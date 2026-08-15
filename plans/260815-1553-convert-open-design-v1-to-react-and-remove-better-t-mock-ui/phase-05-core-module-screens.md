@@ -9,6 +9,8 @@ dependencies: [4]
 
 # Phase 5: Core module screens
 
+> **Structure (red-team):** this phase is split into two sub-gates. **5a (tracer gate):** dashboard + students list only — exit criterion is the gate passing at 390/919/920/921/1440 BEFORE any other screen. **5b:** remaining screens (student detail, schedule, tuition, assignments + detail). The gate gates a boundary, not an internal step that could abort 80% of its own budget.
+
 ## Overview
 Implement the six highest-traffic views as file-based routes: Dashboard, Students (+detail), Schedule, Tuition, Assignments (+detail). Every table row, badge, stat and modal ported 1:1 from the export with real Vietnamese copy.
 
@@ -46,25 +48,28 @@ Data via `useData()`; derived values with small pure helpers in `lib/mock-data.t
 - Reference: export lines 316–425 (dashboard/students/schedule/tuition/assignments markup), 734–1030 (render functions), 1259–1310 (modals)
 
 ## Implementation Steps
-1. **Dashboard first — this is the tracer-bullet gate:** build the complete dashboard screen alone (today lessons + check-in modal flow, alerts, week stats, risk table), then screenshot-diff against `teacher-os.html` at 390×844, 919/920/921 boundary, and 1440×900. STOP the line if tokens, typography, radii, or spacing drift — fix the kit/theme before building any other screen. The dashboard exercises every foundation layer (kit cards/badges/tables/stat-cards, shell sidebar/topbar/drawer, store actions + derived data) at hour ~12 instead of discovering foundation errors at hour ~30.
-2. Students list + chips + add-student modal (name required, defaults total 10 / price 400000 / Online; new student shape from export `saveStudent`).
-3. Student detail with 4 tabs; each tab a small subcomponent in the route file; navigate cross-links (`Link to` to assignment detail).
-4. Schedule: build `week-cal` grid; mobile switch (≤920px single column with left-border day heads) via the Phase 2 `app:` breakpoint replicating export media query; lesson modal with check-in/cancel.
-5. Tuition: two tables + markPaid action; stat cards derived (đã thu T8 = sum paid invoices; còn nợ = sum overdue+unpaid; gói sắp hết count remaining ≤4… port export's exact display values).
-6. Assignments list + filters; detail with rubric, comment bank (append logic), grade modal writing `scores` + `status:'graded'`.
-7. Cross-check every screen against export HTML side-by-side at 1440px; fix visual deltas. Commit after each screen lands.
+1. **5a — tracer gate (dashboard + students list):** build the complete dashboard screen AND the students list (chips + table + add-student modal with name-required validation). Students is included deliberately (red-team): the dashboard exercises cards/badges/avatars/stat-cards/tables/shell/store, but contains NO modal, chips, tabs, or form fields — the students list supplies chips, modal (with Esc + focus-trap + focus-return), fields, and validation in the same gate. Screenshot-diff both against `teacher-os.html` at 390×844, 919/920/921 boundary, and 1440×900. **Numeric threshold (red-team):** no element offset >8px vs export; identical fonts/colors/radii at the three checkpoints. STOP and fix the kit/theme before any 5b screen if the gate fails.
+2. (5b) Student detail with 4 tabs; each tab a small subcomponent in the route file; navigate cross-links (`Link to` to assignment detail). Include a `notFoundComponent` (store lookup miss → friendly card + back link).
+3. (5b) Schedule: build `week-cal` grid; mobile switch (≤920px single column with left-border day heads) via the Phase 2 `max-app:` breakpoint replicating export media query; lesson modal with check-in/cancel.
+4. (5b) Tuition: two tables + markPaid action; stat cards derived (đã thu T8 = sum paid invoices; còn nợ = sum overdue+unpaid; gói sắp hết count remaining ≤4… port export's exact display values).
+5. (5b) Assignments list + filters; detail with rubric, comment bank (append logic), grade modal writing `scores` + `status:'graded'`; `notFoundComponent` on detail.
+6. Cross-check every screen against export HTML side-by-side at 1440px; fix visual deltas. Commit after each screen lands.
+7. Mobile interaction sweep moved here from Phase 8 (red-team): repeat each success-criteria action once at 390px as each screen lands, not in a 4h end-dump.
 
 ## Success Criteria
-- [ ] Tracer gate passed: dashboard pixel-close to export at 390/920-boundary/1440 BEFORE any other screen is built
+- [ ] 5a gate passed: dashboard + students pixel-close (≤8px offsets, identical fonts/colors/radii) to export at 390/919/920/921/1440 BEFORE any 5b screen — including one modal open (Esc close, focus trapped, focus returns), one chip filter round-trip, one validation rejection
 - [ ] All 6 routes render complete content with zero placeholder text
 - [ ] Filter chips on students/assignments produce identical row sets as export
-- [ ] Check-in flow: click Điểm danh on dashboard → badge flips, student remaining decreases in /students and /tuition
+- [ ] Check-in flow: click Điểm danh on dashboard → badge flips, student remaining decreases in /students and /tuition (numeric consistency; tags/alerts are static snapshot per Phase 3 contract)
 - [ ] Grade flow: grade a2 → status Đã chấm, band 6.3 shows in list + detail rubric
 - [ ] Add student flow: create "Test HV" → appears in students table and tuition package table
 - [ ] Lesson modal shows correct zoom link; legend matches export colors
 - [ ] Mark-paid flips invoice row to Đã thu + method
+- [ ] Detail routes render `notFoundComponent` on unknown ids (no crash)
 
 ## Risk Assessment
 - **Risk: stat values drift from export** (dashboard week stats and tuition stats are hardcoded strings like "6.2tr"). Port them as literal strings/numbers first; converting to derived sums is only done where export derives (risk table debt). Signal: screenshot mismatch vs export.
-- **Risk: schedule mobile layout complexity.** The export reflows 7-col grid to stacked rows with left borders — replicate with `md:` prefixed classes; verify at 390px early, not in Phase 8.
+- **Risk: schedule mobile layout complexity.** The export reflows 7-col grid to stacked rows with left borders — replicate with `max-app:` prefixed classes; verify at 390px early, not in Phase 8.
 - **Risk: tab state loss on detail navigation** — acceptable, matches export (tabs reset to first on reopen).
+
+<!-- Updated: Red Team - 5a/5b split, students added to gate, numeric threshold, notFound, mobile sweep moved in -->

@@ -18,7 +18,9 @@ Delete every piece of Better-T-Stack scaffold UI from `apps/web` so the app has 
 - Non-functional: no dead code, no unused imports left behind; `pnpm run check` and `pnpm run check-types` pass after every deletion.
 
 ## Architecture
-The scaffold UI lives in exactly three places: `routes/index.tsx` (ASCII home), `components/header.tsx` + `mode-toggle.tsx` (rendered from `__root.tsx`), and `routes/_auth/dashboard.tsx` (stub). The root layout's grid (`grid-rows-[auto_1fr] h-svh` with Header on top) must be removed so the new app shell can own the full viewport. **Delete `ThemeProvider` entirely, not just set light default** — `next-themes` persists `"dark"` in localStorage under `vite-ui-theme`, so returning users would stay dark if only the default changed. `Toaster` works without `ThemeProvider`.
+The scaffold UI lives in exactly three places: `routes/index.tsx` (ASCII home), `components/header.tsx` + `mode-toggle.tsx` (rendered from `__root.tsx`), and `routes/_auth/dashboard.tsx` (stub). The root layout's grid (`grid-rows-[auto_1fr] h-svh` with Header on top) must be removed so the new app shell can own the full viewport. **Delete `ThemeProvider` entirely, not just set light default** — `next-themes` persists `"dark"` in localStorage under `vite-ui-theme`, so returning users would stay dark if only the default changed. `Toaster` works without `ThemeProvider` but silently falls back to the OS theme — pin `<Toaster richColors theme="light" />` or dark-OS users get dark toasts in the light app.
+
+<!-- Updated: Red Team - pin Toaster theme (sonner falls back to system theme otherwise) -->
 
 ## Related Code Files
 - Modify: `apps/web/src/routes/__root.tsx` — remove Header + grid wrapper + ThemeProvider (keep HeadContent/Toaster/Devtools).
@@ -27,7 +29,7 @@ The scaffold UI lives in exactly three places: `routes/index.tsx` (ASCII home), 
 - Delete: `apps/web/src/components/mode-toggle.tsx`
 - Delete: `apps/web/src/components/theme-provider.tsx` (only if nothing else imports it — verify; sonner's Toaster does not require it)
 - Modify: `apps/web/src/routes/_auth/dashboard.tsx` — temporary minimal placeholder (full implementation lands in Phase 5).
-- Keep untouched: `login.tsx`, `sign-in-form.tsx`, `sign-up-form.tsx`, `user-menu.tsx` (reused in Phase 4 sidebar footer), `loader.tsx`, `lib/auth-client.ts`.
+- Keep untouched: `login.tsx`, `sign-in-form.tsx`, `sign-up-form.tsx`, `user-menu.tsx` (reused in Phase 4 sidebar footer), `loader.tsx`, `lib/auth-client.ts`. **Exception (red-team):** the two auth form files carry hardcoded stock-palette classes (`text-indigo-600 hover:text-indigo-800`, `text-red-500`) that no token remap can reach — a ~6-line mechanical class swap to `text-accent`/`text-destructive` is permitted here so Phase 2's light-palette claim is achievable; flow/validation/navigation logic stays untouched.
 
 ## Implementation Steps
 1. Rewrite `routes/index.tsx` to `createFileRoute("/")` with `beforeLoad: () => { throw redirect({ to: "/dashboard" }) }` (no component needed beyond a null render).

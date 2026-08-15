@@ -19,8 +19,8 @@ Implement the final two views (Reports with send log, Settings with 4 tabs) and 
   - Mẫu tin Zalo: 3 template textareas (nhắc lịch T−24h, nhắc nợ quá hạn 3 ngày, báo cáo tuần) with `{{placeholder}}` tokens verbatim
   - Quy tắc: 2 cards — vắng học (3 selects/inputs) + nhắc nhở (4 selects)
   - Dữ liệu: export card with 2 secondary buttons (Xuất CSV, Xuất toàn bộ JSON) + danger Xóa tài khoản button
-- Functional: modal buttons and settings controls can be local state only (no persistence in export) — matching export behavior exactly (static forms).
-- Cleanup: delete `/dev/kit` scratch route; verify no unused files/imports; PWA manifest `theme_color` → `#ffffff` (light) and meta theme-color; root route meta title → "Teacher OS · Quản lý lớp gia sư 1:1".
+- Functional: modal buttons and settings controls can be local state only (no persistence in export) — matching export behavior exactly (static forms). **Demo-data labeling (red-team):** the Settings export buttons ("Xuất CSV", "Xuất toàn bộ JSON") and the danger zone carry helper text clarifying they operate on demo data — they must not launder seed data as durable records.
+- Cleanup: ~~delete `/dev/kit` scratch route~~ (dropped in Phase 3 red-team edit — the route is never created); verify no unused files/imports; PWA manifest `theme_color` → `#ffffff` (light) and meta theme-color; root route meta title → "Teacher OS · Quản lý lớp gia sư 1:1".
 - Non-functional: settings tab state resets on navigation (matches export).
 
 ## Architecture
@@ -34,7 +34,6 @@ Reports log entries are static seed data (export hardcodes them). Settings forms
 - Create: `apps/web/src/routes/_auth/reports.tsx`
 - Create: `apps/web/src/routes/_auth/settings.tsx`
 - Create: `apps/web/src/components/modals/create-report-modal.tsx`
-- Delete: `apps/web/src/routes/dev/kit.tsx` (Phase 3 scratch)
 - Modify: `apps/web/vite.config.ts` (PWA manifest theme_color, name "Teacher OS", description)
 - Modify: `apps/web/src/routes/__root.tsx` (meta title/description)
 - Reference: export lines 471–545 (reports/settings markup), 1032–1054 (renderReports), 1282–1297 (create-report modal)
@@ -52,8 +51,10 @@ Reports log entries are static seed data (export hardcodes them). Settings forms
 - [ ] Create-report modal opens from both reports page and student detail (export opens it from both places — student detail button reuses same modal component)
 - [ ] Settings tabs switch correctly; all form values editable; template placeholders `{{student_name}}` etc. intact
 - [ ] Danger button styled red-bordered as export
-- [ ] `/dev/kit` gone; manifest theme_color white; tab title correct
+- [ ] `/dev/kit` gone (never created per Phase 3); manifest theme_color white; tab title correct
 - [ ] Biome + type-check + build pass
+
+<!-- Updated: Red Team - demo labeling on exports, /dev/kit dropped -->
 
 ## Risk Assessment
 Low. Static screens. Only trap: the create-report modal is triggered from two contexts (reports page, student detail) with the student preselected when opened from a student — pass `defaultStudentId` prop; export preselects nothing (select defaults to first option) so preselect is a no-op unless wired; keep parity with export (no preselect) to avoid scope creep.

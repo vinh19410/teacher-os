@@ -3,7 +3,7 @@ title: "Convert open-design v1 to React and remove Better-T mock UI"
 description: "Replace all Better-T-Stack scaffold UI in apps/web with production React components converted from open-design/v1/teacher-os.html, preserving the exported visual contract (tokens, layout, interactions, responsive behavior)."
 status: pending
 priority: P1
-effort: "5-6d"
+effort: "6-7d"
 tags: [ui, design-conversion, react, tailwind]
 created: 2026-08-15
 blockedBy: []
@@ -45,7 +45,7 @@ Out of scope (unchanged, still functional): auth **flow** (`login.tsx`, sign-in/
 | `--accent` (+hover/active) | `#0071e3` / `#0077ed` / `#0066cc` | `--color-accent` etc. |
 | `--success` / `--warn` / `--danger` | `#16a34a` / `#eab308` / `#dc2626` | `--color-success` / `--color-warn` / `--color-danger` |
 | `--radius-sm/md/lg/pill` | 8/12/18/980px | `--radius-sm/md/lg/full` overridden individually (export scale is non-linear; do NOT derive from a single `--radius` base) |
-| Mobile breakpoint | `max-width:920px` | custom `--breakpoint-*` at 920px (Tailwind default jumps 768→1024; never use stock `md:`/`lg:` for the drawer) |
+| Mobile breakpoint | `max-width:920px` | `--breakpoint-app: 921px` so `app:` fires ≥921 and `max-app:` covers ≤920 — the export boundary is inclusive of 920 (custom token, never stock `md:`/`lg:` for the drawer) |
 | `--space-1..12` | 4–48px | default Tailwind spacing already covers; keep CSS vars for exact rhythm |
 | `--text-xs..4xl` | 12–80px | `--text-xs` … `--text-4xl` overrides |
 | `--motion-fast/base` + `--ease-standard` | 150/220ms, `cubic-bezier(0.28,0,0.22,1)` | `--animate-*` / CSS vars |
@@ -112,10 +112,11 @@ Phase dependencies: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 (strictly sequen
 - [ ] `/` redirects to `/dashboard` (through `_auth` → `/login` when unauthenticated)
 - [ ] Token diff: every color/radius/type/spacing value used by components comes from the frozen theme, not hardcoded hex
 - [ ] All 13 views navigable via sidebar with correct active states and topbar titles
-- [ ] Interactions verified: student filter chips, assignment filter chips, class/syllabus filters, student/assignment/class/syllabus detail tabs, notification bell panel, check-in (updates dashboard + students + tuition), mark-paid, grading modal (writes rubric scores + band average), syllabus module/lesson add+edit, assign-syllabus, comment bank append, global search → student
+- [ ] Interactions verified: student filter chips, assignment filter chips, class/syllabus filters, student/assignment/class/syllabus detail tabs, notification bell panel, check-in (updates numeric counts on dashboard + students + tuition; tags/alerts are static snapshot), mark-paid, grading modal (writes rubric scores + band average), syllabus module/lesson add+edit, assign-syllabus, comment bank append, global search → student
 - [ ] Viewport checks pass at 360, 390, 430, 600, 820, 1024, 1366, 1440, 1920 with no horizontal overflow; sidebar becomes drawer with scrim ≤920px
 - [ ] `pnpm run check` (Biome), `pnpm run check-types`, `pnpm run build` all pass
 - [ ] No `data-od-id` attributes or prototype annotations in shipped code
+- [ ] Demo-data disclosure visible in app shell; detail routes show not-found (never crash) on unknown ids
 
 ## Risk Assessment
 
@@ -125,4 +126,35 @@ Phase dependencies: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 (strictly sequen
 - **shadcn primitives vs custom design** (shadcn dialog/table styling differs from export) → mitigated by styling at the app-component layer (wrapper components own the export look); shared `@teacher-os/ui` package stays untouched except `globals.css` tokens, so auth screens and future apps don't regress.
 - **PWA theme mismatch** (manifest `theme_color: #0c0c0c` dark vs light design) → fixed in Phase 7.
 
-<!-- slug: convert-open-design-v1-to-react-and-remove-better-t-mock-ui -->
+## Red Team Review
+
+Reviewed by 4 hostile lenses (Security Adversary, Assumption Destroyer, Failure Mode Analyst, Scope & Complexity Critic) with codebase verification. 20 raw findings → 15 deduplicated → 14 accepted, 1 rejected. Applied 2026-08-15.
+
+| # | Finding | Severity | Disposition |
+|---|---------|----------|-------------|
+| 1 | Token collision: export `--muted`/`--accent` clobber shadcn semantics; alias list covered 7 of ~20 consumed vars → auth UI breakage | Critical | Accept → phase-02 complete alias enumeration + collision resolution + exit gate |
+| 2 | Verification unexecutable: all routes behind `_auth` guard (captures would show `/login`); no Playwright; `dev:web` only | Critical | Accept → authenticated capture harness built in phase-04, manual checklist fallback |
+| 3 | Phase 5 self-aborting structure; tracer gate exercised no modals/chips/tabs/fields | Critical | Accept → 5a/5b split; students list added to gate |
+| 4 | `/dev/kit` scratch route outside auth guard = unauthenticated seed-data window | High | Accept → dropped entirely; kit validated on real screens |
+| 5 | Ephemeral financial mutations with zero disclosure | High | Accept → persistent demo-data indicator (phase-04) + labeled exports (phase-07) |
+| 6 | Radius criterion unachievable: `packages/ui` primitives hardcode `rounded-none` | High | Accept → radius criterion scoped to app kit; auth square corners accepted |
+| 7 | Login palette deadlock: hardcoded `text-indigo-600`/`text-red-500` in frozen files | High | Accept → ~6-line mechanical class swap permitted in auth forms |
+| 8 | Runtime-created entities vanish on reload → `$id` crash; no notFound handling | High | Accept → `notFoundComponent` on all 4 detail routes; phase-08 criterion amended |
+| 9 | Phase 8 budget fiction (81 screenshot pairs + 117 checks in 4h) | High | Accept → 4-viewport screenshots + full-grid overflow assertion; 6h; sweeps moved to 5/6 |
+| 10 | "Pixel-close" unmeasurable; ≤5px carve-out covered almost nothing | High | Accept → uniform ≤8px offset threshold, fonts/colors/radii identical |
+| 11 | Session-less fallback rendered fake teacher card — normalizes guard regression | Medium | Accept → hard invariant redirect; fallback branch deleted; Outlet composition resolved |
+| 12 | Phase 3 budget fiction (3h store + ~14 min/component) | High | Accept → 8h; `/dev/kit` dropped |
+| 13 | 920px off-by-one (`max-app:` excluded 920 where export includes it); duplicate step numbering | Medium | Accept → `--breakpoint-app: 921px`; steps renumbered |
+| 14 | Toaster silently falls to system theme | Medium | Accept → pinned `theme="light"` in phase-01 |
+| 15 | Replace seed phone numbers/zalo IDs with placeholders | Medium | **Reject** — DESIGN-HANDOFF.md:37 mandates preserving real export copy verbatim; data is fictional seed from the user's own export. Numeric phone validation accepted (folded into phase-03) |
+
+### Whole-Plan Consistency Sweep
+After applying, re-read plan.md + all 8 phase files. Verified: no remaining reference to `/dev/kit` as a created artifact (phase-07 deletion note updated to "never created"); 920px semantics consistent everywhere (`921px` token, `max-app:` ≤920); Phase 5's split referenced consistently in its own file; check-in consistency claims everywhere limited to numeric fields (plan.md success criteria, phase-05 criteria); no contradictory radius claims remain (phase-02 criterion scoped). No unresolved contradictions.
+
+## Validation Log
+
+### Verification Results (validate gate, 2026-08-15)
+- Claims checked: 24 (file paths, line ranges, token values, structure, ports, deps)
+- Verified: 24 | Failed: 0 | Unverified: 0
+- Tier: Full (8 phases, all 4 roles)
+- Failures: none. Spot-checks: export `:root` lines 8–32 ✓; `D` object 558–691 ✓; 15 `view-*` sections ✓; `max-width:920px` at line 260 ✓; scaffold files exist as claimed (header/mode-toggle/theme-provider, index ASCII, dashboard stub) ✓; vite port 3001 + PWA `theme_color #0c0c0c` ✓; Tailwind v4.3.3 + `@theme inline` mechanics ✓.
