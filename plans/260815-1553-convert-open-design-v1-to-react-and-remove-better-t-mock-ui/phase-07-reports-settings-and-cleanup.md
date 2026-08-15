@@ -47,12 +47,12 @@ Reports log entries are static seed data (export hardcodes them). Settings forms
 6. PWA + meta updates; regenerate nothing (assets optional — logo.png stays).
 
 ## Success Criteria
-- [ ] Reports table shows 4 reports with correct badges and "Chưa mở" for r3/r4
-- [ ] Create-report modal opens from both reports page and student detail (export opens it from both places — student detail button reuses same modal component)
-- [ ] Settings tabs switch correctly; all form values editable; template placeholders `{{student_name}}` etc. intact
-- [ ] Danger button styled red-bordered as export
-- [ ] `/dev/kit` gone (never created per Phase 3); manifest theme_color white; tab title correct
-- [ ] Biome + type-check + build pass
+- [x] Reports table shows 4 reports with correct badges and "Chưa mở" for r3/r4
+- [x] Create-report modal opens from both reports page and student detail (export opens it from both places — student detail button reuses same modal component)
+- [x] Settings tabs switch correctly; all form values editable; template placeholders `{{student_name}}` etc. intact
+- [x] Danger button styled red-bordered as export
+- [x] `/dev/kit` gone (never created per Phase 3); manifest theme_color white; tab title correct
+- [x] Biome + type-check + build pass
 
 <!-- Updated: Red Team - demo labeling on exports, /dev/kit dropped -->
 
