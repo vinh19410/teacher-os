@@ -61,11 +61,11 @@ Use existing `@teacher-os/ui` primitives only where they match the design (e.g. 
 7. Add-student phone field: numeric-only validation (digits/spaces) before a zalo id is derived from it — free text must never flow into a `zalo.me` URL.
 
 ## Success Criteria
-- [ ] `useData()` returns all 8 collections typed; TS strict passes
-- [ ] Every mutation action updates state immutably; `checkInLesson` visibly changes remaining counts on all consumers (verified via React DevTools in Phase 5 wiring)
-- [ ] All 13 components render with export-identical styling (side-by-side vs `teacher-os.html` in browser)
-- [ ] Modal closes on overlay click + Esc; focus is trapped inside while open; focus returns to trigger element
-- [ ] No `any` types; Biome passes
+- [x] `useData()` returns all 8 collections typed; TS strict passes
+- [x] Every mutation action updates state immutably; `checkInLesson` visibly changes remaining counts on all consumers (verified via React DevTools in Phase 5 wiring)
+- [x] All 13 components render with export-identical styling (side-by-side vs `teacher-os.html` in browser)
+- [x] Modal closes on overlay click + Esc; focus is trapped inside while open; focus returns to trigger element
+- [x] No `any` types; Biome passes
 
 ## Risk Assessment
 - **Risk: state divergence from export behavior** (e.g. check-in should NOT decrement remaining below 0 — export clamps `if(remaining<=0) remaining=0`). Mitigation: port each mutation function line-by-line from export lines 1246–1501, then test the exact scenario (check-in all lessons of one student).
