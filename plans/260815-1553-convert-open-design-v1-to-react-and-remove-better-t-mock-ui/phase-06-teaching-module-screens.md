@@ -49,13 +49,13 @@ apps/web/src/components/
 7. Side-by-side comparison vs export at 1440px and 820px.
 
 ## Success Criteria
-- [ ] Classes table + filters exact; create modal validation blocks empty name
-- [ ] Class detail 4 tabs complete; roster links navigate to student detail
-- [ ] Syllabus cards show correct progress and assignment badges
-- [ ] Full CRUD loop: create syllabus → add module → add lesson → edit lesson status to done → counts update (module 1/3, totalLessons +1) → assign to class → class "Giáo trình" tab reflects it
-- [ ] Module collapse/expand works; "Buổi hiện tại" banner appears for syllabi with a current lesson
-- [ ] Empty states render (class without syllabus; new empty syllabus)
-- [ ] Detail routes render not-found on unknown ids; mobile interaction sweep repeated at 390px as each screen lands
+- [x] Classes table + filters exact; create modal validation blocks empty name
+- [x] Class detail 4 tabs complete; roster links navigate to student detail
+- [x] Syllabus cards show correct progress and assignment badges
+- [x] Full CRUD loop: create syllabus → add module → add lesson → edit lesson status to done → counts update (module 1/3, totalLessons +1) → assign to class → class "Giáo trình" tab reflects it
+- [x] Module collapse/expand works; "Buổi hiện tại" banner appears for syllabi with a current lesson
+- [x] Empty states render (class without syllabus; new empty syllabus)
+- [x] Detail routes render not-found on unknown ids; mobile interaction sweep repeated at 390px as each screen lands
 
 <!-- Updated: Red Team - notFound on detail routes, mobile sweep inline -->
 

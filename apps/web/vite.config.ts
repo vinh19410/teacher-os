@@ -21,10 +21,12 @@ export default defineConfig({
 		VitePWA({
 			registerType: "autoUpdate",
 			manifest: {
-				name: "teacher-os",
-				short_name: "teacher-os",
-				description: "teacher-os - PWA Application",
-				theme_color: "#0c0c0c",
+				name: "Teacher OS",
+				short_name: "Teacher OS",
+				description:
+					"Teacher OS — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
+				theme_color: "#ffffff",
+				background_color: "#ffffff",
 			},
 			pwaAssets: { disabled: false, config: true },
 			devOptions: { enabled: true },
