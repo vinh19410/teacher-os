@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Teacher OS · Quản lý lớp gia sư 1:1</title>
+  <style>
+    :root {
+      --bg: #ffffff; --surface: #f5f5f7; --surface-warm: #fbfbfd;
+      --fg: #1d1d1f; --fg-2: #424245; --muted: #6e6e73; --meta: #86868b;
+      --border: #d2d2d7; --border-soft: #e8e8ed;
+      --accent: #0071e3; --accent-on: #ffffff; --accent-hover: #0077ed; --accent-active: #0066cc;
+      --success: #16a34a; --warn: #eab308; --danger: #dc2626;
+      --font-display: "SF Pro Display","SF Pro Icons","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --font-body: "SF Pro Text","SF Pro Icons","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --font-mono: "SF Mono",ui-monospace,"JetBrains Mono",Menlo,Monaco,Consolas,monospace;
+      --text-xs:12px;--text-sm:14px;--text-base:17px;--text-lg:21px;--text-xl:28px;--text-2xl:40px;--text-3xl:56px;--text-4xl:80px;
+      --leading-body:1.47;--leading-tight:1.05;--tracking-display:-0.015em;
+      --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-12:48px;
+      --section-y-desktop:100px;--section-y-tablet:64px;--section-y-phone:40px;
+      --radius-sm:8px;--radius-md:12px;--radius-lg:18px;--radius-pill:980px;
+      --elev-flat:none;--elev-ring:0 0 0 1px var(--border);--elev-raised:0 12px 32px rgba(0,0,0,0.08);
+      --focus-ring:0 0 0 4px color-mix(in oklab,var(--accent),transparent 65%);
+      --motion-fast:150ms;--motion-base:220ms;--ease-standard:cubic-bezier(0.28,0,0.22,1);
+      --container-max:1024px;--container-gutter-desktop:22px;--container-gutter-tablet:18px;--container-gutter-phone:16px;
+      --accent-soft:color-mix(in oklab,var(--accent),transparent 86%);
+      --fg-soft:color-mix(in oklab,var(--fg),transparent 94%);
+      --success-soft:color-mix(in oklab,var(--success),transparent 88%);
+      --warn-soft:color-mix(in oklab,var(--warn),transparent 86%);
+      --danger-soft:color-mix(in oklab,var(--danger),transparent 88%);
+      --gap-xs:var(--space-2);--gap-sm:var(--space-3);--gap-md:var(--space-5);--gap-lg:var(--space-8);--gap-xl:var(--space-12);--gap-2xl:96px;
+      --sidebar-w:248px;
+    }
+    *,*::before,*::after{box-sizing:border-box;}
+    html{-webkit-text-size-adjust:100%;}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:var(--text-base);line-height:var(--leading-body);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;}
+    img,svg{display:block;max-width:100%;}
+    a{color:inherit;text-decoration:none;}
+    button{font:inherit;cursor:pointer;}
+    input,select,textarea{font:inherit;}
+    p{margin:0;text-wrap:pretty;}
+    h1,h2,h3,h4{margin:0;font-family:var(--font-display);text-wrap:balance;}
+    .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+    .meta{font-family:var(--font-mono);font-size:var(--text-xs);color:var(--muted);}
+
+    .app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh;}
+    .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:var(--space-5) var(--space-4);position:sticky;top:0;height:100vh;overflow-y:auto;}
+    .sidebar-brand{display:flex;align-items:center;gap:var(--space-2);padding:0 var(--space-2) var(--space-5);}
+    .brand-mark{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--fg);color:var(--bg);display:grid;place-items:center;font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:-0.02em;}
+    .brand-name{font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:-0.01em;}
+    .nav-group{display:flex;flex-direction:column;gap:2px;flex:1;}
+    .nav-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);color:var(--fg-2);font-size:var(--text-sm);font-weight:500;border:none;background:transparent;text-align:left;width:100%;transition:background var(--motion-fast) var(--ease-standard),color var(--motion-fast);}
+    .nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:0.7;}
+    .nav-item:hover{background:var(--border-soft);color:var(--fg);}
+    .nav-item.active{background:var(--accent-soft);color:var(--accent);}
+    .nav-item.active svg{opacity:1;}
+    .nav-item:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+    .nav-section-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--meta);padding:var(--space-4) var(--space-3) var(--space-2);}
+    .sidebar-foot{margin-top:auto;padding-top:var(--space-4);border-top:1px solid var(--border-soft);}
+    .teacher-card{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2);}
+    .avatar{border-radius:50%;display:inline-grid;place-items:center;font-family:var(--font-display);font-weight:600;background:var(--surface);color:var(--fg);border:1px solid var(--border-soft);flex-shrink:0;}
+    .avatar.sm{width:32px;height:32px;font-size:12px;}
+    .avatar.md{width:40px;height:40px;font-size:14px;}
+    .avatar.lg{width:56px;height:56px;font-size:18px;}
+    .teacher-card .avatar{width:36px;height:36px;font-size:13px;}
+    .t-info{line-height:1.3;min-width:0;}
+    .t-name{font-size:var(--text-sm);font-weight:600;}
+    .t-plan{font-size:var(--text-xs);color:var(--muted);}
+    .plan-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:var(--radius-pill);background:var(--accent-soft);color:var(--accent);font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:0.04em;margin-left:var(--space-1);}
+
+    .main{display:flex;flex-direction:column;min-width:0;}
+    .topbar{position:sticky;top:0;z-index:20;background:color-mix(in oklab,var(--bg) 88%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:var(--space-4);padding:var(--space-3) var(--space-6);}
+    .topbar-title{font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;letter-spacing:-0.01em;}
+    .topbar-search{flex:1;max-width:360px;margin-left:auto;display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border-soft);}
+    .topbar-search svg{width:15px;height:15px;color:var(--meta);flex-shrink:0;}
+    .topbar-search input{border:none;background:transparent;outline:none;font-size:var(--text-sm);color:var(--fg);width:100%;}
+    .topbar-search input::placeholder{color:var(--meta);}
+    .topbar-search:focus-within{border-color:var(--accent);box-shadow:var(--focus-ring);}
+    .icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border-soft);background:var(--bg);display:grid;place-items:center;color:var(--fg-2);position:relative;transition:background var(--motion-fast),border-color var(--motion-fast);}
+    .icon-btn:hover{background:var(--surface);border-color:var(--border);}
+    .icon-btn svg{width:17px;height:17px;}
+    .icon-btn .bell-dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:1.5px solid var(--bg);}
+    .icon-btn:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+    .menu-toggle{display:none;}
+
+    .content{flex:1;padding:var(--space-6);max-width:100%;overflow-x:hidden;}
+    .view{display:none;}
+    .view.active{display:block;}
+    .page-head{margin-bottom:var(--space-6);}
+    .page-head h1{font-size:clamp(28px,3.5vw,40px);line-height:1.1;letter-spacing:var(--tracking-display);font-weight:600;}
+    .page-head .lead{font-size:var(--text-base);color:var(--muted);margin-top:var(--space-2);max-width:60ch;}
+    .section-label{font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--meta);margin-bottom:var(--space-3);}
+    .h-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-4);flex-wrap:wrap;}
+    .h-row h2{font-size:20px;font-weight:600;}
+
+    .btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:9px 18px;border-radius:var(--radius-pill);border:1px solid transparent;font-size:var(--text-sm);font-weight:500;letter-spacing:-0.003em;white-space:nowrap;transition:transform var(--motion-fast) var(--ease-standard),background var(--motion-fast),border-color var(--motion-fast);}
+    .btn:active{transform:scale(0.97);}
+    .btn svg{width:16px;height:16px;}
+    .btn-primary{background:var(--accent);color:var(--accent-on);}
+    .btn-primary:hover{background:var(--accent-hover);}
+    .btn-primary:active{background:var(--accent-active);}
+    .btn-secondary{background:transparent;color:var(--fg);border-color:var(--border);}
+    .btn-secondary:hover{border-color:var(--fg);}
+    .btn-ghost{background:transparent;color:var(--accent);border-color:transparent;padding-inline:var(--space-2);}
+    .btn-ghost:hover{color:var(--accent-active);}
+    .btn-sm{padding:6px 14px;font-size:var(--text-xs);}
+    .btn:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+    .btn[disabled]{opacity:0.4;pointer-events:none;}
+
+    .card{background:var(--surface-warm);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:var(--space-6);}
+    .card-white{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-6);}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-5);}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-5);}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);}
+    .grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:var(--space-5);align-items:start;}
+    .stack{display:flex;flex-direction:column;}
+    .stack>*+*{margin-top:var(--space-4);}
+
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:600;letter-spacing:0.01em;}
+    .badge-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+    .badge-accent{background:var(--accent-soft);color:var(--accent);}
+    .badge-success{background:var(--success-soft);color:var(--success);}
+    .badge-warn{background:var(--warn-soft);color:color-mix(in oklab,var(--warn),black 25%);}
+    .badge-danger{background:var(--danger-soft);color:var(--danger);}
+    .badge-muted{background:var(--border-soft);color:var(--muted);}
+    .tag{display:inline-flex;align-items:center;padding:2px 9px;border:1px solid var(--border);border-radius:var(--radius-pill);font-size:11px;color:var(--muted);background:transparent;}
+
+    .stat-card{padding:var(--space-5);}
+    .stat-card .stat-num{font-family:var(--font-display);font-size:32px;font-weight:600;letter-spacing:-0.02em;line-height:1.1;}
+    .stat-card .stat-label{font-size:var(--text-xs);color:var(--muted);margin-top:var(--space-1);}
+
+    .ds-table{width:100%;border-collapse:collapse;font-size:var(--text-sm);}
+    .ds-table th,.ds-table td{padding:var(--space-3) var(--space-4);text-align:left;border-bottom:1px solid var(--border-soft);}
+    .ds-table th{color:var(--muted);font-weight:500;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;text-transform:uppercase;border-bottom-color:var(--border);}
+    .ds-table tbody tr{transition:background var(--motion-fast);}
+    .ds-table tbody tr:hover{background:var(--surface);}
+    .ds-table tbody tr.clickable{cursor:pointer;}
+    .ds-table .num-col{font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+
+    .chip-row{display:flex;gap:var(--space-2);flex-wrap:wrap;}
+    .chip{padding:6px 14px;border-radius:var(--radius-pill);border:1px solid var(--border);background:var(--bg);color:var(--fg-2);font-size:var(--text-xs);font-weight:500;transition:all var(--motion-fast) var(--ease-standard);}
+    .chip:hover{border-color:var(--fg);}
+    .chip.active{background:var(--fg);color:var(--bg);border-color:var(--fg);}
+    .chip:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+
+    .week-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-2);}
+    .day-col{min-height:0;}
+    .day-head{text-align:center;padding:var(--space-2) 0 var(--space-3);border-bottom:2px solid transparent;}
+    .day-name{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+    .day-num{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--fg);margin-top:2px;}
+    .day-col.today .day-head{border-bottom-color:var(--accent);}
+    .day-col.today .day-num{color:var(--accent);}
+    .lesson-block{margin-top:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);border-left:3px solid var(--accent);background:var(--accent-soft);cursor:pointer;transition:transform var(--motion-fast),box-shadow var(--motion-fast);}
+    .lesson-block:hover{transform:translateY(-1px);box-shadow:var(--elev-raised);}
+    .lb-time{font-family:var(--font-mono);font-size:11px;color:var(--fg-2);}
+    .lb-student{font-size:var(--text-sm);font-weight:600;margin-top:2px;}
+    .lb-type{font-size:11px;color:var(--muted);margin-top:1px;}
+    .lesson-block.type-12{border-left-color:var(--success);background:var(--success-soft);}
+    .lesson-block.type-trial{border-left-color:var(--warn);background:var(--warn-soft);}
+    .lesson-block.type-mock{border-left-color:var(--fg);background:var(--fg-soft);}
+    .lesson-block.type-review{border-left-color:var(--meta);background:var(--border-soft);}
+    .lesson-block.status-completed{opacity:0.6;}
+    .lesson-block.status-completed .lb-student{text-decoration:line-through;text-decoration-color:var(--meta);}
+    .lesson-block.status-cancelled{opacity:0.35;}
+    .lesson-block.status-cancelled .lb-student{text-decoration:line-through;}
+    .lesson-block.status-absent{border-left-color:var(--danger);}
+
+    .progress{height:6px;border-radius:var(--radius-pill);background:var(--border-soft);overflow:hidden;}
+    .progress-fill{height:100%;border-radius:var(--radius-pill);background:var(--accent);transition:width var(--motion-base) var(--ease-standard);}
+    .progress-fill.low{background:var(--danger);}
+    .progress-fill.warn{background:var(--warn);}
+
+    .tabs{display:flex;gap:var(--space-1);border-bottom:1px solid var(--border);margin-bottom:var(--space-5);overflow-x:auto;}
+    .tab{padding:var(--space-3) var(--space-4);border:none;background:transparent;font-size:var(--text-sm);font-weight:500;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:color var(--motion-fast),border-color var(--motion-fast);}
+    .tab:hover{color:var(--fg);}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .tab:focus-visible{outline:none;box-shadow:var(--focus-ring);}
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    .field{display:flex;flex-direction:column;gap:var(--space-1);}
+    .field label{font-size:var(--text-xs);color:var(--muted);font-weight:500;}
+    .field .field-help{font-size:11px;color:var(--meta);}
+    .input,.textarea,select.input{width:100%;padding:10px var(--space-3);border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--fg);font-size:var(--text-sm);transition:border-color var(--motion-fast),box-shadow var(--motion-fast);}
+    .input:focus,.textarea:focus,select.input:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus-ring);}
+    .textarea{min-height:80px;resize:vertical;line-height:1.5;}
+    .input::placeholder,.textarea::placeholder{color:var(--meta);}
+    .field-error{font-size:11px;color:var(--danger);}
+
+    .modal-overlay{position:fixed;inset:0;z-index:100;display:none;background:color-mix(in oklab,var(--fg),transparent 55%);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;padding:var(--space-8) var(--space-4);overflow-y:auto;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--bg);border-radius:var(--radius-lg);width:100%;max-width:480px;box-shadow:var(--elev-raised);animation:modal-in var(--motion-base) var(--ease-standard);}
+    @keyframes modal-in{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--border-soft);}
+    .modal-head h3{font-size:18px;font-weight:600;}
+    .modal-body{padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-4);}
+    .modal-foot{display:flex;justify-content:flex-end;gap:var(--space-2);padding:var(--space-4) var(--space-6);border-top:1px solid var(--border-soft);}
+
+    .log-item{display:grid;grid-template-columns:100px 1fr auto;gap:var(--space-4);padding:var(--space-3) 0;border-top:1px solid var(--border-soft);align-items:baseline;}
+    .log-item:first-child{border-top:none;}
+    .log-date{font-family:var(--font-mono);font-size:var(--text-xs);color:var(--muted);}
+    .log-title{font-size:var(--text-sm);font-weight:500;}
+    .log-desc{font-size:var(--text-xs);color:var(--muted);margin-top:2px;}
+
+    .alert-item{display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-3) 0;}
+    .alert-item+.alert-item{border-top:1px solid var(--border-soft);}
+    .alert-dot{width:8px;height:8px;border-radius:50%;margin-top:7px;flex-shrink:0;}
+    .alert-dot.danger{background:var(--danger);}
+    .alert-dot.warn{background:var(--warn);}
+    .alert-dot.accent{background:var(--accent);}
+    .alert-text{font-size:var(--text-sm);line-height:1.45;}
+    .alert-text strong{font-weight:600;}
+    .alert-meta{font-size:11px;color:var(--meta);margin-top:2px;font-family:var(--font-mono);}
+
+    .rubric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3);}
+    .rubric-cell{padding:var(--space-3) var(--space-4);border:1px solid var(--border-soft);border-radius:var(--radius-sm);}
+    .rc-label{font-size:11px;color:var(--muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;}
+    .rc-score{font-family:var(--font-display);font-size:24px;font-weight:600;margin-top:var(--space-1);}
+
+    .comment-bank{display:flex;flex-direction:column;gap:var(--space-2);}
+    .comment-chip{padding:var(--space-2) var(--space-3);border:1px solid var(--border-soft);border-radius:var(--radius-sm);font-size:var(--text-xs);color:var(--fg-2);cursor:pointer;transition:border-color var(--motion-fast),background var(--motion-fast);line-height:1.4;}
+    .comment-chip:hover{border-color:var(--accent);background:var(--accent-soft);}
+    .cc-tag{font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:2px;}
+
+    .notif-panel{position:absolute;top:100%;right:0;margin-top:var(--space-2);width:360px;max-height:420px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--elev-raised);z-index:50;display:none;}
+    .notif-panel.open{display:block;}
+    .notif-head{padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border-soft);font-size:var(--text-sm);font-weight:600;}
+    .notif-item{display:flex;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-soft);}
+    .notif-item:hover{background:var(--surface);}
+    .ni-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+    .ni-text{font-size:var(--text-xs);line-height:1.4;}
+    .ni-time{font-size:10px;color:var(--meta);font-family:var(--font-mono);margin-top:3px;}
+
+    .scrim{position:fixed;inset:0;z-index:90;background:color-mix(in oklab,var(--fg),transparent 60%);display:none;}
+    .scrim.open{display:block;}
+    @media(min-width:921px){.scrim{display:none!important;}}
+
+    .syllabus-module{background:var(--bg);border:1px solid var(--border-soft);border-radius:var(--radius-lg);overflow:hidden;}
+    .syllabus-module+.syllabus-module{margin-top:var(--space-4);}
+    .module-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:var(--space-4) var(--space-5);background:var(--surface-warm);border-bottom:1px solid var(--border-soft);cursor:pointer;transition:background var(--motion-fast);}
+    .module-head:hover{background:var(--surface);}
+    .module-head h3{font-size:var(--text-sm);font-weight:600;}
+    .module-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+    .module-body{display:block;}
+    .module-body.collapsed{display:none;}
+    .lesson-row{display:grid;grid-template-columns:20px 1fr auto;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-soft);align-items:start;transition:background var(--motion-fast);}
+    .lesson-row:last-child{border-bottom:none;}
+    .lesson-row:hover{background:var(--surface-warm);}
+    .lesson-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+    .lesson-dot.done{background:var(--success);}
+    .lesson-dot.current{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+    .lesson-dot.upcoming{background:var(--border);}
+    .lesson-title{font-size:var(--text-sm);font-weight:500;}
+    .lesson-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+    .lesson-objectives{font-size:var(--text-xs);color:var(--fg-2);margin-top:3px;line-height:1.4;}
+    .link-btn{background:none;border:none;color:var(--muted);font-size:var(--text-xs);font-family:var(--font-body);cursor:pointer;padding:2px 6px;border-radius:var(--radius-sm);transition:all var(--motion-fast);}
+    .link-btn:hover{color:var(--fg);background:var(--surface);}
+    .link-btn:focus-visible{box-shadow:var(--focus-ring);outline:none;}
+
+    @media(max-width:920px){
+      .app{grid-template-columns:1fr;}
+      .sidebar{position:fixed;left:0;top:0;z-index:100;width:280px;transform:translateX(-100%);transition:transform var(--motion-base) var(--ease-standard);}
+      .sidebar.open{transform:translateX(0);box-shadow:var(--elev-raised);}
+      .menu-toggle{display:grid;}
+      .grid-2,.grid-3,.grid-4,.grid-2-1{grid-template-columns:1fr;}
+      .week-cal{grid-template-columns:1fr;gap:var(--space-3);}
+      .day-col{display:flex;align-items:stretch;gap:var(--space-3);}
+      .day-head{text-align:left;min-width:64px;border-bottom:none;border-left:3px solid var(--border-soft);padding-left:var(--space-3);}
+      .day-col.today .day-head{border-left-color:var(--accent);}
+      .topbar-search{display:none;}
+      .content{padding:var(--space-4);}
+      .rubric-grid{grid-template-columns:1fr;}
+      .log-item{grid-template-columns:1fr;gap:var(--space-1);}
+      .lesson-row{grid-template-columns:20px 1fr;}
+      .lesson-row>div:last-child{grid-column:2;padding-top:var(--space-1);}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" data-od-id="sidebar">
+      <div class="sidebar-brand"><div class="brand-mark">T</div><div class="brand-name">Teacher OS</div></div>
+      <nav class="nav-group" id="nav-group">
+        <button class="nav-item active" data-view="dashboard" data-od-id="nav-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Tổng quan</button>
+        <button class="nav-item" data-view="students" data-od-id="nav-students"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>Học viên</button>
+        <button class="nav-item" data-view="schedule" data-od-id="nav-schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Lịch dạy</button>
+        <button class="nav-item" data-view="tuition" data-od-id="nav-tuition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-1 1-2 2-2h14c1 0 2 1 2 2v2H3V7z"/><path d="M3 9h18v8c0 1-1 2-2 2H5c-1 0-2-1-2-2V9z"/><path d="M15 13h2"/></svg>Học phí</button>
+        <button class="nav-item" data-view="assignments" data-od-id="nav-assignments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Bài tập</button>
+        <div class="nav-section-label">Giảng dạy</div>
+        <button class="nav-item" data-view="classes" data-od-id="nav-classes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v6l9 4 9-4V7"/><path d="M12 11v6"/></svg>Lớp học</button>
+        <button class="nav-item" data-view="syllabus" data-od-id="nav-syllabus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4z"/><path d="M4 4v14a2 2 0 0 0 2 2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Syllabus</button>
+        <div class="nav-section-label">Phụ huynh</div>
+        <button class="nav-item" data-view="reports" data-od-id="nav-reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>Báo cáo</button>
+        <div class="nav-section-label">Hệ thống</div>
+        <button class="nav-item" data-view="settings" data-od-id="nav-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19 12c0 .5 0 1-.1 1.5l2 1.5-2 3.4-2.4-1c-.7.6-1.5 1-2.4 1.3L14 21h-4l-.4-2.3c-.9-.3-1.7-.8-2.4-1.3l-2.4 1-2-3.4 2-1.5c-.1-.5-.1-1-.1-1.5s0-1 .1-1.5l-2-1.5 2-3.4 2.4 1c.7-.6 1.5-1 2.4-1.3L10 3h4l.4 2.3c.9.3 1.7.8 2.4 1.3l2.4-1 2 3.4-2 1.5c.1.5.1 1 .1 1.5z"/></svg>Cài đặt</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="teacher-card">
+          <div class="avatar">ML</div>
+          <div class="t-info"><div class="t-name">Trần Mai Lan<span class="plan-badge">PRO</span></div><div class="t-plan">5 học viên · Google</div></div>
+        </div>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+    <div class="main">
+      <header class="topbar" data-od-id="topbar">
+        <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <div class="topbar-title" id="topbar-title">Tổng quan</div>
+        <div class="topbar-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" id="global-search" placeholder="Tìm học viên, buổi học, hóa đơn…" /></div>
+        <div style="position:relative;">
+          <button class="icon-btn" id="bell-btn" aria-label="Thông báo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="bell-dot"></span></button>
+          <div class="notif-panel" id="notif-panel"></div>
+        </div>
+      </header>
+      <div class="content" id="content">
+        <!-- ═══ DASHBOARD ═══ -->
+        <div class="view active" id="view-dashboard" data-od-id="view-dashboard">
+          <div class="page-head">
+            <h1>Chào buổi sáng, cô Lan</h1>
+            <p class="lead">Thứ Ba, 19/08 · Hôm nay có 2 buổi học</p>
+          </div>
+          <div class="grid-2-1" style="gap:var(--space-5);align-items:start;">
+            <div>
+              <div class="h-row"><h2>Lịch hôm nay</h2><button class="btn btn-ghost btn-sm" onclick="switchView('schedule')">Xem tuần →</button></div>
+              <div id="dash-today-lessons" class="stack"></div>
+            </div>
+            <div>
+              <div class="section-label">Cần xử lý</div>
+              <div class="card" id="dash-alerts"></div>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-8);">
+            <div class="section-label">Tuần này · 19–25/08</div>
+            <div class="grid-4">
+              <div class="card-white stat-card"><div class="stat-num num">7.5</div><div class="stat-label">giờ dạy</div></div>
+              <div class="card-white stat-card"><div class="stat-num num">6.2tr</div><div class="stat-label">đã thu (VND)</div></div>
+              <div class="card-white stat-card"><div class="stat-num num" style="color:var(--danger);">2.0tr</div><div class="stat-label">còn nợ (VND)</div></div>
+              <div class="card-white stat-card"><div class="stat-num num" style="color:var(--warn);">2</div><div class="stat-label">sắp hết gói</div></div>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-8);">
+            <div class="section-label">Học viên rủi ro</div>
+            <div class="card" style="padding:0;">
+              <table class="ds-table"><thead><tr><th>Học viên</th><th>Vấn đề</th><th class="num-col">Còn</th><th class="num-col">Nợ</th></tr></thead><tbody id="dash-risk"></tbody></table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ STUDENTS ═══ -->
+        <div class="view" id="view-students" data-od-id="view-students">
+          <div class="page-head"><h1>Học viên</h1><p class="lead">5 học viên đang học · Nhấp để xem hồ sơ, lịch sử, học phí và bài tập.</p></div>
+          <div class="h-row">
+            <div class="chip-row" id="student-filters">
+              <button class="chip active" data-filter="all">Tất cả</button>
+              <button class="chip" data-filter="sắp hết buổi">Sắp hết buổi</button>
+              <button class="chip" data-filter="nợ học phí">Nợ học phí</button>
+              <button class="chip" data-filter="IELTS Writing">Writing</button>
+              <button class="chip" data-filter="IELTS Speaking">Speaking</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('add-student')">+ Thêm học viên</button>
+          </div>
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Học viên</th><th>Gói</th><th>Còn lại</th><th>Trạng thái</th><th class="num-col">Đơn giá</th></tr></thead><tbody id="student-list"></tbody></table>
+          </div>
+        </div>
+
+        <!-- ═══ STUDENT DETAIL ═══ -->
+        <div class="view" id="view-student-detail" data-od-id="view-student-detail">
+          <button class="btn btn-ghost btn-sm" onclick="switchView('students')" style="margin-bottom:var(--space-4);">← Quay lại</button>
+          <div id="student-detail-content"></div>
+        </div>
+
+        <!-- ═══ SCHEDULE ═══ -->
+        <div class="view" id="view-schedule" data-od-id="view-schedule">
+          <div class="page-head"><h1>Lịch dạy</h1><p class="lead">Tuần 19–25/08 · Chặn trùng giờ · Đồng bộ Google Calendar 2 chiều.</p></div>
+          <div class="h-row">
+            <div class="chip-row"><button class="chip">← Trước</button><button class="chip active">Tuần này</button><button class="chip">Sau →</button></div>
+            <div style="display:flex;gap:var(--space-2);align-items:center;"><span class="meta">GCal</span><span class="badge badge-success badge-dot">Đã bật</span></div>
+          </div>
+          <div class="card-white" style="padding:var(--space-4);"><div class="week-cal" id="week-calendar"></div></div>
+          <div style="margin-top:var(--space-5);display:flex;gap:var(--space-5);flex-wrap:wrap;align-items:center;">
+            <span class="meta">Chú giải:</span>
+            <span class="badge badge-accent">1:1</span><span class="badge badge-success">1:2</span><span class="badge badge-warn">Trial</span><span class="badge badge-muted">Mock</span><span class="badge badge-muted">Review</span>
+          </div>
+        </div>
+
+        <!-- ═══ TUITION ═══ -->
+        <div class="view" id="view-tuition" data-od-id="view-tuition">
+          <div class="page-head"><h1>Học phí</h1><p class="lead">Số dư gói, hóa đơn, công nợ và thu tiền — tất cả trên một trang.</p></div>
+          <div class="grid-3" style="margin-bottom:var(--space-6);">
+            <div class="card-white stat-card"><div class="stat-num num">8.2tr</div><div class="stat-label">đã thu T8 (VND)</div></div>
+            <div class="card-white stat-card"><div class="stat-num num" style="color:var(--danger);">2.0tr</div><div class="stat-label">còn nợ (VND)</div></div>
+            <div class="card-white stat-card"><div class="stat-num num" style="color:var(--warn);">2</div><div class="stat-label">gói sắp hết</div></div>
+          </div>
+          <div class="section-label">Số dư gói học</div>
+          <div class="card" style="padding:0;margin-bottom:var(--space-6);">
+            <table class="ds-table"><thead><tr><th>Học viên</th><th>Đã học/Tổng</th><th>Còn</th><th>Tiến độ</th><th>Hết hạn</th><th>Trạng thái</th></tr></thead><tbody id="tuition-packages"></tbody></table>
+          </div>
+          <div class="h-row"><div class="section-label" style="margin:0;">Hóa đơn gần đây</div><button class="btn btn-primary btn-sm" onclick="openModal('add-invoice')">+ Tạo hóa đơn</button></div>
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Mã</th><th>Học viên</th><th>Loại</th><th class="num-col">Số tiền</th><th>Ngày</th><th>Trạng thái</th><th></th></tr></thead><tbody id="tuition-invoices"></tbody></table>
+          </div>
+        </div>
+
+        <!-- ═══ ASSIGNMENTS ═══ -->
+        <div class="view" id="view-assignments" data-od-id="view-assignments">
+          <div class="page-head"><h1>Bài tập</h1><p class="lead">Giao bài, chấm theo rubric IELTS 4 tiêu chí, dùng ngân hàng nhận xét dán nhanh.</p></div>
+          <div class="h-row">
+            <div class="chip-row" id="assignment-filters">
+              <button class="chip active" data-filter="all">Tất cả</button>
+              <button class="chip" data-filter="Chưa nộp">Chưa nộp</button>
+              <button class="chip" data-filter="Trễ">Trễ</button>
+              <button class="chip" data-filter="Đã chấm">Đã chấm</button>
+            </div>
+          </div>
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Bài tập</th><th>Học viên</th><th>Loại</th><th>Hạn nộp</th><th>Trạng thái</th><th class="num-col">Band</th></tr></thead><tbody id="assignment-list"></tbody></table>
+          </div>
+        </div>
+
+        <!-- ═══ ASSIGNMENT DETAIL ═══ -->
+        <div class="view" id="view-assignment-detail" data-od-id="view-assignment-detail">
+          <button class="btn btn-ghost btn-sm" onclick="switchView('assignments')" style="margin-bottom:var(--space-4);">← Quay lại</button>
+          <div id="assignment-detail-content"></div>
+        </div>
+
+        <!-- ═══ CLASSES ═══ -->
+        <div class="view" id="view-classes" data-od-id="view-classes">
+          <div class="page-head"><h1>Lớp học</h1><p class="lead">Nhóm học viên theo trình độ &amp; syllabus. Quản lý sĩ số, tiến độ giáo trình và lịch học.</p></div>
+          <div class="h-row">
+            <div class="chip-row" id="class-filters">
+              <button class="chip active" data-filter="all">Tất cả</button>
+              <button class="chip" data-filter="Online">Online</button>
+              <button class="chip" data-filter="Offline">Offline</button>
+              <button class="chip" data-filter="active">Đang học</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('add-class')">+ Tạo lớp</button>
+          </div>
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Lớp</th><th>Syllabus</th><th>Sĩ số</th><th>Tiến độ</th><th>Lịch</th><th>Trạng thái</th></tr></thead><tbody id="class-list"></tbody></table>
+          </div>
+        </div>
+
+        <!-- ═══ CLASS DETAIL ═══ -->
+        <div class="view" id="view-class-detail" data-od-id="view-class-detail">
+          <button class="btn btn-ghost btn-sm" onclick="switchView('classes')" style="margin-bottom:var(--space-4);">← Quay lại</button>
+          <div id="class-detail-content"></div>
+        </div>
+
+        <!-- ═══ SYLLABUS ═══ -->
+        <div class="view" id="view-syllabus" data-od-id="view-syllabus">
+          <div class="page-head"><h1>Syllabus</h1><p class="lead">Lộ trình giáo trình theo module &amp; buổi. Gán syllabus vào lớp, theo dõi buổi đã dạy.</p></div>
+          <div class="h-row">
+            <div class="chip-row" id="syllabus-filters">
+              <button class="chip active" data-filter="all">Tất cả</button>
+              <button class="chip" data-filter="Writing">Writing</button>
+              <button class="chip" data-filter="Speaking">Speaking</button>
+              <button class="chip" data-filter="Reading">Reading</button>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('add-syllabus')">+ Tạo syllabus</button>
+          </div>
+          <div class="grid-2" id="syllabus-list"></div>
+        </div>
+
+        <!-- ═══ SYLLABUS DETAIL ═══ -->
+        <div class="view" id="view-syllabus-detail" data-od-id="view-syllabus-detail">
+          <button class="btn btn-ghost btn-sm" onclick="switchView('syllabus')" style="margin-bottom:var(--space-4);">← Quay lại</button>
+          <div id="syllabus-detail-content"></div>
+        </div>
+
+        <!-- ═══ REPORTS ═══ -->
+        <div class="view" id="view-reports" data-od-id="view-reports">
+          <div class="page-head"><h1>Báo cáo phụ huynh</h1><p class="lead">Gửi qua Zalo OA — phụ huynh xem trên trình duyệt, không cần app. Cô xem được đã mở chưa.</p></div>
+          <div class="h-row"><div class="section-label" style="margin:0;">Báo cáo đã gửi</div><button class="btn btn-primary btn-sm" onclick="openModal('create-report')">+ Tạo báo cáo tuần</button></div>
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Học viên</th><th>Chu kỳ</th><th>Số buổi</th><th>Trạng thái</th><th>Đã gửi</th><th>Phụ huynh xem</th></tr></thead><tbody id="report-list"></tbody></table>
+          </div>
+          <div style="margin-top:var(--space-6);">
+            <div class="section-label">Nhật ký gửi tin nhắn</div>
+            <div class="card"><div id="notif-log"></div></div>
+          </div>
+        </div>
+
+        <!-- ═══ SETTINGS ═══ -->
+        <div class="view" id="view-settings" data-od-id="view-settings">
+          <div class="page-head"><h1>Cài đặt</h1><p class="lead">Múi giờ VN · Tiền VND · Giao diện tiếng Việt.</p></div>
+          <div class="tabs" id="settings-tabs">
+            <button class="tab active" data-tab="account">Tài khoản</button>
+            <button class="tab" data-tab="templates">Mẫu tin Zalo</button>
+            <button class="tab" data-tab="rules">Quy tắc</button>
+            <button class="tab" data-tab="data">Dữ liệu</button>
+          </div>
+          <div class="tab-panel active" id="tab-account">
+            <div class="grid-2">
+              <div class="card-white">
+                <div class="section-label">Thông tin giáo viên</div>
+                <div class="stack">
+                  <div class="field"><label>Họ tên</label><input class="input" value="Trần Mai Lan" /></div>
+                  <div class="field"><label>Email (Google)</label><input class="input" value="lantran@gmail.com" disabled style="opacity:0.6;" /></div>
+                  <div class="field"><label>SĐT / Zalo</label><input class="input" value="0901 234 567" /></div>
+                  <div class="field"><label>Múi giờ</label><select class="input"><option>Asia/Ho_Chi_Minh (GMT+7)</option></select></div>
+                </div>
+              </div>
+              <div class="card-white">
+                <div class="section-label">Gói dịch vụ</div>
+                <div class="stack">
+                  <div style="display:flex;align-items:center;justify-content:space-between;"><div><strong>Pro</strong> <span class="badge badge-accent" style="margin-left:6px;">Đang dùng</span></div><span class="meta">99.000đ/tháng</span></div>
+                  <p style="font-size:var(--text-sm);color:var(--muted);">Không giới hạn học viên · Zalo OA · Báo cáo phụ huynh · Xuất hóa đơn điện tử.</p>
+                  <div class="field"><label>Đơn giá mặc định / buổi</label><input class="input num" value="400.000đ" /></div>
+                  <button class="btn btn-secondary btn-sm" style="align-self:flex-start;">Quản lý thanh toán</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-templates">
+            <div class="card-white"><div class="section-label">Mẫu nhắc lịch (T−24h)</div><textarea class="textarea" style="min-height:100px;">Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.</textarea></div>
+            <div class="card-white" style="margin-top:var(--space-4);"><div class="section-label">Mẫu nhắc nợ (quá hạn 3 ngày)</div><textarea class="textarea" style="min-height:100px;">Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.</textarea></div>
+            <div class="card-white" style="margin-top:var(--space-4);"><div class="section-label">Mẫu báo cáo tuần</div><textarea class="textarea" style="min-height:100px;">Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}</textarea></div>
+          </div>
+          <div class="tab-panel" id="tab-rules">
+            <div class="grid-2">
+              <div class="card-white"><div class="section-label">Quy tắc vắng học</div><div class="stack">
+                <div class="field"><label>Vắng có phép — báo trước</label><select class="input"><option>2 giờ trước buổi học</option><option>24 giờ trước</option></select></div>
+                <div class="field"><label>Vắng không phép — trừ buổi?</label><select class="input"><option>Có, trừ 1 buổi</option><option>Không trừ</option></select></div>
+                <div class="field"><label>Số buổi vắng tối đa trước nhắc rủi ro</label><input class="input num" value="2" /></div>
+              </div></div>
+              <div class="card-white"><div class="section-label">Quy tắc nhắc nhở</div><div class="stack">
+                <div class="field"><label>Nhắc lịch trước buổi</label><select class="input"><option>T−24h và T−1h</option><option>Chỉ T−24h</option></select></div>
+                <div class="field"><label>Nhắc nợ quá hạn</label><select class="input"><option>Sau 3 ngày và 7 ngày</option><option>Sau 7 ngày</option></select></div>
+                <div class="field"><label>Nhắc sắp hết gói</label><select class="input"><option>Khi còn 3 buổi</option><option>Khi còn 2 buổi</option></select></div>
+                <div class="field"><label>Kênh ưu tiên</label><select class="input"><option>Zalo trước, email dự phòng</option><option>Chỉ Zalo</option></select></div>
+              </div></div>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-data">
+            <div class="card-white"><div class="section-label">Sao lưu và xuất dữ liệu</div><div class="stack">
+              <p style="font-size:var(--text-sm);color:var(--muted);">Toàn bộ dữ liệu thuộc về cô. Xuất bất cứ lúc nào, kể cả khi hủy gói.</p>
+              <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm">Xuất CSV buổi học + thu tiền</button>
+                <button class="btn btn-secondary btn-sm">Xuất toàn bộ (JSON)</button>
+                <button class="btn btn-secondary btn-sm" style="color:var(--danger);border-color:var(--danger-soft);">Xóa tài khoản</button>
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal-box"></div></div>
+  <script>
+    const fmtK = n => (n/1000).toFixed(0).replace(/(\d)(?=(\d{3})+$)/g,'$1.')+'k';
+    const fmtVND = n => n.toLocaleString('vi-VN')+'đ';
+    const studentName = id => (D.students.find(s=>s.id===id)||{}).name||'—';
+    const studentInitials = id => (D.students.find(s=>s.id===id)||{}).avatar||'??';
+    const dayNames = ['T2','T3','T4','T5','T6','T7','CN'];
+    const dayDates = [18,19,20,21,22,23,24];
+
+    const D = {
+      students: [
+        { id:'s1', name:'Nguyễn Minh Anh', phone:'0912 345 678', zalo:'0912345678', parent:{name:'Nguyễn Văn Hùng',phone:'0987 654 321'}, targetBand:'7.0', skills:['Writing','Speaking'], examDate:'14/12/2026', pkg:{total:12,done:8,remaining:4,price:450000,mode:'Online',start:'01/08',expiry:'15/11'}, tags:['IELTS Writing','sắp hết buổi'], notes:'Chăm chỉ, yếu Task Response. Mẹ hay hỏi chi tiết.', avatar:'MA', atRisk:false },
+        { id:'s2', name:'Trần Khôi Nguyên', phone:'0903 222 111', zalo:'0903222111', parent:{name:'Trần Thị Thu',phone:'0903 222 000'}, targetBand:'6.5', skills:['Speaking'], examDate:'30/11/2026', pkg:{total:10,done:3,remaining:7,price:400000,mode:'Offline',start:'10/08',expiry:'20/12'}, tags:['IELTS Speaking'], notes:'Tự tin nói nhưng phát âm /θ/ /ð/ yếu.', avatar:'KN', atRisk:false },
+        { id:'s3', name:'Lê Hoàng Gia Hân', phone:'0988 100 200', zalo:'0988100200', parent:{name:'Lê Minh Phương',phone:'0988 100 201'}, targetBand:'6.0', skills:['Speaking','Giao tiếp'], examDate:'', pkg:{total:16,done:5,remaining:11,price:350000,mode:'Online',start:'15/07',expiry:'15/01/27'}, tags:['Giao tiếp'], notes:'Học 1:2. Cần chia thời gian nói đều.', avatar:'GH', atRisk:false },
+        { id:'s4', name:'Phạm Quốc Bảo', phone:'0977 555 444', zalo:'0977555444', parent:{name:'Phạm Thị Hoa',phone:'0977 555 400'}, targetBand:'7.0', skills:['Writing','Speaking'], examDate:'19/10/2026', pkg:{total:10,done:8,remaining:2,price:500000,mode:'Online',start:'01/07',expiry:'15/09'}, tags:['IELTS Writing','sắp hết buổi','nợ học phí'], notes:'Vắng 2 buổi liên. Cần gọi phụ huynh.', avatar:'QB', atRisk:true },
+        { id:'s5', name:'Vũ Thảo Vy', phone:'0966 777 888', zalo:'0966777888', parent:{name:'Vũ Thanh Hà',phone:'0966 777 800'}, targetBand:'5.5', skills:['Writing','Reading'], examDate:'10/01/2027', pkg:{total:20,done:5,remaining:15,price:300000,mode:'Offline',start:'01/08',expiry:'01/02/27'}, tags:['Trẻ em','IELTS Junior'], notes:'Lớp 10, cần bài tập nhẹ.', avatar:'TV', atRisk:false }
+      ],
+      lessons: [
+        { id:'l1', sid:'s1', day:1, time:'19:00', dur:90, type:'1:1', status:'completed', topic:'Task 2: Advantages & Disadvantages', zoom:'meet.google.com/abc' },
+        { id:'l2', sid:'s5', day:1, time:'18:00', dur:60, type:'1:1', status:'completed', topic:'Writing: Process Description', zoom:'' },
+        { id:'l3', sid:'s1', day:2, time:'19:00', dur:90, type:'1:1', status:'upcoming', topic:'Task 2: Opinion Essay — Education', zoom:'meet.google.com/abc' },
+        { id:'l4', sid:'s2', day:2, time:'20:30', dur:60, type:'1:1', status:'upcoming', topic:'Part 2: Describe a memorable event', zoom:'' },
+        { id:'l5', sid:'s4', day:3, time:'19:00', dur:90, type:'1:1', status:'upcoming', topic:'Mock Writing Task 1 + Review', zoom:'meet.google.com/xyz' },
+        { id:'l6', sid:'s3', day:3, time:'20:30', dur:60, type:'1:2', status:'upcoming', topic:'Speaking Practice — Part 1 & 2', zoom:'meet.google.com/lmn' },
+        { id:'l7', sid:'s5', day:4, time:'18:00', dur:60, type:'1:1', status:'upcoming', topic:'Reading: Matching Headings', zoom:'' },
+        { id:'l8', sid:'s1', day:4, time:'19:30', dur:90, type:'review', status:'upcoming', topic:'Review bài Writing tuần', zoom:'meet.google.com/abc' },
+        { id:'l9', sid:'s4', day:5, time:'19:00', dur:90, type:'1:1', status:'cancelled', topic:'Task 2: Discussion Essay', zoom:'' },
+        { id:'l10', sid:'s2', day:6, time:'9:00', dur:120, type:'mock', status:'upcoming', topic:'Mock Test Full Speaking', zoom:'meet.google.com/mock' },
+        { id:'l11', sid:'s3', day:7, time:'10:00', dur:60, type:'trial', status:'upcoming', topic:'Trial — Đánh giá trình độ', zoom:'meet.google.com/trial' }
+      ],
+      invoices: [
+        { id:'INV-081', sid:'s1', amount:5400000, status:'paid', date:'01/08', type:'Gói 12 buổi', method:'CK' },
+        { id:'INV-082', sid:'s2', amount:4000000, status:'paid', date:'10/08', type:'Gói 10 buổi', method:'MoMo' },
+        { id:'INV-083', sid:'s3', amount:5600000, status:'paid', date:'15/07', type:'Gói 16 buổi', method:'CK' },
+        { id:'INV-084', sid:'s4', amount:1000000, status:'overdue', date:'05/08', type:'2 buổi', method:'MoMo' },
+        { id:'INV-085', sid:'s5', amount:6000000, status:'paid', date:'01/08', type:'Gói 20 buổi', method:'CK' },
+        { id:'INV-086', sid:'s1', amount:900000, status:'unpaid', date:'19/08', type:'2 buổi phụ', method:'—' }
+      ],
+      assignments: [
+        { id:'a1', sid:'s1', title:'Task 2: University education should be free', type:'Writing', due:'20/08', status:'late', scores:null },
+        { id:'a2', sid:'s2', title:'Cue Card: Describe a person who influenced you', type:'Speaking', due:'19/08', status:'graded', scores:{task:6.5,coherence:6.0,lexical:6.5,grammar:6.0} },
+        { id:'a3', sid:'s4', title:'Task 1: Line chart — Internet users 2000-2020', type:'Writing', due:'18/08', status:'not-submitted', scores:null },
+        { id:'a4', sid:'s3', title:'Part 1: Hometown + Study (audio)', type:'Speaking', due:'21/08', status:'not-submitted', scores:null },
+        { id:'a5', sid:'s5', title:'Reading: Matching Headings (Cam 15)', type:'Reading', due:'22/08', status:'graded', scores:{task:5.5,coherence:5.5,lexical:5.0,grammar:5.5} },
+        { id:'a6', sid:'s1', title:'Task 1: Bar chart — Coffee exports', type:'Writing', due:'24/08', status:'late', scores:null }
+      ],
+      reports: [
+        { id:'r1', sid:'s1', period:'12–18/08', sessions:2, status:'read', sent:'18/08 20:00', read:'18/08 21:30' },
+        { id:'r2', sid:'s2', period:'12–18/08', sessions:1, status:'read', sent:'18/08 20:00', read:'19/08 08:15' },
+        { id:'r3', sid:'s4', period:'12–18/08', sessions:0, status:'sent', sent:'18/08 20:00', read:'' },
+        { id:'r4', sid:'s5', period:'12–18/08', sessions:1, status:'draft', sent:'', read:'' }
+      ],
+      notifs: [
+        { id:'n1', text:'Nhắc lịch: Minh Anh — 19:00 hôm nay (Online)', time:'18/08 19:00', channel:'Zalo', dot:'accent' },
+        { id:'n2', text:'Nhắc nợ: Quốc Bảo — quá hạn 5 ngày (1.000k)', time:'18/08 09:00', channel:'Zalo', dot:'danger' },
+        { id:'n3', text:'Sắp hết gói: Quốc Bảo — còn 2 buổi', time:'17/08 18:00', channel:'Zalo', dot:'warn' },
+        { id:'n4', text:'Bài trễ: Minh Anh — Task 2 University (hạn 20/08)', time:'17/08 20:00', channel:'Email', dot:'warn' }
+      ],
+      commentBank: [
+        { tag:'Task Response', text:'Đề bị thiếu ý counter-argument, cần cân bằng hai mặt.' },
+        { tag:'Task Response', text:'Ví dụ cụ thể nhưng chưa link rõ tới luận điểm chính.' },
+        { tag:'Coherence', text:'Thiếu linking words giữa đoạn, ý nhảy quá nhanh.' },
+        { tag:'Coherence', text:'Cấu trúc đoạn tốt, topic sentence rõ ràng.' },
+        { tag:'Lexical', text:'Từ vựng học thuật tốt, nhưng lặp "important" 3 lần.' },
+        { tag:'Lexical', text:'Cần dùng synonym thay "people" — individuals, citizens.' },
+        { tag:'Grammar', text:'Lỗi article a/an, cần ôn lại countable nouns.' },
+        { tag:'Grammar', text:'Câu phức tốt, nhưng run-on sentence ở đoạn 2.' }
+      ],
+      classes: [
+        { id:'c1', name:'IELTS Writing 7.0 — Nhóm tối', level:'Band 7.0', skill:'Writing', mode:'Online', syllabusId:'sy1', studentIds:['s1','s4'], schedule:'T3 & T5 · 19:00–20:30', sessionsDone:6, sessionsTotal:12, status:'active', startDate:'01/08', notes:'Nhóm nâng cao — tập trung Task 2. Minh Anh nhanh, Quốc Bảo cần chậm lại.' },
+        { id:'c2', name:'IELTS Speaking 6.5 — Cặp 1:2', level:'Band 6.5', skill:'Speaking', mode:'Online', syllabusId:'sy2', studentIds:['s3'], schedule:'T4 · 20:30–21:30', sessionsDone:3, sessionsTotal:10, status:'active', startDate:'15/07', notes:'Hoàng Gia Hân học ghép — cần chia thời gian nói đều.' },
+        { id:'c3', name:'IELTS Junior — Viết cơ bản', level:'Band 5.5', skill:'Writing', mode:'Offline', syllabusId:'sy3', studentIds:['s5'], schedule:'T6 · 18:00–19:00', sessionsDone:5, sessionsTotal:15, status:'active', startDate:'01/08', notes:'Thảo Vy lớp 10 — bài tập nhẹ, nhiều thực hành viết câu.' }
+      ],
+      syllabi: [
+        { id:'sy1', name:'IELTS Writing 7.0', level:'Band 7.0', skill:'Writing', totalLessons:12,
+          description:'Lộ trình 12 buổi: Task 1 (4 buổi) → Task 2 (6 buổi) → Mock & Review (2 buổi). Dành cho học viên mục tiêu 7.0+.',
+          modules:[
+            { id:'sy1-m1', title:'Module 1 · Task 1 — Graphs & Charts', lessons:[
+              { id:'sy1-l1', title:'Line chart — Mô tả xu hướng', objectives:'Từ vựng trend (rise, fall, fluctuate); cấu trúc overview', materials:'Cam 15 Test 1 Task 1', status:'done' },
+              { id:'sy1-l2', title:'Bar chart — So sánh nhóm', objectives:'Từ vựng comparison; nhóm dữ liệu', materials:'Cam 14 Test 3 Task 1', status:'done' },
+              { id:'sy1-l3', title:'Pie chart — Tỷ lệ & phân bổ', objectives:'Cấu trúc so sánh tỷ lệ; fractions / percentages', materials:'Cam 13 Test 2 Task 1', status:'done' },
+              { id:'sy1-l4', title:'Table — Dữ liệu số liệu', objectives:'Chọn dữ liệu chính; paraphrase số liệu', materials:'Cam 16 Test 2 Task 1', status:'done' }
+            ]},
+            { id:'sy1-m2', title:'Module 2 · Task 2 — Essay Types', lessons:[
+              { id:'sy1-l5', title:'Opinion Essay — Cấu trúc 4 đoạn', objectives:'Thesis statement; topic sentence', materials:'Cam 15 Test 2 Task 2', status:'done' },
+              { id:'sy1-l6', title:'Discussion Essay — Cân bằng ý', objectives:'Counter-argument; linking words', materials:'Cam 14 Test 2 Task 2', status:'done' },
+              { id:'sy1-l7', title:'Advantages & Disadvantages', objectives:'Paraphrase đề; chọn stand rõ ràng', materials:'Cam 13 Test 1 Task 2', status:'current' },
+              { id:'sy1-l8', title:'Problem & Solution', objectives:'Brainstorm causes; propose solutions', materials:'Cam 16 Test 1 Task 2', status:'upcoming' },
+              { id:'sy1-l9', title:'Two-part Question', objectives:'Phân tích 2 câu hỏi; time management', materials:'Cam 15 Test 4 Task 2', status:'upcoming' },
+              { id:'sy1-l10', title:'Mixed & Unusual Topics', objectives:'Xử lý đề lạ; brainstorm nhanh', materials:'Tự biên soạn', status:'upcoming' }
+            ]},
+            { id:'sy1-m3', title:'Module 3 · Mock & Review', lessons:[
+              { id:'sy1-l11', title:'Mock Test — Full Writing 60 phút', objectives:'Time management; pressure test', materials:'Cam 17 Test 1', status:'upcoming' },
+              { id:'sy1-l12', title:'Review & Feedback tổng hợp', objectives:'Phân tích điểm yếu; kế hoạch tự học', materials:'Tổng hợp bài đã viết', status:'upcoming' }
+            ]}
+          ] },
+        { id:'sy2', name:'IELTS Speaking 6.5', level:'Band 6.5', skill:'Speaking', totalLessons:10,
+          description:'Lộ trình 10 buổi: Part 1 (3) → Part 2 (4) → Part 3 (3). Tập trung phát âm, fluency và mở rộng ý.',
+          modules:[
+            { id:'sy2-m1', title:'Module 1 · Part 1 — Introduction & Familiar Topics', lessons:[
+              { id:'sy2-l1', title:'Hometown & Study', objectives:'Câu trả lời 2-3 câu; mở rộng ý tự nhiên', materials:'Cam 15 Test 1', status:'done' },
+              { id:'sy2-l2', title:'Work & Daily Routine', objectives:'Thì hiện tại; từ vựng tần suất', materials:'Cam 14 Test 2', status:'done' },
+              { id:'sy2-l3', title:'Hobbies & Free time', objectives:'Từ vựng sở thích; gerund / infinitive', materials:'Cam 13 Test 3', status:'done' }
+            ]},
+            { id:'sy2-m2', title:'Module 2 · Part 2 — Cue Card (2 phút)', lessons:[
+              { id:'sy2-l4', title:'Describe a person', objectives:'Cấu trúc 2 phút; từ vựng miêu tả tính cách', materials:'Cam 15 Test 2', status:'done' },
+              { id:'sy2-l5', title:'Describe a place', objectives:'Location vocabulary; miêu tả bằng giác quan', materials:'Cam 14 Test 3', status:'current' },
+              { id:'sy2-l6', title:'Describe an event / experience', objectives:'Narrative tenses; time markers', materials:'Cam 16 Test 1', status:'upcoming' },
+              { id:'sy2-l7', title:'Describe an object / activity', objectives:'Functional language; expressing opinion', materials:'Cam 13 Test 1', status:'upcoming' }
+            ]},
+            { id:'sy2-m3', title:'Module 3 · Part 3 — Abstract Discussion', lessons:[
+              { id:'sy2-l8', title:'Comparing & Contrasting', objectives:'Comparative structures; giving opinion', materials:'Cam 15 Test 3', status:'upcoming' },
+              { id:'sy2-l9', title:'Speculating & Hypothesizing', objectives:'Conditionals; modal verbs', materials:'Cam 14 Test 4', status:'upcoming' },
+              { id:'sy2-l10', title:'Mock Speaking Full Test', objectives:'Full test simulation; feedback tổng hợp', materials:'Cam 17 Test 2', status:'upcoming' }
+            ]}
+          ] },
+        { id:'sy3', name:'IELTS Junior — Viết cơ bản', level:'Band 5.5', skill:'Writing', totalLessons:15,
+          description:'Lộ trình 15 buổi cho học sinh lớp 10: câu → đoạn → essay ngắn. Bài tập nhẹ, nhiều thực hành.',
+          modules:[
+            { id:'sy3-m1', title:'Module 1 · Sentence Structure', lessons:[
+              { id:'sy3-l1', title:'Câu đơn — S-V-O', objectives:'Subject, verb, object; capitalization', materials:'Worksheet 1', status:'done' },
+              { id:'sy3-l2', title:'Câu phức — because, although', objectives:'Conjunctions; complex sentences', materials:'Worksheet 2', status:'done' },
+              { id:'sy3-l3', title:'Connecting ideas — and, but, so', objectives:'Linking words cơ bản', materials:'Worksheet 3', status:'done' },
+              { id:'sy3-l4', title:'Mô tả quá trình', objectives:'Sequence words; passive voice intro', materials:'Worksheet 4', status:'done' },
+              { id:'sy3-l5', title:'Mô tả biểu đồ đơn giản', objectives:'Numbers, percentages; trend words', materials:'Worksheet 5', status:'done' }
+            ]},
+            { id:'sy3-m2', title:'Module 2 · Paragraph Writing', lessons:[
+              { id:'sy3-l6', title:'Topic sentence & supporting', objectives:'Main idea + evidence', materials:'Worksheet 6', status:'current' },
+              { id:'sy3-l7', title:'Paragraph về ý kiến', objectives:'Opinion + reason + example', materials:'Worksheet 7', status:'upcoming' },
+              { id:'sy3-l8', title:'Paragraph miêu tả', objectives:'Descriptive adjectives; order', materials:'Worksheet 8', status:'upcoming' },
+              { id:'sy3-l9', title:'Paragraph kể chuyện', objectives:'Past tenses; narrative flow', materials:'Worksheet 9', status:'upcoming' },
+              { id:'sy3-l10', title:'Review đoạn văn', objectives:'Self-edit; peer review', materials:'Tổng hợp WS 6-9', status:'upcoming' }
+            ]},
+            { id:'sy3-m3', title:'Module 3 · Short Essays', lessons:[
+              { id:'sy3-l11', title:'Essay 3 đoạn — Opinion', objectives:'Intro + body + conclusion', materials:'Topic set A', status:'upcoming' },
+              { id:'sy3-l12', title:'Essay 3 đoạn — Description', objectives:'Descriptive writing basics', materials:'Topic set B', status:'upcoming' },
+              { id:'sy3-l13', title:'Essay 4 đoạn — Discussion', objectives:'Two sides + opinion', materials:'Topic set C', status:'upcoming' },
+              { id:'sy3-l14', title:'Introduction & Conclusion', objectives:'Hook; thesis; summary', materials:'Topic set D', status:'upcoming' },
+              { id:'sy3-l15', title:'Mock mini-test', objectives:'30 min timed writing', materials:'Final worksheet', status:'upcoming' }
+            ]}
+          ] }
+      ]
+    };
+
+    /* ─── view switching ─── */
+    const viewTitles = { dashboard:'Tổng quan', students:'Học viên', 'student-detail':'Học viên', schedule:'Lịch dạy', tuition:'Học phí', assignments:'Bài tập', 'assignment-detail':'Bài tập', classes:'Lớp học', 'class-detail':'Lớp học', syllabus:'Syllabus', 'syllabus-detail':'Syllabus', reports:'Báo cáo phụ huynh', settings:'Cài đặt' };
+    function switchView(name) {
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      const el = document.getElementById('view-'+name);
+      if (el) el.classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===name));
+      document.getElementById('topbar-title').textContent = viewTitles[name]||'';
+      try { localStorage.setItem('tos-view', name); } catch(e){}
+      closeSidebar();
+      document.getElementById('content').scrollTo({top:0});
+    }
+    document.getElementById('nav-group').addEventListener('click', e=>{
+      const btn = e.target.closest('.nav-item');
+      if (btn) switchView(btn.dataset.view);
+    });
+
+    /* ─── mobile sidebar ─── */
+    function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('scrim').classList.remove('open'); }
+    document.getElementById('menu-toggle').addEventListener('click',()=>{ document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('open'); });
+    document.getElementById('scrim').addEventListener('click', closeSidebar);
+
+    /* ─── notification panel ─── */
+    const notifPanel = document.getElementById('notif-panel');
+    document.getElementById('bell-btn').addEventListener('click', e=>{ e.stopPropagation(); notifPanel.classList.toggle('open'); renderNotifs(); });
+    document.addEventListener('click', e=>{ if(!notifPanel.contains(e.target)&&e.target.closest('#bell-btn')===null) notifPanel.classList.remove('open'); });
+    function renderNotifs(){
+      notifPanel.innerHTML = '<div class="notif-head">Thông báo gần đây</div>' + D.notifs.map(n=>`
+        <div class="notif-item"><div class="ni-dot" style="background:var(--${n.dot})"></div>
+        <div><div class="ni-text">${n.text}</div><div class="ni-time">${n.time} · ${n.channel}</div></div></div>`).join('');
+    }
+
+    /* ─── settings tabs ─── */
+    document.getElementById('settings-tabs').addEventListener('click', e=>{
+      const tab = e.target.closest('.tab'); if(!tab) return;
+      document.querySelectorAll('#settings-tabs .tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    });
+
+    /* ─── dashboard ─── */
+    function renderDashboard(){
+      const today = D.lessons.filter(l=>l.day===1);
+      document.getElementById('dash-today-lessons').innerHTML = today.map(l=>{
+        const s = D.students.find(x=>x.id===l.sid);
+        const end = l.time;
+        return `<div class="card-white" style="display:flex;align-items:center;gap:var(--space-4);">
+          <div class="avatar md">${s.avatar}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:var(--text-sm);">${s.name}</div>
+            <div class="meta">${l.time} · ${l.dur}' · ${l.type} · ${l.topic}</div>
+          </div>
+          ${l.status==='completed'
+            ? '<span class="badge badge-success badge-dot">Đã học</span>'
+            : `<button class="btn btn-primary btn-sm" onclick="checkIn('${l.id}',this)">Điểm danh</button>`}
+        </div>`;
+      }).join('') || '<p class="meta">Không có buổi học nào hôm nay.</p>';
+
+      const alerts = [
+        { dot:'danger', text:'<strong>Quốc Bảo</strong> nợ 1.000k — quá hạn 5 ngày', meta:'INV-084 · 05/08' },
+        { dot:'warn', text:'<strong>Quốc Bảo</strong> sắp hết gói — còn 2 buổi', meta:'Hết hạn 15/09' },
+        { dot:'warn', text:'<strong>Minh Anh</strong> sắp hết gói — còn 4 buổi', meta:'Hết hạn 15/11' },
+        { dot:'accent', text:'<strong>Minh Anh</strong> chưa nộp Task 2 (trễ 1 ngày)', meta:'Hạn 20/08' },
+        { dot:'accent', text:'<strong>Quốc Bảo</strong> vắng 2 buổi liên tiếp', meta:'Cần liên hệ phụ huynh' }
+      ];
+      document.getElementById('dash-alerts').innerHTML = alerts.map(a=>`
+        <div class="alert-item"><div class="alert-dot ${a.dot}"></div>
+        <div><div class="alert-text">${a.text}</div><div class="alert-meta">${a.meta}</div></div></div>`).join('');
+
+      const risk = D.students.filter(s=>s.atRisk || s.tags.includes('nợ học phí') || s.tags.includes('sắp hết buổi'));
+      document.getElementById('dash-risk').innerHTML = risk.map(s=>{
+        const issues = [];
+        if(s.tags.includes('nợ học phí')) issues.push('Nợ học phí');
+        if(s.tags.includes('sắp hết buổi')) issues.push('Sắp hết buổi');
+        if(s.atRisk) issues.push('Vắng 2 buổi');
+        const debt = D.invoices.filter(i=>i.sid===s.id&&(i.status==='overdue'||i.status==='unpaid')).reduce((a,b)=>a+b.amount,0);
+        return `<tr class="clickable" onclick="openStudent('${s.id}')">
+          <td><div style="display:flex;align-items:center;gap:var(--space-2);"><div class="avatar sm">${s.avatar}</div>${s.name}</div></td>
+          <td>${issues.map(i=>'<span class="badge badge-warn">'+i+'</span>').join(' ')}</td>
+          <td class="num-col">${s.pkg.remaining}</td>
+          <td class="num-col">${debt>0?fmtK(debt):'—'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ─── students ─── */
+    let studentFilter = 'all';
+    document.getElementById('student-filters').addEventListener('click', e=>{
+      const chip = e.target.closest('.chip'); if(!chip) return;
+      document.querySelectorAll('#student-filters .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); studentFilter = chip.dataset.filter; renderStudents();
+    });
+    function renderStudents(){
+      let list = D.students;
+      if(studentFilter!=='all') list = list.filter(s=>s.tags.includes(studentFilter));
+      document.getElementById('student-list').innerHTML = list.map(s=>`
+        <tr class="clickable" onclick="openStudent('${s.id}')">
+          <td><div style="display:flex;align-items:center;gap:var(--space-3);"><div class="avatar sm">${s.avatar}</div><div><div style="font-weight:600;font-size:var(--text-sm);">${s.name}</div><div class="meta">${s.phone}</div></div></div></td>
+          <td><span class="meta">${s.pkg.total} buổi · ${s.pkg.mode}</span></td>
+          <td><span class="num">${s.pkg.remaining}</span> / ${s.pkg.total}</td>
+          <td>${s.tags.map(t=>'<span class="tag">'+t+'</span>').join(' ')}</td>
+          <td class="num-col">${fmtVND(s.pkg.price)}</td>
+        </tr>`).join('');
+    }
+
+    /* ─── student detail ─── */
+    let currentStudent = null;
+    function openStudent(id){
+      currentStudent = D.students.find(s=>s.id===id);
+      const s = currentStudent; if(!s) return;
+      const lessons = D.lessons.filter(l=>l.sid===id);
+      const invoices = D.invoices.filter(i=>i.sid===id);
+      const assigns = D.assignments.filter(a=>a.sid===id);
+      document.getElementById('student-detail-content').innerHTML = `
+        <div class="card-white" style="display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;margin-bottom:var(--space-5);">
+          <div class="avatar lg">${s.avatar}</div>
+          <div style="flex:1;min-width:200px;">
+            <h1 style="font-size:28px;font-weight:600;">${s.name}</h1>
+            <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin-top:var(--space-2);">
+              <span class="meta">${s.phone} · Zalo: ${s.zalo}</span>
+              <span class="meta">Mục tiêu: Band ${s.targetBand} (${s.skills.join(', ')})</span>
+              ${s.examDate?'<span class="meta">Thi: '+s.examDate+'</span>':''}
+            </div>
+            <div style="margin-top:var(--space-2);">${s.tags.map(t=>'<span class="tag">'+t+'</span>').join(' ')}</div>
+          </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="window.open('https://zalo.me/${s.zalo}')">Nhắn Zalo</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('create-report')">Tạo báo cáo</button>
+          </div>
+        </div>
+        <div class="tabs" id="sd-tabs">
+          <button class="tab active" data-tab="profile">Hồ sơ</button>
+          <button class="tab" data-tab="history">Lịch sử buổi</button>
+          <button class="tab" data-tab="tuition">Học phí</button>
+          <button class="tab" data-tab="assign">Bài tập</button>
+        </div>
+        <div class="tab-panel active" id="sd-tab-profile">
+          <div class="grid-2">
+            <div class="card-white">
+              <div class="section-label">Gói học</div>
+              <div class="stack">
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Tổng buổi</span><span class="num">${s.pkg.total}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Đã học</span><span class="num">${s.pkg.done}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Còn lại</span><span class="num" style="color:${s.pkg.remaining<=3?'var(--danger)':'var(--fg)'};font-weight:600;">${s.pkg.remaining}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Đơn giá</span><span class="num">${fmtVND(s.pkg.price)}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Hình thức</span><span>${s.pkg.mode}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Hết hạn dự kiến</span><span class="num">${s.pkg.expiry}</span></div>
+                <div class="progress" style="margin-top:var(--space-2);"><div class="progress-fill ${s.pkg.remaining<=3?'low':''}" style="width:${(s.pkg.done/s.pkg.total*100)}%"></div></div>
+              </div>
+            </div>
+            <div class="card-white">
+              <div class="section-label">Phụ huynh</div>
+              <div class="stack">
+                <div style="display:flex;justify-content:space-between;"><span class="meta">Tên</span><span style="font-size:var(--text-sm);font-weight:500;">${s.parent.name}</span></div>
+                <div style="display:flex;justify-content:space-between;"><span class="meta">SĐT</span><span class="num">${s.parent.phone}</span></div>
+              </div>
+              <div class="section-label" style="margin-top:var(--space-5);">Ghi chú nội bộ</div>
+              <p style="font-size:var(--text-sm);line-height:1.5;color:var(--fg-2);background:var(--surface-warm);padding:var(--space-3);border-radius:var(--radius-sm);">${s.notes}</p>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" id="sd-tab-history">
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Ngày</th><th>Giờ</th><th>Loại</th><th>Chủ đề</th><th>Trạng thái</th></tr></thead><tbody>
+              ${lessons.map(l=>`<tr><td class="meta">T${l.day+1} ${dayDates[l.day-1]}/08</td><td class="num">${l.time}</td><td><span class="badge badge-muted">${l.type}</span></td><td style="font-size:var(--text-sm);">${l.topic}</td><td>${l.status==='completed'?'<span class="badge badge-success badge-dot">Hoàn thành</span>':l.status==='cancelled'?'<span class="badge badge-danger">Đã hủy</span>':'<span class="badge badge-accent">Sắp tới</span>'}</td></tr>`).join('')}
+            </tbody></table>
+          </div>
+        </div>
+        <div class="tab-panel" id="sd-tab-tuition">
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Mã</th><th>Loại</th><th class="num-col">Số tiền</th><th>Ngày</th><th>Trạng thái</th></tr></thead><tbody>
+              ${invoices.map(i=>`<tr><td class="meta">${i.id}</td><td>${i.type}</td><td class="num-col">${fmtVND(i.amount)}</td><td class="meta">${i.date}</td><td>${i.status==='paid'?'<span class="badge badge-success badge-dot">Đã thu</span>':i.status==='overdue'?'<span class="badge badge-danger badge-dot">Quá hạn</span>':'<span class="badge badge-warn badge-dot">Chưa thu</span>'}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);">Chưa có hóa đơn</td></tr>'}
+            </tbody></table>
+          </div>
+        </div>
+        <div class="tab-panel" id="sd-tab-assign">
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Bài tập</th><th>Loại</th><th>Hạn</th><th>Trạng thái</th><th class="num-col">Band</th></tr></thead><tbody>
+              ${assigns.map(a=>`<tr class="clickable" onclick="openAssignment('${a.id}')"><td style="font-size:var(--text-sm);">${a.title}</td><td><span class="tag">${a.type}</span></td><td class="meta">${a.due}</td><td>${a.status==='graded'?'<span class="badge badge-success">Đã chấm</span>':a.status==='late'?'<span class="badge badge-danger">Trễ</span>':'<span class="badge badge-warn">Chưa nộp</span>'}</td><td class="num-col">${a.scores?((a.scores.task+a.scores.coherence+a.scores.lexical+a.scores.grammar)/4).toFixed(1):'—'}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);">Chưa có bài tập</td></tr>'}
+            </tbody></table>
+          </div>
+        </div>`;
+      switchView('student-detail');
+      document.getElementById('sd-tabs').addEventListener('click', e=>{
+        const tab = e.target.closest('.tab'); if(!tab) return;
+        document.querySelectorAll('#sd-tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('[id^="sd-tab-"]').forEach(p=>p.classList.remove('active'));
+        document.getElementById('sd-tab-'+tab.dataset.tab).classList.add('active');
+      }, { once:true });
+    }
+
+    /* ─── schedule ─── */
+    function renderSchedule(){
+      const todayIdx = 1;
+      document.getElementById('week-calendar').innerHTML = dayNames.map((dn,i)=>{
+        const lessons = D.lessons.filter(l=>l.day===i+1).sort((a,b)=>a.time.localeCompare(b.time));
+        return `<div class="day-col ${i===todayIdx?'today':''}">
+          <div class="day-head"><div class="day-name">${dn}</div><div class="day-num">${dayDates[i]}</div></div>
+          ${lessons.map(l=>{
+            const s=D.students.find(x=>x.id===l.sid);
+            return `<div class="lesson-block type-${l.type==='1:2'?'12':l.type}" data-status="${l.status}" onclick="lessonClick('${l.id}')">
+              <div class="lb-time">${l.time}</div><div class="lb-student">${s?s.name:''}</div><div class="lb-type">${l.type} · ${l.topic.substring(0,30)}</div>
+            </div>`;
+          }).join('')||'<div class="day-empty meta">—</div>'}
+        </div>`;
+      }).join('');
+      document.querySelectorAll('.lesson-block').forEach(b=>{
+        const st=b.dataset.status; if(st) b.classList.add('status-'+st);
+      });
+    }
+    function lessonClick(id){
+      const l = D.lessons.find(x=>x.id===id); if(!l) return;
+      const s = D.students.find(x=>x.id===l.sid);
+      openModalContent(`<div class="modal-head"><h3>${s?s.name:''} — ${l.type}</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Thời gian</label><div class="meta">T${l.day+1} ${dayDates[l.day-1]}/08 · ${l.time} (${l.dur} phút)</div></div>
+          <div class="field"><label>Chủ đề</label><div style="font-size:var(--text-sm);">${l.topic}</div></div>
+          <div class="field"><label>Trạng thái</label>${l.status==='completed'?'<span class="badge badge-success badge-dot">Hoàn thành</span>':l.status==='cancelled'?'<span class="badge badge-danger">Đã hủy</span>':'<span class="badge badge-accent">Sắp tới</span>'}</div>
+          ${l.zoom?`<div class="field"><label>Link Zoom/Meet</label><div class="meta" style="word-break:break-all;">${l.zoom}</div></div>`:''}
+        </div>
+        <div class="modal-foot">
+          ${l.status==='upcoming'?`<button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy buổi</button><button class="btn btn-primary btn-sm" onclick="checkIn('${l.id}',null);closeModal();">Điểm danh</button>`:'<button class="btn btn-secondary btn-sm" onclick="closeModal()">Đóng</button>'}
+        </div>`);
+    }
+
+    /* ─── tuition ─── */
+    function renderTuition(){
+      document.getElementById('tuition-packages').innerHTML = D.students.map(s=>{
+        const pct = s.pkg.done/s.pkg.total*100;
+        const cls = s.pkg.remaining<=2?'low':s.pkg.remaining<=4?'warn':'';
+        return `<tr class="clickable" onclick="openStudent('${s.id}')">
+          <td><div style="display:flex;align-items:center;gap:var(--space-2);"><div class="avatar sm">${s.avatar}</div>${s.name}</div></td>
+          <td class="num">${s.pkg.done}/${s.pkg.total}</td>
+          <td class="num" style="font-weight:600;color:${s.pkg.remaining<=3?'var(--danger)':'var(--fg)'};">${s.pkg.remaining}</td>
+          <td style="min-width:100px;"><div class="progress"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div></td>
+          <td class="meta">${s.pkg.expiry}</td>
+          <td>${s.pkg.remaining<=2?'<span class="badge badge-danger">Sắp hết</span>':s.pkg.remaining<=4?'<span class="badge badge-warn">Sắp hết</span>':'<span class="badge badge-success badge-dot">Đang học</span>'}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('tuition-invoices').innerHTML = D.invoices.map(i=>{
+        const s=D.students.find(x=>x.id===i.sid);
+        return `<tr>
+          <td class="meta">${i.id}</td>
+          <td>${s?s.name:''}</td>
+          <td><span class="tag">${i.type}</span></td>
+          <td class="num-col">${fmtVND(i.amount)}</td>
+          <td class="meta">${i.date}</td>
+          <td>${i.status==='paid'?'<span class="badge badge-success badge-dot">Đã thu</span>':i.status==='overdue'?'<span class="badge badge-danger badge-dot">Quá hạn</span>':'<span class="badge badge-warn badge-dot">Chưa thu</span>'}</td>
+          <td>${i.status!=='paid'?`<button class="btn btn-ghost btn-sm" onclick="markPaid('${i.id}',this)">Đã nhận</button>`:'<span class="meta">'+i.method+'</span>'}</td>
+        </tr>`;
+      }).join('');
+    }
+    function markPaid(id,btn){
+      const inv = D.invoices.find(i=>i.id===id); if(!inv) return;
+      inv.status='paid';
+      const row = btn.closest('tr');
+      row.cells[5].innerHTML = '<span class="badge badge-success badge-dot">Đã thu</span>';
+      row.cells[6].innerHTML = '<span class="meta">'+inv.method+'</span>';
+    }
+
+    /* ─── assignments ─── */
+    let assignFilter = 'all';
+    document.getElementById('assignment-filters').addEventListener('click', e=>{
+      const chip=e.target.closest('.chip'); if(!chip) return;
+      document.querySelectorAll('#assignment-filters .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); assignFilter=chip.dataset.filter; renderAssignments();
+    });
+    function statusBadge(st){ return st==='graded'?'<span class="badge badge-success">Đã chấm</span>':st==='late'?'<span class="badge badge-danger">Trễ</span>':'<span class="badge badge-warn">Chưa nộp</span>'; }
+    function renderAssignments(){
+      let list = D.assignments;
+      if(assignFilter==='Chưa nộp') list=list.filter(a=>a.status==='not-submitted');
+      else if(assignFilter==='Trễ') list=list.filter(a=>a.status==='late');
+      else if(assignFilter==='Đã chấm') list=list.filter(a=>a.status==='graded');
+      document.getElementById('assignment-list').innerHTML = list.map(a=>{
+        const s=D.students.find(x=>x.id===a.sid);
+        const band = a.scores?((a.scores.task+a.scores.coherence+a.scores.lexical+a.scores.grammar)/4).toFixed(1):'—';
+        return `<tr class="clickable" onclick="openAssignment('${a.id}')">
+          <td style="font-size:var(--text-sm);max-width:280px;">${a.title}</td>
+          <td><div style="display:flex;align-items:center;gap:var(--space-2);"><div class="avatar sm">${s?s.avatar:''}</div>${s?s.name:''}</div></td>
+          <td><span class="tag">${a.type}</span></td>
+          <td class="meta">${a.due}</td>
+          <td>${statusBadge(a.status)}</td>
+          <td class="num-col" style="font-weight:600;">${band}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ─── assignment detail ─── */
+    function openAssignment(id){
+      const a = D.assignments.find(x=>x.id===id); if(!a) return;
+      const s = D.students.find(x=>x.id===a.sid);
+      const avg = a.scores?((a.scores.task+a.scores.coherence+a.scores.lexical+a.scores.grammar)/4).toFixed(1):null;
+      document.getElementById('assignment-detail-content').innerHTML = `
+        <div class="card-white" style="margin-bottom:var(--space-5);">
+          <div style="display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap;">
+            <div class="avatar lg">${s?s.avatar:''}</div>
+            <div style="flex:1;min-width:200px;">
+              <h1 style="font-size:24px;font-weight:600;">${a.title}</h1>
+              <div class="meta" style="margin-top:var(--space-1);">${s?s.name:''} · ${a.type} · Hạn nộp: ${a.due}</div>
+            </div>
+            ${avg?`<div style="text-align:center;"><div class="num" style="font-family:var(--font-display);font-size:36px;font-weight:600;color:var(--accent);">${avg}</div><div class="meta">Band trung bình</div></div>`:`<button class="btn btn-primary btn-sm" onclick="openModal('grade','${a.id}')">Chấm bài</button>`}
+          </div>
+        </div>
+        ${a.scores?`
+          <div class="section-label">Rubric IELTS — 4 tiêu chí</div>
+          <div class="rubric-grid" style="margin-bottom:var(--space-5);">
+            <div class="card-white rubric-cell"><div class="rc-label">Task Response</div><div class="rc-score num">${a.scores.task}</div></div>
+            <div class="card-white rubric-cell"><div class="rc-label">Coherence & Cohesion</div><div class="rc-score num">${a.scores.coherence}</div></div>
+            <div class="card-white rubric-cell"><div class="rc-label">Lexical Resource</div><div class="rc-score num">${a.scores.lexical}</div></div>
+            <div class="card-white rubric-cell"><div class="rc-label">Grammatical Range</div><div class="rc-score num">${a.scores.grammar}</div></div>
+          </div>
+        `:''}
+        <div class="grid-2-1" style="align-items:start;">
+          <div>
+            <div class="section-label">Nhận xét</div>
+            <div class="card-white">
+              <textarea class="textarea" style="min-height:160px;" placeholder="Nhập nhận xét chi tiết…">${a.scores?'Tốt lexical resource, cần cải thiện coherence giữa các đoạn. Lỗi article a/an cần ôn lại.':'Phản hồi học sinh chưa nộp bài — nhắc qua Zalo.'}</textarea>
+              <div style="margin-top:var(--space-3);display:flex;gap:var(--space-2);">
+                <button class="btn btn-primary btn-sm">Gửi cho học viên</button>
+                <button class="btn btn-secondary btn-sm">Lưu nháp</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">Ngân hàng nhận xét</div>
+            <div class="card-white"><div class="comment-bank">
+              ${D.commentBank.map((c,i)=>`<div class="comment-chip" onclick="appendComment(${i})"><span class="cc-tag">${c.tag}</span>${c.text}</div>`).join('')}
+            </div></div>
+          </div>
+        </div>`;
+      switchView('assignment-detail');
+    }
+    function appendComment(i){
+      const ta = document.querySelector('#assignment-detail-content textarea');
+      if(ta) { ta.value += (ta.value?'\\n':'') + D.commentBank[i].text; ta.focus(); }
+    }
+
+    /* ─── reports ─── */
+    function renderReports(){
+      document.getElementById('report-list').innerHTML = D.reports.map(r=>{
+        const s=D.students.find(x=>x.id===r.sid);
+        return `<tr>
+          <td><div style="display:flex;align-items:center;gap:var(--space-2);"><div class="avatar sm">${s?s.avatar:''}</div>${s?s.name:''}</div></td>
+          <td class="meta">${r.period}</td>
+          <td class="num">${r.sessions}</td>
+          <td>${r.status==='read'?'<span class="badge badge-success badge-dot">Đã đọc</span>':r.status==='sent'?'<span class="badge badge-accent">Đã gửi</span>':'<span class="badge badge-muted">Nháp</span>'}</td>
+          <td class="meta">${r.sent||'—'}</td>
+          <td>${r.read?'<span class="meta">'+r.read+'</span>':'<span class="meta" style="color:var(--muted);">Chưa mở</span>'}</td>
+        </tr>`;
+      }).join('');
+      const log = [
+        { date:'18/08 19:00', title:'Nhắc lịch → Minh Anh', desc:'Zalo · Đã gửi T−24h', pull:'Zalo' },
+        { date:'18/08 19:00', title:'Báo cáo tuần → Minh Anh', desc:'Zalo OA · Phụ huynh đã mở 21:30', pull:'Zalo' },
+        { date:'18/08 09:00', title:'Nhắc nợ → Quốc Bảo', desc:'Zalo · Quá hạn 5 ngày', pull:'Zalo' },
+        { date:'17/08 20:00', title:'Nhắc nộp bài → Minh Anh', desc:'Email · Task 2 University', pull:'Email' },
+        { date:'17/08 18:00', title:'Nhắc sắp hết gói → Quốc Bảo', desc:'Zalo · Còn 2 buổi', pull:'Zalo' }
+      ];
+      document.getElementById('notif-log').innerHTML = log.map(l=>`
+        <div class="log-item"><span class="log-date">${l.date}</span><div><div class="log-title">${l.title}</div><div class="log-desc">${l.desc}</div></div><span class="meta">${l.pull}</span></div>`).join('');
+    }
+
+    /* ─── classes ─── */
+    let classFilter = 'all';
+    document.getElementById('class-filters').addEventListener('click', e=>{
+      const chip=e.target.closest('.chip'); if(!chip) return;
+      document.querySelectorAll('#class-filters .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); classFilter=chip.dataset.filter; renderClasses();
+    });
+    function renderClasses(){
+      let list = D.classes;
+      if(classFilter==='Online'||classFilter==='Offline') list=list.filter(c=>c.mode===classFilter);
+      else if(classFilter==='active') list=list.filter(c=>c.status==='active');
+      document.getElementById('class-list').innerHTML = list.map(c=>{
+        const sy = D.syllabi.find(s=>s.id===c.syllabusId);
+        const pct = c.sessionsTotal>0?(c.sessionsDone/c.sessionsTotal*100):0;
+        return `<tr class="clickable" onclick="openClass('${c.id}')">
+          <td><div style="font-weight:600;font-size:var(--text-sm);">${c.name}</div><div class="meta">${c.level} · ${c.skill} · ${c.mode}</div></td>
+          <td>${sy?sy.name:'<span class="meta">Chưa gán</span>'}</td>
+          <td class="num">${c.studentIds.length}</td>
+          <td style="min-width:100px;"><div class="progress"><div class="progress-fill ${pct>=67?'':pct>=34?'warn':'low'}" style="width:${pct}%"></div></div><div class="meta" style="margin-top:3px;">${c.sessionsDone}/${c.sessionsTotal} buổi</div></td>
+          <td class="meta">${c.schedule}</td>
+          <td>${c.status==='active'?'<span class="badge badge-success badge-dot">Đang học</span>':'<span class="badge badge-muted">Tạm dừng</span>'}</td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);">Chưa có lớp nào</td></tr>';
+    }
+    function openClass(id){
+      const c = D.classes.find(x=>x.id===id); if(!c) return;
+      const sy = D.syllabi.find(s=>s.id===c.syllabusId);
+      const students = c.studentIds.map(sid=>D.students.find(s=>s.id===sid)).filter(Boolean);
+      const classLessons = D.lessons.filter(l=>c.studentIds.includes(l.sid));
+      const pct = c.sessionsTotal>0?Math.round(c.sessionsDone/c.sessionsTotal*100):0;
+      document.getElementById('class-detail-content').innerHTML = `
+        <div class="card-white" style="display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;margin-bottom:var(--space-5);">
+          <div style="flex:1;min-width:200px;">
+            <h1 style="font-size:28px;font-weight:600;">${c.name}</h1>
+            <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;margin-top:var(--space-2);">
+              <span class="meta">${c.level} · ${c.skill} · ${c.mode}</span>
+              <span class="meta">Lịch: ${c.schedule}</span>
+              <span class="meta">Bắt đầu: ${c.startDate}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('assign-syllabus','${c.syllabusId||''}')">Đổi syllabus</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('add-student')">+ Thêm học viên</button>
+          </div>
+        </div>
+        <div class="grid-4" style="margin-bottom:var(--space-6);">
+          <div class="card-white stat-card"><div class="stat-num num">${c.studentIds.length}</div><div class="stat-label">học viên</div></div>
+          <div class="card-white stat-card"><div class="stat-num num">${c.sessionsDone}/${c.sessionsTotal}</div><div class="stat-label">buổi đã học</div></div>
+          <div class="card-white stat-card"><div class="stat-num num">${pct}%</div><div class="stat-label">tiến độ</div></div>
+          <div class="card-white stat-card"><div class="stat-num num">${sy?sy.totalLessons:'—'}</div><div class="stat-label">bài trong syllabus</div></div>
+        </div>
+        <div class="tabs" id="cd-tabs">
+          <button class="tab active" data-tab="roster">Học viên</button>
+          <button class="tab" data-tab="syllabus">Giáo trình</button>
+          <button class="tab" data-tab="schedule">Lịch học</button>
+          <button class="tab" data-tab="notes">Ghi chú</button>
+        </div>
+        <div class="tab-panel active" id="cd-tab-roster">
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Học viên</th><th>Mục tiêu</th><th>Còn lại</th><th>Trạng thái</th></tr></thead><tbody>
+              ${students.map(s=>`<tr class="clickable" onclick="openStudent('${s.id}')">
+                <td><div style="display:flex;align-items:center;gap:var(--space-2);"><div class="avatar sm">${s.avatar}</div>${s.name}</div></td>
+                <td><span class="meta">Band ${s.targetBand} · ${s.skills.join(', ')}</span></td>
+                <td class="num">${s.pkg.remaining}/${s.pkg.total}</td>
+                <td>${s.atRisk?'<span class="badge badge-danger">Rủi ro</span>':'<span class="badge badge-success badge-dot">Ổn</span>'}</td>
+              </tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted);">Chưa có học viên</td></tr>'}
+            </tbody></table>
+          </div>
+        </div>
+        <div class="tab-panel" id="cd-tab-syllabus">
+          ${sy?renderSyllabusProgress(sy):'<div class="card"><p class="meta">Lớp chưa được gán syllabus.</p><button class="btn btn-primary btn-sm" style="margin-top:var(--space-3);" onclick="switchView(\'syllabus\')">Chọn syllabus</button></div>'}
+        </div>
+        <div class="tab-panel" id="cd-tab-schedule">
+          <div class="card" style="padding:0;">
+            <table class="ds-table"><thead><tr><th>Ngày</th><th>Giờ</th><th>Học viên</th><th>Chủ đề</th><th>Trạng thái</th></tr></thead><tbody>
+              ${classLessons.map(l=>{const s=D.students.find(x=>x.id===l.sid);return `<tr><td class="meta">T${l.day+1} ${dayDates[l.day-1]}/08</td><td class="num">${l.time}</td><td>${s?s.name:''}</td><td style="font-size:var(--text-sm);">${l.topic}</td><td>${l.status==='completed'?'<span class="badge badge-success badge-dot">Đã học</span>':l.status==='cancelled'?'<span class="badge badge-danger">Đã hủy</span>':'<span class="badge badge-accent">Sắp tới</span>'}</td></tr>`;}).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);">Chưa có buổi học</td></tr>'}
+            </tbody></table>
+          </div>
+        </div>
+        <div class="tab-panel" id="cd-tab-notes">
+          <div class="card-white"><div class="section-label">Ghi chú lớp</div>
+            <textarea class="textarea" style="min-height:120px;">${c.notes||''}</textarea>
+            <button class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);">Lưu ghi chú</button>
+          </div>
+        </div>`;
+      switchView('class-detail');
+      const cdTabs = document.getElementById('cd-tabs');
+      const oldHandler = cdTabs._handler;
+      if(oldHandler) cdTabs.removeEventListener('click', oldHandler);
+      cdTabs._handler = e=>{
+        const tab=e.target.closest('.tab'); if(!tab) return;
+        document.querySelectorAll('#cd-tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('[id^="cd-tab-"]').forEach(p=>p.classList.remove('active'));
+        document.getElementById('cd-tab-'+tab.dataset.tab).classList.add('active');
+      };
+      cdTabs.addEventListener('click', cdTabs._handler);
+    }
+    function renderSyllabusProgress(sy){
+      const all = sy.modules.flatMap(m=>m.lessons);
+      const done = all.filter(l=>l.status==='done').length;
+      const pct = all.length>0?Math.round(done/all.length*100):0;
+      return `<div class="card-white" style="margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap;">
+          <div style="flex:1;"><div style="font-weight:600;font-size:var(--text-sm);">${sy.name}</div><div class="meta">${sy.level} · ${sy.skill} · ${sy.totalLessons} buổi</div></div>
+          <div style="text-align:right;"><div class="num" style="font-weight:600;font-size:20px;color:var(--accent);">${pct}%</div><div class="meta">${done}/${all.length} buổi</div></div>
+        </div>
+        <div class="progress" style="margin-bottom:var(--space-5);"><div class="progress-fill" style="width:${pct}%"></div></div>
+        ${sy.modules.map(m=>{const mDone=m.lessons.filter(l=>l.status==='done').length;return `<div class="syllabus-module">
+          <div class="module-head" onclick="toggleModule(this)"><h3>${m.title}</h3><span class="module-count">${mDone}/${m.lessons.length} buổi</span></div>
+          <div class="module-body">${m.lessons.map(l=>`<div class="lesson-row"><div class="lesson-dot ${l.status}"></div><div><div class="lesson-title">${l.title}</div><div class="lesson-sub">${l.materials}</div><div class="lesson-objectives">Mục tiêu: ${l.objectives}</div></div><div>${l.status==='done'?'<span class="badge badge-success badge-dot">Đã dạy</span>':l.status==='current'?'<span class="badge badge-accent">Đang học</span>':'<span class="badge badge-muted">Sắp tới</span>'}</div></div>`).join('')}</div>
+        </div>`;}).join('')}`;
+    }
+
+    /* ─── syllabus ─── */
+    let syllabusFilter = 'all';
+    document.getElementById('syllabus-filters').addEventListener('click', e=>{
+      const chip=e.target.closest('.chip'); if(!chip) return;
+      document.querySelectorAll('#syllabus-filters .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); syllabusFilter=chip.dataset.filter; renderSyllabusList();
+    });
+    function renderSyllabusList(){
+      let list = D.syllabi;
+      if(syllabusFilter!=='all') list=list.filter(s=>s.skill===syllabusFilter);
+      document.getElementById('syllabus-list').innerHTML = list.map(sy=>{
+        const all = sy.modules.flatMap(m=>m.lessons);
+        const done = all.filter(l=>l.status==='done').length;
+        const pct = all.length>0?Math.round(done/all.length*100):0;
+        const assigned = D.classes.filter(c=>c.syllabusId===sy.id);
+        return `<div class="card-white" data-od-id="syllabus-card-${sy.id}" onclick="openSyllabus('${sy.id}')" style="cursor:pointer;transition:box-shadow var(--motion-fast);" onmouseover="this.style.boxShadow='var(--elev-raised)'" onmouseout="this.style.boxShadow='none'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-3);">
+            <div><span class="tag">${sy.skill}</span><span class="tag" style="margin-left:4px;">${sy.level}</span></div>
+            <span class="meta">${sy.totalLessons} buổi</span>
+          </div>
+          <h3 style="font-size:var(--text-lg);font-weight:600;margin-top:var(--space-3);">${sy.name}</h3>
+          <p style="font-size:var(--text-sm);color:var(--muted);margin-top:var(--space-2);line-height:1.45;">${sy.description}</p>
+          <div style="margin-top:var(--space-4);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--space-1);"><span class="meta">Tiến độ</span><span class="meta">${done}/${all.length}</span></div>
+            <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div style="margin-top:var(--space-4);display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;">
+            <span class="meta">Đã gán:</span>${assigned.map(c=>'<span class="badge badge-accent">'+c.name.substring(0,22)+'</span>').join('')||'<span class="meta">Chưa gán</span>'}
+          </div>
+        </div>`;
+      }).join('')||'<div class="card"><p class="meta">Chưa có syllabus nào.</p></div>';
+    }
+    let currentSyllabusId = null;
+    function openSyllabus(id){
+      currentSyllabusId = id;
+      const sy = D.syllabi.find(x=>x.id===id); if(!sy) return;
+      const all = sy.modules.flatMap(m=>m.lessons);
+      const done = all.filter(l=>l.status==='done').length;
+      const current = all.find(l=>l.status==='current');
+      const pct = all.length>0?Math.round(done/all.length*100):0;
+      const assigned = D.classes.filter(c=>c.syllabusId===sy.id);
+      document.getElementById('syllabus-detail-content').innerHTML = `
+        <div class="card-white" style="display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;margin-bottom:var(--space-5);">
+          <div style="flex:1;min-width:200px;">
+            <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-2);"><span class="tag">${sy.skill}</span><span class="tag">${sy.level}</span></div>
+            <h1 style="font-size:28px;font-weight:600;">${sy.name}</h1>
+            <p style="font-size:var(--text-sm);color:var(--muted);margin-top:var(--space-2);max-width:60ch;">${sy.description}</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('assign-syllabus','${sy.id}')">Gán vào lớp</button>
+        </div>
+        <div class="grid-4" style="margin-bottom:var(--space-6);">
+          <div class="card-white stat-card"><div class="stat-num num">${sy.totalLessons}</div><div class="stat-label">tổng buổi</div></div>
+          <div class="card-white stat-card"><div class="stat-num num" style="color:var(--success);">${done}</div><div class="stat-label">đã dạy</div></div>
+          <div class="card-white stat-card"><div class="stat-num num" style="color:var(--accent);">${current?'1':'0'}</div><div class="stat-label">đang học</div></div>
+          <div class="card-white stat-card"><div class="stat-num num">${sy.modules.length}</div><div class="stat-label">module</div></div>
+        </div>
+        ${current?`<div class="card" style="margin-bottom:var(--space-5);display:flex;align-items:center;gap:var(--space-3);"><div class="alert-dot accent"></div><div><div style="font-size:var(--text-sm);font-weight:600;">Buổi hiện tại</div><div class="meta">${current.title} — ${current.objectives}</div></div></div>`:''}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
+          <div class="section-label" style="margin-bottom:0;">Nội dung giáo trình</div>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('add-module','${sy.id}')">+ Thêm module</button>
+        </div>
+        ${sy.modules.length===0?`<div class="card-white" style="text-align:center;padding:var(--space-8);color:var(--muted);"><p style="font-size:var(--text-sm);">Chưa có module nào. Nhấn <strong>+ Thêm module</strong> để bắt đầu xây dựng giáo trình.</p></div>`:''}
+        ${sy.modules.map((m,mi)=>{const mDone=m.lessons.filter(l=>l.status==='done').length;return `<div class="syllabus-module" data-od-id="syllabus-module-${m.id}">
+          <div class="module-head" onclick="toggleModule(this)"><h3>${m.title}</h3><div style="display:flex;align-items:center;gap:var(--space-3);"><button class="link-btn" onclick="event.stopPropagation();openModal('edit-module','${sy.id}','${m.id}')">Sửa</button><span class="module-count">${mDone}/${m.lessons.length} buổi</span></div></div>
+          <div class="module-body">${m.lessons.map(l=>`<div class="lesson-row"><div class="lesson-dot ${l.status}"></div><div><div class="lesson-title">${l.title}</div><div class="lesson-sub">${l.materials}</div><div class="lesson-objectives">Mục tiêu: ${l.objectives}</div></div><div style="display:flex;align-items:center;gap:var(--space-2);">${l.status==='done'?'<span class="badge badge-success badge-dot">Đã dạy</span>':l.status==='current'?'<span class="badge badge-accent">Đang học</span>':'<span class="badge badge-muted">Sắp tới</span>'}<button class="link-btn" onclick="openModal('edit-lesson','${sy.id}','${m.id}','${l.id}')">Sửa</button></div></div>`).join('')}
+            <button class="btn btn-ghost btn-sm" style="margin-top:var(--space-2);width:100%;" onclick="openModal('add-lesson','${sy.id}','${m.id}')">+ Thêm buổi học</button>
+          </div>
+        </div>`;}).join('')}
+        ${assigned.length?`<div style="margin-top:var(--space-6);"><div class="section-label">Lớp đang dùng syllabus này</div>
+          <div class="card" style="padding:0;"><table class="ds-table"><thead><tr><th>Lớp</th><th>Sĩ số</th><th>Tiến độ</th><th>Trạng thái</th></tr></thead><tbody>
+            ${assigned.map(c=>{const cpct=c.sessionsTotal>0?(c.sessionsDone/c.sessionsTotal*100):0;return `<tr class="clickable" onclick="openClass('${c.id}')"><td style="font-size:var(--text-sm);font-weight:500;">${c.name}</td><td class="num">${c.studentIds.length}</td><td style="min-width:100px;"><div class="progress"><div class="progress-fill" style="width:${cpct}%"></div></div></td><td>${c.status==='active'?'<span class="badge badge-success badge-dot">Đang học</span>':'<span class="badge badge-muted">Tạm dừng</span>'}</td></tr>`;}).join('')}
+          </tbody></table></div></div>`:''}
+      `;
+      switchView('syllabus-detail');
+    }
+    function toggleModule(headEl){ headEl.nextElementSibling.classList.toggle('collapsed'); }
+
+    /* ─── check-in ─── */
+    function checkIn(id, btn){
+      const l = D.lessons.find(x=>x.id===id); if(!l) return;
+      l.status='completed';
+      const s = D.students.find(x=>x.id===l.sid);
+      if(s){ s.pkg.done++; s.pkg.remaining = s.pkg.total - s.pkg.done; if(s.pkg.remaining<=0) s.pkg.remaining=0; }
+      if(btn){ btn.outerHTML='<span class="badge badge-success badge-dot">Đã học</span>'; }
+      renderDashboard(); renderStudents(); renderTuition();
+    }
+
+    /* ─── modal ─── */
+    function openModalContent(html){ document.getElementById('modal-box').innerHTML=html; document.getElementById('modal-overlay').classList.add('open'); }
+    function openModal(type, extra, extra2, extra3){
+      if(type==='add-student'){
+        openModalContent(`<div class="modal-head"><h3>Thêm học viên mới</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Họ tên học viên *</label><input class="input" id="ns-name" placeholder="Nguyễn Văn A" /></div>
+          <div class="field"><label>SĐT / Zalo</label><input class="input" id="ns-phone" placeholder="09xx xxx xxx" /></div>
+          <div class="field"><label>Phụ huynh (nếu có)</label><input class="input" id="ns-parent" placeholder="Tên phụ huynh" /></div>
+          <div class="grid-2">
+            <div class="field"><label>Số buổi gói</label><input class="input num" id="ns-total" value="10" type="number" /></div>
+            <div class="field"><label>Đơn giá (VND)</label><input class="input num" id="ns-price" value="400000" type="number" /></div>
+          </div>
+          <div class="field"><label>Hình thức</label><select class="input" id="ns-mode"><option>Online</option><option>Offline</option></select></div>
+          <div id="ns-error" class="field-error" style="display:none;">Vui lòng nhập tên học viên.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveStudent()">Lưu</button></div>`);
+      } else if(type==='add-invoice'){
+        openModalContent(`<div class="modal-head"><h3>Tạo hóa đơn</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Học viên</label><select class="input">${D.students.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('')}</select></div>
+          <div class="field"><label>Loại</label><select class="input"><option>Gói buổi</option><option>Theo buổi</option><option>Theo tháng</option></select></div>
+          <div class="field"><label>Số tiền (VND)</label><input class="input num" placeholder="400000" type="number" /></div>
+          <div class="field"><label>Phương thức</label><select class="input"><option>Chuyển khoản</option><option>MoMo QR</option><option>VNPay</option><option>Tiền mặt</option></select></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="closeModal()">Tạo hóa đơn</button></div>`);
+      } else if(type==='create-report'){
+        openModalContent(`<div class="modal-head"><h3>Tạo báo cáo tuần</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Học viên</label><select class="input">${D.students.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('')}</select></div>
+          <div class="field"><label>Chu kỳ</label><input class="input" value="19–25/08" /></div>
+          <div class="field"><label>Nội dung báo cáo</label><textarea class="textarea" style="min-height:140px;">Số buổi: 2 · Chuyên cần: Đủ
+
+Band gần nhất: 6.5 (Writing)
+Bài đã nộp: Task 2 Opinion Essay
+
+Việc cần làm ở nhà:
+- Làm bài Task 1 (Bar chart) — hạn 24/08
+- Ôn lại article a/an</textarea></div>
+          <div class="field"><label>Gửi qua</label><select class="input"><option>Zalo OA</option><option>Email</option></select></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Lưu nháp</button><button class="btn btn-primary btn-sm" onclick="closeModal()">Gửi báo cáo</button></div>`);
+      } else if(type==='grade'){
+        const a = D.assignments.find(x=>x.id===extra);
+        openModalContent(`<div class="modal-head"><h3>Chấm bài — ${a?a.title:''}</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="rubric-grid">
+            <div class="field"><label>Task Response</label><input class="input num" id="g-task" value="6.0" type="number" step="0.5" min="0" max="9" /></div>
+            <div class="field"><label>Coherence</label><input class="input num" id="g-coh" value="6.0" type="number" step="0.5" min="0" max="9" /></div>
+            <div class="field"><label>Lexical</label><input class="input num" id="g-lex" value="6.0" type="number" step="0.5" min="0" max="9" /></div>
+            <div class="field"><label>Grammar</label><input class="input num" id="g-gram" value="6.0" type="number" step="0.5" min="0" max="9" /></div>
+          </div>
+          <div class="field"><label>Nhận xét</label><textarea class="textarea" placeholder="Nhập nhận xét…"></textarea></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveGrade('${extra}')">Lưu & duyệt</button></div>`);
+      } else if(type==='add-class'){
+        openModalContent(`<div class="modal-head"><h3>Tạo lớp mới</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên lớp *</label><input class="input" id="nc-name" placeholder="VD: IELTS Writing 7.0 — Nhóm tối" /></div>
+          <div class="grid-2">
+            <div class="field"><label>Trình độ</label><select class="input" id="nc-level"><option>Band 5.5</option><option>Band 6.0</option><option>Band 6.5</option><option>Band 7.0</option><option>Band 7.5+</option></select></div>
+            <div class="field"><label>Kỹ năng</label><select class="input" id="nc-skill"><option>Writing</option><option>Speaking</option><option>Reading</option><option>Listening</option><option>Giao tiếp</option></select></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Hình thức</label><select class="input" id="nc-mode"><option>Online</option><option>Offline</option></select></div>
+            <div class="field"><label>Syllabus</label><select class="input" id="nc-syllabus"><option value="">— Chưa gán —</option>${D.syllabi.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('')}</select></div>
+          </div>
+          <div class="field"><label>Lịch học</label><input class="input" id="nc-schedule" placeholder="VD: T3 & T5 · 19:00–20:30" /></div>
+          <div class="grid-2">
+            <div class="field"><label>Tổng số buổi</label><input class="input num" id="nc-total" value="12" type="number" /></div>
+            <div class="field"><label>Ngày bắt đầu</label><input class="input" id="nc-start" value="19/08" /></div>
+          </div>
+          <div id="nc-error" class="field-error" style="display:none;">Vui lòng nhập tên lớp.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveClass()">Tạo lớp</button></div>`);
+      } else if(type==='add-syllabus'){
+        openModalContent(`<div class="modal-head"><h3>Tạo syllabus mới</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên syllabus *</label><input class="input" id="nsy-name" placeholder="VD: IELTS Writing 7.0" /></div>
+          <div class="grid-2">
+            <div class="field"><label>Trình độ</label><select class="input" id="nsy-level"><option>Band 5.5</option><option>Band 6.0</option><option>Band 6.5</option><option>Band 7.0</option><option>Band 7.5+</option></select></div>
+            <div class="field"><label>Kỹ năng</label><select class="input" id="nsy-skill"><option>Writing</option><option>Speaking</option><option>Reading</option><option>Listening</option></select></div>
+          </div>
+          <div class="field"><label>Mô tả</label><textarea class="textarea" id="nsy-desc" placeholder="Mô tả lộ trình và mục tiêu…"></textarea></div>
+          <div class="field"><label>Số buổi dự kiến</label><input class="input num" id="nsy-total" value="10" type="number" /></div>
+          <div id="nsy-error" class="field-error" style="display:none;">Vui lòng nhập tên syllabus.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveSyllabus()">Tạo</button></div>`);
+      } else if(type==='assign-syllabus'){
+        const sy = D.syllabi.find(x=>x.id===extra);
+        openModalContent(`<div class="modal-head"><h3>Gán syllabus vào lớp</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <p style="font-size:var(--text-sm);color:var(--muted);">Chọn lớp để gán${sy?' syllabus <strong>'+sy.name+'</strong>':''}.</p>
+          <div class="field"><label>Lớp</label><select class="input" id="as-class">${D.classes.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('')}</select></div>
+          <div class="field"><label>Syllabus</label><select class="input" id="as-syllabus">${D.syllabi.map(s=>'<option value="'+s.id+'"'+(s.id===extra?' selected':'')+'>'+s.name+'</option>').join('')}</select></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="assignSyllabus()">Gán syllabus</button></div>`);
+      } else if(type==='add-module'){
+        const sy = D.syllabi.find(x=>x.id===extra);
+        openModalContent(`<div class="modal-head"><h3>Thêm module${sy?' — '+sy.name:''}</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên module *</label><input class="input" id="nm-title" placeholder="VD: Module 4 — Mock Test & Feedback" /></div>
+          <div class="field"><label>Mô tả ngắn</label><textarea class="textarea" id="nm-desc" placeholder="Mục tiêu chính của module này…" rows="2"></textarea></div>
+          <div id="nm-error" class="field-error" style="display:none;">Vui lòng nhập tên module.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveModule('${extra}')">Thêm module</button></div>`);
+      } else if(type==='add-lesson'){
+        const sy = D.syllabi.find(x=>x.id===extra);
+        const mod = sy && sy.modules.find(m=>m.id===extra2);
+        openModalContent(`<div class="modal-head"><h3>Thêm buổi học${mod?' — '+mod.title:''}</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên buổi học *</label><input class="input" id="nl-title" placeholder="VD: Line chart — Mô tả xu hướng" /></div>
+          <div class="field"><label>Mục tiêu</label><textarea class="textarea" id="nl-objectives" placeholder="Học viên sẽ học gì trong buổi này?" rows="2"></textarea></div>
+          <div class="field"><label>Tài liệu</label><input class="input" id="nl-materials" placeholder="VD: Cam 15 Test 1 Task 1" /></div>
+          <div class="field"><label>Trạng thái</label><select class="input" id="nl-status"><option value="upcoming">Sắp tới</option><option value="current">Đang học</option><option value="done">Đã dạy</option></select></div>
+          <div id="nl-error" class="field-error" style="display:none;">Vui lòng nhập tên buổi học.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveLesson('${extra}','${extra2}')">Thêm buổi</button></div>`);
+      } else if(type==='edit-module'){
+        const sy = D.syllabi.find(x=>x.id===extra);
+        const mod = sy && sy.modules.find(m=>m.id===extra2);
+        if(!mod) return;
+        openModalContent(`<div class="modal-head"><h3>Sửa module</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên module *</label><input class="input" id="em-title" value="${mod.title}" /></div>
+          <div class="field"><label>Mô tả ngắn</label><textarea class="textarea" id="em-desc" rows="2">${mod.description||''}</textarea></div>
+          <div id="em-error" class="field-error" style="display:none;">Vui lòng nhập tên module.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveModuleEdit('${extra}','${extra2}')">Lưu thay đổi</button></div>`);
+      } else if(type==='edit-lesson'){
+        const sy = D.syllabi.find(x=>x.id===extra);
+        const mod = sy && sy.modules.find(m=>m.id===extra2);
+        const lesson = mod && mod.lessons.find(l=>l.id===extra3);
+        if(!lesson) return;
+        openModalContent(`<div class="modal-head"><h3>Sửa buổi học</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Tên buổi học *</label><input class="input" id="el-title" value="${lesson.title}" /></div>
+          <div class="field"><label>Mục tiêu</label><textarea class="textarea" id="el-objectives" rows="2">${lesson.objectives&&lesson.objectives!=='—'?lesson.objectives:''}</textarea></div>
+          <div class="field"><label>Tài liệu</label><input class="input" id="el-materials" value="${lesson.materials&&lesson.materials!=='—'?lesson.materials:''}" /></div>
+          <div class="field"><label>Trạng thái</label><select class="input" id="el-status"><option value="upcoming"${lesson.status==='upcoming'?' selected':''}>Sắp tới</option><option value="current"${lesson.status==='current'?' selected':''}>Đang học</option><option value="done"${lesson.status==='done'?' selected':''}>Đã dạy</option></select></div>
+          <div id="el-error" class="field-error" style="display:none;">Vui lòng nhập tên buổi học.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary btn-sm" onclick="closeModal()">Hủy</button><button class="btn btn-primary btn-sm" onclick="saveLessonEdit('${extra}','${extra2}','${extra3}')">Lưu thay đổi</button></div>`);
+      }
+    }
+    function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+    document.getElementById('modal-overlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+    function saveStudent(){
+      const name = document.getElementById('ns-name').value.trim();
+      if(!name){ document.getElementById('ns-error').style.display='block'; return; }
+      const phone = document.getElementById('ns-phone').value.trim();
+      const total = parseInt(document.getElementById('ns-total').value)||10;
+      const price = parseInt(document.getElementById('ns-price').value)||400000;
+      const mode = document.getElementById('ns-mode').value;
+      D.students.push({ id:'s'+(D.students.length+1), name, phone, zalo:phone.replace(/\s/g,''), parent:{name:document.getElementById('ns-parent').value.trim(),phone:''}, targetBand:'—', skills:[], examDate:'', pkg:{total,done:0,remaining:total,price,mode,start:'19/08',expiry:'—'}, tags:[], notes:'', avatar:name.substring(0,2).toUpperCase(), atRisk:false });
+      closeModal(); renderStudents();
+    }
+    function saveGrade(id){
+      const a = D.assignments.find(x=>x.id===id); if(!a) return;
+      a.scores = { task:parseFloat(document.getElementById('g-task').value), coherence:parseFloat(document.getElementById('g-coh').value), lexical:parseFloat(document.getElementById('g-lex').value), grammar:parseFloat(document.getElementById('g-gram').value) };
+      a.status='graded';
+      closeModal(); renderAssignments(); openAssignment(id);
+    }
+    function saveClass(){
+      const name = document.getElementById('nc-name').value.trim();
+      if(!name){ document.getElementById('nc-error').style.display='block'; return; }
+      const level = document.getElementById('nc-level').value;
+      const skill = document.getElementById('nc-skill').value;
+      const mode = document.getElementById('nc-mode').value;
+      const syllabusId = document.getElementById('nc-syllabus').value;
+      const schedule = document.getElementById('nc-schedule').value.trim();
+      const total = parseInt(document.getElementById('nc-total').value)||12;
+      const start = document.getElementById('nc-start').value.trim();
+      D.classes.push({ id:'c'+(D.classes.length+1), name, level, skill, mode, syllabusId, studentIds:[], schedule, sessionsDone:0, sessionsTotal:total, status:'active', startDate:start, notes:'' });
+      closeModal(); renderClasses();
+    }
+    function saveSyllabus(){
+      const name = document.getElementById('nsy-name').value.trim();
+      if(!name){ document.getElementById('nsy-error').style.display='block'; return; }
+      const level = document.getElementById('nsy-level').value;
+      const skill = document.getElementById('nsy-skill').value;
+      const desc = document.getElementById('nsy-desc').value.trim();
+      const total = parseInt(document.getElementById('nsy-total').value)||10;
+      const newId = 'sy' + (D.syllabi.length + 1) + '-' + Date.now().toString(36);
+      D.syllabi.push({ id:newId, name, level, skill, totalLessons:total, description:desc, modules:[] });
+      closeModal(); renderSyllabusList();
+      openSyllabus(newId);
+    }
+    function assignSyllabus(){
+      const cid = document.getElementById('as-class').value;
+      const sid = document.getElementById('as-syllabus').value;
+      const c = D.classes.find(x=>x.id===cid); if(c) c.syllabusId = sid;
+      closeModal(); renderClasses(); renderSyllabusList();
+    }
+    function saveModule(syllabusId){
+      const title = document.getElementById('nm-title').value.trim();
+      if(!title){ document.getElementById('nm-error').style.display='block'; return; }
+      const desc = document.getElementById('nm-desc').value.trim();
+      const sy = D.syllabi.find(x=>x.id===syllabusId); if(!sy) return;
+      const modId = syllabusId + '-m' + (sy.modules.length + 1);
+      sy.modules.push({ id:modId, title, description:desc, lessons:[] });
+      sy.totalLessons = sy.modules.reduce((s,m)=>s+m.lessons.length, 0);
+      closeModal(); renderSyllabusList();
+      if(currentSyllabusId===syllabusId) openSyllabus(syllabusId);
+    }
+    function saveLesson(syllabusId, moduleId){
+      const title = document.getElementById('nl-title').value.trim();
+      if(!title){ document.getElementById('nl-error').style.display='block'; return; }
+      const objectives = document.getElementById('nl-objectives').value.trim();
+      const materials = document.getElementById('nl-materials').value.trim();
+      const status = document.getElementById('nl-status').value;
+      const sy = D.syllabi.find(x=>x.id===syllabusId); if(!sy) return;
+      const mod = sy.modules.find(m=>m.id===moduleId); if(!mod) return;
+      const lessonId = moduleId + '-l' + (mod.lessons.length + 1);
+      mod.lessons.push({ id:lessonId, title, objectives:objectives||'—', materials:materials||'—', status });
+      sy.totalLessons = sy.modules.reduce((s,m)=>s+m.lessons.length, 0);
+      closeModal(); renderSyllabusList();
+      if(currentSyllabusId===syllabusId) openSyllabus(syllabusId);
+    }
+    function saveModuleEdit(syllabusId, moduleId){
+      const title = document.getElementById('em-title').value.trim();
+      if(!title){ document.getElementById('em-error').style.display='block'; return; }
+      const desc = document.getElementById('em-desc').value.trim();
+      const sy = D.syllabi.find(x=>x.id===syllabusId); if(!sy) return;
+      const mod = sy.modules.find(m=>m.id===moduleId); if(!mod) return;
+      mod.title = title;
+      mod.description = desc;
+      closeModal(); renderSyllabusList();
+      if(currentSyllabusId===syllabusId) openSyllabus(syllabusId);
+    }
+    function saveLessonEdit(syllabusId, moduleId, lessonId){
+      const title = document.getElementById('el-title').value.trim();
+      if(!title){ document.getElementById('el-error').style.display='block'; return; }
+      const objectives = document.getElementById('el-objectives').value.trim();
+      const materials = document.getElementById('el-materials').value.trim();
+      const status = document.getElementById('el-status').value;
+      const sy = D.syllabi.find(x=>x.id===syllabusId); if(!sy) return;
+      const mod = sy.modules.find(m=>m.id===moduleId); if(!mod) return;
+      const lesson = mod.lessons.find(l=>l.id===lessonId); if(!lesson) return;
+      lesson.title = title;
+      lesson.objectives = objectives||'—';
+      lesson.materials = materials||'—';
+      lesson.status = status;
+      closeModal(); renderSyllabusList();
+      if(currentSyllabusId===syllabusId) openSyllabus(syllabusId);
+    }
+
+    /* ─── search ─── */
+    document.getElementById('global-search').addEventListener('input', e=>{
+      const q = e.target.value.toLowerCase().trim();
+      if(!q) return;
+      const match = D.students.find(s=>s.name.toLowerCase().includes(q));
+      if(match){ switchView('students'); openStudent(match.id); }
+    });
+
+    /* ─── init ─── */
+    renderDashboard(); renderStudents(); renderSchedule(); renderTuition(); renderAssignments(); renderReports(); renderClasses(); renderSyllabusList();
+    try {
+      const saved = localStorage.getItem('tos-view');
+      if(saved && document.getElementById('view-'+saved)) switchView(saved);
+    } catch(e){}
+  </script>
+</body>
+</html>
