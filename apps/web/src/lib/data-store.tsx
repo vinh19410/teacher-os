@@ -56,6 +56,7 @@ export type Action =
 	| {
 			type: "add-syllabus";
 			payload: {
+				id: string;
 				name: string;
 				level: string;
 				skill: string;
@@ -213,7 +214,6 @@ function reducer(state: MockData, action: Action): MockData {
 		}
 		case "add-syllabus": {
 			const syllabus: Syllabus = {
-				id: uid("sy"),
 				...action.payload,
 				modules: [],
 			};

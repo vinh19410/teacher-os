@@ -57,15 +57,15 @@ Data via `useData()`; derived values with small pure helpers in `lib/mock-data.t
 7. Mobile interaction sweep moved here from Phase 8 (red-team): repeat each success-criteria action once at 390px as each screen lands, not in a 4h end-dump.
 
 ## Success Criteria
-- [ ] 5a gate passed: dashboard + students pixel-close (≤8px offsets, identical fonts/colors/radii) to export at 390/919/920/921/1440 BEFORE any 5b screen — including one modal open (Esc close, focus trapped, focus returns), one chip filter round-trip, one validation rejection
-- [ ] All 6 routes render complete content with zero placeholder text
-- [ ] Filter chips on students/assignments produce identical row sets as export
-- [ ] Check-in flow: click Điểm danh on dashboard → badge flips, student remaining decreases in /students and /tuition (numeric consistency; tags/alerts are static snapshot per Phase 3 contract)
-- [ ] Grade flow: grade a2 → status Đã chấm, band 6.3 shows in list + detail rubric
-- [ ] Add student flow: create "Test HV" → appears in students table and tuition package table
-- [ ] Lesson modal shows correct zoom link; legend matches export colors
-- [ ] Mark-paid flips invoice row to Đã thu + method
-- [ ] Detail routes render `notFoundComponent` on unknown ids (no crash)
+- [x] 5a gate passed: dashboard + students pixel-close (≤8px offsets, identical fonts/colors/radii) to export at 390/919/920/921/1440 BEFORE any 5b screen — including one modal open (Esc close, focus trapped, focus returns), one chip filter round-trip, one validation rejection
+- [x] All 6 routes render complete content with zero placeholder text
+- [x] Filter chips on students/assignments produce identical row sets as export
+- [x] Check-in flow: click Điểm danh on dashboard → badge flips, student remaining decreases in /students and /tuition (numeric consistency; tags/alerts are static snapshot per Phase 3 contract)
+- [x] Grade flow: grade a2 → status Đã chấm, band 6.3 shows in list + detail rubric
+- [x] Add student flow: create "Test HV" → appears in students table and tuition package table
+- [x] Lesson modal shows correct zoom link; legend matches export colors
+- [x] Mark-paid flips invoice row to Đã thu + method
+- [x] Detail routes render `notFoundComponent` on unknown ids (no crash)
 
 ## Risk Assessment
 - **Risk: stat values drift from export** (dashboard week stats and tuition stats are hardcoded strings like "6.2tr"). Port them as literal strings/numbers first; converting to derived sums is only done where export derives (risk table debt). Signal: screenshot mismatch vs export.
