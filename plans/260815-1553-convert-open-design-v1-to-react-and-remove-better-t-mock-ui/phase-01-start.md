@@ -39,11 +39,11 @@ The scaffold UI lives in exactly three places: `routes/index.tsx` (ASCII home), 
 5. Run `pnpm run check` and `pnpm run check-types` from repo root; fix any unused-import lint fallout.
 
 ## Success Criteria
-- [ ] Visiting `/` lands on `/dashboard` (or `/login` when signed out) — no ASCII art anywhere
-- [ ] No global header bar; viewport belongs entirely to the auth layout
-- [ ] App boots with light background for BOTH fresh profiles and profiles with stale `vite-ui-theme: dark` in localStorage; no theme toggle control exists; no `ThemeProvider` remains
-- [ ] `git grep -l "TITLE_TEXT\|ModeToggle\|from \"./header\""` returns nothing
-- [ ] Biome + type-check + build pass
+- [x] Visiting `/` lands on `/dashboard` (or `/login` when signed out) — no ASCII art anywhere
+- [x] No global header bar; viewport belongs entirely to the auth layout
+- [x] App boots with light background for BOTH fresh profiles and profiles with stale `vite-ui-theme: dark` in localStorage; no theme toggle control exists; no `ThemeProvider` remains
+- [x] `git grep -l "TITLE_TEXT\|ModeToggle\|from \"./header\""` returns nothing
+- [x] Biome + type-check + build pass
 
 ## Risk Assessment
 Low risk. All deletions are additive-safe: auth guard chain (`__root` → `_auth.beforeLoad` → login redirect) is untouched. If removing the root grid breaks PWA scroll behavior, the signal is a fixed-viewport bug on mobile in Phase 8 — response: wrap `<Outlet />` in `min-h-svh` instead of a grid.

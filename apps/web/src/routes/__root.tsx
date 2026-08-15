@@ -8,7 +8,7 @@ import { Toaster } from "@teacher-os/ui/components/sonner";
 
 import "../index.css";
 
-export type RouterAppContext = {};
+export type RouterAppContext = Record<string, never>;
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,

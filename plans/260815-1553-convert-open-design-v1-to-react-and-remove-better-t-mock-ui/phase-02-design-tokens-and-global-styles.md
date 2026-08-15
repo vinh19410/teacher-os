@@ -48,12 +48,12 @@ Fonts: keep SF Pro stacks with fallbacks (`"SF Pro Display", -apple-system, "Hel
 7. **Exit gate (red-team):** screenshot `/login` AND open the user-menu dropdown — check outline-button hover (`hover:bg-muted`) renders light surface, dropdown item focus (`focus:bg-accent`) renders accent-soft with fg text, error text renders `text-destructive`, not red-500/indigo-600 leftovers. Any unchanged shadcn surface = alias enumeration incomplete; fix before Phase 3.
 
 ## Success Criteria
-- [ ] Every token in the plan.md extraction table exists in `globals.css` and is usable as a Tailwind utility
-- [ ] `--breakpoint-app: 921px` defined; verified `app:` fires at ≥921px and `max-app:` covers ≤920px (export's inclusive boundary) at 919/920/921
-- [ ] Radius scale renders 8/12/18/pill correctly on **app kit components** (app `Button` = pill like export). Scope note (red-team): `packages/ui` primitives hardcode `rounded-none` — auth screens keep square corners; that is outside the export contract (the export has no login screen) and is accepted, not a regression. The "shadcn primitives inherit radius" claim is dropped.
-- [ ] No `.dark` block, no `.dark` variant classes survive; login renders on export palette
-- [ ] Shadcn primitives used by auth screens (`Button`, `Input`, `DropdownMenu`) render readable export-palette surfaces — verified via the step-7 exit gate (login + user-menu dropdown focus/hover states), not assumed
-- [ ] No hex literal appears in any later component file (grep gate in Phase 8)
+- [x] Every token in the plan.md extraction table exists in `globals.css` and is usable as a Tailwind utility
+- [x] `--breakpoint-app: 921px` defined; verified `app:` fires at ≥921px and `max-app:` covers ≤920px (export's inclusive boundary) at 919/920/921
+- [x] Radius scale renders 8/12/18/pill correctly on **app kit components** (app `Button` = pill like export). Scope note (red-team): `packages/ui` primitives hardcode `rounded-none` — auth screens keep square corners; that is outside the export contract (the export has no login screen) and is accepted, not a regression. The "shadcn primitives inherit radius" claim is dropped.
+- [x] No `.dark` block, no `.dark` variant classes survive; login renders on export palette
+- [x] Shadcn primitives used by auth screens (`Button`, `Input`, `DropdownMenu`) render readable export-palette surfaces — verified via the step-7 exit gate (login + user-menu dropdown focus/hover states), not assumed
+- [x] No hex literal appears in any later component file (grep gate in Phase 8)
 
 ## Risk Assessment
 - **Risk: breaking `@teacher-os/ui` consumers other than web** — the ui package is only consumed by `apps/web` (verified via workspace grep), so palette replacement is safe. Signal if wrong: server or future apps import ui styles — response: scope token overrides to `apps/web/src/index.css` instead.

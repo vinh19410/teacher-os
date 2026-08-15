@@ -14,228 +14,245 @@
  * so no var() ever references a name that was redefined.
  */
 :root {
-  --bg: #ffffff;
-  --surface: #f5f5f7;
-  --surface-warm: #fbfbfd;
-  --fg: #1d1d1f;
-  --fg-2: #424245;
-  --muted: #6e6e73;
-  --meta: #86868b;
-  --border: #d2d2d7;
-  --border-soft: #e8e8ed;
-  --accent: #0071e3;
-  --accent-on: #ffffff;
-  --accent-hover: #0077ed;
-  --accent-active: #0066cc;
-  --success: #16a34a;
-  --warn: #eab308;
-  --danger: #dc2626;
-  --font-display: "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-base: 17px;
-  --text-lg: 21px;
-  --text-xl: 28px;
-  --text-2xl: 40px;
-  --text-3xl: 56px;
-  --text-4xl: 80px;
-  --leading-body: 1.47;
-  --leading-tight: 1.05;
-  --tracking-display: -0.015em;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-  --section-y-desktop: 100px;
-  --section-y-tablet: 64px;
-  --section-y-phone: 40px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-pill: 980px;
-  --elev-flat: none;
-  --elev-ring: 0 0 0 1px var(--border);
-  --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
-  --motion-fast: 150ms;
-  --motion-base: 220ms;
-  --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
-  --container-max: 1024px;
-  --container-gutter-desktop: 22px;
-  --container-gutter-tablet: 18px;
-  --container-gutter-phone: 16px;
-  --accent-soft: color-mix(in oklab, var(--accent), transparent 86%);
-  --fg-soft: color-mix(in oklab, var(--fg), transparent 94%);
-  --success-soft: color-mix(in oklab, var(--success), transparent 88%);
-  --warn-soft: color-mix(in oklab, var(--warn), transparent 86%);
-  --danger-soft: color-mix(in oklab, var(--danger), transparent 88%);
-  --gap-xs: var(--space-2);
-  --gap-sm: var(--space-3);
-  --gap-md: var(--space-5);
-  --gap-lg: var(--space-8);
-  --gap-xl: var(--space-12);
-  --gap-2xl: 96px;
-  --sidebar-w: 248px;
+	--bg: #ffffff;
+	--surface: #f5f5f7;
+	--surface-warm: #fbfbfd;
+	--fg: #1d1d1f;
+	--fg-2: #424245;
+	--muted: #6e6e73;
+	--meta: #86868b;
+	--border: #d2d2d7;
+	--border-soft: #e8e8ed;
+	--accent: #0071e3;
+	--accent-on: #ffffff;
+	--accent-hover: #0077ed;
+	--accent-active: #0066cc;
+	--success: #16a34a;
+	--warn: #eab308;
+	--danger: #dc2626;
+	--font-display:
+		"SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial,
+		sans-serif;
+	--font-body:
+		"SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial,
+		sans-serif;
+	--font-mono:
+		"SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas,
+		monospace;
+	--text-xs: 12px;
+	--text-sm: 14px;
+	--text-base: 17px;
+	--text-lg: 21px;
+	--text-xl: 28px;
+	--text-2xl: 40px;
+	--text-3xl: 56px;
+	--text-4xl: 80px;
+	--leading-body: 1.47;
+	--leading-tight: 1.05;
+	--tracking-display: -0.015em;
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-12: 48px;
+	--section-y-desktop: 100px;
+	--section-y-tablet: 64px;
+	--section-y-phone: 40px;
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 18px;
+	--radius-pill: 980px;
+	--elev-flat: none;
+	--elev-ring: 0 0 0 1px var(--border);
+	--elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
+	--focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
+	--motion-fast: 150ms;
+	--motion-base: 220ms;
+	--ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+	--container-max: 1024px;
+	--container-gutter-desktop: 22px;
+	--container-gutter-tablet: 18px;
+	--container-gutter-phone: 16px;
+	--accent-soft: color-mix(in oklab, var(--accent), transparent 86%);
+	--fg-soft: color-mix(in oklab, var(--fg), transparent 94%);
+	--success-soft: color-mix(in oklab, var(--success), transparent 88%);
+	--warn-soft: color-mix(in oklab, var(--warn), transparent 86%);
+	--danger-soft: color-mix(in oklab, var(--danger), transparent 88%);
+	--gap-xs: var(--space-2);
+	--gap-sm: var(--space-3);
+	--gap-md: var(--space-5);
+	--gap-lg: var(--space-8);
+	--gap-xl: var(--space-12);
+	--gap-2xl: 96px;
+	--sidebar-w: 248px;
 
-  /* shadcn semantic block — non-colliding names only */
-  --background: var(--bg);
-  --foreground: var(--fg);
-  --card: var(--bg);
-  --card-foreground: var(--fg);
-  --popover: var(--bg);
-  --popover-foreground: var(--fg);
-  --primary: var(--accent);
-  --primary-foreground: var(--accent-on);
-  --secondary: var(--surface);
-  --secondary-foreground: var(--fg-2);
-  --muted-foreground: var(--muted);
-  --accent-foreground: var(--fg);
-  --destructive: var(--danger);
-  --input: var(--border);
-  --ring: var(--accent);
-  --chart-1: var(--accent);
-  --chart-2: var(--success);
-  --chart-3: var(--warn);
-  --chart-4: var(--meta);
-  --chart-5: var(--danger);
-  --radius: 18px;
-  --sidebar: var(--surface);
-  --sidebar-foreground: var(--fg);
-  --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--accent-on);
-  --sidebar-accent: var(--accent-soft);
-  --sidebar-accent-foreground: var(--accent);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--accent);
+	/* shadcn semantic block — non-colliding names only */
+	--background: var(--bg);
+	--foreground: var(--fg);
+	--card: var(--bg);
+	--card-foreground: var(--fg);
+	--popover: var(--bg);
+	--popover-foreground: var(--fg);
+	--primary: var(--accent);
+	--primary-foreground: var(--accent-on);
+	--secondary: var(--surface);
+	--secondary-foreground: var(--fg-2);
+	--muted-foreground: var(--muted);
+	--accent-foreground: var(--fg);
+	--destructive: var(--danger);
+	--input: var(--border);
+	--ring: var(--accent);
+	--chart-1: var(--accent);
+	--chart-2: var(--success);
+	--chart-3: var(--warn);
+	--chart-4: var(--meta);
+	--chart-5: var(--danger);
+	--radius: 18px;
+	--sidebar: var(--surface);
+	--sidebar-foreground: var(--fg);
+	--sidebar-primary: var(--accent);
+	--sidebar-primary-foreground: var(--accent-on);
+	--sidebar-accent: var(--accent-soft);
+	--sidebar-accent-foreground: var(--accent);
+	--sidebar-border: var(--border);
+	--sidebar-ring: var(--accent);
 }
 
 @theme inline {
-  /* fonts */
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
+	/* fonts */
+	--font-sans: var(--font-body);
+	--font-display: var(--font-display);
+	--font-body: var(--font-body);
+	--font-mono: var(--font-mono);
 
-  /*
+	/*
    * App-kit utilities (export roles). Naming avoids the shadcn collision:
    * - text gray  → muted-fg     (shadcn `muted` stays a SURFACE below)
    * - blue       → accent-blue  (shadcn `accent` stays a hover SURFACE below)
    * - line grays → line / line-soft (shadcn `border` mirrors line below)
    */
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-warm: var(--surface-warm);
-  --color-fg: var(--fg);
-  --color-fg-2: var(--fg-2);
-  --color-muted-fg: var(--muted);
-  --color-meta: var(--meta);
-  --color-line: var(--border);
-  --color-line-soft: var(--border-soft);
-  --color-accent-blue: var(--accent);
-  --color-accent-on: var(--accent-on);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-active: var(--accent-active);
-  --color-success: var(--success);
-  --color-warn: var(--warn);
-  --color-danger: var(--danger);
-  --color-accent-soft: var(--accent-soft);
-  --color-fg-soft: var(--fg-soft);
-  --color-success-soft: var(--success-soft);
-  --color-warn-soft: var(--warn-soft);
-  --color-danger-soft: var(--danger-soft);
+	--color-bg: var(--bg);
+	--color-surface: var(--surface);
+	--color-surface-warm: var(--surface-warm);
+	--color-fg: var(--fg);
+	--color-fg-2: var(--fg-2);
+	--color-muted-fg: var(--muted);
+	--color-meta: var(--meta);
+	--color-line: var(--border);
+	--color-line-soft: var(--border-soft);
+	--color-accent-blue: var(--accent);
+	--color-accent-on: var(--accent-on);
+	--color-accent-hover: var(--accent-hover);
+	--color-accent-active: var(--accent-active);
+	--color-success: var(--success);
+	--color-warn: var(--warn);
+	--color-danger: var(--danger);
+	--color-accent-soft: var(--accent-soft);
+	--color-fg-soft: var(--fg-soft);
+	--color-success-soft: var(--success-soft);
+	--color-warn-soft: var(--warn-soft);
+	--color-danger-soft: var(--danger-soft);
 
-  /*
+	/*
    * shadcn aliases — complete enumeration of vars consumed by
    * packages/ui/src/components/* (surface-role mapping per collision analysis):
    * accent → accent-soft surface w/ fg text; muted → surface; muted-foreground → text gray.
    */
-  --color-background: var(--bg);
-  --color-foreground: var(--fg);
-  --color-card: var(--bg);
-  --color-card-foreground: var(--fg);
-  --color-popover: var(--bg);
-  --color-popover-foreground: var(--fg);
-  --color-primary: var(--accent);
-  --color-primary-foreground: var(--accent-on);
-  --color-secondary: var(--surface);
-  --color-secondary-foreground: var(--fg-2);
-  --color-muted: var(--surface);
-  --color-muted-foreground: var(--muted);
-  --color-accent: var(--accent-soft);
-  --color-accent-foreground: var(--fg);
-  --color-destructive: var(--danger);
-  --color-border: var(--border);
-  --color-input: var(--border);
-  --color-ring: var(--accent);
-  --color-chart-1: var(--accent);
-  --color-chart-2: var(--success);
-  --color-chart-3: var(--warn);
-  --color-chart-4: var(--meta);
-  --color-chart-5: var(--danger);
-  --color-sidebar: var(--surface);
-  --color-sidebar-foreground: var(--fg);
-  --color-sidebar-primary: var(--accent);
-  --color-sidebar-primary-foreground: var(--accent-on);
-  --color-sidebar-accent: var(--accent-soft);
-  --color-sidebar-accent-foreground: var(--accent);
-  --color-sidebar-border: var(--border);
-  --color-sidebar-ring: var(--accent);
+	--color-background: var(--bg);
+	--color-foreground: var(--fg);
+	--color-card: var(--bg);
+	--color-card-foreground: var(--fg);
+	--color-popover: var(--bg);
+	--color-popover-foreground: var(--fg);
+	--color-primary: var(--accent);
+	--color-primary-foreground: var(--accent-on);
+	--color-secondary: var(--surface);
+	--color-secondary-foreground: var(--fg-2);
+	--color-muted: var(--surface);
+	--color-muted-foreground: var(--muted);
+	--color-accent: var(--accent-soft);
+	--color-accent-foreground: var(--fg);
+	--color-destructive: var(--danger);
+	--color-border: var(--border);
+	--color-input: var(--border);
+	--color-ring: var(--accent);
+	--color-chart-1: var(--accent);
+	--color-chart-2: var(--success);
+	--color-chart-3: var(--warn);
+	--color-chart-4: var(--meta);
+	--color-chart-5: var(--danger);
+	--color-sidebar: var(--surface);
+	--color-sidebar-foreground: var(--fg);
+	--color-sidebar-primary: var(--accent);
+	--color-sidebar-primary-foreground: var(--accent-on);
+	--color-sidebar-accent: var(--accent-soft);
+	--color-sidebar-accent-foreground: var(--accent);
+	--color-sidebar-border: var(--border);
+	--color-sidebar-ring: var(--accent);
 
-  /* type scale (export values) */
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-base: 17px;
-  --text-lg: 21px;
-  --text-xl: 28px;
-  --text-2xl: 40px;
-  --text-3xl: 56px;
-  --text-4xl: 80px;
+	/* type scale (export values) */
+	--text-xs: 12px;
+	--text-sm: 14px;
+	--text-base: 17px;
+	--text-lg: 21px;
+	--text-xl: 28px;
+	--text-2xl: 40px;
+	--text-3xl: 56px;
+	--text-4xl: 80px;
 
-  /* radius scale — per-size, non-linear, NOT derived from one base */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 18px;
-  --radius-2xl: 980px;
-  --radius-3xl: 980px;
-  --radius-4xl: 980px;
+	/* radius scale — per-size, non-linear, NOT derived from one base */
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 18px;
+	--radius-xl: 18px;
+	--radius-2xl: 980px;
+	--radius-3xl: 980px;
+	--radius-4xl: 980px;
 
-  /*
+	/*
    * 920px mobile boundary: export uses max-width:920px (920 inclusive = mobile).
    * Min-side token at 921px → app: fires >=921, max-app: covers <=920.
    */
-  --breakpoint-app: 921px;
+	--breakpoint-app: 921px;
 
-  /* motion */
-  --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+	/* motion */
+	--ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background font-sans text-foreground;
-    font-size: var(--text-base);
-    line-height: var(--leading-body);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
-  html {
-    @apply font-sans;
-    -webkit-text-size-adjust: 100%;
-  }
-  :focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring);
-  }
-  ::placeholder {
-    color: var(--meta);
-  }
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background font-sans text-foreground;
+		font-size: var(--text-base);
+		line-height: var(--leading-body);
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+	html {
+		@apply font-sans;
+		-webkit-text-size-adjust: 100%;
+	}
+	:focus-visible {
+		outline: none;
+		box-shadow: var(--focus-ring);
+	}
+	::placeholder {
+		color: var(--meta);
+	}
+}
+
+@keyframes modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
