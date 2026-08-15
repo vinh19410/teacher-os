@@ -57,12 +57,12 @@ The `DataProvider` from Phase 3 mounts in `AppShell` so all child routes share o
 <!-- Updated: Red Team - demo banner, session hard invariant, capture harness, Outlet composition resolved -->
 
 ## Success Criteria
-- [ ] Desktop: sidebar fixed, active nav item accent-styled, title updates per route
-- [ ] Mobile 360–920px: hamburger shows drawer over scrim; nav click navigates + closes; no horizontal scroll
-- [ ] Bell panel opens/closes correctly, lists 4 notifications with correct dot colors
-- [ ] Search typing a student name navigates to their (placeholder) detail route once it exists in Phase 5
-- [ ] Auth redirect to `/login` intact when signed out; no session-less fallback branch exists in the shell
-- [ ] Demo-data indicator visible in topbar; capture harness produced one authenticated screenshot
+- [x] Desktop: sidebar fixed, active nav item accent-styled, title updates per route
+- [x] Mobile 360–920px: hamburger shows drawer over scrim; nav click navigates + closes; no horizontal scroll
+- [x] Bell panel opens/closes correctly, lists 4 notifications with correct dot colors
+- [x] Search typing a student name navigates to their (placeholder) detail route once it exists in Phase 5
+- [x] Auth redirect to `/login` intact when signed out; no session-less fallback branch exists in the shell
+- [x] Demo-data indicator visible in topbar; capture harness produced one authenticated screenshot
 
 ## Risk Assessment
 - **Risk: TanStack Router `useMatches` title derivation complexity.** Simpler: each route file exports a static `title` via `Route.options` / context and `AppShell` reads `useRouterState({ select: s => s.matches }).at(-1)`. Signal: titles blank — response: fall back to per-route `<PageHead>` component carrying its own h1 (export already renders page-level h1s; topbar title duplicates them).
