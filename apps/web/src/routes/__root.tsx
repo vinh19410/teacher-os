@@ -1,52 +1,46 @@
-import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+	createRootRouteWithContext,
+	HeadContent,
+	Outlet,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Toaster } from "@teacher-os/ui/components/sonner";
 
-import Header from "@/components/header";
-import { ThemeProvider } from "@/components/theme-provider";
-
 import "../index.css";
 
-export interface RouterAppContext {}
+export type RouterAppContext = {};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-  component: RootComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "teacher-os",
-      },
-      {
-        name: "description",
-        content: "teacher-os is a web application",
-      },
-    ],
-    links: [
-      {
-        rel: "icon",
-        href: "/favicon.ico",
-      },
-    ],
-  }),
+	component: RootComponent,
+	head: () => ({
+		meta: [
+			{
+				title: "Teacher OS · Quản lý lớp gia sư 1:1",
+			},
+			{
+				name: "description",
+				content:
+					"Teacher OS — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
+			},
+		],
+		links: [
+			{
+				rel: "icon",
+				href: "/favicon.ico",
+			},
+		],
+	}),
 });
 
 function RootComponent() {
-  return (
-    <>
-      <HeadContent />
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        disableTransitionOnChange
-        storageKey="vite-ui-theme"
-      >
-        <div className="grid grid-rows-[auto_1fr] h-svh">
-          <Header />
-          <Outlet />
-        </div>
-        <Toaster richColors />
-      </ThemeProvider>
-      <TanStackRouterDevtools position="bottom-left" />
-    </>
-  );
+	return (
+		<>
+			<HeadContent />
+			<div className="min-h-svh">
+				<Outlet />
+			</div>
+			<Toaster richColors theme="light" />
+			<TanStackRouterDevtools position="bottom-left" />
+		</>
+	);
 }
