@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "Responsive verification and release"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: [7]
@@ -37,13 +37,13 @@ Verification-driven phase; no new features. Fixes land in whichever screen file 
 9. Hand off: commit work on a feature branch, open PR per repo conventions (user will drive ship stage).
 
 ## Success Criteria
-- [ ] Screenshot comparison export vs app at 4 viewports + 1920 spot-check: threshold ≤8px offsets, identical fonts/colors/radii — primary screens pass
-- [ ] 0 horizontal-scroll failures across 9 viewports × 13 routes (automated assertion)
-- [ ] Interaction flows pass on mobile 390px (spot-retest of the inline sweeps)
-- [ ] Keyboard/focus sweep passes; browser back works from every detail screen; reload on `$id` routes: seed ids render same view, created ids render not-found
-- [ ] Biome, type-check, build all green
-- [ ] Grep gates clean (no hardcoded hex in components, no design-process annotations)
-- [ ] Branch pushed with PR opened
+- [x] Screenshot comparison export vs app at 4 viewports + 1920 spot-check: threshold ≤8px offsets, identical fonts/colors/radii — primary screens pass
+- [x] 0 horizontal-scroll failures across 9 viewports × 13 routes (automated assertion)
+- [x] Interaction flows pass on mobile 390px (spot-retest of the inline sweeps)
+- [x] Keyboard/focus sweep passes; browser back works from every detail screen; reload on `$id` routes: seed ids render same view, created ids render not-found
+- [x] Biome, type-check, build all green
+- [x] Grep gates clean (no hardcoded hex in components, no design-process annotations)
+- [x] Branch pushed with PR opened
 
 ## Risk Assessment
 - **Risk: screenshot comparison perfectionism stalls release.** Budget: fix structural and overflow issues; accept ≤5px spacing deltas on non-primary screens. Signal: spending >1h on one screen's polish — response: log as follow-up issue, move on.

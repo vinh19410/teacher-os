@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Mock data layer and shared UI kit"
-status: pending
+status: completed
 priority: P1
 effort: "8h"
 dependencies: [2]

@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Design tokens and global styles"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [1]

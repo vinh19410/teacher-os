@@ -1,7 +1,7 @@
 ---
 title: "Convert open-design v1 to React and remove Better-T mock UI"
 description: "Replace all Better-T-Stack scaffold UI in apps/web with production React components converted from open-design/v1/teacher-os.html, preserving the exported visual contract (tokens, layout, interactions, responsive behavior)."
-status: pending
+status: completed
 priority: P1
 effort: "6-7d"
 tags: [ui, design-conversion, react, tailwind]
@@ -95,14 +95,14 @@ Modals from the export (add-student, add-invoice, create-report, grade, add-clas
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Remove Better-T mock UI and reset shell](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Design tokens and global styles](./phase-02-design-tokens-and-global-styles.md) | Pending |
-| 3 | [Phase 3: Mock data layer and shared UI kit](./phase-03-mock-data-layer-and-shared-ui-kit.md) | Pending |
-| 4 | [Phase 4: App shell layout and navigation](./phase-04-app-shell-layout-and-navigation.md) | Pending |
-| 5 | [Phase 5: Core module screens](./phase-05-core-module-screens.md) | Pending |
-| 6 | [Phase 6: Teaching module screens](./phase-06-teaching-module-screens.md) | Pending |
-| 7 | [Phase 7: Reports, settings and cleanup](./phase-07-reports-settings-and-cleanup.md) | Pending |
-| 8 | [Phase 8: Responsive verification and release](./phase-08-responsive-verification-and-release.md) | Pending |
+| 1 | [Phase 1: Remove Better-T mock UI and reset shell](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Design tokens and global styles](./phase-02-design-tokens-and-global-styles.md) | Completed |
+| 3 | [Phase 3: Mock data layer and shared UI kit](./phase-03-mock-data-layer-and-shared-ui-kit.md) | Completed |
+| 4 | [Phase 4: App shell layout and navigation](./phase-04-app-shell-layout-and-navigation.md) | Completed |
+| 5 | [Phase 5: Core module screens](./phase-05-core-module-screens.md) | Completed |
+| 6 | [Phase 6: Teaching module screens](./phase-06-teaching-module-screens.md) | Completed |
+| 7 | [Phase 7: Reports, settings and cleanup](./phase-07-reports-settings-and-cleanup.md) | Completed |
+| 8 | [Phase 8: Responsive verification and release](./phase-08-responsive-verification-and-release.md) | Completed |
 
 Phase dependencies: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 (strictly sequential; each phase builds on the previous).
 

@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Core module screens"
-status: pending
+status: completed
 priority: P1
 effort: "10h"
 dependencies: [4]

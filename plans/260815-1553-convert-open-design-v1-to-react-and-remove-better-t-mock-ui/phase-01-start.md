@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Remove Better-T mock UI and reset shell"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []
