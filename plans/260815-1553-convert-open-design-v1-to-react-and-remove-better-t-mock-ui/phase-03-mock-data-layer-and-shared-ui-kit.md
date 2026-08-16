@@ -1,9 +1,9 @@
 ---
 phase: 3
 title: "Mock data layer and shared UI kit"
-status: pending
+status: completed
 priority: P1
-effort: "6h"
+effort: "8h"
 dependencies: [2]
 ---
 
@@ -15,7 +15,7 @@ Port the export's mock data object `D` (lines 558–691) into a typed, mutable i
 ## Requirements
 - Functional: all 8 data collections (students, lessons, invoices, assignments, reports, notifs, commentBank, classes, syllabi) with exact fields and Vietnamese content from the export.
 - Functional: mutations that the export performs imperatively become store actions: `checkInLesson` (sets status + increments `pkg.done`, decrements `remaining`), `markInvoicePaid`, `saveGrade`, `addStudent`, `addClass`, `addSyllabus`, `assignSyllabus`, `addModule`, `editModule`, `addLesson`, `editLesson`.
-- Functional: derived selectors mirroring export render logic: student risk filters, debt sums, band average `(task+coherence+lexical+grammar)/4`, package progress %, syllabus completion counts.
+- Functional: derived selectors mirroring export render logic: student risk filters, debt sums, band average `(task+coherence+lexical+grammar)/4`, package progress %, syllabus completion counts. **Derived-data contract (red-team):** the export hardcodes dashboard alert texts ("còn 2 buổi"…) and never recomputes the `sắp hết buổi` tag after check-in. Decide once, here: tags and alerts are a **static snapshot** — tag membership and alert strings do NOT change when mutations run; only derived numeric fields (remaining/done counts, progress %) recompute. Cross-view consistency claims elsewhere mean numbers only.
 - Functional: formatters ported as named utils reused everywhere: `fmtVND(n)` (`toLocaleString('vi-VN')+'đ'`), `fmtK(n)`, date helpers (`dayNames`, `dayDates`) — these silently break if reimplemented per screen.
 - Functional: modal kit has Escape-close + focus trap + focus-return (handoff demands keyboard states the export prototype lacks).
 - Non-functional: pure client-side state (no server calls); resets on reload, matching export behavior.
@@ -57,16 +57,20 @@ Use existing `@teacher-os/ui` primitives only where they match the design (e.g. 
 3. Build `DataProvider` + `useData()` hook: `useReducer` with typed actions; expose formatted helpers `fmtVND`, `fmtK`, `dayNames`, `dayDates`, `studentName(id)`, `initials(id)`, `averageBand(scores)`.
 4. Build the 13 UI components, each mirroring its export CSS block; include hover/active/focus-visible/disabled states from the export (`scale(0.97)` on press, `--focus-ring`, `opacity:.4 pointer-events:none` disabled).
 5. Modal: controlled component `{open, onClose, title, children, footer}`; overlay click closes (matches export); add Esc key + basic focus trap as accessibility upgrade.
-6. Storybook-free visual check: render a scratch route `/dev/kit` (temporary, deleted in Phase 7) exercising every component variant against the export HTML opened side-by-side.
+6. Kit validation (red-team): NO `/dev/kit` scratch route — it would sit outside the `_auth` guard (unauthenticated seed-data exposure) and duplicate work. Instead, kit components are validated in place on the first real screens: the Phase 5a gate (dashboard + students) exercises cards, badges, avatars, stat-cards, tables, chips, modal, fields, and validation in one pass.
+7. Add-student phone field: numeric-only validation (digits/spaces) before a zalo id is derived from it — free text must never flow into a `zalo.me` URL.
 
 ## Success Criteria
-- [ ] `useData()` returns all 8 collections typed; TS strict passes
-- [ ] Every mutation action updates state immutably; `checkInLesson` visibly changes remaining counts on all consumers (verified via React DevTools in Phase 5 wiring)
-- [ ] All 13 components render with export-identical styling (side-by-side vs `teacher-os.html` in browser)
-- [ ] Modal closes on overlay click + Esc; focus is trapped inside while open; focus returns to trigger element
-- [ ] No `any` types; Biome passes
+- [x] `useData()` returns all 8 collections typed; TS strict passes
+- [x] Every mutation action updates state immutably; `checkInLesson` visibly changes remaining counts on all consumers (verified via React DevTools in Phase 5 wiring)
+- [x] All 13 components render with export-identical styling (side-by-side vs `teacher-os.html` in browser)
+- [x] Modal closes on overlay click + Esc; focus is trapped inside while open; focus returns to trigger element
+- [x] No `any` types; Biome passes
 
 ## Risk Assessment
 - **Risk: state divergence from export behavior** (e.g. check-in should NOT decrement remaining below 0 — export clamps `if(remaining<=0) remaining=0`). Mitigation: port each mutation function line-by-line from export lines 1246–1501, then test the exact scenario (check-in all lessons of one student).
 - **Risk: component kit scope creep** (building shadcn-parity giants). Mitigation: only build what the 13 views actually render; defer anything else.
+- **Risk: runtime-created entities vanish on reload while `$id` URLs persist (red-team).** The store is ephemeral; a URL like `/syllabus/<new-uuid>` re-seeds to nothing after F5. Mitigation: every detail route renders a `notFoundComponent` (friendly card + back link) when the store lookup misses — a reload of a runtime-created id shows not-found, never a crash. Verified in Phase 8 for one seed id and one created id per entity type.
 - **Assumption: shared `@teacher-os/ui` primitives can remain unstyled-ish for auth pages.** If auth screens end up visually broken by Phase 2 palette swap, signal = screenshot diff; response: add minimal shadcn alias overrides only for auth route scope.
+
+<!-- Updated: Red Team - static-snapshot derived-data contract, drop /dev/kit, notFound on lookup miss, phone validation, 8h budget -->

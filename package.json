@@ -1,34 +1,34 @@
 {
-  "name": "teacher-os",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "type": "module",
-  "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "check-types": "turbo run check-types",
-    "dev:web": "turbo run dev -F web --",
-    "dev:server": "turbo run dev -F server --",
-    "db:generate": "turbo run db:generate -F @teacher-os/db --",
-    "deploy": "turbo run deploy -F @teacher-os/infra --",
-    "destroy": "turbo run destroy -F @teacher-os/infra --",
-    "check": "biome check --write ."
-  },
-  "dependencies": {
-    "@teacher-os/env": "workspace:*",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.5.6",
-    "@cloudflare/workers-types": "catalog:",
-    "@teacher-os/config": "workspace:*",
-    "@types/node": "catalog:",
-    "turbo": "^2.10.7",
-    "typescript": "catalog:"
-  },
-  "packageManager": "pnpm@10.33.1"
+	"name": "teacher-os",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "turbo run dev",
+		"build": "turbo run build",
+		"check-types": "turbo run check-types",
+		"dev:web": "turbo run dev -F web --",
+		"dev:server": "turbo run dev -F server --",
+		"db:generate": "turbo run db:generate -F @teacher-os/db --",
+		"deploy": "turbo run deploy -F @teacher-os/infra --",
+		"destroy": "turbo run destroy -F @teacher-os/infra --",
+		"check": "biome check --write ."
+	},
+	"dependencies": {
+		"@teacher-os/env": "workspace:*",
+		"dotenv": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.6",
+		"@cloudflare/workers-types": "catalog:",
+		"@teacher-os/config": "workspace:*",
+		"@types/node": "catalog:",
+		"turbo": "^2.10.7",
+		"typescript": "catalog:"
+	},
+	"packageManager": "pnpm@10.33.1"
 }
