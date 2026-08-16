@@ -239,8 +239,10 @@ function ClassDetailRoute() {
 				defaultSyllabusId={cls.syllabusId}
 			/>
 			<AddStudentModal
+				key={`add-student-${cls.id}`}
 				open={addStudentOpen}
 				onClose={() => setAddStudentOpen(false)}
+				classId={cls.id}
 			/>
 		</div>
 	);

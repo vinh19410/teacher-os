@@ -9,9 +9,11 @@ const PHONE_RE = /^[0-9\s+]*$/;
 export function AddStudentModal({
 	open,
 	onClose,
+	classId,
 }: {
 	open: boolean;
 	onClose: () => void;
+	classId?: string;
 }) {
 	const { dispatch } = useData();
 	const [name, setName] = useState("");
@@ -42,6 +44,7 @@ export function AddStudentModal({
 				total: Number.parseInt(total, 10) || 10,
 				price: Number.parseInt(price, 10) || 400000,
 				mode,
+				classId,
 			},
 		});
 		setName("");
