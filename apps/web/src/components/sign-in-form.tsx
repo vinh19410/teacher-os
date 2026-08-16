@@ -8,6 +8,7 @@ import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 
+import GoogleOAuthButton from "./google-oauth-button";
 import Loader from "./loader";
 
 export default function SignInForm({
@@ -59,6 +60,14 @@ export default function SignInForm({
 	return (
 		<div className="mx-auto mt-10 w-full max-w-md p-6">
 			<h1 className="mb-6 text-center font-bold text-3xl">Welcome Back</h1>
+
+			<GoogleOAuthButton />
+
+			<div className="my-6 flex items-center gap-3 text-muted-foreground text-xs">
+				<span className="h-px flex-1 bg-border" />
+				or continue with email
+				<span className="h-px flex-1 bg-border" />
+			</div>
 
 			<form
 				onSubmit={(e) => {

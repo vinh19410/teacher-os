@@ -48,6 +48,20 @@ pnpm run dev
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
 The API is running at [http://localhost:3000](http://localhost:3000).
 
+## Authentication
+
+Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).
+
+### Google OAuth setup
+
+1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth client ID** (type: Web application).
+2. Add the authorized redirect URI: `<BETTER_AUTH_URL>/api/auth/oauth2/callback/google`
+   - Local dev: `http://localhost:3000/api/auth/oauth2/callback/google`
+   - Production: `https://<server-worker-url>/api/auth/oauth2/callback/google`
+3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `apps/server/.env`, then restart `pnpm run dev` (or redeploy).
+
+The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app.
+
 ## UI Customization
 
 React web apps in this stack share shadcn/ui primitives through `packages/ui`.
