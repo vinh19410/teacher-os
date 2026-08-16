@@ -216,10 +216,11 @@ export function Sidebar({
 	return (
 		<aside
 			className={
-				"sidebar app:sticky app:top-0 flex app:h-svh flex-col overflow-y-auto border-line app:border-r app:border-solid bg-surface px-4 py-5" +
+				// Desktop: fill the 248px grid track (app:w-full); the base w-[280px] is the mobile drawer width.
+				"sidebar app:sticky app:top-0 flex app:h-svh app:w-full flex-col overflow-y-auto border-line app:border-r app:border-solid bg-surface px-4 py-5" +
 				(open
 					? "fixed top-0 left-0 z-100 w-[280px] translate-x-0 border-r border-solid shadow-[var(--elev-raised)] transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]"
-					: "app:static fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]")
+					: "fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]")
 			}
 		>
 			<div className="flex items-center gap-2 px-2 pb-5">
