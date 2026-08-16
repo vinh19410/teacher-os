@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
+import { CreateReportModal } from "@/components/modals/create-report-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ function StudentDetailRoute() {
 	const { studentById, data } = useData();
 	const student = studentById(studentId);
 	const [tab, setTab] = useState("profile");
+	const [reportOpen, setReportOpen] = useState(false);
 
 	if (!student) {
 		throw notFound();
@@ -108,7 +110,9 @@ function StudentDetailRoute() {
 					>
 						Nhắn Zalo
 					</Button>
-					<Button size="sm">Tạo báo cáo</Button>
+					<Button size="sm" onClick={() => setReportOpen(true)}>
+						Tạo báo cáo
+					</Button>
 				</div>
 			</Card>
 
@@ -261,6 +265,13 @@ function StudentDetailRoute() {
 					/>
 				</Card>
 			)}
+
+			<CreateReportModal
+				key={student.id}
+				open={reportOpen}
+				onClose={() => setReportOpen(false)}
+				defaultStudentId={student.id}
+			/>
 		</div>
 	);
 }

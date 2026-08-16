@@ -1,5 +1,9 @@
 import {
+	Children,
+	cloneElement,
 	type InputHTMLAttributes,
+	isValidElement,
+	type ReactElement,
 	type ReactNode,
 	type SelectHTMLAttributes,
 	type TextareaHTMLAttributes,
@@ -24,13 +28,23 @@ export function Field({
 	children: ReactNode;
 }) {
 	const id = useId();
-	const target = htmlFor ?? id;
+	// Callers pass a single control (Input/Select/Textarea); inject the label
+	// target id so htmlFor resolves without every call site passing one.
+	const child = Children.toArray(children)[0];
+	const childId = isValidElement(child)
+		? (child.props as { id?: string }).id
+		: undefined;
+	const target = htmlFor ?? childId ?? id;
+	const control =
+		isValidElement(child) && !childId
+			? cloneElement(child as ReactElement<{ id?: string }>, { id: target })
+			: children;
 	return (
 		<div className="flex flex-col gap-1">
 			<label htmlFor={target} className="font-medium text-muted-fg text-xs">
 				{label}
 			</label>
-			{children}
+			{control}
 			{help && <span className="text-[11px] text-meta">{help}</span>}
 			{error && <span className="text-[11px] text-danger">{error}</span>}
 		</div>

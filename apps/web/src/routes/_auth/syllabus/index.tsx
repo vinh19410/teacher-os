@@ -45,7 +45,18 @@ function SyllabusRoute() {
 						<Card
 							key={sy.id}
 							variant="white"
-							className="cursor-pointer transition-shadow duration-[150ms] hover:shadow-[var(--elev-raised)]"
+							role="button"
+							tabIndex={0}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									navigate({
+										to: "/syllabus/$syllabusId",
+										params: { syllabusId: sy.id },
+									});
+								}
+							}}
+							className="cursor-pointer transition-shadow duration-[150ms] hover:shadow-[var(--elev-raised)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 							onClick={() =>
 								navigate({
 									to: "/syllabus/$syllabusId",

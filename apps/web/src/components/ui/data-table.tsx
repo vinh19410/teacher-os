@@ -27,9 +27,22 @@ export function DataTable({ headers, rows }: DataTableProps) {
 						<tr
 							key={`r-${ri}`}
 							onClick={row.onClick}
+							tabIndex={row.onClick ? 0 : undefined}
+							role={row.onClick ? "button" : undefined}
+							onKeyDown={
+								row.onClick
+									? (e) => {
+											if (e.key === "Enter" || e.key === " ") {
+												e.preventDefault();
+												row.onClick?.();
+											}
+										}
+									: undefined
+							}
 							className={cn(
 								"border-line-soft border-b transition-colors duration-[150ms]",
-								row.onClick && "cursor-pointer hover:bg-surface",
+								row.onClick &&
+									"cursor-pointer hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							)}
 						>
 							{row.cells.map((cell, ci) => (

@@ -1,5 +1,11 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useNavigate,
+} from "@tanstack/react-router";
 import { useState } from "react";
+import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { AssignSyllabusModal } from "@/components/modals/assign-syllabus-modal";
 import { SyllabusProgress } from "@/components/syllabus/syllabus-progress";
 import { Avatar } from "@/components/ui/avatar";
@@ -33,10 +39,12 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 
 function ClassDetailRoute() {
 	const { classId } = Route.useParams();
+	const navigate = useNavigate();
 	const { classById, syllabusById, studentById, data, dispatch } = useData();
 	const cls = classById(classId);
 	const [tab, setTab] = useState("roster");
 	const [assignOpen, setAssignOpen] = useState(false);
+	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
 
 	if (!cls) {
@@ -79,7 +87,9 @@ function ClassDetailRoute() {
 					>
 						Đổi syllabus
 					</Button>
-					<Button size="sm">+ Thêm học viên</Button>
+					<Button size="sm" onClick={() => setAddStudentOpen(true)}>
+						+ Thêm học viên
+					</Button>
 				</div>
 			</Card>
 
@@ -112,7 +122,11 @@ function ClassDetailRoute() {
 					<DataTable
 						headers={["Học viên", "Mục tiêu", "Còn lại", "Trạng thái"]}
 						rows={students.map((s) => ({
-							onClick: () => void window.location.assign(`/students/${s.id}`),
+							onClick: () =>
+								navigate({
+									to: "/students/$studentId",
+									params: { studentId: s.id },
+								}),
 							cells: [
 								<div key="s" className="flex items-center gap-2">
 									<Avatar text={s.avatar} size="sm" />
@@ -218,9 +232,14 @@ function ClassDetailRoute() {
 			)}
 
 			<AssignSyllabusModal
+				key={cls.id}
 				open={assignOpen}
 				onClose={() => setAssignOpen(false)}
 				defaultSyllabusId={cls.syllabusId}
+			/>
+			<AddStudentModal
+				open={addStudentOpen}
+				onClose={() => setAddStudentOpen(false)}
 			/>
 		</div>
 	);

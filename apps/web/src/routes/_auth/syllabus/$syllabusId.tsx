@@ -1,4 +1,9 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useNavigate,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
@@ -54,6 +59,7 @@ function statusBadge(status: SyllabusLesson["status"]) {
 
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
+	const navigate = useNavigate();
 	const { syllabusById, data } = useData();
 	const sy = syllabusById(syllabusId);
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -239,7 +245,10 @@ function SyllabusDetailRoute() {
 										: 0;
 								return {
 									onClick: () =>
-										void window.location.assign(`/classes/${c.id}`),
+										navigate({
+											to: "/classes/$classId",
+											params: { classId: c.id },
+										}),
 									cells: [
 										<span key="n" className="font-medium text-sm">
 											{c.name}
@@ -266,6 +275,7 @@ function SyllabusDetailRoute() {
 			)}
 
 			<AssignSyllabusModal
+				key={sy.id}
 				open={assignOpen}
 				onClose={() => setAssignOpen(false)}
 				defaultSyllabusId={sy.id}

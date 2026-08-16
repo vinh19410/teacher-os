@@ -15,6 +15,12 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 	const overlayRef = useRef<HTMLDivElement>(null);
 	const modalRef = useRef<HTMLDivElement>(null);
 	const previouslyFocused = useRef<HTMLElement | null>(null);
+	// Keep the latest close handler without re-running the focus effect on
+	// every parent re-render (callers pass inline closures).
+	const onCloseRef = useRef(onClose);
+	useEffect(() => {
+		onCloseRef.current = onClose;
+	});
 
 	const trapFocus = useCallback((e: KeyboardEvent) => {
 		if (e.key !== "Tab" || !modalRef.current) return;
@@ -37,7 +43,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 		if (!open) return;
 		previouslyFocused.current = document.activeElement as HTMLElement;
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
+			if (e.key === "Escape") onCloseRef.current();
 			trapFocus(e);
 		};
 		document.addEventListener("keydown", onKey);
@@ -50,7 +56,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 			document.removeEventListener("keydown", onKey);
 			previouslyFocused.current?.focus();
 		};
-	}, [open, onClose, trapFocus]);
+	}, [open, trapFocus]);
 
 	if (!open) return null;
 

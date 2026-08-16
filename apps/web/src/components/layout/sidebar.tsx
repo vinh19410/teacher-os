@@ -1,5 +1,11 @@
-import { Link, redirect, useRouteContext } from "@tanstack/react-router";
+import {
+	Link,
+	redirect,
+	useNavigate,
+	useRouteContext,
+} from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const navSections: {
 	label: string | null;
@@ -186,6 +192,7 @@ export function Sidebar({
 	onNavigate: () => void;
 }) {
 	const { session } = useRouteContext({ from: "/_auth" });
+	const navigate = useNavigate();
 
 	// Hard invariant: inside _auth a session must exist; a missing session means
 	// the guard chain is broken — fail loudly back to login instead of faking UI.
@@ -259,6 +266,34 @@ export function Sidebar({
 						</div>
 						<div className="truncate text-muted-fg text-xs">Google</div>
 					</div>
+					<button
+						type="button"
+						aria-label="Đăng xuất"
+						title="Đăng xuất"
+						onClick={() => {
+							authClient.signOut({
+								fetchOptions: {
+									onSuccess: () => {
+										navigate({ to: "/login" });
+									},
+								},
+							});
+						}}
+						className="ml-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					>
+						<svg
+							aria-hidden="true"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.6"
+							className="h-[17px] w-[17px]"
+						>
+							<path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
+							<path d="M16 17l5-5-5-5" />
+							<path d="M21 12H9" />
+						</svg>
+					</button>
 				</div>
 			</div>
 		</aside>
