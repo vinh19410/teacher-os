@@ -26,7 +26,8 @@ export const server = Cloudflare.Worker("server", {
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
 	},
 	dev: {
-		port: 3000,
+		port: 8000,
+		strictPort: true,
 	},
 });
 
@@ -50,7 +51,8 @@ export default Alchemy.Stack(
 				VITE_SERVER_URL: serverWorker.url.as<string>(),
 			},
 			dev: {
-				port: 3001,
+				port: 8001,
+				strictPort: true,
 			},
 		});
 

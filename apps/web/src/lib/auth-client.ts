@@ -34,7 +34,7 @@ function getServerUrl(url: string) {
 		return `${origin}${normalized}`;
 	}
 
-	return `http://localhost:3000${normalized}`;
+	return `http://localhost:8000${normalized}`;
 }
 export const authClient = createAuthClient({
 	// better-auth derives its route-matching base from this URL's path, so the

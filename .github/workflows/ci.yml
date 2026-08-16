@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      VITE_SERVER_URL: http://localhost:3000
+      VITE_SERVER_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
