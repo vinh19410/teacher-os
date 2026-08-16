@@ -26,6 +26,7 @@ export type Action =
 				total: number;
 				price: number;
 				mode: "Online" | "Offline";
+				classId?: string;
 			};
 	  }
 	| {
@@ -163,7 +164,8 @@ export function reducer(state: MockData, action: Action): MockData {
 			};
 		}
 		case "add-student": {
-			const { name, phone, parentName, total, price, mode } = action.payload;
+			const { name, phone, parentName, total, price, mode, classId } =
+				action.payload;
 			const student: Student = {
 				id: uid("s"),
 				name,
@@ -187,7 +189,19 @@ export function reducer(state: MockData, action: Action): MockData {
 				avatar: name.substring(0, 2).toUpperCase(),
 				atRisk: false,
 			};
-			return { ...state, students: [...state.students, student] };
+			const nextStudents = [...state.students, student];
+			if (!classId) {
+				return { ...state, students: nextStudents };
+			}
+			return {
+				...state,
+				students: nextStudents,
+				classes: state.classes.map((c) => {
+					if (c.id !== classId) return c;
+					if (c.studentIds.includes(student.id)) return c;
+					return { ...c, studentIds: [...c.studentIds, student.id] };
+				}),
+			};
 		}
 		case "add-class": {
 			const cls: ClassGroup = {
