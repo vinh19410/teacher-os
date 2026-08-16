@@ -235,6 +235,7 @@ function ClassDetailRoute() {
 				key={cls.id}
 				open={assignOpen}
 				onClose={() => setAssignOpen(false)}
+				defaultClassId={cls.id}
 				defaultSyllabusId={cls.syllabusId}
 			/>
 			<AddStudentModal

@@ -28,7 +28,6 @@ export function DataTable({ headers, rows }: DataTableProps) {
 							key={`r-${ri}`}
 							onClick={row.onClick}
 							tabIndex={row.onClick ? 0 : undefined}
-							role={row.onClick ? "button" : undefined}
 							onKeyDown={
 								row.onClick
 									? (e) => {

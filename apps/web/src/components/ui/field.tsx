@@ -28,15 +28,14 @@ export function Field({
 	children: ReactNode;
 }) {
 	const id = useId();
-	// Callers pass a single control (Input/Select/Textarea); inject the label
-	// target id so htmlFor resolves without every call site passing one.
+	// Single-control usage gets the label target id injected; anything else
+	// (multi-child layouts) renders untouched rather than dropping children.
 	const child = Children.toArray(children)[0];
-	const childId = isValidElement(child)
-		? (child.props as { id?: string }).id
-		: undefined;
+	const single = Children.count(children) === 1 && isValidElement(child);
+	const childId = single ? (child.props as { id?: string }).id : undefined;
 	const target = htmlFor ?? childId ?? id;
 	const control =
-		isValidElement(child) && !childId
+		single && !childId
 			? cloneElement(child as ReactElement<{ id?: string }>, { id: target })
 			: children;
 	return (
