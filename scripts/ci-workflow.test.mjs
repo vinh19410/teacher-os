@@ -34,4 +34,39 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 		"must not require GitHub secrets",
 	);
 	assert.match(yaml, /VITE_SERVER_URL/, "must set dummy VITE_SERVER_URL");
+	assert.match(
+		yaml,
+		/^\s+- run: pnpm test\s*$/m,
+		"must run pnpm test as its own step",
+	);
+
+	const rootPkg = JSON.parse(
+		readFileSync(join(repoRoot, "package.json"), "utf8"),
+	);
+	assert.match(
+		String(rootPkg.scripts?.test ?? ""),
+		/turbo run test/,
+		"root test must invoke turbo run test",
+	);
+	assert.match(
+		String(rootPkg.scripts?.test ?? ""),
+		/test:ci-workflow/,
+		"root test must invoke the CI contract",
+	);
+
+	const turbo = JSON.parse(readFileSync(join(repoRoot, "turbo.json"), "utf8"));
+	assert.equal(
+		typeof turbo.tasks?.test,
+		"object",
+		"turbo.json must declare a test task",
+	);
+
+	const webPkg = JSON.parse(
+		readFileSync(join(repoRoot, "apps/web/package.json"), "utf8"),
+	);
+	assert.equal(
+		webPkg.scripts?.test,
+		"vitest run",
+		"web test script must be vitest run",
+	);
 });

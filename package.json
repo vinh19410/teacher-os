@@ -16,6 +16,7 @@
 		"deploy": "turbo run deploy -F @teacher-os/infra --",
 		"destroy": "turbo run destroy -F @teacher-os/infra --",
 		"check": "biome check --write .",
+		"test": "turbo run test && pnpm test:ci-workflow",
 		"test:ci-workflow": "node --test scripts/ci-workflow.test.mjs"
 	},
 	"dependencies": {
