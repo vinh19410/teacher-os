@@ -21,26 +21,33 @@ export function AddClassModal({
 	const [total, setTotal] = useState("12");
 	const [startDate, setStartDate] = useState("19/08");
 	const [error, setError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!name.trim()) {
 			setError("Vui lòng nhập tên lớp.");
 			return;
 		}
-		dispatch({
-			type: "add-class",
-			payload: {
-				name: name.trim(),
-				level,
-				skill,
-				mode,
-				syllabusId,
-				schedule: schedule.trim(),
-				sessionsTotal: Number.parseInt(total, 10) || 12,
-				startDate: startDate.trim(),
-			},
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "add-class",
+				payload: {
+					name: name.trim(),
+					level,
+					skill,
+					mode,
+					syllabusId,
+					schedule: schedule.trim(),
+					sessionsTotal: Number.parseInt(total, 10) || 12,
+					startDate: startDate.trim(),
+				},
+			});
+		} finally {
+			setSaving(false);
+		}
 		setName("");
 		setSchedule("");
 		setError(undefined);
@@ -124,7 +131,7 @@ export function AddClassModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Tạo lớp
 					</Button>
 				</div>

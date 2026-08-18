@@ -1,7 +1,7 @@
 import { env } from "@teacher-os/env/web";
 import { createAuthClient } from "better-auth/react";
 
-function getServerUrl(url: string) {
+export function getServerUrl(url: string) {
 	const processEnv = (
 		globalThis as {
 			process?: { env?: Record<string, string | undefined> };

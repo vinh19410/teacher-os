@@ -24,9 +24,11 @@ export function AddStudentModal({
 	const [mode, setMode] = useState<"Online" | "Offline">("Online");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [phoneError, setPhoneError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		const trimmedName = name.trim();
 		const hasNameError = !trimmedName;
 		const hasPhoneError = phone !== "" && !PHONE_RE.test(phone);
@@ -35,18 +37,23 @@ export function AddStudentModal({
 			hasPhoneError ? "SĐT chỉ gồm chữ số, khoảng trắng và dấu +." : undefined,
 		);
 		if (hasNameError || hasPhoneError) return;
-		dispatch({
-			type: "add-student",
-			payload: {
-				name: trimmedName,
-				phone,
-				parentName,
-				total: Number.parseInt(total, 10) || 10,
-				price: Number.parseInt(price, 10) || 400000,
-				mode,
-				classId,
-			},
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "add-student",
+				payload: {
+					name: trimmedName,
+					phone,
+					parentName,
+					total: Number.parseInt(total, 10) || 10,
+					price: Number.parseInt(price, 10) || 400000,
+					mode,
+					classId,
+				},
+			});
+		} finally {
+			setSaving(false);
+		}
 		setName("");
 		setPhone("");
 		setParentName("");
@@ -116,7 +123,7 @@ export function AddStudentModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Lưu
 					</Button>
 				</div>

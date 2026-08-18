@@ -22,11 +22,18 @@ export function AssignSyllabusModal({
 	const [syllabusId, setSyllabusId] = useState(
 		defaultSyllabusId ?? data.syllabi[0]?.id ?? "",
 	);
+	const [saving, setSaving] = useState(false);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (classId && syllabusId) {
-			dispatch({ type: "assign-syllabus", classId, syllabusId });
+			setSaving(true);
+			try {
+				await dispatch({ type: "assign-syllabus", classId, syllabusId });
+			} finally {
+				setSaving(false);
+			}
 		}
 		onClose();
 	}
@@ -60,7 +67,7 @@ export function AssignSyllabusModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Gán syllabus
 					</Button>
 				</div>

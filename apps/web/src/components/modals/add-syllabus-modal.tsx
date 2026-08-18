@@ -13,37 +13,45 @@ export function AddSyllabusModal({
 	onClose: () => void;
 	onCreated?: (id: string) => void;
 }) {
-	const { data, dispatch } = useData();
+	const { dispatch } = useData();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 6.5");
 	const [skill, setSkill] = useState("Writing");
 	const [description, setDescription] = useState("");
 	const [total, setTotal] = useState("10");
 	const [error, setError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!name.trim()) {
 			setError("Vui lòng nhập tên syllabus.");
 			return;
 		}
-		const id = `sy-${crypto.randomUUID().slice(0, 8)}`;
-		dispatch({
-			type: "add-syllabus",
-			payload: {
-				id,
-				name: name.trim(),
-				level,
-				skill,
-				description: description.trim(),
-				totalLessons: Number.parseInt(total, 10) || 10,
-			},
-		});
+		setSaving(true);
+		let serverId: string | undefined;
+		try {
+			serverId = await dispatch({
+				type: "add-syllabus",
+				payload: {
+					id: "",
+					name: name.trim(),
+					level,
+					skill,
+					description: description.trim(),
+					totalLessons: Number.parseInt(total, 10) || 10,
+				},
+			});
+		} finally {
+			setSaving(false);
+		}
 		setName("");
 		setDescription("");
 		setError(undefined);
 		onClose();
-		if (onCreated) onCreated(id);
+		// Navigate only with the server id — a client-generated id would 404.
+		if (serverId && onCreated) onCreated(serverId);
 	}
 
 	return (
@@ -93,7 +101,7 @@ export function AddSyllabusModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Tạo
 					</Button>
 				</div>

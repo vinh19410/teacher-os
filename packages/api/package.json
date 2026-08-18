@@ -1,0 +1,19 @@
+{
+	"name": "@teacher-os/api",
+	"type": "module",
+	"exports": {
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"scripts": {
+		"check-types": "tsc -b"
+	},
+	"dependencies": {
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@teacher-os/config": "workspace:*",
+		"typescript": "catalog:"
+	}
+}

@@ -17,19 +17,26 @@ export function AddModuleModal({
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [error, setError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 	const sy = syllabusById(syllabusId);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!title.trim()) {
 			setError("Vui lòng nhập tên module.");
 			return;
 		}
-		dispatch({
-			type: "add-module",
-			syllabusId,
-			payload: { title: title.trim(), description: description.trim() },
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "add-module",
+				syllabusId,
+				payload: { title: title.trim(), description: description.trim() },
+			});
+		} finally {
+			setSaving(false);
+		}
 		setTitle("");
 		setDescription("");
 		setError(undefined);
@@ -62,7 +69,7 @@ export function AddModuleModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Thêm module
 					</Button>
 				</div>

@@ -1,0 +1,592 @@
+import type {
+	CreatedResponse,
+	KernelSnapshot,
+} from "@teacher-os/api/contracts";
+import {
+	assignSyllabusSchema,
+	classCreateSchema,
+	classNotesSchema,
+	lessonUpsertSchema,
+	moduleUpsertSchema,
+	studentCreateSchema,
+	syllabusCreateSchema,
+} from "@teacher-os/api/contracts";
+import { classTable } from "@teacher-os/db/schema/class";
+import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { sessionPackage } from "@teacher-os/db/schema/session-package";
+import { student } from "@teacher-os/db/schema/student";
+import {
+	syllabus,
+	syllabusLesson,
+	syllabusModule,
+} from "@teacher-os/db/schema/syllabus";
+import { and, asc, eq, max } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
+import { type Context, Hono } from "hono";
+import type { z } from "zod";
+import type { Db, KernelCtx } from "../app";
+
+type Env = { Variables: { kernelCtx: KernelCtx } };
+type KernelContext = Context<Env>;
+
+export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
+	const kernel = new Hono<Env>();
+
+	// Cookies are SameSite=None, so CSRF defense is an explicit Origin check:
+	// cross-site POSTs (or non-browser calls without the right Origin) fail closed.
+	// POST bodies are JSON-only; form posts die on content-type before parsing.
+	kernel.use("*", async (c, next) => {
+		if (c.req.method === "POST") {
+			if (c.req.header("Origin") !== deps.corsOrigin) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+		}
+		return next();
+	});
+
+	function unauthorized(c: KernelContext) {
+		return c.json({ error: "unauthorized" }, 401);
+	}
+
+	async function readBody<S extends z.ZodType>(
+		c: KernelContext,
+		schema: S,
+	): Promise<
+		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
+	> {
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return { ok: false, response: c.json({ error: "invalid json" }, 400) };
+		}
+		const parsed = schema.safeParse(raw);
+		if (!parsed.success) {
+			return { ok: false, response: c.json({ error: "invalid body" }, 400) };
+		}
+		return { ok: true, data: parsed.data };
+	}
+
+	async function findClass(db: Db, classId: string, orgId: string) {
+		const [row] = await db
+			.select({ id: classTable.id })
+			.from(classTable)
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
+		return row;
+	}
+
+	async function findSyllabus(db: Db, syllabusId: string, orgId: string) {
+		const [row] = await db
+			.select({ id: syllabus.id })
+			.from(syllabus)
+			.where(and(eq(syllabus.id, syllabusId), eq(syllabus.orgId, orgId)));
+		return row;
+	}
+
+	/** "" → null (unassigned); a foreign/missing syllabus → undefined (404). */
+	async function resolveSyllabusId(
+		db: Db,
+		syllabusId: string,
+		orgId: string,
+	): Promise<string | null | undefined> {
+		if (syllabusId === "") return null;
+		return (await findSyllabus(db, syllabusId, orgId))?.id;
+	}
+
+	/** Module must belong to the given syllabus AND the org — client ids are never trusted. */
+	async function findModule(
+		db: Db,
+		moduleId: string,
+		syllabusId: string,
+		orgId: string,
+	) {
+		const [row] = await db
+			.select({ id: syllabusModule.id })
+			.from(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.id, moduleId),
+					eq(syllabusModule.syllabusId, syllabusId),
+					eq(syllabusModule.orgId, orgId),
+				),
+			);
+		return row;
+	}
+
+	async function loadSnapshot(db: Db, orgId: string): Promise<KernelSnapshot> {
+		const [
+			studentRows,
+			classRows,
+			enrollmentRows,
+			packageRows,
+			syllabusRows,
+			moduleRows,
+			lessonRows,
+		] = await Promise.all([
+			db
+				.select()
+				.from(student)
+				.where(eq(student.orgId, orgId))
+				.orderBy(asc(student.createdAt)),
+			db
+				.select()
+				.from(classTable)
+				.where(eq(classTable.orgId, orgId))
+				.orderBy(asc(classTable.createdAt)),
+			db
+				.select()
+				.from(enrollment)
+				.where(eq(enrollment.orgId, orgId))
+				.orderBy(asc(enrollment.createdAt)),
+			db
+				.select({
+					id: sessionPackage.id,
+					enrollmentId: sessionPackage.enrollmentId,
+					classId: enrollment.classId,
+					studentId: enrollment.studentId,
+					total: sessionPackage.total,
+					price: sessionPackage.price,
+					mode: sessionPackage.mode,
+					start: sessionPackage.start,
+					expiry: sessionPackage.expiry,
+					status: sessionPackage.status,
+					createdAt: sessionPackage.createdAt,
+				})
+				.from(sessionPackage)
+				.innerJoin(enrollment, eq(sessionPackage.enrollmentId, enrollment.id))
+				.where(eq(sessionPackage.orgId, orgId))
+				.orderBy(asc(sessionPackage.createdAt)),
+			db
+				.select()
+				.from(syllabus)
+				.where(eq(syllabus.orgId, orgId))
+				.orderBy(asc(syllabus.createdAt)),
+			db
+				.select()
+				.from(syllabusModule)
+				.where(eq(syllabusModule.orgId, orgId))
+				.orderBy(asc(syllabusModule.position), asc(syllabusModule.createdAt)),
+			db
+				.select()
+				.from(syllabusLesson)
+				.where(eq(syllabusLesson.orgId, orgId))
+				.orderBy(asc(syllabusLesson.position), asc(syllabusLesson.createdAt)),
+		]);
+
+		const lessonsByModule = new Map<
+			string,
+			KernelSnapshot["syllabi"][number]["modules"][number]["lessons"]
+		>();
+		for (const lesson of lessonRows) {
+			const list = lessonsByModule.get(lesson.moduleId) ?? [];
+			list.push({
+				id: lesson.id,
+				title: lesson.title,
+				objectives: lesson.objectives,
+				materials: lesson.materials,
+				status: lesson.status,
+			});
+			lessonsByModule.set(lesson.moduleId, list);
+		}
+		const modulesBySyllabus = new Map<
+			string,
+			KernelSnapshot["syllabi"][number]["modules"]
+		>();
+		for (const mod of moduleRows) {
+			const list = modulesBySyllabus.get(mod.syllabusId) ?? [];
+			list.push({
+				id: mod.id,
+				title: mod.title,
+				description: mod.description,
+				lessons: lessonsByModule.get(mod.id) ?? [],
+			});
+			modulesBySyllabus.set(mod.syllabusId, list);
+		}
+
+		return {
+			students: studentRows.map((row) => ({
+				id: row.id,
+				name: row.name,
+				phone: row.phone,
+				zalo: row.zalo,
+				parentName: row.parentName,
+				parentPhone: row.parentPhone,
+			})),
+			classes: classRows.map((row) => ({
+				id: row.id,
+				name: row.name,
+				level: row.level,
+				skill: row.skill,
+				mode: row.mode,
+				syllabusId: row.syllabusId,
+				schedule: row.schedule,
+				sessionsTotal: row.sessionsTotal,
+				sessionsDone: row.sessionsDone,
+				status: row.status,
+				startDate: row.startDate,
+				notes: row.notes,
+			})),
+			enrollments: enrollmentRows.map((row) => ({
+				id: row.id,
+				classId: row.classId,
+				studentId: row.studentId,
+				createdAt: row.createdAt.toISOString(),
+			})),
+			packages: packageRows.map((row) => ({
+				id: row.id,
+				enrollmentId: row.enrollmentId,
+				classId: row.classId,
+				studentId: row.studentId,
+				total: row.total,
+				price: row.price,
+				mode: row.mode,
+				start: row.start,
+				expiry: row.expiry,
+				status: row.status,
+				createdAt: row.createdAt.toISOString(),
+			})),
+			syllabi: syllabusRows.map((row) => ({
+				id: row.id,
+				name: row.name,
+				level: row.level,
+				skill: row.skill,
+				description: row.description,
+				totalLessons: row.totalLessons,
+				modules: modulesBySyllabus.get(row.id) ?? [],
+			})),
+		};
+	}
+
+	kernel.get("/kernel", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		return c.json(await loadSnapshot(deps.getDb(), ctx.orgId));
+	});
+
+	kernel.get("/students", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
+		return c.json(snapshot.students);
+	});
+
+	kernel.post("/students", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, studentCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+
+		let cls: { id: string } | undefined;
+		if (input.classId) {
+			cls = await findClass(db, input.classId, ctx.orgId);
+			if (!cls) {
+				return c.json({ error: "class not found" }, 404);
+			}
+		}
+
+		const studentId = crypto.randomUUID();
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(student).values({
+				id: studentId,
+				orgId: ctx.orgId,
+				name: input.name,
+				phone: input.phone,
+				zalo: input.phone.replace(/\s/g, ""),
+				parentName: input.parentName,
+				parentPhone: "",
+			}),
+		];
+		if (cls) {
+			const enrollmentId = crypto.randomUUID();
+			statements.push(
+				db.insert(enrollment).values({
+					id: enrollmentId,
+					orgId: ctx.orgId,
+					classId: cls.id,
+					studentId,
+				}),
+				db.insert(sessionPackage).values({
+					id: crypto.randomUUID(),
+					orgId: ctx.orgId,
+					enrollmentId,
+					total: input.total,
+					price: input.price,
+					mode: input.mode,
+					start: formatDayMonth(new Date()),
+					expiry: "",
+					status: "active",
+				}),
+			);
+		}
+		await db.batch(statements);
+		return c.json({ id: studentId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.get("/classes", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
+		return c.json(snapshot.classes);
+	});
+
+	kernel.post("/classes", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+
+		const syllabusId = await resolveSyllabusId(db, input.syllabusId, ctx.orgId);
+		if (syllabusId === undefined) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+
+		const classId = crypto.randomUUID();
+		await db.insert(classTable).values({
+			id: classId,
+			orgId: ctx.orgId,
+			name: input.name,
+			level: input.level,
+			skill: input.skill,
+			mode: input.mode,
+			syllabusId,
+			schedule: input.schedule,
+			sessionsTotal: input.sessionsTotal,
+			sessionsDone: 0,
+			status: "active",
+			startDate: input.startDate,
+			notes: "",
+		});
+		return c.json({ id: classId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/classes/:id/assign-syllabus", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, assignSyllabusSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const syllabusId = await resolveSyllabusId(db, input.syllabusId, ctx.orgId);
+		if (syllabusId === undefined) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+
+		await db
+			.update(classTable)
+			.set({ syllabusId })
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/classes/:id/notes", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classNotesSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		await db
+			.update(classTable)
+			.set({ notes: input.notes })
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		return c.json({ ok: true });
+	});
+
+	kernel.get("/syllabi", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
+		return c.json(snapshot.syllabi);
+	});
+
+	kernel.post("/syllabi", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, syllabusCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+
+		const syllabusId = crypto.randomUUID();
+		await db.insert(syllabus).values({
+			id: syllabusId,
+			orgId: ctx.orgId,
+			name: input.name,
+			level: input.level,
+			skill: input.skill,
+			description: input.description,
+			totalLessons: input.totalLessons,
+		});
+		return c.json({ id: syllabusId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/syllabi/:id/modules", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, moduleUpsertSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const syllabusId = c.req.param("id");
+
+		const sy = await findSyllabus(db, syllabusId, ctx.orgId);
+		if (!sy) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+
+		const [last] = await db
+			.select({ max: max(syllabusModule.position) })
+			.from(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.syllabusId, syllabusId),
+					eq(syllabusModule.orgId, ctx.orgId),
+				),
+			);
+
+		const moduleId = crypto.randomUUID();
+		await db.insert(syllabusModule).values({
+			id: moduleId,
+			orgId: ctx.orgId,
+			syllabusId,
+			title: input.title,
+			description: input.description,
+			position: (last?.max ?? -1) + 1,
+		});
+		return c.json({ id: moduleId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/syllabi/:id/modules/:mid", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, moduleUpsertSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const { id, mid } = c.req.param();
+
+		const mod = await findModule(db, mid, id, ctx.orgId);
+		if (!mod) {
+			return c.json({ error: "module not found" }, 404);
+		}
+
+		await db
+			.update(syllabusModule)
+			.set({ title: input.title, description: input.description })
+			.where(
+				and(eq(syllabusModule.id, mid), eq(syllabusModule.orgId, ctx.orgId)),
+			);
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/syllabi/:id/modules/:mid/lessons", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, lessonUpsertSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const { id, mid } = c.req.param();
+
+		const mod = await findModule(db, mid, id, ctx.orgId);
+		if (!mod) {
+			return c.json({ error: "module not found" }, 404);
+		}
+
+		const [last] = await db
+			.select({ max: max(syllabusLesson.position) })
+			.from(syllabusLesson)
+			.where(
+				and(
+					eq(syllabusLesson.moduleId, mid),
+					eq(syllabusLesson.orgId, ctx.orgId),
+				),
+			);
+
+		const lessonId = crypto.randomUUID();
+		await db.insert(syllabusLesson).values({
+			id: lessonId,
+			orgId: ctx.orgId,
+			moduleId: mid,
+			title: input.title,
+			objectives: input.objectives,
+			materials: input.materials,
+			status: input.status,
+			position: (last?.max ?? -1) + 1,
+		});
+		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/syllabi/:id/modules/:mid/lessons/:lid", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, lessonUpsertSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const { id, mid, lid } = c.req.param();
+
+		const [lesson] = await db
+			.select({ id: syllabusLesson.id })
+			.from(syllabusLesson)
+			.innerJoin(syllabusModule, eq(syllabusLesson.moduleId, syllabusModule.id))
+			.where(
+				and(
+					eq(syllabusLesson.id, lid),
+					eq(syllabusLesson.moduleId, mid),
+					eq(syllabusModule.syllabusId, id),
+					eq(syllabusLesson.orgId, ctx.orgId),
+				),
+			);
+		if (!lesson) {
+			return c.json({ error: "lesson not found" }, 404);
+		}
+
+		await db
+			.update(syllabusLesson)
+			.set({
+				title: input.title,
+				objectives: input.objectives,
+				materials: input.materials,
+				status: input.status,
+			})
+			.where(
+				and(eq(syllabusLesson.id, lid), eq(syllabusLesson.orgId, ctx.orgId)),
+			);
+		return c.json({ ok: true });
+	});
+
+	return kernel;
+}
+
+// dd/MM in Vietnam time — Workers run in UTC, so local getters drift a day
+// before 07:00 Asia/Ho_Chi_Minh.
+function formatDayMonth(date: Date): string {
+	return new Intl.DateTimeFormat("en-GB", {
+		timeZone: "Asia/Ho_Chi_Minh",
+		day: "2-digit",
+		month: "2-digit",
+	}).format(date);
+}

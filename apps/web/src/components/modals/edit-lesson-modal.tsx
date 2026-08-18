@@ -29,6 +29,7 @@ export function EditLessonModal({
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const [error, setError] = useState<string | undefined>();
 	const [loadedFor, setLoadedFor] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
 
 	if (lessonId && lessonId !== loadedFor && lesson) {
 		setTitle(lesson.title);
@@ -38,25 +39,31 @@ export function EditLessonModal({
 		setLoadedFor(lessonId);
 	}
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!moduleId || !lessonId) return;
 		if (!title.trim()) {
 			setError("Vui lòng nhập tên buổi học.");
 			return;
 		}
-		dispatch({
-			type: "edit-lesson",
-			syllabusId,
-			moduleId,
-			lessonId,
-			payload: {
-				title: title.trim(),
-				objectives: objectives.trim(),
-				materials: materials.trim(),
-				status,
-			},
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "edit-lesson",
+				syllabusId,
+				moduleId,
+				lessonId,
+				payload: {
+					title: title.trim(),
+					objectives: objectives.trim(),
+					materials: materials.trim(),
+					status,
+				},
+			});
+		} finally {
+			setSaving(false);
+		}
 		setError(undefined);
 		onClose();
 	}
@@ -94,7 +101,7 @@ export function EditLessonModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Lưu thay đổi
 					</Button>
 				</div>
