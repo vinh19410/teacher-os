@@ -27,7 +27,8 @@
 		"react-dom": "catalog:",
 		"sonner": "catalog:",
 		"vite-plugin-pwa": "^1.3.0",
-		"zod": "catalog:"
+		"zod": "catalog:",
+		"@teacher-os/api": "workspace:*"
 	},
 	"devDependencies": {
 		"@tanstack/react-router-devtools": "^1.167.0",

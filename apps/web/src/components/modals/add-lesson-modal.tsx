@@ -22,25 +22,32 @@ export function AddLessonModal({
 	const [materials, setMaterials] = useState("");
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const [error, setError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!moduleId) return;
 		if (!title.trim()) {
 			setError("Vui lòng nhập tên buổi học.");
 			return;
 		}
-		dispatch({
-			type: "add-lesson",
-			syllabusId,
-			moduleId,
-			payload: {
-				title: title.trim(),
-				objectives: objectives.trim(),
-				materials: materials.trim(),
-				status,
-			},
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "add-lesson",
+				syllabusId,
+				moduleId,
+				payload: {
+					title: title.trim(),
+					objectives: objectives.trim(),
+					materials: materials.trim(),
+					status,
+				},
+			});
+		} finally {
+			setSaving(false);
+		}
 		setTitle("");
 		setObjectives("");
 		setMaterials("");
@@ -88,7 +95,7 @@ export function AddLessonModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Thêm buổi
 					</Button>
 				</div>

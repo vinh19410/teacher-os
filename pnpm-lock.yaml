@@ -84,6 +84,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@teacher-os/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@teacher-os/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -99,6 +102,9 @@ importers:
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       hono:
         specifier: ^4.12.32
         version: 4.13.2
@@ -109,6 +115,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260815.1
+      '@libsql/client':
+        specifier: 0.17.4
+        version: 0.17.4
       '@teacher-os/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -121,6 +130,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@22.20.1)(vite@8.2.1(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
 
   apps/web:
     dependencies:
@@ -133,6 +145,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.18
         version: 1.170.29(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@teacher-os/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@teacher-os/env':
         specifier: workspace:*
         version: link:../../packages/env
@@ -206,6 +221,19 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@22.20.1)(vite@8.2.1(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
+
+  packages/api:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@teacher-os/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/auth:
     dependencies:

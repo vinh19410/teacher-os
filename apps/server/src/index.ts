@@ -1,26 +1,16 @@
 import { createAuth } from "@teacher-os/auth";
+import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import { buildApp, type Db } from "./app";
+import { getSessionUser } from "./session";
 
-const app = new Hono();
+// Lazy so importing this module never touches bindings at eval time.
+// Cast: drizzle's schema generic is invariant; Db keeps the route-facing surface.
+let db: Db | undefined;
 
-app.use(logger());
-app.use(
-	"/*",
-	cors({
-		origin: env.CORS_ORIGIN,
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization"],
-		credentials: true,
-	}),
-);
-
-app.on(["POST", "GET"], "/api/auth/*", (c) => createAuth().handler(c.req.raw));
-
-app.get("/", (c) => {
-	return c.text("OK");
+export default buildApp({
+	getDb: () => (db ??= createDb() as unknown as Db),
+	corsOrigin: env.CORS_ORIGIN,
+	getSessionUser,
+	authHandler: (req) => createAuth().handler(req),
 });
-
-export default app;

@@ -21,6 +21,7 @@ export function EditModuleModal({
 	const [description, setDescription] = useState("");
 	const [error, setError] = useState<string | undefined>();
 	const [loadedFor, setLoadedFor] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
 
 	if (moduleId && moduleId !== loadedFor && mod) {
 		setTitle(mod.title);
@@ -28,19 +29,25 @@ export function EditModuleModal({
 		setLoadedFor(moduleId);
 	}
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		if (!moduleId) return;
 		if (!title.trim()) {
 			setError("Vui lòng nhập tên module.");
 			return;
 		}
-		dispatch({
-			type: "edit-module",
-			syllabusId,
-			moduleId,
-			payload: { title: title.trim(), description: description.trim() },
-		});
+		setSaving(true);
+		try {
+			await dispatch({
+				type: "edit-module",
+				syllabusId,
+				moduleId,
+				payload: { title: title.trim(), description: description.trim() },
+			});
+		} finally {
+			setSaving(false);
+		}
 		setError(undefined);
 		onClose();
 	}
@@ -66,7 +73,7 @@ export function EditModuleModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
+					<Button type="submit" size="sm" disabled={saving}>
 						Lưu thay đổi
 					</Button>
 				</div>

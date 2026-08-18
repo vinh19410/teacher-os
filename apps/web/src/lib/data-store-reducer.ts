@@ -18,6 +18,10 @@ export type Action =
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| {
+			type: "kernel-loaded";
+			payload: Pick<MockData, "students" | "classes" | "syllabi">;
+	  }
+	| {
 			type: "add-student";
 			payload: {
 				name: string;
@@ -117,6 +121,22 @@ function mapModule(
 	return m.id === moduleId ? fn(structuredClone(m)) : m;
 }
 
+/**
+ * Runtime starts empty — the kernel snapshot hydrates via `kernel-loaded`
+ * and seedData remains a test fixture only.
+ */
+export const emptyData: MockData = {
+	students: [],
+	lessons: [],
+	invoices: [],
+	assignments: [],
+	reports: [],
+	notifs: [],
+	commentBank: [],
+	classes: [],
+	syllabi: [],
+};
+
 export function reducer(state: MockData, action: Action): MockData {
 	switch (action.type) {
 		case "check-in": {
@@ -162,6 +182,9 @@ export function reducer(state: MockData, action: Action): MockData {
 						: a,
 				),
 			};
+		}
+		case "kernel-loaded": {
+			return { ...state, ...action.payload };
 		}
 		case "add-student": {
 			const { name, phone, parentName, total, price, mode, classId } =
