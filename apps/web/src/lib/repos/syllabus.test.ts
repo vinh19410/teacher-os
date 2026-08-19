@@ -50,6 +50,7 @@ const snapshot: KernelSnapshot = {
 	],
 	enrollments: [],
 	packages: [],
+	assignments: [],
 };
 
 describe("mapSyllabi", () => {
@@ -106,6 +107,7 @@ describe("mapSyllabi", () => {
 			syllabi: [],
 			enrollments: [],
 			packages: [],
+			assignments: [],
 		};
 		expect(mapSyllabi(empty)).toEqual([]);
 	});

@@ -21,11 +21,13 @@ export function GradeModal({
 	const [grammar, setGrammar] = useState("6.0");
 	const [feedback, setFeedback] = useState("");
 	const [error, setError] = useState<string | undefined>();
+	const [saving, setSaving] = useState(false);
 
 	if (!assignment) return null;
 
-	function submit(e: FormEvent) {
+	async function submit(e: FormEvent) {
 		e.preventDefault();
+		if (saving) return;
 		const scores = {
 			task: Number.parseFloat(task),
 			coherence: Number.parseFloat(coherence),
@@ -39,7 +41,22 @@ export function GradeModal({
 			setError("Điểm mỗi tiêu chí từ 0 đến 9 (bước 0.5).");
 			return;
 		}
-		dispatch({ type: "grade-assignment", assignmentId, scores });
+		setSaving(true);
+		try {
+			// Bus resolves the graded id on success, undefined on write/refresh
+			// failure — stay open so the typed scores are not lost.
+			const gradedId = await dispatch({
+				type: "grade-assignment",
+				assignmentId,
+				scores,
+			});
+			if (gradedId === undefined) {
+				setError("Không lưu được điểm — thử lại.");
+				return;
+			}
+		} finally {
+			setSaving(false);
+		}
 		setError(undefined);
 		setFeedback("");
 		onClose();
@@ -105,8 +122,8 @@ export function GradeModal({
 					<Button variant="secondary" size="sm" onClick={onClose}>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm">
-						Lưu & duyệt
+					<Button type="submit" size="sm" disabled={saving}>
+						{saving ? "Đang lưu…" : "Lưu & duyệt"}
 					</Button>
 				</div>
 			</form>

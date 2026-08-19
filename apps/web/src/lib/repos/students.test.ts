@@ -1,4 +1,4 @@
-/**
+/*
  * Students read repo (Wave 1) — pure mapping units.
  * The kernel snapshot is the only input; the provider wires transport.
  */
@@ -56,6 +56,7 @@ const snapshot: KernelSnapshot = {
 			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 	],
+	assignments: [],
 };
 
 describe("mapStudents", () => {
@@ -102,6 +103,7 @@ describe("mapStudents", () => {
 			syllabi: [],
 			enrollments: [],
 			packages: [],
+			assignments: [],
 		};
 		expect(mapStudents(empty)).toEqual([]);
 	});

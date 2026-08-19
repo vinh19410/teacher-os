@@ -64,6 +64,26 @@ export const lessonUpsertSchema = z.object({
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
+/**
+ * IELTS rubric scores — strict shape, float 0–9 on purpose: half-bands
+ * (6.5, 7.5) are the domain norm, so the repo-wide `.int()` convention
+ * would reject most real grades.
+ */
+export const gradeScoresSchema = z
+	.object({
+		task: z.number().min(0).max(9),
+		coherence: z.number().min(0).max(9),
+		lexical: z.number().min(0).max(9),
+		grammar: z.number().min(0).max(9),
+	})
+	.strict();
+export type GradeScores = z.infer<typeof gradeScoresSchema>;
+
+export const assignmentGradeSchema = z.object({
+	scores: gradeScoresSchema,
+});
+export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
+
 // --- Kernel snapshot rows (server → web adapter) ---
 
 export interface KernelStudentRow {
@@ -141,12 +161,29 @@ export interface KernelSyllabusRow {
 	modules: KernelSyllabusModuleRow[];
 }
 
+export interface KernelAssignmentRow {
+	id: string;
+	studentId: string;
+	title: string;
+	type: string;
+	/** Display-formatted dd/mm text, like every other date on the wire. */
+	due: string;
+	status: "not-submitted" | "late" | "graded" | string;
+	scores: {
+		task: number;
+		coherence: number;
+		lexical: number;
+		grammar: number;
+	} | null;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
 	syllabi: KernelSyllabusRow[];
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
+	assignments: KernelAssignmentRow[];
 }
 
 export interface CreatedResponse {
