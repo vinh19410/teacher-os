@@ -10,10 +10,14 @@ import type {
 import type { Action } from "@/lib/data-store-reducer";
 import type { MockData } from "@/lib/mock-data";
 import { mapClasses } from "./classes";
+import { mapLessons } from "./lessons";
 import { mapStudents } from "./students";
 import { mapSyllabi } from "./syllabus";
 
-export type KernelSlice = Pick<MockData, "students" | "classes" | "syllabi">;
+export type KernelSlice = Pick<
+	MockData,
+	"students" | "classes" | "syllabi" | "lessons"
+>;
 
 const KERNEL_WRITE_TYPES = [
 	"add-student",
@@ -25,6 +29,8 @@ const KERNEL_WRITE_TYPES = [
 	"add-lesson",
 	"edit-lesson",
 	"update-class-notes",
+	"check-in",
+	"cancel-lesson",
 ] as const;
 
 type KernelWriteType = (typeof KERNEL_WRITE_TYPES)[number];
@@ -85,6 +91,12 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/classes/${action.classId}/notes`,
 				body: { notes: action.notes },
 			};
+		case "check-in":
+			// Body must stay exactly {} — the server rejects anything else so
+			// a forged status can never ride along.
+			return { path: `/api/lessons/${action.lessonId}/check-in`, body: {} };
+		case "cancel-lesson":
+			return { path: `/api/lessons/${action.lessonId}/cancel`, body: {} };
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -116,14 +128,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 /**
  * Adapter: kernel snapshot → MockData kernel slice.
  * - Student mapping (incl. pkg derivation) lives in repos/students.ts.
- * - Class mapping (roster from enrollments) lives in repos/classes.ts.
+ * - Class mapping (roster + sessionsDone derive) lives in repos/classes.ts.
  * - Syllabus mapping (incl. totalLessons recompute) lives in repos/syllabus.ts.
+ * - Lesson mapping (incl. sid resolve) lives in repos/lessons.ts.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 	return {
 		students: mapStudents(snapshot),
 		classes: mapClasses(snapshot),
 		syllabi: mapSyllabi(snapshot),
+		lessons: mapLessons(snapshot),
 	};
 }
 

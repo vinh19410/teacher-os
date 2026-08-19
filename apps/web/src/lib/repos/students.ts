@@ -24,6 +24,9 @@ const ZERO_PKG: Student["pkg"] = {
  * Map kernel student rows to the display shape. `pkg` comes from the newest
  * active session_package across the student's enrollments; a classless
  * student gets the zero package (done/remaining always derive, never stored).
+ * Wave 4: done/remaining derive from the completed lessons of exactly the
+ * displayed package's enrollment (invariant 6) — a check-in on another
+ * enrollment (e.g. the other half of a 1:2) never moves this student's pkg.
  */
 export function mapStudents(snapshot: KernelSnapshot): Student[] {
 	const packagesByStudent = new Map<string, KernelPackageRow>();
@@ -35,8 +38,18 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 		}
 	}
 
+	const completedByEnrollment = new Map<string, number>();
+	for (const row of snapshot.lessons) {
+		if (row.status !== "completed") continue;
+		completedByEnrollment.set(
+			row.enrollmentId,
+			(completedByEnrollment.get(row.enrollmentId) ?? 0) + 1,
+		);
+	}
+
 	return snapshot.students.map((row): Student => {
 		const pkg = packagesByStudent.get(row.id);
+		const done = pkg ? (completedByEnrollment.get(pkg.enrollmentId) ?? 0) : 0;
 		return {
 			id: row.id,
 			name: row.name,
@@ -49,8 +62,8 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 			pkg: pkg
 				? {
 						total: pkg.total,
-						done: 0,
-						remaining: pkg.total,
+						done,
+						remaining: Math.max(0, pkg.total - done),
 						price: pkg.price,
 						mode: pkg.mode === "Offline" ? "Offline" : "Online",
 						start: pkg.start,
