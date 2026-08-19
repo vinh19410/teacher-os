@@ -46,17 +46,17 @@ Tháo adapter trên route học viên. List/detail/`AddStudentModal` gọi repo/
 
 ## Todo
 
-- [ ] Repo students
-- [ ] Routes đọc repo; modal write giữ command bus W0
-- [ ] Contract enroll xanh
-- [ ] Org mới: list rỗng
+- [x] Repo students
+- [x] Routes đọc repo; modal write giữ command bus W0
+- [x] Contract enroll xanh
+- [x] Org mới: list rỗng
 
 ## Success Criteria
 
-- [ ] Không đọc seed cho module students
-- [ ] Reload giữ HV vừa tạo
-- [ ] `/students` không classId; class detail vẫn truyền `classId` (chưa peel class)
-- [ ] Quality gate xanh
+- [x] Không đọc seed cho module students
+- [x] Reload giữ HV vừa tạo
+- [x] `/students` không classId; class detail vẫn truyền `classId` (chưa peel class)
+- [x] Quality gate xanh
 
 ## Risk Assessment
 
