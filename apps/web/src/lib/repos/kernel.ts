@@ -9,6 +9,7 @@ import type {
 } from "@teacher-os/api/contracts";
 import type { Action } from "@/lib/data-store-reducer";
 import type { MockData } from "@/lib/mock-data";
+import { mapClasses } from "./classes";
 import { mapStudents } from "./students";
 import { mapSyllabi } from "./syllabus";
 
@@ -115,34 +116,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 /**
  * Adapter: kernel snapshot → MockData kernel slice.
  * - Student mapping (incl. pkg derivation) lives in repos/students.ts.
- * - Class.studentIds comes from enrollments, never a stored id list.
+ * - Class mapping (roster from enrollments) lives in repos/classes.ts.
  * - Syllabus mapping (incl. totalLessons recompute) lives in repos/syllabus.ts.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
-	const enrollmentsByClass = new Map<string, string[]>();
-	for (const row of snapshot.enrollments) {
-		const list = enrollmentsByClass.get(row.classId) ?? [];
-		list.push(row.studentId);
-		enrollmentsByClass.set(row.classId, list);
-	}
-
 	return {
 		students: mapStudents(snapshot),
-		classes: snapshot.classes.map((row) => ({
-			id: row.id,
-			name: row.name,
-			level: row.level,
-			skill: row.skill,
-			mode: row.mode,
-			syllabusId: row.syllabusId ?? "",
-			studentIds: enrollmentsByClass.get(row.id) ?? [],
-			schedule: row.schedule,
-			sessionsDone: row.sessionsDone,
-			sessionsTotal: row.sessionsTotal,
-			status: row.status,
-			startDate: row.startDate,
-			notes: row.notes,
-		})),
+		classes: mapClasses(snapshot),
 		syllabi: mapSyllabi(snapshot),
 	};
 }

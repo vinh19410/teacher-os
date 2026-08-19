@@ -48,17 +48,17 @@ Có thể gộp wave 1–3 thành 1 PR / 3 commit nếu 1 người.
 
 ## Todo
 
-- [ ] Repo classes
-- [ ] Roster = enrollment
-- [ ] Assign + notes persist
-- [ ] 3 module hết seed path
+- [x] Repo classes
+- [x] Roster = enrollment
+- [x] Assign + notes persist
+- [x] 3 module hết seed path
 
 ## Success Criteria
 
-- [ ] Reload giữ lớp + roster + syllabusId + notes
-- [ ] Org mới: 0 class
-- [ ] Không JSON `student_ids` trên class
-- [ ] Quality gate xanh
+- [x] Reload giữ lớp + roster + syllabusId + notes
+- [x] Org mới: 0 class
+- [x] Không JSON `student_ids` trên class
+- [x] Quality gate xanh
 
 ## Risk Assessment
 

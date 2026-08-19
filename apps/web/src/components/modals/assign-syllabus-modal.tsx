@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { useClasses } from "@/lib/repos/use-classes";
 
 export function AssignSyllabusModal({
 	open,
@@ -15,9 +16,10 @@ export function AssignSyllabusModal({
 	defaultSyllabusId?: string;
 	defaultClassId?: string;
 }) {
+	const { classes } = useClasses();
 	const { data, dispatch } = useData();
 	const [classId, setClassId] = useState(
-		defaultClassId ?? data.classes[0]?.id ?? "",
+		defaultClassId ?? classes[0]?.id ?? "",
 	);
 	const [syllabusId, setSyllabusId] = useState(
 		defaultSyllabusId ?? data.syllabi[0]?.id ?? "",
@@ -44,7 +46,7 @@ export function AssignSyllabusModal({
 				<p className="text-muted-fg text-sm">Chọn lớp để gán syllabus.</p>
 				<Field label="Lớp">
 					<Select value={classId} onChange={(e) => setClassId(e.target.value)}>
-						{data.classes.map((c) => (
+						{classes.map((c) => (
 							<option key={c.id} value={c.id}>
 								{c.name}
 							</option>
