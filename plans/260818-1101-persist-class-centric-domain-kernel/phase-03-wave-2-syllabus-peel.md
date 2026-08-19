@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Wave 2 Syllabus peel"
-status: pending
+status: completed
 priority: P1
 effort: "0.5-1d"
 dependencies: [1]

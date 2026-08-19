@@ -6,6 +6,7 @@ import {
 	assignSyllabusSchema,
 	classCreateSchema,
 	classNotesSchema,
+	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonUpsertSchema,
 	moduleUpsertSchema,
@@ -14,6 +15,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
@@ -138,6 +140,37 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return row;
 	}
 
+	/**
+	 * Shared explicit invoice projection for both the list endpoint and kernel
+	 * snapshot. The same-org join hides malformed cross-tenant relations instead
+	 * of exposing a foreign student id through the display DTO.
+	 */
+	async function loadInvoices(
+		db: Db,
+		orgId: string,
+	): Promise<KernelSnapshot["invoices"]> {
+		return db
+			.select({
+				id: invoice.id,
+				studentId: invoice.studentId,
+				amount: invoice.amount,
+				status: invoice.status,
+				date: invoice.date,
+				type: invoice.type,
+				method: invoice.method,
+			})
+			.from(invoice)
+			.innerJoin(
+				student,
+				and(
+					eq(invoice.studentId, student.id),
+					eq(invoice.orgId, student.orgId),
+				),
+			)
+			.where(eq(invoice.orgId, orgId))
+			.orderBy(asc(invoice.createdAt), asc(invoice.id));
+	}
+
 	async function loadSnapshot(db: Db, orgId: string): Promise<KernelSnapshot> {
 		const [
 			studentRows,
@@ -148,6 +181,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			moduleRows,
 			lessonRows,
 			scheduledRows,
+			invoiceRows,
 		] = await Promise.all([
 			db
 				.select()
@@ -202,6 +236,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				.from(lesson)
 				.where(eq(lesson.orgId, orgId))
 				.orderBy(asc(lesson.day), asc(lesson.time), asc(lesson.createdAt)),
+			loadInvoices(db, orgId),
 		]);
 
 		const lessonsByModule = new Map<
@@ -297,6 +332,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				topic: row.topic,
 				zoom: row.zoom,
 			})),
+			invoices: invoiceRows,
 		};
 	}
 
@@ -372,6 +408,12 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		if (!ctx) return unauthorized(c);
 		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
 		return c.json(snapshot.classes);
+	});
+
+	kernel.get("/invoices", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		return c.json(await loadInvoices(deps.getDb(), ctx.orgId));
 	});
 
 	kernel.post("/classes", async (c) => {
@@ -508,6 +550,28 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	kernel.post("/lessons/:id/cancel", (c) =>
 		lessonStatusAction(c, c.req.param("id"), "cancelled"),
 	);
+
+	kernel.post("/invoices/:id/mark-paid", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, invoiceMarkPaidSchema);
+		if (!body.ok) return body.response;
+
+		// Paid replay intentionally overwrites the method (compatibility lock).
+		// The tenant predicate makes unknown and foreign ids indistinguishable.
+		const [updatedInvoice] = await deps
+			.getDb()
+			.update(invoice)
+			.set({ status: "paid", method: body.data.method })
+			.where(
+				and(eq(invoice.id, c.req.param("id")), eq(invoice.orgId, ctx.orgId)),
+			)
+			.returning({ id: invoice.id });
+		if (!updatedInvoice) {
+			return c.json({ error: "invoice not found" }, 404);
+		}
+		return c.json({ ok: true });
+	});
 
 	kernel.get("/syllabi", async (c) => {
 		const ctx = c.get("kernelCtx");

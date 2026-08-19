@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./class";
 export * from "./enrollment";
+export * from "./invoice";
 export * from "./lesson";
 export * from "./membership";
 export * from "./organization";

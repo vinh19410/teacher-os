@@ -57,6 +57,7 @@ const snapshot: KernelSnapshot = {
 		},
 	],
 	lessons: [],
+	invoices: [],
 };
 
 describe("mapStudents", () => {
@@ -104,6 +105,7 @@ describe("mapStudents", () => {
 			enrollments: [],
 			packages: [],
 			lessons: [],
+			invoices: [],
 		};
 		expect(mapStudents(empty)).toEqual([]);
 	});
@@ -191,6 +193,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 			// 1:2 peer completed a shared session: only en-peer's entitlement moves.
 			lessonRow("l5", "en-peer", "completed"),
 		],
+		invoices: [],
 	};
 
 	test("done/remaining derive from completed lessons of the displayed enrollment only", () => {

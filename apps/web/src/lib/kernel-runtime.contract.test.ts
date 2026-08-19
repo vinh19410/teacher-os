@@ -62,6 +62,17 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/if \(serverId && onCreated\) onCreated\(serverId\)/);
 		expect(src).not.toMatch(/onCreated\(id\)/);
 	});
+
+	test("AddInvoiceModal remains close-only and exposes no create write", () => {
+		const src = readSrc("../components/modals/add-invoice-modal.tsx");
+		const submit = src.slice(
+			src.indexOf("function submit"),
+			src.indexOf("return ("),
+		);
+		expect(submit).toMatch(/e\.preventDefault\(\)/);
+		expect(submit).toMatch(/onClose\(\)/);
+		expect(submit).not.toMatch(/dispatch|fetch|post|invoiceId/);
+	});
 });
 
 describe("reducer kernel-loaded hydration", () => {
@@ -96,6 +107,17 @@ describe("reducer kernel-loaded hydration", () => {
 			classes: [],
 			syllabi: [],
 			lessons: [],
+			invoices: [
+				{
+					id: "inv-1",
+					sid: "s1",
+					amount: 400000,
+					status: "unpaid" as const,
+					date: "19/08",
+					type: "Gói buổi",
+					method: "—",
+				},
+			],
 		};
 		const next = reducer(
 			{
@@ -113,6 +135,7 @@ describe("reducer kernel-loaded hydration", () => {
 			{ type: "kernel-loaded", payload },
 		);
 		expect(next.students).toHaveLength(1);
+		expect(next.invoices).toHaveLength(1);
 		expect(next.notifs).toHaveLength(1);
 	});
 });

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Wave 0 Kernel"
-status: pending
+status: completed
 priority: P1
 effort: "3-4d"
 dependencies: []

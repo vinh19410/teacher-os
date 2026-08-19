@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Wave 1 Students peel"
-status: pending
+status: completed
 priority: P1
 effort: "0.5-1d"
 dependencies: [1]

@@ -116,6 +116,17 @@ const snapshot: KernelSnapshot = {
 		},
 	],
 	lessons: [],
+	invoices: [
+		{
+			id: "inv-1",
+			studentId: "st-1",
+			amount: 400000,
+			status: "overdue",
+			date: "19/08",
+			type: "Gói buổi",
+			method: "—",
+		},
+	],
 };
 
 describe("mapKernelSnapshot", () => {
@@ -176,6 +187,20 @@ describe("mapKernelSnapshot", () => {
 
 	test("avatar derives from initials", () => {
 		expect(slice.students[0].avatar).toBe("MA");
+	});
+
+	test("invoice DTO maps studentId to the shared display sid", () => {
+		expect(slice.invoices).toEqual([
+			{
+				id: "inv-1",
+				sid: "st-1",
+				amount: 400000,
+				status: "overdue",
+				date: "19/08",
+				type: "Gói buổi",
+				method: "—",
+			},
+		]);
 	});
 });
 
@@ -303,16 +328,19 @@ describe("kernelCommand", () => {
 		expect(cancel.body).toEqual({});
 	});
 
-	test("check-in and cancel-lesson are kernel writes (no local-only dispatch)", () => {
+	test("persistent store actions, including mark-paid, ride the kernel bus", () => {
 		expect(isKernelWrite({ type: "check-in", lessonId: "l1" })).toBe(true);
 		expect(isKernelWrite({ type: "cancel-lesson", lessonId: "l1" })).toBe(true);
-		expect(
-			isKernelWrite({
-				type: "mark-invoice-paid",
-				invoiceId: "i",
-				method: "cash",
-			}),
-		).toBe(false);
+		const markPaid = {
+			type: "mark-invoice-paid",
+			invoiceId: "i",
+			method: "CK",
+		} as const satisfies Parameters<typeof kernelCommand>[0];
+		expect(isKernelWrite(markPaid)).toBe(true);
+		expect(kernelCommand(markPaid)).toEqual({
+			path: "/api/invoices/i/mark-paid",
+			body: { method: "CK" },
+		});
 	});
 });
 

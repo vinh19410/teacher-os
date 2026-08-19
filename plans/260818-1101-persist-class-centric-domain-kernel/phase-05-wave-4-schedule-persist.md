@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Wave 4 Schedule persist"
-status: pending
+status: completed
 priority: P1
 effort: "2d"
 dependencies: [4]
