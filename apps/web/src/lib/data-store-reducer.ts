@@ -21,7 +21,12 @@ export type Action =
 			type: "kernel-loaded";
 			payload: Pick<
 				MockData,
-				"students" | "classes" | "syllabi" | "lessons" | "assignments"
+				| "students"
+				| "classes"
+				| "syllabi"
+				| "lessons"
+				| "assignments"
+				| "invoices"
 			>;
 	  }
 	| {

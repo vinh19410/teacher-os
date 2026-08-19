@@ -94,6 +94,7 @@ const snapshot: KernelSnapshot = {
 		},
 	],
 	assignments: [],
+	invoices: [],
 };
 
 describe("mapLessons", () => {
@@ -129,6 +130,7 @@ describe("mapLessons", () => {
 				packages: [],
 				lessons: [],
 				assignments: [],
+				invoices: [],
 			}),
 		).toEqual([]);
 	});

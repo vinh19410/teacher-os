@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Wave 3 Classes peel"
-status: pending
+status: completed
 priority: P1
 effort: "0.5-1d"
 dependencies: [1]

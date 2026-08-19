@@ -47,13 +47,13 @@ Lock thêm: org mới trống; wave 7 persist report/notif/comment_bank; package
 
 | # | Phase | Wave | Status |
 |---|-------|------|--------|
-| 1 | [Wave 0 Kernel](./phase-01-start.md) | 0 | Pending |
-| 2 | [Wave 1 Students peel](./phase-02-wave-1-students-peel.md) | 1 | Pending |
-| 3 | [Wave 2 Syllabus peel](./phase-03-wave-2-syllabus-peel.md) | 2 | Pending |
-| 4 | [Wave 3 Classes peel](./phase-04-wave-3-classes-peel.md) | 3 | Pending |
-| 5 | [Wave 4 Schedule persist](./phase-05-wave-4-schedule-persist.md) | 4 | Pending |
-| 6 | [Wave 5 Tuition persist](./phase-06-wave-5-tuition-persist.md) | 5 | Pending |
-| 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Pending |
+| 1 | [Wave 0 Kernel](./phase-01-start.md) | 0 | Completed |
+| 2 | [Wave 1 Students peel](./phase-02-wave-1-students-peel.md) | 1 | Completed |
+| 3 | [Wave 2 Syllabus peel](./phase-03-wave-2-syllabus-peel.md) | 2 | Completed |
+| 4 | [Wave 3 Classes peel](./phase-04-wave-3-classes-peel.md) | 3 | Completed |
+| 5 | [Wave 4 Schedule persist](./phase-05-wave-4-schedule-persist.md) | 4 | Completed |
+| 6 | [Wave 5 Tuition persist](./phase-06-wave-5-tuition-persist.md) | 5 | Completed |
+| 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Completed |
 | 8 | [Wave 7 Reports + notifs + comment bank](./phase-08-wave-7-reports-notifs-comment-bank.md) | 7 | Pending |
 | 9 | [Wave 8 Remove mock runtime](./phase-09-wave-8-remove-mock-runtime.md) | 8 | Pending |
 
@@ -181,6 +181,31 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 | 11 | Name collision `lessonUpsertSchema`; body POST undefined | Medium | Accept | Phase 5 (body `{}`, enum riêng) |
 | 12 | Isolation test không nêu harness | Medium | Accept | Phase 5 (server kernel.test.ts mirror 450-545) |
 
+### Session — 2026-08-19 (Wave 5 scope re-verification, scoped phase-06)
+**Findings:** 16 raw → 9 unique sau dedup (2 reviewers: Security Adversary +
+Assumption Destroyer, tier Light — Fact Checker) — 8 accepted, 1 rejected
+**Severity breakdown:** 3 Critical accepted, 3 High accepted, 2 Medium accepted,
+1 High rejected as pre-existing/out-of-scope
+**Reports:** `reports/red-team-wave5-security-adversary.md`,
+`reports/red-team-wave5-assumption-destroyer.md`
+**Key trigger:** Phase-06 viết theo tree cũ: invoice không có trong
+`KernelSnapshot`/`KernelSlice`/`kernel-loaded`; `mark-invoice-paid` bị test pin
+local-only; router invoice riêng không được mount và sẽ mất guard của
+`kernelRoutes`. Disposition chi tiết: `phase-06-wave-5-tuition-persist.md` →
+"Red Team Dispositions".
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Thiếu full invoice hydrate path; 3 consumer shared-store | Critical | Accept | Phase 6 (snapshot + GET reuse loadInvoices) |
+| 2 | `mark-invoice-paid` local-only | Critical | Accept | Phase 6 (command bus + refetch) |
+| 3 | Router invoice riêng không mount/mất Origin guard | Critical | Accept | Phase 6 (endpoint trong kernelRoutes) |
+| 4 | Schema/DTO thiếu FK/index/order/adapter mapping | High | Accept | Phase 6 (full schema + explicit DTO) |
+| 5 | Auth/org binding + malformed relation chưa khóa | High | Accept | Phase 6 (fail-closed ctx + same-org join) |
+| 6 | Method/replay semantics mơ hồ | High | Accept | Phase 6 (strict bounded body; giữ paid overwrite) |
+| 7 | AddInvoiceModal no-op chưa contract-lock | Medium | Accept | Phase 6 (no-create regression test) |
+| 8 | Test plan thiếu isolation/guard/reload matrix | Medium | Accept | Phase 6 (real handler tests) |
+| 9 | Classless student hiển thị 0/0/NaN | High | Reject | Pre-existing Tuition display; ngoài acceptance issue #15 |
+
 ### Session — 2026-08-19 (Wave 6 pre-implementation, scoped phase-07)
 **Findings:** 13 unique sau dedup (4 reviewers, tier Full: Security Adversary, Failure Mode Analyst, Assumption Destroyer, Scope & Complexity Critic) — 13 accepted, 0 rejected
 **Severity breakdown:** 2 Critical accepted, 4 High accepted, 7 Medium accepted
@@ -241,6 +266,40 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 - Decision deltas checked: endpoint lesson sống trong kernelRoutes (không router riêng, không đụng app.ts); read qua kernel snapshot (không fetch riêng — giữ provider gate wave 0); remaining derive mapping-side tại mapStudents (khớp precedent wave 2 totalLessons); sessionsDone distinct (day,time); transition matrix upcoming-only; body `{}`; `schedule.tsx` zero-change
 - Reconciled stale references (phase-05 cũ): "Modify repos/lessons.ts" → Create; "Create/Modify routes/lessons/" → endpoint trong kernelRoutes; "4 consumer" → 5 file/6 site; "data-store-reducer.ts:122-136" → 142-157; "test 30-47 sessionsDone" → test 30-57 pkg.done counter; "Derive trong API/adapter" → định danh mapStudents/mapClasses; bỏ "Modify schedule.tsx"
 - Cross-phase checks: phase-06 (wave 5 tuition) + phase-07 (wave 6 assignments) không đọc `session_package.done` cột (đã verify schema không có cột) — derive mapping-side không phá; phase-09 (wave 8) gỡ mock runtime vẫn giữ fixture test; invariant 2/5/6/7 không đổi
+- Unresolved contradictions: 0
+
+### Verification Results — 2026-08-19 (wave 5 pre-implementation)
+- **Tier:** Light (phase-06 scoped; parent Full tier 2026-08-18 còn hiệu lực)
+- **Claims checked:** 14 | **Verified:** 14 | **Failed:** 0 | **Unverified:** 0
+- Key verifications: `Invoice` UI shape dùng `sid` (`mock-data.ts:45-55`);
+  invoice có 3 consumer (`tuition.tsx:140-141`,
+  `students/$studentId.tsx:74-76`, `dashboard.tsx:160-166`); runtime khởi tạo
+  `invoices=[]` và snapshot payload không hydrate collection
+  (`data-store-reducer.ts:21-23,128-137`); `KernelSnapshot`/`KernelSlice` không có
+  invoice (`contracts.ts:174-181`, `repos/kernel.ts:17-20`);
+  `mark-invoice-paid` không có trong whitelist và test pin local-only
+  (`repos/kernel.ts:22-34`, `repos/kernel.test.ts:306-315`); Origin/JSON guard
+  per-router (`routes/kernel.ts:37-51`); app chỉ mount `kernelRoutes`
+  (`app.ts:83-100`); unauth bootstrap tiếp tục và handler phải fail-closed
+  (`app.ts:44-50`, `routes/kernel.ts:303-306`); modal submit close-only
+  (`add-invoice-modal.tsx:20-25`); paid replay overwrite method được pin
+  (`data-store-reducer.test.ts:93-100`); migration + real handler harness tồn tại
+  (`drizzle.config.ts:8-13`, `kernel.test.ts:1-42`).
+- Open questions asked: 0 (canonical read chọn shared snapshot + GET helper reuse
+  theo 3 consumer; paid overwrite là verified sticky decision, không đảo).
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 5)
+- Files reread: `plan.md`, phase-01…phase-09 (phase-06 sau edit)
+- Decision deltas checked: invoice canonical shared snapshot; GET reuse
+  `loadInvoices`; command bus write; endpoint trong guarded `kernelRoutes`;
+  strict bounded method; paid replay overwrite; no create; org/same-student binding
+- Reconciled stale references: `routes/invoices/` → `routes/kernel.ts`; generic
+  `GET list + POST` → full snapshot/payload/whitelist/adapter path; single Tuition
+  consumer → 3 shared-store consumers; reducer line 146-154 → 163-171;
+  helper happy-path → real-handler isolation/guard matrix
+- Cross-phase checks: phase-05 remaining/session derives stay source of truth;
+  phase-09 can remove reducer runtime after phase-06 mark-paid leaves local-only
+  path; phase-01 router guard contract stays unchanged; no student-tab code change
 - Unresolved contradictions: 0
 
 <!-- slug: persist-class-centric-domain-kernel -->

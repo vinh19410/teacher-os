@@ -29,6 +29,13 @@
       "when": 1787121757952,
       "tag": "0003_last_shatterstar",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787126991793,
+      "tag": "0004_gray_cloak",
+      "breakpoints": true
     }
   ]
 }

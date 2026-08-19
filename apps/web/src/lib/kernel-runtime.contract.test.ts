@@ -64,6 +64,17 @@ describe("kernel-backed store wiring", () => {
 		expect(src).not.toMatch(/onCreated\(id\)/);
 	});
 
+	test("AddInvoiceModal remains close-only and exposes no create write", () => {
+		const src = readSrc("../components/modals/add-invoice-modal.tsx");
+		const submit = src.slice(
+			src.indexOf("function submit"),
+			src.indexOf("return ("),
+		);
+		expect(submit).toMatch(/e\.preventDefault\(\)/);
+		expect(submit).toMatch(/onClose\(\)/);
+		expect(submit).not.toMatch(/dispatch|fetch|post|invoiceId/);
+	});
+
 	test("grade-modal stays open with an error when the write fails", () => {
 		const src = readSrc("../components/modals/grade-modal.tsx");
 		// Bus resolves undefined on write/refresh failure — the guard must
@@ -115,6 +126,17 @@ describe("reducer kernel-loaded hydration", () => {
 			classes: [],
 			syllabi: [],
 			lessons: [],
+			invoices: [
+				{
+					id: "inv-1",
+					sid: "s1",
+					amount: 400000,
+					status: "unpaid" as const,
+					date: "19/08",
+					type: "Gói buổi",
+					method: "—",
+				},
+			],
 			assignments: [
 				{
 					id: "as-1",
@@ -143,6 +165,7 @@ describe("reducer kernel-loaded hydration", () => {
 			{ type: "kernel-loaded", payload },
 		);
 		expect(next.students).toHaveLength(1);
+		expect(next.invoices).toHaveLength(1);
 		expect(next.notifs).toHaveLength(1);
 		// The assignments slice must ride the same hydration — the web half
 		// of "reload giữ scores + status graded".

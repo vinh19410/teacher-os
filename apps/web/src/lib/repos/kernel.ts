@@ -11,13 +11,14 @@ import type { Action } from "@/lib/data-store-reducer";
 import type { MockData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
+import { mapInvoices } from "./invoices";
 import { mapLessons } from "./lessons";
 import { mapStudents } from "./students";
 import { mapSyllabi } from "./syllabus";
 
 export type KernelSlice = Pick<
 	MockData,
-	"students" | "classes" | "syllabi" | "lessons" | "assignments"
+	"students" | "classes" | "syllabi" | "lessons" | "assignments" | "invoices"
 >;
 
 const KERNEL_WRITE_TYPES = [
@@ -32,6 +33,7 @@ const KERNEL_WRITE_TYPES = [
 	"update-class-notes",
 	"check-in",
 	"cancel-lesson",
+	"mark-invoice-paid",
 	"grade-assignment",
 ] as const;
 
@@ -99,6 +101,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return { path: `/api/lessons/${action.lessonId}/check-in`, body: {} };
 		case "cancel-lesson":
 			return { path: `/api/lessons/${action.lessonId}/cancel`, body: {} };
+		case "mark-invoice-paid":
+			return {
+				path: `/api/invoices/${action.invoiceId}/mark-paid`,
+				body: { method: action.method },
+			};
 		case "grade-assignment":
 			return {
 				path: `/api/assignments/${action.assignmentId}/grade`,
@@ -147,6 +154,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		syllabi: mapSyllabi(snapshot),
 		lessons: mapLessons(snapshot),
 		assignments: mapAssignments(snapshot),
+		invoices: mapInvoices(snapshot),
 	};
 }
 

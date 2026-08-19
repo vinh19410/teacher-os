@@ -3,6 +3,7 @@ import {
 	assignSyllabusSchema,
 	classCreateSchema,
 	classNotesSchema,
+	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonUpsertSchema,
 	moduleUpsertSchema,
@@ -11,6 +12,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
@@ -25,7 +27,7 @@ import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
-import { loadSnapshot } from "./snapshot";
+import { loadInvoices, loadSnapshot } from "./snapshot";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type KernelContext = Context<Env>;
@@ -211,6 +213,12 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return c.json(snapshot.classes);
 	});
 
+	kernel.get("/invoices", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		return c.json(await loadInvoices(deps.getDb(), ctx.orgId));
+	});
+
 	kernel.post("/classes", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -345,6 +353,28 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	kernel.post("/lessons/:id/cancel", (c) =>
 		lessonStatusAction(c, c.req.param("id"), "cancelled"),
 	);
+
+	kernel.post("/invoices/:id/mark-paid", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, invoiceMarkPaidSchema);
+		if (!body.ok) return body.response;
+
+		// Paid replay intentionally overwrites the method (compatibility lock).
+		// The tenant predicate makes unknown and foreign ids indistinguishable.
+		const [updatedInvoice] = await deps
+			.getDb()
+			.update(invoice)
+			.set({ status: "paid", method: body.data.method })
+			.where(
+				and(eq(invoice.id, c.req.param("id")), eq(invoice.orgId, ctx.orgId)),
+			)
+			.returning({ id: invoice.id });
+		if (!updatedInvoice) {
+			return c.json({ error: "invoice not found" }, 404);
+		}
+		return c.json({ ok: true });
+	});
 
 	kernel.get("/syllabi", async (c) => {
 		const ctx = c.get("kernelCtx");

@@ -105,6 +105,7 @@ const snapshot: KernelSnapshot = {
 	packages: [],
 	lessons: [],
 	assignments: [],
+	invoices: [],
 };
 
 describe("mapClasses", () => {
@@ -158,6 +159,7 @@ describe("mapClasses", () => {
 			packages: [],
 			lessons: [],
 			assignments: [],
+			invoices: [],
 		};
 		expect(mapClasses(empty)).toEqual([]);
 	});
@@ -226,6 +228,7 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 			lessonRow("les-g", "cl-1", "en-2", 7, "21:00", "upcoming"),
 		],
 		assignments: [],
+		invoices: [],
 	};
 
 	test("counts distinct (day,time) pairs of completed lessons, not rows", () => {

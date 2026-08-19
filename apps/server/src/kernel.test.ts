@@ -15,6 +15,7 @@ import {
 	user as authUser,
 } from "@teacher-os/db/schema/auth";
 import * as schema from "@teacher-os/db/schema/index";
+import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
@@ -112,6 +113,12 @@ async function createTestApp() {
 			.where(eq(membership.userId, userId));
 	}
 
+	async function orgIdOf(session: TestSession): Promise<string> {
+		const [membershipRow] = await membershipsOf(session.userId);
+		if (!membershipRow) throw new Error("bootstrap the org before inserting");
+		return membershipRow.orgId;
+	}
+
 	/**
 	 * Wave 4 helper insert: no lesson-create endpoint exists yet (non-goal),
 	 * so tests seed scheduled lessons directly — the same way the persist
@@ -130,12 +137,10 @@ async function createTestApp() {
 			topic?: string;
 		},
 	): Promise<string> {
-		const [membershipRow] = await membershipsOf(session.userId);
-		if (!membershipRow) throw new Error("bootstrap the org before inserting");
 		const id = crypto.randomUUID();
 		await libsql.insert(lesson).values({
 			id,
-			orgId: membershipRow.orgId,
+			orgId: await orgIdOf(session),
 			classId: row.classId,
 			enrollmentId: row.enrollmentId,
 			day: row.day ?? 2,
@@ -145,6 +150,31 @@ async function createTestApp() {
 			status: row.status ?? "upcoming",
 			topic: row.topic ?? "Mock test",
 			zoom: "",
+		});
+		return id;
+	}
+
+	async function insertInvoice(
+		session: TestSession,
+		row: {
+			studentId: string;
+			amount?: number;
+			status?: string;
+			date?: string;
+			type?: string;
+			method?: string;
+		},
+	): Promise<string> {
+		const id = crypto.randomUUID();
+		await libsql.insert(invoice).values({
+			id,
+			orgId: await orgIdOf(session),
+			studentId: row.studentId,
+			amount: row.amount ?? 400000,
+			status: row.status ?? "unpaid",
+			date: row.date ?? "19/08",
+			type: row.type ?? "Gói buổi",
+			method: row.method ?? "—",
 		});
 		return id;
 	}
@@ -240,6 +270,7 @@ async function createTestApp() {
 		kernel,
 		membershipsOf,
 		insertLesson,
+		insertInvoice,
 		createClass,
 		createSyllabus,
 		createModule,
@@ -287,6 +318,176 @@ describe("kernel bootstrap", () => {
 		const res = await t.call("/api/auth/get-session", { origin: null });
 		// The stub auth handler answers (404) — proof the request bypassed bootstrap 401/403.
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("invoice persistence", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let studentId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Học phí");
+		const classId = await t.createClass(session, "Lớp học phí");
+		studentId = await t.addStudent(session, "Học viên HĐ", { classId });
+	});
+
+	test("unauthenticated list is 401 and a new org has zero invoices", async () => {
+		expect((await t.call("/api/invoices")).status).toBe(401);
+		const fresh = await t.insertUser("Cô chưa có HĐ");
+		expect((await t.kernel(fresh)).invoices).toEqual([]);
+		const list = await t.call("/api/invoices", { session: fresh });
+		expect(list.status).toBe(200);
+		expect(await list.json()).toEqual([]);
+	});
+
+	test("unauthenticated mark-paid is 401", async () => {
+		const invoiceId = await t.insertInvoice(session, { studentId });
+		const response = await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+			method: "POST",
+			body: { method: "CK" },
+		});
+		expect(response.status).toBe(401);
+	});
+
+	test("list and kernel snapshot expose the explicit org-scoped DTO", async () => {
+		const invoiceId = await t.insertInvoice(session, {
+			studentId,
+			amount: 600000,
+			status: "overdue",
+		});
+		const list = await t.call("/api/invoices", { session });
+		expect(list.status).toBe(200);
+		const rows = (await list.json()) as Array<Record<string, unknown>>;
+		const row = rows.find((candidate) => candidate.id === invoiceId);
+		expect(row).toMatchObject({
+			studentId,
+			amount: 600000,
+			status: "overdue",
+			method: "—",
+		});
+		expect(row).not.toHaveProperty("orgId");
+		expect((await t.kernel(session)).invoices).toEqual(rows);
+	});
+
+	test("mark-paid persists through snapshot and paid replay overwrites method", async () => {
+		const invoiceId = await t.insertInvoice(session, { studentId });
+		const packagesBefore = (await t.kernel(session)).packages;
+		const paid = await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+			session,
+			method: "POST",
+			body: { method: "CK" },
+		});
+		expect(paid.status).toBe(200);
+		expect(
+			(await t.kernel(session)).invoices.find((row) => row.id === invoiceId),
+		).toMatchObject({ status: "paid", method: "CK" });
+
+		const replay = await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+			session,
+			method: "POST",
+			body: { method: "MoMo" },
+		});
+		expect(replay.status).toBe(200);
+		const after = await t.kernel(session);
+		expect(after.invoices.find((row) => row.id === invoiceId)?.method).toBe(
+			"MoMo",
+		);
+		expect(after.packages).toEqual(packagesBefore);
+	});
+
+	test("mark-paid enforces Origin, JSON, strict bounded body, and no create route", async () => {
+		const invoiceId = await t.insertInvoice(session, { studentId });
+		expect(
+			(
+				await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+					session,
+					method: "POST",
+					origin: null,
+					body: { method: "CK" },
+				})
+			).status,
+		).toBe(403);
+		expect(
+			(
+				await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+					session,
+					method: "POST",
+					origin: "https://evil.example",
+					body: { method: "CK" },
+				})
+			).status,
+		).toBe(403);
+		const form = await t.app.request(`/api/invoices/${invoiceId}/mark-paid`, {
+			method: "POST",
+			headers: {
+				cookie: `better-auth.session_token=${session.token}`,
+				origin: CORS_ORIGIN,
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: "method=CK",
+		});
+		expect(form.status).toBe(415);
+		expect(
+			(
+				await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+					session,
+					method: "POST",
+					body: { method: "CK", amount: 1 },
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(
+				await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+					session,
+					method: "POST",
+					body: { method: "x".repeat(33) },
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(
+				await t.call("/api/invoices", {
+					session,
+					method: "POST",
+					body: { studentId, amount: 1 },
+				})
+			).status,
+		).toBe(404);
+	});
+
+	test("cross-org and unknown ids are 404 and cannot change the owner row", async () => {
+		const invoiceId = await t.insertInvoice(session, { studentId });
+		const other = await t.insertUser("Cô khác org");
+		expect((await t.kernel(other)).invoices).toEqual([]);
+		const foreign = await t.call(`/api/invoices/${invoiceId}/mark-paid`, {
+			session: other,
+			method: "POST",
+			body: { method: "CK" },
+		});
+		expect(foreign.status).toBe(404);
+		const missing = await t.call("/api/invoices/missing/mark-paid", {
+			session,
+			method: "POST",
+			body: { method: "CK" },
+		});
+		expect(missing.status).toBe(404);
+		expect(
+			(await t.kernel(session)).invoices.find((row) => row.id === invoiceId),
+		).toMatchObject({ status: "unpaid", method: "—" });
+	});
+
+	test("malformed cross-org student relation is hidden from invoice reads", async () => {
+		const other = await t.insertUser("Cô relation B");
+		await t.kernel(other);
+		const foreignStudent = await t.addStudent(other, "Học viên B");
+		await t.insertInvoice(session, { studentId: foreignStudent });
+		const snapshot = await t.kernel(session);
+		expect(
+			snapshot.invoices.some((row) => row.studentId === foreignStudent),
+		).toBe(false);
 	});
 });
 

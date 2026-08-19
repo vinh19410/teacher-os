@@ -92,6 +92,12 @@ export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
 export const lessonActionSchema = z.object({}).strict();
 export type LessonAction = z.infer<typeof lessonActionSchema>;
 
+/** Mark-paid accepts only the display method; amount/status remain server-owned. */
+export const invoiceMarkPaidSchema = z
+	.object({ method: z.string().trim().min(1).max(32) })
+	.strict();
+export type InvoiceMarkPaid = z.infer<typeof invoiceMarkPaidSchema>;
+
 // --- Kernel snapshot rows (server → web adapter) ---
 
 export interface KernelStudentRow {
@@ -207,6 +213,16 @@ export interface KernelLessonRow {
 	zoom: string;
 }
 
+export interface KernelInvoiceRow {
+	id: string;
+	studentId: string;
+	amount: number;
+	status: "paid" | "overdue" | "unpaid" | string;
+	date: string;
+	type: string;
+	method: string;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
@@ -215,6 +231,7 @@ export interface KernelSnapshot {
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
 	assignments: KernelAssignmentRow[];
+	invoices: KernelInvoiceRow[];
 }
 
 export interface CreatedResponse {

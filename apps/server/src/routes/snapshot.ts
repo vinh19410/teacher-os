@@ -7,6 +7,7 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
@@ -15,8 +16,32 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../app";
+
+/** Shared explicit projection for the list endpoint and kernel snapshot. */
+export async function loadInvoices(
+	db: Db,
+	orgId: string,
+): Promise<KernelSnapshot["invoices"]> {
+	return db
+		.select({
+			id: invoice.id,
+			studentId: invoice.studentId,
+			amount: invoice.amount,
+			status: invoice.status,
+			date: invoice.date,
+			type: invoice.type,
+			method: invoice.method,
+		})
+		.from(invoice)
+		.innerJoin(
+			student,
+			and(eq(invoice.studentId, student.id), eq(invoice.orgId, student.orgId)),
+		)
+		.where(eq(invoice.orgId, orgId))
+		.orderBy(asc(invoice.createdAt), asc(invoice.id));
+}
 
 /** Shared by the kernel routes and the assignments sub-router. */
 export async function loadSnapshot(
@@ -33,6 +58,7 @@ export async function loadSnapshot(
 		lessonRows,
 		scheduledRows,
 		assignmentRows,
+		invoiceRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -92,6 +118,7 @@ export async function loadSnapshot(
 			.from(assignment)
 			.where(eq(assignment.orgId, orgId))
 			.orderBy(asc(assignment.createdAt)),
+		loadInvoices(db, orgId),
 	]);
 
 	const lessonsByModule = new Map<
@@ -196,5 +223,6 @@ export async function loadSnapshot(
 			status: row.status,
 			scores: row.scores,
 		})),
+		invoices: invoiceRows,
 	};
 }
