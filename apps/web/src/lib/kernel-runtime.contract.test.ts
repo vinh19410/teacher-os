@@ -114,6 +114,7 @@ describe("reducer kernel-loaded hydration", () => {
 			],
 			classes: [],
 			syllabi: [],
+			lessons: [],
 			assignments: [
 				{
 					id: "as-1",

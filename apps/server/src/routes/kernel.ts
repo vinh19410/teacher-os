@@ -3,6 +3,7 @@ import {
 	assignSyllabusSchema,
 	classCreateSchema,
 	classNotesSchema,
+	lessonActionSchema,
 	lessonUpsertSchema,
 	moduleUpsertSchema,
 	studentCreateSchema,
@@ -10,6 +11,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import {
@@ -113,6 +115,25 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					eq(syllabusModule.orgId, orgId),
 				),
 			);
+		return row;
+	}
+
+	/**
+	 * Lesson joined with its enrollment so status actions can enforce the
+	 * class↔enrollment pairing (invariant 2): a lesson claiming class A while
+	 * its enrollment sits in class B is a conflict, never a valid check-in.
+	 */
+	async function findLessonAction(db: Db, lessonId: string, orgId: string) {
+		const [row] = await db
+			.select({
+				id: lesson.id,
+				status: lesson.status,
+				classId: lesson.classId,
+				enrollmentClassId: enrollment.classId,
+			})
+			.from(lesson)
+			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+			.where(and(eq(lesson.id, lessonId), eq(lesson.orgId, orgId)));
 		return row;
 	}
 
@@ -268,6 +289,62 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
 		return c.json({ ok: true });
 	});
+
+	/**
+	 * Wave 4 lesson status actions. Status transitions are fixed — check-in
+	 * upcoming→completed, cancel upcoming→cancelled, anything else 409 — and
+	 * the body must be exactly `{}` so a client can never forge a status.
+	 * Only the lesson row is written; package/class counters stay derived.
+	 */
+	async function lessonStatusAction(
+		c: KernelContext,
+		lessonId: string,
+		nextStatus: "completed" | "cancelled",
+	) {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, lessonActionSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const row = await findLessonAction(db, lessonId, ctx.orgId);
+		if (!row) {
+			return c.json({ error: "lesson not found" }, 404);
+		}
+		if (row.enrollmentClassId !== row.classId) {
+			return c.json({ error: "lesson enrollment mismatch" }, 409);
+		}
+		if (row.status !== "upcoming") {
+			return c.json({ error: "lesson is not upcoming" }, 409);
+		}
+
+		// Conditional write: the status guard must also live in the WHERE
+		// clause so two concurrent POSTs (two tabs) cannot both pass the
+		// pre-read and race past the transition matrix.
+		const updated = await db
+			.update(lesson)
+			.set({ status: nextStatus })
+			.where(
+				and(
+					eq(lesson.id, lessonId),
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.status, "upcoming"),
+				),
+			)
+			.returning({ id: lesson.id });
+		if (updated.length === 0) {
+			return c.json({ error: "lesson is not upcoming" }, 409);
+		}
+		return c.json({ ok: true });
+	}
+
+	kernel.post("/lessons/:id/check-in", (c) =>
+		lessonStatusAction(c, c.req.param("id"), "completed"),
+	);
+
+	kernel.post("/lessons/:id/cancel", (c) =>
+		lessonStatusAction(c, c.req.param("id"), "cancelled"),
+	);
 
 	kernel.get("/syllabi", async (c) => {
 		const ctx = c.get("kernelCtx");

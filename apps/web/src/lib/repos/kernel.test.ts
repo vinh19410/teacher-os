@@ -135,6 +135,7 @@ const snapshot: KernelSnapshot = {
 			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 	],
+	lessons: [],
 };
 
 describe("mapKernelSnapshot", () => {
@@ -170,11 +171,11 @@ describe("mapKernelSnapshot", () => {
 		expect(slice.classes[0].studentIds).toEqual(["st-1"]);
 	});
 
-	test("class keeps its display fields and notes", () => {
+	test("class keeps its display fields; sessionsDone derives (stored 3, 0 completed lessons → 0)", () => {
 		expect(slice.classes[0]).toMatchObject({
 			id: "cl-1",
 			syllabusId: "sy-1",
-			sessionsDone: 3,
+			sessionsDone: 0,
 			notes: "ghi chú",
 		});
 	});
@@ -327,6 +328,29 @@ describe("kernelCommand", () => {
 		).toBe("/api/classes/c1/notes");
 	});
 
+	test("check-in and cancel-lesson ride the bus with an exactly-empty body", () => {
+		const checkIn = kernelCommand({ type: "check-in", lessonId: "l1" });
+		expect(checkIn.path).toBe("/api/lessons/l1/check-in");
+		expect(checkIn.body).toEqual({});
+		expect(JSON.stringify(checkIn.body)).toBe("{}");
+
+		const cancel = kernelCommand({ type: "cancel-lesson", lessonId: "l1" });
+		expect(cancel.path).toBe("/api/lessons/l1/cancel");
+		expect(cancel.body).toEqual({});
+	});
+
+	test("check-in and cancel-lesson are kernel writes (no local-only dispatch)", () => {
+		expect(isKernelWrite({ type: "check-in", lessonId: "l1" })).toBe(true);
+		expect(isKernelWrite({ type: "cancel-lesson", lessonId: "l1" })).toBe(true);
+		expect(
+			isKernelWrite({
+				type: "mark-invoice-paid",
+				invoiceId: "i",
+				method: "cash",
+			}),
+		).toBe(false);
+	});
+
 	test("grade-assignment posts scores to the assignment grade endpoint", () => {
 		const scores = { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 };
 		const req = kernelCommand({
@@ -346,7 +370,15 @@ describe("kernelCommand", () => {
 				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
 			}),
 		).toBe(true);
-		expect(isKernelWrite({ type: "check-in", lessonId: "l1" })).toBe(false);
+		// Wave 4 made check-in a kernel write too — mark-invoice-paid is the
+		// still-local negative control.
+		expect(
+			isKernelWrite({
+				type: "mark-invoice-paid",
+				invoiceId: "i",
+				method: "cash",
+			}),
+		).toBe(false);
 	});
 });
 

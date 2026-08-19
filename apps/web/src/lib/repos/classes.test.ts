@@ -103,6 +103,7 @@ const snapshot: KernelSnapshot = {
 		},
 	],
 	packages: [],
+	lessons: [],
 	assignments: [],
 };
 
@@ -133,14 +134,14 @@ describe("mapClasses", () => {
 		expect(classes.find((c) => c.id === "cl-1")?.syllabusId).toBe("sy-1");
 	});
 
-	test("keeps display fields incl. notes and stored session counts", () => {
+	test("keeps display fields; sessionsDone derives (stored 4, 0 completed lessons → 0)", () => {
 		expect(classes.find((c) => c.id === "cl-1")).toMatchObject({
 			name: "IELTS Writing 7.0 — Nhóm tối",
 			level: "Band 7.0",
 			skill: "Writing",
 			mode: "Online",
 			schedule: "T3 & T5 · 19:00–20:30",
-			sessionsDone: 4,
+			sessionsDone: 0,
 			sessionsTotal: 12,
 			status: "active",
 			startDate: "19/08",
@@ -155,8 +156,107 @@ describe("mapClasses", () => {
 			syllabi: [],
 			enrollments: [],
 			packages: [],
+			lessons: [],
 			assignments: [],
 		};
 		expect(mapClasses(empty)).toEqual([]);
 	});
 });
+
+describe("mapClasses sessionsDone derive (Wave 4)", () => {
+	const snapshot: KernelSnapshot = {
+		students: [],
+		classes: [
+			{
+				id: "cl-1",
+				name: "1:2 tối",
+				level: "",
+				skill: "",
+				mode: "Online",
+				syllabusId: null,
+				schedule: "",
+				sessionsTotal: 12,
+				sessionsDone: 99, // stored value must be ignored entirely
+				status: "active",
+				startDate: "",
+				notes: "",
+			},
+			{
+				id: "cl-2",
+				name: "Chưa học buổi nào",
+				level: "",
+				skill: "",
+				mode: "Online",
+				syllabusId: null,
+				schedule: "",
+				sessionsTotal: 10,
+				sessionsDone: 0,
+				status: "active",
+				startDate: "",
+				notes: "",
+			},
+		],
+		syllabi: [],
+		enrollments: [
+			{
+				id: "en-1",
+				classId: "cl-1",
+				studentId: "st-1",
+				createdAt: "2026-08-01T00:00:00.000Z",
+			},
+			{
+				id: "en-2",
+				classId: "cl-1",
+				studentId: "st-2",
+				createdAt: "2026-08-01T00:00:00.000Z",
+			},
+		],
+		packages: [],
+		lessons: [
+			// 1:2 session: both enrollments completed the same (day,time) slot.
+			lessonRow("les-a", "cl-1", "en-1", 2, "19:00", "completed"),
+			lessonRow("les-b", "cl-1", "en-2", 2, "19:00", "completed"),
+			// A distinct delivered session.
+			lessonRow("les-c", "cl-1", "en-1", 4, "09:00", "completed"),
+			// Upcoming and cancelled rows never count.
+			lessonRow("les-d", "cl-1", "en-1", 5, "19:00", "upcoming"),
+			lessonRow("les-e", "cl-1", "en-2", 6, "20:00", "cancelled"),
+			// A half-checked 1:2 still counts as one delivered session.
+			lessonRow("les-f", "cl-1", "en-1", 7, "21:00", "completed"),
+			lessonRow("les-g", "cl-1", "en-2", 7, "21:00", "upcoming"),
+		],
+		assignments: [],
+	};
+
+	test("counts distinct (day,time) pairs of completed lessons, not rows", () => {
+		const classes = mapClasses(snapshot);
+		expect(classes.find((c) => c.id === "cl-1")?.sessionsDone).toBe(3);
+	});
+
+	test("class without completed lessons derives 0 regardless of the stored column", () => {
+		const classes = mapClasses(snapshot);
+		expect(classes.find((c) => c.id === "cl-2")?.sessionsDone).toBe(0);
+	});
+});
+
+function lessonRow(
+	id: string,
+	classId: string,
+	enrollmentId: string,
+	day: number,
+	time: string,
+	status: string,
+): KernelSnapshot["lessons"][number] {
+	return {
+		id,
+		classId,
+		enrollmentId,
+		day,
+		time,
+		dur: 60,
+		type: "1:2",
+		status,
+		topic: "",
+		zoom: "",
+	};
+}

@@ -27,33 +27,16 @@ describe("reducer", () => {
 		expect(typeof reducer).toBe("function");
 	});
 
-	test("check-in l3 (upcoming) increments s1 package math and leaves classes unchanged", () => {
+	test("check-in l3 (upcoming) flips the lesson and writes no counters anywhere (Wave 4 derive-only)", () => {
 		const before = cloneSeed();
-		const s1 = before.students.find((s) => s.id === "s1");
-		const c1 = before.classes.find((c) => c.id === "c1");
-		expect(s1).toBeDefined();
-		expect(c1).toBeDefined();
 		const next = reducer(before, { type: "check-in", lessonId: "l3" });
-		const nextS1 = next.students.find((s) => s.id === "s1");
-		const nextC1 = next.classes.find((c) => c.id === "c1");
 		const nextL3 = next.lessons.find((l) => l.id === "l3");
 		expect(nextL3?.status).toBe("completed");
-		expect(nextS1?.pkg.done).toBe((s1?.pkg.done ?? 0) + 1);
-		expect(nextS1?.pkg.remaining).toBe(
-			Math.max(0, (s1?.pkg.total ?? 0) - (nextS1?.pkg.done ?? 0)),
-		);
-		expect(nextS1?.pkg.remaining).toBe(3);
-		expect(nextC1?.sessionsDone).toBe(c1?.sessionsDone);
+		// Invariant 6/7: the fixture reducer writes the lesson row only —
+		// pkg.done/remaining and class counters always derive downstream.
+		expect(next.students).toEqual(before.students);
 		expect(next.classes).toEqual(before.classes);
 		expect(next.invoices).toEqual(before.invoices);
-		for (const other of next.students.filter((s) => s.id !== "s1")) {
-			const prev = before.students.find((s) => s.id === other.id);
-			expect(other.pkg).toEqual(prev?.pkg);
-		}
-		// Fields students list / detail / roster / tuition package table already read
-		expect(nextS1?.pkg.remaining).toBeDefined();
-		expect(nextS1?.pkg.total).toBe(s1?.pkg.total);
-		expect(nextS1?.pkg.done).toBeDefined();
 	});
 
 	test("check-in l1 (completed) returns the same state reference", () => {
@@ -68,14 +51,12 @@ describe("reducer", () => {
 		expect(next).toBe(before);
 	});
 
-	test("check-in l9 (cancelled) still completes and increments s4 (current hole)", () => {
+	test("check-in l9 (cancelled) returns the same state reference — matrix mirrors the server", () => {
+		// The app path rejects cancelled→completed server-side with 409
+		// (kernel.test.ts); the fixture reducer enforces the same matrix.
 		const before = cloneSeed();
-		const s4 = before.students.find((s) => s.id === "s4");
 		const next = reducer(before, { type: "check-in", lessonId: "l9" });
-		expect(next.lessons.find((l) => l.id === "l9")?.status).toBe("completed");
-		expect(next.students.find((s) => s.id === "s4")?.pkg.done).toBe(
-			(s4?.pkg.done ?? 0) + 1,
-		);
+		expect(next).toBe(before);
 	});
 
 	test("mark-invoice-paid INV-084 sets paid and drops s4 unpaid debt", () => {

@@ -7,6 +7,7 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import {
@@ -30,6 +31,7 @@ export async function loadSnapshot(
 		syllabusRows,
 		moduleRows,
 		lessonRows,
+		scheduledRows,
 		assignmentRows,
 	] = await Promise.all([
 		db
@@ -80,6 +82,11 @@ export async function loadSnapshot(
 			.from(syllabusLesson)
 			.where(eq(syllabusLesson.orgId, orgId))
 			.orderBy(asc(syllabusLesson.position), asc(syllabusLesson.createdAt)),
+		db
+			.select()
+			.from(lesson)
+			.where(eq(lesson.orgId, orgId))
+			.orderBy(asc(lesson.day), asc(lesson.time), asc(lesson.createdAt)),
 		db
 			.select()
 			.from(assignment)
@@ -167,6 +174,18 @@ export async function loadSnapshot(
 			description: row.description,
 			totalLessons: row.totalLessons,
 			modules: modulesBySyllabus.get(row.id) ?? [],
+		})),
+		lessons: scheduledRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			enrollmentId: row.enrollmentId,
+			day: row.day,
+			time: row.time,
+			dur: row.dur,
+			type: row.type,
+			status: row.status,
+			topic: row.topic,
+			zoom: row.zoom,
 		})),
 		assignments: assignmentRows.map((row) => ({
 			id: row.id,
