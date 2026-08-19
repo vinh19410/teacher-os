@@ -18,6 +18,7 @@ import {
 } from "@teacher-os/db/schema/syllabus";
 import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../app";
+import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
 
 /** Shared explicit projection for the list endpoint and kernel snapshot. */
 export async function loadInvoices(
@@ -59,6 +60,9 @@ export async function loadSnapshot(
 		scheduledRows,
 		assignmentRows,
 		invoiceRows,
+		reportRows,
+		notifRows,
+		commentBankRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -119,6 +123,9 @@ export async function loadSnapshot(
 			.where(eq(assignment.orgId, orgId))
 			.orderBy(asc(assignment.createdAt)),
 		loadInvoices(db, orgId),
+		loadReports(db, orgId),
+		loadNotifs(db, orgId),
+		loadCommentBank(db, orgId),
 	]);
 
 	const lessonsByModule = new Map<
@@ -224,5 +231,8 @@ export async function loadSnapshot(
 			scores: row.scores,
 		})),
 		invoices: invoiceRows,
+		reports: reportRows,
+		notifs: notifRows,
+		commentBank: commentBankRows,
 	};
 }

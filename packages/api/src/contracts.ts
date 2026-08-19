@@ -84,6 +84,15 @@ export const assignmentGradeSchema = z.object({
 });
 export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
 
+/** Feedback is teacher-authored and may contain sensitive education data. */
+export const commentBankCreateSchema = z
+	.object({
+		text: z.string().trim().min(1).max(2000),
+		operationId: z.string().uuid(),
+	})
+	.strict();
+export type CommentBankCreate = z.infer<typeof commentBankCreateSchema>;
+
 /**
  * Scheduled-lesson status actions (Wave 4) — NOT syllabus_lesson (invariant 5).
  * The body is exactly `{}`: the target status comes from the endpoint, never
@@ -223,6 +232,30 @@ export interface KernelInvoiceRow {
 	method: string;
 }
 
+export interface KernelReportRow {
+	id: string;
+	studentId: string;
+	period: string;
+	sessions: number;
+	status: "read" | "sent" | "draft";
+	sent: string;
+	read: string;
+}
+
+export interface KernelNotifRow {
+	id: string;
+	text: string;
+	time: string;
+	channel: string;
+	dot: "accent" | "danger" | "warn";
+}
+
+export interface KernelCommentBankRow {
+	id: string;
+	tag: string;
+	text: string;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
@@ -232,6 +265,9 @@ export interface KernelSnapshot {
 	lessons: KernelLessonRow[];
 	assignments: KernelAssignmentRow[];
 	invoices: KernelInvoiceRow[];
+	reports: KernelReportRow[];
+	notifs: KernelNotifRow[];
+	commentBank: KernelCommentBankRow[];
 }
 
 export interface CreatedResponse {

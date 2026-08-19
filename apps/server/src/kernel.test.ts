@@ -14,11 +14,14 @@ import {
 	session as authSession,
 	user as authUser,
 } from "@teacher-os/db/schema/auth";
+import { commentBank } from "@teacher-os/db/schema/comment-bank";
 import * as schema from "@teacher-os/db/schema/index";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { membership } from "@teacher-os/db/schema/membership";
+import { notif } from "@teacher-os/db/schema/notif";
 import { organization } from "@teacher-os/db/schema/organization";
+import { report } from "@teacher-os/db/schema/report";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -296,6 +299,9 @@ describe("kernel bootstrap", () => {
 		expect(snapshot.students).toEqual([]);
 		expect(snapshot.classes).toEqual([]);
 		expect(snapshot.syllabi).toEqual([]);
+		expect(snapshot.reports).toEqual([]);
+		expect(snapshot.notifs).toEqual([]);
+		expect(snapshot.commentBank).toEqual([]);
 
 		const memberships = await t.membershipsOf(session.userId);
 		expect(memberships).toHaveLength(1);
@@ -945,6 +951,256 @@ describe("assignments grade (Wave 6)", () => {
 		expect(snapshot.assignments.some((a) => a.title === "tạo bài lén")).toBe(
 			false,
 		);
+	});
+});
+
+describe("reports, notifications, and comment bank (Wave 7)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let orgAId: string;
+	let studentAId: string;
+	let studentBId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Cô Reporting A");
+		orgB = await t.insertUser("Cô Reporting B");
+		studentAId = await t.addStudent(orgA, "Học viên báo cáo A");
+		studentBId = await t.addStudent(orgB, "Học viên báo cáo B");
+		orgAId = (await t.membershipsOf(orgA.userId))[0]?.orgId ?? "";
+	});
+
+	test("a new org has three empty collections on snapshot and list endpoints", async () => {
+		const snapshot = await t.kernel(orgB);
+		expect(snapshot.reports).toEqual([]);
+		expect(snapshot.notifs).toEqual([]);
+		expect(snapshot.commentBank).toEqual([]);
+
+		for (const path of ["/api/reports", "/api/notifs", "/api/comment-bank"]) {
+			const res = await t.call(path, { session: orgB });
+			expect(res.status, path).toBe(200);
+			expect(await res.json(), path).toEqual([]);
+		}
+	});
+
+	test("existing rows survive reload and use explicit display DTOs", async () => {
+		await t.db.insert(report).values({
+			id: "report-a",
+			orgId: orgAId,
+			studentId: studentAId,
+			period: "19–25/08",
+			sessions: 2,
+			status: "sent",
+			sent: "25/08 20:00",
+			read: "",
+		});
+		await t.db.insert(notif).values({
+			id: "notif-a",
+			orgId: orgAId,
+			text: "Bài đã được chấm",
+			time: "25/08 20:01",
+			channel: "App",
+			dot: "accent",
+		});
+		await t.db.insert(commentBank).values({
+			id: "comment-a",
+			orgId: orgAId,
+			operationId: "00000000-0000-4000-8000-000000000001",
+			tag: "chung",
+			text: "Cần cải thiện coherence",
+		});
+
+		const first = await t.kernel(orgA);
+		expect(first.reports).toEqual([
+			{
+				id: "report-a",
+				studentId: studentAId,
+				period: "19–25/08",
+				sessions: 2,
+				status: "sent",
+				sent: "25/08 20:00",
+				read: "",
+			},
+		]);
+		expect(first.notifs).toEqual([
+			{
+				id: "notif-a",
+				text: "Bài đã được chấm",
+				time: "25/08 20:01",
+				channel: "App",
+				dot: "accent",
+			},
+		]);
+		expect(first.commentBank).toEqual([
+			{ id: "comment-a", tag: "chung", text: "Cần cải thiện coherence" },
+		]);
+		expect(await t.kernel(orgA)).toMatchObject(first);
+
+		const otherOrg = await t.kernel(orgB);
+		expect(otherOrg.reports).toEqual([]);
+		expect(otherOrg.notifs).toEqual([]);
+		expect(otherOrg.commentBank).toEqual([]);
+		for (const path of ["/api/reports", "/api/notifs", "/api/comment-bank"]) {
+			const res = await t.call(path, { session: orgB });
+			expect(await res.json(), path).toEqual([]);
+		}
+	});
+
+	test("a malformed cross-org report relation is hidden", async () => {
+		await t.db.insert(report).values({
+			id: "report-cross-org",
+			orgId: orgAId,
+			studentId: studentBId,
+			period: "cross",
+			sessions: 1,
+			status: "draft",
+			sent: "",
+			read: "",
+		});
+		const snapshot = await t.kernel(orgA);
+		expect(snapshot.reports.some((row) => row.id === "report-cross-org")).toBe(
+			false,
+		);
+		const list = await t.call("/api/reports", { session: orgA });
+		expect(
+			((await list.json()) as KernelSnapshot["reports"]).some(
+				(row) => row.id === "report-cross-org",
+			),
+		).toBe(false);
+	});
+
+	test("comment append trims, persists duplicates with distinct ids, and reloads", async () => {
+		const ids: string[] = [];
+		for (const [text, operationId] of [
+			["  Nhận xét mới  ", "11111111-1111-4111-8111-111111111111"],
+			["Nhận xét mới", "22222222-2222-4222-8222-222222222222"],
+		] as const) {
+			const res = await t.call("/api/comment-bank", {
+				session: orgA,
+				method: "POST",
+				body: { text, operationId },
+			});
+			expect(res.status).toBe(201);
+			ids.push(((await res.json()) as { id: string }).id);
+		}
+		expect(new Set(ids).size).toBe(2);
+		const rows = (await t.kernel(orgA)).commentBank.filter(
+			(row) => row.text === "Nhận xét mới",
+		);
+		expect(rows).toHaveLength(2);
+		expect(rows.every((row) => row.tag === "chung")).toBe(true);
+	});
+
+	test("retrying after a lost acknowledgement returns the committed id once", async () => {
+		const body = {
+			text: "ACK có thể bị mất",
+			operationId: "33333333-3333-4333-8333-333333333333",
+		};
+		const first = await t.call("/api/comment-bank", {
+			session: orgA,
+			method: "POST",
+			body,
+		});
+		expect(first.status).toBe(201);
+		const firstId = ((await first.json()) as { id: string }).id;
+
+		const retry = await t.call("/api/comment-bank", {
+			session: orgA,
+			method: "POST",
+			body,
+		});
+		expect(retry.status).toBe(200);
+		expect(await retry.json()).toEqual({ id: firstId });
+		expect(
+			(await t.kernel(orgA)).commentBank.filter(
+				(row) => row.text === body.text,
+			),
+		).toHaveLength(1);
+
+		const changedPayload = await t.call("/api/comment-bank", {
+			session: orgA,
+			method: "POST",
+			body: { ...body, text: "Không được ghi đè" },
+		});
+		expect(changedPayload.status).toBe(409);
+		expect(
+			(await t.kernel(orgA)).commentBank.some(
+				(row) => row.text === "Không được ghi đè",
+			),
+		).toBe(false);
+
+		const otherOrg = await t.call("/api/comment-bank", {
+			session: orgB,
+			method: "POST",
+			body,
+		});
+		expect(otherOrg.status).toBe(201);
+		expect((await otherOrg.json()) as { id: string }).not.toEqual({
+			id: firstId,
+		});
+		expect(
+			(await t.kernel(orgB)).commentBank.filter(
+				(row) => row.text === body.text,
+			),
+		).toHaveLength(1);
+	});
+
+	test("comment append is guarded and rejects blank, oversized, and extra keys", async () => {
+		const noOrigin = await t.call("/api/comment-bank", {
+			session: orgA,
+			method: "POST",
+			origin: null,
+			body: {
+				text: "x",
+				operationId: "44444444-4444-4444-8444-444444444444",
+			},
+		});
+		expect(noOrigin.status).toBe(403);
+
+		for (const body of [
+			{
+				text: "   ",
+				operationId: "55555555-5555-4555-8555-555555555555",
+			},
+			{
+				text: "x".repeat(2001),
+				operationId: "66666666-6666-4666-8666-666666666666",
+			},
+			{
+				text: "ok",
+				operationId: "77777777-7777-4777-8777-777777777777",
+				tag: "forged",
+			},
+			{ text: "missing operation" },
+			{ text: "bad operation", operationId: "not-a-uuid" },
+		]) {
+			const res = await t.call("/api/comment-bank", {
+				session: orgA,
+				method: "POST",
+				body,
+			});
+			expect(res.status, JSON.stringify(body).slice(0, 80)).toBe(400);
+		}
+	});
+
+	test("report create/send and notification mark-read have no write routes", async () => {
+		const createReport = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: { studentId: studentAId },
+		});
+		expect(createReport.status).toBe(404);
+		const markRead = await t.call("/api/notifs/notif-a", {
+			session: orgA,
+			method: "PATCH",
+			body: {},
+		});
+		expect(markRead.status).toBe(404);
+		const snapshot = await t.kernel(orgA);
+		expect(
+			snapshot.reports.filter((row) => row.id === "report-a"),
+		).toHaveLength(1);
 	});
 });
 

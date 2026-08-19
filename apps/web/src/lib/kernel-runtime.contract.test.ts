@@ -75,12 +75,46 @@ describe("kernel-backed store wiring", () => {
 		expect(submit).not.toMatch(/dispatch|fetch|post|invoiceId/);
 	});
 
-	test("grade-modal stays open with an error when the write fails", () => {
+	test("CreateReportModal keeps Save Draft and Send close-only across both callers", () => {
+		const modal = readSrc("../components/modals/create-report-modal.tsx");
+		const submit = modal.slice(
+			modal.indexOf("function submit"),
+			modal.indexOf("return ("),
+		);
+		expect(submit).toMatch(/e\.preventDefault\(\)/);
+		expect(submit).toMatch(/onClose\(\)/);
+		expect(submit).not.toMatch(/dispatch|fetch|POST|reportId/);
+		expect(modal).toMatch(/Lưu nháp/);
+		expect(modal).toMatch(/Gửi báo cáo/);
+
+		for (const caller of [
+			"../routes/_auth/reports.tsx",
+			"../routes/_auth/students/$studentId.tsx",
+		]) {
+			expect(readSrc(caller), caller).toMatch(/<CreateReportModal/);
+		}
+	});
+
+	test("persisted comments use server identity and notifications expose no mark-read write", () => {
+		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
+		expect(assignment).toMatch(/key=\{c\.id\}/);
+		const topbar = readSrc("../components/layout/topbar.tsx");
+		expect(topbar).toMatch(/<NotifPanel notifs=\{data\.notifs\}/);
+		expect(topbar).not.toMatch(/mark.*read|dispatch\(.*notif/is);
+	});
+
+	test("grade-modal preserves grade/comment ordering and partial-success retry", () => {
 		const src = readSrc("../components/modals/grade-modal.tsx");
 		// Bus resolves undefined on write/refresh failure — the guard must
 		// keep the modal open so the typed scores are not lost.
 		expect(src).toMatch(/gradedId === undefined/);
 		expect(src).toMatch(/setError\("Không lưu được điểm/);
+		expect(src).toMatch(/type: "add-comment-bank"/);
+		expect(src).toMatch(/operationId: commentOperationId/);
+		expect(src).toMatch(/setCommentOperationId\(crypto\.randomUUID\(\)\)/);
+		expect(src).toMatch(/disabled=\{inputsDisabled\}/);
+		expect(src).toMatch(/gradeSaved/);
+		expect(src).toMatch(/Điểm đã lưu.*nhận xét chưa lưu/);
 		expect(src).toMatch(/disabled=\{saving\}/);
 	});
 
@@ -95,7 +129,7 @@ describe("kernel-backed store wiring", () => {
 });
 
 describe("reducer kernel-loaded hydration", () => {
-	test("emptyData hydrates the kernel slice and keeps local collections", async () => {
+	test("emptyData hydrates every persisted kernel collection", async () => {
 		const { emptyData, reducer } = await import("./data-store-reducer");
 		const payload = {
 			students: [
@@ -148,6 +182,9 @@ describe("reducer kernel-loaded hydration", () => {
 					scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 },
 				},
 			],
+			reports: [],
+			notifs: [],
+			commentBank: [{ id: "cb1", tag: "chung", text: "Nhận xét" }],
 		};
 		const next = reducer(
 			{
@@ -166,7 +203,8 @@ describe("reducer kernel-loaded hydration", () => {
 		);
 		expect(next.students).toHaveLength(1);
 		expect(next.invoices).toHaveLength(1);
-		expect(next.notifs).toHaveLength(1);
+		expect(next.notifs).toEqual([]);
+		expect(next.commentBank).toEqual(payload.commentBank);
 		// The assignments slice must ride the same hydration — the web half
 		// of "reload giữ scores + status graded".
 		expect(next.assignments).toEqual(payload.assignments);

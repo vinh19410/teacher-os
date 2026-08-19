@@ -11,6 +11,9 @@ const base: KernelSnapshot = {
 	lessons: [],
 	assignments: [],
 	invoices: [],
+	reports: [],
+	notifs: [],
+	commentBank: [],
 };
 
 describe("mapInvoices", () => {

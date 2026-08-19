@@ -132,7 +132,7 @@ function AssignmentDetailRoute() {
 							{data.commentBank.map((c) => (
 								<button
 									type="button"
-									key={c.text}
+									key={c.id}
 									onClick={() => appendComment(c.text)}
 									className="rounded-sm border border-line-soft border-solid px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-[150ms] hover:border-accent-blue hover:bg-accent-soft"
 								>

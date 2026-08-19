@@ -54,7 +54,7 @@ Lock thêm: org mới trống; wave 7 persist report/notif/comment_bank; package
 | 5 | [Wave 4 Schedule persist](./phase-05-wave-4-schedule-persist.md) | 4 | Completed |
 | 6 | [Wave 5 Tuition persist](./phase-06-wave-5-tuition-persist.md) | 5 | Completed |
 | 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Completed |
-| 8 | [Wave 7 Reports + notifs + comment bank](./phase-08-wave-7-reports-notifs-comment-bank.md) | 7 | Pending |
+| 8 | [Wave 7 Reports + notifs + comment bank](./phase-08-wave-7-reports-notifs-comment-bank.md) | 7 | Completed |
 | 9 | [Wave 8 Remove mock runtime](./phase-09-wave-8-remove-mock-runtime.md) | 8 | Pending |
 
 DAG GitHub: `0 → {1,2,3}` độc lập; `3 → 4 → 5`; `3 → 6 → 7` (serial trên `grade-modal.tsx`); `3 → 7` cũng cần wave 6 xong; `8` sau `4+5+6+7`. 1+2+3 **không** block lẫn nhau. 1+2+3 có thể 1 PR / 3 commit. Serial nếu 1 agent. Không song song 2 wave trên `schema/index.ts`, `apps/server/src/app.ts` (mount; `index.ts` chỉ là worker entry), `routes/kernel.ts`, `packages/api/src/contracts.ts`, `apps/web/src/lib/repos/kernel.ts`, `data-store-reducer.ts`, `grade-modal.ts`, migration journal (`packages/db/src/migrations/meta/_journal.json` — wave merge sau regenerate `db:generate` trên journal đã merge).
@@ -232,6 +232,30 @@ local-only; router invoice riêng không được mount và sẽ mất guard c�
 - Reconciled stale references: `server/src/index.ts` (worker entry) → `app.ts` mount + `routes/kernel.ts` guard, ở DAG lock + execution notes
 - Unresolved contradictions: 0
 
+### Session — 2026-08-19 (Wave 7 scope re-verification, scoped phase-08)
+**Findings:** 14 evidence-backed trước dedup (2 reviewers: Security Adversary + Assumption Destroyer, tier Light) — 9 accepted themes, 3 scope-expansion themes rejected, overlap deduped in phase dispositions.
+**Severity breakdown:** 1 Critical, 7 High, 6 Medium before dedup.
+**Reports:** `reports/red-team-wave7-security-adversary.md`, `reports/red-team-wave7-assumption-destroyer.md`
+**Key trigger:** Phase 8 predated the Wave 6 kernel snapshot/command-bus shape; read sites were already correct but snapshot/contracts did not hydrate reports/notifs/commentBank.
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | 3 list không vào kernel hydration path | Critical | Accept | Phase 8 architecture/tests |
+| 2 | Grade/comment dual-write thiếu ordering + partial UX | High | Accept | Phase 8 write flow/tests |
+| 3 | Comment identity/duplicate semantics chưa khóa | High | Accept | Phase 8 DTO/UI/tests |
+| 4 | Report DTO + same-org student relation thiếu | High | Accept | Phase 8 loader/contracts |
+| 5 | PII premise sai với free-text feedback | High | Accept | Phase 8 security |
+| 6 | Migration/order/contracts chưa đủ cụ thể | Medium | Accept | Phase 8 schema/DTO |
+| 7 | Report no-op chưa pin cả 2 action + 2 callers | Medium | Accept | Phase 8 tests |
+| 8 | Comment input không strict/bounded | Medium | Accept (bounded input only) | Phase 8 API |
+| 9 | Global role enforcement / pagination / demo chrome | High/Medium | Reject for Wave 7 | No public role/import surface; scope expansion |
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 7)
+- Files reread: `plan.md`, phase-01…phase-09 after scoped edits.
+- Decision deltas checked: kernel hydration, DTO identity, same-org report join, ordered two-step grade/comment, comment commit-vs-refresh ACK, duplicate append, PII/input bounds, no-op report paths, no mark-read.
+- Reconciled stale references: Phase 8 `GET 3 list` without provider wiring; missing comment-bank repo; stale read-site edits; PII-as-template premise.
+- Unresolved contradictions: 0
+
 ## Validation Log
 
 ### Verification Results
@@ -301,5 +325,17 @@ local-only; router invoice riêng không được mount và sẽ mất guard c�
   phase-09 can remove reducer runtime after phase-06 mark-paid leaves local-only
   path; phase-01 router guard contract stays unchanged; no student-tab code change
 - Unresolved contradictions: 0
+
+### Verification Results — 2026-08-19 (wave 7 pre-implementation)
+- **Tier:** Light (phase-08 scoped; parent Full tier 2026-08-18 còn hiệu lực)
+- **Claims checked:** 14 | **Verified:** 14 | **Failed:** 0 | **Unverified:** 0
+- Key verifications: `KernelSnapshot`/`KernelSlice`/reducer payload thiếu 3 collection; provider chỉ fetch `/api/kernel`; read sites đã dùng `data.reports/notifs/commentBank`; grade modal await command bus; report UI expects `sid` + display strings; create-report Save Draft/Send share no-op modal across 2 callers; current bootstrap creates only `teacher` and has no role-management/import surface.
+- Questions asked: 0 (issue + parent user locks resolve scope; red-team ambiguities locked as ordered two-step, duplicate append with server id, static send-log/chrome unchanged). Kongming GO_WITH_CONCERN resolved: comment POST `{id}` is commit ACK even when its following snapshot refresh fails; only actual POST failure is retryable.
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 7)
+- Files reread: `plan.md`, phase-01…phase-09 (phase-08 after edit).
+- Decision deltas checked: 8.
+- Reconciled stale references: 4.
+- Unresolved contradictions: 0.
 
 <!-- slug: persist-class-centric-domain-kernel -->

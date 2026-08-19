@@ -147,6 +147,29 @@ const snapshot: KernelSnapshot = {
 			method: "—",
 		},
 	],
+	reports: [
+		{
+			id: "report-1",
+			studentId: "st-1",
+			period: "19–25/08",
+			sessions: 2,
+			status: "sent",
+			sent: "25/08 20:00",
+			read: "",
+		},
+	],
+	notifs: [
+		{
+			id: "notif-1",
+			text: "Bài đã được chấm",
+			time: "25/08 20:01",
+			channel: "App",
+			dot: "accent",
+		},
+	],
+	commentBank: [
+		{ id: "comment-1", tag: "chung", text: "Cần cải thiện coherence" },
+	],
 };
 
 describe("mapKernelSnapshot", () => {
@@ -237,6 +260,22 @@ describe("mapKernelSnapshot", () => {
 			status: "late",
 			scores: null,
 		});
+	});
+
+	test("reporting collections ride the snapshot with display mappings", () => {
+		expect(slice.reports).toEqual([
+			{
+				id: "report-1",
+				sid: "st-1",
+				period: "19–25/08",
+				sessions: 2,
+				status: "sent",
+				sent: "25/08 20:00",
+				read: "",
+			},
+		]);
+		expect(slice.notifs).toEqual(snapshot.notifs);
+		expect(slice.commentBank).toEqual(snapshot.commentBank);
 	});
 });
 
@@ -399,6 +438,22 @@ describe("kernelCommand", () => {
 			}),
 		).toBe(true);
 	});
+
+	test("add-comment-bank carries a stable operation id through the kernel write", () => {
+		const action = {
+			type: "add-comment-bank",
+			text: "Nhận xét",
+			operationId: "11111111-1111-4111-8111-111111111111",
+		} as const;
+		expect(isKernelWrite(action)).toBe(true);
+		expect(kernelCommand(action)).toEqual({
+			path: "/api/comment-bank",
+			body: {
+				text: "Nhận xét",
+				operationId: "11111111-1111-4111-8111-111111111111",
+			},
+		});
+	});
 });
 
 describe("createKernelCommandBus", () => {
@@ -533,6 +588,27 @@ describe("createKernelCommandBus", () => {
 		expect(t.applied).toEqual([7]);
 		expect(t.errors).toEqual([
 			{ kind: "refresh", type: "update-class-notes", willRetry: true },
+		]);
+	});
+
+	test("comment POST acknowledgement survives refresh failure without replaying the write", async () => {
+		const t = makeHarness();
+		const p = t.bus.run({
+			type: "add-comment-bank",
+			text: "Nhận xét",
+			operationId: "11111111-1111-4111-8111-111111111111",
+		});
+		t.pendingPosts[0].resolve("comment-1");
+		await flush();
+		t.pendingFetches[0].reject(new Error("offline"));
+		await flush();
+		t.pendingFetches[1].reject(new Error("still offline"));
+		expect(await p).toBe("comment-1");
+		expect(t.postCalls).toEqual(["add-comment-bank"]);
+		expect(t.applied).toEqual([]);
+		expect(t.errors).toEqual([
+			{ kind: "refresh", type: "add-comment-bank", willRetry: true },
+			{ kind: "refresh", type: "add-comment-bank", willRetry: false },
 		]);
 	});
 });

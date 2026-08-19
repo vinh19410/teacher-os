@@ -92,6 +92,7 @@ export interface Notif {
 }
 
 export interface CommentBankItem {
+	id: string;
 	tag: string;
 	text: string;
 }
@@ -150,6 +151,19 @@ export interface MockData {
 	classes: ClassGroup[];
 	syllabi: Syllabus[];
 }
+
+export type KernelHydratedData = Pick<
+	MockData,
+	| "students"
+	| "classes"
+	| "syllabi"
+	| "lessons"
+	| "assignments"
+	| "invoices"
+	| "reports"
+	| "notifs"
+	| "commentBank"
+>;
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 export const dayDates = [18, 19, 20, 21, 22, 23, 24];
@@ -606,28 +620,45 @@ export const seedData: MockData = {
 	],
 	commentBank: [
 		{
+			id: "cb1",
 			tag: "Task Response",
 			text: "Đề bị thiếu ý counter-argument, cần cân bằng hai mặt.",
 		},
 		{
+			id: "cb2",
 			tag: "Task Response",
 			text: "Ví dụ cụ thể nhưng chưa link rõ tới luận điểm chính.",
 		},
 		{
+			id: "cb3",
 			tag: "Coherence",
 			text: "Thiếu linking words giữa đoạn, ý nhảy quá nhanh.",
 		},
-		{ tag: "Coherence", text: "Cấu trúc đoạn tốt, topic sentence rõ ràng." },
 		{
+			id: "cb4",
+			tag: "Coherence",
+			text: "Cấu trúc đoạn tốt, topic sentence rõ ràng.",
+		},
+		{
+			id: "cb5",
 			tag: "Lexical",
 			text: 'Từ vựng học thuật tốt, nhưng lặp "important" 3 lần.',
 		},
 		{
+			id: "cb6",
 			tag: "Lexical",
 			text: 'Cần dùng synonym thay "people" — individuals, citizens.',
 		},
-		{ tag: "Grammar", text: "Lỗi article a/an, cần ôn lại countable nouns." },
-		{ tag: "Grammar", text: "Câu phức tốt, nhưng run-on sentence ở đoạn 2." },
+		{
+			id: "cb7",
+			tag: "Grammar",
+			text: "Lỗi article a/an, cần ôn lại countable nouns.",
+		},
+		{
+			id: "cb8",
+			tag: "Grammar",
+			text: "Câu phức tốt, nhưng run-on sentence ở đoạn 2.",
+		},
 	],
 	classes: [
 		{
