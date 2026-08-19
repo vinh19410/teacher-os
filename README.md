@@ -17,6 +17,10 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **PWA** - Progressive Web App support
 - **Turborepo** - Optimized monorepo build system
 
+## Documentation
+
+Project context, architecture, and development conventions live in the [documentation index](docs/index.md).
+
 ## Getting Started
 
 First, install the dependencies:
