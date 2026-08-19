@@ -94,11 +94,12 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 - Target: web on Cloudflare + server on Cloudflare
 - Configure provider login: `cd packages/infra && pnpm exec alchemy login --configure`
+- Preferred local/CI method: Cloudflare **API Token via env** (`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`). After `alchemy login --configure`, pick **Environment Variables**.
 - Dev: pnpm run dev
 - Deploy: pnpm run deploy
 - Destroy: pnpm run destroy
 
-`alchemy login --configure` stores the selected Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; no provider-specific setup command is required by this scaffold.
+`alchemy login --configure` stores the selected Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; secrets for the env method stay in the process environment (or a gitignored `packages/infra/.env`), not in the profile.
 
 Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
 
