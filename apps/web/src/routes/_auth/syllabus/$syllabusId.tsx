@@ -19,6 +19,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import type { SyllabusLesson } from "@/lib/mock-data";
+import { useSyllabus } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 	component: SyllabusDetailRoute,
@@ -60,7 +61,8 @@ function statusBadge(status: SyllabusLesson["status"]) {
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
 	const navigate = useNavigate();
-	const { syllabusById, data } = useData();
+	const { syllabusById } = useSyllabus();
+	const { data } = useData();
 	const sy = syllabusById(syllabusId);
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 	const [assignOpen, setAssignOpen] = useState(false);
@@ -81,7 +83,6 @@ function SyllabusDetailRoute() {
 	const all = sy.modules.flatMap((m) => m.lessons);
 	const done = all.filter((l) => l.status === "done").length;
 	const current = all.find((l) => l.status === "current");
-	const pct = all.length > 0 ? Math.round((done / all.length) * 100) : 0;
 	const assigned = data.classes.filter((c) => c.syllabusId === sy.id);
 
 	function toggle(id: string) {

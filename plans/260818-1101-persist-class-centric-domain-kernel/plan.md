@@ -142,6 +142,25 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 - Reconciled stale references: X-Org-Id, /api/me, unique(userId), 26 seed tests, 13-route import, POST enrollments, dashboard Date()
 - Unresolved contradictions: 0
 
+### Session — 2026-08-19 (Wave 2 scope re-verification, scoped phase-03)
+**Findings:** 11 unique sau dedup (2 reviewers: Security Adversary + Assumption Destroyer, tier Light — Fact Checker) — 7 accepted, 2 resolved-by-pattern, 2 rejected
+**Severity breakdown:** 2 Critical accepted, 4 High accepted, 5 Medium (3 accepted / 2 rejected)
+**Key trigger:** 2 reviewer độc lập phát hiện premise phase-03 stale — seed đọc chết từ wave 0; wave 1 (PR #20) merge giữa chừng cấp pattern precedent. Disposition chi tiết: `phase-03-wave-2-syllabus-peel.md` → "Red Team Dispositions".
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Premise stale — peel đã xong wave 0, "ngừng đọc seed" no-op | Critical | Accept | Phase 3 (rewrite scope = read peel pattern wave 1) |
+| 2 | "totalLessons server-side" mâu thuẫn contract lock + pinned test | Critical | Accept | Phase 3 (derive trong mapSyllabi; deviation ghi lên issue #12) |
+| 3 | repos/syllabus.ts dual path desync | High | Accept | Phase 3 (hook trên store cache) |
+| 4 | Rewire modal write dính contract pin | High | Accept | Phase 3 (do-not-modify write) |
+| 5 | "CRUD" không deliver (không delete/rename) | Medium | Accept | Phase 3 (restatement) |
+| 6 | Thiếu test cross-org nested write | Medium | Accept | Phase 3 (server tests) |
+| 7 | Serial conflict repos/kernel.ts wave1∥wave2 | Medium | Resolved | Wave 1 merged PR #20; wave 2 rebase |
+| 8 | Không GET /syllabi/:id; GET /syllabi = snapshot | Medium | Resolved | By pattern (reads qua store hook) |
+| 9 | Input không bound trên 6 write endpoints | Medium | Reject | Out of scope wave 2 (surface wave 0); follow-up ghi trong Phase 3 Security |
+| 10 | PageHead lead hardcoded | Medium | Reject | Wave 1 precedent + wave-8 copy lock |
+| 11 | AssignSyllabusModal 2 mounts + class consumers | Medium | Accept | Phase 3 (do-not-modify list) |
+
 ## Validation Log
 
 ### Verification Results
@@ -151,6 +170,18 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 - Open questions asked: 0 (advise + red-team đã lock; không còn decision user)
 
 ### Whole-Plan Consistency Sweep
+- Unresolved contradictions: 0
+
+### Verification Results — 2026-08-19 (wave 2 pre-implementation)
+- **Tier:** Light (phase-03 scoped; parent Full tier 2026-08-18 còn hiệu lực)
+- **Claims checked:** 11 | **Verified:** 11 | **Failed:** 0 | **Unverified:** 0
+- Key verifications: routes + 5 modals tồn tại; 6 write actions trong `KERNEL_WRITE_TYPES` (`repos/kernel.ts:15-25`) + endpoints org-scoped mounted (`apps/server/src/routes/kernel.ts:424-579`); `seedData` 0 import runtime (chỉ `mock-data.ts:186` + tests); provider hydrate `GET /api/kernel` (`data-provider.tsx:67-87`); adapter derive `totalLessons` từ tree (mapKernelSnapshot trong `repos/kernel.ts`, pin `repos/kernel.test.ts:161`); modal write pins (`kernel-runtime.contract.test.ts:51-66`); wave 1 precedent merged (PR #20: `repos/students.ts` + `use-students.ts` + `students-peel.contract.test.ts`).
+- Open questions asked: 0 (deviation "totalLessons server-side → mapping-side" giải quyết bằng contract lock + pinned test + wave-1 precedent; ghi rõ lên issue #12)
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 2)
+- Files reread: `plan.md`, phase-02, phase-03 (sau edit), phase-04
+- Decision deltas checked: scope phase-03 = read peel; totalLessons mapping-side; store slice `syllabi` sống đến wave 3+; write path đóng băng
+- Reconciled stale references: "ngừng đọc data.syllabi seed" (phase-03 cũ), "Recompute totalLessons server-side" (phase-03 cũ), "Được gộp 1 PR / 3 commit với wave 1+3" (wave 1 đã merge riêng PR #20 — wave 2 PR độc lập)
 - Unresolved contradictions: 0
 
 <!-- slug: persist-class-centric-domain-kernel -->
