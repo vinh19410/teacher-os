@@ -447,6 +447,103 @@ describe("syllabus tree and nested binding", () => {
 	});
 });
 
+describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let syllabusId: string;
+	let moduleId: string;
+	let lessonId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Cô Syllabus A");
+		orgB = await t.insertUser("Cô Syllabus B");
+		syllabusId = await t.createSyllabus(orgA, "Cây giáo trình A");
+		moduleId = await t.createModule(orgA, syllabusId, "Module A");
+		const lessonRes = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Buổi A",
+					objectives: "mục tiêu A",
+					materials: "tài liệu A",
+					status: "upcoming",
+				},
+			},
+		);
+		expect(lessonRes.status).toBe(201);
+		lessonId = ((await lessonRes.json()) as { id: string }).id;
+	});
+
+	test("org B sees none of org A's syllabus tree", async () => {
+		const snapshotB = await t.kernel(orgB);
+		expect(snapshotB.syllabi).toEqual([]);
+	});
+
+	test("org B cannot add a module under org A's syllabus", async () => {
+		const res = await t.call(`/api/syllabi/${syllabusId}/modules`, {
+			session: orgB,
+			method: "POST",
+			body: { title: "module gián điệp", description: "" },
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("org B cannot edit org A's module", async () => {
+		const res = await t.call(`/api/syllabi/${syllabusId}/modules/${moduleId}`, {
+			session: orgB,
+			method: "POST",
+			body: { title: "đánh cắp module", description: "" },
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("org B cannot add a lesson under org A's module", async () => {
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session: orgB,
+				method: "POST",
+				body: {
+					title: "buổi gián điệp",
+					objectives: "",
+					materials: "",
+					status: "upcoming",
+				},
+			},
+		);
+		expect(res.status).toBe(404);
+	});
+
+	test("org B cannot edit org A's lesson", async () => {
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			{
+				session: orgB,
+				method: "POST",
+				body: {
+					title: "đánh cắp buổi",
+					objectives: "",
+					materials: "",
+					status: "done",
+				},
+			},
+		);
+		expect(res.status).toBe(404);
+	});
+
+	test("org A's tree is unchanged after every cross-org attempt", async () => {
+		const snapshotA = await t.kernel(orgA);
+		const sy = snapshotA.syllabi[0];
+		expect(sy?.modules.map((m) => m.title)).toEqual(["Module A"]);
+		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["Buổi A"]);
+		expect(sy?.modules[0]?.lessons[0]?.status).toBe("upcoming");
+	});
+});
+
 describe("assign syllabus + class notes", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;

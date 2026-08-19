@@ -10,6 +10,7 @@ import type {
 import type { Action } from "@/lib/data-store-reducer";
 import type { MockData } from "@/lib/mock-data";
 import { mapStudents } from "./students";
+import { mapSyllabi } from "./syllabus";
 
 export type KernelSlice = Pick<MockData, "students" | "classes" | "syllabi">;
 
@@ -115,7 +116,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
  * Adapter: kernel snapshot → MockData kernel slice.
  * - Student mapping (incl. pkg derivation) lives in repos/students.ts.
  * - Class.studentIds comes from enrollments, never a stored id list.
- * - Syllabus.totalLessons recomputes from the tree, like the reducer did.
+ * - Syllabus mapping (incl. totalLessons recompute) lives in repos/syllabus.ts.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 	const enrollmentsByClass = new Map<string, string[]>();
@@ -142,26 +143,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 			startDate: row.startDate,
 			notes: row.notes,
 		})),
-		syllabi: snapshot.syllabi.map((row) => ({
-			id: row.id,
-			name: row.name,
-			level: row.level,
-			skill: row.skill,
-			totalLessons: row.modules.reduce((sum, m) => sum + m.lessons.length, 0),
-			description: row.description,
-			modules: row.modules.map((mod) => ({
-				id: mod.id,
-				title: mod.title,
-				description: mod.description || undefined,
-				lessons: mod.lessons.map((lesson) => ({
-					id: lesson.id,
-					title: lesson.title,
-					objectives: lesson.objectives || "—",
-					materials: lesson.materials || "—",
-					status: lesson.status as "done" | "current" | "upcoming",
-				})),
-			})),
-		})),
+		syllabi: mapSyllabi(snapshot),
 	};
 }
 
