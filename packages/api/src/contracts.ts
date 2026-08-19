@@ -64,6 +64,14 @@ export const lessonUpsertSchema = z.object({
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
+/**
+ * Scheduled-lesson status actions (Wave 4) — NOT syllabus_lesson (invariant 5).
+ * The body is exactly `{}`: the target status comes from the endpoint, never
+ * the client; anything else is rejected so a forged `status` cannot ride along.
+ */
+export const lessonActionSchema = z.object({}).strict();
+export type LessonAction = z.infer<typeof lessonActionSchema>;
+
 // --- Kernel snapshot rows (server → web adapter) ---
 
 export interface KernelStudentRow {
@@ -84,6 +92,10 @@ export interface KernelClassRow {
 	syllabusId: string | null;
 	schedule: string;
 	sessionsTotal: number;
+	/**
+	 * Stored legacy column with no writer since Wave 4 — the display value
+	 * derives from completed lessons (invariant 7). Do not trust it.
+	 */
 	sessionsDone: number;
 	status: string;
 	startDate: string;
@@ -141,12 +153,31 @@ export interface KernelSyllabusRow {
 	modules: KernelSyllabusModuleRow[];
 }
 
+/**
+ * A delivered/plan session (Wave 4). The student is never on this row —
+ * the adapter resolves `sid` via the enrollment (invariant 2). done/remaining
+ * derive from completed rows of the enrollment (invariant 6).
+ */
+export interface KernelLessonRow {
+	id: string;
+	classId: string;
+	enrollmentId: string;
+	day: number;
+	time: string;
+	dur: number;
+	type: string;
+	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
+	topic: string;
+	zoom: string;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
 	syllabi: KernelSyllabusRow[];
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
+	lessons: KernelLessonRow[];
 }
 
 export interface CreatedResponse {

@@ -19,7 +19,7 @@ export type Action =
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| {
 			type: "kernel-loaded";
-			payload: Pick<MockData, "students" | "classes" | "syllabi">;
+			payload: Pick<MockData, "students" | "classes" | "syllabi" | "lessons">;
 	  }
 	| {
 			type: "add-student";
@@ -141,18 +141,15 @@ export function reducer(state: MockData, action: Action): MockData {
 	switch (action.type) {
 		case "check-in": {
 			const lesson = state.lessons.find((l) => l.id === action.lessonId);
-			if (!lesson || lesson.status === "completed") return state;
+			// Fixture-only path (app dispatches ride the kernel bus since Wave 4):
+			// upcoming→completed mirrors the server matrix; pkg.done/remaining
+			// always derive from completed lessons (invariant 6), never a write.
+			if (lesson?.status !== "upcoming") return state;
 			return {
 				...state,
 				lessons: state.lessons.map((l) =>
 					l.id === action.lessonId ? { ...l, status: "completed" } : l,
 				),
-				students: state.students.map((s) => {
-					if (s.id !== lesson.sid) return s;
-					const done = s.pkg.done + 1;
-					const remaining = Math.max(0, s.pkg.total - done);
-					return { ...s, pkg: { ...s.pkg, done, remaining } };
-				}),
 			};
 		}
 		case "cancel-lesson": {

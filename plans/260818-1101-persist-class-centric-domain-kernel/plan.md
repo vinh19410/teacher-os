@@ -161,6 +161,26 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 | 10 | PageHead lead hardcoded | Medium | Reject | Wave 1 precedent + wave-8 copy lock |
 | 11 | AssignSyllabusModal 2 mounts + class consumers | Medium | Accept | Phase 3 (do-not-modify list) |
 
+### Session — 2026-08-19 (Wave 4 scope re-verification, scoped phase-05)
+**Findings:** 12 unique sau dedup (2 reviewers: Security Adversary + Assumption Destroyer, tier Light — Fact Checker) — 12 accepted, 0 rejected
+**Severity breakdown:** 2 Critical accepted, 4 High accepted, 6 Medium accepted
+**Key trigger:** Phase file viết theo tree cũ — cả read path (KernelSnapshot/loadSnapshot/KernelSlice/kernel-loaded payload không có lessons) lẫn write path (`check-in`/`cancel-lesson` không có trong `KERNEL_WRITE_TYPES`) đều thiếu; theo file list cũ, check-in local-only và `data.lessons` stay `[]` — fail im qua quality gate. Disposition chi tiết: `phase-05-wave-4-schedule-persist.md` → "Red Team Dispositions".
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Read path không có lessons ở 4 tầng — `data.lessons` stay `[]` | Critical | Accept | Phase 5 (Architecture 1, Steps 3) |
+| 2 | `check-in`/`cancel-lesson` không trong `KERNEL_WRITE_TYPES` → local-only | Critical | Accept | Phase 5 (Architecture 2, Steps 4) |
+| 3 | Origin/CSRF guard per-router — router riêng mất guard | High | Accept | Phase 5 (endpoint trong kernelRoutes + guard test) |
+| 4 | Thiếu transition matrix; `cancelled→completed` lọt | High | Accept | Phase 5 (upcoming-only, 409) |
+| 5 | Remaining derive không định danh chỗ; multi-enrollment ill-defined | High | Accept | Phase 5 (mapStudents, theo enrollment package hiển thị) |
+| 6 | sessionsDone pass-through cột lưu; unit 1:2 undefined | High | Accept | Phase 5 (mapClasses, distinct day,time) |
+| 7 | Enum "4 consumer" sai — 5 file/6 site (sót schedule.tsx:85) | Medium | Accept | Phase 5 (Architecture 3) |
+| 8 | Test lock trích dẫn sai; 5 test liên quan | Medium | Accept | Phase 5 (Steps 6) |
+| 9 | Binding lesson↔enrollment không ràng buộc | Medium | Accept | Phase 5 (handler validate) |
+| 10 | Schema thiếu FK/index convention | Medium | Accept | Phase 5 (schema block) |
+| 11 | Name collision `lessonUpsertSchema`; body POST undefined | Medium | Accept | Phase 5 (body `{}`, enum riêng) |
+| 12 | Isolation test không nêu harness | Medium | Accept | Phase 5 (server kernel.test.ts mirror 450-545) |
+
 ## Validation Log
 
 ### Verification Results
@@ -182,6 +202,19 @@ None. Advise đã lock org trống / wave 7 persist / role `teacher`.
 - Files reread: `plan.md`, phase-02, phase-03 (sau edit), phase-04
 - Decision deltas checked: scope phase-03 = read peel; totalLessons mapping-side; store slice `syllabi` sống đến wave 3+; write path đóng băng
 - Reconciled stale references: "ngừng đọc data.syllabi seed" (phase-03 cũ), "Recompute totalLessons server-side" (phase-03 cũ), "Được gộp 1 PR / 3 commit với wave 1+3" (wave 1 đã merge riêng PR #20 — wave 2 PR độc lập)
+- Unresolved contradictions: 0
+
+### Verification Results — 2026-08-19 (wave 4 pre-implementation)
+- **Tier:** Light (phase-05 scoped; parent Full tier 2026-08-18 còn hiệu lực)
+- **Claims checked:** 13 | **Verified:** 13 | **Failed:** 0 | **Unverified:** 0
+- Key verifications (Fact Checker, 2 reviewer độc lập khớp nhau): `repos/lessons.ts` không tồn tại (Create, không Modify); `KERNEL_WRITE_TYPES` 9 type, không có check-in/cancel (`repos/kernel.ts:18-28`); `KernelSnapshot` không có lessons (`contracts.ts:144-150`); `loadSnapshot` không SELECT lesson (`routes/kernel.ts:120-263`); `kernel-loaded` payload Pick 3 key (`data-store-reducer.ts:21-23`); Origin guard per-router `kernel.use` (`routes/kernel.ts:38-49`); `lessonUpsertSchema` là syllabus contract (`contracts.ts:59-65`); `mapStudents` hardcode `done:0/remaining:total` (`repos/students.ts:52-53`); `mapClasses` pass-through `sessionsDone` với comment "until Wave 4" (`repos/classes.ts:15-16`); reader `l.sid` 5 file/6 site gồm `schedule.tsx:85`, `classes/$classId.tsx:59-60,180`; migration convention + server test harness tồn tại (drizzle-kit `db:generate`, alchemy `migrationsDir`, `apps/server` `vitest run` + kernel.test.ts:450-545 pattern); test lock thật là "increments s1 package math" 30-57 pin `pkg.done+1`.
+- Open questions asked: 0
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 4)
+- Files reread: `plan.md`, phase-01, phase-02, phase-03, phase-04, phase-05 (sau edit), phase-06…phase-09
+- Decision deltas checked: endpoint lesson sống trong kernelRoutes (không router riêng, không đụng app.ts); read qua kernel snapshot (không fetch riêng — giữ provider gate wave 0); remaining derive mapping-side tại mapStudents (khớp precedent wave 2 totalLessons); sessionsDone distinct (day,time); transition matrix upcoming-only; body `{}`; `schedule.tsx` zero-change
+- Reconciled stale references (phase-05 cũ): "Modify repos/lessons.ts" → Create; "Create/Modify routes/lessons/" → endpoint trong kernelRoutes; "4 consumer" → 5 file/6 site; "data-store-reducer.ts:122-136" → 142-157; "test 30-47 sessionsDone" → test 30-57 pkg.done counter; "Derive trong API/adapter" → định danh mapStudents/mapClasses; bỏ "Modify schedule.tsx"
+- Cross-phase checks: phase-06 (wave 5 tuition) + phase-07 (wave 6 assignments) không đọc `session_package.done` cột (đã verify schema không có cột) — derive mapping-side không phá; phase-09 (wave 8) gỡ mock runtime vẫn giữ fixture test; invariant 2/5/6/7 không đổi
 - Unresolved contradictions: 0
 
 <!-- slug: persist-class-centric-domain-kernel -->

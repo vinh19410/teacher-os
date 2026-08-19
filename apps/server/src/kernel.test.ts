@@ -14,6 +14,7 @@ import {
 	user as authUser,
 } from "@teacher-os/db/schema/auth";
 import * as schema from "@teacher-os/db/schema/index";
+import { lesson } from "@teacher-os/db/schema/lesson";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
 import { eq } from "drizzle-orm";
@@ -110,6 +111,43 @@ async function createTestApp() {
 			.where(eq(membership.userId, userId));
 	}
 
+	/**
+	 * Wave 4 helper insert: no lesson-create endpoint exists yet (non-goal),
+	 * so tests seed scheduled lessons directly — the same way the persist
+	 * contract is verified.
+	 */
+	async function insertLesson(
+		session: TestSession,
+		row: {
+			classId: string;
+			enrollmentId: string;
+			day?: number;
+			time?: string;
+			dur?: number;
+			type?: string;
+			status?: string;
+			topic?: string;
+		},
+	): Promise<string> {
+		const [membershipRow] = await membershipsOf(session.userId);
+		if (!membershipRow) throw new Error("bootstrap the org before inserting");
+		const id = crypto.randomUUID();
+		await libsql.insert(lesson).values({
+			id,
+			orgId: membershipRow.orgId,
+			classId: row.classId,
+			enrollmentId: row.enrollmentId,
+			day: row.day ?? 2,
+			time: row.time ?? "19:00",
+			dur: row.dur ?? 60,
+			type: row.type ?? "1:1",
+			status: row.status ?? "upcoming",
+			topic: row.topic ?? "Mock test",
+			zoom: "",
+		});
+		return id;
+	}
+
 	async function kernel(session: TestSession): Promise<KernelSnapshot> {
 		const res = await call("/api/kernel", { session });
 		expect(res.status).toBe(200);
@@ -200,6 +238,7 @@ async function createTestApp() {
 		call,
 		kernel,
 		membershipsOf,
+		insertLesson,
 		createClass,
 		createSyllabus,
 		createModule,
@@ -596,5 +635,228 @@ describe("assign syllabus + class notes", () => {
 			body: { syllabusId: foreignSyllabusId },
 		});
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("lesson check-in/cancel (Wave 4)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let classId: string;
+	let enrollmentId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Lịch");
+		classId = await t.createClass(session, "Lớp 1:1");
+		const studentId = await t.addStudent(session, "Học viên lịch", {
+			classId,
+			total: 10,
+		});
+		const snapshot = await t.kernel(session);
+		enrollmentId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+		expect(enrollmentId).not.toBe("");
+	});
+
+	test("new org snapshot carries an empty lessons array (no seed)", async () => {
+		const fresh = await t.insertUser("Cô mới");
+		const snapshot = await t.kernel(fresh);
+		expect(snapshot.lessons).toEqual([]);
+	});
+
+	test("snapshot exposes inserted lesson rows bound to class + enrollment", async () => {
+		const lessonId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+			day: 2,
+			time: "19:00",
+			topic: "Writing task 2",
+		});
+		const snapshot = await t.kernel(session);
+		const row = snapshot.lessons.find((l) => l.id === lessonId);
+		expect(row).toMatchObject({
+			classId,
+			enrollmentId,
+			day: 2,
+			time: "19:00",
+			status: "upcoming",
+			topic: "Writing task 2",
+		});
+	});
+
+	test("check-in flips upcoming→completed and persists; second check-in is 409", async () => {
+		const lessonId = await t.insertLesson(session, { classId, enrollmentId });
+		const before = await t.kernel(session);
+
+		const first = await t.call(`/api/lessons/${lessonId}/check-in`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(first.status).toBe(200);
+
+		const after = await t.kernel(session);
+		expect(after.lessons.find((l) => l.id === lessonId)?.status).toBe(
+			"completed",
+		);
+		// Invariant 6/7: check-in writes only the lesson row — no package
+		// counters, no stored class sessionsDone.
+		expect(after.packages).toEqual(before.packages);
+		expect(after.classes.find((c) => c.id === classId)?.sessionsDone).toBe(
+			before.classes.find((c) => c.id === classId)?.sessionsDone,
+		);
+
+		const second = await t.call(`/api/lessons/${lessonId}/check-in`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(second.status).toBe(409);
+	});
+
+	test("cancel flips upcoming→cancelled; cancelled cannot be checked in; completed cannot be cancelled", async () => {
+		const cancelledId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+		});
+		const cancel = await t.call(`/api/lessons/${cancelledId}/cancel`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(cancel.status).toBe(200);
+		expect(
+			(await t.kernel(session)).lessons.find((l) => l.id === cancelledId)
+				?.status,
+		).toBe("cancelled");
+		const checkCancelled = await t.call(
+			`/api/lessons/${cancelledId}/check-in`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(checkCancelled.status).toBe(409);
+
+		const completedId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+			status: "completed",
+		});
+		const cancelCompleted = await t.call(`/api/lessons/${completedId}/cancel`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(cancelCompleted.status).toBe(409);
+	});
+
+	test("lesson whose enrollment belongs to another class is rejected (binding)", async () => {
+		const otherClassId = await t.createClass(session, "Lớp khác");
+		const otherStudentId = await t.addStudent(session, "HV khác", {
+			classId: otherClassId,
+		});
+		const snapshot = await t.kernel(session);
+		const otherEnrollmentId =
+			snapshot.enrollments.find(
+				(e) => e.classId === otherClassId && e.studentId === otherStudentId,
+			)?.id ?? "";
+		const lessonId = await t.insertLesson(session, {
+			classId, // claims class A but the enrollment sits in class B
+			enrollmentId: otherEnrollmentId,
+		});
+		const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(409);
+	});
+
+	test("guards: no Origin → 403, form content-type → 415, extra body key → 400", async () => {
+		const lessonId = await t.insertLesson(session, { classId, enrollmentId });
+
+		const noOrigin = await t.call(`/api/lessons/${lessonId}/check-in`, {
+			session,
+			method: "POST",
+			origin: null,
+			body: {},
+		});
+		expect(noOrigin.status).toBe(403);
+
+		const form = await t.app.request(`/api/lessons/${lessonId}/check-in`, {
+			method: "POST",
+			headers: {
+				cookie: `better-auth.session_token=${session.token}`,
+				origin: CORS_ORIGIN,
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: "x=1",
+		});
+		expect(form.status).toBe(415);
+
+		const forged = await t.call(`/api/lessons/${lessonId}/check-in`, {
+			session,
+			method: "POST",
+			body: { status: "completed" },
+		});
+		expect(forged.status).toBe(400);
+	});
+
+	test("unknown lesson id is 404", async () => {
+		const res = await t.call("/api/lessons/nope/check-in", {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(404);
+	});
+});
+
+describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let lessonAId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Cô Lịch A");
+		orgB = await t.insertUser("Cô Lịch B");
+		const classId = await t.createClass(orgA, "Lớp của A");
+		const studentId = await t.addStudent(orgA, "Học viên A", { classId });
+		const snapshot = await t.kernel(orgA);
+		const enrollmentId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+		lessonAId = await t.insertLesson(orgA, { classId, enrollmentId });
+	});
+
+	test("org B snapshot contains zero lessons", async () => {
+		const snapshotB = await t.kernel(orgB);
+		expect(snapshotB.lessons).toEqual([]);
+	});
+
+	test("org B cannot check in or cancel org A's lesson", async () => {
+		const checkIn = await t.call(`/api/lessons/${lessonAId}/check-in`, {
+			session: orgB,
+			method: "POST",
+			body: {},
+		});
+		expect(checkIn.status).toBe(404);
+
+		const cancel = await t.call(`/api/lessons/${lessonAId}/cancel`, {
+			session: orgB,
+			method: "POST",
+			body: {},
+		});
+		expect(cancel.status).toBe(404);
+	});
+
+	test("org A's lesson is unchanged after the cross-org attempts", async () => {
+		const snapshotA = await t.kernel(orgA);
+		expect(snapshotA.lessons.find((l) => l.id === lessonAId)?.status).toBe(
+			"upcoming",
+		);
 	});
 });

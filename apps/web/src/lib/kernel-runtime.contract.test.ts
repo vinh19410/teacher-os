@@ -95,6 +95,7 @@ describe("reducer kernel-loaded hydration", () => {
 			],
 			classes: [],
 			syllabi: [],
+			lessons: [],
 		};
 		const next = reducer(
 			{

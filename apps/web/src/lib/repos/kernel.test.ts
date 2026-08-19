@@ -6,6 +6,7 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 import {
 	createKernelCommandBus,
+	isKernelWrite,
 	kernelCommand,
 	mapKernelSnapshot,
 } from "./kernel";
@@ -114,6 +115,7 @@ const snapshot: KernelSnapshot = {
 			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 	],
+	lessons: [],
 };
 
 describe("mapKernelSnapshot", () => {
@@ -149,11 +151,11 @@ describe("mapKernelSnapshot", () => {
 		expect(slice.classes[0].studentIds).toEqual(["st-1"]);
 	});
 
-	test("class keeps its display fields and notes", () => {
+	test("class keeps its display fields; sessionsDone derives (stored 3, 0 completed lessons → 0)", () => {
 		expect(slice.classes[0]).toMatchObject({
 			id: "cl-1",
 			syllabusId: "sy-1",
-			sessionsDone: 3,
+			sessionsDone: 0,
 			notes: "ghi chú",
 		});
 	});
@@ -288,6 +290,29 @@ describe("kernelCommand", () => {
 			kernelCommand({ type: "update-class-notes", classId: "c1", notes: "n" })
 				.path,
 		).toBe("/api/classes/c1/notes");
+	});
+
+	test("check-in and cancel-lesson ride the bus with an exactly-empty body", () => {
+		const checkIn = kernelCommand({ type: "check-in", lessonId: "l1" });
+		expect(checkIn.path).toBe("/api/lessons/l1/check-in");
+		expect(checkIn.body).toEqual({});
+		expect(JSON.stringify(checkIn.body)).toBe("{}");
+
+		const cancel = kernelCommand({ type: "cancel-lesson", lessonId: "l1" });
+		expect(cancel.path).toBe("/api/lessons/l1/cancel");
+		expect(cancel.body).toEqual({});
+	});
+
+	test("check-in and cancel-lesson are kernel writes (no local-only dispatch)", () => {
+		expect(isKernelWrite({ type: "check-in", lessonId: "l1" })).toBe(true);
+		expect(isKernelWrite({ type: "cancel-lesson", lessonId: "l1" })).toBe(true);
+		expect(
+			isKernelWrite({
+				type: "mark-invoice-paid",
+				invoiceId: "i",
+				method: "cash",
+			}),
+		).toBe(false);
 	});
 });
 

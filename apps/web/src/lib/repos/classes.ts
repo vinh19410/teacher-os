@@ -12,8 +12,10 @@ import type { ClassGroup } from "@/lib/mock-data";
 /**
  * Map kernel class rows to the display shape. `studentIds` comes from the
  * org's enrollments; an unassigned syllabus (null) maps to "" like the
- * reducer did. `sessionsDone` stays the stored value until Wave 4 derives
- * it from completed lessons.
+ * reducer did. Wave 4: `sessionsDone` derives from completed lessons —
+ * distinct (day,time) pairs per class so a 1:2 session (one row per
+ * enrollment) counts as one delivered session (invariant 7); the stored
+ * class column is no longer read.
  */
 export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 	const rosterByClass = new Map<string, string[]>();
@@ -21,6 +23,14 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		const list = rosterByClass.get(row.classId) ?? [];
 		list.push(row.studentId);
 		rosterByClass.set(row.classId, list);
+	}
+
+	const sessionsByClass = new Map<string, Set<string>>();
+	for (const row of snapshot.lessons) {
+		if (row.status !== "completed") continue;
+		const sessions = sessionsByClass.get(row.classId) ?? new Set<string>();
+		sessions.add(`${row.day}|${row.time}`);
+		sessionsByClass.set(row.classId, sessions);
 	}
 
 	return snapshot.classes.map((row) => ({
@@ -32,7 +42,7 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		syllabusId: row.syllabusId ?? "",
 		studentIds: rosterByClass.get(row.id) ?? [],
 		schedule: row.schedule,
-		sessionsDone: row.sessionsDone,
+		sessionsDone: sessionsByClass.get(row.id)?.size ?? 0,
 		sessionsTotal: row.sessionsTotal,
 		status: row.status,
 		startDate: row.startDate,
