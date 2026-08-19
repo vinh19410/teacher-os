@@ -59,6 +59,9 @@ const snapshot: KernelSnapshot = {
 	lessons: [],
 	assignments: [],
 	invoices: [],
+	reports: [],
+	notifs: [],
+	commentBank: [],
 };
 
 describe("mapStudents", () => {
@@ -108,6 +111,9 @@ describe("mapStudents", () => {
 			lessons: [],
 			assignments: [],
 			invoices: [],
+			reports: [],
+			notifs: [],
+			commentBank: [],
 		};
 		expect(mapStudents(empty)).toEqual([]);
 	});
@@ -197,6 +203,9 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 		],
 		assignments: [],
 		invoices: [],
+		reports: [],
+		notifs: [],
+		commentBank: [],
 	};
 
 	test("done/remaining derive from completed lessons of the displayed enrollment only", () => {

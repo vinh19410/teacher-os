@@ -8,18 +8,18 @@ import type {
 	KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import type { Action } from "@/lib/data-store-reducer";
-import type { MockData } from "@/lib/mock-data";
+import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
+import { mapCommentBank } from "./comment-bank";
 import { mapInvoices } from "./invoices";
 import { mapLessons } from "./lessons";
+import { mapNotifs } from "./notifs";
+import { mapReports } from "./reports";
 import { mapStudents } from "./students";
 import { mapSyllabi } from "./syllabus";
 
-export type KernelSlice = Pick<
-	MockData,
-	"students" | "classes" | "syllabi" | "lessons" | "assignments" | "invoices"
->;
+export type KernelSlice = KernelHydratedData;
 
 const KERNEL_WRITE_TYPES = [
 	"add-student",
@@ -35,6 +35,7 @@ const KERNEL_WRITE_TYPES = [
 	"cancel-lesson",
 	"mark-invoice-paid",
 	"grade-assignment",
+	"add-comment-bank",
 ] as const;
 
 type KernelWriteType = (typeof KERNEL_WRITE_TYPES)[number];
@@ -111,6 +112,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/assignments/${action.assignmentId}/grade`,
 				body: { scores: action.scores },
 			};
+		case "add-comment-bank":
+			return {
+				path: "/api/comment-bank",
+				body: { text: action.text, operationId: action.operationId },
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -155,6 +161,9 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		lessons: mapLessons(snapshot),
 		assignments: mapAssignments(snapshot),
 		invoices: mapInvoices(snapshot),
+		reports: mapReports(snapshot),
+		notifs: mapNotifs(snapshot),
+		commentBank: mapCommentBank(snapshot),
 	};
 }
 
@@ -219,8 +228,10 @@ export interface KernelCommandBus {
  * a later write's POST always lands after the previous write is applied, so
  * no snapshot can be applied stale and no successful write can be dropped.
  *
- * A write that saved server-side but could not refresh the UI resolves
- * `undefined` so callers never navigate against a stale store.
+ * A write that saved server-side but could not refresh the UI normally resolves
+ * `undefined` so callers never navigate against a stale store. Comment-bank
+ * writes return their acknowledged id because replaying them would duplicate
+ * an already committed comment.
  */
 export function createKernelCommandBus(
 	deps: KernelCommandBusDeps,
@@ -247,7 +258,10 @@ export function createKernelCommandBus(
 				});
 			}
 		}
-		return undefined;
+		// A comment POST acknowledgement is the durable commit boundary. Replaying
+		// after only the hydration failed would create an unintended duplicate.
+		// Other actions keep the existing stale-store safety contract.
+		return action.type === "add-comment-bank" ? id : undefined;
 	}
 
 	return {

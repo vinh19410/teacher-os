@@ -4,6 +4,8 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 
+const DEFAULT_SCORE = "6.0";
+
 export function GradeModal({
 	open,
 	onClose,
@@ -15,13 +17,27 @@ export function GradeModal({
 }) {
 	const { assignmentById, dispatch } = useData();
 	const assignment = assignmentById(assignmentId);
-	const [task, setTask] = useState("6.0");
-	const [coherence, setCoherence] = useState("6.0");
-	const [lexical, setLexical] = useState("6.0");
-	const [grammar, setGrammar] = useState("6.0");
+	const [task, setTask] = useState(DEFAULT_SCORE);
+	const [coherence, setCoherence] = useState(DEFAULT_SCORE);
+	const [lexical, setLexical] = useState(DEFAULT_SCORE);
+	const [grammar, setGrammar] = useState(DEFAULT_SCORE);
 	const [feedback, setFeedback] = useState("");
 	const [error, setError] = useState<string | undefined>();
 	const [saving, setSaving] = useState(false);
+	const [gradeSaved, setGradeSaved] = useState(false);
+	const [commentOperationId, setCommentOperationId] = useState(() =>
+		crypto.randomUUID(),
+	);
+	const inputsDisabled = saving || gradeSaved;
+
+	function readScores() {
+		return {
+			task: Number.parseFloat(task),
+			coherence: Number.parseFloat(coherence),
+			lexical: Number.parseFloat(lexical),
+			grammar: Number.parseFloat(grammar),
+		};
+	}
 
 	// The modal stays mounted across assignments (route component reuse),
 	// so a fresh open must drop the previous assignment's scores and error —
@@ -31,12 +47,14 @@ export function GradeModal({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
 	useEffect(() => {
 		if (!open) return;
-		setTask("6.0");
-		setCoherence("6.0");
-		setLexical("6.0");
-		setGrammar("6.0");
+		setTask(DEFAULT_SCORE);
+		setCoherence(DEFAULT_SCORE);
+		setLexical(DEFAULT_SCORE);
+		setGrammar(DEFAULT_SCORE);
 		setFeedback("");
 		setError(undefined);
+		setGradeSaved(false);
+		setCommentOperationId(crypto.randomUUID());
 	}, [open, assignmentId]);
 
 	if (!assignment) return null;
@@ -44,31 +62,40 @@ export function GradeModal({
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;
-		const scores = {
-			task: Number.parseFloat(task),
-			coherence: Number.parseFloat(coherence),
-			lexical: Number.parseFloat(lexical),
-			grammar: Number.parseFloat(grammar),
-		};
-		const invalid = Object.values(scores).some(
-			(v) => Number.isNaN(v) || v < 0 || v > 9,
-		);
-		if (invalid) {
-			setError("Điểm mỗi tiêu chí từ 0 đến 9 (bước 0.5).");
-			return;
-		}
+		const feedbackText = feedback.trim();
 		setSaving(true);
 		try {
-			// Bus resolves the graded id on success, undefined on write/refresh
-			// failure — stay open so the typed scores are not lost.
-			const gradedId = await dispatch({
-				type: "grade-assignment",
-				assignmentId,
-				scores,
-			});
-			if (gradedId === undefined) {
-				setError("Không lưu được điểm — thử lại.");
-				return;
+			if (!gradeSaved) {
+				const scores = readScores();
+				const invalid = Object.values(scores).some(
+					(v) => Number.isNaN(v) || v < 0 || v > 9,
+				);
+				if (invalid) {
+					setError("Điểm mỗi tiêu chí từ 0 đến 9 (bước 0.5).");
+					return;
+				}
+				const gradedId = await dispatch({
+					type: "grade-assignment",
+					assignmentId,
+					scores,
+				});
+				if (gradedId === undefined) {
+					setError("Không lưu được điểm — thử lại.");
+					return;
+				}
+				setGradeSaved(true);
+			}
+
+			if (feedbackText) {
+				const commentId = await dispatch({
+					type: "add-comment-bank",
+					text: feedbackText,
+					operationId: commentOperationId,
+				});
+				if (commentId === undefined) {
+					setError("Điểm đã lưu, nhưng nhận xét chưa lưu — thử lại.");
+					return;
+				}
 			}
 		} finally {
 			setSaving(false);
@@ -81,7 +108,7 @@ export function GradeModal({
 	return (
 		<Modal
 			open={open}
-			onClose={onClose}
+			onClose={saving ? () => undefined : onClose}
 			title={`Chấm bài — ${assignment.title}`}
 		>
 			<form onSubmit={submit}>
@@ -93,6 +120,7 @@ export function GradeModal({
 							min="0"
 							max="9"
 							value={task}
+							disabled={inputsDisabled}
 							onChange={(e) => setTask(e.target.value)}
 						/>
 					</Field>
@@ -103,6 +131,7 @@ export function GradeModal({
 							min="0"
 							max="9"
 							value={coherence}
+							disabled={inputsDisabled}
 							onChange={(e) => setCoherence(e.target.value)}
 						/>
 					</Field>
@@ -113,6 +142,7 @@ export function GradeModal({
 							min="0"
 							max="9"
 							value={lexical}
+							disabled={inputsDisabled}
 							onChange={(e) => setLexical(e.target.value)}
 						/>
 					</Field>
@@ -123,19 +153,33 @@ export function GradeModal({
 							min="0"
 							max="9"
 							value={grammar}
+							disabled={inputsDisabled}
 							onChange={(e) => setGrammar(e.target.value)}
 						/>
 					</Field>
 				</div>
-				<Field label="Nhận xét" error={error}>
+				<Field label="Nhận xét">
 					<Textarea
 						value={feedback}
 						onChange={(e) => setFeedback(e.target.value)}
+						disabled={inputsDisabled}
+						maxLength={2000}
 						placeholder="Nhập nhận xét…"
 					/>
 				</Field>
+				{error && (
+					<p role="alert" className="mb-3 text-danger text-xs">
+						{error}
+					</p>
+				)}
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
-					<Button variant="secondary" size="sm" onClick={onClose}>
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						onClick={onClose}
+						disabled={saving}
+					>
 						Hủy
 					</Button>
 					<Button type="submit" size="sm" disabled={saving}>

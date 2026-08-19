@@ -1,5 +1,6 @@
 import type {
 	ClassGroup,
+	KernelHydratedData,
 	MockData,
 	Scores,
 	Student,
@@ -17,18 +18,8 @@ export type Action =
 	| { type: "cancel-lesson"; lessonId: string }
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
-	| {
-			type: "kernel-loaded";
-			payload: Pick<
-				MockData,
-				| "students"
-				| "classes"
-				| "syllabi"
-				| "lessons"
-				| "assignments"
-				| "invoices"
-			>;
-	  }
+	| { type: "add-comment-bank"; text: string; operationId: string }
+	| { type: "kernel-loaded"; payload: KernelHydratedData }
 	| {
 			type: "add-student";
 			payload: {
@@ -188,6 +179,9 @@ export function reducer(state: MockData, action: Action): MockData {
 				),
 			};
 		}
+		case "add-comment-bank":
+			// Runtime writes use the kernel bus; local reducer keeps fixture behavior inert.
+			return state;
 		case "kernel-loaded": {
 			return { ...state, ...action.payload };
 		}

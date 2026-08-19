@@ -27,6 +27,7 @@ import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
+import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -543,6 +544,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	// Mounted after the Origin/content-type middleware above, so the
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
 	kernel.route("/assignments", assignmentRoutes(deps));
+	kernel.route("/reports", reportRoutes(deps));
+	kernel.route("/notifs", notifRoutes(deps));
+	kernel.route("/comment-bank", commentBankRoutes(deps));
 
 	return kernel;
 }
