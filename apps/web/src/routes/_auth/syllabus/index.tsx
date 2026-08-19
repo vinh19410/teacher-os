@@ -9,6 +9,7 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { useSyllabus } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
@@ -18,14 +19,13 @@ const FILTERS = ["Tất cả", "Writing", "Speaking", "Reading"];
 
 function SyllabusRoute() {
 	const navigate = useNavigate();
+	const { syllabi } = useSyllabus();
 	const { data } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const list =
-		filter === "Tất cả"
-			? data.syllabi
-			: data.syllabi.filter((s) => s.skill === filter);
+		filter === "Tất cả" ? syllabi : syllabi.filter((s) => s.skill === filter);
 
 	return (
 		<div>
