@@ -93,6 +93,7 @@ const snapshot: KernelSnapshot = {
 			zoom: "",
 		},
 	],
+	assignments: [],
 	invoices: [],
 };
 
@@ -128,6 +129,7 @@ describe("mapLessons", () => {
 				enrollments: [],
 				packages: [],
 				lessons: [],
+				assignments: [],
 				invoices: [],
 			}),
 		).toEqual([]);

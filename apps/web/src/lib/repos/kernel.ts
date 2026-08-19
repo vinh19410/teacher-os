@@ -9,6 +9,7 @@ import type {
 } from "@teacher-os/api/contracts";
 import type { Action } from "@/lib/data-store-reducer";
 import type { MockData } from "@/lib/mock-data";
+import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
 import { mapInvoices } from "./invoices";
 import { mapLessons } from "./lessons";
@@ -17,7 +18,7 @@ import { mapSyllabi } from "./syllabus";
 
 export type KernelSlice = Pick<
 	MockData,
-	"students" | "classes" | "syllabi" | "lessons" | "invoices"
+	"students" | "classes" | "syllabi" | "lessons" | "assignments" | "invoices"
 >;
 
 const KERNEL_WRITE_TYPES = [
@@ -33,6 +34,7 @@ const KERNEL_WRITE_TYPES = [
 	"check-in",
 	"cancel-lesson",
 	"mark-invoice-paid",
+	"grade-assignment",
 ] as const;
 
 type KernelWriteType = (typeof KERNEL_WRITE_TYPES)[number];
@@ -104,6 +106,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,
 				body: { method: action.method },
 			};
+		case "grade-assignment":
+			return {
+				path: `/api/assignments/${action.assignmentId}/grade`,
+				body: { scores: action.scores },
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -138,6 +145,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
  * - Class mapping (roster + sessionsDone derive) lives in repos/classes.ts.
  * - Syllabus mapping (incl. totalLessons recompute) lives in repos/syllabus.ts.
  * - Lesson mapping (incl. sid resolve) lives in repos/lessons.ts.
+ * - Assignment mapping (studentId→sid) lives in repos/assignments.ts.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 	return {
@@ -145,6 +153,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		classes: mapClasses(snapshot),
 		syllabi: mapSyllabi(snapshot),
 		lessons: mapLessons(snapshot),
+		assignments: mapAssignments(snapshot),
 		invoices: mapInvoices(snapshot),
 	};
 }

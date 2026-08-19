@@ -9,6 +9,7 @@ const base: KernelSnapshot = {
 	enrollments: [],
 	packages: [],
 	lessons: [],
+	assignments: [],
 	invoices: [],
 };
 

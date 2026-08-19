@@ -53,15 +53,15 @@ Lock thêm: org mới trống; wave 7 persist report/notif/comment_bank; package
 | 4 | [Wave 3 Classes peel](./phase-04-wave-3-classes-peel.md) | 3 | Completed |
 | 5 | [Wave 4 Schedule persist](./phase-05-wave-4-schedule-persist.md) | 4 | Completed |
 | 6 | [Wave 5 Tuition persist](./phase-06-wave-5-tuition-persist.md) | 5 | Completed |
-| 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Pending |
+| 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Completed |
 | 8 | [Wave 7 Reports + notifs + comment bank](./phase-08-wave-7-reports-notifs-comment-bank.md) | 7 | Pending |
 | 9 | [Wave 8 Remove mock runtime](./phase-09-wave-8-remove-mock-runtime.md) | 8 | Pending |
 
-DAG GitHub: `0 → {1,2,3}` độc lập; `3 → 4 → 5`; `3 → 6 → 7` (serial trên `grade-modal.tsx`); `3 → 7` cũng cần wave 6 xong; `8` sau `4+5+6+7`. 1+2+3 **không** block lẫn nhau. 1+2+3 có thể 1 PR / 3 commit. Serial nếu 1 agent. Không song song 2 wave trên `schema/index.ts`, `server/src/index.ts`, `data-store-reducer.ts`, `grade-modal.tsx`.
+DAG GitHub: `0 → {1,2,3}` độc lập; `3 → 4 → 5`; `3 → 6 → 7` (serial trên `grade-modal.tsx`); `3 → 7` cũng cần wave 6 xong; `8` sau `4+5+6+7`. 1+2+3 **không** block lẫn nhau. 1+2+3 có thể 1 PR / 3 commit. Serial nếu 1 agent. Không song song 2 wave trên `schema/index.ts`, `apps/server/src/app.ts` (mount; `index.ts` chỉ là worker entry), `routes/kernel.ts`, `packages/api/src/contracts.ts`, `apps/web/src/lib/repos/kernel.ts`, `data-store-reducer.ts`, `grade-modal.ts`, migration journal (`packages/db/src/migrations/meta/_journal.json` — wave merge sau regenerate `db:generate` trên journal đã merge).
 
 ## Execution notes
 
-- Mutation = POST action. CORS giữ `GET|POST|OPTIONS` + `Content-Type`/`Authorization` (`apps/server/src/index.ts:12-16`). Không PATCH. Không `X-Org-Id`.
+- Mutation = POST action. CORS giữ `GET|POST|OPTIONS` + `Content-Type`/`Authorization` (`apps/server/src/app.ts:87-95`; CSRF Origin guard trong `routes/kernel.ts:38-49` — router mới mount qua `kernel.route()` để inherit). Không PATCH. Không `X-Org-Id`.
 - `packages/api` tạo tay (Zod). Cấm đổi `bts.jsonc` `api`. `check-types` trên `packages/api` (package mới). Không sửa `.github/workflows/ci.yml`.
 - Bootstrap middleware trên **mọi** `/api/*` trừ `/api/auth/*`. Idempotent. Unique membership `(orgId, userId)`. Re-read nếu race. Không `unique(userId)` toàn cục. Không hook `user.create`. Không `/api/me`.
 - Fetch web: `credentials: 'include'`.
@@ -205,6 +205,32 @@ local-only; router invoice riêng không được mount và sẽ mất guard c�
 | 7 | AddInvoiceModal no-op chưa contract-lock | Medium | Accept | Phase 6 (no-create regression test) |
 | 8 | Test plan thiếu isolation/guard/reload matrix | Medium | Accept | Phase 6 (real handler tests) |
 | 9 | Classless student hiển thị 0/0/NaN | High | Reject | Pre-existing Tuition display; ngoài acceptance issue #15 |
+
+### Session — 2026-08-19 (Wave 6 pre-implementation, scoped phase-07)
+**Findings:** 13 unique sau dedup (4 reviewers, tier Full: Security Adversary, Failure Mode Analyst, Assumption Destroyer, Scope & Complexity Critic) — 13 accepted, 0 rejected
+**Severity breakdown:** 2 Critical accepted, 4 High accepted, 7 Medium accepted
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Read path unplanned — assignments không tới `data.assignments` (snapshot/payload không có) | Critical | Accept | Phase 7 (assignments ride kernel snapshot; GET list convenience; không GET /:id) |
+| 2 | Write path unplanned — `grade-assignment` ngoài `KERNEL_WRITE_TYPES` → local no-op; modal close trước await | Critical | Accept | Phase 7 (bus + kernelCommand + async modal) |
+| 3 | Router mới thoát CSRF Origin guard (guard sống trong `kernelRoutes`) + thiếu `app.ts` mount | High | Accept | Phase 7 (mount `kernel.route()` trong kernel chain) |
+| 4 | "Song song wave 4/5" đụng migration journal + barrels; lock `server/src/index.ts` stale | High | Accept | Phase 7 + plan DAG/notes (serial surfaces; regenerate migration) |
+| 5 | Schema bỏ convention: thiếu `createdAt`, org index, FK cascade (studentId FK = backstop "không đổi chủ") | High | Accept | Phase 7 (Architecture DDL đầy đủ) |
+| 6 | Half-band trap: copy convention `.int()` reject mọi điểm 6.5 | High | Accept | Phase 7 (`gradeScoresSchema` strict float 0–9) |
+| 7 | POST grade không ghi `status='graded'` — criterion fail silent | Medium | Accept | Phase 7 (một UPDATE scores+status; test assert cả hai) |
+| 8 | Thiếu 401 guard convention + test cross-org | Medium | Accept | Phase 7 (guard từng handler + test bắt buộc) |
+| 9 | `packages/api` contracts thiếu khỏi file list | Medium | Accept | Phase 7 (Related Code Files) |
+| 10 | Adapter `studentId → sid` + `due` format + consumer `students/$studentId.tsx` không liệt kê | Medium | Accept | Phase 7 (Context Links + mapAssignments) |
+| 11 | Feedback modal discarded nhưng không lock — nguy cơ thêm cột đụng wave 7 | Medium | Accept | Phase 7 (Requirements: cấm cột, defer wave 7) |
+| 12 | Module trống vĩnh viễn ngoài test — wiring chết không detect được | Medium | Accept | Phase 7 (bước 6: test qua `mapKernelSnapshot` thật) |
+| 13 | `repos/kernel.ts` response contract (`json.id` vs `{ok:true}`) không chỉ định | Medium | Accept | Phase 7 (response `{ ok: true }` pin) |
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 6)
+- Files reread: `plan.md`, phase-05, phase-06 (head), phase-07 (sau edit), phase-08
+- Decision deltas checked: reads qua snapshot (không GET /:id — khớp wave-2 resolution); mount qua `kernel.route()`; `.int()` cấm cho scores; feedback defer khớp phase-08 `comment_bank`; serial surfaces cập nhật DAG
+- Reconciled stale references: `server/src/index.ts` (worker entry) → `app.ts` mount + `routes/kernel.ts` guard, ở DAG lock + execution notes
+- Unresolved contradictions: 0
 
 ## Validation Log
 

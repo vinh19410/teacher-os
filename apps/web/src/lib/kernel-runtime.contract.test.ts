@@ -22,6 +22,7 @@ const KERNEL_WRITE_MODALS = [
 	"edit-module-modal.tsx",
 	"add-lesson-modal.tsx",
 	"edit-lesson-modal.tsx",
+	"grade-modal.tsx",
 ] as const;
 
 describe("kernel-backed store wiring", () => {
@@ -73,6 +74,24 @@ describe("kernel-backed store wiring", () => {
 		expect(submit).toMatch(/onClose\(\)/);
 		expect(submit).not.toMatch(/dispatch|fetch|post|invoiceId/);
 	});
+
+	test("grade-modal stays open with an error when the write fails", () => {
+		const src = readSrc("../components/modals/grade-modal.tsx");
+		// Bus resolves undefined on write/refresh failure — the guard must
+		// keep the modal open so the typed scores are not lost.
+		expect(src).toMatch(/gradedId === undefined/);
+		expect(src).toMatch(/setError\("Không lưu được điểm/);
+		expect(src).toMatch(/disabled=\{saving\}/);
+	});
+
+	test("grade-modal resets scores and error on every open", () => {
+		const src = readSrc("../components/modals/grade-modal.tsx");
+		// The modal stays mounted across assignments; without this reset,
+		// grading B would silently submit A's persisted scores.
+		expect(src).toMatch(/useEffect\(\(\) => \{/);
+		expect(src).toMatch(/if \(!open\) return;/);
+		expect(src).toMatch(/\}, \[open, assignmentId\]\);/);
+	});
 });
 
 describe("reducer kernel-loaded hydration", () => {
@@ -118,6 +137,17 @@ describe("reducer kernel-loaded hydration", () => {
 					method: "—",
 				},
 			],
+			assignments: [
+				{
+					id: "as-1",
+					sid: "s1",
+					title: "Essay 1",
+					type: "Writing Task 2",
+					due: "20/08",
+					status: "graded" as const,
+					scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 },
+				},
+			],
 		};
 		const next = reducer(
 			{
@@ -137,5 +167,8 @@ describe("reducer kernel-loaded hydration", () => {
 		expect(next.students).toHaveLength(1);
 		expect(next.invoices).toHaveLength(1);
 		expect(next.notifs).toHaveLength(1);
+		// The assignments slice must ride the same hydration — the web half
+		// of "reload giữ scores + status graded".
+		expect(next.assignments).toEqual(payload.assignments);
 	});
 });

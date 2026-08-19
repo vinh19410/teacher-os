@@ -87,6 +87,26 @@ const snapshot: KernelSnapshot = {
 			createdAt: "2026-08-18T01:00:00.000Z",
 		},
 	],
+	assignments: [
+		{
+			id: "as-1",
+			studentId: "st-1",
+			title: "Essay 1 — Education",
+			type: "Writing Task 2",
+			due: "20/08",
+			status: "graded",
+			scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 },
+		},
+		{
+			id: "as-2",
+			studentId: "st-2",
+			title: "Describe a map",
+			type: "Writing Task 1",
+			due: "25/08",
+			status: "late",
+			scores: null,
+		},
+	],
 	packages: [
 		{
 			id: "pk-old",
@@ -201,6 +221,22 @@ describe("mapKernelSnapshot", () => {
 				method: "—",
 			},
 		]);
+	});
+
+	test("assignments ride the snapshot into the slice with sid filled", () => {
+		expect(slice.assignments).toHaveLength(2);
+		expect(slice.assignments[0]).toMatchObject({
+			id: "as-1",
+			sid: "st-1",
+			status: "graded",
+			scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 },
+		});
+		expect(slice.assignments[1]).toMatchObject({
+			id: "as-2",
+			sid: "st-2",
+			status: "late",
+			scores: null,
+		});
 	});
 });
 
@@ -341,6 +377,27 @@ describe("kernelCommand", () => {
 			path: "/api/invoices/i/mark-paid",
 			body: { method: "CK" },
 		});
+	});
+
+	test("grade-assignment posts scores to the assignment grade endpoint", () => {
+		const scores = { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 };
+		const req = kernelCommand({
+			type: "grade-assignment",
+			assignmentId: "as-1",
+			scores,
+		});
+		expect(req.path).toBe("/api/assignments/as-1/grade");
+		expect(req.body).toEqual({ scores });
+	});
+
+	test("grade-assignment is a kernel write (local dispatch would drop it)", () => {
+		expect(
+			isKernelWrite({
+				type: "grade-assignment",
+				assignmentId: "as-1",
+				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			}),
+		).toBe(true);
 	});
 });
 

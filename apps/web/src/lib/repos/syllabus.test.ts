@@ -51,6 +51,7 @@ const snapshot: KernelSnapshot = {
 	enrollments: [],
 	packages: [],
 	lessons: [],
+	assignments: [],
 	invoices: [],
 };
 
@@ -109,6 +110,7 @@ describe("mapSyllabi", () => {
 			enrollments: [],
 			packages: [],
 			lessons: [],
+			assignments: [],
 			invoices: [],
 		};
 		expect(mapSyllabi(empty)).toEqual([]);
