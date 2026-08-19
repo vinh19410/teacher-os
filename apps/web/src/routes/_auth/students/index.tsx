@@ -8,31 +8,31 @@ import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
-import { useData } from "@/lib/data-store";
 import { fmtVND } from "@/lib/mock-data";
+import { useStudents } from "@/lib/repos/use-students";
 
 export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
 });
 
 const FILTERS = ["Tất cả", "Sắp hết buổi", "Nợ học phí", "Writing", "Speaking"];
+const FILTER_TAGS: Record<string, string> = {
+	"Sắp hết buổi": "sắp hết buổi",
+	"Nợ học phí": "nợ học phí",
+	Writing: "IELTS Writing",
+	Speaking: "IELTS Speaking",
+};
 
 function StudentsRoute() {
 	const navigate = useNavigate();
-	const { data } = useData();
+	const { students } = useStudents();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
-	const tagMap: Record<string, string> = {
-		"Sắp hết buổi": "sắp hết buổi",
-		"Nợ học phí": "nợ học phí",
-		Writing: "IELTS Writing",
-		Speaking: "IELTS Speaking",
-	};
 	const list =
 		filter === "Tất cả"
-			? data.students
-			: data.students.filter((s) => s.tags.includes(tagMap[filter] ?? filter));
+			? students
+			: students.filter((s) => s.tags.includes(FILTER_TAGS[filter] ?? filter));
 
 	return (
 		<div>

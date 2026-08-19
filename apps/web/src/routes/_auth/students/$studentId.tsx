@@ -11,6 +11,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { averageBand, fmtVND } from "@/lib/mock-data";
+import { useStudents } from "@/lib/repos/use-students";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
@@ -60,7 +61,8 @@ const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
 
 function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
-	const { studentById, data } = useData();
+	const { studentById } = useStudents();
+	const { data } = useData();
 	const student = studentById(studentId);
 	const [tab, setTab] = useState("profile");
 	const [reportOpen, setReportOpen] = useState(false);
