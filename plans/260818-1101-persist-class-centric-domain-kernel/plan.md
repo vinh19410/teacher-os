@@ -1,7 +1,7 @@
 ---
 title: "Persist class-centric domain kernel"
 description: "Persist org/class/enrollment kernel trên D1, giữ 13 màn qua adapter, rồi bóc module đến khi mock runtime chết."
-status: in-progress
+status: completed
 priority: P1
 effort: "12-16d"
 issue: 9
@@ -55,7 +55,7 @@ Lock thêm: org mới trống; wave 7 persist report/notif/comment_bank; package
 | 6 | [Wave 5 Tuition persist](./phase-06-wave-5-tuition-persist.md) | 5 | Completed |
 | 7 | [Wave 6 Assignments persist](./phase-07-wave-6-assignments-persist.md) | 6 | Completed |
 | 8 | [Wave 7 Reports + notifs + comment bank](./phase-08-wave-7-reports-notifs-comment-bank.md) | 7 | Completed |
-| 9 | [Wave 8 Remove mock runtime](./phase-09-wave-8-remove-mock-runtime.md) | 8 | Pending |
+| 9 | [Wave 8 Remove mock runtime](./phase-09-wave-8-remove-mock-runtime.md) | 8 | Completed |
 
 DAG GitHub: `0 → {1,2,3}` độc lập; `3 → 4 → 5`; `3 → 6 → 7` (serial trên `grade-modal.tsx`); `3 → 7` cũng cần wave 6 xong; `8` sau `4+5+6+7`. 1+2+3 **không** block lẫn nhau. 1+2+3 có thể 1 PR / 3 commit. Serial nếu 1 agent. Không song song 2 wave trên `schema/index.ts`, `apps/server/src/app.ts` (mount; `index.ts` chỉ là worker entry), `routes/kernel.ts`, `packages/api/src/contracts.ts`, `apps/web/src/lib/repos/kernel.ts`, `data-store-reducer.ts`, `grade-modal.ts`, migration journal (`packages/db/src/migrations/meta/_journal.json` — wave merge sau regenerate `db:generate` trên journal đã merge).
 
@@ -88,7 +88,7 @@ Vá stub (tạo HĐ, gửi report, Zalo, GCal, Pro 99k, enroll HV cũ, tạo bu�
 - [ ] Schema: 0 cột `student.pkg_*`, 0 JSON `student_ids` trên class
 - [ ] Wave 4: `lesson.classId` NOT NULL; check-in không UPDATE `session_package.done`
 - [ ] Org A không đọc class org B
-- [ ] Wave 8: 0 `seedData` / `useReducer(reducer` trên app path (fixture test được giữ)
+- [ ] Wave 8: 0 `seedData` / `useReducer(reducer` trên runtime `apps/web/src`; fixture test sống ngoài source runtime
 - [ ] 9 GitHub issue Wave 0–8 + 1 tracker, label `ready to review`
 
 ## GitHub issues
@@ -255,6 +255,25 @@ local-only; router invoice riêng không được mount và sẽ mất guard c�
 - Decision deltas checked: kernel hydration, DTO identity, same-org report join, ordered two-step grade/comment, comment commit-vs-refresh ACK, duplicate append, PII/input bounds, no-op report paths, no mark-read.
 - Reconciled stale references: Phase 8 `GET 3 list` without provider wiring; missing comment-bank repo; stale read-site edits; PII-as-template premise.
 - Unresolved contradictions: 0
+
+### Session — 2026-08-19 (Wave 8 pre-implementation, scoped phase-09)
+**Findings:** 15 raw → 5 unique (3 reviewers: Security Adversary, Failure Mode Analyst, Assumption Destroyer; controller completed scope check) — 4 accepted, 1 rejected as out-of-scope.
+**Severity breakdown:** 1 Critical accepted, 3 High accepted, 1 High rejected.
+**Key trigger:** Phase 9 described removing the reducer without naming the replacement snapshot state, action contract, fixture boundary, or complete write-contract coverage.
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | “Provider only fetches” would remove the command bus and discard all writes | Critical | Accept | Phase 9 architecture and steps |
+| 2 | `Action`/empty-state ownership in reducer would break shim and kernel repo | High | Accept | Phase 9 architecture, files and tests |
+| 3 | Fixture inside runtime source makes grep gate impossible | High | Accept | Phase 9 requirements and test boundary |
+| 4 | Historical reducer tests do not prove hydration, error handling or all persisted writes | High | Accept | Phase 9 test matrix |
+| 5 | Replace global demo banner with new stub disclosures | High | Reject | Explicitly outside issue scope; keep existing stub behavior unchanged |
+
+### Whole-Plan Consistency Sweep — 2026-08-19 (wave 8)
+- Files reread: `plan.md`, phase-01…phase-09 (phase-09 after edit).
+- Decision deltas checked: snapshot-state replacement; runtime-neutral action contract; fixture moved outside source runtime; command-bus-only dispatch; 14-action test matrix; existing stub scope unchanged.
+- Reconciled stale references: Phase 9 “Provider only fetches” → state plus command bus; ambiguous reducer-or-contract test path → explicit replacement coverage; fixture exception → exact grep boundary.
+- Unresolved contradictions: 0.
 
 ## Validation Log
 

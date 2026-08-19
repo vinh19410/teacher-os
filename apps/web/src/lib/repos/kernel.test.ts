@@ -6,7 +6,6 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 import {
 	createKernelCommandBus,
-	isKernelWrite,
 	kernelCommand,
 	mapKernelSnapshot,
 } from "./kernel";
@@ -403,15 +402,12 @@ describe("kernelCommand", () => {
 		expect(cancel.body).toEqual({});
 	});
 
-	test("persistent store actions, including mark-paid, ride the kernel bus", () => {
-		expect(isKernelWrite({ type: "check-in", lessonId: "l1" })).toBe(true);
-		expect(isKernelWrite({ type: "cancel-lesson", lessonId: "l1" })).toBe(true);
+	test("persistent store actions, including mark-paid, map to kernel requests", () => {
 		const markPaid = {
 			type: "mark-invoice-paid",
 			invoiceId: "i",
 			method: "CK",
 		} as const satisfies Parameters<typeof kernelCommand>[0];
-		expect(isKernelWrite(markPaid)).toBe(true);
 		expect(kernelCommand(markPaid)).toEqual({
 			path: "/api/invoices/i/mark-paid",
 			body: { method: "CK" },
@@ -429,23 +425,12 @@ describe("kernelCommand", () => {
 		expect(req.body).toEqual({ scores });
 	});
 
-	test("grade-assignment is a kernel write (local dispatch would drop it)", () => {
-		expect(
-			isKernelWrite({
-				type: "grade-assignment",
-				assignmentId: "as-1",
-				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
-			}),
-		).toBe(true);
-	});
-
 	test("add-comment-bank carries a stable operation id through the kernel write", () => {
 		const action = {
 			type: "add-comment-bank",
 			text: "Nhận xét",
 			operationId: "11111111-1111-4111-8111-111111111111",
 		} as const;
-		expect(isKernelWrite(action)).toBe(true);
 		expect(kernelCommand(action)).toEqual({
 			path: "/api/comment-bank",
 			body: {

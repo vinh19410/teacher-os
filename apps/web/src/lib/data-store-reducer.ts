@@ -1,101 +1,15 @@
+import type { KernelAction } from "./data-actions";
 import type {
 	ClassGroup,
-	KernelHydratedData,
 	MockData,
-	Scores,
 	Student,
 	Syllabus,
-	SyllabusLesson,
 	SyllabusModule,
 } from "./mock-data";
 
 function uid(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
-
-export type Action =
-	| { type: "check-in"; lessonId: string }
-	| { type: "cancel-lesson"; lessonId: string }
-	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
-	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
-	| { type: "add-comment-bank"; text: string; operationId: string }
-	| { type: "kernel-loaded"; payload: KernelHydratedData }
-	| {
-			type: "add-student";
-			payload: {
-				name: string;
-				phone: string;
-				parentName: string;
-				total: number;
-				price: number;
-				mode: "Online" | "Offline";
-				classId?: string;
-			};
-	  }
-	| {
-			type: "add-class";
-			payload: {
-				name: string;
-				level: string;
-				skill: string;
-				mode: string;
-				syllabusId: string;
-				schedule: string;
-				sessionsTotal: number;
-				startDate: string;
-			};
-	  }
-	| {
-			type: "add-syllabus";
-			payload: {
-				id: string;
-				name: string;
-				level: string;
-				skill: string;
-				description: string;
-				totalLessons: number;
-			};
-	  }
-	| { type: "assign-syllabus"; classId: string; syllabusId: string }
-	| {
-			type: "add-module";
-			syllabusId: string;
-			payload: { title: string; description: string };
-	  }
-	| {
-			type: "edit-module";
-			syllabusId: string;
-			moduleId: string;
-			payload: { title: string; description: string };
-	  }
-	| {
-			type: "add-lesson";
-			syllabusId: string;
-			moduleId: string;
-			payload: {
-				title: string;
-				objectives: string;
-				materials: string;
-				status: SyllabusLesson["status"];
-			};
-	  }
-	| {
-			type: "edit-lesson";
-			syllabusId: string;
-			moduleId: string;
-			lessonId: string;
-			payload: {
-				title: string;
-				objectives: string;
-				materials: string;
-				status: SyllabusLesson["status"];
-			};
-	  }
-	| {
-			type: "update-class-notes";
-			classId: string;
-			notes: string;
-	  };
 
 function recomputeTotalLessons(syllabus: Syllabus): void {
 	syllabus.totalLessons = syllabus.modules.reduce(
@@ -120,23 +34,8 @@ function mapModule(
 	return m.id === moduleId ? fn(structuredClone(m)) : m;
 }
 
-/**
- * Runtime starts empty — the kernel snapshot hydrates via `kernel-loaded`
- * and seedData remains a test fixture only.
- */
-export const emptyData: MockData = {
-	students: [],
-	lessons: [],
-	invoices: [],
-	assignments: [],
-	reports: [],
-	notifs: [],
-	commentBank: [],
-	classes: [],
-	syllabi: [],
-};
-
-export function reducer(state: MockData, action: Action): MockData {
+/** Historical fixture reducer; runtime state lives in DataProvider. */
+export function reducer(state: MockData, action: KernelAction): MockData {
 	switch (action.type) {
 		case "check-in": {
 			const lesson = state.lessons.find((l) => l.id === action.lessonId);
@@ -182,9 +81,6 @@ export function reducer(state: MockData, action: Action): MockData {
 		case "add-comment-bank":
 			// Runtime writes use the kernel bus; local reducer keeps fixture behavior inert.
 			return state;
-		case "kernel-loaded": {
-			return { ...state, ...action.payload };
-		}
 		case "add-student": {
 			const { name, phone, parentName, total, price, mode, classId } =
 				action.payload;

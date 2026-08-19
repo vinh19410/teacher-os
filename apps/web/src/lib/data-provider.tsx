@@ -6,13 +6,13 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
-	useReducer,
 	useRef,
 	useState,
 } from "react";
 import { toast } from "sonner";
 import { getServerUrl } from "@/lib/auth-client";
-import { type Action, emptyData, reducer } from "./data-store-reducer";
+import type { KernelAction } from "./data-actions";
+import { emptyKernelData } from "./kernel-state";
 import type {
 	Assignment,
 	ClassGroup,
@@ -25,7 +25,6 @@ import type {
 import {
 	createKernelCommandBus,
 	fetchKernelSnapshot,
-	isKernelWrite,
 	type KernelCommandBus,
 	mapKernelSnapshot,
 	postKernelCommand,
@@ -34,7 +33,7 @@ import {
 interface DataStore {
 	data: MockData;
 	/** Kernel writes go through the serialized command bus and resolve the server id. */
-	dispatch(action: Action): Promise<string | undefined>;
+	dispatch(action: KernelAction): Promise<string | undefined>;
 	studentById(id: string): Student | undefined;
 	lessonById(id: string): Lesson | undefined;
 	invoiceById(id: string): Invoice | undefined;
@@ -47,7 +46,7 @@ interface DataStore {
 const DataContext = createContext<DataStore | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-	const [data, localDispatch] = useReducer(reducer, emptyData);
+	const [data, setData] = useState(emptyKernelData);
 	// Loading gate: children (and the store) stay unmounted until the first
 	// GET /api/kernel settles, so detail pages cannot notFound() on stale ids.
 	const [kernelLoaded, setKernelLoaded] = useState(false);
@@ -56,10 +55,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 	const applySnapshot = useCallback(
 		(snapshot: Parameters<typeof mapKernelSnapshot>[0]) => {
-			localDispatch({
-				type: "kernel-loaded",
-				payload: mapKernelSnapshot(snapshot),
-			});
+			setData(mapKernelSnapshot(snapshot));
 		},
 		[],
 	);
@@ -87,11 +83,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	}, [loadKernel]);
 
 	const dispatch = useCallback(
-		(action: Action): Promise<string | undefined> => {
-			if (!isKernelWrite(action)) {
-				localDispatch(action);
-				return Promise.resolve(undefined);
-			}
+		(action: KernelAction): Promise<string | undefined> => {
 			busRef.current ??= createKernelCommandBus({
 				postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
 				fetchSnapshot: () => fetchKernelSnapshot(baseUrl),
