@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "Wave 6 Assignments persist"
-status: pending
+status: completed
 priority: P2
 effort: "1d"
 dependencies: [4]
@@ -71,18 +71,18 @@ assignment: id, orgId (FK organization cascade + assignment_org_idx),
 
 ## Todo
 
-- [ ] Bảng assignment (đủ convention)
-- [ ] Assignments vào kernel snapshot (đọc)
-- [ ] Grade persist (ghi: scores + status một UPDATE)
-- [ ] Gửi/nháp no-op
-- [ ] Cross-org + CSRF + half-band tests
-- [ ] Quality gate
+- [x] Bảng assignment (đủ convention)
+- [x] Assignments vào kernel snapshot (đọc)
+- [x] Grade persist (ghi: scores + status một UPDATE)
+- [x] Gửi/nháp no-op
+- [x] Cross-org + CSRF + half-band tests
+- [x] Quality gate
 
 ## Success Criteria
 
-- [ ] Reload giữ scores + status graded
-- [ ] Không insert assignment mới từ UI
-- [ ] Quality gate xanh
+- [x] Reload giữ scores + status graded
+- [x] Không insert assignment mới từ UI
+- [x] Quality gate xanh
 
 ## Risk Assessment
 
