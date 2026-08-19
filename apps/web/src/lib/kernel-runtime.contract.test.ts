@@ -72,6 +72,15 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/setError\("Không lưu được điểm/);
 		expect(src).toMatch(/disabled=\{saving\}/);
 	});
+
+	test("grade-modal resets scores and error on every open", () => {
+		const src = readSrc("../components/modals/grade-modal.tsx");
+		// The modal stays mounted across assignments; without this reset,
+		// grading B would silently submit A's persisted scores.
+		expect(src).toMatch(/useEffect\(\(\) => \{/);
+		expect(src).toMatch(/if \(!open\) return;/);
+		expect(src).toMatch(/\}, \[open, assignmentId\]\);/);
+	});
 });
 
 describe("reducer kernel-loaded hydration", () => {
