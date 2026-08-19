@@ -3,8 +3,9 @@
  * Delete or rewrite these tests when the mock is replaced by an API.
  */
 import { describe, expect, test } from "vitest";
+import { seedData } from "../../test/fixtures/mock-data";
 import { reducer } from "./data-store-reducer";
-import { averageBand, seedData } from "./mock-data";
+import { averageBand } from "./mock-data";
 
 function cloneSeed() {
 	return structuredClone(seedData);

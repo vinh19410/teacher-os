@@ -38,7 +38,10 @@ describe("kernel-backed store wiring", () => {
 	test("data-provider never mounts seedData and gates children on kernel load", () => {
 		const src = readSrc("data-provider.tsx");
 		expect(src).not.toMatch(/seedData/);
-		expect(src).toMatch(/emptyData/);
+		expect(src).toMatch(/emptyKernelData/);
+		expect(src).toMatch(/useState\(emptyKernelData\)/);
+		expect(src).toMatch(/setData\(mapKernelSnapshot\(snapshot\)\)/);
+		expect(src).not.toMatch(/localDispatch|data-store-reducer/);
 		// Loading gate: children stay unmounted until the first snapshot settles.
 		expect(src).toMatch(/if \(!kernelLoaded\)/);
 		expect(src).toMatch(/return null/);
@@ -128,85 +131,20 @@ describe("kernel-backed store wiring", () => {
 	});
 });
 
-describe("reducer kernel-loaded hydration", () => {
-	test("emptyData hydrates every persisted kernel collection", async () => {
-		const { emptyData, reducer } = await import("./data-store-reducer");
-		const payload = {
-			students: [
-				{
-					id: "s1",
-					name: "A",
-					pkg: {
-						total: 10,
-						done: 0,
-						remaining: 10,
-						price: 1,
-						mode: "Online" as const,
-						start: "",
-						expiry: "",
-					},
-					phone: "",
-					zalo: "",
-					parent: { name: "", phone: "" },
-					targetBand: "—",
-					skills: [],
-					examDate: "",
-					tags: [],
-					notes: "",
-					avatar: "A",
-					atRisk: false,
-				},
-			],
-			classes: [],
-			syllabi: [],
-			lessons: [],
-			invoices: [
-				{
-					id: "inv-1",
-					sid: "s1",
-					amount: 400000,
-					status: "unpaid" as const,
-					date: "19/08",
-					type: "Gói buổi",
-					method: "—",
-				},
-			],
-			assignments: [
-				{
-					id: "as-1",
-					sid: "s1",
-					title: "Essay 1",
-					type: "Writing Task 2",
-					due: "20/08",
-					status: "graded" as const,
-					scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 },
-				},
-			],
-			reports: [],
-			notifs: [],
-			commentBank: [{ id: "cb1", tag: "chung", text: "Nhận xét" }],
-		};
-		const next = reducer(
-			{
-				...emptyData,
-				notifs: [
-					{
-						id: "n1",
-						text: "t",
-						time: "",
-						channel: "",
-						dot: "accent" as const,
-					},
-				],
-			},
-			{ type: "kernel-loaded", payload },
-		);
-		expect(next.students).toHaveLength(1);
-		expect(next.invoices).toHaveLength(1);
-		expect(next.notifs).toEqual([]);
-		expect(next.commentBank).toEqual(payload.commentBank);
-		// The assignments slice must ride the same hydration — the web half
-		// of "reload giữ scores + status graded".
-		expect(next.assignments).toEqual(payload.assignments);
+describe("runtime state boundary", () => {
+	test("empty state is runtime-owned and contains every kernel collection", async () => {
+		const { emptyKernelData } = await import("./kernel-state");
+		expect(Object.keys(emptyKernelData).sort()).toEqual([
+			"assignments",
+			"classes",
+			"commentBank",
+			"invoices",
+			"lessons",
+			"notifs",
+			"reports",
+			"students",
+			"syllabi",
+		]);
+		expect(Object.values(emptyKernelData).every(Array.isArray)).toBe(true);
 	});
 });

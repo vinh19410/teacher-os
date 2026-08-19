@@ -60,12 +60,6 @@ export function Topbar({
 			<div className="font-display font-semibold text-lg tracking-[-0.01em]">
 				{title}
 			</div>
-			<span className="rounded-full border border-current border-dashed px-2 py-0.5 font-mono text-[10px] text-meta uppercase tracking-[0.04em]">
-				<span className="sm:hidden">Demo</span>
-				<span className="hidden sm:inline">
-					Dữ liệu demo — thay đổi không được lưu
-				</span>
-			</span>
 			<div className="topbar-search ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-accent-blue focus-within:shadow-[var(--focus-ring)] max-app:hidden">
 				<svg
 					aria-hidden="true"

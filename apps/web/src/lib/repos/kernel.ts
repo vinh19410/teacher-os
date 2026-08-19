@@ -7,7 +7,7 @@ import type {
 	CreatedResponse,
 	KernelSnapshot,
 } from "@teacher-os/api/contracts";
-import type { Action } from "@/lib/data-store-reducer";
+import type { KernelAction } from "@/lib/data-actions";
 import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
@@ -20,32 +20,6 @@ import { mapStudents } from "./students";
 import { mapSyllabi } from "./syllabus";
 
 export type KernelSlice = KernelHydratedData;
-
-const KERNEL_WRITE_TYPES = [
-	"add-student",
-	"add-class",
-	"add-syllabus",
-	"assign-syllabus",
-	"add-module",
-	"edit-module",
-	"add-lesson",
-	"edit-lesson",
-	"update-class-notes",
-	"check-in",
-	"cancel-lesson",
-	"mark-invoice-paid",
-	"grade-assignment",
-	"add-comment-bank",
-] as const;
-
-type KernelWriteType = (typeof KERNEL_WRITE_TYPES)[number];
-
-export type KernelAction = Extract<Action, { type: KernelWriteType }>;
-
-/** True when the action must go through the kernel command bus. */
-export function isKernelWrite(action: Action): action is KernelAction {
-	return (KERNEL_WRITE_TYPES as readonly string[]).includes(action.type);
-}
 
 export interface KernelRequest {
 	path: string;
