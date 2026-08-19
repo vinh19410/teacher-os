@@ -1,4 +1,4 @@
-/**
+/*
  * Students read repo (Wave 1) — pure mapping units.
  * The kernel snapshot is the only input; the provider wires transport.
  */
@@ -57,6 +57,7 @@ const snapshot: KernelSnapshot = {
 		},
 	],
 	lessons: [],
+	assignments: [],
 };
 
 describe("mapStudents", () => {
@@ -104,6 +105,7 @@ describe("mapStudents", () => {
 			enrollments: [],
 			packages: [],
 			lessons: [],
+			assignments: [],
 		};
 		expect(mapStudents(empty)).toEqual([]);
 	});
@@ -191,6 +193,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 			// 1:2 peer completed a shared session: only en-peer's entitlement moves.
 			lessonRow("l5", "en-peer", "completed"),
 		],
+		assignments: [],
 	};
 
 	test("done/remaining derive from completed lessons of the displayed enrollment only", () => {

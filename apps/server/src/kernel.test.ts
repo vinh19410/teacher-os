@@ -9,6 +9,7 @@
 
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
 	user as authUser,
@@ -580,6 +581,169 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 		expect(sy?.modules.map((m) => m.title)).toEqual(["Module A"]);
 		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["Buổi A"]);
 		expect(sy?.modules[0]?.lessons[0]?.status).toBe("upcoming");
+	});
+});
+
+describe("assignments grade (Wave 6)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let orgAId: string;
+	let orgAStudentId: string;
+	let assignmentId: string;
+
+	/** Test-only helper insert — no create endpoint exists by design. */
+	async function insertAssignment(
+		orgId: string,
+		studentId: string,
+		status: string,
+	): Promise<string> {
+		const id = crypto.randomUUID();
+		await t.db.insert(assignment).values({
+			id,
+			orgId,
+			studentId,
+			title: "Essay 1 — Education",
+			type: "Writing Task 2",
+			due: "20/08",
+			status,
+		});
+		return id;
+	}
+
+	const HALF_BAND = {
+		task: 6.5,
+		coherence: 7.0,
+		lexical: 6.5,
+		grammar: 6.0,
+	};
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Cô Assignment A");
+		orgB = await t.insertUser("Cô Assignment B");
+		orgAStudentId = await t.addStudent(orgA, "Học viên bài tập");
+		const memberships = await t.membershipsOf(orgA.userId);
+		orgAId = memberships[0]?.orgId ?? "";
+		assignmentId = await insertAssignment(orgAId, orgAStudentId, "late");
+	});
+
+	test("new org sees zero assignments", async () => {
+		const snapshot = await t.kernel(orgB);
+		expect(snapshot.assignments).toEqual([]);
+	});
+
+	test("grade persists half-band scores + status graded across snapshot reloads", async () => {
+		const res = await t.call(`/api/assignments/${assignmentId}/grade`, {
+			session: orgA,
+			method: "POST",
+			body: { scores: HALF_BAND },
+		});
+		expect(res.status).toBe(200);
+
+		const snapshot = await t.kernel(orgA);
+		expect(snapshot.assignments).toHaveLength(1);
+		expect(snapshot.assignments[0]).toMatchObject({
+			id: assignmentId,
+			status: "graded",
+			scores: HALF_BAND,
+		});
+
+		// The list convenience endpoint serves the same org-scoped rows.
+		const list = await t.call("/api/assignments", { session: orgA });
+		expect(list.status).toBe(200);
+		const rows = (await list.json()) as KernelSnapshot["assignments"];
+		expect(rows[0]).toMatchObject({ id: assignmentId, status: "graded" });
+	});
+
+	test("org B grading org A's assignment is 404 and does not mutate", async () => {
+		const freshId = await insertAssignment(
+			orgAId,
+			orgAStudentId,
+			"not-submitted",
+		);
+		const res = await t.call(`/api/assignments/${freshId}/grade`, {
+			session: orgB,
+			method: "POST",
+			body: { scores: HALF_BAND },
+		});
+		expect(res.status).toBe(404);
+
+		const snapshot = await t.kernel(orgA);
+		const row = snapshot.assignments.find((a) => a.id === freshId);
+		expect(row?.status).toBe("not-submitted");
+		expect(row?.scores).toBeNull();
+	});
+
+	test("grade POST inherits the origin + content-type guards", async () => {
+		const noOrigin = await t.call(`/api/assignments/${assignmentId}/grade`, {
+			session: orgA,
+			method: "POST",
+			origin: null,
+			body: { scores: HALF_BAND },
+		});
+		expect(noOrigin.status).toBe(403);
+
+		const form = await t.app.request(`/api/assignments/${assignmentId}/grade`, {
+			method: "POST",
+			headers: {
+				cookie: `better-auth.session_token=${orgA.token}`,
+				origin: CORS_ORIGIN,
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: "scores=x",
+		});
+		expect(form.status).toBe(415);
+	});
+
+	test("grade rejects out-of-range, string, missing-key, and extra-key bodies", async () => {
+		const badBodies = [
+			{ scores: { ...HALF_BAND, task: 10 } },
+			{ scores: { ...HALF_BAND, task: "6.5" } },
+			{ scores: { task: 6.5, coherence: 7, lexical: 6.5 } },
+			{ scores: { ...HALF_BAND, extra: 1 } },
+		];
+		for (const body of badBodies) {
+			const res = await t.call(`/api/assignments/${assignmentId}/grade`, {
+				session: orgA,
+				method: "POST",
+				body,
+			});
+			expect(res.status, JSON.stringify(body)).toBe(400);
+		}
+		// The rejected writes must not have clobbered the graded row.
+		const snapshot = await t.kernel(orgA);
+		const row = snapshot.assignments.find((a) => a.id === assignmentId);
+		expect(row?.scores).toEqual(HALF_BAND);
+		expect(row?.status).toBe("graded");
+	});
+
+	test("unauthenticated grade POST is 401", async () => {
+		const res = await t.call(`/api/assignments/${assignmentId}/grade`, {
+			method: "POST",
+			body: { scores: HALF_BAND },
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("no create endpoint exists — POST /api/assignments is 404 (Wave 6 lock)", async () => {
+		const res = await t.call("/api/assignments", {
+			session: orgA,
+			method: "POST",
+			body: {
+				title: "tạo bài lén",
+				studentId: orgAStudentId,
+				type: "Writing",
+				due: "21/08",
+			},
+		});
+		expect(res.status).toBe(404);
+		const snapshot = await t.kernel(orgA);
+		// Only the helper-inserted rows exist; nothing was created via API.
+		expect(snapshot.assignments.length).toBeGreaterThanOrEqual(1);
+		expect(snapshot.assignments.some((a) => a.title === "tạo bài lén")).toBe(
+			false,
+		);
 	});
 });
 

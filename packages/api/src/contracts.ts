@@ -65,6 +65,26 @@ export const lessonUpsertSchema = z.object({
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
 /**
+ * IELTS rubric scores — strict shape, float 0–9 on purpose: half-bands
+ * (6.5, 7.5) are the domain norm, so the repo-wide `.int()` convention
+ * would reject most real grades.
+ */
+export const gradeScoresSchema = z
+	.object({
+		task: z.number().min(0).max(9),
+		coherence: z.number().min(0).max(9),
+		lexical: z.number().min(0).max(9),
+		grammar: z.number().min(0).max(9),
+	})
+	.strict();
+export type GradeScores = z.infer<typeof gradeScoresSchema>;
+
+export const assignmentGradeSchema = z.object({
+	scores: gradeScoresSchema,
+});
+export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
+
+/**
  * Scheduled-lesson status actions (Wave 4) — NOT syllabus_lesson (invariant 5).
  * The body is exactly `{}`: the target status comes from the endpoint, never
  * the client; anything else is rejected so a forged `status` cannot ride along.
@@ -153,6 +173,22 @@ export interface KernelSyllabusRow {
 	modules: KernelSyllabusModuleRow[];
 }
 
+export interface KernelAssignmentRow {
+	id: string;
+	studentId: string;
+	title: string;
+	type: string;
+	/** Display-formatted dd/mm text, like every other date on the wire. */
+	due: string;
+	status: "not-submitted" | "late" | "graded" | string;
+	scores: {
+		task: number;
+		coherence: number;
+		lexical: number;
+		grammar: number;
+	} | null;
+}
+
 /**
  * A delivered/plan session (Wave 4). The student is never on this row —
  * the adapter resolves `sid` via the enrollment (invariant 2). done/remaining
@@ -178,6 +214,7 @@ export interface KernelSnapshot {
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
+	assignments: KernelAssignmentRow[];
 }
 
 export interface CreatedResponse {

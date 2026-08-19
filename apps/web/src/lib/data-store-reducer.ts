@@ -19,7 +19,10 @@ export type Action =
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| {
 			type: "kernel-loaded";
-			payload: Pick<MockData, "students" | "classes" | "syllabi" | "lessons">;
+			payload: Pick<
+				MockData,
+				"students" | "classes" | "syllabi" | "lessons" | "assignments"
+			>;
 	  }
 	| {
 			type: "add-student";
