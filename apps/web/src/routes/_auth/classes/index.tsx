@@ -9,6 +9,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { useData } from "@/lib/data-store";
+import { useClasses } from "@/lib/repos/use-classes";
 
 export const Route = createFileRoute("/_auth/classes/")({
 	component: ClassesRoute,
@@ -18,14 +19,15 @@ const FILTERS = ["Tất cả", "Online", "Offline", "Đang học"];
 
 function ClassesRoute() {
 	const navigate = useNavigate();
+	const { classes } = useClasses();
 	const { data } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const list =
 		filter === "Tất cả"
-			? data.classes
-			: data.classes.filter((c) =>
+			? classes
+			: classes.filter((c) =>
 					filter === "Đang học" ? c.status === "active" : c.mode === filter,
 				);
 

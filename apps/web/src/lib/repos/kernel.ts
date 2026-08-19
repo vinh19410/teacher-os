@@ -9,6 +9,7 @@ import type {
 } from "@teacher-os/api/contracts";
 import type { Action } from "@/lib/data-store-reducer";
 import { initials, type MockData, type Student } from "@/lib/mock-data";
+import { mapClasses } from "./classes";
 
 export type KernelSlice = Pick<MockData, "students" | "classes" | "syllabi">;
 
@@ -125,7 +126,7 @@ const ZERO_PKG: Student["pkg"] = {
  * - Student.pkg comes from the newest active session_package across the
  *   student's enrollments; a classless student gets the zero package
  *   (done/remaining always derive, never stored).
- * - Class.studentIds comes from enrollments, never a stored id list.
+ * - Class mapping (roster from enrollments) lives in repos/classes.ts.
  * - Syllabus.totalLessons recomputes from the tree, like the reducer did.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
@@ -139,13 +140,6 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		if (!existing || pkg.createdAt > existing.createdAt) {
 			packagesByStudent.set(pkg.studentId, pkg);
 		}
-	}
-
-	const enrollmentsByClass = new Map<string, string[]>();
-	for (const row of snapshot.enrollments) {
-		const list = enrollmentsByClass.get(row.classId) ?? [];
-		list.push(row.studentId);
-		enrollmentsByClass.set(row.classId, list);
 	}
 
 	return {
@@ -177,21 +171,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 				atRisk: false,
 			};
 		}),
-		classes: snapshot.classes.map((row) => ({
-			id: row.id,
-			name: row.name,
-			level: row.level,
-			skill: row.skill,
-			mode: row.mode,
-			syllabusId: row.syllabusId ?? "",
-			studentIds: enrollmentsByClass.get(row.id) ?? [],
-			schedule: row.schedule,
-			sessionsDone: row.sessionsDone,
-			sessionsTotal: row.sessionsTotal,
-			status: row.status,
-			startDate: row.startDate,
-			notes: row.notes,
-		})),
+		classes: mapClasses(snapshot),
 		syllabi: snapshot.syllabi.map((row) => ({
 			id: row.id,
 			name: row.name,

@@ -18,6 +18,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
 import { dayDates } from "@/lib/mock-data";
+import { useClasses } from "@/lib/repos/use-classes";
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
 	component: ClassDetailRoute,
@@ -40,7 +41,8 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 function ClassDetailRoute() {
 	const { classId } = Route.useParams();
 	const navigate = useNavigate();
-	const { classById, syllabusById, studentById, data, dispatch } = useData();
+	const { classById } = useClasses();
+	const { syllabusById, studentById, data, dispatch } = useData();
 	const cls = classById(classId);
 	const [tab, setTab] = useState("roster");
 	const [assignOpen, setAssignOpen] = useState(false);
