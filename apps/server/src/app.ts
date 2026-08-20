@@ -6,6 +6,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { kernelRoutes } from "./routes/kernel";
+import { readinessRoute } from "./routes/readiness";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -96,6 +97,9 @@ export function buildApp(deps: AppDeps) {
 	app.use("/api/*", bootstrapMiddleware(deps));
 	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
 	app.get("/", (c) => c.text("OK"));
+	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
+	// Better Auth never run — it answers purely from the D1 schema catalog.
+	app.get("/readyz", readinessRoute(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;
