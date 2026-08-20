@@ -1,7 +1,7 @@
 ---
 title: "Redesign login sign up page"
 description: "Rebuild the /login page (sign in + sign up) to match the approved static design export: two-panel shell with brand panel, accessible segmented tabs, and restyled forms — while keeping all auth wiring (better-auth calls, validation, navigation, error toasts) unchanged."
-status: pending
+status: completed
 priority: P1
 effort: "~1.5-2d"
 branch: feat/redesign-login-sign-up-page
