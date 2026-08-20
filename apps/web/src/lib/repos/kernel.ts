@@ -369,7 +369,12 @@ export function createKernelCommandBus(
 				try {
 					deps.applySnapshot(await deps.fetchSnapshot());
 					return true;
-				} catch {
+				} catch (error) {
+					// A dead session cannot reconcile either — route it to
+					// re-auth instead of reporting a misleading "unreachable".
+					if (isHttpError(error) && error.status === 401) {
+						deps.onAuthLost();
+					}
 					return false;
 				}
 			});

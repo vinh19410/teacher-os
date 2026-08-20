@@ -685,6 +685,16 @@ describe("createKernelCommandBus", () => {
 		expect(await applied).toBe(false);
 	});
 
+	test("bus.refresh() fires onAuthLost when the session died mid-reconcile", async () => {
+		const t = makeHarness();
+		const applied = t.bus.refresh();
+		t.pendingFetches[0].reject(
+			new HttpError(401, "GET /api/kernel failed: 401"),
+		);
+		expect(await applied).toBe(false);
+		expect(t.authLostCalls).toHaveLength(1);
+	});
+
 	test("bus.refresh() serializes behind an in-flight write so a stale snapshot never overwrites a newer apply", async () => {
 		const t = makeHarness();
 		const write = t.bus.run(action(1));
