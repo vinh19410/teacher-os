@@ -20,7 +20,7 @@ created: 2026-08-19
 
 ## Scope Challenge
 
-- Existing: D1 migration được Alchemy gắn vào stack; kernel org-scoped, CSRF, unit tests và CI đã có. Bằng chứng: `packages/infra/alchemy.run.ts:41-43` (`migrationsDir`), `apps/server/src/app.ts:83-101`, `.github/workflows/ci.yml:16-35`.
+- Existing: D1 migration được Alchemy gắn vào stack; kernel org-scoped, CSRF, unit tests và CI đã có. Bằng chứng: `packages/infra/alchemy.run.ts:41-43` (`migrationsDir`), CSRF origin guard `apps/server/src/routes/kernel.ts:42-53` + `buildApp` `apps/server/src/app.ts:84-106`, `.github/workflows/ci.yml:16-35`.
 - Requested: roadmap đầu tiên “Production readiness”, gồm deploy/UAT/rollback-support gate trong `docs/project-roadmap.md`.
 - Complexity: 6 phase, khoảng 15 file/docs có thể tác động, không thêm product feature hay service mới.
 - Selected mode: HOLD SCOPE. Auto-detected Hard.
@@ -33,7 +33,7 @@ GO chỉ khi toàn bộ checklist sau có evidence được lưu trong issue/run
 2. D1 đã migrate đúng và recovery drill trên môi trường non-production pass; policy là migration forward-only, không sửa migration đã apply.
 3. `/readyz` chỉ trả `200` khi Worker và D1 query thành công; lỗi snapshot đầu tiên không render workspace rỗng.
 4. Mọi mutation đang có chỉ đóng/reset UI khi server xác nhận commit; lỗi outcome chưa xác định bắt buộc reconcile snapshot trước khi người dùng thử lại.
-5. UAT incognito pass: sign-in → org rỗng → tạo syllabus/class → thêm học viên ngay trong class để tạo enrollment → hard reload → sign-out/sign-in giữ data; matrix origin sai bị `403`/redirect đúng.
+5. UAT incognito pass: sign-in → org rỗng → tạo syllabus/class → thêm học viên ngay trong class để tạo enrollment → hard reload → sign-out/sign-in giữ data; matrix origin sai bị `403` đúng kỳ vọng (Phase 6 định nghĩa từng hàng; server không trả redirect cho các case này).
 
 NO-GO nếu topology/cookie không ổn định, migration/recovery chưa được rehearsal, readiness không chứng minh D1, hoặc initial snapshot failure vẫn vào workspace rỗng.
 
@@ -50,7 +50,7 @@ NO-GO nếu topology/cookie không ổn định, migration/recovery chưa đư�
 | Release | Manual, controlled, evidence-backed | Một pilot đầu cần live proof; CI/CD deploy không phải điều kiện milestone này. |
 | Migration rollback | Forward-only; restore D1 chỉ theo runbook/rehearsal | Đảo migration sau dữ liệu thật dễ phá schema/data. |
 | Readiness | `/readyz` query D1 nhẹ, không trả detail | `GET /` hiện chỉ liveness (`apps/server/src/app.ts:99`). |
-| Snapshot failure | Blocking error + retry; `401` re-auth, không mount children | `DataProvider` hiện mở empty store sau lỗi (`apps/web/src/lib/data-provider.tsx:73-79`). |
+| Snapshot failure | Blocking error + retry; `401` re-auth, không mount children | Trước Phase 4 `DataProvider` mở empty store sau lỗi; sau Phase 4 lỗi load render blocking `KernelLoadError` (`apps/web/src/lib/data-provider.tsx:176-181`). |
 | Mutation result | Kết quả discriminated: committed/refreshed/failed/unknown | `id` không phải tín hiệu success cho endpoint trả `{ ok: true }`. |
 | Auth smoke | Manual incognito Chrome + Safari; Google OAuth thật, không ở CI | Chỉ browser/live origin chứng minh callback, cookie, CORS. |
 | Production topology | `app.<domain>` + `api.<domain>` | UAT phải bao gồm cross-subdomain cookie và Safari smoke; Phase 1 encodes runtime host/cookie settings. |
@@ -263,4 +263,33 @@ Live ledger (counts only, no UUIDs/row text): staging applied `0000`–`0006`; `
 - Files reread: `plan.md`, all six `phase-*.md` files.
 - Decision deltas checked: 3-bucket taxonomy, bus `onAuthLost`, signOut-then-redirect, returnUrl plumbing through login flows + guard, shape guard, sequence token, contract-test rewrite, new files (`kernel-load-state.ts`, `kernel-load-error.tsx`).
 - Reconciled stale references: 2 — `plan.md` Design decisions citation `apps/server/src/app.ts:98` → `:99` (drift after `/readyz`); Phase 4 Requirements/Steps/Success Criteria rewritten to match.
+- Unresolved contradictions: 0.
+
+### Session — 2026-08-20 (Phase 6 re-review before execution)
+
+**Findings:** 16 raw from 2 lenses (Security/Fact Checker, Assumption Destroyer/Scope Auditor); 13 after dedup. **Applied:** 13. **Rejected:** 0. Ground truth observed live: production never deployed (no prod D1; Alchemy state only `local`), `APP_DOMAIN` absent from every env file, `apps/server/.env` still carries a dev `CORS_ORIGIN`.
+
+| # | Finding | Severity | Disposition | Applied to |
+|---|---------|----------|-------------|------------|
+| 1 | Phase 6 never pinned the production origin — UAT on staging/`workers.dev` could satisfy the letter of every criterion (false GO) | Critical | Accept | Phase 6 (origin pinned everywhere; `APP_DOMAIN`-unset deploy is auto-NO-GO) |
+| 2 | Negative-origin matrix had no expected values; "redirect" exists in no code path; GET endpoints are not server-side origin-enforced | High | Accept | Phase 6 (explicit matrix table with expected statuses; GET excluded) |
+| 3 | Matrix missed the real trust boundary: correct-origin stranger self-registration (email/password enabled, no verification, auto-bootstrap org) | High | Accept | Phase 6 (sign-up row records verdict + risk note; no product change in this phase) |
+| 4 | Safari leg required by runbook/parent plan was absent from Phase 6 steps and criteria | High | Accept | Phase 6 (Chrome AND Safari; missing evidence = NO-GO) |
+| 5 | Evidence procedure itself was a leak channel: no sanitize allowlist; roster screenshots vs no-student-data rule | High | Accept | Phase 6 (allowlist: status/hostname-redacted/request-id/SHA/timestamp/runner; `fixture-*` data; counts not screenshots) |
+| 6 | `CORS_ORIGIN` unset instruction is silently defeated by dev values in `apps/server/.env`/`.env.example` (dotenv precedence, warn-only) | High | Accept | Phase 6 (topology gate asserts all three env files; post-deploy CORS probe) |
+| 7 | Deploy execution context undefined — worktree lacks env/state; commit ambiguity vs "green gates on release commit"; no approval artifact | High | Accept | Phase 6 (deploy from main checkout at recorded SHA; sign-off row before deploy) |
+| 8 | No `APP_DOMAIN`/zone/redirect-URI pre-deploy hard gate; failed first prod deploy has no sanctioned cleanup path | High | Accept | Phase 6 (topology gate; partial-prod cleanup needs restore authority) |
+| 9 | "Verify session cookie" requirement had no step (attributes never checked; same-site fetch hides wrong `Domain`) | Medium | Accept | Phase 6 (DevTools cookie attribute check vs runbook table) |
+| 10 | Fault-path step could pass vacuously — load gate runs once on mount; block must be active before first fetch | Medium | Accept | Phase 6 (rule on → hard reload → blocking error → retry) |
+| 11 | Preflight "Phase 2 gate" unsatisfiable as written — restage with repaired `0006` still pending; "staging exists" is not the acceptance | Medium | Accept | Phase 6 (staging rehearsal gate: restaged ledger or recorded throwaway proof) |
+| 12 | Two divergent GO checklists (plan vs runbook) with no designated authority | Medium | Accept | Phase 6 (unified GO table, superset of both) |
+| 13 | Evidence URL disclosure contradiction (phase mandates URL; runbook makes it operator decision); UAT data retention undecided | Medium | Accept | Phase 6 (redacted-host policy per runbook; synthetic data + recorded retention decision) |
+
+Fact Checker corrections applied to `plan.md`: Scope Challenge citation `apps/server/src/app.ts:83-101` → CSRF guard `apps/server/src/routes/kernel.ts:42-53` + `buildApp` `app.ts:84-106`; Design decisions snapshot-failure citation updated to post-Phase-4 reality (`data-provider.tsx:176-181`).
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: `plan.md`, all six `phase-*.md` files.
+- Decision deltas checked: production-origin pinning, unified GO table, Chrome+Safari mandatory, sanitize allowlist, topology/staging/deploy gates, negative-origin matrix expected statuses, deploy-from-main-checkout rule.
+- Reconciled stale references: 2 (Scope Challenge CSRF citation; Design decisions snapshot-failure citation).
 - Unresolved contradictions: 0.
