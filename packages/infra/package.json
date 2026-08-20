@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"check-types": "tsc --noEmit",
+		"test": "vitest run",
 		"dev": "alchemy dev",
 		"deploy": "alchemy deploy",
 		"destroy": "alchemy destroy"
@@ -18,6 +19,7 @@
 		"@teacher-os/config": "workspace:*",
 		"alchemy": "2.0.0-beta.72",
 		"effect": "4.0.0-rc.108",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "^4.1.10"
 	}
 }
