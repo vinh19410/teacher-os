@@ -1,5 +1,4 @@
 import { useSearch } from "@tanstack/react-router";
-import { Button } from "@teacher-os/ui/components/button";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +11,7 @@ function GoogleIcon() {
 			xmlns="http://www.w3.org/2000/svg"
 			viewBox="0 0 18 18"
 			aria-hidden="true"
+			className="block h-[18px] w-[18px]"
 		>
 			<path
 				fill="#4285F4"
@@ -55,15 +55,14 @@ export default function GoogleOAuthButton() {
 	};
 
 	return (
-		<Button
+		<button
 			type="button"
-			variant="outline"
-			className="h-10 w-full"
 			disabled={isRedirecting}
 			onClick={handleGoogleSignIn}
+			className="mt-[26px] flex h-12 w-full items-center justify-center gap-[10px] rounded-[var(--radius-pill)] border border-line bg-bg font-[510] text-sm tracking-[0.02em] transition-[border-color,background,transform] duration-[150ms] hover:border-fg hover:bg-surface-warm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40"
 		>
 			<GoogleIcon />
-			{isRedirecting ? "Redirecting..." : "Continue with Google"}
-		</Button>
+			{isRedirecting ? "Redirecting…" : "Continue with Google"}
+		</button>
 	);
 }
