@@ -3,9 +3,11 @@ import * as schema from "@teacher-os/db/schema/auth";
 import { env } from "@teacher-os/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
 
 export function createAuth() {
 	const db = createDb();
+	const cookieDomain = crossSubDomainCookieDomain(env.COOKIE_DOMAIN);
 
 	return betterAuth({
 		database: drizzleAdapter(db, {
@@ -23,27 +25,23 @@ export function createAuth() {
 		emailAndPassword: {
 			enabled: true,
 		},
-		// uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-		// session: {
-		//   cookieCache: {
-		//     enabled: true,
-		//     maxAge: 60,
-		//   },
-		// },
 		secret: env.BETTER_AUTH_SECRET,
-		baseURL: env.BETTER_AUTH_URL,
+		baseURL: authBaseURL(env.BETTER_AUTH_URL),
 		advanced: {
 			defaultCookieAttributes: {
 				sameSite: "none",
 				secure: true,
 				httpOnly: true,
 			},
-			// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-			// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-			// crossSubDomainCookies: {
-			//   enabled: true,
-			//   domain: "<your-workers-subdomain>",
-			// },
+			// Cross-subdomain cookies (app.<domain> <-> api.<domain>) are enabled
+			// only when COOKIE_DOMAIN holds a dot-prefixed parent domain; workers.dev
+			// and local deployments keep per-host cookies.
+			...(cookieDomain && {
+				crossSubDomainCookies: {
+					enabled: true,
+					domain: cookieDomain,
+				},
+			}),
 		},
 	});
 }

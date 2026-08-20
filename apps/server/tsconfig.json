@@ -2,6 +2,8 @@
 	"extends": "@teacher-os/config/tsconfig.base.json",
 	"compilerOptions": {
 		"composite": true,
+		"allowImportingTsExtensions": true,
+		"emitDeclarationOnly": true,
 		"outDir": "dist",
 		"paths": {
 			"@/*": ["./src/*"]

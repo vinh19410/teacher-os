@@ -59,12 +59,12 @@ Sign-in uses Better-Auth with Google OAuth as the primary method (email/password
 ### Google OAuth setup
 
 1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth client ID** (type: Web application).
-2. Add the authorized redirect URI: `<BETTER_AUTH_URL>/api/auth/oauth2/callback/google`
-   - Local dev: `http://localhost:8000/api/auth/oauth2/callback/google`
-   - Production: `https://<server-worker-url>/api/auth/oauth2/callback/google`
+2. Add the authorized redirect URI `<BETTER_AUTH_URL>/api/auth/callback/google`:
+   - Local dev: `http://localhost:8000/api/auth/callback/google`
+   - Production (`APP_DOMAIN=<domain>`): `https://api.<domain>/api/auth/callback/google`
 3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `apps/server/.env`, then restart `pnpm run dev` (or redeploy).
 
-The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app.
+The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://app.<domain>`.
 
 ## UI Customization
 
@@ -105,15 +105,19 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 `alchemy login --configure` stores the selected Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; secrets for the env method stay in the process environment (or a gitignored `packages/infra/.env`), not in the profile.
 
-Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
+Deploys are staged and default to a personal `dev_<username>` stage. Stages isolate state and physical resources — staging and production never share a D1 database:
 
 ```bash
-cd packages/infra && pnpm exec alchemy deploy --stage production
+cd packages/infra
+pnpm alchemy deploy --stage staging   # isolated rehearsal environment
+pnpm alchemy deploy --stage prod      # production
 ```
 
-### Production origins
+### Production topology
 
-- Required after the first deploy: set `CORS_ORIGIN` in `apps/server/.env` to the exact deployed web origin, such as `https://app.example.com`, then deploy the server again.
+Set `APP_DOMAIN` (bare lowercase domain) in `packages/infra/.env` to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, and cross-subdomain session cookies all derive from it (see `packages/infra/src/topology.ts`). Without `APP_DOMAIN`, deploys keep their generated `workers.dev` URLs and require an explicit `CORS_ORIGIN`.
+
+Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 
 ## Git Hooks and Formatting
 

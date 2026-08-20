@@ -3,10 +3,40 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import { config } from "dotenv";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import { resolveDomainTopology } from "./src/topology.ts";
 
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
+
+/**
+ * Production topology: set APP_DOMAIN to a bare domain (e.g. teacher-os.edu.vn)
+ * to serve the app at app.<domain> and the API at api.<domain> with
+ * cross-subdomain session cookies. Without APP_DOMAIN the stack keeps its
+ * generated workers.dev URLs and per-host cookies (dev/staging behavior).
+ *
+ * APP_DOMAIN is read from process.env (after dotenv), not Effect Config: it is
+ * deploy-time topology wiring the operator sets, and its presence/absence
+ * switches the whole resource shape. CORS_ORIGIN stays a Config value to keep
+ * its validation + derived-default semantics.
+ */
+const topology = process.env.APP_DOMAIN
+	? resolveDomainTopology(process.env.APP_DOMAIN)
+	: undefined;
+
+// An explicit CORS_ORIGIN that disagrees with APP_DOMAIN silently breaks
+// both Hono CORS and better-auth trustedOrigins (Google sign-in fails at the
+// callback, not just CORS), so make the disagreement impossible to miss.
+// dotenv precedence: packages/infra/.env wins over apps/*/.env.
+if (
+	topology &&
+	process.env.CORS_ORIGIN &&
+	process.env.CORS_ORIGIN.trim() !== topology.appOrigin
+) {
+	console.warn(
+		`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} overrides the derived ${topology.appOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell unless the override is intentional.`,
+	);
+}
 
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
@@ -17,11 +47,17 @@ export const server = Cloudflare.Worker("server", {
 	compatibility: {
 		flags: ["nodejs_compat"],
 	},
+	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,
-		CORS_ORIGIN: Config.string("CORS_ORIGIN"),
+		CORS_ORIGIN: topology
+			? Config.string("CORS_ORIGIN").pipe(
+					Config.withDefault(topology.appOrigin),
+				)
+			: Config.string("CORS_ORIGIN"),
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
-		BETTER_AUTH_URL: Cloudflare.Worker.URL,
+		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
+		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
 	},
@@ -47,8 +83,11 @@ export default Alchemy.Stack(
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "single-page-application",
 			},
+			...(topology && { domain: topology.appHost, workersDev: false }),
 			env: {
-				VITE_SERVER_URL: serverWorker.url.as<string>(),
+				VITE_SERVER_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
 			},
 			dev: {
 				port: 8001,
