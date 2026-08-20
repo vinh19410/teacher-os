@@ -1,7 +1,8 @@
 /**
  * Kernel repo — pure mapping between the kernel API and the MockData shape
- * the 13 screens still consume. No env/fetch imports here so every function
- * is unit-testable in isolation; the provider wires the transport.
+ * the 13 screens still consume. No env imports here so every function is
+ * unit-testable in isolation; the provider wires the transports (POST
+ * endpoint base URL + the QueryClient refetch behind the bus).
  */
 import { queryOptions } from "@tanstack/react-query";
 import type {
@@ -294,8 +295,13 @@ export function kernelQueryOptions(baseUrl: string) {
 
 export interface KernelCommandBusDeps {
 	postCommand(action: KernelAction): Promise<string | undefined>;
-	fetchSnapshot(): Promise<KernelSnapshot>;
-	applySnapshot(snapshot: KernelSnapshot): void;
+	/**
+	 * Refetch the kernel snapshot through the shared `['kernel']` query.
+	 * Resolves when the fresh snapshot landed in the cache; throws on any
+	 * transport/HTTP failure (upstream is `refetchQueries` with
+	 * `throwOnError: true`).
+	 */
+	refetch(): Promise<void>;
 	/**
 	 * A typed `401` reached the bus — the session died mid-flight. Retrying
 	 * cannot help; the host must re-authenticate (sign out + login redirect).
@@ -316,9 +322,10 @@ export interface KernelCommandBus {
 
 /**
  * Serialized command bus: kernel writes run one at a time, each followed by
- * a snapshot fetch+apply. Serialization removes every interleaving hole —
- * a later write's POST always lands after the previous write is applied, so
- * no snapshot can be applied stale and no successful write can be dropped.
+ * a snapshot refetch through the QueryClient. Serialization removes every
+ * interleaving hole — a later write's POST always lands after the previous
+ * write's refresh settled, so no snapshot can be applied stale and no
+ * successful write can be dropped.
  *
  * An identical action dispatched while one is still pending shares the
  * in-flight result instead of queueing a second POST (double-click guard).
@@ -332,7 +339,7 @@ export function createKernelCommandBus(
 
 	function enqueue<T>(start: () => Promise<T>): Promise<T> {
 		// Start immediately when idle; chain behind the previous operation
-		// otherwise so POSTs and snapshot applies stay strictly serialized.
+		// otherwise so POSTs and snapshot refetches stay strictly serialized.
 		const result = queue ? queue.then(start) : start();
 		queue = result.catch(() => undefined);
 		return result;
@@ -355,7 +362,7 @@ export function createKernelCommandBus(
 		}
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
-				deps.applySnapshot(await deps.fetchSnapshot());
+				await deps.refetch();
 				return { kind: "refreshed", id };
 			} catch (error) {
 				// Session expired between the write and the refresh. The write
@@ -391,7 +398,7 @@ export function createKernelCommandBus(
 		refresh() {
 			return enqueue(async () => {
 				try {
-					deps.applySnapshot(await deps.fetchSnapshot());
+					await deps.refetch();
 					return true;
 				} catch (error) {
 					// A dead session cannot reconcile either — route it to

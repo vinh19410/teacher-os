@@ -25,7 +25,6 @@ import type {
 import { reauth } from "./reauth";
 import {
 	createKernelCommandBus,
-	fetchKernelSnapshot,
 	type KernelCommandBus,
 	type KernelCommandResult,
 	kernelQueryKey,
@@ -86,11 +85,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	const getBus = useCallback(() => {
 		busRef.current ??= createKernelCommandBus({
 			postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
-			// Transitional write path (until the bus refetches through the
-			// QueryClient): the bus fetches the fresh snapshot itself after a
-			// 2xx POST and pushes it into the shared ['kernel'] entry.
-			fetchSnapshot: () => fetchKernelSnapshot(baseUrl),
-			applySnapshot: (next) => queryClient.setQueryData(kernelQueryKey, next),
+			// Post-write refresh runs through the shared ['kernel'] query:
+			// resolve = refreshed, throw = committed. throwOnError makes
+			// refetchQueries reject instead of swallowing the failure.
+			refetch: async () => {
+				await queryClient.refetchQueries(
+					{ queryKey: kernelQueryKey, exact: true },
+					{ throwOnError: true },
+				);
+			},
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
 			// the discriminated result still tells the caller what landed.
 			onAuthLost: reauth,

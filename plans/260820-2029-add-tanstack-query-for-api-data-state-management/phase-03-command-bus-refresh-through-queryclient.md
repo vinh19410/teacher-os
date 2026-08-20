@@ -136,19 +136,19 @@ return { kind: "committed", id };
 
 ## Todo
 
-- [ ] Bus deps đổi sang `refetch()`; serial/dedupe/classify/onAuthLost giữ
-- [ ] Provider wiring + xóa setQueryData transitional; `refresh()` wiring không đổi (F4)
-- [ ] `kernel.test.ts` bus suite adapt theo bảng map đủ 17 test (F5)
-- [ ] Dev-server matrix (a)–(d) pass
+- [x] Bus deps đổi sang `refetch()`; serial/dedupe/classify/onAuthLost giữ
+- [x] Provider wiring + xóa setQueryData transitional; `refresh()` wiring không đổi (F4)
+- [x] `kernel.test.ts` bus suite adapt theo bảng map đủ 17 test (F5)
+- [x] Dev-server matrix (a)–(d) pass
 
 ## Success Criteria
 
-- [ ] KernelCommandResult 4-state giống hệt: 17 test cũ đều map + xanh, chứng minh refreshed / committed (refresh fail + refetch-401) / definite-failure (4xx) / outcome-unknown (5xx + TypeError) — `pnpm --filter web test` xanh.
-- [ ] Dedupe: dispatch cùng action 2 lần liên tiếp → 1 POST (test giữ từ suite cũ).
-- [ ] Serialize: POST thứ 2 không bắt đầu trước khi write thứ 1 apply xong (test giữ).
-- [ ] Không còn `setQueryData` trong data-provider (`grep setQueryData apps/web/src` = 0 hits).
-- [ ] Dev-server: mutations end-to-end OK; 401 mid-write redirect MỘT lần.
-- [ ] `pnpm check` + `pnpm test` + `pnpm check-types` xanh.
+- [x] KernelCommandResult 4-state giống hệt: 17 test cũ đều map + xanh, chứng minh refreshed / committed (refresh fail + refetch-401) / definite-failure (4xx) / outcome-unknown (5xx + TypeError) — `pnpm --filter web test` xanh.
+- [x] Dedupe: dispatch cùng action 2 lần liên tiếp → 1 POST (test giữ từ suite cũ).
+- [x] Serialize: POST thứ 2 không bắt đầu trước khi write thứ 1 apply xong (test giữ).
+- [x] Không còn `setQueryData` trong data-provider (`grep setQueryData apps/web/src` = 0 hits).
+- [x] Dev-server: mutations end-to-end OK; 401 mid-write redirect MỘT lần.
+- [x] `pnpm check` + `pnpm test` + `pnpm check-types` xanh.
 
 ## Risk Assessment
 
