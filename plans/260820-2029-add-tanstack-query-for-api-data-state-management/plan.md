@@ -1,7 +1,7 @@
 ---
 title: "Add TanStack Query for API data state management"
 description: "Đưa TanStack Query v5 vào apps/web làm lớp server-state cho dữ liệu API: snapshot kernel đọc qua một query ['kernel'] duy nhất, bus ghi refetch qua QueryClient — context API của DataProvider và toàn bộ 26 call site useData() giữ nguyên."
-status: pending
+status: in-progress
 priority: P1
 effort: "~2-3d"
 issue: 44

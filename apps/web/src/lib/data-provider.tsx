@@ -88,12 +88,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			// Post-write refresh runs through the shared ['kernel'] query:
 			// resolve = refreshed, throw = committed. throwOnError makes
 			// refetchQueries reject instead of swallowing the failure.
-			refetch: async () => {
-				await queryClient.refetchQueries(
+			refetch: () =>
+				queryClient.refetchQueries(
 					{ queryKey: kernelQueryKey, exact: true },
 					{ throwOnError: true },
-				);
-			},
+				),
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
 			// the discriminated result still tells the caller what landed.
 			onAuthLost: reauth,

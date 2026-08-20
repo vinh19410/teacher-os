@@ -782,19 +782,20 @@ describe("createKernelCommandBus", () => {
 	});
 });
 
+/** JSON Response stub shared by the transport and real-QueryClient tests. */
+function jsonResponse(status: number, body: unknown) {
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: { "content-type": "application/json" },
+	});
+}
+
 describe("fetchKernelSnapshot transport", () => {
 	const realFetch = globalThis.fetch;
 
 	function mockFetch(impl: (url: string) => Promise<Response>) {
 		globalThis.fetch = ((input: RequestInfo | URL) =>
 			impl(String(input))) as typeof fetch;
-	}
-
-	function jsonResponse(status: number, body: unknown) {
-		return new Response(JSON.stringify(body), {
-			status,
-			headers: { "content-type": "application/json" },
-		});
 	}
 
 	afterEach(() => {
@@ -945,13 +946,6 @@ describe("bus 4-state through a real QueryClient", () => {
 		}) as typeof fetch;
 	}
 
-	function jsonResponse(status: number, body: unknown) {
-		return new Response(JSON.stringify(body), {
-			status,
-			headers: { "content-type": "application/json" },
-		});
-	}
-
 	afterEach(() => {
 		globalThis.fetch = realFetch;
 	});
@@ -960,12 +954,11 @@ describe("bus 4-state through a real QueryClient", () => {
 		const queryClient = createKernelQueryClient();
 		const bus = createKernelCommandBus({
 			postCommand: (a) => postKernelCommand(baseUrl, a),
-			refetch: async () => {
-				await queryClient.refetchQueries(
+			refetch: () =>
+				queryClient.refetchQueries(
 					{ queryKey: kernelQueryKey, exact: true },
 					{ throwOnError: true },
-				);
-			},
+				),
 			onAuthLost: () => {},
 		});
 		return { bus, queryClient };
