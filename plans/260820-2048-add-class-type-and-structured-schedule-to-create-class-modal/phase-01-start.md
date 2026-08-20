@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contract + DB migration + server"
-status: todo
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: []
@@ -67,18 +67,18 @@ modal payload ──POST /api/classes──▶ zod classCreateSchema (object sch
 
 ## Todo
 
-- [ ] contracts.ts: schema (superRefine + regex chặt + days unique/max) + KernelClassRow (`type: ClassType`) + ClassType/IELTS_SKILLS export
-- [ ] db schema + migration 0007 viết tay theo thứ tự UPDATE đúng (rename + back-compat + sanity check)
-- [ ] POST /api/classes handler (dedupe days)
-- [ ] snapshot.ts parseSkills + mapping
-- [ ] Server tests cập nhật + 7 case mới
+- [x] contracts.ts: schema (superRefine + regex chặt + days unique/max) + KernelClassRow (`type: ClassType`) + ClassType/IELTS_SKILLS export
+- [x] db schema + migration 0007 viết tay theo thứ tự UPDATE đúng (rename + back-compat + sanity check)
+- [x] POST /api/classes handler (dedupe days)
+- [x] snapshot.ts parseSkills + mapping
+- [x] Server tests cập nhật + 7 case mới
 
 ## Success Criteria
 
-- [ ] Migration 0007 apply đúng: class cũ `skill='Writing'` → `type='ielts'`, `skills='["Writing"]'`; `skill='Giao tiếp'` → `type='communication'`, `skills='[]'`; **`skill=''` → `type='ielts'`, `skills='[]'` (không phải `'["[]"]'`)**; sanity check SQL = 0 rows sót
-- [ ] POST hợp lệ trả 201; POST thiếu/sai schedule → 400; POST `skills` chứa giá trị lạ → 400; POST ielts không kỹ năng / communication có kỹ năng → 400; `days` trùng/>7 → 400; time sai format → 400
-- [ ] `GET /api/kernel` trả class có `type` + `skills: string[]`
-- [ ] `pnpm --filter server test` pass
+- [x] Migration 0007 apply đúng: class cũ `skill='Writing'` → `type='ielts'`, `skills='["Writing"]'`; `skill='Giao tiếp'` → `type='communication'`, `skills='[]'`; **`skill=''` → `type='ielts'`, `skills='[]'` (không phải `'["[]"]'`)**; sanity check SQL = 0 rows sót
+- [x] POST hợp lệ trả 201; POST thiếu/sai schedule → 400; POST `skills` chứa giá trị lạ → 400; POST ielts không kỹ năng / communication có kỹ năng → 400; `days` trùng/>7 → 400; time sai format → 400
+- [x] `GET /api/kernel` trả class có `type` + `skills: string[]`
+- [x] `pnpm --filter server test` pass
 
 ## Rollout / Deploy (bắt buộc đọc trước khi áp dụng)
 

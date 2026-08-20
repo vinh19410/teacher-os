@@ -16,8 +16,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
+import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { dayDates } from "@/lib/mock-data";
+import { formatSchedule } from "@/lib/format-schedule";
+import { CLASS_TYPE_LABELS, classMeta, dayDates } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -70,13 +72,18 @@ function ClassDetailRoute() {
 		<div>
 			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
 				<div className="min-w-[200px] flex-1">
-					<h1 className="font-display font-semibold text-[28px]">{cls.name}</h1>
+					<div className="flex flex-wrap items-center gap-2">
+						<h1 className="font-display font-semibold text-[28px]">
+							{cls.name}
+						</h1>
+						<Tag>{CLASS_TYPE_LABELS[cls.type]}</Tag>
+					</div>
 					<div className="mt-2 flex flex-wrap gap-4">
 						<span className="font-mono text-meta text-xs">
-							{cls.level} · {cls.skill} · {cls.mode}
+							{classMeta(cls)}
 						</span>
 						<span className="font-mono text-meta text-xs">
-							Lịch: {cls.schedule}
+							Lịch: {formatSchedule(cls.schedule)}
 						</span>
 						<span className="font-mono text-meta text-xs">
 							Bắt đầu: {cls.startDate}

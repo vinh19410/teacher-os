@@ -1,3 +1,4 @@
+import type { ClassType } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
 
 export type KernelAction =
@@ -22,11 +23,12 @@ export type KernelAction =
 			type: "add-class";
 			payload: {
 				name: string;
+				type: ClassType;
 				level: string;
-				skill: string;
+				skills: string[];
 				mode: string;
 				syllabusId: string;
-				schedule: string;
+				schedule: { days: number[]; start: string; end: string };
 				sessionsTotal: number;
 				startDate: string;
 			};

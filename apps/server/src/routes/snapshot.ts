@@ -3,7 +3,11 @@
  * assignments sub-router (kept in its own module to avoid a circular import
  * between the two route files).
  */
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import {
+	CLASS_TYPES,
+	type ClassType,
+	type KernelSnapshot,
+} from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
@@ -43,6 +47,24 @@ export async function loadInvoices(
 		.where(eq(invoice.orgId, orgId))
 		.orderBy(asc(invoice.createdAt), asc(invoice.id));
 }
+
+/**
+ * `class.skills` is a JSON array string; corrupted or legacy values fall
+ * back to an empty array so the snapshot shape stays `string[]`.
+ */
+function parseSkills(raw: string): string[] {
+	try {
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed)
+			? parsed.filter((s) => typeof s === "string")
+			: [];
+	} catch {
+		return [];
+	}
+}
+
+/** DB text column guard: unknown type values fall back to "ielts". */
+const knownClassTypes = new Set<string>(CLASS_TYPES);
 
 /** Shared by the kernel routes and the assignments sub-router. */
 export async function loadSnapshot(
@@ -171,7 +193,8 @@ export async function loadSnapshot(
 			id: row.id,
 			name: row.name,
 			level: row.level,
-			skill: row.skill,
+			type: knownClassTypes.has(row.type) ? (row.type as ClassType) : "ielts",
+			skills: parseSkills(row.skills),
 			mode: row.mode,
 			syllabusId: row.syllabusId,
 			schedule: row.schedule,

@@ -17,17 +17,58 @@ export const studentCreateSchema = z.object({
 });
 export type StudentCreate = z.infer<typeof studentCreateSchema>;
 
-export const classCreateSchema = z.object({
-	name: z.string().min(1),
-	level: z.string().default(""),
-	skill: z.string().default(""),
-	mode: z.string().default("Online"),
-	/** "" means no syllabus assigned yet. */
-	syllabusId: z.string().default(""),
-	schedule: z.string().default(""),
-	sessionsTotal: z.number().int().min(0).default(12),
-	startDate: z.string().default(""),
-});
+export const CLASS_TYPES = ["ielts", "communication"] as const;
+export type ClassType = (typeof CLASS_TYPES)[number];
+
+export const IELTS_SKILLS = [
+	"Writing",
+	"Speaking",
+	"Reading",
+	"Listening",
+] as const;
+
+/** Strict HH:MM (00:00–23:59) — shared by the contract and web parsing. */
+export const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const classCreateSchema = z
+	.object({
+		name: z.string().min(1),
+		type: z.enum(CLASS_TYPES).default("ielts"),
+		level: z.string().default(""),
+		skills: z.array(z.enum(IELTS_SKILLS)).default([]),
+		mode: z.string().default("Online"),
+		/** "" means no syllabus assigned yet. */
+		syllabusId: z.string().default(""),
+		schedule: z.object({
+			/** 0 = Monday … 6 = Sunday (dayNames index convention). */
+			days: z
+				.array(z.number().int().min(0).max(6))
+				.min(1)
+				.max(7)
+				.refine((days) => new Set(days).size === days.length),
+			start: z.string().regex(TIME_REGEX),
+			/** end <= start means the session crosses midnight — valid. */
+			end: z.string().regex(TIME_REGEX),
+		}),
+		sessionsTotal: z.number().int().min(0).default(12),
+		startDate: z.string().default(""),
+	})
+	.superRefine((input, ctx) => {
+		if (input.type === "ielts" && input.skills.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["skills"],
+				message: "Lớp IELTS cần ít nhất một kỹ năng",
+			});
+		}
+		if (input.type === "communication" && input.skills.length > 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["skills"],
+				message: "Lớp Giao tiếp không chọn kỹ năng",
+			});
+		}
+	});
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
 export const assignSyllabusSchema = z.object({
@@ -122,9 +163,11 @@ export interface KernelClassRow {
 	id: string;
 	name: string;
 	level: string;
-	skill: string;
+	type: ClassType;
+	skills: string[];
 	mode: string;
 	syllabusId: string | null;
+	/** Raw string: JSON `{days,start,end}` (new) or legacy free text. Web formats it. */
 	schedule: string;
 	sessionsTotal: number;
 	/**

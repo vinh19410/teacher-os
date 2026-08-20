@@ -30,7 +30,8 @@ const snapshot: KernelSnapshot = {
 			id: "cl-1",
 			name: "IELTS Writing 7.0 — Nhóm tối",
 			level: "Band 7.0",
-			skill: "Writing",
+			type: "ielts",
+			skills: ["Writing", "Speaking"],
 			mode: "Online",
 			syllabusId: "sy-1",
 			schedule: "T3 & T5 · 19:00–20:30",
@@ -44,7 +45,8 @@ const snapshot: KernelSnapshot = {
 			id: "cl-2",
 			name: "IELTS Speaking 6.5 — Sáng",
 			level: "Band 6.5",
-			skill: "Speaking",
+			type: "ielts",
+			skills: ["Speaking"],
 			mode: "Offline",
 			syllabusId: null,
 			schedule: "T7 · 09:00–10:30",
@@ -56,9 +58,10 @@ const snapshot: KernelSnapshot = {
 		},
 		{
 			id: "cl-3",
-			name: "IELTS Reading 6.0 — Trưa",
-			level: "Band 6.0",
-			skill: "Reading",
+			name: "Giao tiếp tự tin — Trưa",
+			level: "",
+			type: "communication",
+			skills: [],
 			mode: "Online",
 			syllabusId: null,
 			schedule: "CN · 13:00–14:30",
@@ -142,7 +145,8 @@ describe("mapClasses", () => {
 		expect(classes.find((c) => c.id === "cl-1")).toMatchObject({
 			name: "IELTS Writing 7.0 — Nhóm tối",
 			level: "Band 7.0",
-			skill: "Writing",
+			type: "ielts",
+			skills: ["Writing", "Speaking"],
 			mode: "Online",
 			schedule: "T3 & T5 · 19:00–20:30",
 			sessionsDone: 0,
@@ -150,6 +154,13 @@ describe("mapClasses", () => {
 			status: "active",
 			startDate: "19/08",
 			notes: "Nhóm học nhanh",
+		});
+	});
+
+	test("communication class maps type and an empty skills array", () => {
+		expect(classes.find((c) => c.id === "cl-3")).toMatchObject({
+			type: "communication",
+			skills: [],
 		});
 	});
 
@@ -179,7 +190,8 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 				id: "cl-1",
 				name: "1:2 tối",
 				level: "",
-				skill: "",
+				type: "ielts",
+				skills: [],
 				mode: "Online",
 				syllabusId: null,
 				schedule: "",
@@ -193,7 +205,8 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 				id: "cl-2",
 				name: "Chưa học buổi nào",
 				level: "",
-				skill: "",
+				type: "communication",
+				skills: [],
 				mode: "Online",
 				syllabusId: null,
 				schedule: "",

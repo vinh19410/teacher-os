@@ -1,10 +1,31 @@
+import {
+	CLASS_TYPES,
+	type ClassType,
+	IELTS_SKILLS,
+} from "@teacher-os/api/contracts";
 import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { addMinutes } from "@/lib/format-schedule";
+import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
+
+const CLASS_TYPE_OPTIONS = CLASS_TYPES.map((value) => ({
+	value,
+	label: CLASS_TYPE_LABELS[value],
+}));
+
+const SKILL_OPTIONS = IELTS_SKILLS.map((value) => ({ value, label: value }));
+
+const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
+
+const SESSION_MINUTES = 90;
+const DEFAULT_START = "19:00";
+const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
 
 export function AddClassModal({
 	open,
@@ -16,14 +37,32 @@ export function AddClassModal({
 	const { data } = useData();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 7.0");
-	const [skill, setSkill] = useState("Writing");
+	const [classType, setClassType] = useState<ClassType>("ielts");
+	const [skills, setSkills] = useState<string[]>([]);
 	const [mode, setMode] = useState("Online");
 	const [syllabusId, setSyllabusId] = useState("");
-	const [schedule, setSchedule] = useState("");
+	const [days, setDays] = useState<number[]>([]);
+	const [startTime, setStartTime] = useState(DEFAULT_START);
+	const [endTime, setEndTime] = useState(DEFAULT_END);
+	const [endTouched, setEndTouched] = useState(false);
 	const [total, setTotal] = useState("12");
 	const [startDate, setStartDate] = useState("19/08");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
+
+	function resetForm() {
+		setName("");
+		setSkills([]);
+		setDays([]);
+		setStartTime(DEFAULT_START);
+		setEndTime(DEFAULT_END);
+		setEndTouched(false);
+	}
+
+	function changeStart(next: string) {
+		setStartTime(next);
+		if (!endTouched && next) setEndTime(addMinutes(next, SESSION_MINUTES));
+	}
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
@@ -32,30 +71,45 @@ export function AddClassModal({
 			setError("Vui lòng nhập tên lớp.");
 			return;
 		}
+		if (classType === "ielts" && skills.length === 0) {
+			setError("Chọn ít nhất một kỹ năng.");
+			return;
+		}
+		if (days.length === 0) {
+			setError("Chọn ít nhất một ngày học.");
+			return;
+		}
+		if (!startTime || !endTime) {
+			setError("Nhập giờ bắt đầu và giờ kết thúc.");
+			return;
+		}
+		if (startTime === endTime) {
+			setError("Giờ kết thúc phải khác giờ bắt đầu.");
+			return;
+		}
 		const result = await run({
 			type: "add-class",
 			payload: {
 				name: name.trim(),
+				type: classType,
 				level,
-				skill,
+				skills: classType === "ielts" ? skills : [],
 				mode,
 				syllabusId,
-				schedule: schedule.trim(),
+				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: Number.parseInt(total, 10) || 12,
 				startDate: startDate.trim(),
 			},
 		});
 		if (result?.kind === "refreshed") {
-			setName("");
-			setSchedule("");
+			resetForm();
 			onClose();
 		}
 	}
 
 	async function reconcileAndFinish() {
 		if (await reconcile()) {
-			setName("");
-			setSchedule("");
+			resetForm();
 			onClose();
 		}
 	}
@@ -74,6 +128,16 @@ export function AddClassModal({
 						placeholder="VD: IELTS Writing 7.0 — Nhóm tối"
 					/>
 				</Field>
+				<Field label="Loại lớp">
+					<ChipMulti
+						options={CLASS_TYPE_OPTIONS}
+						value={[classType]}
+						onChange={(next) => {
+							const other = next.find((v) => v !== classType);
+							if (other) setClassType(other);
+						}}
+					/>
+				</Field>
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Field label="Trình độ">
 						<Select value={level} onChange={(e) => setLevel(e.target.value)}>
@@ -84,44 +148,57 @@ export function AddClassModal({
 							<option>Band 7.5+</option>
 						</Select>
 					</Field>
-					<Field label="Kỹ năng">
-						<Select value={skill} onChange={(e) => setSkill(e.target.value)}>
-							<option>Writing</option>
-							<option>Speaking</option>
-							<option>Reading</option>
-							<option>Listening</option>
-							<option>Giao tiếp</option>
-						</Select>
-					</Field>
-				</div>
-				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Field label="Hình thức">
 						<Select value={mode} onChange={(e) => setMode(e.target.value)}>
 							<option>Online</option>
 							<option>Offline</option>
 						</Select>
 					</Field>
-					<Field label="Syllabus">
-						<Select
-							value={syllabusId}
-							onChange={(e) => setSyllabusId(e.target.value)}
-						>
-							<option value="">— Chưa gán —</option>
-							{data.syllabi.map((s) => (
-								<option key={s.id} value={s.id}>
-									{s.name}
-								</option>
-							))}
-						</Select>
+				</div>
+				{classType === "ielts" && (
+					<Field label="Kỹ năng *">
+						<ChipMulti
+							options={SKILL_OPTIONS}
+							value={skills}
+							onChange={setSkills}
+						/>
+					</Field>
+				)}
+				<Field label="Syllabus">
+					<Select
+						value={syllabusId}
+						onChange={(e) => setSyllabusId(e.target.value)}
+					>
+						<option value="">— Chưa gán —</option>
+						{data.syllabi.map((s) => (
+							<option key={s.id} value={s.id}>
+								{s.name}
+							</option>
+						))}
+					</Select>
+				</Field>
+				<Field label="Ngày học *">
+					<ChipMulti options={DAY_OPTIONS} value={days} onChange={setDays} />
+				</Field>
+				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
+					<Field label="Giờ bắt đầu">
+						<Input
+							type="time"
+							value={startTime}
+							onChange={(e) => changeStart(e.target.value)}
+						/>
+					</Field>
+					<Field label="Giờ kết thúc">
+						<Input
+							type="time"
+							value={endTime}
+							onChange={(e) => {
+								setEndTouched(true);
+								setEndTime(e.target.value);
+							}}
+						/>
 					</Field>
 				</div>
-				<Field label="Lịch học">
-					<Input
-						value={schedule}
-						onChange={(e) => setSchedule(e.target.value)}
-						placeholder="VD: T3 & T5 · 19:00–20:30"
-					/>
-				</Field>
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Field label="Tổng số buổi">
 						<Input

@@ -8,7 +8,10 @@ import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
+import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { formatSchedule } from "@/lib/format-schedule";
+import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 
 export const Route = createFileRoute("/_auth/classes/")({
@@ -62,9 +65,12 @@ function ClassesRoute() {
 								}),
 							cells: [
 								<div key="n">
-									<div className="font-semibold text-sm">{c.name}</div>
+									<div className="flex items-center gap-2">
+										<span className="font-semibold text-sm">{c.name}</span>
+										<Tag>{CLASS_TYPE_LABELS[c.type]}</Tag>
+									</div>
 									<div className="font-mono text-meta text-xs">
-										{c.level} · {c.skill} · {c.mode}
+										{classMeta(c)}
 									</div>
 								</div>,
 								sy ? (
@@ -87,7 +93,7 @@ function ClassesRoute() {
 									</div>
 								</div>,
 								<span key="s" className="font-mono text-meta text-xs">
-									{c.schedule}
+									{formatSchedule(c.schedule)}
 								</span>,
 								c.status === "active" ? (
 									<Badge key="b" variant="success" dot>
