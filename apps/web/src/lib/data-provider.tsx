@@ -1,24 +1,17 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { env } from "@teacher-os/env/web";
 import {
 	createContext,
 	type ReactNode,
 	useCallback,
 	useContext,
-	useEffect,
 	useMemo,
 	useRef,
-	useState,
 } from "react";
 import KernelLoadError from "@/components/kernel-load-error";
 import { getServerUrl } from "@/lib/auth-client";
 import type { KernelAction } from "./data-actions";
-import {
-	beginLoad,
-	classifyLoadError,
-	type LoadState,
-	settleLoadSuccess,
-	shouldSettle,
-} from "./kernel-load-state";
+import { classifyLoadError } from "./kernel-load-state";
 import { emptyKernelData } from "./kernel-state";
 import type {
 	Assignment,
@@ -35,6 +28,8 @@ import {
 	fetchKernelSnapshot,
 	type KernelCommandBus,
 	type KernelCommandResult,
+	kernelQueryKey,
+	kernelQueryOptions,
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./repos/kernel";
@@ -64,68 +59,44 @@ interface DataStore {
 const DataContext = createContext<DataStore | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-	const [data, setData] = useState(emptyKernelData);
-	// Load gate: children (and the store) stay unmounted until the first
-	// GET /api/kernel settles with a valid snapshot. A failed load renders a
-	// blocking retry/fatal screen — never an empty org.
-	const [load, setLoad] = useState<LoadState>({ status: "loading" });
 	const baseUrl = getServerUrl(env.VITE_SERVER_URL);
+	const queryClient = useQueryClient();
 	const busRef = useRef<KernelCommandBus | null>(null);
-	const attemptRef = useRef(0);
 
-	const applySnapshot = useCallback(
-		(snapshot: Parameters<typeof mapKernelSnapshot>[0]) => {
-			setData(mapKernelSnapshot(snapshot));
-		},
-		[],
+	// Load gate: children (and the store) stay unmounted until the shared
+	// ['kernel'] query settles with a valid snapshot. A failed FIRST load
+	// renders a blocking retry/fatal screen — never an empty org. A failed
+	// mid-session refresh keeps the mounted workspace on stale data.
+	const {
+		data: snapshot,
+		isPending,
+		isError,
+		error,
+		refetch,
+	} = useQuery(kernelQueryOptions(baseUrl));
+
+	const data = useMemo(
+		() => (snapshot ? mapKernelSnapshot(snapshot) : emptyKernelData),
+		[snapshot],
 	);
 
 	// 401 re-auth lives in lib/reauth.ts (single-flight) — the provider and
 	// the command bus share that one exit so concurrent read+write 401s
 	// redirect exactly once.
-	const startLoad = useCallback(() => {
-		attemptRef.current += 1;
-		const seq = attemptRef.current;
-		setLoad(beginLoad());
-		fetchKernelSnapshot(baseUrl)
-			.then((snapshot) => {
-				// Only the newest attempt may settle — a stale attempt rejection
-				// must never unmount an already-running workspace.
-				if (!shouldSettle(seq, attemptRef.current)) {
-					return;
-				}
-				applySnapshot(snapshot);
-				setLoad(settleLoadSuccess());
-			})
-			.catch((error) => {
-				if (!shouldSettle(seq, attemptRef.current)) {
-					return;
-				}
-				console.error("[kernel] initial load failed", error);
-				const failure = classifyLoadError(error);
-				if (failure.kind === "reauth") {
-					reauth();
-					return;
-				}
-				setLoad({ status: "error", failure });
-			});
-	}, [applySnapshot, baseUrl]);
-
-	useEffect(() => {
-		startLoad();
-	}, [startLoad]);
-
 	const getBus = useCallback(() => {
 		busRef.current ??= createKernelCommandBus({
 			postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
+			// Transitional write path (until the bus refetches through the
+			// QueryClient): the bus fetches the fresh snapshot itself after a
+			// 2xx POST and pushes it into the shared ['kernel'] entry.
 			fetchSnapshot: () => fetchKernelSnapshot(baseUrl),
-			applySnapshot,
+			applySnapshot: (next) => queryClient.setQueryData(kernelQueryKey, next),
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
 			// the discriminated result still tells the caller what landed.
 			onAuthLost: reauth,
 		});
 		return busRef.current;
-	}, [applySnapshot, baseUrl]);
+	}, [baseUrl, queryClient]);
 
 	const dispatch = useCallback(
 		(action: KernelAction): Promise<KernelCommandResult> => {
@@ -163,10 +134,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		};
 	}, [data, dispatch, refresh]);
 
-	if (load.status !== "ready") {
-		if (load.status === "error") {
-			return <KernelLoadError failure={load.failure} onRetry={startLoad} />;
+	// Blocking error UI is initial-load-only: once a snapshot exists, a
+	// failed refresh must never unmount the running workspace — the write
+	// outcome surfaces through the modal/direct-action that triggered it.
+	if (isError && !snapshot) {
+		const failure = classifyLoadError(error);
+		if (failure.kind === "reauth") {
+			// The 401 already fired reauth() via QueryCache.onError.
+			return null;
 		}
+		return <KernelLoadError failure={failure} onRetry={() => void refetch()} />;
+	}
+	if (isPending || !snapshot) {
 		return null;
 	}
 

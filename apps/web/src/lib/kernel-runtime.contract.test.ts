@@ -35,22 +35,23 @@ describe("kernel-backed store wiring", () => {
 		expect(src).not.toMatch(/seedData/);
 	});
 
-	test("data-provider never mounts seedData and gates children on the load state machine", () => {
+	test("data-provider never mounts seedData and gates children on the kernel query", () => {
 		const src = readSrc("data-provider.tsx");
 		expect(src).not.toMatch(/seedData/);
 		expect(src).toMatch(/emptyKernelData/);
-		expect(src).toMatch(/useState\(emptyKernelData\)/);
-		expect(src).toMatch(/setData\(mapKernelSnapshot\(snapshot\)\)/);
 		expect(src).not.toMatch(/localDispatch|data-store-reducer/);
-		// The boolean gate is gone: children render only from `ready`.
+		// The manual load machine is gone: the provider subscribes to the
+		// shared ['kernel'] query — one query key for every GET.
+		expect(src).toMatch(/useQuery\(kernelQueryOptions\(/);
+		expect(src).not.toMatch(/useState<LoadState>|beginLoad|shouldSettle/);
+		// Children render only from a settled snapshot.
 		expect(src).not.toMatch(/kernelLoaded/);
-		expect(src).toMatch(/if \(load.status !== "ready"\)/);
-		// A failed first load renders the blocking error screen — never an
-		// empty workspace.
+		expect(src).toMatch(/if \(isPending \|\| !snapshot\)/);
+		// A failed FIRST load renders the blocking error screen — never an
+		// empty workspace. Mid-session refresh failures keep children mounted.
 		expect(src).toMatch(/<KernelLoadError/);
 		expect(src).toMatch(/classifyLoadError/);
-		// Stale attempts must not settle state after a newer attempt exists.
-		expect(src).toMatch(/shouldSettle/);
+		expect(src).toMatch(/if \(isError && !snapshot\)/);
 		// 401 re-auth is a module fn (single-flight) shared by the read and
 		// write paths — the provider imports it, never re-defines it.
 		expect(src).toMatch(/import \{ reauth \} from "\.\/reauth"/);
