@@ -16,7 +16,7 @@ Không nằm trong roadmap này: parent login, Zalo/GCal, mời hoặc quản tr
 
 | Mốc | Trạng thái | Gate hoàn thành | Owner thực thi |
 | --- | --- | --- | --- |
-| Production readiness | Chưa bắt đầu | UAT trên môi trường D1 thật pass cho sign-in, bootstrap org, CRUD kernel và reload; có checklist rollback/support | [README](../README.md), [architecture](./system-architecture.md), hạ tầng trong `packages/infra/` |
+| Production readiness | Blocked | UAT trên môi trường D1 thật pass cho sign-in, bootstrap org, CRUD kernel và reload; có checklist rollback/support. Pre-deploy gates 2026-08-20: local gates xanh, rehearsal/DR có evidence, nhưng NO-GO vì thiếu input operator — xem [evidence](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md) và blocker #41 | [README](../README.md), [architecture](./system-architecture.md), hạ tầng trong `packages/infra/` |
 | Pilot-ready class operations | Chưa bắt đầu | Giáo viên có thể tạo và vận hành 2–3 lớp với lịch, điểm danh, tiến độ data thật; E2E luồng lớp xanh | Web schedule, server kernel routes, schema lesson và test browser |
 | Money loop | Chưa bắt đầu | Tạo invoice, ghi nhận đã thu và xem trạng thái đúng sau reload; E2E luồng thu phí xanh | Web tuition/modal, server invoice route, schema invoice |
 | Pilot vận hành | Chưa bắt đầu | Một giáo viên dùng hằng ngày ít nhất hai tuần; issue log có severity, frequency và workflow impact | Pilot log ngoài repo hoặc tracker được chọn |
