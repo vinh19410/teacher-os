@@ -2,7 +2,7 @@
 
 Rebuild `/login` as the approved two-panel auth screen: dark **brand panel** (logo, headline, static product mock card) + **auth panel** with accessible segmented Sign in / Create account tabs, Google button, and redesigned email forms — matching the static design export `auth-redesign.html` (858 lines; tokens identical to the app's frozen `packages/ui/src/styles/globals.css`).
 
-**Hard invariant:** all auth wiring is preserved unchanged — `authClient.signIn.email` / `signUp.email`, zod validators + messages, `navigate({ to: "/dashboard" })`, sonner **error** toasts. Deliberate deltas only: success toasts → inline notices; mode toggle → accessible tabs persisted to localStorage.
+**Hard invariant:** all auth wiring is preserved unchanged — `authClient.signIn.email` / `signUp.email`, zod validators + messages, full-page `window.location.assign(validateReturnUrl(returnUrl))`, sonner **error** toasts. Deliberate deltas only: success toasts → inline notices; mode toggle → accessible tabs persisted to localStorage.
 
 | | |
 |---|---|

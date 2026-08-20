@@ -24,7 +24,7 @@ Functional:
 Non-functional:
 - Focus-visible audit: tabs, both tab panels' inputs, password toggles, forgot link, switch-line link, Google button, submit buttons — all show `--focus-ring` and `outline-none` pairing.
 - Responsive matrix: 360, 420, 768, 960, 1280, 1920px — no horizontal scroll; ≤960 collapse and ≤420 tightening per Phase 1 spec; tab labels never truncate; mock card hidden ≤960; switch line wraps gracefully at 360px.
-- Repo gates: `pnpm check` (Biome + types, `package.json` script `check`) and `pnpm test` (vitest lib contract tests + CI workflow/topology drift scripts) green. No component/e2e test infra exists — verification is browser-manual, evidence = checklist below.
+- Repo gates: `pnpm check` (Biome only), `pnpm check-types` (root script: `vite build` + `tsc --noEmit` in apps/web — this is the only gate that catches type breakage), and `pnpm test` (vitest lib contract tests + CI workflow/topology drift scripts) green. No component/e2e test infra exists — verification is browser-manual, evidence = checklist below.
 
 ## Architecture
 
@@ -35,7 +35,7 @@ Motion mapping (export → Tailwind):
 | Export rule | Utility |
 |---|---|
 | `.auth-wrap` rise 8px / 220ms (`auth-redesign.html:208-216`) | `animate-in fade-in slide-in-from-bottom-2 duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none` on auth-wrap |
-| `.tabpanel` fade 4px (`auth-redesign.html:467-473`) | same family with `slide-in-from-bottom-1` on each panel, re-triggered by keying the class on `hidden` removal (panel re-mounts its animation when unhidden — apply via the panel's `hidden` toggle; if the animation doesn't re-fire on unhide, use `key={mode}` on the visible-panel wrapper) |
+| `.tabpanel` fade 4px (`auth-redesign.html:467-473`) | same family with `slide-in-from-bottom-1` on each panel, re-triggered by keying the class on `hidden` removal (panel re-mounts its animation when unhidden — apply via the panel's `hidden` toggle; if the animation doesn't re-fire on unhide, re-trigger the animation class from a state counter in `login.tsx`. NEVER remount the panels: `key={mode}` wipes TanStack Form state and typed values, violating the Phase 2 criterion) |
 | reduced motion (`auth-redesign.html:504-506`) | `motion-reduce:animate-none` (and `motion-reduce:transition-none` where a transition exists purely as decoration) on every animated node |
 
 ## Related Code Files
@@ -48,13 +48,13 @@ Motion mapping (export → Tailwind):
 ## Implementation Steps
 
 1. Add rise-in classes to `auth-wrap` in `login.tsx` (mapping table above).
-2. Add crossfade classes to both panel `<form>` elements; verify the animation re-fires on each tab switch (DevTools animations panel); apply the `key={mode}` fallback only if needed.
+2. Add crossfade classes to both panel `<form>` elements; verify the animation re-fires on each tab switch (DevTools animations panel); if it doesn't re-fire on unhide, re-trigger the animation class from a state counter in `login.tsx` — never remount the panels (`key={mode}` is forbidden: it wipes typed values, Phase 2 criterion).
 3. Focus-ring sweep: keyboard-tab through the entire page (tabs → panel controls → switch line → Google) and add missing `focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none`.
 4. Reduced-motion check: OS "Reduce motion" on (macOS Settings → Accessibility → Display) → reload → no rise/crossfade/thumb/spinner animation; thumb still switches instantly (state, not animation, carries meaning).
 5. Responsive matrix at 360/420/768/960/1280/1920 (DevTools device toolbar): no horizontal scrollbar; breakpoints behave per spec; type/spacing eyeball vs export.
 6. Screenshot diff: render the export HTML and the app /login side by side at 1280px (and 375px); log deltas; fix visible ones (spacing/rounding/color only — no behavior).
 7. Cleanup pass: `grep -rn "onSwitchTo\|showSignIn" apps/web/src` → zero hits; no unused imports (Biome flags them in `pnpm check`).
-8. Final auth regression (Success Criteria) + `pnpm check` + `pnpm test`.
+8. Final auth regression (Success Criteria) + `pnpm check` + `pnpm check-types` + `pnpm test`.
 9. Update this plan's statuses (`plan.md` phases table, phase frontmatter) after gates pass.
 
 ## Todo
@@ -65,8 +65,9 @@ Motion mapping (export → Tailwind):
 - [ ] Responsive matrix 6 widths recorded, no horizontal scroll
 - [ ] Screenshot diff vs export at 1280px + 375px; deltas fixed
 - [ ] Cleanup grep clean; no unused imports
-- [ ] Auth regression pass (sign in / sign up / Google / guard)
-- [ ] `pnpm check` + `pnpm test` green; plan statuses updated
+- [ ] Auth regression pass (sign in / sign up / Google / guard; `/login?returnUrl=` round-trip)
+- [ ] Typed values still survive tab switches after motion changes (Phase 2 criterion re-verified)
+- [ ] `pnpm check` + `pnpm check-types` + `pnpm test` green; plan statuses updated
 
 ## Success Criteria
 
@@ -74,14 +75,14 @@ Motion mapping (export → Tailwind):
 - [ ] Keyboard walk: every interactive element reachable and visibly ringed; tab order sane (tabs → active panel → switch line); no focus trap between the two mounted forms (hidden panel's controls are not tabbable — the `hidden` attribute removes them from tab order).
 - [ ] Responsive matrix: zero horizontal scroll at all 6 widths; ≤960 shows centered brand block + mobile-brand + top-aligned auth; ≤420 shows 24px title and tighter padding per export.
 - [ ] Screenshot diff vs `auth-redesign.html`: no unexplained visible deltas at 1280px and 375px (font loading differences acceptable; layout/color/spacing must match).
-- [ ] Auth regression: sign-in, sign-up, Google initiation all pass; `/dashboard` guard redirects signed-out users to `/login` with the new page rendering the persisted tab.
-- [ ] `pnpm check` and `pnpm test` green; `git status` shows changes only in `apps/web/src`; no new dependencies in any `package.json`.
+- [ ] Auth regression: sign-in, sign-up, Google initiation all pass; `/dashboard` guard redirects signed-out users to `/login` with the new page rendering the persisted tab; sign-in from `/login?returnUrl=/classes` lands on `/classes` (returnUrl round-trip intact).
+- [ ] `pnpm check`, `pnpm check-types`, and `pnpm test` green; `git status` shows changes only in `apps/web/src`; no new dependencies in any `package.json`.
 
 ## Risk Assessment
 
 | Risk | L×I | Mitigation | Observable signal |
 |------|-----|------------|-------------------|
-| Crossfade doesn't re-fire on unhide (animation ran once while `hidden`) | M×M | Verify with DevTools animations panel; fallback `key={mode}` wrapper forces remount. Mitigation is one-line, decided in step 2. | Animation entry appears in DevTools on every tab click. |
+| Crossfade doesn't re-fire on unhide (animation ran once while `hidden`) | M×M | Verify with DevTools animations panel; if it doesn't re-fire, re-trigger the animation class from a state counter in `login.tsx` — remounting (`key={mode}`) is FORBIDDEN (wipes typed values). | Animation entry appears in DevTools on every tab click. |
 | Hidden panel still tabbable (focus escapes into invisible form) | L×H | `hidden` attribute on the inactive `<form>` removes it from a11y tree + tab order (export relies on same rule, `auth-redesign.html:468`); keyboard walk proves it. | Tab key never lands on a control of the inactive mode; axe scan clean. |
 | Reduced-motion leaks one animation (e.g. spinner or thumb) | M×M | Enumerate every animated node in step 4; `motion-reduce:animate-none`/`motion-reduce:transition-none` per node — no global CSS override needed since motion is per-utility. | OS Reduce Motion: page fully static during load, tab switch, submit. |
 | Screenshot-diff rabbit hole (chasing sub-pixel font rendering) | M×L | Only fix deltas visible at 100% zoom side-by-side; accept SF-Pro-availability differences (both export and app fall back to the same stack from `globals.css` tokens). | Logged delta list with fix/no-fix decision each. |
