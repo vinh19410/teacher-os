@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function AddModuleModal({
 	open,
@@ -13,11 +15,11 @@ export function AddModuleModal({
 	onClose: () => void;
 	syllabusId: string;
 }) {
-	const { syllabusById, dispatch } = useData();
+	const { syllabusById } = useData();
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-	const [error, setError] = useState<string | undefined>();
-	const [saving, setSaving] = useState(false);
+	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
+		useKernelFormSubmit();
 	const sy = syllabusById(syllabusId);
 
 	async function submit(e: FormEvent) {
@@ -27,26 +29,30 @@ export function AddModuleModal({
 			setError("Vui lòng nhập tên module.");
 			return;
 		}
-		setSaving(true);
-		try {
-			await dispatch({
-				type: "add-module",
-				syllabusId,
-				payload: { title: title.trim(), description: description.trim() },
-			});
-		} finally {
-			setSaving(false);
+		const result = await run({
+			type: "add-module",
+			syllabusId,
+			payload: { title: title.trim(), description: description.trim() },
+		});
+		if (result?.kind === "refreshed") {
+			setTitle("");
+			setDescription("");
+			onClose();
 		}
-		setTitle("");
-		setDescription("");
-		setError(undefined);
-		onClose();
+	}
+
+	async function reconcileAndFinish() {
+		if (await reconcile()) {
+			setTitle("");
+			setDescription("");
+			onClose();
+		}
 	}
 
 	return (
 		<Modal
 			open={open}
-			onClose={onClose}
+			onClose={saving ? () => undefined : onClose}
 			title={`Thêm module${sy ? ` — ${sy.name}` : ""}`}
 		>
 			<form onSubmit={submit}>
@@ -65,11 +71,30 @@ export function AddModuleModal({
 						rows={2}
 					/>
 				</Field>
+				<div className="flex flex-col gap-2">
+					{error && (
+						<p role="alert" className="text-danger text-xs">
+							{error}
+						</p>
+					)}
+					{notice && (
+						<KernelSubmitNotice
+							notice={notice}
+							onReconcile={reconcileAndFinish}
+							disabled={saving}
+						/>
+					)}
+				</div>
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
-					<Button variant="secondary" size="sm" onClick={onClose}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={onClose}
+						disabled={saving}
+					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving}>
+					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
 						Thêm module
 					</Button>
 				</div>

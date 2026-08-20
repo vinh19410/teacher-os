@@ -2,7 +2,8 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
+import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const PHONE_RE = /^[0-9\s+]*$/;
 
@@ -15,7 +16,6 @@ export function AddStudentModal({
 	onClose: () => void;
 	classId?: string;
 }) {
-	const { dispatch } = useData();
 	const [name, setName] = useState("");
 	const [phone, setPhone] = useState("");
 	const [parentName, setParentName] = useState("");
@@ -24,7 +24,19 @@ export function AddStudentModal({
 	const [mode, setMode] = useState<"Online" | "Offline">("Online");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [phoneError, setPhoneError] = useState<string | undefined>();
-	const [saving, setSaving] = useState(false);
+	const { saving, error, notice, submitBlocked, run, reconcile } =
+		useKernelFormSubmit();
+
+	function resetForm() {
+		setName("");
+		setPhone("");
+		setParentName("");
+		setTotal("10");
+		setPrice("400000");
+		setMode("Online");
+		setNameError(undefined);
+		setPhoneError(undefined);
+	}
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
@@ -37,36 +49,37 @@ export function AddStudentModal({
 			hasPhoneError ? "SĐT chỉ gồm chữ số, khoảng trắng và dấu +." : undefined,
 		);
 		if (hasNameError || hasPhoneError) return;
-		setSaving(true);
-		try {
-			await dispatch({
-				type: "add-student",
-				payload: {
-					name: trimmedName,
-					phone,
-					parentName,
-					total: Number.parseInt(total, 10) || 10,
-					price: Number.parseInt(price, 10) || 400000,
-					mode,
-					classId,
-				},
-			});
-		} finally {
-			setSaving(false);
+		const result = await run({
+			type: "add-student",
+			payload: {
+				name: trimmedName,
+				phone,
+				parentName,
+				total: Number.parseInt(total, 10) || 10,
+				price: Number.parseInt(price, 10) || 400000,
+				mode,
+				classId,
+			},
+		});
+		if (result?.kind === "refreshed") {
+			resetForm();
+			onClose();
 		}
-		setName("");
-		setPhone("");
-		setParentName("");
-		setTotal("10");
-		setPrice("400000");
-		setMode("Online");
-		setNameError(undefined);
-		setPhoneError(undefined);
-		onClose();
+	}
+
+	async function reconcileAndFinish() {
+		if (await reconcile()) {
+			resetForm();
+			onClose();
+		}
 	}
 
 	return (
-		<Modal open={open} onClose={onClose} title="Thêm học viên mới">
+		<Modal
+			open={open}
+			onClose={saving ? () => undefined : onClose}
+			title="Thêm học viên mới"
+		>
 			<form onSubmit={submit}>
 				<Field label="Họ tên học viên *" error={nameError}>
 					<Input
@@ -119,11 +132,30 @@ export function AddStudentModal({
 						<option>Offline</option>
 					</Select>
 				</Field>
+				<div className="flex flex-col gap-2">
+					{error && (
+						<p role="alert" className="text-danger text-xs">
+							{error}
+						</p>
+					)}
+					{notice && (
+						<KernelSubmitNotice
+							notice={notice}
+							onReconcile={reconcileAndFinish}
+							disabled={saving}
+						/>
+					)}
+				</div>
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
-					<Button variant="secondary" size="sm" onClick={onClose}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={onClose}
+						disabled={saving}
+					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving}>
+					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
 						Lưu
 					</Button>
 				</div>

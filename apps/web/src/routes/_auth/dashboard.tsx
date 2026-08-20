@@ -8,13 +8,15 @@ import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
 import { fmtK } from "@/lib/mock-data";
+import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/dashboard")({
 	component: DashboardRoute,
 });
 
 function DashboardRoute() {
-	const { data, dispatch, studentById } = useData();
+	const { data, studentById } = useData();
+	const { run, isPending, busy } = useDirectKernelAction();
 
 	const today = data.lessons.filter((l) => l.day === 2);
 	const risk = data.students.filter(
@@ -70,11 +72,16 @@ function DashboardRoute() {
 									) : (
 										<Button
 											size="sm"
+											disabled={busy || isPending(l.id)}
 											onClick={() =>
-												dispatch({ type: "check-in", lessonId: l.id })
+												void run(
+													l.id,
+													{ type: "check-in", lessonId: l.id },
+													"Đã điểm danh.",
+												)
 											}
 										>
-											Điểm danh
+											{isPending(l.id) ? "Đang lưu…" : "Điểm danh"}
 										</Button>
 									)}
 								</Card>

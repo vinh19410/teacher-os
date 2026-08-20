@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 import { dayDates } from "@/lib/mock-data";
+import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export function LessonModal({
 	lessonId,
@@ -11,11 +12,19 @@ export function LessonModal({
 	lessonId: string | null;
 	onClose: () => void;
 }) {
-	const { lessonById, studentById, dispatch } = useData();
+	const { lessonById, studentById } = useData();
+	const { run, isPending, busy } = useDirectKernelAction();
 	const lesson = lessonId ? lessonById(lessonId) : undefined;
 	const student = lesson ? studentById(lesson.sid) : undefined;
 
 	if (!lesson) return null;
+
+	// Closing the modal is user navigation, not a success signal — the action
+	// keeps running and its outcome lands in a toast.
+	const act = (action: Parameters<typeof run>[1], successText: string) => {
+		void run(lesson.id, action, successText);
+		onClose();
+	};
 
 	return (
 		<Modal
@@ -62,19 +71,22 @@ export function LessonModal({
 						<Button
 							variant="secondary"
 							size="sm"
-							onClick={() => {
-								dispatch({ type: "cancel-lesson", lessonId: lesson.id });
-								onClose();
-							}}
+							disabled={busy || isPending(lesson.id)}
+							onClick={() =>
+								act(
+									{ type: "cancel-lesson", lessonId: lesson.id },
+									"Đã hủy buổi học.",
+								)
+							}
 						>
 							Hủy buổi
 						</Button>
 						<Button
 							size="sm"
-							onClick={() => {
-								dispatch({ type: "check-in", lessonId: lesson.id });
-								onClose();
-							}}
+							disabled={busy || isPending(lesson.id)}
+							onClick={() =>
+								act({ type: "check-in", lessonId: lesson.id }, "Đã điểm danh.")
+							}
 						>
 							Điểm danh
 						</Button>

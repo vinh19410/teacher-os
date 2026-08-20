@@ -9,7 +9,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { toast } from "sonner";
 import KernelLoadError from "@/components/kernel-load-error";
 import { authClient, getServerUrl } from "@/lib/auth-client";
 import type { KernelAction } from "./data-actions";
@@ -35,14 +34,24 @@ import {
 	createKernelCommandBus,
 	fetchKernelSnapshot,
 	type KernelCommandBus,
+	type KernelCommandResult,
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./repos/kernel";
 
 interface DataStore {
 	data: MockData;
-	/** Kernel writes go through the serialized command bus and resolve the server id. */
-	dispatch(action: KernelAction): Promise<string | undefined>;
+	/**
+	 * Kernel writes go through the serialized command bus and resolve the
+	 * truthful outcome — only `refreshed` permits close/reset/navigate.
+	 */
+	dispatch(action: KernelAction): Promise<KernelCommandResult>;
+	/**
+	 * Reconcile path for `committed`/`outcome-unknown` results: fetches and
+	 * applies the latest snapshot behind the bus queue. Resolves false when
+	 * the snapshot is unreachable.
+	 */
+	refresh(): Promise<boolean>;
 	studentById(id: string): Student | undefined;
 	lessonById(id: string): Lesson | undefined;
 	invoiceById(id: string): Invoice | undefined;
@@ -116,39 +125,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		startLoad();
 	}, [startLoad]);
 
+	const getBus = useCallback(() => {
+		busRef.current ??= createKernelCommandBus({
+			postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
+			fetchSnapshot: () => fetchKernelSnapshot(baseUrl),
+			applySnapshot,
+			// A dead session mid-write/mid-refresh bounces to login (phase-4);
+			// the discriminated result still tells the caller what landed.
+			onAuthLost: reauth,
+		});
+		return busRef.current;
+	}, [applySnapshot, baseUrl, reauth]);
+
 	const dispatch = useCallback(
-		(action: KernelAction): Promise<string | undefined> => {
-			busRef.current ??= createKernelCommandBus({
-				postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
-				fetchSnapshot: () => fetchKernelSnapshot(baseUrl),
-				applySnapshot,
-				onError: (kind, kernelAction, error, detail) => {
-					console.error(
-						`[kernel] ${kind} failed (attempt ${detail.attempt})`,
-						kernelAction.type,
-						error,
-					);
-					// Intermediate refresh retries only log — toasting both
-					// attempts would show the same message twice.
-					if (kind === "write" || !detail.willRetry) {
-						toast.error(
-							kind === "write"
-								? "Không lưu được — dữ liệu chưa được ghi lên máy chủ."
-								: "Đã lưu trên máy chủ nhưng chưa tải lại được dữ liệu.",
-						);
-					}
-				},
-				onAuthLost: reauth,
+		(action: KernelAction): Promise<KernelCommandResult> => {
+			const result = getBus().run(action);
+			// Outcome surfacing is caller-owned (modal notice / direct-action
+			// toast); the provider only logs non-happy paths for diagnosis.
+			void result.then((r) => {
+				if (r.kind !== "refreshed") {
+					console.warn(`[kernel] ${action.type} → ${r.kind}`);
+				}
 			});
-			return busRef.current.run(action);
+			return result;
 		},
-		[applySnapshot, baseUrl, reauth],
+		[getBus],
+	);
+
+	const refresh = useCallback(
+		(): Promise<boolean> => getBus().refresh(),
+		[getBus],
 	);
 
 	const store = useMemo<DataStore>(() => {
 		return {
 			data,
 			dispatch,
+			refresh,
 			studentById: (id) => data.students.find((s) => s.id === id),
 			lessonById: (id) => data.lessons.find((l) => l.id === id),
 			invoiceById: (id) => data.invoices.find((i) => i.id === id),
@@ -158,7 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			classesForSyllabus: (id) =>
 				data.classes.filter((c) => c.syllabusId === id),
 		};
-	}, [data, dispatch]);
+	}, [data, dispatch, refresh]);
 
 	if (load.status !== "ready") {
 		if (load.status === "error") {
