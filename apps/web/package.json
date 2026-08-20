@@ -16,6 +16,7 @@
 	"dependencies": {
 		"@tailwindcss/vite": "^4.3.3",
 		"@tanstack/react-form": "^1.33.2",
+		"@tanstack/react-query": "^5.101.4",
 		"@tanstack/react-router": "^1.170.18",
 		"@teacher-os/api": "workspace:*",
 		"@teacher-os/env": "workspace:*",
@@ -31,6 +32,7 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
+		"@tanstack/react-query-devtools": "^5.101.4",
 		"@tanstack/router-plugin": "^1.168.23",
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",

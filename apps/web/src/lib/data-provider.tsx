@@ -10,7 +10,7 @@ import {
 	useState,
 } from "react";
 import KernelLoadError from "@/components/kernel-load-error";
-import { authClient, getServerUrl } from "@/lib/auth-client";
+import { getServerUrl } from "@/lib/auth-client";
 import type { KernelAction } from "./data-actions";
 import {
 	beginLoad,
@@ -18,7 +18,6 @@ import {
 	type LoadState,
 	settleLoadSuccess,
 	shouldSettle,
-	validateReturnUrl,
 } from "./kernel-load-state";
 import { emptyKernelData } from "./kernel-state";
 import type {
@@ -30,6 +29,7 @@ import type {
 	Student,
 	Syllabus,
 } from "./mock-data";
+import { reauth } from "./reauth";
 import {
 	createKernelCommandBus,
 	fetchKernelSnapshot,
@@ -80,19 +80,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		[],
 	);
 
-	/**
-	 * 401 = the session is dead. Clear the session cookie best-effort (the
-	 * provider state dies with the unmount that follows), then bounce to the
-	 * login page carrying a validated return URL so the teacher lands back
-	 * where they were. Retrying against a dead session is pointless.
-	 */
-	const reauth = useCallback(() => {
-		void authClient.signOut().catch(() => undefined);
-		const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-		const returnUrl = validateReturnUrl(current);
-		window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-	}, []);
-
+	// 401 re-auth lives in lib/reauth.ts (single-flight) — the provider and
+	// the command bus share that one exit so concurrent read+write 401s
+	// redirect exactly once.
 	const startLoad = useCallback(() => {
 		attemptRef.current += 1;
 		const seq = attemptRef.current;
@@ -119,7 +109,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 				}
 				setLoad({ status: "error", failure });
 			});
-	}, [applySnapshot, baseUrl, reauth]);
+	}, [applySnapshot, baseUrl]);
 
 	useEffect(() => {
 		startLoad();
@@ -135,7 +125,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			onAuthLost: reauth,
 		});
 		return busRef.current;
-	}, [applySnapshot, baseUrl, reauth]);
+	}, [applySnapshot, baseUrl]);
 
 	const dispatch = useCallback(
 		(action: KernelAction): Promise<KernelCommandResult> => {

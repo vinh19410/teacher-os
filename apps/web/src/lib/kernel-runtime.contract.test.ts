@@ -51,11 +51,21 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/classifyLoadError/);
 		// Stale attempts must not settle state after a newer attempt exists.
 		expect(src).toMatch(/shouldSettle/);
+		// 401 re-auth is a module fn (single-flight) shared by the read and
+		// write paths — the provider imports it, never re-defines it.
+		expect(src).toMatch(/import \{ reauth \} from "\.\/reauth"/);
+		expect(src).not.toMatch(/const reauth = useCallback/);
+		// The command bus routes mid-session 401s into the same re-auth path.
+		expect(src).toMatch(/onAuthLost: reauth/);
+	});
+
+	test("lib/reauth.ts owns the single-flight re-auth: sign-out + validated return URL redirect", () => {
+		const src = readSrc("reauth.ts");
 		// 401 re-auth: best-effort sign-out + validated return URL redirect.
 		expect(src).toMatch(/authClient\.signOut/);
 		expect(src).toMatch(/validateReturnUrl/);
-		// The command bus routes mid-session 401s into the same re-auth path.
-		expect(src).toMatch(/onAuthLost: reauth/);
+		// Single-flight guard: concurrent read/write 401s redirect exactly once.
+		expect(src).toMatch(/if \(started\) return/);
 	});
 
 	test("kernel writes POST with cookies included and type HTTP failures", () => {
