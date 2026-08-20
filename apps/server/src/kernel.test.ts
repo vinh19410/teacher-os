@@ -418,6 +418,27 @@ describe("class type + structured schedule (create-class modal)", () => {
 		expect(overnight.status).toBe(201);
 	});
 
+	test("start equal to end is 400", async () => {
+		const res = await postClass({
+			...baseBody,
+			schedule: { days: [2], start: "19:00", end: "19:00" },
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("duplicated or over-long skills arrays are 400", async () => {
+		const duplicated = await postClass({
+			...baseBody,
+			skills: ["Writing", "Writing"],
+		});
+		expect(duplicated.status).toBe(400);
+		const tooLong = await postClass({
+			...baseBody,
+			skills: ["Writing", "Speaking", "Reading", "Listening", "Writing"],
+		});
+		expect(tooLong.status).toBe(400);
+	});
+
 	test("snapshot returns type, skills as string[], and sorted days", async () => {
 		const res = await postClass({
 			...baseBody,

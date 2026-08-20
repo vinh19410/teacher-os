@@ -35,7 +35,11 @@ export const classCreateSchema = z
 		name: z.string().min(1),
 		type: z.enum(CLASS_TYPES).default("ielts"),
 		level: z.string().default(""),
-		skills: z.array(z.enum(IELTS_SKILLS)).default([]),
+		skills: z
+			.array(z.enum(IELTS_SKILLS))
+			.max(IELTS_SKILLS.length)
+			.refine((skills) => new Set(skills).size === skills.length)
+			.default([]),
 		mode: z.string().default("Online"),
 		/** "" means no syllabus assigned yet. */
 		syllabusId: z.string().default(""),
@@ -54,6 +58,13 @@ export const classCreateSchema = z
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
+		if (input.schedule.start === input.schedule.end) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["schedule", "end"],
+				message: "Giờ kết thúc phải khác giờ bắt đầu",
+			});
+		}
 		if (input.type === "ielts" && input.skills.length === 0) {
 			ctx.addIssue({
 				code: "custom",
