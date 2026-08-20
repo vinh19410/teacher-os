@@ -6,6 +6,7 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
 import {
+	classifyWriteFailure,
 	createKernelCommandBus,
 	fetchKernelSnapshot,
 	kernelCommand,
@@ -443,6 +444,38 @@ describe("kernelCommand", () => {
 	});
 });
 
+describe("classifyWriteFailure", () => {
+	test("4xx responses are definite failures — the server did not commit", () => {
+		for (const status of [400, 401, 403, 404, 409, 422]) {
+			expect(
+				classifyWriteFailure(new HttpError(status, "POST /api/x failed: ")),
+			).toEqual({
+				kind: "definite-failure",
+				status,
+			});
+		}
+	});
+
+	test("5xx, 408 and 429 are outcome-unknown — a committed write can lose its response", () => {
+		for (const status of [500, 502, 503, 504, 408, 429]) {
+			expect(
+				classifyWriteFailure(new HttpError(status, "POST /api/x failed: ")),
+			).toEqual({
+				kind: "outcome-unknown",
+			});
+		}
+	});
+
+	test("non-HTTP errors (fetch rejection, AbortSignal timeout) are outcome-unknown", () => {
+		expect(classifyWriteFailure(new Error("offline"))).toEqual({
+			kind: "outcome-unknown",
+		});
+		expect(classifyWriteFailure(new TypeError("fetch failed"))).toEqual({
+			kind: "outcome-unknown",
+		});
+	});
+});
+
 describe("createKernelCommandBus", () => {
 	function deferred<T>() {
 		let resolve!: (value: T) => void;
@@ -464,8 +497,6 @@ describe("createKernelCommandBus", () => {
 		const postCalls: string[] = [];
 		const fetchCalls: number[] = [];
 		const applied: number[] = [];
-		const errors: Array<{ kind: string; type: string; willRetry: boolean }> =
-			[];
 		const authLostCalls: number[] = [];
 		const pendingPosts: Array<ReturnType<typeof deferred<string | undefined>>> =
 			[];
@@ -486,8 +517,6 @@ describe("createKernelCommandBus", () => {
 			},
 			applySnapshot: (snapshot) =>
 				applied.push((snapshot as unknown as { seq: number }).seq),
-			onError: (kind, action, _error, detail) =>
-				errors.push({ kind, type: action.type, willRetry: detail.willRetry }),
 			onAuthLost: () => authLostCalls.push(authLostCalls.length),
 		});
 		return {
@@ -495,7 +524,6 @@ describe("createKernelCommandBus", () => {
 			postCalls,
 			fetchCalls,
 			applied,
-			errors,
 			authLostCalls,
 			pendingPosts,
 			pendingFetches,
@@ -514,39 +542,58 @@ describe("createKernelCommandBus", () => {
 		t.pendingPosts[0].resolve("id-1");
 		await flush(); // let the bus advance to fetchSnapshot
 		t.pendingFetches[0].resolve({ seq: 1 } as never);
-		expect(await p1).toBe("id-1");
+		expect(await p1).toEqual({ kind: "refreshed", id: "id-1" });
 		expect(t.applied).toEqual([1]);
 		await flush(); // second queued write now starts its POST
 
 		t.pendingPosts[1].resolve("id-2");
 		await flush();
 		t.pendingFetches[1].resolve({ seq: 2 } as never);
-		expect(await p2).toBe("id-2");
+		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
 		expect(t.applied).toEqual([1, 2]);
 		expect(t.postCalls).toEqual(["update-class-notes", "update-class-notes"]);
 	});
 
-	test("write failure resolves undefined, reports error, does not block the queue", async () => {
+	test("4xx write failure resolves definite-failure and does not block the queue", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
 		const p2 = t.bus.run(action(2));
 
-		t.pendingPosts[0].reject(new Error("offline"));
-		expect(await p1).toBeUndefined();
-		expect(t.errors).toEqual([
-			{ kind: "write", type: "update-class-notes", willRetry: false },
-		]);
+		const httpError = new HttpError(409, "POST failed: 409");
+		t.pendingPosts[0].reject(httpError);
+		expect(await p1).toEqual({
+			kind: "definite-failure",
+			status: 409,
+			error: httpError,
+		});
 		expect(t.applied).toEqual([]);
 		await flush(); // queued second write now starts its POST
 
 		t.pendingPosts[1].resolve("id-2");
 		await flush();
 		t.pendingFetches[0].resolve({ seq: 2 } as never);
-		expect(await p2).toBe("id-2");
+		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
 		expect(t.applied).toEqual([2]);
 	});
 
-	test("refresh failure retries once, then resolves undefined (no stale-store navigation)", async () => {
+	test("transport loss resolves outcome-unknown — replay could duplicate a create", async () => {
+		const t = makeHarness();
+		const p = t.bus.run(action(1));
+		t.pendingPosts[0].reject(new TypeError("fetch failed"));
+		const result = await p;
+		expect(result.kind).toBe("outcome-unknown");
+		expect(t.applied).toEqual([]);
+	});
+
+	test("5xx response resolves outcome-unknown — edge 502/504 can follow a committed write", async () => {
+		const t = makeHarness();
+		const p = t.bus.run(action(1));
+		t.pendingPosts[0].reject(new HttpError(504, "POST failed: 504"));
+		const result = await p;
+		expect(result.kind).toBe("outcome-unknown");
+	});
+
+	test("refresh failure resolves committed (id is metadata, not the success signal)", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
 		t.pendingPosts[0].resolve("id-1");
@@ -555,15 +602,11 @@ describe("createKernelCommandBus", () => {
 		t.pendingFetches[0].reject(new Error("flaky"));
 		await flush(); // bus advances to the retry fetch
 		t.pendingFetches[1].reject(new Error("flaky again"));
-		expect(await p1).toBeUndefined();
+		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
 		expect(t.applied).toEqual([]);
-		expect(t.errors).toEqual([
-			{ kind: "refresh", type: "update-class-notes", willRetry: true },
-			{ kind: "refresh", type: "update-class-notes", willRetry: false },
-		]);
 	});
 
-	test("refresh succeeds on the retry and returns the id", async () => {
+	test("refresh succeeds on the retry and resolves refreshed with the id", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
 		t.pendingPosts[0].resolve("id-1");
@@ -572,14 +615,11 @@ describe("createKernelCommandBus", () => {
 		t.pendingFetches[0].reject(new Error("flaky"));
 		await flush();
 		t.pendingFetches[1].resolve({ seq: 7 } as never);
-		expect(await p1).toBe("id-1");
+		expect(await p1).toEqual({ kind: "refreshed", id: "id-1" });
 		expect(t.applied).toEqual([7]);
-		expect(t.errors).toEqual([
-			{ kind: "refresh", type: "update-class-notes", willRetry: true },
-		]);
 	});
 
-	test("comment POST acknowledgement survives refresh failure without replaying the write", async () => {
+	test("comment POST acknowledgement survives refresh failure as committed without replaying", async () => {
 		const t = makeHarness();
 		const p = t.bus.run({
 			type: "add-comment-bank",
@@ -591,16 +631,88 @@ describe("createKernelCommandBus", () => {
 		t.pendingFetches[0].reject(new Error("offline"));
 		await flush();
 		t.pendingFetches[1].reject(new Error("still offline"));
-		expect(await p).toBe("comment-1");
+		// The 2xx acknowledgement is the durable commit boundary for every
+		// action now — the caller sees `committed` and keeps the operationId
+		// stable instead of replaying the write.
+		expect(await p).toEqual({ kind: "committed", id: "comment-1" });
 		expect(t.postCalls).toEqual(["add-comment-bank"]);
 		expect(t.applied).toEqual([]);
-		expect(t.errors).toEqual([
-			{ kind: "refresh", type: "add-comment-bank", willRetry: true },
-			{ kind: "refresh", type: "add-comment-bank", willRetry: false },
-		]);
 	});
 
-	test("refresh 401 does not retry: reports once and fires onAuthLost", async () => {
+	test("an identical action dispatched while pending shares the in-flight result (no duplicate POST)", async () => {
+		const t = makeHarness();
+		const first = t.bus.run(action(1));
+		const second = t.bus.run(action(1)); // same payload — double click
+		expect(t.postCalls).toEqual(["update-class-notes"]);
+
+		t.pendingPosts[0].resolve("id-1");
+		await flush();
+		t.pendingFetches[0].resolve({ seq: 3 } as never);
+		expect(await first).toEqual({ kind: "refreshed", id: "id-1" });
+		expect(await second).toEqual({ kind: "refreshed", id: "id-1" });
+		expect(t.postCalls).toEqual(["update-class-notes"]); // still one POST
+	});
+
+	test("a new identical action after the previous one settled POSTs again", async () => {
+		const t = makeHarness();
+		const first = t.bus.run(action(1));
+		t.pendingPosts[0].resolve("id-1");
+		await flush();
+		t.pendingFetches[0].resolve({ seq: 3 } as never);
+		await first;
+
+		const second = t.bus.run(action(1));
+		await flush();
+		expect(t.postCalls).toEqual(["update-class-notes", "update-class-notes"]);
+		t.pendingPosts[1].resolve("id-2");
+		await flush();
+		t.pendingFetches[1].resolve({ seq: 4 } as never);
+		expect(await second).toEqual({ kind: "refreshed", id: "id-2" });
+	});
+
+	test("bus.refresh() applies the latest snapshot and resolves true", async () => {
+		const t = makeHarness();
+		const applied = t.bus.refresh();
+		t.pendingFetches[0].resolve({ seq: 9 } as never);
+		expect(await applied).toBe(true);
+		expect(t.applied).toEqual([9]);
+	});
+
+	test("bus.refresh() resolves false when the snapshot is unreachable", async () => {
+		const t = makeHarness();
+		const applied = t.bus.refresh();
+		t.pendingFetches[0].reject(new Error("offline"));
+		expect(await applied).toBe(false);
+	});
+
+	test("bus.refresh() fires onAuthLost when the session died mid-reconcile", async () => {
+		const t = makeHarness();
+		const applied = t.bus.refresh();
+		t.pendingFetches[0].reject(
+			new HttpError(401, "GET /api/kernel failed: 401"),
+		);
+		expect(await applied).toBe(false);
+		expect(t.authLostCalls).toHaveLength(1);
+	});
+
+	test("bus.refresh() serializes behind an in-flight write so a stale snapshot never overwrites a newer apply", async () => {
+		const t = makeHarness();
+		const write = t.bus.run(action(1));
+		const reconcile = t.bus.refresh();
+		expect(t.pendingFetches).toHaveLength(0); // refresh waits for the write
+
+		t.pendingPosts[0].resolve("id-1");
+		await flush();
+		t.pendingFetches[0].resolve({ seq: 1 } as never); // write's own refresh
+		expect(await write).toEqual({ kind: "refreshed", id: "id-1" });
+
+		await flush(); // reconcile fetch starts only now
+		t.pendingFetches[1].resolve({ seq: 2 } as never);
+		expect(await reconcile).toBe(true);
+		expect(t.applied).toEqual([1, 2]); // newest apply wins, never stale
+	});
+
+	test("refresh 401 does not retry: resolves committed once and fires onAuthLost", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
 		t.pendingPosts[0].resolve("id-1");
@@ -609,16 +721,14 @@ describe("createKernelCommandBus", () => {
 		t.pendingFetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
 		);
-		expect(await p1).toBeUndefined();
+		// The write committed before the session died — committed, not failed.
+		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
 		expect(t.applied).toEqual([]);
 		expect(t.fetchCalls).toHaveLength(1); // no second (pointless) attempt
-		expect(t.errors).toEqual([
-			{ kind: "refresh", type: "update-class-notes", willRetry: false },
-		]);
 		expect(t.authLostCalls).toHaveLength(1);
 	});
 
-	test("refresh 401 still returns the id for an acknowledged comment write", async () => {
+	test("refresh 401 resolves committed with the acknowledged comment id", async () => {
 		const t = makeHarness();
 		const p = t.bus.run({
 			type: "add-comment-bank",
@@ -630,20 +740,20 @@ describe("createKernelCommandBus", () => {
 		t.pendingFetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
 		);
-		expect(await p).toBe("comment-1"); // committed server-side; do not replay
+		expect(await p).toEqual({ kind: "committed", id: "comment-1" });
 		expect(t.authLostCalls).toHaveLength(1);
 	});
 
-	test("write 401 fires onAuthLost alongside the write error", async () => {
+	test("write 401 is a definite failure that also fires onAuthLost", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
-		t.pendingPosts[0].reject(
-			new HttpError(401, "POST /api/classes failed: 401"),
-		);
-		expect(await p1).toBeUndefined();
-		expect(t.errors).toEqual([
-			{ kind: "write", type: "update-class-notes", willRetry: false },
-		]);
+		const unauthorized = new HttpError(401, "POST /api/classes failed: 401");
+		t.pendingPosts[0].reject(unauthorized);
+		expect(await p1).toEqual({
+			kind: "definite-failure",
+			status: 401,
+			error: unauthorized,
+		});
 		expect(t.authLostCalls).toHaveLength(1);
 	});
 
@@ -657,7 +767,7 @@ describe("createKernelCommandBus", () => {
 		);
 		await flush();
 		t.pendingFetches[1].reject(new Error("offline"));
-		expect(await p1).toBeUndefined();
+		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
 		expect(t.authLostCalls).toHaveLength(0);
 	});
 });

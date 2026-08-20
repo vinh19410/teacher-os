@@ -2,7 +2,8 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
+import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function AddSyllabusModal({
 	open,
@@ -13,14 +14,13 @@ export function AddSyllabusModal({
 	onClose: () => void;
 	onCreated?: (id: string) => void;
 }) {
-	const { dispatch } = useData();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 6.5");
 	const [skill, setSkill] = useState("Writing");
 	const [description, setDescription] = useState("");
 	const [total, setTotal] = useState("10");
-	const [error, setError] = useState<string | undefined>();
-	const [saving, setSaving] = useState(false);
+	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
+		useKernelFormSubmit();
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
@@ -29,33 +29,41 @@ export function AddSyllabusModal({
 			setError("Vui lòng nhập tên syllabus.");
 			return;
 		}
-		setSaving(true);
-		let serverId: string | undefined;
-		try {
-			serverId = await dispatch({
-				type: "add-syllabus",
-				payload: {
-					id: "",
-					name: name.trim(),
-					level,
-					skill,
-					description: description.trim(),
-					totalLessons: Number.parseInt(total, 10) || 10,
-				},
-			});
-		} finally {
-			setSaving(false);
+		const result = await run({
+			type: "add-syllabus",
+			payload: {
+				id: "",
+				name: name.trim(),
+				level,
+				skill,
+				description: description.trim(),
+				totalLessons: Number.parseInt(total, 10) || 10,
+			},
+		});
+		// Close/reset/navigate only after the refreshed result — a committed
+		// id without the snapshot would navigate into a stale-store 404.
+		if (result?.kind === "refreshed") {
+			setName("");
+			setDescription("");
+			onClose();
+			if (result.id && onCreated) onCreated(result.id);
 		}
-		setName("");
-		setDescription("");
-		setError(undefined);
-		onClose();
-		// Navigate only with the server id — a client-generated id would 404.
-		if (serverId && onCreated) onCreated(serverId);
+	}
+
+	async function reconcileAndFinish() {
+		if (await reconcile()) {
+			setName("");
+			setDescription("");
+			onClose();
+		}
 	}
 
 	return (
-		<Modal open={open} onClose={onClose} title="Tạo syllabus mới">
+		<Modal
+			open={open}
+			onClose={saving ? () => undefined : onClose}
+			title="Tạo syllabus mới"
+		>
 			<form onSubmit={submit}>
 				<Field label="Tên syllabus *" error={error}>
 					<Input
@@ -97,11 +105,30 @@ export function AddSyllabusModal({
 						onChange={(e) => setTotal(e.target.value)}
 					/>
 				</Field>
+				<div className="flex flex-col gap-2">
+					{error && (
+						<p role="alert" className="text-danger text-xs">
+							{error}
+						</p>
+					)}
+					{notice && (
+						<KernelSubmitNotice
+							notice={notice}
+							onReconcile={reconcileAndFinish}
+							disabled={saving}
+						/>
+					)}
+				</div>
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
-					<Button variant="secondary" size="sm" onClick={onClose}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={onClose}
+						disabled={saving}
+					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving}>
+					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
 						Tạo
 					</Button>
 				</div>

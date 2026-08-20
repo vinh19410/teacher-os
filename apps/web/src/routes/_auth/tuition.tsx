@@ -12,6 +12,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { fmtVND } from "@/lib/mock-data";
+import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/tuition")({
 	component: TuitionRoute,
@@ -30,7 +31,8 @@ const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
 
 function TuitionRoute() {
 	const navigate = useNavigate();
-	const { data, dispatch } = useData();
+	const { data } = useData();
+	const { run, isPending, busy } = useDirectKernelAction();
 	const [modalOpen, setModalOpen] = useState(false);
 
 	return (
@@ -170,15 +172,20 @@ function TuitionRoute() {
 											key="act"
 											variant="ghost"
 											size="sm"
+											disabled={busy || isPending(i.id)}
 											onClick={() =>
-												dispatch({
-													type: "mark-invoice-paid",
-													invoiceId: i.id,
-													method: i.method === "—" ? "CK" : i.method,
-												})
+												void run(
+													i.id,
+													{
+														type: "mark-invoice-paid",
+														invoiceId: i.id,
+														method: i.method === "—" ? "CK" : i.method,
+													},
+													"Đã ghi nhận thanh toán.",
+												)
 											}
 										>
-											Đã nhận
+											{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
 										</Button>
 									) : (
 										<span key="m" className="font-mono text-meta text-xs">
