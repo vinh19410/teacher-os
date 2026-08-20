@@ -40,7 +40,6 @@ function RootComponent() {
 				<Outlet />
 			</div>
 			<Toaster richColors theme="light" />
-			<TanStackRouterDevtools position="bottom-left" />
 		</>
 	);
 }
