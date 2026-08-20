@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Web read and display layer"
-status: todo
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: [1]
@@ -51,17 +51,17 @@ ClassGroup.schedule ──formatSchedule──▶ "T2 & T5 · 19:00–20:30" | l
 
 ## Todo
 
-- [ ] ClassGroup interface (src/lib/mock-data.ts) + seedData (test/fixtures/mock-data.ts) + snapshot fixture kernel.test.ts:35-50
-- [ ] format-schedule.ts + tests (parse, format, addMinutes, wrap)
-- [ ] mapClasses + classes.test.ts
-- [ ] classes/index.tsx + $classId.tsx display
+- [x] ClassGroup interface (src/lib/mock-data.ts) + seedData (test/fixtures/mock-data.ts) + snapshot fixture kernel.test.ts:35-50
+- [x] format-schedule.ts + tests (parse, format, addMinutes, wrap)
+- [x] mapClasses + classes.test.ts
+- [x] classes/index.tsx + $classId.tsx display
 
 ## Success Criteria
 
-- [ ] Class IELTS nhiều kỹ năng hiển thị "Band 7.0 · Writing, Speaking · Online"; class Giao tiếp hiển thị "Giao tiếp" tag, không có kỹ năng trong meta
-- [ ] Class tạo trước migration (schedule free-text) hiển thị nguyên chuỗi cũ
-- [ ] Class JSON mới hiển thị "T2 & T5 · 19:00–20:30"
-- [ ] `pnpm --filter web check-types` + `pnpm --filter web test` pass (kể cả format-schedule.test.ts mới và 3 fixture đã sửa)
+- [x] Class IELTS nhiều kỹ năng hiển thị "Band 7.0 · Writing, Speaking · Online"; class Giao tiếp hiển thị "Giao tiếp" tag, không có kỹ năng trong meta
+- [x] Class tạo trước migration (schedule free-text) hiển thị nguyên chuỗi cũ
+- [x] Class JSON mới hiển thị "T2 & T5 · 19:00–20:30"
+- [x] `pnpm --filter web check-types` + `pnpm --filter web test` pass (kể cả format-schedule.test.ts mới và 3 fixture đã sửa)
 
 ## Risk Assessment
 

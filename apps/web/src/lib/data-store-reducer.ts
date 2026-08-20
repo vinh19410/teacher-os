@@ -122,12 +122,28 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			};
 		}
 		case "add-class": {
+			// Build the row explicitly: the payload's schedule is an object on
+			// the wire, but ClassGroup.schedule stores the JSON string form.
 			const cls: ClassGroup = {
 				id: uid("c"),
-				...action.payload,
+				name: action.payload.name,
+				level: action.payload.level,
+				type: action.payload.type,
+				skills: action.payload.type === "ielts" ? action.payload.skills : [],
+				mode: action.payload.mode,
+				syllabusId: action.payload.syllabusId,
 				studentIds: [],
+				schedule: JSON.stringify({
+					...action.payload.schedule,
+					// Match the server's dedupe + sort before persist.
+					days: [...new Set(action.payload.schedule.days)].sort(
+						(a, b) => a - b,
+					),
+				}),
 				sessionsDone: 0,
+				sessionsTotal: action.payload.sessionsTotal,
 				status: "active",
+				startDate: action.payload.startDate,
 				notes: "",
 			};
 			return { ...state, classes: [...state.classes, cls] };

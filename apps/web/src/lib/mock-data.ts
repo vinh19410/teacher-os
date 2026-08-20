@@ -1,3 +1,5 @@
+import type { ClassType } from "@teacher-os/api/contracts";
+
 export interface Student {
 	id: string;
 	name: string;
@@ -88,10 +90,12 @@ export interface ClassGroup {
 	id: string;
 	name: string;
 	level: string;
-	skill: string;
+	type: ClassType;
+	skills: string[];
 	mode: string;
 	syllabusId: string;
 	studentIds: string[];
+	/** Raw string: JSON `{days,start,end}` (new) or legacy free text. */
 	schedule: string;
 	sessionsDone: number;
 	sessionsTotal: number;
@@ -151,6 +155,17 @@ export type KernelHydratedData = Pick<
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 export const dayDates = [18, 19, 20, 21, 22, 23, 24];
+
+/** Single source for the display label of the wire enum id. */
+export const CLASS_TYPE_LABELS: Record<ClassType, string> = {
+	ielts: "IELTS",
+	communication: "Giao tiếp",
+};
+
+/** One-line class summary: "Band 7.0 · Writing, Speaking · Online". */
+export function classMeta(c: ClassGroup): string {
+	return [c.level, c.skills.join(", "), c.mode].filter(Boolean).join(" · ");
+}
 export function fmtVND(n: number): string {
 	return `${n.toLocaleString("vi-VN")}đ`;
 }

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "AddClassModal form rework"
-status: todo
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: [1, 2]
@@ -57,22 +57,22 @@ submit ──▶ run({type:"add-class", payload:{... , schedule:{days,start,end}
 
 ## Todo
 
-- [ ] ChipMulti generic component
-- [ ] data-actions.ts payload type
-- [ ] data-store-reducer.ts optimistic row map
-- [ ] Modal: loại lớp + kỹ năng điều kiện + days + time picker + end+90
-- [ ] Validation + reset
-- [ ] Fixture tests + contract test verify
+- [x] ChipMulti generic component
+- [x] data-actions.ts payload type
+- [x] data-store-reducer.ts optimistic row map
+- [x] Modal: loại lớp + kỹ năng điều kiện + days + time picker + end+90
+- [x] Validation + reset
+- [x] Fixture tests + contract test verify
 
 ## Success Criteria
 
-- [ ] Chọn "Giao tiếp" → field kỹ năng biến mất, submit được không cần kỹ năng
-- [ ] Chọn "IELTS" không chọn kỹ năng → block với thông báo lỗi
-- [ ] Chọn start 19:00 lần đầu → end hiện 20:30 tự động; sửa end 21:00 rồi đổi start 18:00 → end giữ 21:00
-- [ ] Payload POST đúng shape mới — `days` là mảng number (test assert `typeof days[0] === "number"`, đỏ-team F7), `type` là `"ielts"`, không phải label
-- [ ] Optimistic row trong store có `schedule` là JSON string (không vỡ `formatSchedule`)
-- [ ] Tạo lớp thành công, modal đóng, list refresh
-- [ ] `pnpm check` / `pnpm test` / `pnpm check-types` / `pnpm build` pass toàn workspace
+- [x] Chọn "Giao tiếp" → field kỹ năng biến mất, submit được không cần kỹ năng
+- [x] Chọn "IELTS" không chọn kỹ năng → block với thông báo lỗi
+- [x] Chọn start 19:00 lần đầu → end hiện 20:30 tự động; sửa end 21:00 rồi đổi start 18:00 → end giữ 21:00
+- [x] Payload POST đúng shape mới — `days` là mảng number (test assert `typeof days[0] === "number"`, đỏ-team F7), `type` là `"ielts"`, không phải label
+- [x] Optimistic row trong store có `schedule` là JSON string (không vỡ `formatSchedule`)
+- [x] Tạo lớp thành công, modal đóng, list refresh
+- [x] `pnpm check` / `pnpm test` / `pnpm check-types` / `pnpm build` pass toàn workspace
 
 ## Risk Assessment
 

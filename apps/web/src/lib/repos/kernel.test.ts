@@ -47,7 +47,8 @@ const snapshot: KernelSnapshot = {
 			id: "cl-1",
 			name: "IELTS Writing",
 			level: "Band 7.0",
-			skill: "Writing",
+			type: "ielts",
+			skills: ["Writing"],
 			mode: "Online",
 			syllabusId: "sy-1",
 			schedule: "T3 19:00",
@@ -329,16 +330,21 @@ describe("kernelCommand", () => {
 			type: "add-class",
 			payload: {
 				name: "L",
+				type: "ielts",
 				level: "Band 7.0",
-				skill: "Writing",
+				skills: ["Writing"],
 				mode: "Online",
 				syllabusId: "",
-				schedule: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 12,
 				startDate: "",
 			},
 		});
 		expect(req.path).toBe("/api/classes");
+		// Wire shape lock: enum id (not the display label) and numeric days.
+		expect(req.body).toMatchObject({ type: "ielts" });
+		const body = req.body as { schedule: { days: number[] } };
+		expect(typeof body.schedule.days[0]).toBe("number");
 	});
 
 	test("add-syllabus drops the client id", () => {

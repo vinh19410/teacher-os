@@ -300,17 +300,18 @@ describe("reducer", () => {
 		);
 	});
 
-	test("add-class appends with sessionsDone 0 and c- id", () => {
+	test("add-class appends with sessionsDone 0, c- id, and JSON-string schedule", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
 			type: "add-class",
 			payload: {
 				name: "New class",
+				type: "ielts",
 				level: "6.0",
-				skill: "Writing",
+				skills: ["Writing", "Speaking"],
 				mode: "Online",
 				syllabusId: "sy1",
-				schedule: "T2",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 10,
 				startDate: "01/09",
 			},
@@ -319,6 +320,35 @@ describe("reducer", () => {
 		expect(next.classes.length).toBe(before.classes.length + 1);
 		expect(added.sessionsDone).toBe(0);
 		expect(added.id).toMatch(/^c-/);
+		expect(added.type).toBe("ielts");
+		expect(added.skills).toEqual(["Writing", "Speaking"]);
+		expect(typeof added.schedule).toBe("string");
+		expect(JSON.parse(added.schedule)).toEqual({
+			days: [1, 3],
+			start: "19:00",
+			end: "20:30",
+		});
+	});
+
+	test("add-class communication row stores an empty skills array", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "add-class",
+			payload: {
+				name: "Giao tiếp mới",
+				type: "communication",
+				level: "",
+				skills: [],
+				mode: "Online",
+				syllabusId: "",
+				schedule: { days: [2], start: "09:00", end: "10:30" },
+				sessionsTotal: 10,
+				startDate: "",
+			},
+		});
+		const added = next.classes[next.classes.length - 1];
+		expect(added.type).toBe("communication");
+		expect(added.skills).toEqual([]);
 	});
 
 	test("update-class-notes changes only that class", () => {

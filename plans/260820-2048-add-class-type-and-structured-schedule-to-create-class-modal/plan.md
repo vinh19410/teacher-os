@@ -1,7 +1,7 @@
 ---
 title: "Add class type and structured schedule to create class modal"
 description: "Modal Tạo lớp mới thêm field loại lớp (IELTS / Giao tiếp): IELTS chọn nhiều kỹ năng, Giao tiếp không có kỹ năng. Lịch học thay input free-text bằng multi-select thứ (T2–CN) + time picker start/end, end default = start + 90 phút. Thay đổi dọc toàn stack: zod contract, DB migration, server, snapshot, display, modal."
-status: pending
+status: completed
 priority: P2
 effort: "1.5-2d"
 branch: develop
@@ -39,9 +39,9 @@ Hiện tại class có `skill: string` đơn chọn (Writing…/Giao tiếp tr�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Contract + DB migration + server](./phase-01-start.md) | Pending |
-| 2 | [Web read and display layer](./phase-02-web-read-and-display-layer.md) | Pending |
-| 3 | [AddClassModal form rework](./phase-03-addclassmodal-form-rework.md) | Pending |
+| 1 | [Contract + DB migration + server](./phase-01-start.md) | Completed |
+| 2 | [Web read and display layer](./phase-02-web-read-and-display-layer.md) | Completed |
+| 3 | [AddClassModal form rework](./phase-03-addclassmodal-form-rework.md) | Completed |
 
 ## Cross-Plan Dependencies
 

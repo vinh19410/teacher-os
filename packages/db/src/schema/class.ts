@@ -16,7 +16,9 @@ export const classTable = sqliteTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		level: text("level").notNull().default(""),
-		skill: text("skill").notNull().default(""),
+		type: text("type").notNull().default("ielts"),
+		/** JSON array string, e.g. '["Writing","Speaking"]'. */
+		skills: text("skills").notNull().default("[]"),
 		mode: text("mode").notNull().default("Online"),
 		syllabusId: text("syllabus_id").references(() => syllabus.id),
 		schedule: text("schedule").notNull().default(""),

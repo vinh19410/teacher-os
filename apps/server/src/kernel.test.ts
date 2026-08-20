@@ -14,6 +14,7 @@ import {
 	session as authSession,
 	user as authUser,
 } from "@teacher-os/db/schema/auth";
+import { classTable } from "@teacher-os/db/schema/class";
 import { commentBank } from "@teacher-os/db/schema/comment-bank";
 import * as schema from "@teacher-os/db/schema/index";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -197,11 +198,12 @@ async function createTestApp() {
 			method: "POST",
 			body: {
 				name,
+				type: "ielts",
 				level: "Band 7.0",
-				skill: "Writing",
+				skills: ["Writing", "Speaking"],
 				mode: "Online",
 				syllabusId: "",
-				schedule: "T3 19:00",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 12,
 				startDate: "01/09",
 			},
@@ -324,6 +326,150 @@ describe("kernel bootstrap", () => {
 		const res = await t.call("/api/auth/get-session", { origin: null });
 		// The stub auth handler answers (404) — proof the request bypassed bootstrap 401/403.
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("class type + structured schedule (create-class modal)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Hà");
+	});
+
+	const baseBody = {
+		name: "IELTS Evening",
+		type: "ielts",
+		level: "Band 7.0",
+		skills: ["Writing"],
+		mode: "Online",
+		syllabusId: "",
+		schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+		sessionsTotal: 12,
+		startDate: "01/09",
+	};
+
+	function postClass(body: unknown) {
+		return t.call("/api/classes", { session, method: "POST", body });
+	}
+
+	test("communication class persists type and skills='[]'", async () => {
+		const res = await postClass({
+			...baseBody,
+			name: "Giao tiếp sáng",
+			type: "communication",
+			skills: [],
+		});
+		expect(res.status).toBe(201);
+		const [row] = await t.db
+			.select()
+			.from(classTable)
+			.where(eq(classTable.name, "Giao tiếp sáng"));
+		expect(row?.type).toBe("communication");
+		expect(row?.skills).toBe("[]");
+	});
+
+	test("schedule missing days or legacy free-text string is 400", async () => {
+		const missingDays = await postClass({
+			...baseBody,
+			schedule: { start: "19:00", end: "20:30" },
+		});
+		expect(missingDays.status).toBe(400);
+		const legacyString = await postClass({
+			...baseBody,
+			schedule: "T3 19:00",
+		});
+		expect(legacyString.status).toBe(400);
+	});
+
+	test("days out of range, duplicated, or too long is 400", async () => {
+		const outOfRange = await postClass({
+			...baseBody,
+			schedule: { ...baseBody.schedule, days: [7] },
+		});
+		expect(outOfRange.status).toBe(400);
+		const duplicated = await postClass({
+			...baseBody,
+			schedule: { ...baseBody.schedule, days: [1, 1] },
+		});
+		expect(duplicated.status).toBe(400);
+		const tooLong = await postClass({
+			...baseBody,
+			schedule: {
+				...baseBody.schedule,
+				days: [0, 1, 2, 3, 4, 5, 6, 0],
+			},
+		});
+		expect(tooLong.status).toBe(400);
+	});
+
+	test("invalid time format is 400; overnight end<start is 201", async () => {
+		const badTime = await postClass({
+			...baseBody,
+			schedule: { days: [2], start: "99:99", end: "20:30" },
+		});
+		expect(badTime.status).toBe(400);
+		const overnight = await postClass({
+			...baseBody,
+			name: "Overnight class",
+			schedule: { days: [2], start: "23:00", end: "00:30" },
+		});
+		expect(overnight.status).toBe(201);
+	});
+
+	test("start equal to end is 400", async () => {
+		const res = await postClass({
+			...baseBody,
+			schedule: { days: [2], start: "19:00", end: "19:00" },
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("duplicated or over-long skills arrays are 400", async () => {
+		const duplicated = await postClass({
+			...baseBody,
+			skills: ["Writing", "Writing"],
+		});
+		expect(duplicated.status).toBe(400);
+		const tooLong = await postClass({
+			...baseBody,
+			skills: ["Writing", "Speaking", "Reading", "Listening", "Writing"],
+		});
+		expect(tooLong.status).toBe(400);
+	});
+
+	test("snapshot returns type, skills as string[], and sorted days", async () => {
+		const res = await postClass({
+			...baseBody,
+			name: "Sort Days",
+			schedule: { days: [3, 1], start: "19:00", end: "20:30" },
+		});
+		expect(res.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.name === "Sort Days");
+		expect(cls?.type).toBe("ielts");
+		expect(cls?.skills).toEqual(["Writing"]);
+		expect(JSON.parse(cls?.schedule ?? "{}").days).toEqual([1, 3]);
+	});
+
+	test("ielts with empty skills is 400", async () => {
+		const res = await postClass({ ...baseBody, skills: [] });
+		expect(res.status).toBe(400);
+	});
+
+	test("communication with skills is 400; unknown skill value is 400", async () => {
+		const withSkills = await postClass({
+			...baseBody,
+			type: "communication",
+			skills: ["Writing"],
+		});
+		expect(withSkills.status).toBe(400);
+		const unknownSkill = await postClass({
+			...baseBody,
+			skills: ["Parkour"],
+		});
+		expect(unknownSkill.status).toBe(400);
 	});
 });
 
