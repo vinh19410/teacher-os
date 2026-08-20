@@ -1,7 +1,7 @@
 ---
 title: "Add TanStack Query for API data state management"
 description: "Đưa TanStack Query v5 vào apps/web làm lớp server-state cho dữ liệu API: snapshot kernel đọc qua một query ['kernel'] duy nhất, bus ghi refetch qua QueryClient — context API của DataProvider và toàn bộ 26 call site useData() giữ nguyên."
-status: in-progress
+status: completed
 priority: P1
 effort: "~2-3d"
 issue: 44
@@ -40,10 +40,10 @@ Adopt TanStack Query v5 làm lớp server-state cho `apps/web`: snapshot kernel 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Cài đặt, QueryClient + reauth single-flight, provider bọc app](./phase-01-start.md) | Pending |
-| 2 | [kernelQueryOptions + DataProvider chuyển sang useQuery](./phase-02-kernel-snapshot-query-in-dataprovider.md) | Pending |
-| 3 | [Command bus refetch qua QueryClient](./phase-03-command-bus-refresh-through-queryclient.md) | Pending |
-| 4 | [Tests, docs và verification CI](./phase-04-tests-docs-and-ci-verification.md) | Pending |
+| 1 | [Cài đặt, QueryClient + reauth single-flight, provider bọc app](./phase-01-start.md) | Completed |
+| 2 | [kernelQueryOptions + DataProvider chuyển sang useQuery](./phase-02-kernel-snapshot-query-in-dataprovider.md) | Completed |
+| 3 | [Command bus refetch qua QueryClient](./phase-03-command-bus-refresh-through-queryclient.md) | Completed |
+| 4 | [Tests, docs và verification CI](./phase-04-tests-docs-and-ci-verification.md) | Completed |
 
 ## Success Criteria
 
