@@ -49,7 +49,7 @@ NO-GO nếu topology/cookie không ổn định, migration/recovery chưa đư�
 |---|---|---|
 | Release | Manual, controlled, evidence-backed | Một pilot đầu cần live proof; CI/CD deploy không phải điều kiện milestone này. |
 | Migration rollback | Forward-only; restore D1 chỉ theo runbook/rehearsal | Đảo migration sau dữ liệu thật dễ phá schema/data. |
-| Readiness | `/readyz` query D1 nhẹ, không trả detail | `GET /` hiện chỉ liveness (`apps/server/src/app.ts:98`). |
+| Readiness | `/readyz` query D1 nhẹ, không trả detail | `GET /` hiện chỉ liveness (`apps/server/src/app.ts:99`). |
 | Snapshot failure | Blocking error + retry; `401` re-auth, không mount children | `DataProvider` hiện mở empty store sau lỗi (`apps/web/src/lib/data-provider.tsx:73-79`). |
 | Mutation result | Kết quả discriminated: committed/refreshed/failed/unknown | `id` không phải tín hiệu success cho endpoint trả `{ ok: true }`. |
 | Auth smoke | Manual incognito Chrome + Safari; Google OAuth thật, không ở CI | Chỉ browser/live origin chứng minh callback, cookie, CORS. |
@@ -84,7 +84,7 @@ P5 truthful mutations ─────┘                         │
 | 1 | [Production configuration and support runbook](./phase-01-production-configuration-and-support-runbook.md) | Completed |
 | 2 | [D1 migration safety and recovery drill](./phase-02-d1-migration-safety-and-recovery-drill.md) | Pending |
 | 3 | [Database readiness endpoint](./phase-03-add-database-readiness-endpoint.md) | Completed |
-| 4 | [Fail-safe first snapshot load](./phase-04-fail-safe-on-first-snapshot-load.md) | Pending |
+| 4 | [Fail-safe first snapshot load](./phase-04-fail-safe-on-first-snapshot-load.md) | Completed |
 | 5 | [Truthful mutation failure UI](./phase-05-make-mutation-failure-truthful-in-the-ui.md) | Pending |
 | 6 | [Live UAT and release evidence](./phase-06-execute-live-uat-and-record-release-evidence.md) | Pending |
 
@@ -212,7 +212,7 @@ Live ledger (counts only, no UUIDs/row text): staging applied `0000`–`0006`; `
 **Findings:** 19 deduplicated from 4 lenses (Security, Failure Mode, Assumption Destroyer, Scope Critic). **Applied:** 16. **Rejected:** 3.
 
 | # | Finding | Severity | Disposition | Applied to |
-|---|---|---|---|---|
+|---|---------|----------|-------------|------------|
 | 1 | Decision tree missing empty-staging-applied `0006` | Critical | Accept | Phase 2 |
 | 2 | Empty + populated cannot share current singleton without pre-`0006` fixture | Critical | Accept | Phase 2 |
 | 3 | `alchemy deploy` after Time Travel re-applies migrations | Critical | Accept | Phase 2 |
@@ -238,4 +238,29 @@ Live ledger (counts only, no UUIDs/row text): staging applied `0000`–`0006`; `
 - Files reread: `plan.md`, all six `phase-*.md` files.
 - Decision deltas checked: `0006` repair = table rebuild + recreate staging; split populated fixture vs restore drill; no `0007`; no verify script; runbook append-only; synthetic fixtures only; session wipe after restore.
 - Reconciled stale references: Alchemy line numbers, Phase 1 status, “Phase 1 will create staging”, Phase 2 file list vs step 2, copy/quiesce phantom procedures.
+- Unresolved contradictions: 0.
+
+### Session — 2026-08-20 (Phase 4 re-review)
+
+**Findings:** 11 deduplicated from 3 lenses (Security/Fact Checker, Failure Mode/Flow Tracer, Assumption Destroyer/Scope Auditor). **Applied:** 10. **Rejected:** 1 (partial).
+
+| # | Finding | Severity | Disposition | Applied to |
+|---|---------|----------|-------------|------------|
+| 1 | `kernel-runtime.contract.test.ts` regex-locks the old `kernelLoaded` shape; tests fail on first commit | Critical | Accept | Phase 4 |
+| 2 | "Safe return URL" has no consumer (login hardcodes `/dashboard`), files out of scope, undefined "safe" = open-redirect vector | Critical | Accept | Phase 4 |
+| 3 | Test plan infeasible: vitest env is `node`, no DOM/testing-library; component behaviors untestable | High | Accept | Phase 4 (pure state-machine extraction) |
+| 4 | Mid-session `401` via bus refresh retried pointlessly; provider-only 401 handling leaves the common case stuck | High | Accept | Phase 4 (bus `onAuthLost`) |
+| 5 | `401` "clear in-memory state" is a no-op; session cookie survives — must best-effort `authClient.signOut()` | High | Accept | Phase 4 |
+| 6 | Error taxonomy binary: no bucket for `403`/`429` (server returns real `403`), no-status errors unrepresentable | High | Accept | Phase 4 (3 buckets + no-status mapping) |
+| 7 | Wrong-shape `200` passes `as KernelSnapshot` cast and can mount garbage/empty-looking workspace; "valid" undefined | High | Accept | Phase 4 (shape guard on `emptyKernelData` keys) |
+| 8 | Stale in-flight attempt can flip `ready`→`error` and unmount a running workspace; no sequence guard | Medium | Accept | Phase 4 |
+| 9 | Error/retry UI has no target file; "accessible" undefined; no error boundary exists | Medium | Accept | Phase 4 (`kernel-load-error.tsx`, `role="alert"`) |
+| 10 | `_auth` guard redirect drops the URL, diverging from the new 401 return-URL path | Medium | Accept | Phase 4 (guard carries `returnUrl`) |
+| 11 | Malformed payload should be non-retryable (deterministic) | Medium | Reject (partial) | Kept `retryable` per original requirement — proxy/partial-deploy responses are transient and retry is user-driven; distinct message instead. |
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: `plan.md`, all six `phase-*.md` files.
+- Decision deltas checked: 3-bucket taxonomy, bus `onAuthLost`, signOut-then-redirect, returnUrl plumbing through login flows + guard, shape guard, sequence token, contract-test rewrite, new files (`kernel-load-state.ts`, `kernel-load-error.tsx`).
+- Reconciled stale references: 2 — `plan.md` Design decisions citation `apps/server/src/app.ts:98` → `:99` (drift after `/readyz`); Phase 4 Requirements/Steps/Success Criteria rewritten to match.
 - Unresolved contradictions: 0.

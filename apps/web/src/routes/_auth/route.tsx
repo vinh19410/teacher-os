@@ -4,11 +4,17 @@ import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_auth")({
 	component: AuthLayout,
-	beforeLoad: async () => {
+	beforeLoad: async ({ location }) => {
 		const session = await authClient.getSession();
 		if (!session.data) {
+			// Carry the current location so a re-auth lands the teacher back
+			// where they were — same contract as the provider's 401 redirect.
+			// `location.href` is the full path incl. search + hash (no origin).
+			// Do NOT template the parsed search object here — it serializes to
+			// "[object Object]" and breaks the return URL.
 			throw redirect({
 				to: "/login",
+				search: { returnUrl: location.href },
 			});
 		}
 		return { session };

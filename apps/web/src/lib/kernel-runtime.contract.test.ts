@@ -35,16 +35,27 @@ describe("kernel-backed store wiring", () => {
 		expect(src).not.toMatch(/seedData/);
 	});
 
-	test("data-provider never mounts seedData and gates children on kernel load", () => {
+	test("data-provider never mounts seedData and gates children on the load state machine", () => {
 		const src = readSrc("data-provider.tsx");
 		expect(src).not.toMatch(/seedData/);
 		expect(src).toMatch(/emptyKernelData/);
 		expect(src).toMatch(/useState\(emptyKernelData\)/);
 		expect(src).toMatch(/setData\(mapKernelSnapshot\(snapshot\)\)/);
 		expect(src).not.toMatch(/localDispatch|data-store-reducer/);
-		// Loading gate: children stay unmounted until the first snapshot settles.
-		expect(src).toMatch(/if \(!kernelLoaded\)/);
-		expect(src).toMatch(/return null/);
+		// The boolean gate is gone: children render only from `ready`.
+		expect(src).not.toMatch(/kernelLoaded/);
+		expect(src).toMatch(/if \(load.status !== "ready"\)/);
+		// A failed first load renders the blocking error screen — never an
+		// empty workspace.
+		expect(src).toMatch(/<KernelLoadError/);
+		expect(src).toMatch(/classifyLoadError/);
+		// Stale attempts must not settle state after a newer attempt exists.
+		expect(src).toMatch(/shouldSettle/);
+		// 401 re-auth: best-effort sign-out + validated return URL redirect.
+		expect(src).toMatch(/authClient\.signOut/);
+		expect(src).toMatch(/validateReturnUrl/);
+		// The command bus routes mid-session 401s into the same re-auth path.
+		expect(src).toMatch(/onAuthLost: reauth/);
 	});
 
 	test("kernel writes POST with cookies included", () => {
@@ -128,6 +139,44 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/useEffect\(\(\) => \{/);
 		expect(src).toMatch(/if \(!open\) return;/);
 		expect(src).toMatch(/\}, \[open, assignmentId\]\);/);
+	});
+});
+
+describe("first-load fail-safe wiring", () => {
+	test("login route passes the raw returnUrl through validateSearch", () => {
+		const src = readSrc("../routes/login.tsx");
+		expect(src).toMatch(/validateSearch/);
+		expect(src).toMatch(/typeof search\.returnUrl === "string"/);
+	});
+
+	test("all three login flows consume the validated return URL", () => {
+		for (const file of [
+			"../components/sign-in-form.tsx",
+			"../components/sign-up-form.tsx",
+			"../components/google-oauth-button.tsx",
+		]) {
+			const src = readSrc(file);
+			// Reverting validateReturnUrl(returnUrl) back to the raw param (or
+			// to a hardcoded /dashboard) must fail this lock — that is the
+			// open-redirect regression guard.
+			expect(src, file).toMatch(/useSearch\(\{ from: "\/login" \}\)/);
+			expect(src, file).toMatch(/validateReturnUrl\(returnUrl\)/);
+		}
+	});
+
+	test("the _auth guard carries the current location as returnUrl", () => {
+		const src = readSrc("../routes/_auth/route.tsx");
+		expect(src).toMatch(/returnUrl: location\.href/);
+		// `location.search` is a parsed object in TanStack Router — templating
+		// it would serialize to "[object Object]" and break the return URL.
+		expect(src).not.toMatch(/location\.search/);
+	});
+
+	test("kernel load error screen is accessible and offers retry only when retryable", () => {
+		const src = readSrc("../components/kernel-load-error.tsx");
+		expect(src).toMatch(/role="alert"/);
+		expect(src).toMatch(/failure\.kind === "retryable"/);
+		expect(src).toMatch(/FATAL_HINT/);
 	});
 });
 
