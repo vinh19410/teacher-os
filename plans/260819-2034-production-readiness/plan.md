@@ -7,7 +7,7 @@ effort: "6-9d"
 issue: 28
 branch: develop
 tags: [infra, auth, database, frontend, critical]
-blockedBy: []
+blockedBy: [260820-2029-add-tanstack-query-for-api-data-state-management]
 blocks: []
 created: 2026-08-19
 ---
