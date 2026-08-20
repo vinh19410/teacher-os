@@ -4,15 +4,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
-import { AuthField } from "@/components/auth/auth-field";
+import { AuthField, fieldErrors } from "@/components/auth/auth-field";
 import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
+import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
-
-const fieldErrors = (errors: readonly unknown[]): string[] =>
-	errors
-		.map((error) => (error as { message?: string } | undefined)?.message)
-		.filter((message): message is string => typeof message === "string");
 
 export default function SignInForm({
 	hidden,
@@ -116,6 +112,7 @@ export default function SignInForm({
 						labelRowExtra={
 							<button
 								type="button"
+								aria-expanded={showForgotNote}
 								onClick={() => setShowForgotNote((visible) => !visible)}
 								className="-mr-1 rounded-[4px] px-1 py-[6px] font-[510] text-accent-blue text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 							>
@@ -137,19 +134,12 @@ export default function SignInForm({
 				})}
 			>
 				{({ canSubmit, isSubmitting }) => (
-					<button
-						type="submit"
+					<SubmitButton
 						disabled={!canSubmit || isSubmitting}
-						className="mt-2 flex h-12 w-full items-center justify-center gap-[9px] rounded-[var(--radius-pill)] bg-accent-blue font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background,transform] duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
-					>
-						{isSubmitting && (
-							<span
-								aria-hidden="true"
-								className="h-4 w-4 animate-spin rounded-full border-2 border-[color-mix(in_oklab,var(--accent-on),transparent_70%)] border-t-accent-on"
-							/>
-						)}
-						{isSubmitting ? "Signing in…" : "Sign in"}
-					</button>
+						spinning={isSubmitting}
+						spinningLabel="Signing in…"
+						label="Sign in"
+					/>
 				)}
 			</form.Subscribe>
 		</form>

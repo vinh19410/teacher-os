@@ -2,6 +2,12 @@ import { type ReactNode, useState } from "react";
 
 import { cn } from "@/lib/cn";
 
+/** Maps TanStack Form field errors to a plain string[] (first message renders). */
+export const fieldErrors = (errors: readonly unknown[]): string[] =>
+	errors
+		.map((error) => (error as { message?: string } | undefined)?.message)
+		.filter((message): message is string => typeof message === "string");
+
 interface AuthFieldProps {
 	label: string;
 	id: string;
@@ -58,6 +64,7 @@ export function AuthField({
 					onBlur={onBlur}
 					onChange={(event) => onChange(event.target.value)}
 					aria-invalid={invalid || undefined}
+					aria-describedby={invalid ? `${id}-status` : undefined}
 					className={cn(
 						"h-12 w-full rounded-[var(--radius-md)] border border-line bg-bg px-[15px] text-fg text-sm",
 						"transition-[border-color,box-shadow] duration-[150ms] motion-reduce:transition-none",
@@ -92,7 +99,11 @@ export function AuthField({
 					</button>
 				)}
 			</div>
-			<div className="mt-[5px] min-h-[19px] text-[13px]" aria-live="polite">
+			<div
+				id={`${id}-status`}
+				className="mt-[5px] min-h-[19px] text-[13px]"
+				aria-live="polite"
+			>
 				{invalid ? (
 					<p className="text-[color-mix(in_oklab,var(--danger),black_18%)]">
 						{errors[0]}
