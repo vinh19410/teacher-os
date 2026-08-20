@@ -78,7 +78,9 @@ loads `packages/infra/.env` first — a value there wins over the same name in
    operator env; no secret has ever been committed (search the repo if
    unsure).
 6. **Staging exists** — the staging stage has been provisioned (below) and
-   the pending D1 migration was rehearsed there (Phase 2 gate).
+   the pending D1 migration was rehearsed per the Phase 6 gate: a restaged
+   staging ledger showing the repaired migration, or the recorded
+   throwaway-D1 proof (a live staging D1 alone is not the acceptance).
 7. **Green local gates** — on the release commit: `pnpm test`,
    `pnpm check-types`, `pnpm exec biome check .`, `pnpm build`.
 
@@ -276,8 +278,9 @@ without secrets) attaches to the tracking issue on GitHub.
 **2026-08-20 — NO-GO before deploy (no sign-off row: no release occurred).**
 Phase 6 pre-deploy gates ran and the topology gate failed: `APP_DOMAIN` unset in
 every env file (a leftover dev `CORS_ORIGIN` in `apps/server/.env` would also
-silently defeat the derived default), no production redirect URI registrable
-until the domain is chosen, and the Google UAT account / Safari runner were not
-supplied. No deploy command was run. Blocker inputs tracked in issue #41;
-evidence in
+override the derived default with only a warning, no hard failure), and no
+production redirect URI was registrable until the domain is chosen.
+Additionally, the Google UAT account and the Safari runner were not supplied
+(separate blockers, not topology). No deploy command was run. Blocker inputs
+tracked in issue #41; evidence in
 `plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md`.

@@ -28,14 +28,14 @@ This is a manual acceptance gate, not a flaky production OAuth CI test. `/readyz
 
 ## Related Code Files
 
-- Modify: `docs/project-roadmap.md` only after all gate evidence passes.
+- Modify: `docs/project-roadmap.md` — mark the milestone completed only after all gate evidence passes; a `Blocked` status with blocker/evidence links may be recorded any time per the roadmap update convention.
 - Modify: `docs/production-release-runbook.md` with observed evidence links, deviations, and the pre-deploy sign-off row.
 - GitHub: parent issue and its UAT child issue; sanitized evidence only (allowlist above).
 
 ## Implementation Steps
 
 1. **Local gates on the release commit:** `pnpm test`, `pnpm check-types`, `pnpm exec biome check .`, `pnpm build` (CI env parity: `VITE_SERVER_URL` set when building the web app).
-2. **Topology gate (before any deploy):** `APP_DOMAIN` is set in the deploy environment and resolves via `resolveDomainTopology`; `CORS_ORIGIN` is absent or exactly `https://app.<APP_DOMAIN>` in every env file Alchemy loads (`packages/infra/.env`, `apps/server/.env`, `apps/web/.env`) — a leftover localhost value silently wins over the derived default; the Cloudflare zone for the domain exists in the account; the Google console has redirect URI `https://api.<APP_DOMAIN>/api/auth/callback/google`. Any failure aborts before deploying: NO-GO plus a blocker issue. Never deploy `--stage prod` with `APP_DOMAIN` unset — that yields a `workers.dev`-shaped "prod" that can still pass `/readyz`.
+2. **Topology gate (before any deploy):** `APP_DOMAIN` is set in the deploy environment and resolves via `resolveDomainTopology`; `CORS_ORIGIN` is absent or exactly `https://app.<APP_DOMAIN>` in every env file Alchemy loads (`packages/infra/.env`, `apps/server/.env`, `apps/web/.env`) — a leftover localhost value overrides the derived default with only a warning (no hard failure); the Cloudflare zone for the domain exists in the account; the Google console has redirect URI `https://api.<APP_DOMAIN>/api/auth/callback/google`. Any failure aborts before deploying: NO-GO plus a blocker issue. Never deploy `--stage prod` with `APP_DOMAIN` unset — that yields a `workers.dev`-shaped "prod" that can still pass `/readyz`.
 3. **Staging rehearsal gate:** the staging ledger (`d1_migrations`) shows the repaired `0006` applied on a restaged staging, or the recorded throwaway-D1 proof is the rehearsal evidence. "A live staging D1 exists" alone does not satisfy this gate.
 4. **Deploy:** record the sign-off row (operator, approver, domain) in the runbook, deploy from the main checkout at the release SHA, and record the SHA. If the first production deploy fails partway, cleanup of a partial `prod` stage requires explicit restore-authority approval — no improvised procedures.
 5. **Post-deploy probes (before any browser):** `curl -sS -i https://api.<APP_DOMAIN>/readyz` → `200 {"ok":true}` with `cache-control: no-store`; `GET /` → `OK`; CORS probe with `Origin: https://app.<APP_DOMAIN>` returns the expected `Access-Control-Allow-Origin`. Any failure: diagnose from Worker logs, fix, redeploy — do not open browsers on a red stage.
