@@ -85,7 +85,7 @@ P5 truthful mutations ─────┘                         │
 | 2 | [D1 migration safety and recovery drill](./phase-02-d1-migration-safety-and-recovery-drill.md) | Pending |
 | 3 | [Database readiness endpoint](./phase-03-add-database-readiness-endpoint.md) | Completed |
 | 4 | [Fail-safe first snapshot load](./phase-04-fail-safe-on-first-snapshot-load.md) | Pending |
-| 5 | [Truthful mutation failure UI](./phase-05-make-mutation-failure-truthful-in-the-ui.md) | Pending |
+| 5 | [Truthful mutation failure UI](./phase-05-make-mutation-failure-truthful-in-the-ui.md) | Completed |
 | 6 | [Live UAT and release evidence](./phase-06-execute-live-uat-and-record-release-evidence.md) | Pending |
 
 ## Cross-plan dependencies

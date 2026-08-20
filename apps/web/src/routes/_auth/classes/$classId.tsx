@@ -19,6 +19,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
 import { dayDates } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
+import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
 	component: ClassDetailRoute,
@@ -42,7 +43,8 @@ function ClassDetailRoute() {
 	const { classId } = Route.useParams();
 	const navigate = useNavigate();
 	const { classById } = useClasses();
-	const { syllabusById, studentById, data, dispatch } = useData();
+	const { syllabusById, studentById, data } = useData();
+	const { run, isPending, busy } = useDirectKernelAction();
 	const cls = classById(classId);
 	const [tab, setTab] = useState("roster");
 	const [assignOpen, setAssignOpen] = useState(false);
@@ -220,15 +222,20 @@ function ClassDetailRoute() {
 						variant="secondary"
 						size="sm"
 						className="mt-3"
+						disabled={busy || isPending("class-notes")}
 						onClick={() =>
-							dispatch({
-								type: "update-class-notes",
-								classId: cls.id,
-								notes: notes ?? cls.notes,
-							})
+							void run(
+								"class-notes",
+								{
+									type: "update-class-notes",
+									classId: cls.id,
+									notes: notes ?? cls.notes,
+								},
+								"Đã lưu ghi chú.",
+							)
 						}
 					>
-						Lưu ghi chú
+						{isPending("class-notes") ? "Đang lưu…" : "Lưu ghi chú"}
 					</Button>
 				</Card>
 			)}

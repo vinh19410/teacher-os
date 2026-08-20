@@ -141,6 +141,54 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 	};
 }
 
+/**
+ * Typed HTTP failure: carries the status so the bus can tell a definite
+ * non-commit (4xx) from a response that may have followed a committed write.
+ */
+export class KernelHttpError extends Error {
+	readonly status: number;
+
+	constructor(status: number, path: string) {
+		super(`POST ${path} failed: ${status}`);
+		this.name = "KernelHttpError";
+		this.status = status;
+	}
+}
+
+/**
+ * Truthful outcome of one kernel write (phase-5 contract).
+ * - `refreshed` — 2xx acknowledged and the snapshot was re-applied. The only
+ *   state that permits close/reset/navigate.
+ * - `committed` — 2xx acknowledged but the refresh failed. The write IS saved;
+ *   `id` rides along as metadata. Never navigate a stale store on this.
+ * - `definite-failure` — 4xx: the server did not commit. Safe to retry.
+ * - `outcome-unknown` — 5xx/408/429 or transport loss: a committed write may
+ *   have lost its response. Reconcile the snapshot before any retry.
+ */
+export type KernelCommandResult =
+	| { kind: "refreshed"; id?: string }
+	| { kind: "committed"; id?: string }
+	| { kind: "definite-failure"; status: number; error: unknown }
+	| { kind: "outcome-unknown"; error: unknown };
+
+/**
+ * Only a 4xx response proves the server did NOT commit the write. A 5xx from
+ * an edge/proxy can arrive after the origin already committed, and 408/429
+ * responses sit in the same ambiguity — all classify as outcome-unknown, as do
+ * fetch rejections and timeouts (native errors).
+ */
+export function classifyWriteFailure(
+	error: unknown,
+): { kind: "definite-failure"; status: number } | { kind: "outcome-unknown" } {
+	if (error instanceof KernelHttpError) {
+		if (error.status === 408 || error.status === 429 || error.status >= 500) {
+			return { kind: "outcome-unknown" };
+		}
+		return { kind: "definite-failure", status: error.status };
+	}
+	return { kind: "outcome-unknown" };
+}
+
 /** Transport: POST a kernel write and resolve the server-assigned id. */
 export async function postKernelCommand(
 	baseUrl: string,
@@ -156,7 +204,7 @@ export async function postKernelCommand(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new Error(`POST ${path} failed: ${res.status}`);
+		throw new KernelHttpError(res.status, path);
 	}
 	const json = (await res.json()) as Partial<CreatedResponse>;
 	return json.id;
@@ -180,20 +228,17 @@ export interface KernelCommandBusDeps {
 	postCommand(action: KernelAction): Promise<string | undefined>;
 	fetchSnapshot(): Promise<KernelSnapshot>;
 	applySnapshot(snapshot: KernelSnapshot): void;
-	/**
-	 * `write` = the POST failed; `refresh` = POST succeeded but reload failed.
-	 * `willRetry` is false on the final attempt — suppress duplicate toasts until then.
-	 */
-	onError(
-		kind: "write" | "refresh",
-		action: KernelAction,
-		error: unknown,
-		detail: { attempt: number; willRetry: boolean },
-	): void;
 }
 
 export interface KernelCommandBus {
-	run(action: KernelAction): Promise<string | undefined>;
+	run(action: KernelAction): Promise<KernelCommandResult>;
+	/**
+	 * Serialized snapshot refresh — the reconcile path callers use after a
+	 * `committed` or `outcome-unknown` result. Chaining on the write queue
+	 * guarantees a stale snapshot can never overwrite a newer write's apply.
+	 * Resolves false when the snapshot is unreachable.
+	 */
+	refresh(): Promise<boolean>;
 }
 
 /**
@@ -202,49 +247,69 @@ export interface KernelCommandBus {
  * a later write's POST always lands after the previous write is applied, so
  * no snapshot can be applied stale and no successful write can be dropped.
  *
- * A write that saved server-side but could not refresh the UI normally resolves
- * `undefined` so callers never navigate against a stale store. Comment-bank
- * writes return their acknowledged id because replaying them would duplicate
- * an already committed comment.
+ * An identical action dispatched while one is still pending shares the
+ * in-flight result instead of queueing a second POST (double-click guard).
  */
 export function createKernelCommandBus(
 	deps: KernelCommandBusDeps,
 ): KernelCommandBus {
 	const REFRESH_ATTEMPTS = 2;
 	let queue: Promise<unknown> | null = null;
+	const inFlight = new Map<string, Promise<KernelCommandResult>>();
 
-	async function runOne(action: KernelAction): Promise<string | undefined> {
+	function enqueue<T>(start: () => Promise<T>): Promise<T> {
+		// Start immediately when idle; chain behind the previous operation
+		// otherwise so POSTs and snapshot applies stay strictly serialized.
+		const result = queue ? queue.then(start) : start();
+		queue = result.catch(() => undefined);
+		return result;
+	}
+
+	async function runOne(action: KernelAction): Promise<KernelCommandResult> {
 		let id: string | undefined;
 		try {
 			id = await deps.postCommand(action);
 		} catch (error) {
-			deps.onError("write", action, error, { attempt: 1, willRetry: false });
-			return undefined;
+			const classified = classifyWriteFailure(error);
+			return classified.kind === "definite-failure"
+				? { kind: "definite-failure", status: classified.status, error }
+				: { kind: "outcome-unknown", error };
 		}
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				deps.applySnapshot(await deps.fetchSnapshot());
-				return id;
-			} catch (error) {
-				deps.onError("refresh", action, error, {
-					attempt,
-					willRetry: attempt < REFRESH_ATTEMPTS,
-				});
+				return { kind: "refreshed", id };
+			} catch {
+				// A flaky GET must not lose the acknowledged write's outcome.
 			}
 		}
-		// A comment POST acknowledgement is the durable commit boundary. Replaying
-		// after only the hydration failed would create an unintended duplicate.
-		// Other actions keep the existing stale-store safety contract.
-		return action.type === "add-comment-bank" ? id : undefined;
+		// The 2xx acknowledgement is the durable commit boundary — the write
+		// IS saved even though the UI could not reload. Callers see
+		// `committed`, keep the input out of retry reach, and reconcile.
+		return { kind: "committed", id };
 	}
 
 	return {
 		run(action) {
-			// Start immediately when idle; chain behind the previous write
-			// otherwise so POSTs are strictly serialized.
-			const result = queue ? queue.then(() => runOne(action)) : runOne(action);
-			queue = result.catch(() => undefined);
+			const key = JSON.stringify(action);
+			const pending = inFlight.get(key);
+			if (pending) return pending;
+			const result = enqueue(() => runOne(action));
+			inFlight.set(key, result);
+			void result.finally(() => {
+				if (inFlight.get(key) === result) inFlight.delete(key);
+			});
 			return result;
+		},
+		refresh() {
+			return enqueue(async () => {
+				try {
+					deps.applySnapshot(await deps.fetchSnapshot());
+					return true;
+				} catch {
+					return false;
+				}
+			});
 		},
 	};
 }

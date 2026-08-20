@@ -3,8 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import type { KernelFormNotice } from "@/lib/use-kernel-form-submit";
+import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const DEFAULT_SCORE = "6.0";
+
+/**
+ * operationIds whose comment POST ended outcome-unknown (may or may not be
+ * committed server-side). A reopen for that assignment reuses the id so the
+ * server dedupes instead of inserting a duplicate comment; every resolved
+ * outcome (refreshed/committed/definite) clears the entry.
+ */
+const unresolvedCommentOps = new Map<string, string>();
 
 export function GradeModal({
 	open,
@@ -15,7 +25,7 @@ export function GradeModal({
 	onClose: () => void;
 	assignmentId: string;
 }) {
-	const { assignmentById, dispatch } = useData();
+	const { assignmentById, dispatch, refresh } = useData();
 	const assignment = assignmentById(assignmentId);
 	const [task, setTask] = useState(DEFAULT_SCORE);
 	const [coherence, setCoherence] = useState(DEFAULT_SCORE);
@@ -24,8 +34,9 @@ export function GradeModal({
 	const [feedback, setFeedback] = useState("");
 	const [error, setError] = useState<string | undefined>();
 	const [saving, setSaving] = useState(false);
+	const [notice, setNotice] = useState<KernelFormNotice | undefined>();
 	const [gradeSaved, setGradeSaved] = useState(false);
-	const [commentOperationId, setCommentOperationId] = useState(() =>
+	const [commentOperationId, setCommentOperationId] = useState<string>(() =>
 		crypto.randomUUID(),
 	);
 	const inputsDisabled = saving || gradeSaved;
@@ -44,7 +55,6 @@ export function GradeModal({
 	// otherwise grading B silently submits A's persisted scores.
 	// assignmentId is intentionally in deps: the param can change while the
 	// modal is open, and only the dep re-runs this reset.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
 	useEffect(() => {
 		if (!open) return;
 		setTask(DEFAULT_SCORE);
@@ -53,15 +63,22 @@ export function GradeModal({
 		setGrammar(DEFAULT_SCORE);
 		setFeedback("");
 		setError(undefined);
+		setNotice(undefined);
 		setGradeSaved(false);
-		setCommentOperationId(crypto.randomUUID());
+		// Reuse an unresolved (outcome-unknown) operationId so the replay
+		// dedupes server-side instead of duplicating the comment.
+		setCommentOperationId(
+			unresolvedCommentOps.get(assignmentId) ?? crypto.randomUUID(),
+		);
 	}, [open, assignmentId]);
 
 	if (!assignment) return null;
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
-		if (saving) return;
+		// A pending committed/unknown notice blocks replay: the grade or
+		// comment may already be saved, and re-submitting could duplicate.
+		if (saving || notice !== undefined) return;
 		const feedbackText = feedback.trim();
 		setSaving(true);
 		try {
@@ -74,32 +91,74 @@ export function GradeModal({
 					setError("Điểm mỗi tiêu chí từ 0 đến 9 (bước 0.5).");
 					return;
 				}
-				const gradedId = await dispatch({
+				const graded = await dispatch({
 					type: "grade-assignment",
 					assignmentId,
 					scores,
 				});
-				if (gradedId === undefined) {
+				if (graded.kind === "definite-failure") {
 					setError("Không lưu được điểm — thử lại.");
+					return;
+				}
+				if (graded.kind !== "refreshed") {
+					setNotice(
+						graded.kind === "committed"
+							? { kind: "committed" }
+							: { kind: "unknown" },
+					);
 					return;
 				}
 				setGradeSaved(true);
 			}
 
 			if (feedbackText) {
-				const commentId = await dispatch({
+				const comment = await dispatch({
 					type: "add-comment-bank",
 					text: feedbackText,
 					operationId: commentOperationId,
 				});
-				if (commentId === undefined) {
+				if (comment.kind === "definite-failure") {
+					// Nothing was committed under this id — regenerate so a retry
+					// with edited text cannot hit the operationId-payload 409.
+					unresolvedCommentOps.delete(assignmentId);
+					setCommentOperationId(crypto.randomUUID());
 					setError("Điểm đã lưu, nhưng nhận xét chưa lưu — thử lại.");
 					return;
 				}
+				if (comment.kind === "outcome-unknown") {
+					// Keep the operationId: replaying with it dedupes to 200 if
+					// the lost response actually followed a committed write.
+					unresolvedCommentOps.set(assignmentId, commentOperationId);
+					setNotice({ kind: "unknown" });
+					return;
+				}
+				if (comment.kind === "committed") {
+					unresolvedCommentOps.delete(assignmentId);
+					setNotice({ kind: "committed" });
+					return;
+				}
+				unresolvedCommentOps.delete(assignmentId);
 			}
 		} finally {
 			setSaving(false);
 		}
+		setError(undefined);
+		setNotice(undefined);
+		setFeedback("");
+		onClose();
+	}
+
+	async function reconcileAndFinish() {
+		if (saving) return;
+		setSaving(true);
+		const applied = await refresh();
+		setSaving(false);
+		if (!applied) {
+			setNotice({ kind: "reconcile-failed" });
+			return;
+		}
+		unresolvedCommentOps.delete(assignmentId);
+		setNotice(undefined);
 		setError(undefined);
 		setFeedback("");
 		onClose();
@@ -172,6 +231,13 @@ export function GradeModal({
 						{error}
 					</p>
 				)}
+				{notice && (
+					<KernelSubmitNotice
+						notice={notice}
+						onReconcile={reconcileAndFinish}
+						disabled={saving}
+					/>
+				)}
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
 					<Button
 						type="button"
@@ -182,7 +248,11 @@ export function GradeModal({
 					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving}>
+					<Button
+						type="submit"
+						size="sm"
+						disabled={saving || notice !== undefined}
+					>
 						{saving ? "Đang lưu…" : "Lưu & duyệt"}
 					</Button>
 				</div>

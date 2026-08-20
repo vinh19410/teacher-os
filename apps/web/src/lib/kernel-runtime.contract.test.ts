@@ -47,24 +47,118 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/return null/);
 	});
 
-	test("kernel writes POST with cookies included", () => {
+	test("kernel writes POST with cookies included and type HTTP failures", () => {
 		const src = readSrc("repos/kernel.ts");
 		expect(src).toMatch(/credentials: "include"/);
+		expect(src).toMatch(/class KernelHttpError/);
+		expect(src).toMatch(/new KernelHttpError\(res\.status, path\)/);
 	});
 
-	test("kernel write modals await the dispatch before closing", () => {
+	test("provider exposes the discriminated result and a serialized refresh", () => {
+		const src = readSrc("data-provider.tsx");
+		expect(src).toMatch(
+			/dispatch\(action: KernelAction\): Promise<KernelCommandResult>/,
+		);
+		expect(src).toMatch(/refresh\(\): Promise<boolean>/);
+		// Outcome surfacing is caller-owned — the provider keeps no write toasts.
+		expect(src).not.toMatch(/toast\.error\(\s*kind === "write"/);
+		expect(src).not.toMatch(/Không lưu được/);
+	});
+
+	test("form modals close and reset only on the refreshed result", () => {
 		for (const file of KERNEL_WRITE_MODALS) {
 			const src = readSrc(`../components/modals/${file}`);
+			// grade-modal hand-rolls the two-step sequence against the same contract
+			if (file === "grade-modal.tsx") {
+				expect(src, file).toMatch(/graded\.kind === "definite-failure"/);
+				expect(src, file).toMatch(/graded\.kind !== "refreshed"/);
+				expect(src, file).toMatch(
+					/onClose={saving \? \(\) => undefined : onClose}/,
+				);
+				continue;
+			}
 			expect(src, file).toMatch(/async function submit/);
-			expect(src, file).toMatch(/await dispatch\(/);
+			expect(src, file).toMatch(/const result = await run\(/);
+			expect(src, file).toMatch(/result\?\.kind === "refreshed"/);
+			// No unconditional close after the await — failure keeps the modal.
+			expect(src, file).not.toMatch(
+				/finally \{\s*setSaving\(false\);\s*\}\s*onClose\(\)/,
+			);
+			// A mid-save close would leave the pending outcome with no surface.
+			expect(src, file).toMatch(
+				/onClose={saving \? \(\) => undefined : onClose}/,
+			);
 		}
 	});
 
-	test("add-syllabus navigates with the server id, not a client id", () => {
+	test("form modals surface committed/unknown with a reconcile affordance", () => {
+		for (const file of KERNEL_WRITE_MODALS) {
+			const src = readSrc(`../components/modals/${file}`);
+			expect(src, file).toMatch(/KernelSubmitNotice/);
+			expect(src, file).toMatch(/onReconcile=/);
+			// A committed/unknown notice blocks the submit path: the write may
+			// already be saved, so a blind replay could duplicate a create.
+			if (file === "grade-modal.tsx") {
+				expect(src, file).toMatch(
+					/if \(saving \|\| notice !== undefined\) return/,
+				);
+				expect(src, file).toMatch(
+					/disabled=\{saving \|\| notice !== undefined\}/,
+				);
+			} else {
+				expect(src, file).toMatch(/disabled=\{saving \|\| submitBlocked\}/);
+			}
+		}
+	});
+
+	test("add-syllabus navigates only on the refreshed result with the server id", () => {
 		const src = readSrc("../components/modals/add-syllabus-modal.tsx");
-		expect(src).toMatch(/serverId = await dispatch\(/);
-		expect(src).toMatch(/if \(serverId && onCreated\) onCreated\(serverId\)/);
+		expect(src).toMatch(/result\?\.kind === "refreshed"/);
+		expect(src).toMatch(
+			/if \(result\.id && onCreated\) onCreated\(result\.id\)/,
+		);
 		expect(src).not.toMatch(/onCreated\(id\)/);
+		// A committed id without the snapshot would navigate into a 404.
+		expect(src).toMatch(/refreshed result — a committed/);
+	});
+
+	test("direct actions await the outcome, disable while pending and report visibly", () => {
+		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
+		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
+		expect(dashboard).toMatch(/void run\(/);
+		expect(dashboard).toMatch(/disabled=\{busy \|\| isPending\(l\.id\)\}/);
+
+		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		expect(tuition).toMatch(/useDirectKernelAction\(\)/);
+		expect(tuition).toMatch(/void run\(/);
+		expect(tuition).toMatch(/disabled=\{busy \|\| isPending\(i\.id\)\}/);
+
+		const classDetail = readSrc("../routes/_auth/classes/$classId.tsx");
+		expect(classDetail).toMatch(/useDirectKernelAction\(\)/);
+		expect(classDetail).toMatch(/void run\(/);
+		expect(classDetail).toMatch(
+			/disabled=\{busy \|\| isPending\("class-notes"\)\}/,
+		);
+
+		const lessonModal = readSrc("../components/schedule/lesson-modal.tsx");
+		expect(lessonModal).toMatch(/useDirectKernelAction\(\)/);
+		expect(lessonModal).toMatch(
+			/disabled=\{busy \|\| isPending\(lesson\.id\)\}/,
+		);
+	});
+
+	test("outcome toasts distinguish refreshed/committed/definite/unknown and reconcile after unknown", () => {
+		const src = readSrc("kernel-outcome.ts");
+		expect(src).toMatch(/case "refreshed":/);
+		expect(src).toMatch(/case "committed":/);
+		expect(src).toMatch(/case "definite-failure":/);
+		expect(src).toMatch(/case "outcome-unknown":/);
+		expect(src).toMatch(/if \(await refresh\(\)\)/);
+		// 409 is the server's duplicate-guard — it heals the stale store
+		// instead of reporting a false write failure.
+		expect(src).toMatch(/result\.status === 409/);
+		expect(src).toMatch(/heal-409/);
+		// Behavioral coverage lives in kernel-outcome.test.ts (node-env unit).
 	});
 
 	test("AddInvoiceModal remains close-only and exposes no create write", () => {
@@ -108,17 +202,32 @@ describe("kernel-backed store wiring", () => {
 
 	test("grade-modal preserves grade/comment ordering and partial-success retry", () => {
 		const src = readSrc("../components/modals/grade-modal.tsx");
-		// Bus resolves undefined on write/refresh failure — the guard must
-		// keep the modal open so the typed scores are not lost.
-		expect(src).toMatch(/gradedId === undefined/);
+		// Each step reacts to its own discriminated result — definite failure
+		// keeps the modal open so typed scores are not lost.
+		expect(src).toMatch(/graded\.kind === "definite-failure"/);
 		expect(src).toMatch(/setError\("Không lưu được điểm/);
 		expect(src).toMatch(/type: "add-comment-bank"/);
 		expect(src).toMatch(/operationId: commentOperationId/);
-		expect(src).toMatch(/setCommentOperationId\(crypto\.randomUUID\(\)\)/);
 		expect(src).toMatch(/disabled=\{inputsDisabled\}/);
 		expect(src).toMatch(/gradeSaved/);
 		expect(src).toMatch(/Điểm đã lưu.*nhận xét chưa lưu/);
 		expect(src).toMatch(/disabled=\{saving\}/);
+	});
+
+	test("grade-modal keeps the comment operationId stable across outcome-unknown replay", () => {
+		const src = readSrc("../components/modals/grade-modal.tsx");
+		// Unknown outcome parks the operationId so a replay (or a reopen)
+		// dedupes server-side instead of duplicating the comment…
+		expect(src).toMatch(
+			/unresolvedCommentOps\.set\(assignmentId, commentOperationId\)/,
+		);
+		expect(src).toMatch(
+			/unresolvedCommentOps\.get\(assignmentId\) \?\? crypto\.randomUUID\(\)/,
+		);
+		// …while a definite failure regenerates it so edited text cannot 409.
+		expect(src).toMatch(
+			/unresolvedCommentOps\.delete\(assignmentId\);\s*\n\s*setCommentOperationId\(crypto\.randomUUID\(\)\)/,
+		);
 	});
 
 	test("grade-modal resets scores and error on every open", () => {

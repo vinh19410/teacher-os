@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function AddClassModal({
 	open,
@@ -11,7 +13,7 @@ export function AddClassModal({
 	open: boolean;
 	onClose: () => void;
 }) {
-	const { data, dispatch } = useData();
+	const { data } = useData();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 7.0");
 	const [skill, setSkill] = useState("Writing");
@@ -20,8 +22,8 @@ export function AddClassModal({
 	const [schedule, setSchedule] = useState("");
 	const [total, setTotal] = useState("12");
 	const [startDate, setStartDate] = useState("19/08");
-	const [error, setError] = useState<string | undefined>();
-	const [saving, setSaving] = useState(false);
+	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
+		useKernelFormSubmit();
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
@@ -30,32 +32,40 @@ export function AddClassModal({
 			setError("Vui lòng nhập tên lớp.");
 			return;
 		}
-		setSaving(true);
-		try {
-			await dispatch({
-				type: "add-class",
-				payload: {
-					name: name.trim(),
-					level,
-					skill,
-					mode,
-					syllabusId,
-					schedule: schedule.trim(),
-					sessionsTotal: Number.parseInt(total, 10) || 12,
-					startDate: startDate.trim(),
-				},
-			});
-		} finally {
-			setSaving(false);
+		const result = await run({
+			type: "add-class",
+			payload: {
+				name: name.trim(),
+				level,
+				skill,
+				mode,
+				syllabusId,
+				schedule: schedule.trim(),
+				sessionsTotal: Number.parseInt(total, 10) || 12,
+				startDate: startDate.trim(),
+			},
+		});
+		if (result?.kind === "refreshed") {
+			setName("");
+			setSchedule("");
+			onClose();
 		}
-		setName("");
-		setSchedule("");
-		setError(undefined);
-		onClose();
+	}
+
+	async function reconcileAndFinish() {
+		if (await reconcile()) {
+			setName("");
+			setSchedule("");
+			onClose();
+		}
 	}
 
 	return (
-		<Modal open={open} onClose={onClose} title="Tạo lớp mới">
+		<Modal
+			open={open}
+			onClose={saving ? () => undefined : onClose}
+			title="Tạo lớp mới"
+		>
 			<form onSubmit={submit}>
 				<Field label="Tên lớp *" error={error}>
 					<Input
@@ -127,11 +137,30 @@ export function AddClassModal({
 						/>
 					</Field>
 				</div>
+				<div className="flex flex-col gap-2">
+					{error && (
+						<p role="alert" className="text-danger text-xs">
+							{error}
+						</p>
+					)}
+					{notice && (
+						<KernelSubmitNotice
+							notice={notice}
+							onReconcile={reconcileAndFinish}
+							disabled={saving}
+						/>
+					)}
+				</div>
 				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
-					<Button variant="secondary" size="sm" onClick={onClose}>
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={onClose}
+						disabled={saving}
+					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving}>
+					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
 						Tạo lớp
 					</Button>
 				</div>
