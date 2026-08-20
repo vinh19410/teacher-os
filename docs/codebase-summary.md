@@ -6,7 +6,8 @@ This is the navigation surface for the repository. It points to the owning files
 
 - [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) - web auth gate and shell entry
 - [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) - client kernel store and load gate
-- [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) - kernel transport and snapshot mapping
+- [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts) - QueryClient defaults and global 401 reauth
+- [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) - kernel transport, snapshot query options, and snapshot mapping
 - [apps/server/src/app.ts](../apps/server/src/app.ts) - server app composition and bootstrap middleware
 - [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) - kernel route tree
 - [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) - snapshot loader
@@ -26,7 +27,7 @@ This is the navigation surface for the repository. It points to the owning files
 
 ## Where to look first
 
-- If you are changing UI state or kernel writes, start in [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts).
+- If you are changing UI state or kernel writes, start in [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts); query-layer behavior (keys, retry, refetch policy) lives in [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts).
 - If you are changing persistence, start in [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) and the individual schema files under `packages/db/src/schema/`.
 - If you are changing request bodies or response shapes, start in [packages/api/src/contracts.ts](../packages/api/src/contracts.ts).
 - If you are changing deployment or local runtime wiring, start in [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts).

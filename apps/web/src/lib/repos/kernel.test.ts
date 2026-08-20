@@ -3,15 +3,25 @@
  * Pure functions only — transport lives in the provider.
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
+import { createKernelQueryClient } from "@/lib/query-client";
 import {
 	classifyWriteFailure,
 	createKernelCommandBus,
 	fetchKernelSnapshot,
 	kernelCommand,
+	kernelQueryKey,
+	kernelQueryOptions,
 	mapKernelSnapshot,
+	postKernelCommand,
 } from "./kernel";
+
+// The real QueryClient brings the real reauth path with it; only the
+// auth-client transport (and its env dependency) is mocked away.
+vi.mock("@/lib/auth-client", () => ({
+	authClient: { signOut: vi.fn().mockResolvedValue(undefined) },
+}));
 
 const snapshot: KernelSnapshot = {
 	students: [
@@ -499,15 +509,20 @@ describe("createKernelCommandBus", () => {
 		}
 	}
 
+	/**
+	 * Observation mechanism: every `deps.refetch()` call pushes one deferred
+	 * onto `pendingRefetches`; the array index is the call order. Resolving/
+	 * rejecting a deferred drives the bus step by step. Which snapshot the
+	 * cache ends up with is asserted by the real-QueryClient integration
+	 * tests (see "bus 4-state through a real QueryClient").
+	 */
 	function makeHarness() {
 		const postCalls: string[] = [];
-		const fetchCalls: number[] = [];
-		const applied: number[] = [];
+		const refetchCalls: number[] = [];
 		const authLostCalls: number[] = [];
 		const pendingPosts: Array<ReturnType<typeof deferred<string | undefined>>> =
 			[];
-		const pendingFetches: Array<ReturnType<typeof deferred<KernelSnapshot>>> =
-			[];
+		const pendingRefetches: Array<ReturnType<typeof deferred<void>>> = [];
 		const bus = createKernelCommandBus({
 			postCommand: (action) => {
 				postCalls.push(action.type);
@@ -515,49 +530,47 @@ describe("createKernelCommandBus", () => {
 				pendingPosts.push(d);
 				return d.promise;
 			},
-			fetchSnapshot: () => {
-				fetchCalls.push(fetchCalls.length);
-				const d = deferred<KernelSnapshot>();
-				pendingFetches.push(d);
+			refetch: () => {
+				refetchCalls.push(refetchCalls.length);
+				const d = deferred<void>();
+				pendingRefetches.push(d);
 				return d.promise;
 			},
-			applySnapshot: (snapshot) =>
-				applied.push((snapshot as unknown as { seq: number }).seq),
 			onAuthLost: () => authLostCalls.push(authLostCalls.length),
 		});
 		return {
 			bus,
 			postCalls,
-			fetchCalls,
-			applied,
+			refetchCalls,
 			authLostCalls,
 			pendingPosts,
-			pendingFetches,
+			pendingRefetches,
 		};
 	}
 
 	const action = (i: number) =>
 		({ type: "update-class-notes", classId: `c${i}`, notes: "n" }) as const;
 
-	test("writes serialize: a second POST waits for the first write's apply", async () => {
+	test("writes serialize: a second POST waits for the first write's refetch to settle", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
 		const p2 = t.bus.run(action(2));
 		expect(t.postCalls).toEqual(["update-class-notes"]); // second not started
 
 		t.pendingPosts[0].resolve("id-1");
-		await flush(); // let the bus advance to fetchSnapshot
-		t.pendingFetches[0].resolve({ seq: 1 } as never);
+		await flush(); // let the bus advance to the refetch
+		expect(t.pendingRefetches).toHaveLength(1);
+		t.pendingRefetches[0].resolve();
 		expect(await p1).toEqual({ kind: "refreshed", id: "id-1" });
-		expect(t.applied).toEqual([1]);
 		await flush(); // second queued write now starts its POST
 
 		t.pendingPosts[1].resolve("id-2");
 		await flush();
-		t.pendingFetches[1].resolve({ seq: 2 } as never);
+		t.pendingRefetches[1].resolve();
 		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
-		expect(t.applied).toEqual([1, 2]);
 		expect(t.postCalls).toEqual(["update-class-notes", "update-class-notes"]);
+		// Refetch order proves serialization: write 1's refresh, then write 2's.
+		expect(t.refetchCalls).toHaveLength(2);
 	});
 
 	test("4xx write failure resolves definite-failure and does not block the queue", async () => {
@@ -572,14 +585,13 @@ describe("createKernelCommandBus", () => {
 			status: 409,
 			error: httpError,
 		});
-		expect(t.applied).toEqual([]);
+		expect(t.refetchCalls).toHaveLength(0); // nothing to refresh on 4xx
 		await flush(); // queued second write now starts its POST
 
 		t.pendingPosts[1].resolve("id-2");
 		await flush();
-		t.pendingFetches[0].resolve({ seq: 2 } as never);
+		t.pendingRefetches[0].resolve();
 		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
-		expect(t.applied).toEqual([2]);
 	});
 
 	test("transport loss resolves outcome-unknown — replay could duplicate a create", async () => {
@@ -588,7 +600,7 @@ describe("createKernelCommandBus", () => {
 		t.pendingPosts[0].reject(new TypeError("fetch failed"));
 		const result = await p;
 		expect(result.kind).toBe("outcome-unknown");
-		expect(t.applied).toEqual([]);
+		expect(t.refetchCalls).toHaveLength(0);
 	});
 
 	test("5xx response resolves outcome-unknown — edge 502/504 can follow a committed write", async () => {
@@ -605,11 +617,11 @@ describe("createKernelCommandBus", () => {
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
 
-		t.pendingFetches[0].reject(new Error("flaky"));
-		await flush(); // bus advances to the retry fetch
-		t.pendingFetches[1].reject(new Error("flaky again"));
+		t.pendingRefetches[0].reject(new Error("flaky"));
+		await flush(); // bus advances to the retry refetch
+		t.pendingRefetches[1].reject(new Error("flaky again"));
 		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
-		expect(t.applied).toEqual([]);
+		expect(t.refetchCalls).toHaveLength(2);
 	});
 
 	test("refresh succeeds on the retry and resolves refreshed with the id", async () => {
@@ -618,11 +630,10 @@ describe("createKernelCommandBus", () => {
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
 
-		t.pendingFetches[0].reject(new Error("flaky"));
+		t.pendingRefetches[0].reject(new Error("flaky"));
 		await flush();
-		t.pendingFetches[1].resolve({ seq: 7 } as never);
+		t.pendingRefetches[1].resolve();
 		expect(await p1).toEqual({ kind: "refreshed", id: "id-1" });
-		expect(t.applied).toEqual([7]);
 	});
 
 	test("comment POST acknowledgement survives refresh failure as committed without replaying", async () => {
@@ -634,15 +645,14 @@ describe("createKernelCommandBus", () => {
 		});
 		t.pendingPosts[0].resolve("comment-1");
 		await flush();
-		t.pendingFetches[0].reject(new Error("offline"));
+		t.pendingRefetches[0].reject(new Error("offline"));
 		await flush();
-		t.pendingFetches[1].reject(new Error("still offline"));
+		t.pendingRefetches[1].reject(new Error("still offline"));
 		// The 2xx acknowledgement is the durable commit boundary for every
 		// action now — the caller sees `committed` and keeps the operationId
 		// stable instead of replaying the write.
 		expect(await p).toEqual({ kind: "committed", id: "comment-1" });
 		expect(t.postCalls).toEqual(["add-comment-bank"]);
-		expect(t.applied).toEqual([]);
 	});
 
 	test("an identical action dispatched while pending shares the in-flight result (no duplicate POST)", async () => {
@@ -653,7 +663,7 @@ describe("createKernelCommandBus", () => {
 
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
-		t.pendingFetches[0].resolve({ seq: 3 } as never);
+		t.pendingRefetches[0].resolve();
 		expect(await first).toEqual({ kind: "refreshed", id: "id-1" });
 		expect(await second).toEqual({ kind: "refreshed", id: "id-1" });
 		expect(t.postCalls).toEqual(["update-class-notes"]); // still one POST
@@ -664,7 +674,7 @@ describe("createKernelCommandBus", () => {
 		const first = t.bus.run(action(1));
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
-		t.pendingFetches[0].resolve({ seq: 3 } as never);
+		t.pendingRefetches[0].resolve();
 		await first;
 
 		const second = t.bus.run(action(1));
@@ -672,50 +682,51 @@ describe("createKernelCommandBus", () => {
 		expect(t.postCalls).toEqual(["update-class-notes", "update-class-notes"]);
 		t.pendingPosts[1].resolve("id-2");
 		await flush();
-		t.pendingFetches[1].resolve({ seq: 4 } as never);
+		t.pendingRefetches[1].resolve();
 		expect(await second).toEqual({ kind: "refreshed", id: "id-2" });
 	});
 
-	test("bus.refresh() applies the latest snapshot and resolves true", async () => {
+	test("bus.refresh() refetches and resolves true", async () => {
 		const t = makeHarness();
 		const applied = t.bus.refresh();
-		t.pendingFetches[0].resolve({ seq: 9 } as never);
+		t.pendingRefetches[0].resolve();
 		expect(await applied).toBe(true);
-		expect(t.applied).toEqual([9]);
 	});
 
 	test("bus.refresh() resolves false when the snapshot is unreachable", async () => {
 		const t = makeHarness();
 		const applied = t.bus.refresh();
-		t.pendingFetches[0].reject(new Error("offline"));
+		t.pendingRefetches[0].reject(new Error("offline"));
 		expect(await applied).toBe(false);
 	});
 
 	test("bus.refresh() fires onAuthLost when the session died mid-reconcile", async () => {
 		const t = makeHarness();
 		const applied = t.bus.refresh();
-		t.pendingFetches[0].reject(
+		t.pendingRefetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
 		);
 		expect(await applied).toBe(false);
 		expect(t.authLostCalls).toHaveLength(1);
 	});
 
-	test("bus.refresh() serializes behind an in-flight write so a stale snapshot never overwrites a newer apply", async () => {
+	test("bus.refresh() serializes behind an in-flight write so the write's refetch always lands first", async () => {
 		const t = makeHarness();
 		const write = t.bus.run(action(1));
 		const reconcile = t.bus.refresh();
-		expect(t.pendingFetches).toHaveLength(0); // refresh waits for the write
+		expect(t.pendingRefetches).toHaveLength(0); // refresh waits for the write
 
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
-		t.pendingFetches[0].resolve({ seq: 1 } as never); // write's own refresh
+		t.pendingRefetches[0].resolve(); // write's own refetch
 		expect(await write).toEqual({ kind: "refreshed", id: "id-1" });
 
-		await flush(); // reconcile fetch starts only now
-		t.pendingFetches[1].resolve({ seq: 2 } as never);
+		await flush(); // reconcile refetch starts only now
+		t.pendingRefetches[1].resolve();
 		expect(await reconcile).toBe(true);
-		expect(t.applied).toEqual([1, 2]); // newest apply wins, never stale
+		// Refetch order proves the queue: the write's refresh before the
+		// reconcile — the newest snapshot can never be overwritten stale.
+		expect(t.refetchCalls).toHaveLength(2);
 	});
 
 	test("refresh 401 does not retry: resolves committed once and fires onAuthLost", async () => {
@@ -724,13 +735,12 @@ describe("createKernelCommandBus", () => {
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
 
-		t.pendingFetches[0].reject(
+		t.pendingRefetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
 		);
 		// The write committed before the session died — committed, not failed.
 		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
-		expect(t.applied).toEqual([]);
-		expect(t.fetchCalls).toHaveLength(1); // no second (pointless) attempt
+		expect(t.refetchCalls).toHaveLength(1); // no second (pointless) attempt
 		expect(t.authLostCalls).toHaveLength(1);
 	});
 
@@ -743,7 +753,7 @@ describe("createKernelCommandBus", () => {
 		});
 		t.pendingPosts[0].resolve("comment-1");
 		await flush();
-		t.pendingFetches[0].reject(
+		t.pendingRefetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
 		);
 		expect(await p).toEqual({ kind: "committed", id: "comment-1" });
@@ -768,15 +778,23 @@ describe("createKernelCommandBus", () => {
 		const p1 = t.bus.run(action(1));
 		t.pendingPosts[0].resolve("id-1");
 		await flush();
-		t.pendingFetches[0].reject(
+		t.pendingRefetches[0].reject(
 			new HttpError(503, "GET /api/kernel failed: 503"),
 		);
 		await flush();
-		t.pendingFetches[1].reject(new Error("offline"));
+		t.pendingRefetches[1].reject(new Error("offline"));
 		expect(await p1).toEqual({ kind: "committed", id: "id-1" });
 		expect(t.authLostCalls).toHaveLength(0);
 	});
 });
+
+/** JSON Response stub shared by the transport and real-QueryClient tests. */
+function jsonResponse(status: number, body: unknown) {
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: { "content-type": "application/json" },
+	});
+}
 
 describe("fetchKernelSnapshot transport", () => {
 	const realFetch = globalThis.fetch;
@@ -784,13 +802,6 @@ describe("fetchKernelSnapshot transport", () => {
 	function mockFetch(impl: (url: string) => Promise<Response>) {
 		globalThis.fetch = ((input: RequestInfo | URL) =>
 			impl(String(input))) as typeof fetch;
-	}
-
-	function jsonResponse(status: number, body: unknown) {
-		return new Response(JSON.stringify(body), {
-			status,
-			headers: { "content-type": "application/json" },
-		});
 	}
 
 	afterEach(() => {
@@ -862,5 +873,187 @@ describe("fetchKernelSnapshot transport", () => {
 		await expect(
 			fetchKernelSnapshot("http://api.local"),
 		).rejects.toBeInstanceOf(TypeError);
+	});
+});
+
+describe("fetchKernelSnapshot abort composition (queryFn signal)", () => {
+	const realFetch = globalThis.fetch;
+	const realAny = AbortSignal.any;
+	const realTimeout = AbortSignal.timeout;
+
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+		(AbortSignal as { any?: unknown }).any = realAny;
+		(AbortSignal as { timeout?: unknown }).timeout = realTimeout;
+	});
+
+	/** A fetch that never settles on its own — only the abort signal speaks. */
+	function abortOnlyFetch() {
+		globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) =>
+			new Promise<Response>((_resolve, reject) => {
+				init?.signal?.addEventListener("abort", () => {
+					// Propagate the REAL abort reason — never a hardcoded error.
+					reject(init.signal?.reason);
+				});
+			})) as typeof fetch;
+	}
+
+	test("timeout fires through the composed signal and rejects with TimeoutError", async () => {
+		abortOnlyFetch();
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			AbortSignal.timeout(50),
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("TimeoutError");
+	});
+
+	test("an external abort wins over the timeout and rejects with AbortError", async () => {
+		abortOnlyFetch();
+		const controller = new AbortController();
+		setTimeout(() => controller.abort(), 10);
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			controller.signal,
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("AbortError");
+	});
+
+	test("without AbortSignal.any the timeout-only fallback still aborts (Safari <17.4)", async () => {
+		(AbortSignal as { any?: unknown }).any = undefined;
+		// The internal 15s guard is stubbed to 50ms so the fallback branch is
+		// observable without waiting the real timeout out.
+		(AbortSignal as { timeout?: unknown }).timeout = () =>
+			realTimeout.call(AbortSignal, 50);
+		abortOnlyFetch();
+		const controller = new AbortController(); // passed but never composed
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			controller.signal,
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("TimeoutError");
+	});
+});
+
+describe("bus 4-state through a real QueryClient", () => {
+	const realFetch = globalThis.fetch;
+	const baseUrl = "http://api.local";
+	const action = {
+		type: "update-class-notes",
+		classId: "c1",
+		notes: "n",
+	} as const;
+
+	/** POST → created id; GET /api/kernel → swappable response. */
+	function mockApi(post: () => Response, get: () => Response) {
+		globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+			if (init?.method === "POST") return Promise.resolve(post());
+			if (String(input).endsWith("/api/kernel")) return Promise.resolve(get());
+			return Promise.resolve(new Response(null, { status: 404 }));
+		}) as typeof fetch;
+	}
+
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+	});
+
+	function makeBus() {
+		const queryClient = createKernelQueryClient();
+		const bus = createKernelCommandBus({
+			postCommand: (a) => postKernelCommand(baseUrl, a),
+			refetch: () =>
+				queryClient.refetchQueries(
+					{ queryKey: kernelQueryKey, exact: true },
+					{ throwOnError: true },
+				),
+			onAuthLost: () => {},
+		});
+		return { bus, queryClient };
+	}
+
+	test("POST ok + refetch ok → refreshed and the cache holds the fresh snapshot", async () => {
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		// Prime ['kernel'] the way the mounted DataProvider does.
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		expect(await bus.run(action)).toEqual({ kind: "refreshed", id: "id-1" });
+		expect(queryClient.getQueryData(kernelQueryKey)).toEqual(snapshot);
+	});
+
+	test("POST ok + GET 5xx → committed; 2 GETs total (retry:false, no stacking)", async () => {
+		let getCalls = 0;
+		let getFails = false;
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => {
+				getCalls += 1;
+				return getFails
+					? jsonResponse(500, { error: "boom" })
+					: jsonResponse(200, snapshot);
+			},
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const primedSnapshot = queryClient.getQueryData(kernelQueryKey);
+		getCalls = 0; // count only the post-write refresh attempts
+		getFails = true; // the session's server breaks after the write ack
+
+		expect(await bus.run(action)).toEqual({ kind: "committed", id: "id-1" });
+		expect(getCalls).toBe(2); // exactly the bus's 2 refresh attempts
+		// A failed refresh must not wipe the snapshot the workspace runs on.
+		expect(queryClient.getQueryData(kernelQueryKey)).toEqual(primedSnapshot);
+	});
+
+	test("POST 4xx → definite-failure (the server did not commit)", async () => {
+		mockApi(
+			() => jsonResponse(404, { error: "nope" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const result = await bus.run(action);
+		expect(result.kind).toBe("definite-failure");
+	});
+
+	test("POST 5xx → outcome-unknown (a committed write may have lost its ack)", async () => {
+		mockApi(
+			() => jsonResponse(504, { error: "edge" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const result = await bus.run(action);
+		expect(result.kind).toBe("outcome-unknown");
+	});
+
+	test("offline: the post-write refetch RUNS and fails — never a paused fake refreshed", async () => {
+		const { onlineManager } = await import("@tanstack/react-query");
+		let getCalls = 0;
+		let getFails = false;
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => {
+				getCalls += 1;
+				return getFails
+					? jsonResponse(500, { error: "offline" })
+					: jsonResponse(200, snapshot);
+			},
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		getCalls = 0;
+		getFails = true;
+		// networkMode "offlineFirst": the refetch must execute (and fail)
+		// instead of pausing — a paused refetchQueries would resolve without
+		// fetching and the bus would report a fake "refreshed".
+		onlineManager.setOnline(false);
+		try {
+			expect(await bus.run(action)).toEqual({ kind: "committed", id: "id-1" });
+			expect(getCalls).toBe(2);
+		} finally {
+			onlineManager.setOnline(true);
+		}
 	});
 });
