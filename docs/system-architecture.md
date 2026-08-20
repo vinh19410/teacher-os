@@ -5,7 +5,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 ## Current request flow
 
 1. The auth route in [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) blocks unauthenticated users and sends them to login.
-2. [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) waits for the first `GET /api/kernel` before rendering children.
+2. [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) subscribes to the shared TanStack Query `['kernel']` entry (`GET /api/kernel`) and waits for it before rendering children; kernel writes refetch that same entry through the command bus.
 3. [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) maps UI actions to POST requests and maps kernel snapshots into the legacy UI shape.
 4. [apps/server/src/app.ts](../apps/server/src/app.ts) installs CORS, the bootstrap middleware, and the `/api` router chain.
 5. [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) enforces origin and JSON checks for POSTs, then executes org-scoped reads and writes.

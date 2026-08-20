@@ -3,15 +3,25 @@
  * Pure functions only — transport lives in the provider.
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
+import { createKernelQueryClient } from "@/lib/query-client";
 import {
 	classifyWriteFailure,
 	createKernelCommandBus,
 	fetchKernelSnapshot,
 	kernelCommand,
+	kernelQueryKey,
+	kernelQueryOptions,
 	mapKernelSnapshot,
+	postKernelCommand,
 } from "./kernel";
+
+// The real QueryClient brings the real reauth path with it; only the
+// auth-client transport (and its env dependency) is mocked away.
+vi.mock("@/lib/auth-client", () => ({
+	authClient: { signOut: vi.fn().mockResolvedValue(undefined) },
+}));
 
 const snapshot: KernelSnapshot = {
 	students: [
@@ -856,5 +866,166 @@ describe("fetchKernelSnapshot transport", () => {
 		await expect(
 			fetchKernelSnapshot("http://api.local"),
 		).rejects.toBeInstanceOf(TypeError);
+	});
+});
+
+describe("fetchKernelSnapshot abort composition (queryFn signal)", () => {
+	const realFetch = globalThis.fetch;
+	const realAny = AbortSignal.any;
+	const realTimeout = AbortSignal.timeout;
+
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+		(AbortSignal as { any?: unknown }).any = realAny;
+		(AbortSignal as { timeout?: unknown }).timeout = realTimeout;
+	});
+
+	/** A fetch that never settles on its own — only the abort signal speaks. */
+	function abortOnlyFetch() {
+		globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) =>
+			new Promise<Response>((_resolve, reject) => {
+				init?.signal?.addEventListener("abort", () => {
+					// Propagate the REAL abort reason — never a hardcoded error.
+					reject(init.signal?.reason);
+				});
+			})) as typeof fetch;
+	}
+
+	test("timeout fires through the composed signal and rejects with TimeoutError", async () => {
+		abortOnlyFetch();
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			AbortSignal.timeout(50),
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("TimeoutError");
+	});
+
+	test("an external abort wins over the timeout and rejects with AbortError", async () => {
+		abortOnlyFetch();
+		const controller = new AbortController();
+		setTimeout(() => controller.abort(), 10);
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			controller.signal,
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("AbortError");
+	});
+
+	test("without AbortSignal.any the timeout-only fallback still aborts (Safari <17.4)", async () => {
+		(AbortSignal as { any?: unknown }).any = undefined;
+		// The internal 15s guard is stubbed to 50ms so the fallback branch is
+		// observable without waiting the real timeout out.
+		(AbortSignal as { timeout?: unknown }).timeout = () =>
+			realTimeout.call(AbortSignal, 50);
+		abortOnlyFetch();
+		const controller = new AbortController(); // passed but never composed
+		const error = await fetchKernelSnapshot(
+			"http://api.local",
+			controller.signal,
+		).catch((e: unknown) => e);
+		expect((error as Error).name).toBe("TimeoutError");
+	});
+});
+
+describe("bus 4-state through a real QueryClient", () => {
+	const realFetch = globalThis.fetch;
+	const baseUrl = "http://api.local";
+	const action = {
+		type: "update-class-notes",
+		classId: "c1",
+		notes: "n",
+	} as const;
+
+	/** POST → created id; GET /api/kernel → swappable response. */
+	function mockApi(post: () => Response, get: () => Response) {
+		globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+			if (init?.method === "POST") return Promise.resolve(post());
+			if (String(input).endsWith("/api/kernel")) return Promise.resolve(get());
+			return Promise.resolve(new Response(null, { status: 404 }));
+		}) as typeof fetch;
+	}
+
+	function jsonResponse(status: number, body: unknown) {
+		return new Response(JSON.stringify(body), {
+			status,
+			headers: { "content-type": "application/json" },
+		});
+	}
+
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+	});
+
+	function makeBus() {
+		const queryClient = createKernelQueryClient();
+		const bus = createKernelCommandBus({
+			postCommand: (a) => postKernelCommand(baseUrl, a),
+			refetch: async () => {
+				await queryClient.refetchQueries(
+					{ queryKey: kernelQueryKey, exact: true },
+					{ throwOnError: true },
+				);
+			},
+			onAuthLost: () => {},
+		});
+		return { bus, queryClient };
+	}
+
+	test("POST ok + refetch ok → refreshed and the cache holds the fresh snapshot", async () => {
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		// Prime ['kernel'] the way the mounted DataProvider does.
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		expect(await bus.run(action)).toEqual({ kind: "refreshed", id: "id-1" });
+		expect(queryClient.getQueryData(kernelQueryKey)).toEqual(snapshot);
+	});
+
+	test("POST ok + GET 5xx → committed; 2 GETs total (retry:false, no stacking)", async () => {
+		let getCalls = 0;
+		let getFails = false;
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => {
+				getCalls += 1;
+				return getFails
+					? jsonResponse(500, { error: "boom" })
+					: jsonResponse(200, snapshot);
+			},
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const primedSnapshot = queryClient.getQueryData(kernelQueryKey);
+		getCalls = 0; // count only the post-write refresh attempts
+		getFails = true; // the session's server breaks after the write ack
+
+		expect(await bus.run(action)).toEqual({ kind: "committed", id: "id-1" });
+		expect(getCalls).toBe(2); // exactly the bus's 2 refresh attempts
+		// A failed refresh must not wipe the snapshot the workspace runs on.
+		expect(queryClient.getQueryData(kernelQueryKey)).toEqual(primedSnapshot);
+	});
+
+	test("POST 4xx → definite-failure (the server did not commit)", async () => {
+		mockApi(
+			() => jsonResponse(404, { error: "nope" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const result = await bus.run(action);
+		expect(result.kind).toBe("definite-failure");
+	});
+
+	test("POST 5xx → outcome-unknown (a committed write may have lost its ack)", async () => {
+		mockApi(
+			() => jsonResponse(504, { error: "edge" }),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const result = await bus.run(action);
+		expect(result.kind).toBe("outcome-unknown");
 	});
 });

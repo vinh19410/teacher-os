@@ -17,8 +17,9 @@ These are the repo conventions that show up in the live codebase and should stay
 | [apps/server/src/app.ts](../apps/server/src/app.ts) | auth/bootstrap middleware, CORS, and app composition |
 | [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) | kernel mutations and org-scoped reads |
 | [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) | snapshot assembly and loader projections |
-| [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) | kernel transport and snapshot-to-UI mapping |
+| [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) | kernel transport, snapshot query options, and snapshot-to-UI mapping |
 | [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) | client load gate and store wiring |
+| [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts) | QueryClient defaults, kernel query retry policy, and global 401 reauth |
 | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) | dev/deploy runtime bindings |
 
 ## Writing conventions
