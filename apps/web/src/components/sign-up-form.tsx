@@ -1,24 +1,29 @@
 import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
-import { Button } from "@teacher-os/ui/components/button";
-import { Input } from "@teacher-os/ui/components/input";
-import { Label } from "@teacher-os/ui/components/label";
+import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
+import { AuthField } from "@/components/auth/auth-field";
+import { NoticeOk } from "@/components/auth/notices";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/cn";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
 
-import GoogleOAuthButton from "./google-oauth-button";
-import Loader from "./loader";
+const fieldErrors = (errors: readonly unknown[]): string[] =>
+	errors
+		.map((error) => (error as { message?: string } | undefined)?.message)
+		.filter((message): message is string => typeof message === "string");
 
 export default function SignUpForm({
-	onSwitchToSignIn,
+	hidden,
+	onSubmittingChange,
 }: {
-	onSwitchToSignIn: () => void;
+	hidden: boolean;
+	onSubmittingChange?: (submitting: boolean) => void;
 }) {
 	const { returnUrl } = useSearch({ from: "/login" });
-	const { isPending } = authClient.useSession();
+	const [accountCreated, setAccountCreated] = useState(false);
 
 	const form = useForm({
 		defaultValues: {
@@ -27,24 +32,29 @@ export default function SignUpForm({
 			name: "",
 		},
 		onSubmit: async ({ value }) => {
-			await authClient.signUp.email(
-				{
-					email: value.email,
-					password: value.password,
-					name: value.name,
-				},
-				{
-					onSuccess: () => {
-						toast.success("Sign up successful");
-						// Full page load: the workspace boots through the kernel
-						// load gate with the fresh session.
-						window.location.assign(validateReturnUrl(returnUrl));
+			onSubmittingChange?.(true);
+			try {
+				await authClient.signUp.email(
+					{
+						email: value.email,
+						password: value.password,
+						name: value.name,
 					},
-					onError: (error) => {
-						toast.error(error.error.message || error.error.statusText);
+					{
+						onSuccess: () => {
+							setAccountCreated(true);
+							// Full page load: the workspace boots through the kernel
+							// load gate with the fresh session.
+							window.location.assign(validateReturnUrl(returnUrl));
+						},
+						onError: (error) => {
+							toast.error(error.error.message || error.error.statusText);
+						},
 					},
-				},
-			);
+				);
+			} finally {
+				onSubmittingChange?.(false);
+			}
 		},
 		validators: {
 			onSubmit: z.object({
@@ -55,125 +65,124 @@ export default function SignUpForm({
 		},
 	});
 
-	if (isPending) {
-		return <Loader />;
-	}
-
 	return (
-		<div className="mx-auto mt-10 w-full max-w-md p-6">
-			<h1 className="mb-6 text-center font-bold text-3xl">Create Account</h1>
+		<form
+			noValidate
+			hidden={hidden}
+			id="panel-signup"
+			role="tabpanel"
+			aria-labelledby="tab-signup"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				form.handleSubmit();
+			}}
+			className="fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
+		>
+			{accountCreated && (
+				<NoticeOk title="Account created">Opening your workspace…</NoticeOk>
+			)}
 
-			<GoogleOAuthButton />
+			<form.Field name="name">
+				{(field) => (
+					<AuthField
+						id="su-name"
+						name="name"
+						label="Name"
+						type="text"
+						autoComplete="name"
+						placeholder="Your name"
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						errors={fieldErrors(field.state.meta.errors)}
+					/>
+				)}
+			</form.Field>
 
-			<div className="my-6 flex items-center gap-3 text-muted-foreground text-xs">
-				<span className="h-px flex-1 bg-border" />
-				or sign up with email
-				<span className="h-px flex-1 bg-border" />
-			</div>
+			<form.Field name="email">
+				{(field) => (
+					<AuthField
+						id="su-email"
+						name="email"
+						label="Email"
+						type="email"
+						autoComplete="email"
+						placeholder="you@school.edu"
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						errors={fieldErrors(field.state.meta.errors)}
+					/>
+				)}
+			</form.Field>
 
-			<form
-				onSubmit={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					form.handleSubmit();
+			<form.Field name="password">
+				{(field) => {
+					const met = field.state.value.length >= 8;
+					return (
+						<AuthField
+							id="su-password"
+							name="password"
+							label="Password"
+							type="password"
+							autoComplete="new-password"
+							placeholder="At least 8 characters"
+							passwordToggle
+							hint={
+								<span
+									className={cn(
+										"flex items-center gap-[6px] transition-colors duration-[150ms] motion-reduce:transition-none",
+										met
+											? "text-[color-mix(in_oklab,var(--success),black_24%)]"
+											: "text-muted-fg",
+									)}
+								>
+									<span
+										aria-hidden="true"
+										className={cn(
+											"grid h-[14px] w-[14px] flex-none place-items-center rounded-full border-[1.5px]",
+											met ? "border-success bg-success" : "border-line",
+										)}
+									>
+										{met && (
+											<span className="block h-[4px] w-[7px] -translate-y-[1px] rotate-[-45deg] border-bg border-b-[1.6px] border-l-[1.6px]" />
+										)}
+									</span>
+									At least 8 characters
+								</span>
+							}
+							value={field.state.value}
+							onChange={field.handleChange}
+							onBlur={field.handleBlur}
+							errors={fieldErrors(field.state.meta.errors)}
+						/>
+					);
 				}}
-				className="space-y-4"
+			</form.Field>
+
+			<form.Subscribe
+				selector={(state) => ({
+					canSubmit: state.canSubmit,
+					isSubmitting: state.isSubmitting,
+				})}
 			>
-				<div>
-					<form.Field name="name">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>Name</Label>
-								<Input
-									id={field.name}
-									name={field.name}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-danger">
-										{error?.message}
-									</p>
-								))}
-							</div>
+				{({ canSubmit, isSubmitting }) => (
+					<button
+						type="submit"
+						disabled={!canSubmit || isSubmitting}
+						className="mt-2 flex h-12 w-full items-center justify-center gap-[9px] rounded-[var(--radius-pill)] bg-accent-blue font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background,transform] duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
+					>
+						{isSubmitting && (
+							<span
+								aria-hidden="true"
+								className="h-4 w-4 animate-spin rounded-full border-2 border-[color-mix(in_oklab,var(--accent-on),transparent_70%)] border-t-accent-on"
+							/>
 						)}
-					</form.Field>
-				</div>
-
-				<div>
-					<form.Field name="email">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>Email</Label>
-								<Input
-									id={field.name}
-									name={field.name}
-									type="email"
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-danger">
-										{error?.message}
-									</p>
-								))}
-							</div>
-						)}
-					</form.Field>
-				</div>
-
-				<div>
-					<form.Field name="password">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>Password</Label>
-								<Input
-									id={field.name}
-									name={field.name}
-									type="password"
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-danger">
-										{error?.message}
-									</p>
-								))}
-							</div>
-						)}
-					</form.Field>
-				</div>
-
-				<form.Subscribe
-					selector={(state) => ({
-						canSubmit: state.canSubmit,
-						isSubmitting: state.isSubmitting,
-					})}
-				>
-					{({ canSubmit, isSubmitting }) => (
-						<Button
-							type="submit"
-							className="w-full"
-							disabled={!canSubmit || isSubmitting}
-						>
-							{isSubmitting ? "Submitting..." : "Sign Up"}
-						</Button>
-					)}
-				</form.Subscribe>
-			</form>
-
-			<div className="mt-4 text-center">
-				<Button
-					variant="link"
-					onClick={onSwitchToSignIn}
-					className="text-accent-blue hover:text-accent-active"
-				>
-					Already have an account? Sign In
-				</Button>
-			</div>
-		</div>
+						{isSubmitting ? "Creating account…" : "Create account"}
+					</button>
+				)}
+			</form.Subscribe>
+		</form>
 	);
 }

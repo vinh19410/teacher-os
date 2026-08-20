@@ -66,19 +66,19 @@ Note on arbitrary values: spaces inside `var()`/`color-mix()` must be underscore
 
 ## Todo
 
-- [ ] `apps/web/src/components/auth/brand-panel.tsx` created (static, export-only)
-- [ ] `login.tsx` renders shell grid + brand panel + auth wrap around existing forms
-- [ ] ≤960px collapse + ≤420px tightening verified in browser
-- [ ] Existing sign-in/sign-up flows re-tested manually on dev server
-- [ ] `pnpm check` + `pnpm check-types` green
+- [x] `apps/web/src/components/auth/brand-panel.tsx` created (static, export-only)
+- [x] `login.tsx` renders shell grid + brand panel + auth wrap around existing forms
+- [x] ≤960px collapse + ≤420px tightening verified in browser
+- [x] Existing sign-in/sign-up flows re-tested manually on dev server
+- [x] `pnpm check` + `pnpm check-types` green
 
 ## Success Criteria
 
-- [ ] At 1280px, brand panel computed background is exactly `#1d1d1f` and text `#ffffff`; mock card shadow matches `--elev-raised`. (DevTools computed styles; screenshot vs export side-by-side.)
-- [ ] At 960px and below: single column, mock/sub/head/foot absent from layout, mobile-brand visible, auth panel top-aligned. (Browser responsive mode.)
-- [ ] No horizontal scrollbar at 360–1920px with the shell only.
-- [ ] Sign-in and sign-up still submit and navigate to the validated returnUrl exactly as before (no props/logic change to the two form components).
-- [ ] `pnpm check` and `pnpm check-types` green; no `packages/ui` file modified (`git status` shows only the two web files).
+- [x] At 1280px, brand panel computed background is exactly `#1d1d1f` and text `#ffffff`; mock card shadow matches `--elev-raised`. (DevTools computed styles; screenshot vs export side-by-side.)
+- [x] At 960px and below: single column, mock/sub/head/foot absent from layout, mobile-brand visible, auth panel top-aligned. (Browser responsive mode.)
+- [x] No horizontal scrollbar at 360–1920px with the shell only.
+- [x] Sign-in and sign-up still submit and navigate to the validated returnUrl exactly as before (no props/logic change to the two form components).
+- [x] `pnpm check` and `pnpm check-types` green; no `packages/ui` file modified (`git status` shows only the two web files).
 
 ## Risk Assessment
 

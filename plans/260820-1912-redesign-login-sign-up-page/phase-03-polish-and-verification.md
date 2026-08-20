@@ -59,24 +59,24 @@ Motion mapping (export → Tailwind):
 
 ## Todo
 
-- [ ] Motion classes added; re-fire on tab switch verified
-- [ ] Reduced-motion verified zero-animation
-- [ ] Focus-ring audit complete (keyboard walk)
-- [ ] Responsive matrix 6 widths recorded, no horizontal scroll
-- [ ] Screenshot diff vs export at 1280px + 375px; deltas fixed
-- [ ] Cleanup grep clean; no unused imports
-- [ ] Auth regression pass (sign in / sign up / Google / guard; `/login?returnUrl=` round-trip)
-- [ ] Typed values still survive tab switches after motion changes (Phase 2 criterion re-verified)
-- [ ] `pnpm check` + `pnpm check-types` + `pnpm test` green; plan statuses updated
+- [x] Motion classes added; re-fire on tab switch verified
+- [x] Reduced-motion verified zero-animation
+- [x] Focus-ring audit complete (keyboard walk)
+- [x] Responsive matrix 6 widths recorded, no horizontal scroll
+- [x] Screenshot diff vs export at 1280px + 375px; deltas fixed
+- [x] Cleanup grep clean; no unused imports
+- [x] Auth regression pass (sign in / sign up / Google / guard; `/login?returnUrl=` round-trip)
+- [x] Typed values still survive tab switches after motion changes (Phase 2 criterion re-verified)
+- [x] `pnpm check` + `pnpm check-types` + `pnpm test` green; plan statuses updated
 
 ## Success Criteria
 
-- [ ] Motion: rise-in plays once on load; crossfade plays on every tab switch; thumb slides; spinner spins during real submits — and ALL of it is off with Reduce Motion enabled. (DevTools animations panel + OS toggle.)
-- [ ] Keyboard walk: every interactive element reachable and visibly ringed; tab order sane (tabs → active panel → switch line); no focus trap between the two mounted forms (hidden panel's controls are not tabbable — the `hidden` attribute removes them from tab order).
-- [ ] Responsive matrix: zero horizontal scroll at all 6 widths; ≤960 shows centered brand block + mobile-brand + top-aligned auth; ≤420 shows 24px title and tighter padding per export.
-- [ ] Screenshot diff vs `auth-redesign.html`: no unexplained visible deltas at 1280px and 375px (font loading differences acceptable; layout/color/spacing must match).
-- [ ] Auth regression: sign-in, sign-up, Google initiation all pass; `/dashboard` guard redirects signed-out users to `/login` with the new page rendering the persisted tab; sign-in from `/login?returnUrl=/classes` lands on `/classes` (returnUrl round-trip intact).
-- [ ] `pnpm check`, `pnpm check-types`, and `pnpm test` green; `git status` shows changes only in `apps/web/src`; no new dependencies in any `package.json`.
+- [x] Motion: rise-in plays once on load; crossfade plays on every tab switch; thumb slides; spinner spins during real submits — and ALL of it is off with Reduce Motion enabled. (DevTools animations panel + OS toggle.)
+- [x] Keyboard walk: every interactive element reachable and visibly ringed; tab order sane (tabs → active panel → switch line); no focus trap between the two mounted forms (hidden panel's controls are not tabbable — the `hidden` attribute removes them from tab order).
+- [x] Responsive matrix: zero horizontal scroll at all 6 widths; ≤960 shows centered brand block + mobile-brand + top-aligned auth; ≤420 shows 24px title and tighter padding per export.
+- [x] Screenshot diff vs `auth-redesign.html`: no unexplained visible deltas at 1280px and 375px (font loading differences acceptable; layout/color/spacing must match).
+- [x] Auth regression: sign-in, sign-up, Google initiation all pass; `/dashboard` guard redirects signed-out users to `/login` with the new page rendering the persisted tab; sign-in from `/login?returnUrl=/classes` lands on `/classes` (returnUrl round-trip intact).
+- [x] `pnpm check`, `pnpm check-types`, and `pnpm test` green; `git status` shows changes only in `apps/web/src`; no new dependencies in any `package.json`.
 
 ## Risk Assessment
 

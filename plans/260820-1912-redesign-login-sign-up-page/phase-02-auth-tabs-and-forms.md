@@ -171,28 +171,28 @@ const met = field.state.value.length >= 8;
 
 ## Todo
 
-- [ ] AuthField built; empty-submit error mapping verified on first migrated field
-- [ ] AuthTabs with thumb slide + full keyboard behavior
-- [ ] notices.tsx (info + ok)
-- [ ] sign-in-form.tsx migrated; forgot notice + success notice + spinner submit
-- [ ] sign-up-form.tsx migrated; live hint without layout shift + success notice
-- [ ] google-oauth-button.tsx restyled (logic + callbackURL untouched)
-- [ ] login.tsx mode state + localStorage + title/sub/switch line + session gate; `validateSearch`/Route config preserved verbatim
-- [ ] tabs + switch line disabled while either form submits (`onSubmittingChange`)
-- [ ] toast.success removed from both forms; toast.error kept
-- [ ] `pnpm check` + `pnpm check-types` + `pnpm test` green
+- [x] AuthField built; empty-submit error mapping verified on first migrated field
+- [x] AuthTabs with thumb slide + full keyboard behavior
+- [x] notices.tsx (info + ok)
+- [x] sign-in-form.tsx migrated; forgot notice + success notice + spinner submit
+- [x] sign-up-form.tsx migrated; live hint without layout shift + success notice
+- [x] google-oauth-button.tsx restyled (logic + callbackURL untouched)
+- [x] login.tsx mode state + localStorage + title/sub/switch line + session gate; `validateSearch`/Route config preserved verbatim
+- [x] tabs + switch line disabled while either form submits (`onSubmittingChange`)
+- [x] toast.success removed from both forms; toast.error kept
+- [x] `pnpm check` + `pnpm check-types` + `pnpm test` green
 
 ## Success Criteria
 
-- [ ] Empty submit on each form shows the exact current messages inline: "Invalid email address", "Password must be at least 8 characters", "Name must be at least 2 characters" (sign-up). (Browser: submit empty form; errors in `aria-live` slots.)
-- [ ] Real sign-in and sign-up against dev server: spinner shows during submit, success-notice state is set synchronously in `onSuccess` before the assign (verify by state/log — visible rendering is best-effort, NOT a gate; adding an artificial delay is forbidden), then the unchanged full-page `window.location.assign(validateReturnUrl(returnUrl))` runs. Landing check without `?returnUrl` → `/dashboard`; with `/login?returnUrl=/classes` → `/classes`. Wrong credentials → sonner error toast, no success notice state.
-- [ ] Google button initiates redirect (dev origin blocked is fine — the redirect request firing is the signal); error path still toasts; `git diff apps/web/src/components/google-oauth-button.tsx` shows the callbackURL line `` `${window.location.origin}${validateReturnUrl(returnUrl)}` `` unchanged (never `/dashboard`).
-- [ ] While a form is submitting, the tablist and switch line are disabled — switching tabs mid-submit is impossible; after submit resolves, tabs work again.
-- [ ] Keyboard pass: Tab reaches tabs → selected tab only; ArrowLeft/ArrowRight switch + wrap + move focus; Tab drills into active panel controls only; every control shows `--focus-ring` on focus-visible.
-- [ ] Password toggles announce via `aria-pressed`/`aria-label` swap; hint turns green at exactly 8 chars, no layout shift when error replaces hint.
-- [ ] Reload preserves last tab (localStorage); blocked storage (Safari private) falls back to "signup" without console crash.
-- [ ] Tab switch keeps typed values (both forms mounted).
-- [ ] `pnpm check`, `pnpm check-types`, and `pnpm test` green (contract tests in `kernel-runtime.contract.test.ts` lock `validateSearch`/`useSearch`/`validateReturnUrl` — they must stay green); `git diff` on the two form files shows auth-wiring blocks unchanged (validators, authClient calls, full-page assign, error toast).
+- [x] Empty submit on each form shows the exact current messages inline: "Invalid email address", "Password must be at least 8 characters", "Name must be at least 2 characters" (sign-up). (Browser: submit empty form; errors in `aria-live` slots.)
+- [x] Real sign-in and sign-up against dev server: spinner shows during submit, success-notice state is set synchronously in `onSuccess` before the assign (verify by state/log — visible rendering is best-effort, NOT a gate; adding an artificial delay is forbidden), then the unchanged full-page `window.location.assign(validateReturnUrl(returnUrl))` runs. Landing check without `?returnUrl` → `/dashboard`; with `/login?returnUrl=/classes` → `/classes`. Wrong credentials → sonner error toast, no success notice state.
+- [x] Google button initiates redirect (dev origin blocked is fine — the redirect request firing is the signal); error path still toasts; `git diff apps/web/src/components/google-oauth-button.tsx` shows the callbackURL line `` `${window.location.origin}${validateReturnUrl(returnUrl)}` `` unchanged (never `/dashboard`).
+- [x] While a form is submitting, the tablist and switch line are disabled — switching tabs mid-submit is impossible; after submit resolves, tabs work again.
+- [x] Keyboard pass: Tab reaches tabs → selected tab only; ArrowLeft/ArrowRight switch + wrap + move focus; Tab drills into active panel controls only; every control shows `--focus-ring` on focus-visible.
+- [x] Password toggles announce via `aria-pressed`/`aria-label` swap; hint turns green at exactly 8 chars, no layout shift when error replaces hint.
+- [x] Reload preserves last tab (localStorage); blocked storage (Safari private) falls back to "signup" without console crash.
+- [x] Tab switch keeps typed values (both forms mounted).
+- [x] `pnpm check`, `pnpm check-types`, and `pnpm test` green (contract tests in `kernel-runtime.contract.test.ts` lock `validateSearch`/`useSearch`/`validateReturnUrl` — they must stay green); `git diff` on the two form files shows auth-wiring blocks unchanged (validators, authClient calls, full-page assign, error toast).
 
 ## Risk Assessment
 

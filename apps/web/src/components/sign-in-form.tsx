@@ -1,24 +1,29 @@
 import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
-import { Button } from "@teacher-os/ui/components/button";
-import { Input } from "@teacher-os/ui/components/input";
-import { Label } from "@teacher-os/ui/components/label";
+import { useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
+import { AuthField } from "@/components/auth/auth-field";
+import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
 import { authClient } from "@/lib/auth-client";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
 
-import GoogleOAuthButton from "./google-oauth-button";
-import Loader from "./loader";
+const fieldErrors = (errors: readonly unknown[]): string[] =>
+	errors
+		.map((error) => (error as { message?: string } | undefined)?.message)
+		.filter((message): message is string => typeof message === "string");
 
 export default function SignInForm({
-	onSwitchToSignUp,
+	hidden,
+	onSubmittingChange,
 }: {
-	onSwitchToSignUp: () => void;
+	hidden: boolean;
+	onSubmittingChange?: (submitting: boolean) => void;
 }) {
 	const { returnUrl } = useSearch({ from: "/login" });
-	const { isPending } = authClient.useSession();
+	const [showForgotNote, setShowForgotNote] = useState(false);
+	const [signedIn, setSignedIn] = useState(false);
 
 	const form = useForm({
 		defaultValues: {
@@ -26,23 +31,28 @@ export default function SignInForm({
 			password: "",
 		},
 		onSubmit: async ({ value }) => {
-			await authClient.signIn.email(
-				{
-					email: value.email,
-					password: value.password,
-				},
-				{
-					onSuccess: () => {
-						toast.success("Sign in successful");
-						// Full page load: the workspace boots through the kernel
-						// load gate with the fresh session.
-						window.location.assign(validateReturnUrl(returnUrl));
+			onSubmittingChange?.(true);
+			try {
+				await authClient.signIn.email(
+					{
+						email: value.email,
+						password: value.password,
 					},
-					onError: (error) => {
-						toast.error(error.error.message || error.error.statusText);
+					{
+						onSuccess: () => {
+							setSignedIn(true);
+							// Full page load: the workspace boots through the kernel
+							// load gate with the fresh session.
+							window.location.assign(validateReturnUrl(returnUrl));
+						},
+						onError: (error) => {
+							toast.error(error.error.message || error.error.statusText);
+						},
 					},
-				},
-			);
+				);
+			} finally {
+				onSubmittingChange?.(false);
+			}
 		},
 		validators: {
 			onSubmit: z.object({
@@ -52,103 +62,96 @@ export default function SignInForm({
 		},
 	});
 
-	if (isPending) {
-		return <Loader />;
-	}
-
 	return (
-		<div className="mx-auto mt-10 w-full max-w-md p-6">
-			<h1 className="mb-6 text-center font-bold text-3xl">Welcome Back</h1>
+		<form
+			noValidate
+			hidden={hidden}
+			id="panel-signin"
+			role="tabpanel"
+			aria-labelledby="tab-signin"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				form.handleSubmit();
+			}}
+			className="fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
+		>
+			{showForgotNote && !signedIn && (
+				<NoticeInfo>
+					Password reset isn't enabled in this pilot yet. Contact your admin to
+					recover access.
+				</NoticeInfo>
+			)}
+			{signedIn && (
+				<NoticeOk title="Signed in">Opening your workspace…</NoticeOk>
+			)}
 
-			<GoogleOAuthButton />
+			<form.Field name="email">
+				{(field) => (
+					<AuthField
+						id="si-email"
+						name="email"
+						label="Email"
+						type="email"
+						autoComplete="email"
+						placeholder="you@school.edu"
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						errors={fieldErrors(field.state.meta.errors)}
+					/>
+				)}
+			</form.Field>
 
-			<div className="my-6 flex items-center gap-3 text-muted-foreground text-xs">
-				<span className="h-px flex-1 bg-border" />
-				or continue with email
-				<span className="h-px flex-1 bg-border" />
-			</div>
+			<form.Field name="password">
+				{(field) => (
+					<AuthField
+						id="si-password"
+						name="password"
+						label="Password"
+						type="password"
+						autoComplete="current-password"
+						placeholder="••••••••"
+						passwordToggle
+						labelRowExtra={
+							<button
+								type="button"
+								onClick={() => setShowForgotNote((visible) => !visible)}
+								className="-mr-1 rounded-[4px] px-1 py-[6px] font-[510] text-accent-blue text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							>
+								Forgot password?
+							</button>
+						}
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						errors={fieldErrors(field.state.meta.errors)}
+					/>
+				)}
+			</form.Field>
 
-			<form
-				onSubmit={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					form.handleSubmit();
-				}}
-				className="space-y-4"
+			<form.Subscribe
+				selector={(state) => ({
+					canSubmit: state.canSubmit,
+					isSubmitting: state.isSubmitting,
+				})}
 			>
-				<div>
-					<form.Field name="email">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>Email</Label>
-								<Input
-									id={field.name}
-									name={field.name}
-									type="email"
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-danger">
-										{error?.message}
-									</p>
-								))}
-							</div>
+				{({ canSubmit, isSubmitting }) => (
+					<button
+						type="submit"
+						disabled={!canSubmit || isSubmitting}
+						className="mt-2 flex h-12 w-full items-center justify-center gap-[9px] rounded-[var(--radius-pill)] bg-accent-blue font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background,transform] duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
+					>
+						{isSubmitting && (
+							<span
+								aria-hidden="true"
+								className="h-4 w-4 animate-spin rounded-full border-2 border-[color-mix(in_oklab,var(--accent-on),transparent_70%)] border-t-accent-on"
+							/>
 						)}
-					</form.Field>
-				</div>
-
-				<div>
-					<form.Field name="password">
-						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={field.name}>Password</Label>
-								<Input
-									id={field.name}
-									name={field.name}
-									type="password"
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-								{field.state.meta.errors.map((error) => (
-									<p key={error?.message} className="text-danger">
-										{error?.message}
-									</p>
-								))}
-							</div>
-						)}
-					</form.Field>
-				</div>
-
-				<form.Subscribe
-					selector={(state) => ({
-						canSubmit: state.canSubmit,
-						isSubmitting: state.isSubmitting,
-					})}
-				>
-					{({ canSubmit, isSubmitting }) => (
-						<Button
-							type="submit"
-							className="w-full"
-							disabled={!canSubmit || isSubmitting}
-						>
-							{isSubmitting ? "Submitting..." : "Sign In"}
-						</Button>
-					)}
-				</form.Subscribe>
-			</form>
-
-			<div className="mt-4 text-center">
-				<Button
-					variant="link"
-					onClick={onSwitchToSignUp}
-					className="text-accent-blue hover:text-accent-active"
-				>
-					Need an account? Sign Up
-				</Button>
-			</div>
-		</div>
+						{isSubmitting ? "Signing in…" : "Sign in"}
+					</button>
+				)}
+			</form.Subscribe>
+		</form>
 	);
 }
