@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 import { Button } from "@teacher-os/ui/components/button";
 import { Input } from "@teacher-os/ui/components/input";
 import { Label } from "@teacher-os/ui/components/label";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { validateReturnUrl } from "@/lib/kernel-load-state";
 
 import GoogleOAuthButton from "./google-oauth-button";
 import Loader from "./loader";
@@ -16,9 +17,7 @@ export default function SignInForm({
 }: {
 	onSwitchToSignUp: () => void;
 }) {
-	const navigate = useNavigate({
-		from: "/",
-	});
+	const { returnUrl } = useSearch({ from: "/login" });
 	const { isPending } = authClient.useSession();
 
 	const form = useForm({
@@ -34,10 +33,10 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
-						navigate({
-							to: "/dashboard",
-						});
 						toast.success("Sign in successful");
+						// Full page load: the workspace boots through the kernel
+						// load gate with the fresh session.
+						window.location.assign(validateReturnUrl(returnUrl));
 					},
 					onError: (error) => {
 						toast.error(error.error.message || error.error.statusText);

@@ -3,8 +3,8 @@
  * to a truthful toast + reconcile policy. Pure — no toast import needed here.
  */
 import { describe, expect, test } from "vitest";
+import { HttpError } from "./kernel-load-state";
 import { planDirectOutcome } from "./kernel-outcome";
-import { KernelHttpError } from "./repos/kernel";
 
 describe("planDirectOutcome", () => {
 	test("refreshed reports success and settles", () => {
@@ -42,7 +42,7 @@ describe("planDirectOutcome", () => {
 			{
 				kind: "definite-failure",
 				status: 409,
-				error: new KernelHttpError(409, "/api/lessons/l1/check-in"),
+				error: new HttpError(409, "POST /api/lessons/l1/check-in failed: 409"),
 			},
 			"Đã điểm danh.",
 		);

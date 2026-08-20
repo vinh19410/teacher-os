@@ -8,6 +8,11 @@ import type {
 	KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import type { KernelAction } from "@/lib/data-actions";
+import {
+	HttpError,
+	isHttpError,
+	MalformedSnapshotError,
+} from "@/lib/kernel-load-state";
 import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
@@ -142,20 +147,6 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 }
 
 /**
- * Typed HTTP failure: carries the status so the bus can tell a definite
- * non-commit (4xx) from a response that may have followed a committed write.
- */
-export class KernelHttpError extends Error {
-	readonly status: number;
-
-	constructor(status: number, path: string) {
-		super(`POST ${path} failed: ${status}`);
-		this.name = "KernelHttpError";
-		this.status = status;
-	}
-}
-
-/**
  * Truthful outcome of one kernel write (phase-5 contract).
  * - `refreshed` — 2xx acknowledged and the snapshot was re-applied. The only
  *   state that permits close/reset/navigate.
@@ -180,7 +171,7 @@ export type KernelCommandResult =
 export function classifyWriteFailure(
 	error: unknown,
 ): { kind: "definite-failure"; status: number } | { kind: "outcome-unknown" } {
-	if (error instanceof KernelHttpError) {
+	if (isHttpError(error)) {
 		if (error.status === 408 || error.status === 429 || error.status >= 500) {
 			return { kind: "outcome-unknown" };
 		}
@@ -204,10 +195,50 @@ export async function postKernelCommand(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new KernelHttpError(res.status, path);
+		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`);
 	}
 	const json = (await res.json()) as Partial<CreatedResponse>;
 	return json.id;
+}
+
+/** Every kernel snapshot collection, per the API contract. */
+const SNAPSHOT_COLLECTION_KEYS = [
+	"students",
+	"classes",
+	"syllabi",
+	"enrollments",
+	"packages",
+	"lessons",
+	"assignments",
+	"invoices",
+	"reports",
+	"notifs",
+	"commentBank",
+] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
+
+// Compile-time completeness: every KernelSnapshot collection must appear in
+// SNAPSHOT_COLLECTION_KEYS, or a new contract field would silently skip the
+// shape guard below.
+type MissingSnapshotKey = Exclude<
+	keyof KernelSnapshot,
+	(typeof SNAPSHOT_COLLECTION_KEYS)[number]
+>;
+const allSnapshotKeysPresent: MissingSnapshotKey extends never ? true : never =
+	true;
+void allSnapshotKeysPresent;
+
+/**
+ * Minimal shape guard: a `200` body only counts as a snapshot when every
+ * contract collection is present and is an array. Without this, a proxy page
+ * or foreign JSON envelope would map "successfully" into an empty-looking
+ * workspace — exactly the failure mode this phase exists to prevent.
+ */
+function isSnapshotShape(value: unknown): value is KernelSnapshot {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return false;
+	}
+	const record = value as Record<string, unknown>;
+	return SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key]));
 }
 
 /** Transport: fetch the org-scoped kernel snapshot. */
@@ -219,15 +250,33 @@ export async function fetchKernelSnapshot(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new Error(`GET /api/kernel failed: ${res.status}`);
+		throw new HttpError(res.status, `GET /api/kernel failed: ${res.status}`);
 	}
-	return (await res.json()) as KernelSnapshot;
+	let json: unknown;
+	try {
+		json = await res.json();
+	} catch (cause) {
+		throw new MalformedSnapshotError("GET /api/kernel returned invalid JSON", {
+			cause,
+		});
+	}
+	if (!isSnapshotShape(json)) {
+		throw new MalformedSnapshotError(
+			"GET /api/kernel 200 response did not match the snapshot shape",
+		);
+	}
+	return json;
 }
 
 export interface KernelCommandBusDeps {
 	postCommand(action: KernelAction): Promise<string | undefined>;
 	fetchSnapshot(): Promise<KernelSnapshot>;
 	applySnapshot(snapshot: KernelSnapshot): void;
+	/**
+	 * A typed `401` reached the bus — the session died mid-flight. Retrying
+	 * cannot help; the host must re-authenticate (sign out + login redirect).
+	 */
+	onAuthLost(): void;
 }
 
 export interface KernelCommandBus {
@@ -270,6 +319,11 @@ export function createKernelCommandBus(
 		try {
 			id = await deps.postCommand(action);
 		} catch (error) {
+			// A dead session rejects the write before commit — the host must
+			// re-authenticate; a retry would hit the same dead session.
+			if (isHttpError(error) && error.status === 401) {
+				deps.onAuthLost();
+			}
 			const classified = classifyWriteFailure(error);
 			return classified.kind === "definite-failure"
 				? { kind: "definite-failure", status: classified.status, error }
@@ -279,7 +333,16 @@ export function createKernelCommandBus(
 			try {
 				deps.applySnapshot(await deps.fetchSnapshot());
 				return { kind: "refreshed", id };
-			} catch {
+			} catch (error) {
+				// Session expired between the write and the refresh. The write
+				// itself committed, so report once and re-auth — a retry would
+				// hit the same dead session. Every action resolves `committed`
+				// with the acknowledged id (the comment-bank exception is
+				// absorbed: its ack IS the durable commit boundary).
+				if (isHttpError(error) && error.status === 401) {
+					deps.onAuthLost();
+					return { kind: "committed", id };
+				}
 				// A flaky GET must not lose the acknowledged write's outcome.
 			}
 		}
