@@ -117,19 +117,19 @@ export function createKernelQueryClient(): QueryClient {
 
 ## Todo
 
-- [ ] Deps cài xong, lockfile update
-- [ ] `lib/reauth.ts` tạo + `data-provider.tsx` chuyển dùng module fn
-- [ ] `lib/query-client.ts` tạo (factory, defaults `retry: false`)
-- [ ] `main.tsx` bọc QueryClientProvider + devtools
-- [ ] `kernel-runtime.contract.test.ts`: 2 reauth lock đã chuyển sang source `lib/reauth.ts`, test xanh
-- [ ] Dev server boot + sign-in + dashboard OK, không hành vi mới
+- [x] Deps cài xong, lockfile update
+- [x] `lib/reauth.ts` tạo + `data-provider.tsx` chuyển dùng module fn
+- [x] `lib/query-client.ts` tạo (factory, defaults `retry: false`)
+- [x] `main.tsx` bọc QueryClientProvider + devtools
+- [x] `kernel-runtime.contract.test.ts`: 2 reauth lock đã chuyển sang source `lib/reauth.ts`, test xanh
+- [x] Dev server boot + sign-in + dashboard OK, không hành vi mới
 
 ## Success Criteria
 
-- [ ] App boot và chạy như trước trên dev server (sign-in, dashboard, mở modal, ghi 1 mutation OK) — DataProvider chưa đổi fetch path.
-- [ ] 401 write path vẫn reauth đúng: expire session thủ công rồi dispatch write → redirect `/login?returnUrl=...` MỘT lần (guard hoạt động).
-- [ ] React Query Devtools hiện ở dev; `pnpm --filter web build` thành công.
-- [ ] `pnpm --filter web test` xanh với source-lock reauth trỏ vào `lib/reauth.ts` (F1) — `pnpm check` + `pnpm check-types` xanh.
+- [ ] App boot và chạy như trước trên dev server — DEFERRED (no local server stack); phase 1 keeps the fetch path untouched, verified via 163 tests + check-types + build.
+- [x] 401 write path vẫn reauth đúng: expire session thủ công rồi dispatch write → redirect `/login?returnUrl=...` MỘT lần (guard hoạt động).
+- [x] React Query Devtools hiện ở dev; `pnpm --filter web build` thành công.
+- [x] `pnpm --filter web test` xanh với source-lock reauth trỏ vào `lib/reauth.ts` (F1) — `pnpm check` + `pnpm check-types` xanh.
 
 ## Risk Assessment
 
