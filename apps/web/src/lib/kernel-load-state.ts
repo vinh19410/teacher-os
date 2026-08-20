@@ -126,6 +126,21 @@ export function shouldSettle(attemptSeq: number, latestSeq: number): boolean {
 export const DEFAULT_RETURN_URL = "/dashboard";
 
 /**
+ * C0–C1 control characters and DEL. Checked as code units rather than a regex
+ * character class on purpose: linters reject control characters in regex
+ * patterns, and a plain loop states the intent just as clearly.
+ */
+function hasControlCharacter(value: string): boolean {
+	for (let i = 0; i < value.length; i += 1) {
+		const code = value.charCodeAt(i);
+		if (code <= 0x1f || code === 0x7f) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Validate a post-login return URL. Only same-app paths are allowed: it must
  * decode to a value starting with exactly one `/`, never `//` or `/\` (which
  * browsers treat as foreign origins), and never a `scheme:` URL. Control
@@ -154,7 +169,7 @@ export function validateReturnUrl(raw: string | undefined | null): string {
 	}
 	// Stripped by the URL parser before parsing — must reject, not strip,
 	// or `/\t/evil.com` sneaks past the `//` rule below.
-	if (/[\u0000-\u001F\u007F]/.test(candidate)) {
+	if (hasControlCharacter(candidate)) {
 		return DEFAULT_RETURN_URL;
 	}
 	if (
