@@ -18,12 +18,15 @@ afterEach(() => {
 });
 
 describe("createKernelQueryClient", () => {
-	test("defaults pin the fail-safe policy: no retry, no background refetch", () => {
+	test("defaults pin the fail-safe policy: no retry, no background refetch, never paused", () => {
 		const defaults = createKernelQueryClient().getDefaultOptions().queries;
 		expect(defaults?.retry).toBe(false);
 		expect(defaults?.staleTime).toBe(Number.POSITIVE_INFINITY);
 		expect(defaults?.refetchOnWindowFocus).toBe(false);
 		expect(defaults?.refetchOnReconnect).toBe(false);
+		// A paused query would make refetchQueries resolve without fetching —
+		// the bus would report a fake "refreshed" while offline.
+		expect(defaults?.networkMode).toBe("offlineFirst");
 	});
 
 	test("QueryCache.onError re-authenticates exactly once for concurrent 401 reads", async () => {

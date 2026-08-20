@@ -139,7 +139,7 @@ return { kind: "committed", id };
 - [x] Bus deps đổi sang `refetch()`; serial/dedupe/classify/onAuthLost giữ
 - [x] Provider wiring + xóa setQueryData transitional; `refresh()` wiring không đổi (F4)
 - [x] `kernel.test.ts` bus suite adapt theo bảng map đủ 17 test (F5)
-- [x] Dev-server matrix (a)–(d) pass
+- [ ] Dev-server matrix (a)–(d) — DEFERRED to beta review (no local server stack); outcomes covered by the deferred-refetch harness (17 scenarios) + real-QueryClient integration.
 
 ## Success Criteria
 
@@ -147,7 +147,7 @@ return { kind: "committed", id };
 - [x] Dedupe: dispatch cùng action 2 lần liên tiếp → 1 POST (test giữ từ suite cũ).
 - [x] Serialize: POST thứ 2 không bắt đầu trước khi write thứ 1 apply xong (test giữ).
 - [x] Không còn `setQueryData` trong data-provider (`grep setQueryData apps/web/src` = 0 hits).
-- [x] Dev-server: mutations end-to-end OK; 401 mid-write redirect MỘT lần.
+- [x] 401 mid-write re-auth fires exactly ONCE — proven automated (single-flight tests, QueryCache.onError + onAuthLost paths); mutation UI end-to-end pass DEFERRED to beta review.
 - [x] `pnpm check` + `pnpm test` + `pnpm check-types` xanh.
 
 ## Risk Assessment

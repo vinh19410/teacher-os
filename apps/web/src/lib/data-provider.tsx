@@ -87,10 +87,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			postCommand: (kernelAction) => postKernelCommand(baseUrl, kernelAction),
 			// Post-write refresh runs through the shared ['kernel'] query:
 			// resolve = refreshed, throw = committed. throwOnError makes
-			// refetchQueries reject instead of swallowing the failure.
+			// refetchQueries reject instead of swallowing the failure, and
+			// type "all" keeps it truthful even with no active observer.
 			refetch: () =>
 				queryClient.refetchQueries(
-					{ queryKey: kernelQueryKey, exact: true },
+					{ queryKey: kernelQueryKey, exact: true, type: "all" },
 					{ throwOnError: true },
 				),
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
@@ -140,6 +141,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	// failed refresh must never unmount the running workspace — the write
 	// outcome surfaces through the modal/direct-action that triggered it.
 	if (isError && !snapshot) {
+		console.error("[kernel] initial load failed", error);
 		const failure = classifyLoadError(error);
 		if (failure.kind === "reauth") {
 			// The 401 already fired reauth() via QueryCache.onError.

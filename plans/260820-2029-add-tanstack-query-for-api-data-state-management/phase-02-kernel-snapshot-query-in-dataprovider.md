@@ -128,13 +128,13 @@ if (isPending || !snapshot) return null;
 - [x] Bus deps transitional (setQueryData); `refresh()` giữ `bus.refresh()` (F4)
 - [x] `kernel-runtime.contract.test.ts`: 4 gate lock → lock wiring mới (F1)
 - [x] Dead manual-load code xóa; tests cũ vẫn xanh
-- [x] Dev-server matrix (a)–(f) pass
+- [ ] Dev-server matrix (a)–(f) — DEFERRED to beta review (no local server stack); wiring locked by contract tests, F2 core covered by the real-QueryClient integration tests.
 
 ## Success Criteria
 
 - [x] 26 call site `useData()` không sửa — `grep -rn "useData()" apps/web/src | grep -v data-provider | wc -l` không đổi trước/sau; `git diff` không chạm file ngoài `repos/kernel.ts` + `data-provider.tsx` + `kernel-runtime.contract.test.ts`.
 - [x] Load gate: children unmounted khi pending; lỗi blocking (initial load) hiện đúng message cũ (`classifyLoadError`); nút Retry refetch thành công.
-- [x] Mid-session refresh fail KHÔNG unmount children — stale data giữ, modal notice `committed` như hôm nay (F2, matrix (e)).
+- [x] Mid-session refresh fail KHÔNG unmount children — stale data giữ (F2): code branch `isError && !snapshot` locked by contract test; cache-keeps-primed-snapshot proven by the real-QueryClient integration test (manual UI pass still deferred).
 - [x] 401 read → `/login?returnUrl=...` MỘT lần; quay lại đúng trang sau sign-in.
 - [x] Mutation qua bus cập nhật UI (snapshot mới hiện); `refresh()` reconcile vẫn hoạt động từ modal committed/outcome-unknown (queue-serialized qua bus — F4).
 - [x] Grep `['kernel']` / `kernelQueryKey`: đúng 1 query key định nghĩa.

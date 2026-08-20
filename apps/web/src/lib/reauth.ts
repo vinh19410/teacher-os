@@ -3,6 +3,14 @@ import { validateReturnUrl } from "@/lib/kernel-load-state";
 
 let started = false;
 
+// Back/forward cache restores the page (and this module's flag) without a
+// fresh load — a later 401 must still be able to re-authenticate.
+if (typeof window !== "undefined") {
+	window.addEventListener("pageshow", (event) => {
+		if (event.persisted) started = false;
+	});
+}
+
 /**
  * 401 = the session is dead. Clear the session cookie best-effort (page state
  * dies with the full navigation that follows), then bounce to the login page

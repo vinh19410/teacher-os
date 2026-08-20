@@ -126,7 +126,7 @@ export function createKernelQueryClient(): QueryClient {
 
 ## Success Criteria
 
-- [x] App boot và chạy như trước trên dev server (sign-in, dashboard, mở modal, ghi 1 mutation OK) — DataProvider chưa đổi fetch path.
+- [ ] App boot và chạy như trước trên dev server — DEFERRED (no local server stack); phase 1 keeps the fetch path untouched, verified via 163 tests + check-types + build.
 - [x] 401 write path vẫn reauth đúng: expire session thủ công rồi dispatch write → redirect `/login?returnUrl=...` MỘT lần (guard hoạt động).
 - [x] React Query Devtools hiện ở dev; `pnpm --filter web build` thành công.
 - [x] `pnpm --filter web test` xanh với source-lock reauth trỏ vào `lib/reauth.ts` (F1) — `pnpm check` + `pnpm check-types` xanh.

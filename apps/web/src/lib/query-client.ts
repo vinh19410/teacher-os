@@ -19,6 +19,11 @@ export function createKernelQueryClient(): QueryClient {
 				refetchOnWindowFocus: false,
 				refetchOnReconnect: false,
 				retry: false,
+				// Never pause on navigator.onLine=false: a paused query makes
+				// refetchQueries resolve without fetching (a fake "refreshed"),
+				// and an offline first load would gate on pending forever.
+				// Offline attempts must RUN and fail like plain fetch did.
+				networkMode: "offlineFirst",
 			},
 		},
 		queryCache: new QueryCache({

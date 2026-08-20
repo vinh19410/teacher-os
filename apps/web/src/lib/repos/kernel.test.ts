@@ -1021,4 +1021,33 @@ describe("bus 4-state through a real QueryClient", () => {
 		const result = await bus.run(action);
 		expect(result.kind).toBe("outcome-unknown");
 	});
+
+	test("offline: the post-write refetch RUNS and fails — never a paused fake refreshed", async () => {
+		const { onlineManager } = await import("@tanstack/react-query");
+		let getCalls = 0;
+		let getFails = false;
+		mockApi(
+			() => jsonResponse(200, { id: "id-1" }),
+			() => {
+				getCalls += 1;
+				return getFails
+					? jsonResponse(500, { error: "offline" })
+					: jsonResponse(200, snapshot);
+			},
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		getCalls = 0;
+		getFails = true;
+		// networkMode "offlineFirst": the refetch must execute (and fail)
+		// instead of pausing — a paused refetchQueries would resolve without
+		// fetching and the bus would report a fake "refreshed".
+		onlineManager.setOnline(false);
+		try {
+			expect(await bus.run(action)).toEqual({ kind: "committed", id: "id-1" });
+			expect(getCalls).toBe(2);
+		} finally {
+			onlineManager.setOnline(true);
+		}
+	});
 });

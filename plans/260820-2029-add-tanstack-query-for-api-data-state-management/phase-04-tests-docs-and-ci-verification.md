@@ -76,14 +76,16 @@ Tất cả test node-env thuần: queryFn/bus/refetch là promise thuần; `quer
 - [x] `reauth.test.ts` (single-flight + returnUrl)
 - [x] `kernel.test.ts` extend (abort compose theo signal.reason + bus 4-state integration, GET-fail 5xx)
 - [x] 3 docs cập nhật
-- [x] Manual matrix (a)–(e) + full gates + CI xanh
+- [x] Full gates xanh local (check/test/check-types/build — 174 tests)
+- [ ] Manual matrix (a)–(e) — DEFERRED to beta review (no local server stack)
+- [ ] CI trên branch — pending push/PR
 
 ## Success Criteria
 
 - [x] 5 test skeleton đều cover: (1) abort compose reject theo `signal.reason` từng case, (2) defaults test (`retry === false` + staleTime/refetch flags), (3) onError 401 + reauth single-flight (REAL reauth, 2 fetchQuery concurrent → signOut/assign mỗi cái 1 lần), (4) bus 4-state qua real QueryClient (GET-fail 5xx), (5) gate = manual verification documented (explicit, không vitest).
-- [x] 26 call site `useData()` vẫn không đổi từ đầu đến cuối plan — `grep -rn "useData()" apps/web/src | grep -v data-provider | wc -l` cùng số trước/sau; app full chức năng trên dev server (sign-in, dashboard, modals, mutations; mid-session refresh fail không unmount).
+- [x] 26 call site `useData()` không đổi — grep verified trước/sau; app full-chức năng pass trên dev server DEFERRED to beta review.
 - [x] Docs 3 file phản ánh đúng lớp Query mới (ownership + request flow + code map).
-- [x] `pnpm check`, `pnpm test`, `pnpm check-types`, `pnpm build` xanh local; CI trên branch xanh.
+- [x] `pnpm check`, `pnpm test`, `pnpm check-types`, `pnpm build` xanh local — re-verified after review fixes; CI trên branch — pending push/PR.
 - [x] `grep -r "setQueryData" apps/web/src` = 0; `grep -rn "queryKey.*kernel"` chỉ ra đúng 1 định nghĩa `kernelQueryKey`.
 
 ## Risk Assessment
