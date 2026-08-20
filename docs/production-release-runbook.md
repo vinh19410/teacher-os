@@ -272,3 +272,12 @@ migration, missing operator authority, or missing zone/DNS readiness.
 
 Fill one row per release; evidence (sanitized command output, screenshots
 without secrets) attaches to the tracking issue on GitHub.
+
+**2026-08-20 — NO-GO before deploy (no sign-off row: no release occurred).**
+Phase 6 pre-deploy gates ran and the topology gate failed: `APP_DOMAIN` unset in
+every env file (a leftover dev `CORS_ORIGIN` in `apps/server/.env` would also
+silently defeat the derived default), no production redirect URI registrable
+until the domain is chosen, and the Google UAT account / Safari runner were not
+supplied. No deploy command was run. Blocker inputs tracked in issue #41;
+evidence in
+`plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md`.
