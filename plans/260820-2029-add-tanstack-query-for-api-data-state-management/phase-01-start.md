@@ -16,11 +16,12 @@ dependencies: []
 ## Requirements
 
 Functional:
-- `pnpm --filter web add @tanstack/react-query@^5` (dependencies) + `pnpm --filter web add -D @tanstack/react-query-devtools@^5` (devDependencies — theo convention `@tanstack/react-router-devtools` đã nằm devDependencies trong `apps/web/package.json:34`).
+- `pnpm --filter web add @tanstack/react-query@^5` (dependencies) + `pnpm --filter web add -D @tanstack/react-query-devtools@^5` (devDependencies — devtools chỉ dùng khi dev và bị tree-shake khỏi prod build; pin caret trực tiếp theo convention `@tanstack/react-form` tại `apps/web/package.json:18`).
 - `apps/web/src/lib/reauth.ts`: export `reauth()` — logic nguyên vẹn từ `data-provider.tsx:89-94` (`authClient.signOut()` best-effort → `validateReturnUrl(location)` → `window.location.assign('/login?returnUrl=...')`), thêm module flag single-flight: lần gọi thứ hai trở đi là no-op.
-- `apps/web/src/lib/query-client.ts`: export `createKernelQueryClient()` factory + `kernelQueryRetry()` (pure, testable độc lập). Defaults D4: `staleTime: Infinity`, `gcTime: 5*60_000`, `refetchOnWindowFocus: false`, `refetchOnReconnect: false`, `retry: kernelQueryRetry`, structural sharing giữ default. `QueryCache.onError`: `HttpError` 401 → `reauth()`.
+- `apps/web/src/lib/query-client.ts`: export `createKernelQueryClient()` factory. Defaults D4 (cập nhật F7 — bỏ auto-retry hoàn toàn): `retry: false`, `staleTime: Infinity`, `gcTime: 5*60_000`, `refetchOnWindowFocus: false`, `refetchOnReconnect: false`, structural sharing giữ default. `QueryCache.onError`: `HttpError` 401 → `reauth()`.
 - `apps/web/src/main.tsx`: tạo QueryClient ở module scope, bọc `RouterProvider` trong `QueryClientProvider`, render `TanStackQueryDevtools` (production-excluded mặc định — researcher-01 §4, không cần gate `import.meta.env.DEV`).
 - `data-provider.tsx`: thay inline `reauth` callback bằng import từ `lib/reauth.ts` — xóa `useCallback reauth` (dòng 89-94), bus `onAuthLost: reauth` giữ.
+- `apps/web/src/lib/kernel-runtime.contract.test.ts`: 2 source-lock reauth (`authClient.signOut`, `validateReturnUrl`) đang assert trên source `data-provider.tsx` (dòng 42-58) sẽ VỠ khi reauth rời provider — chuyển sang assert trên source `lib/reauth.ts` (F1).
 
 Non-functional:
 - Không circular import: `reauth.ts` chỉ import `@/lib/auth-client` + `kernel-load-state`; `query-client.ts` import `kernel-load-state` + `reauth.ts`; hai bên không import ngược.
@@ -62,23 +63,17 @@ export function reauth(): void {
 ```
 
 ```ts
-// lib/query-client.ts ( skeleton )
+// lib/query-client.ts ( skeleton — F7: retry false, không export retry fn )
 import { QueryCache, QueryClient } from "@tanstack/react-query";
-import { HttpError, isHttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
+import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
-
-export function kernelQueryRetry(failureCount: number, error: unknown): boolean {
-  if (isHttpError(error) && error.status >= 400 && error.status < 500) return false;
-  if (error instanceof MalformedSnapshotError) return false;
-  return failureCount < 2;
-}
 
 export function createKernelQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: { queries: {
       staleTime: Infinity, gcTime: 5 * 60_000,
       refetchOnWindowFocus: false, refetchOnReconnect: false,
-      retry: kernelQueryRetry,
+      retry: false, // F7: không auto-retry — 1:1 hành vi hôm nay
     } },
     queryCache: new QueryCache({ onError: (error) => {
       if (isHttpError(error) && error.status === 401) reauth();
@@ -90,19 +85,21 @@ export function createKernelQueryClient(): QueryClient {
 ## Related Code Files
 
 - Create: `apps/web/src/lib/reauth.ts` — reauth single-flight (logic tách từ data-provider).
-- Create: `apps/web/src/lib/query-client.ts` — QueryClient factory + retry fn.
+- Create: `apps/web/src/lib/query-client.ts` — QueryClient factory (defaults D4, `retry: false`).
 - Modify: `apps/web/package.json` — thêm 2 deps (caret, direct pin).
 - Modify: `apps/web/src/main.tsx` — QueryClientProvider + devtools.
-- Modify: `apps/web/src/lib/data-provider.tsx` — xóa inline `reauth` callback (dòng 83-94), import từ `lib/reauth.ts`; phần khác không đụng.
+- Modify: `apps/web/src/lib/data-provider.tsx` — xóa inline `reauth` callback (dòng 89-94), import từ `lib/reauth.ts`; phần khác không đụng.
+- Modify: `apps/web/src/lib/kernel-runtime.contract.test.ts` — chuyển 2 reauth source-lock sang `lib/reauth.ts` (F1).
 - `pnpm-lock.yaml` — lockfile update (do pnpm add).
 
 ## Implementation Steps
 
 1. `pnpm --filter web add @tanstack/react-query@^5` rồi `pnpm --filter web add -D @tanstack/react-query-devtools@^5`. Kiểm tra `apps/web/package.json` pin caret trực tiếp (không catalog), giống `@tanstack/react-form: ^1.33.2`.
 2. Tạo `lib/reauth.ts` per skeleton trên — copy đúng logic `data-provider.tsx:89-94`, thêm guard.
-3. Tạo `lib/query-client.ts` per skeleton trên (retry fn export riêng để phase 4 unit-test thuần).
+3. Tạo `lib/query-client.ts` per skeleton trên.
 4. Sửa `data-provider.tsx`: xóa block `const reauth = useCallback(...)` (dòng 89-94), thêm `import { reauth } from "./reauth"`, xóa `reauth` khỏi deps array của `startLoad`/`getBus` useCallback.
-5. Sửa `main.tsx`:
+5. Sửa `kernel-runtime.contract.test.ts` (F1): 2 lock reauth (`authClient.signOut`, `validateReturnUrl`) chuyển từ đọc source `data-provider.tsx` sang đọc source `lib/reauth.ts` — chạy `pnpm --filter web test` ngay sau bước 4 để confirm đây là step bắt buộc, không optional.
+6. Sửa `main.tsx`:
    ```tsx
    import { QueryClientProvider } from "@tanstack/react-query";
    import { TanStackQueryDevtools } from "@tanstack/react-query-devtools";
@@ -116,14 +113,15 @@ export function createKernelQueryClient(): QueryClient {
      </QueryClientProvider>,
    );
    ```
-6. Boot dev server: sign-in → dashboard → throttle network kill server → xác nhận error screen + retry vẫn hoạt động (DataProvider chưa đổi); devtools hiện góc màn (dev only); build prod không chứa devtools bundle (check `pnpm --filter web build` output size không tăng bất thường).
+7. Boot dev server: sign-in → dashboard → throttle network kill server → xác nhận error screen + retry vẫn hoạt động (DataProvider chưa đổi); devtools hiện góc màn (dev only); build prod không chứa devtools bundle (check `pnpm --filter web build` output size không tăng bất thường).
 
 ## Todo
 
 - [ ] Deps cài xong, lockfile update
 - [ ] `lib/reauth.ts` tạo + `data-provider.tsx` chuyển dùng module fn
-- [ ] `lib/query-client.ts` tạo (factory + retry fn)
+- [ ] `lib/query-client.ts` tạo (factory, defaults `retry: false`)
 - [ ] `main.tsx` bọc QueryClientProvider + devtools
+- [ ] `kernel-runtime.contract.test.ts`: 2 reauth lock đã chuyển sang source `lib/reauth.ts`, test xanh
 - [ ] Dev server boot + sign-in + dashboard OK, không hành vi mới
 
 ## Success Criteria
@@ -131,7 +129,7 @@ export function createKernelQueryClient(): QueryClient {
 - [ ] App boot và chạy như trước trên dev server (sign-in, dashboard, mở modal, ghi 1 mutation OK) — DataProvider chưa đổi fetch path.
 - [ ] 401 write path vẫn reauth đúng: expire session thủ công rồi dispatch write → redirect `/login?returnUrl=...` MỘT lần (guard hoạt động).
 - [ ] React Query Devtools hiện ở dev; `pnpm --filter web build` thành công.
-- [ ] `pnpm check` + `pnpm check-types` + `pnpm test` xanh.
+- [ ] `pnpm --filter web test` xanh với source-lock reauth trỏ vào `lib/reauth.ts` (F1) — `pnpm check` + `pnpm check-types` xanh.
 
 ## Risk Assessment
 
