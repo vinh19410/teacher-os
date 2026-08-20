@@ -20,7 +20,7 @@ created: 2026-08-19
 
 ## Scope Challenge
 
-- Existing: D1 migration được Alchemy gắn vào stack; kernel org-scoped, CSRF, unit tests và CI đã có. Bằng chứng: `packages/infra/alchemy.run.ts:11-63`, `apps/server/src/app.ts:83-101`, `.github/workflows/ci.yml:16-35`.
+- Existing: D1 migration được Alchemy gắn vào stack; kernel org-scoped, CSRF, unit tests và CI đã có. Bằng chứng: `packages/infra/alchemy.run.ts:41-43` (`migrationsDir`), `apps/server/src/app.ts:83-101`, `.github/workflows/ci.yml:16-35`.
 - Requested: roadmap đầu tiên “Production readiness”, gồm deploy/UAT/rollback-support gate trong `docs/project-roadmap.md`.
 - Complexity: 6 phase, khoảng 15 file/docs có thể tác động, không thêm product feature hay service mới.
 - Selected mode: HOLD SCOPE. Auto-detected Hard.
@@ -81,7 +81,7 @@ P5 truthful mutations ─────┘                         │
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Production configuration and support runbook](./phase-01-production-configuration-and-support-runbook.md) | Pending |
+| 1 | [Production configuration and support runbook](./phase-01-production-configuration-and-support-runbook.md) | Completed |
 | 2 | [D1 migration safety and recovery drill](./phase-02-d1-migration-safety-and-recovery-drill.md) | Pending |
 | 3 | [Database readiness endpoint](./phase-03-add-database-readiness-endpoint.md) | Pending |
 | 4 | [Fail-safe first snapshot load](./phase-04-fail-safe-on-first-snapshot-load.md) | Pending |
@@ -108,7 +108,7 @@ No unfinished plan blocks this roadmap. The completed persistence plan is a prer
 
 ## Open questions
 
-None. Phase 1 will create an isolated staging D1 database. The user will supply the authorized deploy/restore owner and dedicated Google UAT account out of band; credentials never enter the repository or GitHub issue.
+None. Isolated staging D1 exists (Phase 1 completed). Operator/UAT identities stay out of band; credentials never enter the repository or GitHub issue.
 
 ## Validation Log
 
@@ -150,6 +150,35 @@ None. Phase 1 will create an isolated staging D1 database. The user will supply 
 - Reconciled stale references: 4.
 - Unresolved contradictions: 0.
 
+### Session 2 — 2026-08-20
+
+**Trigger:** Vibe re-validation of Phase 2 against live staging ledger after Phase 1 merge. **Questions asked:** 0 (ledger-answered; original Session 1 decisions still hold).
+
+#### Verification Results
+
+- **Tier:** Full (6 phases; execution scoped to Phase 2)
+- **Claims checked:** 14
+- **Verified:** 12 | **Failed:** 2 | **Unverified:** 0
+
+Failures reconciled in this session:
+
+1. [Fact Checker] `packages/infra/alchemy.run.ts:11-13` cited as `migrationsDir` — actual `migrationsDir` is `:41-43`; `:11-13` is dotenv.
+2. [Fact Checker] `plan.md` Phase 1 still Pending / “will create staging” — Phase 1 is completed; staging D1 exists.
+
+Live ledger (counts only, no UUIDs/row text): staging applied `0000`–`0006`; `comment_bank` = 0; no prod teacher-os D1. `wrangler d1 list` `num_tables=0` is a display bug.
+
+#### Confirmed Decisions
+
+- Topology, operator/UAT out-of-band, and isolated staging: unchanged from Session 1.
+- `0006` repair: rewrite pending file as table rebuild (`operation_id = id`), then destroy/recreate staging. Not NO-GO (no populated-before-`0006` non-rehearsal DB). Not `0007` (cannot unblock earlier ledger; first prod apply must be the safe `0006`).
+- Representative data is synthetic `fixture-*` only; never copy prod/pilot.
+- Restore drill is separate from the populated-upgrade fixture; no `alchemy deploy` until read-only verify; sessions wiped; new login; RPO = writes since bookmark are lost.
+
+#### Impact on Phases
+
+- Phase 2: decision tree third branch, file list, split drills, runbook append-only, no verify script.
+- Phases 3–6: unchanged. Phase 2 must not rewrite topology or add `/readyz`.
+
 ## Red Team Review
 
 ### Session — 2026-08-19
@@ -176,4 +205,37 @@ None. Phase 1 will create an isolated staging D1 database. The user will supply 
 - Files reread: `plan.md`, all six `phase-*.md` files.
 - Decision deltas checked: 10.
 - Reconciled stale references: UI result signal, caller inventory, LessonModal path, UAT enrollment flow, 401, readiness schema query, migration repair and Google UAT policy.
+- Unresolved contradictions: 0.
+
+### Session — 2026-08-20 (Phase 2 re-review)
+
+**Findings:** 19 deduplicated from 4 lenses (Security, Failure Mode, Assumption Destroyer, Scope Critic). **Applied:** 16. **Rejected:** 3.
+
+| # | Finding | Severity | Disposition | Applied to |
+|---|---|---|---|---|
+| 1 | Decision tree missing empty-staging-applied `0006` | Critical | Accept | Phase 2 |
+| 2 | Empty + populated cannot share current singleton without pre-`0006` fixture | Critical | Accept | Phase 2 |
+| 3 | `alchemy deploy` after Time Travel re-applies migrations | Critical | Accept | Phase 2 |
+| 4 | Unique backfill cannot be a constant `DEFAULT` | Critical | Accept | Phase 2 |
+| 5 | Related-files list forbade editing `0006` while step 2 required it | Critical | Accept | Phase 2 |
+| 6 | Restore revives `session` / OAuth token columns | Critical | Accept | Phase 2 |
+| 7 | “Copy representative DB” is a PII channel | Critical | Accept | Phase 2 |
+| 8 | Freeze `0006` and add `0007` | High | Reject | Unsafe `0006` still runs first on prod; `0007` cannot unblock it. Staging is disposable rehearsal. |
+| 9 | Quiesce procedure missing | High | Accept | Phase 2 |
+| 10 | GET `/api/kernel` is a false-green for `operation_id` | High | Accept | Phase 2 |
+| 11 | Kernel smoke must lock `Origin`; no wrangler INSERT | High | Accept | Phase 2 |
+| 12 | Pin staging D1 name + `--remote`; abort non-staging | High | Accept | Phase 2 |
+| 13 | Hand-insert `membership` after restore is a privilege grant | High | Accept | Phase 2 |
+| 14 | `wrangler d1 list` `num_tables=0` is a display bug | High | Accept | Phase 2 |
+| 15 | Stale `alchemy.run.ts:11-13` citations | Medium | Accept | Plan, Phase 2 |
+| 16 | Runbook must stay append-only (topology URI locked) | Medium | Accept | Phase 2 |
+| 17 | Create `scripts/verify-d1-release-state.mjs` | Medium | Reject | Gold-plate; commands belong in the runbook. |
+| 18 | Writes since bookmark have no replay log | Medium | Accept | Phase 2 (honest RPO) |
+| 19 | App maintenance-mode flag / disable staging email-password | High | Reject | Scope expansion; operator quiesce on empty rehearsal is enough. |
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: `plan.md`, all six `phase-*.md` files.
+- Decision deltas checked: `0006` repair = table rebuild + recreate staging; split populated fixture vs restore drill; no `0007`; no verify script; runbook append-only; synthetic fixtures only; session wipe after restore.
+- Reconciled stale references: Alchemy line numbers, Phase 1 status, “Phase 1 will create staging”, Phase 2 file list vs step 2, copy/quiesce phantom procedures.
 - Unresolved contradictions: 0.
