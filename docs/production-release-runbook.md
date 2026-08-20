@@ -141,6 +141,85 @@ If a migration must be undone, that is a **restore**, not a rollback: stop,
 rehearse the restore path on staging first (Phase 2 drill), and only the
 restore authority below may execute it against production.
 
+## D1 ledger, migration 0006, and recovery drill
+
+Inspect the live database, never `_journal.json` alone. `wrangler d1 list`
+`num_tables` can report 0 while tables exist — query `d1_migrations` instead.
+Every `wrangler d1` command in this section requires `--remote` and a database
+name that contains `staging` (or a disposable scratch name used only for the
+populated upgrade). Abort if the name contains `prod` or does not match.
+
+```bash
+# Ledger (counts / schema only — never SELECT token or comment text)
+wrangler d1 execute <staging-name> --remote --command \
+  "SELECT name FROM d1_migrations ORDER BY name;"
+wrangler d1 execute <staging-name> --remote --command \
+  "PRAGMA table_info(comment_bank);"
+wrangler d1 execute <staging-name> --remote --command \
+  "SELECT COUNT(*) AS n FROM comment_bank;"
+```
+
+**0006 repair (ledger 2026-08-20):** staging had already applied
+`0006_pink_ender_wiggin.sql` on empty tables; no production D1 existed.
+The file was rewritten as a table rebuild that copies `operation_id` from
+`id` so populated `comment_bank` rows survive. A later `0007` cannot unblock
+an earlier unsafe `0006`. The repaired SQL was proven on a throwaway D1
+(apply `0000`–`0005`, seed two synthetic comments, apply `0006`, then delete
+that D1) and in CI. Staging was **not** destroyed/recreated in this
+rehearsal (operator `.env` lacked `BETTER_AUTH_SECRET` / `CORS_ORIGIN`).
+The live staging D1 still has the original empty-table apply of this
+filename; schema at runtime matches (`operation_id` NOT NULL + unique
+index). Do not `alchemy deploy --stage staging` until staging is destroyed
+and recreated with the repaired file, or Alchemy will refresh its SQL hash
+while skipping the already-named migration. First production D1 (none yet)
+will apply the git table-rebuild.
+
+**Populated upgrade:** apply `0000`–`0005` on a throwaway D1 (not the live
+post-`0006` staging), insert a synthetic `organization` plus ≥2 `comment_bank`
+rows with text `fixture-*` (never copy production/pilot data), apply `0006`,
+then `PRAGMA foreign_key_check` and `SELECT id, operation_id` (ids only).
+Destroy the throwaway D1 when done.
+
+**Empty upgrade (still pending on live staging):** when operator secrets are
+present, `cd packages/infra && pnpm alchemy destroy --stage staging` then
+`pnpm alchemy deploy --stage staging`. Confirm `d1_migrations` includes
+`0006_pink_ender_wiggin.sql` and `comment_bank` has `operation_id`. Until
+that restage, treat empty-path proof as CI + the original empty staging
+apply, not as “staging already rebuilt.”
+
+**Quiesce (approved maintenance procedure):** do not POST to the staging
+Worker, do not `alchemy deploy`, optionally disable/unbind the staging
+Worker. Confirm `COUNT(*)` stable twice. There is no in-app maintenance flag.
+
+**Restore (Time Travel, in-place, no clone):**
+
+```bash
+wrangler d1 time-travel info <staging-name>
+# Window is 7 days (Workers Free) or 30 days (Paid). If this fails, stop.
+wrangler d1 time-travel restore <staging-name> --bookmark=<from-info>
+```
+
+Do **not** `alchemy deploy` between restore and read-only verify — deploy
+re-applies migrations and undoes the restore. After SQL verify:
+`DELETE FROM session;` (never `SELECT` token columns). Sign in again. Do not
+hand-insert `membership`. Kernel write proof is `POST /api/comment-bank` with
+`Origin` equal to the staging CORS origin; never wrangler `INSERT` as the
+write proof; never weaken CORS.
+
+**RPO / RTO (observed 2026-08-20 rehearsal):** writes after the bookmark are
+**lost** and must be re-entered by the teacher. There is no mutation log.
+Time Travel restore of the staging D1 after a synthetic marker insert returned
+counts to the pre-marker state in **5 seconds**. `time-travel info` succeeded
+(Paid/Free window not exhausted). Bookmarks are not durable evidence — export
+counts/`PRAGMA` before restore.
+
+**Kernel write proof:** new session on the staging web origin; replay the same
+`operationId` UUID (idempotent). Evidence = HTTP status + `COUNT(*)` only.
+2026-08-20 staging: `GET /` → 200 `OK`; `GET /api/kernel` without cookie → 401;
+`POST /api/comment-bank` with staging web `Origin` → 201 then replay 200;
+same POST without `Origin` → 403. Fixture session/comment rows were deleted
+after the proof. Do not paste cookies, tokens, or `comment_bank.text`.
+
 ## Support triage
 
 1. `GET /` on the API origin — liveness (`OK`).
