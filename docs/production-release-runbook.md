@@ -114,8 +114,26 @@ first.
 
 ## Post-deploy smoke (Chrome and Safari)
 
-Run in a private/incognito window, once in Chrome and once in Safari, from
-the production `https://app.<domain>`:
+Readiness first (no browser needed):
+
+```bash
+curl -sS -i https://api.<domain>/readyz
+```
+
+- GO: `200` with body `{"ok":true}` and `cache-control: no-store` — the Worker
+  can run a schema-dependent D1 catalog query (every required table present).
+- NO-GO: `503` with body `{"ok":false}` — D1 binding or schema trouble (e.g. a
+  migration did not apply). Check Worker logs and migration state before any
+  browser smoke. The body is the same generic JSON for every failure mode and
+  never exposes internals; diagnose from Worker logs, not from the response.
+
+`GET /` stays plain liveness ("is the Worker up"); `/readyz` proves "Worker +
+D1 schema usable". Record the sanitized curl output (status + body) as release
+evidence; whether the real domain appears in that evidence is an operator
+decision under the no-secret rule above.
+
+Then run in a private/incognito window, once in Chrome and once in Safari,
+from the production `https://app.<domain>`:
 
 1. Sign in with the dedicated Google UAT account → lands back on the app
    (callback consumed at `/api/auth/callback/google`).
@@ -222,13 +240,17 @@ after the proof. Do not paste cookies, tokens, or `comment_bank.text`.
 
 ## Support triage
 
-1. `GET /` on the API origin — liveness (`OK`).
-2. Worker logs: Cloudflare dashboard → Workers → `server` (stage `prod`) →
+1. `GET /` on the API origin — liveness (`OK`): the Worker process is up.
+2. `GET /readyz` on the API origin — readiness: `200 {"ok":true}` proves a
+   schema-dependent D1 query works; `503 {"ok":false}` points at the D1
+   binding or a missing/partial migration. The response deliberately carries
+   no detail — use Worker logs for diagnosis.
+3. Worker logs: Cloudflare dashboard → Workers → `server` (stage `prod`) →
    Logs, or `npx wrangler tail` with operator credentials.
-3. Alchemy state: `cd packages/infra && pnpm alchemy plan --stage prod` shows
+4. Alchemy state: `cd packages/infra && pnpm alchemy plan --stage prod` shows
    the pending plan/drift; never hand-edit Cloudflare resources that Alchemy
    owns.
-4. Escalate to the release operator; record findings in the tracking issue.
+5. Escalate to the release operator; record findings in the tracking issue.
 
 ## Stop conditions (GO/NO-GO)
 
