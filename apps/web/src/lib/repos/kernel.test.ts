@@ -3,9 +3,11 @@
  * Pure functions only — transport lives in the provider.
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
+import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
 import {
 	createKernelCommandBus,
+	fetchKernelSnapshot,
 	kernelCommand,
 	mapKernelSnapshot,
 } from "./kernel";
@@ -442,8 +444,6 @@ describe("kernelCommand", () => {
 });
 
 describe("createKernelCommandBus", () => {
-	type Fn = () => void;
-
 	function deferred<T>() {
 		let resolve!: (value: T) => void;
 		let reject!: (reason?: unknown) => void;
@@ -462,10 +462,11 @@ describe("createKernelCommandBus", () => {
 
 	function makeHarness() {
 		const postCalls: string[] = [];
-		const fetchCalls: Fn[] = [];
+		const fetchCalls: number[] = [];
 		const applied: number[] = [];
 		const errors: Array<{ kind: string; type: string; willRetry: boolean }> =
 			[];
+		const authLostCalls: number[] = [];
 		const pendingPosts: Array<ReturnType<typeof deferred<string | undefined>>> =
 			[];
 		const pendingFetches: Array<ReturnType<typeof deferred<KernelSnapshot>>> =
@@ -478,7 +479,7 @@ describe("createKernelCommandBus", () => {
 				return d.promise;
 			},
 			fetchSnapshot: () => {
-				fetchCalls.push(() => undefined);
+				fetchCalls.push(fetchCalls.length);
 				const d = deferred<KernelSnapshot>();
 				pendingFetches.push(d);
 				return d.promise;
@@ -487,6 +488,7 @@ describe("createKernelCommandBus", () => {
 				applied.push((snapshot as unknown as { seq: number }).seq),
 			onError: (kind, action, _error, detail) =>
 				errors.push({ kind, type: action.type, willRetry: detail.willRetry }),
+			onAuthLost: () => authLostCalls.push(authLostCalls.length),
 		});
 		return {
 			bus,
@@ -494,6 +496,7 @@ describe("createKernelCommandBus", () => {
 			fetchCalls,
 			applied,
 			errors,
+			authLostCalls,
 			pendingPosts,
 			pendingFetches,
 		};
@@ -595,5 +598,153 @@ describe("createKernelCommandBus", () => {
 			{ kind: "refresh", type: "add-comment-bank", willRetry: true },
 			{ kind: "refresh", type: "add-comment-bank", willRetry: false },
 		]);
+	});
+
+	test("refresh 401 does not retry: reports once and fires onAuthLost", async () => {
+		const t = makeHarness();
+		const p1 = t.bus.run(action(1));
+		t.pendingPosts[0].resolve("id-1");
+		await flush();
+
+		t.pendingFetches[0].reject(
+			new HttpError(401, "GET /api/kernel failed: 401"),
+		);
+		expect(await p1).toBeUndefined();
+		expect(t.applied).toEqual([]);
+		expect(t.fetchCalls).toHaveLength(1); // no second (pointless) attempt
+		expect(t.errors).toEqual([
+			{ kind: "refresh", type: "update-class-notes", willRetry: false },
+		]);
+		expect(t.authLostCalls).toHaveLength(1);
+	});
+
+	test("refresh 401 still returns the id for an acknowledged comment write", async () => {
+		const t = makeHarness();
+		const p = t.bus.run({
+			type: "add-comment-bank",
+			text: "Nhận xét",
+			operationId: "11111111-1111-4111-8111-111111111111",
+		});
+		t.pendingPosts[0].resolve("comment-1");
+		await flush();
+		t.pendingFetches[0].reject(
+			new HttpError(401, "GET /api/kernel failed: 401"),
+		);
+		expect(await p).toBe("comment-1"); // committed server-side; do not replay
+		expect(t.authLostCalls).toHaveLength(1);
+	});
+
+	test("write 401 fires onAuthLost alongside the write error", async () => {
+		const t = makeHarness();
+		const p1 = t.bus.run(action(1));
+		t.pendingPosts[0].reject(
+			new HttpError(401, "POST /api/classes failed: 401"),
+		);
+		expect(await p1).toBeUndefined();
+		expect(t.errors).toEqual([
+			{ kind: "write", type: "update-class-notes", willRetry: false },
+		]);
+		expect(t.authLostCalls).toHaveLength(1);
+	});
+
+	test("non-401 refresh failures never fire onAuthLost", async () => {
+		const t = makeHarness();
+		const p1 = t.bus.run(action(1));
+		t.pendingPosts[0].resolve("id-1");
+		await flush();
+		t.pendingFetches[0].reject(
+			new HttpError(503, "GET /api/kernel failed: 503"),
+		);
+		await flush();
+		t.pendingFetches[1].reject(new Error("offline"));
+		expect(await p1).toBeUndefined();
+		expect(t.authLostCalls).toHaveLength(0);
+	});
+});
+
+describe("fetchKernelSnapshot transport", () => {
+	const realFetch = globalThis.fetch;
+
+	function mockFetch(impl: (url: string) => Promise<Response>) {
+		globalThis.fetch = ((input: RequestInfo | URL) =>
+			impl(String(input))) as typeof fetch;
+	}
+
+	function jsonResponse(status: number, body: unknown) {
+		return new Response(JSON.stringify(body), {
+			status,
+			headers: { "content-type": "application/json" },
+		});
+	}
+
+	afterEach(() => {
+		globalThis.fetch = realFetch;
+	});
+
+	test("200 with a valid snapshot resolves it unchanged", async () => {
+		mockFetch(async () => jsonResponse(200, snapshot));
+		await expect(fetchKernelSnapshot("http://api.local")).resolves.toEqual(
+			snapshot,
+		);
+	});
+
+	test("401/403/5xx throw HttpError carrying the status", async () => {
+		for (const status of [401, 403, 500, 503]) {
+			mockFetch(async () => jsonResponse(status, { error: "boom" }));
+			const error = await fetchKernelSnapshot("http://api.local").catch(
+				(e) => e,
+			);
+			expect(error, `status ${status}`).toBeInstanceOf(HttpError);
+			expect((error as HttpError).status).toBe(status);
+		}
+	});
+
+	test("200 with non-JSON body throws MalformedSnapshotError", async () => {
+		mockFetch(
+			async () =>
+				new Response("<html>proxy error page</html>", {
+					status: 200,
+					headers: { "content-type": "text/html" },
+				}),
+		);
+		await expect(
+			fetchKernelSnapshot("http://api.local"),
+		).rejects.toBeInstanceOf(MalformedSnapshotError);
+	});
+
+	test("200 with a wrong-shape body never becomes a workspace", async () => {
+		const wrongShapes: unknown[] = [
+			"just a string",
+			{ students: [] }, // missing the other collections
+			{ ...snapshot, students: "not-an-array" },
+			[], // array body, not an object of collections
+		];
+		for (const body of wrongShapes) {
+			mockFetch(async () => jsonResponse(200, body));
+			await expect(
+				fetchKernelSnapshot("http://api.local"),
+				JSON.stringify(body).slice(0, 40),
+			).rejects.toBeInstanceOf(MalformedSnapshotError);
+		}
+	});
+
+	test("timeout rejection propagates so the classifier can map it", async () => {
+		mockFetch(async () => {
+			throw new DOMException("The operation timed out.", "TimeoutError");
+		});
+		await expect(fetchKernelSnapshot("http://api.local")).rejects.toMatchObject(
+			{
+				name: "TimeoutError",
+			},
+		);
+	});
+
+	test("network rejection propagates so the classifier can map it", async () => {
+		mockFetch(async () => {
+			throw new TypeError("fetch failed");
+		});
+		await expect(
+			fetchKernelSnapshot("http://api.local"),
+		).rejects.toBeInstanceOf(TypeError);
 	});
 });

@@ -1,8 +1,10 @@
+import { useSearch } from "@tanstack/react-router";
 import { Button } from "@teacher-os/ui/components/button";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
+import { validateReturnUrl } from "@/lib/kernel-load-state";
 
 function GoogleIcon() {
 	return (
@@ -33,14 +35,17 @@ function GoogleIcon() {
 
 export default function GoogleOAuthButton() {
 	const [isRedirecting, setIsRedirecting] = useState(false);
+	const { returnUrl } = useSearch({ from: "/login" });
 
 	const handleGoogleSignIn = async () => {
 		setIsRedirecting(true);
 		const { error } = await authClient.signIn.social({
 			provider: "google",
 			// Must be an absolute URL on a server trustedOrigin: the web app and
-			// the API worker live on different origins
-			callbackURL: `${window.location.origin}/dashboard`,
+			// the API worker live on different origins. The return URL is
+			// validated first so a crafted `?returnUrl=` cannot redirect the
+			// OAuth callback to a foreign origin.
+			callbackURL: `${window.location.origin}${validateReturnUrl(returnUrl)}`,
 		});
 
 		if (error) {

@@ -10,8 +10,17 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
-import { getServerUrl } from "@/lib/auth-client";
+import KernelLoadError from "@/components/kernel-load-error";
+import { authClient, getServerUrl } from "@/lib/auth-client";
 import type { KernelAction } from "./data-actions";
+import {
+	beginLoad,
+	classifyLoadError,
+	type LoadState,
+	settleLoadSuccess,
+	shouldSettle,
+	validateReturnUrl,
+} from "./kernel-load-state";
 import { emptyKernelData } from "./kernel-state";
 import type {
 	Assignment,
@@ -47,11 +56,13 @@ const DataContext = createContext<DataStore | null>(null);
 
 export function DataProvider({ children }: { children: ReactNode }) {
 	const [data, setData] = useState(emptyKernelData);
-	// Loading gate: children (and the store) stay unmounted until the first
-	// GET /api/kernel settles, so detail pages cannot notFound() on stale ids.
-	const [kernelLoaded, setKernelLoaded] = useState(false);
+	// Load gate: children (and the store) stay unmounted until the first
+	// GET /api/kernel settles with a valid snapshot. A failed load renders a
+	// blocking retry/fatal screen — never an empty org.
+	const [load, setLoad] = useState<LoadState>({ status: "loading" });
 	const baseUrl = getServerUrl(env.VITE_SERVER_URL);
 	const busRef = useRef<KernelCommandBus | null>(null);
+	const attemptRef = useRef(0);
 
 	const applySnapshot = useCallback(
 		(snapshot: Parameters<typeof mapKernelSnapshot>[0]) => {
@@ -60,27 +71,50 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		[],
 	);
 
-	const loadKernel = useCallback(async () => {
-		applySnapshot(await fetchKernelSnapshot(baseUrl));
-	}, [applySnapshot, baseUrl]);
+	/**
+	 * 401 = the session is dead. Clear the session cookie best-effort (the
+	 * provider state dies with the unmount that follows), then bounce to the
+	 * login page carrying a validated return URL so the teacher lands back
+	 * where they were. Retrying against a dead session is pointless.
+	 */
+	const reauth = useCallback(() => {
+		void authClient.signOut().catch(() => undefined);
+		const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+		const returnUrl = validateReturnUrl(current);
+		window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+	}, []);
 
-	useEffect(() => {
-		let cancelled = false;
-		loadKernel()
-			.then(() => {
-				if (!cancelled) setKernelLoaded(true);
+	const startLoad = useCallback(() => {
+		attemptRef.current += 1;
+		const seq = attemptRef.current;
+		setLoad(beginLoad());
+		fetchKernelSnapshot(baseUrl)
+			.then((snapshot) => {
+				// Only the newest attempt may settle — a stale attempt rejection
+				// must never unmount an already-running workspace.
+				if (!shouldSettle(seq, attemptRef.current)) {
+					return;
+				}
+				applySnapshot(snapshot);
+				setLoad(settleLoadSuccess());
 			})
 			.catch((error) => {
-				// Gate ends on error too — the app runs on an empty kernel slice
-				// rather than hanging on the loader forever.
+				if (!shouldSettle(seq, attemptRef.current)) {
+					return;
+				}
 				console.error("[kernel] initial load failed", error);
-				toast.error("Không tải được dữ liệu lớp/học viên từ máy chủ.");
-				if (!cancelled) setKernelLoaded(true);
+				const failure = classifyLoadError(error);
+				if (failure.kind === "reauth") {
+					reauth();
+					return;
+				}
+				setLoad({ status: "error", failure });
 			});
-		return () => {
-			cancelled = true;
-		};
-	}, [loadKernel]);
+	}, [applySnapshot, baseUrl, reauth]);
+
+	useEffect(() => {
+		startLoad();
+	}, [startLoad]);
 
 	const dispatch = useCallback(
 		(action: KernelAction): Promise<string | undefined> => {
@@ -104,10 +138,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 						);
 					}
 				},
+				onAuthLost: reauth,
 			});
 			return busRef.current.run(action);
 		},
-		[applySnapshot, baseUrl],
+		[applySnapshot, baseUrl, reauth],
 	);
 
 	const store = useMemo<DataStore>(() => {
@@ -125,7 +160,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 		};
 	}, [data, dispatch]);
 
-	if (!kernelLoaded) {
+	if (load.status !== "ready") {
+		if (load.status === "error") {
+			return <KernelLoadError failure={load.failure} onRetry={startLoad} />;
+		}
 		return null;
 	}
 

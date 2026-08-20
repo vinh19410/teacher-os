@@ -8,6 +8,11 @@ import type {
 	KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import type { KernelAction } from "@/lib/data-actions";
+import {
+	HttpError,
+	isHttpError,
+	MalformedSnapshotError,
+} from "@/lib/kernel-load-state";
 import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
@@ -156,10 +161,50 @@ export async function postKernelCommand(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new Error(`POST ${path} failed: ${res.status}`);
+		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`);
 	}
 	const json = (await res.json()) as Partial<CreatedResponse>;
 	return json.id;
+}
+
+/** Every kernel snapshot collection, per the API contract. */
+const SNAPSHOT_COLLECTION_KEYS = [
+	"students",
+	"classes",
+	"syllabi",
+	"enrollments",
+	"packages",
+	"lessons",
+	"assignments",
+	"invoices",
+	"reports",
+	"notifs",
+	"commentBank",
+] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
+
+// Compile-time completeness: every KernelSnapshot collection must appear in
+// SNAPSHOT_COLLECTION_KEYS, or a new contract field would silently skip the
+// shape guard below.
+type MissingSnapshotKey = Exclude<
+	keyof KernelSnapshot,
+	(typeof SNAPSHOT_COLLECTION_KEYS)[number]
+>;
+const allSnapshotKeysPresent: MissingSnapshotKey extends never ? true : never =
+	true;
+void allSnapshotKeysPresent;
+
+/**
+ * Minimal shape guard: a `200` body only counts as a snapshot when every
+ * contract collection is present and is an array. Without this, a proxy page
+ * or foreign JSON envelope would map "successfully" into an empty-looking
+ * workspace — exactly the failure mode this phase exists to prevent.
+ */
+function isSnapshotShape(value: unknown): value is KernelSnapshot {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		return false;
+	}
+	const record = value as Record<string, unknown>;
+	return SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key]));
 }
 
 /** Transport: fetch the org-scoped kernel snapshot. */
@@ -171,9 +216,22 @@ export async function fetchKernelSnapshot(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new Error(`GET /api/kernel failed: ${res.status}`);
+		throw new HttpError(res.status, `GET /api/kernel failed: ${res.status}`);
 	}
-	return (await res.json()) as KernelSnapshot;
+	let json: unknown;
+	try {
+		json = await res.json();
+	} catch (cause) {
+		throw new MalformedSnapshotError("GET /api/kernel returned invalid JSON", {
+			cause,
+		});
+	}
+	if (!isSnapshotShape(json)) {
+		throw new MalformedSnapshotError(
+			"GET /api/kernel 200 response did not match the snapshot shape",
+		);
+	}
+	return json;
 }
 
 export interface KernelCommandBusDeps {
@@ -190,6 +248,11 @@ export interface KernelCommandBusDeps {
 		error: unknown,
 		detail: { attempt: number; willRetry: boolean },
 	): void;
+	/**
+	 * A typed `401` reached the bus — the session died mid-flight. Retrying
+	 * cannot help; the host must re-authenticate (sign out + login redirect).
+	 */
+	onAuthLost(): void;
 }
 
 export interface KernelCommandBus {
@@ -215,10 +278,19 @@ export function createKernelCommandBus(
 
 	async function runOne(action: KernelAction): Promise<string | undefined> {
 		let id: string | undefined;
+		// A comment POST acknowledgement is the durable commit boundary. Replaying
+		// after only the hydration failed would create an unintended duplicate.
+		// Other actions keep the stale-store safety contract: resolve undefined
+		// so callers never navigate against an un-refreshed store.
+		const settleAfterFailedRefresh = (): string | undefined =>
+			action.type === "add-comment-bank" ? id : undefined;
 		try {
 			id = await deps.postCommand(action);
 		} catch (error) {
 			deps.onError("write", action, error, { attempt: 1, willRetry: false });
+			if (isHttpError(error) && error.status === 401) {
+				deps.onAuthLost();
+			}
 			return undefined;
 		}
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
@@ -226,16 +298,24 @@ export function createKernelCommandBus(
 				deps.applySnapshot(await deps.fetchSnapshot());
 				return id;
 			} catch (error) {
+				if (isHttpError(error) && error.status === 401) {
+					// Session expired between the write and the refresh. The write
+					// itself committed, so report once and re-auth — a retry would
+					// hit the same dead session.
+					deps.onError("refresh", action, error, {
+						attempt,
+						willRetry: false,
+					});
+					deps.onAuthLost();
+					return settleAfterFailedRefresh();
+				}
 				deps.onError("refresh", action, error, {
 					attempt,
 					willRetry: attempt < REFRESH_ATTEMPTS,
 				});
 			}
 		}
-		// A comment POST acknowledgement is the durable commit boundary. Replaying
-		// after only the hydration failed would create an unintended duplicate.
-		// Other actions keep the existing stale-store safety contract.
-		return action.type === "add-comment-bank" ? id : undefined;
+		return settleAfterFailedRefresh();
 	}
 
 	return {
