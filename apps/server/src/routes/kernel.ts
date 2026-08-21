@@ -5,10 +5,12 @@ import {
 	classNotesSchema,
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
+	lessonEditSchema,
 	lessonUpsertSchema,
 	moduleUpsertSchema,
 	studentCreateSchema,
 	syllabusCreateSchema,
+	TIME_REGEX,
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
@@ -32,6 +34,74 @@ import { loadInvoices, loadSnapshot } from "./snapshot";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type KernelContext = Context<Env>;
+
+/** Parse the stored class schedule JSON; null for legacy free-text/invalid. */
+function parseStoredSchedule(
+	raw: string,
+): { days: number[]; start: string; end: string } | null {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (typeof parsed !== "object" || parsed === null) return null;
+		const { days, start, end } = parsed as Record<string, unknown>;
+		if (!Array.isArray(days) || days.length === 0) return null;
+		const unique = [...new Set(days)];
+		if (
+			!unique.every((day) => Number.isInteger(day) && day >= 0 && day <= 6) ||
+			typeof start !== "string" ||
+			typeof end !== "string" ||
+			!TIME_REGEX.test(start) ||
+			!TIME_REGEX.test(end) ||
+			// Mirrors classCreateSchema's superRefine — a legacy row that
+			// violates it must not generate zero-duration lessons.
+			start === end
+		) {
+			return null;
+		}
+		return { days: unique.sort((a, b) => a - b), start, end };
+	} catch {
+		return null;
+	}
+}
+
+function toMinutes(hhmm: string): number {
+	// TIME_REGEX guarantees exactly two numeric parts.
+	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
+	return hours * 60 + minutes;
+}
+
+/**
+ * Expand a class's structured schedule into `sessionsTotal` upcoming lesson
+ * rows for one enrollment (issue #55). Kernel-local parse — the web's
+ * format-schedule helpers live in apps/web and are not importable here.
+ * Fails closed to [] for legacy/invalid schedules so old classes keep
+ * accepting students. Rows carry a weekday only: lesson.day is 1-7 with
+ * 1 = Monday, the schedule JSON is 0-6 with 0 = Monday, hence the +1 —
+ * never JS getDay() (0 = Sunday). dur wraps midnight (23:00→00:30 = 90).
+ */
+export function generateScheduleLessons(input: {
+	schedule: string;
+	sessionsTotal: number;
+	orgId: string;
+	classId: string;
+	enrollmentId: string;
+}): Array<Omit<typeof lesson.$inferInsert, "id" | "createdAt">> {
+	const parsed = parseStoredSchedule(input.schedule);
+	if (!parsed || input.sessionsTotal <= 0) return [];
+	const dur = (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
+	return Array.from({ length: input.sessionsTotal }, (_, i) => ({
+		orgId: input.orgId,
+		classId: input.classId,
+		enrollmentId: input.enrollmentId,
+		// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
+		day: (parsed.days[i % parsed.days.length] ?? 0) + 1,
+		time: parsed.start,
+		dur,
+		type: "1:1",
+		status: "upcoming",
+		topic: "",
+		zoom: "",
+	}));
+}
 
 export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	const kernel = new Hono<Env>();
@@ -75,9 +145,18 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return { ok: true, data: parsed.data };
 	}
 
+	/**
+	 * Class row for write paths: assign/notes only need existence, while
+	 * student-create also reads schedule + sessionsTotal to generate lessons
+	 * (schedule is raw TEXT).
+	 */
 	async function findClass(db: Db, classId: string, orgId: string) {
 		const [row] = await db
-			.select({ id: classTable.id })
+			.select({
+				id: classTable.id,
+				schedule: classTable.schedule,
+				sessionsTotal: classTable.sessionsTotal,
+			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		return row;
@@ -122,9 +201,11 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	}
 
 	/**
-	 * Lesson joined with its enrollment so status actions can enforce the
+	 * Lesson joined with its enrollment so lesson writes can enforce the
 	 * class↔enrollment pairing (invariant 2): a lesson claiming class A while
 	 * its enrollment sits in class B is a conflict, never a valid check-in.
+	 * The five mutable fields ride along for edit, whose conditional WHERE
+	 * re-checks them against this pre-read.
 	 */
 	async function findLessonAction(db: Db, lessonId: string, orgId: string) {
 		const [row] = await db
@@ -133,6 +214,11 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				status: lesson.status,
 				classId: lesson.classId,
 				enrollmentClassId: enrollment.classId,
+				day: lesson.day,
+				time: lesson.time,
+				dur: lesson.dur,
+				topic: lesson.topic,
+				zoom: lesson.zoom,
 			})
 			.from(lesson)
 			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
@@ -161,7 +247,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const input = body.data;
 		const db = deps.getDb();
 
-		let cls: { id: string } | undefined;
+		let cls:
+			| { id: string; schedule: string; sessionsTotal: number }
+			| undefined;
 		if (input.classId) {
 			cls = await findClass(db, input.classId, ctx.orgId);
 			if (!cls) {
@@ -182,6 +270,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			}),
 		];
 		if (cls) {
+			// Schedule-driven lessons (issue #55) join the same batch — an
+			// enrollment can never exist without its generated lesson series.
 			const enrollmentId = crypto.randomUUID();
 			statements.push(
 				db.insert(enrollment).values({
@@ -202,6 +292,17 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					status: "active",
 				}),
 			);
+			for (const row of generateScheduleLessons({
+				schedule: cls.schedule,
+				sessionsTotal: cls.sessionsTotal,
+				orgId: ctx.orgId,
+				classId: cls.id,
+				enrollmentId,
+			})) {
+				statements.push(
+					db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
+				);
+			}
 		}
 		await db.batch(statements);
 		return c.json({ id: studentId } satisfies CreatedResponse, 201);
@@ -358,6 +459,61 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	kernel.post("/lessons/:id/cancel", (c) =>
 		lessonStatusAction(c, c.req.param("id"), "cancelled"),
 	);
+
+	/**
+	 * Lesson edit (issue #55) — upcoming-only, full-replace of the five
+	 * mutable fields; status/type stay server-owned via the strict schema.
+	 * Same guard shape as lessonStatusAction plus optimistic concurrency:
+	 * editing does not write the guard column itself, so the pre-read field
+	 * values must also live in the WHERE clause — otherwise two concurrent
+	 * edits both match `status='upcoming'` and the loser vanishes silently.
+	 */
+	kernel.post("/lessons/:id/edit", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, lessonEditSchema);
+		if (!body.ok) return body.response;
+		const lessonId = c.req.param("id");
+		const db = deps.getDb();
+
+		const pre = await findLessonAction(db, lessonId, ctx.orgId);
+		if (!pre) {
+			return c.json({ error: "lesson not found" }, 404);
+		}
+		if (pre.enrollmentClassId !== pre.classId) {
+			return c.json({ error: "lesson enrollment mismatch" }, 409);
+		}
+		if (pre.status !== "upcoming") {
+			return c.json({ error: "lesson is not upcoming" }, 409);
+		}
+
+		const updated = await db
+			.update(lesson)
+			.set({
+				day: body.data.day,
+				time: body.data.time,
+				dur: body.data.dur,
+				topic: body.data.topic,
+				zoom: body.data.zoom,
+			})
+			.where(
+				and(
+					eq(lesson.id, lessonId),
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.status, "upcoming"),
+					eq(lesson.day, pre.day),
+					eq(lesson.time, pre.time),
+					eq(lesson.dur, pre.dur),
+					eq(lesson.topic, pre.topic),
+					eq(lesson.zoom, pre.zoom),
+				),
+			)
+			.returning({ id: lesson.id });
+		if (updated.length === 0) {
+			return c.json({ error: "lesson changed or is not upcoming" }, 409);
+		}
+		return c.json({ ok: true });
+	});
 
 	kernel.post("/invoices/:id/mark-paid", async (c) => {
 		const ctx = c.get("kernelCtx");

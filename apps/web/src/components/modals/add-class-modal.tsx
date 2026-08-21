@@ -104,6 +104,13 @@ export function AddClassModal({
 			setError("Vui lòng chọn ngày bắt đầu sau hôm nay.");
 			return;
 		}
+		// Mirror of the server cap (classCreateSchema sessionsTotal ≤ 52):
+		// exceeding it would only surface as a generic server error banner.
+		const parsedTotal = Number.parseInt(total, 10) || 12;
+		if (parsedTotal > 52) {
+			setError("Tổng số buổi tối đa là 52.");
+			return;
+		}
 		const result = await run({
 			type: "add-class",
 			payload: {
@@ -114,7 +121,7 @@ export function AddClassModal({
 				mode,
 				syllabusId,
 				schedule: { days, start: startTime, end: endTime },
-				sessionsTotal: Number.parseInt(total, 10) || 12,
+				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
 			},
 		});
@@ -220,6 +227,8 @@ export function AddClassModal({
 					<Field label="Tổng số buổi">
 						<Input
 							type="number"
+							min={0}
+							max={52}
 							value={total}
 							onChange={(e) => setTotal(e.target.value)}
 						/>

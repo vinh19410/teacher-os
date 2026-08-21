@@ -285,3 +285,61 @@ function lessonRow(
 		zoom: "",
 	};
 }
+
+describe("mapClasses sessionsDone derive — weekly-recurrence collapse pin (issue #55 red-target for #56)", () => {
+	// #55's generator emits `sessionsTotal` rows spread over the schedule's
+	// weekday slots: 12 sessions on days {2,4} are 6+6 rows over 2 distinct
+	// (day,time) pairs. The derive counts distinct pairs, so a fully checked-in
+	// series shows 2/12 — this pins that known-broken behavior as the red
+	// target for #56; do not "fix" it here without updating that issue.
+	const snapshot: KernelSnapshot = {
+		students: [],
+		classes: [
+			{
+				id: "cl-gen",
+				name: "IELTS tối (generated)",
+				level: "",
+				type: "ielts",
+				skills: [],
+				mode: "Online",
+				syllabusId: null,
+				schedule: '{"days":[1,3],"start":"19:00","end":"20:30"}',
+				sessionsTotal: 12,
+				sessionsDone: 0,
+				status: "active",
+				startDate: "",
+				notes: "",
+			},
+		],
+		syllabi: [],
+		enrollments: [
+			{
+				id: "en-gen",
+				classId: "cl-gen",
+				studentId: "st-gen",
+				createdAt: "2026-08-21T00:00:00.000Z",
+			},
+		],
+		packages: [],
+		lessons: Array.from({ length: 12 }, (_, i) =>
+			lessonRow(
+				`les-gen-${i}`,
+				"cl-gen",
+				"en-gen",
+				i % 2 === 0 ? 2 : 4,
+				"19:00",
+				"completed",
+			),
+		),
+		assignments: [],
+		invoices: [],
+		reports: [],
+		notifs: [],
+		commentBank: [],
+	};
+
+	test("12 completed generated lessons over 2 weekly slots derive sessionsDone = 2 (collapse)", () => {
+		const classes = mapClasses(snapshot);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(2);
+	});
+});

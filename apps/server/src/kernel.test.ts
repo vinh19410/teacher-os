@@ -28,6 +28,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db } from "./app";
+import { generateScheduleLessons } from "./routes/kernel";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const MIGRATIONS_DIR = new URL(
@@ -39,6 +40,17 @@ interface TestSession {
 	userId: string;
 	userName: string;
 	token: string;
+}
+
+/** Enrollments are identified by their (classId, studentId) pair on the wire. */
+function findEnrollment(
+	snapshot: KernelSnapshot,
+	classId: string,
+	studentId: string,
+) {
+	return snapshot.enrollments.find(
+		(e) => e.classId === classId && e.studentId === studentId,
+	);
 }
 
 async function createTestApp() {
@@ -124,9 +136,10 @@ async function createTestApp() {
 	}
 
 	/**
-	 * Wave 4 helper insert: no lesson-create endpoint exists yet (non-goal),
-	 * so tests seed scheduled lessons directly — the same way the persist
-	 * contract is verified.
+	 * Wave 4 helper insert: no one-off lesson-create endpoint exists (issue
+	 * #55 generates from schedules; manual rows are test-only), so tests seed
+	 * scheduled lessons directly — the same way the persist contract is
+	 * verified.
 	 */
 	async function insertLesson(
 		session: TestSession,
@@ -139,6 +152,7 @@ async function createTestApp() {
 			type?: string;
 			status?: string;
 			topic?: string;
+			zoom?: string;
 		},
 	): Promise<string> {
 		const id = crypto.randomUUID();
@@ -153,7 +167,7 @@ async function createTestApp() {
 			type: row.type ?? "1:1",
 			status: row.status ?? "upcoming",
 			topic: row.topic ?? "Mock test",
-			zoom: "",
+			zoom: row.zoom ?? "",
 		});
 		return id;
 	}
@@ -189,9 +203,16 @@ async function createTestApp() {
 		return (await res.json()) as KernelSnapshot;
 	}
 
+	/** `overrides` replaces top-level body fields — keep type and skills consistent. */
 	async function createClass(
 		session: TestSession,
 		name: string,
+		overrides: {
+			type?: string;
+			skills?: string[];
+			schedule?: { days: number[]; start: string; end: string };
+			sessionsTotal?: number;
+		} = {},
 	): Promise<string> {
 		const res = await call("/api/classes", {
 			session,
@@ -206,6 +227,7 @@ async function createTestApp() {
 				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 12,
 				startDate: "01/09",
+				...overrides,
 			},
 		});
 		expect(res.status).toBe(201);
@@ -274,6 +296,7 @@ async function createTestApp() {
 		call,
 		kernel,
 		membershipsOf,
+		orgIdOf,
 		insertLesson,
 		insertInvoice,
 		createClass,
@@ -1625,5 +1648,580 @@ describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
 		expect(snapshotA.lessons.find((l) => l.id === lessonAId)?.status).toBe(
 			"upcoming",
 		);
+	});
+});
+
+describe("schedule-driven lesson generation (issue #55)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let classId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Lịch");
+		classId = await t.createClass(session, "IELTS tối");
+	});
+
+	// Characterization: the no-classId path never generates lessons.
+	test("student without classId creates zero lessons", async () => {
+		await t.addStudent(session, "HV tự do");
+		const snapshot = await t.kernel(session);
+		expect(snapshot.lessons).toEqual([]);
+	});
+
+	test("unit generator: maps schedule rows to upcoming lesson values", () => {
+		const rows = generateScheduleLessons({
+			schedule: JSON.stringify({ days: [2, 4], start: "19:00", end: "20:30" }),
+			sessionsTotal: 3,
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+		});
+		expect(rows).toHaveLength(3);
+		for (const row of rows) {
+			expect(row).toMatchObject({
+				orgId: "org",
+				classId: "cls",
+				enrollmentId: "enr",
+				day: expect.any(Number), // asserted per-row below
+				time: "19:00",
+				dur: 90,
+				type: "1:1",
+				status: "upcoming",
+				topic: "",
+				zoom: "",
+			});
+		}
+		expect(rows.map((r) => r.day)).toEqual([3, 5, 3]);
+	});
+
+	test("unit generator: weekday +1 mapping is Monday-first (schedule 0=Monday → lesson 1=Monday)", () => {
+		const rows = generateScheduleLessons({
+			schedule: JSON.stringify({ days: [0, 6], start: "09:00", end: "10:30" }),
+			sessionsTotal: 2,
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+		});
+		expect(rows.map((r) => r.day)).toEqual([1, 7]);
+	});
+
+	test("unit generator: overnight schedule wraps midnight into duration", () => {
+		const rows = generateScheduleLessons({
+			schedule: JSON.stringify({ days: [2], start: "23:00", end: "00:30" }),
+			sessionsTotal: 1,
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+		});
+		expect(rows[0]?.dur).toBe(90);
+	});
+
+	test("unit generator: cycles evenly across sorted unique days", () => {
+		const rows = generateScheduleLessons({
+			schedule: JSON.stringify({
+				days: [3, 1, 3],
+				start: "19:00",
+				end: "20:30",
+			}),
+			sessionsTotal: 6,
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+		});
+		const dayCounts = new Map<number, number>();
+		for (const row of rows)
+			dayCounts.set(row.day, (dayCounts.get(row.day) ?? 0) + 1);
+		expect(dayCounts.get(2)).toBe(3); // schedule day 1
+		expect(dayCounts.get(4)).toBe(3); // schedule day 3 (deduped)
+	});
+
+	test("unit generator: zero and invalid inputs fail closed to []", () => {
+		const base = { orgId: "org", classId: "cls", enrollmentId: "enr" };
+		const valid = JSON.stringify({ days: [1], start: "19:00", end: "20:30" });
+		expect(
+			generateScheduleLessons({ ...base, schedule: valid, sessionsTotal: 0 }),
+		).toEqual([]);
+		expect(
+			generateScheduleLessons({
+				...base,
+				schedule: "Tối thứ 3",
+				sessionsTotal: 12,
+			}),
+		).toEqual([]);
+		expect(
+			generateScheduleLessons({
+				...base,
+				schedule: "not json",
+				sessionsTotal: 12,
+			}),
+		).toEqual([]);
+		expect(
+			generateScheduleLessons({
+				...base,
+				schedule: JSON.stringify({ days: [], start: "19:00", end: "20:30" }),
+				sessionsTotal: 12,
+			}),
+		).toEqual([]);
+		expect(
+			generateScheduleLessons({
+				...base,
+				schedule: JSON.stringify({ days: [1], start: "19:00", end: "19:00" }),
+				sessionsTotal: 12,
+			}),
+		).toEqual([]);
+	});
+
+	test("enrolling a student generates sessionsTotal upcoming lessons on the kernel snapshot", async () => {
+		const studentId = await t.addStudent(session, "HV có lớp", { classId });
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(enrollment).toBeDefined();
+		const rows = snapshot.lessons.filter(
+			(l) => l.enrollmentId === enrollment?.id,
+		);
+		expect(rows).toHaveLength(12);
+		const daySet = new Set(rows.map((r) => r.day));
+		expect(daySet).toEqual(new Set([2, 4])); // schedule days [1,3] + 1
+		for (const row of rows) {
+			expect(row.status).toBe("upcoming");
+			expect(row.type).toBe("1:1");
+			expect(row.time).toBe("19:00");
+			expect(row.dur).toBe(90);
+		}
+	});
+
+	test("large sessionsTotal (50) still generates atomically", async () => {
+		const bigClassId = await t.createClass(session, "Khóa dài", {
+			type: "communication",
+			skills: [],
+			schedule: { days: [5], start: "09:00", end: "10:00" },
+			sessionsTotal: 50,
+		});
+		const studentId = await t.addStudent(session, "HV khóa dài", {
+			classId: bigClassId,
+		});
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, bigClassId, studentId);
+		expect(
+			snapshot.lessons.filter((l) => l.enrollmentId === enrollment?.id),
+		).toHaveLength(50);
+	});
+
+	test("sessionsTotal = 0 generates zero lessons", async () => {
+		const zeroClassId = await t.createClass(session, "Chưa định số buổi", {
+			type: "communication",
+			skills: [],
+			schedule: { days: [2], start: "19:00", end: "20:30" },
+			sessionsTotal: 0,
+		});
+		const studentId = await t.addStudent(session, "HV zero", {
+			classId: zeroClassId,
+		});
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, zeroClassId, studentId);
+		expect(
+			snapshot.lessons.filter((l) => l.enrollmentId === enrollment?.id),
+		).toEqual([]);
+	});
+
+	test("legacy free-text schedule: student/enrollment/package still create, zero lessons", async () => {
+		const legacyClassId = crypto.randomUUID();
+		await t.db.insert(classTable).values({
+			id: legacyClassId,
+			orgId: await t.orgIdOf(session),
+			name: "Lớp cũ",
+			level: "",
+			type: "ielts",
+			skills: "[]",
+			mode: "Online",
+			schedule: "Tối thứ 3",
+			sessionsTotal: 12,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "",
+			notes: "",
+		});
+		await t.addStudent(session, "HV lớp cũ", { classId: legacyClassId });
+		const snapshot = await t.kernel(session);
+		expect(snapshot.lessons.filter((l) => l.classId === legacyClassId)).toEqual(
+			[],
+		);
+		expect(
+			snapshot.enrollments.filter((e) => e.classId === legacyClassId),
+		).toHaveLength(1);
+		expect(
+			snapshot.packages.filter((p) => p.classId === legacyClassId),
+		).toHaveLength(1);
+	});
+
+	test("group class: two enrollments get independent lesson sets (invariant 2)", async () => {
+		const firstId = await t.addStudent(session, "HV nhóm 1", { classId });
+		const secondId = await t.addStudent(session, "HV nhóm 2", { classId });
+		const snapshot = await t.kernel(session);
+		const firstEnrollment = findEnrollment(snapshot, classId, firstId);
+		const secondEnrollment = findEnrollment(snapshot, classId, secondId);
+		const firstLessons = snapshot.lessons.filter(
+			(l) => l.enrollmentId === firstEnrollment?.id,
+		);
+		const secondLessons = snapshot.lessons.filter(
+			(l) => l.enrollmentId === secondEnrollment?.id,
+		);
+		expect(firstLessons).toHaveLength(12);
+		expect(secondLessons).toHaveLength(12);
+		expect(
+			new Set(secondLessons.map((l) => l.enrollmentId)).has(
+				firstEnrollment?.id ?? "",
+			),
+		).toBe(false);
+	});
+
+	test("divergence pin: class sessionsTotal (12) and package total (10) stay independent on the wire", async () => {
+		const studentId = await t.addStudent(session, "HV gói lệch", {
+			classId,
+			total: 10,
+		});
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(
+			snapshot.lessons.filter((l) => l.enrollmentId === enrollment?.id),
+		).toHaveLength(12);
+		expect(
+			snapshot.packages.find((p) => p.enrollmentId === enrollment?.id)?.total,
+		).toBe(10);
+	});
+
+	test("cross-org: org B cannot enroll into org A's class and sees zero generated lessons", async () => {
+		const orgB = await t.insertUser("Cô Lịch B");
+		const attempt = await t.call("/api/students", {
+			session: orgB,
+			method: "POST",
+			body: {
+				name: "HV intruder",
+				phone: "0900 000 000",
+				parentName: "",
+				total: 10,
+				price: 400000,
+				mode: "Online",
+				classId,
+			},
+		});
+		expect(attempt.status).toBe(404);
+		const snapshotB = await t.kernel(orgB);
+		expect(snapshotB.lessons).toEqual([]);
+		expect(
+			snapshotB.students.find((s) => s.name === "HV intruder"),
+		).toBeUndefined();
+	});
+});
+
+describe("sessionsTotal contract cap (issue #55)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Cap");
+	});
+
+	async function createWithTotal(sessionsTotal: number) {
+		return t.call("/api/classes", {
+			session,
+			method: "POST",
+			body: {
+				name: `Lớp ${sessionsTotal}`,
+				type: "communication",
+				level: "",
+				skills: [],
+				mode: "Online",
+				syllabusId: "",
+				schedule: { days: [2], start: "19:00", end: "20:30" },
+				sessionsTotal,
+				startDate: "",
+			},
+		});
+	}
+
+	test("52 is accepted (weekly × 1 year)", async () => {
+		expect((await createWithTotal(52)).status).toBe(201);
+	});
+
+	test("53 is rejected", async () => {
+		expect((await createWithTotal(53)).status).toBe(400);
+	});
+});
+
+describe("lesson edit (issue #55)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let classId: string;
+	let enrollmentId: string;
+	let lessonId: string;
+
+	const editBody = {
+		day: 4,
+		time: "18:30",
+		dur: 120,
+		topic: "Speaking part 2",
+		zoom: "https://zoom.us/j/123",
+	};
+
+	async function edit(
+		id: string,
+		body: unknown,
+		options: {
+			session?: TestSession;
+			origin?: string | null;
+		} = {},
+	) {
+		return t.call(`/api/lessons/${id}/edit`, {
+			session: options.session ?? session,
+			method: "POST",
+			body,
+			origin: options.origin,
+		});
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Sửa");
+		classId = await t.createClass(session, "Lớp sửa buổi");
+		const studentId = await t.addStudent(session, "HV sửa buổi", {
+			classId,
+		});
+		const snapshot = await t.kernel(session);
+		enrollmentId = findEnrollment(snapshot, classId, studentId)?.id ?? "";
+		lessonId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			topic: "Writing task 1",
+			zoom: "https://zoom.us/j/old",
+		});
+	});
+
+	test("happy path: 200, row updated with all five fields", async () => {
+		const res = await edit(lessonId, editBody);
+		expect(res.status).toBe(200);
+		const row = (await t.kernel(session)).lessons.find(
+			(l) => l.id === lessonId,
+		);
+		expect(row).toMatchObject(editBody);
+	});
+
+	test("sibling lessons are byte-identical after an edit", async () => {
+		const otherId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+		});
+		const before = await t.kernel(session);
+		const res = await edit(lessonId, { ...editBody, topic: "Moved again" });
+		expect(res.status).toBe(200);
+		const after = await t.kernel(session);
+		expect(after.lessons.find((l) => l.id === otherId)).toEqual(
+			before.lessons.find((l) => l.id === otherId),
+		);
+		expect(after.lessons.filter((l) => l.id !== lessonId)).toEqual(
+			before.lessons.filter((l) => l.id !== lessonId),
+		);
+	});
+
+	test("unknown id is 404", async () => {
+		expect((await edit("nope", editBody)).status).toBe(404);
+	});
+
+	test("org B cannot edit org A's lesson; org A unchanged", async () => {
+		const orgB = await t.insertUser("Cô B sửa");
+		const before = (await t.kernel(session)).lessons.find(
+			(l) => l.id === lessonId,
+		);
+		const res = await edit(lessonId, editBody, { session: orgB });
+		expect(res.status).toBe(404);
+		const after = (await t.kernel(session)).lessons.find(
+			(l) => l.id === lessonId,
+		);
+		expect(after).toEqual(before);
+	});
+
+	test("completed lesson cannot be edited (409)", async () => {
+		const id = await t.insertLesson(session, { classId, enrollmentId });
+		expect(
+			(
+				await t.call(`/api/lessons/${id}/check-in`, {
+					session,
+					method: "POST",
+					body: {},
+				})
+			).status,
+		).toBe(200);
+		expect((await edit(id, editBody)).status).toBe(409);
+	});
+
+	test("cancelled lesson cannot be edited (409)", async () => {
+		const id = await t.insertLesson(session, { classId, enrollmentId });
+		expect(
+			(
+				await t.call(`/api/lessons/${id}/cancel`, {
+					session,
+					method: "POST",
+					body: {},
+				})
+			).status,
+		).toBe(200);
+		expect((await edit(id, editBody)).status).toBe(409);
+	});
+
+	test("lesson whose enrollment belongs to another class is 409", async () => {
+		const otherClassId = await t.createClass(session, "Lớp khác chỗ");
+		const otherStudentId = await t.addStudent(session, "HV lệch lớp", {
+			classId: otherClassId,
+		});
+		const snapshot = await t.kernel(session);
+		const otherEnrollmentId =
+			findEnrollment(snapshot, otherClassId, otherStudentId)?.id ?? "";
+		const id = await t.insertLesson(session, {
+			classId, // claims class A, enrollment sits in class B
+			enrollmentId: otherEnrollmentId,
+		});
+		expect((await edit(id, editBody)).status).toBe(409);
+	});
+
+	test("guards: no Origin 403, form content-type 415, extra key 400, missing day 400, empty body 400", async () => {
+		const id = await t.insertLesson(session, { classId, enrollmentId });
+		expect((await edit(id, editBody, { origin: null })).status).toBe(403);
+		const form = await t.app.request(`/api/lessons/${id}/edit`, {
+			method: "POST",
+			headers: {
+				cookie: `better-auth.session_token=${session.token}`,
+				origin: CORS_ORIGIN,
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: "x=1",
+		});
+		expect(form.status).toBe(415);
+		expect((await edit(id, { ...editBody, status: "completed" })).status).toBe(
+			400,
+		);
+		expect((await edit(id, { ...editBody, day: undefined })).status).toBe(400);
+		expect((await edit(id, {})).status).toBe(400);
+	});
+
+	test("contract boundaries: topic cap 500, zoom scheme https-only", async () => {
+		const id = await t.insertLesson(session, { classId, enrollmentId });
+		expect(
+			(
+				await edit(id, {
+					...editBody,
+					topic: "x".repeat(501),
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(await edit(id, { ...editBody, zoom: "javascript:alert(1)" })).status,
+		).toBe(400);
+		expect((await edit(id, { ...editBody, zoom: "not-a-url" })).status).toBe(
+			400,
+		);
+		const ok = await edit(id, { ...editBody, zoom: "https://zoom.us/j/ok" });
+		expect(ok.status).toBe(200);
+	});
+
+	test("full-replace: omitting topic/zoom resets them to empty strings", async () => {
+		const id = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+			topic: "Sẽ bị wipe",
+		});
+		const res = await edit(id, { day: 3, time: "20:00", dur: 60 });
+		expect(res.status).toBe(200);
+		const row = (await t.kernel(session)).lessons.find((l) => l.id === id);
+		expect(row).toMatchObject({ day: 3, time: "20:00", dur: 60, topic: "" });
+	});
+
+	test("replay with the same body is idempotent (200 twice, same state)", async () => {
+		const id = await t.insertLesson(session, { classId, enrollmentId });
+		const first = await edit(id, editBody);
+		const second = await edit(id, editBody);
+		expect(first.status).toBe(200);
+		expect(second.status).toBe(200);
+		const row = (await t.kernel(session)).lessons.find((l) => l.id === id);
+		expect(row).toMatchObject(editBody);
+	});
+
+	test("cancelling one lesson leaves siblings untouched", async () => {
+		const snapshotBefore = await t.kernel(session);
+		const target = snapshotBefore.lessons.find(
+			(l) =>
+				l.classId === classId &&
+				l.enrollmentId === enrollmentId &&
+				l.status === "upcoming",
+		);
+		expect(target).toBeDefined();
+		const res = await t.call(`/api/lessons/${target?.id}/cancel`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		const after = await t.kernel(session);
+		expect(after.lessons.find((l) => l.id === target?.id)?.status).toBe(
+			"cancelled",
+		);
+		expect(after.lessons.filter((l) => l.id !== target?.id)).toEqual(
+			snapshotBefore.lessons.filter((l) => l.id !== target?.id),
+		);
+	});
+});
+
+describe("lesson edit optimistic concurrency (issue #55)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let lessonId: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Đua");
+		const classId = await t.createClass(session, "Lớp concurrent");
+		const studentId = await t.addStudent(session, "HV concurrent", {
+			classId,
+		});
+		const snapshot = await t.kernel(session);
+		const enrollmentId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+		lessonId = await t.insertLesson(session, {
+			classId,
+			enrollmentId,
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			topic: "Original",
+		});
+	});
+
+	test("two concurrent edits with different bodies: exactly one wins, the loser gets 409", async () => {
+		const [first, second] = await Promise.all([
+			t.call(`/api/lessons/${lessonId}/edit`, {
+				session,
+				method: "POST",
+				body: { day: 3, time: "19:00", dur: 90, topic: "Tab A", zoom: "" },
+			}),
+			t.call(`/api/lessons/${lessonId}/edit`, {
+				session,
+				method: "POST",
+				body: { day: 3, time: "19:00", dur: 90, topic: "Tab B", zoom: "" },
+			}),
+		]);
+		const statuses = [first.status, second.status].sort();
+		// Exactly one conditional write matches the pre-read values; the other
+		// finds the row already changed → 0 rows → 409, never a silent loss.
+		expect(statuses).toEqual([200, 409]);
+		const row = (await t.kernel(session)).lessons.find(
+			(l) => l.id === lessonId,
+		);
+		expect(row?.topic).toMatch(/^Tab [AB]$/);
 	});
 });
