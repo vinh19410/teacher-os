@@ -1,7 +1,7 @@
 ---
 title: "Gỡ GCal badge hardcode / chrome giả trên schedule (issue #58)"
 description: "Gỡ hoàn toàn các phần tử UI nói dối trên luồng classes/schedule: Badge 'GCal · Đã bật' hardcode, chip nav tuần no-op, highlight 'hôm nay' giả (todayIdx), lead 'Tuần 19–25/08 · 11 buổi học' hardcode, ngày giả (dayDates + '/08') trên schedule grid, lesson modal và class detail. Không thay bằng stub/no-op nào khác — Zalo/GCal là non-goal roadmap (issue #56 riêng sẽ wire data thật + nav tuần thật)."
-status: pending
+status: completed
 priority: P1
 effort: 2h
 branch: feat/58-remove-schedule-fake-chrome
