@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { LessonModal } from "@/components/schedule/lesson-modal";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { PageHead } from "@/components/ui/page-head";
 import { useData } from "@/lib/data-store";
 import type { LessonType } from "@/lib/mock-data";
-import { dayDates, dayNames } from "@/lib/mock-data";
+import { dayNames } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_auth/schedule")({
 	component: ScheduleRoute,
@@ -24,31 +21,10 @@ const typeBlockClass: Record<LessonType, string> = {
 export function ScheduleRoute() {
 	const { data, studentById } = useData();
 	const [openLessonId, setOpenLessonId] = useState<string | null>(null);
-	const todayIdx = 1;
 
 	return (
 		<div>
-			<PageHead title="Lịch dạy" lead="Tuần 19–25/08 · 11 buổi học" />
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<div className="chip-row flex flex-wrap gap-2">
-					{["← Trước", "Tuần này", "Sau →"].map((label, i) => (
-						<span
-							// biome-ignore lint/suspicious/noArrayIndexKey: static labels
-							key={i}
-							className={
-								i === 1
-									? "rounded-full border border-fg border-solid bg-fg px-[14px] py-[6px] font-medium text-bg text-xs"
-									: "rounded-full border border-line border-solid bg-bg px-[14px] py-[6px] font-medium text-fg-2 text-xs"
-							}
-						>
-							{label}
-						</span>
-					))}
-				</div>
-				<Badge variant="success" dot>
-					GCal · Đã bật
-				</Badge>
-			</div>
+			<PageHead title="Lịch dạy" />
 			<div className="week-cal grid grid-cols-7 gap-2 max-app:grid-cols-1 max-app:gap-3">
 				{dayNames.map((dn, i) => {
 					const lessons = data.lessons
@@ -57,24 +33,11 @@ export function ScheduleRoute() {
 					return (
 						<div
 							key={dn}
-							className={
-								i === todayIdx
-									? "day-col today flex max-app:items-stretch max-app:gap-3"
-									: "day-col flex max-app:items-stretch max-app:gap-3"
-							}
+							className="day-col flex max-app:items-stretch max-app:gap-3"
 						>
 							<div className="pt-2 pb-3 text-center max-app:min-w-16 max-app:border-l-3 max-app:border-l-line-soft max-app:border-l-solid max-app:pt-0 max-app:pb-0 max-app:pl-3 max-app:text-left">
 								<div className="font-semibold text-[11px] text-muted-fg uppercase tracking-[0.04em]">
 									{dn}
-								</div>
-								<div
-									className={
-										i === todayIdx
-											? "mt-0.5 font-display font-semibold text-accent-blue text-lg"
-											: "mt-0.5 font-display font-semibold text-lg"
-									}
-								>
-									{dayDates[i]}
 								</div>
 							</div>
 							<div className="min-w-0 flex-1">
