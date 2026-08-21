@@ -12,10 +12,14 @@ import type { ClassGroup } from "@/lib/mock-data";
 /**
  * Map kernel class rows to the display shape. `studentIds` comes from the
  * org's enrollments; an unassigned syllabus (null) maps to "" like the
- * reducer did. Wave 4: `sessionsDone` derives from completed lessons —
- * distinct (day,time) pairs per class so a 1:2 session (one row per
- * enrollment) counts as one delivered session (invariant 7); the stored
- * class column is no longer read.
+ * reducer did. #56: `sessionsDone` derives from real completed lesson rows —
+ * the generator emits `sessionsTotal` rows PER ENROLLMENT, so delivered
+ * sessions = max completed-row count across the class's enrollments. Weekly
+ * recurrence counts every session (12 rows over 2 slots → 12) and a 1:2
+ * class (one row per enrollment per session) never double-counts. Known
+ * lower-bound: interleaved 1:2 attendance (each student missing different
+ * sessions) under-reports — an exact occurrence-union needs a date column on
+ * lessons. The stored class column is no longer read.
  */
 export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 	const rosterByClass = new Map<string, string[]>();
@@ -25,13 +29,23 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		rosterByClass.set(row.classId, list);
 	}
 
-	const sessionsByClass = new Map<string, Set<string>>();
+	const completedByClass = new Map<string, Map<string, number>>();
 	for (const row of snapshot.lessons) {
 		if (row.status !== "completed") continue;
-		const sessions = sessionsByClass.get(row.classId) ?? new Set<string>();
-		sessions.add(`${row.day}|${row.time}`);
-		sessionsByClass.set(row.classId, sessions);
+		const perEnrollment =
+			completedByClass.get(row.classId) ?? new Map<string, number>();
+		perEnrollment.set(
+			row.enrollmentId,
+			(perEnrollment.get(row.enrollmentId) ?? 0) + 1,
+		);
+		completedByClass.set(row.classId, perEnrollment);
 	}
+
+	const maxCompleted = (classId: string): number => {
+		const perEnrollment = completedByClass.get(classId);
+		if (!perEnrollment) return 0;
+		return Math.max(0, ...perEnrollment.values());
+	};
 
 	return snapshot.classes.map((row) => ({
 		id: row.id,
@@ -43,7 +57,7 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		syllabusId: row.syllabusId ?? "",
 		studentIds: rosterByClass.get(row.id) ?? [],
 		schedule: row.schedule,
-		sessionsDone: sessionsByClass.get(row.id)?.size ?? 0,
+		sessionsDone: maxCompleted(row.id),
 		sessionsTotal: row.sessionsTotal,
 		status: row.status,
 		startDate: row.startDate,
