@@ -36,7 +36,7 @@ CI (`.github/workflows/ci.yml`) chạy 4 step: `pnpm install --frozen-lockfile`,
 - [x] `pnpm check-types` exit 0.
 - [x] `pnpm exec biome check .` exit 0.
 - [x] `pnpm build` exit 0.
-- [x] Grep scoped source + dist: 0 kết quả cho các chuỗi giả.
+- [x] Grep scoped source: 0 kết quả cho các chuỗi giả (dist grep bị .ckignore chặn — không track trong git, CI build riêng; bảo đảm tương đương ở contract test source-level).
 - [x] `reports/evidence.md` tồn tại với evidence thật.
 
 ## Risk Assessment

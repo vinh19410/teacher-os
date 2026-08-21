@@ -60,15 +60,15 @@ detail — cùng luồng classes/schedule nên dọn cùng lúc cho nhất quán
 
 ## Success Criteria
 
-- [ ] `/schedule` không render "GCal · Đã bật" (badge xóa hẳn, không thay bằng gì).
-- [ ] `/schedule` không còn chip "← Trước / Tuần này / Sau →".
-- [ ] `/schedule` không còn highlight cột "hôm nay" giả và số ngày hardcode `dayDates`.
-- [ ] `PageHead` của schedule chỉ còn title "Lịch dạy" (bỏ lead hardcode).
-- [ ] Lesson modal hiển thị `{dayName} · {time} ({dur} phút)`; class detail cột "Ngày" hiển thị `{dayName}` (cột "Giờ" đã có riêng) — không "/08", không "T8"; `day=7` → "CN".
-- [ ] `grep -rn "dayDates\|todayIdx\|GCal\|19–25\|11 buổi học\|← Trước\|Sau →" apps/web/src/routes/_auth/schedule.tsx apps/web/src/components/schedule/lesson-modal.tsx "apps/web/src/routes/_auth/classes/\$classId.tsx" apps/web/src/lib/mock-data.ts` trả về 0 kết quả.
-- [ ] Contract test mới trong `kernel-runtime.contract.test.ts` (schedule không còn fake chrome) pass cùng toàn bộ test hiện hữu — không weaken test nào.
-- [ ] Không thêm component/CTA/stub mới thay thế phần tử bị gỡ.
-- [ ] Gates xanh (mirror CI): `pnpm test`, `pnpm check-types`, `pnpm exec biome check .` (read-only, không `--write`), build web.
+- [x] `/schedule` không render "GCal · Đã bật" (badge xóa hẳn, không thay bằng gì).
+- [x] `/schedule` không còn chip "← Trước / Tuần này / Sau →".
+- [x] `/schedule` không còn highlight cột "hôm nay" giả và số ngày hardcode `dayDates`.
+- [x] `PageHead` của schedule chỉ còn title "Lịch dạy" (bỏ lead hardcode).
+- [x] Lesson modal hiển thị `{dayName} · {time} ({dur} phút)`; class detail cột "Ngày" hiển thị `{dayName}` (cột "Giờ" đã có riêng) — không "/08", không "T8"; `day=7` → "CN".
+- [x] `grep -rn "dayDates\|todayIdx\|GCal\|19–25\|11 buổi học\|← Trước\|Sau →" apps/web/src/routes/_auth/schedule.tsx apps/web/src/components/schedule/lesson-modal.tsx "apps/web/src/routes/_auth/classes/\$classId.tsx" apps/web/src/lib/mock-data.ts` trả về 0 kết quả.
+- [x] Contract test mới trong `kernel-runtime.contract.test.ts` (schedule không còn fake chrome) pass cùng toàn bộ test hiện hữu — không weaken test nào.
+- [x] Không thêm component/CTA/stub mới thay thế phần tử bị gỡ.
+- [x] Gates xanh (mirror CI): `pnpm test`, `pnpm check-types`, `pnpm exec biome check .` (read-only, không `--write`), build web.
 
 ## Risk Assessment
 

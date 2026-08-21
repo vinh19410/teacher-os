@@ -183,6 +183,10 @@ describe("kernel-backed store wiring", () => {
 	});
 
 	test("schedule flow shows no fake chrome — no GCal badge, no-op week nav, hardcoded dates", () => {
+		// The nav-label and GCal locks below are tripwires for #58: they must
+		// keep failing until #56 lands real week nav (and a real GCal
+		// integration, should the roadmap ever un-non-goal it) — at that point
+		// update this lock together with the feature, not before.
 		const schedule = readSrc("../routes/_auth/schedule.tsx");
 		expect(schedule).not.toMatch(/GCal/);
 		expect(schedule).not.toMatch(/todayIdx/);
