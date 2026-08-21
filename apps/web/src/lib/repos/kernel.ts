@@ -83,6 +83,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return { path: `/api/lessons/${action.lessonId}/check-in`, body: {} };
 		case "cancel-lesson":
 			return { path: `/api/lessons/${action.lessonId}/cancel`, body: {} };
+		case "lesson-edit":
+			// Full-replace endpoint: the body must carry all five fields —
+			// an omitted optional would reset that field to "".
+			return {
+				path: `/api/lessons/${action.lessonId}/edit`,
+				body: { ...action.payload },
+			};
 		case "mark-invoice-paid":
 			return {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,

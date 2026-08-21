@@ -182,30 +182,72 @@ describe("kernel-backed store wiring", () => {
 		expect(dashboard).not.toMatch(/data\.invoices/);
 	});
 
-	test("schedule flow shows no fake chrome — no GCal badge, no-op week nav, hardcoded dates", () => {
-		// The nav-label and GCal locks below are tripwires for #58: they must
-		// keep failing until #56 lands real week nav (and a real GCal
-		// integration, should the roadmap ever un-non-goal it) — at that point
-		// update this lock together with the feature, not before.
+	test("schedule flow shows a real week grid — URL-driven nav, computed dates, no fake chrome", () => {
+		// #56 landed real week nav: the grid is URL-driven (?week= via
+		// validateSearch + useSearch + resolveWeek) and every date label is
+		// computed by week-grid. The remaining negative locks below guard the
+		// fakes #58 removed — GCal stays a non-goal until the roadmap says
+		// otherwise, and hardcoded dates must never come back.
 		const schedule = readSrc("../routes/_auth/schedule.tsx");
 		expect(schedule).not.toMatch(/GCal/);
 		expect(schedule).not.toMatch(/todayIdx/);
 		expect(schedule).not.toMatch(/dayDates/);
 		expect(schedule).not.toMatch(/19–25\/08/);
 		expect(schedule).not.toMatch(/11 buổi học/);
-		expect(schedule).not.toMatch(/← Trước/);
-		expect(schedule).not.toMatch(/Sau →/);
-		expect(schedule).not.toMatch(/Tuần này/);
+		// Real week wiring: param read hop + composition + nav controls + a
+		// real (computed) today highlight.
+		expect(schedule).toMatch(/validateSearch/);
+		expect(schedule).toMatch(/useSearch/);
+		expect(schedule).toMatch(/resolveWeek/);
+		expect(schedule).toMatch(/from "@\/lib\/week-grid"/);
+		expect(schedule).toMatch(/todayISOVietnam|isCurrentWeek/);
+		expect(schedule).toMatch(/Tuần trước/);
+		expect(schedule).toMatch(/Tuần sau/);
 
 		const lessonModal = readSrc("../components/schedule/lesson-modal.tsx");
 		expect(lessonModal).not.toMatch(/dayDates/);
 		expect(lessonModal).not.toMatch(/\/08/);
+		// The modal shows the clicked cell's real date via week-grid, never a
+		// fabricated string concat.
+		expect(lessonModal).toMatch(/dateIso/);
+		expect(lessonModal).toMatch(/formatDayMonth/);
 
 		const classDetail = readSrc("../routes/_auth/classes/$classId.tsx");
 		expect(classDetail).not.toMatch(/dayDates/);
 
 		const mockData = readSrc("mock-data.ts");
 		expect(mockData).not.toMatch(/dayDates/);
+	});
+
+	test("lesson edit form echoes all five fields and closes only on a refreshed result", () => {
+		const lessonModal = readSrc("../components/schedule/lesson-modal.tsx");
+		// Edit entry point only for upcoming lessons; the form is a child.
+		expect(lessonModal).toMatch(/Sửa buổi/);
+		expect(lessonModal).toMatch(/LessonEditForm/);
+		// The modal stays mounted across lessons — without a reset effect,
+		// editing lesson A would leak the form state into lesson B (same trap
+		// as the grade-modal reset pinned above).
+		expect(lessonModal).toMatch(/useEffect\(/);
+		expect(lessonModal).toMatch(/setEditing\(false\)/);
+		// Unlike the idempotent check-in/cancel (void run + close), the edit
+		// submit goes through the shared form-submit hook (awaits the outcome,
+		// keeps typed input on failure) and only closes on "refreshed".
+		expect(lessonModal).toMatch(/useKernelFormSubmit/);
+		expect(lessonModal).toMatch(/"refreshed"/);
+
+		const editForm = readSrc("../components/schedule/lesson-edit-form.tsx");
+		// Client validation reuses the contract schema (DRY — no second
+		// regex); DOM strings are coerced with Number() before safeParse.
+		expect(editForm).toMatch(/lessonEditSchema/);
+		expect(editForm).toMatch(/dayNames/);
+		expect(editForm).toMatch(/Number\(/);
+		// No fabricated date strings — same anti-fake-date lock as the modal.
+		expect(editForm).not.toMatch(/\/08/);
+
+		const dataActions = readSrc("data-actions.ts");
+		// "lesson-edit" is the class-lesson action; "edit-lesson" belongs to
+		// the syllabus lesson and must stay untouched (name-collision pin).
+		expect(dataActions).toMatch(/"lesson-edit"/);
 	});
 
 	test("direct actions await the outcome, disable while pending and report visibly", () => {

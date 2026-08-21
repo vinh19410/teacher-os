@@ -4,6 +4,20 @@ import type { Scores, SyllabusLesson } from "./mock-data";
 export type KernelAction =
 	| { type: "check-in"; lessonId: string }
 	| { type: "cancel-lesson"; lessonId: string }
+	| {
+			/** Scheduled-lesson edit (issue #56) — full-replace 5 fields, so the
+			 * payload always carries all five (omitted optionals reset to "").
+			 * Named "lesson-edit" because "edit-lesson" is the syllabus lesson. */
+			type: "lesson-edit";
+			lessonId: string;
+			payload: {
+				day: number;
+				time: string;
+				dur: number;
+				topic: string;
+				zoom: string;
+			};
+	  }
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| { type: "add-comment-bank"; text: string; operationId: string }
