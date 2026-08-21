@@ -136,6 +136,16 @@ describe("kernel-backed store wiring", () => {
 		}
 	});
 
+	test("add-class start date is a future-only native date input", () => {
+		const src = readSrc("../components/modals/add-class-modal.tsx");
+		expect(src).toMatch(/type="date"/);
+		expect(src).toMatch(/min=\{minimumStartDate\}/);
+		expect(src).toMatch(/<form noValidate onSubmit=\{submit\}>/);
+		expect(src).toMatch(/useState\(getTomorrowDateInputValue\)/);
+		expect(src).toMatch(/setStartDate\(\(current\) =>/);
+		expect(src).toMatch(/isFutureDateInputValue\(startDate\)/);
+	});
+
 	test("add-syllabus navigates only on the refreshed result with the server id", () => {
 		const src = readSrc("../components/modals/add-syllabus-modal.tsx");
 		expect(src).toMatch(/result\?\.kind === "refreshed"/);

@@ -3,12 +3,16 @@ import {
 	type ClassType,
 	IELTS_SKILLS,
 } from "@teacher-os/api/contracts";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import {
+	getTomorrowDateInputValue,
+	isFutureDateInputValue,
+} from "@/lib/date-input";
 import { addMinutes } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
@@ -46,9 +50,17 @@ export function AddClassModal({
 	const [endTime, setEndTime] = useState(DEFAULT_END);
 	const [endTouched, setEndTouched] = useState(false);
 	const [total, setTotal] = useState("12");
-	const [startDate, setStartDate] = useState("19/08");
+	const [startDate, setStartDate] = useState(getTomorrowDateInputValue);
+	const minimumStartDate = getTomorrowDateInputValue();
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
+
+	useEffect(() => {
+		if (!open) return;
+		setStartDate((current) =>
+			isFutureDateInputValue(current) ? current : minimumStartDate,
+		);
+	}, [minimumStartDate, open]);
 
 	function resetForm() {
 		setName("");
@@ -57,6 +69,7 @@ export function AddClassModal({
 		setStartTime(DEFAULT_START);
 		setEndTime(DEFAULT_END);
 		setEndTouched(false);
+		setStartDate(getTomorrowDateInputValue());
 	}
 
 	function changeStart(next: string) {
@@ -85,6 +98,10 @@ export function AddClassModal({
 		}
 		if (startTime === endTime) {
 			setError("Giờ kết thúc phải khác giờ bắt đầu.");
+			return;
+		}
+		if (!isFutureDateInputValue(startDate)) {
+			setError("Vui lòng chọn ngày bắt đầu sau hôm nay.");
 			return;
 		}
 		const result = await run({
@@ -120,7 +137,7 @@ export function AddClassModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Tạo lớp mới"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên lớp *" error={error}>
 					<Input
 						value={name}
@@ -209,7 +226,9 @@ export function AddClassModal({
 					</Field>
 					<Field label="Ngày bắt đầu">
 						<Input
+							type="date"
 							value={startDate}
+							min={minimumStartDate}
 							onChange={(e) => setStartDate(e.target.value)}
 						/>
 					</Field>
