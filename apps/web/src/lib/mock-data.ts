@@ -154,7 +154,6 @@ export type KernelHydratedData = Pick<
 >;
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-export const dayDates = [18, 19, 20, 21, 22, 23, 24];
 
 /** Single source for the display label of the wire enum id. */
 export const CLASS_TYPE_LABELS: Record<ClassType, string> = {

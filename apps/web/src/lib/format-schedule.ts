@@ -43,6 +43,17 @@ export function formatSchedule(raw: string): string {
 	return `${days} · ${schedule.start}–${schedule.end}`;
 }
 
+/**
+ * Label for a lesson's weekday. `lesson.day` is 1-7 with 1 = Monday —
+ * the lesson-day convention (server generates `scheduleDay + 1`) — NOT the
+ * 0-based `parseSchedule().days` used by the class schedule JSON. Never a
+ * calendar date: the schedule grid shows real dates only when backed by
+ * real lesson data (issue #56).
+ */
+export function lessonDayLabel(day: number): string {
+	return dayNames[day - 1] ?? `day ${day}`;
+}
+
 /** Add minutes to "HH:MM", wrapping past midnight (23:00 + 90 → "00:30"). */
 export function addMinutes(hhmm: string, minutes: number): string {
 	const [h, m] = hhmm.split(":").map(Number);

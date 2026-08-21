@@ -18,8 +18,8 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { formatSchedule } from "@/lib/format-schedule";
-import { CLASS_TYPE_LABELS, classMeta, dayDates } from "@/lib/mock-data";
+import { formatSchedule, lessonDayLabel } from "@/lib/format-schedule";
+import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -190,7 +190,7 @@ function ClassDetailRoute() {
 							return {
 								cells: [
 									<span key="d" className="font-mono text-meta text-xs">
-										T{l.day + 1} {dayDates[l.day - 1]}/08
+										{lessonDayLabel(l.day)}
 									</span>,
 									<span key="t" className="font-mono">
 										{l.time}

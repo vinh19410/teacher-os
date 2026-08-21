@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
-import { dayDates } from "@/lib/mock-data";
+import { lessonDayLabel } from "@/lib/format-schedule";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export function LessonModal({
@@ -35,8 +35,7 @@ export function LessonModal({
 			<div className="flex flex-col gap-1">
 				<span className="font-medium text-muted-fg text-xs">Thời gian</span>
 				<div className="font-mono text-meta text-xs">
-					T{lesson.day + 1} {dayDates[lesson.day - 1]}/08 · {lesson.time} (
-					{lesson.dur} phút)
+					{lessonDayLabel(lesson.day)} · {lesson.time} ({lesson.dur} phút)
 				</div>
 			</div>
 			<div className="flex flex-col gap-1">

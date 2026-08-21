@@ -182,6 +182,32 @@ describe("kernel-backed store wiring", () => {
 		expect(dashboard).not.toMatch(/data\.invoices/);
 	});
 
+	test("schedule flow shows no fake chrome — no GCal badge, no-op week nav, hardcoded dates", () => {
+		// The nav-label and GCal locks below are tripwires for #58: they must
+		// keep failing until #56 lands real week nav (and a real GCal
+		// integration, should the roadmap ever un-non-goal it) — at that point
+		// update this lock together with the feature, not before.
+		const schedule = readSrc("../routes/_auth/schedule.tsx");
+		expect(schedule).not.toMatch(/GCal/);
+		expect(schedule).not.toMatch(/todayIdx/);
+		expect(schedule).not.toMatch(/dayDates/);
+		expect(schedule).not.toMatch(/19–25\/08/);
+		expect(schedule).not.toMatch(/11 buổi học/);
+		expect(schedule).not.toMatch(/← Trước/);
+		expect(schedule).not.toMatch(/Sau →/);
+		expect(schedule).not.toMatch(/Tuần này/);
+
+		const lessonModal = readSrc("../components/schedule/lesson-modal.tsx");
+		expect(lessonModal).not.toMatch(/dayDates/);
+		expect(lessonModal).not.toMatch(/\/08/);
+
+		const classDetail = readSrc("../routes/_auth/classes/$classId.tsx");
+		expect(classDetail).not.toMatch(/dayDates/);
+
+		const mockData = readSrc("mock-data.ts");
+		expect(mockData).not.toMatch(/dayDates/);
+	});
+
 	test("direct actions await the outcome, disable while pending and report visibly", () => {
 		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
 		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
