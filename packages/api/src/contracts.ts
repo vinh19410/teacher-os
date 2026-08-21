@@ -54,7 +54,8 @@ export const classCreateSchema = z
 			/** end <= start means the session crosses midnight — valid. */
 			end: z.string().regex(TIME_REGEX),
 		}),
-		sessionsTotal: z.number().int().min(0).default(12),
+		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
+		sessionsTotal: z.number().int().min(0).max(52).default(12),
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
@@ -152,6 +153,31 @@ export type CommentBankCreate = z.infer<typeof commentBankCreateSchema>;
  */
 export const lessonActionSchema = z.object({}).strict();
 export type LessonAction = z.infer<typeof lessonActionSchema>;
+
+/**
+ * Lesson edit (issue #55) — full-replace, upcoming-only. day: 1 = Monday …
+ * 7 = Sunday (lesson-day convention; the class schedule JSON is 0-based —
+ * the off-by-one is pinned here). WARNING for consumers (#56): omitted
+ * optional fields reset to "" — send all five fields or topic/zoom are wiped.
+ * zoom only accepts "" or an https:// URL (it lands in the Zalo reminder
+ * template, so scheme injection must die at the boundary).
+ */
+export const lessonEditSchema = z
+	.object({
+		day: z.number().int().min(1).max(7),
+		time: z.string().regex(TIME_REGEX),
+		dur: z.number().int().min(1).max(1440),
+		topic: z.string().max(500).default(""),
+		zoom: z
+			.string()
+			.max(2048)
+			.default("")
+			.refine((value) => value === "" || value.startsWith("https://"), {
+				message: "zoom phải là URL https:// hoặc rỗng",
+			}),
+	})
+	.strict();
+export type LessonEdit = z.infer<typeof lessonEditSchema>;
 
 /** Mark-paid accepts only the display method; amount/status remain server-owned. */
 export const invoiceMarkPaidSchema = z
