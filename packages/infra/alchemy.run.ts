@@ -24,19 +24,37 @@ const topology = process.env.APP_DOMAIN
 	? resolveDomainTopology(process.env.APP_DOMAIN)
 	: undefined;
 
+// The topology-unset branch is entered by dev AND by staging/prod deploys that
+// lack inline APP_DOMAIN, so the dev CORS default must never apply to deploys.
+// `alchemy dev` evaluates this file inside a spawned child process whose argv
+// is empty, so the command name is unusable here; alchemy sets ALCHEMY_DEV=true
+// only on that child (deploy/plan evaluate in-process and leave it unset). If
+// ALCHEMY_DEV ever goes missing, dev fails loud demanding an explicit
+// CORS_ORIGIN instead of silently using the wrong origin.
+const isDevCommand = process.env.ALCHEMY_DEV === "true";
+
 // An explicit CORS_ORIGIN that disagrees with APP_DOMAIN silently breaks
 // both Hono CORS and better-auth trustedOrigins (Google sign-in fails at the
-// callback, not just CORS), so make the disagreement impossible to miss.
+// callback, not just CORS), so fail the whole run before any resource is
+// touched — no legitimate combination sets both to different values.
 // dotenv precedence: packages/infra/.env wins over apps/*/.env.
 if (
 	topology &&
 	process.env.CORS_ORIGIN &&
 	process.env.CORS_ORIGIN.trim() !== topology.appOrigin
 ) {
-	console.warn(
-		`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} overrides the derived ${topology.appOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell unless the override is intentional.`,
+	throw new Error(
+		`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} overrides the derived ${topology.appOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
 	);
 }
+
+const corsOriginConfig = topology
+	? Config.string("CORS_ORIGIN").pipe(Config.withDefault(topology.appOrigin))
+	: isDevCommand
+		? Config.string("CORS_ORIGIN").pipe(
+				Config.withDefault("http://localhost:8001"),
+			)
+		: Config.string("CORS_ORIGIN");
 
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
@@ -50,11 +68,7 @@ export const server = Cloudflare.Worker("server", {
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,
-		CORS_ORIGIN: topology
-			? Config.string("CORS_ORIGIN").pipe(
-					Config.withDefault(topology.appOrigin),
-				)
-			: Config.string("CORS_ORIGIN"),
+		CORS_ORIGIN: corsOriginConfig,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",

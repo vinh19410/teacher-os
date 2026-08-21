@@ -17,7 +17,7 @@ environment — never editing this runbook.
 | --- | --- | --- |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: app.<APP_DOMAIN>` |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
-| `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN` (explicit override still possible) |
+| `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -25,8 +25,9 @@ environment — never editing this runbook.
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 
 With `APP_DOMAIN` unset (local dev and staging), the stack keeps its generated
-`workers.dev` URLs, per-host cookies, and an explicit `CORS_ORIGIN` is
-required. Derived-value unit tests live in
+`workers.dev` URLs and per-host cookies. `alchemy dev` defaults `CORS_ORIGIN`
+to `http://localhost:8001`; staging deploys require it inline. Derived-value
+unit tests live in
 `packages/infra/src/topology.test.ts` and `packages/auth/src/topology.test.ts`.
 
 ## Environments and stages
@@ -92,9 +93,12 @@ migration/recovery rehearsal.
 ```bash
 cd packages/infra
 cp .env.example .env         # fill non-secret values; secrets per inventory
-# First bootstrap only: deploy once to learn the generated web URL, then set
-# CORS_ORIGIN in .env to that URL and deploy again (two-step, one time).
-pnpm alchemy deploy --stage staging
+# First bootstrap only: deploy once to learn the generated web URL, then pass
+# that URL as an inline CORS_ORIGIN and deploy again (two-step, one time).
+# Never persist CORS_ORIGIN into .env — a leftover value shadowed origins in
+# the 2026-08-20 NO-GO and deploys now fail hard on that mismatch.
+CORS_ORIGIN=http://localhost:8001 pnpm alchemy deploy --stage staging
+CORS_ORIGIN=<staging-web-url> pnpm alchemy deploy --stage staging
 ```
 
 Record the staging D1 name/ID in the release evidence (ID itself stays out of
@@ -105,8 +109,11 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 
 ```bash
 cd packages/infra
-# .env: APP_DOMAIN=<domain>, secrets per inventory, CORS_ORIGIN unset (derived)
-pnpm alchemy deploy --stage prod
+# Secrets per inventory stay in .env. APP_DOMAIN and CORS_ORIGIN are never
+# persisted: APP_DOMAIN is passed inline (read -rs keeps the hostname out of
+# shell history) and the derived https://app.<domain> CORS origin wins.
+printf "APP_DOMAIN (bare domain, not echoed): " && read -rs APP_DOMAIN && echo
+env "APP_DOMAIN=$APP_DOMAIN" pnpm alchemy deploy --stage prod
 ```
 
 Alchemy applies D1 migrations as part of the deploy. Migrations are
@@ -154,7 +161,9 @@ back by editing migrations.
 
 ```bash
 git revert <bad commits>       # or check out the last good release commit
-cd packages/infra && pnpm alchemy deploy --stage prod
+cd packages/infra
+printf "APP_DOMAIN (bare domain, not echoed): " && read -rs APP_DOMAIN && echo
+env "APP_DOMAIN=$APP_DOMAIN" pnpm alchemy deploy --stage prod
 ```
 
 If a migration must be undone, that is a **restore**, not a rollback: stop,
