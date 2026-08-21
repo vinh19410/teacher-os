@@ -41,17 +41,17 @@ Hard invariant: the existing auth wiring must be preserved unchanged — `authCl
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Auth shell and brand panel](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Auth tabs and forms](./phase-02-auth-tabs-and-forms.md) | Pending |
-| 3 | [Phase 3: Polish and verification](./phase-03-polish-and-verification.md) | Pending |
+| 1 | [Phase 1: Auth shell and brand panel](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Auth tabs and forms](./phase-02-auth-tabs-and-forms.md) | Completed |
+| 3 | [Phase 3: Polish and verification](./phase-03-polish-and-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Auth flows unchanged: real sign-in, sign-up and Google redirect work against the dev server; zod messages identical; errors still surface via sonner toast; a sign-in from `/login?returnUrl=/classes` lands on `/classes` (returnUrl round-trip preserved); `window.location.assign(validateReturnUrl(returnUrl))` full-page semantics preserved.
-- [ ] Design fidelity: side-by-side screenshot vs `auth-redesign.html` shows no visible deltas at 1280px (typography, spacing, colors, mock card, chips, progress bar).
-- [ ] A11y pass: tablist/tab/tabpanel roles correct, arrow-key nav with wrap, roving tabIndex, focus-visible ring on every control, password toggle announces state; hidden panel is not tabbable; no `aria-hidden` on visible content.
-- [ ] Responsive matrix 360/420/768/960/1280/1920: no horizontal scroll, ≤960px collapses per export (brand panel centers, mock/sub/head/foot hidden, mobile-brand row shown), ≤420px tighter padding + 24px title. (960px is the auth export's own boundary and deliberately diverges from the app-wide `--breakpoint-app: 921px`; use `max-[960px]:` arbitrary variants, do not touch the token.)
-- [ ] `pnpm check`, `pnpm check-types` (root script: vite build + tsc --noEmit), and `pnpm test` green; no new dependencies; no `packages/ui` changes.
+- [x] Auth flows unchanged: real sign-in, sign-up and Google redirect work against the dev server; zod messages identical; errors still surface via sonner toast; a sign-in from `/login?returnUrl=/classes` lands on `/classes` (returnUrl round-trip preserved); `window.location.assign(validateReturnUrl(returnUrl))` full-page semantics preserved.
+- [x] Design fidelity: side-by-side screenshot vs `auth-redesign.html` shows no visible deltas at 1280px (typography, spacing, colors, mock card, chips, progress bar).
+- [x] A11y pass: tablist/tab/tabpanel roles correct, arrow-key nav with wrap, roving tabIndex, focus-visible ring on every control, password toggle announces state; hidden panel is not tabbable; no `aria-hidden` on visible content.
+- [x] Responsive matrix 360/420/768/960/1280/1920: no horizontal scroll, ≤960px collapses per export (brand panel centers, mock/sub/head/foot hidden, mobile-brand row shown), ≤420px tighter padding + 24px title. (960px is the auth export's own boundary and deliberately diverges from the app-wide `--breakpoint-app: 921px`; use `max-[960px]:` arbitrary variants, do not touch the token.)
+- [x] `pnpm check`, `pnpm check-types` (root script: vite build + tsc --noEmit), and `pnpm test` green; no new dependencies; no `packages/ui` changes.
 
 ## Red Team Review
 

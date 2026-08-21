@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Extract reducer and lock invariants"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: [1]

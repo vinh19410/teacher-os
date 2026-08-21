@@ -31,11 +31,11 @@ Design source: Open Design export `auth-redesign.html` (provided locally by the 
 
 ### Acceptance criteria
 
-- [ ] Auth flows unchanged: real sign-in, sign-up and Google redirect work against the dev server; zod messages identical; errors still surface via sonner toast.
-- [ ] Design fidelity: side-by-side screenshot vs the export shows no visible deltas at 1280px (typography, spacing, colors, mock card, chips, progress bar).
-- [ ] A11y pass: tablist/tab/tabpanel roles correct, arrow-key nav with wrap, roving tabIndex, focus-visible ring on every control, password toggle announces state; hidden panel is not tabbable.
-- [ ] Responsive matrix 360/420/768/960/1280/1920: no horizontal scroll; ≤960px collapses per export; ≤420px tighter padding + 24px title.
-- [ ] `pnpm check` and `pnpm test` green; no new dependencies; no `packages/ui` changes.
-- [ ] Reload preserves last tab (localStorage); blocked storage falls back to `signup` without crashing.
+- [x] Auth flows unchanged: real sign-in, sign-up and Google redirect work against the dev server; zod messages identical; errors still surface via sonner toast.
+- [x] Design fidelity: side-by-side screenshot vs the export shows no visible deltas at 1280px (typography, spacing, colors, mock card, chips, progress bar).
+- [x] A11y pass: tablist/tab/tabpanel roles correct, arrow-key nav with wrap, roving tabIndex, focus-visible ring on every control, password toggle announces state; hidden panel is not tabbable.
+- [x] Responsive matrix 360/420/768/960/1280/1920: no horizontal scroll; ≤960px collapses per export; ≤420px tighter padding + 24px title.
+- [x] `pnpm check` and `pnpm test` green; no new dependencies; no `packages/ui` changes.
+- [x] Reload preserves last tab (localStorage); blocked storage falls back to `signup` without crashing.
 
 Label: `ready to review`

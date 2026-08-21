@@ -88,18 +88,20 @@ This is a characterization suite of the mock store. It does **not** prove every 
 
 | Phase | Name | Status |
 |---|---|---|
-| 1 | [Scaffold Vitest runner](./phase-01-start.md) | Pending |
-| 2 | [Extract reducer and lock invariants](./phase-02-extract-reducer-and-lock-invariants.md) | Pending |
-| 3 | [Wire tests into CI quality gate](./phase-03-wire-tests-into-ci-quality-gate.md) | Pending |
+| 1 | [Scaffold Vitest runner](./phase-01-start.md) | Completed |
+| 2 | [Extract reducer and lock invariants](./phase-02-extract-reducer-and-lock-invariants.md) | Completed |
+| 3 | [Wire tests into CI quality gate](./phase-03-wire-tests-into-ci-quality-gate.md) | Completed |
 
 ## Acceptance Criteria
 
-- [ ] `apps/web` has Vitest ≥ 4.1 and `pnpm --filter web test` exits 0
-- [ ] `reducer` is a named export from `data-store-reducer.ts`; `data-store.tsx` re-exports `Action` and uses that same `reducer` in `useReducer`
-- [ ] Tests cover: check-in `l3` (`upcoming`) package math; completed `l1` no-op (`toBe` same ref); cancelled `l9` current hole (+1); mark-paid; grade raw scores; syllabus create vs mutate totals; cancel-lesson / add-student / add-class / update-class-notes shape
-- [ ] After check-in `l3`, `s1.pkg.done += 1` and `remaining = max(0, total - done)`; `classes` (incl. `sessionsDone`) unchanged. Same next-state fields are what students list (`:68`), student detail (`:139-140`), class roster (`:139`), and tuition package table (`:76-87`) render — not StatCards
-- [ ] CI YAML has a step whose entire command is `pnpm test`; contract also asserts web `vitest run` + turbo `test` task
-- [ ] Finished tree: `pnpm exec biome check .` and `pnpm check-types` stay green (no missing-module intermediate on the branch tip)
+- [x] `apps/web` has Vitest ≥ 4.1 and `pnpm --filter web test` exits 0
+- [x] `reducer` is a named export from `data-store-reducer.ts`; `data-store.tsx` re-exports `Action` and uses that same `reducer` in `useReducer`
+- [x] Tests cover: check-in `l3` (`upcoming`) package math; completed `l1` no-op (`toBe` same ref); cancelled `l9` current hole (+1); mark-paid; grade raw scores; syllabus create vs mutate totals; cancel-lesson / add-student / add-class / update-class-notes shape
+- [x] After check-in `l3`, `s1.pkg.done += 1` and `remaining = max(0, total - done)`; `classes` (incl. `sessionsDone`) unchanged. Same next-state fields are what students list (`:68`), student detail (`:139-140`), class roster (`:139`), and tuition package table (`:76-87`) render — not StatCards
+- [x] CI YAML has a step whose entire command is `pnpm test`; contract also asserts web `vitest run` + turbo `test` task
+- [x] Finished tree: `pnpm exec biome check .` and `pnpm check-types` stay green (no missing-module intermediate on the branch tip)
+
+Shipped 2026-08-16 (issue #4). Wave 0 later moved runtime off `useReducer`; reducer + tests remain as historical fixtures. Wave 4 made check-in derive-only (pkg counters no longer written in the reducer).
 
 ## Ship
 

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Polish and verification"
-status: pending
+status: completed
 priority: P2
 effort: "0.25-0.5d"
 dependencies: [1, 2]

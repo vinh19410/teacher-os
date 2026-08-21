@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Scaffold Vitest runner"
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 dependencies: []

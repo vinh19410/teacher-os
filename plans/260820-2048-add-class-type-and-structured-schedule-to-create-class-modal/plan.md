@@ -47,19 +47,19 @@ Hiện tại class có `skill: string` đơn chọn (Writing…/Giao tiếp tr�
 
 | Relationship | Plan | Status |
 |-------------|------|--------|
-| none | `260820-2029-add-tanstack-query-for-api-data-state-management` | pending |
+| none | `260820-2029-add-tanstack-query-for-api-data-state-management` | completed |
 
 Không có quan hệ blockedBy/blocks: plan TanStack chỉ refactor `data-provider.tsx` + command bus internals và cam kết không đổi call-site `useData()`; plan này không đụng 2 file đó. **Lưu ý phối hợp**: cả hai có thể cùng sửa `apps/web/src/lib/repos/kernel.test.ts` (fixture add-class vs test bus 4-state) — rebase trước khi merge cái sau.
 
 ## Success Criteria
 
-- [ ] Tạo lớp Giao tiếp thành công không cần kỹ năng; card/detail không hiển thị kỹ năng.
-- [ ] Tạo lớp IELTS bắt buộc chọn ≥1 kỹ năng (chặn cả ở server — POST ielts+skills rỗng → 400), chọn được nhiều; display join bằng ", ".
-- [ ] Chọn start 19:00 → end tự thành 20:30; sửa tay end được giữ khi đổi start lại.
-- [ ] Không chọn thứ nào → không submit được (thông báo lỗi tiếng Việt).
-- [ ] Class tạo trước migration (schedule free-text) vẫn hiển thị nguyên chuỗi cũ; class cũ `skill=''` migrate thành `skills='[]'` (không corrupt `'["[]"]'`).
-- [ ] POST `/api/classes` thiếu/sai schedule hợp lệ → 400; snapshot trả `type` + `skills: string[]`.
-- [ ] `pnpm check` / `pnpm test` / `pnpm check-types` / `pnpm build` pass.
+- [x] Tạo lớp Giao tiếp thành công không cần kỹ năng; card/detail không hiển thị kỹ năng.
+- [x] Tạo lớp IELTS bắt buộc chọn ≥1 kỹ năng (chặn cả ở server — POST ielts+skills rỗng → 400), chọn được nhiều; display join bằng ", ".
+- [x] Chọn start 19:00 → end tự thành 20:30; sửa tay end được giữ khi đổi start lại.
+- [x] Không chọn thứ nào → không submit được (thông báo lỗi tiếng Việt).
+- [x] Class tạo trước migration (schedule free-text) vẫn hiển thị nguyên chuỗi cũ; class cũ `skill=''` migrate thành `skills='[]'` (không corrupt `'["[]"]'`).
+- [x] POST `/api/classes` thiếu/sai schedule hợp lệ → 400; snapshot trả `type` + `skills: string[]`.
+- [x] `pnpm check` / `pnpm test` / `pnpm check-types` / `pnpm build` pass.
 
 ## Open Questions
 

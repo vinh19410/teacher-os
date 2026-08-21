@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Auth tabs and forms"
-status: pending
+status: completed
 priority: P1
 effort: "0.75-1d"
 dependencies: [1]
