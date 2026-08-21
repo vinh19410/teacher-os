@@ -115,7 +115,7 @@ pnpm alchemy deploy --stage prod      # production
 
 ### Production topology
 
-Set `APP_DOMAIN` (bare lowercase domain) in `packages/infra/.env` to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, and cross-subdomain session cookies all derive from it (see `packages/infra/src/topology.ts`). Without `APP_DOMAIN`, deploys keep their generated `workers.dev` URLs and require an explicit `CORS_ORIGIN`.
+Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, and cross-subdomain session cookies all derive from it (see `packages/infra/src/topology.ts`). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto the production topology. Without `APP_DOMAIN`, deploys keep their generated `workers.dev` URLs; `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001` and staging takes it inline.
 
 Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 

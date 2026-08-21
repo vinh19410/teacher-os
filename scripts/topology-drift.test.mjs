@@ -25,3 +25,38 @@ test("runbook google redirect URI matches the mount path", () => {
 		"runbook documents the exact google redirect URI",
 	);
 });
+
+test("dev CORS default in alchemy.run.ts matches the web dev port", () => {
+	const vite = read("../apps/web/vite.config.ts");
+	const webPort = vite.match(/port:\s*(\d+)/)?.[1];
+	assert.ok(webPort, "dev port found in apps/web/vite.config.ts");
+	const run = read("../packages/infra/alchemy.run.ts");
+	const devDefault = run.match(
+		/withDefault\("(http:\/\/localhost:\d+)"\)/,
+	)?.[1];
+	assert.ok(
+		devDefault,
+		"dev CORS default found in packages/infra/alchemy.run.ts",
+	);
+	assert.equal(devDefault, `http://localhost:${webPort}`);
+});
+
+test("runbook never persists CORS_ORIGIN or APP_DOMAIN into .env", () => {
+	const runbook = read("../docs/production-release-runbook.md");
+	assert.ok(
+		!runbook.includes("CORS_ORIGIN in .env"),
+		"runbook must direct staging CORS_ORIGIN inline, not into .env (leftover values caused the 2026-08-20 NO-GO)",
+	);
+	assert.ok(
+		!runbook.includes(".env: APP_DOMAIN"),
+		"runbook deploy must use inline APP_DOMAIN, not a persisted .env value",
+	);
+});
+
+test(".env.example keeps CORS_ORIGIN commented out", () => {
+	const example = read("../packages/infra/.env.example");
+	assert.ok(
+		!/^CORS_ORIGIN=/m.test(example),
+		"CORS_ORIGIN must stay commented in .env.example — dev defaults in code, staging passes it inline",
+	);
+});

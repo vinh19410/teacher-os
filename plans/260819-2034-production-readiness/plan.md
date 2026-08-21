@@ -7,7 +7,7 @@ effort: "6-9d"
 issue: 28
 branch: develop
 tags: [infra, auth, database, frontend, critical]
-blockedBy: [260820-2029-add-tanstack-query-for-api-data-state-management]
+blockedBy: [260821-0935-unblock-production-uat-operator-inputs]
 blocks: []
 created: 2026-08-19
 ---
@@ -90,7 +90,7 @@ P5 truthful mutations ─────┘                         │
 
 ## Cross-plan dependencies
 
-No unfinished plan blocks this roadmap. The completed persistence plan is a prerequisite already merged: [class-centric kernel](../260818-1101-persist-class-centric-domain-kernel/plan.md).
+Phase 6 is blocked on the 5 operator inputs of blocker #41, delivered by [Unblock production UAT operator inputs](../260821-0935-unblock-production-uat-operator-inputs/plan.md) (updated 2026-08-21; replaces the stale ref to the completed tanstack-query plan). The completed persistence plan is a prerequisite already merged: [class-centric kernel](../260818-1101-persist-class-centric-domain-kernel/plan.md).
 
 ## External references
 
