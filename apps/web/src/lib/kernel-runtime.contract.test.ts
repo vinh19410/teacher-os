@@ -157,6 +157,31 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/refreshed result — a committed/);
 	});
 
+	test("dashboard reads today and at-risk from kernel helpers, not hardcoded KPIs", () => {
+		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
+		expect(dashboard).toMatch(/from "@\/lib\/dashboard-from-kernel"/);
+		expect(dashboard).toMatch(/lessonsToday\(/);
+		expect(dashboard).toMatch(/atRiskRows\(/);
+		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
+		expect(dashboard).toMatch(/void run\(/);
+		expect(dashboard).toMatch(/disabled=\{busy \|\| isPending\(l\.id\)\}/);
+		expect(dashboard).not.toMatch(/cô Lan/);
+		expect(dashboard).not.toMatch(/Thứ Ba, 19\/08/);
+		expect(dashboard).not.toMatch(/19–25\/08/);
+		expect(dashboard).not.toMatch(/Tuần này/);
+		expect(dashboard).not.toMatch(/7\.5/);
+		expect(dashboard).not.toMatch(/6\.2tr/);
+		expect(dashboard).not.toMatch(/2\.0tr/);
+		expect(dashboard).not.toMatch(/Quốc Bảo/);
+		expect(dashboard).not.toMatch(/Minh Anh/);
+		expect(dashboard).not.toMatch(/INV-084/);
+		expect(dashboard).not.toMatch(/l\.day === 2/);
+		expect(dashboard).not.toMatch(/s\.atRisk/);
+		expect(dashboard).not.toMatch(/nợ học phí/);
+		expect(dashboard).not.toMatch(/fmtK/);
+		expect(dashboard).not.toMatch(/data\.invoices/);
+	});
+
 	test("direct actions await the outcome, disable while pending and report visibly", () => {
 		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
 		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
