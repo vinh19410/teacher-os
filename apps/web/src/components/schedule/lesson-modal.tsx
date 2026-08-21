@@ -44,12 +44,13 @@ export function LessonModal({
 	// The modal stays mounted across lessons — without this reset, closing an
 	// edit session on lesson A would leak the form (and its submit error /
 	// notice state) into lesson B (same trap the grade-modal reset guards
-	// against).
+	// against). `open` alone is the trigger: the UI opens one lesson per open
+	// cycle, so every open transitions false→true and re-runs this effect.
 	useEffect(() => {
 		if (!open) return;
 		setEditing(false);
 		resetEditState();
-	}, [open, lessonId, resetEditState]);
+	}, [open, resetEditState]);
 
 	if (!lesson) return null;
 

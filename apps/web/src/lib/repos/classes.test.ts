@@ -391,8 +391,14 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		// limitation on issue #56) — this pins the current behavior.
 		const classes = mapClasses(
 			buildSnapshot({
-				"en-a": [...Array<string>(6).fill("completed"), ...Array<string>(6).fill("upcoming")],
-				"en-b": [...Array<string>(6).fill("upcoming"), ...Array<string>(6).fill("completed")],
+				"en-a": [
+					...Array<string>(6).fill("completed"),
+					...Array<string>(6).fill("upcoming"),
+				],
+				"en-b": [
+					...Array<string>(6).fill("upcoming"),
+					...Array<string>(6).fill("completed"),
+				],
 			}),
 		);
 		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(6);
