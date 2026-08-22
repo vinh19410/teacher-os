@@ -9,11 +9,10 @@ export default defineConfig({
 		alwaysBundle: [/@teacher-os\/.*/],
 		neverBundle: ["cloudflare:workers"],
 	},
-	dts: {
-		// Prepares all tsconfig files for tsc in one pass (single-tsconfig
-		// monorepo mode). The default isolated path failed to emit the
-		// @teacher-os/auth sources, so types re-exported from session.ts
-		// went missing from the bundled d.ts and the build errored.
-		eager: true,
-	},
+	// No dts emission: nothing consumes apps/server's declaration output —
+	// package exports point at src/*.ts and the worker deploys from src
+	// (packages/infra/alchemy.run.ts). Emitting dts made tsdown follow
+	// @teacher-os/auth sources (isolated mode dropped re-exported types;
+	// eager mode OOMs CI runners at the default 2GB heap).
+	dts: false,
 });
