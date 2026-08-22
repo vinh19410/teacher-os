@@ -14,10 +14,10 @@ Verification & evidence gate cuối: full regression xanh local, push branch, qu
 
 ## Requirements
 
-- [ ] Full regression gate xanh local (kể cả e2e).
-- [ ] Branch push, PR mở (hoặc branch chạy qua workflow push trigger), job `E2E` xanh trên GitHub Actions; job `quality` (ci.yml) cũng xanh và KHÔNG chứa playwright.
-- [ ] `docs/project-roadmap.md:44` dòng `- [ ] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data.` → `- [x] ...` kèm link run.
-- [ ] Issue #59 comment evidence: link workflow run xanh + mô tả spec coverage.
+- [x] Full regression gate xanh local (kể cả e2e).
+- [x] Branch push, PR mở (hoặc branch chạy qua workflow push trigger), job `E2E` xanh trên GitHub Actions; job `quality` (ci.yml) cũng xanh và KHÔNG chứa playwright.
+- [x] `docs/project-roadmap.md:44` dòng `- [ ] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data.` → `- [x] ...` kèm link run.
+- [x] Issue #59 comment evidence: link workflow run xanh + mô tả spec coverage.
 
 ## Architecture
 
@@ -68,11 +68,11 @@ pnpm install --frozen-lockfile && pnpm exec biome check . && pnpm test && pnpm c
 
 ## Success Criteria
 
-- [ ] Local gate + `pnpm build` + `pnpm --filter e2e e2e` xanh trong MỘT chuỗi lệnh.
-- [ ] Run GitHub Actions job `E2E` xanh trên PR của branch (URL ghi lại).
-- [ ] Job `quality` (ci.yml) xanh, output turbo task `test` không chứa package e2e.
-- [ ] `docs/project-roadmap.md:44` = `[x]` với evidence link; `git diff docs/project-roadmap.md` chỉ đổi dòng đó (và không phá các dòng DOD khác).
-- [ ] Issue #59 có comment evidence (run URL + coverage spec).
+- [x] Local gate + `pnpm build` + `pnpm --filter e2e e2e` xanh trong MỘT chuỗi lệnh.
+- [x] Run GitHub Actions job `E2E` xanh trên PR của branch (URL ghi lại).
+- [x] Job `quality` (ci.yml) xanh, output turbo task `test` không chứa package e2e.
+- [x] `docs/project-roadmap.md:44` = `[x]` với evidence link; `git diff docs/project-roadmap.md` chỉ đổi dòng đó (và không phá các dòng DOD khác).
+- [x] Issue #59 có comment evidence (run URL + coverage spec).
 
 ## Risk Assessment
 

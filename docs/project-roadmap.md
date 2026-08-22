@@ -41,7 +41,7 @@ Trạng thái: **Đang thực hiện** (nền tảng classes/students/syllabus �
 - [ ] Org mới trên staging: tạo lớp có lịch → sinh buổi tương ứng, hiển thị đúng trên /schedule, nav tuần hoạt động.
 - [ ] Sửa/hủy buổi không làm hỏng buổi khác; check-in đúng trạng thái sau hard reload.
 - [ ] Dashboard 0 con số hardcode trong pilot view.
-- [ ] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data.
+- [x] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data. ([evidence: E2E job xanh trên PR #76](https://github.com/vinh19410/teacher-os/actions/runs/32557700566))
 - [ ] 0 CTA no-op trong luồng classes/schedule.
 
 ### M2 — Thu học phí được (Money loop) · GitHub milestone: M2

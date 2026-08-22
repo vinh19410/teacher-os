@@ -1,7 +1,7 @@
 ---
 title: "M1: E2E class operations CI (login → tạo lớp có lịch → buổi → check-in → reload)"
 description: "Playwright E2E cho luồng vận hành lớp chạy xanh trên CI riêng (e2e.yml), dùng node boot shim thay cho alchemy dev."
-status: pending
+status: completed
 priority: P1
 effort: 14h
 tags: [e2e, playwright, ci, m1, better-auth, di-refactor]
