@@ -28,13 +28,13 @@ Web: `vite` (port 8001 strictPort từ `apps/web/vite.config.ts:8-10`), env `VIT
 
 ## Requirements
 
-- [ ] `apps/e2e` là workspace package tên `e2e`, private, scripts: `e2e` (playwright test), `boot:api` (tsx src/boot.ts), `check-types` (tsc --noEmit). KHÔNG script `test` → turbo task `test` bỏ qua, root `pnpm test` không đổi (contract `scripts/ci-workflow.test.mjs:46-71`).
-- [ ] `@playwright/test` pin exact `1.62.1` qua catalog (`pnpm-workspace.yaml`), tham chiếu `"catalog:"` — tiền lệ `better-auth: 1.6.27` (`pnpm-workspace.yaml:15`). `@hono/node-server` pin exact `2.1.1`, `tsx` pin exact `4.23.12` (đã verify npm 2026-08-22; network server dependency không được để `<latest>` trôi).
-- [ ] turbo task `e2e`: `{ "cache": false, "passThroughEnv": ["PLAYWRIGHT_*"] }` (không `^build` — web chạy vite dev, không cần build).
-- [ ] Boot wipe DB mỗi lần khởi động (mỗi run e2e = state sạch, deterministic) — wipe cả 3 file `local.db`, `local.db-wal`, `local.db-shm`.
-- [ ] playwright.config: workers 1, chromium only, `serviceWorkers: "block"` (VitePWA devOptions enabled — `vite.config.ts:33`), `reuseExistingServer: false` cho CẢ 2 server (port bận = fail loud, KHÔNG âm thầm reuse dev server alchemy đang chiếm :8000/:8001 — nếu không spec chạy chống worker D1 cũ, DB không wipe → false-green), timeout 120_000 mỗi webServer, test timeout 120_000 (spec tuyến tính dài + cold vite dev), `retries: process.env.CI ? 1 : 0` (trace on-first-retry có ý nghĩa trên CI).
-- [ ] `biome.json` `files.includes` thêm `"!**/playwright-report"` + `"!**/test-results"` (biome có `vcs.useIgnoreFile: false` — .gitignore KHÔNG được tôn trọng; không exclude thì `biome check .` đỏ deterministic sau lần chạy e2e đầu tiên do scan report bundle sinh ra).
-- [ ] Smoke spec: sign-up UI thành công, redirect `/dashboard`, nav sidebar hiện "Lớp học" + "Lịch dạy" (`apps/web/src/components/layout/sidebar.tsx:53,107`) = org đã bootstrap qua `GET /api/kernel`.
+- [x] `apps/e2e` là workspace package tên `e2e`, private, scripts: `e2e` (playwright test), `boot:api` (tsx src/boot.ts), `check-types` (tsc --noEmit). KHÔNG script `test` → turbo task `test` bỏ qua, root `pnpm test` không đổi (contract `scripts/ci-workflow.test.mjs:46-71`).
+- [x] `@playwright/test` pin exact `1.62.1` qua catalog (`pnpm-workspace.yaml`), tham chiếu `"catalog:"` — tiền lệ `better-auth: 1.6.27` (`pnpm-workspace.yaml:15`). `@hono/node-server` pin exact `2.1.1`, `tsx` pin exact `4.23.12` (đã verify npm 2026-08-22; network server dependency không được để `<latest>` trôi).
+- [x] turbo task `e2e`: `{ "cache": false, "passThroughEnv": ["PLAYWRIGHT_*"] }` (không `^build` — web chạy vite dev, không cần build).
+- [x] Boot wipe DB mỗi lần khởi động (mỗi run e2e = state sạch, deterministic) — wipe cả 3 file `local.db`, `local.db-wal`, `local.db-shm`.
+- [x] playwright.config: workers 1, chromium only, `serviceWorkers: "block"` (VitePWA devOptions enabled — `vite.config.ts:33`), `reuseExistingServer: false` cho CẢ 2 server (port bận = fail loud, KHÔNG âm thầm reuse dev server alchemy đang chiếm :8000/:8001 — nếu không spec chạy chống worker D1 cũ, DB không wipe → false-green), timeout 120_000 mỗi webServer, test timeout 120_000 (spec tuyến tính dài + cold vite dev), `retries: process.env.CI ? 1 : 0` (trace on-first-retry có ý nghĩa trên CI).
+- [x] `biome.json` `files.includes` thêm `"!**/playwright-report"` + `"!**/test-results"` (biome có `vcs.useIgnoreFile: false` — .gitignore KHÔNG được tôn trọng; không exclude thì `biome check .` đỏ deterministic sau lần chạy e2e đầu tiên do scan report bundle sinh ra).
+- [x] Smoke spec: sign-up UI thành công, redirect `/dashboard`, nav sidebar hiện "Lớp học" + "Lịch dạy" (`apps/web/src/components/layout/sidebar.tsx:53,107`) = org đã bootstrap qua `GET /api/kernel`.
 
 ## Architecture
 
@@ -232,11 +232,11 @@ pnpm install --frozen-lockfile && pnpm exec biome check . && pnpm test && pnpm c
 
 ## Success Criteria
 
-- [ ] `pnpm --filter e2e e2e` xanh local: sign-up UI → `/dashboard` → sidebar nav hiện "Lớp học", "Lịch dạy".
-- [ ] Cookie session hoạt động cross-origin :8001→:8000 (smoke xanh = bằng chứng; KHÔNG đổi `sameSite/secure` trong `packages/auth`).
-- [ ] `pnpm test` không kéo playwright (grep output turbo: không có task e2e).
-- [ ] `apps/e2e/local.db`, `playwright-report/`, `test-results/` không xuất hiện trong `git status`.
-- [ ] Biome + check-types xanh (kể cả `apps/e2e`).
+- [x] `pnpm --filter e2e e2e` xanh local: sign-up UI → `/dashboard` → sidebar nav hiện "Lớp học", "Lịch dạy".
+- [x] Cookie session hoạt động cross-origin :8001→:8000 (smoke xanh = bằng chứng; KHÔNG đổi `sameSite/secure` trong `packages/auth`).
+- [x] `pnpm test` không kéo playwright (grep output turbo: không có task e2e).
+- [x] `apps/e2e/local.db`, `playwright-report/`, `test-results/` không xuất hiện trong `git status`.
+- [x] Biome + check-types xanh (kể cả `apps/e2e`).
 
 ## Risk Assessment
 

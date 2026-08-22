@@ -28,7 +28,9 @@
 			"!**/.source",
 			"!**/convex/_generated",
 			"!open-design",
-			"!**/packages/db/src/migrations/meta"
+			"!**/packages/db/src/migrations/meta",
+			"!**/playwright-report",
+			"!**/test-results"
 		]
 	},
 	"formatter": {

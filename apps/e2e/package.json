@@ -1,0 +1,25 @@
+{
+	"name": "e2e",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"e2e": "playwright test",
+		"boot:api": "tsx src/boot.ts",
+		"check-types": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@teacher-os/auth": "workspace:*",
+		"@teacher-os/db": "workspace:*",
+		"server": "workspace:*"
+	},
+	"devDependencies": {
+		"@hono/node-server": "2.1.1",
+		"@libsql/client": "0.17.4",
+		"@playwright/test": "catalog:",
+		"@teacher-os/config": "workspace:*",
+		"@types/node": "catalog:",
+		"drizzle-orm": "^0.45.2",
+		"tsx": "4.23.12",
+		"typescript": "catalog:"
+	}
+}
