@@ -9,6 +9,9 @@ catalogs:
     '@cloudflare/workers-types':
       specifier: ^5.20260728.1
       version: 5.20260815.1
+    '@libsql/client':
+      specifier: 0.17.4
+      version: 0.17.4
     '@playwright/test':
       specifier: 1.62.1
       version: 1.62.1
@@ -27,6 +30,9 @@ catalogs:
     dotenv:
       specifier: ^17.4.2
       version: 17.4.2
+    drizzle-orm:
+      specifier: ^0.45.2
+      version: 0.45.2
     lucide-react:
       specifier: ^1.27.0
       version: 1.31.0
@@ -101,7 +107,7 @@ importers:
         specifier: 2.1.1
         version: 2.1.1(hono@4.13.2)
       '@libsql/client':
-        specifier: 0.17.4
+        specifier: 'catalog:'
         version: 0.17.4
       '@playwright/test':
         specifier: 'catalog:'
@@ -113,7 +119,7 @@ importers:
         specifier: 'catalog:'
         version: 22.20.1
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       tsx:
         specifier: 4.23.12
@@ -143,7 +149,7 @@ importers:
         specifier: 'catalog:'
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       hono:
         specifier: ^4.12.32
@@ -156,7 +162,7 @@ importers:
         specifier: 'catalog:'
         version: 5.20260815.1
       '@libsql/client':
-        specifier: 0.17.4
+        specifier: 'catalog:'
         version: 0.17.4
       '@teacher-os/config':
         specifier: workspace:*
@@ -286,9 +292,6 @@ importers:
       better-auth:
         specifier: 'catalog:'
         version: 1.6.27(@cloudflare/workers-types@5.20260815.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)))
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -308,7 +311,7 @@ importers:
   packages/db:
     dependencies:
       '@libsql/client':
-        specifier: 0.17.4
+        specifier: 'catalog:'
         version: 0.17.4
       '@teacher-os/env':
         specifier: workspace:*
@@ -317,7 +320,7 @@ importers:
         specifier: 'catalog:'
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       libsql:
         specifier: 0.5.29

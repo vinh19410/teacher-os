@@ -10,9 +10,10 @@ export default defineConfig({
 		neverBundle: ["cloudflare:workers"],
 	},
 	dts: {
-		// Emit declarations in-process: the isolated-declarations path fails to
-		// emit workspace sources (e.g. @teacher-os/auth types re-exported from
-		// session.ts), leaving the bundled d.ts missing those exports.
+		// Prepares all tsconfig files for tsc in one pass (single-tsconfig
+		// monorepo mode). The default isolated path failed to emit the
+		// @teacher-os/auth sources, so types re-exported from session.ts
+		// went missing from the bundled d.ts and the build errored.
 		eager: true,
 	},
 });

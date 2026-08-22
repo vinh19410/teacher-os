@@ -3,6 +3,11 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
 	testDir: "./specs",
 	timeout: 120_000,
+	expect: {
+		// Flow-critical waits (URL changes, modal close after refetch) can
+		// outrun the 5s default on a cold CI vite dev server.
+		timeout: 15_000,
+	},
 	workers: 1,
 	retries: process.env.CI ? 1 : 0,
 	reporter: [["list"], ["html", { open: "never" }]],

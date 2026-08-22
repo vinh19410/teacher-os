@@ -14,11 +14,11 @@
 	},
 	"devDependencies": {
 		"@hono/node-server": "2.1.1",
-		"@libsql/client": "0.17.4",
+		"@libsql/client": "catalog:",
 		"@playwright/test": "catalog:",
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",
-		"drizzle-orm": "^0.45.2",
+		"drizzle-orm": "catalog:",
 		"tsx": "4.23.12",
 		"typescript": "catalog:"
 	}

@@ -13,7 +13,9 @@ export async function signUpViaUi(page: Page, name = "E2E Teacher") {
 		);
 	await page.locator("#su-password").fill("password-8chars");
 	await page.getByRole("button", { name: "Create account" }).click();
-	await expect(page).toHaveURL(/\/dashboard/);
+	// Cold vite dev on CI can make the sign-up + bootstrap round-trip slow;
+	// the default 5s expect timeout is too tight for this flow-critical wait.
+	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 }
 
 /** Navigate to a class's "Lịch học" tab — the only page rendering the

@@ -15,7 +15,6 @@
 	"dependencies": {
 		"@teacher-os/db": "workspace:*",
 		"better-auth": "catalog:",
-		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

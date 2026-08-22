@@ -93,10 +93,11 @@ test("e2e workflow exists and matches the e2e contract", () => {
 		/^\s*- run: pnpm --filter e2e e2e\s*$/m,
 		"must run the e2e package as its own step",
 	);
-	// Blocks both secrets.X and secrets['X'] (index access).
+	// Blocks secrets.X and secrets['X'] anywhere — including indirect forms
+	// like ${{ fromJSON(secrets.X) }} that a ${{-anchored regex would miss.
 	assert.doesNotMatch(
 		yaml,
-		/\$\{\{\s*secrets[.[]/,
+		/\bsecrets\s*[.[]/,
 		"must not require GitHub secrets",
 	);
 });

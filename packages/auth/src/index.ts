@@ -6,8 +6,9 @@ import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
 /**
  * Drizzle sqlite instance handed to better-auth's adapter — the production
  * worker passes its D1 database, tests and the E2E boot shim pass libsql.
- * Derived from the adapter's own parameter type so this package stays
- * driver-neutral (no d1/libsql imports).
+ * NOTE: this resolves to a loose type (better-auth exports no tight
+ * constraint), so driver compatibility is proven by the round-trip test and
+ * E2E, not by the compiler; runtime behavior is what this type promises.
  */
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0];
 

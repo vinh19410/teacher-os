@@ -11,6 +11,9 @@ let auth: Auth | undefined;
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
+// Behavior note vs. the old construct-per-request code: better-auth's
+// in-memory rate limiter is now actually effective (one persistent instance
+// per isolate); bursts on /api/auth/* may see 429s they never saw before.
 const getAuth = (): Auth => {
 	if (!db) {
 		db = createDb() as unknown as Db;

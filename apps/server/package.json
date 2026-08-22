@@ -20,13 +20,13 @@
 		"@teacher-os/env": "workspace:*",
 		"better-auth": "catalog:",
 		"dotenv": "catalog:",
-		"drizzle-orm": "^0.45.2",
+		"drizzle-orm": "catalog:",
 		"hono": "^4.12.32",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "catalog:",
-		"@libsql/client": "0.17.4",
+		"@libsql/client": "catalog:",
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",
 		"tsdown": "^0.22.14",
