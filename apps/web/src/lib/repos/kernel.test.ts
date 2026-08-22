@@ -421,6 +421,23 @@ describe("kernelCommand", () => {
 		expect(cancel.body).toEqual({});
 	});
 
+	test("lesson-edit maps to the full-replace edit endpoint with all five fields", () => {
+		const req = kernelCommand({
+			type: "lesson-edit",
+			lessonId: "l1",
+			payload: { day: 3, time: "19:00", dur: 90, topic: "T", zoom: "" },
+		});
+		expect(req.path).toBe("/api/lessons/l1/edit");
+		// The API is full-replace: a missing key would wipe that field.
+		expect(req.body).toEqual({
+			day: 3,
+			time: "19:00",
+			dur: 90,
+			topic: "T",
+			zoom: "",
+		});
+	});
+
 	test("persistent store actions, including mark-paid, map to kernel requests", () => {
 		const markPaid = {
 			type: "mark-invoice-paid",

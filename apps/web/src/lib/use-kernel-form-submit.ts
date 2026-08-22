@@ -71,5 +71,22 @@ export function useKernelFormSubmit() {
 		}
 	}, [refresh, saving]);
 
-	return { saving, error, setError, notice, submitBlocked, run, reconcile };
+	/** Clear the submit outcome for a fresh form session. Call when the host
+	 * modal re-opens or switches target (mirror the grade-modal reset) so a
+	 * stale error/notice from target A never gates target B's submit. */
+	const reset = useCallback(() => {
+		setError(undefined);
+		setNotice(undefined);
+	}, []);
+
+	return {
+		saving,
+		error,
+		setError,
+		notice,
+		submitBlocked,
+		run,
+		reconcile,
+		reset,
+	};
 }

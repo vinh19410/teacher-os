@@ -253,8 +253,10 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 		commentBank: [],
 	};
 
-	test("counts distinct (day,time) pairs of completed lessons, not rows", () => {
+	test("derives max completed rows per enrollment (weekly slots count every session)", () => {
 		const classes = mapClasses(snapshot);
+		// en-1 completed les-a/les-c/les-f (3 rows), en-2 completed les-b
+		// (1 row) → max 3. A half-checked 1:2 counts the delivered session.
 		expect(classes.find((c) => c.id === "cl-1")?.sessionsDone).toBe(3);
 	});
 
@@ -286,60 +288,119 @@ function lessonRow(
 	};
 }
 
-describe("mapClasses sessionsDone derive — weekly-recurrence collapse pin (issue #55 red-target for #56)", () => {
-	// #55's generator emits `sessionsTotal` rows spread over the schedule's
-	// weekday slots: 12 sessions on days {2,4} are 6+6 rows over 2 distinct
-	// (day,time) pairs. The derive counts distinct pairs, so a fully checked-in
-	// series shows 2/12 — this pins that known-broken behavior as the red
-	// target for #56; do not "fix" it here without updating that issue.
-	const snapshot: KernelSnapshot = {
-		students: [],
-		classes: [
-			{
-				id: "cl-gen",
-				name: "IELTS tối (generated)",
-				level: "",
-				type: "ielts",
-				skills: [],
-				mode: "Online",
-				syllabusId: null,
-				schedule: '{"days":[1,3],"start":"19:00","end":"20:30"}',
-				sessionsTotal: 12,
-				sessionsDone: 0,
-				status: "active",
-				startDate: "",
-				notes: "",
-			},
-		],
-		syllabi: [],
-		enrollments: [
-			{
-				id: "en-gen",
-				classId: "cl-gen",
-				studentId: "st-gen",
-				createdAt: "2026-08-21T00:00:00.000Z",
-			},
-		],
-		packages: [],
-		lessons: Array.from({ length: 12 }, (_, i) =>
-			lessonRow(
-				`les-gen-${i}`,
-				"cl-gen",
-				"en-gen",
-				i % 2 === 0 ? 2 : 4,
-				"19:00",
-				"completed",
-			),
-		),
-		assignments: [],
-		invoices: [],
-		reports: [],
-		notifs: [],
-		commentBank: [],
+describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () => {
+	// #56 replaces the distinct-(day,time)-pairs derive (which collapsed a
+	// fully checked-in 12-session series on 2 weekly slots to 2/12 — pinned
+	// red by #55). The generator emits `sessionsTotal` rows PER ENROLLMENT,
+	// so delivered sessions = max completed rows across the class's
+	// enrollments: weekly recurrence counts every session, and a 1:2 class
+	// (one row per enrollment per session) never double-counts.
+	const baseClass: KernelSnapshot["classes"][number] = {
+		id: "cl-gen",
+		name: "IELTS tối (generated)",
+		level: "",
+		type: "ielts",
+		skills: [],
+		mode: "Online",
+		syllabusId: null,
+		schedule: '{"days":[1,3],"start":"19:00","end":"20:30"}',
+		sessionsTotal: 12,
+		sessionsDone: 0,
+		status: "active",
+		startDate: "",
+		notes: "",
 	};
 
-	test("12 completed generated lessons over 2 weekly slots derive sessionsDone = 2 (collapse)", () => {
-		const classes = mapClasses(snapshot);
-		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(2);
+	function buildSnapshot(
+		lessonStatuses: Record<string, string[]>,
+	): KernelSnapshot {
+		const enrollmentIds = Object.keys(lessonStatuses);
+		const lessons = enrollmentIds.flatMap((enrollmentId) =>
+			lessonStatuses[enrollmentId].map((status, i) =>
+				lessonRow(
+					`les-${enrollmentId}-${i}`,
+					"cl-gen",
+					enrollmentId,
+					i % 2 === 0 ? 2 : 4,
+					"19:00",
+					status,
+				),
+			),
+		);
+		return {
+			students: [],
+			classes: [baseClass],
+			syllabi: [],
+			enrollments: enrollmentIds.map((id, i) => ({
+				id,
+				classId: "cl-gen",
+				studentId: `st-${i}`,
+				createdAt: "2026-08-21T00:00:00.000Z",
+			})),
+			packages: [],
+			lessons,
+			assignments: [],
+			invoices: [],
+			reports: [],
+			notifs: [],
+			commentBank: [],
+		};
+	}
+
+	test("weekly recurrence: 12 completed rows over 2 slots derive 12/12", () => {
+		const classes = mapClasses(
+			buildSnapshot({ "en-gen": Array<string>(12).fill("completed") }),
+		);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(12);
+	});
+
+	test("1:2 class (2 enrollments × 12 completed) stays at 12/12, not 24", () => {
+		const classes = mapClasses(
+			buildSnapshot({
+				"en-a": Array<string>(12).fill("completed"),
+				"en-b": Array<string>(12).fill("completed"),
+			}),
+		);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(12);
+	});
+
+	test("mixed statuses: only completed rows count", () => {
+		const classes = mapClasses(
+			buildSnapshot({
+				"en-gen": [
+					...Array<string>(4).fill("completed"),
+					...Array<string>(4).fill("cancelled"),
+					...Array<string>(4).fill("upcoming"),
+				],
+			}),
+		);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(4);
+	});
+
+	test("no completed rows derives 0", () => {
+		const classes = mapClasses(
+			buildSnapshot({ "en-gen": Array<string>(12).fill("upcoming") }),
+		);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(0);
+	});
+
+	test("interleaved 1:2 attendance is a pinned lower-bound (max, not union)", () => {
+		// Student A attends sessions 1-6, student B attends 7-12: the class
+		// delivered 12 real sessions but max-per-enrollment derives 6. Exact
+		// occurrence-union needs a date column on lessons (documented
+		// limitation on issue #56) — this pins the current behavior.
+		const classes = mapClasses(
+			buildSnapshot({
+				"en-a": [
+					...Array<string>(6).fill("completed"),
+					...Array<string>(6).fill("upcoming"),
+				],
+				"en-b": [
+					...Array<string>(6).fill("upcoming"),
+					...Array<string>(6).fill("completed"),
+				],
+			}),
+		);
+		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(6);
 	});
 });
