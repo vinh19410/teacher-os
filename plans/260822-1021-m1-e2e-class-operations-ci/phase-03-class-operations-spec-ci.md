@@ -21,10 +21,10 @@ Viết spec đầy đủ đúng kịch bản DOD `docs/project-roadmap.md:44`: l
 
 ## Requirements
 
-- [ ] `apps/e2e/specs/class-operations.spec.ts` chạy trọn kịch bản, xanh local,workers 1, không sleep cứng (chờ auto-waiting của expect).
-- [ ] `.github/workflows/e2e.yml`: triggers pull_request+push main/develop, concurrency cancel, permissions read, job e2e ubuntu-latest timeout 20m, KHÔNG `${{ secrets.`, KHÔNG đụng `ci.yml`.
-- [ ] `scripts/ci-workflow.test.mjs` thêm test block mới: e2e.yml exists, `pull_request:` + `push:` + main + develop, no `${{ secrets.`, có `pnpm --filter e2e e2e`, có playwright install bước. (File chỉ đọc ci.yml hiện tại — thêm e2e.yml assertions KHÔNG phá test cũ.)
-- [ ] Sign-up helper dùng chung: `apps/e2e/specs/helpers.ts` — DRY giữa 2 specs.
+- [x] `apps/e2e/specs/class-operations.spec.ts` chạy trọn kịch bản, xanh local,workers 1, không sleep cứng (chờ auto-waiting của expect).
+- [x] `.github/workflows/e2e.yml`: triggers pull_request+push main/develop, concurrency cancel, permissions read, job e2e ubuntu-latest timeout 20m, KHÔNG `${{ secrets.`, KHÔNG đụng `ci.yml`.
+- [x] `scripts/ci-workflow.test.mjs` thêm test block mới: e2e.yml exists, `pull_request:` + `push:` + main + develop, no `${{ secrets.`, có `pnpm --filter e2e e2e`, có playwright install bước. (File chỉ đọc ci.yml hiện tại — thêm e2e.yml assertions KHÔNG phá test cũ.)
+- [x] Sign-up helper dùng chung: `apps/e2e/specs/helpers.ts` — DRY giữa 2 specs.
 
 ## Architecture
 
@@ -225,11 +225,11 @@ pnpm install --frozen-lockfile && pnpm exec biome check . && pnpm test && pnpm c
 
 ## Success Criteria
 
-- [ ] Spec class-operations xanh local 2 lần liên tiếp: đủ 6 chặng; assert barrier `opacity-60` trên /schedule sau "Điểm danh" (chống race fire-and-forget); 12 "Sắp tới" trước check-in; sau reload: opacity-60 sống sót trên /schedule + navigate tab "Lịch học" thấy 1 "Đã học" + 11 "Sắp tới".
-- [ ] Không có assertion nào vào toast, PageHead hardcode ("3 lớp đang hoạt động"), dashboard greeting; không assert badge trên /schedule (không tồn tại ở đó).
-- [ ] `node --test scripts/ci-workflow.test.mjs` xanh (cả 2 block, gồm assert playwright install + no pull_request_target + permissions read + secrets index-access).
-- [ ] e2e.yml không chứa `${{ secrets.`; `ci.yml` không đổi (`git diff --stat .github/workflows/ci.yml` rỗng).
-- [ ] Regression gate xanh.
+- [x] Spec class-operations xanh local 2 lần liên tiếp: đủ 6 chặng; assert barrier `opacity-60` trên /schedule sau "Điểm danh" (chống race fire-and-forget); 12 "Sắp tới" trước check-in; sau reload: opacity-60 sống sót trên /schedule + navigate tab "Lịch học" thấy 1 "Đã học" + 11 "Sắp tới".
+- [x] Không có assertion nào vào toast, PageHead hardcode ("3 lớp đang hoạt động"), dashboard greeting; không assert badge trên /schedule (không tồn tại ở đó).
+- [x] `node --test scripts/ci-workflow.test.mjs` xanh (cả 2 block, gồm assert playwright install + no pull_request_target + permissions read + secrets index-access).
+- [x] e2e.yml không chứa `${{ secrets.`; `ci.yml` không đổi (`git diff --stat .github/workflows/ci.yml` rỗng).
+- [x] Regression gate xanh.
 
 ## Risk Assessment
 
