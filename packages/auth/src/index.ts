@@ -62,3 +62,7 @@ export function createAuth(input: CreateAuthInput) {
 		},
 	});
 }
+
+/** The configured better-auth instance — for callers that hold one auth
+ * (e.g. getSessionUser) instead of constructing per request. */
+export type Auth = ReturnType<typeof createAuth>;

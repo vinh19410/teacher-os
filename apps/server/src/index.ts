@@ -1,4 +1,4 @@
-import { type CreateAuthInput, createAuth } from "@teacher-os/auth";
+import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db } from "./app";
@@ -7,11 +7,11 @@ import { getSessionUser } from "./session";
 // Lazy so importing this module never touches bindings at eval time.
 // Cast: drizzle's schema generic is invariant; Db keeps the route-facing surface.
 let db: Db | undefined;
-let auth: ReturnType<typeof createAuth> | undefined;
+let auth: Auth | undefined;
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
-const getAuth = (): ReturnType<typeof createAuth> => {
+const getAuth = (): Auth => {
 	if (!db) {
 		db = createDb() as unknown as Db;
 	}

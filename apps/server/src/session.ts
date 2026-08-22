@@ -1,11 +1,11 @@
-import type { createAuth } from "@teacher-os/auth";
+import type { Auth } from "@teacher-os/auth";
 
 export interface SessionUser {
 	userId: string;
 	userName: string;
 }
 
-export type Auth = ReturnType<typeof createAuth>;
+export type { Auth };
 
 /**
  * Resolve the Better-Auth session behind a request's headers.
