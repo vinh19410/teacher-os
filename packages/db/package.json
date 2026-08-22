@@ -14,10 +14,10 @@
 		"db:migrate:deploy": "drizzle-kit migrate"
 	},
 	"dependencies": {
-		"@libsql/client": "0.17.4",
+		"@libsql/client": "catalog:",
 		"@teacher-os/env": "workspace:*",
 		"dotenv": "catalog:",
-		"drizzle-orm": "^0.45.2",
+		"drizzle-orm": "catalog:",
 		"libsql": "0.5.29",
 		"zod": "catalog:"
 	},

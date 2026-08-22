@@ -9,6 +9,12 @@ catalogs:
     '@cloudflare/workers-types':
       specifier: ^5.20260728.1
       version: 5.20260815.1
+    '@libsql/client':
+      specifier: 0.17.4
+      version: 0.17.4
+    '@playwright/test':
+      specifier: 1.62.1
+      version: 1.62.1
     '@types/node':
       specifier: ^22.20.1
       version: 22.20.1
@@ -24,6 +30,9 @@ catalogs:
     dotenv:
       specifier: ^17.4.2
       version: 17.4.2
+    drizzle-orm:
+      specifier: ^0.45.2
+      version: 0.45.2
     lucide-react:
       specifier: ^1.27.0
       version: 1.31.0
@@ -82,6 +91,43 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  apps/e2e:
+    dependencies:
+      '@teacher-os/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@teacher-os/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      server:
+        specifier: workspace:*
+        version: link:../server
+    devDependencies:
+      '@hono/node-server':
+        specifier: 2.1.1
+        version: 2.1.1(hono@4.13.2)
+      '@libsql/client':
+        specifier: 'catalog:'
+        version: 0.17.4
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.62.1
+      '@teacher-os/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.1
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
+      tsx:
+        specifier: 4.23.12
+        version: 4.23.12
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   apps/server:
     dependencies:
       '@teacher-os/api':
@@ -103,7 +149,7 @@ importers:
         specifier: 'catalog:'
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       hono:
         specifier: ^4.12.32
@@ -116,7 +162,7 @@ importers:
         specifier: 'catalog:'
         version: 5.20260815.1
       '@libsql/client':
-        specifier: 0.17.4
+        specifier: 'catalog:'
         version: 0.17.4
       '@teacher-os/config':
         specifier: workspace:*
@@ -243,15 +289,9 @@ importers:
       '@teacher-os/db':
         specifier: workspace:*
         version: link:../db
-      '@teacher-os/env':
-        specifier: workspace:*
-        version: link:../env
       better-auth:
         specifier: 'catalog:'
         version: 1.6.27(@cloudflare/workers-types@5.20260815.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.10(@types/node@26.2.0)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)))
-      dotenv:
-        specifier: 'catalog:'
-        version: 17.4.2
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -271,7 +311,7 @@ importers:
   packages/db:
     dependencies:
       '@libsql/client':
-        specifier: 0.17.4
+        specifier: 'catalog:'
         version: 0.17.4
       '@teacher-os/env':
         specifier: workspace:*
@@ -280,7 +320,7 @@ importers:
         specifier: 'catalog:'
         version: 17.4.2
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 'catalog:'
         version: 0.45.2(@cloudflare/workers-types@5.20260815.1)(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(kysely@0.29.5)
       libsql:
         specifier: 0.5.29
@@ -2377,6 +2417,11 @@ packages:
   '@oxc-project/types@0.144.0':
     resolution: {integrity: sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==}
 
+  '@playwright/test@1.62.1':
+    resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   '@prisma/debug@7.2.0':
     resolution: {integrity: sha512-YSGTiSlBAVJPzX4ONZmMotL+ozJwQjRmZweQNIq/ER0tQJKJynNkRB3kyvt37eOfsbMCXk3gnLF6J9OJ4QWftw==}
 
@@ -4365,6 +4410,11 @@ packages:
     resolution: {integrity: sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==}
     engines: {node: '>=10'}
 
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -5357,6 +5407,16 @@ packages:
   pkg-up@3.1.0:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
+
+  playwright-core@1.62.1:
+    resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.62.1:
+    resolution: {integrity: sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
@@ -8345,6 +8405,10 @@ snapshots:
 
   '@oxc-project/types@0.144.0': {}
 
+  '@playwright/test@1.62.1':
+    dependencies:
+      playwright: 1.62.1
+
   '@prisma/debug@7.2.0': {}
 
   '@prisma/dev@0.20.0(typescript@6.0.3)':
@@ -10164,6 +10228,9 @@ snapshots:
       jsonfile: 6.2.1
       universalify: 2.0.1
 
+  fsevents@2.3.2:
+    optional: true
+
   fsevents@2.3.3:
     optional: true
 
@@ -11047,6 +11114,14 @@ snapshots:
   pkg-up@3.1.0:
     dependencies:
       find-up: 3.0.0
+
+  playwright-core@1.62.1: {}
+
+  playwright@1.62.1:
+    dependencies:
+      playwright-core: 1.62.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   possible-typed-array-names@1.1.0: {}
 
