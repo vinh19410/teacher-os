@@ -146,7 +146,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return { ok: true, data: parsed.data };
 	}
 	/**
-	 * Class row for write paths: assign/notes only need existence, while
+	 * Class row for write paths: notes only needs existence, while
 	 * student-create also reads schedule + sessionsTotal to generate lessons
 	 * (schedule is raw TEXT) and curriculum writes read the syllabus pointer.
 	 */

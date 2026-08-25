@@ -257,7 +257,7 @@ function ClassDetailRoute() {
 							</div>
 						))}
 					</div>
-				) : cls.syllabusId === null ? (
+				) : cls.syllabusId === "" ? (
 					<Card variant="white" className="p-8 text-center">
 						<p className="text-muted-fg text-sm">
 							Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa

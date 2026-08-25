@@ -67,18 +67,24 @@ export function ImportSyllabusModal({
 					Lớp "{className}" nhận một bản sao riêng — chỉnh sửa trên lớp không
 					ảnh hưởng template hay lớp khác.
 				</p>
-				<Field label="Template">
-					<Select
-						value={templateId}
-						onChange={(e) => setSelectedId(e.target.value)}
-					>
-						{templates.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</Select>
-				</Field>
+				{templates.length === 0 ? (
+					<p className="font-mono text-meta text-muted-fg text-xs">
+						Chưa có template nào — tạo syllabus ở trang Syllabus trước.
+					</p>
+				) : (
+					<Field label="Template">
+						<Select
+							value={templateId}
+							onChange={(e) => setSelectedId(e.target.value)}
+						>
+							{templates.map((s) => (
+								<option key={s.id} value={s.id}>
+									{s.name}
+								</option>
+							))}
+						</Select>
+					</Field>
+				)}
 				{notice && (
 					<KernelSubmitNotice
 						notice={notice}
