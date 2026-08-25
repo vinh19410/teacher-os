@@ -1,5 +1,5 @@
-import { IELTS_SKILLS } from "@teacher-os/api/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { IELTS_SKILLS } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { AddSyllabusModal } from "@/components/modals/add-syllabus-modal";
 import { Badge } from "@/components/ui/badge";

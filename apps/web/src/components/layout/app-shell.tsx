@@ -47,6 +47,7 @@ export function AppShell() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 
 	// Close the drawer whenever the route changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the route-change trigger; body only closes the drawer
 	useEffect(() => {
 		setSidebarOpen(false);
 	}, [pathname]);
