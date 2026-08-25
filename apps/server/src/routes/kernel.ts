@@ -558,7 +558,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			orgId: ctx.orgId,
 			name: input.name,
 			level: input.level,
-			skill: input.skill,
+			type: input.type,
+			skills: JSON.stringify(input.skills),
 			description: input.description,
 			totalLessons: input.totalLessons,
 		});

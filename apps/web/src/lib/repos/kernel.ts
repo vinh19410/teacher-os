@@ -61,8 +61,9 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/syllabi",
 				body: {
 					name: action.payload.name,
+					type: action.payload.type,
 					level: action.payload.level,
-					skill: action.payload.skill,
+					skills: action.payload.skills,
 					description: action.payload.description,
 					totalLessons: action.payload.totalLessons,
 				},

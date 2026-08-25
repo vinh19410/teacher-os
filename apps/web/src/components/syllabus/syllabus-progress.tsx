@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { Syllabus } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 
 const dotClass: Record<string, string> = {
 	done: "bg-success",
@@ -43,7 +43,11 @@ export function SyllabusProgress({ syllabus }: { syllabus: Syllabus }) {
 				<div className="flex-1">
 					<div className="font-semibold text-sm">{syllabus.name}</div>
 					<div className="font-mono text-meta text-xs">
-						{syllabus.level} · {syllabus.skill} · {syllabus.totalLessons} buổi
+						{syllabus.level} ·{" "}
+						{syllabus.skills.length > 0
+							? syllabus.skills.join(", ")
+							: CLASS_TYPE_LABELS[syllabus.type]}{" "}
+						· {syllabus.totalLessons} buổi
 					</div>
 				</div>
 				<div className="text-right">

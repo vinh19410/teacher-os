@@ -18,7 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import type { SyllabusLesson } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, type SyllabusLesson } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
@@ -99,7 +99,11 @@ function SyllabusDetailRoute() {
 			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
 				<div className="min-w-[200px] flex-1">
 					<div className="mb-2 flex gap-2">
-						<Tag>{sy.skill}</Tag>
+						{sy.skills.length > 0 ? (
+							sy.skills.map((sk) => <Tag key={sk}>{sk}</Tag>)
+						) : (
+							<Tag>{CLASS_TYPE_LABELS[sy.type]}</Tag>
+						)}
 						<Tag>{sy.level}</Tag>
 					</div>
 					<h1 className="font-display font-semibold text-[28px]">{sy.name}</h1>

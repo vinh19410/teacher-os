@@ -150,7 +150,13 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		}
 		case "add-syllabus": {
 			const syllabus: Syllabus = {
-				...action.payload,
+				id: action.payload.id,
+				name: action.payload.name,
+				type: action.payload.type,
+				level: action.payload.level,
+				skills: action.payload.skills,
+				description: action.payload.description,
+				totalLessons: action.payload.totalLessons,
 				modules: [],
 			};
 			return { ...state, syllabi: [...state.syllabi, syllabus] };

@@ -122,7 +122,8 @@ export interface Syllabus {
 	id: string;
 	name: string;
 	level: string;
-	skill: string;
+	type: ClassType;
+	skills: string[];
 	totalLessons: number;
 	description: string;
 	modules: SyllabusModule[];

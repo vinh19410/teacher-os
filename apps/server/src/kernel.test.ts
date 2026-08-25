@@ -244,7 +244,8 @@ async function createTestApp() {
 			body: {
 				name,
 				level: "Band 7.0",
-				skill: "Writing",
+				type: "ielts",
+				skills: ["Writing"],
 				description: "",
 				totalLessons: 0,
 			},
@@ -823,6 +824,64 @@ describe("syllabus tree and nested binding", () => {
 		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["Line chart"]);
 		expect(sy?.modules[1]?.id).toBe(secondModuleId);
 		expect(sy?.modules[1]?.lessons).toEqual([]);
+	});
+
+	test("snapshot echoes type and skills from createSyllabus", async () => {
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.type).toBe("ielts");
+		expect(sy?.skills).toEqual(["Writing"]);
+		expect(sy?.level).toBe("Band 7.0");
+	});
+
+	test("ielts with empty skills is 400", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Thiếu skill",
+				type: "ielts",
+				skills: [],
+				level: "Band 7.0",
+				description: "",
+				totalLessons: 0,
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("communication with skills is 400; communication empty skills persists", async () => {
+		const rejected = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Giao tiếp sai",
+				type: "communication",
+				skills: ["Writing"],
+				level: "",
+				description: "",
+				totalLessons: 0,
+			},
+		});
+		expect(rejected.status).toBe(400);
+
+		const created = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Giao tiếp ok",
+				type: "communication",
+				skills: [],
+				level: "",
+				description: "",
+				totalLessons: 0,
+			},
+		});
+		expect(created.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.name === "Giao tiếp ok");
+		expect(sy?.type).toBe("communication");
+		expect(sy?.skills).toEqual([]);
 	});
 
 	test("module edit under a foreign syllabus is 404", async () => {

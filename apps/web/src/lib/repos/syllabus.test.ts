@@ -14,7 +14,8 @@ const snapshot: KernelSnapshot = {
 			id: "sy-1",
 			name: "IELTS Writing",
 			level: "Band 7.0",
-			skill: "Writing",
+			type: "ielts",
+			skills: ["Writing"],
 			description: "Giáo trình viết",
 			totalLessons: 99, // stored form value — must be ignored
 			modules: [
@@ -65,6 +66,11 @@ describe("mapSyllabi", () => {
 		expect(syllabi[0]?.totalLessons).toBe(2);
 	});
 
+	test("maps type and skills from the kernel row", () => {
+		expect(syllabi[0]?.type).toBe("ielts");
+		expect(syllabi[0]?.skills).toEqual(["Writing"]);
+	});
+
 	test("empty module description maps to undefined like the seed shape", () => {
 		expect(syllabi[0]?.modules[0]?.description).toBeUndefined();
 		expect(syllabi[0]?.modules[1]?.description).toBe("Essay");
@@ -92,7 +98,8 @@ describe("mapSyllabi", () => {
 					id: "sy-empty",
 					name: "Cây trống",
 					level: "Band 6.0",
-					skill: "Speaking",
+					type: "ielts",
+					skills: ["Speaking"],
 					description: "",
 					totalLessons: 12, // stored lie — the derive wins
 					modules: [

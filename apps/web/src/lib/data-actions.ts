@@ -52,8 +52,9 @@ export type KernelAction =
 			payload: {
 				id: string;
 				name: string;
+				type: ClassType;
 				level: string;
-				skill: string;
+				skills: string[];
 				description: string;
 				totalLessons: number;
 			};

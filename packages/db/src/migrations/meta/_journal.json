@@ -57,6 +57,13 @@
       "when": 1787235670402,
       "tag": "0007_class_type_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787570000000,
+      "tag": "0008_syllabus_type_skills",
+      "breakpoints": true
     }
   ]
 }

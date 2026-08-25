@@ -14,12 +14,19 @@ import type { Syllabus } from "@/lib/mock-data";
  * the seed placeholders so the screens keep rendering unchanged.
  */
 export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
-	return snapshot.syllabi.map(
-		(row): Syllabus => ({
+	return snapshot.syllabi.map((row): Syllabus => {
+		const legacy = row as typeof row & { skill?: string };
+		const skills = Array.isArray(legacy.skills)
+			? legacy.skills
+			: legacy.skill
+				? [legacy.skill]
+				: [];
+		return {
 			id: row.id,
 			name: row.name,
 			level: row.level,
-			skill: row.skill,
+			type: row.type === "communication" ? "communication" : "ielts",
+			skills,
 			totalLessons: row.modules.reduce((sum, m) => sum + m.lessons.length, 0),
 			description: row.description,
 			modules: row.modules.map((mod) => ({
@@ -34,6 +41,6 @@ export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
 					status: lesson.status as "done" | "current" | "upcoming",
 				})),
 			})),
-		}),
-	);
+		};
+	});
 }

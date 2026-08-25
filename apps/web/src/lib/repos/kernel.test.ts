@@ -64,7 +64,8 @@ const snapshot: KernelSnapshot = {
 			id: "sy-1",
 			name: "IELTS Writing 7.0",
 			level: "Band 7.0",
-			skill: "Writing",
+			type: "ielts",
+			skills: ["Writing"],
 			description: "mô tả",
 			totalLessons: 99,
 			modules: [
@@ -353,8 +354,9 @@ describe("kernelCommand", () => {
 			payload: {
 				id: "sy-client",
 				name: "S",
+				type: "ielts",
 				level: "",
-				skill: "",
+				skills: ["Writing"],
 				description: "",
 				totalLessons: 10,
 			},
