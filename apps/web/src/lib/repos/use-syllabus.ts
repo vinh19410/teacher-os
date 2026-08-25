@@ -11,6 +11,8 @@ import type { Syllabus } from "@/lib/mock-data";
 
 export interface SyllabusRead {
 	syllabi: Syllabus[];
+	/** Shared templates only (classId null) — the /syllabus gallery source. */
+	templates: Syllabus[];
 	syllabusById(id: string): Syllabus | undefined;
 }
 
@@ -19,6 +21,7 @@ export function useSyllabus(): SyllabusRead {
 	return useMemo(
 		() => ({
 			syllabi: data.syllabi,
+			templates: data.syllabi.filter((s) => s.classId === null),
 			syllabusById: (id: string) => data.syllabi.find((s) => s.id === id),
 		}),
 		[data],

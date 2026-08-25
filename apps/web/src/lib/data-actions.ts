@@ -41,7 +41,7 @@ export type KernelAction =
 				level: string;
 				skills: string[];
 				mode: string;
-				syllabusId: string;
+				templateId: string;
 				schedule: { days: number[]; start: string; end: string };
 				sessionsTotal: number;
 				startDate: string;
@@ -59,7 +59,17 @@ export type KernelAction =
 				totalLessons: number;
 			};
 	  }
-	| { type: "assign-syllabus"; classId: string; syllabusId: string }
+	| {
+			/** Deep-copy a syllabus template into the class's own curriculum (issue #79). */
+			type: "import-syllabus";
+			classId: string;
+			templateId: string;
+	  }
+	| {
+			/** Delete the class's imported curriculum copy and null the pointer. */
+			type: "remove-curriculum";
+			classId: string;
+	  }
 	| {
 			type: "add-module";
 			syllabusId: string;

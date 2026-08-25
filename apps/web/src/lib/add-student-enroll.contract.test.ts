@@ -1,6 +1,6 @@
 /**
  * Source-contract lock for class-detail enroll wiring.
- * Not a component test. Parses JSX so AssignSyllabusModal's key cannot false-green.
+ * Not a component test. Parses JSX so ImportSyllabusModal's key cannot false-green.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -63,7 +63,7 @@ describe("add-student enroll wiring", () => {
 		);
 		expect(block).toMatch(/key=\{`add-student-\$\{cls\.id\}`\}/);
 		expect(block).toMatch(/classId=\{cls\.id\}/);
-		expect(block).not.toMatch(/<AssignSyllabusModal/);
+		expect(block).not.toMatch(/<ImportSyllabusModal/);
 	});
 
 	test("AddStudentModal puts classId inside the dispatch payload", () => {

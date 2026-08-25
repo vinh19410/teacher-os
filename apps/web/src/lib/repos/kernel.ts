@@ -68,10 +68,17 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					totalLessons: action.payload.totalLessons,
 				},
 			};
-		case "assign-syllabus":
+		case "import-syllabus":
 			return {
-				path: `/api/classes/${action.classId}/assign-syllabus`,
-				body: { syllabusId: action.syllabusId },
+				path: `/api/classes/${action.classId}/import-syllabus`,
+				body: { templateId: action.templateId },
+			};
+		case "remove-curriculum":
+			// Body must stay exactly {} — same CSRF-safe convention as
+			// check-in/cancel.
+			return {
+				path: `/api/classes/${action.classId}/remove-curriculum`,
+				body: {},
 			};
 		case "update-class-notes":
 			return {

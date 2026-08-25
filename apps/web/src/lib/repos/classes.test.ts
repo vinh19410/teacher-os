@@ -78,6 +78,8 @@ const snapshot: KernelSnapshot = {
 			name: "Writing 7.0 chuẩn khai",
 			level: "Band 7.0",
 			type: "ielts",
+			classId: null,
+			sourceTemplateId: null,
 			skills: ["Writing"],
 			description: "",
 			totalLessons: 12,

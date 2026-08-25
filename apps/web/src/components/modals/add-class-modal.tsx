@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
 import {
 	getTomorrowDateInputValue,
 	isFutureDateInputValue,
 } from "@/lib/date-input";
 import { addMinutes } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
+import { useSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -38,13 +38,13 @@ export function AddClassModal({
 	open: boolean;
 	onClose: () => void;
 }) {
-	const { data } = useData();
+	const { templates } = useSyllabus();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 7.0");
 	const [classType, setClassType] = useState<ClassType>("ielts");
 	const [skills, setSkills] = useState<string[]>([]);
 	const [mode, setMode] = useState("Online");
-	const [syllabusId, setSyllabusId] = useState("");
+	const [templateId, setTemplateId] = useState("");
 	const [days, setDays] = useState<number[]>([]);
 	const [startTime, setStartTime] = useState(DEFAULT_START);
 	const [endTime, setEndTime] = useState(DEFAULT_END);
@@ -119,7 +119,7 @@ export function AddClassModal({
 				level,
 				skills: classType === "ielts" ? skills : [],
 				mode,
-				syllabusId,
+				templateId,
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
@@ -188,13 +188,13 @@ export function AddClassModal({
 						/>
 					</Field>
 				)}
-				<Field label="Syllabus">
+				<Field label="Template giáo trình">
 					<Select
-						value={syllabusId}
-						onChange={(e) => setSyllabusId(e.target.value)}
+						value={templateId}
+						onChange={(e) => setTemplateId(e.target.value)}
 					>
-						<option value="">— Chưa gán —</option>
-						{data.syllabi.map((s) => (
+						<option value="">— Lớp trống —</option>
+						{templates.map((s) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
 							</option>

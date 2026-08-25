@@ -17,7 +17,7 @@ const KERNEL_WRITE_MODALS = [
 	"add-student-modal.tsx",
 	"add-class-modal.tsx",
 	"add-syllabus-modal.tsx",
-	"assign-syllabus-modal.tsx",
+	"import-syllabus-modal.tsx",
 	"add-module-modal.tsx",
 	"edit-module-modal.tsx",
 	"add-lesson-modal.tsx",
@@ -131,7 +131,7 @@ describe("kernel-backed store wiring", () => {
 					/disabled=\{saving \|\| notice !== undefined\}/,
 				);
 			} else {
-				expect(src, file).toMatch(/disabled=\{saving \|\| submitBlocked\}/);
+				expect(src, file).toMatch(/disabled=\{saving \|\| submitBlocked/);
 			}
 		}
 	});

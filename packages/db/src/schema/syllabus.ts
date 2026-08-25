@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	type AnySQLiteColumn,
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
 export const syllabus = sqliteTable(
@@ -19,8 +26,28 @@ export const syllabus = sqliteTable(
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
+		/**
+		 * Template/per-class-copy discriminator (issue #79): NULL = shared
+		 * template; a class id = the class's imported deep copy. Enforced
+		 * unique per class by syllabus_class_unique.
+		 */
+		classId: text("class_id"),
+		/**
+		 * Provenance of an imported copy — the template id it was copied
+		 * from. Logical FK only (SQLite cannot ALTER TABLE ADD FK); the
+		 * import handler only accepts templates (class_id IS NULL).
+		 */
+		sourceTemplateId: text("source_template_id").references(
+			(): AnySQLiteColumn => syllabus.id,
+			{ onDelete: "set null" },
+		),
 	},
-	(table) => [index("syllabus_org_idx").on(table.orgId)],
+	(table) => [
+		index("syllabus_org_idx").on(table.orgId),
+		uniqueIndex("syllabus_class_unique")
+			.on(table.classId)
+			.where(sql`class_id IS NOT NULL`),
+	],
 );
 
 export const syllabusModule = sqliteTable(

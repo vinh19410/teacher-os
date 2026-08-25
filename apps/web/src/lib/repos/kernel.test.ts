@@ -65,6 +65,8 @@ const snapshot: KernelSnapshot = {
 			name: "IELTS Writing 7.0",
 			level: "Band 7.0",
 			type: "ielts",
+			classId: null,
+			sourceTemplateId: null,
 			skills: ["Writing"],
 			description: "mô tả",
 			totalLessons: 99,
@@ -335,7 +337,7 @@ describe("kernelCommand", () => {
 				level: "Band 7.0",
 				skills: ["Writing"],
 				mode: "Online",
-				syllabusId: "",
+				templateId: "",
 				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 12,
 				startDate: "",
@@ -398,14 +400,17 @@ describe("kernelCommand", () => {
 		).toBe("/api/syllabi/sy/modules/m/lessons/l");
 	});
 
-	test("assign-syllabus and update-class-notes target the class subpath", () => {
-		expect(
-			kernelCommand({
-				type: "assign-syllabus",
-				classId: "c1",
-				syllabusId: "sy1",
-			}).path,
-		).toBe("/api/classes/c1/assign-syllabus");
+	test("import-syllabus, remove-curriculum and update-class-notes target the class subpath", () => {
+		const imported = kernelCommand({
+			type: "import-syllabus",
+			classId: "c1",
+			templateId: "tpl1",
+		});
+		expect(imported.path).toBe("/api/classes/c1/import-syllabus");
+		expect(imported.body).toEqual({ templateId: "tpl1" });
+		const removed = kernelCommand({ type: "remove-curriculum", classId: "c1" });
+		expect(removed.path).toBe("/api/classes/c1/remove-curriculum");
+		expect(removed.body).toEqual({});
 		expect(
 			kernelCommand({ type: "update-class-notes", classId: "c1", notes: "n" })
 				.path,

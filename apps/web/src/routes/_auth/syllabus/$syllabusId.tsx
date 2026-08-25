@@ -7,7 +7,6 @@ import {
 import { useState } from "react";
 import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
-import { AssignSyllabusModal } from "@/components/modals/assign-syllabus-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
 import { Badge } from "@/components/ui/badge";
@@ -61,11 +60,9 @@ function statusBadge(status: SyllabusLesson["status"]) {
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
 	const navigate = useNavigate();
+	const { classesForSyllabus } = useData();
 	const { syllabusById } = useSyllabus();
-	const { data } = useData();
-	const sy = syllabusById(syllabusId);
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-	const [assignOpen, setAssignOpen] = useState(false);
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
 	const [editModuleId, setEditModuleId] = useState<string | null>(null);
 	const [addLessonModuleId, setAddLessonModuleId] = useState<string | null>(
@@ -75,6 +72,7 @@ function SyllabusDetailRoute() {
 		moduleId: string;
 		lessonId: string;
 	} | null>(null);
+	const sy = syllabusById(syllabusId);
 
 	if (!sy) {
 		throw notFound();
@@ -83,7 +81,7 @@ function SyllabusDetailRoute() {
 	const all = sy.modules.flatMap((m) => m.lessons);
 	const done = all.filter((l) => l.status === "done").length;
 	const current = all.find((l) => l.status === "current");
-	const assigned = data.classes.filter((c) => c.syllabusId === sy.id);
+	const assigned = classesForSyllabus(sy.id);
 
 	function toggle(id: string) {
 		setCollapsed((prev) => {
@@ -111,9 +109,16 @@ function SyllabusDetailRoute() {
 						{sy.description}
 					</p>
 				</div>
-				<Button size="sm" onClick={() => setAssignOpen(true)}>
-					Gán vào lớp
-				</Button>
+				<div className="text-right">
+					<div className="font-mono text-meta text-muted-fg text-xs">
+						Đang dùng {assigned.length} lớp
+					</div>
+					<div className="mt-1 font-mono text-meta text-muted-fg text-xs">
+						{sy.classId === null
+							? "Template dùng chung"
+							: "Bản sao của một lớp"}
+					</div>
+				</div>
 			</Card>
 
 			<div className="mb-6 grid grid-cols-4 gap-4 max-app:grid-cols-2">
@@ -239,7 +244,7 @@ function SyllabusDetailRoute() {
 
 			{assigned.length > 0 && (
 				<div className="mt-6">
-					<SectionLabel>Lớp đang dùng syllabus này</SectionLabel>
+					<SectionLabel>Lớp đang dùng template này</SectionLabel>
 					<Card className="p-0">
 						<DataTable
 							headers={["Lớp", "Sĩ số", "Tiến độ", "Trạng thái"]}
@@ -279,12 +284,6 @@ function SyllabusDetailRoute() {
 				</div>
 			)}
 
-			<AssignSyllabusModal
-				key={sy.id}
-				open={assignOpen}
-				onClose={() => setAssignOpen(false)}
-				defaultSyllabusId={sy.id}
-			/>
 			<AddModuleModal
 				open={addModuleOpen}
 				onClose={() => setAddModuleOpen(false)}

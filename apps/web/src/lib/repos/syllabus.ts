@@ -26,6 +26,8 @@ export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
 			name: row.name,
 			level: row.level,
 			type: row.type === "communication" ? "communication" : "ielts",
+			classId: row.classId,
+			sourceTemplateId: row.sourceTemplateId,
 			skills,
 			totalLessons: row.modules.reduce((sum, m) => sum + m.lessons.length, 0),
 			description: row.description,

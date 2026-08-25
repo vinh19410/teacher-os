@@ -123,6 +123,10 @@ export interface Syllabus {
 	name: string;
 	level: string;
 	type: ClassType;
+	/** NULL = shared template; a class id = that class's imported copy (issue #79). */
+	classId: string | null;
+	/** Template the copy was imported from (null on templates). */
+	sourceTemplateId: string | null;
 	skills: string[];
 	totalLessons: number;
 	description: string;
