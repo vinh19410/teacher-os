@@ -1,7 +1,7 @@
 ---
 title: "Syllabus template import per-class curriculum"
 description: "Syllabus thành template dùng chung (class_id NULL); lớp import deep copy qua POST /api/classes/:id/import-syllabus (db.batch atomic, status reset upcoming, unique index chặn trùng); giáo viên edit module/lesson riêng từng lớp. Migration 0009 thêm class_id + source_template_id + index + backfill copy-on-import cho class hiện có."
-status: pending
+status: completed
 priority: P1
 effort: "3-4d"
 tags: [feature, backend, frontend, database, api]
