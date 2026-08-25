@@ -257,7 +257,7 @@ function ClassDetailRoute() {
 							</div>
 						))}
 					</div>
-				) : (
+				) : cls.syllabusId === null ? (
 					<Card variant="white" className="p-8 text-center">
 						<p className="text-muted-fg text-sm">
 							Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa
@@ -269,6 +269,23 @@ function ClassDetailRoute() {
 							onClick={() => setImportOpen(true)}
 						>
 							Nhập từ template
+						</Button>
+					</Card>
+				) : (
+					// Legacy anomaly: pointer set but not this class's copy
+					// (pre-migration data). Removing nulls the pointer only.
+					<Card variant="white" className="p-8 text-center">
+						<p className="text-muted-fg text-sm">
+							Lớp có con trỏ giáo trình lệch (dữ liệu cũ) và không thể chỉnh
+							sửa. Gỡ con trỏ để bắt đầu lại với một template.
+						</p>
+						<Button
+							variant="secondary"
+							size="sm"
+							className="mt-4"
+							onClick={() => setConfirmRemoveOpen(true)}
+						>
+							Gỡ giáo trình
 						</Button>
 					</Card>
 				))}
@@ -351,9 +368,10 @@ function ClassDetailRoute() {
 				title="Gỡ giáo trình khỏi lớp?"
 			>
 				<p className="text-muted-fg text-sm">
-					Toàn bộ cây giáo trình bản sao của lớp này (kèm tiến độ buổi học) sẽ
-					bị xóa. Template gốc và các lớp khác không bị ảnh hưởng. Hành động này
-					không thể hoàn tác.
+					Nếu lớp đang giữ một bản sao giáo trình, toàn bộ cây (kèm tiến độ buổi
+					học) sẽ bị xóa; nếu chỉ là con trỏ lệch (dữ liệu cũ), chỉ con trỏ được
+					dọn. Template gốc và các lớp khác không bao giờ bị ảnh hưởng. Hành động
+					này không thể hoàn tác.
 				</p>
 				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
 					<Button

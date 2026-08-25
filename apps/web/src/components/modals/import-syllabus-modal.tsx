@@ -24,9 +24,14 @@ export function ImportSyllabusModal({
 }) {
 	const { templates } = useSyllabus();
 	const { classById } = useClasses();
-	const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
+	// The list loads with the snapshot (may be empty on first paint), so the
+	// stored id can go stale — always derive the effective selection.
+	const [selectedId, setSelectedId] = useState("");
 	const { saving, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
+	const templateId = templates.some((t) => t.id === selectedId)
+		? selectedId
+		: (templates[0]?.id ?? "");
 
 	const className = classById(classId)?.name ?? "";
 
@@ -65,7 +70,7 @@ export function ImportSyllabusModal({
 				<Field label="Template">
 					<Select
 						value={templateId}
-						onChange={(e) => setTemplateId(e.target.value)}
+					onChange={(e) => setSelectedId(e.target.value)}
 					>
 						{templates.map((s) => (
 							<option key={s.id} value={s.id}>

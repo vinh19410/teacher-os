@@ -563,7 +563,19 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				),
 			);
 		if (!copy) {
-			return c.json({ error: "Lớp chưa có giáo trình bản sao" }, 409);
+			// Legacy anomaly: the pointer targets a template, a foreign-org
+			// row, or a deleted row. Cleanup = null this class's pointer only;
+			// the pointed row (templates included) is never deleted here.
+			await db
+				.update(classTable)
+				.set({ syllabusId: null })
+				.where(
+					and(
+						eq(classTable.id, classId),
+						eq(classTable.orgId, ctx.orgId),
+					),
+				);
+			return c.json({ ok: true });
 		}
 
 		// FK order (NO ACTION): null the pointer FIRST, then delete

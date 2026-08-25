@@ -23,6 +23,7 @@ import { membership } from "@teacher-os/db/schema/membership";
 import { notif } from "@teacher-os/db/schema/notif";
 import { organization } from "@teacher-os/db/schema/organization";
 import { report } from "@teacher-os/db/schema/report";
+import { syllabusLesson } from "@teacher-os/db/schema/syllabus";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -1639,7 +1640,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		expect(again.status).toBe(200);
 	});
 
-	test("matrix 9: remove-curriculum on a template pointer is 409 and keeps the template", async () => {
+	test("matrix 9: remove-curriculum on a template pointer nulls the pointer, never deletes the template", async () => {
 		const classId = await t.createClass(session, "Lớp pointer thẳng template");
 		// Legacy anomaly simulation: pointer straight at a template row.
 		await t.db
@@ -1652,11 +1653,45 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 			method: "POST",
 			body: {},
 		});
-		expect(res.status).toBe(409);
+		expect(res.status).toBe(200);
 		const snapshot = await t.kernel(session);
-		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+		// Template survives fully intact.
 		const tpl = snapshot.syllabi.find((s) => s.id === templateId);
 		expect(tpl?.modules).toHaveLength(2);
+		expect(tpl?.classId).toBeNull();
+		// The anomalous pointer is cleaned to null (not a dead-end anymore).
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBeNull();
+	});
+
+	test("size guard: import of a template with more than 500 nodes is 422", async () => {
+		const bigTemplateId = await t.createSyllabus(session, "Template khổng lồ");
+		const moduleId = await t.createModule(session, bigTemplateId, "Khối 501");
+		// Direct rows (fast): 501 lessons on one module → modules+lessons > 500.
+		const orgId = await t.orgIdOf(session);
+		await t.db.insert(syllabusLesson).values(
+			Array.from({ length: 501 }, (_, i) => ({
+				id: `big-l${i}`,
+				orgId,
+				moduleId,
+				title: `Lesson ${i}`,
+				objectives: "",
+				materials: "",
+				status: "upcoming",
+				position: i,
+			})),
+		);
+		const classId = await t.createClass(session, "Lớp nhận template lớn");
+		const res = await importSyllabus(session, classId, bigTemplateId);
+		expect(res.status).toBe(422);
+		expect(((await res.json()) as { error: string }).error).toBe(
+			"Template quá lớn để import",
+		);
+		// Nothing was written: no copy, pointer still null.
+		const snapshot = await t.kernel(session);
+		expect(
+			snapshot.syllabi.some((s) => s.sourceTemplateId === bigTemplateId),
+		).toBe(false);
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBeNull();
 	});
 
 	test("matrix 11: snapshot echoes classId/sourceTemplateId on copies", async () => {

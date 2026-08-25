@@ -119,6 +119,9 @@ Simulation of the phase-02 sketch showed **full replay crashes**: after step 6 (
 - Cutover grep: `assign-syllabus|assignSyllabus` in `apps/` + `packages/` = the one intentional 404-proof test string only.
 - Pre-prod verified: no prod D1 (runbook; alchemy state has no production database), deploy coupling noted for PR.
 
+### Local Code Review — 2026-08-25 (vibe step 6)
+Stage 1 spec compliance: **PASS** (reviewer traced the migration SQL independently). Stage 2: no Critical/Important; 4 Minor — 3 fixed (422 size-guard test added; ImportSyllabusModal stale default → derived selection; legacy pointer-anomaly dead-end → remove-curriculum now nulls a non-copy pointer instead of 409, UI anomaly branch with Gỡ; template rows still never deleted). 1 noted-not-fixed: pre-migrate orphan/wrong-org skip-count is an operational SELECT, documented for the deploy note. Verdict: **SHIP**. Server 126/126 after fixes.
+
 ## Boundary reminder
 
 - **Plan-only:** không edit code source. Sau khi plan được duyệt, chạy `/ak:cook plans/260825-1915-syllabus-template-import-per-class-curriculum`.
