@@ -1,3 +1,4 @@
+import { IELTS_SKILLS } from "@teacher-os/api/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddSyllabusModal } from "@/components/modals/add-syllabus-modal";
@@ -9,13 +10,14 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
 });
 
-const FILTERS = ["Tất cả", "Writing", "Speaking", "Reading"];
+const FILTERS = ["Tất cả", ...IELTS_SKILLS];
 
 function SyllabusRoute() {
 	const navigate = useNavigate();
@@ -25,7 +27,9 @@ function SyllabusRoute() {
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const list =
-		filter === "Tất cả" ? syllabi : syllabi.filter((s) => s.skill === filter);
+		filter === "Tất cả"
+			? syllabi
+			: syllabi.filter((s) => s.skills.includes(filter));
 
 	return (
 		<div>
@@ -66,7 +70,11 @@ function SyllabusRoute() {
 						>
 							<div className="flex items-start justify-between gap-3">
 								<div className="flex gap-1">
-									<Tag>{sy.skill}</Tag>
+									{sy.skills.length > 0 ? (
+										sy.skills.map((sk) => <Tag key={sk}>{sk}</Tag>)
+									) : (
+										<Tag>{CLASS_TYPE_LABELS[sy.type]}</Tag>
+									)}
 									<Tag>{sy.level}</Tag>
 								</div>
 								<span className="font-mono text-meta text-xs">

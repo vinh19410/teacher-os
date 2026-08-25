@@ -167,7 +167,8 @@ export const seedData: MockData = {
 			id: "sy1",
 			name: "Syllabus",
 			level: "",
-			skill: "",
+			type: "ielts",
+			skills: [],
 			totalLessons: 12,
 			description: "",
 			modules: [

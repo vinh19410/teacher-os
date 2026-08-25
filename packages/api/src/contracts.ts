@@ -94,13 +94,35 @@ export const classNotesSchema = z.object({
 });
 export type ClassNotes = z.infer<typeof classNotesSchema>;
 
-export const syllabusCreateSchema = z.object({
-	name: z.string().min(1),
-	level: z.string().default(""),
-	skill: z.string().default(""),
-	description: z.string().default(""),
-	totalLessons: z.number().int().min(0).default(0),
-});
+export const syllabusCreateSchema = z
+	.object({
+		name: z.string().min(1),
+		type: z.enum(CLASS_TYPES).default("ielts"),
+		level: z.string().default(""),
+		skills: z
+			.array(z.enum(IELTS_SKILLS))
+			.max(IELTS_SKILLS.length)
+			.refine((skills) => new Set(skills).size === skills.length)
+			.default([]),
+		description: z.string().default(""),
+		totalLessons: z.number().int().min(0).default(0),
+	})
+	.superRefine((input, ctx) => {
+		if (input.type === "ielts" && input.skills.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["skills"],
+				message: "Syllabus IELTS cần ít nhất một kỹ năng",
+			});
+		}
+		if (input.type === "communication" && input.skills.length > 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["skills"],
+				message: "Syllabus Giao tiếp không chọn kỹ năng",
+			});
+		}
+	});
 export type SyllabusCreate = z.infer<typeof syllabusCreateSchema>;
 
 export const moduleUpsertSchema = z.object({
@@ -261,7 +283,8 @@ export interface KernelSyllabusRow {
 	id: string;
 	name: string;
 	level: string;
-	skill: string;
+	type: ClassType;
+	skills: string[];
 	description: string;
 	/** Stored form value; the adapter recomputes from the tree. */
 	totalLessons: number;

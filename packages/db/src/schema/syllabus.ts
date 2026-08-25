@@ -11,7 +11,9 @@ export const syllabus = sqliteTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		level: text("level").notNull().default(""),
-		skill: text("skill").notNull().default(""),
+		type: text("type").notNull().default("ielts"),
+		/** JSON array string, e.g. '["Writing","Speaking"]'. */
+		skills: text("skills").notNull().default("[]"),
 		description: text("description").notNull().default(""),
 		totalLessons: integer("total_lessons").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
