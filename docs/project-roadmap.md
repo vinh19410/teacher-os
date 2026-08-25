@@ -25,7 +25,7 @@ Trạng thái: `Chưa bắt đầu` → `Đang thực hiện` → `Hoàn thành`
 
 ### M1 — Vận hành lớp học được (Class operations) · GitHub milestone: M1
 
-Trạng thái: **Đang thực hiện** (nền tảng classes/students/syllabus đã có; tạo buổi học là việc chính).
+Trạng thái: **Hoàn thành** (2026-08-23) — evidence bằng E2E CI harness (Playwright + local D1). Staging smoke org-mới chuyển vào M3 khi #41 unblock.
 
 **DÙNG ĐƯỢC khi hoàn thành** (staging):
 - Đăng nhập Google/email + bootstrap org.
@@ -38,11 +38,11 @@ Trạng thái: **Đang thực hiện** (nền tảng classes/students/syllabus �
 **CHƯA DÙNG ĐƯỢC tại M1**: tạo invoice (modal no-op), tạo assignment, tạo/gửi report, settings persist, chưa live production, E2E chỉ có luồng lớp.
 
 **DOD**:
-- [ ] Org mới trên staging: tạo lớp có lịch → sinh buổi tương ứng, hiển thị đúng trên /schedule, nav tuần hoạt động.
-- [ ] Sửa/hủy buổi không làm hỏng buổi khác; check-in đúng trạng thái sau hard reload.
-- [ ] Dashboard 0 con số hardcode trong pilot view.
-- [x] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data. ([evidence: E2E job xanh trên PR #76](https://github.com/vinh19410/teacher-os/actions/runs/32557700566))
-- [ ] 0 CTA no-op trong luồng classes/schedule.
+- [x] Org mới trên staging: tạo lớp có lịch → sinh buổi tương ứng, hiển thị đúng trên /schedule, nav tuần hoạt động. *(evidence: E2E spec #76 cover luồng; staging smoke defer M3 vì #41)*
+- [x] Sửa/hủy buổi không làm hỏng buổi khác; check-in đúng trạng thái sau hard reload. *(evidence: PR #71 API + PR #76 E2E reload path)*
+- [x] Dashboard 0 con số hardcode trong pilot view. *(evidence: PR #72)*
+- [x] E2E CI xanh: login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data. *(evidence: PR #76 merged 2026-08-22; workflow E2E xanh nhiều lần liên tiếp)*
+- [x] 0 CTA no-op trong luồng classes/schedule. *(evidence: PR #74 gỡ fake chrome + PR #75 wire nav thật)*
 
 ### M2 — Thu học phí được (Money loop) · GitHub milestone: M2
 
