@@ -111,6 +111,14 @@ Simulation of the phase-02 sketch showed **full replay crashes**: after step 6 (
   3. Backfill status = **copy của class hiện có giữ nguyên phân phối done/current; template gốc reset `upcoming`** — khớp D2.3/D3.4 + red-team F.
 - Whole-Plan Consistency Sweep (post-validation): re-read plan.md + 6 phase files; decision deltas checked 3; stale references 0; unresolved contradictions 0.
 
+### Acceptance Evidence — 2026-08-25 (cook phase 6)
+- Rehearsal: `apps/server/src/syllabus-template-migration.test.ts` — 13 tests green (unique index, 11-scenario matrix incl. orphan/cross-org/share-template, replay-idempotent, boundary-heal loop).
+- Suites: server 125/125, web 234/234, infra 11/11, auth 16/16, ci-workflow + topology 7 node tests — `pnpm test` PASS. `pnpm check-types` PASS, `pnpm build` PASS, `db:generate` parity (no changes), biome clean (2 pre-existing warnings on develop files).
+- Browser smoke (alchemy dev local D1, ports shifted 8010/8011 to avoid the operator's running stack; local-only uncommitted change, reverted after): 9/9 — gallery templates-only + in-use badge 0→1; import → 0/3 upcoming; 409 on duplicate (direct fetch); copy↔template isolation both directions; remove → confirm → empty state, snapshot shows exactly 1 syllabus (template) + null pointer; create-class-with-template has tree ready; classes table pointer column resolves copy name.
+- Snapshot payload: 1,301 B after 1 template + 1 import; 2,553 B after re-import with second class — orders of magnitude under the 512 KB pilot threshold.
+- Cutover grep: `assign-syllabus|assignSyllabus` in `apps/` + `packages/` = the one intentional 404-proof test string only.
+- Pre-prod verified: no prod D1 (runbook; alchemy state has no production database), deploy coupling noted for PR.
+
 ## Boundary reminder
 
 - **Plan-only:** không edit code source. Sau khi plan được duyệt, chạy `/ak:cook plans/260825-1915-syllabus-template-import-per-class-curriculum`.

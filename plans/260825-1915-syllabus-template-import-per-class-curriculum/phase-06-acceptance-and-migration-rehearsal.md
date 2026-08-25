@@ -16,16 +16,16 @@ Cổng acceptance cuối: (a) rehearsal migration 0009 trên **bản sao** local
 
 ## Requirements
 
-- [ ] Rehearsal migration: **test tự động in-memory theo pattern `apps/server/src/comment-bank-existing-data-migration.test.ts:29-70`** (red-team A — KHÔNG dùng `db:migrate:deploy`: driver d1-http không credentials, chạy được thì bắn thẳng D1 remote): seed pilot-like → applyFile 0000→0009 → chạy 11 scenario verification của [Phase 2](./phase-02-db-schema-and-migration.md) → kết quả (count class/copy/status) ghi vào note cook.
-- [ ] `pnpm --filter server test` pass (suite phase 3 + migration rehearsal test phase 2).
-- [ ] `pnpm test` pass toàn workspace (web phase 4-5 + các suite hiện hữu không regression).
-- [ ] `pnpm check-types` pass; `pnpm build` pass.
-- [ ] `pnpm --filter @teacher-os/db db:generate` không sinh migration mới (parity).
-- [ ] Browser smoke (`pnpm dev:server` + `pnpm dev:web`) theo matrix dưới. **Chỉ chạy dev server sau khi 0009 hoàn chỉnh đã land** (red-team A: alchemy dev auto-apply migration — structural-only đã bị ledger khóa).
-- [ ] Clean cutover: grep **`apps/` + `packages/`** (code + test) `assign-syllabus|assignSyllabus` → 0 kết quả (red-team K: `open-design/` prototype và `plans/` archive chứa string này — loại trừ, không sửa archive).
-- [ ] **Đo payload snapshot (red-team J):** capture `GET /api/kernel` response size trước (branch gốc) và sau (branch feature) với dữ liệu pilot; ghi số vào note PR. Ngưỡng chấp nhận pilot: < 512KB. Vượt → tạo follow-up plan fetch cây theo classId, không sửa lén.
-- [ ] Verify pre-prod: runbook — xác nhận chưa có prod D1 nào cần dual-write; nếu có → DỪNG, báo lại quyết định deploy (assumption 1).
-- [ ] Deploy coupling note cho PR: release unit = migration 0009 + worker + web trong MỘT deploy (breaking contract, không để hở giữa web cũ/API mới).
+- [x] Rehearsal migration: **test tự động in-memory theo pattern `apps/server/src/comment-bank-existing-data-migration.test.ts:29-70`** (red-team A — KHÔNG dùng `db:migrate:deploy`: driver d1-http không credentials, chạy được thì bắn thẳng D1 remote): seed pilot-like → applyFile 0000→0009 → chạy 11 scenario verification của [Phase 2](./phase-02-db-schema-and-migration.md) → kết quả (count class/copy/status) ghi vào note cook.
+- [x] `pnpm --filter server test` pass (suite phase 3 + migration rehearsal test phase 2).
+- [x] `pnpm test` pass toàn workspace (web phase 4-5 + các suite hiện hữu không regression).
+- [x] `pnpm check-types` pass; `pnpm build` pass.
+- [x] `pnpm --filter @teacher-os/db db:generate` không sinh migration mới (parity).
+- [x] Browser smoke (`pnpm dev:server` + `pnpm dev:web`) theo matrix dưới. **Chỉ chạy dev server sau khi 0009 hoàn chỉnh đã land** (red-team A: alchemy dev auto-apply migration — structural-only đã bị ledger khóa).
+- [x] Clean cutover: grep **`apps/` + `packages/`** (code + test) `assign-syllabus|assignSyllabus` → 0 kết quả (red-team K: `open-design/` prototype và `plans/` archive chứa string này — loại trừ, không sửa archive).
+- [x] **Đo payload snapshot (red-team J):** capture `GET /api/kernel` response size trước (branch gốc) và sau (branch feature) với dữ liệu pilot; ghi số vào note PR. Ngưỡng chấp nhận pilot: < 512KB. Vượt → tạo follow-up plan fetch cây theo classId, không sửa lén.
+- [x] Verify pre-prod: runbook — xác nhận chưa có prod D1 nào cần dual-write; nếu có → DỪNG, báo lại quyết định deploy (assumption 1).
+- [x] Deploy coupling note cho PR: release unit = migration 0009 + worker + web trong MỘT deploy (breaking contract, không để hở giữa web cũ/API mới).
 
 ## Architecture
 
@@ -72,10 +72,10 @@ Verify-only — không file nào bị sửa trong phase này:
 
 ## Success Criteria
 
-- [ ] 9/9 smoke scenario pass (hoặc defect được fix + re-run step fail).
-- [ ] `pnpm --filter server test`, `pnpm test`, `pnpm check-types`, `pnpm build`, `db:generate` parity — tất cả pass.
-- [ ] Grep `assign-syllabus` trong `apps/` + `packages/` = 0.
-- [ ] Note PR chứa: kết quả rehearsal (counts), payload snapshot trước/sau, deploy coupling (một deploy: 0009 + worker + web), xác nhận pre-prod.
+- [x] 9/9 smoke scenario pass (hoặc defect được fix + re-run step fail).
+- [x] `pnpm --filter server test`, `pnpm test`, `pnpm check-types`, `pnpm build`, `db:generate` parity — tất cả pass.
+- [x] Grep `assign-syllabus` trong `apps/` + `packages/` = 0.
+- [x] Note PR chứa: kết quả rehearsal (counts), payload snapshot trước/sau, deploy coupling (một deploy: 0009 + worker + web), xác nhận pre-prod.
 
 ## Risk Assessment
 
