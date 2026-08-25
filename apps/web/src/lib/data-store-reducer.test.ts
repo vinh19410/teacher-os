@@ -220,17 +220,6 @@ describe("reducer", () => {
 		expect(next.syllabi.find((s) => s.id === "sy1")?.totalLessons).toBe(total);
 	});
 
-	test("assign-syllabus sets class.syllabusId only", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "assign-syllabus",
-			classId: "c1",
-			syllabusId: "sy2",
-		});
-		expect(next.classes.find((c) => c.id === "c1")?.syllabusId).toBe("sy2");
-		expect(next.syllabi).toEqual(before.syllabi);
-	});
-
 	test("cancel-lesson does not change package counts", () => {
 		const before = cloneSeed();
 		const next = reducer(before, { type: "cancel-lesson", lessonId: "l3" });
@@ -312,7 +301,7 @@ describe("reducer", () => {
 				level: "6.0",
 				skills: ["Writing", "Speaking"],
 				mode: "Online",
-				syllabusId: "sy1",
+				templateId: "sy1",
 				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 10,
 				startDate: "01/09",
@@ -342,7 +331,7 @@ describe("reducer", () => {
 				level: "",
 				skills: [],
 				mode: "Online",
-				syllabusId: "",
+				templateId: "",
 				schedule: { days: [2], start: "09:00", end: "10:30" },
 				sessionsTotal: 10,
 				startDate: "",

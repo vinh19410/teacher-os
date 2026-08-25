@@ -131,7 +131,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				type: action.payload.type,
 				skills: action.payload.type === "ielts" ? action.payload.skills : [],
 				mode: action.payload.mode,
-				syllabusId: action.payload.syllabusId,
+				syllabusId: "", // runtime pointer arrives via snapshot refresh; the reducer is a dead fixture
 				studentIds: [],
 				schedule: JSON.stringify({
 					...action.payload.schedule,
@@ -157,17 +157,13 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				skills: action.payload.skills,
 				description: action.payload.description,
 				totalLessons: action.payload.totalLessons,
+				// Reducer is a dead fixture (kernel-runtime contract test): new
+				// syllabi are always templates; copies only arrive via snapshot.
+				classId: null,
+				sourceTemplateId: null,
 				modules: [],
 			};
 			return { ...state, syllabi: [...state.syllabi, syllabus] };
-		}
-		case "assign-syllabus": {
-			return {
-				...state,
-				classes: state.classes.map((c) =>
-					c.id === action.classId ? { ...c, syllabusId: action.syllabusId } : c,
-				),
-			};
 		}
 		case "add-module": {
 			return {

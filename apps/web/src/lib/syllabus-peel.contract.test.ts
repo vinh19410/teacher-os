@@ -24,17 +24,18 @@ describe("syllabus read peel wiring", () => {
 		expect(src).not.toMatch(/syllabusById/);
 	});
 
-	test("syllabus detail reads the syllabus via the repo, keeps useData for unpeeled collections", () => {
+	test("syllabus detail reads the syllabus via the repo, keeps useData for the in-use selector", () => {
 		const src = readSrc("routes/_auth/syllabus/$syllabusId.tsx");
 		expect(src).toMatch(
 			/import \{ useSyllabus \} from "@\/lib\/repos\/use-syllabus"/,
 		);
 		expect(src).toMatch(/const \{ syllabusById \} = useSyllabus\(\)/);
-		// the store destructure carries only unpeeled collections — no syllabus reads
-		expect(src).toMatch(/const \{ data \} = useData\(\)/);
-		expect(src).toMatch(/data\.classes/);
-		// negative backstops: no aliased store reads of syllabi either
+		// "đang dùng" count goes through the provider's provenance selector
+		expect(src).toMatch(/const \{ classesForSyllabus \} = useData\(\)/);
+		expect(src).toMatch(/classesForSyllabus\(sy\.id\)/);
+		// negative backstops: no aliased store reads of syllabi or classes
 		expect(src).not.toMatch(/data\.syllabi/);
+		expect(src).not.toMatch(/data\.classes/);
 		expect(src).not.toMatch(/useData\(\)[^\n]*syllabusById/);
 	});
 

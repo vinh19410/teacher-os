@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
-import { Progress } from "@/components/ui/progress";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
@@ -21,30 +20,29 @@ const FILTERS = ["Tất cả", ...IELTS_SKILLS];
 
 function SyllabusRoute() {
 	const navigate = useNavigate();
-	const { syllabi } = useSyllabus();
-	const { data } = useData();
+	const { templates } = useSyllabus();
+	const { classesForSyllabus } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const list =
 		filter === "Tất cả"
-			? syllabi
-			: syllabi.filter((s) => s.skills.includes(filter));
+			? templates
+			: templates.filter((s) => s.skills.includes(filter));
 
 	return (
 		<div>
-			<PageHead title="Syllabus" lead="3 giáo trình · 37 buổi tổng cộng" />
+			<PageHead
+				title="Syllabus"
+				lead={`${templates.length} template · ${templates.reduce((sum, s) => sum + s.totalLessons, 0)} buổi tổng cộng`}
+			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				<Button onClick={() => setModalOpen(true)}>+ Tạo syllabus</Button>
 			</div>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 				{list.map((sy) => {
-					const all = sy.modules.flatMap((m) => m.lessons);
-					const done = all.filter((l) => l.status === "done").length;
-					const pct =
-						all.length > 0 ? Math.round((done / all.length) * 100) : 0;
-					const assigned = data.classes.filter((c) => c.syllabusId === sy.id);
+					const inUse = classesForSyllabus(sy.id).length;
 					return (
 						<Card
 							key={sy.id}
@@ -89,24 +87,16 @@ function SyllabusRoute() {
 							</p>
 							<div className="mt-4">
 								<div className="mb-1 flex justify-between">
-									<span className="font-mono text-meta text-xs">Tiến độ</span>
+									<span className="font-mono text-meta text-xs">Module</span>
 									<span className="font-mono text-meta text-xs">
-										{done}/{all.length}
+										{sy.modules.length}
 									</span>
 								</div>
-								<Progress value={pct} />
 							</div>
 							<div className="mt-4 flex flex-wrap items-center gap-2">
-								<span className="font-mono text-meta text-xs">Đã gán:</span>
-								{assigned.length > 0 ? (
-									assigned.map((c) => (
-										<Badge key={c.id} variant="accent">
-											{c.name.substring(0, 22)}
-										</Badge>
-									))
-								) : (
-									<span className="font-mono text-meta text-xs">Chưa gán</span>
-								)}
+								<Badge variant={inUse > 0 ? "accent" : "muted"}>
+									Đang dùng {inUse} lớp
+								</Badge>
 							</div>
 						</Card>
 					);

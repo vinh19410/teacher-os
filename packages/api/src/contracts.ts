@@ -41,8 +41,8 @@ export const classCreateSchema = z
 			.refine((skills) => new Set(skills).size === skills.length)
 			.default([]),
 		mode: z.string().default("Online"),
-		/** "" means no syllabus assigned yet. */
-		syllabusId: z.string().default(""),
+		/** Template to import a per-class curriculum copy from; "" = empty class. */
+		templateId: z.string().default(""),
 		schedule: z.object({
 			/** 0 = Monday … 6 = Sunday (dayNames index convention). */
 			days: z
@@ -83,12 +83,15 @@ export const classCreateSchema = z
 	});
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
-export const assignSyllabusSchema = z.object({
-	/** "" unassigns. */
-	syllabusId: z.string(),
+/** Import a deep copy of a syllabus template into a class (issue #79). */
+export const importSyllabusSchema = z.object({
+	templateId: z.string().min(1),
 });
-export type AssignSyllabus = z.infer<typeof assignSyllabusSchema>;
+export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
 
+/** Remove a class curriculum: deletes the imported copy tree, nulls the pointer. */
+export const removeCurriculumSchema = z.object({}).strict();
+export type RemoveCurriculum = z.infer<typeof removeCurriculumSchema>;
 export const classNotesSchema = z.object({
 	notes: z.string(),
 });
@@ -286,6 +289,10 @@ export interface KernelSyllabusRow {
 	type: ClassType;
 	skills: string[];
 	description: string;
+	/** NULL = shared template; a class id = that class's imported copy. */
+	classId: string | null;
+	/** Template the copy was imported from (null on templates). */
+	sourceTemplateId: string | null;
 	/** Stored form value; the adapter recomputes from the tree. */
 	totalLessons: number;
 	modules: KernelSyllabusModuleRow[];

@@ -223,7 +223,7 @@ async function createTestApp() {
 				level: "Band 7.0",
 				skills: ["Writing", "Speaking"],
 				mode: "Online",
-				syllabusId: "",
+				templateId: "",
 				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 				sessionsTotal: 12,
 				startDate: "01/09",
@@ -368,7 +368,7 @@ describe("class type + structured schedule (create-class modal)", () => {
 		level: "Band 7.0",
 		skills: ["Writing"],
 		mode: "Online",
-		syllabusId: "",
+		templateId: "",
 		schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 		sessionsTotal: 12,
 		startDate: "01/09",
@@ -1432,35 +1432,275 @@ describe("reports, notifications, and comment bank (Wave 7)", () => {
 	});
 });
 
-describe("assign syllabus + class notes", () => {
+describe("import syllabus + remove curriculum (issue #79)", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;
+	let templateId: string;
+	let moduleAId: string;
+	let moduleBId: string;
+
+	async function addLesson(
+		session: TestSession,
+		syllabusId: string,
+		moduleId: string,
+		title: string,
+		status = "upcoming",
+	): Promise<string> {
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title, objectives: "", materials: "", status },
+			},
+		);
+		expect(res.status).toBe(201);
+		return ((await res.json()) as { id: string }).id;
+	}
+
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
 
 	beforeAll(async () => {
 		t = await createTestApp();
-		session = await t.insertUser("Cô Assign");
+		session = await t.insertUser("Cô Import");
+		templateId = await t.createSyllabus(session, "Template IELTS");
+		moduleAId = await t.createModule(session, templateId, "Module A");
+		moduleBId = await t.createModule(session, templateId, "Module B");
+		// Mixed statuses prove the runtime copy resets them (unlike the
+		// migration backfill, which preserves existing class progress).
+		await addLesson(session, templateId, moduleAId, "Lesson A1", "done");
+		await addLesson(session, templateId, moduleAId, "Lesson A2", "current");
+		await addLesson(session, templateId, moduleBId, "Lesson B1", "upcoming");
 	});
 
-	test("assign then unassign syllabus, and persist notes", async () => {
-		const classId = await t.createClass(session, "Lớp gán");
-		const syllabusId = await t.createSyllabus(session, "Syllabus gán");
+	test("matrix 12: POST /api/syllabi creates a template (classId null)", async () => {
+		const snapshot = await t.kernel(session);
+		const tpl = snapshot.syllabi.find((s) => s.id === templateId);
+		expect(tpl?.classId).toBeNull();
+		expect(tpl?.sourceTemplateId).toBeNull();
+	});
 
-		const assign = await t.call(`/api/classes/${classId}/assign-syllabus`, {
+	test("matrix 1+2+3+6: import deep-copies the full tree, resets statuses, preserves position + metadata", async () => {
+		const classId = await t.createClass(session, "Lớp import 1");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		const copyId = ((await res.json()) as { id: string }).id;
+		expect(copyId).not.toBe(templateId);
+
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(classId);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+		expect(copy?.name).toBe("Template IELTS");
+		// Stored form value copied as-is; the web recomputes from the tree.
+		expect(copy?.totalLessons).toBe(0);
+
+		// FK wiring: new module ids hanging off the copy, original ids untouched.
+		expect(copy?.modules).toHaveLength(2);
+		const copyModuleIds = copy?.modules.map((m) => m.id) ?? [];
+		expect(copyModuleIds).not.toContain(moduleAId);
+		expect(copyModuleIds).not.toContain(moduleBId);
+		const titles = copy?.modules.map((m) => m.title) ?? [];
+		expect(titles).toEqual(["Module A", "Module B"]);
+
+		const lessons = copy?.modules.flatMap((m) => m.lessons) ?? [];
+		expect(lessons.map((l) => l.title).sort()).toEqual([
+			"Lesson A1",
+			"Lesson A2",
+			"Lesson B1",
+		]);
+		// Runtime import resets statuses — even done/current template lessons.
+		expect(lessons.every((l) => l.status === "upcoming")).toBe(true);
+
+		// Pointer moved to the copy.
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.syllabusId).toBe(copyId);
+
+		// Position preserved within each module.
+		const moduleA = copy?.modules.find((m) => m.title === "Module A");
+		expect(moduleA?.lessons.map((l) => l.title)).toEqual([
+			"Lesson A1",
+			"Lesson A2",
+		]);
+	});
+
+	test("matrix 4: importing into a class that already has a curriculum is 409", async () => {
+		const classId = await t.createClass(session, "Lớp import 2");
+		expect((await importSyllabus(session, classId, templateId)).status).toBe(
+			201,
+		);
+		const before = await t.kernel(session);
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(409);
+		expect(((await res.json()) as { error: string }).error).toBe(
+			"Lớp đã có giáo trình",
+		);
+		const after = await t.kernel(session);
+		expect(after.syllabi.length).toBe(before.syllabi.length);
+	});
+
+	test("matrix 5+10: foreign-org template and cross-class copy are 404", async () => {
+		const otherSession = await t.insertUser("Cô khác");
+		const foreignTemplateId = await t.createSyllabus(
+			otherSession,
+			"Syllabus người khác",
+		);
+		const classId = await t.createClass(session, "Lớp thường");
+		expect(
+			(await importSyllabus(session, classId, foreignTemplateId)).status,
+		).toBe(404);
+
+		// A copy that belongs to another class is not a template.
+		const otherClassId = await t.createClass(session, "Lớp có sẵn cây");
+		const copyRes = await importSyllabus(session, otherClassId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+		expect((await importSyllabus(session, classId, copyId)).status).toBe(404);
+	});
+
+	test("matrix 7: create class with templateId is atomic; bad template leaves no class behind", async () => {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
-			body: { syllabusId },
+			body: {
+				name: "Lớp kèm template",
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId,
+				schedule: { days: [2], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/09",
+			},
 		});
-		expect(assign.status).toBe(200);
-		expect((await t.kernel(session)).classes[0]?.syllabusId).toBe(syllabusId);
+		expect(res.status).toBe(201);
+		const classId = ((await res.json()) as { id: string }).id;
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.syllabusId).not.toBeNull();
+		const copy = snapshot.syllabi.find((s) => s.id === cls?.syllabusId);
+		expect(copy?.classId).toBe(classId);
+		expect(copy?.modules).toHaveLength(2);
 
-		const unassign = await t.call(`/api/classes/${classId}/assign-syllabus`, {
+		const bad = await t.call("/api/classes", {
 			session,
 			method: "POST",
-			body: { syllabusId: "" },
+			body: {
+				name: "Lớp template sai",
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "not-a-template",
+				schedule: { days: [2], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/09",
+			},
 		});
-		expect(unassign.status).toBe(200);
-		expect((await t.kernel(session)).classes[0]?.syllabusId).toBeNull();
+		expect(bad.status).toBe(404);
+		const classes = (await t.kernel(session)).classes;
+		expect(classes.some((c) => c.name === "Lớp template sai")).toBe(false);
+	});
 
+	test("matrix 8: remove-curriculum deletes the copy tree and nulls the pointer; second call is a no-op", async () => {
+		const classId = await t.createClass(session, "Lớp gỡ");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+		const before = (await t.kernel(session)).syllabi.length;
+
+		const remove = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.length).toBe(before - 1);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(false);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+
+		const again = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(again.status).toBe(200);
+	});
+
+	test("matrix 9: remove-curriculum on a template pointer is 409 and keeps the template", async () => {
+		const classId = await t.createClass(session, "Lớp pointer thẳng template");
+		// Legacy anomaly simulation: pointer straight at a template row.
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		const res = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(409);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+		const tpl = snapshot.syllabi.find((s) => s.id === templateId);
+		expect(tpl?.modules).toHaveLength(2);
+	});
+
+	test("matrix 11: snapshot echoes classId/sourceTemplateId on copies", async () => {
+		const classId = await t.createClass(session, "Lớp echo");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(classId);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+	});
+
+	test("matrix 13: module CRUD works on a class copy (isolation from the template)", async () => {
+		const classId = await t.createClass(session, "Lớp edit copy");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+		const added = await t.call(`/api/syllabi/${copyId}/modules`, {
+			session,
+			method: "POST",
+			body: { title: "Module lớp thêm", description: "" },
+		});
+		expect(added.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.find((s) => s.id === copyId)?.modules).toHaveLength(
+			3,
+		);
+		// Template untouched by the class-copy edit.
+		expect(
+			snapshot.syllabi.find((s) => s.id === templateId)?.modules,
+		).toHaveLength(2);
+	});
+
+	test("matrix 14: assign-syllabus endpoint is gone (404)", async () => {
+		const classId = await t.createClass(session, "Lớp cũ");
+		const res = await t.call(`/api/classes/${classId}/assign-syllabus`, {
+			session,
+			method: "POST",
+			body: { syllabusId: templateId },
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("class notes still persist after the cutover", async () => {
+		const classId = await t.createClass(session, "Lớp ghi chú");
 		const notes = await t.call(`/api/classes/${classId}/notes`, {
 			session,
 			method: "POST",
@@ -1468,22 +1708,9 @@ describe("assign syllabus + class notes", () => {
 		});
 		expect(notes.status).toBe(200);
 		const snapshot = await t.kernel(session);
-		expect(snapshot.classes[0]?.notes).toBe("ghi chú mới");
-	});
-
-	test("assigning a foreign-org syllabus is 404", async () => {
-		const otherSession = await t.insertUser("Cô khác");
-		const foreignSyllabusId = await t.createSyllabus(
-			otherSession,
-			"Syllabus người khác",
+		expect(snapshot.classes.find((c) => c.id === classId)?.notes).toBe(
+			"ghi chú mới",
 		);
-		const classId = await t.createClass(session, "Lớp thường");
-		const res = await t.call(`/api/classes/${classId}/assign-syllabus`, {
-			session,
-			method: "POST",
-			body: { syllabusId: foreignSyllabusId },
-		});
-		expect(res.status).toBe(404);
 	});
 });
 
@@ -1993,7 +2220,7 @@ describe("sessionsTotal contract cap (issue #55)", () => {
 				level: "",
 				skills: [],
 				mode: "Online",
-				syllabusId: "",
+				templateId: "",
 				schedule: { days: [2], start: "19:00", end: "20:30" },
 				sessionsTotal,
 				startDate: "",

@@ -1,13 +1,14 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
-	assignSyllabusSchema,
 	classCreateSchema,
 	classNotesSchema,
+	importSyllabusSchema,
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonEditSchema,
 	lessonUpsertSchema,
 	moduleUpsertSchema,
+	removeCurriculumSchema,
 	studentCreateSchema,
 	syllabusCreateSchema,
 	TIME_REGEX,
@@ -23,7 +24,7 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, eq, max } from "drizzle-orm";
+import { and, asc, eq, inArray, max } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -144,11 +145,10 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		}
 		return { ok: true, data: parsed.data };
 	}
-
 	/**
 	 * Class row for write paths: assign/notes only need existence, while
 	 * student-create also reads schedule + sessionsTotal to generate lessons
-	 * (schedule is raw TEXT).
+	 * (schedule is raw TEXT) and curriculum writes read the syllabus pointer.
 	 */
 	async function findClass(db: Db, classId: string, orgId: string) {
 		const [row] = await db
@@ -156,28 +156,20 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				id: classTable.id,
 				schedule: classTable.schedule,
 				sessionsTotal: classTable.sessionsTotal,
+				syllabusId: classTable.syllabusId,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		return row;
 	}
 
+	/** Full row — import needs classId (template check) + metadata to copy. */
 	async function findSyllabus(db: Db, syllabusId: string, orgId: string) {
 		const [row] = await db
-			.select({ id: syllabus.id })
+			.select()
 			.from(syllabus)
 			.where(and(eq(syllabus.id, syllabusId), eq(syllabus.orgId, orgId)));
 		return row;
-	}
-
-	/** "" → null (unassigned); a foreign/missing syllabus → undefined (404). */
-	async function resolveSyllabusId(
-		db: Db,
-		syllabusId: string,
-		orgId: string,
-	): Promise<string | null | undefined> {
-		if (syllabusId === "") return null;
-		return (await findSyllabus(db, syllabusId, orgId))?.id;
 	}
 
 	/** Module must belong to the given syllabus AND the org — client ids are never trusted. */
@@ -198,6 +190,109 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				),
 			);
 		return row;
+	}
+
+	/** Import size guard: modules + lessons above this would brick one D1 batch. */
+	const MAX_IMPORT_NODES = 500;
+
+	/**
+	 * Deep-copy batch of a template tree into a class copy (issue #79).
+	 * All ids are generated before the batch so the copy is wired with fresh
+	 * UUIDs; every lesson status resets to `upcoming` (status is per-class
+	 * progress, not template content); positions are preserved. Callers own
+	 * the org + template checks and the class pointer statement.
+	 */
+	function buildImportBatch(
+		db: Db,
+		input: {
+			template: typeof syllabus.$inferSelect;
+			modules: (typeof syllabusModule.$inferSelect)[];
+			lessons: (typeof syllabusLesson.$inferSelect)[];
+			classId: string;
+			orgId: string;
+		},
+	): {
+		copyId: string;
+		statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
+	} {
+		const { template, classId, orgId } = input;
+		const copyId = crypto.randomUUID();
+		const moduleIds = new Map(
+			input.modules.map((m) => [m.id, crypto.randomUUID()]),
+		);
+		const lessonIds = new Map(
+			input.lessons.map((l) => [l.id, crypto.randomUUID()]),
+		);
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(syllabus).values({
+				id: copyId,
+				orgId,
+				name: template.name,
+				level: template.level,
+				type: template.type,
+				skills: template.skills,
+				description: template.description,
+				totalLessons: template.totalLessons,
+				createdAt: template.createdAt,
+				classId,
+				sourceTemplateId: template.id,
+			}),
+			...input.modules.map((m) =>
+				db.insert(syllabusModule).values({
+					id: moduleIds.get(m.id) as string,
+					orgId,
+					syllabusId: copyId,
+					title: m.title,
+					description: m.description,
+					position: m.position,
+					createdAt: m.createdAt,
+				}),
+			),
+			...input.lessons.map((l) =>
+				db.insert(syllabusLesson).values({
+					id: lessonIds.get(l.id) as string,
+					orgId,
+					moduleId: moduleIds.get(l.moduleId) as string,
+					title: l.title,
+					objectives: l.objectives,
+					materials: l.materials,
+					status: "upcoming",
+					position: l.position,
+					createdAt: l.createdAt,
+				}),
+			),
+		];
+		return { copyId, statements };
+	}
+
+	/** Pre-read of a template's module/lesson tree, ordered by position. */
+	async function selectTemplateTree(db: Db, templateId: string, orgId: string) {
+		const modules = await db
+			.select()
+			.from(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.syllabusId, templateId),
+					eq(syllabusModule.orgId, orgId),
+				),
+			)
+			.orderBy(asc(syllabusModule.position));
+		const lessons = modules.length
+			? await db
+					.select()
+					.from(syllabusLesson)
+					.where(
+						and(
+							eq(syllabusLesson.orgId, orgId),
+							inArray(
+								syllabusLesson.moduleId,
+								modules.map((m) => m.id),
+							),
+						),
+					)
+					.orderBy(asc(syllabusLesson.position))
+			: [];
+		return { modules, lessons };
 	}
 
 	/**
@@ -329,13 +424,35 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const input = body.data;
 		const db = deps.getDb();
 
-		const syllabusId = await resolveSyllabusId(db, input.syllabusId, ctx.orgId);
-		if (syllabusId === undefined) {
-			return c.json({ error: "syllabus not found" }, 404);
+		// Resolve the template (org + class_id IS NULL) BEFORE any write — a
+		// bad template must not leave a half-created class behind.
+		let template:
+			| {
+					template: typeof syllabus.$inferSelect;
+					modules: (typeof syllabusModule.$inferSelect)[];
+					lessons: (typeof syllabusLesson.$inferSelect)[];
+			  }
+			| undefined;
+		if (input.templateId !== "") {
+			const tpl = await findSyllabus(db, input.templateId, ctx.orgId);
+			if (!tpl || tpl.classId !== null) {
+				return c.json({ error: "syllabus not found" }, 404);
+			}
+			const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
+			if (tree.modules.length + tree.lessons.length > MAX_IMPORT_NODES) {
+				return c.json({ error: "Template quá lớn để import" }, 422);
+			}
+			template = { template: tpl, ...tree };
 		}
 
 		const classId = crypto.randomUUID();
-		await db.insert(classTable).values({
+		// Batch order is pinned (issue #79): syllabus copy + modules + lessons
+		// first, the class row LAST — class.syllabus_id is a real FK (NO
+		// ACTION), so inserting the class before its copy aborts the batch.
+		const imported = template
+			? buildImportBatch(db, { ...template, classId, orgId: ctx.orgId })
+			: undefined;
+		const classInsert = db.insert(classTable).values({
 			id: classId,
 			orgId: ctx.orgId,
 			name: input.name,
@@ -343,7 +460,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			type: input.type,
 			skills: JSON.stringify(input.skills),
 			mode: input.mode,
-			syllabusId,
+			syllabusId: imported?.copyId ?? null,
 			schedule: JSON.stringify({
 				...input.schedule,
 				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
@@ -354,15 +471,18 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			startDate: input.startDate,
 			notes: "",
 		});
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = imported
+			? [...imported.statements, classInsert]
+			: [classInsert];
+		await db.batch(statements);
 		return c.json({ id: classId } satisfies CreatedResponse, 201);
 	});
 
-	kernel.post("/classes/:id/assign-syllabus", async (c) => {
+	kernel.post("/classes/:id/import-syllabus", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, assignSyllabusSchema);
+		const body = await readBody(c, importSyllabusSchema);
 		if (!body.ok) return body.response;
-		const input = body.data;
 		const db = deps.getDb();
 		const classId = c.req.param("id");
 
@@ -370,16 +490,120 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
 		}
-
-		const syllabusId = await resolveSyllabusId(db, input.syllabusId, ctx.orgId);
-		if (syllabusId === undefined) {
-			return c.json({ error: "syllabus not found" }, 404);
+		// Deterministic duplicate check — never parse SQLite error strings.
+		if (cls.syllabusId !== null) {
+			return c.json({ error: "Lớp đã có giáo trình" }, 409);
 		}
 
-		await db
-			.update(classTable)
-			.set({ syllabusId })
-			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		const tpl = await findSyllabus(db, body.data.templateId, ctx.orgId);
+		if (!tpl || tpl.classId !== null) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+		const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
+		if (tree.modules.length + tree.lessons.length > MAX_IMPORT_NODES) {
+			return c.json({ error: "Template quá lớn để import" }, 422);
+		}
+
+		const { copyId, statements } = buildImportBatch(db, {
+			template: tpl,
+			...tree,
+			classId,
+			orgId: ctx.orgId,
+		});
+		statements.push(
+			db
+				.update(classTable)
+				.set({ syllabusId: copyId })
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				),
+		);
+		try {
+			await db.batch(statements);
+		} catch {
+			// Unique index race backstop: only a concurrent import surfaces
+			// here as a set pointer — re-check instead of swallowing real
+			// errors into a 409.
+			const after = await findClass(db, classId, ctx.orgId);
+			if (after?.syllabusId != null) {
+				return c.json({ error: "Lớp đã có giáo trình" }, 409);
+			}
+			throw new Error("import-syllabus batch failed");
+		}
+		return c.json({ id: copyId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/classes/:id/remove-curriculum", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, removeCurriculumSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		// Pointer empty → nothing to remove (idempotent no-op).
+		if (cls.syllabusId === null) {
+			return c.json({ ok: true });
+		}
+		// Org + ownership guard: the pointed row must be THIS class's copy.
+		// A template pointer (class_id NULL) or a foreign anomaly is refused —
+		// templates are never deleted through this endpoint.
+		const [copy] = await db
+			.select({ id: syllabus.id })
+			.from(syllabus)
+			.where(
+				and(
+					eq(syllabus.id, cls.syllabusId),
+					eq(syllabus.classId, classId),
+					eq(syllabus.orgId, ctx.orgId),
+				),
+			);
+		if (!copy) {
+			return c.json({ error: "Lớp chưa có giáo trình bản sao" }, 409);
+		}
+
+		// FK order (NO ACTION): null the pointer FIRST, then delete
+		// child-first (lessons → modules → syllabus), every DELETE org-scoped.
+		await db.batch([
+			db
+				.update(classTable)
+				.set({ syllabusId: null })
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				),
+			db.delete(syllabusLesson).where(
+				and(
+					eq(syllabusLesson.orgId, ctx.orgId),
+					inArray(
+						syllabusLesson.moduleId,
+						db
+							.select({ id: syllabusModule.id })
+							.from(syllabusModule)
+							.where(
+								and(
+									eq(syllabusModule.syllabusId, copy.id),
+									eq(syllabusModule.orgId, ctx.orgId),
+								),
+							),
+					),
+				),
+			),
+			db
+				.delete(syllabusModule)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, copy.id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(syllabus)
+				.where(and(eq(syllabus.id, copy.id), eq(syllabus.orgId, ctx.orgId))),
+		]);
 		return c.json({ ok: true });
 	});
 

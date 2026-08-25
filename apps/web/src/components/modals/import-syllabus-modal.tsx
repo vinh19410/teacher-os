@@ -2,41 +2,46 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
 import { useClasses } from "@/lib/repos/use-classes";
+import { useSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
-export function AssignSyllabusModal({
+/**
+ * Import a syllabus template into a class as its own curriculum copy
+ * (issue #79). Lists templates only — a class copy is never importable.
+ * The caller keeps this modal closed once the class has a curriculum;
+ * the server still 409s on a race.
+ */
+export function ImportSyllabusModal({
 	open,
 	onClose,
-	defaultSyllabusId,
-	defaultClassId,
+	classId,
 }: {
 	open: boolean;
 	onClose: () => void;
-	defaultSyllabusId?: string;
-	defaultClassId?: string;
+	classId: string;
 }) {
-	const { classes } = useClasses();
-	const { data } = useData();
-	const [classId, setClassId] = useState(
-		defaultClassId ?? classes[0]?.id ?? "",
-	);
-	const [syllabusId, setSyllabusId] = useState(
-		defaultSyllabusId ?? data.syllabi[0]?.id ?? "",
-	);
+	const { templates } = useSyllabus();
+	const { classById } = useClasses();
+	const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
 	const { saving, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
+
+	const className = classById(classId)?.name ?? "";
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;
-		if (!classId || !syllabusId) {
+		if (!classId || !templateId) {
 			onClose();
 			return;
 		}
-		const result = await run({ type: "assign-syllabus", classId, syllabusId });
+		const result = await run({
+			type: "import-syllabus",
+			classId,
+			templateId,
+		});
 		if (result?.kind === "refreshed") {
 			onClose();
 		}
@@ -50,25 +55,19 @@ export function AssignSyllabusModal({
 		<Modal
 			open={open}
 			onClose={saving ? () => undefined : onClose}
-			title="Gán syllabus vào lớp"
+			title="Nhập giáo trình từ template"
 		>
 			<form onSubmit={submit}>
-				<p className="text-muted-fg text-sm">Chọn lớp để gán syllabus.</p>
-				<Field label="Lớp">
-					<Select value={classId} onChange={(e) => setClassId(e.target.value)}>
-						{classes.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</Select>
-				</Field>
-				<Field label="Syllabus">
+				<p className="text-muted-fg text-sm">
+					Lớp "{className}" nhận một bản sao riêng — chỉnh sửa trên lớp không
+					ảnh hưởng template hay lớp khác.
+				</p>
+				<Field label="Template">
 					<Select
-						value={syllabusId}
-						onChange={(e) => setSyllabusId(e.target.value)}
+						value={templateId}
+						onChange={(e) => setTemplateId(e.target.value)}
 					>
-						{data.syllabi.map((s) => (
+						{templates.map((s) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
 							</option>
@@ -91,8 +90,12 @@ export function AssignSyllabusModal({
 					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
-						Gán syllabus
+					<Button
+						type="submit"
+						size="sm"
+						disabled={saving || submitBlocked || templates.length === 0}
+					>
+						Nhập giáo trình
 					</Button>
 				</div>
 			</form>

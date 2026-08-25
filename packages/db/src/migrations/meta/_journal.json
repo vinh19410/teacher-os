@@ -64,6 +64,13 @@
       "when": 1787570000000,
       "tag": "0008_syllabus_type_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787660000000,
+      "tag": "0009_syllabus_template_discriminator",
+      "breakpoints": true
     }
   ]
 }

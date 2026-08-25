@@ -57,12 +57,12 @@ describe("classes read peel wiring", () => {
 		expect(src).not.toMatch(/data-store/);
 	});
 
-	test("assign-syllabus modal reads classes via the repo, still writes on the bus", () => {
-		const src = readSrc("components/modals/assign-syllabus-modal.tsx");
+	test("import-syllabus modal reads classes via the repo, still writes on the bus", () => {
+		const src = readSrc("components/modals/import-syllabus-modal.tsx");
 		expect(src).toMatch(
 			/import \{ useClasses \} from "@\/lib\/repos\/use-classes"/,
 		);
 		expect(src).not.toMatch(/data\.classes/);
-		expect(src).toMatch(/type: "assign-syllabus"/);
+		expect(src).toMatch(/type: "import-syllabus"/);
 	});
 });

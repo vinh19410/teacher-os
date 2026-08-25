@@ -230,6 +230,8 @@ export async function loadSnapshot(
 			type: knownClassTypes.has(row.type) ? (row.type as ClassType) : "ielts",
 			skills: parseSkills(row.skills),
 			description: row.description,
+			classId: row.classId,
+			sourceTemplateId: row.sourceTemplateId,
 			totalLessons: row.totalLessons,
 			modules: modulesBySyllabus.get(row.id) ?? [],
 		})),

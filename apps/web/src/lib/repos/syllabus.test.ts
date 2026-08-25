@@ -15,6 +15,8 @@ const snapshot: KernelSnapshot = {
 			name: "IELTS Writing",
 			level: "Band 7.0",
 			type: "ielts",
+			classId: null,
+			sourceTemplateId: null,
 			skills: ["Writing"],
 			description: "Giáo trình viết",
 			totalLessons: 99, // stored form value — must be ignored
@@ -85,6 +87,26 @@ describe("mapSyllabi", () => {
 		expect(second?.materials).toBe("—");
 	});
 
+	test("classId/sourceTemplateId pass through (template vs copy)", () => {
+		expect(syllabi[0]?.classId).toBeNull();
+		expect(syllabi[0]?.sourceTemplateId).toBeNull();
+		const template = snapshot.syllabi[0];
+		const sparse: KernelSnapshot = {
+			...snapshot,
+			syllabi: [
+				{
+					...template,
+					id: "sy-copy",
+					classId: "cl-9",
+					sourceTemplateId: "sy-1",
+				},
+			],
+		};
+		const mapped = mapSyllabi(sparse);
+		expect(mapped[0]?.classId).toBe("cl-9");
+		expect(mapped[0]?.sourceTemplateId).toBe("sy-1");
+	});
+
 	test("status keeps the lesson trio", () => {
 		const statuses = syllabi[0]?.modules[0]?.lessons.map((l) => l.status);
 		expect(statuses).toEqual(["done", "current"]);
@@ -99,6 +121,8 @@ describe("mapSyllabi", () => {
 					name: "Cây trống",
 					level: "Band 6.0",
 					type: "ielts",
+					classId: null,
+					sourceTemplateId: null,
 					skills: ["Speaking"],
 					description: "",
 					totalLessons: 12, // stored lie — the derive wins

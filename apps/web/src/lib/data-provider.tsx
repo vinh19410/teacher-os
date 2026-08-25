@@ -132,8 +132,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			assignmentById: (id) => data.assignments.find((a) => a.id === id),
 			classById: (id) => data.classes.find((c) => c.id === id),
 			syllabusById: (id) => data.syllabi.find((s) => s.id === id),
+			// "Đang dùng" = classes holding a copy imported from this template
+			// (provenance join via sourceTemplateId, issue #79) — not pointer
+			// equality, which a template copy never satisfies.
 			classesForSyllabus: (id) =>
-				data.classes.filter((c) => c.syllabusId === id),
+				data.classes.filter((c) =>
+					data.syllabi.some(
+						(s) => s.classId === c.id && s.sourceTemplateId === id,
+					),
+				),
 		};
 	}, [data, dispatch, refresh]);
 
