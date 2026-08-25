@@ -570,10 +570,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				.update(classTable)
 				.set({ syllabusId: null })
 				.where(
-					and(
-						eq(classTable.id, classId),
-						eq(classTable.orgId, ctx.orgId),
-					),
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
 				);
 			return c.json({ ok: true });
 		}

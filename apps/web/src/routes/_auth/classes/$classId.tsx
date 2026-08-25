@@ -370,8 +370,8 @@ function ClassDetailRoute() {
 				<p className="text-muted-fg text-sm">
 					Nếu lớp đang giữ một bản sao giáo trình, toàn bộ cây (kèm tiến độ buổi
 					học) sẽ bị xóa; nếu chỉ là con trỏ lệch (dữ liệu cũ), chỉ con trỏ được
-					dọn. Template gốc và các lớp khác không bao giờ bị ảnh hưởng. Hành động
-					này không thể hoàn tác.
+					dọn. Template gốc và các lớp khác không bao giờ bị ảnh hưởng. Hành
+					động này không thể hoàn tác.
 				</p>
 				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
 					<Button

@@ -1660,7 +1660,9 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		expect(tpl?.modules).toHaveLength(2);
 		expect(tpl?.classId).toBeNull();
 		// The anomalous pointer is cleaned to null (not a dead-end anymore).
-		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBeNull();
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
 	});
 
 	test("size guard: import of a template with more than 500 nodes is 422", async () => {
@@ -1691,7 +1693,9 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		expect(
 			snapshot.syllabi.some((s) => s.sourceTemplateId === bigTemplateId),
 		).toBe(false);
-		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBeNull();
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
 	});
 
 	test("matrix 11: snapshot echoes classId/sourceTemplateId on copies", async () => {

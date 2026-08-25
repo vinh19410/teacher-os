@@ -70,7 +70,7 @@ export function ImportSyllabusModal({
 				<Field label="Template">
 					<Select
 						value={templateId}
-					onChange={(e) => setSelectedId(e.target.value)}
+						onChange={(e) => setSelectedId(e.target.value)}
 					>
 						{templates.map((s) => (
 							<option key={s.id} value={s.id}>
