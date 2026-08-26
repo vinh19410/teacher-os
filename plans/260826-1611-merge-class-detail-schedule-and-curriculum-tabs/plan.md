@@ -1,7 +1,7 @@
 ---
 title: "Merge class detail schedule and curriculum tabs"
 description: "Thay 2 tab Giáo trình + Lịch học trong Class Detail bằng 1 tab Buổi học timeline-first, kèm khu Quản lý giáo trình collapsible ở trên."
-status: completed
+status: pending
 priority: P1
 effort: "3-5d"
 tags: [ui, class-detail, syllabus, schedule, refactor]
@@ -52,10 +52,10 @@ Kế hoạch: gộp thành **1 tab "Buổi học"** với 2 khu chồng dọc �
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Prep refactor — extract + extend helper](./phase-01-start.md) | Completed |
-| 2 | [Phase 2: Timeline read-only enhancements](./phase-02-timeline-read-only-enhancements.md) | Completed |
-| 3 | [Phase 3: Timeline mutations inline edit and status](./phase-03-timeline-mutations-inline-edit-and-status.md) | Deferred |
-| 4 | [Phase 4: Merge tabs cleanup and QA](./phase-04-merge-tabs-cleanup-and-qa.md) | Completed |
+| 1 | [Phase 1: Prep refactor — extract + extend helper](./phase-01-start.md) | Pending |
+| 2 | [Phase 2: Timeline read-only enhancements](./phase-02-timeline-read-only-enhancements.md) | Pending |
+| 3 | [Phase 3: Timeline mutations inline edit and status](./phase-03-timeline-mutations-inline-edit-and-status.md) | Pending |
+| 4 | [Phase 4: Merge tabs cleanup and QA](./phase-04-merge-tabs-cleanup-and-qa.md) | Pending |
 
 ## Dependencies
 
@@ -66,17 +66,17 @@ Kế hoạch: gộp thành **1 tab "Buổi học"** với 2 khu chồng dọc �
 
 ## Success Criteria
 
-- [x] Class Detail hiển thị 3 tab thay vì 4 (assert bằng contract test và route code).
-- [x] Tab "Buổi học" chứa: khu Quản lý giáo trình (collapsible, default collapse khi `syllabus.modules.length > 0`) + bảng timeline mở rộng.
-- [x] Cột "Chủ đề" hiển thị Module badge cạnh Lesson title cho mỗi session có syllabus mapping.
-- [x] Click row session → expand hiển thị `materials` + `objectives` của lesson tương ứng.
-- [ ] [Deferred to separate RFC] Click title lesson trong row → inline edit (tránh phá occurrence invariant của slot bag model).
-- [ ] [Deferred to separate RFC] Status dropdown trên row session → status fan-out (tránh phá prefix attendance model).
-- [x] Progress bar `syDone/syLessons` (khu Quản lý) không đổi hành vi — vẫn dựa `SyllabusLesson.status === "done"`.
-- [x] Empty states: (a) chưa có syllabus → khu Quản lý default expanded + timeline hiển thị khung ngày với Chủ đề = "—"; (b) startDate tương lai → timeline vẫn hiển thị lịch dự kiến; (c) syllabus classId mismatch → dọn pointer.
-- [x] Legacy fallback (`sessions === null`) không regress — bảng cũ vẫn render với 5 cột chuẩn.
-- [x] Test suite pass (268 web unit/contract tests, 126 server tests, CI tests).
-- [x] `apps/web/src/routes/_auth/classes/$classId.tsx` giảm dưới 500 lines (hiện tại ~472 lines sau khi extract + xóa tab cũ).
+- [ ] Class Detail hiển thị 3 tab thay vì 4 (assert bằng render test hoặc grep route).
+- [ ] Tab "Buổi học" chứa: khu Quản lý giáo trình (collapsible, default collapse khi `syllabus.modules.length > 0`) + bảng timeline mở rộng.
+- [ ] Cột "Chủ đề" hiển thị Module badge cạnh Lesson title cho mỗi session có syllabus mapping.
+- [ ] Click row session → expand hiển thị `materials` + `objectives` của lesson tương ứng.
+- [ ] Click title lesson trong row → editable input (Enter save, Escape cancel), ghi vào `row.topic` qua `lesson-edit`.
+- [ ] Status dropdown trên row session → fan-out `check-in`/`cancel-lesson` cho tất cả lesson rows của session.
+- [ ] Progress bar `syDone/syLessons` (khu Quản lý) không đổi hành vi — vẫn dựa `SyllabusLesson.status === "done"`.
+- [ ] Empty states: (a) chưa có syllabus → khu Quản lý default expanded + timeline hiển thị khung ngày với Chủ đề = "—"; (b) startDate tương lai → timeline vẫn hiển thị lịch dự kiến.
+- [ ] Legacy fallback (`sessions === null`) không regress — bảng cũ vẫn render với 4 cột.
+- [ ] Test suite pass; manual QA cho lớp 12 sessions (2 buổi/tuần × 6 tuần) và lớp 72 sessions (3 buổi/tuần × 6 tháng).
+- [ ] `apps/web/src/routes/_auth/classes/$classId.tsx` giảm dưới 500 lines sau khi extract + xóa tab cũ.
 
 ## Risk Assessment
 

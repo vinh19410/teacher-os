@@ -1,17 +1,20 @@
 ---
 title: "Phase 3: Timeline mutations inline edit and status"
-status: deferred
+status: todo
 priority: P1
 effort: "1-1.5d"
 dependencies: [2]
 ---
 
 # Phase 3: Timeline mutations inline edit and status
-# ⚠️ ARCHITECTURAL DECISION: DEFERRED PER KONGMING ADVISORY (CHECKPOINT 1)
 
-Theo đánh giá của Kongming tại Checkpoint 1: trong data model hiện tại (`class-sessions.ts`), `session.rows` là túi chứa toàn bộ row của slot (mọi học viên, mọi occurrence) chứ không có occurrence identity. Việc fan-out `lesson-edit` hoặc `check-in`/`cancel-lesson` từ timeline sẽ ghi nhầm occurrence và phá vỡ hợp đồng attendance/topic deduplication của issue #83.
+# ⚠️ HIGH-RISK PHASE — semantics phải pin trước khi code
 
-Do đó, Phase 3 được hoãn lại (deferred) tách riêng thành follow-up RFC độc lập khi kernel hỗ trợ occurrence identity. Các tính năng cốt lõi (gộp tab "Buổi học", khu Quản lý collapsible, Module badge, expand xem materials/objectives) được hoàn tất an toàn ở Phase 1, 2 và 4.
+Đây là phase rủi ro nhất trong plan (theo kongming advisory). Có 2 semantic ambiguity phải pin trước khi bắt đầu:
+
+1. **Inline edit topic ghi vào đâu?** → **`row.topic` per-occurrence override** (không ghi `SyllabusLesson.title`). Lý do: comment file `class-sessions.ts:253` ghi rõ "Render-only: syllabus titles are never written back to `lesson.topic`". User muốn đổi title chung của lesson vẫn dùng modal Edit Lesson trong khu Quản lý giáo trình.
+2. **Status dropdown fan-out semantics** → dropdown chỉ đổi rows có state hiện tại là `upcoming` sang `completed`/`cancelled`. Rows đã `absent`/`completed`/`cancelled` khác giữ nguyên (để bảo vệ attendance data đã ghi). Nếu tất cả rows đã ở state khác → dropdown disabled với tooltip giải thích.
+
 ## Overview
 
 Cho phép user (a) inline edit title lesson trực tiếp trên row session, (b) đổi status session (upcoming → completed/cancelled) qua dropdown fan-out cho tất cả rows chưa có state đích.

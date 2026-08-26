@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Merge tabs cleanup and QA"
-status: completed
+status: todo
 priority: P1
 effort: "0.5-1d"
 dependencies: [3]
@@ -14,19 +14,19 @@ Bước cuối: gộp 2 tab (Giáo trình + Lịch học) thành 1 tab "Buổi h
 
 ## Requirements
 
-- [x] Xóa 2 tab cũ `"syllabus"` và `"schedule"` trong `$classId.tsx`.
-- [x] Thêm 1 tab mới id `"sessions"` label "Buổi học" (hoặc "Giáo trình & Lịch") — xác nhận label với user tại kickoff phase này.
-- [x] Nội dung tab: `<CurriculumManagementSection>` (khu trên) + `<ClassScheduleTable>` enhanced (khu dưới).
-- [x] `CurriculumManagementSection` nhận prop `defaultCollapsed?: boolean` — default `syllabus?.modules?.length > 0`.
-- [x] Header khu Quản lý có nút toggle collapse với biểu tượng chevron + text tóm tắt (`{modules.length} chương • {lessonsCompleted}/{lessonsTotal} bài đã dạy`).
-- [x] Khi collapsed, chỉ hiển thị header + progress bar summary.
-- [x] Khi expanded, hiển thị đầy đủ tree modules + lessons + tất cả actions (import/add/edit/remove).
-- [x] Empty state (a): `syllabus === null` → khu Quản lý default **expanded** với CTA "Import từ template" + timeline bên dưới hiển thị Chủ đề = "—".
-- [x] Empty state (b): `syllabus` có nhưng `cls.startDate > today` (chưa bắt đầu) → timeline vẫn hiển thị lịch dự kiến (session status = "upcoming"), banner nhỏ "Lớp bắt đầu ngày {startDate}".
-- [x] Empty state (c): `sessions === null` (legacy fallback) → khu Quản lý bình thường + bảng cũ 4 cột read-only.
-- [x] Default tab active sau merge: verify không phá hành vi hiện tại (nếu route đang default tab đầu tiên, tab "sessions" đặt ở vị trí nào — recommend giữ order để không phá muscle memory user).
-- [x] Grep repo cho `tab=syllabus`, `tab=schedule`, `activeTab` URL params → nếu có, thêm redirect map `syllabus`/`schedule` → `sessions`.
-- [x] Line count `$classId.tsx` sau phase < 500 lines.
+- [ ] Xóa 2 tab cũ `"syllabus"` và `"schedule"` trong `$classId.tsx`.
+- [ ] Thêm 1 tab mới id `"sessions"` label "Buổi học" (hoặc "Giáo trình & Lịch") — xác nhận label với user tại kickoff phase này.
+- [ ] Nội dung tab: `<CurriculumManagementSection>` (khu trên) + `<ClassScheduleTable>` enhanced (khu dưới).
+- [ ] `CurriculumManagementSection` nhận prop `defaultCollapsed?: boolean` — default `syllabus?.modules?.length > 0`.
+- [ ] Header khu Quản lý có nút toggle collapse với biểu tượng chevron + text tóm tắt (`{modules.length} chương • {lessonsCompleted}/{lessonsTotal} bài đã dạy`).
+- [ ] Khi collapsed, chỉ hiển thị header + progress bar summary.
+- [ ] Khi expanded, hiển thị đầy đủ tree modules + lessons + tất cả actions (import/add/edit/remove).
+- [ ] Empty state (a): `syllabus === null` → khu Quản lý default **expanded** với CTA "Import từ template" + timeline bên dưới hiển thị Chủ đề = "—".
+- [ ] Empty state (b): `syllabus` có nhưng `cls.startDate > today` (chưa bắt đầu) → timeline vẫn hiển thị lịch dự kiến (session status = "upcoming"), banner nhỏ "Lớp bắt đầu ngày {startDate}".
+- [ ] Empty state (c): `sessions === null` (legacy fallback) → khu Quản lý bình thường + bảng cũ 4 cột read-only.
+- [ ] Default tab active sau merge: verify không phá hành vi hiện tại (nếu route đang default tab đầu tiên, tab "sessions" đặt ở vị trí nào — recommend giữ order để không phá muscle memory user).
+- [ ] Grep repo cho `tab=syllabus`, `tab=schedule`, `activeTab` URL params → nếu có, thêm redirect map `syllabus`/`schedule` → `sessions`.
+- [ ] Line count `$classId.tsx` sau phase < 500 lines.
 
 ## Architecture
 
@@ -67,28 +67,28 @@ Bước cuối: gộp 2 tab (Giáo trình + Lịch học) thành 1 tab "Buổi h
 
 ## Todo
 
-- [x] Confirm label tab + vị trí order với user
-- [x] Grep deep-link risk (`tab=syllabus/schedule`)
-- [x] Thêm `defaultCollapsed` + header collapse UI vào `curriculum-management-section.tsx`
-- [x] Xóa 2 tab cũ trong `$classId.tsx`, thêm tab "Buổi học" gộp 2 khu
-- [x] Xử lý 3 empty states (no syllabus / future startDate / legacy sessions null)
-- [x] Manual QA 5 scenarios (empty new / imported / mid / large 72 / legacy)
-- [x] Full test suite pass, biome, type check xanh
-- [x] Line count `$classId.tsx` < 500 (assert)
-- [x] Update docs nếu có nhắc 2 tab cũ
+- [ ] Confirm label tab + vị trí order với user
+- [ ] Grep deep-link risk (`tab=syllabus/schedule`)
+- [ ] Thêm `defaultCollapsed` + header collapse UI vào `curriculum-management-section.tsx`
+- [ ] Xóa 2 tab cũ trong `$classId.tsx`, thêm tab "Buổi học" gộp 2 khu
+- [ ] Xử lý 3 empty states (no syllabus / future startDate / legacy sessions null)
+- [ ] Manual QA 5 scenarios (empty new / imported / mid / large 72 / legacy)
+- [ ] Full test suite pass, biome, type check xanh
+- [ ] Line count `$classId.tsx` < 500 (assert)
+- [ ] Update docs nếu có nhắc 2 tab cũ
 
 ## Success Criteria
 
-- [x] Class Detail hiển thị **3 tab** (giảm từ 4).
-- [x] Tab "Buổi học" mở ra thấy: khu Quản lý (collapsed khi có syllabus) + timeline.
-- [x] Toggle collapse hoạt động mượt (transition hoặc unmount clean).
-- [x] Empty state (a) `syllabus === null`: khu Quản lý default expanded + CTA import.
-- [x] Empty state (b) future startDate: banner + timeline dự kiến.
-- [x] Empty state (c) legacy `sessions === null`: bảng 4 cột không đổi + khu Quản lý bình thường.
-- [x] `$classId.tsx` < 500 lines.
-- [x] Test suite pass, biome/type check xanh.
-- [x] Manual QA 5 scenarios không có regression.
-- [x] Nếu có URL deep-link cũ, redirect hoạt động.
+- [ ] Class Detail hiển thị **3 tab** (giảm từ 4).
+- [ ] Tab "Buổi học" mở ra thấy: khu Quản lý (collapsed khi có syllabus) + timeline.
+- [ ] Toggle collapse hoạt động mượt (transition hoặc unmount clean).
+- [ ] Empty state (a) `syllabus === null`: khu Quản lý default expanded + CTA import.
+- [ ] Empty state (b) future startDate: banner + timeline dự kiến.
+- [ ] Empty state (c) legacy `sessions === null`: bảng 4 cột không đổi + khu Quản lý bình thường.
+- [ ] `$classId.tsx` < 500 lines.
+- [ ] Test suite pass, biome/type check xanh.
+- [ ] Manual QA 5 scenarios không có regression.
+- [ ] Nếu có URL deep-link cũ, redirect hoạt động.
 
 ## Risk Assessment
 

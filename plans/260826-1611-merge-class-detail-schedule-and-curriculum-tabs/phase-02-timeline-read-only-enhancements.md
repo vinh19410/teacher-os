@@ -14,14 +14,14 @@ Nâng cấp `ClassScheduleTable` (bảng lịch học hiện tại) với 2 enha
 
 ## Requirements
 
-- [x] Cột "Chủ đề" render Module badge nhỏ (chip/tag) ở đầu cell, kế đến là Lesson title (giữ nguyên logic edited-topic-override).
-- [x] Khi không có `moduleTitle` (session không map syllabus, edited topic thuần), không hiển thị badge — chỉ text.
-- [x] Row có `lessonId` hiển thị chevron expand ở đầu row.
-- [x] Click chevron (hoặc click row) → mở sub-row hiển thị `lesson.materials` + `lesson.objectives`.
-- [x] Nếu `lesson.materials` và `lesson.objectives` đều trống → hiển thị empty state "Chưa có tài liệu và mục tiêu".
-- [x] Expand state per-row là local (không persist).
-- [x] Legacy fallback path (`sessions === null`) không nhận cải tiến — vẫn 4 cột read-only.
-- [x] Keyboard accessible: Space/Enter mở/đóng expand khi row focused.
+- [ ] Cột "Chủ đề" render Module badge nhỏ (chip/tag) ở đầu cell, kế đến là Lesson title (giữ nguyên logic edited-topic-override).
+- [ ] Khi không có `moduleTitle` (session không map syllabus, edited topic thuần), không hiển thị badge — chỉ text.
+- [ ] Row có `lessonId` hiển thị chevron expand ở đầu row.
+- [ ] Click chevron (hoặc click row) → mở sub-row hiển thị `lesson.materials` + `lesson.objectives`.
+- [ ] Nếu `lesson.materials` và `lesson.objectives` đều trống → hiển thị empty state "Chưa có tài liệu và mục tiêu".
+- [ ] Expand state per-row là local (không persist).
+- [ ] Legacy fallback path (`sessions === null`) không nhận cải tiến — vẫn 4 cột read-only.
+- [ ] Keyboard accessible: Space/Enter mở/đóng expand khi row focused.
 
 ## Architecture
 
@@ -58,23 +58,23 @@ Nâng cấp `ClassScheduleTable` (bảng lịch học hiện tại) với 2 enha
 
 ## Todo
 
-- [x] Đổi prop `ClassScheduleTable` từ `syLessons` sang `syllabus`
-- [x] Render Module badge trong cột Chủ đề (skip nếu `moduleTitle` null)
-- [x] Thêm chevron + state `expandedIdx`
-- [x] Sub-row hiển thị `materials` + `objectives` (empty state khi trống)
-- [x] A11y: `aria-expanded`, keyboard toggle Space/Enter
-- [x] Verify legacy fallback (`sessions === null`) không đổi
-- [x] Manual QA: lớp có syllabus + lớp không syllabus + session mix edited/non-edited
-- [x] `pnpm test` + biome check xanh
+- [ ] Đổi prop `ClassScheduleTable` từ `syLessons` sang `syllabus`
+- [ ] Render Module badge trong cột Chủ đề (skip nếu `moduleTitle` null)
+- [ ] Thêm chevron + state `expandedIdx`
+- [ ] Sub-row hiển thị `materials` + `objectives` (empty state khi trống)
+- [ ] A11y: `aria-expanded`, keyboard toggle Space/Enter
+- [ ] Verify legacy fallback (`sessions === null`) không đổi
+- [ ] Manual QA: lớp có syllabus + lớp không syllabus + session mix edited/non-edited
+- [ ] `pnpm test` + biome check xanh
 
 ## Success Criteria
 
-- [x] Session có syllabus mapping → thấy badge Module + chevron.
-- [x] Session không có syllabus (edited topic hoặc index > lessons) → chỉ text, không badge, không chevron.
-- [x] Expand row → hiển thị materials + objectives (hoặc empty state).
-- [x] Keyboard: focus row, Enter/Space → toggle expand.
-- [x] Legacy fallback vẫn hiển thị 4 cột như cũ.
-- [x] Không có mutation trong phase này (0 kernel action calls).
+- [ ] Session có syllabus mapping → thấy badge Module + chevron.
+- [ ] Session không có syllabus (edited topic hoặc index > lessons) → chỉ text, không badge, không chevron.
+- [ ] Expand row → hiển thị materials + objectives (hoặc empty state).
+- [ ] Keyboard: focus row, Enter/Space → toggle expand.
+- [ ] Legacy fallback vẫn hiển thị 4 cột như cũ.
+- [ ] Không có mutation trong phase này (0 kernel action calls).
 
 ## Risk Assessment
 

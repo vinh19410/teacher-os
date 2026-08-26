@@ -14,11 +14,11 @@ Refactor thuần, không đổi hành vi UI. Extract khu curriculum edit hiện 
 
 ## Requirements
 
-- [x] Component mới `CurriculumManagementSection` chứa toàn bộ UI hiện tại của tab Giáo trình (`$classId.tsx:198-352`).
-- [x] Tab Giáo trình cũ dùng lại component này → render pixel-identical.
-- [x] Helper mới (hoặc mở rộng `sessionTopic`) trả về `{ title: string, moduleTitle: string | null, lessonId: string | null }`.
-- [x] Callers hiện tại của `sessionTopic()` (chỉ có `ClassScheduleTable`) migrate sang shape mới, hiển thị vẫn chỉ dùng `title`.
-- [x] Unit test cho helper: (a) session có syllabus lesson, (b) session không có syllabus (index > lessons length), (c) edited topic override, (d) syllabus null.
+- [ ] Component mới `CurriculumManagementSection` chứa toàn bộ UI hiện tại của tab Giáo trình (`$classId.tsx:198-352`).
+- [ ] Tab Giáo trình cũ dùng lại component này → render pixel-identical.
+- [ ] Helper mới (hoặc mở rộng `sessionTopic`) trả về `{ title: string, moduleTitle: string | null, lessonId: string | null }`.
+- [ ] Callers hiện tại của `sessionTopic()` (chỉ có `ClassScheduleTable`) migrate sang shape mới, hiển thị vẫn chỉ dùng `title`.
+- [ ] Unit test cho helper: (a) session có syllabus lesson, (b) session không có syllabus (index > lessons length), (c) edited topic override, (d) syllabus null.
 
 ## Architecture
 
@@ -62,21 +62,21 @@ Refactor thuần, không đổi hành vi UI. Extract khu curriculum edit hiện 
 
 ## Todo
 
-- [x] Tạo `curriculum-management-section.tsx` extract từ `$classId.tsx:198-352`
-- [x] Thay inline curriculum UI trong `$classId.tsx` bằng component mới
-- [x] Manual verify: tab Giáo trình render + hoạt động đúng như cũ (add module, edit lesson, import template, remove)
-- [x] Thêm `SessionLessonInfo` type + `sessionLessonInfo()` trong `class-sessions.ts`
-- [x] Migrate `ClassScheduleTable` sang `sessionLessonInfo()` (chỉ dùng `.title`)
-- [x] Bổ sung unit test cho 4 edge cases (có/không syllabus, edited topic, index vượt lessons)
-- [x] `pnpm test` + `pnpm biome check` xanh
+- [ ] Tạo `curriculum-management-section.tsx` extract từ `$classId.tsx:198-352`
+- [ ] Thay inline curriculum UI trong `$classId.tsx` bằng component mới
+- [ ] Manual verify: tab Giáo trình render + hoạt động đúng như cũ (add module, edit lesson, import template, remove)
+- [ ] Thêm `SessionLessonInfo` type + `sessionLessonInfo()` trong `class-sessions.ts`
+- [ ] Migrate `ClassScheduleTable` sang `sessionLessonInfo()` (chỉ dùng `.title`)
+- [ ] Bổ sung unit test cho 4 edge cases (có/không syllabus, edited topic, index vượt lessons)
+- [ ] `pnpm test` + `pnpm biome check` xanh
 
 ## Success Criteria
 
-- [x] Tab Giáo trình cũ render identical (visual diff = 0) và mọi flow (add/edit/import/remove) hoạt động như trước.
-- [x] `sessionLessonInfo()` có test coverage cho 4 edge cases.
-- [x] `$classId.tsx` giảm ≥ 100 lines (155 dòng curriculum → thay bằng ~5 dòng props).
-- [x] Test suite pass, biome không có warning mới.
-- [x] Không có regression ở tab Lịch học (Chủ đề vẫn hiển thị đúng).
+- [ ] Tab Giáo trình cũ render identical (visual diff = 0) và mọi flow (add/edit/import/remove) hoạt động như trước.
+- [ ] `sessionLessonInfo()` có test coverage cho 4 edge cases.
+- [ ] `$classId.tsx` giảm ≥ 100 lines (155 dòng curriculum → thay bằng ~5 dòng props).
+- [ ] Test suite pass, biome không có warning mới.
+- [ ] Không có regression ở tab Lịch học (Chủ đề vẫn hiển thị đúng).
 
 ## Risk Assessment
 
