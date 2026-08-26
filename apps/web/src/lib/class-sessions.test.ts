@@ -5,12 +5,13 @@ import {
 	type ClassSessionLesson,
 	formatSessionDate,
 	parseStartDate,
+	sessionLessonInfo,
 	sessionStatus,
 	sessionStudents,
 	sessionTimeRange,
 	sessionTopic,
 } from "./class-sessions";
-import type { Lesson, LessonStatus } from "./mock-data";
+import type { Lesson, LessonStatus, Syllabus } from "./mock-data";
 
 const SCHEDULE = '{"days":[1,4],"start":"19:00","end":"20:30"}';
 
@@ -399,5 +400,207 @@ describe("sessionTimeRange", () => {
 			rows: [],
 		};
 		expect(sessionTimeRange(session)).toBe("23:00–00:30");
+	});
+});
+
+describe("sessionLessonInfo", () => {
+	function makeSyllabus(overrides: Partial<Syllabus> = {}): Syllabus {
+		return {
+			id: "syl-1",
+			name: "IELTS Intensive",
+			level: "Intermediate",
+			type: "ielts",
+			classId: "cls-1",
+			sourceTemplateId: null,
+			skills: ["Speaking", "Writing"],
+			totalLessons: 3,
+			description: "Test syllabus",
+			modules: [
+				{
+					id: "mod-1",
+					title: "Module 1: Foundation",
+					lessons: [
+						{
+							id: "les-1",
+							title: "L1: Intro & Diagnostic",
+							objectives: "Assess current band score",
+							materials: "Diagnostic test PDF",
+							status: "done",
+						},
+						{
+							id: "les-2",
+							title: "L2: Pronunciation Core",
+							objectives: "Master IPA vowels",
+							materials: "Phonetics chart",
+							status: "current",
+						},
+					],
+				},
+				{
+					id: "mod-2",
+					title: "Module 2: Advanced",
+					lessons: [
+						{
+							id: "les-3",
+							title: "L3: Complex Sentences",
+							objectives: "Use conditional clauses",
+							materials: "Grammar worksheet",
+							status: "upcoming",
+						},
+					],
+				},
+			],
+			...overrides,
+		};
+	}
+
+	function buildSessions(topics: string[] = []): ClassSession[] {
+		const lessons = topics.map((topic) => row({ topic }));
+		for (let i = 0; i < 26 - topics.length; i++) {
+			lessons.push(row({ day: 5 }));
+		}
+		return buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons,
+		}) as ClassSession[];
+	}
+
+	test("maps session to chronological syllabus lesson with module info", () => {
+		const syllabus = makeSyllabus();
+		const sessions = buildSessions();
+
+		const s1 = sessions[0] as ClassSession;
+		const info1 = sessionLessonInfo(s1, syllabus);
+		expect(info1).toEqual({
+			title: "L1: Intro & Diagnostic",
+			moduleTitle: "Module 1: Foundation",
+			lessonId: "les-1",
+			materials: "Diagnostic test PDF",
+			objectives: "Assess current band score",
+		});
+
+		const s2 = sessions[1] as ClassSession;
+		const info2 = sessionLessonInfo(s2, syllabus);
+		expect(info2).toEqual({
+			title: "L2: Pronunciation Core",
+			moduleTitle: "Module 1: Foundation",
+			lessonId: "les-2",
+			materials: "Phonetics chart",
+			objectives: "Master IPA vowels",
+		});
+
+		const s3 = sessions[2] as ClassSession;
+		const info3 = sessionLessonInfo(s3, syllabus);
+		expect(info3).toEqual({
+			title: "L3: Complex Sentences",
+			moduleTitle: "Module 2: Advanced",
+			lessonId: "les-3",
+			materials: "Grammar worksheet",
+			objectives: "Use conditional clauses",
+		});
+	});
+
+	test("returns null for syllabus fields when index > total lessons", () => {
+		const syllabus = makeSyllabus();
+		const sessions = buildSessions();
+
+		const s4 = sessions[3] as ClassSession;
+		const info4 = sessionLessonInfo(s4, syllabus);
+		expect(info4).toEqual({
+			title: null,
+			moduleTitle: null,
+			lessonId: null,
+			materials: null,
+			objectives: null,
+		});
+	});
+
+	test("edited topic overrides title while moduleTitle and lessonId remain mapped", () => {
+		const syllabus = makeSyllabus();
+		const sessions = buildSessions(["Mock Test Day 1"]);
+
+		const tue = sessions.filter((s) => s.day === 2);
+		const s1 = tue[0] as ClassSession;
+		const info1 = sessionLessonInfo(s1, syllabus);
+		expect(info1).toEqual({
+			title: "Mock Test Day 1",
+			moduleTitle: "Module 1: Foundation",
+			lessonId: "les-1",
+			materials: "Diagnostic test PDF",
+			objectives: "Assess current band score",
+		});
+	});
+
+	test("handles null syllabus gracefully", () => {
+		const sessions = buildSessions(["Manual Topic"]);
+		const s1 = sessions[0] as ClassSession;
+		const info1 = sessionLessonInfo(s1, null);
+		expect(info1).toEqual({
+			title: "Manual Topic",
+			moduleTitle: null,
+			lessonId: null,
+			materials: null,
+			objectives: null,
+		});
+
+		const s2 = sessions[1] as ClassSession;
+		const info2 = sessionLessonInfo(s2, null);
+		expect(info2).toEqual({
+			title: null,
+			moduleTitle: null,
+			lessonId: null,
+			materials: null,
+			objectives: null,
+		});
+	});
+
+	test("skips empty modules without shifting subsequent lesson indices", () => {
+		const syllabus = makeSyllabus({
+			modules: [
+				{ id: "mod-empty", title: "Empty Module", lessons: [] },
+				{
+					id: "mod-1",
+					title: "Module 1",
+					lessons: [
+						{
+							id: "les-1",
+							title: "Lesson 1",
+							objectives: "Obj 1",
+							materials: "Mat 1",
+							status: "done",
+						},
+					],
+				},
+			],
+		});
+		const sessions = buildSessions();
+		const s1 = sessions[0] as ClassSession;
+		const info1 = sessionLessonInfo(s1, syllabus);
+		expect(info1).toEqual({
+			title: "Lesson 1",
+			moduleTitle: "Module 1",
+			lessonId: "les-1",
+			materials: "Mat 1",
+			objectives: "Obj 1",
+		});
+	});
+
+	test("anomaly guard: mismatched classId passed as null produces no syllabus leak", () => {
+		const syllabus = makeSyllabus({ classId: "other-class-id" });
+		const currentClassId = "cls-1";
+		// Caller guard: sy && sy.classId === currentClassId ? sy : null
+		const guardedSyllabus =
+			syllabus.classId === currentClassId ? syllabus : null;
+		const sessions = buildSessions();
+		const s1 = sessions[0] as ClassSession;
+		const info1 = sessionLessonInfo(s1, guardedSyllabus);
+		expect(info1).toEqual({
+			title: null,
+			moduleTitle: null,
+			lessonId: null,
+			materials: null,
+			objectives: null,
+		});
 	});
 });

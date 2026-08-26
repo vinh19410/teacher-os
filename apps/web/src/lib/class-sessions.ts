@@ -29,7 +29,7 @@
  */
 
 import { addMinutes, parseSchedule } from "@/lib/format-schedule";
-import type { Lesson } from "@/lib/mock-data";
+import type { Lesson, Syllabus } from "@/lib/mock-data";
 import { formatDayMonth } from "@/lib/week-grid";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -266,4 +266,44 @@ export function sessionTopic(
 	const edited = editedTopics[session.slotIndex - 1];
 	if (edited !== undefined) return edited;
 	return syLessons[session.index - 1]?.title ?? null;
+}
+
+export interface SessionLessonInfo {
+	title: string | null;
+	moduleTitle: string | null;
+	lessonId: string | null;
+	materials: string | null;
+	objectives: string | null;
+}
+
+/**
+ * Detailed syllabus lesson info for one occurrence: derives topic title (with
+ * edited-topic slot override), parent module title, lesson id, materials,
+ * and objectives according to the chronological index.
+ */
+export function sessionLessonInfo(
+	session: ClassSession,
+	syllabus: Syllabus | null,
+): SessionLessonInfo {
+	const flattenedLessons =
+		syllabus?.modules.flatMap((m) =>
+			m.lessons.map((l) => ({
+				lessonId: l.id,
+				title: l.title,
+				moduleTitle: m.title,
+				materials: l.materials,
+				objectives: l.objectives,
+			})),
+		) ?? [];
+
+	const title = sessionTopic(session, flattenedLessons);
+	const mapped = flattenedLessons[session.index - 1];
+
+	return {
+		title,
+		moduleTitle: mapped?.moduleTitle ?? null,
+		lessonId: mapped?.lessonId ?? null,
+		materials: mapped?.materials ?? null,
+		objectives: mapped?.objectives ?? null,
+	};
 }
