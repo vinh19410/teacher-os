@@ -27,3 +27,23 @@ export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText(className).click();
 	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
 }
+
+/** Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice
+ * or machine-local Date, which drift a day between 00:00–07:00 VN. */
+export function vietnamTodayISO(): string {
+	const parts = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "Asia/Ho_Chi_Minh",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).formatToParts(new Date());
+	const get = (type: string) =>
+		parts.find((p) => p.type === type)?.value ?? "00";
+	return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/** Weekday (Mon=0 … Sun=6, schedule.days convention) of a yyyy-mm-dd string,
+ * parsed at UTC midnight — never Date#getDay() on the runner's machine. */
+export function vnWeekdayMon0(iso: string): number {
+	return (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
+}

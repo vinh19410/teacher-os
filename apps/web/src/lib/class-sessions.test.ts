@@ -3,8 +3,11 @@ import {
 	buildClassSessions,
 	type ClassSession,
 	type ClassSessionLesson,
+	firstUpcomingLessonId,
 	formatSessionDate,
 	parseStartDate,
+	sessionAttendanceState,
+	sessionIsEligibleDate,
 	sessionLessonInfo,
 	sessionStatus,
 	sessionStudents,
@@ -17,12 +20,13 @@ const SCHEDULE = '{"days":[1,4],"start":"19:00","end":"20:30"}';
 
 function row(overrides: Partial<ClassSessionLesson> = {}): ClassSessionLesson {
 	return {
+		id: "l1",
 		sid: "s1",
 		day: 2,
 		time: "19:00",
 		dur: 90,
 		topic: "",
-		status: "upcoming" as LessonStatus,
+		status: "upcoming",
 		...overrides,
 	};
 }
@@ -30,8 +34,22 @@ function row(overrides: Partial<ClassSessionLesson> = {}): ClassSessionLesson {
 /** 26 rows for one enrollment: 13 × Tue (day 2) alternating with 13 × Fri (day 5). */
 function standardRows(sid = "s1", total = 26): ClassSessionLesson[] {
 	return Array.from({ length: total }, (_, i) =>
-		row({ sid, day: i % 2 === 0 ? 2 : 5 }),
+		row({ sid, day: i % 2 === 0 ? 2 : 5, id: `${sid}-${i}` }),
 	);
+}
+
+/** Minimal session for helper tests that do not need buildClassSessions. */
+function makeSession(overrides: Partial<ClassSession> = {}): ClassSession {
+	return {
+		index: 1,
+		slotIndex: 1,
+		dateISO: "2026-08-25",
+		day: 2,
+		time: "19:00",
+		dur: 90,
+		rows: [],
+		...overrides,
+	};
 }
 
 describe("parseStartDate", () => {
@@ -400,6 +418,202 @@ describe("sessionTimeRange", () => {
 			rows: [],
 		};
 		expect(sessionTimeRange(session)).toBe("23:00–00:30");
+	});
+});
+
+describe("sessionIsEligibleDate", () => {
+	test("dateISO today or in the past → true; tomorrow → false (string compare)", () => {
+		const session = makeSession({ dateISO: "2026-08-25" });
+		expect(sessionIsEligibleDate(session, "2026-08-25")).toBe(true);
+		expect(sessionIsEligibleDate(session, "2026-08-26")).toBe(true);
+		expect(sessionIsEligibleDate(session, "2026-08-24")).toBe(false);
+	});
+});
+
+describe("firstUpcomingLessonId", () => {
+	test("slot bag: returns the smallest upcoming id by localeCompare, not array order", () => {
+		const session = makeSession({
+			rows: [
+				row({ id: "c" }),
+				row({ id: "a" }),
+				row({ id: "b" }),
+				row({ id: "z", status: "completed" }),
+			],
+		});
+		// Bag order [c,a,b(+z completed)] must not pick "c" — sort wins.
+		expect(firstUpcomingLessonId(session, "s1")).toBe("a");
+	});
+
+	test("no upcoming row for sid → null", () => {
+		const session = makeSession({
+			rows: [row({ id: "z", status: "completed" })],
+		});
+		expect(firstUpcomingLessonId(session, "s1")).toBeNull();
+		expect(firstUpcomingLessonId(session, "other")).toBeNull();
+	});
+
+	test("every occurrence of a slot returns the SAME id — no index binding", () => {
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons: standardRows(),
+		}) as ClassSession[];
+		const tue = sessions.filter((s) => s.day === 2);
+		for (const s of tue) {
+			// First Tue row is s1-0 → every occurrence must return it, never
+			// rowsForSid[slotIndex-1] (occurrence 5 would give s1-8).
+			expect(firstUpcomingLessonId(s, "s1")).toBe("s1-0");
+		}
+	});
+});
+
+describe("sessionAttendanceState", () => {
+	function buildAllUpcoming(): ClassSession[] {
+		return buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons: standardRows(),
+		}) as ClassSession[];
+	}
+
+	test("sequential head: only the earliest unmarked occurrence is actionable", () => {
+		const sessions = buildAllUpcoming();
+		const third = sessions[2];
+		if (!third) throw new Error("expected at least 3 sessions");
+		// todayISO at occurrence 3's date → occurrences 1-3 eligible.
+		const today = third.dateISO;
+		for (const s of sessions) {
+			const state = sessionAttendanceState(s, today);
+			const checkIns = state.sids.filter((x) => x.display === "check-in");
+			if (s.slotIndex === 1) {
+				// First occurrence of EACH slot (Tue and Fri) is its own head.
+				expect(state.kind).toBe("actionable");
+				expect(checkIns).toHaveLength(1);
+				if (s.day === 2) {
+					expect(checkIns[0]?.enrollmentLessonId).toBe("s1-0");
+				}
+			} else {
+				expect(checkIns).toHaveLength(0);
+			}
+		}
+	});
+
+	test("after one check-in occurrence 1 reads completed, head moves to occurrence 2", () => {
+		const rows = standardRows();
+		// s1-0 is the first Tue row → mark it completed.
+		rows[0] = row({ ...rows[0], status: "completed" });
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons: rows,
+		}) as ClassSession[];
+		const tue = sessions.filter((s) => s.day === 2);
+		// Single-sid class: occurrence 1 is now aggregate-completed → badge row.
+		const first = sessionAttendanceState(tue[0] as ClassSession, "2026-12-31");
+		expect(first.kind).toBe("completed");
+		const second = sessionAttendanceState(tue[1] as ClassSession, "2026-12-31");
+		expect(second.sids[0]?.display).toBe("check-in");
+		// Next upcoming id of the slot bag by lexicographic id sort → "s1-10"
+		// (localeCompare: "s1-10" < "s1-2"; ids are UUID tie-breaks, any of the
+		// sid's upcoming rows check in the same earliest occurrence).
+		expect(second.sids[0]?.enrollmentLessonId).toBe("s1-10");
+	});
+
+	test("equal 1:2: check-in only for the sid still on the head occurrence", () => {
+		// s1 completed ×2 Tue rows, s2 all upcoming.
+		let tueCompleted = 0;
+		const s1 = standardRows("s1").map((r) =>
+			r.day === 2 && tueCompleted++ < 2
+				? { ...r, status: "completed" as LessonStatus }
+				: r,
+		);
+		const lessons = [...s1, ...standardRows("s2")];
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons,
+		}) as ClassSession[];
+		const tue = sessions.filter((s) => s.day === 2);
+		const occ1 = sessionAttendanceState(tue[0] as ClassSession, "2026-12-31");
+		expect(
+			occ1.sids.filter((x) => x.display === "check-in").map((x) => x.sid),
+		).toEqual(["s2"]);
+		const occ2 = sessionAttendanceState(tue[1] as ClassSession, "2026-12-31");
+		// s1 already completed 2 → occurrence 2 completed for s1; s2 not head.
+		expect(occ2.sids.filter((x) => x.display === "check-in")).toHaveLength(0);
+	});
+
+	test("equal 1:2 with divergent progress: each sid heads its own occurrence", () => {
+		// s1 completed ×1 Tue row, s2 all upcoming.
+		const s1 = standardRows("s1").map((r, i) =>
+			i === 0 ? { ...r, status: "completed" as LessonStatus } : r,
+		);
+		const lessons = [...s1, ...standardRows("s2")];
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons,
+		}) as ClassSession[];
+		const tue = sessions.filter((s) => s.day === 2);
+		const occ1 = sessionAttendanceState(tue[0] as ClassSession, "2026-12-31");
+		expect(
+			occ1.sids.filter((x) => x.display === "check-in").map((x) => x.sid),
+		).toEqual(["s2"]);
+		const occ2 = sessionAttendanceState(tue[1] as ClassSession, "2026-12-31");
+		expect(
+			occ2.sids.filter((x) => x.display === "check-in").map((x) => x.sid),
+		).toEqual(["s1"]);
+	});
+
+	test("divergent counts: sid that stopped attending gets no entry, no check-in", () => {
+		// s2 has 20 rows (10 Tue + 10 Fri) — drops out of later occurrences.
+		const lessons = [...standardRows("s1"), ...standardRows("s2", 20)];
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons,
+		}) as ClassSession[];
+		const late = sessions[25] as ClassSession; // last Fri, slotIndex 13.
+		expect(late.day).toBe(5);
+		expect(sessionStudents(late)).toEqual(["s1"]);
+		const state = sessionAttendanceState(late, "2026-12-31");
+		expect(state.sids.map((x) => x.sid)).toEqual(["s1"]);
+		expect(state.sids.filter((x) => x.display === "check-in")).toHaveLength(0);
+	});
+
+	test("future todayISO before the first dateISO → every session is 'future'", () => {
+		const sessions = buildAllUpcoming();
+		for (const s of sessions) {
+			expect(sessionAttendanceState(s, "2026-08-24").kind).toBe("future");
+		}
+	});
+
+	test("cancelled and completed sessions carry no per-sid state", () => {
+		const cancelledRows = standardRows().map((r) => ({
+			...r,
+			status: "cancelled" as LessonStatus,
+		}));
+		const cancelled = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons: cancelledRows,
+		}) as ClassSession[];
+		expect(
+			sessionAttendanceState(cancelled[0] as ClassSession, "2026-12-31"),
+		).toEqual({ kind: "cancelled", sids: [] });
+
+		const completedRows = standardRows().map((r) => ({
+			...r,
+			status: "completed" as LessonStatus,
+		}));
+		const completed = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25",
+			lessons: completedRows,
+		}) as ClassSession[];
+		expect(
+			sessionAttendanceState(completed[0] as ClassSession, "2026-12-31"),
+		).toEqual({ kind: "completed", sids: [] });
 	});
 });
 

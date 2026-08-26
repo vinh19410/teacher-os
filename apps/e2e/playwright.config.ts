@@ -13,6 +13,10 @@ export default defineConfig({
 	reporter: [["list"], ["html", { open: "never" }]],
 	use: {
 		baseURL: "http://localhost:8001",
+		// Pin Vietnam time so "start tomorrow" in the UI and the VN-today date
+		// gate of the attendance CTA (issue #91) can never drift apart when
+		// the runner sits in another timezone.
+		timezoneId: "Asia/Ho_Chi_Minh",
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
 		// VitePWA runs its service worker in dev (vite.config.ts devOptions);

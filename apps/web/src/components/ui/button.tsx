@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -8,6 +8,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: Variant;
 	size?: Size;
 	children?: ReactNode;
+	/** React 19 ref-as-prop (imperative focus, e.g. modal focus traps). */
+	ref?: Ref<HTMLButtonElement>;
 }
 
 const variantClasses: Record<Variant, string> = {
@@ -24,11 +26,13 @@ export function Button({
 	size = "default",
 	className,
 	type = "button",
+	ref,
 	...props
 }: ButtonProps) {
 	return (
 		<button
 			type={type}
+			ref={ref}
 			className={cn(
 				"inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-transparent px-[18px] py-[9px] font-medium text-sm tracking-[-0.003em] transition-[transform,background-color,border-color] duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
 				"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97]",
