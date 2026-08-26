@@ -49,6 +49,7 @@ export function mapLessons(snapshot: KernelSnapshot): Lesson[] {
 		if (!sid) continue;
 		lessons.push({
 			id: row.id,
+			classId: row.classId,
 			sid,
 			day: row.day,
 			time: row.time,

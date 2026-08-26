@@ -53,6 +53,7 @@ export const seedData: MockData = {
 	lessons: [
 		{
 			id: "l1",
+			classId: "c1",
 			sid: "s1",
 			day: 1,
 			time: "19:00",
@@ -64,6 +65,7 @@ export const seedData: MockData = {
 		},
 		{
 			id: "l3",
+			classId: "c1",
 			sid: "s1",
 			day: 2,
 			time: "19:00",
@@ -75,6 +77,7 @@ export const seedData: MockData = {
 		},
 		{
 			id: "l9",
+			classId: "c1",
 			sid: "s4",
 			day: 5,
 			time: "19:00",

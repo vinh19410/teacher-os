@@ -29,6 +29,10 @@ export type LessonStatus = "completed" | "upcoming" | "cancelled" | "absent";
 
 export interface Lesson {
 	id: string;
+	/** Owning class — maps 1:1 from KernelLessonRow.classId; the schedule
+	 * tab scopes rows by it (studentIds filtering breaks for multi-class
+	 * students, issue #83). */
+	classId: string;
 	sid: string;
 	day: number;
 	time: string;
