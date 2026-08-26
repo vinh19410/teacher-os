@@ -39,7 +39,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type ClassSessionLesson = Pick<
 	Lesson,
-	"sid" | "day" | "time" | "dur" | "topic" | "status"
+	"id" | "sid" | "day" | "time" | "dur" | "topic" | "status"
 >;
 
 export interface ClassSession {
@@ -305,5 +305,117 @@ export function sessionLessonInfo(
 		lessonId: mapped?.lessonId ?? null,
 		materials: mapped?.materials ?? null,
 		objectives: mapped?.objectives ?? null,
+	};
+}
+
+/**
+ * In-place attendance support (issue #91).
+ *
+ * `session.rows` is a SLOT BAG — every lesson row of every enrollment sharing
+ * the weekday+time slot — so a row never identifies the occurrence being
+ * displayed. Binding `rowsForSid[slotIndex-1]` would POST a different
+ * occurrence's id than the row the teacher is looking at. Check-in on ANY
+ * upcoming row of a sid paints the earliest unmarked occurrence (prefix
+ * heuristic), so the CTA must be sequential-head-only and carry exactly one
+ * upcoming id per sid per click. Never iterate `session.rows` in JSX and never
+ * use `sessionLessonInfo().lessonId` (syllabus id) for check-in.
+ */
+
+/** Date gate for the CTA: occurrence already started (or today) in VN time. */
+export function sessionIsEligibleDate(
+	session: ClassSession,
+	todayISO: string,
+): boolean {
+	return session.dateISO <= todayISO;
+}
+
+/** One upcoming enrollment lesson id of `sid` from the slot bag (stable: id sort). */
+export function firstUpcomingLessonId(
+	session: ClassSession,
+	sid: string,
+): string | null {
+	// filter() already copies, so sort() cannot mutate the slot bag.
+	const row = session.rows
+		.filter((r) => r.sid === sid && r.status === "upcoming")
+		.sort((a, b) => a.id.localeCompare(b.id))[0];
+	return row?.id ?? null;
+}
+
+/** Sequential head: `sid`'s earliest unmarked occurrence within its slot. */
+function isSequentialHead(session: ClassSession, sid: string): boolean {
+	const stats = slotStatsBySid(session.rows).get(sid);
+	if (!stats) return false;
+	return (
+		sidStateAt(stats, session.slotIndex) === "upcoming" &&
+		session.slotIndex === stats.completed + stats.cancelled + 1
+	);
+}
+
+export type SessionAttendanceDisplay =
+	| "completed"
+	| "cancelled"
+	| "check-in"
+	| "upcoming";
+
+export interface SessionAttendanceSid {
+	sid: string;
+	/** Enrollment lesson id to POST check-in for (null = nothing to click). */
+	enrollmentLessonId: string | null;
+	display: SessionAttendanceDisplay;
+}
+
+export type SessionAttendanceKind =
+	| "completed"
+	| "cancelled"
+	| "future"
+	| "upcoming"
+	| "actionable";
+
+export interface SessionAttendanceState {
+	kind: SessionAttendanceKind;
+	sids: SessionAttendanceSid[];
+}
+
+/**
+ * Render state for the Trạng thái column: aggregate kind for badge-only rows
+ * (cancelled / completed / future), otherwise per-sid display where only the
+ * sequential head of each sid gets `check-in` with an `enrollmentLessonId`.
+ */
+export function sessionAttendanceState(
+	session: ClassSession,
+	todayISO: string,
+): SessionAttendanceState {
+	const aggregate = sessionStatus(session);
+	if (aggregate === "cancelled") return { kind: "cancelled", sids: [] };
+	if (aggregate === "completed") return { kind: "completed", sids: [] };
+	if (!sessionIsEligibleDate(session, todayISO)) {
+		return { kind: "future", sids: [] };
+	}
+	const sids: SessionAttendanceSid[] = sessionStudents(session).map((sid) => {
+		const stats = slotStatsBySid(session.rows).get(sid);
+		const state: SessionStatus = stats
+			? sidStateAt(stats, session.slotIndex)
+			: "upcoming";
+		if (state === "completed") {
+			return { sid, enrollmentLessonId: null, display: "completed" };
+		}
+		if (state === "cancelled") {
+			return { sid, enrollmentLessonId: null, display: "cancelled" };
+		}
+		if (isSequentialHead(session, sid)) {
+			const enrollmentLessonId = firstUpcomingLessonId(session, sid);
+			return {
+				sid,
+				enrollmentLessonId,
+				display: enrollmentLessonId ? "check-in" : "upcoming",
+			};
+		}
+		return { sid, enrollmentLessonId: null, display: "upcoming" };
+	});
+	return {
+		kind: sids.some((s) => s.display === "check-in")
+			? "actionable"
+			: "upcoming",
+		sids,
 	};
 }

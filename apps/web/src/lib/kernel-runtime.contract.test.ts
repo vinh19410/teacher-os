@@ -273,6 +273,31 @@ describe("kernel-backed store wiring", () => {
 		expect(lessonModal).toMatch(
 			/disabled=\{busy \|\| isPending\(lesson\.id\)\}/,
 		);
+
+		// Issue #91: the schedule table + roster modal receive the route's
+		// single hook instance as props — a second useDirectKernelAction would
+		// let notes and attendance POST in parallel.
+		const scheduleTable = readSrc(
+			"../components/class-detail/class-schedule-table.tsx",
+		);
+		expect(scheduleTable).toMatch(/void run\(/);
+		expect(scheduleTable).toMatch(/disabled=\{busy \|\| isPending\(/);
+		expect(scheduleTable).not.toMatch(/useDirectKernelAction/);
+		// Check-in posts the sequential-head enrollment lesson id only —
+		// never iterates the slot bag in JSX.
+		expect(scheduleTable).not.toMatch(/session\.rows/);
+		expect(scheduleTable).toMatch(/lessonId: checkInId/);
+
+		const attendanceModal = readSrc(
+			"../components/class-detail/session-attendance-modal.tsx",
+		);
+		expect(attendanceModal).toMatch(/void run\(/);
+		expect(attendanceModal).toMatch(/disabled=\{busy \|\| isPending\(/);
+		expect(attendanceModal).not.toMatch(/useDirectKernelAction/);
+		expect(attendanceModal).not.toMatch(/session\.rows/);
+		expect(attendanceModal).toMatch(
+			/type: "check-in", lessonId: enrollmentLessonId/,
+		);
 	});
 
 	test("outcome toasts distinguish refreshed/committed/definite/unknown and reconcile after unknown", () => {

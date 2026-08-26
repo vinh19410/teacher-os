@@ -4,8 +4,8 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { Fragment, useState } from "react";
+import { useState } from "react";
+import { ClassScheduleTable } from "@/components/class-detail/class-schedule-table";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { Avatar } from "@/components/ui/avatar";
@@ -17,24 +17,9 @@ import { Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
-import {
-	buildClassSessions,
-	formatSessionDate,
-	sessionLessonInfo,
-	sessionStatus,
-	sessionStudents,
-	sessionTimeRange,
-} from "@/lib/class-sessions";
 import { useData } from "@/lib/data-store";
-import { formatSchedule, lessonDayLabel } from "@/lib/format-schedule";
-import {
-	CLASS_TYPE_LABELS,
-	type ClassGroup,
-	classMeta,
-	type Lesson,
-	type Student,
-	type Syllabus,
-} from "@/lib/mock-data";
+import { formatSchedule } from "@/lib/format-schedule";
+import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -189,6 +174,9 @@ function ClassDetailRoute() {
 							legacyLessons={classLessons}
 							syllabus={sy && sy.classId === classId ? sy : null}
 							studentById={studentById}
+							run={run}
+							isPending={isPending}
+							busy={busy}
 						/>
 					</div>
 				</div>
@@ -231,244 +219,5 @@ function ClassDetailRoute() {
 				classId={cls.id}
 			/>
 		</div>
-	);
-}
-
-/**
- * Tab "Buổi học" (issue #83 / #89): one row per session in true chronological order
- * when the class schedule + startDate can be derived — concrete date + time
- * range in one cell, the slot's students, the syllabus-mapped topic with module badge
- * and expandable lesson details (materials + objectives), and the
- * in-order-prefix status. Classes the helper cannot derive truthfully
- * (legacy free-text schedule, missing startDate, rows edited away from the
- * schedule via lesson-edit) render the original weekday-grouped 5-column table.
- */
-function ClassScheduleTable({
-	cls,
-	lessons,
-	legacyLessons,
-	syllabus,
-	studentById,
-}: {
-	cls: ClassGroup;
-	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
-	lessons: Lesson[];
-	/** Student-scoped rows — exactly what the legacy fallback rendered. */
-	legacyLessons: Lesson[];
-	syllabus: Syllabus | null;
-	studentById: (id: string) => Student | undefined;
-}) {
-	const [expandedIndices, setExpandedIndices] = useState<Set<number>>(
-		new Set(),
-	);
-
-	const sessions = buildClassSessions({
-		schedule: cls.schedule,
-		startDate: cls.startDate,
-		lessons,
-	});
-
-	if (sessions === null) {
-		return (
-			<Card className="p-0">
-				<DataTable
-					headers={["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"]}
-					rows={legacyLessons.map((l) => {
-						const s = studentById(l.sid);
-						return {
-							cells: [
-								<span key="d" className="font-mono text-meta text-xs">
-									{lessonDayLabel(l.day)}
-								</span>,
-								<span key="t" className="font-mono">
-									{l.time}
-								</span>,
-								s?.name ?? "",
-								l.topic,
-								l.status === "completed" ? (
-									<Badge key="b" variant="success" dot>
-										Đã học
-									</Badge>
-								) : l.status === "cancelled" ? (
-									<Badge key="b" variant="danger">
-										Đã hủy
-									</Badge>
-								) : (
-									<Badge key="b" variant="accent">
-										Sắp tới
-									</Badge>
-								),
-							],
-						};
-					})}
-				/>
-			</Card>
-		);
-	}
-
-	const toggleExpand = (index: number) => {
-		setExpandedIndices((prev) => {
-			const next = new Set(prev);
-			if (next.has(index)) {
-				next.delete(index);
-			} else {
-				next.add(index);
-			}
-			return next;
-		});
-	};
-
-	return (
-		<Card className="p-0">
-			<div className="w-full overflow-x-auto">
-				<table className="w-full border-collapse text-sm">
-					<thead>
-						<tr>
-							<th className="border-line border-b px-4 py-3 text-left font-medium font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]">
-								Ngày & Giờ
-							</th>
-							<th className="border-line border-b px-4 py-3 text-left font-medium font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]">
-								Học viên
-							</th>
-							<th className="border-line border-b px-4 py-3 text-left font-medium font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]">
-								Chủ đề
-							</th>
-							<th className="border-line border-b px-4 py-3 text-left font-medium font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]">
-								Trạng thái
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						{sessions.map((s) => {
-							const students = sessionStudents(s)
-								.map((sid) => studentById(sid)?.name)
-								.filter((name): name is string => name !== undefined)
-								.join(", ");
-							const status = sessionStatus(s);
-							const info = sessionLessonInfo(s, syllabus);
-							const isExpanded = expandedIndices.has(s.index);
-							const hasDetails = Boolean(
-								info.materials || info.objectives || info.lessonId,
-							);
-
-							return (
-								<Fragment key={`session-${s.index}`}>
-									<tr
-										onClick={
-											hasDetails ? () => toggleExpand(s.index) : undefined
-										}
-										tabIndex={hasDetails ? 0 : undefined}
-										onKeyDown={
-											hasDetails
-												? (e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault();
-															toggleExpand(s.index);
-														}
-													}
-												: undefined
-										}
-										aria-expanded={hasDetails ? isExpanded : undefined}
-										className={`border-line-soft border-b transition-colors duration-[150ms] ${
-											hasDetails
-												? "cursor-pointer hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
-												: ""
-										}`}
-									>
-										<td className="px-4 py-3 text-left">
-											<span className="font-mono text-meta text-xs">
-												{formatSessionDate(s.dateISO)} · {sessionTimeRange(s)}
-											</span>
-										</td>
-										<td className="px-4 py-3 text-left">{students || "—"}</td>
-										<td className="px-4 py-3 text-left">
-											<div className="flex items-center gap-2">
-												{hasDetails ? (
-													<button
-														type="button"
-														tabIndex={-1}
-														onClick={(e) => {
-															e.stopPropagation();
-															toggleExpand(s.index);
-														}}
-														className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-fg hover:bg-surface hover:text-fg"
-														aria-label={
-															isExpanded
-																? "Thu gọn chi tiết bài học"
-																: "Mở rộng chi tiết bài học"
-														}
-														aria-expanded={isExpanded}
-													>
-														{isExpanded ? (
-															<ChevronDown className="h-3.5 w-3.5" />
-														) : (
-															<ChevronRight className="h-3.5 w-3.5" />
-														)}
-													</button>
-												) : (
-													<span className="w-5 shrink-0" />
-												)}
-												<div className="flex flex-wrap items-center gap-1.5">
-													{info.moduleTitle && (
-														<span
-															className="inline-flex max-w-[140px] items-center truncate rounded-md border border-line-soft bg-surface-warm/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-fg"
-															title={info.moduleTitle}
-														>
-															{info.moduleTitle}
-														</span>
-													)}
-													<span className="font-medium text-sm">
-														{info.title ?? "—"}
-													</span>
-												</div>
-											</div>
-										</td>
-										<td className="px-4 py-3 text-left">
-											{status === "completed" ? (
-												<Badge variant="success" dot>
-													Đã học
-												</Badge>
-											) : status === "cancelled" ? (
-												<Badge variant="danger">Đã hủy</Badge>
-											) : (
-												<Badge variant="accent">Sắp tới</Badge>
-											)}
-										</td>
-									</tr>
-									{hasDetails && isExpanded && (
-										<tr
-											key={`details-${s.index}`}
-											className="border-line-soft border-b bg-surface-warm/30 text-xs"
-											aria-label="Chi tiết lesson"
-										>
-											<td colSpan={4} className="px-6 py-3">
-												<div className="space-y-1.5 pl-7">
-													<div>
-														<span className="font-medium text-muted-fg">
-															Tài liệu:{" "}
-														</span>
-														<span className="text-fg-2">
-															{info.materials || "Chưa có tài liệu"}
-														</span>
-													</div>
-													<div>
-														<span className="font-medium text-muted-fg">
-															Mục tiêu:{" "}
-														</span>
-														<span className="text-fg-2">
-															{info.objectives || "Chưa có mục tiêu"}
-														</span>
-													</div>
-												</div>
-											</td>
-										</tr>
-									)}
-								</Fragment>
-							);
-						})}
-					</tbody>
-				</table>
-			</div>
-		</Card>
 	);
 }

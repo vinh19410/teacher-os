@@ -1,5 +1,6 @@
 /**
- * Contract tests for the merged class detail "Buổi học" tab (Issue #89).
+ * Contract tests for the merged class detail "Buổi học" tab (Issue #89) and
+ * the ClassScheduleTable extraction (Issue #91).
  * Verifies tab count, component boundaries, line count, and a11y labels.
  */
 import { readFileSync } from "node:fs";
@@ -17,6 +18,10 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 	);
 	const curriculumSectionSrc = readFileSync(
 		join(webSrc, "components/class-detail/curriculum-management-section.tsx"),
+		"utf8",
+	);
+	const scheduleTableSrc = readFileSync(
+		join(webSrc, "components/class-detail/class-schedule-table.tsx"),
 		"utf8",
 	);
 
@@ -37,6 +42,10 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 		expect(classDetailSrc).toMatch(/tab === "sessions"/);
 		expect(classDetailSrc).toMatch(/<CurriculumManagementSection/);
 		expect(classDetailSrc).toMatch(/<ClassScheduleTable/);
+		// Issue #91: the table itself lives in its own component file.
+		expect(classDetailSrc).toMatch(
+			/from "@\/components\/class-detail\/class-schedule-table"/,
+		);
 	});
 
 	test("CurriculumManagementSection supports collapsible header and defaultCollapsed", () => {
@@ -48,17 +57,17 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 	});
 
 	test("ClassScheduleTable renders enhanced 4-column table with module badges and sub-rows", () => {
-		expect(classDetailSrc).toMatch(/<th[^>]*>\s*Ngày & Giờ\s*<\/th>/);
-		expect(classDetailSrc).toMatch(/sessionLessonInfo\(s, syllabus\)/);
-		expect(classDetailSrc).toMatch(/info\.moduleTitle/);
-		expect(classDetailSrc).toMatch(/aria-label="Chi tiết lesson"/);
-		expect(classDetailSrc).toMatch(/Tài liệu:/);
-		expect(classDetailSrc).toMatch(/Mục tiêu:/);
+		expect(scheduleTableSrc).toMatch(/<th[^>]*>\s*Ngày & Giờ\s*<\/th>/);
+		expect(scheduleTableSrc).toMatch(/sessionLessonInfo\(s, syllabus\)/);
+		expect(scheduleTableSrc).toMatch(/info\.moduleTitle/);
+		expect(scheduleTableSrc).toMatch(/aria-label="Chi tiết lesson"/);
+		expect(scheduleTableSrc).toMatch(/Tài liệu:/);
+		expect(scheduleTableSrc).toMatch(/Mục tiêu:/);
 	});
 
 	test("ClassScheduleTable preserves legacy 5-column fallback for sessions === null", () => {
-		expect(classDetailSrc).toMatch(/sessions === null/);
-		expect(classDetailSrc).toMatch(
+		expect(scheduleTableSrc).toMatch(/sessions === null/);
+		expect(scheduleTableSrc).toMatch(
 			/\["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"\]/,
 		);
 	});
