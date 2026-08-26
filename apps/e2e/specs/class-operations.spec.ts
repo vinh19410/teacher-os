@@ -12,9 +12,8 @@ import { openClassScheduleTab, signUpViaUi } from "./helpers";
  * - 12 lesson-blocks carry the student name → always .first().
  * - "Điểm danh" closes the modal fire-and-forget; the opacity-60 class on
  *   the lesson block is the deterministic completion barrier.
- * - Tab "Lịch học" renders "Đã học"/"Sắp tới" badges; the "Giáo trình" tab
- *   ($classId.tsx) renders "Đã dạy"/"Đang học"/"Sắp tới" per lesson. The
- *   exact-count asserts below only run while standing on "Lịch học".
+ * - Tab "Buổi học" (Issue #89) renders "Đã học"/"Sắp tới" badges on the timeline;
+ *   the exact-count asserts below only run while standing on "Buổi học".
  */
 test("login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data", async ({
 	page,
@@ -50,8 +49,8 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await page.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	// 4. See the generated sessions: "Lịch học" tab → 12 "Sắp tới".
-	await page.getByRole("button", { name: "Lịch học", exact: true }).click();
+	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
+	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 
 	// 5. Check in on /schedule.
@@ -76,7 +75,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await expect(
 		page.locator("button.lesson-block", { hasText: STUDENT_NAME }).first(),
 	).toHaveClass(/opacity-60/);
-	// Badge counts live on the class "Lịch học" tab, never on /schedule.
+	// Badge counts live on the class "Buổi học" tab, never on /schedule.
 	await openClassScheduleTab(page, CLASS_NAME);
 	await expect(page.getByText("Đã học", { exact: true })).toHaveCount(1);
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(11);
