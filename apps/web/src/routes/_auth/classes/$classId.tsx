@@ -11,7 +11,10 @@ import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
-import { SyllabusProgress } from "@/components/syllabus/syllabus-progress";
+import {
+	LessonStatusBadge,
+	lessonDotClassFor,
+} from "@/components/syllabus/lesson-status";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +22,7 @@ import { Card, StatCard } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
@@ -72,6 +76,10 @@ function ClassDetailRoute() {
 		throw notFound();
 	}
 	const sy = syllabusById(cls.syllabusId);
+	const syLessons = sy?.modules.flatMap((m) => m.lessons) ?? [];
+	const syDone = syLessons.filter((l) => l.status === "done").length;
+	const syPct =
+		syLessons.length > 0 ? Math.round((syDone / syLessons.length) * 100) : 0;
 	const students = cls.studentIds
 		.map(studentById)
 		.filter((s) => s !== undefined);
@@ -175,8 +183,31 @@ function ClassDetailRoute() {
 			{tab === "syllabus" &&
 				(sy && sy.classId === classId ? (
 					<div>
-						<SyllabusProgress syllabus={sy} />
-						<div className="mt-4 mb-3 flex items-center justify-between">
+						<Card
+							variant="white"
+							className="mb-4 flex flex-wrap items-center gap-4"
+						>
+							<div className="flex-1">
+								<div className="font-semibold text-sm">{sy.name}</div>
+								<div className="font-mono text-meta text-xs">
+									{sy.level} ·{" "}
+									{sy.skills.length > 0
+										? sy.skills.join(", ")
+										: CLASS_TYPE_LABELS[sy.type]}{" "}
+									· {sy.totalLessons} buổi
+								</div>
+							</div>
+							<div className="text-right">
+								<div className="font-mono font-semibold text-accent-blue text-xl">
+									{syPct}%
+								</div>
+								<div className="font-mono text-meta text-xs">
+									{syDone}/{syLessons.length} buổi
+								</div>
+							</div>
+						</Card>
+						<Progress value={syPct} className="mb-5" />
+						<div className="mb-3 flex items-center justify-between">
 							<SectionLabel>Nội dung giáo trình của lớp</SectionLabel>
 							<div className="flex gap-2">
 								<Button
@@ -203,59 +234,74 @@ function ClassDetailRoute() {
 								</p>
 							</Card>
 						)}
-						{sy.modules.map((m) => (
-							<div
-								key={m.id}
-								className="mb-4 overflow-hidden rounded-lg border border-line-soft border-solid bg-bg"
-							>
-								<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4">
-									<h3 className="font-semibold text-sm">{m.title}</h3>
-									<div className="flex items-center gap-3">
-										<button
-											type="button"
-											onClick={() => setEditModuleId(m.id)}
-											className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
-										>
-											Sửa
-										</button>
-										<span className="font-mono text-[11px] text-muted-fg">
-											{m.lessons.length} buổi
-										</span>
-									</div>
-								</div>
-								<div>
-									{m.lessons.map((l) => (
-										<div
-											key={l.id}
-											className="flex items-center justify-between gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm"
-										>
-											<div>
-												<div className="font-medium text-sm">{l.title}</div>
-												<div className="mt-0.5 text-[11px] text-muted-fg">
-													{l.materials}
-												</div>
-											</div>
+						{sy.modules.map((m) => {
+							const mDone = m.lessons.filter((l) => l.status === "done").length;
+							return (
+								<div
+									key={m.id}
+									className="mb-4 overflow-hidden rounded-lg border border-line-soft border-solid bg-bg"
+								>
+									<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4">
+										<h3 className="font-semibold text-sm">{m.title}</h3>
+										<div className="flex items-center gap-3">
 											<button
 												type="button"
-												onClick={() =>
-													setEditLessonRef({ moduleId: m.id, lessonId: l.id })
-												}
+												onClick={() => setEditModuleId(m.id)}
 												className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
 											>
 												Sửa
 											</button>
+											<span className="font-mono text-[11px] text-muted-fg">
+												{mDone}/{m.lessons.length} buổi
+											</span>
 										</div>
-									))}
-									<button
-										type="button"
-										onClick={() => setAddLessonModuleId(m.id)}
-										className="mt-2 w-full px-5 pb-3 text-left font-medium text-accent-blue text-xs hover:text-accent-active"
-									>
-										+ Thêm buổi học
-									</button>
+									</div>
+									<div>
+										{m.lessons.map((l) => (
+											<div
+												key={l.id}
+												className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
+											>
+												<span
+													className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
+												/>
+												<div>
+													<div className="font-medium text-sm">{l.title}</div>
+													<div className="mt-0.5 text-[11px] text-muted-fg">
+														{l.materials}
+													</div>
+													<div className="mt-[3px] text-fg-2 text-xs leading-[1.4]">
+														Mục tiêu: {l.objectives}
+													</div>
+												</div>
+												<div className="flex items-center gap-2 max-app:col-start-2 max-app:pt-1">
+													<LessonStatusBadge status={l.status} />
+													<button
+														type="button"
+														onClick={() =>
+															setEditLessonRef({
+																moduleId: m.id,
+																lessonId: l.id,
+															})
+														}
+														className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
+													>
+														Sửa
+													</button>
+												</div>
+											</div>
+										))}
+										<button
+											type="button"
+											onClick={() => setAddLessonModuleId(m.id)}
+											className="mt-2 w-full px-5 pb-3 text-left font-medium text-accent-blue text-xs hover:text-accent-active"
+										>
+											+ Thêm buổi học
+										</button>
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 				) : cls.syllabusId === "" ? (
 					<Card variant="white" className="p-8 text-center">

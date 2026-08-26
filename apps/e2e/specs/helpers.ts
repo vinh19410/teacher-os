@@ -18,8 +18,11 @@ export async function signUpViaUi(page: Page, name = "E2E Teacher") {
 	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 }
 
-/** Navigate to a class's "Lịch học" tab — the only page rendering the
- * "Đã học"/"Sắp tới" badges ($classId.tsx); /schedule never shows them. */
+/** Navigate to a class's "Lịch học" tab — it renders the "Đã học"/"Sắp tới"
+ * badges; the "Giáo trình" tab of $classId.tsx also renders "Đã dạy"/
+ * "Đang học"/"Sắp tới" badges per lesson. The /schedule page itself never
+ * shows them (only its opened lesson modal can show "Sắp tới"). Text
+ * counts must scope to "Lịch học" while on it. */
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
