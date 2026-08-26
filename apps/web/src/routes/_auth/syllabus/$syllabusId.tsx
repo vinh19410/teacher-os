@@ -9,6 +9,10 @@ import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
+import {
+	LessonStatusBadge,
+	lessonDotClassFor,
+} from "@/components/syllabus/lesson-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
@@ -17,7 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { CLASS_TYPE_LABELS, type SyllabusLesson } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
@@ -39,23 +43,6 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 		</Card>
 	),
 });
-
-const dotClass: Record<SyllabusLesson["status"], string> = {
-	done: "bg-success",
-	current: "bg-accent-blue shadow-[0_0_0_3px_var(--accent-soft)]",
-	upcoming: "bg-line",
-};
-
-function statusBadge(status: SyllabusLesson["status"]) {
-	if (status === "done")
-		return (
-			<Badge variant="success" dot>
-				Đã dạy
-			</Badge>
-		);
-	if (status === "current") return <Badge variant="accent">Đang học</Badge>;
-	return <Badge variant="muted">Sắp tới</Badge>;
-}
 
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
@@ -204,7 +191,7 @@ function SyllabusDetailRoute() {
 										className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
 									>
 										<span
-											className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${dotClass[l.status]}`}
+											className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
 										/>
 										<div>
 											<div className="font-medium text-sm">{l.title}</div>
@@ -216,7 +203,7 @@ function SyllabusDetailRoute() {
 											</div>
 										</div>
 										<div className="flex items-center gap-2 max-app:col-start-2 max-app:pt-1">
-											{statusBadge(l.status)}
+											<LessonStatusBadge status={l.status} />
 											<button
 												type="button"
 												onClick={() =>

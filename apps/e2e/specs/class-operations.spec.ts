@@ -12,7 +12,9 @@ import { openClassScheduleTab, signUpViaUi } from "./helpers";
  * - 12 lesson-blocks carry the student name → always .first().
  * - "Điểm danh" closes the modal fire-and-forget; the opacity-60 class on
  *   the lesson block is the deterministic completion barrier.
- * - "Đã học"/"Sắp tới" badges exist only on the class "Lịch học" tab.
+ * - Tab "Lịch học" renders "Đã học"/"Sắp tới" badges; the "Giáo trình" tab
+ *   ($classId.tsx) renders "Đã dạy"/"Đang học"/"Sắp tới" per lesson. The
+ *   exact-count asserts below only run while standing on "Lịch học".
  */
 test("login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data", async ({
 	page,
