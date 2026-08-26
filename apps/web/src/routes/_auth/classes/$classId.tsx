@@ -26,9 +26,24 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
+import {
+	buildClassSessions,
+	formatSessionDate,
+	sessionStatus,
+	sessionStudents,
+	sessionTimeRange,
+	sessionTopic,
+} from "@/lib/class-sessions";
 import { useData } from "@/lib/data-store";
 import { formatSchedule, lessonDayLabel } from "@/lib/format-schedule";
-import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
+import {
+	CLASS_TYPE_LABELS,
+	type ClassGroup,
+	classMeta,
+	type Lesson,
+	type Student,
+	type SyllabusLesson,
+} from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -337,39 +352,13 @@ function ClassDetailRoute() {
 				))}
 
 			{tab === "schedule" && (
-				<Card className="p-0">
-					<DataTable
-						headers={["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"]}
-						rows={classLessons.map((l) => {
-							const s = studentById(l.sid);
-							return {
-								cells: [
-									<span key="d" className="font-mono text-meta text-xs">
-										{lessonDayLabel(l.day)}
-									</span>,
-									<span key="t" className="font-mono">
-										{l.time}
-									</span>,
-									s?.name ?? "",
-									l.topic,
-									l.status === "completed" ? (
-										<Badge key="b" variant="success" dot>
-											Đã học
-										</Badge>
-									) : l.status === "cancelled" ? (
-										<Badge key="b" variant="danger">
-											Đã hủy
-										</Badge>
-									) : (
-										<Badge key="b" variant="accent">
-											Sắp tới
-										</Badge>
-									),
-								],
-							};
-						})}
-					/>
-				</Card>
+				<ClassScheduleTable
+					cls={cls}
+					lessons={data.lessons.filter((l) => l.classId === classId)}
+					legacyLessons={classLessons}
+					syLessons={sy && sy.classId === classId ? syLessons : []}
+					studentById={studentById}
+				/>
 			)}
 
 			{tab === "notes" && (
@@ -476,5 +465,110 @@ function ClassDetailRoute() {
 				classId={cls.id}
 			/>
 		</div>
+	);
+}
+
+/**
+ * Tab "Lịch học" (issue #83): one row per session in true chronological order
+ * when the class schedule + startDate can be derived — concrete date + time
+ * range in one cell, the slot's students, the syllabus-mapped topic, and the
+ * in-order-prefix status. Classes the helper cannot derive truthfully
+ * (legacy free-text schedule, missing startDate, rows edited away from the
+ * schedule via lesson-edit) render the original weekday-grouped table.
+ */
+function ClassScheduleTable({
+	cls,
+	lessons,
+	legacyLessons,
+	syLessons,
+	studentById,
+}: {
+	cls: ClassGroup;
+	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
+	lessons: Lesson[];
+	/** Student-scoped rows — exactly what the legacy fallback rendered. */
+	legacyLessons: Lesson[];
+	syLessons: SyllabusLesson[];
+	studentById: (id: string) => Student | undefined;
+}) {
+	const sessions = buildClassSessions({
+		schedule: cls.schedule,
+		startDate: cls.startDate,
+		lessons,
+	});
+
+	if (sessions === null) {
+		return (
+			<Card className="p-0">
+				<DataTable
+					headers={["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"]}
+					rows={legacyLessons.map((l) => {
+						const s = studentById(l.sid);
+						return {
+							cells: [
+								<span key="d" className="font-mono text-meta text-xs">
+									{lessonDayLabel(l.day)}
+								</span>,
+								<span key="t" className="font-mono">
+									{l.time}
+								</span>,
+								s?.name ?? "",
+								l.topic,
+								l.status === "completed" ? (
+									<Badge key="b" variant="success" dot>
+										Đã học
+									</Badge>
+								) : l.status === "cancelled" ? (
+									<Badge key="b" variant="danger">
+										Đã hủy
+									</Badge>
+								) : (
+									<Badge key="b" variant="accent">
+										Sắp tới
+									</Badge>
+								),
+							],
+						};
+					})}
+				/>
+			</Card>
+		);
+	}
+
+	return (
+		<Card className="p-0">
+			<DataTable
+				headers={["Ngày & Giờ", "Học viên", "Chủ đề", "Trạng thái"]}
+				rows={sessions.map((s) => {
+					const students = sessionStudents(s)
+						.map((sid) => studentById(sid)?.name)
+						.filter((name): name is string => name !== undefined)
+						.join(", ");
+					const status = sessionStatus(s);
+					return {
+						cells: [
+							<span key="d" className="font-mono text-meta text-xs">
+								{formatSessionDate(s.dateISO)} · {sessionTimeRange(s)}
+							</span>,
+							students || "—",
+							sessionTopic(s, syLessons) ?? "—",
+							status === "completed" ? (
+								<Badge key="b" variant="success" dot>
+									Đã học
+								</Badge>
+							) : status === "cancelled" ? (
+								<Badge key="b" variant="danger">
+									Đã hủy
+								</Badge>
+							) : (
+								<Badge key="b" variant="accent">
+									Sắp tới
+								</Badge>
+							),
+						],
+					};
+				})}
+			/>
+		</Card>
 	);
 }

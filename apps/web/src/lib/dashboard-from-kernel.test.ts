@@ -42,6 +42,7 @@ function lesson(
 	partial: Pick<Lesson, "id" | "sid" | "day"> & Partial<Lesson>,
 ): Lesson {
 	return {
+		classId: "cl-1",
 		time: "19:00",
 		dur: 60,
 		type: "1:1",
