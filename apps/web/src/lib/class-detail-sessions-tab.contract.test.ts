@@ -56,8 +56,11 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 		expect(curriculumSectionSrc).toMatch(/Thu gọn/);
 	});
 
-	test("ClassScheduleTable renders enhanced 4-column table with module badges and sub-rows", () => {
+	test("ClassScheduleTable renders enhanced 3-column table with module badges and sub-rows", () => {
 		expect(scheduleTableSrc).toMatch(/<th[^>]*>\s*Ngày & Giờ\s*<\/th>/);
+		expect(scheduleTableSrc).toMatch(/<th[^>]*>\s*Chủ đề\s*<\/th>/);
+		expect(scheduleTableSrc).toMatch(/<th[^>]*>\s*Trạng thái\s*<\/th>/);
+		expect((scheduleTableSrc.match(/<th[\s>]/g) ?? []).length).toBe(3);
 		expect(scheduleTableSrc).toMatch(/sessionLessonInfo\(s, syllabus\)/);
 		expect(scheduleTableSrc).toMatch(/info\.moduleTitle/);
 		expect(scheduleTableSrc).toMatch(/aria-label="Chi tiết lesson"/);
@@ -65,11 +68,25 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 		expect(scheduleTableSrc).toMatch(/Mục tiêu:/);
 	});
 
-	test("ClassScheduleTable preserves legacy 5-column fallback for sessions === null", () => {
+	test("ClassScheduleTable preserves legacy 4-column fallback for sessions === null", () => {
 		expect(scheduleTableSrc).toMatch(/sessions === null/);
 		expect(scheduleTableSrc).toMatch(
-			/\["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"\]/,
+			/\["Ngày", "Giờ", "Chủ đề", "Trạng thái"\]/,
 		);
+	});
+
+	test("ClassScheduleTable drops the Học viên column (issue #93)", () => {
+		// Negative assertion is scoped to this component's source only: literal
+		// JSX "<th …>Học viên</th>" is unique to the main table; the roster tab
+		// label lives in $classId.tsx and stays pinned positive above.
+		expect(scheduleTableSrc).not.toMatch(/>\s*Học viên\s*<\/th>/);
+	});
+
+	test("expanded lesson row spans exactly 3 columns (issue #93)", () => {
+		// Source-text pin stands in for column-layout e2e coverage (none asserts
+		// headers/colSpan today).
+		expect(scheduleTableSrc).toMatch(/colSpan=\{3\}/);
+		expect(scheduleTableSrc).not.toMatch(/colSpan=\{4\}/);
 	});
 
 	test("class detail line count is strictly under 500 lines", () => {

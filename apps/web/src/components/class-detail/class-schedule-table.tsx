@@ -29,11 +29,15 @@ const stopActionKeyPropagation = (e: KeyboardEvent<HTMLButtonElement>) => {
 /**
  * Tab "Buổi học" (issue #83 / #89): one row per session in true chronological order
  * when the class schedule + startDate can be derived — concrete date + time
- * range in one cell, the slot's students, the syllabus-mapped topic with module badge
- * and expandable lesson details (materials + objectives), and the
- * in-order-prefix status. Classes the helper cannot derive truthfully
- * (legacy free-text schedule, missing startDate, rows edited away from the
- * schedule via lesson-edit) render the original weekday-grouped 5-column table.
+ * range in one cell, the syllabus-mapped topic with module badge and expandable
+ * lesson details (materials + objectives), and the in-order-prefix status.
+ * Classes the helper cannot derive truthfully (legacy free-text schedule,
+ * missing startDate, rows edited away from the schedule via lesson-edit) render
+ * the original weekday-grouped 4-column table.
+ *
+ * Issue #93 removes the in-table Học viên column: student lists live in the
+ * roster tab, and per-session attendance still opens the roster modal (#91)
+ * when a group session is actionable.
  *
  * Issue #91 adds the in-place check-in CTA: 1:1 classes get a one-click button
  * on the sequential-head occurrence; group classes open the roster modal.
@@ -82,9 +86,8 @@ export function ClassScheduleTable({
 		return (
 			<Card className="p-0">
 				<DataTable
-					headers={["Ngày", "Giờ", "Học viên", "Chủ đề", "Trạng thái"]}
+					headers={["Ngày", "Giờ", "Chủ đề", "Trạng thái"]}
 					rows={legacyLessons.map((l) => {
-						const s = studentById(l.sid);
 						return {
 							cells: [
 								<span key="d" className="font-mono text-meta text-xs">
@@ -93,7 +96,6 @@ export function ClassScheduleTable({
 								<span key="t" className="font-mono">
 									{l.time}
 								</span>,
-								s?.name ?? "",
 								l.topic,
 								l.status === "completed" ? (
 									<Badge key="b" variant="success" dot>
@@ -141,7 +143,6 @@ export function ClassScheduleTable({
 					<thead>
 						<tr>
 							<th className={thClass}>Ngày & Giờ</th>
-							<th className={thClass}>Học viên</th>
 							<th className={thClass}>Chủ đề</th>
 							<th className={thClass}>Trạng thái</th>
 						</tr>
@@ -149,10 +150,6 @@ export function ClassScheduleTable({
 					<tbody>
 						{sessions.map((s) => {
 							const attendees = sessionStudents(s);
-							const students = attendees
-								.map((sid) => studentById(sid)?.name)
-								.filter((name): name is string => name !== undefined)
-								.join(", ");
 							const attendance = sessionAttendanceState(s, todayISO);
 							// Group classes open the roster modal; 1:1 classes check in in place.
 							const isGroupSession = attendees.length >= 2;
@@ -173,7 +170,6 @@ export function ClassScheduleTable({
 												{formatSessionDate(s.dateISO)} · {sessionTimeRange(s)}
 											</span>
 										</td>
-										<td className="px-4 py-3 text-left">{students || "—"}</td>
 										<td className="px-4 py-3 text-left">
 											<div className="flex items-center gap-2">
 												{hasDetails ? (
@@ -268,7 +264,7 @@ export function ClassScheduleTable({
 											className="border-line-soft border-b bg-surface-warm/30 text-xs"
 											aria-label="Chi tiết lesson"
 										>
-											<td colSpan={4} className="px-6 py-3">
+											<td colSpan={3} className="px-6 py-3">
 												<div className="space-y-1.5 pl-7">
 													<div>
 														<span className="font-medium text-muted-fg">
