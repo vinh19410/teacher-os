@@ -263,8 +263,10 @@ export function Sidebar({
 						{section.label && (
 							<hr
 								className={cn(
+									// Base "hidden" gates every viewport; only the display switch is
+									// collapsed-conditional and app:-prefixed (D10) — the decorative
+									// styling stays unconditional, safely dead while hidden.
 									"hidden",
-									// Collapsed-branch classes are always app:-prefixed (D10).
 									collapsed &&
 										"mx-auto my-2 app:block w-6 border-line-soft border-t",
 								)}
