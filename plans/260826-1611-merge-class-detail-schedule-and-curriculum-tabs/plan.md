@@ -6,7 +6,7 @@ priority: P1
 effort: "3-5d"
 tags: [ui, class-detail, syllabus, schedule, refactor]
 created: 2026-08-26
-blockedBy: []
+blockedBy: [260826-1854-in-place-attendance-on-bui-hc-tab]
 blocks: []
 ---
 
