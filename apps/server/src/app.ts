@@ -1,0 +1,106 @@
+import { membership } from "@teacher-os/db/schema/membership";
+import { organization } from "@teacher-os/db/schema/organization";
+import { asc, eq } from "drizzle-orm";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { type Context, Hono } from "hono";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
+import { kernelRoutes } from "./routes/kernel";
+import { readinessRoute } from "./routes/readiness";
+import type { SessionUser } from "./session";
+
+export type Db = DrizzleD1Database<Record<string, never>>;
+
+export interface KernelCtx {
+	orgId: string;
+	userId: string;
+}
+
+/**
+ * Every collaborator that touches Cloudflare bindings is injected so the
+ * middleware + route chain can run under plain node in tests.
+ */
+export interface AppDeps {
+	getDb(): Db;
+	corsOrigin: string;
+	getSessionUser(headers: Headers): Promise<SessionUser | null>;
+	authHandler(req: Request): Response | Promise<Response>;
+}
+
+/** Better-Auth handles its own session bootstrapping under /api/auth. */
+function isAuthPath(pathname: string): boolean {
+	return pathname === "/api/auth" || pathname.startsWith("/api/auth/");
+}
+
+/**
+ * First request of a fresh teacher gets an empty org plus a `teacher`
+ * membership — idempotent, unique per (orgId, userId), earliest org wins
+ * if a concurrent bootstrap race creates two.
+ */
+function bootstrapMiddleware(deps: AppDeps) {
+	return async (
+		c: Context<{ Variables: { kernelCtx: KernelCtx } }>,
+		next: () => Promise<void>,
+	) => {
+		const pathname = new URL(c.req.url).pathname;
+		if (isAuthPath(pathname)) {
+			return next();
+		}
+		const session = await deps.getSessionUser(c.req.raw.headers);
+		if (!session) {
+			return next(); // unauthenticated: kernel routes answer 401
+		}
+		const db = deps.getDb();
+		const readMemberships = () =>
+			db
+				.select()
+				.from(membership)
+				.where(eq(membership.userId, session.userId))
+				.orderBy(asc(membership.createdAt), asc(membership.id));
+		let rows = await readMemberships();
+		if (rows.length === 0) {
+			const orgId = crypto.randomUUID();
+			await db.batch([
+				db.insert(organization).values({ id: orgId, name: session.userName }),
+				db.insert(membership).values({
+					id: crypto.randomUUID(),
+					orgId,
+					userId: session.userId,
+					role: "teacher",
+				}),
+			]);
+			// Re-read: a racing request may have created an earlier org — first wins.
+			rows = await readMemberships();
+		}
+		const first = rows[0];
+		if (!first) {
+			return c.json({ error: "no membership after bootstrap" }, 403);
+		}
+		c.set("kernelCtx", { orgId: first.orgId, userId: session.userId });
+		return next();
+	};
+}
+
+export function buildApp(deps: AppDeps) {
+	const app = new Hono<{ Variables: { kernelCtx: KernelCtx } }>();
+
+	app.use(logger());
+	app.use(
+		"/*",
+		cors({
+			origin: deps.corsOrigin,
+			allowMethods: ["GET", "POST", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization"],
+			credentials: true,
+		}),
+	);
+	app.use("/api/*", bootstrapMiddleware(deps));
+	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
+	app.get("/", (c) => c.text("OK"));
+	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
+	// Better Auth never run — it answers purely from the D1 schema catalog.
+	app.get("/readyz", readinessRoute(deps));
+	app.route("/api", kernelRoutes(deps));
+
+	return app;
+}

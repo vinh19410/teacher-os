@@ -1,0 +1,76 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1786861194241,
+      "tag": "0000_mushy_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787058469798,
+      "tag": "0001_opposite_loki",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787116994796,
+      "tag": "0002_flippant_speed",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787121757952,
+      "tag": "0003_last_shatterstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787126991793,
+      "tag": "0004_gray_cloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787131081355,
+      "tag": "0005_mature_sasquatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787133388431,
+      "tag": "0006_pink_ender_wiggin",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787235670402,
+      "tag": "0007_class_type_skills",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787570000000,
+      "tag": "0008_syllabus_type_skills",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787660000000,
+      "tag": "0009_syllabus_template_discriminator",
+      "breakpoints": true
+    }
+  ]
+}

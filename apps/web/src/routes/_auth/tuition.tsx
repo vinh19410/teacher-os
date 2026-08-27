@@ -1,0 +1,204 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, StatCard } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { PageHead } from "@/components/ui/page-head";
+import { Progress } from "@/components/ui/progress";
+import { SectionLabel } from "@/components/ui/section-label";
+import { Tag } from "@/components/ui/tag";
+import { useData } from "@/lib/data-store";
+import { fmtVND } from "@/lib/mock-data";
+import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+
+export const Route = createFileRoute("/_auth/tuition")({
+	component: TuitionRoute,
+});
+
+const INV_LABEL: Record<string, string> = {
+	paid: "Đã thu",
+	overdue: "Quá hạn",
+	unpaid: "Chưa thu",
+};
+const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
+	paid: "success",
+	overdue: "danger",
+	unpaid: "warn",
+};
+
+function TuitionRoute() {
+	const navigate = useNavigate();
+	const { data } = useData();
+	const { run, isPending, busy } = useDirectKernelAction();
+	const [modalOpen, setModalOpen] = useState(false);
+
+	return (
+		<div>
+			<PageHead title="Học phí" lead="Doanh thu tháng 8 · 21.000.000đ" />
+			<div className="grid grid-cols-3 gap-4 max-app:grid-cols-1">
+				<StatCard num="21.0tr" label="Đã thu T8 (VND)" />
+				<StatCard
+					num="1.9tr"
+					label="Còn nợ (VND)"
+					className="[&>div:first-child]:text-danger"
+				/>
+				<StatCard
+					num="2"
+					label="Gói sắp hết"
+					className="[&>div:first-child]:text-warn"
+				/>
+			</div>
+
+			<div className="mt-8">
+				<SectionLabel>Gói học đang hoạt động</SectionLabel>
+				<Card variant="white" className="p-0">
+					<DataTable
+						headers={[
+							"Học viên",
+							"Đã học",
+							"Còn",
+							"Tiến độ",
+							"Hết hạn",
+							"Trạng thái",
+						]}
+						rows={data.students.map((s) => ({
+							onClick: () =>
+								navigate({
+									to: "/students/$studentId",
+									params: { studentId: s.id },
+								}),
+							cells: [
+								<div key="s" className="flex items-center gap-2">
+									<Avatar text={s.avatar} size="sm" />
+									{s.name}
+								</div>,
+								<span key="d" className="font-mono">
+									{s.pkg.done}/{s.pkg.total}
+								</span>,
+								<span
+									key="r"
+									className={
+										s.pkg.remaining <= 3
+											? "font-mono font-semibold text-danger"
+											: "font-mono font-semibold"
+									}
+								>
+									{s.pkg.remaining}
+								</span>,
+								<Progress
+									key="p"
+									value={(s.pkg.done / s.pkg.total) * 100}
+									variant={
+										s.pkg.remaining <= 2
+											? "low"
+											: s.pkg.remaining <= 4
+												? "warn"
+												: "default"
+									}
+								/>,
+								<span key="e" className="font-mono text-meta text-xs">
+									{s.pkg.expiry}
+								</span>,
+								s.pkg.remaining <= 2 ? (
+									<Badge key="b" variant="danger">
+										Sắp hết
+									</Badge>
+								) : s.pkg.remaining <= 4 ? (
+									<Badge key="b" variant="warn">
+										Sắp hết
+									</Badge>
+								) : (
+									<Badge key="b" variant="success" dot>
+										Đang học
+									</Badge>
+								),
+							],
+						}))}
+					/>
+				</Card>
+			</div>
+
+			<div className="mt-8">
+				<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+					<h2 className="font-semibold text-xl">Hóa đơn</h2>
+					<Button size="sm" onClick={() => setModalOpen(true)}>
+						+ Tạo hóa đơn
+					</Button>
+				</div>
+				<Card variant="white" className="p-0">
+					<DataTable
+						headers={[
+							"Mã",
+							"Học viên",
+							"Loại",
+							"Số tiền",
+							"Ngày",
+							"Trạng thái",
+							"",
+						]}
+						rows={data.invoices.map((i) => {
+							const s = data.students.find((st) => st.id === i.sid);
+							return {
+								cells: [
+									<span key="id" className="font-mono text-meta text-xs">
+										{i.id}
+									</span>,
+									s?.name ?? "",
+									<Tag key="t">{i.type}</Tag>,
+									<span key="a" className="font-mono">
+										{fmtVND(i.amount)}
+									</span>,
+									<span key="d" className="font-mono text-meta text-xs">
+										{i.date}
+									</span>,
+									i.status === "paid" ? (
+										<Badge key="b" variant="success" dot>
+											{INV_LABEL.paid}
+										</Badge>
+									) : i.status === "overdue" ? (
+										<Badge key="b" variant="danger" dot>
+											{INV_LABEL.overdue}
+										</Badge>
+									) : (
+										<Badge key="b" variant="warn" dot>
+											{INV_LABEL.unpaid}
+										</Badge>
+									),
+									i.status !== "paid" ? (
+										<Button
+											key="act"
+											variant="ghost"
+											size="sm"
+											disabled={busy || isPending(i.id)}
+											onClick={() =>
+												void run(
+													i.id,
+													{
+														type: "mark-invoice-paid",
+														invoiceId: i.id,
+														method: i.method === "—" ? "CK" : i.method,
+													},
+													"Đã ghi nhận thanh toán.",
+												)
+											}
+										>
+											{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
+										</Button>
+									) : (
+										<span key="m" className="font-mono text-meta text-xs">
+											{i.method}
+										</span>
+									),
+								],
+							};
+						})}
+					/>
+				</Card>
+			</div>
+			<AddInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
+		</div>
+	);
+}

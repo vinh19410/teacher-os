@@ -1,0 +1,9 @@
+{
+	"extends": "@teacher-os/config/tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"types": ["node"],
+		"lib": ["ESNext", "DOM"]
+	},
+	"include": ["src", "specs", "playwright.config.ts"]
+}

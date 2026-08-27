@@ -5,29 +5,32 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  server: {
-    port: 3001,
-  },
-  resolve: {
-    tsconfigPaths: true,
-  },
-  plugins: [
-    tailwindcss(),
-    tanstackRouter({
-      target: "react",
-      autoCodeSplitting: true,
-    }),
-    react(),
-    VitePWA({
-      registerType: "autoUpdate",
-      manifest: {
-        name: "teacher-os",
-        short_name: "teacher-os",
-        description: "teacher-os - PWA Application",
-        theme_color: "#0c0c0c",
-      },
-      pwaAssets: { disabled: false, config: true },
-      devOptions: { enabled: true },
-    }),
-  ],
+	server: {
+		port: 8001,
+		strictPort: true,
+	},
+	resolve: {
+		tsconfigPaths: true,
+	},
+	plugins: [
+		tailwindcss(),
+		tanstackRouter({
+			target: "react",
+			autoCodeSplitting: true,
+		}),
+		react(),
+		VitePWA({
+			registerType: "autoUpdate",
+			manifest: {
+				name: "Teacher OS",
+				short_name: "Teacher OS",
+				description:
+					"Teacher OS — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
+				theme_color: "#ffffff",
+				background_color: "#ffffff",
+			},
+			pwaAssets: { disabled: false, config: true },
+			devOptions: { enabled: true },
+		}),
+	],
 });

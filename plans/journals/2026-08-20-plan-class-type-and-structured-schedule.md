@@ -1,0 +1,11 @@
+---
+title: Plan class type and structured schedule
+date: 2026-08-20
+summary: "Lập kế hoạch feature modal Tạo lớp: loại lớp (ielts/communication) + kỹ năng đa chọn điều kiện + lịch học structured (days multi-select + time picker end=start+90p). Mode hard tự detect: scout dọc stack (modal→zod→drizzle→server→snapshot→display), plan 3 phase qua ak plan create. Red-team 3 reviewers: 24 raw → 13 findings accepted toàn bộ (nổi bật: migration SQL corrupt rows skill='' thành '[\"[]\"]' — phải reorder UPDATE wrap-trước/blanket-sau; bỏ sót 3 consumer data-store-reducer.ts + test/fixtures/mock-data.ts + kernel.test.ts snapshot fixture; invariant IELTS≥1 kỹ năng đẩy xuống server superRefine; ChipFilter value=label sẽ gửi nhầm 'IELTS' → thay bằng ChipMulti generic; drizzle dễ sinh table-rebuild khi đổi name+default → viết tay migration 0007; rollout sequence stop-server→migrate→deploy). Kongming (--advice) GO ở 2 checkpoint, chính nó flag trước 2 rủi ro lớn nhất (rename migration, deploy order). Consistency sweep 0 mâu thuẫn. GitHub issue #45 label ready to review."
+---
+
+# Plan class type and structured schedule
+
+Lập kế hoạch feature modal Tạo lớp: loại lớp (ielts/communication) + kỹ năng đa chọn điều kiện + lịch học structured (days multi-select + time picker end=start+90p). Mode hard tự detect: scout dọc stack (modal→zod→drizzle→server→snapshot→display), plan 3 phase qua ak plan create. Red-team 3 reviewers: 24 raw → 13 findings accepted toàn bộ (nổi bật: migration SQL corrupt rows skill='' thành '["[]"]' — phải reorder UPDATE wrap-trước/blanket-sau; bỏ sót 3 consumer data-store-reducer.ts + test/fixtures/mock-data.ts + kernel.test.ts snapshot fixture; invariant IELTS≥1 kỹ năng đẩy xuống server superRefine; ChipFilter value=label sẽ gửi nhầm 'IELTS' → thay bằng ChipMulti generic; drizzle dễ sinh table-rebuild khi đổi name+default → viết tay migration 0007; rollout sequence stop-server→migrate→deploy). Kongming (--advice) GO ở 2 checkpoint, chính nó flag trước 2 rủi ro lớn nhất (rename migration, deploy order). Consistency sweep 0 mâu thuẫn. GitHub issue #45 label ready to review.
+
+> Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.

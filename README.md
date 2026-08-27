@@ -17,6 +17,10 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **PWA** - Progressive Web App support
 - **Turborepo** - Optimized monorepo build system
 
+## Documentation
+
+Project context, architecture, and development conventions live in the [documentation index](docs/index.md).
+
 ## Getting Started
 
 First, install the dependencies:
@@ -45,8 +49,22 @@ Then, run the development server:
 pnpm run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:8001](http://localhost:8001) in your browser to see the web application.
+The API is running at [http://localhost:8000](http://localhost:8000).
+
+## Authentication
+
+Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).
+
+### Google OAuth setup
+
+1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials) and create an **OAuth client ID** (type: Web application).
+2. Add the authorized redirect URI `<BETTER_AUTH_URL>/api/auth/callback/google`:
+   - Local dev: `http://localhost:8000/api/auth/callback/google`
+   - Production (`APP_DOMAIN=<domain>`): `https://api.<domain>/api/auth/callback/google`
+3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `apps/server/.env`, then restart `pnpm run dev` (or redeploy).
+
+The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://app.<domain>`.
 
 ## UI Customization
 
@@ -76,25 +94,35 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Deployment
 
+### CI pipelines
+
+- Pull requests and pushes to `main`/`develop` run quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml)) and the Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)); their required shape is asserted by `pnpm run test:ci-workflow`.
+- Merging `develop` into `main` ships production automatically: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) re-runs the same quality gates, deploys Alchemy stage `prod` with credentials from the GitHub `production` environment, then polls `/readyz` until the API reports ready.
+
 ### Alchemy
 
 - Target: web on Cloudflare + server on Cloudflare
 - Configure provider login: `cd packages/infra && pnpm exec alchemy login --configure`
+- Preferred local/CI method: Cloudflare **API Token via env** (`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`). After `alchemy login --configure`, pick **Environment Variables**.
 - Dev: pnpm run dev
 - Deploy: pnpm run deploy
 - Destroy: pnpm run destroy
 
-`alchemy login --configure` stores the selected Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; no provider-specific setup command is required by this scaffold.
+`alchemy login --configure` stores the selected Cloudflare, Neon, PlanetScale, and/or Prisma provider profiles under `~/.alchemy`; secrets for the env method stay in the process environment (or a gitignored `packages/infra/.env`), not in the profile.
 
-Deploys are staged and default to a personal `dev_<username>` stage. For production, run the deploy with an explicit stage from `packages/infra`:
+Deploys are staged and default to a personal `dev_<username>` stage. Stages isolate state and physical resources — staging and production never share a D1 database:
 
 ```bash
-cd packages/infra && pnpm exec alchemy deploy --stage production
+cd packages/infra
+pnpm alchemy deploy --stage staging   # isolated rehearsal environment
+pnpm alchemy deploy --stage prod      # production
 ```
 
-### Production origins
+### Production topology
 
-- Required after the first deploy: set `CORS_ORIGIN` in `apps/server/.env` to the exact deployed web origin, such as `https://app.example.com`, then deploy the server again.
+Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, and cross-subdomain session cookies all derive from it (see `packages/infra/src/topology.ts`). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto the production topology. Without `APP_DOMAIN`, deploys keep their generated `workers.dev` URLs; `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001` and staging takes it inline.
+
+Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 
 ## Git Hooks and Formatting
 
@@ -106,11 +134,16 @@ cd packages/infra && pnpm exec alchemy deploy --stage production
 teacher-os/
 ├── apps/
 │   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono)
+│   ├── server/      # Backend API (Hono)
+│   └── e2e/         # Playwright end-to-end suite
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── db/          # Database schema & migrations
+│   ├── api/         # Shared Zod request schemas and wire DTOs
+│   ├── infra/       # Alchemy stack that wires Cloudflare Workers + D1
+│   ├── env/         # Server and web environment definitions
+│   └── config/      # Shared configs (TypeScript baseline)
 ```
 
 ## Available Scripts
@@ -122,4 +155,6 @@ teacher-os/
 - `pnpm run check-types`: Check TypeScript types across all apps
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run check`: Run Biome formatting and linting
+- `pnpm run test`: Run unit tests via Turborepo plus the CI-workflow and topology-drift contract tests in `scripts/`
+- `pnpm --filter e2e e2e`: Run the Playwright E2E suite (boots the API on :8000 and web on :8001 against a fresh local D1)
 - `cd apps/web && pnpm run generate-pwa-assets`: Generate PWA assets

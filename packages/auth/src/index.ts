@@ -1,43 +1,86 @@
-import { createDb } from "@teacher-os/db";
 import * as schema from "@teacher-os/db/schema/auth";
-import { env } from "@teacher-os/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+	validateUpdateUserImage,
+	validateUpdateUserName,
+} from "./avatar-policy";
+import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
 
-export function createAuth() {
-  const db = createDb();
+/**
+ * Drizzle sqlite instance handed to better-auth's adapter — the production
+ * worker passes its D1 database, tests and the E2E boot shim pass libsql.
+ * NOTE: this resolves to a loose type (better-auth exports no tight
+ * constraint), so driver compatibility is proven by the round-trip test and
+ * E2E, not by the compiler; runtime behavior is what this type promises.
+ */
+export type AuthDatabase = Parameters<typeof drizzleAdapter>[0];
 
-  return betterAuth({
-    database: drizzleAdapter(db, {
-      provider: "sqlite",
-
-      schema: schema,
-    }),
-    trustedOrigins: [env.CORS_ORIGIN],
-    emailAndPassword: {
-      enabled: true,
-    },
-    // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-    // session: {
-    //   cookieCache: {
-    //     enabled: true,
-    //     maxAge: 60,
-    //   },
-    // },
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    advanced: {
-      defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
-        httpOnly: true,
-      },
-      // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-      // https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-      // crossSubDomainCookies: {
-      //   enabled: true,
-      //   domain: "<your-workers-subdomain>",
-      // },
-    },
-  });
+export interface CreateAuthInput {
+	db: AuthDatabase;
+	corsOrigin: string;
+	secret: string;
+	/** API origin; authBaseURL() appends the /api/auth mount path. */
+	baseURL: string;
+	/** Dot-prefixed parent domain enables cross-subdomain cookies; omit for per-host. */
+	cookieDomain?: string;
+	googleClientId: string;
+	googleClientSecret: string;
 }
+
+export function createAuth(input: CreateAuthInput) {
+	const cookieDomain = crossSubDomainCookieDomain(input.cookieDomain);
+
+	return betterAuth({
+		database: drizzleAdapter(input.db, {
+			provider: "sqlite",
+
+			schema: schema,
+		}),
+		trustedOrigins: [input.corsOrigin],
+		socialProviders: {
+			google: {
+				clientId: input.googleClientId,
+				clientSecret: input.googleClientSecret,
+			},
+		},
+		emailAndPassword: {
+			enabled: true,
+		},
+		secret: input.secret,
+		baseURL: authBaseURL(input.baseURL),
+		hooks: {
+			before: createAuthMiddleware(async (ctx) => {
+				if (ctx.path !== "/update-user") return;
+				const body = (ctx.body ?? {}) as Record<string, unknown>;
+				const message =
+					validateUpdateUserName(body.name) ??
+					validateUpdateUserImage(body.image);
+				if (message) {
+					throw new APIError("BAD_REQUEST", { message });
+				}
+			}),
+		},
+		advanced: {
+			defaultCookieAttributes: {
+				sameSite: "none",
+				secure: true,
+				httpOnly: true,
+			},
+			// Cross-subdomain cookies (app.<domain> <-> api.<domain>) are enabled
+			// only when cookieDomain holds a dot-prefixed parent domain; workers.dev
+			// and local deployments keep per-host cookies.
+			...(cookieDomain && {
+				crossSubDomainCookies: {
+					enabled: true,
+					domain: cookieDomain,
+				},
+			}),
+		},
+	});
+}
+
+/** The configured better-auth instance — for callers that hold one auth
+ * (e.g. getSessionUser) instead of constructing per request. */
+export type Auth = ReturnType<typeof createAuth>;
