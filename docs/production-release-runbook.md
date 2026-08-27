@@ -105,6 +105,25 @@ Record the staging D1 name/ID in the release evidence (ID itself stays out of
 GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 `pnpm alchemy destroy --stage staging` — this never touches `prod`.
 
+## Automated production deploy (CI/CD)
+
+`.github/workflows/deploy.yml` deploys stage `prod` automatically on every
+push to `main` (i.e. merging `develop` into `main` is the release trigger).
+The workflow reproduces this runbook's gates in order: the same quality steps
+as CI, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+come from GitHub repo secrets mirroring the inventory above — same names, no
+values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
+within ~10 minutes or the run is marked failed. Deploys are serialized
+(`cancel-in-progress: false`) so forward-only D1 migrations never race.
+
+Scope of automation: code + bindings + migrations only. The operator gates
+this file cannot decide remain manual per the preflight above — rehearsing a
+pending migration on staging before it reaches prod, and the Chrome/Safari
+browser smoke after a deploy (the workflow's curl smoke proves readiness, not
+auth). Manual override/rollback stays available via `workflow_dispatch` and
+the "Rollback code" procedure; rotating any secret means updating both the
+operator `.env` and the GitHub repo secret of the same name.
+
 ## Deploy (production)
 
 ```bash
