@@ -64,7 +64,8 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	// ONE toast summary, then badge flip on the same row.
 	await expect(page.getByText(/Đã hủy buổi(\.|\s\()/)).toBeVisible();
 	await expect(lastRow.getByText("Đã hủy")).toBeVisible();
-	await dialog.getByRole("button", { name: "Đóng" }).click();
+	// Modal renders BOTH an ✕ (aria-label) and a footer Đóng button.
+	await dialog.getByText("Đóng", { exact: true }).click();
 
 	// Persisted server-side across a full reload.
 	await page.reload();
@@ -101,7 +102,8 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await dialog.getByLabel("Chủ đề").fill("Occurrence số ba — chủ đề riêng");
 	await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(page.getByText("Đã cập nhật buổi.")).toBeVisible();
-	await dialog.getByRole("button", { name: "Đóng" }).click();
+	// Modal renders BOTH an ✕ (aria-label) and a footer Đóng button.
+	await dialog.getByText("Đóng", { exact: true }).click();
 
 	// Row k shows it immediately; other rows keep their default topic view.
 	await expect(

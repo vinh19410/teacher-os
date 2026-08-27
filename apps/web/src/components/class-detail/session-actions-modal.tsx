@@ -234,14 +234,11 @@ export function SessionActionsModal({
 												? onComplete(date)
 												: onCancelOccurrence(date),
 										).then((result) => {
-											const extra = summarize(result);
-											setNotice(
-												result.ok
-													? confirming === "complete"
-														? `Đã hoàn thành buổi${extra ? ` — ${extra}` : "."}`
-														: `Đã hủy buổi${extra ? ` — ${extra}` : "."}`
-													: summarize(result),
-											);
+											if (!result.ok) {
+												// Success copy is the ROUTE's single toast; failures that
+												// need in-modal context surface here.
+												setNotice(summarize(result));
+											}
 										});
 									}}
 								>
@@ -333,8 +330,7 @@ export function SessionActionsModal({
 										return;
 									}
 									if (result.ok) {
-										setNotice("Đã cập nhật buổi.");
-										return;
+										return; // route toast already summarized the counts
 									}
 									if (result.reason === "date-occupied") {
 										setFormError("Ngày đích đã có buổi — chọn ngày khác.");
