@@ -1,6 +1,11 @@
 import * as schema from "@teacher-os/db/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+	validateUpdateUserImage,
+	validateUpdateUserName,
+} from "./avatar-policy";
 import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
 
 /**
@@ -45,6 +50,18 @@ export function createAuth(input: CreateAuthInput) {
 		},
 		secret: input.secret,
 		baseURL: authBaseURL(input.baseURL),
+		hooks: {
+			before: createAuthMiddleware(async (ctx) => {
+				if (ctx.path !== "/update-user") return;
+				const body = (ctx.body ?? {}) as Record<string, unknown>;
+				const message =
+					validateUpdateUserName(body.name) ??
+					validateUpdateUserImage(body.image);
+				if (message) {
+					throw new APIError("BAD_REQUEST", { message });
+				}
+			}),
+		},
 		advanced: {
 			defaultCookieAttributes: {
 				sameSite: "none",

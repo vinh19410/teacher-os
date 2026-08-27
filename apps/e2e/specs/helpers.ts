@@ -2,20 +2,26 @@ import { expect, type Page } from "@playwright/test";
 
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
- * authenticated GET /api/kernel bootstraps the org server-side. */
-export async function signUpViaUi(page: Page, name = "E2E Teacher") {
+ * authenticated GET /api/kernel bootstraps the org server-side.
+ * Opts override the generated identity (profile.spec seeds deterministic
+ * emails for DB lookups); defaults keep existing specs unchanged.
+ * Returns the email used so specs can address the created user row. */
+export async function signUpViaUi(
+	page: Page,
+	opts: { name?: string; email?: string; password?: string } = {},
+): Promise<string> {
+	const email =
+		opts.email ??
+		`e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
 	await page.goto("/login");
-	await page.locator("#su-name").fill(name);
-	await page
-		.locator("#su-email")
-		.fill(
-			`e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`,
-		);
-	await page.locator("#su-password").fill("password-8chars");
+	await page.locator("#su-name").fill(opts.name ?? "E2E Teacher");
+	await page.locator("#su-email").fill(email);
+	await page.locator("#su-password").fill(opts.password ?? "password-8chars");
 	await page.getByRole("button", { name: "Create account" }).click();
 	// Cold vite dev on CI can make the sign-up + bootstrap round-trip slow;
 	// the default 5s expect timeout is too tight for this flow-critical wait.
 	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	return email;
 }
 
 /** Navigate to a class's "Buổi học" tab (Issue #89 merged tab) — it renders the

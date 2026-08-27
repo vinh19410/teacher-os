@@ -197,6 +197,9 @@ importers:
       '@teacher-os/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@teacher-os/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@teacher-os/env':
         specifier: workspace:*
         version: link:../../packages/env

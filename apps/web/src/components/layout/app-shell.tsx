@@ -18,6 +18,7 @@ export const routeTitles: Record<string, string> = {
 	"/_auth/syllabus": "Syllabus",
 	"/_auth/syllabus/$syllabusId": "Syllabus",
 	"/_auth/reports": "Báo cáo phụ huynh",
+	"/_auth/profile": "Hồ sơ",
 	"/_auth/settings": "Cài đặt",
 };
 
