@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,8 @@ export const Route = createFileRoute("/_auth/settings")({
 });
 
 function SettingsRoute() {
+	const { session } = useRouteContext({ from: "/_auth" });
 	const [tab, setTab] = useState("account");
-	const [name, setName] = useState("Trần Mai Lan");
-	const [phone, setPhone] = useState("0901 234 567");
-	const [timezone, setTimezone] = useState("Asia/Ho_Chi_Minh (GMT+7)");
 	const [unitPrice, setUnitPrice] = useState("400.000đ");
 
 	const [tplReminder, setTplReminder] = useState(
@@ -59,32 +57,24 @@ function SettingsRoute() {
 			{tab === "account" && (
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Card variant="white">
-						<SectionLabel>Thông tin giáo viên</SectionLabel>
+						<SectionLabel>Tài khoản</SectionLabel>
 						<div className="flex flex-col gap-4">
 							<Field label="Họ tên">
-								<Input value={name} onChange={(e) => setName(e.target.value)} />
+								<Input value={session?.data?.user.name ?? ""} disabled />
 							</Field>
-							<Field label="Email (Google)">
+							<Field label="Email">
 								<Input
-									value="lantran@gmail.com"
+									value={session?.data?.user.email ?? ""}
 									disabled
 									className="opacity-60"
 								/>
 							</Field>
-							<Field label="SĐT / Zalo">
-								<Input
-									value={phone}
-									onChange={(e) => setPhone(e.target.value)}
-								/>
-							</Field>
-							<Field label="Múi giờ">
-								<Select
-									value={timezone}
-									onChange={(e) => setTimezone(e.target.value)}
-								>
-									<option>Asia/Ho_Chi_Minh (GMT+7)</option>
-								</Select>
-							</Field>
+							<Link
+								to="/profile"
+								className="self-start px-2 font-medium text-accent-blue text-sm hover:text-accent-active focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							>
+								Chỉnh sửa tại Hồ sơ →
+							</Link>
 						</div>
 					</Card>
 					<Card variant="white">

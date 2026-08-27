@@ -5,7 +5,9 @@ import {
 	useRouteContext,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
+import { initialsFromName } from "@/lib/initials";
 
 const navSections: {
 	label: string | null;
@@ -202,16 +204,7 @@ export function Sidebar({
 
 	const user = session.data.user;
 	const displayName = user.name || "Giáo viên";
-	const initials =
-		displayName === "Giáo viên"
-			? "GV"
-			: displayName
-					.trim()
-					.split(/\s+/)
-					.slice(-2)
-					.map((p) => p[0])
-					.join("")
-					.toUpperCase();
+	const initials = initialsFromName(displayName);
 
 	return (
 		<aside
@@ -255,18 +248,32 @@ export function Sidebar({
 			</nav>
 			<div className="mt-auto border-line-soft border-t border-solid pt-4">
 				<div className="flex items-center gap-3 p-2">
-					<span className="inline-grid h-9 w-9 place-items-center rounded-full border border-line-soft border-solid bg-surface font-display font-semibold text-[13px] text-fg">
-						{initials}
-					</span>
-					<div className="min-w-0 leading-[1.3]">
-						<div className="flex items-center font-semibold text-sm">
-							<span className="truncate">{displayName}</span>
-							<span className="ml-1 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]">
-								PRO
-							</span>
+					<Link
+						to="/profile"
+						title="Hồ sơ cá nhân"
+						className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					>
+						<Avatar
+							text={initials}
+							src={user.image}
+							size="md"
+							imgProps={{ "data-testid": "sidebar-avatar" }}
+						/>
+						<div className="min-w-0 leading-[1.3]">
+							<div className="flex items-center font-semibold text-sm">
+								<span className="truncate">{displayName}</span>
+								<span className="ml-1 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]">
+									PRO
+								</span>
+							</div>
+							<div
+								className="truncate text-muted-fg text-xs"
+								data-testid="sidebar-user-email"
+							>
+								{user.email}
+							</div>
 						</div>
-						<div className="truncate text-muted-fg text-xs">Google</div>
-					</div>
+					</Link>
 					<button
 						type="button"
 						aria-label="Đăng xuất"
