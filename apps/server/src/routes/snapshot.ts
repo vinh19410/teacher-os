@@ -242,6 +242,7 @@ export async function loadSnapshot(
 			day: row.day,
 			time: row.time,
 			dur: row.dur,
+			date: row.date ?? null,
 			type: row.type,
 			status: row.status,
 			topic: row.topic,

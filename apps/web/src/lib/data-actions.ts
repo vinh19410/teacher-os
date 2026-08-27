@@ -18,6 +18,21 @@ export type KernelAction =
 				zoom: string;
 			};
 	  }
+	| {
+			/** Whole-occurrence edit (#98): moveDate/time/dur/topic/zoom, >=1 field. */
+			type: "session-edit";
+			classId: string;
+			date: string;
+			payload: {
+				moveDate?: string;
+				time?: string;
+				dur?: number;
+				topic?: string;
+				zoom?: string;
+			};
+	  }
+	| { type: "session-check-in"; classId: string; date: string }
+	| { type: "session-cancel"; classId: string; date: string }
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| { type: "add-comment-bank"; text: string; operationId: string }

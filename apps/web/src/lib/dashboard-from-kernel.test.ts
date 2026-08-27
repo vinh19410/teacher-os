@@ -45,6 +45,7 @@ function lesson(
 		classId: "cl-1",
 		time: "19:00",
 		dur: 60,
+		date: null,
 		type: "1:1",
 		status: "upcoming",
 		topic: "T",

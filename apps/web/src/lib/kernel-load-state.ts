@@ -5,14 +5,21 @@
  * return-URL guard are unit-testable in the node Vitest environment.
  */
 
-/** Transport failure with an HTTP status (`!res.ok` from the kernel API). */
+/**
+ * Transport failure with an HTTP status (`!res.ok` from the kernel API).
+ * `reason` (#98) carries the server's machine-readable `{reason}` body field
+ * when the body was JSON with that exact string — garbage/non-JSON bodies
+ * leave it undefined so classification stays status-code-based.
+ */
 export class HttpError extends Error {
 	readonly status: number;
+	readonly reason?: string;
 
-	constructor(status: number, message: string) {
+	constructor(status: number, message: string, options?: { reason?: string }) {
 		super(message);
 		this.name = "HttpError";
 		this.status = status;
+		this.reason = options?.reason;
 	}
 }
 

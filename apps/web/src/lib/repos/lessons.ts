@@ -54,6 +54,7 @@ export function mapLessons(snapshot: KernelSnapshot): Lesson[] {
 			day: row.day,
 			time: row.time,
 			dur: row.dur,
+			date: row.date ?? null,
 			type: coerceType(row.type),
 			status: coerceStatus(row.status),
 			topic: row.topic,

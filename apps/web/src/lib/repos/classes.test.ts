@@ -284,6 +284,7 @@ function lessonRow(
 		day,
 		time,
 		dur: 60,
+		date: null,
 		type: "1:2",
 		status,
 		topic: "",

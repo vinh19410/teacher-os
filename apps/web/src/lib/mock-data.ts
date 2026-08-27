@@ -37,6 +37,9 @@ export interface Lesson {
 	day: number;
 	time: string;
 	dur: number;
+	/** Occurrence identity yyyy-mm-dd (#98): rows sharing `(classId, date)`
+	 * are one physical session; null = legacy/divergent class. */
+	date: string | null;
 	type: LessonType;
 	status: LessonStatus;
 	topic: string;

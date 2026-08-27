@@ -1,5 +1,10 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Fragment, type KeyboardEvent, useState } from "react";
+import {
+	type OccurrenceActionResult,
+	type OccurrenceEditPayload,
+	SessionActionsModal,
+} from "@/components/class-detail/session-actions-modal";
 import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +15,7 @@ import {
 	formatSessionDate,
 	sessionAttendanceState,
 	sessionLessonInfo,
+	sessionRowTargets,
 	sessionStudents,
 	sessionTimeRange,
 } from "@/lib/class-sessions";
@@ -53,6 +59,9 @@ export function ClassScheduleTable({
 	syllabus,
 	studentById,
 	run,
+	onComplete,
+	onCancelOccurrence,
+	onSaveEdit,
 	isPending,
 	busy,
 }: {
@@ -68,6 +77,13 @@ export function ClassScheduleTable({
 		action: KernelAction,
 		successText: string,
 	) => Promise<void>;
+	/** #98 threaded write surface — toasts live at the route, not here. */
+	onComplete: (dateISO: string) => Promise<OccurrenceActionResult>;
+	onCancelOccurrence: (dateISO: string) => Promise<OccurrenceActionResult>;
+	onSaveEdit: (
+		dateISO: string,
+		payload: OccurrenceEditPayload,
+	) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
@@ -75,6 +91,9 @@ export function ClassScheduleTable({
 		new Set(),
 	);
 	const [modalIndex, setModalIndex] = useState<number | null>(null);
+	// Identity-keyed (N4): a numeric index would dangle once a successful
+	// moveDate reorders the chronology under an open dialog.
+	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
@@ -135,6 +154,8 @@ export function ClassScheduleTable({
 	// Live session behind the roster modal: re-resolved from the derived list
 	// on every render so checked-in rows flip to badges without a snapshot.
 	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
+	const actionsSession =
+		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
 
 	return (
 		<Card className="p-0">
@@ -241,18 +262,56 @@ export function ClassScheduleTable({
 													{isPending(checkInId) ? "Đang lưu…" : "Điểm danh"}
 												</Button>
 											) : attendance.kind === "actionable" && isGroupSession ? (
-												<Button
-													type="button"
-													size="sm"
-													disabled={busy}
-													onClick={(e) => {
-														e.stopPropagation();
-														setModalIndex(s.index);
-													}}
-													onKeyDown={stopActionKeyPropagation}
-												>
-													Điểm danh
-												</Button>
+												<Fragment key={`cell-${s.index}`}>
+													<Button
+														type="button"
+														size="sm"
+														disabled={busy}
+														onClick={(e) => {
+															e.stopPropagation();
+															setModalIndex(s.index);
+														}}
+														onKeyDown={stopActionKeyPropagation}
+													>
+														Điểm danh
+													</Button>
+													{sessionRowTargets(s).length > 0 && (
+														<span className="ml-2 inline-flex">
+															<Button
+																type="button"
+																variant="secondary"
+																size="sm"
+																disabled={busy}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setActionsDateISO(s.dateISO);
+																}}
+																onKeyDown={stopActionKeyPropagation}
+															>
+																Điều chỉnh
+															</Button>
+														</span>
+													)}
+												</Fragment>
+											) : sessionRowTargets(s).length > 0 ? (
+												<Fragment key={`adj-${s.index}`}>
+													<Badge variant="accent">Sắp tới</Badge>
+													<span className="ml-2 inline-flex">
+														<Button
+															type="button"
+															variant="secondary"
+															size="sm"
+															disabled={busy}
+															onClick={(e) => {
+																e.stopPropagation();
+																setActionsDateISO(s.dateISO);
+															}}
+															onKeyDown={stopActionKeyPropagation}
+														>
+															Điều chỉnh
+														</Button>
+													</span>
+												</Fragment>
 											) : (
 												<Badge variant="accent">Sắp tới</Badge>
 											)}
@@ -299,6 +358,15 @@ export function ClassScheduleTable({
 				isPending={isPending}
 				busy={busy}
 				onClose={() => setModalIndex(null)}
+			/>
+			<SessionActionsModal
+				key={actionsDateISO ?? "no-session-actions"}
+				session={actionsSession}
+				studentById={studentById}
+				onClose={() => setActionsDateISO(null)}
+				onComplete={onComplete}
+				onCancelOccurrence={onCancelOccurrence}
+				onSaveEdit={onSaveEdit}
 			/>
 		</Card>
 	);

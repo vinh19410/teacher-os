@@ -14,6 +14,7 @@ import {
 	classifyWriteFailure,
 	createKernelCommandBus,
 	fetchKernelSnapshot,
+	type KernelWriteEnvelope,
 	kernelCommand,
 	kernelQueryKey,
 	kernelQueryOptions,
@@ -588,13 +589,14 @@ describe("createKernelCommandBus", () => {
 		const postCalls: string[] = [];
 		const refetchCalls: number[] = [];
 		const authLostCalls: number[] = [];
-		const pendingPosts: Array<ReturnType<typeof deferred<string | undefined>>> =
-			[];
+		const pendingPosts: Array<
+			ReturnType<typeof deferred<KernelWriteEnvelope>>
+		> = [];
 		const pendingRefetches: Array<ReturnType<typeof deferred<void>>> = [];
 		const bus = createKernelCommandBus({
 			postCommand: (action) => {
 				postCalls.push(action.type);
-				const d = deferred<string | undefined>();
+				const d = deferred<KernelWriteEnvelope>();
 				pendingPosts.push(d);
 				return d.promise;
 			},
@@ -625,14 +627,14 @@ describe("createKernelCommandBus", () => {
 		const p2 = t.bus.run(action(2));
 		expect(t.postCalls).toEqual(["update-class-notes"]); // second not started
 
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush(); // let the bus advance to the refetch
 		expect(t.pendingRefetches).toHaveLength(1);
 		t.pendingRefetches[0].resolve();
 		expect(await p1).toEqual({ kind: "refreshed", id: "id-1" });
 		await flush(); // second queued write now starts its POST
 
-		t.pendingPosts[1].resolve("id-2");
+		t.pendingPosts[1].resolve({ id: "id-2" });
 		await flush();
 		t.pendingRefetches[1].resolve();
 		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
@@ -656,7 +658,7 @@ describe("createKernelCommandBus", () => {
 		expect(t.refetchCalls).toHaveLength(0); // nothing to refresh on 4xx
 		await flush(); // queued second write now starts its POST
 
-		t.pendingPosts[1].resolve("id-2");
+		t.pendingPosts[1].resolve({ id: "id-2" });
 		await flush();
 		t.pendingRefetches[0].resolve();
 		expect(await p2).toEqual({ kind: "refreshed", id: "id-2" });
@@ -682,7 +684,7 @@ describe("createKernelCommandBus", () => {
 	test("refresh failure resolves committed (id is metadata, not the success signal)", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 
 		t.pendingRefetches[0].reject(new Error("flaky"));
@@ -695,7 +697,7 @@ describe("createKernelCommandBus", () => {
 	test("refresh succeeds on the retry and resolves refreshed with the id", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 
 		t.pendingRefetches[0].reject(new Error("flaky"));
@@ -711,7 +713,7 @@ describe("createKernelCommandBus", () => {
 			text: "Nhận xét",
 			operationId: "11111111-1111-4111-8111-111111111111",
 		});
-		t.pendingPosts[0].resolve("comment-1");
+		t.pendingPosts[0].resolve({ id: "comment-1" });
 		await flush();
 		t.pendingRefetches[0].reject(new Error("offline"));
 		await flush();
@@ -729,7 +731,7 @@ describe("createKernelCommandBus", () => {
 		const second = t.bus.run(action(1)); // same payload — double click
 		expect(t.postCalls).toEqual(["update-class-notes"]);
 
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 		t.pendingRefetches[0].resolve();
 		expect(await first).toEqual({ kind: "refreshed", id: "id-1" });
@@ -740,7 +742,7 @@ describe("createKernelCommandBus", () => {
 	test("a new identical action after the previous one settled POSTs again", async () => {
 		const t = makeHarness();
 		const first = t.bus.run(action(1));
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 		t.pendingRefetches[0].resolve();
 		await first;
@@ -748,7 +750,7 @@ describe("createKernelCommandBus", () => {
 		const second = t.bus.run(action(1));
 		await flush();
 		expect(t.postCalls).toEqual(["update-class-notes", "update-class-notes"]);
-		t.pendingPosts[1].resolve("id-2");
+		t.pendingPosts[1].resolve({ id: "id-2" });
 		await flush();
 		t.pendingRefetches[1].resolve();
 		expect(await second).toEqual({ kind: "refreshed", id: "id-2" });
@@ -784,7 +786,7 @@ describe("createKernelCommandBus", () => {
 		const reconcile = t.bus.refresh();
 		expect(t.pendingRefetches).toHaveLength(0); // refresh waits for the write
 
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 		t.pendingRefetches[0].resolve(); // write's own refetch
 		expect(await write).toEqual({ kind: "refreshed", id: "id-1" });
@@ -800,7 +802,7 @@ describe("createKernelCommandBus", () => {
 	test("refresh 401 does not retry: resolves committed once and fires onAuthLost", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 
 		t.pendingRefetches[0].reject(
@@ -819,7 +821,7 @@ describe("createKernelCommandBus", () => {
 			text: "Nhận xét",
 			operationId: "11111111-1111-4111-8111-111111111111",
 		});
-		t.pendingPosts[0].resolve("comment-1");
+		t.pendingPosts[0].resolve({ id: "comment-1" });
 		await flush();
 		t.pendingRefetches[0].reject(
 			new HttpError(401, "GET /api/kernel failed: 401"),
@@ -844,7 +846,7 @@ describe("createKernelCommandBus", () => {
 	test("non-401 refresh failures never fire onAuthLost", async () => {
 		const t = makeHarness();
 		const p1 = t.bus.run(action(1));
-		t.pendingPosts[0].resolve("id-1");
+		t.pendingPosts[0].resolve({ id: "id-1" });
 		await flush();
 		t.pendingRefetches[0].reject(
 			new HttpError(503, "GET /api/kernel failed: 503"),
