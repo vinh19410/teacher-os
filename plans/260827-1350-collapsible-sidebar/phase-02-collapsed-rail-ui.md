@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Collapsed rail UI"
-status: pending       # pending | in-progress | completed
+status: completed       # pending | in-progress | completed
 priority: P1
 effort: "~2-3h"
 dependencies: [1]
@@ -74,10 +74,10 @@ Track 1 px→px cùng số track → Chromium/Firefox interpolate mượt; Safar
 
 ## Success Criteria
 
-- [ ] Desktop toggle: track 248↔64px, footer rail không tràn (avatar/logout nằm gọn), logo chỉ ô "T" với `pt-8` nguyên vẹn
-- [ ] Rail: active page nhận diện được (bg accent trên icon), mọi nav item click đúng route, accessible name đầy đủ
-- [ ] Mobile <921px: UI y hệt trước thay đổi bất kể `collapsed` localStorage (không class nào non-`app:` lọt)
-- [ ] Biome + typecheck + build xanh
+- [x] Desktop toggle: track 248↔64px, footer rail không tràn (avatar/logout nằm gọn), logo chỉ ô "T" với `pt-8` nguyên vẹn
+- [x] Rail: active page nhận diện được (bg accent trên icon), mọi nav item click đúng route, accessible name đầy đủ
+- [x] Mobile <921px: UI y hệt trước thay đổi bất kể `collapsed` localStorage (không class nào non-`app:` lọt)
+- [x] Biome + typecheck + build xanh
 
 ## Risk Assessment
 

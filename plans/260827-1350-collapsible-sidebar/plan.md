@@ -1,7 +1,7 @@
 ---
 title: "collapsible-sidebar"
 description: "Sidebar desktop thu gọn được thành icon-rail (64px) thay vì chỉ fixed 248px; persist qua localStorage; mobile drawer giữ nguyên hành vi."
-status: pending
+status: completed
 priority: P2
 effort: "4-6h"
 tags: [ui, layout, sidebar]
