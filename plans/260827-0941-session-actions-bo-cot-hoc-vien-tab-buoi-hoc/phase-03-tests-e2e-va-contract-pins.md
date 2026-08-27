@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Tests, e2e và contract pins"
-status: pending
+status: blocked
 priority: P2
 effort: "3-4h"
 dependencies: [2]
@@ -9,7 +9,7 @@ dependencies: [2]
 
 # Phase 3: Tests, e2e và contract pins
 
-> **⏸️ DEFERRED (2026-08-27, Scope Decision ở plan.md):** phần tests của SessionActionsModal đi cùng phase 2 vào plan server-side kế tiếp. Nếu cook riêng Phase 1, giữ lại e2e assertion bảng 3 cột (đưa vào phase 1 hoặc PR của nó).
+> **⏸️ DEFERRED (2026-08-27, Scope Decision ở plan.md):** phần tests của SessionActionsModal đi cùng phase 2 vào plan server-side kế tiếp. **Đính chính (red-team rerun 2026-08-27):** e2e assertion "bảng 3 cột" KHÔNG tồn tại trong suite hiện tại và KHÔNG được tạo trong Phase 1 của plan này — thay vào đó Phase 1 pins `colSpan={3}` + array header bằng source-text contract test (verified: apps/e2e specs không assert cấu trúc bảng Buổi học). Khi SessionActionsModal được implement ở plan server-side, tạo e2e structural assertion tại đó.
 
 ## Overview
 
@@ -52,7 +52,7 @@ Không thêm abstraction. vitest unit/contract colocated src + Playwright spec m
 1. Unit tests `sessionActionTargets` (6 cases ở Requirements) — fixture reuse của `sessionStudents`/`firstUpcomingLessonId` tests hiện có (class-sessions.test.ts:145, 200–201, 433–465).
 2. Unit test `runSessionBatch` bucket mapping (mock dispatch 4 kind; assert unknown → refresh called).
 3. Rà contract tests: chạy từng file, xác nhận mọi pin từ phase 1–2 hiện diện và pass.
-4. E2E scenario "session actions modal": theo pattern spec M1 (dòng 23–90) + `openClassScheduleTab` (helpers.ts:19–24). Lớp fixture: startDate quá khứ để có buổi eligible + buổi tương lai trong timeline. KHÔNG thao tác trên buổi mà spec M1 assert (12 badge "Sắp tới", spec:59) — tách test riêng với lớp riêng nếu xung đột.
+4. E2E scenario "session actions modal": theo pattern spec M1 (dòng 23–90) + `openClassScheduleTab` (helpers.ts:24–29). Lớp fixture: startDate quá khứ để có buổi eligible + buổi tương lai trong timeline. KHÔNG thao tác trên buổi mà spec M1 assert (12 badge "Sắp tới", spec:59) — tách test riêng với lớp riêng nếu xung đột.
 5. E2E assertion bảng 3 cột (header row không chứa text "Học viên").
 6. Manual QA checklist behind-head (ghi vào PR description).
 7. Chạy full gates từ root: `pnpm check && pnpm test && pnpm check-types` + e2e local.

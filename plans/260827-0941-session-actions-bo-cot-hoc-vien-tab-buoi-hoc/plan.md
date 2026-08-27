@@ -3,7 +3,7 @@ title: "Session actions + bỏ cột Học viên trên tab Buổi học"
 description: "Bỏ cột Học viên khỏi bảng buổi học (main 4→3 cột, legacy 5→4 cột). SessionActionsModal bulk Hoàn thành/Hủy buổi (phase 2–3) DEFERRED theo Scope Decision 2026-08-27 (requester chọn full per-occurrence edit → cần plan server-side occurrence identity trước; thiết kế đã red-team được giữ làm tư liệu)."
 status: pending
 priority: P2
-effort: 2d
+effort: 3h
 issue: 93
 branch: develop
 tags: [web, ui, class-detail, sessions, actions]
@@ -19,15 +19,15 @@ created: 2026-08-27
 Tab **Buổi học** trong class detail (`ClassScheduleTable`) hiện (a) hiển thị cột **Học viên** chỉ liệt kê tên text — khi lớp đông thì tràn/chèn ép cột khác và không mang thông tin hành động (điểm danh đã có roster modal); (b) chưa có cách nào admin/giáo viên **điều chỉnh buổi học** tại chỗ — chỉ có CTA Điểm danh (#91). Plan này:
 
 1. **Bỏ cột Học viên**: main table 4→3 cột `[Ngày & Giờ | Chủ đề | Trạng thái]`, legacy fallback 5→4 cột `[Ngày | Giờ | Chủ đề | Trạng thái]`.
-2. **SessionActionsModal**: modal hành động theo buổi — bulk **Hoàn thành buổi** (fan-out `check-in`) và **Hủy buổi** (fan-out `cancel-lesson`, confirm liệt kê tên + ngày occurrence đích) — targeting **sequential-head per sid** (gate `sidStateAt === "upcoming"` tại occurrence đang hiển thị), không bao giờ iterate `session.rows`.
+2. ~~**SessionActionsModal**: bulk Hoàn thành/Hủy buổi với targeting sequential-head per sid~~ → **DEFERRED theo Scope Decision (2026-08-27)**: requester chọn option 3 — full per-occurrence edit đòi occurrence identity ở server trước, nên bulk status actions chuyển sang tầng UI của **plan server-side kế tiếp**. Thiết kế đã red-team + kongming pins C1–C5 giữ nguyên ở phase 2–3 làm tư liệu, KHÔNG implement trong plan này.
 
-**Không có edit form field nào** (topic/day/time/dur/zoom) trong scope này — xem "Non-goals (pinned)", "Advisory Checkpoint" và "Open Questions" (cần sign-off requester về cách đọc "điều chỉnh" = status-only).
+**Scope thực thi = mục 1 (Phase 1) duy nhất.** OQ1 đã chốt bằng sign-off requester (xem "Scope Decision"); Open Questions = None.
 
 ## Scope Challenge (Step 0)
 
 - **Existing code:** API `POST /api/lessons/:id/edit` đã có (apps/server/src/routes/kernel.ts:704–749, full-replace 5 trường, upcoming-only, conditional-write). `LessonEditForm` + action `lesson-edit` đã có nhưng chỉ reachable từ trang `/schedule` (per-row). #91 đã thêm CTA Điểm danh tại chỗ + roster modal với contract props-threading pin bởi test. Legacy headers (gồm "Học viên") bị pin tại `class-detail-sessions-tab.contract.test.ts:71` — **main table headers chưa bị pin** (phase 1 sẽ thêm negative assertion). Phase-03 của plan `260826-1611` từng thiết kế inline-edit topic + status dropdown — **chưa implement, bị supersede** (xem "Cross-Plan Supersession").
 - **Requested scope:** (1) admin/giáo viên điều chỉnh được buổi học trên tab Buổi học; (2) bỏ cột Học viên. Giao đủ 2 mục.
-- **Complexity:** ~7–9 file (1 component sửa, 1 modal + 1 helper mới, route wiring, 3 file test, 1 e2e spec) — 3 phase. Không class/service mới.
+- **Complexity:** scope thực thi sau Scope Decision = ~2 file (component + contract test). Trước thu hẹp: ~7–9 file / 3 phase (con số đó giờ là tư liệu phase 2–3). Không class/service mới.
 - **Selected mode: HOLD SCOPE** (kongming GO-WITH-CHANGES ×2 — pins là binding).
 
 ## Advisory Checkpoint (kongming, 2026-08-27 — GO-WITH-CHANGES)
@@ -55,13 +55,15 @@ Tab **Buổi học** trong class detail (`ClassScheduleTable`) hiện (a) hiển
 
 | # | Goal | Priority |
 |---|------|----------|
-| 1 | Bảng buổi học không còn cột Học viên (main + legacy fallback), contract test cập nhật + negative assertion | P1 |
-| 2 | SessionActionsModal: bulk Hoàn thành buổi / Hủy buổi, targeting sequential-head per sid (gate `sidStateAt === "upcoming"`), confirm liệt kê tên + ngày occurrence đích | P1 |
-| 3 | Fan-out an toàn: resolve-before-dispatch, phân loại 4 bucket, partial-failure tiếp tục + một toast summary trung thực | P1 |
-| 4 | Non-goals được pin bằng source-text contract test (mirror style test của repo) | P2 |
-| 5 | E2E phủ flow hủy buổi (kể cả buổi tương lai) + bỏ cột | P2 |
+| 1 | Bảng buổi học không còn cột Học viên (main + legacy fallback), contract test cập nhật + negative assertion + pin colSpan | **P1 — thực thi trong plan này** |
+| 2 | SessionActionsModal: bulk Hoàn thành buổi / Hủy buổi, targeting sequential-head per sid (gate `sidStateAt === "upcoming"`), confirm liệt kê tên + ngày occurrence đích | **DEFERRED** — tư liệu plan server-side kế tiếp |
+| 3 | Fan-out an toàn: resolve-before-dispatch, phân loại 4 bucket, toast summary trung thực | **DEFERRED** — tư liệu |
+| 4 | Non-goals của modal được pin bằng source-text contract test | **DEFERRED** — phần pin thuộc scope Phase 1 vẫn thực thi |
+| 5 | E2E phủ flow hủy buổi (kể cả buổi tương lai) | **DEFERRED** — plan server-side kế tiếp |
 
 ## Non-goals (pinned)
+
+> Các mục nhắc đến `session-actions-modal.tsx` / modal là pin chở sang plan server-side kế tiếp (thiết kế DEFERRED). Trong scope thực thi (Phase 1) điều tương đương: **không thêm bất kỳ input/field-edit nào vào mọi file bị chạm** — chỉ xóa hiển thị cột và đồng bộ test/doc.
 
 - **Không** có input/select topic, day, time, dur, zoom trong `session-actions-modal.tsx` — cấm **occurrence-batch field edit** từ tab này, pin bằng contract test đọc source. (Per-row edit các trường này **vẫn khả dụng ở `/schedule`** — không bị chặn.)
 - **Không** thêm kernel action mới vào `data-actions.ts` (chỉ dùng `check-in`, `cancel-lesson` hiện có — verify bằng diff).
@@ -75,29 +77,42 @@ Tab **Buổi học** trong class detail (`ClassScheduleTable`) hiện (a) hiển
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | [Phase 1: Bỏ cột Học viên](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: SessionActionsModal — bulk hoàn thành/hủy buổi](./phase-02-session-actions-modal-bulk-hoan-thanh-huy-buoi.md) — **DEFERRED** (xem Scope Decision) | Pending |
-| 3 | [Phase 3: Tests, e2e và contract pins](./phase-03-tests-e2e-va-contract-pins.md) — **DEFERRED** (xem Scope Decision; giữ e2e assertion 3 cột nếu cook riêng phase 1) | Pending |
+| 2 | [Phase 2: SessionActionsModal — bulk hoàn thành/hủy buổi](./phase-02-session-actions-modal-bulk-hoan-thanh-huy-buoi.md) — DEFERRED, tư liệu plan server-side kế tiếp | Deferred |
+| 3 | [Phase 3: Tests, e2e và contract pins](./phase-03-tests-e2e-va-contract-pins.md) — DEFERRED, tư liệu plan server-side kế tiếp | Deferred |
 
 ## Success Criteria
 
-- [ ] Main table 3 cột `[Ngày & Giờ | Chủ đề | Trạng thái]`; legacy fallback 4 cột `[Ngày | Giờ | Chủ đề | Trạng thái]`; negative assertion không `>Học viên</th>` ở cả hai thead.
-- [ ] Roster tab + `SessionAttendanceModal` + CTA Điểm danh (#91) hoạt động nguyên vẹn; các regex pin #91 vẫn match sau khi thêm nút "Điều chỉnh".
-- [ ] Session **có target** (kể cả buổi tương lai) mở được SessionActionsModal; Hoàn thành buổi disabled khi chưa đến ngày (VN date gate); Hủy buổi luôn khả dụng khi có target, confirm liệt kê tên + ngày occurrence đích từng học viên (nhóm riêng cho behind-head).
-- [ ] Targeting: chỉ sid có `sidStateAt(slotIndex) === "upcoming"`; đúng 1 id/sid; unit test chứng minh sid đã settled tại occurrence này bị exclude; không iterate `session.rows` trong JSX.
-- [ ] Fan-out: targets chụp local trước loop; phân loại 4 bucket theo `KernelCommandResult.kind`; một toast summary duy nhất (tên fail truncate); `outcome-unknown` kích hoạt refresh cuối; modal khóa khi đang chạy.
-- [ ] Contract test pin: modal không chứa field edit; `data-actions.ts` không action type mới; modal không gọi `useDirectKernelAction`.
-- [ ] E2E: hủy buổi tương lai + hoàn thành buổi → badge flip đúng, persist qua reload; bảng 3 cột không vỡ layout.
+### Phase 1 — thực thi trong plan này
+
+- [ ] Main table 3 cột `[Ngày & Giờ | Chủ đề | Trạng thái]`: contract test thêm positive pin 3 `<th>` vào `scheduleTableSrc` (mirror style regex dòng 60) + **negative assertion scoped đúng nguồn này** `not.toMatch(/>\s*Học viên\s*<\/th>/)`. Kỹ thuật: literal JSX `<th …>Học viên</th>` duy nhất của component nằm ở class-schedule-table.tsx:144 (main); roster label `{ id: "roster", label: "Học viên" }` thuộc `$classId.tsx`, được pin PASS riêng ở contract test :29 — KHÔNG đụng.
+- [ ] Legacy fallback 4 cột `[Ngày | Giờ | Chủ đề | Trạng thái]`: guard thật là **array-literal flip** thành `["Ngày", "Giờ", "Chủ đề", "Trạng thái"]` — legacy `<th>` sinh runtime từ `DataTable headers=` nên negative source-text không che được đường này (khoảng trắng trong regex tolerate JSX refactor như `>{"Học viên"}<`).
+- [ ] Expanded row `colSpan={3}`: pin bằng contract test trên `scheduleTableSrc` (`toMatch(/colSpan=\{3\}/)` + `not.toMatch(/colSpan=\{4\}/)`) — **không có e2e structural assertion nào tồn tại hoặc chạy bởi gates** (verified: apps/e2e specs không assert header/số cột bảng Buổi học; root `pnpm test` không chạy Playwright).
+- [ ] Đồng bộ artifact tự-mô-tả cùng commit: doc comment tsx bỏ "the slot's students" + đổi "weekday-grouped 5-column" → "4-column" (:36); rename 2 test title "renders enhanced **4-column**…" → "3-column" (:59) và "preserves legacy **5-column** fallback…" → "4-column" (:68).
+- [ ] Roster tab + `SessionAttendanceModal` + CTA Điểm danh (#91) nguyên vẹn: compute `attendees` GIỮ NGUYÊN (`isGroupSession` phụ thuộc `attendees.length` :158), chỉ xóa chuỗi join tên `students`; các regex pin #91 tại kernel-runtime.contract.test.ts:284–289 không bị diff này chạm tới file khác.
 - [ ] Gates: `pnpm check`, `pnpm test`, `pnpm check-types` xanh (per docs/code-standards.md).
+
+### DEFERRED — di cư nguyên khối sang plan server-side occurrence-identity kế tiếp
+
+- [ ] Session **có target** (kể cả buổi tương lai) mở được SessionActionsModal; Hoàn thành disabled khi chưa đến ngày (VN date gate); Hủy luôn khả dụng khi có target, confirm liệt kê tên + ngày đích từng học viên (nhóm riêng behind-head).
+- [ ] Targeting helper `sessionActionTargets`: chỉ sid upcoming tại occurrence hiển thị; 1 id/sid; settled excluded; behind-head mapping unit-tested.
+- [ ] Fan-out: targets chụp local trước loop; 4 bucket theo `KernelCommandResult.kind`; một toast summary (tên fail truncate); `outcome-unknown` → refresh cuối; modal khóa khi chạy.
+- [ ] Contract pin modal: không field edit; `data-actions.ts` không action mới; modal không gọi `useDirectKernelAction`.
+- [ ] E2E hủy buổi tương lai + hoàn thành buổi → badge flip + persist qua reload.
 
 ## Known Limitations (declared)
 
-- **Legacy-schedule classes** (free-text schedule / thiếu startDate → `buildClassSessions` null) chỉ được bỏ cột, **không có SessionActionsModal** — thao tác thay thế: `/schedule`. Không phải bug.
+> Bốn mục cuối (aggregate badge, bulk cancel, behind-head, batch cost) mô tả thiết kế **DEFERRED của Phase 2** — giữ làm tư liệu cho plan server-side kế tiếp.
+
+- **Bỏ cột Học viên = mất ánh xạ tên trên bảng** (chấp nhận theo sign-off scope — issue AC yêu cầu main 3 cột VÀ legacy 4 cột): lớp legacy nhiều học viên cùng slot sẽ còn những dòng gần giống hệt nhau (khác nhau tối đa ở trạng thái) — không phải dữ liệu lỗi. Thay thế thông tin: danh sách học viên tĩnh ở tab "Học viên"; chi tiết điểm danh từng occurrence vẫn mở qua roster modal trên bảng chính khi buổi actionable (#91); chỉnh nội dung buổi theo học viên ở `/schedule`.
+- **Legacy-schedule classes** (free-text schedule / thiếu startDate → `buildClassSessions` null): legacy table là khu vực THUẦN HIỂN THỊ từ #89/#91, vốn không có CTA/modal nào — trạng thái này có sẵn, không phải regression của việc bỏ cột; thao tác thay thế: `/schedule`. Không phải bug.
 - **Trạng thái hỗn hợp hiển thị aggregate**: `sessionStatus` yêu cầu toàn đồng thuận; partial fan-out → badge vẫn "Sắp tới". Sự thật per-sid xem roster modal; summary toast bucket là kênh kết quả chính.
 - **Bulk cancel bất khả hồi** (transition matrix cố định, kernel.ts:641–694, không có un-cancel). Remediation: sửa dữ liệu trực tiếp ở tầng DB bởi admin (không có tool UI) — ghi nhận ở đây như con đường duy nhất.
 - **Behind-head semantics**: bulk action áp lên occurrence **đầu chưa đánh dấu** của học viên trễ tiến độ (paint prefix), không phải occurrence hiển thị — được surfacing rõ ở confirm (C3). Cần sign-off requester (xem Open Questions).
 - **Chi phí batch**: N×(POST + full snapshot GET) tuần tự (bus refetch sau mỗi POST, repos/kernel.ts:363–399). N = sĩ số lớp (~≤15) — chấp nhận; không server batch trong plan này.
 
 ## Risk Assessment
+
+> **Phạm vi sau Scope Decision:** Risks 1–5 gắn SessionActionsModal (Phase 2 DEFERRED) — giữ làm tư liệu cho plan server-side kế tiếp. Riêng Risk 6 là risk sống của Phase 1.
 
 **Risk 1 (HIGH): Ngữ nghĩa "Hủy buổi xả vào buổi trễ sớm nhất" bị hiểu sai.** User hiểu nút theo dòng bảng; hệ thống theo prefix count.
 - Signal: user report "hủy buổi 5 nhưng buổi của em A bị hủy buổi 3".
@@ -121,7 +136,7 @@ Tab **Buổi học** trong class detail (`ClassScheduleTable`) hiện (a) hiển
 
 **Risk 6 (LOW): Bỏ cột làm vỡ layout/expanded row.**
 - Signal: expanded detail row lệch cột.
-- Response: `colSpan={3}`; e2e check.
+- Response: `colSpan={3}` pin bằng source-text contract test (positive + negative match, site duy nhất toàn repo web src) vì không có e2e structural coverage nào tồn tại/chạy bởi gates.
 
 ## Roadmap (ngoài scope)
 
@@ -155,10 +170,37 @@ Tab **Buổi học** trong class detail (`ClassScheduleTable`) hiện (a) hiển
 | 14 | `busy` không phủ được hook riêng của CurriculumManagementSection | Medium | Accept | Phase 2 (cờ batch-local, C4) |
 | 15 | Mixed-state badge aggregate che partial fan-out | Medium | Accept | plan.md (Known Limitations), Phase 3 (e2e per-sid) |
 
-### Whole-Plan Consistency Sweep
+### Session — 2026-08-27 (rerun sau Scope Decision — scope thực thi Phase 1, 3 reviewer song song)
+
+**Findings:** 10 (dedup từ 3 reviewer: Security Adversary, Failure Mode Analyst, Assumption Destroyer; Standard tier — Fact Checker ~19 claims VERIFIED + Contract Verifier toàn consumer)
+**Severity breakdown:** 1 Critical, 4 High, 5 Medium
+**Disposition:** 10 accepted (riêng #10 chấp nhận mức mitigated-in-scope). Evidence filter: mọi finding đều có ≥1 citation `file:line`; không bị auto-reject. Line-anchor phase-01 khớp HEAD (file component nguyên trạng kể từ merge #91/#92).
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Shared sections chưa co hẹp theo Scope Decision (Goals/SC/Limitations/Risks/effort/Status full-scope modal) | Critical | Accept | plan.md Overview/Complexity/Goals/Non-goals/Phases/SC/Known Limitations/Risk |
+| 2 | Lời hứa e2e "bảng 3 cột" orphaned — premise sai, assertion chưa từng tồn tại; gates gốc không chạy Playwright | High | Accept (hướng: contract-pin thay vì thêm e2e) | plan.md Phases row 3 + Risk 6 response; phase-03 banner đính chính |
+| 3 | Issue #93 body AC/OQ còn full-scope, mâu thuẫn Scope Decision | High | Accept | vibe pipeline step 4 — issue body viết lại phase-1-only |
+| 4 | Negative assertion "ở cả hai thead" vô hiệu kỹ thuật với legacy (`<th>` sinh runtime từ headers array) | High | Accept | plan.md SC bullet 1–2; phase-01 step 5 (scoped `scheduleTableSrc` + array-pin flip legacy) |
+| 5 | Bỏ cột làm mất định danh dòng/học viên↔buổi trên bảng, đặc biệt legacy nhiều học viên cùng slot | High | Accept (documented limitation — user đã sign-off drop cả legacy) | plan.md Known Limitations bullet mới |
+| 6 | Assertion spec thiếu scoping biến/nguồn + matcher; citation "(dòng 29)" mơ hồ giữa contract test và `$classId.tsx` | Medium | Accept | phase-01 step 5 (`scheduleTableSrc` :23–26, regex `\s*`, chống nhầm nguồn) + Risk 1 |
+| 7 | Test titles "4-column"/"5-column fallback" (:59/:68) + doc comment "weekday-grouped 5-column" (:36) tự-nói-sai sau merge | Medium | Accept | phase-01 step 4–5 (rename cùng commit) |
+| 8 | Requirements vs Step 1 mâu thuẫn về xóa `attendees` (dễ regress CTA group) | Medium | Accept | phase-01 Requirements bullet viết lại một-hướng; SC thêm "attendees còn nguyên" |
+| 9 | Ref `openClassScheduleTab` (helpers.ts:19–24) sai vị trí thực (declare :24–29) trong tư liệu deferred | Medium | Accept | phase-03 step 4 (:24–29) |
+| 10 | Không có guard tự động riêng cho branch CTA nhóm nếu ai lỡ xóa `attendees` (e2e hiện hữu chỉ phủ 1:1) | Medium | Accept (mitigated: diff contract + SC pin giữ `attendees`) | phase-01 SC bullet roster; thông báo review |
+### Whole-Plan Consistency Sweep (plan-time — trước Scope Decision)
+
 - Files reread: plan.md, phase-01-start.md, phase-02-…, phase-03-…
 - Decision deltas checked: 15 (finding deltas + C1–C5)
 - Reconciled stale references: run()-based batch → dispatch-based; entry gate actionable → targets.length; "refetch cuối" → per-POST refetch; zoom claim; supersession claim; x/N toast semantics → bucket semantics
+- Unresolved contradictions: 0
+
+### Whole-Plan Consistency Sweep (rerun post-Scope-Decision — 2026-08-27, sau khi áp 10 findings)
+
+- Files reread sau edits: plan.md (full), phase-01-start.md (full), phase-02-session-actions-modal-…md (đối chiếu ref), phase-03-tests-e2e-va-contract-pins.md (edits trực tiếp)
+- Decision deltas checked: 10 (bảng rerun session)
+- Reconciled stale references: Success Criteria tách Phase-1 vs DEFERRED; Goals 2–5 gắn DEFERRED; effort 2d → 3h; Status phases 2–3 → Deferred; Risk 6 response → contract pin; phase-03 banner đính chính e2e; Overview mục 2 strike-through + Scope thực thi note; Complexity annotation
+- Còn sót: "Open Questions — None" khớp Scope Decision; Known Limitations mục behind-head còn chữ "Cần sign-off requester" đã đạt được bằng chính Scope Decision (option 3 ⇒ design chỉ là tư liệu) — chấp nhận dạng historical record
 - Unresolved contradictions: 0
 
 ## Cross-Plan Supersession
