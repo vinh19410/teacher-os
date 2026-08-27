@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "SessionActionsModal — bulk hoàn thành/hủy buổi"
-status: pending
+status: blocked
 priority: P1
 effort: "6-8h"
 dependencies: [1]
@@ -13,7 +13,7 @@ dependencies: [1]
 
 ## Overview
 
-Thêm khả năng **điều chỉnh buổi học tại chỗ** cho admin/giáo viên trên tab Buổi học: một modal hành động theo buổi với 2 thao tác bulk — **Hoàn thành buổi** (fan-out `check-in`) và **Hủy buổi** (fan-out `cancel-lesson`) — targeting **sequential-head per sid**. Đây là phạm vi "điều chỉnh" trung thực với data model slot-bag hiện có (xem plan.md → Advisory Checkpoint): tab này chỉ có thẩm quyền mutation **trạng thái prefix-counted**, không phải thuộc tính row-level. *(OQ1 ở plan.md cần requester sign-off trước khi cook.)*
+Thêm khả năng **điều chỉnh buổi học tại chỗ** cho admin/giáo viên trên tab Buổi học: một modal hành động theo buổi với 2 thao tác bulk — **Hoàn thành buổi** (fan-out `check-in`) và **Hủy buổi** (fan-out `cancel-lesson`) — targeting **sequential-head per sid**. Đây là phạm vi "điều chỉnh" trung thực với data model slot-bag hiện có (xem plan.md → Advisory Checkpoint): tab này chỉ có thẩm quyền mutation **trạng thái prefix-counted**, không phải thuộc tính row-level. *(OQ1 ĐÃ CHỐT — option 3 ⇒ chính vì thế phase này DEFERRED; toàn bộ dưới đây là tư liệu thiết kế cho plan server-side kế tiếp.)*
 
 ## Requirements
 
