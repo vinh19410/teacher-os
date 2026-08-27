@@ -189,9 +189,11 @@ const navSections: {
 export function Sidebar({
 	open,
 	onNavigate,
+	collapsed,
 }: {
 	open: boolean;
 	onNavigate: () => void;
+	collapsed: boolean;
 }) {
 	const { session } = useRouteContext({ from: "/_auth" });
 	const navigate = useNavigate();
@@ -209,11 +211,15 @@ export function Sidebar({
 	return (
 		<aside
 			className={
-				// Desktop: fill the 248px grid track (app:w-full); the base w-[280px] is the mobile drawer width.
+				// Desktop: fill the grid track (app:w-full); the base w-[280px] is the mobile drawer width.
+				// Base px-4 serves the mobile drawer; when collapsed we only append app:px-2 to override
+				// horizontal padding on desktop. Geometry invariant (D2): rail_width - 2*aside_px >= 48px
+				// for the Avatar md (40px) plus focus-ring room -> 64 - 2*8 = 48.
 				"sidebar app:sticky app:top-0 flex app:h-svh app:w-full flex-col overflow-y-auto border-line app:border-r app:border-solid bg-surface px-4 pt-8 pb-5" +
+				(collapsed ? " app:px-2" : "") +
 				(open
-					? "fixed top-0 left-0 z-100 w-[280px] translate-x-0 border-r border-solid shadow-[var(--elev-raised)] transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]"
-					: "fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]")
+					? " fixed top-0 left-0 z-100 w-[280px] translate-x-0 border-r border-solid shadow-[var(--elev-raised)] transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]"
+					: " fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]")
 			}
 		>
 			{/* -mt-2 offsets p-2 so the logo row still sits at the pt-8 baseline; keep them in sync. */}
@@ -226,7 +232,13 @@ export function Sidebar({
 				<div className="grid h-8 w-8 place-items-center rounded-sm bg-fg font-display font-semibold text-[15px] text-bg tracking-[-0.02em]">
 					T
 				</div>
-				<div className="font-display font-semibold text-base tracking-[-0.01em]">
+				<div
+					className={
+						// Collapsed-branch classes are always app:-prefixed (D10) so they cannot leak into the mobile drawer.
+						"font-display font-semibold text-base tracking-[-0.01em]" +
+						(collapsed ? " app:hidden" : "")
+					}
+				>
 					Teacher OS
 				</div>
 			</Link>
@@ -234,30 +246,63 @@ export function Sidebar({
 				{navSections.map((section) => (
 					<div key={section.label ?? "main"}>
 						{section.label && (
-							<div className="px-3 pt-4 pb-2 font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+							// Both section-label and divider stay in the DOM; visibility is decided purely
+							// by app:-variants (D11) so the mobile drawer keeps full labels even when collapsed.
+							<div
+								className={
+									"px-3 pt-4 pb-2 font-mono text-[10px] text-meta uppercase tracking-[0.08em]" +
+									(collapsed ? " app:hidden" : "")
+								}
+							>
 								{section.label}
 							</div>
+						)}
+						{section.label && (
+							<hr
+								className={
+									collapsed
+										? "mx-auto my-2 app:block w-6 border-line-soft border-t"
+										: "hidden"
+								}
+							/>
 						)}
 						{section.items.map((item) => (
 							<Link
 								key={item.to}
 								to={item.to}
 								onClick={onNavigate}
-								className="flex items-center gap-3 rounded-sm px-3 py-2 font-medium text-fg-2 text-sm transition-colors duration-[150ms] hover:bg-line-soft hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-soft active:text-accent-blue aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-blue [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100"
+								title={item.label}
+								className={
+									"flex items-center gap-3 rounded-sm px-3 py-2 font-medium text-fg-2 text-sm transition-colors duration-[150ms] hover:bg-line-soft hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-soft active:text-accent-blue aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-blue [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100" +
+									// Collapsed-branch classes are always app:-prefixed (D10).
+									(collapsed ? " app:justify-center app:px-0" : "")
+								}
 							>
 								{item.icon}
-								{item.label}
+								<span className={collapsed ? "app:sr-only" : undefined}>
+									{item.label}
+								</span>
 							</Link>
 						))}
 					</div>
 				))}
 			</nav>
-			<div className="mt-auto border-line-soft border-t border-solid pt-4">
-				<div className="flex items-center gap-3 p-2">
+			<div
+				className={
+					"mt-auto border-line-soft border-t border-solid pt-4" +
+					// Collapsed-branch classes are always app:-prefixed (D10).
+					(collapsed ? " app:flex app:flex-col app:items-center" : "")
+				}
+			>
+				<div
+					className={
+						"flex items-center gap-3 p-2" + (collapsed ? " app:p-0" : "")
+					}
+				>
 					<Link
 						to="/profile"
 						title="Hồ sơ cá nhân"
-						className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="flex min-w-0 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<Avatar
 							text={initials}
@@ -265,7 +310,11 @@ export function Sidebar({
 							size="md"
 							imgProps={{ "data-testid": "sidebar-avatar" }}
 						/>
-						<div className="min-w-0 leading-[1.3]">
+						<div
+							className={
+								"min-w-0 leading-[1.3]" + (collapsed ? " app:hidden" : "")
+							}
+						>
 							<div className="flex items-center font-semibold text-sm">
 								<span className="truncate">{displayName}</span>
 								<span className="ml-1 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]">
@@ -293,7 +342,10 @@ export function Sidebar({
 								},
 							});
 						}}
-						className="ml-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className={
+							"ml-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none" +
+							(collapsed ? " app:ml-0" : "")
+						}
 					>
 						<svg
 							aria-hidden="true"
