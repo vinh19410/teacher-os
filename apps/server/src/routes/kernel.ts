@@ -1,4 +1,7 @@
-import type { CreatedResponse } from "@teacher-os/api/contracts";
+import type {
+	CreatedResponse,
+	OccurrenceMutationResponse,
+} from "@teacher-os/api/contracts";
 import {
 	classCreateSchema,
 	classNotesSchema,
@@ -10,6 +13,7 @@ import {
 	lessonUpsertSchema,
 	moduleRemoveSchema,
 	moduleUpsertSchema,
+	occurrenceEditSchema,
 	removeCurriculumSchema,
 	reorderLessonsSchema,
 	reorderModulesSchema,
@@ -21,6 +25,7 @@ import {
 	parseStoredSchedule,
 	skeletonOf,
 } from "@teacher-os/api/skeleton";
+
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -328,6 +333,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				dur: lesson.dur,
 				topic: lesson.topic,
 				zoom: lesson.zoom,
+				date: lesson.date,
 			})
 			.from(lesson)
 			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
@@ -657,6 +663,85 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return c.json({ ok: true });
 	});
 
+	/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1. */
+	function isoToLessonWeekday(iso: string): number {
+		const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+		return weekday === 0 ? 7 : weekday;
+	}
+
+	function invalidDateResponse(c: KernelContext) {
+		return c.json({ error: "invalid date", reason: "invalid-date" }, 400);
+	}
+
+	/**
+	 * Advisory pre-read for one occurrence bucket (#98 K5/RT5). Rows are
+	 * pairing-checked like every other write (invariant 2): the lesson's
+	 * enrollment must live in the same class. `total` distinguishes an
+	 * empty bucket (404) from a fully settled one (200 `{updated:0}`).
+	 */
+	async function bucketCounts(
+		db: Db,
+		classId: string,
+		dateISO: string,
+		orgId: string,
+	): Promise<{ total: number; upcoming: number }> {
+		const rows = await db
+			.select({ status: lesson.status })
+			.from(lesson)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(lesson.enrollmentId, enrollment.id),
+					eq(enrollment.classId, lesson.classId),
+				),
+			)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
+			);
+		return {
+			total: rows.length,
+			upcoming: rows.filter((r) => r.status === "upcoming").length,
+		};
+	}
+
+	/**
+	 * Occurrence mutations address the bucket by identity `(class_id, date)`
+	 * in ONE guarded statement — org predicate + pairing subquery ride in the
+	 * WHERE so even a TOCTOU window cannot cross tenants or classes (#98 RT7).
+	 */
+	function occurrenceUpdate(
+		db: Db,
+		classId: string,
+		dateISO: string,
+		orgId: string,
+		set: Partial<typeof lesson.$inferInsert>,
+		statusFilter: boolean,
+	) {
+		return db
+			.update(lesson)
+			.set(set)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+					inArray(
+						lesson.enrollmentId,
+						db
+							.select({ id: enrollment.id })
+							.from(enrollment)
+							.where(eq(enrollment.classId, classId)),
+					),
+					...(statusFilter ? [eq(lesson.status, "upcoming" as const)] : []),
+				),
+			)
+			.returning({ id: lesson.id });
+	}
+
 	/**
 	 * Wave 4 lesson status actions. Status transitions are fixed — check-in
 	 * upcoming→completed, cancel upcoming→cancelled, anything else 409 — and
@@ -714,12 +799,18 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	);
 
 	/**
-	 * Lesson edit (issue #55) — upcoming-only, full-replace of the five
-	 * mutable fields; status/type stay server-owned via the strict schema.
-	 * Same guard shape as lessonStatusAction plus optimistic concurrency:
-	 * editing does not write the guard column itself, so the pre-read field
-	 * values must also live in the WHERE clause — otherwise two concurrent
-	 * edits both match `status='upcoming'` and the loser vanishes silently.
+	 * Lesson edit (issue #55 / #98 K3). Split by dated-identity:
+	 *
+	 * - Dated row → OCCURRENCE-AWARE policy: a `day` that differs from the
+	 *   bucket's calendar weekday is refused with 409
+	 *   `{reason:"use-occurrence-endpoint"}` (moving an occurrence is the new
+	 *   endpoint's job — day-change would break date↔weekday). The remaining
+	 *   fields apply bucket-wide last-write-wins to EVERY row of
+	 *   `(class_id, date)` including settled rows (move/edit-wholly is one
+	 *   physical session, plan Behavior Changes 4/6); the old per-row
+	 *   conditional guard cannot survive multi-value buckets.
+	 * - Undated row → byte-for-byte legacy: upcoming-only full-replace with
+	 *   optimistic concurrency (the field guards in the WHERE clause).
 	 */
 	kernel.post("/lessons/:id/edit", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -736,6 +827,35 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		if (pre.enrollmentClassId !== pre.classId) {
 			return c.json({ error: "lesson enrollment mismatch" }, 409);
 		}
+
+		if (pre.date !== null) {
+			const bucketWeekday = isoToLessonWeekday(pre.date);
+			if (body.data.day !== bucketWeekday) {
+				return c.json(
+					{
+						error: "day change requires the occurrence endpoint",
+						reason: "use-occurrence-endpoint",
+					},
+					409,
+				);
+			}
+			await occurrenceUpdate(
+				db,
+				pre.classId,
+				pre.date,
+				ctx.orgId,
+				{
+					day: bucketWeekday,
+					time: body.data.time,
+					dur: body.data.dur,
+					topic: body.data.topic,
+					zoom: body.data.zoom,
+				},
+				false,
+			);
+			return c.json({ ok: true });
+		}
+
 		if (pre.status !== "upcoming") {
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
@@ -766,6 +886,185 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			return c.json({ error: "lesson changed or is not upcoming" }, 409);
 		}
 		return c.json({ ok: true });
+	});
+
+	/**
+	 * Occurrence mutations (issue #98). Identity-addressed: `:date` must be a
+	 * real calendar day. Edit applies to the WHOLE bucket regardless of
+	 * status (move-wholly); check-in/cancel keep the upcoming-only matrix.
+	 * The COUNT pre-reads are advisory (`{updated, skipped}` is informational,
+	 * never transactional — RT5).
+	 */
+	async function parseOccurrenceContext(c: KernelContext): Promise<
+		| { ok: false; response: Response }
+		| {
+				ok: true;
+				ctx: KernelCtx;
+				db: Db;
+				classId: string;
+				dateISO: string;
+		  }
+	> {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return { ok: false, response: unauthorized(c) };
+		const classId = c.req.param("id") ?? "";
+		const dateISO = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!dateISO) {
+			return { ok: false, response: invalidDateResponse(c) };
+		}
+		return { ok: true, ctx: kernelCtx, db: deps.getDb(), classId, dateISO };
+	}
+
+	kernel.post("/classes/:id/sessions/:date/edit", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+		const body = await readBody(c, occurrenceEditSchema);
+		if (!body.ok) return body.response;
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+
+		let moveDateISO: string | null = null;
+		if (body.data.moveDate !== undefined) {
+			moveDateISO = parseStartDateStrict(body.data.moveDate);
+			if (!moveDateISO) return invalidDateResponse(c);
+		}
+
+		// Collision pre-check (reduces races, does not eliminate them — RT6):
+		// the destination bucket must be empty unless it IS this bucket.
+		if (moveDateISO && moveDateISO !== dateISO) {
+			const dest = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
+			if (dest.total > 0) {
+				return c.json(
+					{ error: "destination date occupied", reason: "date-occupied" },
+					409,
+				);
+			}
+		}
+
+		const set: Partial<typeof lesson.$inferInsert> = {};
+		if (body.data.topic !== undefined) set.topic = body.data.topic;
+		if (body.data.time !== undefined) set.time = body.data.time;
+		if (body.data.dur !== undefined) set.dur = body.data.dur;
+		if (body.data.zoom !== undefined) set.zoom = body.data.zoom;
+		if (moveDateISO) {
+			set.date = moveDateISO;
+			set.day = isoToLessonWeekday(moveDateISO);
+		}
+
+		const before = await bucketCounts(db, classId, dateISO, ctx.orgId);
+		try {
+			const rows = await occurrenceUpdate(
+				db,
+				classId,
+				dateISO,
+				ctx.orgId,
+				set,
+				false,
+			);
+			// Unique-index race backstop (never parse SQLite error strings —
+			// re-check state instead): if the destination shows occupancy now,
+			// a concurrent move won and this write lost cleanly.
+			if (moveDateISO && rows.length === 0 && moveDateISO !== dateISO) {
+				const after = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
+				if (after.total > 0) {
+					return c.json(
+						{ error: "destination date occupied", reason: "date-occupied" },
+						409,
+					);
+				}
+			}
+			return c.json({
+				updated: rows.length,
+				skipped: Math.max(0, before.total - rows.length),
+			} satisfies OccurrenceMutationResponse);
+		} catch (cause) {
+			if (moveDateISO && moveDateISO !== dateISO) {
+				const after = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
+				if (after.total > 0) {
+					return c.json(
+						{ error: "destination date occupied", reason: "date-occupied" },
+						409,
+					);
+				}
+			}
+			throw new Error("occurrence edit failed", { cause });
+		}
+	});
+
+	async function occurrenceStatusAction(
+		c: KernelContext,
+		nextStatus: "completed" | "cancelled",
+		classId: string,
+		dateISO: string,
+		orgId: string,
+		db: Db,
+	): Promise<Response> {
+		const counts = await bucketCounts(db, classId, dateISO, orgId);
+		// Bucket trống vs settled-toàn-bộ phải phân biệt được (K5/R9).
+		if (counts.total === 0) {
+			return c.json(
+				{ error: "occurrence not found", reason: "not-found" },
+				404,
+			);
+		}
+		const rows = await occurrenceUpdate(
+			db,
+			classId,
+			dateISO,
+			orgId,
+			{ status: nextStatus },
+			true,
+		);
+		// Skipped = bucket rows this action did NOT touch — i.e. the ones
+		// already settled. Advisory number, not transactional truth (RT5).
+		return c.json({
+			updated: rows.length,
+			skipped: Math.max(0, counts.total - rows.length),
+		} satisfies OccurrenceMutationResponse);
+	}
+
+	kernel.post("/classes/:id/sessions/:date/check-in", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+		const body = await readBody(c, lessonActionSchema);
+		if (!body.ok) return body.response;
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		return occurrenceStatusAction(
+			c,
+			"completed",
+			classId,
+			dateISO,
+			ctx.orgId,
+			db,
+		);
+	});
+
+	kernel.post("/classes/:id/sessions/:date/cancel", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+		const body = await readBody(c, lessonActionSchema);
+		if (!body.ok) return body.response;
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		return occurrenceStatusAction(
+			c,
+			"cancelled",
+			classId,
+			dateISO,
+			ctx.orgId,
+			db,
+		);
 	});
 
 	kernel.post("/invoices/:id/mark-paid", async (c) => {

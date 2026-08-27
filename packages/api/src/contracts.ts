@@ -223,6 +223,55 @@ export const lessonEditSchema = z
 	.strict();
 export type LessonEdit = z.infer<typeof lessonEditSchema>;
 
+/**
+ * Occurrence-level edit (issue #98) — `≥1` field, never `day`: the server
+ * derives the weekday from `moveDate`. Every shared field MUST stay
+ * constraint-identical to lessonEditSchema above (.strict(), zoom only "" or
+ * https:// — it lands in the Zalo reminder template so scheme injection dies
+ * at the boundary; topic ≤500; dur ≤1440 with midnight wrap handled by the
+ * generator formula). moveDate is pattern-checked here and roundtrip-guarded
+ * against the real calendar server-side (`parseStartDateStrict`) because a
+ * regex alone accepts 2026-02-30.
+ */
+export const occurrenceEditSchema = z
+	.object({
+		moveDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
+		time: z.string().regex(TIME_REGEX).optional(),
+		dur: z.number().int().min(1).max(1440).optional(),
+		topic: z.string().max(500).optional(),
+		zoom: z
+			.string()
+			.max(2048)
+			.optional()
+			.refine(
+				(value) =>
+					value === undefined || value === "" || value.startsWith("https://"),
+				{
+					message: "zoom phải là URL https:// hoặc rỗng",
+				},
+			),
+	})
+	.strict()
+	.refine(
+		(body) =>
+			body.moveDate !== undefined ||
+			body.time !== undefined ||
+			body.dur !== undefined ||
+			body.topic !== undefined ||
+			body.zoom !== undefined,
+		{ message: "cần ít nhất một trường để chỉnh" },
+	);
+export type OccurrenceEdit = z.infer<typeof occurrenceEditSchema>;
+
+/** Occurrence mutations report what landed (advisory numbers — see plan #98 K5/RT5). */
+export interface OccurrenceMutationResponse {
+	updated: number;
+	skipped: number;
+}
+
 /** Mark-paid accepts only the display method; amount/status remain server-owned. */
 export const invoiceMarkPaidSchema = z
 	.object({ method: z.string().trim().min(1).max(32) })
