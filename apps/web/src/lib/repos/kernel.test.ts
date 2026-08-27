@@ -2,7 +2,11 @@
  * Kernel adapter + command mapping units (Wave 0).
  * Pure functions only — transport lives in the provider.
  */
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import {
+	type KernelSnapshot,
+	reorderLessonsSchema,
+	reorderModulesSchema,
+} from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
 import { createKernelQueryClient } from "@/lib/query-client";
@@ -398,6 +402,46 @@ describe("kernelCommand", () => {
 				payload: { title: "T", objectives: "", materials: "", status: "done" },
 			}).path,
 		).toBe("/api/syllabi/sy/modules/m/lessons/l");
+	});
+
+	test("delete and reorder map to verb-sub-path POSTs with canonical bodies", () => {
+		const deletedModule = kernelCommand({
+			type: "delete-module",
+			syllabusId: "sy",
+			moduleId: "m",
+		});
+		expect(deletedModule.path).toBe("/api/syllabi/sy/modules/m/remove");
+		expect(deletedModule.body).toEqual({});
+		const deletedLesson = kernelCommand({
+			type: "delete-lesson",
+			syllabusId: "sy",
+			moduleId: "m",
+			lessonId: "l",
+		});
+		expect(deletedLesson.path).toBe(
+			"/api/syllabi/sy/modules/m/lessons/l/remove",
+		);
+		const reorderedModules = kernelCommand({
+			type: "reorder-modules",
+			syllabusId: "sy",
+			moduleIds: ["m2", "m1"],
+		});
+		expect(reorderedModules.path).toBe("/api/syllabi/sy/modules/reorder");
+		expect(reorderModulesSchema.safeParse(reorderedModules.body).success).toBe(
+			true,
+		);
+		const reorderedLessons = kernelCommand({
+			type: "reorder-lessons",
+			syllabusId: "sy",
+			moduleId: "m",
+			lessonIds: ["l2", "l1"],
+		});
+		expect(reorderedLessons.path).toBe(
+			"/api/syllabi/sy/modules/m/lessons/reorder",
+		);
+		expect(reorderLessonsSchema.safeParse(reorderedLessons.body).success).toBe(
+			true,
+		);
 	});
 
 	test("import-syllabus, remove-curriculum and update-class-notes target the class subpath", () => {

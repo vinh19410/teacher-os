@@ -13,6 +13,10 @@ import {
 	LessonStatusBadge,
 	lessonDotClassFor,
 } from "@/components/syllabus/lesson-status";
+import {
+	SyllabusMutationButtons,
+	useSyllabusMutations,
+} from "@/components/syllabus/syllabus-mutations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
@@ -21,8 +25,12 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
+import {
+	type DirectKernelAction,
+	useDirectKernelAction,
+} from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 	component: SyllabusDetailRoute,
@@ -46,9 +54,25 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
+	const { syllabusById } = useSyllabus();
+	const kernel = useDirectKernelAction();
+	const sy = syllabusById(syllabusId);
+	if (!sy) {
+		throw notFound();
+	}
+	return <SyllabusDetail sy={sy} kernel={kernel} />;
+}
+
+function SyllabusDetail({
+	sy,
+	kernel,
+}: {
+	sy: Syllabus;
+	kernel: DirectKernelAction;
+}) {
 	const navigate = useNavigate();
 	const { classesForSyllabus } = useData();
-	const { syllabusById } = useSyllabus();
+	const { run, busy } = kernel;
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
 	const [editModuleId, setEditModuleId] = useState<string | null>(null);
@@ -59,11 +83,12 @@ function SyllabusDetailRoute() {
 		moduleId: string;
 		lessonId: string;
 	} | null>(null);
-	const sy = syllabusById(syllabusId);
-
-	if (!sy) {
-		throw notFound();
-	}
+	const mutations = useSyllabusMutations({
+		syllabus: sy,
+		isClassCopy: sy.classId !== null,
+		run,
+		busy,
+	});
 
 	const all = sy.modules.flatMap((m) => m.lessons);
 	const done = all.filter((l) => l.status === "done").length;
@@ -155,7 +180,7 @@ function SyllabusDetailRoute() {
 				</Card>
 			)}
 
-			{sy.modules.map((m) => {
+			{sy.modules.map((m, mi) => {
 				const mDone = m.lessons.filter((l) => l.status === "done").length;
 				return (
 					<div
@@ -170,14 +195,24 @@ function SyllabusDetailRoute() {
 							>
 								<h3 className="font-semibold text-sm">{m.title}</h3>
 							</button>
-							<div className="flex items-center gap-3">
+							<div className="flex flex-wrap items-center gap-3">
 								<button
 									type="button"
 									onClick={() => setEditModuleId(m.id)}
-									className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
+									disabled={busy}
+									className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
 								>
 									Sửa
 								</button>
+								<SyllabusMutationButtons
+									label={m.title}
+									upDisabled={mi === 0}
+									downDisabled={mi === sy.modules.length - 1}
+									busy={busy}
+									onUp={() => mutations.moveModule(mi, -1)}
+									onDown={() => mutations.moveModule(mi, 1)}
+									onDelete={() => mutations.requestDeleteModule(m)}
+								/>
 								<span className="font-mono text-[11px] text-muted-fg">
 									{mDone}/{m.lessons.length} buổi
 								</span>
@@ -185,7 +220,7 @@ function SyllabusDetailRoute() {
 						</div>
 						{!collapsed.has(m.id) && (
 							<div className="block">
-								{m.lessons.map((l) => (
+								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
 										className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
@@ -202,17 +237,29 @@ function SyllabusDetailRoute() {
 												Mục tiêu: {l.objectives}
 											</div>
 										</div>
-										<div className="flex items-center gap-2 max-app:col-start-2 max-app:pt-1">
+										<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">
 											<LessonStatusBadge status={l.status} />
 											<button
 												type="button"
 												onClick={() =>
 													setEditLessonRef({ moduleId: m.id, lessonId: l.id })
 												}
-												className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
+												disabled={busy}
+												className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
 											>
 												Sửa
 											</button>
+											<SyllabusMutationButtons
+												label={l.title}
+												upDisabled={li === 0}
+												downDisabled={li === m.lessons.length - 1}
+												busy={busy}
+												onUp={() => mutations.moveLesson(m.id, li, -1)}
+												onDown={() => mutations.moveLesson(m.id, li, 1)}
+												onDelete={() =>
+													mutations.requestDeleteLesson(m.id, l.id, l.title)
+												}
+											/>
 										</div>
 									</div>
 								))}
@@ -295,6 +342,7 @@ function SyllabusDetailRoute() {
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 			/>
+			{mutations.confirmModal}
 		</div>
 	);
 }

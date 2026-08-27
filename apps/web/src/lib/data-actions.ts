@@ -104,6 +104,28 @@ export type KernelAction =
 				status: SyllabusLesson["status"];
 			};
 	  }
+	| {
+			type: "delete-module";
+			syllabusId: string;
+			moduleId: string;
+	  }
+	| {
+			type: "delete-lesson";
+			syllabusId: string;
+			moduleId: string;
+			lessonId: string;
+	  }
+	| {
+			type: "reorder-modules";
+			syllabusId: string;
+			moduleIds: string[];
+	  }
+	| {
+			type: "reorder-lessons";
+			syllabusId: string;
+			moduleId: string;
+			lessonIds: string[];
+	  }
 	| { type: "update-class-notes"; classId: string; notes: string };
 
 /** Backwards-compatible name for data-store consumers. */

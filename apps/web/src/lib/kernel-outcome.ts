@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import type { KernelAction } from "./data-actions";
 import type { KernelCommandResult } from "./repos/kernel";
 
 export type DirectOutcomePlan = {
@@ -8,15 +9,23 @@ export type DirectOutcomePlan = {
 	reconcile: "none" | "check" | "heal-409";
 };
 
+const SET_MISMATCH_ACTIONS = new Set<KernelAction["type"]>([
+	"delete-module",
+	"delete-lesson",
+	"reorder-modules",
+	"reorder-lessons",
+]);
+
 /**
  * Pure decision table for direct (non-modal) kernel outcomes. 409 on these
  * actions is the server's duplicate-guard (e.g. "lesson is not upcoming"):
  * the write already landed earlier, so it must heal the stale store instead
- * of claiming "not saved".
+ * of claiming "not saved". Reorder/delete 409 is set-mismatch — write refused.
  */
 export function planDirectOutcome(
 	result: KernelCommandResult,
 	successText: string,
+	actionType?: KernelAction["type"],
 ): DirectOutcomePlan {
 	switch (result.kind) {
 		case "refreshed":
@@ -29,6 +38,13 @@ export function planDirectOutcome(
 			};
 		case "definite-failure":
 			if (result.status === 409) {
+				if (actionType && SET_MISMATCH_ACTIONS.has(actionType)) {
+					return {
+						toastKind: "info",
+						message: "Thứ tự đã đổi — đang tải lại, hãy thao tác lại.",
+						reconcile: "heal-409",
+					};
+				}
 				return {
 					toastKind: "info",
 					message:
@@ -60,8 +76,9 @@ export async function reportDirectOutcome(
 	result: KernelCommandResult,
 	successText: string,
 	refresh: () => Promise<boolean>,
+	actionType?: KernelAction["type"],
 ): Promise<void> {
-	const plan = planDirectOutcome(result, successText);
+	const plan = planDirectOutcome(result, successText, actionType);
 	toast[plan.toastKind](plan.message);
 	if (plan.reconcile === "none") return;
 	if (await refresh()) {

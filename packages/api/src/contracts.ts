@@ -142,6 +142,25 @@ export const lessonUpsertSchema = z.object({
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
+export const moduleRemoveSchema = z.object({}).strict();
+export type ModuleRemove = z.infer<typeof moduleRemoveSchema>;
+export const lessonRemoveSchema = z.object({}).strict();
+export type LessonRemove = z.infer<typeof lessonRemoveSchema>;
+
+/** Cap matches MAX_IMPORT_NODES — one D1 batch of UPDATEs. */
+export const reorderModulesSchema = z
+	.object({
+		moduleIds: z.array(z.string().min(1)).min(1).max(500),
+	})
+	.strict();
+export type ReorderModules = z.infer<typeof reorderModulesSchema>;
+export const reorderLessonsSchema = z
+	.object({
+		lessonIds: z.array(z.string().min(1)).min(1).max(500),
+	})
+	.strict();
+export type ReorderLessons = z.infer<typeof reorderLessonsSchema>;
+
 /**
  * IELTS rubric scores — strict shape, float 0–9 on purpose: half-bands
  * (6.5, 7.5) are the domain norm, so the repo-wide `.int()` convention
