@@ -28,6 +28,7 @@ function row(overrides: Partial<ClassSessionLesson> = {}): ClassSessionLesson {
 		topic: "",
 		status: "upcoming",
 		date: null, // legacy fixture — undated rows exercise the frozen path
+		zoom: "",
 		...overrides,
 	};
 }

@@ -89,3 +89,62 @@ export async function reportDirectOutcome(
 		);
 	}
 }
+
+/**
+ * Route-owned single-toast copy for occurrence actions (#98 Phase 4). The
+ * caller passes the server result verbatim; counts come ONLY from the
+ * `{updated, skipped}` payload (N2) — never from client snapshots. The new
+ * 409 reasons get guidance instead of the generic heal-409 copy (N5):
+ * `use-occurrence-endpoint` means nothing changed and the user aimed the
+ * write at the wrong surface — point them at the ĐIỀU CHỈNH BUỔI flow.
+ */
+export function occurrenceSummary(
+	result: KernelCommandResult,
+	successText: string,
+): { kind: "success" | "info" | "error"; message: string } {
+	if (result.kind === "refreshed" || result.kind === "committed") {
+		const updated = result.updated ?? 0;
+		const skipped = result.skipped ?? 0;
+		const total = updated + skipped;
+		const suffix =
+			skipped > 0 && total > 0
+				? ` (${updated}/${total} học viên — ${skipped} đã chốt trước đó)`
+				: "";
+		const prefix =
+			result.kind === "committed"
+				? `${successText} Đã lưu nhưng chưa tải lại được dữ liệu.`
+				: successText;
+		return { kind: "success", message: `${prefix}${suffix}` };
+	}
+	if (result.kind === "definite-failure") {
+		if (result.status === 409) {
+			switch (result.reason) {
+				case "use-occurrence-endpoint":
+					return {
+						kind: "info",
+						message:
+							"Bước này đổi thứ/buổi theo từng học viên — hãy dùng nút Điều chỉnh buổi.",
+					};
+				case "date-occupied":
+					return {
+						kind: "error",
+						message: "Ngày đích đã có buổi khác — chọn ngày khác rồi lưu lại.",
+					};
+				default:
+					break;
+			}
+		}
+		if (result.status === 404) {
+			return { kind: "info", message: "Buổi không còn tồn tại — đã tải lại." };
+		}
+		return {
+			kind: "error",
+			message: "Không lưu được — dữ liệu chưa được ghi lên máy chủ.",
+		};
+	}
+	return {
+		kind: "info",
+		message:
+			"Không xác định được kết quả — có thể đã lưu. Đang tải lại để kiểm tra…",
+	};
+}

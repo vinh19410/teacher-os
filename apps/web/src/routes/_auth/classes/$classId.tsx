@@ -5,8 +5,13 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 import { ClassScheduleTable } from "@/components/class-detail/class-schedule-table";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
+import type {
+	OccurrenceActionResult,
+	OccurrenceEditPayload,
+} from "@/components/class-detail/session-actions-modal";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +24,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
+import { occurrenceSummary } from "@/lib/kernel-outcome";
 import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
@@ -43,7 +49,56 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 
 function ClassDetailRoute() {
 	const { classId } = Route.useParams();
+	const { dispatch, refresh } = useData();
 	const navigate = useNavigate();
+
+	/**
+	 * #98 threaded occurrence writes: ONE toast per action composed at this
+	 * level from the server payload `{updated, skipped}` (+ reason guidance),
+	 * plus the reconcile pass for committed/outcome-unknown results. The
+	 * modal itself stays dispatch-free per the #91 callback contract.
+	 */
+	async function runOccurrenceWrite(
+		action: Parameters<typeof dispatch>[0],
+		successText: string,
+	): Promise<OccurrenceActionResult> {
+		const result = await dispatch(action);
+		const summary = occurrenceSummary(result, successText);
+		toast[summary.kind](summary.message);
+		if (result.kind === "committed" || result.kind === "outcome-unknown") {
+			await refresh();
+		}
+		return {
+			ok: result.kind === "refreshed",
+			updated: "updated" in result ? result.updated : undefined,
+			skipped: "skipped" in result ? result.skipped : undefined,
+			reason:
+				result.kind === "definite-failure" && "reason" in result
+					? result.reason
+					: undefined,
+		};
+	}
+
+	const handleCompleteOccurrence = (dateISO: string) =>
+		runOccurrenceWrite(
+			{ type: "session-check-in", classId, date: dateISO },
+			"Đã hoàn thành buổi.",
+		);
+
+	const handleCancelOccurrence = (dateISO: string) =>
+		runOccurrenceWrite(
+			{ type: "session-cancel", classId, date: dateISO },
+			"Đã hủy buổi.",
+		);
+
+	const handleSaveOccurrenceEdit = (
+		dateISO: string,
+		payload: OccurrenceEditPayload,
+	) =>
+		runOccurrenceWrite(
+			{ type: "session-edit", classId, date: dateISO, payload },
+			payload.moveDate !== undefined ? "Đã dời buổi." : "Đã cập nhật buổi.",
+		);
 	const { classById } = useClasses();
 	const { syllabusById, studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
@@ -178,6 +233,9 @@ function ClassDetailRoute() {
 							syllabus={sy && sy.classId === classId ? sy : null}
 							studentById={studentById}
 							run={run}
+							onComplete={handleCompleteOccurrence}
+							onCancelOccurrence={handleCancelOccurrence}
+							onSaveEdit={handleSaveOccurrenceEdit}
 							isPending={isPending}
 							busy={busy}
 						/>

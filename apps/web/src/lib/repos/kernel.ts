@@ -95,6 +95,23 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/lessons/${action.lessonId}/edit`,
 				body: { ...action.payload },
 			};
+		case "session-edit":
+			// Occurrence edit (#98): partial payload, server derives weekday.
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/edit`,
+				body: { ...action.payload },
+			};
+		case "session-check-in":
+			// Body stays exactly {} — the endpoint addresses the whole bucket.
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/check-in`,
+				body: {},
+			};
+		case "session-cancel":
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/cancel`,
+				body: {},
+			};
 		case "mark-invoice-paid":
 			return {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,

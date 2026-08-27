@@ -47,7 +47,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type ClassSessionLesson = Pick<
 	Lesson,
-	"id" | "sid" | "day" | "time" | "dur" | "topic" | "status" | "date"
+	"id" | "sid" | "day" | "time" | "dur" | "topic" | "status" | "date" | "zoom"
 >;
 
 export interface ClassSession {

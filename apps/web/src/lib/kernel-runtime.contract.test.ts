@@ -313,6 +313,42 @@ describe("kernel-backed store wiring", () => {
 		expect(mutations).not.toMatch(/useDirectKernelAction/);
 	});
 
+	test("#98 occurrence modal threads route callbacks (no direct dispatch) and keys by dateISO", () => {
+		const table = readSrc(
+			"../components/class-detail/class-schedule-table.tsx",
+		);
+		expect(table).toMatch(/setActionsDateISO\(s\.dateISO\)/);
+		expect(table).not.toMatch(/actionsIndex/);
+		expect(table).toMatch(/sessionRowTargets\(s\)\.length > 0/);
+		// Entry label must not collide with the #91 attendance CTA.
+		expect(table).toMatch(/Điều chỉnh/);
+		expect(table).not.toMatch(/Điều chỉnh\s*\? "Điểm danh"/);
+
+		const modal = readSrc(
+			"../components/class-detail/session-actions-modal.tsx",
+		);
+		// Docblock prose may MENTION the banned APIs; code must not touch them.
+		expect(modal).not.toMatch(/use-direct-kernel-action|[^a-zA-Z]dispatch\(/);
+		expect(modal).toMatch(/onComplete: \(dateISO: string\) =>/);
+		expect(modal).toMatch(/sessionIsEligibleDate/); // date-gated Hoàn thành
+		expect(modal).toMatch(/role="alertdialog"/); // 2-step confirm block
+
+		const route = readSrc("../routes/_auth/classes/$classId.tsx");
+		expect(route).toMatch(/type: "session-check-in", classId, date: dateISO/);
+		expect(route).toMatch(/type: "session-cancel", classId, date: dateISO/);
+		expect(route).toMatch(/type: "session-edit", classId, date: dateISO/);
+		expect(route).toMatch(/occurrenceSummary\(/);
+
+		const repoSrc = readSrc("./repos/kernel.ts");
+		expect(repoSrc).toMatch(
+			/\/api\/classes\/\$\{action.classId\}\/sessions\/\$\{action.date\}\/(edit|check-in|cancel)/,
+		);
+
+		const outcome = readSrc("./kernel-outcome.ts");
+		expect(outcome).toMatch(/case "use-occurrence-endpoint":/);
+		expect(outcome).toMatch(/case "date-occupied":/);
+	});
+
 	test("outcome toasts distinguish refreshed/committed/definite/unknown and reconcile after unknown", () => {
 		const src = readSrc("kernel-outcome.ts");
 		expect(src).toMatch(/case "refreshed":/);

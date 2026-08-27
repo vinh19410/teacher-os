@@ -28,6 +28,7 @@ function dated(
 		topic: "",
 		status: "upcoming",
 		date: null,
+		zoom: "",
 		...overrides,
 	};
 }
@@ -63,7 +64,9 @@ function tueOccurrence(k: number): string {
 		"2026-11-10",
 		"2026-11-17",
 	];
-	return dates[k]!;
+	const value = dates.at(k);
+	if (value === undefined) throw new Error(`no date at index ${k}`);
+	return value;
 }
 function friOccurrence(k: number): string {
 	const dates = [
@@ -81,7 +84,9 @@ function friOccurrence(k: number): string {
 		"2026-11-13",
 		"2026-11-20",
 	];
-	return dates[k]!;
+	const value = dates.at(k);
+	if (value === undefined) throw new Error(`no date at index ${k}`);
+	return value;
 }
 
 describe("pin (a): derived-projection equality on the untouched class", () => {
@@ -125,13 +130,19 @@ describe("pin (b): edited topic renders on its own occurrence k", () => {
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: rows,
-		})!;
-		const editedSession = sessions.find((s) => s.dateISO === tueOccurrence(1))!;
+		});
+		expect(sessions).toBeDefined();
+		if (!sessions) throw new Error("unexpected: derivation returned nothing");
+		const editedSession = sessions.find((s) => s.dateISO === tueOccurrence(1));
+		if (!editedSession) throw new Error("edited session missing");
 		expect(sessionTopic(editedSession, [])).toBe("Speaking part 2");
 		// First occurrence still falls through to the syllabus slot (none here).
-		expect(sessionTopic(sessions[0]!, [{ title: "Syllabus P1" }])).toBe(
-			"Syllabus P1",
-		);
+		const firstSession = sessions[0];
+		expect(
+			firstSession
+				? sessionTopic(firstSession, [{ title: "Syllabus P1" }])
+				: null,
+		).toBe("Syllabus P1");
 	});
 });
 
@@ -152,7 +163,9 @@ describe("pin (c): CTA targets the bucket's own dated row per sid", () => {
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: rows,
-		})!;
+		});
+		expect(sessions).toBeDefined();
+		if (!sessions) throw new Error("unexpected: derivation returned nothing");
 
 		const today = "2099-01-01"; // everything eligible
 		for (const [k, session] of sessions.entries()) {
@@ -175,8 +188,11 @@ describe("pin (c): CTA targets the bucket's own dated row per sid", () => {
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: rows,
-		})!;
-		const farFuture = sessions[sessions.length - 1]!;
+		});
+		expect(sessions).toBeDefined();
+		if (!sessions) throw new Error("unexpected: derivation returned nothing");
+		const farFuture = sessions.at(-1);
+		if (!farFuture) throw new Error("empty session list");
 		const state = sessionAttendanceState(farFuture, "2026-08-26");
 		expect(state.kind).toBe("future");
 		// Targets still exist — cancel/move entry gate (C5) works pre-date.
@@ -192,12 +208,14 @@ describe("pin (d): startDate-off-day mirrors the label shift only", () => {
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: rows,
-		})!;
+		});
+		if (!sessionsA) throw new Error("sessionsA missing");
 		const sessionsB = buildClassSessions({
 			schedule: SCHEDULE,
 			startDate: "2026-08-26",
 			lessons: rows,
-		})!;
+		});
+		expect(sessionsB).toBeDefined();
 		expect(sessionsB?.map((s) => s.dateISO)).toEqual(
 			sessionsA.map((s) => s.dateISO),
 		);
@@ -220,9 +238,10 @@ describe("pin (e) anti-N1: fully-dated vector-broken class stays V2", () => {
 			lessons: rows,
 		});
 		expect(sessions).not.toBeNull();
-		const moved = sessions!.find((s) => s.dateISO === "2026-09-12");
-		expect(moved).toBeDefined();
-		expect(moved!.day).toBe(6); // weekday derived from identity
+		if (!sessions) throw new Error("sessions missing");
+		const moved = sessions.find((s) => s.dateISO === "2026-09-12");
+		if (!moved) throw new Error("moved session missing");
+		expect(moved.day).toBe(6); // weekday derived from identity
 	});
 });
 
@@ -274,8 +293,11 @@ describe("any-NULL and divergence guards hold the frozen fallback", () => {
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: rows,
-		})!;
-		const bucket = sessions.find((s) => s.dateISO === targetDate)!;
+		});
+		expect(sessions).toBeDefined();
+		if (!sessions) throw new Error("unexpected: derivation returned nothing");
+		const bucket = sessions?.find((s) => s.dateISO === targetDate);
+		if (!bucket) throw new Error("missing bucket for target date");
 		// id-min: sid-a's ids sort before sid-b's regardless of topic text.
 		expect(sessionTopic(bucket, [])).toBe("Zulu");
 	});

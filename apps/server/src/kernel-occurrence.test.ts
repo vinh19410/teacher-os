@@ -166,6 +166,13 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		return t.libsql.select().from(lesson);
 	}
 
+	async function pickRow(dateISO: string): Promise<string> {
+		const rows = await lessonRows();
+		const row = rows.find((r) => r.date === dateISO);
+		if (!row) throw new Error(`no row dated ${dateISO}`);
+		return row.id;
+	}
+
 	test("matrix: happy-path bucket edit updates every sid's rows (count honesty)", async () => {
 		const res = await t.call(
 			t.teacherA.token,
@@ -185,7 +192,8 @@ describe("occurrence mutations (#98 phase 2)", () => {
 	test("move-wholly: settled rows ride along on moveDate (mixed-state bucket)", async () => {
 		// Settle one sid's 08-25 row through the legacy per-row endpoint.
 		const rows = await lessonRows();
-		const first = rows.find((r) => r.date === "2026-08-25")!;
+		const first = rows.find((r) => r.date === "2026-08-25");
+		if (!first) throw new Error("row 08-25 missing");
 		const settle = await t.call(
 			t.teacherA.token,
 			`/api/lessons/${first.id}/check-in`,
@@ -331,7 +339,8 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		const rows = await lessonRows();
 		const datedUpcoming = rows.find(
 			(r) => r.date === "2026-09-01" && r.status === "upcoming",
-		)!;
+		);
+		if (!datedUpcoming) throw new Error("dated upcoming row missing");
 		const res = await t.call(
 			t.teacherA.token,
 			`/api/lessons/${datedUpcoming.id}/edit`,
@@ -353,9 +362,10 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		);
 		expect(((await res.json()) as { updated: number }).updated).toBe(2);
 
+		const datedHead = await pickRow("2026-09-01");
 		const changedTopic = await t.call(
 			t.teacherA.token,
-			`/api/lessons/${(await lessonRows()).find((r) => r.date === "2026-09-01")!.id}/edit`,
+			`/api/lessons/${datedHead}/edit`,
 			{
 				body: { day: 2, time: "20:15", dur: 60, topic: "LWW chung", zoom: "" },
 			},
@@ -372,14 +382,18 @@ describe("occurrence mutations (#98 phase 2)", () => {
 	test("K3 legacy path byte-for-byte: undated conditional-write keeps optimistic concurrency", async () => {
 		// Hand-insert an undated upcoming row (legacy-style data).
 		const orgRow = await t.libsql.select().from(schema.organization);
-		const orgId = orgRow[0]!.id;
+		const org0 = orgRow[0];
+		if (!org0) throw new Error("missing organization row");
+		const orgId = org0.id;
 		const enrollmentRows = await t.libsql.select().from(schema.enrollment);
+		const enrollment0 = enrollmentRows[0];
+		if (!enrollment0) throw new Error("missing enrollment row");
 		const id = crypto.randomUUID();
 		await t.libsql.insert(lesson).values({
 			id,
 			orgId,
 			classId,
-			enrollmentId: enrollmentRows[0]!.id,
+			enrollmentId: enrollment0.id,
 			day: 2,
 			time: "19:00",
 			dur: 90,
