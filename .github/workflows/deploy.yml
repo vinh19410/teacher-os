@@ -75,7 +75,10 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-        run: pnpm alchemy deploy --stage prod
+        run: pnpm alchemy deploy --stage prod --yes
+        # --yes auto-approves the plan: without it Alchemy exits code 0 in a
+        # non-interactive terminal WITHOUT applying anything ("Non-interactive
+        # terminal detected"), which made a no-op deploy look green.
       - name: Smoke check API readiness (/readyz)
         # First deploy of a custom domain may wait on DNS/cert provisioning;
         # poll up to ~10 minutes before declaring the release failed.
