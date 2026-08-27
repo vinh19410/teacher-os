@@ -1,7 +1,7 @@
 ---
 title: "Session actions + bỏ cột Học viên trên tab Buổi học"
 description: "Bỏ cột Học viên khỏi bảng buổi học (main 4→3 cột, legacy 5→4 cột). SessionActionsModal bulk Hoàn thành/Hủy buổi (phase 2–3) DEFERRED theo Scope Decision 2026-08-27 (requester chọn full per-occurrence edit → cần plan server-side occurrence identity trước; thiết kế đã red-team được giữ làm tư liệu)."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 93

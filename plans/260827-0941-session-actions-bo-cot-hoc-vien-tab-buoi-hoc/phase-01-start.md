@@ -52,12 +52,12 @@ Pure presentation change — chỉ `ClassScheduleTable` + contract test. Không 
 
 ## Success Criteria
 
-- [ ] Main table 3 cột, legacy fallback 4 cột, không còn cột Học viên ở bất kỳ dạng bảng nào.
-- [ ] Negative assertion `/>\s*Học viên\s*<\/th>/` vắng mặt trên `scheduleTableSrc`; guard legacy là array-pin flipped 4 phần tử (legacy `<th>` sinh runtime từ headers array — không thể negative-text).
-- [ ] Pin `colSpan={3}` positive+negative có trong contract test; layout expanded row không lệch.
-- [ ] Doc comment + 2 test titles đồng bộ ("3-column" / "4-column fallback"); không còn chữ "5-column"/"4-column table" chỉ sai cấu trúc mới.
-- [ ] Roster tab + SessionAttendanceModal + CTA Điểm danh hoạt động nguyên vẹn (`attendees` còn nguyên; test #91 vẫn xanh, không sửa).
-- [ ] Gates xanh.
+- [x] Main table 3 cột, legacy fallback 4 cột, không còn cột Học viên ở bất kỳ dạng bảng nào.
+- [x] Negative assertion `/>\s*Học viên\s*<\/th>/` vắng mặt trên `scheduleTableSrc`; guard legacy là array-pin flipped 4 phần tử (legacy `<th>` sinh runtime từ headers array — không thể negative-text).
+- [x] Pin `colSpan={3}` positive+negative có trong contract test; layout expanded row không lệch.
+- [x] Doc comment + 2 test titles đồng bộ ("3-column" / "4-column fallback"); không còn chữ "5-column"/"4-column table" chỉ sai cấu trúc mới.
+- [x] Roster tab + SessionAttendanceModal + CTA Điểm danh hoạt động nguyên vẹn (`attendees` còn nguyên; test #91 vẫn xanh, không sửa).
+- [x] Gates xanh.
 
 ## Risk Assessment
 
