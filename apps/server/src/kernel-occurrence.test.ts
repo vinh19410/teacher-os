@@ -320,6 +320,50 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		expect(nonHttps.status).toBe(400);
 	});
 
+	test("edit on an EMPTIED bucket is a 404 not-found, not a false success (review F2)", async () => {
+		// Fresh bucket exists, then gets moved away by another tab; a stale
+		// editor still POSTing to the old date must see 404, never 200/0.
+		const createRes = await t.call(t.teacherA.token, "/api/classes", {
+			body: {
+				name: "Lớp F2",
+				type: "ielts",
+				level: "",
+				skills: ["Reading"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1], start: "18:00", end: "19:30" },
+				sessionsTotal: 2,
+				startDate: "2026-10-06", // schedule day1=Tue: occurrences 10-06, 10-13
+			},
+		});
+		expect(createRes.status).toBe(201);
+		const f2class = ((await createRes.json()) as { id: string }).id;
+		await t.call(t.teacherA.token, "/api/students", {
+			body: {
+				name: "HV F2",
+				total: 2,
+				price: 0,
+				mode: "Online",
+				classId: f2class,
+			},
+		});
+		const move = await t.call(
+			t.teacherA.token,
+			`/api/classes/${f2class}/sessions/2026-10-13/edit`,
+			{ body: { moveDate: "2026-10-20" } },
+		);
+		expect(move.status).toBe(200);
+		const stale = await t.call(
+			t.teacherA.token,
+			`/api/classes/${f2class}/sessions/2026-10-13/edit`,
+			{ body: { topic: "stale tab" } },
+		);
+		expect(stale.status).toBe(404);
+		expect(((await stale.json()) as { reason?: string }).reason).toBe(
+			"not-found",
+		);
+	});
+
 	test("co-tenant protection: second org sees neither bucket nor class", async () => {
 		const resEdit = await t.call(
 			t.teacherB.token,

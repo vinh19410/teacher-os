@@ -956,6 +956,14 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		}
 
 		const before = await bucketCounts(db, classId, dateISO, ctx.orgId);
+		// Identity addressing an EMPTY bucket is a stale client (moved/deleted
+		// under another tab) — never a silent success (#98 review F2).
+		if (before.total === 0) {
+			return c.json(
+				{ error: "occurrence not found", reason: "not-found" },
+				404,
+			);
+		}
 		try {
 			const rows = await occurrenceUpdate(
 				db,

@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "SessionActionsModal + per-occurrence edit UI"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [3]
@@ -69,13 +69,13 @@ Cell Trạng thái JSX: Fragment wrap giữ NGUYÊN cả 2 nhánh "Điểm danh"
 
 ## Success Criteria
 
-- [ ] Session v2 có target mở modal được kể cả future; badge-status kind không cản entry; completed-all-bucket row KHÔNG còn nút.
-- [ ] Hoàn thành disabled pre-date; Hủy cần confirm liệt-kê-tên; cả hai tạo ĐÚNG 1 network call + 1 refetch (contract test assert bus-inflight key semantics).
-- [ ] Toast MỘT lần/action; nội dung trung thực bucket counts ĐỌC TỪ payload P2 (test assert không đếm từ snapshot); failure reason surface gồm guidance riêng use-occurrence-endpoint.
-- [ ] Move thành công ⇒ modal đóng (hoặc remount targets mới); targeting dateISO-keyed — test assert modal sau-reorder không nhắm bucket khác (regression N4).
-- [ ] Form update occurrence k reflected tại row k instantly post-refetch (regression với bug gốc #93); moveDate collision hiển thị message riêng.
-- [ ] Regex pins #91/#93 tất cả still-match; non-goal field-edit pins #93 UPDATE có chủ đích để phản chiếu feature mới (supersession inline comment tham chiếu plan dir này).
-- [ ] Gates xanh toàn bộ.
+- [x] Session v2 có target mở modal được kể cả future; badge-status kind không cản entry; completed-all-bucket row KHÔNG còn nút.
+- [x] Hoàn thành disabled pre-date; Hủy cần confirm liệt-kê-tên; cả hai tạo ĐÚNG 1 network call + 1 refetch (contract test assert bus-inflight key semantics).
+- [x] Toast MỘT lần/action; nội dung trung thực bucket counts ĐỌC TỪ payload P2 (test assert không đếm từ snapshot); failure reason surface gồm guidance riêng use-occurrence-endpoint.
+- [x] Move thành công ⇒ modal đóng (hoặc remount targets mới); targeting dateISO-keyed — test assert modal sau-reorder không nhắm bucket khác (regression N4).
+- [x] Form update occurrence k reflected tại row k instantly post-refetch (regression với bug gốc #93); moveDate collision hiển thị message riêng.
+- [x] Regex pins #91/#93 tất cả still-match; non-goal field-edit pins #93 UPDATE có chủ đích để phản chiếu feature mới (supersession inline comment tham chiếu plan dir này).
+- [x] Gates xanh toàn bộ.
 
 ## Risk Assessment
 

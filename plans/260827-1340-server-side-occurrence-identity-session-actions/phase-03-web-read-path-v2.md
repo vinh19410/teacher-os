@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web read-path v2 + contract chain"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [2]
@@ -62,14 +62,14 @@ Vì `KernelCommandResult`/bus KHÔNG đổi ở phase này (P4 mới thêm call 
 
 ## Success Criteria
 
-- [ ] Pin (a): derived-projection equality trên fixture chưa-edit giữa v2 & legacy outputs (không so raw rows arrays); Pin (d) startDate-off-day nhãn-dịch pinned.
-- [ ] Pin (b) mis-fan regression: topic chỉnh vào occurrence k hiển thị ĐÚNG k ngay khi render đầu (test đặt tên `renders edited topic on its own occurrence`).
-- [ ] Pin (c) attendance/CTA với data 2-sid lệch-prefix: mỗi sid nhận đúng dated-row id của bucket đang xem.
-- [ ] Pin (e) anti-N1: class fully-dated có count-vector lệch công thức (hậu moveDate simulate) VẪN đi nhánh v2 đủ chronology + CTA — vĩnh viễn, không rớt legacy.
-- [ ] Helper dual-mode: sessionStatus/sessionStudents trả đúng semantics-v2 trên fixture có completed-mid-sequence (bucket all-completed nhưng vị trí chrono muộn) — guard chống reg tái-dùng prefix-math trên v2.
-- [ ] Any-NULL-in-class ⇒ null-output (legacy) — kể cả 1 row NULL duy nhất giữa hàng trăm dated rows; time-divergence fixture từ P1 cũng legacy (NULL-theo-class từ backfill).
-- [ ] Legacy branch source-text anchors (walk loop, required-map) đứng im — frozen assertion.
-- [ ] Gates xanh + check-types sạch toàn app.
+- [x] Pin (a): derived-projection equality trên fixture chưa-edit giữa v2 & legacy outputs (không so raw rows arrays); Pin (d) startDate-off-day nhãn-dịch pinned.
+- [x] Pin (b) mis-fan regression: topic chỉnh vào occurrence k hiển thị ĐÚNG k ngay khi render đầu (test đặt tên `renders edited topic on its own occurrence`).
+- [x] Pin (c) attendance/CTA với data 2-sid lệch-prefix: mỗi sid nhận đúng dated-row id của bucket đang xem.
+- [x] Pin (e) anti-N1: class fully-dated có count-vector lệch công thức (hậu moveDate simulate) VẪN đi nhánh v2 đủ chronology + CTA — vĩnh viễn, không rớt legacy.
+- [x] Helper dual-mode: sessionStatus/sessionStudents trả đúng semantics-v2 trên fixture có completed-mid-sequence (bucket all-completed nhưng vị trí chrono muộn) — guard chống reg tái-dùng prefix-math trên v2.
+- [x] Any-NULL-in-class ⇒ null-output (legacy) — kể cả 1 row NULL duy nhất giữa hàng trăm dated rows; time-divergence fixture từ P1 cũng legacy (NULL-theo-class từ backfill).
+- [x] Legacy branch source-text anchors (walk loop, required-map) đứng im — frozen assertion.
+- [x] Gates xanh + check-types sạch toàn app.
 
 ## Risk Assessment
 

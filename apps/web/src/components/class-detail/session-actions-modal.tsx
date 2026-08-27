@@ -135,7 +135,8 @@ export function SessionActionsModal({
 		const payload: OccurrenceEditPayload = {};
 		if (topic !== originalTopic(head)) payload.topic = topic;
 		if (time !== (head?.time ?? "")) payload.time = time;
-		if (durText !== String(head?.dur ?? "")) payload.dur = Number(durText);
+		if (durText !== "" && durText !== String(head?.dur ?? ""))
+			payload.dur = Number(durText); // empty text never mints dur:0 -> 400 noise
 		if (zoom !== (head?.zoom ?? "")) payload.zoom = zoom;
 		if (moveDate !== "" && moveDate !== session.dateISO)
 			payload.moveDate = moveDate;

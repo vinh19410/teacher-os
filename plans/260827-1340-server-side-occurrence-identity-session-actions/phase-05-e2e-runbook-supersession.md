@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E + runbook + docs carve-out + supersession"
-status: pending
+status: completed
 priority: P2
 effort: "1d"
 dependencies: [3, 4]
@@ -53,11 +53,11 @@ Không có surface kỹ thuật mới — phase thu thập/checklists. CI gates 
 
 ## Success Criteria
 
-- [ ] Spec session-occurrence xanh trên CI e2e workflow; toàn bộ suite khác green.
-- [ ] Runbook 1 người lạ đọc-xong-làm-được test (mock walk-through) đủ chuỗi A/B/C, có verification queries 3 detector + heal SQL dup + rollback procedure (re-deploy worker + delta backfill) + NULL-class archive list.
-- [ ] Issue #93 có comment supersession kèm link tương đối đến plan.md của dir này (không path máy-local).
-- [ ] Doc-rot :150-151 đã dọn nếu PR chạm specs.
-- [ ] Toàn bộ gates monorepo xanh.
+- [x] Spec session-occurrence xanh trên CI e2e workflow; toàn bộ suite khác green.
+- [x] Runbook 1 người lạ đọc-xong-làm-được test (mock walk-through) đủ chuỗi A/B/C, có verification queries 3 detector + heal SQL dup + rollback procedure (re-deploy worker + delta backfill) + NULL-class archive list.
+- [x] Issue #93 có comment supersession kèm link tương đối đến plan.md của dir này (không path máy-local).
+- [x] Doc-rot :150-151 đã dọn nếu PR chạm specs.
+- [x] Toàn bộ gates monorepo xanh.
 
 ## Risk Assessment
 

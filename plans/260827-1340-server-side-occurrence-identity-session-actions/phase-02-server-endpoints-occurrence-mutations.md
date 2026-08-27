@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server endpoint occurrence mutations + {reason} transport"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [1]
@@ -27,7 +27,7 @@ Ba route mutation theo identity `(classId, date)` — edit / check-in / cancel �
   - Legacy `/lessons/:id/edit` K3 — policy per-field CHỐT CỨNG, ALIGN cùng chính sách all-rows với occurrence edit (kongming GO-D4: không để hai đường edit một bucket mà một đường sửa được settled, một đường không):
     - Row KHÔNG date → hành vi cũ byte-for-byte (full-replace 5 trường + conditional-write 409, handler :718+).
     - Row CÓ date + body chứa `day` khác weekday-of-bucket → **409 `{reason:"use-occurrence-endpoint"}`** (đổi day sẽ phá bất biến date↔weekday — red-team High #2).
-    - Row CÓ date, đổi time/dur/topic/zoom → **bucket-wide full-replace LWW trên TOÀN BỘ rows `(class_id,org_id,date)` không lọc status**, không giữ conditional-guard per-row (guard cũ pin ĐÚNG giá trị pre-read của MỘT row — áp lên bucket nhiều giá trị là mâu thuẫn; last-write-wins giữa 2 tab được plan.md Non-goals declare chủ ý). Bucket bất đồng `(time,dur)` phát hiện sau apply → 200 kèm warning field.
+    - Row CÓ date, đổi time/dur/topic/zoom → **bucket-wide full-replace LWW trên TOÀN BỘ rows `(class_id,org_id,date)` không lọc status**, không giữ conditional-guard per-row (guard cũ pin ĐÚNG giá trị pre-read của MỘT row — áp lên bucket nhiều giá trị là mâu thuẫn; last-write-wins giữa 2 tab được plan.md Non-goals declare chủ ý). (Bucket bất đồng `(time,dur)` sau apply không thể tồn tại dưới LWW bucket-wide — warning field bị thu gọn tại review F7.)
     - Contract-test pin bucket-wide effect qua đường legacy này (red-team round-2 N7): assert zoom/topic của sid khác trong bucket cũng bị replace — bảo vệ hành vi đã declare khỏi regression vô tình.
 - Non-functional:
   - Idempotent-safe: cancel/check-in trên bucket settled-toàn-bộ → 200 `{updated:0, skipped:N}` (KHÔNG 404).
@@ -76,7 +76,7 @@ KernelCommandResult thêm optional `payload?: { updated?, skipped? }`
 1. Tests-first kernel.occurrence.test.ts: bảng case matrix (Success Criteria) red; incl. co-tenant class protection (ngày trùng giữa 2 class của cùng org phải độc lập), scoped-org giữa 2 orgs, bucket trống vs settled, **mixed-state bucket edit dời trọn bộ**, invalid-calendar-date `:date`/`moveDate` (2026-02-30) → 400, zoom non-https → 400.
 2. Route `sessions/:date/edit`: roundtrip-validate `:date`, refine ≥1-field, pre-check moveDate occupied → 409 (+ catch-recheck cho constraint-race N9), pre-read COUNT advisory, single guarded UPDATE **toàn-bucket không lọc status**, response `{updated(=changes), skipped=preCount−updated}`; server-side derive `day` từ moveDate.
 3. Routes check-in/cancel `{}`-exact + counts + org predicate + status='upcoming' filter (history bất biến).
-4. K3 policy per-field theo bảng Requirements (409 use-occurrence-endpoint cho day-change trên dated row; LWW bucket-wide all-rows cho các trường còn lại); divergent-bucket edge trả warning field; contract-test pin bucket-wide effect.
+4. K3 policy per-field theo bảng Requirements (409 use-occurrence-endpoint cho day-change trên dated row; LWW bucket-wide all-rows cho các trường còn lại); (bucket bất đồng (time,dur) sau apply không thể tồn tại dưới LWW bucket-wide nên không cần warning field — thu gọn tại review F7); contract-test pin bucket-wide effect.
 5. HttpError.reason parse + test body rác (`"oops"` text / JSON lạ / empty).
 6. Transport envelope N2: postKernelCommand 2xx-trả-envelope {id,updated?,skipped?}; bus deps.postCommand type widen; runOne giữ payload vào result; dispatch trả payload; test roundtrip envelope legacy-{id} không vỡ.
 7. Contract test CSRF ordering (`kernel.use("*"` trước mọi `kernel.post(` trong kernelRoutes source).
@@ -84,11 +84,11 @@ KernelCommandResult thêm optional `payload?: { updated?, skipped? }`
 
 ## Success Criteria
 
-- [ ] Matrix: 200 updated=N · 200 updated=0 skipped=M · 404 not-found(bucket trống/class lạ/org lạ) · 409 date-occupied(move, cả path catch-recheck post-constraint) · 409 use-occurrence-endpoint(day-change dated) · 400 schema/invalid-date/non-https-zoom · authenticated-correct-org only.
-- [ ] Edit moveDate cũng ghi `day` mới (weekday đúng Mon=1 — dùng chung helper packages/api với P3 read-path, test chéo fixture) VÀ mixed-state bucket: rows completed/cancelled cùng dời theo (assert count per-status sau move).
-- [ ] K3: non-dated row giữ conditional-409 cũ; dated-row topic edit đổi cả bucket (all-rows incl. settled); day-change bị chặn 409; pin bucket-wide-effect contract test xanh.
-- [ ] Reason xuyên: HttpError mang reason từ các 409/404 mới; HTTP-status classification cũ không đổi.
-- [ ] Envelope N2: dispatch() trả payload `{updated, skipped}` cho endpoint mới; endpoint legacy `{id}`-only vẫn parse sạch; bus refetch đúng 1 lần/call; CSRF ordering pin xanh.
+- [x] Matrix: 200 updated=N · 200 updated=0 skipped=M · 404 not-found(bucket trống/class lạ/org lạ) · 409 date-occupied(move, cả path catch-recheck post-constraint) · 409 use-occurrence-endpoint(day-change dated) · 400 schema/invalid-date/non-https-zoom · authenticated-correct-org only.
+- [x] Edit moveDate cũng ghi `day` mới (weekday đúng Mon=1 — dùng chung helper packages/api với P3 read-path, test chéo fixture) VÀ mixed-state bucket: rows completed/cancelled cùng dời theo (assert count per-status sau move).
+- [x] K3: non-dated row giữ conditional-409 cũ; dated-row topic edit đổi cả bucket (all-rows incl. settled); day-change bị chặn 409; pin bucket-wide-effect contract test xanh.
+- [x] Reason xuyên: HttpError mang reason từ các 409/404 mới; HTTP-status classification cũ không đổi.
+- [x] Envelope N2: dispatch() trả payload `{updated, skipped}` cho endpoint mới; endpoint legacy `{id}`-only vẫn parse sạch; bus refetch đúng 1 lần/call; CSRF ordering pin xanh.
 
 ## Risk Assessment
 

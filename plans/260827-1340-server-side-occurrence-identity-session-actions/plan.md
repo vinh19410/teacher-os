@@ -1,7 +1,7 @@
 ---
 title: "Occurrence identity server-side + SessionActionsModal (per-occurrence edit & bulk actions)"
 description: "Kế thừa issue #93 phần DEFERRED: thêm cột lesson.date làm occurrence identity thật ở server (schema + skeleton parity twin + backfill + generator rewrite gộp một đơn vị deploy), endpoint đột biến theo (classId, date), read-path v2 phía web với dual-path fallback, SessionActionsModal hoàn thành/hủy theo buổi + form per-occurrence edit (option 3 của requester), e2e + runbook."
-status: pending
+status: completed
 priority: P1
 effort: "~7.5d"
 issue: 98

@@ -68,8 +68,11 @@ function ClassDetailRoute() {
 		if (result.kind === "committed" || result.kind === "outcome-unknown") {
 			await refresh();
 		}
+		// committed counts as landed for UX truthfulness: the write IS saved;
+		// the toast prefix already carries the refetch caveat.
+		const landed = result.kind === "refreshed" || result.kind === "committed";
 		return {
-			ok: result.kind === "refreshed",
+			ok: landed,
 			updated: "updated" in result ? result.updated : undefined,
 			skipped: "skipped" in result ? result.skipped : undefined,
 			reason:

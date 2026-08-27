@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Skeleton twin + schema + backfill + generator"
-status: pending
+status: completed
 priority: P1
 effort: "2d"
 dependencies: []
@@ -65,12 +65,12 @@ Surplus quirk: per-weekday count `count_d = floor(total/len(days)) + (idx_d < to
 
 ## Success Criteria
 
-- [ ] Parity pin chạy dưới `pnpm test` (workspace server): với MỌI fixture — grouped-by-date output ≡ heuristic legacy cho status/students/attendance; odd-total 25/2-ngày & 26/3-ngày khớp quirk; duplicate-days (đánh dấu defensive-guard); startDate-off-day & startDate-weekday-sau-array-first-day; tie createdAt ≥2 rows cùng ms → deterministic bằng rowid.
-- [ ] `conforms()` bắt được fixture day-within-schedule-shift (count-vector set-equality fail) VÀ fixture time-divergence (slot-guard legacy mirror fail) → cả hai class NULL.
-- [ ] Backfill output: conform-class 100% rows dated, non-conform-class 100% NULL (không mixed), rerun no-op trên output lần trước.
-- [ ] New enrollment post-deploy mang đầy date (app-server test).
-- [ ] Wire response có `date` cho lessons, giá trị null cho divergent, consumers cũ không vỡ.
-- [ ] Gates xanh toàn monorepo.
+- [x] Parity pin chạy dưới `pnpm test` (workspace server): với MỌI fixture — grouped-by-date output ≡ heuristic legacy cho status/students/attendance; odd-total 25/2-ngày & 26/3-ngày khớp quirk; duplicate-days (đánh dấu defensive-guard); startDate-off-day & startDate-weekday-sau-array-first-day; tie createdAt ≥2 rows cùng ms → deterministic bằng rowid.
+- [x] `conforms()` bắt được fixture day-within-schedule-shift (count-vector set-equality fail) VÀ fixture time-divergence (slot-guard legacy mirror fail) → cả hai class NULL.
+- [x] Backfill output: conform-class 100% rows dated, non-conform-class 100% NULL (không mixed), rerun no-op trên output lần trước.
+- [x] New enrollment post-deploy mang đầy date (app-server test).
+- [x] Wire response có `date` cho lessons, giá trị null cho divergent, consumers cũ không vỡ.
+- [x] Gates xanh toàn monorepo.
 
 ## Risk Assessment
 
