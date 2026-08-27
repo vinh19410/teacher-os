@@ -94,6 +94,11 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ## Deployment
 
+### CI pipelines
+
+- Pull requests and pushes to `main`/`develop` run quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml)) and the Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)); their required shape is asserted by `pnpm run test:ci-workflow`.
+- Merging `develop` into `main` ships production automatically: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) re-runs the same quality gates, deploys Alchemy stage `prod` with credentials from the GitHub `production` environment, then polls `/readyz` until the API reports ready.
+
 ### Alchemy
 
 - Target: web on Cloudflare + server on Cloudflare
@@ -129,11 +134,16 @@ Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live i
 teacher-os/
 ├── apps/
 │   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono)
+│   ├── server/      # Backend API (Hono)
+│   └── e2e/         # Playwright end-to-end suite
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── db/          # Database schema & migrations
+│   ├── api/         # Shared Zod request schemas and wire DTOs
+│   ├── infra/       # Alchemy stack that wires Cloudflare Workers + D1
+│   ├── env/         # Server and web environment definitions
+│   └── config/      # Shared configs (TypeScript baseline)
 ```
 
 ## Available Scripts
@@ -145,4 +155,6 @@ teacher-os/
 - `pnpm run check-types`: Check TypeScript types across all apps
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run check`: Run Biome formatting and linting
+- `pnpm run test`: Run unit tests via Turborepo plus the CI-workflow and topology-drift contract tests in `scripts/`
+- `pnpm --filter e2e e2e`: Run the Playwright E2E suite (boots the API on :8000 and web on :8001 against a fresh local D1)
 - `cd apps/web && pnpm run generate-pwa-assets`: Generate PWA assets

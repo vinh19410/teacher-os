@@ -19,9 +19,11 @@ This is the navigation surface for the repository. It points to the owning files
 
 - `apps/web` - route files, UI shell, client state, and kernel-facing repository helpers
 - `apps/server` - Hono app, auth/session handling, snapshot loaders, and org-scoped kernel routes
+- `apps/e2e` - Playwright specs that boot the real server app under Node with a fresh local D1 database
 - `packages/api` - Zod request schemas and wire DTOs
 - `packages/db` - Drizzle schema definitions and migrations
 - `packages/infra` - Alchemy stack definition for local dev and deployment
+- `scripts` - node:test contract tests enforcing CI workflow shape and topology consistency
 - `open-design/v1` - visual handoff input for the UI
 - `plans` - stateful execution records and past implementation plans
 
@@ -31,4 +33,5 @@ This is the navigation surface for the repository. It points to the owning files
 - If you are changing persistence, start in [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) and the individual schema files under `packages/db/src/schema/`.
 - If you are changing request bodies or response shapes, start in [packages/api/src/contracts.ts](../packages/api/src/contracts.ts).
 - If you are changing deployment or local runtime wiring, start in [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts).
+- If you are changing CI gates or workflow triggers, start in `.github/workflows/`; [scripts/ci-workflow.test.mjs](../scripts/ci-workflow.test.mjs) asserts the contract those workflows must keep.
 
