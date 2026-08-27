@@ -11,6 +11,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 5. [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) enforces origin and JSON checks for POSTs, then executes org-scoped reads and writes.
 6. [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) assembles the snapshot from the canonical database tables.
 7. [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) is the persistence owner, and [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) is the wire contract owner.
+8. [packages/api/src/skeleton.ts](../packages/api/src/skeleton.ts) owns occurrence-identity math (schedule skeleton, `conforms()`, offline backfill planning — issue #98); apps/server consumes it for generation, apps/web never re-implements it.
 
 ## Boundary map
 
