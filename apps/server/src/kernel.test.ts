@@ -2280,6 +2280,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: maps schedule rows to upcoming lesson values", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [2, 4], start: "19:00", end: "20:30" }),
+			startDate: "2026-08-25",
 			sessionsTotal: 3,
 			orgId: "org",
 			classId: "cls",
@@ -2306,6 +2307,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: weekday +1 mapping is Monday-first (schedule 0=Monday → lesson 1=Monday)", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [0, 6], start: "09:00", end: "10:30" }),
+			startDate: "2026-08-24",
 			sessionsTotal: 2,
 			orgId: "org",
 			classId: "cls",
@@ -2317,6 +2319,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: overnight schedule wraps midnight into duration", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [2], start: "23:00", end: "00:30" }),
+			startDate: "2026-08-25",
 			sessionsTotal: 1,
 			orgId: "org",
 			classId: "cls",
@@ -2332,6 +2335,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 				start: "19:00",
 				end: "20:30",
 			}),
+			startDate: "2026-08-24",
 			sessionsTotal: 6,
 			orgId: "org",
 			classId: "cls",
@@ -2345,7 +2349,12 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("unit generator: zero and invalid inputs fail closed to []", () => {
-		const base = { orgId: "org", classId: "cls", enrollmentId: "enr" };
+		const base = {
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+			startDate: "2026-08-25",
+		};
 		const valid = JSON.stringify({ days: [1], start: "19:00", end: "20:30" });
 		expect(
 			generateScheduleLessons({ ...base, schedule: valid, sessionsTotal: 0 }),

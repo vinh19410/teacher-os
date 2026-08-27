@@ -337,6 +337,9 @@ export interface KernelAssignmentRow {
  * A delivered/plan session (Wave 4). The student is never on this row —
  * the adapter resolves `sid` via the enrollment (invariant 2). done/remaining
  * derive from completed rows of the enrollment (invariant 6).
+ * `date` (issue #98): occurrence identity yyyy-mm-dd — every row sharing
+ * `(classId, date)` IS one physical session; NULL means the class diverged
+ * from its schedule heuristic and renders through the frozen legacy path.
  */
 export interface KernelLessonRow {
 	id: string;
@@ -345,6 +348,7 @@ export interface KernelLessonRow {
 	day: number;
 	time: string;
 	dur: number;
+	date: string | null;
 	type: string;
 	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
 	topic: string;

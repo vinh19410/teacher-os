@@ -257,6 +257,7 @@ describe("buildClassSessions", () => {
 			day: 2,
 			time: "19:00",
 			dur: 90,
+			date: null,
 			type: "1:1",
 			status: "upcoming",
 			topic: "",

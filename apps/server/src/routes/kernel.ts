@@ -15,8 +15,12 @@ import {
 	reorderModulesSchema,
 	studentCreateSchema,
 	syllabusCreateSchema,
-	TIME_REGEX,
 } from "@teacher-os/api/contracts";
+import {
+	parseStartDateStrict,
+	parseStoredSchedule,
+	skeletonOf,
+} from "@teacher-os/api/skeleton";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -40,34 +44,6 @@ import { loadInvoices, loadSnapshot } from "./snapshot";
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type KernelContext = Context<Env>;
 
-/** Parse the stored class schedule JSON; null for legacy free-text/invalid. */
-function parseStoredSchedule(
-	raw: string,
-): { days: number[]; start: string; end: string } | null {
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		if (typeof parsed !== "object" || parsed === null) return null;
-		const { days, start, end } = parsed as Record<string, unknown>;
-		if (!Array.isArray(days) || days.length === 0) return null;
-		const unique = [...new Set(days)];
-		if (
-			!unique.every((day) => Number.isInteger(day) && day >= 0 && day <= 6) ||
-			typeof start !== "string" ||
-			typeof end !== "string" ||
-			!TIME_REGEX.test(start) ||
-			!TIME_REGEX.test(end) ||
-			// Mirrors classCreateSchema's superRefine — a legacy row that
-			// violates it must not generate zero-duration lessons.
-			start === end
-		) {
-			return null;
-		}
-		return { days: unique.sort((a, b) => a - b), start, end };
-	} catch {
-		return null;
-	}
-}
-
 function toMinutes(hhmm: string): number {
 	// TIME_REGEX guarantees exactly two numeric parts.
 	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
@@ -76,15 +52,20 @@ function toMinutes(hhmm: string): number {
 
 /**
  * Expand a class's structured schedule into `sessionsTotal` upcoming lesson
- * rows for one enrollment (issue #55). Kernel-local parse — the web's
- * format-schedule helpers live in apps/web and are not importable here.
- * Fails closed to [] for legacy/invalid schedules so old classes keep
- * accepting students. Rows carry a weekday only: lesson.day is 1-7 with
- * 1 = Monday, the schedule JSON is 0-6 with 0 = Monday, hence the +1 —
- * never JS getDay() (0 = Sunday). dur wraps midnight (23:00→00:30 = 90).
+ * rows for one enrollment (issue #55). Schedule/date parsing lives in
+ * @teacher-os/api/skeleton — the same helpers the backfill uses, so a
+ * generated row's date always matches what the backfill would have stamped.
+ * Fails closed for legacy/invalid schedules (no rows at all, unchanged from
+ * before #98). Rows carry weekday plus the occurrence identity `date`
+ * (yyyy-mm-dd of the k-th occurrence of that weekday from startDate) so every
+ * row is born dated when the class inputs are truthful; an invalid startDate
+ * yields date:null rows and the class stays on the frozen legacy path. day is
+ * 1-7 with 1 = Monday, the schedule JSON is 0-6 with 0 = Monday, hence the +1
+ * — never JS getDay() (0 = Sunday). dur wraps midnight (23:00→00:30 = 90).
  */
 export function generateScheduleLessons(input: {
 	schedule: string;
+	startDate: string;
 	sessionsTotal: number;
 	orgId: string;
 	classId: string;
@@ -92,20 +73,37 @@ export function generateScheduleLessons(input: {
 }): Array<Omit<typeof lesson.$inferInsert, "id" | "createdAt">> {
 	const parsed = parseStoredSchedule(input.schedule);
 	if (!parsed || input.sessionsTotal <= 0) return [];
+	const startISO = parseStartDateStrict(input.startDate);
+	// Skeleton keys are lesson weekdays 1-7; parsed.days are 0-6 Mon-first.
+	const skeleton =
+		parsed && startISO
+			? skeletonOf(parsed, startISO, input.sessionsTotal)
+			: null;
 	const dur = (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
-	return Array.from({ length: input.sessionsTotal }, (_, i) => ({
-		orgId: input.orgId,
-		classId: input.classId,
-		enrollmentId: input.enrollmentId,
-		// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
-		day: (parsed.days[i % parsed.days.length] ?? 0) + 1,
-		time: parsed.start,
-		dur,
-		type: "1:1",
-		status: "upcoming",
-		topic: "",
-		zoom: "",
-	}));
+	const ordinalByDay = new Map<number, number>();
+	return Array.from({ length: input.sessionsTotal }, (_, i) => {
+		const day = (parsed.days[i % parsed.days.length] ?? 0) + 1;
+		let date: string | null = null;
+		if (skeleton) {
+			const ordinal = ordinalByDay.get(day) ?? 0;
+			date = skeleton.get(day)?.[ordinal] ?? null;
+			ordinalByDay.set(day, ordinal + 1);
+		}
+		return {
+			orgId: input.orgId,
+			classId: input.classId,
+			enrollmentId: input.enrollmentId,
+			// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
+			day,
+			time: parsed.start,
+			dur,
+			type: "1:1",
+			status: "upcoming",
+			topic: "",
+			zoom: "",
+			date,
+		};
+	});
 }
 
 export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
@@ -151,8 +149,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 	}
 	/**
 	 * Class row for write paths: notes only needs existence, while
-	 * student-create also reads schedule + sessionsTotal to generate lessons
-	 * (schedule is raw TEXT) and curriculum writes read the syllabus pointer.
+	 * student-create also reads schedule + sessionsTotal + startDate to
+	 * generate dated lessons (issue #98: the skeleton needs startISO) and
+	 * curriculum writes read the syllabus pointer.
 	 */
 	async function findClass(db: Db, classId: string, orgId: string) {
 		const [row] = await db
@@ -160,6 +159,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				id: classTable.id,
 				schedule: classTable.schedule,
 				sessionsTotal: classTable.sessionsTotal,
+				startDate: classTable.startDate,
 				syllabusId: classTable.syllabusId,
 			})
 			.from(classTable)
@@ -357,7 +357,12 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const db = deps.getDb();
 
 		let cls:
-			| { id: string; schedule: string; sessionsTotal: number }
+			| {
+					id: string;
+					schedule: string;
+					sessionsTotal: number;
+					startDate: string;
+			  }
 			| undefined;
 		if (input.classId) {
 			cls = await findClass(db, input.classId, ctx.orgId);
@@ -403,6 +408,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			);
 			for (const row of generateScheduleLessons({
 				schedule: cls.schedule,
+				startDate: cls.startDate,
 				sessionsTotal: cls.sessionsTotal,
 				orgId: ctx.orgId,
 				classId: cls.id,
