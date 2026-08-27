@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Collapse state + persistence"
-status: in-progress       # pending | in-progress | completed
+status: pending       # pending | in-progress | completed
 priority: P1
 effort: "~1h"
 dependencies: []
