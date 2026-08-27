@@ -6,9 +6,13 @@ import {
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonEditSchema,
+	lessonRemoveSchema,
 	lessonUpsertSchema,
+	moduleRemoveSchema,
 	moduleUpsertSchema,
 	removeCurriculumSchema,
+	reorderLessonsSchema,
+	reorderModulesSchema,
 	studentCreateSchema,
 	syllabusCreateSchema,
 	TIME_REGEX,
@@ -190,6 +194,16 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				),
 			);
 		return row;
+	}
+
+	function hasDuplicateIds(ids: string[]): boolean {
+		return new Set(ids).size !== ids.length;
+	}
+
+	function sameIdSet(payload: string[], dbIds: string[]): boolean {
+		if (payload.length !== dbIds.length) return false;
+		const dbSet = new Set(dbIds);
+		return payload.every((id) => dbSet.has(id));
 	}
 
 	/** Import size guard: modules + lessons above this would brick one D1 batch. */
@@ -835,6 +849,61 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return c.json({ id: moduleId } satisfies CreatedResponse, 201);
 	});
 
+	kernel.post("/syllabi/:id/modules/reorder", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, reorderModulesSchema);
+		if (!body.ok) return body.response;
+		const { moduleIds } = body.data;
+		if (hasDuplicateIds(moduleIds)) {
+			return c.json({ error: "duplicate ids" }, 400);
+		}
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+		const siblings = await db
+			.select({ id: syllabusModule.id })
+			.from(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.syllabusId, id),
+					eq(syllabusModule.orgId, ctx.orgId),
+				),
+			);
+		if (siblings.length > MAX_IMPORT_NODES) {
+			return c.json({ error: "too many modules to reorder" }, 422);
+		}
+		if (
+			!sameIdSet(
+				moduleIds,
+				siblings.map((row) => row.id),
+			)
+		) {
+			return c.json({ error: "set-mismatch" }, 409);
+		}
+		const statements = moduleIds.map((moduleId, position) =>
+			db
+				.update(syllabusModule)
+				.set({ position })
+				.where(
+					and(
+						eq(syllabusModule.id, moduleId),
+						eq(syllabusModule.syllabusId, id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				),
+		);
+		const [first, ...rest] = statements;
+		if (!first) {
+			return c.json({ error: "set-mismatch" }, 409);
+		}
+		await db.batch([first, ...rest]);
+		return c.json({ ok: true });
+	});
+
 	kernel.post("/syllabi/:id/modules/:mid", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -855,6 +924,53 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			.where(
 				and(eq(syllabusModule.id, mid), eq(syllabusModule.orgId, ctx.orgId)),
 			);
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/syllabi/:id/modules/:mid/remove", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, moduleRemoveSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const { id, mid } = c.req.param();
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+		const mod = await findModule(db, mid, id, ctx.orgId);
+		if (!mod) {
+			return c.json({ error: "module not found" }, 404);
+		}
+		await db.batch([
+			db.delete(syllabusLesson).where(
+				and(
+					eq(syllabusLesson.orgId, ctx.orgId),
+					inArray(
+						syllabusLesson.moduleId,
+						db
+							.select({ id: syllabusModule.id })
+							.from(syllabusModule)
+							.where(
+								and(
+									eq(syllabusModule.id, mid),
+									eq(syllabusModule.syllabusId, id),
+									eq(syllabusModule.orgId, ctx.orgId),
+								),
+							),
+					),
+				),
+			),
+			db
+				.delete(syllabusModule)
+				.where(
+					and(
+						eq(syllabusModule.id, mid),
+						eq(syllabusModule.syllabusId, id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				),
+		]);
 		return c.json({ ok: true });
 	});
 
@@ -896,6 +1012,65 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
 	});
 
+	kernel.post("/syllabi/:id/modules/:mid/lessons/reorder", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, reorderLessonsSchema);
+		if (!body.ok) return body.response;
+		const { lessonIds } = body.data;
+		if (hasDuplicateIds(lessonIds)) {
+			return c.json({ error: "duplicate ids" }, 400);
+		}
+		const db = deps.getDb();
+		const { id, mid } = c.req.param();
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+		const mod = await findModule(db, mid, id, ctx.orgId);
+		if (!mod) {
+			return c.json({ error: "module not found" }, 404);
+		}
+		const siblings = await db
+			.select({ id: syllabusLesson.id })
+			.from(syllabusLesson)
+			.where(
+				and(
+					eq(syllabusLesson.moduleId, mid),
+					eq(syllabusLesson.orgId, ctx.orgId),
+				),
+			);
+		if (siblings.length > MAX_IMPORT_NODES) {
+			return c.json({ error: "too many lessons to reorder" }, 422);
+		}
+		if (
+			!sameIdSet(
+				lessonIds,
+				siblings.map((row) => row.id),
+			)
+		) {
+			return c.json({ error: "set-mismatch" }, 409);
+		}
+		const statements = lessonIds.map((lessonId, position) =>
+			db
+				.update(syllabusLesson)
+				.set({ position })
+				.where(
+					and(
+						eq(syllabusLesson.id, lessonId),
+						eq(syllabusLesson.moduleId, mid),
+						eq(syllabusLesson.orgId, ctx.orgId),
+					),
+				),
+		);
+		const [first, ...rest] = statements;
+		if (!first) {
+			return c.json({ error: "set-mismatch" }, 409);
+		}
+		await db.batch([first, ...rest]);
+		return c.json({ ok: true });
+	});
+
 	kernel.post("/syllabi/:id/modules/:mid/lessons/:lid", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -931,6 +1106,46 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			})
 			.where(
 				and(eq(syllabusLesson.id, lid), eq(syllabusLesson.orgId, ctx.orgId)),
+			);
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/syllabi/:id/modules/:mid/lessons/:lid/remove", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, lessonRemoveSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const { id, mid, lid } = c.req.param();
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+		const mod = await findModule(db, mid, id, ctx.orgId);
+		if (!mod) {
+			return c.json({ error: "module not found" }, 404);
+		}
+		const [row] = await db
+			.select({ id: syllabusLesson.id })
+			.from(syllabusLesson)
+			.where(
+				and(
+					eq(syllabusLesson.id, lid),
+					eq(syllabusLesson.moduleId, mid),
+					eq(syllabusLesson.orgId, ctx.orgId),
+				),
+			);
+		if (!row) {
+			return c.json({ error: "lesson not found" }, 404);
+		}
+		await db
+			.delete(syllabusLesson)
+			.where(
+				and(
+					eq(syllabusLesson.id, lid),
+					eq(syllabusLesson.moduleId, mid),
+					eq(syllabusLesson.orgId, ctx.orgId),
+				),
 			);
 		return c.json({ ok: true });
 	});

@@ -9,6 +9,10 @@ import {
 	LessonStatusBadge,
 	lessonDotClassFor,
 } from "@/components/syllabus/lesson-status";
+import {
+	SyllabusMutationButtons,
+	useSyllabusMutations,
+} from "@/components/syllabus/syllabus-mutations";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -19,13 +23,16 @@ import {
 	type ClassGroup,
 	type Syllabus,
 } from "@/lib/mock-data";
-import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface CurriculumManagementSectionProps {
 	cls: ClassGroup;
 	syllabus: Syllabus | null;
 	defaultCollapsed?: boolean;
 	collapsible?: boolean;
+	run: DirectKernelAction["run"];
+	isPending: DirectKernelAction["isPending"];
+	busy: boolean;
 }
 
 export function CurriculumManagementSection({
@@ -33,8 +40,10 @@ export function CurriculumManagementSection({
 	syllabus: sy,
 	defaultCollapsed = false,
 	collapsible = false,
+	run,
+	isPending,
+	busy,
 }: CurriculumManagementSectionProps) {
-	const { run, isPending, busy } = useDirectKernelAction();
 	const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 	const [importOpen, setImportOpen] = useState(false);
 	const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
@@ -47,6 +56,23 @@ export function CurriculumManagementSection({
 		moduleId: string;
 		lessonId: string;
 	} | null>(null);
+	const mutations = useSyllabusMutations({
+		syllabus: sy ?? {
+			id: "",
+			name: "",
+			level: "",
+			type: "ielts",
+			skills: [],
+			description: "",
+			totalLessons: 0,
+			classId: null,
+			sourceTemplateId: null,
+			modules: [],
+		},
+		isClassCopy: true,
+		run,
+		busy,
+	});
 
 	const syLessons = sy?.modules.flatMap((m) => m.lessons) ?? [];
 	const syDone = syLessons.filter((l) => l.status === "done").length;
@@ -136,7 +162,7 @@ export function CurriculumManagementSection({
 									</p>
 								</Card>
 							)}
-							{sy.modules.map((m) => {
+							{sy.modules.map((m, mi) => {
 								const mDone = m.lessons.filter(
 									(l) => l.status === "done",
 								).length;
@@ -147,21 +173,31 @@ export function CurriculumManagementSection({
 									>
 										<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4">
 											<h3 className="font-semibold text-sm">{m.title}</h3>
-											<div className="flex items-center gap-3">
+											<div className="flex flex-wrap items-center gap-3">
 												<button
 													type="button"
 													onClick={() => setEditModuleId(m.id)}
-													className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
+													disabled={busy}
+													className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
 												>
 													Sửa
 												</button>
+												<SyllabusMutationButtons
+													label={m.title}
+													upDisabled={mi === 0}
+													downDisabled={mi === sy.modules.length - 1}
+													busy={busy}
+													onUp={() => mutations.moveModule(mi, -1)}
+													onDown={() => mutations.moveModule(mi, 1)}
+													onDelete={() => mutations.requestDeleteModule(m)}
+												/>
 												<span className="font-mono text-[11px] text-muted-fg">
 													{mDone}/{m.lessons.length} buổi
 												</span>
 											</div>
 										</div>
 										<div>
-											{m.lessons.map((l) => (
+											{m.lessons.map((l, li) => (
 												<div
 													key={l.id}
 													className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
@@ -178,7 +214,7 @@ export function CurriculumManagementSection({
 															Mục tiêu: {l.objectives}
 														</div>
 													</div>
-													<div className="flex items-center gap-2 max-app:col-start-2 max-app:pt-1">
+													<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">
 														<LessonStatusBadge status={l.status} />
 														<button
 															type="button"
@@ -188,10 +224,26 @@ export function CurriculumManagementSection({
 																	lessonId: l.id,
 																})
 															}
-															className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg"
+															disabled={busy}
+															className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
 														>
 															Sửa
 														</button>
+														<SyllabusMutationButtons
+															label={l.title}
+															upDisabled={li === 0}
+															downDisabled={li === m.lessons.length - 1}
+															busy={busy}
+															onUp={() => mutations.moveLesson(m.id, li, -1)}
+															onDown={() => mutations.moveLesson(m.id, li, 1)}
+															onDelete={() =>
+																mutations.requestDeleteLesson(
+																	m.id,
+																	l.id,
+																	l.title,
+																)
+															}
+														/>
 													</div>
 												</div>
 											))}
@@ -309,6 +361,7 @@ export function CurriculumManagementSection({
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 			/>
+			{mutations.confirmModal}
 		</div>
 	);
 }

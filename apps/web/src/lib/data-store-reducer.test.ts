@@ -220,6 +220,43 @@ describe("reducer", () => {
 		expect(next.syllabi.find((s) => s.id === "sy1")?.totalLessons).toBe(total);
 	});
 
+	test("delete-module drops the module and recomputes totalLessons", () => {
+		const before = cloneSeed();
+		const sy1 = before.syllabi.find((s) => s.id === "sy1");
+		const moduleLessons = sy1?.modules.find((m) => m.id === "sy1-m1")?.lessons
+			.length;
+		expect(moduleLessons).toBeGreaterThan(0);
+		const next = reducer(before, {
+			type: "delete-module",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+		});
+		const after = next.syllabi.find((s) => s.id === "sy1");
+		expect(after?.modules.some((m) => m.id === "sy1-m1")).toBe(false);
+		expect(after ? lessonCount(after) : -1).toBe(after?.totalLessons);
+	});
+
+	test("reorder-modules permutes sibling order", () => {
+		const created = reducer(cloneSeed(), {
+			type: "add-module",
+			syllabusId: "sy1",
+			payload: { title: "Extra", description: "x" },
+		});
+		const ids =
+			created.syllabi.find((s) => s.id === "sy1")?.modules.map((m) => m.id) ??
+			[];
+		expect(ids.length).toBeGreaterThan(1);
+		const reversed = [...ids].reverse();
+		const next = reducer(created, {
+			type: "reorder-modules",
+			syllabusId: "sy1",
+			moduleIds: reversed,
+		});
+		expect(
+			next.syllabi.find((s) => s.id === "sy1")?.modules.map((m) => m.id),
+		).toEqual(reversed);
+	});
+
 	test("cancel-lesson does not change package counts", () => {
 		const before = cloneSeed();
 		const next = reducer(before, { type: "cancel-lesson", lessonId: "l3" });

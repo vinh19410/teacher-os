@@ -138,6 +138,26 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					status: action.payload.status,
 				},
 			};
+		case "delete-module":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/remove`,
+				body: {},
+			};
+		case "delete-lesson":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
+				body: {},
+			};
+		case "reorder-modules":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/modules/reorder`,
+				body: { moduleIds: action.moduleIds },
+			};
+		case "reorder-lessons":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/reorder`,
+				body: { lessonIds: action.lessonIds },
+			};
 	}
 }
 

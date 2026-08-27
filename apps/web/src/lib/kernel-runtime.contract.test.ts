@@ -298,6 +298,19 @@ describe("kernel-backed store wiring", () => {
 		expect(attendanceModal).toMatch(
 			/type: "check-in", lessonId: enrollmentLessonId/,
 		);
+
+		const syllabusDetail = readSrc("../routes/_auth/syllabus/$syllabusId.tsx");
+		expect(syllabusDetail).toMatch(/useDirectKernelAction\(\)/);
+		expect(syllabusDetail).toMatch(/disabled=\{busy\}/);
+
+		const curriculum = readSrc(
+			"../components/class-detail/curriculum-management-section.tsx",
+		);
+		expect(curriculum).toMatch(/disabled=\{busy\}/);
+		expect(curriculum).not.toMatch(/useDirectKernelAction/);
+
+		const mutations = readSrc("../components/syllabus/syllabus-mutations.tsx");
+		expect(mutations).not.toMatch(/useDirectKernelAction/);
 	});
 
 	test("outcome toasts distinguish refreshed/committed/definite/unknown and reconcile after unknown", () => {

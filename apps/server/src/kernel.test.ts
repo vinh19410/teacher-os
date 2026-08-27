@@ -1011,12 +1011,295 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 		expect(res.status).toBe(404);
 	});
 
+	test("org B cannot reorder or remove org A's modules/lessons", async () => {
+		const reorderModules = await t.call(
+			`/api/syllabi/${syllabusId}/modules/reorder`,
+			{
+				session: orgB,
+				method: "POST",
+				body: { moduleIds: [moduleId] },
+			},
+		);
+		expect(reorderModules.status).toBe(404);
+		const removeModule = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/remove`,
+			{ session: orgB, method: "POST", body: {} },
+		);
+		expect(removeModule.status).toBe(404);
+		const reorderLessons = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+			{
+				session: orgB,
+				method: "POST",
+				body: { lessonIds: [lessonId] },
+			},
+		);
+		expect(reorderLessons.status).toBe(404);
+		const removeLesson = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
+			{ session: orgB, method: "POST", body: {} },
+		);
+		expect(removeLesson.status).toBe(404);
+	});
+
 	test("org A's tree is unchanged after every cross-org attempt", async () => {
 		const snapshotA = await t.kernel(orgA);
 		const sy = snapshotA.syllabi[0];
 		expect(sy?.modules.map((m) => m.title)).toEqual(["Module A"]);
 		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["Buổi A"]);
 		expect(sy?.modules[0]?.lessons[0]?.status).toBe("upcoming");
+	});
+});
+
+describe("syllabus module/lesson delete and reorder", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Reorder");
+		await t.kernel(session);
+	});
+
+	async function createLesson(
+		syllabusId: string,
+		moduleId: string,
+		title: string,
+	): Promise<string> {
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: {
+					title,
+					objectives: "",
+					materials: "",
+					status: "upcoming",
+				},
+			},
+		);
+		expect(res.status).toBe(201);
+		return ((await res.json()) as { id: string }).id;
+	}
+
+	test("reorder modules then GET snapshot reflects the new order", async () => {
+		const syllabusId = await t.createSyllabus(session, "Reorder modules");
+		const a = await t.createModule(session, syllabusId, "A");
+		const b = await t.createModule(session, syllabusId, "B");
+		const res = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
+			session,
+			method: "POST",
+			body: { moduleIds: [b, a] },
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.modules.map((m) => m.id)).toEqual([b, a]);
+	});
+
+	test("reorder lessons then GET snapshot reflects the new order", async () => {
+		const syllabusId = await t.createSyllabus(session, "Reorder lessons");
+		const moduleId = await t.createModule(session, syllabusId, "M");
+		const l1 = await createLesson(syllabusId, moduleId, "L1");
+		const l2 = await createLesson(syllabusId, moduleId, "L2");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+			{ session, method: "POST", body: { lessonIds: [l2, l1] } },
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const mod = snapshot.syllabi
+			.find((row) => row.id === syllabusId)
+			?.modules.find((m) => m.id === moduleId);
+		expect(mod?.lessons.map((l) => l.id)).toEqual([l2, l1]);
+	});
+
+	test("delete module removes its lessons from the snapshot", async () => {
+		const syllabusId = await t.createSyllabus(session, "Delete module");
+		const keep = await t.createModule(session, syllabusId, "Keep");
+		const gone = await t.createModule(session, syllabusId, "Gone");
+		await createLesson(syllabusId, gone, "Child 1");
+		await createLesson(syllabusId, gone, "Child 2");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${gone}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.modules.map((m) => m.id)).toEqual([keep]);
+		expect(sy?.modules.flatMap((m) => m.lessons)).toEqual([]);
+	});
+
+	test("delete lesson leaves siblings", async () => {
+		const syllabusId = await t.createSyllabus(session, "Delete lesson");
+		const moduleId = await t.createModule(session, syllabusId, "M");
+		const keep = await createLesson(syllabusId, moduleId, "Keep");
+		const gone = await createLesson(syllabusId, moduleId, "Gone");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${gone}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const mod = snapshot.syllabi
+			.find((row) => row.id === syllabusId)
+			?.modules.find((m) => m.id === moduleId);
+		expect(mod?.lessons.map((l) => l.id)).toEqual([keep]);
+	});
+
+	test("duplicate reorder ids are 400; set-mismatch is 409; extra key is 400", async () => {
+		const syllabusId = await t.createSyllabus(session, "Reorder errors");
+		const a = await t.createModule(session, syllabusId, "A");
+		const b = await t.createModule(session, syllabusId, "B");
+		const dup = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
+			session,
+			method: "POST",
+			body: { moduleIds: [a, a] },
+		});
+		expect(dup.status).toBe(400);
+		const extra = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
+			session,
+			method: "POST",
+			body: { moduleIds: [a, b], extra: true },
+		});
+		expect(extra.status).toBe(400);
+		const mismatch = await t.call(
+			`/api/syllabi/${syllabusId}/modules/reorder`,
+			{
+				session,
+				method: "POST",
+				body: { moduleIds: [a] },
+			},
+		);
+		expect(mismatch.status).toBe(409);
+		expect(await mismatch.json()).toEqual({ error: "set-mismatch" });
+	});
+
+	test("same-cardinality foreign parent ids are 409 and victim order is unchanged", async () => {
+		const syA = await t.createSyllabus(session, "Parent A");
+		const syB = await t.createSyllabus(session, "Parent B");
+		const a1 = await t.createModule(session, syA, "A1");
+		const a2 = await t.createModule(session, syA, "A2");
+		const b1 = await t.createModule(session, syB, "B1");
+		const b2 = await t.createModule(session, syB, "B2");
+		const res = await t.call(`/api/syllabi/${syA}/modules/reorder`, {
+			session,
+			method: "POST",
+			body: { moduleIds: [b1, b2] },
+		});
+		expect(res.status).toBe(409);
+		const snapshot = await t.kernel(session);
+		expect(
+			snapshot.syllabi.find((row) => row.id === syA)?.modules.map((m) => m.id),
+		).toEqual([a1, a2]);
+		expect(
+			snapshot.syllabi.find((row) => row.id === syB)?.modules.map((m) => m.id),
+		).toEqual([b1, b2]);
+	});
+
+	test("same-cardinality foreign lesson ids are 409 and victim order is unchanged", async () => {
+		const sy = await t.createSyllabus(session, "Lesson parents");
+		const m1 = await t.createModule(session, sy, "M1");
+		const m2 = await t.createModule(session, sy, "M2");
+		const a1 = await createLesson(sy, m1, "A1");
+		const a2 = await createLesson(sy, m1, "A2");
+		const b1 = await createLesson(sy, m2, "B1");
+		const b2 = await createLesson(sy, m2, "B2");
+		const res = await t.call(
+			`/api/syllabi/${sy}/modules/${m1}/lessons/reorder`,
+			{ session, method: "POST", body: { lessonIds: [b1, b2] } },
+		);
+		expect(res.status).toBe(409);
+		const snapshot = await t.kernel(session);
+		const parent = snapshot.syllabi.find((row) => row.id === sy);
+		expect(
+			parent?.modules.find((m) => m.id === m1)?.lessons.map((l) => l.id),
+		).toEqual([a1, a2]);
+		expect(
+			parent?.modules.find((m) => m.id === m2)?.lessons.map((l) => l.id),
+		).toEqual([b1, b2]);
+	});
+
+	test("unauthenticated delete/reorder is 401; Origin and form content-type fail closed", async () => {
+		const syllabusId = await t.createSyllabus(session, "Authz");
+		const moduleId = await t.createModule(session, syllabusId, "M");
+		const lessonId = await createLesson(syllabusId, moduleId, "L");
+		const paths: Array<{ path: string; body: unknown }> = [
+			{
+				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/remove`,
+				body: {},
+			},
+			{
+				path: `/api/syllabi/${syllabusId}/modules/reorder`,
+				body: { moduleIds: [moduleId] },
+			},
+			{
+				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
+				body: {},
+			},
+			{
+				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+				body: { lessonIds: [lessonId] },
+			},
+		];
+		for (const { path, body } of paths) {
+			const unauth = await t.call(path, { method: "POST", body });
+			expect(unauth.status).toBe(401);
+			const noOrigin = await t.call(path, {
+				session,
+				method: "POST",
+				origin: null,
+				body,
+			});
+			expect(noOrigin.status).toBe(403);
+			const evil = await t.call(path, {
+				session,
+				method: "POST",
+				origin: "https://evil.example",
+				body,
+			});
+			expect(evil.status).toBe(403);
+			const form = await t.app.request(path, {
+				method: "POST",
+				headers: {
+					cookie: `better-auth.session_token=${session.token}`,
+					origin: CORS_ORIGIN,
+					"content-type": "application/x-www-form-urlencoded",
+				},
+				body: "x=1",
+			});
+			expect(form.status).toBe(415);
+		}
+	});
+
+	test("delete module on a template does not touch a class-copy tree", async () => {
+		const templateId = await t.createSyllabus(session, "Template shared");
+		const templateModule = await t.createModule(session, templateId, "T1");
+		await createLesson(templateId, templateModule, "TL");
+		const classId = await t.createClass(session, "Lớp copy");
+		const imported = await t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+		expect(imported.status).toBe(201);
+		const before = await t.kernel(session);
+		const copy = before.syllabi.find((row) => row.classId === classId);
+		expect(copy?.modules).toHaveLength(1);
+		const res = await t.call(
+			`/api/syllabi/${templateId}/modules/${templateModule}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(res.status).toBe(200);
+		const after = await t.kernel(session);
+		const template = after.syllabi.find((row) => row.id === templateId);
+		expect(template?.modules).toEqual([]);
+		const copyAfter = after.syllabi.find((row) => row.classId === classId);
+		expect(copyAfter?.modules).toHaveLength(1);
+		expect(copyAfter?.modules[0]?.lessons).toHaveLength(1);
 	});
 });
 

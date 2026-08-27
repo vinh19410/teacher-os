@@ -51,6 +51,21 @@ describe("planDirectOutcome", () => {
 		expect(plan.reconcile).toBe("heal-409");
 	});
 
+	test("409 on reorder/delete uses set-mismatch copy, not duplicate-guard", () => {
+		const plan = planDirectOutcome(
+			{
+				kind: "definite-failure",
+				status: 409,
+				error: new HttpError(409, "POST reorder failed: 409"),
+			},
+			"Đã đổi thứ tự module.",
+			"reorder-modules",
+		);
+		expect(plan.message).toMatch(/Thứ tự đã đổi/);
+		expect(plan.message).not.toMatch(/được cập nhật trước đó/);
+		expect(plan.reconcile).toBe("heal-409");
+	});
+
 	test("outcome-unknown warns and reconciles — never claims unsaved", () => {
 		const plan = planDirectOutcome(
 			{ kind: "outcome-unknown", error: new TypeError("fetch failed") },

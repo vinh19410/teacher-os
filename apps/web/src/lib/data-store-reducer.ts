@@ -257,6 +257,73 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				),
 			};
 		}
+		case "delete-module": {
+			return {
+				...state,
+				syllabi: state.syllabi.map((s) =>
+					mapSyllabus(s, action.syllabusId, (sy) => {
+						sy.modules = sy.modules.filter((m) => m.id !== action.moduleId);
+						recomputeTotalLessons(sy);
+						return sy;
+					}),
+				),
+			};
+		}
+		case "delete-lesson": {
+			return {
+				...state,
+				syllabi: state.syllabi.map((s) =>
+					mapSyllabus(s, action.syllabusId, (sy) => {
+						sy.modules = sy.modules.map((m) =>
+							mapModule(m, action.moduleId, (mod) => {
+								mod.lessons = mod.lessons.filter(
+									(l) => l.id !== action.lessonId,
+								);
+								return mod;
+							}),
+						);
+						recomputeTotalLessons(sy);
+						return sy;
+					}),
+				),
+			};
+		}
+		case "reorder-modules": {
+			return {
+				...state,
+				syllabi: state.syllabi.map((s) =>
+					mapSyllabus(s, action.syllabusId, (sy) => {
+						const byId = new Map(sy.modules.map((m) => [m.id, m]));
+						sy.modules = action.moduleIds.flatMap((id) => {
+							const mod = byId.get(id);
+							return mod ? [mod] : [];
+						});
+						return sy;
+					}),
+				),
+			};
+		}
+		case "reorder-lessons": {
+			return {
+				...state,
+				syllabi: state.syllabi.map((s) =>
+					mapSyllabus(s, action.syllabusId, (sy) => {
+						sy.modules = sy.modules.map((m) =>
+							mapModule(m, action.moduleId, (mod) => {
+								const byId = new Map(mod.lessons.map((l) => [l.id, l]));
+								mod.lessons = action.lessonIds.flatMap((id) => {
+									const lesson = byId.get(id);
+									return lesson ? [lesson] : [];
+								});
+								return mod;
+							}),
+						);
+						return sy;
+					}),
+				),
+			};
+		}
+
 		case "update-class-notes": {
 			return {
 				...state,

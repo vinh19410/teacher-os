@@ -163,6 +163,9 @@ function ClassDetailRoute() {
 						syllabus={sy}
 						collapsible
 						defaultCollapsed={Boolean(sy && sy.modules.length > 0)}
+						run={run}
+						isPending={isPending}
+						busy={busy}
 					/>
 					<div>
 						<div className="mb-3 flex items-center justify-between">
