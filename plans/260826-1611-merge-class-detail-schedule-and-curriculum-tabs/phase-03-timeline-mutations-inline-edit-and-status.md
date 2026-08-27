@@ -8,6 +8,9 @@ dependencies: [2]
 
 # Phase 3: Timeline mutations inline edit and status
 
+> **⚠️ SUPERSEDED (một phần) — 2026-08-27** bởi [`plans/260827-0941-session-actions-bo-cot-hoc-vien-tab-buoi-hoc`](../260827-0941-session-actions-bo-cot-hoc-vien-tab-buoi-hoc/plan.md):
+> Phần **inline topic edit** bị hủy — thiết kế `handleEditTopic` fan-out cùng topic cho toàn bộ `session.rows` ghi **nhầm occurrence** (`sessionTopic()` phân phối edited topics theo first-appearance trên cả slot-bag, class-sessions.ts:256–269; edit buổi k hiện lên buổi 1). Phần **status mutations** được thay bằng **SessionActionsModal** (bulk hoàn thành/hủy với sequential-head gate per sid + confirm liệt kê ngày đích) trong plan mới. Red-team 3 reviewer + kongming advisory xác nhận (session 2026-08-27).
+
 # ⚠️ HIGH-RISK PHASE — semantics phải pin trước khi code
 
 Đây là phase rủi ro nhất trong plan (theo kongming advisory). Có 2 semantic ambiguity phải pin trước khi bắt đầu:

@@ -54,7 +54,7 @@ Kế hoạch: gộp thành **1 tab "Buổi học"** với 2 khu chồng dọc �
 |---|-------|--------|
 | 1 | [Phase 1: Prep refactor — extract + extend helper](./phase-01-start.md) | Pending |
 | 2 | [Phase 2: Timeline read-only enhancements](./phase-02-timeline-read-only-enhancements.md) | Pending |
-| 3 | [Phase 3: Timeline mutations inline edit and status](./phase-03-timeline-mutations-inline-edit-and-status.md) | Pending |
+| 3 | [Phase 3: Timeline mutations inline edit and status](./phase-03-timeline-mutations-inline-edit-and-status.md) — **SUPERSEDED một phần** bởi [260827-0941](../260827-0941-session-actions-bo-cot-hoc-vien-tab-buoi-hoc/plan.md) | Pending |
 | 4 | [Phase 4: Merge tabs cleanup and QA](./phase-04-merge-tabs-cleanup-and-qa.md) | Pending |
 
 ## Dependencies
