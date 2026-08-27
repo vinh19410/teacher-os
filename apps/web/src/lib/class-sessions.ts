@@ -24,6 +24,14 @@
  * - topic: edited topics distribute in order across the slot's occurrences;
  *   otherwise syllabus lesson `index` (chronological) fills, then "—".
  *
+ * DUAL-MODE (#98): when EVERY lesson row carries a non-null `date`, the
+ * list is the plain date-grouped chronology — the bucket of `(classId, date)`
+ * IS the physical occurrence, and the helpers below read bucket rows directly
+ * instead of running prefix heuristics. Any NULL date in a class ⇒ whole
+ * class falls back to the legacy walk below (frozen, fallback-only). There
+ * is deliberately NO client-side count-vector gate: one moveDate permanently
+ * breaks the generator formula, and identity needs no re-derivation.
+ *
  * All date math runs on `yyyy-mm-dd` strings anchored at UTC midnight
  * (week-grid.ts convention) so results are deterministic on any machine.
  */
@@ -39,22 +47,29 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type ClassSessionLesson = Pick<
 	Lesson,
-	"id" | "sid" | "day" | "time" | "dur" | "topic" | "status"
+	"id" | "sid" | "day" | "time" | "dur" | "topic" | "status" | "date"
 >;
 
 export interface ClassSession {
 	/** 1-based chronological position across the whole class. */
 	index: number;
-	/** 1-based position among the occurrences of this slot (weekday+time). */
+	/**
+	 * Display ordinal only. Legacy: 1-based position among the occurrences
+	 * of this slot (weekday+time) driving the prefix heuristics. V2 (#98):
+	 * 1-based ordinal among the same-weekday dated occurrences — helpers
+	 * MUST NOT run prefix math on it.
+	 */
 	slotIndex: number;
 	dateISO: string;
 	/** Lesson-day convention: 1-7, Monday = 1. */
 	day: number;
 	time: string;
-	/** Schedule-derived duration (generator formula), not any row's `dur`. */
+	/** Legacy: generator-formula duration. V2: the bucket's own dur. */
 	dur: number;
-	/** All lesson rows of this slot, every enrollment. */
+	/** All lesson rows of this occurrence's bucket/slot, every enrollment. */
 	rows: ClassSessionLesson[];
+	/** Absent on legacy construction — set to "v2" by the dated read path. */
+	mode?: "v2";
 }
 
 export type SessionStatus = "completed" | "cancelled" | "upcoming";
@@ -100,6 +115,19 @@ export function buildClassSessions(input: {
 	const parsed = parseSchedule(input.schedule);
 	const startISO = parseStartDate(input.startDate);
 	if (!parsed || !startISO || input.lessons.length === 0) return null;
+
+	// V2 gate (#98, red-team round-2 N1): ANY fully-dated class goes v2 and
+	// the ONLY client-side divergence signal remains a NULL date. No
+	// count-vector/conforms mirror here — a single moveDate permanently
+	// breaks the skeleton formula, so mirroring it would silently drop a
+	// live class back onto the frozen table forever. Conforms() lives only
+	// at backfill-time (server).
+	if (
+		input.lessons.length > 0 &&
+		input.lessons.every((r) => typeof r.date === "string" && r.date !== "")
+	) {
+		return buildClassSessionsV2(input.lessons);
+	}
 
 	// Divergence guard: every row must live on a schedule slot. A row moved
 	// by lesson-edit (day or time) means data no longer matches the schedule
@@ -170,6 +198,48 @@ export function buildClassSessions(input: {
 	return sessions.length === total ? sessions : null;
 }
 
+function lessonWeekdayFromISO(dateISO: string): number {
+	const weekday = new Date(`${dateISO}T00:00:00Z`).getUTCDay();
+	return weekday === 0 ? 7 : weekday;
+}
+
+/**
+ * Occurrence-identity grouping (#98): rows sharing `(classId, date)` ARE one
+ * physical session. Chronology is the plain sort of distinct dates; the
+ * bucket supplies its own time/dur (generator + bucket-LWW writes keep them
+ * uniform, and a divergent bucket can never reach here — it carries NULLs).
+ */
+function buildClassSessionsV2(lessons: ClassSessionLesson[]): ClassSession[] {
+	const byDate = new Map<string, ClassSessionLesson[]>();
+	for (const row of lessons) {
+		const dateISO = row.date;
+		const bucket = byDate.get(dateISO ?? "") ?? [];
+		bucket.push(row);
+		if (dateISO) byDate.set(dateISO, bucket);
+	}
+	const dates = [...byDate.keys()].sort();
+	const weekdayOrdinal = new Map<number, number>();
+	return dates.map((dateISO, i) => {
+		const bucket = [...(byDate.get(dateISO) ?? [])].sort((a, b) =>
+			a.id.localeCompare(b.id),
+		);
+		const day = lessonWeekdayFromISO(dateISO);
+		const slotIndex = (weekdayOrdinal.get(day) ?? 0) + 1;
+		weekdayOrdinal.set(day, slotIndex);
+		const head = bucket[0];
+		return {
+			index: i + 1,
+			slotIndex,
+			dateISO,
+			day,
+			time: head?.time ?? "",
+			dur: head?.dur ?? 0,
+			rows: bucket,
+			mode: "v2" as const,
+		};
+	});
+}
+
 /** "19:00–20:30" style range; wraps midnight (23:00 + 90 → 00:30). */
 export function sessionTimeRange(session: ClassSession): string {
 	return `${session.time}–${addMinutes(session.time, session.dur)}`;
@@ -219,6 +289,18 @@ function sidStateAt(stats: SlotSidStats, slotIndex: number): SessionStatus {
  * legacy table's rendering).
  */
 export function sessionStatus(session: ClassSession): SessionStatus {
+	if (session.mode === "v2") {
+		// Bucket-read semantics (#98): no prefix math — the rows ARE the truth.
+		let allCompleted = true;
+		let allCancelled = true;
+		for (const row of session.rows) {
+			if (row.status !== "completed") allCompleted = false;
+			if (row.status !== "cancelled") allCancelled = false;
+		}
+		if (session.rows.length > 0 && allCompleted) return "completed";
+		if (session.rows.length > 0 && allCancelled) return "cancelled";
+		return "upcoming";
+	}
 	const stats = slotStatsBySid(session.rows);
 	let allCompleted = true;
 	let allCancelled = true;
@@ -238,6 +320,10 @@ export function sessionStatus(session: ClassSession): SessionStatus {
  * prefix). Unique, in first-appearance order.
  */
 export function sessionStudents(session: ClassSession): string[] {
+	if (session.mode === "v2") {
+		// One row per sid in a conforming bucket — appearance order it is.
+		return [...new Set(session.rows.map((r) => r.sid))];
+	}
 	const counts = new Map<string, number>();
 	const order: string[] = [];
 	for (const row of session.rows) {
@@ -257,6 +343,17 @@ export function sessionTopic(
 	session: ClassSession,
 	syLessons: ReadonlyArray<{ title: string }>,
 ): string | null {
+	if (session.mode === "v2") {
+		// Identity read (fixes the mis-fan that option 3 targets): the topic
+		// authored on THIS occurrence wins. Multi-authored buckets collapse
+		// to the id-min non-empty winner — a declared lossy pick (plan #98
+		// Behavior Changes 7), deterministic across tabs.
+		const winner = [...session.rows]
+			.filter((r) => r.topic !== "")
+			.sort((a, b) => a.id.localeCompare(b.id))[0]?.topic;
+		if (winner !== undefined) return winner;
+		return syLessons[session.index - 1]?.title ?? null;
+	}
 	const editedTopics: string[] = [];
 	for (const row of session.rows) {
 		if (row.topic !== "" && !editedTopics.includes(row.topic)) {
@@ -321,6 +418,12 @@ export function sessionLessonInfo(
  * use `sessionLessonInfo().lessonId` (syllabus id) for check-in.
  */
 
+/**
+ * In-place attendance support — LEGACY notes (#98). On dated (v2) classes
+ * each row is the single row of its sid inside a one-date bucket, so the
+ * old bag-dangers below do not apply there; on legacy classes they still do.
+ */
+
 /** Date gate for the CTA: occurrence already started (or today) in VN time. */
 export function sessionIsEligibleDate(
 	session: ClassSession,
@@ -329,7 +432,11 @@ export function sessionIsEligibleDate(
 	return session.dateISO <= todayISO;
 }
 
-/** One upcoming enrollment lesson id of `sid` from the slot bag (stable: id sort). */
+/**
+ * One upcoming enrollment lesson id of `sid` from the slot bag (id-sort).
+ * LEGACY-ONLY targeting — on dated classes the v2 branches post the bucket's
+ * own row id instead (R6: min-UUID guesses never touch v2).
+ */
 export function firstUpcomingLessonId(
 	session: ClassSession,
 	sid: string,
@@ -341,8 +448,21 @@ export function firstUpcomingLessonId(
 	return row?.id ?? null;
 }
 
+/**
+ * V2 action targets (#98 Phase 4 entry gate): the upcoming rows OF THIS
+ * OCCURRENCE, deterministic id-asc, one per sid when backfill conformed.
+ * Legacy classes have no targets — the modal never mounts on them.
+ * Replaces every min-UUID/sequential-head guess for dated classes (R6).
+ */
+export function sessionRowTargets(session: ClassSession): ClassSessionLesson[] {
+	if (session.mode !== "v2") return [];
+	return session.rows.filter((r) => r.status === "upcoming");
+}
+
 /** Sequential head: `sid`'s earliest unmarked occurrence within its slot. */
 function isSequentialHead(session: ClassSession, sid: string): boolean {
+	// Prefix math is meaningless on dated buckets — v2 never reaches here.
+	if (session.mode === "v2") return false;
 	const stats = slotStatsBySid(session.rows).get(sid);
 	if (!stats) return false;
 	return (
@@ -392,10 +512,32 @@ export function sessionAttendanceState(
 		return { kind: "future", sids: [] };
 	}
 	const sids: SessionAttendanceSid[] = sessionStudents(session).map((sid) => {
+		let enrollmentLessonId: string | null = null;
+		let state: SessionStatus = "upcoming";
+		if (session.mode === "v2") {
+			// The dated row itself is authoritative — no head-of-prefix guess.
+			const row = [...session.rows]
+				.filter((r) => r.sid === sid)
+				.sort((a, b) => a.id.localeCompare(b.id))[0];
+			state =
+				row?.status === "completed" || row?.status === "cancelled"
+					? row.status
+					: "upcoming"; // absent counts as not-completed, legacy parity
+			enrollmentLessonId = state === "upcoming" ? (row?.id ?? null) : null;
+			if (state === "completed") {
+				return { sid, enrollmentLessonId: null, display: "completed" };
+			}
+			if (state === "cancelled") {
+				return { sid, enrollmentLessonId: null, display: "cancelled" };
+			}
+			return {
+				sid,
+				enrollmentLessonId,
+				display: enrollmentLessonId ? "check-in" : "upcoming",
+			};
+		}
 		const stats = slotStatsBySid(session.rows).get(sid);
-		const state: SessionStatus = stats
-			? sidStateAt(stats, session.slotIndex)
-			: "upcoming";
+		state = stats ? sidStateAt(stats, session.slotIndex) : "upcoming";
 		if (state === "completed") {
 			return { sid, enrollmentLessonId: null, display: "completed" };
 		}
