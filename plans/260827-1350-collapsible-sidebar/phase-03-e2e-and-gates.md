@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "E2E coverage + gates"
-status: pending       # pending | in-progress | completed
+status: completed       # pending | in-progress | completed
 priority: P1
 effort: "~1-2h"
 dependencies: [2]
@@ -45,9 +45,9 @@ Spec mới `apps/e2e/specs/sidebar-collapse.spec.ts`, đặt theo pattern specs 
 
 ## Success Criteria
 
-- [ ] `sidebar-collapse.spec.ts` pass đủ 4 kịch bản (i–iv)
-- [ ] Specs cũ pass không sửa logic nào
-- [ ] Toàn bộ gates xanh tương đương CI: `biome check .` + `pnpm check-types` + build + vitest + playwright
+- [x] `sidebar-collapse.spec.ts` pass đủ 4 kịch bản (i–iv)
+- [x] Specs cũ pass không sửa logic nào
+- [x] Toàn bộ gates xanh tương đương CI: `biome check .` + `pnpm check-types` + build + vitest + playwright
 
 ## Risk Assessment
 

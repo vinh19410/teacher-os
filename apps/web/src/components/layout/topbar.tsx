@@ -6,9 +6,13 @@ import { NotifPanel } from "./notif-panel";
 export function Topbar({
 	title,
 	onMenuClick,
+	collapsed,
+	onToggleCollapse,
 }: {
 	title: string;
 	onMenuClick: () => void;
+	collapsed: boolean;
+	onToggleCollapse: () => void;
 }) {
 	const navigate = useNavigate();
 	const { data } = useData();
@@ -55,6 +59,28 @@ export function Topbar({
 					className="h-[17px] w-[17px]"
 				>
 					<path d="M4 7h16M4 12h16M4 17h16" />
+				</svg>
+			</button>
+			<button
+				type="button"
+				onClick={onToggleCollapse}
+				aria-label={
+					collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"
+				}
+				title="Thu gọn/mở rộng thanh điều hướng"
+				data-testid="sidebar-toggle"
+				className="grid h-9 w-9 place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none max-app:hidden"
+			>
+				<svg
+					aria-hidden="true"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.6"
+					className="h-[17px] w-[17px]"
+				>
+					<rect x="3" y="4" width="18" height="16" rx="2" />
+					<path d="M9 4v16" />
 				</svg>
 			</button>
 			<div className="font-display font-semibold text-lg tracking-[-0.01em]">

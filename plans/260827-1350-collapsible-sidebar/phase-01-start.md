@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Collapse state + persistence"
-status: pending       # pending | in-progress | completed
+status: completed       # pending | in-progress | completed
 priority: P1
 effort: "~1h"
 dependencies: []
@@ -69,9 +69,9 @@ Lưu ý: effect persist chạy cả lúc mount lần đầu — ghi lại đúng
 
 ## Success Criteria
 
-- [ ] `readCollapsedPref`/`writeCollapsedPref` có unit test pass (4 case trên)
-- [ ] AppShell giữ state `collapsed`, chưa đổi gì UI/hành vi hiển thị (regression-neutral)
-- [ ] Gates xanh: `biome check .` (read-only — root `pnpm check` là auto-fix `--write`, không dùng làm gate), `pnpm check-types`, build; không có dependency mới trong `apps/web/package.json`
+- [x] `readCollapsedPref`/`writeCollapsedPref` có unit test pass (4 case trên)
+- [x] AppShell giữ state `collapsed`, chưa đổi gì UI/hành vi hiển thị (regression-neutral)
+- [x] Gates xanh: `biome check .` (read-only — root `pnpm check` là auto-fix `--write`, không dùng làm gate), `pnpm check-types`, build; không có dependency mới trong `apps/web/package.json`
 
 ## Risk Assessment
 
