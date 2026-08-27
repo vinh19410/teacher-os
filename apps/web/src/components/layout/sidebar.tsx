@@ -216,14 +216,20 @@ export function Sidebar({
 					: "fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]")
 			}
 		>
-			<div className="flex items-center gap-2 px-2 pb-5">
+			{/* -mt-2 offsets p-2 so the logo row still sits at the pt-8 baseline; keep them in sync. */}
+			<Link
+				to="/"
+				onClick={onNavigate}
+				title="Về trang chủ"
+				className="-mt-2 mb-3 flex items-center gap-2 self-start rounded-sm p-2 transition-colors duration-[150ms] hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+			>
 				<div className="grid h-8 w-8 place-items-center rounded-sm bg-fg font-display font-semibold text-[15px] text-bg tracking-[-0.02em]">
 					T
 				</div>
 				<div className="font-display font-semibold text-base tracking-[-0.01em]">
 					Teacher OS
 				</div>
-			</div>
+			</Link>
 			<nav className="flex flex-1 flex-col gap-0.5">
 				{navSections.map((section) => (
 					<div key={section.label ?? "main"}>
