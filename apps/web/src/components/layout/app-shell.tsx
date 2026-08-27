@@ -1,5 +1,6 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 import { DataProvider } from "@/lib/data-store";
 import { readCollapsedPref, writeCollapsedPref } from "@/lib/sidebar-prefs";
 import { Sidebar } from "./sidebar";
@@ -85,10 +86,10 @@ export function AppShell() {
 	return (
 		<DataProvider>
 			<div
-				className={
-					"app grid min-h-svh grid-cols-1 transition-[grid-template-columns] duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:transition-none " +
-					(collapsed ? "app:grid-cols-[64px_1fr]" : "app:grid-cols-[248px_1fr]")
-				}
+				className={cn(
+					"app grid min-h-svh grid-cols-1 transition-[grid-template-columns] duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:transition-none",
+					collapsed ? "app:grid-cols-[64px_1fr]" : "app:grid-cols-[248px_1fr]",
+				)}
 			>
 				<Sidebar
 					open={sidebarOpen}

@@ -20,8 +20,10 @@ async function sidebarWidth(page: Page): Promise<number> {
 /** Width assertion with ±2px tolerance, polling past the 220ms transition. */
 async function expectSidebarWidth(page: Page, px: number) {
 	await expect
-		.poll(() => sidebarWidth(page), { timeout: 5_000 })
-		.toBeCloseTo(px, 1);
+		.poll(async () => Math.abs((await sidebarWidth(page)) - px), {
+			timeout: 5_000,
+		})
+		.toBeLessThanOrEqual(2);
 }
 
 test("desktop: toggle co rail còn 64px và mở lại đúng 248px", async ({
@@ -92,10 +94,12 @@ test("mobile <921px với collapsed=true: drawer vẫn full-label 280px", async 
 	await expect(drawer).toBeVisible();
 
 	// Full-width drawer keeps visible labels: neither nav text nor section
-	// headers may be hidden or sr-only when collapsed leaks through CSS.
+	// headers may be hidden or sr-only when collapsed leaks through CSS, and
+	// the collapsed divider (<hr>) must stay hidden below 921px (D10/D11).
 	await expect(drawer.getByText("Tổng quan", { exact: true })).toBeVisible();
 	await expect(drawer.getByText("Giảng dạy")).toBeVisible();
 	await expect(drawer.getByTestId("sidebar-user-email")).toBeAttached();
+	await expect(drawer.locator("hr").first()).toBeHidden();
 
 	const box = await drawer.boundingBox();
 	expect(Math.round(box?.width ?? 0)).toBe(280);
@@ -109,8 +113,36 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	await page.getByTestId("sidebar-toggle").click();
 	await expectSidebarWidth(page, 64);
 
-	// Icon-only item still navigates; accessible name survives via sr-only label.
-	await page.locator("aside.sidebar").getByText("Học viên").click();
+	// Icon-only item still navigates; the accessible name (sr-only label)
+	// is what makes this role-based locator resolvable at all.
+	await page
+		.locator("aside.sidebar")
+		.getByRole("link", { name: "Học viên" })
+		.click();
 	await expect(page).toHaveURL(/\/students$/);
 	await expect(page.getByTestId("sidebar-user-email")).toBeAttached();
+
+	// Rail footer geometry (D7/D2): avatar and logout must stack vertically
+	// and stay inside the 64px track, not overflow horizontally.
+	const railFooter = await page.evaluate(() => {
+		const aside = document.querySelector("aside.sidebar");
+		const avatarLink =
+			aside?.querySelector<HTMLAnchorElement>('a[href="/profile"]');
+		const btns = aside?.querySelectorAll("button");
+		const logout = btns?.[btns.length - 1];
+		if (!aside || !avatarLink || !logout) return null;
+		const a = aside.getBoundingClientRect();
+		const av = avatarLink.getBoundingClientRect();
+		const l = logout.getBoundingClientRect();
+		return {
+			asideRight: a.right,
+			logoutRight: l.right,
+			stacked: l.top > av.top,
+		};
+	});
+	expect(railFooter).not.toBeNull();
+	expect(railFooter?.logoutRight).toBeLessThanOrEqual(
+		(railFooter?.asideRight ?? 0) + 1,
+	);
+	expect(railFooter?.stacked).toBe(true);
 });
