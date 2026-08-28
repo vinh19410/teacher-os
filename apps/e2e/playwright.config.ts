@@ -19,8 +19,9 @@ export default defineConfig({
 		timezoneId: "Asia/Ho_Chi_Minh",
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
-		// VitePWA runs its service worker in dev (vite.config.ts devOptions);
-		// a SW would break reload-based persistence assertions.
+		// Guards against any future service worker (including the public/sw.js
+		// self-unregister stub from issue #125) breaking reload-based
+		// persistence assertions. The SW-specific spec opts into "allow".
 		serviceWorkers: "block",
 	},
 	projects: [{ name: "chromium", use: { browserName: "chromium" } }],
