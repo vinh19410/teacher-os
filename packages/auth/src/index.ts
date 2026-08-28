@@ -6,7 +6,11 @@ import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
-import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
+import {
+	authBaseURL,
+	authCookiePrefix,
+	crossSubDomainCookieDomain,
+} from "./topology";
 
 /**
  * Drizzle sqlite instance handed to better-auth's adapter — the production
@@ -25,12 +29,20 @@ export interface CreateAuthInput {
 	baseURL: string;
 	/** Dot-prefixed parent domain enables cross-subdomain cookies; omit for per-host. */
 	cookieDomain?: string;
+	/**
+	 * Namespace prefix for every auth cookie name (advanced.cookiePrefix).
+	 * Non-prod members of the prod cookie zone set "teacheros-staging" so their
+	 * cookies can never be shadowed by same-name prod-zone cookies (issue #125);
+	 * omit for the default `better-auth` namespace (prod/local posture).
+	 */
+	cookiePrefix?: string;
 	googleClientId: string;
 	googleClientSecret: string;
 }
 
 export function createAuth(input: CreateAuthInput) {
 	const cookieDomain = crossSubDomainCookieDomain(input.cookieDomain);
+	const cookiePrefix = authCookiePrefix(input.cookiePrefix);
 
 	return betterAuth({
 		database: drizzleAdapter(input.db, {
@@ -77,6 +89,11 @@ export function createAuth(input: CreateAuthInput) {
 					domain: cookieDomain,
 				},
 			}),
+			// Stage-scoped cookie namespace (issue #125): names every auth cookie
+			// `${prefix}.${name}` so non-prod members of the prod cookie zone can
+			// never be shadowed by same-name prod-zone cookies. Omitted => the
+			// default `better-auth` namespace (prod/local, byte-identical).
+			...(cookiePrefix && { cookiePrefix }),
 		},
 	});
 }
