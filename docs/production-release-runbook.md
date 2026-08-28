@@ -24,9 +24,12 @@ environment — never editing this runbook.
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 
-With `APP_DOMAIN` unset (local dev and staging), the stack keeps its generated
-`workers.dev` URLs and per-host cookies. `alchemy dev` defaults `CORS_ORIGIN`
-to `http://localhost:8001`; staging deploys require it inline. Derived-value
+With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
+`workers.dev` URLs and per-host cookies, and `alchemy dev` defaults
+`CORS_ORIGIN` to `http://localhost:8001`. Staging resolves the same table with
+`APP_DOMAIN=staging.teacheros.io.vn`: `app.staging.teacheros.io.vn` (web) +
+`api.staging.teacheros.io.vn` (API), session cookies scoped to
+`.staging.teacheros.io.vn` (see "Provision staging"). Derived-value
 unit tests live in
 `packages/infra/src/topology.test.ts` and `packages/auth/src/topology.test.ts`.
 
@@ -38,11 +41,18 @@ different stages never overlap.
 | Stage | Purpose | APP_DOMAIN | Data |
 | --- | --- | --- | --- |
 | `dev_<user>` (default) | Local development | unset | disposable |
-| `staging` | Migration/recovery rehearsal, pre-release checks | unset | **rehearsal only** — never production data |
+| `staging` | Migration/recovery rehearsal, pre-release checks, QC | `staging.teacheros.io.vn` | **rehearsal only** — never production data |
 | `prod` | Pilot/production | set to the real domain | real pilot data |
 
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
+
+Staging is the QC browser target: `https://app.staging.teacheros.io.vn` (web)
+and `https://api.staging.teacheros.io.vn` (API). It lives in the same
+Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
+own `BETTER_AUTH_SECRET` value, and cookies scoped to
+`.staging.teacheros.io.vn` — nothing on staging can read or write
+production, and prod sessions do not resolve there.
 
 ## Secret inventory
 
@@ -56,8 +66,8 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | --- | --- | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Deploy operator | operator env | n/a (identifier, not a credential) |
 | `CLOUDFLARE_API_TOKEN` | Deploy operator | operator env | Cloudflare dashboard → My Profile → API Tokens → roll, update `.env` |
-| `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | generate new secret, redeploy **all** stages in one window; invalidates sessions |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy |
+| `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
 
 ## Deploy preflight (all releases)
@@ -73,8 +83,11 @@ loads `packages/infra/.env` first — a value there wins over the same name in
    provisions DNS records and certificates; a zone hosted elsewhere is a
    NO-GO until moved or delegated).
 4. **Google OAuth console** — redirect URIs registered for the exact
-   production topology: `https://api.<domain>/api/auth/callback/google`
-   (plus any staging origin used for live sign-in tests).
+   production topology: `https://api.<domain>/api/auth/callback/google`,
+   plus the staging callback
+   `https://api.staging.teacheros.io.vn/api/auth/callback/google`
+   (sign-in on staging fails without it; the `/readyz` smoke works
+   regardless).
 5. **Secrets present** — every name in the inventory has a value in the
    operator env; no secret has ever been committed (search the repo if
    unsure).
@@ -88,18 +101,31 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 ## Provision staging (one time, and after schema drift)
 
 The staging stage owns its own isolated D1 database — required before any
-migration/recovery rehearsal.
+migration/recovery rehearsal — and serves QC on its own subdomain:
+`https://app.staging.teacheros.io.vn` (web) +
+`https://api.staging.teacheros.io.vn` (API).
 
 ```bash
 cd packages/infra
 cp .env.example .env         # fill non-secret values; secrets per inventory
-# First bootstrap only: deploy once to learn the generated web URL, then pass
-# that URL as an inline CORS_ORIGIN and deploy again (two-step, one time).
-# Never persist CORS_ORIGIN into .env — a leftover value shadowed origins in
-# the 2026-08-20 NO-GO and deploys now fail hard on that mismatch.
-CORS_ORIGIN=http://localhost:8001 pnpm alchemy deploy --stage staging
-CORS_ORIGIN=<staging-web-url> pnpm alchemy deploy --stage staging
+# Staging holds its own BETTER_AUTH_SECRET value, distinct from prod (cookie
+# isolation defense in depth). APP_DOMAIN is passed inline, never persisted;
+# a stray CORS_ORIGIN fails the run instead of shadowing the derived
+# https://app.staging.teacheros.io.vn origin.
+# A workers.dev-era staging stage must be destroyed first (rehearsal-only
+# data; the recreation also completes the pending 0006 empty-upgrade restage
+# below).
+pnpm alchemy destroy --stage staging    # skip if staging does not exist yet
+env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging
 ```
+
+The deploy registers `app.staging.teacheros.io.vn` and
+`api.staging.teacheros.io.vn` as Workers custom domains on the existing
+`teacheros.io.vn` zone — DNS records and certificates are provisioned by
+Alchemy; never hand-edit them (first cert issuance can take a few minutes).
+First sign-in additionally requires the staging callback URI in the Google
+console (preflight 4). Verify with
+`curl -sS -i https://api.staging.teacheros.io.vn/readyz` → `200 {"ok":true}`.
 
 Record the staging D1 name/ID in the release evidence (ID itself stays out of
 GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
@@ -145,7 +171,8 @@ first.
 Readiness first (no browser needed):
 
 ```bash
-curl -sS -i https://api.<domain>/readyz
+curl -sS -i https://api.<domain>/readyz                  # production
+curl -sS -i https://api.staging.teacheros.io.vn/readyz   # staging (QC)
 ```
 
 - GO: `200` with body `{"ok":true}` and `cache-control: no-store` — the Worker
@@ -228,9 +255,10 @@ rows with text `fixture-*` (never copy production/pilot data), apply `0006`,
 then `PRAGMA foreign_key_check` and `SELECT id, operation_id` (ids only).
 Destroy the throwaway D1 when done.
 
-**Empty upgrade (still pending on live staging):** when operator secrets are
-present, `cd packages/infra && pnpm alchemy destroy --stage staging` then
-`pnpm alchemy deploy --stage staging`. Confirm `d1_migrations` includes
+**Empty upgrade (still pending on live staging):** "Provision staging" above
+now performs exactly this — destroy the workers.dev-era stage, then redeploy
+with `APP_DOMAIN=staging.teacheros.io.vn` once operator secrets are present.
+Confirm `d1_migrations` includes
 `0006_pink_ender_wiggin.sql` and `comment_bank` has `operation_id`. Until
 that restage, treat empty-path proof as CI + the original empty staging
 apply, not as “staging already rebuilt.”

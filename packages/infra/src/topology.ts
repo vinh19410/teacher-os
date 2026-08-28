@@ -1,11 +1,11 @@
 /**
- * Single source of truth for the production topology: one bare domain
- * (APP_DOMAIN) derives every origin, the cookie domain and the Google redirect
- * URI. The runbook never changes topology by itself — changing APP_DOMAIN here
- * is the only way.
+ * Single source of truth for the deploy topology: one bare domain (APP_DOMAIN)
+ * derives every origin, the cookie domain and the Google redirect URI —
+ * teacheros.io.vn for prod, staging.teacheros.io.vn for staging. The runbook
+ * never changes topology by itself — changing APP_DOMAIN is the only way.
  *
- * When APP_DOMAIN is unset the stack keeps the generated workers.dev URLs and
- * per-host cookies (dev/staging behavior).
+ * When APP_DOMAIN is unset (local dev) the stack keeps the generated
+ * workers.dev URLs and per-host cookies.
  */
 export interface DomainTopology {
 	/** Web app hostname: app.<domain> */
