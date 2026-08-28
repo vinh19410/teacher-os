@@ -14,6 +14,10 @@
 # - ci-workflow.test.mjs forbids secrets.* in ci.yml/e2e.yml; staging
 #   credentials live in the GitHub environment "staging" (same secret names as
 #   production) and stay out of the PR pipeline.
+# - The deploy smoke covers auth (issue #125): /readyz alone shipped green
+#   while staging signup/sign-in was QC-blocking. Throwaway smoke accounts are
+#   accepted junk rows in the staging D1; prod deliberately gets no signup
+#   smoke (no junk rows in prod D1).
 name: Deploy Staging
 
 on:
@@ -33,6 +37,8 @@ env:
   # app.<domain>, api.<domain>, cookie domain and the Google redirect URI.
   APP_DOMAIN: staging.teacheros.io.vn
   API_READY_URL: https://api.staging.teacheros.io.vn/readyz
+  APP_ORIGIN: https://app.staging.teacheros.io.vn
+  API_BASE_URL: https://api.staging.teacheros.io.vn
 
 jobs:
   quality:
@@ -98,3 +104,76 @@ jobs:
           done
           echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
           exit 1
+      - name: Smoke check auth (sign-up → get-session)
+        # Issue #125: /readyz cannot see auth breakage (cookie config, CORS,
+        # secret, D1 session store). Request shape follows
+        # apps/server/src/auth-roundtrip.test.ts. One throwaway account per
+        # deploy; credentials are generated per run and never echoed.
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          # run_id+run_attempt keeps the email unique across queued runs AND
+          # re-runs of the same run (a re-run must not 422 on a reused email).
+          # Failure is signalled by exit status, not an inner ::error:: — a
+          # fail() inside $( ) would be captured into $code and never rendered.
+          attempt_signup() {
+            local suffix="$1" email pass
+            email="smoke-${GITHUB_RUN_ID}${suffix}-${GITHUB_RUN_ATTEMPT}@smoke.teacheros.internal"
+            pass="$(openssl rand -hex 16)"
+            rm -f /tmp/smoke-jar.txt
+            curl -sS --connect-timeout 5 --max-time 30 -c /tmp/smoke-jar.txt \
+              -o /tmp/smoke-signup.json -w '%{http_code}' \
+              -X POST "$API_BASE_URL/api/auth/sign-up/email" \
+              -H "Content-Type: application/json" \
+              -H "Origin: $APP_ORIGIN" \
+              -d "{\"name\":\"Deploy Smoke\",\"email\":\"$email\",\"password\":\"$pass\"}"
+          }
+          code=$(attempt_signup "") || fail "sign-up smoke request failed"
+          if [ "$code" = "429" ]; then
+            # better-auth's default rule allows 3 /sign-up requests per 10s per
+            # IP; shared runner IPs can collide with manual QC traffic.
+            echo "::warning::sign-up smoke hit the auth rate limit (HTTP 429); retrying once"
+            sleep 11
+            code=$(attempt_signup "-b") || fail "sign-up smoke retry request failed"
+          fi
+          [ "$code" = "200" ] || fail "sign-up smoke returned HTTP $code, expected 200"
+          grep -q "better-auth.session_token" /tmp/smoke-jar.txt \
+            || fail "sign-up smoke response set no session cookie"
+          code=$(curl -sS --connect-timeout 5 --max-time 30 -b /tmp/smoke-jar.txt \
+            -o /tmp/smoke-session.json -w '%{http_code}' \
+            "$API_BASE_URL/api/auth/get-session") || fail "get-session smoke request failed"
+          [ "$code" = "200" ] || fail "get-session smoke returned HTTP $code, expected 200"
+          grep -q '"user"' /tmp/smoke-session.json \
+            || fail "get-session did not return a user for the fresh cookie"
+          echo "auth smoke OK: sign-up set a session cookie and get-session returned the user"
+      - name: Smoke check auth stubs (/sw.js, /registerSW.js)
+        # Issue #125: the removed PWA SW's self-heal chain depends on these
+        # files being served as real JavaScript with cache headers that keep
+        # the SW update check on the network — the SPA fallback would return
+        # 200 HTML and silently strand every already-affected browser.
+        # Retries mirror /readyz: first deploys wait on DNS/cert provisioning.
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          stubs_ok() {
+            local f code
+            for f in sw.js registerSW.js; do
+              code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                -D /tmp/stub-headers.txt -o "/tmp/$f" -w '%{http_code}' \
+                "$APP_ORIGIN/$f") || return 1
+              [ "$code" = "200" ] || { echo "GET /$f returned HTTP $code"; return 1; }
+              grep -qi '^content-type: text/javascript' /tmp/stub-headers.txt \
+                || { echo "/$f is not served as JavaScript (SPA fallback HTML as SW update target?)"; return 1; }
+              grep -Eiq '^cache-control:.*(max-age=0|no-store|no-cache)' /tmp/stub-headers.txt \
+                || { echo "/$f cache-control must pin the update check to the network (max-age=0, no-store, or no-cache)"; return 1; }
+            done
+            grep -q unregister /tmp/sw.js || { echo "/sw.js must be the self-unregister stub"; return 1; }
+            grep -q "caches.delete" /tmp/sw.js || { echo "/sw.js stub lost its cache purge"; return 1; }
+            return 0
+          }
+          ok=""
+          for attempt in 1 2 3; do
+            if reason=$(stubs_ok); then ok=1; break; fi
+            echo "attempt $attempt failed: $reason — retrying in 20s"
+            [ "$attempt" = "3" ] || sleep 20
+          done
+          [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
+          echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
