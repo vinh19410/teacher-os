@@ -119,10 +119,11 @@ function lessonWeekday(date: Date): number {
  * dedupe/sort, no `start === end` guard).
  *
  * Fail-closed: returns null for legacy free-text schedules, empty/invalid
- * startDate, `start === end`, or non-positive totals — callers keep today's
- * rendering (empty legacy table). The result is display-only: every session
- * carries `rows: []` + `mode: "v2"`, which yields zero action targets
- * (`sessionRowTargets`), zero attendance sids, and the muted "Dự kiến" badge.
+ * startDate, `start === end`, or totals outside the create schema's 1..52 —
+ * callers keep today's rendering (empty legacy table). The result is
+ * display-only: every session carries `rows: []` + `mode: "v2"`, which yields
+ * zero action targets (`sessionRowTargets`), zero attendance sids, and the
+ * muted "Dự kiến" badge.
  */
 export function projectClassSessions(input: {
 	schedule: string;
@@ -131,7 +132,13 @@ export function projectClassSessions(input: {
 }): ClassSession[] | null {
 	const parsed = parseStoredSchedule(input.schedule);
 	if (!parsed) return null;
-	if (!Number.isInteger(input.sessionsTotal) || input.sessionsTotal <= 0) {
+	// 52 is classCreateSchema's max — a corrupt stored row must not walk the
+	// skeleton into a render hang (the walk is O(total)).
+	if (
+		!Number.isInteger(input.sessionsTotal) ||
+		input.sessionsTotal <= 0 ||
+		input.sessionsTotal > 52
+	) {
 		return null;
 	}
 	const startISO = parseStartDateStrict(input.startDate);

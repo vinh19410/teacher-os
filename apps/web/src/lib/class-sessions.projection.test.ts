@@ -152,7 +152,7 @@ describe("projectClassSessions (issue #121)", () => {
 		).toBeNull();
 	});
 
-	test("fail-closed: unparseable JSON and non-positive totals", () => {
+	test("fail-closed: unparseable JSON and out-of-range totals", () => {
 		expect(
 			projectClassSessions({
 				schedule: "{oops",
@@ -172,6 +172,14 @@ describe("projectClassSessions (issue #121)", () => {
 				schedule: QC_SCHEDULE,
 				startDate: QC_START,
 				sessionsTotal: -3,
+			}),
+		).toBeNull();
+		// Above the create schema's max: a corrupt row must not hang the walk.
+		expect(
+			projectClassSessions({
+				schedule: QC_SCHEDULE,
+				startDate: QC_START,
+				sessionsTotal: 53,
 			}),
 		).toBeNull();
 	});

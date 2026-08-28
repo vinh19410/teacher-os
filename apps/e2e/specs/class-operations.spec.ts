@@ -81,7 +81,8 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 		addDaysISO(firstSessionISO, -vnWeekdayMon0(firstSessionISO)),
 	);
 	await expect(page).toHaveURL(/\/schedule\?week=/);
-	// All 12 blocks contain the student name → strict mode needs .first().
+	// The pinned week holds only the week's dated blocks (≤2: first T2 + T4),
+	// all carrying the student name → strict mode needs .first().
 	const lesson = page
 		.locator("button.lesson-block", { hasText: STUDENT_NAME })
 		.first();

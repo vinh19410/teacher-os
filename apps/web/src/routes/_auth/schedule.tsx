@@ -196,9 +196,9 @@ export function ScheduleRoute() {
 														setOpenLesson({
 															id: l.id,
 															// The row's own occurrence date wins — the
-															// column date is only the fallback for the
-															// frozen undated template path (day↔date can
-															// diverge after a server-side moveDate).
+															// column date is only a fallback for the
+															// frozen undated template path (dated rows
+															// already render in their date's column).
 															dateIso: l.date ?? dates[i],
 														})
 													}

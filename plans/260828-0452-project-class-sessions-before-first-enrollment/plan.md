@@ -108,9 +108,12 @@ Fixture truth (Mon-only, start 2026-08-28): sessions are the Mondays
 - [ ] AC4 Adding the first student replaces projection with the real generated
       rows (same dates/slots — generator parity) — no duplicates, no visual
       regression.
-- [ ] AC5 Legacy free-text schedule, `start === end`, duplicate/unsorted days,
-      or missing/invalid startDate: rendering identical to today (empty legacy
-      table / weekday template), never fabricated dates.
+- [ ] AC5 Legacy free-text schedule, `start === end`, or missing/invalid
+      startDate: rendering identical to today (empty legacy table / weekday
+      template), never fabricated dates. Duplicate/unsorted `days` follow
+      generator parity (normalized via the shared parser, matching what the
+      server would generate) — review note M4: this is deliberate, not the
+      frozen legacy rendering originally written here.
 - [ ] AC6 Dated real rows on `/schedule` render only in their date's week;
       undated legacy rows keep the template behavior.
 - [ ] AC7 All existing vitest suites + Playwright e2e green (server has no
