@@ -6,6 +6,11 @@ import { useData } from "@/lib/data-store";
 import type { LessonType } from "@/lib/mock-data";
 import { dayNames } from "@/lib/mock-data";
 import {
+	selectProjectedWeekBlocks,
+	selectWeekColumnLessons,
+	weekSlotCount,
+} from "@/lib/schedule-week";
+import {
 	addWeeks,
 	formatDayMonth,
 	formatWeekRange,
@@ -52,20 +57,25 @@ export function ScheduleRoute() {
 		}
 	}, [weekParam, navigate]);
 
-	// Weekly timetable semantics: a slot (day|time) is one teaching slot per
-	// week, so the lead counts distinct non-cancelled slots — a 1:2 slot with
-	// one row per enrollment still counts once.
-	const weekSlotCount = new Set(
-		data.lessons
-			.filter((l) => l.status !== "cancelled")
-			.map((l) => `${l.day}|${l.time}`),
-	).size;
+	// Date-accurate week selection (issue #121): dated rows render only in
+	// the week containing their occurrence date; undated legacy rows keep the
+	// weekday-template behavior; classes with zero lesson rows contribute
+	// display-only projected blocks derived from their schedule skeleton.
+	const columns = dayNames.map((_, i) =>
+		selectWeekColumnLessons(data.lessons, i + 1, dates),
+	);
+	const projected = selectProjectedWeekBlocks(
+		data.classes,
+		data.lessons,
+		dates,
+	);
+	const slotCount = weekSlotCount(columns, projected);
 
 	return (
 		<div>
 			<PageHead
 				title="Lịch dạy"
-				lead={`Tuần ${formatWeekRange(weekStart)} · ${weekSlotCount} buổi`}
+				lead={`Tuần ${formatWeekRange(weekStart)} · ${slotCount} buổi`}
 			/>
 			<div className="mb-4 flex items-center justify-between gap-2">
 				<Link
@@ -103,9 +113,31 @@ export function ScheduleRoute() {
 			</div>
 			<div className="week-cal grid grid-cols-7 gap-2 max-app:grid-cols-1 max-app:gap-3">
 				{dayNames.map((dn, i) => {
-					const lessons = data.lessons
-						.filter((l) => l.day === i + 1)
-						.sort((a, b) => a.time.localeCompare(b.time));
+					const lessons = columns[i];
+					// Real rows and projected blocks interleave chronologically;
+					// projected entries render as non-interactive divs — never a
+					// button, never a LessonModal write target (AC3).
+					const blocks = projected
+						.filter((b) => b.day === i + 1)
+						.map((b) => ({
+							key: `proj:${b.classId}:${b.dateISO}`,
+							time: b.time,
+							block: b,
+						}));
+					const entries = [
+						...lessons.map((l) => ({
+							key: l.id,
+							time: l.time,
+							lesson: l,
+							block: null,
+						})),
+						...blocks.map((b) => ({
+							key: b.key,
+							time: b.time,
+							lesson: null,
+							block: b.block,
+						})),
+					].sort((a, b) => a.time.localeCompare(b.time));
 					const isToday = dates[i] === todayIso;
 					return (
 						<div
@@ -131,46 +163,69 @@ export function ScheduleRoute() {
 								</div>
 							</div>
 							<div className="min-w-0 flex-1">
-								{lessons.length === 0 && (
+								{entries.length === 0 && (
 									<div className="font-mono text-meta text-xs">—</div>
 								)}
-								{lessons.map((l) => {
-									const s = studentById(l.sid);
-									return (
-										<button
-											type="button"
-											key={l.id}
-											onClick={() =>
-												setOpenLesson({ id: l.id, dateIso: dates[i] })
-											}
-											className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
-												typeBlockClass[l.type]
-											} ${
-												l.status === "completed"
-													? "opacity-60"
-													: l.status === "cancelled"
-														? "opacity-35"
-														: ""
-											}`}
+								{entries.map((entry) =>
+									entry.block ? (
+										<div
+											key={entry.key}
+											className={`lesson-block mt-2 rounded-sm border-l-3 border-l-solid px-3 py-2 text-left opacity-75 ${typeBlockClass["1:1"]}`}
+											title="Buổi dự kiến từ lịch lớp — chưa có học viên"
 										>
 											<div className="font-mono text-[11px] text-fg-2">
-												{l.time}
+												{entry.block.time}
 											</div>
-											<div
-												className={
-													l.status === "completed" || l.status === "cancelled"
-														? "font-semibold text-sm line-through decoration-meta"
-														: "font-semibold text-sm"
-												}
-											>
-												{s?.name ?? ""}
+											<div className="font-semibold text-sm">
+												{entry.block.className}
 											</div>
 											<div className="mt-px text-[11px] text-muted-fg">
-												{l.type} · {l.topic.substring(0, 30)}
+												Dự kiến · chưa có học viên
 											</div>
-										</button>
-									);
-								})}
+										</div>
+									) : (
+										(() => {
+											const l = entry.lesson;
+											if (!l) return null;
+											const s = studentById(l.sid);
+											return (
+												<button
+													type="button"
+													key={l.id}
+													onClick={() =>
+														setOpenLesson({ id: l.id, dateIso: dates[i] })
+													}
+													className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
+														typeBlockClass[l.type]
+													} ${
+														l.status === "completed"
+															? "opacity-60"
+															: l.status === "cancelled"
+																? "opacity-35"
+																: ""
+													}`}
+												>
+													<div className="font-mono text-[11px] text-fg-2">
+														{l.time}
+													</div>
+													<div
+														className={
+															l.status === "completed" ||
+															l.status === "cancelled"
+																? "font-semibold text-sm line-through decoration-meta"
+																: "font-semibold text-sm"
+														}
+													>
+														{s?.name ?? ""}
+													</div>
+													<div className="mt-px text-[11px] text-muted-fg">
+														{l.type} · {l.topic.substring(0, 30)}
+													</div>
+												</button>
+											);
+										})()
+									),
+								)}
 							</div>
 						</div>
 					);

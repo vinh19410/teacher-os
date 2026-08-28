@@ -15,8 +15,7 @@ const QC_SCHEDULE = '{"days":[0],"start":"19:00","end":"20:30"}';
 const QC_START = "2026-08-28";
 const QC_TOTAL = 12;
 
-const datesOf = (sessions: ClassSession[]) =>
-	sessions.map((s) => s.dateISO);
+const datesOf = (sessions: ClassSession[]) => sessions.map((s) => s.dateISO);
 
 describe("projectClassSessions (issue #121)", () => {
 	test("QC fixture: 12 chronological Mondays from 2026-08-31", () => {
@@ -64,7 +63,9 @@ describe("projectClassSessions (issue #121)", () => {
 		).toHaveLength(2);
 		// Per-weekday slot ordinals restart at 1.
 		expect(
-			(sessions as ClassSession[]).filter((s) => s.day === 3).map((s) => s.slotIndex),
+			(sessions as ClassSession[])
+				.filter((s) => s.day === 3)
+				.map((s) => s.slotIndex),
 		).toEqual([1, 2, 3]);
 	});
 
@@ -132,20 +133,46 @@ describe("projectClassSessions (issue #121)", () => {
 
 	test("fail-closed: empty, invalid, or impossible startDate", () => {
 		const schedule = QC_SCHEDULE;
-		expect(projectClassSessions({ schedule, startDate: "", sessionsTotal: 12 })).toBeNull();
-		expect(projectClassSessions({ schedule, startDate: "2026-02-30", sessionsTotal: 12 })).toBeNull();
-		expect(projectClassSessions({ schedule, startDate: "not-a-date", sessionsTotal: 12 })).toBeNull();
+		expect(
+			projectClassSessions({ schedule, startDate: "", sessionsTotal: 12 }),
+		).toBeNull();
+		expect(
+			projectClassSessions({
+				schedule,
+				startDate: "2026-02-30",
+				sessionsTotal: 12,
+			}),
+		).toBeNull();
+		expect(
+			projectClassSessions({
+				schedule,
+				startDate: "not-a-date",
+				sessionsTotal: 12,
+			}),
+		).toBeNull();
 	});
 
 	test("fail-closed: unparseable JSON and non-positive totals", () => {
 		expect(
-			projectClassSessions({ schedule: "{oops", startDate: QC_START, sessionsTotal: 12 }),
+			projectClassSessions({
+				schedule: "{oops",
+				startDate: QC_START,
+				sessionsTotal: 12,
+			}),
 		).toBeNull();
 		expect(
-			projectClassSessions({ schedule: QC_SCHEDULE, startDate: QC_START, sessionsTotal: 0 }),
+			projectClassSessions({
+				schedule: QC_SCHEDULE,
+				startDate: QC_START,
+				sessionsTotal: 0,
+			}),
 		).toBeNull();
 		expect(
-			projectClassSessions({ schedule: QC_SCHEDULE, startDate: QC_START, sessionsTotal: -3 }),
+			projectClassSessions({
+				schedule: QC_SCHEDULE,
+				startDate: QC_START,
+				sessionsTotal: -3,
+			}),
 		).toBeNull();
 	});
 
