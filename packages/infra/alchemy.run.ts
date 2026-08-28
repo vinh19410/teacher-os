@@ -73,6 +73,11 @@ export const server = Cloudflare.Worker("server", {
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
+		// Issue #125: stage-scoped auth cookie namespace (empty = default
+		// better-auth namespace for prod/local).
+		BETTER_AUTH_COOKIE_PREFIX: topology
+			? (topology.authCookiePrefix ?? "")
+			: "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
 	},
