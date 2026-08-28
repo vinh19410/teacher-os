@@ -1,0 +1,100 @@
+# Staging deploy: every push to develop ships to Cloudflare stage "staging"
+# (app/api.staging.teacheros.io.vn) for QC and migration rehearsal.
+#
+# Sibling of deploy.yml (prod) with the same design constraints (see
+# docs/production-release-runbook.md, "Provision staging"):
+# - Deploy job runs only after the same quality gates as CI pass on this ref,
+#   so a bypassed/failing CI can never ship.
+# - Concurrency serializes staging deploys without cancelling a run in
+#   progress: alchemy applies forward-only D1 migrations, and two overlapping
+#   deploys would race the migration ledger.
+# - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
+#   the derived https://app.staging.teacheros.io.vn and an explicit disagreeing
+#   value fails the whole run by design.
+# - ci-workflow.test.mjs forbids secrets.* in ci.yml/e2e.yml; staging
+#   credentials live in the GitHub environment "staging" (same secret names as
+#   production) and stay out of the PR pipeline.
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Single source of topology: packages/infra/src/topology.ts derives
+  # app.<domain>, api.<domain>, cookie domain and the Google redirect URI.
+  APP_DOMAIN: staging.teacheros.io.vn
+  API_READY_URL: https://api.staging.teacheros.io.vn/readyz
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SERVER_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome check .
+      - run: pnpm test
+      - run: pnpm check-types
+      - run: pnpm build
+
+  deploy:
+    needs: [quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Deploy to Cloudflare (stage staging)
+        working-directory: packages/infra
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: pnpm alchemy deploy --stage staging --yes
+        # --yes auto-approves the plan: without it Alchemy exits code 0 in a
+        # non-interactive terminal WITHOUT applying anything ("Non-interactive
+        # terminal detected"), which made a no-op deploy look green.
+      - name: Smoke check API readiness (/readyz)
+        # First deploy of a custom domain may wait on DNS/cert provisioning;
+        # poll up to ~10 minutes before declaring the deploy failed.
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(curl -sS -o /tmp/readyz.json -w '%{http_code}' "$API_READY_URL" || true)
+            if [ "$status" = "200" ] && grep -q '"ok":true' /tmp/readyz.json; then
+              echo "/readyz OK after attempt $attempt:"
+              cat /tmp/readyz.json
+              exit 0
+            fi
+            echo "attempt $attempt: HTTP $status, retrying in 20s"
+            sleep 20
+          done
+          echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
+          exit 1

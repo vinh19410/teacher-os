@@ -10,10 +10,11 @@ config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
 /**
- * Production topology: set APP_DOMAIN to a bare domain (e.g. teacher-os.edu.vn)
- * to serve the app at app.<domain> and the API at api.<domain> with
- * cross-subdomain session cookies. Without APP_DOMAIN the stack keeps its
- * generated workers.dev URLs and per-host cookies (dev/staging behavior).
+ * Domain topology: set APP_DOMAIN to a bare domain (teacheros.io.vn for prod,
+ * staging.teacheros.io.vn for staging) to serve the app at app.<domain> and
+ * the API at api.<domain> with cross-subdomain session cookies. Without
+ * APP_DOMAIN (local dev only) the stack keeps its generated workers.dev URLs
+ * and per-host cookies.
  *
  * APP_DOMAIN is read from process.env (after dotenv), not Effect Config: it is
  * deploy-time topology wiring the operator sets, and its presence/absence
