@@ -1,7 +1,7 @@
 ---
 title: "Project class sessions before first enrollment (issue #121)"
 description: "P0: class created with a structured schedule shows 0 sessions everywhere because lesson generation is per-enrollment; project schedule-derived sessions on read for classes with zero lesson rows, and make /schedule date-accurate."
-status: in-progress
+status: completed
 priority: P1
 effort: "1d"
 tags: [bug, issue-121, p0, schedule, web]
