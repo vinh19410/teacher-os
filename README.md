@@ -14,7 +14,6 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Cloudflare D1** - Database engine
 - **Authentication** - Better-Auth
 - **Biome** - Linting and formatting
-- **PWA** - Progressive Web App support
 - **Turborepo** - Optimized monorepo build system
 
 ## Documentation
@@ -157,4 +156,3 @@ teacher-os/
 - `pnpm run check`: Run Biome formatting and linting
 - `pnpm run test`: Run unit tests via Turborepo plus the CI-workflow and topology-drift contract tests in `scripts/`
 - `pnpm --filter e2e e2e`: Run the Playwright E2E suite (boots the API on :8000 and web on :8001 against a fresh local D1)
-- `cd apps/web && pnpm run generate-pwa-assets`: Generate PWA assets

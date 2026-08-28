@@ -8,6 +8,7 @@ import { AuthField, fieldErrors } from "@/components/auth/auth-field";
 import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-error";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
 
 export default function SignInForm({
@@ -28,24 +29,40 @@ export default function SignInForm({
 		},
 		onSubmit: async ({ value }) => {
 			onSubmittingChange?.(true);
+			const AUTH_FAILED =
+				"Couldn't sign you in. Check your email and password, then try again.";
 			try {
-				await authClient.signIn.email(
-					{
-						email: value.email,
-						password: value.password,
-					},
-					{
-						onSuccess: () => {
-							setSignedIn(true);
-							// Full page load: the workspace boots through the kernel
-							// load gate with the fresh session.
-							window.location.assign(validateReturnUrl(returnUrl));
-						},
-						onError: (error) => {
-							toast.error(error.error.message || error.error.statusText);
-						},
-					},
-				);
+				// Layer 1: the auth call. A rejected fetch throws (no callbacks
+				// fire), so the catch below owns it — silent failures shipped the
+				// QC #125 incident.
+				const { error } = await authClient.signIn.email({
+					email: value.email,
+					password: value.password,
+				});
+				if (error) {
+					toast.error(authErrorMessage(error, AUTH_FAILED));
+					return;
+				}
+				// Layer 2: session verification — its own failure path with its
+				// own copy; a lost cookie must never read as "sign-in failed".
+				let session: { user?: { id: string } } | null = null;
+				try {
+					session = (await authClient.getSession()).data;
+				} catch {
+					session = null;
+				}
+				if (!session?.user) {
+					toast.error(
+						"We couldn't start your session. Please try signing in again.",
+					);
+					return;
+				}
+				setSignedIn(true);
+				// Full page load: the workspace boots through the kernel
+				// load gate with the fresh session.
+				window.location.assign(validateReturnUrl(returnUrl));
+			} catch {
+				toast.error(AUTH_FAILED);
 			} finally {
 				onSubmittingChange?.(false);
 			}
