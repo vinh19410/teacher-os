@@ -253,3 +253,56 @@ function lessonRow(
 		zoom: "",
 	};
 }
+
+describe("mapStudents parked package (issue #104)", () => {
+	// st-1 owns a parked package: created from /students with no class, so
+	// enrollmentId is null and nothing can ever be checked in against it.
+	const snapshot: KernelSnapshot = {
+		students: [
+			{
+				id: "st-1",
+				name: "QC-104",
+				phone: "",
+				zalo: "",
+				parentName: "",
+				parentPhone: "",
+			},
+		],
+		classes: [],
+		syllabi: [],
+		enrollments: [],
+		packages: [
+			{
+				id: "pk-parked",
+				enrollmentId: null,
+				classId: null,
+				studentId: "st-1",
+				total: 10,
+				price: 400000,
+				mode: "Online",
+				start: "28/08",
+				expiry: "",
+				status: "active",
+				createdAt: "2026-08-28T00:00:00.000Z",
+			},
+		],
+		lessons: [lessonRow("ls-orphan", "en-ghost", "completed")],
+		assignments: [],
+		invoices: [],
+		reports: [],
+		notifs: [],
+		commentBank: [],
+	};
+
+	test("parked package displays total/price and never counts done", () => {
+		expect(mapStudents(snapshot).find((s) => s.id === "st-1")?.pkg).toEqual({
+			total: 10,
+			done: 0,
+			remaining: 10,
+			price: 400000,
+			mode: "Online",
+			start: "28/08",
+			expiry: "",
+		});
+	});
+});

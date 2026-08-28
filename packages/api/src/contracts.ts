@@ -318,13 +318,15 @@ export interface KernelEnrollmentRow {
 }
 
 /**
- * Entitlement joined with its enrollment's class/student for the adapter.
- * done/remaining are derived downstream, never stored (invariant 6).
+ * Entitlement owned by a student; enrollment is the optional class attachment
+ * (issue #104 — a package can exist before the student joins a class, so
+ * `enrollmentId`/`classId` are null for parked packages).
+ * done/remaining are derived downstream, never stored.
  */
 export interface KernelPackageRow {
 	id: string;
-	enrollmentId: string;
-	classId: string;
+	enrollmentId: string | null;
+	classId: string | null;
 	studentId: string;
 	total: number;
 	price: number;

@@ -389,6 +389,19 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				parentPhone: "",
 			}),
 		];
+		// Shared package fields — both branches must stay field-identical or a
+		// classless student silently loses whatever the class branch gains
+		// (the exact #104 failure mode).
+		const packageValues = {
+			orgId: ctx.orgId,
+			studentId,
+			total: input.total,
+			price: input.price,
+			mode: input.mode,
+			start: formatDayMonth(new Date()),
+			expiry: "",
+			status: "active",
+		};
 		if (cls) {
 			// Schedule-driven lessons (issue #55) join the same batch — an
 			// enrollment can never exist without its generated lesson series.
@@ -402,14 +415,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				}),
 				db.insert(sessionPackage).values({
 					id: crypto.randomUUID(),
-					orgId: ctx.orgId,
+					...packageValues,
 					enrollmentId,
-					total: input.total,
-					price: input.price,
-					mode: input.mode,
-					start: formatDayMonth(new Date()),
-					expiry: "",
-					status: "active",
 				}),
 			);
 			for (const row of generateScheduleLessons({
@@ -424,6 +431,17 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
 				);
 			}
+		} else {
+			// Issue #104: a student created without a class still owns the gói —
+			// it parks on the student with a null enrollmentId (no attach-to-
+			// class flow exists yet) so total/price/mode are never dropped.
+			statements.push(
+				db.insert(sessionPackage).values({
+					id: crypto.randomUUID(),
+					...packageValues,
+					enrollmentId: null,
+				}),
+			);
 		}
 		await db.batch(statements);
 		return c.json({ id: studentId } satisfies CreatedResponse, 201);
