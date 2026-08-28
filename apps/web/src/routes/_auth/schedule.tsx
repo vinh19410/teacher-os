@@ -193,7 +193,14 @@ export function ScheduleRoute() {
 													type="button"
 													key={l.id}
 													onClick={() =>
-														setOpenLesson({ id: l.id, dateIso: dates[i] })
+														setOpenLesson({
+															id: l.id,
+															// The row's own occurrence date wins — the
+															// column date is only the fallback for the
+															// frozen undated template path (day↔date can
+															// diverge after a server-side moveDate).
+															dateIso: l.date ?? dates[i],
+														})
 													}
 													className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
 														typeBlockClass[l.type]
