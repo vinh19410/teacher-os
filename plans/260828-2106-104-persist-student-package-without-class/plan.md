@@ -1,7 +1,7 @@
 ---
 title: "104: Persist student package when created without a class"
 description: "P0 bugfix — POST /api/students drops total/price/mode when classId is absent; make session_package able to exist without an enrollment (parked package) so gói buổi/đơn giá survives."
-status: in-progress
+status: completed
 priority: P0
 effort: "1.5d"
 tags: [bugfix, qc, p0, students, session-package]
