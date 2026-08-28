@@ -48,3 +48,24 @@ export function crossSubDomainCookieDomain(
 	}
 	return value;
 }
+
+/**
+ * Validate the optional auth cookie namespace prefix (BETTER_AUTH_COOKIE_PREFIX).
+ * better-auth joins it as `${prefix}.${cookieName}` (vendored 1.6.27 dist,
+ * cookies/index.mjs — `advanced.cookiePrefix`), so it must be a cookie-name-safe
+ * token. An empty binding keeps better-auth's default `better-auth` namespace —
+ * the prod posture (issue #125: staging namespaces its cookies away from the
+ * prod parent-domain zone; prod stays byte-identical).
+ */
+export function authCookiePrefix(cookiePrefix?: string): string | undefined {
+	const value = cookiePrefix?.trim();
+	if (!value) {
+		return undefined;
+	}
+	if (!/^[a-z0-9-]+$/.test(value)) {
+		throw new Error(
+			`BETTER_AUTH_COOKIE_PREFIX must be cookie name safe (lowercase letters, digits, hyphens), got: ${value}`,
+		);
+	}
+	return value;
+}

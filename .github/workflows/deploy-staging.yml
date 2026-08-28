@@ -36,6 +36,11 @@ env:
   # Single source of topology: packages/infra/src/topology.ts derives
   # app.<domain>, api.<domain>, cookie domain and the Google redirect URI.
   APP_DOMAIN: staging.teacheros.io.vn
+  # The prod apex whose cookie zone nests staging's (issue #125): the auth
+  # smoke plants a prod-shaped parent-domain session cookie from this zone.
+  # Kept as an explicit literal (not derived from APP_DOMAIN) so the poison
+  # stays correct even if APP_DOMAIN ever stops being a subdomain of prod.
+  PARENT_DOMAIN: teacheros.io.vn
   API_READY_URL: https://api.staging.teacheros.io.vn/readyz
   APP_ORIGIN: https://app.staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
@@ -109,6 +114,16 @@ jobs:
         # secret, D1 session store). Request shape follows
         # apps/server/src/auth-roundtrip.test.ts. One throwaway account per
         # deploy; credentials are generated per run and never echoed.
+        #
+        # The jar is POISONED before sign-up with a prod-shaped parent-domain
+        # session cookie (round-2 repro): any browser that ever held a session
+        # on the prod zone carries `__Secure-better-auth.session_token;
+        # Domain=.teacheros.io.vn`, and browsers send it to the staging API
+        # too. Staging must resolve the session from its own namespaced
+        # cookie (__Secure-teacheros-staging.session_token) and ignore the
+        # foreign one — get-session returning a user from this poisoned jar is
+        # the exact end state that failed for QC. printf (not echo) because
+        # Netscape jar fields are TAB-separated.
         run: |
           fail() { echo "::error::$1"; exit 1; }
           # run_id+run_attempt keeps the email unique across queued runs AND
@@ -120,7 +135,13 @@ jobs:
             email="smoke-${GITHUB_RUN_ID}${suffix}-${GITHUB_RUN_ATTEMPT}@smoke.teacheros.internal"
             pass="$(openssl rand -hex 16)"
             rm -f /tmp/smoke-jar.txt
-            curl -sS --connect-timeout 5 --max-time 30 -c /tmp/smoke-jar.txt \
+            printf '#HttpOnly_.%s\tTRUE\t/\tTRUE\t0\t__Secure-better-auth.session_token\tbogus\n' "$PARENT_DOMAIN" >> /tmp/smoke-jar.txt
+            # -b AND -c: -b loads the poison into the cookie engine (and sends
+            # it with the request, like a poisoned browser); -c alone would
+            # overwrite the jar from an empty in-memory state and destroy the
+            # poison (verified: curl keeps the loaded session cookie in the
+            # jar written by -c only when it was loaded via -b).
+            curl -sS --connect-timeout 5 --max-time 30 -b /tmp/smoke-jar.txt -c /tmp/smoke-jar.txt \
               -o /tmp/smoke-signup.json -w '%{http_code}' \
               -X POST "$API_BASE_URL/api/auth/sign-up/email" \
               -H "Content-Type: application/json" \
@@ -133,18 +154,20 @@ jobs:
             # IP; shared runner IPs can collide with manual QC traffic.
             echo "::warning::sign-up smoke hit the auth rate limit (HTTP 429); retrying once"
             sleep 11
-            code=$(attempt_signup "-b") || fail "sign-up smoke retry request failed"
+            code=$(attempt_signup "-retry") || fail "sign-up smoke retry request failed"
           fi
           [ "$code" = "200" ] || fail "sign-up smoke returned HTTP $code, expected 200"
-          grep -q "better-auth.session_token" /tmp/smoke-jar.txt \
-            || fail "sign-up smoke response set no session cookie"
+          grep -q "teacheros-staging.session_token" /tmp/smoke-jar.txt \
+            || fail "sign-up smoke set no namespaced session cookie (stage cookie prefix wiring regression)"
+          grep -q "__Secure-better-auth.session_token" /tmp/smoke-jar.txt \
+            || fail "poisoned foreign cookie vanished from the jar — smoke no longer reproduces the issue #125 poisoned-browser shape"
           code=$(curl -sS --connect-timeout 5 --max-time 30 -b /tmp/smoke-jar.txt \
             -o /tmp/smoke-session.json -w '%{http_code}' \
             "$API_BASE_URL/api/auth/get-session") || fail "get-session smoke request failed"
           [ "$code" = "200" ] || fail "get-session smoke returned HTTP $code, expected 200"
           grep -q '"user"' /tmp/smoke-session.json \
-            || fail "get-session did not return a user for the fresh cookie"
-          echo "auth smoke OK: sign-up set a session cookie and get-session returned the user"
+            || fail "get-session did not return a user from the poisoned jar (a foreign prod-zone cookie is shadowing the namespaced session — issue #125 regression)"
+          echo "auth smoke OK: sign-up set a namespaced cookie and get-session resolved the user despite the poisoned jar"
       - name: Smoke check auth stubs (/sw.js, /registerSW.js)
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep

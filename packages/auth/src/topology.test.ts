@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { authBaseURL, crossSubDomainCookieDomain } from "./topology";
+import {
+	authBaseURL,
+	authCookiePrefix,
+	crossSubDomainCookieDomain,
+} from "./topology";
 
 describe("authBaseURL", () => {
 	it("appends the /api/auth mount path to a bare origin", () => {
@@ -85,6 +89,42 @@ describe("crossSubDomainCookieDomain", () => {
 	it("rejects uppercase domains", () => {
 		expect(() => crossSubDomainCookieDomain(".Teacher-OS.edu.vn")).toThrow(
 			/lowercase/i,
+		);
+	});
+});
+
+describe("authCookiePrefix", () => {
+	it("returns the prefix unchanged when it is cookie-name safe", () => {
+		expect(authCookiePrefix("teacheros-staging")).toBe("teacheros-staging");
+	});
+
+	it("returns undefined for an empty value (default better-auth namespace)", () => {
+		expect(authCookiePrefix("")).toBeUndefined();
+	});
+
+	it("returns undefined when the binding is absent", () => {
+		expect(authCookiePrefix(undefined)).toBeUndefined();
+	});
+
+	it("returns undefined for a whitespace-only value", () => {
+		expect(authCookiePrefix("   ")).toBeUndefined();
+	});
+
+	it("rejects a prefix containing a dot (better-auth joins prefix.cookieName)", () => {
+		expect(() => authCookiePrefix("teacheros.staging")).toThrow(
+			/cookie name safe/i,
+		);
+	});
+
+	it("rejects a prefix containing a slash", () => {
+		expect(() => authCookiePrefix("teacheros/staging")).toThrow(
+			/cookie name safe/i,
+		);
+	});
+
+	it("rejects uppercase prefixes", () => {
+		expect(() => authCookiePrefix("TeacherOS-Staging")).toThrow(
+			/cookie name safe/i,
 		);
 	});
 });
