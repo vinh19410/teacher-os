@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server — snapshot LEFT JOIN, contract nullable, POST /students parked package"
-status: pending
+status: completed
 priority: P0
 effort: "3h"
 dependencies: [1]

@@ -83,9 +83,9 @@ tồn tại không kèm enrollment ("parked package") — cắt neo ở bảng l
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Phase 1: Schema + migration 0011/0012 + backfill test](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Server — snapshot LEFT JOIN, contract nullable, POST /students parked package](./phase-02-server-parked-package.md) | Pending |
-| 3 | [Phase 3: Web + e2e kịch bản QC + full CI gate](./phase-03-web-e2e-ci-gate.md) | Pending |
+| 1 | [Phase 1: Schema + migration 0011/0012 + backfill test](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Server — snapshot LEFT JOIN, contract nullable, POST /students parked package](./phase-02-server-parked-package.md) | Completed |
+| 3 | [Phase 3: Web + e2e kịch bản QC + full CI gate](./phase-03-web-e2e-ci-gate.md) | Completed |
 
 ## Success Criteria (từ acceptance criteria của issue)
 

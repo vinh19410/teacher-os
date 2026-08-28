@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web + e2e kịch bản QC + full CI gate"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: [2]

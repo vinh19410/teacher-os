@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Schema + migration 0011/0012 + backfill test"
-status: pending
+status: completed
 priority: P0
 effort: "4h"
 dependencies: []
