@@ -36,6 +36,11 @@
  * (week-grid.ts convention) so results are deterministic on any machine.
  */
 
+import {
+	parseStartDateStrict,
+	parseStoredSchedule,
+	skeletonOf,
+} from "@teacher-os/api/skeleton";
 import { addMinutes, parseSchedule } from "@/lib/format-schedule";
 import type { Lesson, Syllabus } from "@/lib/mock-data";
 import { formatDayMonth } from "@/lib/week-grid";
@@ -102,16 +107,100 @@ function lessonWeekday(date: Date): number {
 }
 
 /**
+ * Schedule-derived projection for classes with ZERO lesson rows (issue #121).
+ *
+ * Lesson rows are generated per enrollment (issue #55), so a freshly created
+ * class has nothing persisted yet — but its schedule + startDate +
+ * sessionsTotal already determine every future occurrence. This function
+ * derives the same chronological sessions the generator will mint on first
+ * enrollment, using the SERVER's own pure skeleton helpers
+ * (`@teacher-os/api/skeleton`) so projection and generation are date-for-date
+ * identical by construction — never the weaker web-local parsers (no
+ * dedupe/sort, no `start === end` guard).
+ *
+ * Fail-closed: returns null for legacy free-text schedules, empty/invalid
+ * startDate, `start === end`, or totals outside the create schema's 1..52 —
+ * callers keep today's rendering (empty legacy table). The result is
+ * display-only: every session carries `rows: []` + `mode: "v2"`, which yields
+ * zero action targets (`sessionRowTargets`), zero attendance sids, and the
+ * muted "Dự kiến" badge.
+ */
+export function projectClassSessions(input: {
+	schedule: string;
+	startDate: string;
+	sessionsTotal: number;
+}): ClassSession[] | null {
+	const parsed = parseStoredSchedule(input.schedule);
+	if (!parsed) return null;
+	// 52 is classCreateSchema's max — a corrupt stored row must not walk the
+	// skeleton into a render hang (the walk is O(total)).
+	if (
+		!Number.isInteger(input.sessionsTotal) ||
+		input.sessionsTotal <= 0 ||
+		input.sessionsTotal > 52
+	) {
+		return null;
+	}
+	const startISO = parseStartDateStrict(input.startDate);
+	if (!startISO) return null;
+	const skeleton = skeletonOf(parsed, startISO, input.sessionsTotal);
+	if (!skeleton) return null;
+
+	const dur =
+		(hhmmToMinutes(parsed.end) - hhmmToMinutes(parsed.start) + 1440) % 1440;
+	const dated: Array<{ dateISO: string; day: number }> = [];
+	for (const [day, dates] of skeleton) {
+		for (const dateISO of dates) dated.push({ dateISO, day });
+	}
+	dated.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+
+	const weekdayOrdinal = new Map<number, number>();
+	return dated.map((entry, i) => {
+		const slotIndex = (weekdayOrdinal.get(entry.day) ?? 0) + 1;
+		weekdayOrdinal.set(entry.day, slotIndex);
+		return {
+			index: i + 1,
+			slotIndex,
+			dateISO: entry.dateISO,
+			day: entry.day,
+			time: parsed.start,
+			dur,
+			rows: [],
+			mode: "v2" as const,
+		};
+	});
+}
+
+/**
  * Build the chronological session list. Returns null — and the caller keeps
  * the legacy table — when the inputs cannot be derived truthfully: legacy
  * free-text schedule, missing startDate, no rows, rows edited away from the
  * schedule slots (lesson-edit can move day/time per row), or the safety cap.
+ *
+ * Issue #121: `sessionsTotal` unlocks the pre-enrollment projection — with
+ * zero lessons AND a positive sessionsTotal the class's sessions are derived
+ * from its schedule skeleton instead of gating to the empty legacy table.
+ * Any lessons present ⇒ the row-derived paths below run unchanged, so
+ * projection and real rows can never mix.
  */
 export function buildClassSessions(input: {
 	schedule: string;
 	startDate: string;
 	lessons: ClassSessionLesson[];
+	sessionsTotal?: number;
 }): ClassSession[] | null {
+	if (
+		input.lessons.length === 0 &&
+		typeof input.sessionsTotal === "number" &&
+		Number.isInteger(input.sessionsTotal) &&
+		input.sessionsTotal > 0
+	) {
+		return projectClassSessions({
+			schedule: input.schedule,
+			startDate: input.startDate,
+			sessionsTotal: input.sessionsTotal,
+		});
+	}
 	const parsed = parseSchedule(input.schedule);
 	const startISO = parseStartDate(input.startDate);
 	if (!parsed || !startISO || input.lessons.length === 0) return null;

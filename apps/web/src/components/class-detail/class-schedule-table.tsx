@@ -99,7 +99,14 @@ export function ClassScheduleTable({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
+		// Issue #121: with zero rows the sessions project from the schedule
+		// skeleton instead of gating to the empty legacy table.
+		sessionsTotal: cls.sessionsTotal,
 	});
+	// Projection mode: zero real rows means every displayed session is a
+	// schedule projection — display-only, rendered with the muted "Dự kiến"
+	// badge instead of the attendance states driven by row data.
+	const isProjected = lessons.length === 0 && sessions !== null;
 
 	if (sessions === null) {
 		return (
@@ -233,7 +240,9 @@ export function ClassScheduleTable({
 											</div>
 										</td>
 										<td className="px-4 py-3 text-left">
-											{attendance.kind === "completed" ? (
+											{isProjected ? (
+												<Badge variant="muted">Dự kiến</Badge>
+											) : attendance.kind === "completed" ? (
 												<Badge variant="success" dot>
 													Đã học
 												</Badge>
