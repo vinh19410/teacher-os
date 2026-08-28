@@ -1,7 +1,7 @@
 ---
 title: "fix-staging-auth-silent-fail"
 description: "Issue #125 P0: staging signup/sign-in silent fail — root-caused to the broken PWA service worker layer; remove the SW with a self-healing stub, make auth forms fail loudly, and add a deploy-time auth smoke check."
-status: in-progress
+status: completed
 priority: P1
 effort: "~0.5 day"
 tags: [bug, auth, pwa, staging, qc-blocker]
