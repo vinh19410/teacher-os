@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, type Page, type Route, test } from "@playwright/test";
 
 /**
  * Auth failures must be loud (issue #125): the QC P0 was invisible because the
