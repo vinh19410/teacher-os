@@ -106,7 +106,7 @@ export async function loadSnapshot(
 				id: sessionPackage.id,
 				enrollmentId: sessionPackage.enrollmentId,
 				classId: enrollment.classId,
-				studentId: enrollment.studentId,
+				studentId: sessionPackage.studentId,
 				total: sessionPackage.total,
 				price: sessionPackage.price,
 				mode: sessionPackage.mode,
@@ -116,7 +116,17 @@ export async function loadSnapshot(
 				createdAt: sessionPackage.createdAt,
 			})
 			.from(sessionPackage)
-			.innerJoin(enrollment, eq(sessionPackage.enrollmentId, enrollment.id))
+			// LEFT JOIN (issue #104): parked packages have no enrollment yet but
+			// must still reach the snapshot; classId then comes out null. The
+			// org predicate on the join keeps a hypothetical cross-org
+			// enrollment_id from leaking a classId across tenants.
+			.leftJoin(
+				enrollment,
+				and(
+					eq(sessionPackage.enrollmentId, enrollment.id),
+					eq(enrollment.orgId, sessionPackage.orgId),
+				),
+			)
 			.where(eq(sessionPackage.orgId, orgId))
 			.orderBy(asc(sessionPackage.createdAt)),
 		db

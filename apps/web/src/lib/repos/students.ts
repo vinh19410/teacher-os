@@ -22,11 +22,13 @@ const ZERO_PKG: Student["pkg"] = {
 
 /**
  * Map kernel student rows to the display shape. `pkg` comes from the newest
- * active session_package across the student's enrollments; a classless
- * student gets the zero package (done/remaining always derive, never stored).
+ * active session_package owned by the student; a student without any package
+ * gets the zero package (done/remaining always derive, never stored).
  * Wave 4: done/remaining derive from the completed lessons of exactly the
  * displayed package's enrollment (invariant 6) — a check-in on another
  * enrollment (e.g. the other half of a 1:2) never moves this student's pkg.
+ * Issue #104: parked packages have `enrollmentId === null` (no class yet), so
+ * they always display done 0 — nothing can be checked in without a class.
  */
 export function mapStudents(snapshot: KernelSnapshot): Student[] {
 	const packagesByStudent = new Map<string, KernelPackageRow>();
@@ -49,7 +51,10 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 
 	return snapshot.students.map((row): Student => {
 		const pkg = packagesByStudent.get(row.id);
-		const done = pkg ? (completedByEnrollment.get(pkg.enrollmentId) ?? 0) : 0;
+		const done =
+			pkg?.enrollmentId != null
+				? (completedByEnrollment.get(pkg.enrollmentId) ?? 0)
+				: 0;
 		return {
 			id: row.id,
 			name: row.name,

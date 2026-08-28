@@ -272,7 +272,12 @@ async function createTestApp() {
 	async function addStudent(
 		session: TestSession,
 		name: string,
-		extra: { classId?: string; total?: number; price?: number } = {},
+		extra: {
+			classId?: string;
+			total?: number;
+			price?: number;
+			mode?: "Online" | "Offline";
+		} = {},
 	): Promise<string> {
 		const res = await call("/api/students", {
 			session,
@@ -283,7 +288,7 @@ async function createTestApp() {
 				parentName: "Phụ huynh",
 				total: extra.total ?? 10,
 				price: extra.price ?? 400000,
-				mode: "Online",
+				mode: extra.mode ?? "Online",
 				...(extra.classId ? { classId: extra.classId } : {}),
 			},
 		});
@@ -752,7 +757,7 @@ describe("org isolation", () => {
 		expect(snapshotA.students).toHaveLength(1);
 	});
 
-	test("students with classId create enrollment + package atomically; without classId, person only", async () => {
+	test("students with classId create enrollment + package atomically", async () => {
 		const session = await t.insertUser("Cô Pkg");
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
@@ -774,12 +779,34 @@ describe("org isolation", () => {
 		// Entitlement only: no done/remaining on the wire — derived downstream.
 		expect(snapshot.packages[0]).not.toHaveProperty("done");
 		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+	});
 
-		const personId = await t.addStudent(session, "Học viên tự do");
-		const after = await t.kernel(session);
-		expect(after.enrollments).toHaveLength(1); // unchanged
-		expect(after.packages).toHaveLength(1); // unchanged
-		expect(after.students.map((s) => s.id)).toContain(personId);
+	test("without classId the package parks on the student (issue #104)", async () => {
+		const session = await t.insertUser("Cô Parked");
+		const personId = await t.addStudent(session, "Học viên tự do", {
+			total: 10,
+			price: 400000,
+			mode: "Offline",
+		});
+
+		const snapshot = await t.kernel(session);
+		expect(snapshot.enrollments).toHaveLength(0);
+		expect(snapshot.packages).toHaveLength(1);
+		expect(snapshot.packages[0]).toMatchObject({
+			studentId: personId,
+			enrollmentId: null,
+			classId: null,
+			total: 10,
+			price: 400000,
+			// Deliberately not the schema default — proves input.mode is kept.
+			mode: "Offline",
+			status: "active",
+		});
+		expect(snapshot.packages[0]?.start).toMatch(/^\d{2}\/\d{2}$/);
+		// Entitlement only: no done/remaining on the wire — derived downstream.
+		expect(snapshot.packages[0]).not.toHaveProperty("done");
+		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(snapshot.students.map((s) => s.id)).toContain(personId);
 	});
 });
 
