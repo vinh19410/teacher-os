@@ -53,3 +53,29 @@ export function vietnamTodayISO(): string {
 export function vnWeekdayMon0(iso: string): number {
 	return (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
 }
+
+/** yyyy-mm-dd + n days, UTC-anchored — ISO strings carry no DST, so plain
+ * day-millisecond math is exact and machine-local timezones never leak. */
+export function addDaysISO(iso: string, n: number): string {
+	return new Date(
+		new Date(`${iso}T00:00:00Z`).getTime() + n * 24 * 60 * 60 * 1000,
+	)
+		.toISOString()
+		.slice(0, 10);
+}
+
+/** Monday-start week containing `iso` (week-grid convention). */
+export function mondayWeekStartISO(iso: string): string {
+	return addDaysISO(iso, -vnWeekdayMon0(iso));
+}
+
+/** Navigate the /schedule grid to an explicit week. Issue #121: specs must
+ * never depend on "current week" — on a VN Sunday a "start tomorrow" seed
+ * lands its dated rows in the NEXT Monday-start week, so week-scoped
+ * assertions pin the ?week= param instead. */
+export async function gotoWeek(
+	page: Page,
+	weekStartISO: string,
+): Promise<void> {
+	await page.goto(`/schedule?week=${weekStartISO}`);
+}
