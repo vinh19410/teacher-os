@@ -96,17 +96,22 @@ export function AddClassModal({
 			setError("Nhập giờ bắt đầu và giờ kết thúc.");
 			return;
 		}
-		if (startTime === endTime) {
-			setError("Giờ kết thúc phải khác giờ bắt đầu.");
+		if (endTime <= startTime) {
+			setError("Giờ kết thúc phải sau giờ bắt đầu.");
 			return;
 		}
 		if (!isFutureDateInputValue(startDate)) {
 			setError("Vui lòng chọn ngày bắt đầu sau hôm nay.");
 			return;
 		}
-		// Mirror of the server cap (classCreateSchema sessionsTotal ≤ 52):
-		// exceeding it would only surface as a generic server error banner.
-		const parsedTotal = Number.parseInt(total, 10) || 12;
+		// Mirror of the server cap (classCreateSchema sessionsTotal 1..52).
+		// Issue #105: `parseInt || 12` silently coerced 0 → 12 — a strict
+		// parse now errors instead, matching the server's min(1).
+		const parsedTotal = Number.parseInt(total, 10);
+		if (!Number.isInteger(parsedTotal) || parsedTotal < 1) {
+			setError("Tổng số buổi phải từ 1 đến 52.");
+			return;
+		}
 		if (parsedTotal > 52) {
 			setError("Tổng số buổi tối đa là 52.");
 			return;
@@ -227,7 +232,7 @@ export function AddClassModal({
 					<Field label="Tổng số buổi">
 						<Input
 							type="number"
-							min={0}
+							min={1}
 							max={52}
 							value={total}
 							onChange={(e) => setTotal(e.target.value)}

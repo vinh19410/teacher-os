@@ -434,18 +434,20 @@ describe("class type + structured schedule (create-class modal)", () => {
 		expect(tooLong.status).toBe(400);
 	});
 
-	test("invalid time format is 400; overnight end<start is 201", async () => {
+	test("invalid time format is 400; end before start is 400", async () => {
 		const badTime = await postClass({
 			...baseBody,
 			schedule: { days: [2], start: "99:99", end: "20:30" },
 		});
 		expect(badTime.status).toBe(400);
-		const overnight = await postClass({
+		// Issue #105: the QC repro — 21:00 → 08:00 must be rejected at
+		// creation, not stored as a 660-minute "cross-midnight" class.
+		const endBeforeStart = await postClass({
 			...baseBody,
-			name: "Overnight class",
-			schedule: { days: [2], start: "23:00", end: "00:30" },
+			name: "QC repro class",
+			schedule: { days: [2], start: "21:00", end: "08:00" },
 		});
-		expect(overnight.status).toBe(201);
+		expect(endBeforeStart.status).toBe(400);
 	});
 
 	test("start equal to end is 400", async () => {
@@ -454,6 +456,22 @@ describe("class type + structured schedule (create-class modal)", () => {
 			schedule: { days: [2], start: "19:00", end: "19:00" },
 		});
 		expect(res.status).toBe(400);
+	});
+
+	test("sessionsTotal 0 is 400; omitted sessionsTotal defaults to 12", async () => {
+		// Issue #105: "Tổng số buổi 0" must be rejected, not coerced anywhere.
+		const zero = await postClass({ ...baseBody, sessionsTotal: 0 });
+		expect(zero.status).toBe(400);
+		const omitted = await postClass({
+			...baseBody,
+			name: "Default sessions class",
+		});
+		expect(omitted.status).toBe(201);
+		const [row] = await t.db
+			.select()
+			.from(classTable)
+			.where(eq(classTable.name, "Default sessions class"));
+		expect(row?.sessionsTotal).toBe(12);
 	});
 
 	test("duplicated or over-long skills arrays are 400", async () => {
@@ -2452,12 +2470,26 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toHaveLength(50);
 	});
 
-	test("sessionsTotal = 0 generates zero lessons", async () => {
-		const zeroClassId = await t.createClass(session, "Chưa định số buổi", {
+	test("stored sessionsTotal = 0 generates zero lessons", async () => {
+		// Issue #105: the API now rejects sessionsTotal 0 at creation, but a
+		// legacy row (e.g. the QC-created class) can still carry 0 — the
+		// generator must mint zero lesson rows on enrollment. Row seeded
+		// directly because POST /classes is no longer a valid path to 0.
+		const zeroClassId = crypto.randomUUID();
+		await t.db.insert(classTable).values({
+			id: zeroClassId,
+			orgId: await t.orgIdOf(session),
+			name: "Chưa định số buổi",
+			level: "",
 			type: "communication",
-			skills: [],
-			schedule: { days: [2], start: "19:00", end: "20:30" },
+			skills: "[]",
+			mode: "Online",
+			schedule: JSON.stringify({ days: [2], start: "19:00", end: "20:30" }),
 			sessionsTotal: 0,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "",
+			notes: "",
 		});
 		const studentId = await t.addStudent(session, "HV zero", {
 			classId: zeroClassId,
