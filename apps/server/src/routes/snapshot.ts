@@ -33,6 +33,9 @@ export async function loadInvoices(
 		.select({
 			id: invoice.id,
 			studentId: invoice.studentId,
+			due: invoice.due,
+			note: invoice.note,
+			enrollmentId: invoice.enrollmentId,
 			amount: invoice.amount,
 			status: invoice.status,
 			date: invoice.date,

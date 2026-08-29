@@ -25,6 +25,9 @@ describe("mapInvoices", () => {
 					{
 						id: "INV-1",
 						studentId: "student-1",
+						due: "2026-08-19",
+						note: "",
+						enrollmentId: "enr-1",
 						amount: 500000,
 						status: "paid",
 						date: "19/08",
@@ -53,6 +56,9 @@ describe("mapInvoices", () => {
 				{
 					id: "INV-bad",
 					studentId: "student-1",
+					due: "",
+					note: "",
+					enrollmentId: "",
 					amount: 1,
 					status: "unknown",
 					date: "",

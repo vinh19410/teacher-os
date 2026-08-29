@@ -161,6 +161,9 @@ const snapshot: KernelSnapshot = {
 		{
 			id: "inv-1",
 			studentId: "st-1",
+			due: "2026-08-19",
+			note: "",
+			enrollmentId: "enr-1",
 			amount: 400000,
 			status: "overdue",
 			date: "19/08",
