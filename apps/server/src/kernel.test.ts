@@ -23,6 +23,7 @@ import { membership } from "@teacher-os/db/schema/membership";
 import { notif } from "@teacher-os/db/schema/notif";
 import { organization } from "@teacher-os/db/schema/organization";
 import { report } from "@teacher-os/db/schema/report";
+import { student } from "@teacher-os/db/schema/student";
 import { syllabusLesson } from "@teacher-os/db/schema/syllabus";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -182,6 +183,9 @@ async function createTestApp() {
 			date?: string;
 			type?: string;
 			method?: string;
+			due?: string;
+			note?: string;
+			enrollmentId?: string;
 		},
 	): Promise<string> {
 		const id = crypto.randomUUID();
@@ -194,6 +198,9 @@ async function createTestApp() {
 			date: row.date ?? "19/08",
 			type: row.type ?? "Gói buổi",
 			method: row.method ?? "—",
+			due: row.due ?? "",
+			note: row.note ?? "",
+			enrollmentId: row.enrollmentId ?? "",
 		});
 		return id;
 	}
@@ -597,7 +604,7 @@ describe("invoice persistence", () => {
 		expect(after.packages).toEqual(packagesBefore);
 	});
 
-	test("mark-paid enforces Origin, JSON, strict bounded body, and no create route", async () => {
+	test("mark-paid enforces Origin, JSON, and strict bounded body", async () => {
 		const invoiceId = await t.insertInvoice(session, { studentId });
 		expect(
 			(
@@ -647,15 +654,6 @@ describe("invoice persistence", () => {
 				})
 			).status,
 		).toBe(400);
-		expect(
-			(
-				await t.call("/api/invoices", {
-					session,
-					method: "POST",
-					body: { studentId, amount: 1 },
-				})
-			).status,
-		).toBe(404);
 	});
 
 	test("cross-org and unknown ids are 404 and cannot change the owner row", async () => {
@@ -688,6 +686,162 @@ describe("invoice persistence", () => {
 		expect(
 			snapshot.invoices.some((row) => row.studentId === foreignStudent),
 		).toBe(false);
+	});
+});
+
+describe("invoice create (issue #60)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let studentId: string;
+	let classId: string;
+	let enrollmentId: string;
+
+	function postInvoice(body: unknown) {
+		return t.call("/api/invoices", {
+			session,
+			method: "POST",
+			body,
+		});
+	}
+
+	async function enrollmentIdOf(
+		snapshotSession: TestSession,
+		forClassId: string,
+		forStudentId: string,
+	): Promise<string> {
+		const enrollmentRow = findEnrollment(
+			await t.kernel(snapshotSession),
+			forClassId,
+			forStudentId,
+		);
+		if (!enrollmentRow) throw new Error("enrollment not seeded");
+		return enrollmentRow.id;
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô tạo invoice");
+		classId = await t.createClass(session, "Lớp invoice");
+		studentId = await t.addStudent(session, "Học viên invoice", { classId });
+		enrollmentId = await enrollmentIdOf(session, classId, studentId);
+	});
+
+	test("unauthenticated create is 401", async () => {
+		const res = await t.call("/api/invoices", {
+			method: "POST",
+			body: { enrollmentId, amount: 1, due: "2026-09-15" },
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("creates an unpaid invoice bound to the enrollment, visible in snapshot", async () => {
+		const res = await postInvoice({
+			enrollmentId,
+			amount: 1500000,
+			due: "2026-09-15",
+			note: "Học phí tháng 9",
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(session)).invoices.find(
+			(candidate) => candidate.id === id,
+		);
+		expect(row).toMatchObject({
+			studentId,
+			amount: 1500000,
+			status: "unpaid",
+			due: "2026-09-15",
+			note: "Học phí tháng 9",
+			enrollmentId,
+		});
+	});
+
+	test("duplicates for the same enrollment are allowed (per-period invoices)", async () => {
+		const body = { enrollmentId, amount: 400000, due: "2026-10-15" };
+		const first = await postInvoice(body);
+		const second = await postInvoice(body);
+		expect(first.status).toBe(201);
+		expect(second.status).toBe(201);
+		const firstId = ((await first.json()) as { id: string }).id;
+		const secondId = ((await second.json()) as { id: string }).id;
+		expect(firstId).not.toBe(secondId);
+		const rows = (await t.kernel(session)).invoices.filter(
+			(row) => row.enrollmentId === enrollmentId,
+		);
+		expect(rows).toHaveLength(3);
+	});
+
+	test("rejects invalid amount, due, and shape with 400", async () => {
+		const base = { enrollmentId, amount: 1, due: "2026-09-15" };
+		expect((await postInvoice({ ...base, amount: 0 })).status).toBe(400);
+		expect((await postInvoice({ ...base, amount: -5 })).status).toBe(400);
+		expect((await postInvoice({ ...base, amount: 1.5 })).status).toBe(400);
+		// Regex passes but the calendar date does not exist (rolls to March).
+		expect((await postInvoice({ ...base, due: "2026-02-30" })).status).toBe(
+			400,
+		);
+		expect((await postInvoice({ ...base, due: "15/09/2026" })).status).toBe(
+			400,
+		);
+		expect((await postInvoice({ ...base, surprise: true })).status).toBe(400);
+		expect((await postInvoice({ amount: 1, due: "2026-09-15" })).status).toBe(
+			400,
+		);
+	});
+
+	test("unknown or foreign enrollment is 404 and creates nothing", async () => {
+		const unknown = await postInvoice({
+			enrollmentId: crypto.randomUUID(),
+			amount: 1,
+			due: "2026-09-15",
+		});
+		expect(unknown.status).toBe(404);
+
+		const other = await t.insertUser("Cô enrollment khác org");
+		await t.kernel(other);
+		const otherClassId = await t.createClass(other, "Lớp org khác");
+		const otherStudentId = await t.addStudent(other, "Học viên org khác", {
+			classId: otherClassId,
+		});
+		const foreignEnrollmentId = await enrollmentIdOf(
+			other,
+			otherClassId,
+			otherStudentId,
+		);
+		const foreign = await postInvoice({
+			enrollmentId: foreignEnrollmentId,
+			amount: 1,
+			due: "2026-09-15",
+		});
+		expect(foreign.status).toBe(404);
+		expect((await t.kernel(session)).invoices).toHaveLength(3);
+	});
+
+	test("enrollment whose student row is cross-org is 404 (snapshot visibility)", async () => {
+		const foreignClassId = await t.createClass(session, "Lớp lệch org");
+		const foreignStudentId = await t.addStudent(session, "Học viên lệch org", {
+			classId: foreignClassId,
+		});
+		const foreignEnrollmentId = await enrollmentIdOf(
+			session,
+			foreignClassId,
+			foreignStudentId,
+		);
+		// Corrupt the relation directly: student now belongs to another org
+		// while the enrollment still points at this org's class.
+		const other = await t.insertUser("Cô student khác org");
+		await t.kernel(other);
+		await t.db
+			.update(student)
+			.set({ orgId: await t.orgIdOf(other) })
+			.where(eq(student.id, foreignStudentId));
+
+		const res = await postInvoice({
+			enrollmentId: foreignEnrollmentId,
+			amount: 1,
+			due: "2026-09-15",
+		});
+		expect(res.status).toBe(404);
 	});
 });
 

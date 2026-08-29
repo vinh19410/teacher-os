@@ -1,7 +1,7 @@
 ---
 title: "M2: API tạo invoice + validation (amount/due/enrollment) — issue #60"
 description: "POST /api/invoices: tạo invoice cho enrollment với amount, due, note; validation org-scoped; mở rộng schema invoice (due, note, enrollment_id) + migration; wire row mở rộng; test TDD."
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 tags: [m2, invoice, api, server]

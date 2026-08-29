@@ -43,6 +43,6 @@ Data flow: `kernelCtx` (orgId/userId từ session membership) → `readBody(c, i
 
 ## Success Criteria
 
-- [ ] Toàn bộ test mới xanh; không test nào bị skip.
-- [ ] Route đặt trong `kernel.ts`, mutation ownership đúng theo docs/code-standards.md.
-- [ ] `pnpm check`, `pnpm check-types` xanh.
+- [x] Toàn bộ test mới xanh; không test nào bị skip.
+- [x] Route đặt trong `kernel.ts`, mutation ownership đúng theo docs/code-standards.md.
+- [x] `pnpm check`, `pnpm check-types` xanh.

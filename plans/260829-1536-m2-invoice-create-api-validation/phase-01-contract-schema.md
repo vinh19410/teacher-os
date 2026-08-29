@@ -47,6 +47,6 @@ dependencies: []
 
 ## Success Criteria
 
-- [ ] `pnpm check-types` xanh với contract mới.
-- [ ] Migration file sinh ra additive (3 cột + 1 index), không destructive.
-- [ ] `KernelInvoiceRow` có đủ 3 trường mới; `loadInvoices` chọn đủ cột.
+- [x] `pnpm check-types` xanh với contract mới.
+- [x] Migration file sinh ra additive (3 cột + 1 index), không destructive.
+- [x] `KernelInvoiceRow` có đủ 3 trường mới; `loadInvoices` chọn đủ cột.
