@@ -1,0 +1,11 @@
+---
+title: Issue 104 parked package — pooled entitlements cut from enrollment
+date: 2026-08-28
+summary: "P0: POST /api/students dropped total/price/mode without classId. Option B: session_package owns student (student_id NOT NULL FK, enrollment_id nullable, partial unique parked index). Hand-written 0011 (anti-orphan SELECT NULL guard -> table-recreate -> INNER JOIN backfill -> recreate all indexes) + 0012 (partial index only, D1 apply is not transactional). Meta snapshots via 2-pass generate recipe (no journal surgery). Verified: 171/171 server, 359/359 web, migration 3/3, e2e 26/26, drizzle generate diff rỗng, wrangler --local D1-engine run keeps seeded money row with FK on. Lessons: (1) tool-generated backfill for a new NOT NULL column fails on real data — hand-write and prove on the D1 engine; (2) a whole pipeline of hostile review certified an artifact that was still uncommitted — commit after every green gate; (3) one kongming checkpoint falsely reported the worktree deleted — verify counsel claims that would block action before acting on them."
+---
+
+# Issue 104 parked package — pooled entitlements cut from enrollment
+
+P0: POST /api/students dropped total/price/mode without classId. Option B: session_package owns student (student_id NOT NULL FK, enrollment_id nullable, partial unique parked index). Hand-written 0011 (anti-orphan SELECT NULL guard -> table-recreate -> INNER JOIN backfill -> recreate all indexes) + 0012 (partial index only, D1 apply is not transactional). Meta snapshots via 2-pass generate recipe (no journal surgery). Verified: 171/171 server, 359/359 web, migration 3/3, e2e 26/26, drizzle generate diff rỗng, wrangler --local D1-engine run keeps seeded money row with FK on. Lessons: (1) tool-generated backfill for a new NOT NULL column fails on real data — hand-write and prove on the D1 engine; (2) a whole pipeline of hostile review certified an artifact that was still uncommitted — commit after every green gate; (3) one kongming checkpoint falsely reported the worktree deleted — verify counsel claims that would block action before acting on them.
+
+> Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.

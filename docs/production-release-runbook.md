@@ -22,6 +22,7 @@ environment — never editing this runbook.
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
+| Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 
 With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
@@ -51,8 +52,13 @@ Staging is the QC browser target: `https://app.staging.teacheros.io.vn` (web)
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
-`.staging.teacheros.io.vn` — nothing on staging can read or write
-production, and prod sessions do not resolve there.
+`.staging.teacheros.io.vn`. Because staging is a subdomain of the prod apex,
+browsers also send prod's parent-domain session cookie
+(`__Secure-better-auth.session_token`, `Domain=.teacheros.io.vn`) to the
+staging API; staging therefore emits its session under the namespaced
+`teacheros-staging` prefix (topology table above), so the foreign prod-zone
+cookie can never shadow a staging session (issue #125). Nothing on staging
+can read or write production.
 
 ## Secret inventory
 
@@ -103,7 +109,11 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 The staging stage owns its own isolated D1 database — required before any
 migration/recovery rehearsal — and serves QC on its own subdomain:
 `https://app.staging.teacheros.io.vn` (web) +
-`https://api.staging.teacheros.io.vn` (API).
+`https://api.staging.teacheros.io.vn` (API). After first provisioning (or
+destroy/recreate), the automated staging deploy (see "Automated staging
+deploy (CI/CD)" below) keeps the stage current on every push to `develop`;
+run this procedure manually only for first provisioning or
+destroy/recreate.
 
 ```bash
 cd packages/infra
@@ -145,10 +155,30 @@ within ~10 minutes or the run is marked failed. Deploys are serialized
 Scope of automation: code + bindings + migrations only. The operator gates
 this file cannot decide remain manual per the preflight above — rehearsing a
 pending migration on staging before it reaches prod, and the Chrome/Safari
-browser smoke after a deploy (the workflow's curl smoke proves readiness, not
-auth). Manual override/rollback stays available via `workflow_dispatch` and
+browser smoke after a deploy (the prod workflow's curl smoke proves
+readiness, not auth). Manual override/rollback stays available via
+`workflow_dispatch` and
 the "Rollback code" procedure; rotating any secret means updating both the
 operator `.env` and the GitHub repo secret of the same name.
+
+## Automated staging deploy (CI/CD)
+
+`.github/workflows/deploy-staging.yml` is the sibling workflow for stage
+`staging`: every push to `develop` (plus manual `workflow_dispatch`) runs the
+same quality gates as CI, then
+`APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
+with credentials from the GitHub `staging` environment (same secret names as
+production), serialized like prod (`cancel-in-progress: false`) so
+forward-only migrations never race. Its post-deploy smoke is broader than
+prod's because staging is the QC target: `/readyz` polling, an auth
+round-trip (throwaway sign-up → `get-session` with a cookie jar poisoned by a
+prod-shaped parent-domain session cookie — the exact shape that broke QC
+sign-in before issue #125), and a check that the removed PWA service
+worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
+network-first cache headers. Throwaway smoke accounts are accepted junk rows
+in the staging D1; prod deliberately gets no signup smoke. The manual
+"Provision staging" procedure below remains the path for first provisioning
+or destroy/recreate.
 
 ## Deploy (production)
 

@@ -96,6 +96,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 ### CI pipelines
 
 - Pull requests and pushes to `main`/`develop` run quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml)) and the Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)); their required shape is asserted by `pnpm run test:ci-workflow`.
+- Every push to `develop` ships the QC staging environment automatically: [.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml) re-runs the same quality gates, deploys Alchemy stage `staging` with credentials from the GitHub `staging` environment, then polls `/readyz` and runs an auth sign-up round-trip smoke plus service-worker stub checks.
 - Merging `develop` into `main` ships production automatically: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) re-runs the same quality gates, deploys Alchemy stage `prod` with credentials from the GitHub `production` environment, then polls `/readyz` until the API reports ready.
 
 ### Alchemy
@@ -119,7 +120,7 @@ pnpm alchemy deploy --stage prod      # production
 
 ### Production topology
 
-Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, and cross-subdomain session cookies all derive from it (see `packages/infra/src/topology.ts`). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
+Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, cross-subdomain session cookies, and the auth cookie namespace prefix all derive from it (see `packages/infra/src/topology.ts` — staging, as a non-prod member of the prod cookie zone, gets the `teacheros-staging` namespace so prod's parent-domain cookie cannot shadow its sessions). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
 
 Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 
