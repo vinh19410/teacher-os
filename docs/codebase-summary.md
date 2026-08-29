@@ -32,6 +32,6 @@ This is the navigation surface for the repository. It points to the owning files
 - If you are changing UI state or kernel writes, start in [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts); query-layer behavior (keys, retry, refetch policy) lives in [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts).
 - If you are changing persistence, start in [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) and the individual schema files under `packages/db/src/schema/`.
 - If you are changing request bodies or response shapes, start in [packages/api/src/contracts.ts](../packages/api/src/contracts.ts).
-- If you are changing deployment or local runtime wiring, start in [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts).
+- If you are changing deployment or local runtime wiring, start in [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts); topology derivation (origins, cookie domain, auth cookie namespace prefix) lives in [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) with its validation in [packages/auth/src/topology.ts](../packages/auth/src/topology.ts).
 - If you are changing CI gates or workflow triggers, start in `.github/workflows/`; [scripts/ci-workflow.test.mjs](../scripts/ci-workflow.test.mjs) asserts the contract those workflows must keep.
 

@@ -17,6 +17,19 @@ export const studentCreateSchema = z.object({
 });
 export type StudentCreate = z.infer<typeof studentCreateSchema>;
 
+/**
+ * Issue #122 — enroll an EXISTING student into a class. Package fields mirror
+ * studentCreateSchema defaults so an enrolled-existing student owns the same
+ * active-package shape the create-new branch produces.
+ */
+export const enrollStudentSchema = z.object({
+	studentId: z.string().min(1),
+	total: z.number().int().min(0).default(10),
+	price: z.number().int().min(0).default(400000),
+	mode: z.enum(["Online", "Offline"]).default("Online"),
+});
+export type EnrollStudent = z.infer<typeof enrollStudentSchema>;
+
 export const CLASS_TYPES = ["ielts", "communication"] as const;
 export type ClassType = (typeof CLASS_TYPES)[number];
 
@@ -51,19 +64,21 @@ export const classCreateSchema = z
 				.max(7)
 				.refine((days) => new Set(days).size === days.length),
 			start: z.string().regex(TIME_REGEX),
-			/** end <= start means the session crosses midnight — valid. */
 			end: z.string().regex(TIME_REGEX),
 		}),
 		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
-		sessionsTotal: z.number().int().min(0).max(52).default(12),
+		sessionsTotal: z.number().int().min(1).max(52).default(12),
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
-		if (input.schedule.start === input.schedule.end) {
+		// Issue #105: creation rejects end <= start. Legacy stored rows with
+		// end < start still parse (parseStoredSchedule guards only start ===
+		// end) — the cross-midnight duration math stays for display only.
+		if (input.schedule.end <= input.schedule.start) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["schedule", "end"],
-				message: "Giờ kết thúc phải khác giờ bắt đầu",
+				message: "Giờ kết thúc phải sau giờ bắt đầu",
 			});
 		}
 		if (input.type === "ielts" && input.skills.length === 0) {
@@ -223,6 +238,55 @@ export const lessonEditSchema = z
 	.strict();
 export type LessonEdit = z.infer<typeof lessonEditSchema>;
 
+/**
+ * Occurrence-level edit (issue #98) — `≥1` field, never `day`: the server
+ * derives the weekday from `moveDate`. Every shared field MUST stay
+ * constraint-identical to lessonEditSchema above (.strict(), zoom only "" or
+ * https:// — it lands in the Zalo reminder template so scheme injection dies
+ * at the boundary; topic ≤500; dur ≤1440 with midnight wrap handled by the
+ * generator formula). moveDate is pattern-checked here and roundtrip-guarded
+ * against the real calendar server-side (`parseStartDateStrict`) because a
+ * regex alone accepts 2026-02-30.
+ */
+export const occurrenceEditSchema = z
+	.object({
+		moveDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
+		time: z.string().regex(TIME_REGEX).optional(),
+		dur: z.number().int().min(1).max(1440).optional(),
+		topic: z.string().max(500).optional(),
+		zoom: z
+			.string()
+			.max(2048)
+			.optional()
+			.refine(
+				(value) =>
+					value === undefined || value === "" || value.startsWith("https://"),
+				{
+					message: "zoom phải là URL https:// hoặc rỗng",
+				},
+			),
+	})
+	.strict()
+	.refine(
+		(body) =>
+			body.moveDate !== undefined ||
+			body.time !== undefined ||
+			body.dur !== undefined ||
+			body.topic !== undefined ||
+			body.zoom !== undefined,
+		{ message: "cần ít nhất một trường để chỉnh" },
+	);
+export type OccurrenceEdit = z.infer<typeof occurrenceEditSchema>;
+
+/** Occurrence mutations report what landed (advisory numbers — see plan #98 K5/RT5). */
+export interface OccurrenceMutationResponse {
+	updated: number;
+	skipped: number;
+}
+
 /** Mark-paid accepts only the display method; amount/status remain server-owned. */
 export const invoiceMarkPaidSchema = z
 	.object({ method: z.string().trim().min(1).max(32) })
@@ -269,13 +333,15 @@ export interface KernelEnrollmentRow {
 }
 
 /**
- * Entitlement joined with its enrollment's class/student for the adapter.
- * done/remaining are derived downstream, never stored (invariant 6).
+ * Entitlement owned by a student; enrollment is the optional class attachment
+ * (issue #104 — a package can exist before the student joins a class, so
+ * `enrollmentId`/`classId` are null for parked packages).
+ * done/remaining are derived downstream, never stored.
  */
 export interface KernelPackageRow {
 	id: string;
-	enrollmentId: string;
-	classId: string;
+	enrollmentId: string | null;
+	classId: string | null;
 	studentId: string;
 	total: number;
 	price: number;
@@ -337,6 +403,9 @@ export interface KernelAssignmentRow {
  * A delivered/plan session (Wave 4). The student is never on this row —
  * the adapter resolves `sid` via the enrollment (invariant 2). done/remaining
  * derive from completed rows of the enrollment (invariant 6).
+ * `date` (issue #98): occurrence identity yyyy-mm-dd — every row sharing
+ * `(classId, date)` IS one physical session; NULL means the class diverged
+ * from its schedule heuristic and renders through the frozen legacy path.
  */
 export interface KernelLessonRow {
 	id: string;
@@ -345,6 +414,7 @@ export interface KernelLessonRow {
 	day: number;
 	time: string;
 	dur: number;
+	date: string | null;
 	type: string;
 	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
 	topic: string;

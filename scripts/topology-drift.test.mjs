@@ -60,3 +60,35 @@ test(".env.example keeps CORS_ORIGIN commented out", () => {
 		"CORS_ORIGIN must stay commented in .env.example — dev defaults in code, staging passes it inline",
 	);
 });
+
+test("workflow APP_DOMAIN domains agree with the prod apex constant (cookie-zone rule)", () => {
+	// Issue #125: the auth cookie namespace rule keys off the exact prod apex
+	// (PROD_APP_DOMAIN in packages/infra/src/topology.ts). If a workflow's
+	// APP_DOMAIN drifts from that constant, prod could silently fall into the
+	// non-prod prefix branch (or vice versa).
+	const topology = read("../packages/infra/src/topology.ts");
+	const prodApex = topology.match(/PROD_APP_DOMAIN\s*=\s*"([^"]+)"/)?.[1];
+	assert.ok(
+		prodApex,
+		"PROD_APP_DOMAIN found in packages/infra/src/topology.ts",
+	);
+
+	const prodAppDomain = read("../.github/workflows/deploy.yml").match(
+		/^\s*APP_DOMAIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	assert.equal(
+		prodAppDomain,
+		prodApex,
+		"deploy.yml APP_DOMAIN must be the exact PROD_APP_DOMAIN (default cookie namespace)",
+	);
+
+	const stagingAppDomain = read(
+		"../.github/workflows/deploy-staging.yml",
+	).match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
+	assert.ok(
+		stagingAppDomain &&
+			stagingAppDomain !== prodApex &&
+			stagingAppDomain.endsWith(`.${prodApex}`),
+		"deploy-staging.yml APP_DOMAIN must be a non-apex member of the prod cookie zone (namespaced cookie prefix)",
+	);
+});

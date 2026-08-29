@@ -5,10 +5,7 @@
  * endpoint base URL + the QueryClient refetch behind the bus).
  */
 import { queryOptions } from "@tanstack/react-query";
-import type {
-	CreatedResponse,
-	KernelSnapshot,
-} from "@teacher-os/api/contracts";
+import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import type { KernelAction } from "@/lib/data-actions";
 import {
 	HttpError,
@@ -49,6 +46,17 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					...(action.payload.classId
 						? { classId: action.payload.classId }
 						: {}),
+				},
+			};
+		case "enroll-student":
+			// Issue #122: enroll an EXISTING student into the viewed class.
+			return {
+				path: `/api/classes/${action.classId}/enroll`,
+				body: {
+					studentId: action.studentId,
+					total: action.payload.total,
+					price: action.payload.price,
+					mode: action.payload.mode,
 				},
 			};
 		case "add-class":
@@ -97,6 +105,23 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return {
 				path: `/api/lessons/${action.lessonId}/edit`,
 				body: { ...action.payload },
+			};
+		case "session-edit":
+			// Occurrence edit (#98): partial payload, server derives weekday.
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/edit`,
+				body: { ...action.payload },
+			};
+		case "session-check-in":
+			// Body stays exactly {} — the endpoint addresses the whole bucket.
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/check-in`,
+				body: {},
+			};
+		case "session-cancel":
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}/cancel`,
+				body: {},
 			};
 		case "mark-invoice-paid":
 			return {
@@ -193,10 +218,25 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
  * - `outcome-unknown` — 5xx/408/429 or transport loss: a committed write may
  *   have lost its response. Reconcile the snapshot before any retry.
  */
+/**
+ * Occurrence-count honesty channel (#98 N2): refreshed/committed results may
+ * carry `{updated, skipped}` parsed from the response envelope so UI can tell
+ * "x/y học viên" truthfully instead of counting client-side snapshots.
+ */
+export interface KernelCommandPayload {
+	updated?: number;
+	skipped?: number;
+}
+
 export type KernelCommandResult =
-	| { kind: "refreshed"; id?: string }
-	| { kind: "committed"; id?: string }
-	| { kind: "definite-failure"; status: number; error: unknown }
+	| ({ kind: "refreshed"; id?: string } & KernelCommandPayload)
+	| ({ kind: "committed"; id?: string } & KernelCommandPayload)
+	| {
+			kind: "definite-failure";
+			status: number;
+			error: unknown;
+			reason?: string;
+	  }
 	| { kind: "outcome-unknown"; error: unknown };
 
 /**
@@ -217,11 +257,52 @@ export function classifyWriteFailure(
 	return { kind: "outcome-unknown" };
 }
 
-/** Transport: POST a kernel write and resolve the server-assigned id. */
+/**
+ * Successful-write wire shape (#98 N2): legacy endpoints answer `{id}`,
+ * occurrence mutations answer `{updated, skipped}`. Parsed defensively — a
+ * foreign 2xx body degrades to an empty envelope instead of poisoning callers.
+ */
+export interface KernelWriteEnvelope {
+	id?: string;
+	updated?: number;
+	skipped?: number;
+}
+
+function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
+	if (typeof json !== "object" || json === null || Array.isArray(json)) {
+		return {};
+	}
+	const record = json as Record<string, unknown>;
+	const envelope: KernelWriteEnvelope = {};
+	if (typeof record.id === "string") envelope.id = record.id;
+	if (typeof record.updated === "number") envelope.updated = record.updated;
+	if (typeof record.skipped === "number") envelope.skipped = record.skipped;
+	return envelope;
+}
+
+/** Extract `{reason}` from an error body — silently skips non-JSON/garbage. */
+async function parseErrorReason(res: Response): Promise<string | undefined> {
+	try {
+		const json: unknown = await res.json();
+		if (
+			typeof json === "object" &&
+			json !== null &&
+			!Array.isArray(json) &&
+			typeof (json as Record<string, unknown>).reason === "string"
+		) {
+			return (json as Record<string, unknown>).reason as string;
+		}
+	} catch {
+		// Body-rác/không-JSON: reason stays undefined; status still classifies.
+	}
+	return undefined;
+}
+
+/** Transport: POST a kernel write and resolve its parsed 2xx envelope. */
 export async function postKernelCommand(
 	baseUrl: string,
 	action: KernelAction,
-): Promise<string | undefined> {
+): Promise<KernelWriteEnvelope> {
 	const { path, body } = kernelCommand(action);
 	const res = await fetch(`${baseUrl}${path}`, {
 		method: "POST",
@@ -232,10 +313,18 @@ export async function postKernelCommand(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`);
+		const reason = await parseErrorReason(res);
+		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`, {
+			reason,
+		});
 	}
-	const json = (await res.json()) as Partial<CreatedResponse>;
-	return json.id;
+	let json: unknown;
+	try {
+		json = await res.json();
+	} catch {
+		return {};
+	}
+	return parseWriteEnvelope(json);
 }
 
 /** Every kernel snapshot collection, per the API contract. */
@@ -329,7 +418,7 @@ export function kernelQueryOptions(baseUrl: string) {
 }
 
 export interface KernelCommandBusDeps {
-	postCommand(action: KernelAction): Promise<string | undefined>;
+	postCommand(action: KernelAction): Promise<KernelWriteEnvelope>;
 	/**
 	 * Refetch the kernel snapshot through the shared `['kernel']` query.
 	 * Resolves when the fresh snapshot landed in the cache; throws on any
@@ -381,9 +470,9 @@ export function createKernelCommandBus(
 	}
 
 	async function runOne(action: KernelAction): Promise<KernelCommandResult> {
-		let id: string | undefined;
+		let envelope: KernelWriteEnvelope;
 		try {
-			id = await deps.postCommand(action);
+			envelope = await deps.postCommand(action);
 		} catch (error) {
 			// A dead session rejects the write before commit — the host must
 			// re-authenticate; a retry would hit the same dead session.
@@ -392,13 +481,19 @@ export function createKernelCommandBus(
 			}
 			const classified = classifyWriteFailure(error);
 			return classified.kind === "definite-failure"
-				? { kind: "definite-failure", status: classified.status, error }
+				? {
+						kind: "definite-failure",
+						status: classified.status,
+						error,
+						reason: isHttpError(error) ? error.reason : undefined,
+					}
 				: { kind: "outcome-unknown", error };
 		}
+		const { id, updated, skipped } = envelope;
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				await deps.refetch();
-				return { kind: "refreshed", id };
+				return { kind: "refreshed", id, updated, skipped };
 			} catch (error) {
 				// Session expired between the write and the refresh. The write
 				// itself committed, so report once and re-auth — a retry would
@@ -407,7 +502,7 @@ export function createKernelCommandBus(
 				// absorbed: its ack IS the durable commit boundary).
 				if (isHttpError(error) && error.status === 401) {
 					deps.onAuthLost();
-					return { kind: "committed", id };
+					return { kind: "committed", id, updated, skipped };
 				}
 				// A flaky GET must not lose the acknowledged write's outcome.
 			}
@@ -415,7 +510,7 @@ export function createKernelCommandBus(
 		// The 2xx acknowledgement is the durable commit boundary — the write
 		// IS saved even though the UI could not reload. Callers see
 		// `committed`, keep the input out of retry reach, and reconcile.
-		return { kind: "committed", id };
+		return { kind: "committed", id, updated, skipped };
 	}
 
 	return {

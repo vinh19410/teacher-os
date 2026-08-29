@@ -392,3 +392,65 @@ describe("reducer", () => {
 		);
 	});
 });
+
+describe("enroll-student (issue #122)", () => {
+	const enrollPayload = { total: 8, price: 100, mode: "Offline" as const };
+
+	test("enroll-student adds an existing student to the class and sets pkg", () => {
+		const before = cloneSeed();
+		const beforeStudent = before.students.find((s) => s.id === "s4");
+		expect(beforeStudent).toBeDefined();
+		const next = reducer(before, {
+			type: "enroll-student",
+			classId: "c2",
+			studentId: "s4",
+			payload: enrollPayload,
+		});
+		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual(["s4"]);
+		const enrolled = next.students.find((s) => s.id === "s4");
+		expect(enrolled?.pkg).toEqual({
+			total: 8,
+			done: 0,
+			remaining: 8,
+			price: 100,
+			mode: "Offline",
+			start: "19/08",
+			expiry: "—",
+		});
+		// The student is moved, not duplicated.
+		expect(next.students.length).toBe(before.students.length);
+	});
+
+	test("enroll-student with unknown classId leaves state unchanged", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "enroll-student",
+			classId: "c-missing",
+			studentId: "s1",
+			payload: enrollPayload,
+		});
+		expect(next).toEqual(before);
+	});
+
+	test("enroll-student with unknown studentId leaves state unchanged", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "enroll-student",
+			classId: "c2",
+			studentId: "s-missing",
+			payload: enrollPayload,
+		});
+		expect(next).toEqual(before);
+	});
+
+	test("enroll-student is a no-op when the student is already in the class", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "enroll-student",
+			classId: "c1",
+			studentId: "s1",
+			payload: enrollPayload,
+		});
+		expect(next).toEqual(before);
+	});
+});

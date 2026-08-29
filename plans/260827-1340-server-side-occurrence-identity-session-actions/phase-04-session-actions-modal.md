@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "SessionActionsModal + per-occurrence edit UI"
-status: pending
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [3]
@@ -21,7 +21,9 @@ Triển khai tầng UI được DEFERRED từ #93 ở dạng GIẢM theo dated-i
   - Section hành động: nút "Hoàn thành buổi" disabled khi `!sessionIsEligibleDate(s, todayISO)` (VN date gate qua ISO-compare như cũ :325-330); nút "Hủy buổi" luôn enabled.
   - Confirm Hủy (bất khả hồi): danh sách tên học viên sẽ bị hủy (tên via `studentById`, sid chưa-settled trong bucket), 2-step nội bộ (state, không window.confirm — vô hình Playwright); confirm Hoàn thành tương tự khi bucket > 1 sid (một sid → trực tiếp).
   - Form chỉnh sửa: prefill topic/zoom/time/dur/date từ bucket rows; save ≥1-field đổi mới POST edit; moveDate input `<input type="date">`; lỗi 409 date-occupied báo ngay trong modal (dùng HttpError.reason — lần ĐẦU TIÊN client diễn giải nguyên nhân).
-  - Partial result honesty: response `{updated, skipped}` với skipped>0 hiển thị note "x/y học viên (đã settled trước đó)".
+  - **Targeting bằng identity không phải vị trí (red-team round-2 N4): selection/modal binding key theo `dateISO` string, KHÔNG numeric index trong mảng `sessions` — một moveDate thành công reorder chronology nên index vị trí trở thành con trỏ treo nhắm nhầm bucket khác. moveDate THÀNH CÔNG ⇒ đóng modal ngay (toast-only) hoặc remount với targets mới từ fresh snapshot; disable Hoàn thành/Hủy khi form đã dirty đổi identity.**
+  - Partial result honesty: response `{updated, skipped}` với skipped>0 hiển thị note "x/y học viên (đã settled trước đó)" — **số liệu lấy từ `result.payload` do P2 envelope cung cấp (N2), KHÔNG tự đếm từ snapshot client-side (snapshot-derived count sai đúng lúc race đa tab — đúng case mà `{updated,skipped}` sinh ra để phân biệt).**
+  - **409 guidance riêng (red-team round-2 N5): kernel-outcome/branch dành cho `reason: use-occurrence-endpoint` → message dẫn về nút "Điều chỉnh buổi" (KHÔNG rơi vào heal-409 copy chung "Dữ liệu đã được cập nhật trước đó" — sai ngữ nghĩa vì nothing-changed); ghi ràng buộc thứ tự: branch này CHỈ khả thi sau khi envelope P2 land (HttpError.reason mới tồn tại).**
 - Non-functional (C4 nguyên văn):
   - Snapshot tên local chụp TRƯỚC call từ props/derive-once, không re-resolve giữa chừng.
   - Modal KHÓA đóng khi request đang chạy (precedent grade-modal.tsx:170); disable bằng cờ local instance; disable mọi nút trong modal.
@@ -35,11 +37,12 @@ Triển khai tầng UI được DEFERRED từ #93 ở dạng GIẢM theo dated-i
 // classId lấy từ route params ($classId), KHÔNG từ ClassSession shape
 const completeSessionOccurrence = async (s: ClassSession) => {
   const result = await dispatch({ type: "session-check-in", classId, date: s.dateISO });
-  // classify {updated, skipped} + reason nếu throw → MỘT toast summary
+  // result.payload.updated/skipped từ envelope P2 (N2) → MỘT toast summary;
+  // throw với HttpError.reason use-occurrence-endpoint → guidance riêng (N5)
 };
 ```
 
-Modal components file mỏng: info + list + 2 buttons + form state machine (idle→confirm→running→result). Data-action type mới đăng ký tại contracts (P2 schema đã có) — verify `data-actions.ts` chỉ thêm mapping KhÔNG logic mới.
+Modal components file mỏng: info + list + 2 buttons + form state machine (idle→confirm→running→result). Data-action type mới đăng ký tại contracts (P2 schema đã có) — verify `data-actions.ts` chỉ thêm mapping KhÔNG logic mới. State selection giữ `selectedDateISO: string | null` (không `actionsIndex`) — render-time re-resolve bucket theo dateISO từ sessions hiện hành (N4).
 
 Cell Trạng thái JSX: Fragment wrap giữ NGUYÊN cả 2 nhánh "Điểm danh", append nút Điều chỉnh phía sau (R4 pins).
 
@@ -49,7 +52,8 @@ Cell Trạng thái JSX: Fragment wrap giữ NGUYÊN cả 2 nhánh "Điểm danh"
 - Modify: `apps/web/src/routes/_auth/classes/$classId.tsx` (callbacks + thread props)
 - Modify: `apps/web/src/repos/kernel.ts` **`kernelCommand()` mapper ~:37** — đăng ký path/body cho 3 action type mới; không có bước này snippet dispatch không chạy được (red-team Medium #5)
 - Modify: `apps/web/src/lib/data-actions.ts` (mapping action mới, zero logic)
-- Modify: `apps/web/src/components/class-detail/class-schedule-table.tsx` (nút + state actionsIndex song song modalIndex :77, re-resolve pattern :137)
+- Modify: `apps/web/src/lib/kernel-outcome.ts` (reason-aware branch use-occurrence-endpoint — N5)
+- Modify: `apps/web/src/components/class-detail/class-schedule-table.tsx` (nút + state `selectedDateISO` thế cho positional index — modalIndex hiện tại :77 là pattern attendance KHÔNG copy vì flow moveDate reorder mảng; N4)
 - Modify: contract tests (kernel-runtime.contract.test.ts pins callback-threading + non-goal flip-update)
 
 ⚠️ Pin-file hygiene: literal chuỗi `session.rows` CẤM xuất hiện trong class-schedule-table.tsx / session-attendance-modal.tsx / $classId.tsx (regex pin #91 phủ 2 file đầu — red-team Medium #8).
@@ -58,19 +62,20 @@ Cell Trạng thái JSX: Fragment wrap giữ NGUYÊN cả 2 nhánh "Điểm danh"
 
 1. Tests-first contract: modal không-import-direct-action; pins #91 regex vẫn match sau restructure; pin entry-gate target-based.
 2. KernelAction types + kernelCommand() mapper paths (`/classes/:id/sessions/:date/{edit,check-in,cancel}`) + data-actions mapping + inflight-key test mỗi action.
-3. Route callbacks 3 hàm với toast-summary classification (updated/skipped/reason) — unit-testable seam thuần.
-4. SessionActionsModal UI theo spec; confirm-list derive-once; khóa-running; form prefill & 409-reason display.
-5. Table integration: Fragment-wrap cell, append button, state actionsIndex.
+3. Route callbacks 3 hàm với toast-summary classification đọc `result.payload` (updated/skipped) + reason-aware branch cho `use-occurrence-endpoint` trong kernel-outcome (N5, phụ thuộc envelope P2 đã land) — unit-testable seam thuần.
+4. SessionActionsModal UI theo spec; confirm-list derive-once; khóa-running; targeting dateISO-keyed (N4: close-on-move/remount); form prefill & 409-reason display.
+5. Table integration: Fragment-wrap cell, append button, state `selectedDateISO` (dateISO-keyed targeting — N4).
 6. Gates xanh (+ visual manual pass UAT check module tab Buổi học incl. legacy class regression không lộ nút).
 
 ## Success Criteria
 
-- [ ] Session v2 có target mở modal được kể cả future; badge-status kind không cản entry; completed-all-bucket row KHÔNG còn nút.
-- [ ] Hoàn thành disabled pre-date; Hủy cần confirm liệt-kê-tên; cả hai tạo ĐÚNG 1 network call + 1 refetch (contract test assert bus-inflight key semantics).
-- [ ] Toast MỘT lần/action; nội dung trung thực bucket counts; failure reason surface.
-- [ ] Form update occurrence k reflected tại row k instantly post-refetch (regression với bug gốc #93); moveDate collision hiển thị message riêng.
-- [ ] Regex pins #91/#93 tất cả still-match; non-goal field-edit pins #93 UPDATE có chủ đích để phản chiếu feature mới (supersession inline comment tham chiếu plan dir này).
-- [ ] Gates xanh toàn bộ.
+- [x] Session v2 có target mở modal được kể cả future; badge-status kind không cản entry; completed-all-bucket row KHÔNG còn nút.
+- [x] Hoàn thành disabled pre-date; Hủy cần confirm liệt-kê-tên; cả hai tạo ĐÚNG 1 network call + 1 refetch (contract test assert bus-inflight key semantics).
+- [x] Toast MỘT lần/action; nội dung trung thực bucket counts ĐỌC TỪ payload P2 (test assert không đếm từ snapshot); failure reason surface gồm guidance riêng use-occurrence-endpoint.
+- [x] Move thành công ⇒ modal đóng (hoặc remount targets mới); targeting dateISO-keyed — test assert modal sau-reorder không nhắm bucket khác (regression N4).
+- [x] Form update occurrence k reflected tại row k instantly post-refetch (regression với bug gốc #93); moveDate collision hiển thị message riêng.
+- [x] Regex pins #91/#93 tất cả still-match; non-goal field-edit pins #93 UPDATE có chủ đích để phản chiếu feature mới (supersession inline comment tham chiếu plan dir này).
+- [x] Gates xanh toàn bộ.
 
 ## Risk Assessment
 

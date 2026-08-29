@@ -2,7 +2,6 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
 	server: {
@@ -19,18 +18,9 @@ export default defineConfig({
 			autoCodeSplitting: true,
 		}),
 		react(),
-		VitePWA({
-			registerType: "autoUpdate",
-			manifest: {
-				name: "Teacher OS",
-				short_name: "Teacher OS",
-				description:
-					"Teacher OS — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
-				theme_color: "#ffffff",
-				background_color: "#ffffff",
-			},
-			pwaAssets: { disabled: false, config: true },
-			devOptions: { enabled: true },
-		}),
+		// No service worker on purpose (issue #125): the vite-plugin-pwa SW
+		// broke SPA boot and auth fetches in real browsers and precached
+		// index.html served stale shells across deploys. public/sw.js only
+		// self-unregisters the SW in browsers that still hold it.
 	],
 });

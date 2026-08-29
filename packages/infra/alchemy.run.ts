@@ -10,10 +10,11 @@ config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
 /**
- * Production topology: set APP_DOMAIN to a bare domain (e.g. teacher-os.edu.vn)
- * to serve the app at app.<domain> and the API at api.<domain> with
- * cross-subdomain session cookies. Without APP_DOMAIN the stack keeps its
- * generated workers.dev URLs and per-host cookies (dev/staging behavior).
+ * Domain topology: set APP_DOMAIN to a bare domain (teacheros.io.vn for prod,
+ * staging.teacheros.io.vn for staging) to serve the app at app.<domain> and
+ * the API at api.<domain> with cross-subdomain session cookies. Without
+ * APP_DOMAIN (local dev only) the stack keeps its generated workers.dev URLs
+ * and per-host cookies.
  *
  * APP_DOMAIN is read from process.env (after dotenv), not Effect Config: it is
  * deploy-time topology wiring the operator sets, and its presence/absence
@@ -72,6 +73,11 @@ export const server = Cloudflare.Worker("server", {
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
+		// Issue #125: stage-scoped auth cookie namespace (empty = default
+		// better-auth namespace for prod/local).
+		BETTER_AUTH_COOKIE_PREFIX: topology
+			? (topology.authCookiePrefix ?? "")
+			: "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
 	},

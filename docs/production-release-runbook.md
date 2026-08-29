@@ -22,11 +22,15 @@ environment — never editing this runbook.
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
+| Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 
-With `APP_DOMAIN` unset (local dev and staging), the stack keeps its generated
-`workers.dev` URLs and per-host cookies. `alchemy dev` defaults `CORS_ORIGIN`
-to `http://localhost:8001`; staging deploys require it inline. Derived-value
+With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
+`workers.dev` URLs and per-host cookies, and `alchemy dev` defaults
+`CORS_ORIGIN` to `http://localhost:8001`. Staging resolves the same table with
+`APP_DOMAIN=staging.teacheros.io.vn`: `app.staging.teacheros.io.vn` (web) +
+`api.staging.teacheros.io.vn` (API), session cookies scoped to
+`.staging.teacheros.io.vn` (see "Provision staging"). Derived-value
 unit tests live in
 `packages/infra/src/topology.test.ts` and `packages/auth/src/topology.test.ts`.
 
@@ -38,11 +42,23 @@ different stages never overlap.
 | Stage | Purpose | APP_DOMAIN | Data |
 | --- | --- | --- | --- |
 | `dev_<user>` (default) | Local development | unset | disposable |
-| `staging` | Migration/recovery rehearsal, pre-release checks | unset | **rehearsal only** — never production data |
+| `staging` | Migration/recovery rehearsal, pre-release checks, QC | `staging.teacheros.io.vn` | **rehearsal only** — never production data |
 | `prod` | Pilot/production | set to the real domain | real pilot data |
 
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
+
+Staging is the QC browser target: `https://app.staging.teacheros.io.vn` (web)
+and `https://api.staging.teacheros.io.vn` (API). It lives in the same
+Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
+own `BETTER_AUTH_SECRET` value, and cookies scoped to
+`.staging.teacheros.io.vn`. Because staging is a subdomain of the prod apex,
+browsers also send prod's parent-domain session cookie
+(`__Secure-better-auth.session_token`, `Domain=.teacheros.io.vn`) to the
+staging API; staging therefore emits its session under the namespaced
+`teacheros-staging` prefix (topology table above), so the foreign prod-zone
+cookie can never shadow a staging session (issue #125). Nothing on staging
+can read or write production.
 
 ## Secret inventory
 
@@ -56,8 +72,8 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | --- | --- | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Deploy operator | operator env | n/a (identifier, not a credential) |
 | `CLOUDFLARE_API_TOKEN` | Deploy operator | operator env | Cloudflare dashboard → My Profile → API Tokens → roll, update `.env` |
-| `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | generate new secret, redeploy **all** stages in one window; invalidates sessions |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy |
+| `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
 
 ## Deploy preflight (all releases)
@@ -73,8 +89,11 @@ loads `packages/infra/.env` first — a value there wins over the same name in
    provisions DNS records and certificates; a zone hosted elsewhere is a
    NO-GO until moved or delegated).
 4. **Google OAuth console** — redirect URIs registered for the exact
-   production topology: `https://api.<domain>/api/auth/callback/google`
-   (plus any staging origin used for live sign-in tests).
+   production topology: `https://api.<domain>/api/auth/callback/google`,
+   plus the staging callback
+   `https://api.staging.teacheros.io.vn/api/auth/callback/google`
+   (sign-in on staging fails without it; the `/readyz` smoke works
+   regardless).
 5. **Secrets present** — every name in the inventory has a value in the
    operator env; no secret has ever been committed (search the repo if
    unsure).
@@ -88,18 +107,35 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 ## Provision staging (one time, and after schema drift)
 
 The staging stage owns its own isolated D1 database — required before any
-migration/recovery rehearsal.
+migration/recovery rehearsal — and serves QC on its own subdomain:
+`https://app.staging.teacheros.io.vn` (web) +
+`https://api.staging.teacheros.io.vn` (API). After first provisioning (or
+destroy/recreate), the automated staging deploy (see "Automated staging
+deploy (CI/CD)" below) keeps the stage current on every push to `develop`;
+run this procedure manually only for first provisioning or
+destroy/recreate.
 
 ```bash
 cd packages/infra
 cp .env.example .env         # fill non-secret values; secrets per inventory
-# First bootstrap only: deploy once to learn the generated web URL, then pass
-# that URL as an inline CORS_ORIGIN and deploy again (two-step, one time).
-# Never persist CORS_ORIGIN into .env — a leftover value shadowed origins in
-# the 2026-08-20 NO-GO and deploys now fail hard on that mismatch.
-CORS_ORIGIN=http://localhost:8001 pnpm alchemy deploy --stage staging
-CORS_ORIGIN=<staging-web-url> pnpm alchemy deploy --stage staging
+# Staging holds its own BETTER_AUTH_SECRET value, distinct from prod (cookie
+# isolation defense in depth). APP_DOMAIN is passed inline, never persisted;
+# a stray CORS_ORIGIN fails the run instead of shadowing the derived
+# https://app.staging.teacheros.io.vn origin.
+# A workers.dev-era staging stage must be destroyed first (rehearsal-only
+# data; the recreation also completes the pending 0006 empty-upgrade restage
+# below).
+pnpm alchemy destroy --stage staging    # skip if staging does not exist yet
+env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging
 ```
+
+The deploy registers `app.staging.teacheros.io.vn` and
+`api.staging.teacheros.io.vn` as Workers custom domains on the existing
+`teacheros.io.vn` zone — DNS records and certificates are provisioned by
+Alchemy; never hand-edit them (first cert issuance can take a few minutes).
+First sign-in additionally requires the staging callback URI in the Google
+console (preflight 4). Verify with
+`curl -sS -i https://api.staging.teacheros.io.vn/readyz` → `200 {"ok":true}`.
 
 Record the staging D1 name/ID in the release evidence (ID itself stays out of
 GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
@@ -119,10 +155,30 @@ within ~10 minutes or the run is marked failed. Deploys are serialized
 Scope of automation: code + bindings + migrations only. The operator gates
 this file cannot decide remain manual per the preflight above — rehearsing a
 pending migration on staging before it reaches prod, and the Chrome/Safari
-browser smoke after a deploy (the workflow's curl smoke proves readiness, not
-auth). Manual override/rollback stays available via `workflow_dispatch` and
+browser smoke after a deploy (the prod workflow's curl smoke proves
+readiness, not auth). Manual override/rollback stays available via
+`workflow_dispatch` and
 the "Rollback code" procedure; rotating any secret means updating both the
 operator `.env` and the GitHub repo secret of the same name.
+
+## Automated staging deploy (CI/CD)
+
+`.github/workflows/deploy-staging.yml` is the sibling workflow for stage
+`staging`: every push to `develop` (plus manual `workflow_dispatch`) runs the
+same quality gates as CI, then
+`APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
+with credentials from the GitHub `staging` environment (same secret names as
+production), serialized like prod (`cancel-in-progress: false`) so
+forward-only migrations never race. Its post-deploy smoke is broader than
+prod's because staging is the QC target: `/readyz` polling, an auth
+round-trip (throwaway sign-up → `get-session` with a cookie jar poisoned by a
+prod-shaped parent-domain session cookie — the exact shape that broke QC
+sign-in before issue #125), and a check that the removed PWA service
+worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
+network-first cache headers. Throwaway smoke accounts are accepted junk rows
+in the staging D1; prod deliberately gets no signup smoke. The manual
+"Provision staging" procedure below remains the path for first provisioning
+or destroy/recreate.
 
 ## Deploy (production)
 
@@ -145,7 +201,8 @@ first.
 Readiness first (no browser needed):
 
 ```bash
-curl -sS -i https://api.<domain>/readyz
+curl -sS -i https://api.<domain>/readyz                  # production
+curl -sS -i https://api.staging.teacheros.io.vn/readyz   # staging (QC)
 ```
 
 - GO: `200` with body `{"ok":true}` and `cache-control: no-store` — the Worker
@@ -228,9 +285,10 @@ rows with text `fixture-*` (never copy production/pilot data), apply `0006`,
 then `PRAGMA foreign_key_check` and `SELECT id, operation_id` (ids only).
 Destroy the throwaway D1 when done.
 
-**Empty upgrade (still pending on live staging):** when operator secrets are
-present, `cd packages/infra && pnpm alchemy destroy --stage staging` then
-`pnpm alchemy deploy --stage staging`. Confirm `d1_migrations` includes
+**Empty upgrade (still pending on live staging):** "Provision staging" above
+now performs exactly this — destroy the workers.dev-era stage, then redeploy
+with `APP_DOMAIN=staging.teacheros.io.vn` once operator secrets are present.
+Confirm `d1_migrations` includes
 `0006_pink_ender_wiggin.sql` and `comment_bank` has `operation_id`. Until
 that restage, treat empty-path proof as CI + the original empty staging
 apply, not as “staging already rebuilt.”
@@ -312,3 +370,113 @@ Additionally, the Google UAT account and the Safari runner were not supplied
 (separate blockers, not topology). No deploy command was run. Blocker inputs
 tracked in issue #41; evidence in
 `plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md`.
+
+## Release sequence: occurrence identity (issue #98) — A/B/C deployment shape
+
+Alchemy applies D1 migrations as part of every deploy (forward-only), so the
+safety gates below are enforced by SEPARATING PRs, not by feature flags. Do not
+compress the sequence into one deploy.
+
+### Step A — code + column migration (one PR, then deploy)
+
+Contents: `lesson.date` column + `lesson_class_date_idx` normal index
+(migration 0010), date-attaching generator, occurrence endpoints, web read
+path v2 and modal. NO unique-index migration in this PR.
+
+After `pnpm alchemy deploy --stage prod`:
+
+- Old classes have `date IS NULL` ⇒ render the frozen legacy table; the new
+  endpoints no-op on them (`{updated: 0}`) because a NULL date never matches.
+- NEW classes are born fully dated ⇒ live on v2 immediately. This is safe-on-
+  by-default; there is no env toggle.
+
+### Step B — backfill + verification loop (operator)
+
+```
+wrangler d1 execute teacher-os-db --remote --json \
+  "SELECT l.id,l.class_id,l.enrollment_id,l.day,l.time,l.created_at AS created_at_ms,l.rowid AS seq FROM lesson l;" \
+  > dump-undated.json
+wrangler d1 execute teacher-os-db --remote --json \
+  "SELECT id,schedule,start_date,sessions_total FROM class" > dump-classes.json
+npx -y tsx apps/server/scripts/backfill-date.ts dump-classes.json dump-undated.json \
+  > backfill.sql        # planned by @teacher-os/api/skeleton buildBackfillPlan
+wrangler d1 execute teacher-os-db --remote --file=backfill.sql
+```
+
+The LESSON dump must be the WHOLE table — no `WHERE date IS NULL` filter.
+conforms() derives count-vectors from the rows it receives; feeding it only the
+undated remainder would misread post-A classes and make this delta loop diverge
+(review F3). Emitted SQL stays safe on a superset because every UPDATE guards
+`AND date IS NULL`.
+
+`backfill-date.ts` prints a per-class conformance summary. ARCHIVE the list of
+NULL-staying classes with their fail reason (`schedule-unparseable`,
+`start-date-invalid`, `slot-divergence`, `count-vector-mismatch`) to the issue —
+that is the permanent legacy blast radius. A class summarised `STAMPED` with zero
+UPDATE lines is either empty or fully dated already (post-Step-A traffic); both are
+expected noise, not regressions.
+
+Delta re-dump loop: traffic during the dump→apply window (new enrollments)
+produces fresh NULL rows inside otherwise-conforming classes. Re-run from the
+dump step while
+
+```sql
+SELECT class_id, COUNT(*) FROM lesson WHERE date IS NULL GROUP BY class_id;
+-- expectation: only archived divergent classes remain
+SELECT enrollment_id, date, COUNT(*) c FROM lesson
+WHERE date IS NOT NULL AND created_at <= :deploy_ts GROUP BY 1,2 HAVING c>1;
+-- dup detector, scoped to PRE-deploy classes (deploy_ts = Step A completion)
+SELECT class_id, date, COUNT(DISTINCT enrollment_id) sids,
+       (SELECT COUNT(*) FROM enrollment e WHERE e.class_id=lesson.class_id) enrolled
+FROM lesson WHERE date IS NOT NULL GROUP BY 1,2;
+-- misalignment detector (kongming D5): flag buckets where sids < enrolled
+```
+
+passes with those expectations only.
+
+Heal SQL for duplicate `(enrollment_id, date)` (keep one settled row if exactly
+one exists in the group; otherwise keep the lowest rowid):
+
+```sql
+DELETE FROM lesson WHERE rowid IN (
+  SELECT b.rowid FROM lesson b
+  JOIN (
+    SELECT class_id, enrollment_id, date,
+           MIN(CASE WHEN status <> 'upcoming' THEN 0 ELSE 1 END) AS priority,
+           MIN(rowid) AS keep_rowid, COUNT(*) c
+    FROM lesson WHERE date IS NOT NULL
+    GROUP BY 1,2,3 HAVING c>1
+  ) d ON d.class_id=b.class_id AND d.enrollment_id=b.enrollment_id AND d.date=b.date
+  WHERE b.rowid <> d.keep_rowid
+    AND NOT (b.status<>'upcoming' AND d.priority=0);
+);
+```
+Review rows with `status <> 'upcoming'` manually before deleting them — a group
+holding TWO differently-settled rows must be reconciled by hand, not bulk-deleted.
+
+Mid-moveDate misalignment (enrollment joined between a generator skeleton and a
+moved occurrence) is a DECLARED limitation (#98 Known Limitations): heal is DB-only,
+detected by the third query above.
+
+### Step C — unique index PR (only after Step B evidence PASS)
+
+One-line migration adding the unique index `(class_id, enrollment_id, date)`
+via drizzle-kit generate in its own PR. Checklist before merge:
+
+1. Step B verification output archived on the issue (all three detectors).
+2. Re-run the dup detector once more pre-deploy — post-A traffic may have
+   produced duplicates that need the heal SQL above FIRST.
+
+After this deploy, concurrent moveDate writes lose cleanly with
+`409 {reason:"date-occupied"}` instead of racing silently.
+
+### Rollback procedure (issue #98 N10)
+
+Worker rollback alone is display-safe (any NULL ⇒ frozen legacy table) but
+re-introduces an OLD generator that writes NULL dates again. System stability
+therefore requires, after the emergency rollback settles:
+
+1. redeploy the NEW worker image (Step A artifact), then
+2. re-run the Step B delta loop until verification passes.
+
+The `date` column itself is forward-only; no data rollback path exists or is needed.

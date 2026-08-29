@@ -12,7 +12,32 @@ describe("resolveDomainTopology", () => {
 			googleRedirectURI:
 				"https://api.teacher-os.edu.vn/api/auth/callback/google",
 			cookieDomain: ".teacher-os.edu.vn",
+			authCookiePrefix: undefined,
 		});
+	});
+
+	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the prod cookie zone)", () => {
+		expect(
+			resolveDomainTopology("staging.teacheros.io.vn").authCookiePrefix,
+		).toBe("teacheros-staging");
+	});
+
+	it("keeps the prod domain on the default better-auth cookie namespace", () => {
+		expect(
+			resolveDomainTopology("teacheros.io.vn").authCookiePrefix,
+		).toBeUndefined();
+	});
+
+	it("prefixes any other member of the prod cookie zone, not just the staging label", () => {
+		expect(
+			resolveDomainTopology("preview.teacheros.io.vn").authCookiePrefix,
+		).toBe("teacheros-staging");
+	});
+
+	it("leaves unrelated zones on the default namespace (no shared cookie zone with prod)", () => {
+		expect(
+			resolveDomainTopology("teacher-os.edu.vn").authCookiePrefix,
+		).toBeUndefined();
 	});
 
 	it("supports a multi-label domain", () => {

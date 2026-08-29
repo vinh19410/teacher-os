@@ -25,6 +25,12 @@ const getAuth = (): Auth => {
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
+			// Issue #125: stage-scoped cookie namespace for non-prod members of
+			// the prod cookie zone (derived in infra topology); empty = default
+			// better-auth names (prod/local posture).
+			...(env.BETTER_AUTH_COOKIE_PREFIX
+				? { cookiePrefix: env.BETTER_AUTH_COOKIE_PREFIX }
+				: {}),
 			googleClientId: env.GOOGLE_CLIENT_ID,
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 		});

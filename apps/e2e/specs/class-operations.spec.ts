@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+	addDaysISO,
+	gotoWeek,
 	openClassScheduleTab,
 	signUpViaUi,
 	vietnamTodayISO,
@@ -61,10 +63,26 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	// occurrence future → badges only, never an in-place check-in button.
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);
 
-	// 5. Check in on /schedule.
-	await page.getByText("Lịch dạy", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/schedule$/);
-	// All 12 blocks contain the student name → strict mode needs .first().
+	// 5. Check in on /schedule. The class starts TOMORROW, so its dated rows
+	// live in the week containing the first T2/T4 occurrence — pin that week
+	// explicitly (issue #121): on a VN Sunday run "tomorrow" is a Monday and
+	// the current-week grid would be empty once /schedule renders dated rows
+	// only in their own week.
+	const seedStartISO = addDaysISO(vietnamTodayISO(), 1);
+	const firstSessionISO = Array.from({ length: 7 }, (_, i) =>
+		addDaysISO(seedStartISO, i),
+	).find((iso) => {
+		const weekday = vnWeekdayMon0(iso);
+		return weekday === 0 || weekday === 2; // T2 or T4
+	});
+	if (!firstSessionISO) throw new Error("no T2/T4 within 7 days — impossible");
+	await gotoWeek(
+		page,
+		addDaysISO(firstSessionISO, -vnWeekdayMon0(firstSessionISO)),
+	);
+	await expect(page).toHaveURL(/\/schedule\?week=/);
+	// The pinned week holds only the week's dated blocks (≤2: first T2 + T4),
+	// all carrying the student name → strict mode needs .first().
 	const lesson = page
 		.locator("button.lesson-block", { hasText: STUDENT_NAME })
 		.first();

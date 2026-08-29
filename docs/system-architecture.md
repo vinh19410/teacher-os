@@ -11,6 +11,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 5. [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) enforces origin and JSON checks for POSTs, then executes org-scoped reads and writes.
 6. [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) assembles the snapshot from the canonical database tables.
 7. [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) is the persistence owner, and [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) is the wire contract owner.
+8. [packages/api/src/skeleton.ts](../packages/api/src/skeleton.ts) owns occurrence-identity math (schedule skeleton, `conforms()`, offline backfill planning — issue #98); apps/server consumes it for generation, apps/web never re-implements it.
 
 ## Boundary map
 
@@ -24,6 +25,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 | Persistent rows and constraints | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Kernel DTOs and request bodies | [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) |
 | Cloudflare worker and D1 wiring | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) |
+| Deploy topology and auth cookie namespace | [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) (derivation) and [packages/auth/src/topology.ts](../packages/auth/src/topology.ts) (validation) |
 
 ## Architectural rules
 
@@ -31,6 +33,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 - Keep the bootstrap rule idempotent so a new authenticated teacher always lands in a usable workspace.
 - Keep the snapshot contract stable for the web adapter; if the server shape changes, the adapter and contracts change with it.
 - Keep scheduled lesson actions separate from curriculum lessons.
-- Keep entitlement state on `session_package` keyed by `enrollment`, not on the student row.
+- Keep entitlement state on `session_package` owned by `student`; `enrollment` is the optional class attachment (a package can be parked without a class).
 - Keep deployment wiring in the infra package, not in app code.
+- Keep auth topology (origins, cookie domain, cookie namespace prefix) derived from `APP_DOMAIN` in the topology modules. Because staging is a subdomain of the prod apex, browsers send prod's parent-domain session cookie to the staging API too; any non-prod member of that cookie zone must namespace its auth cookies (`teacheros-staging`) so the foreign cookie cannot shadow its sessions, while prod and local stay on the default `better-auth` names.
 

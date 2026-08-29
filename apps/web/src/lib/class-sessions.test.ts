@@ -27,6 +27,8 @@ function row(overrides: Partial<ClassSessionLesson> = {}): ClassSessionLesson {
 		dur: 90,
 		topic: "",
 		status: "upcoming",
+		date: null, // legacy fixture — undated rows exercise the frozen path
+		zoom: "",
 		...overrides,
 	};
 }
@@ -257,6 +259,7 @@ describe("buildClassSessions", () => {
 			day: 2,
 			time: "19:00",
 			dur: 90,
+			date: null,
 			type: "1:1",
 			status: "upcoming",
 			topic: "",

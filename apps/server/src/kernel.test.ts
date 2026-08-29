@@ -272,7 +272,12 @@ async function createTestApp() {
 	async function addStudent(
 		session: TestSession,
 		name: string,
-		extra: { classId?: string; total?: number; price?: number } = {},
+		extra: {
+			classId?: string;
+			total?: number;
+			price?: number;
+			mode?: "Online" | "Offline";
+		} = {},
 	): Promise<string> {
 		const res = await call("/api/students", {
 			session,
@@ -283,7 +288,7 @@ async function createTestApp() {
 				parentName: "Phụ huynh",
 				total: extra.total ?? 10,
 				price: extra.price ?? 400000,
-				mode: "Online",
+				mode: extra.mode ?? "Online",
 				...(extra.classId ? { classId: extra.classId } : {}),
 			},
 		});
@@ -429,18 +434,20 @@ describe("class type + structured schedule (create-class modal)", () => {
 		expect(tooLong.status).toBe(400);
 	});
 
-	test("invalid time format is 400; overnight end<start is 201", async () => {
+	test("invalid time format is 400; end before start is 400", async () => {
 		const badTime = await postClass({
 			...baseBody,
 			schedule: { days: [2], start: "99:99", end: "20:30" },
 		});
 		expect(badTime.status).toBe(400);
-		const overnight = await postClass({
+		// Issue #105: the QC repro — 21:00 → 08:00 must be rejected at
+		// creation, not stored as a 660-minute "cross-midnight" class.
+		const endBeforeStart = await postClass({
 			...baseBody,
-			name: "Overnight class",
-			schedule: { days: [2], start: "23:00", end: "00:30" },
+			name: "QC repro class",
+			schedule: { days: [2], start: "21:00", end: "08:00" },
 		});
-		expect(overnight.status).toBe(201);
+		expect(endBeforeStart.status).toBe(400);
 	});
 
 	test("start equal to end is 400", async () => {
@@ -449,6 +456,22 @@ describe("class type + structured schedule (create-class modal)", () => {
 			schedule: { days: [2], start: "19:00", end: "19:00" },
 		});
 		expect(res.status).toBe(400);
+	});
+
+	test("sessionsTotal 0 is 400; omitted sessionsTotal defaults to 12", async () => {
+		// Issue #105: "Tổng số buổi 0" must be rejected, not coerced anywhere.
+		const zero = await postClass({ ...baseBody, sessionsTotal: 0 });
+		expect(zero.status).toBe(400);
+		const omitted = await postClass({
+			...baseBody,
+			name: "Default sessions class",
+		});
+		expect(omitted.status).toBe(201);
+		const [row] = await t.db
+			.select()
+			.from(classTable)
+			.where(eq(classTable.name, "Default sessions class"));
+		expect(row?.sessionsTotal).toBe(12);
 	});
 
 	test("duplicated or over-long skills arrays are 400", async () => {
@@ -752,7 +775,7 @@ describe("org isolation", () => {
 		expect(snapshotA.students).toHaveLength(1);
 	});
 
-	test("students with classId create enrollment + package atomically; without classId, person only", async () => {
+	test("students with classId create enrollment + package atomically", async () => {
 		const session = await t.insertUser("Cô Pkg");
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
@@ -774,12 +797,34 @@ describe("org isolation", () => {
 		// Entitlement only: no done/remaining on the wire — derived downstream.
 		expect(snapshot.packages[0]).not.toHaveProperty("done");
 		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+	});
 
-		const personId = await t.addStudent(session, "Học viên tự do");
-		const after = await t.kernel(session);
-		expect(after.enrollments).toHaveLength(1); // unchanged
-		expect(after.packages).toHaveLength(1); // unchanged
-		expect(after.students.map((s) => s.id)).toContain(personId);
+	test("without classId the package parks on the student (issue #104)", async () => {
+		const session = await t.insertUser("Cô Parked");
+		const personId = await t.addStudent(session, "Học viên tự do", {
+			total: 10,
+			price: 400000,
+			mode: "Offline",
+		});
+
+		const snapshot = await t.kernel(session);
+		expect(snapshot.enrollments).toHaveLength(0);
+		expect(snapshot.packages).toHaveLength(1);
+		expect(snapshot.packages[0]).toMatchObject({
+			studentId: personId,
+			enrollmentId: null,
+			classId: null,
+			total: 10,
+			price: 400000,
+			// Deliberately not the schema default — proves input.mode is kept.
+			mode: "Offline",
+			status: "active",
+		});
+		expect(snapshot.packages[0]?.start).toMatch(/^\d{2}\/\d{2}$/);
+		// Entitlement only: no done/remaining on the wire — derived downstream.
+		expect(snapshot.packages[0]).not.toHaveProperty("done");
+		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(snapshot.students.map((s) => s.id)).toContain(personId);
 	});
 });
 
@@ -2280,6 +2325,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: maps schedule rows to upcoming lesson values", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [2, 4], start: "19:00", end: "20:30" }),
+			startDate: "2026-08-25",
 			sessionsTotal: 3,
 			orgId: "org",
 			classId: "cls",
@@ -2306,6 +2352,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: weekday +1 mapping is Monday-first (schedule 0=Monday → lesson 1=Monday)", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [0, 6], start: "09:00", end: "10:30" }),
+			startDate: "2026-08-24",
 			sessionsTotal: 2,
 			orgId: "org",
 			classId: "cls",
@@ -2317,6 +2364,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	test("unit generator: overnight schedule wraps midnight into duration", () => {
 		const rows = generateScheduleLessons({
 			schedule: JSON.stringify({ days: [2], start: "23:00", end: "00:30" }),
+			startDate: "2026-08-25",
 			sessionsTotal: 1,
 			orgId: "org",
 			classId: "cls",
@@ -2332,6 +2380,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 				start: "19:00",
 				end: "20:30",
 			}),
+			startDate: "2026-08-24",
 			sessionsTotal: 6,
 			orgId: "org",
 			classId: "cls",
@@ -2345,7 +2394,12 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("unit generator: zero and invalid inputs fail closed to []", () => {
-		const base = { orgId: "org", classId: "cls", enrollmentId: "enr" };
+		const base = {
+			orgId: "org",
+			classId: "cls",
+			enrollmentId: "enr",
+			startDate: "2026-08-25",
+		};
 		const valid = JSON.stringify({ days: [1], start: "19:00", end: "20:30" });
 		expect(
 			generateScheduleLessons({ ...base, schedule: valid, sessionsTotal: 0 }),
@@ -2416,12 +2470,26 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toHaveLength(50);
 	});
 
-	test("sessionsTotal = 0 generates zero lessons", async () => {
-		const zeroClassId = await t.createClass(session, "Chưa định số buổi", {
+	test("stored sessionsTotal = 0 generates zero lessons", async () => {
+		// Issue #105: the API now rejects sessionsTotal 0 at creation, but a
+		// legacy row (e.g. the QC-created class) can still carry 0 — the
+		// generator must mint zero lesson rows on enrollment. Row seeded
+		// directly because POST /classes is no longer a valid path to 0.
+		const zeroClassId = crypto.randomUUID();
+		await t.db.insert(classTable).values({
+			id: zeroClassId,
+			orgId: await t.orgIdOf(session),
+			name: "Chưa định số buổi",
+			level: "",
 			type: "communication",
-			skills: [],
-			schedule: { days: [2], start: "19:00", end: "20:30" },
+			skills: "[]",
+			mode: "Online",
+			schedule: JSON.stringify({ days: [2], start: "19:00", end: "20:30" }),
 			sessionsTotal: 0,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "",
+			notes: "",
 		});
 		const studentId = await t.addStudent(session, "HV zero", {
 			classId: zeroClassId,
@@ -2831,5 +2899,114 @@ describe("lesson edit optimistic concurrency (issue #55)", () => {
 			(l) => l.id === lessonId,
 		);
 		expect(row?.topic).toMatch(/^Tab [AB]$/);
+	});
+});
+
+describe("enroll existing student (issue #122)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Enroll");
+	});
+
+	async function enroll(
+		classId: string,
+		body: Record<string, unknown>,
+		who: TestSession = session,
+	) {
+		return t.call(`/api/classes/${classId}/enroll`, {
+			session: who,
+			method: "POST",
+			body,
+		});
+	}
+
+	test("happy path: enrollment + active package + generated lessons in one shot", async () => {
+		const classId = await t.createClass(session, "Lớp enroll #122");
+		const studentId = await t.addStudent(session, "HV có sẵn");
+
+		const res = await enroll(classId, {
+			studentId,
+			total: 24,
+			price: 600000,
+			mode: "Offline",
+		});
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(enrollment?.id).toBe(enrollmentId);
+
+		const pkg = snapshot.packages.find((p) => p.enrollmentId === enrollmentId);
+		expect(pkg).toMatchObject({
+			studentId,
+			classId,
+			total: 24,
+			price: 600000,
+			mode: "Offline",
+			status: "active",
+			expiry: "",
+		});
+		expect(pkg?.start).not.toBe("");
+
+		const lessons = snapshot.lessons.filter(
+			(l) => l.enrollmentId === enrollmentId,
+		);
+		expect(lessons).toHaveLength(12);
+	});
+
+	test("package fields stay field-identical with the create-new branch", async () => {
+		const classId = await t.createClass(session, "Lớp enroll gói");
+		const studentId = await t.addStudent(session, "HV gói chuẩn");
+		const res = await enroll(classId, { studentId });
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const pkg = (await t.kernel(session)).packages.find(
+			(p) => p.enrollmentId === enrollmentId,
+		);
+		// Defaults mirror studentCreateSchema: total 10, price 400000, Online.
+		expect(pkg).toMatchObject({
+			total: 10,
+			price: 400000,
+			mode: "Online",
+			status: "active",
+		});
+	});
+
+	test("404 class not found", async () => {
+		const studentId = await t.addStudent(session, "HV lớp mất");
+		const res = await enroll("no-such-class", { studentId });
+		expect(res.status).toBe(404);
+		expect(await res.json()).toMatchObject({ error: "class not found" });
+	});
+
+	test("404 student not found", async () => {
+		const classId = await t.createClass(session, "Lớp HV mất");
+		const res = await enroll(classId, { studentId: "no-such-student" });
+		expect(res.status).toBe(404);
+		expect(await res.json()).toMatchObject({ error: "student not found" });
+	});
+
+	test("409 duplicate enroll for the same class", async () => {
+		const classId = await t.createClass(session, "Lớp enroll trùng");
+		const studentId = await t.addStudent(session, "HV trùng");
+		expect((await enroll(classId, { studentId })).status).toBe(201);
+		const again = await enroll(classId, { studentId });
+		expect(again.status).toBe(409);
+		expect(await again.json()).toMatchObject({
+			error: "student already enrolled",
+		});
+	});
+
+	test("org isolation: student of another org is 404", async () => {
+		const classId = await t.createClass(session, "Lớp cross-org");
+		const other = await t.insertUser("Cô Org Khác");
+		const otherStudentId = await t.addStudent(other, "HV org khác");
+		const res = await enroll(classId, { studentId: otherStudentId });
+		expect(res.status).toBe(404);
 	});
 });
