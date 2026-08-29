@@ -2901,3 +2901,112 @@ describe("lesson edit optimistic concurrency (issue #55)", () => {
 		expect(row?.topic).toMatch(/^Tab [AB]$/);
 	});
 });
+
+describe("enroll existing student (issue #122)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Enroll");
+	});
+
+	async function enroll(
+		classId: string,
+		body: Record<string, unknown>,
+		who: TestSession = session,
+	) {
+		return t.call(`/api/classes/${classId}/enroll`, {
+			session: who,
+			method: "POST",
+			body,
+		});
+	}
+
+	test("happy path: enrollment + active package + generated lessons in one shot", async () => {
+		const classId = await t.createClass(session, "Lớp enroll #122");
+		const studentId = await t.addStudent(session, "HV có sẵn");
+
+		const res = await enroll(classId, {
+			studentId,
+			total: 24,
+			price: 600000,
+			mode: "Offline",
+		});
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(enrollment?.id).toBe(enrollmentId);
+
+		const pkg = snapshot.packages.find((p) => p.enrollmentId === enrollmentId);
+		expect(pkg).toMatchObject({
+			studentId,
+			classId,
+			total: 24,
+			price: 600000,
+			mode: "Offline",
+			status: "active",
+			expiry: "",
+		});
+		expect(pkg?.start).not.toBe("");
+
+		const lessons = snapshot.lessons.filter(
+			(l) => l.enrollmentId === enrollmentId,
+		);
+		expect(lessons).toHaveLength(12);
+	});
+
+	test("package fields stay field-identical with the create-new branch", async () => {
+		const classId = await t.createClass(session, "Lớp enroll gói");
+		const studentId = await t.addStudent(session, "HV gói chuẩn");
+		const res = await enroll(classId, { studentId });
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const pkg = (await t.kernel(session)).packages.find(
+			(p) => p.enrollmentId === enrollmentId,
+		);
+		// Defaults mirror studentCreateSchema: total 10, price 400000, Online.
+		expect(pkg).toMatchObject({
+			total: 10,
+			price: 400000,
+			mode: "Online",
+			status: "active",
+		});
+	});
+
+	test("404 class not found", async () => {
+		const studentId = await t.addStudent(session, "HV lớp mất");
+		const res = await enroll("no-such-class", { studentId });
+		expect(res.status).toBe(404);
+		expect(await res.json()).toMatchObject({ error: "class not found" });
+	});
+
+	test("404 student not found", async () => {
+		const classId = await t.createClass(session, "Lớp HV mất");
+		const res = await enroll(classId, { studentId: "no-such-student" });
+		expect(res.status).toBe(404);
+		expect(await res.json()).toMatchObject({ error: "student not found" });
+	});
+
+	test("409 duplicate enroll for the same class", async () => {
+		const classId = await t.createClass(session, "Lớp enroll trùng");
+		const studentId = await t.addStudent(session, "HV trùng");
+		expect((await enroll(classId, { studentId })).status).toBe(201);
+		const again = await enroll(classId, { studentId });
+		expect(again.status).toBe(409);
+		expect(await again.json()).toMatchObject({
+			error: "student already enrolled",
+		});
+	});
+
+	test("org isolation: student of another org is 404", async () => {
+		const classId = await t.createClass(session, "Lớp cross-org");
+		const other = await t.insertUser("Cô Org Khác");
+		const otherStudentId = await t.addStudent(other, "HV org khác");
+		const res = await enroll(classId, { studentId: otherStudentId });
+		expect(res.status).toBe(404);
+	});
+});

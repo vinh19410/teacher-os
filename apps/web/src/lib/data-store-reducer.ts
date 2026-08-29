@@ -121,6 +121,41 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				}),
 			};
 		}
+		case "enroll-student": {
+			// Issue #122 fixture mirror: attach an EXISTING student to one class
+			// and refresh the package display from the enroll payload. The
+			// runtime truth comes from the kernel snapshot refresh.
+			const existing = state.students.find((s) => s.id === action.studentId);
+			if (!existing) return state;
+			let attached = false;
+			const classes = state.classes.map((c) => {
+				if (c.id !== action.classId) return c;
+				if (c.studentIds.includes(existing.id)) return c;
+				attached = true;
+				return { ...c, studentIds: [...c.studentIds, existing.id] };
+			});
+			if (!attached) return state;
+			return {
+				...state,
+				classes,
+				students: state.students.map((s) =>
+					s.id === existing.id
+						? {
+								...s,
+								pkg: {
+									total: action.payload.total,
+									done: 0,
+									remaining: action.payload.total,
+									price: action.payload.price,
+									mode: action.payload.mode,
+									start: "19/08",
+									expiry: "—",
+								},
+							}
+						: s,
+				),
+			};
+		}
 		case "add-class": {
 			// Build the row explicitly: the payload's schedule is an object on
 			// the wire, but ClassGroup.schedule stores the JSON string form.
