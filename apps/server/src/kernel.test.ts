@@ -734,6 +734,29 @@ describe("invoice create (issue #60)", () => {
 		expect(res.status).toBe(401);
 	});
 
+	test("create enforces Origin and JSON content-type", async () => {
+		expect(
+			(
+				await t.call("/api/invoices", {
+					session,
+					method: "POST",
+					origin: null,
+					body: { enrollmentId, amount: 1, due: "2026-09-15" },
+				})
+			).status,
+		).toBe(403);
+		const form = await t.app.request("/api/invoices", {
+			method: "POST",
+			headers: {
+				cookie: `better-auth.session_token=${session.token}`,
+				origin: CORS_ORIGIN,
+				"content-type": "application/x-www-form-urlencoded",
+			},
+			body: "amount=1",
+		});
+		expect(form.status).toBe(415);
+	});
+
 	test("creates an unpaid invoice bound to the enrollment, visible in snapshot", async () => {
 		const res = await postInvoice({
 			enrollmentId,
