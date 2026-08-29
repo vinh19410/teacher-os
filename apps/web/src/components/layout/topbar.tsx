@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/lib/data-store";
+import { searchGlobal } from "@/lib/global-search";
 import { NotifPanel } from "./notif-panel";
 
 export function Topbar({
@@ -18,7 +19,9 @@ export function Topbar({
 	const { data } = useData();
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const [searchOpen, setSearchOpen] = useState(false);
 	const bellWrapRef = useRef<HTMLDivElement>(null);
+	const searchWrapRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!notifOpen) return;
@@ -29,18 +32,39 @@ export function Topbar({
 		return () => document.removeEventListener("mousedown", onDown);
 	}, [notifOpen]);
 
-	function submitSearch() {
-		const q = query.trim().toLowerCase();
-		if (!q) return;
-		const match = data.students.find((s) => s.name.toLowerCase().includes(q));
-		if (match) {
+	useEffect(() => {
+		if (!searchOpen) return;
+		const onDown = (e: MouseEvent) => {
+			if (!searchWrapRef.current?.contains(e.target as Node))
+				setSearchOpen(false);
+		};
+		document.addEventListener("mousedown", onDown);
+		return () => document.removeEventListener("mousedown", onDown);
+	}, [searchOpen]);
+
+	const results = useMemo(
+		() => (query.trim() ? searchGlobal(data, query) : []),
+		[data, query],
+	);
+
+	function goTo(result: (typeof results)[number]) {
+		if (result.type === "student") {
 			navigate({
 				to: "/students/$studentId",
-				params: { studentId: match.id },
+				params: { studentId: result.id },
 			});
-			setQuery("");
+		} else {
+			navigate({ to: "/classes/$classId", params: { classId: result.id } });
 		}
+		setQuery("");
+		setSearchOpen(false);
 	}
+
+	function submitSearch() {
+		if (results.length > 0) goTo(results[0]);
+	}
+
+	const showResults = searchOpen && query.trim().length > 0;
 
 	return (
 		<header className="topbar sticky top-0 z-20 flex items-center gap-4 border-line border-b border-solid px-6 py-3 backdrop-blur-[16px] [-webkit-backdrop-filter:blur(16px)]">
@@ -86,7 +110,10 @@ export function Topbar({
 			<div className="font-display font-semibold text-lg tracking-[-0.01em]">
 				{title}
 			</div>
-			<div className="topbar-search ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-accent-blue focus-within:shadow-[var(--focus-ring)] max-app:hidden">
+			<div
+				ref={searchWrapRef}
+				className="topbar-search relative ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-accent-blue focus-within:shadow-[var(--focus-ring)] max-app:hidden"
+			>
 				<svg
 					aria-hidden="true"
 					viewBox="0 0 24 24"
@@ -101,13 +128,67 @@ export function Topbar({
 				<input
 					type="text"
 					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter") submitSearch();
+					onChange={(e) => {
+						setQuery(e.target.value);
+						setSearchOpen(true);
 					}}
-					placeholder="Tìm học viên, buổi học, hóa đơn…"
+					onFocus={() => setSearchOpen(true)}
+					onKeyDown={(e) => {
+						// Enter confirming an IME composition (Telex/VNI) must not
+						// navigate mid-word — wait for it to land in the field.
+						if (e.nativeEvent.isComposing) return;
+						if (e.key === "Enter") submitSearch();
+						if (e.key === "Escape") setSearchOpen(false);
+					}}
+					placeholder="Tìm học viên, lớp học…"
+					role="combobox"
+					aria-expanded={showResults}
+					aria-controls="global-search-listbox"
 					className="w-full border-none bg-transparent text-fg text-sm outline-none placeholder:text-meta"
 				/>
+				{showResults && (
+					<div
+						id="global-search-listbox"
+						role="listbox"
+						data-testid="global-search-results"
+						className="absolute top-full left-0 z-50 mt-2 max-h-[360px] w-full min-w-[280px] overflow-y-auto rounded-lg border border-line border-solid bg-bg shadow-[var(--elev-raised)]"
+					>
+						{results.length === 0 ? (
+							<div
+								data-testid="global-search-empty"
+								className="px-4 py-3 text-meta text-sm"
+							>
+								Không tìm thấy kết quả
+							</div>
+						) : (
+							results.map((r) => (
+								<button
+									type="button"
+									role="option"
+									aria-selected="false"
+									data-testid="global-search-result-item"
+									key={`${r.type}-${r.id}`}
+									onClick={() => goTo(r)}
+									className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left hover:bg-surface"
+								>
+									<span className="min-w-0">
+										<span className="block truncate font-medium text-fg text-sm">
+											{r.label}
+										</span>
+										{r.sublabel && (
+											<span className="mt-[2px] block truncate text-[11px] text-meta">
+												{r.sublabel}
+											</span>
+										)}
+									</span>
+									<span className="shrink-0 font-mono text-[10px] text-meta uppercase">
+										{r.type === "student" ? "Học viên" : "Lớp"}
+									</span>
+								</button>
+							))
+						)}
+					</div>
+				)}
 			</div>
 			<div ref={bellWrapRef} className="relative">
 				<button
