@@ -5,6 +5,7 @@ import type {
 import {
 	classCreateSchema,
 	classNotesSchema,
+	enrollStudentSchema,
 	importSyllabusSchema,
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
@@ -445,6 +446,82 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		}
 		await db.batch(statements);
 		return c.json({ id: studentId } satisfies CreatedResponse, 201);
+	});
+
+	// Issue #122: enroll an EXISTING student into a class — same batch shape
+	// as the class branch of POST /students, minus the student insert.
+	kernel.post("/classes/:id/enroll", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, enrollStudentSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		const [existingStudent] = await db
+			.select({ id: student.id })
+			.from(student)
+			.where(
+				and(eq(student.id, input.studentId), eq(student.orgId, ctx.orgId)),
+			);
+		if (!existingStudent) {
+			return c.json({ error: "student not found" }, 404);
+		}
+		const [dupe] = await db
+			.select({ id: enrollment.id })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.classId, classId),
+					eq(enrollment.studentId, input.studentId),
+				),
+			);
+		if (dupe) {
+			return c.json({ error: "student already enrolled" }, 409);
+		}
+
+		const enrollmentId = crypto.randomUUID();
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(enrollment).values({
+				id: enrollmentId,
+				orgId: ctx.orgId,
+				classId: cls.id,
+				studentId: input.studentId,
+			}),
+			// Package values must stay field-identical with POST /students —
+			// an enrolled-existing student owns the same active-package shape.
+			db.insert(sessionPackage).values({
+				id: crypto.randomUUID(),
+				orgId: ctx.orgId,
+				studentId: input.studentId,
+				total: input.total,
+				price: input.price,
+				mode: input.mode,
+				start: formatDayMonth(new Date()),
+				expiry: "",
+				status: "active",
+				enrollmentId,
+			}),
+		];
+		for (const row of generateScheduleLessons({
+			schedule: cls.schedule,
+			startDate: cls.startDate,
+			sessionsTotal: cls.sessionsTotal,
+			orgId: ctx.orgId,
+			classId: cls.id,
+			enrollmentId,
+		})) {
+			statements.push(
+				db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
+			);
+		}
+		await db.batch(statements);
+		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
 	});
 
 	kernel.get("/classes", async (c) => {

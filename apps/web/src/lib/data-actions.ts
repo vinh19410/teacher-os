@@ -49,6 +49,17 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Issue #122 — enroll an EXISTING student into a viewed class. */
+			type: "enroll-student";
+			classId: string;
+			studentId: string;
+			payload: {
+				total: number;
+				price: number;
+				mode: "Online" | "Offline";
+			};
+	  }
+	| {
 			type: "add-class";
 			payload: {
 				name: string;

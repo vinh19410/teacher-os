@@ -17,6 +17,19 @@ export const studentCreateSchema = z.object({
 });
 export type StudentCreate = z.infer<typeof studentCreateSchema>;
 
+/**
+ * Issue #122 — enroll an EXISTING student into a class. Package fields mirror
+ * studentCreateSchema defaults so an enrolled-existing student owns the same
+ * active-package shape the create-new branch produces.
+ */
+export const enrollStudentSchema = z.object({
+	studentId: z.string().min(1),
+	total: z.number().int().min(0).default(10),
+	price: z.number().int().min(0).default(400000),
+	mode: z.enum(["Online", "Offline"]).default("Online"),
+});
+export type EnrollStudent = z.infer<typeof enrollStudentSchema>;
+
 export const CLASS_TYPES = ["ielts", "communication"] as const;
 export type ClassType = (typeof CLASS_TYPES)[number];
 
