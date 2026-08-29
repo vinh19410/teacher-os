@@ -64,19 +64,21 @@ export const classCreateSchema = z
 				.max(7)
 				.refine((days) => new Set(days).size === days.length),
 			start: z.string().regex(TIME_REGEX),
-			/** end <= start means the session crosses midnight — valid. */
 			end: z.string().regex(TIME_REGEX),
 		}),
 		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
-		sessionsTotal: z.number().int().min(0).max(52).default(12),
+		sessionsTotal: z.number().int().min(1).max(52).default(12),
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
-		if (input.schedule.start === input.schedule.end) {
+		// Issue #105: creation rejects end <= start. Legacy stored rows with
+		// end < start still parse (parseStoredSchedule guards only start ===
+		// end) — the cross-midnight duration math stays for display only.
+		if (input.schedule.end <= input.schedule.start) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["schedule", "end"],
-				message: "Giờ kết thúc phải khác giờ bắt đầu",
+				message: "Giờ kết thúc phải sau giờ bắt đầu",
 			});
 		}
 		if (input.type === "ielts" && input.skills.length === 0) {
