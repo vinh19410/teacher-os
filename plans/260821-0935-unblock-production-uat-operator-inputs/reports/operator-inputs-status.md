@@ -17,8 +17,8 @@ Tracker per-item cho 5 inputs của [#41](https://github.com/vinh19410/teacher-o
 - [x] README + `.env.example` đồng bộ inline policy
 - [x] Drift assertions (dev CORS default ↔ web dev port; không persist CORS_ORIGIN/APP_DOMAIN)
 - [x] Runner kit viết xong
-- [ ] Cleanup PR merge vào `develop` (4 gates xanh) — _pending_
-- [ ] Xóa `CORS_ORIGIN` khỏi `apps/server/.env` tại main checkout sau khi verify HEAD == merge SHA; `pnpm dev` proof
-- [ ] Dry-run no-apply `APP_DOMAIN=… pnpm alchemy plan --stage prod` tại main checkout (không `--yes`)
+- [x] Cleanup PR merge vào `develop` (PR #49, 2026-08-21 — 4 gates xanh, proof trong #48)
+- [x] Xóa `CORS_ORIGIN` khỏi `apps/server/.env` tại main checkout sau khi verify HEAD == merge SHA; `pnpm dev` proof (2026-08-21, ghi trong #48; re-verified 2026-08-30: `grep -c CORS_ORIGIN apps/server/.env` = 0)
+- [ ] Dry-run no-apply `APP_DOMAIN=… pnpm alchemy plan --stage prod` tại main checkout (không `--yes`) — _chờ operator chọn domain (gate 1)_
 
 _Cập nhật file này mỗi khi một item đổi trạng thái; đồng bộ comment tương ứng vào #41._
