@@ -46,18 +46,18 @@ Trạng thái: **Hoàn thành** (2026-08-23) — evidence bằng E2E CI harness 
 
 ### M2 — Thu học phí được (Money loop) · GitHub milestone: M2
 
-Trạng thái: **Chưa bắt đầu**.
+Trạng thái: **Hoàn thành** (2026-08-30) — evidence bằng E2E CI workflow xanh trên develop (@53fd2f2, PR #137) + server tests cho idempotency mark-paid.
 
 **DÙNG ĐƯỢC khi hoàn thành**: tất cả M1 + tạo invoice cho enrollment (amount, due, note), mark-paid, tổng thu/chưa thu từ data thật.
 
 **CHƯA DÙNG ĐƯỢC tại M2**: tạo assignment, tạo/gửi report, settings persist, chưa live production.
 
 **DOD**:
-- [ ] AddInvoiceModal tạo invoice thật; hiện trong bảng sau reload.
-- [ ] Mark-paid idempotent, đúng trạng thái sau reload.
-- [ ] Totals tuition = tổng từ invoice thật.
-- [ ] E2E CI xanh: tạo invoice → mark paid → reload.
-- [ ] 0 CTA no-op trong luồng tuition.
+- [x] AddInvoiceModal tạo invoice thật; hiện trong bảng sau reload. *(evidence: PR #136 — E2E spec `create-invoice.spec.ts` test 1: submit → POST /api/invoices 201 → row hiện, giữ sau reload)*
+- [x] Mark-paid idempotent, đúng trạng thái sau reload. *(evidence: server test `kernel.test.ts` "mark-paid persists through snapshot and paid replay overwrites method" — replay 200, vẫn paid; E2E assert trạng thái paid + KPI giữ nguyên sau reload)*
+- [x] Totals tuition = tổng từ invoice thật. *(evidence: PR #137 — E2E assert KPI Đã thu/Còn nợ từ invoice thật, baseline 0đ, flip sau mark-paid, giữ sau reload; unit test `tuition-from-kernel.test.ts`)*
+- [x] E2E CI xanh: tạo invoice → mark paid → reload. *(evidence: workflow E2E success trên develop @53fd2f2 — `apps/e2e/specs/create-invoice.spec.ts` chạy trong `e2e.yml`)*
+- [x] 0 CTA no-op trong luồng tuition. *(evidence: 3 CTA duy nhất trên /tuition đều wired thật — row gói navigate, "+ Tạo hóa đơn" mở modal POST thật, "Đã nhận" chạy `mark-invoice-paid` qua command bus; E2E đếm POST xác nhận)*
 
 ### M3 — Go-live production · GitHub milestone: M3
 

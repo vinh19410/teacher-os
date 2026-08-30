@@ -46,3 +46,12 @@ export function isFutureDateInputValue(
 	today.setHours(0, 0, 0, 0);
 	return selected.getTime() > today.getTime();
 }
+
+/**
+ * Roundtrip calendar check: the value must be a real yyyy-mm-dd date
+ * (rejects 2026-02-30). Unlike isFutureDateInputValue, past and today are
+ * valid — invoice due dates may legitimately be today or overdue.
+ */
+export function isRealDateInputValue(value: string): boolean {
+	return parseDateInput(value) !== null;
+}

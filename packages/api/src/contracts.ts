@@ -293,6 +293,24 @@ export const invoiceMarkPaidSchema = z
 	.strict();
 export type InvoiceMarkPaid = z.infer<typeof invoiceMarkPaidSchema>;
 
+/**
+ * Issue #60 — create a tuition invoice for an enrollment. `due` is ISO
+ * yyyy-mm-dd and is roundtrip-guarded server-side (`parseStartDateStrict`,
+ * same precedent as `moveDate`) because the regex alone accepts 2026-02-30.
+ * `amount` is integer VND and must be positive — unlike package `price`
+ * (min 0), an invoice is a concrete amount due. Creation is non-idempotent,
+ * consistent with POST /syllabi.
+ */
+export const invoiceCreateSchema = z
+	.object({
+		enrollmentId: z.string().min(1),
+		amount: z.number().int().min(1),
+		due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		note: z.string().trim().max(500).default(""),
+	})
+	.strict();
+export type InvoiceCreate = z.infer<typeof invoiceCreateSchema>;
+
 // --- Kernel snapshot rows (server → web adapter) ---
 
 export interface KernelStudentRow {
@@ -424,6 +442,15 @@ export interface KernelLessonRow {
 export interface KernelInvoiceRow {
 	id: string;
 	studentId: string;
+	/**
+	 * Issue #60 — ISO yyyy-mm-dd, unlike `date`'s display dd/mm and unlike
+	 * the "every other date on the wire" dd/mm docblock on
+	 * KernelAssignmentRow.due: the year is required for overdue math.
+	 * Display formatting is a web concern (issue #61).
+	 */
+	due: string;
+	note: string;
+	enrollmentId: string;
 	amount: number;
 	status: "paid" | "overdue" | "unpaid" | string;
 	date: string;

@@ -161,6 +161,9 @@ const snapshot: KernelSnapshot = {
 		{
 			id: "inv-1",
 			studentId: "st-1",
+			due: "2026-08-19",
+			note: "",
+			enrollmentId: "enr-1",
 			amount: 400000,
 			status: "overdue",
 			date: "19/08",
@@ -263,6 +266,8 @@ describe("mapKernelSnapshot", () => {
 				date: "19/08",
 				type: "Gói buổi",
 				method: "—",
+				due: "2026-08-19",
+				note: "",
 			},
 		]);
 	});
@@ -298,6 +303,17 @@ describe("mapKernelSnapshot", () => {
 		expect(slice.notifs).toEqual(snapshot.notifs);
 		expect(slice.commentBank).toEqual(snapshot.commentBank);
 	});
+
+	test("enrollments ride the snapshot for the invoice enrollment picker (#61)", () => {
+		// Issue #61: AddInvoiceModal needs (classId, studentId) pairs to
+		// label "student · class" options and to POST the enrollmentId.
+		expect(slice.enrollments).toEqual(snapshot.enrollments);
+		expect(slice.enrollments[0]).toMatchObject({
+			id: "en-1",
+			classId: "cl-1",
+			studentId: "st-1",
+		});
+	});
 });
 
 describe("kernelCommand", () => {
@@ -331,6 +347,42 @@ describe("kernelCommand", () => {
 			total: 24,
 			price: 600000,
 			mode: "Offline",
+		});
+	});
+
+	test("add-invoice posts the invoice-create contract body (#61)", () => {
+		const req = kernelCommand({
+			type: "add-invoice",
+			payload: {
+				enrollmentId: "en-1",
+				amount: 400000,
+				due: "2026-09-15",
+				note: "Tháng 9",
+			},
+		});
+		expect(req.path).toBe("/api/invoices");
+		expect(req.body).toEqual({
+			enrollmentId: "en-1",
+			amount: 400000,
+			due: "2026-09-15",
+			note: "Tháng 9",
+		});
+	});
+
+	test("add-invoice always carries note, defaulting to empty string", () => {
+		const req = kernelCommand({
+			type: "add-invoice",
+			payload: {
+				enrollmentId: "en-1",
+				amount: 1,
+				due: "2026-09-15",
+			},
+		});
+		expect(req.body).toEqual({
+			enrollmentId: "en-1",
+			amount: 1,
+			due: "2026-09-15",
+			note: "",
 		});
 	});
 

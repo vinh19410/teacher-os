@@ -33,7 +33,9 @@ export function todayISOVietnam(now = new Date()): string {
 	return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-function isValidISODate(iso: string): boolean {
+/** Calendar-true yyyy-mm-dd check (UTC roundtrip) — shared with
+ * tuition-from-kernel so due dates like 2026-02-30 never render. */
+export function isValidISODate(iso: string): boolean {
 	const date = new Date(`${iso}T00:00:00Z`);
 	if (Number.isNaN(date.getTime())) return false;
 	// Roundtrip guard: 2026-02-30 and friends silently roll over.

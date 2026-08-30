@@ -7,6 +7,7 @@ import {
 	classNotesSchema,
 	enrollStudentSchema,
 	importSyllabusSchema,
+	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonEditSchema,
@@ -1168,6 +1169,60 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			ctx.orgId,
 			db,
 		);
+	});
+
+	// Issue #60 — creation is non-idempotent, consistent with POST /syllabi.
+	kernel.post("/invoices", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, invoiceCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+
+		// Both lookups are tenant-predicated so unknown and foreign ids stay
+		// indistinguishable. The student re-check keeps the new row visible to
+		// snapshot reads, which innerJoin student on the same org.
+		const [enrollmentRow] = await db
+			.select({ studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.id, input.enrollmentId),
+					eq(enrollment.orgId, ctx.orgId),
+				),
+			);
+		if (!enrollmentRow) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+		const [enrolledStudent] = await db
+			.select({ id: student.id })
+			.from(student)
+			.where(
+				and(
+					eq(student.id, enrollmentRow.studentId),
+					eq(student.orgId, ctx.orgId),
+				),
+			);
+		if (!enrolledStudent) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+
+		// Regex alone accepts 2026-02-30; roundtrip-guard against the real calendar.
+		const due = parseStartDateStrict(input.due);
+		if (!due) return c.json({ error: "invalid body" }, 400);
+
+		const invoiceId = crypto.randomUUID();
+		await db.insert(invoice).values({
+			id: invoiceId,
+			orgId: ctx.orgId,
+			studentId: enrollmentRow.studentId,
+			enrollmentId: input.enrollmentId,
+			amount: input.amount,
+			due,
+			note: input.note,
+		});
+		return c.json({ id: invoiceId } satisfies CreatedResponse, 201);
 	});
 
 	kernel.post("/invoices/:id/mark-paid", async (c) => {

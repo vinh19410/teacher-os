@@ -1,4 +1,4 @@
-import type { ClassType } from "@teacher-os/api/contracts";
+import type { ClassType, KernelEnrollmentRow } from "@teacher-os/api/contracts";
 
 export interface Student {
 	id: string;
@@ -54,6 +54,10 @@ export interface Invoice {
 	date: string;
 	type: string;
 	method: string;
+	/** Issue #60/#135 — ISO yyyy-mm-dd from the wire; dd/mm is a render
+	 * concern. Empty on legacy rows created before the create API. */
+	due: string;
+	note: string;
 }
 export interface Scores {
 	task: number;
@@ -163,7 +167,11 @@ export type KernelHydratedData = Pick<
 	| "reports"
 	| "notifs"
 	| "commentBank"
->;
+> & {
+	/** Issue #61: raw enrollment rows for the invoice create picker —
+	 * MockData itself has no enrollments collection. */
+	enrollments: KernelEnrollmentRow[];
+};
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 

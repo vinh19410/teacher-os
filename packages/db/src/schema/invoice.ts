@@ -4,8 +4,11 @@ import { organization } from "./organization";
 import { student } from "./student";
 
 /**
- * An org-scoped tuition invoice. Creation is intentionally not exposed in the
- * current product surface; tests and future import tooling may insert rows.
+ * An org-scoped tuition invoice. Creation happens via POST /api/invoices
+ * (issue #60): the request carries an enrollmentId, the server derives the
+ * studentId, and `due` stores ISO yyyy-mm-dd. `enrollmentId` is plain text —
+ * no FK — so the financial record survives enrollment deletion; validity is
+ * enforced at write time.
  */
 export const invoice = sqliteTable(
 	"invoice",
@@ -17,8 +20,11 @@ export const invoice = sqliteTable(
 		studentId: text("student_id")
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
+		enrollmentId: text("enrollment_id").notNull().default(""),
 		amount: integer("amount").notNull(),
 		status: text("status").notNull().default("unpaid"),
+		due: text("due").notNull().default(""),
+		note: text("note").notNull().default(""),
 		date: text("date").notNull().default(""),
 		type: text("type").notNull().default(""),
 		method: text("method").notNull().default("—"),
@@ -29,5 +35,7 @@ export const invoice = sqliteTable(
 	(table) => [
 		index("invoice_org_idx").on(table.orgId),
 		index("invoice_student_idx").on(table.studentId),
+		// Serves per-enrollment invoice timelines (tuition totals, issue #62).
+		index("invoice_enrollment_idx").on(table.enrollmentId),
 	],
 );

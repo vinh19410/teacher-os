@@ -18,7 +18,6 @@ import type {
 	ClassGroup,
 	Invoice,
 	Lesson,
-	MockData,
 	Student,
 	Syllabus,
 } from "./mock-data";
@@ -27,6 +26,7 @@ import {
 	createKernelCommandBus,
 	type KernelCommandBus,
 	type KernelCommandResult,
+	type KernelSlice,
 	kernelQueryKey,
 	kernelQueryOptions,
 	mapKernelSnapshot,
@@ -34,7 +34,8 @@ import {
 } from "./repos/kernel";
 
 interface DataStore {
-	data: MockData;
+	/** Kernel slice — MockData shape plus raw `enrollments` rows (#61). */
+	data: KernelSlice;
 	/**
 	 * Kernel writes go through the serialized command bus and resolve the
 	 * truthful outcome — only `refreshed` permits close/reset/navigate.

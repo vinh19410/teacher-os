@@ -23,5 +23,7 @@ export function mapInvoices(snapshot: KernelSnapshot): Invoice[] {
 		date: row.date,
 		type: row.type,
 		method: row.method,
+		due: row.due,
+		note: row.note,
 	}));
 }
