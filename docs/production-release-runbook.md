@@ -357,6 +357,7 @@ migration, missing operator authority, or missing zone/DNS readiness.
 
 | Release | Commit | Operator (deploy) | Restore authority | Staging rehearsal | Smoke (Chrome/Safari) | GO |
 | --- | --- | --- | --- | --- | --- | --- |
+| prod UAT r2 (2026-08-30) | merge of `659e837` (develop) | AI agent (directed by Vinh Tran) | Vinh Tran | recorded throwaway-D1 proof of repaired `0006` (ledger 2026-08-20) | pending | pending |
 
 Fill one row per release; evidence (sanitized command output, screenshots
 without secrets) attaches to the tracking issue on GitHub.
