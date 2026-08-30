@@ -1,6 +1,6 @@
-import type { MockData } from "./mock-data";
+import type { KernelHydratedData } from "./mock-data";
 
-export const emptyKernelData: MockData = {
+export const emptyKernelData: KernelHydratedData = {
 	students: [],
 	lessons: [],
 	invoices: [],
@@ -10,4 +10,5 @@ export const emptyKernelData: MockData = {
 	commentBank: [],
 	classes: [],
 	syllabi: [],
+	enrollments: [],
 };

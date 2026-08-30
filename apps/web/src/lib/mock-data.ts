@@ -1,4 +1,4 @@
-import type { ClassType } from "@teacher-os/api/contracts";
+import type { ClassType, KernelEnrollmentRow } from "@teacher-os/api/contracts";
 
 export interface Student {
 	id: string;
@@ -163,7 +163,11 @@ export type KernelHydratedData = Pick<
 	| "reports"
 	| "notifs"
 	| "commentBank"
->;
+> & {
+	/** Issue #61: raw enrollment rows for the invoice create picker —
+	 * MockData itself has no enrollments collection. */
+	enrollments: KernelEnrollmentRow[];
+};
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 

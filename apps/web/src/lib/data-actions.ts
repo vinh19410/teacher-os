@@ -60,6 +60,17 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Issue #61 — create an invoice for an existing enrollment.
+			 * `note` is optional: the wire body always carries it ("" default). */
+			type: "add-invoice";
+			payload: {
+				enrollmentId: string;
+				amount: number;
+				due: string;
+				note?: string;
+			};
+	  }
+	| {
 			type: "add-class";
 			payload: {
 				name: string;

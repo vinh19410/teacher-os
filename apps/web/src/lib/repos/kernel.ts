@@ -16,6 +16,7 @@ import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
 import { mapCommentBank } from "./comment-bank";
+import { mapEnrollments } from "./enrollments";
 import { mapInvoices } from "./invoices";
 import { mapLessons } from "./lessons";
 import { mapNotifs } from "./notifs";
@@ -63,6 +64,18 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return {
 				path: "/api/classes",
 				body: { ...action.payload },
+			};
+		case "add-invoice":
+			// Issue #61: invoiceCreateSchema is .strict() — the body must carry
+			// exactly these four fields; note always rides along ("" default).
+			return {
+				path: "/api/invoices",
+				body: {
+					enrollmentId: action.payload.enrollmentId,
+					amount: action.payload.amount,
+					due: action.payload.due,
+					note: action.payload.note ?? "",
+				},
 			};
 		case "add-syllabus":
 			return {
@@ -205,6 +218,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		reports: mapReports(snapshot),
 		notifs: mapNotifs(snapshot),
 		commentBank: mapCommentBank(snapshot),
+		enrollments: mapEnrollments(snapshot),
 	};
 }
 
