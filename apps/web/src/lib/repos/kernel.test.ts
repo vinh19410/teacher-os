@@ -266,6 +266,8 @@ describe("mapKernelSnapshot", () => {
 				date: "19/08",
 				type: "Gói buổi",
 				method: "—",
+				due: "2026-08-19",
+				note: "",
 			},
 		]);
 	});

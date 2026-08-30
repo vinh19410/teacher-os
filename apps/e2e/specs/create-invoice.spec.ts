@@ -60,11 +60,25 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 
 /** The Card holding the "Hóa đơn" DataTable (scoped away from the package
  * cards above, which also render VND amounts). */
-function invoiceTable(page: Page) {
+function invoiceRegion(page: Page) {
 	return page
 		.locator("div.mt-8")
-		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) })
-		.locator("tbody tr");
+		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) });
+}
+
+function invoiceTable(page: Page) {
+	return invoiceRegion(page).locator("tbody tr");
+}
+
+/** One KPI StatCard inside the 3-card grid, addressed by its label. */
+function kpiCard(page: Page, label: string) {
+	return page.locator(".grid.grid-cols-3 > div").filter({ hasText: label });
+}
+
+/** The big number div of a KPI card — exact-matched, because "0đ" is a
+ * substring of every vi-VN amount ending in zero. */
+function kpiNum(page: Page, label: string) {
+	return kpiCard(page, label).locator("div").first();
 }
 
 async function openCreateInvoiceModal(page: Page) {
@@ -103,7 +117,7 @@ async function countInvoicePosts(
 	return posts;
 }
 
-test("tuition → tạo hóa đơn hợp lệ → row hiện, reload vẫn còn", async ({
+test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mark-paid và reload (#135 #62)", async ({
 	page,
 }) => {
 	await setupOrgWithEnrollment(page);
@@ -113,24 +127,46 @@ test("tuition → tạo hóa đơn hợp lệ → row hiện, reload vẫn còn"
 	// labeled with the student before submitting.
 	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
 	await dialog.getByLabel("Số tiền (VND) *").fill("400000");
+	// Explicit due, not the modal's "today" default: deterministic across
+	// midnight races and the UTC CI runner (advisory round).
+	await dialog.getByLabel("Ngày đến hạn *").fill("2026-12-25");
+	await dialog.getByLabel("Ghi chú").fill("QC-135 ghi chú");
 	await dialog
 		.getByRole("button", { name: "Tạo hóa đơn", exact: true })
 		.click();
 	await expect(dialog).toBeHidden();
 
-	// fmtVND renders vi-VN thousands separators: 400.000đ, unpaid badge.
-	await expect(page.getByText("400.000đ")).toBeVisible();
+	// fmtVND renders vi-VN thousands separators: 400.000đ. The KPI cards now
+	// render the same string as the invoice row, so every amount assertion
+	// must stay scoped (Playwright strict mode throws on double matches).
+	await expect(invoiceRegion(page).getByText("400.000đ")).toBeVisible();
 	await expect(invoiceTable(page)).toHaveCount(1);
-	await expect(
-		page
-			.locator("div.mt-8")
-			.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) })
-			.getByText("Chưa thu"),
-	).toBeVisible();
+	await expect(invoiceTable(page).getByText("Chưa thu")).toBeVisible();
 
+	// Empty-org baseline first: collected starts at zero, outstanding rises
+	// by exactly the new invoice (issue #62).
+	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("0đ");
+	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("400.000đ");
+
+	// The unpaid row shows the entered due as dd/mm plus the note tooltip
+	// (issue #135).
+	const row = invoiceTable(page).filter({ hasText: "400.000đ" });
+	await expect(row.getByText("25/12")).toBeVisible();
+	await expect(row.locator('[title="QC-135 ghi chú"]')).toBeVisible();
+
+	// Mark paid → the command bus refetches → KPIs flip in place (issue #62).
+	await row.getByRole("button", { name: "Đã nhận" }).click();
+	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
+	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
+
+	// Everything survives a reload; the paid row's due cell becomes "—".
 	await page.reload();
-	await expect(page.getByText("400.000đ")).toBeVisible();
 	await expect(invoiceTable(page)).toHaveCount(1);
+	const paidRow = invoiceTable(page).filter({ hasText: "400.000đ" });
+	await expect(paidRow.getByText("Đã thu")).toBeVisible();
+	await expect(paidRow.getByText("—")).toBeVisible();
+	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
+	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
 });
 
 test("tuition → tạo hóa đơn amount trống → field error, không POST, không row", async ({

@@ -12,6 +12,11 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { fmtVND } from "@/lib/mock-data";
+import {
+	formatDue,
+	packagesEndingSoon,
+	tuitionTotals,
+} from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/tuition")({
@@ -23,11 +28,6 @@ const INV_LABEL: Record<string, string> = {
 	overdue: "Quá hạn",
 	unpaid: "Chưa thu",
 };
-const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
-	paid: "success",
-	overdue: "danger",
-	unpaid: "warn",
-};
 
 function TuitionRoute() {
 	const navigate = useNavigate();
@@ -35,18 +35,24 @@ function TuitionRoute() {
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [modalOpen, setModalOpen] = useState(false);
 
+	// Issues #62/#135 — every number on this page derives from the kernel
+	// store; nothing is hardcoded. The command bus refetches after mark-paid,
+	// so totals track the server without local arithmetic.
+	const { collected, outstanding } = tuitionTotals(data.invoices);
+	const endingSoon = packagesEndingSoon(data.students);
+
 	return (
 		<div>
-			<PageHead title="Học phí" lead="Doanh thu tháng 8 · 21.000.000đ" />
+			<PageHead title="Học phí" lead={`Đã thu ${fmtVND(collected)}`} />
 			<div className="grid grid-cols-3 gap-4 max-app:grid-cols-1">
-				<StatCard num="21.0tr" label="Đã thu T8 (VND)" />
+				<StatCard num={fmtVND(collected)} label="Đã thu (VND)" />
 				<StatCard
-					num="1.9tr"
+					num={fmtVND(outstanding)}
 					label="Còn nợ (VND)"
 					className="[&>div:first-child]:text-danger"
 				/>
 				<StatCard
-					num="2"
+					num={String(endingSoon)}
 					label="Gói sắp hết"
 					className="[&>div:first-child]:text-warn"
 				/>
@@ -136,6 +142,7 @@ function TuitionRoute() {
 							"Loại",
 							"Số tiền",
 							"Ngày",
+							"Đến hạn",
 							"Trạng thái",
 							"",
 						]}
@@ -147,12 +154,17 @@ function TuitionRoute() {
 										{i.id}
 									</span>,
 									s?.name ?? "",
-									<Tag key="t">{i.type}</Tag>,
+									<span key="t" title={i.note || undefined}>
+										<Tag>{i.type}</Tag>
+									</span>,
 									<span key="a" className="font-mono">
 										{fmtVND(i.amount)}
 									</span>,
 									<span key="d" className="font-mono text-meta text-xs">
 										{i.date}
+									</span>,
+									<span key="due" className="font-mono text-meta text-xs">
+										{i.status === "paid" ? "—" : formatDue(i.due)}
 									</span>,
 									i.status === "paid" ? (
 										<Badge key="b" variant="success" dot>

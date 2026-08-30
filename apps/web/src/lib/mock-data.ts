@@ -54,6 +54,10 @@ export interface Invoice {
 	date: string;
 	type: string;
 	method: string;
+	/** Issue #60/#135 — ISO yyyy-mm-dd from the wire; dd/mm is a render
+	 * concern. Empty on legacy rows created before the create API. */
+	due: string;
+	note: string;
 }
 export interface Scores {
 	task: number;
