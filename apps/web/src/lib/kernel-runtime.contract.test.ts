@@ -23,6 +23,7 @@ const KERNEL_WRITE_MODALS = [
 	"add-lesson-modal.tsx",
 	"edit-lesson-modal.tsx",
 	"grade-modal.tsx",
+	"add-invoice-modal.tsx",
 ] as const;
 
 describe("kernel-backed store wiring", () => {
@@ -363,15 +364,24 @@ describe("kernel-backed store wiring", () => {
 		// Behavioral coverage lives in kernel-outcome.test.ts (node-env unit).
 	});
 
-	test("AddInvoiceModal remains close-only and exposes no create write", () => {
+	test("AddInvoiceModal creates invoices through the kernel bus (#61)", () => {
 		const src = readSrc("../components/modals/add-invoice-modal.tsx");
-		const submit = src.slice(
-			src.indexOf("function submit"),
-			src.indexOf("return ("),
-		);
-		expect(submit).toMatch(/e\.preventDefault\(\)/);
-		expect(submit).toMatch(/onClose\(\)/);
-		expect(submit).not.toMatch(/dispatch|fetch|post|invoiceId/);
+		// The create rides the command bus like every other write modal —
+		// never a bare fetch from the component.
+		expect(src).toMatch(/useKernelFormSubmit\(\)/);
+		expect(src).toMatch(/type: "add-invoice"/);
+		expect(src).not.toMatch(/fetch\(/);
+		// Re-opening must start a fresh form session: field values, field
+		// errors, and any committed/unknown notice from the previous session.
+		expect(src).toMatch(/useEffect\(\(\) => \{/);
+		expect(src).toMatch(/if \(open\) \{/);
+		expect(src).toMatch(/\}, \[open\]\);/);
+		expect(src).toMatch(/resetFields\(\)/);
+		expect(src).toMatch(/\breset\(\)/);
+		// A committed/unknown outcome must reconcile-and-finish (close), not
+		// leave the modal open for a blind replay against a non-idempotent POST.
+		expect(src).toMatch(/async function reconcileAndFinish/);
+		expect(src).toMatch(/onReconcile=\{reconcileAndFinish\}/);
 	});
 
 	test("CreateReportModal keeps Save Draft and Send close-only across both callers", () => {
@@ -487,6 +497,7 @@ describe("runtime state boundary", () => {
 			"assignments",
 			"classes",
 			"commentBank",
+			"enrollments",
 			"invoices",
 			"lessons",
 			"notifs",
