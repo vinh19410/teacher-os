@@ -122,3 +122,26 @@ describe("shell integration", () => {
 		expect(shell).toMatch(/"\/_auth\/profile": "Hồ sơ"/);
 	});
 });
+
+describe("billing button (interim — issue #138)", () => {
+	// INTERIM (issue #138): delete/replace this block when the real billing
+	// portal lands (issue #138 — "Scope khi mở lại monetization").
+	const settings = readSrc("../routes/_auth/settings.tsx");
+	const serviceCard = /Gói dịch vụ[\s\S]*?<\/Card>/.exec(settings)?.[0] ?? "";
+
+	test("billing button is disabled with no handler (mock UI, portal not built)", () => {
+		const attrs =
+			/<Button\b([^>]*)>\s*Quản lý thanh toán\s*<\/Button>/.exec(
+				serviceCard,
+			)?.[1] ?? "";
+		expect(attrs, "billing button block not found in service card").not.toBe(
+			"",
+		);
+		expect(attrs).toMatch(/(^|\s)disabled(\s|=|$)/);
+		expect(attrs).not.toMatch(/\bonClick\b|\bhref\b|\bto\s*=/);
+	});
+
+	test("coming-soon label renders as a text node in the same card", () => {
+		expect(serviceCard).toMatch(/>\s*Sắp ra mắt\s*</);
+	});
+});
