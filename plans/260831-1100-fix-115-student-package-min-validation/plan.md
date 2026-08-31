@@ -1,7 +1,7 @@
 ---
 title: "fix-115-student-package-min-validation"
 description: "Chặn min client-side + lỗi theo field cho Số buổi/Đơn giá trong AddStudentModal; nâng server contract total lên min(1) — QC P1 issue #115"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 tags: [bugfix, qc, validation]
