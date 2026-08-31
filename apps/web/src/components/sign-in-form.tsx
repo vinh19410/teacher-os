@@ -2,7 +2,6 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import z from "zod";
 
 import { AuthField, fieldErrors } from "@/components/auth/auth-field";
 import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
@@ -10,6 +9,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
+import { signInSchema } from "@/lib/sign-in-schema";
 
 export default function SignInForm({
 	hidden,
@@ -34,9 +34,12 @@ export default function SignInForm({
 			try {
 				// Layer 1: the auth call. A rejected fetch throws (no callbacks
 				// fire), so the catch below owns it — silent failures shipped the
-				// QC #125 incident.
+				// QC #125 incident. The schema's trim() only feeds validation
+				// (TanStack Form discards the parsed output), so trim the
+				// payload here or a padded email passes the client yet fails
+				// auth with a misleading "wrong password" toast (#114).
 				const { error } = await authClient.signIn.email({
-					email: value.email,
+					email: value.email.trim(),
 					password: value.password,
 				});
 				if (error) {
@@ -68,10 +71,9 @@ export default function SignInForm({
 			}
 		},
 		validators: {
-			onSubmit: z.object({
-				email: z.email("Invalid email address"),
-				password: z.string().min(8, "Password must be at least 8 characters"),
-			}),
+			// Sign-in semantics (#114): required-first messages, no sign-up
+			// min-length rule — see lib/sign-in-schema.ts.
+			onSubmit: signInSchema,
 		},
 	});
 
