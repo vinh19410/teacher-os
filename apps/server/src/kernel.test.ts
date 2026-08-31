@@ -3187,3 +3187,87 @@ describe("enroll existing student (issue #122)", () => {
 		expect(res.status).toBe(404);
 	});
 });
+
+describe("student package minimums (issue #115)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Min Gói");
+	});
+
+	// total=0 is the red-first pair: min(0) on develop still accepts a
+	// zero-session package, which is the server half of QC #115.
+	test("create student with total 0 is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV gói 0 buổi",
+				phone: "0900 000 001",
+				total: 0,
+				price: 400000,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("enroll existing student with total 0 is rejected with 400", async () => {
+		const classId = await t.createClass(session, "Lớp min gói");
+		const studentId = await t.addStudent(session, "HV min gói");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId, total: 0, price: 400000, mode: "Online" },
+		});
+		expect(res.status).toBe(400);
+	});
+
+	// Regression locks (born green on develop — price min(0) already exists).
+	test("negative price is rejected with 400 on create", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV giá âm",
+				phone: "0900 000 002",
+				total: 10,
+				price: -500,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("total 1 and price 0 (free package) are accepted", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV gói miễn phí",
+				phone: "0900 000 003",
+				total: 1,
+				price: 0,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	// Pin the intentional #122 boundary: omitted package fields default to
+	// 10/400000 and pass min(1) — documented, not silently inherited.
+	test("omitted package fields default to 10 sessions / 400000 VND", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: { name: "HV mặc định gói", phone: "0900 000 004" },
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(session);
+		const pkg = snapshot.packages.find((p) => p.studentId === id);
+		expect(pkg).toMatchObject({ total: 10, price: 400000 });
+	});
+});
