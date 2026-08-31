@@ -61,18 +61,18 @@ Trạng thái: **Hoàn thành** (2026-08-30) — evidence bằng E2E CI workflow
 
 ### M3 — Go-live production · GitHub milestone: M3
 
-Trạng thái: **Blocked** — chờ 5 operator inputs (issue #41); xem [evidence NO-GO 2026-08-20](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md).
+Trạng thái: **Hoàn thành** (2026-08-31) — GO trên release `235275c` sau r2 + r2.1; evidence [UAT r2 (2026-08-30)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2-2026-08-30.md) + [UAT r2.1 (2026-08-31)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2.1-2026-08-31.md). Ghi chú: Google OAuth leg theo deviation operator-approved (email-auth evidence + authorize precheck pass); vòng Google round-trip thật được verify khi onboard giáo viên pilot đầu tiên (M4).
 
-**DÙNG ĐƯỢC khi hoàn thành**: M1+M2 live trên production domain HTTPS, Google OAuth production, có runbook hỗ trợ/rollback.
+**DÙNG ĐƯỢC khi hoàn thành**: M1+M2 live trên production domain HTTPS, Google OAuth production (redirect URI đăng ký + precheck pass; round-trip thật chờ M4 theo deviation), có runbook hỗ trợ/rollback.
 
 **CHƯA DÙNG ĐƯỢC tại M3**: pilot chưa bắt đầu; tạo assignment, tạo/gửi report, settings persist.
 
 **DOD**:
-- [ ] 5 operator inputs #41 đóng (domain/APP_DOMAIN, Google redirect URI, UAT account, Safari runner, sign-off).
-- [ ] D1 migration drill pass có evidence (phase 2 production-readiness).
-- [ ] Live UAT phase 6 re-run: GO — sign-in → bootstrap org → CRUD kernel → reload pass trên production.
-- [ ] Deploy Alchemy production thành công + rollback rehearsed.
-- [ ] #28, #30, #41, #48 đóng với evidence.
+- [x] 5 operator inputs #41 đóng (domain/APP_DOMAIN, Google redirect URI, UAT account, Safari runner, sign-off). *(evidence: r2 topology gate + sign-off row pre-deploy `24132d9`; Safari runner unlocked 2026-08-31 qua Accessibility grant — r2.1)*
+- [x] D1 migration drill pass có evidence (phase 2 production-readiness). *(evidence: phase-02 success criteria [x] — throwaway-D1 proof repaired `0006`, ledger 2026-08-20 + runbook RPO/RTO section)*
+- [x] Live UAT phase 6 re-run: GO — sign-in → bootstrap org → CRUD kernel → reload pass trên production. *(evidence: r2.1 — Chrome r2 + Safari r2.1 đều 6/6 pass incognito; unified GO table toàn pass)*
+- [x] Deploy Alchemy production thành công + rollback rehearsed. *(evidence: deploy CI run 33313994693 `/readyz` smoke pass r2; rollback rehearsed = phase-02 restore drill + runbook code-rollback path)*
+- [x] #28, #30, #41, #48 đóng với evidence. *(evidence: các issue comment + close kèm link r2/r2.1, 2026-08-31)*
 
 ### M4 — Pilot vận hành · GitHub milestone: M4
 
