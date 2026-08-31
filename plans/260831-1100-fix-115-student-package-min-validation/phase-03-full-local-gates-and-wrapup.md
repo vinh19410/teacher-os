@@ -1,6 +1,7 @@
 ---
+phase: 3
 title: "Phase 3: Full local gates and wrapup"
-status: in-progress
+status: completed
 priority: P2
 effort: "1h"
 dependencies: ["phase-01", "phase-02"]
@@ -40,9 +41,9 @@ Không đổi code trong phase này — chỉ verify + wrap-up. Gate theo `docs/
 
 ## Success Criteria
 
-- [ ] 4 gate xanh (e2e hoặc xanh, hoặc external blocker được ghi rõ và phase-2 TDD criterion để mở)
-- [ ] Diff chỉ gồm: `packages/api/src/contracts.ts`, `apps/server/src/kernel.test.ts`, `apps/web/src/components/modals/add-student-modal.tsx`, `apps/e2e/specs/student-package-validation.spec.ts` (+ được phép: `apps/web/src/lib/add-student-enroll.contract.test.ts` và/hoặc `apps/web/src/lib/kernel-runtime.contract.test.ts` nếu source-format đổi; KHÔNG thêm `helpers.ts` — spec mới self-contained)
-- [ ] Commit trên branch đúng, không đụng develop trực tiếp
+- [x] 4 gate xanh (e2e hoặc xanh, hoặc external blocker được ghi rõ và phase-2 TDD criterion để mở)
+- [x] Diff chỉ gồm: `packages/api/src/contracts.ts`, `apps/server/src/kernel.test.ts`, `apps/web/src/components/modals/add-student-modal.tsx`, `apps/e2e/specs/student-package-validation.spec.ts` (+ được phép: `apps/web/src/lib/add-student-enroll.contract.test.ts` và/hoặc `apps/web/src/lib/kernel-runtime.contract.test.ts` nếu source-format đổi; KHÔNG thêm `helpers.ts` — spec mới self-contained)
+- [x] Commit trên branch đúng, không đụng develop trực tiếp
 
 ## Risk Assessment
 

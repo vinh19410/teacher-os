@@ -33,6 +33,9 @@ async function countPosts(
 	page.on("request", onRequest);
 	try {
 		await action();
+		// Give the CDP request event a beat to arrive before the listener is
+		// detached, so a fired POST can never be missed by an early off().
+		await page.waitForTimeout(100);
 	} finally {
 		page.off("request", onRequest);
 	}

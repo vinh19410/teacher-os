@@ -1,4 +1,5 @@
 ---
+phase: 1
 title: "Phase 1: Contract min(1) + server tests"
 status: completed
 priority: P1
@@ -38,11 +39,11 @@ Zod schema ở `packages/api/src/contracts.ts` là nguồn thật duy nhất cho
 
 ## Success Criteria
 
-- [ ] Case `total=0` ĐỎ trước (min(0) còn cho phép) / XANH sau; case price + omitted-defaults là regression-lock sinh ra xanh (ghi chú rõ, không claim TDD)
-- [ ] `total=0` → 400 trên cả 2 route; `total=1` pass — assert status, không assert body zod
-- [ ] `price=0` pass, `price<0` chặn — có assertion
-- [ ] Omit total/price → 201 với default 10/400000 — pinned, đánh dấu "intentional #122"
-- [ ] Toàn bộ server test suite xanh (`pnpm --filter server test`)
+- [x] Case `total=0` ĐỎ trước (min(0) còn cho phép) / XANH sau; case price + omitted-defaults là regression-lock sinh ra xanh (ghi chú rõ, không claim TDD)
+- [x] `total=0` → 400 trên cả 2 route; `total=1` pass — assert status, không assert body zod
+- [x] `price=0` pass, `price<0` chặn — có assertion
+- [x] Omit total/price → 201 với default 10/400000 — pinned, đánh dấu "intentional #122"
+- [x] Toàn bộ server test suite xanh (`pnpm --filter server test`)
 
 ## Risk Assessment
 

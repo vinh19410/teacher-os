@@ -1,4 +1,5 @@
 ---
+phase: 2
 title: "Phase 2: Client per-field validation and e2e"
 status: completed
 priority: P1
@@ -57,11 +58,11 @@ Giữ nguyên luồng `useKernelFormSubmit` — validation là tiền điều ki
 
 ## Success Criteria
 
-- [ ] E2E 5 case (A-E) ĐỎ trước / XANH sau, trong đó Case D enroll-mode là bắt buộc — không được thay bằng "reasoning"
-- [ ] grep `add-student-modal.tsx` không còn `|| 10` hay `|| 400000`; không có `Number.parseInt` trong submit path của package fields
-- [ ] "10.5" bị chặn với lỗi field (không truncate thành 10)
-- [ ] Lỗi clear khi sửa input và khi switchMode; không stale error qua 2 mode (Case C assert)
-- [ ] 2 contract test source-parse (`add-student-enroll.contract.test.ts`, `kernel-runtime.contract.test.ts`) xanh — nếu format source đổi, cập nhật trong cùng PR
+- [x] E2E 5 case (A-E) ĐỎ trước / XANH sau, trong đó Case D enroll-mode là bắt buộc — không được thay bằng "reasoning"
+- [x] grep `add-student-modal.tsx` không còn `|| 10` hay `|| 400000`; không có `Number.parseInt` trong submit path của package fields
+- [x] "10.5" bị chặn với lỗi field (không truncate thành 10)
+- [x] Lỗi clear khi sửa input và khi switchMode; không stale error qua 2 mode (Case C assert)
+- [x] 2 contract test source-parse (`add-student-enroll.contract.test.ts`, `kernel-runtime.contract.test.ts`) xanh — nếu format source đổi, cập nhật trong cùng PR
 
 ## Risk Assessment
 
