@@ -1,7 +1,7 @@
 ---
 title: "fix-114-signin-validation-semantics"
 description: "Sửa validation form Sign-in (/login): thông điệp required khi để trống và gỡ rule min-8 ký tự (rule sign-up) khỏi sign-in — issue #114 QC P1"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 tags: [bugfix, auth, login, qc]

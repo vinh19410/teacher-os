@@ -56,12 +56,12 @@ E2e theo pattern interception của `auth-fail-loudly.spec.ts` nhưng **mỗi sc
 
 ## Success Criteria
 
-- [ ] Unit test schema: 6 case trên pass, trong đó case password `abc` pass là regression test cho #114.
-- [ ] E2e (a): submit trống hiện đúng 2 thông điệp required trên tab Sign in.
-- [ ] E2e (b): client gửi POST sign-in với password `abc` (interceptor bắt được), toast lỗi hiện diện.
-- [ ] E2e (c): sign-up vẫn chặn password < 8 với đúng thông điệp min-8.
-- [ ] Email padding `" a@b.com "` pass validation và payload trim (verify qua payload của interceptor hoặc unit contract).
-- [ ] `pnpm test` / `check-types` / `biome` / `build` xanh toàn bộ.
+- [x] Unit test schema: 6 case trên pass, trong đó case password `abc` pass là regression test cho #114.
+- [x] E2e (a): submit trống hiện đúng 2 thông điệp required trên tab Sign in.
+- [x] E2e (b): client gửi POST sign-in với password `abc` (interceptor bắt được), toast lỗi hiện diện.
+- [x] E2e (c): sign-up vẫn chặn password < 8 với đúng thông điệp min-8.
+- [x] Email padding `" a@b.com "` pass validation và payload trim (verify qua payload của interceptor hoặc unit contract).
+- [x] `pnpm test` / `check-types` / `biome` / `build` xanh toàn bộ.
 
 ## Risk Assessment
 
