@@ -10,7 +10,9 @@ export const studentCreateSchema = z.object({
 	name: z.string().min(1),
 	phone: z.string().default(""),
 	parentName: z.string().default(""),
-	total: z.number().int().min(0).default(10),
+	// Issue #115: a 0-session package is meaningless — min(1), while price
+	// keeps min(0) because a free package is legitimate.
+	total: z.number().int().min(1).default(10),
 	price: z.number().int().min(0).default(400000),
 	mode: z.enum(["Online", "Offline"]).default("Online"),
 	classId: z.string().min(1).optional(),
@@ -24,7 +26,7 @@ export type StudentCreate = z.infer<typeof studentCreateSchema>;
  */
 export const enrollStudentSchema = z.object({
 	studentId: z.string().min(1),
-	total: z.number().int().min(0).default(10),
+	total: z.number().int().min(1).default(10),
 	price: z.number().int().min(0).default(400000),
 	mode: z.enum(["Online", "Offline"]).default("Online"),
 });
