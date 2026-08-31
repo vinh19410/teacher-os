@@ -1,7 +1,7 @@
 ---
 title: "Production readiness"
 description: "Chứng minh Teacher OS chạy an toàn trên Cloudflare + D1 thật trước pilot: cấu hình release, recovery drill, readiness, UI fail-safe và UAT có evidence."
-status: pending
+status: completed
 priority: P1
 effort: "6-9d"
 issue: 28
@@ -82,11 +82,11 @@ P5 truthful mutations ─────┘                         │
 | # | Phase | Status |
 |---|---|---|
 | 1 | [Production configuration and support runbook](./phase-01-production-configuration-and-support-runbook.md) | Completed |
-| 2 | [D1 migration safety and recovery drill](./phase-02-d1-migration-safety-and-recovery-drill.md) | Pending |
+| 2 | [D1 migration safety and recovery drill](./phase-02-d1-migration-safety-and-recovery-drill.md) | Completed |
 | 3 | [Database readiness endpoint](./phase-03-add-database-readiness-endpoint.md) | Completed |
 | 4 | [Fail-safe first snapshot load](./phase-04-fail-safe-on-first-snapshot-load.md) | Completed |
 | 5 | [Truthful mutation failure UI](./phase-05-make-mutation-failure-truthful-in-the-ui.md) | Completed |
-| 6 | [Live UAT and release evidence](./phase-06-execute-live-uat-and-record-release-evidence.md) | Pending |
+| 6 | [Live UAT and release evidence](./phase-06-execute-live-uat-and-record-release-evidence.md) | Completed |
 
 ## Cross-plan dependencies
 

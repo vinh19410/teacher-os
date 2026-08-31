@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Live UAT and release evidence"
-status: pending
+status: completed
 priority: P1
 effort: "1-2d"
 dependencies: [1, 2, 3, 4, 5]
@@ -79,3 +79,8 @@ This is a manual acceptance gate, not a flaky production OAuth CI test. `/readyz
 ## Risk Assessment
 
 Live test requires an approved identity and deployment authority. Signals to stop: missing `APP_DOMAIN`, zone, or Google redirect registration; leftover `CORS_ORIGIN` in any loaded env file; restaged staging not done; missing operator approval; missing Chrome or Safari runner. Response: keep NO-GO, file a blocker issue per missing input, do not substitute staging/local tests, and do not weaken browser/production checks.
+
+## Execution record
+
+- r2 (2026-08-30): NO-GO có điều kiện — mọi gate kỹ thuật pass, 2 GO-gap đều là input operator (Safari runner bị chặn TCC Accessibility; không có Google UAT account). Evidence: [uat-evidence-phase-06-r2](./reports/uat-evidence-phase-06-r2-2026-08-30.md).
+- r2.1 (2026-08-31): **GO** — Safari private leg 6/6 pass (operator cấp Accessibility); Google OAuth leg theo **deviation được operator phê duyệt 2026-08-31**: chấp nhận email-auth incognito legs (Chrome + Safari) + production authorize precheck (không `redirect_uri_mismatch`) làm bằng chứng auth cross-origin, thay vì vòng Google round-trip thật với Google UAT account không được cấp. Google round-trip thật sẽ được verify khi onboard giáo viên pilot đầu tiên (M4, blocker SLA ≤ 1 ngày làm việc). Evidence: [uat-evidence-phase-06-r2.1](./reports/uat-evidence-phase-06-r2.1-2026-08-31.md).
