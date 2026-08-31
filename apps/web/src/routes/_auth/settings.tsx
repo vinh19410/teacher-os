@@ -101,9 +101,12 @@ function SettingsRoute() {
 									onChange={(e) => setUnitPrice(e.target.value)}
 								/>
 							</Field>
-							<Button variant="secondary" size="sm" className="self-start">
-								Quản lý thanh toán
-							</Button>
+							<div className="flex items-center gap-2 self-start">
+								<Button variant="secondary" size="sm" disabled>
+									Quản lý thanh toán
+								</Button>
+								<Badge variant="muted">Sắp ra mắt</Badge>
+							</div>
 						</div>
 					</Card>
 				</div>
