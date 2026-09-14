@@ -528,6 +528,138 @@ describe("class type + structured schedule (create-class modal)", () => {
 	});
 });
 
+describe("syllabus create with imported content (excel/csv import)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Import");
+	});
+
+	test("create with modules persists the ordered tree", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "IELTS Writing 7.0 (import)",
+				level: "Band 7.0",
+				type: "ielts",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 0,
+				modules: [
+					{
+						title: "M1",
+						description: "d1",
+						lessons: [
+							{
+								title: "B1",
+								objectives: "o1",
+								materials: "m1",
+								status: "done",
+							},
+							{
+								title: "B2",
+								objectives: "",
+								materials: "",
+								status: "upcoming",
+							},
+						],
+					},
+					{ title: "M2", description: "", lessons: [] },
+				],
+			},
+		});
+		expect(res.status).toBe(201);
+		expect(((await res.json()) as { id: string }).id).toBeTruthy();
+
+		const listRes = await t.call("/api/syllabi", { session });
+		const syllabi = (await listRes.json()) as Array<{
+			name: string;
+			modules: Array<{
+				title: string;
+				description: string;
+				lessons: Array<{
+					title: string;
+					objectives: string;
+					materials: string;
+					status: string;
+				}>;
+			}>;
+		}>;
+		expect(syllabi).toHaveLength(1);
+		const sy = syllabi[0];
+		expect(sy?.name).toBe("IELTS Writing 7.0 (import)");
+		expect(sy?.modules.map((m) => m.title)).toEqual(["M1", "M2"]);
+		expect(sy?.modules[0]?.description).toBe("d1");
+		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["B1", "B2"]);
+		expect(sy?.modules[0]?.lessons[0]).toMatchObject({
+			title: "B1",
+			objectives: "o1",
+			materials: "m1",
+			status: "done",
+		});
+		expect(sy?.modules[1]?.lessons).toEqual([]);
+	});
+
+	test("schema rejects oversized payload before any write", async () => {
+		const lessons = Array.from({ length: 501 }, (_, i) => ({
+			title: `B${i}`,
+		}));
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Quá cap",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 0,
+				modules: [{ title: "M", lessons }],
+			},
+		});
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid body" });
+
+		const listRes = await t.call("/api/syllabi", { session });
+		const list = (await listRes.json()) as Array<{ name: string }>;
+		expect(list.some((row) => row.name === "Quá cap")).toBe(false);
+	});
+
+	test("invalid lesson status in modules is 400", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Status lạ",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 0,
+				modules: [
+					{ title: "M", lessons: [{ title: "B", status: "finished" }] },
+				],
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create without modules still works (backward compat)", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Flow cũ",
+				level: "",
+				type: "ielts",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 0,
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+});
+
 describe("invoice persistence", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;

@@ -1,4 +1,7 @@
-import type { ClassType } from "@teacher-os/api/contracts";
+import type {
+	ClassType,
+	SyllabusModuleContent,
+} from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
 
 export type KernelAction =
@@ -94,6 +97,8 @@ export type KernelAction =
 				skills: string[];
 				description: string;
 				totalLessons: number;
+				/** Bulk content from Excel/CSV import (issue #144); omitted = old flow. */
+				modules?: SyllabusModuleContent[];
 			};
 	  }
 	| {

@@ -1263,16 +1263,49 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const db = deps.getDb();
 
 		const syllabusId = crypto.randomUUID();
-		await db.insert(syllabus).values({
-			id: syllabusId,
-			orgId: ctx.orgId,
-			name: input.name,
-			level: input.level,
-			type: input.type,
-			skills: JSON.stringify(input.skills),
-			description: input.description,
-			totalLessons: input.totalLessons,
-		});
+		// One atomic batch: syllabus + imported modules/lessons (issue #144).
+		// Tuple type is required by db.batch (drizzle); same shape as
+		// buildImportBatch (issue #79).
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(syllabus).values({
+				id: syllabusId,
+				orgId: ctx.orgId,
+				name: input.name,
+				level: input.level,
+				type: input.type,
+				skills: JSON.stringify(input.skills),
+				description: input.description,
+				totalLessons: input.totalLessons,
+			}),
+		];
+		for (const [mi, m] of (input.modules ?? []).entries()) {
+			const moduleId = crypto.randomUUID();
+			statements.push(
+				db.insert(syllabusModule).values({
+					id: moduleId,
+					orgId: ctx.orgId,
+					syllabusId,
+					title: m.title,
+					description: m.description,
+					position: mi,
+				}),
+			);
+			for (const [li, l] of m.lessons.entries()) {
+				statements.push(
+					db.insert(syllabusLesson).values({
+						id: crypto.randomUUID(),
+						orgId: ctx.orgId,
+						moduleId,
+						title: l.title,
+						objectives: l.objectives,
+						materials: l.materials,
+						status: l.status,
+						position: li,
+					}),
+				);
+			}
+		}
+		await db.batch(statements);
 		return c.json({ id: syllabusId } satisfies CreatedResponse, 201);
 	});
 

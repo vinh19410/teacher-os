@@ -114,6 +114,27 @@ export const classNotesSchema = z.object({
 });
 export type ClassNotes = z.infer<typeof classNotesSchema>;
 
+/**
+ * Bulk content cho syllabus create (Excel/CSV import).
+ * Mirror moduleUpsertSchema/lessonUpsertSchema + import-only caps
+ * (server-side bound: client 2MB file cap không áp dụng cho caller trực tiếp).
+ */
+export const syllabusModuleContentSchema = z.object({
+	title: z.string().min(1).max(500),
+	description: z.string().max(10_000).default(""),
+	lessons: z
+		.array(
+			z.object({
+				title: z.string().min(1).max(500),
+				objectives: z.string().max(10_000).default(""),
+				materials: z.string().max(10_000).default(""),
+				status: z.enum(["done", "current", "upcoming"]).default("upcoming"),
+			}),
+		)
+		.default([]),
+});
+export type SyllabusModuleContent = z.infer<typeof syllabusModuleContentSchema>;
+
 export const syllabusCreateSchema = z
 	.object({
 		name: z.string().min(1),
@@ -126,8 +147,21 @@ export const syllabusCreateSchema = z
 			.default([]),
 		description: z.string().default(""),
 		totalLessons: z.number().int().min(0).default(0),
+		modules: z.array(syllabusModuleContentSchema).optional(),
 	})
 	.superRefine((input, ctx) => {
+		if (input.modules) {
+			const nodes =
+				input.modules.length +
+				input.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+			if (nodes > 500) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["modules"],
+					message: "Tổng số module và buổi học vượt giới hạn 500",
+				});
+			}
+		}
 		if (input.type === "ielts" && input.skills.length === 0) {
 			ctx.addIssue({
 				code: "custom",
