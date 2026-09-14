@@ -1,7 +1,7 @@
 ---
 title: "Syllabus Excel/CSV Import"
 description: "Cho phép upload Excel/CSV trong flow tạo syllabus để nhập nhanh toàn bộ modules + lessons trong một request atomic"
-status: pending
+status: completed
 priority: P2
 effort: 15h
 issue: 144
@@ -82,9 +82,9 @@ Schema giữ **không** `.strict()` → zod **strip** key lạ: một server ch�
 |-------|------|--------|
 | 1 | [Parser core & contract](./phase-01-parser-core-and-contract.md) | Completed |
 | 2 | [Server batch & transport wiring](./phase-02-server-batch-and-transport.md) | Completed |
-| 3 | [Modal UI & E2E](./phase-03-modal-ui-and-e2e.md) | Pending |
+| 3 | [Modal UI & E2E](./phase-03-modal-ui-and-e2e.md) | Completed |
 
-*Phase 3: mọi gate local xanh (check/check-types/test/build/contract test); e2e được enforce ở CI PR — port 8000 local bị dev environment của user giữ, disposition duyệt kongming 2026-09-14.*
+*Phase 3: mọi gate local xanh (check/check-types/test/build/contract test); e2e được enforce ở CI PR — port 8000 local bị dev environment của user giữ, disposition duyệt kongming 2026-09-14. 2 e2e locator criticals từ review đã fix trước push (a2314ef).*
 
 ## Goals
 
