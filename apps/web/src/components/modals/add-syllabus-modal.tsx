@@ -3,12 +3,17 @@ import {
 	type ClassType,
 	IELTS_SKILLS,
 } from "@teacher-os/api/contracts";
-import { type FormEvent, useState } from "react";
+import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
+import {
+	buildSampleCsv,
+	parseSyllabusFile,
+	type SyllabusImportResult,
+} from "@/lib/syllabus-import";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -34,6 +39,11 @@ export function AddSyllabusModal({
 	const [skills, setSkills] = useState<string[]>([]);
 	const [description, setDescription] = useState("");
 	const [total, setTotal] = useState("10");
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [importResult, setImportResult] = useState<SyllabusImportResult | null>(
+		null,
+	);
+	const [parsing, setParsing] = useState(false);
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 
@@ -41,11 +51,43 @@ export function AddSyllabusModal({
 		setName("");
 		setDescription("");
 		setSkills([]);
+		setImportResult(null);
 	}
+
+	async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		e.target.value = ""; // cho phép chọn lại cùng file
+		if (!file) return;
+		setParsing(true);
+		try {
+			const result = await parseSyllabusFile(file);
+			setImportResult(result);
+			if (result.ok) setTotal(String(result.lessonCount));
+		} finally {
+			setParsing(false);
+		}
+	}
+
+	function downloadSample() {
+		const csv = buildSampleCsv();
+		const url = URL.createObjectURL(
+			new Blob([csv], { type: "text/csv;charset=utf-8" }),
+		);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "syllabus-template.csv";
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	const importBlocked = importResult !== null && !importResult.ok;
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;
+		// Đang parse hoặc file parse lỗi → chặn submit: teacher đã cố import,
+		// tạo syllabus rỗng lúc đó là sai.
+		if (parsing || importBlocked) return;
 		if (!name.trim()) {
 			setError("Vui lòng nhập tên syllabus.");
 			return;
@@ -63,7 +105,10 @@ export function AddSyllabusModal({
 				level,
 				skills: classType === "ielts" ? skills : [],
 				description: description.trim(),
-				totalLessons: Number.parseInt(total, 10) || 10,
+				totalLessons: importResult?.ok
+					? importResult.lessonCount
+					: Number.parseInt(total, 10) || 10,
+				modules: importResult?.ok ? importResult.modules : undefined,
 			},
 		});
 		// Close/reset/navigate only after the refreshed result — a committed
@@ -81,6 +126,18 @@ export function AddSyllabusModal({
 			onClose();
 		}
 	}
+
+	const removeFileButton = (
+		<Button
+			type="button"
+			variant="secondary"
+			size="sm"
+			onClick={() => setImportResult(null)}
+			disabled={saving}
+		>
+			Gỡ file
+		</Button>
+	);
 
 	return (
 		<Modal
@@ -133,6 +190,64 @@ export function AddSyllabusModal({
 						placeholder="Mô tả lộ trình và mục tiêu…"
 					/>
 				</Field>
+				<Field label="Nhập nhanh từ Excel/CSV (tùy chọn)">
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".csv,.xlsx"
+						className="hidden"
+						onChange={onFileChange}
+					/>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={parsing}
+						>
+							Chọn file
+						</Button>
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							onClick={downloadSample}
+						>
+							Tải file mẫu
+						</Button>
+						{parsing && <span className="text-xs">Đang đọc file…</span>}
+					</div>
+					{importResult?.ok && (
+						<div className="flex flex-col gap-2 text-xs">
+							<p>
+								{importResult.modules.length} module ·{" "}
+								{importResult.lessonCount} buổi học
+							</p>
+							<details>
+								<summary>Xem trước nội dung</summary>
+								<ul className="list-disc pl-4">
+									{importResult.modules.map((m, i) => (
+										<li key={`${i}-${m.title}`}>
+											{m.title} ({m.lessons.length} buổi)
+										</li>
+									))}
+								</ul>
+							</details>
+							{removeFileButton}
+						</div>
+					)}
+					{importResult && !importResult.ok && (
+						<div className="flex flex-col gap-2">
+							<ul role="alert" className="text-danger text-xs">
+								{importResult.errors.map((err) => (
+									<li key={err}>{err}</li>
+								))}
+							</ul>
+							{removeFileButton}
+						</div>
+					)}
+				</Field>
 				<Field label="Số buổi dự kiến">
 					<Input
 						type="number"
@@ -163,7 +278,11 @@ export function AddSyllabusModal({
 					>
 						Hủy
 					</Button>
-					<Button type="submit" size="sm" disabled={saving || submitBlocked}>
+					<Button
+						type="submit"
+						size="sm"
+						disabled={saving || submitBlocked || parsing || importBlocked}
+					>
 						Tạo
 					</Button>
 				</div>

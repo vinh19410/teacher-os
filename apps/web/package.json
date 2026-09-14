@@ -25,8 +25,10 @@
 		"dotenv": "catalog:",
 		"lucide-react": "catalog:",
 		"next-themes": "catalog:",
+		"papaparse": "^5.7.0",
 		"react": "catalog:",
 		"react-dom": "catalog:",
+		"read-excel-file": "^9.3.10",
 		"sonner": "catalog:",
 		"zod": "catalog:"
 	},
@@ -35,6 +37,7 @@
 		"@tanstack/router-plugin": "^1.168.23",
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",
+		"@types/papaparse": "^5.5.2",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
 		"@vitejs/plugin-react": "^6.0.4",
