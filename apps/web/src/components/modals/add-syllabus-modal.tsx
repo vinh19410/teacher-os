@@ -77,7 +77,9 @@ export function AddSyllabusModal({
 		a.href = url;
 		a.download = "syllabus-template.csv";
 		a.click();
-		URL.revokeObjectURL(url);
+		// Revoke sau khi download khởi hành — revoke đồng bộ ngay sau click
+		// có thể hủy download trên Safari/Firefox.
+		setTimeout(() => URL.revokeObjectURL(url), 0);
 	}
 
 	const importBlocked = importResult !== null && !importResult.ok;
@@ -240,8 +242,8 @@ export function AddSyllabusModal({
 					{importResult && !importResult.ok && (
 						<div className="flex flex-col gap-2">
 							<ul role="alert" className="text-danger text-xs">
-								{importResult.errors.map((err) => (
-									<li key={err}>{err}</li>
+								{importResult.errors.map((err, i) => (
+									<li key={`${i}-${err}`}>{err}</li>
 								))}
 							</ul>
 							{removeFileButton}

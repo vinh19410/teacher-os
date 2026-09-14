@@ -9,23 +9,27 @@ test("tạo syllabus bằng upload CSV: preview rồi thấy đủ modules/buổ
 	await signUpViaUi(page);
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
-	await page
+	const dialog = page.getByRole("dialog");
+	await dialog
 		.getByPlaceholder("VD: IELTS Writing 7.0")
 		.fill(`E2E Import CSV ${Date.now()}`);
-	await page.getByText("Writing", { exact: true }).click();
+	// Scope vào dialog: list page phía sau cũng có chip "Writing" (ChipFilter).
+	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 	await page.setInputFiles(
 		"input[type=file]",
 		"fixtures/syllabus-import.sample.csv",
 	);
-	await expect(page.getByText("2 module · 3 buổi học")).toBeVisible();
-	await expect(page.getByLabel("Số buổi dự kiến")).toHaveValue("3");
-	await page.getByRole("button", { name: "Tạo", exact: true }).click();
+	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+	await expect(dialog.getByLabel("Số buổi dự kiến")).toHaveValue("3");
+	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 	await page.waitForURL(/\/syllabus\/.+/);
 	await expect(page.getByText("Module 1 — Nền tảng")).toBeVisible();
 	await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
 	await expect(page.getByText("Buổi 1")).toBeVisible();
 	await expect(page.getByText("Buổi 2")).toBeVisible();
-	await expect(page.getByText("Buổi 3")).toBeVisible();
+	// exact:Buổi 3 status "đang học" → detail page render thêm card
+	// "Buổi hiện tại" chứa "Buổi 3 — …"; substring match sẽ trúng 2 element.
+	await expect(page.getByText("Buổi 3", { exact: true })).toBeVisible();
 });
 
 test("tạo syllabus bằng upload XLSX: preview rồi thấy đủ modules/buổi trên trang chi tiết", async ({
@@ -34,21 +38,22 @@ test("tạo syllabus bằng upload XLSX: preview rồi thấy đủ modules/bu�
 	await signUpViaUi(page);
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
-	await page
+	const dialog = page.getByRole("dialog");
+	await dialog
 		.getByPlaceholder("VD: IELTS Writing 7.0")
 		.fill(`E2E Import XLSX ${Date.now()}`);
-	await page.getByText("Writing", { exact: true }).click();
+	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 	await page.setInputFiles(
 		"input[type=file]",
 		"fixtures/syllabus-import.sample.xlsx",
 	);
-	await expect(page.getByText("2 module · 3 buổi học")).toBeVisible();
-	await expect(page.getByLabel("Số buổi dự kiến")).toHaveValue("3");
-	await page.getByRole("button", { name: "Tạo", exact: true }).click();
+	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+	await expect(dialog.getByLabel("Số buổi dự kiến")).toHaveValue("3");
+	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 	await page.waitForURL(/\/syllabus\/.+/);
 	await expect(page.getByText("Module 1 — Nền tảng")).toBeVisible();
 	await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
 	await expect(page.getByText("Buổi 1")).toBeVisible();
 	await expect(page.getByText("Buổi 2")).toBeVisible();
-	await expect(page.getByText("Buổi 3")).toBeVisible();
+	await expect(page.getByText("Buổi 3", { exact: true })).toBeVisible();
 });
