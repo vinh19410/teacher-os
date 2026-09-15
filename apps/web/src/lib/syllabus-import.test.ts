@@ -66,7 +66,14 @@ describe("rowsToModules", () => {
 
 	test("template cũ 6 cột ('Buổi học'/'lesson' ở cột 2) → đúng 1 lỗi tường minh; padding cột thừa không làm thoát luật", () => {
 		const viHeader = rowsToModules([
-			["Module", "Mô tả module", "Buổi học", "Mục tiêu", "Tài liệu", "Trạng thái"],
+			[
+				"Module",
+				"Mô tả module",
+				"Buổi học",
+				"Mục tiêu",
+				"Tài liệu",
+				"Trạng thái",
+			],
 		]);
 		expect(viHeader).toEqual({ ok: false, errors: [OLD_TEMPLATE_ERROR] });
 
@@ -150,7 +157,12 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "",
 					lessons: [
-						{ title: "Buổi 1", objectives: "mục tiêu", materials: "", status: "upcoming" },
+						{
+							title: "Buổi 1",
+							objectives: "mục tiêu",
+							materials: "",
+							status: "upcoming",
+						},
 					],
 				},
 			],
@@ -170,8 +182,18 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "d1",
 					lessons: [
-						{ title: "Buổi 1", objectives: "o1", materials: "m1", status: "done" },
-						{ title: "Buổi 2", objectives: "o2", materials: "", status: "upcoming" },
+						{
+							title: "Buổi 1",
+							objectives: "o1",
+							materials: "m1",
+							status: "done",
+						},
+						{
+							title: "Buổi 2",
+							objectives: "o2",
+							materials: "",
+							status: "upcoming",
+						},
 					],
 				},
 			],
@@ -199,8 +221,18 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "d1",
 					lessons: [
-						{ title: "Buổi 1", objectives: "o1", materials: "", status: "upcoming" },
-						{ title: "Buổi 2", objectives: "o2", materials: "", status: "upcoming" },
+						{
+							title: "Buổi 1",
+							objectives: "o1",
+							materials: "",
+							status: "upcoming",
+						},
+						{
+							title: "Buổi 2",
+							objectives: "o2",
+							materials: "",
+							status: "upcoming",
+						},
 					],
 				},
 				{ title: "M2", description: "", lessons: [] },
@@ -208,7 +240,12 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "d3",
 					lessons: [
-						{ title: "Buổi 3", objectives: "o3", materials: "", status: "upcoming" },
+						{
+							title: "Buổi 3",
+							objectives: "o3",
+							materials: "",
+							status: "upcoming",
+						},
 					],
 				},
 			],
@@ -303,7 +340,12 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "",
 					lessons: [
-						{ title: "Buổi 1", objectives: "o1", materials: "", status: "upcoming" },
+						{
+							title: "Buổi 1",
+							objectives: "o1",
+							materials: "",
+							status: "upcoming",
+						},
 					],
 				},
 			],
@@ -320,7 +362,12 @@ describe("rowsToModules", () => {
 					title: "M1",
 					description: "d",
 					lessons: [
-						{ title: "Buổi 1", objectives: "o", materials: "m", status: "done" },
+						{
+							title: "Buổi 1",
+							objectives: "o",
+							materials: "m",
+							status: "done",
+						},
 					],
 				},
 			],
@@ -359,7 +406,12 @@ describe("parseSyllabusFile (CSV)", () => {
 					title: "M1",
 					description: "d1",
 					lessons: [
-						{ title: "Buổi 1", objectives: "o1", materials: "m1", status: "done" },
+						{
+							title: "Buổi 1",
+							objectives: "o1",
+							materials: "m1",
+							status: "done",
+						},
 					],
 				},
 			],

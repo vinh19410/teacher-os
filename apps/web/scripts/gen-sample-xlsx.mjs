@@ -6,18 +6,13 @@
  *
  * Chạy lại: node apps/web/scripts/gen-sample-xlsx.mjs
  */
-import { deflateRawSync } from "node:zlib";
+
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { deflateRawSync } from "node:zlib";
 
 const ROWS = [
-	[
-		"Module",
-		"Mô tả module",
-		"Mục tiêu",
-		"Tài liệu",
-		"Trạng thái",
-	],
+	["Module", "Mô tả module", "Mục tiêu", "Tài liệu", "Trạng thái"],
 	[
 		"Module 1 — Nền tảng",
 		"Làm quen format đề",

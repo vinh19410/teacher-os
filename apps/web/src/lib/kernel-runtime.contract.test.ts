@@ -158,6 +158,21 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/refreshed result — a committed/);
 	});
 
+	test("add-syllabus keeps form state across close: no reset-on-open effect and unconditional route mount", () => {
+		// Đóng (Hủy/Esc/overlay) phải GIỮ dữ liệu — ngược chủ đích với
+		// AddInvoiceModal (reset-on-open). Modal luôn mounted; state sống ở
+		// AddSyllabusModal, không phải trong Modal (Modal return null khi đóng).
+		const modal = readSrc("../components/modals/add-syllabus-modal.tsx");
+		// Pin phủ cả biến thể thiếu dấu ";": effect phụ thuộc [open] là chỗ
+		// reset-on-open trú ngụ (focus management của Modal nằm ở ui/modal.tsx,
+		// không phải ở đây).
+		expect(modal).not.toMatch(/\}, \[open\]\)/);
+		const route = readSrc("../routes/_auth/syllabus/index.tsx");
+		expect(route).toMatch(/<AddSyllabusModal/);
+		expect(route).not.toMatch(/modalOpen &&\s*<AddSyllabusModal/);
+		expect(route).not.toMatch(/open &&\s*<AddSyllabusModal/);
+	});
+
 	test("dashboard reads today and at-risk from kernel helpers, not hardcoded KPIs", () => {
 		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
 		expect(dashboard).toMatch(/from "@\/lib\/dashboard-from-kernel"/);

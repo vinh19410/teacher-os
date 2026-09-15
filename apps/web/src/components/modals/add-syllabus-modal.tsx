@@ -2,12 +2,15 @@ import {
 	CLASS_TYPES,
 	type ClassType,
 	IELTS_SKILLS,
+	type SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
+import { X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { Tag } from "@/components/ui/tag";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
 import {
 	buildSampleCsv,
@@ -23,6 +26,12 @@ const CLASS_TYPE_OPTIONS = CLASS_TYPES.map((value) => ({
 }));
 
 const SKILL_OPTIONS = IELTS_SKILLS.map((value) => ({ value, label: value }));
+
+const STATUS_LABELS: Record<"done" | "current" | "upcoming", string> = {
+	done: "Đã dạy",
+	current: "Đang học",
+	upcoming: "Sắp tới",
+};
 
 export function AddSyllabusModal({
 	open,
@@ -129,15 +138,32 @@ export function AddSyllabusModal({
 		}
 	}
 
+	// Số thứ tự buổi toàn file cho cột `#` của bảng preview — cùng phép đếm
+	// với `lessonOrdinal` của parser, không parse ngược từ title.
+	function lessonNumber(
+		modules: SyllabusModuleContent[],
+		moduleIndex: number,
+		lessonIndex: number,
+	): number {
+		let before = 0;
+		for (let i = 0; i < moduleIndex; i++) before += modules[i].lessons.length;
+		return before + lessonIndex + 1;
+	}
+
+	// Gỡ file không hoàn tác `total`: giá trị là dự định số buổi user vừa thấy
+	// ở preview và tự chỉnh được — đưa về mặc định sẽ giết input của user.
 	const removeFileButton = (
 		<Button
 			type="button"
-			variant="secondary"
+			variant="ghost"
 			size="sm"
+			className="px-1.5 text-muted-fg hover:text-danger"
 			onClick={() => setImportResult(null)}
-			disabled={saving}
+			disabled={saving || parsing}
+			aria-label="Gỡ file"
+			title="Gỡ file"
 		>
-			Gỡ file
+			<X className="size-4" aria-hidden="true" />
 		</Button>
 	);
 
@@ -221,32 +247,95 @@ export function AddSyllabusModal({
 						{parsing && <span className="text-xs">Đang đọc file…</span>}
 					</div>
 					{importResult?.ok && (
-						<div className="flex flex-col gap-2 text-xs">
-							<p>
-								{importResult.modules.length} module ·{" "}
-								{importResult.lessonCount} buổi học
-							</p>
-							<details>
-								<summary>Xem trước nội dung</summary>
-								<ul className="list-disc pl-4">
-									{importResult.modules.map((m, i) => (
-										<li key={`${i}-${m.title}`}>
-											{m.title} ({m.lessons.length} buổi)
-										</li>
-									))}
-								</ul>
-							</details>
-							{removeFileButton}
+						<div className="rounded-md border border-line-soft border-solid bg-surface">
+							<div className="flex items-center justify-between gap-2 px-3 py-2">
+								<span className="text-xs">
+									{importResult.modules.length} module ·{" "}
+									{importResult.lessonCount} buổi học
+								</span>
+								{removeFileButton}
+							</div>
+							<div className="max-h-64 overflow-y-auto border-line-soft border-t">
+								<table className="w-full border-collapse text-xs">
+									<thead>
+										<tr>
+											{[
+												"#",
+												"Module",
+												"Mục tiêu",
+												"Tài liệu",
+												"Trạng thái",
+											].map((h) => (
+												<th
+													key={h}
+													className="border-line border-b px-2 py-1.5 text-left font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]"
+												>
+													{h}
+												</th>
+											))}
+										</tr>
+									</thead>
+									<tbody>
+										{importResult.modules.map((m, mi) =>
+											m.lessons.map((l, li) => (
+												<tr
+													key={`${mi}-${li}-${l.title}`}
+													className="border-line-soft border-b"
+												>
+													<td className="px-2 py-1.5 font-mono text-muted-fg">
+														{lessonNumber(importResult.modules, mi, li)}
+													</td>
+													<td className="px-2 py-1.5">
+														<span
+															className="block max-w-[7rem] truncate"
+															title={m.title}
+														>
+															{li === 0 ? m.title : ""}
+														</span>
+													</td>
+													<td className="px-2 py-1.5">
+														<span
+															className="block max-w-[9rem] truncate"
+															title={l.objectives}
+														>
+															{l.objectives}
+														</span>
+													</td>
+													<td className="px-2 py-1.5">
+														<span
+															className="block max-w-[7rem] truncate"
+															title={l.materials}
+														>
+															{l.materials}
+														</span>
+													</td>
+													<td className="px-2 py-1.5">
+														<Tag>{STATUS_LABELS[l.status]}</Tag>
+													</td>
+												</tr>
+											)),
+										)}
+									</tbody>
+								</table>
+							</div>
 						</div>
 					)}
 					{importResult && !importResult.ok && (
-						<div className="flex flex-col gap-2">
-							<ul role="alert" className="text-danger text-xs">
+						<div className="rounded-md border border-line-soft border-solid bg-surface">
+							<div className="flex items-center justify-between gap-2 px-3 py-2">
+								<span className="text-danger text-xs">
+									File có {importResult.errors.length} lỗi
+								</span>
+								{removeFileButton}
+							</div>
+							<ul
+								role="alert"
+								className="list-disc py-2 pr-3 pl-8 text-danger text-xs"
+							>
 								{importResult.errors.map((err, i) => (
 									<li key={`${i}-${err}`}>{err}</li>
 								))}
 							</ul>
-							{removeFileButton}
 						</div>
 					)}
 				</Field>
