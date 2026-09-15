@@ -1,9 +1,10 @@
 /**
- * Syllabus Excel/CSV import (issue #144) — parse 100% client-side.
+ * Syllabus Excel/CSV import v2 (issue #150) — parse 100% client-side.
  * Core `rowsToModules`/`normalizeRow` thuần (chạy được trong vitest env node);
  * adapter `parseSyllabusFile` dynamic-import papaparse/read-excel-file để tách
- * chunk. File không bao giờ tới server — 13 luật deterministic định nghĩa ở
- * plans/260914-0744-syllabus-excel-csv-import/plan.md là hợp đồng forensic.
+ * chunk. File không bao giờ tới server — 14 luật deterministic định nghĩa ở
+ * plans/260915-1108-syllabus-import-v2/plan.md là hợp đồng forensic: 5 cột
+ * (không còn cột "Buổi học"), title buổi tự sinh `Buổi {n}` theo thứ tự dòng.
  */
 import type { SyllabusModuleContent } from "@teacher-os/api/contracts";
 
@@ -25,7 +26,7 @@ export type SyllabusImportResult =
 	| { ok: false; errors: string[] };
 
 /**
- * Chuẩn hóa 1 row về đúng 6 cột: pad thiếu / cắt thừa, mọi cell về trimmed
+ * Chuẩn hóa 1 row về đúng 5 cột: pad thiếu / cắt thừa, mọi cell về trimmed
  * string. Cell `Date` (read-excel-file trả cho ô định dạng ngày) là lỗi dòng —
  * tránh `String(date)` thành chuỗi GMT rác.
  */
@@ -34,7 +35,7 @@ export function normalizeRow(
 	lineNumber: number,
 ): { ok: true; cells: string[] } | { ok: false; error: string } {
 	const cells: string[] = [];
-	for (let i = 0; i < 6; i++) {
+	for (let i = 0; i < 5; i++) {
 		const cell = row[i];
 		if (cell instanceof Date) {
 			return {
@@ -47,7 +48,7 @@ export function normalizeRow(
 	return { ok: true, cells };
 }
 
-/** Map cột Trạng thái (luật 8) — giá trị lạ là lỗi dòng. */
+/** Map cột Trạng thái (luật 10) — giá trị lạ là lỗi dòng. */
 function mapStatus(
 	value: string,
 	lineNumber: number,
@@ -64,20 +65,32 @@ function mapStatus(
 	return { ok: true, status };
 }
 
-/** Core thuần: rows (đã theo thứ tự file gốc) → modules. Luật 4–11. */
+/** Core thuần: rows (đã theo thứ tự file gốc) → modules. Luật 4–12. */
 export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 	const errors: string[] = [];
 	const modules: SyllabusModuleContent[] = [];
 	let currentModule: SyllabusModuleContent | null = null;
 	let sawDataRow = false;
+	let lessonOrdinal = 1;
 
-	// Luật 4: bỏ dòng đầu iff cột 2 là "buổi học"/"lesson".
+	// Luật 4 (template cũ) phải bắt TRƯỚC skip-header vì header cũ cũng có
+	// "Module" ở cột 0. Không kèm điều kiện độ dài row (read-excel-file/
+	// papaparse pad đuôi khác nhau → misfire).
 	let start = 0;
 	if (rows.length > 0) {
 		const first = normalizeRow(rows[0], 1);
 		if (first.ok) {
 			const col2 = first.cells[2].toLowerCase();
-			if (col2 === "buổi học" || col2 === "lesson") start = 1;
+			if (col2 === "buổi học" || col2 === "lesson") {
+				return {
+					ok: false,
+					errors: [
+						'File dùng template cũ (cột "Buổi học" đã bỏ). Hãy tải file mẫu mới rồi điền lại dữ liệu.',
+					],
+				};
+			}
+			// Luật 5: header mới — bỏ dòng đầu iff cột 0 là "module".
+			if (first.cells[0].toLowerCase() === "module") start = 1;
 		}
 	}
 
@@ -90,13 +103,13 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 		}
 		const cells = normalized.cells;
 
-		// Luật 5: dòng trống hoàn toàn → bỏ qua (numbering theo file gốc).
+		// Luật 6: dòng trống hoàn toàn → bỏ qua (numbering theo file gốc).
 		if (cells.every((cell) => cell === "")) continue;
 		sawDataRow = true;
 
 		const moduleName = cells[0];
 		if (moduleName === "") {
-			// Luật 6: kế thừa module dòng trước; rỗng khi chưa có module → lỗi.
+			// Luật 7: kế thừa module dòng trước; rỗng khi chưa có module → lỗi.
 			if (!currentModule) {
 				errors.push(`Dòng ${lineNumber}: thiếu tên module`);
 				continue;
@@ -112,23 +125,24 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 			modules.push(currentModule);
 		}
 
-		if (cells[2] !== "") {
-			const lessonTitle = cells[2];
-			const status = mapStatus(cells[5], lineNumber);
+		// Luật 8: dòng tạo buổi học iff bất kỳ ô Mục tiêu/Tài liệu/Trạng thái
+		// khác rỗng. Title tự sinh theo thứ tự buổi TOÀN FILE (1-based);
+		// module-only row và dòng trống không tiêu số.
+		const hasLessonContent =
+			cells[2] !== "" || cells[3] !== "" || cells[4] !== "";
+		if (hasLessonContent) {
+			const status = mapStatus(cells[4], lineNumber);
 			if (!status.ok) {
 				errors.push(status.error);
 				continue;
 			}
 			currentModule?.lessons.push({
-				title: lessonTitle,
-				objectives: cells[3],
-				materials: cells[4],
+				title: `Buổi ${lessonOrdinal}`,
+				objectives: cells[2],
+				materials: cells[3],
 				status: status.status,
 			});
-		} else if (cells[3] !== "" || cells[4] !== "" || cells[5] !== "") {
-			// Luật 9: có nội dung cột 3/4/5 nhưng thiếu tên buổi học → lỗi dòng,
-			// không drop im lặng.
-			errors.push(`Dòng ${lineNumber}: có nội dung nhưng thiếu tên buổi học`);
+			lessonOrdinal += 1;
 		}
 	}
 
@@ -149,7 +163,7 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 }
 
 /**
- * Browser adapter: chọn nhánh parse theo đuôi file, bắt mọi exception (luật 13)
+ * Browser adapter: chọn nhánh parse theo đuôi file, bắt mọi exception (luật 14)
  * — caller không bao giờ thấy reject thoát ra ngoài.
  */
 export async function parseSyllabusFile(
@@ -197,12 +211,15 @@ export async function parseSyllabusFile(
 	}
 }
 
-/** File mẫu (luật 12): CSV UTF-8 có BOM + CRLF, khớp fixture e2e. */
+/**
+ * File mẫu (luật 13): CSV UTF-8 có BOM + CRLF, 5 cột, khớp fixture e2e —
+ * 2 module · 3 buổi (Buổi 1..3 xuyên module theo thứ tự dòng).
+ */
 export function buildSampleCsv(): string {
 	return [
-		"\uFEFFModule,Mô tả module,Buổi học,Mục tiêu,Tài liệu,Trạng thái",
-		"Module 1 — Nền tảng,Làm quen format đề,Buổi 1,Hiểu cấu trúc đề,Cambridge 18,sắp tới",
-		",,Buổi 2,Viết introduction,File mẫu 2,đã dạy",
-		"Module 2 — Thực hành,,Buổi 3,Viết body paragraph,,đang học",
+		"\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu,Trạng thái",
+		"Module 1 — Nền tảng,Làm quen format đề,Hiểu cấu trúc đề,Cambridge 18,sắp tới",
+		",,Viết introduction,File mẫu 2,đã dạy",
+		"Module 2 — Thực hành,,Viết body paragraph,,đang học",
 	].join("\r\n");
 }
