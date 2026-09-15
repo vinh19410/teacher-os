@@ -33,6 +33,8 @@ const STATUS_LABELS: Record<"done" | "current" | "upcoming", string> = {
 	upcoming: "Sắp tới",
 };
 
+const PREVIEW_HEADERS = ["#", "Module", "Mục tiêu", "Tài liệu", "Trạng thái"];
+
 export function AddSyllabusModal({
 	open,
 	onClose,
@@ -259,13 +261,7 @@ export function AddSyllabusModal({
 								<table className="w-full border-collapse text-xs">
 									<thead>
 										<tr>
-											{[
-												"#",
-												"Module",
-												"Mục tiêu",
-												"Tài liệu",
-												"Trạng thái",
-											].map((h) => (
+											{PREVIEW_HEADERS.map((h) => (
 												<th
 													key={h}
 													className="border-line border-b px-2 py-1.5 text-left font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]"

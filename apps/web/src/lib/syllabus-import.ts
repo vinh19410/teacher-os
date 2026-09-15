@@ -191,11 +191,7 @@ export async function parseSyllabusFile(
 			}
 			const rows = result.data;
 			// Strip BOM ở cell đầu của dòng đầu (Excel VN thường ghi UTF-8 BOM).
-			if (
-				rows.length > 0 &&
-				rows[0].length > 0 &&
-				rows[0][0].startsWith("\uFEFF")
-			) {
+			if (rows[0]?.[0]?.startsWith("\uFEFF")) {
 				rows[0][0] = rows[0][0].slice(1);
 			}
 			return rowsToModules(rows);

@@ -163,11 +163,9 @@ const WORKBOOK_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
 
 // ---------- Build + ghi ----------
-const fixtureUrl = new URL(
-	"../../e2e/fixtures/syllabus-import.sample.xlsx",
-	import.meta.url,
+const fixturePath = fileURLToPath(
+	new URL("../../e2e/fixtures/syllabus-import.sample.xlsx", import.meta.url),
 );
-const fixturePath = fileURLToPath(fixtureUrl);
 
 const xlsx = zipFile([
 	{ name: "[Content_Types].xml", data: Buffer.from(CONTENT_TYPES, "utf8") },
@@ -188,16 +186,10 @@ console.log(`wrote ${fixturePath} (${xlsx.length} bytes)`);
 // ---------- Round-trip verify (read-excel-file/node) ----------
 const { readSheet } = await import("read-excel-file/node");
 const readBack = await readSheet(fixturePath);
-const normalized = readBack.map((row) => {
-	const cells = Array.from({ length: 5 }, (_, i) => String(row[i] ?? ""));
-	return cells.map((cell) => cell.trim());
-});
-const pass =
-	normalized.length === ROWS.length &&
-	normalized.every(
-		(row, r) =>
-			row.length === ROWS[r].length && row.every((c, i) => c === ROWS[r][i]),
-	);
+const normalized = readBack.map((row) =>
+	Array.from({ length: 5 }, (_, i) => String(row[i] ?? "").trim()),
+);
+const pass = JSON.stringify(normalized) === JSON.stringify(ROWS);
 if (!pass) {
 	console.error("round-trip MISMATCH:");
 	console.error(JSON.stringify(normalized, null, 2));
