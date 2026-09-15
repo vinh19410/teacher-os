@@ -30,7 +30,8 @@
 			"!open-design",
 			"!**/packages/db/src/migrations/meta",
 			"!**/playwright-report",
-			"!**/test-results"
+			"!**/test-results",
+			"!docs/diagrams"
 		]
 	},
 	"formatter": {
