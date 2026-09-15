@@ -357,7 +357,7 @@ migration, missing operator authority, or missing zone/DNS readiness.
 
 | Release | Commit | Operator (deploy) | Restore authority | Staging rehearsal | Smoke (Chrome/Safari) | GO |
 | --- | --- | --- | --- | --- | --- | --- |
-| prod UAT r2 (2026-08-30) | merge of `659e837` (develop) | AI agent (directed by Vinh Tran) | Vinh Tran | recorded throwaway-D1 proof of repaired `0006` (ledger 2026-08-20) | pending | pending |
+| prod UAT r2 (2026-08-30) | merge of `659e837` (develop) | AI agent (directed by Vinh Tran) | Vinh Tran | recorded throwaway-D1 proof of repaired `0006` (ledger 2026-08-20) | pass — Chrome incognito r2 (2026-08-30) + Safari private r2.1 (2026-08-31), 6/6 steps each | **GO 2026-08-31** (r2 + r2.1; Google OAuth leg by operator-approved deviation — email-auth evidence, Google round-trip to be retired at pilot onboarding) |
 
 Fill one row per release; evidence (sanitized command output, screenshots
 without secrets) attaches to the tracking issue on GitHub.
@@ -371,6 +371,15 @@ Additionally, the Google UAT account and the Safari runner were not supplied
 (separate blockers, not topology). No deploy command was run. Blocker inputs
 tracked in issue #41; evidence in
 `plans/260819-2034-production-readiness/reports/uat-evidence-phase-06.md`.
+
+**2026-08-31 — GO (release `235275c`).** r2 (2026-08-30) passed every
+technical gate but held NO-GO on two operator-input gaps. r2.1 closed them:
+Safari private leg ran 6/6 pass via agent runner (operator granted
+Accessibility), and the Google OAuth leg was resolved by operator-approved
+deviation (email-auth incognito evidence + production authorize precheck
+without `redirect_uri_mismatch`; the real Google round-trip is to be verified
+at pilot onboarding per M4 SLA). Evidence:
+`plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2.1-2026-08-31.md`.
 
 ## Release sequence: occurrence identity (issue #98) — A/B/C deployment shape
 

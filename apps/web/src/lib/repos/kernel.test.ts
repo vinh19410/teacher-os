@@ -440,6 +440,40 @@ describe("kernelCommand", () => {
 		expect(req.body).not.toHaveProperty("id");
 	});
 
+	test("add-syllabus passes modules through to the create body", () => {
+		const modules = [{ title: "M", description: "", lessons: [] }];
+		const req = kernelCommand({
+			type: "add-syllabus",
+			payload: {
+				id: "sy-client",
+				name: "S",
+				type: "ielts",
+				level: "",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 3,
+				modules,
+			},
+		});
+		expect((req.body as { modules?: unknown }).modules).toEqual(modules);
+	});
+
+	test("add-syllabus omits modules when not provided", () => {
+		const req = kernelCommand({
+			type: "add-syllabus",
+			payload: {
+				id: "sy-client",
+				name: "S",
+				type: "ielts",
+				level: "",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 10,
+			},
+		});
+		expect((req.body as { modules?: unknown }).modules).toBeUndefined();
+	});
+
 	test("nested module and lesson routes embed parent ids in the path", () => {
 		expect(
 			kernelCommand({

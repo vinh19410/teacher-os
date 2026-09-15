@@ -528,6 +528,138 @@ describe("class type + structured schedule (create-class modal)", () => {
 	});
 });
 
+describe("syllabus create with imported content (excel/csv import)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Import");
+	});
+
+	test("create with modules persists the ordered tree", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "IELTS Writing 7.0 (import)",
+				level: "Band 7.0",
+				type: "ielts",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 0,
+				modules: [
+					{
+						title: "M1",
+						description: "d1",
+						lessons: [
+							{
+								title: "B1",
+								objectives: "o1",
+								materials: "m1",
+								status: "done",
+							},
+							{
+								title: "B2",
+								objectives: "",
+								materials: "",
+								status: "upcoming",
+							},
+						],
+					},
+					{ title: "M2", description: "", lessons: [] },
+				],
+			},
+		});
+		expect(res.status).toBe(201);
+		expect(((await res.json()) as { id: string }).id).toBeTruthy();
+
+		const listRes = await t.call("/api/syllabi", { session });
+		const syllabi = (await listRes.json()) as Array<{
+			name: string;
+			modules: Array<{
+				title: string;
+				description: string;
+				lessons: Array<{
+					title: string;
+					objectives: string;
+					materials: string;
+					status: string;
+				}>;
+			}>;
+		}>;
+		expect(syllabi).toHaveLength(1);
+		const sy = syllabi[0];
+		expect(sy?.name).toBe("IELTS Writing 7.0 (import)");
+		expect(sy?.modules.map((m) => m.title)).toEqual(["M1", "M2"]);
+		expect(sy?.modules[0]?.description).toBe("d1");
+		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual(["B1", "B2"]);
+		expect(sy?.modules[0]?.lessons[0]).toMatchObject({
+			title: "B1",
+			objectives: "o1",
+			materials: "m1",
+			status: "done",
+		});
+		expect(sy?.modules[1]?.lessons).toEqual([]);
+	});
+
+	test("schema rejects oversized payload before any write", async () => {
+		const lessons = Array.from({ length: 501 }, (_, i) => ({
+			title: `B${i}`,
+		}));
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Quá cap",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 0,
+				modules: [{ title: "M", lessons }],
+			},
+		});
+		expect(res.status).toBe(400);
+		expect(await res.json()).toEqual({ error: "invalid body" });
+
+		const listRes = await t.call("/api/syllabi", { session });
+		const list = (await listRes.json()) as Array<{ name: string }>;
+		expect(list.some((row) => row.name === "Quá cap")).toBe(false);
+	});
+
+	test("invalid lesson status in modules is 400", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Status lạ",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 0,
+				modules: [
+					{ title: "M", lessons: [{ title: "B", status: "finished" }] },
+				],
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create without modules still works (backward compat)", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Flow cũ",
+				level: "",
+				type: "ielts",
+				skills: ["Writing"],
+				description: "",
+				totalLessons: 0,
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+});
+
 describe("invoice persistence", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;
@@ -3185,5 +3317,89 @@ describe("enroll existing student (issue #122)", () => {
 		const otherStudentId = await t.addStudent(other, "HV org khác");
 		const res = await enroll(classId, { studentId: otherStudentId });
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("student package minimums (issue #115)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Min Gói");
+	});
+
+	// total=0 is the red-first pair: min(0) on develop still accepts a
+	// zero-session package, which is the server half of QC #115.
+	test("create student with total 0 is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV gói 0 buổi",
+				phone: "0900 000 001",
+				total: 0,
+				price: 400000,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("enroll existing student with total 0 is rejected with 400", async () => {
+		const classId = await t.createClass(session, "Lớp min gói");
+		const studentId = await t.addStudent(session, "HV min gói");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId, total: 0, price: 400000, mode: "Online" },
+		});
+		expect(res.status).toBe(400);
+	});
+
+	// Regression locks (born green on develop — price min(0) already exists).
+	test("negative price is rejected with 400 on create", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV giá âm",
+				phone: "0900 000 002",
+				total: 10,
+				price: -500,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("total 1 and price 0 (free package) are accepted", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV gói miễn phí",
+				phone: "0900 000 003",
+				total: 1,
+				price: 0,
+				mode: "Online",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	// Pin the intentional #122 boundary: omitted package fields default to
+	// 10/400000 and pass min(1) — documented, not silently inherited.
+	test("omitted package fields default to 10 sessions / 400000 VND", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: { name: "HV mặc định gói", phone: "0900 000 004" },
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(session);
+		const pkg = snapshot.packages.find((p) => p.studentId === id);
+		expect(pkg).toMatchObject({ total: 10, price: 400000 });
 	});
 });

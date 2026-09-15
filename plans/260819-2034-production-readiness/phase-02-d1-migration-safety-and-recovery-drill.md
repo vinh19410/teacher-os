@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "D1 migration safety and recovery drill"
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 dependencies: [1]

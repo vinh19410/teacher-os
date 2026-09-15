@@ -8,6 +8,19 @@ import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const PHONE_RE = /^[0-9\s+]*$/;
 
+/**
+ * Issue #115: strict parse for package fields. Unlike the #105 add-class
+ * pattern (Number.parseInt silently truncates "10.5" → 10), Number() lets a
+ * decimal be rejected, and an empty string never falls back to a default —
+ * the old `|| 10` / `|| 400000` coercion masked invalid input entirely.
+ * Returns null for empty, decimal, or non-numeric input.
+ */
+function parsePackageField(raw: string): number | null {
+	if (raw.trim() === "") return null;
+	const n = Number(raw);
+	return Number.isInteger(n) ? n : null;
+}
+
 type ModalMode = "existing" | "create";
 
 /**
@@ -39,6 +52,8 @@ export function AddStudentModal({
 	>("Online");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [phoneError, setPhoneError] = useState<string | undefined>();
+	const [totalError, setTotalError] = useState<string | undefined>();
+	const [priceError, setPriceError] = useState<string | undefined>();
 	const { saving, error, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 
@@ -72,12 +87,18 @@ export function AddStudentModal({
 		setModeOnlineOffline("Online");
 		setNameError(undefined);
 		setPhoneError(undefined);
+		setTotalError(undefined);
+		setPriceError(undefined);
 	}
 
 	function switchMode(next: ModalMode) {
 		setMode(next);
 		setSelectedStudentId("");
 		setFilter("");
+		// packageFields renders in both modes — a stale package error from the
+		// other tab must not follow the user across the switch (issue #115).
+		setTotalError(undefined);
+		setPriceError(undefined);
 	}
 
 	const filteredStudents = eligibleStudents.filter((s) => {
@@ -91,6 +112,28 @@ export function AddStudentModal({
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;
+		// Issue #115: package fields are shared by both modes, so their
+		// validation runs before the branch — an enroll with a 0-session or
+		// negative-price package is blocked exactly like a create, with the
+		// error under the field instead of a generic server banner.
+		const parsedTotal = parsePackageField(total);
+		const parsedPrice = parsePackageField(price);
+		setTotalError(
+			parsedTotal === null || parsedTotal < 1
+				? "Số buổi gói phải là số nguyên từ 1 trở lên."
+				: undefined,
+		);
+		setPriceError(
+			price.trim() === ""
+				? "Đơn giá không được để trống."
+				: parsedPrice === null
+					? "Đơn giá phải là số nguyên."
+					: parsedPrice < 0
+						? "Đơn giá không được âm."
+						: undefined,
+		);
+		if (parsedTotal === null || parsedTotal < 1) return;
+		if (parsedPrice === null || parsedPrice < 0) return;
 		if (effectiveMode === "existing") {
 			if (!selectedStudentId) return;
 			const result = await run({
@@ -98,8 +141,8 @@ export function AddStudentModal({
 				classId: classId ?? "",
 				studentId: selectedStudentId,
 				payload: {
-					total: Number.parseInt(total, 10) || 10,
-					price: Number.parseInt(price, 10) || 400000,
+					total: parsedTotal,
+					price: parsedPrice,
 					mode: modeOnlineOffline,
 				},
 			});
@@ -123,8 +166,8 @@ export function AddStudentModal({
 				name: trimmedName,
 				phone,
 				parentName,
-				total: Number.parseInt(total, 10) || 10,
-				price: Number.parseInt(price, 10) || 400000,
+				total: parsedTotal,
+				price: parsedPrice,
 				mode: modeOnlineOffline,
 				classId,
 			},
@@ -145,18 +188,24 @@ export function AddStudentModal({
 	const packageFields = (
 		<>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-				<Field label="Số buổi gói">
+				<Field label="Số buổi gói" error={totalError}>
 					<Input
 						type="number"
 						value={total}
-						onChange={(e) => setTotal(e.target.value)}
+						onChange={(e) => {
+							setTotal(e.target.value);
+							if (totalError) setTotalError(undefined);
+						}}
 					/>
 				</Field>
-				<Field label="Đơn giá (VND)">
+				<Field label="Đơn giá (VND)" error={priceError}>
 					<Input
 						type="number"
 						value={price}
-						onChange={(e) => setPrice(e.target.value)}
+						onChange={(e) => {
+							setPrice(e.target.value);
+							if (priceError) setPriceError(undefined);
+						}}
 					/>
 				</Field>
 			</div>
@@ -182,7 +231,7 @@ export function AddStudentModal({
 				effectiveMode === "existing" ? "Thêm học viên" : "Thêm học viên mới"
 			}
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				{classId && (
 					<div className="mb-5 flex gap-2">
 						<Button

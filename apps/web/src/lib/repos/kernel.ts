@@ -87,6 +87,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					skills: action.payload.skills,
 					description: action.payload.description,
 					totalLessons: action.payload.totalLessons,
+					modules: action.payload.modules,
 				},
 			};
 		case "import-syllabus":
