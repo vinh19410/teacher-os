@@ -25,6 +25,14 @@ for (const [format, fixture] of [
 		await expect(
 			dialog.getByRole("cell", { name: "Hiểu cấu trúc đề" }),
 		).toBeVisible();
+		// Khóa hợp đồng ordinal xuyên module của cột #: buổi 3 là hàng đầu
+		// Module 2 (Buổi 1–2 thuộc Module 1) — "3" và "Module 2" cùng hàng.
+		await expect(
+			dialog.getByRole("cell", { name: "3", exact: true }),
+		).toBeVisible();
+		await expect(
+			dialog.getByRole("cell", { name: "Module 2 — Thực hành" }),
+		).toBeVisible();
 		await expect(dialog.getByLabel("Số buổi dự kiến")).toHaveValue("3");
 		await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 		await page.waitForURL(/\/syllabus\/.+/);
@@ -62,7 +70,7 @@ test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đ�
 		page.getByRole("dialog").getByText("2 module · 3 buổi học"),
 	).toBeVisible();
 
-	// Đóng bằng Esc → mở lại: vẫn còn.
+	// Đóng bằng Esc → mở lại: vẫn còn (name + preview).
 	await page
 		.getByRole("dialog")
 		.getByPlaceholder("VD: IELTS Writing 7.0")
@@ -71,6 +79,9 @@ test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đ�
 	await expect(
 		page.getByRole("dialog").getByPlaceholder("VD: IELTS Writing 7.0"),
 	).toHaveValue("E2E Keep State");
+	await expect(
+		page.getByRole("dialog").getByText("2 module · 3 buổi học"),
+	).toBeVisible();
 
 	// Đóng bằng click overlay → mở lại: vẫn còn.
 	await page.mouse.click(15, 400); // ngoài modal (modal max-w 480px giữa màn hình)
@@ -81,4 +92,38 @@ test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đ�
 	await expect(
 		page.getByRole("dialog").getByText("2 module · 3 buổi học"),
 	).toBeVisible();
+});
+
+test("nút gỡ file (X) hoạt động ở cả nhánh preview OK lẫn nhánh lỗi", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/syllabus");
+	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
+	const dialog = page.getByRole("dialog");
+
+	// Nhánh OK: import mẫu → nút X hiện ở header card → gỡ được preview.
+	await page.setInputFiles(
+		"input[type=file]",
+		"fixtures/syllabus-import.sample.csv",
+	);
+	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+	const removeButton = dialog.getByRole("button", { name: "Gỡ file" });
+	await expect(removeButton).toBeVisible();
+	await removeButton.click();
+	await expect(dialog.getByRole("table")).toBeHidden();
+	await expect(dialog.getByText("2 module · 3 buổi học")).toBeHidden();
+
+	// Nhánh lỗi: file template cũ 6 cột → error card + cùng nút X → gỡ được.
+	await page.setInputFiles("input[type=file]", {
+		name: "old-template.csv",
+		mimeType: "text/csv",
+		buffer: Buffer.from(
+			"Module,Mô tả module,Buổi học,Mục tiêu,Tài liệu,Trạng thái\r\nM1,,Buổi 1,o,,",
+		),
+	});
+	await expect(dialog.getByText(/File dùng template cũ/)).toBeVisible();
+	await expect(dialog.getByRole("button", { name: "Gỡ file" })).toBeVisible();
+	await dialog.getByRole("button", { name: "Gỡ file" }).click();
+	await expect(dialog.getByText(/File dùng template cũ/)).toBeHidden();
 });

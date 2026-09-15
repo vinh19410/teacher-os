@@ -181,6 +181,7 @@ export function AddSyllabusModal({
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="VD: IELTS Writing 7.0"
+						maxLength={500}
 					/>
 				</Field>
 				<Field label="Loại lớp">
@@ -328,9 +329,15 @@ export function AddSyllabusModal({
 								role="alert"
 								className="list-disc py-2 pr-3 pl-8 text-danger text-xs"
 							>
-								{importResult.errors.map((err, i) => (
+								{importResult.errors.slice(0, 100).map((err, i) => (
 									<li key={`${i}-${err}`}>{err}</li>
 								))}
+								{importResult.errors.length > 100 && (
+									<li key="more-errors">
+										…và {importResult.errors.length - 100} lỗi khác (sửa 100 lỗi
+										đầu rồi nhập lại)
+									</li>
+								)}
 							</ul>
 						</div>
 					)}

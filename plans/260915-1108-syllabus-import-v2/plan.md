@@ -43,7 +43,7 @@ Phạm vi kỹ thuật: chỉ client (`apps/web` + fixtures e2e). Server/contrac
 | 3 | Tài liệu | Không |
 | 4 | Trạng thái | Không (mặc định `sắp tới`) |
 
-14 luật deterministic (thứ tự áp dụng; thay thế bộ 13 luật v1 trong `plans/260914-0744-syllabus-excel-csv-import/plan.md`):
+15 luật deterministic (thứ tự áp dụng; thay thế bộ 13 luật v1 trong `plans/260914-0744-syllabus-excel-csv-import/plan.md`):
 
 1. **File**: chỉ nhận đuôi `.csv`/`.xlsx` (kể cả `.xls` bị từ chối); ≤ 2 MB. *(giữ luật 1 v1)*
 2. **Chuẩn hóa row**: mọi row về đúng **5 cột** (thiếu pad `""`, thừa cắt); cell → `String(cell ?? "").trim()`; cell `Date` → lỗi dòng "Dòng {n}: ô dạng ngày tháng không hỗ trợ — hãy định dạng ô thành Text". Bởi `normalizeRow` thuần. *(luật 2 v1, 6→5)*
@@ -59,6 +59,7 @@ Phạm vi kỹ thuật: chỉ client (`apps/web` + fixtures e2e). Server/contrac
 12. **Rỗng**: không có dòng data → "Không có dòng dữ liệu." *(giữ luật 11 v1)*
 13. **File mẫu** (`buildSampleCsv()`): CSV UTF-8 **BOM** + CRLF, header 5 cột + 3 dòng ví dụ → 2 module · 3 buổi (Buổi 1, Buổi 2, Buổi 3 xuyên module); **khớp fixture e2e**. *(luật 12 v1, 5 cột)*
 14. **Exception**: adapter bắt mọi exception → `{ ok: false, errors: ["Không đọc được file. Kiểm tra file Excel/CSV hợp lệ."] }`. *(giữ luật 13 v1)*
+15. **Length mirror API contract** *(append 2026-09-15 sau code review — không renumber luật 1–14)*: tên module > 500 ký tự → "Dòng {n}: tên module vượt 500 ký tự"; mô tả module (chỉ dòng đầu nhóm — luật 7 bỏ description dòng continuation) / mục tiêu / tài liệu > 10.000 ký tự → lỗi dòng tương ứng. Lý do: zod contract `POST /api/syllabi` enforce `title max(500)`, `description/objectives/materials max(10_000)` nhưng server fail chỉ trả 400 opaque "invalid body" — bắt ở parser giữ giá trị forensic "lỗi định vị theo dòng trước submit". Check đặt trong `rowsToModules` tại đúng nhánh giá trị đáp xuống payload, không đặt trong `normalizeRow` (hàm đó cũng serve header-sniff).
 
 Kết quả parse: `{ ok: true, modules: SyllabusModuleContent[], lessonCount }` | `{ ok: false, errors: string[] }` — tiếng Việt, kèm số dòng.
 

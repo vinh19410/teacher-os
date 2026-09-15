@@ -316,6 +316,87 @@ describe("rowsToModules", () => {
 		});
 	});
 
+	test("boundary cap: đúng 500 mục → ok; 501 → lỗi (luật 11 inclusive)", () => {
+		const at500: unknown[][] = [["M1", "", "", "", ""]];
+		for (let i = 1; i <= 499; i++) {
+			at500.push(["", "", `o${i}`, "", ""]);
+		}
+		expect(rowsToModules(at500)).toEqual({
+			ok: true,
+			modules: [
+				{
+					title: "M1",
+					description: "",
+					lessons: Array.from({ length: 499 }, (_, i) => ({
+						title: `Buổi ${i + 1}`,
+						objectives: `o${i + 1}`,
+						materials: "",
+						status: "upcoming",
+					})),
+				},
+			],
+			lessonCount: 499,
+		});
+
+		const at501: unknown[][] = [["M1", "", "", "", ""]];
+		for (let i = 1; i <= 500; i++) {
+			at501.push(["", "", `o${i}`, "", ""]);
+		}
+		expect(rowsToModules(at501)).toEqual({
+			ok: false,
+			errors: ["File có 501 mục (module + buổi học), vượt giới hạn 500."],
+		});
+	});
+
+	test("luật 15 length mirror API contract: title >500 / text >10.000 → lỗi dòng; đúng biên → pass", () => {
+		const longTitle = "M".repeat(501);
+		expect(rowsToModules([[longTitle, "", "", "", ""]])).toEqual({
+			ok: false,
+			errors: ["Dòng 1: tên module vượt 500 ký tự"],
+		});
+
+		const longDesc = "d".repeat(10_001);
+		expect(rowsToModules([["M1", longDesc, "", "", ""]])).toEqual({
+			ok: false,
+			errors: ["Dòng 1: mô tả module vượt 10000 ký tự"],
+		});
+
+		expect(rowsToModules([["M1", "", "o".repeat(10_001), "", ""]])).toEqual({
+			ok: false,
+			errors: ["Dòng 1: mục tiêu vượt 10000 ký tự"],
+		});
+
+		expect(rowsToModules([["M1", "", "o", "m".repeat(10_001), ""]])).toEqual({
+			ok: false,
+			errors: ["Dòng 1: tài liệu vượt 10000 ký tự"],
+		});
+
+		// Chiều pass ở đúng biên: server zod contract chấp nhận 500/10.000.
+		const atLimit = rowsToModules([
+			[
+				"M".repeat(500),
+				"d".repeat(10_000),
+				"o".repeat(10_000),
+				"t".repeat(10_000),
+				"",
+			],
+		]);
+		expect(atLimit.ok).toBe(true);
+		if (atLimit.ok) {
+			expect(atLimit.modules[0].title).toHaveLength(500);
+			expect(atLimit.modules[0].description).toHaveLength(10_000);
+			expect(atLimit.modules[0].lessons[0].objectives).toHaveLength(10_000);
+			expect(atLimit.modules[0].lessons[0].materials).toHaveLength(10_000);
+		}
+
+		// Description dòng continuation bị luật 7 bỏ — không check length.
+		const continuation = rowsToModules([
+			["M1", "", "o1", "", ""],
+			["M1", "d".repeat(10_001), "o2", "", ""],
+		]);
+		expect(continuation.ok).toBe(true);
+	});
+
 	test("không có dòng data → lỗi 'Không có dòng dữ liệu.'", () => {
 		expect(rowsToModules([])).toEqual({
 			ok: false,

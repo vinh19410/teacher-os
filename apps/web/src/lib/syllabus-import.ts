@@ -2,7 +2,7 @@
  * Syllabus Excel/CSV import v2 (issue #150) — parse 100% client-side.
  * Core `rowsToModules`/`normalizeRow` thuần (chạy được trong vitest env node);
  * adapter `parseSyllabusFile` dynamic-import papaparse/read-excel-file để tách
- * chunk. File không bao giờ tới server — 14 luật deterministic định nghĩa ở
+ * chunk. File không bao giờ tới server — 15 luật deterministic định nghĩa ở
  * plans/260915-1108-syllabus-import-v2/plan.md là hợp đồng forensic: 5 cột
  * (không còn cột "Buổi học"), title buổi tự sinh `Buổi {n}` theo thứ tự dòng.
  */
@@ -10,6 +10,11 @@ import type { SyllabusModuleContent } from "@teacher-os/api/contracts";
 
 export const IMPORT_MAX_NODES = 500;
 export const IMPORT_FILE_MAX_BYTES = 2 * 1024 * 1024;
+// Mirror zod contract của POST /api/syllabi (packages/api contracts.ts) —
+// viền này phải bắt ở parser: server fail chỉ trả 400 opaque "invalid body",
+// không chỉ ra dòng/ô nào của file.
+const MODULE_TITLE_MAX = 500;
+const FIELD_TEXT_MAX = 10_000;
 
 const STATUS_MAP: Record<string, "done" | "current" | "upcoming"> = {
 	"đã dạy": "done",
@@ -117,6 +122,21 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 		} else if (currentModule !== null && currentModule.title === moduleName) {
 			// Luật 7: nhóm consecutive cùng tên — mô tả giữ của dòng đầu nhóm.
 		} else {
+			// Luật 15: length mirror API contract — chỉ check giá trị thật sự
+			// đáp xuống payload: tên module + mô tả dòng đầu nhóm (description
+			// dòng continuation bị luật 7 bỏ, không check).
+			if (moduleName.length > MODULE_TITLE_MAX) {
+				errors.push(
+					`Dòng ${lineNumber}: tên module vượt ${MODULE_TITLE_MAX} ký tự`,
+				);
+				continue;
+			}
+			if (cells[1].length > FIELD_TEXT_MAX) {
+				errors.push(
+					`Dòng ${lineNumber}: mô tả module vượt ${FIELD_TEXT_MAX} ký tự`,
+				);
+				continue;
+			}
 			currentModule = {
 				title: moduleName,
 				description: cells[1],
@@ -131,6 +151,20 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 		const hasLessonContent =
 			cells[2] !== "" || cells[3] !== "" || cells[4] !== "";
 		if (hasLessonContent) {
+			// Luật 15 (tiếp): objectives/materials — chỉ check dòng tạo buổi
+			// học (giá trị vào payload); status ngắn, lạ đã bị mapStatus chặn.
+			if (cells[2].length > FIELD_TEXT_MAX) {
+				errors.push(
+					`Dòng ${lineNumber}: mục tiêu vượt ${FIELD_TEXT_MAX} ký tự`,
+				);
+				continue;
+			}
+			if (cells[3].length > FIELD_TEXT_MAX) {
+				errors.push(
+					`Dòng ${lineNumber}: tài liệu vượt ${FIELD_TEXT_MAX} ký tự`,
+				);
+				continue;
+			}
 			const status = mapStatus(cells[4], lineNumber);
 			if (!status.ok) {
 				errors.push(status.error);
