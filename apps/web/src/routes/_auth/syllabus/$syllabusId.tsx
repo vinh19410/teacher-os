@@ -4,11 +4,12 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
+import { SyllabusImportPreview } from "@/components/syllabus/import-preview";
 import {
 	SyllabusMutationButtons,
 	useSyllabusMutations,
@@ -17,12 +18,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { Modal } from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
+import {
+	parseSyllabusFile,
+	type SyllabusImportResult,
+} from "@/lib/syllabus-import";
 import {
 	type DirectKernelAction,
 	useDirectKernelAction,
@@ -67,7 +73,7 @@ function SyllabusDetail({
 	kernel: DirectKernelAction;
 }) {
 	const navigate = useNavigate();
-	const { classesForSyllabus } = useData();
+	const { classesForSyllabus, refresh } = useData();
 	const { run, busy } = kernel;
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
@@ -79,6 +85,12 @@ function SyllabusDetail({
 		moduleId: string;
 		lessonId: string;
 	} | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [importResult, setImportResult] = useState<SyllabusImportResult | null>(
+		null,
+	);
+	const [parsing, setParsing] = useState(false);
+	const [confirmOverwriteOpen, setConfirmOverwriteOpen] = useState(false);
 	const mutations = useSyllabusMutations({
 		syllabus: sy,
 		isClassCopy: sy.classId !== null,
@@ -88,6 +100,13 @@ function SyllabusDetail({
 
 	const assigned = classesForSyllabus(sy.id);
 
+	// Derived để TypeScript narrowing giữ được qua closure của modal.
+	const pendingImport = importResult?.ok ? importResult : null;
+	const currentLessons = sy.modules.reduce(
+		(sum, m) => sum + m.lessons.length,
+		0,
+	);
+
 	function toggle(id: string) {
 		setCollapsed((prev) => {
 			const next = new Set(prev);
@@ -95,6 +114,25 @@ function SyllabusDetail({
 			else next.add(id);
 			return next;
 		});
+	}
+
+	async function onImportFileChange(e: ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0];
+		e.target.value = ""; // cho phép chọn lại cùng file
+		if (!file) return;
+		setParsing(true);
+		try {
+			setImportResult(await parseSyllabusFile(file));
+		} finally {
+			setParsing(false);
+		}
+	}
+
+	// Refresh snapshot trước khi mở modal: số module/buổi "sẽ bị xóa" phải
+	// lấy từ dữ liệu mới nhất (staleTime Infinity, đa tab).
+	async function openOverwriteConfirm() {
+		await refresh();
+		setConfirmOverwriteOpen(true);
 	}
 
 	return (
@@ -133,14 +171,62 @@ function SyllabusDetail({
 
 			<div className="mb-3 flex items-center justify-between">
 				<SectionLabel>Nội dung giáo trình</SectionLabel>
-				<Button
-					variant="secondary"
-					size="sm"
-					onClick={() => setAddModuleOpen(true)}
-				>
-					+ Thêm module
-				</Button>
+				<div className="flex items-center gap-2">
+					{/* Import ghi đè chỉ dành cho template (classId === null):
+					    ghi đè bản copy lớp sẽ xóa tiến độ sống của lớp đó. */}
+					{sy.classId === null && (
+						<>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".csv,.xlsx"
+								className="hidden"
+								onChange={onImportFileChange}
+							/>
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								disabled={parsing || busy}
+								onClick={() => fileInputRef.current?.click()}
+							>
+								Nhập từ Excel/CSV
+							</Button>
+						</>
+					)}
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => setAddModuleOpen(true)}
+					>
+						+ Thêm module
+					</Button>
+				</div>
 			</div>
+
+			{parsing && <p className="mb-3 text-xs">Đang đọc file…</p>}
+			{importResult !== null && (
+				<div className="mb-3">
+					<SyllabusImportPreview
+						result={importResult}
+						onRemove={() => setImportResult(null)}
+						disabled={busy || parsing}
+					/>
+					{importResult.ok && (
+						<div className="mt-2 flex justify-end">
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								disabled={busy || parsing}
+								onClick={openOverwriteConfirm}
+							>
+								Ghi đè nội dung
+							</Button>
+						</div>
+					)}
+				</div>
+			)}
 
 			{sy.modules.length === 0 && (
 				<Card variant="white" className="p-8 text-center text-muted-fg">
@@ -308,6 +394,57 @@ function SyllabusDetail({
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 			/>
+			<Modal
+				open={confirmOverwriteOpen}
+				onClose={busy ? () => undefined : () => setConfirmOverwriteOpen(false)}
+				title="Ghi đè nội dung giáo trình?"
+			>
+				<p className="text-sm">
+					Toàn bộ nội dung hiện tại — {sy.modules.length} module ·{" "}
+					{currentLessons} buổi học — sẽ bị XÓA và thay bằng{" "}
+					{pendingImport?.modules.length ?? 0} module ·{" "}
+					{pendingImport?.lessonCount ?? 0} buổi học từ file. Hành động này
+					không thể hoàn tác. Các lớp đã nhập bản sao từ template này không bị
+					ảnh hưởng.
+				</p>
+				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+					<Button
+						variant="secondary"
+						size="sm"
+						disabled={busy}
+						onClick={() => setConfirmOverwriteOpen(false)}
+					>
+						Hủy
+					</Button>
+					<Button
+						variant="danger"
+						size="sm"
+						disabled={busy || !pendingImport}
+						onClick={async () => {
+							if (!pendingImport) return;
+							setConfirmOverwriteOpen(false);
+							const result = await run(
+								"replace-syllabus-content",
+								{
+									type: "replace-syllabus-content",
+									syllabusId: sy.id,
+									modules: pendingImport.modules,
+								},
+								"Đã ghi đè nội dung giáo trình.",
+							);
+							// Chỉ clear preview khi write chắc chắn đã land;
+							// definite-failure giữ preview để user sửa rồi retry.
+							if (result.kind === "refreshed" || result.kind === "committed") {
+								setImportResult(null);
+							} else {
+								setConfirmOverwriteOpen(true);
+							}
+						}}
+					>
+						Ghi đè
+					</Button>
+				</div>
+			</Modal>
 			{mutations.confirmModal}
 		</div>
 	);

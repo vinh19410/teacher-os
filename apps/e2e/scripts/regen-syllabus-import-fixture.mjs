@@ -47,14 +47,17 @@ if (csvReread !== csvContent) fail("CSV đọc lại không khớp nội dung đ
 const csvLines = csvReread.slice(1).split("\r\n");
 const expectedLines = ROWS.map((row) => row.join(","));
 if (JSON.stringify(csvLines) !== JSON.stringify(expectedLines)) {
-	fail(`CSV dòng không khớp nguồn:\n  expected ${JSON.stringify(expectedLines)}\n  actual   ${JSON.stringify(csvLines)}`);
+	fail(
+		`CSV dòng không khớp nguồn:\n  expected ${JSON.stringify(expectedLines)}\n  actual   ${JSON.stringify(csvLines)}`,
+	);
 }
 if (!csvReread.includes("Hiểu cấu trúc đề")) {
 	fail("CSV thiếu cell 'Hiểu cấu trúc đề' (encoding lỗi?)");
 }
 
 // --- XLSX: 1 sheet, mọi cell Text, cùng ROWS ---
-const workbook = new ExcelJS.Workbook();const sheet = workbook.addWorksheet("Syllabus");
+const workbook = new ExcelJS.Workbook();
+const sheet = workbook.addWorksheet("Syllabus");
 for (const row of ROWS) {
 	sheet.addRow(row);
 }
@@ -82,9 +85,10 @@ first.eachRow({ includeEmpty: true }, (row) => {
 });
 const expected = ROWS.map((row) => row.map((cell) => String(cell)));
 if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-	fail(`XLSX nội dung không khớp nguồn:\n  expected ${JSON.stringify(expected)}\n  actual   ${JSON.stringify(actual)}`);
+	fail(
+		`XLSX nội dung không khớp nguồn:\n  expected ${JSON.stringify(expected)}\n  actual   ${JSON.stringify(actual)}`,
+	);
 }
 console.log(
 	`regenerated + verified:\n  ${csvPath}\n  ${xlsxPath} (${actual.length} rows)`,
 );
-

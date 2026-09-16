@@ -102,6 +102,12 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Ghi đè toàn bộ cây module/buổi học từ import Excel/CSV ở màn hình detail (issue #152). */
+			type: "replace-syllabus-content";
+			syllabusId: string;
+			modules: SyllabusModuleContent[];
+	  }
+	| {
 			/** Deep-copy a syllabus template into the class's own curriculum (issue #79). */
 			type: "import-syllabus";
 			classId: string;

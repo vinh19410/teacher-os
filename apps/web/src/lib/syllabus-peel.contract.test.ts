@@ -30,8 +30,11 @@ describe("syllabus read peel wiring", () => {
 			/import \{ useSyllabus \} from "@\/lib\/repos\/use-syllabus"/,
 		);
 		expect(src).toMatch(/const \{ syllabusById \} = useSyllabus\(\)/);
-		// "đang dùng" count goes through the provider's provenance selector
-		expect(src).toMatch(/const \{ classesForSyllabus \} = useData\(\)/);
+		// "đang dùng" count goes through the provider's provenance selector;
+		// refresh re-syncs the snapshot before the overwrite confirm (issue #152).
+		expect(src).toMatch(
+			/const \{ classesForSyllabus, refresh \} = useData\(\)/,
+		);
 		expect(src).toMatch(/classesForSyllabus\(sy\.id\)/);
 		// negative backstops: no aliased store reads of syllabi or classes
 		expect(src).not.toMatch(/data\.syllabi/);

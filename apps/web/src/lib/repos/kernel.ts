@@ -174,6 +174,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}`,
 				body: { ...action.payload },
 			};
+		case "replace-syllabus-content":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/replace-content`,
+				body: { modules: action.modules },
+			};
 		case "delete-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/remove`,
