@@ -210,6 +210,9 @@ export function AddSyllabusModal({
 						</Button>
 						{parsing && <span className="text-xs">Đang đọc file…</span>}
 					</div>
+					{/* Gỡ file không hoàn tác `total`: giá trị là dự định số buổi user
+					    vừa thấy ở preview và tự chỉnh được — đưa về mặc định sẽ giết
+					    input của user (component preview dùng chung không biết `total`). */}
 					<SyllabusImportPreview
 						result={importResult}
 						onRemove={() => setImportResult(null)}

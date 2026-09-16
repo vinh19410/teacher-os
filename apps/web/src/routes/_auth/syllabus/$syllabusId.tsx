@@ -164,7 +164,7 @@ function SyllabusDetail({
 				</div>
 			</Card>
 
-			<div className="mb-6 grid grid-cols-2 gap-4 max-app:grid-cols-2">
+			<div className="mb-6 grid grid-cols-2 gap-4">
 				<StatCard num={String(sy.totalLessons)} label="tổng buổi" />
 				<StatCard num={String(sy.modules.length)} label="module" />
 			</div>
