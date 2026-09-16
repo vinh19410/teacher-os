@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Import ở màn hình detail + cảnh báo ghi đè"
-status: todo
+status: done
 priority: P1
 effort: "4h"
 dependencies: [1, 3]

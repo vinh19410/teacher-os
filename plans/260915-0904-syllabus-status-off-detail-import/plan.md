@@ -1,7 +1,7 @@
 ---
 title: "Bỏ trạng thái buổi học khỏi màn hình syllabus + import ghi đè ở màn hình detail"
 description: "Gỡ status buổi học khỏi mọi màn hình syllabus (status chỉ còn đổi ở lớp học), đưa import Excel/CSV về format 4 cột, và thêm nút import ghi đè có cảnh báo ở màn hình syllabus detail."
-status: pending
+status: completed
 priority: P2
 effort: 14h
 issue: 152
@@ -60,7 +60,7 @@ Ba thay đổi, bốn phase:
 | 1 | [Phase 1: Hợp đồng API & endpoint thay nội dung](./phase-01-server-contract-api.md) | Done |
 | 2 | [Phase 2: Gỡ status khỏi màn hình syllabus](./phase-02-web-status-removal.md) | Done |
 | 3 | [Phase 3: Parser import v3 — 4 cột + preview dùng chung](./phase-03-import-parser-v3.md) | Done |
-| 4 | [Phase 4: Import ở màn hình detail + cảnh báo ghi đè](./phase-04-detail-import-overwrite.md) | Pending |
+| 4 | [Phase 4: Import ở màn hình detail + cảnh báo ghi đè](./phase-04-detail-import-overwrite.md) | Done |
 
 ## Dependencies
 
