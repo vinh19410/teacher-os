@@ -56,6 +56,15 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await expect(editDialog).toBeHidden();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
 	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(1);
+	// Chống false-positive: class attribute khớp substring chưa đủ — computed
+	// style phải là màu thật (biome từng gộp mất space giữa 2 class trong
+	// className template, token dính nhưng CSS không áp dụng).
+	const tinted = page.locator("[class*='bg-warn-soft/50']").first();
+	const tintBg = await tinted.evaluate(
+		(el) => getComputedStyle(el).backgroundColor,
+	);
+	expect(tintBg).not.toBe("rgba(0, 0, 0, 0)");
+	expect(tintBg).not.toBe("transparent");
 
 	// Đổi thành "Thi cuối kỳ" → nhãn cập nhật.
 	await lessonRow.getByRole("button", { name: "Sửa", exact: true }).click();

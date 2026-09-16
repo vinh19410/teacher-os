@@ -27,6 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { cn } from "@/lib/cn";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 import {
@@ -283,11 +284,14 @@ function SyllabusDetail({
 								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
-										className={`grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]${
-											// Buổi thi tint nền amber; kind lạ không bao giờ
-											// highlight (isTestSessionKind kiểm tra dương, #154).
-											isTestSessionKind(l.kind) ? "bg-warn-soft/50" : ""
-										}`}
+										// Buổi thi tint nền amber; kind lạ không bao giờ
+										// highlight (isTestSessionKind kiểm tra dương, #154).
+										// cn() — concat template bị biome gộp mất space
+										// giữa class tĩnh và class điều kiện.
+										className={cn(
+											"grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]",
+											isTestSessionKind(l.kind) && "bg-warn-soft/50",
+										)}
 									>
 										<div>
 											<div className="flex items-center gap-2 font-medium text-sm">
