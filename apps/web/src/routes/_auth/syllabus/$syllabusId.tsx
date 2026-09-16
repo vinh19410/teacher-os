@@ -286,7 +286,7 @@ function SyllabusDetail({
 										className={`grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]${
 											// Buổi thi tint nền amber; kind lạ không bao giờ
 											// highlight (isTestSessionKind kiểm tra dương, #154).
-											isTestSessionKind(l.kind) ? " bg-warn-soft/50" : ""
+											isTestSessionKind(l.kind) ? "bg-warn-soft/50" : ""
 										}`}
 									>
 										<div>

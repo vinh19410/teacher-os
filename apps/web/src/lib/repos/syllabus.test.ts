@@ -25,28 +25,28 @@ const snapshot: KernelSnapshot = {
 			totalLessons: 99, // stored form value — must be ignored
 			modules: [
 				{
-						id: "mod-1",
-						title: "Task 1",
-						description: "",
-						lessons: [
-							{
-								id: "les-1",
-								title: "Line chart",
-								objectives: "",
-								materials: "Cam 15",
-								kind: "lesson",
-								status: "done",
-							},
-							{
-								id: "les-2",
-								title: "Map",
-								objectives: "so sánh vị trí",
-								materials: "",
-								kind: "midterm",
-								status: "current",
-							},
-						],
-					},
+					id: "mod-1",
+					title: "Task 1",
+					description: "",
+					lessons: [
+						{
+							id: "les-1",
+							title: "Line chart",
+							objectives: "",
+							materials: "Cam 15",
+							kind: "lesson",
+							status: "done",
+						},
+						{
+							id: "les-2",
+							title: "Map",
+							objectives: "so sánh vị trí",
+							materials: "",
+							kind: "midterm",
+							status: "current",
+						},
+					],
+				},
 				{
 					id: "mod-2",
 					title: "Task 2",
@@ -134,10 +134,10 @@ describe("mapSyllabi", () => {
 	};
 
 	test("unknown kind normalizes to lesson — snapshot cũ/khác version không crash", () => {
-		const stale = structuredClone(
-			snapshot.syllabi[0],
-		) as unknown as SkewRow;
-		stale.modules[0]!.lessons[1]!.kind = "exam";
+		const stale = structuredClone(snapshot.syllabi[0]) as unknown as SkewRow;
+		const skewed = stale.modules[0]?.lessons[1];
+		if (!skewed) throw new Error("setup failed");
+		skewed.kind = "exam";
 		const mapped = mapSyllabi({
 			...snapshot,
 			syllabi: [stale as unknown as KernelSnapshot["syllabi"][number]],
@@ -146,10 +146,10 @@ describe("mapSyllabi", () => {
 	});
 
 	test("missing kind normalizes to lesson (version-skew defense)", () => {
-		const stale = structuredClone(
-			snapshot.syllabi[0],
-		) as unknown as SkewRow;
-		delete stale.modules[0]!.lessons[0]!.kind;
+		const stale = structuredClone(snapshot.syllabi[0]) as unknown as SkewRow;
+		const skewed = stale.modules[0]?.lessons[0];
+		if (!skewed) throw new Error("setup failed");
+		delete skewed.kind;
 		const mapped = mapSyllabi({
 			...snapshot,
 			syllabi: [stale as unknown as KernelSnapshot["syllabi"][number]],

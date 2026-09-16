@@ -1,8 +1,8 @@
 import { Buffer } from "node:buffer";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import { expect, test } from "@playwright/test";
 import { seedGoogleAccount } from "../src/account-seed";
 import { signUpViaUi } from "./helpers";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
  * Profile page e2e (issue #94) — no auth mocking: signup runs through the
@@ -109,13 +109,10 @@ test("guard server /update-user thật: tên quá ngắn nhận 400 tiếng Vi�
 	// POST straight to the auth endpoint with the browser session cookie —
 	// this exercises the REAL server hook (the UI form would validate first),
 	// so a silent wire-up regression of the validation guard fails here.
-	const res = await page.request.post(
-		`${API_ORIGIN}/api/auth/update-user`,
-		{
-			headers: { origin: WEB_ORIGIN },
-			data: { name: "A" },
-		},
-	);
+	const res = await page.request.post(`${API_ORIGIN}/api/auth/update-user`, {
+		headers: { origin: WEB_ORIGIN },
+		data: { name: "A" },
+	});
 	expect(res.status()).toBe(400);
 	const body = await res.json();
 	expect(JSON.stringify(body)).toMatch(/Tên hiển thị/);

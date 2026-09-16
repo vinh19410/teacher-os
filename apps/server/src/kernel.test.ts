@@ -883,7 +883,12 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 								materials: "",
 								kind: "midterm",
 							},
-							{ title: "Cuối kỳ", objectives: "", materials: "", kind: "final" },
+							{
+								title: "Cuối kỳ",
+								objectives: "",
+								materials: "",
+								kind: "final",
+							},
 						],
 					},
 				],
@@ -894,7 +899,8 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		const snapshot = await t.kernel(session);
 		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
 		const mod = sy?.modules[0];
-		if (!sy || !mod || mod.lessons.length !== 3) throw new Error("setup failed");
+		if (!sy || !mod || mod.lessons.length !== 3)
+			throw new Error("setup failed");
 		return { syllabusId, moduleId: mod.id, lessons: mod.lessons };
 	}
 
@@ -914,7 +920,11 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		if (!midterm) throw new Error("setup failed");
 		const res = await t.call(
 			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${midterm.id}`,
-			{ session, method: "POST", body: { title: "Giữa kỳ đổi tên", objectives: "", materials: "" } },
+			{
+				session,
+				method: "POST",
+				body: { title: "Giữa kỳ đổi tên", objectives: "", materials: "" },
+			},
 		);
 		expect(res.status).toBe(200);
 		const snapshot = await t.kernel(session);
@@ -948,7 +958,11 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		const { syllabusId, moduleId } = await createWithKinds();
 		const res = await t.call(
 			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
-			{ session, method: "POST", body: { title: "B4 thêm", objectives: "", materials: "" } },
+			{
+				session,
+				method: "POST",
+				body: { title: "B4 thêm", objectives: "", materials: "" },
+			},
 		);
 		expect(res.status).toBe(201);
 		const snapshot = await t.kernel(session);
@@ -968,7 +982,12 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 						title: "M mới",
 						lessons: [
 							{ title: "Thường", objectives: "", materials: "" },
-							{ title: "Thi lại", objectives: "", materials: "", kind: "midterm" },
+							{
+								title: "Thi lại",
+								objectives: "",
+								materials: "",
+								kind: "midterm",
+							},
 						],
 					},
 				],
@@ -1013,7 +1032,12 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 						title: "M1",
 						lessons: [
 							{ title: "B1", objectives: "", materials: "" },
-							{ title: "Thi giữa kỳ", objectives: "", materials: "", kind: "midterm" },
+							{
+								title: "Thi giữa kỳ",
+								objectives: "",
+								materials: "",
+								kind: "midterm",
+							},
 						],
 					},
 				],

@@ -18,18 +18,23 @@ export function isTestSessionKind(
 	return kind === "midterm" || kind === "final";
 }
 
-/** Giá trị lạ → null (không crash, không nhãn). */
+/** Giá trị lạ → null (không crash, không nhãn); lesson thường → null. */
 export function lessonKindLabel(kind: SyllabusLesson["kind"]): string | null {
-	return LESSON_KINDS.includes(kind)
-		? ({ midterm: "Thi giữa kỳ", final: "Thi cuối kỳ" } as Record<
-				SyllabusLessonKind,
-				string
-			>)[kind]
-		: null;
+	if (!LESSON_KINDS.includes(kind)) return null;
+	const labels: Record<SyllabusLessonKind, string | null> = {
+		lesson: null,
+		midterm: "Thi giữa kỳ",
+		final: "Thi cuối kỳ",
+	};
+	return labels[kind];
 }
 
 /** Badge warn cho buổi thi; buổi thường/kind lạ → không render gì. */
 export function LessonKindBadge({ kind }: { kind: SyllabusLesson["kind"] }) {
 	if (!isTestSessionKind(kind)) return null;
-	return <Badge variant="warn" dot>{lessonKindLabel(kind)}</Badge>;
+	return (
+		<Badge variant="warn" dot>
+			{lessonKindLabel(kind)}
+		</Badge>
+	);
 }

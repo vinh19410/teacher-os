@@ -467,7 +467,10 @@ describe("kernel-backed store wiring", () => {
 	});
 
 	test("lesson kind payload rides showKind only — màn hình lớp không bao giờ gửi key kind (#154)", () => {
-		for (const file of ["add-lesson-modal.tsx", "edit-lesson-modal.tsx"] as const) {
+		for (const file of [
+			"add-lesson-modal.tsx",
+			"edit-lesson-modal.tsx",
+		] as const) {
 			const src = readSrc(`../components/modals/${file}`);
 			// Spread có điều kiện đúng pattern status: không showKind → key
 			// `kind` phải VẮNG KHỎI payload (server + reducer preserve).
@@ -484,7 +487,10 @@ describe("kernel-backed store wiring", () => {
 		const syllabusDetail = readSrc("../routes/_auth/syllabus/$syllabusId.tsx");
 		const jsxOf = (tag: string) => {
 			const start = syllabusDetail.indexOf(`<${tag}`);
-			return syllabusDetail.slice(start, syllabusDetail.indexOf("/>", start) + 2);
+			return syllabusDetail.slice(
+				start,
+				syllabusDetail.indexOf("/>", start) + 2,
+			);
 		};
 		expect(jsxOf("AddLessonModal")).toContain("showKind");
 		expect(jsxOf("EditLessonModal")).toContain("showKind");

@@ -16,30 +16,27 @@ export async function seedDatedClass(
 		sessionsTotal?: number;
 	},
 ): Promise<string> {
-	const response = await page.request.post(
-		`${API_ORIGIN}/api/classes`,
-		{
-			data: {
-				name: opts.name,
-				type: "ielts",
-				level: "",
-				skills: ["Writing"],
-				mode: "Online",
-				templateId: "",
-				schedule: {
-					days: opts.schedule.days,
-					start: opts.schedule.start ?? "19:00",
-					end: opts.schedule.end ?? "20:30",
-				},
-				sessionsTotal: opts.sessionsTotal ?? 4,
-				startDate: opts.startDate,
+	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {
+		data: {
+			name: opts.name,
+			type: "ielts",
+			level: "",
+			skills: ["Writing"],
+			mode: "Online",
+			templateId: "",
+			schedule: {
+				days: opts.schedule.days,
+				start: opts.schedule.start ?? "19:00",
+				end: opts.schedule.end ?? "20:30",
 			},
-			headers: {
-				Origin: WEB_ORIGIN,
-				"Content-Type": "application/json",
-			},
+			sessionsTotal: opts.sessionsTotal ?? 4,
+			startDate: opts.startDate,
 		},
-	);
+		headers: {
+			Origin: WEB_ORIGIN,
+			"Content-Type": "application/json",
+		},
+	});
 	if (response.status() !== 201) {
 		throw new Error(
 			`seedDatedClass failed (${response.status()}): ${await response.text()}`,

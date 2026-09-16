@@ -779,20 +779,20 @@ describe("sessionLessonInfo", () => {
 		const syllabus = makeSyllabus({
 			modules: [
 				{ id: "mod-empty", title: "Empty Module", lessons: [] },
-					{
-						id: "mod-1",
-						title: "Module 1",
-						lessons: [
-							{
-								id: "les-1",
-								title: "Lesson 1",
-								objectives: "Obj 1",
-								materials: "Mat 1",
-								kind: "lesson",
-								status: "done",
-							},
-						],
-					},
+				{
+					id: "mod-1",
+					title: "Module 1",
+					lessons: [
+						{
+							id: "les-1",
+							title: "Lesson 1",
+							objectives: "Obj 1",
+							materials: "Mat 1",
+							kind: "lesson",
+							status: "done",
+						},
+					],
+				},
 			],
 		});
 		const sessions = buildSessions();

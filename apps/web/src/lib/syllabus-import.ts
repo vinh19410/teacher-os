@@ -268,9 +268,10 @@ export async function parseSyllabusFile(
 /**
  * Dữ liệu file mẫu v4 — nguồn sự thật chung cho `buildSampleCsv` (nút tải
  * file mẫu) và script regenerate fixture e2e
- * (`apps/e2e/scripts/regen-syllabus-fixture.ts`) — không có bản copy thứ hai
- * (red-team #8). 5 buổi / 2 module: buổi `giữa kỳ` cuối Module 1, `cuối kỳ`
- * cuối Module 2 (law 7 hợp đồng v4).
+ * (`apps/e2e/scripts/regen-syllabus-v4-fixture.mjs`) — script mirror 1:1
+ * SAMPLE_ROWS (giới hạn đã biết: .mjs không import được TS; đổi SAMPLE_ROWS
+ * phải đổi ROWS trong script rồi chạy regen — red-team #8). 5 buổi / 2 module:
+ * buổi `giữa kỳ` cuối Module 1, `cuối kỳ` cuối Module 2 (law 7 hợp đồng v4).
  */
 export const SAMPLE_HEADER = [
 	"Module",
@@ -283,7 +284,13 @@ export const SAMPLE_HEADER = [
 export const SAMPLE_ROWS: Array<
 	readonly [string, string, string, string, string]
 > = [
-	["Module 1 — Nền tảng", "Làm quen format đề", "Hiểu cấu trúc đề", "Cambridge 18", ""],
+	[
+		"Module 1 — Nền tảng",
+		"Làm quen format đề",
+		"Hiểu cấu trúc đề",
+		"Cambridge 18",
+		"",
+	],
 	["", "", "Viết introduction", "File mẫu 2", ""],
 	["", "", "Kiểm tra giữa kỳ", "", "giữa kỳ"],
 	["Module 2 — Thực hành", "", "Viết body paragraph", "", ""],

@@ -86,7 +86,10 @@ test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight h
 	await expect(page.getByText("Module thủ công")).toBeVisible();
 
 	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();
-	await page.setInputFiles("input[type=file]", "fixtures/syllabus-import.v4.csv");
+	await page.setInputFiles(
+		"input[type=file]",
+		"fixtures/syllabus-import.v4.csv",
+	);
 	await expect(page.getByText("2 module · 5 buổi học")).toBeVisible();
 	await expect(page.getByRole("cell", { name: "Thi giữa kỳ" })).toBeVisible();
 	await page.getByRole("button", { name: "Ghi đè nội dung" }).click();
@@ -108,7 +111,10 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await createSyllabusTemplate(page, "E2E Buổi Thi Guard");
 	// Template có 1 buổi thi: import v4 (Buổi 3 = Thi giữa kỳ).
 	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();
-	await page.setInputFiles("input[type=file]", "fixtures/syllabus-import.v4.csv");
+	await page.setInputFiles(
+		"input[type=file]",
+		"fixtures/syllabus-import.v4.csv",
+	);
 	await expect(page.getByText("2 module · 5 buổi học")).toBeVisible();
 	await page.getByRole("button", { name: "Ghi đè nội dung" }).click();
 	await page
@@ -124,7 +130,9 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await classDialog
 		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill("Lớp Buổi Thi Guard");
-	await classDialog.getByRole("button", { name: "Writing", exact: true }).click();
+	await classDialog
+		.getByRole("button", { name: "Writing", exact: true })
+		.click();
 	await classDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ label: "E2E Buổi Thi Guard" });
@@ -156,10 +164,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await examRow.getByRole("button", { name: "Sửa", exact: true }).click();
 	const editDialog = page.getByRole("dialog");
 	await expect(editDialog.getByLabel("Loại buổi học")).toHaveCount(0);
-	await editDialog
-		.getByRole("textbox")
-		.first()
-		.fill("Buổi 3 — giữa kỳ đã đổi");
+	await editDialog.getByRole("textbox").first().fill("Buổi 3 — giữa kỳ đã đổi");
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 

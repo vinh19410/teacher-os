@@ -721,9 +721,7 @@ describe("buildSampleCsv", () => {
 		expect(lines[5]).toBe(",,Kiểm tra cuối kỳ,,cuối kỳ");
 
 		// Round-trip: file mẫu của chính app phải parse ra đúng 5 buổi thi/không thi.
-		const result = rowsToModules(
-			lines.slice(1).map((line) => line.split(",")),
-		);
+		const result = rowsToModules(lines.slice(1).map((line) => line.split(",")));
 		expect(result.ok).toBe(true);
 		if (result.ok) {
 			expect(result.lessonCount).toBe(5);

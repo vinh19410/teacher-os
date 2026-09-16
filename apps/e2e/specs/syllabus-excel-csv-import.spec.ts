@@ -78,7 +78,10 @@ test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regressio
 		.getByPlaceholder("VD: IELTS Writing 7.0")
 		.fill(`E2E Legacy v3 ${Date.now()}`);
 	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
-	await page.setInputFiles("input[type=file]", "fixtures/syllabus-import.sample.csv");
+	await page.setInputFiles(
+		"input[type=file]",
+		"fixtures/syllabus-import.sample.csv",
+	);
 	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
 	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 	await page.waitForURL(/\/syllabus\/.+/);

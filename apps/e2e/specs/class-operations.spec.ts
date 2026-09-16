@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import {
 	addDaysISO,
 	gotoWeek,
@@ -8,6 +7,7 @@ import {
 	vietnamTodayISO,
 	vnWeekdayMon0,
 } from "./helpers";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
  * M1 DOD scenario (issue #59, docs/project-roadmap.md:44):
@@ -133,30 +133,27 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	await signUpViaUi(page);
 
 	const startDate = vietnamTodayISO();
-	const response = await page.request.post(
-		`${API_ORIGIN}/api/classes`,
-		{
-			data: {
-				name: CLASS_NAME,
-				type: "ielts",
-				level: "",
-				skills: ["Writing"],
-				mode: "Online",
-				templateId: "",
-				schedule: {
-					days: [vnWeekdayMon0(startDate)],
-					start: "19:00",
-					end: "20:30",
-				},
-				sessionsTotal: 12,
-				startDate,
+	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {
+		data: {
+			name: CLASS_NAME,
+			type: "ielts",
+			level: "",
+			skills: ["Writing"],
+			mode: "Online",
+			templateId: "",
+			schedule: {
+				days: [vnWeekdayMon0(startDate)],
+				start: "19:00",
+				end: "20:30",
 			},
-			headers: {
-				Origin: WEB_ORIGIN,
-				"Content-Type": "application/json",
-			},
+			sessionsTotal: 12,
+			startDate,
 		},
-	);
+		headers: {
+			Origin: WEB_ORIGIN,
+			"Content-Type": "application/json",
+		},
+	});
 	// 403 = Origin, 401 = cookie, 415 = content-type — fail loud with the code.
 	expect(response.status(), await response.text()).toBe(201);
 
