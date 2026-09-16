@@ -189,7 +189,9 @@ export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
 	materials: z.string().default(""),
-	status: z.enum(["done", "current", "upcoming"]).default("upcoming"),
+	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
+	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
+	status: z.enum(["done", "current", "upcoming"]).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -211,6 +213,28 @@ export const reorderLessonsSchema = z
 	})
 	.strict();
 export type ReorderLessons = z.infer<typeof reorderLessonsSchema>;
+
+/** Bulk replace nội dung syllabus (import ghi đè ở màn hình detail). */
+export const syllabusReplaceContentSchema = z
+	.object({
+		modules: z.array(syllabusModuleContentSchema).min(1),
+	})
+	.strict()
+	.superRefine((input, ctx) => {
+		const nodes =
+			input.modules.length +
+			input.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+		if (nodes > 500) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["modules"],
+				message: "Tổng số module và buổi học vượt giới hạn 500",
+			});
+		}
+	});
+export type SyllabusReplaceContent = z.infer<
+	typeof syllabusReplaceContentSchema
+>;
 
 /**
  * IELTS rubric scores — strict shape, float 0–9 on purpose: half-bands
