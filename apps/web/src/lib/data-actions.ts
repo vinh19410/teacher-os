@@ -131,7 +131,9 @@ export type KernelAction =
 				title: string;
 				objectives: string;
 				materials: string;
-				status: SyllabusLesson["status"];
+				// Form mở từ màn hình syllabus không gửi status — server/reducer
+				// tự default "upcoming" (add) và preserve (edit).
+				status?: SyllabusLesson["status"];
 			};
 	  }
 	| {
@@ -143,7 +145,7 @@ export type KernelAction =
 				title: string;
 				objectives: string;
 				materials: string;
-				status: SyllabusLesson["status"];
+				status?: SyllabusLesson["status"];
 			};
 	  }
 	| {

@@ -353,6 +353,7 @@ export function CurriculumManagementSection({
 				onClose={() => setAddLessonModuleId(null)}
 				syllabusId={cls.syllabusId}
 				moduleId={addLessonModuleId}
+				showStatus
 			/>
 			<EditLessonModal
 				open={editLessonRef !== null}
@@ -360,6 +361,7 @@ export function CurriculumManagementSection({
 				syllabusId={cls.syllabusId}
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
+				showStatus
 			/>
 			{mutations.confirmModal}
 		</div>

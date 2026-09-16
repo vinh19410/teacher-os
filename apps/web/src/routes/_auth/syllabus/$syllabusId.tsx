@@ -10,10 +10,6 @@ import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
 import {
-	LessonStatusBadge,
-	lessonDotClassFor,
-} from "@/components/syllabus/lesson-status";
-import {
 	SyllabusMutationButtons,
 	useSyllabusMutations,
 } from "@/components/syllabus/syllabus-mutations";
@@ -90,9 +86,6 @@ function SyllabusDetail({
 		busy,
 	});
 
-	const all = sy.modules.flatMap((m) => m.lessons);
-	const done = all.filter((l) => l.status === "done").length;
-	const current = all.find((l) => l.status === "current");
 	const assigned = classesForSyllabus(sy.id);
 
 	function toggle(id: string) {
@@ -133,32 +126,10 @@ function SyllabusDetail({
 				</div>
 			</Card>
 
-			<div className="mb-6 grid grid-cols-4 gap-4 max-app:grid-cols-2">
+			<div className="mb-6 grid grid-cols-2 gap-4 max-app:grid-cols-2">
 				<StatCard num={String(sy.totalLessons)} label="tổng buổi" />
-				<StatCard
-					num={String(done)}
-					label="đã dạy"
-					className="[&>div:first-child]:text-success"
-				/>
-				<StatCard
-					num={current ? "1" : "0"}
-					label="đang học"
-					className="[&>div:first-child]:text-accent-blue"
-				/>
 				<StatCard num={String(sy.modules.length)} label="module" />
 			</div>
-
-			{current && (
-				<Card className="mb-5 flex items-center gap-3">
-					<span className="h-2 w-2 shrink-0 rounded-full bg-accent-blue" />
-					<div>
-						<div className="font-semibold text-sm">Buổi hiện tại</div>
-						<div className="font-mono text-meta text-xs">
-							{current.title} — {current.objectives}
-						</div>
-					</div>
-				</Card>
-			)}
 
 			<div className="mb-3 flex items-center justify-between">
 				<SectionLabel>Nội dung giáo trình</SectionLabel>
@@ -181,7 +152,6 @@ function SyllabusDetail({
 			)}
 
 			{sy.modules.map((m, mi) => {
-				const mDone = m.lessons.filter((l) => l.status === "done").length;
 				return (
 					<div
 						key={m.id}
@@ -214,7 +184,7 @@ function SyllabusDetail({
 									onDelete={() => mutations.requestDeleteModule(m)}
 								/>
 								<span className="font-mono text-[11px] text-muted-fg">
-									{mDone}/{m.lessons.length} buổi
+									{m.lessons.length} buổi
 								</span>
 							</div>
 						</div>
@@ -223,11 +193,8 @@ function SyllabusDetail({
 								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
-										className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
+										className="grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]"
 									>
-										<span
-											className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
-										/>
 										<div>
 											<div className="font-medium text-sm">{l.title}</div>
 											<div className="mt-0.5 text-[11px] text-muted-fg">
@@ -237,8 +204,7 @@ function SyllabusDetail({
 												Mục tiêu: {l.objectives}
 											</div>
 										</div>
-										<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">
-											<LessonStatusBadge status={l.status} />
+										<div className="flex flex-wrap items-center gap-2 max-app:pt-1">
 											<button
 												type="button"
 												onClick={() =>
