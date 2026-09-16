@@ -1,10 +1,10 @@
 /**
- * Syllabus Excel/CSV import v2 (issue #150) — parse 100% client-side.
+ * Syllabus Excel/CSV import v3 (issue #152) — parse 100% client-side.
  * Core `rowsToModules`/`normalizeRow` thuần (chạy được trong vitest env node);
  * adapter `parseSyllabusFile` dynamic-import papaparse/read-excel-file để tách
- * chunk. File không bao giờ tới server — 15 luật deterministic định nghĩa ở
- * plans/260915-1108-syllabus-import-v2/plan.md là hợp đồng forensic: 5 cột
- * (không còn cột "Buổi học"), title buổi tự sinh `Buổi {n}` theo thứ tự dòng.
+ * chunk. File không bao giờ tới server — format 4 cột (không còn cột "Trạng
+ * thái"): file v2 5 cột bị từ chối tường minh, title buổi tự sinh `Buổi {n}`
+ * theo thứ tự dòng.
  */
 import type { SyllabusModuleContent } from "@teacher-os/api/contracts";
 
@@ -16,22 +16,12 @@ export const IMPORT_FILE_MAX_BYTES = 2 * 1024 * 1024;
 const MODULE_TITLE_MAX = 500;
 const FIELD_TEXT_MAX = 10_000;
 
-const STATUS_MAP: Record<string, "done" | "current" | "upcoming"> = {
-	"đã dạy": "done",
-	done: "done",
-	"đang học": "current",
-	current: "current",
-	"sắp tới": "upcoming",
-	upcoming: "upcoming",
-	"": "upcoming",
-};
-
 export type SyllabusImportResult =
 	| { ok: true; modules: SyllabusModuleContent[]; lessonCount: number }
 	| { ok: false; errors: string[] };
 
 /**
- * Chuẩn hóa 1 row về đúng 5 cột: pad thiếu / cắt thừa, mọi cell về trimmed
+ * Chuẩn hóa 1 row về đúng 4 cột: pad thiếu / cắt thừa, mọi cell về trimmed
  * string. Cell `Date` (read-excel-file trả cho ô định dạng ngày) là lỗi dòng —
  * tránh `String(date)` thành chuỗi GMT rác.
  */
@@ -40,7 +30,7 @@ export function normalizeRow(
 	lineNumber: number,
 ): { ok: true; cells: string[] } | { ok: false; error: string } {
 	const cells: string[] = [];
-	for (let i = 0; i < 5; i++) {
+	for (let i = 0; i < 4; i++) {
 		const cell = row[i];
 		if (cell instanceof Date) {
 			return {
@@ -53,24 +43,7 @@ export function normalizeRow(
 	return { ok: true, cells };
 }
 
-/** Map cột Trạng thái (luật 10) — giá trị lạ là lỗi dòng. */
-function mapStatus(
-	value: string,
-	lineNumber: number,
-):
-	| { ok: true; status: "done" | "current" | "upcoming" }
-	| { ok: false; error: string } {
-	const status = STATUS_MAP[value.toLowerCase()];
-	if (!status) {
-		return {
-			ok: false,
-			error: `Dòng ${lineNumber}: trạng thái không hợp lệ '${value}'`,
-		};
-	}
-	return { ok: true, status };
-}
-
-/** Core thuần: rows (đã theo thứ tự file gốc) → modules. Luật 4–12. */
+/** Core thuần: rows (đã theo thứ tự file gốc) → modules. */
 export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 	const errors: string[] = [];
 	const modules: SyllabusModuleContent[] = [];
@@ -78,11 +51,23 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 	let sawDataRow = false;
 	let lessonOrdinal = 1;
 
-	// Luật 4 (template cũ) phải bắt TRƯỚC skip-header vì header cũ cũng có
-	// "Module" ở cột 0. Không kèm điều kiện độ dài row (read-excel-file/
-	// papaparse pad đuôi khác nhau → misfire).
+	// Template cũ phải bắt TRƯỚC skip-header vì header cũ cũng có "Module" ở
+	// cột 0. Không kèm điều kiện độ dài row (read-excel-file/papaparse pad
+	// đuôi khác nhau → misfire). v2 (cột "Trạng thái" ở ô thứ 5) phải bắt
+	// trước normalizeRow — normalize cắt về 4 cột làm mất ô thứ 5.
 	let start = 0;
 	if (rows.length > 0) {
+		const rawFifth = String(rows[0]?.[4] ?? "")
+			.trim()
+			.toLowerCase();
+		if (rawFifth === "trạng thái" || rawFifth === "status") {
+			return {
+				ok: false,
+				errors: [
+					'File dùng template cũ (cột "Trạng thái" đã bỏ). Hãy tải file mẫu mới rồi điền lại dữ liệu.',
+				],
+			};
+		}
 		const first = normalizeRow(rows[0], 1);
 		if (first.ok) {
 			const col2 = first.cells[2].toLowerCase();
@@ -94,13 +79,21 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 					],
 				};
 			}
-			// Luật 5: header mới — bỏ dòng đầu iff cột 0 là "module".
+			// Header mới — bỏ dòng đầu iff cột 0 là "module".
 			if (first.cells[0].toLowerCase() === "module") start = 1;
 		}
 	}
 
 	for (let i = start; i < rows.length; i++) {
 		const lineNumber = i + 1;
+		// File v2 đã xóa header vẫn bị chặn: bất kỳ dòng nào còn nội dung ở ô
+		// thứ 5 là dữ liệu user đã điền — không bỏ ngầm.
+		if (String(rows[i]?.[4] ?? "").trim() !== "") {
+			errors.push(
+				`Dòng ${lineNumber}: file có cột dữ liệu thừa ở cột thứ 5 — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.`,
+			);
+			continue;
+		}
 		const normalized = normalizeRow(rows[i], lineNumber);
 		if (!normalized.ok) {
 			errors.push(normalized.error);
@@ -108,23 +101,23 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 		}
 		const cells = normalized.cells;
 
-		// Luật 6: dòng trống hoàn toàn → bỏ qua (numbering theo file gốc).
+		// Dòng trống hoàn toàn → bỏ qua (numbering theo file gốc).
 		if (cells.every((cell) => cell === "")) continue;
 		sawDataRow = true;
 
 		const moduleName = cells[0];
 		if (moduleName === "") {
-			// Luật 7: kế thừa module dòng trước; rỗng khi chưa có module → lỗi.
+			// Kế thừa module dòng trước; rỗng khi chưa có module → lỗi.
 			if (!currentModule) {
 				errors.push(`Dòng ${lineNumber}: thiếu tên module`);
 				continue;
 			}
 		} else if (currentModule !== null && currentModule.title === moduleName) {
-			// Luật 7: nhóm consecutive cùng tên — mô tả giữ của dòng đầu nhóm.
+			// Nhóm consecutive cùng tên — mô tả giữ của dòng đầu nhóm.
 		} else {
-			// Luật 15: length mirror API contract — chỉ check giá trị thật sự
-			// đáp xuống payload: tên module + mô tả dòng đầu nhóm (description
-			// dòng continuation bị luật 7 bỏ, không check).
+			// Length mirror API contract — chỉ check giá trị thật sự đáp xuống
+			// payload: tên module + mô tả dòng đầu nhóm (description dòng
+			// continuation bị luật nhóm bỏ, không check).
 			if (moduleName.length > MODULE_TITLE_MAX) {
 				errors.push(
 					`Dòng ${lineNumber}: tên module vượt ${MODULE_TITLE_MAX} ký tự`,
@@ -145,14 +138,13 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 			modules.push(currentModule);
 		}
 
-		// Luật 8: dòng tạo buổi học iff bất kỳ ô Mục tiêu/Tài liệu/Trạng thái
-		// khác rỗng. Title tự sinh theo thứ tự buổi TOÀN FILE (1-based);
-		// module-only row và dòng trống không tiêu số.
-		const hasLessonContent =
-			cells[2] !== "" || cells[3] !== "" || cells[4] !== "";
+		// Dòng tạo buổi học iff bất kỳ ô Mục tiêu/Tài liệu khác rỗng. Title
+		// tự sinh theo thứ tự buổi TOÀN FILE (1-based); module-only row và
+		// dòng trống không tiêu số.
+		const hasLessonContent = cells[2] !== "" || cells[3] !== "";
 		if (hasLessonContent) {
-			// Luật 15 (tiếp): objectives/materials — chỉ check dòng tạo buổi
-			// học (giá trị vào payload); status ngắn, lạ đã bị mapStatus chặn.
+			// Length mirror API contract: objectives/materials — chỉ check dòng
+			// tạo buổi học (giá trị vào payload).
 			if (cells[2].length > FIELD_TEXT_MAX) {
 				errors.push(
 					`Dòng ${lineNumber}: mục tiêu vượt ${FIELD_TEXT_MAX} ký tự`,
@@ -165,16 +157,14 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 				);
 				continue;
 			}
-			const status = mapStatus(cells[4], lineNumber);
-			if (!status.ok) {
-				errors.push(status.error);
-				continue;
-			}
+			// Format v3 không còn cột status — import mới luôn khởi điểm
+			// "upcoming" (type SyllabusModuleContent là zod output type nên
+			// status là trường bắt buộc, không thể bỏ field).
 			currentModule?.lessons.push({
 				title: `Buổi ${lessonOrdinal}`,
 				objectives: cells[2],
 				materials: cells[3],
-				status: status.status,
+				status: "upcoming",
 			});
 			lessonOrdinal += 1;
 		}
@@ -197,7 +187,7 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 }
 
 /**
- * Browser adapter: chọn nhánh parse theo đuôi file, bắt mọi exception (luật 14)
+ * Browser adapter: chọn nhánh parse theo đuôi file, bắt mọi exception
  * — caller không bao giờ thấy reject thoát ra ngoài.
  */
 export async function parseSyllabusFile(
@@ -242,14 +232,14 @@ export async function parseSyllabusFile(
 }
 
 /**
- * File mẫu (luật 13): CSV UTF-8 có BOM + CRLF, 5 cột, khớp fixture e2e —
+ * File mẫu: CSV UTF-8 có BOM + CRLF, 4 cột, khớp fixture e2e —
  * 2 module · 3 buổi (Buổi 1..3 xuyên module theo thứ tự dòng).
  */
 export function buildSampleCsv(): string {
 	return [
-		"\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu,Trạng thái",
-		"Module 1 — Nền tảng,Làm quen format đề,Hiểu cấu trúc đề,Cambridge 18,sắp tới",
-		",,Viết introduction,File mẫu 2,đã dạy",
-		"Module 2 — Thực hành,,Viết body paragraph,,đang học",
+		"\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu",
+		"Module 1 — Nền tảng,Làm quen format đề,Hiểu cấu trúc đề,Cambridge 18",
+		",,Viết introduction,File mẫu 2",
+		"Module 2 — Thực hành,,Viết body paragraph,",
 	].join("\r\n");
 }
