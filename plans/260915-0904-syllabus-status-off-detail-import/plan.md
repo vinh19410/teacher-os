@@ -59,7 +59,7 @@ Ba thay đổi, bốn phase:
 |-------|------|--------|
 | 1 | [Phase 1: Hợp đồng API & endpoint thay nội dung](./phase-01-server-contract-api.md) | Done |
 | 2 | [Phase 2: Gỡ status khỏi màn hình syllabus](./phase-02-web-status-removal.md) | Done |
-| 3 | [Phase 3: Parser import v3 — 4 cột + preview dùng chung](./phase-03-import-parser-v3.md) | Pending |
+| 3 | [Phase 3: Parser import v3 — 4 cột + preview dùng chung](./phase-03-import-parser-v3.md) | Done |
 | 4 | [Phase 4: Import ở màn hình detail + cảnh báo ghi đè](./phase-04-detail-import-overwrite.md) | Pending |
 
 ## Dependencies
