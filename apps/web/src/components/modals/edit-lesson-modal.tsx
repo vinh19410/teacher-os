@@ -13,12 +13,15 @@ export function EditLessonModal({
 	syllabusId,
 	moduleId,
 	lessonId,
+	showStatus,
 }: {
 	open: boolean;
 	onClose: () => void;
 	syllabusId: string;
 	moduleId: string | null;
 	lessonId: string | null;
+	/** Chỉ màn hình lớp học bật — syllabus không sửa trạng thái buổi học. */
+	showStatus?: boolean;
 }) {
 	const { syllabusById } = useData();
 	const lesson = syllabusById(syllabusId)
@@ -58,7 +61,9 @@ export function EditLessonModal({
 				title: title.trim(),
 				objectives: objectives.trim(),
 				materials: materials.trim(),
-				status,
+				// Không showStatus → không gửi key status: server + reducer sẽ
+				// giữ nguyên trạng thái hiện tại của buổi học.
+				...(showStatus ? { status } : {}),
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -93,16 +98,20 @@ export function EditLessonModal({
 						onChange={(e) => setMaterials(e.target.value)}
 					/>
 				</Field>
-				<Field label="Trạng thái">
-					<Select
-						value={status}
-						onChange={(e) => setStatus(e.target.value as SyllabusLessonStatus)}
-					>
-						<option value="upcoming">Sắp tới</option>
-						<option value="current">Đang học</option>
-						<option value="done">Đã dạy</option>
-					</Select>
-				</Field>
+				{showStatus && (
+					<Field label="Trạng thái">
+						<Select
+							value={status}
+							onChange={(e) =>
+								setStatus(e.target.value as SyllabusLessonStatus)
+							}
+						>
+							<option value="upcoming">Sắp tới</option>
+							<option value="current">Đang học</option>
+							<option value="done">Đã dạy</option>
+						</Select>
+					</Field>
+				)}
 				<div className="flex flex-col gap-2">
 					{error && (
 						<p role="alert" className="text-danger text-xs">

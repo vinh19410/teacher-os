@@ -168,14 +168,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				body: { ...action.payload },
 			};
 		case "edit-lesson":
+			// Spread để key `status` undefined tự rơi khỏi JSON — server sẽ
+			// preserve status cũ khi body không có key này.
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}`,
-				body: {
-					title: action.payload.title,
-					objectives: action.payload.objectives,
-					materials: action.payload.materials,
-					status: action.payload.status,
-				},
+				body: { ...action.payload },
+			};
+		case "replace-syllabus-content":
+			return {
+				path: `/api/syllabi/${action.syllabusId}/replace-content`,
+				body: { modules: action.modules },
 			};
 		case "delete-module":
 			return {

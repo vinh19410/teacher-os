@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Hợp đồng API & endpoint thay nội dung"
-status: todo
+status: done
 priority: P1
 effort: "3h"
 dependencies: []

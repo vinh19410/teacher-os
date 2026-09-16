@@ -208,6 +208,52 @@ describe("reducer", () => {
 		expect(after ? lessonCount(after) : 0).toBe(total);
 	});
 
+	test("add-lesson without status defaults to upcoming (mirror server, issue #152)", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "add-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			payload: {
+				title: "Lesson không status",
+				objectives: "o",
+				materials: "m",
+			},
+		});
+		const added = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.at(-1);
+		expect(added?.title).toBe("Lesson không status");
+		expect(added?.status).toBe("upcoming");
+	});
+
+	test("edit-lesson without status preserves the old status (mirror server, issue #152)", () => {
+		const before = cloneSeed();
+		expect(
+			before.syllabi
+				.find((s) => s.id === "sy1")
+				?.modules.find((m) => m.id === "sy1-m1")?.lessons[0]?.status,
+		).toBe("done");
+		const next = reducer(before, {
+			type: "edit-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			lessonId: "sy1-l1",
+			payload: {
+				title: "Sửa tiêu đề không status",
+				objectives: "o",
+				materials: "m",
+			},
+		});
+		const edited = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.find((l) => l.id === "sy1-l1");
+		expect(edited?.title).toBe("Sửa tiêu đề không status");
+		expect(edited?.status).toBe("done");
+	});
+
 	test("edit-module does not change totalLessons", () => {
 		const before = cloneSeed();
 		const total = before.syllabi.find((s) => s.id === "sy1")?.totalLessons;

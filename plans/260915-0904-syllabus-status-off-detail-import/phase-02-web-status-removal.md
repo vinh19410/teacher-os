@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Gỡ status khỏi màn hình syllabus"
-status: todo
+status: done
 priority: P1
 effort: "3h"
 dependencies: [1]
@@ -50,8 +50,9 @@ Màn hình syllabus detail (`/syllabus/:id`) không còn hiển thị hay cho s�
      ```
      (JSON.stringify bỏ key undefined — cùng kết quả dây cho cả nhánh có/không status.)
   4. Case `add-lesson` đã là `body: { ...action.payload }` — không đổi.
+  5. (F3 — khóa semantics reducer bằng test) Thêm vào `apps/web/src/lib/data-store-reducer.test.ts` (mirror pattern test hiện có trong file): (a) dispatch `add-lesson` KHÔNG gửi `status` → lesson mới trong optimistic state có `status === "upcoming"`; (b) dispatch `edit-lesson` KHÔNG gửi `status` trên lesson đang `status: "done"` → lesson giữ nguyên `"done"` (không bị reset). 2 assertion này khóa đúng semantics server-side mirror, không cho phép regress về sau.
 - Success criteria: typecheck qua; gửi action không status tạo body JSON không có key `status`; reducer giữ status cũ ở edit không status.
-- Verify: `pnpm check-types` exit 0; `pnpm --filter web test` exit 0 (bộ test reducer hiện có `data-store-reducer.test.ts` phải vẫn xanh).
+- Verify: `pnpm check-types` exit 0; `pnpm --filter web test` exit 0 (gồm 2 test reducer mới ở bước 5 và bộ test hiện có trong `data-store-reducer.test.ts`).
 
 ### Task 2.2 — Prop `showStatus` cho 2 modal buổi học
 - Goal: form thêm/sửa buổi học chỉ hiển thị + gửi status khi được bật (dùng riêng cho lớp học).

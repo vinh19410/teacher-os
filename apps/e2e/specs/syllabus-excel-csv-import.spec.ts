@@ -40,8 +40,9 @@ for (const [format, fixture] of [
 		await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
 		await expect(page.getByText("Buổi 1")).toBeVisible();
 		await expect(page.getByText("Buổi 2")).toBeVisible();
-		// exact:Buổi 3 status "đang học" → detail page render thêm card
-		// "Buổi hiện tại" chứa "Buổi 3 — …"; substring match sẽ trúng 2 element.
+		// exact:true — "Buổi 3" chỉ là title buổi học (trang detail không còn
+		// card "Buổi hiện tại" từ issue #152); substring match có thể trúng
+		// "Buổi 3" lồng trong text khác.
 		await expect(page.getByText("Buổi 3", { exact: true })).toBeVisible();
 	});
 }

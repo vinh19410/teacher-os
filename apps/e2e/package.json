@@ -19,6 +19,7 @@
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",
 		"drizzle-orm": "catalog:",
+		"exceljs": "catalog:",
 		"tsx": "4.23.12",
 		"typescript": "catalog:"
 	}

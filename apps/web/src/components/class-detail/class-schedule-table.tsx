@@ -22,6 +22,7 @@ import {
 import type { KernelAction } from "@/lib/data-actions";
 import { lessonDayLabel } from "@/lib/format-schedule";
 import type { ClassGroup, Lesson, Student, Syllabus } from "@/lib/mock-data";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 const thClass =
@@ -76,7 +77,7 @@ export function ClassScheduleTable({
 		key: string,
 		action: KernelAction,
 		successText: string,
-	) => Promise<void>;
+	) => Promise<KernelCommandResult>;
 	/** #98 threaded write surface — toasts live at the route, not here. */
 	onComplete: (dateISO: string) => Promise<OccurrenceActionResult>;
 	onCancelOccurrence: (dateISO: string) => Promise<OccurrenceActionResult>;

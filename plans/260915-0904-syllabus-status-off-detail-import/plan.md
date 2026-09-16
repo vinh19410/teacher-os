@@ -1,7 +1,7 @@
 ---
 title: "Bỏ trạng thái buổi học khỏi màn hình syllabus + import ghi đè ở màn hình detail"
 description: "Gỡ status buổi học khỏi mọi màn hình syllabus (status chỉ còn đổi ở lớp học), đưa import Excel/CSV về format 4 cột, và thêm nút import ghi đè có cảnh báo ở màn hình syllabus detail."
-status: pending
+status: completed
 priority: P2
 effort: 14h
 issue: 152
@@ -42,7 +42,7 @@ Ba thay đổi, bốn phase:
 | D5 | `AddLessonModal`/`EditLessonModal` thêm prop `showStatus?: boolean`; chỉ `curriculum-management-section.tsx` truyền `true` | 2 modal dùng chung 2 ngữ cảnh;	prop nhỏ nhất giữ 2 hành vi |
 | D6 | Fixture XLSX e2e được tạo lại bằng script `apps/e2e/scripts/regen-syllabus-import-fixture.mjs`; `exceljs` thêm vào **catalog** `pnpm-workspace.yaml` (apps/e2e tham chiếu `catalog:`); script anchor output bằng `import.meta.url` và tự-verify nội dung; commit kèm `pnpm-lock.yaml` (CI chạy `--frozen-lockfile`) | XLSX là binary; mọi devDep của e2e đang dùng `catalog:`; script sai cwd sẽ ghi fixture lạc chỗ và e2e đỏ misleading |
 | D7 | Nút import ở màn hình detail **chỉ hiện khi `sy.classId === null`** (template); bản copy của lớp không có nút này | Ghi đè bản copy lớp sẽ xóa sạch tiến độ done/current đang sống của lớp đó (progress class derive từ `syllabus_lesson.status`); status/"nội dung sống" chỉ thuộc về lớp học theo yêu cầu |
-| D8 | Trước khi mở modal xác nhận ghi đè: `await refresh()` (bus) để số liệu "sẽ bị xóa" lấy từ snapshot mới nhất; `useDirectKernelAction.run` đổi kiểu trả về thành `KernelCommandResult` (backward-compatible) để caller chỉ clear preview khi `refreshed`/`committed` | Modal hiện counts từ snapshot có thể stale (đa tab, `staleTime: Infinity`); `run()` hiện trả void và không bao giờ reject nên clear vô điều kiện phá preview của user khi 4xx retryable |
+| D8 | Trước khi mở modal xác nhận ghi đè: `await refresh()` (bus) để số liệu "sẽ bị xóa" lấy từ snapshot mới nhất; `useDirectKernelAction.run` đổi kiểu trả về thành `KernelCommandResult` (backward-compatible về runtime; về TYPE thì `KernelRun` trong `syllabus-mutations.tsx` phải mirror return type mới — F1, nếu không TS2322 tại 2 call sites) để caller chỉ clear preview khi `refreshed`/`committed` | Modal hiện counts từ snapshot có thể stale (đa tab, `staleTime: Infinity`); `run()` hiện trả void và không bao giờ reject nên clear vô điều kiện phá preview của user khi 4xx retryable |
 
 ## Goals
 
@@ -57,10 +57,10 @@ Ba thay đổi, bốn phase:
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Phase 1: Hợp đồng API & endpoint thay nội dung](./phase-01-server-contract-api.md) | Pending |
-| 2 | [Phase 2: Gỡ status khỏi màn hình syllabus](./phase-02-web-status-removal.md) | Pending |
-| 3 | [Phase 3: Parser import v3 — 4 cột + preview dùng chung](./phase-03-import-parser-v3.md) | Pending |
-| 4 | [Phase 4: Import ở màn hình detail + cảnh báo ghi đè](./phase-04-detail-import-overwrite.md) | Pending |
+| 1 | [Phase 1: Hợp đồng API & endpoint thay nội dung](./phase-01-server-contract-api.md) | Done |
+| 2 | [Phase 2: Gỡ status khỏi màn hình syllabus](./phase-02-web-status-removal.md) | Done |
+| 3 | [Phase 3: Parser import v3 — 4 cột + preview dùng chung](./phase-03-import-parser-v3.md) | Done |
+| 4 | [Phase 4: Import ở màn hình detail + cảnh báo ghi đè](./phase-04-detail-import-overwrite.md) | Done |
 
 ## Dependencies
 
@@ -118,6 +118,18 @@ Ba thay đổi, bốn phase:
 
 ### Whole-Plan Consistency Sweep
 Đã rà lại toàn bộ plan.md + 4 phase files sau khi vá: các mục D2/D3/D4/D6 cập nhật đồng bộ với phase files; câu modal Phase 4 giờ luôn đúng (chỉ template); dependency các phase không đổi; verify commands không đổi. Không còn mâu thuẫn chưa giải quyết.
+
+### Session — 2026-09-16 (kongming advisory re-review trước cook — checkpoint "sau plan gates")
+**Verdict:** GO-WITH-CONDITIONS. Verify độc lập ~30 claims trên worktree `88fedb9` — tất cả khớp, trừ findings mới dưới đây. Đã vá hết vào phase files (thuần cơ học, không cần vòng red-team mới).
+**Findings mới (F1–F5) & dispositions:**
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| F1 | Đổi return type `run` phá type `KernelRun` (`Promise<void>`) trong `syllabus-mutations.tsx:8-12` — `Promise<KernelCommandResult>` không assignable `Promise<void>` (TS2322 tại 2 call sites). Phase 4 thiếu file này trong Files to Modify | Critical | Accept — thêm file + Task 4.2 bước 1b mirror `KernelRun` | D8, Phase 4 Files, Task 4.2 |
+| F2 | Early-return `if (pendingKey) return;` (`use-direct-kernel-action.ts:23`) vi phạm kiểu khai báo `Promise<KernelCommandResult>` sau khi đổi (TS2322/TS2366) | Medium | Accept — guard trả `{kind:"outcome-unknown"}`, không qua `reportDirectOutcome` (không toast giả) | Phase 4 Task 4.2 |
+| F3 | Semantics reducer preserve-on-edit (Phase 2 Task 2.1) không có test khóa phía web | Medium | Accept — thêm 2 assertion reducer vào `data-store-reducer.test.ts` | Phase 2 Task 2.1 bước 5 |
+| F4 | E2e mới assert text ngắn ("3", "1 module") dễ strict-mode violation/flake | Low | Accept — ghi chú scope locator (locator cha StatCard / `getByRole("dialog")`) + thứ tự test hủy-trước-confirm | Phase 4 Task 4.3 bước 2 |
+| F5 | `replace-syllabus-content` không cần case reducer (switch có `default: return state`) — compile không gãy; edge `kind==="committed"` khi refresh fail hiếm, chấp nhận | Info | Accept — ghi nhận, không vá | — |
 
 ## Handoff
 

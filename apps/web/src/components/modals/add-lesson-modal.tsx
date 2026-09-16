@@ -11,11 +11,14 @@ export function AddLessonModal({
 	onClose,
 	syllabusId,
 	moduleId,
+	showStatus,
 }: {
 	open: boolean;
 	onClose: () => void;
 	syllabusId: string;
 	moduleId: string | null;
+	/** Chỉ màn hình lớp học bật — syllabus không sửa trạng thái buổi học. */
+	showStatus?: boolean;
 }) {
 	const [title, setTitle] = useState("");
 	const [objectives, setObjectives] = useState("");
@@ -47,7 +50,7 @@ export function AddLessonModal({
 				title: title.trim(),
 				objectives: objectives.trim(),
 				materials: materials.trim(),
-				status,
+				...(showStatus ? { status } : {}),
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -92,16 +95,20 @@ export function AddLessonModal({
 						placeholder="VD: Cam 15 Test 1 Task 1"
 					/>
 				</Field>
-				<Field label="Trạng thái">
-					<Select
-						value={status}
-						onChange={(e) => setStatus(e.target.value as SyllabusLessonStatus)}
-					>
-						<option value="upcoming">Sắp tới</option>
-						<option value="current">Đang học</option>
-						<option value="done">Đã dạy</option>
-					</Select>
-				</Field>
+				{showStatus && (
+					<Field label="Trạng thái">
+						<Select
+							value={status}
+							onChange={(e) =>
+								setStatus(e.target.value as SyllabusLessonStatus)
+							}
+						>
+							<option value="upcoming">Sắp tới</option>
+							<option value="current">Đang học</option>
+							<option value="done">Đã dạy</option>
+						</Select>
+					</Field>
+				)}
 				<div className="flex flex-col gap-2">
 					{error && (
 						<p role="alert" className="text-danger text-xs">

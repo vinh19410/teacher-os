@@ -9,6 +9,7 @@ import {
 	sessionStudents,
 } from "@/lib/class-sessions";
 import type { KernelAction } from "@/lib/data-actions";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 /**
@@ -32,7 +33,7 @@ export function SessionAttendanceModal({
 		key: string,
 		action: KernelAction,
 		successText: string,
-	) => Promise<void>;
+	) => Promise<KernelCommandResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 	onClose: () => void;

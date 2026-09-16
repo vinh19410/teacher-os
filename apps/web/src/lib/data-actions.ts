@@ -102,6 +102,12 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Ghi đè toàn bộ cây module/buổi học từ import Excel/CSV ở màn hình detail (issue #152). */
+			type: "replace-syllabus-content";
+			syllabusId: string;
+			modules: SyllabusModuleContent[];
+	  }
+	| {
 			/** Deep-copy a syllabus template into the class's own curriculum (issue #79). */
 			type: "import-syllabus";
 			classId: string;
@@ -131,7 +137,9 @@ export type KernelAction =
 				title: string;
 				objectives: string;
 				materials: string;
-				status: SyllabusLesson["status"];
+				// Form mở từ màn hình syllabus không gửi status — server/reducer
+				// tự default "upcoming" (add) và preserve (edit).
+				status?: SyllabusLesson["status"];
 			};
 	  }
 	| {
@@ -143,7 +151,7 @@ export type KernelAction =
 				title: string;
 				objectives: string;
 				materials: string;
-				status: SyllabusLesson["status"];
+				status?: SyllabusLesson["status"];
 			};
 	  }
 	| {

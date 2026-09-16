@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Parser import v3 — 4 cột + preview dùng chung"
-status: todo
+status: done
 priority: P1
 effort: "4h"
 dependencies: []
