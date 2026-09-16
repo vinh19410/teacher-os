@@ -7,6 +7,7 @@ import {
 	vietnamTodayISO,
 	vnWeekdayMon0,
 } from "./helpers";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
  * M1 DOD scenario (issue #59, docs/project-roadmap.md:44):
@@ -113,7 +114,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
  * The create-class UI never offers a start date ≤ today, so the class is
  * seeded through POST /api/classes directly (schema has no future-only
  * guard). Load-bearing details:
- * - API is http://localhost:8000 while Playwright's baseURL is the Vite
+ * - API is API_ORIGIN (mặc định :8000) while Playwright's baseURL is the Vite
  *   origin :8001 — a relative page.request.post would 404.
  * - CSRF demands the Vite Origin header plus the session cookie that
  *   page.request carries after signUpViaUi.
@@ -132,30 +133,27 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	await signUpViaUi(page);
 
 	const startDate = vietnamTodayISO();
-	const response = await page.request.post(
-		"http://localhost:8000/api/classes",
-		{
-			data: {
-				name: CLASS_NAME,
-				type: "ielts",
-				level: "",
-				skills: ["Writing"],
-				mode: "Online",
-				templateId: "",
-				schedule: {
-					days: [vnWeekdayMon0(startDate)],
-					start: "19:00",
-					end: "20:30",
-				},
-				sessionsTotal: 12,
-				startDate,
+	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {
+		data: {
+			name: CLASS_NAME,
+			type: "ielts",
+			level: "",
+			skills: ["Writing"],
+			mode: "Online",
+			templateId: "",
+			schedule: {
+				days: [vnWeekdayMon0(startDate)],
+				start: "19:00",
+				end: "20:30",
 			},
-			headers: {
-				Origin: "http://localhost:8001",
-				"Content-Type": "application/json",
-			},
+			sessionsTotal: 12,
+			startDate,
 		},
-	);
+		headers: {
+			Origin: WEB_ORIGIN,
+			"Content-Type": "application/json",
+		},
+	});
 	// 403 = Origin, 401 = cookie, 415 = content-type — fail loud with the code.
 	expect(response.status(), await response.text()).toBe(201);
 

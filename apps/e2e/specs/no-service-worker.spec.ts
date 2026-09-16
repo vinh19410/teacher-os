@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { WEB_ORIGIN } from "./origins";
 
 /**
  * No service worker may ship (issue #125): the vite-plugin-pwa SW broke SPA
@@ -88,7 +89,7 @@ test.describe("no service worker ships", () => {
 				{ timeout: 15_000 },
 			)
 			.toBe(0);
-		expect(await page.url()).toContain("localhost:8001");
+		expect(await page.url()).toContain(WEB_ORIGIN);
 		const cachesLeft = await page.evaluate(() => caches.keys());
 		expect(cachesLeft).toEqual([]);
 		// A reload after the purge lands on a working, SW-free app.

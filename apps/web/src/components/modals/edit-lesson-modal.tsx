@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
-import type { SyllabusLessonStatus } from "@/lib/mock-data";
+import type { SyllabusLessonKind, SyllabusLessonStatus } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -13,6 +13,7 @@ export function EditLessonModal({
 	syllabusId,
 	moduleId,
 	lessonId,
+	showKind,
 	showStatus,
 }: {
 	open: boolean;
@@ -20,6 +21,8 @@ export function EditLessonModal({
 	syllabusId: string;
 	moduleId: string | null;
 	lessonId: string | null;
+	/** Chỉ màn hình syllabus bật — loại buổi là nội dung giáo trình (#154). */
+	showKind?: boolean;
 	/** Chỉ màn hình lớp học bật — syllabus không sửa trạng thái buổi học. */
 	showStatus?: boolean;
 }) {
@@ -31,6 +34,7 @@ export function EditLessonModal({
 	const [title, setTitle] = useState("");
 	const [objectives, setObjectives] = useState("");
 	const [materials, setMaterials] = useState("");
+	const [kind, setKind] = useState<SyllabusLessonKind>("lesson");
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
@@ -40,6 +44,7 @@ export function EditLessonModal({
 		setTitle(lesson.title);
 		setObjectives(lesson.objectives === "—" ? "" : lesson.objectives);
 		setMaterials(lesson.materials === "—" ? "" : lesson.materials);
+		setKind(lesson.kind);
 		setStatus(lesson.status);
 		setLoadedFor(lessonId);
 	}
@@ -61,6 +66,9 @@ export function EditLessonModal({
 				title: title.trim(),
 				objectives: objectives.trim(),
 				materials: materials.trim(),
+				// Không showKind → không gửi key kind: server + reducer sẽ giữ
+				// nguyên loại buổi hiện tại (mirror showStatus, issue #154).
+				...(showKind ? { kind } : {}),
 				// Không showStatus → không gửi key status: server + reducer sẽ
 				// giữ nguyên trạng thái hiện tại của buổi học.
 				...(showStatus ? { status } : {}),
@@ -98,6 +106,18 @@ export function EditLessonModal({
 						onChange={(e) => setMaterials(e.target.value)}
 					/>
 				</Field>
+				{showKind && (
+					<Field label="Loại buổi học">
+						<Select
+							value={kind}
+							onChange={(e) => setKind(e.target.value as SyllabusLessonKind)}
+						>
+							<option value="lesson">Buổi học</option>
+							<option value="midterm">Thi giữa kỳ</option>
+							<option value="final">Thi cuối kỳ</option>
+						</Select>
+					</Field>
+				)}
 				{showStatus && (
 					<Field label="Trạng thái">
 						<Select

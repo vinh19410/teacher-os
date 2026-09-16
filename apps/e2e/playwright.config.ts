@@ -1,5 +1,10 @@
 import { defineConfig } from "@playwright/test";
 
+// Port override cho chạy song song với dev server chiếm 8000/8001 — mặc định
+// giữ nguyên như CI; boot:api cùng đọc env này (fail-loud semantics không đổi).
+const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
+const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
+
 export default defineConfig({
 	testDir: "./specs",
 	timeout: 120_000,
@@ -12,7 +17,7 @@ export default defineConfig({
 	retries: process.env.CI ? 1 : 0,
 	reporter: [["list"], ["html", { open: "never" }]],
 	use: {
-		baseURL: "http://localhost:8001",
+		baseURL: `http://localhost:${webPort}`,
 		// Pin Vietnam time so "start tomorrow" in the UI and the VN-today date
 		// gate of the attendance CTA (issue #91) can never drift apart when
 		// the runner sits in another timezone.
@@ -28,16 +33,21 @@ export default defineConfig({
 	webServer: [
 		{
 			command: "pnpm run boot:api",
-			url: "http://localhost:8000/readyz",
+			url: `http://localhost:${apiPort}/readyz`,
 			// Fail loud on a busy port: silently reusing a dev server (alchemy
 			// worker on :8000) would run specs against the wrong backend.
 			reuseExistingServer: false,
 			timeout: 120_000,
+			env: { E2E_API_PORT: String(apiPort), E2E_WEB_PORT: String(webPort) },
 		},
 		{
-			command: "pnpm --filter web exec vite",
-			url: "http://localhost:8001/",
-			env: { VITE_SERVER_URL: "http://localhost:8000" },
+			command: `pnpm --filter web exec vite --port ${webPort} --strictPort`,
+			url: `http://localhost:${webPort}/`,
+			env: {
+				VITE_SERVER_URL: `http://localhost:${apiPort}`,
+				E2E_API_PORT: String(apiPort),
+				E2E_WEB_PORT: String(webPort),
+			},
 			reuseExistingServer: false,
 			timeout: 120_000,
 		},

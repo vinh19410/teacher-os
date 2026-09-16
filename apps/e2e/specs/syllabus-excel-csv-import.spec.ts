@@ -3,9 +3,11 @@ import { signUpViaUi } from "./helpers";
 
 // Hai định dạng = hai code path parse khác nhau (papaparse vs
 // read-excel-file) — CSV không exercise read-excel-file chút nào.
+// Fixture v4 (issue #154): 5 cột có cột Loại — 2 module · 5 buổi, buổi
+// "giữa kỳ" cuối Module 1 (#3), "cuối kỳ" cuối Module 2 (#5).
 for (const [format, fixture] of [
-	["CSV", "fixtures/syllabus-import.sample.csv"],
-	["XLSX", "fixtures/syllabus-import.sample.xlsx"],
+	["CSV", "fixtures/syllabus-import.v4.csv"],
+	["XLSX", "fixtures/syllabus-import.v4.xlsx"],
 ] as const) {
 	test(`tạo syllabus bằng upload ${format}: preview rồi thấy đủ modules/buổi trên trang chi tiết`, async ({
 		page,
@@ -20,32 +22,76 @@ for (const [format, fixture] of [
 		// Scope vào dialog: list page phía sau cũng có chip "Writing" (ChipFilter).
 		await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 		await page.setInputFiles("input[type=file]", fixture);
-		await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+		await expect(dialog.getByText("2 module · 5 buổi học")).toBeVisible();
 		await expect(dialog.getByRole("table")).toBeVisible();
 		await expect(
 			dialog.getByRole("cell", { name: "Hiểu cấu trúc đề" }),
 		).toBeVisible();
-		// Khóa hợp đồng ordinal xuyên module của cột #: buổi 3 là hàng đầu
-		// Module 2 (Buổi 1–2 thuộc Module 1) — "3" và "Module 2" cùng hàng.
+		// Cột Loại ở preview: nhãn đầy đủ khớp syllabus detail (issue #154).
+		await expect(
+			dialog.getByRole("cell", { name: "Thi giữa kỳ" }),
+		).toBeVisible();
+		await expect(
+			dialog.getByRole("cell", { name: "Thi cuối kỳ" }),
+		).toBeVisible();
+		// Khóa hợp đồng ordinal xuyên module của cột #: buổi 3 (giữa kỳ) là
+		// hàng cuối Module 1, buổi 5 (cuối kỳ) thuộc Module 2 — "5" và
+		// "Module 2" cùng hàng (Buổi 1–3 thuộc Module 1).
 		await expect(
 			dialog.getByRole("cell", { name: "3", exact: true }),
 		).toBeVisible();
 		await expect(
-			dialog.getByRole("cell", { name: "Module 2 — Thực hành" }),
+			dialog.getByRole("cell", { name: "5", exact: true }),
 		).toBeVisible();
-		await expect(dialog.getByLabel("Số buổi dự kiến")).toHaveValue("3");
+		// .first(): với v4, Module 2 có 2 buổi — row sau giữ span rỗng với
+		// attr title trùng tên module (accessory name trùng, quirk có sẵn).
+		await expect(
+			dialog.getByRole("cell", { name: "Module 2 — Thực hành" }).first(),
+		).toBeVisible();
+		await expect(dialog.getByLabel("Số buổi dự kiến")).toHaveValue("5");
 		await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 		await page.waitForURL(/\/syllabus\/.+/);
 		await expect(page.getByText("Module 1 — Nền tảng")).toBeVisible();
 		await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
-		await expect(page.getByText("Buổi 1")).toBeVisible();
-		await expect(page.getByText("Buổi 2")).toBeVisible();
-		// exact:true — "Buổi 3" chỉ là title buổi học (trang detail không còn
-		// card "Buổi hiện tại" từ issue #152); substring match có thể trúng
-		// "Buổi 3" lồng trong text khác.
-		await expect(page.getByText("Buổi 3", { exact: true })).toBeVisible();
+		// Không exact:true với buổi thi — title div chứa thêm text badge
+		// ("Buổi 3Thi giữa kỳ"), exact match sẽ trượt. getByText khớp element
+		// sâu nhất chứa text nên không đụng text khác trên trang.
+		for (const n of ["1", "2", "3", "4", "5"]) {
+			await expect(page.getByText(`Buổi ${n}`)).toBeVisible();
+		}
+		// Highlight buổi thi: badge warn + nền dòng amber (bg-warn-soft/50) —
+		// đúng 2 dòng thi giữa kỳ/cuối kỳ.
+		await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
+		await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
+		await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
 	});
 }
+
+test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regression #154)", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/syllabus");
+	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
+	const dialog = page.getByRole("dialog");
+	await dialog
+		.getByPlaceholder("VD: IELTS Writing 7.0")
+		.fill(`E2E Legacy v3 ${Date.now()}`);
+	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
+	await page.setInputFiles(
+		"input[type=file]",
+		"fixtures/syllabus-import.sample.csv",
+	);
+	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
+	await page.waitForURL(/\/syllabus\/.+/);
+	for (const n of ["1", "2", "3"]) {
+		await expect(page.getByText(`Buổi ${n}`, { exact: true })).toBeVisible();
+	}
+	// Không có buổi thi nào → không badge, không dòng tint.
+	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
+	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(0);
+});
 
 test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đã nhập", async ({
 	page,

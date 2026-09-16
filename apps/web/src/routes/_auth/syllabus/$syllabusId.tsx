@@ -11,6 +11,10 @@ import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
 import { SyllabusImportPreview } from "@/components/syllabus/import-preview";
 import {
+	isTestSessionKind,
+	LessonKindBadge,
+} from "@/components/syllabus/lesson-kind";
+import {
 	SyllabusMutationButtons,
 	useSyllabusMutations,
 } from "@/components/syllabus/syllabus-mutations";
@@ -22,6 +26,7 @@ import { Modal } from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
+import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
@@ -279,10 +284,20 @@ function SyllabusDetail({
 								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
-										className="grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]"
+										// Buổi thi tint nền amber; kind lạ không bao giờ
+										// highlight (isTestSessionKind kiểm tra dương, #154).
+										// cn() — concat template bị biome gộp mất space
+										// giữa class tĩnh và class điều kiện.
+										className={cn(
+											"grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]",
+											isTestSessionKind(l.kind) && "bg-warn-soft/50",
+										)}
 									>
 										<div>
-											<div className="font-medium text-sm">{l.title}</div>
+											<div className="flex items-center gap-2 font-medium text-sm">
+												{l.title}
+												<LessonKindBadge kind={l.kind} />
+											</div>
 											<div className="mt-0.5 text-[11px] text-muted-fg">
 												{l.materials}
 											</div>
@@ -386,6 +401,7 @@ function SyllabusDetail({
 				onClose={() => setAddLessonModuleId(null)}
 				syllabusId={sy.id}
 				moduleId={addLessonModuleId}
+				showKind
 			/>
 			<EditLessonModal
 				open={editLessonRef !== null}
@@ -393,6 +409,7 @@ function SyllabusDetail({
 				syllabusId={sy.id}
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
+				showKind
 			/>
 			<Modal
 				open={confirmOverwriteOpen}

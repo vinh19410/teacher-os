@@ -86,6 +86,7 @@ const snapshot: KernelSnapshot = {
 							title: "Line chart",
 							objectives: "",
 							materials: "Cam 15",
+							kind: "lesson",
 							status: "done",
 						},
 						{
@@ -93,6 +94,7 @@ const snapshot: KernelSnapshot = {
 							title: "Bar chart",
 							objectives: "so sánh",
 							materials: "",
+							kind: "lesson",
 							status: "current",
 						},
 					],

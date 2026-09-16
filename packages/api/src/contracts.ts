@@ -128,6 +128,9 @@ export const syllabusModuleContentSchema = z.object({
 				title: z.string().min(1).max(500),
 				objectives: z.string().max(10_000).default(""),
 				materials: z.string().max(10_000).default(""),
+				// Loại buổi (issue #154): default "lesson" — payload create/
+				// replace luôn có kind, file import 4 cột v3 chạy như cũ.
+				kind: z.enum(["lesson", "midterm", "final"]).default("lesson"),
 				status: z.enum(["done", "current", "upcoming"]).default("upcoming"),
 			}),
 		)
@@ -189,6 +192,10 @@ export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
 	materials: z.string().default(""),
+	// Loại buổi (issue #154): optional như status — form mở từ màn hình lớp
+	// không gửi kind; route edit preserve giá trị existing, route add default
+	// "lesson" khi vắng.
+	kind: z.enum(["lesson", "midterm", "final"]).optional(),
 	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
 	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
 	status: z.enum(["done", "current", "upcoming"]).optional(),
@@ -435,6 +442,8 @@ export interface KernelSyllabusLessonRow {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Loại buổi (issue #154): "lesson" | "midterm" | "final"; `| string` cho forward-compat. */
+	kind: "lesson" | "midterm" | "final" | string;
 	status: "done" | "current" | "upcoming" | string;
 }
 

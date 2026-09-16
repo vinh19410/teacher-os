@@ -1,14 +1,15 @@
 import type { SyllabusModuleContent } from "@teacher-os/api/contracts";
 import { X } from "lucide-react";
+import { LessonKindBadge } from "@/components/syllabus/lesson-kind";
 import { Button } from "@/components/ui/button";
 import type { SyllabusImportResult } from "@/lib/syllabus-import";
 
-const PREVIEW_HEADERS = ["#", "Module", "Mục tiêu", "Tài liệu"];
+const PREVIEW_HEADERS = ["#", "Module", "Mục tiêu", "Tài liệu", "Loại"];
 
 /**
  * Preview kết quả parse import Excel/CSV — dùng chung popup tạo syllabus và
- * màn hình syllabus detail (issue #152): bảng 4 cột khi ok, danh sách lỗi
- * (cap 100) khi lỗi, nút gỡ file trên cả hai nhánh.
+ * màn hình syllabus detail (issue #152): bảng 5 cột khi ok (cột Loại #154),
+ * danh sách lỗi (cap 100) khi lỗi, nút gỡ file trên cả hai nhánh.
  */
 export function SyllabusImportPreview({
 	result,
@@ -118,6 +119,11 @@ export function SyllabusImportPreview({
 										>
 											{l.materials}
 										</span>
+									</td>
+									<td className="px-2 py-1.5">
+										{/* Nhãn đầy đủ "Thi giữa kỳ"/"Thi cuối kỳ" — cùng
+										    nguồn lessonKindLabel với syllabus detail (#154). */}
+										<LessonKindBadge kind={l.kind} />
 									</td>
 								</tr>
 							)),
