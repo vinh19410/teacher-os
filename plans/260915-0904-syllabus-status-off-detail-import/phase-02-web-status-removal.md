@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Gỡ status khỏi màn hình syllabus"
-status: todo
+status: done
 priority: P1
 effort: "3h"
 dependencies: [1]
