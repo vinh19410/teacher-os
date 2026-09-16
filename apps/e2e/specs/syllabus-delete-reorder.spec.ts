@@ -1,8 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaUi } from "./helpers";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
-const API = "http://localhost:8000";
-const ORIGIN = "http://localhost:8001";
+const API = API_ORIGIN;
+const ORIGIN = WEB_ORIGIN;
 
 async function apiPost(
 	page: Page,

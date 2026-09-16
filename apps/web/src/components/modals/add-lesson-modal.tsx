@@ -2,7 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import type { SyllabusLessonStatus } from "@/lib/mock-data";
+import type { SyllabusLessonKind, SyllabusLessonStatus } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -11,18 +11,22 @@ export function AddLessonModal({
 	onClose,
 	syllabusId,
 	moduleId,
+	showKind,
 	showStatus,
 }: {
 	open: boolean;
 	onClose: () => void;
 	syllabusId: string;
 	moduleId: string | null;
+	/** Chỉ màn hình syllabus bật — loại buổi là nội dung giáo trình (#154). */
+	showKind?: boolean;
 	/** Chỉ màn hình lớp học bật — syllabus không sửa trạng thái buổi học. */
 	showStatus?: boolean;
 }) {
 	const [title, setTitle] = useState("");
 	const [objectives, setObjectives] = useState("");
 	const [materials, setMaterials] = useState("");
+	const [kind, setKind] = useState<SyllabusLessonKind>("lesson");
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
@@ -31,6 +35,7 @@ export function AddLessonModal({
 		setTitle("");
 		setObjectives("");
 		setMaterials("");
+		setKind("lesson");
 		setStatus("upcoming");
 	}
 
@@ -50,6 +55,9 @@ export function AddLessonModal({
 				title: title.trim(),
 				objectives: objectives.trim(),
 				materials: materials.trim(),
+				// Không showKind → không gửi key kind: server + reducer tự
+				// default "lesson" (mirror showStatus, issue #154).
+				...(showKind ? { kind } : {}),
 				...(showStatus ? { status } : {}),
 			},
 		});
@@ -95,6 +103,18 @@ export function AddLessonModal({
 						placeholder="VD: Cam 15 Test 1 Task 1"
 					/>
 				</Field>
+				{showKind && (
+					<Field label="Loại buổi học">
+						<Select
+							value={kind}
+							onChange={(e) => setKind(e.target.value as SyllabusLessonKind)}
+						>
+							<option value="lesson">Buổi học</option>
+							<option value="midterm">Thi giữa kỳ</option>
+							<option value="final">Thi cuối kỳ</option>
+						</Select>
+					</Field>
+				)}
 				{showStatus && (
 					<Field label="Trạng thái">
 						<Select

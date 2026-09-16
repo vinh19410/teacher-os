@@ -254,6 +254,95 @@ describe("reducer", () => {
 		expect(edited?.status).toBe("done");
 	});
 
+	test("add-lesson with kind persists it (mirror server, issue #154)", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "add-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			payload: {
+				title: "Thi giữa kỳ",
+				objectives: "o",
+				materials: "m",
+				kind: "midterm",
+			},
+		});
+		const added = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.at(-1);
+		expect(added?.kind).toBe("midterm");
+	});
+
+	test("add-lesson without kind defaults to lesson (mirror server, issue #154)", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "add-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			payload: { title: "Lesson không kind", objectives: "o", materials: "m" },
+		});
+		const added = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.at(-1);
+		expect(added?.kind).toBe("lesson");
+	});
+
+	test("edit-lesson with kind updates it (mirror server, issue #154)", () => {
+		const before = cloneSeed();
+		const next = reducer(before, {
+			type: "edit-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			lessonId: "sy1-l1",
+			payload: {
+				title: "Đổi thành thi cuối kỳ",
+				objectives: "o",
+				materials: "m",
+				kind: "final",
+			},
+		});
+		const edited = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.find((l) => l.id === "sy1-l1");
+		expect(edited?.kind).toBe("final");
+	});
+
+	test("edit-lesson without kind preserves the old kind (mirror server, issue #154)", () => {
+		const before = cloneSeed();
+		// Seed lesson đầu là lesson thường — dùng add để có buổi thi trước.
+		const withExam = reducer(before, {
+			type: "add-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			payload: {
+				title: "Thi cuối kỳ",
+				objectives: "o",
+				materials: "m",
+				kind: "final",
+			},
+		});
+		const examId = withExam.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.at(-1)?.id;
+		const next = reducer(withExam, {
+			type: "edit-lesson",
+			syllabusId: "sy1",
+			moduleId: "sy1-m1",
+			lessonId: examId ?? "",
+			payload: { title: "Đổi tên chỉ", objectives: "o", materials: "m" },
+		});
+		const edited = next.syllabi
+			.find((s) => s.id === "sy1")
+			?.modules.find((m) => m.id === "sy1-m1")
+			?.lessons.find((l) => l.id === examId);
+		expect(edited?.title).toBe("Đổi tên chỉ");
+		expect(edited?.kind).toBe("final");
+	});
+
 	test("edit-module does not change totalLessons", () => {
 		const before = cloneSeed();
 		const total = before.syllabi.find((s) => s.id === "sy1")?.totalLessons;

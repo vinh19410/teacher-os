@@ -90,6 +90,12 @@ export const syllabusLesson = sqliteTable(
 		title: text("title").notNull(),
 		objectives: text("objectives").notNull().default(""),
 		materials: text("materials").notNull().default(""),
+		/**
+		 * Loại buổi (issue #154): kind là nội dung giáo trình (copy
+		 * template→lớp giữ nguyên); status là tiến độ per-lớp (reset
+		 * `upcoming` khi copy). Value space do zod contract guarded.
+		 */
+		kind: text("kind").notNull().default("lesson"),
 		status: text("status").notNull().default("upcoming"),
 		position: integer("position").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })

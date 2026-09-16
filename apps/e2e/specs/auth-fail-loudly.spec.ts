@@ -1,4 +1,5 @@
 import { expect, type Page, type Route, test } from "@playwright/test";
+import { WEB_ORIGIN } from "./origins";
 
 /**
  * Auth failures must be loud (issue #125): the QC P0 was invisible because the
@@ -12,7 +13,7 @@ import { expect, type Page, type Route, test } from "@playwright/test";
  */
 
 const CORS_BASE = {
-	"access-control-allow-origin": "http://localhost:8001",
+	"access-control-allow-origin": WEB_ORIGIN,
 	"access-control-allow-credentials": "true",
 };
 

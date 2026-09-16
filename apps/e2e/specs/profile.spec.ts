@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import { expect, test } from "@playwright/test";
 import { seedGoogleAccount } from "../src/account-seed";
 import { signUpViaUi } from "./helpers";
@@ -109,9 +110,9 @@ test("guard server /update-user thật: tên quá ngắn nhận 400 tiếng Vi�
 	// this exercises the REAL server hook (the UI form would validate first),
 	// so a silent wire-up regression of the validation guard fails here.
 	const res = await page.request.post(
-		"http://localhost:8000/api/auth/update-user",
+		`${API_ORIGIN}/api/auth/update-user`,
 		{
-			headers: { origin: "http://localhost:8001" },
+			headers: { origin: WEB_ORIGIN },
 			data: { name: "A" },
 		},
 	);

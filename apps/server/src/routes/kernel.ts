@@ -278,6 +278,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					title: l.title,
 					objectives: l.objectives,
 					materials: l.materials,
+					// kind là nội dung giáo trình — copy giữ nguyên (status
+					// là tiến độ per-lớp, reset upcoming ở dưới).
+					kind: l.kind,
 					status: "upcoming",
 					position: l.position,
 					createdAt: l.createdAt,
@@ -1300,6 +1303,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 						title: l.title,
 						objectives: l.objectives,
 						materials: l.materials,
+						kind: l.kind,
 						status: l.status,
 						position: li,
 					}),
@@ -1379,6 +1383,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 						title: l.title,
 						objectives: l.objectives,
 						materials: l.materials,
+						kind: l.kind,
 						status: l.status,
 						position: li,
 					}),
@@ -1582,6 +1587,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			title: input.title,
 			objectives: input.objectives,
 			materials: input.materials,
+			kind: input.kind ?? "lesson",
 			status: input.status ?? "upcoming",
 			position: (last?.max ?? -1) + 1,
 		});
@@ -1657,7 +1663,11 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const { id, mid, lid } = c.req.param();
 
 		const [lesson] = await db
-			.select({ id: syllabusLesson.id, status: syllabusLesson.status })
+			.select({
+				id: syllabusLesson.id,
+				kind: syllabusLesson.kind,
+				status: syllabusLesson.status,
+			})
 			.from(syllabusLesson)
 			.innerJoin(syllabusModule, eq(syllabusLesson.moduleId, syllabusModule.id))
 			.where(
@@ -1678,7 +1688,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				title: input.title,
 				objectives: input.objectives,
 				materials: input.materials,
-				// Body không có status (form syllabus) → giữ nguyên status hiện tại.
+				// Body không có kind/status (form lớp) → giữ nguyên giá trị hiện tại.
+				kind: input.kind ?? lesson.kind,
 				status: input.status ?? lesson.status,
 			})
 			.where(

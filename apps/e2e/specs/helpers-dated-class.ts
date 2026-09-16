@@ -5,6 +5,7 @@
  * — the ['kernel'] cache is staleTime: Infinity. Returns nothing; callers
  * navigate themselves. */
 import type { Page } from "@playwright/test";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 export async function seedDatedClass(
 	page: Page,
@@ -16,7 +17,7 @@ export async function seedDatedClass(
 	},
 ): Promise<string> {
 	const response = await page.request.post(
-		"http://localhost:8000/api/classes",
+		`${API_ORIGIN}/api/classes`,
 		{
 			data: {
 				name: opts.name,
@@ -34,7 +35,7 @@ export async function seedDatedClass(
 				startDate: opts.startDate,
 			},
 			headers: {
-				Origin: "http://localhost:8001",
+				Origin: WEB_ORIGIN,
 				"Content-Type": "application/json",
 			},
 		},

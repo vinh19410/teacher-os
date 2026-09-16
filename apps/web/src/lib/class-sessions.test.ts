@@ -642,6 +642,7 @@ describe("sessionLessonInfo", () => {
 							title: "L1: Intro & Diagnostic",
 							objectives: "Assess current band score",
 							materials: "Diagnostic test PDF",
+							kind: "lesson",
 							status: "done",
 						},
 						{
@@ -649,6 +650,7 @@ describe("sessionLessonInfo", () => {
 							title: "L2: Pronunciation Core",
 							objectives: "Master IPA vowels",
 							materials: "Phonetics chart",
+							kind: "lesson",
 							status: "current",
 						},
 					],
@@ -662,6 +664,7 @@ describe("sessionLessonInfo", () => {
 							title: "L3: Complex Sentences",
 							objectives: "Use conditional clauses",
 							materials: "Grammar worksheet",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -776,19 +779,20 @@ describe("sessionLessonInfo", () => {
 		const syllabus = makeSyllabus({
 			modules: [
 				{ id: "mod-empty", title: "Empty Module", lessons: [] },
-				{
-					id: "mod-1",
-					title: "Module 1",
-					lessons: [
-						{
-							id: "les-1",
-							title: "Lesson 1",
-							objectives: "Obj 1",
-							materials: "Mat 1",
-							status: "done",
-						},
-					],
-				},
+					{
+						id: "mod-1",
+						title: "Module 1",
+						lessons: [
+							{
+								id: "les-1",
+								title: "Lesson 1",
+								objectives: "Obj 1",
+								materials: "Mat 1",
+								kind: "lesson",
+								status: "done",
+							},
+						],
+					},
 			],
 		});
 		const sessions = buildSessions();

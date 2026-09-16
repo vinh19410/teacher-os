@@ -116,11 +116,14 @@ export interface ClassGroup {
 }
 
 export type SyllabusLessonStatus = "done" | "current" | "upcoming";
+/** Loại buổi (issue #154): midterm/final là buổi thi, hiển thị highlight. */
+export type SyllabusLessonKind = "lesson" | "midterm" | "final";
 export interface SyllabusLesson {
 	id: string;
 	title: string;
 	objectives: string;
 	materials: string;
+	kind: SyllabusLessonKind;
 	status: SyllabusLessonStatus;
 }
 export interface SyllabusModule {

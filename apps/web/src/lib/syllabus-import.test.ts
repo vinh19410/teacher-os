@@ -27,6 +27,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "Mục tiêu",
 							materials: "Tài liệu",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -116,12 +117,14 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "Mục tiêu A",
 							materials: "Tài liệu A",
+							kind: "lesson",
 							status: "upcoming",
 						},
 						{
 							title: "Buổi 2",
 							objectives: "Viết introduction",
 							materials: "File mẫu 2",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -134,6 +137,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 3",
 							objectives: "Viết body paragraph",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -160,6 +164,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "mục tiêu",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -185,12 +190,14 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "o1",
 							materials: "m1",
+							kind: "lesson",
 							status: "upcoming",
 						},
 						{
 							title: "Buổi 2",
 							objectives: "o2",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -224,12 +231,14 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "o1",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 						{
 							title: "Buổi 2",
 							objectives: "o2",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -243,6 +252,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 3",
 							objectives: "o3",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -279,20 +289,20 @@ describe("rowsToModules", () => {
 		expect(result).toEqual({
 			ok: false,
 			errors: [
-				'Dòng 1: file có cột dữ liệu thừa ở cột thứ 5 — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+				'Dòng 1: cột Loại nhận "đã dạy" — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
 			],
 		});
 
 		// Nhiều dòng vi phạm → mỗi dòng một lỗi, giữ số dòng file gốc.
 		const multi = rowsToModules([
 			["M1", "", "o", "m", "đã dạy"],
-			["", "", "o2", "", "x"],
+			["", "", "o2", "", "current"],
 		]);
 		expect(multi).toEqual({
 			ok: false,
 			errors: [
-				'Dòng 1: file có cột dữ liệu thừa ở cột thứ 5 — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
-				'Dòng 2: file có cột dữ liệu thừa ở cột thứ 5 — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+				'Dòng 1: cột Loại nhận "đã dạy" — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+				'Dòng 2: cột Loại nhận "current" — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
 			],
 		});
 	});
@@ -315,7 +325,7 @@ describe("rowsToModules", () => {
 		expect(result).toEqual({
 			ok: false,
 			errors: [
-				'Dòng 3: file có cột dữ liệu thừa ở cột thứ 5 — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+				"Dòng 3: loại buổi không hợp lệ 'thừa-cột-5' (dùng: giữa kỳ / cuối kỳ)",
 			],
 		});
 	});
@@ -347,6 +357,7 @@ describe("rowsToModules", () => {
 						title: `Buổi ${i + 1}`,
 						objectives: `o${i + 1}`,
 						materials: "",
+						kind: "lesson",
 						status: "upcoming",
 					})),
 				},
@@ -427,7 +438,7 @@ describe("rowsToModules", () => {
 		});
 	});
 
-	test("row ngắn (thiếu cột) được pad về 4 cột, không crash; ô thứ 5 rỗng bị cắt an toàn, khác rỗng là lỗi", () => {
+	test("row ngắn (thiếu cột) được pad về 5 cột, không crash; ô 6+ bị cắt an toàn", () => {
 		const short = rowsToModules([["M1"], ["", "", "o1"]]);
 		expect(short).toEqual({
 			ok: true,
@@ -440,6 +451,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "o1",
 							materials: "",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -461,6 +473,7 @@ describe("rowsToModules", () => {
 							title: "Buổi 1",
 							objectives: "o",
 							materials: "m",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -469,9 +482,141 @@ describe("rowsToModules", () => {
 			lessonCount: 1,
 		});
 
-		// Ô thứ 5 CÓ nội dung → lỗi dòng (không bỏ ngầm dữ liệu user).
+		// Ô thứ 5 CÓ nội dung lạ → lỗi dòng (không bỏ ngầm dữ liệu user).
 		const longFilledFifth = rowsToModules([["M1", "d", "o", "m", "x"]]);
 		expect(longFilledFifth.ok).toBe(false);
+		if (!longFilledFifth.ok) {
+			expect(longFilledFifth.errors[0]).toBe(
+				"Dòng 1: loại buổi không hợp lệ 'x' (dùng: giữa kỳ / cuối kỳ)",
+			);
+		}
+	});
+});
+
+describe("import v4 cột Loại (issue #154)", () => {
+	test("mapping 6 giá trị Loại: rỗng/buổi học/lesson → lesson; giữa kỳ/midterm → midterm; cuối kỳ/final → final", () => {
+		const result = rowsToModules([
+			["M1", "", "o1", "", ""],
+			["", "", "o2", "", "buổi học"],
+			["", "", "o3", "", "lesson"],
+			["", "", "o4", "", "giữa kỳ"],
+			["", "", "o5", "", "MIDTERM"],
+			["M2", "", "o6", "", "cuối kỳ"],
+			["", "", "o7", "", "Final"],
+		]);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.modules[0].lessons.map((l) => l.kind)).toEqual([
+				"lesson",
+				"lesson",
+				"lesson",
+				"midterm",
+				"midterm",
+			]);
+			expect(result.modules[1].lessons.map((l) => l.kind)).toEqual([
+				"final",
+				"final",
+			]);
+		}
+	});
+
+	test("Loại lạ → lỗi đúng dòng với đúng câu, không parse nửa chừng", () => {
+		const result = rowsToModules([
+			["M1", "", "o1", "", "giữa kỳ"],
+			["", "", "o2", "", "thi giữa kỳ"],
+		]);
+		expect(result).toEqual({
+			ok: false,
+			errors: [
+				"Dòng 2: loại buổi không hợp lệ 'thi giữa kỳ' (dùng: giữa kỳ / cuối kỳ)",
+			],
+		});
+	});
+
+	test("dòng chỉ điền Loại vẫn tạo buổi thi (không cần mục tiêu/tài liệu)", () => {
+		const result = rowsToModules([
+			["M1", "", "", ""],
+			["", "", "", "", "giữa kỳ"],
+			["", "", "", "", "cuối kỳ"],
+		]);
+		expect(result).toEqual({
+			ok: true,
+			modules: [
+				{
+					title: "M1",
+					description: "",
+					lessons: [
+						{
+							title: "Buổi 1",
+							objectives: "",
+							materials: "",
+							kind: "midterm",
+							status: "upcoming",
+						},
+						{
+							title: "Buổi 2",
+							objectives: "",
+							materials: "",
+							kind: "final",
+							status: "upcoming",
+						},
+					],
+				},
+			],
+			lessonCount: 2,
+		});
+	});
+
+	test("file 4 cột v3 (không cột Loại) vẫn import không lỗi — regression bắt buộc", () => {
+		const result = rowsToModules([
+			["Module", "Mô tả module", "Mục tiêu", "Tài liệu"],
+			["M1", "d1", "o1", "m1"],
+			["", "", "o2", ""],
+		]);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(
+				result.modules.flatMap((m) => m.lessons).map((l) => l.kind),
+			).toEqual(["lesson", "lesson"]);
+		}
+	});
+
+	test("cap 500 đếm cả loại-only row: 500 mục → ok, 501 → lỗi", () => {
+		const at500: unknown[][] = [["M1", "", "", ""]];
+		for (let i = 1; i <= 499; i++) {
+			at500.push(["", "", `o${i}`, "", i <= 10 ? "giữa kỳ" : ""]);
+		}
+		const ok500 = rowsToModules(at500);
+		expect(ok500.ok).toBe(true);
+		if (ok500.ok) {
+			expect(ok500.lessonCount).toBe(499);
+			expect(
+				ok500.modules[0].lessons.filter((l) => l.kind === "midterm"),
+			).toHaveLength(10);
+		}
+
+		const at501: unknown[][] = [["M1", "", "", ""]];
+		for (let i = 1; i <= 500; i++) {
+			at501.push(["", "", "", "", "cuối kỳ"]);
+		}
+		expect(rowsToModules(at501)).toEqual({
+			ok: false,
+			errors: ["File có 501 mục (module + buổi học), vượt giới hạn 500."],
+		});
+	});
+
+	test("v2 vocab check chạy TRƯỚC mapping Loại — 'đã dạy' báo old-template, không báo loại lạ", () => {
+		const result = rowsToModules([
+			["M1", "", "o", "", "sắp tới"],
+			["", "", "o2", "", "upcoming"],
+		]);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.errors).toEqual([
+				'Dòng 1: cột Loại nhận "sắp tới" — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+				'Dòng 2: cột Loại nhận "upcoming" — có thể bạn đang dùng template cũ (cột "Trạng thái"). Hãy tải file mẫu mới.',
+			]);
+		}
 	});
 });
 
@@ -487,7 +632,7 @@ describe("normalizeRow", () => {
 		const mixed = normalizeRow(["M1", 42, true, null, undefined], 1);
 		expect(mixed).toEqual({
 			ok: true,
-			cells: ["M1", "42", "true", ""],
+			cells: ["M1", "42", "true", "", ""],
 		});
 	});
 });
@@ -509,6 +654,7 @@ describe("parseSyllabusFile (CSV)", () => {
 							title: "Buổi 1",
 							objectives: "o1",
 							materials: "m1",
+							kind: "lesson",
 							status: "upcoming",
 						},
 					],
@@ -561,15 +707,29 @@ describe("parseSyllabusFile (CSV)", () => {
 });
 
 describe("buildSampleCsv", () => {
-	test("buildSampleCsv có BOM, CRLF, 4 dòng; header 4 cột không 'Trạng thái'; dòng 2 module rỗng kế thừa; dòng 3 module mới", () => {
+	test("buildSampleCsv có BOM, CRLF, 6 dòng; header 5 cột 'Loại' không 'Trạng thái'; 5 buổi với giữa kỳ cuối M1, cuối kỳ cuối M2 (law 7 v4)", () => {
 		const csv = buildSampleCsv();
 		expect(csv.startsWith("\uFEFF")).toBe(true);
 		const lines = csv.slice(1).split("\r\n");
-		expect(lines).toHaveLength(4);
-		expect(lines[0]).toBe("Module,Mô tả module,Mục tiêu,Tài liệu");
+		expect(lines).toHaveLength(6);
+		expect(lines[0]).toBe("Module,Mô tả module,Mục tiêu,Tài liệu,Loại");
 		expect(lines[0]).not.toContain("Trạng thái");
 		expect(lines[1].startsWith("Module 1 — Nền tảng")).toBe(true);
 		expect(lines[2].startsWith(",")).toBe(true);
-		expect(lines[3].startsWith("Module 2 — Thực hành")).toBe(true);
+		expect(lines[3]).toBe(",,Kiểm tra giữa kỳ,,giữa kỳ");
+		expect(lines[4].startsWith("Module 2 — Thực hành")).toBe(true);
+		expect(lines[5]).toBe(",,Kiểm tra cuối kỳ,,cuối kỳ");
+
+		// Round-trip: file mẫu của chính app phải parse ra đúng 5 buổi thi/không thi.
+		const result = rowsToModules(
+			lines.slice(1).map((line) => line.split(",")),
+		);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.lessonCount).toBe(5);
+			expect(
+				result.modules.flatMap((m) => m.lessons).map((l) => l.kind),
+			).toEqual(["lesson", "lesson", "midterm", "lesson", "final"]);
+		}
 	});
 });

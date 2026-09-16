@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import {
 	addDaysISO,
 	gotoWeek,
@@ -113,7 +114,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
  * The create-class UI never offers a start date ≤ today, so the class is
  * seeded through POST /api/classes directly (schema has no future-only
  * guard). Load-bearing details:
- * - API is http://localhost:8000 while Playwright's baseURL is the Vite
+ * - API is API_ORIGIN (mặc định :8000) while Playwright's baseURL is the Vite
  *   origin :8001 — a relative page.request.post would 404.
  * - CSRF demands the Vite Origin header plus the session cookie that
  *   page.request carries after signUpViaUi.
@@ -133,7 +134,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 
 	const startDate = vietnamTodayISO();
 	const response = await page.request.post(
-		"http://localhost:8000/api/classes",
+		`${API_ORIGIN}/api/classes`,
 		{
 			data: {
 				name: CLASS_NAME,
@@ -151,7 +152,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 				startDate,
 			},
 			headers: {
-				Origin: "http://localhost:8001",
+				Origin: WEB_ORIGIN,
 				"Content-Type": "application/json",
 			},
 		},
