@@ -1,7 +1,7 @@
 ---
 title: "Buổi thi giữa kỳ/cuối kỳ trên Syllabus — loại buổi, highlight, import cột Loại"
 description: "Thêm khái niệm loại buổi học (thường / thi giữa kỳ / thi cuối kỳ) vào syllabus: highlight buổi thi ở màn hình syllabus, đánh dấu qua modal Sửa/Thêm buổi học, và khai báo từ file import Excel/CSV qua cột Loại tùy chọn"
-status: pending
+status: completed
 priority: P2
 effort: 6h
 issue: 154
