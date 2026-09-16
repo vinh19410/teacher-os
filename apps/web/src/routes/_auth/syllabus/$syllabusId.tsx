@@ -26,8 +26,8 @@ import { Modal } from "@/components/ui/modal";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
-import { useData } from "@/lib/data-store";
 import { cn } from "@/lib/cn";
+import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 import {
