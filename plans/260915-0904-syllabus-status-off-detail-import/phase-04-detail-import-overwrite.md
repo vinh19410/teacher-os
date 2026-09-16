@@ -24,7 +24,8 @@ Màn hình syllabus detail có nút "Nhập từ Excel/CSV": chọn file → par
 
 - Modify: `apps/web/src/lib/data-actions.ts` (thêm action `replace-syllabus-content`)
 - Modify: `apps/web/src/lib/repos/kernel.ts` (case mới trong `kernelCommand`)
-- Modify: `apps/web/src/lib/use-direct-kernel-action.ts` (run trả `KernelCommandResult` — backward-compatible)
+- Modify: `apps/web/src/lib/use-direct-kernel-action.ts` (run trả `KernelCommandResult` — backward-compatible về runtime, KHÔNG backward-compatible về type)
+- Modify: `apps/web/src/components/syllabus/syllabus-mutations.tsx` (type `KernelRun` mirror return type mới của run — F1)
 - Modify: `apps/web/src/routes/_auth/syllabus/$syllabusId.tsx` (nút + preview + modal)
 - Create: `apps/e2e/specs/syllabus-detail-import-overwrite.spec.ts`
 
@@ -57,13 +58,27 @@ Màn hình syllabus detail có nút "Nhập từ Excel/CSV": chọn file → par
 
 ### Task 4.2 — UI import + modal cảnh báo ở trang detail
 - Goal: đủ flow chọn file → preview → xác nhận → ghi đè (hoặc hủy) trên `/syllabus/:id` của **template** (`sy.classId === null`); bản copy của lớp không hiện nút import.
-- Target files: `apps/web/src/lib/use-direct-kernel-action.ts`, `apps/web/src/routes/_auth/syllabus/$syllabusId.tsx`.
+- Target files: `apps/web/src/lib/use-direct-kernel-action.ts`, `apps/web/src/components/syllabus/syllabus-mutations.tsx`, `apps/web/src/routes/_auth/syllabus/$syllabusId.tsx`.
 - Steps:
-  1. **Hook trả kết quả**: trong `use-direct-kernel-action.ts`, đổi `run` để trả về `KernelCommandResult` (import type từ `@/lib/repos/kernel`):
+  1. **Hook trả kết quả**: trong `use-direct-kernel-action.ts`, đổi signature `run` trong `DirectKernelAction` thành `Promise<KernelCommandResult>` (import type từ `@/lib/repos/kernel`). Thân hàm:
      ```ts
-     run: (key: string, action: KernelAction, successText: string) => Promise<KernelCommandResult>,
+     const run = useCallback(
+       async (key: string, action: KernelAction, successText: string): Promise<KernelCommandResult> => {
+         if (pendingKey) return { kind: "outcome-unknown", error: new Error(`busy: ${pendingKey}`) };
+         setPendingKey(key);
+         try {
+           const result = await dispatch(action);
+           await reportDirectOutcome(result, successText, refresh, action.type);
+           return result;
+         } finally {
+           setPendingKey(null);
+         }
+       },
+       [dispatch, refresh, pendingKey],
+     );
      ```
-     phần thân: `const result = await dispatch(action); await reportDirectOutcome(result, successText, refresh, action.type); return result;`. Signature mở rộng là backward-compatible — các caller hiện có bỏ qua return.
+     Lưu ý F2: nhánh busy-guard `if (pendingKey)` PHẢI trả một giá trị `KernelCommandResult` (dùng `outcome-unknown`) — nếu để `return;` trần thì vi phạm kiểu khai báo (TS2322/TS2366). Guard trả trước khi gọi `reportDirectOutcome` nên KHÔNG phát sinh toast lỗi giả.
+  1b. **Mirror type `KernelRun` (F1 — bắt buộc, nếu không `pnpm check-types` gãy TS2322 tại 2 call sites)**: trong `apps/web/src/components/syllabus/syllabus-mutations.tsx`, đổi return type của `KernelRun` từ `Promise<void>` thành `Promise<KernelCommandResult>` (import `import type { KernelCommandResult } from "@/lib/repos/kernel";`). TS không cho `Promise<KernelCommandResult>` gán vào `Promise<void>` (chỉ `return void` mới tương thích). Các lời gọi `void run(...)` bên trong file (dòng 87–127) giữ nguyên — bỏ qua giá trị trả về là hợp lệ. Call sites `$syllabusId.tsx` và `curriculum-management-section.tsx` truyền `run` của `useDirectKernelAction` không cần sửa gì sau khi type mirror.
   2. Imports trong `$syllabusId.tsx`: `useRef` thêm vào import react; `parseSyllabusFile`, `type SyllabusImportResult` từ `@/lib/syllabus-import`; `SyllabusImportPreview` từ `@/components/syllabus/import-preview`; `Modal` từ `@/components/ui/modal`. Lấy `refresh` từ `useData()` (đã có sẵn trong provider: `const { dispatch, refresh } = useData()`).
   3. Trong `SyllabusDetail`, thêm state + ref:
      ```ts
@@ -143,7 +158,8 @@ Màn hình syllabus detail có nút "Nhập từ Excel/CSV": chọn file → par
      - Bấm "Nhập từ Excel/CSV" → `setInputFiles("input[type=file]", "fixtures/syllabus-import.sample.csv")` → thấy "2 module · 3 buổi học" → bấm "Ghi đè nội dung" → dialog "Ghi đè nội dung giáo trình?" hiện, chứa text "sẽ bị XÓA" và "1 module" (cây hiện tại).
      - Bấm "Hủy" → dialog đóng → "Module thủ công" VẪN hiển thị.
      - Bấm "Ghi đè nội dung" lại → "Ghi đè" (danger) → chờ toast/text "Đã ghi đè nội dung giáo trình." → "Module thủ công" biến mất, "Module 1 — Nền tảng" và "Buổi 1" hiển thị, và StatCard "tổng buổi" hiển thị "3" (khóa totalLessons qua UI).
-  2. Chạy spec: `pnpm --filter e2e e2e` — toàn bộ (cũ + mới) exit 0.
+  2. Scope locator (F4 — chống strict-mode violation/flake): các assertion text ngắn như "3" hay "1 module" dễ trùng element khác — assert StatCard "tổng buổi" qua locator cha của StatCard đó (theo label "tổng buổi", ví dụ `page.locator("div", { hasText: /^tổng buổi$/ })` kết hợp `getByText("3")` trong phạm vi ấy hoặc selector StatCard hiện có trong `$syllabusId.tsx`), và assert "1 module" trong phạm vi dialog (`page.getByRole("dialog").getByText(/1 module/)`) chứ không phải `page.getByText(...)` toàn trang.
+  3. Chạy spec: `pnpm --filter e2e e2e` — toàn bộ (cũ + mới) exit 0. Trong cùng spec, test/scenario hủy-giữ-nguyên chạy TRƯỚC scenario confirm để không phụ thuộc thứ tự ngược.
 - Success criteria: spec pass; không flake do chờ snapshot (dùng `expect(...).toBeVisible()` với timeout mặc định).
 - Verify:
   1. `pnpm --filter e2e e2e` → exit 0
