@@ -19,8 +19,8 @@ const session = {
  * Issue #167: settings must never render an editable-looking form that
  * silently discards input. Until a kernel settings surface exists, every
  * config control is disabled and labelled "Chưa mở"; the data tab must not
- * claim to be a demo. The delete-account button stays out of this scope
- * (#174) — these tests pin that it is NOT disabled here.
+ * claim to be a demo. Issue #174: the delete-account button is gone until a
+ * real flow exists — these tests pin that it stays gone.
  */
 describe("SettingsPage honesty guards (issue #167)", () => {
 	it("renders default unit price disabled and keeps the interim plan block", () => {
@@ -67,7 +67,7 @@ describe("SettingsPage honesty guards (issue #167)", () => {
 		expect(html).toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
 	});
 
-	it("drops the demo copy, disables exports, and leaves delete-account alone", () => {
+	it("drops the demo copy, disables exports, and offers admin contact instead of a dead delete button (#174)", () => {
 		const html = renderToStaticMarkup(<DataTab />);
 		expect(html).not.toContain("bản demo");
 		// Export-specific note: "sẽ lưu" would read wrong next to file exports.
@@ -82,8 +82,9 @@ describe("SettingsPage honesty guards (issue #167)", () => {
 		);
 		expect(csvButton?.[0]).toMatch(/\sdisabled=/);
 		expect(jsonButton?.[0]).toMatch(/\sdisabled=/);
-		const deleteButton = html.match(/<button[^>]*>Xóa tài khoản<\/button>/);
-		expect(deleteButton?.[0]).toBeDefined();
-		expect(deleteButton?.[0]).not.toMatch(/\sdisabled=/);
+		// #174: a destructive button that silently does nothing must not
+		// render at all — point at the admin instead until a real flow lands.
+		expect(html).not.toContain("Xóa tài khoản");
+		expect(html).toContain("liên hệ admin");
 	});
 });

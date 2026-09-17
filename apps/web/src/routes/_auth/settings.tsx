@@ -236,14 +236,10 @@ export function DataTab() {
 					<Button variant="secondary" size="sm" disabled>
 						Xuất toàn bộ (JSON)
 					</Button>
-					<Button
-						variant="secondary"
-						size="sm"
-						className="border-danger-soft text-danger"
-					>
-						Xóa tài khoản
-					</Button>
 				</div>
+				<p className="text-muted-fg text-xs">
+					Muốn xóa tài khoản? Giai đoạn pilot vui lòng liên hệ admin của bạn.
+				</p>
 			</div>
 		</Card>
 	);
