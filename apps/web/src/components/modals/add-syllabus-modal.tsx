@@ -219,9 +219,17 @@ export function AddSyllabusModal({
 						disabled={saving || parsing}
 					/>
 				</Field>
-				<Field label="Số buổi dự kiến">
+				<Field
+					label="Số buổi dự kiến"
+					help={
+						importResult?.ok
+							? "Số buổi lấy từ file import. Gỡ file để chỉnh thủ công."
+							: undefined
+					}
+				>
 					<Input
 						type="number"
+						disabled={importResult?.ok === true}
 						value={total}
 						onChange={(e) => setTotal(e.target.value)}
 					/>

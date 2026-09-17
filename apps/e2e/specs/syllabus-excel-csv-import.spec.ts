@@ -155,11 +155,17 @@ test("nút gỡ file (X) hoạt động ở cả nhánh preview OK lẫn nhánh 
 		"fixtures/syllabus-import.sample.csv",
 	);
 	await expect(dialog.getByText("2 module · 3 buổi học")).toBeVisible();
+	const total = dialog.getByRole("spinbutton");
+	await expect(total).toBeDisabled();
+	await expect(total).toHaveValue("3");
 	const removeButton = dialog.getByRole("button", { name: "Gỡ file" });
 	await expect(removeButton).toBeVisible();
 	await removeButton.click();
 	await expect(dialog.getByRole("table")).toBeHidden();
 	await expect(dialog.getByText("2 module · 3 buổi học")).toBeHidden();
+	await expect(total).toBeEnabled();
+	await total.fill("7");
+	await expect(total).toHaveValue("7");
 
 	// Nhánh lỗi: file template cũ 6 cột → error card + cùng nút X → gỡ được.
 	await page.setInputFiles("input[type=file]", {
@@ -170,6 +176,7 @@ test("nút gỡ file (X) hoạt động ở cả nhánh preview OK lẫn nhánh 
 		),
 	});
 	await expect(dialog.getByText(/File dùng template cũ/)).toBeVisible();
+	await expect(total).toBeEnabled();
 	await expect(dialog.getByRole("button", { name: "Gỡ file" })).toBeVisible();
 	await dialog.getByRole("button", { name: "Gỡ file" }).click();
 	await expect(dialog.getByText(/File dùng template cũ/)).toBeHidden();
