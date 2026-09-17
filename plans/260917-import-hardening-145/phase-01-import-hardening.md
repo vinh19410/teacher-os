@@ -19,4 +19,4 @@ status: completed
 No parser rewrite, grouping changes, migrations, replacement-route policy changes, or production promotion.
 
 ## Evidence
-Parser 28 and server 150 tests passed; affected type checks/build passed. Browser verified imported-count lock/removal. Full Playwright replay not run: existing signup helper selectors are stale; see plan verification receipt.
+Parser 28 and server 150 tests passed; affected type checks/build passed. Browser verified imported-count lock/removal. After correcting Field label association, all 5 import Playwright scenarios passed locally; signup helper required no changes.
