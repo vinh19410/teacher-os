@@ -2,15 +2,16 @@ import { useForm } from "@tanstack/react-form";
 import { useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import z from "zod";
 
 import { AuthField, fieldErrors } from "@/components/auth/auth-field";
 import { NoticeOk } from "@/components/auth/notices";
+import { resetFieldErrors } from "@/components/auth/reset-field-errors";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { cn } from "@/lib/cn";
 import { validateReturnUrl } from "@/lib/kernel-load-state";
+import { signUpSchema } from "@/lib/sign-up-schema";
 
 export default function SignUpForm({
 	hidden,
@@ -70,11 +71,7 @@ export default function SignUpForm({
 			}
 		},
 		validators: {
-			onSubmit: z.object({
-				name: z.string().min(2, "Name must be at least 2 characters"),
-				email: z.email("Invalid email address"),
-				password: z.string().min(8, "Password must be at least 8 characters"),
-			}),
+			onSubmit: signUpSchema,
 		},
 	});
 
@@ -106,7 +103,10 @@ export default function SignUpForm({
 						autoComplete="name"
 						placeholder="Your name"
 						value={field.state.value}
-						onChange={field.handleChange}
+						onChange={(value) => {
+							field.handleChange(value);
+							resetFieldErrors(form, "name");
+						}}
 						onBlur={field.handleBlur}
 						errors={fieldErrors(field.state.meta.errors)}
 					/>
@@ -123,7 +123,10 @@ export default function SignUpForm({
 						autoComplete="email"
 						placeholder="you@school.edu"
 						value={field.state.value}
-						onChange={field.handleChange}
+						onChange={(value) => {
+							field.handleChange(value);
+							resetFieldErrors(form, "email");
+						}}
 						onBlur={field.handleBlur}
 						errors={fieldErrors(field.state.meta.errors)}
 					/>
@@ -166,7 +169,10 @@ export default function SignUpForm({
 								</span>
 							}
 							value={field.state.value}
-							onChange={field.handleChange}
+							onChange={(value) => {
+								field.handleChange(value);
+								resetFieldErrors(form, "password");
+							}}
 							onBlur={field.handleBlur}
 							errors={fieldErrors(field.state.meta.errors)}
 						/>
