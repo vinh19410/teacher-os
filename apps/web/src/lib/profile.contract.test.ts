@@ -114,7 +114,9 @@ describe("shell integration", () => {
 		expect(settings).toMatch(/to="\/profile"/);
 		// Untouched on purpose.
 		expect(settings).toMatch(/Gói dịch vụ/);
-		expect(settings).toMatch(/unitPrice/);
+		// #167: the unit price renders as a disabled default (no local state
+		// to assert anymore) — pin the field by its visible label instead.
+		expect(settings).toMatch(/Đơn giá mặc định \/ buổi/);
 	});
 
 	test("the topbar title map knows the new route id", () => {

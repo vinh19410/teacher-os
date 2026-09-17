@@ -12,30 +12,38 @@ export const Route = createFileRoute("/_auth/settings")({
 	component: SettingsRoute,
 });
 
-function SettingsRoute() {
-	const { session } = useRouteContext({ from: "/_auth" });
+/**
+ * Placeholder values for controls whose persistence isn't built yet (#167).
+ * They stay visible so a teacher can read the current defaults; the controls
+ * themselves are disabled until a kernel settings surface exists — never
+ * render an editable-looking form that silently discards input.
+ */
+const DEFAULT_UNIT_PRICE = "400.000đ";
+const DEFAULT_TPL_REMINDER =
+	"Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.";
+const DEFAULT_TPL_DEBT =
+	"Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.";
+const DEFAULT_TPL_REPORT =
+	"Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}";
+
+function NotYetOpenNote() {
+	return (
+		<p className="text-muted-fg text-xs">
+			Chưa mở — sẽ lưu khi tính năng ra mắt.
+		</p>
+	);
+}
+
+export function SettingsPage({
+	session,
+}: {
+	session?: {
+		data?: {
+			user?: { name?: string | null; email?: string | null } | null;
+		} | null;
+	} | null;
+}) {
 	const [tab, setTab] = useState("account");
-	const [unitPrice, setUnitPrice] = useState("400.000đ");
-
-	const [tplReminder, setTplReminder] = useState(
-		"Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.",
-	);
-	const [tplDebt, setTplDebt] = useState(
-		"Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.",
-	);
-	const [tplReport, setTplReport] = useState(
-		"Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}",
-	);
-
-	const [absenceNotice, setAbsenceNotice] = useState("2 giờ trước buổi học");
-	const [absenceDeduct, setAbsenceDeduct] = useState("Có, trừ 1 buổi");
-	const [absenceMax, setAbsenceMax] = useState("2");
-	const [remindSchedule, setRemindSchedule] = useState("T−24h và T−1h");
-	const [remindDebt, setRemindDebt] = useState("Sau 3 ngày và 7 ngày");
-	const [remindPkg, setRemindPkg] = useState("Khi còn 3 buổi");
-	const [remindChannel, setRemindChannel] = useState(
-		"Zalo trước, email dự phòng",
-	);
 
 	return (
 		<div>
@@ -60,11 +68,11 @@ function SettingsRoute() {
 						<SectionLabel>Tài khoản</SectionLabel>
 						<div className="flex flex-col gap-4">
 							<Field label="Họ tên">
-								<Input value={session?.data?.user.name ?? ""} disabled />
+								<Input value={session?.data?.user?.name ?? ""} disabled />
 							</Field>
 							<Field label="Email">
 								<Input
-									value={session?.data?.user.email ?? ""}
+									value={session?.data?.user?.email ?? ""}
 									disabled
 									className="opacity-60"
 								/>
@@ -97,10 +105,12 @@ function SettingsRoute() {
 							</p>
 							<Field label="Đơn giá mặc định / buổi">
 								<Input
-									value={unitPrice}
-									onChange={(e) => setUnitPrice(e.target.value)}
+									value={DEFAULT_UNIT_PRICE}
+									disabled
+									className="opacity-60"
 								/>
 							</Field>
+							<NotYetOpenNote />
 							<div className="flex items-center gap-2 self-start">
 								<Button variant="secondary" size="sm" disabled>
 									Quản lý thanh toán
@@ -112,138 +122,134 @@ function SettingsRoute() {
 				</div>
 			)}
 
-			{tab === "templates" && (
-				<div className="flex flex-col gap-4">
-					<Card variant="white">
-						<SectionLabel>Mẫu nhắc lịch (T−24h)</SectionLabel>
-						<Textarea
-							value={tplReminder}
-							onChange={(e) => setTplReminder(e.target.value)}
-							className="min-h-25"
-						/>
-					</Card>
-					<Card variant="white">
-						<SectionLabel>Mẫu nhắc nợ (quá hạn 3 ngày)</SectionLabel>
-						<Textarea
-							value={tplDebt}
-							onChange={(e) => setTplDebt(e.target.value)}
-							className="min-h-25"
-						/>
-					</Card>
-					<Card variant="white">
-						<SectionLabel>Mẫu báo cáo tuần</SectionLabel>
-						<Textarea
-							value={tplReport}
-							onChange={(e) => setTplReport(e.target.value)}
-							className="min-h-25"
-						/>
-					</Card>
-				</div>
-			)}
-
-			{tab === "rules" && (
-				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-					<Card variant="white">
-						<SectionLabel>Quy tắc vắng học</SectionLabel>
-						<div className="flex flex-col gap-4">
-							<Field label="Vắng có phép — báo trước">
-								<Select
-									value={absenceNotice}
-									onChange={(e) => setAbsenceNotice(e.target.value)}
-								>
-									<option>2 giờ trước buổi học</option>
-									<option>24 giờ trước</option>
-								</Select>
-							</Field>
-							<Field label="Vắng không phép — trừ buổi?">
-								<Select
-									value={absenceDeduct}
-									onChange={(e) => setAbsenceDeduct(e.target.value)}
-								>
-									<option>Có, trừ 1 buổi</option>
-									<option>Không trừ</option>
-								</Select>
-							</Field>
-							<Field label="Số buổi vắng tối đa trước nhắc rủi ro">
-								<Input
-									type="number"
-									value={absenceMax}
-									onChange={(e) => setAbsenceMax(e.target.value)}
-								/>
-							</Field>
-						</div>
-					</Card>
-					<Card variant="white">
-						<SectionLabel>Quy tắc nhắc nhở</SectionLabel>
-						<div className="flex flex-col gap-4">
-							<Field label="Nhắc lịch trước buổi">
-								<Select
-									value={remindSchedule}
-									onChange={(e) => setRemindSchedule(e.target.value)}
-								>
-									<option>T−24h và T−1h</option>
-									<option>Chỉ T−24h</option>
-								</Select>
-							</Field>
-							<Field label="Nhắc nợ quá hạn">
-								<Select
-									value={remindDebt}
-									onChange={(e) => setRemindDebt(e.target.value)}
-								>
-									<option>Sau 3 ngày và 7 ngày</option>
-									<option>Sau 7 ngày</option>
-								</Select>
-							</Field>
-							<Field label="Nhắc sắp hết gói">
-								<Select
-									value={remindPkg}
-									onChange={(e) => setRemindPkg(e.target.value)}
-								>
-									<option>Khi còn 3 buổi</option>
-									<option>Khi còn 2 buổi</option>
-								</Select>
-							</Field>
-							<Field label="Kênh ưu tiên">
-								<Select
-									value={remindChannel}
-									onChange={(e) => setRemindChannel(e.target.value)}
-								>
-									<option>Zalo trước, email dự phòng</option>
-									<option>Chỉ Zalo</option>
-								</Select>
-							</Field>
-						</div>
-					</Card>
-				</div>
-			)}
-
-			{tab === "data" && (
-				<Card variant="white">
-					<SectionLabel>Sao lưu và xuất dữ liệu</SectionLabel>
-					<div className="flex flex-col gap-4">
-						<p className="text-muted-fg text-sm">
-							Toàn bộ dữ liệu thuộc về cô. Xuất bất cứ lúc nào, kể cả khi hủy
-							gói. Đây là bản demo — dữ liệu hiển thị là dữ liệu mẫu, chưa có
-							xuất file thật.
-						</p>
-						<div className="flex flex-wrap gap-3">
-							<Button variant="secondary" size="sm">
-								Xuất CSV buổi học + thu tiền
-							</Button>
-							<Button variant="secondary" size="sm">
-								Xuất toàn bộ (JSON)
-							</Button>
-							<Button
-								variant="secondary"
-								size="sm"
-								className="border-danger-soft text-danger"
-							>
-								Xóa tài khoản
-							</Button>
-						</div>
-					</div>
-				</Card>
-			)}
+			{tab === "templates" && <TemplatesTab />}
+			{tab === "rules" && <RulesTab />}
+			{tab === "data" && <DataTab />}
 		</div>
 	);
+}
+
+export function TemplatesTab() {
+	return (
+		<div className="flex flex-col gap-4">
+			<Card variant="white">
+				<SectionLabel>Mẫu nhắc lịch (T−24h)</SectionLabel>
+				<Textarea
+					value={DEFAULT_TPL_REMINDER}
+					disabled
+					className="min-h-25 opacity-60"
+				/>
+			</Card>
+			<Card variant="white">
+				<SectionLabel>Mẫu nhắc nợ (quá hạn 3 ngày)</SectionLabel>
+				<Textarea
+					value={DEFAULT_TPL_DEBT}
+					disabled
+					className="min-h-25 opacity-60"
+				/>
+			</Card>
+			<Card variant="white">
+				<SectionLabel>Mẫu báo cáo tuần</SectionLabel>
+				<Textarea
+					value={DEFAULT_TPL_REPORT}
+					disabled
+					className="min-h-25 opacity-60"
+				/>
+			</Card>
+			<NotYetOpenNote />
+		</div>
+	);
+}
+
+export function RulesTab() {
+	return (
+		<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
+			<Card variant="white">
+				<SectionLabel>Quy tắc vắng học</SectionLabel>
+				<div className="flex flex-col gap-4">
+					<Field label="Vắng có phép — báo trước">
+						<Select disabled className="opacity-60">
+							<option>2 giờ trước buổi học</option>
+							<option>24 giờ trước</option>
+						</Select>
+					</Field>
+					<Field label="Vắng không phép — trừ buổi?">
+						<Select disabled className="opacity-60">
+							<option>Có, trừ 1 buổi</option>
+							<option>Không trừ</option>
+						</Select>
+					</Field>
+					<Field label="Số buổi vắng tối đa trước nhắc rủi ro">
+						<Input type="number" value="2" disabled className="opacity-60" />
+					</Field>
+				</div>
+			</Card>
+			<Card variant="white">
+				<SectionLabel>Quy tắc nhắc nhở</SectionLabel>
+				<div className="flex flex-col gap-4">
+					<Field label="Nhắc lịch trước buổi">
+						<Select disabled className="opacity-60">
+							<option>T−24h và T−1h</option>
+							<option>Chỉ T−24h</option>
+						</Select>
+					</Field>
+					<Field label="Nhắc nợ quá hạn">
+						<Select disabled className="opacity-60">
+							<option>Sau 3 ngày và 7 ngày</option>
+							<option>Sau 7 ngày</option>
+						</Select>
+					</Field>
+					<Field label="Nhắc sắp hết gói">
+						<Select disabled className="opacity-60">
+							<option>Khi còn 3 buổi</option>
+							<option>Khi còn 2 buổi</option>
+						</Select>
+					</Field>
+					<Field label="Kênh ưu tiên">
+						<Select disabled className="opacity-60">
+							<option>Zalo trước, email dự phòng</option>
+							<option>Chỉ Zalo</option>
+						</Select>
+					</Field>
+				</div>
+			</Card>
+			<NotYetOpenNote />
+		</div>
+	);
+}
+
+export function DataTab() {
+	return (
+		<Card variant="white">
+			<SectionLabel>Sao lưu và xuất dữ liệu</SectionLabel>
+			<div className="flex flex-col gap-4">
+				<p className="text-muted-fg text-sm">
+					Toàn bộ dữ liệu thuộc về cô. Xuất bất cứ lúc nào, kể cả khi hủy gói.
+				</p>
+				<p className="text-muted-fg text-xs">
+					Chưa mở — xuất file đang ra mắt.
+				</p>
+				<div className="flex flex-wrap gap-3">
+					<Button variant="secondary" size="sm" disabled>
+						Xuất CSV buổi học + thu tiền
+					</Button>
+					<Button variant="secondary" size="sm" disabled>
+						Xuất toàn bộ (JSON)
+					</Button>
+					<Button
+						variant="secondary"
+						size="sm"
+						className="border-danger-soft text-danger"
+					>
+						Xóa tài khoản
+					</Button>
+				</div>
+			</div>
+		</Card>
+	);
+}
+
+function SettingsRoute() {
+	const { session } = useRouteContext({ from: "/_auth" });
+	return <SettingsPage session={session} />;
 }
