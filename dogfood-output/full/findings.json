@@ -1,194 +1,194 @@
 {
-  "generatedAt": "2026-09-17T06:14:55.128Z",
-  "base": "https://app.staging.teacheros.io.vn",
-  "emailUsed": "dogfood.full.1789625611571@mailinator.com",
-  "coverage": [
-    {
-      "feature": "signup email",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "add-student",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "add-syllabus",
-      "status": "FAIL",
-      "detail": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: /^Writing$/ }) resolved to 2 elements:\n "
-    },
-    {
-      "feature": "syllabus-module-lesson",
-      "status": "FAIL",
-      "detail": "TimeoutError: locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Syllabus QA Full').first"
-    },
-    {
-      "feature": "add-class",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "class-detail",
-      "status": "PASS",
-      "detail": "https://app.staging.teacheros.io.vn/classes/3e5460bf-373c-41a9-a7d0-949b72391481"
-    },
-    {
-      "feature": "enroll-student",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "session-check-in",
-      "status": "SKIP",
-      "detail": "no session CTA (startDate > today?)"
-    },
-    {
-      "feature": "update-class-notes",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "schedule-open-lesson",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "schedule-bad-week-param",
-      "status": "PASS",
-      "detail": "https://app.staging.teacheros.io.vn/schedule"
-    },
-    {
-      "feature": "dashboard-check-in",
-      "status": "SKIP",
-      "detail": "no lesson today (class starts tomorrow)"
-    },
-    {
-      "feature": "add-invoice",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "mark-invoice-paid",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "assignments-list",
-      "status": "PASS",
-      "detail": "still empty — no create CTA"
-    },
-    {
-      "feature": "create-report",
-      "status": "FAIL",
-      "detail": "modal-only, no persist"
-    },
-    {
-      "feature": "zalo-oa-cta",
-      "status": "PARTIAL",
-      "detail": "clicked"
-    },
-    {
-      "feature": "global-search",
-      "status": "PASS",
-      "detail": "https://app.staging.teacheros.io.vn/students/33cc4539-b866-49ce-b42f-fc3c7a90b7b8"
-    },
-    {
-      "feature": "notif-panel",
-      "status": "PASS",
-      "detail": "T\nTeacher OS\nTổng quan\nHọc viên\nLịch dạy\nHọc phí\nBài tập\nGIẢNG DẠY\nLớp học\nSyllabus\nPHỤ HUYNH\nBáo cáo\nHỆ THỐNG\nCài đặt\nQ"
-    },
-    {
-      "feature": "profile-rename",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "google-link-card",
-      "status": "PASS",
-      "detail": "visible"
-    },
-    {
-      "feature": "settings-tabs",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "feature": "delete-account",
-      "status": "FAIL",
-      "detail": "no confirm dialog"
-    },
-    {
-      "feature": "logout",
-      "status": "PASS",
-      "detail": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "feature": "signin-existing",
-      "status": "PASS",
-      "detail": "https://app.staging.teacheros.io.vn/dashboard"
-    }
-  ],
-  "findings": [
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Step failed: add-syllabus",
-      "actual": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: /^Writing$/ }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"rounded-full border px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none border-line bg-bg text-fg-2 hover:border-fg\">Writin"
-    },
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Step failed: syllabus-module-lesson",
-      "actual": "TimeoutError: locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Syllabus QA Full').first()\u001b[22m\n"
-    },
-    {
-      "severity": "Medium",
-      "category": "UX",
-      "title": "Tab Buổi học không có CTA điểm danh ngay sau khi tạo lớp (startDate = ngày mai)",
-      "url": "https://app.staging.teacheros.io.vn/classes/3e5460bf-373c-41a9-a7d0-949b72391481"
-    },
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Sau khi có lớp + học viên + syllabus, trang Bài tập vẫn trống và không có nút tạo",
-      "url": "https://app.staging.teacheros.io.vn/assignments"
-    },
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Gửi báo cáo tuần chỉ đóng modal, không lưu/gửi (submit = onClose)",
-      "url": "https://app.staging.teacheros.io.vn/reports",
-      "actual": "T\nTeacher OS\nTổng quan\nHọc viên\nLịch dạy\nHọc phí\nBài tập\nGIẢNG DẠY\nLớp học\nSyllabus\nPHỤ HUYNH\nBáo cáo\nHỆ THỐNG\nCài đặt\nQF\nQA Full\nPRO\ndogfood.full.1789625611571@mailinator.com\nBáo cáo phụ huynh\nBáo cáo phụ huynh\n\nGửi qua Zalo OA\n\nBáo cáo đã gửi\n+ Tạo báo cáo tuần\n\nChưa có báo cáo nào được gửi.\n\nNHẬT KÝ GỬI TIN NHẮN\n\nChưa có nhật ký gửi tin nhắn."
-    },
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Tab Dữ liệu thừa nhận demo; xuất CSV/JSON không phải file thật",
-      "url": "https://app.staging.teacheros.io.vn/settings"
-    },
-    {
-      "severity": "High",
-      "category": "UX",
-      "title": "Nút Xóa tài khoản không confirm và không xóa (click không có dialog)",
-      "url": "https://app.staging.teacheros.io.vn/settings"
-    }
-  ],
-  "pagesVisited": [
-    "https://app.staging.teacheros.io.vn/login",
-    "https://app.staging.teacheros.io.vn/students",
-    "https://app.staging.teacheros.io.vn/syllabus",
-    "https://app.staging.teacheros.io.vn/classes",
-    "https://app.staging.teacheros.io.vn/schedule",
-    "https://app.staging.teacheros.io.vn/schedule",
-    "https://app.staging.teacheros.io.vn/dashboard",
-    "https://app.staging.teacheros.io.vn/tuition",
-    "https://app.staging.teacheros.io.vn/assignments",
-    "https://app.staging.teacheros.io.vn/reports",
-    "https://app.staging.teacheros.io.vn/dashboard",
-    "https://app.staging.teacheros.io.vn/dashboard",
-    "https://app.staging.teacheros.io.vn/profile",
-    "https://app.staging.teacheros.io.vn/settings"
-  ],
-  "shots": 32
+	"generatedAt": "2026-09-17T06:14:55.128Z",
+	"base": "https://app.staging.teacheros.io.vn",
+	"emailUsed": "dogfood.full.1789625611571@mailinator.com",
+	"coverage": [
+		{
+			"feature": "signup email",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "add-student",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "add-syllabus",
+			"status": "FAIL",
+			"detail": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: /^Writing$/ }) resolved to 2 elements:\n "
+		},
+		{
+			"feature": "syllabus-module-lesson",
+			"status": "FAIL",
+			"detail": "TimeoutError: locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Syllabus QA Full').first"
+		},
+		{
+			"feature": "add-class",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "class-detail",
+			"status": "PASS",
+			"detail": "https://app.staging.teacheros.io.vn/classes/3e5460bf-373c-41a9-a7d0-949b72391481"
+		},
+		{
+			"feature": "enroll-student",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "session-check-in",
+			"status": "SKIP",
+			"detail": "no session CTA (startDate > today?)"
+		},
+		{
+			"feature": "update-class-notes",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "schedule-open-lesson",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "schedule-bad-week-param",
+			"status": "PASS",
+			"detail": "https://app.staging.teacheros.io.vn/schedule"
+		},
+		{
+			"feature": "dashboard-check-in",
+			"status": "SKIP",
+			"detail": "no lesson today (class starts tomorrow)"
+		},
+		{
+			"feature": "add-invoice",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "mark-invoice-paid",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "assignments-list",
+			"status": "PASS",
+			"detail": "still empty — no create CTA"
+		},
+		{
+			"feature": "create-report",
+			"status": "FAIL",
+			"detail": "modal-only, no persist"
+		},
+		{
+			"feature": "zalo-oa-cta",
+			"status": "PARTIAL",
+			"detail": "clicked"
+		},
+		{
+			"feature": "global-search",
+			"status": "PASS",
+			"detail": "https://app.staging.teacheros.io.vn/students/33cc4539-b866-49ce-b42f-fc3c7a90b7b8"
+		},
+		{
+			"feature": "notif-panel",
+			"status": "PASS",
+			"detail": "T\nTeacher OS\nTổng quan\nHọc viên\nLịch dạy\nHọc phí\nBài tập\nGIẢNG DẠY\nLớp học\nSyllabus\nPHỤ HUYNH\nBáo cáo\nHỆ THỐNG\nCài đặt\nQ"
+		},
+		{
+			"feature": "profile-rename",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "google-link-card",
+			"status": "PASS",
+			"detail": "visible"
+		},
+		{
+			"feature": "settings-tabs",
+			"status": "PASS",
+			"detail": ""
+		},
+		{
+			"feature": "delete-account",
+			"status": "FAIL",
+			"detail": "no confirm dialog"
+		},
+		{
+			"feature": "logout",
+			"status": "PASS",
+			"detail": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"feature": "signin-existing",
+			"status": "PASS",
+			"detail": "https://app.staging.teacheros.io.vn/dashboard"
+		}
+	],
+	"findings": [
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Step failed: add-syllabus",
+			"actual": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: /^Writing$/ }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"rounded-full border px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none border-line bg-bg text-fg-2 hover:border-fg\">Writin"
+		},
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Step failed: syllabus-module-lesson",
+			"actual": "TimeoutError: locator.click: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Syllabus QA Full').first()\u001b[22m\n"
+		},
+		{
+			"severity": "Medium",
+			"category": "UX",
+			"title": "Tab Buổi học không có CTA điểm danh ngay sau khi tạo lớp (startDate = ngày mai)",
+			"url": "https://app.staging.teacheros.io.vn/classes/3e5460bf-373c-41a9-a7d0-949b72391481"
+		},
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Sau khi có lớp + học viên + syllabus, trang Bài tập vẫn trống và không có nút tạo",
+			"url": "https://app.staging.teacheros.io.vn/assignments"
+		},
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Gửi báo cáo tuần chỉ đóng modal, không lưu/gửi (submit = onClose)",
+			"url": "https://app.staging.teacheros.io.vn/reports",
+			"actual": "T\nTeacher OS\nTổng quan\nHọc viên\nLịch dạy\nHọc phí\nBài tập\nGIẢNG DẠY\nLớp học\nSyllabus\nPHỤ HUYNH\nBáo cáo\nHỆ THỐNG\nCài đặt\nQF\nQA Full\nPRO\ndogfood.full.1789625611571@mailinator.com\nBáo cáo phụ huynh\nBáo cáo phụ huynh\n\nGửi qua Zalo OA\n\nBáo cáo đã gửi\n+ Tạo báo cáo tuần\n\nChưa có báo cáo nào được gửi.\n\nNHẬT KÝ GỬI TIN NHẮN\n\nChưa có nhật ký gửi tin nhắn."
+		},
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Tab Dữ liệu thừa nhận demo; xuất CSV/JSON không phải file thật",
+			"url": "https://app.staging.teacheros.io.vn/settings"
+		},
+		{
+			"severity": "High",
+			"category": "UX",
+			"title": "Nút Xóa tài khoản không confirm và không xóa (click không có dialog)",
+			"url": "https://app.staging.teacheros.io.vn/settings"
+		}
+	],
+	"pagesVisited": [
+		"https://app.staging.teacheros.io.vn/login",
+		"https://app.staging.teacheros.io.vn/students",
+		"https://app.staging.teacheros.io.vn/syllabus",
+		"https://app.staging.teacheros.io.vn/classes",
+		"https://app.staging.teacheros.io.vn/schedule",
+		"https://app.staging.teacheros.io.vn/schedule",
+		"https://app.staging.teacheros.io.vn/dashboard",
+		"https://app.staging.teacheros.io.vn/tuition",
+		"https://app.staging.teacheros.io.vn/assignments",
+		"https://app.staging.teacheros.io.vn/reports",
+		"https://app.staging.teacheros.io.vn/dashboard",
+		"https://app.staging.teacheros.io.vn/dashboard",
+		"https://app.staging.teacheros.io.vn/profile",
+		"https://app.staging.teacheros.io.vn/settings"
+	],
+	"shots": 32
 }

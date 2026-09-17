@@ -1,265 +1,265 @@
 {
-  "consoleLog": [
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "type": "error",
-      "text": "Failed to load resource: the server responded with a status of 404 ()",
-      "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "type": "warning",
-      "text": "No available adapters.",
-      "url": "https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1108169320%3A1789624527117850&client_id=849029604953-na8io0clmpla0h6vk8lg1ibe00fluccm.apps.googleusercontent.com&code_challenge=YiM62q4WnQEJLR2Mg5oQT0ORr-6YRMcyifur4G8llj8&code_challenge_method=S256&include_granted_scopes=true&o2v=2&redirect_uri=https%3A%2F%2Fapi.staging.teacheros.io.vn%2Fapi%2Fauth%2Fcallback%2Fgoogle&response_type=code&scope=email+profile+openid&service=lso&state=o7gueX6HoxA3v3n9zjRNKtyDkKuXvAmz&flowName=GeneralOAuthLite&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Flegacy%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAMpwO88J5UldrGjmfQKBikhqVCRgcU6iHVJ9qjkmYGmOb344KEK8NiqmTUGlPuYxgA5gZrPOy9d70oMOOmjLCcy1UOV3aKtCATAo3Zg90kvDUVO49ZGy9AtLbDjdR_HdynsF8kcAiq-slKshjQaMwCi4_Hw6fP8n0UriQLLqzQexc7xAORG9Z03GME-TmAA7g0FnZH9AnbrEO5jYa-sR1SUjnIYy-YOLterGBE9KvSWqPZGjf6kylvGoo1_s0ow52OP59n77r4G_uMuKGr21u4R3Oj6r4wDK1Y26sEVyuHwpSN8jStTXSaGWl4zfeWMCSbi0P6k-QztMeAIqq1xUR87iNCnMjbYWMeIJdawm8ryXb06ZHdnPxS0eVrfuEK6ptsRpoaBtCVqEWYuX_8ElUsqz1OEHQPcqeG_qRjs99wkeGHNTWoEnGCGkbIziLZ-xAJtkdET3EqGU1qkM8EKSFRuOkFbpo9SOWONTw2tGRmeMNtQ--c%26flowName%3DGeneralOAuthFlow%26as%3DS1108169320%253A1789624527117850%26client_id%3D849029604953-na8io0clmpla0h6vk8lg1ibe00fluccm.apps.googleusercontent.com%23&app_domain=https%3A%2F%2Fapi.staging.teacheros.io.vn&rart=ANgoxcdFEqNf6F_rGjtNABcAxQPONF8_iyF8uTJnmlwiFs_n7gVUT46oijN0philnPwyl05f9mW0T8-QzI06bHvl9tAvwfDJ-ZgT_AIPoQDmUGrev1LGoII"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/schedule"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/tuition"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/assignments"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/classes"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/syllabus"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/reports"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/settings"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/profile"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/classes"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "type": "error",
-      "text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
-      "url": "https://app.staging.teacheros.io.vn/login"
-    }
-  ],
-  "pageErrors": [],
-  "failedRequests": [
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
-      "method": "GET",
-      "status": 404,
-      "page": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/schedule"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/tuition"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/assignments"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/classes"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/syllabus"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/reports"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/settings"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/profile"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/classes"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/dashboard"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/students"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/login"
-    },
-    {
-      "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "method": "GET",
-      "error": "csp",
-      "page": "https://app.staging.teacheros.io.vn/login"
-    }
-  ]
+	"consoleLog": [
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"type": "error",
+			"text": "Failed to load resource: the server responded with a status of 404 ()",
+			"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"type": "warning",
+			"text": "No available adapters.",
+			"url": "https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1108169320%3A1789624527117850&client_id=849029604953-na8io0clmpla0h6vk8lg1ibe00fluccm.apps.googleusercontent.com&code_challenge=YiM62q4WnQEJLR2Mg5oQT0ORr-6YRMcyifur4G8llj8&code_challenge_method=S256&include_granted_scopes=true&o2v=2&redirect_uri=https%3A%2F%2Fapi.staging.teacheros.io.vn%2Fapi%2Fauth%2Fcallback%2Fgoogle&response_type=code&scope=email+profile+openid&service=lso&state=o7gueX6HoxA3v3n9zjRNKtyDkKuXvAmz&flowName=GeneralOAuthLite&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Flegacy%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAMpwO88J5UldrGjmfQKBikhqVCRgcU6iHVJ9qjkmYGmOb344KEK8NiqmTUGlPuYxgA5gZrPOy9d70oMOOmjLCcy1UOV3aKtCATAo3Zg90kvDUVO49ZGy9AtLbDjdR_HdynsF8kcAiq-slKshjQaMwCi4_Hw6fP8n0UriQLLqzQexc7xAORG9Z03GME-TmAA7g0FnZH9AnbrEO5jYa-sR1SUjnIYy-YOLterGBE9KvSWqPZGjf6kylvGoo1_s0ow52OP59n77r4G_uMuKGr21u4R3Oj6r4wDK1Y26sEVyuHwpSN8jStTXSaGWl4zfeWMCSbi0P6k-QztMeAIqq1xUR87iNCnMjbYWMeIJdawm8ryXb06ZHdnPxS0eVrfuEK6ptsRpoaBtCVqEWYuX_8ElUsqz1OEHQPcqeG_qRjs99wkeGHNTWoEnGCGkbIziLZ-xAJtkdET3EqGU1qkM8EKSFRuOkFbpo9SOWONTw2tGRmeMNtQ--c%26flowName%3DGeneralOAuthFlow%26as%3DS1108169320%253A1789624527117850%26client_id%3D849029604953-na8io0clmpla0h6vk8lg1ibe00fluccm.apps.googleusercontent.com%23&app_domain=https%3A%2F%2Fapi.staging.teacheros.io.vn&rart=ANgoxcdFEqNf6F_rGjtNABcAxQPONF8_iyF8uTJnmlwiFs_n7gVUT46oijN0philnPwyl05f9mW0T8-QzI06bHvl9tAvwfDJ-ZgT_AIPoQDmUGrev1LGoII"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/schedule"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/tuition"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/assignments"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/classes"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/syllabus"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/reports"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/settings"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/profile"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/classes"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"type": "error",
+			"text": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+			"url": "https://app.staging.teacheros.io.vn/login"
+		}
+	],
+	"pageErrors": [],
+	"failedRequests": [
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
+			"method": "GET",
+			"status": 404,
+			"page": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/schedule"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/tuition"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/assignments"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/classes"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/syllabus"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/reports"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/settings"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/profile"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/classes"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/dashboard"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/students"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/login"
+		},
+		{
+			"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"method": "GET",
+			"error": "csp",
+			"page": "https://app.staging.teacheros.io.vn/login"
+		}
+	]
 }
