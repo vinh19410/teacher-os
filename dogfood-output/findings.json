@@ -1,214 +1,214 @@
 {
-  "generatedAt": "2026-09-17T05:56:26.502Z",
-  "base": "https://app.staging.teacheros.io.vn",
-  "signedIn": true,
-  "emailUsed": "dogfood.qa.1789624537950@mailinator.com",
-  "pagesVisited": [
-    {
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/dashboard",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/students",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/schedule",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/tuition",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/assignments",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/classes",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/syllabus",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/reports",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/settings",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/profile",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/students",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/classes",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/dashboard",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/students",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    },
-    {
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "title": "Teacher OS · Quản lý lớp gia sư 1:1"
-    }
-  ],
-  "findings": [
-    {
-      "severity": "Medium",
-      "category": "Content",
-      "title": "html lang=vi nhưng toàn bộ trang login bằng tiếng Anh",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/01-login-default.png",
-      "expected": "UI tiếng Việt khớp lang=vi, hoặc lang=en",
-      "actual": "lang=vi; copy English: Create your account / Continue with Google"
-    },
-    {
-      "severity": "Low",
-      "category": "Content",
-      "title": "Brand panel login hiện lịch demo cố định 'Thu, Aug 20' (không phải hôm nay)",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/01-login-default.png",
-      "expected": "Panel marketing có thể dùng mock, nhưng ngày cứng dễ hiểu nhầm app đang lệch lịch",
-      "actual": "Today · Thu, Aug 20 · 3 classes"
-    },
-    {
-      "severity": "High",
-      "category": "UX",
-      "title": "Nút submit #panel-signup bị disabled khi form còn trống/invalid — user không bấm được để xem lỗi",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "actual": {
-        "id": "",
-        "type": "submit",
-        "text": "Create account",
-        "disabled": true,
-        "hidden": false,
-        "form": "panel-signup"
-      }
-    },
-    {
-      "severity": "Medium",
-      "category": "Functional",
-      "title": "Signup: email không hợp lệ không hiện 'Invalid email address'",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/03-signup-invalid-email.png",
-      "actual": "Teacher OS\n\nTEACHER-FIRST WORKSPACE\n\nYour whole teaching day, in one calm workspace.\n\nClasses, students, syllabi, lessons, invoices and reports — organized around the classes you teach.\n\nToday\nThu, Aug 20 · 3 classes\n09:00\nSpeaking Club · Group A\nRoom 204\nNOW\n10:30\nMathematics 10 · Section B\nRoom 112\nNEXT\n14:00\nPhysics Lab · Group C\nLab 3\nDONE\nSyllabus · Midterm review\n78%\n\n© 2026 Teacher OS\n\nCreate your account\n\nSet up your teacher workspace in a minute.\n\nSign in\nCreate account\nContinue with Google\nOR USE EMAIL\nName\nEmail\nPassword\n\nPassword must be at least 8 characters\n\nCreate account\n\nAlready have an account? Sign in"
-    },
-    {
-      "severity": "Medium",
-      "category": "Functional",
-      "title": "Signup: tên 1 ký tự không bị chặn",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/03-signup-invalid-email.png"
-    },
-    {
-      "severity": "High",
-      "category": "UX",
-      "title": "Nút submit #panel-signin bị disabled khi form còn trống/invalid — user không bấm được để xem lỗi",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "actual": {
-        "id": "",
-        "type": "submit",
-        "text": "Sign in",
-        "disabled": true,
-        "hidden": false,
-        "form": "panel-signin"
-      }
-    },
-    {
-      "severity": "High",
-      "category": "Functional",
-      "title": "Sign-in: email 'not-an-email' không hiện Invalid email address",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/06-signin-invalid-email.png",
-      "expected": "Invalid email address",
-      "actual": "Teacher OS\n\nTEACHER-FIRST WORKSPACE\n\nYour whole teaching day, in one calm workspace.\n\nClasses, students, syllabi, lessons, invoices and reports — organized around the classes you teach.\n\nToday\nThu, Aug 20 · 3 classes\n09:00\nSpeaking Club · Group A\nRoom 204\nNOW\n10:30\nMathematics 10 · Section B\nRoom 112\nNEXT\n14:00\nPhysics Lab · Group C\nLab 3\nDONE\nSyllabus · Midterm review\n78%\n\n© 2026 Teacher OS\n\nWelcome back\n\nSign in to open your workspace.\n\nSign in\nCreate account\nContinue with Google\nOR USE EMAIL\nEmail\nPassword\nForgot password?\n\nPassword is required\n\nSign in\n\nNew to Teacher OS? Create an account",
-      "steps": [
-        "Mở /login",
-        "Tab Sign in",
-        "Nhập email not-an-email, để trống password",
-        "Bấm Sign in"
-      ]
-    },
-    {
-      "severity": "High",
-      "category": "Console",
-      "title": "JS error: Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"s",
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "actual": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
-    },
-    {
-      "severity": "High",
-      "category": "Console",
-      "title": "JS error: Failed to load resource: the server responded with a status of 404 ()",
-      "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
-      "actual": "Failed to load resource: the server responded with a status of 404 ()"
-    },
-    {
-      "severity": "Medium",
-      "category": "Console",
-      "title": "HTTP csp GET https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-      "url": "https://app.staging.teacheros.io.vn/login",
-      "actual": {
-        "url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
-        "method": "GET",
-        "error": "csp",
-        "page": "https://app.staging.teacheros.io.vn/login"
-      }
-    },
-    {
-      "severity": "Medium",
-      "category": "Console",
-      "title": "HTTP 404 GET https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
-      "url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
-      "actual": {
-        "url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
-        "method": "GET",
-        "status": 404,
-        "page": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard"
-      }
-    }
-  ],
-  "consoleErrorCount": 2,
-  "failedRequestCount": 2
+	"generatedAt": "2026-09-17T05:56:26.502Z",
+	"base": "https://app.staging.teacheros.io.vn",
+	"signedIn": true,
+	"emailUsed": "dogfood.qa.1789624537950@mailinator.com",
+	"pagesVisited": [
+		{
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=https://evil.example",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/dashboard",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/students",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/schedule",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/tuition",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/assignments",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/classes",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/syllabus",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/reports",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/settings",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/profile",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/students",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/classes",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/dashboard",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/students",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		},
+		{
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"title": "Teacher OS · Quản lý lớp gia sư 1:1"
+		}
+	],
+	"findings": [
+		{
+			"severity": "Medium",
+			"category": "Content",
+			"title": "html lang=vi nhưng toàn bộ trang login bằng tiếng Anh",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/01-login-default.png",
+			"expected": "UI tiếng Việt khớp lang=vi, hoặc lang=en",
+			"actual": "lang=vi; copy English: Create your account / Continue with Google"
+		},
+		{
+			"severity": "Low",
+			"category": "Content",
+			"title": "Brand panel login hiện lịch demo cố định 'Thu, Aug 20' (không phải hôm nay)",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/01-login-default.png",
+			"expected": "Panel marketing có thể dùng mock, nhưng ngày cứng dễ hiểu nhầm app đang lệch lịch",
+			"actual": "Today · Thu, Aug 20 · 3 classes"
+		},
+		{
+			"severity": "High",
+			"category": "UX",
+			"title": "Nút submit #panel-signup bị disabled khi form còn trống/invalid — user không bấm được để xem lỗi",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"actual": {
+				"id": "",
+				"type": "submit",
+				"text": "Create account",
+				"disabled": true,
+				"hidden": false,
+				"form": "panel-signup"
+			}
+		},
+		{
+			"severity": "Medium",
+			"category": "Functional",
+			"title": "Signup: email không hợp lệ không hiện 'Invalid email address'",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/03-signup-invalid-email.png",
+			"actual": "Teacher OS\n\nTEACHER-FIRST WORKSPACE\n\nYour whole teaching day, in one calm workspace.\n\nClasses, students, syllabi, lessons, invoices and reports — organized around the classes you teach.\n\nToday\nThu, Aug 20 · 3 classes\n09:00\nSpeaking Club · Group A\nRoom 204\nNOW\n10:30\nMathematics 10 · Section B\nRoom 112\nNEXT\n14:00\nPhysics Lab · Group C\nLab 3\nDONE\nSyllabus · Midterm review\n78%\n\n© 2026 Teacher OS\n\nCreate your account\n\nSet up your teacher workspace in a minute.\n\nSign in\nCreate account\nContinue with Google\nOR USE EMAIL\nName\nEmail\nPassword\n\nPassword must be at least 8 characters\n\nCreate account\n\nAlready have an account? Sign in"
+		},
+		{
+			"severity": "Medium",
+			"category": "Functional",
+			"title": "Signup: tên 1 ký tự không bị chặn",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/03-signup-invalid-email.png"
+		},
+		{
+			"severity": "High",
+			"category": "UX",
+			"title": "Nút submit #panel-signin bị disabled khi form còn trống/invalid — user không bấm được để xem lỗi",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"actual": {
+				"id": "",
+				"type": "submit",
+				"text": "Sign in",
+				"disabled": true,
+				"hidden": false,
+				"form": "panel-signin"
+			}
+		},
+		{
+			"severity": "High",
+			"category": "Functional",
+			"title": "Sign-in: email 'not-an-email' không hiện Invalid email address",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"screenshot": "/Users/vinhtran/Documents/project/personal/teacher-os/dogfood-output/screenshots/06-signin-invalid-email.png",
+			"expected": "Invalid email address",
+			"actual": "Teacher OS\n\nTEACHER-FIRST WORKSPACE\n\nYour whole teaching day, in one calm workspace.\n\nClasses, students, syllabi, lessons, invoices and reports — organized around the classes you teach.\n\nToday\nThu, Aug 20 · 3 classes\n09:00\nSpeaking Club · Group A\nRoom 204\nNOW\n10:30\nMathematics 10 · Section B\nRoom 112\nNEXT\n14:00\nPhysics Lab · Group C\nLab 3\nDONE\nSyllabus · Midterm review\n78%\n\n© 2026 Teacher OS\n\nWelcome back\n\nSign in to open your workspace.\n\nSign in\nCreate account\nContinue with Google\nOR USE EMAIL\nEmail\nPassword\nForgot password?\n\nPassword is required\n\nSign in\n\nNew to Teacher OS? Create an account",
+			"steps": [
+				"Mở /login",
+				"Tab Sign in",
+				"Nhập email not-an-email, để trống password",
+				"Bấm Sign in"
+			]
+		},
+		{
+			"severity": "High",
+			"category": "Console",
+			"title": "JS error: Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"s",
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"actual": "Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+		},
+		{
+			"severity": "High",
+			"category": "Console",
+			"title": "JS error: Failed to load resource: the server responded with a status of 404 ()",
+			"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
+			"actual": "Failed to load resource: the server responded with a status of 404 ()"
+		},
+		{
+			"severity": "Medium",
+			"category": "Console",
+			"title": "HTTP csp GET https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+			"url": "https://app.staging.teacheros.io.vn/login",
+			"actual": {
+				"url": "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495",
+				"method": "GET",
+				"error": "csp",
+				"page": "https://app.staging.teacheros.io.vn/login"
+			}
+		},
+		{
+			"severity": "Medium",
+			"category": "Console",
+			"title": "HTTP 404 GET https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
+			"url": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			"actual": {
+				"url": "https://app.staging.teacheros.io.vn/this-page-does-not-exist-qa",
+				"method": "GET",
+				"status": 404,
+				"page": "https://app.staging.teacheros.io.vn/login?returnUrl=%2Fdashboard"
+			}
+		}
+	],
+	"consoleErrorCount": 2,
+	"failedRequestCount": 2
 }
