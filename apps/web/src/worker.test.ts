@@ -187,4 +187,135 @@ describe("apps/web worker fetch handler", () => {
 		expect(res.headers.get("content-type")).toContain("text/plain");
 		expect(await res.text()).toBe("Not Found");
 	});
+
+	it("redirects plain HTTP requests on non-local host to HTTPS with 301 and HSTS", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("http://app.teacheros.io.vn/dashboard?tab=classes"),
+			env,
+		);
+		expect(res.status).toBe(301);
+		expect(res.headers.get("location")).toBe(
+			"https://app.teacheros.io.vn/dashboard?tab=classes",
+		);
+		expect(res.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+	});
+
+	it("does not redirect when already on HTTPS, even if x-forwarded-proto is http (prevents self-redirect loop)", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/login", {
+				headers: { "x-forwarded-proto": "http" },
+			}),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("location")).toBeNull();
+	});
+
+	it("does not redirect when upstream proxy already terminated TLS (x-forwarded-proto: https)", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("http://app.teacheros.io.vn/login", {
+				headers: { "x-forwarded-proto": "https" },
+			}),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("location")).toBeNull();
+	});
+
+	it("redirects plain HTTP requests with multi-hop x-forwarded-proto (e.g. 'http, https')", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("http://app.teacheros.io.vn/dashboard", {
+				headers: { "x-forwarded-proto": "http, https" },
+			}),
+			env,
+		);
+		expect(res.status).toBe(301);
+		expect(res.headers.get("location")).toBe(
+			"https://app.teacheros.io.vn/dashboard",
+		);
+	});
+
+	it("does not redirect local development requests on localhost, 127.0.0.1, or IPv6 [::1]", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("http://localhost:8001/dashboard"),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("location")).toBeNull();
+
+		const ipRes = await worker.fetch(
+			new Request("http://127.0.0.1:8001/dashboard"),
+			env,
+		);
+		expect(ipRes.status).toBe(200);
+		expect(ipRes.headers.get("location")).toBeNull();
+
+		const ipv6Res = await worker.fetch(
+			new Request("http://[::1]:8001/dashboard"),
+			env,
+		);
+		expect(ipv6Res.status).toBe(200);
+		expect(ipv6Res.headers.get("location")).toBeNull();
+	});
+	it("applies full security headers suite to 200 OK SPA responses", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/dashboard"),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+		expect(res.headers.get("x-frame-options")).toBe("DENY");
+		expect(res.headers.get("referrer-policy")).toBe(
+			"strict-origin-when-cross-origin",
+		);
+		expect(res.headers.get("permissions-policy")).toBe(
+			"camera=(), microphone=(), geolocation=(), browsing-topics=()",
+		);
+		expect(res.headers.get("content-security-policy")).toContain(
+			"default-src 'self'",
+		);
+		expect(res.headers.get("content-security-policy")).toContain(
+			"frame-ancestors 'none'",
+		);
+	});
+
+	it("applies security headers to 404 responses and dotfile rejections", async () => {
+		const env = createMockEnv();
+		const dotfileRes = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/.env"),
+			env,
+		);
+		expect(dotfileRes.status).toBe(404);
+		expect(dotfileRes.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(dotfileRes.headers.get("x-content-type-options")).toBe("nosniff");
+		expect(dotfileRes.headers.get("x-frame-options")).toBe("DENY");
+
+		const notFoundHtmlRes = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/missing-page", {
+				headers: { Accept: "text/html" },
+			}),
+			env,
+		);
+		expect(notFoundHtmlRes.status).toBe(404);
+		expect(notFoundHtmlRes.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(notFoundHtmlRes.headers.get("content-security-policy")).toContain(
+			"default-src 'self'",
+		);
+	});
 });

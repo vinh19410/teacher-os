@@ -3,6 +3,10 @@ import {
 	isStaticAssetPath,
 	isValidAppRoute,
 } from "./routes-matcher";
+import {
+	applySecurityHeaders,
+	shouldRedirectToHttps,
+} from "./security-headers";
 
 export interface WorkerAssetsBinding {
 	fetch(input: Request | string): Promise<Response>;
@@ -17,26 +21,53 @@ export default {
 		const url = new URL(request.url);
 		const pathname = url.pathname;
 
+		// 0. Redirect plain HTTP to HTTPS (except localhost / 127.0.0.1)
+		const redirectUrl = shouldRedirectToHttps(request);
+		if (redirectUrl) {
+			return new Response(null, {
+				status: 301,
+				statusText: "Moved Permanently",
+				headers: {
+					Location: redirectUrl,
+					"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+				},
+			});
+		}
+
 		// 1. Block dotfiles (e.g. /.env, /.git) immediately with plain-text 404
 		if (isDotFilePath(pathname)) {
 			return new Response("Not Found", {
 				status: 404,
 				statusText: "Not Found",
-				headers: {
-					"Content-Type": "text/plain; charset=utf-8",
-					"Cache-Control": "no-store",
-				},
+				headers: applySecurityHeaders(
+					new Headers({
+						"Content-Type": "text/plain; charset=utf-8",
+						"Cache-Control": "no-store",
+					}),
+				),
 			});
 		}
 
 		// 2. Serve static assets directly from ASSETS
 		if (isStaticAssetPath(pathname) && env.ASSETS) {
-			return env.ASSETS.fetch(request);
+			const res = await env.ASSETS.fetch(request);
+			return new Response(res.body, {
+				status: res.status,
+				statusText: res.statusText,
+				headers: applySecurityHeaders(res.headers),
+			});
 		}
 
 		// 3. Serve valid SPA routes with 200 OK and index.html
 		if (isValidAppRoute(pathname) && env.ASSETS) {
-			return env.ASSETS.fetch(new Request(new URL("/", request.url), request));
+			const res = await env.ASSETS.fetch(
+				new Request(new URL("/", request.url), request),
+			);
+			return new Response(res.body, {
+				status: res.status,
+				statusText: res.statusText,
+				headers: applySecurityHeaders(res.headers),
+			});
 		}
 
 		// 4. Unknown route (404)
@@ -50,7 +81,7 @@ export default {
 				method: "GET",
 			});
 			const shell = await env.ASSETS.fetch(shellRequest);
-			const headers = new Headers(shell.headers);
+			const headers = applySecurityHeaders(shell.headers);
 			headers.delete("etag");
 			headers.delete("last-modified");
 			headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -64,10 +95,12 @@ export default {
 		return new Response("Not Found", {
 			status: 404,
 			statusText: "Not Found",
-			headers: {
-				"Content-Type": "text/plain; charset=utf-8",
-				"Cache-Control": "no-cache, no-store, must-revalidate",
-			},
+			headers: applySecurityHeaders(
+				new Headers({
+					"Content-Type": "text/plain; charset=utf-8",
+					"Cache-Control": "no-cache, no-store, must-revalidate",
+				}),
+			),
 		});
 	},
 };
