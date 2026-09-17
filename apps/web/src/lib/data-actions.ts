@@ -40,6 +40,18 @@ export type KernelAction =
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| { type: "add-comment-bank"; text: string; operationId: string }
 	| {
+			/** Weekly parent report (#173): "sent" requires content server-side;
+			 * drafts persist as-is with an empty `sent` stamp. */
+			type: "create-report";
+			payload: {
+				studentId: string;
+				period: string;
+				content: string;
+				channel: string;
+				status: "draft" | "sent";
+			};
+	  }
+	| {
 			type: "add-student";
 			payload: {
 				name: string;

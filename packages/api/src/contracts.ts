@@ -273,6 +273,25 @@ export const commentBankCreateSchema = z
 export type CommentBankCreate = z.infer<typeof commentBankCreateSchema>;
 
 /**
+ * Weekly parent-report creation (#173). A "sent" report requires content —
+ * an empty send would create a log entry for a message that never existed.
+ * Drafts may be empty; `channel` is metadata only (no real delivery yet).
+ */
+export const reportCreateSchema = z
+	.object({
+		studentId: z.string().min(1),
+		period: z.string().trim().min(1).max(120),
+		content: z.string().max(4000),
+		channel: z.enum(["Zalo OA", "Email"]),
+		status: z.enum(["draft", "sent"]),
+	})
+	.strict()
+	.refine((v) => v.status !== "sent" || v.content.trim().length > 0, {
+		message: "content required when sending",
+	});
+export type ReportCreate = z.infer<typeof reportCreateSchema>;
+
+/**
  * Scheduled-lesson status actions (Wave 4) — NOT syllabus_lesson (invariant 5).
  * The body is exactly `{}`: the target status comes from the endpoint, never
  * the client; anything else is rejected so a forged `status` cannot ride along.

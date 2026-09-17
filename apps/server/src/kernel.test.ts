@@ -2465,13 +2465,106 @@ describe("reports, notifications, and comment bank (Wave 7)", () => {
 		}
 	});
 
-	test("report create/send and notification mark-read have no write routes", async () => {
-		const createReport = await t.call("/api/reports", {
+	test("POST /api/reports persists a sent report with a send stamp (#173)", async () => {
+		const res = await t.call("/api/reports", {
 			session: orgA,
 			method: "POST",
-			body: { studentId: studentAId },
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "Tuần này tiến bộ rõ rệt.",
+				channel: "Zalo OA",
+				status: "sent",
+			},
 		});
-		expect(createReport.status).toBe(404);
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const row = (await t.kernel(orgA)).reports.find((r) => r.id === id);
+		expect(row?.status).toBe("sent");
+		expect(row?.sent).not.toBe("");
+		expect(row?.read).toBe("");
+	});
+
+	test("POST /api/reports keeps a draft unsent with empty content allowed (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "",
+				channel: "Email",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).reports.find((r) => r.id === id);
+		expect(row?.status).toBe("draft");
+		expect(row?.sent).toBe("");
+	});
+
+	test("POST /api/reports rejects a send without content (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "   ",
+				channel: "Zalo OA",
+				status: "sent",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST /api/reports rejects a student from another org (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentBId,
+				period: "08–14/09",
+				content: "x",
+				channel: "Zalo OA",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+		expect(await t.kernel(orgB).then((s) => s.reports)).toEqual([]);
+	});
+
+	test("POST /api/reports rejects malformed bodies and anonymous callers (#173)", async () => {
+		const bad = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "",
+				content: "x",
+				channel: "Fax",
+				status: "sent",
+			},
+		});
+		expect(bad.status).toBe(400);
+
+		const anon = await t.call("/api/reports", {
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "x",
+				channel: "Zalo OA",
+				status: "sent",
+			},
+		});
+		expect(anon.status).toBe(401);
+	});
+
+	test("notification mark-read has no write route (#173 shipped report create)", async () => {
 		const markRead = await t.call("/api/notifs/notif-a", {
 			session: orgA,
 			method: "PATCH",
