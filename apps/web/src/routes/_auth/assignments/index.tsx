@@ -31,6 +31,10 @@ function AssignmentsRoute() {
 	const { data } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 
+	const pendingCount = data.assignments.filter(
+		(a) => a.status !== "graded",
+	).length;
+
 	const list =
 		filter === "Tất cả"
 			? data.assignments
@@ -38,7 +42,10 @@ function AssignmentsRoute() {
 
 	return (
 		<div>
-			<PageHead title="Bài tập" lead="6 bài tập · 3 cần xử lý" />
+			<PageHead
+				title="Bài tập"
+				lead={`${data.assignments.length} bài tập · ${pendingCount} cần xử lý`}
+			/>
 			<div className="mb-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 			</div>

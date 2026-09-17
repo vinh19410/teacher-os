@@ -8,6 +8,7 @@ import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
+import { useData } from "@/lib/data-store";
 import { fmtVND } from "@/lib/mock-data";
 import { useStudents } from "@/lib/repos/use-students";
 
@@ -26,8 +27,21 @@ const FILTER_TAGS: Record<string, string> = {
 function StudentsRoute() {
 	const navigate = useNavigate();
 	const { students } = useStudents();
+	const { data } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
+
+	const unpaidStudentIds = new Set(
+		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
+	);
+
+	const attentionCount = students.filter(
+		(s) =>
+			s.tags.includes("nợ học phí") ||
+			s.tags.includes("sắp hết buổi") ||
+			(s.pkg.total > 0 && s.pkg.remaining <= 4) ||
+			unpaidStudentIds.has(s.id),
+	).length;
 
 	const list =
 		filter === "Tất cả"
@@ -38,7 +52,7 @@ function StudentsRoute() {
 		<div>
 			<PageHead
 				title="Học viên"
-				lead="5 học viên đang học · 2 cần chú ý (nợ học phí / sắp hết gói)"
+				lead={`${students.length} học viên đang học · ${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
