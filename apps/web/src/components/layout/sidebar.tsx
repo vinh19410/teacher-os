@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { initialsFromName } from "@/lib/initials";
+import { VersionBadge } from "./version-badge";
 
 const navSections: {
 	label: string | null;
@@ -237,12 +238,13 @@ export function Sidebar({
 				</div>
 				<div
 					className={cn(
-						"font-display font-semibold text-base tracking-[-0.01em]",
+						"flex items-center gap-2 font-display font-semibold text-base tracking-[-0.01em]",
 						// Collapsed-branch classes are always app:-prefixed (D10) so they cannot leak into the mobile drawer.
 						collapsed && "app:hidden",
 					)}
 				>
-					Teacher OS
+					<span>Teacher OS</span>
+					<VersionBadge />
 				</div>
 			</Link>
 			<nav className="flex flex-1 flex-col gap-0.5">
