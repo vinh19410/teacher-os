@@ -99,9 +99,10 @@ export default Alchemy.Stack(
 		const serverWorker = yield* server;
 		const webWorker = yield* Cloudflare.Website.Vite("web", {
 			rootDir: "../../apps/web",
+			main: "src/worker.ts",
 			assets: {
 				htmlHandling: "auto-trailing-slash",
-				notFoundHandling: "single-page-application",
+				notFoundHandling: "none",
 			},
 			...(topology && { domain: topology.appHost, workersDev: false }),
 			env: {

@@ -1,0 +1,154 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+import {
+	isDotFilePath,
+	isStaticAssetPath,
+	isValidAppRoute,
+} from "./routes-matcher";
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+describe("routes-matcher", () => {
+	describe("isValidAppRoute", () => {
+		const validStaticRoutes = [
+			"/",
+			"/login",
+			"/dashboard",
+			"/profile",
+			"/reports",
+			"/schedule",
+			"/settings",
+			"/tuition",
+			"/assignments",
+			"/classes",
+			"/students",
+			"/syllabus",
+		];
+
+		for (const route of validStaticRoutes) {
+			it(`accepts exact route ${route}`, () => {
+				expect(isValidAppRoute(route)).toBe(true);
+			});
+
+			it(`accepts exact route with trailing slash: ${route}/`, () => {
+				expect(isValidAppRoute(`${route}/`)).toBe(true);
+			});
+		}
+
+		it("accepts valid dynamic sub-routes (with and without trailing slashes)", () => {
+			expect(
+				isValidAppRoute("/students/6da91f92-1faf-40a6-ac57-09724ad29bf3"),
+			).toBe(true);
+			expect(
+				isValidAppRoute("/students/6da91f92-1faf-40a6-ac57-09724ad29bf3/"),
+			).toBe(true);
+			expect(isValidAppRoute("/classes/class-abc-123")).toBe(true);
+			expect(isValidAppRoute("/classes/class-abc-123/")).toBe(true);
+			expect(isValidAppRoute("/syllabus/syll-xyz-456")).toBe(true);
+			expect(isValidAppRoute("/syllabus/syll-xyz-456/")).toBe(true);
+			expect(isValidAppRoute("/assignments/assign-789")).toBe(true);
+			expect(isValidAppRoute("/assignments/assign-789/")).toBe(true);
+		});
+
+		it("rejects non-existent pages reported in QC issue #113", () => {
+			expect(isValidAppRoute("/this-page-does-not-exist-qc-test")).toBe(false);
+			expect(isValidAppRoute("/help")).toBe(false);
+			expect(isValidAppRoute("/about")).toBe(false);
+			expect(isValidAppRoute("/signup")).toBe(false);
+			expect(isValidAppRoute("/register")).toBe(false);
+		});
+
+		it("rejects random unknown paths", () => {
+			expect(isValidAppRoute("/foo")).toBe(false);
+			expect(isValidAppRoute("/api/unknown")).toBe(false);
+			expect(isValidAppRoute("/admin")).toBe(false);
+			expect(isValidAppRoute("/settings/extra/nested")).toBe(false);
+		});
+
+		it("drift guard: every route declared in routeTree.gen.ts passes isValidAppRoute", () => {
+			const routeTreeSrc = readFileSync(join(here, "routeTree.gen.ts"), "utf8");
+			// Match all route keys in FileRoutesByFullPath
+			const match = routeTreeSrc.match(
+				/export interface FileRoutesByFullPath \{([^}]+)\}/,
+			);
+			expect(match).toBeTruthy();
+			const block = match?.[1] ?? "";
+			const routeKeys = Array.from(block.matchAll(/'([^']+)'/g)).map(
+				(m) => m[1],
+			);
+
+			expect(routeKeys.length).toBeGreaterThan(0);
+			for (const path of routeKeys) {
+				const concretePath = path
+					.replace(/\$studentId/g, "sample-id")
+					.replace(/\$classId/g, "sample-id")
+					.replace(/\$syllabusId/g, "sample-id")
+					.replace(/\$assignmentId/g, "sample-id");
+				expect(
+					isValidAppRoute(concretePath),
+					`Route "${path}" (resolved as "${concretePath}") should be recognized as valid`,
+				).toBe(true);
+			}
+		});
+	});
+
+	describe("isDotFilePath", () => {
+		it("detects sensitive dotfiles", () => {
+			expect(isDotFilePath("/.env")).toBe(true);
+			expect(isDotFilePath("/.env.local")).toBe(true);
+			expect(isDotFilePath("/.git")).toBe(true);
+			expect(isDotFilePath("/.git/config")).toBe(true);
+			expect(isDotFilePath("/sub/.secret")).toBe(true);
+		});
+
+		it("detects path traversal attempts", () => {
+			expect(isDotFilePath("/../.env")).toBe(true);
+			expect(isDotFilePath("/assets/../../.env")).toBe(true);
+			expect(isDotFilePath("/%2e%2e/.env")).toBe(true);
+		});
+
+		it("does not flag standard .well-known directories as dotfiles", () => {
+			expect(isDotFilePath("/.well-known/assetlinks.json")).toBe(false);
+			expect(isDotFilePath("/.well-known/openid-configuration")).toBe(false);
+		});
+
+		it("does not flag normal routes or assets as dotfiles", () => {
+			expect(isDotFilePath("/")).toBe(false);
+			expect(isDotFilePath("/dashboard")).toBe(false);
+			expect(isDotFilePath("/assets/index.js")).toBe(false);
+			expect(isDotFilePath("/favicon.ico")).toBe(false);
+		});
+		it("recognizes known static files in public/", () => {
+			expect(isStaticAssetPath("/favicon.ico")).toBe(true);
+			expect(isStaticAssetPath("/logo.png")).toBe(true);
+			expect(isStaticAssetPath("/sw.js")).toBe(true);
+			expect(isStaticAssetPath("/registerSW.js")).toBe(true);
+			expect(isStaticAssetPath("/dev-sw.js")).toBe(true);
+		});
+
+		it("recognizes files in /assets/ directory", () => {
+			expect(isStaticAssetPath("/assets/index-abc.js")).toBe(true);
+			expect(isStaticAssetPath("/assets/index-def.css")).toBe(true);
+		});
+
+		it("recognizes standard static file extensions", () => {
+			expect(isStaticAssetPath("/image.png")).toBe(true);
+			expect(isStaticAssetPath("/style.css")).toBe(true);
+			expect(isStaticAssetPath("/script.js")).toBe(true);
+			expect(isStaticAssetPath("/font.woff2")).toBe(true);
+			expect(isStaticAssetPath("/manifest.json")).toBe(true);
+		});
+
+		it("does not flag client application routes as static assets", () => {
+			expect(isStaticAssetPath("/")).toBe(false);
+			expect(isStaticAssetPath("/login")).toBe(false);
+			expect(isStaticAssetPath("/dashboard")).toBe(false);
+			expect(isStaticAssetPath("/students/123")).toBe(false);
+			expect(isStaticAssetPath("/this-page-does-not-exist-qc-test")).toBe(
+				false,
+			);
+		});
+	});
+});
