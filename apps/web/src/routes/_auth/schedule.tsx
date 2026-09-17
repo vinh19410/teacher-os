@@ -1,13 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LessonModal } from "@/components/schedule/lesson-modal";
+import {
+	ClassSessionModal,
+	type ClassSessionModalRef,
+} from "@/components/schedule/class-session-modal";
 import { PageHead } from "@/components/ui/page-head";
 import { useData } from "@/lib/data-store";
 import type { LessonType } from "@/lib/mock-data";
 import { dayNames } from "@/lib/mock-data";
 import {
 	selectProjectedWeekBlocks,
-	selectWeekColumnLessons,
+	selectWeekColumnSessions,
 	weekSlotCount,
 } from "@/lib/schedule-week";
 import {
@@ -37,16 +40,15 @@ const typeBlockClass: Record<LessonType, string> = {
 	review: "border-l-meta bg-line-soft",
 };
 
-export function ScheduleRoute() {
-	const { data, studentById } = useData();
+function ScheduleRoute() {
+	const { data, classById } = useData();
 	const { week: weekParam } = Route.useSearch();
 	const navigate = useNavigate();
 	const { weekStart, dates, isCurrentWeek } = resolveWeek(weekParam);
 	const todayIso = todayISOVietnam();
-	const [openLesson, setOpenLesson] = useState<{
-		id: string;
-		dateIso: string;
-	} | null>(null);
+	const [openSession, setOpenSession] = useState<ClassSessionModalRef | null>(
+		null,
+	);
 
 	// A garbage ?week renders the current week already (resolveWeek falls
 	// back); this scrub replaces the bad param so the URL matches the view
@@ -57,12 +59,13 @@ export function ScheduleRoute() {
 		}
 	}, [weekParam, navigate]);
 
-	// Date-accurate week selection (issue #121): dated rows render only in
-	// the week containing their occurrence date; undated legacy rows keep the
-	// weekday-template behavior; classes with zero lesson rows contribute
-	// display-only projected blocks derived from their schedule skeleton.
+	// Date-accurate week selection (issue #121, #162): weekly sessions are
+	// grouped by class (a single block represents one physical session).
+	// Dated rows render only in the week containing their occurrence date;
+	// undated legacy rows keep the weekday-template behavior; classes with
+	// zero lesson rows contribute display-only projected blocks.
 	const columns = dayNames.map((_, i) =>
-		selectWeekColumnLessons(data.lessons, i + 1, dates),
+		selectWeekColumnSessions(data.lessons, i + 1, dates),
 	);
 	const projected = selectProjectedWeekBlocks(
 		data.classes,
@@ -113,10 +116,10 @@ export function ScheduleRoute() {
 			</div>
 			<div className="week-cal grid grid-cols-7 gap-2 max-app:grid-cols-1 max-app:gap-3">
 				{dayNames.map((dn, i) => {
-					const lessons = columns[i];
-					// Real rows and projected blocks interleave chronologically;
+					const sessions = columns[i];
+					// Real sessions and projected blocks interleave chronologically;
 					// projected entries render as non-interactive divs — never a
-					// button, never a LessonModal write target (AC3).
+					// button, never a ClassSessionModal write target (AC3).
 					const blocks = projected
 						.filter((b) => b.day === i + 1)
 						.map((b) => ({
@@ -125,16 +128,16 @@ export function ScheduleRoute() {
 							block: b,
 						}));
 					const entries = [
-						...lessons.map((l) => ({
-							key: l.id,
-							time: l.time,
-							lesson: l,
+						...sessions.map((s) => ({
+							key: s.key,
+							time: s.time,
+							session: s,
 							block: null,
 						})),
 						...blocks.map((b) => ({
 							key: b.key,
 							time: b.time,
-							lesson: null,
+							session: null,
 							block: b.block,
 						})),
 					].sort((a, b) => a.time.localeCompare(b.time));
@@ -185,48 +188,53 @@ export function ScheduleRoute() {
 										</div>
 									) : (
 										(() => {
-											const l = entry.lesson;
-											if (!l) return null;
-											const s = studentById(l.sid);
+											const s = entry.session;
+											if (!s) return null;
+											const cls = classById(s.classId);
+											const className = cls?.name ?? "Lớp học";
 											return (
 												<button
 													type="button"
-													key={l.id}
+													key={s.key}
 													onClick={() =>
-														setOpenLesson({
-															id: l.id,
-															// The row's own occurrence date wins — the
-															// column date is only a fallback for the
-															// frozen undated template path (dated rows
-															// already render in their date's column).
-															dateIso: l.date ?? dates[i],
+														setOpenSession({
+															classId: s.classId,
+															dateISO: s.dateISO,
+															day: s.day,
+															time: s.time,
+															columnDateISO: dates[i],
 														})
 													}
 													className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
-														typeBlockClass[l.type]
+														typeBlockClass[s.type]
 													} ${
-														l.status === "completed"
+														s.status === "completed"
 															? "opacity-60"
-															: l.status === "cancelled"
+															: s.status === "cancelled"
 																? "opacity-35"
 																: ""
 													}`}
 												>
 													<div className="font-mono text-[11px] text-fg-2">
-														{l.time}
+														{s.time}
 													</div>
 													<div
 														className={
-															l.status === "completed" ||
-															l.status === "cancelled"
+															s.status === "completed" ||
+															s.status === "cancelled"
 																? "font-semibold text-sm line-through decoration-meta"
 																: "font-semibold text-sm"
 														}
 													>
-														{s?.name ?? ""}
+														{className}
+														{s.rows.length > 1 && (
+															<span className="ml-1 font-normal text-[11px] text-muted-fg">
+																({s.rows.length} HV)
+															</span>
+														)}
 													</div>
 													<div className="mt-px text-[11px] text-muted-fg">
-														{l.type} · {l.topic.substring(0, 30)}
+														{s.type} · {s.topic.substring(0, 30)}
 													</div>
 												</button>
 											);
@@ -260,10 +268,9 @@ export function ScheduleRoute() {
 					Review
 				</span>
 			</div>
-			<LessonModal
-				lessonId={openLesson?.id ?? null}
-				dateIso={openLesson?.dateIso ?? null}
-				onClose={() => setOpenLesson(null)}
+			<ClassSessionModal
+				sessionRef={openSession}
+				onClose={() => setOpenSession(null)}
 			/>
 		</div>
 	);

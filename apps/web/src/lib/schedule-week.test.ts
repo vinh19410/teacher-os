@@ -1,8 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { ClassGroup, Lesson } from "@/lib/mock-data";
 import {
+	findSessionRows,
+	rollupSessionStatus,
 	selectProjectedWeekBlocks,
 	selectWeekColumnLessons,
+	selectWeekColumnSessions,
 	weekSlotCount,
 } from "./schedule-week";
 
@@ -66,6 +69,216 @@ describe("selectWeekColumnLessons (date-accurate weeks)", () => {
 		expect(
 			selectWeekColumnLessons([undated], 2, mondayWeek("2025-01-06")),
 		).toHaveLength(0);
+	});
+});
+
+describe("selectWeekColumnSessions (issue #162 — sessions grouped by class)", () => {
+	test("1:2 class with 2 enrollments on same date produces 1 session entry with 2 rows", () => {
+		const rowA = lesson({
+			id: "row-2",
+			classId: "cls-1",
+			sid: "s-bob",
+			day: 1,
+			time: "19:00",
+			date: "2026-09-07",
+			type: "1:2",
+			topic: "Unit 1 Speaking",
+		});
+		const rowB = lesson({
+			id: "row-1",
+			classId: "cls-1",
+			sid: "s-alice",
+			day: 1,
+			time: "19:00",
+			date: "2026-09-07",
+			type: "1:2",
+			topic: "Unit 1 Speaking",
+		});
+
+		const entries = selectWeekColumnSessions(
+			[rowA, rowB],
+			1,
+			mondayWeek("2026-09-07"),
+		);
+		expect(entries).toHaveLength(1);
+		const entry = entries[0];
+		expect(entry.classId).toBe("cls-1");
+		expect(entry.key).toBe("d:cls-1:2026-09-07");
+		expect(entry.dateISO).toBe("2026-09-07");
+		expect(entry.day).toBe(1);
+		expect(entry.time).toBe("19:00");
+		expect(entry.type).toBe("1:2");
+		expect(entry.topic).toBe("Unit 1 Speaking");
+		expect(entry.status).toBe("upcoming");
+		// Rows sorted stably by id
+		expect(entry.rows.map((r) => r.id)).toEqual(["row-1", "row-2"]);
+	});
+
+	test("two distinct classes at same day and time produce 2 separate entries", () => {
+		const c1 = lesson({
+			id: "l-c1",
+			classId: "cls-1",
+			day: 1,
+			time: "19:00",
+			date: "2026-09-07",
+		});
+		const c2 = lesson({
+			id: "l-c2",
+			classId: "cls-2",
+			day: 1,
+			time: "19:00",
+			date: "2026-09-07",
+		});
+
+		const entries = selectWeekColumnSessions(
+			[c1, c2],
+			1,
+			mondayWeek("2026-09-07"),
+		);
+		expect(entries).toHaveLength(2);
+		expect(entries.map((e) => e.classId).sort()).toEqual(["cls-1", "cls-2"]);
+	});
+
+	test("legacy undated class with 2 enrollments groups by (classId, day, time)", () => {
+		const u1 = lesson({
+			id: "u-1",
+			classId: "cls-leg",
+			sid: "s-1",
+			day: 2,
+			time: "18:00",
+			date: null,
+		});
+		const u2 = lesson({
+			id: "u-2",
+			classId: "cls-leg",
+			sid: "s-2",
+			day: 2,
+			time: "18:00",
+			date: null,
+		});
+
+		const entries = selectWeekColumnSessions(
+			[u1, u2],
+			2,
+			mondayWeek("2026-09-07"),
+		);
+		expect(entries).toHaveLength(1);
+		expect(entries[0].key).toBe("l:cls-leg:2:18:00");
+		expect(entries[0].dateISO).toBeNull();
+		expect(entries[0].rows).toHaveLength(2);
+	});
+
+	test("dated row out of viewed week is excluded", () => {
+		const l = lesson({
+			id: "l-out",
+			classId: "cls-1",
+			day: 1,
+			date: "2026-09-14",
+		});
+		const entries = selectWeekColumnSessions([l], 1, mondayWeek("2026-09-07"));
+		expect(entries).toHaveLength(0);
+	});
+});
+
+describe("rollupSessionStatus (homogenous vs mixed)", () => {
+	test("all cancelled -> cancelled", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "cancelled" }),
+				lesson({ status: "cancelled" }),
+			]),
+		).toBe("cancelled");
+	});
+
+	test("all completed -> completed", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "completed" }),
+				lesson({ status: "completed" }),
+			]),
+		).toBe("completed");
+	});
+
+	test("mixed completed and upcoming -> upcoming", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "completed" }),
+				lesson({ status: "upcoming" }),
+			]),
+		).toBe("upcoming");
+	});
+
+	test("mixed completed and cancelled -> upcoming", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "completed" }),
+				lesson({ status: "cancelled" }),
+			]),
+		).toBe("upcoming");
+	});
+
+	test("all absent -> upcoming", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "absent" }),
+				lesson({ status: "absent" }),
+			]),
+		).toBe("upcoming");
+	});
+
+	test("empty rows -> upcoming", () => {
+		expect(rollupSessionStatus([])).toBe("upcoming");
+	});
+});
+
+describe("findSessionRows (live lookup by ref)", () => {
+	test("finds dated rows by classId and date, sorted by id", () => {
+		const all = [
+			lesson({ id: "r-2", classId: "cls-target", date: "2026-09-07" }),
+			lesson({ id: "r-1", classId: "cls-target", date: "2026-09-07" }),
+			lesson({ id: "r-other", classId: "cls-target", date: "2026-09-14" }),
+			lesson({ id: "r-diff", classId: "cls-other", date: "2026-09-07" }),
+		];
+		const matched = findSessionRows(all, {
+			classId: "cls-target",
+			dateISO: "2026-09-07",
+			day: 1,
+			time: "19:00",
+		});
+		expect(matched.map((r) => r.id)).toEqual(["r-1", "r-2"]);
+	});
+
+	test("finds legacy undated rows by (classId, day, time)", () => {
+		const all = [
+			lesson({
+				id: "u-b",
+				classId: "cls-leg",
+				day: 2,
+				time: "18:00",
+				date: null,
+			}),
+			lesson({
+				id: "u-a",
+				classId: "cls-leg",
+				day: 2,
+				time: "18:00",
+				date: null,
+			}),
+			lesson({
+				id: "u-diff-time",
+				classId: "cls-leg",
+				day: 2,
+				time: "20:00",
+				date: null,
+			}),
+		];
+		const matched = findSessionRows(all, {
+			classId: "cls-leg",
+			dateISO: null,
+			day: 2,
+			time: "18:00",
+		});
+		expect(matched.map((r) => r.id)).toEqual(["u-a", "u-b"]);
 	});
 });
 
@@ -153,5 +366,34 @@ describe("weekSlotCount (AC8 — rendered-week distinct slots)", () => {
 			},
 		];
 		expect(weekSlotCount(columns, projected)).toBe(3);
+	});
+	test("excludes fully-cancelled session entries and counts 1:2 sessions once", () => {
+		const cancelledEntry = {
+			key: "d:cls-1:2026-09-07",
+			classId: "cls-1",
+			dateISO: "2026-09-07",
+			day: 1,
+			time: "19:00",
+			rows: [lesson({ id: "r1", status: "cancelled" })],
+			status: "cancelled" as const,
+			type: "1:1" as const,
+			topic: "",
+		};
+		const multiEnrollmentActiveEntry = {
+			key: "d:cls-2:2026-09-07",
+			classId: "cls-2",
+			dateISO: "2026-09-07",
+			day: 1,
+			time: "20:00",
+			rows: [
+				lesson({ id: "r2", status: "upcoming" }),
+				lesson({ id: "r3", status: "upcoming" }),
+			],
+			status: "upcoming" as const,
+			type: "1:2" as const,
+			topic: "",
+		};
+		const columns = [[cancelledEntry, multiEnrollmentActiveEntry]];
+		expect(weekSlotCount(columns, [])).toBe(1);
 	});
 });
