@@ -4,6 +4,7 @@ import {
 	Outlet,
 } from "@tanstack/react-router";
 import { Toaster } from "@teacher-os/ui/components/sonner";
+import { NotFoundPage } from "@/components/not-found";
 
 import "../index.css";
 
@@ -11,6 +12,7 @@ export type RouterAppContext = Record<string, never>;
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,
+	notFoundComponent: NotFoundPage,
 	head: () => ({
 		meta: [
 			{
