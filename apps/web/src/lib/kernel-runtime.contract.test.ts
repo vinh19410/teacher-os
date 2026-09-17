@@ -419,6 +419,25 @@ describe("kernel-backed store wiring", () => {
 		}
 	});
 
+	test("reports route and create-report-modal contain 0 mock data, names, or fake dates (#107)", () => {
+		const reports = readSrc("../routes/_auth/reports.tsx");
+		expect(reports).not.toMatch(/Minh Anh/);
+		expect(reports).not.toMatch(/Quốc Bảo/);
+		expect(reports).not.toMatch(/18\/08/);
+		expect(reports).not.toMatch(/17\/08/);
+		expect(reports).not.toMatch(/4 báo cáo tuần này/);
+		expect(reports).not.toMatch(/Task 2 University/);
+		expect(reports).toMatch(/Chưa có báo cáo nào được gửi/);
+		expect(reports).toMatch(/Chưa có nhật ký gửi tin nhắn/);
+
+		const modal = readSrc("../components/modals/create-report-modal.tsx");
+		expect(modal).not.toMatch(/DEFAULT_CONTENT/);
+		expect(modal).not.toMatch(/19–25\/08/);
+		expect(modal).not.toMatch(/Task 2 Opinion Essay/);
+		expect(modal).not.toMatch(/Bar chart/);
+		expect(modal).not.toMatch(/Band gần nhất/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);
