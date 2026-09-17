@@ -24,7 +24,9 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 | Snapshot assembly | [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) |
 | Persistent rows and constraints | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Kernel DTOs and request bodies | [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) |
-| Cloudflare worker and D1 wiring | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) |
+| API Cloudflare worker and D1 wiring | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) |
+| Web asset worker: static assets, SPA routes, HTTP 404 for unknown paths | [apps/web/src/worker.ts](../apps/web/src/worker.ts) with route classification in [apps/web/src/routes-matcher.ts](../apps/web/src/routes-matcher.ts) |
+| Syllabus import file parsing (client-side; files never reach the server) | [apps/web/src/lib/syllabus-import.ts](../apps/web/src/lib/syllabus-import.ts) |
 | Deploy topology and auth cookie namespace | [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) (derivation) and [packages/auth/src/topology.ts](../packages/auth/src/topology.ts) (validation) |
 
 ## Architectural rules
@@ -35,5 +37,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 - Keep scheduled lesson actions separate from curriculum lessons.
 - Keep entitlement state on `session_package` owned by `student`; `enrollment` is the optional class attachment (a package can be parked without a class).
 - Keep deployment wiring in the infra package, not in app code.
+- Keep syllabus file parsing in the browser; the server only receives validated JSON module trees (`POST /api/syllabi/:id/replace-content` applies the replacement as one atomic D1 batch).
+- Keep unknown web paths answering HTTP 404 from the asset worker (branded SPA shell for browser navigations, plain text otherwise); never serve unknown paths as a 200 SPA rewrite.
 - Keep auth topology (origins, cookie domain, cookie namespace prefix) derived from `APP_DOMAIN` in the topology modules. Because staging is a subdomain of the prod apex, browsers send prod's parent-domain session cookie to the staging API too; any non-prod member of that cookie zone must namespace its auth cookies (`teacheros-staging`) so the foreign cookie cannot shadow its sessions, while prod and local stay on the default `better-auth` names.
 
