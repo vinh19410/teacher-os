@@ -660,6 +660,421 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 	});
 });
 
+describe("syllabus lesson status optional + replace-content (import ghi đè)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	/** Syllabus 1 module "M1" với 1 lesson `status`, trả ids từ snapshot. */
+	async function createWithLesson(status: "done" | "current" | "upcoming") {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: `Syllabus ${status}`,
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 1,
+				modules: [
+					{
+						title: "M1",
+						lessons: [
+							{ title: "B1", objectives: "o1", materials: "m1", status },
+						],
+					},
+				],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: syllabusId } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		const mod = sy?.modules[0];
+		const lesson = mod?.lessons[0];
+		if (!sy || !mod || !lesson) throw new Error("setup failed");
+		return { syllabusId, moduleId: mod.id, lessonId: lesson.id };
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Replace");
+	});
+
+	test("edit-lesson without status preserves the existing status", async () => {
+		const { syllabusId, moduleId, lessonId } = await createWithLesson("done");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			{
+				session,
+				method: "POST",
+				body: { title: "B1 mới", objectives: "", materials: "" },
+			},
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const lesson = snapshot.syllabi.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons[0];
+		expect(lesson).toMatchObject({ title: "B1 mới", status: "done" });
+	});
+
+	test("edit-lesson with an explicit status still updates it", async () => {
+		const { syllabusId, moduleId, lessonId } = await createWithLesson("done");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			{
+				session,
+				method: "POST",
+				body: {
+					title: "B1",
+					objectives: "",
+					materials: "",
+					status: "current",
+				},
+			},
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const lesson = snapshot.syllabi.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons[0];
+		expect(lesson?.status).toBe("current");
+	});
+
+	test("add-lesson without status defaults to upcoming", async () => {
+		const { syllabusId, moduleId } = await createWithLesson("done");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "B2 thêm", objectives: "", materials: "" },
+			},
+		);
+		expect(res.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		const lessons = snapshot.syllabi.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons;
+		expect(lessons?.[1]).toMatchObject({
+			title: "B2 thêm",
+			status: "upcoming",
+		});
+	});
+
+	test("replace-content swaps the whole tree and updates totalLessons", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Syllabus bị ghi đè",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 2,
+				modules: [
+					{
+						title: "M1 cũ",
+						lessons: [
+							{ title: "B1 cũ", status: "done" },
+							{ title: "B2 cũ", status: "current" },
+						],
+					},
+					{ title: "M2 cũ", lessons: [] },
+				],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: syllabusId } = (await res.json()) as { id: string };
+
+		const replace = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
+			session,
+			method: "POST",
+			body: {
+				modules: [
+					{
+						title: "Mới",
+						description: "d",
+						lessons: [
+							{ title: "Buổi 1", objectives: "o", materials: "m" },
+							{ title: "Buổi 2", objectives: "", materials: "" },
+						],
+					},
+				],
+			},
+		});
+		expect(replace.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.totalLessons).toBe(2);
+		expect(sy?.modules.map((m) => m.title)).toEqual(["Mới"]);
+		expect(sy?.modules[0]?.lessons.map((l) => l.title)).toEqual([
+			"Buổi 1",
+			"Buổi 2",
+		]);
+		expect(sy?.modules[0]?.lessons[0]?.status).toBe("upcoming");
+	});
+
+	test("replace-content on an unknown syllabus is 404", async () => {
+		const res = await t.call(
+			`/api/syllabi/${crypto.randomUUID()}/replace-content`,
+			{
+				session,
+				method: "POST",
+				body: { modules: [{ title: "M", lessons: [] }] },
+			},
+		);
+		expect(res.status).toBe(404);
+	});
+
+	test("replace-content with empty modules is 400", async () => {
+		const { syllabusId } = await createWithLesson("upcoming");
+		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
+			session,
+			method: "POST",
+			body: { modules: [] },
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("replace-content from another org is 404 and leaves the tree intact", async () => {
+		const { syllabusId } = await createWithLesson("done");
+		const other = await t.insertUser("Cô org khác");
+		await t.kernel(other); // bootstrap org + membership cho user thứ hai
+
+		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
+			session: other,
+			method: "POST",
+			body: {
+				modules: [{ title: "M phá hoại", lessons: [{ title: "B phá hoại" }] }],
+			},
+		});
+		expect(res.status).toBe(404);
+
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.totalLessons).toBe(1);
+		expect(sy?.modules.map((m) => m.title)).toEqual(["M1"]);
+		expect(sy?.modules[0]?.lessons[0]).toMatchObject({
+			title: "B1",
+			status: "done",
+		});
+	});
+});
+
+describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #154)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+
+	/** Syllabus 1 module với 3 lesson kind lesson/midterm/final, trả ids. */
+	async function createWithKinds() {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Syllabus buổi thi",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 3,
+				modules: [
+					{
+						title: "M1",
+						lessons: [
+							{ title: "B1", objectives: "o1", materials: "m1" },
+							{
+								title: "Giữa kỳ",
+								objectives: "",
+								materials: "",
+								kind: "midterm",
+							},
+							{
+								title: "Cuối kỳ",
+								objectives: "",
+								materials: "",
+								kind: "final",
+							},
+						],
+					},
+				],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: syllabusId } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		const mod = sy?.modules[0];
+		if (!sy || !mod || mod.lessons.length !== 3)
+			throw new Error("setup failed");
+		return { syllabusId, moduleId: mod.id, lessons: mod.lessons };
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Buổi Thi");
+	});
+
+	test("create with modules persists kind and snapshot returns it", async () => {
+		const { lessons } = await createWithKinds();
+		expect(lessons.map((l) => l.kind)).toEqual(["lesson", "midterm", "final"]);
+	});
+
+	test("edit-lesson without kind preserves the existing kind", async () => {
+		const { syllabusId, moduleId, lessons } = await createWithKinds();
+		const midterm = lessons[1];
+		if (!midterm) throw new Error("setup failed");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${midterm.id}`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Giữa kỳ đổi tên", objectives: "", materials: "" },
+			},
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const lesson = snapshot.syllabi
+			.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons.find((l) => l.id === midterm.id);
+		expect(lesson).toMatchObject({ title: "Giữa kỳ đổi tên", kind: "midterm" });
+	});
+
+	test("edit-lesson with an explicit kind updates it", async () => {
+		const { syllabusId, moduleId, lessons } = await createWithKinds();
+		const normal = lessons[0];
+		if (!normal) throw new Error("setup failed");
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${normal.id}`,
+			{
+				session,
+				method: "POST",
+				body: { title: "B1", objectives: "", materials: "", kind: "final" },
+			},
+		);
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const lesson = snapshot.syllabi
+			.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons.find((l) => l.id === normal.id);
+		expect(lesson?.kind).toBe("final");
+	});
+
+	test("add-lesson without kind defaults to lesson", async () => {
+		const { syllabusId, moduleId } = await createWithKinds();
+		const res = await t.call(
+			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "B4 thêm", objectives: "", materials: "" },
+			},
+		);
+		expect(res.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		const lessons = snapshot.syllabi.find((row) => row.id === syllabusId)
+			?.modules[0]?.lessons;
+		expect(lessons?.[3]).toMatchObject({ title: "B4 thêm", kind: "lesson" });
+	});
+
+	test("replace-content preserves mixed kinds", async () => {
+		const { syllabusId } = await createWithKinds();
+		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
+			session,
+			method: "POST",
+			body: {
+				modules: [
+					{
+						title: "M mới",
+						lessons: [
+							{ title: "Thường", objectives: "", materials: "" },
+							{
+								title: "Thi lại",
+								objectives: "",
+								materials: "",
+								kind: "midterm",
+							},
+						],
+					},
+				],
+			},
+		});
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
+		expect(sy?.modules[0]?.lessons.map((l) => l.kind)).toEqual([
+			"lesson",
+			"midterm",
+		]);
+	});
+
+	test("invalid kind in modules is 400", async () => {
+		const res = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Kind lạ",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 0,
+				modules: [{ title: "M", lessons: [{ title: "B", kind: "exam" }] }],
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("import template into a class keeps kind and resets status", async () => {
+		// Template: 1 lesson thường (status upcoming) + 1 buổi thi giữa kỳ.
+		const createRes = await t.call("/api/syllabi", {
+			session,
+			method: "POST",
+			body: {
+				name: "Template buổi thi",
+				type: "ielts",
+				skills: ["Writing"],
+				totalLessons: 2,
+				modules: [
+					{
+						title: "M1",
+						lessons: [
+							{ title: "B1", objectives: "", materials: "" },
+							{
+								title: "Thi giữa kỳ",
+								objectives: "",
+								materials: "",
+								kind: "midterm",
+							},
+						],
+					},
+				],
+			},
+		});
+		expect(createRes.status).toBe(201);
+		const { id: templateId } = (await createRes.json()) as { id: string };
+		const tplSnapshot = await t.kernel(session);
+		const template = tplSnapshot.syllabi.find((row) => row.id === templateId);
+		const tplMidterm = template?.modules[0]?.lessons[1];
+
+		const classId = await t.createClass(session, "Lớp copy buổi thi");
+		const importRes = await t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+		expect(importRes.status).toBe(201);
+
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find(
+			(row) => row.classId === classId && row.sourceTemplateId === templateId,
+		);
+		expect(copy).toBeTruthy();
+		expect(copy?.modules[0]?.lessons.map((l) => l.kind)).toEqual([
+			"lesson",
+			"midterm",
+		]);
+		// status là tiến độ per-lớp → copy reset upcoming dù template là gì.
+		expect(copy?.modules[0]?.lessons.map((l) => l.status)).toEqual([
+			"upcoming",
+			"upcoming",
+		]);
+		expect(tplMidterm?.kind).toBe("midterm");
+	});
+});
+
 describe("invoice persistence", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;

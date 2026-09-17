@@ -4,6 +4,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 
 import Loader from "./components/loader";
+import NotFoundPage from "./components/not-found";
 import { createKernelQueryClient } from "./lib/query-client";
 import { routeTree } from "./routeTree.gen";
 
@@ -12,6 +13,7 @@ const router = createRouter({
 	defaultPreload: "intent",
 	scrollRestoration: true,
 	defaultPendingComponent: () => <Loader />,
+	defaultNotFoundComponent: NotFoundPage,
 	context: {},
 });
 

@@ -4,12 +4,15 @@ import { Modal } from "@/components/ui/modal";
 import type { KernelAction } from "@/lib/data-actions";
 import type { Syllabus, SyllabusModule } from "@/lib/mock-data";
 import { moveItem } from "@/lib/move-item";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
 
+// Mirror DirectKernelAction.run — run trả kết quả để caller (import ghi đè)
+// quyết định clear preview hay giữ lại (issue #152).
 export type KernelRun = (
 	key: string,
 	action: KernelAction,
 	successText: string,
-) => Promise<void>;
+) => Promise<KernelCommandResult>;
 
 const textBtnClass =
 	"rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40";

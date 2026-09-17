@@ -21,6 +21,7 @@ import {
 	reorderModulesSchema,
 	studentCreateSchema,
 	syllabusCreateSchema,
+	syllabusReplaceContentSchema,
 } from "@teacher-os/api/contracts";
 import {
 	parseStartDateStrict,
@@ -277,6 +278,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					title: l.title,
 					objectives: l.objectives,
 					materials: l.materials,
+					// kind là nội dung giáo trình — copy giữ nguyên (status
+					// là tiến độ per-lớp, reset upcoming ở dưới).
+					kind: l.kind,
 					status: "upcoming",
 					position: l.position,
 					createdAt: l.createdAt,
@@ -1299,6 +1303,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 						title: l.title,
 						objectives: l.objectives,
 						materials: l.materials,
+						kind: l.kind,
 						status: l.status,
 						position: li,
 					}),
@@ -1307,6 +1312,86 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		}
 		await db.batch(statements);
 		return c.json({ id: syllabusId } satisfies CreatedResponse, 201);
+	});
+
+	// Replace toàn bộ cây module/lesson của một syllabus (import ghi đè ở màn
+	// hình detail, issue #152). Delete explicit qua subquery — không dựa FK
+	// cascade (same rule as module-remove). One atomic batch.
+	kernel.post("/syllabi/:id/replace-content", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, syllabusReplaceContentSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) return c.json({ error: "syllabus not found" }, 404);
+		const lessonCount = input.modules.reduce(
+			(sum, m) => sum + m.lessons.length,
+			0,
+		);
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.delete(syllabusLesson).where(
+				and(
+					eq(syllabusLesson.orgId, ctx.orgId),
+					inArray(
+						syllabusLesson.moduleId,
+						db
+							.select({ id: syllabusModule.id })
+							.from(syllabusModule)
+							.where(
+								and(
+									eq(syllabusModule.syllabusId, id),
+									eq(syllabusModule.orgId, ctx.orgId),
+								),
+							),
+					),
+				),
+			),
+			db
+				.delete(syllabusModule)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				),
+			db
+				.update(syllabus)
+				.set({ totalLessons: lessonCount })
+				.where(and(eq(syllabus.id, id), eq(syllabus.orgId, ctx.orgId))),
+		];
+		for (const [mi, m] of input.modules.entries()) {
+			const moduleId = crypto.randomUUID();
+			statements.push(
+				db.insert(syllabusModule).values({
+					id: moduleId,
+					orgId: ctx.orgId,
+					syllabusId: id,
+					title: m.title,
+					description: m.description,
+					position: mi,
+				}),
+			);
+			for (const [li, l] of m.lessons.entries()) {
+				statements.push(
+					db.insert(syllabusLesson).values({
+						id: crypto.randomUUID(),
+						orgId: ctx.orgId,
+						moduleId,
+						title: l.title,
+						objectives: l.objectives,
+						materials: l.materials,
+						kind: l.kind,
+						status: l.status,
+						position: li,
+					}),
+				);
+			}
+		}
+		await db.batch(statements);
+		return c.json({ ok: true });
 	});
 
 	kernel.post("/syllabi/:id/modules", async (c) => {
@@ -1502,7 +1587,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			title: input.title,
 			objectives: input.objectives,
 			materials: input.materials,
-			status: input.status,
+			kind: input.kind ?? "lesson",
+			status: input.status ?? "upcoming",
 			position: (last?.max ?? -1) + 1,
 		});
 		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
@@ -1577,7 +1663,11 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const { id, mid, lid } = c.req.param();
 
 		const [lesson] = await db
-			.select({ id: syllabusLesson.id })
+			.select({
+				id: syllabusLesson.id,
+				kind: syllabusLesson.kind,
+				status: syllabusLesson.status,
+			})
 			.from(syllabusLesson)
 			.innerJoin(syllabusModule, eq(syllabusLesson.moduleId, syllabusModule.id))
 			.where(
@@ -1598,7 +1688,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				title: input.title,
 				objectives: input.objectives,
 				materials: input.materials,
-				status: input.status,
+				// Body không có kind/status (form lớp) → giữ nguyên giá trị hiện tại.
+				kind: input.kind ?? lesson.kind,
+				status: input.status ?? lesson.status,
 			})
 			.where(
 				and(eq(syllabusLesson.id, lid), eq(syllabusLesson.orgId, ctx.orgId)),

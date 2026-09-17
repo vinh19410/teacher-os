@@ -4,6 +4,7 @@ import {
 	IELTS_SKILLS,
 } from "@teacher-os/api/contracts";
 import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
+import { SyllabusImportPreview } from "@/components/syllabus/import-preview";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -129,18 +130,6 @@ export function AddSyllabusModal({
 		}
 	}
 
-	const removeFileButton = (
-		<Button
-			type="button"
-			variant="secondary"
-			size="sm"
-			onClick={() => setImportResult(null)}
-			disabled={saving}
-		>
-			Gỡ file
-		</Button>
-	);
-
 	return (
 		<Modal
 			open={open}
@@ -153,6 +142,7 @@ export function AddSyllabusModal({
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="VD: IELTS Writing 7.0"
+						maxLength={500}
 					/>
 				</Field>
 				<Field label="Loại lớp">
@@ -220,35 +210,14 @@ export function AddSyllabusModal({
 						</Button>
 						{parsing && <span className="text-xs">Đang đọc file…</span>}
 					</div>
-					{importResult?.ok && (
-						<div className="flex flex-col gap-2 text-xs">
-							<p>
-								{importResult.modules.length} module ·{" "}
-								{importResult.lessonCount} buổi học
-							</p>
-							<details>
-								<summary>Xem trước nội dung</summary>
-								<ul className="list-disc pl-4">
-									{importResult.modules.map((m, i) => (
-										<li key={`${i}-${m.title}`}>
-											{m.title} ({m.lessons.length} buổi)
-										</li>
-									))}
-								</ul>
-							</details>
-							{removeFileButton}
-						</div>
-					)}
-					{importResult && !importResult.ok && (
-						<div className="flex flex-col gap-2">
-							<ul role="alert" className="text-danger text-xs">
-								{importResult.errors.map((err, i) => (
-									<li key={`${i}-${err}`}>{err}</li>
-								))}
-							</ul>
-							{removeFileButton}
-						</div>
-					)}
+					{/* Gỡ file không hoàn tác `total`: giá trị là dự định số buổi user
+					    vừa thấy ở preview và tự chỉnh được — đưa về mặc định sẽ giết
+					    input của user (component preview dùng chung không biết `total`). */}
+					<SyllabusImportPreview
+						result={importResult}
+						onRemove={() => setImportResult(null)}
+						disabled={saving || parsing}
+					/>
 				</Field>
 				<Field label="Số buổi dự kiến">
 					<Input

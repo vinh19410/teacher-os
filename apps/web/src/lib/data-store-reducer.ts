@@ -253,7 +253,10 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 										title: action.payload.title,
 										objectives: action.payload.objectives || "—",
 										materials: action.payload.materials || "—",
-										status: action.payload.status,
+										// Mirror server: add không kind → default "lesson".
+										kind: action.payload.kind ?? "lesson",
+										// Mirror server: add không status → default "upcoming".
+										status: action.payload.status ?? "upcoming",
 									},
 								];
 								return mod;
@@ -279,7 +282,11 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 												title: action.payload.title,
 												objectives: action.payload.objectives || "—",
 												materials: action.payload.materials || "—",
-												status: action.payload.status,
+												// Mirror server: edit không kind → giữ kind cũ.
+												kind: action.payload.kind ?? l.kind,
+												// Mirror server: edit không status → giữ status cũ
+												// (không reset tiến độ của bản copy lớp).
+												status: action.payload.status ?? l.status,
 											}
 										: l,
 								);

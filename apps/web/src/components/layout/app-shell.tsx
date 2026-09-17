@@ -98,7 +98,6 @@ export function AppShell() {
 				/>
 				{sidebarOpen && (
 					// biome-ignore lint/a11y/noStaticElementInteractions: scrim exists only on mobile; Escape handler + click both close it
-					// biome-ignore lint/a11y/useKeyWithClickEvents: keyboard close is the Escape listener in the effect above
 					<div
 						role="presentation"
 						className="scrim fixed inset-0 z-90 app:hidden bg-[color-mix(in_oklab,var(--fg),transparent_60%)]"

@@ -5,7 +5,22 @@
  * repos/use-syllabus.ts; writes stay on the Wave 0 command bus.
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import type { Syllabus } from "@/lib/mock-data";
+import type { Syllabus, SyllabusLessonKind } from "@/lib/mock-data";
+
+const LESSON_KINDS: readonly SyllabusLessonKind[] = [
+	"lesson",
+	"midterm",
+	"final",
+];
+
+/**
+ * Normalize kind từ snapshot — giá trị lạ/missing → "lesson" (mirror fallback
+ * `lessonDotClassFor`: snapshot cũ/khác version không được crash UI).
+ */
+function normalizeKind(value: unknown): SyllabusLessonKind {
+	const kind = value as SyllabusLessonKind;
+	return LESSON_KINDS.includes(kind) ? kind : "lesson";
+}
 
 /**
  * Map kernel syllabus rows to the display shape. `totalLessons` always
@@ -40,6 +55,7 @@ export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
 					title: lesson.title,
 					objectives: lesson.objectives || "—",
 					materials: lesson.materials || "—",
+					kind: normalizeKind(lesson.kind),
 					status: lesson.status as "done" | "current" | "upcoming",
 				})),
 			})),

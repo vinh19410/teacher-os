@@ -194,6 +194,7 @@ export const seedData: MockData = {
 						title: "",
 						objectives: "",
 						materials: "",
+						kind: "lesson" as const,
 						status: index === 0 ? "done" : "upcoming",
 					})),
 				},

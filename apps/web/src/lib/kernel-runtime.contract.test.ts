@@ -158,6 +158,21 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/refreshed result — a committed/);
 	});
 
+	test("add-syllabus keeps form state across close: no reset-on-open effect and unconditional route mount", () => {
+		// Đóng (Hủy/Esc/overlay) phải GIỮ dữ liệu — ngược chủ đích với
+		// AddInvoiceModal (reset-on-open). Modal luôn mounted; state sống ở
+		// AddSyllabusModal, không phải trong Modal (Modal return null khi đóng).
+		const modal = readSrc("../components/modals/add-syllabus-modal.tsx");
+		// Pin phủ cả biến thể thiếu dấu ";": effect phụ thuộc [open] là chỗ
+		// reset-on-open trú ngụ (focus management của Modal nằm ở ui/modal.tsx,
+		// không phải ở đây).
+		expect(modal).not.toMatch(/\}, \[open\]\)/);
+		const route = readSrc("../routes/_auth/syllabus/index.tsx");
+		expect(route).toMatch(/<AddSyllabusModal/);
+		expect(route).not.toMatch(/modalOpen &&\s*<AddSyllabusModal/);
+		expect(route).not.toMatch(/open &&\s*<AddSyllabusModal/);
+	});
+
 	test("dashboard reads today and at-risk from kernel helpers, not hardcoded KPIs", () => {
 		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
 		expect(dashboard).toMatch(/from "@\/lib\/dashboard-from-kernel"/);
@@ -404,6 +419,25 @@ describe("kernel-backed store wiring", () => {
 		}
 	});
 
+	test("reports route and create-report-modal contain 0 mock data, names, or fake dates (#107)", () => {
+		const reports = readSrc("../routes/_auth/reports.tsx");
+		expect(reports).not.toMatch(/Minh Anh/);
+		expect(reports).not.toMatch(/Quốc Bảo/);
+		expect(reports).not.toMatch(/18\/08/);
+		expect(reports).not.toMatch(/17\/08/);
+		expect(reports).not.toMatch(/4 báo cáo tuần này/);
+		expect(reports).not.toMatch(/Task 2 University/);
+		expect(reports).toMatch(/Chưa có báo cáo nào được gửi/);
+		expect(reports).toMatch(/Chưa có nhật ký gửi tin nhắn/);
+
+		const modal = readSrc("../components/modals/create-report-modal.tsx");
+		expect(modal).not.toMatch(/DEFAULT_CONTENT/);
+		expect(modal).not.toMatch(/19–25\/08/);
+		expect(modal).not.toMatch(/Task 2 Opinion Essay/);
+		expect(modal).not.toMatch(/Bar chart/);
+		expect(modal).not.toMatch(/Band gần nhất/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);
@@ -449,6 +483,43 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/useEffect\(\(\) => \{/);
 		expect(src).toMatch(/if \(!open\) return;/);
 		expect(src).toMatch(/\}, \[open, assignmentId\]\);/);
+	});
+
+	test("lesson kind payload rides showKind only — màn hình lớp không bao giờ gửi key kind (#154)", () => {
+		for (const file of [
+			"add-lesson-modal.tsx",
+			"edit-lesson-modal.tsx",
+		] as const) {
+			const src = readSrc(`../components/modals/${file}`);
+			// Spread có điều kiện đúng pattern status: không showKind → key
+			// `kind` phải VẮNG KHỎI payload (server + reducer preserve).
+			expect(src, file).toMatch(/\.\.\.\(showKind \? \{ kind \} : \{\}\)/);
+			// Chặn biến thể `kind: showKind ? … : "lesson"` — luôn gửi key sẽ
+			// ghi đè kind của buổi thi khi sửa từ màn hình lớp (red-team #6).
+			expect(src, file).not.toMatch(/kind:\s*showKind/);
+			// Select chỉ render khi showKind — mirror showStatus.
+			expect(src, file).toMatch(/\{showKind && \(/);
+		}
+
+		// Màn hình syllabus bật showKind cho cả 2 modal (slice JSX từng tag —
+		// regex [^>]* gãy ở arrow fn trong props).
+		const syllabusDetail = readSrc("../routes/_auth/syllabus/$syllabusId.tsx");
+		const jsxOf = (tag: string) => {
+			const start = syllabusDetail.indexOf(`<${tag}`);
+			return syllabusDetail.slice(
+				start,
+				syllabusDetail.indexOf("/>", start) + 2,
+			);
+		};
+		expect(jsxOf("AddLessonModal")).toContain("showKind");
+		expect(jsxOf("EditLessonModal")).toContain("showKind");
+
+		// Màn hình Chi tiết lớp KHÔNG truyền showKind (không đổi hành vi —
+		// success criterion "màn hình lớp không đổi").
+		const curriculum = readSrc(
+			"../components/class-detail/curriculum-management-section.tsx",
+		);
+		expect(curriculum).not.toMatch(/showKind/);
 	});
 });
 

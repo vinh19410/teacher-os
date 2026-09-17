@@ -4,15 +4,6 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 
-const DEFAULT_CONTENT = `Số buổi: 2 · Chuyên cần: Đủ
-
-Band gần nhất: 6.5 (Writing)
-Bài đã nộp: Task 2 Opinion Essay
-
-Việc cần làm ở nhà:
-- Làm bài Task 1 (Bar chart) — hạn 24/08
-- Ôn lại article a/an`;
-
 export function CreateReportModal({
 	open,
 	onClose,
@@ -26,8 +17,8 @@ export function CreateReportModal({
 	const [sid, setSid] = useState(
 		defaultStudentId ?? data.students[0]?.id ?? "",
 	);
-	const [period, setPeriod] = useState("19–25/08");
-	const [content, setContent] = useState(DEFAULT_CONTENT);
+	const [period, setPeriod] = useState("");
+	const [content, setContent] = useState("");
 	const [channel, setChannel] = useState("Zalo OA");
 
 	function submit(e: FormEvent) {
@@ -41,6 +32,9 @@ export function CreateReportModal({
 			<form onSubmit={submit}>
 				<Field label="Học viên">
 					<Select value={sid} onChange={(e) => setSid(e.target.value)}>
+						{data.students.length === 0 && (
+							<option value="">Chưa có học viên</option>
+						)}
 						{data.students.map((s) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
@@ -49,12 +43,17 @@ export function CreateReportModal({
 					</Select>
 				</Field>
 				<Field label="Chu kỳ">
-					<Input value={period} onChange={(e) => setPeriod(e.target.value)} />
+					<Input
+						value={period}
+						onChange={(e) => setPeriod(e.target.value)}
+						placeholder="VD: 01–07/09"
+					/>
 				</Field>
 				<Field label="Nội dung báo cáo">
 					<Textarea
 						value={content}
 						onChange={(e) => setContent(e.target.value)}
+						placeholder="Nhập nội dung báo cáo..."
 						className="min-h-35"
 					/>
 				</Field>

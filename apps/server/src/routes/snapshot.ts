@@ -174,6 +174,7 @@ export async function loadSnapshot(
 			title: lesson.title,
 			objectives: lesson.objectives,
 			materials: lesson.materials,
+			kind: lesson.kind,
 			status: lesson.status,
 		});
 		lessonsByModule.set(lesson.moduleId, list);

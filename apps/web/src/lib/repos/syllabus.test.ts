@@ -2,7 +2,10 @@
  * Syllabus read repo (Wave 2) — pure mapping units.
  * The kernel snapshot is the only input; the provider wires transport.
  */
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import type {
+	KernelSnapshot,
+	KernelSyllabusLessonRow,
+} from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 import { mapSyllabi } from "./syllabus";
 
@@ -31,6 +34,7 @@ const snapshot: KernelSnapshot = {
 							title: "Line chart",
 							objectives: "",
 							materials: "Cam 15",
+							kind: "lesson",
 							status: "done",
 						},
 						{
@@ -38,6 +42,7 @@ const snapshot: KernelSnapshot = {
 							title: "Map",
 							objectives: "so sánh vị trí",
 							materials: "",
+							kind: "midterm",
 							status: "current",
 						},
 					],
@@ -110,6 +115,46 @@ describe("mapSyllabi", () => {
 	test("status keeps the lesson trio", () => {
 		const statuses = syllabi[0]?.modules[0]?.lessons.map((l) => l.status);
 		expect(statuses).toEqual(["done", "current"]);
+	});
+
+	test("kind passes through (issue #154)", () => {
+		const kinds = syllabi[0]?.modules[0]?.lessons.map((l) => l.kind);
+		expect(kinds).toEqual(["lesson", "midterm"]);
+	});
+
+	// kind là required trên KernelSyllabusLessonRow; alias này làm kind thành
+	// optional để mô phỏng version-skew (snapshot từ server cũ chưa có cột).
+	type SkewLesson = Omit<KernelSyllabusLessonRow, "kind"> & { kind?: string };
+	type SkewRow = Omit<KernelSnapshot["syllabi"][number], "modules"> & {
+		modules: Array<
+			Omit<KernelSnapshot["syllabi"][number]["modules"][number], "lessons"> & {
+				lessons: SkewLesson[];
+			}
+		>;
+	};
+
+	test("unknown kind normalizes to lesson — snapshot cũ/khác version không crash", () => {
+		const stale = structuredClone(snapshot.syllabi[0]) as unknown as SkewRow;
+		const skewed = stale.modules[0]?.lessons[1];
+		if (!skewed) throw new Error("setup failed");
+		skewed.kind = "exam";
+		const mapped = mapSyllabi({
+			...snapshot,
+			syllabi: [stale as unknown as KernelSnapshot["syllabi"][number]],
+		});
+		expect(mapped[0]?.modules[0]?.lessons[1]?.kind).toBe("lesson");
+	});
+
+	test("missing kind normalizes to lesson (version-skew defense)", () => {
+		const stale = structuredClone(snapshot.syllabi[0]) as unknown as SkewRow;
+		const skewed = stale.modules[0]?.lessons[0];
+		if (!skewed) throw new Error("setup failed");
+		delete skewed.kind;
+		const mapped = mapSyllabi({
+			...snapshot,
+			syllabi: [stale as unknown as KernelSnapshot["syllabi"][number]],
+		});
+		expect(mapped[0]?.modules[0]?.lessons[0]?.kind).toBe("lesson");
 	});
 
 	test("syllabus with modules but zero lessons derives totalLessons 0", () => {

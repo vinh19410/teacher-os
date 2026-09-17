@@ -43,6 +43,8 @@ File (.csv/.xlsx) ──client parse──> modules JSON ──POST /api/syllabi
 
 ## Định dạng file nhập (hợp đồng forensic — mọi phase theo đúng mục này)
 
+> **Superseded 2026-09-15:** format v2 5 cột (bỏ cột Buổi học, auto-numbering "Buổi {n}") — hợp đồng hiện hành: plans/260915-1108-syllabus-import-v2/plan.md
+
 6 cột **theo vị trí** (cột thừa bỏ qua; không được thiếu cột 0 và 2):
 
 | Vị trí | Cột | Bắt buộc |

@@ -128,6 +128,9 @@ export const syllabusModuleContentSchema = z.object({
 				title: z.string().min(1).max(500),
 				objectives: z.string().max(10_000).default(""),
 				materials: z.string().max(10_000).default(""),
+				// Loại buổi (issue #154): default "lesson" — payload create/
+				// replace luôn có kind, file import 4 cột v3 chạy như cũ.
+				kind: z.enum(["lesson", "midterm", "final"]).default("lesson"),
 				status: z.enum(["done", "current", "upcoming"]).default("upcoming"),
 			}),
 		)
@@ -189,7 +192,13 @@ export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
 	materials: z.string().default(""),
-	status: z.enum(["done", "current", "upcoming"]).default("upcoming"),
+	// Loại buổi (issue #154): optional như status — form mở từ màn hình lớp
+	// không gửi kind; route edit preserve giá trị existing, route add default
+	// "lesson" khi vắng.
+	kind: z.enum(["lesson", "midterm", "final"]).optional(),
+	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
+	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
+	status: z.enum(["done", "current", "upcoming"]).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -211,6 +220,28 @@ export const reorderLessonsSchema = z
 	})
 	.strict();
 export type ReorderLessons = z.infer<typeof reorderLessonsSchema>;
+
+/** Bulk replace nội dung syllabus (import ghi đè ở màn hình detail). */
+export const syllabusReplaceContentSchema = z
+	.object({
+		modules: z.array(syllabusModuleContentSchema).min(1),
+	})
+	.strict()
+	.superRefine((input, ctx) => {
+		const nodes =
+			input.modules.length +
+			input.modules.reduce((sum, m) => sum + m.lessons.length, 0);
+		if (nodes > 500) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["modules"],
+				message: "Tổng số module và buổi học vượt giới hạn 500",
+			});
+		}
+	});
+export type SyllabusReplaceContent = z.infer<
+	typeof syllabusReplaceContentSchema
+>;
 
 /**
  * IELTS rubric scores — strict shape, float 0–9 on purpose: half-bands
@@ -411,6 +442,8 @@ export interface KernelSyllabusLessonRow {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Loại buổi (issue #154): "lesson" | "midterm" | "final"; `| string` cho forward-compat. */
+	kind: "lesson" | "midterm" | "final" | string;
 	status: "done" | "current" | "upcoming" | string;
 }
 

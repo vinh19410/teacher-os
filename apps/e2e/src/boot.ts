@@ -16,11 +16,14 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { getSessionUser } from "server/session";
 
-const PORT = 8000;
+// Port override chỉ phục vụ chạy e2e song song với dev server đang chiếm
+// 8000 (workerd của main worktree) — mặc định giữ 8000 như CI (playwright
+// config cùng đọc E2E_API_PORT để fail-loud semantics không đổi).
+const PORT = Number(process.env.E2E_API_PORT ?? 8000);
 // Loopback-only: this shim serves a real better-auth instance; never expose
 // it beyond the test machine.
 const HOSTNAME = "127.0.0.1";
-const CORS_ORIGIN = "http://localhost:8001";
+const CORS_ORIGIN = `http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`;
 const DB_PATH = new URL("../local.db", import.meta.url).pathname;
 const MIGRATIONS_DIR = new URL(
 	"../../../packages/db/src/migrations",

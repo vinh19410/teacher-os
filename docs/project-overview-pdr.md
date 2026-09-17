@@ -15,7 +15,8 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 | The persistent kernel is org-scoped and centers on `organization`, `membership`, `student`, `class`, `enrollment`, `session_package`, and syllabus tables. | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Curriculum data stays separate from delivered lessons. | [packages/db/src/schema/syllabus.ts](../packages/db/src/schema/syllabus.ts) and [packages/db/src/schema/lesson.ts](../packages/db/src/schema/lesson.ts) |
 | The web app stays behind a load gate until the first kernel snapshot resolves. | [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) |
-| Kernel writes are POST-only JSON commands that return a server id and then refresh the snapshot. | [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) |
+| Kernel writes are POST-only JSON commands; the client refreshes the snapshot after each write (creation endpoints return the server id, bulk replacements acknowledge with ok). | [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) |
+| A syllabus lesson's `kind` (`lesson`/`midterm`/`final`) is curriculum content copied with the template; `status` is per-class progress that resets to `upcoming` on copy. | [packages/db/src/schema/syllabus.ts](../packages/db/src/schema/syllabus.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) |
 | Better Auth is the sign-in boundary, and the auth route redirects unauthenticated users to login. | [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) and [apps/server/src/index.ts](../apps/server/src/index.ts) |
 
 ## Product requirements

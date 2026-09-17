@@ -1,0 +1,1 @@
+ALTER TABLE `syllabus_lesson` ADD `kind` text DEFAULT 'lesson' NOT NULL;
