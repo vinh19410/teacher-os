@@ -152,6 +152,12 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/comment-bank",
 				body: { text: action.text, operationId: action.operationId },
 			};
+		case "create-report":
+			// #173: reportCreateSchema is .strict() — exactly these five fields.
+			return {
+				path: "/api/reports",
+				body: { ...action.payload },
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,

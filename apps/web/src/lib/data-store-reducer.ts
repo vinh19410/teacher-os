@@ -79,6 +79,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			};
 		}
 		case "add-comment-bank":
+		case "create-report":
 			// Runtime writes use the kernel bus; local reducer keeps fixture behavior inert.
 			return state;
 		case "add-student": {

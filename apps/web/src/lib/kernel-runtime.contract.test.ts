@@ -399,15 +399,19 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/onReconcile=\{reconcileAndFinish\}/);
 	});
 
-	test("CreateReportModal keeps Save Draft and Send close-only across both callers", () => {
+	test("CreateReportModal persists via the kernel bus across both callers (#173)", () => {
 		const modal = readSrc("../components/modals/create-report-modal.tsx");
 		const submit = modal.slice(
+			modal.indexOf("async function save"),
 			modal.indexOf("function submit"),
-			modal.indexOf("return ("),
 		);
-		expect(submit).toMatch(/e\.preventDefault\(\)/);
-		expect(submit).toMatch(/onClose\(\)/);
-		expect(submit).not.toMatch(/dispatch|fetch|POST|reportId/);
+		// #173 replaced the close-only submit with a real kernel write: the
+		// bus (dispatch) is mandatory, direct fetch/POST stays forbidden.
+		expect(submit).toMatch(/dispatch\(\{/);
+		expect(submit).toMatch(/type: "create-report"/);
+		expect(submit).not.toMatch(/fetch\(|axios|XMLHttpRequest/);
+		// A lost acknowledgement keeps the modal open instead of blind-retrying.
+		expect(submit).toMatch(/outcome-unknown/);
 		expect(modal).toMatch(/Lưu nháp/);
 		expect(modal).toMatch(/Gửi báo cáo/);
 
@@ -464,6 +468,19 @@ describe("kernel-backed store wiring", () => {
 		const topbar = readSrc("../components/layout/topbar.tsx");
 		expect(topbar).toMatch(/<NotifPanel notifs=\{data\.notifs\}/);
 		expect(topbar).not.toMatch(/mark.*read|dispatch\(.*notif/is);
+	});
+
+	test("create-report-modal persists through the kernel bus (#173)", () => {
+		const src = readSrc("../components/modals/create-report-modal.tsx");
+		// The modal must dispatch a real kernel action — a submit that only
+		// closes is exactly the #173 bug.
+		expect(src).toMatch(/type: "create-report"/);
+		expect(src).toMatch(/await dispatch\(/);
+		// A definite failure keeps the modal open so typed content isn't lost.
+		expect(src).toMatch(/definite-failure/);
+		// Both buttons persist: draft and send ride the same action.
+		expect(src).toMatch(/save\("draft"\)/);
+		expect(src).toMatch(/save\("sent"\)/);
 	});
 
 	test("grade-modal preserves grade/comment ordering and partial-success retry", () => {
