@@ -658,6 +658,32 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 		});
 		expect(res.status).toBe(201);
 	});
+
+	test("create rejects requests above 2 MiB without persisting", async () => {
+		const before = await (await t.call("/api/syllabi", { session })).json();
+		const body = JSON.stringify({
+			name: "Large import",
+			type: "communication",
+			description: "a".repeat(2 * 1024 * 1024),
+		});
+		for (const withLength of [false, true]) {
+			const res = await t.app.request("/api/syllabi", {
+				method: "POST",
+				headers: {
+					cookie: `better-auth.session_token=${session.token}`,
+					origin: CORS_ORIGIN,
+					"content-type": "application/json",
+					...(withLength ? { "content-length": String(body.length) } : {}),
+				},
+				body,
+			});
+			expect(res.status).toBe(413);
+			expect(res.headers.get("content-type")).toContain("application/json");
+		}
+		expect(await (await t.call("/api/syllabi", { session })).json()).toEqual(
+			before,
+		);
+	});
 });
 
 describe("syllabus lesson status optional + replace-content (import ghi đè)", () => {

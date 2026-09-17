@@ -43,6 +43,7 @@ import {
 import { and, asc, eq, inArray, max } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
@@ -1257,6 +1258,19 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
 		return c.json(snapshot.syllabi);
 	});
+
+	kernel.post(
+		"/syllabi",
+		async (c, next) => {
+			if (!c.get("kernelCtx")) return unauthorized(c);
+			return next();
+		},
+		bodyLimit({
+			maxSize: 2 * 1024 * 1024,
+			onError: (c) =>
+				c.json({ error: "Dữ liệu syllabus vượt giới hạn 2 MiB." }, 413),
+		}),
+	);
 
 	kernel.post("/syllabi", async (c) => {
 		const ctx = c.get("kernelCtx");

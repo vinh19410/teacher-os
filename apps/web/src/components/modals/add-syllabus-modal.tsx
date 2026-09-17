@@ -222,9 +222,15 @@ export function AddSyllabusModal({
 				<Field label="Số buổi dự kiến">
 					<Input
 						type="number"
+						disabled={importResult?.ok === true}
 						value={total}
 						onChange={(e) => setTotal(e.target.value)}
 					/>
+					{importResult?.ok && (
+						<p className="text-muted text-xs">
+							Số buổi lấy từ file import. Gỡ file để chỉnh thủ công.
+						</p>
+					)}
 				</Field>
 				<div className="flex flex-col gap-2">
 					{error && (
