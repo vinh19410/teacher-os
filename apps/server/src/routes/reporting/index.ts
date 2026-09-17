@@ -94,6 +94,9 @@ export function reportRoutes(deps: Deps) {
 				read: "",
 			})
 			.returning({ id: report.id });
+		// RETURNING on an insert always yields the row; the guard exists for
+		// the type-level undefined so the 201 body stays CreatedResponse.
+		if (!created) return c.json({ error: "report write conflict" }, 500);
 		return c.json<CreatedResponse>(created, 201);
 	});
 	return routes;
