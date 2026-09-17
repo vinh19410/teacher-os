@@ -5,6 +5,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
 import type { SessionUser } from "./session";
@@ -15,6 +16,8 @@ export interface KernelCtx {
 	orgId: string;
 	userId: string;
 }
+
+export type ServerApp = Hono<{ Variables: { kernelCtx: KernelCtx } }>;
 
 /**
  * Every collaborator that touches Cloudflare bindings is injected so the
@@ -85,6 +88,38 @@ export function buildApp(deps: AppDeps) {
 	const app = new Hono<{ Variables: { kernelCtx: KernelCtx } }>();
 
 	app.use(logger());
+	app.use(
+		"/*",
+		secureHeaders({
+			strictTransportSecurity: "max-age=31536000; includeSubDomains",
+			xFrameOptions: "DENY",
+			xContentTypeOptions: "nosniff",
+			referrerPolicy: "strict-origin-when-cross-origin",
+			crossOriginResourcePolicy: "cross-origin",
+			crossOriginOpenerPolicy: false,
+		}),
+	);
+	app.use("/*", async (c, next) => {
+		const url = new URL(c.req.url);
+		const isLocal =
+			url.hostname === "localhost" ||
+			url.hostname === "127.0.0.1" ||
+			url.hostname === "0.0.0.0" ||
+			url.hostname === "[::1]" ||
+			url.hostname === "::1" ||
+			url.hostname.endsWith(".localhost") ||
+			url.hostname.endsWith(".local");
+		if (isLocal || url.protocol === "https:") {
+			return next();
+		}
+		const forwarded = c.req.header("x-forwarded-proto");
+		const firstProto = forwarded?.split(",")[0]?.trim().toLowerCase();
+		if (firstProto === "https") {
+			return next();
+		}
+		url.protocol = "https:";
+		return c.redirect(url.toString(), 301);
+	});
 	app.use(
 		"/*",
 		cors({
