@@ -438,6 +438,26 @@ describe("kernel-backed store wiring", () => {
 		expect(modal).not.toMatch(/Band gần nhất/);
 	});
 
+	test("list pages derive KPI counters dynamically from kernel store (#106)", () => {
+		const classes = readSrc("../routes/_auth/classes/index.tsx");
+		expect(classes).not.toMatch(/3 lớp đang hoạt động/);
+		expect(classes).toMatch(/classes\.filter/);
+		expect(classes).toMatch(/\$\{activeCount\} lớp đang hoạt động/);
+
+		const students = readSrc("../routes/_auth/students/index.tsx");
+		expect(students).not.toMatch(/5 học viên đang học/);
+		expect(students).not.toMatch(/2 cần chú ý/);
+		expect(students).toMatch(/from "@\/lib\/data-store"/);
+		expect(students).toMatch(/\$\{students\.length\} học viên đang học/);
+		expect(students).toMatch(/\$\{attentionCount\} cần chú ý/);
+
+		const assignments = readSrc("../routes/_auth/assignments/index.tsx");
+		expect(assignments).not.toMatch(/6 bài tập/);
+		expect(assignments).not.toMatch(/3 cần xử lý/);
+		expect(assignments).toMatch(/\$\{data\.assignments\.length\} bài tập/);
+		expect(assignments).toMatch(/\$\{pendingCount\} cần xử lý/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);

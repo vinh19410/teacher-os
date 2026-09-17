@@ -27,6 +27,8 @@ function ClassesRoute() {
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
+	const activeCount = classes.filter((c) => c.status === "active").length;
+
 	const list =
 		filter === "Tất cả"
 			? classes
@@ -36,7 +38,7 @@ function ClassesRoute() {
 
 	return (
 		<div>
-			<PageHead title="Lớp học" lead="3 lớp đang hoạt động" />
+			<PageHead title="Lớp học" lead={`${activeCount} lớp đang hoạt động`} />
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>
