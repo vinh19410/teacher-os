@@ -30,7 +30,9 @@ export async function signUpViaUi(
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
-	await page.getByText(className).click();
+	const classRow = page.locator("tbody").getByText(className);
+	await expect(classRow).toBeVisible();
+	await classRow.click();
 	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
 }
 
