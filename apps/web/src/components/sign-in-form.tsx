@@ -109,6 +109,7 @@ export default function SignInForm({
 						name="email"
 						label="Email"
 						type="email"
+						required
 						autoComplete="email"
 						placeholder="you@school.edu"
 						value={field.state.value}
@@ -129,6 +130,7 @@ export default function SignInForm({
 						name="password"
 						label="Password"
 						type="password"
+						required
 						autoComplete="current-password"
 						placeholder="••••••••"
 						passwordToggle

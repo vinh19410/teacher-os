@@ -83,7 +83,7 @@ export function CreateReportModal({
 
 	return (
 		<Modal open={open} onClose={onClose} title="Tạo báo cáo tuần">
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Học viên">
 					<Select value={sid} onChange={(e) => setSid(e.target.value)}>
 						{data.students.length === 0 && (

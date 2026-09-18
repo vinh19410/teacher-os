@@ -155,7 +155,7 @@ export function AddClassModal({
 			title="Tạo lớp mới"
 		>
 			<form noValidate onSubmit={submit}>
-				<Field label="Tên lớp *" error={error}>
+				<Field label="Tên lớp *">
 					<Input
 						value={name}
 						onChange={(e) => setName(e.target.value)}

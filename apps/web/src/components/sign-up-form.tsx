@@ -100,6 +100,7 @@ export default function SignUpForm({
 						name="name"
 						label="Name"
 						type="text"
+						required
 						autoComplete="name"
 						placeholder="Your name"
 						value={field.state.value}
@@ -120,6 +121,7 @@ export default function SignUpForm({
 						name="email"
 						label="Email"
 						type="email"
+						required
 						autoComplete="email"
 						placeholder="you@school.edu"
 						value={field.state.value}
@@ -142,9 +144,9 @@ export default function SignUpForm({
 							name="password"
 							label="Password"
 							type="password"
+							required
 							autoComplete="new-password"
 							placeholder="At least 8 characters"
-							passwordToggle
 							hint={
 								<span
 									className={cn(
