@@ -107,7 +107,7 @@ export default Alchemy.Stack(
 			...(topology && {
 				domain: {
 					name: topology.appHost,
-					redirects: topology.appRedirects,
+					aliases: topology.appAliases,
 				},
 				workersDev: false,
 			}),
