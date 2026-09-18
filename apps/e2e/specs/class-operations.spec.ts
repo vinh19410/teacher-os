@@ -16,7 +16,8 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
  * Load-bearing facts (verified against the DOM):
  * - Lessons are generated when a STUDENT is added to the class
  *   (POST /api/students with classId), not at class creation.
- * - Tabs render plain buttons (no role="tab") — use getByRole("button").
+ * - Tabs render role="tab" inside a tablist (issue #119 added the ARIA
+ *   roles) — use getByRole("tab").
  * - Lesson blocks on /schedule carry the class name (issue #162) → .first().
  * - In ClassSessionModal, each student has a row with role="group";
  *   "Điểm danh" marks attendance and the opacity-60 class on the session
@@ -59,7 +60,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 	// Issue #91: the class starts tomorrow → the VN date gate keeps every
 	// occurrence future → badges only, never an in-place check-in button.
@@ -177,7 +178,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 1:1 class → sequential head today renders a one-click button.
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	const checkInButton = page.getByRole("button", { name: "Điểm danh" });
 	await expect(checkInButton).toHaveCount(1);
 	await checkInButton.click();
@@ -189,7 +190,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	// Persisted server-side: survives a reload; next head is a week out →
 	// future → no CTA left on the tab.
 	await page.reload();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Đã học", { exact: true })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);
 });

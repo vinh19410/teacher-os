@@ -79,7 +79,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	await expect(kpi.first()).toBeVisible();
 
 	// 7. The schedule's lesson series was generated for the enrollment.
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Sắp tới").first()).toBeVisible();
 	await expect(page.getByText("0/12").first()).toBeVisible();
 

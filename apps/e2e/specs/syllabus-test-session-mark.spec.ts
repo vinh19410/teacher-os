@@ -164,7 +164,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	// buổi thi (Buổi 3) → KHÔNG có select "Loại buổi học"; đổi title rồi lưu.
 	// Locator scope lesson row (grid 20px_1fr_auto) của curriculum section.
 	await page.goto(`/classes/${copy.classId}`);
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	// Curriculum tree gập mặc định — mở accordion trước khi thấy lesson rows.
 	await page.getByRole("button", { name: /^Mở rộng \(/ }).click();
 	const examRow = page
