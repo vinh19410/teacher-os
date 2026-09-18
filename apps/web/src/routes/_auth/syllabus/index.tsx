@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { IELTS_SKILLS } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { AddSyllabusModal } from "@/components/modals/add-syllabus-modal";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +15,15 @@ export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
 });
 
-const FILTERS = ["Tất cả", ...IELTS_SKILLS];
+const FILTERS = ["Tất cả", "Viết", "Nói", "Đọc", "Nghe"];
+const SKILL_MAP: Record<string, string> = {
+	Viết: "Writing",
+	Nói: "Speaking",
+	Đọc: "Reading",
+	Nghe: "Listening",
+};
 
-function SyllabusRoute() {
+export function SyllabusRoute() {
 	const navigate = useNavigate();
 	const { templates } = useSyllabus();
 	const { classesForSyllabus } = useData();
@@ -28,80 +33,105 @@ function SyllabusRoute() {
 	const list =
 		filter === "Tất cả"
 			? templates
-			: templates.filter((s) => s.skills.includes(filter));
+			: templates.filter((s) => {
+					const wireSkill = SKILL_MAP[filter] ?? filter;
+					return s.skills.includes(wireSkill);
+				});
 
 	return (
 		<div>
 			<PageHead
-				title="Syllabus"
+				title="Giáo trình"
 				lead={`${templates.length} template · ${templates.reduce((sum, s) => sum + s.totalLessons, 0)} buổi tổng cộng`}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				<Button onClick={() => setModalOpen(true)}>+ Tạo syllabus</Button>
 			</div>
-			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-				{list.map((sy) => {
-					const inUse = classesForSyllabus(sy.id).length;
-					return (
-						<Card
-							key={sy.id}
-							variant="white"
-							role="button"
-							tabIndex={0}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									e.preventDefault();
+			{templates.length === 0 ? (
+				<Card
+					variant="white"
+					className="p-8 text-center"
+					data-testid="syllabus-empty-state"
+				>
+					<h2 className="font-display font-semibold text-lg">
+						Chưa có syllabus nào
+					</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+						Bấm "+ Tạo syllabus" ở góc trên để tạo giáo trình mẫu hoặc nhập từ
+						file Excel/CSV.
+					</p>
+				</Card>
+			) : list.length === 0 ? (
+				<Card variant="white" className="p-8 text-center">
+					<p className="font-mono text-meta text-xs">
+						Không có giáo trình nào phù hợp với bộ lọc.
+					</p>
+				</Card>
+			) : (
+				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
+					{list.map((sy) => {
+						const inUse = classesForSyllabus(sy.id).length;
+						return (
+							<Card
+								key={sy.id}
+								variant="white"
+								role="button"
+								tabIndex={0}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										navigate({
+											to: "/syllabus/$syllabusId",
+											params: { syllabusId: sy.id },
+										});
+									}
+								}}
+								className="cursor-pointer transition-shadow duration-[150ms] hover:shadow-[var(--elev-raised)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+								onClick={() =>
 									navigate({
 										to: "/syllabus/$syllabusId",
 										params: { syllabusId: sy.id },
-									});
+									})
 								}
-							}}
-							className="cursor-pointer transition-shadow duration-[150ms] hover:shadow-[var(--elev-raised)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
-							onClick={() =>
-								navigate({
-									to: "/syllabus/$syllabusId",
-									params: { syllabusId: sy.id },
-								})
-							}
-						>
-							<div className="flex items-start justify-between gap-3">
-								<div className="flex gap-1">
-									{sy.skills.length > 0 ? (
-										sy.skills.map((sk) => <Tag key={sk}>{sk}</Tag>)
-									) : (
-										<Tag>{CLASS_TYPE_LABELS[sy.type]}</Tag>
-									)}
-									<Tag>{sy.level}</Tag>
-								</div>
-								<span className="font-mono text-meta text-xs">
-									{sy.totalLessons} buổi
-								</span>
-							</div>
-							<h3 className="mt-3 font-display font-semibold text-lg">
-								{sy.name}
-							</h3>
-							<p className="mt-2 text-muted-fg text-sm leading-[1.45]">
-								{sy.description}
-							</p>
-							<div className="mt-4">
-								<div className="mb-1 flex justify-between">
-									<span className="font-mono text-meta text-xs">Module</span>
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div className="flex gap-1">
+										{sy.skills.length > 0 ? (
+											sy.skills.map((sk) => <Tag key={sk}>{sk}</Tag>)
+										) : (
+											<Tag>{CLASS_TYPE_LABELS[sy.type]}</Tag>
+										)}
+										<Tag>{sy.level}</Tag>
+									</div>
 									<span className="font-mono text-meta text-xs">
-										{sy.modules.length}
+										{sy.totalLessons} buổi
 									</span>
 								</div>
-							</div>
-							<div className="mt-4 flex flex-wrap items-center gap-2">
-								<Badge variant={inUse > 0 ? "accent" : "muted"}>
-									Đang dùng {inUse} lớp
-								</Badge>
-							</div>
-						</Card>
-					);
-				})}
-			</div>
+								<h3 className="mt-3 font-display font-semibold text-lg">
+									{sy.name}
+								</h3>
+								<p className="mt-2 text-muted-fg text-sm leading-[1.45]">
+									{sy.description}
+								</p>
+								<div className="mt-4">
+									<div className="mb-1 flex justify-between">
+										<span className="font-mono text-meta text-xs">Module</span>
+										<span className="font-mono text-meta text-xs">
+											{sy.modules.length}
+										</span>
+									</div>
+								</div>
+								<div className="mt-4 flex flex-wrap items-center gap-2">
+									<Badge variant={inUse > 0 ? "accent" : "muted"}>
+										Đang dùng {inUse} lớp
+									</Badge>
+								</div>
+							</Card>
+						);
+					})}
+				</div>
+			)}
 			<AddSyllabusModal
 				open={modalOpen}
 				onClose={() => setModalOpen(false)}

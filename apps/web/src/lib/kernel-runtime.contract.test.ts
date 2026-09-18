@@ -147,6 +147,13 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/isFutureDateInputValue\(startDate\)/);
 	});
 
+	test("add-class modal wires templateId to kernel command and resets it on submit", () => {
+		const src = readSrc("../components/modals/add-class-modal.tsx");
+		expect(src).toMatch(/<Field label="Template giáo trình">/);
+		expect(src).toMatch(/templateId,\s*schedule:/);
+		expect(src).toMatch(/setTemplateId\(""\)/);
+	});
+
 	test("add-syllabus navigates only on the refreshed result with the server id", () => {
 		const src = readSrc("../components/modals/add-syllabus-modal.tsx");
 		expect(src).toMatch(/result\?\.kind === "refreshed"/);
@@ -399,15 +406,19 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/onReconcile=\{reconcileAndFinish\}/);
 	});
 
-	test("CreateReportModal keeps Save Draft and Send close-only across both callers", () => {
+	test("CreateReportModal persists via the kernel bus across both callers (#173)", () => {
 		const modal = readSrc("../components/modals/create-report-modal.tsx");
 		const submit = modal.slice(
+			modal.indexOf("async function save"),
 			modal.indexOf("function submit"),
-			modal.indexOf("return ("),
 		);
-		expect(submit).toMatch(/e\.preventDefault\(\)/);
-		expect(submit).toMatch(/onClose\(\)/);
-		expect(submit).not.toMatch(/dispatch|fetch|POST|reportId/);
+		// #173 replaced the close-only submit with a real kernel write: the
+		// bus (dispatch) is mandatory, direct fetch/POST stays forbidden.
+		expect(submit).toMatch(/dispatch\(\{/);
+		expect(submit).toMatch(/type: "create-report"/);
+		expect(submit).not.toMatch(/fetch\(|axios|XMLHttpRequest/);
+		// A lost acknowledgement keeps the modal open instead of blind-retrying.
+		expect(submit).toMatch(/outcome-unknown/);
 		expect(modal).toMatch(/Lưu nháp/);
 		expect(modal).toMatch(/Gửi báo cáo/);
 
@@ -438,12 +449,74 @@ describe("kernel-backed store wiring", () => {
 		expect(modal).not.toMatch(/Band gần nhất/);
 	});
 
+	test("list pages derive KPI counters dynamically from kernel store (#106)", () => {
+		const classes = readSrc("../routes/_auth/classes/index.tsx");
+		expect(classes).not.toMatch(/3 lớp đang hoạt động/);
+		expect(classes).toMatch(/classes\.filter/);
+		expect(classes).toMatch(/\$\{activeCount\} lớp đang hoạt động/);
+
+		const students = readSrc("../routes/_auth/students/index.tsx");
+		expect(students).not.toMatch(/5 học viên đang học/);
+		expect(students).not.toMatch(/2 cần chú ý/);
+		expect(students).toMatch(/from "@\/lib\/data-store"/);
+		expect(students).toMatch(/\$\{students\.length\} học viên đang học/);
+		expect(students).toMatch(/\$\{attentionCount\} cần chú ý/);
+
+		const assignments = readSrc("../routes/_auth/assignments/index.tsx");
+		expect(assignments).not.toMatch(/6 bài tập/);
+		expect(assignments).not.toMatch(/3 cần xử lý/);
+		expect(assignments).toMatch(/\$\{data\.assignments\.length\} bài tập/);
+		expect(assignments).toMatch(/\$\{pendingCount\} cần xử lý/);
+	});
+
+	test("tuition debt KPI renders neutral for 0đ and list pages have localized filter chips (#170)", () => {
+		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		expect(tuition).not.toMatch(
+			/label="Còn nợ \(VND\)"\s+className="\[&>div:first-child\]:text-danger"/,
+		);
+		expect(tuition).toMatch(
+			/outstanding > 0 \? "\[&>div:first-child\]:text-danger" : undefined/,
+		);
+
+		const students = readSrc("../routes/_auth/students/index.tsx");
+		expect(students).toMatch(
+			/const FILTERS = \["Tất cả", "Sắp hết buổi", "Nợ học phí", "Viết", "Nói"\]/,
+		);
+		expect(students).not.toMatch(/"Writing", "Speaking"/);
+
+		const classes = readSrc("../routes/_auth/classes/index.tsx");
+		expect(classes).toMatch(
+			/const FILTERS = \["Tất cả", "Trực tuyến", "Trực tiếp", "Đang học"\]/,
+		);
+		expect(classes).not.toMatch(/"Online", "Offline"/);
+		expect(classes).toMatch(/"Giáo trình"/);
+
+		const syllabus = readSrc("../routes/_auth/syllabus/index.tsx");
+		expect(syllabus).toMatch(
+			/const FILTERS = \["Tất cả", "Viết", "Nói", "Đọc", "Nghe"\]/,
+		);
+		expect(syllabus).toMatch(/title="Giáo trình"/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);
 		const topbar = readSrc("../components/layout/topbar.tsx");
 		expect(topbar).toMatch(/<NotifPanel notifs=\{data\.notifs\}/);
 		expect(topbar).not.toMatch(/mark.*read|dispatch\(.*notif/is);
+	});
+
+	test("create-report-modal persists through the kernel bus (#173)", () => {
+		const src = readSrc("../components/modals/create-report-modal.tsx");
+		// The modal must dispatch a real kernel action — a submit that only
+		// closes is exactly the #173 bug.
+		expect(src).toMatch(/type: "create-report"/);
+		expect(src).toMatch(/await dispatch\(/);
+		// A definite failure keeps the modal open so typed content isn't lost.
+		expect(src).toMatch(/definite-failure/);
+		// Both buttons persist: draft and send ride the same action.
+		expect(src).toMatch(/save\("draft"\)/);
+		expect(src).toMatch(/save\("sent"\)/);
 	});
 
 	test("grade-modal preserves grade/comment ordering and partial-success retry", () => {

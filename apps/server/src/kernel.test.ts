@@ -8,7 +8,10 @@
  */
 
 import { createClient } from "@libsql/client";
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import type {
+	KernelSnapshot,
+	WorkspaceSettings,
+} from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -657,6 +660,32 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 			},
 		});
 		expect(res.status).toBe(201);
+	});
+
+	test("create rejects requests above 2 MiB without persisting", async () => {
+		const before = await (await t.call("/api/syllabi", { session })).json();
+		const body = JSON.stringify({
+			name: "Large import",
+			type: "communication",
+			description: "a".repeat(2 * 1024 * 1024),
+		});
+		for (const withLength of [false, true]) {
+			const res = await t.app.request("/api/syllabi", {
+				method: "POST",
+				headers: {
+					cookie: `better-auth.session_token=${session.token}`,
+					origin: CORS_ORIGIN,
+					"content-type": "application/json",
+					...(withLength ? { "content-length": String(body.length) } : {}),
+				},
+				body,
+			});
+			expect(res.status).toBe(413);
+			expect(res.headers.get("content-type")).toContain("application/json");
+		}
+		expect(await (await t.call("/api/syllabi", { session })).json()).toEqual(
+			before,
+		);
 	});
 });
 
@@ -2465,13 +2494,106 @@ describe("reports, notifications, and comment bank (Wave 7)", () => {
 		}
 	});
 
-	test("report create/send and notification mark-read have no write routes", async () => {
-		const createReport = await t.call("/api/reports", {
+	test("POST /api/reports persists a sent report with a send stamp (#173)", async () => {
+		const res = await t.call("/api/reports", {
 			session: orgA,
 			method: "POST",
-			body: { studentId: studentAId },
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "Tuần này tiến bộ rõ rệt.",
+				channel: "Zalo OA",
+				status: "sent",
+			},
 		});
-		expect(createReport.status).toBe(404);
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const row = (await t.kernel(orgA)).reports.find((r) => r.id === id);
+		expect(row?.status).toBe("sent");
+		expect(row?.sent).not.toBe("");
+		expect(row?.read).toBe("");
+	});
+
+	test("POST /api/reports keeps a draft unsent with empty content allowed (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "",
+				channel: "Email",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).reports.find((r) => r.id === id);
+		expect(row?.status).toBe("draft");
+		expect(row?.sent).toBe("");
+	});
+
+	test("POST /api/reports rejects a send without content (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "   ",
+				channel: "Zalo OA",
+				status: "sent",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST /api/reports rejects a student from another org (#173)", async () => {
+		const res = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentBId,
+				period: "08–14/09",
+				content: "x",
+				channel: "Zalo OA",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+		expect(await t.kernel(orgB).then((s) => s.reports)).toEqual([]);
+	});
+
+	test("POST /api/reports rejects malformed bodies and anonymous callers (#173)", async () => {
+		const bad = await t.call("/api/reports", {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "",
+				content: "x",
+				channel: "Fax",
+				status: "sent",
+			},
+		});
+		expect(bad.status).toBe(400);
+
+		const anon = await t.call("/api/reports", {
+			method: "POST",
+			body: {
+				studentId: studentAId,
+				period: "08–14/09",
+				content: "x",
+				channel: "Zalo OA",
+				status: "sent",
+			},
+		});
+		expect(anon.status).toBe(401);
+	});
+
+	test("notification mark-read has no write route (#173 shipped report create)", async () => {
 		const markRead = await t.call("/api/notifs/notif-a", {
 			session: orgA,
 			method: "PATCH",
@@ -2644,6 +2766,8 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		const copy = snapshot.syllabi.find((s) => s.id === cls?.syllabusId);
 		expect(copy?.classId).toBe(classId);
 		expect(copy?.modules).toHaveLength(2);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+		expect(copy?.modules.flatMap((m) => m.lessons)).toHaveLength(3);
 
 		const bad = await t.call("/api/classes", {
 			session,
@@ -3816,5 +3940,105 @@ describe("student package minimums (issue #115)", () => {
 		const snapshot = await t.kernel(session);
 		const pkg = snapshot.packages.find((p) => p.studentId === id);
 		expect(pkg).toMatchObject({ total: 10, price: 400000 });
+	});
+});
+
+describe("workspace settings persistence (issue #179)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let sessionA: TestSession;
+	let sessionB: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		sessionA = await t.insertUser("Giáo viên A");
+		sessionB = await t.insertUser("Giáo viên B");
+	});
+
+	test("GET returns default settings for new workspace", async () => {
+		const res = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "GET",
+		});
+		expect(res.status).toBe(200);
+		const settings = (await res.json()) as WorkspaceSettings;
+		expect(settings).toMatchObject({
+			defaultUnitPrice: "400.000đ",
+			absenceNoticeHours: "2 giờ trước buổi học",
+			unexcusedDeduct: "Có, trừ 1 buổi",
+			maxAbsencesBeforeAlert: 2,
+			reminderSchedule: "T−24h và T−1h",
+			overdueDebtReminder: "Sau 3 ngày và 7 ngày",
+			packageEndReminder: "Khi còn 3 buổi",
+			preferredChannel: "Zalo trước, email dự phòng",
+		});
+		expect(typeof settings.tplReminder).toBe("string");
+		expect(typeof settings.tplDebt).toBe("string");
+		expect(typeof settings.tplReport).toBe("string");
+	});
+
+	test("PUT saves settings and GET returns updated values", async () => {
+		const update = {
+			defaultUnitPrice: "500.000đ",
+			tplReminder: "Nhắc lịch mới: {{date}}",
+			tplDebt: "Học phí mới: {{amount}}",
+			tplReport: "Báo cáo mới: {{sessions}}",
+			maxAbsencesBeforeAlert: 3,
+			preferredChannel: "Chỉ Zalo",
+		};
+		const putRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "PUT",
+			body: update,
+		});
+		expect(putRes.status).toBe(200);
+		const putJson = (await putRes.json()) as WorkspaceSettings;
+		expect(putJson).toMatchObject(update);
+		expect(putJson.absenceNoticeHours).toBe("2 giờ trước buổi học"); // unchanged default
+
+		// Verify persistence on subsequent GET
+		const getRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "GET",
+		});
+		expect(getRes.status).toBe(200);
+		const getJson = await getRes.json();
+		expect(getJson).toMatchObject(update);
+	});
+
+	test("POST /api/kernel/settings also updates settings", async () => {
+		const postRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "POST",
+			body: {
+				defaultUnitPrice: "600.000đ",
+			},
+		});
+		expect(postRes.status).toBe(200);
+		const postJson = (await postRes.json()) as WorkspaceSettings;
+		expect(postJson.defaultUnitPrice).toBe("600.000đ");
+		expect(postJson.tplReminder).toBe("Nhắc lịch mới: {{date}}"); // previous update kept
+	});
+
+	test("PUT rejects invalid payload with 400", async () => {
+		const res = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "PUT",
+			body: {
+				maxAbsencesBeforeAlert: -5, // min is 0
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("multi-tenant isolation: Org A settings do not leak to Org B", async () => {
+		const resB = await t.call("/api/kernel/settings", {
+			session: sessionB,
+			method: "GET",
+		});
+		expect(resB.status).toBe(200);
+		const jsonB = (await resB.json()) as WorkspaceSettings;
+		// Org B should still have pristine defaults
+		expect(jsonB.defaultUnitPrice).toBe("400.000đ");
+		expect(jsonB.preferredChannel).toBe("Zalo trước, email dự phòng");
 	});
 });

@@ -97,7 +97,17 @@ function spa404Plugin(): Plugin {
 		},
 	};
 }
+const rootPkg = JSON.parse(
+	await fs.readFile(
+		path.resolve(import.meta.dirname, "../../package.json"),
+		"utf-8",
+	),
+) as { version?: string };
+
 export default defineConfig({
+	define: {
+		__APP_VERSION__: JSON.stringify(rootPkg.version ?? "0.0.0"),
+	},
 	server: {
 		port: 8001,
 		strictPort: true,

@@ -273,6 +273,25 @@ export const commentBankCreateSchema = z
 export type CommentBankCreate = z.infer<typeof commentBankCreateSchema>;
 
 /**
+ * Weekly parent-report creation (#173). A "sent" report requires content —
+ * an empty send would create a log entry for a message that never existed.
+ * Drafts may be empty; `channel` is metadata only (no real delivery yet).
+ */
+export const reportCreateSchema = z
+	.object({
+		studentId: z.string().min(1),
+		period: z.string().trim().min(1).max(120),
+		content: z.string().max(4000),
+		channel: z.enum(["Zalo OA", "Email"]),
+		status: z.enum(["draft", "sent"]),
+	})
+	.strict()
+	.refine((v) => v.status !== "sent" || v.content.trim().length > 0, {
+		message: "content required when sending",
+	});
+export type ReportCreate = z.infer<typeof reportCreateSchema>;
+
+/**
  * Scheduled-lesson status actions (Wave 4) — NOT syllabus_lesson (invariant 5).
  * The body is exactly `{}`: the target status comes from the endpoint, never
  * the client; anything else is rejected so a forged `status` cannot ride along.
@@ -568,3 +587,50 @@ export interface KernelSnapshot {
 export interface CreatedResponse {
 	id: string;
 }
+
+export const workspaceSettingsSchema = z.object({
+	defaultUnitPrice: z.string().min(1).default("400.000đ"),
+	tplReminder: z
+		.string()
+		.min(1)
+		.default(
+			"Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.",
+		),
+	tplDebt: z
+		.string()
+		.min(1)
+		.default(
+			"Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.",
+		),
+	tplReport: z
+		.string()
+		.min(1)
+		.default(
+			"Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}",
+		),
+	absenceNoticeHours: z.string().min(1).default("2 giờ trước buổi học"),
+	unexcusedDeduct: z.string().min(1).default("Có, trừ 1 buổi"),
+	maxAbsencesBeforeAlert: z.number().int().min(0).default(2),
+	reminderSchedule: z.string().min(1).default("T−24h và T−1h"),
+	overdueDebtReminder: z.string().min(1).default("Sau 3 ngày và 7 ngày"),
+	packageEndReminder: z.string().min(1).default("Khi còn 3 buổi"),
+	preferredChannel: z.string().min(1).default("Zalo trước, email dự phòng"),
+});
+export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
+
+export const workspaceSettingsUpdateSchema = z.object({
+	defaultUnitPrice: z.string().min(1).optional(),
+	tplReminder: z.string().min(1).optional(),
+	tplDebt: z.string().min(1).optional(),
+	tplReport: z.string().min(1).optional(),
+	absenceNoticeHours: z.string().min(1).optional(),
+	unexcusedDeduct: z.string().min(1).optional(),
+	maxAbsencesBeforeAlert: z.number().int().min(0).optional(),
+	reminderSchedule: z.string().min(1).optional(),
+	overdueDebtReminder: z.string().min(1).optional(),
+	packageEndReminder: z.string().min(1).optional(),
+	preferredChannel: z.string().min(1).optional(),
+});
+export type WorkspaceSettingsUpdate = z.infer<
+	typeof workspaceSettingsUpdateSchema
+>;

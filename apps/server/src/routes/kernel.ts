@@ -22,6 +22,8 @@ import {
 	studentCreateSchema,
 	syllabusCreateSchema,
 	syllabusReplaceContentSchema,
+	workspaceSettingsSchema,
+	workspaceSettingsUpdateSchema,
 } from "@teacher-os/api/contracts";
 import {
 	parseStartDateStrict,
@@ -34,6 +36,7 @@ import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
+import { workspaceSettings } from "@teacher-os/db/schema/settings";
 import { student } from "@teacher-os/db/schema/student";
 import {
 	syllabus,
@@ -43,6 +46,7 @@ import {
 import { and, asc, eq, inArray, max } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
@@ -352,6 +356,139 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		if (!ctx) return unauthorized(c);
 		return c.json(await loadSnapshot(deps.getDb(), ctx.orgId));
 	});
+
+	kernel.get("/kernel/settings", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(workspaceSettings)
+			.where(eq(workspaceSettings.orgId, ctx.orgId))
+			.limit(1);
+		if (!row) {
+			return c.json(workspaceSettingsSchema.parse({}));
+		}
+		return c.json({
+			defaultUnitPrice: row.defaultUnitPrice,
+			tplReminder: row.tplReminder,
+			tplDebt: row.tplDebt,
+			tplReport: row.tplReport,
+			absenceNoticeHours: row.absenceNoticeHours,
+			unexcusedDeduct: row.unexcusedDeduct,
+			maxAbsencesBeforeAlert: row.maxAbsencesBeforeAlert,
+			reminderSchedule: row.reminderSchedule,
+			overdueDebtReminder: row.overdueDebtReminder,
+			packageEndReminder: row.packageEndReminder,
+			preferredChannel: row.preferredChannel,
+		});
+	});
+
+	const saveSettings = async (c: KernelContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, workspaceSettingsUpdateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const [existing] = await db
+			.select()
+			.from(workspaceSettings)
+			.where(eq(workspaceSettings.orgId, ctx.orgId))
+			.limit(1);
+
+		const defaults = workspaceSettingsSchema.parse({});
+
+		if (existing) {
+			await db
+				.update(workspaceSettings)
+				.set({
+					...(body.data.defaultUnitPrice !== undefined && {
+						defaultUnitPrice: body.data.defaultUnitPrice,
+					}),
+					...(body.data.tplReminder !== undefined && {
+						tplReminder: body.data.tplReminder,
+					}),
+					...(body.data.tplDebt !== undefined && {
+						tplDebt: body.data.tplDebt,
+					}),
+					...(body.data.tplReport !== undefined && {
+						tplReport: body.data.tplReport,
+					}),
+					...(body.data.absenceNoticeHours !== undefined && {
+						absenceNoticeHours: body.data.absenceNoticeHours,
+					}),
+					...(body.data.unexcusedDeduct !== undefined && {
+						unexcusedDeduct: body.data.unexcusedDeduct,
+					}),
+					...(body.data.maxAbsencesBeforeAlert !== undefined && {
+						maxAbsencesBeforeAlert: body.data.maxAbsencesBeforeAlert,
+					}),
+					...(body.data.reminderSchedule !== undefined && {
+						reminderSchedule: body.data.reminderSchedule,
+					}),
+					...(body.data.overdueDebtReminder !== undefined && {
+						overdueDebtReminder: body.data.overdueDebtReminder,
+					}),
+					...(body.data.packageEndReminder !== undefined && {
+						packageEndReminder: body.data.packageEndReminder,
+					}),
+					...(body.data.preferredChannel !== undefined && {
+						preferredChannel: body.data.preferredChannel,
+					}),
+					updatedAt: new Date(),
+				})
+				.where(eq(workspaceSettings.orgId, ctx.orgId));
+		} else {
+			await db.insert(workspaceSettings).values({
+				orgId: ctx.orgId,
+				defaultUnitPrice:
+					body.data.defaultUnitPrice ?? defaults.defaultUnitPrice,
+				tplReminder: body.data.tplReminder ?? defaults.tplReminder,
+				tplDebt: body.data.tplDebt ?? defaults.tplDebt,
+				tplReport: body.data.tplReport ?? defaults.tplReport,
+				absenceNoticeHours:
+					body.data.absenceNoticeHours ?? defaults.absenceNoticeHours,
+				unexcusedDeduct: body.data.unexcusedDeduct ?? defaults.unexcusedDeduct,
+				maxAbsencesBeforeAlert:
+					body.data.maxAbsencesBeforeAlert ?? defaults.maxAbsencesBeforeAlert,
+				reminderSchedule:
+					body.data.reminderSchedule ?? defaults.reminderSchedule,
+				overdueDebtReminder:
+					body.data.overdueDebtReminder ?? defaults.overdueDebtReminder,
+				packageEndReminder:
+					body.data.packageEndReminder ?? defaults.packageEndReminder,
+				preferredChannel:
+					body.data.preferredChannel ?? defaults.preferredChannel,
+				updatedAt: new Date(),
+			});
+		}
+
+		const [updated] = await db
+			.select()
+			.from(workspaceSettings)
+			.where(eq(workspaceSettings.orgId, ctx.orgId))
+			.limit(1);
+		if (!updated) {
+			return c.json(defaults);
+		}
+
+		return c.json({
+			defaultUnitPrice: updated.defaultUnitPrice,
+			tplReminder: updated.tplReminder,
+			tplDebt: updated.tplDebt,
+			tplReport: updated.tplReport,
+			absenceNoticeHours: updated.absenceNoticeHours,
+			unexcusedDeduct: updated.unexcusedDeduct,
+			maxAbsencesBeforeAlert: updated.maxAbsencesBeforeAlert,
+			reminderSchedule: updated.reminderSchedule,
+			overdueDebtReminder: updated.overdueDebtReminder,
+			packageEndReminder: updated.packageEndReminder,
+			preferredChannel: updated.preferredChannel,
+		});
+	};
+
+	kernel.put("/kernel/settings", saveSettings);
+	kernel.post("/kernel/settings", saveSettings);
 
 	kernel.get("/students", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -1257,6 +1394,19 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
 		return c.json(snapshot.syllabi);
 	});
+
+	kernel.post(
+		"/syllabi",
+		async (c, next) => {
+			if (!c.get("kernelCtx")) return unauthorized(c);
+			return next();
+		},
+		bodyLimit({
+			maxSize: 2 * 1024 * 1024,
+			onError: (c) =>
+				c.json({ error: "Dữ liệu syllabus vượt giới hạn 2 MiB." }, 413),
+		}),
+	);
 
 	kernel.post("/syllabi", async (c) => {
 		const ctx = c.get("kernelCtx");

@@ -1,0 +1,57 @@
+{
+	"url": "https://app.staging.teacheros.io.vn/syllabus",
+	"text": "T\nTeacher OS\nv0.0.3\nTổng quan\nHọc viên\nLịch dạy\nHọc phí\nBài tập\nGIẢNG DẠY\nLớp học\nSyllabus\nPHỤ HUYNH\nBáo cáo\nHỆ THỐNG\nCài đặt\nQD\nQA Dump\nPRO\ndogfood.d.1789625992099@mailinator.com\nSyllabus\n\n0 template · 0 buổi tổng cộng\n\nTất cả\nWriting\nSpeaking\nReading\nListening\n+ Tạo syllabus",
+	"buttons": [
+		{
+			"text": "",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "Tất cả",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "Writing",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "Speaking",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "Reading",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "Listening",
+			"disabled": false,
+			"hidden": false
+		},
+		{
+			"text": "+ Tạo syllabus",
+			"disabled": false,
+			"hidden": false
+		}
+	],
+	"placeholders": ["Tìm học viên, lớp học…"]
+}

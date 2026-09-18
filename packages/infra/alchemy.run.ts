@@ -104,7 +104,13 @@ export default Alchemy.Stack(
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "none",
 			},
-			...(topology && { domain: topology.appHost, workersDev: false }),
+			...(topology && {
+				domain: {
+					name: topology.appHost,
+					aliases: topology.appAliases,
+				},
+				workersDev: false,
+			}),
 			env: {
 				VITE_SERVER_URL: topology
 					? topology.apiOrigin

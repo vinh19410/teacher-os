@@ -55,7 +55,7 @@ export function AddModuleModal({
 			onClose={saving ? () => undefined : onClose}
 			title={`Thêm module${sy ? ` — ${sy.name}` : ""}`}
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên module *" error={error}>
 					<Input
 						value={title}

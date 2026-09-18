@@ -16,10 +16,12 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
  * Load-bearing facts (verified against the DOM):
  * - Lessons are generated when a STUDENT is added to the class
  *   (POST /api/students with classId), not at class creation.
- * - Tabs render plain buttons (no role="tab") — use getByRole("button").
- * - 12 lesson-blocks carry the student name → always .first().
- * - "Điểm danh" closes the modal fire-and-forget; the opacity-60 class on
- *   the lesson block is the deterministic completion barrier.
+ * - Tabs render role="tab" inside a tablist (issue #119 added the ARIA
+ *   roles) — use getByRole("tab").
+ * - Lesson blocks on /schedule carry the class name (issue #162) → .first().
+ * - In ClassSessionModal, each student has a row with role="group";
+ *   "Điểm danh" marks attendance and the opacity-60 class on the session
+ *   block is the deterministic completion barrier.
  * - Tab "Buổi học" (Issue #89) renders "Đã học"/"Sắp tới" badges on the timeline;
  *   the exact-count asserts below only run while standing on "Buổi học".
  */
@@ -58,7 +60,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 	// Issue #91: the class starts tomorrow → the VN date gate keeps every
 	// occurrence future → badges only, never an in-place check-in button.
@@ -83,24 +85,28 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	);
 	await expect(page).toHaveURL(/\/schedule\?week=/);
 	// The pinned week holds only the week's dated blocks (≤2: first T2 + T4),
-	// all carrying the student name → strict mode needs .first().
+	// all carrying the class name (issue #162) → strict mode needs .first().
 	const lesson = page
-		.locator("button.lesson-block", { hasText: STUDENT_NAME })
+		.locator("button.lesson-block", { hasText: CLASS_NAME })
 		.first();
 	await expect(lesson).toBeVisible();
 	await lesson.click();
-	await expect(page.getByText(`${STUDENT_NAME} — 1:1`)).toBeVisible();
-	await page.getByRole("button", { name: "Điểm danh" }).click();
-	// Modal close is NOT a success signal (fire-and-forget action).
-	await expect(page.getByText(`${STUDENT_NAME} — 1:1`)).toBeHidden();
+
+	// Modal displays class session details and lists the enrolled student
+	const studentRow = page.getByRole("group", { name: STUDENT_NAME });
+	await expect(studentRow).toBeVisible();
+	await studentRow.getByRole("button", { name: "Điểm danh" }).click();
+	await expect(page.getByText("Đã điểm danh.")).toBeVisible();
+	await expect(studentRow.getByText("Hoàn thành")).toBeVisible();
+	await page.getByLabel("Đóng").click();
+
 	// Completion barrier: the block gains opacity-60 only after the
 	// check-in POST finished and the kernel refetch applied.
 	await expect(lesson).toHaveClass(/opacity-60/);
-
 	// 6. Reload keeps the data — proof it was persisted server-side.
 	await page.reload();
 	await expect(
-		page.locator("button.lesson-block", { hasText: STUDENT_NAME }).first(),
+		page.locator("button.lesson-block", { hasText: CLASS_NAME }).first(),
 	).toHaveClass(/opacity-60/);
 	// Badge counts live on the class "Buổi học" tab, never on /schedule.
 	await openClassScheduleTab(page, CLASS_NAME);
@@ -172,7 +178,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 1:1 class → sequential head today renders a one-click button.
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	const checkInButton = page.getByRole("button", { name: "Điểm danh" });
 	await expect(checkInButton).toHaveCount(1);
 	await checkInButton.click();
@@ -184,7 +190,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	// Persisted server-side: survives a reload; next head is a week out →
 	// future → no CTA left on the tab.
 	await page.reload();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Đã học", { exact: true })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);
 });

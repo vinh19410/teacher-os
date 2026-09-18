@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 type Variant = "accent" | "success" | "warn" | "danger" | "muted";
@@ -11,7 +11,7 @@ const variantClasses: Record<Variant, string> = {
 	muted: "bg-line-soft text-muted-fg",
 };
 
-export interface BadgeProps {
+export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 	variant?: Variant;
 	dot?: boolean;
 	className?: string;
@@ -23,6 +23,7 @@ export function Badge({
 	dot = false,
 	className,
 	children,
+	...rest
 }: BadgeProps) {
 	return (
 		<span
@@ -33,6 +34,7 @@ export function Badge({
 				variantClasses[variant],
 				className,
 			)}
+			{...rest}
 		>
 			{children}
 		</span>

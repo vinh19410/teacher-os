@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { initialsFromName } from "@/lib/initials";
+import { VersionBadge } from "./version-badge";
 
 const navSections: {
 	label: string | null;
@@ -187,6 +188,17 @@ const navSections: {
 	},
 ];
 
+export function extractUserPlan(user: unknown): string | null {
+	if (!user || typeof user !== "object") return null;
+	if ("plan" in user && typeof user.plan === "string" && user.plan.trim()) {
+		return user.plan.trim();
+	}
+	if ("tier" in user && typeof user.tier === "string" && user.tier.trim()) {
+		return user.tier.trim();
+	}
+	return null;
+}
+
 export function Sidebar({
 	open,
 	onNavigate,
@@ -208,7 +220,7 @@ export function Sidebar({
 	const user = session.data.user;
 	const displayName = user.name || "Giáo viên";
 	const initials = initialsFromName(displayName);
-
+	const plan = extractUserPlan(user);
 	return (
 		<aside
 			className={cn(
@@ -237,12 +249,13 @@ export function Sidebar({
 				</div>
 				<div
 					className={cn(
-						"font-display font-semibold text-base tracking-[-0.01em]",
+						"flex items-center gap-2 font-display font-semibold text-base tracking-[-0.01em]",
 						// Collapsed-branch classes are always app:-prefixed (D10) so they cannot leak into the mobile drawer.
 						collapsed && "app:hidden",
 					)}
 				>
-					Teacher OS
+					<span>Teacher OS</span>
+					<VersionBadge />
 				</div>
 			</Link>
 			<nav className="flex flex-1 flex-col gap-0.5">
@@ -304,8 +317,11 @@ export function Sidebar({
 				>
 					<Link
 						to="/profile"
-						title="Hồ sơ cá nhân"
-						className="flex min-w-0 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						title={
+							displayName ? `${displayName} (${user.email})` : "Hồ sơ cá nhân"
+						}
+						aria-label="Hồ sơ cá nhân"
+						className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<Avatar
 							text={initials}
@@ -313,7 +329,7 @@ export function Sidebar({
 							size="md"
 							imgProps={{ "data-testid": "sidebar-avatar" }}
 						/>
-						<div className="min-w-0 leading-[1.3]">
+						<div className="min-w-0 flex-1 leading-[1.3]">
 							<div
 								className={cn(
 									"flex items-center font-semibold text-sm",
@@ -321,10 +337,17 @@ export function Sidebar({
 									collapsed && "app:hidden",
 								)}
 							>
-								<span className="truncate">{displayName}</span>
-								<span className="ml-1 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]">
-									PRO
+								<span className="truncate" title={displayName}>
+									{displayName}
 								</span>
+								{plan && (
+									<span
+										className="ml-1 shrink-0 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]"
+										data-testid="sidebar-user-plan"
+									>
+										{plan}
+									</span>
+								)}
 							</div>
 							<div
 								className={cn(
@@ -334,6 +357,7 @@ export function Sidebar({
 									collapsed && "app:sr-only",
 								)}
 								data-testid="sidebar-user-email"
+								title={user.email}
 							>
 								{user.email}
 							</div>

@@ -29,7 +29,7 @@ const INV_LABEL: Record<string, string> = {
 	unpaid: "Chưa thu",
 };
 
-function TuitionRoute() {
+export function TuitionRoute() {
 	const navigate = useNavigate();
 	const { data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
@@ -49,7 +49,9 @@ function TuitionRoute() {
 				<StatCard
 					num={fmtVND(outstanding)}
 					label="Còn nợ (VND)"
-					className="[&>div:first-child]:text-danger"
+					className={
+						outstanding > 0 ? "[&>div:first-child]:text-danger" : undefined
+					}
 				/>
 				<StatCard
 					num={String(endingSoon)}
@@ -60,71 +62,84 @@ function TuitionRoute() {
 
 			<div className="mt-8">
 				<SectionLabel>Gói học đang hoạt động</SectionLabel>
-				<Card variant="white" className="p-0">
-					<DataTable
-						headers={[
-							"Học viên",
-							"Đã học",
-							"Còn",
-							"Tiến độ",
-							"Hết hạn",
-							"Trạng thái",
-						]}
-						rows={data.students.map((s) => ({
-							onClick: () =>
-								navigate({
-									to: "/students/$studentId",
-									params: { studentId: s.id },
-								}),
-							cells: [
-								<div key="s" className="flex items-center gap-2">
-									<Avatar text={s.avatar} size="sm" />
-									{s.name}
-								</div>,
-								<span key="d" className="font-mono">
-									{s.pkg.done}/{s.pkg.total}
-								</span>,
-								<span
-									key="r"
-									className={
-										s.pkg.remaining <= 3
-											? "font-mono font-semibold text-danger"
-											: "font-mono font-semibold"
-									}
-								>
-									{s.pkg.remaining}
-								</span>,
-								<Progress
-									key="p"
-									value={(s.pkg.done / s.pkg.total) * 100}
-									variant={
-										s.pkg.remaining <= 2
-											? "low"
-											: s.pkg.remaining <= 4
-												? "warn"
-												: "default"
-									}
-								/>,
-								<span key="e" className="font-mono text-meta text-xs">
-									{s.pkg.expiry}
-								</span>,
-								s.pkg.remaining <= 2 ? (
-									<Badge key="b" variant="danger">
-										Sắp hết
-									</Badge>
-								) : s.pkg.remaining <= 4 ? (
-									<Badge key="b" variant="warn">
-										Sắp hết
-									</Badge>
-								) : (
-									<Badge key="b" variant="success" dot>
-										Đang học
-									</Badge>
-								),
-							],
-						}))}
-					/>
-				</Card>
+				{data.students.length === 0 ? (
+					<Card
+						variant="white"
+						className="p-8 text-center"
+						data-testid="tuition-packages-empty"
+					>
+						<p className="font-mono text-meta text-xs">
+							Chưa có gói học nào đang hoạt động.
+						</p>
+					</Card>
+				) : (
+					<Card variant="white" className="p-0">
+						<DataTable
+							headers={[
+								"Học viên",
+								"Đã học",
+								"Còn",
+								"Tiến độ",
+								"Hết hạn",
+								"Trạng thái",
+							]}
+							emptyMessage="Chưa có gói học."
+							rows={data.students.map((s) => ({
+								onClick: () =>
+									navigate({
+										to: "/students/$studentId",
+										params: { studentId: s.id },
+									}),
+								cells: [
+									<div key="s" className="flex items-center gap-2">
+										<Avatar text={s.avatar} size="sm" />
+										{s.name}
+									</div>,
+									<span key="d" className="font-mono">
+										{s.pkg.done}/{s.pkg.total}
+									</span>,
+									<span
+										key="r"
+										className={
+											s.pkg.remaining <= 3
+												? "font-mono font-semibold text-danger"
+												: "font-mono font-semibold"
+										}
+									>
+										{s.pkg.remaining}
+									</span>,
+									<Progress
+										key="p"
+										value={(s.pkg.done / s.pkg.total) * 100}
+										variant={
+											s.pkg.remaining <= 2
+												? "low"
+												: s.pkg.remaining <= 4
+													? "warn"
+													: "default"
+										}
+									/>,
+									<span key="e" className="font-mono text-meta text-xs">
+										{s.pkg.expiry}
+									</span>,
+									s.pkg.remaining <= 2 ? (
+										<Badge key="b" variant="danger">
+											Sắp hết
+										</Badge>
+									) : s.pkg.remaining <= 4 ? (
+										<Badge key="b" variant="warn">
+											Sắp hết
+										</Badge>
+									) : (
+										<Badge key="b" variant="success" dot>
+											Đang học
+										</Badge>
+									),
+								],
+							}))}
+						/>
+					</Card>
+				)}
 			</div>
 
 			<div className="mt-8">
@@ -134,81 +149,98 @@ function TuitionRoute() {
 						+ Tạo hóa đơn
 					</Button>
 				</div>
-				<Card variant="white" className="p-0">
-					<DataTable
-						headers={[
-							"Mã",
-							"Học viên",
-							"Loại",
-							"Số tiền",
-							"Ngày",
-							"Đến hạn",
-							"Trạng thái",
-							"",
-						]}
-						rows={data.invoices.map((i) => {
-							const s = data.students.find((st) => st.id === i.sid);
-							return {
-								cells: [
-									<span key="id" className="font-mono text-meta text-xs">
-										{i.id}
-									</span>,
-									s?.name ?? "",
-									<span key="t" title={i.note || undefined}>
-										<Tag>{i.type}</Tag>
-									</span>,
-									<span key="a" className="font-mono">
-										{fmtVND(i.amount)}
-									</span>,
-									<span key="d" className="font-mono text-meta text-xs">
-										{i.date}
-									</span>,
-									<span key="due" className="font-mono text-meta text-xs">
-										{i.status === "paid" ? "—" : formatDue(i.due)}
-									</span>,
-									i.status === "paid" ? (
-										<Badge key="b" variant="success" dot>
-											{INV_LABEL.paid}
-										</Badge>
-									) : i.status === "overdue" ? (
-										<Badge key="b" variant="danger" dot>
-											{INV_LABEL.overdue}
-										</Badge>
-									) : (
-										<Badge key="b" variant="warn" dot>
-											{INV_LABEL.unpaid}
-										</Badge>
-									),
-									i.status !== "paid" ? (
-										<Button
-											key="act"
-											variant="ghost"
-											size="sm"
-											disabled={busy || isPending(i.id)}
-											onClick={() =>
-												void run(
-													i.id,
-													{
-														type: "mark-invoice-paid",
-														invoiceId: i.id,
-														method: i.method === "—" ? "CK" : i.method,
-													},
-													"Đã ghi nhận thanh toán.",
-												)
-											}
-										>
-											{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
-										</Button>
-									) : (
-										<span key="m" className="font-mono text-meta text-xs">
-											{i.method}
-										</span>
-									),
-								],
-							};
-						})}
-					/>
-				</Card>
+				{data.invoices.length === 0 ? (
+					<Card
+						variant="white"
+						className="p-8 text-center"
+						data-testid="tuition-invoices-empty"
+					>
+						<h3 className="font-display font-semibold text-base">
+							Chưa có hóa đơn nào
+						</h3>
+						<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+							Bấm "+ Tạo hóa đơn" ở góc trên để theo dõi các khoản thu và công
+							nợ của học viên.
+						</p>
+					</Card>
+				) : (
+					<Card variant="white" className="p-0">
+						<DataTable
+							headers={[
+								"Mã",
+								"Học viên",
+								"Loại",
+								"Số tiền",
+								"Ngày",
+								"Đến hạn",
+								"Trạng thái",
+								"",
+							]}
+							emptyMessage="Chưa có hóa đơn."
+							rows={data.invoices.map((i) => {
+								const s = data.students.find((st) => st.id === i.sid);
+								return {
+									cells: [
+										<span key="id" className="font-mono text-meta text-xs">
+											{i.id}
+										</span>,
+										s?.name ?? "",
+										<span key="t" title={i.note || undefined}>
+											<Tag>{i.type}</Tag>
+										</span>,
+										<span key="a" className="font-mono">
+											{fmtVND(i.amount)}
+										</span>,
+										<span key="d" className="font-mono text-meta text-xs">
+											{i.date}
+										</span>,
+										<span key="due" className="font-mono text-meta text-xs">
+											{i.status === "paid" ? "—" : formatDue(i.due)}
+										</span>,
+										i.status === "paid" ? (
+											<Badge key="b" variant="success" dot>
+												{INV_LABEL.paid}
+											</Badge>
+										) : i.status === "overdue" ? (
+											<Badge key="b" variant="danger" dot>
+												{INV_LABEL.overdue}
+											</Badge>
+										) : (
+											<Badge key="b" variant="warn" dot>
+												{INV_LABEL.unpaid}
+											</Badge>
+										),
+										i.status !== "paid" ? (
+											<Button
+												key="act"
+												variant="ghost"
+												size="sm"
+												disabled={busy || isPending(i.id)}
+												onClick={() =>
+													void run(
+														i.id,
+														{
+															type: "mark-invoice-paid",
+															invoiceId: i.id,
+															method: i.method === "—" ? "CK" : i.method,
+														},
+														"Đã ghi nhận thanh toán.",
+													)
+												}
+											>
+												{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
+											</Button>
+										) : (
+											<span key="m" className="font-mono text-meta text-xs">
+												{i.method}
+											</span>
+										),
+									],
+								};
+							})}
+						/>
+					</Card>
+				)}
 			</div>
 			<AddInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AuthField, fieldErrors } from "@/components/auth/auth-field";
 import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
+import { resetFieldErrors } from "@/components/auth/reset-field-errors";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
@@ -108,10 +109,14 @@ export default function SignInForm({
 						name="email"
 						label="Email"
 						type="email"
+						required
 						autoComplete="email"
 						placeholder="you@school.edu"
 						value={field.state.value}
-						onChange={field.handleChange}
+						onChange={(value) => {
+							field.handleChange(value);
+							resetFieldErrors(form, "email");
+						}}
 						onBlur={field.handleBlur}
 						errors={fieldErrors(field.state.meta.errors)}
 					/>
@@ -125,6 +130,7 @@ export default function SignInForm({
 						name="password"
 						label="Password"
 						type="password"
+						required
 						autoComplete="current-password"
 						placeholder="••••••••"
 						passwordToggle
@@ -139,7 +145,10 @@ export default function SignInForm({
 							</button>
 						}
 						value={field.state.value}
-						onChange={field.handleChange}
+						onChange={(value) => {
+							field.handleChange(value);
+							resetFieldErrors(form, "password");
+						}}
 						onBlur={field.handleBlur}
 						errors={fieldErrors(field.state.meta.errors)}
 					/>

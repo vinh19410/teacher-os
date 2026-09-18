@@ -19,12 +19,14 @@ export function Field({
 	help,
 	error,
 	htmlFor,
+	required,
 	children,
 }: {
 	label: string;
 	help?: string;
 	error?: string;
 	htmlFor?: string;
+	required?: boolean;
 	children: ReactNode;
 }) {
 	const id = useId();
@@ -32,20 +34,58 @@ export function Field({
 	// (multi-child layouts) renders untouched rather than dropping children.
 	const child = Children.toArray(children)[0];
 	const single = Children.count(children) === 1 && isValidElement(child);
-	const childId = single ? (child.props as { id?: string }).id : undefined;
+	const childProps = single
+		? (child.props as Record<string, unknown>)
+		: undefined;
+	const childId = childProps?.id as string | undefined;
 	const target = htmlFor ?? childId ?? id;
-	const control =
-		single && !childId
-			? cloneElement(child as ReactElement<{ id?: string }>, { id: target })
-			: children;
+
+	const isRequired =
+		required ??
+		(typeof label === "string" && label.includes("*")) ??
+		Boolean(childProps?.required || childProps?.["aria-required"]);
+
+	const errorId = error ? `${target}-error` : undefined;
+	const helpId = help ? `${target}-help` : undefined;
+	const describedByParts = [
+		errorId,
+		helpId,
+		typeof childProps?.["aria-describedby"] === "string"
+			? childProps["aria-describedby"]
+			: undefined,
+	].filter(Boolean);
+	const describedBy =
+		describedByParts.length > 0 ? describedByParts.join(" ") : undefined;
+
+	const control = single
+		? cloneElement(child as ReactElement<Record<string, unknown>>, {
+				id: target,
+				...(isRequired ? { required: true, "aria-required": true } : {}),
+				...(error ? { "aria-invalid": true } : {}),
+				...(describedBy ? { "aria-describedby": describedBy } : {}),
+			})
+		: children;
 	return (
 		<div className="flex flex-col gap-1">
 			<label htmlFor={target} className="font-medium text-muted-fg text-xs">
 				{label}
 			</label>
 			{control}
-			{help && <span className="text-[11px] text-meta">{help}</span>}
-			{error && <span className="text-[11px] text-danger">{error}</span>}
+			{help && (
+				<span id={helpId} className="text-[11px] text-meta">
+					{help}
+				</span>
+			)}
+			{error && (
+				<span
+					id={errorId}
+					role="alert"
+					aria-live="polite"
+					className="text-[11px] text-danger"
+				>
+					{error}
+				</span>
+			)}
 		</div>
 	);
 }

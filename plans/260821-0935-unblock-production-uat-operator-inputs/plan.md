@@ -1,7 +1,7 @@
 ---
 title: "Unblock production UAT operator inputs"
 description: "Cung cấp 5 operator inputs còn thiếu của blocker #41 (domain, Google redirect, UAT account, Safari runner, sign-off), dọn + harden env topology cho deploy, rồi re-run phase 6 UAT của plan Production readiness từ Step 1 trên release commit mới đến quyết định GO/NO-GO có evidence."
-status: pending
+status: completed
 priority: P1
 effort: "1-2d (chờ operator inputs)"
 issue: 41

@@ -64,11 +64,16 @@ export function AddClassModal({
 
 	function resetForm() {
 		setName("");
+		setLevel("Band 7.0");
+		setClassType("ielts");
 		setSkills([]);
+		setMode("Online");
+		setTemplateId("");
 		setDays([]);
 		setStartTime(DEFAULT_START);
 		setEndTime(DEFAULT_END);
 		setEndTouched(false);
+		setTotal("12");
 		setStartDate(getTomorrowDateInputValue());
 	}
 
@@ -150,7 +155,7 @@ export function AddClassModal({
 			title="Tạo lớp mới"
 		>
 			<form noValidate onSubmit={submit}>
-				<Field label="Tên lớp *" error={error}>
+				<Field label="Tên lớp *">
 					<Input
 						value={name}
 						onChange={(e) => setName(e.target.value)}

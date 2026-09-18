@@ -30,8 +30,10 @@ export async function signUpViaUi(
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
-	await page.getByText(className).click();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	const classRow = page.locator("tbody").getByText(className);
+	await expect(classRow).toBeVisible();
+	await classRow.click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 }
 
 /** Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice

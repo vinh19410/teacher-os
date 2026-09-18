@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	atRiskRows,
+	formatDashboardGreeting,
 	formatDashboardLead,
 	lessonDayFromDate,
 	lessonsToday,
@@ -181,5 +182,88 @@ describe("formatDashboardLead", () => {
 		expect(lead).toContain("17/08");
 		expect(lead).toContain("Hôm nay có 0 buổi học");
 		expect(lead).not.toContain("19/08");
+	});
+});
+
+describe("formatDashboardGreeting", () => {
+	test("greets morning between 05:00 and 11:59 Vietnam time", () => {
+		// 05:00 ICT = 22:00 UTC previous day
+		const start = new Date("2026-08-26T22:00:00Z");
+		expect(formatDashboardGreeting("Cô Lan", start)).toBe(
+			"Chào buổi sáng, Cô Lan",
+		);
+
+		// 08:30 ICT = 01:30 UTC
+		const mid = new Date("2026-08-27T01:30:00Z");
+		expect(formatDashboardGreeting("Thầy Tuấn", mid)).toBe(
+			"Chào buổi sáng, Thầy Tuấn",
+		);
+
+		// 11:59 ICT = 04:59 UTC
+		const end = new Date("2026-08-27T04:59:59Z");
+		expect(formatDashboardGreeting("Giáo viên", end)).toBe(
+			"Chào buổi sáng, Giáo viên",
+		);
+	});
+
+	test("greets afternoon between 12:00 and 17:59 Vietnam time", () => {
+		// 12:00 ICT = 05:00 UTC
+		const start = new Date("2026-08-27T05:00:00Z");
+		expect(formatDashboardGreeting("Cô Lan", start)).toBe(
+			"Chào buổi chiều, Cô Lan",
+		);
+
+		// 14:30 ICT = 07:30 UTC
+		const mid = new Date("2026-08-27T07:30:00Z");
+		expect(formatDashboardGreeting("Thầy Tuấn", mid)).toBe(
+			"Chào buổi chiều, Thầy Tuấn",
+		);
+
+		// 17:59 ICT = 10:59 UTC
+		const end = new Date("2026-08-27T10:59:59Z");
+		expect(formatDashboardGreeting("Giáo viên", end)).toBe(
+			"Chào buổi chiều, Giáo viên",
+		);
+	});
+
+	test("greets evening from 18:00 to 04:59 Vietnam time (including QC issue #120 repro at 20:39)", () => {
+		// 18:00 ICT = 11:00 UTC
+		const start = new Date("2026-08-27T11:00:00Z");
+		expect(formatDashboardGreeting("Cô Lan", start)).toBe(
+			"Chào buổi tối, Cô Lan",
+		);
+
+		// 20:39 ICT (QC repro: 2026-08-27 ~20:39 ICT = 13:39 UTC)
+		const qcRepro = new Date("2026-08-27T13:39:00Z");
+		expect(formatDashboardGreeting("QA Dogfood", qcRepro)).toBe(
+			"Chào buổi tối, QA Dogfood",
+		);
+
+		// 23:59 ICT = 16:59 UTC
+		const midnightBefore = new Date("2026-08-27T16:59:59Z");
+		expect(formatDashboardGreeting("usertest1", midnightBefore)).toBe(
+			"Chào buổi tối, usertest1",
+		);
+
+		// 00:00 ICT = 17:00 UTC
+		const midnight = new Date("2026-08-27T17:00:00Z");
+		expect(formatDashboardGreeting("usertest1", midnight)).toBe(
+			"Chào buổi tối, usertest1",
+		);
+
+		// 04:59 ICT = 21:59 UTC
+		const earlyMorning = new Date("2026-08-27T21:59:59Z");
+		expect(formatDashboardGreeting("usertest1", earlyMorning)).toBe(
+			"Chào buổi tối, usertest1",
+		);
+	});
+
+	test("pins Asia/Ho_Chi_Minh timezone regardless of machine environment", () => {
+		// At 13:39 UTC, in America/Los_Angeles it's 06:39 morning, but in Vietnam it's 20:39 night.
+		// The helper must evaluate in Vietnam time, yielding 'Chào buổi tối'.
+		const now = new Date("2026-08-27T13:39:00Z");
+		expect(formatDashboardGreeting("Giáo viên", now)).toBe(
+			"Chào buổi tối, Giáo viên",
+		);
 	});
 });

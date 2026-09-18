@@ -72,3 +72,29 @@ export function formatDashboardLead(now: Date, todayCount: number): string {
 	const mm = String(now.getMonth() + 1).padStart(2, "0");
 	return `${label}, ${dd}/${mm} · Hôm nay có ${todayCount} buổi học`;
 }
+
+/**
+ * Dynamic greeting according to Vietnam time (issue #120):
+ * - Sáng (05:00 – 11:59): "Chào buổi sáng, {name}"
+ * - Chiều (12:00 – 17:59): "Chào buổi chiều, {name}"
+ * - Tối (18:00 – 04:59): "Chào buổi tối, {name}"
+ */
+export function formatDashboardGreeting(
+	name: string,
+	now = new Date(),
+	timeZone = "Asia/Ho_Chi_Minh",
+): string {
+	const hourFormatter = new Intl.DateTimeFormat("en-US", {
+		timeZone,
+		hour: "numeric",
+		hourCycle: "h23",
+	});
+	const hour = Number.parseInt(hourFormatter.format(now), 10);
+	const timeOfDay =
+		hour >= 5 && hour < 12
+			? "buổi sáng"
+			: hour >= 12 && hour < 18
+				? "buổi chiều"
+				: "buổi tối";
+	return `Chào ${timeOfDay}, ${name}`;
+}

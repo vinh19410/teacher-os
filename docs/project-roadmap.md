@@ -8,12 +8,12 @@
 
 - **Vertical slice theo giá trị**: mỗi mốc kết thúc khi giáo viên dùng được end-to-end một nhóm tính năng, không phải khi hết việc kỹ thuật.
 - Mỗi mốc bắt buộc có 3 khối: **DÙNG ĐƯỢC** (hoạt động thật end-to-end), **CHƯA DÙNG ĐƯỢC** (bị loại rõ ràng tại mốc đó), **DOD** (checklist evidence-based).
-- M1–M2 chạy trên **staging**; go-live production là mốc riêng (M3); pilot thật sau go-live.
+- M1–M2 chạy trên **staging**; go-live production là mốc riêng (M3); pilot (self-pilot) sau go-live.
 - Không đặt deadline theo tuần — tiến độ đo bằng DOD, không bằng lịch.
 
 ## Phạm vi đã chốt
 
-- Một người full-time; pilot với một giáo viên quản lý 2–3 lớp, data thật.
+- Một người full-time; pilot là **self-pilot** (đổi 2026-09-17): chính tác giả vận hành 2–3 lớp trên production theo nhịp thật — data thật nếu có, nếu không dùng dữ liệu mô phỏng nhưng vẫn vận hành hằng ngày như giáo viên thật (solo dev không tìm được giáo viên ngoài cho pilot).
 - Luồng vận hành xuyên suốt: học viên/lớp → buổi học → điểm danh và tiến độ → ghi nhận thu phí.
 - Có browser E2E cho luồng lõi, log phản hồi pilot và triage lỗi.
 
@@ -61,7 +61,7 @@ Trạng thái: **Hoàn thành** (2026-08-30) — evidence bằng E2E CI workflow
 
 ### M3 — Go-live production · GitHub milestone: M3
 
-Trạng thái: **Hoàn thành** (2026-08-31) — GO trên release `235275c` sau r2 + r2.1; evidence [UAT r2 (2026-08-30)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2-2026-08-30.md) + [UAT r2.1 (2026-08-31)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2.1-2026-08-31.md). Ghi chú: Google OAuth leg theo deviation operator-approved (email-auth evidence + authorize precheck pass); vòng Google round-trip thật được verify khi onboard giáo viên pilot đầu tiên (M4).
+Trạng thái: **Hoàn thành** (2026-08-31) — GO trên release `235275c` sau r2 + r2.1; evidence [UAT r2 (2026-08-30)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2-2026-08-30.md) + [UAT r2.1 (2026-08-31)](../plans/260819-2034-production-readiness/reports/uat-evidence-phase-06-r2.1-2026-08-31.md). Ghi chú: Google OAuth leg theo deviation operator-approved (email-auth evidence + authorize precheck pass); vòng Google round-trip thật được verify khi pilot đầu tiên sign-in Google production (M4 — nay là self-pilot).
 
 **DÙNG ĐƯỢC khi hoàn thành**: M1+M2 live trên production domain HTTPS, Google OAuth production (redirect URI đăng ký + precheck pass; round-trip thật chờ M4 theo deviation), có runbook hỗ trợ/rollback.
 
@@ -74,18 +74,20 @@ Trạng thái: **Hoàn thành** (2026-08-31) — GO trên release `235275c` sau 
 - [x] Deploy Alchemy production thành công + rollback rehearsed. *(evidence: deploy CI run 33313994693 `/readyz` smoke pass r2; rollback rehearsed = phase-02 restore drill + runbook code-rollback path)*
 - [x] #28, #30, #41, #48 đóng với evidence. *(evidence: các issue comment + close kèm link r2/r2.1, 2026-08-31)*
 
-### M4 — Pilot vận hành · GitHub milestone: M4
+### M4 — Pilot vận hành (self-pilot) · GitHub milestone: M4
 
-Trạng thái: **Chưa bắt đầu**.
+Trạng thái: **Đang thực hiện** (2026-09-18) — #67 labeled in progress; board In progress. DOD chưa đạt.
 
-**DÙNG ĐƯỢC khi hoàn thành**: giáo viên thật dùng M1–M3 hằng ngày; pilot log chạy.
+Đổi phạm vi 2026-09-17: từ "1 giáo viên ngoài" sang **self-pilot** — solo dev không tìm được giáo viên nào cho pilot; người vận hành là chính tác giả trên production. Evidence self-pilot mang author bias (không phát hiện được friction UX mà chỉ người ngoài mới gặp) → decision record M5 phải ghi rõ provisional.
 
-**CHƯA DÙNG ĐƯỢC tại M4**: tạo assignment, tạo/gửi report, settings persist (trừ khi pilot evidence chứng minh blocker → đổi phạm vi theo quy ước).
+**DÙNG ĐƯỢC khi hoàn thành**: tác giả tự vận hành M1–M3 hằng ngày trên production như giáo viên; pilot log chạy.
+
+**CHƯA DÙNG ĐƯỢC tại M4**: pilot vận hành chưa bắt đầu. Tạo assignment, tạo/gửi report, settings persist đã lên production (release 0.0.4, 2026-09-18).
 
 **DOD**:
-- [ ] 1 giáo viên onboard, vận hành ≥2 lớp thật trên production.
+- [ ] Org thật trên production do tác giả onboard và vận hành ≥2 lớp theo lịch (data thật nếu có, nếu không dữ liệu mô phỏng vận hành theo nhịp thật); sign-in Google production thành công (đóng deviation OAuth từ M3).
 - [ ] Hoạt động ≥8/10 ngày làm việc, liên tục ≥2 tuần.
-- [ ] Pilot log có severity/frequency/workflow impact.
+- [ ] Pilot log có severity/frequency/workflow impact (ghi rõ evidence là self-pilot).
 - [ ] 0 mất dữ liệu xác nhận sau reload.
 - [ ] 0 pilot blocker mở quá 1 ngày làm việc.
 
@@ -100,7 +102,7 @@ Trạng thái: **Chưa bắt đầu**.
 **DOD**:
 - [ ] Toàn bộ pilot blocker fix; regression E2E xanh.
 - [ ] Metrics pilot tổng hợp (completion, support burden, critical errors).
-- [ ] Decision record 1 trang: mở rộng / lặp pilot / đổi hướng + top 3 blockers theo frequency.
+- [ ] Decision record 1 trang: mở rộng / lặp pilot / đổi hướng + top 3 blockers theo frequency. Evidence là self-pilot → ghi rõ provisional; nếu chọn mở rộng, bước kế tiếp là pilot với giáo viên thật.
 - [ ] `docs/project-roadmap.md` cập nhật phạm vi quý sau theo quyết định.
 
 ## Thước đo thành công
@@ -108,7 +110,7 @@ Trạng thái: **Chưa bắt đầu**.
 - Staging UAT pass toàn bộ luồng sign-in → lớp/học viên/enrollment → buổi học → reload.
 - CI có ít nhất hai E2E workflow xanh: vận hành lớp và tạo/thu invoice.
 - Không còn CTA no-op trong luồng đã chọn (classes/schedule/tuition).
-- Giáo viên pilot có hoạt động vận hành ít nhất 8 trong 10 ngày làm việc pilot.
+- Người self-pilot có hoạt động vận hành ít nhất 8 trong 10 ngày làm việc pilot.
 - Không có mất dữ liệu được xác nhận sau reload trong pilot.
 - Cuối M5 có quyết định viết rõ "mở rộng / lặp pilot / đổi hướng" kèm top 3 blockers theo frequency.
 

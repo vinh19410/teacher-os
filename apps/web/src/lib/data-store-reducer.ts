@@ -79,6 +79,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			};
 		}
 		case "add-comment-bank":
+		case "create-report":
 			// Runtime writes use the kernel bus; local reducer keeps fixture behavior inert.
 			return state;
 		case "add-student": {
@@ -166,7 +167,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				type: action.payload.type,
 				skills: action.payload.type === "ielts" ? action.payload.skills : [],
 				mode: action.payload.mode,
-				syllabusId: "", // runtime pointer arrives via snapshot refresh; the reducer is a dead fixture
+				syllabusId: action.payload.templateId || "",
 				studentIds: [],
 				schedule: JSON.stringify({
 					...action.payload.schedule,

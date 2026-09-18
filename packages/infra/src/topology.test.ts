@@ -13,7 +13,21 @@ describe("resolveDomainTopology", () => {
 				"https://api.teacher-os.edu.vn/api/auth/callback/google",
 			cookieDomain: ".teacher-os.edu.vn",
 			authCookiePrefix: undefined,
+			appAliases: ["teacher-os.edu.vn", "www.teacher-os.edu.vn"],
 		});
+	});
+
+	it("derives apex and www aliases for prod domain (issue #117)", () => {
+		const topology = resolveDomainTopology("teacheros.io.vn");
+		expect(topology.appAliases).toEqual([
+			"teacheros.io.vn",
+			"www.teacheros.io.vn",
+		]);
+	});
+
+	it("derives app alias for staging domain", () => {
+		const topology = resolveDomainTopology("staging.teacheros.io.vn");
+		expect(topology.appAliases).toEqual(["staging.teacheros.io.vn"]);
 	});
 
 	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the prod cookie zone)", () => {

@@ -190,7 +190,7 @@ export function Topbar({
 					</div>
 				)}
 			</div>
-			<div ref={bellWrapRef} className="relative">
+			<div ref={bellWrapRef} className="relative max-app:ml-auto">
 				<button
 					type="button"
 					aria-label="Thông báo"
@@ -208,7 +208,12 @@ export function Topbar({
 						<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9z" />
 						<path d="M10 21a2 2 0 0 0 4 0" />
 					</svg>
-					<span className="absolute top-[7px] right-2 h-2 w-2 rounded-full border-[1.5px] border-bg border-solid bg-danger" />
+					{data.notifs.length > 0 && (
+						<span
+							data-testid="notif-badge"
+							className="absolute top-[7px] right-2 h-2 w-2 rounded-full border-[1.5px] border-bg border-solid bg-danger"
+						/>
+					)}
 				</button>
 				{notifOpen && <NotifPanel notifs={data.notifs} />}
 			</div>

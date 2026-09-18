@@ -40,7 +40,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await page.getByText(CLASS_NAME).click();
 
 	// Buổi học tab: all 12 projected sessions, chronological, muted badges.
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.locator("tbody tr")).toHaveCount(12);
 	const firstRow = page.locator("tbody tr").first();
 	await expect(firstRow).toContainText("04/01");
@@ -88,7 +88,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await page.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.locator("tbody tr")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(0);
 	await expect(page.locator("tbody tr").first()).toContainText("04/01");

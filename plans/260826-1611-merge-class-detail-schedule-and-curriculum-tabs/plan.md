@@ -1,7 +1,7 @@
 ---
 title: "Merge class detail schedule and curriculum tabs"
 description: "Thay 2 tab Giáo trình + Lịch học trong Class Detail bằng 1 tab Buổi học timeline-first, kèm khu Quản lý giáo trình collapsible ở trên."
-status: pending
+status: completed
 priority: P1
 effort: "3-5d"
 tags: [ui, class-detail, syllabus, schedule, refactor]

@@ -1,7 +1,7 @@
 ---
 title: "Syllabus Import v2 — Template 5 cột, Preview bảng, UX gỡ file, giữ state khi đóng modal"
 description: "V1.1 cho feature import Excel/CSV (#144): bỏ cột Buổi học (thứ tự tự động theo dòng), preview dạng bảng chi tiết, nút gỡ file dạng icon, đóng popup không mất dữ liệu"
-status: pending
+status: completed
 priority: P2
 effort: "5h"
 issue: 150

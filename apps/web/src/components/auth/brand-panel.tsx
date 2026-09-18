@@ -1,4 +1,15 @@
-export default function BrandPanel() {
+const brandPanelDateFormatter = new Intl.DateTimeFormat("en-US", {
+	weekday: "short",
+	month: "short",
+	day: "numeric",
+});
+
+export interface BrandPanelProps {
+	now?: Date;
+}
+
+export default function BrandPanel({ now }: BrandPanelProps = {}) {
+	const formattedDate = brandPanelDateFormatter.format(now ?? new Date());
 	return (
 		<section className="relative flex flex-col overflow-hidden bg-[var(--fg)] px-[clamp(28px,4.5vw,64px)] py-[clamp(32px,4vw,56px)] text-[var(--bg)] max-[960px]:items-center max-[960px]:gap-6 max-[960px]:px-6 max-[960px]:py-8 max-[960px]:pb-9 max-[960px]:text-center">
 			<div className="flex items-center gap-3 max-[960px]:hidden">
@@ -43,7 +54,7 @@ export default function BrandPanel() {
 							Today
 						</span>
 						<span className="text-muted-fg text-xs">
-							Thu, Aug 20 · 3 classes
+							{formattedDate} · 3 classes
 						</span>
 					</div>
 					<div className="grid grid-cols-[52px_1fr_auto] items-center gap-[14px] border-line-soft border-b py-[13px] last:border-b-0">
