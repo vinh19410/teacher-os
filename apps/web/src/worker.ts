@@ -5,6 +5,7 @@ import {
 } from "./routes-matcher";
 import {
 	applySecurityHeaders,
+	shouldRedirectHost,
 	shouldRedirectToHttps,
 } from "./security-headers";
 
@@ -21,7 +22,20 @@ export default {
 		const url = new URL(request.url);
 		const pathname = url.pathname;
 
-		// 0. Redirect plain HTTP to HTTPS (except localhost / 127.0.0.1)
+		// 0a. Redirect apex / www / alternate hosts to canonical app host (issue #117)
+		const hostRedirectUrl = shouldRedirectHost(request);
+		if (hostRedirectUrl) {
+			return new Response(null, {
+				status: 301,
+				statusText: "Moved Permanently",
+				headers: {
+					Location: hostRedirectUrl,
+					"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+				},
+			});
+		}
+
+		// 0b. Redirect plain HTTP to HTTPS (except localhost / 127.0.0.1)
 		const redirectUrl = shouldRedirectToHttps(request);
 		if (redirectUrl) {
 			return new Response(null, {
@@ -48,7 +62,35 @@ export default {
 			});
 		}
 
-		// 2. Serve static assets directly from ASSETS
+		// 2. Serve /robots.txt with guaranteed 200 OK and text/plain (issue #117)
+		if (pathname === "/robots.txt") {
+			if (env.ASSETS) {
+				const res = await env.ASSETS.fetch(request);
+				if (res.ok) {
+					const headers = applySecurityHeaders(res.headers);
+					if (!headers.has("Content-Type")) {
+						headers.set("Content-Type", "text/plain; charset=utf-8");
+					}
+					return new Response(res.body, {
+						status: res.status,
+						statusText: res.statusText,
+						headers,
+					});
+				}
+			}
+			return new Response("User-agent: *\nDisallow: /\n", {
+				status: 200,
+				statusText: "OK",
+				headers: applySecurityHeaders(
+					new Headers({
+						"Content-Type": "text/plain; charset=utf-8",
+						"Cache-Control": "public, max-age=86400",
+					}),
+				),
+			});
+		}
+
+		// 3. Serve static assets directly from ASSETS
 		if (isStaticAssetPath(pathname) && env.ASSETS) {
 			const res = await env.ASSETS.fetch(request);
 			return new Response(res.body, {

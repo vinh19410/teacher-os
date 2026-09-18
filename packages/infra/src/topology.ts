@@ -31,6 +31,12 @@ export interface DomainTopology {
 	 * Unrelated zones don't share a cookie zone with prod and need no prefix.
 	 */
 	authCookiePrefix: string | undefined;
+	/**
+	 * Hostnames that 301-redirect to appHost. Attached to the web Worker
+	 * as custom domains so Cloudflare provisions DNS records (A/AAAA/CNAME)
+	 * and TLS certs, then creates Dynamic Redirect rules to https://<appHost>.
+	 */
+	appRedirects: string[];
 }
 
 /** The prod apex — the only member of its cookie zone allowed to keep the
@@ -63,6 +69,12 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 	const inProdCookieZone =
 		domain === PROD_APP_DOMAIN || domain.endsWith(`.${PROD_APP_DOMAIN}`);
 	const apiOrigin = `https://api.${domain}`;
+	const appRedirects =
+		domain === PROD_APP_DOMAIN
+			? [PROD_APP_DOMAIN, `www.${PROD_APP_DOMAIN}`]
+			: inProdCookieZone
+				? [domain]
+				: [domain, `www.${domain}`];
 	return {
 		appHost: `app.${domain}`,
 		apiHost: `api.${domain}`,
@@ -75,5 +87,6 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 			inProdCookieZone && domain !== PROD_APP_DOMAIN
 				? AUTH_COOKIE_PREFIX
 				: undefined,
+		appRedirects,
 	};
 }
