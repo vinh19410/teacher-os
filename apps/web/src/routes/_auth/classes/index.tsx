@@ -24,7 +24,7 @@ const MODE_MAP: Record<string, string> = {
 	"Trực tiếp": "Offline",
 };
 
-function ClassesRoute() {
+export function ClassesRoute() {
 	const navigate = useNavigate();
 	const { classes } = useClasses();
 	const { data } = useData();
@@ -49,74 +49,102 @@ function ClassesRoute() {
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>
 			</div>
-			<Card variant="white" className="p-0">
-				<DataTable
-					headers={[
-						"Lớp",
-						"Giáo trình",
-						"Sĩ số",
-						"Tiến độ",
-						"Lịch",
-						"Trạng thái",
-					]}
-					rows={list.map((c) => {
-						const sy = data.syllabi.find((s) => s.id === c.syllabusId);
-						const pct =
-							c.sessionsTotal > 0
-								? (c.sessionsDone / c.sessionsTotal) * 100
-								: 0;
-						return {
-							onClick: () =>
-								navigate({
-									to: "/classes/$classId",
-									params: { classId: c.id },
-								}),
-							cells: [
-								<div key="n">
-									<div className="flex items-center gap-2">
-										<span className="font-semibold text-sm">{c.name}</span>
-										<Tag>{CLASS_TYPE_LABELS[c.type]}</Tag>
-									</div>
-									<div className="font-mono text-meta text-xs">
-										{classMeta(c)}
-									</div>
-								</div>,
-								sy ? (
-									<span key="sy">{sy.name}</span>
-								) : (
-									<span key="sy" className="font-mono text-meta text-xs">
-										Chưa gán
-									</span>
-								),
-								<span key="c" className="font-mono">
-									{c.studentIds.length}
-								</span>,
-								<div key="p" className="min-w-[100px]">
-									<Progress
-										value={pct}
-										variant={pct >= 67 ? "default" : pct >= 34 ? "warn" : "low"}
-									/>
-									<div className="mt-[3px] font-mono text-meta text-xs">
-										{c.sessionsDone}/{c.sessionsTotal} buổi
-									</div>
-								</div>,
-								<span key="s" className="font-mono text-meta text-xs">
-									{formatSchedule(c.schedule)}
-								</span>,
-								c.status === "active" ? (
-									<Badge key="b" variant="success" dot>
-										Đang học
-									</Badge>
-								) : (
-									<Badge key="b" variant="muted">
-										Tạm dừng
-									</Badge>
-								),
-							],
-						};
-					})}
-				/>
-			</Card>
+			{classes.length === 0 ? (
+				<Card
+					variant="white"
+					className="p-8 text-center"
+					data-testid="classes-empty-state"
+				>
+					<h2 className="font-display font-semibold text-lg">
+						Chưa có lớp học nào
+					</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+						Tạo lớp học đầu tiên để xếp lịch, liên kết giáo trình và quản lý
+						danh sách học viên.
+					</p>
+					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+						<Button onClick={() => setModalOpen(true)}>+ Tạo lớp học</Button>
+					</div>
+				</Card>
+			) : list.length === 0 ? (
+				<Card variant="white" className="p-8 text-center">
+					<p className="font-mono text-meta text-xs">
+						Không có lớp học nào phù hợp với bộ lọc.
+					</p>
+				</Card>
+			) : (
+				<Card variant="white" className="p-0">
+					<DataTable
+						headers={[
+							"Lớp",
+							"Giáo trình",
+							"Sĩ số",
+							"Tiến độ",
+							"Lịch",
+							"Trạng thái",
+						]}
+						emptyMessage="Chưa có lớp học."
+						rows={list.map((c) => {
+							const sy = data.syllabi.find((s) => s.id === c.syllabusId);
+							const pct =
+								c.sessionsTotal > 0
+									? (c.sessionsDone / c.sessionsTotal) * 100
+									: 0;
+							return {
+								onClick: () =>
+									navigate({
+										to: "/classes/$classId",
+										params: { classId: c.id },
+									}),
+								cells: [
+									<div key="n">
+										<div className="flex items-center gap-2">
+											<span className="font-semibold text-sm">{c.name}</span>
+											<Tag>{CLASS_TYPE_LABELS[c.type]}</Tag>
+										</div>
+										<div className="font-mono text-meta text-xs">
+											{classMeta(c)}
+										</div>
+									</div>,
+									sy ? (
+										<span key="sy">{sy.name}</span>
+									) : (
+										<span key="sy" className="font-mono text-meta text-xs">
+											Chưa gán
+										</span>
+									),
+									<span key="c" className="font-mono">
+										{c.studentIds.length}
+									</span>,
+									<div key="p" className="min-w-[100px]">
+										<Progress
+											value={pct}
+											variant={
+												pct >= 67 ? "default" : pct >= 34 ? "warn" : "low"
+											}
+										/>
+										<div className="mt-[3px] font-mono text-meta text-xs">
+											{c.sessionsDone}/{c.sessionsTotal} buổi
+										</div>
+									</div>,
+									<span key="s" className="font-mono text-meta text-xs">
+										{formatSchedule(c.schedule)}
+									</span>,
+									c.status === "active" ? (
+										<Badge key="b" variant="success" dot>
+											Đang học
+										</Badge>
+									) : (
+										<Badge key="b" variant="muted">
+											Tạm dừng
+										</Badge>
+									),
+								],
+							};
+						})}
+					/>
+				</Card>
+			)}
 			<AddClassModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);

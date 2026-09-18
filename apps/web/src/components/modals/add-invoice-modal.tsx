@@ -57,7 +57,7 @@ export function AddInvoiceModal({
 		setNoteError(undefined);
 	}
 
-	const enrollmentOptions = data.enrollments.map((enrollment) => {
+	const enrollmentOptions = (data.enrollments ?? []).map((enrollment) => {
 		const student = data.students.find((s) => s.id === enrollment.studentId);
 		const cls = data.classes.find((c) => c.id === enrollment.classId);
 		return {

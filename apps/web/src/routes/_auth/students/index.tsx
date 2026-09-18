@@ -24,7 +24,7 @@ const FILTER_TAGS: Record<string, string[]> = {
 	Nói: ["IELTS Speaking", "Speaking", "Nói"],
 };
 
-function StudentsRoute() {
+export function StudentsRoute() {
 	const navigate = useNavigate();
 	const { students } = useStudents();
 	const { data } = useData();
@@ -60,41 +60,67 @@ function StudentsRoute() {
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				<Button onClick={() => setModalOpen(true)}>+ Thêm học viên</Button>
 			</div>
-			<Card variant="white" className="p-0">
-				<DataTable
-					headers={["Học viên", "Gói", "Còn lại", "Tags", "Đơn giá"]}
-					rows={list.map((s) => ({
-						onClick: () =>
-							navigate({
-								to: "/students/$studentId",
-								params: { studentId: s.id },
-							}),
-						cells: [
-							<div className="flex items-center gap-3" key="name">
-								<Avatar text={s.avatar} size="sm" />
-								<div>
-									<div className="font-semibold text-sm">{s.name}</div>
-									<div className="font-mono text-meta text-xs">{s.phone}</div>
-								</div>
-							</div>,
-							<span key="pkg" className="font-mono text-meta text-xs">
-								{s.pkg.total} buổi · {s.pkg.mode}
-							</span>,
-							<span key="remaining" className="font-mono">
-								{s.pkg.remaining} / {s.pkg.total}
-							</span>,
-							<div key="tags" className="flex flex-wrap gap-1">
-								{s.tags.map((t) => (
-									<Tag key={t}>{t}</Tag>
-								))}
-							</div>,
-							<span key="price" className="font-mono">
-								{fmtVND(s.pkg.price)}
-							</span>,
-						],
-					}))}
-				/>
-			</Card>
+			{students.length === 0 ? (
+				<Card
+					variant="white"
+					className="p-8 text-center"
+					data-testid="students-empty-state"
+				>
+					<h2 className="font-display font-semibold text-lg">
+						Chưa có học viên nào
+					</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+						Thêm học viên để bắt đầu quản lý thông tin, gói học, học phí và bài
+						tập.
+					</p>
+					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+						<Button onClick={() => setModalOpen(true)}>+ Thêm học viên</Button>
+					</div>
+				</Card>
+			) : list.length === 0 ? (
+				<Card variant="white" className="p-8 text-center">
+					<p className="font-mono text-meta text-xs">
+						Không có học viên nào phù hợp với bộ lọc.
+					</p>
+				</Card>
+			) : (
+				<Card variant="white" className="p-0">
+					<DataTable
+						headers={["Học viên", "Gói", "Còn lại", "Tags", "Đơn giá"]}
+						emptyMessage="Chưa có học viên."
+						rows={list.map((s) => ({
+							onClick: () =>
+								navigate({
+									to: "/students/$studentId",
+									params: { studentId: s.id },
+								}),
+							cells: [
+								<div className="flex items-center gap-3" key="name">
+									<Avatar text={s.avatar} size="sm" />
+									<div>
+										<div className="font-semibold text-sm">{s.name}</div>
+										<div className="font-mono text-meta text-xs">{s.phone}</div>
+									</div>
+								</div>,
+								<span key="pkg" className="font-mono text-meta text-xs">
+									{s.pkg.total} buổi · {s.pkg.mode}
+								</span>,
+								<span key="remaining" className="font-mono">
+									{s.pkg.remaining} / {s.pkg.total}
+								</span>,
+								<div key="tags" className="flex flex-wrap gap-1">
+									{s.tags.map((t) => (
+										<Tag key={t}>{t}</Tag>
+									))}
+								</div>,
+								<span key="price" className="font-mono">
+									{fmtVND(s.pkg.price)}
+								</span>,
+							],
+						}))}
+					/>
+				</Card>
+			)}
 			<AddStudentModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);
