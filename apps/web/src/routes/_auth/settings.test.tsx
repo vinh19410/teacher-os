@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 	useRouteContext: () => ({ session: null }),
+	useNavigate: () => vi.fn(),
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
@@ -15,7 +16,13 @@ vi.mock("@tanstack/react-query", () => ({
 	queryOptions: (opts: unknown) => opts,
 }));
 
-import { DataTab, RulesTab, SettingsPage, TemplatesTab } from "./settings";
+import {
+	DataTab,
+	RulesTab,
+	SettingsPage,
+	TemplatesTab,
+	validateSettingsSearch,
+} from "./settings";
 
 const session = {
 	data: { user: { name: "QA Dogfood", email: "qa@school.edu" } },
@@ -88,5 +95,36 @@ describe("SettingsPage persistence & honest guards (issue #179, follow-up #167)"
 		expect(jsonButton?.[0]).toMatch(/\sdisabled=/);
 		expect(html).not.toContain("Xóa tài khoản");
 		expect(html).toContain("liên hệ admin");
+	});
+});
+
+describe("settings tab deep-link (issue #119)", () => {
+	it("accepts whitelisted tabs and falls back silently for anything else", () => {
+		expect(validateSettingsSearch({ tab: "templates" })).toEqual({
+			tab: "templates",
+		});
+		expect(validateSettingsSearch({ tab: "data" })).toEqual({ tab: "data" });
+		expect(validateSettingsSearch({ tab: "javascript:" })).toEqual({});
+		expect(validateSettingsSearch({ tab: 42 })).toEqual({});
+		expect(validateSettingsSearch({})).toEqual({});
+	});
+
+	it("renders the URL-controlled tab instead of always Tài khoản", () => {
+		const templates = renderToStaticMarkup(
+			<SettingsPage session={session} tab="templates" />,
+		);
+		expect(templates).toContain("{{student_name}}");
+		expect(templates).not.toContain("Đang dùng");
+
+		const data = renderToStaticMarkup(
+			<SettingsPage session={session} tab="data" />,
+		);
+		expect(data).toContain("liên hệ admin");
+		expect(data).not.toContain("Đang dùng");
+	});
+
+	it("defaults to Tài khoản when no tab prop is given", () => {
+		const html = renderToStaticMarkup(<SettingsPage session={session} />);
+		expect(html).toContain("Đang dùng");
 	});
 });

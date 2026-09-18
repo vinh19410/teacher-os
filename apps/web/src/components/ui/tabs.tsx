@@ -10,6 +10,7 @@ export interface TabsProps {
 export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 	return (
 		<div
+			role="tablist"
 			className={cn(
 				"mb-5 flex gap-1 overflow-x-auto border-line border-b",
 				className,
@@ -18,7 +19,9 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 			{tabs.map((t) => (
 				<button
 					type="button"
+					role="tab"
 					key={t.id}
+					aria-selected={t.id === active}
 					onClick={() => onChange(t.id)}
 					className={cn(
 						"whitespace-nowrap border-b-2 border-b-transparent border-none bg-transparent px-4 py-3 font-medium text-sm transition-colors duration-[150ms]",

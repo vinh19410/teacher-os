@@ -1,5 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useRouteContext,
+} from "@tanstack/react-router";
 import type {
 	WorkspaceSettings,
 	WorkspaceSettingsUpdate,
@@ -20,7 +25,27 @@ import {
 	workspaceSettingsQueryOptions,
 } from "@/lib/repos/settings";
 
+const SETTINGS_TAB_IDS = ["account", "templates", "rules", "data"] as const;
+export type SettingsTab = (typeof SETTINGS_TAB_IDS)[number];
+
+/**
+ * Issue #119: the active tab lives in the URL (`?tab=`) so reload and back
+ * keep the position. Passthrough validation — an unknown or missing tab
+ * never throws, it just falls back to the default (same pattern as
+ * login/profile/schedule).
+ */
+export function validateSettingsSearch(search: Record<string, unknown>): {
+	tab?: SettingsTab;
+} {
+	const tab = search.tab;
+	return typeof tab === "string" &&
+		(SETTINGS_TAB_IDS as readonly string[]).includes(tab)
+		? { tab: tab as SettingsTab }
+		: {};
+}
+
 export const Route = createFileRoute("/_auth/settings")({
+	validateSearch: validateSettingsSearch,
 	component: SettingsRoute,
 });
 
@@ -28,6 +53,8 @@ export function SettingsPage({
 	session,
 	initialSettings,
 	onSave,
+	tab: controlledTab,
+	onTabChange,
 }: {
 	session?: {
 		data?: {
@@ -36,8 +63,12 @@ export function SettingsPage({
 	} | null;
 	initialSettings?: WorkspaceSettings;
 	onSave?: (settings: WorkspaceSettingsUpdate) => Promise<void>;
+	/** Issue #119: when provided the active tab is URL-controlled. */
+	tab?: string;
+	onTabChange?: (tab: string) => void;
 }) {
-	const [tab, setTab] = useState("account");
+	const [internalTab, setInternalTab] = useState("account");
+	const tab = controlledTab ?? internalTab;
 	const [form, setForm] = useState<WorkspaceSettings>(
 		() => initialSettings ?? workspaceSettingsSchema.parse({}),
 	);
@@ -85,7 +116,8 @@ export function SettingsPage({
 				]}
 				active={tab}
 				onChange={(t) => {
-					setTab(t);
+					if (onTabChange) onTabChange(t);
+					else setInternalTab(t);
 					setError(null);
 				}}
 			/>
@@ -464,6 +496,8 @@ export function DataTab() {
 
 function SettingsRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
+	const { tab } = Route.useSearch();
+	const navigate = useNavigate();
 	const baseUrl = getApiBaseUrl();
 	const queryClient = useQueryClient();
 	const { data: settings } = useQuery(workspaceSettingsQueryOptions(baseUrl));
@@ -480,6 +514,16 @@ function SettingsRoute() {
 			session={session}
 			initialSettings={settings}
 			onSave={handleSave}
+			tab={tab ?? "account"}
+			// replace: rapid tab switches must not flood browser history.
+			onTabChange={(next) =>
+				void navigate({
+					to: "/settings",
+					// Re-validate so the URL can only ever carry a whitelisted id.
+					search: validateSettingsSearch({ tab: next }),
+					replace: true,
+				})
+			}
 		/>
 	);
 }
