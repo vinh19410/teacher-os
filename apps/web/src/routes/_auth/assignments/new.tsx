@@ -50,7 +50,7 @@ function freshComposer(): ComposerState {
 	};
 }
 
-function NewAssignmentRoute() {
+export function NewAssignmentRoute() {
 	const _navigate = useNavigate();
 	const { data } = useData();
 	const submit = useKernelFormSubmit();
