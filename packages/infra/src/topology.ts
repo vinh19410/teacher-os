@@ -32,11 +32,14 @@ export interface DomainTopology {
 	 */
 	authCookiePrefix: string | undefined;
 	/**
-	 * Hostnames that 301-redirect to appHost. Attached to the web Worker
-	 * as custom domains so Cloudflare provisions DNS records (A/AAAA/CNAME)
-	 * and TLS certs, then creates Dynamic Redirect rules to https://<appHost>.
+	 * Additional hostnames attached to the web Worker as custom domains so
+	 * Cloudflare provisions DNS records (A/AAAA/CNAME) and TLS certs.
+	 * Requests to these hostnames are 301-redirected by the Worker to https://<appHost>.
+	 * Note: Using WorkerDomainConfig `aliases` (rather than `redirects`) avoids
+	 * calling Cloudflare Rulesets API, which requires extra Zone Ruleset permissions
+	 * not present on standard CI deploy tokens.
 	 */
-	appRedirects: string[];
+	appAliases: string[];
 }
 
 /** The prod apex — the only member of its cookie zone allowed to keep the
@@ -69,7 +72,7 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 	const inProdCookieZone =
 		domain === PROD_APP_DOMAIN || domain.endsWith(`.${PROD_APP_DOMAIN}`);
 	const apiOrigin = `https://api.${domain}`;
-	const appRedirects =
+	const appAliases =
 		domain === PROD_APP_DOMAIN
 			? [PROD_APP_DOMAIN, `www.${PROD_APP_DOMAIN}`]
 			: inProdCookieZone
@@ -87,6 +90,6 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 			inProdCookieZone && domain !== PROD_APP_DOMAIN
 				? AUTH_COOKIE_PREFIX
 				: undefined,
-		appRedirects,
+		appAliases,
 	};
 }
