@@ -124,7 +124,7 @@ export function buildApp(deps: AppDeps) {
 		"/*",
 		cors({
 			origin: deps.corsOrigin,
-			allowMethods: ["GET", "POST", "OPTIONS"],
+			allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization"],
 			credentials: true,
 		}),

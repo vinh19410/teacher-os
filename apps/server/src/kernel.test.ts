@@ -8,7 +8,10 @@
  */
 
 import { createClient } from "@libsql/client";
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import type {
+	KernelSnapshot,
+	WorkspaceSettings,
+} from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -3935,5 +3938,105 @@ describe("student package minimums (issue #115)", () => {
 		const snapshot = await t.kernel(session);
 		const pkg = snapshot.packages.find((p) => p.studentId === id);
 		expect(pkg).toMatchObject({ total: 10, price: 400000 });
+	});
+});
+
+describe("workspace settings persistence (issue #179)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let sessionA: TestSession;
+	let sessionB: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		sessionA = await t.insertUser("Giáo viên A");
+		sessionB = await t.insertUser("Giáo viên B");
+	});
+
+	test("GET returns default settings for new workspace", async () => {
+		const res = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "GET",
+		});
+		expect(res.status).toBe(200);
+		const settings = (await res.json()) as WorkspaceSettings;
+		expect(settings).toMatchObject({
+			defaultUnitPrice: "400.000đ",
+			absenceNoticeHours: "2 giờ trước buổi học",
+			unexcusedDeduct: "Có, trừ 1 buổi",
+			maxAbsencesBeforeAlert: 2,
+			reminderSchedule: "T−24h và T−1h",
+			overdueDebtReminder: "Sau 3 ngày và 7 ngày",
+			packageEndReminder: "Khi còn 3 buổi",
+			preferredChannel: "Zalo trước, email dự phòng",
+		});
+		expect(typeof settings.tplReminder).toBe("string");
+		expect(typeof settings.tplDebt).toBe("string");
+		expect(typeof settings.tplReport).toBe("string");
+	});
+
+	test("PUT saves settings and GET returns updated values", async () => {
+		const update = {
+			defaultUnitPrice: "500.000đ",
+			tplReminder: "Nhắc lịch mới: {{date}}",
+			tplDebt: "Học phí mới: {{amount}}",
+			tplReport: "Báo cáo mới: {{sessions}}",
+			maxAbsencesBeforeAlert: 3,
+			preferredChannel: "Chỉ Zalo",
+		};
+		const putRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "PUT",
+			body: update,
+		});
+		expect(putRes.status).toBe(200);
+		const putJson = (await putRes.json()) as WorkspaceSettings;
+		expect(putJson).toMatchObject(update);
+		expect(putJson.absenceNoticeHours).toBe("2 giờ trước buổi học"); // unchanged default
+
+		// Verify persistence on subsequent GET
+		const getRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "GET",
+		});
+		expect(getRes.status).toBe(200);
+		const getJson = await getRes.json();
+		expect(getJson).toMatchObject(update);
+	});
+
+	test("POST /api/kernel/settings also updates settings", async () => {
+		const postRes = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "POST",
+			body: {
+				defaultUnitPrice: "600.000đ",
+			},
+		});
+		expect(postRes.status).toBe(200);
+		const postJson = (await postRes.json()) as WorkspaceSettings;
+		expect(postJson.defaultUnitPrice).toBe("600.000đ");
+		expect(postJson.tplReminder).toBe("Nhắc lịch mới: {{date}}"); // previous update kept
+	});
+
+	test("PUT rejects invalid payload with 400", async () => {
+		const res = await t.call("/api/kernel/settings", {
+			session: sessionA,
+			method: "PUT",
+			body: {
+				maxAbsencesBeforeAlert: -5, // min is 0
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("multi-tenant isolation: Org A settings do not leak to Org B", async () => {
+		const resB = await t.call("/api/kernel/settings", {
+			session: sessionB,
+			method: "GET",
+		});
+		expect(resB.status).toBe(200);
+		const jsonB = (await resB.json()) as WorkspaceSettings;
+		// Org B should still have pristine defaults
+		expect(jsonB.defaultUnitPrice).toBe("400.000đ");
+		expect(jsonB.preferredChannel).toBe("Zalo trước, email dự phòng");
 	});
 });

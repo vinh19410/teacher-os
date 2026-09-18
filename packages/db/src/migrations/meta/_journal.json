@@ -113,6 +113,13 @@
       "when": 1789636651920,
       "tag": "0015_high_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1789697153071,
+      "tag": "0016_real_butterfly",
+      "breakpoints": true
     }
   ]
 }
