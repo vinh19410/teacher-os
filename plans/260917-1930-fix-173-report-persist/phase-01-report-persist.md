@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Schema+migration → contract → POST route → web action+modal → tests"
-status: in-progress
+status: completed
 depends: []
 files:
   - packages/db/src/schema/report.ts

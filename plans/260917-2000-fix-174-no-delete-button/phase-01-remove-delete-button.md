@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Bỏ nút + copy admin + update SSR tests"
-status: in-progress
+status: completed
 depends: []
 files:
   - apps/web/src/routes/_auth/settings.tsx

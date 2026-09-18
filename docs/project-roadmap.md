@@ -76,7 +76,7 @@ Trạng thái: **Hoàn thành** (2026-08-31) — GO trên release `235275c` sau 
 
 ### M4 — Pilot vận hành (self-pilot) · GitHub milestone: M4
 
-Trạng thái: **Chưa bắt đầu**.
+Trạng thái: **Đang thực hiện** (2026-09-18) — #67 labeled in progress; board In progress. DOD chưa đạt.
 
 Đổi phạm vi 2026-09-17: từ "1 giáo viên ngoài" sang **self-pilot** — solo dev không tìm được giáo viên nào cho pilot; người vận hành là chính tác giả trên production. Evidence self-pilot mang author bias (không phát hiện được friction UX mà chỉ người ngoài mới gặp) → decision record M5 phải ghi rõ provisional.
 

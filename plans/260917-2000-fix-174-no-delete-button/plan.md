@@ -1,7 +1,7 @@
 ---
 title: "Fix #174: Gỡ nút Xóa tài khoản no-op — thay bằng hướng dẫn liên hệ admin"
 description: "Nút danger Xóa tài khoản không confirm, không action. Xóa thật cần better-auth delete-user plugin + email verification (pilot chưa có email infra) + chính sách cascade dữ liệu workspace — không phải bugfix. Theo Expected option 2: gỡ nút, thay bằng copy liên hệ admin."
-status: in-progress
+status: completed
 priority: P1
 effort: 2h
 issue: 174
@@ -40,13 +40,13 @@ Route 2 khớp nguyên tắc đã ship ở #167: không render control giả.
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Bỏ nút + copy admin + update SSR tests](./phase-01-remove-delete-button.md) | Pending |
+| 1 | [Bỏ nút + copy admin + update SSR tests](./phase-01-remove-delete-button.md) | Completed |
 
 ## Success Criteria
 
-- [ ] SSR test: DataTab KHÔNG còn nút "Xóa tài khoản"; có copy "liên hệ admin"; 2 nút Xuất vẫn disabled
-- [ ] vitest apps/web xanh; tsc sạch; biome exit 0 (repo-wide, chạy không qua pipe)
-- [ ] CI PR xanh; merge beta; đóng issue kèm follow-up
+- [x] SSR test: DataTab KHÔNG còn nút "Xóa tài khoản"; có copy "liên hệ admin"; 2 nút Xuất vẫn disabled
+- [x] vitest apps/web xanh; tsc sạch; biome exit 0 (repo-wide, chạy không qua pipe)
+- [x] CI PR xanh; merge beta; đóng issue kèm follow-up
 
 ## Verification Commands
 

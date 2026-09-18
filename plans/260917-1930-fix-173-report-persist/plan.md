@@ -1,7 +1,7 @@
 ---
 title: "Fix #173: Gửi báo cáo tuần persist thật qua kernel"
 description: "CreateReportModal submit chỉ onClose. Kernel đã có bảng report + loader + snapshot map nhưng chưa expose creation. Thêm POST /api/reports (zod schema + verify student cùng org) + 2 cột content/channel (migration) + wire modal: Gửi báo cáo → status 'sent' + sent=now; Lưu nháp → status 'draft'."
-status: in-progress
+status: completed
 priority: P1
 effort: 5h
 issue: 173
@@ -37,14 +37,14 @@ created: 2026-09-17
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Schema+migration → contract → POST route → web action+modal → tests](./phase-01-report-persist.md) | Pending |
+| 1 | [Schema+migration → contract → POST route → web action+modal → tests](./phase-01-report-persist.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Server test: POST sent → 201 + snapshot có row `status="sent"`, `sent!=""`; POST draft → `status="draft"`, `sent=""`; unknown student → 400; invalid body → 400; no session → 401
-- [ ] Web unit: `kernelCommand({type:"create-report"})` → `/api/reports` + body đủ 5 field; reducer case inert (fixture pattern)
-- [ ] Modal: submit gọi dispatch; `definite-failure` → inline error không đóng; `refreshed/committed` → toast + đóng
-- [ ] vitest cả workspace xanh; tsc + biome sạch (biome chạy không qua pipe)
+- [x] Server test: POST sent → 201 + snapshot có row `status="sent"`, `sent!=""`; POST draft → `status="draft"`, `sent=""`; unknown student → 400; invalid body → 400; no session → 401
+- [x] Web unit: `kernelCommand({type:"create-report"})` → `/api/reports` + body đủ 5 field; reducer case inert (fixture pattern)
+- [x] Modal: submit gọi dispatch; `definite-failure` → inline error không đóng; `refreshed/committed` → toast + đóng
+- [x] vitest cả workspace xanh; tsc + biome sạch (biome chạy không qua pipe)
 
 ## Verification Commands
 

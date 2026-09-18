@@ -1,7 +1,7 @@
 ---
 title: "M4 — Pilot vận hành"
 description: "Đưa Teacher OS qua pilot thật: pilot kit (log/severity/SLA), tài liệu tuyển + onboard 1 giáo viên lên production, vận hành ≥2 lớp thật ≥2 tuần liên tục với triage blocker ≤1 ngày làm việc, và đóng milestone 4 theo evidence."
-status: pending
+status: in-progress
 priority: P1
 effort: "2-4 ngày chuẩn bị + ≥2 tuần vận hành thời gian thực"
 issue: 53
