@@ -82,7 +82,7 @@ Trạng thái: **Đang thực hiện** (2026-09-18) — #67 labeled in progress;
 
 **DÙNG ĐƯỢC khi hoàn thành**: tác giả tự vận hành M1–M3 hằng ngày trên production như giáo viên; pilot log chạy.
 
-**CHƯA DÙNG ĐƯỢC tại M4**: tạo assignment, tạo/gửi report, settings persist (trừ khi pilot evidence chứng minh blocker → đổi phạm vi theo quy ước).
+**CHƯA DÙNG ĐƯỢC tại M4**: pilot vận hành chưa bắt đầu. Tạo assignment, tạo/gửi report, settings persist đã lên production (release 0.0.4, 2026-09-18).
 
 **DOD**:
 - [ ] Org thật trên production do tác giả onboard và vận hành ≥2 lớp theo lịch (data thật nếu có, nếu không dữ liệu mô phỏng vận hành theo nhịp thật); sign-in Google production thành công (đóng deviation OAuth từ M3).
