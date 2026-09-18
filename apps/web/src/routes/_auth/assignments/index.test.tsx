@@ -52,7 +52,6 @@ vi.mock("@/lib/data-store", () => ({
 	}),
 }));
 
-import { AddAssignmentModal } from "@/components/modals/add-assignment-modal";
 import { AssignmentsRoute } from "./index";
 
 describe("AssignmentsRoute empty state & CTA (Issue #166)", () => {
@@ -131,24 +130,8 @@ describe("AssignmentsRoute empty state & CTA (Issue #166)", () => {
 		expect(html).toContain("Không có bài tập nào phù hợp với bộ lọc.");
 	});
 
-	it("renders AddAssignmentModal correctly when open", () => {
-		const html = renderToStaticMarkup(
-			<AddAssignmentModal open={true} onClose={vi.fn()} />,
-		);
-		expect(html).toContain("Tạo bài tập");
-		expect(html).toContain(
-			"Tính năng giao bài tập trực tiếp đang được hoàn thiện",
-		);
-		expect(html).toContain("Đến trang Lớp học");
-		expect(html).toContain("Quản lý danh sách học viên");
-		expect(html).toContain("Quản lý danh sách lớp học");
-		expect(html).toContain("Đóng");
-	});
-
-	it("does not render AddAssignmentModal when closed", () => {
-		const html = renderToStaticMarkup(
-			<AddAssignmentModal open={false} onClose={vi.fn()} />,
-		);
-		expect(html).toBe("");
+	it("pins the create CTA to the dedicated prompt page (#202)", () => {
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+		expect(html).toContain("+ Tạo bài tập");
 	});
 });
