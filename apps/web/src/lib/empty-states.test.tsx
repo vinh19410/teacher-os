@@ -139,7 +139,7 @@ describe("List empty states (Issue #118)", () => {
 				mode: "Online",
 				studentIds: [],
 				syllabusId: "",
-				schedule: JSON.stringify({ days: [1], start: "18:00", end: "19:30" }),
+				schedule: JSON.stringify({ days: [], start: "18:00", end: "19:30" }),
 				sessionsTotal: 10,
 				sessionsDone: 0,
 				status: "active",
