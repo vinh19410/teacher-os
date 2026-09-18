@@ -135,13 +135,16 @@ describe("List empty states (Issue #118)", () => {
 				name: "IELTS 1",
 				type: "ielts",
 				level: "Band 6.5",
+				skills: ["Writing"],
 				mode: "Online",
 				studentIds: [],
 				syllabusId: "",
-				schedule: { days: [1], start: "18:00", end: "19:30" },
+				schedule: JSON.stringify({ days: [1], start: "18:00", end: "19:30" }),
 				sessionsTotal: 10,
 				sessionsDone: 0,
 				status: "active",
+				startDate: "2026-09-01",
+				notes: "",
 			},
 		];
 		mockStoreData.lessons = [];
