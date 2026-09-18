@@ -30,7 +30,9 @@ test("student row click opens the detail page", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: STUDENT_NAME })).toBeVisible();
 	// Detail tabs render role="tab" since #119's ARIA pass.
 	for (const tab of ["Hồ sơ", "Lịch sử buổi", "Học phí", "Bài tập"]) {
-		await expect(page.getByRole("tab", { name: tab, exact: true })).toBeVisible();
+		await expect(
+			page.getByRole("tab", { name: tab, exact: true }),
+		).toBeVisible();
 	}
 });
 
