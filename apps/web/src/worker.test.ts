@@ -321,4 +321,95 @@ describe("apps/web worker fetch handler", () => {
 			"default-src 'self'",
 		);
 	});
+
+	it("serves /robots.txt with HTTP 200 text/plain and Disallow: / (issue #117)", async () => {
+		const env = createMockEnv(async (req) => {
+			const url = new URL(req.url);
+			if (url.pathname === "/robots.txt") {
+				return new Response("User-agent: *\nDisallow: /\n", {
+					status: 200,
+					headers: { "Content-Type": "text/plain; charset=utf-8" },
+				});
+			}
+			return new Response("Not Found", { status: 404 });
+		});
+
+		const res = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/robots.txt"),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("content-type")).toContain("text/plain");
+		const text = await res.text();
+		expect(text).toContain("User-agent: *");
+		expect(text).toContain("Disallow: /");
+		expect(text).not.toContain("<!doctype html>");
+		expect(res.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+	});
+
+	it("falls back to guaranteed robots.txt when ASSETS returns 404 or fails (issue #117)", async () => {
+		// Mock env where ASSETS returns 404 for all paths
+		const env = createMockEnv(
+			async () => new Response("Not Found", { status: 404 }),
+		);
+
+		const res = await worker.fetch(
+			new Request("https://app.teacheros.io.vn/robots.txt"),
+			env,
+		);
+		expect(res.status).toBe(200);
+		expect(res.headers.get("content-type")).toContain("text/plain");
+		const text = await res.text();
+		expect(text).toContain("User-agent: *");
+		expect(text).toContain("Disallow: /");
+		expect(text).not.toContain("<!doctype html>");
+		expect(res.headers.get("cache-control")).toContain("public");
+	});
+
+	it("redirects apex and www domains to canonical app domain with 301 and HSTS (issue #117)", async () => {
+		const env = createMockEnv();
+
+		const cases = [
+			{
+				from: "http://teacheros.io.vn/",
+				to: "https://app.teacheros.io.vn/",
+			},
+			{
+				from: "https://teacheros.io.vn/login?returnUrl=%2Fdashboard",
+				to: "https://app.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+			},
+			{
+				from: "http://www.teacheros.io.vn/",
+				to: "https://app.teacheros.io.vn/",
+			},
+			{
+				from: "https://www.teacheros.io.vn/classes",
+				to: "https://app.teacheros.io.vn/classes",
+			},
+			{
+				from: "http://staging.teacheros.io.vn/",
+				to: "https://app.staging.teacheros.io.vn/",
+			},
+			{
+				from: "https://www.staging.teacheros.io.vn/students",
+				to: "https://app.staging.teacheros.io.vn/students",
+			},
+			{
+				from: "https://www.app.teacheros.io.vn/",
+				to: "https://app.teacheros.io.vn/",
+			},
+		];
+
+		for (const { from, to } of cases) {
+			const res = await worker.fetch(new Request(from), env);
+			expect(res.status, `Redirecting ${from}`).toBe(301);
+			expect(res.headers.get("location"), `Location for ${from}`).toBe(to);
+			expect(
+				res.headers.get("strict-transport-security"),
+				`HSTS for ${from}`,
+			).toBe("max-age=31536000; includeSubDomains");
+		}
+	});
 });

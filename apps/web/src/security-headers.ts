@@ -21,6 +21,43 @@ export function isLocalHost(hostname: string): boolean {
 	);
 }
 
+/**
+ * Hostnames that should be redirected to their canonical app hostname (app.<domain>).
+ * Covers apex and www domains (issue #117: teacheros.io.vn and www.teacheros.io.vn).
+ */
+export function shouldRedirectHost(request: Request): string | null {
+	const url = new URL(request.url);
+	if (isLocalHost(url.hostname)) {
+		return null;
+	}
+
+	const hostname = url.hostname.toLowerCase();
+
+	let targetHost: string | null = null;
+	if (
+		hostname === "teacheros.io.vn" ||
+		hostname === "www.teacheros.io.vn" ||
+		hostname === "www.app.teacheros.io.vn"
+	) {
+		targetHost = "app.teacheros.io.vn";
+	} else if (
+		hostname === "staging.teacheros.io.vn" ||
+		hostname === "www.staging.teacheros.io.vn" ||
+		hostname === "www.app.staging.teacheros.io.vn"
+	) {
+		targetHost = "app.staging.teacheros.io.vn";
+	} else if (hostname.startsWith("www.app.")) {
+		targetHost = hostname.slice(4);
+	}
+
+	if (targetHost && targetHost !== hostname) {
+		url.hostname = targetHost;
+		url.protocol = "https:";
+		return url.toString();
+	}
+
+	return null;
+}
 export function shouldRedirectToHttps(request: Request): string | null {
 	const url = new URL(request.url);
 	if (isLocalHost(url.hostname)) {
