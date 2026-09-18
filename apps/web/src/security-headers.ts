@@ -77,9 +77,24 @@ export function shouldRedirectToHttps(request: Request): string | null {
 	return url.toString();
 }
 
-export function applySecurityHeaders(headers: Headers): Headers {
+/**
+ * Applies the production security headers to a response. On local dev
+ * (issue #203) the CSP is omitted: Vite transforms non-root routes into dev
+ * HTML with the inline React-Refresh preamble, which a production CSP
+ * (`script-src 'self'`) blocks and blanks the page on reload. The packaged
+ * output has no inline scripts, so the CSP keeps protecting real hosts.
+ */
+export function applySecurityHeaders(
+	request: Request,
+	headers: Headers,
+): Headers {
 	const out = new Headers(headers);
+	const skipCsp = isLocalHost(new URL(request.url).hostname);
 	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+		if (skipCsp && key === "Content-Security-Policy") {
+			out.delete(key);
+			continue;
+		}
 		out.set(key, value);
 	}
 	return out;

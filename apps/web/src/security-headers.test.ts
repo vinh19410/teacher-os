@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldRedirectHost } from "./security-headers";
+import { applySecurityHeaders, shouldRedirectHost } from "./security-headers";
 
 describe("shouldRedirectHost (issue #117)", () => {
 	it("returns null for localhost, 127.0.0.1, and loopback domains", () => {
@@ -76,5 +76,29 @@ describe("shouldRedirectHost (issue #117)", () => {
 				new Request("https://www.app.staging.teacheros.io.vn/dashboard"),
 			),
 		).toBe("https://app.staging.teacheros.io.vn/dashboard");
+	});
+});
+
+describe("applySecurityHeaders (issue #203)", () => {
+	it("drops CSP for local dev but keeps the other headers", () => {
+		const headers = applySecurityHeaders(
+			new Request("http://localhost:8001/dashboard"),
+			new Headers({ "Content-Type": "text/html" }),
+		);
+		expect(headers.get("content-security-policy")).toBeNull();
+		expect(headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(headers.get("x-frame-options")).toBe("DENY");
+	});
+
+	it("keeps the full CSP for real hosts", () => {
+		const headers = applySecurityHeaders(
+			new Request("https://app.teacheros.io.vn/dashboard"),
+			new Headers({ "Content-Type": "text/html" }),
+		);
+		expect(headers.get("content-security-policy")).toContain(
+			"script-src 'self'",
+		);
 	});
 });
