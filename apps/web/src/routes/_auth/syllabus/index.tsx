@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { IELTS_SKILLS } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { AddSyllabusModal } from "@/components/modals/add-syllabus-modal";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +15,13 @@ export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
 });
 
-const FILTERS = ["Tất cả", ...IELTS_SKILLS];
+const FILTERS = ["Tất cả", "Viết", "Nói", "Đọc", "Nghe"];
+const SKILL_MAP: Record<string, string> = {
+	Viết: "Writing",
+	Nói: "Speaking",
+	Đọc: "Reading",
+	Nghe: "Listening",
+};
 
 function SyllabusRoute() {
 	const navigate = useNavigate();
@@ -28,12 +33,15 @@ function SyllabusRoute() {
 	const list =
 		filter === "Tất cả"
 			? templates
-			: templates.filter((s) => s.skills.includes(filter));
+			: templates.filter((s) => {
+					const wireSkill = SKILL_MAP[filter] ?? filter;
+					return s.skills.includes(wireSkill);
+				});
 
 	return (
 		<div>
 			<PageHead
-				title="Syllabus"
+				title="Giáo trình"
 				lead={`${templates.length} template · ${templates.reduce((sum, s) => sum + s.totalLessons, 0)} buổi tổng cộng`}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">

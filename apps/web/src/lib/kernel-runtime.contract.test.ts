@@ -462,6 +462,35 @@ describe("kernel-backed store wiring", () => {
 		expect(assignments).toMatch(/\$\{pendingCount\} cần xử lý/);
 	});
 
+	test("tuition debt KPI renders neutral for 0đ and list pages have localized filter chips (#170)", () => {
+		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		expect(tuition).not.toMatch(
+			/label="Còn nợ \(VND\)"\s+className="\[&>div:first-child\]:text-danger"/,
+		);
+		expect(tuition).toMatch(
+			/outstanding > 0 \? "\[&>div:first-child\]:text-danger" : undefined/,
+		);
+
+		const students = readSrc("../routes/_auth/students/index.tsx");
+		expect(students).toMatch(
+			/const FILTERS = \["Tất cả", "Sắp hết buổi", "Nợ học phí", "Viết", "Nói"\]/,
+		);
+		expect(students).not.toMatch(/"Writing", "Speaking"/);
+
+		const classes = readSrc("../routes/_auth/classes/index.tsx");
+		expect(classes).toMatch(
+			/const FILTERS = \["Tất cả", "Trực tuyến", "Trực tiếp", "Đang học"\]/,
+		);
+		expect(classes).not.toMatch(/"Online", "Offline"/);
+		expect(classes).toMatch(/"Giáo trình"/);
+
+		const syllabus = readSrc("../routes/_auth/syllabus/index.tsx");
+		expect(syllabus).toMatch(
+			/const FILTERS = \["Tất cả", "Viết", "Nói", "Đọc", "Nghe"\]/,
+		);
+		expect(syllabus).toMatch(/title="Giáo trình"/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);
