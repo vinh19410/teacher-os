@@ -42,7 +42,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await page.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	// Fully-upcoming class: every row offers Điều chỉnh; nothing settled yet.
 	const adjustButtons = page.getByRole("button", { name: "Điều chỉnh" });
 	await expect(adjustButtons.first()).toBeVisible();
@@ -69,7 +69,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 
 	// Persisted server-side across a full reload.
 	await page.reload();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.getByText("Đã hủy", { exact: true })).toHaveCount(1);
 });
 
@@ -92,7 +92,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await page.getByLabel("Họ tên học viên *").fill("Phạm Topic E2E");
 	await page.getByRole("button", { name: "Lưu", exact: true }).click();
 
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 
 	// Edit occurrence #3 (0-based row index 2) with a distinctive topic.
 	const targetRow = page.locator("tbody tr").nth(2);
@@ -115,7 +115,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 
 	// Reload persistence: the topic lives on THIS occurrence only.
 	await page.reload();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(
 		page
 			.locator("tbody tr")

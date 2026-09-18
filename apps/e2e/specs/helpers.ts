@@ -33,7 +33,7 @@ export async function openClassScheduleTab(page: Page, className: string) {
 	const classRow = page.locator("tbody").getByText(className);
 	await expect(classRow).toBeVisible();
 	await classRow.click();
-	await page.getByRole("button", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 }
 
 /** Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice
