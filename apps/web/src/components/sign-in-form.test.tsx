@@ -22,10 +22,14 @@ describe("SignInForm (issue #165)", () => {
 		expect(button?.[0]).not.toMatch(/\sdisabled=/);
 	});
 
-	it("keeps the sign-in panel markup intact", () => {
+	it("keeps the sign-in panel markup intact with required accessible inputs (Issue #118)", () => {
 		const html = renderToStaticMarkup(<SignInForm hidden={false} />);
 		expect(html).toContain('id="panel-signin"');
 		expect(html).toContain('id="si-email"');
 		expect(html).toContain('id="si-password"');
+		expect(html).toMatch(/id="si-email"[^>]*required/);
+		expect(html).toMatch(/id="si-email"[^>]*aria-required="true"/);
+		expect(html).toMatch(/id="si-password"[^>]*required/);
+		expect(html).toMatch(/id="si-password"[^>]*aria-required="true"/);
 	});
 });

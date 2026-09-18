@@ -22,6 +22,7 @@ interface AuthFieldProps {
 	labelRowExtra?: ReactNode;
 	hint?: ReactNode;
 	passwordToggle?: boolean;
+	required?: boolean;
 }
 
 export function AuthField({
@@ -38,6 +39,7 @@ export function AuthField({
 	labelRowExtra,
 	hint,
 	passwordToggle,
+	required,
 }: AuthFieldProps) {
 	const [passwordShown, setPasswordShown] = useState(false);
 	const invalid = errors.length > 0;
@@ -63,6 +65,8 @@ export function AuthField({
 					value={value}
 					onBlur={onBlur}
 					onChange={(event) => onChange(event.target.value)}
+					required={required}
+					aria-required={required ? true : undefined}
 					aria-invalid={invalid || undefined}
 					aria-describedby={invalid ? `${id}-status` : undefined}
 					className={cn(
@@ -105,7 +109,10 @@ export function AuthField({
 				aria-live="polite"
 			>
 				{invalid ? (
-					<p className="text-[color-mix(in_oklab,var(--danger),black_18%)]">
+					<p
+						role="alert"
+						className="text-[color-mix(in_oklab,var(--danger),black_18%)]"
+					>
 						{errors[0]}
 					</p>
 				) : (
