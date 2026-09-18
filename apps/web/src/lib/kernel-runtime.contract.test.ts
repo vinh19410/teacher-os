@@ -147,6 +147,13 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/isFutureDateInputValue\(startDate\)/);
 	});
 
+	test("add-class modal wires templateId to kernel command and resets it on submit", () => {
+		const src = readSrc("../components/modals/add-class-modal.tsx");
+		expect(src).toMatch(/<Field label="Template giáo trình">/);
+		expect(src).toMatch(/templateId,\s*schedule:/);
+		expect(src).toMatch(/setTemplateId\(""\)/);
+	});
+
 	test("add-syllabus navigates only on the refreshed result with the server id", () => {
 		const src = readSrc("../components/modals/add-syllabus-modal.tsx");
 		expect(src).toMatch(/result\?\.kind === "refreshed"/);

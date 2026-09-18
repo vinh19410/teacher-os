@@ -64,11 +64,16 @@ export function AddClassModal({
 
 	function resetForm() {
 		setName("");
+		setLevel("Band 7.0");
+		setClassType("ielts");
 		setSkills([]);
+		setMode("Online");
+		setTemplateId("");
 		setDays([]);
 		setStartTime(DEFAULT_START);
 		setEndTime(DEFAULT_END);
 		setEndTouched(false);
+		setTotal("12");
 		setStartDate(getTomorrowDateInputValue());
 	}
 
