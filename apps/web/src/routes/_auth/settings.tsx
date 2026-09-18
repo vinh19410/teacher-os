@@ -1,5 +1,11 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouteContext } from "@tanstack/react-router";
-import { useState } from "react";
+import type {
+	WorkspaceSettings,
+	WorkspaceSettingsUpdate,
+} from "@teacher-os/api/contracts";
+import { workspaceSettingsSchema } from "@teacher-os/api/contracts";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,43 +13,62 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
+import {
+	getApiBaseUrl,
+	saveWorkspaceSettings,
+	workspaceSettingsQueryKey,
+	workspaceSettingsQueryOptions,
+} from "@/lib/repos/settings";
 
 export const Route = createFileRoute("/_auth/settings")({
 	component: SettingsRoute,
 });
 
-/**
- * Placeholder values for controls whose persistence isn't built yet (#167).
- * They stay visible so a teacher can read the current defaults; the controls
- * themselves are disabled until a kernel settings surface exists — never
- * render an editable-looking form that silently discards input.
- */
-const DEFAULT_UNIT_PRICE = "400.000đ";
-const DEFAULT_TPL_REMINDER =
-	"Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.";
-const DEFAULT_TPL_DEBT =
-	"Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.";
-const DEFAULT_TPL_REPORT =
-	"Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}";
-
-function NotYetOpenNote() {
-	return (
-		<p className="text-muted-fg text-xs">
-			Chưa mở — sẽ lưu khi tính năng ra mắt.
-		</p>
-	);
-}
-
 export function SettingsPage({
 	session,
+	initialSettings,
+	onSave,
 }: {
 	session?: {
 		data?: {
 			user?: { name?: string | null; email?: string | null } | null;
 		} | null;
 	} | null;
+	initialSettings?: WorkspaceSettings;
+	onSave?: (settings: WorkspaceSettingsUpdate) => Promise<void>;
 }) {
 	const [tab, setTab] = useState("account");
+	const [form, setForm] = useState<WorkspaceSettings>(
+		() => initialSettings ?? workspaceSettingsSchema.parse({}),
+	);
+	const [saving, setSaving] = useState(false);
+	const [savedTab, setSavedTab] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (initialSettings) {
+			setForm(initialSettings);
+		}
+	}, [initialSettings]);
+
+	const handleSave = async (
+		tabName: string,
+		update: WorkspaceSettingsUpdate,
+	) => {
+		if (!onSave) return;
+		setSaving(true);
+		setError(null);
+		setSavedTab(null);
+		try {
+			await onSave(update);
+			setSavedTab(tabName);
+			setTimeout(() => setSavedTab(null), 3000);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Lỗi lưu cài đặt");
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	return (
 		<div>
@@ -59,8 +84,17 @@ export function SettingsPage({
 					{ id: "data", label: "Dữ liệu" },
 				]}
 				active={tab}
-				onChange={setTab}
+				onChange={(t) => {
+					setTab(t);
+					setError(null);
+				}}
 			/>
+
+			{error && (
+				<div className="mb-4 rounded-md bg-danger-bg p-3 text-danger text-sm">
+					{error}
+				</div>
+			)}
 
 			{tab === "account" && (
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
@@ -105,13 +139,35 @@ export function SettingsPage({
 							</p>
 							<Field label="Đơn giá mặc định / buổi">
 								<Input
-									value={DEFAULT_UNIT_PRICE}
-									disabled
-									className="opacity-60"
+									value={form.defaultUnitPrice}
+									onChange={(e) =>
+										setForm((prev) => ({
+											...prev,
+											defaultUnitPrice: e.target.value,
+										}))
+									}
 								/>
 							</Field>
-							<NotYetOpenNote />
-							<div className="flex items-center gap-2 self-start">
+							<div className="flex items-center gap-3">
+								<Button
+									variant="primary"
+									size="sm"
+									disabled={saving}
+									onClick={() =>
+										handleSave("account", {
+											defaultUnitPrice: form.defaultUnitPrice,
+										})
+									}
+								>
+									{saving ? "Đang lưu..." : "Lưu đơn giá"}
+								</Button>
+								{savedTab === "account" && (
+									<span className="font-medium text-accent-green text-xs">
+										✓ Đã lưu đơn giá
+									</span>
+								)}
+							</div>
+							<div className="flex items-center gap-2 self-start pt-2">
 								<Button variant="secondary" size="sm" disabled>
 									Quản lý thanh toán
 								</Button>
@@ -122,98 +178,259 @@ export function SettingsPage({
 				</div>
 			)}
 
-			{tab === "templates" && <TemplatesTab />}
-			{tab === "rules" && <RulesTab />}
+			{tab === "templates" && (
+				<TemplatesTab
+					form={form}
+					onChange={setForm}
+					saving={saving}
+					saved={savedTab === "templates"}
+					onSave={() =>
+						handleSave("templates", {
+							tplReminder: form.tplReminder,
+							tplDebt: form.tplDebt,
+							tplReport: form.tplReport,
+						})
+					}
+				/>
+			)}
+			{tab === "rules" && (
+				<RulesTab
+					form={form}
+					onChange={setForm}
+					saving={saving}
+					saved={savedTab === "rules"}
+					onSave={() =>
+						handleSave("rules", {
+							absenceNoticeHours: form.absenceNoticeHours,
+							unexcusedDeduct: form.unexcusedDeduct,
+							maxAbsencesBeforeAlert: form.maxAbsencesBeforeAlert,
+							reminderSchedule: form.reminderSchedule,
+							overdueDebtReminder: form.overdueDebtReminder,
+							packageEndReminder: form.packageEndReminder,
+							preferredChannel: form.preferredChannel,
+						})
+					}
+				/>
+			)}
 			{tab === "data" && <DataTab />}
 		</div>
 	);
 }
 
-export function TemplatesTab() {
+export function TemplatesTab({
+	form,
+	onChange,
+	onSave,
+	saving,
+	saved,
+}: {
+	form?: WorkspaceSettings;
+	onChange?: React.Dispatch<React.SetStateAction<WorkspaceSettings>>;
+	onSave?: () => void;
+	saving?: boolean;
+	saved?: boolean;
+}) {
+	const current = form ?? workspaceSettingsSchema.parse({});
 	return (
 		<div className="flex flex-col gap-4">
 			<Card variant="white">
 				<SectionLabel>Mẫu nhắc lịch (T−24h)</SectionLabel>
 				<Textarea
-					value={DEFAULT_TPL_REMINDER}
-					disabled
-					className="min-h-25 opacity-60"
+					value={current.tplReminder}
+					onChange={(e) =>
+						onChange?.((prev) => ({ ...prev, tplReminder: e.target.value }))
+					}
+					className="min-h-25"
 				/>
 			</Card>
 			<Card variant="white">
 				<SectionLabel>Mẫu nhắc nợ (quá hạn 3 ngày)</SectionLabel>
 				<Textarea
-					value={DEFAULT_TPL_DEBT}
-					disabled
-					className="min-h-25 opacity-60"
+					value={current.tplDebt}
+					onChange={(e) =>
+						onChange?.((prev) => ({ ...prev, tplDebt: e.target.value }))
+					}
+					className="min-h-25"
 				/>
 			</Card>
 			<Card variant="white">
 				<SectionLabel>Mẫu báo cáo tuần</SectionLabel>
 				<Textarea
-					value={DEFAULT_TPL_REPORT}
-					disabled
-					className="min-h-25 opacity-60"
+					value={current.tplReport}
+					onChange={(e) =>
+						onChange?.((prev) => ({ ...prev, tplReport: e.target.value }))
+					}
+					className="min-h-25"
 				/>
 			</Card>
-			<NotYetOpenNote />
+			{onSave && (
+				<div className="flex items-center gap-3">
+					<Button
+						variant="primary"
+						size="sm"
+						disabled={saving}
+						onClick={onSave}
+					>
+						{saving ? "Đang lưu..." : "Lưu mẫu tin"}
+					</Button>
+					{saved && (
+						<span className="font-medium text-accent-green text-xs">
+							✓ Đã lưu mẫu tin Zalo
+						</span>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
 
-export function RulesTab() {
+export function RulesTab({
+	form,
+	onChange,
+	onSave,
+	saving,
+	saved,
+}: {
+	form?: WorkspaceSettings;
+	onChange?: React.Dispatch<React.SetStateAction<WorkspaceSettings>>;
+	onSave?: () => void;
+	saving?: boolean;
+	saved?: boolean;
+}) {
+	const current = form ?? workspaceSettingsSchema.parse({});
 	return (
-		<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-			<Card variant="white">
-				<SectionLabel>Quy tắc vắng học</SectionLabel>
-				<div className="flex flex-col gap-4">
-					<Field label="Vắng có phép — báo trước">
-						<Select disabled className="opacity-60">
-							<option>2 giờ trước buổi học</option>
-							<option>24 giờ trước</option>
-						</Select>
-					</Field>
-					<Field label="Vắng không phép — trừ buổi?">
-						<Select disabled className="opacity-60">
-							<option>Có, trừ 1 buổi</option>
-							<option>Không trừ</option>
-						</Select>
-					</Field>
-					<Field label="Số buổi vắng tối đa trước nhắc rủi ro">
-						<Input type="number" value="2" disabled className="opacity-60" />
-					</Field>
+		<div className="flex flex-col gap-4">
+			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
+				<Card variant="white">
+					<SectionLabel>Quy tắc vắng học</SectionLabel>
+					<div className="flex flex-col gap-4">
+						<Field label="Vắng có phép — báo trước">
+							<Select
+								value={current.absenceNoticeHours}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										absenceNoticeHours: e.target.value,
+									}))
+								}
+							>
+								<option value="2 giờ trước buổi học">
+									2 giờ trước buổi học
+								</option>
+								<option value="24 giờ trước">24 giờ trước</option>
+							</Select>
+						</Field>
+						<Field label="Vắng không phép — trừ buổi?">
+							<Select
+								value={current.unexcusedDeduct}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										unexcusedDeduct: e.target.value,
+									}))
+								}
+							>
+								<option value="Có, trừ 1 buổi">Có, trừ 1 buổi</option>
+								<option value="Không trừ">Không trừ</option>
+							</Select>
+						</Field>
+						<Field label="Số buổi vắng tối đa trước nhắc rủi ro">
+							<Input
+								type="number"
+								value={current.maxAbsencesBeforeAlert}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										maxAbsencesBeforeAlert: Number(e.target.value) || 0,
+									}))
+								}
+							/>
+						</Field>
+					</div>
+				</Card>
+				<Card variant="white">
+					<SectionLabel>Quy tắc nhắc nhở</SectionLabel>
+					<div className="flex flex-col gap-4">
+						<Field label="Nhắc lịch trước buổi">
+							<Select
+								value={current.reminderSchedule}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										reminderSchedule: e.target.value,
+									}))
+								}
+							>
+								<option value="T−24h và T−1h">T−24h và T−1h</option>
+								<option value="Chỉ T−24h">Chỉ T−24h</option>
+							</Select>
+						</Field>
+						<Field label="Nhắc nợ quá hạn">
+							<Select
+								value={current.overdueDebtReminder}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										overdueDebtReminder: e.target.value,
+									}))
+								}
+							>
+								<option value="Sau 3 ngày và 7 ngày">
+									Sau 3 ngày và 7 ngày
+								</option>
+								<option value="Sau 7 ngày">Sau 7 ngày</option>
+							</Select>
+						</Field>
+						<Field label="Nhắc sắp hết gói">
+							<Select
+								value={current.packageEndReminder}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										packageEndReminder: e.target.value,
+									}))
+								}
+							>
+								<option value="Khi còn 3 buổi">Khi còn 3 buổi</option>
+								<option value="Khi còn 2 buổi">Khi còn 2 buổi</option>
+							</Select>
+						</Field>
+						<Field label="Kênh ưu tiên">
+							<Select
+								value={current.preferredChannel}
+								onChange={(e) =>
+									onChange?.((prev) => ({
+										...prev,
+										preferredChannel: e.target.value,
+									}))
+								}
+							>
+								<option value="Zalo trước, email dự phòng">
+									Zalo trước, email dự phòng
+								</option>
+								<option value="Chỉ Zalo">Chỉ Zalo</option>
+							</Select>
+						</Field>
+					</div>
+				</Card>
+			</div>
+			{onSave && (
+				<div className="flex items-center gap-3">
+					<Button
+						variant="primary"
+						size="sm"
+						disabled={saving}
+						onClick={onSave}
+					>
+						{saving ? "Đang lưu..." : "Lưu quy tắc"}
+					</Button>
+					{saved && (
+						<span className="font-medium text-accent-green text-xs">
+							✓ Đã lưu quy tắc
+						</span>
+					)}
 				</div>
-			</Card>
-			<Card variant="white">
-				<SectionLabel>Quy tắc nhắc nhở</SectionLabel>
-				<div className="flex flex-col gap-4">
-					<Field label="Nhắc lịch trước buổi">
-						<Select disabled className="opacity-60">
-							<option>T−24h và T−1h</option>
-							<option>Chỉ T−24h</option>
-						</Select>
-					</Field>
-					<Field label="Nhắc nợ quá hạn">
-						<Select disabled className="opacity-60">
-							<option>Sau 3 ngày và 7 ngày</option>
-							<option>Sau 7 ngày</option>
-						</Select>
-					</Field>
-					<Field label="Nhắc sắp hết gói">
-						<Select disabled className="opacity-60">
-							<option>Khi còn 3 buổi</option>
-							<option>Khi còn 2 buổi</option>
-						</Select>
-					</Field>
-					<Field label="Kênh ưu tiên">
-						<Select disabled className="opacity-60">
-							<option>Zalo trước, email dự phòng</option>
-							<option>Chỉ Zalo</option>
-						</Select>
-					</Field>
-				</div>
-			</Card>
-			<NotYetOpenNote />
+			)}
 		</div>
 	);
 }
@@ -247,5 +464,22 @@ export function DataTab() {
 
 function SettingsRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
-	return <SettingsPage session={session} />;
+	const baseUrl = getApiBaseUrl();
+	const queryClient = useQueryClient();
+	const { data: settings } = useQuery(workspaceSettingsQueryOptions(baseUrl));
+
+	const handleSave = async (payload: WorkspaceSettingsUpdate) => {
+		await saveWorkspaceSettings(baseUrl, payload);
+		await queryClient.invalidateQueries({
+			queryKey: workspaceSettingsQueryKey,
+		});
+	};
+
+	return (
+		<SettingsPage
+			session={session}
+			initialSettings={settings}
+			onSave={handleSave}
+		/>
+	);
 }

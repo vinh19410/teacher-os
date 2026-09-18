@@ -9,6 +9,12 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
+vi.mock("@tanstack/react-query", () => ({
+	useQuery: () => ({ data: undefined }),
+	useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+	queryOptions: (opts: unknown) => opts,
+}));
+
 import { DataTab, RulesTab, SettingsPage, TemplatesTab } from "./settings";
 
 const session = {
@@ -16,21 +22,21 @@ const session = {
 };
 
 /**
- * Issue #167: settings must never render an editable-looking form that
- * silently discards input. Until a kernel settings surface exists, every
- * config control is disabled and labelled "Chưa mở"; the data tab must not
- * claim to be a demo. Issue #174: the delete-account button is gone until a
- * real flow exists — these tests pin that it stays gone.
+ * Issue #179: Settings controls are now connected to the kernel settings surface.
+ * The controls are enabled and editable; "Chưa mở — sẽ lưu khi tính năng ra mắt"
+ * note is removed from active tabs (Account, Templates, Rules). DataTab retains
+ * honest export state and admin contact note (#174).
  */
-describe("SettingsPage honesty guards (issue #167)", () => {
-	it("renders default unit price disabled and keeps the interim plan block", () => {
+describe("SettingsPage persistence & honest guards (issue #179, follow-up #167)", () => {
+	it("renders default unit price editable and keeps the interim plan block", () => {
 		const html = renderToStaticMarkup(<SettingsPage session={session} />);
 		const priceInput = html.match(/<input[^>]*400\.000đ[^>]*>/);
-		expect(priceInput?.[0]).toMatch(/\sdisabled=/);
+		expect(priceInput?.[0]).not.toMatch(/\sdisabled=/);
 		expect(html).toContain("Sắp ra mắt");
 		expect(html).toContain("Đang dùng");
 		expect(html).toContain("Chỉnh sửa tại Hồ sơ");
-		expect(html).toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
+		expect(html).not.toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
+		expect(html).toContain("Lưu đơn giá");
 	});
 
 	it("labels all four tabs and keeps the account fields read-only", () => {
@@ -42,38 +48,36 @@ describe("SettingsPage honesty guards (issue #167)", () => {
 		expect(nameInput?.[0]).toMatch(/\sdisabled=/);
 	});
 
-	it("disables every Zalo template textarea with the not-open note", () => {
-		const html = renderToStaticMarkup(<TemplatesTab />);
+	it("enables every Zalo template textarea without the not-open note", () => {
+		const html = renderToStaticMarkup(<TemplatesTab onSave={() => {}} />);
 		const areas = html.match(/<textarea[^>]*>/g) ?? [];
 		expect(areas.length).toBe(3);
 		for (const area of areas) {
-			expect(area).toMatch(/\sdisabled=/);
+			expect(area).not.toMatch(/\sdisabled=/);
 		}
-		expect(html).toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
-		// The current default stays visible so the teacher can read it.
+		expect(html).not.toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
 		expect(html).toContain("{{student_name}}");
+		expect(html).toContain("Lưu mẫu tin");
 	});
 
-	it("disables all seven rule controls", () => {
-		const html = renderToStaticMarkup(<RulesTab />);
+	it("enables all seven rule controls without the not-open note", () => {
+		const html = renderToStaticMarkup(<RulesTab onSave={() => {}} />);
 		const selects = html.match(/<select[^>]*>/g) ?? [];
 		expect(selects.length).toBe(6);
 		for (const select of selects) {
-			expect(select).toMatch(/\sdisabled=/);
+			expect(select).not.toMatch(/\sdisabled=/);
 		}
 		const numberInputs = html.match(/<input[^>]*type="number"[^>]*>/g) ?? [];
 		expect(numberInputs.length).toBe(1);
-		expect(numberInputs[0]).toMatch(/\sdisabled=/);
-		expect(html).toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
+		expect(numberInputs[0]).not.toMatch(/\sdisabled=/);
+		expect(html).not.toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
+		expect(html).toContain("Lưu quy tắc");
 	});
 
 	it("drops the demo copy, disables exports, and offers admin contact instead of a dead delete button (#174)", () => {
 		const html = renderToStaticMarkup(<DataTab />);
 		expect(html).not.toContain("bản demo");
-		// Export-specific note: "sẽ lưu" would read wrong next to file exports.
 		expect(html).toContain("Chưa mở — xuất file đang ra mắt.");
-		// Button ships disabled:* utility classes in its className, so match
-		// the rendered attribute, not the substring.
 		const csvButton = html.match(
 			/<button[^>]*>Xuất CSV buổi học \+ thu tiền<\/button>/,
 		);
@@ -82,8 +86,6 @@ describe("SettingsPage honesty guards (issue #167)", () => {
 		);
 		expect(csvButton?.[0]).toMatch(/\sdisabled=/);
 		expect(jsonButton?.[0]).toMatch(/\sdisabled=/);
-		// #174: a destructive button that silently does nothing must not
-		// render at all — point at the admin instead until a real flow lands.
 		expect(html).not.toContain("Xóa tài khoản");
 		expect(html).toContain("liên hệ admin");
 	});

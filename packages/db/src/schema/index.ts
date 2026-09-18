@@ -10,5 +10,6 @@ export * from "./notif";
 export * from "./organization";
 export * from "./report";
 export * from "./session-package";
+export * from "./settings";
 export * from "./student";
 export * from "./syllabus";
