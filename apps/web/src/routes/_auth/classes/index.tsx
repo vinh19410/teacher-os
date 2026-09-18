@@ -18,7 +18,11 @@ export const Route = createFileRoute("/_auth/classes/")({
 	component: ClassesRoute,
 });
 
-const FILTERS = ["Tất cả", "Online", "Offline", "Đang học"];
+const FILTERS = ["Tất cả", "Trực tuyến", "Trực tiếp", "Đang học"];
+const MODE_MAP: Record<string, string> = {
+	"Trực tuyến": "Online",
+	"Trực tiếp": "Offline",
+};
 
 function ClassesRoute() {
 	const navigate = useNavigate();
@@ -33,7 +37,9 @@ function ClassesRoute() {
 		filter === "Tất cả"
 			? classes
 			: classes.filter((c) =>
-					filter === "Đang học" ? c.status === "active" : c.mode === filter,
+					filter === "Đang học"
+						? c.status === "active"
+						: c.mode === (MODE_MAP[filter] ?? filter),
 				);
 
 	return (
@@ -47,7 +53,7 @@ function ClassesRoute() {
 				<DataTable
 					headers={[
 						"Lớp",
-						"Syllabus",
+						"Giáo trình",
 						"Sĩ số",
 						"Tiến độ",
 						"Lịch",

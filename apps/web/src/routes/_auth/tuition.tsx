@@ -49,7 +49,9 @@ function TuitionRoute() {
 				<StatCard
 					num={fmtVND(outstanding)}
 					label="Còn nợ (VND)"
-					className="[&>div:first-child]:text-danger"
+					className={
+						outstanding > 0 ? "[&>div:first-child]:text-danger" : undefined
+					}
 				/>
 				<StatCard
 					num={String(endingSoon)}

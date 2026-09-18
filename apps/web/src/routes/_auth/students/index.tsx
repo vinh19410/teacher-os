@@ -16,12 +16,12 @@ export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
 });
 
-const FILTERS = ["Tất cả", "Sắp hết buổi", "Nợ học phí", "Writing", "Speaking"];
-const FILTER_TAGS: Record<string, string> = {
-	"Sắp hết buổi": "sắp hết buổi",
-	"Nợ học phí": "nợ học phí",
-	Writing: "IELTS Writing",
-	Speaking: "IELTS Speaking",
+const FILTERS = ["Tất cả", "Sắp hết buổi", "Nợ học phí", "Viết", "Nói"];
+const FILTER_TAGS: Record<string, string[]> = {
+	"Sắp hết buổi": ["sắp hết buổi"],
+	"Nợ học phí": ["nợ học phí"],
+	Viết: ["IELTS Writing", "Writing", "Viết"],
+	Nói: ["IELTS Speaking", "Speaking", "Nói"],
 };
 
 function StudentsRoute() {
@@ -46,8 +46,10 @@ function StudentsRoute() {
 	const list =
 		filter === "Tất cả"
 			? students
-			: students.filter((s) => s.tags.includes(FILTER_TAGS[filter] ?? filter));
-
+			: students.filter((s) => {
+					const tags = FILTER_TAGS[filter] ?? [filter];
+					return s.tags.some((t) => tags.includes(t));
+				});
 	return (
 		<div>
 			<PageHead
