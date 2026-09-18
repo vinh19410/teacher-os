@@ -94,7 +94,7 @@ describe("List empty states (Issue #118)", () => {
 		const html = renderToStaticMarkup(<ClassesRoute />);
 		expect(html).toContain('data-testid="classes-empty-state"');
 		expect(html).toContain("Chưa có lớp học nào");
-		expect(html).toContain("+ Tạo lớp học");
+		expect(html).toContain("+ Tạo lớp");
 	});
 
 	it("renders empty states on /tuition for both packages and invoices", () => {

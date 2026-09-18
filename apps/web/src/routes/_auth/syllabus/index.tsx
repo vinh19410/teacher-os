@@ -58,12 +58,9 @@ export function SyllabusRoute() {
 						Chưa có syllabus nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
-						Tạo giáo trình mẫu hoặc nhập từ file Excel/CSV để áp dụng cho các
-						lớp học.
+						Bấm "+ Tạo syllabus" ở góc trên để tạo giáo trình mẫu hoặc nhập từ
+						file Excel/CSV.
 					</p>
-					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-						<Button onClick={() => setModalOpen(true)}>+ Tạo syllabus</Button>
-					</div>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">

@@ -70,12 +70,9 @@ export function StudentsRoute() {
 						Chưa có học viên nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
-						Thêm học viên để bắt đầu quản lý thông tin, gói học, học phí và bài
-						tập.
+						Bấm "+ Thêm học viên" ở góc trên để bắt đầu quản lý thông tin, gói
+						học, học phí và bài tập.
 					</p>
-					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-						<Button onClick={() => setModalOpen(true)}>+ Thêm học viên</Button>
-					</div>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">

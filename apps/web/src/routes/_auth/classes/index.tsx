@@ -59,12 +59,9 @@ export function ClassesRoute() {
 						Chưa có lớp học nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
-						Tạo lớp học đầu tiên để xếp lịch, liên kết giáo trình và quản lý
-						danh sách học viên.
+						Bấm "+ Tạo lớp" ở góc trên để xếp lịch, liên kết giáo trình và quản
+						lý danh sách học viên.
 					</p>
-					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-						<Button onClick={() => setModalOpen(true)}>+ Tạo lớp học</Button>
-					</div>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">

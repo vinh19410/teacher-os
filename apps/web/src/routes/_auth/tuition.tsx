@@ -159,14 +159,9 @@ export function TuitionRoute() {
 							Chưa có hóa đơn nào
 						</h3>
 						<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
-							Tạo hóa đơn học phí để theo dõi các khoản thu và công nợ của học
-							viên.
+							Bấm "+ Tạo hóa đơn" ở góc trên để theo dõi các khoản thu và công
+							nợ của học viên.
 						</p>
-						<div className="mt-4 flex justify-center">
-							<Button size="sm" onClick={() => setModalOpen(true)}>
-								+ Tạo hóa đơn
-							</Button>
-						</div>
 					</Card>
 				) : (
 					<Card variant="white" className="p-0">
