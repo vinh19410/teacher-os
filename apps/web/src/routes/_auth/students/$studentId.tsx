@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { averageBand, fmtVND } from "@/lib/mock-data";
 import { useStudents } from "@/lib/repos/use-students";
 
@@ -215,8 +216,8 @@ function StudentDetailRoute() {
 						headers={["Mã", "Loại", "Số tiền", "Ngày", "Trạng thái"]}
 						rows={invoices.map((inv) => ({
 							cells: [
-								inv.id,
-								inv.type,
+								invoiceCode(inv.id),
+								invoiceType(inv.type),
 								<span key={inv.id} className="font-mono">
 									{fmtVND(inv.amount)}
 								</span>,
