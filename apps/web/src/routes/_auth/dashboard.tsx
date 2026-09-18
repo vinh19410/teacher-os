@@ -14,6 +14,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import {
 	atRiskRows,
 	type DashboardRiskReason,
+	formatDashboardGreeting,
 	formatDashboardLead,
 	lessonsToday,
 } from "@/lib/dashboard-from-kernel";
@@ -45,7 +46,7 @@ function DashboardRoute() {
 	return (
 		<div>
 			<PageHead
-				title={`Chào buổi sáng, ${displayName}`}
+				title={formatDashboardGreeting(displayName, now)}
 				lead={formatDashboardLead(now, today.length)}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
