@@ -124,7 +124,7 @@ export function AddInvoiceModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Tạo hóa đơn"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field
 					label="Học viên *"
 					error={enrollmentError}

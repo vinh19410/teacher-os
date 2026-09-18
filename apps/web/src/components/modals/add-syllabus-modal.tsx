@@ -136,7 +136,7 @@ export function AddSyllabusModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Tạo syllabus mới"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên syllabus *" error={error}>
 					<Input
 						value={name}

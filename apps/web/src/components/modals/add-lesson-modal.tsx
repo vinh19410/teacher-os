@@ -80,7 +80,7 @@ export function AddLessonModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Thêm buổi học"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên buổi học *" error={error}>
 					<Input
 						value={title}

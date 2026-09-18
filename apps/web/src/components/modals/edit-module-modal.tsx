@@ -60,7 +60,7 @@ export function EditModuleModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Sửa module"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên module *" error={error}>
 					<Input
 						value={title}

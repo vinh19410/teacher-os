@@ -89,7 +89,7 @@ export function EditLessonModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Sửa buổi học"
 		>
-			<form onSubmit={submit}>
+			<form noValidate onSubmit={submit}>
 				<Field label="Tên buổi học *" error={error}>
 					<Input value={title} onChange={(e) => setTitle(e.target.value)} />
 				</Field>
