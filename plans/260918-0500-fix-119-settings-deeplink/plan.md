@@ -1,7 +1,7 @@
 ---
 title: "Fix #119: Settings tabs deep-link qua ?tab= + aria-selected"
 description: "Settings tabs controlled bởi useState nội bộ — URL không đổi, reload/quay lại mất tab, highlight có thể lệch state. Fix: validateSearch ?tab= (enum whitelist) + controlled tab từ URL + navigate replace; Tabs component thêm role tablist/tab + aria-selected (đóng góp #118)."
-status: in-progress
+status: completed
 priority: P2
 effort: 2h
 issue: 119
@@ -35,14 +35,14 @@ Tabs settings (Tài khoản/Mẫu tin Zalo/Quy tắc/Dữ liệu) controlled b�
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [validateSearch + controlled tab + Tabs a11y + tests](./phase-01-deeplink.md) | Pending |
+| 1 | [validateSearch + controlled tab + Tabs a11y + tests](./phase-01-deeplink.md) | Done |
 
 ## Success Criteria
 
-- [ ] Unit: validateSettingsSearch (tab hợp lệ / lạ / thiếu) — 3 case
-- [ ] Unit: SettingsPage với tab="templates"/"data" render đúng nội dung tab đó (controlled, không useState nội bộ)
-- [ ] Unit: Tabs aria-selected đúng + role tablist
-- [ ] vitest apps/web xanh; tsc sạch; biome repo-wide exit 0; CI PR xanh → merge beta → đóng issue
+- [x] Unit: validateSettingsSearch (tab hợp lệ / lạ / thiếu) — 3 case
+- [x] Unit: SettingsPage với tab="templates"/"data" render đúng nội dung tab đó (controlled, không useState nội bộ)
+- [x] Unit: Tabs aria-selected đúng + role tablist
+- [x] vitest apps/web xanh; tsc sạch; biome repo-wide exit 0; CI PR xanh → merge beta → đóng issue
 
 ## Verification Commands
 

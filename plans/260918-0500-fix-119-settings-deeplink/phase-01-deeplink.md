@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "validateSearch + controlled tab + Tabs a11y + tests"
-status: in-progress
+status: completed
 depends: []
 files:
   - apps/web/src/routes/_auth/settings.tsx
