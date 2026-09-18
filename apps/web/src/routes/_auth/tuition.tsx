@@ -14,6 +14,8 @@ import { useData } from "@/lib/data-store";
 import { fmtVND } from "@/lib/mock-data";
 import {
 	formatDue,
+	formatInvoiceCode,
+	formatInvoiceType,
 	packagesEndingSoon,
 	tuitionTotals,
 } from "@/lib/tuition-from-kernel";
@@ -181,12 +183,16 @@ export function TuitionRoute() {
 								const s = data.students.find((st) => st.id === i.sid);
 								return {
 									cells: [
-										<span key="id" className="font-mono text-meta text-xs">
-											{i.id}
+										<span
+											key="id"
+											title={i.id}
+											className="font-mono text-meta text-xs"
+										>
+											{formatInvoiceCode(i.id)}
 										</span>,
 										s?.name ?? "",
 										<span key="t" title={i.note || undefined}>
-											<Tag>{i.type}</Tag>
+											<Tag>{formatInvoiceType(i.type)}</Tag>
 										</span>,
 										<span key="a" className="font-mono">
 											{fmtVND(i.amount)}

@@ -12,6 +12,10 @@ import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { averageBand, fmtVND } from "@/lib/mock-data";
 import { useStudents } from "@/lib/repos/use-students";
+import {
+	formatInvoiceCode,
+	formatInvoiceType,
+} from "@/lib/tuition-from-kernel";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
@@ -215,8 +219,16 @@ function StudentDetailRoute() {
 						headers={["Mã", "Loại", "Số tiền", "Ngày", "Trạng thái"]}
 						rows={invoices.map((inv) => ({
 							cells: [
-								inv.id,
-								inv.type,
+								<span
+									key={`${inv.id}-id`}
+									title={inv.id}
+									className="font-mono text-meta text-xs"
+								>
+									{formatInvoiceCode(inv.id)}
+								</span>,
+								<span key={`${inv.id}-t`} title={inv.note || undefined}>
+									<Tag>{formatInvoiceType(inv.type)}</Tag>
+								</span>,
 								<span key={inv.id} className="font-mono">
 									{fmtVND(inv.amount)}
 								</span>,

@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest";
 import type { Invoice, Student } from "./mock-data";
 import {
+	DEFAULT_INVOICE_TYPE,
 	formatDue,
+	formatInvoiceCode,
+	formatInvoiceType,
 	packagesEndingSoon,
 	tuitionTotals,
 } from "./tuition-from-kernel";
@@ -103,5 +106,53 @@ describe("formatDue", () => {
 
 	test("calendar-invalid dates roll no fake day — em dash", () => {
 		expect(formatDue("2026-02-30")).toBe("—");
+	});
+});
+
+describe("formatInvoiceCode (Issue #176)", () => {
+	test("formats 36-character UUID to compact INV-XXXXXXXX code", () => {
+		expect(formatInvoiceCode("6b2ac60c-1d64-4156-977d-07a52f554cdd")).toBe(
+			"INV-2F554CDD",
+		);
+		expect(formatInvoiceCode("91c7d196-4a06-4c9c-af32-d24e78f5f977")).toBe(
+			"INV-78F5F977",
+		);
+	});
+
+	test("preserves existing INV- prefixed codes", () => {
+		expect(formatInvoiceCode("INV-0001")).toBe("INV-0001");
+		expect(formatInvoiceCode("INV-084")).toBe("INV-084");
+		expect(formatInvoiceCode("INV-1")).toBe("INV-1");
+		expect(formatInvoiceCode("inv-123")).toBe("INV-123");
+	});
+
+	test("handles short identifiers by prefixing INV-", () => {
+		expect(formatInvoiceCode("abc-1234")).toBe("INV-ABC1234");
+		expect(formatInvoiceCode("0001")).toBe("INV-0001");
+	});
+
+	test("returns em dash for empty or missing id", () => {
+		expect(formatInvoiceCode("")).toBe("—");
+		expect(formatInvoiceCode(undefined as unknown as string)).toBe("—");
+	});
+});
+
+describe("formatInvoiceType (Issue #176)", () => {
+	test("defaults empty or whitespace-only type to 'Học phí'", () => {
+		expect(formatInvoiceType("")).toBe(DEFAULT_INVOICE_TYPE);
+		expect(formatInvoiceType("   ")).toBe(DEFAULT_INVOICE_TYPE);
+		expect(formatInvoiceType()).toBe(DEFAULT_INVOICE_TYPE);
+		expect(formatInvoiceType(null)).toBe(DEFAULT_INVOICE_TYPE);
+	});
+
+	test("defaults em dash and hyphen to 'Học phí'", () => {
+		expect(formatInvoiceType("—")).toBe(DEFAULT_INVOICE_TYPE);
+		expect(formatInvoiceType("-")).toBe(DEFAULT_INVOICE_TYPE);
+	});
+
+	test("preserves custom and non-empty types", () => {
+		expect(formatInvoiceType("Gói 12 buổi")).toBe("Gói 12 buổi");
+		expect(formatInvoiceType("Tài liệu")).toBe("Tài liệu");
+		expect(formatInvoiceType("Học phí")).toBe("Học phí");
 	});
 });

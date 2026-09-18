@@ -498,6 +498,23 @@ describe("kernel-backed store wiring", () => {
 		expect(syllabus).toMatch(/title="Giáo trình"/);
 	});
 
+	test("tuition invoice table formats UUID code and defaults empty type (#176)", () => {
+		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		expect(tuition).toMatch(/formatInvoiceCode\(i\.id\)/);
+		expect(tuition).toMatch(/title=\{i\.id\}/);
+		expect(tuition).toMatch(/formatInvoiceType\(i\.type\)/);
+		// Ensure bare raw {i.id} is no longer rendered in the Mã cell
+		expect(tuition).not.toMatch(
+			/<span key="id" className="font-mono text-meta text-xs">\s*\{i\.id\}\s*<\/span>/,
+		);
+		// Ensure bare raw <Tag>{i.type}</Tag> is no longer rendered
+		expect(tuition).not.toMatch(/<Tag>\{i\.type\}<\/Tag>/);
+
+		const studentDetail = readSrc("../routes/_auth/students/$studentId.tsx");
+		expect(studentDetail).toMatch(/formatInvoiceCode\(inv\.id\)/);
+		expect(studentDetail).toMatch(/formatInvoiceType\(inv\.type\)/);
+	});
+
 	test("persisted comments use server identity and notifications expose no mark-read write", () => {
 		const assignment = readSrc("../routes/_auth/assignments/$assignmentId.tsx");
 		expect(assignment).toMatch(/key=\{c\.id\}/);
