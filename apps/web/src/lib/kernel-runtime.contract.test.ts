@@ -638,6 +638,7 @@ describe("runtime state boundary", () => {
 	test("empty state is runtime-owned and contains every kernel collection", async () => {
 		const { emptyKernelData } = await import("./kernel-state");
 		expect(Object.keys(emptyKernelData).sort()).toEqual([
+			"assignmentPrompts",
 			"assignments",
 			"classes",
 			"commentBank",

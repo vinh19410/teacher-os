@@ -1,4 +1,5 @@
 export * from "./assignment";
+export * from "./assignment-prompt";
 export * from "./auth";
 export * from "./class";
 export * from "./comment-bank";

@@ -46,6 +46,18 @@ export interface Lesson {
 	zoom: string;
 }
 export type InvoiceStatus = "paid" | "overdue" | "unpaid";
+export interface AssignmentPrompt {
+	id: string;
+	task: string;
+	genre: string;
+	title: string;
+	band: string;
+	source: string;
+	prompt: string;
+	note: string;
+	status: "draft" | "ready";
+}
+
 export interface Invoice {
 	id: string;
 	sid: string;
@@ -152,6 +164,7 @@ export interface MockData {
 	lessons: Lesson[];
 	invoices: Invoice[];
 	assignments: Assignment[];
+	assignmentPrompts: AssignmentPrompt[];
 	reports: Report[];
 	notifs: Notif[];
 	commentBank: CommentBankItem[];
@@ -166,6 +179,7 @@ export type KernelHydratedData = Pick<
 	| "syllabi"
 	| "lessons"
 	| "assignments"
+	| "assignmentPrompts"
 	| "invoices"
 	| "reports"
 	| "notifs"

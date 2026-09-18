@@ -2,6 +2,7 @@ import type { MockData } from "../../src/lib/mock-data";
 
 /** Minimal historical fixture for reducer-only unit tests. */
 export const seedData: MockData = {
+	assignmentPrompts: [],
 	students: [
 		{
 			id: "s1",

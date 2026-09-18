@@ -5,6 +5,7 @@ export const emptyKernelData: KernelHydratedData = {
 	lessons: [],
 	invoices: [],
 	assignments: [],
+	assignmentPrompts: [],
 	reports: [],
 	notifs: [],
 	commentBank: [],

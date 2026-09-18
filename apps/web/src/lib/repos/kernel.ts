@@ -13,6 +13,7 @@ import {
 	MalformedSnapshotError,
 } from "@/lib/kernel-load-state";
 import type { KernelHydratedData } from "@/lib/mock-data";
+import { mapAssignmentPrompts } from "./assignment-prompts";
 import { mapAssignments } from "./assignments";
 import { mapClasses } from "./classes";
 import { mapCommentBank } from "./comment-bank";
@@ -158,6 +159,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/reports",
 				body: { ...action.payload },
 			};
+		case "create-assignment-prompt":
+			// #202: assignmentPromptCreateSchema is .strict() — the payload is
+			// the entire body, all eight fields.
+			return {
+				path: "/api/assignments/prompts",
+				body: { ...action.payload },
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -225,6 +233,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		assignments: mapAssignments(snapshot),
 		invoices: mapInvoices(snapshot),
 		reports: mapReports(snapshot),
+		assignmentPrompts: mapAssignmentPrompts(snapshot),
 		notifs: mapNotifs(snapshot),
 		commentBank: mapCommentBank(snapshot),
 		enrollments: mapEnrollments(snapshot),
@@ -359,6 +368,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"packages",
 	"lessons",
 	"assignments",
+	"assignmentPrompts",
 	"invoices",
 	"reports",
 	"notifs",

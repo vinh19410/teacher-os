@@ -10,6 +10,7 @@ import { describe, expect, test } from "vitest";
 import { mapSyllabi } from "./syllabus";
 
 const snapshot: KernelSnapshot = {
+	assignmentPrompts: [],
 	students: [],
 	classes: [],
 	syllabi: [
@@ -183,6 +184,7 @@ describe("mapSyllabi", () => {
 
 	test("empty org maps to an empty list, never seed", () => {
 		const empty: KernelSnapshot = {
+			assignmentPrompts: [],
 			students: [],
 			classes: [],
 			syllabi: [],

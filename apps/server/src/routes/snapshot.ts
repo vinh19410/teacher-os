@@ -9,6 +9,7 @@ import {
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
+import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -84,6 +85,7 @@ export async function loadSnapshot(
 		lessonRows,
 		scheduledRows,
 		assignmentRows,
+		assignmentPromptRows,
 		invoiceRows,
 		reportRows,
 		notifRows,
@@ -157,6 +159,11 @@ export async function loadSnapshot(
 			.from(assignment)
 			.where(eq(assignment.orgId, orgId))
 			.orderBy(asc(assignment.createdAt)),
+		db
+			.select()
+			.from(assignmentPrompt)
+			.where(eq(assignmentPrompt.orgId, orgId))
+			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
 		loadInvoices(db, orgId),
 		loadReports(db, orgId),
 		loadNotifs(db, orgId),
@@ -273,6 +280,19 @@ export async function loadSnapshot(
 		})),
 		invoices: invoiceRows,
 		reports: reportRows,
+		assignmentPrompts: assignmentPromptRows.map(
+			({ id, task, genre, title, band, source, prompt, note, status }) => ({
+				id,
+				task,
+				genre,
+				title,
+				band,
+				source,
+				prompt,
+				note,
+				status,
+			}),
+		),
 		notifs: notifRows,
 		commentBank: commentBankRows,
 	};

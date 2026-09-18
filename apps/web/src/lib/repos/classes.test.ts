@@ -7,6 +7,7 @@ import { describe, expect, test } from "vitest";
 import { mapClasses } from "./classes";
 
 const snapshot: KernelSnapshot = {
+	assignmentPrompts: [],
 	students: [
 		{
 			id: "st-1",
@@ -169,6 +170,7 @@ describe("mapClasses", () => {
 
 	test("empty org maps to an empty list, never seed", () => {
 		const empty: KernelSnapshot = {
+			assignmentPrompts: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -187,6 +189,7 @@ describe("mapClasses", () => {
 
 describe("mapClasses sessionsDone derive (Wave 4)", () => {
 	const snapshot: KernelSnapshot = {
+		assignmentPrompts: [],
 		students: [],
 		classes: [
 			{
@@ -332,6 +335,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 			),
 		);
 		return {
+			assignmentPrompts: [],
 			students: [],
 			classes: [baseClass],
 			syllabi: [],
