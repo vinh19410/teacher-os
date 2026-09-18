@@ -167,7 +167,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				type: action.payload.type,
 				skills: action.payload.type === "ielts" ? action.payload.skills : [],
 				mode: action.payload.mode,
-				syllabusId: "", // runtime pointer arrives via snapshot refresh; the reducer is a dead fixture
+				syllabusId: action.payload.templateId || "",
 				studentIds: [],
 				schedule: JSON.stringify({
 					...action.payload.schedule,

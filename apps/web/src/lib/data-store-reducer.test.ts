@@ -484,6 +484,7 @@ describe("reducer", () => {
 		expect(added.sessionsDone).toBe(0);
 		expect(added.id).toMatch(/^c-/);
 		expect(added.type).toBe("ielts");
+		expect(added.syllabusId).toBe("sy1");
 		expect(added.skills).toEqual(["Writing", "Speaking"]);
 		expect(typeof added.schedule).toBe("string");
 		expect(JSON.parse(added.schedule)).toEqual({
@@ -511,6 +512,7 @@ describe("reducer", () => {
 		});
 		const added = next.classes[next.classes.length - 1];
 		expect(added.type).toBe("communication");
+		expect(added.syllabusId).toBe("");
 		expect(added.skills).toEqual([]);
 	});
 

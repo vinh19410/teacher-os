@@ -2766,6 +2766,8 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		const copy = snapshot.syllabi.find((s) => s.id === cls?.syllabusId);
 		expect(copy?.classId).toBe(classId);
 		expect(copy?.modules).toHaveLength(2);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+		expect(copy?.modules.flatMap((m) => m.lessons)).toHaveLength(3);
 
 		const bad = await t.call("/api/classes", {
 			session,
