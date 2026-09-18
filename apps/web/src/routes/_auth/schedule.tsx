@@ -171,18 +171,13 @@ export function ScheduleRoute() {
 							].sort((a, b) => a.time.localeCompare(b.time));
 							const isToday = dates[i] === todayIso;
 							return (
-								<div
-									key={dn}
-									className="day-col flex max-app:items-stretch max-app:gap-3"
-								>
-									<div
-										className={`pt-2 pb-3 text-center max-app:min-w-16 max-app:border-l-3 max-app:border-l-solid max-app:pt-0 max-app:pb-0 max-app:pl-3 max-app:text-left ${
-											isToday
-												? "max-app:border-l-accent-blue"
-												: "max-app:border-l-line-soft"
-										}`}
-									>
-										<div className="font-semibold text-[11px] text-muted-fg uppercase tracking-[0.04em]">
+								<div key={dn} className="day-col flex flex-col">
+									<div className="pb-3 text-center">
+										<div
+											className={`font-semibold text-[11px] uppercase tracking-[0.04em] ${
+												isToday ? "text-accent-blue" : "text-muted-fg"
+											}`}
+										>
 											{dn}
 										</div>
 										<div
