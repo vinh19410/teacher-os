@@ -1,7 +1,7 @@
 ---
 title: "Trang tạo bài tập — Thêm đề vào ngân hàng (thiết kế mới)"
 description: "Dựng trang /assignments/new theo design v3 'Thêm đề vào ngân hàng' (Open Design): composer đề Writing Task 1/2 + ngữ cảnh ngân hàng + xem trước học viên + sticky action bar + success state, persist thật end-to-end qua kernel (bảng assignment_prompt mới, POST /api/assignments/prompts, snapshot, command bus)."
-status: pending
+status: completed
 priority: P2
 effort: 12h
 issue: 202

@@ -1,7 +1,7 @@
 ---
 title: "Phase 3: Tests, E2E & verification sweep"
 description: "Server tests cho POST /api/assignments/prompts (201/400/401/org-isolation), web unit cho presets + mapper + kernelCommand + routes-matcher, component test trang mới, Playwright E2E luồng tạo đề ready + draft, và sweep toàn workspace (biome, check-types, turbo test, topology-drift)."
-status: pending
+status: completed
 ---
 
 # Phase 3: Tests, E2E & verification sweep

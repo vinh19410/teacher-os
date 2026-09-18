@@ -1,7 +1,7 @@
 ---
 title: "Phase 2: Trang /assignments/new + data layer web"
 description: "Dựng trang tạo đề theo design v3 'Thêm đề vào ngân hàng' (composer Task 1/2 + dạng đề + band + preview học viên + sticky action bar + success state), kernel action create-assignment-prompt, navigation wiring, xóa AddAssignmentModal placeholder."
-status: pending
+status: completed
 ---
 
 # Phase 2: Trang /assignments/new + data layer web
