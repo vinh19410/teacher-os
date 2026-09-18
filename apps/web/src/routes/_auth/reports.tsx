@@ -25,9 +25,14 @@ const STATUS_LABEL: Record<string, string> = {
 	draft: "Nháp",
 };
 
-function ReportsRoute() {
+export function ReportsRoute() {
 	const { data } = useData();
 	const [modalOpen, setModalOpen] = useState(false);
+	// Issue #172: Teacher OS currently does not have a connected Zalo OA channel.
+	// When unconnected, the CTA / claim "Gửi qua Zalo OA" is hidden to prevent
+	// fake integration promises; the UI honestly reports the report count and
+	// connection status badge.
+	const isZaloConnected = false;
 
 	const sendLog = data.reports
 		.filter((r) => r.status === "sent" || r.status === "read")
@@ -52,9 +57,23 @@ function ReportsRoute() {
 			<PageHead
 				title="Báo cáo phụ huynh"
 				lead={
-					reportCount > 0
-						? `Gửi qua Zalo OA · ${reportCount} báo cáo`
-						: "Gửi qua Zalo OA"
+					isZaloConnected ? (
+						reportCount > 0 ? (
+							`Gửi qua Zalo OA · ${reportCount} báo cáo`
+						) : (
+							"Gửi qua Zalo OA"
+						)
+					) : (
+						<span className="flex flex-wrap items-center gap-2">
+							<span>
+								{reportCount > 0
+									? `${reportCount} báo cáo`
+									: "Chưa có báo cáo nào"}
+							</span>
+							<span className="text-muted-fg">·</span>
+							<Badge variant="muted">Zalo OA: Chưa kết nối</Badge>
+						</span>
+					)
 				}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">

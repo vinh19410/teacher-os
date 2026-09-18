@@ -113,7 +113,7 @@ export function CreateReportModal({
 				</Field>
 				<Field label="Gửi qua">
 					<Select value={channel} onChange={(e) => setChannel(e.target.value)}>
-						<option>Zalo OA</option>
+						<option value="Zalo OA">Zalo OA (Chưa kết nối)</option>
 						<option>Email</option>
 					</Select>
 				</Field>
