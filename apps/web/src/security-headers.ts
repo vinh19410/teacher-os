@@ -6,7 +6,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
 	"Permissions-Policy":
 		"camera=(), microphone=(), geolocation=(), browsing-topics=()",
 	"Content-Security-Policy":
-		"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;",
+		"default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;",
 };
 
 export function isLocalHost(hostname: string): boolean {

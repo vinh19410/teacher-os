@@ -289,6 +289,9 @@ describe("apps/web worker fetch handler", () => {
 		expect(res.headers.get("content-security-policy")).toContain(
 			"frame-ancestors 'none'",
 		);
+		expect(res.headers.get("content-security-policy")).toContain(
+			"script-src 'self' https://static.cloudflareinsights.com",
+		);
 	});
 
 	it("applies security headers to 404 responses and dotfile rejections", async () => {
