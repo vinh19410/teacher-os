@@ -11,6 +11,7 @@ import { useData } from "@/lib/data-store";
 import type { LessonType } from "@/lib/mock-data";
 import { dayNames } from "@/lib/mock-data";
 import {
+	distinctStudentsBySid,
 	selectProjectedWeekBlocks,
 	selectWeekColumnSessions,
 	weekSlotCount,
@@ -250,11 +251,18 @@ export function ScheduleRoute() {
 																}
 															>
 																{className}
-																{s.rows.length > 1 && (
-																	<span className="ml-1 font-normal text-[11px] text-muted-fg">
-																		({s.rows.length} HV)
-																	</span>
-																)}
+																{(() => {
+																	// #204: legacy undated entries bundle whole-course rows; the chip
+																	// must count students, not rows.
+																	const students = distinctStudentsBySid(
+																		s.rows,
+																	).length;
+																	return students > 1 ? (
+																		<span className="ml-1 font-normal text-[11px] text-muted-fg">
+																			({students} HV)
+																		</span>
+																	) : null;
+																})()}
 															</div>
 															<div className="mt-px text-[11px] text-muted-fg">
 																{s.type} · {s.topic.substring(0, 30)}

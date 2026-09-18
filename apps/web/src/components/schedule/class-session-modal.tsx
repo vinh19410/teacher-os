@@ -12,7 +12,11 @@ import { formatSessionDate } from "@/lib/class-sessions";
 import { useData } from "@/lib/data-store";
 import { lessonDayLabel } from "@/lib/format-schedule";
 import type { Lesson } from "@/lib/mock-data";
-import { findSessionRows, type SessionRef } from "@/lib/schedule-week";
+import {
+	distinctStudentsBySid,
+	findSessionRows,
+	type SessionRef,
+} from "@/lib/schedule-week";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
@@ -177,10 +181,10 @@ export function ClassSessionModal({
 					/* Student Rows List */
 					<div className="flex flex-col gap-3">
 						<div className="font-medium text-muted-fg text-xs">
-							Danh sách học viên ({rows.length})
+							Danh sách học viên ({distinctStudentsBySid(rows).length})
 						</div>
 						<div className="flex flex-col divide-y divide-line-soft">
-							{rows.map((row) => {
+							{distinctStudentsBySid(rows).map((row) => {
 								const student = studentById(row.sid);
 								const studentName = student?.name ?? `Học viên #${row.sid}`;
 								const isRowPending = isPending(row.id);

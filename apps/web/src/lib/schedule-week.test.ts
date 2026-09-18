@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { ClassGroup, Lesson } from "@/lib/mock-data";
 import {
+	distinctStudentsBySid,
 	findSessionRows,
 	rollupSessionStatus,
 	selectProjectedWeekBlocks,
@@ -395,5 +396,52 @@ describe("weekSlotCount (AC8 — rendered-week distinct slots)", () => {
 		};
 		const columns = [[cancelledEntry, multiEnrollmentActiveEntry]];
 		expect(weekSlotCount(columns, [])).toBe(1);
+	});
+});
+
+describe("distinctStudentsBySid (issue #204)", () => {
+	test("legacy N-lessons x M-students bundle counts people, not rows", () => {
+		const rows: Lesson[] = [];
+		// "Lớp Test 1" shape: 2 enrollments x 13 lessons for one (day, time).
+		for (let lessonIndex = 0; lessonIndex < 13; lessonIndex += 1) {
+			for (const sid of ["s-1", "s-2"]) {
+				rows.push(
+					lesson({
+						id: `legacy-${lessonIndex}-${sid}`,
+						classId: "cls-leg",
+						sid,
+						day: 2,
+						time: "19:00",
+						date: null,
+					}),
+				);
+			}
+		}
+		expect(rows).toHaveLength(26);
+		const students = distinctStudentsBySid(rows);
+		expect(students).toHaveLength(2);
+		expect(students.map((r) => r.sid)).toEqual(["s-1", "s-2"]);
+	});
+
+	test("dated rows are unaffected (one row per student already)", () => {
+		const rows = [
+			lesson({
+				id: "d-1",
+				classId: "c",
+				sid: "s-1",
+				day: 2,
+				time: "19:00",
+				date: "2026-09-15",
+			}),
+			lesson({
+				id: "d-2",
+				classId: "c",
+				sid: "s-2",
+				day: 2,
+				time: "19:00",
+				date: "2026-09-15",
+			}),
+		];
+		expect(distinctStudentsBySid(rows)).toHaveLength(2);
 	});
 });
