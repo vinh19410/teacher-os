@@ -54,6 +54,7 @@ export default {
 				status: 404,
 				statusText: "Not Found",
 				headers: applySecurityHeaders(
+					request,
 					new Headers({
 						"Content-Type": "text/plain; charset=utf-8",
 						"Cache-Control": "no-store",
@@ -67,7 +68,7 @@ export default {
 			if (env.ASSETS) {
 				const res = await env.ASSETS.fetch(request);
 				if (res.ok) {
-					const headers = applySecurityHeaders(res.headers);
+					const headers = applySecurityHeaders(request, res.headers);
 					if (!headers.has("Content-Type")) {
 						headers.set("Content-Type", "text/plain; charset=utf-8");
 					}
@@ -82,6 +83,7 @@ export default {
 				status: 200,
 				statusText: "OK",
 				headers: applySecurityHeaders(
+					request,
 					new Headers({
 						"Content-Type": "text/plain; charset=utf-8",
 						"Cache-Control": "public, max-age=86400",
@@ -96,7 +98,7 @@ export default {
 			return new Response(res.body, {
 				status: res.status,
 				statusText: res.statusText,
-				headers: applySecurityHeaders(res.headers),
+				headers: applySecurityHeaders(request, res.headers),
 			});
 		}
 
@@ -108,7 +110,7 @@ export default {
 			return new Response(res.body, {
 				status: res.status,
 				statusText: res.statusText,
-				headers: applySecurityHeaders(res.headers),
+				headers: applySecurityHeaders(request, res.headers),
 			});
 		}
 
@@ -123,7 +125,7 @@ export default {
 				method: "GET",
 			});
 			const shell = await env.ASSETS.fetch(shellRequest);
-			const headers = applySecurityHeaders(shell.headers);
+			const headers = applySecurityHeaders(request, shell.headers);
 			headers.delete("etag");
 			headers.delete("last-modified");
 			headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -138,6 +140,7 @@ export default {
 			status: 404,
 			statusText: "Not Found",
 			headers: applySecurityHeaders(
+				request,
 				new Headers({
 					"Content-Type": "text/plain; charset=utf-8",
 					"Cache-Control": "no-cache, no-store, must-revalidate",
