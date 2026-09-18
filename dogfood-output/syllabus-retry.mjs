@@ -26,10 +26,10 @@ async function main() {
 	const password = `Qa!${randomBytes(12).toString("base64url")}`;
 	const log = [];
 	const shot = async (n) => {
-		await page.screenshot({ path: join(OUT, n + ".png"), fullPage: true });
+		await page.screenshot({ path: join(OUT, `${n}.png`), fullPage: true });
 	};
 
-	await page.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
+	await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(800);
 	await page.locator("#tab-signup").click();
 	await page.locator("#su-name").fill("QA Syllabus");
@@ -45,9 +45,9 @@ async function main() {
 		);
 	await page.waitForURL(/dashboard/, { timeout: 25000 });
 	await page.waitForTimeout(1500);
-	log.push("signed in " + page.url());
+	log.push(`signed in ${page.url()}`);
 
-	await page.goto(BASE + "/syllabus", { waitUntil: "domcontentloaded" });
+	await page.goto(`${BASE}/syllabus`, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(800);
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	await page.waitForTimeout(400);
@@ -61,7 +61,7 @@ async function main() {
 	await shot("after-create");
 	const t1 = await page.evaluate(() => document.body.innerText);
 	log.push(
-		"after create: " + (t1.includes("Syllabus Retry") ? "LISTED" : "MISSING"),
+		`after create: ${t1.includes("Syllabus Retry") ? "LISTED" : "MISSING"}`,
 	);
 	log.push(t1.slice(0, 400));
 
@@ -76,7 +76,7 @@ async function main() {
 		await page.waitForTimeout(2000);
 		await shot("after-module");
 		const t2 = await page.evaluate(() => document.body.innerText);
-		log.push("module: " + (t2.includes("Module Retry") ? "OK" : "MISSING"));
+		log.push(`module: ${t2.includes("Module Retry") ? "OK" : "MISSING"}`);
 
 		const addLesson = page.getByRole("button", { name: "+ Thêm buổi học" });
 		if (await addLesson.count()) {
@@ -88,7 +88,7 @@ async function main() {
 			await page.waitForTimeout(2000);
 			await shot("after-lesson");
 			const t3 = await page.evaluate(() => document.body.innerText);
-			log.push("lesson: " + (t3.includes("Lesson Retry") ? "OK" : "MISSING"));
+			log.push(`lesson: ${t3.includes("Lesson Retry") ? "OK" : "MISSING"}`);
 			log.push(t3.slice(0, 600));
 		} else log.push("no add lesson button");
 	}

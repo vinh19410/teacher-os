@@ -51,6 +51,7 @@ function klass(
 
 function data(partial: Partial<MockData>): MockData {
 	return {
+		assignmentPrompts: [],
 		students: [],
 		lessons: [],
 		invoices: [],

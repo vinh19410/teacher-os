@@ -29,6 +29,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 const snapshot: KernelSnapshot = {
+	assignmentPrompts: [],
 	students: [
 		{
 			id: "st-1",

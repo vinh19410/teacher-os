@@ -4042,3 +4042,112 @@ describe("workspace settings persistence (issue #179)", () => {
 		expect(jsonB.preferredChannel).toBe("Zalo trước, email dự phòng");
 	});
 });
+
+describe("assignment prompt bank (issue #202)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+
+	const validBody = {
+		task: "task2",
+		genre: "discuss",
+		title: "Writing Task 2 — Discuss both views",
+		band: "7.0",
+		source: "Cambridge IELTS 10, Test 2",
+		prompt:
+			"Some people think that all university students should study whatever they like.\n\nDiscuss both these views and give your own opinion.",
+		note: "",
+		status: "ready",
+	};
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Giáo viên ngân hàng A");
+		orgB = await t.insertUser("Giáo viên ngân hàng B");
+	});
+
+	test("POST ready prompt persists and lands in the snapshot (#202)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: validBody,
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row).toMatchObject({
+			id,
+			task: "task2",
+			genre: "discuss",
+			title: "Writing Task 2 — Discuss both views",
+			band: "7.0",
+			source: "Cambridge IELTS 10, Test 2",
+			status: "ready",
+		});
+	});
+
+	test("POST draft keeps the draft status in the snapshot", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Nháp 1",
+				status: "draft",
+				note: "cần duyệt",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.status).toBe("draft");
+		expect(row?.note).toBe("cần duyệt");
+	});
+
+	test("POST rejects invalid bodies with 400", async () => {
+		for (const body of [
+			{ ...validBody, title: "" }, // blank title
+			{ ...validBody, title: "  " }, // whitespace-only title
+			{ ...validBody, prompt: "" }, // blank prompt
+			{ ...validBody, task: "task3" }, // enum
+			{ ...validBody, band: "8.0" }, // enum
+			{ ...validBody, status: "sent" }, // enum
+			{ ...validBody, extra: true }, // strict
+			{ task: "task2" }, // missing fields
+		]) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body,
+			});
+			expect(res.status, JSON.stringify(body).slice(0, 60)).toBe(400);
+		}
+	});
+
+	test("POST without a session is 401", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			method: "POST",
+			body: validBody,
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("prompts are org-scoped: org B never sees org A's bank", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: { ...validBody, title: "Đề riêng của A" },
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const bankB = (await t.kernel(orgB)).assignmentPrompts;
+		expect(bankB.some((r) => r.id === id)).toBe(false);
+		expect(bankB.some((r) => r.title === "Đề riêng của A")).toBe(false);
+	});
+});

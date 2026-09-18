@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AddAssignmentModal } from "@/components/modals/add-assignment-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,7 +35,6 @@ export function AssignmentsRoute({
 	const navigate = useNavigate();
 	const { data } = useData();
 	const [filter, setFilter] = useState(initialFilter);
-	const [modalOpen, setModalOpen] = useState(false);
 
 	const pendingCount = data.assignments.filter(
 		(a) => a.status !== "graded",
@@ -55,7 +53,9 @@ export function AssignmentsRoute({
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => setModalOpen(true)}>+ Tạo bài tập</Button>
+				<Button onClick={() => navigate({ to: "/assignments/new" })}>
+					+ Tạo bài tập
+				</Button>
 			</div>
 			{data.assignments.length === 0 ? (
 				<Card
@@ -134,10 +134,6 @@ export function AssignmentsRoute({
 					/>
 				</Card>
 			)}
-			<AddAssignmentModal
-				open={modalOpen}
-				onClose={() => setModalOpen(false)}
-			/>
 		</div>
 	);
 }

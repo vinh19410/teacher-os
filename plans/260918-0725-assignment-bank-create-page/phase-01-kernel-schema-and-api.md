@@ -1,7 +1,7 @@
 ---
 title: "Phase 1: Kernel schema, contract & POST route (db + api + server + web glue)"
 description: "Tạo bảng assignment_prompt (drizzle + migration D1), contract zod + KernelAssignmentPromptRow + mở rộng KernelSnapshot, POST /api/assignments/prompts org-scoped, và web glue tối thiểu (collection key + mapper + MockData slice) để workspace stay-green."
-status: pending
+status: completed
 ---
 
 # Phase 1: Kernel schema, contract & POST route

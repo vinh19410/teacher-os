@@ -263,6 +263,27 @@ export const assignmentGradeSchema = z.object({
 });
 export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
 
+/**
+ * Ngân hàng đề — tạo đề Writing để lưu vào bank (design 2026-09-18).
+ * `status` luôn tường minh trên wire (giống reportCreateSchema):
+ * "ready" = hiện khi giao từ trang Lớp học, "draft" = bản nháp riêng tư.
+ */
+export const assignmentPromptCreateSchema = z
+	.object({
+		task: z.enum(["task1", "task2"]),
+		genre: z.string().trim().min(1).max(40),
+		title: z.string().trim().min(1).max(200),
+		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
+		source: z.string().trim().max(200),
+		prompt: z.string().trim().min(1).max(5000),
+		note: z.string().max(2000),
+		status: z.enum(["draft", "ready"]),
+	})
+	.strict();
+export type AssignmentPromptCreate = z.infer<
+	typeof assignmentPromptCreateSchema
+>;
+
 /** Feedback is teacher-authored and may contain sensitive education data. */
 export const commentBankCreateSchema = z
 	.object({
@@ -546,6 +567,18 @@ export interface KernelInvoiceRow {
 	method: string;
 }
 
+export interface KernelAssignmentPromptRow {
+	id: string;
+	task: string;
+	genre: string;
+	title: string;
+	band: string;
+	source: string;
+	prompt: string;
+	note: string;
+	status: "draft" | "ready" | string;
+}
+
 export interface KernelReportRow {
 	id: string;
 	studentId: string;
@@ -580,6 +613,7 @@ export interface KernelSnapshot {
 	assignments: KernelAssignmentRow[];
 	invoices: KernelInvoiceRow[];
 	reports: KernelReportRow[];
+	assignmentPrompts: KernelAssignmentPromptRow[];
 	notifs: KernelNotifRow[];
 	commentBank: KernelCommentBankRow[];
 }

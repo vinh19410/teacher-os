@@ -24,3 +24,24 @@ describe("kernelCommand create-report", () => {
 		expect(request.body).toEqual(payload);
 	});
 });
+
+describe("kernelCommand create-assignment-prompt (#202)", () => {
+	test("maps to /api/assignments/prompts with the exact eight-field body", () => {
+		const payload = {
+			task: "task2",
+			genre: "discuss",
+			title: "Discuss both views",
+			band: "7.0",
+			source: "Cambridge 10, Test 2",
+			prompt: "Some people think…",
+			note: "",
+			status: "ready",
+		} as const;
+		const request = kernelCommand({
+			type: "create-assignment-prompt",
+			payload: { ...payload },
+		});
+		expect(request.path).toBe("/api/assignments/prompts");
+		expect(request.body).toEqual(payload);
+	});
+});

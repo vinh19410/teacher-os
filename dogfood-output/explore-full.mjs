@@ -33,7 +33,7 @@ function note(severity, category, title, extra = {}) {
 function covered(feature, status, detail = "") {
 	coverage.push({ feature, status, detail });
 	console.log(
-		`  cover ${status.padEnd(8)} ${feature}${detail ? " — " + detail.slice(0, 80) : ""}`,
+		`  cover ${status.padEnd(8)} ${feature}${detail ? ` — ${detail.slice(0, 80)}` : ""}`,
 	);
 }
 
@@ -173,7 +173,7 @@ async function main() {
 		const t = await bodyText(page);
 		await shot(page, "after-syllabus");
 		if (!/Syllabus QA Full/.test(t))
-			throw new Error("syllabus not listed: " + t.slice(0, 300));
+			throw new Error(`syllabus not listed: ${t.slice(0, 300)}`);
 		covered("add-syllabus", "PASS");
 	});
 
@@ -242,7 +242,7 @@ async function main() {
 		await shot(page, "class-modal");
 		await page.getByPlaceholder(/IELTS Writing/).fill("Lớp QA Full");
 		await page.getByRole("button", { name: /^Writing$/ }).click();
-		const tpl = page
+		const _tpl = page
 			.locator("select")
 			.filter({ hasText: /Syllabus QA Full|Lớp trống/ });
 		if (await page.locator("select").count()) {
@@ -494,7 +494,7 @@ async function main() {
 				},
 			);
 		}
-		const row = page.locator("table tbody tr, [role=row]").nth(1);
+		const _row = page.locator("table tbody tr, [role=row]").nth(1);
 		if ((await page.getByText(/Task|Writing|Bài/).count()) > 2) {
 			await page
 				.locator("table tbody tr")
@@ -572,7 +572,7 @@ async function main() {
 		} else covered("global-search", "FAIL", "no search input");
 
 		await goto(page, "/dashboard");
-		const bell = page
+		const _bell = page
 			.getByRole("button", { name: /thông báo|notification/i })
 			.or(page.locator("header button").last());
 		await page.locator("header").locator("button").last().click();
