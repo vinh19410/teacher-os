@@ -53,9 +53,17 @@ export function AssignmentsRoute({
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => navigate({ to: "/assignments/new" })}>
-					+ Tạo bài tập
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						onClick={() => navigate({ to: "/assignments/bank" })}
+					>
+						Ngân hàng đề
+					</Button>
+					<Button onClick={() => navigate({ to: "/assignments/new" })}>
+						+ Tạo bài tập
+					</Button>
+				</div>
 			</div>
 			{data.assignments.length === 0 ? (
 				<Card

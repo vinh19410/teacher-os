@@ -74,6 +74,12 @@ export function CreateSuccessCard({
 					Tạo đề khác
 				</Button>
 				<Link
+					to="/assignments/bank"
+					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm hover:text-fg"
+				>
+					Xem ngân hàng đề
+				</Link>
+				<Link
 					to="/classes"
 					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm hover:text-fg"
 				>

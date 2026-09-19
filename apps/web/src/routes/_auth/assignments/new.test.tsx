@@ -14,6 +14,7 @@ const bank: AssignmentPrompt[] = [
 		prompt: "Some people believe that unpaid community service…",
 		note: "",
 		status: "ready",
+		createdAt: "2026-09-18T00:00:00.000Z",
 	},
 ];
 
@@ -29,6 +30,7 @@ const dataFixture = {
 	classes: [],
 	syllabi: [],
 	enrollments: [],
+	classAssignments: [],
 };
 
 const submitFixture = {

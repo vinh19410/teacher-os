@@ -4,6 +4,7 @@ import { mapInvoices } from "./invoices";
 
 const base: KernelSnapshot = {
 	assignmentPrompts: [],
+	classAssignments: [],
 	students: [],
 	classes: [],
 	syllabi: [],

@@ -2,6 +2,7 @@ export * from "./assignment";
 export * from "./assignment-prompt";
 export * from "./auth";
 export * from "./class";
+export * from "./class-assignment";
 export * from "./comment-bank";
 export * from "./enrollment";
 export * from "./invoice";

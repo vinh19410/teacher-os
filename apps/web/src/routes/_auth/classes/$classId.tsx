@@ -4,7 +4,7 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ClassScheduleTable } from "@/components/class-detail/class-schedule-table";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
@@ -12,6 +12,7 @@ import type {
 	OccurrenceActionResult,
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
+import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -106,8 +107,18 @@ function ClassDetailRoute() {
 	const { syllabusById, studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [tab, setTab] = useState("roster");
+	const [assignmentsView, setAssignmentsView] = useState<
+		"list" | "assign" | "success"
+	>("list");
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
+
+	const handleTabChange = (nextTab: string) => {
+		setTab(nextTab);
+		if (nextTab !== "assignments") {
+			setAssignmentsView("list");
+		}
+	};
 	const cls = classById(classId);
 
 	if (!cls) {
@@ -124,6 +135,25 @@ function ClassDetailRoute() {
 		cls.sessionsTotal > 0
 			? Math.round((cls.sessionsDone / cls.sessionsTotal) * 100)
 			: 0;
+	const classAssignments = useMemo(() => {
+		return (data.classAssignments ?? []).filter((ca) => ca.classId === classId);
+	}, [data.classAssignments, classId]);
+	const openAssignmentsCount = useMemo(() => {
+		return classAssignments.filter((ca) => {
+			const submitted = ca.targets.filter((t) => t.submittedAt !== null).length;
+			return submitted < ca.targets.length;
+		}).length;
+	}, [classAssignments]);
+	const totalTargetsCount = useMemo(() => {
+		return classAssignments.reduce((acc, ca) => acc + ca.targets.length, 0);
+	}, [classAssignments]);
+	const doneTargetsCount = useMemo(() => {
+		return classAssignments.reduce(
+			(acc, ca) =>
+				acc + ca.targets.filter((t) => t.submittedAt !== null).length,
+			0,
+		);
+	}, [classAssignments]);
 
 	return (
 		<div>
@@ -148,14 +178,34 @@ function ClassDetailRoute() {
 					</div>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					<Button size="sm" onClick={() => setAddStudentOpen(true)}>
+					{!(tab === "assignments" && assignmentsView !== "list") && (
+						<Button
+							size="sm"
+							onClick={() => {
+								setTab("assignments");
+								setAssignmentsView("assign");
+							}}
+						>
+							Giao bài tập
+						</Button>
+					)}
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => setAddStudentOpen(true)}
+					>
 						+ Thêm học viên
 					</Button>
 				</div>
 			</Card>
 
-			<div className="mb-6 grid grid-cols-4 gap-4 max-app:grid-cols-2">
+			<div className="mb-6 grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-app:grid-cols-2">
 				<StatCard num={String(cls.studentIds.length)} label="học viên" />
+				<StatCard num={String(openAssignmentsCount)} label="bài đang mở" />
+				<StatCard
+					num={`${doneTargetsCount}/${totalTargetsCount}`}
+					label="đã nộp trên bài mở"
+				/>
 				<StatCard
 					num={`${cls.sessionsDone}/${cls.sessionsTotal}`}
 					label="buổi đã học"
@@ -171,11 +221,21 @@ function ClassDetailRoute() {
 				tabs={[
 					{ id: "roster", label: "Học viên" },
 					{ id: "sessions", label: "Buổi học" },
+					{ id: "assignments", label: "Bài tập" },
 					{ id: "notes", label: "Ghi chú" },
 				]}
 				active={tab}
-				onChange={setTab}
+				onChange={handleTabChange}
 			/>
+
+			{tab === "assignments" && (
+				<ClassAssignmentsTab
+					key={classId}
+					classGroup={cls}
+					view={assignmentsView}
+					onViewChange={setAssignmentsView}
+				/>
+			)}
 
 			{tab === "roster" && (
 				<Card className="p-0">

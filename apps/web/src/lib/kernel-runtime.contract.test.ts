@@ -640,6 +640,7 @@ describe("runtime state boundary", () => {
 		expect(Object.keys(emptyKernelData).sort()).toEqual([
 			"assignmentPrompts",
 			"assignments",
+			"classAssignments",
 			"classes",
 			"commentBank",
 			"enrollments",

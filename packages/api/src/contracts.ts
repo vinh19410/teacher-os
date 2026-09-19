@@ -283,6 +283,21 @@ export const assignmentPromptCreateSchema = z
 export type AssignmentPromptCreate = z.infer<
 	typeof assignmentPromptCreateSchema
 >;
+/**
+ * Giao đề ngân hàng cho lớp (#208). `due` là ISO yyyy-mm-dd (so được với
+ * hôm nay — precedent `invoice.due`, khác `assignment.due` display dd/mm);
+ * min-today theo ngày VN KHÔNG nằm ở contract — route tự kiểm sau
+ * `parseStartDateStrict` (red-team F6). studentIds ≤ 100/lượt (red-team F11).
+ */
+export const classAssignmentCreateSchema = z
+	.object({
+		promptId: z.string().trim().min(1).max(100),
+		due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		note: z.string().trim().max(2000).default(""),
+		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+	})
+	.strict();
+export type ClassAssignmentCreate = z.infer<typeof classAssignmentCreateSchema>;
 
 /** Feedback is teacher-authored and may contain sensitive education data. */
 export const commentBankCreateSchema = z
@@ -577,6 +592,21 @@ export interface KernelAssignmentPromptRow {
 	prompt: string;
 	note: string;
 	status: "draft" | "ready" | string;
+	/** ISO datetime string — snapshot convention (bank sort + `Thêm {date}`). */
+	createdAt: string;
+}
+
+/** One lượt giao (#208): header + targets embedded. `title` là snapshot tên
+ * đề lúc giao; `submittedAt` null = chưa nộp (display-only, derived). */
+export interface KernelClassAssignmentRow {
+	id: string;
+	classId: string;
+	promptId: string;
+	title: string;
+	due: string;
+	note: string;
+	createdAt: string;
+	targets: Array<{ studentId: string; submittedAt: string | null }>;
 }
 
 export interface KernelReportRow {
@@ -588,7 +618,6 @@ export interface KernelReportRow {
 	sent: string;
 	read: string;
 }
-
 export interface KernelNotifRow {
 	id: string;
 	text: string;
@@ -616,6 +645,7 @@ export interface KernelSnapshot {
 	assignmentPrompts: KernelAssignmentPromptRow[];
 	notifs: KernelNotifRow[];
 	commentBank: KernelCommentBankRow[];
+	classAssignments: KernelClassAssignmentRow[];
 }
 
 export interface CreatedResponse {

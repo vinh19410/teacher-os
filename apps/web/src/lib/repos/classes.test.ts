@@ -8,6 +8,7 @@ import { mapClasses } from "./classes";
 
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
+	classAssignments: [],
 	students: [
 		{
 			id: "st-1",
@@ -171,6 +172,7 @@ describe("mapClasses", () => {
 	test("empty org maps to an empty list, never seed", () => {
 		const empty: KernelSnapshot = {
 			assignmentPrompts: [],
+			classAssignments: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -190,6 +192,7 @@ describe("mapClasses", () => {
 describe("mapClasses sessionsDone derive (Wave 4)", () => {
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
+		classAssignments: [],
 		students: [],
 		classes: [
 			{
@@ -336,6 +339,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		);
 		return {
 			assignmentPrompts: [],
+			classAssignments: [],
 			students: [],
 			classes: [baseClass],
 			syllabi: [],

@@ -3,6 +3,7 @@ import type {
 	OccurrenceMutationResponse,
 } from "@teacher-os/api/contracts";
 import {
+	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
 	enrollStudentSchema,
@@ -30,8 +31,15 @@ import {
 	parseStoredSchedule,
 	skeletonOf,
 } from "@teacher-os/api/skeleton";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
+import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { classTable } from "@teacher-os/db/schema/class";
+import {
+	classAssignment,
+	classAssignmentTarget,
+} from "@teacher-os/db/schema/class-assignment";
+
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -664,6 +672,96 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		}
 		await db.batch(statements);
 		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
+	});
+
+	// #208: giao một đề ngân hàng cho lớp — header + N targets trong MỘT
+	// db.batch (atomic; precedent mọi mutation đa statement). Server tự đọc
+	// prompt (snapshot title, kiểm org + ready) và kiểm studentIds ⊆
+	// enrollment — không tin client. Cap 200 lượt/lớp chống phình snapshot.
+	kernel.post("/classes/:id/assignments", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classAssignmentCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		const [prompt] = await db
+			.select({
+				id: assignmentPrompt.id,
+				title: assignmentPrompt.title,
+				status: assignmentPrompt.status,
+			})
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.id, input.promptId),
+					eq(assignmentPrompt.orgId, ctx.orgId),
+				),
+			);
+		if (!prompt) {
+			return c.json({ error: "prompt not found" }, 404);
+		}
+		if (prompt.status !== "ready") {
+			return c.json({ error: "prompt not ready" }, 400);
+		}
+		if (!parseStartDateStrict(input.due) || input.due < vietnamTodayISO()) {
+			return c.json({ error: "invalid due date", reason: "invalid-date" }, 400);
+		}
+		if (new Set(input.studentIds).size !== input.studentIds.length) {
+			return c.json({ error: "duplicate student ids" }, 400);
+		}
+		const rosterRows = await db
+			.select({ studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(
+				and(eq(enrollment.classId, classId), eq(enrollment.orgId, ctx.orgId)),
+			);
+		const roster = new Set(rosterRows.map((row) => row.studentId));
+		if (input.studentIds.some((sid) => !roster.has(sid))) {
+			return c.json({ error: "student not enrolled" }, 400);
+		}
+		const existing = await db
+			.select({ id: classAssignment.id })
+			.from(classAssignment)
+			.where(
+				and(
+					eq(classAssignment.classId, classId),
+					eq(classAssignment.orgId, ctx.orgId),
+				),
+			);
+		if (existing.length >= 200) {
+			return c.json({ error: "assignment limit reached" }, 400);
+		}
+
+		const assignmentId = crypto.randomUUID();
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(classAssignment).values({
+				id: assignmentId,
+				orgId: ctx.orgId,
+				classId,
+				promptId: prompt.id,
+				title: prompt.title,
+				due: input.due,
+				note: input.note,
+			}),
+			...input.studentIds.map((studentId) =>
+				db.insert(classAssignmentTarget).values({
+					id: crypto.randomUUID(),
+					orgId: ctx.orgId,
+					assignmentId,
+					studentId,
+					submittedAt: null,
+				}),
+			),
+		];
+		await db.batch(statements);
+		return c.json({ id: assignmentId } satisfies CreatedResponse, 201);
 	});
 
 	kernel.get("/classes", async (c) => {

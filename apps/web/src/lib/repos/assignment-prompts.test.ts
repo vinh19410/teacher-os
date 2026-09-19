@@ -17,6 +17,7 @@ describe("mapAssignmentPrompts (#202)", () => {
 					prompt: "Some people think…",
 					note: "",
 					status: "ready",
+					createdAt: "2026-09-18T10:00:00.000Z",
 				},
 			],
 		} as unknown as KernelSnapshot;
@@ -32,6 +33,7 @@ describe("mapAssignmentPrompts (#202)", () => {
 				prompt: "Some people think…",
 				note: "",
 				status: "ready",
+				createdAt: "2026-09-18T10:00:00.000Z",
 			},
 		]);
 	});
@@ -49,6 +51,7 @@ describe("mapAssignmentPrompts (#202)", () => {
 					prompt: "P",
 					note: "n",
 					status: "weird",
+					createdAt: "2026-09-18T10:00:00.000Z",
 				},
 			],
 		} as unknown as KernelSnapshot;
