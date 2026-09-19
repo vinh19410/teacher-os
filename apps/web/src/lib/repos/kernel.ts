@@ -15,6 +15,7 @@ import {
 import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignmentPrompts } from "./assignment-prompts";
 import { mapAssignments } from "./assignments";
+import { mapClassAssignments } from "./class-assignments";
 import { mapClasses } from "./classes";
 import { mapCommentBank } from "./comment-bank";
 import { mapEnrollments } from "./enrollments";
@@ -166,6 +167,18 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/assignments/prompts",
 				body: { ...action.payload },
 			};
+		case "assign-class-prompt":
+			// #208: classAssignmentCreateSchema is .strict() — the payload is
+			// the entire body (promptId, due, note, studentIds).
+			return {
+				path: `/api/classes/${action.payload.classId}/assignments`,
+				body: {
+					promptId: action.payload.promptId,
+					due: action.payload.due,
+					note: action.payload.note,
+					studentIds: action.payload.studentIds,
+				},
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -237,6 +250,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		notifs: mapNotifs(snapshot),
 		commentBank: mapCommentBank(snapshot),
 		enrollments: mapEnrollments(snapshot),
+		classAssignments: mapClassAssignments(snapshot),
 	};
 }
 
@@ -369,6 +383,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"lessons",
 	"assignments",
 	"assignmentPrompts",
+	"classAssignments",
 	"invoices",
 	"reports",
 	"notifs",

@@ -55,6 +55,17 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Giao đề ngân hàng cho lớp (#208) */
+			type: "assign-class-prompt";
+			payload: {
+				classId: string;
+				promptId: string;
+				due: string;
+				note?: string;
+				studentIds: string[];
+			};
+	  }
+	| {
 			/** Weekly parent report (#173): "sent" requires content server-side;
 			 * drafts persist as-is with an empty `sent` stamp. */
 			type: "create-report";

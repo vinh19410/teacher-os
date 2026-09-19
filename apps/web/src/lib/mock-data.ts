@@ -56,6 +56,21 @@ export interface AssignmentPrompt {
 	prompt: string;
 	note: string;
 	status: "draft" | "ready";
+	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */
+	createdAt: string;
+}
+
+/** One lượt giao (#208) — mirror KernelClassAssignmentRow. `title` là snapshot
+ * tên đề lúc giao; submittedAt null = chưa nộp (derived display-only). */
+export interface ClassAssignment {
+	id: string;
+	classId: string;
+	promptId: string;
+	title: string;
+	due: string;
+	note: string;
+	createdAt: string;
+	targets: Array<{ studentId: string; submittedAt: string | null }>;
 }
 
 export interface Invoice {
@@ -188,6 +203,8 @@ export type KernelHydratedData = Pick<
 	/** Issue #61: raw enrollment rows for the invoice create picker —
 	 * MockData itself has no enrollments collection. */
 	enrollments: KernelEnrollmentRow[];
+	/** #208: lượt giao bài đã persist; MockData itself has no such collection. */
+	classAssignments: ClassAssignment[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

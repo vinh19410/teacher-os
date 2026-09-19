@@ -15,5 +15,6 @@ export function mapAssignmentPrompts(
 		prompt: row.prompt,
 		note: row.note,
 		status: row.status === "ready" ? "ready" : "draft",
+		createdAt: row.createdAt,
 	}));
 }

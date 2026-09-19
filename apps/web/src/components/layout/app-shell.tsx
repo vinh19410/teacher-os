@@ -16,6 +16,7 @@ export const routeTitles: Record<string, string> = {
 	"/_auth/assignments": "Bài tập",
 	"/_auth/assignments/$assignmentId": "Bài tập",
 	"/_auth/assignments/new": "Tạo bài tập",
+	"/_auth/assignments/bank": "Ngân hàng bài tập",
 	"/_auth/classes": "Lớp học",
 	"/_auth/classes/$classId": "Lớp học",
 	"/_auth/syllabus": "Giáo trình",

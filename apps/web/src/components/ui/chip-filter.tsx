@@ -19,6 +19,7 @@ export function ChipFilter({
 				<button
 					type="button"
 					key={opt}
+					aria-pressed={opt === value}
 					onClick={() => onChange(opt)}
 					className={cn(
 						"rounded-full border px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",

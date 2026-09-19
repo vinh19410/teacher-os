@@ -9,6 +9,7 @@ import { mapLessons } from "./lessons";
 
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
+	classAssignments: [],
 	students: [
 		{
 			id: "st-1",
@@ -132,6 +133,7 @@ describe("mapLessons", () => {
 		expect(
 			mapLessons({
 				assignmentPrompts: [],
+				classAssignments: [],
 				students: [],
 				classes: [],
 				syllabi: [],

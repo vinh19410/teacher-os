@@ -8,6 +8,7 @@ import { mapStudents } from "./students";
 
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
+	classAssignments: [],
 	students: [
 		{
 			id: "st-1",
@@ -105,6 +106,7 @@ describe("mapStudents", () => {
 	test("empty org maps to an empty list, never seed", () => {
 		const empty: KernelSnapshot = {
 			assignmentPrompts: [],
+			classAssignments: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -127,6 +129,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 	// via en-peer.
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
+		classAssignments: [],
 		students: [
 			{
 				id: "st-1",
@@ -262,6 +265,7 @@ describe("mapStudents parked package (issue #104)", () => {
 	// enrollmentId is null and nothing can ever be checked in against it.
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
+		classAssignments: [],
 		students: [
 			{
 				id: "st-1",

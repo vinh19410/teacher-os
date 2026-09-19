@@ -12,6 +12,7 @@ import type {
 	KernelSnapshot,
 	WorkspaceSettings,
 } from "@teacher-os/api/contracts";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -4149,5 +4150,303 @@ describe("assignment prompt bank (issue #202)", () => {
 		const bankB = (await t.kernel(orgB)).assignmentPrompts;
 		expect(bankB.some((r) => r.id === id)).toBe(false);
 		expect(bankB.some((r) => r.title === "Đề riêng của A")).toBe(false);
+	});
+});
+
+describe("class assignment give flow (#208)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let classIdA: string;
+	let studentIdA1: string;
+	let studentIdA2: string;
+	let promptReadyA: string;
+	let promptDraftA: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Teacher A");
+		orgB = await t.insertUser("Teacher B");
+
+		// Bootstrap orgs via snapshot
+		await t.kernel(orgA);
+		await t.kernel(orgB);
+
+		// Create class for Org A
+		classIdA = await t.createClass(orgA, "Lớp IELTS Tối");
+
+		// Create 2 students for Org A enrolled in classIdA
+		studentIdA1 = await t.addStudent(orgA, "Học viên A1", {
+			classId: classIdA,
+		});
+		studentIdA2 = await t.addStudent(orgA, "Học viên A2", {
+			classId: classIdA,
+		});
+
+		// Create prompts in Org A
+		const pReadyRes = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				task: "task2",
+				genre: "opinion",
+				title: "Writing Task 2 — Ready",
+				band: "7.0",
+				source: "Cambridge 12",
+				prompt: "Some people think...",
+				note: "",
+				status: "ready",
+			},
+		});
+		promptReadyA = ((await pReadyRes.json()) as { id: string }).id;
+
+		const pDraftRes = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				task: "task1",
+				genre: "chart",
+				title: "Writing Task 1 — Draft",
+				band: "6.5",
+				source: "",
+				prompt: "The chart below shows...",
+				note: "",
+				status: "draft",
+			},
+		});
+		promptDraftA = ((await pDraftRes.json()) as { id: string }).id;
+	});
+
+	test("happy-path: gives assignment to class, snapshot contains row with null submittedAt", async () => {
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "Nộp đúng hạn",
+				studentIds: [studentIdA1, studentIdA2],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const snapshot = await t.kernel(orgA);
+		const assigned = snapshot.classAssignments.find((a) => a.id === id);
+		expect(assigned).toBeDefined();
+		expect(assigned).toMatchObject({
+			id,
+			classId: classIdA,
+			promptId: promptReadyA,
+			title: "Writing Task 2 — Ready",
+			due: "2030-01-15",
+			note: "Nộp đúng hạn",
+		});
+		expect(assigned?.targets).toHaveLength(2);
+		expect(assigned?.targets).toEqual(
+			expect.arrayContaining([
+				{ studentId: studentIdA1, submittedAt: null },
+				{ studentId: studentIdA2, submittedAt: null },
+			]),
+		);
+	});
+
+	test("due today in VN timezone is accepted", async () => {
+		const todayVN = vietnamTodayISO();
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: todayVN,
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("matrix: 400 rejects invalid bodies", async () => {
+		const baseValid = {
+			promptId: promptReadyA,
+			due: "2030-01-15",
+			note: "",
+			studentIds: [studentIdA1],
+		};
+
+		// 1. Due calendar nonexistent (2030-02-30)
+		const resCalendar = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, due: "2030-02-30" },
+		});
+		expect(resCalendar.status).toBe(400);
+
+		// 2. Due in the past (2020-01-01)
+		const resPast = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, due: "2020-01-01" },
+		});
+		expect(resPast.status).toBe(400);
+
+		// 3. studentIds empty
+		const resEmpty = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: [] },
+		});
+		expect(resEmpty.status).toBe(400);
+
+		// 4. studentIds duplicates
+		const resDupe = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: [studentIdA1, studentIdA1] },
+		});
+		expect(resDupe.status).toBe(400);
+
+		// 5. studentId not enrolled in class
+		const resNotEnrolled = await t.call(
+			`/api/classes/${classIdA}/assignments`,
+			{
+				session: orgA,
+				method: "POST",
+				body: { ...baseValid, studentIds: ["non-existent-student"] },
+			},
+		);
+		expect(resNotEnrolled.status).toBe(400);
+
+		// 6. prompt is draft
+		const resDraft = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, promptId: promptDraftA },
+		});
+		expect(resDraft.status).toBe(400);
+
+		// 7. Extra field (.strict())
+		const resStrict = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, extraField: "not-allowed" },
+		});
+		expect(resStrict.status).toBe(400);
+
+		// 8. studentIds over 100
+		const manyStudents = Array.from({ length: 101 }, (_, i) => `s-${i}`);
+		const resTooMany = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: manyStudents },
+		});
+		expect(resTooMany.status).toBe(400);
+	});
+
+	test("401 when unauthorized", async () => {
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("404 when class or prompt not found in org", async () => {
+		// Non-existent class
+		const resNoClass = await t.call(
+			"/api/classes/non-existent-class/assignments",
+			{
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: promptReadyA,
+					due: "2030-01-15",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			},
+		);
+		expect(resNoClass.status).toBe(404);
+
+		// Prompt of Org A called by Org B
+		const resForeignPrompt = await t.call(
+			`/api/classes/${classIdA}/assignments`,
+			{
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: "non-existent-prompt",
+					due: "2030-01-15",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			},
+		);
+		expect(resForeignPrompt.status).toBe(404);
+	});
+
+	test("org-scoping: Org B does not see Org A's class assignments", async () => {
+		const snapshotB = await t.kernel(orgB);
+		const found = snapshotB.classAssignments.find(
+			(ca) => ca.classId === classIdA,
+		);
+		expect(found).toBeUndefined();
+	});
+
+	test("cap 200 assignments per class rejects with 400", async () => {
+		// Create a separate class for cap test
+		const capClassId = await t.createClass(orgA, "Lớp Cap Test");
+
+		// Enroll studentIdA1 in capClassId
+		const enrollRes = await t.call(`/api/classes/${capClassId}/enroll`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentIdA1,
+				total: 10,
+				price: 400000,
+				mode: "Online",
+			},
+		});
+		expect(enrollRes.status).toBe(201);
+
+		// Insert 200 dummy rows into class_assignment for this class
+		const orgId = await t.orgIdOf(orgA);
+		const batchStatements = Array.from({ length: 200 }, () =>
+			t.db.insert(schema.classAssignment).values({
+				id: crypto.randomUUID(),
+				orgId,
+				classId: capClassId,
+				promptId: promptReadyA,
+				title: "Dummy Prompt",
+				due: "2030-01-01",
+				note: "",
+			}),
+		);
+		const [first, ...rest] = batchStatements;
+		if (first) {
+			await t.db.batch([first, ...rest]);
+		}
+
+		// Now the 201st assignment must be rejected
+		const res = await t.call(`/api/classes/${capClassId}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body).toMatchObject({ error: "assignment limit reached" });
 	});
 });

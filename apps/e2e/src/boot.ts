@@ -22,7 +22,7 @@ import { getSessionUser } from "server/session";
 const PORT = Number(process.env.E2E_API_PORT ?? 8000);
 // Loopback-only: this shim serves a real better-auth instance; never expose
 // it beyond the test machine.
-const HOSTNAME = "127.0.0.1";
+const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
 const CORS_ORIGIN = `http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`;
 const DB_PATH = new URL("../local.db", import.meta.url).pathname;
 const MIGRATIONS_DIR = new URL(
