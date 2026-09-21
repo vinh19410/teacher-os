@@ -19,7 +19,11 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	assert.match(yaml, /pull_request:/, "must trigger on pull_request");
 	assert.match(yaml, /push:/, "must trigger on push");
 	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.match(yaml, /\bdevelop\b/, "must include develop");
+	assert.doesNotMatch(
+		yaml,
+		/\bdevelop\b/,
+		"must not trigger on develop (runs on main only)",
+	);
 	assert.match(yaml, /pnpm exec biome check \./, "must run read-only biome");
 	assert.match(yaml, /pnpm check-types/, "must run check-types");
 	assert.match(yaml, /pnpm build/, "must run build");
@@ -85,7 +89,11 @@ test("e2e workflow exists and matches the e2e contract", () => {
 	);
 	assert.match(yaml, /push:/, "must trigger on push");
 	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.match(yaml, /\bdevelop\b/, "must include develop");
+	assert.doesNotMatch(
+		yaml,
+		/\bdevelop\b/,
+		"must not trigger on develop (runs on main only)",
+	);
 	assert.match(yaml, /contents:\s*read/, "must keep read-only permissions");
 	assert.match(yaml, /playwright install/, "must install playwright browsers");
 	assert.match(
