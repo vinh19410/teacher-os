@@ -4,14 +4,17 @@ import {
 	compositionDefaults,
 	genreOf,
 } from "@/components/assignments/assignment-presets";
-import { BankContextCard } from "@/components/assignments/bank-context-card";
 import { CreateSuccessCard } from "@/components/assignments/create-success-card";
 import { PromptComposer } from "@/components/assignments/prompt-composer";
-import { StudentPreviewPaper } from "@/components/assignments/student-preview-paper";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
+import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
-import { useData } from "@/lib/data-store";
+import {
+	type PreviewDraft,
+	savePreviewDraft,
+	takePreviewDraft,
+} from "@/lib/assignment-preview-draft";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export const Route = createFileRoute("/_auth/assignments/new")({
@@ -51,14 +54,31 @@ function freshComposer(): ComposerState {
 }
 
 export function NewAssignmentRoute() {
-	const _navigate = useNavigate();
-	const { data } = useData();
+	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
 
-	const [value, setValue] = useState<ComposerState>(freshComposer);
-	const [status, setStatus] = useState<"draft" | "ready">("ready");
-	const [dirtyTitle, setDirtyTitle] = useState(false);
-	const [dirtyPrompt, setDirtyPrompt] = useState(false);
+	// Restored once per mount (app has no StrictMode double-invoke). The
+	// dirty flags start true so compositionDefaults never overwrites the
+	// restored title/prompt when the teacher switches task/genre (#213).
+	const [restored] = useState<PreviewDraft | null>(() => takePreviewDraft());
+	const [value, setValue] = useState<ComposerState>(() =>
+		restored
+			? {
+					task: restored.task,
+					genre: restored.genre,
+					title: restored.title,
+					band: restored.band,
+					source: restored.source,
+					prompt: restored.prompt,
+					note: restored.note,
+				}
+			: freshComposer(),
+	);
+	const [status, setStatus] = useState<"draft" | "ready">(
+		restored?.status ?? "ready",
+	);
+	const [dirtyTitle, setDirtyTitle] = useState(!!restored);
+	const [dirtyPrompt, setDirtyPrompt] = useState(!!restored);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
 
@@ -190,32 +210,13 @@ export function NewAssignmentRoute() {
 					onCreateAnother={resetAll}
 				/>
 			) : (
-				<form onSubmit={handleSubmit} noValidate>
-					<div className="grid items-start gap-5 lg:grid-cols-[1.45fr_0.9fr]">
-						<PromptComposer
-							value={value}
-							errors={fieldErrors}
-							showErrors={showErrors}
-							onFieldChange={handleFieldChange}
-						/>
-						<div className="flex flex-col gap-5">
-							<BankContextCard
-								status={status}
-								onStatusChange={setStatus}
-								prompts={data.assignmentPrompts}
-							/>
-							<StudentPreviewPaper
-								task={value.task}
-								genre={value.genre}
-								title={value.title}
-								band={value.band}
-								source={value.source}
-								prompt={value.prompt}
-								note={value.note}
-								status={status}
-							/>
-						</div>
-					</div>
+				<form onSubmit={handleSubmit} noValidate className="max-w-3xl">
+					<PromptComposer
+						value={value}
+						errors={fieldErrors}
+						showErrors={showErrors}
+						onFieldChange={handleFieldChange}
+					/>
 
 					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
 						{submit.notice && (
@@ -235,7 +236,29 @@ export function NewAssignmentRoute() {
 								<strong className="text-sm">{actionCopy.title}</strong>
 								<span className="text-muted-fg text-xs">{actionCopy.sub}</span>
 							</div>
+							<div className="flex flex-col gap-1.5">
+								<span className="font-medium text-muted-fg text-xs">
+									Trạng thái
+								</span>
+								<ChipFilter
+									options={["Bản nháp", "Sẵn sàng giao"]}
+									value={status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}
+									onChange={(label) =>
+										setStatus(label === "Bản nháp" ? "draft" : "ready")
+									}
+								/>
+							</div>
 							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										savePreviewDraft({ ...value, status });
+										navigate({ to: "/assignments/preview" });
+									}}
+								>
+									Xem trước
+								</Button>
 								<Button
 									type="button"
 									variant="secondary"

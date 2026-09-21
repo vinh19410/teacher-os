@@ -1,7 +1,7 @@
 ---
 title: "Trang tạo bài tập một cột + trang xem trước làm bài của học viên"
 description: "Gỡ cột phải (card Ngân hàng + preview inline) khỏi /assignments/new, dời chips Trạng thái vào action bar, và tách 'Xem trước' thành trang riêng /assignments/preview mô phỏng đề đúng như học viên đọc — kèm vùng làm bài mô phỏng và khôi phục nháp khi quay lại."
-status: pending
+status: completed
 priority: P2
 effort: 4h
 issue: 213

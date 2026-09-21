@@ -23,6 +23,7 @@ describe("routes-matcher", () => {
 			"/tuition",
 			"/assignments",
 			"/assignments/new",
+			"/assignments/preview",
 			"/assignments/bank",
 			"/classes",
 			"/students",
