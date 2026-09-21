@@ -62,6 +62,13 @@ function rosterFee(page: Page, text: string) {
 	return rosterRow(page).getByText(text, { exact: true });
 }
 
+async function openClassDetail(page: Page): Promise<void> {
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await expect(page).toHaveURL(/\/classes$/);
+	await page.getByText(CLASS_NAME, { exact: true }).click();
+	await expect(rosterRow(page)).toBeVisible();
+}
+
 async function createInvoice(page: Page, amount: string): Promise<void> {
 	await page.getByText("Học phí", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
@@ -82,14 +89,11 @@ async function createInvoice(page: Page, amount: string): Promise<void> {
 async function markFirstInvoicePaid(page: Page): Promise<void> {
 	await page.getByText("Học phí", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
-	const row = page
-		.locator("tbody tr")
-		.filter({ hasText: STUDENT_NAME })
-		.first();
-	await row.getByRole("button", { name: "Đã nhận" }).click();
-	await expect(row.getByRole("button", { name: "Đã nhận" })).toBeHidden({
-		timeout: 15000,
-	});
+	const unpaidButtons = page.getByRole("button", { name: "Đã nhận" });
+	const before = await unpaidButtons.count();
+	expect(before).toBeGreaterThan(0);
+	await unpaidButtons.first().click();
+	await expect(unpaidButtons).toHaveCount(before - 1);
 }
 
 test("class roster reflects the tuition-debt lifecycle of the class", async ({
@@ -103,19 +107,19 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 
 	// First invoice → red outstanding amount in the roster.
 	await createInvoice(page, "400000");
-	await page.getByText(CLASS_NAME).click();
+	await openClassDetail(page);
 	await expect(rosterFee(page, "400.000đ")).toBeVisible();
 	await expect(rosterFee(page, "—")).toBeHidden();
 
 	// Second invoice accumulates (helper's accumulation branch).
 	await createInvoice(page, "400000");
-	await page.getByText(CLASS_NAME).click();
+	await openClassDetail(page);
 	await expect(rosterFee(page, "800.000đ")).toBeVisible();
 
 	// Mark both paid → "Đã đủ", and it survives a reload.
 	await markFirstInvoicePaid(page);
 	await markFirstInvoicePaid(page);
-	await page.getByText(CLASS_NAME).click();
+	await openClassDetail(page);
 	await expect(rosterFee(page, "Đã đủ")).toBeVisible();
 	await expect(rosterFee(page, "800.000đ")).toBeHidden();
 	await page.reload();
