@@ -9,6 +9,16 @@ import { signUpViaUi } from "./helpers";
  */
 
 async function createTemplateWithModules(page: Page, name: string) {
+	// Mỗi module render trong card riêng (div.overflow-hidden chứa h3 tiêu đề)
+	// và có nút "+ Thêm buổi học" của riêng nó — phải scope theo module, nếu
+	// không từ module thứ hai trở đi locator sẽ strict-violate (2 matches).
+	const moduleSection = (title: string) =>
+		page
+			.locator("div.overflow-hidden")
+			.filter({
+				has: page.getByRole("heading", { name: title, exact: true }),
+			});
+
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
@@ -27,7 +37,9 @@ async function createTemplateWithModules(page: Page, name: string) {
 	await expect(page.getByText("Module A")).toBeVisible();
 
 	for (const title of ["Buổi A1", "Buổi A2"]) {
-		await page.getByRole("button", { name: "+ Thêm buổi học" }).click();
+		await moduleSection("Module A")
+			.getByRole("button", { name: "+ Thêm buổi học" })
+			.click();
 		const addDialog = page.getByRole("dialog");
 		await addDialog
 			.getByPlaceholder("VD: Line chart — Mô tả xu hướng")
@@ -44,7 +56,9 @@ async function createTemplateWithModules(page: Page, name: string) {
 	await moduleDialog2.getByRole("button", { name: "Thêm module" }).click();
 	await expect(moduleDialog2).toBeHidden();
 
-	await page.getByRole("button", { name: "+ Thêm buổi học" }).click();
+	await moduleSection("Module B")
+		.getByRole("button", { name: "+ Thêm buổi học" })
+		.click();
 	const addDialog2 = page.getByRole("dialog");
 	await addDialog2
 		.getByPlaceholder("VD: Line chart — Mô tả xu hướng")
@@ -67,6 +81,15 @@ async function createClassAndImportTemplate(page: Page, className: string) {
 		.getByRole("button", { name: "Tạo lớp", exact: true })
 		.click();
 	await expect(classDialog).toBeHidden();
+
+	// Creation stays on the /classes list (same flow as class-operations.spec)
+	// — open the class detail before importing the template.
+	await expect(page.getByText(className)).toBeVisible();
+	await page.getByText(className).click();
+	await expect(page).toHaveURL(/\/classes\/.+/);
+
+	// Curriculum import lives on the "Buổi học" tab (#221); roster is default.
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 
 	// Import the template into the class (single "Nhập giáo trình" submit).
 	await page.getByRole("button", { name: "Nhập từ template" }).click();
@@ -106,7 +129,11 @@ test("manage modal reorders lessons and the schedule table follows (#221)", asyn
 	const a2Row = manageDialog
 		.locator("div[class*='grid-cols-[20px_1fr_auto']")
 		.filter({ hasText: "Buổi A2" });
-	await a2Row.getByRole("button", { name: "↑", exact: true }).click();
+	// Nút mũi tên có aria-label "Đưa {buổi} lên" (a11y #221) — glyph ↑ chỉ
+	// là nội dung hiển thị, không phải accessible name.
+	await a2Row
+		.getByRole("button", { name: "Đưa Buổi A2 lên", exact: true })
+		.click();
 	// The base Modal closes on Escape (no explicit close button).
 	await page.keyboard.press("Escape");
 	await expect(

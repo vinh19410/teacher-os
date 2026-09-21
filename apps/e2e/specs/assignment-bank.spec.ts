@@ -54,19 +54,22 @@ test("bank lists prompts with filters, search, and preview", async ({
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
 
 	// Filter Task 1 → only the draft row + task1 genre chips.
-	await page.getByRole("button", { name: "Task 1 · 150 từ" }).click();
+	// exact:true — card meta chứa cùng nhãn "Task 1 · 150 từ" nên substring
+	// match trúng cả row button (strict violation trên CI promote 0.0.5).
+	await page
+		.getByRole("button", { name: "Task 1 · 150 từ", exact: true })
+		.click();
 	await expect(
 		page.getByRole("heading", { name: "QC-208 Bank Chart Draft" }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("heading", { name: "QC-208 Bank Discuss" }),
 	).toHaveCount(0);
+	// #218 v5: hàng "Phần thi" là danh sách chip tĩnh (không còn genre chips
+	// phụ thuộc task) — vẫn render đầy đủ khi đang lọc Task 1.
 	await expect(
-		page.getByRole("button", { name: "Biểu đồ", exact: true }),
+		page.getByRole("button", { name: "Task 2 · 250 từ", exact: true }),
 	).toBeVisible();
-	await expect(
-		page.getByRole("button", { name: "Discuss both views" }),
-	).toHaveCount(0);
 
 	// Search with no match → filter-empty card.
 	await page.getByLabel("Tìm đề theo tiêu đề hoặc nguồn").fill("zzz-no-match");
@@ -75,7 +78,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 	).toBeVisible();
 	await expect(
 		page.getByText(
-			"Thử dạng bài khác, hoặc xóa bộ lọc để xem toàn bộ ngân hàng.",
+			"Thử kỹ năng hoặc phần thi khác, hoặc xóa bộ lọc để xem toàn bộ ngân hàng.",
 		),
 	).toBeVisible();
 

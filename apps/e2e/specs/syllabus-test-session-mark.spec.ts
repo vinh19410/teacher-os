@@ -171,7 +171,9 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 		.locator("div[class*='grid-cols-[20px_1fr_auto']")
 		.filter({ hasText: "Buổi 3" });
 	await examRow.getByRole("button", { name: "Sửa", exact: true }).click();
-	const editDialog = page.getByRole("dialog");
+	// Scope theo aria-label: modal "Quản lý buổi của lớp" (#221) vẫn mở bên
+	// dưới dialog "Sửa buổi học" → getByRole("dialog") trúng 2 elements.
+	const editDialog = page.getByRole("dialog", { name: "Sửa buổi học" });
 	await expect(editDialog.getByLabel("Loại buổi học")).toHaveCount(0);
 	await editDialog.getByRole("textbox").first().fill("Buổi 3 — giữa kỳ đã đổi");
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
