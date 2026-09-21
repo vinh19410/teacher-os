@@ -63,3 +63,49 @@ test("create a draft prompt with the draft tag", async ({ page }) => {
 	await expect(page.getByText("QC-202 Bản nháp").first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
 });
+
+test("preview as a student, return to the form without losing it, then save ready", async ({
+	page,
+}) => {
+	const TITLE = "QC-202 Preview Flow";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page
+		.getByLabel("Nội dung đề")
+		.fill("Some people believe that preview should match the student view…");
+
+	// Preview is a page handoff now, not an inline paper.
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview$/);
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+	await expect(
+		page.getByText(/Some people believe that preview/).first(),
+	).toBeVisible();
+	await expect(
+		page.getByText("Bản xem trước — bài làm không được lưu."),
+	).toBeVisible();
+	await expect(page.getByText("Bài làm của học viên (mô phỏng)")).toBeVisible();
+
+	// readPreviewDraft must not clear: reload keeps the paper.
+	await page.reload();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+
+	// Back to composing: the form survives the round trip.
+	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
+	await expect(page.getByLabel("Nội dung đề")).toHaveValue(
+		/Some people believe that preview/,
+	);
+
+	// And the restored form still saves for real.
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+	await page.goto("/assignments/bank");
+	await page.reload();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+});
