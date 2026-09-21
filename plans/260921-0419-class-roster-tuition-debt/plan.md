@@ -1,7 +1,7 @@
 ---
 title: "Tab Học viên (lớp chi tiết): hiển thị học viên còn nợ học phí theo lớp"
 description: "Thêm cột \"Học phí\" vào bảng roster của trang chi tiết lớp — tiền chưa thu (đỏ) tính theo enrollment của lớp đó, giúp giáo viên/admin nhìn ngay ai còn nợ."
-status: pending
+status: completed
 priority: P2
 effort: 4h
 branch: vinh19410/issue-216-class-roster-tuition-debt
