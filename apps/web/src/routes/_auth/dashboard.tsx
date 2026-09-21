@@ -17,8 +17,10 @@ import {
 	formatDashboardGreeting,
 	formatDashboardLead,
 	lessonsToday,
+	upcomingLessonsThisWeek,
 } from "@/lib/dashboard-from-kernel";
 import { useData } from "@/lib/data-store";
+import { lessonDayLabel } from "@/lib/format-schedule";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/dashboard")({
@@ -42,6 +44,16 @@ function DashboardRoute() {
 	const now = new Date();
 	const today = lessonsToday(data.lessons, now);
 	const risk = atRiskRows(data.students, data.lessons, now);
+	const upcoming = upcomingLessonsThisWeek(data.lessons, now);
+	const upcomingGroups: Array<{ day: number; lessons: typeof upcoming }> = [];
+	for (const l of upcoming) {
+		const last = upcomingGroups[upcomingGroups.length - 1];
+		if (last && last.day === l.day) {
+			last.lessons.push(l);
+		} else {
+			upcomingGroups.push({ day: l.day, lessons: [l] });
+		}
+	}
 
 	return (
 		<div>
@@ -102,6 +114,43 @@ function DashboardRoute() {
 						</Card>
 					);
 				})}
+			</div>
+			<div className="mt-8">
+				<SectionLabel>Lịch sắp tới</SectionLabel>
+				{upcoming.length === 0 ? (
+					<p className="font-mono text-meta text-xs">
+						Không có buổi học nào trong phần còn lại của tuần.
+					</p>
+				) : (
+					upcomingGroups.map((group) => (
+						<div key={group.day}>
+							<div className="mt-4 mb-2 font-semibold text-sm">
+								{lessonDayLabel(group.day)}
+							</div>
+							<div className="flex flex-col gap-2">
+								{group.lessons.map((l) => {
+									const s = studentById(l.sid);
+									if (!s) return null;
+									return (
+										<Card
+											key={l.id}
+											variant="white"
+											className="flex items-center gap-4"
+										>
+											<Avatar text={s.avatar} size="sm" />
+											<div className="min-w-0 flex-1">
+												<div className="font-semibold text-sm">{s.name}</div>
+												<div className="font-mono text-meta text-xs">
+													{l.time} · {l.dur}&apos; · {l.type} · {l.topic}
+												</div>
+											</div>
+										</Card>
+									);
+								})}
+							</div>
+						</div>
+					))
+				)}
 			</div>
 			<div className="mt-8">
 				<SectionLabel>Học viên rủi ro</SectionLabel>
