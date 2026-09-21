@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Cột \"Học phí\" trong tab Học viên + e2e"
-status: todo
+status: completed
 phase: 2
 priority: P2
 effort: "2.5h"

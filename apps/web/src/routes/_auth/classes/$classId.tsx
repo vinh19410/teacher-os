@@ -26,8 +26,9 @@ import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
-import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, classMeta, fmtVND } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
+import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
@@ -138,6 +139,10 @@ function ClassDetailRoute() {
 	const classAssignments = useMemo(() => {
 		return (data.classAssignments ?? []).filter((ca) => ca.classId === classId);
 	}, [data.classAssignments, classId]);
+	const rosterDebt = useMemo(
+		() => rosterDebtByStudent(classId, data.enrollments, data.invoices),
+		[classId, data.enrollments, data.invoices],
+	);
 	const openAssignmentsCount = useMemo(() => {
 		return classAssignments.filter((ca) => {
 			const submitted = ca.targets.filter((t) => t.submittedAt !== null).length;
@@ -240,7 +245,13 @@ function ClassDetailRoute() {
 			{tab === "roster" && (
 				<Card className="p-0">
 					<DataTable
-						headers={["Học viên", "Mục tiêu", "Còn lại", "Trạng thái"]}
+						headers={[
+							"Học viên",
+							"Mục tiêu",
+							"Còn lại",
+							"Học phí",
+							"Trạng thái",
+						]}
 						rows={students.map((s) => ({
 							onClick: () =>
 								navigate({
@@ -258,6 +269,34 @@ function ClassDetailRoute() {
 								<span key="r" className="font-mono">
 									{s.pkg.remaining}/{s.pkg.total}
 								</span>,
+								(() => {
+									// #216: per-class tuition debt. "Đã đủ" only when the
+									// class has invoices and none outstanding; "—" when the
+									// student has no invoice through this class's enrollments.
+									const d = rosterDebt.get(s.id);
+									if (!d || d.invoiceCount === 0) {
+										return (
+											<span key="fee" className="font-mono text-meta text-xs">
+												—
+											</span>
+										);
+									}
+									if (d.outstanding > 0) {
+										return (
+											<span
+												key="fee"
+												className="font-mono font-semibold text-danger"
+											>
+												{fmtVND(d.outstanding)}
+											</span>
+										);
+									}
+									return (
+										<span key="fee" className="font-mono text-meta text-xs">
+											Đã đủ
+										</span>
+									);
+								})(),
 								s.atRisk ? (
 									<Badge key="b" variant="danger">
 										Rủi ro
