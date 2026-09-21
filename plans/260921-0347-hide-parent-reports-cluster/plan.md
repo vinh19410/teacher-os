@@ -1,7 +1,7 @@
 ---
 title: "Tạm ẩn cụm Phụ huynh Báo cáo (hoãn phát triển)"
 description: "Ẩn toàn bộ điểm vào UI của cụm Phụ huynh — Báo cáo bằng flag tĩnh, giữ nguyên backend, DB và code trang để bật lại sau."
-status: pending
+status: in-progress
 priority: P2
 effort: 3h
 branch: vinh19410/issue-210-hide-parent-reports
