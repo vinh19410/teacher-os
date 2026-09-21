@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,8 +9,14 @@ import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
+import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 
 export const Route = createFileRoute("/_auth/reports")({
+	beforeLoad: () => {
+		if (!PARENT_REPORTS_ENABLED) {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
 	component: ReportsRoute,
 });
 

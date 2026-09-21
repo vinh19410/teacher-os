@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { averageBand, fmtVND } from "@/lib/mock-data";
 import { useStudents } from "@/lib/repos/use-students";
@@ -113,9 +114,11 @@ function StudentDetailRoute() {
 					>
 						Nhắn Zalo
 					</Button>
-					<Button size="sm" onClick={() => setReportOpen(true)}>
-						Tạo báo cáo
-					</Button>
+					{PARENT_REPORTS_ENABLED && (
+						<Button size="sm" onClick={() => setReportOpen(true)}>
+							Tạo báo cáo
+						</Button>
+					)}
 				</div>
 			</Card>
 
@@ -269,12 +272,14 @@ function StudentDetailRoute() {
 				</Card>
 			)}
 
-			<CreateReportModal
-				key={student.id}
-				open={reportOpen}
-				onClose={() => setReportOpen(false)}
-				defaultStudentId={student.id}
-			/>
+			{PARENT_REPORTS_ENABLED && (
+				<CreateReportModal
+					key={student.id}
+					open={reportOpen}
+					onClose={() => setReportOpen(false)}
+					defaultStudentId={student.id}
+				/>
+			)}
 		</div>
 	);
 }

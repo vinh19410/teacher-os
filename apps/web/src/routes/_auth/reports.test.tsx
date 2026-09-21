@@ -7,6 +7,9 @@ const mockNavigate = vi.fn();
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 	useNavigate: () => mockNavigate,
+	redirect: (opts: { to: string }) => {
+		throw Object.assign(new Error("redirect"), { redirect: opts });
+	},
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
@@ -53,7 +56,7 @@ vi.mock("@/lib/data-store", () => ({
 }));
 
 import { CreateReportModal } from "@/components/modals/create-report-modal";
-import { ReportsRoute } from "./reports";
+import { ReportsRoute, Route } from "./reports";
 
 describe("ReportsRoute Zalo OA channel state & empty state (Issue #172)", () => {
 	it("renders honest empty state with 'Chưa có báo cáo nào' and 'Zalo OA: Chưa kết nối' badge when 0 reports", () => {
@@ -134,5 +137,14 @@ describe("ReportsRoute Zalo OA channel state & empty state (Issue #172)", () => 
 		expect(html).toContain("Zalo OA (Chưa kết nối)");
 		expect(html).toContain('value="Zalo OA"');
 		expect(html).toContain("Email");
+	});
+});
+
+describe("/reports route guard while the parent reports cluster is hidden", () => {
+	it("redirects to /dashboard in beforeLoad when the flag is off", () => {
+		// The mock's createFileRoute returns the options object itself, but the
+		// real Route type hides it — cast to reach the runtime beforeLoad.
+		const routeOptions = Route as unknown as { beforeLoad: () => void };
+		expect(() => routeOptions.beforeLoad()).toThrow("redirect");
 	});
 });

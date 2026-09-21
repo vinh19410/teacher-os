@@ -18,6 +18,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
+import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import {
 	getApiBaseUrl,
 	saveWorkspaceSettings,
@@ -166,8 +167,12 @@ export function SettingsPage({
 								</span>
 							</div>
 							<p className="text-muted-fg text-sm">
-								Không giới hạn học viên · Zalo OA · Báo cáo phụ huynh · Xuất hóa
-								đơn điện tử.
+								{[
+									"Không giới hạn học viên",
+									"Zalo OA",
+									...(PARENT_REPORTS_ENABLED ? ["Báo cáo phụ huynh"] : []),
+									"Xuất hóa đơn điện tử.",
+								].join(" · ")}
 							</p>
 							<Field label="Đơn giá mặc định / buổi">
 								<Input
@@ -285,16 +290,18 @@ export function TemplatesTab({
 					className="min-h-25"
 				/>
 			</Card>
-			<Card variant="white">
-				<SectionLabel>Mẫu báo cáo tuần</SectionLabel>
-				<Textarea
-					value={current.tplReport}
-					onChange={(e) =>
-						onChange?.((prev) => ({ ...prev, tplReport: e.target.value }))
-					}
-					className="min-h-25"
-				/>
-			</Card>
+			{PARENT_REPORTS_ENABLED && (
+				<Card variant="white">
+					<SectionLabel>Mẫu báo cáo tuần</SectionLabel>
+					<Textarea
+						value={current.tplReport}
+						onChange={(e) =>
+							onChange?.((prev) => ({ ...prev, tplReport: e.target.value }))
+						}
+						className="min-h-25"
+					/>
+				</Card>
+			)}
 			{onSave && (
 				<div className="flex items-center gap-3">
 					<Button
