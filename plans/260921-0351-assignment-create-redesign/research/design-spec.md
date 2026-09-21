@@ -34,8 +34,8 @@ Bảng type đầy đủ (id → dạng input đáp án, xem §2.6):
 | W/task2 | Discuss both views, Opinion, Advantages, Problem / Solution |
 | R/p1 | True/False/NG (tfng), Sentence completion (sent) |
 | R/p2 | Matching headings (headings), Matching information (info) |
-| R/p3 | Yes/No/NG (ynng), Multiple choice (mcq4) |
-| L/s1 | Form completion (form), Multiple choice (mcq3) |
+| R/p3 | Yes/No/NG (ynng), Multiple choice (mcq) |
+| L/s1 | Form completion (form), Multiple choice (mcq1) |
 | L/s2 | Map labelling (map), Matching (match2) |
 | L/s3 | Multiple choice (mcq3), Flow-chart (flow) |
 | L/s4 | Note completion (notes), Sentence completion (sent4) |
@@ -71,7 +71,7 @@ Mỗi type có **template mẫu** (title + prompt/passage/intro/items/transcript
     - Dạng choice → chip radiogroup: tfng `[TRUE, FALSE, NOT GIVEN]`; ynng `[YES, NO, NOT GIVEN]`; mcq4 `[A,B,C,D]`; mcq3 `[A,B,C]`; roman (headings) `[i..viii]`; letter (info, map, match2) `[A..H]`.
     - Dạng text → 2 input: "Đáp án chấm tự động" + "Chấp nhận thêm, cách nhau bằng /" (alts).
 - "Thêm câu" link + **key-scan** (mono, right-aligned): "1 FALSE · 2 TRUE · 3 —" (đáp án từng câu hoặc —).
-- KIND map type→dạng đáp án: tfng→tfng, sent→text, headings→roman, info→letter, ynng→ynng, mcq→mcq4, form→text, mcq1→mcq3, map→letter, match2→letter, mcq3→mcq3, flow→text, notes→text, sent4→text.
+- KIND map **type-id → kind của answer UI**: tfng→tfng, sent→text, headings→roman, info→letter, ynng→ynng, mcq→mcq4, form→text, mcq1→mcq3, map→letter, match2→letter, mcq3→mcq3, flow→text, notes→text, sent4→text. Lưu ý: type-id là id trong catalog (`mcq`, `mcq1`, `mcq3`); giá trị kind (`mcq4` = 4 lựa chọn A–D, `mcq3` = 3 lựa chọn A–C) chỉ quyết định UI đáp án — không dùng kind làm type-id. Id `map` trùng giữa W/task1 (Bản đồ) và L/s2 (Map labelling) — chấp nhận được vì q-editor chỉ hiện cho R/L. Tổng catalog: **4 skill · 12 part · 29 type** (W 4+4, R 2×3, L 2×4, S 2+3+2).
 
 ## 3. Card "Ngân hàng" (cột phải)
 
@@ -146,3 +146,5 @@ Plan [`260921-0400-assignment-create-single-column-preview`](../../260921-0400-a
 - **§4 (preview inline) tách trang riêng `/assignments/preview`**: nút "Xem trước" ghi snapshot draft vào sessionStorage rồi redirect; teacher quay lại soạn không mất form.
 
 Khi triển khai redesign 4-skill phải giữ các quyết định này; §1/§3/§4 chỉ còn giá trị tham khảo về copy/data model.
+
+> **Cập nhật thứ tự 2026-09-21 (validation plan `260921-0351`, Q2 — user chốt):** plan redesign 4-skill (#218) thực hiện **trước** theo đúng §1/§3/§4 (bố cục v5 hai cột); các quyết định layout một cột ở addendum trên áp dụng khi plan `260921-0400` (#213) **rebase lên kết quả** sau đó. Trong lúc cook #218, addendum là tham chiếu cho #213 chứ không ràng buộc #218.

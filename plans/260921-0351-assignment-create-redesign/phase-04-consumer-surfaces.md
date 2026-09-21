@@ -32,15 +32,16 @@ Chuyển 3 surface đang tiêu thụ `task`/`genre` (legacy) sang `skill`/`part`
 ### Functional
 
 - `bank.tsx`: thay `taskFilter` bằng `skillFilter: "all" | SkillId`; ChipFilter "Kỹ năng" options `["Tất cả","Writing","Reading","Listening","Speaking"]`; ChipFilter "Phần thi" options derive từ `SKILLS[skill].parts` (+ "Tất cả phần"), reset về all khi đổi skill; filter `p.skill`/`p.part`; search giữ (title + source + `typeOf(...).label`); hàng đề: Tag = type label, mono meta = `{partOf(...).label} · Band {band}`; "Xóa bộ lọc" reset cả 3 state.
-- `class-assignments-tab.tsx`: `PICKER_TASK_OPTIONS` → skill options; `taskFilter` state → `skillFilter`; filter ready prompts theo `p.skill` (dòng 75-82); handler ChipFilter (dòng 134-143) đổi theo label skill; label chip hiện tại của lựa chọn đổi tương ứng.
+- `class-assignments-tab.tsx`: `PICKER_TASK_OPTIONS` → skill options; `taskFilter` state → `skillFilter`; filter ready prompts theo `p.skill` (dòng 75-82); handler ChipFilter (dòng 134-143) đổi theo label skill; label chip hiện tại của lựa chọn đổi tương ứng. **Bổ sung finding R14 — các chỗ tiêu thụ task/genre còn lại của file**: preview panel chọn đề (dòng 320-322 `taskOf(selectedPrompt.task)`/`genreOf(...)`) chuyển sang `skillOf/partOf/typeOf(...).label` + tag skill; meta từng prompt card (dòng 363, 385 `{t.label} · Band {p.band}`) đổi thành `partOf(p.skill, p.part).label · Band {p.band}` + tag `skillOf(p.skill).name` — recorded deviation nhẹ: preview giao bài chỉ hiện title + spec + skill tag + câu hỏi (R/L, không đáp án), không dựng lại đầy đủ paper (thiết kế v5 không vẽ màn này; tái dùng helper catalog).
 - `bank-preview-aside.tsx`: đọc `prompt.skill/part/type` qua catalog; spec line = `part.spec + " · Band {band}"`; R/L hiện intro + câu hỏi (số + stem, MCQ hiện opts, không đáp án) + tag "Chấm tự động"; L hiện audio row (`audioName` || "Chưa đính file nghe"); S p2 hiện cue preview; tags: Skill · Part label · Type label · Band · Nguồn; body theo skill (prompt/passage); giữ note "Đề này chưa giao lớp…" + link Lớp học.
 - Dọn compat: xóa `TASK_PRESETS`/`taskOf`/`genreOf` khỏi `assignment-presets.ts`; xóa `task`/`genre` khỏi `AssignmentPrompt` (`mock-data.ts`) + mapper `assignment-prompts.ts` (snapshot vẫn trả — mapper bỏ, không break vì row type giữ legacy field, chỉ web không tiêu thụ; ghi comment mapper "legacy task/genre bỏ qua — đọc skill/part/type").
-- Tests: `bank.test.tsx` update fixture (`skill/part/type`, bỏ `task/genre`) + assertion filter mới (chọn Reading chỉ còn đề reading; "Xóa bộ lọc" reset); thêm fixture 1 đề reading có `questions` để assert preview không hiện đáp án (assert chuỗi answer không xuất hiện trong markup).
+- Tests: `bank.test.tsx` update fixture (`skill/part/type`, bỏ `task/genre`) + assertion filter mới (chọn Reading chỉ còn đề reading; "Xóa bộ lọc" reset); thêm fixture 1 đề reading có `questions` để assert preview không hiện đáp án (assert chuỗi answer không xuất hiện trong markup). `class-assignments-tab.test.tsx` update fixture tương tự + assertion meta card theo part label/skill tag mới.
 
 ### Non-functional
 
 - Không đổi route/URL; không đụng luồng giao bài (POST #208) ngoài chip filter.
 - Giữ count "Đang hiện X / Y đề" + empty state filter hiện có.
+- **Phase 3 + phase 4 phải land trong cùng một PR/release** (finding R13): nếu phase 3 deploy trước, đề R/L/S mới bị consumer cũ xếp nhầm "Task 2"/"Biểu đồ" (legacy-write `task='task2'`/`genre=''` + fallback `taskOf/genreOf`).
 
 ## Architecture (data flow)
 
@@ -59,7 +60,7 @@ bank-preview-aside.tsx → catalog helpers (partOf/typeOf) hiển thị 4 kỹ n
 ## Implementation Steps
 
 1. `bank.tsx`: đổi state + 2 ChipFilter + filter/search/meta theo Requirements; chạy web test, fix `bank.test.tsx` fixture + assertion.
-2. `class-assignments-tab.tsx`: đổi options/state/filter (dòng 32, 59-81, 134-143, 341-343); kiểm test liên quan nếu có (grep `PICKER_TASK_OPTIONS|taskFilter` trong `apps/web/src/components/classes/*.test.tsx` — sửa theo).
+2. `class-assignments-tab.tsx`: đổi options/state/filter (dòng 32, 59-81, 134-143, 341-343) **+ preview panel (320-322) + meta card (363, 385)** theo Requirements; sửa `class-assignments-tab.test.tsx` fixture + assertion theo.
 3. `bank-preview-aside.tsx`: mở rộng display 4 kỹ năng theo Requirements (tái dùng helper catalog).
 4. Grep `TASK_PRESETS|taskOf|genreOf` trên `apps/web` — sau bước 1–3 chỉ còn trong `assignment-presets.ts` (định nghĩa compat) → xóa block compat + xóa `task/genre` khỏi `AssignmentPrompt` + mapper; `pnpm check-types` bắt mọi chỗ sót (kể fixture `new.test.tsx` nếu còn tham chiếu).
 5. Chạy toàn `pnpm --filter web test` + `pnpm check-types` + `pnpm check`.
