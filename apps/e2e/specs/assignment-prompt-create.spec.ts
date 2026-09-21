@@ -32,10 +32,11 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
 
-	// "Tạo đề khác" returns to the form; the new prompt shows in "Đề đã có".
+	// "Tạo đề khác" returns to the form (#213: the create page no longer
+	// shows the bank — persistence is asserted on the bank page instead).
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
-	const bankItem = page.getByText(TITLE).first();
-	await expect(bankItem).toBeVisible();
+	await page.goto("/assignments/bank");
+	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Sẵn sàng").first()).toBeVisible();
 
 	// Persist for real: a full reload keeps the prompt in the bank.
@@ -58,6 +59,7 @@ test("create a draft prompt with the draft tag", async ({ page }) => {
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
+	await page.goto("/assignments/bank");
 	await expect(page.getByText("QC-202 Bản nháp").first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
 });
