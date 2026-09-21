@@ -88,6 +88,7 @@ async function createInvoice(page: Page, amount: string): Promise<void> {
 async function markFirstInvoicePaid(page: Page): Promise<void> {
 	await page.goto("/tuition");
 	const unpaidButtons = page.getByRole("button", { name: "Đã nhận" });
+	await expect(unpaidButtons.first()).toBeVisible();
 	const before = await unpaidButtons.count();
 	expect(before).toBeGreaterThan(0);
 	await unpaidButtons.first().click();
