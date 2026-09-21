@@ -4,6 +4,7 @@ description: "Thêm section display-only 'Lịch sắp tới' (phần còn lại
 status: pending
 priority: P2
 effort: 2h
+issue: 212
 branch: vinh19410/feat/dashboard-upcoming-summary
 tags: [feature, frontend]
 blockedBy: []
