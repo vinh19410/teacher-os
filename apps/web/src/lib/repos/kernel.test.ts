@@ -265,6 +265,7 @@ describe("mapKernelSnapshot", () => {
 			{
 				id: "inv-1",
 				sid: "st-1",
+				eid: "enr-1",
 				amount: 400000,
 				status: "overdue",
 				date: "19/08",

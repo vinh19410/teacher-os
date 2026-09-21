@@ -3,6 +3,7 @@ import type { Invoice, Student } from "./mock-data";
 import {
 	formatDue,
 	packagesEndingSoon,
+	rosterDebtByStudent,
 	tuitionTotals,
 } from "./tuition-from-kernel";
 
@@ -36,6 +37,7 @@ function invoice(partial: Partial<Invoice> & Pick<Invoice, "status">): Invoice {
 	return {
 		id: "INV-1",
 		sid: "s1",
+		eid: "",
 		amount: 1000000,
 		date: "",
 		type: "",
@@ -103,5 +105,57 @@ describe("formatDue", () => {
 
 	test("calendar-invalid dates roll no fake day — em dash", () => {
 		expect(formatDue("2026-02-30")).toBe("—");
+	});
+});
+
+describe("rosterDebtByStudent (#216)", () => {
+	const enrollments = [
+		{ id: "E1", classId: "C1", studentId: "S1" },
+		{ id: "E2", classId: "C2", studentId: "S1" },
+		{ id: "E3", classId: "C1", studentId: "S2" },
+	];
+
+	test("paid invoices count toward invoiceCount but not outstanding", () => {
+		const debts = rosterDebtByStudent("C1", enrollments, [
+			{ eid: "E1", amount: 400000, status: "paid" },
+		]);
+		expect(debts.get("S1")).toEqual({ outstanding: 0, invoiceCount: 1 });
+	});
+
+	test("unpaid and overdue both add to outstanding", () => {
+		const debts = rosterDebtByStudent("C1", enrollments, [
+			{ eid: "E1", amount: 400000, status: "unpaid" },
+			{ eid: "E1", amount: 100000, status: "overdue" },
+			{ eid: "E1", amount: 50000, status: "unpaid" },
+		]);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 550000,
+			invoiceCount: 3,
+		});
+	});
+
+	test("invoices of other classes and legacy empty-eid rows are excluded", () => {
+		const debts = rosterDebtByStudent("C1", enrollments, [
+			{ eid: "E2", amount: 999000, status: "unpaid" }, // class C2
+			{ eid: "", amount: 500000, status: "unpaid" }, // legacy
+			{ eid: "E-DELETED", amount: 250000, status: "unpaid" }, // unknown
+		]);
+		expect(debts.size).toBe(0);
+	});
+
+	test("multiple invoices of one student accumulate", () => {
+		const debts = rosterDebtByStudent("C1", enrollments, [
+			{ eid: "E1", amount: 400000, status: "unpaid" },
+			{ eid: "E1", amount: 300000, status: "unpaid" },
+			{ eid: "E3", amount: 250000, status: "unpaid" },
+		]);
+		expect(debts.get("S1")?.outstanding).toBe(700000);
+		expect(debts.get("S2")?.outstanding).toBe(250000);
+	});
+
+	test("students without invoices are absent from the map", () => {
+		const debts = rosterDebtByStudent("C1", enrollments, []);
+		expect(debts.has("S1")).toBe(false);
+		expect(debts.has("S2")).toBe(false);
 	});
 });

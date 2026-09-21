@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Đưa enrollmentId lên Invoice client + helper tính nợ theo lớp"
-status: todo
+status: completed
 phase: 1
 priority: P2
 effort: "1.5h"
