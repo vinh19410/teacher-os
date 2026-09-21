@@ -27,6 +27,8 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 | API Cloudflare worker and D1 wiring | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) |
 | Web asset worker: static assets, SPA routes, HTTP 404 for unknown paths | [apps/web/src/worker.ts](../apps/web/src/worker.ts) with route classification in [apps/web/src/routes-matcher.ts](../apps/web/src/routes-matcher.ts) |
 | Syllabus import file parsing (client-side; files never reach the server) | [apps/web/src/lib/syllabus-import.ts](../apps/web/src/lib/syllabus-import.ts) |
+| Assignment prompt bank create and per-student grading routes | [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) (subrouter of the kernel tree) |
+| Web security headers and CSP stamping | [apps/web/src/security-headers.ts](../apps/web/src/security-headers.ts), applied by [apps/web/src/worker.ts](../apps/web/src/worker.ts) to every response |
 | Deploy topology and auth cookie namespace | [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) (derivation) and [packages/auth/src/topology.ts](../packages/auth/src/topology.ts) (validation) |
 
 ## Architectural rules
@@ -38,6 +40,8 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 - Keep entitlement state on `session_package` owned by `student`; `enrollment` is the optional class attachment (a package can be parked without a class).
 - Keep deployment wiring in the infra package, not in app code.
 - Keep syllabus file parsing in the browser; the server only receives validated JSON module trees (`POST /api/syllabi/:id/replace-content` applies the replacement as one atomic D1 batch).
+- Keep the assignments router mounted inside the kernel route tree (`kernel.route("/assignments", ...)`) so the kernel's Origin + JSON CSRF guard covers every assignment write; never mount it standalone.
+- Keep the full security-header suite on every host; only the `Content-Security-Policy` header is dropped for localhost/loopback dev HTML (the dev worker serves Vite-transformed HTML whose inline React-Refresh preamble cannot pass `script-src 'self'`), while prod and staging keep it.
 - Keep unknown web paths answering HTTP 404 from the asset worker (branded SPA shell for browser navigations, plain text otherwise); never serve unknown paths as a 200 SPA rewrite.
 - Keep auth topology (origins, cookie domain, cookie namespace prefix) derived from `APP_DOMAIN` in the topology modules. Because staging is a subdomain of the prod apex, browsers send prod's parent-domain session cookie to the staging API too; any non-prod member of that cookie zone must namespace its auth cookies (`teacheros-staging`) so the foreign cookie cannot shadow its sessions, while prod and local stay on the default `better-auth` names.
 

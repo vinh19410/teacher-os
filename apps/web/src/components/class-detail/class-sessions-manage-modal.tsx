@@ -39,7 +39,6 @@ export function ClassSessionsManageModal({
 	cls,
 	syllabus: sy,
 	run,
-	isPending,
 	busy,
 }: ClassSessionsManageModalProps) {
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
