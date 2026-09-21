@@ -48,12 +48,19 @@ describe("class detail merged sessions tab contract (Issue #89)", () => {
 		);
 	});
 
-	test("CurriculumManagementSection supports collapsible header and defaultCollapsed", () => {
-		expect(curriculumSectionSrc).toMatch(/collapsible/);
-		expect(curriculumSectionSrc).toMatch(/defaultCollapsed/);
-		expect(curriculumSectionSrc).toMatch(/aria-expanded/);
-		expect(curriculumSectionSrc).toMatch(/Mở rộng/);
-		expect(curriculumSectionSrc).toMatch(/Thu gọn/);
+	test("CurriculumManagementSection renders assignment-only card (#221)", () => {
+		// Positive: attach/remove affordances and the confirm flow survive.
+		expect(curriculumSectionSrc).toMatch(/ImportSyllabusModal/);
+		expect(curriculumSectionSrc).toMatch(/Gỡ giáo trình/);
+		expect(curriculumSectionSrc).toMatch(/Nhập từ template/);
+		expect(curriculumSectionSrc).toMatch(/disabled=\{busy\}/);
+		// Negative (#221): progress and the content tree are gone from the
+		// card — they belong to the page header and the manage modal.
+		expect(curriculumSectionSrc).not.toMatch(/Mở rộng/);
+		expect(curriculumSectionSrc).not.toMatch(/Thu gọn/);
+		expect(curriculumSectionSrc).not.toMatch(/collapsible/);
+		expect(curriculumSectionSrc).not.toMatch(/syPct/);
+		expect(curriculumSectionSrc).not.toMatch(/<Progress/);
 	});
 
 	test("ClassScheduleTable renders enhanced 3-column table with module badges and sub-rows", () => {

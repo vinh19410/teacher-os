@@ -7,6 +7,7 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ClassScheduleTable } from "@/components/class-detail/class-schedule-table";
+import { ClassSessionsManageModal } from "@/components/class-detail/class-sessions-manage-modal";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
 import type {
 	OccurrenceActionResult,
@@ -108,6 +109,7 @@ function ClassDetailRoute() {
 	const { syllabusById, studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [tab, setTab] = useState("roster");
+	const [manageOpen, setManageOpen] = useState(false);
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"
 	>("list");
@@ -318,8 +320,15 @@ function ClassDetailRoute() {
 						key={`curriculum-${cls.id}`}
 						cls={cls}
 						syllabus={sy}
-						collapsible
-						defaultCollapsed={Boolean(sy && sy.modules.length > 0)}
+						run={run}
+						isPending={isPending}
+						busy={busy}
+					/>{" "}
+					<ClassSessionsManageModal
+						open={manageOpen}
+						onClose={() => setManageOpen(false)}
+						cls={cls}
+						syllabus={sy}
 						run={run}
 						isPending={isPending}
 						busy={busy}
@@ -327,6 +336,14 @@ function ClassDetailRoute() {
 					<div>
 						<div className="mb-3 flex items-center justify-between">
 							<SectionLabel>Lịch học & Tiến độ buổi học</SectionLabel>
+							<Button
+								variant="secondary"
+								size="sm"
+								disabled={!(sy && sy.classId === classId)}
+								onClick={() => setManageOpen(true)}
+							>
+								Sắp xếp buổi
+							</Button>
 						</div>
 						<ClassScheduleTable
 							cls={cls}
