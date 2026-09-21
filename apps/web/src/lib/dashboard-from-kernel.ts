@@ -1,4 +1,5 @@
 import type { Lesson, Student } from "@/lib/mock-data";
+import { startOfWeekMonday, todayISOVietnam, weekDates } from "@/lib/week-grid";
 
 /**
  * Weekday on a lesson row: Monday=1 … Sunday=7.
@@ -15,6 +16,33 @@ export function lessonsToday(lessons: Lesson[], now = new Date()): Lesson[] {
 		.filter((lesson) => lesson.day === day && lesson.status !== "cancelled")
 		.slice()
 		.sort((a, b) => a.time.localeCompare(b.time));
+}
+/**
+ * Phần còn lại của tuần hiện tại (mai → Chủ nhật), khác lessonsToday có
+ * chủ ý:
+ * - legacy (date == null): day > weekday hôm nay (template weekly);
+ * - có date: chỉ tính khi date ∈ các ngày còn lại của tuần chứa "hôm nay"
+ *   (Việt Nam) — date đã qua/hôm nay/tuần khác bị loại;
+ * - loại cancelled; sort (day asc, time asc); flat Lesson[].
+ * lessonsToday giữ semantics day-based (không xét date) — không đổi.
+ */
+export function upcomingLessonsThisWeek(
+	lessons: Lesson[],
+	now = new Date(),
+): Lesson[] {
+	const todayDay = lessonDayFromDate(now);
+	const todayIso = todayISOVietnam(now);
+	const remaining = new Set(
+		weekDates(startOfWeekMonday(todayIso)).filter((iso) => iso > todayIso),
+	);
+	return lessons
+		.filter((lesson) => {
+			if (lesson.status === "cancelled") return false;
+			if (lesson.date == null) return lesson.day > todayDay;
+			return remaining.has(lesson.date);
+		})
+		.slice()
+		.sort((a, b) => a.day - b.day || a.time.localeCompare(b.time));
 }
 
 export type DashboardRiskReason = "absent" | "missed-check-in";
