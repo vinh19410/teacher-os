@@ -19,12 +19,12 @@ Chạy toàn bộ test/type/lint của repo trên một commit chứa cả Phase
 
 ## Yêu cầu
 
-- [ ] Toàn bộ test server + web pass (đã đạt ở Phase 1/2, tái xác nhận trên commit cuối)
-- [ ] `pnpm test` toàn repo pass (gồm `test:ci-workflow` và `test:topology-drift`)
-- [ ] `pnpm check-types` pass (turbo chạy cả server `tsc -b` lẫn web `vite build && tsc --noEmit`)
-- [ ] `pnpm check` (biome) pass — không diff formatting/lint trên các file mới/sửa
-- [ ] Success criteria checklist dưới đây được đối chiếu từng mục
-- [ ] E2E Playwright: optional stretch — chỉ chạy nếu dev server khả dụng, kết quả không chặn done
+- [x] Toàn bộ test server + web pass (đã đạt ở Phase 1/2, tái xác nhận trên commit cuối)
+- [x] `pnpm test` toàn repo pass (gồm `test:ci-workflow` và `test:topology-drift`)
+- [x] `pnpm check-types` pass (turbo chạy cả server `tsc -b` lẫn web `vite build && tsc --noEmit`)
+- [x] `pnpm check` (biome) pass — không diff formatting/lint trên các file mới/sửa
+- [x] Success criteria checklist dưới đây được đối chiếu từng mục
+- [x] E2E Playwright: optional stretch — chỉ chạy nếu dev server khả dụng, kết quả không chặn done
 
 ## Files tạo/sửa
 
@@ -71,12 +71,12 @@ Chạy toàn bộ test/type/lint của repo trên một commit chứa cả Phase
 
 ## Todo
 
-- [ ] `pnpm test` toàn repo xanh
-- [ ] `pnpm check-types` xanh
-- [ ] `pnpm check` xanh (commit diff formatting nếu có)
-- [ ] Đối chiếu xong checklist Success Criteria của plan.md
-- [ ] (Optional) E2E/smoke thủ công 3 kịch bản (a)(b)(c) nếu dev server khả dụng
-- [ ] Cập nhật `status: completed` cho plan.md và 3 phase file
+- [x] `pnpm test` toàn repo xanh
+- [x] `pnpm check-types` xanh
+- [x] `pnpm check` xanh (commit diff formatting nếu có)
+- [x] Đối chiếu xong checklist Success Criteria của plan.md
+- [x] (Optional) E2E/smoke thủ công 3 kịch bản (a)(b)(c) nếu dev server khả dụng
+- [x] Cập nhật `status: completed` cho plan.md và 3 phase file
 
 ## Verification
 

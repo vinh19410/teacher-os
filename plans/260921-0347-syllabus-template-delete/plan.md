@@ -1,7 +1,7 @@
 ---
 title: "Cho phép xóa syllabus template"
 description: "Thêm endpoint hard-delete template giáo trình (an toàn cho các lớp đã import nhờ kiến trúc deep-copy) cùng nút xóa có confirm trên web."
-status: pending
+status: completed
 priority: P2
 effort: "5h"
 branch: vinh19410/feat/syllabus-template-delete
@@ -30,9 +30,9 @@ Yêu cầu "xóa syllabus template nhưng không ảnh hưởng các lớp đã 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1 — Server endpoint xóa template](./phase-01-server-delete-endpoint.md) | Pending |
-| 2 | [Phase 2 — Web action và UI nút xóa](./phase-02-web-delete-action-ui.md) | Pending |
-| 3 | [Phase 3 — Verification toàn diện](./phase-03-end-to-end-verification.md) | Pending |
+| 1 | [Phase 1 — Server endpoint xóa template](./phase-01-server-delete-endpoint.md) | Done |
+| 2 | [Phase 2 — Web action và UI nút xóa](./phase-02-web-delete-action-ui.md) | Done |
+| 3 | [Phase 3 — Verification toàn diện](./phase-03-end-to-end-verification.md) | Done |
 
 ## Kiến trúc & Quyết định
 
