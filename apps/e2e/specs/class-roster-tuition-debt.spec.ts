@@ -85,18 +85,27 @@ async function createInvoice(page: Page, amount: string): Promise<void> {
 	await expect(dialog).toBeHidden();
 }
 
-async function markFirstInvoicePaid(page: Page): Promise<void> {
+function invoiceRegion(page: Page) {
+	return page
+		.locator("div.mt-8")
+		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) });
+}
+
+async function markAllInvoicesPaid(page: Page): Promise<void> {
 	await page.goto("/tuition");
-	// Row-scoped click: a snapshot refetch can re-render the table between
-	// "visible" and "count", so counting buttons races (seen in CI #216).
-	const row = page
-		.locator("tbody tr")
-		.filter({ hasText: STUDENT_NAME })
-		.first();
-	await row.getByRole("button", { name: "Đã nhận" }).click();
-	await expect(row.getByRole("button", { name: "Đã nhận" })).toBeHidden({
-		timeout: 15000,
+	const unpaidButtons = invoiceRegion(page).getByRole("button", {
+		name: "Đã nhận",
 	});
+	// Wait until both created invoices render as unpaid buttons.
+	await expect(unpaidButtons).toHaveCount(2);
+
+	// Click first, wait for snapshot refetch to drop count to 1.
+	await unpaidButtons.first().click();
+	await expect(unpaidButtons).toHaveCount(1, { timeout: 15000 });
+
+	// Click remaining, wait for snapshot refetch to drop count to 0.
+	await unpaidButtons.first().click();
+	await expect(unpaidButtons).toHaveCount(0, { timeout: 15000 });
 }
 
 test("class roster reflects the tuition-debt lifecycle of the class", async ({
@@ -120,8 +129,7 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 	await expect(rosterFee(page, "800.000đ")).toBeVisible();
 
 	// Mark both paid → "Đã đủ", and it survives a reload.
-	await markFirstInvoicePaid(page);
-	await markFirstInvoicePaid(page);
+	await markAllInvoicesPaid(page);
 	await openClassDetail(page);
 	await expect(rosterFee(page, "Đã đủ")).toBeVisible();
 	await expect(rosterFee(page, "800.000đ")).toBeHidden();
