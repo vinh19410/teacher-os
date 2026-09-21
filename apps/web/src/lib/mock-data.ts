@@ -76,6 +76,9 @@ export interface ClassAssignment {
 export interface Invoice {
 	id: string;
 	sid: string;
+	/** Enrollment (lớp) phát sinh hóa đơn; "" trên legacy rows tạo trước
+	 * create API. Nguồn: KernelInvoiceRow.enrollmentId trên snapshot. */
+	eid: string;
 	amount: number;
 	status: InvoiceStatus;
 	date: string;

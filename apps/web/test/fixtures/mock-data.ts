@@ -96,6 +96,7 @@ export const seedData: MockData = {
 		{
 			id: "INV-081",
 			sid: "s1",
+			eid: "",
 			amount: 5400000,
 			status: "paid",
 			date: "",
@@ -107,6 +108,7 @@ export const seedData: MockData = {
 		{
 			id: "INV-084",
 			sid: "s4",
+			eid: "",
 			amount: 1000000,
 			status: "overdue",
 			date: "",
@@ -118,6 +120,7 @@ export const seedData: MockData = {
 		{
 			id: "INV-086",
 			sid: "s1",
+			eid: "",
 			amount: 900000,
 			status: "unpaid",
 			date: "",

@@ -18,6 +18,7 @@ export function mapInvoices(snapshot: KernelSnapshot): Invoice[] {
 	return snapshot.invoices.map((row) => ({
 		id: row.id,
 		sid: row.studentId,
+		eid: row.enrollmentId,
 		amount: row.amount,
 		status: coerceStatus(row.status),
 		date: row.date,
