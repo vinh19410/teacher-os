@@ -34,7 +34,7 @@ Xác định tập pilot blocker thật sự tồn tại cần fix cho issue #69
 
 ## Success Criteria
 
-Inventory blocker có kết luận cho từng nguồn (log / issues / docs); không blocker nào bỏ lửng không lý do. Đạt: 3 nguồn đã kiểm, 0 blocker — finding này là đầu vào cho evidence report (Phase 3).
+Inventory blocker có kết luận cho từng nguồn (log / issues / docs); không blocker nào bỏ lửng không lý do. Đạt: 5 nguồn đã kiểm (log, issues QC/Dev, roadmap, nguồn phụ plan M4, comments #67/#53), 0 blocker — finding này là đầu vào cho evidence report (Phase 3).
 
 ## Risk Assessment
 
