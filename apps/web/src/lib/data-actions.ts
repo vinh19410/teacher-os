@@ -1,4 +1,5 @@
 import type {
+	AssignmentPromptCreate,
 	ClassType,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
@@ -43,16 +44,7 @@ export type KernelAction =
 			/** Assignment-prompt bank (#202): 8 fields — exactly the strict
 			 * contract; the command bus posts them verbatim. */
 			type: "create-assignment-prompt";
-			payload: {
-				task: "task1" | "task2";
-				genre: string;
-				title: string;
-				band: "6.0" | "6.5" | "7.0" | "7.5";
-				source: string;
-				prompt: string;
-				note: string;
-				status: "draft" | "ready";
-			};
+			payload: AssignmentPromptCreate;
 	  }
 	| {
 			/** Giao đề ngân hàng cho lớp (#208) */

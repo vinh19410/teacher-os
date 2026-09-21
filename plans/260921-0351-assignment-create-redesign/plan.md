@@ -1,7 +1,7 @@
 ---
 title: "Trình dựng lại trang tạo bài tập theo thiết kế v5 — 4 kỹ năng IELTS + đáp án chấm tự động"
 description: "Dựng lại /assignments/new theo assignment-create-5.html: 4 kỹ năng Writing/Reading/Listening/Speaking (preset 3 cấp), q-editor + đáp án chấm tự động, audio metadata, preview/success card mở rộng, migration 0019 + contract v2 cho assignment_prompt."
-status: pending
+status: completed
 priority: P1
 effort: 20h
 issue: 218
@@ -66,20 +66,20 @@ Trang `/assignments/new` hiện chỉ soạn đề Writing (task1/task2 + genre,
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Kernel: schema 0019, contract v2 & POST API](./phase-01-kernel-schema-contract-api.md) | Pending |
-| 2 | [Web data layer & catalog preset 3 cấp](./phase-02-web-data-layer-presets.md) | Pending |
-| 3 | [Trang tạo đề 4 kỹ năng + components](./phase-03-create-page-components.md) | Pending |
-| 4 | [Consumer surfaces: bank, class picker, preview](./phase-04-consumer-surfaces.md) | Pending |
-| 5 | [E2E & verification sweep](./phase-05-e2e-verification.md) | Pending |
+| 1 | [Kernel: schema 0019, contract v2 & POST API](./phase-01-kernel-schema-contract-api.md) | Completed |
+| 2 | [Web data layer & catalog preset 3 cấp](./phase-02-web-data-layer-presets.md) | Completed |
+| 3 | [Trang tạo đề 4 kỹ năng + components](./phase-03-create-page-components.md) | Completed |
+| 4 | [Consumer surfaces: bank, class picker, preview](./phase-04-consumer-surfaces.md) | Completed |
+| 5 | [E2E & verification sweep](./phase-05-e2e-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Tạo được đề đủ 4 kỹ năng; Reading/Listening có answer key; listening draft lưu được không cần file, ready bị chặn client + server khi thiếu file hoặc thiếu đáp án
-- [ ] Đề Reading ready lưu xong sống qua reload, hiện trong bank list với filter skill; org khác không thấy
-- [ ] Preview phía học viên không bao giờ hiện đáp án/answer key; cue card + audio row + tags mới đúng design
-- [ ] Success card đủ meta rows (Kỹ năng, Phần thi, Band, Chi tiết, Chấm điểm R/L, Nguồn, Trạng thái, Giao lớp)
-- [ ] Migration 0019 apply sạch trên DB fresh (server test harness) và backfill đúng cho row Writing cũ
-- [ ] `pnpm check && pnpm check-types && pnpm test` xanh; 4 spec E2E (2 cũ + 2 mới) xanh
+- [x] Tạo được đề đủ 4 kỹ năng; Reading/Listening có answer key; listening draft lưu được không cần file, ready bị chặn client + server khi thiếu file hoặc thiếu đáp án
+- [x] Đề Reading ready lưu xong sống qua reload, hiện trong bank list với filter skill; org khác không thấy
+- [x] Preview phía học viên không bao giờ hiện đáp án/answer key; cue card + audio row + tags mới đúng design
+- [x] Success card đủ meta rows (Kỹ năng, Phần thi, Band, Chi tiết, Chấm điểm R/L, Nguồn, Trạng thái, Giao lớp)
+- [x] Migration 0019 apply sạch trên DB fresh (server test harness) và backfill đúng cho row Writing cũ
+- [x] `pnpm check && pnpm check-types && pnpm test` xanh; 4 spec E2E (2 cũ + 2 mới) xanh
 
 ## Verification Commands
 
@@ -119,6 +119,13 @@ pnpm check && pnpm check-types && pnpm test
 - Unresolved contradictions: 0 — `ak plan validate` [OK]
 
 <!-- Updated: Validation Session 1 - dirty-flag preserve, #213 ordering, red-team confirmed -->
+
+### Session 2 — 2026-09-21 (Execution & Verification)
+- `pnpm --filter db db:generate`: No schema changes, nothing to migrate.
+- `apps/server` vitest: 257/257 passed in 12 files.
+- `apps/web` vitest: 68/68 passed in 68 files.
+- `apps/e2e` playwright: 5/5 passed in `assignment-prompt-create.spec.ts`.
+- `pnpm check && pnpm check-types && pnpm test`: 100% green across all packages.
 
 
 ## Red Team Review

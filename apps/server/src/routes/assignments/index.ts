@@ -65,7 +65,28 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 		const [created] = await deps
 			.getDb()
 			.insert(assignmentPrompt)
-			.values({ id: crypto.randomUUID(), orgId: ctx.orgId, ...body.data })
+			.values({
+				id: crypto.randomUUID(),
+				orgId: ctx.orgId,
+				task: body.data.skill === "writing" ? body.data.part : "task2",
+				genre: body.data.skill === "writing" ? body.data.type : "",
+				skill: body.data.skill,
+				part: body.data.part,
+				type: body.data.type,
+				title: body.data.title,
+				band: body.data.band,
+				source: body.data.source,
+				prompt: body.data.prompt,
+				intro: body.data.intro,
+				passage: body.data.passage,
+				transcript: body.data.transcript,
+				cueTopic: body.data.cueTopic,
+				cuePoints: body.data.cuePoints,
+				audioName: body.data.audioName,
+				questions: JSON.stringify(body.data.questions),
+				note: body.data.note,
+				status: body.data.status,
+			})
 			.returning({ id: assignmentPrompt.id });
 		if (!created) return c.json({ error: "prompt write conflict" }, 500);
 		return c.json<CreatedResponse>(created, 201);

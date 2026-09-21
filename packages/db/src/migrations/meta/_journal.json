@@ -134,6 +134,13 @@
       "when": 1789736000253,
       "tag": "0018_glorious_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1789971661327,
+      "tag": "0019_solid_boomer",
+      "breakpoints": true
     }
   ]
 }

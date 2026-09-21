@@ -4176,13 +4176,21 @@ describe("assignment prompt bank (issue #202)", () => {
 	let orgB: TestSession;
 
 	const validBody = {
-		task: "task2",
-		genre: "discuss",
+		skill: "writing",
+		part: "task2",
+		type: "discuss",
 		title: "Writing Task 2 — Discuss both views",
 		band: "7.0",
 		source: "Cambridge IELTS 10, Test 2",
 		prompt:
 			"Some people think that all university students should study whatever they like.\n\nDiscuss both these views and give your own opinion.",
+		passage: "",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		questions: [],
 		note: "",
 		status: "ready",
 	};
@@ -4242,11 +4250,11 @@ describe("assignment prompt bank (issue #202)", () => {
 			{ ...validBody, title: "" }, // blank title
 			{ ...validBody, title: "  " }, // whitespace-only title
 			{ ...validBody, prompt: "" }, // blank prompt
-			{ ...validBody, task: "task3" }, // enum
+			{ ...validBody, skill: "math" }, // enum
 			{ ...validBody, band: "8.0" }, // enum
 			{ ...validBody, status: "sent" }, // enum
 			{ ...validBody, extra: true }, // strict
-			{ task: "task2" }, // missing fields
+			{ skill: "writing" }, // missing fields
 		]) {
 			const res = await t.call("/api/assignments/prompts", {
 				session: orgA,
@@ -4276,6 +4284,349 @@ describe("assignment prompt bank (issue #202)", () => {
 		const bankB = (await t.kernel(orgB)).assignmentPrompts;
 		expect(bankB.some((r) => r.id === id)).toBe(false);
 		expect(bankB.some((r) => r.title === "Đề riêng của A")).toBe(false);
+	});
+
+	test("POST reading ready prompt persists passage and parsed questions", async () => {
+		const readingBody = {
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Reading Passage 1 — TFNG",
+			band: "7.0",
+			source: "Cambridge 10, Test 1",
+			prompt: "",
+			passage: "Stepwells are underground reservoirs found across India...",
+			intro: "Questions 1-2\nDo the following statements agree...",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: [
+				{
+					stem: "Stepwells were first built in the 20th century.",
+					opts: null,
+					answer: "FALSE",
+					alts: "",
+				},
+				{
+					stem: "Water stored in stepwells stays cool.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+				},
+			],
+			note: "",
+			status: "ready",
+		};
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: readingBody,
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row).toMatchObject({
+			id,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Reading Passage 1 — TFNG",
+			passage: "Stepwells are underground reservoirs found across India...",
+			status: "ready",
+		});
+		expect(row?.questions).toHaveLength(2);
+		expect(row?.questions?.[0]?.answer).toBe("FALSE");
+		expect(row?.questions?.[1]?.answer).toBe("TRUE");
+	});
+
+	test("POST reading ready prompt rejects missing answer with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Passage 1",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Some passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "TRUE", alts: "" },
+					{ stem: "Q2", opts: null, answer: "", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST listening ready prompt rejects missing audioName with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "listening",
+				part: "s1",
+				type: "form",
+				title: "Listening S1",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "answer", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST listening draft prompt accepts missing audio and missing answer when stem present", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "listening",
+				part: "s1",
+				type: "form",
+				title: "Listening Draft S1",
+				band: "6.5",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "", alts: "" }],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST reading draft prompt rejects missing passage with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Draft",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "   ",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "", alts: "" }],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST speaking part2 rejects missing cueTopic with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "speaking",
+				part: "part2",
+				type: "place",
+				title: "Speaking Part 2",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "  ",
+				cuePoints: "where it is",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST writing or speaking rejects non-empty questions with 400", async () => {
+		for (const skill of ["writing", "speaking"] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					...validBody,
+					skill,
+					part: skill === "writing" ? "task2" : "part1",
+					type: skill === "writing" ? "discuss" : "hometown",
+					prompt: "Valid prompt text",
+					questions: [{ stem: "Q1", opts: null, answer: "A", alts: "" }],
+				},
+			});
+			expect(res.status).toBe(400);
+		}
+	});
+
+	test("POST rejects questions exceeding 40 items with 400", async () => {
+		const items = Array.from({ length: 41 }, (_, i) => ({
+			stem: `Question ${i + 1}`,
+			opts: null,
+			answer: "TRUE",
+			alts: "",
+		}));
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Too Many Questions",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: items,
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST rejects invalid or cross-skill part/type combinations with 400", async () => {
+		for (const [skill, part, type] of [
+			["speaking", "task2", "discuss"],
+			["reading", "task1", "chart"],
+			["writing", "p1", "tfng"],
+			["listening", "part2", "place"],
+			["writing", "task2", "nonexistent"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					...validBody,
+					skill,
+					part,
+					type,
+				},
+			});
+			expect(res.status).toBe(400);
+		}
+	});
+
+	test("POST rejects answer choices outside kind alphabet with 400", async () => {
+		const resTfng = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "TFNG Invalid Choice",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "BANANA", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(resTfng.status).toBe(400);
+
+		const resMcq = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p3",
+				type: "mcq",
+				title: "MCQ Invalid Choice",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: ["A", "B", "C", "D"], answer: "E", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(resMcq.status).toBe(400);
+	});
+
+	test("snapshot projection safely parses corrupt or 'null' questions without crashing", async () => {
+		const corruptId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: corruptId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Corrupt questions",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: "null",
+			note: "",
+			status: "draft",
+		});
+		const snapshot = await t.kernel(orgA);
+		const row = snapshot.assignmentPrompts.find((r) => r.id === corruptId);
+		expect(row).toBeDefined();
+		expect(row?.questions).toEqual([]);
 	});
 });
 
@@ -4314,12 +4665,20 @@ describe("class assignment give flow (#208)", () => {
 			session: orgA,
 			method: "POST",
 			body: {
-				task: "task2",
-				genre: "opinion",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
 				title: "Writing Task 2 — Ready",
 				band: "7.0",
 				source: "Cambridge 12",
 				prompt: "Some people think...",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
 				note: "",
 				status: "ready",
 			},
@@ -4330,12 +4689,20 @@ describe("class assignment give flow (#208)", () => {
 			session: orgA,
 			method: "POST",
 			body: {
-				task: "task1",
-				genre: "chart",
+				skill: "writing",
+				part: "task1",
+				type: "chart",
 				title: "Writing Task 1 — Draft",
 				band: "6.5",
 				source: "",
 				prompt: "The chart below shows...",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
 				note: "",
 				status: "draft",
 			},

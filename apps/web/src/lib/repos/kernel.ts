@@ -161,8 +161,8 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				body: { ...action.payload },
 			};
 		case "create-assignment-prompt":
-			// #202: assignmentPromptCreateSchema is .strict() — the payload is
-			// the entire body, all eight fields.
+			// #218: assignmentPromptCreateSchema is .strict() — v2 payload is
+			// the entire body and is posted verbatim.
 			return {
 				path: "/api/assignments/prompts",
 				body: { ...action.payload },

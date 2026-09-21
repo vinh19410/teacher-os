@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Trang tạo đề 4 kỹ năng + components"
-status: todo
+status: completed
 priority: P1
 effort: "6h"
 dependencies: ["2"]

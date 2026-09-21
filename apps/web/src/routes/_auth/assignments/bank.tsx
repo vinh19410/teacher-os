@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-	genreOf,
-	TASK_PRESETS,
-	taskOf,
+	partOf,
+	SKILLS,
+	type SkillId,
+	typeOf,
 } from "@/components/assignments/assignment-presets";
 import {
 	fmtDate,
@@ -23,16 +24,14 @@ export const Route = createFileRoute("/_auth/assignments/bank")({
 	component: AssignmentBankPage,
 });
 
-const TASK_OPTIONS = ["Tất cả", "Task 1 · 150 từ", "Task 2 · 250 từ"];
+const SKILL_OPTIONS = ["Tất cả", "Writing", "Reading", "Listening", "Speaking"];
 
 export function AssignmentBankPage() {
 	const navigate = useNavigate();
 	const { data } = useData();
 
-	const [taskFilter, setTaskFilter] = useState<"all" | "task1" | "task2">(
-		"all",
-	);
-	const [genreFilter, setGenreFilter] = useState<string>("all");
+	const [skillFilter, setSkillFilter] = useState<"all" | SkillId>("all");
+	const [partFilter, setPartFilter] = useState<string>("all");
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -51,84 +50,80 @@ export function AssignmentBankPage() {
 		return counts;
 	}, [data.classAssignments]);
 
-	// Dynamic genres based on selected task
-	const genrePresets = useMemo(() => {
-		if (taskFilter === "task1") {
-			return TASK_PRESETS.find((t) => t.id === "task1")?.genres ?? [];
+	// Dynamic parts based on selected skill
+	const partPresets = useMemo(() => {
+		if (skillFilter !== "all") {
+			return SKILLS.find((s) => s.id === skillFilter)?.parts ?? [];
 		}
-		if (taskFilter === "task2") {
-			return TASK_PRESETS.find((t) => t.id === "task2")?.genres ?? [];
-		}
-		return [...TASK_PRESETS[0].genres, ...TASK_PRESETS[1].genres];
-	}, [taskFilter]);
+		return SKILLS.flatMap((s) => s.parts);
+	}, [skillFilter]);
 
-	const genreOptions = useMemo(() => {
-		return ["Tất cả dạng", ...genrePresets.map((g) => g.label)];
-	}, [genrePresets]);
+	const partOptions = useMemo(() => {
+		return ["Tất cả phần", ...partPresets.map((p) => p.label)];
+	}, [partPresets]);
 
-	function handleTaskChange(label: string) {
-		const nextTask: "all" | "task1" | "task2" = label.startsWith("Task 1")
-			? "task1"
-			: label.startsWith("Task 2")
-				? "task2"
-				: "all";
-		setTaskFilter(nextTask);
-
-		// If current genre is not valid under new task, reset to "all"
-		if (nextTask !== "all") {
-			const validGenreIds =
-				TASK_PRESETS.find((t) => t.id === nextTask)?.genres.map((g) => g.id) ??
-				[];
-			if (genreFilter !== "all" && !validGenreIds.includes(genreFilter)) {
-				setGenreFilter("all");
-			}
-		}
+	function handleSkillChange(label: string) {
+		const nextSkill: "all" | SkillId =
+			label === "Writing"
+				? "writing"
+				: label === "Reading"
+					? "reading"
+					: label === "Listening"
+						? "listening"
+						: label === "Speaking"
+							? "speaking"
+							: "all";
+		setSkillFilter(nextSkill);
+		setPartFilter("all");
 	}
 
-	function handleGenreChange(label: string) {
-		if (label === "Tất cả dạng") {
-			setGenreFilter("all");
+	function handlePartChange(label: string) {
+		if (label === "Tất cả phần") {
+			setPartFilter("all");
 			return;
 		}
-		const found = genrePresets.find((g) => g.label === label);
-		setGenreFilter(found?.id ?? "all");
+		const found = partPresets.find((p) => p.label === label);
+		setPartFilter(found?.id ?? "all");
 	}
 
-	const selectedGenreLabel = useMemo(() => {
-		if (genreFilter === "all") return "Tất cả dạng";
-		return (
-			genrePresets.find((g) => g.id === genreFilter)?.label ?? "Tất cả dạng"
-		);
-	}, [genreFilter, genrePresets]);
-
-	const selectedTaskLabel = useMemo(() => {
-		if (taskFilter === "task1") return "Task 1 · 150 từ";
-		if (taskFilter === "task2") return "Task 2 · 250 từ";
+	const selectedSkillLabel = useMemo(() => {
+		if (skillFilter === "writing") return "Writing";
+		if (skillFilter === "reading") return "Reading";
+		if (skillFilter === "listening") return "Listening";
+		if (skillFilter === "speaking") return "Speaking";
 		return "Tất cả";
-	}, [taskFilter]);
+	}, [skillFilter]);
+
+	const selectedPartLabel = useMemo(() => {
+		if (partFilter === "all") return "Tất cả phần";
+		return partPresets.find((p) => p.id === partFilter)?.label ?? "Tất cả phần";
+	}, [partFilter, partPresets]);
 
 	// Filter & sort prompts
 	const filteredPrompts = useMemo(() => {
 		const q = query.trim().toLowerCase();
 		return data.assignmentPrompts
 			.filter((p) => {
-				if (taskFilter !== "all" && p.task !== taskFilter) return false;
-				if (genreFilter !== "all" && p.genre !== genreFilter) return false;
+				const pSkill = (p.skill ?? "writing") as SkillId;
+				const pPart = p.part ?? p.task;
+				const pType = p.type ?? p.genre;
+				if (skillFilter !== "all" && pSkill !== skillFilter) return false;
+				if (partFilter !== "all" && pPart !== partFilter) return false;
 				if (q) {
-					const g = genreOf(p.task, p.genre);
+					const t = typeOf(pSkill, pPart, pType);
 					const matchTitle = p.title.toLowerCase().includes(q);
 					const matchSource = p.source.toLowerCase().includes(q);
-					const matchGenre = g.label.toLowerCase().includes(q);
-					if (!matchTitle && !matchSource && !matchGenre) return false;
+					const matchType = t.label.toLowerCase().includes(q);
+					if (!matchTitle && !matchSource && !matchType) return false;
 				}
 				return true;
 			})
 			.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-	}, [data.assignmentPrompts, taskFilter, genreFilter, query]);
+	}, [data.assignmentPrompts, skillFilter, partFilter, query]);
 
 	const totalPrompts = data.assignmentPrompts.length;
 	const hasActiveFilter =
-		taskFilter !== "all" || genreFilter !== "all" || query.trim() !== "";
+		skillFilter !== "all" || partFilter !== "all" || query.trim() !== "";
 
 	// Active selection (defaults to first item in filtered list)
 	const activePrompt = useMemo(() => {
@@ -159,7 +154,7 @@ export function AssignmentBankPage() {
 			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
 				<PageHead
 					title="Ngân hàng bài tập"
-					lead="Đề đã lưu sau khi soạn. Lọc theo dạng bài rồi giao cho lớp ở trang Lớp học."
+					lead="Đề đã lưu sau khi soạn. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
 				/>
 				<Button onClick={() => navigate({ to: "/assignments/new" })}>
 					Tạo đề mới
@@ -198,27 +193,27 @@ export function AssignmentBankPage() {
 								/>
 							</div>
 
-							{/* Task Filter */}
+							{/* Skill Filter */}
 							<div className="flex flex-col gap-1.5">
 								<span className="font-medium text-muted-fg text-xs">
-									Dạng bài
+									Kỹ năng
 								</span>
 								<ChipFilter
-									options={TASK_OPTIONS}
-									value={selectedTaskLabel}
-									onChange={handleTaskChange}
+									options={SKILL_OPTIONS}
+									value={selectedSkillLabel}
+									onChange={handleSkillChange}
 								/>
 							</div>
 
-							{/* Genre Filter */}
-							<div id="genre-block" className="flex flex-col gap-1.5">
+							{/* Part Filter */}
+							<div id="part-block" className="flex flex-col gap-1.5">
 								<span className="font-medium text-muted-fg text-xs">
-									Dạng đề
+									Phần thi
 								</span>
 								<ChipFilter
-									options={genreOptions}
-									value={selectedGenreLabel}
-									onChange={handleGenreChange}
+									options={partOptions}
+									value={selectedPartLabel}
+									onChange={handlePartChange}
 								/>
 							</div>
 
@@ -239,8 +234,8 @@ export function AssignmentBankPage() {
 									<button
 										type="button"
 										onClick={() => {
-											setTaskFilter("all");
-											setGenreFilter("all");
+											setSkillFilter("all");
+											setPartFilter("all");
 											setQuery("");
 										}}
 										className="font-medium text-muted-fg text-xs hover:text-fg"
@@ -258,7 +253,8 @@ export function AssignmentBankPage() {
 									Không có đề khớp bộ lọc
 								</h2>
 								<p className="mt-1 text-muted-fg text-sm">
-									Thử dạng bài khác, hoặc xóa bộ lọc để xem toàn bộ ngân hàng.
+									Thử kỹ năng hoặc phần thi khác, hoặc xóa bộ lọc để xem toàn bộ
+									ngân hàng.
 								</p>
 							</Card>
 						) : (
@@ -269,8 +265,11 @@ export function AssignmentBankPage() {
 							>
 								{filteredPrompts.map((prompt) => {
 									const isSelected = activePrompt?.id === prompt.id;
-									const g = genreOf(prompt.task, prompt.genre);
-									const t = taskOf(prompt.task);
+									const pSkill = (prompt.skill ?? "writing") as SkillId;
+									const pPart = prompt.part ?? prompt.task;
+									const pType = prompt.type ?? prompt.genre;
+									const t = typeOf(pSkill, pPart, pType);
+									const part = partOf(pSkill, pPart);
 									const used = usedByPromptId.get(prompt.id) ?? 0;
 									const statusInfo = promptStatus(prompt.status, used);
 
@@ -293,7 +292,7 @@ export function AssignmentBankPage() {
 													{prompt.title}
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs">
-													<Tag>{g.label}</Tag>
+													<Tag>{t.label}</Tag>
 													{prompt.source.trim() && (
 														<span className="truncate text-meta">
 															{prompt.source.trim()}
@@ -305,13 +304,13 @@ export function AssignmentBankPage() {
 												</div>
 											</div>
 
-											{/* Right: Status Tag + Task/Band meta */}
+											{/* Right: Status Tag + Part/Band meta */}
 											<div className="flex shrink-0 flex-col items-end gap-1.5">
 												<StatusTag tone={statusInfo.tone}>
 													{statusInfo.label}
 												</StatusTag>
 												<span className="font-mono text-meta text-xs">
-													{t.label} · Band {prompt.band}
+													{part.label} · Band {prompt.band}
 												</span>
 											</div>
 										</button>

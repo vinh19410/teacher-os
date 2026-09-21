@@ -1,53 +1,54 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { genreOf, taskOf } from "./assignment-presets";
+import {
+	partOf,
+	type QuestionItem,
+	skillOf,
+	typeOf,
+} from "./assignment-presets";
 
-/**
- * Post-save state (design v3): replaces the form in place — "Tạo đề khác"
- * resets, the ghost link hands off to the assigning flow in Lớp học.
- */
 export function CreateSuccessCard({
 	title,
 	status,
-	task,
-	genre,
+	skill = "writing",
+	part = "task2",
+	type = "discuss",
 	band,
 	source,
+	audioName = "",
+	questions = [],
 	onCreateAnother,
 }: {
 	title: string;
 	status: "draft" | "ready";
-	task: string;
-	genre: string;
+	skill?: string;
+	part?: string;
+	type?: string;
 	band: string;
 	source: string;
+	audioName?: string;
+	questions?: QuestionItem[];
 	onCreateAnother: () => void;
+	task?: string;
+	genre?: string;
 }) {
-	const t = taskOf(task);
-	const g = genreOf(task, genre);
-
+	const skillPreset = skillOf(skill);
+	const partPreset = partOf(skill, part);
+	const typePreset = typeOf(skill, part, type);
+	const auto = skill === "reading" || skill === "listening";
+	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
 		<Card
 			variant="white"
-			className="flex flex-col gap-4 p-8"
+			className="flex max-w-2xl flex-col gap-4 p-8"
 			aria-live="polite"
 		>
 			<div
 				aria-hidden="true"
 				className="grid h-11 w-11 place-items-center rounded-full bg-[color-mix(in_oklab,var(--success),transparent_88%)] text-success"
 			>
-				<svg
-					aria-hidden="true"
-					width="22"
-					height="22"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2"
-				>
-					<path d="M5 12l5 5L20 7" />
-				</svg>
+				✓
 			</div>
 			<h2 className="font-display font-semibold text-[22px]">
 				{status === "draft" ? "Đã lưu bản nháp" : "Đã thêm vào ngân hàng"}
@@ -57,15 +58,32 @@ export function CreateSuccessCard({
 			</p>
 			<ul className="flex flex-col gap-2">
 				{[
-					["Dạng bài", `${t.label} · ${g.label}`],
+					["Kỹ năng", skillPreset.name],
+					["Phần thi", `${partPreset.label} · ${typePreset.label}`],
 					["Band mục tiêu", band],
+					[
+						"Chi tiết",
+						skill === "listening"
+							? audioName || "Chưa đính file"
+							: auto
+								? `${questions.length} câu`
+								: typePreset.label,
+					],
+					...(auto
+						? [
+								[
+									"Chấm điểm",
+									`Tự động · ${locked}/${questions.length} đáp án đã khóa`,
+								],
+							]
+						: []),
 					["Nguồn", source.trim() || "Không ghi nguồn"],
 					["Trạng thái", status === "draft" ? "Bản nháp" : "Sẵn sàng giao"],
 					["Giao lớp", "Chưa giao"],
-				].map(([k, v]) => (
-					<li key={k} className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">{k}</span>
-						<strong className="text-sm">{v}</strong>
+				].map(([key, value]) => (
+					<li key={key} className="flex items-center justify-between gap-4">
+						<span className="text-muted-fg text-sm">{key}</span>
+						<strong className="text-right text-sm">{value}</strong>
 					</li>
 				))}
 			</ul>

@@ -71,6 +71,42 @@ function parseSkills(raw: string): string[] {
 	}
 }
 
+function parseQuestions(
+	raw: string,
+	rowId: string,
+): KernelSnapshot["assignmentPrompts"][number]["questions"] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			console.warn(
+				`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,
+			);
+			return [];
+		}
+		return parsed.flatMap((item) => {
+			if (!item || typeof item !== "object") return [];
+			const record = item as Record<string, unknown>;
+			return [
+				{
+					stem: typeof record.stem === "string" ? record.stem : "",
+					opts: Array.isArray(record.opts)
+						? record.opts.filter(
+								(option): option is string => typeof option === "string",
+							)
+						: null,
+					answer: typeof record.answer === "string" ? record.answer : "",
+					alts: typeof record.alts === "string" ? record.alts : "",
+				},
+			];
+		});
+	} catch {
+		console.warn(
+			`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,
+		);
+		return [];
+	}
+}
+
 /** DB text column guard: unknown type values fall back to "ielts". */
 const knownClassTypes = new Set<string>(CLASS_TYPES);
 
@@ -314,10 +350,20 @@ export async function loadSnapshot(
 				id,
 				task,
 				genre,
+				skill,
+				part,
+				type,
 				title,
 				band,
 				source,
 				prompt,
+				intro,
+				passage,
+				transcript,
+				cueTopic,
+				cuePoints,
+				audioName,
+				questions,
 				note,
 				status,
 				createdAt,
@@ -325,10 +371,20 @@ export async function loadSnapshot(
 				id,
 				task,
 				genre,
+				skill,
+				part,
+				type,
 				title,
 				band,
 				source,
 				prompt,
+				intro,
+				passage,
+				transcript,
+				cueTopic,
+				cuePoints,
+				audioName,
+				questions: parseQuestions(questions, id),
 				note,
 				status,
 				createdAt: createdAt.toISOString(),

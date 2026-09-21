@@ -1,3 +1,4 @@
+import type { AssignmentPromptCreate } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 
 import { kernelCommand } from "./kernel";
@@ -14,8 +15,8 @@ describe("kernelCommand create-report", () => {
 			period: "08–14/09",
 			content: "Tuần học tốt.",
 			channel: "Zalo OA",
-			status: "sent",
-		} as const;
+			status: "sent" as const,
+		};
 		const request = kernelCommand({
 			type: "create-report",
 			payload: { ...payload },
@@ -25,18 +26,26 @@ describe("kernelCommand create-report", () => {
 	});
 });
 
-describe("kernelCommand create-assignment-prompt (#202)", () => {
-	test("maps to /api/assignments/prompts with the exact eight-field body", () => {
-		const payload = {
-			task: "task2",
-			genre: "discuss",
+describe("kernelCommand create-assignment-prompt (#218)", () => {
+	test("maps to /api/assignments/prompts with the exact v2 body", () => {
+		const payload: AssignmentPromptCreate = {
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
 			title: "Discuss both views",
 			band: "7.0",
 			source: "Cambridge 10, Test 2",
 			prompt: "Some people think…",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: [],
 			note: "",
 			status: "ready",
-		} as const;
+		};
 		const request = kernelCommand({
 			type: "create-assignment-prompt",
 			payload: { ...payload },

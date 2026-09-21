@@ -6,39 +6,76 @@ import type { AssignmentPrompt, ClassAssignment } from "@/lib/mock-data";
 const bankFixture: AssignmentPrompt[] = [
 	{
 		id: "ap-draft",
+		skill: "writing",
+		part: "task1",
+		type: "chart",
 		task: "task1",
 		genre: "chart",
 		title: "Writing Task 1 — Chart Draft",
 		band: "6.5",
 		source: "Cambridge 10",
 		prompt: "The chart below shows...",
+		questions: [],
 		note: "",
 		status: "draft",
 		createdAt: "2026-09-18T12:00:00.000Z",
 	},
 	{
 		id: "ap-used",
+		skill: "writing",
+		part: "task2",
+		type: "discuss",
 		task: "task2",
 		genre: "discuss",
 		title: "Writing Task 2 — Discuss Both Views",
 		band: "7.0",
 		source: "Cambridge 12",
 		prompt: "Some people think that...",
+		questions: [],
 		note: "",
 		status: "ready",
 		createdAt: "2026-09-17T10:00:00.000Z",
 	},
 	{
 		id: "ap-ready",
+		skill: "writing",
+		part: "task2",
+		type: "opinion",
 		task: "task2",
 		genre: "opinion",
 		title: "Writing Task 2 — Opinion Essay",
 		band: "7.5",
 		source: "Cambridge 14",
 		prompt: "Do you agree or disagree...",
+		questions: [],
 		note: "",
 		status: "ready",
 		createdAt: "2026-09-16T08:00:00.000Z",
+	},
+	{
+		id: "ap-reading",
+		skill: "reading",
+		part: "p1",
+		type: "tfng",
+		task: "task2",
+		genre: "discuss",
+		title: "Reading Passage 1 — TFNG",
+		band: "7.0",
+		source: "Cambridge 10",
+		prompt: "",
+		passage: "Stepwells are underground reservoirs...",
+		intro: "Questions 1-2",
+		questions: [
+			{
+				stem: "Question stem one",
+				opts: null,
+				answer: "SECRET_ANSWER_FALSE",
+				alts: "",
+			},
+		],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-15T08:00:00.000Z",
 	},
 ];
 
@@ -74,7 +111,7 @@ vi.mock("@/lib/data-store", () => ({
 
 import { AssignmentBankPage } from "./bank";
 
-describe("AssignmentBankPage (#208)", () => {
+describe("AssignmentBankPage (#218 v5)", () => {
 	it("renders bank list page structure and copy per design", () => {
 		currentDataFixture = {
 			assignmentPrompts: bankFixture,
@@ -84,15 +121,15 @@ describe("AssignmentBankPage (#208)", () => {
 
 		expect(html).toContain("Ngân hàng bài tập");
 		expect(html).toContain(
-			"Đề đã lưu sau khi soạn. Lọc theo dạng bài rồi giao cho lớp ở trang Lớp học.",
+			"Đề đã lưu sau khi soạn. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học.",
 		);
 		expect(html).toContain("Tạo đề mới");
-		expect(html).toContain("Dạng bài");
-		expect(html).toContain("Dạng đề");
+		expect(html).toContain("Kỹ năng");
+		expect(html).toContain("Phần thi");
 		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
 		expect(html).toContain("Đang hiện");
-		expect(html).toContain("3");
-		expect(html).toContain("/ 3 đề");
+		expect(html).toContain("4");
+		expect(html).toContain("/ 4 đề");
 	});
 
 	it("renders rows with status tags priority: draft > used > ready", () => {
@@ -102,24 +139,24 @@ describe("AssignmentBankPage (#208)", () => {
 		};
 		const html = renderToStaticMarkup(<AssignmentBankPage />);
 
-		// Draft prompt gets "Bản nháp" tag
 		expect(html).toContain("Bản nháp");
-		// Used prompt gets "Đã dùng 1 lớp" tag
 		expect(html).toContain("Đã dùng 1 lớp");
-		// Unused ready prompt gets "Sẵn sàng" tag
 		expect(html).toContain("Sẵn sàng");
 	});
 
-	it("renders preview aside with student view kicker and static copy", () => {
+	it("renders preview aside with student view kicker without exposing answer key", () => {
 		currentDataFixture = {
-			assignmentPrompts: bankFixture,
-			classAssignments: classAssignmentsFixture,
+			assignmentPrompts: [bankFixture[3]], // reading with secret answer
+			classAssignments: [],
 		};
 		const html = renderToStaticMarkup(<AssignmentBankPage />);
 
 		expect(html).toContain("Xem trước phía học viên");
 		expect(html).toContain("Đề này chưa giao lớp. Giao cho học viên ở trang");
 		expect(html).toContain("Lớp học");
+		expect(html).toContain("Question stem one");
+		expect(html).not.toContain("SECRET_ANSWER_FALSE");
+		expect(html).toContain("Chấm tự động");
 	});
 
 	it("renders empty state when bank has zero prompts", () => {

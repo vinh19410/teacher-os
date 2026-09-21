@@ -267,23 +267,207 @@ export const assignmentGradeSchema = z.object({
 });
 export type AssignmentGrade = z.infer<typeof assignmentGradeSchema>;
 
+/** Canonical v5 skill/part/type ids shared by server validation and web catalog. */
+export const ASSIGNMENT_SKILLS = [
+	"writing",
+	"reading",
+	"listening",
+	"speaking",
+] as const;
+export type AssignmentSkill = (typeof ASSIGNMENT_SKILLS)[number];
+
+export const ASSIGNMENT_PART_TYPES: Record<
+	AssignmentSkill,
+	{ parts: readonly string[]; types: Record<string, readonly string[]> }
+> = {
+	writing: {
+		parts: ["task1", "task2"],
+		types: {
+			task1: ["chart", "table", "map", "process"],
+			task2: ["discuss", "opinion", "advantage", "problem"],
+		},
+	},
+	reading: {
+		parts: ["p1", "p2", "p3"],
+		types: {
+			p1: ["tfng", "sent"],
+			p2: ["headings", "info"],
+			p3: ["ynng", "mcq"],
+		},
+	},
+	listening: {
+		parts: ["s1", "s2", "s3", "s4"],
+		types: {
+			s1: ["form", "mcq1"],
+			s2: ["map", "match2"],
+			s3: ["mcq3", "flow"],
+			s4: ["notes", "sent4"],
+		},
+	},
+	speaking: {
+		parts: ["part1", "part2", "part3"],
+		types: {
+			part1: ["hometown", "work"],
+			part2: ["place", "person", "object"],
+			part3: ["cities", "education"],
+		},
+	},
+};
+
+export const ASSIGNMENT_ANSWER_CHOICES = {
+	tfng: ["TRUE", "FALSE", "NOT GIVEN"],
+	ynng: ["YES", "NO", "NOT GIVEN"],
+	mcq4: ["A", "B", "C", "D"],
+	mcq3: ["A", "B", "C"],
+	roman: ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"],
+	letter: ["A", "B", "C", "D", "E", "F", "G", "H"],
+} as const;
+
+const answerKindByType: Record<string, keyof typeof ASSIGNMENT_ANSWER_CHOICES> =
+	{
+		tfng: "tfng",
+		headings: "roman",
+		info: "letter",
+		ynng: "ynng",
+		mcq: "mcq4",
+		mcq1: "mcq3",
+		map: "letter",
+		match2: "letter",
+		mcq3: "mcq3",
+	};
+
 /**
- * Ngân hàng đề — tạo đề Writing để lưu vào bank (design 2026-09-18).
- * `status` luôn tường minh trên wire (giống reportCreateSchema):
- * "ready" = hiện khi giao từ trang Lớp học, "draft" = bản nháp riêng tư.
+ * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
+ * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
 export const assignmentPromptCreateSchema = z
 	.object({
-		task: z.enum(["task1", "task2"]),
-		genre: z.string().trim().min(1).max(40),
+		skill: z.enum(ASSIGNMENT_SKILLS),
+		part: z.string().trim().min(1).max(20),
+		type: z.string().trim().min(1).max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
 		source: z.string().trim().max(200),
-		prompt: z.string().trim().min(1).max(5000),
+		prompt: z.string().trim().max(5000),
+		passage: z.string().trim().max(20000),
+		intro: z.string().max(2000),
+		transcript: z.string().max(10000),
+		cueTopic: z.string().trim().max(500),
+		cuePoints: z.string().max(2000),
+		audioName: z.string().trim().max(200),
+		questions: z
+			.array(
+				z.object({
+					stem: z.string().trim().max(500),
+					opts: z.array(z.string().max(500)).max(6).nullish(),
+					answer: z.string().trim().max(200),
+					alts: z.string().max(500).default(""),
+				}),
+			)
+			.max(40),
 		note: z.string().max(2000),
 		status: z.enum(["draft", "ready"]),
 	})
-	.strict();
+	.strict()
+	.superRefine((value, ctx) => {
+		const config = ASSIGNMENT_PART_TYPES[value.skill];
+		if (!config.parts.includes(value.part)) {
+			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
+			return;
+		}
+		if (!(config.types[value.part] ?? []).includes(value.type)) {
+			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
+		}
+		const auto = value.skill === "reading" || value.skill === "listening";
+		if (!auto && value.questions.length)
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions"],
+				message: "questions only apply to reading or listening",
+			});
+		if (value.skill === "writing" && !value.prompt.trim())
+			ctx.addIssue({
+				code: "custom",
+				path: ["prompt"],
+				message: "prompt required",
+			});
+		if (value.skill === "reading") {
+			if (!value.passage.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["passage"],
+					message: "passage required",
+				});
+			if (
+				value.questions.length < 1 ||
+				!value.questions.some((question) => question.stem.trim())
+			)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions"],
+					message: "question stem required",
+				});
+		}
+		if (value.skill === "listening") {
+			if (
+				value.questions.length < 1 ||
+				!value.questions.some((question) => question.stem.trim())
+			)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions"],
+					message: "question stem required",
+				});
+			if (value.status === "ready" && !value.audioName.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioName"],
+					message: "audio required when ready",
+				});
+		}
+		if (auto && value.status === "ready") {
+			for (const [index, question] of value.questions.entries()) {
+				if (!question.stem.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "stem"],
+						message: "stem required when ready",
+					});
+				if (!question.answer.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "answer required when ready",
+					});
+			}
+		}
+		if (value.skill === "speaking") {
+			if (value.part === "part2" && !value.cueTopic.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["cueTopic"],
+					message: "cue topic required",
+				});
+			if (value.part !== "part2" && !value.prompt.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["prompt"],
+					message: "prompt required",
+				});
+		}
+		const kind = answerKindByType[value.type];
+		if (kind) {
+			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+			for (const [index, question] of value.questions.entries()) {
+				if (question.answer && !choices.includes(question.answer as never))
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "invalid answer choice",
+					});
+			}
+		}
+	});
 export type AssignmentPromptCreate = z.infer<
 	typeof assignmentPromptCreateSchema
 >;
@@ -586,14 +770,31 @@ export interface KernelInvoiceRow {
 	method: string;
 }
 
+export interface AssignmentQuestion {
+	stem: string;
+	opts: string[] | null;
+	answer: string;
+	alts: string;
+}
+
 export interface KernelAssignmentPromptRow {
 	id: string;
 	task: string;
 	genre: string;
+	skill: AssignmentSkill | string;
+	part: string;
+	type: string;
 	title: string;
 	band: string;
 	source: string;
 	prompt: string;
+	intro: string;
+	passage: string;
+	transcript: string;
+	cueTopic: string;
+	cuePoints: string;
+	audioName: string;
+	questions: AssignmentQuestion[];
 	note: string;
 	status: "draft" | "ready" | string;
 	/** ISO datetime string — snapshot convention (bank sort + `Thêm {date}`). */
