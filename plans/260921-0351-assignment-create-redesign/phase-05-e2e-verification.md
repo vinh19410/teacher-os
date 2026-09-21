@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E & verification sweep"
-status: todo
+status: completed
 priority: P1
 effort: "3h"
 dependencies: ["4"]

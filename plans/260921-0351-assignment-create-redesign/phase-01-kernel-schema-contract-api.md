@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Kernel: schema 0019, contract v2 & POST API"
-status: todo
+status: completed
 priority: P1
 effort: "4h"
 dependencies: []

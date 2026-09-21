@@ -1,4 +1,9 @@
-import type { ClassType, KernelEnrollmentRow } from "@teacher-os/api/contracts";
+import type {
+	AssignmentQuestion,
+	AssignmentSkill,
+	ClassType,
+	KernelEnrollmentRow,
+} from "@teacher-os/api/contracts";
 
 export interface Student {
 	id: string;
@@ -48,12 +53,22 @@ export interface Lesson {
 export type InvoiceStatus = "paid" | "overdue" | "unpaid";
 export interface AssignmentPrompt {
 	id: string;
+	skill?: AssignmentSkill | string;
+	part?: string;
+	type?: string;
 	task: string;
 	genre: string;
 	title: string;
 	band: string;
 	source: string;
 	prompt: string;
+	intro?: string;
+	passage?: string;
+	transcript?: string;
+	cueTopic?: string;
+	cuePoints?: string;
+	audioName?: string;
+	questions?: AssignmentQuestion[];
 	note: string;
 	status: "draft" | "ready";
 	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */

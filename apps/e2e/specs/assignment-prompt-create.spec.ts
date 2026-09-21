@@ -109,3 +109,108 @@ test("preview as a student, return to the form without losing it, then save read
 	await page.reload();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 });
+
+test("create a ready reading prompt with answer key, survive reload", async ({
+	page,
+}) => {
+	const TITLE = "QC-218 Reading TFNG";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	// Select Reading skill
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await expect(page.getByText("Reading Academic")).toBeVisible();
+
+	// Title
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+
+	// Submit ready prompt
+	const submitBtn = page
+		.getByRole("button", { name: "Lưu vào ngân hàng" })
+		.first();
+	await expect(submitBtn).toBeEnabled();
+	await submitBtn.click();
+
+	// Success card assertions
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+	await expect(page.getByText("Tự động · 8/8 đáp án đã khóa")).toBeVisible();
+
+	// Assert preview does not leak answers
+	expect(await page.getByText("1 FALSE").count()).toBe(0);
+	expect(
+		await page.getByText("Đáp án đúng · học viên không thấy").count(),
+	).toBe(0);
+
+	// Navigate to bank and filter by Reading
+	await page.goto("/assignments/bank");
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+
+	// Persist across reload
+	await page.reload();
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+});
+
+test("create a listening draft without audio; ready is blocked", async ({
+	page,
+}) => {
+	const TITLE = "QC-218 Listening Draft";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	// Select Listening skill
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+
+	// Ready mode is blocked because audio is missing
+	await page.getByRole("button", { name: "Sẵn sàng giao" }).click();
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeDisabled();
+	await expect(page.getByText("Thiếu file nghe")).toBeVisible();
+
+	// Use sample audio unlocks ready
+	await page
+		.getByRole("button", { name: "Dùng file mẫu Cambridge 10" })
+		.click();
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeEnabled();
+
+	// Clear first question answer blocks ready
+	await page.getByLabel("Đáp án chấm tự động").first().fill("");
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeDisabled();
+	await expect(page.getByText("Thiếu đáp án chấm tự động")).toBeVisible();
+
+	// Restore answer and remove audio
+	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
+	await page.getByRole("button", { name: "Gỡ file" }).click();
+
+	// Switch to draft mode allows saving without audio
+	await page.getByRole("button", { name: "Bản nháp" }).click();
+	const draftSubmit = page
+		.getByRole("button", { name: "Lưu bản nháp" })
+		.first();
+	await expect(draftSubmit).toBeEnabled();
+	await draftSubmit.click();
+
+	// Success card assertions
+	await expect(
+		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
+	).toBeVisible();
+	await expect(page.getByText("Chưa đính file").first()).toBeVisible();
+	await expect(page.getByText("Tự động · 6/6 đáp án đã khóa")).toBeVisible();
+
+	// Check bank
+	await page.goto("/assignments/bank");
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+	await expect(page.getByText("Bản nháp").first()).toBeVisible();
+});

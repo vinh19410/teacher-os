@@ -21,39 +21,36 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/use-kernel-form-submit", () => ({
 	useKernelFormSubmit: () => submitFixture,
 }));
+vi.mock("@/lib/data-store", () => ({
+	useData: () => ({
+		data: {
+			assignmentPrompts: [],
+			classAssignments: [],
+		},
+	}),
+}));
 
-import { NewAssignmentRoute } from "./new";
+import { actionCopyFor, NewAssignmentRoute } from "./new";
 
-/**
- * SSR honesty guards for the prompt composer (#202, single-column #213):
- * Task 2 defaults render, the action bar carries the status chips, and
- * the bank column is gone from this page. Interaction paths (submit
- * dispatch) are covered by the server tests + the E2E specs — the node
- * vitest env has no DOM.
- */
-describe("NewAssignmentRoute (issue #202)", () => {
-	it("renders design v3 structure with Task 2 · Discuss defaults", () => {
+describe("NewAssignmentRoute (#218 v5)", () => {
+	it("renders design v5 structure with 4 skills and Task 2 Discuss defaults", () => {
 		const html = renderToStaticMarkup(<NewAssignmentRoute />);
 		expect(html).toContain("Thêm đề vào ngân hàng");
 		expect(html).toContain("Writing Academic");
+		expect(html).toContain("Writing");
+		expect(html).toContain("Reading");
+		expect(html).toContain("Listening");
+		expect(html).toContain("Speaking");
 		expect(html).toContain("Task 2 · 250 từ");
 		expect(html).toContain("Discuss both views");
-		// action copy for the ready state
 		expect(html).toContain("Sẵn sàng lưu vào ngân hàng");
-		// #213: single column — status chips moved into the action bar, and
-		// the bank column is gone from this page entirely.
 		expect(html).toContain("Trạng thái");
 		expect(html).toContain("Bản nháp");
 		expect(html).toContain("Sẵn sàng giao");
-		expect(html).not.toContain("Xem trước phía học viên");
-		expect(html).not.toContain("Đề đã có");
-		// "Chưa giao lớp" is valid action-bar copy; the removed card's tells
-		// are its own strings:
-		expect(html).not.toContain("Đề này chỉ được thêm vào ngân hàng");
-		expect(html).not.toContain("Chưa có đề nào trong ngân hàng.");
-		// #213: the preview is a button to a dedicated page now.
+		expect(html).toContain("Xem trước phía học viên");
+		expect(html).toContain("Đề Writing đã có");
 		expect(html).toContain("Xem trước");
-		// submit enabled by default (prefilled) — attribute absent
+
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);
@@ -67,5 +64,90 @@ describe("NewAssignmentRoute (issue #202)", () => {
 		const html = renderToStaticMarkup(<NewAssignmentRoute />);
 		expect(html).toContain("Không lưu được");
 		submitFixture.error = undefined;
+	});
+
+	describe("actionCopyFor priority states", () => {
+		const baseValue = {
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			title: "Discuss both views",
+			band: "7.0",
+			source: "Cambridge 10",
+			prompt: "Some prompt",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			note: "",
+			items: [],
+		};
+
+		it("1. Missing title", () => {
+			const res = actionCopyFor({ ...baseValue, title: "   " }, "ready");
+			expect(res.title).toBe("Đặt tên đề rồi lưu vào ngân hàng.");
+			expect(res.sub).toBe("Chưa giao lớp.");
+		});
+
+		it("2. Listening ready missing audio", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "listening",
+					part: "s1",
+					type: "form",
+					audioName: "",
+					items: [{ stem: "Q1", answer: "A", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Thiếu file nghe");
+			expect(res.sub).toContain("Đính file hoặc dùng file mẫu");
+		});
+
+		it("3. Reading/Listening ready missing answers", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "tfng",
+					passage: "Some passage",
+					items: [
+						{ stem: "Q1", answer: "TRUE", opts: null, alts: "" },
+						{ stem: "Q2", answer: "", opts: null, alts: "" },
+					],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Thiếu đáp án chấm tự động");
+			expect(res.sub).toContain("Khóa đáp án đúng");
+		});
+
+		it("4. Missing core content", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					prompt: "   ",
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Thiếu nội dung đề");
+			expect(res.sub).toContain("Soạn xong rồi lưu vào ngân hàng");
+		});
+
+		it("5. Draft mode", () => {
+			const res = actionCopyFor(baseValue, "draft");
+			expect(res.title).toBe("Lưu bản nháp");
+			expect(res.sub).toContain("Bản nháp chưa hiện");
+		});
+
+		it("6. Ready mode", () => {
+			const res = actionCopyFor(baseValue, "ready");
+			expect(res.title).toBe("Sẵn sàng lưu vào ngân hàng");
+			expect(res.sub).toContain("Chưa giao lớp");
+		});
 	});
 });

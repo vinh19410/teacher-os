@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Consumer surfaces: bank, class picker, preview"
-status: todo
+status: completed
 priority: P1
 effort: "2h"
 dependencies: ["3"]

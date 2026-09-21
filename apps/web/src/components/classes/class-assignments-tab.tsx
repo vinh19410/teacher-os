@@ -2,7 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useMemo, useState } from "react";
-import { genreOf, taskOf } from "@/components/assignments/assignment-presets";
+import {
+	partOf,
+	type SkillId,
+	skillOf,
+	typeOf,
+} from "@/components/assignments/assignment-presets";
 import {
 	fmtDue,
 	fmtWhen,
@@ -28,7 +33,13 @@ export interface ClassAssignmentsTabProps {
 	onViewChange: (view: "list" | "assign" | "success") => void;
 }
 
-const PICKER_TASK_OPTIONS = ["Tất cả", "Task 2", "Task 1"];
+const PICKER_SKILL_OPTIONS = [
+	"Tất cả",
+	"Writing",
+	"Reading",
+	"Listening",
+	"Speaking",
+];
 
 export function ClassAssignmentsTab({
 	classGroup,
@@ -55,9 +66,7 @@ export function ClassAssignmentsTab({
 
 	// Assign form state
 	const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-	const [taskFilter, setTaskFilter] = useState<"all" | "task2" | "task1">(
-		"all",
-	);
+	const [skillFilter, setSkillFilter] = useState<"all" | SkillId>("all");
 	const [due, setDue] = useState<string>(() => addDaysISO(todayVN, 7));
 	const [note, setNote] = useState("");
 	const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(() =>
@@ -74,10 +83,11 @@ export function ClassAssignmentsTab({
 	const readyPrompts = useMemo(() => {
 		return data.assignmentPrompts.filter((p) => {
 			if (p.status !== "ready") return false;
-			if (taskFilter !== "all" && p.task !== taskFilter) return false;
+			const pSkill = p.skill ?? "writing";
+			if (skillFilter !== "all" && pSkill !== skillFilter) return false;
 			return true;
 		});
-	}, [data.assignmentPrompts, taskFilter]);
+	}, [data.assignmentPrompts, skillFilter]);
 
 	// Previously assigned prompt IDs in this class
 	const assignedPromptIds = useMemo(() => {
@@ -129,19 +139,24 @@ export function ClassAssignmentsTab({
 		}
 	}
 
-	function handleTaskChipChange(opt: string) {
-		if (opt === "Task 2") setTaskFilter("task2");
-		else if (opt === "Task 1") setTaskFilter("task1");
-		else setTaskFilter("all");
+	function handleSkillChipChange(opt: string) {
+		if (opt === "Writing") setSkillFilter("writing");
+		else if (opt === "Reading") setSkillFilter("reading");
+		else if (opt === "Listening") setSkillFilter("listening");
+		else if (opt === "Speaking") setSkillFilter("speaking");
+		else setSkillFilter("all");
 	}
 
-	const selectedTaskChip =
-		taskFilter === "task2"
-			? "Task 2"
-			: taskFilter === "task1"
-				? "Task 1"
-				: "Tất cả";
-
+	const selectedSkillChip =
+		skillFilter === "writing"
+			? "Writing"
+			: skillFilter === "reading"
+				? "Reading"
+				: skillFilter === "listening"
+					? "Listening"
+					: skillFilter === "speaking"
+						? "Speaking"
+						: "Tất cả";
 	// Action bar copy
 	const actionState = useMemo(() => {
 		if (!promptOk) {
@@ -203,7 +218,7 @@ export function ClassAssignmentsTab({
 
 	function handleResetToAssign() {
 		setSelectedPromptId(null);
-		setTaskFilter("all");
+		setSkillFilter("all");
 		setDue(addDaysISO(todayVN, 7));
 		setNote("");
 		setSelectedStudentIds(enrolledStudents.map((s) => s.id).slice(0, 100));
@@ -316,9 +331,21 @@ export function ClassAssignmentsTab({
 	// 2. VIEW: ASSIGN FORM
 	// --------------------------------------------------------------------------
 	if (view === "assign") {
-		const previewTask = selectedPrompt ? taskOf(selectedPrompt.task) : null;
-		const previewGenre = selectedPrompt
-			? genreOf(selectedPrompt.task, selectedPrompt.genre)
+		const previewSkill = selectedPrompt
+			? skillOf(selectedPrompt.skill ?? "writing")
+			: null;
+		const previewPart = selectedPrompt
+			? partOf(
+					selectedPrompt.skill ?? "writing",
+					selectedPrompt.part ?? selectedPrompt.task,
+				)
+			: null;
+		const previewType = selectedPrompt
+			? typeOf(
+					selectedPrompt.skill ?? "writing",
+					selectedPrompt.part ?? selectedPrompt.task,
+					selectedPrompt.type ?? selectedPrompt.genre,
+				)
 			: null;
 
 		return (
@@ -338,17 +365,17 @@ export function ClassAssignmentsTab({
 
 						{/* Filter chips */}
 						<ChipFilter
-							options={PICKER_TASK_OPTIONS}
-							value={selectedTaskChip}
-							onChange={handleTaskChipChange}
+							options={PICKER_SKILL_OPTIONS}
+							value={selectedSkillChip}
+							onChange={handleSkillChipChange}
 						/>
 
 						{/* Prompt Cards */}
 						{readyPrompts.length === 0 ? (
 							<div className="rounded-lg border border-border-soft bg-surface/50 p-6 text-center text-muted-fg text-sm">
 								Không có đề{" "}
-								{selectedTaskChip !== "Tất cả" ? `${selectedTaskChip} ` : ""}sẵn
-								sàng.
+								{selectedSkillChip !== "Tất cả" ? `${selectedSkillChip} ` : ""}
+								sẵn sàng.
 							</div>
 						) : (
 							<div
@@ -359,7 +386,8 @@ export function ClassAssignmentsTab({
 								{readyPrompts.map((p) => {
 									const isSelected = selectedPromptId === p.id;
 									const isAlreadyAssigned = assignedPromptIds.has(p.id);
-									const t = taskOf(p.task);
+									const skill = skillOf(p.skill ?? "writing");
+									const part = partOf(skill.id, p.part ?? p.task);
 
 									return (
 										<button
@@ -379,10 +407,11 @@ export function ClassAssignmentsTab({
 													{p.title}
 												</strong>
 												<span className="shrink-0 font-mono text-meta text-xs">
-													{t.label} · Band {p.band}
+													{part.label} · Band {p.band}
 												</span>
 											</div>
 											<div className="flex flex-wrap items-center gap-2 text-xs">
+												<Tag>{skill.name}</Tag>
 												{isAlreadyAssigned ? (
 													<StatusTag tone="used">Đã giao lớp này</StatusTag>
 												) : (
@@ -539,18 +568,22 @@ export function ClassAssignmentsTab({
 								{selectedPrompt ? selectedPrompt.title : "Chọn một đề"}
 							</p>
 							<p className="mt-1.5 font-mono text-meta text-xs">
-								{selectedPrompt && previewTask
-									? `Academic · ${previewTask.words} từ · ${previewTask.minutes} phút · hạn ${fmtDue(due)}`
-									: `Academic · hạn ${fmtDue(due)}`}
+								{selectedPrompt && previewPart
+									? `${previewPart.spec} · hạn ${fmtDue(due)}`
+									: `hạn ${fmtDue(due)}`}
 							</p>
 							<p className="mt-3 whitespace-pre-wrap text-fg text-sm leading-[1.55]">
 								{selectedPrompt
-									? selectedPrompt.prompt
+									? selectedPrompt.skill === "reading"
+										? selectedPrompt.passage || selectedPrompt.prompt
+										: selectedPrompt.prompt
 									: "Đề sẽ hiện khi bạn chọn từ ngân hàng."}
 							</p>
-							{selectedPrompt && previewGenre && (
+							{selectedPrompt && previewType && (
 								<div className="mt-3 flex flex-wrap gap-2">
-									<Tag>{previewGenre.label}</Tag>
+									{previewSkill && <Tag>{previewSkill.name}</Tag>}
+									{previewPart && <Tag>{previewPart.label}</Tag>}
+									<Tag>{previewType.label}</Tag>
 									<Tag>{`Band ${selectedPrompt.band}`}</Tag>
 									{selectedPrompt.source.trim() && (
 										<Tag>{selectedPrompt.source.trim()}</Tag>

@@ -3,11 +3,11 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
 /**
- * Ngân hàng đề Writing (design "Thêm đề vào ngân hàng", 2026-09-18).
+ * Ngân hàng đề IELTS 4 kỹ năng (design "Thêm đề vào ngân hàng", 2026-09-21).
  * Một row là MỘT đề chưa gắn lớp/học viên — giao bài (tạo row `assignment`)
  * là luồng riêng ở trang Lớp học, nên không có FK student/class ở đây.
- * genre là free id dạng đề (chart/table/.../discuss/...) — thêm dạng đề mới
- * không cần migration.
+ * task/genre are legacy compatibility columns; skill/part/type are the
+ * canonical v5 catalog identifiers.
  */
 export const assignmentPrompt = sqliteTable(
 	"assignment_prompt",
@@ -18,10 +18,20 @@ export const assignmentPrompt = sqliteTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		task: text("task").notNull(), // "task1" | "task2"
 		genre: text("genre").notNull(),
+		skill: text("skill").notNull().default("writing"),
+		part: text("part").notNull().default(""),
+		type: text("type").notNull().default(""),
 		title: text("title").notNull(),
 		band: text("band").notNull().default("7.0"), // "6.0".."7.5"
 		source: text("source").notNull().default(""),
 		prompt: text("prompt").notNull(),
+		intro: text("intro").notNull().default(""),
+		passage: text("passage").notNull().default(""),
+		transcript: text("transcript").notNull().default(""),
+		cueTopic: text("cue_topic").notNull().default(""),
+		cuePoints: text("cue_points").notNull().default(""),
+		audioName: text("audio_name").notNull().default(""),
+		questions: text("questions").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
