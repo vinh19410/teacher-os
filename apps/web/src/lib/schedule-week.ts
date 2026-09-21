@@ -132,6 +132,24 @@ export function selectWeekColumnSessions(
 }
 
 /**
+ * Issue #204: legacy undated rows collapse a whole course (weeks × students)
+ * into one entry, so `rows.length` counts rows — not people. Dedupe by
+ * `sid`, keeping the first row of each student (stable by id sort).
+ */
+export function distinctStudentsBySid<T extends { sid: string }>(
+	rows: readonly T[],
+): T[] {
+	const seen = new Set<string>();
+	const out: T[] = [];
+	for (const row of rows) {
+		if (seen.has(row.sid)) continue;
+		seen.add(row.sid);
+		out.push(row);
+	}
+	return out;
+}
+
+/**
  * Lookup live rows for a session occurrence from store state (e.g. for modal display).
  * Prevents holding stale snapshot rows after check-in/cancel mutations.
  */

@@ -12,6 +12,7 @@ import type {
 	KernelSnapshot,
 	WorkspaceSettings,
 } from "@teacher-os/api/contracts";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -2929,6 +2930,132 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 	});
 });
 
+describe("delete syllabus template (xóa template giáo trình)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	// Helper local mirror của describe import (issue #79).
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Xóa Syllabus");
+	});
+
+	test("matrix 15: delete-syllabus xóa template, bản copy của lớp đã import sống sót nguyên vẹn", async () => {
+		const templateId = await t.createSyllabus(session, "Template sẽ xóa");
+		const moduleAId = await t.createModule(session, templateId, "Module A");
+		await t.createModule(session, templateId, "Module B");
+		// Thêm 1 lesson qua endpoint (mirror addLesson của describe #79).
+		const lessonRes = await t.call(
+			`/api/syllabi/${templateId}/modules/${moduleAId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "L1", objectives: "", materials: "" },
+			},
+		);
+		expect(lessonRes.status).toBe(201);
+
+		// Lớp đã import trước khi xóa.
+		const classId = await t.createClass(session, "Lớp đã dùng template");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		expect(copyRes.status).toBe(201);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+
+		const remove = await t.call(`/api/syllabi/${templateId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		// Template + cây biến mất.
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(false);
+		// Bản copy của lớp sống sót nguyên vẹn cây (2 modules + 1 lesson).
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(classId);
+		expect(copy?.modules).toHaveLength(2);
+		expect(copy?.modules.flatMap((m) => m.lessons)).toHaveLength(1);
+		// Provenance detached (logical FK phải tự null).
+		expect(copy?.sourceTemplateId).toBeNull();
+		// Pointer của lớp vẫn trỏ vào copy.
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+
+		// Lớp mới không thể chọn template đã xóa.
+		const newClassId = await t.createClass(session, "Lớp mới sau xóa");
+		expect((await importSyllabus(session, newClassId, templateId)).status).toBe(
+			404,
+		);
+	});
+
+	test("matrix 16: delete-syllabus từ chối bản copy của lớp (mirror guard import handler)", async () => {
+		const templateId = await t.createSyllabus(session, "Template giữ nguyên");
+		await t.createModule(session, templateId, "Module A");
+		const classId = await t.createClass(session, "Lớp copy bị nhắm");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+
+		const res = await t.call(`/api/syllabi/${copyId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(404);
+		// Copy vẫn còn nguyên.
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(true);
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+	});
+
+	test("anomaly: class trỏ thẳng template vẫn cho xóa template và null pointer", async () => {
+		const templateId = await t.createSyllabus(session, "Template bị trỏ thẳng");
+		const classId = await t.createClass(session, "Lớp pointer lệch");
+		// Legacy anomaly simulation — mirror matrix 9 setup (issue #79).
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		const res = await t.call(`/api/syllabi/${templateId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(false);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+	});
+
+	test("org-scoping: template của org khác là 404", async () => {
+		const other = await t.insertUser("Cô Org Khác");
+		const foreignId = await t.createSyllabus(other, "Template người khác");
+		const res = await t.call(`/api/syllabi/${foreignId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(404);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === foreignId)).toBe(false);
+	});
+});
+
 describe("lesson check-in/cancel (Wave 4)", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;
@@ -4040,5 +4167,779 @@ describe("workspace settings persistence (issue #179)", () => {
 		// Org B should still have pristine defaults
 		expect(jsonB.defaultUnitPrice).toBe("400.000đ");
 		expect(jsonB.preferredChannel).toBe("Zalo trước, email dự phòng");
+	});
+});
+
+describe("assignment prompt bank (issue #202)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+
+	const validBody = {
+		skill: "writing",
+		part: "task2",
+		type: "discuss",
+		title: "Writing Task 2 — Discuss both views",
+		band: "7.0",
+		source: "Cambridge IELTS 10, Test 2",
+		prompt:
+			"Some people think that all university students should study whatever they like.\n\nDiscuss both these views and give your own opinion.",
+		passage: "",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		questions: [],
+		note: "",
+		status: "ready",
+	};
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Giáo viên ngân hàng A");
+		orgB = await t.insertUser("Giáo viên ngân hàng B");
+	});
+
+	test("POST ready prompt persists and lands in the snapshot (#202)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: validBody,
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row).toMatchObject({
+			id,
+			task: "task2",
+			genre: "discuss",
+			title: "Writing Task 2 — Discuss both views",
+			band: "7.0",
+			source: "Cambridge IELTS 10, Test 2",
+			status: "ready",
+		});
+	});
+
+	test("POST draft keeps the draft status in the snapshot", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Nháp 1",
+				status: "draft",
+				note: "cần duyệt",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.status).toBe("draft");
+		expect(row?.note).toBe("cần duyệt");
+	});
+
+	test("POST rejects invalid bodies with 400", async () => {
+		for (const body of [
+			{ ...validBody, title: "" }, // blank title
+			{ ...validBody, title: "  " }, // whitespace-only title
+			{ ...validBody, prompt: "" }, // blank prompt
+			{ ...validBody, skill: "math" }, // enum
+			{ ...validBody, band: "8.0" }, // enum
+			{ ...validBody, status: "sent" }, // enum
+			{ ...validBody, extra: true }, // strict
+			{ skill: "writing" }, // missing fields
+		]) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body,
+			});
+			expect(res.status, JSON.stringify(body).slice(0, 60)).toBe(400);
+		}
+	});
+
+	test("POST without a session is 401", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			method: "POST",
+			body: validBody,
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("prompts are org-scoped: org B never sees org A's bank", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: { ...validBody, title: "Đề riêng của A" },
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const bankB = (await t.kernel(orgB)).assignmentPrompts;
+		expect(bankB.some((r) => r.id === id)).toBe(false);
+		expect(bankB.some((r) => r.title === "Đề riêng của A")).toBe(false);
+	});
+
+	test("POST reading ready prompt persists passage and parsed questions", async () => {
+		const readingBody = {
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Reading Passage 1 — TFNG",
+			band: "7.0",
+			source: "Cambridge 10, Test 1",
+			prompt: "",
+			passage: "Stepwells are underground reservoirs found across India...",
+			intro: "Questions 1-2\nDo the following statements agree...",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: [
+				{
+					stem: "Stepwells were first built in the 20th century.",
+					opts: null,
+					answer: "FALSE",
+					alts: "",
+				},
+				{
+					stem: "Water stored in stepwells stays cool.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+				},
+			],
+			note: "",
+			status: "ready",
+		};
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: readingBody,
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row).toMatchObject({
+			id,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Reading Passage 1 — TFNG",
+			passage: "Stepwells are underground reservoirs found across India...",
+			status: "ready",
+		});
+		expect(row?.questions).toHaveLength(2);
+		expect(row?.questions?.[0]?.answer).toBe("FALSE");
+		expect(row?.questions?.[1]?.answer).toBe("TRUE");
+	});
+
+	test("POST reading ready prompt rejects missing answer with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Passage 1",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Some passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "TRUE", alts: "" },
+					{ stem: "Q2", opts: null, answer: "", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST listening ready prompt rejects missing audioName with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "listening",
+				part: "s1",
+				type: "form",
+				title: "Listening S1",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "answer", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST listening draft prompt accepts missing audio and missing answer when stem present", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "listening",
+				part: "s1",
+				type: "form",
+				title: "Listening Draft S1",
+				band: "6.5",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "", alts: "" }],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST reading draft prompt rejects missing passage with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Draft",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "   ",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "", alts: "" }],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST speaking part2 rejects missing cueTopic with 400", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "speaking",
+				part: "part2",
+				type: "place",
+				title: "Speaking Part 2",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "  ",
+				cuePoints: "where it is",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST writing or speaking rejects non-empty questions with 400", async () => {
+		for (const skill of ["writing", "speaking"] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					...validBody,
+					skill,
+					part: skill === "writing" ? "task2" : "part1",
+					type: skill === "writing" ? "discuss" : "hometown",
+					prompt: "Valid prompt text",
+					questions: [{ stem: "Q1", opts: null, answer: "A", alts: "" }],
+				},
+			});
+			expect(res.status).toBe(400);
+		}
+	});
+
+	test("POST rejects questions exceeding 40 items with 400", async () => {
+		const items = Array.from({ length: 41 }, (_, i) => ({
+			stem: `Question ${i + 1}`,
+			opts: null,
+			answer: "TRUE",
+			alts: "",
+		}));
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Too Many Questions",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: items,
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST rejects invalid or cross-skill part/type combinations with 400", async () => {
+		for (const [skill, part, type] of [
+			["speaking", "task2", "discuss"],
+			["reading", "task1", "chart"],
+			["writing", "p1", "tfng"],
+			["listening", "part2", "place"],
+			["writing", "task2", "nonexistent"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					...validBody,
+					skill,
+					part,
+					type,
+				},
+			});
+			expect(res.status).toBe(400);
+		}
+	});
+
+	test("POST rejects answer choices outside kind alphabet with 400", async () => {
+		const resTfng = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "TFNG Invalid Choice",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "BANANA", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(resTfng.status).toBe(400);
+
+		const resMcq = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p3",
+				type: "mcq",
+				title: "MCQ Invalid Choice",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: ["A", "B", "C", "D"], answer: "E", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(resMcq.status).toBe(400);
+	});
+
+	test("snapshot projection safely parses corrupt or 'null' questions without crashing", async () => {
+		const corruptId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: corruptId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Corrupt questions",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: "null",
+			note: "",
+			status: "draft",
+		});
+		const snapshot = await t.kernel(orgA);
+		const row = snapshot.assignmentPrompts.find((r) => r.id === corruptId);
+		expect(row).toBeDefined();
+		expect(row?.questions).toEqual([]);
+	});
+});
+
+describe("class assignment give flow (#208)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let orgA: TestSession;
+	let orgB: TestSession;
+	let classIdA: string;
+	let studentIdA1: string;
+	let studentIdA2: string;
+	let promptReadyA: string;
+	let promptDraftA: string;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		orgA = await t.insertUser("Teacher A");
+		orgB = await t.insertUser("Teacher B");
+
+		// Bootstrap orgs via snapshot
+		await t.kernel(orgA);
+		await t.kernel(orgB);
+
+		// Create class for Org A
+		classIdA = await t.createClass(orgA, "Lớp IELTS Tối");
+
+		// Create 2 students for Org A enrolled in classIdA
+		studentIdA1 = await t.addStudent(orgA, "Học viên A1", {
+			classId: classIdA,
+		});
+		studentIdA2 = await t.addStudent(orgA, "Học viên A2", {
+			classId: classIdA,
+		});
+
+		// Create prompts in Org A
+		const pReadyRes = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Writing Task 2 — Ready",
+				band: "7.0",
+				source: "Cambridge 12",
+				prompt: "Some people think...",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		promptReadyA = ((await pReadyRes.json()) as { id: string }).id;
+
+		const pDraftRes = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task1",
+				type: "chart",
+				title: "Writing Task 1 — Draft",
+				band: "6.5",
+				source: "",
+				prompt: "The chart below shows...",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "draft",
+			},
+		});
+		promptDraftA = ((await pDraftRes.json()) as { id: string }).id;
+	});
+
+	test("happy-path: gives assignment to class, snapshot contains row with null submittedAt", async () => {
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "Nộp đúng hạn",
+				studentIds: [studentIdA1, studentIdA2],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		expect(id).toBeTruthy();
+
+		const snapshot = await t.kernel(orgA);
+		const assigned = snapshot.classAssignments.find((a) => a.id === id);
+		expect(assigned).toBeDefined();
+		expect(assigned).toMatchObject({
+			id,
+			classId: classIdA,
+			promptId: promptReadyA,
+			title: "Writing Task 2 — Ready",
+			due: "2030-01-15",
+			note: "Nộp đúng hạn",
+		});
+		expect(assigned?.targets).toHaveLength(2);
+		expect(assigned?.targets).toEqual(
+			expect.arrayContaining([
+				{ studentId: studentIdA1, submittedAt: null },
+				{ studentId: studentIdA2, submittedAt: null },
+			]),
+		);
+	});
+
+	test("due today in VN timezone is accepted", async () => {
+		const todayVN = vietnamTodayISO();
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: todayVN,
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("matrix: 400 rejects invalid bodies", async () => {
+		const baseValid = {
+			promptId: promptReadyA,
+			due: "2030-01-15",
+			note: "",
+			studentIds: [studentIdA1],
+		};
+
+		// 1. Due calendar nonexistent (2030-02-30)
+		const resCalendar = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, due: "2030-02-30" },
+		});
+		expect(resCalendar.status).toBe(400);
+
+		// 2. Due in the past (2020-01-01)
+		const resPast = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, due: "2020-01-01" },
+		});
+		expect(resPast.status).toBe(400);
+
+		// 3. studentIds empty
+		const resEmpty = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: [] },
+		});
+		expect(resEmpty.status).toBe(400);
+
+		// 4. studentIds duplicates
+		const resDupe = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: [studentIdA1, studentIdA1] },
+		});
+		expect(resDupe.status).toBe(400);
+
+		// 5. studentId not enrolled in class
+		const resNotEnrolled = await t.call(
+			`/api/classes/${classIdA}/assignments`,
+			{
+				session: orgA,
+				method: "POST",
+				body: { ...baseValid, studentIds: ["non-existent-student"] },
+			},
+		);
+		expect(resNotEnrolled.status).toBe(400);
+
+		// 6. prompt is draft
+		const resDraft = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, promptId: promptDraftA },
+		});
+		expect(resDraft.status).toBe(400);
+
+		// 7. Extra field (.strict())
+		const resStrict = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, extraField: "not-allowed" },
+		});
+		expect(resStrict.status).toBe(400);
+
+		// 8. studentIds over 100
+		const manyStudents = Array.from({ length: 101 }, (_, i) => `s-${i}`);
+		const resTooMany = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: { ...baseValid, studentIds: manyStudents },
+		});
+		expect(resTooMany.status).toBe(400);
+	});
+
+	test("401 when unauthorized", async () => {
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("404 when class or prompt not found in org", async () => {
+		// Non-existent class
+		const resNoClass = await t.call(
+			"/api/classes/non-existent-class/assignments",
+			{
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: promptReadyA,
+					due: "2030-01-15",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			},
+		);
+		expect(resNoClass.status).toBe(404);
+
+		// Prompt of Org A called by Org B
+		const resForeignPrompt = await t.call(
+			`/api/classes/${classIdA}/assignments`,
+			{
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: "non-existent-prompt",
+					due: "2030-01-15",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			},
+		);
+		expect(resForeignPrompt.status).toBe(404);
+	});
+
+	test("org-scoping: Org B does not see Org A's class assignments", async () => {
+		const snapshotB = await t.kernel(orgB);
+		const found = snapshotB.classAssignments.find(
+			(ca) => ca.classId === classIdA,
+		);
+		expect(found).toBeUndefined();
+	});
+
+	test("cap 200 assignments per class rejects with 400", async () => {
+		// Create a separate class for cap test
+		const capClassId = await t.createClass(orgA, "Lớp Cap Test");
+
+		// Enroll studentIdA1 in capClassId
+		const enrollRes = await t.call(`/api/classes/${capClassId}/enroll`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				studentId: studentIdA1,
+				total: 10,
+				price: 400000,
+				mode: "Online",
+			},
+		});
+		expect(enrollRes.status).toBe(201);
+
+		// Insert 200 dummy rows into class_assignment for this class
+		const orgId = await t.orgIdOf(orgA);
+		const batchStatements = Array.from({ length: 200 }, () =>
+			t.db.insert(schema.classAssignment).values({
+				id: crypto.randomUUID(),
+				orgId,
+				classId: capClassId,
+				promptId: promptReadyA,
+				title: "Dummy Prompt",
+				due: "2030-01-01",
+				note: "",
+			}),
+		);
+		const [first, ...rest] = batchStatements;
+		if (first) {
+			await t.db.batch([first, ...rest]);
+		}
+
+		// Now the 201st assignment must be rejected
+		const res = await t.call(`/api/classes/${capClassId}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(400);
+		const body = await res.json();
+		expect(body).toMatchObject({ error: "assignment limit reached" });
 	});
 });

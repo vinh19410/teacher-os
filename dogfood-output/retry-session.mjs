@@ -23,15 +23,15 @@ async function main() {
 	).newPage();
 	const wait = (ms) => page.waitForTimeout(ms);
 	const shot = (n) =>
-		page.screenshot({ path: join(OUT, n + ".png"), fullPage: true });
+		page.screenshot({ path: join(OUT, `${n}.png`), fullPage: true });
 	const jsClickExact = (lab) =>
 		page.evaluate((t) => {
 			const b = [...document.querySelectorAll("button")].find(
 				(x) => x.innerText.replace(/\s+/g, " ").trim() === t,
 			);
-			if (!b) return "missing " + t;
+			if (!b) return `missing ${t}`;
 			b.click();
-			return "clicked " + t;
+			return `clicked ${t}`;
 		}, lab);
 
 	await page.goto("https://app.staging.teacheros.io.vn/login", {
@@ -71,7 +71,7 @@ async function main() {
 	const listed = await page.evaluate(() =>
 		document.body.innerText.includes("Syllabus Last"),
 	);
-	log.push("syllabus listed=" + listed);
+	log.push(`syllabus listed=${listed}`);
 
 	if (listed) {
 		await page.getByText("Syllabus Last").first().click();
@@ -141,7 +141,7 @@ async function main() {
 		);
 		return b ? { text: b.innerText, disabled: b.disabled } : null;
 	});
-	log.push("completeBtn " + JSON.stringify(disabled));
+	log.push(`completeBtn ${JSON.stringify(disabled)}`);
 	if (disabled && !disabled.disabled) {
 		await jsClickExact("Hoàn thành buổi");
 		await wait(2000);

@@ -9,7 +9,12 @@ import {
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
+import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { classTable } from "@teacher-os/db/schema/class";
+import {
+	classAssignment,
+	classAssignmentTarget,
+} from "@teacher-os/db/schema/class-assignment";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -20,7 +25,7 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { Db } from "../app";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
 
@@ -66,6 +71,42 @@ function parseSkills(raw: string): string[] {
 	}
 }
 
+function parseQuestions(
+	raw: string,
+	rowId: string,
+): KernelSnapshot["assignmentPrompts"][number]["questions"] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			console.warn(
+				`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,
+			);
+			return [];
+		}
+		return parsed.flatMap((item) => {
+			if (!item || typeof item !== "object") return [];
+			const record = item as Record<string, unknown>;
+			return [
+				{
+					stem: typeof record.stem === "string" ? record.stem : "",
+					opts: Array.isArray(record.opts)
+						? record.opts.filter(
+								(option): option is string => typeof option === "string",
+							)
+						: null,
+					answer: typeof record.answer === "string" ? record.answer : "",
+					alts: typeof record.alts === "string" ? record.alts : "",
+				},
+			];
+		});
+	} catch {
+		console.warn(
+			`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,
+		);
+		return [];
+	}
+}
+
 /** DB text column guard: unknown type values fall back to "ielts". */
 const knownClassTypes = new Set<string>(CLASS_TYPES);
 
@@ -84,6 +125,7 @@ export async function loadSnapshot(
 		lessonRows,
 		scheduledRows,
 		assignmentRows,
+		assignmentPromptRows,
 		invoiceRows,
 		reportRows,
 		notifRows,
@@ -157,11 +199,41 @@ export async function loadSnapshot(
 			.from(assignment)
 			.where(eq(assignment.orgId, orgId))
 			.orderBy(asc(assignment.createdAt)),
+		db
+			.select()
+			.from(assignmentPrompt)
+			.where(eq(assignmentPrompt.orgId, orgId))
+			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
 		loadInvoices(db, orgId),
 		loadReports(db, orgId),
 		loadNotifs(db, orgId),
 		loadCommentBank(db, orgId),
 	]);
+
+	// #208: headers BEFORE targets, strictly sequential — a write landing
+	// between the two reads can only orphan targets (dropped below), never
+	// emit a header with `targets: []` (red-team F10).
+	const classAssignmentRows = await db
+		.select()
+		.from(classAssignment)
+		.where(eq(classAssignment.orgId, orgId))
+		.orderBy(desc(classAssignment.createdAt), desc(classAssignment.id));
+	const classAssignmentTargetRows = await db
+		.select()
+		.from(classAssignmentTarget)
+		.where(eq(classAssignmentTarget.orgId, orgId));
+	const targetsByAssignment = new Map<
+		string,
+		KernelSnapshot["classAssignments"][number]["targets"]
+	>();
+	for (const target of classAssignmentTargetRows) {
+		const list = targetsByAssignment.get(target.assignmentId) ?? [];
+		list.push({
+			studentId: target.studentId,
+			submittedAt: target.submittedAt,
+		});
+		targetsByAssignment.set(target.assignmentId, list);
+	}
 
 	const lessonsByModule = new Map<
 		string,
@@ -273,7 +345,62 @@ export async function loadSnapshot(
 		})),
 		invoices: invoiceRows,
 		reports: reportRows,
+		assignmentPrompts: assignmentPromptRows.map(
+			({
+				id,
+				task,
+				genre,
+				skill,
+				part,
+				type,
+				title,
+				band,
+				source,
+				prompt,
+				intro,
+				passage,
+				transcript,
+				cueTopic,
+				cuePoints,
+				audioName,
+				questions,
+				note,
+				status,
+				createdAt,
+			}) => ({
+				id,
+				task,
+				genre,
+				skill,
+				part,
+				type,
+				title,
+				band,
+				source,
+				prompt,
+				intro,
+				passage,
+				transcript,
+				cueTopic,
+				cuePoints,
+				audioName,
+				questions: parseQuestions(questions, id),
+				note,
+				status,
+				createdAt: createdAt.toISOString(),
+			}),
+		),
 		notifs: notifRows,
 		commentBank: commentBankRows,
+		classAssignments: classAssignmentRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			promptId: row.promptId,
+			title: row.title,
+			due: row.due,
+			note: row.note,
+			createdAt: row.createdAt.toISOString(),
+			targets: targetsByAssignment.get(row.id) ?? [],
+		})),
 	};
 }

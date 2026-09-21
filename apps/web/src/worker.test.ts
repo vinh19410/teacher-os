@@ -293,6 +293,22 @@ describe("apps/web worker fetch handler", () => {
 			"script-src 'self' https://static.cloudflareinsights.com",
 		);
 	});
+	it("omits CSP on localhost so the Vite dev preamble can boot (#203)", async () => {
+		const env = createMockEnv();
+		const res = await worker.fetch(
+			new Request("http://localhost:8001/dashboard"),
+			env,
+		);
+		expect(res.status).toBe(200);
+		// CSP omitted entirely in dev — Vite's transformed HTML carries the
+		// inline React-Refresh preamble that script-src 'self' would block.
+		expect(res.headers.get("content-security-policy")).toBeNull();
+		// The remaining hardening headers still apply in dev.
+		expect(res.headers.get("strict-transport-security")).toBe(
+			"max-age=31536000; includeSubDomains",
+		);
+		expect(res.headers.get("x-frame-options")).toBe("DENY");
+	});
 
 	it("applies security headers to 404 responses and dotfile rejections", async () => {
 		const env = createMockEnv();

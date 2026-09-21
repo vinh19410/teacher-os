@@ -1,0 +1,65 @@
+import type { QuestionItem } from "@/components/assignments/assignment-presets";
+
+export const PREVIEW_DRAFT_KEY = "teacher-os:assignment-preview-draft";
+export interface PreviewDraft {
+	task: string;
+	genre: string;
+	title: string;
+	band: string;
+	source: string;
+	prompt: string;
+	note: string;
+	status: "draft" | "ready";
+	skill?: string;
+	part?: string;
+	type?: string;
+	passage?: string;
+	intro?: string;
+	transcript?: string;
+	cueTopic?: string;
+	cuePoints?: string;
+	audioName?: string;
+	items?: QuestionItem[];
+}
+function isPreviewDraft(value: unknown): value is PreviewDraft {
+	if (!value || typeof value !== "object") return false;
+	const v = value as Record<string, unknown>;
+	return (
+		typeof v.title === "string" &&
+		typeof v.band === "string" &&
+		typeof v.source === "string" &&
+		typeof v.prompt === "string" &&
+		typeof v.note === "string" &&
+		(v.status === "draft" || v.status === "ready")
+	);
+}
+function storage(): Storage | null {
+	if (typeof window === "undefined") return null;
+	try {
+		return window.sessionStorage;
+	} catch {
+		return null;
+	}
+}
+export function savePreviewDraft(draft: PreviewDraft): void {
+	try {
+		storage()?.setItem(PREVIEW_DRAFT_KEY, JSON.stringify(draft));
+	} catch {}
+}
+export function readPreviewDraft(): PreviewDraft | null {
+	try {
+		const raw = storage()?.getItem(PREVIEW_DRAFT_KEY);
+		if (!raw) return null;
+		const value: unknown = JSON.parse(raw);
+		return isPreviewDraft(value) ? value : null;
+	} catch {
+		return null;
+	}
+}
+export function takePreviewDraft(): PreviewDraft | null {
+	const value = readPreviewDraft();
+	try {
+		storage()?.removeItem(PREVIEW_DRAFT_KEY);
+	} catch {}
+	return value;
+}

@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
+import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
 import {
 	formatDue,
@@ -182,11 +183,11 @@ export function TuitionRoute() {
 								return {
 									cells: [
 										<span key="id" className="font-mono text-meta text-xs">
-											{i.id}
+											{invoiceCode(i.id)}
 										</span>,
 										s?.name ?? "",
 										<span key="t" title={i.note || undefined}>
-											<Tag>{i.type}</Tag>
+											<Tag>{invoiceType(i.type)}</Tag>
 										</span>,
 										<span key="a" className="font-mono">
 											{fmtVND(i.amount)}

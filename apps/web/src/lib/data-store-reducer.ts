@@ -80,7 +80,8 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		}
 		case "add-comment-bank":
 		case "create-report":
-			// Runtime writes use the kernel bus; local reducer keeps fixture behavior inert.
+		case "create-assignment-prompt":
+		case "assign-class-prompt":
 			return state;
 		case "add-student": {
 			const { name, phone, parentName, total, price, mode, classId } =

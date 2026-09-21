@@ -58,11 +58,12 @@ describe("SettingsPage persistence & honest guards (issue #179, follow-up #167)"
 	it("enables every Zalo template textarea without the not-open note", () => {
 		const html = renderToStaticMarkup(<TemplatesTab onSave={() => {}} />);
 		const areas = html.match(/<textarea[^>]*>/g) ?? [];
-		expect(areas.length).toBe(3);
+		expect(areas.length).toBe(2);
 		for (const area of areas) {
 			expect(area).not.toMatch(/\sdisabled=/);
 		}
 		expect(html).not.toContain("Chưa mở — sẽ lưu khi tính năng ra mắt.");
+		expect(html).not.toContain("Mẫu báo cáo tuần");
 		expect(html).toContain("{{student_name}}");
 		expect(html).toContain("Lưu mẫu tin");
 	});

@@ -8,6 +8,8 @@ import { describe, expect, test } from "vitest";
 import { mapLessons } from "./lessons";
 
 const snapshot: KernelSnapshot = {
+	assignmentPrompts: [],
+	classAssignments: [],
 	students: [
 		{
 			id: "st-1",
@@ -130,6 +132,8 @@ describe("mapLessons", () => {
 	test("empty snapshot maps to an empty schedule", () => {
 		expect(
 			mapLessons({
+				assignmentPrompts: [],
+				classAssignments: [],
 				students: [],
 				classes: [],
 				syllabi: [],

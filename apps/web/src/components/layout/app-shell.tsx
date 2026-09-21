@@ -2,6 +2,7 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { DataProvider } from "@/lib/data-store";
+import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { readCollapsedPref, writeCollapsedPref } from "@/lib/sidebar-prefs";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
@@ -15,11 +16,14 @@ export const routeTitles: Record<string, string> = {
 	"/_auth/tuition": "Học phí",
 	"/_auth/assignments": "Bài tập",
 	"/_auth/assignments/$assignmentId": "Bài tập",
+	"/_auth/assignments/new": "Tạo bài tập",
+	"/_auth/assignments/preview": "Xem trước bài tập",
+	"/_auth/assignments/bank": "Ngân hàng bài tập",
 	"/_auth/classes": "Lớp học",
 	"/_auth/classes/$classId": "Lớp học",
 	"/_auth/syllabus": "Giáo trình",
 	"/_auth/syllabus/$syllabusId": "Giáo trình",
-	"/_auth/reports": "Báo cáo phụ huynh",
+	...(PARENT_REPORTS_ENABLED ? { "/_auth/reports": "Báo cáo phụ huynh" } : {}),
 	"/_auth/profile": "Hồ sơ",
 	"/_auth/settings": "Cài đặt",
 };

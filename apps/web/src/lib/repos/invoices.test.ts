@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import { mapInvoices } from "./invoices";
 
 const base: KernelSnapshot = {
+	assignmentPrompts: [],
+	classAssignments: [],
 	students: [],
 	classes: [],
 	syllabi: [],
@@ -40,6 +42,7 @@ describe("mapInvoices", () => {
 			{
 				id: "INV-1",
 				sid: "student-1",
+				eid: "enr-1",
 				amount: 500000,
 				status: "paid",
 				date: "19/08",
@@ -76,6 +79,7 @@ describe("mapInvoices", () => {
 			{
 				id: "INV-2",
 				sid: "student-2",
+				eid: "enr-2",
 				amount: 400000,
 				status: "unpaid",
 				date: "01/09",
@@ -128,5 +132,28 @@ describe("mapInvoices", () => {
 			],
 		});
 		expect(mapped?.status).toBe("unpaid");
+	});
+});
+
+describe("mapInvoices enrollment mapping (#216)", () => {
+	test("maps enrollmentId to eid field-for-field", () => {
+		const snapshot = {
+			invoices: [
+				{
+					id: "inv-eid",
+					studentId: "s1",
+					enrollmentId: "ENR-9",
+					amount: 400000,
+					status: "unpaid",
+					date: "2026-09-21",
+					type: "",
+					method: "",
+					due: "2026-12-25",
+					note: "",
+				},
+			],
+		} as never;
+		const mapped = mapInvoices(snapshot)[0];
+		expect(mapped?.eid).toBe("ENR-9");
 	});
 });

@@ -35,7 +35,7 @@ async function main() {
 			),
 		}));
 		console.log(
-			"\n=== " + tag + " ===\n" + JSON.stringify(info, null, 2).slice(0, 2500),
+			`\n=== ${tag} ===\n${JSON.stringify(info, null, 2).slice(0, 2500)}`,
 		);
 		return info;
 	};

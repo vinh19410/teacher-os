@@ -1,4 +1,9 @@
-import type { ClassType, KernelEnrollmentRow } from "@teacher-os/api/contracts";
+import type {
+	AssignmentQuestion,
+	AssignmentSkill,
+	ClassType,
+	KernelEnrollmentRow,
+} from "@teacher-os/api/contracts";
 
 export interface Student {
 	id: string;
@@ -46,9 +51,49 @@ export interface Lesson {
 	zoom: string;
 }
 export type InvoiceStatus = "paid" | "overdue" | "unpaid";
+export interface AssignmentPrompt {
+	id: string;
+	skill?: AssignmentSkill | string;
+	part?: string;
+	type?: string;
+	task: string;
+	genre: string;
+	title: string;
+	band: string;
+	source: string;
+	prompt: string;
+	intro?: string;
+	passage?: string;
+	transcript?: string;
+	cueTopic?: string;
+	cuePoints?: string;
+	audioName?: string;
+	questions?: AssignmentQuestion[];
+	note: string;
+	status: "draft" | "ready";
+	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */
+	createdAt: string;
+}
+
+/** One lượt giao (#208) — mirror KernelClassAssignmentRow. `title` là snapshot
+ * tên đề lúc giao; submittedAt null = chưa nộp (derived display-only). */
+export interface ClassAssignment {
+	id: string;
+	classId: string;
+	promptId: string;
+	title: string;
+	due: string;
+	note: string;
+	createdAt: string;
+	targets: Array<{ studentId: string; submittedAt: string | null }>;
+}
+
 export interface Invoice {
 	id: string;
 	sid: string;
+	/** Enrollment (lớp) phát sinh hóa đơn; "" trên legacy rows tạo trước
+	 * create API. Nguồn: KernelInvoiceRow.enrollmentId trên snapshot. */
+	eid: string;
 	amount: number;
 	status: InvoiceStatus;
 	date: string;
@@ -152,6 +197,7 @@ export interface MockData {
 	lessons: Lesson[];
 	invoices: Invoice[];
 	assignments: Assignment[];
+	assignmentPrompts: AssignmentPrompt[];
 	reports: Report[];
 	notifs: Notif[];
 	commentBank: CommentBankItem[];
@@ -166,6 +212,7 @@ export type KernelHydratedData = Pick<
 	| "syllabi"
 	| "lessons"
 	| "assignments"
+	| "assignmentPrompts"
 	| "invoices"
 	| "reports"
 	| "notifs"
@@ -174,6 +221,8 @@ export type KernelHydratedData = Pick<
 	/** Issue #61: raw enrollment rows for the invoice create picker —
 	 * MockData itself has no enrollments collection. */
 	enrollments: KernelEnrollmentRow[];
+	/** #208: lượt giao bài đã persist; MockData itself has no such collection. */
+	classAssignments: ClassAssignment[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

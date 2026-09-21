@@ -13,7 +13,9 @@ import {
 	MalformedSnapshotError,
 } from "@/lib/kernel-load-state";
 import type { KernelHydratedData } from "@/lib/mock-data";
+import { mapAssignmentPrompts } from "./assignment-prompts";
 import { mapAssignments } from "./assignments";
+import { mapClassAssignments } from "./class-assignments";
 import { mapClasses } from "./classes";
 import { mapCommentBank } from "./comment-bank";
 import { mapEnrollments } from "./enrollments";
@@ -158,6 +160,25 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/reports",
 				body: { ...action.payload },
 			};
+		case "create-assignment-prompt":
+			// #218: assignmentPromptCreateSchema is .strict() — v2 payload is
+			// the entire body and is posted verbatim.
+			return {
+				path: "/api/assignments/prompts",
+				body: { ...action.payload },
+			};
+		case "assign-class-prompt":
+			// #208: classAssignmentCreateSchema is .strict() — the payload is
+			// the entire body (promptId, due, note, studentIds).
+			return {
+				path: `/api/classes/${action.payload.classId}/assignments`,
+				body: {
+					promptId: action.payload.promptId,
+					due: action.payload.due,
+					note: action.payload.note,
+					studentIds: action.payload.studentIds,
+				},
+			};
 		case "add-module":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules`,
@@ -195,6 +216,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
 				body: {},
 			};
+		case "delete-syllabus":
+			// Body phải stay exactly {} — same CSRF-safe convention as
+			// remove-curriculum (server schema là z.object({}).strict()).
+			return {
+				path: `/api/syllabi/${action.syllabusId}/remove`,
+				body: {},
+			};
 		case "reorder-modules":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules/reorder`,
@@ -225,9 +253,11 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		assignments: mapAssignments(snapshot),
 		invoices: mapInvoices(snapshot),
 		reports: mapReports(snapshot),
+		assignmentPrompts: mapAssignmentPrompts(snapshot),
 		notifs: mapNotifs(snapshot),
 		commentBank: mapCommentBank(snapshot),
 		enrollments: mapEnrollments(snapshot),
+		classAssignments: mapClassAssignments(snapshot),
 	};
 }
 
@@ -359,6 +389,8 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"packages",
 	"lessons",
 	"assignments",
+	"assignmentPrompts",
+	"classAssignments",
 	"invoices",
 	"reports",
 	"notifs",

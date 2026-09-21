@@ -7,6 +7,8 @@ import { describe, expect, test } from "vitest";
 import { mapStudents } from "./students";
 
 const snapshot: KernelSnapshot = {
+	assignmentPrompts: [],
+	classAssignments: [],
 	students: [
 		{
 			id: "st-1",
@@ -103,6 +105,8 @@ describe("mapStudents", () => {
 
 	test("empty org maps to an empty list, never seed", () => {
 		const empty: KernelSnapshot = {
+			assignmentPrompts: [],
+			classAssignments: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -124,6 +128,8 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 	// displayed newest active one (en-new). st-2 shares a 1:2 class session
 	// via en-peer.
 	const snapshot: KernelSnapshot = {
+		assignmentPrompts: [],
+		classAssignments: [],
 		students: [
 			{
 				id: "st-1",
@@ -258,6 +264,8 @@ describe("mapStudents parked package (issue #104)", () => {
 	// st-1 owns a parked package: created from /students with no class, so
 	// enrollmentId is null and nothing can ever be checked in against it.
 	const snapshot: KernelSnapshot = {
+		assignmentPrompts: [],
+		classAssignments: [],
 		students: [
 			{
 				id: "st-1",

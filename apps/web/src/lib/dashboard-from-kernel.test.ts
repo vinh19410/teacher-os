@@ -5,6 +5,7 @@ import {
 	formatDashboardLead,
 	lessonDayFromDate,
 	lessonsToday,
+	upcomingLessonsThisWeek,
 } from "./dashboard-from-kernel";
 import type { Lesson, Student } from "./mock-data";
 
@@ -265,5 +266,137 @@ describe("formatDashboardGreeting", () => {
 		expect(formatDashboardGreeting("Giáo viên", now)).toBe(
 			"Chào buổi tối, Giáo viên",
 		);
+	});
+});
+
+describe("upcomingLessonsThisWeek (issue #212)", () => {
+	test("legacy rows: keeps only days after today, drops today and past days", () => {
+		const lessons: Lesson[] = [
+			lesson({ id: "mon", sid: "s1", day: 1, time: "08:00", date: null }),
+			lesson({ id: "tue", sid: "s1", day: 2, time: "08:00", date: null }),
+			lesson({ id: "wed", sid: "s1", day: 3, time: "08:00", date: null }),
+			lesson({ id: "thu", sid: "s1", day: 4, time: "08:00", date: null }),
+			lesson({ id: "fri", sid: "s1", day: 5, time: "08:00", date: null }),
+		];
+		const result = upcomingLessonsThisWeek(lessons, wednesday);
+		expect(result.map((l) => l.id)).toEqual(["thu", "fri"]);
+	});
+
+	test("drops cancelled lessons", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "thu-cancelled",
+				sid: "s1",
+				day: 4,
+				time: "08:00",
+				date: null,
+				status: "cancelled",
+			}),
+			lesson({ id: "fri", sid: "s1", day: 5, time: "08:00", date: null }),
+		];
+		const result = upcomingLessonsThisWeek(lessons, wednesday);
+		expect(result.map((l) => l.id)).toEqual(["fri"]);
+	});
+
+	test("dated rows: keeps only dates in the remaining part of this week", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "past",
+				sid: "s1",
+				day: 2,
+				time: "08:00",
+				date: "2026-08-18",
+			}),
+			lesson({
+				id: "today",
+				sid: "s1",
+				day: 3,
+				time: "08:00",
+				date: "2026-08-19",
+			}),
+			lesson({
+				id: "thu",
+				sid: "s1",
+				day: 4,
+				time: "08:00",
+				date: "2026-08-20",
+			}),
+			lesson({
+				id: "sun",
+				sid: "s1",
+				day: 7,
+				time: "08:00",
+				date: "2026-08-23",
+			}),
+			lesson({
+				id: "next-week",
+				sid: "s1",
+				day: 2,
+				time: "08:00",
+				date: "2026-08-25",
+			}),
+		];
+		const result = upcomingLessonsThisWeek(lessons, wednesday);
+		expect(result.map((l) => l.id)).toEqual(["thu", "sun"]);
+	});
+
+	test("Sunday boundary returns an empty list", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "legacy-sun",
+				sid: "s1",
+				day: 7,
+				time: "08:00",
+				date: null,
+			}),
+			lesson({
+				id: "dated-sun",
+				sid: "s1",
+				day: 7,
+				time: "09:00",
+				date: "2026-08-23",
+			}),
+		];
+		expect(upcomingLessonsThisWeek(lessons, sunday)).toEqual([]);
+	});
+
+	test("Monday keeps the whole rest of the week for legacy rows", () => {
+		const lessons: Lesson[] = [
+			lesson({ id: "tue", sid: "s1", day: 2, time: "08:00", date: null }),
+			lesson({ id: "sun", sid: "s1", day: 7, time: "08:00", date: null }),
+		];
+		expect(upcomingLessonsThisWeek(lessons, monday).map((l) => l.id)).toEqual([
+			"tue",
+			"sun",
+		]);
+	});
+
+	test("sorts by day then time across legacy and dated rows", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "fri-legacy-2000",
+				sid: "s1",
+				day: 5,
+				time: "20:00",
+				date: null,
+			}),
+			lesson({
+				id: "thu-dated-1900",
+				sid: "s1",
+				day: 4,
+				time: "19:00",
+				date: "2026-08-20",
+			}),
+			lesson({
+				id: "thu-legacy-0900",
+				sid: "s1",
+				day: 4,
+				time: "09:00",
+				date: null,
+			}),
+		];
+		expect(
+			upcomingLessonsThisWeek(lessons, wednesday).map((l) => l.id),
+		).toEqual(["thu-legacy-0900", "thu-dated-1900", "fri-legacy-2000"]);
 	});
 });

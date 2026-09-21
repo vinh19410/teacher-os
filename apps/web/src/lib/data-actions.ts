@@ -1,4 +1,5 @@
 import type {
+	AssignmentPromptCreate,
 	ClassType,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
@@ -39,6 +40,23 @@ export type KernelAction =
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| { type: "add-comment-bank"; text: string; operationId: string }
+	| {
+			/** Assignment-prompt bank (#202): 8 fields — exactly the strict
+			 * contract; the command bus posts them verbatim. */
+			type: "create-assignment-prompt";
+			payload: AssignmentPromptCreate;
+	  }
+	| {
+			/** Giao đề ngân hàng cho lớp (#208) */
+			type: "assign-class-prompt";
+			payload: {
+				classId: string;
+				promptId: string;
+				due: string;
+				note?: string;
+				studentIds: string[];
+			};
+	  }
 	| {
 			/** Weekly parent report (#173): "sent" requires content server-side;
 			 * drafts persist as-is with an empty `sent` stamp. */
@@ -129,6 +147,13 @@ export type KernelAction =
 			/** Delete the class's imported curriculum copy and null the pointer. */
 			type: "remove-curriculum";
 			classId: string;
+	  }
+	| {
+			/** Xóa một syllabus template (hard delete cây module/lesson). Các lớp
+			 * đã import KHÔNG bị ảnh hưởng (giữ nguyên bản copy của mình); lớp mới
+			 * không thể chọn template này nữa. */
+			type: "delete-syllabus";
+			syllabusId: string;
 	  }
 	| {
 			type: "add-module";

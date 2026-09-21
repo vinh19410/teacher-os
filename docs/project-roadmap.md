@@ -93,14 +93,14 @@ Trạng thái: **Đang thực hiện** (2026-09-18) — #67 labeled in progress;
 
 ### M5 — Ổn định & quyết định · GitHub milestone: M5
 
-Trạng thái: **Chưa bắt đầu**.
+Trạng thái: **Đang thực hiện** (2026-09-21) — DOD-1 (#69) có evidence; metrics + decision record (#70) chưa bắt đầu.
 
 **DÙNG ĐƯỢC khi hoàn thành**: bản ổn định sau pilot + decision record quý sau.
 
 **CHƯA DÙNG ĐƯỢC tại M5**: feature mới theo quyết định (ứng viên đầu: assignment create, report create, settings persist — chỉ thêm nếu pilot chứng minh blocker).
 
 **DOD**:
-- [ ] Toàn bộ pilot blocker fix; regression E2E xanh.
+- [x] Toàn bộ pilot blocker fix; regression E2E xanh. *(evidence: pilot log 0 blocker — pilot chưa bắt đầu nên không có blocker nào để fix, triage 5 nguồn trong [evidence report](../plans/260921-0505-issue69-m5-pilot-blockers-regression-e2e/reports/evidence-regression-e2e.md); regression E2E xanh — local 66 pass/0 fail tại `beda711` + CI workflow E2E xanh trên develop `e41c0a3` và trên PR của issue này; ghi chú: DOD-1 được đóng ở dạng vacuous — nếu pilot (#67) bắt đầu và ghi blocker, dòng này mở lại)*
 - [ ] Metrics pilot tổng hợp (completion, support burden, critical errors).
 - [ ] Decision record 1 trang: mở rộng / lặp pilot / đổi hướng + top 3 blockers theo frequency. Evidence là self-pilot → ghi rõ provisional; nếu chọn mở rộng, bước kế tiếp là pilot với giáo viên thật.
 - [ ] `docs/project-roadmap.md` cập nhật phạm vi quý sau theo quyết định.
