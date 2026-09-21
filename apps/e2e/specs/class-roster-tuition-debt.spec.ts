@@ -87,12 +87,16 @@ async function createInvoice(page: Page, amount: string): Promise<void> {
 
 async function markFirstInvoicePaid(page: Page): Promise<void> {
 	await page.goto("/tuition");
-	const unpaidButtons = page.getByRole("button", { name: "Đã nhận" });
-	await expect(unpaidButtons.first()).toBeVisible();
-	const before = await unpaidButtons.count();
-	expect(before).toBeGreaterThan(0);
-	await unpaidButtons.first().click();
-	await expect(unpaidButtons).toHaveCount(before - 1);
+	// Row-scoped click: a snapshot refetch can re-render the table between
+	// "visible" and "count", so counting buttons races (seen in CI #216).
+	const row = page
+		.locator("tbody tr")
+		.filter({ hasText: STUDENT_NAME })
+		.first();
+	await row.getByRole("button", { name: "Đã nhận" }).click();
+	await expect(row.getByRole("button", { name: "Đã nhận" })).toBeHidden({
+		timeout: 15000,
+	});
 }
 
 test("class roster reflects the tuition-debt lifecycle of the class", async ({
