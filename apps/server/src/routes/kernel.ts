@@ -6,6 +6,7 @@ import {
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
+	classTuitionFeeUpdateSchema,
 	deleteSyllabusSchema,
 	enrollStudentSchema,
 	importSyllabusSchema,
@@ -831,6 +832,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			sessionsDone: 0,
 			status: "active",
 			startDate: input.startDate,
+			tuitionFee: input.tuitionFee ?? null,
 			notes: "",
 		});
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = imported
@@ -995,6 +997,27 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		await db
 			.update(classTable)
 			.set({ notes: input.notes })
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/classes/:id/tuition-fee", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classTuitionFeeUpdateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		await db
+			.update(classTable)
+			.set({ tuitionFee: input.tuitionFee })
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
 		return c.json({ ok: true });
 	});

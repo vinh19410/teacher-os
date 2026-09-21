@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server endpoints"
-status: todo
+status: done
 priority: P1
 effort: 2h
 dependencies: [1]
@@ -48,10 +48,10 @@ Server ghi + trả về `tuitionFee`: `POST /classes` persist field mới; endpo
 
 ## Todo
 
-- [ ] `POST /classes` insert `tuitionFee ?? null`
-- [ ] Route `POST /classes/:id/tuition-fee` org-scoped, response shape = notes
-- [ ] `loadSnapshot` trả `tuitionFee`
-- [ ] 6 test cases ở trên xanh
+- [x] `POST /classes` insert `tuitionFee ?? null`
+- [x] Route `POST /classes/:id/tuition-fee` org-scoped, response shape = notes
+- [x] `loadSnapshot` trả `tuitionFee`
+- [x] 6 test cases ở trên xanh
 
 ## Verification
 

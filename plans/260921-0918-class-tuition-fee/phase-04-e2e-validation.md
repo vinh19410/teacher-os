@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E & validation sweep"
-status: todo
+status: done
 priority: P1
 effort: 1h
 dependencies: [3]
@@ -38,9 +38,9 @@ E2E phủ vòng đời học phí (tạo có/không fee → sửa → xóa) và 
 
 ## Todo
 
-- [ ] Spec `class-tuition-fee.spec.ts` 5 case trên
-- [ ] Full e2e suite xanh
-- [ ] `pnpm check`, `pnpm check-types`, web + server tests xanh
+- [x] Spec `class-tuition-fee.spec.ts` 5 case trên
+- [x] Full e2e suite xanh
+- [x] `pnpm check`, `pnpm check-types`, web + server tests xanh
 
 ## Verification
 

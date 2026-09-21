@@ -181,6 +181,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				sessionsTotal: action.payload.sessionsTotal,
 				status: "active",
 				startDate: action.payload.startDate,
+				tuitionFee: action.payload.tuitionFee ?? null,
 				notes: "",
 			};
 			return { ...state, classes: [...state.classes, cls] };
@@ -373,6 +374,16 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				...state,
 				classes: state.classes.map((c) =>
 					c.id === action.classId ? { ...c, notes: action.notes } : c,
+				),
+			};
+		}
+		case "update-class-tuition-fee": {
+			return {
+				...state,
+				classes: state.classes.map((c) =>
+					c.id === action.payload.classId
+						? { ...c, tuitionFee: action.payload.tuitionFee }
+						: c,
 				),
 			};
 		}

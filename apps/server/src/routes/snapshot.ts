@@ -288,6 +288,7 @@ export async function loadSnapshot(
 			sessionsDone: row.sessionsDone,
 			status: row.status,
 			startDate: row.startDate,
+			tuitionFee: row.tuitionFee ?? null,
 			notes: row.notes,
 		})),
 		enrollments: enrollmentRows.map((row) => ({

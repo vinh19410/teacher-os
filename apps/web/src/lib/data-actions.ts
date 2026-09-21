@@ -115,6 +115,7 @@ export type KernelAction =
 				schedule: { days: number[]; start: string; end: string };
 				sessionsTotal: number;
 				startDate: string;
+				tuitionFee?: number | null;
 			};
 	  }
 	| {
@@ -215,7 +216,11 @@ export type KernelAction =
 			moduleId: string;
 			lessonIds: string[];
 	  }
-	| { type: "update-class-notes"; classId: string; notes: string };
+	| { type: "update-class-notes"; classId: string; notes: string }
+	| {
+			type: "update-class-tuition-fee";
+			payload: { classId: string; tuitionFee: number | null };
+	  };
 
 /** Backwards-compatible name for data-store consumers. */
 export type Action = KernelAction;

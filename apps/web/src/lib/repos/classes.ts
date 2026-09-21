@@ -61,6 +61,7 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		sessionsTotal: row.sessionsTotal,
 		status: row.status,
 		startDate: row.startDate,
+		tuitionFee: row.tuitionFee ?? null,
 		notes: row.notes,
 	}));
 }

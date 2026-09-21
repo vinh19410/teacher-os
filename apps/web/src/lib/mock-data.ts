@@ -157,6 +157,7 @@ export interface ClassGroup {
 	sessionsTotal: number;
 	status: string;
 	startDate: string;
+	tuitionFee: number | null;
 	notes: string;
 }
 

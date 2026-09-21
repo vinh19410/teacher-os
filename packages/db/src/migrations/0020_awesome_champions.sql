@@ -1,0 +1,1 @@
+ALTER TABLE `class` ADD `tuition_fee` integer;

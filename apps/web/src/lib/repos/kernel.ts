@@ -65,7 +65,10 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 		case "add-class":
 			return {
 				path: "/api/classes",
-				body: { ...action.payload },
+				body: {
+					...action.payload,
+					tuitionFee: action.payload.tuitionFee ?? null,
+				},
 			};
 		case "add-invoice":
 			// Issue #61: invoiceCreateSchema is .strict() — the body must carry
@@ -108,6 +111,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return {
 				path: `/api/classes/${action.classId}/notes`,
 				body: { notes: action.notes },
+			};
+		case "update-class-tuition-fee":
+			return {
+				path: `/api/classes/${action.payload.classId}/tuition-fee`,
+				body: { tuitionFee: action.payload.tuitionFee },
 			};
 		case "check-in":
 			// Body must stay exactly {} — the server rejects anything else so

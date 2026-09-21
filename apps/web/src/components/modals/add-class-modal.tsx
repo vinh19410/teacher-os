@@ -30,6 +30,7 @@ const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
 const SESSION_MINUTES = 90;
 const DEFAULT_START = "19:00";
 const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
+const AMOUNT_RE = /^\d{1,12}$/;
 
 export function AddClassModal({
 	open,
@@ -50,6 +51,7 @@ export function AddClassModal({
 	const [endTime, setEndTime] = useState(DEFAULT_END);
 	const [endTouched, setEndTouched] = useState(false);
 	const [total, setTotal] = useState("12");
+	const [fee, setFee] = useState("");
 	const [startDate, setStartDate] = useState(getTomorrowDateInputValue);
 	const minimumStartDate = getTomorrowDateInputValue();
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
@@ -75,6 +77,7 @@ export function AddClassModal({
 		setEndTouched(false);
 		setTotal("12");
 		setStartDate(getTomorrowDateInputValue());
+		setFee("");
 	}
 
 	function changeStart(next: string) {
@@ -121,6 +124,13 @@ export function AddClassModal({
 			setError("Tổng số buổi tối đa là 52.");
 			return;
 		}
+		const trimmedFee = fee.trim();
+		if (trimmedFee !== "") {
+			if (!AMOUNT_RE.test(trimmedFee) || Number(trimmedFee) < 1) {
+				setError("Học phí phải là số nguyên dương.");
+				return;
+			}
+		}
 		const result = await run({
 			type: "add-class",
 			payload: {
@@ -133,6 +143,7 @@ export function AddClassModal({
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
+				tuitionFee: trimmedFee === "" ? null : Number(trimmedFee),
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -243,15 +254,24 @@ export function AddClassModal({
 							onChange={(e) => setTotal(e.target.value)}
 						/>
 					</Field>
-					<Field label="Ngày bắt đầu">
+					<Field label="Học phí / học viên (VND)">
 						<Input
-							type="date"
-							value={startDate}
-							min={minimumStartDate}
-							onChange={(e) => setStartDate(e.target.value)}
+							type="number"
+							min={1}
+							placeholder="Không bắt buộc"
+							value={fee}
+							onChange={(e) => setFee(e.target.value)}
 						/>
 					</Field>
 				</div>
+				<Field label="Ngày bắt đầu">
+					<Input
+						type="date"
+						value={startDate}
+						min={minimumStartDate}
+						onChange={(e) => setStartDate(e.target.value)}
+					/>
+				</Field>
 				<div className="flex flex-col gap-2">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
