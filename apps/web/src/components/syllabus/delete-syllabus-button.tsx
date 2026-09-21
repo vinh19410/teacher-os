@@ -18,12 +18,16 @@ export function DeleteSyllabusButton({
 	return (
 		// Card là 1 link navigate (onClick + onKeyDown Enter/Space ở
 		// syllabus/index.tsx) và Modal render inline không portal
-		// (ui/modal.tsx) — chặn cả click và keydown bubble tại wrapper này
-		// để mở modal / bấm nút trong modal không navigate sang detail.
+		// (ui/modal.tsx) — chặn click bubble và CHỈ chặn keydown
+		// Enter/Space tại wrapper này để mở modal / bấm nút trong modal
+		// không navigate sang detail; Escape và Tab vẫn tới document cho
+		// modal close + focus trap (same rule as session-attendance-modal).
 		// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation, điều hướng do Card đóng vai trò.
 		<div
 			onClick={(e) => e.stopPropagation()}
-			onKeyDown={(e) => e.stopPropagation()}
+			onKeyDown={(e) => {
+				if (e.key === " " || e.key === "Enter") e.stopPropagation();
+			}}
 		>
 			<Button variant="danger" size="sm" onClick={() => setConfirmOpen(true)}>
 				Xóa
