@@ -10,6 +10,11 @@ import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
+import {
+	type PreviewDraft,
+	savePreviewDraft,
+	takePreviewDraft,
+} from "@/lib/assignment-preview-draft";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export const Route = createFileRoute("/_auth/assignments/new")({
@@ -52,10 +57,28 @@ export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
 
-	const [value, setValue] = useState<ComposerState>(freshComposer);
-	const [status, setStatus] = useState<"draft" | "ready">("ready");
-	const [dirtyTitle, setDirtyTitle] = useState(false);
-	const [dirtyPrompt, setDirtyPrompt] = useState(false);
+	// Restored once per mount (app has no StrictMode double-invoke). The
+	// dirty flags start true so compositionDefaults never overwrites the
+	// restored title/prompt when the teacher switches task/genre (#213).
+	const [restored] = useState<PreviewDraft | null>(() => takePreviewDraft());
+	const [value, setValue] = useState<ComposerState>(() =>
+		restored
+			? {
+					task: restored.task,
+					genre: restored.genre,
+					title: restored.title,
+					band: restored.band,
+					source: restored.source,
+					prompt: restored.prompt,
+					note: restored.note,
+				}
+			: freshComposer(),
+	);
+	const [status, setStatus] = useState<"draft" | "ready">(
+		restored?.status ?? "ready",
+	);
+	const [dirtyTitle, setDirtyTitle] = useState(!!restored);
+	const [dirtyPrompt, setDirtyPrompt] = useState(!!restored);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
 
@@ -226,6 +249,16 @@ export function NewAssignmentRoute() {
 								/>
 							</div>
 							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										savePreviewDraft({ ...value, status });
+										navigate({ to: "/assignments/preview" });
+									}}
+								>
+									Xem trước
+								</Button>
 								<Button
 									type="button"
 									variant="secondary"

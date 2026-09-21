@@ -51,6 +51,8 @@ describe("NewAssignmentRoute (issue #202)", () => {
 		// are its own strings:
 		expect(html).not.toContain("Đề này chỉ được thêm vào ngân hàng");
 		expect(html).not.toContain("Chưa có đề nào trong ngân hàng.");
+		// #213: the preview is a button to a dedicated page now.
+		expect(html).toContain("Xem trước");
 		// submit enabled by default (prefilled) — attribute absent
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
