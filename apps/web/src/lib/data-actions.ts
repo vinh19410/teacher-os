@@ -157,6 +157,13 @@ export type KernelAction =
 			classId: string;
 	  }
 	| {
+			/** Xóa một syllabus template (hard delete cây module/lesson). Các lớp
+			 * đã import KHÔNG bị ảnh hưởng (giữ nguyên bản copy của mình); lớp mới
+			 * không thể chọn template này nữa. */
+			type: "delete-syllabus";
+			syllabusId: string;
+	  }
+	| {
 			type: "add-module";
 			syllabusId: string;
 			payload: { title: string; description: string };

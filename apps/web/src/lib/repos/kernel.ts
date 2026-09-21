@@ -216,6 +216,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
 				body: {},
 			};
+		case "delete-syllabus":
+			// Body phải stay exactly {} — same CSRF-safe convention as
+			// remove-curriculum (server schema là z.object({}).strict()).
+			return {
+				path: `/api/syllabi/${action.syllabusId}/remove`,
+				body: {},
+			};
 		case "reorder-modules":
 			return {
 				path: `/api/syllabi/${action.syllabusId}/modules/reorder`,

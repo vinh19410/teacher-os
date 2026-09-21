@@ -6,6 +6,7 @@ import {
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
+	deleteSyllabusSchema,
 	enrollStudentSchema,
 	importSyllabusSchema,
 	invoiceCreateSchema,
@@ -1983,6 +1984,76 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					eq(syllabusLesson.orgId, ctx.orgId),
 				),
 			);
+		return c.json({ ok: true });
+	});
+
+	// Xóa template giáo trình (hard delete cả cây module/lesson). Bản copy của
+	// các lớp đã import là deep-copy độc lập (buildImportBatch, issue #79) nên
+	// không bị ảnh hưởng; chỉ cần detach provenance vì source_template_id là
+	// logical FK only (SQLite không có FK thật để tự set null).
+	kernel.post("/syllabi/:id/remove", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, deleteSyllabusSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const id = c.req.param("id");
+
+		const sy = await findSyllabus(db, id, ctx.orgId);
+		if (!sy) return c.json({ error: "syllabus not found" }, 404);
+		// Mirror guard import handler: bản copy của lớp chỉ được xóa qua
+		// remove-curriculum phía lớp; 404 che tồn tại (consistent với guard
+		// template của import handler phía trên).
+		if (sy.classId !== null) {
+			return c.json({ error: "syllabus not found" }, 404);
+		}
+
+		// FK order (NO ACTION trên class.syllabus_id): null pointer trước, rồi
+		// detach provenance, rồi delete explicit child-first qua subquery —
+		// không dựa FK cascade (same rule as remove-curriculum). Mọi statement
+		// org-scoped.
+		await db.batch([
+			db
+				.update(classTable)
+				.set({ syllabusId: null })
+				.where(
+					and(eq(classTable.syllabusId, id), eq(classTable.orgId, ctx.orgId)),
+				),
+			db
+				.update(syllabus)
+				.set({ sourceTemplateId: null })
+				.where(
+					and(eq(syllabus.sourceTemplateId, id), eq(syllabus.orgId, ctx.orgId)),
+				),
+			db.delete(syllabusLesson).where(
+				and(
+					eq(syllabusLesson.orgId, ctx.orgId),
+					inArray(
+						syllabusLesson.moduleId,
+						db
+							.select({ id: syllabusModule.id })
+							.from(syllabusModule)
+							.where(
+								and(
+									eq(syllabusModule.syllabusId, id),
+									eq(syllabusModule.orgId, ctx.orgId),
+								),
+							),
+					),
+				),
+			),
+			db
+				.delete(syllabusModule)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(syllabus)
+				.where(and(eq(syllabus.id, id), eq(syllabus.orgId, ctx.orgId))),
+		]);
 		return c.json({ ok: true });
 	});
 

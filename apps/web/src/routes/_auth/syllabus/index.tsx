@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddSyllabusModal } from "@/components/modals/add-syllabus-modal";
+import { DeleteSyllabusButton } from "@/components/syllabus/delete-syllabus-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -126,6 +127,11 @@ export function SyllabusRoute() {
 									<Badge variant={inUse > 0 ? "accent" : "muted"}>
 										Đang dùng {inUse} lớp
 									</Badge>
+									<DeleteSyllabusButton
+										syllabusId={sy.id}
+										name={sy.name}
+										inUse={inUse}
+									/>
 								</div>
 							</Card>
 						);

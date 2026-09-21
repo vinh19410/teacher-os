@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: server-delete-endpoint"
-status: todo
+status: done
 ---
 
 # Phase 1 — Server endpoint xóa template
@@ -26,14 +26,14 @@ Tất cả line number dưới đây đã được đọc và verify trực ti�
 
 ## Yêu cầu
 
-- [ ] `deleteSyllabusSchema = z.object({}).strict()` + export type `DeleteSyllabus` trong `packages/api/src/contracts.ts`, đặt cạnh `removeCurriculumSchema` (sau dòng 111)
-- [ ] Endpoint `POST /syllabi/:id/remove` trong kernel.ts, cuối nhóm syllabi routes: guard `kernelCtx` → `readBody` → `findSyllabus` → 404 khi thiếu hoặc `classId !== null` → 1 atomic `db.batch` 5 statement (mọi statement org-scoped) → `{ ok: true }` 200
-- [ ] Batch order: null class pointers → null sourceTemplateId của các copy → delete lessons (subquery modules) → delete modules → delete syllabus
-- [ ] Test matrix 15: xóa template thành công; bản copy của lớp đã import sống sót nguyên vẹn cây; pointer lớp còn; `sourceTemplateId` copy thành null; import lại với templateId đã xóa → 404
-- [ ] Test matrix 16: gọi endpoint với id bản copy của lớp → 404, copy vẫn còn
-- [ ] Test anomaly: class trỏ thẳng template → endpoint vẫn xóa được template và null pointer
-- [ ] Test org-scoping: template của org khác → 404
-- [ ] `pnpm --filter server test` pass toàn bộ (cũ + mới)
+- [x] `deleteSyllabusSchema = z.object({}).strict()` + export type `DeleteSyllabus` trong `packages/api/src/contracts.ts`, đặt cạnh `removeCurriculumSchema` (sau dòng 111)
+- [x] Endpoint `POST /syllabi/:id/remove` trong kernel.ts, cuối nhóm syllabi routes: guard `kernelCtx` → `readBody` → `findSyllabus` → 404 khi thiếu hoặc `classId !== null` → 1 atomic `db.batch` 5 statement (mọi statement org-scoped) → `{ ok: true }` 200
+- [x] Batch order: null class pointers → null sourceTemplateId của các copy → delete lessons (subquery modules) → delete modules → delete syllabus
+- [x] Test matrix 15: xóa template thành công; bản copy của lớp đã import sống sót nguyên vẹn cây; pointer lớp còn; `sourceTemplateId` copy thành null; import lại với templateId đã xóa → 404
+- [x] Test matrix 16: gọi endpoint với id bản copy của lớp → 404, copy vẫn còn
+- [x] Test anomaly: class trỏ thẳng template → endpoint vẫn xóa được template và null pointer
+- [x] Test org-scoping: template của org khác → 404
+- [x] `pnpm --filter server test` pass toàn bộ (cũ + mới)
 
 ## Files tạo/sửa
 
@@ -272,11 +272,11 @@ Tất cả line number dưới đây đã được đọc và verify trực ti�
 
 ## Todo
 
-- [ ] Thêm `deleteSyllabusSchema` + `DeleteSyllabus` vào contracts.ts
-- [ ] Thêm import schema vào kernel.ts import-block
-- [ ] Thêm endpoint `POST /syllabi/:id/remove` vào kernel.ts
-- [ ] Thêm describe test mới (matrix 15, 16, anomaly, org-scoping) vào kernel.test.ts
-- [ ] `pnpm --filter server test` pass
+- [x] Thêm `deleteSyllabusSchema` + `DeleteSyllabus` vào contracts.ts
+- [x] Thêm import schema vào kernel.ts import-block
+- [x] Thêm endpoint `POST /syllabi/:id/remove` vào kernel.ts
+- [x] Thêm describe test mới (matrix 15, 16, anomaly, org-scoping) vào kernel.test.ts
+- [x] `pnpm --filter server test` pass
 
 ## Verification
 

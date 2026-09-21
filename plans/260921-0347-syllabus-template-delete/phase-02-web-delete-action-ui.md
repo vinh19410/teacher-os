@@ -25,13 +25,13 @@ Tất cả line number đã được đọc và verify trực tiếp. Phase này
 
 ## Yêu cầu
 
-- [ ] Thêm `{ type: "delete-syllabus"; syllabusId: string }` vào `KernelAction` với JSDoc tiếng Việt, đặt sau "remove-curriculum" (nhóm syllabus actions)
-- [ ] Thêm case "delete-syllabus" vào `kernelCommand`: path `/api/syllabi/${action.syllabusId}/remove`, body `{}` (CSRF-safe)
-- [ ] Component mới `apps/web/src/components/syllabus/delete-syllabus-button.tsx`: nút "Xóa" (variant danger) + confirm modal 2 vế semantics + "không thể hoàn tác"; busy-guard pattern mirror
-- [ ] Nút và modal KHÔNG trigger navigation của card (chặn cả click và Enter/Space keydown bubble)
-- [ ] Tích hợp nút vào footer card ở `apps/web/src/routes/_auth/syllabus/index.tsx` cạnh Badge "Đang dùng"
-- [ ] Test mapping mới trong `kernel-command.test.ts`
-- [ ] `pnpm --filter web test` pass và `pnpm check-types` (hoặc `pnpm --filter web check-types`) pass
+- [x] Thêm `{ type: "delete-syllabus"; syllabusId: string }` vào `KernelAction` với JSDoc tiếng Việt, đặt sau "remove-curriculum" (nhóm syllabus actions)
+- [x] Thêm case "delete-syllabus" vào `kernelCommand`: path `/api/syllabi/${action.syllabusId}/remove`, body `{}` (CSRF-safe)
+- [x] Component mới `apps/web/src/components/syllabus/delete-syllabus-button.tsx`: nút "Xóa" (variant danger) + confirm modal 2 vế semantics + "không thể hoàn tác"; busy-guard pattern mirror
+- [x] Nút và modal KHÔNG trigger navigation của card (chặn cả click và Enter/Space keydown bubble)
+- [x] Tích hợp nút vào footer card ở `apps/web/src/routes/_auth/syllabus/index.tsx` cạnh Badge "Đang dùng"
+- [x] Test mapping mới trong `kernel-command.test.ts`
+- [x] `pnpm --filter web test` pass và `pnpm check-types` (hoặc `pnpm --filter web check-types`) pass
 
 ## Files tạo/sửa
 
@@ -183,12 +183,12 @@ Tất cả line number đã được đọc và verify trực tiếp. Phase này
 
 ## Todo
 
-- [ ] Thêm action type "delete-syllabus" vào data-actions.ts
-- [ ] Thêm case mapping vào repos/kernel.ts
-- [ ] Tạo delete-syllabus-button.tsx (nút + confirm modal 2 vế + stopPropagation)
-- [ ] Tích hợp vào syllabus/index.tsx footer card
-- [ ] Thêm test mapping vào kernel-command.test.ts
-- [ ] `pnpm --filter web test` + `pnpm --filter web check-types` pass
+- [x] Thêm action type "delete-syllabus" vào data-actions.ts
+- [x] Thêm case mapping vào repos/kernel.ts
+- [x] Tạo delete-syllabus-button.tsx (nút + confirm modal 2 vế + stopPropagation)
+- [x] Tích hợp vào syllabus/index.tsx footer card
+- [x] Thêm test mapping vào kernel-command.test.ts
+- [x] `pnpm --filter web test` + `pnpm --filter web check-types` pass
 
 ## Verification
 

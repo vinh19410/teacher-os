@@ -109,6 +109,10 @@ export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
 /** Remove a class curriculum: deletes the imported copy tree, nulls the pointer. */
 export const removeCurriculumSchema = z.object({}).strict();
 export type RemoveCurriculum = z.infer<typeof removeCurriculumSchema>;
+/** Xóa một syllabus template (hard delete cây module/lesson). Bản copy
+ * của các lớp đã import không bị ảnh hưởng — deep-copy độc lập. */
+export const deleteSyllabusSchema = z.object({}).strict();
+export type DeleteSyllabus = z.infer<typeof deleteSyllabusSchema>;
 export const classNotesSchema = z.object({
 	notes: z.string(),
 });
