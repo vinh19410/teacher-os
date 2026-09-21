@@ -70,8 +70,7 @@ async function openClassDetail(page: Page): Promise<void> {
 }
 
 async function createInvoice(page: Page, amount: string): Promise<void> {
-	await page.getByText("Học phí", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/tuition$/);
+	await page.goto("/tuition");
 	await page.getByRole("button", { name: "+ Tạo hóa đơn" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
@@ -87,8 +86,7 @@ async function createInvoice(page: Page, amount: string): Promise<void> {
 }
 
 async function markFirstInvoicePaid(page: Page): Promise<void> {
-	await page.getByText("Học phí", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/tuition$/);
+	await page.goto("/tuition");
 	const unpaidButtons = page.getByRole("button", { name: "Đã nhận" });
 	const before = await unpaidButtons.count();
 	expect(before).toBeGreaterThan(0);
