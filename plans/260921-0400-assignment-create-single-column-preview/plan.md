@@ -4,6 +4,7 @@ description: "Gỡ cột phải (card Ngân hàng + preview inline) khỏi /assi
 status: pending
 priority: P2
 effort: 4h
+issue: 213
 branch: vinh19410/feat/assignment-create-single-column-preview
 tags: [feature, frontend]
 created: 2026-09-21
