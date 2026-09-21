@@ -224,6 +224,7 @@ async function createTestApp() {
 			skills?: string[];
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
+			tuitionFee?: number | null;
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/classes", {
@@ -4941,5 +4942,157 @@ describe("class assignment give flow (#208)", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body).toMatchObject({ error: "assignment limit reached" });
+	});
+});
+
+describe("class tuition fee (học phí lớp theo học viên - issue #227)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let orgOther: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Teacher Fee");
+		orgOther = await t.insertUser("Teacher Other Org");
+		await t.kernel(session);
+		await t.kernel(orgOther);
+	});
+
+	test("create class with tuitionFee persists and returns in snapshot", async () => {
+		const res = await t.call("/api/classes", {
+			session,
+			method: "POST",
+			body: {
+				name: "Lớp có học phí",
+				type: "ielts",
+				level: "Band 6.5",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/10",
+				tuitionFee: 5_000_000,
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: classId } = (await res.json()) as { id: string };
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBe(5_000_000);
+	});
+
+	test("create class without tuitionFee leaves tuitionFee null", async () => {
+		const classId = await t.createClass(session, "Lớp không học phí");
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBeNull();
+	});
+
+	test("POST /classes/:id/tuition-fee updates tuition fee and reflects in snapshot", async () => {
+		const classId = await t.createClass(session, "Lớp cập nhật phí");
+		const updateRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 6_000_000 },
+		});
+		expect(updateRes.status).toBe(200);
+		expect(await updateRes.json()).toEqual({ ok: true });
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBe(6_000_000);
+	});
+
+	test("POST /classes/:id/tuition-fee with null clears tuition fee", async () => {
+		const res = await t.call("/api/classes", {
+			session,
+			method: "POST",
+			body: {
+				name: "Lớp xóa học phí",
+				type: "ielts",
+				level: "Band 6.5",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/10",
+				tuitionFee: 4_500_000,
+			},
+		});
+		const { id: classId } = (await res.json()) as { id: string };
+
+		const clearRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: null },
+		});
+		expect(clearRes.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBeNull();
+	});
+
+	test("POST /classes/:id/tuition-fee rejects invalid values (<= 0, non-integer, extra fields)", async () => {
+		const classId = await t.createClass(session, "Lớp test validate");
+
+		// 0
+		const resZero = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 0 },
+		});
+		expect(resZero.status).toBe(400);
+
+		// negative
+		const resNeg = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: -100_000 },
+		});
+		expect(resNeg.status).toBe(400);
+
+		// decimal / float
+		const resFloat = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 1.5 },
+		});
+		expect(resFloat.status).toBe(400);
+
+		// extra field (.strict())
+		const resStrict = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 1_000_000, extra: "invalid" },
+		});
+		expect(resStrict.status).toBe(400);
+	});
+
+	test("POST /classes/:id/tuition-fee returns 404 for class belonging to different org or non-existent", async () => {
+		const classId = await t.createClass(session, "Lớp của session");
+
+		// Cross-org call
+		const resCross = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session: orgOther,
+			method: "POST",
+			body: { tuitionFee: 1_000_000 },
+		});
+		expect(resCross.status).toBe(404);
+		expect(await resCross.json()).toEqual({ error: "class not found" });
+
+		// Non-existent
+		const resNonExistent = await t.call(
+			"/api/classes/non-existent-id/tuition-fee",
+			{
+				session,
+				method: "POST",
+				body: { tuitionFee: 1_000_000 },
+			},
+		);
+		expect(resNonExistent.status).toBe(404);
 	});
 });

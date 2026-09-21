@@ -159,6 +159,7 @@ export const seedData: MockData = {
 			sessionsTotal: 12,
 			status: "active",
 			startDate: "",
+			tuitionFee: null,
 			notes: "",
 		},
 		{
@@ -175,6 +176,7 @@ export const seedData: MockData = {
 			sessionsTotal: 10,
 			status: "active",
 			startDate: "",
+			tuitionFee: null,
 			notes: "unchanged",
 		},
 	],

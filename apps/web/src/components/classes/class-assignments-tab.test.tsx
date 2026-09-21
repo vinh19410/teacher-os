@@ -21,6 +21,7 @@ const testClass: ClassGroup = {
 	sessionsDone: 5,
 	status: "active",
 	startDate: "2026-09-01",
+	tuitionFee: null,
 	notes: "",
 	studentIds: ["st-1", "st-2"],
 };

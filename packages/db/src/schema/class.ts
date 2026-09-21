@@ -26,6 +26,10 @@ export const classTable = sqliteTable(
 		sessionsDone: integer("sessions_done").notNull().default(0),
 		status: text("status").notNull().default("active"),
 		startDate: text("start_date").notNull().default(""),
+		/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập.
+		 * User-action ghi: tạo lớp (POST /api/classes), sửa học phí lớp (POST /api/classes/:id/tuition-fee).
+		 * Per-student theo yêu cầu — KHÔNG phải tổng học phí cả lớp; không derive từ invoice (persist-vs-derive carve-out). */
+		tuitionFee: integer("tuition_fee"),
 		notes: text("notes").notNull().default(""),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web UI: tạo lớp + sửa học phí"
-status: todo
+status: done
 priority: P1
 effort: 3h
 dependencies: [2]
@@ -68,12 +68,12 @@ Người dùng nhập học phí optional khi tạo lớp (AddClassModal), thấ
 
 ## Todo
 
-- [ ] `ClassGroup` + `mapClasses` + `data-actions` types
-- [ ] `kernelCommand`: forward add-class + case update-class-tuition-fee
-- [ ] AddClassModal: field optional + validate + payload + reset
-- [ ] `edit-class-fee-modal.tsx` mới (prefill, trống = xóa)
-- [ ] `$classId.tsx`: hiển thị "Học phí: Xđ / học viên | —" + nút Sửa
-- [ ] Unit tests 2 file xanh
+- [x] `ClassGroup` + `mapClasses` + `data-actions` types
+- [x] `kernelCommand`: forward add-class + case update-class-tuition-fee
+- [x] AddClassModal: field optional + validate + payload + reset
+- [x] `edit-class-fee-modal.tsx` mới (prefill, trống = xóa)
+- [x] `$classId.tsx`: hiển thị "Học phí: Xđ / học viên | —" + nút Sửa
+- [x] Unit tests 2 file xanh
 
 ## Verification
 

@@ -41,6 +41,7 @@ const snapshot: KernelSnapshot = {
 			sessionsDone: 4,
 			status: "active",
 			startDate: "19/08",
+			tuitionFee: 5000000,
 			notes: "Nhóm học nhanh",
 		},
 		{
@@ -56,6 +57,7 @@ const snapshot: KernelSnapshot = {
 			sessionsDone: 0,
 			status: "active",
 			startDate: "26/08",
+			tuitionFee: null,
 			notes: "",
 		},
 		{
@@ -71,6 +73,7 @@ const snapshot: KernelSnapshot = {
 			sessionsDone: 0,
 			status: "paused",
 			startDate: "01/09",
+			tuitionFee: null,
 			notes: "",
 		},
 	],
@@ -158,8 +161,13 @@ describe("mapClasses", () => {
 			sessionsTotal: 12,
 			status: "active",
 			startDate: "19/08",
+			tuitionFee: 5000000,
 			notes: "Nhóm học nhanh",
 		});
+	});
+	test("maps tuitionFee from snapshot (number or null)", () => {
+		expect(classes.find((c) => c.id === "cl-1")?.tuitionFee).toBe(5000000);
+		expect(classes.find((c) => c.id === "cl-2")?.tuitionFee).toBeNull();
 	});
 
 	test("communication class maps type and an empty skills array", () => {
@@ -208,6 +216,7 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 				sessionsDone: 99, // stored value must be ignored entirely
 				status: "active",
 				startDate: "",
+				tuitionFee: null,
 				notes: "",
 			},
 			{
@@ -223,6 +232,7 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 				sessionsDone: 0,
 				status: "active",
 				startDate: "",
+				tuitionFee: null,
 				notes: "",
 			},
 		],
@@ -318,6 +328,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		sessionsDone: 0,
 		status: "active",
 		startDate: "",
+		tuitionFee: null,
 		notes: "",
 	};
 

@@ -70,6 +70,8 @@ export const classCreateSchema = z
 		}),
 		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
 		sessionsTotal: z.number().int().min(1).max(52).default(12),
+		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
+		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
@@ -117,6 +119,12 @@ export const classNotesSchema = z.object({
 	notes: z.string(),
 });
 export type ClassNotes = z.infer<typeof classNotesSchema>;
+
+/** Cập nhật học phí mỗi học viên của lớp; null = xóa học phí. */
+export const classTuitionFeeUpdateSchema = z
+	.object({ tuitionFee: z.number().int().min(1).nullable() })
+	.strict();
+export type ClassTuitionFeeUpdate = z.infer<typeof classTuitionFeeUpdateSchema>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).
@@ -650,6 +658,8 @@ export interface KernelClassRow {
 	sessionsDone: number;
 	status: string;
 	startDate: string;
+	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
+	tuitionFee: number | null;
 	notes: string;
 }
 

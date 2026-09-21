@@ -1,7 +1,7 @@
 ---
 title: "Học phí lớp theo học viên: thiết lập khi tạo lớp, sửa được sau khi tạo"
 description: "Thêm học phí optional (VND/học viên/toàn khóa) vào flow tạo lớp, kèm endpoint + modal sửa học phí sau khi tạo."
-status: pending
+status: completed
 priority: P2
 effort: 7h
 issue: 227
@@ -39,17 +39,17 @@ Quy ước tiền: số nguyên VND, `min(1)`, client chặn `/^\d{1,12}$/` — 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Contract & DB migration](./phase-01-start.md) | Pending |
-| 2 | [Server endpoints](./phase-02-server-endpoints.md) | Pending |
-| 3 | [Web UI: tạo lớp + sửa học phí](./phase-03-web-ui.md) | Pending |
-| 4 | [E2E & validation sweep](./phase-04-e2e-validation.md) | Pending |
+| 1 | [Contract & DB migration](./phase-01-start.md) | Done |
+| 2 | [Server endpoints](./phase-02-server-endpoints.md) | Done |
+| 3 | [Web UI: tạo lớp + sửa học phí](./phase-03-web-ui.md) | Done |
+| 4 | [E2E & validation sweep](./phase-04-e2e-validation.md) | Done |
 
 ## Success Criteria
 
-- [ ] Tạo lớp có nhập học phí → snapshot trả `tuitionFee` đúng; bỏ trống → `null`
-- [ ] Sửa học phí (set giá trị mới / xóa về `—`) từ trang chi tiết lớp, không cần F5 (bus refetch)
-- [ ] Endpoint fee org-scoped: lớp của org khác → 404; `amount` ≤ 0 → 400
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test`, `pnpm --filter e2e e2e specs/class-tuition-fee.spec.ts` — exit 0
+- [x] Tạo lớp có nhập học phí → snapshot trả `tuitionFee` đúng; bỏ trống → `null`
+- [x] Sửa học phí (set giá trị mới / xóa về `—`) từ trang chi tiết lớp, không cần F5 (bus refetch)
+- [x] Endpoint fee org-scoped: lớp của org khác → 404; `amount` ≤ 0 → 400
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test`, `pnpm --filter e2e e2e specs/class-tuition-fee.spec.ts` — exit 0
 
 ## Dependencies
 

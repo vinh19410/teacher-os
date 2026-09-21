@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contract & DB migration"
-status: todo
+status: done
 priority: P1
 effort: 1h
 dependencies: []
@@ -63,11 +63,11 @@ Khai báo học phí theo học viên làm dữ liệu persisted: cột `class.t
 
 ## Todo
 
-- [ ] Cột `tuitionFee` trong `schema/class.ts` + docblock user-action
-- [ ] Migration generated & kiểm tra nội dung additive
-- [ ] `classCreateSchema.tuitionFee` (`.int().min(1).nullish()`)
-- [ ] `classTuitionFeeUpdateSchema` (`.strict()`, nullable) + type export
-- [ ] `KernelClassRow.tuitionFee: number | null`
+- [x] Cột `tuitionFee` trong `schema/class.ts` + docblock user-action
+- [x] Migration generated & kiểm tra nội dung additive
+- [x] `classCreateSchema.tuitionFee` (`.int().min(1).nullish()`)
+- [x] `classTuitionFeeUpdateSchema` (`.strict()`, nullable) + type export
+- [x] `KernelClassRow.tuitionFee: number | null`
 
 ## Verification
 
