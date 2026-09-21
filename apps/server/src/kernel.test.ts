@@ -2930,6 +2930,132 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 	});
 });
 
+describe("delete syllabus template (xóa template giáo trình)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	// Helper local mirror của describe import (issue #79).
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Xóa Syllabus");
+	});
+
+	test("matrix 15: delete-syllabus xóa template, bản copy của lớp đã import sống sót nguyên vẹn", async () => {
+		const templateId = await t.createSyllabus(session, "Template sẽ xóa");
+		const moduleAId = await t.createModule(session, templateId, "Module A");
+		await t.createModule(session, templateId, "Module B");
+		// Thêm 1 lesson qua endpoint (mirror addLesson của describe #79).
+		const lessonRes = await t.call(
+			`/api/syllabi/${templateId}/modules/${moduleAId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "L1", objectives: "", materials: "" },
+			},
+		);
+		expect(lessonRes.status).toBe(201);
+
+		// Lớp đã import trước khi xóa.
+		const classId = await t.createClass(session, "Lớp đã dùng template");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		expect(copyRes.status).toBe(201);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+
+		const remove = await t.call(`/api/syllabi/${templateId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		// Template + cây biến mất.
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(false);
+		// Bản copy của lớp sống sót nguyên vẹn cây (2 modules + 1 lesson).
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(classId);
+		expect(copy?.modules).toHaveLength(2);
+		expect(copy?.modules.flatMap((m) => m.lessons)).toHaveLength(1);
+		// Provenance detached (logical FK phải tự null).
+		expect(copy?.sourceTemplateId).toBeNull();
+		// Pointer của lớp vẫn trỏ vào copy.
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+
+		// Lớp mới không thể chọn template đã xóa.
+		const newClassId = await t.createClass(session, "Lớp mới sau xóa");
+		expect((await importSyllabus(session, newClassId, templateId)).status).toBe(
+			404,
+		);
+	});
+
+	test("matrix 16: delete-syllabus từ chối bản copy của lớp (mirror guard import handler)", async () => {
+		const templateId = await t.createSyllabus(session, "Template giữ nguyên");
+		await t.createModule(session, templateId, "Module A");
+		const classId = await t.createClass(session, "Lớp copy bị nhắm");
+		const copyRes = await importSyllabus(session, classId, templateId);
+		const copyId = ((await copyRes.json()) as { id: string }).id;
+
+		const res = await t.call(`/api/syllabi/${copyId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(404);
+		// Copy vẫn còn nguyên.
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(true);
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+	});
+
+	test("anomaly: class trỏ thẳng template vẫn cho xóa template và null pointer", async () => {
+		const templateId = await t.createSyllabus(session, "Template bị trỏ thẳng");
+		const classId = await t.createClass(session, "Lớp pointer lệch");
+		// Legacy anomaly simulation — mirror matrix 9 setup (issue #79).
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		const res = await t.call(`/api/syllabi/${templateId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(false);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+	});
+
+	test("org-scoping: template của org khác là 404", async () => {
+		const other = await t.insertUser("Cô Org Khác");
+		const foreignId = await t.createSyllabus(other, "Template người khác");
+		const res = await t.call(`/api/syllabi/${foreignId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(404);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === foreignId)).toBe(false);
+	});
+});
+
 describe("lesson check-in/cancel (Wave 4)", () => {
 	let t: Awaited<ReturnType<typeof createTestApp>>;
 	let session: TestSession;

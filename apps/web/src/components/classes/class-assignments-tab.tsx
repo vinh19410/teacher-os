@@ -4,7 +4,6 @@ import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useMemo, useState } from "react";
 import { genreOf, taskOf } from "@/components/assignments/assignment-presets";
 import {
-	fmtDate,
 	fmtDue,
 	fmtWhen,
 	rollupStatus,

@@ -45,3 +45,14 @@ describe("kernelCommand create-assignment-prompt (#202)", () => {
 		expect(request.body).toEqual(payload);
 	});
 });
+
+describe("kernelCommand delete-syllabus (#211)", () => {
+	test("maps to /api/syllabi/:id/remove with an empty body", () => {
+		const request = kernelCommand({
+			type: "delete-syllabus",
+			syllabusId: "sy-1",
+		});
+		expect(request.path).toBe("/api/syllabi/sy-1/remove");
+		expect(request.body).toEqual({});
+	});
+});
