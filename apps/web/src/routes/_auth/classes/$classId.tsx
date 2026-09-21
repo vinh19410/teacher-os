@@ -318,8 +318,6 @@ function ClassDetailRoute() {
 						key={`curriculum-${cls.id}`}
 						cls={cls}
 						syllabus={sy}
-						collapsible
-						defaultCollapsed={Boolean(sy && sy.modules.length > 0)}
 						run={run}
 						isPending={isPending}
 						busy={busy}
