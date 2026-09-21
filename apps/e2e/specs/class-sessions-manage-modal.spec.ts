@@ -13,11 +13,9 @@ async function createTemplateWithModules(page: Page, name: string) {
 	// và có nút "+ Thêm buổi học" của riêng nó — phải scope theo module, nếu
 	// không từ module thứ hai trở đi locator sẽ strict-violate (2 matches).
 	const moduleSection = (title: string) =>
-		page
-			.locator("div.overflow-hidden")
-			.filter({
-				has: page.getByRole("heading", { name: title, exact: true }),
-			});
+		page.locator("div.overflow-hidden").filter({
+			has: page.getByRole("heading", { name: title, exact: true }),
+		});
 
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
