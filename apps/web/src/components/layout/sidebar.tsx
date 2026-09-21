@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
+import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { initialsFromName } from "@/lib/initials";
 import { VersionBadge } from "./version-badge";
 
@@ -142,29 +143,33 @@ const navSections: {
 			},
 		],
 	},
-	{
-		label: "Phụ huynh",
-		items: [
-			{
-				to: "/reports",
-				label: "Báo cáo",
-				icon: (
-					<svg
-						aria-hidden="true"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.6"
-					>
-						<path d="M3 3v18h18" />
-						<rect x="7" y="12" width="3" height="6" />
-						<rect x="12" y="8" width="3" height="10" />
-						<rect x="17" y="5" width="3" height="13" />
-					</svg>
-				),
-			},
-		],
-	},
+	...(PARENT_REPORTS_ENABLED
+		? [
+				{
+					label: "Phụ huynh",
+					items: [
+						{
+							to: "/reports",
+							label: "Báo cáo",
+							icon: (
+								<svg
+									aria-hidden="true"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="1.6"
+								>
+									<path d="M3 3v18h18" />
+									<rect x="7" y="12" width="3" height="6" />
+									<rect x="12" y="8" width="3" height="10" />
+									<rect x="17" y="5" width="3" height="13" />
+								</svg>
+							),
+						},
+					],
+				},
+			]
+		: []),
 	{
 		label: "Hệ thống",
 		items: [

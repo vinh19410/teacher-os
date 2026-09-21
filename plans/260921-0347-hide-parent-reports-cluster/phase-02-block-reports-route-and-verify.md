@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Chặn route /reports và kiểm chứng tổng thể"
-status: todo
+status: done
 phase: 2
 priority: P2
 effort: "1h"
@@ -15,10 +15,10 @@ Thêm `beforeLoad` redirect cho route `/reports` khi flag tắt, cập nhật `r
 
 ## Requirements
 
-- [ ] `reports.tsx:13-15`: thêm `beforeLoad` ném `redirect({ to: "/dashboard" })` khi flag tắt; giữ nguyên `component: ReportsRoute`
-- [ ] `reports.test.tsx:7-13`: thêm `redirect` vào mock `@tanstack/react-router`; thêm import `Route`; thêm test guard `beforeLoad` throw; giữ nguyên mọi test component hiện có
-- [ ] Chạy và pass cả 3 lệnh: `pnpm -C apps/web test`, `pnpm -C apps/web check-types`, `pnpm check`
-- [ ] KHÔNG đổi `routes-matcher.ts:9` và `routeTree.gen.ts`
+- [x] `reports.tsx:13-15`: thêm `beforeLoad` ném `redirect({ to: "/dashboard" })` khi flag tắt; giữ nguyên `component: ReportsRoute`
+- [x] `reports.test.tsx:7-13`: thêm `redirect` vào mock `@tanstack/react-router`; thêm import `Route`; thêm test guard `beforeLoad` throw; giữ nguyên mọi test component hiện có
+- [x] Chạy và pass cả 3 lệnh: `pnpm -C apps/web test`, `pnpm -C apps/web check-types`, `pnpm check`
+- [x] KHÔNG đổi `routes-matcher.ts:9` và `routeTree.gen.ts`
 
 ## Implementation Steps
 
@@ -95,12 +95,12 @@ describe("/reports route guard while the parent reports cluster is hidden", () =
 
 ## Todo
 
-- [ ] Thêm `beforeLoad` redirect trong reports.tsx (dòng 13-15)
-- [ ] Mock `redirect` + test guard mới trong reports.test.tsx
-- [ ] `pnpm -C apps/web test` pass
-- [ ] `pnpm -C apps/web check-types` pass
-- [ ] `pnpm check` không diff
-- [ ] Smoke thủ công /reports → /dashboard
+- [x] Thêm `beforeLoad` redirect trong reports.tsx (dòng 13-15)
+- [x] Mock `redirect` + test guard mới trong reports.test.tsx
+- [x] `pnpm -C apps/web test` pass
+- [x] `pnpm -C apps/web check-types` pass
+- [x] `pnpm check` không diff
+- [x] Smoke thủ công /reports → /dashboard
 
 ## Success Criteria
 

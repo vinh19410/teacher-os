@@ -1,7 +1,7 @@
 ---
 title: "Tạm ẩn cụm Phụ huynh Báo cáo (hoãn phát triển)"
 description: "Ẩn toàn bộ điểm vào UI của cụm Phụ huynh — Báo cáo bằng flag tĩnh, giữ nguyên backend, DB và code trang để bật lại sau."
-status: in-progress
+status: completed
 priority: P2
 effort: 3h
 branch: vinh19410/issue-210-hide-parent-reports
@@ -65,8 +65,8 @@ Cơ chế: hằng số `PARENT_REPORTS_ENABLED = false` trong module mới `apps
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Ẩn điều hướng và điểm vào UI](./phase-01-start.md) | Pending |
-| 2 | [Chặn route /reports và kiểm chứng tổng thể](./phase-02-block-reports-route-and-verify.md) | Pending |
+| 1 | [Ẩn điều hướng và điểm vào UI](./phase-01-start.md) | Completed |
+| 2 | [Chặn route /reports và kiểm chứng tổng thể](./phase-02-block-reports-route-and-verify.md) | Completed |
 
 ## Success Criteria
 

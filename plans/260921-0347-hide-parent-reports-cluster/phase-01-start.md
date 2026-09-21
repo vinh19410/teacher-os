@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Ẩn điều hướng và điểm vào UI của cụm Phụ huynh Báo cáo"
-status: todo
+status: done
 phase: 1
 priority: P2
 effort: "2h"
@@ -15,12 +15,12 @@ Tạo module feature flag `features.ts` và gate toàn bộ điểm vào UI tĩn
 
 ## Requirements
 
-- [ ] Tạo `apps/web/src/lib/features.ts` với `export const PARENT_REPORTS_ENABLED = false;`
-- [ ] `sidebar.tsx:145-167`: ẩn section "Phụ huynh" bằng conditional spread
-- [ ] `app-shell.tsx:24`: ẩn entry `"/_auth/reports"` trong `routeTitles` bằng conditional spread
-- [ ] `$studentId.tsx:116-118`: ẩn nút "Tạo báo cáo"; `:272-278`: ẩn `CreateReportModal`; giữ nút "Nhắn Zalo" và card "Phụ huynh"
-- [ ] `settings.tsx:168-171`: bỏ "· Báo cáo phụ huynh" khi flag tắt; `:288-297`: ẩn Card "Mẫu báo cáo tuần"; payload save giữ nguyên `tplReport`
-- [ ] `settings.test.tsx:58-68`: `toBe(3)` → `toBe(2)` + assert không còn "Mẫu báo cáo tuần"
+- [x] Tạo `apps/web/src/lib/features.ts` với `export const PARENT_REPORTS_ENABLED = false;`
+- [x] `sidebar.tsx:145-167`: ẩn section "Phụ huynh" bằng conditional spread
+- [x] `app-shell.tsx:24`: ẩn entry `"/_auth/reports"` trong `routeTitles` bằng conditional spread
+- [x] `$studentId.tsx:116-118`: ẩn nút "Tạo báo cáo"; `:272-278`: ẩn `CreateReportModal`; giữ nút "Nhắn Zalo" và card "Phụ huynh"
+- [x] `settings.tsx:168-171`: bỏ "· Báo cáo phụ huynh" khi flag tắt; `:288-297`: ẩn Card "Mẫu báo cáo tuần"; payload save giữ nguyên `tplReport`
+- [x] `settings.test.tsx:58-68`: `toBe(3)` → `toBe(2)` + assert không còn "Mẫu báo cáo tuần"
 
 ## Implementation Steps
 
@@ -162,12 +162,12 @@ import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 
 ## Todo
 
-- [ ] Tạo `apps/web/src/lib/features.ts`
-- [ ] Gate section sidebar "Phụ huynh" (sidebar.tsx:145-167)
-- [ ] Gate title `"/_auth/reports"` (app-shell.tsx:24)
-- [ ] Gate nút "Tạo báo cáo" + modal ($studentId.tsx:116-118, 272-278)
-- [ ] Gate copy + Card "Mẫu báo cáo tuần" (settings.tsx:168-171, 288-297)
-- [ ] Cập nhật settings.test.tsx (dòng 58-68)
+- [x] Tạo `apps/web/src/lib/features.ts`
+- [x] Gate section sidebar "Phụ huynh" (sidebar.tsx:145-167)
+- [x] Gate title `"/_auth/reports"` (app-shell.tsx:24)
+- [x] Gate nút "Tạo báo cáo" + modal ($studentId.tsx:116-118, 272-278)
+- [x] Gate copy + Card "Mẫu báo cáo tuần" (settings.tsx:168-171, 288-297)
+- [x] Cập nhật settings.test.tsx (dòng 58-68)
 
 ## Success Criteria
 
