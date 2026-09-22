@@ -10,6 +10,16 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-22
+
+### Added
+
+- Modal tạo lớp: mỗi template giáo trình hiện `Tên · N kỹ năng`, và syllabus đang chọn hiện Tag kỹ năng ngay dưới dropdown (#229)
+
+### Changed
+
+- E2E chọn template giáo trình theo id trên URL `/syllabus/:id` vì label option đã đổi (#229)
+
 ## 2026-09-21
 
 ### Added

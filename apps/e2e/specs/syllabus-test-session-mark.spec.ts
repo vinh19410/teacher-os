@@ -2,7 +2,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { signUpViaUi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
- * trang detail. Trả về sau khi URL chuyển sang /syllabus/:id. */
+ * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
+ * bản copy gắn class. */
 async function createSyllabusTemplate(page: Page, name: string) {
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
@@ -12,6 +13,9 @@ async function createSyllabusTemplate(page: Page, name: string) {
 	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 	await page.waitForURL(/\/syllabus\/.+/);
+	const templateId = new URL(page.url()).pathname.split("/").pop();
+	if (!templateId) throw new Error(`Thiếu id template trên ${page.url()}`);
+	return templateId;
 }
 
 test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền amber, đổi loại cập nhật nhãn", async ({
@@ -117,7 +121,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	page,
 }) => {
 	await signUpViaUi(page);
-	await createSyllabusTemplate(page, "E2E Buổi Thi Guard");
+	const templateId = await createSyllabusTemplate(page, "E2E Buổi Thi Guard");
 	// Template có 1 buổi thi: import v4 (Buổi 3 = Thi giữa kỳ).
 	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();
 	await page.setInputFiles(
@@ -144,7 +148,8 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 		.click();
 	await classDialog
 		.getByLabel("Template giáo trình")
-		.selectOption({ label: "E2E Buổi Thi Guard" });
+		.selectOption({ value: templateId });
+	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	const kernelPromise = page.waitForResponse((response) =>
 		response.url().includes("/api/kernel"),

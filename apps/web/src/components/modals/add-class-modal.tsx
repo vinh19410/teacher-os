@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { Tag } from "@/components/ui/tag";
 import {
 	getTomorrowDateInputValue,
 	isFutureDateInputValue,
@@ -31,6 +32,53 @@ const SESSION_MINUTES = 90;
 const DEFAULT_START = "19:00";
 const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
 const AMOUNT_RE = /^\d{1,12}$/;
+
+export function ClassTemplatePicker({
+	templates,
+	templateId,
+	onTemplateId,
+}: {
+	templates: ReadonlyArray<{
+		id: string;
+		name: string;
+		skills: readonly string[];
+	}>;
+	templateId: string;
+	onTemplateId: (value: string) => void;
+}) {
+	const selectedTemplate = templates.find((item) => item.id === templateId);
+	return (
+		<>
+			<Field label="Template giáo trình">
+				<Select
+					value={templateId}
+					onChange={(event) => onTemplateId(event.target.value)}
+				>
+					<option value="">— Lớp trống —</option>
+					{templates.map((item) => (
+						<option key={item.id} value={item.id}>
+							{item.name} · {item.skills.length} kỹ năng
+						</option>
+					))}
+				</Select>
+			</Field>
+			{selectedTemplate ? (
+				selectedTemplate.skills.length > 0 ? (
+					<div className="flex flex-wrap items-center gap-1">
+						<span className="text-muted-fg text-sm">Kỹ năng giáo trình</span>
+						{selectedTemplate.skills.map((skill) => (
+							<Tag key={skill}>{skill}</Tag>
+						))}
+					</div>
+				) : (
+					<p className="text-muted-fg text-sm">
+						Syllabus chưa khai báo kỹ năng
+					</p>
+				)
+			) : null}
+		</>
+	);
+}
 
 export function AddClassModal({
 	open,
@@ -209,19 +257,11 @@ export function AddClassModal({
 						/>
 					</Field>
 				)}
-				<Field label="Template giáo trình">
-					<Select
-						value={templateId}
-						onChange={(e) => setTemplateId(e.target.value)}
-					>
-						<option value="">— Lớp trống —</option>
-						{templates.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</Select>
-				</Field>
+				<ClassTemplatePicker
+					templates={templates}
+					templateId={templateId}
+					onTemplateId={setTemplateId}
+				/>
 				<Field label="Ngày học *">
 					<ChipMulti options={DAY_OPTIONS} value={days} onChange={setDays} />
 				</Field>

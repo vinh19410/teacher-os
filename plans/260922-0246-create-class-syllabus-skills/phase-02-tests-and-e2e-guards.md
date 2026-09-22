@@ -1,21 +1,21 @@
 ---
 title: "Phase 2: Tests — component test và e2e guards"
-status: todo
+status: done
 ---
 
 # Phase 2: Tests — component test và e2e guards
 
 ## Context Links
 
-- E2E chọn option theo label (sẽ vỡ): `apps/e2e/specs/syllabus-detail-import-overwrite.spec.ts:98-99`, `apps/e2e/specs/syllabus-test-session-mark.spec.ts:146-147`
+- E2E chọn option theo label (sẽ vỡ): `syllabus-detail-import-overwrite.spec.ts` dùng `"E2E Template Copy Guard"`; `syllabus-test-session-mark.spec.ts` dùng `"E2E Buổi Thi Guard"`. Không phải cùng một chuỗi.
 - Contract test quét source modal: `apps/web/src/lib/kernel-runtime.contract.test.ts:150-155`
-- Pattern component test: `apps/web/src/components/ui/field.test.tsx` (Vitest + Testing Library, test nằm cạnh source)
+- Pattern component test: `apps/web/src/components/ui/field.test.tsx` dùng `renderToStaticMarkup` trên Vitest `environment: "node"`. Web không có `@testing-library/react`. Không thêm dependency để click select.
 - Playwright `selectOption({ label })` là exact match → label đổi là vỡ
 
 ## Overview
 
 - **Priority**: P1
-- **Status**: pending
+- **Status**: done
 - Bảo vệ tính năng bằng component test mới cho `AddClassModal` và cập nhật 2 e2e specs đang select template theo exact label.
 
 ## Key Insights
@@ -26,9 +26,9 @@ status: todo
 
 ## Requirements
 
-- [ ] Component test `apps/web/src/components/modals/add-class-modal.test.tsx` phủ 4 case: option label chứa "· N kỹ năng"; chọn template có skills → Tag đúng tên từng skill; chọn template `skills: []` → text "Syllabus chưa khai báo kỹ năng"; chọn "— Lớp trống —" → không render hint.
-- [ ] 2 e2e specs chuyển sang `selectOption({ value: <templateId> })` (hoặc exact label mới nếu id không khả dụng trong context spec).
-- [ ] Không sửa `kernel-runtime.contract.test.ts` (phase 1 giữ nguyên các chuỗi regex).
+- [x] Component test `apps/web/src/components/modals/add-class-modal.test.tsx` render đúng khối picker (cùng component modal dùng) bằng `renderToStaticMarkup` cho 4 trạng thái: option label `Tên · N kỹ năng`; template có skills → nhãn "Kỹ năng giáo trình" + Tag từng tên, và `label for` vẫn trùng `select id`; template `skills: []` → "Syllabus chưa khai báo kỹ năng"; "— Lớp trống —" → không hint. Modal đầy đủ (mock `useSyllabus` + `useKernelFormSubmit`) xác nhận option label và chip lớp vẫn `aria-pressed="false"`.
+- [x] 2 e2e specs chuyển sang `selectOption({ value })`. Id là segment URL sau `waitForURL(/\/syllabus\/.+/)` trong `createSyllabusTemplate`, trả về trước `goto("/classes")`. Không dùng id bản copy `classId !== null` (dropdown chỉ liệt kê template `classId === null`).
+- [x] Không sửa `kernel-runtime.contract.test.ts` (phase 1 giữ nguyên các chuỗi regex).
 
 ## Architecture
 
@@ -42,18 +42,17 @@ Test ở 2 tầng: (1) Vitest RTL render `AddClassModal` với `useSyllabus` moc
 
 ## Implementation Steps
 
-1. Viết `add-class-modal.test.tsx`: mock `@/lib/repos/use-syllabus` (import tại dòng 17) trả 2 templates (một có `skills: ["Writing", "Speaking"]`, một `skills: []`), mock `@/lib/use-kernel-form-submit` (dùng tại dòng 58) và các hook còn lại mà modal cần để render (theo mẫu `field.test.tsx`).
-2. Nếu mock toàn bộ modal quá nặng (kernel runtime, router), fallback được chấp nhận: extract helper thuần `formatTemplateOption(s)` vào modal và test trực tiếp helper + render hint bằng cách render `<Field>` con; ưu tiên vẫn là render full modal.
-3. Đọc context 2 e2e specs, tìm template id trong scope (API response khi tạo template); đổi `selectOption({ label: "..." })` → `selectOption({ value: id })`. Nếu spec không giữ id, thêm biến lưu id lúc tạo template.
-4. Chạy thứ tự: `pnpm --filter web test` → `pnpm check` → `pnpm --filter e2e e2e syllabus-detail-import-overwrite syllabus-test-session-mark` (chỉ 2 specs liên quan).
+1. Tách khối picker trong `add-class-modal.tsx` (Select vẫn là child duy nhất của Field; hint là sibling). Test picker bằng `renderToStaticMarkup` cho 4 trạng thái, gồm cả `label for` === `select id` khi đã chọn template. Render thêm `AddClassModal` với mock `useSyllabus` và `useKernelFormSubmit` để khóa option label trên modal thật và chip lớp không bị bật sẵn.
+2. Sửa `createSyllabusTemplate` ở cả 2 spec để trả id từ URL `/syllabus/:id`. Đổi `selectOption({ label: "E2E Template Copy Guard" })` và `selectOption({ label: "E2E Buổi Thi Guard" })` sang `selectOption({ value: templateId })`.
+3. Chạy `pnpm --filter web test` rồi `pnpm check`. E2E chỉ 2 spec. Playwright `reuseExistingServer: false`; nếu 8000/8001 đang bận thì đặt `E2E_API_PORT` / `E2E_WEB_PORT` sang cổng trống, không tắt dev server của người dùng và không bám server đó.
 
 ## Todo
 
-- [ ] `add-class-modal.test.tsx` với 4 case yêu cầu
-- [ ] 2 e2e specs chuyển sang value-based selection
-- [ ] `pnpm --filter web test` pass
-- [ ] `pnpm check` pass
-- [ ] 2 e2e specs pass local (server + web đang chạy theo cấu hình Playwright hiện có)
+- [x] `add-class-modal.test.tsx` với 4 trạng thái picker + association label
+- [x] 2 e2e specs chọn theo id template từ URL
+- [x] `pnpm --filter web test` pass
+- [x] `pnpm check` pass
+- [x] 2 e2e specs pass local (server + web đang chạy theo cấu hình Playwright hiện có)
 
 ## Success Criteria
 
@@ -61,9 +60,9 @@ Toàn bộ test web + contract test + 2 e2e specs pass; không có spec nào cò
 
 ## Risk Assessment
 
-- **Mock modal phức tạp** (modal phụ thuộc kernel command bus): fallback helper thuần đã nêu ở step 2; vẫn đạt mục tiêu assert logic label/hint.
-- **Spec không có id template trong context**: đọc lại spec trước khi sửa — cả 2 đều tạo template ngay trong spec nên id gần như chắc chắn lấy được.
-- **E2E flaky do môi trường**: chỉ chạy 2 specs liên quan bằng grep name, không chạy full suite trong phase này.
+- **Mock modal phức tạp:** picker thuần nhận `templateId` nên 4 trạng thái hint không cần click. Modal đầy đủ chỉ cần mock hai hook.
+- **Id trong spec sau submit là bản copy:** lấy id template từ URL lúc tạo, trước khi rời trang detail.
+- **Cổng 8000/8001 bận:** Playwright không reuse server. Dùng `E2E_API_PORT` / `E2E_WEB_PORT` nếu cổng mặc định đang có dev server.
 
 ## Security Considerations
 
