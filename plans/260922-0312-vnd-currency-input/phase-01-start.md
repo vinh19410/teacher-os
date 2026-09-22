@@ -96,11 +96,11 @@ export function CurrencyInput({ value, onChange, ...props }: CurrencyInputProps)
 
 ## Todo
 
-- [ ] formatVndInput: `"4"`→`"4"`, `"40"`→`"40"`, `"400"`→`"400"`, `"4000"`→`"4,000"`, `"400000"`→`"400,000"`, `"1000000"`→`"1,000,000"`
-- [ ] formatVndInput: dán `"1.000.000đ"`→`"1,000,000"`; `"-500"`→`""`; `"10.5"`→`"105"`; `""`→`""`; `"0"`→`"0"`; `"007"`→`"7"`; idempotent với `"1,000,000"`
-- [ ] parseVndAmount: `""`→null; `"abc"`→null; `"0"`→0; `"400,000"`→400000; `"400.000đ"`→400000; 13 chữ số→null; `"999999999999"`→999999999999
-- [ ] CurrencyInput render tĩnh: `value="400000"` → `<input value="400,000" type="text" inputmode="numeric">`; forward `id`/`placeholder`/`aria-*` từ props
-- [ ] `pnpm --filter web test format-currency` + `pnpm --filter web check-types` exit 0
+- [x] formatVndInput: `"4"`→`"4"`, `"40"`→`"40"`, `"400"`→`"400"`, `"4000"`→`"4,000"`, `"400000"`→`"400,000"`, `"1000000"`→`"1,000,000"`
+- [x] formatVndInput: dán `"1.000.000đ"`→`"1,000,000"`; `"-500"`→`""`; `"10.5"`→`"105"`; `""`→`""`; `"0"`→`"0"`; `"007"`→`"7"`; idempotent với `"1,000,000"`
+- [x] parseVndAmount: `""`→null; `"abc"`→null; `"0"`→0; `"400,000"`→400000; `"400.000đ"`→400000; 13 chữ số→null; `"999999999999"`→999999999999
+- [x] CurrencyInput render tĩnh: `value="400000"` → `<input value="400,000" type="text" inputmode="numeric">`; forward `id`/`placeholder`/`aria-*` từ props
+- [x] `pnpm --filter web test format-currency` + `pnpm --filter web check-types` exit 0
 
 ## Success Criteria
 

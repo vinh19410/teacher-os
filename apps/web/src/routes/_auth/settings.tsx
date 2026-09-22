@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -175,12 +176,12 @@ export function SettingsPage({
 								].join(" · ")}
 							</p>
 							<Field label="Đơn giá mặc định / buổi">
-								<Input
+								<CurrencyInput
 									value={form.defaultUnitPrice}
-									onChange={(e) =>
+									onChange={(next) =>
 										setForm((prev) => ({
 											...prev,
-											defaultUnitPrice: e.target.value,
+											defaultUnitPrice: next,
 										}))
 									}
 								/>

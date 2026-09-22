@@ -74,16 +74,16 @@ test("students → gói 0 buổi / giá âm / thập phân bị chặn theo fiel
 	await expect(dialog).toBeVisible();
 	expect(blockedTotal).toBe(0);
 
-	// QC repro 2 (Case B): negative price is blocked per-field (guard against
-	// a state-stale false green: the input must really hold -500 first).
+	// QC repro 2 (Case B): negative price is stripped by mask at UI layer;
+	// input becomes empty and triggers required validation (server-side min is final guard).
 	await dialog.getByLabel("Đơn giá (VND)").fill("-500");
 	const priceValue = await dialog.getByLabel("Đơn giá (VND)").inputValue();
-	await expect(priceValue).toBe("-500");
+	await expect(priceValue).toBe("");
 	const blockedPrice = await countPosts(page, "/api/students", () =>
 		save.click(),
 	);
 	await expect(
-		fieldError(page, "Đơn giá (VND)").getByText("không được âm"),
+		fieldError(page, "Đơn giá (VND)").getByText("không được để trống"),
 	).toBeVisible();
 	await expect(dialog).toBeVisible();
 	expect(blockedPrice).toBe(0);

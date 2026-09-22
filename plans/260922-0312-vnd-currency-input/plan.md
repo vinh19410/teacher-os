@@ -1,7 +1,7 @@
 ---
 title: "Input tiền hiển thị format VNĐ có dấu phân cách ngay khi gõ"
 description: "Toàn bộ input tiền/phí dùng CurrencyInput chung: chỉ nhận chữ số, tự nhóm hàng nghìn (1,000,000) ngay lúc typing; parse/validate chung, cập nhật 4 modal + settings và e2e."
-status: pending
+status: completed
 priority: P2
 effort: 5h
 issue: 230

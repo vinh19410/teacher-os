@@ -46,7 +46,7 @@ test.describe("class tuition fee (issue #227)", () => {
 		const editDialog = page.getByRole("dialog");
 		await expect(editDialog.getByText("Sửa học phí lớp")).toBeVisible();
 		await expect(editDialog.getByLabel("Học phí / học viên (VND)")).toHaveValue(
-			"5000000",
+			"5,000,000",
 		);
 
 		await editDialog.getByLabel("Học phí / học viên (VND)").fill("6000000");

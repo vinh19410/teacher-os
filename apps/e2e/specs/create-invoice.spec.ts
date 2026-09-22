@@ -186,21 +186,21 @@ test("tuition → tạo hóa đơn amount trống → field error, không POST, 
 	await expect(invoiceTable(page)).toHaveCount(0);
 });
 
-test("tuition → tạo hóa đơn amount âm → field error, không POST, không row", async ({
+test("tuition → tạo hóa đơn amount âm / ký tự không hợp lệ bị strip → input rỗng, field error, không POST, không row", async ({
 	page,
 }) => {
 	await setupOrgWithEnrollment(page);
 	const dialog = await openCreateInvoiceModal(page);
 	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
 	await dialog.getByLabel("Số tiền (VND) *").fill("-5000");
+	// mask strip dấu "-" → input rỗng → lỗi "bắt buộc" thay vì lỗi số âm
+	await expect(dialog.getByLabel("Số tiền (VND) *")).toHaveValue("");
 
 	const posts = await countInvoicePosts(page, async () => {
 		await dialog
 			.getByRole("button", { name: "Tạo hóa đơn", exact: true })
 			.click();
-		await expect(
-			dialog.getByText("Số tiền phải là số nguyên dương, tối đa 12 chữ số."),
-		).toBeVisible();
+		await expect(dialog.getByText("Vui lòng nhập số tiền.")).toBeVisible();
 	});
 	expect(posts).toBe(0);
 	await expect(invoiceTable(page)).toHaveCount(0);

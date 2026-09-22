@@ -75,12 +75,12 @@ pnpm --filter e2e e2e specs/class-roster-tuition-debt.spec.ts
 
 ## Todo
 
-- [ ] 3 spec files cập nhật đúng như trên, kèm comment giải thích thay đổi hành vi mask
-- [ ] `pnpm check` exit 0 (không diff sót)
-- [ ] `pnpm check-types` exit 0
-- [ ] `pnpm --filter web test` exit 0
-- [ ] 5 e2e specs trên exit 0
-- [ ] Whole-plan sweep: grep `type="number"` trong 4 modal → chỉ còn field không phải tiền; grep `AMOUNT_RE` → 0 kết quả
+- [x] 3 spec files cập nhật đúng như trên, kèm comment giải thích thay đổi hành vi mask
+- [x] `pnpm check` exit 0 (không diff sót)
+- [x] `pnpm check-types` exit 0
+- [x] `pnpm --filter web test` exit 0
+- [x] 5 e2e specs trên exit 0
+- [x] Whole-plan sweep: grep `type="number"` trong 4 modal → chỉ còn field không phải tiền; grep `AMOUNT_RE` → 0 kết quả
 
 ## Success Criteria
 

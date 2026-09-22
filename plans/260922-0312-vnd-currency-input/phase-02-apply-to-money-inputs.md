@@ -105,11 +105,11 @@ if (parsedPrice === null) return;
 
 ## Todo
 
-- [ ] 4 modal: thay JSX + parse như spec; không còn `<Input type="number">` nào ở field tiền; `AMOUNT_RE` xóa sạch (grep không còn)
-- [ ] add-student: `parsePackageField` chỉ còn serve `total`
-- [ ] settings: input mask; save vẫn POST `defaultUnitPrice` string
-- [ ] `settings.test.tsx` update regex
-- [ ] `pnpm --filter web test` exit 0; `pnpm --filter web check-types` exit 0
+- [x] 4 modal: thay JSX + parse như spec; không còn `<Input type="number">` nào ở field tiền; `AMOUNT_RE` xóa sạch (grep không còn)
+- [x] add-student: `parsePackageField` chỉ còn serve `total`
+- [x] settings: input mask; save vẫn POST `defaultUnitPrice` string
+- [x] `settings.test.tsx` update regex
+- [x] `pnpm --filter web test` exit 0; `pnpm --filter web check-types` exit 0
 
 ## Success Criteria
 
