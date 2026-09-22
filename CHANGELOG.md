@@ -32,6 +32,7 @@ Quy ước khi cập nhật:
 
 - Form tạo học viên bỏ 3 input gói ("Số buổi gói", "Đơn giá", "Hình thức"); gói học khi tạo trong lớp tự động derive từ lớp (#240)
 - Gói học khi tạo ngoài lớp không tạo bản ghi `session_package` và không bị đếm nhầm vào KPI gói sắp hết (#240)
+- Tab "Hồ sơ" trong trang chi tiết học viên hiển thị card "Lớp học" liệt kê các lớp học viên tham gia thay vì card "Gói học" (#245)
 
 ### CI/Infra
 

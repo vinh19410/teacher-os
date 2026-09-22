@@ -161,7 +161,9 @@ test("class detail → enroll học viên có sẵn vẫn có 3 input gói và c
 	expect(blockedEnroll).toBe(0);
 });
 
-test("tạo học viên trong lớp → gói derive từ lớp (D1)", async ({ page }) => {
+test("tạo học viên trong lớp → derive gói từ lớp, detail hiển thị lớp học (D1)", async ({
+	page,
+}) => {
 	const CLASS_NAME = "E2E 240 Lớp Derive";
 	const STUDENT_NAME = "QC-240 Student Derive";
 
@@ -203,16 +205,15 @@ test("tạo học viên trong lớp → gói derive từ lớp (D1)", async ({ p
 	// Roster hiện học viên
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	// Vào detail học viên -> gói derive 12 buổi, 500.000đ, Online
+	// List học viên: derive gói từ lớp + đơn giá 500.000đ
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
-	await page.getByText(STUDENT_NAME).click();
-	const packageCard = page.locator("div", {
-		has: page.getByText("Gói học", { exact: true }),
-	});
-	await expect(packageCard.getByText("Gói học", { exact: true })).toBeVisible();
-	await expect(packageCard.getByText("Tổng buổi")).toBeVisible();
-	await expect(packageCard.getByText("500.000đ")).toBeVisible();
-	await expect(packageCard.getByText("Online")).toBeVisible();
+	const row = page.locator("tr", { hasText: STUDENT_NAME });
+	await expect(row.getByText(/buổi · Online/)).toBeVisible();
+	await expect(row.getByText("500.000đ")).toBeVisible();
+
+	// Vào detail học viên -> card "Lớp học" hiện lớp vừa tạo
+	await row.getByText(STUDENT_NAME).click();
+	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText("Email: derive@e2e.test")).toBeVisible();
 });
