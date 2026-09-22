@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Docs + CHANGELOG"
-status: todo
+status: completed
 priority: P2
 effort: "1h"
 dependencies: [2]

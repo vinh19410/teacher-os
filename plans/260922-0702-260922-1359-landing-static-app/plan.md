@@ -1,7 +1,7 @@
 ---
 title: "Thêm app landing page tĩnh tách biệt deploy ở apex domain"
 description: "Tạo apps/landing (static page zero-framework theo thiết kế landing.html) và wiring Cloudflare.Website.StaticSite vào Alchemy stack, đưa landing lên apex teacheros.io.vn (+www) tách biệt hoàn toàn với web app."
-status: pending
+status: completed
 priority: P2
 effort: 6h
 issue: 239
@@ -34,10 +34,10 @@ Behavior change có chủ đích: apex từ "301 về app" thành "serve landing
 
 | Phase | Name | Status |
 | ----- | ---- | ------ |
-| 1 | [App `apps/landing` static + tests](./phase-01-landing-app.md) | Pending |
-| 2 | [Topology + Alchemy wiring](./phase-02-topology-alchemy.md) | Pending |
-| 3 | [Deploy smoke + drift tests](./phase-03-deploy-smoke-drift.md) | Pending |
-| 4 | [Docs + CHANGELOG](./phase-04-docs-changelog.md) | Pending |
+| 1 | [App `apps/landing` static + tests](./phase-01-landing-app.md) | Completed |
+| 2 | [Topology + Alchemy wiring](./phase-02-topology-alchemy.md) | Completed |
+| 3 | [Deploy smoke + drift tests](./phase-03-deploy-smoke-drift.md) | Completed |
+| 4 | [Docs + CHANGELOG](./phase-04-docs-changelog.md) | Completed |
 
 Dependencies: 2 ← 1, 3 ← 2, 4 ← 2 (phase 3 và 4 độc lập nhau, có thể song song).
 
@@ -71,12 +71,12 @@ Dependencies: 2 ← 1, 3 ← 2, 4 ← 2 (phase 3 và 4 độc lập nhau, có th
 
 ## Success Criteria
 
-- [ ] `pnpm --filter landing build` tạo `dist/index.html` ; `pnpm --filter landing test` 5 test xanh (đúng 1 `<h1>`, có `#beta-form`, không `<script src=`, có viewport); `pnpm check` xanh.
-- [ ] `resolveDomainTopology("teacheros.io.vn")` → `landingHost === "teacheros.io.vn"`, `appAliases` rỗng, `landingAliases` chứa `www.teacheros.io.vn` (drift test runtime).
+- [x] `pnpm --filter landing build` tạo `dist/index.html` ; `pnpm --filter landing test` 5 test xanh (đúng 1 `<h1>`, có `#beta-form`, không `<script src=`, có viewport); `pnpm check` xanh.
+- [x] `resolveDomainTopology("teacheros.io.vn")` → `landingHost === "teacheros.io.vn"`, `appAliases` rỗng, `landingAliases` chứa `www.teacheros.io.vn` (drift test runtime).
 - [ ] Deploy Staging xanh: GET `https://staging.teacheros.io.vn/` → 200 `text/html` chứa "Teacher OS"; `https://app.staging.teacheros.io.vn` vẫn là web app; auth smoke không vỡ.
 - [ ] Deploy prod: apex + www serve landing; `https://app.teacheros.io.vn` vẫn là web app; `/readyz` + smoke stubs không vỡ.
-- [ ] `pnpm test` full (gồm `test:ci-workflow` + `test:topology-drift`) xanh.
-- [ ] 4 file docs + CHANGELOG cập nhật; drift test chạm runbook vẫn xanh.
+- [x] `pnpm test` full (gồm `test:ci-workflow` + `test:topology-drift`) xanh.
+- [x] 4 file docs + CHANGELOG cập nhật; drift test chạm runbook vẫn xanh.
 
 ## Rollback
 

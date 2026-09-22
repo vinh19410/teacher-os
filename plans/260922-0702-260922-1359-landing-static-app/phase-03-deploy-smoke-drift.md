@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Deploy smoke + drift tests"
-status: todo
+status: completed
 priority: P2
 effort: "1.5h"
 dependencies: [2]

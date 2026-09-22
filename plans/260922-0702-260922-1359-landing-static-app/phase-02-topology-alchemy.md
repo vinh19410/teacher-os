@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Topology + Alchemy wiring"
-status: todo
+status: completed
 priority: P2
 effort: "1.5h"
 dependencies: [1]

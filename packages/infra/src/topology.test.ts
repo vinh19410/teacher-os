@@ -13,21 +13,24 @@ describe("resolveDomainTopology", () => {
 				"https://api.teacher-os.edu.vn/api/auth/callback/google",
 			cookieDomain: ".teacher-os.edu.vn",
 			authCookiePrefix: undefined,
-			appAliases: ["teacher-os.edu.vn", "www.teacher-os.edu.vn"],
+			appAliases: [],
+			landingHost: "teacher-os.edu.vn",
+			landingAliases: ["www.teacher-os.edu.vn"],
 		});
 	});
 
-	it("derives apex and www aliases for prod domain (issue #117)", () => {
+	it("derives landing host and aliases for prod domain, appAliases empty", () => {
 		const topology = resolveDomainTopology("teacheros.io.vn");
-		expect(topology.appAliases).toEqual([
-			"teacheros.io.vn",
-			"www.teacheros.io.vn",
-		]);
+		expect(topology.landingHost).toBe("teacheros.io.vn");
+		expect(topology.landingAliases).toEqual(["www.teacheros.io.vn"]);
+		expect(topology.appAliases).toEqual([]);
 	});
 
-	it("derives app alias for staging domain", () => {
+	it("derives landing host and aliases for staging domain, appAliases empty", () => {
 		const topology = resolveDomainTopology("staging.teacheros.io.vn");
-		expect(topology.appAliases).toEqual(["staging.teacheros.io.vn"]);
+		expect(topology.landingHost).toBe("staging.teacheros.io.vn");
+		expect(topology.landingAliases).toEqual(["www.staging.teacheros.io.vn"]);
+		expect(topology.appAliases).toEqual([]);
 	});
 
 	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the prod cookie zone)", () => {

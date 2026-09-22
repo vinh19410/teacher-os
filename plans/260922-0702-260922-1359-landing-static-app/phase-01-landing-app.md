@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "App apps/landing static + tests"
-status: todo
+status: completed
 priority: P2
 effort: "2h"
 dependencies: []

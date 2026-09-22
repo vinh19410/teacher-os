@@ -50,7 +50,7 @@ pnpm run dev
 
 Open [http://localhost:8001](http://localhost:8001) in your browser to see the web application.
 The API is running at [http://localhost:8000](http://localhost:8000).
-
+The static marketing landing page runs at [http://localhost:8002](http://localhost:8002) (`pnpm run dev:landing`).
 ## Authentication
 
 Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).

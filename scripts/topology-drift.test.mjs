@@ -92,3 +92,25 @@ test("workflow APP_DOMAIN domains agree with the prod apex constant (cookie-zone
 		"deploy-staging.yml APP_DOMAIN must be a non-apex member of the prod cookie zone (namespaced cookie prefix)",
 	);
 });
+
+test("topology derives landing host and frees app aliases", async () => {
+	const { resolveDomainTopology } = await import(
+		"../packages/infra/src/topology.ts"
+	);
+	const t = resolveDomainTopology("teacheros.io.vn");
+	assert.equal(t.landingHost, "teacheros.io.vn");
+	assert.deepEqual(t.appAliases, []);
+	assert.ok(t.landingAliases.includes("www.teacheros.io.vn"));
+});
+
+test("workflow LANDING_ORIGIN matches each stage apex", () => {
+	const prod = read("../.github/workflows/deploy.yml").match(
+		/^\s*LANDING_ORIGIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	assert.equal(prod, "https://teacheros.io.vn");
+
+	const staging = read("../.github/workflows/deploy-staging.yml").match(
+		/^\s*LANDING_ORIGIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	assert.equal(staging, "https://staging.teacheros.io.vn");
+});

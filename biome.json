@@ -31,7 +31,9 @@
 			"!**/packages/db/src/migrations/meta",
 			"!**/playwright-report",
 			"!**/test-results",
-			"!docs/diagrams"
+			"!docs/diagrams",
+			"!**/apps/landing/public",
+			"!**/apps/landing/public"
 		]
 	},
 	"formatter": {
