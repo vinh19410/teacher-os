@@ -32,6 +32,11 @@ Quy ước khi cập nhật:
 
 - Form tạo học viên bỏ 3 input gói ("Số buổi gói", "Đơn giá", "Hình thức"); gói học khi tạo trong lớp tự động derive từ lớp (#240)
 - Gói học khi tạo ngoài lớp không tạo bản ghi `session_package` và không bị đếm nhầm vào KPI gói sắp hết (#240)
+
+### CI/Infra
+
+- Tắt auto-deploy staging khi merge vào `develop`; deploy staging chuyển sang thủ công qua `workflow_dispatch` theo release runbook
+
 ## 2026-09-21
 
 ### Added

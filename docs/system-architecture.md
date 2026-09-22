@@ -39,7 +39,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 - Keep the bootstrap rule idempotent so a new authenticated teacher always lands in a usable workspace.
 - Keep the snapshot contract stable for the web adapter; if the server shape changes, the adapter and contracts change with it.
 - Keep scheduled lesson actions separate from curriculum lessons.
-- Keep entitlement state on `session_package` owned by `student`; `enrollment` is the optional class attachment (a package can be parked without a class).
+- Keep entitlement state on `session_package` owned by `student`; the package is always created attached to an `enrollment` — either with the student (package derived from the class) or via `POST /api/classes/:id/enroll` — and a student created without a class starts with no package.
 - Keep deployment wiring in the infra package, not in app code.
 - Keep syllabus file parsing in the browser; the server only receives validated JSON module trees (`POST /api/syllabi/:id/replace-content` applies the replacement as one atomic D1 batch).
 - Keep the assignments router mounted inside the kernel route tree (`kernel.route("/assignments", ...)`) so the kernel's Origin + JSON CSRF guard covers every assignment write; never mount it standalone.
