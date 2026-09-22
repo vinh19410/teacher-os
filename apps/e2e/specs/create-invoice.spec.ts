@@ -1,5 +1,5 @@
 import { expect, type Page, type Request, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * QC scenario for issue #61: the "Tạo hóa đơn" modal used to be a no-op —
@@ -21,13 +21,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const studentsDialog = page.getByRole("dialog");
-	await expect(studentsDialog.getByText("Thêm học viên mới")).toBeVisible();
-	await studentsDialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await studentsDialog
-		.getByRole("button", { name: "Lưu", exact: true })
-		.click();
-	await expect(studentsDialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// Scheduled class (defaults: T2+T4, 12 buổi).
@@ -186,21 +180,21 @@ test("tuition → tạo hóa đơn amount trống → field error, không POST, 
 	await expect(invoiceTable(page)).toHaveCount(0);
 });
 
-test("tuition → tạo hóa đơn amount âm → field error, không POST, không row", async ({
+test("tuition → tạo hóa đơn amount âm / ký tự không hợp lệ bị strip → input rỗng, field error, không POST, không row", async ({
 	page,
 }) => {
 	await setupOrgWithEnrollment(page);
 	const dialog = await openCreateInvoiceModal(page);
 	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
 	await dialog.getByLabel("Số tiền (VND) *").fill("-5000");
+	// mask strip dấu "-" → input rỗng → lỗi "bắt buộc" thay vì lỗi số âm
+	await expect(dialog.getByLabel("Số tiền (VND) *")).toHaveValue("");
 
 	const posts = await countInvoicePosts(page, async () => {
 		await dialog
 			.getByRole("button", { name: "Tạo hóa đơn", exact: true })
 			.click();
-		await expect(
-			dialog.getByText("Số tiền phải là số nguyên dương, tối đa 12 chữ số."),
-		).toBeVisible();
+		await expect(dialog.getByText("Vui lòng nhập số tiền.")).toBeVisible();
 	});
 	expect(posts).toBe(0);
 	await expect(invoiceTable(page)).toHaveCount(0);

@@ -19,6 +19,8 @@ function student(id: string, overrides: Partial<Student> = {}): Student {
 		name: id,
 		phone: "",
 		zalo: "",
+		email: "",
+		hasPackage: true,
 		parent: { name: "", phone: "" },
 		targetBand: "—",
 		skills: [],

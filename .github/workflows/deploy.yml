@@ -31,6 +31,7 @@ env:
   APP_DOMAIN: teacheros.io.vn
   API_READY_URL: https://api.teacheros.io.vn/readyz
   APP_ORIGIN: https://app.teacheros.io.vn
+  LANDING_ORIGIN: https://teacheros.io.vn
   API_BASE_URL: https://api.teacheros.io.vn
 
 jobs:
@@ -130,3 +131,23 @@ jobs:
           done
           [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
+      - name: Smoke check landing apex (/)
+        # Apex handover (web → landing StaticSite): the first attach of the
+        # custom domain may wait on DNS/cert provisioning; poll up to ~10
+        # minutes like /readyz.
+        run: |
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/landing-headers.txt -o /tmp/landing.html \
+              -w '%{http_code}' "$LANDING_ORIGIN/" || true)
+            if [ "$code" = "200" ] \
+              && grep -qi '^content-type: text/html' /tmp/landing-headers.txt \
+              && grep -q 'Teacher OS' /tmp/landing.html; then
+              echo "landing apex OK after attempt $attempt"
+              exit 0
+            fi
+            echo "attempt $attempt: HTTP $code, retrying in 20s"
+            sleep 20
+          done
+          echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
+          exit 1

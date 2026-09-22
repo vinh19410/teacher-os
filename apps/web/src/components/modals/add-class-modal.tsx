@@ -6,14 +6,17 @@ import {
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { Tag } from "@/components/ui/tag";
 import {
 	getTomorrowDateInputValue,
 	isFutureDateInputValue,
 } from "@/lib/date-input";
+import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
-import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, dayNames, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -25,11 +28,78 @@ const CLASS_TYPE_OPTIONS = CLASS_TYPES.map((value) => ({
 
 const SKILL_OPTIONS = IELTS_SKILLS.map((value) => ({ value, label: value }));
 
+/** Kỹ năng lớp lấy từ syllabus: thứ tự canonical theo IELTS_SKILLS,
+ * tự dedupe và lọc giá trị ngoài enum (phòng thủ dữ liệu cũ). */
+export function skillsFromTemplate(
+	templateSkills: readonly string[],
+): string[] {
+	return IELTS_SKILLS.filter((skill) => templateSkills.includes(skill));
+}
+
+/** Tổng số buổi lấy từ syllabus: đếm mọi buổi qua mọi module,
+ * gồm cả buổi thi (midterm/final). Đếm từ cây modules thay vì
+ * totalLessons vì totalLessons có thể stale (chỉ sync khi replace). */
+export function sessionsFromTemplate(
+	templateModules: Syllabus["modules"] | undefined | null,
+): number {
+	return (templateModules ?? []).reduce(
+		(sum, module) => sum + (module?.lessons?.length ?? 0),
+		0,
+	);
+}
+
 const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
 
 const SESSION_MINUTES = 90;
 const DEFAULT_START = "19:00";
 const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
+
+export function ClassTemplatePicker({
+	templates,
+	templateId,
+	onTemplateId,
+}: {
+	templates: ReadonlyArray<{
+		id: string;
+		name: string;
+		skills: readonly string[];
+	}>;
+	templateId: string;
+	onTemplateId: (value: string) => void;
+}) {
+	const selectedTemplate = templates.find((item) => item.id === templateId);
+	return (
+		<>
+			<Field label="Template giáo trình">
+				<Select
+					value={templateId}
+					onChange={(event) => onTemplateId(event.target.value)}
+				>
+					<option value="">— Lớp trống —</option>
+					{templates.map((item) => (
+						<option key={item.id} value={item.id}>
+							{item.name} · {item.skills.length} kỹ năng
+						</option>
+					))}
+				</Select>
+			</Field>
+			{selectedTemplate ? (
+				selectedTemplate.skills.length > 0 ? (
+					<div className="flex flex-wrap items-center gap-1">
+						<span className="text-muted-fg text-sm">Kỹ năng giáo trình</span>
+						{selectedTemplate.skills.map((skill) => (
+							<Tag key={skill}>{skill}</Tag>
+						))}
+					</div>
+				) : (
+					<p className="text-muted-fg text-sm">
+						Syllabus chưa khai báo kỹ năng
+					</p>
+				)
+			) : null}
+		</>
+	);
+}
 
 export function AddClassModal({
 	open,
@@ -50,6 +120,7 @@ export function AddClassModal({
 	const [endTime, setEndTime] = useState(DEFAULT_END);
 	const [endTouched, setEndTouched] = useState(false);
 	const [total, setTotal] = useState("12");
+	const [fee, setFee] = useState("");
 	const [startDate, setStartDate] = useState(getTomorrowDateInputValue);
 	const minimumStartDate = getTomorrowDateInputValue();
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
@@ -61,6 +132,17 @@ export function AddClassModal({
 			isFutureDateInputValue(current) ? current : minimumStartDate,
 		);
 	}, [minimumStartDate, open]);
+
+	// Mục đã base theo syllabus thì view-only: điều kiện khóa trùng
+	// điều kiện auto-fill trong changeTemplateId — khóa đúng khi giá trị
+	// đang do syllabus quyết định.
+	const selectedTemplate = templates.find((item) => item.id === templateId);
+	const skillsLocked = Boolean(
+		selectedTemplate && selectedTemplate.skills.length > 0,
+	);
+	const sessionsLocked = Boolean(
+		selectedTemplate && sessionsFromTemplate(selectedTemplate.modules) > 0,
+	);
 
 	function resetForm() {
 		setName("");
@@ -75,11 +157,26 @@ export function AddClassModal({
 		setEndTouched(false);
 		setTotal("12");
 		setStartDate(getTomorrowDateInputValue());
+		setFee("");
 	}
 
 	function changeStart(next: string) {
 		setStartTime(next);
 		if (!endTouched && next) setEndTime(addMinutes(next, SESSION_MINUTES));
+	}
+
+	function changeTemplateId(next: string) {
+		setTemplateId(next);
+		const template = templates.find((item) => item.id === next);
+		// Template rỗng hoặc syllabus chưa khai báo kỹ năng: giữ selection tay.
+		if (template && template.skills.length > 0) {
+			setSkills(skillsFromTemplate(template.skills));
+		}
+		// Syllabus chưa có buổi nào: giữ số buổi nhập tay.
+		const sessions = template ? sessionsFromTemplate(template.modules) : 0;
+		if (sessions > 0) {
+			setTotal(String(sessions));
+		}
 	}
 
 	async function submit(e: FormEvent) {
@@ -121,6 +218,11 @@ export function AddClassModal({
 			setError("Tổng số buổi tối đa là 52.");
 			return;
 		}
+		const parsedFee = parseVndAmount(fee);
+		if (fee.trim() !== "" && (parsedFee === null || parsedFee < 1)) {
+			setError("Học phí phải là số nguyên dương.");
+			return;
+		}
 		const result = await run({
 			type: "add-class",
 			payload: {
@@ -133,6 +235,7 @@ export function AddClassModal({
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
+				tuitionFee: fee.trim() === "" ? null : parsedFee,
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -195,22 +298,15 @@ export function AddClassModal({
 							options={SKILL_OPTIONS}
 							value={skills}
 							onChange={setSkills}
+							disabled={skillsLocked}
 						/>
 					</Field>
 				)}
-				<Field label="Template giáo trình">
-					<Select
-						value={templateId}
-						onChange={(e) => setTemplateId(e.target.value)}
-					>
-						<option value="">— Lớp trống —</option>
-						{templates.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</Select>
-				</Field>
+				<ClassTemplatePicker
+					templates={templates}
+					templateId={templateId}
+					onTemplateId={changeTemplateId}
+				/>
 				<Field label="Ngày học *">
 					<ChipMulti options={DAY_OPTIONS} value={days} onChange={setDays} />
 				</Field>
@@ -241,17 +337,25 @@ export function AddClassModal({
 							max={52}
 							value={total}
 							onChange={(e) => setTotal(e.target.value)}
+							disabled={sessionsLocked}
 						/>
 					</Field>
-					<Field label="Ngày bắt đầu">
-						<Input
-							type="date"
-							value={startDate}
-							min={minimumStartDate}
-							onChange={(e) => setStartDate(e.target.value)}
+					<Field label="Học phí / học viên (VND)">
+						<CurrencyInput
+							placeholder="Không bắt buộc"
+							value={fee}
+							onChange={setFee}
 						/>
 					</Field>
 				</div>
+				<Field label="Ngày bắt đầu">
+					<Input
+						type="date"
+						value={startDate}
+						min={minimumStartDate}
+						onChange={(e) => setStartDate(e.target.value)}
+					/>
+				</Field>
 				<div className="flex flex-col gap-2">
 					{error && (
 						<p role="alert" className="text-danger text-xs">

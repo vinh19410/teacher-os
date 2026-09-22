@@ -8,13 +8,11 @@ import { z } from "zod";
 
 export const studentCreateSchema = z.object({
 	name: z.string().min(1),
-	phone: z.string().default(""),
+	/** SĐT = danh tính đăng nhập tương lai: bắt buộc, chỉ chữ số. */
+	phone: z.string().regex(/^[0-9]+$/),
+	/** Email = danh tính đăng nhập tương lai: bắt buộc lúc tạo (row legacy ""). */
+	email: z.email(),
 	parentName: z.string().default(""),
-	// Issue #115: a 0-session package is meaningless — min(1), while price
-	// keeps min(0) because a free package is legitimate.
-	total: z.number().int().min(1).default(10),
-	price: z.number().int().min(0).default(400000),
-	mode: z.enum(["Online", "Offline"]).default("Online"),
 	classId: z.string().min(1).optional(),
 });
 export type StudentCreate = z.infer<typeof studentCreateSchema>;
@@ -70,6 +68,8 @@ export const classCreateSchema = z
 		}),
 		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
 		sessionsTotal: z.number().int().min(1).max(52).default(12),
+		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
+		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
 	})
 	.superRefine((input, ctx) => {
@@ -117,6 +117,12 @@ export const classNotesSchema = z.object({
 	notes: z.string(),
 });
 export type ClassNotes = z.infer<typeof classNotesSchema>;
+
+/** Cập nhật học phí mỗi học viên của lớp; null = xóa học phí. */
+export const classTuitionFeeUpdateSchema = z
+	.object({ tuitionFee: z.number().int().min(1).nullable() })
+	.strict();
+export type ClassTuitionFeeUpdate = z.infer<typeof classTuitionFeeUpdateSchema>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).
@@ -627,6 +633,8 @@ export interface KernelStudentRow {
 	id: string;
 	name: string;
 	phone: string;
+	/** Email học viên — danh tính đăng nhập tương lai (username) cùng phone; "" với row legacy. */
+	email: string;
 	zalo: string;
 	parentName: string;
 	parentPhone: string;
@@ -650,6 +658,8 @@ export interface KernelClassRow {
 	sessionsDone: number;
 	status: string;
 	startDate: string;
+	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
+	tuitionFee: number | null;
 	notes: string;
 }
 

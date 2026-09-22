@@ -154,6 +154,12 @@ describe("kernel-backed store wiring", () => {
 		expect(src).toMatch(/setTemplateId\(""\)/);
 	});
 
+	test("add-class syllabus-derived fields render view-only while a template is selected", () => {
+		const src = readSrc("../components/modals/add-class-modal.tsx");
+		expect(src).toMatch(/disabled=\{skillsLocked\}/);
+		expect(src).toMatch(/disabled=\{sessionsLocked\}/);
+	});
+
 	test("add-syllabus navigates only on the refreshed result with the server id", () => {
 		const src = readSrc("../components/modals/add-syllabus-modal.tsx");
 		expect(src).toMatch(/result\?\.kind === "refreshed"/);

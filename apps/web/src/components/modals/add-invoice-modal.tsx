@@ -1,15 +1,14 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 import { formatDateInputValue, isRealDateInputValue } from "@/lib/date-input";
+import { parseVndAmount } from "@/lib/format-currency";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
-/** Integer VND, 1..12 digits — the SQLite integer column and the wire
- * contract (`.int().min(1)`) both reject anything else. */
-const AMOUNT_RE = /^\d{1,12}$/;
 const NOTE_MAX = 500;
 
 /**
@@ -72,13 +71,13 @@ export function AddInvoiceModal({
 		e.preventDefault();
 		if (saving) return;
 		const hasEnrollmentError = !enrollmentId;
-		const trimmedAmount = amount.trim();
+		const parsedAmount = parseVndAmount(amount);
 		const amountMessage =
-			trimmedAmount === ""
+			amount.trim() === ""
 				? "Vui lòng nhập số tiền."
-				: AMOUNT_RE.test(trimmedAmount)
-					? undefined
-					: "Số tiền phải là số nguyên dương, tối đa 12 chữ số.";
+				: parsedAmount === null
+					? "Số tiền phải là số nguyên dương, tối đa 12 chữ số."
+					: undefined;
 		const hasDueError = !due || !isRealDateInputValue(due);
 		const hasNoteError = note.trim().length > NOTE_MAX;
 		setEnrollmentError(
@@ -100,7 +99,7 @@ export function AddInvoiceModal({
 			type: "add-invoice",
 			payload: {
 				enrollmentId,
-				amount: Number(trimmedAmount),
+				amount: parsedAmount ?? 0,
 				due,
 				note: trimmedNote === "" ? undefined : trimmedNote,
 			},
@@ -151,11 +150,13 @@ export function AddInvoiceModal({
 					</Select>
 				</Field>
 				<Field label="Số tiền (VND) *" error={amountError}>
-					<Input
-						type="number"
-						placeholder="400000"
+					<CurrencyInput
+						placeholder="400,000"
 						value={amount}
-						onChange={(e) => setAmount(e.target.value)}
+						onChange={(next) => {
+							setAmount(next);
+							if (amountError) setAmountError(undefined);
+						}}
 					/>
 				</Field>
 				<Field label="Ngày đến hạn *" error={dueError}>

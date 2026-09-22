@@ -26,6 +26,7 @@ const QC_CLASS: ClassGroup = {
 	sessionsTotal: 12,
 	status: "active",
 	startDate: "2026-08-28",
+	tuitionFee: null,
 	notes: "",
 };
 

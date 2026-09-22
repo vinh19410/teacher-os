@@ -75,6 +75,28 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	);
 });
 
+test("staging deploy workflow is manual-only (no develop push trigger)", () => {
+	const stagingPath = join(repoRoot, ".github/workflows/deploy-staging.yml");
+	assert.equal(
+		existsSync(stagingPath),
+		true,
+		"missing .github/workflows/deploy-staging.yml (topology-drift tests read it)",
+	);
+
+	const yaml = readFileSync(stagingPath, "utf8");
+
+	assert.doesNotMatch(
+		yaml,
+		/^\s*push:/m,
+		"must not trigger on push (staging auto-deploy disabled 2026-09-22)",
+	);
+	assert.match(
+		yaml,
+		/workflow_dispatch/,
+		"must stay runnable manually (staging migration rehearsal)",
+	);
+});
+
 test("e2e workflow exists and matches the e2e contract", () => {
 	const e2ePath = join(repoRoot, ".github/workflows/e2e.yml");
 	assert.equal(existsSync(e2ePath), true, "missing .github/workflows/e2e.yml");

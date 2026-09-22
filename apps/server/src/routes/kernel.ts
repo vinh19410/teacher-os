@@ -6,6 +6,7 @@ import {
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
+	classTuitionFeeUpdateSchema,
 	deleteSyllabusSchema,
 	enrollStudentSchema,
 	importSyllabusSchema,
@@ -182,6 +183,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				sessionsTotal: classTable.sessionsTotal,
 				startDate: classTable.startDate,
 				syllabusId: classTable.syllabusId,
+				mode: classTable.mode,
+				tuitionFee: classTable.tuitionFee,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
@@ -520,6 +523,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 					schedule: string;
 					sessionsTotal: number;
 					startDate: string;
+					mode: string;
+					tuitionFee: number | null;
 			  }
 			| undefined;
 		if (input.classId) {
@@ -536,25 +541,24 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				orgId: ctx.orgId,
 				name: input.name,
 				phone: input.phone,
+				email: input.email,
 				zalo: input.phone.replace(/\s/g, ""),
 				parentName: input.parentName,
 				parentPhone: "",
 			}),
 		];
-		// Shared package fields — both branches must stay field-identical or a
-		// classless student silently loses whatever the class branch gains
-		// (the exact #104 failure mode).
-		const packageValues = {
-			orgId: ctx.orgId,
-			studentId,
-			total: input.total,
-			price: input.price,
-			mode: input.mode,
-			start: formatDayMonth(new Date()),
-			expiry: "",
-			status: "active",
-		};
 		if (cls) {
+			// D1: gói derive từ lớp — không còn package fields trong input.
+			const packageValues = {
+				orgId: ctx.orgId,
+				studentId,
+				total: cls.sessionsTotal,
+				price: cls.tuitionFee ?? 0, // null = chưa thiết lập → 0
+				mode: cls.mode,
+				start: formatDayMonth(new Date()),
+				expiry: "",
+				status: "active",
+			};
 			// Schedule-driven lessons (issue #55) join the same batch — an
 			// enrollment can never exist without its generated lesson series.
 			const enrollmentId = crypto.randomUUID();
@@ -584,16 +588,9 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				);
 			}
 		} else {
-			// Issue #104: a student created without a class still owns the gói —
-			// it parks on the student with a null enrollmentId (no attach-to-
-			// class flow exists yet) so total/price/mode are never dropped.
-			statements.push(
-				db.insert(sessionPackage).values({
-					id: crypto.randomUUID(),
-					...packageValues,
-					enrollmentId: null,
-				}),
-			);
+			// D2: học viên tạo không lớp chưa có gói; enroll vào lớp
+			// (POST /classes/:id/enroll) sẽ tạo gói. (Lịch sử: issue #104 parked-package
+			// đã bị thay thế bởi D2 — không tạo sessionPackage nào).
 		}
 		await db.batch(statements);
 		return c.json({ id: studentId } satisfies CreatedResponse, 201);
@@ -644,8 +641,8 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				classId: cls.id,
 				studentId: input.studentId,
 			}),
-			// Package values must stay field-identical with POST /students —
-			// an enrolled-existing student owns the same active-package shape.
+			// enroll nhận package fields từ input — luồng tạo học viên
+			// (POST /students) giờ derive gói từ lớp (D1).
 			db.insert(sessionPackage).values({
 				id: crypto.randomUUID(),
 				orgId: ctx.orgId,
@@ -831,6 +828,7 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 			sessionsDone: 0,
 			status: "active",
 			startDate: input.startDate,
+			tuitionFee: input.tuitionFee ?? null,
 			notes: "",
 		});
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = imported
@@ -995,6 +993,27 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 		await db
 			.update(classTable)
 			.set({ notes: input.notes })
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		return c.json({ ok: true });
+	});
+
+	kernel.post("/classes/:id/tuition-fee", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classTuitionFeeUpdateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		await db
+			.update(classTable)
+			.set({ tuitionFee: input.tuitionFee })
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
 		return c.json({ ok: true });
 	});

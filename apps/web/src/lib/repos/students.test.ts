@@ -14,6 +14,7 @@ const snapshot: KernelSnapshot = {
 			id: "st-1",
 			name: "Nguyễn Minh Anh",
 			phone: "0912 345 678",
+			email: "minhanh@test.local",
 			zalo: "0912345678",
 			parentName: "Nguyễn Văn Hùng",
 			parentPhone: "0987 654 321",
@@ -22,6 +23,7 @@ const snapshot: KernelSnapshot = {
 			id: "st-2",
 			name: "Vũ Thảo Vy",
 			phone: "",
+			email: "",
 			zalo: "",
 			parentName: "",
 			parentPhone: "",
@@ -73,9 +75,17 @@ describe("mapStudents", () => {
 		expect(students.find((s) => s.id === "st-1")).toMatchObject({
 			name: "Nguyễn Minh Anh",
 			phone: "0912 345 678",
+			email: "minhanh@test.local",
+			hasPackage: true,
 			zalo: "0912345678",
 			parent: { name: "Nguyễn Văn Hùng", phone: "0987 654 321" },
 			avatar: "MA",
+		});
+		expect(students.find((s) => s.id === "st-2")).toMatchObject({
+			name: "Vũ Thảo Vy",
+			phone: "",
+			email: "",
+			hasPackage: false,
 		});
 	});
 
@@ -135,6 +145,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 				id: "st-1",
 				name: "A",
 				phone: "",
+				email: "a@test.local",
 				zalo: "",
 				parentName: "",
 				parentPhone: "",
@@ -143,6 +154,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 				id: "st-2",
 				name: "B",
 				phone: "",
+				email: "",
 				zalo: "",
 				parentName: "",
 				parentPhone: "",
@@ -271,6 +283,7 @@ describe("mapStudents parked package (issue #104)", () => {
 				id: "st-1",
 				name: "QC-104",
 				phone: "",
+				email: "",
 				zalo: "",
 				parentName: "",
 				parentPhone: "",

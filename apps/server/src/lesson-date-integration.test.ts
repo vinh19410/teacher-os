@@ -108,7 +108,12 @@ describe("lesson.date generator + snapshot projection", () => {
 	async function enroll(classId: string, name: string): Promise<void> {
 		const res = await t.call("/api/students", {
 			method: "POST",
-			body: { name, total: 6, price: 0, mode: "Online", classId },
+			body: {
+				name,
+				phone: "0900000000",
+				email: `stu-${crypto.randomUUID()}@test.local`,
+				classId,
+			},
 		});
 		expect([201, 200]).toContain(res.status);
 	}

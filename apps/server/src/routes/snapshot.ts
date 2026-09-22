@@ -271,6 +271,7 @@ export async function loadSnapshot(
 			id: row.id,
 			name: row.name,
 			phone: row.phone,
+			email: row.email,
 			zalo: row.zalo,
 			parentName: row.parentName,
 			parentPhone: row.parentPhone,
@@ -288,6 +289,7 @@ export async function loadSnapshot(
 			sessionsDone: row.sessionsDone,
 			status: row.status,
 			startDate: row.startDate,
+			tuitionFee: row.tuitionFee ?? null,
 			notes: row.notes,
 		})),
 		enrollments: enrollmentRows.map((row) => ({

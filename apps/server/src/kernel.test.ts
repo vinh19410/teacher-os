@@ -224,6 +224,7 @@ async function createTestApp() {
 			skills?: string[];
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
+			tuitionFee?: number | null;
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/classes", {
@@ -285,9 +286,6 @@ async function createTestApp() {
 		name: string,
 		extra: {
 			classId?: string;
-			total?: number;
-			price?: number;
-			mode?: "Online" | "Offline";
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/students", {
@@ -295,11 +293,9 @@ async function createTestApp() {
 			method: "POST",
 			body: {
 				name,
-				phone: "0900 000 000",
+				phone: "0900000000",
+				email: `stu-${crypto.randomUUID()}@test.local`,
 				parentName: "Phụ huynh",
-				total: extra.total ?? 10,
-				price: extra.price ?? 400000,
-				mode: extra.mode ?? "Online",
 				...(extra.classId ? { classId: extra.classId } : {}),
 			},
 		});
@@ -1534,8 +1530,6 @@ describe("org isolation", () => {
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
 			classId,
-			total: 12,
-			price: 500000,
 		});
 
 		const snapshot = await t.kernel(session);
@@ -1545,7 +1539,8 @@ describe("org isolation", () => {
 		expect(snapshot.packages[0]).toMatchObject({
 			enrollmentId: snapshot.enrollments[0]?.id,
 			total: 12,
-			price: 500000,
+			price: 0,
+			mode: "Online",
 			status: "active",
 		});
 		// Entitlement only: no done/remaining on the wire — derived downstream.
@@ -1553,31 +1548,13 @@ describe("org isolation", () => {
 		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
 	});
 
-	test("without classId the package parks on the student (issue #104)", async () => {
+	test("without classId no package is created", async () => {
 		const session = await t.insertUser("Cô Parked");
-		const personId = await t.addStudent(session, "Học viên tự do", {
-			total: 10,
-			price: 400000,
-			mode: "Offline",
-		});
+		const personId = await t.addStudent(session, "Học viên tự do");
 
 		const snapshot = await t.kernel(session);
 		expect(snapshot.enrollments).toHaveLength(0);
-		expect(snapshot.packages).toHaveLength(1);
-		expect(snapshot.packages[0]).toMatchObject({
-			studentId: personId,
-			enrollmentId: null,
-			classId: null,
-			total: 10,
-			price: 400000,
-			// Deliberately not the schema default — proves input.mode is kept.
-			mode: "Offline",
-			status: "active",
-		});
-		expect(snapshot.packages[0]?.start).toMatch(/^\d{2}\/\d{2}$/);
-		// Entitlement only: no done/remaining on the wire — derived downstream.
-		expect(snapshot.packages[0]).not.toHaveProperty("done");
-		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(snapshot.packages).toHaveLength(0);
 		expect(snapshot.students.map((s) => s.id)).toContain(personId);
 	});
 });
@@ -3068,7 +3045,6 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 		classId = await t.createClass(session, "Lớp 1:1");
 		const studentId = await t.addStudent(session, "Học viên lịch", {
 			classId,
-			total: 10,
 		});
 		const snapshot = await t.kernel(session);
 		enrollmentId =
@@ -3528,10 +3504,13 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("divergence pin: class sessionsTotal (12) and package total (10) stay independent on the wire", async () => {
-		const studentId = await t.addStudent(session, "HV gói lệch", {
-			classId,
-			total: 10,
+		const studentId = await t.addStudent(session, "HV gói lệch");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId, total: 10, price: 400000, mode: "Online" },
 		});
+		expect(res.status).toBe(201);
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(
@@ -3549,11 +3528,9 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			method: "POST",
 			body: {
 				name: "HV intruder",
-				phone: "0900 000 000",
+				phone: "0900000000",
+				email: "intruder@test.local",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Online",
 				classId,
 			},
 		});
@@ -3997,21 +3974,6 @@ describe("student package minimums (issue #115)", () => {
 
 	// total=0 is the red-first pair: min(0) on develop still accepts a
 	// zero-session package, which is the server half of QC #115.
-	test("create student with total 0 is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV gói 0 buổi",
-				phone: "0900 000 001",
-				total: 0,
-				price: 400000,
-				mode: "Online",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
 	test("enroll existing student with total 0 is rejected with 400", async () => {
 		const classId = await t.createClass(session, "Lớp min gói");
 		const studentId = await t.addStudent(session, "HV min gói");
@@ -4023,50 +3985,80 @@ describe("student package minimums (issue #115)", () => {
 		expect(res.status).toBe(400);
 	});
 
-	// Regression locks (born green on develop — price min(0) already exists).
-	test("negative price is rejected with 400 on create", async () => {
+	test("create student missing phone is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
 			body: {
-				name: "HV giá âm",
-				phone: "0900 000 002",
-				total: 10,
-				price: -500,
-				mode: "Online",
+				name: "HV thiếu phone",
+				email: "hv@test.local",
 			},
 		});
 		expect(res.status).toBe(400);
 	});
 
-	test("total 1 and price 0 (free package) are accepted", async () => {
+	test("create student phone with spaces is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
 			body: {
-				name: "HV gói miễn phí",
-				phone: "0900 000 003",
-				total: 1,
-				price: 0,
-				mode: "Online",
+				name: "HV phone space",
+				phone: "0900 000 000",
+				email: "hv@test.local",
 			},
 		});
-		expect(res.status).toBe(201);
+		expect(res.status).toBe(400);
 	});
 
-	// Pin the intentional #122 boundary: omitted package fields default to
-	// 10/400000 and pass min(1) — documented, not silently inherited.
-	test("omitted package fields default to 10 sessions / 400000 VND", async () => {
+	test("create student phone with non-digits is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
-			body: { name: "HV mặc định gói", phone: "0900 000 004" },
+			body: {
+				name: "HV phone chữ",
+				phone: "0900abc",
+				email: "hv@test.local",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student missing email is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV thiếu email",
+				phone: "0900000000",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student invalid email format is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV email sai",
+				phone: "0900000000",
+				email: "not-an-email",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student with valid phone digits and email succeeds with 201", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV hợp lệ",
+				phone: "0901234567",
+				email: "hop.le@test.local",
+			},
 		});
 		expect(res.status).toBe(201);
-		const { id } = (await res.json()) as { id: string };
-		const snapshot = await t.kernel(session);
-		const pkg = snapshot.packages.find((p) => p.studentId === id);
-		expect(pkg).toMatchObject({ total: 10, price: 400000 });
 	});
 });
 
@@ -4941,5 +4933,157 @@ describe("class assignment give flow (#208)", () => {
 		expect(res.status).toBe(400);
 		const body = await res.json();
 		expect(body).toMatchObject({ error: "assignment limit reached" });
+	});
+});
+
+describe("class tuition fee (học phí lớp theo học viên - issue #227)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let orgOther: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Teacher Fee");
+		orgOther = await t.insertUser("Teacher Other Org");
+		await t.kernel(session);
+		await t.kernel(orgOther);
+	});
+
+	test("create class with tuitionFee persists and returns in snapshot", async () => {
+		const res = await t.call("/api/classes", {
+			session,
+			method: "POST",
+			body: {
+				name: "Lớp có học phí",
+				type: "ielts",
+				level: "Band 6.5",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/10",
+				tuitionFee: 5_000_000,
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: classId } = (await res.json()) as { id: string };
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBe(5_000_000);
+	});
+
+	test("create class without tuitionFee leaves tuitionFee null", async () => {
+		const classId = await t.createClass(session, "Lớp không học phí");
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBeNull();
+	});
+
+	test("POST /classes/:id/tuition-fee updates tuition fee and reflects in snapshot", async () => {
+		const classId = await t.createClass(session, "Lớp cập nhật phí");
+		const updateRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 6_000_000 },
+		});
+		expect(updateRes.status).toBe(200);
+		expect(await updateRes.json()).toEqual({ ok: true });
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBe(6_000_000);
+	});
+
+	test("POST /classes/:id/tuition-fee with null clears tuition fee", async () => {
+		const res = await t.call("/api/classes", {
+			session,
+			method: "POST",
+			body: {
+				name: "Lớp xóa học phí",
+				type: "ielts",
+				level: "Band 6.5",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "01/10",
+				tuitionFee: 4_500_000,
+			},
+		});
+		const { id: classId } = (await res.json()) as { id: string };
+
+		const clearRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: null },
+		});
+		expect(clearRes.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.tuitionFee).toBeNull();
+	});
+
+	test("POST /classes/:id/tuition-fee rejects invalid values (<= 0, non-integer, extra fields)", async () => {
+		const classId = await t.createClass(session, "Lớp test validate");
+
+		// 0
+		const resZero = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 0 },
+		});
+		expect(resZero.status).toBe(400);
+
+		// negative
+		const resNeg = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: -100_000 },
+		});
+		expect(resNeg.status).toBe(400);
+
+		// decimal / float
+		const resFloat = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 1.5 },
+		});
+		expect(resFloat.status).toBe(400);
+
+		// extra field (.strict())
+		const resStrict = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 1_000_000, extra: "invalid" },
+		});
+		expect(resStrict.status).toBe(400);
+	});
+
+	test("POST /classes/:id/tuition-fee returns 404 for class belonging to different org or non-existent", async () => {
+		const classId = await t.createClass(session, "Lớp của session");
+
+		// Cross-org call
+		const resCross = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session: orgOther,
+			method: "POST",
+			body: { tuitionFee: 1_000_000 },
+		});
+		expect(resCross.status).toBe(404);
+		expect(await resCross.json()).toEqual({ error: "class not found" });
+
+		// Non-existent
+		const resNonExistent = await t.call(
+			"/api/classes/non-existent-id/tuition-fee",
+			{
+				session,
+				method: "POST",
+				body: { tuitionFee: 1_000_000 },
+			},
+		);
+		expect(resNonExistent.status).toBe(404);
 	});
 });

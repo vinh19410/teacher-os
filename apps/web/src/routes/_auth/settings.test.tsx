@@ -37,7 +37,7 @@ const session = {
 describe("SettingsPage persistence & honest guards (issue #179, follow-up #167)", () => {
 	it("renders default unit price editable and keeps the interim plan block", () => {
 		const html = renderToStaticMarkup(<SettingsPage session={session} />);
-		const priceInput = html.match(/<input[^>]*400\.000đ[^>]*>/);
+		const priceInput = html.match(/<input[^>]*400,000[^>]*>/);
 		expect(priceInput?.[0]).not.toMatch(/\sdisabled=/);
 		expect(html).toContain("Sắp ra mắt");
 		expect(html).toContain("Đang dùng");

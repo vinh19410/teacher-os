@@ -12,7 +12,7 @@
  * - after cancelling, aggregate badge flips to "Đã hủy" and persists reload.
  */
 import { expect, test } from "@playwright/test";
-import { signUpViaUi, vietnamTodayISO } from "./helpers";
+import { createStudentViaUi, signUpViaUi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload", async ({
@@ -38,8 +38,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 
 	// Student joins ⇒ lessons exist ⇒ rows become addressable occurrences.
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await page.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
@@ -89,8 +88,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await page.getByLabel("Họ tên học viên *").fill("Phạm Topic E2E");
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, "Phạm Topic E2E");
 
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 

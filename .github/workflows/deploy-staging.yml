@@ -1,5 +1,11 @@
-# Staging deploy: every push to develop ships to Cloudflare stage "staging"
+# Staging deploy to Cloudflare stage "staging"
 # (app/api.staging.teacheros.io.vn) for QC and migration rehearsal.
+#
+# Auto-deploy disabled 2026-09-22: the push trigger on the integration
+# branch was removed, so merging code no longer ships staging automatically.
+# The workflow is manual-only (workflow_dispatch) — e.g. to rehearse a
+# pending migration on staging before promoting to prod
+# (docs/production-release-runbook.md, "Provision staging").
 #
 # Sibling of deploy.yml (prod) with the same design constraints (see
 # docs/production-release-runbook.md, "Provision staging"):
@@ -21,8 +27,6 @@
 name: Deploy Staging
 
 on:
-  push:
-    branches: [develop]
   workflow_dispatch: {}
 
 concurrency:
@@ -43,6 +47,7 @@ env:
   PARENT_DOMAIN: teacheros.io.vn
   API_READY_URL: https://api.staging.teacheros.io.vn/readyz
   APP_ORIGIN: https://app.staging.teacheros.io.vn
+  LANDING_ORIGIN: https://staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
 
 jobs:
@@ -200,3 +205,23 @@ jobs:
           done
           [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
+      - name: Smoke check landing apex (/)
+        # Apex handover (web → landing StaticSite): the first attach of the
+        # custom domain may wait on DNS/cert provisioning; poll up to ~10
+        # minutes like /readyz.
+        run: |
+          for attempt in $(seq 1 30); do
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/landing-headers.txt -o /tmp/landing.html \
+              -w '%{http_code}' "$LANDING_ORIGIN/" || true)
+            if [ "$code" = "200" ] \
+              && grep -qi '^content-type: text/html' /tmp/landing-headers.txt \
+              && grep -q 'Teacher OS' /tmp/landing.html; then
+              echo "landing apex OK after attempt $attempt"
+              exit 0
+            fi
+            echo "attempt $attempt: HTTP $code, retrying in 20s"
+            sleep 20
+          done
+          echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
+          exit 1

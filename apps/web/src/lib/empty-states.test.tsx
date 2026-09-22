@@ -144,6 +144,7 @@ describe("List empty states (Issue #118)", () => {
 				sessionsDone: 0,
 				status: "active",
 				startDate: "2026-09-01",
+				tuitionFee: null,
 				notes: "",
 			},
 		];

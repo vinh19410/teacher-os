@@ -10,6 +10,8 @@ export interface ChipMultiProps<T extends string | number> {
 	value: T[];
 	onChange: (next: T[]) => void;
 	className?: string;
+	/** View-only: khóa toàn bộ chip, giữ giá trị hiển thị (aria-pressed nguyên vẹn). */
+	disabled?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export function ChipMulti<T extends string | number>({
 	value,
 	onChange,
 	className,
+	disabled,
 }: ChipMultiProps<T>) {
 	function toggle(option: ChipMultiOption<T>) {
 		onChange(
@@ -38,10 +41,12 @@ export function ChipMulti<T extends string | number>({
 					type="button"
 					key={String(option.value)}
 					aria-pressed={value.includes(option.value)}
+					disabled={disabled}
 					onClick={() => toggle(option)}
 					className={cn(
 						"rounded-full border px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
 						"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+						"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60",
 						value.includes(option.value)
 							? "border-fg bg-fg text-bg"
 							: "border-line bg-bg text-fg-2 hover:border-fg",

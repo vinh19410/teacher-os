@@ -15,6 +15,7 @@ import type {
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
+import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,7 @@ function ClassDetailRoute() {
 		"list" | "assign" | "success"
 	>("list");
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
+	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
 
 	const handleTabChange = (nextTab: string) => {
@@ -172,7 +174,7 @@ function ClassDetailRoute() {
 						</h1>
 						<Tag>{CLASS_TYPE_LABELS[cls.type]}</Tag>
 					</div>
-					<div className="mt-2 flex flex-wrap gap-4">
+					<div className="mt-2 flex flex-wrap items-center gap-4">
 						<span className="font-mono text-meta text-xs">
 							{classMeta(cls)}
 						</span>
@@ -181,6 +183,17 @@ function ClassDetailRoute() {
 						</span>
 						<span className="font-mono text-meta text-xs">
 							Bắt đầu: {cls.startDate}
+						</span>
+						<span className="inline-flex items-center gap-1.5 font-mono text-meta text-xs">
+							Học phí:{" "}
+							{cls.tuitionFee ? `${fmtVND(cls.tuitionFee)} / học viên` : "—"}
+							<button
+								type="button"
+								onClick={() => setFeeModalOpen(true)}
+								className="cursor-pointer font-sans text-accent-blue text-xs hover:underline"
+							>
+								Sửa
+							</button>
 						</span>
 					</div>
 				</div>
@@ -397,6 +410,13 @@ function ClassDetailRoute() {
 				open={addStudentOpen}
 				onClose={() => setAddStudentOpen(false)}
 				classId={cls.id}
+			/>
+			<EditClassFeeModal
+				key={`edit-fee-${cls.id}`}
+				open={feeModalOpen}
+				onClose={() => setFeeModalOpen(false)}
+				classId={cls.id}
+				current={cls.tuitionFee}
 			/>
 		</div>
 	);

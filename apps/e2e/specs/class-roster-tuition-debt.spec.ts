@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Issue #216 — class-detail roster shows a "Học phí" column scoped to the
@@ -17,12 +17,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const studentsDialog = page.getByRole("dialog");
-	await studentsDialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await studentsDialog
-		.getByRole("button", { name: "Lưu", exact: true })
-		.click();
-	await expect(studentsDialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 
 	// Scheduled class (defaults: T2+T4).
 	await page.getByText("Lớp học", { exact: true }).first().click();

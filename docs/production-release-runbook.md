@@ -6,7 +6,7 @@ values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
 
-The production topology is `app.<domain>` (web) + `api.<domain>` (API). It is
+The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web) + `api.<domain>` (API). It is
 **encoded in runtime configuration, not in this document**: the deploy-time
 variable `APP_DOMAIN` (bare lowercase domain) derives every URL below via
 `packages/infra/src/topology.ts`, wired in `packages/infra/alchemy.run.ts`.
@@ -15,7 +15,8 @@ environment — never editing this runbook.
 
 | Setting | Value (APP_DOMAIN set) | Where it comes from |
 | --- | --- | --- |
-| Web origin | `https://app.<domain>` | Website.Vite `domain: app.<APP_DOMAIN>` |
+| Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
+| Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
@@ -25,6 +26,7 @@ environment — never editing this runbook.
 | Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 
+First deploy with this topology: custom domain apex (`teacheros.io.vn`) and `www` detach from the web Worker and attach to the landing Worker (`apps/landing`) in the same apply. Staging is deployed first (`staging.teacheros.io.vn`); certificates already exist in the Cloudflare zone.
 With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
 `workers.dev` URLs and per-host cookies, and `alchemy dev` defaults
 `CORS_ORIGIN` to `http://localhost:8001`. Staging resolves the same table with
@@ -48,7 +50,7 @@ different stages never overlap.
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
 
-Staging is the QC browser target: `https://app.staging.teacheros.io.vn` (web)
+Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://app.staging.teacheros.io.vn` (web),
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
@@ -164,7 +166,10 @@ operator `.env` and the GitHub repo secret of the same name.
 ## Automated staging deploy (CI/CD)
 
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
-`staging`: every push to `develop` (plus manual `workflow_dispatch`) runs the
+`staging`. Since 2026-09-22 staging auto-deploy is disabled: the `push`
+trigger on `develop` was removed, so merging code no longer deploys staging.
+The workflow runs only on manual `workflow_dispatch` (e.g. to rehearse a
+pending migration on staging before promotion) and runs the
 same quality gates as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as

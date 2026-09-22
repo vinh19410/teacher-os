@@ -2,7 +2,8 @@ import { expect, type Page, test } from "@playwright/test";
 import { signUpViaUi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
- * trang detail. Trả về sau khi URL chuyển sang /syllabus/:id. */
+ * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
+ * bản copy gắn class. */
 async function createSyllabusTemplate(page: Page, name: string) {
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
@@ -12,6 +13,9 @@ async function createSyllabusTemplate(page: Page, name: string) {
 	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo", exact: true }).click();
 	await page.waitForURL(/\/syllabus\/.+/);
+	const templateId = new URL(page.url()).pathname.split("/").pop();
+	if (!templateId) throw new Error(`Thiếu id template trên ${page.url()}`);
+	return templateId;
 }
 
 test("ghi đè sau xác nhận thay cây, hủy giữ nguyên dữ liệu hiện tại", async ({
@@ -77,7 +81,10 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	page,
 }) => {
 	await signUpViaUi(page);
-	await createSyllabusTemplate(page, "E2E Template Copy Guard");
+	const templateId = await createSyllabusTemplate(
+		page,
+		"E2E Template Copy Guard",
+	);
 	// Template: nút import PHẢI hiện.
 	await expect(
 		page.getByRole("button", { name: "Nhập từ Excel/CSV" }),
@@ -90,13 +97,24 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await classDialog
 		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill("Lớp Copy Guard");
-	// Scope vào dialog: kỹ năng là bắt buộc với lớp IELTS.
-	await classDialog
-		.getByRole("button", { name: "Writing", exact: true })
-		.click();
+	// Auto-fill: template có skills=["Writing"] → chip tự bật, thỏa
+	// validation kỹ năng bắt buộc với lớp IELTS mà không cần bấm tay.
 	await classDialog
 		.getByLabel("Template giáo trình")
-		.selectOption({ label: "E2E Template Copy Guard" });
+		.selectOption({ value: templateId });
+	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	await expect(
+		classDialog.getByRole("button", { name: "Writing", exact: true }),
+	).toHaveAttribute("aria-pressed", "true");
+	// View-only (#236): khóa theo field — chips bị khóa vì có kỹ năng,
+	// còn số buổi không base theo syllabus (0 buổi) thì vẫn editable.
+	await expect(
+		classDialog.getByRole("button", { name: "Writing", exact: true }),
+	).toBeDisabled();
+	await expect(classDialog.getByLabel("Tổng số buổi")).toBeEnabled();
+	// Auto-fill số buổi (#235): template rỗng (0 buổi) → giữ giá trị
+	// mặc định "12", không xóa trắng.
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("12");
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	// Kernel GET sau write là snapshot đầu tiên chứa bản copy — đăng ký chờ
 	// TRƯỚC khi submit để không lỡ response.

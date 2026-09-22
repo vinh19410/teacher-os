@@ -141,6 +141,20 @@
       "when": 1789971661327,
       "tag": "0019_solid_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1789983142640,
+      "tag": "0020_awesome_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1790063458024,
+      "tag": "0021_slow_rhodey",
+      "breakpoints": true
     }
   ]
 }

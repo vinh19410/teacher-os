@@ -13,7 +13,7 @@
  * constant — 12 weekly Mondays, 04/01 … 22/03/2027.
  */
 import { expect, test } from "@playwright/test";
-import { gotoWeek, signUpViaUi } from "./helpers";
+import { createStudentViaUi, gotoWeek, signUpViaUi } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 const START = "2027-01-04"; // Monday
@@ -84,8 +84,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await page.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();

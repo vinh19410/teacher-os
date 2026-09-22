@@ -36,6 +36,7 @@ const snapshot: KernelSnapshot = {
 			id: "st-1",
 			name: "Nguyễn Minh Anh",
 			phone: "0912 345 678",
+			email: "minhanh@test.local",
 			zalo: "0912345678",
 			parentName: "Nguyễn Văn Hùng",
 			parentPhone: "",
@@ -45,6 +46,7 @@ const snapshot: KernelSnapshot = {
 			name: "Vũ Thảo Vy",
 			phone: "",
 			zalo: "",
+			email: "",
 			parentName: "",
 			parentPhone: "",
 		},
@@ -63,6 +65,7 @@ const snapshot: KernelSnapshot = {
 			sessionsDone: 3,
 			status: "active",
 			startDate: "01/08",
+			tuitionFee: null,
 			notes: "ghi chú",
 		},
 	],
@@ -328,15 +331,13 @@ describe("kernelCommand", () => {
 			payload: {
 				name: "A",
 				phone: "090",
+				email: "a@test.local",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Online",
 				classId: "cl-1",
 			},
 		});
 		expect(req.path).toBe("/api/students");
-		expect(req.body).toMatchObject({ classId: "cl-1" });
+		expect(req.body).toMatchObject({ classId: "cl-1", email: "a@test.local" });
 	});
 
 	test("enroll-student maps to the class enroll endpoint (#122)", () => {
@@ -398,9 +399,7 @@ describe("kernelCommand", () => {
 				name: "A",
 				phone: "",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Offline",
+				email: "a@test.local",
 			},
 		});
 		expect(req.body).not.toHaveProperty("classId");
@@ -426,6 +425,41 @@ describe("kernelCommand", () => {
 		expect(req.body).toMatchObject({ type: "ielts" });
 		const body = req.body as { schedule: { days: number[] } };
 		expect(typeof body.schedule.days[0]).toBe("number");
+	});
+
+	test("add-class forwards tuitionFee in body", () => {
+		const reqWithFee = kernelCommand({
+			type: "add-class",
+			payload: {
+				name: "IELTS Fee",
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "",
+				tuitionFee: 5_000_000,
+			},
+		});
+		expect(reqWithFee.body).toMatchObject({ tuitionFee: 5_000_000 });
+
+		const reqWithoutFee = kernelCommand({
+			type: "add-class",
+			payload: {
+				name: "IELTS No Fee",
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				mode: "Online",
+				templateId: "",
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: "",
+			},
+		});
+		expect(reqWithoutFee.body).toMatchObject({ tuitionFee: null });
 	});
 
 	test("add-syllabus drops the client id", () => {
@@ -567,6 +601,15 @@ describe("kernelCommand", () => {
 			kernelCommand({ type: "update-class-notes", classId: "c1", notes: "n" })
 				.path,
 		).toBe("/api/classes/c1/notes");
+	});
+
+	test("update-class-tuition-fee targets class subresource with single-field body", () => {
+		const cmd = kernelCommand({
+			type: "update-class-tuition-fee",
+			payload: { classId: "c1", tuitionFee: 6_000_000 },
+		});
+		expect(cmd.path).toBe("/api/classes/c1/tuition-fee");
+		expect(cmd.body).toEqual({ tuitionFee: 6_000_000 });
 	});
 
 	test("check-in and cancel-lesson ride the bus with an exactly-empty body", () => {

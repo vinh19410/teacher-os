@@ -70,14 +70,13 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** SĐT + email = danh tính đăng nhập tương lai; gói học do server derive từ lớp (D1/D2). */
 			type: "add-student";
 			payload: {
 				name: string;
 				phone: string;
+				email: string;
 				parentName: string;
-				total: number;
-				price: number;
-				mode: "Online" | "Offline";
 				classId?: string;
 			};
 	  }
@@ -115,6 +114,7 @@ export type KernelAction =
 				schedule: { days: number[]; start: string; end: string };
 				sessionsTotal: number;
 				startDate: string;
+				tuitionFee?: number | null;
 			};
 	  }
 	| {
@@ -215,7 +215,11 @@ export type KernelAction =
 			moduleId: string;
 			lessonIds: string[];
 	  }
-	| { type: "update-class-notes"; classId: string; notes: string };
+	| { type: "update-class-notes"; classId: string; notes: string }
+	| {
+			type: "update-class-tuition-fee";
+			payload: { classId: string; tuitionFee: number | null };
+	  };
 
 /** Backwards-compatible name for data-store consumers. */
 export type Action = KernelAction;
