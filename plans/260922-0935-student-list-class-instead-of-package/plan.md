@@ -1,7 +1,7 @@
 ---
 title: "Danh sách học viên hiển thị lớp học thay vì gói học"
 description: "Màn danh sách học viên bỏ 3 cột Gói/Còn lại/Đơn giá, thay bằng cột Lớp học liệt kê các lớp học viên đang tham gia — theo đúng pattern PR #245 ở tab Hồ sơ."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 247
@@ -38,16 +38,16 @@ Màn danh sách học viên (`apps/web/src/routes/_auth/students/index.tsx`) đa
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Cột Lớp học thay các cột gói trong danh sách học viên](./phase-01-list-classes-column.md) | Pending |
-| 2 | [Cập nhật E2E + verification](./phase-02-e2e-regression-verification.md) | Pending |
+| 1 | [Cột Lớp học thay các cột gói trong danh sách học viên](./phase-01-list-classes-column.md) | Completed |
+| 2 | [Cập nhật E2E + verification](./phase-02-e2e-regression-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Trên /students không còn text "Gói", "Còn lại", "Đơn giá", "Chưa có gói"; cột "Lớp học" liệt kê đúng mọi lớp đang tham gia (multi-class OK).
-- [ ] Học viên chưa có lớp thấy "Chưa có lớp" tại cột Lớp học.
-- [ ] Join enrollments×classes chỉ tồn tại 1 nơi (`classesByStudent`); `$studentId.tsx` dùng helper này.
-- [ ] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src apps/e2e/specs` pass.
-- [ ] 4 spec e2e pass: `student-package-without-class`, `student-package-validation`, `student-row-detail`, `enroll-existing-student`.
+- [x] Trên /students không còn text "Gói", "Còn lại", "Đơn giá", "Chưa có gói"; cột "Lớp học" liệt kê đúng mọi lớp đang tham gia (multi-class OK).
+- [x] Học viên chưa có lớp thấy "Chưa có lớp" tại cột Lớp học.
+- [x] Join enrollments×classes chỉ tồn tại 1 nơi (`classesByStudent`); `$studentId.tsx` dùng helper này.
+- [x] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src apps/e2e/specs` pass.
+- [x] 4 spec e2e pass: `student-package-without-class`, `student-package-validation`, `student-row-detail`, `enroll-existing-student`.
 
 ## Dependencies
 
@@ -63,3 +63,33 @@ Màn danh sách học viên (`apps/web/src/routes/_auth/students/index.tsx`) đa
 ## Open Questions
 
 - Nếu giáo viên vẫn cần nhìn nhanh số buổi còn lại tại list, có thể giữ "Còn lại" như cột phụ — cần xác nhận product trước khi thêm lại (mặc định: bỏ hẳn theo hướng lớp học).
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 8
+- Verified: 8 | Failed: 0 | Unverified: 0
+- Tier: Light (2 phases)
+- Codebase evidence verified:
+  - `apps/web/src/routes/_auth/students/index.tsx`: `useData()`, headers `["Học viên", "Gói", "Còn lại", "Tags", "Đơn giá"]`, `fmtVND`, `attentionCount`
+  - `apps/web/src/routes/_auth/students/$studentId.tsx`: join `data.classes.filter` + `data.enrollments.some`
+  - `apps/web/src/lib/repos/enrollments.ts`: existing read repo for enrollments
+  - `apps/e2e/specs/student-package-without-class.spec.ts`: assertions for "Chưa có gói", "0 buổi · Online"
+  - `apps/e2e/specs/student-package-validation.spec.ts`: assertions for "Chưa có gói", "500.000đ", `/buổi · Online/`
+
+### Whole-Plan Consistency Sweep
+- Consistency: All phases align on replacing the 3 package columns with "Lớp học", pure helper `classesByStudent`, unit tests in `enrollments.test.ts`, and updated E2E assertions.
+- Unresolved contradictions: None.
+
+## Red Team Review
+
+### Reviewers
+- Security Adversary: Multi-tenancy isolation confirmed (`useData` snapshot is org-scoped); XSS prevention confirmed (React JSX escapes strings); auth protection confirmed (`/_auth/` layout).
+- Assumption Destroyer: Orphaned enrollment tolerance confirmed (`data.classes.filter` only emits valid classes); row click interaction confirmed (no nested interactive elements in list cell); sidebar vs header DOM order confirmed.
+
+### Findings
+- Total findings: 0 Critical, 0 High, 0 Medium
+- Disposition: 0 Accepted, 0 Rejected
+
+### Whole-Plan Consistency Sweep
+- Status: Pass. Plan is ready for implementation.

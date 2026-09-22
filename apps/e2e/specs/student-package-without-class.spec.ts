@@ -3,11 +3,11 @@ import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Scenario for D2: creating a student outside a class (no classId) produces
- * NO session package row. The UI renders "Chưa có gói" across list and
- * tuition pages, with dashes for counts/prices, tuition never badges
+ * NO session package row. The UI renders "Chưa có lớp" on list and
+ * "Chưa có gói" on tuition pages, with dashes for counts, tuition never badges
  * "Sắp hết", and student detail shows the empty class card.
  */
-test("thêm học viên không lớp → hiển thị 'Chưa có gói', không tạo package (D2)", async ({
+test("thêm học viên không lớp → hiển thị 'Chưa có lớp' trên list, không tạo package (D2)", async ({
 	page,
 }) => {
 	const STUDENT_NAME = "QC-240 No Class";
@@ -24,13 +24,10 @@ test("thêm học viên không lớp → hiển thị 'Chưa có gói', không t
 		email: STUDENT_EMAIL,
 	});
 
-	// 3. Students list: row shows "Chưa có gói" and dashes
+	// 3. Students list: row shows "Chưa có lớp"
 	const studentRow = page.locator("tr", { hasText: STUDENT_NAME });
 	await expect(studentRow).toBeVisible();
-	await expect(studentRow.getByText("Chưa có gói")).toBeVisible();
-	await expect(studentRow.getByText("0 buổi · Online")).toHaveCount(0);
-	await expect(studentRow.getByText("0 / 0")).toHaveCount(0);
-
+	await expect(studentRow.getByText("Chưa có lớp")).toBeVisible();
 	// 4. Student detail: shows Email and the empty class card
 	await studentRow.getByText(STUDENT_NAME).click();
 	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
