@@ -34,7 +34,11 @@ vi.mock("@/lib/use-kernel-form-submit", () => ({
 	}),
 }));
 
-import { AddClassModal, ClassTemplatePicker } from "./add-class-modal";
+import {
+	AddClassModal,
+	ClassTemplatePicker,
+	skillsFromTemplate,
+} from "./add-class-modal";
 
 function linkedSelectId(html: string) {
 	const match = html.match(
@@ -108,5 +112,27 @@ describe("AddClassModal template options", () => {
 		expect(html).toMatch(/aria-pressed="false"[^>]*>Writing</);
 		expect(html).toMatch(/aria-pressed="false"[^>]*>Speaking</);
 		linkedSelectId(html);
+	});
+});
+
+describe("skillsFromTemplate", () => {
+	it("orders skills canonically and drops unknown values", () => {
+		expect(skillsFromTemplate(["Reading", "Writing", "Pronunciation"])).toEqual(
+			["Writing", "Reading"],
+		);
+	});
+
+	it("dedupes repeated skills", () => {
+		expect(skillsFromTemplate(["Writing", "Writing"])).toEqual(["Writing"]);
+	});
+
+	it("returns all four skills unchanged for a full syllabus", () => {
+		expect(
+			skillsFromTemplate(["Listening", "Speaking", "Reading", "Writing"]),
+		).toEqual(["Writing", "Speaking", "Reading", "Listening"]);
+	});
+
+	it("returns an empty array for an empty syllabus", () => {
+		expect(skillsFromTemplate([])).toEqual([]);
 	});
 });

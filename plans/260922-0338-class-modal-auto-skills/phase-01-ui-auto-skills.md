@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "UI — tự động chọn kỹ năng theo syllabus"
-status: pending
+status: completed
 priority: P2
 effort: "1h"
 dependencies: []

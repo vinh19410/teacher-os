@@ -97,14 +97,15 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await classDialog
 		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill("Lớp Copy Guard");
-	// Scope vào dialog: kỹ năng là bắt buộc với lớp IELTS.
-	await classDialog
-		.getByRole("button", { name: "Writing", exact: true })
-		.click();
+	// Auto-fill: template có skills=["Writing"] → chip tự bật, thỏa
+	// validation kỹ năng bắt buộc với lớp IELTS mà không cần bấm tay.
 	await classDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ value: templateId });
 	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	await expect(
+		classDialog.getByRole("button", { name: "Writing", exact: true }),
+	).toHaveAttribute("aria-pressed", "true");
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	// Kernel GET sau write là snapshot đầu tiên chứa bản copy — đăng ký chờ
 	// TRƯỚC khi submit để không lỡ response.
