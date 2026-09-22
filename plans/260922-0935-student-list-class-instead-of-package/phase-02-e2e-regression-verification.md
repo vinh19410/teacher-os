@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Cập nhật E2E + verification"
-status: pending
+status: completed
 priority: P1
 effort: 1h
 dependencies: [1]
@@ -23,10 +23,10 @@ dependencies: [1]
 
 ## Requirements
 
-- [ ] Không còn spec nào assert text gói trên hàng list (/students): "Chưa có gói", `/buổi ·/`, cột Đơn giá
-- [ ] Spec assert hàng list hiển thị tên lớp; học viên không lớp thấy "Chưa có lớp"
-- [ ] Coverage derive gói (#240 D1) giữ được qua trang Học phí
-- [ ] Toàn bộ verification pass
+- [x] Không còn spec nào assert text gói trên hàng list (/students): "Chưa có gói", `/buổi ·/`, cột Đơn giá
+- [x] Spec assert hàng list hiển thị tên lớp; học viên không lớp thấy "Chưa có lớp"
+- [x] Coverage derive gói (#240 D1) giữ được qua trang Học phí
+- [x] Toàn bộ verification pass
 
 ## Related Code Files
 

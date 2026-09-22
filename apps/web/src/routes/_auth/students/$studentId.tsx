@@ -12,6 +12,7 @@ import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
+import { classesByStudent } from "@/lib/repos/enrollments";
 import { useStudents } from "@/lib/repos/use-students";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
@@ -75,11 +76,7 @@ function StudentDetailRoute() {
 	const lessons = data.lessons.filter((l) => l.sid === studentId);
 	const invoices = data.invoices.filter((i) => i.sid === studentId);
 	const assignments = data.assignments.filter((a) => a.sid === studentId);
-	const studentClasses = data.classes.filter((c) =>
-		data.enrollments.some(
-			(e) => e.studentId === studentId && e.classId === c.id,
-		),
-	);
+	const studentClasses = classesByStudent(data, studentId);
 
 	return (
 		<div>

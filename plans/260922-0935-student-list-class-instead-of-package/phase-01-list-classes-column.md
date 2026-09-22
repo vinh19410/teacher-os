@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Cột Lớp học thay các cột gói trong danh sách học viên"
-status: pending
+status: completed
 priority: P1
 effort: 2h
 dependencies: []
@@ -23,11 +23,11 @@ dependencies: []
 
 ## Requirements
 
-- [ ] Headers bảng: `["Học viên", "Gói", "Còn lại", "Tags", "Đơn giá"]` → `["Học viên", "Lớp học", "Tags"]`
-- [ ] Cell Lớp học: mỗi lớp 1 khối (tên lớp `font-medium text-sm` + meta `classMeta(c)` dạng `font-mono text-meta text-xs`), stack dọc khi nhiều lớp
-- [ ] Học viên không lớp: cell hiện "Chưa có lớp"
-- [ ] Cell là text thuần, không `Link` (row đã onClick → detail)
-- [ ] Unit test cho helper mới
+- [x] Headers bảng: `["Học viên", "Gói", "Còn lại", "Tags", "Đơn giá"]` → `["Học viên", "Lớp học", "Tags"]`
+- [x] Cell Lớp học: mỗi lớp 1 khối (tên lớp `font-medium text-sm` + meta `classMeta(c)` dạng `font-mono text-meta text-xs`), stack dọc khi nhiều lớp
+- [x] Học viên không lớp: cell hiện "Chưa có lớp"
+- [x] Cell là text thuần, không `Link` (row đã onClick → detail)
+- [x] Unit test cho helper mới
 
 ## Related Code Files
 

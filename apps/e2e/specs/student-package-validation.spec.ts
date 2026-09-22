@@ -93,7 +93,7 @@ test("students → form tạo không có input gói, SĐT chỉ số + email b�
 	).toBeVisible();
 	expect(blockedEmptyEmail).toBe(0);
 
-	// 6. Nhập đủ hợp lệ -> Lưu thành công, dialog đóng, row hiện "Chưa có gói"
+	// 6. Nhập đủ hợp lệ -> Lưu thành công, dialog đóng, row hiện "Chưa có lớp"
 	await emailInput.fill("hocvien@example.com");
 	const saved = await countPosts(page, "/api/students", () => save.click());
 	await expect(dialog).toBeHidden();
@@ -101,7 +101,7 @@ test("students → form tạo không có input gói, SĐT chỉ số + email b�
 
 	const row = page.locator("tr", { hasText: STUDENT_NAME });
 	await expect(row).toBeVisible();
-	await expect(row.getByText("Chưa có gói")).toBeVisible();
+	await expect(row.getByText("Chưa có lớp")).toBeVisible();
 });
 
 test("class detail → enroll học viên có sẵn vẫn có 3 input gói và chặn gói 0 buổi theo field (D4)", async ({
@@ -205,15 +205,22 @@ test("tạo học viên trong lớp → derive gói từ lớp, detail hiển th
 	// Roster hiện học viên
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	// List học viên: derive gói từ lớp + đơn giá 500.000đ
+	// List học viên: hàng hiển thị lớp đã enroll
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
 	const row = page.locator("tr", { hasText: STUDENT_NAME });
-	await expect(row.getByText(/buổi · Online/)).toBeVisible();
-	await expect(row.getByText("500.000đ")).toBeVisible();
+	await expect(row.getByText(CLASS_NAME)).toBeVisible();
 
 	// Vào detail học viên -> card "Lớp học" hiện lớp vừa tạo
 	await row.getByText(STUDENT_NAME).click();
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText("Email: derive@e2e.test")).toBeVisible();
+
+	// Trang Học phí: derive gói từ lớp (12 buổi, trạng thái Đang học)
+	await page.getByText("Học phí", { exact: true }).first().click();
+	await expect(page).toHaveURL(/\/tuition$/);
+	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
+	await expect(tuitionRow).toBeVisible();
+	await expect(tuitionRow.getByText("0/12")).toBeVisible();
+	await expect(tuitionRow.getByText("Đang học")).toBeVisible();
 });
