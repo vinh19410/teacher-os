@@ -4,14 +4,15 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 
 ## Current request flow
 
-1. The auth route in [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) blocks unauthenticated users and sends them to login.
-2. [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) subscribes to the shared TanStack Query `['kernel']` entry (`GET /api/kernel`) and waits for it before rendering children; kernel writes refetch that same entry through the command bus.
-3. [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) maps UI actions to POST requests and maps kernel snapshots into the legacy UI shape.
-4. [apps/server/src/app.ts](../apps/server/src/app.ts) installs CORS, the bootstrap middleware, and the `/api` router chain.
-5. [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) enforces origin and JSON checks for POSTs, then executes org-scoped reads and writes.
-6. [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) assembles the snapshot from the canonical database tables.
-7. [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) is the persistence owner, and [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) is the wire contract owner.
-8. [packages/api/src/skeleton.ts](../packages/api/src/skeleton.ts) owns occurrence-identity math (schedule skeleton, `conforms()`, offline backfill planning — issue #98); apps/server consumes it for generation, apps/web never re-implements it.
+1. Requests to apex and www (`teacheros.io.vn` / `www.teacheros.io.vn`) are served directly by the static landing page Worker (`apps/landing`, via `Cloudflare.Website.StaticSite`). The web app lives at `app.<domain>`, and the API lives at `api.<domain>` (see [packages/infra/src/topology.ts](../packages/infra/src/topology.ts)).
+2. The auth route in [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) blocks unauthenticated users and sends them to login.
+3. [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) subscribes to the shared TanStack Query `['kernel']` entry (`GET /api/kernel`) and waits for it before rendering children; kernel writes refetch that same entry through the command bus.
+4. [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) maps UI actions to POST requests and maps kernel snapshots into the legacy UI shape.
+5. [apps/server/src/app.ts](../apps/server/src/app.ts) installs CORS, the bootstrap middleware, and the `/api` router chain.
+6. [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) enforces origin and JSON checks for POSTs, then executes org-scoped reads and writes.
+7. [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) assembles the snapshot from the canonical database tables.
+8. [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) is the persistence owner, and [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) is the wire contract owner.
+9. [packages/api/src/skeleton.ts](../packages/api/src/skeleton.ts) owns occurrence-identity math (schedule skeleton, `conforms()`, offline backfill planning — issue #98); apps/server consumes it for generation, apps/web never re-implements it.
 
 ## Boundary map
 
@@ -30,6 +31,7 @@ Teacher OS is a three-layer monorepo: a React web app, a Hono server, and shared
 | Assignment prompt bank create and per-student grading routes | [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) (subrouter of the kernel tree) |
 | Web security headers and CSP stamping | [apps/web/src/security-headers.ts](../apps/web/src/security-headers.ts), applied by [apps/web/src/worker.ts](../apps/web/src/worker.ts) to every response |
 | Deploy topology and auth cookie namespace | [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) (derivation) and [packages/auth/src/topology.ts](../packages/auth/src/topology.ts) (validation) |
+| Static landing page: zero-framework marketing site deployed at apex | [apps/landing](../apps/landing) |
 
 ## Architectural rules
 

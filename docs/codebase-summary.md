@@ -9,6 +9,7 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts) - QueryClient defaults and global 401 reauth
 - [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) - kernel transport, snapshot query options, and snapshot mapping
 - [apps/web/src/worker.ts](../apps/web/src/worker.ts) - web asset worker entry: static assets, SPA routes, and branded HTTP 404
+- [apps/landing/public/index.html](../apps/landing/public/index.html) - static marketing landing page entry (zero-framework, served at apex)
 - [apps/server/src/app.ts](../apps/server/src/app.ts) - server app composition and bootstrap middleware
 - [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) - kernel route tree
 - [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) - assignment-prompt bank create and per-student grading routes, mounted inside the kernel tree
@@ -20,6 +21,7 @@ This is the navigation surface for the repository. It points to the owning files
 ## Directory map
 
 - `apps/web` - route files, UI shell, client state, and kernel-facing repository helpers
+- `apps/landing` - static landing page, zero-framework, public/index.html from Open Design design, build = copy, serve.mjs :8002, zero dependencies
 - `apps/server` - Hono app, auth/session handling, snapshot loaders, and org-scoped kernel routes
 - `apps/e2e` - Playwright specs that boot the real server app under Node with a fresh local D1 database
 - `packages/api` - Zod request schemas and wire DTOs

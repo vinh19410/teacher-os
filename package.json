@@ -1,6 +1,6 @@
 {
 	"name": "teacher-os",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"private": true,
 	"workspaces": [
 		"apps/*",
@@ -13,6 +13,7 @@
 		"check-types": "turbo run check-types",
 		"dev:web": "turbo run dev -F web --",
 		"dev:server": "turbo run dev -F server --",
+		"dev:landing": "turbo run dev -F landing --",
 		"db:generate": "turbo run db:generate -F @teacher-os/db --",
 		"deploy": "turbo run deploy -F @teacher-os/infra --",
 		"destroy": "turbo run destroy -F @teacher-os/infra --",

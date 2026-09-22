@@ -122,9 +122,31 @@ export default Alchemy.Stack(
 			},
 		});
 
+		const landingWorker = yield* Cloudflare.Website.StaticSite("landing", {
+			cwd: "../../apps/landing",
+			command: "pnpm build",
+			outdir: "dist",
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.landingHost,
+					aliases: topology.landingAliases,
+				},
+				workersDev: false,
+			}),
+			dev: {
+				command: "pnpm dev",
+				url: "http://localhost:8002",
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
+			landing: landingWorker.url,
 		};
 	}),
 );

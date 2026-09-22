@@ -32,14 +32,21 @@ export interface DomainTopology {
 	 */
 	authCookiePrefix: string | undefined;
 	/**
-	 * Additional hostnames attached to the web Worker as custom domains so
-	 * Cloudflare provisions DNS records (A/AAAA/CNAME) and TLS certs.
-	 * Requests to these hostnames are 301-redirected by the Worker to https://<appHost>.
-	 * Note: Using WorkerDomainConfig `aliases` (rather than `redirects`) avoids
-	 * calling Cloudflare Rulesets API, which requires extra Zone Ruleset permissions
-	 * not present on standard CI deploy tokens.
+	 * Additional hostnames attached to the web Worker.
+	 * Currently empty: apex and www are now attached to the landing Worker instead.
+	 * Note: Historical note — using WorkerDomainConfig `aliases` (rather than `redirects`)
+	 * avoids calling Cloudflare Rulesets API, which requires extra Zone Ruleset permissions
+	 * not present on standard CI deploy tokens (still holds true for landingAliases).
 	 */
 	appAliases: string[];
+	/** Landing page hostname: the bare APP_DOMAIN itself (prod apex). */
+	landingHost: string;
+	/**
+	 * Additional hostnames attached to the landing Worker. Serves the same
+	 * content (no 301 to apex — Redirect Rules need the Rulesets API the CI
+	 * token lacks); duplicate content is handled by the page's canonical tag.
+	 */
+	landingAliases: string[];
 }
 
 /** The prod apex — the only member of its cookie zone allowed to keep the
@@ -72,12 +79,7 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 	const inProdCookieZone =
 		domain === PROD_APP_DOMAIN || domain.endsWith(`.${PROD_APP_DOMAIN}`);
 	const apiOrigin = `https://api.${domain}`;
-	const appAliases =
-		domain === PROD_APP_DOMAIN
-			? [PROD_APP_DOMAIN, `www.${PROD_APP_DOMAIN}`]
-			: inProdCookieZone
-				? [domain]
-				: [domain, `www.${domain}`];
+	const appAliases: string[] = [];
 	return {
 		appHost: `app.${domain}`,
 		apiHost: `api.${domain}`,
@@ -91,5 +93,7 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 				? AUTH_COOKIE_PREFIX
 				: undefined,
 		appAliases,
+		landingHost: domain,
+		landingAliases: [`www.${domain}`],
 	};
 }
