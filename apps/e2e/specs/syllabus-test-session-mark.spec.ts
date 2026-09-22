@@ -150,6 +150,9 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 		.getByLabel("Template giáo trình")
 		.selectOption({ value: templateId });
 	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	// Auto-fill số buổi (#235): template v4 có 5 buổi (2 buổi thi Buổi 3
+	// giữa kỳ + Buổi 5 cuối kỳ) → "Tổng số buổi" tự điền "5", tính cả buổi thi.
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("5");
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	const kernelPromise = page.waitForResponse((response) =>
 		response.url().includes("/api/kernel"),

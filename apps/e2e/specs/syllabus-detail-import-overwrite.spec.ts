@@ -106,6 +106,9 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await expect(
 		classDialog.getByRole("button", { name: "Writing", exact: true }),
 	).toHaveAttribute("aria-pressed", "true");
+	// Auto-fill số buổi (#235): template rỗng (0 buổi) → giữ giá trị
+	// mặc định "12", không xóa trắng.
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("12");
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	// Kernel GET sau write là snapshot đầu tiên chứa bản copy — đăng ký chờ
 	// TRƯỚC khi submit để không lỡ response.

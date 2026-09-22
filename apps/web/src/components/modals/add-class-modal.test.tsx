@@ -34,9 +34,15 @@ vi.mock("@/lib/use-kernel-form-submit", () => ({
 	}),
 }));
 
+import type {
+	Syllabus,
+	SyllabusLesson,
+	SyllabusLessonKind,
+} from "@/lib/mock-data";
 import {
 	AddClassModal,
 	ClassTemplatePicker,
+	sessionsFromTemplate,
 	skillsFromTemplate,
 } from "./add-class-modal";
 
@@ -134,5 +140,41 @@ describe("skillsFromTemplate", () => {
 
 	it("returns an empty array for an empty syllabus", () => {
 		expect(skillsFromTemplate([])).toEqual([]);
+	});
+});
+
+const lesson = (kind: SyllabusLessonKind): SyllabusLesson => ({
+	id: `l-${kind}-${Math.random()}`,
+	title: "",
+	objectives: "",
+	materials: "",
+	kind,
+	status: "upcoming",
+});
+
+describe("sessionsFromTemplate", () => {
+	it("counts lessons across all modules including midterm and final sessions", () => {
+		const modules = [
+			{
+				id: "m1",
+				title: "Module 1",
+				lessons: [lesson("lesson"), lesson("lesson"), lesson("midterm")],
+			},
+			{
+				id: "m2",
+				title: "Module 2",
+				lessons: [lesson("lesson"), lesson("final")],
+			},
+		] satisfies Syllabus["modules"];
+		expect(sessionsFromTemplate(modules)).toBe(5);
+	});
+
+	it("returns 0 for a syllabus without modules", () => {
+		expect(sessionsFromTemplate([])).toBe(0);
+	});
+
+	it("handles null or undefined modules safely", () => {
+		expect(sessionsFromTemplate(undefined)).toBe(0);
+		expect(sessionsFromTemplate(null)).toBe(0);
 	});
 });

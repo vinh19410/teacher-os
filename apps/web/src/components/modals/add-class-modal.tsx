@@ -16,7 +16,7 @@ import {
 } from "@/lib/date-input";
 import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
-import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, dayNames, type Syllabus } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -34,6 +34,18 @@ export function skillsFromTemplate(
 	templateSkills: readonly string[],
 ): string[] {
 	return IELTS_SKILLS.filter((skill) => templateSkills.includes(skill));
+}
+
+/** Tổng số buổi lấy từ syllabus: đếm mọi buổi qua mọi module,
+ * gồm cả buổi thi (midterm/final). Đếm từ cây modules thay vì
+ * totalLessons vì totalLessons có thể stale (chỉ sync khi replace). */
+export function sessionsFromTemplate(
+	templateModules: Syllabus["modules"] | undefined | null,
+): number {
+	return (templateModules ?? []).reduce(
+		(sum, module) => sum + (module?.lessons?.length ?? 0),
+		0,
+	);
 }
 
 const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
@@ -148,6 +160,11 @@ export function AddClassModal({
 		// Template rỗng hoặc syllabus chưa khai báo kỹ năng: giữ selection tay.
 		if (template && template.skills.length > 0) {
 			setSkills(skillsFromTemplate(template.skills));
+		}
+		// Syllabus chưa có buổi nào: giữ số buổi nhập tay.
+		const sessions = template ? sessionsFromTemplate(template.modules) : 0;
+		if (sessions > 0) {
+			setTotal(String(sessions));
 		}
 	}
 

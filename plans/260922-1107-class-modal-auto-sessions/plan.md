@@ -1,7 +1,7 @@
 ---
 title: "Tự động điền tổng số buổi của lớp theo syllabus trong modal tạo lớp"
 description: "Chọn template giáo trình trong modal 'Tạo lớp mới' tự động điền 'Tổng số buổi' bằng tổng số buổi của syllabus đó, tính luôn cả buổi thi (midterm/final)."
-status: pending
+status: completed
 priority: P2
 effort: 2h
 issue: 235
@@ -33,8 +33,8 @@ Plan này mở rộng `changeTemplateId`: khi chọn một syllabus, tự điề
 
 | Phase | Name | Status |
 | ----- | ---- | ------ |
-| 1 | [UI — tự điền tổng số buổi theo syllabus](./phase-01-ui-auto-sessions.md) | Pending |
-| 2 | [Tests — unit helper và e2e guard](./phase-02-tests-e2e.md) | Pending |
+| 1 | [UI — tự điền tổng số buổi theo syllabus](./phase-01-ui-auto-sessions.md) | Completed |
+| 2 | [Tests — unit helper và e2e guard](./phase-02-tests-e2e.md) | Completed |
 
 ## Design Decisions
 
@@ -60,13 +60,13 @@ Plan này mở rộng `changeTemplateId`: khi chọn một syllabus, tự điề
 
 ## Success Criteria
 
-- [ ] Chọn syllabus có N buổi (gồm cả midterm/final) → "Tổng số buổi" = N.
-- [ ] Chọn "— Lớp trống —" / syllabus 0 buổi → ô số buổi giữ nguyên giá trị trước đó (mặc định "12" hoặc số đã nhập tay).
-- [ ] Đã sửa số buổi tay, rồi chọn template khác → bị ghi đè bằng số buổi của template mới.
-- [ ] Syllabus > 52 buổi → điền số thật; submit báo lỗi cap 52 như cơ chế hiện có (không crash, không clamp).
-- [ ] Payload `add-class` shape không đổi; `templateId,` vẫn liền trước `schedule:`; `resetForm()` vẫn reset `total: "12"`, `templateId: ""`.
-- [ ] `pnpm --filter web test` pass (unit helper + contract test regex + test render đầu).
-- [ ] `pnpm check` pass; 2 e2e specs `syllabus-test-session-mark`, `syllabus-detail-import-overwrite` pass với assert số buổi mới.
+- [x] Chọn syllabus có N buổi (gồm cả midterm/final) → "Tổng số buổi" = N.
+- [x] Chọn "— Lớp trống —" / syllabus 0 buổi → ô số buổi giữ nguyên giá trị trước đó (mặc định "12" hoặc số đã nhập tay).
+- [x] Đã sửa số buổi tay, rồi chọn template khác → bị ghi đè bằng số buổi của template mới.
+- [x] Syllabus > 52 buổi → điền số thật; submit báo lỗi cap 52 như cơ chế hiện có (không crash, không clamp).
+- [x] Payload `add-class` shape không đổi; `templateId,` vẫn liền trước `schedule:`; `resetForm()` vẫn reset `total: "12"`, `templateId: ""`.
+- [x] `pnpm --filter web test` pass (unit helper + contract test regex + test render đầu).
+- [x] `pnpm check` pass; 2 e2e specs `syllabus-test-session-mark`, `syllabus-detail-import-overwrite` pass với assert số buổi mới.
 
 ## Dependencies
 
