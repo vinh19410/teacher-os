@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tests — unit ChipMulti, contract regex, e2e guard"
-status: pending
+status: completed
 priority: P2
 effort: "1h 15m"
 dependencies: [1]

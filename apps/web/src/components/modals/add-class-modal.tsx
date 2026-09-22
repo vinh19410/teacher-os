@@ -133,6 +133,17 @@ export function AddClassModal({
 		);
 	}, [minimumStartDate, open]);
 
+	// Mục đã base theo syllabus thì view-only: điều kiện khóa trùng
+	// điều kiện auto-fill trong changeTemplateId — khóa đúng khi giá trị
+	// đang do syllabus quyết định.
+	const selectedTemplate = templates.find((item) => item.id === templateId);
+	const skillsLocked = Boolean(
+		selectedTemplate && selectedTemplate.skills.length > 0,
+	);
+	const sessionsLocked = Boolean(
+		selectedTemplate && sessionsFromTemplate(selectedTemplate.modules) > 0,
+	);
+
 	function resetForm() {
 		setName("");
 		setLevel("Band 7.0");
@@ -287,6 +298,7 @@ export function AddClassModal({
 							options={SKILL_OPTIONS}
 							value={skills}
 							onChange={setSkills}
+							disabled={skillsLocked}
 						/>
 					</Field>
 				)}
@@ -325,6 +337,7 @@ export function AddClassModal({
 							max={52}
 							value={total}
 							onChange={(e) => setTotal(e.target.value)}
+							disabled={sessionsLocked}
 						/>
 					</Field>
 					<Field label="Học phí / học viên (VND)">

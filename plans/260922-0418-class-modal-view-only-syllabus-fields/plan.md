@@ -1,7 +1,7 @@
 ---
 title: "Khóa view-only mục Kỹ năng và Tổng số buổi khi đã base theo syllabus trong modal tạo lớp"
 description: "Khi template syllabus được chọn, chips 'Kỹ năng' và ô 'Tổng số buổi' hiển thị view-only theo dữ liệu syllabus; chỉ editable với lớp trống hoặc syllabus thiếu dữ liệu tương ứng."
-status: pending
+status: completed
 priority: P2
 effort: 2h
 issue: 236
@@ -33,8 +33,8 @@ Yêu cầu mới: **khi một mục đã được base theo syllabus thì mục 
 
 | Phase | Name | Status |
 | ----- | ---- | ------ |
-| 1 | [UI — khóa view-only 2 mục theo syllabus](./phase-01-ui-view-only-fields.md) | Pending |
-| 2 | [Tests — unit ChipMulti, contract regex, e2e guard](./phase-02-tests-e2e.md) | Pending |
+| 1 | [UI — khóa view-only 2 mục theo syllabus](./phase-01-ui-view-only-fields.md) | Completed |
+| 2 | [Tests — unit ChipMulti, contract regex, e2e guard](./phase-02-tests-e2e.md) | Completed |
 
 ## Design Decisions
 
@@ -58,13 +58,13 @@ Yêu cầu mới: **khi một mục đã được base theo syllabus thì mục 
 
 ## Success Criteria
 
-- [ ] Chọn syllabus có kỹ năng + có buổi → chips "Kỹ năng" và ô "Tổng số buổi" đều disabled với đúng giá trị theo syllabus.
-- [ ] Chọn "— Lớp trống —" → cả hai editable như hiện trạng.
-- [ ] Syllabus 0 kỹ năng → chips editable (tự chọn, validation ≥1 kỹ năng chạy như cũ); syllabus 0 buổi → ô số buổi editable (khóa theo field).
-- [ ] Chip disabled vẫn giữ `aria-pressed` đúng giá trị; submit vẫn gửi `skills`/`sessionsTotal` đúng từ state.
-- [ ] Payload `add-class` shape không đổi; `resetForm()` vẫn reset về editable (templateId "").
-- [ ] `pnpm --filter web test` pass (unit ChipMulti + contract regex + test render hiện có).
-- [ ] `pnpm check` pass; 2 e2e specs `syllabus-test-session-mark`, `syllabus-detail-import-overwrite` pass với assert khóa mới.
+- [x] Chọn syllabus có kỹ năng + có buổi → chips "Kỹ năng" và ô "Tổng số buổi" đều disabled với đúng giá trị theo syllabus.
+- [x] Chọn "— Lớp trống —" → cả hai editable như hiện trạng.
+- [x] Syllabus 0 kỹ năng → chips editable (tự chọn, validation ≥1 kỹ năng chạy như cũ); syllabus 0 buổi → ô số buổi editable (khóa theo field).
+- [x] Chip disabled vẫn giữ `aria-pressed` đúng giá trị; submit vẫn gửi `skills`/`sessionsTotal` đúng từ state.
+- [x] Payload `add-class` shape không đổi; `resetForm()` vẫn reset về editable (templateId "").
+- [x] `pnpm --filter web test` pass (unit ChipMulti + contract regex + test render hiện có).
+- [x] `pnpm check` pass; 2 e2e specs `syllabus-test-session-mark`, `syllabus-detail-import-overwrite` pass với assert khóa mới.
 
 ## Dependencies
 
@@ -73,4 +73,29 @@ Yêu cầu mới: **khi một mục đã được base theo syllabus thì mục 
 
 ## Validation Log
 
-_(điền sau validation gate)_
+### Verification Results
+- Claims checked: 8
+- Verified: 8 | Failed: 0 | Unverified: 0
+- Tier: Light (2 phases)
+- Files verified:
+  - `apps/web/src/components/ui/chip-multi.tsx:8-13` (ChipMultiProps signature)
+  - `apps/web/src/components/modals/add-class-modal.tsx:111,157-165,284-292,320-329` (templates, changeTemplateId, skills, total)
+  - `apps/web/src/lib/kernel-runtime.contract.test.ts:150-155` (templateId contract test)
+  - `apps/e2e/specs/syllabus-test-session-mark.spec.ts:149-156` (template v4 total sessions = 5)
+  - `apps/e2e/specs/syllabus-detail-import-overwrite.spec.ts:102-111` (empty template total sessions = 12)
+
+### Whole-Plan Consistency Sweep
+- Plan files reconciled: `plan.md`, `phase-01-ui-view-only-fields.md`, `phase-02-tests-e2e.md`.
+- Field-by-field locking logic matches auto-fill conditions from PR #234 and PR #237.
+- No contradictory claims or unverified assumptions detected.
+
+## Red Team Review
+
+| # | Persona | Finding | Evidence | Disposition | Rationale |
+|---|---------|---------|----------|-------------|-----------|
+| 1 | Security Adversary | Disabled inputs bypass native form submit constraints | `add-class-modal.tsx:206-208` | Accept (mitigated) | Form submit builds payload explicitly from state `skills` and `total`; server kernel still validates. |
+| 2 | Assumption Destroyer | Disabled ChipMulti might drop `aria-pressed` or keyboard navigation | `chip-multi.tsx:38-52` | Accept (mitigated) | `aria-pressed` retained on disabled `<button>`; unit test asserts both `disabled=""` and `aria-pressed`. |
+
+### Whole-Plan Consistency Sweep
+- All adversarial findings reviewed and confirmed safe.
+- Zero unresolved contradictions.
