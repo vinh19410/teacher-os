@@ -3,9 +3,9 @@ import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Scenario for D2: creating a student outside a class (no classId) produces
- * NO session package row. The UI renders "Chưa có gói" across list, detail,
- * and tuition pages, with dashes for counts/prices, and tuition never badges
- * "Sắp hết".
+ * NO session package row. The UI renders "Chưa có gói" across list and
+ * tuition pages, with dashes for counts/prices, tuition never badges
+ * "Sắp hết", and student detail shows the empty class card.
  */
 test("thêm học viên không lớp → hiển thị 'Chưa có gói', không tạo package (D2)", async ({
 	page,
@@ -31,13 +31,11 @@ test("thêm học viên không lớp → hiển thị 'Chưa có gói', không t
 	await expect(studentRow.getByText("0 buổi · Online")).toHaveCount(0);
 	await expect(studentRow.getByText("0 / 0")).toHaveCount(0);
 
-	// 4. Student detail: shows Email and "Chưa có gói"
+	// 4. Student detail: shows Email and the empty class card
 	await studentRow.getByText(STUDENT_NAME).click();
 	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
-	await expect(page.getByText("Gói học", { exact: true })).toBeVisible();
-	await expect(
-		page.getByText("Chưa có gói — thêm học viên vào lớp để có gói học."),
-	).toBeVisible();
+	// "Lớp học" exact trùng nav sidebar — assert qua empty state (duy nhất)
+	await expect(page.getByText("Chưa tham gia lớp học nào.")).toBeVisible();
 
 	// 5. Tuition page: row shows "Chưa có gói", no "Sắp hết" badge, dashes for counts
 	await page.getByText("Học phí", { exact: true }).first().click();

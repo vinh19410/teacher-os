@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Cập nhật E2E + verification"
-status: todo
+status: completed
 ---
 
 # Phase 2: Cập nhật E2E + verification

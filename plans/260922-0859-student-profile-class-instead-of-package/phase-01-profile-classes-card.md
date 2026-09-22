@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Card Lớp học thay card Gói học trong tab Hồ sơ"
-status: todo
+status: completed
 ---
 
 # Phase 1: Card Lớp học thay card Gói học trong tab Hồ sơ

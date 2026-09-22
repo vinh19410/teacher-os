@@ -1,7 +1,7 @@
 ---
 title: "Hồ sơ học viên hiển thị lớp học thay vì gói học"
 description: "Tab Hồ sơ của chi tiết học viên bỏ card Gói học, thay bằng card Lớp học liệt kê các lớp học viên đang tham gia."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 245
@@ -36,15 +36,15 @@ Tab "Hồ sơ" trong trang chi tiết học viên (`apps/web/src/routes/_auth/st
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Card Lớp học thay card Gói học trong tab Hồ sơ](./phase-01-profile-classes-card.md) | Pending |
-| 2 | [Cập nhật E2E + verification](./phase-02-e2e-regression-verification.md) | Pending |
+| 1 | [Card Lớp học thay card Gói học trong tab Hồ sơ](./phase-01-profile-classes-card.md) | Completed |
+| 2 | [Cập nhật E2E + verification](./phase-02-e2e-regression-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Trên detail học viên không còn text "Gói học"; card "Lớp học" liệt kê đúng mọi lớp đang tham gia (multi-class OK), tên lớp link tới `/classes/$classId`.
-- [ ] Học viên chưa có lớp thấy "Chưa tham gia lớp học nào."
-- [ ] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src apps/e2e/specs` pass.
-- [ ] 3 spec e2e liên quan pass: `student-package-without-class`, `student-package-validation`, `student-row-detail`.
+- [x] Trên detail học viên không còn text "Gói học"; card "Lớp học" liệt kê đúng mọi lớp đang tham gia (multi-class OK), tên lớp link tới `/classes/$classId`.
+- [x] Học viên chưa có lớp thấy "Chưa tham gia lớp học nào."
+- [x] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src apps/e2e/specs` pass.
+- [x] 3 spec e2e liên quan pass: `student-package-without-class`, `student-package-validation`, `student-row-detail`.
 
 ## Dependencies
 
@@ -79,3 +79,17 @@ Tab "Hồ sơ" trong trang chi tiết học viên (`apps/web/src/routes/_auth/st
 - Thuật ngữ thống nhất: header card "Lớp học", empty state "Chưa tham gia lớp học nào." — nhất quán xuyên suốt plan.md, phase-01, phase-02 và các assertion E2E.
 - Out-of-scope rõ: `pkg`/`hasPackage` giữ nguyên cho list/tuition/dashboard/reducer — không phase nào đụng.
 - Kết luận: không còn mâu thuẫn; plan đủ điều kiện implement.
+
+## Red Team Review
+
+### Adversarial Lenses (Security Adversary + Assumption Destroyer)
+
+| # | Lens | Finding | Disposition | Codebase Evidence |
+|---|------|---------|-------------|-------------------|
+| 1 | Security Adversary | Đảm bảo `studentClasses` không rò rỉ lớp thuộc org/học viên khác | Accept (verified safe) | `apps/web/src/routes/_auth/students/$studentId.tsx:76-78`: `useData()` trả snapshot đã org-scoped; filter so sánh `e.studentId === studentId && e.classId === c.id` |
+| 2 | Assumption Destroyer | Học viên có enrollment nhưng class đã bị xóa/không tồn tại | Accept (verified safe) | `data.classes.filter(...)` lặp trên `data.classes` hiện hữu, không ném lỗi nếu id rác |
+| 3 | Assumption Destroyer | Test E2E conflict locator "Lớp học" với nav sidebar | Accept (addressed) | `apps/e2e/specs/student-package-validation.spec.ts`: không assert `getByText("Lớp học")` un-scoped; assert qua tên lớp và empty state |
+
+### Whole-Plan Consistency Sweep
+- Không còn mâu thuẫn giữa các file phase và plan overview.
+- Các finding được xác nhận an toàn, không yêu cầu thay đổi thiết kế cốt lõi.
