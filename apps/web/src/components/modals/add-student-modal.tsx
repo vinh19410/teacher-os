@@ -1,18 +1,20 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { parseVndAmount } from "@/lib/format-currency";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const PHONE_RE = /^[0-9\s+]*$/;
 
 /**
- * Issue #115: strict parse for package fields. Unlike the #105 add-class
+ * Issue #115: strict parse for package total field. Unlike the #105 add-class
  * pattern (Number.parseInt silently truncates "10.5" → 10), Number() lets a
  * decimal be rejected, and an empty string never falls back to a default —
- * the old `|| 10` / `|| 400000` coercion masked invalid input entirely.
+ * the old `|| 10` coercion masked invalid input entirely.
  * Returns null for empty, decimal, or non-numeric input.
  */
 function parsePackageField(raw: string): number | null {
@@ -117,7 +119,7 @@ export function AddStudentModal({
 		// negative-price package is blocked exactly like a create, with the
 		// error under the field instead of a generic server banner.
 		const parsedTotal = parsePackageField(total);
-		const parsedPrice = parsePackageField(price);
+		const parsedPrice = parseVndAmount(price);
 		setTotalError(
 			parsedTotal === null || parsedTotal < 1
 				? "Số buổi gói phải là số nguyên từ 1 trở lên."
@@ -127,13 +129,11 @@ export function AddStudentModal({
 			price.trim() === ""
 				? "Đơn giá không được để trống."
 				: parsedPrice === null
-					? "Đơn giá phải là số nguyên."
-					: parsedPrice < 0
-						? "Đơn giá không được âm."
-						: undefined,
+					? "Đơn giá phải là số nguyên, tối đa 12 chữ số."
+					: undefined,
 		);
 		if (parsedTotal === null || parsedTotal < 1) return;
-		if (parsedPrice === null || parsedPrice < 0) return;
+		if (parsedPrice === null) return;
 		if (effectiveMode === "existing") {
 			if (!selectedStudentId) return;
 			const result = await run({
@@ -199,11 +199,10 @@ export function AddStudentModal({
 					/>
 				</Field>
 				<Field label="Đơn giá (VND)" error={priceError}>
-					<Input
-						type="number"
+					<CurrencyInput
 						value={price}
-						onChange={(e) => {
-							setPrice(e.target.value);
+						onChange={(next) => {
+							setPrice(next);
 							if (priceError) setPriceError(undefined);
 						}}
 					/>

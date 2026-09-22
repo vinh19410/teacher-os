@@ -6,6 +6,7 @@ import {
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Tag } from "@/components/ui/tag";
@@ -13,6 +14,7 @@ import {
 	getTomorrowDateInputValue,
 	isFutureDateInputValue,
 } from "@/lib/date-input";
+import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, dayNames } from "@/lib/mock-data";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
@@ -31,7 +33,6 @@ const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
 const SESSION_MINUTES = 90;
 const DEFAULT_START = "19:00";
 const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
-const AMOUNT_RE = /^\d{1,12}$/;
 
 export function ClassTemplatePicker({
 	templates,
@@ -172,12 +173,10 @@ export function AddClassModal({
 			setError("Tổng số buổi tối đa là 52.");
 			return;
 		}
-		const trimmedFee = fee.trim();
-		if (trimmedFee !== "") {
-			if (!AMOUNT_RE.test(trimmedFee) || Number(trimmedFee) < 1) {
-				setError("Học phí phải là số nguyên dương.");
-				return;
-			}
+		const parsedFee = parseVndAmount(fee);
+		if (fee.trim() !== "" && (parsedFee === null || parsedFee < 1)) {
+			setError("Học phí phải là số nguyên dương.");
+			return;
 		}
 		const result = await run({
 			type: "add-class",
@@ -191,7 +190,7 @@ export function AddClassModal({
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
-				tuitionFee: trimmedFee === "" ? null : Number(trimmedFee),
+				tuitionFee: fee.trim() === "" ? null : parsedFee,
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -295,12 +294,10 @@ export function AddClassModal({
 						/>
 					</Field>
 					<Field label="Học phí / học viên (VND)">
-						<Input
-							type="number"
-							min={1}
+						<CurrencyInput
 							placeholder="Không bắt buộc"
 							value={fee}
-							onChange={(e) => setFee(e.target.value)}
+							onChange={setFee}
 						/>
 					</Field>
 				</div>

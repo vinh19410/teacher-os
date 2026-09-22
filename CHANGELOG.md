@@ -15,10 +15,12 @@ Quy ước khi cập nhật:
 ### Added
 
 - Modal tạo lớp: mỗi template giáo trình hiện `Tên · N kỹ năng`, và syllabus đang chọn hiện Tag kỹ năng ngay dưới dropdown (#229)
+- Component `CurrencyInput` và util `format-currency.ts` hỗ trợ tự động nhóm hàng nghìn bằng dấu phẩy (`1,000,000`) ngay khi gõ cho mọi ô nhập tiền/phí (#230)
 
 ### Changed
 
 - E2E chọn template giáo trình theo id trên URL `/syllabus/:id` vì label option đã đổi (#229)
+- 4 modal (Sửa học phí lớp, Tạo lớp, Tạo hóa đơn, Thêm học viên) và trang Cài đặt chuyển sang dùng `CurrencyInput` và parse số nguyên VND an toàn qua `parseVndAmount` (#230)
 
 ## 2026-09-21
 

@@ -1,12 +1,11 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { parseVndAmount } from "@/lib/format-currency";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
-
-/** Integer VND, 1..12 digits — matches invoiceCreateSchema.amount and server validation. */
-const AMOUNT_RE = /^\d{1,12}$/;
 
 export function EditClassFeeModal({
 	open,
@@ -35,15 +34,13 @@ export function EditClassFeeModal({
 		e.preventDefault();
 		if (saving) return;
 
-		const trimmed = fee.trim();
-		if (trimmed !== "") {
-			if (!AMOUNT_RE.test(trimmed) || Number(trimmed) < 1) {
-				setError("Học phí phải là số nguyên dương.");
-				return;
-			}
+		const parsed = parseVndAmount(fee);
+		if (fee.trim() !== "" && (parsed === null || parsed < 1)) {
+			setError("Học phí phải là số nguyên dương.");
+			return;
 		}
 
-		const tuitionFee = trimmed === "" ? null : Number(trimmed);
+		const tuitionFee = fee.trim() === "" ? null : parsed;
 		const result = await run({
 			type: "update-class-tuition-fee",
 			payload: { classId, tuitionFee },
@@ -63,12 +60,10 @@ export function EditClassFeeModal({
 		<Modal open={open} onClose={onClose} title="Sửa học phí lớp">
 			<form noValidate onSubmit={submit} className="flex flex-col gap-5">
 				<Field label="Học phí / học viên (VND)" help="Để trống để xóa học phí">
-					<Input
-						type="number"
-						min={1}
+					<CurrencyInput
 						placeholder="Để trống để xóa học phí"
 						value={fee}
-						onChange={(e) => setFee(e.target.value)}
+						onChange={setFee}
 					/>
 				</Field>
 				<div className="flex flex-col gap-2">
