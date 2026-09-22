@@ -32,10 +32,10 @@ Trong `AddClassModal`, khi user đổi dropdown "Template giáo trình" sang m�
     * gồm cả buổi thi (midterm/final). Đếm từ cây modules thay vì
     * totalLessons vì totalLessons có thể stale (chỉ sync khi replace). */
    export function sessionsFromTemplate(
-   	templateModules: Syllabus["modules"],
+   	templateModules: Syllabus["modules"] | undefined | null,
    ): number {
-   	return templateModules.reduce(
-   		(sum, module) => sum + module.lessons.length,
+   	return (templateModules ?? []).reduce(
+   		(sum, module) => sum + (module?.lessons?.length ?? 0),
    		0,
    	);
    }

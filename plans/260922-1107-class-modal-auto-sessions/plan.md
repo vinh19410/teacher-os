@@ -87,3 +87,17 @@ Plan này mở rộng `changeTemplateId`: khi chọn một syllabus, tự điề
 - Đã re-read cả 3 file sau khi viết. Phát hiện + sửa 2 điểm: (1) typo lặp từ "thay thế thay thế" trong Design Decisions plan.md; (2) phase-02 thiếu nêu import type `SyllabusLesson` dùng trong fixture factory (snippet có dùng nhưng text import thiếu).
 - Nhất quán đã kiểm: semantics "ghi đè số buổi tay" (Goals #3 = Design Decisions = phase-01 = Success Criteria); "0 buổi / Lớp trống → giữ nguyên" (Goals #2 = Design Decisions = phase-02 e2e assert "12"); "tính cả buổi thi midterm/final" (Overview = Goals #1 = Design Decisions = phase-01 helper = phase-02 unit fixture 3+2 và e2e assert "5"); tên label "Tổng số buổi" thống nhất khớp `add-class-modal.tsx:304`.
 - `ak plan validate` → `[OK] plans/260922-1107-class-modal-auto-sessions is a valid plan directory`.
+
+## Red Team Review
+
+### Session — 2026-09-22
+**Findings:** 1 (1 accepted, 0 rejected)
+**Severity breakdown:** 0 Critical, 0 High, 1 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Phòng vệ null/undefined cho `templateModules` và `lessons` trong `sessionsFromTemplate` | Medium | Accept | Phase 1 |
+
+### Whole-Plan Consistency Sweep
+- Áp dụng phòng vệ `(templateModules ?? []).reduce(...)` và `module?.lessons?.length ?? 0` vào helper Phase 1.
+- Toàn bộ 2 phases, goal, success criteria và unit test fixture nhất quán.
