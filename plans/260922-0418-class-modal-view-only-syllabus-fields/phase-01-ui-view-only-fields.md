@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "UI — khóa view-only 2 mục theo syllabus"
-status: pending
+status: completed
 priority: P2
 effort: "45m"
 dependencies: []

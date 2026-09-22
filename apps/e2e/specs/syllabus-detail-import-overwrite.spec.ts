@@ -106,6 +106,12 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await expect(
 		classDialog.getByRole("button", { name: "Writing", exact: true }),
 	).toHaveAttribute("aria-pressed", "true");
+	// View-only (#236): khóa theo field — chips bị khóa vì có kỹ năng,
+	// còn số buổi không base theo syllabus (0 buổi) thì vẫn editable.
+	await expect(
+		classDialog.getByRole("button", { name: "Writing", exact: true }),
+	).toBeDisabled();
+	await expect(classDialog.getByLabel("Tổng số buổi")).toBeEnabled();
 	// Auto-fill số buổi (#235): template rỗng (0 buổi) → giữ giá trị
 	// mặc định "12", không xóa trắng.
 	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("12");

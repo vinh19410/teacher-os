@@ -18,6 +18,7 @@ Quy ước khi cập nhật:
 - Component `CurrencyInput` và util `format-currency.ts` hỗ trợ tự động nhóm hàng nghìn bằng dấu phẩy (`1,000,000`) ngay khi gõ cho mọi ô nhập tiền/phí (#230)
 - Modal tạo lớp: chọn template giáo trình tự động bật các chip kỹ năng của lớp theo kỹ năng syllabus (#232)
 - Modal tạo lớp: chọn template giáo trình tự động điền "Tổng số buổi" theo tổng số buổi của syllabus, tính cả buổi thi giữa kỳ/cuối kỳ (#235)
+- Modal tạo lớp: hai mục Kỹ năng và Tổng số buổi hiển thị view-only khi giá trị đã lấy theo syllabus template (#236)
 
 ### Changed
 
