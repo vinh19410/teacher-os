@@ -84,23 +84,24 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "assign-class-prompt":
 			return state;
 		case "add-student": {
-			const { name, phone, parentName, total, price, mode, classId } =
-				action.payload;
+			const { name, phone, email, parentName, classId } = action.payload;
 			const student: Student = {
 				id: uid("s"),
 				name,
 				phone,
-				zalo: phone.replace(/\s/g, ""),
+				email,
+				hasPackage: false,
+				zalo: phone,
 				parent: { name: parentName, phone: "" },
 				targetBand: "—",
 				skills: [],
 				examDate: "",
 				pkg: {
-					total,
+					total: 0,
 					done: 0,
-					remaining: total,
-					price,
-					mode,
+					remaining: 0,
+					price: 0,
+					mode: "Online",
 					start: "19/08",
 					expiry: "—",
 				},

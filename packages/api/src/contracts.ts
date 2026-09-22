@@ -8,13 +8,11 @@ import { z } from "zod";
 
 export const studentCreateSchema = z.object({
 	name: z.string().min(1),
-	phone: z.string().default(""),
+	/** SĐT = danh tính đăng nhập tương lai: bắt buộc, chỉ chữ số. */
+	phone: z.string().regex(/^[0-9]+$/),
+	/** Email = danh tính đăng nhập tương lai: bắt buộc lúc tạo (row legacy ""). */
+	email: z.email(),
 	parentName: z.string().default(""),
-	// Issue #115: a 0-session package is meaningless — min(1), while price
-	// keeps min(0) because a free package is legitimate.
-	total: z.number().int().min(1).default(10),
-	price: z.number().int().min(0).default(400000),
-	mode: z.enum(["Online", "Offline"]).default("Online"),
 	classId: z.string().min(1).optional(),
 });
 export type StudentCreate = z.infer<typeof studentCreateSchema>;
@@ -635,6 +633,8 @@ export interface KernelStudentRow {
 	id: string;
 	name: string;
 	phone: string;
+	/** Email học viên — danh tính đăng nhập tương lai (username) cùng phone; "" với row legacy. */
+	email: string;
 	zalo: string;
 	parentName: string;
 	parentPhone: string;

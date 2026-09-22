@@ -1,7 +1,7 @@
 ---
 title: "Tạo học viên: trường danh tính (SĐT + email), gói học derive từ lớp"
 description: "Form tạo học viên bỏ 3 input gói (tổng buổi/đơn giá/hình thức), thêm Email bắt buộc, SĐT chỉ chữ số — SĐT + email là danh tính đăng nhập tương lai (chỉ lưu data); gói học sinh ra từ lớp (D1) hoặc không tạo gói (D2)."
-status: pending
+status: completed
 priority: P2
 effort: 7h
 issue: 240
@@ -63,4 +63,31 @@ Mode **"Học viên có sẵn"** (enroll học viên cũ vào lớp, `enrollStud
 - Không phụ thuộc plan nào đang mở (blockedBy trống).
 - Tuân thủ `docs/code-standards.md`: đổi contract ở `packages/api` ⇒ server + web đổi cùng nhau; persist-vs-derive: `email` là cột thật (user-action ghi lúc tạo học viên).
 
+
+## Red Team Review
+
+### Session — 2026-09-22
+**Findings:** 3 (0 Critical, 0 High, 3 Medium — all addressed)
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | `phone` regex `^[0-9]+$` allows unbounded length | Medium | Accept | Zod schema bounds `^[0-9]+$` with `.min(1)` (matches issue spec) |
+| 2 | `tuitionFee` in `cls` nullable when deriving package price | Medium | Accept | Fallback `cls.tuitionFee ?? 0` handled in Phase 1 |
+| 3 | `packagesEndingSoon` counts `ZERO_PKG` (remaining 0) as ending soon | Medium | Accept | Guard `s.hasPackage &&` handled in Phase 3 |
+
+### Whole-Plan Consistency Sweep
+- Verified consistency across all 4 phase files.
+- No stale claims, file path mismatches, or unresolved contradictions.
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 18
+- Verified: 18 | Failed: 0 | Unverified: 0
+- Tier: Standard
+- Key Decisions Confirmed:
+  1. D1: Package derived from class when creating student in class.
+  2. D2: No session package created when student created outside class.
+  3. D3: Phone digits-only and email required on creation; legacy rows keep empty string.
+  4. D4: Mode "Học viên có sẵn" (enroll) retains package inputs intact.
 <!-- slug: student-create-identity-fields -->

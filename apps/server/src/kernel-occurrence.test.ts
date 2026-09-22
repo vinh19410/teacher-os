@@ -143,7 +143,12 @@ describe("occurrence mutations (#98 phase 2)", () => {
 
 		for (const name of ["HV Một", "HV Hai"]) {
 			const res = await t.call(t.teacherA.token, "/api/students", {
-				body: { name, total: 4, price: 0, mode: "Online", classId },
+				body: {
+					name,
+					phone: "0900000000",
+					email: `stu-${crypto.randomUUID()}@test.local`,
+					classId,
+				},
 			});
 			expect(res.status).toBe(201);
 		}
@@ -341,9 +346,8 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		await t.call(t.teacherA.token, "/api/students", {
 			body: {
 				name: "HV F2",
-				total: 2,
-				price: 0,
-				mode: "Online",
+				phone: "0900000000",
+				email: "hvf2@test.local",
 				classId: f2class,
 			},
 		});

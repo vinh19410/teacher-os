@@ -6,6 +6,7 @@
  */
 import { expect, type Page, test } from "@playwright/test";
 import {
+	createStudentViaUi,
 	gotoWeek,
 	mondayWeekStartISO,
 	signUpViaUi,
@@ -18,9 +19,7 @@ const TOPIC = "Writing Task 2 — class session";
 
 async function addStudent(page: Page, name: string) {
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await expect(page.getByText("Thêm học viên mới")).toBeVisible();
-	await page.getByLabel("Họ tên học viên *").fill(name);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, name);
 	await expect(page.getByText(name)).toBeVisible();
 }
 

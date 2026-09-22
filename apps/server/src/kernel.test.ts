@@ -286,9 +286,6 @@ async function createTestApp() {
 		name: string,
 		extra: {
 			classId?: string;
-			total?: number;
-			price?: number;
-			mode?: "Online" | "Offline";
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/students", {
@@ -296,11 +293,9 @@ async function createTestApp() {
 			method: "POST",
 			body: {
 				name,
-				phone: "0900 000 000",
+				phone: "0900000000",
+				email: `stu-${crypto.randomUUID()}@test.local`,
 				parentName: "Phụ huynh",
-				total: extra.total ?? 10,
-				price: extra.price ?? 400000,
-				mode: extra.mode ?? "Online",
 				...(extra.classId ? { classId: extra.classId } : {}),
 			},
 		});
@@ -1535,8 +1530,6 @@ describe("org isolation", () => {
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
 			classId,
-			total: 12,
-			price: 500000,
 		});
 
 		const snapshot = await t.kernel(session);
@@ -1546,7 +1539,8 @@ describe("org isolation", () => {
 		expect(snapshot.packages[0]).toMatchObject({
 			enrollmentId: snapshot.enrollments[0]?.id,
 			total: 12,
-			price: 500000,
+			price: 0,
+			mode: "Online",
 			status: "active",
 		});
 		// Entitlement only: no done/remaining on the wire — derived downstream.
@@ -1554,31 +1548,13 @@ describe("org isolation", () => {
 		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
 	});
 
-	test("without classId the package parks on the student (issue #104)", async () => {
+	test("without classId no package is created", async () => {
 		const session = await t.insertUser("Cô Parked");
-		const personId = await t.addStudent(session, "Học viên tự do", {
-			total: 10,
-			price: 400000,
-			mode: "Offline",
-		});
+		const personId = await t.addStudent(session, "Học viên tự do");
 
 		const snapshot = await t.kernel(session);
 		expect(snapshot.enrollments).toHaveLength(0);
-		expect(snapshot.packages).toHaveLength(1);
-		expect(snapshot.packages[0]).toMatchObject({
-			studentId: personId,
-			enrollmentId: null,
-			classId: null,
-			total: 10,
-			price: 400000,
-			// Deliberately not the schema default — proves input.mode is kept.
-			mode: "Offline",
-			status: "active",
-		});
-		expect(snapshot.packages[0]?.start).toMatch(/^\d{2}\/\d{2}$/);
-		// Entitlement only: no done/remaining on the wire — derived downstream.
-		expect(snapshot.packages[0]).not.toHaveProperty("done");
-		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(snapshot.packages).toHaveLength(0);
 		expect(snapshot.students.map((s) => s.id)).toContain(personId);
 	});
 });
@@ -3069,7 +3045,6 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 		classId = await t.createClass(session, "Lớp 1:1");
 		const studentId = await t.addStudent(session, "Học viên lịch", {
 			classId,
-			total: 10,
 		});
 		const snapshot = await t.kernel(session);
 		enrollmentId =
@@ -3529,10 +3504,13 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("divergence pin: class sessionsTotal (12) and package total (10) stay independent on the wire", async () => {
-		const studentId = await t.addStudent(session, "HV gói lệch", {
-			classId,
-			total: 10,
+		const studentId = await t.addStudent(session, "HV gói lệch");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId, total: 10, price: 400000, mode: "Online" },
 		});
+		expect(res.status).toBe(201);
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(
@@ -3550,11 +3528,9 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			method: "POST",
 			body: {
 				name: "HV intruder",
-				phone: "0900 000 000",
+				phone: "0900000000",
+				email: "intruder@test.local",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Online",
 				classId,
 			},
 		});
@@ -3998,21 +3974,6 @@ describe("student package minimums (issue #115)", () => {
 
 	// total=0 is the red-first pair: min(0) on develop still accepts a
 	// zero-session package, which is the server half of QC #115.
-	test("create student with total 0 is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV gói 0 buổi",
-				phone: "0900 000 001",
-				total: 0,
-				price: 400000,
-				mode: "Online",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
 	test("enroll existing student with total 0 is rejected with 400", async () => {
 		const classId = await t.createClass(session, "Lớp min gói");
 		const studentId = await t.addStudent(session, "HV min gói");
@@ -4024,50 +3985,80 @@ describe("student package minimums (issue #115)", () => {
 		expect(res.status).toBe(400);
 	});
 
-	// Regression locks (born green on develop — price min(0) already exists).
-	test("negative price is rejected with 400 on create", async () => {
+	test("create student missing phone is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
 			body: {
-				name: "HV giá âm",
-				phone: "0900 000 002",
-				total: 10,
-				price: -500,
-				mode: "Online",
+				name: "HV thiếu phone",
+				email: "hv@test.local",
 			},
 		});
 		expect(res.status).toBe(400);
 	});
 
-	test("total 1 and price 0 (free package) are accepted", async () => {
+	test("create student phone with spaces is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
 			body: {
-				name: "HV gói miễn phí",
-				phone: "0900 000 003",
-				total: 1,
-				price: 0,
-				mode: "Online",
+				name: "HV phone space",
+				phone: "0900 000 000",
+				email: "hv@test.local",
 			},
 		});
-		expect(res.status).toBe(201);
+		expect(res.status).toBe(400);
 	});
 
-	// Pin the intentional #122 boundary: omitted package fields default to
-	// 10/400000 and pass min(1) — documented, not silently inherited.
-	test("omitted package fields default to 10 sessions / 400000 VND", async () => {
+	test("create student phone with non-digits is rejected with 400", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
-			body: { name: "HV mặc định gói", phone: "0900 000 004" },
+			body: {
+				name: "HV phone chữ",
+				phone: "0900abc",
+				email: "hv@test.local",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student missing email is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV thiếu email",
+				phone: "0900000000",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student invalid email format is rejected with 400", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV email sai",
+				phone: "0900000000",
+				email: "not-an-email",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("create student with valid phone digits and email succeeds with 201", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV hợp lệ",
+				phone: "0901234567",
+				email: "hop.le@test.local",
+			},
 		});
 		expect(res.status).toBe(201);
-		const { id } = (await res.json()) as { id: string };
-		const snapshot = await t.kernel(session);
-		const pkg = snapshot.packages.find((p) => p.studentId === id);
-		expect(pkg).toMatchObject({ total: 10, price: 400000 });
 	});
 });
 

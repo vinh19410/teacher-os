@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Regression guard for issue #111 (QC P1): a student row on /students must
@@ -16,11 +16,7 @@ test("student row click opens the detail page", async ({ page }) => {
 
 	await page.goto("/students");
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const dialog = page.getByRole("dialog");
-	await dialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
-	// The modal only closes after the kernel refresh applies.
-	await expect(dialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// Click the row → SPA navigation to /students/:id. The detail route is

@@ -8,7 +8,8 @@ import { parseVndAmount } from "@/lib/format-currency";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
-const PHONE_RE = /^[0-9\s+]*$/;
+const PHONE_DIGITS_RE = /^[0-9]+$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Issue #115: strict parse for package total field. Unlike the #105 add-class
@@ -46,6 +47,8 @@ export function AddStudentModal({
 	const [filter, setFilter] = useState("");
 	const [name, setName] = useState("");
 	const [phone, setPhone] = useState("");
+	const [email, setEmail] = useState("");
+	const [emailError, setEmailError] = useState<string | undefined>();
 	const [parentName, setParentName] = useState("");
 	const [total, setTotal] = useState("10");
 	const [price, setPrice] = useState("400000");
@@ -83,12 +86,14 @@ export function AddStudentModal({
 	function resetFields() {
 		setName("");
 		setPhone("");
+		setEmail("");
 		setParentName("");
 		setTotal("10");
 		setPrice("400000");
 		setModeOnlineOffline("Online");
 		setNameError(undefined);
 		setPhoneError(undefined);
+		setEmailError(undefined);
 		setTotalError(undefined);
 		setPriceError(undefined);
 	}
@@ -114,27 +119,24 @@ export function AddStudentModal({
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;
-		// Issue #115: package fields are shared by both modes, so their
-		// validation runs before the branch — an enroll with a 0-session or
-		// negative-price package is blocked exactly like a create, with the
-		// error under the field instead of a generic server banner.
-		const parsedTotal = parsePackageField(total);
-		const parsedPrice = parseVndAmount(price);
-		setTotalError(
-			parsedTotal === null || parsedTotal < 1
-				? "Số buổi gói phải là số nguyên từ 1 trở lên."
-				: undefined,
-		);
-		setPriceError(
-			price.trim() === ""
-				? "Đơn giá không được để trống."
-				: parsedPrice === null
-					? "Đơn giá phải là số nguyên, tối đa 12 chữ số."
-					: undefined,
-		);
-		if (parsedTotal === null || parsedTotal < 1) return;
-		if (parsedPrice === null) return;
 		if (effectiveMode === "existing") {
+			// Issue #115: package validation belongs to enroll mode
+			const parsedTotal = parsePackageField(total);
+			const parsedPrice = parseVndAmount(price);
+			setTotalError(
+				parsedTotal === null || parsedTotal < 1
+					? "Số buổi gói phải là số nguyên từ 1 trở lên."
+					: undefined,
+			);
+			setPriceError(
+				price.trim() === ""
+					? "Đơn giá không được để trống."
+					: parsedPrice === null
+						? "Đơn giá phải là số nguyên, tối đa 12 chữ số."
+						: undefined,
+			);
+			if (parsedTotal === null || parsedTotal < 1) return;
+			if (parsedPrice === null) return;
 			if (!selectedStudentId) return;
 			const result = await run({
 				type: "enroll-student",
@@ -152,23 +154,36 @@ export function AddStudentModal({
 			}
 			return;
 		}
+
+		// Create mode validation: name, phone (digits only), email
 		const trimmedName = name.trim();
+		const trimmedEmail = email.trim();
 		const hasNameError = !trimmedName;
-		const hasPhoneError = phone !== "" && !PHONE_RE.test(phone);
+		const hasPhoneError = !PHONE_DIGITS_RE.test(phone);
+		const hasEmailError =
+			trimmedEmail === ""
+				? true // required
+				: !EMAIL_RE.test(trimmedEmail);
 		setNameError(hasNameError ? "Vui lòng nhập tên học viên." : undefined);
 		setPhoneError(
-			hasPhoneError ? "SĐT chỉ gồm chữ số, khoảng trắng và dấu +." : undefined,
+			hasPhoneError ? "SĐT chỉ gồm chữ số, VD: 0901234567." : undefined,
 		);
-		if (hasNameError || hasPhoneError) return;
+		setEmailError(
+			hasEmailError
+				? trimmedEmail === ""
+					? "Vui lòng nhập email."
+					: "Email không hợp lệ."
+				: undefined,
+		);
+		if (hasNameError || hasPhoneError || hasEmailError) return;
+
 		const result = await run({
 			type: "add-student",
 			payload: {
 				name: trimmedName,
 				phone,
+				email: trimmedEmail,
 				parentName,
-				total: parsedTotal,
-				price: parsedPrice,
-				mode: modeOnlineOffline,
 				classId,
 			},
 		});
@@ -185,7 +200,7 @@ export function AddStudentModal({
 		}
 	}
 
-	const packageFields = (
+	const enrollPackageFields = (
 		<>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 				<Field label="Số buổi gói" error={totalError}>
@@ -292,7 +307,7 @@ export function AddStudentModal({
 								))
 							)}
 						</div>
-						{packageFields}
+						{enrollPackageFields}
 					</>
 				) : (
 					<>
@@ -304,15 +319,33 @@ export function AddStudentModal({
 							/>
 						</Field>
 						<Field
-							label="SĐT / Zalo"
+							label="SĐT *"
 							error={phoneError}
-							help="Chỉ số và khoảng trắng, VD: 09xx xxx xxx"
+							help="Chỉ nhập chữ số, VD: 0901234567"
 						>
 							<Input
 								value={phone}
-								onChange={(e) => setPhone(e.target.value)}
-								placeholder="09xx xxx xxx"
-								inputMode="tel"
+								onChange={(e) => {
+									setPhone(e.target.value.replace(/\D/g, ""));
+									if (phoneError) setPhoneError(undefined);
+								}}
+								placeholder="0901234567"
+								inputMode="numeric"
+							/>
+						</Field>
+						<Field
+							label="Email *"
+							error={emailError}
+							help="Dùng làm tài khoản đăng nhập cho học viên sau này"
+						>
+							<Input
+								type="email"
+								value={email}
+								onChange={(e) => {
+									setEmail(e.target.value);
+									if (emailError) setEmailError(undefined);
+								}}
+								placeholder="hocvien@example.com"
 							/>
 						</Field>
 						<Field label="Phụ huynh (nếu có)">
@@ -322,7 +355,6 @@ export function AddStudentModal({
 								placeholder="Tên phụ huynh"
 							/>
 						</Field>
-						{packageFields}
 					</>
 				)}
 				<div className="flex flex-col gap-2">

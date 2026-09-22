@@ -36,6 +36,7 @@ const snapshot: KernelSnapshot = {
 			id: "st-1",
 			name: "Nguyễn Minh Anh",
 			phone: "0912 345 678",
+			email: "minhanh@test.local",
 			zalo: "0912345678",
 			parentName: "Nguyễn Văn Hùng",
 			parentPhone: "",
@@ -45,6 +46,7 @@ const snapshot: KernelSnapshot = {
 			name: "Vũ Thảo Vy",
 			phone: "",
 			zalo: "",
+			email: "",
 			parentName: "",
 			parentPhone: "",
 		},
@@ -329,15 +331,13 @@ describe("kernelCommand", () => {
 			payload: {
 				name: "A",
 				phone: "090",
+				email: "a@test.local",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Online",
 				classId: "cl-1",
 			},
 		});
 		expect(req.path).toBe("/api/students");
-		expect(req.body).toMatchObject({ classId: "cl-1" });
+		expect(req.body).toMatchObject({ classId: "cl-1", email: "a@test.local" });
 	});
 
 	test("enroll-student maps to the class enroll endpoint (#122)", () => {
@@ -399,9 +399,7 @@ describe("kernelCommand", () => {
 				name: "A",
 				phone: "",
 				parentName: "",
-				total: 10,
-				price: 400000,
-				mode: "Offline",
+				email: "a@test.local",
 			},
 		});
 		expect(req.body).not.toHaveProperty("classId");

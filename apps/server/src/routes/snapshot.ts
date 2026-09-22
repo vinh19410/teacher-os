@@ -271,6 +271,7 @@ export async function loadSnapshot(
 			id: row.id,
 			name: row.name,
 			phone: row.phone,
+			email: row.email,
 			zalo: row.zalo,
 			parentName: row.parentName,
 			parentPhone: row.parentPhone,

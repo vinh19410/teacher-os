@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 — Giao bài trên lớp:
@@ -20,10 +20,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	// 2. Create student
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const studentDialog = page.getByRole("dialog");
-	await studentDialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await studentDialog.getByRole("button", { name: "Lưu", exact: true }).click();
-	await expect(studentDialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 
 	// 3. Create class
 	await page.getByText("Lớp học", { exact: true }).first().click();

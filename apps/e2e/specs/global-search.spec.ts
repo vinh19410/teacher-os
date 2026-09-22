@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * Global search on the topbar (issue #109) — P1: typing + Enter used to be a
@@ -92,8 +92,6 @@ async function createClassAndStudent(page: import("@playwright/test").Page) {
 	await expect(dialog).toBeHidden();
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await expect(page.getByText("Thêm học viên mới")).toBeVisible();
-	await page.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 }

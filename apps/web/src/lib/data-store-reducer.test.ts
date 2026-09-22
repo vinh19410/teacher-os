@@ -404,10 +404,8 @@ describe("reducer", () => {
 	const newStudentPayload = {
 		name: "Test Student",
 		phone: "0900",
+		email: "test@example.com",
 		parentName: "P",
-		total: 8,
-		price: 100,
-		mode: "Online" as const,
 	};
 
 	test("add-student appends with pkg.done 0 and s- id", () => {
@@ -419,7 +417,7 @@ describe("reducer", () => {
 		expect(next.students.length).toBe(before.students.length + 1);
 		const added = next.students[next.students.length - 1];
 		expect(added.pkg.done).toBe(0);
-		expect(added.pkg.remaining).toBe(8);
+		expect(added.pkg.remaining).toBe(0);
 		expect(added.id).toMatch(/^s-/);
 		expect(next.classes).toEqual(before.classes);
 	});

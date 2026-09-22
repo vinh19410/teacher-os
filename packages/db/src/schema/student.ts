@@ -15,6 +15,10 @@ export const student = sqliteTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		phone: text("phone").notNull().default(""),
+		/** Email học viên — danh tính đăng nhập tương lai (username) cùng `phone`.
+		 * User-action ghi: tạo học viên (POST /api/students). Row legacy giữ "".
+		 * Chưa unique + chưa có user row — dành cho plan student-login sau này. */
+		email: text("email").notNull().default(""),
 		zalo: text("zalo").notNull().default(""),
 		parentName: text("parent_name").notNull().default(""),
 		parentPhone: text("parent_phone").notNull().default(""),

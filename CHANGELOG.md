@@ -13,6 +13,10 @@ Quy ước khi cập nhật:
 ## 2026-09-22
 
 ### Added
+- Cột `student.email` và chuẩn hóa SĐT chỉ nhận chữ số qua migration 0021 (#240)
+- Trường Email bắt buộc và SĐT bắt buộc (strip ký tự lạ ngay khi gõ) trong form tạo học viên (#240)
+- Trạng thái "Chưa có gói" ở danh sách học viên, chi tiết học viên, và trang học phí khi tạo học viên ngoài lớp (#240)
+- Hiển thị Email học viên trong khối thông tin liên hệ ở trang chi tiết học viên (#240)
 
 - Landing page tĩnh `apps/landing` (zero-framework theo thiết kế Open Design) deploy ở apex `teacheros.io.vn` (+www) qua `Cloudflare.Website.StaticSite`; apex không còn 301 về `app.<domain>`, web app giữ nguyên ở `app.<domain>` (#239)
 - Modal tạo lớp: mỗi template giáo trình hiện `Tên · N kỹ năng`, và syllabus đang chọn hiện Tag kỹ năng ngay dưới dropdown (#229)
@@ -26,6 +30,8 @@ Quy ước khi cập nhật:
 - E2E chọn template giáo trình theo id trên URL `/syllabus/:id` vì label option đã đổi (#229)
 - 4 modal (Sửa học phí lớp, Tạo lớp, Tạo hóa đơn, Thêm học viên) và trang Cài đặt chuyển sang dùng `CurrencyInput` và parse số nguyên VND an toàn qua `parseVndAmount` (#230)
 
+- Form tạo học viên bỏ 3 input gói ("Số buổi gói", "Đơn giá", "Hình thức"); gói học khi tạo trong lớp tự động derive từ lớp (#240)
+- Gói học khi tạo ngoài lớp không tạo bản ghi `session_package` và không bị đếm nhầm vào KPI gói sắp hết (#240)
 ## 2026-09-21
 
 ### Added

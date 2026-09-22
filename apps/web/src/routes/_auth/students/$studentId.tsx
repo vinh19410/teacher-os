@@ -89,6 +89,11 @@ function StudentDetailRoute() {
 						<span className="font-mono text-meta text-xs">
 							{student.phone} · Zalo: {student.zalo}
 						</span>
+						{student.email && (
+							<span className="font-mono text-meta text-xs">
+								Email: {student.email}
+							</span>
+						)}
 						<span className="font-mono text-meta text-xs">
 							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
 						</span>
@@ -139,34 +144,40 @@ function StudentDetailRoute() {
 						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
 							Gói học
 						</div>
-						<div className="flex flex-col gap-4">
-							{[
-								["Tổng buổi", String(student.pkg.total)],
-								["Đã học", String(student.pkg.done)],
-								["Còn lại", String(student.pkg.remaining)],
-								["Đơn giá", fmtVND(student.pkg.price)],
-								["Hình thức", student.pkg.mode],
-								["Hết hạn dự kiến", student.pkg.expiry],
-							].map(([k, v], i) => (
-								<div key={k} className="flex items-center justify-between">
-									<span className="font-mono text-meta text-xs">{k}</span>
-									<span
-										className={
-											i === 2 && student.pkg.remaining <= 3
-												? "font-mono font-semibold text-danger"
-												: "font-mono"
-										}
-									>
-										{v}
-									</span>
-								</div>
-							))}
-							<Progress
-								className="mt-2"
-								value={(student.pkg.done / student.pkg.total) * 100}
-								variant={student.pkg.remaining <= 3 ? "low" : "default"}
-							/>
-						</div>
+						{student.hasPackage ? (
+							<div className="flex flex-col gap-4">
+								{[
+									["Tổng buổi", String(student.pkg.total)],
+									["Đã học", String(student.pkg.done)],
+									["Còn lại", String(student.pkg.remaining)],
+									["Đơn giá", fmtVND(student.pkg.price)],
+									["Hình thức", student.pkg.mode],
+									["Hết hạn dự kiến", student.pkg.expiry],
+								].map(([k, v], i) => (
+									<div key={k} className="flex items-center justify-between">
+										<span className="font-mono text-meta text-xs">{k}</span>
+										<span
+											className={
+												i === 2 && student.pkg.remaining <= 3
+													? "font-mono font-semibold text-danger"
+													: "font-mono"
+											}
+										>
+											{v}
+										</span>
+									</div>
+								))}
+								<Progress
+									className="mt-2"
+									value={(student.pkg.done / student.pkg.total) * 100}
+									variant={student.pkg.remaining <= 3 ? "low" : "default"}
+								/>
+							</div>
+						) : (
+							<p className="text-muted-fg text-sm">
+								Chưa có gói — thêm học viên vào lớp để có gói học.
+							</p>
+						)}
 					</Card>
 					<Card variant="white">
 						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">

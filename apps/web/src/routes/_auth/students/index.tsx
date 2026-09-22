@@ -39,7 +39,7 @@ export function StudentsRoute() {
 		(s) =>
 			s.tags.includes("nợ học phí") ||
 			s.tags.includes("sắp hết buổi") ||
-			(s.pkg.total > 0 && s.pkg.remaining <= 4) ||
+			(s.hasPackage && s.pkg.total > 0 && s.pkg.remaining <= 4) ||
 			unpaidStudentIds.has(s.id),
 	).length;
 
@@ -100,10 +100,12 @@ export function StudentsRoute() {
 									</div>
 								</div>,
 								<span key="pkg" className="font-mono text-meta text-xs">
-									{s.pkg.total} buổi · {s.pkg.mode}
+									{s.hasPackage
+										? `${s.pkg.total} buổi · ${s.pkg.mode}`
+										: "Chưa có gói"}
 								</span>,
 								<span key="remaining" className="font-mono">
-									{s.pkg.remaining} / {s.pkg.total}
+									{s.hasPackage ? `${s.pkg.remaining} / ${s.pkg.total}` : "—"}
 								</span>,
 								<div key="tags" className="flex flex-wrap gap-1">
 									{s.tags.map((t) => (
@@ -111,7 +113,7 @@ export function StudentsRoute() {
 									))}
 								</div>,
 								<span key="price" className="font-mono">
-									{fmtVND(s.pkg.price)}
+									{s.hasPackage ? fmtVND(s.pkg.price) : "—"}
 								</span>,
 							],
 						}))}
