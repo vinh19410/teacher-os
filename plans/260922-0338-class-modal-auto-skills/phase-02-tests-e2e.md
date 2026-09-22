@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tests — component test và e2e guard"
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 dependencies: [1]

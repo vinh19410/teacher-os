@@ -28,6 +28,14 @@ const CLASS_TYPE_OPTIONS = CLASS_TYPES.map((value) => ({
 
 const SKILL_OPTIONS = IELTS_SKILLS.map((value) => ({ value, label: value }));
 
+/** Kỹ năng lớp lấy từ syllabus: thứ tự canonical theo IELTS_SKILLS,
+ * tự dedupe và lọc giá trị ngoài enum (phòng thủ dữ liệu cũ). */
+export function skillsFromTemplate(
+	templateSkills: readonly string[],
+): string[] {
+	return IELTS_SKILLS.filter((skill) => templateSkills.includes(skill));
+}
+
 const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
 
 const SESSION_MINUTES = 90;
@@ -132,6 +140,15 @@ export function AddClassModal({
 	function changeStart(next: string) {
 		setStartTime(next);
 		if (!endTouched && next) setEndTime(addMinutes(next, SESSION_MINUTES));
+	}
+
+	function changeTemplateId(next: string) {
+		setTemplateId(next);
+		const template = templates.find((item) => item.id === next);
+		// Template rỗng hoặc syllabus chưa khai báo kỹ năng: giữ selection tay.
+		if (template && template.skills.length > 0) {
+			setSkills(skillsFromTemplate(template.skills));
+		}
 	}
 
 	async function submit(e: FormEvent) {
@@ -259,7 +276,7 @@ export function AddClassModal({
 				<ClassTemplatePicker
 					templates={templates}
 					templateId={templateId}
-					onTemplateId={setTemplateId}
+					onTemplateId={changeTemplateId}
 				/>
 				<Field label="Ngày học *">
 					<ChipMulti options={DAY_OPTIONS} value={days} onChange={setDays} />

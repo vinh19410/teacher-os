@@ -1,7 +1,7 @@
 ---
 title: "Tự động chọn kỹ năng của lớp theo syllabus trong modal tạo lớp"
 description: "Chọn template giáo trình trong modal 'Tạo lớp mới' tự động bật các chip kỹ năng của lớp theo kỹ năng của syllabus đó."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 232
@@ -86,3 +86,23 @@ Plan này nối hai nguồn lại: khi chọn một syllabus ở dropdown, `AddC
 - develop fast-forward thêm 2 commit (feature VND đã merge, đụng cả `add-class-modal.tsx`) → re-check toàn bộ claim `file:line` của modal: các dòng lệch hỗn hợp (+1/+2/−1), đã cập nhật: `SKILL_OPTIONS` :27→:29, state :96→:97, resetForm :121→:122, changeStart :131→:132, notice :75→:76, gate :188→:187, payload :190→:189, wiring :263→:262, picker range :36-81→:37-82.
 - Các file ref khác không bị PR #233 đụng (contracts, contract test, component test, 2 e2e specs, chip-multi, use-syllabus, CHANGELOG `:13,15`) → claim giữ nguyên, đã spot-check lại.
 - Kết luận: 0 failed sau re-verify; plan sẵn sàng cook.
+
+## Red Team Review
+
+### Reviewers & Lenses
+- Security Adversary: Kiểm tra rủi ro inject giá trị ngoài enum IELTS_SKILLS, bypass classType gate, phá vỡ contract payload add-class.
+- Assumption Destroyer: Kiểm tra các giả định về template skills rỗng, hành vi chuyển đổi qua lại giữa các template, bảo lưu lựa chọn tay.
+
+### Findings & Adjudication
+1. **Security / Enum Sanitization**: Dữ liệu syllabus cũ có thể chứa giá trị skill ngoài IELTS_SKILLS nếu import từ bên ngoài?
+   - *Evidence*: `add-class-modal.tsx:29`, `contracts.ts:37-42`.
+   - *Adjudication*: Reject (đã được phòng vệ trong thiết kế). Helper `skillsFromTemplate` dùng `IELTS_SKILLS.filter(...)`, loại bỏ triệt để mọi giá trị không nằm trong enum.
+2. **Security / Communication Class Leak**: Chọn template có skills rồi đổi sang lớp Giao tiếp có gửi skills lên server không?
+   - *Evidence*: `add-class-modal.tsx:187` (`skills: classType === "ielts" ? skills : []`).
+   - *Adjudication*: Reject (đã được bảo đảm). Gate tại dòng 187 luôn áp đặt mảng rỗng cho lớp communication.
+3. **Assumption / Reset State Consistency**: Reset form có đưa templateId và skills về trạng thái ban đầu mà không kích hoạt auto-fill ngầm không?
+   - *Evidence*: `add-class-modal.tsx:120-122` (`setSkills([])`, `setTemplateId("")`).
+   - *Adjudication*: Accept (đã có trong task phase 1, resetForm gọi set trực tiếp, handler `changeTemplateId` chỉ kích hoạt từ interaction người dùng).
+
+### Whole-Plan Consistency Sweep
+- Không có xung đột giữa Red Team Review và các pha thực thi. Plan sẵn sàng thực hiện.
