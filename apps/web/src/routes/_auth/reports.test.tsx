@@ -21,6 +21,8 @@ function createStudent(id: string, name: string): Student {
 		name,
 		phone: "0901234567",
 		zalo: "0901234567",
+		email: "student@test.local",
+		hasPackage: true,
 		parent: { name: "Phụ huynh", phone: "0901234568" },
 		targetBand: "6.5",
 		skills: ["Writing"],

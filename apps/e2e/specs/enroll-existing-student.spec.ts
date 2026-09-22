@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * QC scenario for issue #122 (P1): from class detail, "+ Thêm học viên" used
@@ -28,11 +28,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	await expect(
 		studentsDialog.getByRole("button", { name: "Học viên có sẵn" }),
 	).toHaveCount(0);
-	await studentsDialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await studentsDialog
-		.getByRole("button", { name: "Lưu", exact: true })
-		.click();
-	await expect(studentsDialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 3. Create a scheduled class (defaults: T2+T4, 12 buổi).

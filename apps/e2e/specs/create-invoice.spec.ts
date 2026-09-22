@@ -1,5 +1,5 @@
 import { expect, type Page, type Request, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
  * QC scenario for issue #61: the "Tạo hóa đơn" modal used to be a no-op —
@@ -21,13 +21,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const studentsDialog = page.getByRole("dialog");
-	await expect(studentsDialog.getByText("Thêm học viên mới")).toBeVisible();
-	await studentsDialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await studentsDialog
-		.getByRole("button", { name: "Lưu", exact: true })
-		.click();
-	await expect(studentsDialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// Scheduled class (defaults: T2+T4, 12 buổi).

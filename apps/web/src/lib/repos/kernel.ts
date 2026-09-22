@@ -42,10 +42,8 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				body: {
 					name: action.payload.name,
 					phone: action.payload.phone,
+					email: action.payload.email,
 					parentName: action.payload.parentName,
-					total: action.payload.total,
-					price: action.payload.price,
-					mode: action.payload.mode,
 					...(action.payload.classId
 						? { classId: action.payload.classId }
 						: {}),

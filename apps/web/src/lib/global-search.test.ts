@@ -8,6 +8,8 @@ function student(
 	return {
 		phone: "",
 		zalo: "",
+		email: "",
+		hasPackage: true,
 		parent: { name: "", phone: "" },
 		targetBand: "",
 		skills: [],

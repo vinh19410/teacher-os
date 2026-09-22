@@ -10,6 +10,10 @@ export interface Student {
 	name: string;
 	phone: string;
 	zalo: string;
+	/** Email học viên — danh tính đăng nhập tương lai (cùng phone); "" với row legacy. */
+	email: string;
+	/** false = chưa có gói (tạo không lớp — D2): pkg là ZERO_PKG, view render "Chưa có gói". */
+	hasPackage: boolean;
 	parent: { name: string; phone: string };
 	targetBand: string;
 	skills: string[];

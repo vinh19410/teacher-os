@@ -70,14 +70,13 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** SĐT + email = danh tính đăng nhập tương lai; gói học do server derive từ lớp (D1/D2). */
 			type: "add-student";
 			payload: {
 				name: string;
 				phone: string;
+				email: string;
 				parentName: string;
-				total: number;
-				price: number;
-				mode: "Online" | "Offline";
 				classId?: string;
 			};
 	  }

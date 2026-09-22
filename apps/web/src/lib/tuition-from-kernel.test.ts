@@ -7,11 +7,13 @@ import {
 	tuitionTotals,
 } from "./tuition-from-kernel";
 
-function student(id: string, remaining: number): Student {
+function student(id: string, remaining: number, hasPackage = true): Student {
 	return {
 		id,
 		name: id,
 		phone: "",
+		email: "",
+		hasPackage,
 		zalo: "",
 		parent: { name: "", phone: "" },
 		targetBand: "—",
@@ -86,6 +88,10 @@ describe("packagesEndingSoon", () => {
 	test("counts remaining 4 and below, not 5", () => {
 		const students = [student("s-2", 2), student("s-4", 4), student("s-5", 5)];
 		expect(packagesEndingSoon(students)).toBe(2);
+	});
+	test("students without package (hasPackage: false) are not counted even if remaining is 0", () => {
+		const students = [student("s-no-pkg", 0, false), student("s-2", 2)];
+		expect(packagesEndingSoon(students)).toBe(1);
 	});
 });
 

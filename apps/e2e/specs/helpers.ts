@@ -24,6 +24,28 @@ export async function signUpViaUi(
 	return email;
 }
 
+/** Tạo học viên qua modal /students (form create — SĐT + email bắt buộc).
+ * Mặc định SĐT/email hợp lệ; spec test validation tự fill tay, không dùng helper. */
+export async function createStudentViaUi(
+	page: Page,
+	name: string,
+	opts: { phone?: string; email?: string } = {},
+): Promise<void> {
+	const dialog = page.getByRole("dialog");
+	await dialog.getByLabel("Họ tên học viên *").fill(name);
+	await dialog.getByLabel("SĐT *").fill(opts.phone ?? "0901234567");
+	const slug =
+		name
+			.normalize("NFD")
+			.replace(/[\u0300-\u036f]/g, "")
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "") || "student";
+	const email = opts.email ?? `${slug}.${Date.now()}@e2e.test`;
+	await dialog.getByLabel("Email *").fill(email);
+	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(dialog).toBeHidden();
+}
+
 /** Navigate to a class's "Buổi học" tab (Issue #89 merged tab) — it renders the
  * "Đã học"/"Sắp tới" badges on the timeline table. Text counts must scope to
  * "Buổi học" while on it. */

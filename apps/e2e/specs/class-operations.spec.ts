@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
 	addDaysISO,
+	createStudentViaUi,
 	gotoWeek,
 	openClassScheduleTab,
 	signUpViaUi,
@@ -54,9 +55,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	// 3. Open the class and add a student — THIS generates the lessons.
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await expect(page.getByText("Thêm học viên mới")).toBeVisible();
-	await page.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
@@ -172,9 +171,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	// Lessons appear only after a student joins the class. Add the student on
 	// the roster tab — the name would match all 12 rows of "Buổi học".
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await expect(page.getByText("Thêm học viên mới")).toBeVisible();
-	await page.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await page.getByRole("button", { name: "Lưu", exact: true }).click();
+	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 1:1 class → sequential head today renders a one-click button.

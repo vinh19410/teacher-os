@@ -75,9 +75,10 @@ export function rosterDebtByStudent(
  * Students whose remaining sessions put them in a "Sắp hết" badge row of the
  * packages table: the table badges danger at ≤2 and warn at ≤4 with the same
  * label, so the KPI counts ≤4 to never contradict the table below it.
+ * Students without a package (`hasPackage === false`) are never ending soon.
  */
 export function packagesEndingSoon(students: Student[]): number {
-	return students.filter((s) => s.pkg.remaining <= 4).length;
+	return students.filter((s) => s.hasPackage && s.pkg.remaining <= 4).length;
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

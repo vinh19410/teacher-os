@@ -1,50 +1,49 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { createStudentViaUi, signUpViaUi } from "./helpers";
 
 /**
- * QC scenario for issue #104 (P0): creating a student from the /students
- * list (no classId) used to silently drop total/price/mode — the list showed
- * "0 buổi · Online" · "0 / 0" · "0đ" and /tuition showed a 0/0 package with a
- * red "Sắp hết" badge. After the fix the package parks on the student
- * (enrollmentId null) and renders everywhere. This is the only spec covering
- * the no-class creation path; class specs cover the with-classId path.
+ * Scenario for D2: creating a student outside a class (no classId) produces
+ * NO session package row. The UI renders "Chưa có gói" across list, detail,
+ * and tuition pages, with dashes for counts/prices, and tuition never badges
+ * "Sắp hết".
  */
-test("thêm học viên từ list (không lớp) → gói giữ số buổi + đơn giá", async ({
+test("thêm học viên không lớp → hiển thị 'Chưa có gói', không tạo package (D2)", async ({
 	page,
 }) => {
-	const STUDENT_NAME = "QC-104 E2E";
+	const STUDENT_NAME = "QC-240 No Class";
+	const STUDENT_EMAIL = "noclass@e2e.test";
 
-	// 1. Sign-up (org bootstrap happens on the first GET /api/kernel).
+	// 1. Sign-up
 	await signUpViaUi(page);
 
-	// 2. Create a classless student from the list — exactly the QC steps.
+	// 2. Create student without class
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const dialog = page.getByRole("dialog");
-	await expect(dialog.getByText("Thêm học viên mới")).toBeVisible();
-	await dialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await dialog.getByLabel("Số buổi gói").fill("10");
-	await dialog.getByLabel("Đơn giá (VND)").fill("400000");
-	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
-	await expect(dialog).toBeHidden();
+	await createStudentViaUi(page, STUDENT_NAME, {
+		email: STUDENT_EMAIL,
+	});
 
-	// 3. The row must show the entered package, never the zero package.
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-	await expect(page.getByText("10 buổi · Online")).toBeVisible();
-	await expect(page.getByText("10 / 10")).toBeVisible();
-	await expect(page.getByText("400.000đ")).toBeVisible();
+	// 3. Students list: row shows "Chưa có gói" and dashes
+	const studentRow = page.locator("tr", { hasText: STUDENT_NAME });
+	await expect(studentRow).toBeVisible();
+	await expect(studentRow.getByText("Chưa có gói")).toBeVisible();
+	await expect(studentRow.getByText("0 buổi · Online")).toHaveCount(0);
+	await expect(studentRow.getByText("0 / 0")).toHaveCount(0);
 
-	// 4. /tuition renders the same parked package: 0/10 done (nothing can be
-	// checked in without a class), remaining 10 — never the red "Sắp hết"
-	// badge that the broken 0/0 state produced. Scope to the student's row:
-	// the page's KPI band carries a hardcoded "Gói sắp hết" counter (issue
-	// #106) that would otherwise match the badge text.
+	// 4. Student detail: shows Email and "Chưa có gói"
+	await studentRow.getByText(STUDENT_NAME).click();
+	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
+	await expect(page.getByText("Gói học", { exact: true })).toBeVisible();
+	await expect(
+		page.getByText("Chưa có gói — thêm học viên vào lớp để có gói học."),
+	).toBeVisible();
+
+	// 5. Tuition page: row shows "Chưa có gói", no "Sắp hết" badge, dashes for counts
 	await page.getByText("Học phí", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
 	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
 	await expect(tuitionRow).toBeVisible();
-	await expect(tuitionRow.getByText("0/10")).toBeVisible();
+	await expect(tuitionRow.getByText("Chưa có gói")).toBeVisible();
 	await expect(tuitionRow.getByText("Sắp hết")).toHaveCount(0);
-	await expect(tuitionRow.getByText("Đang học")).toBeVisible();
 });

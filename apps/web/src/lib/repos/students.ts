@@ -23,7 +23,8 @@ const ZERO_PKG: Student["pkg"] = {
 /**
  * Map kernel student rows to the display shape. `pkg` comes from the newest
  * active session_package owned by the student; a student without any package
- * gets the zero package (done/remaining always derive, never stored).
+ * gets the zero package (done/remaining always derive, never stored) and
+ * hasPackage: false (D2 — views render "Chưa có gói").
  * Wave 4: done/remaining derive from the completed lessons of exactly the
  * displayed package's enrollment (invariant 6) — a check-in on another
  * enrollment (e.g. the other half of a 1:2) never moves this student's pkg.
@@ -60,6 +61,8 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 			name: row.name,
 			phone: row.phone,
 			zalo: row.zalo,
+			email: row.email,
+			hasPackage: pkg != null,
 			parent: { name: row.parentName, phone: row.parentPhone },
 			targetBand: "—",
 			skills: [],
