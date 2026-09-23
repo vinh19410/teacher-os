@@ -125,11 +125,12 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			};
 		}
 		case "enroll-student": {
-			// Issue #122 fixture mirror: attach an EXISTING student to one class
-			// and refresh the package display from the enroll payload. The
-			// runtime truth comes from the kernel snapshot refresh.
+			// Issue #122 / #251 fixture mirror: attach an EXISTING student to one class
+			// and refresh the package display from the class attributes (D1 pattern).
+			// The runtime truth comes from the kernel snapshot refresh.
 			const existing = state.students.find((s) => s.id === action.studentId);
 			if (!existing) return state;
+			const targetClass = state.classes.find((c) => c.id === action.classId);
 			let attached = false;
 			const classes = state.classes.map((c) => {
 				if (c.id !== action.classId) return c;
@@ -145,15 +146,18 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 					s.id === existing.id
 						? {
 								...s,
-								pkg: {
-									total: action.payload.total,
-									done: 0,
-									remaining: action.payload.total,
-									price: action.payload.price,
-									mode: action.payload.mode,
-									start: "19/08",
-									expiry: "—",
-								},
+								pkg: targetClass
+									? {
+											total: targetClass.sessionsTotal,
+											done: 0,
+											remaining: targetClass.sessionsTotal,
+											price: targetClass.tuitionFee ?? 0,
+											mode:
+												targetClass.mode === "Offline" ? "Offline" : "Online",
+											start: "19/08",
+											expiry: "—",
+										}
+									: s.pkg,
 							}
 						: s,
 				),

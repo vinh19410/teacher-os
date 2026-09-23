@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Web — dọn tab 'Học viên có sẵn'"
-status: todo
+status: completed
 ---
 
 # Phase 2: Web — dọn tab "Học viên có sẵn"
@@ -8,7 +8,7 @@ status: todo
 ## Overview
 
 - **Priority**: P1
-- **Status**: pending
+- **Status**: completed
 - Phụ thuộc Phase 1 (server không còn đọc `total/price/mode`). Phase này dọn sạch phía web: tab "Học viên có sẵn" chỉ còn ô **"Tìm học viên"** (đã có sẵn, dòng 272–278 — lọc theo tên/SĐT tại `filteredStudents` dòng 111–115) + listbox chọn học viên (dòng 279–309) + nút Lưu.
 
 **Key insights**:
@@ -18,10 +18,10 @@ status: todo
 
 ## Requirements
 
-- [ ] Tab "Học viên có sẵn" không còn render "Số buổi gói", "Đơn giá (VND)", "Hình thức".
-- [ ] Action `enroll-student` không còn mang `payload`; POST body chỉ `{studentId}`.
-- [ ] Reducer mirror gói từ lớp trong store (không còn đọc `action.payload`).
-- [ ] Không command nào tới `/enroll` còn chứa `total/price/mode`.
+- [x] Tab "Học viên có sẵn" không còn render "Số buổi gói", "Đơn giá (VND)", "Hình thức".
+- [x] Action `enroll-student` không còn mang `payload`; POST body chỉ `{studentId}`.
+- [x] Reducer mirror gói từ lớp trong store (không còn đọc `action.payload`).
+- [x] Không command nào tới `/enroll` còn chứa `total/price/mode`.
 
 ## Implementation Steps
 
@@ -41,11 +41,11 @@ status: todo
 
 ## Todo
 
-- [ ] Modal: xoá `enrollPackageFields` + states + validation + helper, dọn import
-- [ ] `data-actions.ts` + `repos/kernel.ts`: bỏ payload/body gói
-- [ ] Reducer: mirror pkg từ lớp
-- [ ] Cập nhật 3 file test web
-- [ ] `pnpm --filter web test` xanh
+- [x] Modal: xoá `enrollPackageFields` + states + validation + helper, dọn import
+- [x] `data-actions.ts` + `repos/kernel.ts`: bỏ payload/body gói
+- [x] Reducer: mirror pkg từ lớp
+- [x] Cập nhật 3 file test web
+- [x] `pnpm --filter web test` xanh
 
 ## Success Criteria
 

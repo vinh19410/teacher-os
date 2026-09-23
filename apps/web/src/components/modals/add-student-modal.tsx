@@ -1,28 +1,13 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
-import { parseVndAmount } from "@/lib/format-currency";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const PHONE_DIGITS_RE = /^[0-9]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * Issue #115: strict parse for package total field. Unlike the #105 add-class
- * pattern (Number.parseInt silently truncates "10.5" → 10), Number() lets a
- * decimal be rejected, and an empty string never falls back to a default —
- * the old `|| 10` coercion masked invalid input entirely.
- * Returns null for empty, decimal, or non-numeric input.
- */
-function parsePackageField(raw: string): number | null {
-	if (raw.trim() === "") return null;
-	const n = Number(raw);
-	return Number.isInteger(n) ? n : null;
-}
 
 type ModalMode = "existing" | "create";
 
@@ -50,15 +35,8 @@ export function AddStudentModal({
 	const [email, setEmail] = useState("");
 	const [emailError, setEmailError] = useState<string | undefined>();
 	const [parentName, setParentName] = useState("");
-	const [total, setTotal] = useState("10");
-	const [price, setPrice] = useState("400000");
-	const [modeOnlineOffline, setModeOnlineOffline] = useState<
-		"Online" | "Offline"
-	>("Online");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [phoneError, setPhoneError] = useState<string | undefined>();
-	const [totalError, setTotalError] = useState<string | undefined>();
-	const [priceError, setPriceError] = useState<string | undefined>();
 	const { saving, error, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 
@@ -88,24 +66,12 @@ export function AddStudentModal({
 		setPhone("");
 		setEmail("");
 		setParentName("");
-		setTotal("10");
-		setPrice("400000");
-		setModeOnlineOffline("Online");
-		setNameError(undefined);
-		setPhoneError(undefined);
-		setEmailError(undefined);
-		setTotalError(undefined);
-		setPriceError(undefined);
 	}
 
 	function switchMode(next: ModalMode) {
 		setMode(next);
 		setSelectedStudentId("");
 		setFilter("");
-		// packageFields renders in both modes — a stale package error from the
-		// other tab must not follow the user across the switch (issue #115).
-		setTotalError(undefined);
-		setPriceError(undefined);
 	}
 
 	const filteredStudents = eligibleStudents.filter((s) => {
@@ -120,33 +86,11 @@ export function AddStudentModal({
 		e.preventDefault();
 		if (saving) return;
 		if (effectiveMode === "existing") {
-			// Issue #115: package validation belongs to enroll mode
-			const parsedTotal = parsePackageField(total);
-			const parsedPrice = parseVndAmount(price);
-			setTotalError(
-				parsedTotal === null || parsedTotal < 1
-					? "Số buổi gói phải là số nguyên từ 1 trở lên."
-					: undefined,
-			);
-			setPriceError(
-				price.trim() === ""
-					? "Đơn giá không được để trống."
-					: parsedPrice === null
-						? "Đơn giá phải là số nguyên, tối đa 12 chữ số."
-						: undefined,
-			);
-			if (parsedTotal === null || parsedTotal < 1) return;
-			if (parsedPrice === null) return;
 			if (!selectedStudentId) return;
 			const result = await run({
 				type: "enroll-student",
 				classId: classId ?? "",
 				studentId: selectedStudentId,
-				payload: {
-					total: parsedTotal,
-					price: parsedPrice,
-					mode: modeOnlineOffline,
-				},
 			});
 			if (result?.kind === "refreshed") {
 				resetFields();
@@ -199,43 +143,6 @@ export function AddStudentModal({
 			onClose();
 		}
 	}
-
-	const enrollPackageFields = (
-		<>
-			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-				<Field label="Số buổi gói" error={totalError}>
-					<Input
-						type="number"
-						value={total}
-						onChange={(e) => {
-							setTotal(e.target.value);
-							if (totalError) setTotalError(undefined);
-						}}
-					/>
-				</Field>
-				<Field label="Đơn giá (VND)" error={priceError}>
-					<CurrencyInput
-						value={price}
-						onChange={(next) => {
-							setPrice(next);
-							if (priceError) setPriceError(undefined);
-						}}
-					/>
-				</Field>
-			</div>
-			<Field label="Hình thức">
-				<Select
-					value={modeOnlineOffline}
-					onChange={(e) =>
-						setModeOnlineOffline(e.target.value as "Online" | "Offline")
-					}
-				>
-					<option>Online</option>
-					<option>Offline</option>
-				</Select>
-			</Field>
-		</>
-	);
 
 	return (
 		<Modal
@@ -307,7 +214,6 @@ export function AddStudentModal({
 								))
 							)}
 						</div>
-						{enrollPackageFields}
 					</>
 				) : (
 					<>

@@ -528,10 +528,8 @@ describe("reducer", () => {
 	});
 });
 
-describe("enroll-student (issue #122)", () => {
-	const enrollPayload = { total: 8, price: 100, mode: "Offline" as const };
-
-	test("enroll-student adds an existing student to the class and sets pkg", () => {
+describe("enroll-student (issue #122 / #251)", () => {
+	test("enroll-student adds an existing student to the class and sets pkg from class", () => {
 		const before = cloneSeed();
 		const beforeStudent = before.students.find((s) => s.id === "s4");
 		expect(beforeStudent).toBeDefined();
@@ -539,16 +537,15 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c2",
 			studentId: "s4",
-			payload: enrollPayload,
 		});
 		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual(["s4"]);
 		const enrolled = next.students.find((s) => s.id === "s4");
 		expect(enrolled?.pkg).toEqual({
-			total: 8,
+			total: 10,
 			done: 0,
-			remaining: 8,
-			price: 100,
-			mode: "Offline",
+			remaining: 10,
+			price: 0,
+			mode: "Online",
 			start: "19/08",
 			expiry: "—",
 		});
@@ -562,7 +559,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c-missing",
 			studentId: "s1",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});
@@ -573,7 +569,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c2",
 			studentId: "s-missing",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});
@@ -584,7 +579,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c1",
 			studentId: "s1",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});

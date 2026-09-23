@@ -340,19 +340,15 @@ describe("kernelCommand", () => {
 		expect(req.body).toMatchObject({ classId: "cl-1", email: "a@test.local" });
 	});
 
-	test("enroll-student maps to the class enroll endpoint (#122)", () => {
+	test("enroll-student maps to the class enroll endpoint (#122 / #251)", () => {
 		const req = kernelCommand({
 			type: "enroll-student",
 			classId: "cl-1",
 			studentId: "st-9",
-			payload: { total: 24, price: 600000, mode: "Offline" },
 		});
 		expect(req.path).toBe("/api/classes/cl-1/enroll");
 		expect(req.body).toEqual({
 			studentId: "st-9",
-			total: 24,
-			price: 600000,
-			mode: "Offline",
 		});
 	});
 

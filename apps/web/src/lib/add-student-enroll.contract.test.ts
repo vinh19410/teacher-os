@@ -79,4 +79,11 @@ describe("add-student enroll wiring", () => {
 		);
 		expect(block).not.toMatch(/classId=/);
 	});
+
+	test("AddStudentModal no longer contains package inputs (issue #251)", () => {
+		const src = readSrc("components/modals/add-student-modal.tsx");
+		expect(src).not.toContain("Số buổi gói");
+		expect(src).not.toContain("Đơn giá (VND)");
+		expect(src).not.toContain("enrollPackageFields");
+	});
 });

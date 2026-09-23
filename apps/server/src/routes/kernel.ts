@@ -641,15 +641,14 @@ export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
 				classId: cls.id,
 				studentId: input.studentId,
 			}),
-			// enroll nhận package fields từ input — luồng tạo học viên
-			// (POST /students) giờ derive gói từ lớp (D1).
+			// D1: Gói derive từ lớp — không còn package fields trong input.
 			db.insert(sessionPackage).values({
 				id: crypto.randomUUID(),
 				orgId: ctx.orgId,
 				studentId: input.studentId,
-				total: input.total,
-				price: input.price,
-				mode: input.mode,
+				total: cls.sessionsTotal,
+				price: cls.tuitionFee ?? 0,
+				mode: cls.mode,
 				start: formatDayMonth(new Date()),
 				expiry: "",
 				status: "active",

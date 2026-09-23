@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: API & server — enroll derive gói từ lớp (D1)"
-status: todo
+status: completed
 ---
 
 # Phase 1: API & server — enroll derive gói từ lớp (D1)
@@ -8,7 +8,7 @@ status: todo
 ## Overview
 
 - **Priority**: P1
-- **Status**: pending
+- **Status**: completed
 - `POST /api/classes/:id/enroll` hiện nhận `total/price/mode` từ input (`apps/server/src/routes/kernel.ts:644-657`) — nhánh duy nhất còn làm vậy sau khi nhánh tạo-học-viên-có-lớp chuyển sang derive từ lớp (comment `D1`, `kernel.ts:550-561`). Phase này đưa enroll về cùng pattern: schema chỉ còn `studentId`, gói derive từ `cls`.
 
 **Key insights** (từ scout + verify trực tiếp):
@@ -19,9 +19,9 @@ status: todo
 
 ## Requirements
 
-- [ ] `enrollStudentSchema` chỉ còn `studentId: z.string().min(1)`; comment khối cập nhật theo D1.
-- [ ] Handler enroll tạo `sessionPackage` với `total: cls.sessionsTotal`, `price: cls.tuitionFee ?? 0`, `mode: cls.mode`.
-- [ ] Server tests phản ánh hành vi mới (không còn test pin hành vi cũ).
+- [x] `enrollStudentSchema` chỉ còn `studentId: z.string().min(1)`; comment khối cập nhật theo D1.
+- [x] Handler enroll tạo `sessionPackage` với `total: cls.sessionsTotal`, `price: cls.tuitionFee ?? 0`, `mode: cls.mode`.
+- [x] Server tests phản ánh hành vi mới (không còn test pin hành vi cũ).
 
 ## Implementation Steps
 
@@ -35,10 +35,10 @@ status: todo
 
 ## Todo
 
-- [ ] `contracts.ts`: `enrollStudentSchema` = `{studentId}` + comment D1
-- [ ] `kernel.ts`: sessionPackage derive từ `cls`
-- [ ] `kernel.test.ts`: viết lại 4 điểm test enroll
-- [ ] `pnpm --filter server test` xanh
+- [x] `contracts.ts`: `enrollStudentSchema` = `{studentId}` + comment D1
+- [x] `kernel.ts`: sessionPackage derive từ `cls`
+- [x] `kernel.test.ts`: viết lại 4 điểm test enroll
+- [x] `pnpm --filter server test` xanh
 
 ## Success Criteria
 
