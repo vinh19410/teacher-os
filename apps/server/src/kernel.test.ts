@@ -222,6 +222,7 @@ async function createTestApp() {
 		overrides: {
 			type?: string;
 			skills?: string[];
+			mode?: "Online" | "Offline";
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
 			tuitionFee?: number | null;
@@ -3503,12 +3504,12 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toBe(false);
 	});
 
-	test("divergence pin: class sessionsTotal (12) and package total (10) stay independent on the wire", async () => {
-		const studentId = await t.addStudent(session, "HV gói lệch");
+	test("enroll mirrors the class package: total = class sessionsTotal", async () => {
+		const studentId = await t.addStudent(session, "HV gói chuẩn lớp");
 		const res = await t.call(`/api/classes/${classId}/enroll`, {
 			session,
 			method: "POST",
-			body: { studentId, total: 10, price: 400000, mode: "Online" },
+			body: { studentId },
 		});
 		expect(res.status).toBe(201);
 		const snapshot = await t.kernel(session);
@@ -3518,7 +3519,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toHaveLength(12);
 		expect(
 			snapshot.packages.find((p) => p.enrollmentId === enrollment?.id)?.total,
-		).toBe(10);
+		).toBe(12);
 	});
 
 	test("cross-org: org B cannot enroll into org A's class and sees zero generated lessons", async () => {
@@ -3876,14 +3877,15 @@ describe("enroll existing student (issue #122)", () => {
 	}
 
 	test("happy path: enrollment + active package + generated lessons in one shot", async () => {
-		const classId = await t.createClass(session, "Lớp enroll #122");
+		const classId = await t.createClass(session, "Lớp enroll #122", {
+			sessionsTotal: 24,
+			tuitionFee: 600000,
+			mode: "Offline",
+		});
 		const studentId = await t.addStudent(session, "HV có sẵn");
 
 		const res = await enroll(classId, {
 			studentId,
-			total: 24,
-			price: 600000,
-			mode: "Offline",
 		});
 		expect(res.status).toBe(201);
 		const { id: enrollmentId } = (await res.json()) as { id: string };
@@ -3907,10 +3909,10 @@ describe("enroll existing student (issue #122)", () => {
 		const lessons = snapshot.lessons.filter(
 			(l) => l.enrollmentId === enrollmentId,
 		);
-		expect(lessons).toHaveLength(12);
+		expect(lessons).toHaveLength(24);
 	});
 
-	test("package fields stay field-identical with the create-new branch", async () => {
+	test("package fields stay field-identical with the create-new branch (D1 derived from class)", async () => {
 		const classId = await t.createClass(session, "Lớp enroll gói");
 		const studentId = await t.addStudent(session, "HV gói chuẩn");
 		const res = await enroll(classId, { studentId });
@@ -3920,10 +3922,10 @@ describe("enroll existing student (issue #122)", () => {
 		const pkg = (await t.kernel(session)).packages.find(
 			(p) => p.enrollmentId === enrollmentId,
 		);
-		// Defaults mirror studentCreateSchema: total 10, price 400000, Online.
+		// D1: mirrors class defaults (sessionsTotal 12, tuitionFee null -> 0, Online).
 		expect(pkg).toMatchObject({
-			total: 10,
-			price: 400000,
+			total: 12,
+			price: 0,
 			mode: "Online",
 			status: "active",
 		});
@@ -3972,9 +3974,8 @@ describe("student package minimums (issue #115)", () => {
 		session = await t.insertUser("Cô Min Gói");
 	});
 
-	// total=0 is the red-first pair: min(0) on develop still accepts a
-	// zero-session package, which is the server half of QC #115.
-	test("enroll existing student with total 0 is rejected with 400", async () => {
+	// D1: enroll derives package from class; extra fields in body are ignored
+	test("enroll existing student ignores extra package fields (D1)", async () => {
 		const classId = await t.createClass(session, "Lớp min gói");
 		const studentId = await t.addStudent(session, "HV min gói");
 		const res = await t.call(`/api/classes/${classId}/enroll`, {
@@ -3982,7 +3983,12 @@ describe("student package minimums (issue #115)", () => {
 			method: "POST",
 			body: { studentId, total: 0, price: 400000, mode: "Online" },
 		});
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(201);
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(
+			snapshot.packages.find((p) => p.enrollmentId === enrollment?.id)?.total,
+		).toBe(12);
 	});
 
 	test("create student missing phone is rejected with 400", async () => {
@@ -4894,9 +4900,6 @@ describe("class assignment give flow (#208)", () => {
 			method: "POST",
 			body: {
 				studentId: studentIdA1,
-				total: 10,
-				price: 400000,
-				mode: "Online",
 			},
 		});
 		expect(enrollRes.status).toBe(201);

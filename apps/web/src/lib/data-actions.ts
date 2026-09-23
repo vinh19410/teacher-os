@@ -81,15 +81,11 @@ export type KernelAction =
 			};
 	  }
 	| {
-			/** Issue #122 — enroll an EXISTING student into a viewed class. */
+			/** Issue #122 / #251 — enroll an EXISTING student into a viewed class.
+			 * Package is derived by server from class attributes (D1 pattern). */
 			type: "enroll-student";
 			classId: string;
 			studentId: string;
-			payload: {
-				total: number;
-				price: number;
-				mode: "Online" | "Offline";
-			};
 	  }
 	| {
 			/** Issue #61 — create an invoice for an existing enrollment.

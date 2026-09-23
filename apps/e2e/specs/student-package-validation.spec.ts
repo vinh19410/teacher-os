@@ -104,7 +104,7 @@ test("students → form tạo không có input gói, SĐT chỉ số + email b�
 	await expect(row.getByText("Chưa có lớp")).toBeVisible();
 });
 
-test("class detail → enroll học viên có sẵn vẫn có 3 input gói và chặn gói 0 buổi theo field (D4)", async ({
+test("class detail → enroll học viên có sẵn KHÔNG còn 3 input gói, chọn học viên là enroll được (D4)", async ({
 	page,
 }) => {
 	const CLASS_NAME = "E2E 240 Lớp enroll";
@@ -140,25 +140,19 @@ test("class detail → enroll học viên có sẵn vẫn có 3 input gói và c
 		dialog.getByText("Thêm học viên", { exact: true }),
 	).toBeVisible();
 
-	// Mode "Học viên có sẵn" vẫn hiển thị 3 input gói (D4)
-	await expect(dialog.getByLabel("Số buổi gói")).toBeVisible();
-	await expect(dialog.getByLabel("Đơn giá (VND)")).toBeVisible();
-	await expect(dialog.getByLabel("Hình thức")).toBeVisible();
+	// Mode "Học viên có sẵn" KHÔNG còn 3 input gói (D4)
+	await expect(dialog.getByLabel("Số buổi gói")).not.toBeVisible();
+	await expect(dialog.getByLabel("Đơn giá (VND)")).not.toBeVisible();
+	await expect(dialog.getByLabel("Hình thức")).not.toBeVisible();
 
 	const option = dialog.getByRole("option", { name: STUDENT_NAME });
 	await expect(option).toBeVisible();
 	await option.click();
 
-	// Enroll với số buổi 0 bị chặn
-	await dialog.getByLabel("Số buổi gói").fill("0");
-	const blockedEnroll = await countPosts(page, "/enroll", () =>
-		dialog.getByRole("button", { name: "Lưu", exact: true }).click(),
-	);
-	await expect(
-		fieldError(page, "Số buổi gói").getByText("từ 1 trở lên"),
-	).toBeVisible();
-	await expect(dialog).toBeVisible();
-	expect(blockedEnroll).toBe(0);
+	// Chọn học viên → click Lưu → enroll thành công, dialog đóng
+	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 });
 
 test("tạo học viên trong lớp → derive gói từ lớp, detail hiển thị lớp học (D1)", async ({

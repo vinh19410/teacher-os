@@ -50,14 +50,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				},
 			};
 		case "enroll-student":
-			// Issue #122: enroll an EXISTING student into the viewed class.
+			// Issue #122 / #251: enroll an EXISTING student into the viewed class.
 			return {
 				path: `/api/classes/${action.classId}/enroll`,
 				body: {
 					studentId: action.studentId,
-					total: action.payload.total,
-					price: action.payload.price,
-					mode: action.payload.mode,
 				},
 			};
 		case "add-class":

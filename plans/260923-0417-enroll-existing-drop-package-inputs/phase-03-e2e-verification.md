@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: E2E & verification gate"
-status: todo
+status: completed
 ---
 
 # Phase 3: E2E & verification gate
@@ -8,7 +8,7 @@ status: todo
 ## Overview
 
 - **Priority**: P1
-- **Status**: pending
+- **Status**: completed
 - Phụ thuộc Phase 1 + 2. Cập nhật e2e đang pin UI cũ, rồi chạy toàn bộ gate trước khi cook kết thúc.
 
 **Key insights**:
@@ -18,8 +18,8 @@ status: todo
 
 ## Requirements
 
-- [ ] E2E khóa hành vi mới: enroll mode không còn 3 input gói; enroll vẫn thành công.
-- [ ] Toàn bộ gate xanh: unit (server, web), e2e 2 spec liên quan, typecheck, biome.
+- [x] E2E khóa hành vi mới: enroll mode không còn 3 input gói; enroll vẫn thành công.
+- [x] Toàn bộ gate xanh: unit (server, web), e2e 2 spec liên quan, typecheck, biome.
 
 ## Implementation Steps
 
@@ -40,9 +40,9 @@ status: todo
 
 ## Todo
 
-- [ ] Viết lại test D4 trong `student-package-validation.spec.ts`
-- [ ] Chạy lại `enroll-existing-student.spec.ts`
-- [ ] Full gate xanh (unit + e2e + typecheck + biome)
+- [x] Viết lại test D4 trong `student-package-validation.spec.ts`
+- [x] Chạy lại `enroll-existing-student.spec.ts`
+- [x] Full gate xanh (unit + e2e + typecheck + biome)
 
 ## Success Criteria
 
