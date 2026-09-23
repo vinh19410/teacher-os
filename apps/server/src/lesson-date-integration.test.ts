@@ -1,6 +1,6 @@
 /**
  * lesson.date integration (issue #98 Phase 1): generator stamps occurrence
- * dates at enrollment time, snapshot projects them, and legacy fixtures stay
+ * dates at accept time (originally enrollment time), snapshot projects them, and legacy fixtures stay
  * undated. Runs against the real handler chain like kernel.test.ts.
  */
 import { createClient } from "@libsql/client";
@@ -116,6 +116,15 @@ describe("lesson.date generator + snapshot projection", () => {
 			},
 		});
 		expect([201, 200]).toContain(res.status);
+		const snap = await kernel();
+		const en = snap.enrollments.find((e) => e.classId === classId);
+		if (en) {
+			const acceptRes = await t.call(`/api/enrollments/${en.id}/accept`, {
+				method: "POST",
+				body: {},
+			});
+			expect(acceptRes.status).toBe(200);
+		}
 	}
 
 	test("class with ISO startDate generates fully-dated rows matching the skeleton", async () => {

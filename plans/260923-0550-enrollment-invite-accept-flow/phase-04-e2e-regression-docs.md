@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Phase 4: E2E, regression & docs"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: [2, 3]
@@ -72,12 +72,12 @@ Không có kiến trúc mới — phase verify + tài liệu. Luồng e2e mục 
 
 ## Todo
 
-- [ ] Grep liệt kê lại spec liên quan (đối chiếu 12)
-- [ ] Helper `acceptEnrollment`
-- [ ] 12 spec cập nhật theo vòng đời mới (đúng semantics, không xóa assertion)
-- [ ] Case hủy lời mời + mời lại
-- [ ] `pnpm test` + `pnpm e2e` + `check-types` + `check` xanh
-- [ ] PDR + CHANGELOG + runbook cập nhật
+- [x] Grep liệt kê lại spec liên quan (đối chiếu 12)
+- [x] Helper `acceptEnrollment`
+- [x] 12 spec cập nhật theo vòng đời mới (đúng semantics, không xóa assertion)
+- [x] Case hủy lời mời + mời lại
+- [x] `pnpm test` + `pnpm e2e` + `check-types` + `check` xanh
+- [x] PDR + CHANGELOG + runbook cập nhật
 
 ## Success Criteria
 

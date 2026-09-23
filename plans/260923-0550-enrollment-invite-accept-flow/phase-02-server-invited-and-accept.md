@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Server — enroll tạo invited + accept/cancel + guards"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1]
@@ -103,13 +103,13 @@ Accept và DELETE đều 404 (không 403) khi sai org — tránh enumeration, nh
 
 ## Todo
 
-- [ ] Enroll tạo `invited`, bỏ sinh package/lessons (cả 2 đường)
-- [ ] Route accept CAS + batch atomic + idempotent + 404 org-scoped
-- [ ] Route DELETE invited-only + 409 active
-- [ ] Guard invoice 409 invited + guard assignments active-only
-- [ ] Snapshot trả `status`
-- [ ] Invariant comment + verify skeleton vô hình với invited
-- [ ] Helper `addActiveStudent` + toàn bộ vitest trên xanh
+- [x] Enroll tạo `invited`, bỏ sinh package/lessons (cả 2 đường)
+- [x] Route accept CAS + batch atomic + idempotent + 404 org-scoped
+- [x] Route DELETE invited-only + 409 active
+- [x] Guard invoice 409 invited + guard assignments active-only
+- [x] Snapshot trả `status`
+- [x] Invariant comment + verify skeleton vô hình với invited
+- [x] Helper `addActiveStudent` + toàn bộ vitest trên xanh
 
 ## Success Criteria
 

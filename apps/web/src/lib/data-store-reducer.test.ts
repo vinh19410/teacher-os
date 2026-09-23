@@ -442,7 +442,7 @@ describe("reducer", () => {
 		expect(next.classes).toEqual(before.classes);
 	});
 
-	test("add-student with classId enrolls only that class", () => {
+	test("add-student with classId invites to that class", () => {
 		const before = cloneSeed();
 		const beforeC1 = before.classes.find((c) => c.id === "c1");
 		expect(beforeC1).toBeDefined();
@@ -454,7 +454,7 @@ describe("reducer", () => {
 		expect(added.id).toMatch(/^s-/);
 		expect(next.classes.find((c) => c.id === "c1")).toEqual({
 			...beforeC1,
-			studentIds: [...(beforeC1?.studentIds ?? []), added.id],
+			invitedStudentIds: [...(beforeC1?.invitedStudentIds ?? []), added.id],
 		});
 		expect(next.classes.filter((c) => c.id !== "c1")).toEqual(
 			before.classes.filter((c) => c.id !== "c1"),
@@ -528,8 +528,8 @@ describe("reducer", () => {
 	});
 });
 
-describe("enroll-student (issue #122 / #251)", () => {
-	test("enroll-student adds an existing student to the class and sets pkg from class", () => {
+describe("enroll-student (issue #122 / #251 / #253)", () => {
+	test("enroll-student adds an existing student to the class as invited without pkg fabrication", () => {
 		const before = cloneSeed();
 		const beforeStudent = before.students.find((s) => s.id === "s4");
 		expect(beforeStudent).toBeDefined();
@@ -538,18 +538,13 @@ describe("enroll-student (issue #122 / #251)", () => {
 			classId: "c2",
 			studentId: "s4",
 		});
-		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual(["s4"]);
+		expect(next.classes.find((c) => c.id === "c2")?.invitedStudentIds).toEqual([
+			"s4",
+		]);
+		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual([]);
 		const enrolled = next.students.find((s) => s.id === "s4");
-		expect(enrolled?.pkg).toEqual({
-			total: 10,
-			done: 0,
-			remaining: 10,
-			price: 0,
-			mode: "Online",
-			start: "19/08",
-			expiry: "—",
-		});
-		// The student is moved, not duplicated.
+		expect(enrolled?.pkg).toEqual(beforeStudent?.pkg);
+		// The student is not duplicated.
 		expect(next.students.length).toBe(before.students.length);
 	});
 

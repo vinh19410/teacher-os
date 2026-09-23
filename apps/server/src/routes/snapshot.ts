@@ -296,6 +296,7 @@ export async function loadSnapshot(
 			id: row.id,
 			classId: row.classId,
 			studentId: row.studentId,
+			status: row.status,
 			createdAt: row.createdAt.toISOString(),
 		})),
 		packages: packageRows.map((row) => ({

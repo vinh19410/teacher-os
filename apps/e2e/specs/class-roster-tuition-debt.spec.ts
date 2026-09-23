@@ -44,6 +44,16 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await option.click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
+
+	// Activate student so they can receive invoices
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 }
 
 /** The roster row of STUDENT_NAME inside the class-detail roster table. */

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Web — roster status UI, kích hoạt, sĩ số"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: [1, 2]
@@ -80,13 +80,13 @@ Nhãn hiển thị (text + màu cùng lúc): `invited` → "Đã mời", `active
 
 ## Todo
 
-- [ ] Derive `studentIds` (active) + `invitedStudentIds` ở repos/classes.ts + type/fixtures
-- [ ] Actions activate-enrollment + delete-enrollment
-- [ ] Reducer: 2 action → invitedStudentIds, bỏ pkg fabrication
-- [ ] Roster badge + nút Kích hoạt/Hủy lời mời + KPI "N chờ xác nhận"
-- [ ] Picker học viên loại union; picker hóa đơn loại invited
-- [ ] Chip "Đã mời" ở trang học viên
-- [ ] Web tests cập nhật, xanh
+- [x] Derive `studentIds` (active) + `invitedStudentIds` ở repos/classes.ts + type/fixtures
+- [x] Actions activate-enrollment + delete-enrollment
+- [x] Reducer: 2 action → invitedStudentIds, bỏ pkg fabrication
+- [x] Roster badge + nút Kích hoạt/Hủy lời mời + KPI "N chờ xác nhận"
+- [x] Picker học viên loại union; picker hóa đơn loại invited
+- [x] Chip "Đã mời" ở trang học viên
+- [x] Web tests cập nhật, xanh
 
 ## Success Criteria
 

@@ -30,6 +30,7 @@ export type KernelSlice = KernelHydratedData;
 
 export interface KernelRequest {
 	path: string;
+	method?: "POST" | "DELETE";
 	body: unknown;
 }
 
@@ -236,6 +237,17 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/reorder`,
 				body: { lessonIds: action.lessonIds },
 			};
+		case "activate-enrollment":
+			return {
+				path: `/api/enrollments/${action.enrollmentId}/accept`,
+				body: {},
+			};
+		case "delete-enrollment":
+			return {
+				path: `/api/enrollments/${action.enrollmentId}`,
+				method: "DELETE",
+				body: undefined,
+			};
 	}
 }
 
@@ -359,20 +371,25 @@ export async function postKernelCommand(
 	baseUrl: string,
 	action: KernelAction,
 ): Promise<KernelWriteEnvelope> {
-	const { path, body } = kernelCommand(action);
-	const res = await fetch(`${baseUrl}${path}`, {
-		method: "POST",
+	const req = kernelCommand(action);
+	const method = req.method ?? "POST";
+	const res = await fetch(`${baseUrl}${req.path}`, {
+		method,
 		credentials: "include",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify(body),
+		body: req.body !== undefined ? JSON.stringify(req.body) : undefined,
 		// Serialized bus: a hung request would block every later write.
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
 		const reason = await parseErrorReason(res);
-		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`, {
-			reason,
-		});
+		throw new HttpError(
+			res.status,
+			`${method} ${req.path} failed: ${res.status}`,
+			{
+				reason,
+			},
+		);
 	}
 	let json: unknown;
 	try {

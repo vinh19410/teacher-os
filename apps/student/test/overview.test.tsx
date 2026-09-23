@@ -4,7 +4,13 @@ import type {
 } from "@teacher-os/api/contracts";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/auth-client", () => ({
+	authClient: {
+		signOut: vi.fn(),
+	},
+}));
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { ClassCard } from "@/components/overview/class-card";

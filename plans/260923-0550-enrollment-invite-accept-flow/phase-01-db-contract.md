@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: DB schema & API contract"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []
@@ -66,10 +66,10 @@ Nhãn tiếng Việt (dùng ở phase 3, đặt trong apps/web chứ không nhú
 
 ## Todo
 
-- [ ] Thêm cột `status` vào schema `enrollment`
-- [ ] Sinh migration D1 bằng `db:generate`, review SQL
-- [ ] Thêm `EnrollmentStatus` + `KernelEnrollmentRow.status` vào contracts
-- [ ] `pnpm check-types` + `pnpm check` (biome) xanh
+- [x] Thêm cột `status` vào schema `enrollment`
+- [x] Sinh migration D1 bằng `db:generate`, review SQL
+- [x] Thêm `EnrollmentStatus` + `KernelEnrollmentRow.status` vào contracts
+- [x] `pnpm check-types` + `pnpm check` (biome) xanh
 
 ## Success Criteria
 

@@ -148,14 +148,19 @@ export function kernelRoutes(deps: {
 	// cross-site POSTs (or non-browser calls without the right Origin) fail closed.
 	// POST bodies are JSON-only; form posts die on content-type before parsing.
 	kernel.use("*", async (c, next) => {
-		if (c.req.method === "POST") {
+		if (c.req.method === "POST" || c.req.method === "DELETE") {
 			const origin = c.req.header("Origin") ?? "";
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
 			}
-			const contentType = c.req.header("Content-Type") ?? "";
-			if (!contentType.toLowerCase().startsWith("application/json")) {
-				return c.json({ error: "content-type must be application/json" }, 415);
+			if (c.req.method === "POST") {
+				const contentType = c.req.header("Content-Type") ?? "";
+				if (!contentType.toLowerCase().startsWith("application/json")) {
+					return c.json(
+						{ error: "content-type must be application/json" },
+						415,
+					);
+				}
 			}
 		}
 		return next();
@@ -562,19 +567,9 @@ export function kernelRoutes(deps: {
 			}),
 		];
 		if (cls) {
-			// D1: gói derive từ lớp — không còn package fields trong input.
-			const packageValues = {
-				orgId: ctx.orgId,
-				studentId,
-				total: cls.sessionsTotal,
-				price: cls.tuitionFee ?? 0, // null = chưa thiết lập → 0
-				mode: cls.mode,
-				start: formatDayMonth(new Date()),
-				expiry: "",
-				status: "active",
-			};
-			// Schedule-driven lessons (issue #55) join the same batch — an
-			// enrollment can never exist without its generated lesson series.
+			// Lifecycle: Thêm học viên vào lớp tạo enrollment ở trạng thái 'invited'.
+			// Gói học và chuỗi buổi học chỉ được sinh khi accept (POST /api/enrollments/:id/accept).
+			// Invariant: enrollment active luôn có lesson series; invited chưa có — sinh khi accept.
 			const enrollmentId = crypto.randomUUID();
 			statements.push(
 				db.insert(enrollment).values({
@@ -582,29 +577,11 @@ export function kernelRoutes(deps: {
 					orgId: ctx.orgId,
 					classId: cls.id,
 					studentId,
-				}),
-				db.insert(sessionPackage).values({
-					id: crypto.randomUUID(),
-					...packageValues,
-					enrollmentId,
+					status: "invited",
 				}),
 			);
-			for (const row of generateScheduleLessons({
-				schedule: cls.schedule,
-				startDate: cls.startDate,
-				sessionsTotal: cls.sessionsTotal,
-				orgId: ctx.orgId,
-				classId: cls.id,
-				enrollmentId,
-			})) {
-				statements.push(
-					db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
-				);
-			}
 		} else {
-			// D2: học viên tạo không lớp chưa có gói; enroll vào lớp
-			// (POST /classes/:id/enroll) sẽ tạo gói. (Lịch sử: issue #104 parked-package
-			// đã bị thay thế bởi D2 — không tạo sessionPackage nào).
+			// Học viên tạo không lớp: chưa có enrollment nào.
 		}
 		await db.batch(statements);
 		return c.json({ id: studentId } satisfies CreatedResponse, 201);
@@ -648,18 +625,94 @@ export function kernelRoutes(deps: {
 		}
 
 		const enrollmentId = crypto.randomUUID();
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.insert(enrollment).values({
-				id: enrollmentId,
+		await db.insert(enrollment).values({
+			id: enrollmentId,
+			orgId: ctx.orgId,
+			classId: cls.id,
+			studentId: input.studentId,
+			status: "invited",
+		});
+		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
+	});
+
+	/**
+	 * POST /api/enrollments/:enrollmentId/accept
+	 *
+	 * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage + lessons trong một atomic batch.
+	 * 1 endpoint, 2 caller: nút "Kích hoạt" của teacher trên roster admin và student portal (sau này).
+	 *
+	 * Idempotent qua CAS UPDATE:
+	 * - Nếu status đã là 'active', trả 200 idempotent không tạo thêm package/lessons.
+	 * - Hai request song song: chỉ một request UPDATE thành công (rows affected = 1) và insert;
+	 *   request còn lại rows affected = 0 -> re-read thấy 'active' -> trả 200.
+	 * - Bắt unique-violation của session_package_enrollment_uq phòng ngừa race condition -> trả 200 nếu active.
+	 * - Trả 404 nếu không tìm thấy enrollment trong org.
+	 */
+	kernel.post("/enrollments/:enrollmentId/accept", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const enrollmentId = c.req.param("enrollmentId");
+
+		// Pre-read: kiểm tra tồn tại và org-scoping
+		const [existingEnrollment] = await db
+			.select({
+				id: enrollment.id,
+				classId: enrollment.classId,
+				studentId: enrollment.studentId,
+				status: enrollment.status,
+			})
+			.from(enrollment)
+			.where(
+				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+			);
+		if (!existingEnrollment) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+		if (existingEnrollment.status === "active") {
+			return c.json({ ok: true });
+		}
+
+		const cls = await findClass(db, existingEnrollment.classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		try {
+			// CAS update: chỉ flip nếu status vẫn là 'invited'
+			const updated = await db
+				.update(enrollment)
+				.set({ status: "active" })
+				.where(
+					and(
+						eq(enrollment.id, enrollmentId),
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.status, "invited"),
+					),
+				)
+				.returning({ id: enrollment.id });
+
+			if (updated.length === 0) {
+				// Đã bị kích hoạt bởi request đồng thời khác
+				const [recheck] = await db
+					.select({ status: enrollment.status })
+					.from(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+						),
+					);
+				if (recheck?.status === "active") {
+					return c.json({ ok: true });
+				}
+				return c.json({ error: "enrollment not found" }, 404);
+			}
+
+			// Won CAS: sinh session package + chuỗi buổi học trong 1 batch
+			const packageValues = {
 				orgId: ctx.orgId,
-				classId: cls.id,
-				studentId: input.studentId,
-			}),
-			// D1: Gói derive từ lớp — không còn package fields trong input.
-			db.insert(sessionPackage).values({
-				id: crypto.randomUUID(),
-				orgId: ctx.orgId,
-				studentId: input.studentId,
+				studentId: existingEnrollment.studentId,
 				total: cls.sessionsTotal,
 				price: cls.tuitionFee ?? 0,
 				mode: cls.mode,
@@ -667,22 +720,76 @@ export function kernelRoutes(deps: {
 				expiry: "",
 				status: "active",
 				enrollmentId,
-			}),
-		];
-		for (const row of generateScheduleLessons({
-			schedule: cls.schedule,
-			startDate: cls.startDate,
-			sessionsTotal: cls.sessionsTotal,
-			orgId: ctx.orgId,
-			classId: cls.id,
-			enrollmentId,
-		})) {
-			statements.push(
-				db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
-			);
+			};
+
+			const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+				db.insert(sessionPackage).values({
+					id: crypto.randomUUID(),
+					...packageValues,
+				}),
+			];
+			for (const row of generateScheduleLessons({
+				schedule: cls.schedule,
+				startDate: cls.startDate,
+				sessionsTotal: cls.sessionsTotal,
+				orgId: ctx.orgId,
+				classId: cls.id,
+				enrollmentId,
+			})) {
+				statements.push(
+					db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
+				);
+			}
+			await db.batch(statements);
+			return c.json({ ok: true });
+		} catch (err: unknown) {
+			// Phòng vệ unique constraint nếu có race còn sót
+			const [recheck] = await db
+				.select({ status: enrollment.status })
+				.from(enrollment)
+				.where(
+					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+				);
+			if (recheck?.status === "active") {
+				return c.json({ ok: true });
+			}
+			throw err;
 		}
-		await db.batch(statements);
-		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
+	});
+
+	/**
+	 * DELETE /api/enrollments/:enrollmentId
+	 *
+	 * Hủy lời mời tham gia lớp (D5).
+	 * Vùng an toàn: CHỈ cho phép khi status = 'invited' (chưa có package/lesson/invoice).
+	 * Trả 409 nếu status = 'active'.
+	 * Trả 404 nếu không tìm thấy trong org.
+	 */
+	kernel.delete("/enrollments/:enrollmentId", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const enrollmentId = c.req.param("enrollmentId");
+
+		const [row] = await db
+			.select({ id: enrollment.id, status: enrollment.status })
+			.from(enrollment)
+			.where(
+				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+			);
+		if (!row) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+		if (row.status !== "invited") {
+			return c.json({ error: "cannot delete active enrollment" }, 409);
+		}
+
+		await db
+			.delete(enrollment)
+			.where(
+				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+			);
+		return c.json({ ok: true });
 	});
 
 	// #208: giao một đề ngân hàng cho lớp — header + N targets trong MỘT
@@ -731,7 +838,11 @@ export function kernelRoutes(deps: {
 			.select({ studentId: enrollment.studentId })
 			.from(enrollment)
 			.where(
-				and(eq(enrollment.classId, classId), eq(enrollment.orgId, ctx.orgId)),
+				and(
+					eq(enrollment.classId, classId),
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.status, "active"),
+				),
 			);
 		const roster = new Set(rosterRows.map((row) => row.studentId));
 		if (input.studentIds.some((sid) => !roster.has(sid))) {
@@ -1456,7 +1567,10 @@ export function kernelRoutes(deps: {
 		// indistinguishable. The student re-check keeps the new row visible to
 		// snapshot reads, which innerJoin student on the same org.
 		const [enrollmentRow] = await db
-			.select({ studentId: enrollment.studentId })
+			.select({
+				studentId: enrollment.studentId,
+				status: enrollment.status,
+			})
 			.from(enrollment)
 			.where(
 				and(
@@ -1466,6 +1580,9 @@ export function kernelRoutes(deps: {
 			);
 		if (!enrollmentRow) {
 			return c.json({ error: "enrollment not found" }, 404);
+		}
+		if (enrollmentRow.status !== "active") {
+			return c.json({ error: "Học viên chưa đồng ý tham gia lớp" }, 409);
 		}
 		const [enrolledStudent] = await db
 			.select({ id: student.id })

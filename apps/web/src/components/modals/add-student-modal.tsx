@@ -43,7 +43,10 @@ export function AddStudentModal({
 	const eligibleStudents = (() => {
 		if (!classId) return [];
 		const cls = data.classes.find((c) => c.id === classId);
-		const enrolled = new Set(cls?.studentIds ?? []);
+		const enrolled = new Set([
+			...(cls?.studentIds ?? []),
+			...(cls?.invitedStudentIds ?? []),
+		]);
 		return data.students.filter((s) => !enrolled.has(s.id));
 	})();
 	const hasEligible = eligibleStudents.length > 0;

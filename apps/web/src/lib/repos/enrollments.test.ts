@@ -19,6 +19,7 @@ function createClass(id: string, name: string): ClassGroup {
 		mode: "Online",
 		syllabusId: "syl-1",
 		studentIds: [],
+		invitedStudentIds: [],
 		sessionsDone: 0,
 		sessionsTotal: 24,
 		tuitionFee: 200000,
@@ -33,6 +34,7 @@ describe("enrollments repo", () => {
 				id: "en-1",
 				classId: "cls-1",
 				studentId: "st-1",
+				status: "active",
 				createdAt: "2026-09-01T00:00:00.000Z",
 			},
 		];
@@ -55,39 +57,45 @@ describe("enrollments repo", () => {
 					id: "en-1",
 					classId: "cls-1",
 					studentId: "st-1",
+					status: "active",
 					createdAt: "2026-09-01T00:00:00.000Z",
 				},
 				{
 					id: "en-2",
 					classId: "cls-2",
 					studentId: "st-1",
+					status: "active",
 					createdAt: "2026-09-02T00:00:00.000Z",
 				},
 				{
 					id: "en-3",
 					classId: "cls-2",
 					studentId: "st-2",
+					status: "active",
 					createdAt: "2026-09-02T00:00:00.000Z",
 				},
 				{
 					id: "en-orphan",
 					classId: "cls-non-existent",
 					studentId: "st-orphan",
+					status: "active",
 					createdAt: "2026-09-03T00:00:00.000Z",
 				},
 			],
 		};
 
-		test("student thuộc 1 lớp → trả đúng lớp đó", () => {
+		test("student thuộc 1 lớp → trả đúng lớp đó kèm enrollmentStatus", () => {
 			const result = classesByStudent(testData, "st-2");
-			expect(result).toEqual([cls2]);
+			expect(result).toEqual([{ ...cls2, enrollmentStatus: "active" }]);
 		});
 
-		test("student thuộc nhiều lớp → đủ và giữ thứ tự của data.classes", () => {
+		test("student thuộc nhiều lớp → đủ và giữ thứ tự của data.classes kèm enrollmentStatus", () => {
 			const result = classesByStudent(testData, "st-1");
-			expect(result).toEqual([cls1, cls2]);
+			expect(result).toEqual([
+				{ ...cls1, enrollmentStatus: "active" },
+				{ ...cls2, enrollmentStatus: "active" },
+			]);
 		});
-
 		test("student không enrollment → mảng rỗng", () => {
 			const result = classesByStudent(testData, "st-no-enrollment");
 			expect(result).toEqual([]);

@@ -304,6 +304,31 @@ async function createTestApp() {
 		return ((await res.json()) as { id: string }).id;
 	}
 
+	async function addActiveStudent(
+		session: TestSession,
+		name: string,
+		extra: {
+			classId?: string;
+		} = {},
+	): Promise<string> {
+		const studentId = await addStudent(session, name, extra);
+		if (extra.classId) {
+			const snap = await kernel(session);
+			const en = snap.enrollments.find(
+				(e) => e.classId === extra.classId && e.studentId === studentId,
+			);
+			if (en) {
+				const acceptRes = await call(`/api/enrollments/${en.id}/accept`, {
+					session,
+					method: "POST",
+					body: {},
+				});
+				expect(acceptRes.status).toBe(200);
+			}
+		}
+		return studentId;
+	}
+
 	return {
 		app,
 		db: libsql,
@@ -318,6 +343,7 @@ async function createTestApp() {
 		createSyllabus,
 		createModule,
 		addStudent,
+		addActiveStudent,
 	};
 }
 
@@ -1296,7 +1322,9 @@ describe("invoice create (issue #60)", () => {
 		t = await createTestApp();
 		session = await t.insertUser("Cô tạo invoice");
 		classId = await t.createClass(session, "Lớp invoice");
-		studentId = await t.addStudent(session, "Học viên invoice", { classId });
+		studentId = await t.addActiveStudent(session, "Học viên invoice", {
+			classId,
+		});
 		enrollmentId = await enrollmentIdOf(session, classId, studentId);
 	});
 
@@ -1397,9 +1425,13 @@ describe("invoice create (issue #60)", () => {
 		const other = await t.insertUser("Cô enrollment khác org");
 		await t.kernel(other);
 		const otherClassId = await t.createClass(other, "Lớp org khác");
-		const otherStudentId = await t.addStudent(other, "Học viên org khác", {
-			classId: otherClassId,
-		});
+		const otherStudentId = await t.addActiveStudent(
+			other,
+			"Học viên org khác",
+			{
+				classId: otherClassId,
+			},
+		);
 		const foreignEnrollmentId = await enrollmentIdOf(
 			other,
 			otherClassId,
@@ -1416,9 +1448,13 @@ describe("invoice create (issue #60)", () => {
 
 	test("enrollment whose student row is cross-org is 404 (snapshot visibility)", async () => {
 		const foreignClassId = await t.createClass(session, "Lớp lệch org");
-		const foreignStudentId = await t.addStudent(session, "Học viên lệch org", {
-			classId: foreignClassId,
-		});
+		const foreignStudentId = await t.addActiveStudent(
+			session,
+			"Học viên lệch org",
+			{
+				classId: foreignClassId,
+			},
+		);
 		const foreignEnrollmentId = await enrollmentIdOf(
 			session,
 			foreignClassId,
@@ -1439,6 +1475,30 @@ describe("invoice create (issue #60)", () => {
 			due: "2026-09-15",
 		});
 		expect(res.status).toBe(404);
+	});
+
+	test("rejects invoice for invited enrollment with 409", async () => {
+		const invitedStudentId = await t.addStudent(
+			session,
+			"Học viên chờ kích hoạt",
+			{
+				classId,
+			},
+		);
+		const invitedEnrollmentId = await enrollmentIdOf(
+			session,
+			classId,
+			invitedStudentId,
+		);
+		const res = await postInvoice({
+			enrollmentId: invitedEnrollmentId,
+			amount: 500000,
+			due: "2026-09-15",
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			error: "Học viên chưa đồng ý tham gia lớp",
+		});
 	});
 });
 
@@ -1526,7 +1586,7 @@ describe("org isolation", () => {
 		expect(snapshotA.students).toHaveLength(1);
 	});
 
-	test("students with classId create enrollment + package atomically", async () => {
+	test("students with classId create invited enrollment; package created upon accept", async () => {
 		const session = await t.insertUser("Cô Pkg");
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
@@ -1535,18 +1595,37 @@ describe("org isolation", () => {
 
 		const snapshot = await t.kernel(session);
 		expect(snapshot.enrollments).toHaveLength(1);
-		expect(snapshot.enrollments[0]).toMatchObject({ classId, studentId });
-		expect(snapshot.packages).toHaveLength(1);
-		expect(snapshot.packages[0]).toMatchObject({
-			enrollmentId: snapshot.enrollments[0]?.id,
+		expect(snapshot.enrollments[0]).toMatchObject({
+			classId,
+			studentId,
+			status: "invited",
+		});
+		expect(snapshot.packages).toHaveLength(0);
+
+		// When accepted, package is created atomically
+		const acceptRes = await t.call(
+			`/api/enrollments/${snapshot.enrollments[0]?.id}/accept`,
+			{
+				session,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(acceptRes.status).toBe(200);
+
+		const acceptedSnapshot = await t.kernel(session);
+		expect(acceptedSnapshot.enrollments[0]?.status).toBe("active");
+		expect(acceptedSnapshot.packages).toHaveLength(1);
+		expect(acceptedSnapshot.packages[0]).toMatchObject({
+			enrollmentId: acceptedSnapshot.enrollments[0]?.id,
 			total: 12,
 			price: 0,
 			mode: "Online",
 			status: "active",
 		});
 		// Entitlement only: no done/remaining on the wire — derived downstream.
-		expect(snapshot.packages[0]).not.toHaveProperty("done");
-		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(acceptedSnapshot.packages[0]).not.toHaveProperty("done");
+		expect(acceptedSnapshot.packages[0]).not.toHaveProperty("remaining");
 	});
 
 	test("without classId no package is created", async () => {
@@ -3386,8 +3465,10 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toEqual([]);
 	});
 
-	test("enrolling a student generates sessionsTotal upcoming lessons on the kernel snapshot", async () => {
-		const studentId = await t.addStudent(session, "HV có lớp", { classId });
+	test("enrolling and activating a student generates sessionsTotal upcoming lessons on the kernel snapshot", async () => {
+		const studentId = await t.addActiveStudent(session, "HV có lớp", {
+			classId,
+		});
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(enrollment).toBeDefined();
@@ -3412,7 +3493,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			schedule: { days: [5], start: "09:00", end: "10:00" },
 			sessionsTotal: 50,
 		});
-		const studentId = await t.addStudent(session, "HV khóa dài", {
+		const studentId = await t.addActiveStudent(session, "HV khóa dài", {
 			classId: bigClassId,
 		});
 		const snapshot = await t.kernel(session);
@@ -3470,7 +3551,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			startDate: "",
 			notes: "",
 		});
-		await t.addStudent(session, "HV lớp cũ", { classId: legacyClassId });
+		await t.addActiveStudent(session, "HV lớp cũ", { classId: legacyClassId });
 		const snapshot = await t.kernel(session);
 		expect(snapshot.lessons.filter((l) => l.classId === legacyClassId)).toEqual(
 			[],
@@ -3484,8 +3565,10 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("group class: two enrollments get independent lesson sets (invariant 2)", async () => {
-		const firstId = await t.addStudent(session, "HV nhóm 1", { classId });
-		const secondId = await t.addStudent(session, "HV nhóm 2", { classId });
+		const firstId = await t.addActiveStudent(session, "HV nhóm 1", { classId });
+		const secondId = await t.addActiveStudent(session, "HV nhóm 2", {
+			classId,
+		});
 		const snapshot = await t.kernel(session);
 		const firstEnrollment = findEnrollment(snapshot, classId, firstId);
 		const secondEnrollment = findEnrollment(snapshot, classId, secondId);
@@ -3512,6 +3595,13 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			body: { studentId },
 		});
 		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(
@@ -3876,7 +3966,7 @@ describe("enroll existing student (issue #122)", () => {
 		});
 	}
 
-	test("happy path: enrollment + active package + generated lessons in one shot", async () => {
+	test("happy path: enrollment creates invited, then accept activates package + generated lessons", async () => {
 		const classId = await t.createClass(session, "Lớp enroll #122", {
 			sessionsTotal: 24,
 			tuitionFee: 600000,
@@ -3890,9 +3980,32 @@ describe("enroll existing student (issue #122)", () => {
 		expect(res.status).toBe(201);
 		const { id: enrollmentId } = (await res.json()) as { id: string };
 
+		const initialSnapshot = await t.kernel(session);
+		const initialEnrollment = findEnrollment(
+			initialSnapshot,
+			classId,
+			studentId,
+		);
+		expect(initialEnrollment?.id).toBe(enrollmentId);
+		expect(initialEnrollment?.status).toBe("invited");
+		expect(
+			initialSnapshot.packages.filter((p) => p.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+		expect(
+			initialSnapshot.lessons.filter((l) => l.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+
+		// Accept
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
-		expect(enrollment?.id).toBe(enrollmentId);
+		expect(enrollment?.status).toBe("active");
 
 		const pkg = snapshot.packages.find((p) => p.enrollmentId === enrollmentId);
 		expect(pkg).toMatchObject({
@@ -3918,6 +4031,12 @@ describe("enroll existing student (issue #122)", () => {
 		const res = await enroll(classId, { studentId });
 		expect(res.status).toBe(201);
 		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
 
 		const pkg = (await t.kernel(session)).packages.find(
 			(p) => p.enrollmentId === enrollmentId,
@@ -3984,6 +4103,13 @@ describe("student package minimums (issue #115)", () => {
 			body: { studentId, total: 0, price: 400000, mode: "Online" },
 		});
 		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(
@@ -4651,10 +4777,10 @@ describe("class assignment give flow (#208)", () => {
 		classIdA = await t.createClass(orgA, "Lớp IELTS Tối");
 
 		// Create 2 students for Org A enrolled in classIdA
-		studentIdA1 = await t.addStudent(orgA, "Học viên A1", {
+		studentIdA1 = await t.addActiveStudent(orgA, "Học viên A1", {
 			classId: classIdA,
 		});
-		studentIdA2 = await t.addStudent(orgA, "Học viên A2", {
+		studentIdA2 = await t.addActiveStudent(orgA, "Học viên A2", {
 			classId: classIdA,
 		});
 
@@ -4903,7 +5029,16 @@ describe("class assignment give flow (#208)", () => {
 			},
 		});
 		expect(enrollRes.status).toBe(201);
-
+		const { id: capEnrollmentId } = (await enrollRes.json()) as { id: string };
+		const acceptRes = await t.call(
+			`/api/enrollments/${capEnrollmentId}/accept`,
+			{
+				session: orgA,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(acceptRes.status).toBe(200);
 		// Insert 200 dummy rows into class_assignment for this class
 		const orgId = await t.orgIdOf(orgA);
 		const batchStatements = Array.from({ length: 200 }, () =>
@@ -5088,5 +5223,372 @@ describe("class tuition fee (học phí lớp theo học viên - issue #227)", (
 			},
 		);
 		expect(resNonExistent.status).toBe(404);
+	});
+});
+
+describe("enrollment invite -> accept lifecycle (issue #253)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let otherOrg: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Lifecycle");
+		otherOrg = await t.insertUser("Cô Khác Org Lifecycle");
+		await t.kernel(session);
+		await t.kernel(otherOrg);
+	});
+
+	test("POST /students with classId creates enrollment invited, 0 packages, 0 lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Invite 1", {
+			sessionsTotal: 10,
+		});
+		const studentId = await t.addStudent(session, "HV Mới 1", { classId });
+
+		const snap = await t.kernel(session);
+		const en = snap.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en).toBeDefined();
+		expect(en?.status).toBe("invited");
+		expect(snap.packages.filter((p) => p.enrollmentId === en?.id)).toHaveLength(
+			0,
+		);
+		expect(snap.lessons.filter((l) => l.enrollmentId === en?.id)).toHaveLength(
+			0,
+		);
+	});
+
+	test("POST /classes/:id/enroll creates enrollment invited, 0 packages, 0 lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Invite 2", {
+			sessionsTotal: 10,
+		});
+		const studentId = await t.addStudent(session, "HV Sẵn 2");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const snap = await t.kernel(session);
+		const en = snap.enrollments.find((e) => e.id === enrollmentId);
+		expect(en?.status).toBe("invited");
+		expect(
+			snap.packages.filter((p) => p.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+		expect(
+			snap.lessons.filter((l) => l.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+	});
+
+	test("POST /api/enrollments/:id/accept transitions invited -> active, generates package and lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Accept Test", {
+			sessionsTotal: 8,
+			tuitionFee: 800000,
+			mode: "Offline",
+		});
+		const studentId = await t.addStudent(session, "HV Chờ Accept", { classId });
+		const snapBefore = await t.kernel(session);
+		const en = snapBefore.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en?.status).toBe("invited");
+
+		const acceptRes = await t.call(`/api/enrollments/${en?.id}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+		expect(await acceptRes.json()).toEqual({ ok: true });
+
+		const snapAfter = await t.kernel(session);
+		const enAfter = snapAfter.enrollments.find((e) => e.id === en?.id);
+		expect(enAfter?.status).toBe("active");
+
+		const pkgs = snapAfter.packages.filter((p) => p.enrollmentId === en?.id);
+		expect(pkgs).toHaveLength(1);
+		expect(pkgs[0]).toMatchObject({
+			classId,
+			studentId,
+			total: 8,
+			price: 800000,
+			mode: "Offline",
+			status: "active",
+		});
+
+		const lessons = snapAfter.lessons.filter((l) => l.enrollmentId === en?.id);
+		expect(lessons).toHaveLength(8);
+	});
+
+	test("accept is idempotent on sequential calls", async () => {
+		const classId = await t.createClass(session, "Lớp Idempotent", {
+			sessionsTotal: 6,
+		});
+		await t.addStudent(session, "HV Idempotent", { classId });
+		const snap = await t.kernel(session);
+		const enId = snap.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		const first = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(first.status).toBe(200);
+
+		const second = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(second.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		expect(
+			snapAfter.packages.filter((p) => p.enrollmentId === enId),
+		).toHaveLength(1);
+		expect(
+			snapAfter.lessons.filter((l) => l.enrollmentId === enId),
+		).toHaveLength(6);
+	});
+
+	test("concurrent accept race: two requests in parallel both succeed without 500 or duplicate packages", async () => {
+		const classId = await t.createClass(session, "Lớp Race Accept", {
+			sessionsTotal: 6,
+		});
+		await t.addStudent(session, "HV Race Accept", { classId });
+		const snap = await t.kernel(session);
+		const enId = snap.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		// Fire two parallel accept requests
+		const [resA, resB] = await Promise.all([
+			t.call(`/api/enrollments/${enId}/accept`, {
+				session,
+				method: "POST",
+				body: {},
+			}),
+			t.call(`/api/enrollments/${enId}/accept`, {
+				session,
+				method: "POST",
+				body: {},
+			}),
+		]);
+
+		expect(resA.status).toBe(200);
+		expect(resB.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		expect(snapAfter.enrollments.find((e) => e.id === enId)?.status).toBe(
+			"active",
+		);
+		expect(
+			snapAfter.packages.filter((p) => p.enrollmentId === enId),
+		).toHaveLength(1);
+		expect(
+			snapAfter.lessons.filter((l) => l.enrollmentId === enId),
+		).toHaveLength(6);
+	});
+
+	test("accept returns 404 for unknown id or cross-org enrollment", async () => {
+		const resNotFound = await t.call(
+			`/api/enrollments/${crypto.randomUUID()}/accept`,
+			{
+				session,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(resNotFound.status).toBe(404);
+
+		const otherClassId = await t.createClass(otherOrg, "Lớp của Other Org");
+		await t.addStudent(otherOrg, "HV Other", {
+			classId: otherClassId,
+		});
+		const otherSnap = await t.kernel(otherOrg);
+		const otherEnId =
+			otherSnap.enrollments.find((e) => e.classId === otherClassId)?.id ?? "";
+
+		const resCross = await t.call(`/api/enrollments/${otherEnId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(resCross.status).toBe(404);
+	});
+
+	test("DELETE /api/enrollments/:id deletes invited enrollment and allows re-enrolling", async () => {
+		const classId = await t.createClass(session, "Lớp Cancel Test");
+		const studentId = await t.addStudent(session, "HV Hủy Lời Mời", {
+			classId,
+		});
+		const snapBefore = await t.kernel(session);
+		const en = snapBefore.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en?.status).toBe("invited");
+
+		const deleteRes = await t.call(`/api/enrollments/${en?.id}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(deleteRes.status).toBe(200);
+		expect(await deleteRes.json()).toEqual({ ok: true });
+
+		const snapDeleted = await t.kernel(session);
+		expect(
+			snapDeleted.enrollments.filter(
+				(e) => e.classId === classId && e.studentId === studentId,
+			),
+		).toHaveLength(0);
+
+		// Re-enrolling same student into the class succeeds without 409
+		const reEnrollRes = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(reEnrollRes.status).toBe(201);
+	});
+
+	test("DELETE /api/enrollments/:id returns 409 for active enrollment", async () => {
+		const classId = await t.createClass(session, "Lớp Delete Active");
+		const studentId = await t.addActiveStudent(session, "HV Active Delete", {
+			classId,
+		});
+		const snap = await t.kernel(session);
+		const enId =
+			snap.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+
+		const deleteRes = await t.call(`/api/enrollments/${enId}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(deleteRes.status).toBe(409);
+		expect(await deleteRes.json()).toEqual({
+			error: "cannot delete active enrollment",
+		});
+	});
+
+	test("DELETE /api/enrollments/:id returns 404 for unknown or cross-org enrollment", async () => {
+		const resNotFound = await t.call(
+			`/api/enrollments/${crypto.randomUUID()}`,
+			{
+				session,
+				method: "DELETE",
+			},
+		);
+		expect(resNotFound.status).toBe(404);
+
+		const otherClassId = await t.createClass(otherOrg, "Lớp Other Delete");
+		await t.addStudent(otherOrg, "HV Other Del", {
+			classId: otherClassId,
+		});
+		const otherSnap = await t.kernel(otherOrg);
+		const otherEnId =
+			otherSnap.enrollments.find((e) => e.classId === otherClassId)?.id ?? "";
+
+		const resCross = await t.call(`/api/enrollments/${otherEnId}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(resCross.status).toBe(404);
+	});
+
+	test("assignments rejects studentIds containing invited student with 400", async () => {
+		const classId = await t.createClass(session, "Lớp Assign Guard");
+		const invitedId = await t.addStudent(session, "HV Invited Assign", {
+			classId,
+		});
+		const activeId = await t.addActiveStudent(session, "HV Active Assign", {
+			classId,
+		});
+
+		const pRes = await t.call("/api/assignments/prompts", {
+			session,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Prompt Guard",
+				band: "7.0",
+				source: "",
+				prompt: "prompt",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		const promptPayload = (await pRes.json()) as { id: string };
+		const promptId = promptPayload.id;
+
+		// Attempt to assign with invited student
+		const resInvited = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [invitedId],
+			},
+		});
+		expect(resInvited.status).toBe(400);
+		expect(await resInvited.json()).toMatchObject({
+			error: "student not enrolled",
+		});
+
+		// Active student succeeds
+		const resActive = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [activeId],
+			},
+		});
+		expect(resActive.status).toBe(201);
+	});
+
+	test("tuitionFee drift: accept uses tuitionFee at time of accept as package price", async () => {
+		const classId = await t.createClass(session, "Lớp Fee Drift", {
+			tuitionFee: 500000,
+		});
+		await t.addStudent(session, "HV Fee Drift", { classId });
+		const snapInit = await t.kernel(session);
+		const enId =
+			snapInit.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		// Teacher updates class tuition fee before accept
+		const feeRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 750000 },
+		});
+		expect(feeRes.status).toBe(200);
+
+		// Now accept
+		const acceptRes = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		const pkg = snapAfter.packages.find((p) => p.enrollmentId === enId);
+		expect(pkg?.price).toBe(750000);
 	});
 });

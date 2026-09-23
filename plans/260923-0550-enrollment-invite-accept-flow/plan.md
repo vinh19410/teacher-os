@@ -1,7 +1,7 @@
 ---
 title: "Enrollment invite → accept flow"
 description: "Thêm vòng đời trạng thái enrollment: 'Đã mời' khi thêm học viên vào lớp, chỉ chuyển 'Đang học' sau khi được đồng ý (portal API seam hoặc nút kích hoạt của teacher); kèm hủy lời mời và chặn hóa đơn/bài tập trên enrollment invited."
-status: pending
+status: completed
 priority: P1
 effort: 15h
 issue: 253
@@ -51,10 +51,10 @@ Plan portal đã tồn tại (`plans/260923-0641-student-portal-app/plan.md`, v1
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [DB schema & API contract](./phase-01-db-contract.md) | Pending |
-| 2 | [Server: enroll tạo invited + accept/cancel + guards](./phase-02-server-invited-and-accept.md) | Pending |
-| 3 | [Web: roster status UI, kích hoạt, sĩ số](./phase-03-web-roster-status-ui.md) | Pending |
-| 4 | [E2E, regression & docs](./phase-04-e2e-regression-docs.md) | Pending |
+| 1 | [DB schema & API contract](./phase-01-db-contract.md) | Completed |
+| 2 | [Server: enroll tạo invited + accept/cancel + guards](./phase-02-server-invited-and-accept.md) | Completed |
+| 3 | [Web: roster status UI, kích hoạt, sĩ số](./phase-03-web-roster-status-ui.md) | Completed |
+| 4 | [E2E, regression & docs](./phase-04-e2e-regression-docs.md) | Completed |
 
 ## Cross-Plan Dependencies
 
@@ -65,13 +65,13 @@ Plan portal đã tồn tại (`plans/260923-0641-student-portal-app/plan.md`, v1
 
 ## Success Criteria
 
-- [ ] Thêm học viên vào lớp (cả 2 đường: enroll-existing và tạo-mới-có-lớp) → enrollment `invited`, KHÔNG sinh package/lessons; KPI sĩ số không đổi.
-- [ ] `POST /api/enrollments/:enrollmentId/accept` (portal seam + nút Kích hoạt dùng chung) chuyển `invited`→`active`, sinh đúng 1 package + chuỗi buổi học; idempotent kể cả khi gọi SONG SONG (không 500).
-- [ ] `DELETE /api/enrollments/:enrollmentId` xóa được enrollment `invited`; bị chặn (409) khi `active`.
-- [ ] Không tạo được hóa đơn (`POST /invoices` → 409) và không gán được bài tập cho học viên `invited`.
-- [ ] Roster hiển thị badge "Đã mời"/"Đang học" + nút Kích hoạt/Hủy lời mời cho invited; picker "Học viên có sẵn" và picker hóa đơn loại invited.
-- [ ] Enrollment cũ sau migration tự động là `active` — dữ liệu hiện hữu không đổi hành vi.
-- [ ] Toàn bộ vitest + contract tests + e2e (12 spec liên quan) xanh.
+- [x] Thêm học viên vào lớp (cả 2 đường: enroll-existing và tạo-mới-có-lớp) → enrollment `invited`, KHÔNG sinh package/lessons; KPI sĩ số không đổi.
+- [x] `POST /api/enrollments/:enrollmentId/accept` (portal seam + nút Kích hoạt dùng chung) chuyển `invited`→`active`, sinh đúng 1 package + chuỗi buổi học; idempotent kể cả khi gọi SONG SONG (không 500).
+- [x] `DELETE /api/enrollments/:enrollmentId` xóa được enrollment `invited`; bị chặn (409) khi `active`.
+- [x] Không tạo được hóa đơn (`POST /invoices` → 409) và không gán được bài tập cho học viên `invited`.
+- [x] Roster hiển thị badge "Đã mời"/"Đang học" + nút Kích hoạt/Hủy lời mời cho invited; picker "Học viên có sẵn" và picker hóa đơn loại invited.
+- [x] Enrollment cũ sau migration tự động là `active` — dữ liệu hiện hữu không đổi hành vi.
+- [x] Toàn bộ vitest + contract tests + e2e (12 spec liên quan) xanh.
 
 ## Reports
 

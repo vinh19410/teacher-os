@@ -154,6 +154,14 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		}
 
 		const snap = await snapshot();
+		for (const en of snap.enrollments.filter((e) => e.classId === classId)) {
+			const acceptRes = await t.call(
+				t.teacherA.token,
+				`/api/enrollments/${en.id}/accept`,
+				{ body: {} },
+			);
+			expect(acceptRes.status).toBe(200);
+		}
 		expect(snap.enrollments.filter((e) => e.classId === classId)).toHaveLength(
 			2,
 		);
@@ -351,6 +359,16 @@ describe("occurrence mutations (#98 phase 2)", () => {
 				classId: f2class,
 			},
 		});
+		const snapF2 = await snapshot();
+		const enF2 = snapF2.enrollments.find((e) => e.classId === f2class);
+		if (enF2) {
+			const accept = await t.call(
+				t.teacherA.token,
+				`/api/enrollments/${enF2.id}/accept`,
+				{ body: {} },
+			);
+			expect(accept.status).toBe(200);
+		}
 		const move = await t.call(
 			t.teacherA.token,
 			`/api/classes/${f2class}/sessions/2026-10-13/edit`,

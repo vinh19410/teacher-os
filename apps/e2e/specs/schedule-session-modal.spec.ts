@@ -21,6 +21,15 @@ async function addStudent(page: Page, name: string) {
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, name);
 	await expect(page.getByText(name)).toBeVisible();
+	const row = page.locator("tr", { hasText: name });
+	await row.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(row.getByText("Đang học")).toBeVisible();
 }
 
 async function seedTwoStudentClass(page: Page, className: string) {

@@ -50,6 +50,16 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+
+	// Activate student so they can receive invoices
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 }
 
 /** The Card holding the "Hóa đơn" DataTable (scoped away from the package
@@ -198,4 +208,25 @@ test("tuition → tạo hóa đơn amount âm / ký tự không hợp lệ bị 
 	});
 	expect(posts).toBe(0);
 	await expect(invoiceTable(page)).toHaveCount(0);
+});
+
+test("tuition → picker hóa đơn loại trừ học viên chưa kích hoạt (status invited)", async ({
+	page,
+}) => {
+	await setupOrgWithEnrollment(page);
+
+	// Tạo học viên thứ hai và thêm vào lớp nhưng KHÔNG kích hoạt (giữ invited)
+	const INVITED_STUDENT = "HV-Chờ-Kích-Hoạt";
+	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await createStudentViaUi(page, INVITED_STUDENT);
+	await expect(page.getByText(INVITED_STUDENT)).toBeVisible();
+	// Học viên này đang ở trạng thái 'Đã mời'
+	await expect(page.getByText("Đã mời")).toBeVisible();
+
+	// Mở modal tạo hóa đơn: chỉ thấy học viên active, KHÔNG thấy học viên invited
+	const dialog = await openCreateInvoiceModal(page);
+	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
+	await expect(dialog.getByLabel("Học viên *")).not.toContainText(
+		INVITED_STUDENT,
+	);
 });

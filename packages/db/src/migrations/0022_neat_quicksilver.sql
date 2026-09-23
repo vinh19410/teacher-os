@@ -1,0 +1,1 @@
+ALTER TABLE `enrollment` ADD `status` text DEFAULT 'active' NOT NULL;

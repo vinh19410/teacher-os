@@ -27,6 +27,11 @@ export const enrollment = sqliteTable(
 		studentId: text("student_id")
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
+		/**
+		 * Lifecycle: 'invited' (added to class, awaiting accept) -> 'active' (accepted, packages/lessons generated).
+		 * Invariant: default 'active' exists only to backfill pre-existing rows in migrations; new code writes status explicitly.
+		 */
+		status: text("status").notNull().default("active"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

@@ -22,11 +22,18 @@ import type { ClassGroup } from "@/lib/mock-data";
  * lessons. The stored class column is no longer read.
  */
 export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
-	const rosterByClass = new Map<string, string[]>();
+	const activeRosterByClass = new Map<string, string[]>();
+	const invitedRosterByClass = new Map<string, string[]>();
 	for (const row of snapshot.enrollments) {
-		const list = rosterByClass.get(row.classId) ?? [];
-		list.push(row.studentId);
-		rosterByClass.set(row.classId, list);
+		if (row.status === "invited") {
+			const list = invitedRosterByClass.get(row.classId) ?? [];
+			list.push(row.studentId);
+			invitedRosterByClass.set(row.classId, list);
+		} else {
+			const list = activeRosterByClass.get(row.classId) ?? [];
+			list.push(row.studentId);
+			activeRosterByClass.set(row.classId, list);
+		}
 	}
 
 	const completedByClass = new Map<string, Map<string, number>>();
@@ -55,7 +62,8 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		skills: row.skills,
 		mode: row.mode,
 		syllabusId: row.syllabusId ?? "",
-		studentIds: rosterByClass.get(row.id) ?? [],
+		studentIds: activeRosterByClass.get(row.id) ?? [],
+		invitedStudentIds: invitedRosterByClass.get(row.id) ?? [],
 		schedule: row.schedule,
 		sessionsDone: maxCompleted(row.id),
 		sessionsTotal: row.sessionsTotal,

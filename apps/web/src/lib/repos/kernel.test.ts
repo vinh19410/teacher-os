@@ -112,6 +112,7 @@ const snapshot: KernelSnapshot = {
 			id: "en-1",
 			classId: "cl-1",
 			studentId: "st-1",
+			status: "active",
 			createdAt: "2026-08-18T01:00:00.000Z",
 		},
 	],

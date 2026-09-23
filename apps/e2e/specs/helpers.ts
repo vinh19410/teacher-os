@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -102,4 +102,47 @@ export async function gotoWeek(
 	weekStartISO: string,
 ): Promise<void> {
 	await page.goto(`/schedule?week=${weekStartISO}`);
+}
+
+/** Kích hoạt enrollment qua API seam (/api/enrollments/:id/accept).
+ * Mang theo session cookie và Origin header. */
+export async function acceptEnrollment(
+	page: Page,
+	enrollmentId: string,
+): Promise<void> {
+	const response = await page.request.post(
+		`${API_ORIGIN}/api/enrollments/${enrollmentId}/accept`,
+		{
+			data: {},
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "application/json",
+			},
+		},
+	);
+	if (response.status() !== 200) {
+		throw new Error(
+			`acceptEnrollment failed (${response.status()}): ${await response.text()}`,
+		);
+	}
+}
+
+/** Kích hoạt toàn bộ enrollment đang ở trạng thái 'invited' của lớp qua API. */
+export async function acceptAllClassEnrollments(
+	page: Page,
+	classId: string,
+): Promise<void> {
+	const response = await page.request.get(`${API_ORIGIN}/api/kernel`);
+	if (response.status() !== 200) {
+		throw new Error(`getKernelSnapshot failed (${response.status()})`);
+	}
+	const snap = (await response.json()) as {
+		enrollments?: Array<{ id: string; classId: string; status?: string }>;
+	};
+	const enrollments = (snap.enrollments ?? []).filter(
+		(e) => e.classId === classId && e.status === "invited",
+	);
+	for (const en of enrollments) {
+		await acceptEnrollment(page, en.id);
+	}
 }
