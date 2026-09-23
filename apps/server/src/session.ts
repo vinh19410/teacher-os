@@ -3,6 +3,8 @@ import type { Auth } from "@teacher-os/auth";
 export interface SessionUser {
 	userId: string;
 	userName: string;
+	email?: string;
+	emailVerified?: boolean;
 }
 
 export type { Auth };
@@ -21,5 +23,10 @@ export async function getSessionUser(
 	if (!session?.user) {
 		return null;
 	}
-	return { userId: session.user.id, userName: session.user.name };
+	return {
+		userId: session.user.id,
+		userName: session.user.name,
+		email: session.user.email,
+		emailVerified: Boolean(session.user.emailVerified),
+	};
 }

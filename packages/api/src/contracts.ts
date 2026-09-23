@@ -914,3 +914,81 @@ export const workspaceSettingsUpdateSchema = z.object({
 export type WorkspaceSettingsUpdate = z.infer<
 	typeof workspaceSettingsUpdateSchema
 >;
+
+/**
+ * Student Portal API contracts.
+ * Read-only endpoints mounted under /api/student.
+ */
+export const STUDENT_ERROR_CODES = {
+	NOT_LINKED: "STUDENT_NOT_LINKED",
+	AMBIGUOUS: "STUDENT_AMBIGUOUS",
+	EMAIL_UNVERIFIED: "STUDENT_EMAIL_UNVERIFIED",
+} as const;
+export type StudentErrorCode =
+	(typeof STUDENT_ERROR_CODES)[keyof typeof STUDENT_ERROR_CODES];
+
+export const studentMeSchema = z.object({
+	user: z.object({
+		name: z.string(),
+		email: z.string(),
+	}),
+	student: z.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		orgId: z.string(),
+	}),
+});
+export type StudentMe = z.infer<typeof studentMeSchema>;
+
+export const studentNextSessionSchema = z.object({
+	date: z.string(),
+	time: z.string(),
+	topic: z.string(),
+});
+export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
+
+export const studentClassSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	level: z.string(),
+	mode: z.string(),
+	schedule: z.string(),
+	sessionsDone: z.number().int(),
+	sessionsTotal: z.number().int(),
+	status: z.string(),
+	nextSession: studentNextSessionSchema.nullable(),
+});
+export type StudentClass = z.infer<typeof studentClassSchema>;
+
+export const studentAssignmentScoresSchema = z.object({
+	task: z.number(),
+	coherence: z.number(),
+	lexical: z.number(),
+	grammar: z.number(),
+});
+export type StudentAssignmentScores = z.infer<
+	typeof studentAssignmentScoresSchema
+>;
+
+export const studentAssignmentSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	source: z.enum(["class_assignment", "grading"]),
+	classId: z.string().nullable(),
+	className: z.string().nullable(),
+	due: z.string(),
+	submittedAt: z.string().nullable(),
+	scores: studentAssignmentScoresSchema.nullable(),
+});
+export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
+
+export const studentOverviewSchema = z.object({
+	student: z.object({
+		id: z.string(),
+		name: z.string(),
+	}),
+	classes: z.array(studentClassSchema),
+	assignments: z.array(studentAssignmentSchema),
+});
+export type StudentOverview = z.infer<typeof studentOverviewSchema>;

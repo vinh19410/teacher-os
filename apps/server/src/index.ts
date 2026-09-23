@@ -4,6 +4,13 @@ import { env } from "@teacher-os/env/server";
 import { buildApp, type Db } from "./app";
 import { getSessionUser } from "./session";
 
+export function parseCORSOrigins(raw: string): string[] {
+	return raw
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+}
+
 // Lazy so importing this module never touches bindings at eval time.
 // Cast: drizzle's schema generic is invariant; Db keeps the route-facing surface.
 let db: Db | undefined;
@@ -21,7 +28,7 @@ const getAuth = (): Auth => {
 	if (!auth) {
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
-			corsOrigin: env.CORS_ORIGIN,
+			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -40,7 +47,7 @@ const getAuth = (): Auth => {
 
 export default buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
-	corsOrigin: env.CORS_ORIGIN,
+	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) => getSessionUser(getAuth(), headers),
 	authHandler: (req) => getAuth().handler(req),
 });

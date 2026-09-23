@@ -1,7 +1,7 @@
 ---
 title: "Student Portal: thêm app học viên vào monorepo (login + tổng quan)"
 description: "Thêm apps/student (React SPA tái dùng packages/ui + Better-Auth), trang login học viên và trang tổng quan sau login; server thêm API student-scoped bridge qua student.email; infra derive student.<domain>."
-status: pending
+status: completed
 priority: P1
 effort: 29h
 issue: 254
@@ -43,18 +43,18 @@ Thêm app thứ 4 vào monorepo: `apps/student` — student portal cho học vi�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Scaffold app `apps/student`](./phase-01-start.md) | Pending |
-| 2 | [Server: student bridge + API student-scoped](./phase-02-server-student-bridge.md) | Pending |
-| 3 | [Trang login học viên](./phase-03-student-login.md) | Pending |
-| 4 | [Trang tổng quan học viên](./phase-04-student-overview.md) | Pending |
-| 5 | [Infra topology + docs](./phase-05-infra-topology.md) | Pending |
+| 1 | [Scaffold app `apps/student`](./phase-01-start.md) | Completed |
+| 2 | [Server: student bridge + API student-scoped](./phase-02-server-student-bridge.md) | Completed |
+| 3 | [Trang login học viên](./phase-03-student-login.md) | Completed |
+| 4 | [Trang tổng quan học viên](./phase-04-student-overview.md) | Completed |
+| 5 | [Infra topology + docs](./phase-05-infra-topology.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `pnpm dev:student` chạy `apps/student` ở http://localhost:8003; `pnpm check`, `pnpm check-types`, `pnpm build`, `pnpm test` xanh.
-- [ ] Login bằng Google hoặc email/password trên :8003 → vào trang tổng quan; user không khớp `student.email` (hoặc email chưa verified, hoặc mơ hồ nhiều row) thấy màn hình lỗi tương ứng + đăng xuất.
-- [ ] Tổng quan hiển thị đúng lớp (progress "Buổi 12/24", buổi tới) và bài tập (Sắp đến hạn/Quá hạn/Đã nộp/Điểm) từ API `/api/student/*`, chỉ data của học viên đó.
-- [ ] `CORS_ORIGIN` chấp nhận danh sách origin (cả nhánh topology lẫn nhánh dev local); trustedOrigins gồm origin student; topology derive `student.<domain>`; deploy định nghĩa được worker student.
+- [x] `pnpm dev:student` chạy `apps/student` ở http://localhost:8003; `pnpm check`, `pnpm check-types`, `pnpm build`, `pnpm test` xanh.
+- [x] Login bằng Google hoặc email/password trên :8003 → vào trang tổng quan; user không khớp `student.email` (hoặc email chưa verified, hoặc mơ hồ nhiều row) thấy màn hình lỗi tương ứng + đăng xuất.
+- [x] Tổng quan hiển thị đúng lớp (progress "Buổi 12/24", buổi tới) và bài tập (Sắp đến hạn/Quá hạn/Đã nộp/Điểm) từ API `/api/student/*`, chỉ data của học viên đó.
+- [x] `CORS_ORIGIN` chấp nhận danh sách origin (cả nhánh topology lẫn nhánh dev local); trustedOrigins gồm origin student; topology derive `student.<domain>`; deploy định nghĩa được worker student.
 
 ## Dependencies
 

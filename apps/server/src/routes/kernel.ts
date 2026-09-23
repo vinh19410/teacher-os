@@ -128,15 +128,29 @@ export function generateScheduleLessons(input: {
 	});
 }
 
-export function kernelRoutes(deps: { getDb(): Db; corsOrigin: string }) {
+export function kernelRoutes(deps: {
+	getDb(): Db;
+	corsOrigin?: string | string[];
+	corsOrigins?: string | string[];
+}) {
 	const kernel = new Hono<Env>();
+	const allowedOrigins = Array.isArray(deps.corsOrigins)
+		? deps.corsOrigins
+		: typeof deps.corsOrigins === "string"
+			? [deps.corsOrigins]
+			: Array.isArray(deps.corsOrigin)
+				? deps.corsOrigin
+				: typeof deps.corsOrigin === "string"
+					? [deps.corsOrigin]
+					: [];
 
 	// Cookies are SameSite=None, so CSRF defense is an explicit Origin check:
 	// cross-site POSTs (or non-browser calls without the right Origin) fail closed.
 	// POST bodies are JSON-only; form posts die on content-type before parsing.
 	kernel.use("*", async (c, next) => {
 		if (c.req.method === "POST" || c.req.method === "DELETE") {
-			if (c.req.header("Origin") !== deps.corsOrigin) {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
 			}
 			if (c.req.method === "POST") {

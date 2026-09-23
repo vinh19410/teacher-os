@@ -28,11 +28,11 @@ dependencies: []
 
 ## Requirements
 
-- [ ] `apps/student` là workspace member, `build`/`test`/`check-types` chạy được qua turbo
-- [ ] Dev server :8003 strictPort; router có `/login` placeholder và `_auth` guard → `/` (tổng quan placeholder)
-- [ ] Query client có handler 401 → redirect `/login` (không phụ thuộc guard — guard chỉ chạy lúc navigation)
-- [ ] Fresh clone: copy `.env.example` → `.env` là `pnpm dev:student` boot được
-- [ ] Không chỉnh sửa hành vi hiện có của `apps/web`/`apps/server`
+- [x] `apps/student` là workspace member, `build`/`test`/`check-types` chạy được qua turbo
+- [x] Dev server :8003 strictPort; router có `/login` placeholder và `_auth` guard → `/` (tổng quan placeholder)
+- [x] Query client có handler 401 → redirect `/login` (không phụ thuộc guard — guard chỉ chạy lúc navigation)
+- [x] Fresh clone: copy `.env.example` → `.env` là `pnpm dev:student` boot được
+- [x] Không chỉnh sửa hành vi hiện có của `apps/web`/`apps/server`
 
 ## Architecture
 
@@ -73,10 +73,10 @@ Ngoài ra: `apps/student/.env.example` (chứa `VITE_SERVER_URL=http://localhost
 
 ## Todo
 
-- [ ] Scaffold cây file `apps/student` theo Architecture (gồm `.env.example`)
-- [ ] `dev:student` script + `pnpm install` xanh
-- [ ] Query-client 401 handler
-- [ ] Gates xanh: check / check-types / build / test
+- [x] Scaffold cây file `apps/student` theo Architecture (gồm `.env.example`)
+- [x] `dev:student` script + `pnpm install` xanh
+- [x] Query-client 401 handler
+- [x] Gates xanh: check / check-types / build / test
 
 ## Success Criteria
 

@@ -30,11 +30,11 @@ dependencies: [1, 2, 3]
 
 ## Requirements
 
-- [ ] Greeting "Chào {tên}" + ngày VN ("Thứ Ba, 23/09") + dòng tóm tắt số bài sắp đến hạn
-- [ ] "Lớp học của tôi": card/lớp — tên, chip level, chip mode, lịch tuần, progress "Buổi 12/24" + bar, "Buổi tới: ..."
-- [ ] "Bài tập": tabs Tất cả / Sắp đến hạn / Quá hạn / Đã nộp (button thật + `aria-selected`), row: tiêu đề, lớp, "Hạn: 25/09 · còn 2 ngày", chip trạng thái, điểm nếu có
-- [ ] Empty states gọn cho "chưa có lớp" và "chưa có bài tập"; skeleton khi loading; avatar menu có Đăng xuất
-- [ ] Mobile-first 360→1920 không scroll ngang, touch target ≥ 44px, contrast ≥ 4.5:1, icon Lucide (không emoji)
+- [x] Greeting "Chào {tên}" + ngày VN ("Thứ Ba, 23/09") + dòng tóm tắt số bài sắp đến hạn
+- [x] "Lớp học của tôi": card/lớp — tên, chip level, chip mode, lịch tuần, progress "Buổi 12/24" + bar, "Buổi tới: ..."
+- [x] "Bài tập": tabs Tất cả / Sắp đến hạn / Quá hạn / Đã nộp (button thật + `aria-selected`), row: tiêu đề, lớp, "Hạn: 25/09 · còn 2 ngày", chip trạng thái, điểm nếu có
+- [x] Empty states gọn cho "chưa có lớp" và "chưa có bài tập"; skeleton khi loading; avatar menu có Đăng xuất
+- [x] Mobile-first 360→1920 không scroll ngang, touch target ≥ 44px, contrast ≥ 4.5:1, icon Lucide (không emoji)
 
 ## Architecture
 
@@ -76,13 +76,13 @@ Error mapping: `/api/student/me` 403 → render trạng thái tương ứng mã 
 
 ## Todo
 
-- [ ] repos + hooks + 403 mapping
-- [ ] assignment-status derive + unit test
-- [ ] Shell + avatar menu + đăng xuất
-- [ ] Greeting + lớp card + buổi tới + progress
-- [ ] Bài tập tabs/list + chips + điểm
-- [ ] Empty states + skeleton + 3 màn hình lỗi (NotLinked/Unverified/Ambiguous)
-- [ ] Responsive + a11y checklist theo design contract
+- [x] repos + hooks + 403 mapping
+- [x] assignment-status derive + unit test
+- [x] Shell + avatar menu + đăng xuất
+- [x] Greeting + lớp card + buổi tới + progress
+- [x] Bài tập tabs/list + chips + điểm
+- [x] Empty states + skeleton + 3 màn hình lỗi (NotLinked/Unverified/Ambiguous)
+- [x] Responsive + a11y checklist theo design contract
 
 ## Success Criteria
 
