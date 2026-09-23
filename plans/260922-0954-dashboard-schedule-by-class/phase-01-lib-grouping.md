@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Helper group buổi-lớp + unit tests"
-status: todo
+status: completed
 priority: P1
 effort: "1h"
 dependencies: []

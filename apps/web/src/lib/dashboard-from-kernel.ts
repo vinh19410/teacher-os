@@ -17,6 +17,43 @@ export function lessonsToday(lessons: Lesson[], now = new Date()): Lesson[] {
 		.slice()
 		.sort((a, b) => a.time.localeCompare(b.time));
 }
+
+export interface DashboardClassSession {
+	classId: string;
+	time: string;
+	dur: number;
+	type: Lesson["type"];
+	topic: string;
+	lessons: Lesson[];
+}
+
+/**
+ * Gom các lesson per-student thành buổi-lớp theo (classId, time).
+ * Giữ thứ tự xuất hiện của buổi đầu tiên trong input (insertion order).
+ * lessons bên trong giữ thứ tự xuất hiện theo input.
+ */
+export function groupLessonsByClassSession(
+	lessons: Lesson[],
+): DashboardClassSession[] {
+	const groups = new Map<string, DashboardClassSession>();
+	for (const lesson of lessons) {
+		const key = `${lesson.classId}|${lesson.time}`;
+		const existing = groups.get(key);
+		if (existing) {
+			existing.lessons.push(lesson);
+		} else {
+			groups.set(key, {
+				classId: lesson.classId,
+				time: lesson.time,
+				dur: lesson.dur,
+				type: lesson.type,
+				topic: lesson.topic,
+				lessons: [lesson],
+			});
+		}
+	}
+	return Array.from(groups.values());
+}
 /**
  * Phần còn lại của tuần hiện tại (mai → Chủ nhật), khác lessonsToday có
  * chủ ý:
