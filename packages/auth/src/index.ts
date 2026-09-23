@@ -23,7 +23,7 @@ export type AuthDatabase = Parameters<typeof drizzleAdapter>[0];
 
 export interface CreateAuthInput {
 	db: AuthDatabase;
-	corsOrigin: string;
+	corsOrigin: string | string[];
 	secret: string;
 	/** API origin; authBaseURL() appends the /api/auth mount path. */
 	baseURL: string;
@@ -50,7 +50,9 @@ export function createAuth(input: CreateAuthInput) {
 
 			schema: schema,
 		}),
-		trustedOrigins: [input.corsOrigin],
+		trustedOrigins: Array.isArray(input.corsOrigin)
+			? input.corsOrigin
+			: [input.corsOrigin],
 		socialProviders: {
 			google: {
 				clientId: input.googleClientId,

@@ -26,19 +26,28 @@ test("runbook google redirect URI matches the mount path", () => {
 	);
 });
 
-test("dev CORS default in alchemy.run.ts matches the web dev port", () => {
-	const vite = read("../apps/web/vite.config.ts");
-	const webPort = vite.match(/port:\s*(\d+)/)?.[1];
+test("dev CORS default in alchemy.run.ts matches web and student dev ports", () => {
+	const webVite = read("../apps/web/vite.config.ts");
+	const webPort = webVite.match(/port:\s*(\d+)/)?.[1];
 	assert.ok(webPort, "dev port found in apps/web/vite.config.ts");
+
+	const studentVite = read("../apps/student/vite.config.ts");
+	const studentPort = studentVite.match(/port:\s*(\d+)/)?.[1];
+	assert.ok(studentPort, "dev port found in apps/student/vite.config.ts");
+	assert.equal(studentPort, "8003");
+
 	const run = read("../packages/infra/alchemy.run.ts");
 	const devDefault = run.match(
-		/withDefault\("(http:\/\/localhost:\d+)"\)/,
+		/withDefault\("(http:\/\/localhost:\d+,http:\/\/localhost:\d+)"\)/,
 	)?.[1];
 	assert.ok(
 		devDefault,
 		"dev CORS default found in packages/infra/alchemy.run.ts",
 	);
-	assert.equal(devDefault, `http://localhost:${webPort}`);
+	assert.equal(
+		devDefault,
+		`http://localhost:${webPort},http://localhost:${studentPort}`,
+	);
 });
 
 test("runbook never persists CORS_ORIGIN or APP_DOMAIN into .env", () => {

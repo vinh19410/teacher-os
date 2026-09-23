@@ -34,11 +34,11 @@ dependencies: [1]
 
 ## Requirements
 
-- [ ] `GET /api/student/me` — `{ user: {name, email}, student: {id, name, email, orgId} }`; lỗi phân loại: 403 `STUDENT_NOT_LINKED` (không có row khớp / email rỗng), 403 `STUDENT_AMBIGUOUS` (>1 row khớp), 403 `STUDENT_EMAIL_UNVERIFIED` (khớp nhưng `emailVerified=false`)
-- [ ] `GET /api/student/overview` — lớp đang học (kèm buổi tới) + bài tập 2 nguồn; chỉ data của student đã bind
-- [ ] CORS + trustedOrigins + kernel CSRF check nhận danh sách origin (comma-separated), backward-compatible 1 origin
-- [ ] Request `/api/student/*` không kích hoạt bootstrap provisioning (không tạo org/membership junk)
-- [ ] Kernel routes hiện có không đổi hành vi (POST từ origin app hiện tại vẫn xanh)
+- [x] `GET /api/student/me` — `{ user: {name, email}, student: {id, name, email, orgId} }`; lỗi phân loại: 403 `STUDENT_NOT_LINKED` (không có row khớp / email rỗng), 403 `STUDENT_AMBIGUOUS` (>1 row khớp), 403 `STUDENT_EMAIL_UNVERIFIED` (khớp nhưng `emailVerified=false`)
+- [x] `GET /api/student/overview` — lớp đang học (kèm buổi tới) + bài tập 2 nguồn; chỉ data của student đã bind
+- [x] CORS + trustedOrigins + kernel CSRF check nhận danh sách origin (comma-separated), backward-compatible 1 origin
+- [x] Request `/api/student/*` không kích hoạt bootstrap provisioning (không tạo org/membership junk)
+- [x] Kernel routes hiện có không đổi hành vi (POST từ origin app hiện tại vẫn xanh)
 
 ## Architecture
 
@@ -102,11 +102,11 @@ Không có field `band` trong contract — band derive ở CLIENT Phase 4 với 
 
 ## Todo
 
-- [ ] Contracts + SessionUser mở rộng
-- [ ] routes/student.ts + resolver 5 bước
-- [ ] bootstrap skip /api/student + multi-origin CORS + kernel corsOrigins
-- [ ] 10 unit test case trên xanh: `pnpm --filter server test`
-- [ ] E2e boot shim + test files compile xanh (`pnpm --filter e2e check-types` hoặc build)
+- [x] Contracts + SessionUser mở rộng
+- [x] routes/student.ts + resolver 5 bước
+- [x] bootstrap skip /api/student + multi-origin CORS + kernel corsOrigins
+- [x] 10 unit test case trên xanh: `pnpm --filter server test`
+- [x] E2e boot shim + test files compile xanh (`pnpm --filter e2e check-types` hoặc build)
 
 ## Success Criteria
 

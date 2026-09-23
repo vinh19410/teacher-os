@@ -29,10 +29,10 @@ dependencies: [1, 2]
 
 ## Requirements
 
-- [ ] `/login` hiển thị: Google button + tabs Đăng nhập/Đăng ký (email/password), copy tiếng Việt, brand "Teacher OS · Học viên"
-- [ ] Login thành công → redirect về `returnUrl` an toàn hoặc `/`
-- [ ] `_auth/route.tsx` beforeLoad dùng `authClient.getSession()` thật, redirect `/login?returnUrl=...` khi chưa có session
-- [ ] Lỗi hiển thị inline (email/mật khẩu sai, user chưa tồn tại...) không crash
+- [x] `/login` hiển thị: Google button + tabs Đăng nhập/Đăng ký (email/password), copy tiếng Việt, brand "Teacher OS · Học viên"
+- [x] Login thành công → redirect về `returnUrl` an toàn hoặc `/`
+- [x] `_auth/route.tsx` beforeLoad dùng `authClient.getSession()` thật, redirect `/login?returnUrl=...` khi chưa có session
+- [x] Lỗi hiển thị inline (email/mật khẩu sai, user chưa tồn tại...) không crash
 
 ## Architecture
 
@@ -64,10 +64,10 @@ apps/student/src/
 
 ## Todo
 
-- [ ] 5 component auth copy + bản địa hóa VN
-- [ ] routes/login.tsx + guard _auth thật
-- [ ] Unit test form + guard
-- [ ] Thử tay login Google + email/password trên :8003 (server :8000)
+- [x] 5 component auth copy + bản địa hóa VN
+- [x] routes/login.tsx + guard _auth thật
+- [x] Unit test form + guard
+- [x] Thử tay login Google + email/password trên :8003 (server :8000)
 
 ## Success Criteria
 

@@ -7,6 +7,8 @@ describe("resolveDomainTopology", () => {
 			appHost: "app.teacher-os.edu.vn",
 			apiHost: "api.teacher-os.edu.vn",
 			appOrigin: "https://app.teacher-os.edu.vn",
+			studentHost: "student.teacher-os.edu.vn",
+			studentOrigin: "https://student.teacher-os.edu.vn",
 			apiOrigin: "https://api.teacher-os.edu.vn",
 			authBaseURL: "https://api.teacher-os.edu.vn/api/auth",
 			googleRedirectURI:

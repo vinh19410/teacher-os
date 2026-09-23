@@ -39,21 +39,25 @@ const isDevCommand = process.env.ALCHEMY_DEV === "true";
 // callback, not just CORS), so fail the whole run before any resource is
 // touched — no legitimate combination sets both to different values.
 // dotenv precedence: packages/infra/.env wins over apps/*/.env.
-if (
-	topology &&
-	process.env.CORS_ORIGIN &&
-	process.env.CORS_ORIGIN.trim() !== topology.appOrigin
-) {
-	throw new Error(
-		`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} overrides the derived ${topology.appOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
-	);
+if (topology && process.env.CORS_ORIGIN) {
+	const explicit = process.env.CORS_ORIGIN.split(",").map((s) => s.trim());
+	if (
+		!explicit.includes(topology.appOrigin) ||
+		!explicit.includes(topology.studentOrigin)
+	) {
+		throw new Error(
+			`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} missing required origins ${topology.appOrigin} or ${topology.studentOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origins.`,
+		);
+	}
 }
 
 const corsOriginConfig = topology
-	? Config.string("CORS_ORIGIN").pipe(Config.withDefault(topology.appOrigin))
+	? Config.string("CORS_ORIGIN").pipe(
+			Config.withDefault(`${topology.appOrigin},${topology.studentOrigin}`),
+		)
 	: isDevCommand
 		? Config.string("CORS_ORIGIN").pipe(
-				Config.withDefault("http://localhost:8001"),
+				Config.withDefault("http://localhost:8001,http://localhost:8003"),
 			)
 		: Config.string("CORS_ORIGIN");
 
@@ -143,10 +147,35 @@ export default Alchemy.Stack(
 			},
 		});
 
+		const studentWorker = yield* Cloudflare.Website.Vite("student", {
+			rootDir: "../../apps/student",
+			main: "src/worker.ts",
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.studentHost,
+				},
+				workersDev: false,
+			}),
+			env: {
+				VITE_SERVER_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
+			},
+			dev: {
+				port: 8003,
+				strictPort: true,
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
+			student: studentWorker.url,
 		};
 	}),
 );
