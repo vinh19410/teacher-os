@@ -3,6 +3,7 @@ import {
 	atRiskRows,
 	formatDashboardGreeting,
 	formatDashboardLead,
+	groupLessonsByClassSession,
 	lessonDayFromDate,
 	lessonsToday,
 	upcomingLessonsThisWeek,
@@ -117,6 +118,126 @@ describe("lessonsToday", () => {
 		);
 		expect(lessonsToday(series, monday)).toHaveLength(12);
 		expect(lessonsToday(series, wednesday)).toHaveLength(0);
+	});
+});
+
+describe("groupLessonsByClassSession", () => {
+	test("groups multiple students in same class at same time into one session", () => {
+		const l1 = lesson({
+			id: "l1",
+			sid: "s1",
+			classId: "cl-1",
+			time: "19:00",
+			day: 1,
+		});
+		const l2 = lesson({
+			id: "l2",
+			sid: "s2",
+			classId: "cl-1",
+			time: "19:00",
+			day: 1,
+		});
+		const result = groupLessonsByClassSession([l1, l2]);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toMatchObject({
+			classId: "cl-1",
+			time: "19:00",
+		});
+		expect(result[0].lessons).toEqual([l1, l2]);
+	});
+
+	test("splits same class with different times into separate sessions", () => {
+		const l1 = lesson({
+			id: "l1",
+			sid: "s1",
+			classId: "cl-1",
+			time: "19:00",
+			day: 1,
+		});
+		const l2 = lesson({
+			id: "l2",
+			sid: "s2",
+			classId: "cl-1",
+			time: "20:00",
+			day: 1,
+		});
+		const result = groupLessonsByClassSession([l1, l2]);
+		expect(result).toHaveLength(2);
+		expect(result[0].time).toBe("19:00");
+		expect(result[1].time).toBe("20:00");
+	});
+
+	test("splits different classes with same time into separate sessions", () => {
+		const l1 = lesson({
+			id: "l1",
+			sid: "s1",
+			classId: "cl-1",
+			time: "19:00",
+			day: 1,
+		});
+		const l2 = lesson({
+			id: "l2",
+			sid: "s2",
+			classId: "cl-2",
+			time: "19:00",
+			day: 1,
+		});
+		const result = groupLessonsByClassSession([l1, l2]);
+		expect(result).toHaveLength(2);
+		expect(result[0].classId).toBe("cl-1");
+		expect(result[1].classId).toBe("cl-2");
+	});
+
+	test("preserves input group order without auto-sorting", () => {
+		const l1 = lesson({
+			id: "l1",
+			sid: "s1",
+			classId: "cl-1",
+			time: "20:00",
+			day: 1,
+		});
+		const l2 = lesson({
+			id: "l2",
+			sid: "s2",
+			classId: "cl-2",
+			time: "18:00",
+			day: 1,
+		});
+		const result = groupLessonsByClassSession([l1, l2]);
+		expect(result).toHaveLength(2);
+		expect(result[0].classId).toBe("cl-1");
+		expect(result[0].time).toBe("20:00");
+		expect(result[1].classId).toBe("cl-2");
+		expect(result[1].time).toBe("18:00");
+	});
+
+	test("derives session display fields from first lesson in group", () => {
+		const l1 = lesson({
+			id: "l1",
+			sid: "s1",
+			classId: "cl-1",
+			time: "19:00",
+			dur: 90,
+			type: "1:2",
+			topic: "Speaking Unit 1",
+			day: 1,
+		});
+		const l2 = lesson({
+			id: "l2",
+			sid: "s2",
+			classId: "cl-1",
+			time: "19:00",
+			dur: 60,
+			type: "1:1",
+			topic: "Different topic",
+			day: 1,
+		});
+		const result = groupLessonsByClassSession([l1, l2]);
+		expect(result).toHaveLength(1);
+		expect(result[0].dur).toBe(90);
+		expect(result[0].type).toBe("1:2");
+		expect(result[0].topic).toBe("Speaking Unit 1");
+		expect(result[0].lessons).toEqual([l1, l2]);
 	});
 });
 

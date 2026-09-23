@@ -1,7 +1,7 @@
 ---
 title: "Dashboard hiển thị lịch theo lớp thay vì theo học viên"
 description: "Hai mục Lịch hôm nay và Lịch sắp tới trên /dashboard group card theo buổi-lớp với tên lớp làm tiêu đề (học viên liệt kê trong card) thay vì một card mỗi học viên."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 249
@@ -41,16 +41,16 @@ Trên `/dashboard` (`apps/web/src/routes/_auth/dashboard.tsx`), hai mục "Lịc
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Helper group buổi-lớp + unit tests](./phase-01-lib-grouping.md) | Todo |
-| 2 | [Dashboard render card theo lớp + verification](./phase-02-ui-class-cards.md) | Todo |
+| 1 | [Helper group buổi-lớp + unit tests](./phase-01-lib-grouping.md) | Done |
+| 2 | [Dashboard render card theo lớp + verification](./phase-02-ui-class-cards.md) | Done |
 
 ## Success Criteria
 
-- [ ] "Lịch hôm nay" và "Lịch sắp tới" render card theo buổi-lớp với tên lớp làm tiêu đề (cùng lớp khác giờ vẫn là 2 card riêng).
-- [ ] Trong card "Lịch hôm nay": mỗi học viên 1 dòng kèm action riêng — Badge "Đã học" khi completed, Button "Điểm danh" (per-lesson pending state) cho buổi chưa học.
-- [ ] Lead "Hôm nay có N buổi học" đếm đúng số buổi-lớp của hôm nay.
-- [ ] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src` pass.
-- [ ] Full e2e `pnpm --filter e2e e2e` pass (regression — không spec nào pin UI card dashboard).
+- [x] "Lịch hôm nay" và "Lịch sắp tới" render card theo buổi-lớp với tên lớp làm tiêu đề (cùng lớp khác giờ vẫn là 2 card riêng).
+- [x] Trong card "Lịch hôm nay": mỗi học viên 1 dòng kèm action riêng — Badge "Đã học" khi completed, Button "Điểm danh" (per-lesson pending state) cho buổi chưa học.
+- [x] Lead "Hôm nay có N buổi học" đếm đúng số buổi-lớp của hôm nay.
+- [x] `pnpm check-types`, `pnpm --filter web test`, `pnpm exec biome check apps/web/src` pass.
+- [x] Full e2e `pnpm --filter e2e e2e` pass (regression — không spec nào pin UI card dashboard).
 
 ## Dependencies
 
