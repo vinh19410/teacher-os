@@ -8,6 +8,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
+import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -25,7 +26,7 @@ export type ServerApp = Hono<{ Variables: { kernelCtx: KernelCtx } }>;
  */
 export interface AppDeps {
 	getDb(): Db;
-	corsOrigin: string;
+	corsOrigin: string | string[];
 	getSessionUser(headers: Headers): Promise<SessionUser | null>;
 	authHandler(req: Request): Response | Promise<Response>;
 }
@@ -45,8 +46,12 @@ function bootstrapMiddleware(deps: AppDeps) {
 		c: Context<{ Variables: { kernelCtx: KernelCtx } }>,
 		next: () => Promise<void>,
 	) => {
-		const pathname = new URL(c.req.url).pathname;
-		if (isAuthPath(pathname)) {
+		const pathname = c.req.path;
+		if (
+			isAuthPath(pathname) ||
+			pathname === "/api/student" ||
+			pathname.startsWith("/api/student/")
+		) {
 			return next();
 		}
 		const session = await deps.getSessionUser(c.req.raw.headers);
@@ -135,6 +140,7 @@ export function buildApp(deps: AppDeps) {
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
+	app.route("/api/student", studentRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

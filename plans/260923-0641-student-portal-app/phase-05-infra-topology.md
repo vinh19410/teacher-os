@@ -29,12 +29,12 @@ dependencies: [1, 2]
 
 ## Requirements
 
-- [ ] `resolveDomainTopology` trả thêm `studentHost: student.<domain>`, `studentOrigin: https://student.<domain>`
-- [ ] `alchemy.run.ts` định nghĩa `studentWorker` (dev port 8003, env VITE_SERVER_URL = api origin) + output `student`
-- [ ] CORS_ORIGIN default **cả 2 nhánh**: topology = `appOrigin,studentOrigin`; dev = `http://localhost:8001,http://localhost:8003`
-- [ ] Guard explicit CORS_ORIGIN **giữ fail-loud (throw)** khi thiếu origin bắt buộc — không hạ xuống warning (red-team #11)
-- [ ] `scripts/topology-drift.test.mjs` assert thêm port 8003 trong `apps/student/vite.config.ts` **và** sửa regex default CORS (regex cũ chỉ khớp single-origin, sẽ vỡ với list — red-team #7)
-- [ ] README + docs: ports (8003), cấu trúc apps/, mục student portal (login qua email trùng `student.email` — email phải verified), bước `cp apps/student/.env.example .env`
+- [x] `resolveDomainTopology` trả thêm `studentHost: student.<domain>`, `studentOrigin: https://student.<domain>`
+- [x] `alchemy.run.ts` định nghĩa `studentWorker` (dev port 8003, env VITE_SERVER_URL = api origin) + output `student`
+- [x] CORS_ORIGIN default **cả 2 nhánh**: topology = `appOrigin,studentOrigin`; dev = `http://localhost:8001,http://localhost:8003`
+- [x] Guard explicit CORS_ORIGIN **giữ fail-loud (throw)** khi thiếu origin bắt buộc — không hạ xuống warning (red-team #11)
+- [x] `scripts/topology-drift.test.mjs` assert thêm port 8003 trong `apps/student/vite.config.ts` **và** sửa regex default CORS (regex cũ chỉ khớp single-origin, sẽ vỡ với list — red-team #7)
+- [x] README + docs: ports (8003), cấu trúc apps/, mục student portal (login qua email trùng `student.email` — email phải verified), bước `cp apps/student/.env.example .env`
 
 ## Architecture
 
@@ -65,12 +65,12 @@ Worker mỏng (draft hành vi): mọi request → nếu dotfile 404 text; nếu 
 
 ## Todo
 
-- [ ] topology studentHost/studentOrigin + test auth package xanh
-- [ ] student worker.ts mỏng
-- [ ] alchemy studentWorker + CORS default/guard mới
-- [ ] topology-drift test mở rộng
-- [ ] README/docs cập nhật
-- [ ] Gates: pnpm test (bao gồm scripts tests) + check-types + build
+- [x] topology studentHost/studentOrigin + test auth package xanh
+- [x] student worker.ts mỏng
+- [x] alchemy studentWorker + CORS default/guard mới
+- [x] topology-drift test mở rộng
+- [x] README/docs cập nhật
+- [x] Gates: pnpm test (bao gồm scripts tests) + check-types + build
 
 ## Success Criteria
 
