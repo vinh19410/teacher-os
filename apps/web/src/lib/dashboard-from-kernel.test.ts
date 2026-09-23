@@ -239,6 +239,36 @@ describe("groupLessonsByClassSession", () => {
 		expect(result[0].topic).toBe("Speaking Unit 1");
 		expect(result[0].lessons).toEqual([l1, l2]);
 	});
+
+	test("deduplicates multiple lessons for same student within same session (issue #249 / #204 shape)", () => {
+		const rows: Lesson[] = [];
+		for (let i = 0; i < 12; i++) {
+			rows.push(
+				lesson({
+					id: `l-s1-${i}`,
+					sid: "s1",
+					classId: "cl-1",
+					time: "19:00",
+					day: 5,
+					date: null,
+				}),
+				lesson({
+					id: `l-s2-${i}`,
+					sid: "s2",
+					classId: "cl-1",
+					time: "19:00",
+					day: 5,
+					date: null,
+				}),
+			);
+		}
+		expect(rows).toHaveLength(24);
+		const result = groupLessonsByClassSession(rows);
+		expect(result).toHaveLength(1);
+		expect(result[0].lessons).toHaveLength(2);
+		expect(result[0].lessons.map((l) => l.sid)).toEqual(["s1", "s2"]);
+		expect(result[0].lessons.map((l) => l.id)).toEqual(["l-s1-0", "l-s2-0"]);
+	});
 });
 
 describe("atRiskRows", () => {
