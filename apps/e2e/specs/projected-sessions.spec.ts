@@ -79,20 +79,37 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 		page.locator("div.lesson-block", { hasText: CLASS_NAME }),
 	).toHaveCount(0);
 
-	// First enrollment flips the projection to real rows IN-PAGE (atomic
-	// snapshot refresh, no reload): same dates, no "Dự kiến", real targets.
+	// First enrollment creates an 'invited' student.
+	// Invariant (D2 / red-team #7): while all enrollments are invited,
+	// projection "Dự kiến" REMAINS (does NOT flip to real lessons yet).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(page.getByText("Đã mời")).toBeVisible();
 
+	// Projection still shows "Dự kiến" because enrollment is invited
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await expect(page.locator("tbody tr")).toHaveCount(12);
+	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(12);
+
+	// Now activate the student via "Kích hoạt" on the roster tab
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
+
+	// Now projection flips to real rows: same dates, no "Dự kiến", real targets.
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.locator("tbody tr")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(0);
 	await expect(page.locator("tbody tr").first()).toContainText("04/01");
-	// Real dated rows: every occurrence is future + upcoming → adjust targets
-	// exist, no check-in (VN date gate keeps them ineligible).
 	await expect(
 		page.getByRole("button", { name: "Điều chỉnh" }).first(),
 	).toBeVisible();

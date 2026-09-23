@@ -57,6 +57,14 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal1 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal1).toBeVisible();
+	await confirmModal1.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal1).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
@@ -173,6 +181,14 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal2 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal2).toBeVisible();
+	await confirmModal2.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal2).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 1:1 class → sequential head today renders a one-click button.
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();

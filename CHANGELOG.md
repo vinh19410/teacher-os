@@ -10,6 +10,23 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-23
+
+### Added
+- Vòng đời trạng thái enrollment (`invited` -> `active`) qua cột `enrollment.status` (migration 0022, default `active` backfill dữ liệu cũ) (#253)
+- Endpoint `POST /api/enrollments/:enrollmentId/accept` kích hoạt enrollment chuyển sang `active` và sinh gói học cùng chuỗi buổi học CAS idempotent (#253)
+- Endpoint `DELETE /api/enrollments/:enrollmentId` cho phép hủy lời mời chưa kích hoạt (chỉ áp dụng khi status là `invited`) (#253)
+- Roster lớp: badge trạng thái "Đã mời" (warning) / "Đang học" (success) và 2 nút thao tác "Kích hoạt" và "Hủy lời mời" kèm modal xác nhận cho học viên invited (#253)
+- Roster lớp & danh sách lớp: KPI sĩ số chỉ đếm học viên `active`, hiển thị phụ `· N chờ xác nhận` khi có học viên invited (#253)
+- Trang học viên (danh sách và chi tiết): hiển thị badge "Đã mời" bên cạnh lớp học có enrollment invited (#253)
+
+### Changed
+- Thêm học viên vào lớp (cả qua tạo học viên mới kèm lớp và enroll học viên có sẵn) chỉ tạo enrollment ở trạng thái "Đã mời" (`invited`), chưa sinh gói học và buổi học (#253)
+- Modal Thêm học viên có sẵn loại trừ cả học viên đang học và học viên đã được mời (#253)
+- Modal Tạo hóa đơn và endpoint `POST /api/invoices` chặn lập hóa đơn cho enrollment `invited` (trả về 409) (#253)
+- Gán bài tập trên lớp (`POST /classes/:id/assignments`) chặn gán bài tập cho học viên `invited` (trả về 400) (#253)
+- Cảnh báo vận hành: Enrollment mới mặc định ở trạng thái Đã mời — chưa có buổi học/học phí cho đến khi được kích hoạt (nút Kích hoạt trên roster hoặc student portal sau này) (#253)
+
 ## 2026-09-22
 
 ### Added

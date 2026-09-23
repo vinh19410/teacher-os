@@ -196,9 +196,16 @@ test("tạo học viên trong lớp → derive gói từ lớp, detail hiển th
 	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(dialog).toBeHidden();
 
-	// Roster hiện học viên
+	// Roster hiện học viên và kích hoạt
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 	// List học viên: hàng hiển thị lớp đã enroll
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);

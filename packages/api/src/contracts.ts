@@ -660,10 +660,14 @@ export interface KernelClassRow {
 	notes: string;
 }
 
+export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
+export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
+
 export interface KernelEnrollmentRow {
 	id: string;
 	classId: string;
 	studentId: string;
+	status: EnrollmentStatus | string;
 	createdAt: string;
 }
 

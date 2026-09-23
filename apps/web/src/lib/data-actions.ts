@@ -215,7 +215,9 @@ export type KernelAction =
 	| {
 			type: "update-class-tuition-fee";
 			payload: { classId: string; tuitionFee: number | null };
-	  };
+	  }
+	| { type: "activate-enrollment"; enrollmentId: string }
+	| { type: "delete-enrollment"; enrollmentId: string };
 
 /** Backwards-compatible name for data-store consumers. */
 export type Action = KernelAction;

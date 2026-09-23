@@ -17,13 +17,25 @@ export function mapEnrollments(
 	return snapshot.enrollments;
 }
 
+export type StudentClassGroup = ClassGroup & {
+	enrollmentStatus?: string;
+};
+
 export function classesByStudent(
 	data: Pick<KernelHydratedData, "classes" | "enrollments">,
 	studentId: string,
-): ClassGroup[] {
-	return data.classes.filter((c) =>
-		data.enrollments.some(
-			(e) => e.studentId === studentId && e.classId === c.id,
-		),
+): StudentClassGroup[] {
+	const enrollmentsForStudent = data.enrollments.filter(
+		(e) => e.studentId === studentId,
 	);
+	const statusByClass = new Map(
+		enrollmentsForStudent.map((e) => [e.classId, e.status]),
+	);
+
+	return data.classes
+		.filter((c) => statusByClass.has(c.id))
+		.map((c) => ({
+			...c,
+			enrollmentStatus: statusByClass.get(c.id),
+		}));
 }

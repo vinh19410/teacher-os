@@ -155,6 +155,7 @@ export interface ClassGroup {
 	mode: string;
 	syllabusId: string;
 	studentIds: string[];
+	invitedStudentIds: string[];
 	/** Raw string: JSON `{days,start,end}` (new) or legacy free text. */
 	schedule: string;
 	sessionsDone: number;

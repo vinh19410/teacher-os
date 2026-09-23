@@ -495,3 +495,20 @@ therefore requires, after the emergency rollback settles:
 2. re-run the Step B delta loop until verification passes.
 
 The `date` column itself is forward-only; no data rollback path exists or is needed.
+
+### Rollback procedure: Enrollment invited state (issue #253)
+
+Worker rollback retains migration 0022 (`enrollment.status` column với default `'active'`).
+- Các bản ghi `enrollment` ở trạng thái `'invited'` sống qua rollback worker vô hại về mặt schema D1 (cột status giữ nguyên).
+- Tuy nhiên, worker code cũ coi mọi enrollment là đang học (không nhận diện trạng thái `invited` và kỳ vọng có `session_package`).
+- Nếu cần hoàn tác dữ liệu thủ công về tương thích hoàn toàn với code cũ sau rollback khẩn cấp:
+
+```bash
+# 1. Kiểm tra số lượng enrollment invited
+npx wrangler d1 execute teacher-os-db --command "SELECT id, class_id, student_id FROM enrollment WHERE status = 'invited';"
+
+# 2. Cập nhật các bản ghi invited thành active nếu cần cho code cũ hoạt động:
+npx wrangler d1 execute teacher-os-db --command "UPDATE enrollment SET status = 'active' WHERE status = 'invited';"
+```
+
+Cột `enrollment.status` là forward-only; không xóa cột hay sửa file migration.

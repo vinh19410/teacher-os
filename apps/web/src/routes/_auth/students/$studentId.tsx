@@ -149,13 +149,23 @@ function StudentDetailRoute() {
 							<div className="flex flex-col gap-4">
 								{studentClasses.map((c) => (
 									<div key={c.id}>
-										<Link
-											to="/classes/$classId"
-											params={{ classId: c.id }}
-											className="font-medium text-accent-blue hover:text-accent-active"
-										>
-											{c.name}
-										</Link>
+										<div className="flex items-center gap-2">
+											<Link
+												to="/classes/$classId"
+												params={{ classId: c.id }}
+												className="font-medium text-accent-blue hover:text-accent-active"
+											>
+												{c.name}
+											</Link>
+											{c.enrollmentStatus === "invited" && (
+												<Badge
+													variant="warn"
+													className="px-1.5 py-0 text-[10px]"
+												>
+													Đã mời
+												</Badge>
+											)}
+										</div>
 										<div className="mt-1 font-mono text-meta text-xs">
 											{classMeta(c)}
 										</div>

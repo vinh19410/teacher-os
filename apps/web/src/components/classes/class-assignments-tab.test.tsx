@@ -24,6 +24,7 @@ const testClass: ClassGroup = {
 	tuitionFee: null,
 	notes: "",
 	studentIds: ["st-1", "st-2"],
+	invitedStudentIds: [],
 };
 
 const testStudents: Student[] = [

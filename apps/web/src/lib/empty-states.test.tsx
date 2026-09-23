@@ -138,6 +138,7 @@ describe("List empty states (Issue #118)", () => {
 				skills: ["Writing"],
 				mode: "Online",
 				studentIds: [],
+				invitedStudentIds: [],
 				syllabusId: "",
 				schedule: JSON.stringify({ days: [], start: "18:00", end: "19:30" }),
 				sessionsTotal: 10,

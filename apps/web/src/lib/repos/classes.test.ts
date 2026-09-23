@@ -98,12 +98,14 @@ const snapshot: KernelSnapshot = {
 			id: "en-1",
 			classId: "cl-1",
 			studentId: "st-2",
+			status: "active",
 			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 		{
 			id: "en-2",
 			classId: "cl-1",
 			studentId: "st-1",
+			status: "active",
 			createdAt: "2026-08-02T00:00:00.000Z",
 		},
 		// dangling: student missing from students[] — passes through like the
@@ -112,6 +114,7 @@ const snapshot: KernelSnapshot = {
 			id: "en-3",
 			classId: "cl-2",
 			studentId: "st-9",
+			status: "active",
 			createdAt: "2026-08-03T00:00:00.000Z",
 		},
 	],
@@ -244,12 +247,14 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 				id: "en-1",
 				classId: "cl-1",
 				studentId: "st-1",
+				status: "active",
 				createdAt: "2026-08-01T00:00:00.000Z",
 			},
 			{
 				id: "en-2",
 				classId: "cl-1",
 				studentId: "st-2",
+				status: "active",
 				createdAt: "2026-08-01T00:00:00.000Z",
 			},
 		],
@@ -360,6 +365,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 				id,
 				classId: "cl-gen",
 				studentId: `st-${i}`,
+				status: "active",
 				createdAt: "2026-08-21T00:00:00.000Z",
 			})),
 			packages: [],
@@ -427,5 +433,60 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 			}),
 		);
 		expect(classes.find((c) => c.id === "cl-gen")?.sessionsDone).toBe(6);
+	});
+
+	test("mapClasses separates active and invited enrollments into studentIds and invitedStudentIds", () => {
+		const snapshot: KernelSnapshot = {
+			assignmentPrompts: [],
+			classAssignments: [],
+			students: [],
+			classes: [
+				{
+					id: "cl-test",
+					name: "Class Test",
+					level: "B2",
+					type: "ielts",
+					skills: [],
+					mode: "Online",
+					syllabusId: null,
+					schedule: "",
+					sessionsDone: 0,
+					sessionsTotal: 10,
+					status: "active",
+					startDate: "",
+					tuitionFee: null,
+					notes: "",
+				},
+			],
+			syllabi: [],
+			enrollments: [
+				{
+					id: "en-active",
+					classId: "cl-test",
+					studentId: "st-active",
+					status: "active",
+					createdAt: "2026-09-01T00:00:00.000Z",
+				},
+				{
+					id: "en-invited",
+					classId: "cl-test",
+					studentId: "st-invited",
+					status: "invited",
+					createdAt: "2026-09-02T00:00:00.000Z",
+				},
+			],
+			packages: [],
+			lessons: [],
+			assignments: [],
+			invoices: [],
+			reports: [],
+			notifs: [],
+			commentBank: [],
+		};
+
+		const result = mapClasses(snapshot);
+		const cls = result.find((c) => c.id === "cl-test");
+		expect(cls?.studentIds).toEqual(["st-active"]);
+		expect(cls?.invitedStudentIds).toEqual(["st-invited"]);
 	});
 });

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
@@ -108,7 +109,17 @@ export function StudentsRoute() {
 										{classes.length > 0 ? (
 											classes.map((c) => (
 												<div key={c.id}>
-													<div className="font-medium text-sm">{c.name}</div>
+													<div className="flex items-center gap-1.5 font-medium text-sm">
+														{c.name}
+														{c.enrollmentStatus === "invited" && (
+															<Badge
+																variant="warn"
+																className="px-1.5 py-0 text-[10px]"
+															>
+																Đã mời
+															</Badge>
+														)}
+													</div>
 													<div className="font-mono text-meta text-xs">
 														{classMeta(c)}
 													</div>

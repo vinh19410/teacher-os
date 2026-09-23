@@ -40,7 +40,14 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal1 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal1).toBeVisible();
+	await confirmModal1.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal1).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	// Fully-upcoming class: every row offers Điều chỉnh; nothing settled yet.
 	const adjustButtons = page.getByRole("button", { name: "Điều chỉnh" });
@@ -89,6 +96,15 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await page.getByText(CLASS_NAME).click();
 	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
 	await createStudentViaUi(page, "Phạm Topic E2E");
+	await expect(page.getByText("Phạm Topic E2E")).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal2 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal2).toBeVisible();
+	await confirmModal2.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal2).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 

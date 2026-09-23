@@ -45,7 +45,14 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await option.click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 	// 5. Create 1 ready prompt and 1 draft prompt in the bank
 	await page.goto("/assignments/new");
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
