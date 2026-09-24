@@ -37,6 +37,7 @@ export function SignUpForm({
 					email: value.email.trim(),
 					password: value.password,
 					name: value.name.trim(),
+					callbackURL: `${window.location.origin}/login`,
 				});
 				if (error) {
 					toast.error(authErrorMessage(error, AUTH_FAILED));
@@ -85,7 +86,8 @@ export function SignUpForm({
 		>
 			{accountCreated && (
 				<NoticeOk title="Tài khoản đã tạo">
-					Đang mở cổng thông tin học viên…
+					Chúng tôi đã gửi liên kết xác thực đến email của bạn. Vui lòng xác
+					thực trước khi sử dụng portal. Đang mở cổng thông tin học viên…
 				</NoticeOk>
 			)}
 

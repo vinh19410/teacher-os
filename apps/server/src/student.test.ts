@@ -339,8 +339,9 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			headers: { "x-test-user": "unverified-unlinked" },
 		});
 		expect(res.status).toBe(403);
-		const body = (await res.json()) as { error?: string };
-		expect(body.error).toBe(STUDENT_ERROR_CODES.NOT_LINKED);
+		const body = (await res.json()) as { error?: string; code?: string };
+		expect(body.error).toBe(STUDENT_ERROR_CODES.EMAIL_UNVERIFIED);
+		expect(body.code).toBe(STUDENT_ERROR_CODES.EMAIL_UNVERIFIED);
 
 		const [afterCount] = await libsql
 			.select({ count: count() })

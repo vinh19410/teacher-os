@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 // giữ nguyên như CI; boot:api cùng đọc env này (fail-loud semantics không đổi).
 const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
 const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
-
+const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
 export default defineConfig({
 	testDir: "./specs",
 	timeout: 120_000,
@@ -38,7 +38,11 @@ export default defineConfig({
 			// worker on :8000) would run specs against the wrong backend.
 			reuseExistingServer: false,
 			timeout: 120_000,
-			env: { E2E_API_PORT: String(apiPort), E2E_WEB_PORT: String(webPort) },
+			env: {
+				E2E_API_PORT: String(apiPort),
+				E2E_WEB_PORT: String(webPort),
+				E2E_STUDENT_PORT: String(studentPort),
+			},
 		},
 		{
 			command: `pnpm --filter web exec vite --port ${webPort} --strictPort`,
@@ -47,6 +51,17 @@ export default defineConfig({
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				E2E_API_PORT: String(apiPort),
 				E2E_WEB_PORT: String(webPort),
+			},
+			reuseExistingServer: false,
+			timeout: 120_000,
+		},
+		{
+			command: `pnpm --filter student exec vite --port ${studentPort} --strictPort`,
+			url: `http://localhost:${studentPort}/login`,
+			env: {
+				VITE_SERVER_URL: `http://localhost:${apiPort}`,
+				E2E_API_PORT: String(apiPort),
+				E2E_STUDENT_PORT: String(studentPort),
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,

@@ -146,12 +146,27 @@ describe("StudentErrorView", () => {
 		expect(html).toContain("Đăng xuất");
 	});
 
-	it("renders EMAIL_UNVERIFIED state", () => {
+	it("renders EMAIL_UNVERIFIED state without userEmail", () => {
 		const html = renderToStaticMarkup(
 			<StudentErrorView code={STUDENT_ERROR_CODES.EMAIL_UNVERIFIED} />,
 		);
 		expect(html).toContain("Email chưa được xác thực");
-		expect(html).toContain("Google");
+		expect(html).toContain("Tôi đã xác thực");
+		expect(html).toContain("Đăng xuất");
+		expect(html).not.toContain("Gửi lại email");
+	});
+
+	it("renders EMAIL_UNVERIFIED state with userEmail", () => {
+		const html = renderToStaticMarkup(
+			<StudentErrorView
+				code={STUDENT_ERROR_CODES.EMAIL_UNVERIFIED}
+				userEmail="test@example.com"
+			/>,
+		);
+		expect(html).toContain("Email chưa được xác thực");
+		expect(html).toContain("test@example.com");
+		expect(html).toContain("Gửi lại email");
+		expect(html).toContain("Tôi đã xác thực");
 		expect(html).toContain("Đăng xuất");
 	});
 

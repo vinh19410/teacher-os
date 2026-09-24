@@ -86,10 +86,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			}
 
 			if (rows.length === 0) {
+				const code =
+					session.emailVerified === true
+						? STUDENT_ERROR_CODES.NOT_LINKED
+						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
 				return c.json(
 					{
-						error: STUDENT_ERROR_CODES.NOT_LINKED,
-						code: STUDENT_ERROR_CODES.NOT_LINKED,
+						error: code,
+						code,
 					},
 					403,
 				);
