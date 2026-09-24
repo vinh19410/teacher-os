@@ -1,4 +1,8 @@
 import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
+import {
+	createLogMailer,
+	createResendMailer,
+} from "@teacher-os/auth/mail/mailer";
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db } from "./app";
@@ -26,6 +30,21 @@ const getAuth = (): Auth => {
 		db = createDb() as unknown as Db;
 	}
 	if (!auth) {
+		if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
+			throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
+		}
+		if (env.MAILER_IMPL !== "resend") {
+			console.error(
+				"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
+			);
+		}
+		const mailer =
+			env.MAILER_IMPL === "resend"
+				? createResendMailer({
+						apiKey: env.RESEND_API_KEY,
+						from: env.MAIL_FROM,
+					})
+				: createLogMailer();
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
@@ -41,6 +60,7 @@ const getAuth = (): Auth => {
 				: {}),
 			googleClientId: env.GOOGLE_CLIENT_ID,
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+			mailer,
 		});
 	}
 	return auth;

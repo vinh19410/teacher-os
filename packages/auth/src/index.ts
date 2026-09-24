@@ -7,6 +7,8 @@ import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
+import type { Mailer } from "./mail/mailer";
+import { verificationEmailTemplate } from "./mail/verification-email-template";
 import { OAUTH_APP_STATE_KEY, resolveRequestApp } from "./role";
 import {
 	authBaseURL,
@@ -55,6 +57,7 @@ export interface CreateAuthInput {
 	cookiePrefix?: string;
 	googleClientId: string;
 	googleClientSecret: string;
+	mailer: Mailer;
 }
 
 /** Tài khoản học viên không thể đăng nhập vào trang giáo viên (plan #260 D4). */
@@ -119,6 +122,35 @@ export function createAuth(input: CreateAuthInput) {
 		},
 		emailAndPassword: {
 			enabled: true,
+		},
+		emailVerification: {
+			sendVerificationEmail: async ({ user, url }, request) => {
+				const { html, text } = verificationEmailTemplate({ url });
+				// Đường "Gửi lại" (/send-verification-email): để lỗi ném ra ngoài —
+				// Better-Auth sẽ trả lỗi về client để UI hiển thị (email-verification.mjs:109-117).
+				// Đường sign-up: nuốt lỗi (D3 fail-open) — đăng ký không được chết vì mailer.
+				const isResendPath = Boolean(
+					request &&
+						new URL(request.url).pathname.endsWith("/send-verification-email"),
+				);
+				try {
+					await input.mailer.send({
+						to: user.email,
+						subject: "Xác thực email TeacherOS của bạn",
+						html,
+						text,
+					});
+				} catch (error) {
+					if (isResendPath) throw error;
+					console.error("Failed to send verification email", {
+						email: user.email,
+						error,
+					});
+				}
+			},
+			sendOnSignUp: true,
+			autoSignInAfterVerification: true,
+			expiresIn: 60 * 60,
 		},
 		secret: input.secret,
 		baseURL: authBaseURL(input.baseURL),

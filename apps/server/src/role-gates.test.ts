@@ -10,6 +10,7 @@
 import { createClient } from "@libsql/client";
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { createAuth } from "@teacher-os/auth";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -64,6 +65,7 @@ describe("api role gates", () => {
 			baseURL: "http://localhost:8000",
 			googleClientId: "test-dummy",
 			googleClientSecret: "test-dummy",
+			mailer: createLogMailer(),
 		});
 
 		app = buildApp({

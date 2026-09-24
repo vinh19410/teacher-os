@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Mailer + HTML verification template + Better-Auth wiring"
-status: todo
+status: completed
 priority: P1
 effort: 4h
 dependencies: []

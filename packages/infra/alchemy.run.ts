@@ -115,6 +115,14 @@ export const server = Cloudflare.Worker("server", {
 			: "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
+		MAILER_IMPL: Config.string("MAILER_IMPL").pipe(Config.withDefault("log")),
+		MAIL_FROM: Config.string("MAIL_FROM").pipe(
+			Config.withDefault("TeacherOS <onboarding@resend.dev>"),
+		),
+		// plain string vì redacted không combine được với withDefault
+		RESEND_API_KEY: Config.string("RESEND_API_KEY").pipe(
+			Config.withDefault(""),
+		),
 	},
 	dev: {
 		port: 8000,

@@ -32,6 +32,7 @@
 			"!**/playwright-report",
 			"!**/test-results",
 			"!docs/diagrams",
+			"!**/.mail-preview",
 			"!**/apps/landing/public",
 			"!**/apps/landing/public"
 		]

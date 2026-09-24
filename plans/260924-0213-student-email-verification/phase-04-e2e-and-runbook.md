@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E happy-path + RecordingMailer + Runbook"
-status: todo
+status: completed
 priority: P2
 effort: 3h
 dependencies: [1, 2, 3]

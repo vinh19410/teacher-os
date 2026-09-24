@@ -6,10 +6,11 @@
  * credentials even for emulated resources.
  */
 
-import { rmSync } from "node:fs";
+import { appendFileSync, rmSync } from "node:fs";
 import { serve } from "@hono/node-server";
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -23,10 +24,36 @@ const PORT = Number(process.env.E2E_API_PORT ?? 8000);
 // Loopback-only: this shim serves a real better-auth instance; never expose
 // it beyond the test machine.
 const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
-const CORS_ORIGIN = `http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`;
-// Portal origin joins the trusted origins so role-classification requests from
-// the student app pass the better-auth origin check (plan #260, red-team #7).
-const STUDENT_ORIGIN = "http://localhost:8003";
+const CORS_ORIGINS = [
+	`http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`,
+	`http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`,
+];
+// Portal origin is the role-classification student origin (plan #260,
+// red-team #7): requests carrying it classify as student instead of
+// failing the better-auth origin check.
+const STUDENT_ORIGIN = `http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`;
+const MAIL_LOG_PATH = new URL("../.mail-log.jsonl", import.meta.url).pathname;
+rmSync(MAIL_LOG_PATH, { force: true });
+
+const recordingMailer: Mailer = {
+	async send(input) {
+		const match = input.text.match(/https?:\/\/[^\s]*\/verify-email\?[^\s]+/);
+		const line = match
+			? JSON.stringify({
+					to: input.to,
+					subject: input.subject,
+					url: match[0],
+					at: new Date().toISOString(),
+				})
+			: JSON.stringify({
+					to: input.to,
+					subject: input.subject,
+					error: "no-verify-url",
+					at: new Date().toISOString(),
+				});
+		appendFileSync(MAIL_LOG_PATH, `${line}\n`, "utf8");
+	},
+};
 const DB_PATH = new URL("../local.db", import.meta.url).pathname;
 const MIGRATIONS_DIR = new URL(
 	"../../../packages/db/src/migrations",
@@ -46,17 +73,18 @@ await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 
 const auth = createAuth({
 	db: libsql,
-	corsOrigin: [CORS_ORIGIN, STUDENT_ORIGIN],
+	corsOrigin: CORS_ORIGINS,
 	studentOrigins: [STUDENT_ORIGIN],
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",
 	googleClientSecret: "e2e-dummy",
+	mailer: recordingMailer,
 });
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
-	corsOrigin: CORS_ORIGIN,
+	corsOrigin: CORS_ORIGINS,
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
 });
