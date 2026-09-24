@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Student Portal Bell & Org Switcher"
-status: todo
+status: completed
 priority: P1
 effort: 4h
 ---

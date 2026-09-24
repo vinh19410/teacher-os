@@ -1,5 +1,9 @@
-import { organization, student } from "@teacher-os/db/schema/index";
-import { asc, sql } from "drizzle-orm";
+import {
+	organization,
+	student,
+	studentInvitation,
+} from "@teacher-os/db/schema/index";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { Db } from "./app";
 
 /**
@@ -27,6 +31,22 @@ export async function provisionStudentForUser(
 			.limit(1);
 
 		if (existing.length > 0) {
+			return;
+		}
+
+		// Do not auto-provision to earliest org if pending invitations exist for this email
+		const pending = await db
+			.select({ id: studentInvitation.id })
+			.from(studentInvitation)
+			.where(
+				and(
+					sql`lower(trim(${studentInvitation.email})) = ${email}`,
+					eq(studentInvitation.status, "pending"),
+				),
+			)
+			.limit(1);
+
+		if (pending.length > 0) {
 			return;
 		}
 

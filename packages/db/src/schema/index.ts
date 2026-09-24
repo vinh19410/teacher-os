@@ -14,4 +14,5 @@ export * from "./report";
 export * from "./session-package";
 export * from "./settings";
 export * from "./student";
+export * from "./student-invitation";
 export * from "./syllabus";

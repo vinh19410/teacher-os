@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type StudentInvitationItem,
 	type StudentMe,
+	type StudentOrgItem,
 	type StudentOverview,
 	studentMeSchema,
 	studentOverviewSchema,
@@ -13,12 +15,34 @@ function getApiBaseUrl(): string {
 	return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
 
+export function getActiveStudentOrgId(): string | null {
+	if (typeof window === "undefined") return null;
+	return localStorage.getItem("active_student_org_id");
+}
+
+export function setActiveStudentOrgId(orgId: string): void {
+	if (typeof window === "undefined") return;
+	localStorage.setItem("active_student_org_id", orgId);
+}
+
+function getStudentHeaders(
+	extra: Record<string, string> = {},
+): Record<string, string> {
+	const headers: Record<string, string> = {
+		Accept: "application/json",
+		...extra,
+	};
+	const activeOrgId = getActiveStudentOrgId();
+	if (activeOrgId) {
+		headers["x-student-org-id"] = activeOrgId;
+	}
+	return headers;
+}
+
 export async function fetchStudentMe(): Promise<StudentMe> {
 	const res = await fetch(`${getApiBaseUrl()}/api/student/me`, {
 		method: "GET",
-		headers: {
-			Accept: "application/json",
-		},
+		headers: getStudentHeaders(),
 		credentials: "include",
 	});
 
@@ -46,9 +70,7 @@ export async function fetchStudentMe(): Promise<StudentMe> {
 export async function fetchStudentOverview(): Promise<StudentOverview> {
 	const res = await fetch(`${getApiBaseUrl()}/api/student/overview`, {
 		method: "GET",
-		headers: {
-			Accept: "application/json",
-		},
+		headers: getStudentHeaders(),
 		credentials: "include",
 	});
 
@@ -73,6 +95,116 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 	return studentOverviewSchema.parse(data);
 }
 
+export async function fetchStudentNotifications(): Promise<
+	StudentInvitationItem[]
+> {
+	const res = await fetch(`${getApiBaseUrl()}/api/student/notifications`, {
+		method: "GET",
+		headers: getStudentHeaders(),
+		credentials: "include",
+	});
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	return (await res.json()) as StudentInvitationItem[];
+}
+
+export async function acceptStudentInvitation(
+	id: string,
+): Promise<{ ok: boolean; orgId: string }> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/invitations/${encodeURIComponent(id)}/accept`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		const data = (await res.json().catch(() => ({}))) as {
+			error?: string;
+			code?: string;
+		};
+		throw new HttpError(
+			res.status,
+			data.error || `Failed to accept invitation: ${res.status}`,
+			{ code: data.code },
+		);
+	}
+
+	return (await res.json()) as { ok: boolean; orgId: string };
+}
+
+export async function rejectStudentInvitation(
+	id: string,
+): Promise<{ ok: boolean }> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/invitations/${encodeURIComponent(id)}/reject`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		const data = (await res.json().catch(() => ({}))) as {
+			error?: string;
+			code?: string;
+		};
+		throw new HttpError(
+			res.status,
+			data.error || `Failed to reject invitation: ${res.status}`,
+			{ code: data.code },
+		);
+	}
+
+	return (await res.json()) as { ok: boolean };
+}
+
+export async function fetchStudentOrgs(): Promise<StudentOrgItem[]> {
+	const res = await fetch(`${getApiBaseUrl()}/api/student/orgs`, {
+		method: "GET",
+		headers: getStudentHeaders(),
+		credentials: "include",
+	});
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	return (await res.json()) as StudentOrgItem[];
+}
+
 export function useStudentMe() {
 	return useQuery({
 		queryKey: ["student", "me"],
@@ -86,5 +218,47 @@ export function useStudentOverview() {
 		queryKey: ["student", "overview"],
 		queryFn: fetchStudentOverview,
 		staleTime: 60_000,
+	});
+}
+
+export function useStudentNotifications() {
+	return useQuery({
+		queryKey: ["student", "notifications"],
+		queryFn: fetchStudentNotifications,
+		staleTime: 10_000,
+		refetchInterval: 15_000,
+	});
+}
+
+export function useStudentOrgs() {
+	return useQuery({
+		queryKey: ["student", "orgs"],
+		queryFn: fetchStudentOrgs,
+		staleTime: 30_000,
+	});
+}
+
+export function useAcceptInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: acceptStudentInvitation,
+		onSuccess: (data) => {
+			if (data.orgId) {
+				setActiveStudentOrgId(data.orgId);
+			}
+			void queryClient.invalidateQueries({ queryKey: ["student"] });
+		},
+	});
+}
+
+export function useRejectInvitation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: rejectStudentInvitation,
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "notifications"],
+			});
+		},
 	});
 }

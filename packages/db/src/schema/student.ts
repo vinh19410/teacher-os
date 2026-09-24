@@ -34,8 +34,8 @@ export const student = sqliteTable(
 	},
 	(table) => [
 		index("student_org_idx").on(table.orgId),
-		uniqueIndex("student_email_uq")
-			.on(sql`lower(trim(${table.email}))`)
+		uniqueIndex("student_org_email_uq")
+			.on(table.orgId, sql`lower(trim(${table.email}))`)
 			.where(sql`trim(${table.email}) != ''`),
 	],
 );

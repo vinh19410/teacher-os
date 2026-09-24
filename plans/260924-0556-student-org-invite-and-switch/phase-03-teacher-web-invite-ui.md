@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Teacher Web App Invite UI"
-status: todo
+status: completed
 priority: P1
 effort: 3h
 ---

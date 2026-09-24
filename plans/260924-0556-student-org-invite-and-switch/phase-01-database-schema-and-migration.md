@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Database Schema & Migration"
-status: todo
+status: completed
 priority: P1
 effort: 3h
 ---

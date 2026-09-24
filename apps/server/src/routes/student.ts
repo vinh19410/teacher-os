@@ -1,7 +1,9 @@
 import {
 	ACCOUNT_ERROR_CODES,
 	STUDENT_ERROR_CODES,
+	STUDENT_INVITATION_ERROR_CODES,
 	type StudentMe,
+	type StudentOrgItem,
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -12,10 +14,13 @@ import {
 	classTable,
 	enrollment,
 	lesson,
+	organization,
 	student,
+	studentInvitation,
+	user,
 } from "@teacher-os/db/schema/index";
 import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -34,6 +39,7 @@ interface StudentContext {
 
 type StudentEnv = {
 	Variables: {
+		sessionUser: SessionUser & { email: string };
 		studentCtx: StudentContext;
 	};
 };
@@ -48,9 +54,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 
 		// Account-role gate (plan #260): a teacher-role session must never
-		// reach the email match/provision step, even with a matching student
-		// profile (the shared cookie zone makes stale teacher sessions land
-		// here without any portal sign-in).
+		// reach the student portal.
 		if (session.role !== "student") {
 			return c.json(
 				{
@@ -72,29 +76,220 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			);
 		}
 
+		if (session.emailVerified !== true) {
+			return c.json(
+				{
+					error: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
+					code: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
+				},
+				403,
+			);
+		}
+
+		c.set("sessionUser", {
+			...session,
+			email,
+		});
+
+		return next();
+	});
+
+	// Notification & Multi-Org Routes (accessible even with 0 student records)
+	router.get("/notifications", async (c) => {
+		const sessionUser = c.get("sessionUser");
 		const db = deps.getDb();
-		const normalizedEmail = email.toLowerCase();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
+		const rows = await db
+			.select({
+				id: studentInvitation.id,
+				orgId: studentInvitation.orgId,
+				orgName: organization.name,
+				inviterUserId: studentInvitation.inviterUserId,
+				inviterName: user.name,
+				email: studentInvitation.email,
+				status: studentInvitation.status,
+				createdAt: studentInvitation.createdAt,
+				updatedAt: studentInvitation.updatedAt,
+			})
+			.from(studentInvitation)
+			.innerJoin(organization, eq(studentInvitation.orgId, organization.id))
+			.innerJoin(user, eq(studentInvitation.inviterUserId, user.id))
+			.where(
+				and(
+					sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+					eq(studentInvitation.status, "pending"),
+				),
+			)
+			.orderBy(desc(studentInvitation.createdAt));
+
+		return c.json(rows);
+	});
+
+	router.post("/invitations/:id/accept", async (c) => {
+		const sessionUser = c.get("sessionUser");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
+		const [invitation] = await db
+			.select()
+			.from(studentInvitation)
+			.where(
+				and(
+					eq(studentInvitation.id, id),
+					sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+					eq(studentInvitation.status, "pending"),
+				),
+			);
+
+		if (!invitation) {
+			return c.json(
+				{
+					error: "Lời mời không tồn tại hoặc đã được xử lý",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const now = new Date();
+		await db
+			.update(studentInvitation)
+			.set({ status: "accepted", updatedAt: now })
+			.where(eq(studentInvitation.id, id));
+
+		// Check if student record already exists in target org
+		const [existingStudent] = await db
+			.select({ id: student.id })
+			.from(student)
+			.where(
+				and(
+					eq(student.orgId, invitation.orgId),
+					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+				),
+			);
+
+		if (!existingStudent) {
+			await db.insert(student).values({
+				id: crypto.randomUUID(),
+				orgId: invitation.orgId,
+				name:
+					sessionUser.userName || normalizedEmail.split("@")[0] || "Học viên",
+				email: normalizedEmail,
+				phone: "",
+				zalo: "",
+				parentName: "",
+				parentPhone: "",
+				createdAt: now,
+			});
+		}
+
+		return c.json({ ok: true, orgId: invitation.orgId });
+	});
+
+	router.post("/invitations/:id/reject", async (c) => {
+		const sessionUser = c.get("sessionUser");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
+		const [invitation] = await db
+			.select()
+			.from(studentInvitation)
+			.where(
+				and(
+					eq(studentInvitation.id, id),
+					sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+					eq(studentInvitation.status, "pending"),
+				),
+			);
+
+		if (!invitation) {
+			return c.json(
+				{
+					error: "Lời mời không tồn tại hoặc đã được xử lý",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		await db
+			.update(studentInvitation)
+			.set({ status: "rejected", updatedAt: new Date() })
+			.where(eq(studentInvitation.id, id));
+
+		return c.json({ ok: true });
+	});
+
+	router.get("/orgs", async (c) => {
+		const sessionUser = c.get("sessionUser");
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+		const requestedOrgId = c.req.header("x-student-org-id");
+
+		const studentRows = await db
+			.select({
+				studentId: student.id,
+				orgId: student.orgId,
+				orgName: organization.name,
+				createdAt: student.createdAt,
+			})
+			.from(student)
+			.innerJoin(organization, eq(student.orgId, organization.id))
+			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.orderBy(desc(student.createdAt), desc(student.id));
+
+		if (studentRows.length === 0) {
+			return c.json([]);
+		}
+
+		// Determine active orgId: requestedOrgId if matches, else studentRows[0].orgId
+		const defaultOrgId = studentRows[0]?.orgId ?? "";
+		const activeOrgId =
+			requestedOrgId && studentRows.some((r) => r.orgId === requestedOrgId)
+				? requestedOrgId
+				: defaultOrgId;
+		const orgs: StudentOrgItem[] = studentRows.map((r) => ({
+			id: r.orgId,
+			name: r.orgName,
+			isCurrent: r.orgId === activeOrgId,
+		}));
+
+		return c.json(orgs);
+	});
+
+	// Org-Scoped Middleware for /me, /overview, etc.
+	const requireStudent = async (
+		c: Context<StudentEnv>,
+		next: () => Promise<void>,
+	) => {
+		const sessionUser = c.get("sessionUser");
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
 		let rows = await db
 			.select()
 			.from(student)
 			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(asc(student.createdAt), asc(student.id));
+			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
-			if (session.emailVerified === true) {
+			if (sessionUser.emailVerified === true) {
 				try {
 					await provisionStudentForUser(db, {
-						name: session.userName,
-						email,
+						name: sessionUser.userName,
+						email: sessionUser.email,
 					});
 					rows = await db
 						.select()
 						.from(student)
 						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-						.orderBy(asc(student.createdAt), asc(student.id));
+						.orderBy(desc(student.createdAt), asc(student.id));
 				} catch (err) {
 					console.error("Failed to provision student for user", {
-						userId: session.userId,
+						userId: sessionUser.userId,
 						error: err,
 					});
 				}
@@ -102,7 +297,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 			if (rows.length === 0) {
 				const code =
-					session.emailVerified === true
+					sessionUser.emailVerified === true
 						? STUDENT_ERROR_CODES.NOT_LINKED
 						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
 				return c.json(
@@ -115,27 +310,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			}
 		}
 
-		if (session.emailVerified !== true) {
-			return c.json(
-				{
-					error: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
-					code: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
-				},
-				403,
-			);
+		const requestedOrgId = c.req.header("x-student-org-id");
+		let matchedStudent = rows[0];
+
+		if (requestedOrgId) {
+			const found = rows.find((r) => r.orgId === requestedOrgId);
+			if (found) {
+				matchedStudent = found;
+			}
 		}
 
-		if (rows.length > 1) {
-			return c.json(
-				{
-					error: STUDENT_ERROR_CODES.AMBIGUOUS,
-					code: STUDENT_ERROR_CODES.AMBIGUOUS,
-				},
-				403,
-			);
-		}
-
-		const matchedStudent = rows[0];
 		if (!matchedStudent) {
 			return c.json(
 				{
@@ -149,15 +333,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		c.set("studentCtx", {
 			student: matchedStudent,
 			orgId: matchedStudent.orgId,
-			userId: session.userId,
-			sessionUser: {
-				...session,
-				email,
-			},
+			userId: sessionUser.userId,
+			sessionUser,
 		});
 
 		return next();
-	});
+	};
+
+	router.use("/me", requireStudent);
+	router.use("/overview", requireStudent);
 
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");

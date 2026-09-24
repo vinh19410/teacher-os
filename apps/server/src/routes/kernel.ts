@@ -22,6 +22,8 @@ import {
 	removeCurriculumSchema,
 	reorderLessonsSchema,
 	reorderModulesSchema,
+	STUDENT_INVITATION_ERROR_CODES,
+	studentInviteSchema,
 	syllabusCreateSchema,
 	syllabusReplaceContentSchema,
 	workspaceSettingsSchema,
@@ -47,12 +49,13 @@ import { lesson } from "@teacher-os/db/schema/lesson";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { workspaceSettings } from "@teacher-os/db/schema/settings";
 import { student } from "@teacher-os/db/schema/student";
+import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import {
 	syllabus,
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, asc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, max, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -525,6 +528,127 @@ export function kernelRoutes(deps: {
 		if (!ctx) return unauthorized(c);
 		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
 		return c.json(snapshot.students);
+	});
+
+	kernel.post("/students/invite", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, studentInviteSchema);
+		if (!body.ok) return body.response;
+		const normalizedEmail = body.data.email.trim().toLowerCase();
+		const db = deps.getDb();
+
+		// Check if already student in this org
+		const [existingStudent] = await db
+			.select({ id: student.id })
+			.from(student)
+			.where(
+				and(
+					eq(student.orgId, ctx.orgId),
+					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+				),
+			)
+			.limit(1);
+
+		if (existingStudent) {
+			return c.json(
+				{
+					error: "Học viên này đã ở trong tổ chức của bạn",
+					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+				},
+				409,
+			);
+		}
+
+		// Check if pending invite already exists in this org
+		const [existingInvite] = await db
+			.select({ id: studentInvitation.id })
+			.from(studentInvitation)
+			.where(
+				and(
+					eq(studentInvitation.orgId, ctx.orgId),
+					sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+					eq(studentInvitation.status, "pending"),
+				),
+			)
+			.limit(1);
+
+		if (existingInvite) {
+			return c.json(
+				{
+					error: "Lời mời đang chờ học viên phản hồi",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_ALREADY_PENDING,
+				},
+				409,
+			);
+		}
+
+		const id = crypto.randomUUID();
+		const now = new Date();
+		await db.insert(studentInvitation).values({
+			id,
+			orgId: ctx.orgId,
+			inviterUserId: ctx.userId,
+			email: normalizedEmail,
+			status: "pending",
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		const [created] = await db
+			.select()
+			.from(studentInvitation)
+			.where(eq(studentInvitation.id, id));
+
+		return c.json(created, 201);
+	});
+
+	kernel.get("/students/invitations", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const rows = await db
+			.select()
+			.from(studentInvitation)
+			.where(eq(studentInvitation.orgId, ctx.orgId))
+			.orderBy(desc(studentInvitation.createdAt));
+
+		return c.json(rows);
+	});
+
+	kernel.delete("/students/invitations/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const id = c.req.param("id");
+		const db = deps.getDb();
+
+		const [existing] = await db
+			.select()
+			.from(studentInvitation)
+			.where(
+				and(
+					eq(studentInvitation.id, id),
+					eq(studentInvitation.orgId, ctx.orgId),
+					eq(studentInvitation.status, "pending"),
+				),
+			);
+
+		if (!existing) {
+			return c.json(
+				{
+					error: "Lời mời không tồn tại hoặc đã được xử lý",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		await db
+			.update(studentInvitation)
+			.set({ status: "canceled", updatedAt: new Date() })
+			.where(eq(studentInvitation.id, id));
+
+		return c.json({ ok: true });
 	});
 
 	// Issue #122 / Issue #257: enroll an EXISTING student into a class —

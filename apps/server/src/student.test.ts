@@ -7,7 +7,7 @@ import {
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
-import { count, eq, sql } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
@@ -373,30 +373,37 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		spy.mockRestore();
 	});
 
-	// (c) 2 rows matching email across orgs -> 403 STUDENT_AMBIGUOUS (fail-closed)
-	test("(c) ambiguous email across orgs fails closed with 403 STUDENT_AMBIGUOUS", async () => {
-		// Temporarily drop index and set duplicate email to simulate legacy data before unique expression index
-		await libsql.run(sql`DROP INDEX IF EXISTS student_email_uq`);
+	// (c) 2 rows matching email across orgs -> resolves cleanly with multi-org bridge
+	test("(c) multi-org student resolves cleanly via header x-student-org-id or fallback", async () => {
 		await libsql
 			.update(schema.student)
 			.set({ email: "trung@test.local" })
 			.where(eq(schema.student.id, "student-amb-2"));
 
 		try {
+			// Without header: fallback to most recent
 			const res = await app.request("/api/student/me", {
 				headers: { "x-test-user": "ambiguous" },
 			});
-			expect(res.status).toBe(403);
-			const body = (await res.json()) as { error?: string };
-			expect(body.error).toBe(STUDENT_ERROR_CODES.AMBIGUOUS);
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as { student: { orgId: string } };
+			expect(["org-1", "org-2"]).toContain(body.student.orgId);
+
+			// With header: resolves specifically to requested org-1
+			const resOrg1 = await app.request("/api/student/me", {
+				headers: {
+					"x-test-user": "ambiguous",
+					"x-student-org-id": "org-1",
+				},
+			});
+			expect(resOrg1.status).toBe(200);
+			const body1 = (await resOrg1.json()) as { student: { orgId: string } };
+			expect(body1.student.orgId).toBe("org-1");
 		} finally {
 			await libsql
 				.update(schema.student)
 				.set({ email: "" })
 				.where(eq(schema.student.id, "student-amb-2"));
-			await libsql.run(
-				sql`CREATE UNIQUE INDEX student_email_uq ON student(lower(trim(email))) WHERE trim(email) != ''`,
-			);
 		}
 	});
 

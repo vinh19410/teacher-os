@@ -994,3 +994,37 @@ export const studentOverviewSchema = z.object({
 	assignments: z.array(studentAssignmentSchema),
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
+
+/**
+ * Student Invitation & Multi-Org Contracts (Phase 2).
+ */
+export const STUDENT_INVITATION_ERROR_CODES = {
+	ALREADY_IN_ORG: "STUDENT_ALREADY_IN_ORG",
+	INVITATION_ALREADY_PENDING: "INVITATION_ALREADY_PENDING",
+	INVITATION_NOT_FOUND: "INVITATION_NOT_FOUND",
+} as const;
+export type StudentInvitationErrorCode =
+	(typeof STUDENT_INVITATION_ERROR_CODES)[keyof typeof STUDENT_INVITATION_ERROR_CODES];
+
+export const studentInviteSchema = z.object({
+	email: z.string().trim().email("Email không hợp lệ"),
+});
+export type StudentInviteInput = z.infer<typeof studentInviteSchema>;
+
+export interface StudentInvitationItem {
+	id: string;
+	orgId: string;
+	orgName?: string;
+	inviterUserId: string;
+	inviterName?: string;
+	email: string;
+	status: "pending" | "accepted" | "rejected" | "canceled";
+	createdAt: string | number | Date;
+	updatedAt?: string | number | Date;
+}
+
+export interface StudentOrgItem {
+	id: string;
+	name: string;
+	isCurrent: boolean;
+}

@@ -51,6 +51,22 @@ vi.mock("@/lib/repos/use-students", () => ({
 	}),
 }));
 
+vi.mock("@/lib/repos/invitations", () => ({
+	usePendingInvitations: () => ({
+		data: [],
+		isLoading: false,
+		error: null,
+	}),
+	useInviteStudent: () => ({
+		mutateAsync: vi.fn(),
+		isPending: false,
+	}),
+	useCancelInvitation: () => ({
+		mutateAsync: vi.fn(),
+		isPending: false,
+	}),
+}));
+
 vi.mock("@/lib/repos/use-classes", () => ({
 	useClasses: () => ({
 		classes: mockStoreData.classes,
