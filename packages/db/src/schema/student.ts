@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
 /**
@@ -15,9 +21,9 @@ export const student = sqliteTable(
 			.references(() => organization.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		phone: text("phone").notNull().default(""),
-		/** Email học viên — danh tính đăng nhập tương lai (username) cùng `phone`.
-		 * User-action ghi: tạo học viên (POST /api/students). Row legacy giữ "".
-		 * Chưa unique + chưa có user row — dành cho plan student-login sau này. */
+		/** Email học viên — danh tính đăng nhập portal (PR #255 + issue #257).
+		 * Ghi bởi: bridge portal provisioning (requireStudent) khi emailVerified === true.
+		 * Unique expression index: lower(trim(email)) WHERE trim(email) != ''. */
 		email: text("email").notNull().default(""),
 		zalo: text("zalo").notNull().default(""),
 		parentName: text("parent_name").notNull().default(""),
@@ -26,5 +32,10 @@ export const student = sqliteTable(
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
 	},
-	(table) => [index("student_org_idx").on(table.orgId)],
+	(table) => [
+		index("student_org_idx").on(table.orgId),
+		uniqueIndex("student_email_uq")
+			.on(sql`lower(trim(${table.email}))`)
+			.where(sql`trim(${table.email}) != ''`),
+	],
 );

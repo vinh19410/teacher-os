@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Xoá create path: contract, server, UI, server tests"
-status: todo
+status: completed
 priority: P1
 effort: 5h
 dependencies: [1]
@@ -32,12 +32,12 @@ dependencies: [1]
 
 ## Requirements
 
-- [ ] `POST /api/students` → 404; `studentCreateSchema`/`StudentCreate` xoá khỏi contracts
-- [ ] Web không còn action `add-student` (command map, data-actions, reducer, UI, comment, key)
-- [ ] `/students` mất nút "+ Thêm học viên"; empty state ghi nguồn học viên mới (đăng nhập portal)
-- [ ] Modal enroll-only: rename `AddStudentModal` → `EnrollStudentModal` (file `enroll-student-modal.tsx`)
-- [ ] Server tests xanh: `addStudent` thành DB-seed helper; guard-test probe đổi endpoint
-- [ ] PDR + docs không còn mô tả teacher tạo học viên
+- [x] `POST /api/students` → 404; `studentCreateSchema`/`StudentCreate` xoá khỏi contracts
+- [x] Web không còn action `add-student` (command map, data-actions, reducer, UI, comment, key)
+- [x] `/students` mất nút "+ Thêm học viên"; empty state ghi nguồn học viên mới (đăng nhập portal)
+- [x] Modal enroll-only: rename `AddStudentModal` → `EnrollStudentModal` (file `enroll-student-modal.tsx`)
+- [x] Server tests xanh: `addStudent` thành DB-seed helper; guard-test probe đổi endpoint
+- [x] PDR + docs không còn mô tả teacher tạo học viên
 
 ## Implementation Steps
 

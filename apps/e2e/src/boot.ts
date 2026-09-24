@@ -36,6 +36,8 @@ for (const suffix of ["", "-wal", "-shm"]) {
 	rmSync(`${DB_PATH}${suffix}`, { force: true });
 }
 const client = createClient({ url: `file:${DB_PATH}` });
+await client.execute("PRAGMA journal_mode = WAL;");
+await client.execute("PRAGMA busy_timeout = 5000;");
 const libsql = drizzle(client, { schema });
 await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 

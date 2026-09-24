@@ -136,7 +136,11 @@ async function createTestApp() {
 	}
 
 	async function orgIdOf(session: TestSession): Promise<string> {
-		const [membershipRow] = await membershipsOf(session.userId);
+		let [membershipRow] = await membershipsOf(session.userId);
+		if (!membershipRow) {
+			await call("/api/readyz", { session });
+			[membershipRow] = await membershipsOf(session.userId);
+		}
 		if (!membershipRow) throw new Error("bootstrap the org before inserting");
 		return membershipRow.orgId;
 	}
@@ -289,19 +293,30 @@ async function createTestApp() {
 			classId?: string;
 		} = {},
 	): Promise<string> {
-		const res = await call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name,
-				phone: "0900000000",
-				email: `stu-${crypto.randomUUID()}@test.local`,
-				parentName: "Phụ huynh",
-				...(extra.classId ? { classId: extra.classId } : {}),
-			},
+		const orgId = await orgIdOf(session);
+		const studentId = crypto.randomUUID();
+		const email = `stu-${crypto.randomUUID()}@test.local`;
+		await libsql.insert(schema.student).values({
+			id: studentId,
+			orgId,
+			name,
+			phone: "0900000000",
+			email,
+			zalo: "0900000000",
+			parentName: "Phụ huynh",
+			parentPhone: "",
 		});
-		expect(res.status).toBe(201);
-		return ((await res.json()) as { id: string }).id;
+		if (extra.classId) {
+			const enrollmentId = crypto.randomUUID();
+			await libsql.insert(schema.enrollment).values({
+				id: enrollmentId,
+				orgId,
+				classId: extra.classId,
+				studentId,
+				status: "invited",
+			});
+		}
+		return studentId;
 	}
 
 	async function addActiveStudent(
@@ -1512,7 +1527,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST without Origin header is 403", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
 			origin: null,
@@ -1522,7 +1537,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST with a foreign Origin is 403", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
 			origin: "https://evil.example",
@@ -1532,7 +1547,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST with a non-JSON content-type is 415", async () => {
-		const res = await t.app.request("/api/students", {
+		const res = await t.app.request("/api/classes", {
 			method: "POST",
 			headers: {
 				cookie: `better-auth.session_token=${session.token}`,
@@ -1545,10 +1560,10 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("invalid body fails zod validation with 400", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
-			body: { phone: "" },
+			body: { name: "" },
 		});
 		expect(res.status).toBe(400);
 	});
@@ -3614,22 +3629,19 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 
 	test("cross-org: org B cannot enroll into org A's class and sees zero generated lessons", async () => {
 		const orgB = await t.insertUser("Cô Lịch B");
-		const attempt = await t.call("/api/students", {
+		const studentIdB = await t.addStudent(orgB, "HV intruder");
+		const attempt = await t.call(`/api/classes/${classId}/enroll`, {
 			session: orgB,
 			method: "POST",
 			body: {
-				name: "HV intruder",
-				phone: "0900000000",
-				email: "intruder@test.local",
-				parentName: "",
-				classId,
+				studentId: studentIdB,
 			},
 		});
 		expect(attempt.status).toBe(404);
 		const snapshotB = await t.kernel(orgB);
 		expect(snapshotB.lessons).toEqual([]);
 		expect(
-			snapshotB.students.find((s) => s.name === "HV intruder"),
+			snapshotB.enrollments.find((e) => e.classId === classId),
 		).toBeUndefined();
 	});
 });
@@ -4117,80 +4129,25 @@ describe("student package minimums (issue #115)", () => {
 		).toBe(12);
 	});
 
-	test("create student missing phone is rejected with 400", async () => {
+	test("POST /api/students route is removed and returns 404", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
 			body: {
-				name: "HV thiếu phone",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student phone with spaces is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV phone space",
-				phone: "0900 000 000",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student phone with non-digits is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV phone chữ",
-				phone: "0900abc",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student missing email is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV thiếu email",
-				phone: "0900000000",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student invalid email format is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV email sai",
-				phone: "0900000000",
-				email: "not-an-email",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student with valid phone digits and email succeeds with 201", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV hợp lệ",
+				name: "HV test",
 				phone: "0901234567",
-				email: "hop.le@test.local",
+				email: "hv@test.local",
 			},
 		});
-		expect(res.status).toBe(201);
+		expect(res.status).toBe(404);
+	});
+
+	test("GET /api/students route remains active and returns 200", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "GET",
+		});
+		expect(res.status).toBe(200);
 	});
 });
 

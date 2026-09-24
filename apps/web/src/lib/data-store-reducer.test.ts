@@ -401,66 +401,6 @@ describe("reducer", () => {
 		);
 	});
 
-	const newStudentPayload = {
-		name: "Test Student",
-		phone: "0900",
-		email: "test@example.com",
-		parentName: "P",
-	};
-
-	test("add-student appends with pkg.done 0 and s- id", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: newStudentPayload,
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		const added = next.students[next.students.length - 1];
-		expect(added.pkg.done).toBe(0);
-		expect(added.pkg.remaining).toBe(0);
-		expect(added.id).toMatch(/^s-/);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with unknown classId leaves classes unchanged", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "c-missing" },
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with empty classId leaves classes unchanged", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "" },
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with classId invites to that class", () => {
-		const before = cloneSeed();
-		const beforeC1 = before.classes.find((c) => c.id === "c1");
-		expect(beforeC1).toBeDefined();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "c1" },
-		});
-		const added = next.students[next.students.length - 1];
-		expect(added.id).toMatch(/^s-/);
-		expect(next.classes.find((c) => c.id === "c1")).toEqual({
-			...beforeC1,
-			invitedStudentIds: [...(beforeC1?.invitedStudentIds ?? []), added.id],
-		});
-		expect(next.classes.filter((c) => c.id !== "c1")).toEqual(
-			before.classes.filter((c) => c.id !== "c1"),
-		);
-	});
-
 	test("add-class appends with sessionsDone 0, c- id, and JSON-string schedule", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {

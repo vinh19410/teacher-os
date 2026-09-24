@@ -1,7 +1,7 @@
 ---
 title: "Học viên gốc từ đăng ký portal: bỏ tạo thủ công ở admin/teacher"
 description: "Xoá đường tạo học viên thủ công (POST /api/students + UI) và chuyển nguồn gốc student row sang đăng ký tự do trên student portal: bridge /api/student tự provision học viên ở lần đầu đăng nhập (email verified, org sớm nhất) kèm unique index lower(trim(student.email)); e2e chuyển sang seed DB."
-status: pending
+status: completed
 priority: P1
 effort: 15h
 issue: 257
@@ -47,9 +47,9 @@ Hiện tại học viên chỉ tồn tại khi teacher tạo tay qua `POST /api/
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [DB unique index + provisioning ở bridge portal](./phase-01-start.md) | Pending |
-| 2 | [Xoá create path: contract, server, UI, server tests](./phase-02-remove-create-path.md) | Pending |
-| 3 | [E2E seed DB + regression + docs](./phase-03-e2e-regression-docs.md) | Pending |
+| 1 | [DB unique index + provisioning ở bridge portal](./phase-01-start.md) | Completed |
+| 2 | [Xoá create path: contract, server, UI, server tests](./phase-02-remove-create-path.md) | Completed |
+| 3 | [E2E seed DB + regression + docs](./phase-03-e2e-regression-docs.md) | Completed |
 
 ## Cross-Plan Dependencies
 
@@ -61,13 +61,13 @@ Hiện tại học viên chỉ tồn tại khi teacher tạo tay qua `POST /api/
 
 ## Success Criteria
 
-- [ ] Học viên đăng ký portal bằng Google (emailVerified) → lần đầu mở portal, student row tự sinh vào org sớm nhất với name/email từ user, phone/parent rỗng; `/students` (web giáo viên) hiện học viên mới sau refresh snapshot.
-- [ ] Teacher đăng ký Google trên web app → KHÔNG bao giờ sinh student row (không gọi `/api/student/*`); signup email/password chưa verify → không sinh row, không lỗi.
-- [ ] Email trùng student row có sẵn → không tạo duplicate; >1 row trùng email → không tạo, bridge vẫn fail-closed `STUDENT_AMBIGUOUS`; provisioning lỗi transient → lần vào portal sau tự phục hồi.
-- [ ] Migration 0023 dedupe không mất row học viên nào; expression unique index chặn cả case-variant (`Anna@X.com` vs `anna@x.com`).
-- [ ] `POST /api/students` → 404; `studentCreateSchema` + command `add-student` + modal tạo học viên biến mất khỏi codebase; modal ở lớp chỉ còn picker "Học viên có sẵn"; `/students` không còn nút thêm, empty state ghi nguồn học viên mới.
-- [ ] Rows học viên legacy giữ nguyên (id, email, enrollment, hóa đơn không đổi); server tests (kernel.test.ts, kernel-occurrence, lesson-date-integration) xanh với helper seed mới.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build` xanh; `pnpm --filter e2e e2e` xanh với helper seed mới.
+- [x] Học viên đăng ký portal bằng Google (emailVerified) → lần đầu mở portal, student row tự sinh vào org sớm nhất với name/email từ user, phone/parent rỗng; `/students` (web giáo viên) hiện học viên mới sau refresh snapshot.
+- [x] Teacher đăng ký Google trên web app → KHÔNG bao giờ sinh student row (không gọi `/api/student/*`); signup email/password chưa verify → không sinh row, không lỗi.
+- [x] Email trùng student row có sẵn → không tạo duplicate; >1 row trùng email → không tạo, bridge vẫn fail-closed `STUDENT_AMBIGUOUS`; provisioning lỗi transient → lần vào portal sau tự phục hồi.
+- [x] Migration 0023 dedupe không mất row học viên nào; expression unique index chặn cả case-variant (`Anna@X.com` vs `anna@x.com`).
+- [x] `POST /api/students` → 404; `studentCreateSchema` + command `add-student` + modal tạo học viên biến mất khỏi codebase; modal ở lớp chỉ còn picker "Học viên có sẵn"; `/students` không còn nút thêm, empty state ghi nguồn học viên mới.
+- [x] Rows học viên legacy giữ nguyên (id, email, enrollment, hóa đơn không đổi); server tests (kernel.test.ts, kernel-occurrence, lesson-date-integration) xanh với helper seed mới.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build` xanh; `pnpm --filter e2e e2e` xanh với helper seed mới.
 
 ## Reports
 

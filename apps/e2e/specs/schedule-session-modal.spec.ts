@@ -6,9 +6,9 @@
  */
 import { expect, type Page, test } from "@playwright/test";
 import {
-	createStudentViaUi,
 	gotoWeek,
 	mondayWeekStartISO,
+	seedStudent,
 	signUpViaUi,
 	vietnamTodayISO,
 	vnWeekdayMon0,
@@ -17,9 +17,14 @@ import { seedDatedClass } from "./helpers-dated-class";
 
 const TOPIC = "Writing Task 2 — class session";
 
-async function addStudent(page: Page, name: string) {
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, name);
+async function addStudent(page: Page, name: string, teacherEmail?: string) {
+	await seedStudent({ teacherEmail, name });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(name)).toBeVisible();
 	const row = page.locator("tr", { hasText: name });
 	await row.getByRole("button", { name: "Kích hoạt" }).click();
@@ -34,7 +39,7 @@ async function addStudent(page: Page, name: string) {
 
 async function seedTwoStudentClass(page: Page, className: string) {
 	const startDate = vietnamTodayISO();
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 	await seedDatedClass(page, {
 		name: className,
 		schedule: {
@@ -49,8 +54,8 @@ async function seedTwoStudentClass(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(className).click();
-	await addStudent(page, "An Session E2E");
-	await addStudent(page, "Bình Session E2E");
+	await addStudent(page, "An Session E2E", teacherEmail);
+	await addStudent(page, "Bình Session E2E", teacherEmail);
 	await gotoWeek(page, mondayWeekStartISO(startDate));
 }
 

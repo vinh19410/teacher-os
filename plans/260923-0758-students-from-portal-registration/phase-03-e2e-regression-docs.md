@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "E2E seed DB + regression + docs chốt"
-status: todo
+status: completed
 priority: P1
 effort: 6h
 dependencies: [2]
@@ -31,9 +31,9 @@ dependencies: [2]
 
 ## Requirements
 
-- [ ] Helper `seedStudent()` resolve org theo teacher của spec, guard org rỗng + busy_timeout/retry
-- [ ] 12 spec files dựng lại; 3 spec rework (without-class, enroll-existing, package-validation); negative spec assert-DB
-- [ ] Full regression: `pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build`, `pnpm --filter e2e e2e` xanh
+- [x] Helper `seedStudent()` resolve org theo teacher của spec, guard org rỗng + busy_timeout/retry
+- [x] 12 spec files dựng lại; 3 spec rework (without-class, enroll-existing, package-validation); negative spec assert-DB
+- [x] Full regression: `pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build`, `pnpm --filter e2e e2e` xanh
 
 ## Implementation Steps
 

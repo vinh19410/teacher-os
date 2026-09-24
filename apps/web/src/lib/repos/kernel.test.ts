@@ -326,21 +326,6 @@ describe("mapKernelSnapshot", () => {
 });
 
 describe("kernelCommand", () => {
-	test("add-student with classId carries it in the body", () => {
-		const req = kernelCommand({
-			type: "add-student",
-			payload: {
-				name: "A",
-				phone: "090",
-				email: "a@test.local",
-				parentName: "",
-				classId: "cl-1",
-			},
-		});
-		expect(req.path).toBe("/api/students");
-		expect(req.body).toMatchObject({ classId: "cl-1", email: "a@test.local" });
-	});
-
 	test("enroll-student maps to the class enroll endpoint (#122 / #251)", () => {
 		const req = kernelCommand({
 			type: "enroll-student",
@@ -387,19 +372,6 @@ describe("kernelCommand", () => {
 			due: "2026-09-15",
 			note: "",
 		});
-	});
-
-	test("add-student without classId omits the key entirely", () => {
-		const req = kernelCommand({
-			type: "add-student",
-			payload: {
-				name: "A",
-				phone: "",
-				parentName: "",
-				email: "a@test.local",
-			},
-		});
-		expect(req.body).not.toHaveProperty("classId");
 	});
 
 	test("add-class posts the payload as-is", () => {

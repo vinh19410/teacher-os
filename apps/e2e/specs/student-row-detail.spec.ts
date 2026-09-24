@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Regression guard for issue #111 (QC P1): a student row on /students must
@@ -12,11 +12,10 @@ import { createStudentViaUi, signUpViaUi } from "./helpers";
  */
 test("student row click opens the detail page", async ({ page }) => {
 	const STUDENT_NAME = "QC-111 Học viên hồi quy";
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 	await page.goto("/students");
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// Click the row → SPA navigation to /students/:id. The detail route is

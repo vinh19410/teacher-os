@@ -17,6 +17,7 @@ import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Db } from "../app";
 import type { SessionUser } from "../session";
+import { provisionStudentForUser } from "../student-provisioning";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -58,20 +59,41 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const db = deps.getDb();
 		const normalizedEmail = email.toLowerCase();
-		const rows = await db
+		let rows = await db
 			.select()
 			.from(student)
 			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
 			.orderBy(asc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
-			return c.json(
-				{
-					error: STUDENT_ERROR_CODES.NOT_LINKED,
-					code: STUDENT_ERROR_CODES.NOT_LINKED,
-				},
-				403,
-			);
+			if (session.emailVerified === true) {
+				try {
+					await provisionStudentForUser(db, {
+						name: session.userName,
+						email,
+					});
+					rows = await db
+						.select()
+						.from(student)
+						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+						.orderBy(asc(student.createdAt), asc(student.id));
+				} catch (err) {
+					console.error("Failed to provision student for user", {
+						userId: session.userId,
+						error: err,
+					});
+				}
+			}
+
+			if (rows.length === 0) {
+				return c.json(
+					{
+						error: STUDENT_ERROR_CODES.NOT_LINKED,
+						code: STUDENT_ERROR_CODES.NOT_LINKED,
+					},
+					403,
+				);
+			}
 		}
 
 		if (session.emailVerified !== true) {

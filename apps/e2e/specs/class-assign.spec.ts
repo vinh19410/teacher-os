@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 — Giao bài trên lớp:
@@ -14,14 +14,9 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	const STUDENT_NAME = "QC-208 Học viên";
 	const PROMPT_TITLE = "QC-208 Prompt Ready";
 
-	// 1. Sign-up
-	await signUpViaUi(page);
-
-	// 2. Create student
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
-
+	// 1. Sign-up & seed student
+	const teacherEmail = await signUpViaUi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// 3. Create class
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
@@ -39,7 +34,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 
 	// 4. Enroll student into class
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
 	await option.click();

@@ -2,7 +2,6 @@ import type { KernelAction } from "./data-actions";
 import type {
 	ClassGroup,
 	MockData,
-	Student,
 	Syllabus,
 	SyllabusModule,
 } from "./mock-data";
@@ -83,50 +82,6 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "create-assignment-prompt":
 		case "assign-class-prompt":
 			return state;
-		case "add-student": {
-			const { name, phone, email, parentName, classId } = action.payload;
-			const student: Student = {
-				id: uid("s"),
-				name,
-				phone,
-				email,
-				hasPackage: false,
-				zalo: phone,
-				parent: { name: parentName, phone: "" },
-				targetBand: "—",
-				skills: [],
-				examDate: "",
-				pkg: {
-					total: 0,
-					done: 0,
-					remaining: 0,
-					price: 0,
-					mode: "Online",
-					start: "19/08",
-					expiry: "—",
-				},
-				tags: [],
-				notes: "",
-				avatar: name.substring(0, 2).toUpperCase(),
-				atRisk: false,
-			};
-			const nextStudents = [...state.students, student];
-			if (!classId) {
-				return { ...state, students: nextStudents };
-			}
-			return {
-				...state,
-				students: nextStudents,
-				classes: state.classes.map((c) => {
-					if (c.id !== classId) return c;
-					if (c.invitedStudentIds.includes(student.id)) return c;
-					return {
-						...c,
-						invitedStudentIds: [...c.invitedStudentIds, student.id],
-					};
-				}),
-			};
-		}
 		case "enroll-student": {
 			// Issue #122 / #251 / #253: attach an EXISTING student to class as invited.
 			// No package fabricated — package is generated when accepted.

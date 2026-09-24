@@ -37,19 +37,6 @@ export interface KernelRequest {
 /** Map a kernel write action to its POST endpoint and JSON body. */
 export function kernelCommand(action: KernelAction): KernelRequest {
 	switch (action.type) {
-		case "add-student":
-			return {
-				path: "/api/students",
-				body: {
-					name: action.payload.name,
-					phone: action.payload.phone,
-					email: action.payload.email,
-					parentName: action.payload.parentName,
-					...(action.payload.classId
-						? { classId: action.payload.classId }
-						: {}),
-				},
-			};
 		case "enroll-student":
 			// Issue #122 / #251: enroll an EXISTING student into the viewed class.
 			return {

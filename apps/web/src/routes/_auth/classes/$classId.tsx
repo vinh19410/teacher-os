@@ -10,8 +10,8 @@ import type {
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
-import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
+import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
@@ -202,7 +202,7 @@ function ClassDetailRoute() {
 						size="sm"
 						onClick={() => setAddStudentOpen(true)}
 					>
-						+ Thêm học viên
+						+ Thêm học viên vào lớp
 					</Button>
 				</div>
 			</Card>
@@ -341,8 +341,8 @@ function ClassDetailRoute() {
 				</Card>
 			)}
 
-			<AddStudentModal
-				key={`add-student-${cls.id}`}
+			<EnrollStudentModal
+				key={`enroll-student-${cls.id}`}
 				open={addStudentOpen}
 				onClose={() => setAddStudentOpen(false)}
 				classId={cls.id}

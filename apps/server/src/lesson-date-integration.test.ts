@@ -81,8 +81,36 @@ async function createTestApp() {
 				options.body !== undefined ? JSON.stringify(options.body) : undefined,
 		});
 	}
+	async function addStudent(name: string, extra: { classId?: string } = {}) {
+		const [membershipRow] = await libsql
+			.select()
+			.from(schema.membership)
+			.where(eq(schema.membership.userId, userId));
+		if (!membershipRow) throw new Error("bootstrap the org before inserting");
+		const studentId = crypto.randomUUID();
+		await libsql.insert(schema.student).values({
+			id: studentId,
+			orgId: membershipRow.orgId,
+			name,
+			phone: "0900000000",
+			email: `stu-${crypto.randomUUID()}@test.local`,
+			zalo: "0900000000",
+			parentName: "",
+			parentPhone: "",
+		});
+		if (extra.classId) {
+			await libsql.insert(schema.enrollment).values({
+				id: crypto.randomUUID(),
+				orgId: membershipRow.orgId,
+				classId: extra.classId,
+				studentId,
+				status: "invited",
+			});
+		}
+		return studentId;
+	}
 
-	return { call };
+	return { call, addStudent };
 }
 
 describe("lesson.date generator + snapshot projection", () => {
@@ -106,16 +134,7 @@ describe("lesson.date generator + snapshot projection", () => {
 	}
 
 	async function enroll(classId: string, name: string): Promise<void> {
-		const res = await t.call("/api/students", {
-			method: "POST",
-			body: {
-				name,
-				phone: "0900000000",
-				email: `stu-${crypto.randomUUID()}@test.local`,
-				classId,
-			},
-		});
-		expect([201, 200]).toContain(res.status);
+		await t.addStudent(name, { classId });
 		const snap = await kernel();
 		const en = snap.enrollments.find((e) => e.classId === classId);
 		if (en) {
