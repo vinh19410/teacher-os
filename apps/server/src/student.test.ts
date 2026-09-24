@@ -454,11 +454,15 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			headers: {
 				Origin: "http://localhost:8003",
 				"Access-Control-Request-Method": "GET",
+				"Access-Control-Request-Headers": "x-student-org-id",
 			},
 		});
 		expect(studentPreflight.headers.get("access-control-allow-origin")).toBe(
 			"http://localhost:8003",
 		);
+		expect(
+			studentPreflight.headers.get("access-control-allow-headers"),
+		).toContain("x-student-org-id");
 
 		const unknownPreflight = await app.request("/api/student/me", {
 			method: "OPTIONS",

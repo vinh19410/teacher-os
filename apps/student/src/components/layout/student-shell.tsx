@@ -40,8 +40,8 @@ export function StudentShell({
 				</div>
 				<div className="flex items-center gap-2">
 					<OrgSwitcher />
-					<NotificationBell />
-					<AvatarMenu name={userName} email={userEmail} />
+					<NotificationBell variant="compact" />
+					<AvatarMenu name={userName} email={userEmail} variant="compact" />
 				</div>
 			</header>
 
@@ -104,9 +104,9 @@ export function StudentShell({
 					</nav>
 				</div>
 
-				<div className="flex items-center justify-between border-line-soft border-t pt-4">
-					<AvatarMenu name={userName} email={userEmail} />
-					<NotificationBell />
+				<div className="space-y-1 border-line-soft border-t pt-3">
+					<NotificationBell variant="sidebar" />
+					<AvatarMenu name={userName} email={userEmail} variant="sidebar" />
 				</div>
 			</aside>
 
