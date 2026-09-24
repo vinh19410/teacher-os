@@ -11,7 +11,7 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 
 | Decision | Owner |
 | --- | --- |
-| Authenticated users are bootstrapped into an org with a `teacher` membership when no membership exists yet. | [apps/server/src/app.ts](../apps/server/src/app.ts) and [packages/db/src/schema/membership.ts](../packages/db/src/schema/membership.ts) |
+| Only `teacher`-role accounts are bootstrapped into an org with a `teacher` membership when no membership exists yet; a `student` role receives 403 `ACCOUNT_STUDENT_ROLE`. Accounts carry an app role (`user.role`): student-portal sign-ups are `student` and cannot sign in on the teacher app; teacher accounts cannot sign in on the student portal (403 `ACCOUNT_TEACHER_ROLE`). | [apps/server/src/app.ts](../apps/server/src/app.ts) and [packages/db/src/schema/membership.ts](../packages/db/src/schema/membership.ts) and [packages/auth/src/role.ts](../packages/auth/src/role.ts) |
 | The persistent kernel is org-scoped and centers on `organization`, `membership`, `student`, `class`, `enrollment`, `session_package`, and syllabus tables. | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Curriculum data stays separate from delivered lessons. | [packages/db/src/schema/syllabus.ts](../packages/db/src/schema/syllabus.ts) and [packages/db/src/schema/lesson.ts](../packages/db/src/schema/lesson.ts) |
 | The web app stays behind a load gate until the first kernel snapshot resolves. | [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) |

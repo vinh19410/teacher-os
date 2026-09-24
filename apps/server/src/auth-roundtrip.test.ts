@@ -35,6 +35,7 @@ describe("real better-auth round-trip under node", () => {
 		const auth = createAuth({
 			db: libsql,
 			corsOrigin: CORS_ORIGIN,
+			studentOrigins: [],
 			secret: "test-secret-0123456789abcdef0123456789abcdef",
 			baseURL: "http://localhost:8000",
 			googleClientId: "test-dummy",

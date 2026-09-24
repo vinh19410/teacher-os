@@ -9,6 +9,15 @@ export const user = sqliteTable("user", {
 		.default(false)
 		.notNull(),
 	image: text("image"),
+	/**
+	 * Auth app-role: "teacher" (teacher app) | "student" (student portal).
+	 * Gán MỘT LẦN lúc tạo tài khoản theo app nguồn của request sign-up
+	 * (origin classification). Default "student" = least privilege cho row
+	 * sinh ngoài luồng hook; legacy được backfill theo "nguồn sử dụng đầu
+	 * tiên thắng" (migration 0024). Không client API nào được ghi
+	 * (better-auth additionalFields input:false).
+	 */
+	role: text("role").default("student"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),

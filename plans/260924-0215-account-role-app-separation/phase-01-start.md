@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Migration user.role + backfill phân loại tài khoản hiện hữu"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []
@@ -119,12 +119,24 @@ Thêm cột `role` (`"teacher"` | `"student"`) vào bảng `user` kèm migration
 
 ## Todo
 
-- [ ] Thêm cột `role` (default `'student'`) + docblock vào `packages/db/src/schema/auth.ts`
-- [ ] `drizzle-kit generate` → 0024 + snapshot + journal
-- [ ] Append 4 statement backfill theo luật "nguồn dùng đầu tiên thắng"
-- [ ] Test migration 6 case + assert 0 row NULL
-- [ ] Runbook audit prod (query overlap) ghi trong phase
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm test` xanh
+- [x] Thêm cột `role` (default `'student'`) + docblock vào `packages/db/src/schema/auth.ts`
+- [x] `drizzle-kit generate` → 0024 + snapshot + journal
+- [x] Append 4 statement backfill theo luật "nguồn dùng đầu tiên thắng"
+- [x] Test migration 6 case + assert 0 row NULL
+- [x] Runbook audit prod (query overlap) ghi trong phase
+- [x] `pnpm check`, `pnpm check-types`, `pnpm test` xanh
+
+## Implementation Deviations (cook 2026-09-24)
+
+- **Backfill SQL đổi từ NULL-based 4 bước thành 2 statement gán `teacher`.** SQLite
+  `ALTER TABLE ... ADD COLUMN ... DEFAULT 'student'` điền `'student'` vào MỌI row
+  hiện hữu ngay trong statement đầu → các bước `WHERE role IS NULL` của plan không
+  bao giờ match (test overlap 2 chiều bắt ngay: user membership-trước nhận nhầm
+  `student`). Viết lại: statement 1 gán `teacher` cho overlap membership-trước/tie,
+  statement 2 gán `teacher` cho membership-only; mọi row còn lại (overlap
+  student-trước, chỉ student row, không dấu vết) giữ `'student'` từ default —
+  semantics "nguồn dùng đầu tiên thắng" giữ nguyên, kết quả cuối đúng Success
+  Criteria (0 row NULL, 6/6 test case xanh).
 
 ## Success Criteria
 

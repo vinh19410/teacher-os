@@ -24,6 +24,9 @@ const PORT = Number(process.env.E2E_API_PORT ?? 8000);
 // it beyond the test machine.
 const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
 const CORS_ORIGIN = `http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`;
+// Portal origin joins the trusted origins so role-classification requests from
+// the student app pass the better-auth origin check (plan #260, red-team #7).
+const STUDENT_ORIGIN = "http://localhost:8003";
 const DB_PATH = new URL("../local.db", import.meta.url).pathname;
 const MIGRATIONS_DIR = new URL(
 	"../../../packages/db/src/migrations",
@@ -43,7 +46,8 @@ await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 
 const auth = createAuth({
 	db: libsql,
-	corsOrigin: CORS_ORIGIN,
+	corsOrigin: [CORS_ORIGIN, STUDENT_ORIGIN],
+	studentOrigins: [STUDENT_ORIGIN],
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",

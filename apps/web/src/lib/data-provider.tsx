@@ -7,7 +7,9 @@ import {
 	useContext,
 	useMemo,
 	useRef,
+	useSyncExternalStore,
 } from "react";
+import AccountBlockedView from "@/components/account-blocked-view";
 import KernelLoadError from "@/components/kernel-load-error";
 import { getServerUrl } from "@/lib/auth-client";
 import type { KernelAction } from "./data-actions";
@@ -32,6 +34,11 @@ import {
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./repos/kernel";
+import {
+	isRoleBlocked,
+	markRoleBlocked,
+	subscribeRoleBlocked,
+} from "./role-block";
 
 interface DataStore {
 	/** Kernel slice — MockData shape plus raw `enrollments` rows (#61). */
@@ -62,6 +69,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	const baseUrl = getServerUrl(env.VITE_SERVER_URL);
 	const queryClient = useQueryClient();
 	const busRef = useRef<KernelCommandBus | null>(null);
+	// Role-block exit (plan #260): the flag flips from QueryCache.onError (read
+	// path) or the bus seam below (write path) and re-renders the provider into
+	// the blocked view — no retry, the session can never become valid here.
+	const roleBlocked = useSyncExternalStore(subscribeRoleBlocked, isRoleBlocked);
 
 	// Load gate: children (and the store) stay unmounted until the shared
 	// ['kernel'] query settles with a valid snapshot. A failed FIRST load
@@ -98,6 +109,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
 			// the discriminated result still tells the caller what landed.
 			onAuthLost: reauth,
+			// A student-role rejection mid-write/mid-refresh shares the same
+			// single-flight flag the read path (QueryCache.onError) marks.
+			onRoleBlocked: markRoleBlocked,
 		});
 		return busRef.current;
 	}, [baseUrl, queryClient]);
@@ -148,6 +162,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	// Blocking error UI is initial-load-only: once a snapshot exists, a
 	// failed refresh must never unmount the running workspace — the write
 	// outcome surfaces through the modal/direct-action that triggered it.
+	if (roleBlocked) {
+		return <AccountBlockedView />;
+	}
 	if (isError && !snapshot) {
 		console.error("[kernel] initial load failed", error);
 		const failure = classifyLoadError(error);

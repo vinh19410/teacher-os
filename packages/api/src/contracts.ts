@@ -916,6 +916,19 @@ export const STUDENT_ERROR_CODES = {
 export type StudentErrorCode =
 	(typeof STUDENT_ERROR_CODES)[keyof typeof STUDENT_ERROR_CODES];
 
+/**
+ * Account-role gate errors (plan #260): a session whose `user.role` does not
+ * match the app is rejected at the API middleware layer — the student portal
+ * and the teacher app share one cross-subdomain cookie zone, so the form-level
+ * sign-in rejection alone is not enough.
+ */
+export const ACCOUNT_ERROR_CODES = {
+	STUDENT_ON_TEACHER_APP: "ACCOUNT_STUDENT_ROLE",
+	TEACHER_ON_STUDENT_PORTAL: "ACCOUNT_TEACHER_ROLE",
+} as const;
+export type AccountErrorCode =
+	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
+
 export const studentMeSchema = z.object({
 	user: z.object({
 		name: z.string(),

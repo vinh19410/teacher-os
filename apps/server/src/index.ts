@@ -29,6 +29,7 @@ const getAuth = (): Auth => {
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
+			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),

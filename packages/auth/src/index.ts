@@ -1,11 +1,13 @@
 import * as schema from "@teacher-os/db/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getOAuthState } from "better-auth/api";
+import { eq } from "drizzle-orm";
 import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
+import { OAUTH_APP_STATE_KEY, resolveRequestApp } from "./role";
 import {
 	authBaseURL,
 	authCookiePrefix,
@@ -21,9 +23,24 @@ import {
  */
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0];
 
+/** Minimal structural view of the drizzle instance for the role lookup. */
+interface RoleLookupDb {
+	select: (fields: { role: unknown }) => {
+		from: (table: unknown) => {
+			where: (condition: unknown) => Promise<Array<{ role?: string | null }>>;
+		};
+	};
+}
+
 export interface CreateAuthInput {
 	db: AuthDatabase;
 	corsOrigin: string | string[];
+	/**
+	 * Origins of the student portal app; teacher origins are derived as
+	 * corsOrigin minus studentOrigins. Sign-ups from an unknown origin default
+	 * to the student role (least privilege, plan #260 D3).
+	 */
+	studentOrigins: string[];
 	secret: string;
 	/** API origin; authBaseURL() appends the /api/auth mount path. */
 	baseURL: string;
@@ -40,9 +57,52 @@ export interface CreateAuthInput {
 	googleClientSecret: string;
 }
 
+/** Tài khoản học viên không thể đăng nhập vào trang giáo viên (plan #260 D4). */
+const ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE =
+	"Tài khoản học viên không thể đăng nhập vào trang giáo viên. Vui lòng dùng cổng học viên.";
+/** Tài khoản giáo viên không thể đăng nhập vào cổng học viên (plan #260 D4). */
+const ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE =
+	"Tài khoản giáo viên không thể đăng nhập vào cổng học viên.";
+
 export function createAuth(input: CreateAuthInput) {
 	const cookieDomain = crossSubDomainCookieDomain(input.cookieDomain);
 	const cookiePrefix = authCookiePrefix(input.cookiePrefix);
+	const trustedOrigins = Array.isArray(input.corsOrigin)
+		? input.corsOrigin
+		: [input.corsOrigin];
+	const teacherOrigins = trustedOrigins.filter(
+		(o) => !input.studentOrigins.includes(o),
+	);
+
+	/** App nguồn từ OAuth state (server-side stamp tại /sign-in/social). */
+	async function readOAuthApp(): Promise<string | null> {
+		const state = await (getOAuthState() as Promise<unknown>).catch(() => null);
+		if (!state || typeof state !== "object") return null;
+		const value = (state as Record<string, unknown>)[OAUTH_APP_STATE_KEY];
+		return typeof value === "string" ? value : null;
+	}
+
+	async function getUserRole(userId: string): Promise<string | null> {
+		const db = input.db as unknown as RoleLookupDb;
+		const rows = await db
+			.select({ role: schema.user.role })
+			.from(schema.user)
+			.where(eq(schema.user.id, userId));
+		return rows[0]?.role ?? null;
+	}
+
+	/** App nguồn của request hiện tại: Origin trước, OAuth state làm fallback. */
+	async function resolveRequestAppForContext(
+		ctx: { request?: Request | null } | null | undefined,
+	): Promise<string> {
+		const oauthApp = await readOAuthApp();
+		return resolveRequestApp({
+			origin: ctx?.request?.headers?.get("origin") ?? null,
+			oauthApp,
+			studentOrigins: input.studentOrigins,
+			teacherOrigins,
+		});
+	}
 
 	return betterAuth({
 		database: drizzleAdapter(input.db, {
@@ -50,9 +110,7 @@ export function createAuth(input: CreateAuthInput) {
 
 			schema: schema,
 		}),
-		trustedOrigins: Array.isArray(input.corsOrigin)
-			? input.corsOrigin
-			: [input.corsOrigin],
+		trustedOrigins,
 		socialProviders: {
 			google: {
 				clientId: input.googleClientId,
@@ -64,8 +122,41 @@ export function createAuth(input: CreateAuthInput) {
 		},
 		secret: input.secret,
 		baseURL: authBaseURL(input.baseURL),
+		user: {
+			additionalFields: {
+				role: { type: "string", required: false, input: false },
+			},
+		},
 		hooks: {
 			before: createAuthMiddleware(async (ctx) => {
+				if (ctx.path === "/sign-in/social") {
+					// Server-side stamping (plan #260 D5): the OAuth state records the
+					// app from the initiation POST's Origin so the callback — a GET
+					// navigation without Origin — still classifies correctly, even
+					// with an old client bundle. Client-sent additionalData is
+					// overwritten. Merge through the returned context: assigning
+					// ctx.body directly does not reach the endpoint handler (the
+					// middleware context holds a copy, red-team-verified by the
+					// stamping round-trip test).
+					const body = (ctx.body ?? {}) as Record<string, unknown>;
+					const extra = (body.additionalData ?? {}) as Record<string, unknown>;
+					const appRole = resolveRequestApp({
+						origin: ctx.headers?.get("origin") ?? null,
+						studentOrigins: input.studentOrigins,
+						teacherOrigins,
+					});
+					return {
+						context: {
+							body: {
+								...body,
+								additionalData: {
+									...extra,
+									[OAUTH_APP_STATE_KEY]: appRole,
+								},
+							},
+						},
+					};
+				}
 				if (ctx.path !== "/update-user") return;
 				const body = (ctx.body ?? {}) as Record<string, unknown>;
 				const message =
@@ -75,6 +166,33 @@ export function createAuth(input: CreateAuthInput) {
 					throw new APIError("BAD_REQUEST", { message });
 				}
 			}),
+		},
+		databaseHooks: {
+			user: {
+				create: {
+					before: async (user, ctx) => {
+						const appRole = await resolveRequestAppForContext(ctx);
+						return { data: { ...user, role: appRole } };
+					},
+				},
+			},
+			session: {
+				create: {
+					before: async (session, ctx) => {
+						const requiredApp = await resolveRequestAppForContext(ctx);
+						const userRole = await getUserRole(session.userId);
+						if (userRole !== requiredApp) {
+							throw new APIError("FORBIDDEN", {
+								message:
+									userRole === "student"
+										? ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE
+										: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE,
+								code: "ROLE_MISMATCH",
+							});
+						}
+					},
+				},
+			},
 		},
 		advanced: {
 			defaultCookieAttributes: {

@@ -50,10 +50,10 @@ Yêu cầu: account được tạo từ student portal sẽ là role `student`; 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Migration `user.role` + backfill phân loại](./phase-01-start.md) | Pending |
-| 2 | [better-auth gán role theo app nguồn + chặn đăng nhập chéo](./phase-02-auth-role-assignment.md) | Pending |
-| 3 | [Gate role ở API — bootstrap teacher-app và bridge portal](./phase-03-server-role-gates.md) | Pending |
-| 4 | [UX 2 phía + E2E regression + docs](./phase-04-client-ux-e2e-docs.md) | Pending |
+| 1 | [Migration `user.role` + backfill phân loại](./phase-01-start.md) | Completed |
+| 2 | [better-auth gán role theo app nguồn + chặn đăng nhập chéo](./phase-02-auth-role-assignment.md) | Completed |
+| 3 | [Gate role ở API — bootstrap teacher-app và bridge portal](./phase-03-server-role-gates.md) | Completed |
+| 4 | [UX 2 phía + E2E regression + docs](./phase-04-client-ux-e2e-docs.md) | Completed |
 
 ## Cross-Plan Dependencies
 

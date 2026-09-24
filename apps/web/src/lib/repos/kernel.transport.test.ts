@@ -3,10 +3,16 @@
  * Roundtrip honesty: the 2xx body fields must survive to dispatch payload,
  * and error `{reason}` must ride on HttpError without garbage bodies crashing.
  */
+
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { KernelAction } from "@/lib/data-actions";
 import { HttpError } from "@/lib/kernel-load-state";
-import { createKernelCommandBus, postKernelCommand } from "./kernel";
+import {
+	createKernelCommandBus,
+	fetchKernelSnapshot,
+	postKernelCommand,
+} from "./kernel";
 
 const BASE = "http://test.local";
 
@@ -92,6 +98,93 @@ describe("HttpError.reason transport (K7)", () => {
 			status: 400,
 			reason: undefined,
 		});
+	});
+});
+
+describe("GET snapshot transport role reason (plan #260)", () => {
+	test("403 body {error: ACCOUNT_STUDENT_ROLE} rides on HttpError.reason", async () => {
+		stubFetchOnce(
+			403,
+			JSON.stringify({ error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP }),
+		);
+		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
+			status: 403,
+			reason: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+		});
+	});
+
+	test("403 body {reason: ...} (legacy shape) still parses", async () => {
+		stubFetchOnce(403, JSON.stringify({ reason: "some-legacy-reason" }));
+		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
+			status: 403,
+			reason: "some-legacy-reason",
+		});
+	});
+
+	test("non-role 403 keeps its own reason — never misread as role-blocked", async () => {
+		stubFetchOnce(
+			403,
+			JSON.stringify({ error: "no membership after bootstrap" }),
+		);
+		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
+			status: 403,
+			reason: "no membership after bootstrap",
+		});
+	});
+
+	test("garbage 403 body leaves reason undefined, message stays descriptive", async () => {
+		stubFetchOnce(403, "<html>proxy</html>", "text/html");
+		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
+			status: 403,
+			message: "GET /api/kernel failed: 403",
+			reason: undefined,
+		});
+	});
+});
+
+describe("bus onRoleBlocked seam (plan #260)", () => {
+	test("write 403 ACCOUNT_STUDENT_ROLE fires onRoleBlocked as definite-failure", async () => {
+		const blockedCalls: number[] = [];
+		const authLostCalls: number[] = [];
+		const bus = createKernelCommandBus({
+			postCommand: (() =>
+				Promise.reject(
+					new HttpError(403, ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP, {
+						reason: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+					}),
+				)) as never,
+			refetch: async () => {},
+			onAuthLost: () => {
+				authLostCalls.push(1);
+			},
+			onRoleBlocked: () => {
+				blockedCalls.push(1);
+			},
+		});
+		const result = await bus.run({
+			type: "check-in",
+			lessonId: "l",
+		} as KernelAction);
+		expect(result.kind).toBe("definite-failure");
+		expect(blockedCalls).toHaveLength(1);
+		expect(authLostCalls).toHaveLength(0);
+	});
+
+	test("other 403s never fire onRoleBlocked", async () => {
+		const blockedCalls: number[] = [];
+		const bus = createKernelCommandBus({
+			postCommand: (() =>
+				Promise.reject(
+					new HttpError(403, "forbidden", { reason: "not-allowed" }),
+				)) as never,
+			refetch: async () => {},
+			onAuthLost: () => {},
+			onRoleBlocked: () => {
+				blockedCalls.push(1);
+			},
+		});
+		await bus.run({ type: "check-in", lessonId: "l" } as KernelAction);
+		expect(blockedCalls).toHaveLength(0);
 	});
 });
 
