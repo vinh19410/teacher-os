@@ -28,6 +28,10 @@ const CORS_ORIGINS = [
 	`http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`,
 	`http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`,
 ];
+// Portal origin is the role-classification student origin (plan #260,
+// red-team #7): requests carrying it classify as student instead of
+// failing the better-auth origin check.
+const STUDENT_ORIGIN = `http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`;
 const MAIL_LOG_PATH = new URL("../.mail-log.jsonl", import.meta.url).pathname;
 rmSync(MAIL_LOG_PATH, { force: true });
 
@@ -70,6 +74,7 @@ await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 const auth = createAuth({
 	db: libsql,
 	corsOrigin: CORS_ORIGINS,
+	studentOrigins: [STUDENT_ORIGIN],
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",

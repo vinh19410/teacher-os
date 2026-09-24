@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: better-auth gán role theo app nguồn + chặn đăng nhập chéo"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1]
@@ -179,15 +179,24 @@ Tại lớp auth: (1) mọi account mới được gán `user.role` theo app g�
 
 ## Todo
 
-- [ ] `role.ts` + `role.test.ts` (pure)
-- [ ] `createAuth`: additionalFields + 2 databaseHooks + stamping hook + studentOrigins
-- [ ] Dep `drizzle-orm` vào packages/auth
-- [ ] alchemy: 3 nhánh + guard + env block STUDENT_ORIGINS
-- [ ] Google buttons 2 app: errorCallbackURL
-- [ ] `/login` 2 app: toast error params + strip
-- [ ] `auth-roundtrip.test.ts` + `cookie-prefix.test.ts` thêm `studentOrigins`
-- [ ] `auth-role-roundtrip.test.ts` 10 case
-- [ ] Full check xanh
+- [x] `role.ts` + `role.test.ts` (pure)
+- [x] `createAuth`: additionalFields + 2 databaseHooks + stamping hook + studentOrigins
+- [x] Dep `drizzle-orm` vào packages/auth
+- [x] alchemy: 3 nhánh + guard + env block STUDENT_ORIGINS
+- [x] Google buttons 2 app: errorCallbackURL
+- [x] `/login` 2 app: toast error params + strip
+- [x] `auth-roundtrip.test.ts` + `cookie-prefix.test.ts` thêm `studentOrigins`
+- [x] `auth-role-roundtrip.test.ts` 10 case
+- [x] Full check xanh
+
+## Implementation Deviations (cook 2026-09-24)
+
+- **Stamping mutate `ctx.body` KHÔNG chảy vào state** (test bước 6 bắt đúng như
+  risk plan dự báo — middleware context giữ bản copy, không phải object ref của
+  handler). Fix: hook `/sign-in/social` return `{ context: { body: ... } }` theo
+  docs chính thức better-auth ("Modify Request Context") → stamping chảy vào state,
+  verify bằng roundtrip test đọc row `verification`. **Fallback signed cookie
+  không cần dùng.**
 
 ## Success Criteria
 
@@ -199,7 +208,7 @@ Tại lớp auth: (1) mọi account mới được gán `user.role` theo app g�
 ## Risk Assessment
 
 - **Mutate `ctx.body.additionalData` không chảy vào state** (khả năng thấp — researcher Q1 xác nhận cùng object ref): test bước 6 stamping bắt ngay; fallback chỉ định sẵn — signed cookie marker (`ctx.setSignedCookie("tos_oauth_app", appRole, secret, { maxAge: 600 })`) đặt trong cùng hook, đọc bằng `ctx.request.headers` ở callback; không đổi kiến trúc.
-- **Google callback không test được E2E** (dummy creds như #257): chiều OAuth cover bằng unit/roundtrip (state row + 302 Location header assertion với fetch không follow redirect); ghi nhận giới hạn.
+- **Google callback không test được E2E** (dummy creds như #257): chiều OAuth cover bằng unit/roundtrip (state row stamp — đọc row `verification`); redirect 302 của callback KHÔNG assert được offline (dummy Google creds chết ở token exchange TRƯỚC createSession) — hành vi chặn đã được assert thật qua email path đi cùng `databaseHooks.session.create.before` (cook 2026-09-24).
 - **`getOAuthState()` ít docs** (researcher ghi nhận): đã verify tồn tại trong export của bản 1.6.27; nếu runtime lệch, fallback đọc row `verification` theo state query param.
 - **Auto-signin sau signup chạy qua session hook**: role vừa gán khớp app nên vô hại (roundtrip case 1/3 chứng minh).
 

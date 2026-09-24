@@ -21,6 +21,7 @@ async function setupTestAuth(mailer: Mailer) {
 	return createAuth({
 		db: libsql,
 		corsOrigin: TEST_ORIGIN,
+		studentOrigins: [],
 		secret: "test-secret-0123456789abcdef0123456789abcdef",
 		baseURL: TEST_ORIGIN,
 		googleClientId: "test-dummy",

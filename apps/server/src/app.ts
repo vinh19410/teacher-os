@@ -1,3 +1,4 @@
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
 import { asc, eq } from "drizzle-orm";
@@ -57,6 +58,18 @@ function bootstrapMiddleware(deps: AppDeps) {
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) {
 			return next(); // unauthenticated: kernel routes answer 401
+		}
+		// Account-role gate (plan #260): the shared cross-subdomain cookie zone
+		// gives a portal session full API reach here, so a student role must
+		// never bootstrap an org/membership on the teacher app.
+		if (session.role === "student") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+					code: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+				},
+				403,
+			);
 		}
 		const db = deps.getDb();
 		const readMemberships = () =>

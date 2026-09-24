@@ -1,5 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { type AuthMode, AuthTabs } from "@/components/auth/auth-tabs";
 import BrandPanel from "@/components/auth/brand-panel";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
@@ -14,16 +15,21 @@ const TAB_STORAGE_KEY = "teacher-os-student-auth-tab";
 export const Route = createFileRoute("/login")({
 	validateSearch: (
 		search: Record<string, unknown>,
-	): { returnUrl?: string } => ({
+	): { returnUrl?: string; error?: string; error_description?: string } => ({
 		returnUrl:
 			typeof search.returnUrl === "string" ? search.returnUrl : undefined,
+		error: typeof search.error === "string" ? search.error : undefined,
+		error_description:
+			typeof search.error_description === "string"
+				? search.error_description
+				: undefined,
 	}),
 	component: RouteComponent,
 });
 
 function RouteComponent() {
-	const navigate = useNavigate();
-	const { returnUrl } = Route.useSearch();
+	const navigate = Route.useNavigate();
+	const { returnUrl, error, error_description } = Route.useSearch();
 	const [mode, setMode] = useState<AuthMode>(() => {
 		try {
 			const saved = localStorage.getItem(TAB_STORAGE_KEY);
@@ -40,6 +46,18 @@ function RouteComponent() {
 			void navigate({ to: validateReturnUrl(returnUrl) });
 		}
 	}, [session, returnUrl, navigate]);
+
+	useEffect(() => {
+		if (!error) return;
+		// Only trusted error codes surface their server-provided description;
+		// a hand-crafted ?error_description= link must not control toast text.
+		toast.error(
+			error === "ROLE_MISMATCH"
+				? error_description || "Đăng nhập Google thất bại. Vui lòng thử lại."
+				: "Đăng nhập Google thất bại. Vui lòng thử lại.",
+		);
+		void navigate({ search: { returnUrl }, replace: true });
+	}, [error, error_description, returnUrl, navigate]);
 
 	const changeMode = (next: AuthMode) => {
 		setMode(next);

@@ -46,6 +46,10 @@ export default function GoogleOAuthButton() {
 			// validated first so a crafted `?returnUrl=` cannot redirect the
 			// OAuth callback to a foreign origin.
 			callbackURL: `${window.location.origin}${validateReturnUrl(returnUrl)}`,
+			// Role-mismatch rejections (plan #260) land back on /login, which
+			// reads the ?error= params and toasts the message. No additionalData:
+			// the server stamps the app into the OAuth state itself.
+			errorCallbackURL: `${window.location.origin}/login`,
 		});
 
 		if (error) {

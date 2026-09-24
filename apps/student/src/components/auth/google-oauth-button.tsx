@@ -42,6 +42,10 @@ export function GoogleOAuthButton() {
 		const { error } = await authClient.signIn.social({
 			provider: "google",
 			callbackURL: `${window.location.origin}${validateReturnUrl(returnUrl)}`,
+			// Role-mismatch rejections (plan #260) land back on /login, which
+			// reads the ?error= params and toasts the message. No additionalData:
+			// the server stamps the app into the OAuth state itself.
+			errorCallbackURL: `${window.location.origin}/login`,
 		});
 
 		if (error) {

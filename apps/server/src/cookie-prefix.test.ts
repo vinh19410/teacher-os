@@ -42,6 +42,7 @@ async function bootAuth({ cookiePrefix }: BootOptions = {}) {
 	return createAuth({
 		db: libsql,
 		corsOrigin: STAGING_ORIGIN,
+		studentOrigins: [],
 		secret: "test-secret-0123456789abcdef0123456789abcdef",
 		baseURL: "https://localhost:8000",
 		...(cookiePrefix ? { cookiePrefix } : {}),

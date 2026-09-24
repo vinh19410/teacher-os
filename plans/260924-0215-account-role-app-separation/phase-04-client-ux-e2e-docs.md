@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: UX 2 phía + E2E regression + docs"
-status: pending
+status: completed
 priority: P2
 effort: "5h"
 dependencies: [3]
@@ -89,13 +89,13 @@ Boot shim Phase 2 đã có `corsOrigin` 2 origin + `studentOrigins`. Hai test:
 
 ## Todo
 
-- [ ] `role-block.ts` + GET transport parse `reason` + transport test
-- [ ] Nhánh 403 trong `query-client.ts` (+ bus seam nếu có)
-- [ ] `AccountBlockedView` + render trong `data-provider`
-- [ ] Portal `StudentErrorView` nhánh `ACCOUNT_TEACHER_ROLE`
-- [ ] E2E Test A (login rejection) + Test B (stale session)
-- [ ] Docs PDR + system-architecture
-- [ ] Full check + e2e xanh
+- [x] `role-block.ts` + GET transport parse `reason` + transport test
+- [x] Nhánh 403 trong `query-client.ts` (+ bus seam nếu có)
+- [x] `AccountBlockedView` + render trong `data-provider`
+- [x] Portal `StudentErrorView` nhánh `ACCOUNT_TEACHER_ROLE`
+- [x] E2E Test A (login rejection) + Test B (stale session)
+- [x] Docs PDR + system-architecture
+- [x] Full check + e2e xanh
 
 ## Success Criteria
 

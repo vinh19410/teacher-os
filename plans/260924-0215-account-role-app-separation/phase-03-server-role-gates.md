@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Gate role ở API — bootstrap teacher-app và bridge student portal"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [1, 2]
@@ -81,7 +81,7 @@ Server từ chối ở tầng API mọi request dùng session sai loại app: us
      );
    }
    ```
-5. Sửa seed/stub test: `student.test.ts` (DB seed `role: "student"` + stub getSessionUser trả role theo seed); 3 stub teacher trong `kernel.test.ts`/`kernel-occurrence.test.ts`/`lesson-date-integration.test.ts` thêm `role: "teacher"`.
+5. Sửa seed/stub test: `student.test.ts` (file này không seed row `user` nào — chỉ stub `getSessionUser`, nên chỉ phần stub được áp dụng: 9 stub thêm `role` theo kịch bản; đường DB thật do `role-gates.test.ts` đảm nhận); 3 stub teacher trong `kernel.test.ts`/`kernel-occurrence.test.ts`/`lesson-date-integration.test.ts` thêm `role: "teacher"`.
 6. Viết `role-gates.test.ts` (libsql in-memory + migrations thật + better-auth thật; **seed session row TRỰC TIẾP qua drizzle** theo pattern `kernel.test.ts:99-104` `insert(authSession).values({ token, ... })` — KHÔNG tạo session qua API sign-in, vì session hook Phase 2 sẽ chặn đúng kịch bản đang muốn mô phỏng; request mang header cookie với token đã seed):
    - User role `student` (seed trực tiếp) + session seeded gọi 1 route kernel đại diện → 403 `ACCOUNT_STUDENT_ROLE`; assert DB **không** có organization/membership mới.
    - User role `teacher` chưa có membership gọi route kernel → vẫn được bootstrap (regression hành vi hiện hành).
@@ -94,14 +94,23 @@ Server từ chối ở tầng API mọi request dùng session sai loại app: us
 
 ## Todo
 
-- [ ] `SessionUser.role` + map trong `getSessionUser`
-- [ ] Gate student-role trong `bootstrapMiddleware` (không bootstrap)
-- [ ] Gate teacher-role trong `requireStudent` (trước provisioning)
-- [ ] `ACCOUNT_ERROR_CODES` trong contracts
-- [ ] Sửa seed/stub test portal + 3 stub teacher
-- [ ] `role-gates.test.ts` 4 case (seed session trực tiếp)
-- [ ] Runbook post-deploy NULL check
-- [ ] Suite toàn workspace xanh
+- [x] `SessionUser.role` + map trong `getSessionUser`
+- [x] Gate student-role trong `bootstrapMiddleware` (không bootstrap)
+- [x] Gate teacher-role trong `requireStudent` (trước provisioning)
+- [x] `ACCOUNT_ERROR_CODES` trong contracts
+- [x] Sửa seed/stub test portal + 3 stub teacher
+- [x] `role-gates.test.ts` 4 case (seed session trực tiếp)
+- [x] Runbook post-deploy NULL check
+- [x] Suite toàn workspace xanh
+
+## Implementation Deviations (cook 2026-09-24)
+
+- **Session seeded tay không được better-auth `getSession` nhận diện** (5/5 test
+  401 khi insert row `session` trực tiếp — cookie value là `token.signature`,
+  lookup nội bộ khác pattern seed). Đổi cách: session được mint qua sign-up API
+  THẬT (genuine cookie), kịch bản stale-session mô phỏng bằng `UPDATE user SET
+  role` sau khi có cookie — đúng chất "cookie cũ hợp lệ, role đã flip" của D6,
+  và query DB phải tách `token.signature` → phần trước dấu chấm.
 
 ## Success Criteria
 

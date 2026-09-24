@@ -42,7 +42,11 @@ async function createTestApp() {
 			.innerJoin(authUser, eq(authSession.userId, authUser.id))
 			.where(eq(authSession.token, token));
 		if (!row || row.expiresAt.getTime() <= Date.now()) return null;
-		return { userId: row.userId, userName: row.userName };
+		return {
+			userId: row.userId,
+			userName: row.userName,
+			role: "teacher" as const,
+		};
 	}
 
 	const app = buildApp({

@@ -1,4 +1,7 @@
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import {
 	AlertCircle,
 	Check,
@@ -74,7 +77,12 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 
 	const isEmailUnverified = code === STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
 
-	if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
+	if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+		title = "Đây là tài khoản giáo viên";
+		description =
+			"Tài khoản này thuộc hệ thống giáo viên, không đăng nhập được cổng học viên. Vui lòng đăng xuất và dùng tài khoản học viên.";
+		icon = <ShieldAlert className="h-8 w-8 text-danger" />;
+	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
 		description = `Email ${userEmail ? `(${userEmail})` : ""} chưa được liên kết với hồ sơ học viên nào trên hệ thống. Vui lòng thông báo cho giáo viên để thêm email này vào danh sách lớp.`;
 		icon = <AlertCircle className="h-8 w-8 text-muted-fg" />;

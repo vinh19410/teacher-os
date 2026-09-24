@@ -61,6 +61,36 @@ const corsOriginConfig = topology
 			)
 		: Config.string("CORS_ORIGIN");
 
+// An explicit STUDENT_ORIGINS that misses the portal origin (topology mode)
+// silently classifies every portal sign-up as teacher and locks students out
+// of the portal, so fail the whole run before any resource is touched — the
+// same override risk as CORS_ORIGIN above (alchemy loads apps/*/.env on
+// deploy too). Presence (not truthiness) is the gate: `STUDENT_ORIGINS=`
+// (empty) must throw as well, or the empty list would classify the portal
+// origin as teacher.
+const studentOriginsEnv = process.env.STUDENT_ORIGINS;
+if (topology && studentOriginsEnv !== undefined) {
+	const explicitStudents = studentOriginsEnv
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	if (!explicitStudents.includes(topology.studentOrigin)) {
+		throw new Error(
+			`[topology] STUDENT_ORIGINS=${studentOriginsEnv || "(empty)"} missing required portal origin ${topology.studentOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear STUDENT_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
+		);
+	}
+}
+
+const studentOriginsConfig = topology
+	? Config.string("STUDENT_ORIGINS").pipe(
+			Config.withDefault(topology.studentOrigin),
+		)
+	: isDevCommand
+		? Config.string("STUDENT_ORIGINS").pipe(
+				Config.withDefault("http://localhost:8003"),
+			)
+		: Config.string("STUDENT_ORIGINS");
+
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
 });
@@ -74,6 +104,7 @@ export const server = Cloudflare.Worker("server", {
 	env: {
 		DB: db,
 		CORS_ORIGIN: corsOriginConfig,
+		STUDENT_ORIGINS: studentOriginsConfig,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",

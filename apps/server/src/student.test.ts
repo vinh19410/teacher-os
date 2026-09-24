@@ -186,6 +186,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Minh Tran",
 						email: "minh@gmail.com",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "mixed-case") {
@@ -194,6 +195,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Minh Mixed",
 						email: "Minh@Gmail.com",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "unverified") {
@@ -202,6 +204,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Minh Unverified",
 						email: "minh@gmail.com",
 						emailVerified: false,
+						role: "student",
 					};
 				}
 				if (userKey === "ambiguous") {
@@ -210,6 +213,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Trung",
 						email: "trung@test.local",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "provisioning-user") {
@@ -218,6 +222,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "New Portal Student",
 						email: "newportal@test.local",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "unverified-unlinked") {
@@ -226,6 +231,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Unlinked Unverified",
 						email: "unv-unl@test.local",
 						emailVerified: false,
+						role: "student",
 					};
 				}
 				if (userKey === "failing-provision") {
@@ -234,6 +240,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Failing User",
 						email: "failing@test.local",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "fresh-student") {
@@ -242,6 +249,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Fresh Student",
 						email: "fresh@test.local",
 						emailVerified: true,
+						role: "student",
 					};
 				}
 				if (userKey === "teacher") {
@@ -250,6 +258,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userName: "Teacher One",
 						email: "teacher@test.local",
 						emailVerified: true,
+						role: "teacher",
 					};
 				}
 				return null;

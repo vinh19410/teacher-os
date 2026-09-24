@@ -1,4 +1,5 @@
 import {
+	ACCOUNT_ERROR_CODES,
 	STUDENT_ERROR_CODES,
 	type StudentMe,
 	type StudentOverview,
@@ -44,6 +45,20 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) {
 			return c.json({ error: "unauthorized" }, 401);
+		}
+
+		// Account-role gate (plan #260): a teacher-role session must never
+		// reach the email match/provision step, even with a matching student
+		// profile (the shared cookie zone makes stale teacher sessions land
+		// here without any portal sign-in).
+		if (session.role !== "student") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+					code: ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+				},
+				403,
+			);
 		}
 
 		const email = session.email?.trim();
