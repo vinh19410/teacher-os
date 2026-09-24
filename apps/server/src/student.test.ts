@@ -541,4 +541,38 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		expect(orgsAfter?.count).toBe(orgsBefore?.count);
 		expect(membershipsAfter?.count).toBe(membershipsBefore?.count);
 	});
+
+	// (k) overview formats structured JSON schedule into human-readable text
+	test("(k) overview formats structured JSON schedule into human-readable text", async () => {
+		await libsql.insert(schema.classTable).values({
+			id: "class-json",
+			orgId: "org-1",
+			name: "[TEST] Foundation 2",
+			level: "Band 5.5",
+			mode: "Online",
+			schedule: JSON.stringify({
+				days: [0, 2, 4],
+				start: "19:00",
+				end: "20:30",
+			}),
+			sessionsDone: 0,
+			sessionsTotal: 26,
+			status: "active",
+		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-json",
+			orgId: "org-1",
+			classId: "class-json",
+			studentId: "student-1",
+		});
+
+		const res = await app.request("/api/student/overview", {
+			headers: { "x-test-user": "google-verified" },
+		});
+		expect(res.status).toBe(200);
+		const overview = (await res.json()) as StudentOverview;
+		const jsonClass = overview.classes.find((c) => c.id === "class-json");
+		expect(jsonClass).toBeDefined();
+		expect(jsonClass?.schedule).toBe("T2 & T4 & T6 · 19:00–20:30");
+	});
 });

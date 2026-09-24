@@ -4,44 +4,14 @@
  * legacy free-text string written before migration 0007. Parse defensively and
  * fall back to the raw string so old rows keep rendering verbatim.
  */
-import { TIME_REGEX } from "@teacher-os/api/contracts";
+import {
+	formatSchedule,
+	parseSchedule,
+	type StructuredSchedule,
+} from "@teacher-os/api/format-schedule";
 import { dayNames } from "@/lib/mock-data";
 
-export interface StructuredSchedule {
-	days: number[];
-	start: string;
-	end: string;
-}
-
-export function parseSchedule(raw: string): StructuredSchedule | null {
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(raw);
-	} catch {
-		return null;
-	}
-	if (typeof parsed !== "object" || parsed === null) return null;
-	const { days, start, end } = parsed as Record<string, unknown>;
-	if (
-		!Array.isArray(days) ||
-		days.length === 0 ||
-		!days.every(
-			(d) => typeof d === "number" && Number.isInteger(d) && d >= 0 && d <= 6,
-		)
-	) {
-		return null;
-	}
-	if (typeof start !== "string" || typeof end !== "string") return null;
-	if (!TIME_REGEX.test(start) || !TIME_REGEX.test(end)) return null;
-	return { days, start, end };
-}
-
-export function formatSchedule(raw: string): string {
-	const schedule = parseSchedule(raw);
-	if (!schedule) return raw;
-	const days = schedule.days.map((d) => dayNames[d] ?? `day ${d}`).join(" & ");
-	return `${days} · ${schedule.start}–${schedule.end}`;
-}
+export { formatSchedule, parseSchedule, type StructuredSchedule };
 
 /**
  * Label for a lesson's weekday. `lesson.day` is 1-7 with 1 = Monday —
