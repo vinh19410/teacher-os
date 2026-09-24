@@ -76,3 +76,49 @@ Wizard steps (copy tiếng Việt, cho phép refine khi implement): (1) "Bạn �
 - E2E chạy `workers: 1` (`apps/e2e/playwright.config.ts:16`), DB wipe mỗi lần boot — spec mới seed org theo pattern `beforeAll` của spec email-verification. CI bật `retries: 1` (`playwright.config.ts:17`) — kết luận "pass thật" phải đọc output không có dòng flaky/retry (Task 4.3)
 - Phụ thuộc chuỗi #259: flow verify + auto sign-in + provisioning phải còn hoạt động; regression ở đó làm wizard không bao giờ được nhìn thấy
 - Test strict-equality `(a)` trong `apps/server/src/student.test.ts:270-278` (`expect(me).toEqual({...})`) sẽ vỡ khi mở rộng DTO — đổi kỳ vọng có chủ ý ở Phase 2 Task 2.1
+
+## Red Team Review
+
+### Session — 2026-09-24
+**Reviewers:** 3 hostile reviewers (Security Adversary/Fact Checker, Failure Mode Analyst/Contract Verifier, Assumption Destroyer/Fact Checker)
+**Findings:** 24 raw → 16 unique sau dedupe → gom thành 15 findings (**15 accepted**, trong đó 2 accept-modified; 0 rejected sau evidence filter — mọi finding đều có citation file:line)
+**Severity breakdown:** 1 Critical, 5 High, 9 Medium
+**Verification (tier Standard):** Fact Checker 34 claims (29V/5F — failures: posture read-only của D5, lập luận vị trí gate, citation origins.ts:10, tiền đề "không có textarea dùng lại được", thiếu phân tích Google OAuth); Contract Verifier liệt kê đầy đủ consumer `studentMeSchema`/`StudentMe`/`/api/student/me` (3 schema site, 6 type site, 1 runtime caller + 11 test call — không consumer nào bị bỏ sót; đúng 1 strict-equality test cần đổi, plan đã phủ) + ~30 line-claim khớp toàn bộ. Mọi failure đã fix qua findings dưới đây.
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | POST `/onboarding` thiếu guard CSRF (Origin + content-type) mà kernel bắt buộc cho mọi mutation — cookie `SameSite=None`, form `text/plain` cross-site vượt qua `c.req.json()` | Critical | Accept | Phase 2 Task 2.2 (middleware trước session middleware) + Task 2.3 case 5 + D5 |
+| 2 | `/api/student/*` đổi posture read-only → có POST ghi; lookup email global không scope org (teacher Google-verified email trùng student row org khác ghi được) | High | Accept-modified (cập nhật trust-model comment contracts + Risks; role gate chéo app là scope plan #260, không lồng vào plan này) | Phase 2 Task 2.1 + plan Risks |
+| 3 | Gate đặt sau nhánh `overviewQuery.error` → lỗi overview thoáng qua kẹt user chưa onboarding ở màn lỗi, không tới wizard; overview fetch trước redirect là phí | High | Accept (chuyển gate lên giữa nhánh `meQuery.error` và `overviewQuery.error`; giữ `isLoading` 2 query như tradeoff tối thiểu diff, ghi Risks) | Phase 3 Goal + Task 3.4 + plan Risks |
+| 4 | Race invalidate→navigate: gate ở `/` đọc cache cũ (`onboardingCompletedAt` null) trong cửa sổ refetch → bounce ngược vào wizard, mất state answers | High | Accept (`setQueryData(["student","me"], data)` trong onSuccess trước navigate + e2e anti-bounce assertion) | Phase 3 Task 3.1 + Phase 4 Task 4.1 |
+| 5 | Collision migration 0024 với plan #260 là kịch bản mặc định (cùng claim 0024); remedy "đổi tham chiếu số trong docs" sai cơ học — journal trùng idx hỏng deploy | High | Accept (re-read journal develop ngay trước generate; nếu trùng: delete migration + journal/meta local rồi regenerate; verify grep pin bảng `student`) | Phase 1 Task 1.2 + plan Risks |
+| 6 | Cohort học viên hiện hữu (verified trước khi ship) bị force-redirect wizard vĩnh viễn — không quyết định backfill/intent | High | Accept (thành D8: chủ ý thu thập từ cohort hiện hữu — nguồn dữ liệu giá trị nhất; kill-switch SQL) | plan D8 |
+| 7 | `studentMeSchema` thêm 6 required key + client `.parse()` strict → server rollback/cache CDN lệch version = ZodError trắng màn CẢ portal | Medium | Accept (6 field `.nullable().catch(null)` read-side + Risks deploy order server-trước-client) | Phase 2 Task 2.1 + plan Risks |
+| 8 | D1 không phân tích đường Google OAuth (verified ngay, không màn chờ verify — `login.tsx:5,100`) | Medium | Accept (note D1: Google user rơi thẳng gate → wizard; copy không viết theo ngữ cảnh "vừa verify email") | plan D1 |
+| 9 | Validation read-side bất đối xứng: chỉ `learningGoals` được fail-soft theo enum, 3 field kia pass-through; hành vi fail-soft không có test khóa | Medium | Accept (`parseEnum`/`parseTargetScore` fail-soft 4 phía + test case 8 corrupt DB) | Phase 2 Task 2.1 + 2.3 |
+| 10 | Verify migration đếm `ADD COLUMN` tổng — không pin bảng, schema drift bảng khác lọt qua | Medium | Accept (grep `ALTER TABLE "student" ADD COLUMN` = 6 và tổng `ALTER TABLE` = 6) | Phase 1 Task 1.2 |
+| 11 | POST mới không body-size cap, không rate-limit (write-amplification) | Medium | Accept-modified (content-length > 4KB → 413; rate-limit defer — nhất quán posture repo, kernel cũng chưa có, ghi Risks) | Phase 2 Task 2.2 + plan Risks |
+| 12 | Task 4.2 "bỏ assertion chỉ nếu ổn định" mơ hồ; CI `retries: 1` khiến chuẩn "2 lần liên tiếp" không phân biệt pass-that vs pass-on-retry | Medium | Accept (giữ deterministic dòng 77; Task 4.3 đọc output không có flaky/retried) | Phase 4 Task 4.2/4.3 + plan Risks + Success Criteria |
+| 13 | Snippet Task 3.4 dùng `navigate` không khai báo + thiếu imports — implementer copy là vỡ check-types | Medium | Accept (snippet đầy đủ `const navigate = useNavigate()` + imports + `void navigate` theo `login.tsx:39-40`) | Phase 3 Task 3.4 |
+| 14 | Tiền đề "KHÔNG import shadcn mới" sai — `packages/ui` CÓ `Textarea`; tự dựng là reimplementation song song | Medium | Accept (dùng `Textarea` từ `@teacher-os/ui` + className override token portal) | Phase 3 Task 3.2 + D6 |
+| 15 | Effort Phase 4 = 2h không thực tế cho full suite ×2 (29+ specs, workers:1) + citation lệch dòng (origins.ts:10→8, helpers 51-60→51-61) | Medium | Accept (student specs ×2 + full suite ×1; effort 3h, plan 11h; sửa citation) | Phase 4 + plan frontmatter |
+
+**Decision được bảo toàn (không relitigate):** D1 (wizard sau verify), D5 (idempotent last-write-wins qua bridge có sẵn), D7 (bắt buộc, không skip) — mọi finding đều áp trong khung các quyết định này.
+
+### Whole-Plan Consistency Sweep
+- Files reread: plan.md, phase-01…phase-04 (sau khi áp 15 findings)
+- Decision deltas checked: 15
+- Reconciled stale references: 5 — D5 "không sinh surface mới" → thêm guard CSRF; phase-02 Goal "không thêm một dòng guard nào" → CSRF guard đăng ký trước middleware session; phase-03 Goal vị trí gate (sau 2 nhánh error → giữa 2 nhánh) + lý do sai về user chưa verify rút lại; Task 3.1 invalidate prefix `["student"]` → setQueryData + invalidate overview; phase-04 chuẩn "2 lần" → student specs ×2 + full ×1; citations origins.ts/helpers.ts
+- Unresolved contradictions: 0
+
+## Validation Log
+
+### Session 1 — 2026-09-24 (intake, trước khi draft)
+- Scope Challenge (auto, không --yagni): **HOLD SCOPE** — giao đủ phạm vi user yêu cầu (wizard 4 bước: IELTS/TOEIC, target, mục tiêu học, giờ/ngày); từ chối additions ngoài yêu cầu (hiển thị teacher app → Non-goals). Existing code: toàn bộ flow đăng ký/verify/provisioning từ #257/#259 tái sử dụng; không có wizard/profile field/toeic nào hiện hữu
+- Mode auto-detect: **hard** (feature full-stack 4 package, cần scouting) — scout report lưu `reports/scout-report.md`; không spawn researcher ngoài (không unknown công nghệ mới, mọi quyết định grounding từ codebase)
+
+### Verification Results
+- Tier: Standard (4 phases → Fact Checker ×2 + Contract Verifier ×1, chạy trong red-team session)
+- Claims checked: 64 | Verified: 58 | Failed: 5 | Unverified/partial: 1
+- Failures (đã fix qua findings #1, #3, #8, #14, #15): posture read-only `/api/student`; lập luận vị trí gate; citation `origins.ts:10`; tiền đề textarea; Google OAuth assumption gap
+- Consumer enumeration (Contract Verifier): `studentMeSchema` (3 site), `StudentMe` (6 site), `/api/student/me` (1 runtime + 11 test call) — không consumer bị bỏ sót; đúng 1 strict test cần đổi (Task 2.1 bước 4)
