@@ -84,8 +84,8 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 		icon = <ShieldAlert className="h-8 w-8 text-danger" />;
 	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
-		description = `Email ${userEmail ? `(${userEmail})` : ""} chưa được liên kết với hồ sơ học viên nào trên hệ thống. Vui lòng thông báo cho giáo viên để thêm email này vào danh sách lớp.`;
-		icon = <AlertCircle className="h-8 w-8 text-muted-fg" />;
+		description = `Email ${userEmail ? `(${userEmail})` : ""} hiện chưa tham gia lớp học nào. Nếu giáo viên đã gửi lời mời, vui lòng bấm vào biểu tượng Chuông thông báo ở góc trên để chấp nhận tham gia lớp.`;
+		icon = <AlertCircle className="h-8 w-8 text-accent-blue" />;
 	} else if (isEmailUnverified) {
 		title = "Email chưa được xác thực";
 		description = userEmail

@@ -566,3 +566,12 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 3. **Học viên phản ánh "Đã bấm gửi lại nhưng không nhận được email"**:
    - Kiểm tra xem server có đang chạy ở chế độ `LOG-ONLY` (quên cấu hình `MAILER_IMPL=resend` hoặc thiếu `RESEND_API_KEY`) hay không.
    - Kiểm tra log server xem có lỗi gửi mail từ Resend (quota, invalid recipient).
+
+## Student Invitation & Multi-Org (Migration 0025) — issue #263
+
+- **Migration file:** `packages/db/src/migrations/0025_spotty_betty_ross.sql`
+- **Schema changes:**
+  1. `student_invitation`: Bảng mới lưu trữ lời mời học viên (`id`, `org_id`, `inviter_user_id`, `email`, `status`, `created_at`, `updated_at`).
+  2. Partial unique index `student_invitation_org_email_pending_uq` trên `(org_id, lower(trim(email))) WHERE status = 'pending'` chống spam duplicate lời mời pending.
+  3. Drop index `student_email_uq` (toàn cục) và tạo index `student_org_email_uq` scoped theo `(org_id, lower(trim(email)))` cho phép học viên học cùng lúc nhiều tổ chức (multi-org).
+- **Rollback safety:** Forward-only. Dữ liệu `student_invitation` cascade delete theo tổ chức/người dùng.

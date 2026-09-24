@@ -1,6 +1,8 @@
 import { BookOpen, Home, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { AvatarMenu } from "@/components/layout/avatar-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
+import { OrgSwitcher } from "@/components/layout/org-switcher";
 
 interface StudentShellProps {
 	userName?: string;
@@ -36,7 +38,11 @@ export function StudentShell({
 						Teacher OS · Học viên
 					</span>
 				</div>
-				<AvatarMenu name={userName} email={userEmail} />
+				<div className="flex items-center gap-2">
+					<OrgSwitcher />
+					<NotificationBell />
+					<AvatarMenu name={userName} email={userEmail} />
+				</div>
 			</header>
 
 			{/* Desktop Left Sidebar */}
@@ -60,6 +66,10 @@ export function StudentShell({
 						<span className="font-display font-semibold text-[16px] text-fg tracking-tight">
 							Teacher OS · Học viên
 						</span>
+					</div>
+
+					<div className="mb-5">
+						<OrgSwitcher />
 					</div>
 
 					<nav className="space-y-1">
@@ -94,8 +104,9 @@ export function StudentShell({
 					</nav>
 				</div>
 
-				<div className="border-line-soft border-t pt-4">
+				<div className="flex items-center justify-between border-line-soft border-t pt-4">
 					<AvatarMenu name={userName} email={userEmail} />
+					<NotificationBell />
 				</div>
 			</aside>
 

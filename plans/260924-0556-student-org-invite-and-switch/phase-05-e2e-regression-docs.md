@@ -1,6 +1,6 @@
 ---
 title: "Phase 5: E2E Regression & Documentation"
-status: todo
+status: completed
 priority: P1
 effort: 2h
 ---

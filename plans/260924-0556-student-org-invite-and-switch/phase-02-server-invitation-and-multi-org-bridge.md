@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Server Invitation & Multi-Org Bridge"
-status: todo
+status: completed
 priority: P1
 effort: 4h
 ---

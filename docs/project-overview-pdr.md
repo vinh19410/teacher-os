@@ -37,3 +37,10 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 - The main data flows still work through the kernel snapshot and command bus.
 - Product changes still point to the owning source file instead of copying behavior into docs.
 
+## Student Multi-Org and Invitation Model
+
+- **Org-Scoped Student Profiles:** Instead of a single global student profile, `student` records are scoped by `org_id` with unique constraint `UNIQUE(org_id, lower(trim(email)))`. One email address can study across multiple teacher organizations.
+- **Teacher Invitations (`student_invitation`):** Teachers invite students via email from `/students`. Pending invitations are unique per `(org_id, lower(trim(email)))`.
+- **Portal Notifications & Acceptance:** Students receive real-time notifications in their portal bell icon. Accepting creates their student profile in the target organization.
+- **Multi-Org Switcher:** Students in multiple organizations switch active context via header `x-student-org-id` and the `OrgSwitcher` dropdown without losing session authentication.
+
