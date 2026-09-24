@@ -4,7 +4,7 @@ description: "Sau khi email đã verify, học viên vào portal thấy wizard 4
 status: pending
 priority: P2
 effort: 11h
-issue: ""
+issue: 264
 branch: vinh19410/feat/student-onboarding-wizard
 tags: [feature, backend, frontend, database, api]
 blockedBy: []
