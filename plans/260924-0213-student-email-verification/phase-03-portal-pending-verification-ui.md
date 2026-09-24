@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Portal — màn hình chờ xác thực + nút Gửi lại email"
-status: todo
+status: completed
 priority: P1
 effort: 2h
 dependencies: [2]

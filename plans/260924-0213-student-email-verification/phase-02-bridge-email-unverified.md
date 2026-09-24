@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Bridge requireStudent — 0 row + chưa verify trả EMAIL_UNVERIFIED"
-status: todo
+status: completed
 priority: P1
 effort: 1h
 dependencies: []

@@ -1,7 +1,7 @@
 ---
 title: "Student email verification (portal registration)"
 description: "Gửi email xác thực HTML (Resend) khi học viên đăng ký portal; portal có màn chờ xác thực kèm Gửi lại; soft mode không chặn đăng nhập."
-status: pending
+status: completed
 priority: P1
 effort: 10h
 issue: 259
@@ -34,18 +34,18 @@ Feature kế thừa plan `260923-0758-students-from-portal-registration` (đã c
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Mailer + HTML verification template + Better-Auth wiring](./phase-01-mailer-and-template.md) | Pending |
-| 2 | [Bridge requireStudent — 0 row + chưa verify trả EMAIL_UNVERIFIED](./phase-02-bridge-email-unverified.md) | Pending |
-| 3 | [Portal — màn hình chờ xác thực + nút Gửi lại email](./phase-03-portal-pending-verification-ui.md) | Pending |
-| 4 | [E2E happy-path + RecordingMailer + Runbook](./phase-04-e2e-and-runbook.md) | Pending |
+| 1 | [Mailer + HTML verification template + Better-Auth wiring](./phase-01-mailer-and-template.md) | Completed |
+| 2 | [Bridge requireStudent — 0 row + chưa verify trả EMAIL_UNVERIFIED](./phase-02-bridge-email-unverified.md) | Completed |
+| 3 | [Portal — màn hình chờ xác thực + nút Gửi lại email](./phase-03-portal-pending-verification-ui.md) | Completed |
+| 4 | [E2E happy-path + RecordingMailer + Runbook](./phase-04-e2e-and-runbook.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Đăng ký portal → server gửi email verify (HTML < 15KB, tiếng Việt, có URL verify); dev thấy URL trong console (`LogMailer`)
-- [ ] User chưa verify vào portal → thấy màn "Email chưa được xác thực" + Gửi lại/Đăng xuất; KHÔNG thấy banner "Tài khoản chưa được liên kết"
-- [ ] Click link verify → tự đăng nhập, được provision hồ sơ, vào được overview
-- [ ] E2E happy-path pass 2 lần liên tiếp; spec `student-portal-provisioning` cũ vẫn xanh
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm test` (root) exit 0
+- [x] Đăng ký portal → server gửi email verify (HTML < 15KB, tiếng Việt, có URL verify); dev thấy URL trong console (`LogMailer`)
+- [x] User chưa verify vào portal → thấy màn "Email chưa được xác thực" + Gửi lại/Đăng xuất; KHÔNG thấy banner "Tài khoản chưa được liên kết"
+- [x] Click link verify → tự đăng nhập, được provision hồ sơ, vào được overview
+- [x] E2E happy-path pass 2 lần liên tiếp; spec `student-portal-provisioning` cũ vẫn xanh
+- [x] `pnpm check`, `pnpm check-types`, `pnpm test` (root) exit 0
 
 ## Non-goals
 

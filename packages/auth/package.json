@@ -10,7 +10,8 @@
 		}
 	},
 	"scripts": {
-		"test": "vitest run"
+		"test": "vitest run",
+		"preview:email": "tsx scripts/preview-email.ts"
 	},
 	"dependencies": {
 		"@teacher-os/db": "workspace:*",
@@ -18,7 +19,10 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
+		"@libsql/client": "catalog:",
 		"@teacher-os/config": "workspace:*",
+		"drizzle-orm": "catalog:",
+		"tsx": "4.23.12",
 		"typescript": "catalog:",
 		"vitest": "^4.1.10"
 	}

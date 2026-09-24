@@ -16,9 +16,10 @@ export const Route = createFileRoute("/_auth/")({
 });
 
 function StudentOverviewPage() {
+	const { session } = Route.useRouteContext();
+	const sessionEmail = session?.data?.user?.email;
 	const meQuery = useStudentMe();
 	const overviewQuery = useStudentOverview();
-
 	const isLoading = meQuery.isLoading || overviewQuery.isLoading;
 
 	const dueSoonCount = useMemo(() => {
@@ -35,7 +36,7 @@ function StudentOverviewPage() {
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
-		return <StudentErrorView code={code} />;
+		return <StudentErrorView code={code} userEmail={sessionEmail} />;
 	}
 
 	if (overviewQuery.error) {
@@ -44,9 +45,12 @@ function StudentOverviewPage() {
 		return (
 			<StudentShell
 				userName={meQuery.data?.student.name}
-				userEmail={meQuery.data?.user.email}
+				userEmail={sessionEmail ?? meQuery.data?.user.email}
 			>
-				<StudentErrorView code={code} userEmail={meQuery.data?.user.email} />
+				<StudentErrorView
+					code={code}
+					userEmail={sessionEmail ?? meQuery.data?.user.email}
+				/>
 			</StudentShell>
 		);
 	}

@@ -19,6 +19,7 @@
  */
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -46,6 +47,7 @@ async function bootAuth({ cookiePrefix }: BootOptions = {}) {
 		...(cookiePrefix ? { cookiePrefix } : {}),
 		googleClientId: "test-dummy",
 		googleClientSecret: "test-dummy",
+		mailer: createLogMailer(),
 	});
 }
 

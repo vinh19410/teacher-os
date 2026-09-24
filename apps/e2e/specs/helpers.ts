@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page } from "@playwright/test";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
@@ -37,6 +38,26 @@ async function withBusyRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {
 		}
 	}
 	throw new Error("retry exhausted");
+}
+
+export interface VerificationEmailEntry {
+	to: string;
+	subject?: string;
+	url?: string;
+	error?: string;
+	at?: string;
+}
+
+export async function readVerificationEmails(): Promise<
+	VerificationEmailEntry[]
+> {
+	const logPath = new URL("../.mail-log.jsonl", import.meta.url).pathname;
+	return withBusyRetry(async () => {
+		if (!existsSync(logPath)) return [];
+		const content = readFileSync(logPath, "utf8");
+		const lines = content.split("\n").filter((l) => l.trim().length > 0);
+		return lines.map((l) => JSON.parse(l) as VerificationEmailEntry);
+	});
 }
 
 /**

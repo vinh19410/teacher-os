@@ -512,3 +512,57 @@ npx wrangler d1 execute teacher-os-db --command "UPDATE enrollment SET status = 
 ```
 
 Cột `enrollment.status` là forward-only; không xóa cột hay sửa file migration.
+
+## Email verification (Resend) — issue #259
+
+### Environment variables
+
+| Variable | Purpose | Default / Example | Notes |
+| --- | --- | --- | --- |
+| `MAILER_IMPL` | Implementation driver (`log` or `resend`) | `log` (dev/test) | Prod **bắt buộc** đặt `resend`. Server boot guard sẽ in log cảnh báo đỏ nếu không phải `resend`. |
+| `MAIL_FROM` | Sender display name & email | `TeacherOS <onboarding@resend.dev>` | Prod đặt `TeacherOS <no-reply@<domain>>` (domain đã xác thực trên Resend). |
+| `RESEND_API_KEY` | Resend HTTP API token (`re_...`) | empty string | Secret operator — cấu hình qua CI/CD secrets hoặc Alchemy environment, **không commit vào code**. Boot sẽ throw ngay nếu `MAILER_IMPL=resend` mà key rỗng. |
+
+### Production procedure
+
+1. **Cấu hình Domain trên Resend**:
+   - Tạo tài khoản hoặc đăng nhập vào [Resend Dashboard](https://resend.com/domains).
+   - Thêm domain (ví dụ: `teacheros.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
+   - Chờ trạng thái domain chuyển sang `Verified`.
+2. **Cấu hình Secret**:
+   - Tạo API Key tại Resend Dashboard với quyền `Sending access`.
+   - Đặt `RESEND_API_KEY` vào GitHub Secrets / Cloudflare / Alchemy environment **trước khi deploy**.
+   - Đặt `MAIL_FROM="TeacherOS <no-reply@teacheros.io.vn>"`.
+   - Đặt `MAILER_IMPL=resend`.
+3. **Deploy & Kiểm tra**:
+   - Deploy server worker.
+   - Đăng ký thử 1 tài khoản học viên thật trên student portal (`app.<domain>/login` hoặc URL portal tương ứng).
+   - Kiểm tra email xác thực được gửi đến hộp thư người nhận (inbox, không vào spam) và URL verify hoạt động chính xác.
+
+### Quota & Monitoring
+
+- **Free tier Resend**: 100 email/ngày, tối đa 3.000 email/tháng.
+- **Lưu ý quan trọng**: Quota này **chia sẻ chung** giữa việc gửi email xác thực học viên và bất kỳ email xác thực nào từ tài khoản giáo viên đăng ký trên web app (do dùng chung cấu hình auth của server).
+- **Monitoring log**: Theo dõi log Workers qua Cloudflare Dashboard / log stream:
+  - Tìm các thông điệp `Failed to send verification email` hoặc `resend send failed: 429` (vượt quota).
+  - Khi gặp lỗi 429 hoặc 5xx từ Resend, `ResendMailer` tự động retry đúng 1 lần (tôn trọng header `Retry-After`).
+
+### Chống lạm dụng (Abuse Prevention)
+
+- Better-Auth đã tích hợp sẵn rate limiter rule cho endpoint `/send-verification-email`: tối đa 3 requests / 60 giây theo IP client (`rate-limiter/index.mjs`). Trên Cloudflare Workers, bộ đếm memory này được duy trì per-isolate.
+- Endpoint có cơ chế chống rò rỉ danh tính (anti-enumeration): luôn trả về `{ status: true }` và duy trì timing floor tối thiểu 500ms ngay cả khi email không tồn tại hoặc đã được xác thực trước đó.
+- Không tự ý cấu hình thêm rate limit tầng D1 trừ khi có bằng chứng tấn công mail-bombing thực tế.
+
+### Sự cố thường gặp & Hướng xử lý
+
+1. **Email rơi vào Spam / Junk**:
+   - Kiểm tra lại trạng thái DKIM, SPF trên Resend Dashboard. Đảm bảo bản ghi DMARC đã được cấu hình trên domain.
+2. **Kích hoạt tài khoản thủ công (Emergency unblock)**:
+   - Nếu học viên không nhận được email do sự cố mail server nhưng cần vào lớp gấp, operator có thể kích hoạt trực tiếp trên D1:
+     ```bash
+     npx wrangler d1 execute teacher-os-db --command "UPDATE user SET email_verified = 1 WHERE lower(trim(email)) = 'student@example.com';"
+     ```
+   - Sau khi cập nhật, học viên bấm "Tôi đã xác thực — Kiểm tra lại" trên portal sẽ được tự động provision hồ sơ và vào trang tổng quan.
+3. **Học viên phản ánh "Đã bấm gửi lại nhưng không nhận được email"**:
+   - Kiểm tra xem server có đang chạy ở chế độ `LOG-ONLY` (quên cấu hình `MAILER_IMPL=resend` hoặc thiếu `RESEND_API_KEY`) hay không.
+   - Kiểm tra log server xem có lỗi gửi mail từ Resend (quota, invalid recipient).
