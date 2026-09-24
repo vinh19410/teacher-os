@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Issue #216 — class-detail roster shows a "Học phí" column scoped to the
@@ -11,14 +11,8 @@ const STUDENT_NAME = "QC Roster E2E";
 const CLASS_NAME = "E2E Roster Nợ học phí";
 
 async function setupOrgWithEnrollment(page: Page): Promise<void> {
-	await signUpViaUi(page);
-
-	// Student first, from /students (the /students modal is create-only).
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/students$/);
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
-
+	const teacherEmail = await signUpViaUi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// Scheduled class (defaults: T2+T4).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
@@ -37,7 +31,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 
 	// Enroll via the class-detail picker.
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
 	await expect(option).toBeVisible();

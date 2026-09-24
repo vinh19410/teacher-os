@@ -22,7 +22,6 @@ import {
 	removeCurriculumSchema,
 	reorderLessonsSchema,
 	reorderModulesSchema,
-	studentCreateSchema,
 	syllabusCreateSchema,
 	syllabusReplaceContentSchema,
 	workspaceSettingsSchema,
@@ -528,67 +527,9 @@ export function kernelRoutes(deps: {
 		return c.json(snapshot.students);
 	});
 
-	kernel.post("/students", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, studentCreateSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-
-		let cls:
-			| {
-					id: string;
-					schedule: string;
-					sessionsTotal: number;
-					startDate: string;
-					mode: string;
-					tuitionFee: number | null;
-			  }
-			| undefined;
-		if (input.classId) {
-			cls = await findClass(db, input.classId, ctx.orgId);
-			if (!cls) {
-				return c.json({ error: "class not found" }, 404);
-			}
-		}
-
-		const studentId = crypto.randomUUID();
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.insert(student).values({
-				id: studentId,
-				orgId: ctx.orgId,
-				name: input.name,
-				phone: input.phone,
-				email: input.email,
-				zalo: input.phone.replace(/\s/g, ""),
-				parentName: input.parentName,
-				parentPhone: "",
-			}),
-		];
-		if (cls) {
-			// Lifecycle: Thêm học viên vào lớp tạo enrollment ở trạng thái 'invited'.
-			// Gói học và chuỗi buổi học chỉ được sinh khi accept (POST /api/enrollments/:id/accept).
-			// Invariant: enrollment active luôn có lesson series; invited chưa có — sinh khi accept.
-			const enrollmentId = crypto.randomUUID();
-			statements.push(
-				db.insert(enrollment).values({
-					id: enrollmentId,
-					orgId: ctx.orgId,
-					classId: cls.id,
-					studentId,
-					status: "invited",
-				}),
-			);
-		} else {
-			// Học viên tạo không lớp: chưa có enrollment nào.
-		}
-		await db.batch(statements);
-		return c.json({ id: studentId } satisfies CreatedResponse, 201);
-	});
-
-	// Issue #122: enroll an EXISTING student into a class — same batch shape
-	// as the class branch of POST /students, minus the student insert.
+	// Issue #122 / Issue #257: enroll an EXISTING student into a class —
+	// this is the ONLY way teachers attach students to classes.
+	// Students originate from student portal provisioning on first portal login.
 	kernel.post("/classes/:id/enroll", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);

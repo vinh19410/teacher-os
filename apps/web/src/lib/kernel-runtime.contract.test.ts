@@ -1,6 +1,6 @@
 /**
  * Kernel runtime contract — locks the Wave 0 wiring without rendering React.
- * Mirrors the source-parse style of add-student-enroll.contract.test.ts.
+ * Mirrors the source-parse style of enroll-student.contract.test.ts.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -14,7 +14,7 @@ function readSrc(rel: string): string {
 }
 
 const KERNEL_WRITE_MODALS = [
-	"add-student-modal.tsx",
+	"enroll-student-modal.tsx",
 	"add-class-modal.tsx",
 	"add-syllabus-modal.tsx",
 	"import-syllabus-modal.tsx",

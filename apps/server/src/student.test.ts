@@ -7,12 +7,13 @@ import {
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
-import { count } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
 import type { SessionUser } from "./session";
+import * as studentProvisioning from "./student-provisioning";
 
 const CORS_ORIGINS = ["http://localhost:8001", "http://localhost:8003"];
 const MIGRATIONS_DIR = new URL(
@@ -73,7 +74,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				id: "student-amb-2",
 				orgId: "org-2",
 				name: "Trung B",
-				email: "trung@test.local",
+				email: "",
 				phone: "0902222222",
 			},
 		]);
@@ -211,11 +212,27 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						emailVerified: true,
 					};
 				}
-				if (userKey === "not-linked") {
+				if (userKey === "provisioning-user") {
 					return {
-						userId: "u-nl",
-						userName: "Unknown User",
-						email: "unknown@test.local",
+						userId: "u-prov",
+						userName: "New Portal Student",
+						email: "newportal@test.local",
+						emailVerified: true,
+					};
+				}
+				if (userKey === "unverified-unlinked") {
+					return {
+						userId: "u-unv-unl",
+						userName: "Unlinked Unverified",
+						email: "unv-unl@test.local",
+						emailVerified: false,
+					};
+				}
+				if (userKey === "failing-provision") {
+					return {
+						userId: "u-fail",
+						userName: "Failing User",
+						email: "failing@test.local",
 						emailVerified: true,
 					};
 				}
@@ -290,24 +307,87 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		});
 	});
 
-	// (b) User email not matching any student -> 403 STUDENT_NOT_LINKED
-	test("(b) unlinked email returns 403 STUDENT_NOT_LINKED", async () => {
+	// (b) Google-session verified + 0 row -> provisions student into earliest org and returns 200
+	test("(b) verified session with 0 student rows provisions student into earliest org and returns 200", async () => {
 		const res = await app.request("/api/student/me", {
-			headers: { "x-test-user": "not-linked" },
+			headers: { "x-test-user": "provisioning-user" },
+		});
+		expect(res.status).toBe(200);
+		const me = (await res.json()) as StudentMe;
+		expect(me.student).toMatchObject({
+			name: "New Portal Student",
+			email: "newportal@test.local",
+			orgId: "org-1",
+		});
+
+		const [dbStudent] = await libsql
+			.select()
+			.from(schema.student)
+			.where(eq(schema.student.email, "newportal@test.local"));
+		expect(dbStudent).toBeDefined();
+		expect(dbStudent?.name).toBe("New Portal Student");
+		expect(dbStudent?.phone).toBe("");
+		expect(dbStudent?.parentName).toBe("");
+	});
+
+	test("unverified user with 0 rows does not provision student and returns 403", async () => {
+		const [beforeCount] = await libsql
+			.select({ count: count() })
+			.from(schema.student);
+
+		const res = await app.request("/api/student/me", {
+			headers: { "x-test-user": "unverified-unlinked" },
 		});
 		expect(res.status).toBe(403);
 		const body = (await res.json()) as { error?: string };
 		expect(body.error).toBe(STUDENT_ERROR_CODES.NOT_LINKED);
+
+		const [afterCount] = await libsql
+			.select({ count: count() })
+			.from(schema.student);
+		expect(afterCount?.count).toBe(beforeCount?.count);
+	});
+
+	test("provisioning failure falls back cleanly to 403 NOT_LINKED without 500", async () => {
+		const spy = vi
+			.spyOn(studentProvisioning, "provisionStudentForUser")
+			.mockRejectedValueOnce(new Error("Simulated transient error"));
+
+		const res = await app.request("/api/student/me", {
+			headers: { "x-test-user": "failing-provision" },
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { error?: string };
+		expect(body.error).toBe(STUDENT_ERROR_CODES.NOT_LINKED);
+
+		spy.mockRestore();
 	});
 
 	// (c) 2 rows matching email across orgs -> 403 STUDENT_AMBIGUOUS (fail-closed)
 	test("(c) ambiguous email across orgs fails closed with 403 STUDENT_AMBIGUOUS", async () => {
-		const res = await app.request("/api/student/me", {
-			headers: { "x-test-user": "ambiguous" },
-		});
-		expect(res.status).toBe(403);
-		const body = (await res.json()) as { error?: string };
-		expect(body.error).toBe(STUDENT_ERROR_CODES.AMBIGUOUS);
+		// Temporarily drop index and set duplicate email to simulate legacy data before unique expression index
+		await libsql.run(sql`DROP INDEX IF EXISTS student_email_uq`);
+		await libsql
+			.update(schema.student)
+			.set({ email: "trung@test.local" })
+			.where(eq(schema.student.id, "student-amb-2"));
+
+		try {
+			const res = await app.request("/api/student/me", {
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(res.status).toBe(403);
+			const body = (await res.json()) as { error?: string };
+			expect(body.error).toBe(STUDENT_ERROR_CODES.AMBIGUOUS);
+		} finally {
+			await libsql
+				.update(schema.student)
+				.set({ email: "" })
+				.where(eq(schema.student.id, "student-amb-2"));
+			await libsql.run(
+				sql`CREATE UNIQUE INDEX student_email_uq ON student(lower(trim(email))) WHERE trim(email) != ''`,
+			);
+		}
 	});
 
 	// (d) email matches but emailVerified = false -> 403 STUDENT_EMAIL_UNVERIFIED

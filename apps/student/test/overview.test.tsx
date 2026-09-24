@@ -11,6 +11,7 @@ vi.mock("@/lib/auth-client", () => ({
 		signOut: vi.fn(),
 	},
 }));
+
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { ClassCard } from "@/components/overview/class-card";

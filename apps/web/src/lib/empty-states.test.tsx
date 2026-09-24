@@ -85,7 +85,7 @@ describe("List empty states (Issue #118)", () => {
 		const html = renderToStaticMarkup(<StudentsRoute />);
 		expect(html).toContain('data-testid="students-empty-state"');
 		expect(html).toContain("Chưa có học viên nào");
-		expect(html).toContain("+ Thêm học viên");
+		expect(html).toContain("student portal");
 	});
 
 	it("renders empty state card on /classes when 0 classes exist", () => {

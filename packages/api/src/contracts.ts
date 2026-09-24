@@ -6,17 +6,6 @@ import { z } from "zod";
  * Every request is org-scoped from the session membership (no tenant header).
  */
 
-export const studentCreateSchema = z.object({
-	name: z.string().min(1),
-	/** SĐT = danh tính đăng nhập tương lai: bắt buộc, chỉ chữ số. */
-	phone: z.string().regex(/^[0-9]+$/),
-	/** Email = danh tính đăng nhập tương lai: bắt buộc lúc tạo (row legacy ""). */
-	email: z.email(),
-	parentName: z.string().default(""),
-	classId: z.string().min(1).optional(),
-});
-export type StudentCreate = z.infer<typeof studentCreateSchema>;
-
 /**
  * Issue #122 / Issue #251 — enroll an EXISTING student into a class.
  * Package derives from class via D1 pattern (sessionsTotal, tuitionFee ?? 0, mode).

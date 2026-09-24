@@ -1,9 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
@@ -31,7 +29,6 @@ export function StudentsRoute() {
 	const { students } = useStudents();
 	const { data } = useData();
 	const [filter, setFilter] = useState("Tất cả");
-	const [modalOpen, setModalOpen] = useState(false);
 
 	const unpaidStudentIds = new Set(
 		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
@@ -60,7 +57,6 @@ export function StudentsRoute() {
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => setModalOpen(true)}>+ Thêm học viên</Button>
 			</div>
 			{students.length === 0 ? (
 				<Card
@@ -72,8 +68,9 @@ export function StudentsRoute() {
 						Chưa có học viên nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
-						Bấm "+ Thêm học viên" ở góc trên để bắt đầu quản lý thông tin, gói
-						học, học phí và bài tập.
+						Học viên sẽ tự xuất hiện tại đây khi đăng ký và đăng nhập student
+						portal lần đầu. Giáo viên có thể thêm học viên vào lớp từ trang chi
+						tiết lớp học.
 					</p>
 				</Card>
 			) : list.length === 0 ? (
@@ -142,7 +139,6 @@ export function StudentsRoute() {
 					/>
 				</Card>
 			)}
-			<AddStudentModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);
 }

@@ -10,6 +10,22 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-24
+
+### Added
+- Tự động provision học viên tại bridge middleware portal (`requireStudent` trong `apps/server/src/routes/student.ts`): lần đầu đăng nhập student portal với email đã xác thực (`emailVerified === true`) và chưa có hồ sơ học viên, hệ thống tự động sinh student row vào organization sớm nhất (#257)
+- Expression unique index `student_email_uq` trên `lower(trim(email))` (migration 0023, dedupe non-destructive dữ liệu cũ) ngăn chặn trùng lặp email học viên kể cả khác biệt chữ hoa/thường hoặc khoảng trắng (#257)
+- Helper direct DB seed `seedStudent()` phục vụ các bài kiểm thử E2E và server tests (#257)
+
+### Removed
+- Xoá hoàn toàn đường tạo học viên thủ công ở admin/teacher: xoá route `POST /api/students`, xoá Zod contract `studentCreateSchema` và type `StudentCreate` (#257)
+- Gỡ bỏ command `add-student` và reducer case `add-student` trên web app (#257)
+- Gỡ bỏ nút "+ Thêm học viên" trên trang danh sách học viên `/students` và form tạo học viên mới; chuyển đổi `AddStudentModal` thành `EnrollStudentModal` chỉ phục vụ xếp học viên có sẵn vào lớp (#257)
+
+### Changed
+- Modal thêm học viên ở lớp chỉ còn một chế độ duy nhất là chọn học viên có sẵn trong trung tâm để thêm vào lớp (#257)
+- Empty state trang danh sách học viên hướng dẫn học viên tự xuất hiện khi đăng ký và đăng nhập student portal lần đầu (#257)
+
 ## 2026-09-23
 
 ### Added

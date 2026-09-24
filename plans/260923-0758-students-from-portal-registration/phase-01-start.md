@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "DB unique index + provisioning ở bridge portal"
-status: todo
+status: completed
 priority: P1
 effort: 4h
 dependencies: []
@@ -31,9 +31,9 @@ dependencies: []
 
 ## Requirements
 
-- [ ] Migration 0023: dedupe non-destructive + `CREATE UNIQUE INDEX student_email_uq ON student(lower(trim(email))) WHERE trim(email) != ''`
-- [ ] `provisionStudentForUser` với đúng 4 luật D1/D2/D3/D7, cắm vào nhánh 0-row của middleware
-- [ ] Teacher signup (web app) và signup unverified không sinh row; bridge test cũ của #255 vẫn xanh
+- [x] Migration 0023: dedupe non-destructive + `CREATE UNIQUE INDEX student_email_uq ON student(lower(trim(email))) WHERE trim(email) != ''`
+- [x] `provisionStudentForUser` với đúng 4 luật D1/D2/D3/D7, cắm vào nhánh 0-row của middleware
+- [x] Teacher signup (web app) và signup unverified không sinh row; bridge test cũ của #255 vẫn xanh
 
 ## Implementation Steps
 

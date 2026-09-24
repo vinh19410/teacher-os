@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Global search on the topbar (issue #109) — P1: typing + Enter used to be a
@@ -17,9 +17,9 @@ import { createStudentViaUi, signUpViaUi } from "./helpers";
  */
 const CLASS_NAME = "E2E Tìm Lớp";
 const STUDENT_NAME = "Nguyễn Minh E2E";
-
+let currentTeacherEmail = "";
 test.beforeEach(async ({ page }) => {
-	await signUpViaUi(page);
+	currentTeacherEmail = await signUpViaUi(page);
 	// Fresh-org proof: an accented-free query that matches nothing must show
 	// the empty state before we create any data.
 	await page.getByPlaceholder("Tìm học viên, lớp học…").fill("zzz-khong-co");
@@ -90,8 +90,13 @@ async function createClassAndStudent(page: import("@playwright/test").Page) {
 	await dialog.getByRole("button", { name: "T2", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
+	await seedStudent({ teacherEmail: currentTeacherEmail, name: STUDENT_NAME });
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 }

@@ -70,17 +70,6 @@ export type KernelAction =
 			};
 	  }
 	| {
-			/** SĐT + email = danh tính đăng nhập tương lai; gói học do server derive từ lớp (D1/D2). */
-			type: "add-student";
-			payload: {
-				name: string;
-				phone: string;
-				email: string;
-				parentName: string;
-				classId?: string;
-			};
-	  }
-	| {
 			/** Issue #122 / #251 — enroll an EXISTING student into a viewed class.
 			 * Package is derived by server from class attributes (D1 pattern). */
 			type: "enroll-student";

@@ -13,7 +13,7 @@
  * constant — 12 weekly Mondays, 04/01 … 22/03/2027.
  */
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, gotoWeek, signUpViaUi } from "./helpers";
+import { gotoWeek, seedStudent, signUpViaUi } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 const START = "2027-01-04"; // Monday
@@ -27,7 +27,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	const CLASS_NAME = `E2E Projected ${Date.now()}`;
 	const STUDENT_NAME = "Trần Dự Kiến E2E";
 
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 	await seedDatedClass(page, {
 		name: CLASS_NAME,
 		schedule: { days: [0], start: "19:00", end: "20:30" },
@@ -84,8 +84,13 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	// projection "Dự kiến" REMAINS (does NOT flip to real lessons yet).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 	await expect(page.getByText("Đã mời")).toBeVisible();
 

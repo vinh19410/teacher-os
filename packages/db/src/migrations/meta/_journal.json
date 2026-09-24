@@ -162,6 +162,13 @@
       "when": 1790147654216,
       "tag": "0022_neat_quicksilver",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1790154352217,
+      "tag": "0023_special_inertia",
+      "breakpoints": true
     }
   ]
 }
