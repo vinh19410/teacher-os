@@ -59,6 +59,9 @@ export async function cancelStudentInvitation(
 		`${baseUrl}/api/students/invitations/${encodeURIComponent(id)}`,
 		{
 			method: "DELETE",
+			headers: {
+				"Content-Type": "application/json",
+			},
 			credentials: "include",
 		},
 	);

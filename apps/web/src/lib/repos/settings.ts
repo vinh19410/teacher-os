@@ -4,28 +4,13 @@ import type {
 	WorkspaceSettingsUpdate,
 } from "@teacher-os/api/contracts";
 import { workspaceSettingsSchema } from "@teacher-os/api/contracts";
+import { env } from "@teacher-os/env/web";
+import { getServerUrl } from "@/lib/auth-client";
 
 export const workspaceSettingsQueryKey = ["kernel", "settings"] as const;
 
-function readEnvString(key: string): string | undefined {
-	const envObj =
-		typeof process !== "undefined" && process?.env ? process.env : undefined;
-	if (envObj && key in envObj) {
-		const val = envObj[key];
-		if (typeof val === "string") return val;
-	}
-	return undefined;
-}
-
 export function getApiBaseUrl(): string {
-	if (typeof window !== "undefined") {
-		return window.location.origin;
-	}
-	const serverUrl = readEnvString("SERVER_URL");
-	if (serverUrl) {
-		return serverUrl.endsWith("/") ? serverUrl.slice(0, -1) : serverUrl;
-	}
-	return "http://localhost:8000";
+	return getServerUrl(env.VITE_SERVER_URL);
 }
 
 export async function fetchWorkspaceSettings(
