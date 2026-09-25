@@ -11,6 +11,7 @@ import {
 	CLOZE_STEM_MAX,
 	CLOZE_TOKENIZE_PERF_CHARS,
 	type ClozeBlankEntry,
+	clickClozeToken,
 	clozeApplyIssues,
 	countBlanks,
 	emptyTableGrid,
@@ -190,6 +191,32 @@ describe("toggleClozeBlank (phase-03 FR1 — click order bookkeeping)", () => {
 		blanks = toggleClozeBlank(blanks, mat);
 		blanks = toggleClozeBlank(blanks, cat);
 		expect(blanks.map((blank) => blank.tokenIndex)).toEqual([5, 1]);
+	});
+});
+
+describe("clickClozeToken (phase-03 FR3 — stray click never deletes a key)", () => {
+	const tokens = tokenizePassage("The cat sat on the mat");
+	const cat = tokens[1];
+	const mat = tokens[5];
+	const blanks: ClozeBlankEntry[] = [
+		{ tokenIndex: cat.index, answer: "cat", alts: "a cat" },
+	];
+
+	it("clicking a blanked word opens its edit popover and keeps the blank", () => {
+		const result = clickClozeToken(blanks, cat);
+		expect(result.openBlank).toBe(cat.index);
+		expect(result.blanks).toEqual(blanks);
+	});
+
+	it("clicking a fresh word adds the blank and closes the popover", () => {
+		const result = clickClozeToken(blanks, mat);
+		expect(result.openBlank).toBeNull();
+		expect(result.blanks).toHaveLength(2);
+		expect(result.blanks[1]).toEqual({
+			tokenIndex: mat.index,
+			answer: "mat",
+			alts: "",
+		});
 	});
 });
 

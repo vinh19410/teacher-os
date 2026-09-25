@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/field";
 import {
@@ -7,10 +7,10 @@ import {
 	CLOZE_RENDER_TOKEN_CAP,
 	type ClozeBlankEntry,
 	type ClozeToken,
+	clickClozeToken,
 	clozeApplyIssues,
 	parseClozeRaw,
 	segmentsToItems,
-	toggleClozeBlank,
 	tokenizePassage,
 } from "@/lib/cloze";
 import { cn } from "@/lib/cn";
@@ -138,9 +138,14 @@ export function ClozeEditor({
 	const canApply = segments.length > 0 && issues.length === 0;
 	const willReplace = items.some(hasItemContent);
 
+	// Ref keeps `handleToggle` identity stable so the memoized TokenButtons
+	// don't all re-render on every toggle (non-functional requirement).
+	const blanksRef = useRef(blanks);
+	blanksRef.current = blanks;
 	const handleToggle = useCallback((token: ClozeToken) => {
-		setActiveBlank(null);
-		setBlanks((current) => toggleClozeBlank(current, token));
+		const result = clickClozeToken(blanksRef.current, token);
+		setBlanks(result.blanks);
+		setActiveBlank(result.openBlank);
 	}, []);
 	const updateBlank = (tokenIndex: number, patch: Partial<ClozeBlankEntry>) => {
 		setBlanks((current) =>
@@ -296,7 +301,14 @@ export function ClozeEditor({
 						placeholder={
 							"Dán văn bản, bọc đáp án bằng dấu *: Rains refill the *well/stepwell* each year. Dấu \\* in chữ * thường."
 						}
-						onChange={(event) => setSource(event.target.value)}
+						onChange={(event) => {
+							// Edits shift token indexes — stale blanks would silently
+							// re-bind answers to the wrong words, so reset them and
+							// drop back to the paste stage for the visual mode.
+							setSource(event.target.value);
+							setBlanks([]);
+							setStage("paste");
+						}}
 						className="min-h-32 font-mono"
 					/>
 					<p className="font-medium text-muted-fg text-xs">

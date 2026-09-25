@@ -176,6 +176,21 @@ export function toggleClozeBlank(
 }
 
 /**
+ * Click a word in the token view (FR1/FR3): a new word gains a blank; an
+ * already-blanked word OPENS its edit popover instead of silently deleting
+ * the graded key — removal lives behind the popover's explicit remove.
+ */
+export function clickClozeToken(
+	blanks: ClozeBlankEntry[],
+	token: ClozeToken,
+): { blanks: ClozeBlankEntry[]; openBlank: number | null } {
+	if (blanks.some((blank) => blank.tokenIndex === token.index)) {
+		return { blanks, openBlank: token.index };
+	}
+	return { blanks: toggleClozeBlank(blanks, token), openBlank: null };
+}
+
+/**
  * Build segments from pasted text + clicked blanks (FR2). Segments are in
  * TEXT order — each item's `stem` is the gap before its blank plus the
  * marker, and the last segment also carries the trailing text, so the
