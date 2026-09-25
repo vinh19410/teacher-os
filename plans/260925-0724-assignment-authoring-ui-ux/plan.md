@@ -37,7 +37,7 @@ created: 2026-09-25
 |---|-------|--------|
 | 1 | [Authoring quick wins: key grid, chống mất dữ liệu, autosave](./phase-01-authoring-quick-wins.md) | Done |
 | 2 | [Option bank có cấu trúc cho matching + map](./phase-02-option-bank.md) | Done |
-| 3 | [Cloze click-to-blank cho dạng completion](./phase-03-cloze-editor.md) | Pending |
+| 3 | [Cloze click-to-blank cho dạng completion](./phase-03-cloze-editor.md) | Done |
 | 4 | [Ảnh ghim nhãn cho diagram + map](./phase-04-image-pins.md) | Pending |
 
 ## Success Criteria
