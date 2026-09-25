@@ -1,4 +1,5 @@
 import type { StudentClass } from "@teacher-os/api/contracts";
+import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
 
 export function ClassCard({ cls }: { cls: StudentClass }) {
@@ -37,7 +38,7 @@ export function ClassCard({ cls }: { cls: StudentClass }) {
 
 				{cls.schedule && (
 					<p className="mt-1 text-[13px] text-muted-fg leading-normal">
-						{cls.schedule}
+						{formatSchedule(cls.schedule)}
 					</p>
 				)}
 			</div>

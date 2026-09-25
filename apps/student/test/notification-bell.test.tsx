@@ -56,4 +56,25 @@ describe("NotificationBell", () => {
 		expect(html).toContain('data-testid="notification-badge"');
 		expect(html).toContain(">2</span>");
 	});
+
+	it("renders sidebar variant with text and badge", () => {
+		mockNotifications.mockReturnValue({
+			data: [
+				{
+					id: "inv-1",
+					orgId: "org-1",
+					orgName: "Academy 1",
+					inviterName: "Teacher One",
+					status: "pending",
+					createdAt: Date.now(),
+				},
+			],
+			isLoading: false,
+		});
+
+		const html = renderToStaticMarkup(<NotificationBell variant="sidebar" />);
+		expect(html).toContain("Thông báo");
+		expect(html).toContain('data-testid="notification-badge"');
+		expect(html).toContain(">1</span>");
+	});
 });

@@ -13,6 +13,7 @@ import {
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
+import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
@@ -497,7 +498,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					name: cls.name,
 					level: cls.level,
 					mode: cls.mode,
-					schedule: cls.schedule,
+					schedule: formatSchedule(cls.schedule),
 					sessionsDone: cls.sessionsDone,
 					sessionsTotal: cls.sessionsTotal,
 					status: cls.status,

@@ -64,6 +64,25 @@ describe("ClassCard", () => {
 		expect(html).toContain("General English");
 		expect(html).toContain("Chưa có lịch buổi tới");
 	});
+
+	it("formats raw JSON schedule into human-readable Vietnamese schedule", () => {
+		const cls: StudentClass = {
+			id: "c3",
+			name: "[TEST] Foundation 2",
+			level: "Band 5.5",
+			mode: "Online",
+			schedule: '{"days":[0,2,4],"start":"19:00","end":"20:30"}',
+			sessionsDone: 0,
+			sessionsTotal: 26,
+			status: "active",
+			nextSession: null,
+		};
+
+		const html = renderToStaticMarkup(<ClassCard cls={cls} />);
+		expect(html).toContain("[TEST] Foundation 2");
+		expect(html).not.toContain('{"days"');
+		expect(html).toContain("T2 &amp; T4 &amp; T6 · 19:00–20:30");
+	});
 });
 
 describe("AssignmentRow", () => {
