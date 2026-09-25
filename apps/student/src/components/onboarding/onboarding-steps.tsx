@@ -57,7 +57,7 @@ export function OptionButton({
 			className={cn(
 				"flex w-full items-center justify-between rounded-[var(--radius-lg)] border p-4 text-left transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 				selected
-					? "border-accent/40 bg-accent-soft font-medium text-fg"
+					? "border-accent-blue/40 bg-accent-soft font-medium text-fg"
 					: "border-line bg-bg text-fg hover:border-line-hover",
 				className,
 			)}
@@ -72,7 +72,7 @@ export function OptionButton({
 				className={cn(
 					"ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
 					selected
-						? "border-accent bg-accent text-white"
+						? "border-accent-blue bg-accent-blue text-accent-on"
 						: "border-line bg-transparent",
 				)}
 			>
@@ -153,7 +153,7 @@ export function TargetScoreStep({
 							className={cn(
 								"rounded-[var(--radius-lg)] border p-3.5 text-center transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								selected
-									? "border-accent/40 bg-accent-soft font-semibold text-fg shadow-sm"
+									? "border-accent-blue/40 bg-accent-soft font-semibold text-fg shadow-sm"
 									: "border-line bg-bg text-fg hover:border-line-hover",
 							)}
 						>
@@ -198,7 +198,7 @@ export function LearningGoalsStep({
 							className={cn(
 								"flex items-center justify-between rounded-[var(--radius-lg)] border p-3 text-left transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								selected
-									? "border-accent/40 bg-accent-soft font-medium text-fg"
+									? "border-accent-blue/40 bg-accent-soft font-medium text-fg"
 									: "border-line bg-bg text-fg hover:border-line-hover",
 							)}
 						>
@@ -207,7 +207,7 @@ export function LearningGoalsStep({
 								className={cn(
 									"flex h-4 w-4 items-center justify-center rounded border transition-colors",
 									selected
-										? "border-accent bg-accent text-white"
+										? "border-accent-blue bg-accent-blue text-accent-on"
 										: "border-line bg-transparent",
 								)}
 							>
