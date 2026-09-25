@@ -136,7 +136,7 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain("/ 4 đề");
 	});
 
-	it("renders rows with status tags priority: draft > used > ready", () => {
+	it("renders rows with usage-status tags: used class wins over ready, draft shows draft", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,

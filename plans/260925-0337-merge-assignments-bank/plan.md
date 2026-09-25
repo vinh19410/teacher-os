@@ -65,7 +65,7 @@ cũ (nạp từ `data.assignments`, có phần mock) bị thay thế hoàn toàn
 - [x] `/assignments` là path duy nhất hiển thị danh sách bài tập đã tạo; route bank bị xoá khỏi routeTree và khỏi exact-entry của matcher — request tới `/assignments/bank` vẫn nhận SPA shell HTTP 200 (matcher dynamic prefix `/assignments/`) nhưng router render not-found
 - [x] `grep -rn "assignments/bank" apps packages --include="*.ts" --include="*.tsx" | grep -v routeTree.gen` trả về 0 kết quả
 - [x] `pnpm --filter web check-types`, `pnpm --filter web test`, `pnpm --filter e2e e2e` đều pass
-- [ ] Không thay đổi nào ở `apps/server`, `packages/api`, `packages/db`
+- [x] Không thay đổi nào ở `apps/server`, `packages/api`, `packages/db` (verified tại PR #268)
 
 ## Risks
 
