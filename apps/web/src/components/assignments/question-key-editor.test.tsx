@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { QuestionKeyEditor } from "./question-key-editor";
+import { BulkKeyPastePanel, QuestionKeyEditor } from "./question-key-editor";
 
 describe("QuestionKeyEditor (#218 v5)", () => {
 	it("renders TFNG mode with choices chips and key-scan", () => {
@@ -18,6 +18,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Questions 1–3"
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -48,6 +49,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Question 1"
 				items={singleItem}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -76,6 +78,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Choose A, B, C or D"
 				items={mcqItems}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -108,6 +111,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Complete the sentences"
 				items={textItems}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -131,6 +135,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -159,6 +164,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl="https://example.com/diagram.png"
@@ -184,6 +190,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -201,6 +208,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl="http://insecure.example.com/d.png"
@@ -208,5 +216,116 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 			/>,
 		);
 		expect(unsafeHtml).not.toContain("<img");
+	});
+});
+
+describe("QuestionKeyEditor — phase-01 quick wins", () => {
+	const base = {
+		skill: "reading",
+		partId: "p1",
+		typeId: "note",
+		intro: "",
+		showErrors: false,
+		status: "ready" as const,
+		onIntroChange: vi.fn(),
+		onItemsChange: vi.fn(),
+		imageUrl: "",
+		onImageUrlChange: vi.fn(),
+	};
+
+	it("disables Thêm câu at the 40-question contract cap with a message (FR10)", () => {
+		const items = Array.from({ length: 40 }, () => ({
+			stem: `Q${Math.random()}`,
+			answer: "",
+			opts: null,
+			alts: "",
+		}));
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} items={items} />,
+		);
+		expect(html).toMatch(/disabled=""/);
+		expect(html).toContain("Tối đa 40 câu");
+	});
+
+	it("keeps Thêm câu enabled below the cap", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				typeId="tfng"
+				items={[
+					{ stem: "S", answer: "TRUE", opts: null, alts: "" },
+					{ stem: "S2", answer: "", opts: null, alts: "" },
+				]}
+			/>,
+		);
+		expect(html).not.toContain("Tối đa 40 câu");
+	});
+
+	it("offers the standard-instruction preset chip for completion kinds (FR8)", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId="note" intro="" items={[]} />,
+		);
+		expect(html).toContain("Chèn câu lệnh chuẩn");
+	});
+
+	it("offers no preset chip when the type has no TYPE_HINTS entry", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId="tfng" intro="" items={[]} />,
+		);
+		expect(html).not.toContain("Chèn câu lệnh chuẩn");
+	});
+
+	it("exposes the bulk key paste entry point (FR7)", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId="tfng" intro="" items={[]} />,
+		);
+		expect(html).toContain("Thêm key hàng loạt");
+	});
+});
+
+describe("BulkKeyPastePanel — per-line errors with summary (FR7)", () => {
+	it("lists each failing line with its reason and keeps valid-line count", () => {
+		const html = renderToStaticMarkup(
+			<BulkKeyPastePanel
+				value={"1. TRUE\n9. FALSE\nTRUE"}
+				onValueChange={vi.fn()}
+				errors={[
+					{
+						line: 2,
+						raw: "9. FALSE",
+						reason: "out-of-range",
+						message: "Q9 ngoài phạm vi phần này (đang có Q1–Q3).",
+					},
+					{
+						line: 3,
+						raw: "TRUE",
+						reason: "unparsable",
+						message: "Dòng không đọc được — dùng mẫu “số. giá trị”.",
+					},
+				]}
+				appliedCount={1}
+				onApply={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+		expect(html).toContain("Dòng 2");
+		expect(html).toContain("Q9 ngoài phạm vi");
+		expect(html).toContain("Dòng 3");
+		expect(html).toContain("1/3 dòng đã áp dụng");
+		expect(html).toContain("Áp dụng");
+	});
+
+	it("stays quiet when the paste had no errors", () => {
+		const html = renderToStaticMarkup(
+			<BulkKeyPastePanel
+				value="1. TRUE"
+				onValueChange={vi.fn()}
+				errors={[]}
+				appliedCount={1}
+				onApply={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+		expect(html).not.toContain('role="alert"');
 	});
 });

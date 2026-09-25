@@ -136,8 +136,9 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
 		.fill("The first statement describes the stepwells.");
-	// TFNG key: pick the TRUE chip from the choice filter.
-	await page.getByRole("button", { name: "TRUE", exact: true }).click();
+	// TFNG key: pick the TRUE chip from the answer-key grid (phase-01 FR1 —
+	// chips carry per-row aria-labels `Câu n: <choice>`).
+	await page.getByRole("button", { name: "Câu 1: TRUE" }).click();
 
 	await expect(submitBtn).toBeEnabled();
 	await submitBtn.click();
@@ -241,4 +242,324 @@ test("create a listening draft without audio; ready is blocked", async ({
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
+});
+
+/**
+ * Phase-01 (authoring UX quick wins): answer-key grid + chống mất dữ liệu +
+ * autosave draft. The scenarios below pin the FR1/FR3/FR5/FR6/FR7 behaviors.
+ */
+
+test("author a 3-question tfng set with grid clicks only (FR1)", async ({
+	page,
+}) => {
+	const TITLE = "QC-271 Grid TFNG";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("Stepwells are underground reservoirs…");
+
+	// Row 1 exists out of the box; add two more via the gated button.
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("The first statement matches the passage.");
+	await page.getByRole("button", { name: "Câu 1: TRUE" }).click();
+	await page.getByRole("button", { name: "Thêm câu" }).click();
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.nth(1)
+		.fill("The second statement contradicts the passage.");
+	await page.getByRole("button", { name: "Câu 2: FALSE" }).click();
+	await page.getByRole("button", { name: "Thêm câu" }).click();
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.nth(2)
+		.fill("The third statement is not covered.");
+	await page.getByRole("button", { name: "Câu 3: NOT GIVEN" }).click();
+
+	// The key-scan footer mirrors real question numbers (reading p1 → 1..3).
+	await expect(page.getByText("1 TRUE · 2 FALSE · 3 NOT GIVEN")).toBeVisible();
+
+	const submitBtn = page
+		.getByRole("button", { name: "Lưu vào ngân hàng" })
+		.first();
+	await expect(submitBtn).toBeEnabled();
+	await submitBtn.click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+	await expect(page.getByText("Tự động · 3/3 đáp án đã khóa")).toBeVisible();
+
+	await page.goto("/assignments");
+	await page.reload();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
+});
+
+test("grid keyboard shortcuts: letter keys pick chips, Enter adds, Backspace removes (FR3)", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill("QC-271 Grid Keyboard");
+
+	const row0 = page.locator('[data-qindex="0"]');
+	// Typing inside the stem input must never hijack letters into chips.
+	await row0
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.fill("Statement with t and n letters");
+	await expect(
+		page.getByRole("button", { name: "Câu 1: TRUE" }),
+	).toHaveAttribute("aria-pressed", "false");
+
+	// Row-focused letter key picks the chip (t → TRUE).
+	await row0.focus();
+	await page.keyboard.press("t");
+	await expect(
+		page.getByRole("button", { name: "Câu 1: TRUE" }),
+	).toHaveAttribute("aria-pressed", "true");
+
+	// Enter adds the next question; Backspace on an empty row removes it.
+	await page.getByRole("button", { name: "Thêm câu" }).click();
+	await expect(page.locator('[data-qindex="1"]')).toBeVisible();
+	await row0.focus();
+	await page.keyboard.press("Enter");
+	await expect(page.locator('[data-qindex="2"]')).toBeVisible();
+	await page.locator('[data-qindex="2"]').focus();
+	await page.keyboard.press("Backspace");
+	await expect(page.locator('[data-qindex="2"]')).toHaveCount(0);
+	// The authored row and key survived the row churn.
+	await expect(
+		page.getByRole("button", { name: "Câu 1: TRUE" }),
+	).toHaveAttribute("aria-pressed", "true");
+});
+
+test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR6)", async ({
+	page,
+}) => {
+	const TITLE = "QC-271 Draft Restore";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("Stepwells are underground reservoirs…");
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("The first statement describes the stepwells.");
+	await page.getByRole("button", { name: "Câu 1: TRUE" }).click();
+
+	// Wait for the 1s autosave debounce to actually land, then simulate an
+	// accidental reload.
+	await expect
+		.poll(() =>
+			page.evaluate(() => localStorage.getItem("assignment-draft")),
+		)
+		.not.toBeNull();
+	await page.reload();
+
+	await expect(page.getByText("Đã phục hồi bản nháp")).toBeVisible();
+	await page.getByRole("button", { name: "Tiếp tục" }).click();
+	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue(/first statement describes/);
+	await expect(
+		page.getByRole("button", { name: "Câu 1: TRUE" }),
+	).toHaveAttribute("aria-pressed", "true");
+
+	// Editing again re-arms autosave; this time discard via the banner Hủy.
+	await page.getByLabel("Tiêu đề").fill(`${TITLE} v2`);
+	await expect
+		.poll(() =>
+			page.evaluate(() =>
+				localStorage.getItem("assignment-draft")?.includes("v2"),
+			),
+		)
+		.toBe(true);
+	await page.reload();
+	await expect(page.getByText("Đã phục hồi bản nháp")).toBeVisible();
+	// Scope to the banner: the form toolbar also has a Hủy button.
+	await page.getByRole("status").getByRole("button", { name: "Hủy" }).click();
+	await expect(page.getByLabel("Tiêu đề")).toHaveValue("");
+	// The discarded draft must not resurrect on the next visit.
+	await page.reload();
+	await expect(page.getByText("Đã phục hồi bản nháp")).toBeHidden();
+});
+
+test("preview draft beats the autosave restore banner (FR6 precedence)", async ({
+	page,
+}) => {
+	const TITLE = "QC-271 Preview Beats Banner";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	// Listening so the transcript round trip is exercised (FR6 bug fix).
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page
+		.getByLabel("Transcript (chỉ giáo viên)")
+		.fill("W: Good morning. M: Hello!");
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("Name of caller:");
+	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
+	// Autosave lands in localStorage too (1s debounce).
+	await expect
+		.poll(() =>
+			page.evaluate(() => localStorage.getItem("assignment-draft")),
+		)
+		.not.toBeNull();
+
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview$/);
+	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+
+	// Preview draft won: no banner, form fully restored including transcript.
+	await expect(page.getByText("Đã phục hồi bản nháp")).toBeHidden();
+	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
+	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveValue(
+		/Good morning/,
+	);
+});
+
+test("type change with authored content confirms; same-skill keeps transcript (FR5)", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill("QC-271 Carry Transcript");
+	await page
+		.getByLabel("Transcript (chỉ giáo viên)")
+		.fill("W: Good morning. M: Hello!");
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("Name of caller:");
+	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
+
+	let confirms = 0;
+	// First confirm is cancelled, the retry is accepted — both branches of
+	// the confirm gate get exercised (a type-based handler would always
+	// dismiss and leave the accept path untested, review #1).
+	page.on("dialog", (dialog) => {
+		confirms += 1;
+		void (confirms === 2 ? dialog.accept() : dialog.dismiss());
+	});
+
+	// Re-clicking the already-selected type chip must NOT confirm nor wipe
+	// (ChipFilter re-fire guard, #269). Wait out the async dialog event
+	// before counting — a sync assert can false-pass mid-race.
+	await page.getByRole("button", { name: "Form completion" }).click();
+	await page.waitForTimeout(300);
+	await expect.poll(() => confirms).toBe(0);
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("Name of caller:");
+	await expect(page.getByLabel("Đáp án chấm tự động").first()).toHaveValue(
+		"Clarke",
+	);
+
+	// First real change: teacher cancels → nothing is wiped.
+	await page.getByRole("button", { name: "Multiple choice" }).click();
+	await expect.poll(() => confirms).toBe(1);
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("Name of caller:");
+
+	// Second change: teacher accepts → type changes, transcript carries over
+	// within the same skill, answers reset.
+	await page.getByRole("button", { name: "Multiple choice" }).click();
+	await expect.poll(() => confirms).toBe(2);
+	await expect(
+		page.getByRole("button", { name: "Câu 1: A" }).first(),
+	).toBeVisible();
+	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveValue(
+		/Good morning/,
+	);
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("");
+});
+
+test("skill change with authored content confirms and resets on accept (FR5)", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill("QC-271 Skill Confirm");
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("Stepwells are underground reservoirs…");
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("The first statement describes the stepwells.");
+	await page.getByRole("button", { name: "Câu 1: TRUE" }).click();
+
+	let confirms = 0;
+	// Cancel first, accept on retry — see the FR5 type-change test above.
+	page.on("dialog", (dialog) => {
+		confirms += 1;
+		void (confirms === 2 ? dialog.accept() : dialog.dismiss());
+	});
+
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await expect.poll(() => confirms).toBe(1);
+	// Dismissed: authored content untouched.
+	await expect(page.getByLabel("Đoạn đọc")).toHaveValue(/Stepwells/);
+	await expect(
+		page.getByRole("button", { name: "Câu 1: TRUE" }),
+	).toHaveAttribute("aria-pressed", "true");
+
+	await page.getByRole("button", { name: "Listening", exact: true }).click();
+	await expect.poll(() => confirms).toBe(2);
+	// Accepted: reading fields are gone, fresh single listening row.
+	await expect(page.getByLabel("Đoạn đọc")).toHaveCount(0);
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("");
+});
+
+test("bulk key paste maps by question number and reports per-line errors (FR7)", async ({
+	page,
+}) => {
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill("QC-271 Bulk Paste");
+	await page.getByRole("button", { name: "Thêm câu" }).click();
+	await page.getByRole("button", { name: "Thêm câu" }).click();
+
+	await page.getByRole("button", { name: "Thêm key hàng loạt" }).click();
+	// Line 3 targets Q3 (not the 3rd pasted line); Q9 is out of range; the
+	// last line is unparsable — valid lines must still apply.
+	await page
+		.getByLabel("Nội dung key dán vào")
+		.fill("1. TRUE\n2. TRUE\n3. FALSE\n9. NOT GIVEN\nhello");
+	await page.getByRole("button", { name: "Áp dụng" }).click();
+
+	await expect(page.getByText("3/5 dòng đã áp dụng")).toBeVisible();
+	await expect(page.getByText(/Dòng 4: Q9 ngoài phạm vi/)).toBeVisible();
+	await expect(page.getByText(/Dòng 5: .*không đọc được/)).toBeVisible();
+	// Keys landed on the right rows: 1 TRUE, 2 TRUE, 3 FALSE.
+	await expect(page.getByText("1 TRUE · 2 TRUE · 3 FALSE")).toBeVisible();
 });

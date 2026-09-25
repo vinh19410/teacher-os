@@ -1,12 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import {
 	emptyComposer,
-	emptyItem,
 	isAutoSkill,
 	type QuestionItem,
 } from "@/components/assignments/assignment-presets";
+import {
+	applyComposerFieldChange,
+	hasAuthoringContent,
+	structuralChangeKind,
+} from "@/components/assignments/composer-transitions";
 import { CreateSuccessCard } from "@/components/assignments/create-success-card";
 import {
 	type ComposerValue,
@@ -17,6 +21,15 @@ import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
+	ASSIGNMENT_DRAFT_SCHEMA_VERSION,
+	clearAssignmentDraft,
+	composerDraftHasContent,
+	readAssignmentDraft,
+	type StoredAssignmentDraft,
+	saveAssignmentDraft,
+} from "@/lib/assignment-draft-store";
+import {
+	type PreviewDraft,
 	savePreviewDraft,
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
@@ -124,11 +137,51 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	};
 }
 
+/** Snapshot for the preview page (sessionStorage handoff). Includes
+ * `transcript` — the preview round trip must never drop it (phase-01 FR6). */
+export function previewDraftFrom(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): PreviewDraft {
+	return {
+		task: value.part,
+		genre: value.type,
+		skill: value.skill,
+		part: value.part,
+		type: value.type,
+		title: value.title,
+		band: value.band,
+		source: value.source,
+		prompt: value.prompt,
+		passage: value.passage,
+		intro: value.intro,
+		transcript: value.transcript,
+		cueTopic: value.cueTopic,
+		cuePoints: value.cuePoints,
+		audioName: value.audioName,
+		imageUrl: value.imageUrl,
+		items: value.items,
+		note: value.note,
+		status,
+	};
+}
+
+const STRUCTURAL_LABELS = {
+	skill: "kỹ năng",
+	part: "phần thi",
+	type: "dạng đề",
+} as const;
+
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
 	const { data } = useData();
+	// Restore precedence (FR6): the destructive preview-draft take wins over
+	// the autosave banner — the teacher deliberately handed off to /preview.
 	const [restored] = useState(() => takePreviewDraft());
+	const [bannerDraft] = useState<StoredAssignmentDraft | null>(() =>
+		restored ? null : readAssignmentDraft(),
+	);
 	const [value, setValue] = useState<ComposerValue>(() =>
 		restored
 			? {
@@ -146,13 +199,32 @@ export function NewAssignmentRoute() {
 					imageUrl: restored.imageUrl ?? "",
 					items: restored.items ?? [],
 				}
-			: freshComposer(),
+			: bannerDraft
+				? { ...freshComposer(), ...bannerDraft.value }
+				: freshComposer(),
 	);
 	const [status, setStatus] = useState<"draft" | "ready">(
-		restored?.status ?? "ready",
+		restored?.status ?? bannerDraft?.status ?? "ready",
 	);
+	const [bannerOpen, setBannerOpen] = useState(() => bannerDraft !== null);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
+	// Debounced autosave (FR6): skip the success card (the draft was cleared
+	// on purpose) and skip an untouched composer (an empty draft must never
+	// resurrect the restore banner).
+	useEffect(() => {
+		if (saved) return;
+		if (!composerDraftHasContent(value)) return;
+		const timer = setTimeout(() => {
+			saveAssignmentDraft({
+				schemaVersion: ASSIGNMENT_DRAFT_SCHEMA_VERSION,
+				savedAt: Date.now(),
+				status,
+				value,
+			});
+		}, 1000);
+		return () => clearTimeout(timer);
+	}, [value, status, saved]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
 	if (value.skill === "writing" && !value.prompt.trim())
@@ -203,39 +275,37 @@ export function NewAssignmentRoute() {
 		);
 	const actionCopy = actionCopyFor(value, status);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
-		setValue((current) => {
-			if (patch.skill !== undefined && patch.skill !== current.skill) {
-				return {
-					...current,
-					...patch,
-					...emptyComposer(patch.skill, patch.type ?? current.type),
-				};
-			}
-			// ChipFilter re-fires onChange for the already-selected option —
-			// only wipe composed content when the part/type actually changed,
-			// otherwise one stray click destroys intro + URL + items (#269).
-			const partChanged =
-				patch.part !== undefined && patch.part !== current.part;
-			const typeChanged =
-				patch.type !== undefined && patch.type !== current.type;
-			if (partChanged || typeChanged) {
-				const merged = { ...current, ...patch };
-				return {
-					...merged,
-					intro: "",
-					transcript: "",
-					cueTopic: "",
-					cuePoints: "",
-					// Diagram URLs belong to one prompt — never let them leak
-					// into the next type (#269 red-team #5).
-					imageUrl: "",
-					items: isAutoSkill(merged.skill) ? [emptyItem(merged.type)] : [],
-				};
-			}
-			return { ...current, ...patch };
-		});
+		// Confirm decision happens HERE, outside the state updater — React
+		// StrictMode double-fires updaters, so a confirm inside one would fire
+		// twice (red-team #8). The updater stays pure.
+		const change = structuralChangeKind(value, patch);
+		if (change && hasAuthoringContent(value)) {
+			// A skill change wipes the whole composer (emptyComposer — including
+			// title); a part/type change only wipes the type-specific fields.
+			const message =
+				change === "skill"
+					? "Đổi kỹ năng sẽ xóa toàn bộ nội dung đã soạn của đề hiện tại. Tiếp tục?"
+					: `Đổi ${STRUCTURAL_LABELS[change]} sẽ xóa câu hỏi, đáp án và câu lệnh đã soạn của dạng hiện tại. Tiếp tục?`;
+			const ok = window.confirm(message);
+			if (!ok) return;
+		}
+		setValue((current) => applyComposerFieldChange(current, patch));
+	}
+	function acceptDraftBanner() {
+		// The restored content is now the live form state — drop the stored
+		// copy so the next mount never resurrects the banner.
+		clearAssignmentDraft();
+		setBannerOpen(false);
+	}
+	function discardDraftBanner() {
+		clearAssignmentDraft();
+		setBannerOpen(false);
+		setValue(freshComposer());
+		setStatus("ready");
 	}
 	function resetAll() {
+		clearAssignmentDraft();
+		setBannerOpen(false);
 		setValue(freshComposer());
 		setStatus("ready");
 		setShowErrors(false);
@@ -268,6 +338,15 @@ export function NewAssignmentRoute() {
 				status,
 			},
 		});
+		// The write may be saved on refreshed/committed and may-or-may-not on
+		// outcome-unknown — the draft must not resurrect in any of those. A
+		// definite-failure (4xx) provably did NOT save: keep the draft.
+		if (
+			result?.kind === "refreshed" ||
+			result?.kind === "committed" ||
+			result?.kind === "outcome-unknown"
+		)
+			clearAssignmentDraft();
 		if (result?.kind === "refreshed")
 			setSaved({
 				title: value.title.trim(),
@@ -284,6 +363,7 @@ export function NewAssignmentRoute() {
 	async function handleReconcile() {
 		const applied = await submit.reconcile();
 		if (!applied) return;
+		clearAssignmentDraft();
 		const row = data.assignmentPrompts.find(
 			(prompt) =>
 				prompt.title === value.title.trim() && prompt.skill === value.skill,
@@ -325,6 +405,29 @@ export function NewAssignmentRoute() {
 				title="Thêm đề vào ngân hàng"
 				lead="Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
 			/>
+			{bannerOpen && !saved && (
+				<div
+					role="status"
+					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+				>
+					<span className="text-xs">
+						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.
+					</span>
+					<span className="flex gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={discardDraftBanner}
+						>
+							Hủy
+						</Button>
+						<Button type="button" size="sm" onClick={acceptDraftBanner}>
+							Tiếp tục
+						</Button>
+					</span>
+				</div>
+			)}
 			{saved ? (
 				<CreateSuccessCard {...saved} onCreateAnother={resetAll} />
 			) : (
@@ -333,6 +436,7 @@ export function NewAssignmentRoute() {
 						value={value}
 						errors={fieldErrors}
 						showErrors={showErrors}
+						status={status}
 						onFieldChange={handleFieldChange}
 					/>
 					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
@@ -370,26 +474,7 @@ export function NewAssignmentRoute() {
 									type="button"
 									variant="secondary"
 									onClick={() => {
-										savePreviewDraft({
-											task: value.part,
-											genre: value.type,
-											skill: value.skill,
-											part: value.part,
-											type: value.type,
-											title: value.title,
-											band: value.band,
-											source: value.source,
-											prompt: value.prompt,
-											passage: value.passage,
-											intro: value.intro,
-											cueTopic: value.cueTopic,
-											cuePoints: value.cuePoints,
-											audioName: value.audioName,
-											imageUrl: value.imageUrl,
-											items: value.items,
-											note: value.note,
-											status,
-										});
+										savePreviewDraft(previewDraftFrom(value, status));
 										navigate({ to: "/assignments/preview" });
 									}}
 								>
