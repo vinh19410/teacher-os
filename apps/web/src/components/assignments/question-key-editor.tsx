@@ -1,3 +1,4 @@
+import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -7,6 +8,7 @@ import {
 	kindOf,
 	type QuestionItem,
 	qStartOf,
+	TYPE_HINTS,
 } from "./assignment-presets";
 
 export function QuestionKeyEditor({
@@ -16,8 +18,11 @@ export function QuestionKeyEditor({
 	intro,
 	items,
 	showErrors,
+	imageUrl,
 	onIntroChange,
+	onImageUrlChange,
 	onItemsChange,
+	imageUrlError,
 }: {
 	skill: string;
 	partId: string;
@@ -25,11 +30,24 @@ export function QuestionKeyEditor({
 	intro: string;
 	items: QuestionItem[];
 	showErrors: boolean;
+	imageUrl: string;
 	onIntroChange: (value: string) => void;
+	onImageUrlChange: (value: string) => void;
 	onItemsChange: (items: QuestionItem[]) => void;
+	/** Pre-gated by the composer: only set when showErrors is on. */
+	imageUrlError?: string;
 }) {
 	const kind = kindOf(typeId);
 	const choices = answerChoices(kind);
+	const isDiagram = typeId === "diagram";
+	// Same scheme policy as the contract — the thumbnail never renders an
+	// unsafe URL, even while the field still carries a draft value.
+	const safeImageUrl = imageUrl.trim();
+	const showThumbnail =
+		isDiagram &&
+		safeImageUrl.length > 0 &&
+		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
+	const hint = TYPE_HINTS[typeId];
 	const update = (index: number, patch: Partial<QuestionItem>) => {
 		const next = items.map((item, itemIndex) =>
 			itemIndex === index ? { ...item, ...patch } : item,
@@ -49,10 +67,33 @@ export function QuestionKeyEditor({
 			<Field label="Hướng dẫn đề">
 				<Textarea
 					value={intro}
+					placeholder={hint}
 					onChange={(event) => onIntroChange(event.target.value)}
 					className="min-h-24"
 				/>
 			</Field>
+			{isDiagram && (
+				<Field
+					label="Ảnh biểu đồ (URL)"
+					help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
+					error={imageUrlError}
+				>
+					<Input
+						value={imageUrl}
+						placeholder="https://…"
+						onChange={(event) => onImageUrlChange(event.target.value)}
+					/>
+					{showThumbnail && (
+						<img
+							src={safeImageUrl}
+							alt="Ảnh biểu đồ đề Reading"
+							className="mt-2 max-h-48 rounded-md border border-line"
+							referrerPolicy="no-referrer"
+							loading="lazy"
+						/>
+					)}
+				</Field>
+			)}
 			<div className="flex flex-col gap-3">
 				{items.map((item, index) => (
 					<div
@@ -139,6 +180,7 @@ export function QuestionKeyEditor({
 								>
 									<Input
 										value={item.answer}
+										placeholder={hint}
 										onChange={(event) =>
 											update(index, { answer: event.target.value })
 										}

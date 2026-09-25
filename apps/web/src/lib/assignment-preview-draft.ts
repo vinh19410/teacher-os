@@ -19,6 +19,7 @@ export interface PreviewDraft {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	imageUrl?: string;
 	items?: QuestionItem[];
 }
 function isPreviewDraft(value: unknown): value is PreviewDraft {

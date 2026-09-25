@@ -21,6 +21,11 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/use-kernel-form-submit", () => ({
 	useKernelFormSubmit: () => submitFixture,
 }));
+const draftFixture: { value: PreviewDraft | null } = { value: null };
+vi.mock("@/lib/assignment-preview-draft", () => ({
+	takePreviewDraft: () => draftFixture.value,
+	savePreviewDraft: vi.fn(),
+}));
 vi.mock("@/lib/data-store", () => ({
 	useData: () => ({
 		data: {
@@ -30,6 +35,7 @@ vi.mock("@/lib/data-store", () => ({
 	}),
 }));
 
+import type { PreviewDraft } from "@/lib/assignment-preview-draft";
 import { actionCopyFor, NewAssignmentRoute } from "./new";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
@@ -85,6 +91,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			cueTopic: "",
 			cuePoints: "",
 			audioName: "",
+			imageUrl: "",
 			note: "",
 			items: [],
 		};
@@ -153,5 +160,67 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.title).toBe("Sẵn sàng lưu vào ngân hàng");
 			expect(res.sub).toContain("Chưa giao lớp");
 		});
+
+		it("7. Reading diagram ready missing image (#269)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "diagram",
+					passage: "Some passage",
+					imageUrl: "",
+					items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Thiếu ảnh biểu đồ");
+			expect(res.sub).toContain("Dán link ảnh");
+		});
+
+		it("8. Reading image URL not https (#269)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "summary",
+					passage: "Some passage",
+					imageUrl: "http://example.com/diagram.png",
+					items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Link ảnh chưa hợp lệ");
+			expect(res.sub).toContain("https");
+		});
+	});
+
+	it("blocks save for a restored diagram-ready draft missing its image (#269)", () => {
+		draftFixture.value = {
+			task: "p1",
+			genre: "diagram",
+			title: "Diagram draft",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			note: "",
+			status: "ready",
+			skill: "reading",
+			part: "p1",
+			type: "diagram",
+			passage: "Passage",
+			intro: "",
+			audioName: "",
+			imageUrl: "",
+			items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
+		};
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Thiếu ảnh biểu đồ");
+		const submit = html.match(
+			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
+		);
+		expect(submit?.[0]).toMatch(/\sdisabled=/);
+		draftFixture.value = null;
 	});
 });
