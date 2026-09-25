@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { emptyItem } from "./assignment-presets";
 import { BulkKeyPastePanel, QuestionKeyEditor } from "./question-key-editor";
 
 describe("QuestionKeyEditor (#218 v5)", () => {
@@ -294,6 +295,62 @@ describe("QuestionKeyEditor — phase-01 quick wins", () => {
 			<QuestionKeyEditor {...base} typeId="tfng" intro="" items={[]} />,
 		);
 		expect(html).toContain("Thêm key hàng loạt");
+	});
+});
+
+describe("QuestionKeyEditor — cloze/tablecomp editors (phase-03)", () => {
+	const base = {
+		skill: "reading",
+		partId: "p2",
+		typeId: "summary",
+		intro: "",
+		showErrors: false,
+		status: "ready" as const,
+		onIntroChange: vi.fn(),
+		onItemsChange: vi.fn(),
+		onBankChange: vi.fn(),
+		imageUrl: "",
+		onImageUrlChange: vi.fn(),
+	};
+
+	it.each(["sent", "note", "summary", "flowchart", "form", "notes", "sent4", "flow"])(
+		"embeds the cloze click-to-blank editor for %s",
+		(typeId) => {
+			const html = renderToStaticMarkup(
+				<QuestionKeyEditor {...base} typeId={typeId} items={[]} />,
+			);
+			expect(html).toContain("Soạn đoạn hoàn thành");
+			expect(html).not.toContain("Soạn bảng");
+		},
+	);
+
+	it("embeds the table grid editor for tablecomp instead of the cloze editor", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId="tablecomp" items={[]} />,
+		);
+		expect(html).toContain("Soạn bảng");
+		expect(html).not.toContain("Soạn đoạn hoàn thành");
+	});
+
+	it("keeps shortans on the plain phase-01 text rows without a content block", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				typeId="shortans"
+				items={[emptyItem("shortans")]}
+			/>,
+		);
+		expect(html).not.toContain("Soạn đoạn hoàn thành");
+		expect(html).not.toContain("Soạn bảng");
+		expect(html).toContain("Đáp án chấm tự động");
+	});
+
+	it("renders no content editor for non-completion kinds (tfng)", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId="tfng" items={[]} />,
+		);
+		expect(html).not.toContain("Soạn đoạn hoàn thành");
+		expect(html).not.toContain("Soạn bảng");
 	});
 });
 

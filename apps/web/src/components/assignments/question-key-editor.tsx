@@ -14,7 +14,10 @@ import {
 	applyBulkKeyPaste,
 	type BulkKeyPasteLineError,
 } from "./bulk-key-paste";
+import { ClozeEditor } from "./cloze-editor";
 import { OptionBankEditor } from "./option-bank-editor";
+import { TableGridEditor } from "./table-grid-editor";
+import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
@@ -67,6 +70,11 @@ export function QuestionKeyEditor({
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
 	const hint = TYPE_HINTS[typeId];
 	const atMax = items.length >= QUESTION_MAX_COUNT;
+	// Phase-03: the 8 cloze completion types get the click-to-blank editor,
+	// tablecomp gets the grid editor; `shortans` keeps the phase-01 text rows
+	// (no content block — coordinator scope note).
+	const showClozeEditor = CLOZE_EDITOR_TYPES.has(typeId);
+	const showTableEditor = typeId === TABLECOMP_TYPE;
 	const [pasteOpen, setPasteOpen] = useState(false);
 	const [pasteRaw, setPasteRaw] = useState("");
 	const [pasteOutcome, setPasteOutcome] = useState<{
@@ -147,6 +155,16 @@ export function QuestionKeyEditor({
 					className="min-h-24"
 				/>
 			</Field>
+			{showClozeEditor && (
+				<ClozeEditor
+					typeId={typeId}
+					items={items}
+					onApply={onItemsChange}
+				/>
+			)}
+			{showTableEditor && (
+				<TableGridEditor items={items} onApply={onItemsChange} />
+			)}
 			{isBankableType(skill, typeId) && (
 				<OptionBankEditor
 					typeId={typeId}
