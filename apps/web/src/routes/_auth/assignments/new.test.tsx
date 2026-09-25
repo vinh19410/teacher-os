@@ -33,7 +33,7 @@ vi.mock("@/lib/data-store", () => ({
 import { actionCopyFor, NewAssignmentRoute } from "./new";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
-	it("renders design v5 structure with 4 skills and Task 2 Discuss defaults", () => {
+	it("renders design v5 structure with 4 skills and a blank form", () => {
 		const html = renderToStaticMarkup(<NewAssignmentRoute />);
 		expect(html).toContain("Thêm đề vào ngân hàng");
 		expect(html).toContain("Writing Academic");
@@ -43,11 +43,14 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		expect(html).toContain("Speaking");
 		expect(html).toContain("Task 2 · 250 từ");
 		expect(html).toContain("Discuss both views");
-		expect(html).toContain("Sẵn sàng lưu vào ngân hàng");
+		expect(html).toContain("Đặt tên đề rồi lưu vào ngân hàng.");
 		expect(html).toContain("Trạng thái");
 		expect(html).toContain("Bản nháp");
 		expect(html).toContain("Sẵn sàng giao");
 		expect(html).toContain("Xem trước");
+		// Form khởi tạo trắng: không còn nội dung mẫu hardcode.
+		expect(html).not.toContain("Some people think");
+		expect(html).not.toContain("Cambridge");
 		// Khung phải (card "Ngân hàng" + preview) đã bị bỏ — form chiếm toàn bộ chiều rộng.
 		expect(html).not.toContain("Xem trước phía học viên");
 		expect(html).not.toContain("Đề Writing đã có");
@@ -56,7 +59,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);
 		expect(submit?.[0]).toBeDefined();
-		expect(submit?.[0]).not.toMatch(/\sdisabled=/);
+		expect(submit?.[0]).toMatch(/\sdisabled=/);
 	});
 
 	it("surfaces the server error from the submit hook", () => {
@@ -105,7 +108,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 				"ready",
 			);
 			expect(res.title).toBe("Thiếu file nghe");
-			expect(res.sub).toContain("Đính file hoặc dùng file mẫu");
+			expect(res.sub).toContain("Đính file nghe trước khi lưu");
 		});
 
 		it("3. Reading/Listening ready missing answers", () => {

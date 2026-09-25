@@ -39,7 +39,7 @@ export function StudentPreviewPaper(props: {
 				Xem trước phía học viên
 			</p>
 			<p className="mt-1 font-display font-semibold text-[17px]">
-				{props.title.trim() || type.title}
+				{props.title.trim() || "Chưa đặt tên đề"}
 			</p>
 			<p className="mt-1.5 font-mono text-meta text-xs">
 				{part.spec} · Band {props.band}

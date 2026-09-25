@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
+	isAutoSkill,
 	partOf,
 	qStartOf,
 	skillOf,
@@ -20,8 +21,8 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	const skill = skillOf(skillId);
 	const part = partOf(skillId, partId);
 	const type = typeOf(skillId, partId, typeId);
-	const trimmedTitle = prompt.title.trim() || type.title;
-	const isAuto = skillId === "reading" || skillId === "listening";
+	const trimmedTitle = prompt.title.trim() || "Chưa đặt tên đề";
+	const isAuto = isAutoSkill(skillId);
 	const isSpeakingPart2 = skillId === "speaking" && partId === "part2";
 
 	return (

@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
 import {
-	compositionDefaults,
+	emptyComposer,
+	emptyItem,
+	isAutoSkill,
 	type QuestionItem,
-	skillOf,
 } from "@/components/assignments/assignment-presets";
 import { CreateSuccessCard } from "@/components/assignments/create-success-card";
 import {
@@ -37,29 +38,12 @@ interface SavedPrompt {
 	questions: QuestionItem[];
 }
 function freshComposer(): ComposerValue {
-	const defaults = compositionDefaults(
-		"writing",
-		"task2",
-		"discuss",
-		false,
-		false,
-	);
 	return {
 		skill: "writing",
 		part: "task2",
 		type: "discuss",
-		title: defaults.title,
 		band: "7.0",
-		source: defaults.source,
-		prompt: defaults.prompt,
-		passage: defaults.passage,
-		intro: defaults.intro,
-		transcript: defaults.transcript,
-		cueTopic: defaults.cueTopic,
-		cuePoints: defaults.cuePoints,
-		audioName: "",
-		note: "",
-		items: defaults.items,
+		...emptyComposer("writing", "discuss"),
 	};
 }
 function countAnswers(value: ComposerValue) {
@@ -79,7 +63,7 @@ function hasCoreContent(value: ComposerValue) {
 		: !!value.prompt.trim();
 }
 export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
-	const auto = value.skill === "reading" || value.skill === "listening";
+	const auto = isAutoSkill(value.skill);
 	if (!value.title.trim())
 		return {
 			title: "Đặt tên đề rồi lưu vào ngân hàng.",
@@ -92,7 +76,7 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	)
 		return {
 			title: "Thiếu file nghe",
-			sub: "Đính file hoặc dùng file mẫu trước khi lưu sẵn sàng giao.",
+			sub: "Đính file nghe trước khi lưu sẵn sàng giao.",
 		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
@@ -146,8 +130,6 @@ export function NewAssignmentRoute() {
 	const [status, setStatus] = useState<"draft" | "ready">(
 		restored?.status ?? "ready",
 	);
-	const [dirtyTitle, setDirtyTitle] = useState(!!restored);
-	const [dirtyMain, setDirtyMain] = useState(!!restored);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
 	const fieldErrors: Record<string, string | undefined> = {};
@@ -161,7 +143,7 @@ export function NewAssignmentRoute() {
 		status === "ready" &&
 		!value.audioName.trim()
 	)
-		fieldErrors.audioName = "Đính file nghe hoặc dùng file mẫu.";
+		fieldErrors.audioName = "Đính file nghe (MP3 hoặc WAV).";
 	if (
 		value.skill === "speaking" &&
 		value.part === "part2" &&
@@ -176,85 +158,37 @@ export function NewAssignmentRoute() {
 			!value.audioName.trim()
 		) &&
 		!(
-			(value.skill === "reading" || value.skill === "listening") &&
+			isAutoSkill(value.skill) &&
 			status === "ready" &&
 			countAnswers(value) !== value.items.length
 		);
 	const actionCopy = actionCopyFor(value, status);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
-		if (patch.title !== undefined) setDirtyTitle(true);
-		if (
-			[
-				"prompt",
-				"passage",
-				"intro",
-				"transcript",
-				"cueTopic",
-				"cuePoints",
-				"items",
-			].some((key) => key in patch)
-		)
-			setDirtyMain(true);
 		setValue((current) => {
-			const merged = { ...current, ...patch };
-			if (patch.skill !== undefined) {
-				const skill = skillOf(merged.skill);
-				const part = skill.parts[0];
-				const type = part.types[0];
-				const defaults = compositionDefaults(
-					skill.id,
-					part.id,
-					type.id,
-					false,
-					false,
-				);
+			if (patch.skill !== undefined && patch.skill !== current.skill) {
 				return {
-					...merged,
-					skill: skill.id,
-					part: part.id,
-					type: type.id,
-					title: defaults.title,
-					source: defaults.source,
-					prompt: defaults.prompt,
-					passage: defaults.passage,
-					intro: defaults.intro,
-					transcript: defaults.transcript,
-					cueTopic: defaults.cueTopic,
-					cuePoints: defaults.cuePoints,
-					items: defaults.items,
-					audioName: "",
-					note: "",
+					...current,
+					...patch,
+					...emptyComposer(patch.skill, patch.type ?? current.type),
 				};
 			}
 			if (patch.part !== undefined || patch.type !== undefined) {
-				const defaults = compositionDefaults(
-					merged.skill,
-					merged.part,
-					merged.type,
-					dirtyTitle || patch.title !== undefined,
-					dirtyMain || patch.prompt !== undefined || patch.items !== undefined,
-				);
+				const merged = { ...current, ...patch };
 				return {
 					...merged,
-					title: defaults.title || merged.title,
-					source: defaults.source,
-					prompt: defaults.prompt || merged.prompt,
-					passage: defaults.passage || merged.passage,
-					intro: defaults.intro,
-					transcript: defaults.transcript,
-					cueTopic: defaults.cueTopic,
-					cuePoints: defaults.cuePoints,
-					items: defaults.items.length ? defaults.items : merged.items,
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					items: isAutoSkill(merged.skill) ? [emptyItem(merged.type)] : [],
 				};
 			}
-			return merged;
+			return { ...current, ...patch };
 		});
 	}
 	function resetAll() {
 		setValue(freshComposer());
 		setStatus("ready");
-		setDirtyTitle(false);
-		setDirtyMain(false);
 		setShowErrors(false);
 		setSaved(null);
 		submit.reset();

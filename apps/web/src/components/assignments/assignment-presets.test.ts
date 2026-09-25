@@ -6,8 +6,9 @@ import { describe, expect, test } from "vitest";
 
 import {
 	answerChoices,
-	compositionDefaults,
+	emptyComposer,
 	emptyItem,
+	isAutoSkill,
 	kindOf,
 	partOf,
 	qStartOf,
@@ -135,50 +136,53 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(textItem.opts).toBeNull();
 	});
 
+	test("catalog carries no hardcoded sample content", () => {
+		const catalog = JSON.stringify(SKILLS);
+		expect(catalog).not.toContain("Cambridge");
+		expect(catalog).not.toContain("Stepwells");
+		expect(catalog).not.toContain("Some people think");
+		for (const skill of SKILLS) {
+			expect(skill).not.toHaveProperty("source");
+			for (const part of skill.parts) {
+				expect(part).not.toHaveProperty("passage");
+				for (const type of part.types) {
+					expect(Object.keys(type).sort()).toEqual(["id", "label"]);
+				}
+			}
+		}
+	});
+
+	test("emptyComposer returns blank content for every skill", () => {
+		for (const skill of SKILLS) {
+			for (const part of skill.parts) {
+				for (const type of part.types) {
+					const blank = emptyComposer(skill.id, type.id);
+					expect(blank.title).toBe("");
+					expect(blank.source).toBe("");
+					expect(blank.prompt).toBe("");
+					expect(blank.passage).toBe("");
+					expect(blank.intro).toBe("");
+					expect(blank.transcript).toBe("");
+					expect(blank.cueTopic).toBe("");
+					expect(blank.cuePoints).toBe("");
+					expect(blank.audioName).toBe("");
+					expect(blank.note).toBe("");
+					if (isAutoSkill(skill.id)) {
+						expect(blank.items).toEqual([emptyItem(type.id)]);
+					} else {
+						expect(blank.items).toEqual([]);
+					}
+				}
+			}
+		}
+	});
+
 	test("helper fallbacks with unknown ids do not crash", () => {
 		expect(skillOf("unknown_skill").id).toBe("writing");
 		expect(partOf("writing", "unknown_part").id).toBe("task1");
 		expect(typeOf("writing", "task1", "unknown_type").id).toBe("chart");
 		expect(kindOf("unknown_type")).toBe("text");
 		expect(qStartOf("unknown_skill", "unknown_part")).toBe(1);
-	});
-
-	test("compositionDefaults respects dirty flags", () => {
-		const clean = compositionDefaults(
-			"writing",
-			"task2",
-			"discuss",
-			false,
-			false,
-		);
-		expect(clean.title).toContain("Discuss both views");
-		expect(clean.prompt).toContain("Some people think");
-
-		const dirty = compositionDefaults(
-			"writing",
-			"task2",
-			"discuss",
-			true,
-			true,
-		);
-		expect(dirty.title).toBe("");
-		expect(dirty.prompt).toBe("");
-
-		// Legacy calling signature compatibility
-		const legacyClean = compositionDefaults("task2", "discuss", false, false);
-		expect(legacyClean.title).toContain("Discuss both views");
-	});
-
-	test("spot-check verbatim design template for Reading Passage 1 TFNG", () => {
-		const tfng = typeOf("reading", "p1", "tfng");
-
-		expect(tfng.title).toBe("Reading Passage 1 — True/False/Not Given");
-		expect(tfng.items).toBeDefined();
-		expect(tfng.items?.[0].answer).toBe("FALSE");
-		expect(tfng.items?.[0].stem).toBe(
-			"Stepwells were first built in the twentieth century.",
-		);
-		expect(tfng.intro).toContain("TRUE if the statement agrees");
 	});
 
 	test("wordCount counts whitespace-separated words", () => {

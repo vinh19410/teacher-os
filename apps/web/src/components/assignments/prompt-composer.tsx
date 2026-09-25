@@ -3,6 +3,7 @@ import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import {
+	isAutoSkill,
 	partOf,
 	type QuestionItem,
 	SKILLS,
@@ -44,7 +45,7 @@ export function PromptComposer({
 	const skill = skillOf(value.skill);
 	const part = partOf(value.skill, value.part);
 	const type = typeOf(value.skill, value.part, value.type);
-	const isAuto = value.skill === "reading" || value.skill === "listening";
+	const isAuto = isAutoSkill(value.skill);
 	const isCue = value.skill === "speaking" && value.part === "part2";
 	return (
 		<Card variant="white" className="flex flex-col gap-4">
@@ -184,19 +185,7 @@ export function PromptComposer({
 									Gỡ file
 								</button>
 							</>
-						) : (
-							<button
-								type="button"
-								className="text-accent-blue text-xs"
-								onClick={() =>
-									onFieldChange({
-										audioName: "Cambridge IELTS 10 — Section 1.mp3",
-									})
-								}
-							>
-								Dùng file mẫu Cambridge 10
-							</button>
-						)}
+						) : null}
 					</div>
 					<p className="mt-1 text-[11px] text-meta">
 						{value.audioName
