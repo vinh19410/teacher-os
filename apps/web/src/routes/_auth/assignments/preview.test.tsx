@@ -65,4 +65,102 @@ describe("PreviewAssignmentRoute (#213)", () => {
 		expect(html).toContain("Chưa có bản nháp nào để xem trước.");
 		expect(html).not.toContain("Bài làm của học viên");
 	});
+
+	it("renders a reading paper with passage, intro bank, questions and diagram image (#269)", () => {
+		stubStorageWith(
+			JSON.stringify({
+				task: "p1",
+				genre: "diagram",
+				title: "QC-269 Diagram paper",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				note: "",
+				status: "ready",
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				passage: "Stepwells are underground reservoirs.",
+				intro:
+					"Complete the diagram. ONE WORD ONLY from the passage.\nA reservoir  B tunnel  C channel",
+				audioName: "",
+				imageUrl: "https://example.com/qc-269.png",
+				items: [
+					{
+						stem: "Label 4 of the diagram.",
+						answer: "SECRET_QC_269",
+						opts: null,
+						alts: "",
+					},
+				],
+			}),
+		);
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		// Passage + intro (word limit + option bank) + stems all visible.
+		expect(html).toContain("Stepwells are underground reservoirs.");
+		expect(html).toContain("ONE WORD ONLY");
+		expect(html).toContain("A reservoir");
+		expect(html).toContain("Label 4 of the diagram.");
+		// Diagram image gated to the diagram type with a safe https URL.
+		expect(html).toContain('src="https://example.com/qc-269.png"');
+		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		// Leak-check: the answer key never reaches the student preview.
+		expect(html).not.toContain("SECRET_QC_269");
+		expect(html).not.toContain("Đáp án đúng");
+	});
+
+	it("never renders the diagram image for non-diagram types (#269)", () => {
+		stubStorageWith(
+			JSON.stringify({
+				task: "p2",
+				genre: "tablecomp",
+				title: "QC-269 Table paper",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				note: "",
+				status: "draft",
+				skill: "reading",
+				part: "p2",
+				type: "tablecomp",
+				passage: "Passage text.",
+				intro: "",
+				imageUrl: "https://example.com/leftover.png",
+				items: [
+					{ stem: "Year of the flood.", answer: "1834", opts: null, alts: "" },
+				],
+			}),
+		);
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain("Passage text.");
+		// The URL was pasted before the type switch — the renderer must still
+		// gate the image to the diagram type.
+		expect(html).not.toContain("leftover.png");
+		expect(html).not.toContain("<img");
+	});
+
+	it("does not render an unsafe image URL even for a diagram draft (#269)", () => {
+		stubStorageWith(
+			JSON.stringify({
+				task: "p1",
+				genre: "diagram",
+				title: "QC-269 Unsafe",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				note: "",
+				status: "draft",
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				passage: "Passage.",
+				intro: "",
+				imageUrl: "javascript:alert(1)",
+				items: [{ stem: "Label.", answer: "x", opts: null, alts: "" }],
+			}),
+		);
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).not.toContain("<img");
+		expect(html).not.toContain("javascript:alert(1)");
+	});
 });

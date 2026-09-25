@@ -1,3 +1,4 @@
+import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
 import {
 	partOf,
@@ -22,6 +23,7 @@ export function StudentPreviewPaper(props: {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	imageUrl?: string;
 	items?: QuestionItem[];
 	task?: string;
 	genre?: string;
@@ -33,6 +35,16 @@ export function StudentPreviewPaper(props: {
 	const part = partOf(skillId, partId);
 	const type = typeOf(skillId, partId, typeId);
 	const isAuto = skillId === "reading" || skillId === "listening";
+	// The preview draft never passes the server contract — this renderer is
+	// the only guard, so verify the scheme here before any <img> exists.
+	const rawImageUrl = props.imageUrl?.trim() ?? "";
+	const diagramImageUrl =
+		skillId === "reading" &&
+		typeId === "diagram" &&
+		rawImageUrl &&
+		ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
+			? rawImageUrl
+			: "";
 	return (
 		<div className="rounded-lg border border-line bg-surface-warm p-5">
 			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
@@ -54,8 +66,22 @@ export function StudentPreviewPaper(props: {
 					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
 				</p>
 			)}
+			{diagramImageUrl && (
+				<img
+					src={diagramImageUrl}
+					alt="Ảnh biểu đồ đề Reading"
+					className="mt-3 max-h-72 rounded-md border border-line"
+					referrerPolicy="no-referrer"
+					loading="lazy"
+				/>
+			)}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
+					{props.intro?.trim() && (
+						<p className="whitespace-pre-line text-muted-fg text-sm">
+							{props.intro.trim()}
+						</p>
+					)}
 					{(props.items ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{(part.qStart ?? 1) + index}.</strong>{" "}

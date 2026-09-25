@@ -43,7 +43,7 @@ Phân bổ 8 dạng mới theo part (5/5/4), id không đụng id skills khác:
 |-------|------|--------|
 | 1 | [Contracts & Storage](./phase-01-contracts-storage.md) | Done |
 | 2 | [Web Catalog & Editor](./phase-02-web-catalog-editor.md) | Done |
-| 3 | [Preview, Bank Surfaces, E2E & Docs](./phase-03-preview-e2e-docs.md) | Pending |
+| 3 | [Preview, Bank Surfaces, E2E & Docs](./phase-03-preview-e2e-docs.md) | Done |
 
 ## Out of Scope (non-goals)
 

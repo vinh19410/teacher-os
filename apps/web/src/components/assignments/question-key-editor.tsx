@@ -73,26 +73,28 @@ export function QuestionKeyEditor({
 				/>
 			</Field>
 			{isDiagram && (
-				<Field
-					label="Ảnh biểu đồ (URL)"
-					help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
-					error={imageUrlError}
-				>
-					<Input
-						value={imageUrl}
-						placeholder="https://…"
-						onChange={(event) => onImageUrlChange(event.target.value)}
-					/>
+				<div className="flex flex-col gap-1">
+					<Field
+						label="Ảnh biểu đồ (URL)"
+						help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
+						error={imageUrlError}
+					>
+						<Input
+							value={imageUrl}
+							placeholder="https://…"
+							onChange={(event) => onImageUrlChange(event.target.value)}
+						/>
+					</Field>
 					{showThumbnail && (
 						<img
 							src={safeImageUrl}
 							alt="Ảnh biểu đồ đề Reading"
-							className="mt-2 max-h-48 rounded-md border border-line"
+							className="max-h-48 rounded-md border border-line"
 							referrerPolicy="no-referrer"
 							loading="lazy"
 						/>
 					)}
-				</Field>
+				</div>
 			)}
 			<div className="flex flex-col gap-3">
 				{items.map((item, index) => (

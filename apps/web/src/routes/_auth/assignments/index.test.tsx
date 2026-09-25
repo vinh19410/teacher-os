@@ -163,6 +163,44 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain("Chấm tự động");
 	});
 
+	it("renders the diagram thumbnail in the bank preview aside (#269)", () => {
+		mockStoreData = {
+			assignmentPrompts: [
+				{
+					...bankFixture[3],
+					id: "ap-diagram",
+					part: "p1",
+					type: "diagram",
+					title: "Reading Diagram — bank",
+					imageUrl: "https://example.com/qc-269-bank.png",
+					questions: [
+						{
+							stem: "Label 4.",
+							opts: null,
+							answer: "SECRET_ANSWER_THUMB",
+							alts: "",
+						},
+					],
+				},
+			],
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
+		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		expect(html).toContain("https://example.com/qc-269-bank.png");
+		expect(html).not.toContain("SECRET_ANSWER_THUMB");
+	});
+
+	it("does not render the aside thumbnail for non-diagram prompts (#269)", () => {
+		mockStoreData = {
+			assignmentPrompts: [bankFixture[3]], // tfng, no image
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+		expect(html).not.toContain("<img");
+	});
+
 	it("renders empty state when there are zero prompts", () => {
 		mockStoreData = {
 			assignmentPrompts: [],
