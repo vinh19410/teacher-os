@@ -1,7 +1,7 @@
 ---
 title: "Reading: đủ 14 dạng câu hỏi IELTS cho flow tạo bài tập"
 description: "Thêm 8 dạng Reading còn thiếu (matching features/sentence endings, summary/note/table/flow-chart completion, diagram label, short-answer) vào contracts, UI soạn đề, preview và tests — đủ bộ 14 dạng chính thức."
-status: pending
+status: completed
 priority: P1
 effort: 12h
 issue: 269
