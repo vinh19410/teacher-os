@@ -1,8 +1,4 @@
-import {
-	emptyComposer,
-	emptyItem,
-	isAutoSkill,
-} from "./assignment-presets";
+import { emptyComposer, emptyItem, isAutoSkill } from "./assignment-presets";
 import type { ComposerValue } from "./prompt-composer";
 
 /**
@@ -24,7 +20,8 @@ export function structuralChangeKind(
 	current: ComposerValue,
 	patch: Partial<ComposerValue>,
 ): StructuralChangeKind | null {
-	if (patch.skill !== undefined && patch.skill !== current.skill) return "skill";
+	if (patch.skill !== undefined && patch.skill !== current.skill)
+		return "skill";
 	if (patch.part !== undefined && patch.part !== current.part) return "part";
 	if (patch.type !== undefined && patch.type !== current.type) return "type";
 	return null;

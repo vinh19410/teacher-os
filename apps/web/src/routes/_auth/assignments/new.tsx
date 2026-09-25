@@ -21,18 +21,18 @@ import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
+	ASSIGNMENT_DRAFT_SCHEMA_VERSION,
+	clearAssignmentDraft,
+	composerDraftHasContent,
+	readAssignmentDraft,
+	type StoredAssignmentDraft,
+	saveAssignmentDraft,
+} from "@/lib/assignment-draft-store";
+import {
 	type PreviewDraft,
 	savePreviewDraft,
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
-import {
-	ASSIGNMENT_DRAFT_SCHEMA_VERSION,
-	type StoredAssignmentDraft,
-	clearAssignmentDraft,
-	composerDraftHasContent,
-	readAssignmentDraft,
-	saveAssignmentDraft,
-} from "@/lib/assignment-draft-store";
 import { useData } from "@/lib/data-store";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
@@ -407,8 +407,7 @@ export function NewAssignmentRoute() {
 					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
 				>
 					<span className="text-xs">
-						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn
-						mới.
+						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.
 					</span>
 					<span className="flex gap-2">
 						<Button

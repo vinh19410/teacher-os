@@ -1,8 +1,4 @@
-import {
-	answerChoices,
-	kindOf,
-	type QuestionItem,
-} from "./assignment-presets";
+import { answerChoices, kindOf, type QuestionItem } from "./assignment-presets";
 
 /**
  * Bulk answer-key paste (phase-01 FR7): each line is `số. giá trị` or
@@ -41,7 +37,9 @@ export interface BulkKeyPasteOutcome {
 	appliedCount: number;
 }
 
-export function applyBulkKeyPaste(input: BulkKeyPasteInput): BulkKeyPasteOutcome {
+export function applyBulkKeyPaste(
+	input: BulkKeyPasteInput,
+): BulkKeyPasteOutcome {
 	const { raw, typeId, qStart, items } = input;
 	const kind = kindOf(typeId);
 	const choices = answerChoices(kind);

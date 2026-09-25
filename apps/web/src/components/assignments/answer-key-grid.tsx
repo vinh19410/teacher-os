@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
 	answerChoices,
-	type QuestionItem,
 	kindOf,
+	type QuestionItem,
 	qStartOf,
 } from "./assignment-presets";
 
@@ -95,12 +95,10 @@ export function AnswerKeyGrid({
 	};
 	const focusRow = (index: number) => {
 		if (typeof document === "undefined") return;
-		document
-			.querySelector<HTMLElement>(`[data-qindex="${index}"]`)
-			?.focus();
+		document.querySelector<HTMLElement>(`[data-qindex="${index}"]`)?.focus();
 	};
 	const handleKeyDown = (
-		event: React.KeyboardEvent<HTMLDivElement>,
+		event: React.KeyboardEvent<HTMLElement>,
 		index: number,
 	) => {
 		const target = event.target as HTMLElement;
@@ -142,7 +140,7 @@ export function AnswerKeyGrid({
 		}
 	};
 	return (
-		<div className="flex flex-col gap-2" aria-label="Lưới đáp án">
+		<section aria-label="Lưới đáp án" className="flex flex-col gap-2">
 			<div
 				aria-hidden="true"
 				className="hidden gap-2 px-1 font-medium text-muted-fg text-xs sm:grid sm:grid-cols-[3.5rem_1fr_14rem_2rem]"
@@ -156,13 +154,18 @@ export function AnswerKeyGrid({
 				const rowErrors = questionRowError(item, choices);
 				const rowVisible = showErrors || blurred.has(index);
 				const errorEntries = rowVisible
-					? (["stem", "answer", "alts"] as const).filter((key) => rowErrors[key])
+					? (["stem", "answer", "alts"] as const).filter(
+							(key) => rowErrors[key],
+						)
 					: [];
+				const mcqChoices = kind === "mcq4" || kind === "mcq3" ? choices : null;
+				const options = item.opts ?? mcqChoices?.map(() => "") ?? [];
 				return (
-					<div
+					<fieldset
 						key={`${partId}-${index}`}
 						data-qindex={index}
 						tabIndex={-1}
+						aria-label={`Câu ${number}`}
 						onKeyDown={(event) => handleKeyDown(event, index)}
 						onBlur={(event) => {
 							if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -176,53 +179,50 @@ export function AnswerKeyGrid({
 							<Input
 								value={item.stem}
 								aria-label="Nội dung câu hỏi phía học viên"
-								onChange={(event) => update(index, { stem: event.target.value })}
+								onChange={(event) =>
+									update(index, { stem: event.target.value })
+								}
 							/>
-							{(kind === "mcq4" || kind === "mcq3") && (
+							{mcqChoices && mcqChoices.length > 0 && (
 								<div className="grid gap-2 pt-1 sm:grid-cols-2">
-									{(item.opts ?? choices!.map(() => "")).map(
-										(option, optionIndex) => (
-											<Input
-												key={optionIndex}
-												value={option}
-												aria-label={`Lựa chọn ${choices![optionIndex]} câu ${number}`}
-												placeholder={`Lựa chọn ${choices![optionIndex]}`}
-												onChange={(event) =>
-													update(index, {
-														opts: (item.opts ?? choices!.map(() => "")).map(
-															(value, idx) =>
-																idx === optionIndex ? event.target.value : value,
-														),
-													})
-												}
-											/>
-										),
-									)}
+									{options.map((option, optionIndex) => (
+										<Input
+											key={optionIndex}
+											value={option}
+											aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
+											placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
+											onChange={(event) =>
+												update(index, {
+													opts: options.map((value, idx) =>
+														idx === optionIndex ? event.target.value : value,
+													),
+												})
+											}
+										/>
+									))}
 								</div>
 							)}
 						</div>
 						<div className="flex flex-col gap-1">
 							{choices && kind !== "text" ? (
-								<div role="group" aria-label={`Đáp án câu ${number}`}>
-									<div className="flex flex-wrap gap-1.5">
-										{choices.map((choice) => (
-											<button
-												type="button"
-												key={choice}
-												aria-pressed={item.answer === choice}
-												aria-label={`Câu ${number}: ${choice}`}
-												onClick={() => update(index, { answer: choice })}
-												className={cn(
-													"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
-													item.answer === choice
-														? "border-fg bg-fg text-bg"
-														: "border-line bg-bg text-fg-2 hover:border-fg",
-												)}
-											>
-												{choice}
-											</button>
-										))}
-									</div>
+								<div className="flex flex-wrap gap-1.5">
+									{choices.map((choice) => (
+										<button
+											type="button"
+											key={choice}
+											aria-pressed={item.answer === choice}
+											aria-label={`Câu ${number}: ${choice}`}
+											onClick={() => update(index, { answer: choice })}
+											className={cn(
+												"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
+												item.answer === choice
+													? "border-fg bg-fg text-bg"
+													: "border-line bg-bg text-fg-2 hover:border-fg",
+											)}
+										>
+											{choice}
+										</button>
+									))}
 								</div>
 							) : (
 								<>
@@ -266,9 +266,9 @@ export function AnswerKeyGrid({
 								))}
 							</div>
 						)}
-					</div>
+					</fieldset>
 				);
 			})}
-		</div>
+		</section>
 	);
 }

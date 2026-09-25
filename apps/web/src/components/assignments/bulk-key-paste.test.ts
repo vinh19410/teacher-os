@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { answerChoices, emptyItem, kindOf } from "./assignment-presets";
+import { emptyItem, kindOf } from "./assignment-presets";
 import { applyBulkKeyPaste, PASTE_LINE_PATTERN } from "./bulk-key-paste";
 
 function items(typeId: string, count: number) {
@@ -114,10 +114,11 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(result.appliedCount).toBe(0);
 		expect(result.items[0].answer).toBe("");
 		expect(result.errors).toHaveLength(1);
-		expect(result.errors[0]).toMatchObject({ line: 1, reason: "invalid-choice" });
-		expect(result.errors[0].message).toContain(
-			answerChoices("tfng")!.join(", "),
-		);
+		expect(result.errors[0]).toMatchObject({
+			line: 1,
+			reason: "invalid-choice",
+		});
+		expect(result.errors[0].message).toContain("TRUE, FALSE, NOT GIVEN");
 	});
 
 	test("blank lines are ignored, not reported", () => {

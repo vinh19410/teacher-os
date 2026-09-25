@@ -1,15 +1,12 @@
 import { describe, expect, test } from "vitest";
 
-import {
-	emptyComposer,
-	emptyItem,
-} from "./assignment-presets";
-import type { ComposerValue } from "./prompt-composer";
+import { emptyComposer, emptyItem } from "./assignment-presets";
 import {
 	applyComposerFieldChange,
 	hasAuthoringContent,
 	structuralChangeKind,
 } from "./composer-transitions";
+import type { ComposerValue } from "./prompt-composer";
 
 function composer(overrides: Partial<ComposerValue> = {}): ComposerValue {
 	return {
@@ -56,7 +53,9 @@ describe("structuralChangeKind (FR5 confirm gate)", () => {
 	});
 
 	test("returns null when ChipFilter re-fires the already-selected option", () => {
-		expect(structuralChangeKind(authored, { part: "p1", type: "tfng" })).toBeNull();
+		expect(
+			structuralChangeKind(authored, { part: "p1", type: "tfng" }),
+		).toBeNull();
 		expect(
 			structuralChangeKind(authored, {
 				skill: "reading",
@@ -67,29 +66,49 @@ describe("structuralChangeKind (FR5 confirm gate)", () => {
 	});
 
 	test("classifies part and type changes; skill outranks part", () => {
-		expect(structuralChangeKind(authored, { part: "p2", type: "headings" })).toBe("part");
+		expect(
+			structuralChangeKind(authored, { part: "p2", type: "headings" }),
+		).toBe("part");
 		expect(structuralChangeKind(authored, { type: "sent" })).toBe("type");
 		expect(
-			structuralChangeKind(authored, { skill: "listening", part: "s1", type: "form" }),
+			structuralChangeKind(authored, {
+				skill: "listening",
+				part: "s1",
+				type: "form",
+			}),
 		).toBe("skill");
 	});
 });
 
 describe("hasAuthoringContent (FR5 confirm gate)", () => {
 	test("bare meta fields (title/source/band/note) do not require a confirm", () => {
-		expect(hasAuthoringContent(composer({ title: "Đề 1", source: "Cam" }))).toBe(false);
+		expect(
+			hasAuthoringContent(composer({ title: "Đề 1", source: "Cam" })),
+		).toBe(false);
 		expect(hasAuthoringContent(composer({ note: "ghi chú" }))).toBe(false);
 	});
 
 	test("items, passage, prompt, intro, transcript and cue content do", () => {
-		expect(hasAuthoringContent(composer({ items: [{ stem: "s", answer: "", opts: null, alts: "" }] }))).toBe(true);
-		expect(hasAuthoringContent(composer({ items: [{ stem: "", answer: "A", opts: null, alts: "" }] }))).toBe(true);
+		expect(
+			hasAuthoringContent(
+				composer({ items: [{ stem: "s", answer: "", opts: null, alts: "" }] }),
+			),
+		).toBe(true);
+		expect(
+			hasAuthoringContent(
+				composer({ items: [{ stem: "", answer: "A", opts: null, alts: "" }] }),
+			),
+		).toBe(true);
 		expect(hasAuthoringContent(composer({ passage: "text" }))).toBe(true);
 		expect(hasAuthoringContent(composer({ prompt: "text" }))).toBe(true);
-		expect(hasAuthoringContent(composer({ intro: "Questions 1–3" }))).toBe(true);
+		expect(hasAuthoringContent(composer({ intro: "Questions 1–3" }))).toBe(
+			true,
+		);
 		expect(hasAuthoringContent(composer({ transcript: "W: …" }))).toBe(true);
 		expect(hasAuthoringContent(composer({ cueTopic: "A place" }))).toBe(true);
-		expect(hasAuthoringContent(composer({ cuePoints: "You should say…" }))).toBe(true);
+		expect(
+			hasAuthoringContent(composer({ cuePoints: "You should say…" })),
+		).toBe(true);
 		expect(hasAuthoringContent(composer())).toBe(false);
 	});
 });
@@ -101,10 +120,15 @@ describe("applyComposerFieldChange — carry-over rules (FR5)", () => {
 			transcript: "Note: transcript carries over within one skill",
 			items: [{ stem: "First", answer: "TRUE", opts: null, alts: "" }],
 		});
-		const next = applyComposerFieldChange(reading, { part: "p2", type: "headings" });
+		const next = applyComposerFieldChange(reading, {
+			part: "p2",
+			type: "headings",
+		});
 		expect(next.part).toBe("p2");
 		expect(next.type).toBe("headings");
-		expect(next.transcript).toBe("Note: transcript carries over within one skill");
+		expect(next.transcript).toBe(
+			"Note: transcript carries over within one skill",
+		);
 		expect(next.intro).toBe("");
 		expect(next.items).toEqual([emptyItem("headings")]);
 	});
@@ -159,7 +183,10 @@ describe("applyComposerFieldChange — carry-over rules (FR5)", () => {
 	});
 
 	test("ChipFilter re-fire for the same option is a plain merge — nothing is wiped (#269 guard)", () => {
-		const next = applyComposerFieldChange(authored, { part: "p1", type: "tfng" });
+		const next = applyComposerFieldChange(authored, {
+			part: "p1",
+			type: "tfng",
+		});
 		expect(next).toEqual(authored);
 	});
 

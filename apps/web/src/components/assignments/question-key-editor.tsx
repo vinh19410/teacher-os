@@ -1,23 +1,18 @@
-import { useState } from "react";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
-import {
-	type BulkKeyPasteLineError,
-	applyBulkKeyPaste,
-} from "./bulk-key-paste";
+import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
-	kindOf,
 	type QuestionItem,
 	qStartOf,
 	TYPE_HINTS,
 } from "./assignment-presets";
 import {
-	AnswerKeyGrid,
-	QUESTION_MAX_COUNT,
-} from "./answer-key-grid";
+	applyBulkKeyPaste,
+	type BulkKeyPasteLineError,
+} from "./bulk-key-paste";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
@@ -47,7 +42,6 @@ export function QuestionKeyEditor({
 	/** Pre-gated by the composer: only set when showErrors is on. */
 	imageUrlError?: string;
 }) {
-	const kind = kindOf(typeId);
 	const qStart = qStartOf(skill, partId);
 	// Guarded by skill too — a drifted draft must not surface the URL field
 	// for a non-reading skill where no validation gate pairs with it (#269).
@@ -67,12 +61,6 @@ export function QuestionKeyEditor({
 		errors: BulkKeyPasteLineError[];
 		appliedCount: number;
 	} | null>(null);
-	const update = (index: number, patch: Partial<QuestionItem>) => {
-		const next = items.map((item, itemIndex) =>
-			itemIndex === index ? { ...item, ...patch } : item,
-		);
-		onItemsChange(next);
-	};
 	const addQuestion = () => {
 		if (atMax) return false;
 		onItemsChange([...items, emptyItem(typeId)]);
@@ -214,8 +202,7 @@ export function QuestionKeyEditor({
 			<p className="text-right font-mono text-[11px] text-meta">
 				{items
 					.map(
-						(item, index) =>
-							`${qStart + index} ${item.answer.trim() || "—"}`,
+						(item, index) => `${qStart + index} ${item.answer.trim() || "—"}`,
 					)
 					.join(" · ")}
 			</p>
@@ -238,10 +225,7 @@ export function BulkKeyPastePanel({
 	onApply: () => void;
 	onClose: () => void;
 }) {
-	const totalLines = value
-		.split(/\r?\n/)
-		.filter((line) => line.trim())
-		.length;
+	const totalLines = value.split(/\r?\n/).filter((line) => line.trim()).length;
 	return (
 		<div
 			role="dialog"
@@ -250,10 +234,9 @@ export function BulkKeyPastePanel({
 		>
 			<p className="text-muted-fg text-xs">
 				Mỗi dòng: <code>1. TRUE</code> hoặc{" "}
-				<code>3. câu lệnh / alt1 / alt2</code>. Dòng số{" "}
-				<code>n</code> ghi vào đúng câu <code>Qn</code> của phần này —
-				dòng sai số hoặc trùng số sẽ được báo riêng, phần hợp lệ vẫn áp
-				dụng.
+				<code>3. câu lệnh / alt1 / alt2</code>. Dòng số <code>n</code> ghi vào
+				đúng câu <code>Qn</code> của phần này — dòng sai số hoặc trùng số sẽ
+				được báo riêng, phần hợp lệ vẫn áp dụng.
 			</p>
 			<Textarea
 				value={value}
@@ -265,8 +248,8 @@ export function BulkKeyPastePanel({
 			{errors.length > 0 && (
 				<div role="alert" className="flex flex-col gap-1">
 					<p className="text-danger text-xs">
-						{appliedCount}/{totalLines} dòng đã áp dụng — {errors.length}{" "}
-						dòng cần sửa:
+						{appliedCount}/{totalLines} dòng đã áp dụng — {errors.length} dòng
+						cần sửa:
 					</p>
 					<ul className="flex flex-col gap-0.5">
 						{errors.map((error) => (

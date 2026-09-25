@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-
-import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import { emptyItem } from "@/components/assignments/assignment-presets";
+import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import {
 	ASSIGNMENT_DRAFT_KEY,
 	ASSIGNMENT_DRAFT_MAX_LENGTH,
@@ -9,8 +8,8 @@ import {
 	ASSIGNMENT_DRAFT_TTL_MS,
 	clearAssignmentDraft,
 	composerDraftHasContent,
-	type StoredAssignmentDraft,
 	readAssignmentDraft,
+	type StoredAssignmentDraft,
 	saveAssignmentDraft,
 } from "./assignment-draft-store";
 
@@ -58,7 +57,9 @@ function composerValue(overrides: Partial<ComposerValue> = {}): ComposerValue {
 	};
 }
 
-function draft(overrides: Partial<StoredAssignmentDraft> = {}): StoredAssignmentDraft {
+function draft(
+	overrides: Partial<StoredAssignmentDraft> = {},
+): StoredAssignmentDraft {
 	return {
 		schemaVersion: ASSIGNMENT_DRAFT_SCHEMA_VERSION,
 		savedAt: Date.now(),
@@ -91,7 +92,9 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 			part: "s1",
 			type: "form",
 			transcript: "W: Good morning…",
-			items: [{ stem: "Name:", answer: "Clarke", opts: null, alts: "Clarke-T" }],
+			items: [
+				{ stem: "Name:", answer: "Clarke", opts: null, alts: "Clarke-T" },
+			],
 		});
 		saveAssignmentDraft({ ...draft(), value, status: "draft" }, store);
 		const read = readAssignmentDraft(store);
@@ -154,7 +157,10 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 		];
 		for (const bad of bads) {
 			store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(bad));
-			expect(readAssignmentDraft(store), JSON.stringify(bad).slice(0, 60)).toBeNull();
+			expect(
+				readAssignmentDraft(store),
+				JSON.stringify(bad).slice(0, 60),
+			).toBeNull();
 		}
 	});
 
@@ -192,11 +198,17 @@ describe("composerDraftHasContent — autosave skip gate (FR6)", () => {
 	});
 
 	test("any authored field or answered item marks the draft worth saving", () => {
-		expect(composerDraftHasContent(composerValue({ title: "Đề 1" }))).toBe(true);
-		expect(composerDraftHasContent(composerValue({ transcript: "W:…" }))).toBe(true);
+		expect(composerDraftHasContent(composerValue({ title: "Đề 1" }))).toBe(
+			true,
+		);
+		expect(composerDraftHasContent(composerValue({ transcript: "W:…" }))).toBe(
+			true,
+		);
 		expect(
 			composerDraftHasContent(
-				composerValue({ items: [{ stem: "s", answer: "TRUE", opts: null, alts: "" }] }),
+				composerValue({
+					items: [{ stem: "s", answer: "TRUE", opts: null, alts: "" }],
+				}),
 			),
 		).toBe(true);
 	});

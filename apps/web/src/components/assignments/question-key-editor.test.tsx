@@ -317,6 +317,6 @@ describe("BulkKeyPastePanel — per-line errors with summary (FR7)", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		expect(html).not.toContain("role=\"alert\"");
+		expect(html).not.toContain('role="alert"');
 	});
 });

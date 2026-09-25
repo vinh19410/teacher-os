@@ -115,7 +115,12 @@ describe("AnswerKeyGrid — three row kinds (phase-01 FR1/FR2/FR4)", () => {
 			skill: "reading",
 			partId: "p1",
 			items: [
-				{ stem: "The lake is in the …… valley.", answer: "northern", opts: null, alts: "north" },
+				{
+					stem: "The lake is in the …… valley.",
+					answer: "northern",
+					opts: null,
+					alts: "north",
+				},
 			],
 		});
 		expect(html).toContain('aria-label="Nội dung câu hỏi phía học viên"');

@@ -35,9 +35,9 @@ vi.mock("@/lib/data-store", () => ({
 	}),
 }));
 
+import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
 import { actionCopyFor, NewAssignmentRoute, previewDraftFrom } from "./new";
-import type { ComposerValue } from "@/components/assignments/prompt-composer";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
 	it("renders design v5 structure with 4 skills and a blank form", () => {
@@ -263,7 +263,10 @@ function stubLocalStorage(initial: Record<string, string> = {}) {
 	return map;
 }
 
-function autosaveDraftJson(title: string, overrides: Record<string, unknown> = {}) {
+function autosaveDraftJson(
+	title: string,
+	overrides: Record<string, unknown> = {},
+) {
 	return JSON.stringify({
 		schemaVersion: 1,
 		savedAt: Date.now(),
@@ -312,7 +315,9 @@ describe("NewAssignmentRoute — autosave draft restore precedence (phase-01 FR6
 	});
 
 	it("preview draft wins: no banner when a preview draft was just consumed", () => {
-		stubLocalStorage({ "assignment-draft": autosaveDraftJson("Autosave Loses") });
+		stubLocalStorage({
+			"assignment-draft": autosaveDraftJson("Autosave Loses"),
+		});
 		draftFixture.value = {
 			task: "task2",
 			genre: "discuss",

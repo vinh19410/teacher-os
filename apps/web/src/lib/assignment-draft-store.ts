@@ -55,7 +55,8 @@ function composerValueShape(value: unknown): value is ComposerValue {
 		"imageUrl",
 		"note",
 	] as const;
-	if (!stringFields.every((field) => typeof v[field] === "string")) return false;
+	if (!stringFields.every((field) => typeof v[field] === "string"))
+		return false;
 	if (!Array.isArray(v.items)) return false;
 	return v.items.every(
 		(item) =>
@@ -77,7 +78,8 @@ function draftShape(value: unknown): value is StoredAssignmentDraft {
 	if (!value || typeof value !== "object") return false;
 	const v = value as Record<string, unknown>;
 	if (v.schemaVersion !== ASSIGNMENT_DRAFT_SCHEMA_VERSION) return false;
-	if (typeof v.savedAt !== "number" || !Number.isFinite(v.savedAt)) return false;
+	if (typeof v.savedAt !== "number" || !Number.isFinite(v.savedAt))
+		return false;
 	if (v.status !== "draft" && v.status !== "ready") return false;
 	return composerValueShape(v.value);
 }
@@ -168,7 +170,6 @@ export function composerDraftHasContent(value: ComposerValue): boolean {
 			item.stem.trim() ||
 			item.answer.trim() ||
 			item.alts.trim() ||
-			JSON.stringify(item.opts ?? blank.opts) !==
-				JSON.stringify(blank.opts),
+			JSON.stringify(item.opts ?? blank.opts) !== JSON.stringify(blank.opts),
 	);
 }
