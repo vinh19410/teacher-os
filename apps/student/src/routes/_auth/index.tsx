@@ -1,6 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
 import { AssignmentList } from "@/components/overview/assignment-list";
@@ -10,7 +11,11 @@ import { GreetingHeader } from "@/components/overview/greeting-header";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
-import { useStudentMe, useStudentOverview } from "@/lib/repos/student";
+import {
+	useAcceptClassEnrollment,
+	useStudentMe,
+	useStudentOverview,
+} from "@/lib/repos/student";
 
 export const Route = createFileRoute("/_auth/")({
 	component: StudentOverviewPage,
@@ -21,7 +26,19 @@ function StudentOverviewPage() {
 	const sessionEmail = session?.data?.user?.email;
 	const meQuery = useStudentMe();
 	const overviewQuery = useStudentOverview();
+	const acceptEnrollmentMutation = useAcceptClassEnrollment();
 	const isLoading = meQuery.isLoading || overviewQuery.isLoading;
+
+	const handleAcceptEnrollment = (enrollmentId: string) => {
+		acceptEnrollmentMutation.mutate(enrollmentId, {
+			onSuccess: () => {
+				toast.success("Đã xác nhận tham gia lớp thành công!");
+			},
+			onError: () => {
+				toast.error("Không thể xác nhận tham gia lớp. Vui lòng thử lại.");
+			},
+		});
+	};
 
 	const dueSoonCount = useMemo(() => {
 		if (!overviewQuery.data?.assignments) return 0;
@@ -96,7 +113,15 @@ function StudentOverviewPage() {
 				) : (
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{overview.classes.map((cls) => (
-							<ClassCard key={cls.id} cls={cls} />
+							<ClassCard
+								key={cls.id}
+								cls={cls}
+								onAccept={handleAcceptEnrollment}
+								accepting={
+									acceptEnrollmentMutation.isPending &&
+									acceptEnrollmentMutation.variables === cls.enrollmentId
+								}
+							/>
 						))}
 					</div>
 				)}

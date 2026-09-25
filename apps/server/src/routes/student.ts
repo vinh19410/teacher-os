@@ -1,6 +1,7 @@
 import {
 	ACCOUNT_ERROR_CODES,
 	DAILY_STUDY_HOUR_OPTIONS,
+	type EnrollmentStatus,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
@@ -32,6 +33,7 @@ import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
+import { activateEnrollment } from "./enrollment-activation";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -139,6 +141,21 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			const contentLength = Number(c.req.header("Content-Length") ?? "0");
 			if (contentLength > 4096) {
 				return c.json({ error: "payload too large" }, 413);
+			}
+		}
+		return next();
+	});
+
+	// CSRF defense cho POST accept enrollment — cùng contract với /onboarding.
+	router.use("/enrollments/*", async (c, next) => {
+		if (c.req.method === "POST") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
 			}
 		}
 		return next();
@@ -440,6 +457,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
 	router.use("/onboarding", requireStudent);
+	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
@@ -461,6 +479,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				sessionsDone: classTable.sessionsDone,
 				sessionsTotal: classTable.sessionsTotal,
 				status: classTable.status,
+				enrollmentId: enrollment.id,
+				enrollmentStatus: enrollment.status,
 			})
 			.from(enrollment)
 			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
@@ -502,6 +522,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					sessionsDone: cls.sessionsDone,
 					sessionsTotal: cls.sessionsTotal,
 					status: cls.status,
+					enrollmentId: cls.enrollmentId,
+					// DB lưu text; lifecycle chỉ ghi 'invited' | 'active' (schema enrollment).
+					enrollmentStatus: cls.enrollmentStatus as EnrollmentStatus,
 					nextSession,
 				};
 			}),
@@ -618,6 +641,41 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json({ error: STUDENT_ERROR_CODES.NOT_LINKED }, 403);
 		}
 		return c.json(buildStudentMe(sessionUser, updated), 200);
+	});
+
+	/**
+	 * POST /api/student/enrollments/:enrollmentId/accept
+	 *
+	 * Học viên xác nhận tham gia lớp: enrollment 'invited' -> 'active' (sinh
+	 * sessionPackage + lessons). Logic dùng chung với nút "Kích hoạt" của
+	 * teacher nằm ở enrollment-activation.ts (idempotent, CAS).
+	 * Scope: enrollment phải thuộc về chính học viên này trong org đang chọn —
+	 * student không thể kích hoạt enrollment của học viên khác.
+	 */
+	router.post("/enrollments/:enrollmentId/accept", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+		const enrollmentId = c.req.param("enrollmentId");
+
+		const [owned] = await db
+			.select({ studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
+		if (!owned || owned.studentId !== s.id) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+
+		const result = await activateEnrollment(db, orgId, enrollmentId);
+		if (result.ok) {
+			return c.json({ ok: true });
+		}
+		return c.json(
+			{
+				error:
+					result.error === "class" ? "class not found" : "enrollment not found",
+			},
+			404,
+		);
 	});
 
 	return router;

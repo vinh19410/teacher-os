@@ -213,6 +213,33 @@ export async function rejectStudentInvitation(
 	return (await res.json()) as { ok: boolean };
 }
 
+export async function acceptClassEnrollment(
+	enrollmentId: string,
+): Promise<{ ok: boolean }> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/enrollments/${encodeURIComponent(enrollmentId)}/accept`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		const data = (await res.json().catch(() => ({}))) as {
+			error?: string;
+			code?: string;
+		};
+		throw new HttpError(
+			res.status,
+			data.error || `Failed to accept enrollment: ${res.status}`,
+			{ code: data.code },
+		);
+	}
+
+	return (await res.json()) as { ok: boolean };
+}
+
 export async function fetchStudentOrgs(): Promise<StudentOrgItem[]> {
 	const res = await fetch(`${getApiBaseUrl()}/api/student/orgs`, {
 		method: "GET",
@@ -304,6 +331,16 @@ export function useSubmitOnboarding() {
 		mutationFn: submitOnboarding,
 		onSuccess: (data) => {
 			queryClient.setQueryData(["student", "me"], data);
+			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
+		},
+	});
+}
+
+export function useAcceptClassEnrollment() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: acceptClassEnrollment,
+		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
 		},
 	});

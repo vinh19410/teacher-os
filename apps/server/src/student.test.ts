@@ -853,4 +853,199 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(me.student.dailyStudyHours).toBeNull();
 		});
 	});
+
+	describe("POST /api/student/enrollments/:enrollmentId/accept (student activates own class enrollment)", () => {
+		beforeAll(async () => {
+			// Học viên khác cùng org — enrollment của bạn ấy phải không thể kích hoạt bởi student-1.
+			await libsql.insert(schema.student).values({
+				id: "student-2",
+				orgId: "org-1",
+				name: "Lan Nguyen",
+				email: "lan@gmail.com",
+				phone: "0909999999",
+			});
+			await libsql.insert(schema.classTable).values({
+				id: "class-inv",
+				orgId: "org-1",
+				name: "IELTS Sprint",
+				level: "Band 6.0",
+				mode: "Online",
+				schedule: JSON.stringify({
+					days: [0, 2],
+					start: "18:00",
+					end: "19:30",
+				}),
+				sessionsDone: 0,
+				sessionsTotal: 4,
+				status: "active",
+				startDate: "2099-01-04",
+			});
+			await libsql.insert(schema.enrollment).values([
+				{
+					id: "enr-inv",
+					orgId: "org-1",
+					classId: "class-inv",
+					studentId: "student-1",
+					status: "invited",
+				},
+				{
+					id: "enr-inv-2",
+					orgId: "org-1",
+					classId: "class-inv",
+					studentId: "student-2",
+					status: "invited",
+				},
+			]);
+		});
+
+		test("overview exposes enrollmentId and enrollmentStatus per class", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			const invited = overview.classes.find((c) => c.id === "class-inv");
+			expect(invited?.enrollmentId).toBe("enr-inv");
+			expect(invited?.enrollmentStatus).toBe("invited");
+			const active = overview.classes.find((c) => c.id === "class-1");
+			expect(active?.enrollmentId).toBe("enr-1");
+			expect(active?.enrollmentStatus).toBe("active");
+		});
+
+		test("student accepts own invited enrollment: flips to active and generates package + lessons", async () => {
+			const res = await app.request("/api/student/enrollments/enr-inv/accept", {
+				method: "POST",
+				headers: {
+					"x-test-user": "google-verified",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+			});
+			expect(res.status).toBe(200);
+			expect(await res.json()).toEqual({ ok: true });
+
+			const [row] = await libsql
+				.select()
+				.from(schema.enrollment)
+				.where(eq(schema.enrollment.id, "enr-inv"));
+			expect(row?.status).toBe("active");
+
+			const [pkg] = await libsql
+				.select()
+				.from(schema.sessionPackage)
+				.where(eq(schema.sessionPackage.enrollmentId, "enr-inv"));
+			expect(pkg).toBeDefined();
+			expect(pkg?.total).toBe(4);
+			expect(pkg?.status).toBe("active");
+
+			const lessons = await libsql
+				.select({ id: schema.lesson.id })
+				.from(schema.lesson)
+				.where(eq(schema.lesson.enrollmentId, "enr-inv"));
+			expect(lessons).toHaveLength(4);
+		});
+
+		test("idempotent: second accept returns 200 without duplicating package or lessons", async () => {
+			const res = await app.request("/api/student/enrollments/enr-inv/accept", {
+				method: "POST",
+				headers: {
+					"x-test-user": "google-verified",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+			});
+			expect(res.status).toBe(200);
+
+			const [pkgCount] = await libsql
+				.select({ count: count() })
+				.from(schema.sessionPackage)
+				.where(eq(schema.sessionPackage.enrollmentId, "enr-inv"));
+			expect(pkgCount?.count).toBe(1);
+			const [lessonCount] = await libsql
+				.select({ count: count() })
+				.from(schema.lesson)
+				.where(eq(schema.lesson.enrollmentId, "enr-inv"));
+			expect(lessonCount?.count).toBe(4);
+		});
+
+		test("cannot activate another student's enrollment: 404 and status untouched", async () => {
+			const res = await app.request(
+				"/api/student/enrollments/enr-inv-2/accept",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "google-verified",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			expect(res.status).toBe(404);
+			const [row] = await libsql
+				.select()
+				.from(schema.enrollment)
+				.where(eq(schema.enrollment.id, "enr-inv-2"));
+			expect(row?.status).toBe("invited");
+		});
+
+		test("unknown enrollment id returns 404", async () => {
+			const res = await app.request(
+				"/api/student/enrollments/enr-does-not-exist/accept",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "google-verified",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			expect(res.status).toBe(404);
+		});
+
+		test("CSRF guard: missing origin 403, wrong content-type 415", async () => {
+			const res1 = await app.request(
+				"/api/student/enrollments/enr-inv-2/accept",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "google-verified",
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			expect(res1.status).toBe(403);
+			expect((await res1.json()) as { error: string }).toEqual({
+				error: "origin not allowed",
+			});
+
+			const res2 = await app.request(
+				"/api/student/enrollments/enr-inv-2/accept",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "google-verified",
+						Origin: "http://localhost:8003",
+						"Content-Type": "text/plain",
+					},
+				},
+			);
+			expect(res2.status).toBe(415);
+		});
+
+		test("teacher-role session is rejected by the student role gate", async () => {
+			const res = await app.request(
+				"/api/student/enrollments/enr-inv-2/accept",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "teacher",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			expect(res.status).toBe(403);
+		});
+	});
 });

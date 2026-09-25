@@ -30,6 +30,8 @@ describe("ClassCard", () => {
 			sessionsDone: 8,
 			sessionsTotal: 24,
 			status: "active",
+			enrollmentId: "enr-1",
+			enrollmentStatus: "active",
 			nextSession: {
 				date: "2099-01-05",
 				time: "18:30",
@@ -57,6 +59,8 @@ describe("ClassCard", () => {
 			sessionsDone: 10,
 			sessionsTotal: 10,
 			status: "active",
+			enrollmentId: "enr-2",
+			enrollmentStatus: "active",
 			nextSession: null,
 		};
 
@@ -75,6 +79,8 @@ describe("ClassCard", () => {
 			sessionsDone: 0,
 			sessionsTotal: 26,
 			status: "active",
+			enrollmentId: "enr-3",
+			enrollmentStatus: "active",
 			nextSession: null,
 		};
 
@@ -82,6 +88,29 @@ describe("ClassCard", () => {
 		expect(html).toContain("[TEST] Foundation 2");
 		expect(html).not.toContain('{"days"');
 		expect(html).toContain("T2 &amp; T4 &amp; T6 · 19:00–20:30");
+	});
+
+	it("renders pending-activation state with join button for invited enrollment", () => {
+		const cls: StudentClass = {
+			id: "c4",
+			name: "IELTS Foundation",
+			level: "Band 5.0",
+			mode: "Online",
+			schedule: "T2 & T5 · 18:30–20:00",
+			sessionsDone: 0,
+			sessionsTotal: 20,
+			status: "active",
+			enrollmentId: "enr-inv",
+			enrollmentStatus: "invited",
+			nextSession: null,
+		};
+
+		const html = renderToStaticMarkup(<ClassCard cls={cls} />);
+		expect(html).toContain("Chờ kích hoạt");
+		expect(html).toContain("Tham gia lớp");
+		expect(html).toContain("Giáo viên đã mời bạn vào lớp");
+		// Chưa kích hoạt thì không hiển thị tiến độ khóa học
+		expect(html).not.toContain("Tiến độ khóa học");
 	});
 });
 

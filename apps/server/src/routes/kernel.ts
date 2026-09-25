@@ -29,11 +29,7 @@ import {
 	workspaceSettingsSchema,
 	workspaceSettingsUpdateSchema,
 } from "@teacher-os/api/contracts";
-import {
-	parseStartDateStrict,
-	parseStoredSchedule,
-	skeletonOf,
-} from "@teacher-os/api/skeleton";
+import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -46,7 +42,6 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
-import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { workspaceSettings } from "@teacher-os/db/schema/settings";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
@@ -62,73 +57,16 @@ import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
+import { activateEnrollment } from "./enrollment-activation";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 
+// Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
+// chuyển sang enrollment-activation.ts.
+export { generateScheduleLessons } from "./enrollment-activation";
+
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type KernelContext = Context<Env>;
-
-function toMinutes(hhmm: string): number {
-	// TIME_REGEX guarantees exactly two numeric parts.
-	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
-	return hours * 60 + minutes;
-}
-
-/**
- * Expand a class's structured schedule into `sessionsTotal` upcoming lesson
- * rows for one enrollment (issue #55). Schedule/date parsing lives in
- * @teacher-os/api/skeleton — the same helpers the backfill uses, so a
- * generated row's date always matches what the backfill would have stamped.
- * Fails closed for legacy/invalid schedules (no rows at all, unchanged from
- * before #98). Rows carry weekday plus the occurrence identity `date`
- * (yyyy-mm-dd of the k-th occurrence of that weekday from startDate) so every
- * row is born dated when the class inputs are truthful; an invalid startDate
- * yields date:null rows and the class stays on the frozen legacy path. day is
- * 1-7 with 1 = Monday, the schedule JSON is 0-6 with 0 = Monday, hence the +1
- * — never JS getDay() (0 = Sunday). dur wraps midnight (23:00→00:30 = 90).
- */
-export function generateScheduleLessons(input: {
-	schedule: string;
-	startDate: string;
-	sessionsTotal: number;
-	orgId: string;
-	classId: string;
-	enrollmentId: string;
-}): Array<Omit<typeof lesson.$inferInsert, "id" | "createdAt">> {
-	const parsed = parseStoredSchedule(input.schedule);
-	if (!parsed || input.sessionsTotal <= 0) return [];
-	const startISO = parseStartDateStrict(input.startDate);
-	// Skeleton keys are lesson weekdays 1-7; parsed.days are 0-6 Mon-first.
-	const skeleton =
-		parsed && startISO
-			? skeletonOf(parsed, startISO, input.sessionsTotal)
-			: null;
-	const dur = (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
-	const ordinalByDay = new Map<number, number>();
-	return Array.from({ length: input.sessionsTotal }, (_, i) => {
-		const day = (parsed.days[i % parsed.days.length] ?? 0) + 1;
-		let date: string | null = null;
-		if (skeleton) {
-			const ordinal = ordinalByDay.get(day) ?? 0;
-			date = skeleton.get(day)?.[ordinal] ?? null;
-			ordinalByDay.set(day, ordinal + 1);
-		}
-		return {
-			orgId: input.orgId,
-			classId: input.classId,
-			enrollmentId: input.enrollmentId,
-			// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
-			day,
-			time: parsed.start,
-			dur,
-			type: "1:1",
-			status: "upcoming",
-			topic: "",
-			zoom: "",
-			date,
-		};
-	});
-}
 
 export function kernelRoutes(deps: {
 	getDb(): Db;
@@ -703,15 +641,10 @@ export function kernelRoutes(deps: {
 	/**
 	 * POST /api/enrollments/:enrollmentId/accept
 	 *
-	 * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage + lessons trong một atomic batch.
-	 * 1 endpoint, 2 caller: nút "Kích hoạt" của teacher trên roster admin và student portal (sau này).
-	 *
-	 * Idempotent qua CAS UPDATE:
-	 * - Nếu status đã là 'active', trả 200 idempotent không tạo thêm package/lessons.
-	 * - Hai request song song: chỉ một request UPDATE thành công (rows affected = 1) và insert;
-	 *   request còn lại rows affected = 0 -> re-read thấy 'active' -> trả 200.
-	 * - Bắt unique-violation của session_package_enrollment_uq phòng ngừa race condition -> trả 200 nếu active.
-	 * - Trả 404 nếu không tìm thấy enrollment trong org.
+	 * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage + lessons.
+	 * 1 endpoint, 2 caller: nút "Kích hoạt" của teacher trên roster admin và nút
+	 * "Tham gia lớp" của student portal (POST /api/student/enrollments/:id/accept).
+	 * Logic dùng chung (idempotent, CAS) nằm ở enrollment-activation.ts.
 	 */
 	kernel.post("/enrollments/:enrollmentId/accept", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -719,107 +652,17 @@ export function kernelRoutes(deps: {
 		const db = deps.getDb();
 		const enrollmentId = c.req.param("enrollmentId");
 
-		// Pre-read: kiểm tra tồn tại và org-scoping
-		const [existingEnrollment] = await db
-			.select({
-				id: enrollment.id,
-				classId: enrollment.classId,
-				studentId: enrollment.studentId,
-				status: enrollment.status,
-			})
-			.from(enrollment)
-			.where(
-				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
-			);
-		if (!existingEnrollment) {
-			return c.json({ error: "enrollment not found" }, 404);
-		}
-		if (existingEnrollment.status === "active") {
+		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
+		if (result.ok) {
 			return c.json({ ok: true });
 		}
-
-		const cls = await findClass(db, existingEnrollment.classId, ctx.orgId);
-		if (!cls) {
-			return c.json({ error: "class not found" }, 404);
-		}
-
-		try {
-			// CAS update: chỉ flip nếu status vẫn là 'invited'
-			const updated = await db
-				.update(enrollment)
-				.set({ status: "active" })
-				.where(
-					and(
-						eq(enrollment.id, enrollmentId),
-						eq(enrollment.orgId, ctx.orgId),
-						eq(enrollment.status, "invited"),
-					),
-				)
-				.returning({ id: enrollment.id });
-
-			if (updated.length === 0) {
-				// Đã bị kích hoạt bởi request đồng thời khác
-				const [recheck] = await db
-					.select({ status: enrollment.status })
-					.from(enrollment)
-					.where(
-						and(
-							eq(enrollment.id, enrollmentId),
-							eq(enrollment.orgId, ctx.orgId),
-						),
-					);
-				if (recheck?.status === "active") {
-					return c.json({ ok: true });
-				}
-				return c.json({ error: "enrollment not found" }, 404);
-			}
-
-			// Won CAS: sinh session package + chuỗi buổi học trong 1 batch
-			const packageValues = {
-				orgId: ctx.orgId,
-				studentId: existingEnrollment.studentId,
-				total: cls.sessionsTotal,
-				price: cls.tuitionFee ?? 0,
-				mode: cls.mode,
-				start: formatDayMonth(new Date()),
-				expiry: "",
-				status: "active",
-				enrollmentId,
-			};
-
-			const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-				db.insert(sessionPackage).values({
-					id: crypto.randomUUID(),
-					...packageValues,
-				}),
-			];
-			for (const row of generateScheduleLessons({
-				schedule: cls.schedule,
-				startDate: cls.startDate,
-				sessionsTotal: cls.sessionsTotal,
-				orgId: ctx.orgId,
-				classId: cls.id,
-				enrollmentId,
-			})) {
-				statements.push(
-					db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
-				);
-			}
-			await db.batch(statements);
-			return c.json({ ok: true });
-		} catch (err: unknown) {
-			// Phòng vệ unique constraint nếu có race còn sót
-			const [recheck] = await db
-				.select({ status: enrollment.status })
-				.from(enrollment)
-				.where(
-					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
-				);
-			if (recheck?.status === "active") {
-				return c.json({ ok: true });
-			}
-			throw err;
-		}
+		return c.json(
+			{
+				error:
+					result.error === "class" ? "class not found" : "enrollment not found",
+			},
+			404,
+		);
 	});
 
 	/**
@@ -2279,14 +2122,4 @@ export function kernelRoutes(deps: {
 	kernel.route("/comment-bank", commentBankRoutes(deps));
 
 	return kernel;
-}
-
-// dd/MM in Vietnam time — Workers run in UTC, so local getters drift a day
-// before 07:00 Asia/Ho_Chi_Minh.
-function formatDayMonth(date: Date): string {
-	return new Intl.DateTimeFormat("en-GB", {
-		timeZone: "Asia/Ho_Chi_Minh",
-		day: "2-digit",
-		month: "2-digit",
-	}).format(date);
 }

@@ -1039,6 +1039,14 @@ export const studentClassSchema = z.object({
 	sessionsTotal: z.number().int(),
 	status: z.string(),
 	nextSession: studentNextSessionSchema.nullable(),
+	/**
+	 * Enrollment của học viên trong lớp này. 'invited' = giáo viên đã thêm vào
+	 * lớp nhưng học viên chưa xác nhận (issue #264): portal hiển thị trạng thái
+	 * chờ kích hoạt và gọi POST /api/student/enrollments/:enrollmentId/accept.
+	 * `.catch` fallback giữ hành vi "đang học" khi server cũ chưa trả field.
+	 */
+	enrollmentId: z.string().catch(""),
+	enrollmentStatus: z.enum(ENROLLMENT_STATUSES).catch("active"),
 });
 export type StudentClass = z.infer<typeof studentClassSchema>;
 
