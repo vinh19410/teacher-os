@@ -33,6 +33,13 @@ export const assignmentPrompt = sqliteTable(
 		audioName: text("audio_name").notNull().default(""),
 		imageUrl: text("image_url").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
+		/**
+		 * Ngân hàng lựa chọn có cấu trúc cho các dạng matching + listening map
+		 * (phase-02 FR1): JSON array of strings, `[]` = không có bank (đề cũ).
+		 * Contracts cap 8 mục (`ASSIGNMENT_OPTION_BANK_MAX`) — nhãn chỉ có
+		 * 8 giá trị (A–H / i–viii).
+		 */
+		optionBank: text("option_bank").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
