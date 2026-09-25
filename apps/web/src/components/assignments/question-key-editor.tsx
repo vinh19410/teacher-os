@@ -1,15 +1,25 @@
+import { useState } from "react";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import {
-	answerChoices,
+	type BulkKeyPasteLineError,
+	applyBulkKeyPaste,
+} from "./bulk-key-paste";
+import {
 	emptyItem,
 	kindOf,
 	type QuestionItem,
 	qStartOf,
 	TYPE_HINTS,
 } from "./assignment-presets";
+import {
+	AnswerKeyGrid,
+	QUESTION_MAX_COUNT,
+} from "./answer-key-grid";
+
+const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
 export function QuestionKeyEditor({
 	skill,
@@ -38,7 +48,7 @@ export function QuestionKeyEditor({
 	imageUrlError?: string;
 }) {
 	const kind = kindOf(typeId);
-	const choices = answerChoices(kind);
+	const qStart = qStartOf(skill, partId);
 	// Guarded by skill too — a drifted draft must not surface the URL field
 	// for a non-reading skill where no validation gate pairs with it (#269).
 	const isDiagram = skill === "reading" && typeId === "diagram";
@@ -50,11 +60,57 @@ export function QuestionKeyEditor({
 		safeImageUrl.length > 0 &&
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
 	const hint = TYPE_HINTS[typeId];
+	const atMax = items.length >= QUESTION_MAX_COUNT;
+	const [pasteOpen, setPasteOpen] = useState(false);
+	const [pasteRaw, setPasteRaw] = useState("");
+	const [pasteOutcome, setPasteOutcome] = useState<{
+		errors: BulkKeyPasteLineError[];
+		appliedCount: number;
+	} | null>(null);
 	const update = (index: number, patch: Partial<QuestionItem>) => {
 		const next = items.map((item, itemIndex) =>
 			itemIndex === index ? { ...item, ...patch } : item,
 		);
 		onItemsChange(next);
+	};
+	const addQuestion = () => {
+		if (atMax) return false;
+		onItemsChange([...items, emptyItem(typeId)]);
+		return true;
+	};
+	const insertPresetIntro = () => {
+		if (!hint) return;
+		if (!intro.trim() || KNOWN_HINTS.has(intro.trim())) {
+			onIntroChange(hint);
+			return;
+		}
+		// Custom teacher text: never overwrite silently.
+		if (window.confirm("Thay câu lệnh hiện tại bằng câu lệnh chuẩn?")) {
+			onIntroChange(hint);
+		}
+	};
+	const applyPaste = () => {
+		const outcome = applyBulkKeyPaste({
+			raw: pasteRaw,
+			typeId,
+			qStart,
+			items,
+		});
+		onItemsChange(outcome.items);
+		if (outcome.errors.length > 0) {
+			setPasteOutcome({
+				errors: outcome.errors,
+				appliedCount: outcome.appliedCount,
+			});
+			return;
+		}
+		setPasteOpen(false);
+		setPasteRaw("");
+		setPasteOutcome(null);
+	};
+	const closePaste = () => {
+		setPasteOpen(false);
+		setPasteOutcome(null);
 	};
 	return (
 		<div className="flex flex-col gap-4 rounded-md border border-line bg-bg p-4">
@@ -66,6 +122,15 @@ export function QuestionKeyEditor({
 					Đáp án đúng chỉ dùng để chấm tự động; học viên không thấy.
 				</p>
 			</div>
+			{hint && (
+				<button
+					type="button"
+					onClick={insertPresetIntro}
+					className="self-start rounded-full border border-line bg-bg px-[14px] py-[6px] font-medium text-xs transition-all hover:border-fg"
+				>
+					Chèn câu lệnh chuẩn
+				</button>
+			)}
 			<Field label="Hướng dẫn đề">
 				<Textarea
 					value={intro}
@@ -99,126 +164,127 @@ export function QuestionKeyEditor({
 					)}
 				</div>
 			)}
-			<div className="flex flex-col gap-3">
-				{items.map((item, index) => (
-					<div
-						key={`${index}-${qStartOf(skill, partId)}`}
-						className="rounded-md border border-line bg-surface p-3"
-					>
-						<div className="mb-3 flex items-center justify-between">
-							<strong className="text-sm">
-								Câu {qStartOf(skill, partId) + index}
-							</strong>
-							{items.length > 1 && (
-								<Button
-									type="button"
-									size="sm"
-									variant="ghost"
-									onClick={() =>
-										onItemsChange(
-											items.filter((_, itemIndex) => itemIndex !== index),
-										)
-									}
-								>
-									Xóa
-								</Button>
-							)}
-						</div>
-						<Field
-							label="Nội dung câu hỏi phía học viên"
-							error={
-								showErrors && !item.stem.trim()
-									? "Nhập nội dung câu hỏi."
-									: undefined
-							}
-						>
-							<Input
-								value={item.stem}
-								onChange={(event) =>
-									update(index, { stem: event.target.value })
-								}
-							/>
-						</Field>
-						{choices && choices.length > 0 && kind !== "text" ? (
-							<div className="mt-3 flex flex-col gap-2">
-								<span className="font-medium text-muted-fg text-xs">
-									Đáp án đúng · học viên không thấy
-								</span>
-								<ChipFilter
-									options={[...choices]}
-									value={item.answer}
-									onChange={(answer) => update(index, { answer })}
-								/>
-								{(kind === "mcq4" || kind === "mcq3") && (
-									<div className="grid gap-2 sm:grid-cols-2">
-										{(item.opts ?? choices.map(() => "")).map(
-											(option, optionIndex) => (
-												<Input
-													key={optionIndex}
-													value={option}
-													placeholder={`Lựa chọn ${choices[optionIndex]}`}
-													onChange={(event) =>
-														update(index, {
-															opts: (item.opts ?? choices.map(() => "")).map(
-																(value, idx) =>
-																	idx === optionIndex
-																		? event.target.value
-																		: value,
-															),
-														})
-													}
-												/>
-											),
-										)}
-									</div>
-								)}
-							</div>
-						) : (
-							<div className="mt-3 grid gap-2 sm:grid-cols-2">
-								<Field
-									label="Đáp án chấm tự động"
-									error={
-										showErrors && !item.answer.trim()
-											? "Khóa đáp án đúng."
-											: undefined
-									}
-								>
-									<Input
-										value={item.answer}
-										placeholder={hint}
-										onChange={(event) =>
-											update(index, { answer: event.target.value })
-										}
-									/>
-								</Field>
-								<Field label="Chấp nhận thêm, cách nhau bằng /">
-									<Input
-										value={item.alts}
-										onChange={(event) =>
-											update(index, { alts: event.target.value })
-										}
-									/>
-								</Field>
-							</div>
-						)}
-					</div>
-				))}
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<span className="font-medium text-muted-fg text-xs">
+					{items.length}/{QUESTION_MAX_COUNT} câu
+				</span>
+				<Button
+					type="button"
+					size="sm"
+					variant="secondary"
+					onClick={() => setPasteOpen(true)}
+				>
+					Thêm key hàng loạt
+				</Button>
 			</div>
-			<Button
-				type="button"
-				variant="secondary"
-				onClick={() => onItemsChange([...items, emptyItem(typeId)])}
-			>
-				Thêm câu
-			</Button>
+			{pasteOpen && (
+				<BulkKeyPastePanel
+					value={pasteRaw}
+					onValueChange={setPasteRaw}
+					errors={pasteOutcome?.errors ?? []}
+					appliedCount={pasteOutcome?.appliedCount ?? 0}
+					onApply={applyPaste}
+					onClose={closePaste}
+				/>
+			)}
+			<AnswerKeyGrid
+				typeId={typeId}
+				skill={skill}
+				partId={partId}
+				items={items}
+				showErrors={showErrors}
+				onItemsChange={onItemsChange}
+				onAddQuestion={addQuestion}
+			/>
+			<div className="flex flex-col gap-1">
+				<Button
+					type="button"
+					variant="secondary"
+					onClick={addQuestion}
+					disabled={atMax}
+				>
+					Thêm câu
+				</Button>
+				{atMax && (
+					<p className="text-muted-fg text-xs">
+						Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
+					</p>
+				)}
+			</div>
 			<p className="text-right font-mono text-[11px] text-meta">
 				{items
 					.map(
 						(item, index) =>
-							`${qStartOf(skill, partId) + index} ${item.answer.trim() || "—"}`,
+							`${qStart + index} ${item.answer.trim() || "—"}`,
 					)
 					.join(" · ")}
 			</p>
+		</div>
+	);
+}
+
+export function BulkKeyPastePanel({
+	value,
+	onValueChange,
+	errors,
+	appliedCount,
+	onApply,
+	onClose,
+}: {
+	value: string;
+	onValueChange: (value: string) => void;
+	errors: BulkKeyPasteLineError[];
+	appliedCount: number;
+	onApply: () => void;
+	onClose: () => void;
+}) {
+	const totalLines = value
+		.split(/\r?\n/)
+		.filter((line) => line.trim())
+		.length;
+	return (
+		<div
+			role="dialog"
+			aria-label="Thêm key hàng loạt"
+			className="flex flex-col gap-2 rounded-md border border-line bg-bg p-3"
+		>
+			<p className="text-muted-fg text-xs">
+				Mỗi dòng: <code>1. TRUE</code> hoặc{" "}
+				<code>3. câu lệnh / alt1 / alt2</code>. Dòng số{" "}
+				<code>n</code> ghi vào đúng câu <code>Qn</code> của phần này —
+				dòng sai số hoặc trùng số sẽ được báo riêng, phần hợp lệ vẫn áp
+				dụng.
+			</p>
+			<Textarea
+				value={value}
+				aria-label="Nội dung key dán vào"
+				placeholder={"1. TRUE\n2. FALSE\n3. northern / north"}
+				onChange={(event) => onValueChange(event.target.value)}
+				className="min-h-32 font-mono"
+			/>
+			{errors.length > 0 && (
+				<div role="alert" className="flex flex-col gap-1">
+					<p className="text-danger text-xs">
+						{appliedCount}/{totalLines} dòng đã áp dụng — {errors.length}{" "}
+						dòng cần sửa:
+					</p>
+					<ul className="flex flex-col gap-0.5">
+						{errors.map((error) => (
+							<li key={error.line} className="text-danger text-xs">
+								Dòng {error.line}: {error.message}
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+			<div className="flex gap-2">
+				<Button type="button" size="sm" onClick={onApply}>
+					Áp dụng
+				</Button>
+				<Button type="button" size="sm" variant="ghost" onClick={onClose}>
+					Đóng
+				</Button>
+			</div>
 		</div>
 	);
 }
