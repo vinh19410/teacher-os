@@ -31,6 +31,7 @@ export const assignmentPrompt = sqliteTable(
 		cueTopic: text("cue_topic").notNull().default(""),
 		cuePoints: text("cue_points").notNull().default(""),
 		audioName: text("audio_name").notNull().default(""),
+		imageUrl: text("image_url").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"

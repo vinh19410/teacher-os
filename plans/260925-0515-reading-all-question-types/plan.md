@@ -1,7 +1,7 @@
 ---
 title: "Reading: đủ 14 dạng câu hỏi IELTS cho flow tạo bài tập"
 description: "Thêm 8 dạng Reading còn thiếu (matching features/sentence endings, summary/note/table/flow-chart completion, diagram label, short-answer) vào contracts, UI soạn đề, preview và tests — đủ bộ 14 dạng chính thức."
-status: pending
+status: completed
 priority: P1
 effort: 12h
 issue: 269
@@ -41,9 +41,9 @@ Phân bổ 8 dạng mới theo part (5/5/4), id không đụng id skills khác:
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Contracts & Storage](./phase-01-contracts-storage.md) | Pending |
-| 2 | [Web Catalog & Editor](./phase-02-web-catalog-editor.md) | Pending |
-| 3 | [Preview, Bank Surfaces, E2E & Docs](./phase-03-preview-e2e-docs.md) | Pending |
+| 1 | [Contracts & Storage](./phase-01-contracts-storage.md) | Done |
+| 2 | [Web Catalog & Editor](./phase-02-web-catalog-editor.md) | Done |
+| 3 | [Preview, Bank Surfaces, E2E & Docs](./phase-03-preview-e2e-docs.md) | Done |
 
 ## Out of Scope (non-goals)
 

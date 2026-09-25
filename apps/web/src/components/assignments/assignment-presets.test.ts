@@ -1,6 +1,7 @@
 import {
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_SKILLS,
+	answerKindByType,
 } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 
@@ -9,17 +10,19 @@ import {
 	emptyComposer,
 	emptyItem,
 	isAutoSkill,
+	KIND,
 	kindOf,
 	partOf,
 	qStartOf,
 	SKILLS,
 	skillOf,
+	TYPE_HINTS,
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
 
 describe("assignment presets catalog (#218 v5)", () => {
-	test("catalog shape: 4 skills, 12 parts, 29 types total with breakdown per skill", () => {
+	test("catalog shape: 4 skills, 12 parts, 37 types total with breakdown per skill", () => {
 		expect(SKILLS).toHaveLength(4);
 		expect(SKILLS.map((s) => s.id)).toEqual(ASSIGNMENT_SKILLS);
 
@@ -54,13 +57,13 @@ describe("assignment presets catalog (#218 v5)", () => {
 		);
 
 		expect(writingTypes).toBe(8); // task1 (4) + task2 (4)
-		expect(readingTypes).toBe(6); // p1 (2) + p2 (2) + p3 (2)
+		expect(readingTypes).toBe(14); // p1 (5) + p2 (5) + p3 (4) — #269
 		expect(listeningTypes).toBe(8); // s1 (2) + s2 (2) + s3 (2) + s4 (2)
 		expect(speakingTypes).toBe(7); // part1 (2) + part2 (3) + part3 (2)
 
 		const totalTypes =
 			writingTypes + readingTypes + listeningTypes + speakingTypes;
-		expect(totalTypes).toBe(29);
+		expect(totalTypes).toBe(37);
 	});
 
 	test("catalog ids match ASSIGNMENT_PART_TYPES whitelist from @teacher-os/api/contracts", () => {
@@ -92,7 +95,52 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(kindOf("notes")).toBe("text");
 		expect(kindOf("flow")).toBe("text");
 		expect(kindOf("sent4")).toBe("text");
+		expect(kindOf("note")).toBe("text");
+		expect(kindOf("shortans")).toBe("text");
+		expect(kindOf("diagram")).toBe("text");
+		expect(kindOf("summary")).toBe("text");
+		expect(kindOf("tablecomp")).toBe("text");
+		expect(kindOf("flowchart")).toBe("text");
+		expect(kindOf("sentend")).toBe("letter");
+		expect(kindOf("features")).toBe("letter");
 		expect(kindOf("unknown")).toBe("text");
+	});
+
+	test("web KIND stays in sync with the exported server answerKindByType (#269)", () => {
+		const allTypeIds = Object.values(ASSIGNMENT_PART_TYPES).flatMap((config) =>
+			Object.values(config.types).flat(),
+		);
+		expect(allTypeIds.length).toBe(37);
+		for (const typeId of allTypeIds) {
+			// Both sides fall back to text for types without an explicit entry.
+			const serverKind = answerKindByType[typeId] ?? "text";
+			expect(KIND[typeId] ?? "text", typeId).toBe(serverKind);
+		}
+	});
+
+	test("TYPE_HINTS carries official IELTS instructions for the 8 new reading types (#269)", () => {
+		const newIds = [
+			"note",
+			"shortans",
+			"diagram",
+			"summary",
+			"sentend",
+			"tablecomp",
+			"features",
+			"flowchart",
+		];
+		for (const id of newIds) {
+			expect(TYPE_HINTS[id], id).toBeTruthy();
+		}
+		// Word-limit clauses per the official task instructions.
+		expect(TYPE_HINTS.diagram).toContain("MỘT TỪ");
+		expect(TYPE_HINTS.note).toContain("BA TỪ");
+		// Matching banks: the placeholder must tell the teacher to list A–H.
+		expect(TYPE_HINTS.features).toContain("A–H");
+		expect(TYPE_HINTS.sentend).toContain("A–H");
+		// Existing types keep their current (empty) placeholder behavior.
+		expect(TYPE_HINTS.tfng).toBeUndefined();
+		expect(TYPE_HINTS.sent).toBeUndefined();
 	});
 
 	test("qStartOf calculates question start numbers by skill and part", () => {
@@ -166,6 +214,7 @@ describe("assignment presets catalog (#218 v5)", () => {
 					expect(blank.cueTopic).toBe("");
 					expect(blank.cuePoints).toBe("");
 					expect(blank.audioName).toBe("");
+					expect(blank.imageUrl).toBe("");
 					expect(blank.note).toBe("");
 					if (isAutoSkill(skill.id)) {
 						expect(blank.items).toEqual([emptyItem(type.id)]);

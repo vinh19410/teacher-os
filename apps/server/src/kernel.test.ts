@@ -4684,6 +4684,281 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(resMcq.status).toBe(400);
 	});
 
+	test("POST accepts every new reading type id from the 14-type catalog (#269)", async () => {
+		for (const [part, type, answer] of [
+			["p1", "note", "river"],
+			["p1", "shortans", "1800"],
+			["p1", "diagram", "steam"],
+			["p2", "summary", "hot dry air"],
+			["p2", "sentend", "A"],
+			["p2", "tablecomp", "1834"],
+			["p3", "features", "B"],
+			["p3", "flowchart", "tunnelling"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part,
+					type,
+					title: `Reading ${type} — catalog`,
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					questions: [{ stem: "Q1", opts: null, answer, alts: "" }],
+					note: "",
+					status: "draft",
+				},
+			});
+			expect(res.status, `${part}/${type}`).toBe(201);
+		}
+	});
+
+	test("POST rejects answers outside A–H for the new matching types with 400 (#269)", async () => {
+		for (const [part, type] of [
+			["p2", "sentend"],
+			["p3", "features"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part,
+					type,
+					title: `Reading ${type} invalid letter`,
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					questions: [{ stem: "Q1", opts: null, answer: "I", alts: "" }],
+					note: "",
+					status: "ready",
+				},
+			});
+			expect(res.status, `${type} answer "I"`).toBe(400);
+		}
+	});
+
+	test("POST reading diagram ready prompt rejects missing imageUrl with 400 (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — no image",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST reading non-diagram ready prompt needs no imageUrl (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p2",
+				type: "summary",
+				title: "Reading Summary — no image needed",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "hot dry air", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST trims the imageUrl before persistence (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — padded URL",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "  https://example.com/padded.png  ",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.imageUrl).toBe("https://example.com/padded.png");
+	});
+
+	test("POST rejects lowercase letter answers for matching types (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p3",
+				type: "features",
+				title: "Reading Features — lowercase letter",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q29", opts: null, answer: "b", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST rejects non-https imageUrl with 400 (#269)", async () => {
+		for (const imageUrl of [
+			"http://example.com/diagram.png",
+			"javascript:alert(1)",
+			"data:text/html,leak",
+		]) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part: "p1",
+					type: "diagram",
+					title: "Reading Diagram — bad scheme",
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					imageUrl,
+					questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+					note: "",
+					status: "draft",
+				},
+			});
+			expect(res.status, imageUrl).toBe(400);
+		}
+	});
+
+	test("POST reading diagram prompt persists imageUrl through the snapshot (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — with image",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "https://example.com/diagram.png",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.imageUrl).toBe("https://example.com/diagram.png");
+	});
+
+	test("snapshot falls back to empty imageUrl for legacy rows (#269)", async () => {
+		const legacyId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: legacyId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Legacy row without image",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: "[]",
+			note: "",
+			status: "draft",
+		});
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === legacyId,
+		);
+		expect(row?.imageUrl).toBe("");
+	});
+
 	test("snapshot projection safely parses corrupt or 'null' questions without crashing", async () => {
 		const corruptId = crypto.randomUUID();
 		await t.db.insert(schema.assignmentPrompt).values({

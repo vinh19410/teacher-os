@@ -72,6 +72,8 @@ export interface AssignmentPrompt {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	/** Diagram image URL (https-only) — diagram prompts render it (#269). */
+	imageUrl?: string;
 	questions?: AssignmentQuestion[];
 	note: string;
 	status: "draft" | "ready";

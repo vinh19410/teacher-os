@@ -366,6 +366,7 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				imageUrl,
 				questions,
 				note,
 				status,
@@ -387,6 +388,9 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				// Legacy rows predate image_url; defensive default matches the
+				// parseQuestions style for corrupted/missing values.
+				imageUrl: typeof imageUrl === "string" ? imageUrl : "",
 				questions: parseQuestions(questions, id),
 				note,
 				status,

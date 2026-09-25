@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Web Catalog & Editor: label, hint, editor ảnh, validation client, draft pipeline"
-status: pending
+status: done
 priority: P1
 effort: 4.5h
 dependencies: [1]
@@ -24,16 +24,16 @@ Không cần editor per-type: nhánh kind hiện có tại `question-key-editor.
 
 ## Requirements
 
-- [ ] `KIND` có đủ 8 entry mới: `note/shortans/diagram/summary/tablecomp/flowchart → "text"`, `features/sentend → "letter"`
-- [ ] **Test sync mới:** `KIND[typeId] === answerKindByType[typeId]` cho mọi type trong `ASSIGNMENT_PART_TYPES` (dùng map vừa export ở Phase 1; type không entry → cả hai cùng fallback text) — red-team #3
-- [ ] `SKILLS.reading` đủ 14 type với label chuẩn: Note completion, Short-answer questions, Diagram label completion, Summary completion, Matching sentence endings, Table completion, Matching features, Flow-chart completion
-- [ ] `TYPE_HINTS: Record<string, string>` mới (nằm ngoài object type trong catalog — test `139-153` pin type chỉ có `{id,label}`): placeholder "Hướng dẫn đề" theo câu lệnh IELTS chính thức (giới hạn từ), `features`/`sentend` nhắc liệt kê ngân hàng lựa chọn A→ trong ô này kèm ghi chú "nhập đủ các mục A–H" (hạn chế đã ghi nhận ở plan Decision 1)
-- [ ] `emptyComposer` thêm `imageUrl: ""`; editor nhận prop `imageUrl` + `onImageUrlChange` (song song `intro` tại `question-key-editor.tsx:49-55`)
-- [ ] UI diagram: field "Ảnh biểu đồ (URL)" chỉ nhận https (dùng pattern export từ contracts — red-team #8) + thumbnail `<img>` + lỗi khi ready mà trống
-- [ ] **Đủ 3 khối validation trong `new.tsx`** (red-team #12): fieldErrors + canSave + `actionCopyFor` nhánh mới copy kiểu "Thiếu ảnh biểu đồ" (mirror "Thiếu file nghe" — test `new.test.tsx:73-152` pin copy)
-- [ ] **Reset `imageUrl: ""` trong nhánh đổi part/type của `handleFieldChange`** (`new.tsx:175-185`) — tránh URL dính sang đề type khác (red-team #5); giữ nguyên semantics reset `intro` hiện có (non-goal đổi hành vi)
-- [ ] **`imageUrl` vào dây chuyền draft** (red-team #2): `PreviewDraft` interface + guard `isPreviewDraft` + lệnh `savePreviewDraft(...)` tại `new.tsx:323-341` + nhánh restore draft
-- [ ] Cập nhật help copy 3 part reading (p1/p2/p3) liệt kê đúng các dạng hay gặp mới
+- [x] `KIND` có đủ 8 entry mới: `note/shortans/diagram/summary/tablecomp/flowchart → "text"`, `features/sentend → "letter"`
+- [x] **Test sync mới:** `KIND[typeId] === answerKindByType[typeId]` cho mọi type trong `ASSIGNMENT_PART_TYPES` (dùng map vừa export ở Phase 1; type không entry → cả hai cùng fallback text) — red-team #3
+- [x] `SKILLS.reading` đủ 14 type với label chuẩn: Note completion, Short-answer questions, Diagram label completion, Summary completion, Matching sentence endings, Table completion, Matching features, Flow-chart completion
+- [x] `TYPE_HINTS: Record<string, string>` mới (nằm ngoài object type trong catalog — test `139-153` pin type chỉ có `{id,label}`): placeholder "Hướng dẫn đề" theo câu lệnh IELTS chính thức (giới hạn từ), `features`/`sentend` nhắc liệt kê ngân hàng lựa chọn A→ trong ô này kèm ghi chú "nhập đủ các mục A–H" (hạn chế đã ghi nhận ở plan Decision 1)
+- [x] `emptyComposer` thêm `imageUrl: ""`; editor nhận prop `imageUrl` + `onImageUrlChange` (song song `intro` tại `question-key-editor.tsx:49-55`)
+- [x] UI diagram: field "Ảnh biểu đồ (URL)" chỉ nhận https (dùng pattern export từ contracts — red-team #8) + thumbnail `<img>` + lỗi khi ready mà trống
+- [x] **Đủ 3 khối validation trong `new.tsx`** (red-team #12): fieldErrors + canSave + `actionCopyFor` nhánh mới copy kiểu "Thiếu ảnh biểu đồ" (mirror "Thiếu file nghe" — test `new.test.tsx:73-152` pin copy)
+- [x] **Reset `imageUrl: ""` trong nhánh đổi part/type của `handleFieldChange`** (`new.tsx:175-185`) — tránh URL dính sang đề type khác (red-team #5); giữ nguyên semantics reset `intro` hiện có (non-goal đổi hành vi)
+- [x] **`imageUrl` vào dây chuyền draft** (red-team #2): `PreviewDraft` interface + guard `isPreviewDraft` + lệnh `savePreviewDraft(...)` tại `new.tsx:323-341` + nhánh restore draft
+- [x] Cập nhật help copy 3 part reading (p1/p2/p3) liệt kê đúng các dạng hay gặp mới
 
 ## Implementation Steps
 
@@ -47,12 +47,12 @@ Không cần editor per-type: nhánh kind hiện có tại `question-key-editor.
 
 ## Todo
 
-- [ ] KIND + SKILLS + TYPE_HINTS + emptyComposer
-- [ ] Editor: 2 prop mới, field URL diagram, placeholder theo type
-- [ ] new.tsx: state + 3 khối validation + reset + payload; prompt-composer kéo dây
-- [ ] assignment-preview-draft.ts: PreviewDraft + guard + save/restore
-- [ ] Tests: presets counts + KIND + sync map, editor 2 mode mới, new validation/copy/payload/reset
-- [ ] `pnpm check` sạch
+- [x] KIND + SKILLS + TYPE_HINTS + emptyComposer
+- [x] Editor: 2 prop mới, field URL diagram, placeholder theo type
+- [x] new.tsx: state + 3 khối validation + reset + payload; prompt-composer kéo dây
+- [x] assignment-preview-draft.ts: PreviewDraft + guard + save/restore
+- [x] Tests: presets counts + KIND + sync map, editor 2 mode mới, new validation/copy/payload/reset
+- [x] `pnpm check` sạch
 
 ## Verification
 

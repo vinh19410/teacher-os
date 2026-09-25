@@ -14,11 +14,11 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	await page.getByRole("button", { name: "+ Tạo bài tập" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 
-	// Design v3 defaults: Task 2 · Discuss both views pre-filled.
+	// Design v3 + form-trống (29eee03): blank form blocks ready save.
 	await expect(page.getByRole("heading", { name: TITLE })).toBeHidden();
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }),
-	).toBeEnabled();
+	).toBeDisabled();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await page
@@ -122,13 +122,23 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await expect(page.getByText("Reading Academic")).toBeVisible();
 
-	// Title
-	await page.getByLabel("Tiêu đề").fill(TITLE);
-
-	// Submit ready prompt
+	// The form starts blank: ready save is blocked until core content exists.
 	const submitBtn = page
 		.getByRole("button", { name: "Lưu vào ngân hàng" })
 		.first();
+	await expect(submitBtn).toBeDisabled();
+
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("Stepwells are underground reservoirs found across India...");
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("The first statement describes the stepwells.");
+	// TFNG key: pick the TRUE chip from the choice filter.
+	await page.getByRole("button", { name: "TRUE", exact: true }).click();
+
 	await expect(submitBtn).toBeEnabled();
 	await submitBtn.click();
 
@@ -136,10 +146,12 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
-	await expect(page.getByText("Tự động · 8/8 đáp án đã khóa")).toBeVisible();
+	await expect(page.getByText("Tự động · 1/1 đáp án đã khóa")).toBeVisible();
 
-	// Assert preview does not leak answers
-	expect(await page.getByText("1 FALSE").count()).toBe(0);
+	// Assert the post-save view does not leak the answer key: the locked-in
+	// answer ("TRUE") must be absent from the success view, not just the
+	// editor's key-scan header.
+	expect(await page.getByText("TRUE", { exact: true }).count()).toBe(0);
 	expect(
 		await page.getByText("Đáp án đúng · học viên không thấy").count(),
 	).toBe(0);
@@ -174,15 +186,31 @@ test("create a listening draft without audio; ready is blocked", async ({
 	).toBeDisabled();
 	await expect(page.getByText("Thiếu file nghe")).toBeVisible();
 
-	// Use sample audio unlocks ready
+	// Attach an audio file through the real file input (no sample content —
+	// the form ships blank since commit 29eee03).
+	await page.locator('input[type="file"]').setInputFiles({
+		name: "qc-218-listening.mp3",
+		mimeType: "audio/mpeg",
+		buffer: Buffer.from("fake audio bytes"),
+	});
+
+	// Audio alone is not enough: the blank question still blocks ready —
+	// the answer-key gate outranks the core-content copy.
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeDisabled();
+	await expect(page.getByText("Thiếu đáp án chấm tự động")).toBeVisible();
+
 	await page
-		.getByRole("button", { name: "Dùng file mẫu Cambridge 10" })
-		.click();
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("Clarke speaks about the community project.");
+	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
 	).toBeEnabled();
 
-	// Clear first question answer blocks ready
+	// Clear the answer: ready blocks again
 	await page.getByLabel("Đáp án chấm tự động").first().fill("");
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
@@ -206,7 +234,7 @@ test("create a listening draft without audio; ready is blocked", async ({
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
 	).toBeVisible();
 	await expect(page.getByText("Chưa đính file").first()).toBeVisible();
-	await expect(page.getByText("Tự động · 6/6 đáp án đã khóa")).toBeVisible();
+	await expect(page.getByText("Tự động · 1/1 đáp án đã khóa")).toBeVisible();
 
 	// Check assignments page
 	await page.goto("/assignments");

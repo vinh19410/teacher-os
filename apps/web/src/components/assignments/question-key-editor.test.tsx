@@ -20,6 +20,8 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				showErrors={false}
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
 			/>,
 		);
 
@@ -48,6 +50,8 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				showErrors={false}
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
 			/>,
 		);
 
@@ -74,6 +78,8 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				showErrors={false}
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
 			/>,
 		);
 
@@ -104,6 +110,8 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				showErrors={false}
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
 			/>,
 		);
 
@@ -111,5 +119,94 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 		expect(html).toContain("Đáp án chấm tự động");
 		expect(html).toContain("Chấp nhận thêm, cách nhau bằng /");
 		expect(html).toContain("1 northern");
+	});
+
+	it("renders features mode with A–H chips and the option-bank intro placeholder (#269)", () => {
+		const items = [{ stem: "29 is", answer: "B", opts: null, alts: "" }];
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				skill="reading"
+				partId="p3"
+				typeId="features"
+				intro=""
+				items={items}
+				showErrors={false}
+				onIntroChange={vi.fn()}
+				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
+			/>,
+		);
+
+		expect(html).toContain("Câu 27"); // Reading p3 starts at 27
+		// Letter chips A–H (letter kind, like matching information).
+		expect(html).toContain(">A<");
+		expect(html).toContain(">H<");
+		// Placeholder instructs the teacher to list the option bank A–H here.
+		expect(html).toContain("A–H");
+		// Letter kind: no free-text answer/alts pair.
+		expect(html).not.toContain("Chấp nhận thêm, cách nhau bằng /");
+		expect(html).toContain("27 B");
+	});
+
+	it("renders diagram mode with the image URL field, thumbnail and text answer (#269)", () => {
+		const items = [{ stem: "Label 4", answer: "steam", opts: null, alts: "" }];
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				skill="reading"
+				partId="p1"
+				typeId="diagram"
+				intro=""
+				items={items}
+				showErrors={false}
+				onIntroChange={vi.fn()}
+				onItemsChange={vi.fn()}
+				imageUrl="https://example.com/diagram.png"
+				onImageUrlChange={vi.fn()}
+			/>,
+		);
+
+		expect(html).toContain("Ảnh biểu đồ (URL)");
+		expect(html).toContain("https://example.com/diagram.png");
+		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		// Text kind: free-text answer + alts, no chips.
+		expect(html).toContain("Đáp án chấm tự động");
+		expect(html).not.toContain(">H<");
+	});
+
+	it("hides the diagram thumbnail while the URL is empty or non-https (#269)", () => {
+		const items = [{ stem: "Label 4", answer: "steam", opts: null, alts: "" }];
+		const emptyHtml = renderToStaticMarkup(
+			<QuestionKeyEditor
+				skill="reading"
+				partId="p1"
+				typeId="diagram"
+				intro=""
+				items={items}
+				showErrors={false}
+				onIntroChange={vi.fn()}
+				onItemsChange={vi.fn()}
+				imageUrl=""
+				onImageUrlChange={vi.fn()}
+			/>,
+		);
+		expect(emptyHtml).toContain("Ảnh biểu đồ (URL)");
+		expect(emptyHtml).not.toContain("<img");
+
+		const unsafeHtml = renderToStaticMarkup(
+			<QuestionKeyEditor
+				skill="reading"
+				partId="p1"
+				typeId="diagram"
+				intro=""
+				items={items}
+				showErrors={false}
+				onIntroChange={vi.fn()}
+				onItemsChange={vi.fn()}
+				imageUrl="http://insecure.example.com/d.png"
+				onImageUrlChange={vi.fn()}
+			/>,
+		);
+		expect(unsafeHtml).not.toContain("<img");
 	});
 });

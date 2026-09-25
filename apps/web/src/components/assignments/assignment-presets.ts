@@ -44,6 +44,14 @@ export const KIND: Record<string, AnswerKind> = {
 	info: "letter",
 	ynng: "ynng",
 	mcq: "mcq4",
+	note: "text",
+	shortans: "text",
+	diagram: "text",
+	summary: "text",
+	sentend: "letter",
+	tablecomp: "text",
+	features: "letter",
+	flowchart: "text",
 	form: "text",
 	mcq1: "mcq3",
 	map: "letter",
@@ -52,6 +60,25 @@ export const KIND: Record<string, AnswerKind> = {
 	flow: "text",
 	notes: "text",
 	sent4: "text",
+};
+
+/**
+ * Placeholder "Hướng dẫn đề" theo câu lệnh IELTS chính thức (giới hạn từ).
+ * Đứng ngoài catalog vì test pin type catalog chỉ có {id,label} (#269).
+ * Với 2 dạng matching (features/sentend), ngân hàng lựa chọn A–H do giáo
+ * viên liệt kê ngay trong ô này — placeholder phải nhắc đủ A–H.
+ */
+export const TYPE_HINTS: Record<string, string> = {
+	note: "Hoàn thành ghi chú. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	shortans: "Trả lời ngắn. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	diagram: "Hoàn thành nhãn sơ đồ. MỘT TỪ DUY NHẤT · lấy từ bài đọc",
+	summary: "Hoàn thành tóm tắt. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	tablecomp: "Hoàn thành bảng. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	flowchart: "Hoàn thành lưu đồ. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	features:
+		"Nối thông tin với tên/đối tượng. Liệt kê ngân hàng lựa chọn A→H tại đây (nhập đủ các mục A–H)",
+	sentend:
+		"Hoàn thành câu với phần kết đúng. Liệt kê các nửa câu A→H tại đây (nhập đủ các mục A–H)",
 };
 
 export const SKILLS: SkillPreset[] = [
@@ -101,33 +128,41 @@ export const SKILLS: SkillPreset[] = [
 				id: "p1",
 				label: "Passage 1",
 				spec: "Academic · Passage 1 · 20 phút",
-				help: "Passage 1 thường là đoạn sự kiện. Học viên đọc rồi trả lời; đáp án chỉ để chấm tự động.",
+				help: "Passage 1 thường là đoạn sự kiện. Note completion, short-answer và diagram label hay gặp. Đáp án khóa để chấm tự động.",
 				qStart: 1,
 				types: [
 					{ id: "tfng", label: "True / False / NG" },
 					{ id: "sent", label: "Sentence completion" },
+					{ id: "note", label: "Note completion" },
+					{ id: "shortans", label: "Short-answer questions" },
+					{ id: "diagram", label: "Diagram label completion" },
 				],
 			},
 			{
 				id: "p2",
 				label: "Passage 2",
 				spec: "Academic · Passage 2 · 20 phút",
-				help: "Passage 2 thường dài hơn. Matching headings là dạng hay gặp. Đáp án khóa để chấm tự động.",
+				help: "Passage 2 thường dài hơn. Summary completion, matching sentence endings và table completion hay gặp. Đáp án khóa để chấm tự động.",
 				qStart: 14,
 				types: [
 					{ id: "headings", label: "Matching headings" },
 					{ id: "info", label: "Matching information" },
+					{ id: "summary", label: "Summary completion" },
+					{ id: "sentend", label: "Matching sentence endings" },
+					{ id: "tablecomp", label: "Table completion" },
 				],
 			},
 			{
 				id: "p3",
 				label: "Passage 3",
 				spec: "Academic · Passage 3 · 20 phút",
-				help: "Passage 3 là đoạn khó. Multiple choice và Yes/No/NG hay đi cùng. Đáp án khóa để chấm tự động.",
+				help: "Passage 3 là đoạn khó. Matching features và flow-chart completion hay đi cùng Yes/No/NG. Đáp án khóa để chấm tự động.",
 				qStart: 27,
 				types: [
 					{ id: "ynng", label: "Yes / No / NG" },
 					{ id: "mcq", label: "Multiple choice" },
+					{ id: "features", label: "Matching features" },
+					{ id: "flowchart", label: "Flow-chart completion" },
 				],
 			},
 		],
@@ -283,6 +318,7 @@ export function emptyComposer(skillId: string, typeId: string) {
 		cueTopic: "",
 		cuePoints: "",
 		audioName: "",
+		imageUrl: "",
 		note: "",
 		items: isAutoSkill(skillId) ? [emptyItem(typeId)] : [],
 	};

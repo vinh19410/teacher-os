@@ -27,6 +27,7 @@ export interface ComposerValue {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	imageUrl: string;
 	note: string;
 	items: QuestionItem[];
 }
@@ -207,7 +208,10 @@ export function PromptComposer({
 					intro={value.intro}
 					items={value.items}
 					showErrors={showErrors}
+					imageUrl={value.imageUrl}
+					imageUrlError={showErrors ? errors.imageUrl : undefined}
 					onIntroChange={(intro) => onFieldChange({ intro })}
+					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
 					onItemsChange={(items) => onFieldChange({ items })}
 				/>
 			)}

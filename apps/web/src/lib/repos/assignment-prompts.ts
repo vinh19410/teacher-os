@@ -22,6 +22,7 @@ export function mapAssignmentPrompts(
 		cueTopic: row.cueTopic,
 		cuePoints: row.cuePoints,
 		audioName: row.audioName,
+		imageUrl: row.imageUrl ?? "",
 		questions: row.questions,
 		note: row.note,
 		status: row.status === "ready" ? "ready" : "draft",

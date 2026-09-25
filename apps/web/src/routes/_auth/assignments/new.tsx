@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
 import { type FormEvent, useState } from "react";
 import {
 	emptyComposer,
@@ -78,6 +79,25 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 			title: "Thiếu file nghe",
 			sub: "Đính file nghe trước khi lưu sẵn sàng giao.",
 		};
+	if (
+		value.skill === "reading" &&
+		value.imageUrl.trim() &&
+		!isAssignmentImageUrl(value.imageUrl)
+	)
+		return {
+			title: "Link ảnh chưa hợp lệ",
+			sub: "Ảnh chỉ nhận link https (tối đa 500 ký tự). Sửa link trước khi lưu.",
+		};
+	if (
+		value.skill === "reading" &&
+		value.type === "diagram" &&
+		status === "ready" &&
+		!value.imageUrl.trim()
+	)
+		return {
+			title: "Thiếu ảnh biểu đồ",
+			sub: "Dán link ảnh https trước khi lưu sẵn sàng giao.",
+		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
 			title: "Thiếu đáp án chấm tự động",
@@ -123,6 +143,7 @@ export function NewAssignmentRoute() {
 					cueTopic: restored.cueTopic ?? "",
 					cuePoints: restored.cuePoints ?? "",
 					audioName: restored.audioName ?? "",
+					imageUrl: restored.imageUrl ?? "",
 					items: restored.items ?? [],
 				}
 			: freshComposer(),
@@ -144,6 +165,13 @@ export function NewAssignmentRoute() {
 		!value.audioName.trim()
 	)
 		fieldErrors.audioName = "Đính file nghe (MP3 hoặc WAV).";
+	const trimmedImageUrl = value.imageUrl.trim();
+	if (value.skill === "reading") {
+		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl))
+			fieldErrors.imageUrl = "Chỉ nhận link ảnh https (tối đa 500 ký tự).";
+		else if (value.type === "diagram" && status === "ready" && !trimmedImageUrl)
+			fieldErrors.imageUrl = "Dán link ảnh biểu đồ (https) trước khi lưu.";
+	}
 	if (
 		value.skill === "speaking" &&
 		value.part === "part2" &&
@@ -156,6 +184,17 @@ export function NewAssignmentRoute() {
 			value.skill === "listening" &&
 			status === "ready" &&
 			!value.audioName.trim()
+		) &&
+		!(
+			value.skill === "reading" &&
+			value.type === "diagram" &&
+			status === "ready" &&
+			!value.imageUrl.trim()
+		) &&
+		!(
+			value.skill === "reading" &&
+			value.imageUrl.trim() &&
+			!isAssignmentImageUrl(value.imageUrl)
 		) &&
 		!(
 			isAutoSkill(value.skill) &&
@@ -172,7 +211,14 @@ export function NewAssignmentRoute() {
 					...emptyComposer(patch.skill, patch.type ?? current.type),
 				};
 			}
-			if (patch.part !== undefined || patch.type !== undefined) {
+			// ChipFilter re-fires onChange for the already-selected option —
+			// only wipe composed content when the part/type actually changed,
+			// otherwise one stray click destroys intro + URL + items (#269).
+			const partChanged =
+				patch.part !== undefined && patch.part !== current.part;
+			const typeChanged =
+				patch.type !== undefined && patch.type !== current.type;
+			if (partChanged || typeChanged) {
 				const merged = { ...current, ...patch };
 				return {
 					...merged,
@@ -180,6 +226,9 @@ export function NewAssignmentRoute() {
 					transcript: "",
 					cueTopic: "",
 					cuePoints: "",
+					// Diagram URLs belong to one prompt — never let them leak
+					// into the next type (#269 red-team #5).
+					imageUrl: "",
 					items: isAutoSkill(merged.skill) ? [emptyItem(merged.type)] : [],
 				};
 			}
@@ -213,6 +262,7 @@ export function NewAssignmentRoute() {
 				cueTopic: value.cueTopic.trim(),
 				cuePoints: value.cuePoints,
 				audioName: value.audioName.trim(),
+				imageUrl: value.imageUrl.trim(),
 				questions: value.items,
 				note: value.note.trim(),
 				status,
@@ -335,6 +385,7 @@ export function NewAssignmentRoute() {
 											cueTopic: value.cueTopic,
 											cuePoints: value.cuePoints,
 											audioName: value.audioName,
+											imageUrl: value.imageUrl,
 											items: value.items,
 											note: value.note,
 											status,

@@ -83,6 +83,7 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 				cueTopic: body.data.cueTopic,
 				cuePoints: body.data.cuePoints,
 				audioName: body.data.audioName,
+				imageUrl: body.data.imageUrl,
 				questions: JSON.stringify(body.data.questions),
 				note: body.data.note,
 				status: body.data.status,

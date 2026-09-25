@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
@@ -51,6 +52,19 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					{prompt.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
 				</p>
 			)}
+
+			{skillId === "reading" &&
+				typeId === "diagram" &&
+				prompt.imageUrl?.trim() &&
+				ASSIGNMENT_IMAGE_SRC_PATTERN.test(prompt.imageUrl.trim()) && (
+					<img
+						src={prompt.imageUrl.trim()}
+						alt="Ảnh biểu đồ đề Reading"
+						className="mt-3 max-h-48 rounded-md border border-line"
+						referrerPolicy="no-referrer"
+						loading="lazy"
+					/>
+				)}
 
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">

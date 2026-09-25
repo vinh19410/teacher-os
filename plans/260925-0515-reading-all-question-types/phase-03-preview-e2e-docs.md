@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Preview, Bank Surfaces, E2E & Docs"
-status: pending
+status: done
 priority: P2
 effort: 4h
 dependencies: [2]
@@ -20,14 +20,14 @@ Preview hiển thị trọn vẹn đề dạng mới — **bao gồm intro (câu
 
 ## Requirements
 
-- [ ] **Render `intro` trong `StudentPreviewPaper`** (red-team #1 — Critical): block whitespace-pre-line sau passage, trước danh sách câu hỏi, cho nhánh `isAuto` — đây là nơi chứa câu lệnh giới hạn từ và ngân hàng A–H của `features`/`sentend`; kèm test pin "intro hiện trong preview"
-- [ ] `StudentPreviewPaper` nhận `imageUrl`, render `<img>` **chỉ khi `typeId/part` là diagram và URL khác rỗng** (gated theo type — red-team #5), scheme https verify tại renderer (lớp bảo vệ chính của preview vì draft client-side không qua contract — red-team #7), kèm `referrerPolicy="no-referrer"` + `loading="lazy"` (red-team #6)
-- [ ] `preview.tsx` truyền đủ `items`/`passage`/`intro`/`imageUrl` (fix gap `preview.tsx:86-95`)
-- [ ] **Ảnh ở ngân hàng đề** (red-team #13): `repos/assignment-prompts.ts` mapper thêm `imageUrl`; type `AssignmentPrompt` (`mock-data.ts:58-77`) thêm field; `PromptPreviewAside` render thumbnail nhỏ khi có
-- [ ] **E2E leak-check visit trang preview** (red-team #11): assert DOM preview không chứa chuỗi đáp án của các câu vừa soạn — assertion hiện có (`:141-145`) chỉ check trang create, không vào preview
-- [ ] E2E hiện hữu sửa toàn bộ assertion stale theo hành vi form-trống sau commit 29eee03 (`:132` submit enabled trên form reading trống, `:139` "8/8 đáp án", `:179` nút "Dùng file mẫu Cambridge 10" không còn, `:186-193` flow listening sample, `:209` "6/6 đáp án") — không bỏ spec
-- [ ] E2E spec mới: tạo đề reading `ready` dạng `summary` (fill passage + intro + 2 câu) và dạng `diagram` (URL ảnh) → submit → verify ngân hàng + chi tiết + preview có `<img>`/intro
-- [ ] Docs: CHỈ cập nhật nội dung đã tồn tại (`docs/codebase-summary.md:40` mô tả flow assignments — thêm nhắc image_url nếu đoạn đó liệt kê field; KHÔNG tạo section đếm số dạng mới — grep do plan chỉ định trả rỗng, red-team #14)
+- [x] **Render `intro` trong `StudentPreviewPaper`** (red-team #1 — Critical): block whitespace-pre-line sau passage, trước danh sách câu hỏi, cho nhánh `isAuto` — đây là nơi chứa câu lệnh giới hạn từ và ngân hàng A–H của `features`/`sentend`; kèm test pin "intro hiện trong preview"
+- [x] `StudentPreviewPaper` nhận `imageUrl`, render `<img>` **chỉ khi `typeId/part` là diagram và URL khác rỗng** (gated theo type — red-team #5), scheme https verify tại renderer (lớp bảo vệ chính của preview vì draft client-side không qua contract — red-team #7), kèm `referrerPolicy="no-referrer"` + `loading="lazy"` (red-team #6)
+- [x] `preview.tsx` truyền đủ `items`/`passage`/`intro`/`imageUrl` (fix gap `preview.tsx:86-95`)
+- [x] **Ảnh ở ngân hàng đề** (red-team #13): `repos/assignment-prompts.ts` mapper thêm `imageUrl`; type `AssignmentPrompt` (`mock-data.ts:58-77`) thêm field; `PromptPreviewAside` render thumbnail nhỏ khi có
+- [x] **E2E leak-check visit trang preview** (red-team #11): assert DOM preview không chứa chuỗi đáp án của các câu vừa soạn — assertion hiện có (`:141-145`) chỉ check trang create, không vào preview
+- [x] E2E hiện hữu sửa toàn bộ assertion stale theo hành vi form-trống sau commit 29eee03 (`:132` submit enabled trên form reading trống, `:139` "8/8 đáp án", `:179` nút "Dùng file mẫu Cambridge 10" không còn, `:186-193` flow listening sample, `:209` "6/6 đáp án") — không bỏ spec
+- [x] E2E spec mới: tạo đề reading `ready` dạng `summary` (fill passage + intro + 2 câu) và dạng `diagram` (URL ảnh) → submit → verify ngân hàng + chi tiết + preview có `<img>`/intro
+- [x] Docs: CHỈ cập nhật nội dung đã tồn tại (`docs/codebase-summary.md:40` mô tả flow assignments — thêm nhắc image_url nếu đoạn đó liệt kê field; KHÔNG tạo section đếm số dạng mới — grep do plan chỉ định trả rỗng, red-team #14)
 
 ## Implementation Steps
 
@@ -40,11 +40,11 @@ Preview hiển thị trọn vẹn đề dạng mới — **bao gồm intro (câu
 
 ## Todo
 
-- [ ] Preview: intro block + imageUrl gated + truyền 4 props
-- [ ] Bank surfaces: mapper + type + aside thumbnail
-- [ ] E2E: fix 5 stale vị trí + spec summary/diagram + leak-check trên preview
-- [ ] Docs: chỉ sửa nội dung có sẵn
-- [ ] Full gate xanh
+- [x] Preview: intro block + imageUrl gated + truyền 4 props
+- [x] Bank surfaces: mapper + type + aside thumbnail
+- [x] E2E: fix 5 stale vị trí + spec summary/diagram + leak-check trên preview
+- [x] Docs: chỉ sửa nội dung có sẵn
+- [x] Full gate xanh
 
 ## Verification
 
