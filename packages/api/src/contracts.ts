@@ -282,9 +282,9 @@ export const ASSIGNMENT_PART_TYPES: Record<
 	reading: {
 		parts: ["p1", "p2", "p3"],
 		types: {
-			p1: ["tfng", "sent"],
-			p2: ["headings", "info"],
-			p3: ["ynng", "mcq"],
+			p1: ["tfng", "sent", "note", "shortans", "diagram"],
+			p2: ["headings", "info", "summary", "sentend", "tablecomp"],
+			p3: ["ynng", "mcq", "features", "flowchart"],
 		},
 	},
 	listening: {
@@ -315,18 +315,34 @@ export const ASSIGNMENT_ANSWER_CHOICES = {
 	letter: ["A", "B", "C", "D", "E", "F", "G", "H"],
 } as const;
 
-const answerKindByType: Record<string, keyof typeof ASSIGNMENT_ANSWER_CHOICES> =
-	{
-		tfng: "tfng",
-		headings: "roman",
-		info: "letter",
-		ynng: "ynng",
-		mcq: "mcq4",
-		mcq1: "mcq3",
-		map: "letter",
-		match2: "letter",
-		mcq3: "mcq3",
-	};
+/**
+ * Exported so the web catalog can sync its KIND map against this one —
+ * without the export, a drifted web kind map ships silently (#269).
+ */
+export const answerKindByType: Record<
+	string,
+	keyof typeof ASSIGNMENT_ANSWER_CHOICES
+> = {
+	tfng: "tfng",
+	headings: "roman",
+	info: "letter",
+	ynng: "ynng",
+	mcq: "mcq4",
+	mcq1: "mcq3",
+	map: "letter",
+	match2: "letter",
+	mcq3: "mcq3",
+	features: "letter",
+	sentend: "letter",
+};
+
+/**
+ * Diagram images are teacher-pasted URLs: https-only blocks `javascript:`,
+ * `data:` and mixed content at the contract layer. The web editor and the
+ * preview renderer (client-side draft path, no contract) re-use this same
+ * pattern — single source for the scheme policy (#269).
+ */
+export const ASSIGNMENT_IMAGE_SRC_PATTERN = /^https:\/\/\S+$/;
 
 /**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
@@ -347,6 +363,7 @@ export const assignmentPromptCreateSchema = z
 		cueTopic: z.string().trim().max(500),
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
+		imageUrl: z.string().trim().max(500).default(""),
 		questions: z
 			.array(
 				z.object({
@@ -417,6 +434,20 @@ export const assignmentPromptCreateSchema = z
 					message: "audio required when ready",
 				});
 		}
+		if (value.skill === "reading" && value.type === "diagram") {
+			if (value.status === "ready" && !value.imageUrl.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["imageUrl"],
+					message: "image required when ready",
+				});
+		}
+		if (value.imageUrl && !ASSIGNMENT_IMAGE_SRC_PATTERN.test(value.imageUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["imageUrl"],
+				message: "imageUrl must be an https URL",
+			});
 		if (auto && value.status === "ready") {
 			for (const [index, question] of value.questions.entries()) {
 				if (!question.stem.trim())
@@ -794,6 +825,7 @@ export interface KernelAssignmentPromptRow {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	imageUrl: string;
 	questions: AssignmentQuestion[];
 	note: string;
 	status: "draft" | "ready" | string;

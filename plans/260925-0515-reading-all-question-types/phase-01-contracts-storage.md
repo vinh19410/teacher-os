@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contracts & Storage: 8 type id mới, kind mapping, cột image_url"
-status: pending
+status: done
 priority: P1
 effort: 3.5h
 dependencies: []
@@ -20,13 +20,13 @@ Server chấp nhận và lưu trữ được 8 dạng Reading mới: catalog id 
 
 ## Requirements
 
-- [ ] Reading catalog đạt 14 type id: p1 `["tfng","sent","note","shortans","diagram"]`, p2 `["headings","info","summary","sentend","tablecomp"]`, p3 `["ynng","mcq","features","flowchart"]`
-- [ ] `features`, `sentend` validate đáp án thuộc `ASSIGNMENT_ANSWER_CHOICES.letter` (A–H); 6 dạng text không cần entry trong `answerKindByType` (fallback — precedent `sent` tại `contracts.ts:450-461`)
-- [ ] **Export `answerKindByType`** (red-team #3: hiện là module-private tại `contracts.ts:318`, không test nào so sánh được với web `KIND`) — export const hoặc wrapper `answerKindForType(typeId)`
-- [ ] `imageUrl` mới: optional, default `""`, ≤500 ký tự, **chỉ nhận `https://`** khi khác rỗng (red-team #6: match precedent `SAFE_AVATAR_SRC_PATTERN` https-only tại `packages/auth/src/avatar-policy.ts:20-21`); pattern scheme export dùng chung (red-team #8: một nguồn, web import lại — không rải regex 3 chỗ); `KernelAssignmentPromptRow.imageUrl: string`
-- [ ] Reading + type `diagram` + status `ready` bắt buộc `imageUrl` (mirror listening `audioName` tại `contracts.ts:413-418`)
-- [ ] Cột `image_url` TEXT NOT NULL DEFAULT '' trên bảng `assignment_prompt` + migration SQL sinh qua `pnpm db:generate`
-- [ ] Route POST `/prompts` ghi `imageUrl`; snapshot trả `imageUrl` với fallback `""` cho row legacy
+- [x] Reading catalog đạt 14 type id: p1 `["tfng","sent","note","shortans","diagram"]`, p2 `["headings","info","summary","sentend","tablecomp"]`, p3 `["ynng","mcq","features","flowchart"]`
+- [x] `features`, `sentend` validate đáp án thuộc `ASSIGNMENT_ANSWER_CHOICES.letter` (A–H); 6 dạng text không cần entry trong `answerKindByType` (fallback — precedent `sent` tại `contracts.ts:450-461`)
+- [x] **Export `answerKindByType`** (red-team #3: hiện là module-private tại `contracts.ts:318`, không test nào so sánh được với web `KIND`) — export const hoặc wrapper `answerKindForType(typeId)`
+- [x] `imageUrl` mới: optional, default `""`, ≤500 ký tự, **chỉ nhận `https://`** khi khác rỗng (red-team #6: match precedent `SAFE_AVATAR_SRC_PATTERN` https-only tại `packages/auth/src/avatar-policy.ts:20-21`); pattern scheme export dùng chung (red-team #8: một nguồn, web import lại — không rải regex 3 chỗ); `KernelAssignmentPromptRow.imageUrl: string`
+- [x] Reading + type `diagram` + status `ready` bắt buộc `imageUrl` (mirror listening `audioName` tại `contracts.ts:413-418`)
+- [x] Cột `image_url` TEXT NOT NULL DEFAULT '' trên bảng `assignment_prompt` + migration SQL sinh qua `pnpm db:generate`
+- [x] Route POST `/prompts` ghi `imageUrl`; snapshot trả `imageUrl` với fallback `""` cho row legacy
 
 ## Implementation Steps
 
@@ -41,11 +41,11 @@ Server chấp nhận và lưu trữ được 8 dạng Reading mới: catalog id 
 
 ## Todo
 
-- [ ] Catalog 14 type id + 2 entry `answerKindByType` + export map trong contracts.ts
-- [ ] `imageUrl` trong create schema + superRefine (https-only, ready-diagram bắt buộc) + const pattern export + interface snapshot
-- [ ] Cột `image_url` + migration SQL qua `pnpm db:generate`
-- [ ] Route insert + snapshot mapping + payload type check
-- [ ] Test server: 201 roundtrip có imageUrl; 400 diagram-ready thiếu ảnh; 400 đáp án `"I"` cho **cả `sentend` lẫn `features`**
+- [x] Catalog 14 type id + 2 entry `answerKindByType` + export map trong contracts.ts
+- [x] `imageUrl` trong create schema + superRefine (https-only, ready-diagram bắt buộc) + const pattern export + interface snapshot
+- [x] Cột `image_url` + migration SQL qua `pnpm db:generate`
+- [x] Route insert + snapshot mapping + payload type check
+- [x] Test server: 201 roundtrip có imageUrl; 400 diagram-ready thiếu ảnh; 400 đáp án `"I"` cho **cả `sentend` lẫn `features`**
 
 ## Verification
 

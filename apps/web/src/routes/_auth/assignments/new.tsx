@@ -213,6 +213,7 @@ export function NewAssignmentRoute() {
 				cueTopic: value.cueTopic.trim(),
 				cuePoints: value.cuePoints,
 				audioName: value.audioName.trim(),
+				imageUrl: "",
 				questions: value.items,
 				note: value.note.trim(),
 				status,

@@ -42,6 +42,7 @@ describe("kernelCommand create-assignment-prompt (#218)", () => {
 			cueTopic: "",
 			cuePoints: "",
 			audioName: "",
+			imageUrl: "",
 			questions: [],
 			note: "",
 			status: "ready",
