@@ -2,8 +2,9 @@ import { expect, test } from "@playwright/test";
 import { signUpViaUi } from "./helpers";
 
 /**
- * Issue #208 — Ngân hàng bài tập: filters (task + genre), in-page search,
- * count line, status tags (draft / used / ready), preview, empty state.
+ * Issue #208 / #267 — Trang Bài tập (gộp bank): filters (skill + part),
+ * in-page search, count line, status tags (draft / used / ready), preview,
+ * empty state.
  */
 test("bank lists prompts with filters, search, and preview", async ({
 	page,
@@ -33,13 +34,9 @@ test("bank lists prompts with filters, search, and preview", async ({
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
 	).toBeVisible();
 
-	// /assignments → "Ngân hàng đề" CTA → /assignments/bank.
+	// /assignments hiển thị trực tiếp danh sách bài tập đã tạo (#267).
 	await page.goto("/assignments");
-	await page.getByRole("button", { name: "Ngân hàng đề" }).click();
-	await expect(page).toHaveURL(/\/assignments\/bank$/);
-	await expect(
-		page.getByRole("heading", { name: "Ngân hàng bài tập" }),
-	).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
 
 	// Both rows visible + count 2/2 (drafts count toward M).
 	await expect(
@@ -78,7 +75,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 	).toBeVisible();
 	await expect(
 		page.getByText(
-			"Thử kỹ năng hoặc phần thi khác, hoặc xóa bộ lọc để xem toàn bộ ngân hàng.",
+			"Thử kỹ năng hoặc phần thi khác, hoặc xóa bộ lọc để xem toàn bộ danh sách.",
 		),
 	).toBeVisible();
 
@@ -98,7 +95,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 		page.getByText("Đề này chưa giao lớp. Giao cho học viên ở trang"),
 	).toBeVisible();
 
-	// Persistence: reload keeps the bank.
+	// Persistence: reload keeps the list.
 	await page.reload();
 	await expect(
 		page.getByRole("heading", { name: "QC-208 Bank Discuss" }),
