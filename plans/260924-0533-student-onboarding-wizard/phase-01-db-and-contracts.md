@@ -1,17 +1,17 @@
 ---
 phase: 1
-title: "DB schema + migration 0024 + contracts onboarding"
-status: pending
+title: "DB schema + migration 0026 + contracts onboarding"
+status: completed
 priority: P2
 effort: 2h
 dependencies: []
 ---
 
-# Phase 1: DB schema + migration 0024 + contracts onboarding
+# Phase 1: DB schema + migration 0026 + contracts onboarding
 
 ## Goal
 
-Đặt nền data + contract cho wizard: 6 cột nullable mới trên bảng `student` (sinh migration **0024**) và bộ enums + `studentOnboardingPayloadSchema` trong `packages/api/src/contracts.ts`.
+Đặt nền data + contract cho wizard: 6 cột nullable mới trên bảng `student` (sinh migration **0026**) và bộ enums + `studentOnboardingPayloadSchema` trong `packages/api/src/contracts.ts`.
 
 Điểm load-bearing (thứ tự bắt buộc): Task 1.1 (schema) phải chạy trước Task 1.2 (`pnpm db:generate` đọc schema để sinh migration). Task 1.3 chỉ **thêm exports mới** — KHÔNG sửa `studentMeSchema` ở phase này: field mới trong `studentMeSchema` là field bắt buộc của type `StudentMe`, sẽ làm `apps/server` vỡ `check-types` khi handler `/me` chưa emit (handler đó nằm ở Phase 2). Giữ nguyên ràng buộc này để mọi Verify gate của Phase 1 xanh sạch.
 

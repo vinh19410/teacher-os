@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "POST /api/student/onboarding + studentMe mở rộng + unit tests"
-status: pending
+status: completed
 priority: P2
 effort: 2h
 dependencies: [1]
