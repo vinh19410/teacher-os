@@ -36,7 +36,8 @@ vi.mock("@/lib/data-store", () => ({
 }));
 
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
-import { actionCopyFor, NewAssignmentRoute } from "./new";
+import { actionCopyFor, NewAssignmentRoute, previewDraftFrom } from "./new";
+import type { ComposerValue } from "@/components/assignments/prompt-composer";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
 	it("renders design v5 structure with 4 skills and a blank form", () => {
@@ -242,5 +243,168 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		);
 		expect(submit?.[0]).toMatch(/\sdisabled=/);
 		draftFixture.value = null;
+	});
+});
+
+function stubLocalStorage(initial: Record<string, string> = {}) {
+	const map = new Map(Object.entries(initial));
+	vi.stubGlobal("window", {
+		sessionStorage: {
+			getItem: () => null,
+			setItem: () => {},
+			removeItem: () => {},
+		},
+		localStorage: {
+			getItem: (k: string) => map.get(k) ?? null,
+			setItem: (k: string, v: string) => void map.set(k, v),
+			removeItem: (k: string) => void map.delete(k),
+		},
+	});
+	return map;
+}
+
+function autosaveDraftJson(title: string, overrides: Record<string, unknown> = {}) {
+	return JSON.stringify({
+		schemaVersion: 1,
+		savedAt: Date.now(),
+		status: "ready",
+		value: {
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			title,
+			band: "7.0",
+			source: "",
+			prompt: "Autosaved prompt text…",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			note: "",
+			items: [],
+		},
+		...overrides,
+	});
+}
+
+describe("NewAssignmentRoute — autosave draft restore precedence (phase-01 FR6)", () => {
+	it("shows no restore banner when localStorage has no draft", () => {
+		stubLocalStorage();
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Thêm đề vào ngân hàng");
+		expect(html).not.toContain("Đã phục hồi bản nháp");
+	});
+
+	it("restores the autosave draft with a Hủy/Tiếp tục banner (non-destructive read)", () => {
+		const map = stubLocalStorage({
+			"assignment-draft": autosaveDraftJson("Autosave QC"),
+		});
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Đã phục hồi bản nháp");
+		expect(html).toContain("Tiếp tục");
+		expect(html).toContain("Hủy");
+		expect(html).toContain('value="Autosave QC"');
+		// Non-destructive: the stored draft survives the restore render.
+		expect(map.get("assignment-draft")).toContain("Autosave QC");
+	});
+
+	it("preview draft wins: no banner when a preview draft was just consumed", () => {
+		stubLocalStorage({ "assignment-draft": autosaveDraftJson("Autosave Loses") });
+		draftFixture.value = {
+			task: "task2",
+			genre: "discuss",
+			title: "Preview Wins",
+			band: "7.0",
+			source: "",
+			prompt: "Preview prompt…",
+			note: "",
+			status: "ready",
+		};
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain('value="Preview Wins"');
+		expect(html).not.toContain("Đã phục hồi bản nháp");
+		expect(html).not.toContain('value="Autosave Loses"');
+		draftFixture.value = null;
+	});
+
+	it("ignores an autosave draft whose schemaVersion is foreign", () => {
+		stubLocalStorage({
+			"assignment-draft": autosaveDraftJson("Version Mismatch", {
+				schemaVersion: 999,
+			}),
+		});
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).not.toContain("Đã phục hồi bản nháp");
+		expect(html).not.toContain("Version Mismatch");
+	});
+
+	it("ignores an expired autosave draft (TTL 7 days)", () => {
+		stubLocalStorage({
+			"assignment-draft": autosaveDraftJson("Expired QC", {
+				savedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+			}),
+		});
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).not.toContain("Đã phục hồi bản nháp");
+		expect(html).not.toContain("Expired QC");
+	});
+});
+
+describe("previewDraftFrom — preview payload parity (phase-01 FR6 bug fix)", () => {
+	const full: ComposerValue = {
+		skill: "listening",
+		part: "s1",
+		type: "form",
+		title: "QC Listening",
+		band: "6.5",
+		source: "Cam 15",
+		prompt: "",
+		passage: "",
+		intro: "Complete the form",
+		transcript: "W: Good morning…",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "sec1.mp3",
+		imageUrl: "",
+		note: "",
+		items: [{ stem: "Name:", answer: "Clarke", opts: null, alts: "" }],
+	};
+
+	it("carries transcript so the preview round trip cannot drop it", () => {
+		const draft = previewDraftFrom(full, "draft");
+		expect(draft.transcript).toBe("W: Good morning…");
+	});
+
+	it("carries every composer field plus legacy task/genre aliases", () => {
+		const draft = previewDraftFrom(full, "ready");
+		expect(draft).toMatchObject({
+			task: "s1",
+			genre: "form",
+			skill: "listening",
+			part: "s1",
+			type: "form",
+			title: "QC Listening",
+			band: "6.5",
+			source: "Cam 15",
+			intro: "Complete the form",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "sec1.mp3",
+			imageUrl: "",
+			items: [{ stem: "Name:", answer: "Clarke", opts: null, alts: "" }],
+			note: "",
+			status: "ready",
+		});
+	});
+
+	it("keeps empty items arrays for prompt-only skills", () => {
+		const draft = previewDraftFrom(
+			{ ...full, skill: "speaking", items: [] },
+			"ready",
+		);
+		expect(draft.items).toEqual([]);
 	});
 });

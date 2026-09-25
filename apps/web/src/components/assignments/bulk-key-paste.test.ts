@@ -115,7 +115,9 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(result.items[0].answer).toBe("");
 		expect(result.errors).toHaveLength(1);
 		expect(result.errors[0]).toMatchObject({ line: 1, reason: "invalid-choice" });
-		expect(result.errors[0].message).toContain(answerChoices("tfng").join(", "));
+		expect(result.errors[0].message).toContain(
+			answerChoices("tfng")!.join(", "),
+		);
 	});
 
 	test("blank lines are ignored, not reported", () => {
