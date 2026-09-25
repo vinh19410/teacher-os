@@ -1,7 +1,7 @@
 ---
 title: "Authoring UX: soạn đề IELTS theo họ nhập liệu"
 description: "Tái cấu trúc màn hình soạn đề theo 4 họ nhập liệu dùng chung (answer-key grid, option bank có cấu trúc, cloze click-to-blank, ảnh ghim nhãn) để giáo viên nhập 37 loại đề IELTS nhanh và ít lỗi nhất."
-status: pending
+status: in-progress
 priority: P1
 effort: 23h
 issue: 271

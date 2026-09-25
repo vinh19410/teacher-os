@@ -20,6 +20,17 @@ Quy ước khi cập nhật:
 - Trang `/assignments` giờ hiển thị duy nhất **danh sách bài tập đã tạo** (assignment prompts): filter kỹ năng/phần thi, search, preview aside và StatusTag Nháp/Sẵn sàng/Đã dùng N lớp — kế thừa toàn bộ UX của trang bank cũ (#267)
 - Link sau khi tạo đề đổi thành "Xem danh sách bài tập" trỏ về `/assignments`; empty state mới hướng dẫn tạo bài tập đầu tiên (#267)
 
+### Added
+- Lưới khóa đáp án (answer-key grid) cho các dạng reading/listening đóng (tfng/ynng/mcq/roman/letter): mỗi câu một hàng với số câu thật theo phần thi, chip chọn đáp án, phím tắt (t/f/n/g, y/n, 1–8/a–h, Enter thêm câu, Backspace xóa hàng rỗng) — không còn gõ đáp án tay (#271)
+- Dán key hàng loạt map theo số câu (`1. TRUE`, `3. câu trả lời / alt1 / alt2`), báo lỗi theo từng dòng khi số ngoài phạm vi/trùng/không đọc được, phần hợp lệ vẫn áp dụng (#271)
+- Autosave bản nháp soạn đề vào localStorage (debounce 1s, TTL 7 ngày): banner "Đã phục hồi bản nháp" sau refresh; bản nháp preview (sessionStorage) luôn thắng banner; sửa bug `savePreviewDraft` bỏ sót transcript (#271)
+- Chip "Chèn câu lệnh chuẩn" chèn giới hạn từ IELTS chuẩn theo dạng đề vào intro một chạm (#271)
+
+### Changed
+- Đổi kỹ năng/phần thi/dạng đề khi đang có nội dung soạn giờ hỏi xác nhận trước (kể cả nhánh đổi kỹ năng xóa sạch); trong cùng skill Listening, transcript được giữ lại khi đổi phần/dạng; intro/imageUrl vẫn reset như cũ (#271)
+- Lỗi validation từng câu (thiếu nội dung/đáp án khi lưu "Sẵn sàng giao", vượt cap 500/200/500 ký tự, lựa chọn mcq quá dài) hiển thị tại đúng hàng câu thay vì popup toàn trang; bản nháp không bị báo đỏ hàng loạt (#271)
+- Nút "Thêm câu" vô hiệu hóa khi đủ 40 câu (khớp giới hạn contract) kèm thông báo (#271)
+
 ## 2026-09-24
 
 ### Added
