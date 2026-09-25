@@ -47,9 +47,10 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		expect(html).toContain("Trạng thái");
 		expect(html).toContain("Bản nháp");
 		expect(html).toContain("Sẵn sàng giao");
-		expect(html).toContain("Xem trước phía học viên");
-		expect(html).toContain("Đề Writing đã có");
 		expect(html).toContain("Xem trước");
+		// Khung phải (card "Ngân hàng" + preview) đã bị bỏ — form chiếm toàn bộ chiều rộng.
+		expect(html).not.toContain("Xem trước phía học viên");
+		expect(html).not.toContain("Đề Writing đã có");
 
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,

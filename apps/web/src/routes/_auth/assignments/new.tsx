@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useState } from "react";
 import {
 	compositionDefaults,
 	type QuestionItem,
@@ -10,10 +10,8 @@ import {
 	type ComposerValue,
 	PromptComposer,
 } from "@/components/assignments/prompt-composer";
-import { StudentPreviewPaper } from "@/components/assignments/student-preview-paper";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
@@ -183,14 +181,6 @@ export function NewAssignmentRoute() {
 			countAnswers(value) !== value.items.length
 		);
 	const actionCopy = actionCopyFor(value, status);
-	const prompts = useMemo(
-		() =>
-			data.assignmentPrompts
-				.filter((prompt) => prompt.skill === value.skill)
-				.slice(-5)
-				.reverse(),
-		[data.assignmentPrompts, value.skill],
-	);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
 		if (patch.title !== undefined) setDirtyTitle(true);
 		if (
@@ -354,132 +344,91 @@ export function NewAssignmentRoute() {
 			{saved ? (
 				<CreateSuccessCard {...saved} onCreateAnother={resetAll} />
 			) : (
-				<div className="grid gap-5 lg:grid-cols-[1.45fr_0.9fr]">
-					<form onSubmit={handleSubmit} noValidate>
-						<PromptComposer
-							value={value}
-							errors={fieldErrors}
-							showErrors={showErrors}
-							onFieldChange={handleFieldChange}
-						/>
-						<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
-							{submit.notice && (
-								<KernelSubmitNotice
-									notice={submit.notice}
-									onReconcile={handleReconcile}
-									disabled={submit.saving}
+				<form onSubmit={handleSubmit} noValidate>
+					<PromptComposer
+						value={value}
+						errors={fieldErrors}
+						showErrors={showErrors}
+						onFieldChange={handleFieldChange}
+					/>
+					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
+						{submit.notice && (
+							<KernelSubmitNotice
+								notice={submit.notice}
+								onReconcile={handleReconcile}
+								disabled={submit.saving}
+							/>
+						)}
+						{submit.error && (
+							<p role="alert" className="mb-2 text-danger text-xs">
+								{submit.error}
+							</p>
+						)}
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="flex flex-col">
+								<strong className="text-sm">{actionCopy.title}</strong>
+								<span className="text-muted-fg text-xs">{actionCopy.sub}</span>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<span className="font-medium text-muted-fg text-xs">
+									Trạng thái
+								</span>
+								<ChipFilter
+									options={["Bản nháp", "Sẵn sàng giao"]}
+									value={status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}
+									onChange={(label) =>
+										setStatus(label === "Bản nháp" ? "draft" : "ready")
+									}
 								/>
-							)}
-							{submit.error && (
-								<p role="alert" className="mb-2 text-danger text-xs">
-									{submit.error}
-								</p>
-							)}
-							<div className="flex flex-wrap items-center justify-between gap-3">
-								<div className="flex flex-col">
-									<strong className="text-sm">{actionCopy.title}</strong>
-									<span className="text-muted-fg text-xs">
-										{actionCopy.sub}
-									</span>
-								</div>
-								<div className="flex flex-col gap-1.5">
-									<span className="font-medium text-muted-fg text-xs">
-										Trạng thái
-									</span>
-									<ChipFilter
-										options={["Bản nháp", "Sẵn sàng giao"]}
-										value={status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}
-										onChange={(label) =>
-											setStatus(label === "Bản nháp" ? "draft" : "ready")
-										}
-									/>
-								</div>
-								<div className="flex gap-2">
-									<Button
-										type="button"
-										variant="secondary"
-										onClick={() => {
-											savePreviewDraft({
-												task: value.part,
-												genre: value.type,
-												skill: value.skill,
-												part: value.part,
-												type: value.type,
-												title: value.title,
-												band: value.band,
-												source: value.source,
-												prompt: value.prompt,
-												passage: value.passage,
-												intro: value.intro,
-												cueTopic: value.cueTopic,
-												cuePoints: value.cuePoints,
-												audioName: value.audioName,
-												items: value.items,
-												note: value.note,
-												status,
-											});
-											navigate({ to: "/assignments/preview" });
-										}}
-									>
-										Xem trước
-									</Button>
-									<Button
-										type="button"
-										variant="secondary"
-										onClick={resetAll}
-										disabled={submit.saving}
-									>
-										Hủy
-									</Button>
-									<Button type="submit" disabled={!canSave || submit.saving}>
-										{submit.saving
-											? "Đang lưu…"
-											: status === "draft"
-												? "Lưu bản nháp"
-												: "Lưu vào ngân hàng"}
-									</Button>
-								</div>
+							</div>
+							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										savePreviewDraft({
+											task: value.part,
+											genre: value.type,
+											skill: value.skill,
+											part: value.part,
+											type: value.type,
+											title: value.title,
+											band: value.band,
+											source: value.source,
+											prompt: value.prompt,
+											passage: value.passage,
+											intro: value.intro,
+											cueTopic: value.cueTopic,
+											cuePoints: value.cuePoints,
+											audioName: value.audioName,
+											items: value.items,
+											note: value.note,
+											status,
+										});
+										navigate({ to: "/assignments/preview" });
+									}}
+								>
+									Xem trước
+								</Button>
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={resetAll}
+									disabled={submit.saving}
+								>
+									Hủy
+								</Button>
+								<Button type="submit" disabled={!canSave || submit.saving}>
+									{submit.saving
+										? "Đang lưu…"
+										: status === "draft"
+											? "Lưu bản nháp"
+											: "Lưu vào ngân hàng"}
+								</Button>
 							</div>
 						</div>
-					</form>
-					<div className="flex flex-col gap-5">
-						<Card variant="white" className="flex flex-col gap-3">
-							<h2 className="font-display font-semibold text-[17px]">
-								Ngân hàng
-							</h2>
-							<p className="text-muted-fg text-xs">
-								Đề này chỉ được thêm vào ngân hàng bài tập. Giao cho lớp và học
-								viên ở trang Lớp học.
-							</p>
-							<strong>Đề {skillOf(value.skill).name} đã có</strong>
-							{prompts.length ? (
-								prompts.map((prompt) => (
-									<div
-										key={prompt.id}
-										className="border-line border-t pt-2 text-sm"
-									>
-										<div>{prompt.title}</div>
-										<span className="text-meta text-xs">
-											{prompt.source || "Không ghi nguồn"} ·{" "}
-											{prompt.status === "ready" ? "Sẵn sàng" : "Bản nháp"}
-										</span>
-									</div>
-								))
-							) : (
-								<p className="text-muted-fg text-xs">
-									Chưa có đề {skillOf(value.skill).name} trong ngân hàng.
-								</p>
-							)}
-							{(value.skill === "reading" || value.skill === "listening") && (
-								<p className="rounded-md bg-bg p-2 text-xs">
-									{countAnswers(value)}/{value.items.length} đáp án đã khóa.
-									Preview bên dưới không hiện đáp án.
-								</p>
-							)}
-						</Card>
-						<StudentPreviewPaper {...value} status={status} />
 					</div>
-				</div>
+				</form>
 			)}
 		</div>
 	);
