@@ -10,6 +10,16 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-25
+
+### Removed
+- Xoá trang `/assignments/bank` (Ngân hàng bài tập): route, nút "Ngân hàng đề", breadcrumb "Ngân hàng" và mọi liên kết điều hướng tới nó (#267)
+- Bỏ bảng tracking bài tập per-học viên cũ trên `/assignments` (dữ liệu mock `data.assignments` + `averageBand`); theo dõi tiến độ làm bài vẫn ở tab Bài tập của trang Lớp học, luồng chấm bài vẫn vào được từ trang chi tiết học viên (#267)
+
+### Changed
+- Trang `/assignments` giờ hiển thị duy nhất **danh sách bài tập đã tạo** (assignment prompts): filter kỹ năng/phần thi, search, preview aside và StatusTag Nháp/Sẵn sàng/Đã dùng N lớp — kế thừa toàn bộ UX của trang bank cũ (#267)
+- Link sau khi tạo đề đổi thành "Xem danh sách bài tập" trỏ về `/assignments`; empty state mới hướng dẫn tạo bài tập đầu tiên (#267)
+
 ## 2026-09-24
 
 ### Added

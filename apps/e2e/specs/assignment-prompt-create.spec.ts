@@ -33,13 +33,13 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	).toBeVisible();
 
 	// "Tạo đề khác" returns to the form (#213: the create page no longer
-	// shows the bank — persistence is asserted on the bank page instead).
+	// shows the bank — persistence is asserted on the assignments page instead).
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
-	await page.goto("/assignments/bank");
+	await page.goto("/assignments");
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Sẵn sàng").first()).toBeVisible();
 
-	// Persist for real: a full reload keeps the prompt in the bank.
+	// Persist for real: a full reload keeps the prompt in the list.
 	await page.reload();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 });
@@ -59,7 +59,7 @@ test("create a draft prompt with the draft tag", async ({ page }) => {
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
-	await page.goto("/assignments/bank");
+	await page.goto("/assignments");
 	await expect(page.getByText("QC-202 Bản nháp").first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
 });
@@ -105,7 +105,7 @@ test("preview as a student, return to the form without losing it, then save read
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
-	await page.goto("/assignments/bank");
+	await page.goto("/assignments");
 	await page.reload();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 });
@@ -144,8 +144,8 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 		await page.getByText("Đáp án đúng · học viên không thấy").count(),
 	).toBe(0);
 
-	// Navigate to bank and filter by Reading
-	await page.goto("/assignments/bank");
+	// Navigate to assignments and filter by Reading
+	await page.goto("/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 
@@ -208,8 +208,8 @@ test("create a listening draft without audio; ready is blocked", async ({
 	await expect(page.getByText("Chưa đính file").first()).toBeVisible();
 	await expect(page.getByText("Tự động · 6/6 đáp án đã khóa")).toBeVisible();
 
-	// Check bank
-	await page.goto("/assignments/bank");
+	// Check assignments page
+	await page.goto("/assignments");
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();

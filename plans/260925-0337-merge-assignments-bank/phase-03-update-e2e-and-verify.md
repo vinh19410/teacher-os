@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Update-E2E-And-Verify"
-status: todo
+status: done
 ---
 
 # Phase 3: Update-E2E-And-Verify
@@ -29,9 +29,9 @@ status: todo
 
 ## Requirements
 
-- [ ] Không spec e2e nào còn navigate tới `/assignments/bank`
-- [ ] Toàn bộ verify chain xanh: check-types → unit test → e2e
-- [ ] Sweep toàn repo: 0 tham chiếu `/assignments/bank` ngoài `routeTree.gen.ts`
+- [x] Không spec e2e nào còn navigate tới `/assignments/bank`
+- [x] Toàn bộ verify chain xanh: check-types → unit test → e2e
+- [x] Sweep toàn repo: 0 tham chiếu `/assignments/bank` ngoài `routeTree.gen.ts`
 
 ## Architecture
 
@@ -53,11 +53,11 @@ Không đổi kiến trúc. Chỉ thay đổi e2e specs + chạy verification.
 
 ## Todo
 
-- [ ] Cập nhật `assignment-bank.spec.ts`
-- [ ] Cập nhật `assignment-prompt-create.spec.ts`
-- [ ] Cập nhật `class-assign.spec.ts`
-- [ ] Sweep grep = 0 tham chiếu `/assignments/bank`
-- [ ] `pnpm --filter web check-types` + `pnpm --filter web test` + `pnpm --filter e2e e2e` pass
+- [x] Cập nhật `assignment-bank.spec.ts`
+- [x] Cập nhật `assignment-prompt-create.spec.ts`
+- [x] Cập nhật `class-assign.spec.ts`
+- [x] Sweep grep = 0 tham chiếu `/assignments/bank`
+- [x] `pnpm --filter web check-types` + `pnpm --filter web test` + `pnpm --filter e2e e2e` pass
 
 ## Success Criteria
 
@@ -75,7 +75,7 @@ git diff --stat apps/server packages/api packages/db
 
 ## Risk Assessment
 
-- E2E chạy đầy đủ stack (api + 2 web apps) — chậm; nếu chỉ cần smoke spec assignments thì dùng `pnpm --filter e2e e2e --grep "assignment"` trước, full suite sau cùng.
+- E2E chạy đầy đủ stack (api + 2 web apps) — chậm; để lặp nhanh đúng 3 spec đã sửa: `pnpm --filter e2e exec playwright test specs/assignment-bank.spec.ts specs/assignment-prompt-create.spec.ts specs/class-assign.spec.ts` (KHÔNG dùng `--grep "assignment"` — grep khớp theo test title chứ không phải tên file, sẽ chạy 0 test).
 - Heading "Bài tập" trùng text nav sidebar — Playwright dùng `getByRole("heading")` nên không conflict.
 
 ## Security Considerations

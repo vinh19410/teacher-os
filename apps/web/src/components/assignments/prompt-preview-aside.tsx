@@ -9,11 +9,11 @@ import {
 	wordCount,
 } from "./assignment-presets";
 
-interface BankPreviewAsideProps {
+interface PromptPreviewAsideProps {
 	prompt: AssignmentPrompt;
 }
 
-export function BankPreviewAside({ prompt }: BankPreviewAsideProps) {
+export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	const skillId = prompt.skill ?? "writing";
 	const partId = prompt.part ?? prompt.task ?? "task2";
 	const typeId = prompt.type ?? prompt.genre ?? "discuss";
@@ -22,6 +22,7 @@ export function BankPreviewAside({ prompt }: BankPreviewAsideProps) {
 	const type = typeOf(skillId, partId, typeId);
 	const trimmedTitle = prompt.title.trim() || type.title;
 	const isAuto = skillId === "reading" || skillId === "listening";
+	const isSpeakingPart2 = skillId === "speaking" && partId === "part2";
 
 	return (
 		<aside
@@ -71,7 +72,7 @@ export function BankPreviewAside({ prompt }: BankPreviewAsideProps) {
 				</div>
 			)}
 
-			{skillId === "speaking" && partId === "part2" && (
+			{isSpeakingPart2 && (
 				<div className="mt-3 text-sm">
 					<p>Describe {prompt.cueTopic || "the topic"}.</p>
 					<p className="mt-2 font-medium">You should say:</p>
@@ -86,7 +87,7 @@ export function BankPreviewAside({ prompt }: BankPreviewAsideProps) {
 				</div>
 			)}
 
-			{!isAuto && !(skillId === "speaking" && partId === "part2") && (
+			{!isAuto && !isSpeakingPart2 && (
 				<p className="mt-3 whitespace-pre-wrap text-fg text-sm leading-[1.55]">
 					{prompt.prompt.trim()}
 				</p>

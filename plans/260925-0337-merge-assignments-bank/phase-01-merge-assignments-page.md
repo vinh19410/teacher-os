@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Merge-Assignments-Page"
-status: todo
+status: done
 ---
 
 # Phase 1: Merge-Assignments-Page
@@ -27,15 +27,17 @@ status: todo
 - `usedByPromptId` (số lớp đã giao mỗi đề) được tính từ `data.classAssignments ?? []` — giữ nguyên.
 - Bảng cũ trong `index.tsx` đọc `data.assignments` + `averageBand` từ `mock-data.ts` — bỏ toàn bộ,
   nhưng KHÔNG xoá field `assignments` trong snapshot (`data-provider.tsx:147` và
-  `routes/_auth/students/$studentId.tsx:78` vẫn dùng).
+  `routes/_auth/students/$studentId.tsx:78` vẫn dùng). Row-click của bảng (`index.tsx:113-117` →
+  `/assignments/$assignmentId`) bị xoá theo; luồng chấm bài vẫn vào được qua
+  `students/$studentId.tsx:256` (điểm vào còn lại — xem Red Team Review plan.md).
 - E2E `assignment-prompt-create.spec.ts:14` click nút `+ Tạo bài tập` trên trang này → bắt buộc giữ nguyên label.
 - `routeTree.gen.ts` do TanStack Router plugin sinh lại khi chạy vite build/dev — không sửa tay.
 
 ## Requirements
 
-- [ ] `/assignments` chỉ hiển thị danh sách prompts đã tạo (kèm filter/search/preview)
-- [ ] Không còn route `/assignments/bank` và không còn liên kết nào trỏ tới nó trong app code
-- [ ] App vẫn type-check pass sau khi xoá route (routeTree regenerated)
+- [x] `/assignments` chỉ hiển thị danh sách prompts đã tạo (kèm filter/search/preview)
+- [x] Không còn route `/assignments/bank` và không còn liên kết nào trỏ tới nó trong app code
+- [x] App vẫn type-check pass sau khi xoá route (routeTree regenerated)
 
 ## Architecture
 
@@ -62,7 +64,7 @@ Data: `useData()` → `data.assignmentPrompts`, `data.classAssignments`. Loại 
 - Modify: `apps/web/src/routes/_auth/assignments/new.tsx` — breadcrumb bỏ middle link "Ngân hàng" (còn "Bài tập › Tạo mới")
 - Modify: `apps/web/src/routes-matcher.ts` — xoá `"/assignments/bank": true` khỏi `VALID_EXACT_ROUTES`
 - Modify: `apps/web/src/components/layout/app-shell.tsx` — xoá entry `"/_auth/assignments/bank": "Ngân hàng bài tập"`
-- Modify: `apps/web/src/routeTree.gen.ts` — KHÔNG sửa tay; regenerate bằng `pnpm --filter web check-types` (vite build chạy plugin)
+- Generate locally, KHÔNG commit (gitignored tại `.gitignore:12`): `apps/web/src/routeTree.gen.ts` — KHÔNG sửa tay; regenerate bằng `pnpm --filter web check-types` (vite build chạy plugin)
 - Delete: `apps/web/src/routes/_auth/assignments/bank.tsx`
 
 ## Implementation Steps
@@ -73,19 +75,19 @@ Data: `useData()` → `data.assignmentPrompts`, `data.classAssignments`. Loại 
 4. Empty state khi `assignmentPrompts.length === 0`: Card "Chưa có bài tập nào" + mô tả + nút "Tạo bài tập đầu tiên" → `/assignments/new`.
 5. Xoá file `bank.tsx`.
 6. Cập nhật 4 file tham chiếu (create-success-card, new.tsx breadcrumb, routes-matcher, app-shell) như mục Related Code Files.
-7. Chạy `pnpm --filter web check-types` để vite build regenerate `routeTree.gen.ts` + tsc pass; commit `routeTree.gen.ts` mới.
+7. Chạy `pnpm --filter web check-types` để vite build regenerate `routeTree.gen.ts` (file gitignored — giữ local, KHÔNG commit) + tsc pass.
 
 ## Todo
 
-- [ ] Ghi đè `index.tsx` bằng UI danh sách prompts (port từ bank.tsx, đổi title/lead/CTA, thêm empty state)
-- [ ] Xoá `bank.tsx`
-- [ ] Cập nhật `create-success-card.tsx` + `new.tsx` (link/breadcrumb)
-- [ ] Cập nhật `routes-matcher.ts` + `app-shell.tsx` (bỏ entry bank)
-- [ ] `pnpm --filter web check-types` pass và `routeTree.gen.ts` đã regenerate
+- [x] Ghi đè `index.tsx` bằng UI danh sách prompts (port từ bank.tsx, đổi title/lead/CTA, thêm empty state)
+- [x] Xoá `bank.tsx`
+- [x] Cập nhật `create-success-card.tsx` + `new.tsx` (link/breadcrumb)
+- [x] Cập nhật `routes-matcher.ts` + `app-shell.tsx` (bỏ entry bank)
+- [x] `pnpm --filter web check-types` pass và `routeTree.gen.ts` đã regenerate
 
 ## Success Criteria
 
-- `/assignments` render đúng layout architecture ở trên; `/assignments/bank` không còn route (mở trực tiếp → not found)
+- `/assignments` render đúng layout architecture ở trên; `/assignments/bank` không còn route trong routeTree (mở trực tiếp → SPA shell HTTP 200 + router not-found, vì matcher dynamic prefix `/assignments/` vẫn match — xem Red Team Review plan.md)
 - `grep -rn "assignments/bank\|_auth/assignments/bank" apps/web/src --include="*.tsx" --include="*.ts" | grep -v routeTree.gen | grep -v ".test."` → 0 kết quả
 - `pnpm --filter web check-types` exit 0
 

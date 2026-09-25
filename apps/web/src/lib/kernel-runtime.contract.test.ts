@@ -471,8 +471,8 @@ describe("kernel-backed store wiring", () => {
 		const assignments = readSrc("../routes/_auth/assignments/index.tsx");
 		expect(assignments).not.toMatch(/6 bài tập/);
 		expect(assignments).not.toMatch(/3 cần xử lý/);
-		expect(assignments).toMatch(/\$\{data\.assignments\.length\} bài tập/);
-		expect(assignments).toMatch(/\$\{pendingCount\} cần xử lý/);
+		expect(assignments).toMatch(/data\.assignmentPrompts/);
+		expect(assignments).toMatch(/\{filteredPrompts\.length\}/);
 	});
 
 	test("tuition debt KPI renders neutral for 0đ and list pages have localized filter chips (#170)", () => {

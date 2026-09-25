@@ -345,13 +345,6 @@ export function NewAssignmentRoute() {
 					Bài tập
 				</Link>
 				<span aria-hidden="true">›</span>
-				<Link
-					to="/assignments/bank"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
-				>
-					Ngân hàng
-				</Link>
-				<span aria-hidden="true">›</span>
 				<span>Tạo mới</span>
 			</nav>
 			<PageHead

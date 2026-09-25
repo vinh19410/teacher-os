@@ -121,8 +121,8 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
 
-	// 12. Go to /assignments/bank → prompt has tag "Đã dùng 1 lớp"
-	await page.goto("/assignments/bank");
+	// 12. Go to /assignments → prompt has tag "Đã dùng 1 lớp"
+	await page.goto("/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 
@@ -152,8 +152,8 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	const items = page.locator(".assign-item");
 	await expect(items).toHaveCount(2);
 
-	// 14. Return to /assignments/bank: tag MUST STILL BE "Đã dùng 1 lớp" (distinct classId)
-	await page.goto("/assignments/bank");
+	// 14. Return to /assignments: tag MUST STILL BE "Đã dùng 1 lớp" (distinct classId)
+	await page.goto("/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 	await expect(page.getByText("Đã dùng 2 lớp")).toHaveCount(0);
