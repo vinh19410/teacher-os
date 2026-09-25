@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
+import { countBlanks } from "@/lib/cloze";
 import {
 	answerChoices,
 	kindOf,
@@ -48,6 +49,10 @@ export function questionRowError(
 	const errors: Record<string, string> = {};
 	if (item.stem.trim().length > QUESTION_STEM_MAX)
 		errors.stem = `Nội dung câu hỏi vượt quá ${QUESTION_STEM_MAX} ký tự.`;
+	else if (countBlanks(item.stem) >= 2)
+		// Phase-03 FR7: one blank per question. Zero markers stay valid
+		// (legacy prompts + tablecomp); two or more would render broken.
+		errors.stem = `Câu này có ${countBlanks(item.stem)} chỗ trống (____) — mỗi câu chỉ một chỗ trống.`;
 	else if (requireFilled && !item.stem.trim())
 		errors.stem = "Nhập nội dung câu hỏi.";
 	if (item.answer.trim().length > QUESTION_ANSWER_MAX) {

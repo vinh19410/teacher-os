@@ -8,6 +8,7 @@ import {
 } from "@/components/assignments/assignment-presets";
 import {
 	applyComposerFieldChange,
+	clozeStemIssue,
 	hasAuthoringContent,
 	optionBankIssue,
 	structuralChangeKind,
@@ -119,6 +120,13 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 		return {
 			title: "Ngân hàng lựa chọn chưa đạt",
 			sub: bankIssue,
+		};
+	// Phase-03 FR7 mirror: marker count + caps block with the row message.
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue)
+		return {
+			title: "Câu hỏi chưa hợp lệ",
+			sub: stemIssue,
 		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
@@ -266,6 +274,10 @@ export function NewAssignmentRoute() {
 	// errors.optionBank) and the save gate below mirrors the contract.
 	const bankIssue = optionBankIssue(value, status);
 	if (bankIssue) fieldErrors.optionBank = bankIssue;
+	// Phase-03 FR7 mirror — marker count + stem/answer/alts caps block both
+	// statuses (contract parse-time); shown at the key editor and the gate.
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue) fieldErrors.questions = stemIssue;
 	const canSave =
 		hasCoreContent(value) &&
 		!(
@@ -285,6 +297,7 @@ export function NewAssignmentRoute() {
 			!isAssignmentImageUrl(value.imageUrl)
 		) &&
 		!bankIssue &&
+		!stemIssue &&
 		!(
 			isAutoSkill(value.skill) &&
 			status === "ready" &&

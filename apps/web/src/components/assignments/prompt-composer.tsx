@@ -226,6 +226,7 @@ export function PromptComposer({
 					optionBank={value.optionBank}
 					imageUrlError={showErrors ? errors.imageUrl : undefined}
 					optionBankError={showErrors ? errors.optionBank : undefined}
+					questionsError={showErrors ? errors.questions : undefined}
 					onIntroChange={(intro) => onFieldChange({ intro })}
 					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
 					onItemsChange={(items) => onFieldChange({ items })}

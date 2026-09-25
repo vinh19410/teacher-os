@@ -218,6 +218,36 @@ describe("AnswerKeyGrid — per-row validation (phase-01 FR9)", () => {
 	});
 });
 
+describe("AnswerKeyGrid — marker rule (phase-03 FR7)", () => {
+	it("flags a stem with two or more ____ markers inside the row, in both statuses", () => {
+		for (const requireFilled of [true, false]) {
+			const html = renderGrid({
+				typeId: "sent",
+				items: [
+					{ stem: "a ____ b ____ c", answer: "x", opts: null, alts: "" },
+				],
+				showErrors: true,
+				requireFilled,
+			});
+			expect(html).toContain("2 chỗ trống");
+			expect(html).toContain("một chỗ trống");
+		}
+	});
+
+	it("one marker and zero markers stay valid", () => {
+		const html = renderGrid({
+			typeId: "sent",
+			items: [
+				{ stem: "with ____ marker", answer: "x", opts: null, alts: "" },
+				{ stem: "[table] r1 c1: A / B", answer: "y", opts: null, alts: "" },
+			],
+			showErrors: true,
+		});
+		expect(html).not.toContain("chỗ trống (____)");
+		expect(html).not.toContain("một chỗ trống.");
+	});
+});
+
 describe("AnswerKeyGrid — row actions", () => {
 	it("keeps the per-row delete button hidden while a single row remains", () => {
 		const single = renderGrid({ items: [emptyItem("tfng")] });

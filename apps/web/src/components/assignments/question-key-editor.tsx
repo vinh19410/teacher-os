@@ -37,6 +37,7 @@ export function QuestionKeyEditor({
 	onBankChange,
 	imageUrlError,
 	optionBankError,
+	questionsError,
 }: {
 	skill: string;
 	partId: string;
@@ -56,6 +57,8 @@ export function QuestionKeyEditor({
 	/** Pre-gated by the composer: only set when showErrors is on. */
 	imageUrlError?: string;
 	optionBankError?: string;
+	/** Phase-03 FR7 — composer-level marker/caps mirror, shown at the block. */
+	questionsError?: string;
 }) {
 	const qStart = qStartOf(skill, partId);
 	// Guarded by skill too — a drifted draft must not surface the URL field
@@ -164,6 +167,11 @@ export function QuestionKeyEditor({
 			)}
 			{showTableEditor && (
 				<TableGridEditor items={items} onApply={onItemsChange} />
+			)}
+			{showErrors && questionsError && (
+				<p role="alert" className="text-danger text-xs">
+					{questionsError}
+				</p>
 			)}
 			{isBankableType(skill, typeId) && (
 				<OptionBankEditor

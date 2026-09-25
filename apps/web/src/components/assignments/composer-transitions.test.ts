@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { emptyComposer, emptyItem } from "./assignment-presets";
 import {
 	applyComposerFieldChange,
+	clozeStemIssue,
 	hasAuthoringContent,
 	optionBankIssue,
 	structuralChangeKind,
@@ -384,5 +385,102 @@ describe("optionBankIssue — web mirror of the contract bank rules (phase-02 FR
 		});
 		expect(optionBankIssue(dup, "ready")).toMatch(/mỗi nhãn chỉ dùng/);
 		expect(optionBankIssue({ ...dup, type: "features" }, "ready")).toBeNull();
+	});
+});
+
+describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7)", () => {
+	test("a stem with two markers errors regardless of save status", () => {
+		for (const status of ["draft", "ready"] as const) {
+			const issue = clozeStemIssue(
+				composer({
+					type: "summary",
+					items: [
+						{ ...emptyItem("summary"), stem: "____ and ____", answer: "x" },
+					],
+				}),
+				status,
+			);
+			expect(issue).toContain("2 chỗ trống");
+			expect(issue).toContain("một chỗ trống");
+		}
+	});
+	test("one marker and zero markers are valid (backward compat + tablecomp)", () => {
+		expect(
+			clozeStemIssue(
+				composer({
+					type: "summary",
+					items: [
+						{ ...emptyItem("summary"), stem: "Rains refill the ____", answer: "wells" },
+						{ ...emptyItem("summary"), stem: "[table] r1 c1: A / B", answer: "x" },
+						{ ...emptyItem("summary"), stem: "legacy stem, no marker", answer: "y" },
+					],
+				}),
+				"ready",
+			),
+		).toBeNull();
+	});
+	test("over-cap stem/answer/alts block in both statuses", () => {
+		expect(
+			clozeStemIssue(
+				composer({
+					type: "summary",
+					items: [{ ...emptyItem("summary"), stem: "x".repeat(501), answer: "a" }],
+				}),
+				"draft",
+			),
+		).toContain("500 ký tự");
+		expect(
+			clozeStemIssue(
+				composer({
+					type: "summary",
+					items: [{ ...emptyItem("summary"), stem: "ok ____", answer: "a".repeat(201) }],
+				}),
+				"draft",
+			),
+		).toContain("200 ký tự");
+		expect(
+			clozeStemIssue(
+				composer({
+					type: "summary",
+					items: [{ ...emptyItem("summary"), stem: "ok ____", answer: "a", alts: "b".repeat(501) }],
+				}),
+				"ready",
+			),
+		).toContain("500 ký tự");
+	});
+	test("over 40 items blocks with the cap", () => {
+		const items = Array.from({ length: 41 }, () => ({
+			...emptyItem("summary"),
+			stem: "s ____",
+			answer: "a",
+		}));
+		expect(clozeStemIssue(composer({ type: "summary", items }), "draft")).toContain(
+			"Tối đa 40 câu",
+		);
+	});
+	test("ignores non-auto skills", () => {
+		expect(
+			clozeStemIssue(
+				composer({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					items: [{ ...emptyItem("discuss"), stem: "____ and ____" }],
+				}),
+				"ready",
+			),
+		).toBeNull();
+	});
+	test("numbers rows by the part's real qStart (p3 → 27)", () => {
+		const issue = clozeStemIssue(
+			composer({
+				skill: "reading",
+				part: "p3",
+				type: "flowchart",
+				items: [{ ...emptyItem("flowchart"), stem: "a ____ b ____" }],
+			}),
+			"ready",
+		);
+		expect(issue).toContain("Câu 27");
 	});
 });
