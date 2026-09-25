@@ -1,7 +1,10 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_OPTION_BANK_MAX,
+	ASSIGNMENT_OPTION_BANK_TYPES,
 	type AssignmentQuestion,
 	type AssignmentSkill,
+	isOptionBankable,
 } from "@teacher-os/api/contracts";
 
 export type SkillId = AssignmentSkill;
@@ -65,8 +68,9 @@ export const KIND: Record<string, AnswerKind> = {
 /**
  * Placeholder "Hướng dẫn đề" theo câu lệnh IELTS chính thức (giới hạn từ).
  * Đứng ngoài catalog vì test pin type catalog chỉ có {id,label} (#269).
- * Với 2 dạng matching (features/sentend), ngân hàng lựa chọn A–H do giáo
- * viên liệt kê ngay trong ô này — placeholder phải nhắc đủ A–H.
+ * Phase-02 FR5: 2 dạng matching (features/sentend) khóa đáp án từ panel
+ * "Ngân hàng lựa chọn" — placeholder KHÔNG còn hướng dẫn liệt kê A–H vào ô
+ * intro nữa (intro trở lại vai trò câu lệnh).
  */
 export const TYPE_HINTS: Record<string, string> = {
 	note: "Hoàn thành ghi chú. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
@@ -76,10 +80,36 @@ export const TYPE_HINTS: Record<string, string> = {
 	tablecomp: "Hoàn thành bảng. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
 	flowchart: "Hoàn thành lưu đồ. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
 	features:
-		"Nối thông tin với tên/đối tượng. Liệt kê ngân hàng lựa chọn A→H tại đây (nhập đủ các mục A–H)",
+		"Nối thông tin với đúng đối tượng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
 	sentend:
-		"Hoàn thành câu với phần kết đúng. Liệt kê các nửa câu A→H tại đây (nhập đủ các mục A–H)",
+		"Hoàn thành câu với phần kết đúng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
 };
+
+/**
+ * Option bank (phase-02 FR3): the (skill, type) pairs whose composer shows
+ * the structured bank editor. Mirrors `ASSIGNMENT_OPTION_BANK_TYPES` in the
+ * contracts — the sync test pins both sides so a drift cannot ship silently.
+ * Skill-qualified: `map` is shared with writing task1, which is NOT bankable.
+ */
+export const BANKABLE_PAIRS: ReadonlySet<string> = new Set(
+	Object.entries(ASSIGNMENT_OPTION_BANK_TYPES).flatMap(([skill, types]) =>
+		types.map((type) => `${skill}:${type}`),
+	),
+);
+export function isBankableType(skill: string, type: string): boolean {
+	return isOptionBankable(skill, type);
+}
+/** Contract cap — labels only exist for 8 positions (A–H / i–viii). */
+export const OPTION_BANK_MAX = ASSIGNMENT_OPTION_BANK_MAX;
+/**
+ * Positional display label for bank row `index` under `kind`: A… for letter
+ * kinds, i… for the roman headings kind. "" outside the alphabet or for
+ * non-bankable kinds — callers treat it as "no label exists".
+ */
+export function bankLabel(kind: AnswerKind, index: number): string {
+	if (kind !== "letter" && kind !== "roman") return "";
+	return ASSIGNMENT_ANSWER_CHOICES[kind][index] ?? "";
+}
 
 export const SKILLS: SkillPreset[] = [
 	{
@@ -319,6 +349,7 @@ export function emptyComposer(skillId: string, typeId: string) {
 		cuePoints: "",
 		audioName: "",
 		imageUrl: "",
+		optionBank: [],
 		note: "",
 		items: isAutoSkill(skillId) ? [emptyItem(typeId)] : [],
 	};

@@ -1,3 +1,4 @@
+import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -75,6 +76,7 @@ export function AnswerKeyGrid({
 	items,
 	showErrors,
 	requireFilled = true,
+	optionBank,
 	onItemsChange,
 	onAddQuestion,
 }: {
@@ -86,13 +88,34 @@ export function AnswerKeyGrid({
 	/** FR9: missing stem/answer are flagged only when the composer status is
 	 * `ready`; drafts may legitimately be half-filled. */
 	requireFilled?: boolean;
+	/** Phase-02 FR4: when the prompt's type is bankable and the teacher has
+	 * bank rows, the choice chips come from the bank's POSITIONAL labels —
+	 * only labels that exist in the bank are selectable. */
+	optionBank?: string[];
 	onItemsChange: (items: QuestionItem[]) => void;
 	/** Enter-to-add comes from the editor so the max-40 gate stays in one
 	 * place; returns whether a row was actually added. */
 	onAddQuestion: () => boolean;
 }) {
 	const kind = kindOf(typeId);
-	const choices = answerChoices(kind);
+	const kindAlphabet = answerChoices(kind);
+	// Bank-sourced chips (FR4): positional labels limited to the bank size.
+	// An empty bank falls back to the full alphabet so a draft can still be
+	// keyed before the teacher fills the bank.
+	const bankChips =
+		optionBank &&
+		optionBank.length > 0 &&
+		(kind === "letter" || kind === "roman")
+			? ASSIGNMENT_ANSWER_CHOICES[kind].slice(
+					0,
+					Math.min(optionBank.length, ASSIGNMENT_ANSWER_CHOICES[kind].length),
+				)
+			: null;
+	const choices = bankChips ?? kindAlphabet;
+	// FR4: sentend uses each option exactly once (formal format) — labels
+	// already keyed on ANOTHER row render disabled + faded. features and the
+	// other matching kinds may reuse labels.
+	const enforceDistinct = typeId === "sentend";
 	const qStart = qStartOf(skill, partId);
 	const [blurred, setBlurred] = useState<ReadonlySet<number>>(new Set());
 	const update = (index: number, patch: Partial<QuestionItem>) => {
@@ -182,6 +205,12 @@ export function AnswerKeyGrid({
 					: [];
 				const mcqChoices = kind === "mcq4" || kind === "mcq3" ? choices : null;
 				const options = item.opts ?? mcqChoices?.map(() => "") ?? [];
+				// FR4 (sentend): labels keyed on another row are unusable here.
+				const usedByOthers = new Set(
+					items
+						.filter((_, otherIndex) => otherIndex !== index)
+						.map((other) => other.answer.trim()),
+				);
 				return (
 					<fieldset
 						key={`${partId}-${index}`}
@@ -228,23 +257,32 @@ export function AnswerKeyGrid({
 						<div className="flex flex-col gap-1">
 							{choices && kind !== "text" ? (
 								<div className="flex flex-wrap gap-1.5">
-									{choices.map((choice) => (
-										<button
-											type="button"
-											key={choice}
-											aria-pressed={item.answer === choice}
-											aria-label={`Câu ${number}: ${choice}`}
-											onClick={() => update(index, { answer: choice })}
-											className={cn(
-												"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
-												item.answer === choice
-													? "border-fg bg-fg text-bg"
-													: "border-line bg-bg text-fg-2 hover:border-fg",
-											)}
-										>
-											{choice}
-										</button>
-									))}
+									{choices.map((choice) => {
+										const taken =
+											enforceDistinct &&
+											usedByOthers.has(choice) &&
+											item.answer !== choice;
+										return (
+											<button
+												type="button"
+												key={choice}
+												aria-pressed={item.answer === choice}
+												aria-label={`Câu ${number}: ${choice}`}
+												disabled={taken}
+												onClick={() => update(index, { answer: choice })}
+												className={cn(
+													"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
+													item.answer === choice
+														? "border-fg bg-fg text-bg"
+														: "border-line bg-bg text-fg-2 hover:border-fg",
+													taken &&
+														"cursor-not-allowed opacity-40 hover:border-line",
+												)}
+											>
+												{choice}
+											</button>
+										);
+									})}
 								</div>
 							) : (
 								<>

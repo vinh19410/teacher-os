@@ -1,15 +1,20 @@
 import {
+	ASSIGNMENT_OPTION_BANK_TYPES,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_SKILLS,
 	answerKindByType,
+	isOptionBankable,
 } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 
 import {
 	answerChoices,
+	BANKABLE_PAIRS,
+	bankLabel,
 	emptyComposer,
 	emptyItem,
 	isAutoSkill,
+	isBankableType,
 	KIND,
 	kindOf,
 	partOf,
@@ -135,9 +140,13 @@ describe("assignment presets catalog (#218 v5)", () => {
 		// Word-limit clauses per the official task instructions.
 		expect(TYPE_HINTS.diagram).toContain("MỘT TỪ");
 		expect(TYPE_HINTS.note).toContain("BA TỪ");
-		// Matching banks: the placeholder must tell the teacher to list A–H.
-		expect(TYPE_HINTS.features).toContain("A–H");
-		expect(TYPE_HINTS.sentend).toContain("A–H");
+		// Phase-02 FR5: the matching types key answers from the structured
+		// option-bank editor — the placeholder must NOT ask the teacher to
+		// list the A–H bank inside the intro anymore.
+		expect(TYPE_HINTS.features).not.toContain("Liệt kê");
+		expect(TYPE_HINTS.sentend).not.toContain("Liệt kê");
+		expect(TYPE_HINTS.features).not.toContain("tại đây");
+		expect(TYPE_HINTS.sentend).not.toContain("tại đây");
 		// Existing types keep their current (empty) placeholder behavior.
 		expect(TYPE_HINTS.tfng).toBeUndefined();
 		expect(TYPE_HINTS.sent).toBeUndefined();
@@ -216,6 +225,8 @@ describe("assignment presets catalog (#218 v5)", () => {
 					expect(blank.audioName).toBe("");
 					expect(blank.imageUrl).toBe("");
 					expect(blank.note).toBe("");
+					// Phase-02 FR3: the option bank starts empty for every type.
+					expect(blank.optionBank).toEqual([]);
 					if (isAutoSkill(skill.id)) {
 						expect(blank.items).toEqual([emptyItem(type.id)]);
 					} else {
@@ -224,6 +235,58 @@ describe("assignment presets catalog (#218 v5)", () => {
 				}
 			}
 		}
+	});
+
+	describe("option bank helpers (phase-02 FR3)", () => {
+		test("BANKABLE_PAIRS mirrors the contracts skill-qualified set exactly", () => {
+			const fromContracts = new Set(
+				Object.entries(ASSIGNMENT_OPTION_BANK_TYPES).flatMap(([skill, types]) =>
+					types.map((type) => `${skill}:${type}`),
+				),
+			);
+			expect([...BANKABLE_PAIRS].sort()).toEqual([...fromContracts].sort());
+			expect(BANKABLE_PAIRS.size).toBe(6);
+			// Spot-check the red-team #1 trap: writing task1 shares the `map`
+			// type id but must never be bankable.
+			expect(BANKABLE_PAIRS.has("writing:map")).toBe(false);
+			expect(BANKABLE_PAIRS.has("listening:map")).toBe(true);
+		});
+
+		test("isBankableType is skill-qualified", () => {
+			expect(isBankableType("reading", "headings")).toBe(true);
+			expect(isBankableType("reading", "info")).toBe(true);
+			expect(isBankableType("reading", "sentend")).toBe(true);
+			expect(isBankableType("reading", "features")).toBe(true);
+			expect(isBankableType("listening", "match2")).toBe(true);
+			expect(isBankableType("listening", "map")).toBe(true);
+			expect(isBankableType("writing", "map")).toBe(false);
+			expect(isBankableType("writing", "discuss")).toBe(false);
+			expect(isBankableType("reading", "tfng")).toBe(false);
+			expect(isBankableType("reading", "diagram")).toBe(false);
+			expect(isBankableType("unknown", "headings")).toBe(false);
+			// Stay in sync with the contracts helper itself.
+			for (const skill of SKILLS) {
+				for (const part of skill.parts) {
+					for (const type of part.types) {
+						expect(isBankableType(skill.id, type.id)).toBe(
+							isOptionBankable(skill.id, type.id),
+						);
+					}
+				}
+			}
+		});
+
+		test("bankLabel derives positional labels: A–H for letter, i–viii for roman", () => {
+			expect(bankLabel("letter", 0)).toBe("A");
+			expect(bankLabel("letter", 7)).toBe("H");
+			expect(bankLabel("roman", 0)).toBe("i");
+			expect(bankLabel("roman", 7)).toBe("viii");
+			// Beyond the alphabet or a non-bankable kind: no label.
+			expect(bankLabel("letter", 8)).toBe("");
+			expect(bankLabel("roman", 8)).toBe("");
+			expect(bankLabel("tfng", 0)).toBe("");
+			expect(bankLabel("text", 0)).toBe("");
+		});
 	});
 
 	test("helper fallbacks with unknown ids do not crash", () => {

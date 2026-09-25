@@ -226,3 +226,107 @@ describe("AnswerKeyGrid — row actions", () => {
 		expect(many).toContain("Xóa");
 	});
 });
+
+describe("AnswerKeyGrid — option bank chips (phase-02 FR4)", () => {
+	it("sources letter chips from the bank for bankable kinds: 5 rows → A–E only", () => {
+		const html = renderGrid({
+			typeId: "features",
+			skill: "reading",
+			partId: "p3",
+			items: tfngItems(2, ["A", "C"]),
+			optionBank: ["Ada", "Brunel", "Curie", "Darwin", "Einstein"],
+		});
+		expect(html).toContain('aria-label="Câu 27: A"');
+		expect(html).toContain('aria-label="Câu 27: E"');
+		expect(html).not.toContain('aria-label="Câu 27: F"');
+		expect(html).not.toContain('aria-label="Câu 27: H"');
+		// Keyed answers still render as selected.
+		expect(html).toMatch(/aria-pressed="true"[^>]*>A</);
+	});
+
+	it("falls back to the full alphabet when the bank is empty (draft UX)", () => {
+		const html = renderGrid({
+			typeId: "features",
+			skill: "reading",
+			partId: "p3",
+			items: tfngItems(1),
+			optionBank: [],
+		});
+		expect(html).toContain('aria-label="Câu 27: A"');
+		expect(html).toContain('aria-label="Câu 27: H"');
+	});
+
+	it("sources roman chips from the bank for headings", () => {
+		const html = renderGrid({
+			typeId: "headings",
+			skill: "reading",
+			partId: "p2",
+			items: tfngItems(1, ["i"]),
+			optionBank: ["I", "II", "III"],
+		});
+		expect(html).toContain('aria-label="Câu 14: i"');
+		expect(html).toContain('aria-label="Câu 14: iii"');
+		expect(html).not.toContain('aria-label="Câu 14: iv"');
+	});
+
+	it("sentend used labels render disabled and faded; features may reuse", () => {
+		const sentend = renderGrid({
+			typeId: "sentend",
+			skill: "reading",
+			partId: "p2",
+			items: tfngItems(2, ["A", ""]),
+			optionBank: ["Nửa A", "Nửa B", "Nửa C"],
+		});
+		// Row 2's "A" chip is disabled + faded (row 1 already keyed it).
+		expect(sentend).toContain('aria-label="Câu 15: A" disabled');
+		expect(sentend).toContain("opacity-40");
+		expect(sentend).not.toContain('aria-label="Câu 15: B" disabled');
+
+		const features = renderGrid({
+			typeId: "features",
+			skill: "reading",
+			partId: "p3",
+			items: tfngItems(2, ["A", ""]),
+			optionBank: ["Ada", "Brunel", "Curie"],
+		});
+		expect(features).not.toContain('aria-label="Câu 27: A" disabled');
+	});
+
+	it("the current row's own selection stays enabled", () => {
+		const html = renderGrid({
+			typeId: "sentend",
+			skill: "reading",
+			partId: "p2",
+			items: tfngItems(2, ["A", "A"]),
+			optionBank: ["Nửa A", "Nửa B", "Nửa C"],
+		});
+		expect(html).toMatch(/aria-pressed="true"[^>]*>A</);
+		expect(html).not.toContain('aria-label="Câu 14: A" disabled');
+	});
+
+	it("flags a keyed answer beyond the bank length as invalid", () => {
+		const html = renderGrid({
+			typeId: "features",
+			skill: "reading",
+			partId: "p3",
+			items: tfngItems(1, ["F"]),
+			optionBank: ["Ada", "Brunel"],
+			showErrors: true,
+		});
+		expect(html).toContain("không thuộc bộ đáp án");
+	});
+
+	it("non-bankable kinds ignore the optionBank prop entirely", () => {
+		const html = renderGrid({
+			typeId: "mcq",
+			skill: "reading",
+			partId: "p3",
+			items: [
+				{ stem: "Main idea?", answer: "A", opts: ["", "", "", ""], alts: "" },
+			],
+			optionBank: ["Ada", "Brunel"],
+		});
+		expect(html).toContain('aria-label="Câu 27: A"');
+		expect(html).toContain('aria-label="Câu 27: D"');
+	});
+});

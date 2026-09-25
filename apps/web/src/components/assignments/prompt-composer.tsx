@@ -28,6 +28,8 @@ export interface ComposerValue {
 	cuePoints: string;
 	audioName: string;
 	imageUrl: string;
+	/** Phase-02 FR3 — structured option bank rows for bankable matching types. */
+	optionBank: string[];
 	note: string;
 	items: QuestionItem[];
 }
@@ -221,10 +223,13 @@ export function PromptComposer({
 					showErrors={showErrors}
 					status={status}
 					imageUrl={value.imageUrl}
+					optionBank={value.optionBank}
 					imageUrlError={showErrors ? errors.imageUrl : undefined}
+					optionBankError={showErrors ? errors.optionBank : undefined}
 					onIntroChange={(intro) => onFieldChange({ intro })}
 					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
 					onItemsChange={(items) => onFieldChange({ items })}
+					onBankChange={(optionBank) => onFieldChange({ optionBank })}
 				/>
 			)}
 			{value.skill === "listening" && (

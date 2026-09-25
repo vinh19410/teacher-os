@@ -99,6 +99,7 @@ export function PreviewAssignmentRoute() {
 					intro={draft.intro}
 					audioName={draft.audioName}
 					imageUrl={draft.imageUrl}
+					optionBank={draft.optionBank}
 					items={draft.items}
 				/>
 

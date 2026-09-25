@@ -107,6 +107,34 @@ function parseQuestions(
 	}
 }
 
+/** Phase-02 FR7 — same guard style as parseQuestions: legacy rows carry the
+ * `"[]"` column default; corrupted JSON or non-string items fall back to []
+ * so the snapshot shape stays `string[]`. */
+function parseOptionBank(
+	raw: string,
+	rowId: string,
+): KernelSnapshot["assignmentPrompts"][number]["optionBank"] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			console.warn(
+				`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,
+			);
+			return [];
+		}
+		// Read-path defense in depth: the contract caps banks at 8 on write;
+		// a corrupt row with more items would render empty `bankLabel`s.
+		return parsed
+			.filter((item): item is string => typeof item === "string")
+			.slice(0, 8);
+	} catch {
+		console.warn(
+			`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,
+		);
+		return [];
+	}
+}
+
 /** DB text column guard: unknown type values fall back to "ielts". */
 const knownClassTypes = new Set<string>(CLASS_TYPES);
 
@@ -368,6 +396,7 @@ export async function loadSnapshot(
 				audioName,
 				imageUrl,
 				questions,
+				optionBank,
 				note,
 				status,
 				createdAt,
@@ -392,6 +421,9 @@ export async function loadSnapshot(
 				// parseQuestions style for corrupted/missing values.
 				imageUrl: typeof imageUrl === "string" ? imageUrl : "",
 				questions: parseQuestions(questions, id),
+				// Phase-02 FR7: legacy rows predate option_bank — parseOptionBank
+				// defaults corrupted/missing values to [].
+				optionBank: parseOptionBank(optionBank, id),
 				note,
 				status,
 				createdAt: createdAt.toISOString(),

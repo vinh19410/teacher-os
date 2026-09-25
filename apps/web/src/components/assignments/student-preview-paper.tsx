@@ -1,6 +1,9 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
 import {
+	bankLabel,
+	isBankableType,
+	kindOf,
 	partOf,
 	type QuestionItem,
 	skillOf,
@@ -24,6 +27,8 @@ export function StudentPreviewPaper(props: {
 	cuePoints?: string;
 	audioName?: string;
 	imageUrl?: string;
+	/** Phase-02 FR6 — structured option bank, rendered as a labeled list. */
+	optionBank?: string[];
 	items?: QuestionItem[];
 	task?: string;
 	genre?: string;
@@ -35,6 +40,11 @@ export function StudentPreviewPaper(props: {
 	const part = partOf(skillId, partId);
 	const type = typeOf(skillId, partId, typeId);
 	const isAuto = skillId === "reading" || skillId === "listening";
+	// FR6: bankable matching types show the structured bank; an empty bank
+	// (legacy prompts) falls back to the intro text AND warns — never silent.
+	const bankable = isBankableType(skillId, typeId);
+	const bank = props.optionBank ?? [];
+	const bankKind = kindOf(typeId);
 	// The preview draft never passes the server contract — this renderer is
 	// the only guard, so verify the scheme here before any <img> exists.
 	const rawImageUrl = props.imageUrl?.trim() ?? "";
@@ -82,6 +92,31 @@ export function StudentPreviewPaper(props: {
 							{props.intro.trim()}
 						</p>
 					)}
+					{bankable &&
+						(bank.length > 0 ? (
+							<div className="rounded-md border border-line bg-surface p-3">
+								<p className="font-medium text-muted-fg text-xs">
+									Ngân hàng lựa chọn
+								</p>
+								<ol className="mt-1.5 flex flex-col gap-1">
+									{bank.map((row, index) => (
+										<li key={index} className="text-sm">
+											<span className="font-medium font-mono">
+												{bankLabel(bankKind, index)}
+											</span>{" "}
+											{row}
+										</li>
+									))}
+								</ol>
+							</div>
+						) : (
+							<p
+								role="alert"
+								className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
+							>
+								Thiếu ngân hàng lựa chọn
+							</p>
+						))}
 					{(props.items ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{(part.qStart ?? 1) + index}.</strong>{" "}

@@ -21,6 +21,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -52,6 +53,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -81,6 +83,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -114,6 +117,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -138,6 +142,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -147,8 +152,13 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 		// Letter chips A–H (letter kind, like matching information).
 		expect(html).toContain(">A<");
 		expect(html).toContain(">H<");
-		// Placeholder instructs the teacher to list the option bank A–H here.
-		expect(html).toContain("A–H");
+		// Phase-02 FR5: the placeholder no longer asks the teacher to list the
+		// bank in the intro — it points at the structured bank panel instead.
+		expect(html).not.toContain("Liệt kê");
+		expect(html).toContain("Chọn đáp án từ Ngân hàng lựa chọn bên dưới.");
+		// Phase-02 FR3: the bank panel renders for the bankable type.
+		expect(html).toContain("Ngân hàng lựa chọn");
+		expect(html).toContain("Thêm mục");
 		// Letter kind: no free-text answer/alts pair.
 		expect(html).not.toContain("Chấp nhận thêm, cách nhau bằng /");
 		expect(html).toContain("27 B");
@@ -167,6 +177,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl="https://example.com/diagram.png"
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -193,6 +204,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl=""
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -211,6 +223,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
+				onBankChange={vi.fn()}
 				imageUrl="http://insecure.example.com/d.png"
 				onImageUrlChange={vi.fn()}
 			/>,
@@ -229,6 +242,7 @@ describe("QuestionKeyEditor — phase-01 quick wins", () => {
 		status: "ready" as const,
 		onIntroChange: vi.fn(),
 		onItemsChange: vi.fn(),
+		onBankChange: vi.fn(),
 		imageUrl: "",
 		onImageUrlChange: vi.fn(),
 	};

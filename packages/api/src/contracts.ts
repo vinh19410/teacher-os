@@ -337,6 +337,30 @@ export const answerKindByType: Record<
 };
 
 /**
+ * Structured option bank (phase-02 FR2) — the (skill, type) pairs whose
+ * prompts carry `optionBank`. Skill-qualified ON PURPOSE: `map` is shared
+ * with writing task1 (a prompt-only type with no questions), which is NOT
+ * bankable. Only these 5 matching kinds + listening map render a labeled
+ * choice list; labels are positional (A–H letters or i–viii romans), so
+ * the bank is capped at `ASSIGNMENT_OPTION_BANK_MAX` = 8 items.
+ */
+export const ASSIGNMENT_OPTION_BANK_MAX = 8;
+export const ASSIGNMENT_OPTION_BANK_TYPES: Record<
+	AssignmentSkill,
+	readonly string[]
+> = {
+	writing: [],
+	reading: ["headings", "info", "sentend", "features"],
+	listening: ["match2", "map"],
+	speaking: [],
+};
+export function isOptionBankable(skill: string, type: string): boolean {
+	return (
+		ASSIGNMENT_OPTION_BANK_TYPES[skill as AssignmentSkill] ?? []
+	).includes(type);
+}
+
+/**
  * Diagram images are teacher-pasted URLs: https-only blocks `javascript:`,
  * `data:` and mixed content at the contract layer. The web editor and the
  * preview renderer (client-side draft path, no contract) re-use this same
@@ -386,6 +410,17 @@ export const assignmentPromptCreateSchema = z
 				}),
 			)
 			.max(40),
+		/**
+		 * Phase-02 FR2 — structured option bank for the bankable matching
+		 * pairs (`ASSIGNMENT_OPTION_BANK_TYPES`). Every item must be 1–200
+		 * chars after trim (empty rows never parse, even as drafts — the web
+		 * editor mirrors this). Rules tying bank ↔ answers only gate `ready`;
+		 * see the superRefine below.
+		 */
+		optionBank: z
+			.array(z.string().trim().min(1).max(200))
+			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.default([]),
 		note: z.string().max(2000),
 		status: z.enum(["draft", "ready"]),
 	})
@@ -500,6 +535,59 @@ export const assignmentPromptCreateSchema = z
 						path: ["questions", index, "answer"],
 						message: "invalid answer choice",
 					});
+			}
+		}
+		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
+		// (red-team #1): writing task1 shares the `map` type id but is NOT
+		// bankable, so a bank arriving there is rejected outright. The 2..8 /
+		// ≥ questions / label-in-bank / sentend-distinct rules gate `ready`
+		// only — drafts may carry a partial bank while the teacher is keying.
+		if (!isOptionBankable(value.skill, value.type)) {
+			if (value.optionBank.length > 0)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: "optionBank only applies to bankable matching types",
+				});
+		} else if (value.status === "ready") {
+			const { optionBank } = value;
+			if (optionBank.length < 2 || optionBank.length < value.questions.length)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every question`,
+				});
+			if (value.questions.length > ASSIGNMENT_OPTION_BANK_MAX)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions"],
+					message: `bankable types allow at most ${ASSIGNMENT_OPTION_BANK_MAX} questions (label alphabet size)`,
+				});
+			const bankKind = answerKindByType[value.type];
+			const labels = bankKind
+				? ASSIGNMENT_ANSWER_CHOICES[bankKind]
+				: ASSIGNMENT_ANSWER_CHOICES.letter;
+			const used = new Set<string>();
+			for (const [index, question] of value.questions.entries()) {
+				if (!question.answer.trim()) continue;
+				const labelIndex = labels.indexOf(question.answer as never);
+				if (labelIndex < 0 || labelIndex >= optionBank.length)
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "answer must be a label inside the option bank",
+					});
+				if (value.type === "sentend") {
+					// Formal-format rule: sentend uses each option exactly once;
+					// features and the other matching kinds may reuse labels.
+					if (used.has(question.answer))
+						ctx.addIssue({
+							code: "custom",
+							path: ["questions", index, "answer"],
+							message: "duplicate answer — each option is used once",
+						});
+					used.add(question.answer);
+				}
 			}
 		}
 	});
@@ -839,6 +927,8 @@ export interface KernelAssignmentPromptRow {
 	audioName: string;
 	imageUrl: string;
 	questions: AssignmentQuestion[];
+	/** Phase-02 FR7 — structured option bank (labeled choice list). */
+	optionBank: string[];
 	note: string;
 	status: "draft" | "ready" | string;
 	/** ISO datetime string — snapshot convention (bank sort + `Thêm {date}`). */

@@ -93,6 +93,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			cuePoints: "",
 			audioName: "",
 			imageUrl: "",
+			optionBank: [],
 			note: "",
 			items: [],
 		};
@@ -214,6 +215,40 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			);
 			expect(res.title).toBe("Link ảnh chưa hợp lệ");
 			expect(res.sub).toContain("500 ký tự");
+		});
+
+		it("10. Bankable ready without a bank blocks save with the panel message (phase-02)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p3",
+					type: "features",
+					passage: "Some passage",
+					optionBank: [],
+					items: [{ stem: "Q27", answer: "A", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Ngân hàng lựa chọn chưa đạt");
+			expect(res.sub).toContain("tối thiểu 2");
+		});
+
+		it("11. Bankable with a blank bank row blocks save even as draft (phase-02)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p3",
+					type: "features",
+					passage: "Some passage",
+					optionBank: ["Ada", "  "],
+					items: [{ stem: "Q27", answer: "", opts: null, alts: "" }],
+				},
+				"draft",
+			);
+			expect(res.title).toBe("Ngân hàng lựa chọn chưa đạt");
+			expect(res.sub).toContain("điền nội dung cho mọi mục");
 		});
 	});
 
@@ -374,6 +409,7 @@ describe("previewDraftFrom — preview payload parity (phase-01 FR6 bug fix)", (
 		cuePoints: "",
 		audioName: "sec1.mp3",
 		imageUrl: "",
+		optionBank: [],
 		note: "",
 		items: [{ stem: "Name:", answer: "Clarke", opts: null, alts: "" }],
 	};
@@ -381,6 +417,18 @@ describe("previewDraftFrom — preview payload parity (phase-01 FR6 bug fix)", (
 	it("carries transcript so the preview round trip cannot drop it", () => {
 		const draft = previewDraftFrom(full, "draft");
 		expect(draft.transcript).toBe("W: Good morning…");
+	});
+
+	it("carries the option bank so the preview round trip cannot drop it (phase-02 FR7)", () => {
+		const banked = {
+			...full,
+			skill: "reading",
+			part: "p3",
+			type: "features",
+			optionBank: ["Brunel", "Darwin"],
+		} as ComposerValue;
+		const draft = previewDraftFrom(banked, "ready");
+		expect(draft.optionBank).toEqual(["Brunel", "Darwin"]);
 	});
 
 	it("carries every composer field plus legacy task/genre aliases", () => {

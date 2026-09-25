@@ -4988,6 +4988,278 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(row).toBeDefined();
 		expect(row?.questions).toEqual([]);
 	});
+
+	describe("option bank (phase-02 FR2/FR7)", () => {
+		const bankBody = (overrides: Record<string, unknown> = {}) => ({
+			skill: "reading",
+			part: "p3",
+			type: "features",
+			title: "Reading Features — bank",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "Match each feature with the correct person.",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: ["Ada", "Brunel", "Curie", "Darwin", "Einstein"],
+			questions: [
+				{ stem: "Q27", opts: null, answer: "A", alts: "" },
+				{ stem: "Q28", opts: null, answer: "B", alts: "" },
+				{ stem: "Q29", opts: null, answer: "C", alts: "" },
+				{ stem: "Q30", opts: null, answer: "A", alts: "" },
+			],
+			note: "",
+			status: "ready",
+			...overrides,
+		});
+
+		test("POST ready features with a full bank persists optionBank through the snapshot (round-trip)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["  Ada ", "Brunel", "Curie", "Darwin", "Einstein"],
+				}),
+			});
+			expect(res.status).toBe(201);
+			const { id } = (await res.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.optionBank).toEqual([
+				"Ada",
+				"Brunel",
+				"Curie",
+				"Darwin",
+				"Einstein",
+			]);
+		});
+
+		test("POST ready bankable without a bank is 400", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({ optionBank: [] }),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with fewer bank items than questions is 400", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["Ada", "Brunel", "Curie"],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with a single bank item is 400 (min 2)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["Ada"],
+					questions: [{ stem: "Q27", opts: null, answer: "A", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with more than 8 questions is 400 (labels A–H only)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					questions: Array.from({ length: 9 }, (_, i) => ({
+						stem: `Q${i}`,
+						opts: null,
+						answer: "A",
+						alts: "",
+					})),
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with an answer beyond the bank length is 400", async () => {
+			// Bank has 5 items → labels A–E; "F" would point outside the bank.
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					questions: [{ stem: "Q27", opts: null, answer: "F", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready sentend rejects duplicate labels with 400; features may reuse", async () => {
+			const dupBody = {
+				questions: [
+					{ stem: "Q34", opts: null, answer: "A", alts: "" },
+					{ stem: "Q35", opts: null, answer: "A", alts: "" },
+				],
+			};
+			const sentend = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p2",
+					type: "sentend",
+					...dupBody,
+				}),
+			});
+			expect(sentend.status).toBe(400);
+
+			const features = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody(dupBody),
+			});
+			expect(features.status).toBe(201);
+		});
+
+		test("POST draft bankable accepts a partial bank and no answers (rules gate ready only)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					status: "draft",
+					optionBank: ["Ada"],
+					questions: [{ stem: "Q27", opts: null, answer: "", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(201);
+		});
+
+		test("POST rejects a bank on non-bankable types — including writing task1 map (skill-qualified)", async () => {
+			for (const [skill, part, type] of [
+				["reading", "p1", "tfng"],
+				["writing", "task1", "map"],
+			] as const) {
+				const res = await t.call("/api/assignments/prompts", {
+					session: orgA,
+					method: "POST",
+					body: {
+						...bankBody({
+							questions: [],
+						}),
+						skill,
+						part,
+						type,
+						title: `Non-bankable ${skill} ${type}`,
+						prompt: skill === "writing" ? "Prompt text" : "",
+						optionBank: ["Ada", "Brunel"],
+					},
+				});
+				expect(res.status, `${skill}/${type}`).toBe(400);
+			}
+		});
+
+		test("POST rejects empty, over-cap and over-count bank items with 400", async () => {
+			for (const optionBank of [
+				["Ada", ""],
+				["Ada", " ".repeat(1)],
+				["Ada", "x".repeat(201)],
+				Array.from({ length: 9 }, (_, i) => `Item ${i}`),
+			]) {
+				const res = await t.call("/api/assignments/prompts", {
+					session: orgA,
+					method: "POST",
+					body: bankBody({ optionBank }),
+				});
+				expect(res.status, JSON.stringify(optionBank).slice(0, 40)).toBe(400);
+			}
+		});
+
+		test("snapshot defaults missing or corrupt option_bank to [] for legacy rows", async () => {
+			const orgId = await t.orgIdOf(orgA);
+			const legacyId = crypto.randomUUID();
+			await t.db.insert(schema.assignmentPrompt).values({
+				id: legacyId,
+				orgId,
+				task: "task2",
+				genre: "discuss",
+				skill: "reading",
+				part: "p2",
+				type: "headings",
+				title: "Legacy row without bank",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: "[]",
+				note: "",
+				status: "draft",
+			});
+			const corruptId = crypto.randomUUID();
+			await t.db.insert(schema.assignmentPrompt).values({
+				id: corruptId,
+				orgId,
+				task: "task2",
+				genre: "discuss",
+				skill: "reading",
+				part: "p2",
+				type: "headings",
+				title: "Corrupt bank JSON",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: "[]",
+				optionBank: "not-json",
+				note: "",
+				status: "draft",
+			});
+			const rows = (await t.kernel(orgA)).assignmentPrompts;
+			expect(rows.find((r) => r.id === legacyId)?.optionBank).toEqual([]);
+			expect(rows.find((r) => r.id === corruptId)?.optionBank).toEqual([]);
+		});
+
+		test("POST ready headings accepts a roman-labeled bank round-trip", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p2",
+					type: "headings",
+					title: "Reading Headings — roman bank",
+					optionBank: ["Liệt kê I", "Liệt kê II", "Liệt kê III"],
+					questions: [
+						{ stem: "Paragraph A", opts: null, answer: "i", alts: "" },
+						{ stem: "Paragraph B", opts: null, answer: "ii", alts: "" },
+						{ stem: "Paragraph C", opts: null, answer: "iii", alts: "" },
+					],
+				}),
+			});
+			expect(res.status).toBe(201);
+			const { id } = (await res.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.optionBank).toEqual([
+				"Liệt kê I",
+				"Liệt kê II",
+				"Liệt kê III",
+			]);
+		});
+	});
 });
 
 describe("class assignment give flow (#208)", () => {
