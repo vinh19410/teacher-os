@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Option bank có cấu trúc cho các dạng matching + map"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: [1]
@@ -91,15 +91,15 @@ flowchart LR
 
 ## Todo List
 
-- [ ] Cột DB + migration (+ ghi chú thứ tự deploy)
-- [ ] Contract field + superRefine + KernelAssignmentPromptRow + test API
-- [ ] `bankablePairs`/`bankLabel` + sync test
-- [ ] `option-bank-editor.tsx` (kèm reset answer khi xóa dòng)
-- [ ] Grid dropdown nguồn bank + gray-out sentend
-- [ ] ComposerValue/canSave mirror + reset rules
-- [ ] Snapshot + repo projection + mock-data + PreviewDraft mang bank
-- [ ] Preview render bank + fallback cảnh báo
-- [ ] E2E features/sentend/xóa-row/đề cũ/round-trip snapshot
+- [x] Cột DB + migration (+ ghi chú thứ tự deploy)
+- [x] Contract field + superRefine + KernelAssignmentPromptRow + test API
+- [x] `bankablePairs`/`bankLabel` + sync test
+- [x] `option-bank-editor.tsx` (kèm reset answer khi xóa dòng)
+- [x] Grid dropdown nguồn bank + gray-out sentend
+- [x] ComposerValue/canSave mirror + reset rules
+- [x] Snapshot + repo projection + mock-data + PreviewDraft mang bank
+- [x] Preview render bank + fallback cảnh báo
+- [x] E2E features/sentend/xóa-row/đề cũ/round-trip snapshot
 
 ## Success Criteria
 

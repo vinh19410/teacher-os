@@ -12,6 +12,13 @@ Quy ước khi cập nhật:
 
 ## 2026-09-25
 
+### Added
+- Ngân hàng lựa chọn có cấu trúc (option bank) cho 5 dạng matching + listening map (headings, info, sentend, features, match2, map): panel soạn từng dòng tự gán nhãn A–H / i–viii, nút "điền đủ N mục", cap 8 mục (#271)
+- Khóa đáp án dạng matching bằng chip chọn từ chính ngân hàng (chỉ nhãn có trong bank); riêng sentend chặn chọn trùng — mỗi nhãn dùng đúng một câu (#271)
+- Xóa một dòng bank sẽ reset đáp án đã khóa từ vị trí đó trở xuống (nhãn là vị trí — tránh re-bind âm thầm chấm sai) (#271)
+- Preview học viên (draft lẫn ngân hàng đề) render bank thành danh sách đánh nhãn; đề cũ không bank hiển thị fallback intro kèm cảnh báo "Thiếu ngân hàng lựa chọn" thay vì im lặng (#271)
+- Validation đồng bộ 3 tầng (contract / composer / preview): bank 2–8 mục phủ đủ số câu, tối đa 8 câu cho dạng bankable, đáp án phải nằm trong bank, sentend đôi một khác nhau; cột DB `assignment_prompt.option_bank` (migration 0028 — deploy `db:migrate:deploy` TRƯỚC worker) (#271)
+
 ### Removed
 - Xoá trang `/assignments/bank` (Ngân hàng bài tập): route, nút "Ngân hàng đề", breadcrumb "Ngân hàng" và mọi liên kết điều hướng tới nó (#267)
 - Bỏ bảng tracking bài tập per-học viên cũ trên `/assignments` (dữ liệu mock `data.assignments` + `averageBand`); theo dõi tiến độ làm bài vẫn ở tab Bài tập của trang Lớp học, luồng chấm bài vẫn vào được từ trang chi tiết học viên (#267)
