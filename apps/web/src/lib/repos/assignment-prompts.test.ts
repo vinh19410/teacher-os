@@ -35,6 +35,7 @@ describe("mapAssignmentPrompts (#202)", () => {
 				prompt: "Some people think…",
 				audioName: "section1.mp3",
 				imageUrl: "https://example.com/diagram.png",
+				optionBank: [],
 				note: "",
 				status: "ready",
 				createdAt: "2026-09-18T10:00:00.000Z",
@@ -80,5 +81,40 @@ describe("mapAssignmentPrompts (#202)", () => {
 			],
 		} as unknown as KernelSnapshot;
 		expect(mapAssignmentPrompts(snapshot)[0]?.status).toBe("draft");
+	});
+
+	test("optionBank projects through; legacy rows collapse to [] (phase-02 FR7)", () => {
+		const snapshot = {
+			assignmentPrompts: [
+				{
+					id: "ap-bank",
+					task: "p3",
+					genre: "features",
+					title: "Features with bank",
+					band: "7.0",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					optionBank: ["Brunel", "Darwin"],
+					createdAt: "2026-09-25T00:00:00.000Z",
+				},
+				{
+					id: "ap-legacy",
+					task: "p3",
+					genre: "features",
+					title: "Legacy features",
+					band: "7.0",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					createdAt: "2026-09-25T00:00:00.000Z",
+				},
+			],
+		} as unknown as KernelSnapshot;
+		const [withBank, legacy] = mapAssignmentPrompts(snapshot);
+		expect(withBank?.optionBank).toEqual(["Brunel", "Darwin"]);
+		expect(legacy?.optionBank).toEqual([]);
 	});
 });

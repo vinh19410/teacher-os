@@ -1,4 +1,14 @@
-import { emptyComposer, emptyItem, isAutoSkill } from "./assignment-presets";
+import {
+	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_OPTION_BANK_MAX,
+} from "@teacher-os/api/contracts";
+import {
+	emptyComposer,
+	emptyItem,
+	isAutoSkill,
+	isBankableType,
+	kindOf,
+} from "./assignment-presets";
 import type { ComposerValue } from "./prompt-composer";
 
 /**
@@ -31,11 +41,13 @@ export function structuralChangeKind(
  * Authored material whose loss would hurt: composed question content.
  * Meta fields (title/source/band/note) never trigger a confirm on their own;
  * imageUrl alone keeps its silent #269 reset (a stray URL must not pin the
- * teacher into a dialog).
+ * teacher into a dialog). A typed option-bank row is authored content too —
+ * losing it on a type change must be confirmed (phase-02 FR3).
  */
 export function hasAuthoringContent(value: ComposerValue): boolean {
 	if (value.items.some((item) => item.stem.trim() || item.answer.trim()))
 		return true;
+	if (value.optionBank.some((row) => row.trim())) return true;
 	return Boolean(
 		value.passage.trim() ||
 			value.prompt.trim() ||
@@ -52,8 +64,11 @@ export function hasAuthoringContent(value: ComposerValue): boolean {
  * `intro` still resets on every part/type change (TYPE_HINTS text is
  * type-specific — keeping it would re-open the #269 word-limit leak);
  * `imageUrl` keeps the #269 behavior of resetting on every part/type change.
- * Skill changes still go through `emptyComposer` (full wipe, including
- * transcript — it is only carried within one skill).
+ * Phase-02 FR3: the option bank survives only a bankable→bankable change
+ * within one skill (labels are positional — a bank riding into a
+ * non-bankable or cross-skill type would be meaningless); everything else
+ * resets it. Skill changes still go through `emptyComposer` (full wipe,
+ * including transcript — it is only carried within one skill).
  */
 export function applyComposerFieldChange(
 	current: ComposerValue,
@@ -70,6 +85,9 @@ export function applyComposerFieldChange(
 	const typeChanged = patch.type !== undefined && patch.type !== current.type;
 	if (partChanged || typeChanged) {
 		const merged = { ...current, ...patch };
+		const keepBank =
+			isBankableType(current.skill, current.type) &&
+			isBankableType(merged.skill, merged.type);
 		return {
 			...merged,
 			intro: "",
@@ -81,8 +99,61 @@ export function applyComposerFieldChange(
 			// Diagram URLs belong to one prompt — never let them leak
 			// into the next type (#269 red-team #5).
 			imageUrl: "",
+			// Bank rows are positional labels (A–H / i–viii): keep them only
+			// between two bankable types of the same skill (phase-02 FR3).
+			optionBank: keepBank ? merged.optionBank : [],
 			items: isAutoSkill(merged.skill) ? [emptyItem(merged.type)] : [],
 		};
 	}
 	return { ...current, ...patch };
+}
+
+/**
+ * Web mirror of the contract's option-bank rules (phase-02 FR2) — a draft
+ * can half-fail here without ever hitting a blind 400. Returns the first
+ * human-readable issue or null. Item-level rules (blank / over-cap row,
+ * over-count) block BOTH statuses because the contract rejects them at
+ * parse time; the bank ↔ answers rules gate `ready` only, exactly like the
+ * contract superRefine.
+ */
+export function optionBankIssue(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): string | null {
+	if (!isBankableType(value.skill, value.type)) return null;
+	if (value.optionBank.length > ASSIGNMENT_OPTION_BANK_MAX)
+		return `Ngân hàng lựa chọn tối đa ${ASSIGNMENT_OPTION_BANK_MAX} mục.`;
+	if (value.optionBank.some((row) => !row.trim() || row.trim().length > 200))
+		return "Ngân hàng lựa chọn: điền nội dung cho mọi mục (1–200 ký tự).";
+	if (status !== "ready") return null;
+	if (value.optionBank.length < 2)
+		return "Ngân hàng lựa chọn cần tối thiểu 2 mục trước khi lưu sẵn sàng giao.";
+	if (value.items.length > ASSIGNMENT_OPTION_BANK_MAX)
+		// Root cause first: more questions than labels can never be covered.
+		return `Dạng này tối đa ${ASSIGNMENT_OPTION_BANK_MAX} câu — số nhãn chỉ có ${ASSIGNMENT_OPTION_BANK_MAX} giá trị.`;
+	if (value.optionBank.length < value.items.length)
+		return `Ngân hàng lựa chọn phải phủ đủ ${value.items.length} câu.`;
+	const kind = kindOf(value.type);
+	const labels =
+		kind === "letter" || kind === "roman"
+			? ASSIGNMENT_ANSWER_CHOICES[kind]
+			: null;
+	if (labels) {
+		for (const item of value.items) {
+			if (!item.answer.trim()) continue;
+			const labelIndex = labels.indexOf(item.answer as never);
+			if (labelIndex < 0 || labelIndex >= value.optionBank.length)
+				return `Đáp án “${item.answer}” nằm ngoài Ngân hàng lựa chọn — khóa lại theo nhãn hiện có.`;
+		}
+	}
+	if (value.type === "sentend") {
+		const used = new Set<string>();
+		for (const item of value.items) {
+			if (!item.answer.trim()) continue;
+			if (used.has(item.answer))
+				return "Matching sentence endings: mỗi nhãn chỉ dùng cho đúng một câu.";
+			used.add(item.answer);
+		}
+	}
+	return null;
 }

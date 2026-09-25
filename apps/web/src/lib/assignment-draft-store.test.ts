@@ -48,6 +48,7 @@ function composerValue(overrides: Partial<ComposerValue> = {}): ComposerValue {
 		cuePoints: "",
 		audioName: "",
 		imageUrl: "",
+		optionBank: [],
 		note: "",
 		items: [
 			{ stem: "First", answer: "TRUE", opts: null, alts: "" },

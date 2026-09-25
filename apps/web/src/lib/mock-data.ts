@@ -75,6 +75,8 @@ export interface AssignmentPrompt {
 	/** Diagram image URL (https-only) — diagram prompts render it (#269). */
 	imageUrl?: string;
 	questions?: AssignmentQuestion[];
+	/** Phase-02 FR7 — structured option bank (labeled choice list). */
+	optionBank?: string[];
 	note: string;
 	status: "draft" | "ready";
 	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */

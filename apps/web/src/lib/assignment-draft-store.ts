@@ -57,6 +57,15 @@ function composerValueShape(value: unknown): value is ComposerValue {
 	] as const;
 	if (!stringFields.every((field) => typeof v[field] === "string"))
 		return false;
+	// `optionBank` (phase-02 FR3) may be absent on pre-phase-02 drafts —
+	// missing falls back to [] via the freshComposer spread in new.tsx, but a
+	// corrupted non-string-array value must be dropped, not crash the editor.
+	if (
+		v.optionBank !== undefined &&
+		(!Array.isArray(v.optionBank) ||
+			v.optionBank.some((row) => typeof row !== "string"))
+	)
+		return false;
 	if (!Array.isArray(v.items)) return false;
 	return v.items.every((rawItem) => {
 		if (!rawItem || typeof rawItem !== "object") return false;
@@ -175,6 +184,8 @@ export function composerDraftHasContent(value: ComposerValue): boolean {
 		value.note.trim()
 	)
 		return true;
+	// `?? []`: pre-phase-02 drafts may legitimately lack the field at runtime.
+	if ((value.optionBank ?? []).some((row) => row.trim())) return true;
 	const blank = emptyItem(value.type);
 	return value.items.some(
 		(item) =>

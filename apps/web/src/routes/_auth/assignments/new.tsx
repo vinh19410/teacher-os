@@ -9,6 +9,7 @@ import {
 import {
 	applyComposerFieldChange,
 	hasAuthoringContent,
+	optionBankIssue,
 	structuralChangeKind,
 } from "@/components/assignments/composer-transitions";
 import { CreateSuccessCard } from "@/components/assignments/create-success-card";
@@ -111,6 +112,14 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 			title: "Thiếu ảnh biểu đồ",
 			sub: "Dán link ảnh https trước khi lưu sẵn sàng giao.",
 		};
+	// Phase-02 FR2/FR3 mirror: the option-bank rules surface as one message —
+	// the same text the bank panel and the save gate show.
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue)
+		return {
+			title: "Ngân hàng lựa chọn chưa đạt",
+			sub: bankIssue,
+		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
 			title: "Thiếu đáp án chấm tự động",
@@ -138,7 +147,8 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 }
 
 /** Snapshot for the preview page (sessionStorage handoff). Includes
- * `transcript` — the preview round trip must never drop it (phase-01 FR6). */
+ * `transcript` — the preview round trip must never drop it (phase-01 FR6) —
+ * and `optionBank` (phase-02 FR7, same rule). */
 export function previewDraftFrom(
 	value: ComposerValue,
 	status: "draft" | "ready",
@@ -160,6 +170,7 @@ export function previewDraftFrom(
 		cuePoints: value.cuePoints,
 		audioName: value.audioName,
 		imageUrl: value.imageUrl,
+		optionBank: value.optionBank,
 		items: value.items,
 		note: value.note,
 		status,
@@ -197,6 +208,7 @@ export function NewAssignmentRoute() {
 					cuePoints: restored.cuePoints ?? "",
 					audioName: restored.audioName ?? "",
 					imageUrl: restored.imageUrl ?? "",
+					optionBank: restored.optionBank ?? [],
 					items: restored.items ?? [],
 				}
 			: bannerDraft
@@ -250,6 +262,10 @@ export function NewAssignmentRoute() {
 		!value.cueTopic.trim()
 	)
 		fieldErrors.cueTopic = "Nhập chủ đề cue card.";
+	// Phase-02 FR2 mirror — the bank panel shows this inline (via
+	// errors.optionBank) and the save gate below mirrors the contract.
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue) fieldErrors.optionBank = bankIssue;
 	const canSave =
 		hasCoreContent(value) &&
 		!(
@@ -268,6 +284,7 @@ export function NewAssignmentRoute() {
 			value.imageUrl.trim() &&
 			!isAssignmentImageUrl(value.imageUrl)
 		) &&
+		!bankIssue &&
 		!(
 			isAutoSkill(value.skill) &&
 			status === "ready" &&
@@ -334,6 +351,7 @@ export function NewAssignmentRoute() {
 				audioName: value.audioName.trim(),
 				imageUrl: value.imageUrl.trim(),
 				questions: value.items,
+				optionBank: value.optionBank,
 				note: value.note.trim(),
 				status,
 			},

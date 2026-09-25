@@ -4,6 +4,7 @@ import { emptyComposer, emptyItem } from "./assignment-presets";
 import {
 	applyComposerFieldChange,
 	hasAuthoringContent,
+	optionBankIssue,
 	structuralChangeKind,
 } from "./composer-transitions";
 import type { ComposerValue } from "./prompt-composer";
@@ -31,6 +32,7 @@ function fresh(): ComposerValue {
 		cuePoints: "",
 		audioName: "",
 		imageUrl: "",
+		optionBank: [],
 		note: "",
 		items: [emptyItem("tfng")],
 	};
@@ -110,6 +112,14 @@ describe("hasAuthoringContent (FR5 confirm gate)", () => {
 			hasAuthoringContent(composer({ cuePoints: "You should say…" })),
 		).toBe(true);
 		expect(hasAuthoringContent(composer())).toBe(false);
+	});
+
+	test("a filled option bank row is authored content (phase-02 FR3)", () => {
+		expect(
+			hasAuthoringContent(composer({ optionBank: ["", "Người thuyền"] })),
+		).toBe(true);
+		// Empty rows only — nothing to lose yet.
+		expect(hasAuthoringContent(composer({ optionBank: ["", ""] }))).toBe(false);
 	});
 });
 
@@ -210,5 +220,169 @@ describe("applyComposerFieldChange — carry-over rules (FR5)", () => {
 			part: "task2",
 			type: "discuss",
 		});
+	});
+});
+
+describe("option bank reset rules (phase-02 FR3)", () => {
+	const bank = ["Người thuyền", "Kỹ sư", "Nhà khoa học", "Nhà tự nhiên"];
+
+	test("bankable → bankable within one skill keeps the bank", () => {
+		const headings = composer({
+			part: "p2",
+			type: "headings",
+			optionBank: bank,
+			items: [{ stem: "Paragraph A", answer: "i", opts: null, alts: "" }],
+		});
+		const next = applyComposerFieldChange(headings, {
+			part: "p3",
+			type: "features",
+		});
+		expect(next.type).toBe("features");
+		expect(next.optionBank).toEqual(bank);
+		// Items still reset on a type change (long-standing #269 semantics) —
+		// roman labels must never ride into a letter kind.
+		expect(next.items).toEqual([emptyItem("features")]);
+	});
+
+	test("bankable → non-bankable resets the bank", () => {
+		const headings = composer({
+			part: "p2",
+			type: "headings",
+			optionBank: bank,
+		});
+		const next = applyComposerFieldChange(headings, {
+			part: "p2",
+			type: "summary",
+		});
+		expect(next.type).toBe("summary");
+		expect(next.optionBank).toEqual([]);
+	});
+
+	test("non-bankable → bankable starts from an empty bank", () => {
+		const summary = composer({
+			part: "p2",
+			type: "summary",
+			optionBank: [],
+		});
+		const next = applyComposerFieldChange(summary, {
+			part: "p2",
+			type: "sentend",
+		});
+		expect(next.type).toBe("sentend");
+		expect(next.optionBank).toEqual([]);
+	});
+
+	test("skill change wipes the bank entirely (emptyComposer)", () => {
+		const headings = composer({
+			part: "p2",
+			type: "headings",
+			optionBank: bank,
+		});
+		const next = applyComposerFieldChange(headings, {
+			skill: "listening",
+			part: "s2",
+			type: "match2",
+		});
+		expect(next.optionBank).toEqual([]);
+		expect(next.skill).toBe("listening");
+	});
+});
+
+describe("optionBankIssue — web mirror of the contract bank rules (phase-02 FR2)", () => {
+	const banked = composer({
+		part: "p3",
+		type: "features",
+		optionBank: ["Ada", "Brunel", "Curie", "Darwin"],
+		items: [
+			{ stem: "Q27", answer: "A", opts: null, alts: "" },
+			{ stem: "Q28", answer: "B", opts: null, alts: "" },
+			{ stem: "Q29", answer: "", opts: null, alts: "" },
+			{ stem: "Q30", answer: "", opts: null, alts: "" },
+		],
+	});
+
+	test("non-bankable types never raise a bank issue", () => {
+		expect(optionBankIssue(composer({ type: "tfng" }), "ready")).toBeNull();
+	});
+
+	test("a blank or over-cap row blocks every status (contract item rules)", () => {
+		expect(
+			optionBankIssue(
+				composer({ type: "features", optionBank: ["Ada", "  "] }),
+				"draft",
+			),
+		).toMatch(/Ngân hàng/);
+		expect(
+			optionBankIssue(
+				composer({ type: "features", optionBank: ["Ada", "x".repeat(201)] }),
+				"ready",
+			),
+		).toMatch(/Ngân hàng/);
+	});
+
+	test("draft may carry a partial bank with unanswered rows", () => {
+		expect(optionBankIssue(banked, "draft")).toBeNull();
+	});
+
+	test("ready requires >= 2 rows covering every question", () => {
+		expect(optionBankIssue(banked, "ready")).toBeNull();
+		expect(
+			optionBankIssue(
+				composer({
+					type: "features",
+					optionBank: ["Ada"],
+					items: banked.items,
+				}),
+				"ready",
+			),
+		).toMatch(/tối thiểu 2/);
+		expect(
+			optionBankIssue(
+				composer({
+					type: "features",
+					optionBank: ["Ada", "Brunel", "Curie"],
+					items: banked.items,
+				}),
+				"ready",
+			),
+		).toMatch(/phủ đủ 4 câu/);
+	});
+
+	test("ready caps bankable types at 8 questions", () => {
+		expect(
+			optionBankIssue(
+				composer({
+					type: "features",
+					optionBank: Array.from({ length: 8 }, (_, i) => `Item ${i}`),
+					items: Array.from({ length: 9 }, () => emptyItem("features")),
+				}),
+				"ready",
+			),
+		).toMatch(/tối đa 8 câu/);
+	});
+
+	test("ready rejects keyed answers whose label sits outside the bank", () => {
+		const fiveBank = composer({
+			...banked,
+			optionBank: ["Ada", "Brunel", "Curie", "Darwin", "Einstein"],
+			items: [{ stem: "Q27", answer: "F", opts: null, alts: "" }],
+		});
+		expect(optionBankIssue(fiveBank, "ready")).toMatch(/ngoài Ngân hàng/);
+		// Draft stays free — the teacher may be re-keying.
+		expect(optionBankIssue(fiveBank, "draft")).toBeNull();
+	});
+
+	test("ready blocks sentend duplicate labels but allows feature reuse", () => {
+		const dup = composer({
+			part: "p2",
+			type: "sentend",
+			optionBank: ["Nửa A", "Nửa B"],
+			items: [
+				{ stem: "Q34", answer: "A", opts: null, alts: "" },
+				{ stem: "Q35", answer: "A", opts: null, alts: "" },
+			],
+		});
+		expect(optionBankIssue(dup, "ready")).toMatch(/mỗi nhãn chỉ dùng/);
+		expect(optionBankIssue({ ...dup, type: "features" }, "ready")).toBeNull();
 	});
 });

@@ -5,6 +5,7 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
+	isBankableType,
 	type QuestionItem,
 	qStartOf,
 	TYPE_HINTS,
@@ -13,6 +14,7 @@ import {
 	applyBulkKeyPaste,
 	type BulkKeyPasteLineError,
 } from "./bulk-key-paste";
+import { OptionBankEditor } from "./option-bank-editor";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
@@ -25,10 +27,13 @@ export function QuestionKeyEditor({
 	showErrors,
 	status,
 	imageUrl,
+	optionBank = [],
 	onIntroChange,
 	onImageUrlChange,
 	onItemsChange,
+	onBankChange,
 	imageUrlError,
+	optionBankError,
 }: {
 	skill: string;
 	partId: string;
@@ -39,11 +44,15 @@ export function QuestionKeyEditor({
 	/** FR9: missing stem/answer only block a `ready` save. */
 	status: "draft" | "ready";
 	imageUrl: string;
+	/** Phase-02 FR3 — structured option bank for bankable matching types. */
+	optionBank?: string[];
 	onIntroChange: (value: string) => void;
 	onImageUrlChange: (value: string) => void;
 	onItemsChange: (items: QuestionItem[]) => void;
+	onBankChange: (bank: string[]) => void;
 	/** Pre-gated by the composer: only set when showErrors is on. */
 	imageUrlError?: string;
+	optionBankError?: string;
 }) {
 	const qStart = qStartOf(skill, partId);
 	// Guarded by skill too — a drifted draft must not surface the URL field
@@ -138,6 +147,17 @@ export function QuestionKeyEditor({
 					className="min-h-24"
 				/>
 			</Field>
+			{isBankableType(skill, typeId) && (
+				<OptionBankEditor
+					typeId={typeId}
+					bank={optionBank}
+					items={items}
+					showErrors={showErrors}
+					error={optionBankError}
+					onBankChange={onBankChange}
+					onItemsChange={onItemsChange}
+				/>
+			)}
 			{isDiagram && (
 				<div className="flex flex-col gap-1">
 					<Field
@@ -200,6 +220,7 @@ export function QuestionKeyEditor({
 				items={items}
 				showErrors={showErrors}
 				requireFilled={status === "ready"}
+				optionBank={optionBank}
 				onItemsChange={onItemsChange}
 				onAddQuestion={addQuestion}
 			/>

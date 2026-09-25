@@ -44,6 +44,7 @@ describe("kernelCommand create-assignment-prompt (#218)", () => {
 			audioName: "",
 			imageUrl: "",
 			questions: [],
+			optionBank: [],
 			note: "",
 			status: "ready",
 		};
