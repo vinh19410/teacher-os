@@ -129,6 +129,22 @@ test("create a ready diagram prompt with an https image URL", async ({
 	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 	await expect(page.getByLabel("Ảnh biểu đồ (URL)")).toHaveValue(IMAGE_URL);
+
+	// Switching type away wipes the URL (red-team #5): a diagram URL must
+	// never ride along into another type's prompt. Composed content resets
+	// with it (long-standing type-change semantics).
+	await page.getByRole("button", { name: "Note completion" }).first().click();
+	await expect(page.getByLabel("Ảnh biểu đồ (URL)")).toHaveCount(0);
+	await page.getByRole("button", { name: "Diagram label completion" }).click();
+	await expect(page.getByLabel("Ảnh biểu đồ (URL)")).toHaveValue("");
+
+	// Re-compose and save ready.
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("Part 4 of the machine.");
+	await page.getByLabel("Đáp án chấm tự động").first().fill("piston");
+	await page.getByLabel("Ảnh biểu đồ (URL)").fill(IMAGE_URL);
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),

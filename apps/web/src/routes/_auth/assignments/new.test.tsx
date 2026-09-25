@@ -194,6 +194,26 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.title).toBe("Link ảnh chưa hợp lệ");
 			expect(res.sub).toContain("https");
 		});
+
+		it("9. Reading image URL over 500 chars blocks save (#269)", () => {
+			// Mirrors the server .max(500) — presigned CDN URLs blow past it.
+			const longUrl = `https://example.com/${"a".repeat(490)}.png`;
+			expect(longUrl.length).toBeGreaterThan(500);
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "summary",
+					passage: "Some passage",
+					imageUrl: longUrl,
+					items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Link ảnh chưa hợp lệ");
+			expect(res.sub).toContain("500 ký tự");
+		});
 	});
 
 	it("blocks save for a restored diagram-ready draft missing its image (#269)", () => {

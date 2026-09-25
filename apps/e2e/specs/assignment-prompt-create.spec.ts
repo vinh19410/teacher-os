@@ -148,7 +148,10 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	).toBeVisible();
 	await expect(page.getByText("Tự động · 1/1 đáp án đã khóa")).toBeVisible();
 
-	// Assert the post-save view does not leak the answer key
+	// Assert the post-save view does not leak the answer key: the locked-in
+	// answer ("TRUE") must be absent from the success view, not just the
+	// editor's key-scan header.
+	expect(await page.getByText("TRUE", { exact: true }).count()).toBe(0);
 	expect(
 		await page.getByText("Đáp án đúng · học viên không thấy").count(),
 	).toBe(0);

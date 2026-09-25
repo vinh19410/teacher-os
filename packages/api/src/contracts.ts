@@ -343,6 +343,18 @@ export const answerKindByType: Record<
  * pattern — single source for the scheme policy (#269).
  */
 export const ASSIGNMENT_IMAGE_SRC_PATTERN = /^https:\/\/\S+$/;
+export const ASSIGNMENT_IMAGE_URL_MAX_LENGTH = 500;
+
+/** Full URL policy (scheme + length) shared by the schema field and the web
+ * validation blocks, so client `canSave` never disagrees with a 400 (#269). */
+export function isAssignmentImageUrl(value: string): boolean {
+	const trimmed = value.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= ASSIGNMENT_IMAGE_URL_MAX_LENGTH &&
+		ASSIGNMENT_IMAGE_SRC_PATTERN.test(trimmed)
+	);
+}
 
 /**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
@@ -442,7 +454,7 @@ export const assignmentPromptCreateSchema = z
 					message: "image required when ready",
 				});
 		}
-		if (value.imageUrl && !ASSIGNMENT_IMAGE_SRC_PATTERN.test(value.imageUrl))
+		if (value.imageUrl && !isAssignmentImageUrl(value.imageUrl))
 			ctx.addIssue({
 				code: "custom",
 				path: ["imageUrl"],

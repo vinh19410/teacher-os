@@ -4778,6 +4778,92 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(res.status).toBe(400);
 	});
 
+	test("POST reading non-diagram ready prompt needs no imageUrl (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p2",
+				type: "summary",
+				title: "Reading Summary — no image needed",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "hot dry air", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST trims the imageUrl before persistence (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — padded URL",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "  https://example.com/padded.png  ",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.imageUrl).toBe("https://example.com/padded.png");
+	});
+
+	test("POST rejects lowercase letter answers for matching types (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p3",
+				type: "features",
+				title: "Reading Features — lowercase letter",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q29", opts: null, answer: "b", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
 	test("POST rejects non-https imageUrl with 400 (#269)", async () => {
 		for (const imageUrl of [
 			"http://example.com/diagram.png",

@@ -39,7 +39,9 @@ export function QuestionKeyEditor({
 }) {
 	const kind = kindOf(typeId);
 	const choices = answerChoices(kind);
-	const isDiagram = typeId === "diagram";
+	// Guarded by skill too — a drifted draft must not surface the URL field
+	// for a non-reading skill where no validation gate pairs with it (#269).
+	const isDiagram = skill === "reading" && typeId === "diagram";
 	// Same scheme policy as the contract — the thumbnail never renders an
 	// unsafe URL, even while the field still carries a draft value.
 	const safeImageUrl = imageUrl.trim();
@@ -82,6 +84,7 @@ export function QuestionKeyEditor({
 						<Input
 							value={imageUrl}
 							placeholder="https://…"
+							maxLength={500}
 							onChange={(event) => onImageUrlChange(event.target.value)}
 						/>
 					</Field>

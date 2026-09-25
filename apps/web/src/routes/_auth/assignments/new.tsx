@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
 import { type FormEvent, useState } from "react";
 import {
 	emptyComposer,
@@ -82,11 +82,11 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	if (
 		value.skill === "reading" &&
 		value.imageUrl.trim() &&
-		!ASSIGNMENT_IMAGE_SRC_PATTERN.test(value.imageUrl.trim())
+		!isAssignmentImageUrl(value.imageUrl)
 	)
 		return {
 			title: "Link ảnh chưa hợp lệ",
-			sub: "Ảnh chỉ nhận link https. Sửa link trước khi lưu.",
+			sub: "Ảnh chỉ nhận link https (tối đa 500 ký tự). Sửa link trước khi lưu.",
 		};
 	if (
 		value.skill === "reading" &&
@@ -167,8 +167,8 @@ export function NewAssignmentRoute() {
 		fieldErrors.audioName = "Đính file nghe (MP3 hoặc WAV).";
 	const trimmedImageUrl = value.imageUrl.trim();
 	if (value.skill === "reading") {
-		if (trimmedImageUrl && !ASSIGNMENT_IMAGE_SRC_PATTERN.test(trimmedImageUrl))
-			fieldErrors.imageUrl = "Chỉ nhận link ảnh https.";
+		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl))
+			fieldErrors.imageUrl = "Chỉ nhận link ảnh https (tối đa 500 ký tự).";
 		else if (value.type === "diagram" && status === "ready" && !trimmedImageUrl)
 			fieldErrors.imageUrl = "Dán link ảnh biểu đồ (https) trước khi lưu.";
 	}
@@ -194,7 +194,7 @@ export function NewAssignmentRoute() {
 		!(
 			value.skill === "reading" &&
 			value.imageUrl.trim() &&
-			!ASSIGNMENT_IMAGE_SRC_PATTERN.test(value.imageUrl.trim())
+			!isAssignmentImageUrl(value.imageUrl)
 		) &&
 		!(
 			isAutoSkill(value.skill) &&
@@ -211,7 +211,14 @@ export function NewAssignmentRoute() {
 					...emptyComposer(patch.skill, patch.type ?? current.type),
 				};
 			}
-			if (patch.part !== undefined || patch.type !== undefined) {
+			// ChipFilter re-fires onChange for the already-selected option —
+			// only wipe composed content when the part/type actually changed,
+			// otherwise one stray click destroys intro + URL + items (#269).
+			const partChanged =
+				patch.part !== undefined && patch.part !== current.part;
+			const typeChanged =
+				patch.type !== undefined && patch.type !== current.type;
+			if (partChanged || typeChanged) {
 				const merged = { ...current, ...patch };
 				return {
 					...merged,
