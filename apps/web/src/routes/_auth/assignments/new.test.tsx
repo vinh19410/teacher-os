@@ -250,6 +250,40 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.title).toBe("Ngân hàng lựa chọn chưa đạt");
 			expect(res.sub).toContain("điền nội dung cho mọi mục");
 		});
+
+		it("12. A stem with two markers blocks save with the row message (phase-03 FR7)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "summary",
+					passage: "Some passage",
+					items: [{ stem: "____ and ____", answer: "x", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Câu hỏi chưa hợp lệ");
+			expect(res.sub).toContain("một chỗ trống");
+		});
+
+		it("13. One marker and zero markers save fine (phase-03 FR7 backward compat)", () => {
+			const res = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "summary",
+					passage: "Some passage",
+					items: [
+						{ stem: "one ____ only", answer: "x", opts: null, alts: "" },
+						{ stem: "[table] r1 c1: A / B", answer: "y", opts: null, alts: "" },
+					],
+				},
+				"ready",
+			);
+			expect(res.title).toBe("Sẵn sàng lưu vào ngân hàng");
+		});
 	});
 
 	it("blocks save for a restored diagram-ready draft missing its image (#269)", () => {

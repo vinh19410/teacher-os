@@ -407,3 +407,196 @@ test("a legacy prompt without a bank previews with the intro fallback and a miss
 		page.getByText("Thiếu ngân hàng lựa chọn").first(),
 	).toBeVisible();
 });
+
+test("summary composes via click-to-blank: 4 clicked words become 4 keyed questions and 4 preview inputs (phase-03 FR1/FR2/FR5)", async ({
+	page,
+}) => {
+	const TITLE = "QC-273 Cloze summary";
+	const PASSAGE =
+		"Engineers raised the dams to store monsoon water for the dry season.";
+	// The four words the teacher will click — each unique in the text so the
+	// role selectors stay unambiguous, and each absent from the UI chrome so
+	// the preview leak-check can rely on their absence.
+	const WORDS = ["raised", "dams", "store", "dry"];
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByRole("button", { name: "Passage 2" }).click();
+	await page
+		.getByRole("button", { name: "Summary completion" })
+		.first()
+		.click();
+
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	// The passage must NOT contain the four words the teacher will blank —
+	// the preview renders the passage verbatim and the leak-check relies on
+	// the answers appearing nowhere in the student paper.
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("Victorian builders changed the landscape of the city forever.");
+	await page
+		.getByLabel("Hướng dẫn đề")
+		.fill("Complete the summary. NO MORE THAN THREE WORDS from the passage.");
+
+	// Paste → tokenize → click four words → apply. Zero typing of answers.
+	await page.getByLabel("Dán đoạn văn bản").fill(PASSAGE);
+	await page.getByRole("button", { name: "Chọn chỗ trống" }).click();
+	for (const word of WORDS) {
+		await page.getByRole("button", { name: `Chọn từ: ${word}` }).click();
+	}
+	await expect(page.getByText("4/40 chỗ trống")).toBeVisible();
+	await page.getByRole("button", { name: "Áp vào câu hỏi" }).click();
+
+	// The grid now carries the four markered stems with auto-generated keys.
+	await expect(page.getByText("4/40 câu")).toBeVisible();
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("Engineers ____");
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeEnabled();
+
+	// Student preview: exactly 4 blank inputs in the right word positions,
+	// and none of the clicked words (the answers) leak into the paper.
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview$/);
+	const blanks = page.locator('input[aria-label^="Điền đáp án câu"]');
+	await expect(blanks).toHaveCount(4);
+	await expect(page.getByText("Engineers").first()).toBeVisible();
+	await expect(page.getByText("monsoon water for the").first()).toBeVisible();
+	await expect(page.getByText("season.").first()).toBeVisible();
+	const previewBody = await page.locator("body").innerText();
+	for (const word of WORDS) {
+		expect(previewBody).not.toContain(word);
+	}
+
+	// Back: the draft survives, then saves ready with all four keys locked.
+	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+	await expect(page.getByText("Tự động · 4/4 đáp án đã khóa")).toBeVisible();
+});
+
+test("tablecomp composes via the grid: 2×3 table with 2 blanks previews as labeled rows (phase-03 FR4/FR5)", async ({
+	page,
+}) => {
+	const TITLE = "QC-273 Table grid";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByRole("button", { name: "Passage 2" }).click();
+	await page.getByRole("button", { name: "Table completion" }).click();
+
+	// exact: the grid editor adds its own "Tiêu đề cột/hàng" labels.
+	await page.getByLabel("Tiêu đề", { exact: true }).fill(TITLE);
+	await page
+		.getByLabel("Đoạn đọc")
+		.fill("The table lists Victorian inventions and their dates.");
+	await page
+		.getByLabel("Hướng dẫn đề")
+		.fill("Complete the table. ONE WORD ONLY from the passage.");
+
+	// Grow the default 2×2 grid to 2×3 and fill titles + two data cells.
+	await page.getByRole("button", { name: "Thêm cột" }).click();
+	await page.getByLabel("Tiêu đề cột 1").fill("Invention");
+	await page.getByLabel("Tiêu đề cột 2").fill("Year");
+	await page.getByLabel("Tiêu đề hàng 1").fill("Steam engine");
+	// exact: each cell also carries a "Tạo chỗ trống ô …" toggle button.
+	await page.getByLabel("Ô hàng 1 cột 1", { exact: true }).fill("piston");
+	await page.getByLabel("Ô hàng 1 cột 2", { exact: true }).fill("1769");
+	await page
+		.getByRole("button", { name: "Tạo chỗ trống ô hàng 1 cột 1" })
+		.click();
+	await page
+		.getByRole("button", { name: "Tạo chỗ trống ô hàng 1 cột 2" })
+		.click();
+	await expect(page.getByText("2/40 ô trống")).toBeVisible();
+	await page.getByRole("button", { name: "Áp vào bảng" }).click();
+
+	// Two marker-exempt [table] stems land in the grid with captured answers.
+	await expect(page.getByText("2/40 câu")).toBeVisible();
+	await expect(
+		page.getByLabel("Nội dung câu hỏi phía học viên").first(),
+	).toHaveValue("[table] r1 c1: Steam engine / Invention");
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeEnabled();
+
+	// Student preview: labeled "Hàng — Cột" rows, never the grid answers.
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview$/);
+	const blanks = page.locator('input[aria-label^="Điền đáp án câu"]');
+	await expect(blanks).toHaveCount(2);
+	await expect(page.getByText("Hàng 1 — Cột 1:").first()).toBeVisible();
+	await expect(page.getByText("Hàng 1 — Cột 2:").first()).toBeVisible();
+	await expect(page.getByText("Steam engine / Invention").first()).toBeVisible();
+	const previewBody = await page.locator("body").innerText();
+	expect(previewBody).not.toContain("piston");
+	expect(previewBody).not.toContain("1769");
+
+	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+	await expect(page.getByText("Tự động · 2/2 đáp án đã khóa")).toBeVisible();
+});
+
+test("cloze apply is blocked above the caps: over 40 blanks and a 500-char segment (phase-03 FR2/FR7)", async ({
+	page,
+}) => {
+	const TITLE = "QC-273 Cloze caps";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByRole("button", { name: "Passage 2" }).click();
+	await page
+		.getByRole("button", { name: "Summary completion" })
+		.first()
+		.click();
+
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await page.getByLabel("Đoạn đọc").fill("Cap check passage.");
+	// No items yet — apply must stay blocked before the grid grows.
+	await expect(page.getByText("1/40 câu")).toBeVisible();
+
+	// Raw mode: 41 blanks → the 40-blank cap blocks apply with a message.
+	await page.getByRole("button", { name: "Cú pháp thô" }).click();
+	const fortyOne = Array.from({ length: 41 }, (_, i) => `w${i} *k${i}*`).join(" ");
+	await page.getByLabel("Văn bản cú pháp thô").fill(fortyOne);
+	await expect(page.getByText("Tìm thấy 41 chỗ trống")).toBeVisible();
+	await expect(page.getByText("Tối đa 40 chỗ trống")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Áp vào câu hỏi" }),
+	).toBeDisabled();
+	await expect(page.getByText("1/40 câu")).toBeVisible();
+
+	// A single segment longer than the 500-char stem cap blocks too.
+	const longSegment = `${"word ".repeat(110)}*key*`;
+	await page.getByLabel("Văn bản cú pháp thô").fill(longSegment);
+	await expect(page.getByText("vượt quá 500 ký tự")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Áp vào câu hỏi" }),
+	).toBeDisabled();
+	await expect(page.getByText("1/40 câu")).toBeVisible();
+
+	// A valid small paste unlocks apply — the caps are the only gate here.
+	await page
+		.getByLabel("Văn bản cú pháp thô")
+		.fill("Water fills the *well* each year.");
+	await expect(page.getByText("Tìm thấy 1 chỗ trống")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Áp vào câu hỏi" }),
+	).toBeEnabled();
+});

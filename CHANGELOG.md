@@ -13,6 +13,16 @@ Quy ước khi cập nhật:
 ## 2026-09-25
 
 ### Added
+- Cloze click-to-blank cho 8 dạng completion (sent, note, summary, flowchart, form, notes, sent4, flow): dán đoạn văn → bấm vào từ để tạo chỗ trống đánh số, đáp án tự sinh từ từ được chọn, popover sửa đáp án/nhận thêm (`alt1 / alt2`); chế độ "Cú pháp thô" cho power user theo cú pháp H5P `*đáp án/alt*` với escape `\*` (#271)
+- Soạn đề Table completion bằng lưới r×c trực tiếp: thêm/xóa hàng/cột, bấm nút gạch dưới để biến ô thành chỗ trống (nội dung ô thành đáp án); preview học viên render từng câu thành hàng có nhãn "Hàng h — Cột c" (#271)
+- Preview học viên (cả draft lẫn trang ngân hàng) render stem chứa marker `____` thành text trước + ô điền (rộng theo độ dài đáp án) + text sau, các câu completion ghép liên tiếp tái hiện đoạn văn; đề cũ không marker vẫn hiển thị nguyên văn (#271)
+- Pure helpers cloze (`parseClozeRaw`, `segmentsToItems`, `splitStemByMarker`, `countBlanks`, grid math) + test unit 56 case: token hóa 20.000 ký tự < 50ms, cap render 5000 từ kèm gợi ý rút ngắn (#271)
+
+### Changed
+- Marker `____` (≥4 gạch dưới) trong stem là quy ước nội bộ: đúng 1 marker hợp lệ, 0 marker hợp lệ (đề cũ + stem tablecomp được miễn marker), ≥2 marker báo lỗi tại hàng và chặn lưu; cap stem 500 / answer 200 / alts 500 / 40 câu mirror vào canSave — chặn trước khi gặp 400 "invalid body" không kèm thông tin (#271)
+- "Áp vào câu hỏi" của cloze/tablecomp kiểm tra cap TRƯỚC khi ghi items (segment > 500 ký tự / tổng blanks > 40 → chặn kèm thông báo tại chỗ) và luôn hỏi xác nhận khi sẽ ghi đè câu hỏi đã soạn (#271)
+
+### Added
 - Ngân hàng lựa chọn có cấu trúc (option bank) cho 5 dạng matching + listening map (headings, info, sentend, features, match2, map): panel soạn từng dòng tự gán nhãn A–H / i–viii, nút "điền đủ N mục", cap 8 mục (#271)
 - Khóa đáp án dạng matching bằng chip chọn từ chính ngân hàng (chỉ nhãn có trong bank); riêng sentend chặn chọn trùng — mỗi nhãn dùng đúng một câu (#271)
 - Xóa một dòng bank sẽ reset đáp án đã khóa từ vị trí đó trở xuống (nhãn là vị trí — tránh re-bind âm thầm chấm sai) (#271)

@@ -2,6 +2,7 @@ import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
@@ -14,7 +15,9 @@ import {
 	applyBulkKeyPaste,
 	type BulkKeyPasteLineError,
 } from "./bulk-key-paste";
+import { ClozeEditor } from "./cloze-editor";
 import { OptionBankEditor } from "./option-bank-editor";
+import { TableGridEditor } from "./table-grid-editor";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
@@ -34,6 +37,7 @@ export function QuestionKeyEditor({
 	onBankChange,
 	imageUrlError,
 	optionBankError,
+	questionsError,
 }: {
 	skill: string;
 	partId: string;
@@ -53,6 +57,8 @@ export function QuestionKeyEditor({
 	/** Pre-gated by the composer: only set when showErrors is on. */
 	imageUrlError?: string;
 	optionBankError?: string;
+	/** Phase-03 FR7 — composer-level marker/caps mirror, shown at the block. */
+	questionsError?: string;
 }) {
 	const qStart = qStartOf(skill, partId);
 	// Guarded by skill too — a drifted draft must not surface the URL field
@@ -67,6 +73,11 @@ export function QuestionKeyEditor({
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
 	const hint = TYPE_HINTS[typeId];
 	const atMax = items.length >= QUESTION_MAX_COUNT;
+	// Phase-03: the 8 cloze completion types get the click-to-blank editor,
+	// tablecomp gets the grid editor; `shortans` keeps the phase-01 text rows
+	// (no content block — coordinator scope note).
+	const showClozeEditor = CLOZE_EDITOR_TYPES.has(typeId);
+	const showTableEditor = typeId === TABLECOMP_TYPE;
 	const [pasteOpen, setPasteOpen] = useState(false);
 	const [pasteRaw, setPasteRaw] = useState("");
 	const [pasteOutcome, setPasteOutcome] = useState<{
@@ -147,6 +158,17 @@ export function QuestionKeyEditor({
 					className="min-h-24"
 				/>
 			</Field>
+			{showClozeEditor && (
+				<ClozeEditor typeId={typeId} items={items} onApply={onItemsChange} />
+			)}
+			{showTableEditor && (
+				<TableGridEditor items={items} onApply={onItemsChange} />
+			)}
+			{showErrors && questionsError && (
+				<p role="alert" className="text-danger text-xs">
+					{questionsError}
+				</p>
+			)}
 			{isBankableType(skill, typeId) && (
 				<OptionBankEditor
 					typeId={typeId}

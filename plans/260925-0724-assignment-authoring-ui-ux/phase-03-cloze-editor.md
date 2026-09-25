@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Cloze click-to-blank cho 10 dạng completion"
-status: pending
+status: done
 priority: P1
 effort: "8h"
 dependencies: [1]
@@ -87,15 +87,15 @@ flowchart TD
 
 ## Todo List
 
-- [ ] `cloze.ts` + unit test
-- [ ] `cloze-editor.tsx` visual mode
-- [ ] Raw mode + parse
-- [ ] Apply → items + confirm ghi đè
-- [ ] Popover alts
-- [ ] `table-grid-editor.tsx`
-- [ ] Preview render marker (2 surfaces)
-- [ ] Validation FR7 mirror
-- [ ] E2E summary + tablecomp
+- [x] `cloze.ts` + unit test
+- [x] `cloze-editor.tsx` visual mode
+- [x] Raw mode + parse
+- [x] Apply → items + confirm ghi đè
+- [x] Popover alts
+- [x] `table-grid-editor.tsx`
+- [x] Preview render marker (2 surfaces)
+- [x] Validation FR7 mirror
+- [x] E2E summary + tablecomp
 
 ## Success Criteria
 
