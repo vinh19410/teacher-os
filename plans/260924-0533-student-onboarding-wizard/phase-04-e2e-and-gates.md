@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E onboarding + cập nhật spec cũ + full gates"
-status: pending
+status: completed
 priority: P2
 effort: 3h
 dependencies: [1, 2, 3]

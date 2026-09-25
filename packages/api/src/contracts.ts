@@ -906,7 +906,8 @@ export type WorkspaceSettingsUpdate = z.infer<
 
 /**
  * Student Portal API contracts.
- * Read-only endpoints mounted under /api/student.
+ * Endpoints mounted under /api/student (GET /me, GET /overview, and POST /onboarding written by students).
+ * Trust anchor is session email + bridge provisioning.
  */
 export const STUDENT_ERROR_CODES = {
 	NOT_LINKED: "STUDENT_NOT_LINKED",
@@ -929,6 +930,74 @@ export const ACCOUNT_ERROR_CODES = {
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
 
+export const EXAM_INTERESTS = ["ielts", "toeic"] as const;
+export type ExamInterest = (typeof EXAM_INTERESTS)[number];
+
+export const IELTS_TARGET_BANDS = [
+	"5.0",
+	"5.5",
+	"6.0",
+	"6.5",
+	"7.0",
+	"7.5",
+	"8.0+",
+] as const;
+export const TOEIC_TARGET_SCORES = [
+	"450",
+	"550",
+	"650",
+	"750",
+	"850",
+	"990",
+] as const;
+
+export const LEARNING_GOAL_OPTIONS = [
+	"study-abroad",
+	"career",
+	"certification",
+	"communication",
+	"academic",
+	"other",
+] as const;
+export type LearningGoalOption = (typeof LEARNING_GOAL_OPTIONS)[number];
+
+export const DAILY_STUDY_HOUR_OPTIONS = [
+	"under-1",
+	"1-2",
+	"2-3",
+	"3-plus",
+] as const;
+export type DailyStudyHourOption = (typeof DAILY_STUDY_HOUR_OPTIONS)[number];
+
+/** Payload POST /api/student/onboarding — wizard 4 bước (D4/D7: đầy đủ, không skip). */
+const onboardingPayloadBase = z.object({
+	examInterest: z.enum(EXAM_INTERESTS),
+	/** Chuỗi hiển thị; hợp lệ phải nằm trong mảng tương ứng examInterest (superRefine). */
+	targetScore: z.string().min(1),
+	learningGoals: z
+		.array(z.enum(LEARNING_GOAL_OPTIONS))
+		.min(1)
+		.refine((goals) => new Set(goals).size === goals.length),
+	learningGoalsNote: z.string().trim().max(200).optional(),
+	dailyStudyHours: z.enum(DAILY_STUDY_HOUR_OPTIONS),
+});
+export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
+	(value, ctx) => {
+		const allowed =
+			value.examInterest === "ielts" ? IELTS_TARGET_BANDS : TOEIC_TARGET_SCORES;
+		if (!(allowed as readonly string[]).includes(value.targetScore)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["targetScore"],
+				message: `targetScore must be one of ${allowed.join(", ")}`,
+			});
+		}
+	},
+);
+export type StudentOnboardingPayload = z.infer<
+	typeof studentOnboardingPayloadSchema
+>;
+
 export const studentMeSchema = z.object({
 	user: z.object({
 		name: z.string(),
@@ -939,6 +1008,16 @@ export const studentMeSchema = z.object({
 		name: z.string(),
 		email: z.string(),
 		orgId: z.string(),
+		examInterest: z.string().nullable().catch(null),
+		targetScore: z.string().nullable().catch(null),
+		learningGoals: z
+			.array(z.enum(LEARNING_GOAL_OPTIONS))
+			.nullable()
+			.catch(null),
+		learningGoalsNote: z.string().nullable().catch(null),
+		dailyStudyHours: z.string().nullable().catch(null),
+		/** ISO 8601 string — precedent: studentAssignmentSchema.submittedAt. */
+		onboardingCompletedAt: z.string().nullable().catch(null),
 	}),
 });
 export type StudentMe = z.infer<typeof studentMeSchema>;

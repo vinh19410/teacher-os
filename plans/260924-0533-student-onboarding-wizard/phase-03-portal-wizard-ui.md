@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Portal — route /onboarding + wizard UI + gate 2 chiều"
-status: pending
+status: completed
 priority: P2
 effort: 4h
 dependencies: [2]

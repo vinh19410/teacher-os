@@ -143,7 +143,7 @@ export function buildApp(deps: AppDeps) {
 		cors({
 			origin: deps.corsOrigin,
 			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
+			allowHeaders: ["Content-Type", "Authorization", "x-student-org-id"],
 			credentials: true,
 		}),
 	);

@@ -1,10 +1,17 @@
 import {
 	ACCOUNT_ERROR_CODES,
+	DAILY_STUDY_HOUR_OPTIONS,
+	EXAM_INTERESTS,
+	IELTS_TARGET_BANDS,
+	LEARNING_GOAL_OPTIONS,
+	type LearningGoalOption,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
 	type StudentMe,
 	type StudentOrgItem,
 	type StudentOverview,
+	studentOnboardingPayloadSchema,
+	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
@@ -28,6 +35,7 @@ import { provisionStudentForUser } from "../student-provisioning";
 export interface StudentRouteDeps {
 	getDb(): Db;
 	getSessionUser(headers: Headers): Promise<SessionUser | null>;
+	corsOrigin?: string | string[];
 }
 
 interface StudentContext {
@@ -35,6 +43,69 @@ interface StudentContext {
 	orgId: string;
 	userId: string;
 	sessionUser: SessionUser & { email: string };
+}
+function parseLearningGoals(raw: string | null): LearningGoalOption[] | null {
+	if (!raw) return null;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return null;
+		const valid = parsed.filter(
+			(g): g is LearningGoalOption =>
+				typeof g === "string" &&
+				(LEARNING_GOAL_OPTIONS as readonly string[]).includes(g),
+		);
+		return valid.length === parsed.length ? valid : null;
+	} catch {
+		return null;
+	}
+}
+
+function parseEnum<T extends string>(
+	raw: string | null,
+	allowed: readonly T[],
+): T | null {
+	return typeof raw === "string" && (allowed as readonly string[]).includes(raw)
+		? (raw as T)
+		: null;
+}
+
+function parseTargetScore(
+	examInterest: string | null,
+	raw: string | null,
+): string | null {
+	const allowed =
+		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
+	return parseEnum(raw, allowed);
+}
+
+function buildStudentMe(
+	sessionUser: { userName: string; email: string },
+	s: typeof student.$inferSelect,
+): StudentMe {
+	const examInterest = parseEnum(s.examInterest ?? null, EXAM_INTERESTS);
+	return {
+		user: { name: sessionUser.userName, email: sessionUser.email },
+		student: {
+			id: s.id,
+			name: s.name,
+			email: s.email,
+			orgId: s.orgId,
+			examInterest,
+			targetScore: parseTargetScore(examInterest, s.targetScore ?? null),
+			learningGoals: parseLearningGoals(s.learningGoals ?? null),
+			learningGoalsNote: s.learningGoalsNote ?? null,
+			dailyStudyHours: parseEnum(
+				s.dailyStudyHours ?? null,
+				DAILY_STUDY_HOUR_OPTIONS,
+			),
+			onboardingCompletedAt:
+				s.onboardingCompletedAt instanceof Date
+					? s.onboardingCompletedAt.toISOString()
+					: typeof s.onboardingCompletedAt === "number"
+						? new Date(s.onboardingCompletedAt).toISOString()
+						: null,
+		},
+	};
 }
 
 type StudentEnv = {
@@ -46,6 +117,31 @@ type StudentEnv = {
 
 export function studentRoutes(deps: StudentRouteDeps) {
 	const router = new Hono<StudentEnv>();
+	const allowedOrigins = Array.isArray(deps.corsOrigin)
+		? deps.corsOrigin
+		: typeof deps.corsOrigin === "string"
+			? [deps.corsOrigin]
+			: [];
+
+	// Cookies are SameSite=None, so CSRF defense is an explicit Origin check
+	// (same contract as kernel.ts). POST bodies are JSON-only and size-capped.
+	router.use("/onboarding", async (c, next) => {
+		if (c.req.method === "POST") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+			const contentLength = Number(c.req.header("Content-Length") ?? "0");
+			if (contentLength > 4096) {
+				return c.json({ error: "payload too large" }, 413);
+			}
+		}
+		return next();
+	});
 
 	router.use("*", async (c, next) => {
 		const session = await deps.getSessionUser(c.req.raw.headers);
@@ -342,22 +438,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
+	router.use("/onboarding", requireStudent);
 
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
-		const response: StudentMe = {
-			user: {
-				name: sessionUser.userName,
-				email: sessionUser.email,
-			},
-			student: {
-				id: s.id,
-				name: s.name,
-				email: s.email,
-				orgId: s.orgId,
-			},
-		};
-		return c.json(response);
+		return c.json(buildStudentMe(sessionUser, s));
 	});
 
 	router.get("/overview", async (c) => {
@@ -487,6 +572,51 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		};
 
 		return c.json(response);
+	});
+
+	router.post("/onboarding", async (c) => {
+		const { student: s, sessionUser } = c.get("studentCtx");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		const parsed = studentOnboardingPayloadSchema.safeParse(raw);
+		if (!parsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const {
+			examInterest,
+			targetScore,
+			learningGoals,
+			learningGoalsNote,
+			dailyStudyHours,
+		} = parsed.data;
+		await db
+			.update(student)
+			.set({
+				examInterest,
+				targetScore,
+				learningGoals: JSON.stringify([...learningGoals]),
+				learningGoalsNote: learningGoalsNote?.length ? learningGoalsNote : null,
+				dailyStudyHours,
+				onboardingCompletedAt: new Date(),
+			})
+			.where(eq(student.id, s.id));
+
+		const [updated] = await db
+			.select()
+			.from(student)
+			.where(eq(student.id, s.id))
+			.limit(1);
+		if (!updated) {
+			return c.json({ error: STUDENT_ERROR_CODES.NOT_LINKED }, 403);
+		}
+		return c.json(buildStudentMe(sessionUser, updated), 200);
 	});
 
 	return router;

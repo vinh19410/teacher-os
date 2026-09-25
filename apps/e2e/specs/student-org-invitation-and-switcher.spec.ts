@@ -19,7 +19,7 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 			// Go to students page
 			await teacherPage.goto("/students");
 			await expect(
-				teacherPage.getByRole("heading", { name: "Học viên" }),
+				teacherPage.getByRole("heading", { name: "Học viên", exact: true }),
 			).toBeVisible();
 
 			// Click "+ Mời học viên"
@@ -45,7 +45,9 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 				.click();
 
 			// Assert studentEmail appears in pending list
-			await expect(teacherPage.getByText(studentEmail)).toBeVisible({
+			await expect(
+				teacherPage.getByText(studentEmail, { exact: true }),
+			).toBeVisible({
 				timeout: 10_000,
 			});
 			await expect(teacherPage.getByText("Đang chờ chấp nhận")).toBeVisible();
@@ -113,20 +115,31 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 			});
 			const acceptBtn = studentPage.getByRole("button", { name: "Chấp nhận" });
 			await expect(acceptBtn).toBeVisible();
-
 			// Click "Chấp nhận"
 			await acceptBtn.click();
 
-			// After accepting, popover closes or invitation disappears, and org switcher shows the org
-			await expect(
-				studentPage.getByRole("button", { name: "Chấp nhận" }),
-			).not.toBeVisible({ timeout: 10_000 });
+			// After accepting, gate redirects new un-onboarded student to /onboarding
+			await expect(studentPage).toHaveURL(/\/onboarding/, { timeout: 10_000 });
 
-			// Org switcher should show the organization
+			// Complete onboarding wizard
+			await studentPage.getByRole("button", { name: /IELTS/ }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: "Band 6.5" }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: "Du học" }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: "1–2 giờ" }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: "Hoàn thành" }).click();
+
+			// Back on overview, Org switcher should show the organization
+			await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
 			await expect(
-				studentPage.locator(
-					"[data-testid='org-switcher-single'], [data-testid='org-switcher-trigger']",
-				),
+				studentPage
+					.locator(
+						"[data-testid='org-switcher-single'], [data-testid='org-switcher-trigger']",
+					)
+					.filter({ visible: true }),
 			).toBeVisible({ timeout: 10_000 });
 		} finally {
 			await studentContext.close();

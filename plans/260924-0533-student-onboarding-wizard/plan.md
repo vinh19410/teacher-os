@@ -1,7 +1,7 @@
 ---
 title: "Student onboarding wizard (thu thập mục tiêu học sau đăng ký)"
 description: "Sau khi email đã verify, học viên vào portal thấy wizard 4 bước (IELTS/TOEIC, điểm mục tiêu, mục tiêu học, giờ học/ngày) lưu vào cột mới bảng student qua POST /api/student/onboarding; gate 2 chiều giữa / và /onboarding."
-status: pending
+status: completed
 priority: P2
 effort: 11h
 issue: 264
@@ -18,7 +18,7 @@ created: 2026-09-24
 
 Kế thừa mạch plan `260924-0213-student-email-verification` (đã completed): học viên đăng ký portal bằng email/password → server gửi email verify (soft mode vẫn cấp session) → portal hiển thị màn chờ xác thực → click link verify + auto sign-in → bridge provisioning tạo hồ sơ student khi `emailVerified === true`. Plan này thêm bước kế tiếp trong hành trình đó: **lần đầu vào portal sau khi đã verify, học viên thấy wizard 4 bước thu thập mục tiêu học** — quan tâm IELTS hay TOEIC, band/điểm mục tiêu, mục tiêu học tiếng Anh, thời gian tự học mỗi ngày — rồi mới vào overview.
 
-Lưu trữ: 6 cột nullable mới trên bảng `student` (migration 0024), ghi qua endpoint mới `POST /api/student/onboarding` nằm sau middleware provisioning có sẵn của `/api/student/*` (`apps/server/src/routes/student.ts:43-145`). UI: route `/onboarding` dưới `_auth` + gate 2 chiều với `_auth/index.tsx`. Không thêm dependency; không đụng teacher app (apps/web).
+Lưu trữ: 6 cột nullable mới trên bảng `student` (migration 0026), ghi qua endpoint mới `POST /api/student/onboarding` nằm sau middleware provisioning có sẵn của `/api/student/*` (`apps/server/src/routes/student.ts:43-145`). UI: route `/onboarding` dưới `_auth` + gate 2 chiều với `_auth/index.tsx`. Không thêm dependency; không đụng teacher app (apps/web).
 
 ## Decisions
 
@@ -26,7 +26,7 @@ Lưu trữ: 6 cột nullable mới trên bảng `student` (migration 0024), ghi 
 |---|-----------|-------|
 | D1 | Wizard hiển thị **lần đầu vào portal sau khi email đã verify** (khi `onboardingCompletedAt` null), không phải ngay sau sign-up | Bridge provisioning + endpoint ghi yêu cầu `emailVerified === true` (middleware trả 403 `STUDENT_EMAIL_UNVERIFIED`, `apps/server/src/routes/student.ts:103-111`); lưu answers tạm client-side qua bước verify là state mong manh. Flow chốt: sign-up → màn chờ verify (plan #259) → verify + auto sign-in → vào `/` → redirect `/onboarding` → hoàn thành → về `/`. **Đường Google OAuth** (verified ngay, không có màn chờ — `login.tsx:5,100`, `packages/auth/src/index.ts:59-64`): Google user rơi thẳng `/login` → `/` → gate → wizard — hành vi đúng; copy wizard KHÔNG được viết theo ngữ cảnh "vừa xác thực email" |
 | D2 | Route mới `/onboarding` dưới layout `_auth`; gate 2 chiều: `_auth/index.tsx` khi chưa onboarding → Navigate `/onboarding`; route `/onboarding` khi đã onboarding → Navigate `/`. KHÔNG đụng `beforeLoad` của `_auth/route.tsx` | Gate bằng dữ liệu (`onboardingCompletedAt`) thay vì đổi guard session đang chạy tốt (`apps/student/src/routes/_auth/route.tsx:4-16`); 2 chiều chặn vòng lặp redirect và chặn user đã onboarding quay lại wizard bằng URL |
-| D3 | Storage = 6 cột nullable trên bảng `student`: `examInterest` text, `targetScore` text, `learningGoals` text (JSON array string của goal keys), `learningGoalsNote` text, `dailyStudyHours` text, `onboardingCompletedAt` integer timestamp_ms nullable. Migration kế tiếp = **0024** (sinh bằng `pnpm db:generate`) | Theo quy ước "derived-until-user-mutable" của `docs/code-standards.md:26-35` (mutable facts get a real column + docblock ghi user action); repo không có enum DB-level — text + enum zod ở contracts là pattern hiện có (`CLASS_TYPES`, `packages/api/src/contracts.ts:19-20`) |
+| D3 | Storage = 6 cột nullable trên bảng `student`: `examInterest` text, `targetScore` text, `learningGoals` text (JSON array string của goal keys), `learningGoalsNote` text, `dailyStudyHours` text, `onboardingCompletedAt` integer timestamp_ms nullable. Migration kế tiếp = **0026** (sinh bằng `pnpm db:generate`) | Theo quy ước "derived-until-user-mutable" của `docs/code-standards.md:26-35` (mutable facts get a real column + docblock ghi user action); repo không có enum DB-level — text + enum zod ở contracts là pattern hiện có (`CLASS_TYPES`, `packages/api/src/contracts.ts:19-20`) |
 | D4 | Contracts trong `packages/api/src/contracts.ts` theo pattern `CLASS_TYPES`: `EXAM_INTERESTS = ["ielts","toeic"]`, `IELTS_TARGET_BANDS = ["5.0","5.5","6.0","6.5","7.0","7.5","8.0+"]`, `TOEIC_TARGET_SCORES = ["450","550","650","750","850","990"]`, `LEARNING_GOAL_OPTIONS = ["study-abroad","career","certification","communication","academic","other"]`, `DAILY_STUDY_HOUR_OPTIONS = ["under-1","1-2","2-3","3-plus"]` (đều `as const`). `studentOnboardingPayloadSchema`: examInterest enum, targetScore điều kiện theo examInterest (superRefine), learningGoals array(enum).min(1) + unique + note optional trim ≤200, dailyStudyHours enum. `studentMeSchema` mở rộng onboarding fields (nullable) + `onboardingCompletedAt` dạng **ISO string nullable** | Enum nghiệp vụ nằm ở zod contracts là pattern duy nhất hiện có của repo; wire format ISO string chosen vì `studentMeSchema` hiện chưa có timestamp nào và precedent serialize cùng khu student portal là `submittedAt: z.string().nullable()` (`packages/api/src/contracts.ts:970`) — không đưa number ms lên wire |
 | D5 | API: `POST /api/student/onboarding` trong `studentRoutes`, đi qua middleware provisioning có sẵn; parse payload → update student row → trả studentMe DTO. Idempotent last-write-wins. **Bắt buộc kèm guard CSRF** cho POST (Origin ∈ allowlist `corsOrigin` → 403 fail-closed; `Content-Type` phải `application/json` → 415; content-length > 4KB → 413) đăng ký TRƯỚC middleware session — nhân bản pattern `kernel.ts` vì cookie là `SameSite=None` (`packages/auth/src/index.ts:111-116`) | Middleware provisioning chỉ check session, không chống CSRF — POST ghi đầu tiên dưới `/api/student/*` phải có cùng lớp phòng thủ như mọi mutation của kernel (`apps/server/src/routes/kernel.ts:146-166`, test regression `student.test.ts:460-495`); form cross-site `text/plain` sẽ vượt qua `c.req.json()` nếu không chặn content-type. Double-submit hoặc chạy lại chỉ ghi đè — an toàn |
 | D6 | UI: `OnboardingWizard` + step components; state object lifted trong wizard; validate từng bước bằng zod schema con dựng từ enums contracts; progress indicator tự dựng bằng tokens có sẵn (packages/ui KHÔNG có stepper — đã duyệt `packages/ui/src/components/`). Copy tiếng Việt. Textarea ở bước mục tiêu dùng `Textarea` có sẵn từ `@teacher-os/ui` (`packages/ui/src/components/textarea.tsx`) + `className` override về token portal (`border-line`, `--focus-ring`). Bước cuối tổng hợp + nút "Hoàn thành" → POST qua repo function `submitOnboarding` trong `apps/student/src/lib/repos/student.ts` + TanStack Query mutation (onSuccess `setQueryData(["student","me"], data)` trước khi navigate — triệt tiêu race cache) + sonner toast lỗi; thành công → invalidate overview + navigate `/` | KISS/DRY: không thêm dependency (student app đã import từ `@teacher-os/ui` — `__root.tsx:6`); repo + HttpError pattern có sẵn (`apps/student/src/lib/repos/student.ts:16-44`); toast + spinner precedent `sign-up-form.tsx:43`, `student-error-view.tsx:129`. `setQueryData` từ DTO mutation trả về đóng cửa sổ stale-cache giữa navigate và refetch (gate ở `/` đọc cache mới ngay) |
@@ -39,19 +39,19 @@ Wizard steps (copy tiếng Việt, cho phép refine khi implement): (1) "Bạn �
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [DB schema + migration 0024 + contracts onboarding](./phase-01-db-and-contracts.md) | Pending |
-| 2 | [POST /api/student/onboarding + studentMe mở rộng + unit tests](./phase-02-onboarding-endpoint.md) | Pending |
-| 3 | [Portal — route /onboarding + wizard UI + gate 2 chiều](./phase-03-portal-wizard-ui.md) | Pending |
-| 4 | [E2E onboarding + cập nhật spec cũ + full gates](./phase-04-e2e-and-gates.md) | Pending |
+| 1 | [DB schema + migration 0026 + contracts onboarding](./phase-01-db-and-contracts.md) | Completed |
+| 2 | [POST /api/student/onboarding + studentMe mở rộng + unit tests](./phase-02-onboarding-endpoint.md) | Completed |
+| 3 | [Portal — route /onboarding + wizard UI + gate 2 chiều](./phase-03-portal-wizard-ui.md) | Completed |
+| 4 | [E2E onboarding + cập nhật spec cũ + full gates](./phase-04-e2e-and-gates.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Flow đầy đủ: sign-up → màn chờ verify → click link verify + auto sign-in → vào `/` → tự chuyển `/onboarding` → hoàn thành wizard → về `/` thấy overview (heading "Chào")
-- [ ] Dữ liệu lưu đúng cột DB (`exam_interest`, `target_score`, `learning_goals` JSON, `learning_goals_note`, `daily_study_hours`, `onboarding_completed_at` NOT NULL sau khi hoàn thành) — assert ở unit test + e2e
-- [ ] User đã onboarding vào `/` KHÔNG bị redirect sang `/onboarding`; vào thẳng `/onboarding` bị đẩy về `/`
-- [ ] User chưa verify vẫn thấy màn "Email chưa được xác thực" cũ (kể cả khi vào thẳng `/onboarding`) — wizard không xuất hiện trước verify
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm test` (root) exit 0
-- [ ] E2E: 3 spec student (onboarding mới + email-verification sau đổi kỳ vọng + provisioning) pass **2 lần liên tiếp** (không có test nào pass nhờ retry); full e2e suite pass 1 lần
+- [x] Flow đầy đủ: sign-up → màn chờ verify → click link verify + auto sign-in → vào `/` → tự chuyển `/onboarding` → hoàn thành wizard → về `/` thấy overview (heading "Chào")
+- [x] Dữ liệu lưu đúng cột DB (`exam_interest`, `target_score`, `learning_goals` JSON, `learning_goals_note`, `daily_study_hours`, `onboarding_completed_at` NOT NULL sau khi hoàn thành) — assert ở unit test + e2e
+- [x] User đã onboarding vào `/` KHÔNG bị redirect sang `/onboarding`; vào thẳng `/onboarding` bị đẩy về `/`
+- [x] User chưa verify vẫn thấy màn "Email chưa được xác thực" cũ (kể cả khi vào thẳng `/onboarding`) — wizard không xuất hiện trước verify
+- [x] `pnpm check`, `pnpm check-types`, `pnpm test` (root) exit 0
+- [x] E2E: 3 spec student (onboarding mới + email-verification sau đổi kỳ vọng + provisioning) pass **2 lần liên tiếp** (không có test nào pass nhờ retry); full e2e suite pass 1 lần
 
 ## Non-goals
 

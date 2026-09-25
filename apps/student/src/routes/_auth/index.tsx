@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useMemo } from "react";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
@@ -36,7 +37,18 @@ function StudentOverviewPage() {
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
+			return (
+				<StudentShell userEmail={sessionEmail}>
+					<StudentErrorView code={code} userEmail={sessionEmail} />
+				</StudentShell>
+			);
+		}
 		return <StudentErrorView code={code} userEmail={sessionEmail} />;
+	}
+
+	if (meQuery.data?.student.onboardingCompletedAt == null) {
+		return <Navigate to="/onboarding" />;
 	}
 
 	if (overviewQuery.error) {

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type StudentInvitationItem,
 	type StudentMe,
+	type StudentOnboardingPayload,
 	type StudentOrgItem,
 	type StudentOverview,
 	studentMeSchema,
@@ -44,6 +45,40 @@ export async function fetchStudentMe(): Promise<StudentMe> {
 		method: "GET",
 		headers: getStudentHeaders(),
 		credentials: "include",
+	});
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	const data = (await res.json()) as unknown;
+	return studentMeSchema.parse(data);
+}
+
+export async function submitOnboarding(
+	payload: StudentOnboardingPayload,
+): Promise<StudentMe> {
+	const res = await fetch(`${getApiBaseUrl()}/api/student/onboarding`, {
+		method: "POST",
+		headers: getStudentHeaders({
+			Accept: "application/json",
+			"Content-Type": "application/json",
+		}),
+		credentials: "include",
+		body: JSON.stringify(payload),
 	});
 
 	if (!res.ok) {
@@ -259,6 +294,17 @@ export function useRejectInvitation() {
 			void queryClient.invalidateQueries({
 				queryKey: ["student", "notifications"],
 			});
+		},
+	});
+}
+
+export function useSubmitOnboarding() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: submitOnboarding,
+		onSuccess: (data) => {
+			queryClient.setQueryData(["student", "me"], data);
+			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
 		},
 	});
 }

@@ -283,6 +283,12 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				name: "Minh Tran",
 				email: "minh@gmail.com",
 				orgId: "org-1",
+				examInterest: null,
+				targetScore: null,
+				learningGoals: null,
+				learningGoalsNote: null,
+				dailyStudyHours: null,
+				onboardingCompletedAt: null,
 			},
 		});
 
@@ -536,5 +542,277 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 
 		expect(orgsAfter?.count).toBe(orgsBefore?.count);
 		expect(membershipsAfter?.count).toBe(membershipsBefore?.count);
+	});
+
+	describe("POST /api/student/onboarding", () => {
+		test("happy path: valid payload provisions/updates student and returns 200", async () => {
+			const payload = {
+				examInterest: "ielts",
+				targetScore: "6.5",
+				learningGoals: ["study-abroad", "career"],
+				dailyStudyHours: "1-2",
+			};
+
+			const res = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload),
+			});
+
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as StudentMe;
+			expect(body.student.examInterest).toBe("ielts");
+			expect(body.student.targetScore).toBe("6.5");
+			expect(body.student.learningGoals).toEqual(["study-abroad", "career"]);
+			expect(body.student.dailyStudyHours).toBe("1-2");
+			expect(body.student.learningGoalsNote).toBeNull();
+			expect(body.student.onboardingCompletedAt).toBeTypeOf("string");
+			expect(
+				Number.isNaN(
+					new Date(body.student.onboardingCompletedAt ?? "").getTime(),
+				),
+			).toBe(false);
+
+			// Assert DB row
+			const [row] = await libsql
+				.select()
+				.from(schema.student)
+				.where(eq(schema.student.email, "newportal@test.local"));
+			expect(row).toBeDefined();
+			expect(row?.examInterest).toBe("ielts");
+			expect(row?.targetScore).toBe("6.5");
+			expect(row?.learningGoals).toBe(
+				JSON.stringify(["study-abroad", "career"]),
+			);
+			expect(row?.learningGoalsNote).toBeNull();
+			expect(row?.dailyStudyHours).toBe("1-2");
+			expect(row?.onboardingCompletedAt).not.toBeNull();
+		});
+
+		test("GET /me round-trip reflects persisted onboarding fields", async () => {
+			const meRes = await app.request("/api/student/me", {
+				headers: { "x-test-user": "provisioning-user" },
+			});
+			expect(meRes.status).toBe(200);
+			const me = (await meRes.json()) as StudentMe;
+			expect(me.student.examInterest).toBe("ielts");
+			expect(me.student.targetScore).toBe("6.5");
+			expect(me.student.learningGoals).toEqual(["study-abroad", "career"]);
+			expect(me.student.dailyStudyHours).toBe("1-2");
+			expect(me.student.onboardingCompletedAt).toBeTypeOf("string");
+		});
+
+		test("idempotent overwrite: successive POST updates answers and refreshes timestamp", async () => {
+			const payload2 = {
+				examInterest: "toeic",
+				targetScore: "850",
+				learningGoals: ["communication"],
+				learningGoalsNote: "Need TOEIC for graduation",
+				dailyStudyHours: "3-plus",
+			};
+
+			const res = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload2),
+			});
+
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as StudentMe;
+			expect(body.student.examInterest).toBe("toeic");
+			expect(body.student.targetScore).toBe("850");
+			expect(body.student.learningGoals).toEqual(["communication"]);
+			expect(body.student.learningGoalsNote).toBe("Need TOEIC for graduation");
+			expect(body.student.dailyStudyHours).toBe("3-plus");
+
+			// Assert DB row updated
+			const [row] = await libsql
+				.select()
+				.from(schema.student)
+				.where(eq(schema.student.email, "newportal@test.local"));
+			expect(row?.examInterest).toBe("toeic");
+			expect(row?.targetScore).toBe("850");
+			expect(row?.learningGoalsNote).toBe("Need TOEIC for graduation");
+		});
+
+		test("invalid body returns 400 with { error: 'invalid body' }", async () => {
+			// (i) missing examInterest
+			const res1 = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					targetScore: "6.5",
+					learningGoals: ["career"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res1.status).toBe(400);
+			expect((await res1.json()) as { error: string }).toEqual({
+				error: "invalid body",
+			});
+
+			// (ii) examInterest: "ielts" with invalid targetScore: "999"
+			const res2 = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					targetScore: "999",
+					learningGoals: ["career"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res2.status).toBe(400);
+			expect((await res2.json()) as { error: string }).toEqual({
+				error: "invalid body",
+			});
+
+			// (iii) empty learningGoals: []
+			const res3 = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					targetScore: "6.5",
+					learningGoals: [],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res3.status).toBe(400);
+			expect((await res3.json()) as { error: string }).toEqual({
+				error: "invalid body",
+			});
+		});
+
+		test("CSRF guard: bad origin 403, text/plain 415, oversized body 413", async () => {
+			const validPayload = {
+				examInterest: "ielts",
+				targetScore: "6.5",
+				learningGoals: ["study-abroad"],
+				dailyStudyHours: "1-2",
+			};
+
+			// (i) Disallowed origin
+			const resOrigin = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "https://evil.example",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(validPayload),
+			});
+			expect(resOrigin.status).toBe(403);
+			expect((await resOrigin.json()) as { error: string }).toEqual({
+				error: "origin not allowed",
+			});
+
+			// (ii) Invalid content-type
+			const resContentType = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "text/plain",
+				},
+				body: JSON.stringify(validPayload),
+			});
+			expect(resContentType.status).toBe(415);
+			expect((await resContentType.json()) as { error: string }).toEqual({
+				error: "content-type must be application/json",
+			});
+
+			// (iii) Oversized body (> 4096 bytes)
+			const resSize = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+					"Content-Length": "5000",
+				},
+				body: JSON.stringify(validPayload),
+			});
+			expect(resSize.status).toBe(413);
+			expect((await resSize.json()) as { error: string }).toEqual({
+				error: "payload too large",
+			});
+		});
+
+		test("unverified user gets 403 STUDENT_EMAIL_UNVERIFIED", async () => {
+			const res = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "unverified",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					targetScore: "6.5",
+					learningGoals: ["study-abroad"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res.status).toBe(403);
+			const body = (await res.json()) as { error: string; code: string };
+			expect(body.code).toBe(STUDENT_ERROR_CODES.EMAIL_UNVERIFIED);
+		});
+
+		test("unauthenticated user gets 401 unauthorized", async () => {
+			const res = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "none",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					targetScore: "6.5",
+					learningGoals: ["study-abroad"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res.status).toBe(401);
+		});
+
+		test("fail-soft read-side: corrupt DB row values gracefully return null in DTO", async () => {
+			await libsql
+				.update(schema.student)
+				.set({
+					learningGoals: "not-json-corrupt-string",
+					dailyStudyHours: "bogus-value",
+				})
+				.where(eq(schema.student.id, "student-1"));
+
+			const res = await app.request("/api/student/me", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const me = (await res.json()) as StudentMe;
+			expect(me.student.learningGoals).toBeNull();
+			expect(me.student.dailyStudyHours).toBeNull();
+		});
 	});
 });

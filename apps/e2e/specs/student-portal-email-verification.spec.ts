@@ -70,10 +70,11 @@ test.describe("Student Portal Email Verification", () => {
 
 		// 6. Click URL verify
 		await page.goto(verifyUrl);
-		// 7. Better-Auth verify và auto sign-in chuyển về portal overview
-		await expect(page.getByRole("heading", { name: /Chào/ })).toBeVisible({
-			timeout: 20_000,
-		});
+		// 7. Better-Auth verify + auto sign-in → gate onboarding đưa user mới sang /onboarding
+		await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
+		await expect(
+			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
+		).toBeVisible();
 		await expect(page.getByText("Email chưa được xác thực")).not.toBeVisible();
 
 		// 8. Assert DB có đúng 1 record student được provision
