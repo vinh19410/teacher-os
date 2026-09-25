@@ -23,6 +23,7 @@ export function QuestionKeyEditor({
 	intro,
 	items,
 	showErrors,
+	status,
 	imageUrl,
 	onIntroChange,
 	onImageUrlChange,
@@ -35,6 +36,8 @@ export function QuestionKeyEditor({
 	intro: string;
 	items: QuestionItem[];
 	showErrors: boolean;
+	/** FR9: missing stem/answer only block a `ready` save. */
+	status: "draft" | "ready";
 	imageUrl: string;
 	onIntroChange: (value: string) => void;
 	onImageUrlChange: (value: string) => void;
@@ -168,19 +171,27 @@ export function QuestionKeyEditor({
 			{pasteOpen && (
 				<BulkKeyPastePanel
 					value={pasteRaw}
-					onValueChange={setPasteRaw}
+					onValueChange={(next) => {
+						setPasteRaw(next);
+						// A stale outcome list must not linger over edited content.
+						if (pasteOutcome) setPasteOutcome(null);
+					}}
 					errors={pasteOutcome?.errors ?? []}
 					appliedCount={pasteOutcome?.appliedCount ?? 0}
 					onApply={applyPaste}
 					onClose={closePaste}
 				/>
 			)}
+			{/* Remount on skill/part/type change so the index-keyed blur flags
+			never leak across wipes (review #3). */}
 			<AnswerKeyGrid
+				key={`${skill}-${partId}-${typeId}`}
 				typeId={typeId}
 				skill={skill}
 				partId={partId}
 				items={items}
 				showErrors={showErrors}
+				requireFilled={status === "ready"}
 				onItemsChange={onItemsChange}
 				onAddQuestion={addQuestion}
 			/>

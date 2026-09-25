@@ -164,6 +164,39 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 		}
 	});
 
+	test("corrupted question opts (non-array) is ignored — must not crash the grid", () => {
+		const store = fakeStorage();
+		const bads = [
+			{
+				...draft(),
+				value: {
+					...composerValue(),
+					items: [{ stem: "S", answer: "TRUE", opts: "garbage", alts: "" }],
+				},
+			},
+			{
+				...draft(),
+				value: {
+					...composerValue(),
+					items: [{ stem: "S", answer: "TRUE", opts: [42], alts: "" }],
+				},
+			},
+		];
+		for (const bad of bads) {
+			store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(bad));
+			expect(readAssignmentDraft(store)).toBeNull();
+			expect(store.size).toBe(0);
+		}
+		// null opts stays valid (the QuestionItem default).
+		const withNullOpts = draft({
+			value: composerValue({
+				items: [{ stem: "S", answer: "TRUE", opts: null, alts: "" }],
+			}),
+		});
+		store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(withNullOpts));
+		expect(readAssignmentDraft(store)).not.toBeNull();
+	});
+
 	test("oversized payload is not written (200KB cap)", () => {
 		const store = fakeStorage();
 		const bloated = composerValue({

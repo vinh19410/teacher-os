@@ -24,6 +24,8 @@ import {
 export const QUESTION_STEM_MAX = 500;
 export const QUESTION_ANSWER_MAX = 200;
 export const QUESTION_ALTS_MAX = 500;
+/** `opts: z.array(z.string().max(500))` in `assignmentPromptCreateSchema`. */
+export const QUESTION_OPTION_MAX = 500;
 /** `questions.max(40)` in `assignmentPromptCreateSchema`. */
 export const QUESTION_MAX_COUNT = 40;
 
@@ -38,20 +40,26 @@ const DIGIT_ROMANS = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"];
 export function questionRowError(
 	item: QuestionItem,
 	choices: readonly string[] | null,
+	/** FR9: missing stem/answer only block a `ready` save — a draft may be
+	 * half-filled. Over-cap and invalid-choice errors apply in both states. */
+	requireFilled = true,
 ): Record<string, string> {
 	const errors: Record<string, string> = {};
 	if (item.stem.trim().length > QUESTION_STEM_MAX)
 		errors.stem = `Nội dung câu hỏi vượt quá ${QUESTION_STEM_MAX} ký tự.`;
-	else if (!item.stem.trim()) errors.stem = "Nhập nội dung câu hỏi.";
+	else if (requireFilled && !item.stem.trim())
+		errors.stem = "Nhập nội dung câu hỏi.";
 	if (item.answer.trim().length > QUESTION_ANSWER_MAX) {
 		errors.answer = `Đáp án vượt quá ${QUESTION_ANSWER_MAX} ký tự.`;
-	} else if (!item.answer.trim()) {
+	} else if (requireFilled && !item.answer.trim()) {
 		errors.answer = "Khóa đáp án đúng.";
-	} else if (choices && !choices.includes(item.answer)) {
+	} else if (choices && item.answer.trim() && !choices.includes(item.answer)) {
 		errors.answer = `Đáp án “${item.answer}” không thuộc bộ đáp án (${choices.join(", ")}).`;
 	}
 	if (item.alts.length > QUESTION_ALTS_MAX)
 		errors.alts = `Danh sách nhận thêm vượt quá ${QUESTION_ALTS_MAX} ký tự.`;
+	if ((item.opts ?? []).some((option) => option.length > QUESTION_OPTION_MAX))
+		errors.opts = `Lựa chọn vượt quá ${QUESTION_OPTION_MAX} ký tự.`;
 	return errors;
 }
 
@@ -66,6 +74,7 @@ export function AnswerKeyGrid({
 	partId,
 	items,
 	showErrors,
+	requireFilled = true,
 	onItemsChange,
 	onAddQuestion,
 }: {
@@ -74,6 +83,9 @@ export function AnswerKeyGrid({
 	partId: string;
 	items: QuestionItem[];
 	showErrors: boolean;
+	/** FR9: missing stem/answer are flagged only when the composer status is
+	 * `ready`; drafts may legitimately be half-filled. */
+	requireFilled?: boolean;
 	onItemsChange: (items: QuestionItem[]) => void;
 	/** Enter-to-add comes from the editor so the max-40 gate stays in one
 	 * place; returns whether a row was actually added. */
@@ -92,6 +104,16 @@ export function AnswerKeyGrid({
 	};
 	const remove = (index: number) => {
 		onItemsChange(items.filter((_, itemIndex) => itemIndex !== index));
+		// Blur flags track row indices — shift them so removing a middle row
+		// never paints stale errors onto the row that slid into its place.
+		setBlurred((current) => {
+			const next = new Set<number>();
+			for (const blurredIndex of current) {
+				if (blurredIndex === index) continue;
+				next.add(blurredIndex > index ? blurredIndex - 1 : blurredIndex);
+			}
+			return next;
+		});
 	};
 	const focusRow = (index: number) => {
 		if (typeof document === "undefined") return;
@@ -151,10 +173,10 @@ export function AnswerKeyGrid({
 			</div>
 			{items.map((item, index) => {
 				const number = qStart + index;
-				const rowErrors = questionRowError(item, choices);
+				const rowErrors = questionRowError(item, choices, requireFilled);
 				const rowVisible = showErrors || blurred.has(index);
 				const errorEntries = rowVisible
-					? (["stem", "answer", "alts"] as const).filter(
+					? (["stem", "answer", "opts", "alts"] as const).filter(
 							(key) => rowErrors[key],
 						)
 					: [];

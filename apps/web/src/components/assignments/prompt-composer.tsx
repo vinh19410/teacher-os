@@ -36,11 +36,14 @@ export function PromptComposer({
 	value,
 	errors = {},
 	showErrors,
+	status,
 	onFieldChange,
 }: {
 	value: ComposerValue;
 	errors?: Record<string, string | undefined>;
 	showErrors: boolean;
+	/** Threaded to the key editor for FR9 (missing answers block `ready` only). */
+	status: "draft" | "ready";
 	onFieldChange: (patch: Partial<ComposerValue>) => void;
 }) {
 	const skill = skillOf(value.skill);
@@ -64,6 +67,10 @@ export function PromptComposer({
 					onChange={(label) => {
 						const next =
 							SKILLS.find((entry) => entry.name === label) ?? SKILLS[0];
+						// ChipFilter re-fires on the selected chip — a stray click on
+						// the current skill must not confirm or wipe (#269 guard,
+						// review #2: the patch below always carries part/type).
+						if (next.id === value.skill) return;
 						onFieldChange({
 							skill: next.id,
 							part: next.parts[0].id,
@@ -83,6 +90,10 @@ export function PromptComposer({
 						const next =
 							skill.parts.find((entry) => entry.label === label) ??
 							skill.parts[0];
+						// Same re-fire guard: the patch always carries the part's
+						// default type, so a stray click could otherwise reset the
+						// type (review #2).
+						if (next.id === value.part) return;
 						onFieldChange({ part: next.id, type: next.types[0].id });
 					}}
 				/>
@@ -208,6 +219,7 @@ export function PromptComposer({
 					intro={value.intro}
 					items={value.items}
 					showErrors={showErrors}
+					status={status}
 					imageUrl={value.imageUrl}
 					imageUrlError={showErrors ? errors.imageUrl : undefined}
 					onIntroChange={(intro) => onFieldChange({ intro })}

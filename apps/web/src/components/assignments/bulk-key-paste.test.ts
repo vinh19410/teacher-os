@@ -91,6 +91,22 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(result.errors[0]).toMatchObject({ line: 2, reason: "duplicate" });
 	});
 
+	test("an errored line must not reserve its number — a later valid line for the same Qn applies", () => {
+		const result = applyBulkKeyPaste({
+			raw: "1. MAYBE\n1. TRUE",
+			typeId: "tfng",
+			qStart: 1,
+			items: items("tfng", 2),
+		});
+		expect(result.appliedCount).toBe(1);
+		expect(result.items[0].answer).toBe("TRUE");
+		expect(result.errors).toHaveLength(1);
+		expect(result.errors[0]).toMatchObject({
+			line: 1,
+			reason: "invalid-choice",
+		});
+	});
+
 	test("unparsable line produces a per-line error; valid lines still apply", () => {
 		const result = applyBulkKeyPaste({
 			raw: "TRUE\n2. FALSE",

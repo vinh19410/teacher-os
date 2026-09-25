@@ -84,7 +84,6 @@ export function applyBulkKeyPaste(
 			});
 			continue;
 		}
-		seenNumbers.add(number);
 
 		const segments = match[2]
 			.split("/")
@@ -122,6 +121,9 @@ export function applyBulkKeyPaste(
 			}
 			next[index] = { ...next[index], answer: canonical };
 		}
+		// Mark only lines that actually applied — an errored line for Qn must
+		// not block a later valid line for the same number (review #6).
+		seenNumbers.add(number);
 		appliedCount += 1;
 	}
 

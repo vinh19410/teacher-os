@@ -18,6 +18,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Questions 1–3"
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -48,6 +49,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Question 1"
 				items={singleItem}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -76,6 +78,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Choose A, B, C or D"
 				items={mcqItems}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -108,6 +111,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro="Complete the sentences"
 				items={textItems}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -131,6 +135,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -159,6 +164,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl="https://example.com/diagram.png"
@@ -184,6 +190,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl=""
@@ -201,6 +208,7 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 				intro=""
 				items={items}
 				showErrors={false}
+				status="ready"
 				onIntroChange={vi.fn()}
 				onItemsChange={vi.fn()}
 				imageUrl="http://insecure.example.com/d.png"
@@ -218,6 +226,7 @@ describe("QuestionKeyEditor — phase-01 quick wins", () => {
 		typeId: "note",
 		intro: "",
 		showErrors: false,
+		status: "ready" as const,
 		onIntroChange: vi.fn(),
 		onItemsChange: vi.fn(),
 		imageUrl: "",

@@ -58,20 +58,31 @@ function composerValueShape(value: unknown): value is ComposerValue {
 	if (!stringFields.every((field) => typeof v[field] === "string"))
 		return false;
 	if (!Array.isArray(v.items)) return false;
-	return v.items.every(
-		(item) =>
-			typeof item === "object" &&
-			item !== null &&
-			typeof (item as QuestionItemShape).stem === "string" &&
-			typeof (item as QuestionItemShape).answer === "string" &&
-			typeof (item as QuestionItemShape).alts === "string",
-	);
+	return v.items.every((rawItem) => {
+		if (!rawItem || typeof rawItem !== "object") return false;
+		const item = rawItem as QuestionItemShape;
+		if (
+			typeof item.stem !== "string" ||
+			typeof item.answer !== "string" ||
+			typeof item.alts !== "string"
+		)
+			return false;
+		// `opts` is nullish-or-string[] on QuestionItem — a corrupted draft
+		// (e.g. hand-edited `opts: "garbage"`) must be dropped, not crash the
+		// grid's `.every`/`.map` over it (review #5).
+		return (
+			item.opts == null ||
+			(Array.isArray(item.opts) &&
+				item.opts.every((option) => typeof option === "string"))
+		);
+	});
 }
 
 interface QuestionItemShape {
 	stem: string;
 	answer: string;
 	alts: string;
+	opts?: null | string[];
 }
 
 function draftShape(value: unknown): value is StoredAssignmentDraft {

@@ -280,9 +280,13 @@ export function NewAssignmentRoute() {
 		// twice (red-team #8). The updater stays pure.
 		const change = structuralChangeKind(value, patch);
 		if (change && hasAuthoringContent(value)) {
-			const ok = window.confirm(
-				`Đổi ${STRUCTURAL_LABELS[change]} sẽ xóa nội dung đã soạn của dạng hiện tại. Tiếp tục?`,
-			);
+			// A skill change wipes the whole composer (emptyComposer — including
+			// title); a part/type change only wipes the type-specific fields.
+			const message =
+				change === "skill"
+					? "Đổi kỹ năng sẽ xóa toàn bộ nội dung đã soạn của đề hiện tại. Tiếp tục?"
+					: `Đổi ${STRUCTURAL_LABELS[change]} sẽ xóa câu hỏi, đáp án và câu lệnh đã soạn của dạng hiện tại. Tiếp tục?`;
+			const ok = window.confirm(message);
 			if (!ok) return;
 		}
 		setValue((current) => applyComposerFieldChange(current, patch));
@@ -432,6 +436,7 @@ export function NewAssignmentRoute() {
 						value={value}
 						errors={fieldErrors}
 						showErrors={showErrors}
+						status={status}
 						onFieldChange={handleFieldChange}
 					/>
 					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">

@@ -141,12 +141,6 @@ describe("AnswerKeyGrid — per-row validation (phase-01 FR9)", () => {
 		expect(html).toContain("Khóa đáp án đúng.");
 	});
 
-	it("keeps rows quiet until blur or save", () => {
-		const html = renderGrid({ items: [emptyItem("tfng")], showErrors: false });
-		expect(html).not.toContain("Nhập nội dung câu hỏi.");
-		expect(html).not.toContain("Khóa đáp án đúng.");
-	});
-
 	it("flags over-cap stem (500), answer (200) and alts (500) — contract caps", () => {
 		const html = renderGrid({
 			items: [
@@ -162,6 +156,48 @@ describe("AnswerKeyGrid — per-row validation (phase-01 FR9)", () => {
 		});
 		expect(html).toContain("vượt quá 500 ký tự");
 		expect(html).toContain("vượt quá 200 ký tự");
+	});
+
+	it("flags an mcq option over the 500-char contract cap", () => {
+		const html = renderGrid({
+			typeId: "mcq",
+			skill: "reading",
+			partId: "p3",
+			items: [
+				{
+					stem: "Main idea?",
+					answer: "A",
+					opts: ["o".repeat(501), "Two", "Three", "Four"],
+					alts: "",
+				},
+			],
+			showErrors: true,
+		});
+		expect(html).toContain("Lựa chọn vượt quá 500 ký tự.");
+	});
+
+	it("a draft (requireFilled=false) stays quiet about missing stem/answer but still flags over-cap and invalid choices", () => {
+		const draftQuiet = renderGrid({
+			items: [emptyItem("tfng")],
+			showErrors: true,
+			requireFilled: false,
+		});
+		expect(draftQuiet).not.toContain("Nhập nội dung câu hỏi.");
+		expect(draftQuiet).not.toContain("Khóa đáp án đúng.");
+
+		const draftLoud = renderGrid({
+			items: [{ stem: "s".repeat(501), answer: "MAYBE", opts: null, alts: "" }],
+			showErrors: true,
+			requireFilled: false,
+		});
+		expect(draftLoud).toContain("vượt quá 500 ký tự");
+		expect(draftLoud).toContain("không thuộc bộ đáp án");
+	});
+
+	it("keeps rows quiet until blur or save", () => {
+		const html = renderGrid({ items: [emptyItem("tfng")], showErrors: false });
+		expect(html).not.toContain("Nhập nội dung câu hỏi.");
+		expect(html).not.toContain("Khóa đáp án đúng.");
 	});
 
 	it("flags a stored answer outside the choice set", () => {
