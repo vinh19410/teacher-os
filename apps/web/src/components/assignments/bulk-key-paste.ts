@@ -80,7 +80,7 @@ export function applyBulkKeyPaste(
 				line: lineNumber,
 				raw: line,
 				reason: "duplicate",
-				message: `Q${number} bị lặp trong nội dung dán — chỉ dòng đầu được áp dụng.`,
+				message: `Q${number} bị lặp trong nội dung dán — mỗi số câu chỉ nhận một dòng hợp lệ.`,
 			});
 			continue;
 		}

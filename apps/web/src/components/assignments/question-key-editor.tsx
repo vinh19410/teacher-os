@@ -1,5 +1,5 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
@@ -64,6 +64,14 @@ export function QuestionKeyEditor({
 		errors: BulkKeyPasteLineError[];
 		appliedCount: number;
 	} | null>(null);
+	// A skill/part/type wipe resets the questions — a paste panel holding the
+	// old type's raw lines must not survive it (review: INFO #3).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: skill/partId/typeId are the reset identity, not data used in the body — deliberate reset-on-structural-change
+	useEffect(() => {
+		setPasteOpen(false);
+		setPasteRaw("");
+		setPasteOutcome(null);
+	}, [skill, partId, typeId]);
 	const addQuestion = () => {
 		if (atMax) return false;
 		onItemsChange([...items, emptyItem(typeId)]);

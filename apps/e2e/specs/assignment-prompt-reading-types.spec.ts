@@ -134,7 +134,13 @@ test("create a ready diagram prompt with an https image URL", async ({
 	// never ride along into another type's prompt. Composed content resets
 	// with it (long-standing type-change semantics). Phase-01 FR5 adds a
 	// confirm for type changes with authored content — the teacher accepts.
-	page.on("dialog", (dialog) => void dialog.accept());
+	page.on("dialog", (dialog) => {
+		// Accept only the type-change confirm — an unexpected dialog must
+		// dismiss loudly, not get swallowed into a false pass.
+		void (dialog.message().includes("Đổi dạng đề")
+			? dialog.accept()
+			: dialog.dismiss());
+	});
 	await page.getByRole("button", { name: "Note completion" }).first().click();
 	await expect(page.getByLabel("Ảnh biểu đồ (URL)")).toHaveCount(0);
 	await page.getByRole("button", { name: "Diagram label completion" }).click();

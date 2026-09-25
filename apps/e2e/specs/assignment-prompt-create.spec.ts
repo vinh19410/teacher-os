@@ -359,8 +359,13 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 		.fill("The first statement describes the stepwells.");
 	await page.getByRole("button", { name: "Câu 1: TRUE" }).click();
 
-	// Wait out the 1s autosave debounce, then simulate an accidental reload.
-	await page.waitForTimeout(1500);
+	// Wait for the 1s autosave debounce to actually land, then simulate an
+	// accidental reload.
+	await expect
+		.poll(() =>
+			page.evaluate(() => localStorage.getItem("assignment-draft")),
+		)
+		.not.toBeNull();
 	await page.reload();
 
 	await expect(page.getByText("Đã phục hồi bản nháp")).toBeVisible();
@@ -375,7 +380,13 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 
 	// Editing again re-arms autosave; this time discard via the banner Hủy.
 	await page.getByLabel("Tiêu đề").fill(`${TITLE} v2`);
-	await page.waitForTimeout(1500);
+	await expect
+		.poll(() =>
+			page.evaluate(() =>
+				localStorage.getItem("assignment-draft")?.includes("v2"),
+			),
+		)
+		.toBe(true);
 	await page.reload();
 	await expect(page.getByText("Đã phục hồi bản nháp")).toBeVisible();
 	// Scope to the banner: the form toolbar also has a Hủy button.
@@ -405,7 +416,12 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 		.first()
 		.fill("Name of caller:");
 	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
-	await page.waitForTimeout(1500); // autosave lands in localStorage too
+	// Autosave lands in localStorage too (1s debounce).
+	await expect
+		.poll(() =>
+			page.evaluate(() => localStorage.getItem("assignment-draft")),
+		)
+		.not.toBeNull();
 
 	await page.getByRole("button", { name: "Xem trước" }).click();
 	await expect(page).toHaveURL(/\/assignments\/preview$/);
