@@ -71,3 +71,73 @@ describe("PromptPreviewAside — option bank (phase-02 FR6/FR7)", () => {
 		expect(html).not.toContain("Thiếu ngân hàng lựa chọn");
 	});
 });
+
+describe("PromptPreviewAside — cloze marker rendering (phase-03 FR5)", () => {
+	it("renders a markered completion stem as before-text + input + after-text without leaking the key", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({
+					part: "p2",
+					type: "summary",
+					task: "p2",
+					genre: "summary",
+					questions: [
+						{
+							stem: "Tunnels ____ the water through the rock.",
+							opts: null,
+							answer: "channel",
+							alts: "",
+						},
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Tunnels");
+		expect(html).toContain("the water through the rock.");
+		expect(html).toContain("<input");
+		expect(html).not.toContain("channel");
+	});
+
+	it("renders tablecomp stems as labeled Hàng — Cột rows from the snapshot read path", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({
+					part: "p2",
+					type: "tablecomp",
+					task: "p2",
+					genre: "tablecomp",
+					questions: [
+						{
+							stem: "[table] r2 c1: Victorian inventions / Year",
+							opts: null,
+							answer: "1843",
+							alts: "",
+						},
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Hàng 2 — Cột 1:");
+		expect(html).toContain("Victorian inventions / Year");
+		expect(html).toContain("<input");
+		expect(html).not.toContain("1843");
+	});
+
+	it("renders legacy markerless stems verbatim without a blank input", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({
+					part: "p2",
+					type: "summary",
+					task: "p2",
+					genre: "summary",
+					questions: [
+						{ stem: "An old summary stem?", opts: null, answer: "x", alts: "" },
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("An old summary stem?");
+		expect(html).not.toContain("<input");
+	});
+});

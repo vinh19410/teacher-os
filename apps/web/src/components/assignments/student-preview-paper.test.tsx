@@ -93,3 +93,64 @@ describe("StudentPreviewPaper — option bank (phase-02 FR6)", () => {
 		expect(html).toContain("28 The iron bridge");
 	});
 });
+
+describe("StudentPreviewPaper — cloze marker rendering (phase-03 FR5)", () => {
+	it("renders a markered completion stem as before-text + input + after-text without leaking the key", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					part: "p2",
+					type: "summary",
+					items: [
+						{
+							...emptyItem("summary"),
+							stem: "Rains refill the ____ each year.",
+							answer: "stepwells",
+						},
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Rains refill the");
+		expect(html).toContain("each year.");
+		expect(html).toContain("<input");
+		// The auto-grading key never appears in the student paper.
+		expect(html).not.toContain("stepwells");
+	});
+
+	it("renders tablecomp stems as labeled Hàng — Cột rows (no full grid)", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					part: "p2",
+					type: "tablecomp",
+					items: [
+						{
+							...emptyItem("tablecomp"),
+							stem: "[table] r1 c2: Steam engine / Invention",
+							answer: "piston",
+						},
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Hàng 1 — Cột 2:");
+		expect(html).toContain("Steam engine / Invention");
+		expect(html).toContain("<input");
+		expect(html).not.toContain("piston");
+	});
+
+	it("renders legacy markerless stems verbatim without a blank input", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					part: "p2",
+					type: "summary",
+					items: [{ ...emptyItem("summary"), stem: "An old summary stem?" }],
+				})}
+			/>,
+		);
+		expect(html).toContain("An old summary stem?");
+		expect(html).not.toContain("<input");
+	});
+});

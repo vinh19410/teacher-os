@@ -1,5 +1,6 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
+import { ClozeStemText } from "./cloze-stem";
 import {
 	bankLabel,
 	isBankableType,
@@ -120,7 +121,16 @@ export function StudentPreviewPaper(props: {
 					{(props.items ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{(part.qStart ?? 1) + index}.</strong>{" "}
-							{item.stem || "Câu hỏi sẽ hiện ở đây."}
+							{item.stem.trim() ? (
+								<ClozeStemText
+									stem={item.stem}
+									answer={item.answer}
+									typeId={typeId}
+									number={(part.qStart ?? 1) + index}
+								/>
+							) : (
+								"Câu hỏi sẽ hiện ở đây."
+							)}
 							{item.opts?.map((option, optionIndex) => (
 								<div key={optionIndex} className="ml-5 text-muted-fg">
 									{String.fromCharCode(65 + optionIndex)} {option}
