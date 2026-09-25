@@ -122,9 +122,7 @@ function parseOptionBank(
 			);
 			return [];
 		}
-		return parsed.filter(
-			(item): item is string => typeof item === "string",
-		);
+		return parsed.filter((item): item is string => typeof item === "string");
 	} catch {
 		console.warn(
 			`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,

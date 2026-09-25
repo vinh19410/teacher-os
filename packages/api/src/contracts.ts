@@ -355,9 +355,9 @@ export const ASSIGNMENT_OPTION_BANK_TYPES: Record<
 	speaking: [],
 };
 export function isOptionBankable(skill: string, type: string): boolean {
-	return (ASSIGNMENT_OPTION_BANK_TYPES[skill as AssignmentSkill] ?? []).includes(
-		type,
-	);
+	return (
+		ASSIGNMENT_OPTION_BANK_TYPES[skill as AssignmentSkill] ?? []
+	).includes(type);
 }
 
 /**
