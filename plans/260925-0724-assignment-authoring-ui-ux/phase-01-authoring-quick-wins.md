@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Authoring quick wins: key grid, chống mất dữ liệu, autosave"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: []
@@ -82,14 +82,14 @@ flowchart LR
 
 ## Todo List
 
-- [ ] `answer-key-grid.tsx` + 3 row kind
-- [ ] Tích grid vào `question-key-editor.tsx`
-- [ ] Phím tắt + focus quản lý
-- [ ] Confirm dialog + carry-over reset logic
-- [ ] `assignment-draft-store.ts` + banner phục hồi
-- [ ] Paste key hàng loạt + parse `/` alts
-- [ ] Chip word-limit từ TYPE_HINTS
-- [ ] E2E mở rộng + `pnpm test` xanh
+- [x] `answer-key-grid.tsx` + 3 row kind
+- [x] Tích grid vào `question-key-editor.tsx`
+- [x] Phím tắt + focus quản lý
+- [x] Confirm dialog + carry-over reset logic
+- [x] `assignment-draft-store.ts` + banner phục hồi
+- [x] Paste key hàng loạt + parse `/` alts
+- [x] Chip word-limit từ TYPE_HINTS
+- [x] E2E mở rộng + `pnpm test` xanh
 
 ## Success Criteria
 
