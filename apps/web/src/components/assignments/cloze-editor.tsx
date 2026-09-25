@@ -203,7 +203,7 @@ export function ClozeEditor({
 								: "border-line text-fg-2 hover:border-fg",
 						)}
 					>
-						Chọn chỗ trống
+						Bấm từ
 					</button>
 					<button
 						type="button"
