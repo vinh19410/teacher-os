@@ -410,9 +410,21 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 				composer({
 					type: "summary",
 					items: [
-						{ ...emptyItem("summary"), stem: "Rains refill the ____", answer: "wells" },
-						{ ...emptyItem("summary"), stem: "[table] r1 c1: A / B", answer: "x" },
-						{ ...emptyItem("summary"), stem: "legacy stem, no marker", answer: "y" },
+						{
+							...emptyItem("summary"),
+							stem: "Rains refill the ____",
+							answer: "wells",
+						},
+						{
+							...emptyItem("summary"),
+							stem: "[table] r1 c1: A / B",
+							answer: "x",
+						},
+						{
+							...emptyItem("summary"),
+							stem: "legacy stem, no marker",
+							answer: "y",
+						},
 					],
 				}),
 				"ready",
@@ -424,7 +436,9 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			clozeStemIssue(
 				composer({
 					type: "summary",
-					items: [{ ...emptyItem("summary"), stem: "x".repeat(501), answer: "a" }],
+					items: [
+						{ ...emptyItem("summary"), stem: "x".repeat(501), answer: "a" },
+					],
 				}),
 				"draft",
 			),
@@ -433,7 +447,13 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			clozeStemIssue(
 				composer({
 					type: "summary",
-					items: [{ ...emptyItem("summary"), stem: "ok ____", answer: "a".repeat(201) }],
+					items: [
+						{
+							...emptyItem("summary"),
+							stem: "ok ____",
+							answer: "a".repeat(201),
+						},
+					],
 				}),
 				"draft",
 			),
@@ -442,7 +462,14 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			clozeStemIssue(
 				composer({
 					type: "summary",
-					items: [{ ...emptyItem("summary"), stem: "ok ____", answer: "a", alts: "b".repeat(501) }],
+					items: [
+						{
+							...emptyItem("summary"),
+							stem: "ok ____",
+							answer: "a",
+							alts: "b".repeat(501),
+						},
+					],
 				}),
 				"ready",
 			),
@@ -454,9 +481,9 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			stem: "s ____",
 			answer: "a",
 		}));
-		expect(clozeStemIssue(composer({ type: "summary", items }), "draft")).toContain(
-			"Tối đa 40 câu",
-		);
+		expect(
+			clozeStemIssue(composer({ type: "summary", items }), "draft"),
+		).toContain("Tối đa 40 câu");
 	});
 	test("ignores non-auto skills", () => {
 		expect(

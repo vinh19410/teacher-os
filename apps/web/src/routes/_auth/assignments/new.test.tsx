@@ -259,9 +259,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 					part: "p1",
 					type: "summary",
 					passage: "Some passage",
-					items: [
-						{ stem: "____ and ____", answer: "x", opts: null, alts: "" },
-					],
+					items: [{ stem: "____ and ____", answer: "x", opts: null, alts: "" }],
 				},
 				"ready",
 			);

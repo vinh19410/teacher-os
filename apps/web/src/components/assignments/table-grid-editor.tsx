@@ -1,23 +1,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
 import {
+	addTableCol,
+	addTableRow,
+	emptyTableGrid,
+	removeTableCol,
+	removeTableRow,
+	segmentsToItems,
 	type TableGridState,
 	tableApplyIssues,
 	tableSegments,
-	segmentsToItems,
 	toggleTableCell,
-	addTableRow,
-	addTableCol,
-	removeTableRow,
-	removeTableCol,
-	updateTableCell,
 	updateTableBlank,
+	updateTableCell,
 } from "@/lib/cloze";
-import { emptyTableGrid } from "@/lib/cloze";
-import { hasItemContent } from "./cloze-editor";
+import { cn } from "@/lib/cn";
 import type { QuestionItem } from "./assignment-presets";
+import { hasItemContent } from "./cloze-editor";
 
 /**
  * Table-completion grid editor (phase-03 FR4). The teacher types the table
@@ -168,7 +168,7 @@ export function TableGridEditor({
 													aria-label={`Chỗ trống ô hàng ${row + 1} cột ${col + 1}`}
 													onClick={() => setActiveCell([row, col])}
 													className={cn(
-														"w-full rounded-sm border border-dashed border-fg bg-bg px-3 py-[10px] font-mono text-sm",
+														"w-full rounded-sm border border-fg border-dashed bg-bg px-3 py-[10px] font-mono text-sm",
 														activeCell?.[0] === row &&
 															activeCell?.[1] === col &&
 															"outline outline-fg",
@@ -304,7 +304,12 @@ export function TableGridEditor({
 			))}
 
 			<div className="flex flex-wrap items-center gap-2">
-				<Button type="button" size="sm" disabled={!canApply} onClick={handleApply}>
+				<Button
+					type="button"
+					size="sm"
+					disabled={!canApply}
+					onClick={handleApply}
+				>
 					Áp vào bảng
 				</Button>
 				{willReplace && (

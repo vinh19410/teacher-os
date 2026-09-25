@@ -1,6 +1,5 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
-import { ClozeStemText } from "./cloze-stem";
 import {
 	bankLabel,
 	isBankableType,
@@ -11,6 +10,7 @@ import {
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
+import { ClozeStemText } from "./cloze-stem";
 
 export function StudentPreviewPaper(props: {
 	skill?: string;

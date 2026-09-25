@@ -3,32 +3,30 @@ import { describe, expect, it } from "vitest";
 
 import { QUESTION_STEM_MAX } from "@/components/assignments/answer-key-grid";
 import {
+	addTableRow,
 	buildClozeSegments,
 	buildTableStem,
 	CLOZE_MARKER,
 	CLOZE_MAX_BLANKS,
 	CLOZE_STEM_MAX,
 	CLOZE_TOKENIZE_PERF_CHARS,
+	type ClozeBlankEntry,
 	clozeApplyIssues,
 	countBlanks,
 	emptyTableGrid,
 	parseClozeRaw,
 	parseTableStem,
+	removeTableCol,
+	removeTableRow,
 	segmentsToItems,
 	splitStemByMarker,
+	type TableGridState,
 	tableApplyIssues,
 	tableSegments,
-	tokenizePassage,
 	toggleClozeBlank,
 	toggleTableCell,
-	addTableRow,
-	removeTableRow,
-	addTableCol,
-	removeTableCol,
+	tokenizePassage,
 	updateTableCell,
-	type ClozeBlankEntry,
-	type ClozeToken,
-	type TableGridState,
 } from "./cloze";
 
 describe("countBlanks (phase-03 FR7 — shared composer + preview helper)", () => {
@@ -177,11 +175,14 @@ describe("toggleClozeBlank (phase-03 FR1 — click order bookkeeping)", () => {
 		expect(blanks).toEqual([{ tokenIndex: 1, answer: "cat", alts: "" }]);
 	});
 	it("toggling again removes the blank", () => {
-		const blanks = toggleClozeBlank([cat].map(() => ({
-			tokenIndex: cat.index,
-			answer: cat.text,
-			alts: "",
-		})), cat);
+		const blanks = toggleClozeBlank(
+			[cat].map(() => ({
+				tokenIndex: cat.index,
+				answer: cat.text,
+				alts: "",
+			})),
+			cat,
+		);
 		expect(blanks).toEqual([]);
 	});
 	it("click order is preserved even when clicked out of text order", () => {
@@ -201,7 +202,10 @@ describe("buildClozeSegments (phase-03 FR2 — segment i ends at the next blank)
 		let blanks: ClozeBlankEntry[] = [];
 		blanks = toggleClozeBlank(blanks, mat);
 		blanks = toggleClozeBlank(blanks, cat);
-		const segments = buildClozeSegments("The cat sat on the mat and slept.", blanks);
+		const segments = buildClozeSegments(
+			"The cat sat on the mat and slept.",
+			blanks,
+		);
 		expect(segments).toEqual([
 			{ stem: "The ____", answer: "cat", alts: "" },
 			{ stem: " sat on the ____ and slept.", answer: "mat", alts: "" },
@@ -223,7 +227,9 @@ describe("buildClozeSegments (phase-03 FR2 — segment i ends at the next blank)
 		const segments = buildClozeSegments("The cat slept.", [
 			{ tokenIndex: last.index, answer: "slept.", alts: "" },
 		]);
-		expect(segments).toEqual([{ stem: "The cat ____", answer: "slept.", alts: "" }]);
+		expect(segments).toEqual([
+			{ stem: "The cat ____", answer: "slept.", alts: "" },
+		]);
 	});
 	it("keeps alts edited through the popover (FR3)", () => {
 		const segments = buildClozeSegments("The cat sat", [
@@ -232,7 +238,11 @@ describe("buildClozeSegments (phase-03 FR2 — segment i ends at the next blank)
 		expect(segments[0].alts).toBe("feline");
 	});
 	it("stale token indexes (text edited after clicking) are ignored", () => {
-		expect(buildClozeSegments("Short text", [{ tokenIndex: 99, answer: "x", alts: "" }])).toEqual([]);
+		expect(
+			buildClozeSegments("Short text", [
+				{ tokenIndex: 99, answer: "x", alts: "" },
+			]),
+		).toEqual([]);
 	});
 	it("zero blanks produce zero segments", () => {
 		expect(buildClozeSegments("Some text", [])).toEqual([]);
@@ -259,7 +269,7 @@ describe("clozeApplyIssues (phase-03 FR2 — caps BEFORE writing items)", () => 
 		).toEqual([]);
 	});
 	it("a segment over the 500-char stem cap errors at that segment", () => {
-		const long = "word ".repeat(110) + "____"; // > 500 chars
+		const long = `${"word ".repeat(110)}____`; // > 500 chars
 		const issues = clozeApplyIssues([
 			{ stem: "The ____", answer: "cat", alts: "" },
 			{ stem: long, answer: "x", alts: "" },
@@ -269,11 +279,14 @@ describe("clozeApplyIssues (phase-03 FR2 — caps BEFORE writing items)", () => 
 		expect(issues[0]).toContain(String(CLOZE_STEM_MAX));
 	});
 	it("more blanks than the 40-question cap blocks apply", () => {
-		const segments = Array.from({ length: CLOZE_MAX_BLANKS + 1 }, (_, index) => ({
-			stem: `seg ${index} ____`,
-			answer: "x",
-			alts: "",
-		}));
+		const segments = Array.from(
+			{ length: CLOZE_MAX_BLANKS + 1 },
+			(_, index) => ({
+				stem: `seg ${index} ____`,
+				answer: "x",
+				alts: "",
+			}),
+		);
 		const issues = clozeApplyIssues(segments);
 		expect(issues.length).toBe(1);
 		expect(issues[0]).toContain(String(CLOZE_MAX_BLANKS));
@@ -286,10 +299,12 @@ describe("clozeApplyIssues (phase-03 FR2 — caps BEFORE writing items)", () => 
 		}));
 		const issues = clozeApplyIssues(segments);
 		// One over-count issue + one per-segment stem issue (41 segments).
-		expect(issues.some((issue) => issue.includes(String(CLOZE_MAX_BLANKS)))).toBe(true);
-		expect(issues.filter((issue) => issue.includes(String(CLOZE_STEM_MAX))).length).toBe(
-			CLOZE_MAX_BLANKS + 1,
-		);
+		expect(
+			issues.some((issue) => issue.includes(String(CLOZE_MAX_BLANKS))),
+		).toBe(true);
+		expect(
+			issues.filter((issue) => issue.includes(String(CLOZE_STEM_MAX))).length,
+		).toBe(CLOZE_MAX_BLANKS + 1);
 	});
 });
 
@@ -301,7 +316,12 @@ describe("tablecomp stem prefix (phase-03 FR4 — marker-exempt)", () => {
 	});
 	it("round-trips through parseTableStem", () => {
 		const ref = parseTableStem(buildTableStem(1, 2, "Row title", "Col title"));
-		expect(ref).toEqual({ row: 1, col: 2, rowTitle: "Row title", colTitle: "Col title" });
+		expect(ref).toEqual({
+			row: 1,
+			col: 2,
+			rowTitle: "Row title",
+			colTitle: "Col title",
+		});
 	});
 	it("non-table stems parse to null", () => {
 		expect(parseTableStem("Rains refill the ____ each year.")).toBeNull();
@@ -313,7 +333,12 @@ describe("tablecomp stem prefix (phase-03 FR4 — marker-exempt)", () => {
 	});
 	it("a slash inside the column title stays in the column title", () => {
 		const ref = parseTableStem(buildTableStem(1, 1, "Row", "North / South"));
-		expect(ref).toEqual({ row: 1, col: 1, rowTitle: "Row", colTitle: "North / South" });
+		expect(ref).toEqual({
+			row: 1,
+			col: 1,
+			rowTitle: "Row",
+			colTitle: "North / South",
+		});
 	});
 });
 
@@ -346,7 +371,9 @@ describe("table grid state (phase-03 FR4 — grid editor math)", () => {
 
 	it("clicking a filled cell captures the answer and clears the cell", () => {
 		const state = gridWithPiston();
-		expect(state.blanks).toEqual([{ row: 0, col: 1, answer: "boiler", alts: "" }]);
+		expect(state.blanks).toEqual([
+			{ row: 0, col: 1, answer: "boiler", alts: "" },
+		]);
 		expect(state.cells[0][1]).toBe("");
 	});
 	it("clicking an empty cell is a no-op (no empty answers)", () => {
@@ -368,21 +395,27 @@ describe("table grid state (phase-03 FR4 — grid editor math)", () => {
 		const state = addTableRow(gridWithPiston());
 		expect(state.rowTitles.length).toBe(3);
 		expect(state.cells.length).toBe(3);
-		expect(state.blanks).toEqual([{ row: 0, col: 1, answer: "boiler", alts: "" }]);
+		expect(state.blanks).toEqual([
+			{ row: 0, col: 1, answer: "boiler", alts: "" },
+		]);
 	});
 	it("removing a row drops its blanks and shifts later rows", () => {
 		let state = gridWithPiston();
 		state = toggleTableCell(state, 1, 2); // blank "valve" at row 1
 		const next = removeTableRow(state, 0);
 		expect(next.rowTitles.length).toBe(1);
-		expect(next.blanks).toEqual([{ row: 0, col: 2, answer: "valve", alts: "" }]);
+		expect(next.blanks).toEqual([
+			{ row: 0, col: 2, answer: "valve", alts: "" },
+		]);
 	});
 	it("removing a column drops its blanks and shifts later columns", () => {
 		const state = gridWithPiston();
 		const next = removeTableCol(state, 0);
 		expect(next.colTitles.length).toBe(2);
 		expect(next.cells[0].length).toBe(2);
-		expect(next.blanks).toEqual([{ row: 0, col: 0, answer: "boiler", alts: "" }]);
+		expect(next.blanks).toEqual([
+			{ row: 0, col: 0, answer: "boiler", alts: "" },
+		]);
 	});
 	it("never removes the last row or column", () => {
 		const state = emptyTableGrid(1, 1);
@@ -418,7 +451,9 @@ describe("table grid state (phase-03 FR4 — grid editor math)", () => {
 				alts: "",
 			})),
 		};
-		expect(tableApplyIssues(many).some((issue) => issue.includes("40"))).toBe(true);
+		expect(tableApplyIssues(many).some((issue) => issue.includes("40"))).toBe(
+			true,
+		);
 		const longTitle = "t".repeat(480);
 		const longStem: TableGridState = {
 			...emptyTableGrid(1, 1),
@@ -436,7 +471,16 @@ describe("CLOZE_EDITOR_TYPES (phase-03 — 8 cloze types; tablecomp has its own 
 	it("covers exactly the completion types that get the click-to-blank editor", async () => {
 		const { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } = await import("./cloze");
 		expect([...CLOZE_EDITOR_TYPES].sort()).toEqual(
-			["flow", "flowchart", "form", "note", "notes", "sent", "sent4", "summary"].sort(),
+			[
+				"flow",
+				"flowchart",
+				"form",
+				"note",
+				"notes",
+				"sent",
+				"sent4",
+				"summary",
+			].sort(),
 		);
 		expect(TABLECOMP_TYPE).toBe("tablecomp");
 		expect(CLOZE_EDITOR_TYPES.has("shortans")).toBe(false);

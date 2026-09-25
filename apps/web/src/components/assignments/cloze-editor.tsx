@@ -1,19 +1,19 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/field";
-import { cn } from "@/lib/cn";
 import {
 	buildClozeSegments,
 	CLOZE_MAX_BLANKS,
 	CLOZE_RENDER_TOKEN_CAP,
-	clozeApplyIssues,
 	type ClozeBlankEntry,
 	type ClozeToken,
+	clozeApplyIssues,
 	parseClozeRaw,
 	segmentsToItems,
-	tokenizePassage,
 	toggleClozeBlank,
+	tokenizePassage,
 } from "@/lib/cloze";
+import { cn } from "@/lib/cn";
 import type { QuestionItem } from "./assignment-presets";
 
 /**
@@ -100,7 +100,9 @@ export function ClozeEditor({
 	const [stage, setStage] = useState<"paste" | "tokens">(initialStage);
 	const [source, setSource] = useState(initialSource);
 	const [blanks, setBlanks] = useState<ClozeBlankEntry[]>(initialBlanks);
-	const [activeBlank, setActiveBlank] = useState<number | null>(initialActiveBlank);
+	const [activeBlank, setActiveBlank] = useState<number | null>(
+		initialActiveBlank,
+	);
 
 	const isListening = TRANSCRIPT_TYPES.has(typeId);
 	const tokens = useMemo(() => tokenizePassage(source), [source]);
@@ -108,11 +110,13 @@ export function ClozeEditor({
 	// the question number students see; click order stays in the array (FR1).
 	const blankNumberByToken = useMemo(() => {
 		const numbers = new Map<number, number>();
-		[...blanks]
+		const ordered = [...blanks]
 			.map((blank) => ({ blank, token: tokens[blank.tokenIndex] }))
 			.filter((entry) => entry.token)
-			.sort((a, b) => a.token.start - b.token.start)
-			.forEach((entry, position) => numbers.set(entry.token.index, position + 1));
+			.sort((a, b) => a.token.start - b.token.start);
+		ordered.forEach((entry, position) => {
+			numbers.set(entry.token.index, position + 1);
+		});
 		return numbers;
 	}, [blanks, tokens]);
 	const visibleTokens = tokens.slice(0, CLOZE_RENDER_TOKEN_CAP);
@@ -123,7 +127,10 @@ export function ClozeEditor({
 		[mode, source],
 	);
 	const visualSegments = useMemo(
-		() => (mode === "visual" && stage === "tokens" ? buildClozeSegments(source, blanks) : []),
+		() =>
+			mode === "visual" && stage === "tokens"
+				? buildClozeSegments(source, blanks)
+				: [],
 		[mode, stage, source, blanks],
 	);
 	const segments = mode === "raw" ? rawSegments : visualSegments;
@@ -131,13 +138,10 @@ export function ClozeEditor({
 	const canApply = segments.length > 0 && issues.length === 0;
 	const willReplace = items.some(hasItemContent);
 
-	const handleToggle = useCallback(
-		(token: ClozeToken) => {
-			setActiveBlank(null);
-			setBlanks((current) => toggleClozeBlank(current, token));
-		},
-		[],
-	);
+	const handleToggle = useCallback((token: ClozeToken) => {
+		setActiveBlank(null);
+		setBlanks((current) => toggleClozeBlank(current, token));
+	}, []);
 	const updateBlank = (tokenIndex: number, patch: Partial<ClozeBlankEntry>) => {
 		setBlanks((current) =>
 			current.map((blank) =>
@@ -159,7 +163,9 @@ export function ClozeEditor({
 	const backToPaste = () => {
 		if (
 			blanks.length > 0 &&
-			!window.confirm(`Sửa văn bản sẽ xóa ${blanks.length} chỗ trống đã chọn. Tiếp tục?`)
+			!window.confirm(
+				`Sửa văn bản sẽ xóa ${blanks.length} chỗ trống đã chọn. Tiếp tục?`,
+			)
 		)
 			return;
 		setBlanks([]);
@@ -252,9 +258,9 @@ export function ClozeEditor({
 						Bấm một từ để tạo chỗ trống (đáp án tự lấy từ từ đó); bấm chỗ trống
 						đã có để sửa đáp án / nhận thêm hoặc bỏ.
 					</p>
-					<div
+					<fieldset
 						aria-label="Văn bản dạng từ bấm được"
-						className="max-h-72 overflow-y-auto rounded-md border border-line bg-bg p-3 text-sm leading-[1.9] whitespace-pre-wrap"
+						className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-md border border-line bg-bg p-3 text-sm leading-[1.9]"
 					>
 						{visibleTokens.map((token, position) => (
 							<span key={token.index}>
@@ -270,11 +276,11 @@ export function ClozeEditor({
 						))}
 						{overRenderCap && (
 							<p role="status" className="mt-2 text-danger text-xs">
-								Văn bản quá dài — chỉ hiện {CLOZE_RENDER_TOKEN_CAP} từ đầu.
-								Hãy rút ngắn đoạn trước khi đánh dấu chỗ trống.
+								Văn bản quá dài — chỉ hiện {CLOZE_RENDER_TOKEN_CAP} từ đầu. Hãy
+								rút ngắn đoạn trước khi đánh dấu chỗ trống.
 							</p>
 						)}
-					</div>
+					</fieldset>
 					<p className="font-medium text-muted-fg text-xs">
 						{blanks.length}/{CLOZE_MAX_BLANKS} chỗ trống · Số câu sẽ tạo:{" "}
 						{segments.length}
@@ -327,7 +333,9 @@ export function ClozeEditor({
 						aria-label="Đáp án chỗ trống"
 						maxLength={200}
 						onChange={(event) =>
-							updateBlank(activeEntry.tokenIndex, { answer: event.target.value })
+							updateBlank(activeEntry.tokenIndex, {
+								answer: event.target.value,
+							})
 						}
 					/>
 					<Input
@@ -368,11 +376,21 @@ export function ClozeEditor({
 
 			{(mode === "raw" || stage === "tokens") && (
 				<div className="flex flex-wrap items-center gap-2">
-					<Button type="button" size="sm" disabled={!canApply} onClick={handleApply}>
+					<Button
+						type="button"
+						size="sm"
+						disabled={!canApply}
+						onClick={handleApply}
+					>
 						Áp vào câu hỏi
 					</Button>
 					{mode === "visual" && stage === "tokens" && (
-						<Button type="button" size="sm" variant="ghost" onClick={backToPaste}>
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={backToPaste}
+						>
 							Sửa lại văn bản
 						</Button>
 					)}

@@ -27,9 +27,7 @@ function blankInput(answer: string, number?: number) {
 		<input
 			readOnly
 			aria-label={
-				number === undefined
-					? "Chỗ điền đáp án"
-					: `Điền đáp án câu ${number}`
+				number === undefined ? "Chỗ điền đáp án" : `Điền đáp án câu ${number}`
 			}
 			className="mx-[2px] rounded-sm border-line border-b-2 bg-bg px-1 align-baseline font-mono text-sm"
 			style={{ width: `${width}ch` }}

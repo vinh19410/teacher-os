@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
-import { ClozeStemText } from "./cloze-stem";
 import {
 	bankLabel,
 	isAutoSkill,
@@ -14,6 +13,7 @@ import {
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
+import { ClozeStemText } from "./cloze-stem";
 
 interface PromptPreviewAsideProps {
 	prompt: AssignmentPrompt;

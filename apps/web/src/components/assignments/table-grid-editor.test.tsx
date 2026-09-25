@@ -57,11 +57,7 @@ describe("TableGridEditor — blanking cells (phase-03 FR4)", () => {
 
 	it("renders a blanked cell as the ____ placeholder with its stored answer in the popover path", () => {
 		const html = renderToStaticMarkup(
-			<TableGridEditor
-				items={[]}
-				onApply={vi.fn()}
-				initialGrid={blanked}
-			/>,
+			<TableGridEditor items={[]} onApply={vi.fn()} initialGrid={blanked} />,
 		);
 		expect(html).toContain("Chỗ trống ô hàng 1 cột 1");
 		expect(html).toContain("____");

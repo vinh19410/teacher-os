@@ -313,16 +313,22 @@ describe("QuestionKeyEditor — cloze/tablecomp editors (phase-03)", () => {
 		onImageUrlChange: vi.fn(),
 	};
 
-	it.each(["sent", "note", "summary", "flowchart", "form", "notes", "sent4", "flow"])(
-		"embeds the cloze click-to-blank editor for %s",
-		(typeId) => {
-			const html = renderToStaticMarkup(
-				<QuestionKeyEditor {...base} typeId={typeId} items={[]} />,
-			);
-			expect(html).toContain("Soạn đoạn hoàn thành");
-			expect(html).not.toContain("Soạn bảng");
-		},
-	);
+	it.each([
+		"sent",
+		"note",
+		"summary",
+		"flowchart",
+		"form",
+		"notes",
+		"sent4",
+		"flow",
+	])("embeds the cloze click-to-blank editor for %s", (typeId) => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} typeId={typeId} items={[]} />,
+		);
+		expect(html).toContain("Soạn đoạn hoàn thành");
+		expect(html).not.toContain("Soạn bảng");
+	});
 
 	it("embeds the table grid editor for tablecomp instead of the cloze editor", () => {
 		const html = renderToStaticMarkup(

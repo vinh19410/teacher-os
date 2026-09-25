@@ -2,6 +2,13 @@ import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 } from "@teacher-os/api/contracts";
+import { countBlanks } from "@/lib/cloze";
+import {
+	QUESTION_ALTS_MAX,
+	QUESTION_ANSWER_MAX,
+	QUESTION_MAX_COUNT,
+	QUESTION_STEM_MAX,
+} from "./answer-key-grid";
 import {
 	emptyComposer,
 	emptyItem,
@@ -11,13 +18,6 @@ import {
 	type QuestionItem,
 	qStartOf,
 } from "./assignment-presets";
-import {
-	QUESTION_ALTS_MAX,
-	QUESTION_ANSWER_MAX,
-	QUESTION_MAX_COUNT,
-	QUESTION_STEM_MAX,
-} from "./answer-key-grid";
-import { countBlanks } from "@/lib/cloze";
 import type { ComposerValue } from "./prompt-composer";
 
 /**

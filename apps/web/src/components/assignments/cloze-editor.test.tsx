@@ -102,10 +102,9 @@ describe("ClozeEditor — visual token stage (phase-03 FR1/FR2)", () => {
 	});
 
 	it("caps the rendered tokens and hints to shorten the text", () => {
-		const long = Array.from(
-			{ length: 5100 },
-			(_, index) => `w${index}`,
-		).join(" ");
+		const long = Array.from({ length: 5100 }, (_, index) => `w${index}`).join(
+			" ",
+		);
 		const html = renderToStaticMarkup(
 			<ClozeEditor
 				typeId="summary"
@@ -155,7 +154,10 @@ describe("ClozeEditor — raw mode (phase-03 FR1, H5P syntax)", () => {
 	});
 
 	it("blocks apply above the 40-blank cap with the cap message (FR2)", () => {
-		const source = Array.from({ length: 41 }, (_, index) => `w${index} *x*`).join(" ");
+		const source = Array.from(
+			{ length: 41 },
+			(_, index) => `w${index} *x*`,
+		).join(" ");
 		const html = renderToStaticMarkup(
 			<ClozeEditor
 				typeId="sent"

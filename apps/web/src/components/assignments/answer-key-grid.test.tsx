@@ -223,9 +223,7 @@ describe("AnswerKeyGrid — marker rule (phase-03 FR7)", () => {
 		for (const requireFilled of [true, false]) {
 			const html = renderGrid({
 				typeId: "sent",
-				items: [
-					{ stem: "a ____ b ____ c", answer: "x", opts: null, alts: "" },
-				],
+				items: [{ stem: "a ____ b ____ c", answer: "x", opts: null, alts: "" }],
 				showErrors: true,
 				requireFilled,
 			});

@@ -2,6 +2,7 @@ import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
@@ -17,7 +18,6 @@ import {
 import { ClozeEditor } from "./cloze-editor";
 import { OptionBankEditor } from "./option-bank-editor";
 import { TableGridEditor } from "./table-grid-editor";
-import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
 
@@ -159,11 +159,7 @@ export function QuestionKeyEditor({
 				/>
 			</Field>
 			{showClozeEditor && (
-				<ClozeEditor
-					typeId={typeId}
-					items={items}
-					onApply={onItemsChange}
-				/>
+				<ClozeEditor typeId={typeId} items={items} onApply={onItemsChange} />
 			)}
 			{showTableEditor && (
 				<TableGridEditor items={items} onApply={onItemsChange} />

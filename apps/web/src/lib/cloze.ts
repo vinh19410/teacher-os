@@ -52,7 +52,10 @@ export function countBlanks(stem: string): number {
 export function splitStemByMarker(stem: string): [string, string] {
 	const match = CLOZE_MARKER_PATTERN.exec(stem);
 	if (!match) return [stem, ""];
-	return [stem.slice(0, match.index), stem.slice(match.index + match[0].length)];
+	return [
+		stem.slice(0, match.index),
+		stem.slice(match.index + match[0].length),
+	];
 }
 
 /** One segmented piece of the passage: `stem` carries exactly one marker. */
@@ -109,7 +112,10 @@ export function parseClozeRaw(text: string): ClozeSegment[] {
 			segments.push({
 				stem: buffer + CLOZE_MARKER,
 				answer: (parts[0] ?? "").trim(),
-				alts: parts.slice(1, last + 1).join("/").trim(),
+				alts: parts
+					.slice(1, last + 1)
+					.join("/")
+					.trim(),
 			});
 			buffer = "";
 			index = cursor + 1;
@@ -120,7 +126,10 @@ export function parseClozeRaw(text: string): ClozeSegment[] {
 	}
 	if (segments.length === 0) return [];
 	const lastSegment = segments[segments.length - 1];
-	segments[segments.length - 1] = { ...lastSegment, stem: lastSegment.stem + buffer };
+	segments[segments.length - 1] = {
+		...lastSegment,
+		stem: lastSegment.stem + buffer,
+	};
 	return segments;
 }
 
@@ -187,8 +196,7 @@ export function buildClozeSegments(
 		.sort((a, b) => a.token.start - b.token.start);
 	if (ordered.length === 0) return [];
 	return ordered.map(({ blank, token }, position) => {
-		const previous =
-			position === 0 ? { end: 0 } : ordered[position - 1].token;
+		const previous = position === 0 ? { end: 0 } : ordered[position - 1].token;
 		const gap = text.slice(previous.end, token.start);
 		const trailing =
 			position === ordered.length - 1 ? text.slice(token.end) : "";
@@ -397,7 +405,10 @@ export function addTableRow(state: TableGridState): TableGridState {
 	};
 }
 
-export function removeTableRow(state: TableGridState, row: number): TableGridState {
+export function removeTableRow(
+	state: TableGridState,
+	row: number,
+): TableGridState {
 	if (state.rowTitles.length <= 1) return state;
 	return {
 		...state,
@@ -415,12 +426,17 @@ export function addTableCol(state: TableGridState): TableGridState {
 	};
 }
 
-export function removeTableCol(state: TableGridState, col: number): TableGridState {
+export function removeTableCol(
+	state: TableGridState,
+	col: number,
+): TableGridState {
 	if (state.colTitles.length <= 1) return state;
 	return {
 		...state,
 		colTitles: state.colTitles.filter((_, index) => index !== col),
-		cells: state.cells.map((cells) => cells.filter((_, index) => index !== col)),
+		cells: state.cells.map((cells) =>
+			cells.filter((_, index) => index !== col),
+		),
 		blanks: dropBlanksForRemovedCol(state, col),
 	};
 }
