@@ -51,7 +51,9 @@ export function removeBankRow(
 	return {
 		bank: bank.filter((_, rowIndex) => rowIndex !== index),
 		items: items.map((item) => {
-			const labelIndex = labels.indexOf(item.answer as never);
+			// Trim before matching: a whitespace-padded label (e.g. a restored
+			// corrupted draft "C ") must still reset instead of lingering.
+			const labelIndex = labels.indexOf(item.answer.trim() as never);
 			return labelIndex >= index ? { ...item, answer: "" } : item;
 		}),
 	};

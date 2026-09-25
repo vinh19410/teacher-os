@@ -122,7 +122,11 @@ function parseOptionBank(
 			);
 			return [];
 		}
-		return parsed.filter((item): item is string => typeof item === "string");
+		// Read-path defense in depth: the contract caps banks at 8 on write;
+		// a corrupt row with more items would render empty `bankLabel`s.
+		return parsed
+			.filter((item): item is string => typeof item === "string")
+			.slice(0, 8);
 	} catch {
 		console.warn(
 			`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,
