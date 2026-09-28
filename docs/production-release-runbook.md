@@ -6,7 +6,7 @@ values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
 
-The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web) + `api.<domain>` (API). It is
+The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web), `student.<domain>` (student portal) + `api.<domain>` (API). It is
 **encoded in runtime configuration, not in this document**: the deploy-time
 variable `APP_DOMAIN` (bare lowercase domain) derives every URL below via
 `packages/infra/src/topology.ts`, wired in `packages/infra/alchemy.run.ts`.
@@ -17,8 +17,10 @@ environment — never editing this runbook.
 | --- | --- | --- |
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
+| Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
+| `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -50,7 +52,7 @@ different stages never overlap.
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
 
-Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://app.staging.teacheros.io.vn` (web),
+Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://app.staging.teacheros.io.vn` (web), `https://student.staging.teacheros.io.vn` (student portal),
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
@@ -536,7 +538,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
    - Đặt `MAILER_IMPL=resend`.
 3. **Deploy & Kiểm tra**:
    - Deploy server worker.
-   - Đăng ký thử 1 tài khoản học viên thật trên student portal (`app.<domain>/login` hoặc URL portal tương ứng).
+   - Đăng ký thử 1 tài khoản học viên thật trên student portal (`https://student.<domain>` — portal origin derive từ `APP_DOMAIN`, xem bảng topology trên).
    - Kiểm tra email xác thực được gửi đến hộp thư người nhận (inbox, không vào spam) và URL verify hoạt động chính xác.
 
 ### Quota & Monitoring

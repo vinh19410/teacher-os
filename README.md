@@ -52,7 +52,7 @@ Open [http://localhost:8001](http://localhost:8001) in your browser to see the w
 The API is running at [http://localhost:8000](http://localhost:8000).
 The static marketing landing page runs at [http://localhost:8002](http://localhost:8002) (`pnpm run dev:landing`).
 The student portal runs at [http://localhost:8003](http://localhost:8003) (`pnpm run dev:student`). Initial setup: `cp apps/student/.env.example apps/student/.env`.
-Học viên đăng nhập bằng tài khoản Google (email khớp với `student.email` đã được giáo viên thêm vào hệ thống). Hệ thống nhận diện tự động và hiển thị lớp học cùng bài tập liên quan.
+Học viên tự đăng ký trên student portal (email + mật khẩu kèm xác thực email, hoặc đăng nhập Google); hồ sơ `student` được tự động provision ở lần đăng nhập portal đầu tiên, sau đó học viên nhận và chấp nhận lời mời vào lớp từ thông báo portal.
 ## Authentication
 
 Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).
