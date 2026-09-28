@@ -56,7 +56,7 @@ Route Test Builder mới (`/assignments/tests/new` + edit) theo bố cục Selfo
 - Goal: route mới boot được, đọc snapshot qua repo, layout outline trái + editor phải.
 - Target files: `apps/web/src/routes/_auth/assignments/tests/new.tsx`, `tests/$id.tsx`, `components/assignment-tests/test-builder-shell.tsx`.
 - Steps:
-  1. Route `new.tsx`: state test mới mặc định skill=reading (chọn được 4 skill từ `ASSIGNMENT_TEST_PRESETS`, nhưng chỉ reading có đủ slot UX — 3 skill kia enabled vì preset đã đủ, UI hiển thị đúng số slot của preset đã chọn).
+  1. Route `new.tsx`: state test mới mặc định skill=reading. Select Preset bật **cả 4 skill** (mỗi skill hiển thị đúng số slot của nó từ `ASSIGNMENT_TEST_PRESETS` — Reading 3, Listening 4, Writing 2, Speaking 3; phase 6 có unit test riêng cho từng preset).
   2. Route `$id.tsx`: load test theo id từ repo snapshot, chỉnh sửa.
   3. Shell: cột trái outline "Test → [slot p1/p2/p3 → question count qua computeTestRanges]" + meta "N parts, N questions" theo mẫu Selfomy ("3 groups, 13 questions"); cột phải là header form + slots.
   4. Cập nhật `routes-matcher.ts` nếu có route động cần thêm (matcher là exact-routes; chỉ thêm exact đã định ở phase 2).
@@ -67,7 +67,7 @@ Route Test Builder mới (`/assignments/tests/new` + edit) theo bố cục Selfo
 - Goal: form metadata bộ đề đúng hành vi Selfomy.
 - Target files: `components/assignment-tests/test-header-form.tsx`.
 - Steps:
-  1. Trường: Title* (≤200), Description (textarea ≤2000), Time Limit* (input MM:SS hoặc MM:SS:SS; hiển thị "60:00" cho 3600s; lưu `timeLimitSeconds`), Preset (select 4 skill — hiển thị "Academic IELTS Reading"…), Collection (input + `<datalist>` distinct từ `snapshot.assignmentTests.map(t => t.collection)` — gõ giá trị mới = tạo mới inline như Selfomy Create), Group (input + datalist tương tự).
+  1. Trường: Title* (≤200), Description (textarea ≤2000), Time Limit* (input MM:SS hoặc HH:MM:SS; hiển thị "60:00" cho 3600s; lưu `timeLimitSeconds`), Preset (select 4 skill — hiển thị "Academic IELTS Reading"…), Collection (input + `<datalist>` distinct từ `snapshot.assignmentTests.map(t => t.collection)` — gõ giá trị mới = tạo mới inline như Selfomy Create), Group (input + datalist tương tự).
   2. Validate client theo cùng rule zod `assignmentTestCreateSchema` (import từ packages/api, không copy rule).
   3. Nút Save gọi action create/update test; sau save chuyển `/assignments/tests/$id`.
 - Success criteria: điền form + save → test xuất hiện trong snapshot (`useQuery` refetch); timeLimit "60:00" lưu 3600.

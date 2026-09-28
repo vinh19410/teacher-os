@@ -78,7 +78,18 @@ Trọng tâm: giáo viên soạn được **đủ 1 bộ IELTS Reading** (3 pass
 - Claims checked: 24 (file paths, symbols, line anchors trong toàn bộ phase files)
 - Verified: 24 | Failed: 0 | Unverified: 0
 - Tier: Full (6 phases)
-- Phương pháp: grep/ls trực tiếp từng cite — `emptyKernelData` (kernel-state.ts:3 ✓), `KernelAction` (data-actions.ts:8 ✓), `VALID_EXACT_ROUTES` (routes-matcher.ts:13 ✓), `PASTE_LINE_PATTERN` (bulk-key-paste.ts:10 ✓), contracts anchors (ASSIGNMENT_PART_TYPES:271, assignmentPromptCreateSchema:410, AssignmentQuestion:958, KernelSnapshot:1031 ✓), kernel mount (kernel.ts:2119 ✓), routes verbs (assignments/index.ts: chỉ GET/, POST /prompts:60, POST /:id/grade:102 ✓ — xác nhận CHƯA có PATCH prompt), migration 0028 pattern DEPLOY ORDER ✓, qStart tĩnh 1/14/27 (assignment-presets.ts:178-206 ✓), e2e specs tồn tại ✓, `apps/server` có vitest (`pnpm -F server test` ✓), draft store schemaVersion ✓, student-preview-paper/prompt-preview-aside ✓.
+- Phương pháp: grep/ls trực tiếp từng cite — `emptyKernelData` (kernel-state.ts:3 ✓), `KernelAction` (data-actions.ts:8 ✓), `VALID_EXACT_ROUTES` (routes-matcher.ts:4 ✓), `PASTE_LINE_PATTERN` (bulk-key-paste.ts:10 ✓), contracts anchors (ASSIGNMENT_PART_TYPES:271, assignmentPromptCreateSchema:410, AssignmentQuestion:958, KernelSnapshot:1031 ✓), kernel mount (kernel.ts:2119 ✓), routes verbs (assignments/index.ts: chỉ GET/, POST /prompts:60, POST /:id/grade:102 ✓ — xác nhận CHƯA có PATCH prompt), migration 0028 pattern DEPLOY ORDER ✓, qStart tĩnh 1/14/27 (assignment-presets.ts:178-206 ✓), e2e specs tồn tại ✓, `apps/server` có vitest (`pnpm -F server test` ✓), draft store schemaVersion ✓, student-preview-paper/prompt-preview-aside ✓.
+
+### Kongming Checkpoint #2 — Final Review (2026-09-28): NEEDS-FIX → đã áp dụng đủ 8 edit
+1. Phase 1 thêm `apps/web/src/lib/mock-data.ts` (`KernelHydratedData` dòng 218 phải mở rộng TRƯỚC khi thêm key vào `emptyKernelData`, nếu không check-types đỏ ở chính phase 1). ✅
+2. Phase 2 Task 2.4 thêm bước wire `mapAssignmentTests` vào `mapKernelSnapshot` (`apps/web/src/lib/repos/kernel.ts:252`). ✅
+3. Phase 2 Task 2.1: "transaction" → `db.batch([...])` (D1/`DrizzleD1Database` không có `.transaction()`, precedent kernel.ts:793) + tạo `tests.test.ts` với Verify có filter. ✅
+4. Phase 5: `alts: string[]` → `alts: string` join `" / "` (đúng `AssignmentQuestion.alts` contracts.ts:964 + bulk-key-paste.ts:106). ✅
+5. Phase 6 Task 6.1: playwright filter positional (không `--`) + e2e tự soạn prompt qua UI (boot.ts wipe DB, không có seed). ✅
+6. Phase 6 Task 6.3: "không file mới" → "không file logic mới; file test shell được phép". ✅
+7. Phase 3 Task 3.4: "MM:SS:SS" → "HH:MM:SS"; Task 3.3 câu preset viết lại rõ (bật cả 4 skill). ✅
+8. Anchor `VALID_EXACT_ROUTES` :13 → :4 (đồng bộ plan.md + phase-02). ✅
+Baseline kongming đã chạy: `pnpm -F web test` = 90 file / 990 test xanh trước khi bắt đầu.
 
 ### Interview (2026-09-28) — user chưa phúc đáp, áp dụng phương án Recommended
 1. **PATCH /api/assignments/prompts/:id** (nguyên liệu Apply): THÊM — Task 2.2. *(Override: chọn "Không thêm" → bỏ Task 2.2 + Task 5.3-apply.)*

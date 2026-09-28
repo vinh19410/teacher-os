@@ -21,10 +21,12 @@ Test CRUD + set parts hoạt động end-to-end qua API (org-scoped, mount trong
 ## Files to Create / Modify
 
 - Create: `apps/server/src/routes/assignments/tests.ts` (test routes)
+- Create: `apps/server/src/routes/assignments/tests.test.ts` (route tests)
 - Modify: `apps/server/src/routes/assignments/index.ts` (export + mount tests routes, thêm PATCH prompt)
 - Modify: `apps/server/src/routes/snapshot.ts` (load + map `assignmentTests`)
 - Modify: `apps/web/src/lib/data-actions.ts` (`KernelAction` union, dòng 8)
 - Create: `apps/web/src/lib/repos/assignment-tests.ts` + `assignment-tests.test.ts`
+- Modify: `apps/web/src/lib/repos/kernel.ts` (wire `mapAssignmentTests` vào `mapKernelSnapshot` — dòng 252)
 - Modify: `apps/web/src/routes-matcher.ts` (thêm route mới của phase 3 ngay từ bây giờ để sync-test không đỏ đột xuất sau)
 
 ## Tasks & Steps
@@ -33,11 +35,12 @@ Test CRUD + set parts hoạt động end-to-end qua API (org-scoped, mount trong
 - Goal: API tạo/sửa/xóa test và gán parts vào slot, validate slot theo preset.
 - Target files: `apps/server/src/routes/assignments/tests.ts` (mới), `apps/server/src/routes/assignments/index.ts`.
 - Steps:
-  1. Viết `testsRoutes(deps)` theo đúng factory pattern của file hiện tại: `POST /tests` (create từ `assignmentTestCreateSchema`), `PATCH /tests/:id` (update meta/status), `DELETE /tests/:id`, `PUT /tests/:id/parts` (nhận `assignmentTestPartsSetSchema` — replace toàn bộ: delete parts cũ + insert mới trong transaction; validate mỗi `part` thuộc `ASSIGNMENT_TEST_PRESETS[test.skill].slots`, mỗi `promptId` tồn tại trong org và `prompt.skill === test.skill`, `prompt.part` khớp slot).
+  1. Viết `testsRoutes(deps)` theo đúng factory pattern của file hiện tại: `POST /tests` (create từ `assignmentTestCreateSchema`), `PATCH /tests/:id` (update meta/status), `DELETE /tests/:id`, `PUT /tests/:id/parts` (nhận `assignmentTestPartsSetSchema` — replace toàn bộ: delete parts cũ + insert mới **nguyên tử bằng `db.batch([delete, ...inserts])`** — `Db` là `DrizzleD1Database`, KHÔNG có `.transaction()`; precedent `db.batch` tại `kernel.ts:793`; validate mỗi `part` thuộc `ASSIGNMENT_TEST_PRESETS[test.skill].slots`, mỗi `promptId` tồn tại trong org và `prompt.skill === test.skill`, `prompt.part` khớp slot).
   2. Mọi handler lấy `kernelCtx` như các route hiện tại (org scoping). Trả về DTO map field tường minh theo mẫu `assignments/index.ts:65-93`.
   3. Mount trong `index.ts`: `routes.route("/tests", testsRoutes(deps))` (con của assignmentRoutes → tự nằm trong kernel mount :2119, không sửa kernel.ts).
-- Success criteria: 4 verb hoạt động; request gán 2 part cùng slot bị 400; gán prompt sai skill bị 400; request thiếu auth bị 401.
-- Verify: `pnpm -F server test` exit 0 (nếu app server có vitest; nếu không có, verify bằng e2e spec phase 6 và bằng `pnpm check-types`). Bổ sung: curl thủ công khi dev không tính là verify chính.
+  4. Viết `tests.test.ts` phủ đúng 4 case của Success criteria (4 verb OK; 2 part trùng slot → 400; prompt sai skill → 400; thiếu auth → 401).
+- Success criteria: 4 verb hoạt động; request gán 2 part cùng slot bị 400; gán prompt sai skill bị 400; request thiếu auth bị 401 — cả 4 có test cơ học.
+- Verify: `pnpm -F server test -- tests` exit 0 với ≥ 4 test mới pass.
 
 ### Task 2.2 — PATCH /prompts/:id (update questions cho Apply)
 - Goal: cập nhật được `questions` (và `title/note/status`) của 1 prompt đã có — nguyên liệu cho nút Apply ở phase 5.
@@ -45,6 +48,7 @@ Test CRUD + set parts hoạt động end-to-end qua API (org-scoped, mount trong
 - Steps:
   1. Thêm `assignmentPromptUpdateSchema` vào contracts (partial của `assignmentPromptCreateSchema`, giữ validate từng question như cũ).
   2. Thêm `routes.patch("/prompts/:id", ...)` vào assignments/index.ts: load prompt theo org, apply patch, lưu, trả DTO map tường minh.
+  3. Lưu ý cột legacy: POST /prompts derive `task`/`genre` khi create (`task = skill === "writing" ? part : "task2"`, `genre = skill === "writing" ? type : ""` — xem code create hiện tại) — PATCH phải giữ nguyên giá trị legacy này (đổi skill/part không thuộc scope PATCH), nếu không round-trip lệch field.
 - Success criteria: PATCH đổi answer của question 1 round-trip đúng qua GET; PATCH body sai shape bị 400.
 - Verify: `pnpm check-types` exit 0 + (nếu có) `pnpm -F server test` exit 0.
 
@@ -64,8 +68,9 @@ Test CRUD + set parts hoạt động end-to-end qua API (org-scoped, mount trong
 - Steps:
   1. Thêm vào `KernelAction` union (data-actions.ts:8): create/update/delete test + set parts + update prompt (cho phase 5). Map vào command bus theo pattern action hiện có.
   2. Viết `repos/assignment-tests.ts` theo style `repos/assignment-prompts.ts`: read defensive `?? []`, mapper DTO → view model, và mutation helpers gọi action.
-  3. Thêm `"/assignments/tests/new": true, "/assignments/tests/preview": true` vào `VALID_EXACT_ROUTES` (routes-matcher.ts:13) — route file tạo ở phase 3, matcher cập nhật trước để drift-test không đỏ đột xuất.
-  4. Viết `assignment-tests.test.ts`: mapper với snapshot thiếu key (`undefined` → `[]`), action payload đúng shape.
+  3. **Wire mapper vào snapshot pipeline**: thêm `mapAssignmentTests(snapshot)` vào `mapKernelSnapshot` tại `apps/web/src/lib/repos/kernel.ts:252` (nơi gọi từng `mapAssignmentPrompts`...) — không wire thì shell phase 3 không bao giờ nhận được dữ liệu test.
+  4. Thêm `"/assignments/tests/new": true, "/assignments/tests/preview": true` vào `VALID_EXACT_ROUTES` (routes-matcher.ts:4). Ghi chú: drift-guard một chiều nên bước này mang tính khai báo route tường minh, vô hại.
+  5. Viết `assignment-tests.test.ts`: mapper với snapshot thiếu key (`undefined` → `[]`), action payload đúng shape.
 - Success criteria: typecheck xanh; repo test xanh; routes-matcher test xanh.
 - Verify: `pnpm -F web test` exit 0; `pnpm check-types` exit 0.
 
@@ -84,7 +89,7 @@ failure evidence to the user. Never continue by self-reasoning.
 ## Risk Assessment
 - **Mount sai chỗ mất CSRF/Origin guard** — nghiêm cấm tạo route mới ngoài kernel mount; docblock :17-21 là lý do.
 - **Round-trip thiếu field** (silent drop) — mọi DTO map phải copy từng field rõ ràng, test round-trip từng field.
-- **Replace parts không transaction** — PUT /tests/:id/parts phải delete+insert nguyên tử, tránh test bị mất parts nếu 1 insert lỗi.
+- **Replace parts không nguyên tử** — PUT /tests/:id/parts phải delete+insert bằng `db.batch([...])` (D1 không có `.transaction()`), tránh test bị mất parts nếu 1 insert lỗi.
 
 ## Security Considerations
 - Mọi handler đọc org từ `kernelCtx` — không bao giờ nhận orgId từ body.

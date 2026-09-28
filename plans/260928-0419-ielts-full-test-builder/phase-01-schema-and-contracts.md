@@ -25,6 +25,7 @@ Tạo 2 bảng DB mới (`assignment_test`, `assignment_test_part`), contracts z
 - Create: `packages/db/src/migrations/0029_<generated_name>.sql` (sinh bằng `pnpm db:generate`)
 - Modify: `packages/api/src/contracts.ts` (thêm `ASSIGNMENT_TEST_PRESETS`, zod schemas, DTOs, `KernelSnapshot`)
 - Modify: `apps/web/src/lib/kernel-state.ts` (`emptyKernelData` thêm `assignmentTests: []`)
+- Modify: `apps/web/src/lib/mock-data.ts` (mở rộng type `KernelHydratedData` dòng 218 — thêm `assignmentTests: KernelAssignmentTestRow[]`)
 
 ## Tasks & Steps
 
@@ -61,13 +62,14 @@ Tạo 2 bảng DB mới (`assignment_test`, `assignment_test_part`), contracts z
 - Success criteria: các export mới dùng được từ cả server và web (typecheck), validation từ chối slot sai preset.
 - Verify: `pnpm check-types` exit 0. (Nếu packages/api có test file contracts — chạy `pnpm -F @teacher-os/api test` nếu script tồn tại.)
 
-### Task 1.4 — Web stub `emptyKernelData`
+### Task 1.4 — Web stub `emptyKernelData` + mở rộng `KernelHydratedData`
 - Goal: snapshot rỗng vẫn thỏa type mới — tránh vỡ typecheck + crash empty state.
-- Target files: `apps/web/src/lib/kernel-state.ts` (dòng 3).
+- Target files: `apps/web/src/lib/mock-data.ts` (dòng 218, type `KernelHydratedData`), `apps/web/src/lib/kernel-state.ts` (dòng 3, `emptyKernelData`).
 - Steps:
-  1. Thêm `assignmentTests: []` vào object `emptyKernelData`.
-  2. Chạy lại toàn bộ vitest web: `kernel-runtime.contract.test.ts:42` đã assert sự tồn tại của `emptyKernelData` — mọi test cũ phải vẫn xanh.
-- Success criteria: `emptyKernelData` chứa key mới; không test nào vỡ.
+  1. TRƯỚC TIÊN mở rộng type `KernelHydratedData` trong `mock-data.ts` — nó là `Pick<MockData, ...> & { enrollments; classAssignments }`; thêm `assignmentTests: KernelAssignmentTestRow[]` vào khối `& {...}` (đúng precedent `enrollments`/`classAssignments`). Nếu bỏ qua bước này, key mới trong `emptyKernelData` sẽ là excess-property error và `pnpm check-types` ĐỎ.
+  2. Thêm `assignmentTests: []` vào object `emptyKernelData` (kernel-state.ts:3).
+  3. Chạy lại toàn bộ vitest web: `kernel-runtime.contract.test.ts:42` đã assert sự tồn tại của `emptyKernelData` — mọi test cũ phải vẫn xanh.
+- Success criteria: `KernelHydratedData` có field mới; `emptyKernelData` chứa key mới; không test nào vỡ.
 - Verify: `pnpm -F web test` exit 0 và `pnpm check-types` exit 0.
 
 ## Failure Protocol
@@ -84,7 +86,7 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Risk Assessment
 - **Drift migration ↔ schema**: luôn sinh migration bằng `pnpm db:generate`, không viết tay CREATE TABLE.
-- **Bỏ quên một mắt xích snapshot-chain** (contracts → loadSnapshot → emptyKernelData → repo mapper → fixtures): phase này chịu trách nhiệm 2 mắt đầu + emptyKernelData; checklist đầy đủ tiếp ở phase 2.
+- **Bỏ quên một mắt xích snapshot-chain** (contracts → loadSnapshot → KernelHydratedData mock-data.ts → emptyKernelData → mapKernelSnapshot → repo mapper → fixtures): phase này chịu trách nhiệm contracts + loadSnapshot-side DTO + KernelHydratedData + emptyKernelData; phần còn lại ở phase 2.
 
 ## Security Considerations
 - Bảng mới bắt buộc `orgId` — mọi query sau này phải org-scoped như các bảng khác (không có cross-org read).

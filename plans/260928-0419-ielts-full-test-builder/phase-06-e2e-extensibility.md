@@ -32,12 +32,12 @@ Chứng minh full-flow bằng Playwright (tạo bộ Reading 3 part/40 câu, pas
 - Steps:
   1. Đăng nhập giáo viên (helper theo spec hiện có) → vào `/assignments/tests/new`.
   2. Điền header: title "Reading - Test E2E - Trainer 2", time 60:00, collection "IELTS Trainer 2 Academic", group "TEST 5".
-  3. Tạo 2 part từ picker (2 prompt reading sẵn trong test seed/fixture) + soạn 1 part mới inline (composer lockPart, 12 câu tfng) → tổng 40 câu ở 3 slot.
+  3. Soạn 2 part reading qua UI composer (`/assignments/new`, theo pattern spec `assignment-prompt-create.spec.ts` — **boot.ts wipe DB mỗi lần chạy, không có seed/fixture nào sẵn**) rồi tạo 1 part mới inline trong builder (composer lockPart, 12 câu tfng) → tổng 40 câu ở 3 slot.
   4. Mở Answers Checking → paste key 40 dòng (2 dòng cố tình sai) → Compare thấy đúng 2 mismatch → sửa 2 dòng → Apply → grid toàn match.
   5. Vào Preview → assert text "Questions 1-40" và passage 3 part hiện diện, KHÔNG thấy đáp án.
   6. Save → reload trang edit → slots + key còn nguyên (snapshot persist).
 - Success criteria: spec xanh end-to-end trên D1 local.
-- Verify: `pnpm --filter e2e e2e --assignment-test-create` exit 0. Sau đó full suite: `pnpm --filter e2e e2e` exit 0 (kể cả 3 spec cũ assignment — chứng minh không phá luồng single-part).
+- Verify: `pnpm --filter e2e e2e assignment-test-create` exit 0 (filter tên file là positional arg của playwright, KHÔNG có `--`). Sau đó full suite: `pnpm --filter e2e e2e` exit 0 (kể cả 3 spec cũ assignment — chứng minh không phá luồng single-part).
 
 ### Task 6.2 — Source-parse contract tests (khoá failure modes)
 - Goal: 3 regression tường cấm lỗi tái diễn.
@@ -51,7 +51,7 @@ Chứng minh full-flow bằng Playwright (tạo bộ Reading 3 part/40 câu, pas
 
 ### Task 6.3 — Xác nhận extensibility 3 skill (không code mới)
 - Goal: chọn preset Listening/Writing/Speaking trong builder hoạt động đúng slot.
-- Target files: không file mới — chỉ chạy kiểm tra; nếu thiếu mới được phép sửa config.
+- Target files: không file **logic** mới — chỉ chạy kiểm tra và tạo file test `apps/web/src/components/assignment-tests/test-builder-shell.test.tsx` (4 case preset). Nếu thiếu mới được phép sửa config.
 - Steps:
   1. Mở `/assignments/tests/new` → đổi Preset sang Listening → shell hiển thị 4 slot s1–s4; Writing → 2 slot task1/task2; Speaking → 3 slot part1–3 (unit test component shell với 3 preset này).
   2. Time limit Speaking mặc định mở (nullable — để trống được); Writing hiển thị 2 slot đúng.
