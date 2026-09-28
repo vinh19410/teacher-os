@@ -42,6 +42,13 @@ Quy ước khi cập nhật:
 - Dán key hàng loạt map theo số câu (`1. TRUE`, `3. câu trả lời / alt1 / alt2`), báo lỗi theo từng dòng khi số ngoài phạm vi/trùng/không đọc được, phần hợp lệ vẫn áp dụng (#271)
 - Autosave bản nháp soạn đề vào localStorage (debounce 1s, TTL 7 ngày): banner "Đã phục hồi bản nháp" sau refresh; bản nháp preview (sessionStorage) luôn thắng banner; sửa bug `savePreviewDraft` bỏ sót transcript (#271)
 - Chip "Chèn câu lệnh chuẩn" chèn giới hạn từ IELTS chuẩn theo dạng đề vào intro một chạm (#271)
+- Ghim nhãn trên ảnh (image pins) cho diagram (Reading) và map (Listening): bấm lên ảnh đặt ghim đánh số theo câu (toạ độ %, không lệch khi đổi kích thước màn hình), bấm ghim để chọn câu, nút đặt lại ghim từng hàng; ảnh chết (URL hỏng) vẫn nhập key text kèm cảnh báo (#271)
+- Chế độ raw `*đáp án/alt*` trong cloze editor cho power user (tương thích cú pháp H5P), parse trực tiếp ra chỗ trống (#271)
+
+### Changed
+- Lưu sẵn sàng giao của diagram (Reading) / map (Listening) giờ bắt buộc: đủ link ảnh https, mỗi câu có ghim trên ảnh và đáp án (skill-qualified — writing Task 1 "Bản đồ" không bị đòi ảnh/pin); câu hỏi thiếu ghim báo lỗi tại hàng khi lưu (#271)
+- Preview học viên vẽ ghim đánh số tại đúng vị trí % trên ảnh kèm ô điền; đề cũ không ghim vẫn xem như cũ (#271)
+- Object câu hỏi trong contract giờ `.strict()`: trường lạ trong `questions` bị từ chối 400 rõ ràng thay vì bị strip im lặng (#271)
 
 ### Changed
 - Đổi kỹ năng/phần thi/dạng đề khi đang có nội dung soạn giờ hỏi xác nhận trước (kể cả nhánh đổi kỹ năng xóa sạch); trong cùng skill Listening, transcript được giữ lại khi đổi phần/dạng; intro/imageUrl vẫn reset như cũ (#271)

@@ -12,6 +12,7 @@ import {
 	wordCount,
 } from "./assignment-presets";
 import { ClozeStemText } from "./cloze-stem";
+import { PinOverlay } from "./pin-editor";
 
 export function StudentPreviewPaper(props: {
 	skill?: string;
@@ -87,38 +88,11 @@ export function StudentPreviewPaper(props: {
 			)}
 			{diagramImageUrl &&
 				(pinnedItems.length > 0 ? (
-					<div className="relative mt-3 w-fit max-w-full">
-						<img
-							src={diagramImageUrl}
-							alt="Ảnh đề"
-							className="block max-h-72 w-auto max-w-full rounded-md border border-line"
-							referrerPolicy="no-referrer"
-							loading="lazy"
-						/>
-						{pinnedItems.map((item) => {
-							const index = (props.items ?? []).indexOf(item);
-							const number = (part.qStart ?? 1) + index;
-							return (
-								<span
-									key={number}
-									className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1"
-									style={{
-										left: `${item.pin?.x ?? 0}%`,
-										top: `${item.pin?.y ?? 0}%`,
-									}}
-								>
-									<span className="flex h-5 w-5 items-center justify-center rounded-full border border-fg bg-bg font-medium font-mono text-[10px]">
-										{number}
-									</span>
-									<input
-										readOnly
-										aria-label={`Điền đáp án câu ${number}`}
-										className="w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px]"
-									/>
-								</span>
-							);
-						})}
-					</div>
+					<PinOverlay
+						imageUrl={diagramImageUrl}
+						items={props.items ?? []}
+						qStart={part.qStart ?? 1}
+					/>
 				) : (
 					<img
 						src={diagramImageUrl}

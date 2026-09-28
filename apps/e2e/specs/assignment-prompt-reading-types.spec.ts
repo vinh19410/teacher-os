@@ -12,7 +12,6 @@ import { signUpViaUi } from "./helpers";
  * the snapshot round trip through the prompt bank page.
  */
 
-const DIAGRAM_IMG_ALT = "Ảnh biểu đồ đề Reading";
 
 test("create a ready summary prompt and leak-check the preview", async ({
 	page,
@@ -89,6 +88,16 @@ test("create a ready diagram prompt with an https image URL", async ({
 	const TITLE = "QC-269 Diagram";
 	const IMAGE_URL = "https://example.com/qc-269-diagram.png";
 
+	// The pin editor needs a REAL loaded image box for percent math — serve
+	// a deterministic 200×100 image for the pasted URL.
+	const svgImage = (width: number, height: number) =>
+		`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="#3b82f6"/></svg>`;
+	await page.route("**/qc-269-diagram.png", (route) =>
+		route.fulfill({
+			contentType: "image/svg+xml",
+			body: svgImage(200, 100),
+		}),
+	);
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
 
@@ -116,15 +125,22 @@ test("create a ready diagram prompt with an https image URL", async ({
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
 	).toBeDisabled();
-	await expect(page.getByText("Thiếu ảnh biểu đồ")).toBeVisible();
+	await expect(page.getByText("Thiếu ảnh hoặc ghim nhãn")).toBeVisible();
 
 	await page.getByLabel("Ảnh biểu đồ (URL)").fill(IMAGE_URL);
-	await expect(page.locator(`img[alt="${DIAGRAM_IMG_ALT}"]`)).toBeVisible();
+	// Phase-04 FR3: the image hosts the pin editor — click to pin Q1.
+	const pinSurface = page.getByRole("application", {
+		name: "Ảnh đề — bấm để đặt ghim nhãn",
+	});
+	await pinSurface.click({ position: { x: 60, y: 40 } });
+	await expect(
+		page.getByRole("button", { name: "Chọn câu 1 tại ghim" }),
+	).toBeVisible();
 
-	// Student preview renders the image + intro, never the key.
+	// Student preview renders the pinned image + intro, never the key.
 	await page.getByRole("button", { name: "Xem trước" }).click();
 	await expect(page).toHaveURL(/\/assignments\/preview$/);
-	await expect(page.locator(`img[alt="${DIAGRAM_IMG_ALT}"]`)).toBeVisible();
+	await expect(page.getByLabel("Điền đáp án câu 1")).toBeVisible();
 	await expect(page.getByText("ONE WORD ONLY").first()).toBeVisible();
 	const previewBody = await page.locator("body").innerText();
 	expect(previewBody).not.toContain("piston");
@@ -157,17 +173,26 @@ test("create a ready diagram prompt with an https image URL", async ({
 		.fill("Part 4 of the machine.");
 	await page.getByLabel("Đáp án chấm tự động").first().fill("piston");
 	await page.getByLabel("Ảnh biểu đồ (URL)").fill(IMAGE_URL);
+	// Ready also demands a pin on every question (phase-04 FR2) — the save
+	// stays blocked until the image is labeled again.
+	await expect(
+		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
+	).toBeDisabled();
+	await page
+		.getByRole("application", { name: "Ảnh đề — bấm để đặt ghim nhãn" })
+		.click({ position: { x: 60, y: 40 } });
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
 	await expect(page.getByText("Tự động · 1/1 đáp án đã khóa")).toBeVisible();
 
-	// Bank detail: the diagram image is visible in the preview aside too.
+	// Bank detail: the pinned image survives the snapshot round-trip —
+	// the aside draws the numbered pin overlay (phase-04 FR5/FR7).
 	await page.goto("/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-269 Diagram/ }).click();
-	await expect(page.locator(`img[alt="${DIAGRAM_IMG_ALT}"]`)).toBeVisible();
+	await expect(page.getByLabel("Điền đáp án câu 1")).toBeVisible();
 });
 
 test("create a ready features prompt with a 5-item bank and round-trip it through the bank page", async ({

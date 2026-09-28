@@ -219,7 +219,13 @@ export function AnswerKeyGrid({
 				const rowVisible = showErrors || blurred.has(index);
 				const errorEntries = rowVisible
 					? (["stem", "answer", "opts", "pin", "alts"] as const).filter(
-							(key) => rowErrors[key],
+							(key) =>
+								rowErrors[key] &&
+								// Phase-04: a missing pin is fixed on the IMAGE, not in
+								// this row — rendering it on blur would flash an alert
+								// mid-click (layout shift swallowed the very next
+								// "Thêm câu" press in e2e). Save-time only.
+								(key !== "pin" || showErrors),
 						)
 					: [];
 				const mcqChoices = kind === "mcq4" || kind === "mcq3" ? choices : null;

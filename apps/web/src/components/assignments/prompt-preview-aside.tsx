@@ -6,6 +6,7 @@ import {
 	bankLabel,
 	isAutoSkill,
 	isBankableType,
+	isImageBased,
 	kindOf,
 	partOf,
 	qStartOf,
@@ -14,6 +15,7 @@ import {
 	wordCount,
 } from "./assignment-presets";
 import { ClozeStemText } from "./cloze-stem";
+import { PinOverlay } from "./pin-editor";
 
 interface PromptPreviewAsideProps {
 	prompt: AssignmentPrompt;
@@ -85,6 +87,19 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 						className="mt-3 max-h-48 rounded-md border border-line"
 						referrerPolicy="no-referrer"
 						loading="lazy"
+					/>
+				)}
+
+			{/* Phase-04 FR5 — pinned image labels render over the image so the
+			snapshot round-trip is visible (and e2e-assertable) from the bank. */}
+			{isImageBased(skillId, typeId) &&
+				prompt.imageUrl?.trim() &&
+				ASSIGNMENT_IMAGE_SRC_PATTERN.test(prompt.imageUrl.trim()) &&
+				(prompt.questions ?? []).some((item) => item.pin) && (
+					<PinOverlay
+						imageUrl={prompt.imageUrl.trim()}
+						items={prompt.questions ?? []}
+						qStart={qStartOf(skillId, partId)}
 					/>
 				)}
 

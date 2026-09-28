@@ -1,7 +1,7 @@
 ---
 title: "Authoring UX: soạn đề IELTS theo họ nhập liệu"
 description: "Tái cấu trúc màn hình soạn đề theo 4 họ nhập liệu dùng chung (answer-key grid, option bank có cấu trúc, cloze click-to-blank, ảnh ghim nhãn) để giáo viên nhập 37 loại đề IELTS nhanh và ít lỗi nhất."
-status: in-progress
+status: completed
 priority: P1
 effort: 23h
 issue: 271
@@ -38,7 +38,7 @@ created: 2026-09-25
 | 1 | [Authoring quick wins: key grid, chống mất dữ liệu, autosave](./phase-01-authoring-quick-wins.md) | Done |
 | 2 | [Option bank có cấu trúc cho matching + map](./phase-02-option-bank.md) | Done |
 | 3 | [Cloze click-to-blank cho dạng completion](./phase-03-cloze-editor.md) | Done |
-| 4 | [Ảnh ghim nhãn cho diagram + map](./phase-04-image-pins.md) | Pending |
+| 4 | [Ảnh ghim nhãn cho diagram + map](./phase-04-image-pins.md) | Done |
 
 ## Success Criteria
 

@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Ảnh ghim nhãn cho diagram + map"
-status: pending
+status: done
 priority: P2
 effort: "5h"
 dependencies: [1, 2]
@@ -82,13 +82,13 @@ flowchart LR
 
 ## Todo List
 
-- [ ] Contract `pin` + superRefine skill-qualified + `.strict()` inner + AssignmentQuestion + emptyItem sync
-- [ ] Snapshot `parseQuestions` giữ pin
-- [ ] `pin-editor.tsx` đặt/dời/xóa ghim theo %
-- [ ] Tích key editor (diagram text, map bank)
-- [ ] canSave mirror + lỗi tại hàng
-- [ ] Preview vẽ ghim (2 surfaces)
-- [ ] E2E diagram + map + round-trip snapshot + regression writing map
+- [x] Contract `pin` + superRefine skill-qualified + `.strict()` inner + AssignmentQuestion + emptyItem sync
+- [x] Snapshot `parseQuestions` giữ pin
+- [x] `pin-editor.tsx` đặt/dời/xóa ghim theo %
+- [x] Tích key editor (diagram text, map bank)
+- [x] canSave mirror + lỗi tại hàng
+- [x] Preview vẽ ghim (2 surfaces)
+- [x] E2E diagram + map + round-trip snapshot + regression writing map
 
 ## Success Criteria
 
