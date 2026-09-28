@@ -1,5 +1,5 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
-import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
