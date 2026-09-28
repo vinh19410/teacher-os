@@ -74,6 +74,28 @@ describe("buildTestPayload — zod rule từ packages/api (Task 3.4 verify)", ()
 			expect(built.errors.timeLimit).toContain("MM:SS hoặc HH:MM:SS");
 	});
 
+	it("phase-06: time limit để trống → null không giới hạn (Speaking/Writing)", () => {
+		const built = buildTestPayload({
+			...emptyTestHeader(),
+			title: "Speaking Full Mock",
+			skill: "speaking",
+			timeLimit: "   ",
+		});
+		expect(built.ok).toBe(true);
+		if (built.ok) expect(built.payload.timeLimitSeconds).toBeNull();
+	});
+
+	it("phase-06: time limit sai dạng (khác rỗng) vẫn chặn với message hướng dẫn", () => {
+		const built = buildTestPayload({
+			...emptyTestHeader(),
+			title: "X",
+			timeLimit: "60:",
+		});
+		expect(built.ok).toBe(false);
+		if (!built.ok)
+			expect(built.errors.timeLimit).toContain("MM:SS hoặc HH:MM:SS");
+	});
+
 	it("title trống vi phạm rule zod (không copy rule — import schema)", () => {
 		const built = buildTestPayload({
 			...emptyTestHeader(),

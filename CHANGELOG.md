@@ -12,9 +12,18 @@ Quy ước khi cập nhật:
 
 ## 2026-09-28
 
+### Added
+- IELTS Full Test Builder: soạn bộ đề trọn vẹn (`/assignments/tests/new`) ghép nhiều part thành một đề — header (title/time limit/preset 4 kỹ năng/collection/group), outline số câu chạy liên tục, mỗi slot gán 1 part từ ngân hàng hoặc soạn mới ngay trong builder (composer khóa skill/part), autosave bản nháp riêng; entity `assignment_test` + `assignment_test_part` (unique theo slot, `qStartOverride` nullable) trong snapshot kernel
+- Đánh số câu liên tục 1–40 qua `computeTestRanges` (`apps/web/src/lib/test-ranges.ts`) — nguồn số duy nhất cho outline/preview/soát đáp án; contract test source-parse cấm `qStartOf` (số tĩnh 1/14/27 của catalog part) trong code test-builder
+- Full-test preview (`/assignments/tests/preview`): render trọn bộ đề đúng format đề thi (READING PASSAGE 1–3, Questions 1–40, time limit) bàn giao qua sessionStorage — không hiển thị đáp án
+- Answers Checking trong builder: View All Answers (grid số câu tuyệt đối), paste key 40 dòng (`1. TRUE` / `1. Car / Cars`), Compare diff match/mismatch, Apply ghi đè answer/alts thẳng vào prompt gốc từng part (idempotent — chỉ câu thực sự khác)
+- Extensibility 3 kỹ năng còn lại chỉ là config: slot layout render từ `ASSIGNMENT_TEST_PRESETS` trong `packages/api/src/contracts.ts` (Listening 4 section, Writing 2 task, Speaking 3 part) — unit test 4 preset khóa hành vi này
+- E2E full-flow `assignment-test-create.spec.ts`: tự seed 2 part reading, soạn part thứ 3 inline, soát đáp án 2 mismatch → sửa → Apply, preview 1–40 không lộ key, reload giữ nguyên bộ đề + key đã ghi
+
 ### Changed
 - Card lịch dạy trên `/dashboard` (section "Lịch hôm nay" & "Lịch sắp tới") hiển thị gọn: chỉ còn tên lớp + dòng meta `time · dur' · type · topic`; bỏ avatar chữ-cái-đầu của lớp và toàn bộ danh sách học viên trong card — mọi buổi học có trong data đều hiển thị card kể cả khi thiếu student record (#278)
 - Nút "Điểm danh" nhanh không còn trên dashboard; check-in vẫn đầy đủ ở class detail (tab "Buổi học") và modal `/schedule` (#278)
+- Time limit của bộ đề để trống được (null = không giới hạn, hợp cho Speaking/Writing) — khớp contract `timeLimitSeconds` nullable; dạng gõ sai vẫn chặn kèm thông báo hướng dẫn
 
 ### Removed
 - Drift-guard `kernel-runtime.contract.test.ts` bỏ positive pin yêu cầu dashboard phải có flow check-in (`useDirectKernelAction`/`void run`/`disabled={busy…}`), thay bằng negative pin theo hướng UI mới (#278)

@@ -162,7 +162,8 @@ export function TestBuilderShell({
 	}, [data.assignmentPrompts]);
 
 	const slotViews = useMemo(() => {
-		// computeTestRanges là NGUỒN SỐ DUY NHẤT — không qStartOf/qStart preset.
+		// computeTestRanges là NGUỒN SỐ DUY NHẤT — không dùng qStart tĩnh của
+		// preset part (contract test cấm chuỗi đó trong thư mục này).
 		const ranges = computeTestRanges({
 			parts: slots.map((slot) => {
 				const promptId = assigned[slot.part];

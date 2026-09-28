@@ -77,11 +77,17 @@ export type BuiltTestPayload =
 /**
  * Validate + build payload create/update theo ĐÚNG rule zod server
  * (`assignmentTestCreateSchema` import từ packages/api — không copy rule).
- * Time limit parse fail được bắt trước zod với message hướng dẫn dạng nhập.
+ * Time limit để trống → null (không giới hạn); parse fail trên input khác
+ * rỗng được bắt trước zod với message hướng dẫn dạng nhập.
  */
 export function buildTestPayload(value: TestHeaderFormValue): BuiltTestPayload {
-	const timeLimitSeconds = parseTimeLimit(value.timeLimit);
-	if (timeLimitSeconds === null) {
+	// Để trống = không giới hạn (timeLimitSeconds null theo contract — hợp
+	// cho Speaking/Writing); dạng GÕ SAI (khác rỗng mà parse không được) vẫn
+	// chặn trước zod với message hướng dẫn.
+	const trimmedTime = value.timeLimit.trim();
+	const timeLimitSeconds =
+		trimmedTime === "" ? null : parseTimeLimit(trimmedTime);
+	if (timeLimitSeconds === null && trimmedTime !== "") {
 		return {
 			ok: false,
 			errors: { timeLimit: "Nhập thời gian theo dạng MM:SS hoặc HH:MM:SS." },
@@ -168,8 +174,7 @@ export function TestHeaderForm({
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 				<Field
 					label="Time limit"
-					required
-					help="MM:SS hoặc HH:MM:SS — 60:00 cho 60 phút."
+					help="MM:SS hoặc HH:MM:SS — 60:00 cho 60 phút; để trống = không giới hạn."
 					error={showErrors ? errors.timeLimit : undefined}
 				>
 					<Input

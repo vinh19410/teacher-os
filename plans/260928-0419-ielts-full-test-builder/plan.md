@@ -1,7 +1,7 @@
 ---
 title: "IELTS Full Test Builder — bộ đề hoàn chỉnh trên nền assignment prompt"
 description: "Thêm tầng entity 'assignment_test' nhóm nhiều part thành 1 bộ đề IELTS hoàn chỉnh (Reading 3 passages/40 câu/60 phút trước, mở rộng Listening/Writing/Speaking sau), kèm Answers Checking soát đáp án 40 câu."
-status: pending
+status: done
 priority: P1
 effort: 3d
 branch: vinh19410/feat/ielts-full-test-builder
@@ -48,7 +48,7 @@ Trọng tâm: giáo viên soạn được **đủ 1 bộ IELTS Reading** (3 pass
 | 3 | [Test Builder UI](./phase-03-test-builder-ui.md) | Done |
 | 4 | [Full-Test Preview](./phase-04-full-test-preview.md) | Done |
 | 5 | [Answers Checking](./phase-05-answers-checking.md) | Done |
-| 6 | [E2E & Extensibility](./phase-06-e2e-extensibility.md) | Pending |
+| 6 | [E2E & Extensibility](./phase-06-e2e-extensibility.md) | Done |
 
 ## Success Criteria
 

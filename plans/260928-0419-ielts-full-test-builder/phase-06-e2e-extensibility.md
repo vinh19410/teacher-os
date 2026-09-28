@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "E2E & Extensibility"
-status: pending
+status: done
 priority: P1
 effort: "4h"
 dependencies: [5]
@@ -89,8 +89,8 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 6.1 — E2E full-flow + full suite xanh
-- [ ] Task 6.2 — 3 source-parse contract test
-- [ ] Task 6.3 — Extensibility 3 skill (unit 4 preset)
-- [ ] Task 6.4 — Docs + CHANGELOG
-- [ ] `pnpm test` (workspace) + `pnpm --filter e2e e2e` exit 0
+- [x] Task 6.1 — E2E full-flow + full suite xanh
+- [x] Task 6.2 — 3 source-parse contract test
+- [x] Task 6.3 — Extensibility 3 skill (unit 4 preset)
+- [x] Task 6.4 — Docs + CHANGELOG
+- [x] `pnpm test` (workspace) + `pnpm --filter e2e e2e` exit 0

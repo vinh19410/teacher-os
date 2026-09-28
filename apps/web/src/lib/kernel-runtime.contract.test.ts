@@ -2,7 +2,7 @@
  * Kernel runtime contract — locks the Wave 0 wiring without rendering React.
  * Mirrors the source-parse style of enroll-student.contract.test.ts.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
@@ -655,5 +655,46 @@ describe("runtime state boundary", () => {
 			"syllabi",
 		]);
 		expect(Object.values(emptyKernelData).every(Array.isArray)).toBe(true);
+	});
+});
+describe("full-test builder contract (design IELTS Full Test Builder)", () => {
+	/** Đọc source mọi file trong một thư mục con của web src. */
+	function readDirSources(rel: string): { file: string; src: string }[] {
+		const dir = join(here, rel);
+		return readdirSync(dir).map((file) => ({
+			file,
+			src: readFileSync(join(dir, file), "utf8"),
+		}));
+	}
+
+	test("test-builder code never numbers parts from the static qStart catalog", () => {
+		// computeTestRanges (lib/test-ranges.ts) là nguồn số duy nhất; qStartOf
+		// đọc qStart tĩnh 1/14/27 của preset part — một part 12 câu làm lệch
+		// mọi số sau nó (outline, preview, answers panel).
+		const sources = [
+			...readDirSources("../components/assignment-tests"),
+			{ file: "test-ranges.ts", src: readSrc("../lib/test-ranges.ts") },
+		];
+		expect(sources.length).toBeGreaterThan(4);
+		for (const { file, src } of sources) {
+			expect(src, file).not.toMatch(/qStartOf/);
+		}
+	});
+
+	test("empty state seeds assignmentTests as an empty array", async () => {
+		const { emptyKernelData } = await import("./kernel-state");
+		// Bộ đề full test là kernel collection thật (không phải derived) —
+		// empty state phải mở đúng shape để snapshot rỗng không crash UI.
+		expect(Array.isArray(emptyKernelData.assignmentTests)).toBe(true);
+		expect(emptyKernelData.assignmentTests).toEqual([]);
+	});
+
+	test("routes-matcher registers the full-test builder routes", () => {
+		const src = readSrc("../routes-matcher.ts");
+		// Soạn mới + preview là route exact; edit /assignments/tests/$id đi
+		// qua dynamic prefix — thiếu entry nào thì 404 branded.
+		expect(src).toContain('"/assignments/tests/new": true');
+		expect(src).toContain('"/assignments/tests/preview": true');
+		expect(src).toContain('"/assignments/tests/"');
 	});
 });

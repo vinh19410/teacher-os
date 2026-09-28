@@ -147,3 +147,72 @@ describe("TestBuilderShell (phase-03 Tasks 3.3/3.4/3.5)", () => {
 		expect(createHtml).not.toContain("View All Answers");
 	});
 });
+
+describe("TestBuilderShell preset extensibility (phase-06 Task 6.3)", () => {
+	/**
+	 * Slot layout phải đến từ ASSIGNMENT_TEST_PRESETS — render shell với test
+	 * row của từng skill (edit mode khởi tạo header theo skill của test) và
+	 * chứng minh cùng MỘT component cho ra 4 layout, không hard-code reading.
+	 */
+	const presetCase = (skill: string): KernelAssignmentTestRow => ({
+		id: `at-${skill}`,
+		title: `${skill} shell`,
+		description: null,
+		skill,
+		timeLimitSeconds: null,
+		collection: null,
+		testGroup: null,
+		status: "draft",
+		parts: [],
+	});
+
+	it("reading: 3 slot Passage 1–3", () => {
+		const html = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={presetCase("reading")} />,
+		);
+		expect(html).toContain("Parts (3 slot)");
+		expect(html).toContain("0/3 parts · 0 questions");
+		expect(html).toContain("Passage 1");
+		expect(html).toContain("Passage 2");
+		expect(html).toContain("Passage 3");
+	});
+
+	it("listening: 4 slot Section 1–4", () => {
+		const html = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={presetCase("listening")} />,
+		);
+		expect(html).toContain("Parts (4 slot)");
+		expect(html).toContain("0/4 parts · 0 questions");
+		expect(html).toContain("Section 1");
+		expect(html).toContain("Section 2");
+		expect(html).toContain("Section 3");
+		expect(html).toContain("Section 4");
+	});
+
+	it("writing: 2 slot Task 1/Task 2", () => {
+		const html = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={presetCase("writing")} />,
+		);
+		expect(html).toContain("Parts (2 slot)");
+		expect(html).toContain("0/2 parts · 0 questions");
+		expect(html).toContain("Task 1");
+		expect(html).toContain("Task 2");
+	});
+
+	it("speaking: 3 slot Part 1–3, time limit null hiển thị trống", () => {
+		const html = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={presetCase("speaking")} />,
+		);
+		expect(html).toContain("Parts (3 slot)");
+		expect(html).toContain("0/3 parts · 0 questions");
+		expect(html).toContain("Part 1");
+		expect(html).toContain("Part 2");
+		expect(html).toContain("Part 3");
+		// timeLimitSeconds null → input rỗng (để trống được, contract nullable).
+		const timeInput = html.match(
+			/input[^>]*placeholder="60:00"[^>]*value="([^"]*)"/,
+		);
+		expect(timeInput).not.toBeNull();
+		expect(timeInput?.[1]).toBe("");
+	});
+});
