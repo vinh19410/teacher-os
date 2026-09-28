@@ -4825,7 +4825,15 @@ describe("assignment prompt bank (issue #202)", () => {
 				cuePoints: "",
 				audioName: "",
 				imageUrl: "  https://example.com/padded.png  ",
-				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "steam",
+						alts: "",
+						pin: { x: 50, y: 40 },
+					},
+				],
 				note: "",
 				status: "ready",
 			},
@@ -4916,7 +4924,15 @@ describe("assignment prompt bank (issue #202)", () => {
 				cuePoints: "",
 				audioName: "",
 				imageUrl: "https://example.com/diagram.png",
-				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "steam",
+						alts: "",
+						pin: { x: 25, y: 75 },
+					},
+				],
 				note: "",
 				status: "ready",
 			},
@@ -4927,6 +4943,229 @@ describe("assignment prompt bank (issue #202)", () => {
 			(r) => r.id === id,
 		);
 		expect(row?.imageUrl).toBe("https://example.com/diagram.png");
+	});
+
+	test("POST ready diagram without a pin is 400 (phase-04 FR2)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — missing pin",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "https://example.com/diagram.png",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST ready listening map requires image and pins (phase-04 FR2)", async () => {
+		const base = {
+			skill: "listening",
+			part: "s2",
+			type: "map",
+			title: "Listening Map — gates",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "Label the map.",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "section2.mp3",
+			optionBank: ["Reception", "Cafe", "Gym"],
+			questions: [
+				{ stem: "Q11", opts: null, answer: "A", alts: "" },
+				{ stem: "Q12", opts: null, answer: "B", alts: "" },
+			],
+			note: "",
+			status: "ready",
+		};
+		// No image at all → 400.
+		const noImage = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: base,
+		});
+		expect(noImage.status).toBe(400);
+		// Image but one pin missing → 400.
+		const missingPin = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...base,
+				imageUrl: "https://example.com/campus-map.png",
+				questions: [
+					{
+						stem: "Q11",
+						opts: null,
+						answer: "A",
+						alts: "",
+						pin: { x: 20, y: 30 },
+					},
+					{ stem: "Q12", opts: null, answer: "B", alts: "" },
+				],
+			},
+		});
+		expect(missingPin.status).toBe(400);
+		// Full set persists and the pins round-trip through the snapshot.
+		const ok = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...base,
+				imageUrl: "https://example.com/campus-map.png",
+				questions: [
+					{
+						stem: "Q11",
+						opts: null,
+						answer: "A",
+						alts: "",
+						pin: { x: 20, y: 30 },
+					},
+					{
+						stem: "Q12",
+						opts: null,
+						answer: "B",
+						alts: "",
+						pin: { x: 80, y: 60 },
+					},
+				],
+			},
+		});
+		expect(ok.status).toBe(201);
+		const { id } = (await ok.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.questions.map((question) => question.pin)).toEqual([
+			{ x: 20, y: 30 },
+			{ x: 80, y: 60 },
+		]);
+	});
+
+	test("POST ready writing task1 map needs no image or pins (skill-qualified, phase-04 FR2)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task1",
+				type: "map",
+				title: "Writing Task1 Map — never gated",
+				band: "7.0",
+				source: "",
+				prompt: "The maps show the town centre in 1990 and today.",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST question item with an unknown field is 400 (inner .strict(), phase-04)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p2",
+				type: "summary",
+				title: "Reading Summary — unknown field",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "rain",
+						alts: "",
+						pinn: { x: 1, y: 2 },
+					},
+				],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("snapshot forwards legacy pins and nulls corrupt pins (phase-04 FR7)", async () => {
+		const legacyId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: legacyId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "diagram",
+			title: "Legacy diagram rows with pins",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: JSON.stringify([
+				{
+					stem: "Q1",
+					opts: null,
+					answer: "boiler",
+					alts: "",
+					pin: { x: 10, y: 90 },
+				},
+				{
+					stem: "Q2",
+					opts: null,
+					answer: "crankshaft",
+					alts: "",
+					pin: { x: 200, y: "bad" },
+				},
+				{ stem: "Q3", opts: null, answer: "valve", alts: "" },
+			]),
+			note: "",
+			status: "draft",
+		});
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === legacyId,
+		);
+		expect(row?.questions.map((question) => question.pin)).toEqual([
+			{ x: 10, y: 90 },
+			null,
+			null,
+		]);
 	});
 
 	test("snapshot falls back to empty imageUrl for legacy rows (#269)", async () => {

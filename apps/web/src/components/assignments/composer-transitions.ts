@@ -14,6 +14,7 @@ import {
 	emptyItem,
 	isAutoSkill,
 	isBankableType,
+	isImageBased,
 	kindOf,
 	type QuestionItem,
 	qStartOf,
@@ -54,7 +55,11 @@ export function structuralChangeKind(
  * losing it on a type change must be confirmed (phase-02 FR3).
  */
 export function hasAuthoringContent(value: ComposerValue): boolean {
-	if (value.items.some((item) => item.stem.trim() || item.answer.trim()))
+	if (
+		value.items.some(
+			(item) => item.stem.trim() || item.answer.trim() || item.pin != null,
+		)
+	)
 		return true;
 	if (value.optionBank.some((row) => row.trim())) return true;
 	return Boolean(
@@ -208,5 +213,26 @@ export function clozeRowIssue(
 		return `Đáp án câu ${number} vượt quá ${QUESTION_ANSWER_MAX} ký tự.`;
 	if (item.alts.length > QUESTION_ALTS_MAX)
 		return `Danh sách nhận thêm của câu ${number} vượt quá ${QUESTION_ALTS_MAX} ký tự.`;
+	return null;
+}
+
+/**
+ * Web mirror of the phase-04 image-pin rules (FR2) — image-based pairs gate
+ * `ready` on the image URL AND a pin per question, exactly like the contract
+ * superRefine. Skill-qualified: writing task1's `map` never reaches here.
+ */
+export function imagePinIssue(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): string | null {
+	if (!isImageBased(value.skill, value.type)) return null;
+	if (status !== "ready") return null;
+	if (!value.imageUrl.trim())
+		return "Dán link ảnh (https) trước khi lưu sẵn sàng giao.";
+	const qStart = qStartOf(value.skill, value.part);
+	for (const [index, item] of value.items.entries()) {
+		if (!item.pin)
+			return `Câu ${qStart + index} chưa đặt ghim trên ảnh — bấm lên ảnh để đặt.`;
+	}
 	return null;
 }

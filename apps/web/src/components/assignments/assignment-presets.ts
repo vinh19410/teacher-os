@@ -1,9 +1,11 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_IMAGE_BASED_TYPES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 	ASSIGNMENT_OPTION_BANK_TYPES,
 	type AssignmentQuestion,
 	type AssignmentSkill,
+	isImageBasedType,
 	isOptionBankable,
 } from "@teacher-os/api/contracts";
 
@@ -98,6 +100,20 @@ export const BANKABLE_PAIRS: ReadonlySet<string> = new Set(
 );
 export function isBankableType(skill: string, type: string): boolean {
 	return isOptionBankable(skill, type);
+}
+/**
+ * Image pins (phase-04 FR2/FR3): the (skill, type) pairs whose composer
+ * shows the pin editor over the prompt image — reading `diagram` + listening
+ * `map`. Mirrors `ASSIGNMENT_IMAGE_BASED_TYPES` (sync-tested); skill-
+ * qualified so writing task1's shared `map` type id is never image-gated.
+ */
+export const IMAGE_BASED_PAIRS: ReadonlySet<string> = new Set(
+	Object.entries(ASSIGNMENT_IMAGE_BASED_TYPES).flatMap(([skill, types]) =>
+		types.map((type) => `${skill}:${type}`),
+	),
+);
+export function isImageBased(skill: string, type: string): boolean {
+	return isImageBasedType(skill, type);
 }
 /** Contract cap — labels only exist for 8 positions (A–H / i–viii). */
 export const OPTION_BANK_MAX = ASSIGNMENT_OPTION_BANK_MAX;
@@ -335,6 +351,7 @@ export function emptyItem(typeId: string): QuestionItem {
 					: null,
 		answer: "",
 		alts: "",
+		pin: null,
 	};
 }
 export function emptyComposer(skillId: string, typeId: string) {

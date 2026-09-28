@@ -45,6 +45,8 @@ export function questionRowError(
 	/** FR9: missing stem/answer only block a `ready` save — a draft may be
 	 * half-filled. Over-cap and invalid-choice errors apply in both states. */
 	requireFilled = true,
+	/** Phase-04 FR2: image-based pairs need a pin per question when ready. */
+	requirePin = false,
 ): Record<string, string> {
 	const errors: Record<string, string> = {};
 	if (item.stem.trim().length > QUESTION_STEM_MAX)
@@ -55,6 +57,7 @@ export function questionRowError(
 		errors.stem = `Câu này có ${countBlanks(item.stem)} chỗ trống (____) — mỗi câu chỉ một chỗ trống.`;
 	else if (requireFilled && !item.stem.trim())
 		errors.stem = "Nhập nội dung câu hỏi.";
+	if (requirePin && !item.pin) errors.pin = "Đặt ghim trên ảnh cho câu này.";
 	if (item.answer.trim().length > QUESTION_ANSWER_MAX) {
 		errors.answer = `Đáp án vượt quá ${QUESTION_ANSWER_MAX} ký tự.`;
 	} else if (requireFilled && !item.answer.trim()) {
@@ -81,6 +84,8 @@ export function AnswerKeyGrid({
 	items,
 	showErrors,
 	requireFilled = true,
+	requirePin = false,
+	selectedIndex = null,
 	optionBank,
 	onItemsChange,
 	onAddQuestion,
@@ -93,6 +98,10 @@ export function AnswerKeyGrid({
 	/** FR9: missing stem/answer are flagged only when the composer status is
 	 * `ready`; drafts may legitimately be half-filled. */
 	requireFilled?: boolean;
+	/** Phase-04 FR2: image-based pairs flag missing pins when ready. */
+	requirePin?: boolean;
+	/** Phase-04 FR3: the pin editor selects a question — highlight the row. */
+	selectedIndex?: number | null;
 	/** Phase-02 FR4: when the prompt's type is bankable and the teacher has
 	 * bank rows, the choice chips come from the bank's POSITIONAL labels —
 	 * only labels that exist in the bank are selectable. */
@@ -201,11 +210,22 @@ export function AnswerKeyGrid({
 			</div>
 			{items.map((item, index) => {
 				const number = qStart + index;
-				const rowErrors = questionRowError(item, choices, requireFilled);
+				const rowErrors = questionRowError(
+					item,
+					choices,
+					requireFilled,
+					requirePin,
+				);
 				const rowVisible = showErrors || blurred.has(index);
 				const errorEntries = rowVisible
-					? (["stem", "answer", "opts", "alts"] as const).filter(
-							(key) => rowErrors[key],
+					? (["stem", "answer", "opts", "pin", "alts"] as const).filter(
+							(key) =>
+								rowErrors[key] &&
+								// Phase-04: a missing pin is fixed on the IMAGE, not in
+								// this row — rendering it on blur would flash an alert
+								// mid-click (layout shift swallowed the very next
+								// "Thêm câu" press in e2e). Save-time only.
+								(key !== "pin" || showErrors),
 						)
 					: [];
 				const mcqChoices = kind === "mcq4" || kind === "mcq3" ? choices : null;
@@ -228,7 +248,10 @@ export function AnswerKeyGrid({
 								setBlurred((current) => new Set(current).add(index));
 							}
 						}}
-						className="grid gap-2 rounded-md border border-line bg-surface p-3 outline-none focus-visible:border-fg sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start"
+						className={cn(
+							"grid gap-2 rounded-md border bg-surface p-3 outline-none focus-visible:border-fg sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
+							selectedIndex === index ? "border-fg" : "border-line",
+						)}
 					>
 						<strong className="pt-2 font-mono text-sm">Câu {number}</strong>
 						<div className="flex flex-col gap-1">

@@ -186,7 +186,9 @@ describe("QuestionKeyEditor (#218 v5)", () => {
 
 		expect(html).toContain("Ảnh biểu đồ (URL)");
 		expect(html).toContain("https://example.com/diagram.png");
-		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		// Phase-04: the thumbnail renders inside the pin editor (FR3).
+		expect(html).toContain('alt="Ảnh đề"');
+		expect(html).toContain("Bấm lên ảnh để đặt ghim");
 		// Text kind: free-text answer + alts, no chips.
 		expect(html).toContain("Đáp án chấm tự động");
 		expect(html).not.toContain(">H<");

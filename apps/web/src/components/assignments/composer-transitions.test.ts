@@ -5,6 +5,7 @@ import {
 	applyComposerFieldChange,
 	clozeStemIssue,
 	hasAuthoringContent,
+	imagePinIssue,
 	optionBankIssue,
 	structuralChangeKind,
 } from "./composer-transitions";
@@ -509,5 +510,71 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			"ready",
 		);
 		expect(issue).toContain("Câu 27");
+	});
+});
+
+describe("imagePinIssue — web mirror of the image gates (phase-04 FR2)", () => {
+	const diagram = composer({
+		skill: "reading",
+		part: "p1",
+		type: "diagram",
+		passage: "Boiler diagram",
+		imageUrl: "https://example.com/machine.png",
+		items: [
+			{
+				stem: "Part 4",
+				answer: "piston",
+				opts: null,
+				alts: "",
+				pin: { x: 30, y: 60 },
+			},
+			{
+				stem: "Part 5",
+				answer: "valve",
+				opts: null,
+				alts: "",
+				pin: { x: 80, y: 20 },
+			},
+		],
+	});
+
+	test("a fully pinned ready image prompt passes", () => {
+		expect(imagePinIssue(diagram, "ready")).toBeNull();
+		expect(imagePinIssue(diagram, "draft")).toBeNull();
+	});
+
+	test("ready image prompt without the image URL is blocked", () => {
+		const issue = imagePinIssue({ ...diagram, imageUrl: "" }, "ready");
+		expect(issue).toContain("link ảnh");
+		// Drafts may still be assembling — no block.
+		expect(imagePinIssue({ ...diagram, imageUrl: "" }, "draft")).toBeNull();
+	});
+
+	test("ready image prompt with a pin-less question names that question", () => {
+		const issue = imagePinIssue(
+			{
+				...diagram,
+				items: [diagram.items[0], { ...diagram.items[1], pin: null }],
+			},
+			"ready",
+		);
+		expect(issue).toContain("Câu 2 chưa đặt ghim");
+	});
+
+	test("non-image types and writing task1 map are never gated", () => {
+		expect(imagePinIssue(composer({ type: "summary" }), "ready")).toBeNull();
+		expect(
+			imagePinIssue(
+				composer({
+					skill: "writing",
+					part: "task1",
+					type: "map",
+					prompt: "The maps show the town centre.",
+					imageUrl: "",
+					items: [],
+				}),
+				"ready",
+			),
+		).toBeNull();
 	});
 });

@@ -9,6 +9,7 @@ import type { ComposerValue } from "@/components/assignments/prompt-composer";
  */
 
 import { emptyItem } from "@/components/assignments/assignment-presets";
+import { isValidPin } from "@/lib/image-pin";
 
 export const ASSIGNMENT_DRAFT_KEY = "assignment-draft";
 export const ASSIGNMENT_DRAFT_SCHEMA_VERSION = 1;
@@ -80,9 +81,13 @@ function composerValueShape(value: unknown): value is ComposerValue {
 		// (e.g. hand-edited `opts: "garbage"`) must be dropped, not crash the
 		// grid's `.every`/`.map` over it (review #5).
 		return (
-			item.opts == null ||
-			(Array.isArray(item.opts) &&
-				item.opts.every((option) => typeof option === "string"))
+			(item.opts == null ||
+				(Array.isArray(item.opts) &&
+					item.opts.every((option) => typeof option === "string"))) &&
+			// `pin` (phase-04 FR1) is nullish-or-a-0–100 point — the same guard
+			// as the snapshot read path; a corrupted draft must be dropped, not
+			// handed to the pin editor as garbage.
+			(item.pin == null || isValidPin(item.pin))
 		);
 	});
 }
@@ -92,6 +97,7 @@ interface QuestionItemShape {
 	answer: string;
 	alts: string;
 	opts?: null | string[];
+	pin?: null | { x: number; y: number };
 }
 
 function draftShape(value: unknown): value is StoredAssignmentDraft {
@@ -192,6 +198,9 @@ export function composerDraftHasContent(value: ComposerValue): boolean {
 			item.stem.trim() ||
 			item.answer.trim() ||
 			item.alts.trim() ||
+			// A placed pin is composed work too — losing it on a reload would
+			// re-place every label by hand (phase-04 FR3).
+			item.pin != null ||
 			JSON.stringify(item.opts ?? blank.opts) !== JSON.stringify(blank.opts),
 	);
 }

@@ -361,6 +361,29 @@ export function isOptionBankable(skill: string, type: string): boolean {
 }
 
 /**
+ * Phase-04 FR2 — the (skill, type) pairs whose prompts label an IMAGE:
+ * reading `diagram` + listening `map`. Skill-qualified ON PURPOSE (same
+ * red-team rule as the option bank): writing task1 shares the `map` type id
+ * but is a prompt-only type with no questions — it must never be gated on
+ * image/pin. Pin coordinates are percents of the image box, so the pin rule
+ * only applies where an image is required.
+ */
+export const ASSIGNMENT_IMAGE_BASED_TYPES: Record<
+	AssignmentSkill,
+	readonly string[]
+> = {
+	writing: [],
+	reading: ["diagram"],
+	listening: ["map"],
+	speaking: [],
+};
+export function isImageBasedType(skill: string, type: string): boolean {
+	return (
+		ASSIGNMENT_IMAGE_BASED_TYPES[skill as AssignmentSkill] ?? []
+	).includes(type);
+}
+
+/**
  * Diagram images are teacher-pasted URLs: https-only blocks `javascript:`,
  * `data:` and mixed content at the contract layer. The web editor and the
  * preview renderer (client-side draft path, no contract) re-use this same
@@ -402,12 +425,28 @@ export const assignmentPromptCreateSchema = z
 		imageUrl: z.string().trim().max(500).default(""),
 		questions: z
 			.array(
-				z.object({
-					stem: z.string().trim().max(500),
-					opts: z.array(z.string().max(500)).max(6).nullish(),
-					answer: z.string().trim().max(200),
-					alts: z.string().max(500).default(""),
-				}),
+				z
+					.object({
+						stem: z.string().trim().max(500),
+						opts: z.array(z.string().max(500)).max(6).nullish(),
+						answer: z.string().trim().max(200),
+						alts: z.string().max(500).default(""),
+						/**
+						 * Phase-04 FR1 — label pin on the prompt image, percents of
+						 * the image box (0–100, center of the pin). Nullish for
+						 * non-image types and legacy image rows. `.strict()` on the
+						 * inner object ON PURPOSE (red-team #2/#12): the old strip
+						 * mode silently dropped unknown fields — a typo'd field or
+						 * a drifted client now 400s instead of vanishing data.
+						 */
+						pin: z
+							.object({
+								x: z.number().min(0).max(100),
+								y: z.number().min(0).max(100),
+							})
+							.nullish(),
+					})
+					.strict(),
 			)
 			.max(40),
 		/**
@@ -481,13 +520,28 @@ export const assignmentPromptCreateSchema = z
 					message: "audio required when ready",
 				});
 		}
-		if (value.skill === "reading" && value.type === "diagram") {
+		// Phase-04 FR2 — image-based pairs are (skill, type)-qualified:
+		// reading `diagram` + listening `map`. Writing task1 shares the `map`
+		// type id and must NEVER be gated on image/pin (red-team #1). Ready
+		// prompts on these pairs need the image AND a pin on every question —
+		// a key without a place on the image is the old blind-text behavior.
+		if (isImageBasedType(value.skill, value.type)) {
 			if (value.status === "ready" && !value.imageUrl.trim())
 				ctx.addIssue({
 					code: "custom",
 					path: ["imageUrl"],
 					message: "image required when ready",
 				});
+			if (value.status === "ready") {
+				for (const [index, question] of value.questions.entries()) {
+					if (!question.pin)
+						ctx.addIssue({
+							code: "custom",
+							path: ["questions", index, "pin"],
+							message: "pin required when ready",
+						});
+				}
+			}
 		}
 		if (value.imageUrl && !isAssignmentImageUrl(value.imageUrl))
 			ctx.addIssue({
@@ -906,6 +960,9 @@ export interface AssignmentQuestion {
 	opts: string[] | null;
 	answer: string;
 	alts: string;
+	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
+	 * non-image types and legacy image rows. */
+	pin?: { x: number; y: number } | null;
 }
 
 export interface KernelAssignmentPromptRow {

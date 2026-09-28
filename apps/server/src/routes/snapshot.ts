@@ -71,6 +71,26 @@ function parseSkills(raw: string): string[] {
 	}
 }
 
+/** Phase-04 FR1 — pin guard: a valid pin is an object with numeric 0–100
+ * percents; anything else (legacy rows, corrupt JSON) falls back to null so
+ * the snapshot shape stays `pin | null` (never `undefined` — the web shape
+ * guards check for null). */
+function parsePin(raw: unknown): { x: number; y: number } | null {
+	if (!raw || typeof raw !== "object") return null;
+	const record = raw as Record<string, unknown>;
+	const { x, y } = record;
+	return typeof x === "number" &&
+		Number.isFinite(x) &&
+		x >= 0 &&
+		x <= 100 &&
+		typeof y === "number" &&
+		Number.isFinite(y) &&
+		y >= 0 &&
+		y <= 100
+		? { x, y }
+		: null;
+}
+
 function parseQuestions(
 	raw: string,
 	rowId: string,
@@ -96,6 +116,10 @@ function parseQuestions(
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
+					// Phase-04 FR7 — forward the pin or the image labels vanish on
+					// the first reload (the write path persists them inside this
+					// same JSON; this destructure is the only read path).
+					pin: parsePin(record.pin),
 				},
 			];
 		});

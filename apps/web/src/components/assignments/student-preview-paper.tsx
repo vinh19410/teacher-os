@@ -1,5 +1,6 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
+import { isValidPin } from "@/lib/image-pin";
 import {
 	bankLabel,
 	isBankableType,
@@ -11,6 +12,7 @@ import {
 	wordCount,
 } from "./assignment-presets";
 import { ClozeStemText } from "./cloze-stem";
+import { PinOverlay } from "./pin-editor";
 
 export function StudentPreviewPaper(props: {
 	skill?: string;
@@ -49,13 +51,20 @@ export function StudentPreviewPaper(props: {
 	// The preview draft never passes the server contract — this renderer is
 	// the only guard, so verify the scheme here before any <img> exists.
 	const rawImageUrl = props.imageUrl?.trim() ?? "";
+	// Phase-04 FR2/FR5 — image-based pairs are skill-qualified (reading
+	// diagram + listening map); writing task1's shared `map` id stays clear.
+	const imageBased =
+		(skillId === "reading" && typeId === "diagram") ||
+		(skillId === "listening" && typeId === "map");
 	const diagramImageUrl =
-		skillId === "reading" &&
-		typeId === "diagram" &&
-		rawImageUrl &&
-		ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
+		imageBased && rawImageUrl && ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
 			? rawImageUrl
 			: "";
+	// Pins render over the image when present; legacy rows (or a pin-less
+	// draft) keep the plain thumbnail + key list below — never broken.
+	const pinnedItems = (props.items ?? []).filter((item) =>
+		isValidPin(item.pin),
+	);
 	return (
 		<div className="rounded-lg border border-line bg-surface-warm p-5">
 			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
@@ -77,15 +86,22 @@ export function StudentPreviewPaper(props: {
 					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
 				</p>
 			)}
-			{diagramImageUrl && (
-				<img
-					src={diagramImageUrl}
-					alt="Ảnh biểu đồ đề Reading"
-					className="mt-3 max-h-72 rounded-md border border-line"
-					referrerPolicy="no-referrer"
-					loading="lazy"
-				/>
-			)}
+			{diagramImageUrl &&
+				(pinnedItems.length > 0 ? (
+					<PinOverlay
+						imageUrl={diagramImageUrl}
+						items={props.items ?? []}
+						qStart={part.qStart ?? 1}
+					/>
+				) : (
+					<img
+						src={diagramImageUrl}
+						alt="Ảnh biểu đồ đề Reading"
+						className="mt-3 max-h-72 rounded-md border border-line"
+						referrerPolicy="no-referrer"
+						loading="lazy"
+					/>
+				))}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
 					{props.intro?.trim() && (
