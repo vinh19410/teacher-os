@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isEmptyRichText, richTextField } from "./rich-text";
 
 /**
  * Kernel API contracts — Wave 0.
@@ -454,11 +455,15 @@ const assignmentPromptBaseSchema = z
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
 		source: z.string().trim().max(200),
-		prompt: z.string().trim().max(5000),
-		passage: z.string().trim().max(20000),
-		intro: z.string().max(2000),
-		transcript: z.string().max(10000),
+		// Rich text (HTML string) — the meaningful cap is measured on the
+		// plain text without markup; raw cap guards transport. intro/transcript/
+		// note gain a leading trim of the HTML string (harmless around tags).
+		prompt: richTextField(5000),
+		passage: richTextField(20000),
+		intro: richTextField(2000),
+		transcript: richTextField(10000),
 		cueTopic: z.string().trim().max(500),
+		// cuePoints stays PLAIN text (one idea per line) — do not convert.
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
 		imageUrl: z.string().trim().max(500).default(""),
@@ -499,7 +504,7 @@ const assignmentPromptBaseSchema = z
 			.array(z.string().trim().min(1).max(200))
 			.max(ASSIGNMENT_OPTION_BANK_MAX)
 			.default([]),
-		note: z.string().max(2000),
+		note: richTextField(2000),
 		status: z.enum(["draft", "ready"]),
 	})
 	.strict();
@@ -521,14 +526,14 @@ export const assignmentPromptCreateSchema =
 				path: ["questions"],
 				message: "questions only apply to reading or listening",
 			});
-		if (value.skill === "writing" && !value.prompt.trim())
+		if (value.skill === "writing" && isEmptyRichText(value.prompt))
 			ctx.addIssue({
 				code: "custom",
 				path: ["prompt"],
 				message: "prompt required",
 			});
 		if (value.skill === "reading") {
-			if (!value.passage.trim())
+			if (isEmptyRichText(value.passage))
 				ctx.addIssue({
 					code: "custom",
 					path: ["passage"],
@@ -613,7 +618,7 @@ export const assignmentPromptCreateSchema =
 					path: ["cueTopic"],
 					message: "cue topic required",
 				});
-			if (value.part !== "part2" && !value.prompt.trim())
+			if (value.part !== "part2" && isEmptyRichText(value.prompt))
 				ctx.addIssue({
 					code: "custom",
 					path: ["prompt"],
@@ -734,7 +739,7 @@ export type AssignmentPromptUpdate = z.infer<
 export const assignmentTestCreateSchema = z
 	.object({
 		title: z.string().trim().min(1).max(200),
-		description: z.string().trim().max(2000).optional(),
+		description: richTextField(2000).optional(),
 		skill: z.enum(ASSIGNMENT_SKILLS),
 		timeLimitSeconds: z
 			.number()
