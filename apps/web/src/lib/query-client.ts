@@ -1,6 +1,8 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
+import { isStudentRoleRejected } from "@/lib/repos/kernel";
+import { markRoleBlocked } from "@/lib/role-block";
 
 /**
  * Factory for the app's QueryClient — created once at module scope in
@@ -28,10 +30,18 @@ export function createKernelQueryClient(): QueryClient {
 		},
 		queryCache: new QueryCache({
 			onError: (error) => {
+				if (!isHttpError(error)) return;
 				// A dead session on the read path re-authenticates through the
 				// same single-flight guard the write path (bus onAuthLost) uses.
-				if (isHttpError(error) && error.status === 401) {
+				if (error.status === 401) {
 					reauth();
+					return;
+				}
+				// A student-role session (plan #260) triggers the blocked view
+				// through the same single-flight flag the write path (bus
+				// onRoleBlocked) uses; other 403s keep their own error surfaces.
+				if (isStudentRoleRejected(error)) {
+					markRoleBlocked();
 				}
 			},
 		}),

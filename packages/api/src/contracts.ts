@@ -6,27 +6,13 @@ import { z } from "zod";
  * Every request is org-scoped from the session membership (no tenant header).
  */
 
-export const studentCreateSchema = z.object({
-	name: z.string().min(1),
-	/** SĐT = danh tính đăng nhập tương lai: bắt buộc, chỉ chữ số. */
-	phone: z.string().regex(/^[0-9]+$/),
-	/** Email = danh tính đăng nhập tương lai: bắt buộc lúc tạo (row legacy ""). */
-	email: z.email(),
-	parentName: z.string().default(""),
-	classId: z.string().min(1).optional(),
-});
-export type StudentCreate = z.infer<typeof studentCreateSchema>;
-
 /**
- * Issue #122 — enroll an EXISTING student into a class. Package fields mirror
- * studentCreateSchema defaults so an enrolled-existing student owns the same
- * active-package shape the create-new branch produces.
+ * Issue #122 / Issue #251 — enroll an EXISTING student into a class.
+ * Package derives from class via D1 pattern (sessionsTotal, tuitionFee ?? 0, mode).
+ * Client only sends studentId.
  */
 export const enrollStudentSchema = z.object({
 	studentId: z.string().min(1),
-	total: z.number().int().min(1).default(10),
-	price: z.number().int().min(0).default(400000),
-	mode: z.enum(["Online", "Offline"]).default("Online"),
 });
 export type EnrollStudent = z.infer<typeof enrollStudentSchema>;
 
@@ -296,9 +282,9 @@ export const ASSIGNMENT_PART_TYPES: Record<
 	reading: {
 		parts: ["p1", "p2", "p3"],
 		types: {
-			p1: ["tfng", "sent"],
-			p2: ["headings", "info"],
-			p3: ["ynng", "mcq"],
+			p1: ["tfng", "sent", "note", "shortans", "diagram"],
+			p2: ["headings", "info", "summary", "sentend", "tablecomp"],
+			p3: ["ynng", "mcq", "features", "flowchart"],
 		},
 	},
 	listening: {
@@ -329,18 +315,93 @@ export const ASSIGNMENT_ANSWER_CHOICES = {
 	letter: ["A", "B", "C", "D", "E", "F", "G", "H"],
 } as const;
 
-const answerKindByType: Record<string, keyof typeof ASSIGNMENT_ANSWER_CHOICES> =
-	{
-		tfng: "tfng",
-		headings: "roman",
-		info: "letter",
-		ynng: "ynng",
-		mcq: "mcq4",
-		mcq1: "mcq3",
-		map: "letter",
-		match2: "letter",
-		mcq3: "mcq3",
-	};
+/**
+ * Exported so the web catalog can sync its KIND map against this one —
+ * without the export, a drifted web kind map ships silently (#269).
+ */
+export const answerKindByType: Record<
+	string,
+	keyof typeof ASSIGNMENT_ANSWER_CHOICES
+> = {
+	tfng: "tfng",
+	headings: "roman",
+	info: "letter",
+	ynng: "ynng",
+	mcq: "mcq4",
+	mcq1: "mcq3",
+	map: "letter",
+	match2: "letter",
+	mcq3: "mcq3",
+	features: "letter",
+	sentend: "letter",
+};
+
+/**
+ * Structured option bank (phase-02 FR2) — the (skill, type) pairs whose
+ * prompts carry `optionBank`. Skill-qualified ON PURPOSE: `map` is shared
+ * with writing task1 (a prompt-only type with no questions), which is NOT
+ * bankable. Only these 5 matching kinds + listening map render a labeled
+ * choice list; labels are positional (A–H letters or i–viii romans), so
+ * the bank is capped at `ASSIGNMENT_OPTION_BANK_MAX` = 8 items.
+ */
+export const ASSIGNMENT_OPTION_BANK_MAX = 8;
+export const ASSIGNMENT_OPTION_BANK_TYPES: Record<
+	AssignmentSkill,
+	readonly string[]
+> = {
+	writing: [],
+	reading: ["headings", "info", "sentend", "features"],
+	listening: ["match2", "map"],
+	speaking: [],
+};
+export function isOptionBankable(skill: string, type: string): boolean {
+	return (
+		ASSIGNMENT_OPTION_BANK_TYPES[skill as AssignmentSkill] ?? []
+	).includes(type);
+}
+
+/**
+ * Phase-04 FR2 — the (skill, type) pairs whose prompts label an IMAGE:
+ * reading `diagram` + listening `map`. Skill-qualified ON PURPOSE (same
+ * red-team rule as the option bank): writing task1 shares the `map` type id
+ * but is a prompt-only type with no questions — it must never be gated on
+ * image/pin. Pin coordinates are percents of the image box, so the pin rule
+ * only applies where an image is required.
+ */
+export const ASSIGNMENT_IMAGE_BASED_TYPES: Record<
+	AssignmentSkill,
+	readonly string[]
+> = {
+	writing: [],
+	reading: ["diagram"],
+	listening: ["map"],
+	speaking: [],
+};
+export function isImageBasedType(skill: string, type: string): boolean {
+	return (
+		ASSIGNMENT_IMAGE_BASED_TYPES[skill as AssignmentSkill] ?? []
+	).includes(type);
+}
+
+/**
+ * Diagram images are teacher-pasted URLs: https-only blocks `javascript:`,
+ * `data:` and mixed content at the contract layer. The web editor and the
+ * preview renderer (client-side draft path, no contract) re-use this same
+ * pattern — single source for the scheme policy (#269).
+ */
+export const ASSIGNMENT_IMAGE_SRC_PATTERN = /^https:\/\/\S+$/;
+export const ASSIGNMENT_IMAGE_URL_MAX_LENGTH = 500;
+
+/** Full URL policy (scheme + length) shared by the schema field and the web
+ * validation blocks, so client `canSave` never disagrees with a 400 (#269). */
+export function isAssignmentImageUrl(value: string): boolean {
+	const trimmed = value.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= ASSIGNMENT_IMAGE_URL_MAX_LENGTH &&
+		ASSIGNMENT_IMAGE_SRC_PATTERN.test(trimmed)
+	);
+}
 
 /**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
@@ -361,16 +422,44 @@ export const assignmentPromptCreateSchema = z
 		cueTopic: z.string().trim().max(500),
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
+		imageUrl: z.string().trim().max(500).default(""),
 		questions: z
 			.array(
-				z.object({
-					stem: z.string().trim().max(500),
-					opts: z.array(z.string().max(500)).max(6).nullish(),
-					answer: z.string().trim().max(200),
-					alts: z.string().max(500).default(""),
-				}),
+				z
+					.object({
+						stem: z.string().trim().max(500),
+						opts: z.array(z.string().max(500)).max(6).nullish(),
+						answer: z.string().trim().max(200),
+						alts: z.string().max(500).default(""),
+						/**
+						 * Phase-04 FR1 — label pin on the prompt image, percents of
+						 * the image box (0–100, center of the pin). Nullish for
+						 * non-image types and legacy image rows. `.strict()` on the
+						 * inner object ON PURPOSE (red-team #2/#12): the old strip
+						 * mode silently dropped unknown fields — a typo'd field or
+						 * a drifted client now 400s instead of vanishing data.
+						 */
+						pin: z
+							.object({
+								x: z.number().min(0).max(100),
+								y: z.number().min(0).max(100),
+							})
+							.nullish(),
+					})
+					.strict(),
 			)
 			.max(40),
+		/**
+		 * Phase-02 FR2 — structured option bank for the bankable matching
+		 * pairs (`ASSIGNMENT_OPTION_BANK_TYPES`). Every item must be 1–200
+		 * chars after trim (empty rows never parse, even as drafts — the web
+		 * editor mirrors this). Rules tying bank ↔ answers only gate `ready`;
+		 * see the superRefine below.
+		 */
+		optionBank: z
+			.array(z.string().trim().min(1).max(200))
+			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.default([]),
 		note: z.string().max(2000),
 		status: z.enum(["draft", "ready"]),
 	})
@@ -431,6 +520,35 @@ export const assignmentPromptCreateSchema = z
 					message: "audio required when ready",
 				});
 		}
+		// Phase-04 FR2 — image-based pairs are (skill, type)-qualified:
+		// reading `diagram` + listening `map`. Writing task1 shares the `map`
+		// type id and must NEVER be gated on image/pin (red-team #1). Ready
+		// prompts on these pairs need the image AND a pin on every question —
+		// a key without a place on the image is the old blind-text behavior.
+		if (isImageBasedType(value.skill, value.type)) {
+			if (value.status === "ready" && !value.imageUrl.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["imageUrl"],
+					message: "image required when ready",
+				});
+			if (value.status === "ready") {
+				for (const [index, question] of value.questions.entries()) {
+					if (!question.pin)
+						ctx.addIssue({
+							code: "custom",
+							path: ["questions", index, "pin"],
+							message: "pin required when ready",
+						});
+				}
+			}
+		}
+		if (value.imageUrl && !isAssignmentImageUrl(value.imageUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["imageUrl"],
+				message: "imageUrl must be an https URL",
+			});
 		if (auto && value.status === "ready") {
 			for (const [index, question] of value.questions.entries()) {
 				if (!question.stem.trim())
@@ -471,6 +589,59 @@ export const assignmentPromptCreateSchema = z
 						path: ["questions", index, "answer"],
 						message: "invalid answer choice",
 					});
+			}
+		}
+		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
+		// (red-team #1): writing task1 shares the `map` type id but is NOT
+		// bankable, so a bank arriving there is rejected outright. The 2..8 /
+		// ≥ questions / label-in-bank / sentend-distinct rules gate `ready`
+		// only — drafts may carry a partial bank while the teacher is keying.
+		if (!isOptionBankable(value.skill, value.type)) {
+			if (value.optionBank.length > 0)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: "optionBank only applies to bankable matching types",
+				});
+		} else if (value.status === "ready") {
+			const { optionBank } = value;
+			if (optionBank.length < 2 || optionBank.length < value.questions.length)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every question`,
+				});
+			if (value.questions.length > ASSIGNMENT_OPTION_BANK_MAX)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions"],
+					message: `bankable types allow at most ${ASSIGNMENT_OPTION_BANK_MAX} questions (label alphabet size)`,
+				});
+			const bankKind = answerKindByType[value.type];
+			const labels = bankKind
+				? ASSIGNMENT_ANSWER_CHOICES[bankKind]
+				: ASSIGNMENT_ANSWER_CHOICES.letter;
+			const used = new Set<string>();
+			for (const [index, question] of value.questions.entries()) {
+				if (!question.answer.trim()) continue;
+				const labelIndex = labels.indexOf(question.answer as never);
+				if (labelIndex < 0 || labelIndex >= optionBank.length)
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "answer must be a label inside the option bank",
+					});
+				if (value.type === "sentend") {
+					// Formal-format rule: sentend uses each option exactly once;
+					// features and the other matching kinds may reuse labels.
+					if (used.has(question.answer))
+						ctx.addIssue({
+							code: "custom",
+							path: ["questions", index, "answer"],
+							message: "duplicate answer — each option is used once",
+						});
+					used.add(question.answer);
+				}
 			}
 		}
 	});
@@ -663,10 +834,14 @@ export interface KernelClassRow {
 	notes: string;
 }
 
+export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
+export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
+
 export interface KernelEnrollmentRow {
 	id: string;
 	classId: string;
 	studentId: string;
+	status: EnrollmentStatus | string;
 	createdAt: string;
 }
 
@@ -785,6 +960,9 @@ export interface AssignmentQuestion {
 	opts: string[] | null;
 	answer: string;
 	alts: string;
+	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
+	 * non-image types and legacy image rows. */
+	pin?: { x: number; y: number } | null;
 }
 
 export interface KernelAssignmentPromptRow {
@@ -804,7 +982,10 @@ export interface KernelAssignmentPromptRow {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	imageUrl: string;
 	questions: AssignmentQuestion[];
+	/** Phase-02 FR7 — structured option bank (labeled choice list). */
+	optionBank: string[];
 	note: string;
 	status: "draft" | "ready" | string;
 	/** ISO datetime string — snapshot convention (bank sort + `Thêm {date}`). */
@@ -913,3 +1094,215 @@ export const workspaceSettingsUpdateSchema = z.object({
 export type WorkspaceSettingsUpdate = z.infer<
 	typeof workspaceSettingsUpdateSchema
 >;
+
+/**
+ * Student Portal API contracts.
+ * Endpoints mounted under /api/student (GET /me, GET /overview, and POST /onboarding written by students).
+ * Trust anchor is session email + bridge provisioning.
+ */
+export const STUDENT_ERROR_CODES = {
+	NOT_LINKED: "STUDENT_NOT_LINKED",
+	AMBIGUOUS: "STUDENT_AMBIGUOUS",
+	EMAIL_UNVERIFIED: "STUDENT_EMAIL_UNVERIFIED",
+} as const;
+export type StudentErrorCode =
+	(typeof STUDENT_ERROR_CODES)[keyof typeof STUDENT_ERROR_CODES];
+
+/**
+ * Account-role gate errors (plan #260): a session whose `user.role` does not
+ * match the app is rejected at the API middleware layer — the student portal
+ * and the teacher app share one cross-subdomain cookie zone, so the form-level
+ * sign-in rejection alone is not enough.
+ */
+export const ACCOUNT_ERROR_CODES = {
+	STUDENT_ON_TEACHER_APP: "ACCOUNT_STUDENT_ROLE",
+	TEACHER_ON_STUDENT_PORTAL: "ACCOUNT_TEACHER_ROLE",
+} as const;
+export type AccountErrorCode =
+	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
+
+export const EXAM_INTERESTS = ["ielts", "toeic"] as const;
+export type ExamInterest = (typeof EXAM_INTERESTS)[number];
+
+export const IELTS_TARGET_BANDS = [
+	"5.0",
+	"5.5",
+	"6.0",
+	"6.5",
+	"7.0",
+	"7.5",
+	"8.0+",
+] as const;
+export const TOEIC_TARGET_SCORES = [
+	"450",
+	"550",
+	"650",
+	"750",
+	"850",
+	"990",
+] as const;
+
+export const LEARNING_GOAL_OPTIONS = [
+	"study-abroad",
+	"career",
+	"certification",
+	"communication",
+	"academic",
+	"other",
+] as const;
+export type LearningGoalOption = (typeof LEARNING_GOAL_OPTIONS)[number];
+
+export const DAILY_STUDY_HOUR_OPTIONS = [
+	"under-1",
+	"1-2",
+	"2-3",
+	"3-plus",
+] as const;
+export type DailyStudyHourOption = (typeof DAILY_STUDY_HOUR_OPTIONS)[number];
+
+/** Payload POST /api/student/onboarding — wizard 4 bước (D4/D7: đầy đủ, không skip). */
+const onboardingPayloadBase = z.object({
+	examInterest: z.enum(EXAM_INTERESTS),
+	/** Chuỗi hiển thị; hợp lệ phải nằm trong mảng tương ứng examInterest (superRefine). */
+	targetScore: z.string().min(1),
+	learningGoals: z
+		.array(z.enum(LEARNING_GOAL_OPTIONS))
+		.min(1)
+		.refine((goals) => new Set(goals).size === goals.length),
+	learningGoalsNote: z.string().trim().max(200).optional(),
+	dailyStudyHours: z.enum(DAILY_STUDY_HOUR_OPTIONS),
+});
+export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
+	(value, ctx) => {
+		const allowed =
+			value.examInterest === "ielts" ? IELTS_TARGET_BANDS : TOEIC_TARGET_SCORES;
+		if (!(allowed as readonly string[]).includes(value.targetScore)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["targetScore"],
+				message: `targetScore must be one of ${allowed.join(", ")}`,
+			});
+		}
+	},
+);
+export type StudentOnboardingPayload = z.infer<
+	typeof studentOnboardingPayloadSchema
+>;
+
+export const studentMeSchema = z.object({
+	user: z.object({
+		name: z.string(),
+		email: z.string(),
+	}),
+	student: z.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		orgId: z.string(),
+		examInterest: z.string().nullable().catch(null),
+		targetScore: z.string().nullable().catch(null),
+		learningGoals: z
+			.array(z.enum(LEARNING_GOAL_OPTIONS))
+			.nullable()
+			.catch(null),
+		learningGoalsNote: z.string().nullable().catch(null),
+		dailyStudyHours: z.string().nullable().catch(null),
+		/** ISO 8601 string — precedent: studentAssignmentSchema.submittedAt. */
+		onboardingCompletedAt: z.string().nullable().catch(null),
+	}),
+});
+export type StudentMe = z.infer<typeof studentMeSchema>;
+
+export const studentNextSessionSchema = z.object({
+	date: z.string(),
+	time: z.string(),
+	topic: z.string(),
+});
+export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
+
+export const studentClassSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	level: z.string(),
+	mode: z.string(),
+	schedule: z.string(),
+	sessionsDone: z.number().int(),
+	sessionsTotal: z.number().int(),
+	status: z.string(),
+	nextSession: studentNextSessionSchema.nullable(),
+	/**
+	 * Enrollment của học viên trong lớp này. 'invited' = giáo viên đã thêm vào
+	 * lớp nhưng học viên chưa xác nhận (issue #264): portal hiển thị trạng thái
+	 * chờ kích hoạt và gọi POST /api/student/enrollments/:enrollmentId/accept.
+	 * `.catch` fallback giữ hành vi "đang học" khi server cũ chưa trả field.
+	 */
+	enrollmentId: z.string().catch(""),
+	enrollmentStatus: z.enum(ENROLLMENT_STATUSES).catch("active"),
+});
+export type StudentClass = z.infer<typeof studentClassSchema>;
+
+export const studentAssignmentScoresSchema = z.object({
+	task: z.number(),
+	coherence: z.number(),
+	lexical: z.number(),
+	grammar: z.number(),
+});
+export type StudentAssignmentScores = z.infer<
+	typeof studentAssignmentScoresSchema
+>;
+
+export const studentAssignmentSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	source: z.enum(["class_assignment", "grading"]),
+	classId: z.string().nullable(),
+	className: z.string().nullable(),
+	due: z.string(),
+	submittedAt: z.string().nullable(),
+	scores: studentAssignmentScoresSchema.nullable(),
+});
+export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
+
+export const studentOverviewSchema = z.object({
+	student: z.object({
+		id: z.string(),
+		name: z.string(),
+	}),
+	classes: z.array(studentClassSchema),
+	assignments: z.array(studentAssignmentSchema),
+});
+export type StudentOverview = z.infer<typeof studentOverviewSchema>;
+
+/**
+ * Student Invitation & Multi-Org Contracts (Phase 2).
+ */
+export const STUDENT_INVITATION_ERROR_CODES = {
+	ALREADY_IN_ORG: "STUDENT_ALREADY_IN_ORG",
+	INVITATION_ALREADY_PENDING: "INVITATION_ALREADY_PENDING",
+	INVITATION_NOT_FOUND: "INVITATION_NOT_FOUND",
+} as const;
+export type StudentInvitationErrorCode =
+	(typeof STUDENT_INVITATION_ERROR_CODES)[keyof typeof STUDENT_INVITATION_ERROR_CODES];
+
+export const studentInviteSchema = z.object({
+	email: z.string().trim().email("Email không hợp lệ"),
+});
+export type StudentInviteInput = z.infer<typeof studentInviteSchema>;
+
+export interface StudentInvitationItem {
+	id: string;
+	orgId: string;
+	orgName?: string;
+	inviterUserId: string;
+	inviterName?: string;
+	email: string;
+	status: "pending" | "accepted" | "rejected" | "canceled";
+	createdAt: string | number | Date;
+	updatedAt?: string | number | Date;
+}
+
+export interface StudentOrgItem {
+	id: string;
+	name: string;
+	isCurrent: boolean;
+}

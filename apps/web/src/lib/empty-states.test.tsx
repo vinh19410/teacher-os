@@ -51,6 +51,22 @@ vi.mock("@/lib/repos/use-students", () => ({
 	}),
 }));
 
+vi.mock("@/lib/repos/invitations", () => ({
+	usePendingInvitations: () => ({
+		data: [],
+		isLoading: false,
+		error: null,
+	}),
+	useInviteStudent: () => ({
+		mutateAsync: vi.fn(),
+		isPending: false,
+	}),
+	useCancelInvitation: () => ({
+		mutateAsync: vi.fn(),
+		isPending: false,
+	}),
+}));
+
 vi.mock("@/lib/repos/use-classes", () => ({
 	useClasses: () => ({
 		classes: mockStoreData.classes,
@@ -85,7 +101,7 @@ describe("List empty states (Issue #118)", () => {
 		const html = renderToStaticMarkup(<StudentsRoute />);
 		expect(html).toContain('data-testid="students-empty-state"');
 		expect(html).toContain("Chưa có học viên nào");
-		expect(html).toContain("+ Thêm học viên");
+		expect(html).toContain("student portal");
 	});
 
 	it("renders empty state card on /classes when 0 classes exist", () => {
@@ -138,6 +154,7 @@ describe("List empty states (Issue #118)", () => {
 				skills: ["Writing"],
 				mode: "Online",
 				studentIds: [],
+				invitedStudentIds: [],
 				syllabusId: "",
 				schedule: JSON.stringify({ days: [], start: "18:00", end: "19:30" }),
 				sessionsTotal: 10,

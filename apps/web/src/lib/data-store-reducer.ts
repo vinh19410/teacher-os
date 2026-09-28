@@ -2,7 +2,6 @@ import type { KernelAction } from "./data-actions";
 import type {
 	ClassGroup,
 	MockData,
-	Student,
 	Syllabus,
 	SyllabusModule,
 } from "./mock-data";
@@ -83,80 +82,29 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "create-assignment-prompt":
 		case "assign-class-prompt":
 			return state;
-		case "add-student": {
-			const { name, phone, email, parentName, classId } = action.payload;
-			const student: Student = {
-				id: uid("s"),
-				name,
-				phone,
-				email,
-				hasPackage: false,
-				zalo: phone,
-				parent: { name: parentName, phone: "" },
-				targetBand: "—",
-				skills: [],
-				examDate: "",
-				pkg: {
-					total: 0,
-					done: 0,
-					remaining: 0,
-					price: 0,
-					mode: "Online",
-					start: "19/08",
-					expiry: "—",
-				},
-				tags: [],
-				notes: "",
-				avatar: name.substring(0, 2).toUpperCase(),
-				atRisk: false,
-			};
-			const nextStudents = [...state.students, student];
-			if (!classId) {
-				return { ...state, students: nextStudents };
-			}
-			return {
-				...state,
-				students: nextStudents,
-				classes: state.classes.map((c) => {
-					if (c.id !== classId) return c;
-					if (c.studentIds.includes(student.id)) return c;
-					return { ...c, studentIds: [...c.studentIds, student.id] };
-				}),
-			};
-		}
 		case "enroll-student": {
-			// Issue #122 fixture mirror: attach an EXISTING student to one class
-			// and refresh the package display from the enroll payload. The
-			// runtime truth comes from the kernel snapshot refresh.
+			// Issue #122 / #251 / #253: attach an EXISTING student to class as invited.
+			// No package fabricated — package is generated when accepted.
 			const existing = state.students.find((s) => s.id === action.studentId);
 			if (!existing) return state;
 			let attached = false;
 			const classes = state.classes.map((c) => {
 				if (c.id !== action.classId) return c;
-				if (c.studentIds.includes(existing.id)) return c;
+				if (
+					c.studentIds.includes(existing.id) ||
+					c.invitedStudentIds.includes(existing.id)
+				)
+					return c;
 				attached = true;
-				return { ...c, studentIds: [...c.studentIds, existing.id] };
+				return {
+					...c,
+					invitedStudentIds: [...c.invitedStudentIds, existing.id],
+				};
 			});
 			if (!attached) return state;
 			return {
 				...state,
 				classes,
-				students: state.students.map((s) =>
-					s.id === existing.id
-						? {
-								...s,
-								pkg: {
-									total: action.payload.total,
-									done: 0,
-									remaining: action.payload.total,
-									price: action.payload.price,
-									mode: action.payload.mode,
-									start: "19/08",
-									expiry: "—",
-								},
-							}
-						: s,
-				),
 			};
 		}
 		case "add-class": {
@@ -171,6 +119,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				mode: action.payload.mode,
 				syllabusId: action.payload.templateId || "",
 				studentIds: [],
+				invitedStudentIds: [],
 				schedule: JSON.stringify({
 					...action.payload.schedule,
 					// Match the server's dedupe + sort before persist.

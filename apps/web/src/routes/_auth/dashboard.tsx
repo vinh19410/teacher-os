@@ -16,6 +16,7 @@ import {
 	type DashboardRiskReason,
 	formatDashboardGreeting,
 	formatDashboardLead,
+	groupLessonsByClassSession,
 	lessonsToday,
 	upcomingLessonsThisWeek,
 } from "@/lib/dashboard-from-kernel";
@@ -34,7 +35,7 @@ const RISK_LABEL: Record<DashboardRiskReason, string> = {
 
 function DashboardRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
-	const { data, studentById } = useData();
+	const { data, studentById, classById } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	if (!session?.data?.user) {
 		throw redirect({ to: "/login" });
@@ -43,6 +44,7 @@ function DashboardRoute() {
 	const displayName = session.data.user.name || "Giáo viên";
 	const now = new Date();
 	const today = lessonsToday(data.lessons, now);
+	const todayGroups = groupLessonsByClassSession(today);
 	const risk = atRiskRows(data.students, data.lessons, now);
 	const upcoming = upcomingLessonsThisWeek(data.lessons, now);
 	const upcomingGroups: Array<{ day: number; lessons: typeof upcoming }> = [];
@@ -59,7 +61,7 @@ function DashboardRoute() {
 		<div>
 			<PageHead
 				title={formatDashboardGreeting(displayName, now)}
-				lead={formatDashboardLead(now, today.length)}
+				lead={formatDashboardLead(now, todayGroups.length)}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
 				<h2 className="font-semibold text-xl">Lịch hôm nay</h2>
@@ -71,46 +73,79 @@ function DashboardRoute() {
 				</Link>
 			</div>
 			<div className="flex flex-col gap-4">
-				{today.length === 0 && (
+				{todayGroups.length === 0 && (
 					<p className="font-mono text-meta text-xs">
 						Không có buổi học nào hôm nay.
 					</p>
 				)}
-				{today.map((l) => {
-					const s = studentById(l.sid);
-					if (!s) return null;
+				{todayGroups.map((g) => {
+					const className = classById(g.classId)?.name ?? "Lớp";
+					const studentRows = g.lessons
+						.map((l) => {
+							const s = studentById(l.sid);
+							if (!s) return null;
+							return { lesson: l, student: s };
+						})
+						.filter(
+							(
+								row,
+							): row is {
+								lesson: (typeof g.lessons)[number];
+								student: NonNullable<ReturnType<typeof studentById>>;
+							} => row !== null,
+						);
+
+					if (studentRows.length === 0) return null;
+
 					return (
 						<Card
-							key={l.id}
+							key={`${g.classId}-${g.time}`}
 							variant="white"
-							className="flex items-center gap-4"
+							className="flex flex-col gap-3"
 						>
-							<Avatar text={s.avatar} size="md" />
-							<div className="min-w-0 flex-1">
-								<div className="font-semibold text-sm">{s.name}</div>
-								<div className="font-mono text-meta text-xs">
-									{l.time} · {l.dur}' · {l.type} · {l.topic}
+							<div className="flex items-center gap-3">
+								<Avatar text={className.charAt(0)} size="md" />
+								<div className="min-w-0 flex-1">
+									<div className="font-semibold text-sm">{className}</div>
+									<div className="font-mono text-meta text-xs">
+										{g.time} · {g.dur}' · {g.type} · {g.topic}
+									</div>
 								</div>
 							</div>
-							{l.status === "completed" ? (
-								<Badge variant="success" dot>
-									Đã học
-								</Badge>
-							) : (
-								<Button
-									size="sm"
-									disabled={busy || isPending(l.id)}
-									onClick={() =>
-										void run(
-											l.id,
-											{ type: "check-in", lessonId: l.id },
-											"Đã điểm danh.",
-										)
-									}
-								>
-									{isPending(l.id) ? "Đang lưu…" : "Điểm danh"}
-								</Button>
-							)}
+							<div className="flex flex-col gap-2 border-border/50 border-t pt-2">
+								{studentRows.map(({ lesson: l, student: s }) => (
+									<div
+										key={l.id}
+										className="flex items-center justify-between gap-3"
+									>
+										<div className="flex min-w-0 items-center gap-2">
+											<Avatar text={s.avatar} size="sm" />
+											<span className="truncate font-medium text-sm">
+												{s.name}
+											</span>
+										</div>
+										{l.status === "completed" ? (
+											<Badge variant="success" dot>
+												Đã học
+											</Badge>
+										) : (
+											<Button
+												size="sm"
+												disabled={busy || isPending(l.id)}
+												onClick={() =>
+													void run(
+														l.id,
+														{ type: "check-in", lessonId: l.id },
+														"Đã điểm danh.",
+													)
+												}
+											>
+												{isPending(l.id) ? "Đang lưu…" : "Điểm danh"}
+											</Button>
+										)}
+									</div>
+								))}
+							</div>
 						</Card>
 					);
 				})}
@@ -122,34 +157,67 @@ function DashboardRoute() {
 						Không có buổi học nào trong phần còn lại của tuần.
 					</p>
 				) : (
-					upcomingGroups.map((group) => (
-						<div key={group.day}>
-							<div className="mt-4 mb-2 font-semibold text-sm">
-								{lessonDayLabel(group.day)}
-							</div>
-							<div className="flex flex-col gap-2">
-								{group.lessons.map((l) => {
-									const s = studentById(l.sid);
-									if (!s) return null;
-									return (
-										<Card
-											key={l.id}
-											variant="white"
-											className="flex items-center gap-4"
-										>
-											<Avatar text={s.avatar} size="sm" />
-											<div className="min-w-0 flex-1">
-												<div className="font-semibold text-sm">{s.name}</div>
-												<div className="font-mono text-meta text-xs">
-													{l.time} · {l.dur}&apos; · {l.type} · {l.topic}
+					upcomingGroups.map((group) => {
+						const classSessions = groupLessonsByClassSession(group.lessons);
+						return (
+							<div key={group.day}>
+								<div className="mt-4 mb-2 font-semibold text-sm">
+									{lessonDayLabel(group.day)}
+								</div>
+								<div className="flex flex-col gap-2">
+									{classSessions.map((g) => {
+										const className = classById(g.classId)?.name ?? "Lớp";
+										const studentRows = g.lessons
+											.map((l) => {
+												const s = studentById(l.sid);
+												if (!s) return null;
+												return { lesson: l, student: s };
+											})
+											.filter(
+												(
+													row,
+												): row is {
+													lesson: (typeof g.lessons)[number];
+													student: NonNullable<ReturnType<typeof studentById>>;
+												} => row !== null,
+											);
+
+										if (studentRows.length === 0) return null;
+
+										return (
+											<Card
+												key={`${group.day}-${g.classId}-${g.time}`}
+												variant="white"
+												className="flex flex-col gap-2"
+											>
+												<div className="flex items-center gap-3">
+													<Avatar text={className.charAt(0)} size="sm" />
+													<div className="min-w-0 flex-1">
+														<div className="font-semibold text-sm">
+															{className}
+														</div>
+														<div className="font-mono text-meta text-xs">
+															{g.time} · {g.dur}&apos; · {g.type} · {g.topic}
+														</div>
+													</div>
 												</div>
-											</div>
-										</Card>
-									);
-								})}
+												<div className="flex flex-col gap-1.5 border-border/50 border-t pt-2">
+													{studentRows.map(({ lesson: l, student: s }) => (
+														<div key={l.id} className="flex items-center gap-2">
+															<Avatar text={s.avatar} size="sm" />
+															<span className="font-medium text-sm">
+																{s.name}
+															</span>
+														</div>
+													))}
+												</div>
+											</Card>
+										);
+									})}
+								</div>
 							</div>
-						</div>
-					))
+						);
+					})
 				)}
 			</div>
 			<div className="mt-8">

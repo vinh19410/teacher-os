@@ -19,6 +19,7 @@
  */
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -41,11 +42,13 @@ async function bootAuth({ cookiePrefix }: BootOptions = {}) {
 	return createAuth({
 		db: libsql,
 		corsOrigin: STAGING_ORIGIN,
+		studentOrigins: [],
 		secret: "test-secret-0123456789abcdef0123456789abcdef",
 		baseURL: "https://localhost:8000",
 		...(cookiePrefix ? { cookiePrefix } : {}),
 		googleClientId: "test-dummy",
 		googleClientSecret: "test-dummy",
+		mailer: createLogMailer(),
 	});
 }
 

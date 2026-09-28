@@ -19,6 +19,10 @@ export interface PreviewDraft {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	imageUrl?: string;
+	/** Phase-02 FR7 — the bank must survive the preview round trip like
+	 * `transcript` does; dropping it here would silently wipe the panel. */
+	optionBank?: string[];
 	items?: QuestionItem[];
 }
 function isPreviewDraft(value: unknown): value is PreviewDraft {

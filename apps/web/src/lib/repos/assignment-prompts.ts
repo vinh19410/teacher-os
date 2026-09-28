@@ -22,7 +22,10 @@ export function mapAssignmentPrompts(
 		cueTopic: row.cueTopic,
 		cuePoints: row.cuePoints,
 		audioName: row.audioName,
+		imageUrl: row.imageUrl ?? "",
 		questions: row.questions,
+		// Legacy rows predate option_bank — collapse to [] like imageUrl (#269).
+		optionBank: row.optionBank ?? [],
 		note: row.note,
 		status: row.status === "ready" ? "ready" : "draft",
 		createdAt: row.createdAt,

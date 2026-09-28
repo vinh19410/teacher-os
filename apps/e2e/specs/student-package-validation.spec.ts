@@ -1,122 +1,22 @@
-import { expect, type Page, type Request, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
- * E2E scenarios for student creation form:
- * - Phone digits-only + Email required + No package fields on create form (D2/D3)
- * - Enroll existing student preserves package fields and blocks total 0 (D4)
- * - Create student in class derives package from class (D1)
+ * E2E scenarios for student package and enrollment validation:
+ * - Enroll existing student has no package inputs (derived by server) (D4)
+ * - Enrolled student derives package from class on activation, detail displays class (D1)
  */
 
-/** Observe-only request counter (no mocking): POSTs hitting `needle` while
- * `action` runs. Registered BEFORE the action so nothing slips past. */
-async function countPosts(
-	page: Page,
-	needle: string,
-	action: () => Promise<void>,
-): Promise<number> {
-	let posts = 0;
-	const onRequest = (request: Request) => {
-		if (request.method() === "POST" && request.url().includes(needle)) {
-			posts += 1;
-		}
-	};
-	page.on("request", onRequest);
-	try {
-		await action();
-	} finally {
-		page.off("request", onRequest);
-	}
-	return posts;
-}
-
-/** The <span> holding a per-field error: a sibling of the labeled input. */
-function fieldError(page: Page, label: string) {
-	return page.getByRole("dialog").getByLabel(label).locator("xpath=..");
-}
-
-test("students → form tạo không có input gói, SĐT chỉ số + email bắt buộc (D2/D3)", async ({
-	page,
-}) => {
-	const STUDENT_NAME = "QC-240 Form Tao";
-
-	await signUpViaUi(page);
-
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/students$/);
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	const dialog = page.getByRole("dialog");
-	await expect(dialog.getByText("Thêm học viên mới")).toBeVisible();
-
-	// 1. Form create KHÔNG còn 3 input gói
-	await expect(dialog.getByLabel("Số buổi gói")).toHaveCount(0);
-	await expect(dialog.getByLabel("Đơn giá (VND)")).toHaveCount(0);
-	await expect(dialog.getByLabel("Hình thức")).toHaveCount(0);
-
-	await dialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	const phoneInput = dialog.getByLabel("SĐT *");
-	const emailInput = dialog.getByLabel("Email *");
-	const save = dialog.getByRole("button", { name: "Lưu", exact: true });
-
-	// 2. SĐT strip ký tự không phải số ngay khi gõ
-	await phoneInput.fill("09ab 12+");
-	expect(await phoneInput.inputValue()).toBe("0912");
-
-	// 3. SĐT rỗng bị chặn
-	await phoneInput.fill("");
-	const blockedEmptyPhone = await countPosts(page, "/api/students", () =>
-		save.click(),
-	);
-	await expect(
-		fieldError(page, "SĐT *").getByText("SĐT chỉ gồm chữ số"),
-	).toBeVisible();
-	expect(blockedEmptyPhone).toBe(0);
-
-	// 4. SĐT hợp lệ nhưng email sai format bị chặn
-	await phoneInput.fill("0901234567");
-	await emailInput.fill("not-an-email");
-	const blockedBadEmail = await countPosts(page, "/api/students", () =>
-		save.click(),
-	);
-	await expect(
-		fieldError(page, "Email *").getByText("Email không hợp lệ."),
-	).toBeVisible();
-	expect(blockedBadEmail).toBe(0);
-
-	// 5. Email rỗng bị chặn
-	await emailInput.fill("");
-	const blockedEmptyEmail = await countPosts(page, "/api/students", () =>
-		save.click(),
-	);
-	await expect(
-		fieldError(page, "Email *").getByText("Vui lòng nhập email."),
-	).toBeVisible();
-	expect(blockedEmptyEmail).toBe(0);
-
-	// 6. Nhập đủ hợp lệ -> Lưu thành công, dialog đóng, row hiện "Chưa có gói"
-	await emailInput.fill("hocvien@example.com");
-	const saved = await countPosts(page, "/api/students", () => save.click());
-	await expect(dialog).toBeHidden();
-	expect(saved).toBe(1);
-
-	const row = page.locator("tr", { hasText: STUDENT_NAME });
-	await expect(row).toBeVisible();
-	await expect(row.getByText("Chưa có gói")).toBeVisible();
-});
-
-test("class detail → enroll học viên có sẵn vẫn có 3 input gói và chặn gói 0 buổi theo field (D4)", async ({
+test("class detail → enroll học viên có sẵn KHÔNG có input gói, chọn học viên là enroll được (D4)", async ({
 	page,
 }) => {
 	const CLASS_NAME = "E2E 240 Lớp enroll";
 	const STUDENT_NAME = "QC-240 Enrollable";
 
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 
-	// Tạo học viên trước bằng helper (D2: tạo ngoài lớp)
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/students$/);
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	// Tạo học viên trước bằng helper seed
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 	// Tạo lớp học
 	await page.getByText("Lớp học", { exact: true }).first().click();
@@ -134,38 +34,43 @@ test("class detail → enroll học viên có sẵn vẫn có 3 input gói và c
 	await expect(classDialog).toBeHidden();
 
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
-		dialog.getByText("Thêm học viên", { exact: true }),
+		dialog.getByText("Thêm học viên vào lớp", { exact: true }),
 	).toBeVisible();
 
-	// Mode "Học viên có sẵn" vẫn hiển thị 3 input gói (D4)
-	await expect(dialog.getByLabel("Số buổi gói")).toBeVisible();
-	await expect(dialog.getByLabel("Đơn giá (VND)")).toBeVisible();
-	await expect(dialog.getByLabel("Hình thức")).toBeVisible();
+	// Modal enroll KHÔNG có 3 input gói (D4)
+	await expect(dialog.getByLabel("Số buổi gói")).not.toBeVisible();
+	await expect(dialog.getByLabel("Đơn giá (VND)")).not.toBeVisible();
+	await expect(dialog.getByLabel("Hình thức")).not.toBeVisible();
 
 	const option = dialog.getByRole("option", { name: STUDENT_NAME });
 	await expect(option).toBeVisible();
 	await option.click();
 
-	// Enroll với số buổi 0 bị chặn
-	await dialog.getByLabel("Số buổi gói").fill("0");
-	const blockedEnroll = await countPosts(page, "/enroll", () =>
-		dialog.getByRole("button", { name: "Lưu", exact: true }).click(),
-	);
-	await expect(
-		fieldError(page, "Số buổi gói").getByText("từ 1 trở lên"),
-	).toBeVisible();
-	await expect(dialog).toBeVisible();
-	expect(blockedEnroll).toBe(0);
+	// Chọn học viên → click Lưu → enroll thành công, dialog đóng
+	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 });
 
-test("tạo học viên trong lớp → gói derive từ lớp (D1)", async ({ page }) => {
+test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, detail hiển thị lớp học (D1)", async ({
+	page,
+}) => {
 	const CLASS_NAME = "E2E 240 Lớp Derive";
 	const STUDENT_NAME = "QC-240 Student Derive";
+	const STUDENT_EMAIL = "derive@e2e.test";
 
-	await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaUi(page);
+
+	// Seed học viên vào org của teacher 2
+	await seedStudent({
+		teacherEmail: teacherEmail2,
+		name: STUDENT_NAME,
+		email: STUDENT_EMAIL,
+		phone: "0908888999",
+	});
 
 	// Tạo lớp có Học phí = 500.000đ và 12 buổi
 	await page.getByText("Lớp học", { exact: true }).first().click();
@@ -183,36 +88,43 @@ test("tạo học viên trong lớp → gói derive từ lớp (D1)", async ({ p
 		.click();
 	await expect(classDialog).toBeHidden();
 
-	// Vào lớp -> "+ Thêm học viên" -> tab "Tạo học viên mới"
+	// Vào lớp -> "+ Thêm học viên vào lớp"
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
-
-	// Khi chưa có học viên nào trong org, modal mở thẳng create form; nếu có tab thì click "Tạo học viên mới"
-	const createTab = dialog.getByRole("button", { name: "Tạo học viên mới" });
-	if (await createTab.isVisible()) {
-		await createTab.click();
-	}
-
-	await dialog.getByLabel("Họ tên học viên *").fill(STUDENT_NAME);
-	await dialog.getByLabel("SĐT *").fill("0908888999");
-	await dialog.getByLabel("Email *").fill("derive@e2e.test");
+	const option = dialog.getByRole("option", { name: STUDENT_NAME });
+	await expect(option).toBeVisible();
+	await option.click();
 	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(dialog).toBeHidden();
 
-	// Roster hiện học viên
+	// Roster hiện học viên và kích hoạt
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
-	// Vào detail học viên -> gói derive 12 buổi, 500.000đ, Online
+	// List học viên: hàng hiển thị lớp đã enroll
 	await page.getByText("Học viên", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/students$/);
-	await page.getByText(STUDENT_NAME).click();
-	const packageCard = page.locator("div", {
-		has: page.getByText("Gói học", { exact: true }),
-	});
-	await expect(packageCard.getByText("Gói học", { exact: true })).toBeVisible();
-	await expect(packageCard.getByText("Tổng buổi")).toBeVisible();
-	await expect(packageCard.getByText("500.000đ")).toBeVisible();
-	await expect(packageCard.getByText("Online")).toBeVisible();
-	await expect(page.getByText("Email: derive@e2e.test")).toBeVisible();
+	const row = page.locator("tr", { hasText: STUDENT_NAME });
+	await expect(row.getByText(CLASS_NAME)).toBeVisible();
+
+	// Vào detail học viên -> card "Lớp học" hiện lớp vừa tạo
+	await row.getByText(STUDENT_NAME).click();
+	await expect(page.getByText(CLASS_NAME)).toBeVisible();
+	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
+
+	// Trang Học phí: derive gói từ lớp (12 buổi, trạng thái Đang học)
+	await page.getByText("Học phí", { exact: true }).first().click();
+	await expect(page).toHaveURL(/\/tuition$/);
+	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
+	await expect(tuitionRow).toBeVisible();
+	await expect(tuitionRow.getByText("0/12")).toBeVisible();
+	await expect(tuitionRow.getByText("Đang học")).toBeVisible();
 });

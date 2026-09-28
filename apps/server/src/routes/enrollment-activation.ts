@@ -1,0 +1,215 @@
+import {
+	parseStartDateStrict,
+	parseStoredSchedule,
+	skeletonOf,
+} from "@teacher-os/api/skeleton";
+import { classTable } from "@teacher-os/db/schema/class";
+import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { lesson } from "@teacher-os/db/schema/lesson";
+import { sessionPackage } from "@teacher-os/db/schema/session-package";
+import { and, eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
+import type { Db } from "../app";
+
+function toMinutes(hhmm: string): number {
+	// TIME_REGEX guarantees exactly two numeric parts.
+	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
+	return hours * 60 + minutes;
+}
+
+/**
+ * Expand a class's structured schedule into `sessionsTotal` upcoming lesson
+ * rows for one enrollment (issue #55). Schedule/date parsing lives in
+ * @teacher-os/api/skeleton — the same helpers the backfill uses, so a
+ * generated row's date always matches what the backfill would have stamped.
+ * Fails closed for legacy/invalid schedules (no rows at all, unchanged from
+ * before #98). Rows carry weekday plus the occurrence identity `date`
+ * (yyyy-mm-dd of the k-th occurrence of that weekday from startDate) so every
+ * row is born dated when the class inputs are truthful; an invalid startDate
+ * yields date:null rows and the class stays on the frozen legacy path. day is
+ * 1-7 with 1 = Monday, the schedule JSON is 0-6 with 0 = Monday, hence the +1
+ * — never JS getDay() (0 = Sunday). dur wraps midnight (23:00→00:30 = 90).
+ */
+export function generateScheduleLessons(input: {
+	schedule: string;
+	startDate: string;
+	sessionsTotal: number;
+	orgId: string;
+	classId: string;
+	enrollmentId: string;
+}): Array<Omit<typeof lesson.$inferInsert, "id" | "createdAt">> {
+	const parsed = parseStoredSchedule(input.schedule);
+	if (!parsed || input.sessionsTotal <= 0) return [];
+	const startISO = parseStartDateStrict(input.startDate);
+	// Skeleton keys are lesson weekdays 1-7; parsed.days are 0-6 Mon-first.
+	const skeleton = startISO
+		? skeletonOf(parsed, startISO, input.sessionsTotal)
+		: null;
+	const dur = (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
+	const ordinalByDay = new Map<number, number>();
+	return Array.from({ length: input.sessionsTotal }, (_, i) => {
+		const day = (parsed.days[i % parsed.days.length] ?? 0) + 1;
+		let date: string | null = null;
+		if (skeleton) {
+			const ordinal = ordinalByDay.get(day) ?? 0;
+			date = skeleton.get(day)?.[ordinal] ?? null;
+			ordinalByDay.set(day, ordinal + 1);
+		}
+		return {
+			orgId: input.orgId,
+			classId: input.classId,
+			enrollmentId: input.enrollmentId,
+			// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
+			day,
+			time: parsed.start,
+			dur,
+			type: "1:1",
+			status: "upcoming",
+			topic: "",
+			zoom: "",
+			date,
+		};
+	});
+}
+
+// dd/MM in Vietnam time — Workers run in UTC, so local getters drift a day
+// before 07:00 Asia/Ho_Chi_Minh.
+function formatDayMonth(date: Date): string {
+	return new Intl.DateTimeFormat("en-GB", {
+		timeZone: "Asia/Ho_Chi_Minh",
+		day: "2-digit",
+		month: "2-digit",
+	}).format(date);
+}
+
+export type ActivateEnrollmentResult =
+	| { ok: true }
+	| { ok: false; error: "enrollment" | "class" };
+
+/**
+ * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage +
+ * lessons trong một atomic batch. Caller: nút "Kích hoạt" của teacher
+ * (kernel.ts) và nút "Tham gia lớp" của student portal (student.ts) — caller
+ * tự chịu trách nhiệm scoping (org của teacher / enrollment của chính student).
+ *
+ * Idempotent qua CAS UPDATE:
+ * - Nếu status đã là 'active', trả ok không tạo thêm package/lessons.
+ * - Hai request song song: chỉ một request UPDATE thành công (rows affected = 1)
+ *   và insert; request còn lại rows affected = 0 -> re-read thấy 'active' -> trả ok.
+ * - Bắt unique-violation của session_package_enrollment_uq phòng ngừa race
+ *   condition -> trả ok nếu active.
+ */
+export async function activateEnrollment(
+	db: Db,
+	orgId: string,
+	enrollmentId: string,
+): Promise<ActivateEnrollmentResult> {
+	// Re-read sau race: request đồng thời khác có thể đã kích hoạt enrollment.
+	async function isAlreadyActive(): Promise<boolean> {
+		const [row] = await db
+			.select({ status: enrollment.status })
+			.from(enrollment)
+			.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
+		return row?.status === "active";
+	}
+
+	// Pre-read: kiểm tra tồn tại và org-scoping
+	const [existingEnrollment] = await db
+		.select({
+			id: enrollment.id,
+			classId: enrollment.classId,
+			studentId: enrollment.studentId,
+			status: enrollment.status,
+		})
+		.from(enrollment)
+		.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
+	if (!existingEnrollment) {
+		return { ok: false, error: "enrollment" };
+	}
+	if (existingEnrollment.status === "active") {
+		return { ok: true };
+	}
+
+	const [cls] = await db
+		.select({
+			id: classTable.id,
+			schedule: classTable.schedule,
+			sessionsTotal: classTable.sessionsTotal,
+			startDate: classTable.startDate,
+			mode: classTable.mode,
+			tuitionFee: classTable.tuitionFee,
+		})
+		.from(classTable)
+		.where(
+			and(
+				eq(classTable.id, existingEnrollment.classId),
+				eq(classTable.orgId, orgId),
+			),
+		);
+	if (!cls) {
+		return { ok: false, error: "class" };
+	}
+
+	try {
+		// CAS update: chỉ flip nếu status vẫn là 'invited'
+		const updated = await db
+			.update(enrollment)
+			.set({ status: "active" })
+			.where(
+				and(
+					eq(enrollment.id, enrollmentId),
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.status, "invited"),
+				),
+			)
+			.returning({ id: enrollment.id });
+
+		if (updated.length === 0) {
+			// Đã bị kích hoạt bởi request đồng thời khác
+			if (await isAlreadyActive()) {
+				return { ok: true };
+			}
+			return { ok: false, error: "enrollment" };
+		}
+
+		// Won CAS: sinh session package + chuỗi buổi học trong 1 batch
+		const packageValues = {
+			orgId,
+			studentId: existingEnrollment.studentId,
+			total: cls.sessionsTotal,
+			price: cls.tuitionFee ?? 0,
+			mode: cls.mode,
+			start: formatDayMonth(new Date()),
+			expiry: "",
+			status: "active",
+			enrollmentId,
+		};
+
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(sessionPackage).values({
+				id: crypto.randomUUID(),
+				...packageValues,
+			}),
+		];
+		for (const row of generateScheduleLessons({
+			schedule: cls.schedule,
+			startDate: cls.startDate,
+			sessionsTotal: cls.sessionsTotal,
+			orgId,
+			classId: cls.id,
+			enrollmentId,
+		})) {
+			statements.push(
+				db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
+			);
+		}
+		await db.batch(statements);
+		return { ok: true };
+	} catch (err: unknown) {
+		// Phòng vệ unique constraint nếu có race còn sót
+		if (await isAlreadyActive()) {
+			return { ok: true };
+		}
+		throw err;
+	}
+}

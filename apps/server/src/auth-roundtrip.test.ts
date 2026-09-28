@@ -11,6 +11,7 @@
 
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -35,10 +36,12 @@ describe("real better-auth round-trip under node", () => {
 		const auth = createAuth({
 			db: libsql,
 			corsOrigin: CORS_ORIGIN,
+			studentOrigins: [],
 			secret: "test-secret-0123456789abcdef0123456789abcdef",
 			baseURL: "http://localhost:8000",
 			googleClientId: "test-dummy",
 			googleClientSecret: "test-dummy",
+			mailer: createLogMailer(),
 		});
 
 		app = buildApp({

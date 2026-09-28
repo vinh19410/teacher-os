@@ -45,8 +45,12 @@ export function AddInvoiceModal({
 		}
 	}, [open]);
 
+	const activeEnrollments = (data.enrollments ?? []).filter(
+		(e) => e.status === "active",
+	);
+
 	function resetFields() {
-		setEnrollmentId(data.enrollments[0]?.id ?? "");
+		setEnrollmentId(activeEnrollments[0]?.id ?? "");
 		setAmount("");
 		setDue(formatDateInputValue(new Date()));
 		setNote("");
@@ -56,7 +60,7 @@ export function AddInvoiceModal({
 		setNoteError(undefined);
 	}
 
-	const enrollmentOptions = (data.enrollments ?? []).map((enrollment) => {
+	const enrollmentOptions = activeEnrollments.map((enrollment) => {
 		const student = data.students.find((s) => s.id === enrollment.studentId);
 		const cls = data.classes.find((c) => c.id === enrollment.classId);
 		return {
@@ -66,7 +70,6 @@ export function AddInvoiceModal({
 				.join(" · "),
 		};
 	});
-
 	async function submit(e: FormEvent) {
 		e.preventDefault();
 		if (saving) return;

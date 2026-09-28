@@ -401,66 +401,6 @@ describe("reducer", () => {
 		);
 	});
 
-	const newStudentPayload = {
-		name: "Test Student",
-		phone: "0900",
-		email: "test@example.com",
-		parentName: "P",
-	};
-
-	test("add-student appends with pkg.done 0 and s- id", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: newStudentPayload,
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		const added = next.students[next.students.length - 1];
-		expect(added.pkg.done).toBe(0);
-		expect(added.pkg.remaining).toBe(0);
-		expect(added.id).toMatch(/^s-/);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with unknown classId leaves classes unchanged", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "c-missing" },
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with empty classId leaves classes unchanged", () => {
-		const before = cloneSeed();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "" },
-		});
-		expect(next.students.length).toBe(before.students.length + 1);
-		expect(next.classes).toEqual(before.classes);
-	});
-
-	test("add-student with classId enrolls only that class", () => {
-		const before = cloneSeed();
-		const beforeC1 = before.classes.find((c) => c.id === "c1");
-		expect(beforeC1).toBeDefined();
-		const next = reducer(before, {
-			type: "add-student",
-			payload: { ...newStudentPayload, classId: "c1" },
-		});
-		const added = next.students[next.students.length - 1];
-		expect(added.id).toMatch(/^s-/);
-		expect(next.classes.find((c) => c.id === "c1")).toEqual({
-			...beforeC1,
-			studentIds: [...(beforeC1?.studentIds ?? []), added.id],
-		});
-		expect(next.classes.filter((c) => c.id !== "c1")).toEqual(
-			before.classes.filter((c) => c.id !== "c1"),
-		);
-	});
-
 	test("add-class appends with sessionsDone 0, c- id, and JSON-string schedule", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
@@ -528,10 +468,8 @@ describe("reducer", () => {
 	});
 });
 
-describe("enroll-student (issue #122)", () => {
-	const enrollPayload = { total: 8, price: 100, mode: "Offline" as const };
-
-	test("enroll-student adds an existing student to the class and sets pkg", () => {
+describe("enroll-student (issue #122 / #251 / #253)", () => {
+	test("enroll-student adds an existing student to the class as invited without pkg fabrication", () => {
 		const before = cloneSeed();
 		const beforeStudent = before.students.find((s) => s.id === "s4");
 		expect(beforeStudent).toBeDefined();
@@ -539,20 +477,14 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c2",
 			studentId: "s4",
-			payload: enrollPayload,
 		});
-		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual(["s4"]);
+		expect(next.classes.find((c) => c.id === "c2")?.invitedStudentIds).toEqual([
+			"s4",
+		]);
+		expect(next.classes.find((c) => c.id === "c2")?.studentIds).toEqual([]);
 		const enrolled = next.students.find((s) => s.id === "s4");
-		expect(enrolled?.pkg).toEqual({
-			total: 8,
-			done: 0,
-			remaining: 8,
-			price: 100,
-			mode: "Offline",
-			start: "19/08",
-			expiry: "—",
-		});
-		// The student is moved, not duplicated.
+		expect(enrolled?.pkg).toEqual(beforeStudent?.pkg);
+		// The student is not duplicated.
 		expect(next.students.length).toBe(before.students.length);
 	});
 
@@ -562,7 +494,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c-missing",
 			studentId: "s1",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});
@@ -573,7 +504,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c2",
 			studentId: "s-missing",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});
@@ -584,7 +514,6 @@ describe("enroll-student (issue #122)", () => {
 			type: "enroll-student",
 			classId: "c1",
 			studentId: "s1",
-			payload: enrollPayload,
 		});
 		expect(next).toEqual(before);
 	});

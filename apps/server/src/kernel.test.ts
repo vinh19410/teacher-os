@@ -79,7 +79,11 @@ async function createTestApp() {
 			.innerJoin(authUser, eq(authSession.userId, authUser.id))
 			.where(eq(authSession.token, token));
 		if (!row || row.expiresAt.getTime() <= Date.now()) return null;
-		return { userId: row.userId, userName: row.userName };
+		return {
+			userId: row.userId,
+			userName: row.userName,
+			role: "teacher" as const,
+		};
 	}
 
 	const app = buildApp({
@@ -136,7 +140,11 @@ async function createTestApp() {
 	}
 
 	async function orgIdOf(session: TestSession): Promise<string> {
-		const [membershipRow] = await membershipsOf(session.userId);
+		let [membershipRow] = await membershipsOf(session.userId);
+		if (!membershipRow) {
+			await call("/api/readyz", { session });
+			[membershipRow] = await membershipsOf(session.userId);
+		}
 		if (!membershipRow) throw new Error("bootstrap the org before inserting");
 		return membershipRow.orgId;
 	}
@@ -222,6 +230,7 @@ async function createTestApp() {
 		overrides: {
 			type?: string;
 			skills?: string[];
+			mode?: "Online" | "Offline";
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
 			tuitionFee?: number | null;
@@ -288,19 +297,55 @@ async function createTestApp() {
 			classId?: string;
 		} = {},
 	): Promise<string> {
-		const res = await call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name,
-				phone: "0900000000",
-				email: `stu-${crypto.randomUUID()}@test.local`,
-				parentName: "Phụ huynh",
-				...(extra.classId ? { classId: extra.classId } : {}),
-			},
+		const orgId = await orgIdOf(session);
+		const studentId = crypto.randomUUID();
+		const email = `stu-${crypto.randomUUID()}@test.local`;
+		await libsql.insert(schema.student).values({
+			id: studentId,
+			orgId,
+			name,
+			phone: "0900000000",
+			email,
+			zalo: "0900000000",
+			parentName: "Phụ huynh",
+			parentPhone: "",
 		});
-		expect(res.status).toBe(201);
-		return ((await res.json()) as { id: string }).id;
+		if (extra.classId) {
+			const enrollmentId = crypto.randomUUID();
+			await libsql.insert(schema.enrollment).values({
+				id: enrollmentId,
+				orgId,
+				classId: extra.classId,
+				studentId,
+				status: "invited",
+			});
+		}
+		return studentId;
+	}
+
+	async function addActiveStudent(
+		session: TestSession,
+		name: string,
+		extra: {
+			classId?: string;
+		} = {},
+	): Promise<string> {
+		const studentId = await addStudent(session, name, extra);
+		if (extra.classId) {
+			const snap = await kernel(session);
+			const en = snap.enrollments.find(
+				(e) => e.classId === extra.classId && e.studentId === studentId,
+			);
+			if (en) {
+				const acceptRes = await call(`/api/enrollments/${en.id}/accept`, {
+					session,
+					method: "POST",
+					body: {},
+				});
+				expect(acceptRes.status).toBe(200);
+			}
+		}
+		return studentId;
 	}
 
 	return {
@@ -317,6 +362,7 @@ async function createTestApp() {
 		createSyllabus,
 		createModule,
 		addStudent,
+		addActiveStudent,
 	};
 }
 
@@ -1295,7 +1341,9 @@ describe("invoice create (issue #60)", () => {
 		t = await createTestApp();
 		session = await t.insertUser("Cô tạo invoice");
 		classId = await t.createClass(session, "Lớp invoice");
-		studentId = await t.addStudent(session, "Học viên invoice", { classId });
+		studentId = await t.addActiveStudent(session, "Học viên invoice", {
+			classId,
+		});
 		enrollmentId = await enrollmentIdOf(session, classId, studentId);
 	});
 
@@ -1396,9 +1444,13 @@ describe("invoice create (issue #60)", () => {
 		const other = await t.insertUser("Cô enrollment khác org");
 		await t.kernel(other);
 		const otherClassId = await t.createClass(other, "Lớp org khác");
-		const otherStudentId = await t.addStudent(other, "Học viên org khác", {
-			classId: otherClassId,
-		});
+		const otherStudentId = await t.addActiveStudent(
+			other,
+			"Học viên org khác",
+			{
+				classId: otherClassId,
+			},
+		);
 		const foreignEnrollmentId = await enrollmentIdOf(
 			other,
 			otherClassId,
@@ -1415,9 +1467,13 @@ describe("invoice create (issue #60)", () => {
 
 	test("enrollment whose student row is cross-org is 404 (snapshot visibility)", async () => {
 		const foreignClassId = await t.createClass(session, "Lớp lệch org");
-		const foreignStudentId = await t.addStudent(session, "Học viên lệch org", {
-			classId: foreignClassId,
-		});
+		const foreignStudentId = await t.addActiveStudent(
+			session,
+			"Học viên lệch org",
+			{
+				classId: foreignClassId,
+			},
+		);
 		const foreignEnrollmentId = await enrollmentIdOf(
 			session,
 			foreignClassId,
@@ -1439,6 +1495,30 @@ describe("invoice create (issue #60)", () => {
 		});
 		expect(res.status).toBe(404);
 	});
+
+	test("rejects invoice for invited enrollment with 409", async () => {
+		const invitedStudentId = await t.addStudent(
+			session,
+			"Học viên chờ kích hoạt",
+			{
+				classId,
+			},
+		);
+		const invitedEnrollmentId = await enrollmentIdOf(
+			session,
+			classId,
+			invitedStudentId,
+		);
+		const res = await postInvoice({
+			enrollmentId: invitedEnrollmentId,
+			amount: 500000,
+			due: "2026-09-15",
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			error: "Học viên chưa đồng ý tham gia lớp",
+		});
+	});
 });
 
 describe("kernel origin + content-type guards", () => {
@@ -1451,7 +1531,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST without Origin header is 403", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
 			origin: null,
@@ -1461,7 +1541,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST with a foreign Origin is 403", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
 			origin: "https://evil.example",
@@ -1471,7 +1551,7 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("POST with a non-JSON content-type is 415", async () => {
-		const res = await t.app.request("/api/students", {
+		const res = await t.app.request("/api/classes", {
 			method: "POST",
 			headers: {
 				cookie: `better-auth.session_token=${session.token}`,
@@ -1484,10 +1564,10 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("invalid body fails zod validation with 400", async () => {
-		const res = await t.call("/api/students", {
+		const res = await t.call("/api/classes", {
 			session,
 			method: "POST",
-			body: { phone: "" },
+			body: { name: "" },
 		});
 		expect(res.status).toBe(400);
 	});
@@ -1525,7 +1605,7 @@ describe("org isolation", () => {
 		expect(snapshotA.students).toHaveLength(1);
 	});
 
-	test("students with classId create enrollment + package atomically", async () => {
+	test("students with classId create invited enrollment; package created upon accept", async () => {
 		const session = await t.insertUser("Cô Pkg");
 		const classId = await t.createClass(session, "Lớp pkg");
 		const studentId = await t.addStudent(session, "Học viên gói", {
@@ -1534,18 +1614,37 @@ describe("org isolation", () => {
 
 		const snapshot = await t.kernel(session);
 		expect(snapshot.enrollments).toHaveLength(1);
-		expect(snapshot.enrollments[0]).toMatchObject({ classId, studentId });
-		expect(snapshot.packages).toHaveLength(1);
-		expect(snapshot.packages[0]).toMatchObject({
-			enrollmentId: snapshot.enrollments[0]?.id,
+		expect(snapshot.enrollments[0]).toMatchObject({
+			classId,
+			studentId,
+			status: "invited",
+		});
+		expect(snapshot.packages).toHaveLength(0);
+
+		// When accepted, package is created atomically
+		const acceptRes = await t.call(
+			`/api/enrollments/${snapshot.enrollments[0]?.id}/accept`,
+			{
+				session,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(acceptRes.status).toBe(200);
+
+		const acceptedSnapshot = await t.kernel(session);
+		expect(acceptedSnapshot.enrollments[0]?.status).toBe("active");
+		expect(acceptedSnapshot.packages).toHaveLength(1);
+		expect(acceptedSnapshot.packages[0]).toMatchObject({
+			enrollmentId: acceptedSnapshot.enrollments[0]?.id,
 			total: 12,
 			price: 0,
 			mode: "Online",
 			status: "active",
 		});
 		// Entitlement only: no done/remaining on the wire — derived downstream.
-		expect(snapshot.packages[0]).not.toHaveProperty("done");
-		expect(snapshot.packages[0]).not.toHaveProperty("remaining");
+		expect(acceptedSnapshot.packages[0]).not.toHaveProperty("done");
+		expect(acceptedSnapshot.packages[0]).not.toHaveProperty("remaining");
 	});
 
 	test("without classId no package is created", async () => {
@@ -3385,8 +3484,10 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toEqual([]);
 	});
 
-	test("enrolling a student generates sessionsTotal upcoming lessons on the kernel snapshot", async () => {
-		const studentId = await t.addStudent(session, "HV có lớp", { classId });
+	test("enrolling and activating a student generates sessionsTotal upcoming lessons on the kernel snapshot", async () => {
+		const studentId = await t.addActiveStudent(session, "HV có lớp", {
+			classId,
+		});
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(enrollment).toBeDefined();
@@ -3411,7 +3512,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			schedule: { days: [5], start: "09:00", end: "10:00" },
 			sessionsTotal: 50,
 		});
-		const studentId = await t.addStudent(session, "HV khóa dài", {
+		const studentId = await t.addActiveStudent(session, "HV khóa dài", {
 			classId: bigClassId,
 		});
 		const snapshot = await t.kernel(session);
@@ -3469,7 +3570,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 			startDate: "",
 			notes: "",
 		});
-		await t.addStudent(session, "HV lớp cũ", { classId: legacyClassId });
+		await t.addActiveStudent(session, "HV lớp cũ", { classId: legacyClassId });
 		const snapshot = await t.kernel(session);
 		expect(snapshot.lessons.filter((l) => l.classId === legacyClassId)).toEqual(
 			[],
@@ -3483,8 +3584,10 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 	});
 
 	test("group class: two enrollments get independent lesson sets (invariant 2)", async () => {
-		const firstId = await t.addStudent(session, "HV nhóm 1", { classId });
-		const secondId = await t.addStudent(session, "HV nhóm 2", { classId });
+		const firstId = await t.addActiveStudent(session, "HV nhóm 1", { classId });
+		const secondId = await t.addActiveStudent(session, "HV nhóm 2", {
+			classId,
+		});
 		const snapshot = await t.kernel(session);
 		const firstEnrollment = findEnrollment(snapshot, classId, firstId);
 		const secondEnrollment = findEnrollment(snapshot, classId, secondId);
@@ -3503,14 +3606,21 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toBe(false);
 	});
 
-	test("divergence pin: class sessionsTotal (12) and package total (10) stay independent on the wire", async () => {
-		const studentId = await t.addStudent(session, "HV gói lệch");
+	test("enroll mirrors the class package: total = class sessionsTotal", async () => {
+		const studentId = await t.addStudent(session, "HV gói chuẩn lớp");
 		const res = await t.call(`/api/classes/${classId}/enroll`, {
 			session,
 			method: "POST",
-			body: { studentId, total: 10, price: 400000, mode: "Online" },
+			body: { studentId },
 		});
 		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
 		expect(
@@ -3518,27 +3628,24 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 		).toHaveLength(12);
 		expect(
 			snapshot.packages.find((p) => p.enrollmentId === enrollment?.id)?.total,
-		).toBe(10);
+		).toBe(12);
 	});
 
 	test("cross-org: org B cannot enroll into org A's class and sees zero generated lessons", async () => {
 		const orgB = await t.insertUser("Cô Lịch B");
-		const attempt = await t.call("/api/students", {
+		const studentIdB = await t.addStudent(orgB, "HV intruder");
+		const attempt = await t.call(`/api/classes/${classId}/enroll`, {
 			session: orgB,
 			method: "POST",
 			body: {
-				name: "HV intruder",
-				phone: "0900000000",
-				email: "intruder@test.local",
-				parentName: "",
-				classId,
+				studentId: studentIdB,
 			},
 		});
 		expect(attempt.status).toBe(404);
 		const snapshotB = await t.kernel(orgB);
 		expect(snapshotB.lessons).toEqual([]);
 		expect(
-			snapshotB.students.find((s) => s.name === "HV intruder"),
+			snapshotB.enrollments.find((e) => e.classId === classId),
 		).toBeUndefined();
 	});
 });
@@ -3875,22 +3982,46 @@ describe("enroll existing student (issue #122)", () => {
 		});
 	}
 
-	test("happy path: enrollment + active package + generated lessons in one shot", async () => {
-		const classId = await t.createClass(session, "Lớp enroll #122");
+	test("happy path: enrollment creates invited, then accept activates package + generated lessons", async () => {
+		const classId = await t.createClass(session, "Lớp enroll #122", {
+			sessionsTotal: 24,
+			tuitionFee: 600000,
+			mode: "Offline",
+		});
 		const studentId = await t.addStudent(session, "HV có sẵn");
 
 		const res = await enroll(classId, {
 			studentId,
-			total: 24,
-			price: 600000,
-			mode: "Offline",
 		});
 		expect(res.status).toBe(201);
 		const { id: enrollmentId } = (await res.json()) as { id: string };
 
+		const initialSnapshot = await t.kernel(session);
+		const initialEnrollment = findEnrollment(
+			initialSnapshot,
+			classId,
+			studentId,
+		);
+		expect(initialEnrollment?.id).toBe(enrollmentId);
+		expect(initialEnrollment?.status).toBe("invited");
+		expect(
+			initialSnapshot.packages.filter((p) => p.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+		expect(
+			initialSnapshot.lessons.filter((l) => l.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+
+		// Accept
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+
 		const snapshot = await t.kernel(session);
 		const enrollment = findEnrollment(snapshot, classId, studentId);
-		expect(enrollment?.id).toBe(enrollmentId);
+		expect(enrollment?.status).toBe("active");
 
 		const pkg = snapshot.packages.find((p) => p.enrollmentId === enrollmentId);
 		expect(pkg).toMatchObject({
@@ -3907,23 +4038,29 @@ describe("enroll existing student (issue #122)", () => {
 		const lessons = snapshot.lessons.filter(
 			(l) => l.enrollmentId === enrollmentId,
 		);
-		expect(lessons).toHaveLength(12);
+		expect(lessons).toHaveLength(24);
 	});
 
-	test("package fields stay field-identical with the create-new branch", async () => {
+	test("package fields stay field-identical with the create-new branch (D1 derived from class)", async () => {
 		const classId = await t.createClass(session, "Lớp enroll gói");
 		const studentId = await t.addStudent(session, "HV gói chuẩn");
 		const res = await enroll(classId, { studentId });
 		expect(res.status).toBe(201);
 		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
 
 		const pkg = (await t.kernel(session)).packages.find(
 			(p) => p.enrollmentId === enrollmentId,
 		);
-		// Defaults mirror studentCreateSchema: total 10, price 400000, Online.
+		// D1: mirrors class defaults (sessionsTotal 12, tuitionFee null -> 0, Online).
 		expect(pkg).toMatchObject({
-			total: 10,
-			price: 400000,
+			total: 12,
+			price: 0,
 			mode: "Online",
 			status: "active",
 		});
@@ -3972,9 +4109,8 @@ describe("student package minimums (issue #115)", () => {
 		session = await t.insertUser("Cô Min Gói");
 	});
 
-	// total=0 is the red-first pair: min(0) on develop still accepts a
-	// zero-session package, which is the server half of QC #115.
-	test("enroll existing student with total 0 is rejected with 400", async () => {
+	// D1: enroll derives package from class; extra fields in body are ignored
+	test("enroll existing student ignores extra package fields (D1)", async () => {
 		const classId = await t.createClass(session, "Lớp min gói");
 		const studentId = await t.addStudent(session, "HV min gói");
 		const res = await t.call(`/api/classes/${classId}/enroll`, {
@@ -3982,83 +4118,40 @@ describe("student package minimums (issue #115)", () => {
 			method: "POST",
 			body: { studentId, total: 0, price: 400000, mode: "Online" },
 		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student missing phone is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV thiếu phone",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student phone with spaces is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV phone space",
-				phone: "0900 000 000",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student phone with non-digits is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV phone chữ",
-				phone: "0900abc",
-				email: "hv@test.local",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student missing email is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV thiếu email",
-				phone: "0900000000",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student invalid email format is rejected with 400", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV email sai",
-				phone: "0900000000",
-				email: "not-an-email",
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("create student with valid phone digits and email succeeds with 201", async () => {
-		const res = await t.call("/api/students", {
-			session,
-			method: "POST",
-			body: {
-				name: "HV hợp lệ",
-				phone: "0901234567",
-				email: "hop.le@test.local",
-			},
-		});
 		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+		const acceptRes = await t.call(`/api/enrollments/${enrollmentId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const enrollment = findEnrollment(snapshot, classId, studentId);
+		expect(
+			snapshot.packages.find((p) => p.enrollmentId === enrollment?.id)?.total,
+		).toBe(12);
+	});
+
+	test("POST /api/students route is removed and returns 404", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: {
+				name: "HV test",
+				phone: "0901234567",
+				email: "hv@test.local",
+			},
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("GET /api/students route remains active and returns 200", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "GET",
+		});
+		expect(res.status).toBe(200);
 	});
 });
 
@@ -4591,6 +4684,520 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(resMcq.status).toBe(400);
 	});
 
+	test("POST accepts every new reading type id from the 14-type catalog (#269)", async () => {
+		for (const [part, type, answer] of [
+			["p1", "note", "river"],
+			["p1", "shortans", "1800"],
+			["p1", "diagram", "steam"],
+			["p2", "summary", "hot dry air"],
+			["p2", "sentend", "A"],
+			["p2", "tablecomp", "1834"],
+			["p3", "features", "B"],
+			["p3", "flowchart", "tunnelling"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part,
+					type,
+					title: `Reading ${type} — catalog`,
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					questions: [{ stem: "Q1", opts: null, answer, alts: "" }],
+					note: "",
+					status: "draft",
+				},
+			});
+			expect(res.status, `${part}/${type}`).toBe(201);
+		}
+	});
+
+	test("POST rejects answers outside A–H for the new matching types with 400 (#269)", async () => {
+		for (const [part, type] of [
+			["p2", "sentend"],
+			["p3", "features"],
+		] as const) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part,
+					type,
+					title: `Reading ${type} invalid letter`,
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					questions: [{ stem: "Q1", opts: null, answer: "I", alts: "" }],
+					note: "",
+					status: "ready",
+				},
+			});
+			expect(res.status, `${type} answer "I"`).toBe(400);
+		}
+	});
+
+	test("POST reading diagram ready prompt rejects missing imageUrl with 400 (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — no image",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST reading non-diagram ready prompt needs no imageUrl (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p2",
+				type: "summary",
+				title: "Reading Summary — no image needed",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "hot dry air", alts: "" },
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST trims the imageUrl before persistence (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — padded URL",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "  https://example.com/padded.png  ",
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "steam",
+						alts: "",
+						pin: { x: 50, y: 40 },
+					},
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.imageUrl).toBe("https://example.com/padded.png");
+	});
+
+	test("POST rejects lowercase letter answers for matching types (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p3",
+				type: "features",
+				title: "Reading Features — lowercase letter",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [{ stem: "Q29", opts: null, answer: "b", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST rejects non-https imageUrl with 400 (#269)", async () => {
+		for (const imageUrl of [
+			"http://example.com/diagram.png",
+			"javascript:alert(1)",
+			"data:text/html,leak",
+		]) {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: {
+					skill: "reading",
+					part: "p1",
+					type: "diagram",
+					title: "Reading Diagram — bad scheme",
+					band: "7.0",
+					source: "",
+					prompt: "",
+					passage: "Passage",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					imageUrl,
+					questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+					note: "",
+					status: "draft",
+				},
+			});
+			expect(res.status, imageUrl).toBe(400);
+		}
+	});
+
+	test("POST reading diagram prompt persists imageUrl through the snapshot (#269)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — with image",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "https://example.com/diagram.png",
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "steam",
+						alts: "",
+						pin: { x: 25, y: 75 },
+					},
+				],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.imageUrl).toBe("https://example.com/diagram.png");
+	});
+
+	test("POST ready diagram without a pin is 400 (phase-04 FR2)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Diagram — missing pin",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "https://example.com/diagram.png",
+				questions: [{ stem: "Q1", opts: null, answer: "steam", alts: "" }],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST ready listening map requires image and pins (phase-04 FR2)", async () => {
+		const base = {
+			skill: "listening",
+			part: "s2",
+			type: "map",
+			title: "Listening Map — gates",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "Label the map.",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "section2.mp3",
+			optionBank: ["Reception", "Cafe", "Gym"],
+			questions: [
+				{ stem: "Q11", opts: null, answer: "A", alts: "" },
+				{ stem: "Q12", opts: null, answer: "B", alts: "" },
+			],
+			note: "",
+			status: "ready",
+		};
+		// No image at all → 400.
+		const noImage = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: base,
+		});
+		expect(noImage.status).toBe(400);
+		// Image but one pin missing → 400.
+		const missingPin = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...base,
+				imageUrl: "https://example.com/campus-map.png",
+				questions: [
+					{
+						stem: "Q11",
+						opts: null,
+						answer: "A",
+						alts: "",
+						pin: { x: 20, y: 30 },
+					},
+					{ stem: "Q12", opts: null, answer: "B", alts: "" },
+				],
+			},
+		});
+		expect(missingPin.status).toBe(400);
+		// Full set persists and the pins round-trip through the snapshot.
+		const ok = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...base,
+				imageUrl: "https://example.com/campus-map.png",
+				questions: [
+					{
+						stem: "Q11",
+						opts: null,
+						answer: "A",
+						alts: "",
+						pin: { x: 20, y: 30 },
+					},
+					{
+						stem: "Q12",
+						opts: null,
+						answer: "B",
+						alts: "",
+						pin: { x: 80, y: 60 },
+					},
+				],
+			},
+		});
+		expect(ok.status).toBe(201);
+		const { id } = (await ok.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.questions.map((question) => question.pin)).toEqual([
+			{ x: 20, y: 30 },
+			{ x: 80, y: 60 },
+		]);
+	});
+
+	test("POST ready writing task1 map needs no image or pins (skill-qualified, phase-04 FR2)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task1",
+				type: "map",
+				title: "Writing Task1 Map — never gated",
+				band: "7.0",
+				source: "",
+				prompt: "The maps show the town centre in 1990 and today.",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		expect(res.status).toBe(201);
+	});
+
+	test("POST question item with an unknown field is 400 (inner .strict(), phase-04)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				skill: "reading",
+				part: "p2",
+				type: "summary",
+				title: "Reading Summary — unknown field",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "rain",
+						alts: "",
+						pinn: { x: 1, y: 2 },
+					},
+				],
+				note: "",
+				status: "draft",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("snapshot forwards legacy pins and nulls corrupt pins (phase-04 FR7)", async () => {
+		const legacyId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: legacyId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "diagram",
+			title: "Legacy diagram rows with pins",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: JSON.stringify([
+				{
+					stem: "Q1",
+					opts: null,
+					answer: "boiler",
+					alts: "",
+					pin: { x: 10, y: 90 },
+				},
+				{
+					stem: "Q2",
+					opts: null,
+					answer: "crankshaft",
+					alts: "",
+					pin: { x: 200, y: "bad" },
+				},
+				{ stem: "Q3", opts: null, answer: "valve", alts: "" },
+			]),
+			note: "",
+			status: "draft",
+		});
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === legacyId,
+		);
+		expect(row?.questions.map((question) => question.pin)).toEqual([
+			{ x: 10, y: 90 },
+			null,
+			null,
+		]);
+	});
+
+	test("snapshot falls back to empty imageUrl for legacy rows (#269)", async () => {
+		const legacyId = crypto.randomUUID();
+		await t.db.insert(schema.assignmentPrompt).values({
+			id: legacyId,
+			orgId: await t.orgIdOf(orgA),
+			task: "task2",
+			genre: "discuss",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Legacy row without image",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions: "[]",
+			note: "",
+			status: "draft",
+		});
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === legacyId,
+		);
+		expect(row?.imageUrl).toBe("");
+	});
+
 	test("snapshot projection safely parses corrupt or 'null' questions without crashing", async () => {
 		const corruptId = crypto.randomUUID();
 		await t.db.insert(schema.assignmentPrompt).values({
@@ -4620,6 +5227,278 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(row).toBeDefined();
 		expect(row?.questions).toEqual([]);
 	});
+
+	describe("option bank (phase-02 FR2/FR7)", () => {
+		const bankBody = (overrides: Record<string, unknown> = {}) => ({
+			skill: "reading",
+			part: "p3",
+			type: "features",
+			title: "Reading Features — bank",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Passage",
+			intro: "Match each feature with the correct person.",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: ["Ada", "Brunel", "Curie", "Darwin", "Einstein"],
+			questions: [
+				{ stem: "Q27", opts: null, answer: "A", alts: "" },
+				{ stem: "Q28", opts: null, answer: "B", alts: "" },
+				{ stem: "Q29", opts: null, answer: "C", alts: "" },
+				{ stem: "Q30", opts: null, answer: "A", alts: "" },
+			],
+			note: "",
+			status: "ready",
+			...overrides,
+		});
+
+		test("POST ready features with a full bank persists optionBank through the snapshot (round-trip)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["  Ada ", "Brunel", "Curie", "Darwin", "Einstein"],
+				}),
+			});
+			expect(res.status).toBe(201);
+			const { id } = (await res.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.optionBank).toEqual([
+				"Ada",
+				"Brunel",
+				"Curie",
+				"Darwin",
+				"Einstein",
+			]);
+		});
+
+		test("POST ready bankable without a bank is 400", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({ optionBank: [] }),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with fewer bank items than questions is 400", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["Ada", "Brunel", "Curie"],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with a single bank item is 400 (min 2)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					optionBank: ["Ada"],
+					questions: [{ stem: "Q27", opts: null, answer: "A", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with more than 8 questions is 400 (labels A–H only)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					questions: Array.from({ length: 9 }, (_, i) => ({
+						stem: `Q${i}`,
+						opts: null,
+						answer: "A",
+						alts: "",
+					})),
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready bankable with an answer beyond the bank length is 400", async () => {
+			// Bank has 5 items → labels A–E; "F" would point outside the bank.
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					questions: [{ stem: "Q27", opts: null, answer: "F", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(400);
+		});
+
+		test("POST ready sentend rejects duplicate labels with 400; features may reuse", async () => {
+			const dupBody = {
+				questions: [
+					{ stem: "Q34", opts: null, answer: "A", alts: "" },
+					{ stem: "Q35", opts: null, answer: "A", alts: "" },
+				],
+			};
+			const sentend = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p2",
+					type: "sentend",
+					...dupBody,
+				}),
+			});
+			expect(sentend.status).toBe(400);
+
+			const features = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody(dupBody),
+			});
+			expect(features.status).toBe(201);
+		});
+
+		test("POST draft bankable accepts a partial bank and no answers (rules gate ready only)", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					status: "draft",
+					optionBank: ["Ada"],
+					questions: [{ stem: "Q27", opts: null, answer: "", alts: "" }],
+				}),
+			});
+			expect(res.status).toBe(201);
+		});
+
+		test("POST rejects a bank on non-bankable types — including writing task1 map (skill-qualified)", async () => {
+			for (const [skill, part, type] of [
+				["reading", "p1", "tfng"],
+				["writing", "task1", "map"],
+			] as const) {
+				const res = await t.call("/api/assignments/prompts", {
+					session: orgA,
+					method: "POST",
+					body: {
+						...bankBody({
+							questions: [],
+						}),
+						skill,
+						part,
+						type,
+						title: `Non-bankable ${skill} ${type}`,
+						prompt: skill === "writing" ? "Prompt text" : "",
+						optionBank: ["Ada", "Brunel"],
+					},
+				});
+				expect(res.status, `${skill}/${type}`).toBe(400);
+			}
+		});
+
+		test("POST rejects empty, over-cap and over-count bank items with 400", async () => {
+			for (const optionBank of [
+				["Ada", ""],
+				["Ada", " ".repeat(1)],
+				["Ada", "x".repeat(201)],
+				Array.from({ length: 9 }, (_, i) => `Item ${i}`),
+			]) {
+				const res = await t.call("/api/assignments/prompts", {
+					session: orgA,
+					method: "POST",
+					body: bankBody({ optionBank }),
+				});
+				expect(res.status, JSON.stringify(optionBank).slice(0, 40)).toBe(400);
+			}
+		});
+
+		test("snapshot defaults missing or corrupt option_bank to [] for legacy rows", async () => {
+			const orgId = await t.orgIdOf(orgA);
+			const legacyId = crypto.randomUUID();
+			await t.db.insert(schema.assignmentPrompt).values({
+				id: legacyId,
+				orgId,
+				task: "task2",
+				genre: "discuss",
+				skill: "reading",
+				part: "p2",
+				type: "headings",
+				title: "Legacy row without bank",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: "[]",
+				note: "",
+				status: "draft",
+			});
+			const corruptId = crypto.randomUUID();
+			await t.db.insert(schema.assignmentPrompt).values({
+				id: corruptId,
+				orgId,
+				task: "task2",
+				genre: "discuss",
+				skill: "reading",
+				part: "p2",
+				type: "headings",
+				title: "Corrupt bank JSON",
+				band: "7.0",
+				source: "",
+				prompt: "",
+				passage: "Passage",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: "[]",
+				optionBank: "not-json",
+				note: "",
+				status: "draft",
+			});
+			const rows = (await t.kernel(orgA)).assignmentPrompts;
+			expect(rows.find((r) => r.id === legacyId)?.optionBank).toEqual([]);
+			expect(rows.find((r) => r.id === corruptId)?.optionBank).toEqual([]);
+		});
+
+		test("POST ready headings accepts a roman-labeled bank round-trip", async () => {
+			const res = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p2",
+					type: "headings",
+					title: "Reading Headings — roman bank",
+					optionBank: ["Liệt kê I", "Liệt kê II", "Liệt kê III"],
+					questions: [
+						{ stem: "Paragraph A", opts: null, answer: "i", alts: "" },
+						{ stem: "Paragraph B", opts: null, answer: "ii", alts: "" },
+						{ stem: "Paragraph C", opts: null, answer: "iii", alts: "" },
+					],
+				}),
+			});
+			expect(res.status).toBe(201);
+			const { id } = (await res.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.optionBank).toEqual([
+				"Liệt kê I",
+				"Liệt kê II",
+				"Liệt kê III",
+			]);
+		});
+	});
 });
 
 describe("class assignment give flow (#208)", () => {
@@ -4645,10 +5524,10 @@ describe("class assignment give flow (#208)", () => {
 		classIdA = await t.createClass(orgA, "Lớp IELTS Tối");
 
 		// Create 2 students for Org A enrolled in classIdA
-		studentIdA1 = await t.addStudent(orgA, "Học viên A1", {
+		studentIdA1 = await t.addActiveStudent(orgA, "Học viên A1", {
 			classId: classIdA,
 		});
-		studentIdA2 = await t.addStudent(orgA, "Học viên A2", {
+		studentIdA2 = await t.addActiveStudent(orgA, "Học viên A2", {
 			classId: classIdA,
 		});
 
@@ -4894,13 +5773,19 @@ describe("class assignment give flow (#208)", () => {
 			method: "POST",
 			body: {
 				studentId: studentIdA1,
-				total: 10,
-				price: 400000,
-				mode: "Online",
 			},
 		});
 		expect(enrollRes.status).toBe(201);
-
+		const { id: capEnrollmentId } = (await enrollRes.json()) as { id: string };
+		const acceptRes = await t.call(
+			`/api/enrollments/${capEnrollmentId}/accept`,
+			{
+				session: orgA,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(acceptRes.status).toBe(200);
 		// Insert 200 dummy rows into class_assignment for this class
 		const orgId = await t.orgIdOf(orgA);
 		const batchStatements = Array.from({ length: 200 }, () =>
@@ -5085,5 +5970,372 @@ describe("class tuition fee (học phí lớp theo học viên - issue #227)", (
 			},
 		);
 		expect(resNonExistent.status).toBe(404);
+	});
+});
+
+describe("enrollment invite -> accept lifecycle (issue #253)", () => {
+	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let session: TestSession;
+	let otherOrg: TestSession;
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Lifecycle");
+		otherOrg = await t.insertUser("Cô Khác Org Lifecycle");
+		await t.kernel(session);
+		await t.kernel(otherOrg);
+	});
+
+	test("POST /students with classId creates enrollment invited, 0 packages, 0 lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Invite 1", {
+			sessionsTotal: 10,
+		});
+		const studentId = await t.addStudent(session, "HV Mới 1", { classId });
+
+		const snap = await t.kernel(session);
+		const en = snap.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en).toBeDefined();
+		expect(en?.status).toBe("invited");
+		expect(snap.packages.filter((p) => p.enrollmentId === en?.id)).toHaveLength(
+			0,
+		);
+		expect(snap.lessons.filter((l) => l.enrollmentId === en?.id)).toHaveLength(
+			0,
+		);
+	});
+
+	test("POST /classes/:id/enroll creates enrollment invited, 0 packages, 0 lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Invite 2", {
+			sessionsTotal: 10,
+		});
+		const studentId = await t.addStudent(session, "HV Sẵn 2");
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(res.status).toBe(201);
+		const { id: enrollmentId } = (await res.json()) as { id: string };
+
+		const snap = await t.kernel(session);
+		const en = snap.enrollments.find((e) => e.id === enrollmentId);
+		expect(en?.status).toBe("invited");
+		expect(
+			snap.packages.filter((p) => p.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+		expect(
+			snap.lessons.filter((l) => l.enrollmentId === enrollmentId),
+		).toHaveLength(0);
+	});
+
+	test("POST /api/enrollments/:id/accept transitions invited -> active, generates package and lessons", async () => {
+		const classId = await t.createClass(session, "Lớp Accept Test", {
+			sessionsTotal: 8,
+			tuitionFee: 800000,
+			mode: "Offline",
+		});
+		const studentId = await t.addStudent(session, "HV Chờ Accept", { classId });
+		const snapBefore = await t.kernel(session);
+		const en = snapBefore.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en?.status).toBe("invited");
+
+		const acceptRes = await t.call(`/api/enrollments/${en?.id}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+		expect(await acceptRes.json()).toEqual({ ok: true });
+
+		const snapAfter = await t.kernel(session);
+		const enAfter = snapAfter.enrollments.find((e) => e.id === en?.id);
+		expect(enAfter?.status).toBe("active");
+
+		const pkgs = snapAfter.packages.filter((p) => p.enrollmentId === en?.id);
+		expect(pkgs).toHaveLength(1);
+		expect(pkgs[0]).toMatchObject({
+			classId,
+			studentId,
+			total: 8,
+			price: 800000,
+			mode: "Offline",
+			status: "active",
+		});
+
+		const lessons = snapAfter.lessons.filter((l) => l.enrollmentId === en?.id);
+		expect(lessons).toHaveLength(8);
+	});
+
+	test("accept is idempotent on sequential calls", async () => {
+		const classId = await t.createClass(session, "Lớp Idempotent", {
+			sessionsTotal: 6,
+		});
+		await t.addStudent(session, "HV Idempotent", { classId });
+		const snap = await t.kernel(session);
+		const enId = snap.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		const first = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(first.status).toBe(200);
+
+		const second = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(second.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		expect(
+			snapAfter.packages.filter((p) => p.enrollmentId === enId),
+		).toHaveLength(1);
+		expect(
+			snapAfter.lessons.filter((l) => l.enrollmentId === enId),
+		).toHaveLength(6);
+	});
+
+	test("concurrent accept race: two requests in parallel both succeed without 500 or duplicate packages", async () => {
+		const classId = await t.createClass(session, "Lớp Race Accept", {
+			sessionsTotal: 6,
+		});
+		await t.addStudent(session, "HV Race Accept", { classId });
+		const snap = await t.kernel(session);
+		const enId = snap.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		// Fire two parallel accept requests
+		const [resA, resB] = await Promise.all([
+			t.call(`/api/enrollments/${enId}/accept`, {
+				session,
+				method: "POST",
+				body: {},
+			}),
+			t.call(`/api/enrollments/${enId}/accept`, {
+				session,
+				method: "POST",
+				body: {},
+			}),
+		]);
+
+		expect(resA.status).toBe(200);
+		expect(resB.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		expect(snapAfter.enrollments.find((e) => e.id === enId)?.status).toBe(
+			"active",
+		);
+		expect(
+			snapAfter.packages.filter((p) => p.enrollmentId === enId),
+		).toHaveLength(1);
+		expect(
+			snapAfter.lessons.filter((l) => l.enrollmentId === enId),
+		).toHaveLength(6);
+	});
+
+	test("accept returns 404 for unknown id or cross-org enrollment", async () => {
+		const resNotFound = await t.call(
+			`/api/enrollments/${crypto.randomUUID()}/accept`,
+			{
+				session,
+				method: "POST",
+				body: {},
+			},
+		);
+		expect(resNotFound.status).toBe(404);
+
+		const otherClassId = await t.createClass(otherOrg, "Lớp của Other Org");
+		await t.addStudent(otherOrg, "HV Other", {
+			classId: otherClassId,
+		});
+		const otherSnap = await t.kernel(otherOrg);
+		const otherEnId =
+			otherSnap.enrollments.find((e) => e.classId === otherClassId)?.id ?? "";
+
+		const resCross = await t.call(`/api/enrollments/${otherEnId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(resCross.status).toBe(404);
+	});
+
+	test("DELETE /api/enrollments/:id deletes invited enrollment and allows re-enrolling", async () => {
+		const classId = await t.createClass(session, "Lớp Cancel Test");
+		const studentId = await t.addStudent(session, "HV Hủy Lời Mời", {
+			classId,
+		});
+		const snapBefore = await t.kernel(session);
+		const en = snapBefore.enrollments.find(
+			(e) => e.classId === classId && e.studentId === studentId,
+		);
+		expect(en?.status).toBe("invited");
+
+		const deleteRes = await t.call(`/api/enrollments/${en?.id}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(deleteRes.status).toBe(200);
+		expect(await deleteRes.json()).toEqual({ ok: true });
+
+		const snapDeleted = await t.kernel(session);
+		expect(
+			snapDeleted.enrollments.filter(
+				(e) => e.classId === classId && e.studentId === studentId,
+			),
+		).toHaveLength(0);
+
+		// Re-enrolling same student into the class succeeds without 409
+		const reEnrollRes = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(reEnrollRes.status).toBe(201);
+	});
+
+	test("DELETE /api/enrollments/:id returns 409 for active enrollment", async () => {
+		const classId = await t.createClass(session, "Lớp Delete Active");
+		const studentId = await t.addActiveStudent(session, "HV Active Delete", {
+			classId,
+		});
+		const snap = await t.kernel(session);
+		const enId =
+			snap.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+
+		const deleteRes = await t.call(`/api/enrollments/${enId}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(deleteRes.status).toBe(409);
+		expect(await deleteRes.json()).toEqual({
+			error: "cannot delete active enrollment",
+		});
+	});
+
+	test("DELETE /api/enrollments/:id returns 404 for unknown or cross-org enrollment", async () => {
+		const resNotFound = await t.call(
+			`/api/enrollments/${crypto.randomUUID()}`,
+			{
+				session,
+				method: "DELETE",
+			},
+		);
+		expect(resNotFound.status).toBe(404);
+
+		const otherClassId = await t.createClass(otherOrg, "Lớp Other Delete");
+		await t.addStudent(otherOrg, "HV Other Del", {
+			classId: otherClassId,
+		});
+		const otherSnap = await t.kernel(otherOrg);
+		const otherEnId =
+			otherSnap.enrollments.find((e) => e.classId === otherClassId)?.id ?? "";
+
+		const resCross = await t.call(`/api/enrollments/${otherEnId}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(resCross.status).toBe(404);
+	});
+
+	test("assignments rejects studentIds containing invited student with 400", async () => {
+		const classId = await t.createClass(session, "Lớp Assign Guard");
+		const invitedId = await t.addStudent(session, "HV Invited Assign", {
+			classId,
+		});
+		const activeId = await t.addActiveStudent(session, "HV Active Assign", {
+			classId,
+		});
+
+		const pRes = await t.call("/api/assignments/prompts", {
+			session,
+			method: "POST",
+			body: {
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Prompt Guard",
+				band: "7.0",
+				source: "",
+				prompt: "prompt",
+				passage: "",
+				intro: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				questions: [],
+				note: "",
+				status: "ready",
+			},
+		});
+		const promptPayload = (await pRes.json()) as { id: string };
+		const promptId = promptPayload.id;
+
+		// Attempt to assign with invited student
+		const resInvited = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [invitedId],
+			},
+		});
+		expect(resInvited.status).toBe(400);
+		expect(await resInvited.json()).toMatchObject({
+			error: "student not enrolled",
+		});
+
+		// Active student succeeds
+		const resActive = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2030-01-15",
+				note: "",
+				studentIds: [activeId],
+			},
+		});
+		expect(resActive.status).toBe(201);
+	});
+
+	test("tuitionFee drift: accept uses tuitionFee at time of accept as package price", async () => {
+		const classId = await t.createClass(session, "Lớp Fee Drift", {
+			tuitionFee: 500000,
+		});
+		await t.addStudent(session, "HV Fee Drift", { classId });
+		const snapInit = await t.kernel(session);
+		const enId =
+			snapInit.enrollments.find((e) => e.classId === classId)?.id ?? "";
+
+		// Teacher updates class tuition fee before accept
+		const feeRes = await t.call(`/api/classes/${classId}/tuition-fee`, {
+			session,
+			method: "POST",
+			body: { tuitionFee: 750000 },
+		});
+		expect(feeRes.status).toBe(200);
+
+		// Now accept
+		const acceptRes = await t.call(`/api/enrollments/${enId}/accept`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(acceptRes.status).toBe(200);
+
+		const snapAfter = await t.kernel(session);
+		const pkg = snapAfter.packages.find((p) => p.enrollmentId === enId);
+		expect(pkg?.price).toBe(750000);
 	});
 });

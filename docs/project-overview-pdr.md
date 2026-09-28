@@ -11,7 +11,7 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 
 | Decision | Owner |
 | --- | --- |
-| Authenticated users are bootstrapped into an org with a `teacher` membership when no membership exists yet. | [apps/server/src/app.ts](../apps/server/src/app.ts) and [packages/db/src/schema/membership.ts](../packages/db/src/schema/membership.ts) |
+| Only `teacher`-role accounts are bootstrapped into an org with a `teacher` membership when no membership exists yet; a `student` role receives 403 `ACCOUNT_STUDENT_ROLE`. Accounts carry an app role (`user.role`): student-portal sign-ups are `student` and cannot sign in on the teacher app; teacher accounts cannot sign in on the student portal (403 `ACCOUNT_TEACHER_ROLE`). | [apps/server/src/app.ts](../apps/server/src/app.ts) and [packages/db/src/schema/membership.ts](../packages/db/src/schema/membership.ts) and [packages/auth/src/role.ts](../packages/auth/src/role.ts) |
 | The persistent kernel is org-scoped and centers on `organization`, `membership`, `student`, `class`, `enrollment`, `session_package`, and syllabus tables. | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Curriculum data stays separate from delivered lessons. | [packages/db/src/schema/syllabus.ts](../packages/db/src/schema/syllabus.ts) and [packages/db/src/schema/lesson.ts](../packages/db/src/schema/lesson.ts) |
 | The web app stays behind a load gate until the first kernel snapshot resolves. | [apps/web/src/lib/data-provider.tsx](../apps/web/src/lib/data-provider.tsx) |
@@ -20,7 +20,8 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 | `assignment_prompt` is an org-scoped bank of unassigned IELTS 4-skill prompts carrying the auto-grading answer key (no student/class FK); delivering a prompt to a class writes a `class_assignment` snapshot row (its `title` is frozen at assign time), and the `assignment` table stays per-student grading fed by the server. | [packages/db/src/schema/assignment-prompt.ts](../packages/db/src/schema/assignment-prompt.ts), [packages/db/src/schema/class-assignment.ts](../packages/db/src/schema/class-assignment.ts), and [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) |
 | Deferred feature clusters are hidden by static flags in code, not runtime toggles; the parent-reports cluster ships disabled (`PARENT_REPORTS_ENABLED = false`) with backend, schema, and components untouched so one constant flip re-enables it. | [apps/web/src/lib/features.ts](../apps/web/src/lib/features.ts) |
 | Better Auth is the sign-in boundary, and the auth route redirects unauthenticated users to login. | [apps/web/src/routes/_auth/route.tsx](../apps/web/src/routes/_auth/route.tsx) and [apps/server/src/index.ts](../apps/server/src/index.ts) |
-| A student is created with a required email and a required digits-only phone (the future login identity); the first package is derived from the class at creation (no package inputs), and a student created without a class has no package until enrolled. | [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) and [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) |
+| Students originate from student portal provisioning on first portal login (verified email + earliest global org); teachers no longer create students manually and only enroll existing students into classes via POST /api/classes/:id/enroll. | [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) and [apps/server/src/student-provisioning.ts](../apps/server/src/student-provisioning.ts) |
+| Enrollment có vòng đời trạng thái `invited` → `active`: thêm học viên vào lớp tạo `invited` (chưa có gói/buổi học); `active` chỉ sinh khi được kích hoạt qua `POST /api/enrollments/:id/accept` (nút Kích hoạt admin) hoặc qua portal `POST /api/student/enrollments/:id/accept`; hủy lời mời (DELETE) chỉ áp dụng cho `invited`; invoices và assignments chỉ chấp nhận enrollment `active`. | [packages/db/src/schema/enrollment.ts](../packages/db/src/schema/enrollment.ts), [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts), và [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) |
 
 ## Product requirements
 
@@ -35,4 +36,11 @@ Teacher OS is a teacher-first operations app for managing classes, students, syl
 - The signed-in teacher can reach a populated org workspace without manual tenant setup.
 - The main data flows still work through the kernel snapshot and command bus.
 - Product changes still point to the owning source file instead of copying behavior into docs.
+
+## Student Multi-Org and Invitation Model
+
+- **Org-Scoped Student Profiles:** Instead of a single global student profile, `student` records are scoped by `org_id` with unique constraint `UNIQUE(org_id, lower(trim(email)))`. One email address can study across multiple teacher organizations.
+- **Teacher Invitations (`student_invitation`):** Teachers invite students via email from `/students`. Pending invitations are unique per `(org_id, lower(trim(email)))`.
+- **Portal Notifications & Acceptance:** Students receive real-time notifications in their portal bell icon. Accepting creates their student profile in the target organization.
+- **Multi-Org Switcher:** Students in multiple organizations switch active context via header `x-student-org-id` and the `OrgSwitcher` dropdown without losing session authentication.
 

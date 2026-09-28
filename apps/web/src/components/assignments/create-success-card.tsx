@@ -30,8 +30,6 @@ export function CreateSuccessCard({
 	audioName?: string;
 	questions?: QuestionItem[];
 	onCreateAnother: () => void;
-	task?: string;
-	genre?: string;
 }) {
 	const skillPreset = skillOf(skill);
 	const partPreset = partOf(skill, part);
@@ -92,10 +90,10 @@ export function CreateSuccessCard({
 					Tạo đề khác
 				</Button>
 				<Link
-					to="/assignments/bank"
+					to="/assignments"
 					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm hover:text-fg"
 				>
-					Xem ngân hàng đề
+					Xem danh sách bài tập
 				</Link>
 				<Link
 					to="/classes"

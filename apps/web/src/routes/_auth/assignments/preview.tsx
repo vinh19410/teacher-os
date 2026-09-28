@@ -86,12 +86,21 @@ export function PreviewAssignmentRoute() {
 				<StudentPreviewPaper
 					task={draft.task}
 					genre={draft.genre}
+					skill={draft.skill}
+					part={draft.part}
+					type={draft.type}
 					title={draft.title}
 					band={draft.band}
 					source={draft.source}
 					prompt={draft.prompt}
 					note={draft.note}
 					status={draft.status}
+					passage={draft.passage}
+					intro={draft.intro}
+					audioName={draft.audioName}
+					imageUrl={draft.imageUrl}
+					optionBank={draft.optionBank}
+					items={draft.items}
 				/>
 
 				<Card variant="white" className="flex flex-col gap-3">

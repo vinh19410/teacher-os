@@ -3,6 +3,7 @@ import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import {
+	isAutoSkill,
 	partOf,
 	type QuestionItem,
 	SKILLS,
@@ -26,6 +27,9 @@ export interface ComposerValue {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	imageUrl: string;
+	/** Phase-02 FR3 — structured option bank rows for bankable matching types. */
+	optionBank: string[];
 	note: string;
 	items: QuestionItem[];
 }
@@ -34,17 +38,20 @@ export function PromptComposer({
 	value,
 	errors = {},
 	showErrors,
+	status,
 	onFieldChange,
 }: {
 	value: ComposerValue;
 	errors?: Record<string, string | undefined>;
 	showErrors: boolean;
+	/** Threaded to the key editor for FR9 (missing answers block `ready` only). */
+	status: "draft" | "ready";
 	onFieldChange: (patch: Partial<ComposerValue>) => void;
 }) {
 	const skill = skillOf(value.skill);
 	const part = partOf(value.skill, value.part);
 	const type = typeOf(value.skill, value.part, value.type);
-	const isAuto = value.skill === "reading" || value.skill === "listening";
+	const isAuto = isAutoSkill(value.skill);
 	const isCue = value.skill === "speaking" && value.part === "part2";
 	return (
 		<Card variant="white" className="flex flex-col gap-4">
@@ -62,6 +69,10 @@ export function PromptComposer({
 					onChange={(label) => {
 						const next =
 							SKILLS.find((entry) => entry.name === label) ?? SKILLS[0];
+						// ChipFilter re-fires on the selected chip — a stray click on
+						// the current skill must not confirm or wipe (#269 guard,
+						// review #2: the patch below always carries part/type).
+						if (next.id === value.skill) return;
 						onFieldChange({
 							skill: next.id,
 							part: next.parts[0].id,
@@ -81,6 +92,10 @@ export function PromptComposer({
 						const next =
 							skill.parts.find((entry) => entry.label === label) ??
 							skill.parts[0];
+						// Same re-fire guard: the patch always carries the part's
+						// default type, so a stray click could otherwise reset the
+						// type (review #2).
+						if (next.id === value.part) return;
 						onFieldChange({ part: next.id, type: next.types[0].id });
 					}}
 				/>
@@ -184,19 +199,7 @@ export function PromptComposer({
 									Gỡ file
 								</button>
 							</>
-						) : (
-							<button
-								type="button"
-								className="text-accent-blue text-xs"
-								onClick={() =>
-									onFieldChange({
-										audioName: "Cambridge IELTS 10 — Section 1.mp3",
-									})
-								}
-							>
-								Dùng file mẫu Cambridge 10
-							</button>
-						)}
+						) : null}
 					</div>
 					<p className="mt-1 text-[11px] text-meta">
 						{value.audioName
@@ -218,8 +221,16 @@ export function PromptComposer({
 					intro={value.intro}
 					items={value.items}
 					showErrors={showErrors}
+					status={status}
+					imageUrl={value.imageUrl}
+					optionBank={value.optionBank}
+					imageUrlError={showErrors ? errors.imageUrl : undefined}
+					optionBankError={showErrors ? errors.optionBank : undefined}
+					questionsError={showErrors ? errors.questions : undefined}
 					onIntroChange={(intro) => onFieldChange({ intro })}
+					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
 					onItemsChange={(items) => onFieldChange({ items })}
+					onBankChange={(optionBank) => onFieldChange({ optionBank })}
 				/>
 			)}
 			{value.skill === "listening" && (

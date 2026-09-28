@@ -1,5 +1,7 @@
+import { existsSync, readFileSync } from "node:fs";
+import { createClient } from "@libsql/client";
 import { expect, type Page } from "@playwright/test";
-
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -24,28 +26,108 @@ export async function signUpViaUi(
 	return email;
 }
 
-/** Tạo học viên qua modal /students (form create — SĐT + email bắt buộc).
- * Mặc định SĐT/email hợp lệ; spec test validation tự fill tay, không dùng helper. */
-export async function createStudentViaUi(
-	page: Page,
-	name: string,
-	opts: { phone?: string; email?: string } = {},
-): Promise<void> {
-	const dialog = page.getByRole("dialog");
-	await dialog.getByLabel("Họ tên học viên *").fill(name);
-	await dialog.getByLabel("SĐT *").fill(opts.phone ?? "0901234567");
-	const slug =
-		name
-			.normalize("NFD")
-			.replace(/[\u0300-\u036f]/g, "")
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, "") || "student";
-	const email = opts.email ?? `${slug}.${Date.now()}@e2e.test`;
-	await dialog.getByLabel("Email *").fill(email);
-	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
-	await expect(dialog).toBeHidden();
+async function withBusyRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {
+	for (let i = 0; i < retries; i++) {
+		try {
+			return await fn();
+		} catch (err: unknown) {
+			if (i === retries - 1) throw err;
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 50 * (i + 1));
+			await promise;
+		}
+	}
+	throw new Error("retry exhausted");
 }
 
+export interface VerificationEmailEntry {
+	to: string;
+	subject?: string;
+	url?: string;
+	error?: string;
+	at?: string;
+}
+
+export async function readVerificationEmails(): Promise<
+	VerificationEmailEntry[]
+> {
+	const logPath = new URL("../.mail-log.jsonl", import.meta.url).pathname;
+	return withBusyRetry(async () => {
+		if (!existsSync(logPath)) return [];
+		const content = readFileSync(logPath, "utf8");
+		const lines = content.split("\n").filter((l) => l.trim().length > 0);
+		return lines.map((l) => JSON.parse(l) as VerificationEmailEntry);
+	});
+}
+
+/**
+ * Seed a student record directly into local.db for E2E tests (Decision D6).
+ * Resolves the target org from the logged-in teacher's email, or falls back
+ * to the earliest global org.
+ */
+export async function seedStudent(opts: {
+	teacherEmail?: string;
+	name: string;
+	email?: string;
+	phone?: string;
+}): Promise<{ id: string; name: string; email: string }> {
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await client.execute("PRAGMA busy_timeout = 5000;");
+	try {
+		const slug =
+			opts.name
+				.normalize("NFD")
+				.replace(/[\u0300-\u036f]/g, "")
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "") || "student";
+		const email = opts.email ?? `${slug}.${Date.now()}@e2e.test`;
+
+		const teacherEmail = opts.teacherEmail;
+		const orgRow = await withBusyRetry(async () => {
+			const res = teacherEmail
+				? await client.execute({
+						sql: `SELECT m.org_id AS id FROM membership m JOIN user u ON u.id = m.user_id
+							WHERE lower(u.email) = lower(?) ORDER BY m.created_at, m.id LIMIT 1`,
+						args: [teacherEmail],
+					})
+				: await client.execute(
+						"SELECT id FROM organization ORDER BY created_at ASC, id ASC LIMIT 1",
+					);
+			if (!res.rows[0]) {
+				throw new Error("seedStudent: no org yet, waiting for bootstrap");
+			}
+			return res;
+		}, 30);
+
+		const orgId = String(orgRow.rows[0]?.id);
+		const id = crypto.randomUUID();
+		const now = Date.now();
+
+		await withBusyRetry(() =>
+			client.execute({
+				sql: `INSERT INTO student (id, org_id, name, phone, email, zalo, parent_name, parent_phone, created_at)
+					VALUES (?,?,?,?,?,?,?,?,?)`,
+				args: [
+					id,
+					orgId,
+					opts.name,
+					opts.phone ?? "0901234567",
+					email,
+					opts.phone ?? "0901234567",
+					"",
+					"",
+					now,
+				],
+			}),
+		);
+
+		return { id, name: opts.name, email };
+	} finally {
+		client.close();
+	}
+}
 /** Navigate to a class's "Buổi học" tab (Issue #89 merged tab) — it renders the
  * "Đã học"/"Sắp tới" badges on the timeline table. Text counts must scope to
  * "Buổi học" while on it. */
@@ -102,4 +184,47 @@ export async function gotoWeek(
 	weekStartISO: string,
 ): Promise<void> {
 	await page.goto(`/schedule?week=${weekStartISO}`);
+}
+
+/** Kích hoạt enrollment qua API seam (/api/enrollments/:id/accept).
+ * Mang theo session cookie và Origin header. */
+export async function acceptEnrollment(
+	page: Page,
+	enrollmentId: string,
+): Promise<void> {
+	const response = await page.request.post(
+		`${API_ORIGIN}/api/enrollments/${enrollmentId}/accept`,
+		{
+			data: {},
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "application/json",
+			},
+		},
+	);
+	if (response.status() !== 200) {
+		throw new Error(
+			`acceptEnrollment failed (${response.status()}): ${await response.text()}`,
+		);
+	}
+}
+
+/** Kích hoạt toàn bộ enrollment đang ở trạng thái 'invited' của lớp qua API. */
+export async function acceptAllClassEnrollments(
+	page: Page,
+	classId: string,
+): Promise<void> {
+	const response = await page.request.get(`${API_ORIGIN}/api/kernel`);
+	if (response.status() !== 200) {
+		throw new Error(`getKernelSnapshot failed (${response.status()})`);
+	}
+	const snap = (await response.json()) as {
+		enrollments?: Array<{ id: string; classId: string; status?: string }>;
+	};
+	const enrollments = (snap.enrollments ?? []).filter(
+		(e) => e.classId === classId && e.status === "invited",
+	);
+	for (const en of enrollments) {
+		await acceptEnrollment(page, en.id);
+	}
 }

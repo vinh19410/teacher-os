@@ -71,6 +71,26 @@ function parseSkills(raw: string): string[] {
 	}
 }
 
+/** Phase-04 FR1 — pin guard: a valid pin is an object with numeric 0–100
+ * percents; anything else (legacy rows, corrupt JSON) falls back to null so
+ * the snapshot shape stays `pin | null` (never `undefined` — the web shape
+ * guards check for null). */
+function parsePin(raw: unknown): { x: number; y: number } | null {
+	if (!raw || typeof raw !== "object") return null;
+	const record = raw as Record<string, unknown>;
+	const { x, y } = record;
+	return typeof x === "number" &&
+		Number.isFinite(x) &&
+		x >= 0 &&
+		x <= 100 &&
+		typeof y === "number" &&
+		Number.isFinite(y) &&
+		y >= 0 &&
+		y <= 100
+		? { x, y }
+		: null;
+}
+
 function parseQuestions(
 	raw: string,
 	rowId: string,
@@ -96,12 +116,44 @@ function parseQuestions(
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
+					// Phase-04 FR7 — forward the pin or the image labels vanish on
+					// the first reload (the write path persists them inside this
+					// same JSON; this destructure is the only read path).
+					pin: parsePin(record.pin),
 				},
 			];
 		});
 	} catch {
 		console.warn(
 			`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,
+		);
+		return [];
+	}
+}
+
+/** Phase-02 FR7 — same guard style as parseQuestions: legacy rows carry the
+ * `"[]"` column default; corrupted JSON or non-string items fall back to []
+ * so the snapshot shape stays `string[]`. */
+function parseOptionBank(
+	raw: string,
+	rowId: string,
+): KernelSnapshot["assignmentPrompts"][number]["optionBank"] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			console.warn(
+				`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,
+			);
+			return [];
+		}
+		// Read-path defense in depth: the contract caps banks at 8 on write;
+		// a corrupt row with more items would render empty `bankLabel`s.
+		return parsed
+			.filter((item): item is string => typeof item === "string")
+			.slice(0, 8);
+	} catch {
+		console.warn(
+			`[kernel] invalid assignment prompt option bank JSON for row ${rowId}`,
 		);
 		return [];
 	}
@@ -296,6 +348,7 @@ export async function loadSnapshot(
 			id: row.id,
 			classId: row.classId,
 			studentId: row.studentId,
+			status: row.status,
 			createdAt: row.createdAt.toISOString(),
 		})),
 		packages: packageRows.map((row) => ({
@@ -365,7 +418,9 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				imageUrl,
 				questions,
+				optionBank,
 				note,
 				status,
 				createdAt,
@@ -386,7 +441,13 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				// Legacy rows predate image_url; defensive default matches the
+				// parseQuestions style for corrupted/missing values.
+				imageUrl: typeof imageUrl === "string" ? imageUrl : "",
 				questions: parseQuestions(questions, id),
+				// Phase-02 FR7: legacy rows predate option_bank — parseOptionBank
+				// defaults corrupted/missing values to [].
+				optionBank: parseOptionBank(optionBank, id),
 				note,
 				status,
 				createdAt: createdAt.toISOString(),

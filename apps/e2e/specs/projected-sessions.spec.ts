@@ -13,7 +13,7 @@
  * constant — 12 weekly Mondays, 04/01 … 22/03/2027.
  */
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, gotoWeek, signUpViaUi } from "./helpers";
+import { gotoWeek, seedStudent, signUpViaUi } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 const START = "2027-01-04"; // Monday
@@ -27,7 +27,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	const CLASS_NAME = `E2E Projected ${Date.now()}`;
 	const STUDENT_NAME = "Trần Dự Kiến E2E";
 
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 	await seedDatedClass(page, {
 		name: CLASS_NAME,
 		schedule: { days: [0], start: "19:00", end: "20:30" },
@@ -79,20 +79,42 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 		page.locator("div.lesson-block", { hasText: CLASS_NAME }),
 	).toHaveCount(0);
 
-	// First enrollment flips the projection to real rows IN-PAGE (atomic
-	// snapshot refresh, no reload): same dates, no "Dự kiến", real targets.
+	// First enrollment creates an 'invited' student.
+	// Invariant (D2 / red-team #7): while all enrollments are invited,
+	// projection "Dự kiến" REMAINS (does NOT flip to real lessons yet).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(page.getByText("Đã mời")).toBeVisible();
 
+	// Projection still shows "Dự kiến" because enrollment is invited
+	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await expect(page.locator("tbody tr")).toHaveCount(12);
+	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(12);
+
+	// Now activate the student via "Kích hoạt" on the roster tab
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
+
+	// Now projection flips to real rows: same dates, no "Dự kiến", real targets.
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await expect(page.locator("tbody tr")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(0);
 	await expect(page.locator("tbody tr").first()).toContainText("04/01");
-	// Real dated rows: every occurrence is future + upcoming → adjust targets
-	// exist, no check-in (VN date gate keeps them ineligible).
 	await expect(
 		page.getByRole("button", { name: "Điều chỉnh" }).first(),
 	).toBeVisible();

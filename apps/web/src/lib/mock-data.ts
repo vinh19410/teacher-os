@@ -72,7 +72,11 @@ export interface AssignmentPrompt {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	/** Diagram image URL (https-only) — diagram prompts render it (#269). */
+	imageUrl?: string;
 	questions?: AssignmentQuestion[];
+	/** Phase-02 FR7 — structured option bank (labeled choice list). */
+	optionBank?: string[];
 	note: string;
 	status: "draft" | "ready";
 	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */
@@ -155,6 +159,7 @@ export interface ClassGroup {
 	mode: string;
 	syllabusId: string;
 	studentIds: string[];
+	invitedStudentIds: string[];
 	/** Raw string: JSON `{days,start,end}` (new) or legacy free text. */
 	schedule: string;
 	sessionsDone: number;

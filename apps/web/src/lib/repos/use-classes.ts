@@ -1,7 +1,7 @@
 /**
  * Classes-module read hook (Wave 3) — the /classes routes' only data entry.
  * Reads from the kernel-backed store cache so command-bus writes (add class,
- * assign syllabus, notes, enroll-via-add-student) land immediately;
+ * assign syllabus, notes, enroll-student) land immediately;
  * re-render granularity matches useData (any store change) until a later
  * wave narrows it. No second fetch.
  */

@@ -14,6 +14,10 @@ export interface DomainTopology {
 	apiHost: string;
 	/** Browser origin of the web app (CORS_ORIGIN default). */
 	appOrigin: string;
+	/** Student portal hostname: student.<domain> */
+	studentHost: string;
+	/** Browser origin of the student portal. */
+	studentOrigin: string;
 	/** Browser origin of the API (BETTER_AUTH_URL). */
 	apiOrigin: string;
 	/** better-auth base URL including the /api/auth mount path. */
@@ -84,6 +88,8 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		appHost: `app.${domain}`,
 		apiHost: `api.${domain}`,
 		appOrigin: `https://app.${domain}`,
+		studentHost: `student.${domain}`,
+		studentOrigin: `https://student.${domain}`,
 		apiOrigin,
 		authBaseURL: `${apiOrigin}${AUTH_MOUNT_PATH}`,
 		googleRedirectURI: `${apiOrigin}${AUTH_MOUNT_PATH}/callback/google`,

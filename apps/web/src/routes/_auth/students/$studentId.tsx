@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
-import { averageBand, fmtVND } from "@/lib/mock-data";
+import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
+import { classesByStudent } from "@/lib/repos/enrollments";
 import { useStudents } from "@/lib/repos/use-students";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
@@ -76,6 +76,7 @@ function StudentDetailRoute() {
 	const lessons = data.lessons.filter((l) => l.sid === studentId);
 	const invoices = data.invoices.filter((i) => i.sid === studentId);
 	const assignments = data.assignments.filter((a) => a.sid === studentId);
+	const studentClasses = classesByStudent(data, studentId);
 
 	return (
 		<div>
@@ -142,40 +143,38 @@ function StudentDetailRoute() {
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Card variant="white">
 						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
-							Gói học
+							Lớp học
 						</div>
-						{student.hasPackage ? (
+						{studentClasses.length > 0 ? (
 							<div className="flex flex-col gap-4">
-								{[
-									["Tổng buổi", String(student.pkg.total)],
-									["Đã học", String(student.pkg.done)],
-									["Còn lại", String(student.pkg.remaining)],
-									["Đơn giá", fmtVND(student.pkg.price)],
-									["Hình thức", student.pkg.mode],
-									["Hết hạn dự kiến", student.pkg.expiry],
-								].map(([k, v], i) => (
-									<div key={k} className="flex items-center justify-between">
-										<span className="font-mono text-meta text-xs">{k}</span>
-										<span
-											className={
-												i === 2 && student.pkg.remaining <= 3
-													? "font-mono font-semibold text-danger"
-													: "font-mono"
-											}
-										>
-											{v}
-										</span>
+								{studentClasses.map((c) => (
+									<div key={c.id}>
+										<div className="flex items-center gap-2">
+											<Link
+												to="/classes/$classId"
+												params={{ classId: c.id }}
+												className="font-medium text-accent-blue hover:text-accent-active"
+											>
+												{c.name}
+											</Link>
+											{c.enrollmentStatus === "invited" && (
+												<Badge
+													variant="warn"
+													className="px-1.5 py-0 text-[10px]"
+												>
+													Đã mời
+												</Badge>
+											)}
+										</div>
+										<div className="mt-1 font-mono text-meta text-xs">
+											{classMeta(c)}
+										</div>
 									</div>
 								))}
-								<Progress
-									className="mt-2"
-									value={(student.pkg.done / student.pkg.total) * 100}
-									variant={student.pkg.remaining <= 3 ? "low" : "default"}
-								/>
 							</div>
 						) : (
 							<p className="text-muted-fg text-sm">
-								Chưa có gói — thêm học viên vào lớp để có gói học.
+								Chưa tham gia lớp học nào.
 							</p>
 						)}
 					</Card>

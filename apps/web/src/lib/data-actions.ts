@@ -70,26 +70,11 @@ export type KernelAction =
 			};
 	  }
 	| {
-			/** SĐT + email = danh tính đăng nhập tương lai; gói học do server derive từ lớp (D1/D2). */
-			type: "add-student";
-			payload: {
-				name: string;
-				phone: string;
-				email: string;
-				parentName: string;
-				classId?: string;
-			};
-	  }
-	| {
-			/** Issue #122 — enroll an EXISTING student into a viewed class. */
+			/** Issue #122 / #251 — enroll an EXISTING student into a viewed class.
+			 * Package is derived by server from class attributes (D1 pattern). */
 			type: "enroll-student";
 			classId: string;
 			studentId: string;
-			payload: {
-				total: number;
-				price: number;
-				mode: "Online" | "Offline";
-			};
 	  }
 	| {
 			/** Issue #61 — create an invoice for an existing enrollment.
@@ -219,7 +204,9 @@ export type KernelAction =
 	| {
 			type: "update-class-tuition-fee";
 			payload: { classId: string; tuitionFee: number | null };
-	  };
+	  }
+	| { type: "activate-enrollment"; enrollmentId: string }
+	| { type: "delete-enrollment"; enrollmentId: string };
 
 /** Backwards-compatible name for data-store consumers. */
 export type Action = KernelAction;

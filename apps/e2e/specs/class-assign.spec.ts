@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 — Giao bài trên lớp:
@@ -14,14 +14,9 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	const STUDENT_NAME = "QC-208 Học viên";
 	const PROMPT_TITLE = "QC-208 Prompt Ready";
 
-	// 1. Sign-up
-	await signUpViaUi(page);
-
-	// 2. Create student
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
-
+	// 1. Sign-up & seed student
+	const teacherEmail = await signUpViaUi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// 3. Create class
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
@@ -39,13 +34,20 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 
 	// 4. Enroll student into class
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
 	await option.click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 	// 5. Create 1 ready prompt and 1 draft prompt in the bank
 	await page.goto("/assignments/new");
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
@@ -119,8 +121,8 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
 
-	// 12. Go to /assignments/bank → prompt has tag "Đã dùng 1 lớp"
-	await page.goto("/assignments/bank");
+	// 12. Go to /assignments → prompt has tag "Đã dùng 1 lớp"
+	await page.goto("/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 
@@ -150,8 +152,8 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	const items = page.locator(".assign-item");
 	await expect(items).toHaveCount(2);
 
-	// 14. Return to /assignments/bank: tag MUST STILL BE "Đã dùng 1 lớp" (distinct classId)
-	await page.goto("/assignments/bank");
+	// 14. Return to /assignments: tag MUST STILL BE "Đã dùng 1 lớp" (distinct classId)
+	await page.goto("/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 	await expect(page.getByText("Đã dùng 2 lớp")).toHaveCount(0);

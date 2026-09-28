@@ -1,0 +1,1 @@
+ALTER TABLE `assignment_prompt` ADD `image_url` text DEFAULT '' NOT NULL;

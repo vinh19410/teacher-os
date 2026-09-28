@@ -6,7 +6,7 @@ values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
 
-The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web) + `api.<domain>` (API). It is
+The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web), `student.<domain>` (student portal) + `api.<domain>` (API). It is
 **encoded in runtime configuration, not in this document**: the deploy-time
 variable `APP_DOMAIN` (bare lowercase domain) derives every URL below via
 `packages/infra/src/topology.ts`, wired in `packages/infra/alchemy.run.ts`.
@@ -17,8 +17,10 @@ environment — never editing this runbook.
 | --- | --- | --- |
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
+| Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
+| `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -50,7 +52,7 @@ different stages never overlap.
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
 
-Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://app.staging.teacheros.io.vn` (web),
+Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://app.staging.teacheros.io.vn` (web), `https://student.staging.teacheros.io.vn` (student portal),
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
@@ -495,3 +497,83 @@ therefore requires, after the emergency rollback settles:
 2. re-run the Step B delta loop until verification passes.
 
 The `date` column itself is forward-only; no data rollback path exists or is needed.
+
+### Rollback procedure: Enrollment invited state (issue #253)
+
+Worker rollback retains migration 0022 (`enrollment.status` column với default `'active'`).
+- Các bản ghi `enrollment` ở trạng thái `'invited'` sống qua rollback worker vô hại về mặt schema D1 (cột status giữ nguyên).
+- Tuy nhiên, worker code cũ coi mọi enrollment là đang học (không nhận diện trạng thái `invited` và kỳ vọng có `session_package`).
+- Nếu cần hoàn tác dữ liệu thủ công về tương thích hoàn toàn với code cũ sau rollback khẩn cấp:
+
+```bash
+# 1. Kiểm tra số lượng enrollment invited
+npx wrangler d1 execute teacher-os-db --command "SELECT id, class_id, student_id FROM enrollment WHERE status = 'invited';"
+
+# 2. Cập nhật các bản ghi invited thành active nếu cần cho code cũ hoạt động:
+npx wrangler d1 execute teacher-os-db --command "UPDATE enrollment SET status = 'active' WHERE status = 'invited';"
+```
+
+Cột `enrollment.status` là forward-only; không xóa cột hay sửa file migration.
+
+## Email verification (Resend) — issue #259
+
+### Environment variables
+
+| Variable | Purpose | Default / Example | Notes |
+| --- | --- | --- | --- |
+| `MAILER_IMPL` | Implementation driver (`log` or `resend`) | `log` (dev/test) | Prod **bắt buộc** đặt `resend`. Server boot guard sẽ in log cảnh báo đỏ nếu không phải `resend`. |
+| `MAIL_FROM` | Sender display name & email | `TeacherOS <onboarding@resend.dev>` | Prod đặt `TeacherOS <no-reply@<domain>>` (domain đã xác thực trên Resend). |
+| `RESEND_API_KEY` | Resend HTTP API token (`re_...`) | empty string | Secret operator — cấu hình qua CI/CD secrets hoặc Alchemy environment, **không commit vào code**. Boot sẽ throw ngay nếu `MAILER_IMPL=resend` mà key rỗng. |
+
+### Production procedure
+
+1. **Cấu hình Domain trên Resend**:
+   - Tạo tài khoản hoặc đăng nhập vào [Resend Dashboard](https://resend.com/domains).
+   - Thêm domain (ví dụ: `teacheros.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
+   - Chờ trạng thái domain chuyển sang `Verified`.
+2. **Cấu hình Secret**:
+   - Tạo API Key tại Resend Dashboard với quyền `Sending access`.
+   - Đặt `RESEND_API_KEY` vào GitHub Secrets / Cloudflare / Alchemy environment **trước khi deploy**.
+   - Đặt `MAIL_FROM="TeacherOS <no-reply@teacheros.io.vn>"`.
+   - Đặt `MAILER_IMPL=resend`.
+3. **Deploy & Kiểm tra**:
+   - Deploy server worker.
+   - Đăng ký thử 1 tài khoản học viên thật trên student portal (`https://student.<domain>` — portal origin derive từ `APP_DOMAIN`, xem bảng topology trên).
+   - Kiểm tra email xác thực được gửi đến hộp thư người nhận (inbox, không vào spam) và URL verify hoạt động chính xác.
+
+### Quota & Monitoring
+
+- **Free tier Resend**: 100 email/ngày, tối đa 3.000 email/tháng.
+- **Lưu ý quan trọng**: Quota này **chia sẻ chung** giữa việc gửi email xác thực học viên và bất kỳ email xác thực nào từ tài khoản giáo viên đăng ký trên web app (do dùng chung cấu hình auth của server).
+- **Monitoring log**: Theo dõi log Workers qua Cloudflare Dashboard / log stream:
+  - Tìm các thông điệp `Failed to send verification email` hoặc `resend send failed: 429` (vượt quota).
+  - Khi gặp lỗi 429 hoặc 5xx từ Resend, `ResendMailer` tự động retry đúng 1 lần (tôn trọng header `Retry-After`).
+
+### Chống lạm dụng (Abuse Prevention)
+
+- Better-Auth đã tích hợp sẵn rate limiter rule cho endpoint `/send-verification-email`: tối đa 3 requests / 60 giây theo IP client (`rate-limiter/index.mjs`). Trên Cloudflare Workers, bộ đếm memory này được duy trì per-isolate.
+- Endpoint có cơ chế chống rò rỉ danh tính (anti-enumeration): luôn trả về `{ status: true }` và duy trì timing floor tối thiểu 500ms ngay cả khi email không tồn tại hoặc đã được xác thực trước đó.
+- Không tự ý cấu hình thêm rate limit tầng D1 trừ khi có bằng chứng tấn công mail-bombing thực tế.
+
+### Sự cố thường gặp & Hướng xử lý
+
+1. **Email rơi vào Spam / Junk**:
+   - Kiểm tra lại trạng thái DKIM, SPF trên Resend Dashboard. Đảm bảo bản ghi DMARC đã được cấu hình trên domain.
+2. **Kích hoạt tài khoản thủ công (Emergency unblock)**:
+   - Nếu học viên không nhận được email do sự cố mail server nhưng cần vào lớp gấp, operator có thể kích hoạt trực tiếp trên D1:
+     ```bash
+     npx wrangler d1 execute teacher-os-db --command "UPDATE user SET email_verified = 1 WHERE lower(trim(email)) = 'student@example.com';"
+     ```
+   - Sau khi cập nhật, học viên bấm "Tôi đã xác thực — Kiểm tra lại" trên portal sẽ được tự động provision hồ sơ và vào trang tổng quan.
+3. **Học viên phản ánh "Đã bấm gửi lại nhưng không nhận được email"**:
+   - Kiểm tra xem server có đang chạy ở chế độ `LOG-ONLY` (quên cấu hình `MAILER_IMPL=resend` hoặc thiếu `RESEND_API_KEY`) hay không.
+   - Kiểm tra log server xem có lỗi gửi mail từ Resend (quota, invalid recipient).
+
+## Student Invitation & Multi-Org (Migration 0025) — issue #263
+
+- **Migration file:** `packages/db/src/migrations/0025_spotty_betty_ross.sql`
+- **Schema changes:**
+  1. `student_invitation`: Bảng mới lưu trữ lời mời học viên (`id`, `org_id`, `inviter_user_id`, `email`, `status`, `created_at`, `updated_at`).
+  2. Partial unique index `student_invitation_org_email_pending_uq` trên `(org_id, lower(trim(email))) WHERE status = 'pending'` chống spam duplicate lời mời pending.
+  3. Drop index `student_email_uq` (toàn cục) và tạo index `student_org_email_uq` scoped theo `(org_id, lower(trim(email)))` cho phép học viên học cùng lúc nhiều tổ chức (multi-org).
+- **Rollback safety:** Forward-only. Dữ liệu `student_invitation` cascade delete theo tổ chức/người dùng.

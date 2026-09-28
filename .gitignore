@@ -59,3 +59,5 @@ apps/e2e/test-results/
 .cache
 tmp
 temp
+.mail-preview/
+apps/e2e/.mail-log.jsonl

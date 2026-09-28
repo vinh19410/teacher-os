@@ -1,8 +1,19 @@
 import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
+import {
+	createLogMailer,
+	createResendMailer,
+} from "@teacher-os/auth/mail/mailer";
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db } from "./app";
 import { getSessionUser } from "./session";
+
+export function parseCORSOrigins(raw: string): string[] {
+	return raw
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+}
 
 // Lazy so importing this module never touches bindings at eval time.
 // Cast: drizzle's schema generic is invariant; Db keeps the route-facing surface.
@@ -19,9 +30,25 @@ const getAuth = (): Auth => {
 		db = createDb() as unknown as Db;
 	}
 	if (!auth) {
+		if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
+			throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
+		}
+		if (env.MAILER_IMPL !== "resend") {
+			console.error(
+				"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
+			);
+		}
+		const mailer =
+			env.MAILER_IMPL === "resend"
+				? createResendMailer({
+						apiKey: env.RESEND_API_KEY,
+						from: env.MAIL_FROM,
+					})
+				: createLogMailer();
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
-			corsOrigin: env.CORS_ORIGIN,
+			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
+			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -33,6 +60,7 @@ const getAuth = (): Auth => {
 				: {}),
 			googleClientId: env.GOOGLE_CLIENT_ID,
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+			mailer,
 		});
 	}
 	return auth;
@@ -40,7 +68,7 @@ const getAuth = (): Auth => {
 
 export default buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
-	corsOrigin: env.CORS_ORIGIN,
+	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) => getSessionUser(getAuth(), headers),
 	authHandler: (req) => getAuth().handler(req),
 });

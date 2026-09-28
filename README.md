@@ -51,6 +51,8 @@ pnpm run dev
 Open [http://localhost:8001](http://localhost:8001) in your browser to see the web application.
 The API is running at [http://localhost:8000](http://localhost:8000).
 The static marketing landing page runs at [http://localhost:8002](http://localhost:8002) (`pnpm run dev:landing`).
+The student portal runs at [http://localhost:8003](http://localhost:8003) (`pnpm run dev:student`). Initial setup: `cp apps/student/.env.example apps/student/.env`.
+Học viên tự đăng ký trên student portal (email + mật khẩu kèm xác thực email, hoặc đăng nhập Google); hồ sơ `student` được tự động provision ở lần đăng nhập portal đầu tiên, sau đó học viên nhận và chấp nhận lời mời vào lớp từ thông báo portal.
 ## Authentication
 
 Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).
@@ -133,7 +135,9 @@ Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live i
 ```
 teacher-os/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
+│   ├── web/         # Teacher frontend application (React + TanStack Router)
+│   ├── student/     # Student portal (React + TanStack Router)
+│   ├── landing/     # Static marketing landing page
 │   ├── server/      # Backend API (Hono)
 │   └── e2e/         # Playwright end-to-end suite
 ├── packages/
@@ -152,6 +156,7 @@ teacher-os/
 - `pnpm run build`: Build all applications
 - `pnpm run dev:web`: Start only the web application
 - `pnpm run dev:server`: Start only the server
+- `pnpm run dev:student`: Start only the student portal
 - `pnpm run check-types`: Check TypeScript types across all apps
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run check`: Run Biome formatting and linting

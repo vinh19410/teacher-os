@@ -13,7 +13,6 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
-	"/assignments/bank": true,
 	"/classes": true,
 	"/students": true,
 	"/syllabus": true,
@@ -72,6 +71,13 @@ export function isDotFilePath(pathname: string): boolean {
 }
 
 /**
+ * Strips the query string and hash fragment from a pathname.
+ */
+function stripQueryAndHash(pathname: string): string {
+	return pathname.split("?")[0].split("#")[0];
+}
+
+/**
  * Checks if the given path is a static asset.
  */
 export function isStaticAssetPath(pathname: string): boolean {
@@ -79,7 +85,7 @@ export function isStaticAssetPath(pathname: string): boolean {
 		return false;
 	}
 
-	const normalized = pathname.split("?")[0].split("#")[0];
+	const normalized = stripQueryAndHash(pathname);
 
 	if (normalized.startsWith("/assets/")) {
 		return true;
@@ -101,8 +107,7 @@ export function isValidAppRoute(pathname: string): boolean {
 	}
 
 	// Strip query string, hash, and normalize trailing slashes
-	const clean = pathname.split("?")[0].split("#")[0];
-	const normalized = clean.replace(/\/+$/, "") || "/";
+	const normalized = stripQueryAndHash(pathname).replace(/\/+$/, "") || "/";
 
 	if (VALID_EXACT_ROUTES[normalized]) {
 		return true;

@@ -1,7 +1,12 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_IMAGE_BASED_TYPES,
+	ASSIGNMENT_OPTION_BANK_MAX,
+	ASSIGNMENT_OPTION_BANK_TYPES,
 	type AssignmentQuestion,
 	type AssignmentSkill,
+	isImageBasedType,
+	isOptionBankable,
 } from "@teacher-os/api/contracts";
 
 export type SkillId = AssignmentSkill;
@@ -18,13 +23,6 @@ export type QuestionItem = AssignmentQuestion;
 export interface AssignmentTypePreset {
 	id: string;
 	label: string;
-	title: string;
-	prompt?: string;
-	intro?: string;
-	items?: QuestionItem[];
-	transcript?: string;
-	cueTopic?: string;
-	cuePoints?: string;
 }
 export interface AssignmentPartPreset {
 	id: string;
@@ -32,7 +30,6 @@ export interface AssignmentPartPreset {
 	spec: string;
 	help: string;
 	qStart?: number;
-	passage?: string;
 	types: AssignmentTypePreset[];
 }
 export interface SkillPreset {
@@ -42,7 +39,6 @@ export interface SkillPreset {
 	bankLabel: string;
 	partLabel: string;
 	typeLabel: string;
-	source: string;
 	parts: AssignmentPartPreset[];
 }
 
@@ -53,6 +49,14 @@ export const KIND: Record<string, AnswerKind> = {
 	info: "letter",
 	ynng: "ynng",
 	mcq: "mcq4",
+	note: "text",
+	shortans: "text",
+	diagram: "text",
+	summary: "text",
+	sentend: "letter",
+	tablecomp: "text",
+	features: "letter",
+	flowchart: "text",
 	form: "text",
 	mcq1: "mcq3",
 	map: "letter",
@@ -63,12 +67,65 @@ export const KIND: Record<string, AnswerKind> = {
 	sent4: "text",
 };
 
-const q = (
-	stem: string,
-	answer = "",
-	opts: string[] | null = null,
-	alts = "",
-): QuestionItem => ({ stem, answer, opts, alts });
+/**
+ * Placeholder "Hướng dẫn đề" theo câu lệnh IELTS chính thức (giới hạn từ).
+ * Đứng ngoài catalog vì test pin type catalog chỉ có {id,label} (#269).
+ * Phase-02 FR5: 2 dạng matching (features/sentend) khóa đáp án từ panel
+ * "Ngân hàng lựa chọn" — placeholder KHÔNG còn hướng dẫn liệt kê A–H vào ô
+ * intro nữa (intro trở lại vai trò câu lệnh).
+ */
+export const TYPE_HINTS: Record<string, string> = {
+	note: "Hoàn thành ghi chú. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	shortans: "Trả lời ngắn. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	diagram: "Hoàn thành nhãn sơ đồ. MỘT TỪ DUY NHẤT · lấy từ bài đọc",
+	summary: "Hoàn thành tóm tắt. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	tablecomp: "Hoàn thành bảng. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	flowchart: "Hoàn thành lưu đồ. KHÔNG QUÁ BA TỪ · lấy từ bài đọc",
+	features:
+		"Nối thông tin với đúng đối tượng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
+	sentend:
+		"Hoàn thành câu với phần kết đúng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
+};
+
+/**
+ * Option bank (phase-02 FR3): the (skill, type) pairs whose composer shows
+ * the structured bank editor. Mirrors `ASSIGNMENT_OPTION_BANK_TYPES` in the
+ * contracts — the sync test pins both sides so a drift cannot ship silently.
+ * Skill-qualified: `map` is shared with writing task1, which is NOT bankable.
+ */
+export const BANKABLE_PAIRS: ReadonlySet<string> = new Set(
+	Object.entries(ASSIGNMENT_OPTION_BANK_TYPES).flatMap(([skill, types]) =>
+		types.map((type) => `${skill}:${type}`),
+	),
+);
+export function isBankableType(skill: string, type: string): boolean {
+	return isOptionBankable(skill, type);
+}
+/**
+ * Image pins (phase-04 FR2/FR3): the (skill, type) pairs whose composer
+ * shows the pin editor over the prompt image — reading `diagram` + listening
+ * `map`. Mirrors `ASSIGNMENT_IMAGE_BASED_TYPES` (sync-tested); skill-
+ * qualified so writing task1's shared `map` type id is never image-gated.
+ */
+export const IMAGE_BASED_PAIRS: ReadonlySet<string> = new Set(
+	Object.entries(ASSIGNMENT_IMAGE_BASED_TYPES).flatMap(([skill, types]) =>
+		types.map((type) => `${skill}:${type}`),
+	),
+);
+export function isImageBased(skill: string, type: string): boolean {
+	return isImageBasedType(skill, type);
+}
+/** Contract cap — labels only exist for 8 positions (A–H / i–viii). */
+export const OPTION_BANK_MAX = ASSIGNMENT_OPTION_BANK_MAX;
+/**
+ * Positional display label for bank row `index` under `kind`: A… for letter
+ * kinds, i… for the roman headings kind. "" outside the alphabet or for
+ * non-bankable kinds — callers treat it as "no label exists".
+ */
+export function bankLabel(kind: AnswerKind, index: number): string {
+	if (kind !== "letter" && kind !== "roman") return "";
+	return ASSIGNMENT_ANSWER_CHOICES[kind][index] ?? "";
+}
 
 export const SKILLS: SkillPreset[] = [
 	{
@@ -78,7 +135,6 @@ export const SKILLS: SkillPreset[] = [
 		bankLabel: "Đề Writing đã có",
 		partLabel: "Dạng bài",
 		typeLabel: "Dạng đề",
-		source: "Cambridge IELTS 10, Test 2",
 		parts: [
 			{
 				id: "task1",
@@ -86,34 +142,10 @@ export const SKILLS: SkillPreset[] = [
 				spec: "Academic · 150 từ · 20 phút",
 				help: "Mô tả biểu đồ, bảng, bản đồ hoặc quy trình. Ảnh biểu đồ chưa đính trong bản này.",
 				types: [
-					{
-						id: "chart",
-						label: "Biểu đồ",
-						title: "Writing Task 1 — Chart",
-						prompt:
-							"The charts below show the percentage of water used for different purposes in six areas of the world.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-					},
-					{
-						id: "table",
-						label: "Bảng số liệu",
-						title: "Writing Task 1 — Table",
-						prompt:
-							"The tables below give information about sales of Fairtrade-labelled coffee and bananas in 1999 and 2004.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-					},
-					{
-						id: "map",
-						label: "Bản đồ",
-						title: "Writing Task 1 — Map",
-						prompt:
-							"The maps below show an industrial area in the town of Norbiton, and planned future development of the site.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-					},
-					{
-						id: "process",
-						label: "Quy trình",
-						title: "Writing Task 1 — Process",
-						prompt:
-							"The diagram below shows how instant noodles are manufactured.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-					},
+					{ id: "chart", label: "Biểu đồ" },
+					{ id: "table", label: "Bảng số liệu" },
+					{ id: "map", label: "Bản đồ" },
+					{ id: "process", label: "Quy trình" },
 				],
 			},
 			{
@@ -122,34 +154,10 @@ export const SKILLS: SkillPreset[] = [
 				spec: "Academic · 250 từ · 40 phút",
 				help: "Học viên thấy đúng đoạn văn này. Không cần đính ảnh cho Task 2.",
 				types: [
-					{
-						id: "discuss",
-						label: "Discuss both views",
-						title: "Writing Task 2 — Discuss both views",
-						prompt:
-							"Some people think that all university students should study whatever they like. Others believe that they should only be allowed to study subjects that will be useful in the future, such as those related to science and technology.\n\nDiscuss both these views and give your own opinion.",
-					},
-					{
-						id: "opinion",
-						label: "Opinion",
-						title: "Writing Task 2 — Opinion",
-						prompt:
-							"Some people believe that unpaid community service should be a compulsory part of high school programmes.\n\nTo what extent do you agree or disagree?",
-					},
-					{
-						id: "advantage",
-						label: "Advantages",
-						title: "Writing Task 2 — Advantages",
-						prompt:
-							"In some countries, young people are encouraged to work or travel for a year between finishing high school and starting university studies.\n\nDiscuss the advantages and disadvantages for young people who decide to do this.",
-					},
-					{
-						id: "problem",
-						label: "Problem / Solution",
-						title: "Writing Task 2 — Problem",
-						prompt:
-							"In many cities the use of private cars is increasing and this is causing a range of problems.\n\nWhat are those problems? What measures could be taken to deal with them?",
-					},
+					{ id: "discuss", label: "Discuss both views" },
+					{ id: "opinion", label: "Opinion" },
+					{ id: "advantage", label: "Advantages" },
+					{ id: "problem", label: "Problem / Solution" },
 				],
 			},
 		],
@@ -161,190 +169,46 @@ export const SKILLS: SkillPreset[] = [
 		bankLabel: "Đề Reading đã có",
 		partLabel: "Phần thi",
 		typeLabel: "Dạng câu hỏi",
-		source: "Cambridge IELTS 10, Test 1",
 		parts: [
 			{
 				id: "p1",
 				label: "Passage 1",
 				spec: "Academic · Passage 1 · 20 phút",
-				help: "Passage 1 thường là đoạn sự kiện. Học viên đọc rồi trả lời; đáp án chỉ để chấm tự động.",
+				help: "Passage 1 thường là đoạn sự kiện. Note completion, short-answer và diagram label hay gặp. Đáp án khóa để chấm tự động.",
 				qStart: 1,
-				passage:
-					"Stepwells are underground reservoirs found across India, particularly in arid regions. Built over many centuries, they capture monsoon rain and store it below ground, where the water stays cooler during the dry months. The finest examples include carved galleries and pavilions, and were used not only for water but as places where people met, rested and held ceremonies.",
 				types: [
-					{
-						id: "tfng",
-						label: "True / False / NG",
-						title: "Reading Passage 1 — True/False/Not Given",
-						intro:
-							"Questions 1–8\nDo the following statements agree with the information given in the passage?\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
-						items: [
-							q(
-								"Stepwells were first built in the twentieth century.",
-								"FALSE",
-							),
-							q(
-								"Water stored in stepwells stays cool in the dry season.",
-								"TRUE",
-							),
-							q(
-								"Every stepwell in India is still used for drinking water.",
-								"NOT GIVEN",
-							),
-							q("Some stepwells had spaces for people to gather.", "TRUE"),
-							q("Stepwells are especially common in arid regions.", "TRUE"),
-							q("The finest examples include carved galleries.", "TRUE"),
-							q("Stepwells were used only for drinking water.", "FALSE"),
-							q(
-								"All stepwells were designed by the same builder.",
-								"NOT GIVEN",
-							),
-						],
-					},
-					{
-						id: "sent",
-						label: "Sentence completion",
-						title: "Reading Passage 1 — Sentence completion",
-						intro:
-							"Questions 1–6\nComplete the sentences below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
-						items: [
-							q(
-								"Stepwells are especially common in ………… regions of India.",
-								"arid",
-								null,
-								"dry",
-							),
-							q(
-								"They collect ………… and keep it below ground.",
-								"monsoon rain",
-								null,
-								"rain",
-							),
-							q(
-								"Carved ………… often surround the water.",
-								"galleries",
-								null,
-								"pavilions",
-							),
-							q(
-								"Water in the wells stays ………… in the dry months.",
-								"cooler",
-								null,
-								"cool",
-							),
-							q("People also used stepwells for ………….", "ceremonies"),
-							q("The wells were built over many ………….", "centuries"),
-						],
-					},
+					{ id: "tfng", label: "True / False / NG" },
+					{ id: "sent", label: "Sentence completion" },
+					{ id: "note", label: "Note completion" },
+					{ id: "shortans", label: "Short-answer questions" },
+					{ id: "diagram", label: "Diagram label completion" },
 				],
 			},
 			{
 				id: "p2",
 				label: "Passage 2",
 				spec: "Academic · Passage 2 · 20 phút",
-				help: "Passage 2 thường dài hơn. Matching headings là dạng hay gặp. Đáp án khóa để chấm tự động.",
+				help: "Passage 2 thường dài hơn. Summary completion, matching sentence endings và table completion hay gặp. Đáp án khóa để chấm tự động.",
 				qStart: 14,
-				passage:
-					"Museums have changed from quiet rooms of objects to places that try to explain ideas. Many now design exhibitions around a question rather than a collection. Audio guides, workshops and evening events are used to bring in visitors who would not otherwise come. Critics say this turns museums into entertainment; supporters argue that a museum which nobody visits cannot teach anyone.",
 				types: [
-					{
-						id: "headings",
-						label: "Matching headings",
-						title: "Reading Passage 2 — Matching headings",
-						intro:
-							"Questions 14–18\nThe passage has five paragraphs, A–E.\nChoose the correct heading for each paragraph from the list of headings below.",
-						items: [
-							q("Paragraph A", "v"),
-							q("Paragraph B", "ii"),
-							q("Paragraph C", "iv"),
-							q("Paragraph D", "iii"),
-							q("Paragraph E", "i"),
-						],
-					},
-					{
-						id: "info",
-						label: "Matching information",
-						title: "Reading Passage 2 — Matching information",
-						intro:
-							"Questions 14–18\nWhich paragraph contains the following information?",
-						items: [
-							q("a reason why empty museums fail", "E"),
-							q("examples of activities added to attract people", "C"),
-							q("a warning that education may be diluted", "D"),
-							q("exhibitions organised around a question", "B"),
-							q("museums as quiet rooms of objects", "A"),
-						],
-					},
+					{ id: "headings", label: "Matching headings" },
+					{ id: "info", label: "Matching information" },
+					{ id: "summary", label: "Summary completion" },
+					{ id: "sentend", label: "Matching sentence endings" },
+					{ id: "tablecomp", label: "Table completion" },
 				],
 			},
 			{
 				id: "p3",
 				label: "Passage 3",
 				spec: "Academic · Passage 3 · 20 phút",
-				help: "Passage 3 là đoạn khó. Multiple choice và Yes/No/NG hay đi cùng. Đáp án khóa để chấm tự động.",
+				help: "Passage 3 là đoạn khó. Matching features và flow-chart completion hay đi cùng Yes/No/NG. Đáp án khóa để chấm tự động.",
 				qStart: 27,
-				passage:
-					"Bilingual children do not simply store two separate dictionaries. Research suggests they constantly select the language that fits the situation and suppress the other. This switching appears to strengthen attention control, though the advantage is clearer in some tasks than others. The findings have been used to argue for earlier language programmes in schools, but the size of the classroom benefit is still debated.",
 				types: [
-					{
-						id: "ynng",
-						label: "Yes / No / NG",
-						title: "Reading Passage 3 — Yes/No/Not Given",
-						intro:
-							"Questions 27–32\nDo the following statements agree with the claims of the writer?",
-						items: [
-							q(
-								"Bilingual children keep the two languages completely separate.",
-								"NO",
-							),
-							q("Switching languages can improve attention control.", "YES"),
-							q(
-								"Every school should teach a second language before age five.",
-								"NOT GIVEN",
-							),
-							q(
-								"The research has been used to support earlier language programmes.",
-								"YES",
-							),
-							q("The size of the classroom benefit is still debated.", "YES"),
-							q(
-								"Bilingual children prefer written tasks to spoken tasks.",
-								"NOT GIVEN",
-							),
-						],
-					},
-					{
-						id: "mcq",
-						label: "Multiple choice",
-						title: "Reading Passage 3 — Multiple choice",
-						intro: "Questions 27–30\nChoose the correct letter, A, B, C or D.",
-						items: [
-							q("Research on bilingual children suggests that they", "B", [
-								"forget their first language more quickly.",
-								"choose one language and ignore the other in each situation.",
-								"prefer written tasks to spoken tasks.",
-								"cannot translate between languages.",
-							]),
-							q("Switching between languages appears to", "C", [
-								"reduce memory in both languages.",
-								"delay speaking in the second language.",
-								"strengthen attention control.",
-								"remove the need for classroom teaching.",
-							]),
-							q("The writer says the bilingual advantage is", "A", [
-								"clearer in some tasks than others.",
-								"identical for every child.",
-								"limited to reading tests.",
-								"proven in every school subject.",
-							]),
-							q("The classroom benefit of early language programmes is", "D", [
-								"already measured in every country.",
-								"rejected by the writer.",
-								"larger than the attention effect.",
-								"still debated.",
-							]),
-						],
-					},
+					{ id: "ynng", label: "Yes / No / NG" },
+					{ id: "mcq", label: "Multiple choice" },
+					{ id: "features", label: "Matching features" },
+					{ id: "flowchart", label: "Flow-chart completion" },
 				],
 			},
 		],
@@ -356,7 +220,6 @@ export const SKILLS: SkillPreset[] = [
 		bankLabel: "Đề Listening đã có",
 		partLabel: "Phần thi",
 		typeLabel: "Dạng câu hỏi",
-		source: "Cambridge IELTS 10, Test 2",
 		parts: [
 			{
 				id: "s1",
@@ -365,51 +228,8 @@ export const SKILLS: SkillPreset[] = [
 				help: "Hội thoại đời thường. Học viên chỉ nghe file; đáp án khóa để chấm tự động.",
 				qStart: 1,
 				types: [
-					{
-						id: "form",
-						label: "Form completion",
-						title: "Listening Section 1 — Form completion",
-						intro:
-							"Questions 1–6\nComplete the form below.\nWrite ONE WORD AND/OR A NUMBER for each answer.\n\nHoliday rental enquiry",
-						transcript:
-							"A: Good morning, Highfield Holiday Rentals.\nB: Hello, I’d like to book a cottage in July.\nA: Can I take your name?\nB: It’s Helen Clarke, C-L-A-R-K-E.\nA: And the arrival date?\nB: The 12th of July, for five nights.\nA: The cottage is at 17 Station Street. The deposit is fifty pounds.\nB: That’s fine. Two bedrooms, and we don’t have pets.",
-						items: [
-							q("Name", "Clarke", null, "Helen Clarke"),
-							q("Arrival date", "12 July", null, "12th July / 12/7"),
-							q("Number of nights", "5", null, "five"),
-							q("Address: 17 ………… Street", "Station"),
-							q("Deposit paid: £ …………", "50", null, "fifty"),
-							q("Number of bedrooms", "2", null, "two"),
-						],
-					},
-					{
-						id: "mcq1",
-						label: "Multiple choice",
-						title: "Listening Section 1 — Multiple choice",
-						intro: "Questions 1–4\nChoose the correct letter, A, B or C.",
-						items: [
-							q("The caller wants to book", "B", [
-								"a hotel room.",
-								"a holiday cottage.",
-								"a campsite pitch.",
-							]),
-							q("They will arrive on", "B", [
-								"2 July.",
-								"12 July.",
-								"20 July.",
-							]),
-							q("They will stay for", "A", [
-								"five nights.",
-								"two weeks.",
-								"one month.",
-							]),
-							q("The company they call is", "C", [
-								"a city hotel.",
-								"an airline.",
-								"a holiday rental firm.",
-							]),
-						],
-					},
+					{ id: "form", label: "Form completion" },
+					{ id: "mcq1", label: "Multiple choice" },
 				],
 			},
 			{
@@ -419,32 +239,8 @@ export const SKILLS: SkillPreset[] = [
 				help: "Độc thoại hướng dẫn — bản đồ, quy định, sự kiện. Đáp án khóa để chấm tự động.",
 				qStart: 11,
 				types: [
-					{
-						id: "map",
-						label: "Map labelling",
-						title: "Listening Section 2 — Map labelling",
-						intro: "Questions 11–14\nLabel the map below.",
-						items: [
-							q("visitor centre", "B"),
-							q("cycle hire", "D"),
-							q("picnic area", "F"),
-							q("main car park", "A"),
-						],
-					},
-					{
-						id: "match2",
-						label: "Matching",
-						title: "Listening Section 2 — Matching",
-						intro:
-							"Questions 11–15\nWhat does the speaker say about each facility?",
-						items: [
-							q("swimming pool", "D"),
-							q("tennis courts", "B"),
-							q("café", "A"),
-							q("gym", "C"),
-							q("main car park", "E"),
-						],
-					},
+					{ id: "map", label: "Map labelling" },
+					{ id: "match2", label: "Matching" },
 				],
 			},
 			{
@@ -454,56 +250,8 @@ export const SKILLS: SkillPreset[] = [
 				help: "Thảo luận học thuật. Multiple choice và flowchart hay gặp. Đáp án khóa để chấm tự động.",
 				qStart: 21,
 				types: [
-					{
-						id: "mcq3",
-						label: "Multiple choice",
-						title: "Listening Section 3 — Multiple choice",
-						intro: "Questions 21–24\nChoose the correct letter, A, B or C.",
-						items: [
-							q("The students’ project is about", "B", [
-								"local transport.",
-								"food waste on campus.",
-								"library opening hours.",
-							]),
-							q("Their tutor asks them to", "A", [
-								"collect more interviews.",
-								"shorten the introduction.",
-								"change the topic.",
-							]),
-							q("They will start by", "C", [
-								"writing the conclusion.",
-								"booking a lecture hall.",
-								"reading last year’s reports.",
-							]),
-							q("The deadline is", "B", [
-								"this Friday.",
-								"the end of term.",
-								"next January.",
-							]),
-						],
-					},
-					{
-						id: "flow",
-						label: "Flow-chart",
-						title: "Listening Section 3 — Flow-chart",
-						intro: "Questions 21–24\nComplete the flow-chart below.",
-						items: [
-							q(
-								"Read last year’s reports → …………",
-								"design survey",
-								null,
-								"design the survey",
-							),
-							q("Design the survey → …………", "pilot", null, "pilot study"),
-							q(
-								"Pilot with 10 students → …………",
-								"revise questions",
-								null,
-								"revise",
-							),
-							q("Collect results → …………", "write report", null, "report"),
-						],
-					},
+					{ id: "mcq3", label: "Multiple choice" },
+					{ id: "flow", label: "Flow-chart" },
 				],
 			},
 			{
@@ -513,42 +261,8 @@ export const SKILLS: SkillPreset[] = [
 				help: "Bài giảng học thuật. Note completion là dạng chuẩn. Đáp án khóa để chấm tự động.",
 				qStart: 31,
 				types: [
-					{
-						id: "notes",
-						label: "Note completion",
-						title: "Listening Section 4 — Note completion",
-						intro: "Questions 31–36\nComplete the notes below.",
-						items: [
-							q(
-								"Early parks were created for ………… in industrial cities",
-								"workers",
-								null,
-								"residents",
-							),
-							q("often paid for by …………", "philanthropists", null, "donors"),
-							q(
-								"20th century: used for public …………",
-								"recreation",
-								null,
-								"leisure",
-							),
-							q("some land sold for …………", "housing"),
-							q("Today parks support local …………", "wildlife"),
-							q("Cities now measure parks by …………", "access"),
-						],
-					},
-					{
-						id: "sent4",
-						label: "Sentence completion",
-						title: "Listening Section 4 — Sentence completion",
-						intro: "Questions 31–34\nComplete the sentences below.",
-						items: [
-							q("The first urban parks were built for …………", "workers"),
-							q("Many parks later lost land to …………", "housing"),
-							q("Modern parks are also designed for …………", "wildlife"),
-							q("Planners now emphasise equal …………", "access"),
-						],
-					},
+					{ id: "notes", label: "Note completion" },
+					{ id: "sent4", label: "Sentence completion" },
 				],
 			},
 		],
@@ -560,7 +274,6 @@ export const SKILLS: SkillPreset[] = [
 		bankLabel: "Đề Speaking đã có",
 		partLabel: "Phần thi",
 		typeLabel: "Dạng đề",
-		source: "Cambridge IELTS 10",
 		parts: [
 			{
 				id: "part1",
@@ -568,20 +281,8 @@ export const SKILLS: SkillPreset[] = [
 				spec: "Part 1 · 4–5 phút",
 				help: "Câu hỏi ngắn về bản thân. Học viên trả lời nói, không viết essay.",
 				types: [
-					{
-						id: "hometown",
-						label: "Hometown",
-						title: "Speaking Part 1 — Hometown",
-						prompt:
-							"Let’s talk about your hometown.\n\n1. Where is your hometown?\n2. What do you like most about it?\n3. How has it changed in recent years?\n4. Do you think you will continue to live there?",
-					},
-					{
-						id: "work",
-						label: "Work & study",
-						title: "Speaking Part 1 — Work & study",
-						prompt:
-							"Let’s talk about your work or studies.\n\n1. Do you work or are you a student?\n2. What do you like about that?\n3. What is the most difficult part of it?\n4. What would you like to do in the future?",
-					},
+					{ id: "hometown", label: "Hometown" },
+					{ id: "work", label: "Work & study" },
 				],
 			},
 			{
@@ -590,30 +291,9 @@ export const SKILLS: SkillPreset[] = [
 				spec: "Part 2 · 1 phút chuẩn bị · 1–2 phút nói",
 				help: "Cue card: 1 phút ghi chú, 1–2 phút nói liên tục. Học viên thấy đúng thẻ này.",
 				types: [
-					{
-						id: "place",
-						label: "Place",
-						title: "Speaking Part 2 — Describe a place",
-						cueTopic: "a place in your city that you like to visit",
-						cuePoints:
-							"where it is\nhow you get there\nwhat you do there\nand explain why you like this place",
-					},
-					{
-						id: "person",
-						label: "Person",
-						title: "Speaking Part 2 — Describe a person",
-						cueTopic: "a person you know who is good at their job",
-						cuePoints:
-							"who this person is\nwhat their job is\nhow you know them\nand explain why you think they are good at their job",
-					},
-					{
-						id: "object",
-						label: "Object",
-						title: "Speaking Part 2 — Describe an object",
-						cueTopic: "something you own that is important to you",
-						cuePoints:
-							"what it is\nhow you got it\nwhat you use it for\nand explain why it is important to you",
-					},
+					{ id: "place", label: "Place" },
+					{ id: "person", label: "Person" },
+					{ id: "object", label: "Object" },
 				],
 			},
 			{
@@ -622,31 +302,14 @@ export const SKILLS: SkillPreset[] = [
 				spec: "Part 3 · 4–5 phút",
 				help: "Câu hỏi trừu tượng, nối với Part 2. Giáo viên hỏi; học viên bàn luận.",
 				types: [
-					{
-						id: "cities",
-						label: "Cities",
-						title: "Speaking Part 3 — Cities",
-						prompt:
-							"Let’s consider public places in cities.\n\n1. What kinds of public places are most popular in your country?\n2. How can cities make public spaces more attractive?\n3. Do you think people will spend more time outdoors in the future? Why?",
-					},
-					{
-						id: "education",
-						label: "Education",
-						title: "Speaking Part 3 — Education",
-						prompt:
-							"Let’s discuss work and training.\n\n1. What skills should schools teach that they do not teach now?\n2. Is it better to specialise early or study a wide range of subjects?\n3. How might people’s working lives change in the next 20 years?",
-					},
+					{ id: "cities", label: "Cities" },
+					{ id: "education", label: "Education" },
 				],
 			},
 		],
 	},
 ];
 
-const cloneItems = (items: QuestionItem[] | undefined): QuestionItem[] =>
-	(items ?? []).map((item) => ({
-		...item,
-		opts: item.opts ? [...item.opts] : null,
-	}));
 const fallbackSkill = SKILLS[0];
 
 export function skillOf(id: string): SkillPreset {
@@ -670,6 +333,9 @@ export function kindOf(typeId: string): AnswerKind {
 export function qStartOf(skillId: string, partId: string): number {
 	return partOf(skillId, partId).qStart ?? 1;
 }
+export function isAutoSkill(skillId: string): boolean {
+	return skillId === "reading" || skillId === "listening";
+}
 export function answerChoices(kind: AnswerKind): readonly string[] | null {
 	return kind === "text" ? null : ASSIGNMENT_ANSWER_CHOICES[kind];
 }
@@ -685,37 +351,27 @@ export function emptyItem(typeId: string): QuestionItem {
 					: null,
 		answer: "",
 		alts: "",
+		pin: null,
+	};
+}
+export function emptyComposer(skillId: string, typeId: string) {
+	return {
+		title: "",
+		source: "",
+		prompt: "",
+		passage: "",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		imageUrl: "",
+		optionBank: [],
+		note: "",
+		items: isAutoSkill(skillId) ? [emptyItem(typeId)] : [],
 	};
 }
 export function wordCount(text: string): number {
 	const value = text.trim();
 	return value ? value.split(/\s+/).length : 0;
-}
-export function compositionDefaults(
-	skillId: string,
-	partId: string,
-	typeIdOrDirtyTitle: string | boolean,
-	dirtyMainOrPrompt: boolean,
-	maybeDirtyMain?: boolean,
-) {
-	const legacy = typeof typeIdOrDirtyTitle === "boolean";
-	const typeId = legacy ? partId : typeIdOrDirtyTitle;
-	const dirtyTitle = legacy
-		? (typeIdOrDirtyTitle as boolean)
-		: dirtyMainOrPrompt;
-	const dirtyMain = legacy ? dirtyMainOrPrompt : (maybeDirtyMain ?? false);
-	const skill = skillOf(legacy ? "writing" : skillId);
-	const part = partOf(skill.id, legacy ? skillId : partId);
-	const type = typeOf(skill.id, part.id, typeId);
-	return {
-		title: dirtyTitle ? "" : type.title,
-		source: skill.source,
-		prompt: dirtyMain ? "" : (type.prompt ?? ""),
-		passage: dirtyMain ? "" : (part.passage ?? ""),
-		intro: type.intro ?? "",
-		transcript: type.transcript ?? "",
-		cueTopic: type.cueTopic ?? "",
-		cuePoints: type.cuePoints ?? "",
-		items: dirtyMain ? [] : cloneItems(type.items),
-	};
 }

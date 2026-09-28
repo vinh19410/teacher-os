@@ -1,5 +1,5 @@
 import { expect, type Page, type Request, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * QC scenario for issue #61: the "Tạo hóa đơn" modal used to be a no-op —
@@ -14,16 +14,9 @@ import { createStudentViaUi, signUpViaUi } from "./helpers";
 const STUDENT_NAME = "QC-61 E2E";
 const CLASS_NAME = "E2E 61 Lớp hóa đơn";
 
-async function setupOrgWithEnrollment(page: Page): Promise<void> {
-	await signUpViaUi(page);
-
-	// Student first, from /students (the /students modal is create-only).
-	await page.getByText("Học viên", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/students$/);
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-
+async function setupOrgWithEnrollment(page: Page): Promise<string> {
+	const teacherEmail = await signUpViaUi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// Scheduled class (defaults: T2+T4, 12 buổi).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
@@ -42,7 +35,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 
 	// Enroll the existing student via the class-detail picker (#122 flow).
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
 	await expect(option).toBeVisible();
@@ -50,6 +43,17 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+
+	// Activate student so they can receive invoices
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
+	return teacherEmail;
 }
 
 /** The Card holding the "Hóa đơn" DataTable (scoped away from the package
@@ -198,4 +202,32 @@ test("tuition → tạo hóa đơn amount âm / ký tự không hợp lệ bị 
 	});
 	expect(posts).toBe(0);
 	await expect(invoiceTable(page)).toHaveCount(0);
+});
+
+test("tuition → picker hóa đơn loại trừ học viên chưa kích hoạt (status invited)", async ({
+	page,
+}) => {
+	const teacherEmail = await setupOrgWithEnrollment(page);
+
+	// Tạo học viên thứ hai và thêm vào lớp nhưng KHÔNG kích hoạt (giữ invited)
+	const INVITED_STUDENT = "HV-Chờ-Kích-Hoạt";
+	await seedStudent({ teacherEmail, name: INVITED_STUDENT });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog2 = page.getByRole("dialog");
+	const option2 = enrollDialog2.getByRole("option", { name: INVITED_STUDENT });
+	await expect(option2).toBeVisible();
+	await option2.click();
+	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog2).toBeHidden();
+	await expect(page.getByText(INVITED_STUDENT)).toBeVisible();
+	// Học viên này đang ở trạng thái 'Đã mời'
+	await expect(page.getByText("Đã mời")).toBeVisible();
+
+	// Mở modal tạo hóa đơn: chỉ thấy học viên active, KHÔNG thấy học viên invited
+	const dialog = await openCreateInvoiceModal(page);
+	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
+	await expect(dialog.getByLabel("Học viên *")).not.toContainText(
+		INVITED_STUDENT,
+	);
 });

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { type AuthMode, AuthTabs } from "@/components/auth/auth-tabs";
 import BrandPanel from "@/components/auth/brand-panel";
@@ -14,16 +15,25 @@ const TAB_STORAGE_KEY = "teacher-os-auth-tab";
 export const Route = createFileRoute("/login")({
 	// Raw passthrough: the consumers validate before use (validateReturnUrl)
 	// so an attacker-supplied `?returnUrl=` can never become an open redirect.
+	// error/error_description come back from the OAuth error callback when a
+	// sign-in is rejected (e.g. plan #260 role mismatch).
 	validateSearch: (
 		search: Record<string, unknown>,
-	): { returnUrl?: string } => ({
+	): { returnUrl?: string; error?: string; error_description?: string } => ({
 		returnUrl:
 			typeof search.returnUrl === "string" ? search.returnUrl : undefined,
+		error: typeof search.error === "string" ? search.error : undefined,
+		error_description:
+			typeof search.error_description === "string"
+				? search.error_description
+				: undefined,
 	}),
 	component: RouteComponent,
 });
 
 function RouteComponent() {
+	const navigate = Route.useNavigate();
+	const { returnUrl, error, error_description } = Route.useSearch();
 	const [mode, setMode] = useState<AuthMode>(() => {
 		try {
 			const stored = localStorage.getItem(TAB_STORAGE_KEY);
@@ -34,6 +44,18 @@ function RouteComponent() {
 	});
 	const [anySubmitting, setAnySubmitting] = useState(false);
 	const { isPending } = authClient.useSession();
+
+	useEffect(() => {
+		if (!error) return;
+		// Only trusted error codes surface their server-provided description;
+		// a hand-crafted ?error_description= link must not control toast text.
+		toast.error(
+			error === "ROLE_MISMATCH"
+				? error_description || "Đăng nhập Google thất bại. Vui lòng thử lại."
+				: "Đăng nhập Google thất bại. Vui lòng thử lại.",
+		);
+		void navigate({ search: { returnUrl }, replace: true });
+	}, [error, error_description, returnUrl, navigate]);
 
 	const changeMode = (next: AuthMode) => {
 		setMode(next);

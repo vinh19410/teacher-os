@@ -1,3 +1,4 @@
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
 import { asc, eq } from "drizzle-orm";
@@ -8,6 +9,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
+import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -25,7 +27,7 @@ export type ServerApp = Hono<{ Variables: { kernelCtx: KernelCtx } }>;
  */
 export interface AppDeps {
 	getDb(): Db;
-	corsOrigin: string;
+	corsOrigin: string | string[];
 	getSessionUser(headers: Headers): Promise<SessionUser | null>;
 	authHandler(req: Request): Response | Promise<Response>;
 }
@@ -45,13 +47,29 @@ function bootstrapMiddleware(deps: AppDeps) {
 		c: Context<{ Variables: { kernelCtx: KernelCtx } }>,
 		next: () => Promise<void>,
 	) => {
-		const pathname = new URL(c.req.url).pathname;
-		if (isAuthPath(pathname)) {
+		const pathname = c.req.path;
+		if (
+			isAuthPath(pathname) ||
+			pathname === "/api/student" ||
+			pathname.startsWith("/api/student/")
+		) {
 			return next();
 		}
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) {
 			return next(); // unauthenticated: kernel routes answer 401
+		}
+		// Account-role gate (plan #260): the shared cross-subdomain cookie zone
+		// gives a portal session full API reach here, so a student role must
+		// never bootstrap an org/membership on the teacher app.
+		if (session.role === "student") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+					code: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+				},
+				403,
+			);
 		}
 		const db = deps.getDb();
 		const readMemberships = () =>
@@ -124,8 +142,8 @@ export function buildApp(deps: AppDeps) {
 		"/*",
 		cors({
 			origin: deps.corsOrigin,
-			allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization"],
+			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization", "x-student-org-id"],
 			credentials: true,
 		}),
 	);
@@ -135,6 +153,7 @@ export function buildApp(deps: AppDeps) {
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
+	app.route("/api/student", studentRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

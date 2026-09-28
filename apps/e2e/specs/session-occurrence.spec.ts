@@ -12,7 +12,7 @@
  * - after cancelling, aggregate badge flips to "Đã hủy" and persists reload.
  */
 import { expect, test } from "@playwright/test";
-import { createStudentViaUi, signUpViaUi, vietnamTodayISO } from "./helpers";
+import { seedStudent, signUpViaUi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload", async ({
@@ -21,7 +21,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	const CLASS_NAME = `E2E Occurrence Cancel ${Date.now()}`;
 	const STUDENT_NAME = "Lê Hủy Tươnglai E2E";
 
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 
 	// Tue+Fri starting today ⇒ two distinct slots; 4 occurrences each week
 	// family kept small: total 8 (4 Tue + 4 Fri).
@@ -37,10 +37,22 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await page.getByText(CLASS_NAME).click();
 
 	// Student joins ⇒ lessons exist ⇒ rows become addressable occurrences.
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog1 = page.getByRole("dialog");
+	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog1).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal1 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal1).toBeVisible();
+	await confirmModal1.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal1).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	// Fully-upcoming class: every row offers Điều chỉnh; nothing settled yet.
 	const adjustButtons = page.getByRole("button", { name: "Điều chỉnh" });
@@ -77,7 +89,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 }) => {
 	const CLASS_NAME = `E2E Occurrence Topic ${Date.now()}`;
 
-	await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaUi(page);
 	await seedDatedClass(page, {
 		name: CLASS_NAME,
 		schedule: { days: [1] }, // one weekly slot → k indexes cleanly
@@ -87,8 +99,22 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await page.reload();
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, "Phạm Topic E2E");
+	await seedStudent({ teacherEmail: teacherEmail2, name: "Phạm Topic E2E" });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog2 = page.getByRole("dialog");
+	await enrollDialog2.getByRole("option", { name: "Phạm Topic E2E" }).click();
+	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog2).toBeHidden();
+	await expect(page.getByText("Phạm Topic E2E")).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal2 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal2).toBeVisible();
+	await confirmModal2.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal2).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 

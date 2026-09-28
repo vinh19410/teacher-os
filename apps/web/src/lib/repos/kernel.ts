@@ -5,7 +5,10 @@
  * endpoint base URL + the QueryClient refetch behind the bus).
  */
 import { queryOptions } from "@tanstack/react-query";
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	type KernelSnapshot,
+} from "@teacher-os/api/contracts";
 import type { KernelAction } from "@/lib/data-actions";
 import {
 	HttpError,
@@ -30,34 +33,19 @@ export type KernelSlice = KernelHydratedData;
 
 export interface KernelRequest {
 	path: string;
+	method?: "POST" | "DELETE";
 	body: unknown;
 }
 
 /** Map a kernel write action to its POST endpoint and JSON body. */
 export function kernelCommand(action: KernelAction): KernelRequest {
 	switch (action.type) {
-		case "add-student":
-			return {
-				path: "/api/students",
-				body: {
-					name: action.payload.name,
-					phone: action.payload.phone,
-					email: action.payload.email,
-					parentName: action.payload.parentName,
-					...(action.payload.classId
-						? { classId: action.payload.classId }
-						: {}),
-				},
-			};
 		case "enroll-student":
-			// Issue #122: enroll an EXISTING student into the viewed class.
+			// Issue #122 / #251: enroll an EXISTING student into the viewed class.
 			return {
 				path: `/api/classes/${action.classId}/enroll`,
 				body: {
 					studentId: action.studentId,
-					total: action.payload.total,
-					price: action.payload.price,
-					mode: action.payload.mode,
 				},
 			};
 		case "add-class":
@@ -239,6 +227,17 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/reorder`,
 				body: { lessonIds: action.lessonIds },
 			};
+		case "activate-enrollment":
+			return {
+				path: `/api/enrollments/${action.enrollmentId}/accept`,
+				body: {},
+			};
+		case "delete-enrollment":
+			return {
+				path: `/api/enrollments/${action.enrollmentId}`,
+				method: "DELETE",
+				body: undefined,
+			};
 	}
 }
 
@@ -339,17 +338,19 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	return envelope;
 }
 
-/** Extract `{reason}` from an error body — silently skips non-JSON/garbage. */
+/**
+ * Extract the machine reason from an error body — `body.error ?? body.reason`
+ * (the kernel 403s use `error`, legacy write failures use `reason`; mirrors
+ * the portal's `code = body.code ?? body.error` precedent). Silently skips
+ * non-JSON/garbage.
+ */
 async function parseErrorReason(res: Response): Promise<string | undefined> {
 	try {
 		const json: unknown = await res.json();
-		if (
-			typeof json === "object" &&
-			json !== null &&
-			!Array.isArray(json) &&
-			typeof (json as Record<string, unknown>).reason === "string"
-		) {
-			return (json as Record<string, unknown>).reason as string;
+		if (typeof json === "object" && json !== null && !Array.isArray(json)) {
+			const record = json as Record<string, unknown>;
+			const candidate = record.error ?? record.reason;
+			if (typeof candidate === "string") return candidate;
 		}
 	} catch {
 		// Body-rác/không-JSON: reason stays undefined; status still classifies.
@@ -362,20 +363,25 @@ export async function postKernelCommand(
 	baseUrl: string,
 	action: KernelAction,
 ): Promise<KernelWriteEnvelope> {
-	const { path, body } = kernelCommand(action);
-	const res = await fetch(`${baseUrl}${path}`, {
-		method: "POST",
+	const req = kernelCommand(action);
+	const method = req.method ?? "POST";
+	const res = await fetch(`${baseUrl}${req.path}`, {
+		method,
 		credentials: "include",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify(body),
+		body: req.body !== undefined ? JSON.stringify(req.body) : undefined,
 		// Serialized bus: a hung request would block every later write.
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
 		const reason = await parseErrorReason(res);
-		throw new HttpError(res.status, `POST ${path} failed: ${res.status}`, {
-			reason,
-		});
+		throw new HttpError(
+			res.status,
+			`${method} ${req.path} failed: ${res.status}`,
+			{
+				reason,
+			},
+		);
 	}
 	let json: unknown;
 	try {
@@ -445,7 +451,13 @@ export async function fetchKernelSnapshot(
 		signal: composed,
 	});
 	if (!res.ok) {
-		throw new HttpError(res.status, `GET /api/kernel failed: ${res.status}`);
+		// Parse the body (plan #260): the account-role 403 carries
+		// `error: ACCOUNT_STUDENT_ROLE` and QueryCache.onError must see it —
+		// the machine code rides on `reason`; the message stays descriptive.
+		const reason = await parseErrorReason(res);
+		throw new HttpError(res.status, `GET /api/kernel failed: ${res.status}`, {
+			reason,
+		});
 	}
 	let json: unknown;
 	try {
@@ -492,6 +504,12 @@ export interface KernelCommandBusDeps {
 	 * cannot help; the host must re-authenticate (sign out + login redirect).
 	 */
 	onAuthLost(): void;
+	/**
+	 * A `403 ACCOUNT_STUDENT_ROLE` reached the bus — the account is a student
+	 * on the teacher app (plan #260); the host swaps the UI for the blocked
+	 * view. Optional so ad-hoc test buses can omit it.
+	 */
+	onRoleBlocked?(): void;
 }
 
 export interface KernelCommandBus {
@@ -503,6 +521,19 @@ export interface KernelCommandBus {
 	 * Resolves false when the snapshot is unreachable.
 	 */
 	refresh(): Promise<boolean>;
+}
+
+/**
+ * Only the exact account-role code triggers the blocked exit — never a bare
+ * 403 (e.g. the legacy "no membership after bootstrap"). Shared with the
+ * QueryCache read path (query-client.ts) so both gates stay in lockstep.
+ */
+export function isStudentRoleRejected(error: unknown): boolean {
+	return (
+		isHttpError(error) &&
+		error.status === 403 &&
+		error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP
+	);
 }
 
 /**
@@ -540,6 +571,10 @@ export function createKernelCommandBus(
 			if (isHttpError(error) && error.status === 401) {
 				deps.onAuthLost();
 			}
+			// A student-role session is likewise beyond retry (plan #260).
+			if (isStudentRoleRejected(error)) {
+				deps.onRoleBlocked?.();
+			}
 			const classified = classifyWriteFailure(error);
 			return classified.kind === "definite-failure"
 				? {
@@ -563,6 +598,12 @@ export function createKernelCommandBus(
 				// absorbed: its ack IS the durable commit boundary).
 				if (isHttpError(error) && error.status === 401) {
 					deps.onAuthLost();
+					return { kind: "committed", id, updated, skipped };
+				}
+				// A student-role rejection on the post-write reload means the
+				// write landed but the session can no longer read — same exit.
+				if (isStudentRoleRejected(error)) {
+					deps.onRoleBlocked?.();
 					return { kind: "committed", id, updated, skipped };
 				}
 				// A flaky GET must not lose the acknowledged write's outcome.
@@ -596,6 +637,9 @@ export function createKernelCommandBus(
 					// re-auth instead of reporting a misleading "unreachable".
 					if (isHttpError(error) && error.status === 401) {
 						deps.onAuthLost();
+					}
+					if (isStudentRoleRejected(error)) {
+						deps.onRoleBlocked?.();
 					}
 					return false;
 				}

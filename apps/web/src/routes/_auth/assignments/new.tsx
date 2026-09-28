@@ -1,22 +1,39 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { type FormEvent, useMemo, useState } from "react";
+import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
+import { type FormEvent, useEffect, useState } from "react";
 import {
-	compositionDefaults,
+	emptyComposer,
+	isAutoSkill,
+	isImageBased,
 	type QuestionItem,
-	skillOf,
 } from "@/components/assignments/assignment-presets";
+import {
+	applyComposerFieldChange,
+	clozeStemIssue,
+	hasAuthoringContent,
+	imagePinIssue,
+	optionBankIssue,
+	structuralChangeKind,
+} from "@/components/assignments/composer-transitions";
 import { CreateSuccessCard } from "@/components/assignments/create-success-card";
 import {
 	type ComposerValue,
 	PromptComposer,
 } from "@/components/assignments/prompt-composer";
-import { StudentPreviewPaper } from "@/components/assignments/student-preview-paper";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
+	ASSIGNMENT_DRAFT_SCHEMA_VERSION,
+	clearAssignmentDraft,
+	composerDraftHasContent,
+	readAssignmentDraft,
+	type StoredAssignmentDraft,
+	saveAssignmentDraft,
+} from "@/lib/assignment-draft-store";
+import {
+	type PreviewDraft,
 	savePreviewDraft,
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
@@ -39,29 +56,12 @@ interface SavedPrompt {
 	questions: QuestionItem[];
 }
 function freshComposer(): ComposerValue {
-	const defaults = compositionDefaults(
-		"writing",
-		"task2",
-		"discuss",
-		false,
-		false,
-	);
 	return {
 		skill: "writing",
 		part: "task2",
 		type: "discuss",
-		title: defaults.title,
 		band: "7.0",
-		source: defaults.source,
-		prompt: defaults.prompt,
-		passage: defaults.passage,
-		intro: defaults.intro,
-		transcript: defaults.transcript,
-		cueTopic: defaults.cueTopic,
-		cuePoints: defaults.cuePoints,
-		audioName: "",
-		note: "",
-		items: defaults.items,
+		...emptyComposer("writing", "discuss"),
 	};
 }
 function countAnswers(value: ComposerValue) {
@@ -81,7 +81,7 @@ function hasCoreContent(value: ComposerValue) {
 		: !!value.prompt.trim();
 }
 export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
-	const auto = value.skill === "reading" || value.skill === "listening";
+	const auto = isAutoSkill(value.skill);
 	if (!value.title.trim())
 		return {
 			title: "Đặt tên đề rồi lưu vào ngân hàng.",
@@ -94,7 +94,39 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	)
 		return {
 			title: "Thiếu file nghe",
-			sub: "Đính file hoặc dùng file mẫu trước khi lưu sẵn sàng giao.",
+			sub: "Đính file nghe trước khi lưu sẵn sàng giao.",
+		};
+	if (
+		value.skill === "reading" &&
+		value.imageUrl.trim() &&
+		!isAssignmentImageUrl(value.imageUrl)
+	)
+		return {
+			title: "Link ảnh chưa hợp lệ",
+			sub: "Ảnh chỉ nhận link https (tối đa 500 ký tự). Sửa link trước khi lưu.",
+		};
+	// Phase-04 FR2 mirror: image-based pairs (reading diagram + listening map,
+	// skill-qualified) gate ready on the image AND per-question pins.
+	const pinIssue = imagePinIssue(value, status);
+	if (pinIssue)
+		return {
+			title: "Thiếu ảnh hoặc ghim nhãn",
+			sub: pinIssue,
+		};
+	// Phase-02 FR2/FR3 mirror: the option-bank rules surface as one message —
+	// the same text the bank panel and the save gate show.
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue)
+		return {
+			title: "Ngân hàng lựa chọn chưa đạt",
+			sub: bankIssue,
+		};
+	// Phase-03 FR7 mirror: marker count + caps block with the row message.
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue)
+		return {
+			title: "Câu hỏi chưa hợp lệ",
+			sub: stemIssue,
 		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
@@ -122,11 +154,53 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	};
 }
 
+/** Snapshot for the preview page (sessionStorage handoff). Includes
+ * `transcript` — the preview round trip must never drop it (phase-01 FR6) —
+ * and `optionBank` (phase-02 FR7, same rule). */
+export function previewDraftFrom(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): PreviewDraft {
+	return {
+		task: value.part,
+		genre: value.type,
+		skill: value.skill,
+		part: value.part,
+		type: value.type,
+		title: value.title,
+		band: value.band,
+		source: value.source,
+		prompt: value.prompt,
+		passage: value.passage,
+		intro: value.intro,
+		transcript: value.transcript,
+		cueTopic: value.cueTopic,
+		cuePoints: value.cuePoints,
+		audioName: value.audioName,
+		imageUrl: value.imageUrl,
+		optionBank: value.optionBank,
+		items: value.items,
+		note: value.note,
+		status,
+	};
+}
+
+const STRUCTURAL_LABELS = {
+	skill: "kỹ năng",
+	part: "phần thi",
+	type: "dạng đề",
+} as const;
+
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
 	const { data } = useData();
+	// Restore precedence (FR6): the destructive preview-draft take wins over
+	// the autosave banner — the teacher deliberately handed off to /preview.
 	const [restored] = useState(() => takePreviewDraft());
+	const [bannerDraft] = useState<StoredAssignmentDraft | null>(() =>
+		restored ? null : readAssignmentDraft(),
+	);
 	const [value, setValue] = useState<ComposerValue>(() =>
 		restored
 			? {
@@ -141,17 +215,36 @@ export function NewAssignmentRoute() {
 					cueTopic: restored.cueTopic ?? "",
 					cuePoints: restored.cuePoints ?? "",
 					audioName: restored.audioName ?? "",
+					imageUrl: restored.imageUrl ?? "",
+					optionBank: restored.optionBank ?? [],
 					items: restored.items ?? [],
 				}
-			: freshComposer(),
+			: bannerDraft
+				? { ...freshComposer(), ...bannerDraft.value }
+				: freshComposer(),
 	);
 	const [status, setStatus] = useState<"draft" | "ready">(
-		restored?.status ?? "ready",
+		restored?.status ?? bannerDraft?.status ?? "ready",
 	);
-	const [dirtyTitle, setDirtyTitle] = useState(!!restored);
-	const [dirtyMain, setDirtyMain] = useState(!!restored);
+	const [bannerOpen, setBannerOpen] = useState(() => bannerDraft !== null);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
+	// Debounced autosave (FR6): skip the success card (the draft was cleared
+	// on purpose) and skip an untouched composer (an empty draft must never
+	// resurrect the restore banner).
+	useEffect(() => {
+		if (saved) return;
+		if (!composerDraftHasContent(value)) return;
+		const timer = setTimeout(() => {
+			saveAssignmentDraft({
+				schemaVersion: ASSIGNMENT_DRAFT_SCHEMA_VERSION,
+				savedAt: Date.now(),
+				status,
+				value,
+			});
+		}, 1000);
+		return () => clearTimeout(timer);
+	}, [value, status, saved]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
 	if (value.skill === "writing" && !value.prompt.trim())
@@ -163,13 +256,31 @@ export function NewAssignmentRoute() {
 		status === "ready" &&
 		!value.audioName.trim()
 	)
-		fieldErrors.audioName = "Đính file nghe hoặc dùng file mẫu.";
+		fieldErrors.audioName = "Đính file nghe (MP3 hoặc WAV).";
+	const trimmedImageUrl = value.imageUrl.trim();
+	if (isImageBased(value.skill, value.type)) {
+		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl))
+			fieldErrors.imageUrl = "Chỉ nhận link ảnh https (tối đa 500 ký tự).";
+		else if (status === "ready" && !trimmedImageUrl)
+			fieldErrors.imageUrl = "Dán link ảnh (https) trước khi lưu.";
+	}
 	if (
 		value.skill === "speaking" &&
 		value.part === "part2" &&
 		!value.cueTopic.trim()
 	)
 		fieldErrors.cueTopic = "Nhập chủ đề cue card.";
+	// Phase-02 FR2 mirror — the bank panel shows this inline (via
+	// errors.optionBank) and the save gate below mirrors the contract.
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue) fieldErrors.optionBank = bankIssue;
+	// Phase-03 FR7 mirror — marker count + stem/answer/alts caps block both
+	// statuses (contract parse-time); shown at the key editor and the gate.
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue) fieldErrors.questions = stemIssue;
+	// Phase-04 FR2 mirror — image-based pairs gate ready on image + pins.
+	const pinIssue = imagePinIssue(value, status);
+	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
 	const canSave =
 		hasCoreContent(value) &&
 		!(
@@ -178,93 +289,58 @@ export function NewAssignmentRoute() {
 			!value.audioName.trim()
 		) &&
 		!(
-			(value.skill === "reading" || value.skill === "listening") &&
+			isImageBased(value.skill, value.type) &&
+			status === "ready" &&
+			!value.imageUrl.trim()
+		) &&
+		!(
+			value.skill === "reading" &&
+			value.imageUrl.trim() &&
+			!isAssignmentImageUrl(value.imageUrl)
+		) &&
+		!bankIssue &&
+		!stemIssue &&
+		!pinIssue &&
+		!(
+			isAutoSkill(value.skill) &&
 			status === "ready" &&
 			countAnswers(value) !== value.items.length
 		);
 	const actionCopy = actionCopyFor(value, status);
-	const prompts = useMemo(
-		() =>
-			data.assignmentPrompts
-				.filter((prompt) => prompt.skill === value.skill)
-				.slice(-5)
-				.reverse(),
-		[data.assignmentPrompts, value.skill],
-	);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
-		if (patch.title !== undefined) setDirtyTitle(true);
-		if (
-			[
-				"prompt",
-				"passage",
-				"intro",
-				"transcript",
-				"cueTopic",
-				"cuePoints",
-				"items",
-			].some((key) => key in patch)
-		)
-			setDirtyMain(true);
-		setValue((current) => {
-			const merged = { ...current, ...patch };
-			if (patch.skill !== undefined) {
-				const skill = skillOf(merged.skill);
-				const part = skill.parts[0];
-				const type = part.types[0];
-				const defaults = compositionDefaults(
-					skill.id,
-					part.id,
-					type.id,
-					false,
-					false,
-				);
-				return {
-					...merged,
-					skill: skill.id,
-					part: part.id,
-					type: type.id,
-					title: defaults.title,
-					source: defaults.source,
-					prompt: defaults.prompt,
-					passage: defaults.passage,
-					intro: defaults.intro,
-					transcript: defaults.transcript,
-					cueTopic: defaults.cueTopic,
-					cuePoints: defaults.cuePoints,
-					items: defaults.items,
-					audioName: "",
-					note: "",
-				};
-			}
-			if (patch.part !== undefined || patch.type !== undefined) {
-				const defaults = compositionDefaults(
-					merged.skill,
-					merged.part,
-					merged.type,
-					dirtyTitle || patch.title !== undefined,
-					dirtyMain || patch.prompt !== undefined || patch.items !== undefined,
-				);
-				return {
-					...merged,
-					title: defaults.title || merged.title,
-					source: defaults.source,
-					prompt: defaults.prompt || merged.prompt,
-					passage: defaults.passage || merged.passage,
-					intro: defaults.intro,
-					transcript: defaults.transcript,
-					cueTopic: defaults.cueTopic,
-					cuePoints: defaults.cuePoints,
-					items: defaults.items.length ? defaults.items : merged.items,
-				};
-			}
-			return merged;
-		});
+		// Confirm decision happens HERE, outside the state updater — React
+		// StrictMode double-fires updaters, so a confirm inside one would fire
+		// twice (red-team #8). The updater stays pure.
+		const change = structuralChangeKind(value, patch);
+		if (change && hasAuthoringContent(value)) {
+			// A skill change wipes the whole composer (emptyComposer — including
+			// title); a part/type change only wipes the type-specific fields.
+			const message =
+				change === "skill"
+					? "Đổi kỹ năng sẽ xóa toàn bộ nội dung đã soạn của đề hiện tại. Tiếp tục?"
+					: `Đổi ${STRUCTURAL_LABELS[change]} sẽ xóa câu hỏi, đáp án và câu lệnh đã soạn của dạng hiện tại. Tiếp tục?`;
+			const ok = window.confirm(message);
+			if (!ok) return;
+		}
+		setValue((current) => applyComposerFieldChange(current, patch));
 	}
-	function resetAll() {
+	function acceptDraftBanner() {
+		// The restored content is now the live form state — drop the stored
+		// copy so the next mount never resurrects the banner.
+		clearAssignmentDraft();
+		setBannerOpen(false);
+	}
+	function discardDraftBanner() {
+		clearAssignmentDraft();
+		setBannerOpen(false);
 		setValue(freshComposer());
 		setStatus("ready");
-		setDirtyTitle(false);
-		setDirtyMain(false);
+	}
+	function resetAll() {
+		clearAssignmentDraft();
+		setBannerOpen(false);
+		setValue(freshComposer());
+		setStatus("ready");
 		setShowErrors(false);
 		setSaved(null);
 		submit.reset();
@@ -289,11 +365,22 @@ export function NewAssignmentRoute() {
 				cueTopic: value.cueTopic.trim(),
 				cuePoints: value.cuePoints,
 				audioName: value.audioName.trim(),
+				imageUrl: value.imageUrl.trim(),
 				questions: value.items,
+				optionBank: value.optionBank,
 				note: value.note.trim(),
 				status,
 			},
 		});
+		// The write may be saved on refreshed/committed and may-or-may-not on
+		// outcome-unknown — the draft must not resurrect in any of those. A
+		// definite-failure (4xx) provably did NOT save: keep the draft.
+		if (
+			result?.kind === "refreshed" ||
+			result?.kind === "committed" ||
+			result?.kind === "outcome-unknown"
+		)
+			clearAssignmentDraft();
 		if (result?.kind === "refreshed")
 			setSaved({
 				title: value.title.trim(),
@@ -310,6 +397,7 @@ export function NewAssignmentRoute() {
 	async function handleReconcile() {
 		const applied = await submit.reconcile();
 		if (!applied) return;
+		clearAssignmentDraft();
 		const row = data.assignmentPrompts.find(
 			(prompt) =>
 				prompt.title === value.title.trim() && prompt.skill === value.skill,
@@ -345,148 +433,106 @@ export function NewAssignmentRoute() {
 					Bài tập
 				</Link>
 				<span aria-hidden="true">›</span>
-				<Link
-					to="/assignments/bank"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
-				>
-					Ngân hàng
-				</Link>
-				<span aria-hidden="true">›</span>
 				<span>Tạo mới</span>
 			</nav>
 			<PageHead
 				title="Thêm đề vào ngân hàng"
 				lead="Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
 			/>
+			{bannerOpen && !saved && (
+				<div
+					role="status"
+					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+				>
+					<span className="text-xs">
+						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.
+					</span>
+					<span className="flex gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={discardDraftBanner}
+						>
+							Hủy
+						</Button>
+						<Button type="button" size="sm" onClick={acceptDraftBanner}>
+							Tiếp tục
+						</Button>
+					</span>
+				</div>
+			)}
 			{saved ? (
 				<CreateSuccessCard {...saved} onCreateAnother={resetAll} />
 			) : (
-				<div className="grid gap-5 lg:grid-cols-[1.45fr_0.9fr]">
-					<form onSubmit={handleSubmit} noValidate>
-						<PromptComposer
-							value={value}
-							errors={fieldErrors}
-							showErrors={showErrors}
-							onFieldChange={handleFieldChange}
-						/>
-						<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
-							{submit.notice && (
-								<KernelSubmitNotice
-									notice={submit.notice}
-									onReconcile={handleReconcile}
-									disabled={submit.saving}
+				<form onSubmit={handleSubmit} noValidate>
+					<PromptComposer
+						value={value}
+						errors={fieldErrors}
+						showErrors={showErrors}
+						status={status}
+						onFieldChange={handleFieldChange}
+					/>
+					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
+						{submit.notice && (
+							<KernelSubmitNotice
+								notice={submit.notice}
+								onReconcile={handleReconcile}
+								disabled={submit.saving}
+							/>
+						)}
+						{submit.error && (
+							<p role="alert" className="mb-2 text-danger text-xs">
+								{submit.error}
+							</p>
+						)}
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="flex flex-col">
+								<strong className="text-sm">{actionCopy.title}</strong>
+								<span className="text-muted-fg text-xs">{actionCopy.sub}</span>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<span className="font-medium text-muted-fg text-xs">
+									Trạng thái
+								</span>
+								<ChipFilter
+									options={["Bản nháp", "Sẵn sàng giao"]}
+									value={status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}
+									onChange={(label) =>
+										setStatus(label === "Bản nháp" ? "draft" : "ready")
+									}
 								/>
-							)}
-							{submit.error && (
-								<p role="alert" className="mb-2 text-danger text-xs">
-									{submit.error}
-								</p>
-							)}
-							<div className="flex flex-wrap items-center justify-between gap-3">
-								<div className="flex flex-col">
-									<strong className="text-sm">{actionCopy.title}</strong>
-									<span className="text-muted-fg text-xs">
-										{actionCopy.sub}
-									</span>
-								</div>
-								<div className="flex flex-col gap-1.5">
-									<span className="font-medium text-muted-fg text-xs">
-										Trạng thái
-									</span>
-									<ChipFilter
-										options={["Bản nháp", "Sẵn sàng giao"]}
-										value={status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}
-										onChange={(label) =>
-											setStatus(label === "Bản nháp" ? "draft" : "ready")
-										}
-									/>
-								</div>
-								<div className="flex gap-2">
-									<Button
-										type="button"
-										variant="secondary"
-										onClick={() => {
-											savePreviewDraft({
-												task: value.part,
-												genre: value.type,
-												skill: value.skill,
-												part: value.part,
-												type: value.type,
-												title: value.title,
-												band: value.band,
-												source: value.source,
-												prompt: value.prompt,
-												passage: value.passage,
-												intro: value.intro,
-												cueTopic: value.cueTopic,
-												cuePoints: value.cuePoints,
-												audioName: value.audioName,
-												items: value.items,
-												note: value.note,
-												status,
-											});
-											navigate({ to: "/assignments/preview" });
-										}}
-									>
-										Xem trước
-									</Button>
-									<Button
-										type="button"
-										variant="secondary"
-										onClick={resetAll}
-										disabled={submit.saving}
-									>
-										Hủy
-									</Button>
-									<Button type="submit" disabled={!canSave || submit.saving}>
-										{submit.saving
-											? "Đang lưu…"
-											: status === "draft"
-												? "Lưu bản nháp"
-												: "Lưu vào ngân hàng"}
-									</Button>
-								</div>
+							</div>
+							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => {
+										savePreviewDraft(previewDraftFrom(value, status));
+										navigate({ to: "/assignments/preview" });
+									}}
+								>
+									Xem trước
+								</Button>
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={resetAll}
+									disabled={submit.saving}
+								>
+									Hủy
+								</Button>
+								<Button type="submit" disabled={!canSave || submit.saving}>
+									{submit.saving
+										? "Đang lưu…"
+										: status === "draft"
+											? "Lưu bản nháp"
+											: "Lưu vào ngân hàng"}
+								</Button>
 							</div>
 						</div>
-					</form>
-					<div className="flex flex-col gap-5">
-						<Card variant="white" className="flex flex-col gap-3">
-							<h2 className="font-display font-semibold text-[17px]">
-								Ngân hàng
-							</h2>
-							<p className="text-muted-fg text-xs">
-								Đề này chỉ được thêm vào ngân hàng bài tập. Giao cho lớp và học
-								viên ở trang Lớp học.
-							</p>
-							<strong>Đề {skillOf(value.skill).name} đã có</strong>
-							{prompts.length ? (
-								prompts.map((prompt) => (
-									<div
-										key={prompt.id}
-										className="border-line border-t pt-2 text-sm"
-									>
-										<div>{prompt.title}</div>
-										<span className="text-meta text-xs">
-											{prompt.source || "Không ghi nguồn"} ·{" "}
-											{prompt.status === "ready" ? "Sẵn sàng" : "Bản nháp"}
-										</span>
-									</div>
-								))
-							) : (
-								<p className="text-muted-fg text-xs">
-									Chưa có đề {skillOf(value.skill).name} trong ngân hàng.
-								</p>
-							)}
-							{(value.skill === "reading" || value.skill === "listening") && (
-								<p className="rounded-md bg-bg p-2 text-xs">
-									{countAnswers(value)}/{value.items.length} đáp án đã khóa.
-									Preview bên dưới không hiện đáp án.
-								</p>
-							)}
-						</Card>
-						<StudentPreviewPaper {...value} status={status} />
 					</div>
-				</div>
+				</form>
 			)}
 		</div>
 	);

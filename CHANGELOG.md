@@ -10,6 +10,84 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-25
+
+### Added
+- Cloze click-to-blank cho 8 dạng completion (sent, note, summary, flowchart, form, notes, sent4, flow): dán đoạn văn → bấm vào từ để tạo chỗ trống đánh số, đáp án tự sinh từ từ được chọn, popover sửa đáp án/nhận thêm (`alt1 / alt2`); chế độ "Cú pháp thô" cho power user theo cú pháp H5P `*đáp án/alt*` với escape `\*` (#271)
+- Soạn đề Table completion bằng lưới r×c trực tiếp: thêm/xóa hàng/cột, bấm nút gạch dưới để biến ô thành chỗ trống (nội dung ô thành đáp án); preview học viên render từng câu thành hàng có nhãn "Hàng h — Cột c" (#271)
+- Preview học viên (cả draft lẫn trang ngân hàng) render stem chứa marker `____` thành text trước + ô điền (rộng theo độ dài đáp án) + text sau, các câu completion ghép liên tiếp tái hiện đoạn văn; đề cũ không marker vẫn hiển thị nguyên văn (#271)
+- Pure helpers cloze (`parseClozeRaw`, `segmentsToItems`, `splitStemByMarker`, `countBlanks`, grid math) + test unit 56 case: token hóa 20.000 ký tự < 50ms, cap render 5000 từ kèm gợi ý rút ngắn (#271)
+
+### Changed
+- Marker `____` (≥4 gạch dưới) trong stem là quy ước nội bộ: đúng 1 marker hợp lệ, 0 marker hợp lệ (đề cũ + stem tablecomp được miễn marker), ≥2 marker báo lỗi tại hàng và chặn lưu; cap stem 500 / answer 200 / alts 500 / 40 câu mirror vào canSave — chặn trước khi gặp 400 "invalid body" không kèm thông tin (#271)
+- "Áp vào câu hỏi" của cloze/tablecomp kiểm tra cap TRƯỚC khi ghi items (segment > 500 ký tự / tổng blanks > 40 → chặn kèm thông báo tại chỗ) và luôn hỏi xác nhận khi sẽ ghi đè câu hỏi đã soạn (#271)
+
+### Added
+- Ngân hàng lựa chọn có cấu trúc (option bank) cho 5 dạng matching + listening map (headings, info, sentend, features, match2, map): panel soạn từng dòng tự gán nhãn A–H / i–viii, nút "điền đủ N mục", cap 8 mục (#271)
+- Khóa đáp án dạng matching bằng chip chọn từ chính ngân hàng (chỉ nhãn có trong bank); riêng sentend chặn chọn trùng — mỗi nhãn dùng đúng một câu (#271)
+- Xóa một dòng bank sẽ reset đáp án đã khóa từ vị trí đó trở xuống (nhãn là vị trí — tránh re-bind âm thầm chấm sai) (#271)
+- Preview học viên (draft lẫn ngân hàng đề) render bank thành danh sách đánh nhãn; đề cũ không bank hiển thị fallback intro kèm cảnh báo "Thiếu ngân hàng lựa chọn" thay vì im lặng (#271)
+- Validation đồng bộ 3 tầng (contract / composer / preview): bank 2–8 mục phủ đủ số câu, tối đa 8 câu cho dạng bankable, đáp án phải nằm trong bank, sentend đôi một khác nhau; cột DB `assignment_prompt.option_bank` (migration 0028 — deploy `db:migrate:deploy` TRƯỚC worker) (#271)
+
+### Removed
+- Xoá trang `/assignments/bank` (Ngân hàng bài tập): route, nút "Ngân hàng đề", breadcrumb "Ngân hàng" và mọi liên kết điều hướng tới nó (#267)
+- Bỏ bảng tracking bài tập per-học viên cũ trên `/assignments` (dữ liệu mock `data.assignments` + `averageBand`); theo dõi tiến độ làm bài vẫn ở tab Bài tập của trang Lớp học, luồng chấm bài vẫn vào được từ trang chi tiết học viên (#267)
+
+### Changed
+- Trang `/assignments` giờ hiển thị duy nhất **danh sách bài tập đã tạo** (assignment prompts): filter kỹ năng/phần thi, search, preview aside và StatusTag Nháp/Sẵn sàng/Đã dùng N lớp — kế thừa toàn bộ UX của trang bank cũ (#267)
+- Link sau khi tạo đề đổi thành "Xem danh sách bài tập" trỏ về `/assignments`; empty state mới hướng dẫn tạo bài tập đầu tiên (#267)
+
+### Added
+- Lưới khóa đáp án (answer-key grid) cho các dạng reading/listening đóng (tfng/ynng/mcq/roman/letter): mỗi câu một hàng với số câu thật theo phần thi, chip chọn đáp án, phím tắt (t/f/n/g, y/n, 1–8/a–h, Enter thêm câu, Backspace xóa hàng rỗng) — không còn gõ đáp án tay (#271)
+- Dán key hàng loạt map theo số câu (`1. TRUE`, `3. câu trả lời / alt1 / alt2`), báo lỗi theo từng dòng khi số ngoài phạm vi/trùng/không đọc được, phần hợp lệ vẫn áp dụng (#271)
+- Autosave bản nháp soạn đề vào localStorage (debounce 1s, TTL 7 ngày): banner "Đã phục hồi bản nháp" sau refresh; bản nháp preview (sessionStorage) luôn thắng banner; sửa bug `savePreviewDraft` bỏ sót transcript (#271)
+- Chip "Chèn câu lệnh chuẩn" chèn giới hạn từ IELTS chuẩn theo dạng đề vào intro một chạm (#271)
+- Ghim nhãn trên ảnh (image pins) cho diagram (Reading) và map (Listening): bấm lên ảnh đặt ghim đánh số theo câu (toạ độ %, không lệch khi đổi kích thước màn hình), bấm ghim để chọn câu, nút đặt lại ghim từng hàng; ảnh chết (URL hỏng) vẫn nhập key text kèm cảnh báo (#271)
+- Chế độ raw `*đáp án/alt*` trong cloze editor cho power user (tương thích cú pháp H5P), parse trực tiếp ra chỗ trống (#271)
+
+### Changed
+- Lưu sẵn sàng giao của diagram (Reading) / map (Listening) giờ bắt buộc: đủ link ảnh https, mỗi câu có ghim trên ảnh và đáp án (skill-qualified — writing Task 1 "Bản đồ" không bị đòi ảnh/pin); câu hỏi thiếu ghim báo lỗi tại hàng khi lưu (#271)
+- Preview học viên vẽ ghim đánh số tại đúng vị trí % trên ảnh kèm ô điền; đề cũ không ghim vẫn xem như cũ (#271)
+- Object câu hỏi trong contract giờ `.strict()`: trường lạ trong `questions` bị từ chối 400 rõ ràng thay vì bị strip im lặng (#271)
+
+### Changed
+- Đổi kỹ năng/phần thi/dạng đề khi đang có nội dung soạn giờ hỏi xác nhận trước (kể cả nhánh đổi kỹ năng xóa sạch); trong cùng skill Listening, transcript được giữ lại khi đổi phần/dạng; intro/imageUrl vẫn reset như cũ (#271)
+- Lỗi validation từng câu (thiếu nội dung/đáp án khi lưu "Sẵn sàng giao", vượt cap 500/200/500 ký tự, lựa chọn mcq quá dài) hiển thị tại đúng hàng câu thay vì popup toàn trang; bản nháp không bị báo đỏ hàng loạt (#271)
+- Nút "Thêm câu" vô hiệu hóa khi đủ 40 câu (khớp giới hạn contract) kèm thông báo (#271)
+
+## 2026-09-24
+
+### Added
+- Tự động provision học viên tại bridge middleware portal (`requireStudent` trong `apps/server/src/routes/student.ts`): lần đầu đăng nhập student portal với email đã xác thực (`emailVerified === true`) và chưa có hồ sơ học viên, hệ thống tự động sinh student row vào organization sớm nhất (#257)
+- Expression unique index `student_email_uq` trên `lower(trim(email))` (migration 0023, dedupe non-destructive dữ liệu cũ) ngăn chặn trùng lặp email học viên kể cả khác biệt chữ hoa/thường hoặc khoảng trắng (#257)
+- Helper direct DB seed `seedStudent()` phục vụ các bài kiểm thử E2E và server tests (#257)
+
+### Removed
+- Xoá hoàn toàn đường tạo học viên thủ công ở admin/teacher: xoá route `POST /api/students`, xoá Zod contract `studentCreateSchema` và type `StudentCreate` (#257)
+- Gỡ bỏ command `add-student` và reducer case `add-student` trên web app (#257)
+- Gỡ bỏ nút "+ Thêm học viên" trên trang danh sách học viên `/students` và form tạo học viên mới; chuyển đổi `AddStudentModal` thành `EnrollStudentModal` chỉ phục vụ xếp học viên có sẵn vào lớp (#257)
+
+### Changed
+- Modal thêm học viên ở lớp chỉ còn một chế độ duy nhất là chọn học viên có sẵn trong trung tâm để thêm vào lớp (#257)
+- Empty state trang danh sách học viên hướng dẫn học viên tự xuất hiện khi đăng ký và đăng nhập student portal lần đầu (#257)
+
+## 2026-09-23
+
+### Added
+- Vòng đời trạng thái enrollment (`invited` -> `active`) qua cột `enrollment.status` (migration 0022, default `active` backfill dữ liệu cũ) (#253)
+- Endpoint `POST /api/enrollments/:enrollmentId/accept` kích hoạt enrollment chuyển sang `active` và sinh gói học cùng chuỗi buổi học CAS idempotent (#253)
+- Endpoint `DELETE /api/enrollments/:enrollmentId` cho phép hủy lời mời chưa kích hoạt (chỉ áp dụng khi status là `invited`) (#253)
+- Roster lớp: badge trạng thái "Đã mời" (warning) / "Đang học" (success) và 2 nút thao tác "Kích hoạt" và "Hủy lời mời" kèm modal xác nhận cho học viên invited (#253)
+- Roster lớp & danh sách lớp: KPI sĩ số chỉ đếm học viên `active`, hiển thị phụ `· N chờ xác nhận` khi có học viên invited (#253)
+- Trang học viên (danh sách và chi tiết): hiển thị badge "Đã mời" bên cạnh lớp học có enrollment invited (#253)
+
+### Changed
+- Thêm học viên vào lớp (cả qua tạo học viên mới kèm lớp và enroll học viên có sẵn) chỉ tạo enrollment ở trạng thái "Đã mời" (`invited`), chưa sinh gói học và buổi học (#253)
+- Modal Thêm học viên có sẵn loại trừ cả học viên đang học và học viên đã được mời (#253)
+- Modal Tạo hóa đơn và endpoint `POST /api/invoices` chặn lập hóa đơn cho enrollment `invited` (trả về 409) (#253)
+- Gán bài tập trên lớp (`POST /classes/:id/assignments`) chặn gán bài tập cho học viên `invited` (trả về 400) (#253)
+- Cảnh báo vận hành: Enrollment mới mặc định ở trạng thái Đã mời — chưa có buổi học/học phí cho đến khi được kích hoạt (nút Kích hoạt trên roster hoặc student portal sau này) (#253)
+
 ## 2026-09-22
 
 ### Added
@@ -32,6 +110,7 @@ Quy ước khi cập nhật:
 
 - Form tạo học viên bỏ 3 input gói ("Số buổi gói", "Đơn giá", "Hình thức"); gói học khi tạo trong lớp tự động derive từ lớp (#240)
 - Gói học khi tạo ngoài lớp không tạo bản ghi `session_package` và không bị đếm nhầm vào KPI gói sắp hết (#240)
+- Tab "Hồ sơ" trong trang chi tiết học viên hiển thị card "Lớp học" liệt kê các lớp học viên tham gia thay vì card "Gói học" (#245)
 
 ### CI/Infra
 

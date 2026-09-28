@@ -1,0 +1,234 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { Modal } from "@/components/ui/modal";
+import {
+	type ClassGroup,
+	fmtVND,
+	type KernelHydratedData,
+	type Student,
+} from "@/lib/mock-data";
+import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
+
+export interface ClassRosterTabProps {
+	cls: ClassGroup;
+	data: KernelHydratedData;
+	studentById: (id: string) => Student | undefined;
+	rosterDebt: Map<string, { outstanding: number; invoiceCount: number }>;
+	run: DirectKernelAction["run"];
+	busy: boolean;
+}
+
+export function ClassRosterTab({
+	cls,
+	data,
+	studentById,
+	rosterDebt,
+	run,
+	busy,
+}: ClassRosterTabProps) {
+	const navigate = useNavigate();
+	const [confirmAction, setConfirmAction] = useState<{
+		type: "activate" | "delete";
+		enrollmentId: string;
+		studentName: string;
+	} | null>(null);
+
+	const activeStudents = cls.studentIds
+		.map(studentById)
+		.filter((s): s is Student => s !== undefined);
+	const invitedStudents = (cls.invitedStudentIds ?? [])
+		.map(studentById)
+		.filter((s): s is Student => s !== undefined);
+	const rosterEntries = [
+		...activeStudents.map((s) => ({ student: s, isInvited: false })),
+		...invitedStudents.map((s) => ({ student: s, isInvited: true })),
+	];
+
+	return (
+		<>
+			<Card className="p-0">
+				<DataTable
+					headers={[
+						"Học viên",
+						"Mục tiêu",
+						"Còn lại",
+						"Học phí",
+						"Trạng thái",
+						"Thao tác",
+					]}
+					emptyMessage="Chưa có học viên nào trong lớp."
+					rows={rosterEntries.map(({ student: s, isInvited }) => {
+						const en = data.enrollments.find(
+							(e) => e.classId === cls.id && e.studentId === s.id,
+						);
+						return {
+							onClick: () =>
+								navigate({
+									to: "/students/$studentId",
+									params: { studentId: s.id },
+								}),
+							cells: [
+								<div key="s" className="flex items-center gap-2">
+									<Avatar text={s.avatar} size="sm" />
+									{s.name}
+								</div>,
+								<span key="t" className="font-mono text-meta text-xs">
+									Band {s.targetBand} · {s.skills.join(", ")}
+								</span>,
+								isInvited ? (
+									<span key="r" className="font-mono text-meta text-xs">
+										—
+									</span>
+								) : (
+									<span key="r" className="font-mono">
+										{s.pkg.remaining}/{s.pkg.total}
+									</span>
+								),
+								(() => {
+									if (isInvited) {
+										return (
+											<span key="fee" className="font-mono text-meta text-xs">
+												—
+											</span>
+										);
+									}
+									const d = rosterDebt.get(s.id);
+									if (!d || d.invoiceCount === 0) {
+										return (
+											<span key="fee" className="font-mono text-meta text-xs">
+												—
+											</span>
+										);
+									}
+									if (d.outstanding > 0) {
+										return (
+											<span
+												key="fee"
+												className="font-mono font-semibold text-danger"
+											>
+												{fmtVND(d.outstanding)}
+											</span>
+										);
+									}
+									return (
+										<span key="fee" className="font-mono text-meta text-xs">
+											Đã đủ
+										</span>
+									);
+								})(),
+								isInvited ? (
+									<Badge key="b" variant="warn">
+										Đã mời
+									</Badge>
+								) : (
+									<Badge key="b" variant="success" dot>
+										Đang học
+									</Badge>
+								),
+								isInvited && en ? (
+									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
+									<div
+										className="flex items-center gap-2"
+										onClick={(e) => e.stopPropagation()}
+										onKeyDown={(e) => {
+											if (e.key === " " || e.key === "Enter")
+												e.stopPropagation();
+										}}
+									>
+										<Button
+											size="sm"
+											variant="secondary"
+											disabled={busy}
+											onClick={() =>
+												setConfirmAction({
+													type: "activate",
+													enrollmentId: en.id,
+													studentName: s.name,
+												})
+											}
+										>
+											Kích hoạt
+										</Button>
+										<Button
+											size="sm"
+											variant="secondary"
+											className="text-danger hover:text-danger"
+											disabled={busy}
+											onClick={() =>
+												setConfirmAction({
+													type: "delete",
+													enrollmentId: en.id,
+													studentName: s.name,
+												})
+											}
+										>
+											Hủy lời mời
+										</Button>
+									</div>
+								) : (
+									<span key="act" />
+								),
+							],
+						};
+					})}
+				/>
+			</Card>
+
+			<Modal
+				open={confirmAction !== null}
+				onClose={busy ? () => undefined : () => setConfirmAction(null)}
+				title={
+					confirmAction?.type === "activate"
+						? "Kích hoạt học viên?"
+						: "Hủy lời mời tham gia lớp?"
+				}
+			>
+				<p className="text-muted-fg text-sm">
+					{confirmAction?.type === "activate"
+						? `Học viên "${confirmAction.studentName}" sẽ chuyển sang trạng thái Đang học và được tạo gói học cùng lịch các buổi học trong lớp.`
+						: `Học viên "${confirmAction?.studentName}" sẽ bị xóa khỏi danh sách mời của lớp này. Bạn có thể mời lại sau.`}
+				</p>
+				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+					<Button
+						variant="secondary"
+						size="sm"
+						onClick={() => setConfirmAction(null)}
+						disabled={busy}
+					>
+						Hủy
+					</Button>
+					<Button
+						variant={confirmAction?.type === "activate" ? "primary" : "danger"}
+						size="sm"
+						disabled={busy}
+						onClick={() => {
+							if (!confirmAction) return;
+							const { type, enrollmentId } = confirmAction;
+							setConfirmAction(null);
+							if (type === "activate") {
+								void run(
+									enrollmentId,
+									{ type: "activate-enrollment", enrollmentId },
+									"Đã kích hoạt học viên vào lớp.",
+								);
+							} else {
+								void run(
+									enrollmentId,
+									{ type: "delete-enrollment", enrollmentId },
+									"Đã hủy lời mời tham gia lớp.",
+								);
+							}
+						}}
+					>
+						{confirmAction?.type === "activate" ? "Kích hoạt" : "Hủy lời mời"}
+					</Button>
+				</div>
+			</Modal>
+		</>
+	);
+}

@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import {
 	addDaysISO,
-	createStudentViaUi,
 	gotoWeek,
 	openClassScheduleTab,
+	seedStudent,
 	signUpViaUi,
 	vietnamTodayISO,
 	vnWeekdayMon0,
@@ -33,7 +33,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	const STUDENT_NAME = "Nguyễn Văn E2E";
 
 	// 1. Sign-up (org bootstrap happens on the first GET /api/kernel).
-	await signUpViaUi(page);
+	const teacherEmail = await signUpViaUi(page);
 
 	// 2. Create a scheduled class (T2+T4, Writing; keep defaults:
 	// 19:00–20:30, 12 buổi, start tomorrow).
@@ -54,9 +54,22 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 
 	// 3. Open the class and add a student — THIS generates the lessons.
 	await page.getByText(CLASS_NAME).click();
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await seedStudent({ teacherEmail, name: STUDENT_NAME });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog1 = page.getByRole("dialog");
+	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog1).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal1 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal1).toBeVisible();
+	await confirmModal1.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal1).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 4. See the generated sessions: "Buổi học" tab → 12 "Sắp tới".
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
@@ -135,7 +148,7 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 	const CLASS_NAME = `E2E Attendance CTA ${Date.now()}`;
 	const STUDENT_NAME = "Trần Atten E2E";
 
-	await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaUi(page);
 
 	const startDate = vietnamTodayISO();
 	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {
@@ -170,9 +183,22 @@ test("điểm danh tại chỗ trên tab Buổi học (lớp start hôm nay)", a
 
 	// Lessons appear only after a student joins the class. Add the student on
 	// the roster tab — the name would match all 12 rows of "Buổi học".
-	await page.getByRole("button", { name: "+ Thêm học viên" }).click();
-	await createStudentViaUi(page, STUDENT_NAME);
+	await seedStudent({ teacherEmail: teacherEmail2, name: STUDENT_NAME });
+	await page.reload();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog2 = page.getByRole("dialog");
+	await enrollDialog2.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog2).toBeHidden();
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal2 = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal2).toBeVisible();
+	await confirmModal2.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal2).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 1:1 class → sequential head today renders a one-click button.
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();

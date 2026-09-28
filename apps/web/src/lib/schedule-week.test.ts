@@ -21,6 +21,7 @@ const QC_CLASS: ClassGroup = {
 	mode: "online",
 	syllabusId: "",
 	studentIds: [],
+	invitedStudentIds: [],
 	schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
 	sessionsDone: 0,
 	sessionsTotal: 12,

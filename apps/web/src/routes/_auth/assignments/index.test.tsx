@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import type { Assignment, Student } from "@/lib/mock-data";
+
+import type { AssignmentPrompt, ClassAssignment } from "@/lib/mock-data";
 
 const mockNavigate = vi.fn();
 
@@ -12,127 +13,227 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
-function createStudent(id: string, name: string): Student {
-	return {
-		id,
-		name,
-		phone: "0901234567",
-		zalo: "0901234567",
-		email: "student@test.local",
-		hasPackage: true,
-		parent: { name: "Phụ huynh", phone: "0901234568" },
-		targetBand: "6.5",
-		skills: ["Writing"],
-		examDate: "2026-12-01",
-		pkg: {
-			total: 10,
-			done: 0,
-			remaining: 10,
-			price: 4000000,
-			mode: "Online",
-			start: "2026-09-01",
-			expiry: "2026-12-01",
-		},
-		tags: [],
-		notes: "",
-		avatar: name.slice(0, 2).toUpperCase(),
-		atRisk: false,
-	};
-}
+const bankFixture: AssignmentPrompt[] = [
+	{
+		id: "ap-draft",
+		skill: "writing",
+		part: "task1",
+		type: "chart",
+		task: "task1",
+		genre: "chart",
+		title: "Writing Task 1 — Chart Draft",
+		band: "6.5",
+		source: "Cambridge 10",
+		prompt: "The chart below shows...",
+		questions: [],
+		note: "",
+		status: "draft",
+		createdAt: "2026-09-18T12:00:00.000Z",
+	},
+	{
+		id: "ap-used",
+		skill: "writing",
+		part: "task2",
+		type: "discuss",
+		task: "task2",
+		genre: "discuss",
+		title: "Writing Task 2 — Discuss Both Views",
+		band: "7.0",
+		source: "Cambridge 12",
+		prompt: "Some people think that...",
+		questions: [],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-17T10:00:00.000Z",
+	},
+	{
+		id: "ap-ready",
+		skill: "writing",
+		part: "task2",
+		type: "opinion",
+		task: "task2",
+		genre: "opinion",
+		title: "Writing Task 2 — Opinion Essay",
+		band: "7.5",
+		source: "Cambridge 14",
+		prompt: "Do you agree or disagree...",
+		questions: [],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-16T08:00:00.000Z",
+	},
+	{
+		id: "ap-reading",
+		skill: "reading",
+		part: "p1",
+		type: "tfng",
+		task: "task2",
+		genre: "discuss",
+		title: "Reading Passage 1 — TFNG",
+		band: "7.0",
+		source: "Cambridge 10",
+		prompt: "",
+		passage: "Stepwells are underground reservoirs...",
+		intro: "Questions 1-2",
+		questions: [
+			{
+				stem: "Question stem one",
+				opts: null,
+				answer: "SECRET_ANSWER_FALSE",
+				alts: "",
+			},
+		],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-15T08:00:00.000Z",
+	},
+];
+
+const classAssignmentsFixture: ClassAssignment[] = [
+	{
+		id: "ca-1",
+		classId: "cl-1",
+		promptId: "ap-used",
+		title: "Writing Task 2 — Discuss Both Views",
+		due: "2026-09-25",
+		note: "",
+		createdAt: "2026-09-17T11:00:00.000Z",
+		targets: [{ studentId: "st-1", submittedAt: null }],
+	},
+];
 
 let mockStoreData: {
-	assignments: Assignment[];
-	students: Student[];
+	assignmentPrompts: AssignmentPrompt[];
+	classAssignments: ClassAssignment[];
 } = {
-	assignments: [],
-	students: [],
+	assignmentPrompts: bankFixture,
+	classAssignments: classAssignmentsFixture,
 };
 
 vi.mock("@/lib/data-store", () => ({
-	useData: () => ({
-		data: mockStoreData,
-	}),
+	useData: () => ({ data: mockStoreData }),
 }));
 
 import { AssignmentsRoute } from "./index";
 
-describe("AssignmentsRoute empty state & CTA (Issue #166)", () => {
-	it("renders empty state with instructions and action CTAs when workspace has 0 assignments", () => {
+describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
+	it("renders page structure and copy per design", () => {
 		mockStoreData = {
-			assignments: [],
-			students: [],
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
 		};
-
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
-		expect(html).toContain('data-testid="assignments-empty-state"');
+
+		expect(html).toContain("Bài tập");
+		expect(html).toContain(
+			"Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học.",
+		);
+		expect(html).toContain("+ Tạo bài tập");
+		expect(html).toContain("Kỹ năng");
+		expect(html).toContain("Phần thi");
+		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
+		expect(html).toContain("Đang hiện");
+		expect(html).toContain("/ 4 đề");
+	});
+
+	it("renders rows with usage-status tags: used class wins over ready, draft shows draft", () => {
+		mockStoreData = {
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
+		expect(html).toContain("Bản nháp");
+		expect(html).toContain("Đã dùng 1 lớp");
+		expect(html).toContain("Sẵn sàng");
+	});
+
+	it("renders preview aside with student view kicker without exposing answer key", () => {
+		mockStoreData = {
+			assignmentPrompts: [bankFixture[3]], // reading with secret answer
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
+		expect(html).toContain("Xem trước phía học viên");
+		expect(html).toContain("Đề này chưa giao lớp. Giao cho học viên ở trang");
+		expect(html).toContain("Lớp học");
+		expect(html).toContain("Question stem one");
+		expect(html).not.toContain("SECRET_ANSWER_FALSE");
+		expect(html).toContain("Chấm tự động");
+	});
+
+	it("renders the diagram thumbnail in the bank preview aside (#269)", () => {
+		mockStoreData = {
+			assignmentPrompts: [
+				{
+					...bankFixture[3],
+					id: "ap-diagram",
+					part: "p1",
+					type: "diagram",
+					title: "Reading Diagram — bank",
+					imageUrl: "https://example.com/qc-269-bank.png",
+					questions: [
+						{
+							stem: "Label 4.",
+							opts: null,
+							answer: "SECRET_ANSWER_THUMB",
+							alts: "",
+						},
+					],
+				},
+			],
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
+		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		expect(html).toContain("https://example.com/qc-269-bank.png");
+		expect(html).not.toContain("SECRET_ANSWER_THUMB");
+	});
+
+	it("does not render the aside thumbnail for non-diagram prompts (#269)", () => {
+		mockStoreData = {
+			assignmentPrompts: [bankFixture[3]], // tfng, no image
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+		expect(html).not.toContain("<img");
+	});
+
+	it("renders empty state when there are zero prompts", () => {
+		mockStoreData = {
+			assignmentPrompts: [],
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
 		expect(html).toContain("Chưa có bài tập nào");
-		expect(html).toContain("Quản lý lớp học");
-		expect(html).toContain("Quản lý học viên");
-		expect(html).toContain("+ Tạo bài tập");
-		expect(html).toContain("0 bài tập · 0 cần xử lý");
+		expect(html).toContain(
+			"Tạo bài tập đầu tiên để lưu vào danh sách và giao cho các lớp học.",
+		);
+		expect(html).toContain("Tạo bài tập đầu tiên");
 	});
 
-	it("renders assignments DataTable when workspace has assignments", () => {
+	it("renders filter UI: search input, skill chips and part chips", () => {
 		mockStoreData = {
-			assignments: [
-				{
-					id: "a1",
-					sid: "s1",
-					title: "IELTS Writing Task 2",
-					type: "Writing",
-					due: "20/09",
-					status: "graded",
-					scores: { task: 7, coherence: 7, lexical: 6.5, grammar: 6.5 },
-				},
-				{
-					id: "a2",
-					sid: "s2",
-					title: "Reading Practice Test 1",
-					type: "Reading",
-					due: "22/09",
-					status: "not-submitted",
-					scores: null,
-				},
-			],
-			students: [
-				createStudent("s1", "Nguyễn Văn A"),
-				createStudent("s2", "Trần Thị B"),
-			],
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
 		};
-
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
-		expect(html).not.toContain('data-testid="assignments-empty-state"');
-		expect(html).toContain("IELTS Writing Task 2");
-		expect(html).toContain("Nguyễn Văn A");
-		expect(html).toContain("Đã chấm");
-		expect(html).toContain("Reading Practice Test 1");
-		expect(html).toContain("Trần Thị B");
-		expect(html).toContain("Chưa nộp");
-		expect(html).toContain("+ Tạo bài tập");
-		expect(html).toContain("2 bài tập · 1 cần xử lý");
-	});
-	it("renders filter-empty message when filter matches 0 assignments", () => {
-		mockStoreData = {
-			assignments: [
-				{
-					id: "a1",
-					sid: "s1",
-					title: "IELTS Writing Task 2",
-					type: "Writing",
-					due: "20/09",
-					status: "graded",
-					scores: { task: 7, coherence: 7, lexical: 6.5, grammar: 6.5 },
-				},
-			],
-			students: [createStudent("s1", "Nguyễn Văn A")],
-		};
 
-		const html = renderToStaticMarkup(<AssignmentsRoute initialFilter="Trễ" />);
-		expect(html).not.toContain('data-testid="assignments-empty-state"');
-		expect(html).toContain("Không có bài tập nào phù hợp với bộ lọc.");
+		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
+		expect(html).toContain("Writing");
+		expect(html).toContain("Listening");
+		expect(html).toContain("Speaking");
+		expect(html).toContain("Tất cả phần");
 	});
 
 	it("pins the create CTA to the dedicated prompt page (#202)", () => {
+		mockStoreData = {
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
+		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 		expect(html).toContain("+ Tạo bài tập");
 	});

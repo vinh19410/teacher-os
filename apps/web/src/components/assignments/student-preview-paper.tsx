@@ -1,11 +1,18 @@
+import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
+import { isValidPin } from "@/lib/image-pin";
 import {
+	bankLabel,
+	isBankableType,
+	kindOf,
 	partOf,
 	type QuestionItem,
 	skillOf,
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
+import { ClozeStemText } from "./cloze-stem";
+import { PinOverlay } from "./pin-editor";
 
 export function StudentPreviewPaper(props: {
 	skill?: string;
@@ -22,6 +29,9 @@ export function StudentPreviewPaper(props: {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	imageUrl?: string;
+	/** Phase-02 FR6 — structured option bank, rendered as a labeled list. */
+	optionBank?: string[];
 	items?: QuestionItem[];
 	task?: string;
 	genre?: string;
@@ -33,13 +43,35 @@ export function StudentPreviewPaper(props: {
 	const part = partOf(skillId, partId);
 	const type = typeOf(skillId, partId, typeId);
 	const isAuto = skillId === "reading" || skillId === "listening";
+	// FR6: bankable matching types show the structured bank; an empty bank
+	// (legacy prompts) falls back to the intro text AND warns — never silent.
+	const bankable = isBankableType(skillId, typeId);
+	const bank = props.optionBank ?? [];
+	const bankKind = kindOf(typeId);
+	// The preview draft never passes the server contract — this renderer is
+	// the only guard, so verify the scheme here before any <img> exists.
+	const rawImageUrl = props.imageUrl?.trim() ?? "";
+	// Phase-04 FR2/FR5 — image-based pairs are skill-qualified (reading
+	// diagram + listening map); writing task1's shared `map` id stays clear.
+	const imageBased =
+		(skillId === "reading" && typeId === "diagram") ||
+		(skillId === "listening" && typeId === "map");
+	const diagramImageUrl =
+		imageBased && rawImageUrl && ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
+			? rawImageUrl
+			: "";
+	// Pins render over the image when present; legacy rows (or a pin-less
+	// draft) keep the plain thumbnail + key list below — never broken.
+	const pinnedItems = (props.items ?? []).filter((item) =>
+		isValidPin(item.pin),
+	);
 	return (
 		<div className="rounded-lg border border-line bg-surface-warm p-5">
 			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
 				Xem trước phía học viên
 			</p>
 			<p className="mt-1 font-display font-semibold text-[17px]">
-				{props.title.trim() || type.title}
+				{props.title.trim() || "Chưa đặt tên đề"}
 			</p>
 			<p className="mt-1.5 font-mono text-meta text-xs">
 				{part.spec} · Band {props.band}
@@ -54,12 +86,67 @@ export function StudentPreviewPaper(props: {
 					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
 				</p>
 			)}
+			{diagramImageUrl &&
+				(pinnedItems.length > 0 ? (
+					<PinOverlay
+						imageUrl={diagramImageUrl}
+						items={props.items ?? []}
+						qStart={part.qStart ?? 1}
+					/>
+				) : (
+					<img
+						src={diagramImageUrl}
+						alt="Ảnh biểu đồ đề Reading"
+						className="mt-3 max-h-72 rounded-md border border-line"
+						referrerPolicy="no-referrer"
+						loading="lazy"
+					/>
+				))}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
+					{props.intro?.trim() && (
+						<p className="whitespace-pre-line text-muted-fg text-sm">
+							{props.intro.trim()}
+						</p>
+					)}
+					{bankable &&
+						(bank.length > 0 ? (
+							<div className="rounded-md border border-line bg-surface p-3">
+								<p className="font-medium text-muted-fg text-xs">
+									Ngân hàng lựa chọn
+								</p>
+								<ol className="mt-1.5 flex flex-col gap-1">
+									{bank.map((row, index) => (
+										<li key={index} className="text-sm">
+											<span className="font-medium font-mono">
+												{bankLabel(bankKind, index)}
+											</span>{" "}
+											{row}
+										</li>
+									))}
+								</ol>
+							</div>
+						) : (
+							<p
+								role="alert"
+								className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
+							>
+								Thiếu ngân hàng lựa chọn
+							</p>
+						))}
 					{(props.items ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{(part.qStart ?? 1) + index}.</strong>{" "}
-							{item.stem || "Câu hỏi sẽ hiện ở đây."}
+							{item.stem.trim() ? (
+								<ClozeStemText
+									stem={item.stem}
+									answer={item.answer}
+									typeId={typeId}
+									number={(part.qStart ?? 1) + index}
+								/>
+							) : (
+								"Câu hỏi sẽ hiện ở đây."
+							)}
 							{item.opts?.map((option, optionIndex) => (
 								<div key={optionIndex} className="ml-5 text-muted-fg">
 									{String.fromCharCode(65 + optionIndex)} {option}

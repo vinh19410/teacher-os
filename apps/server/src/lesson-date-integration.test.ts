@@ -1,6 +1,6 @@
 /**
  * lesson.date integration (issue #98 Phase 1): generator stamps occurrence
- * dates at enrollment time, snapshot projects them, and legacy fixtures stay
+ * dates at accept time (originally enrollment time), snapshot projects them, and legacy fixtures stay
  * undated. Runs against the real handler chain like kernel.test.ts.
  */
 import { createClient } from "@libsql/client";
@@ -42,7 +42,11 @@ async function createTestApp() {
 			.innerJoin(authUser, eq(authSession.userId, authUser.id))
 			.where(eq(authSession.token, token));
 		if (!row || row.expiresAt.getTime() <= Date.now()) return null;
-		return { userId: row.userId, userName: row.userName };
+		return {
+			userId: row.userId,
+			userName: row.userName,
+			role: "teacher" as const,
+		};
 	}
 
 	const app = buildApp({
@@ -81,8 +85,36 @@ async function createTestApp() {
 				options.body !== undefined ? JSON.stringify(options.body) : undefined,
 		});
 	}
+	async function addStudent(name: string, extra: { classId?: string } = {}) {
+		const [membershipRow] = await libsql
+			.select()
+			.from(schema.membership)
+			.where(eq(schema.membership.userId, userId));
+		if (!membershipRow) throw new Error("bootstrap the org before inserting");
+		const studentId = crypto.randomUUID();
+		await libsql.insert(schema.student).values({
+			id: studentId,
+			orgId: membershipRow.orgId,
+			name,
+			phone: "0900000000",
+			email: `stu-${crypto.randomUUID()}@test.local`,
+			zalo: "0900000000",
+			parentName: "",
+			parentPhone: "",
+		});
+		if (extra.classId) {
+			await libsql.insert(schema.enrollment).values({
+				id: crypto.randomUUID(),
+				orgId: membershipRow.orgId,
+				classId: extra.classId,
+				studentId,
+				status: "invited",
+			});
+		}
+		return studentId;
+	}
 
-	return { call };
+	return { call, addStudent };
 }
 
 describe("lesson.date generator + snapshot projection", () => {
@@ -106,16 +138,16 @@ describe("lesson.date generator + snapshot projection", () => {
 	}
 
 	async function enroll(classId: string, name: string): Promise<void> {
-		const res = await t.call("/api/students", {
-			method: "POST",
-			body: {
-				name,
-				phone: "0900000000",
-				email: `stu-${crypto.randomUUID()}@test.local`,
-				classId,
-			},
-		});
-		expect([201, 200]).toContain(res.status);
+		await t.addStudent(name, { classId });
+		const snap = await kernel();
+		const en = snap.enrollments.find((e) => e.classId === classId);
+		if (en) {
+			const acceptRes = await t.call(`/api/enrollments/${en.id}/accept`, {
+				method: "POST",
+				body: {},
+			});
+			expect(acceptRes.status).toBe(200);
+		}
 	}
 
 	test("class with ISO startDate generates fully-dated rows matching the skeleton", async () => {

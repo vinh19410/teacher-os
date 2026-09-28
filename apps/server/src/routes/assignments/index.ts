@@ -83,7 +83,11 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 				cueTopic: body.data.cueTopic,
 				cuePoints: body.data.cuePoints,
 				audioName: body.data.audioName,
+				imageUrl: body.data.imageUrl,
 				questions: JSON.stringify(body.data.questions),
+				// Phase-02 FR7: explicit map — a missing entry here silently drops
+				// the field (data saves but never round-trips).
+				optionBank: JSON.stringify(body.data.optionBank),
 				note: body.data.note,
 				status: body.data.status,
 			})

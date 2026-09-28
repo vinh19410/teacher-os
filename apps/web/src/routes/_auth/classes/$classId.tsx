@@ -1,11 +1,7 @@
-import {
-	createFileRoute,
-	Link,
-	notFound,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ClassRosterTab } from "@/components/class-detail/class-roster-tab";
 import { ClassScheduleTable } from "@/components/class-detail/class-schedule-table";
 import { ClassSessionsManageModal } from "@/components/class-detail/class-sessions-manage-modal";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
@@ -14,13 +10,10 @@ import type {
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
-import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/data-table";
 import { Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
@@ -54,7 +47,6 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 function ClassDetailRoute() {
 	const { classId } = Route.useParams();
 	const { dispatch, refresh } = useData();
-	const navigate = useNavigate();
 
 	/**
 	 * #98 threaded occurrence writes: ONE toast per action composed at this
@@ -117,7 +109,6 @@ function ClassDetailRoute() {
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
-
 	const handleTabChange = (nextTab: string) => {
 		setTab(nextTab);
 		if (nextTab !== "assignments") {
@@ -130,9 +121,6 @@ function ClassDetailRoute() {
 		throw notFound();
 	}
 	const sy = syllabusById(cls.syllabusId) ?? null;
-	const students = cls.studentIds
-		.map(studentById)
-		.filter((s) => s !== undefined);
 	const classLessons = data.lessons.filter((l) =>
 		cls.studentIds.includes(l.sid),
 	);
@@ -214,13 +202,20 @@ function ClassDetailRoute() {
 						size="sm"
 						onClick={() => setAddStudentOpen(true)}
 					>
-						+ Thêm học viên
+						+ Thêm học viên vào lớp
 					</Button>
 				</div>
 			</Card>
 
 			<div className="mb-6 grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-app:grid-cols-2">
-				<StatCard num={String(cls.studentIds.length)} label="học viên" />
+				<StatCard
+					num={String(cls.studentIds.length)}
+					label={
+						(cls.invitedStudentIds ?? []).length > 0
+							? `học viên · ${cls.invitedStudentIds.length} chờ xác nhận`
+							: "học viên"
+					}
+				/>
 				<StatCard num={String(openAssignmentsCount)} label="bài đang mở" />
 				<StatCard
 					num={`${doneTargetsCount}/${totalTargetsCount}`}
@@ -258,73 +253,14 @@ function ClassDetailRoute() {
 			)}
 
 			{tab === "roster" && (
-				<Card className="p-0">
-					<DataTable
-						headers={[
-							"Học viên",
-							"Mục tiêu",
-							"Còn lại",
-							"Học phí",
-							"Trạng thái",
-						]}
-						rows={students.map((s) => ({
-							onClick: () =>
-								navigate({
-									to: "/students/$studentId",
-									params: { studentId: s.id },
-								}),
-							cells: [
-								<div key="s" className="flex items-center gap-2">
-									<Avatar text={s.avatar} size="sm" />
-									{s.name}
-								</div>,
-								<span key="t" className="font-mono text-meta text-xs">
-									Band {s.targetBand} · {s.skills.join(", ")}
-								</span>,
-								<span key="r" className="font-mono">
-									{s.pkg.remaining}/{s.pkg.total}
-								</span>,
-								(() => {
-									// #216: per-class tuition debt. "Đã đủ" only when the
-									// class has invoices and none outstanding; "—" when the
-									// student has no invoice through this class's enrollments.
-									const d = rosterDebt.get(s.id);
-									if (!d || d.invoiceCount === 0) {
-										return (
-											<span key="fee" className="font-mono text-meta text-xs">
-												—
-											</span>
-										);
-									}
-									if (d.outstanding > 0) {
-										return (
-											<span
-												key="fee"
-												className="font-mono font-semibold text-danger"
-											>
-												{fmtVND(d.outstanding)}
-											</span>
-										);
-									}
-									return (
-										<span key="fee" className="font-mono text-meta text-xs">
-											Đã đủ
-										</span>
-									);
-								})(),
-								s.atRisk ? (
-									<Badge key="b" variant="danger">
-										Rủi ro
-									</Badge>
-								) : (
-									<Badge key="b" variant="success" dot>
-										Ổn
-									</Badge>
-								),
-							],
-						}))}
-					/>
-				</Card>
+				<ClassRosterTab
+					cls={cls}
+					data={data}
+					studentById={studentById}
+					rosterDebt={rosterDebt}
+					run={run}
+					busy={busy}
+				/>
 			)}
 
 			{tab === "sessions" && (
@@ -405,8 +341,8 @@ function ClassDetailRoute() {
 				</Card>
 			)}
 
-			<AddStudentModal
-				key={`add-student-${cls.id}`}
+			<EnrollStudentModal
+				key={`enroll-student-${cls.id}`}
 				open={addStudentOpen}
 				onClose={() => setAddStudentOpen(false)}
 				classId={cls.id}

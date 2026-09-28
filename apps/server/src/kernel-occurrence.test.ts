@@ -48,7 +48,11 @@ async function createTestApp() {
 			.innerJoin(authUser, eq(authSession.userId, authUser.id))
 			.where(eq(authSession.token, token));
 		if (!row || row.expiresAt.getTime() <= Date.now()) return null;
-		return { userId: row.userId, userName: row.userName };
+		return {
+			userId: row.userId,
+			userName: row.userName,
+			role: "teacher" as const,
+		};
 	}
 
 	const app = buildApp({
@@ -114,8 +118,40 @@ async function createTestApp() {
 				options.body !== undefined ? JSON.stringify(options.body) : undefined,
 		});
 	}
+	async function addStudent(
+		userId: string,
+		name: string,
+		extra: { classId?: string } = {},
+	): Promise<string> {
+		const [membershipRow] = await libsql
+			.select()
+			.from(schema.membership)
+			.where(eq(schema.membership.userId, userId));
+		if (!membershipRow) throw new Error("bootstrap the org before inserting");
+		const studentId = crypto.randomUUID();
+		await libsql.insert(schema.student).values({
+			id: studentId,
+			orgId: membershipRow.orgId,
+			name,
+			phone: "0900000000",
+			email: `stu-${crypto.randomUUID()}@test.local`,
+			zalo: "0900000000",
+			parentName: "",
+			parentPhone: "",
+		});
+		if (extra.classId) {
+			await libsql.insert(schema.enrollment).values({
+				id: crypto.randomUUID(),
+				orgId: membershipRow.orgId,
+				classId: extra.classId,
+				studentId,
+				status: "invited",
+			});
+		}
+		return studentId;
+	}
 
-	return { app, libsql, call, teacherA, teacherB };
+	return { app, libsql, call, teacherA, teacherB, addStudent };
 }
 
 describe("occurrence mutations (#98 phase 2)", () => {
@@ -142,18 +178,18 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		classId = ((await mkClass.json()) as { id: string }).id;
 
 		for (const name of ["HV Một", "HV Hai"]) {
-			const res = await t.call(t.teacherA.token, "/api/students", {
-				body: {
-					name,
-					phone: "0900000000",
-					email: `stu-${crypto.randomUUID()}@test.local`,
-					classId,
-				},
-			});
-			expect(res.status).toBe(201);
+			await t.addStudent(t.teacherA.id, name, { classId });
 		}
 
 		const snap = await snapshot();
+		for (const en of snap.enrollments.filter((e) => e.classId === classId)) {
+			const acceptRes = await t.call(
+				t.teacherA.token,
+				`/api/enrollments/${en.id}/accept`,
+				{ body: {} },
+			);
+			expect(acceptRes.status).toBe(200);
+		}
 		expect(snap.enrollments.filter((e) => e.classId === classId)).toHaveLength(
 			2,
 		);
@@ -343,14 +379,17 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		});
 		expect(createRes.status).toBe(201);
 		const f2class = ((await createRes.json()) as { id: string }).id;
-		await t.call(t.teacherA.token, "/api/students", {
-			body: {
-				name: "HV F2",
-				phone: "0900000000",
-				email: "hvf2@test.local",
-				classId: f2class,
-			},
-		});
+		await t.addStudent(t.teacherA.id, "HV F2", { classId: f2class });
+		const snapF2 = await snapshot();
+		const enF2 = snapF2.enrollments.find((e) => e.classId === f2class);
+		if (enF2) {
+			const accept = await t.call(
+				t.teacherA.token,
+				`/api/enrollments/${enF2.id}/accept`,
+				{ body: {} },
+			);
+			expect(accept.status).toBe(200);
+		}
 		const move = await t.call(
 			t.teacherA.token,
 			`/api/classes/${f2class}/sessions/2026-10-13/edit`,
