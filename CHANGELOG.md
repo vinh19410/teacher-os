@@ -10,6 +10,15 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-28
+
+### Changed
+- Card lịch dạy trên `/dashboard` (section "Lịch hôm nay" & "Lịch sắp tới") hiển thị gọn: chỉ còn tên lớp + dòng meta `time · dur' · type · topic`; bỏ avatar chữ-cái-đầu của lớp và toàn bộ danh sách học viên trong card — mọi buổi học có trong data đều hiển thị card kể cả khi thiếu student record (#278)
+- Nút "Điểm danh" nhanh không còn trên dashboard; check-in vẫn đầy đủ ở class detail (tab "Buổi học") và modal `/schedule` (#278)
+
+### Removed
+- Drift-guard `kernel-runtime.contract.test.ts` bỏ positive pin yêu cầu dashboard phải có flow check-in (`useDirectKernelAction`/`void run`/`disabled={busy…}`), thay bằng negative pin theo hướng UI mới (#278)
+
 ## 2026-09-25
 
 ### Added
