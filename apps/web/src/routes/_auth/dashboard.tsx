@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-router";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
@@ -22,7 +21,6 @@ import {
 } from "@/lib/dashboard-from-kernel";
 import { useData } from "@/lib/data-store";
 import { lessonDayLabel } from "@/lib/format-schedule";
-import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export const Route = createFileRoute("/_auth/dashboard")({
 	component: DashboardRoute,
@@ -35,8 +33,7 @@ const RISK_LABEL: Record<DashboardRiskReason, string> = {
 
 function DashboardRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
-	const { data, studentById, classById } = useData();
-	const { run, isPending, busy } = useDirectKernelAction();
+	const { data, classById } = useData();
 	if (!session?.data?.user) {
 		throw redirect({ to: "/login" });
 	}
@@ -80,71 +77,12 @@ function DashboardRoute() {
 				)}
 				{todayGroups.map((g) => {
 					const className = classById(g.classId)?.name ?? "Lớp";
-					const studentRows = g.lessons
-						.map((l) => {
-							const s = studentById(l.sid);
-							if (!s) return null;
-							return { lesson: l, student: s };
-						})
-						.filter(
-							(
-								row,
-							): row is {
-								lesson: (typeof g.lessons)[number];
-								student: NonNullable<ReturnType<typeof studentById>>;
-							} => row !== null,
-						);
-
-					if (studentRows.length === 0) return null;
 
 					return (
-						<Card
-							key={`${g.classId}-${g.time}`}
-							variant="white"
-							className="flex flex-col gap-3"
-						>
-							<div className="flex items-center gap-3">
-								<Avatar text={className.charAt(0)} size="md" />
-								<div className="min-w-0 flex-1">
-									<div className="font-semibold text-sm">{className}</div>
-									<div className="font-mono text-meta text-xs">
-										{g.time} · {g.dur}' · {g.type} · {g.topic}
-									</div>
-								</div>
-							</div>
-							<div className="flex flex-col gap-2 border-border/50 border-t pt-2">
-								{studentRows.map(({ lesson: l, student: s }) => (
-									<div
-										key={l.id}
-										className="flex items-center justify-between gap-3"
-									>
-										<div className="flex min-w-0 items-center gap-2">
-											<Avatar text={s.avatar} size="sm" />
-											<span className="truncate font-medium text-sm">
-												{s.name}
-											</span>
-										</div>
-										{l.status === "completed" ? (
-											<Badge variant="success" dot>
-												Đã học
-											</Badge>
-										) : (
-											<Button
-												size="sm"
-												disabled={busy || isPending(l.id)}
-												onClick={() =>
-													void run(
-														l.id,
-														{ type: "check-in", lessonId: l.id },
-														"Đã điểm danh.",
-													)
-												}
-											>
-												{isPending(l.id) ? "Đang lưu…" : "Điểm danh"}
-											</Button>
-										)}
-									</div>
-								))}
+						<Card key={`${g.classId}-${g.time}`} variant="white">
+							<div className="font-semibold text-sm">{className}</div>
+							<div className="font-mono text-meta text-xs">
+								{g.time} · {g.dur}' · {g.type} · {g.topic}
 							</div>
 						</Card>
 					);
@@ -167,49 +105,15 @@ function DashboardRoute() {
 								<div className="flex flex-col gap-2">
 									{classSessions.map((g) => {
 										const className = classById(g.classId)?.name ?? "Lớp";
-										const studentRows = g.lessons
-											.map((l) => {
-												const s = studentById(l.sid);
-												if (!s) return null;
-												return { lesson: l, student: s };
-											})
-											.filter(
-												(
-													row,
-												): row is {
-													lesson: (typeof g.lessons)[number];
-													student: NonNullable<ReturnType<typeof studentById>>;
-												} => row !== null,
-											);
-
-										if (studentRows.length === 0) return null;
 
 										return (
 											<Card
 												key={`${group.day}-${g.classId}-${g.time}`}
 												variant="white"
-												className="flex flex-col gap-2"
 											>
-												<div className="flex items-center gap-3">
-													<Avatar text={className.charAt(0)} size="sm" />
-													<div className="min-w-0 flex-1">
-														<div className="font-semibold text-sm">
-															{className}
-														</div>
-														<div className="font-mono text-meta text-xs">
-															{g.time} · {g.dur}&apos; · {g.type} · {g.topic}
-														</div>
-													</div>
-												</div>
-												<div className="flex flex-col gap-1.5 border-border/50 border-t pt-2">
-													{studentRows.map(({ lesson: l, student: s }) => (
-														<div key={l.id} className="flex items-center gap-2">
-															<Avatar text={s.avatar} size="sm" />
-															<span className="font-medium text-sm">
-																{s.name}
-															</span>
-														</div>
-													))}
+												<div className="font-semibold text-sm">{className}</div>
+												<div className="font-mono text-meta text-xs">
+													{g.time} · {g.dur}&apos; · {g.type} · {g.topic}
 												</div>
 											</Card>
 										);

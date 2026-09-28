@@ -191,9 +191,10 @@ describe("kernel-backed store wiring", () => {
 		expect(dashboard).toMatch(/from "@\/lib\/dashboard-from-kernel"/);
 		expect(dashboard).toMatch(/lessonsToday\(/);
 		expect(dashboard).toMatch(/atRiskRows\(/);
-		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
-		expect(dashboard).toMatch(/void run\(/);
-		expect(dashboard).toMatch(/disabled=\{busy \|\| isPending\(l\.id\)\}/);
+		// #278: dashboard cards chỉ còn tên lớp + meta buổi học — check-in
+		// trực tiếp không còn là surface của dashboard (vẫn pin ở class
+		// detail + lesson modal của /schedule bên dưới).
+		expect(dashboard).not.toMatch(/useDirectKernelAction/);
 		expect(dashboard).not.toMatch(/cô Lan/);
 		expect(dashboard).not.toMatch(/Thứ Ba, 19\/08/);
 		expect(dashboard).not.toMatch(/19–25\/08/);
@@ -280,11 +281,6 @@ describe("kernel-backed store wiring", () => {
 	});
 
 	test("direct actions await the outcome, disable while pending and report visibly", () => {
-		const dashboard = readSrc("../routes/_auth/dashboard.tsx");
-		expect(dashboard).toMatch(/useDirectKernelAction\(\)/);
-		expect(dashboard).toMatch(/void run\(/);
-		expect(dashboard).toMatch(/disabled=\{busy \|\| isPending\(l\.id\)\}/);
-
 		const tuition = readSrc("../routes/_auth/tuition.tsx");
 		expect(tuition).toMatch(/useDirectKernelAction\(\)/);
 		expect(tuition).toMatch(/void run\(/);
