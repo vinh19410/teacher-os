@@ -161,6 +161,23 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		return next();
 	});
 
+	// CSRF defense cho POST invitations (accept/reject) — cùng contract với
+	// /enrollments/*; các handler này không đọc body nên chặn simple-request
+	// cross-site (form/text/plain) bằng Origin + Content-Type check.
+	router.use("/invitations/*", async (c, next) => {
+		if (c.req.method === "POST") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+		}
+		return next();
+	});
+
 	router.use("*", async (c, next) => {
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) {

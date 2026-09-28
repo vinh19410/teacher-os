@@ -271,7 +271,11 @@ describe("student invitation & multi-org API endpoints", () => {
 			`/api/student/invitations/${invite.id}/reject`,
 			{
 				method: "POST",
-				headers: { "x-test-user": "student-bob" },
+				headers: {
+					"x-test-user": "student-bob",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
 			},
 		);
 		expect(rejectRes.status).toBe(200);
@@ -306,7 +310,11 @@ describe("student invitation & multi-org API endpoints", () => {
 			`/api/student/invitations/${alphaInvite.id}/accept`,
 			{
 				method: "POST",
-				headers: { "x-test-user": "student-alice" },
+				headers: {
+					"x-test-user": "student-alice",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
 			},
 		);
 		expect(acceptAlpha.status).toBe(200);
@@ -318,7 +326,11 @@ describe("student invitation & multi-org API endpoints", () => {
 			`/api/student/invitations/${betaInvite.id}/accept`,
 			{
 				method: "POST",
-				headers: { "x-test-user": "student-alice" },
+				headers: {
+					"x-test-user": "student-alice",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
 			},
 		);
 		expect(acceptBeta.status).toBe(200);
@@ -357,5 +369,41 @@ describe("student invitation & multi-org API endpoints", () => {
 		});
 		expect(meBeta.status).toBe(200);
 		expect(((await meBeta.json()) as StudentMe).student.orgId).toBe("org-beta");
+	});
+
+	test("CSRF guard on invitations: bad origin 403, text/plain 415 (valid session)", async () => {
+		// (i) Disallowed origin — chặn trước handler dù session hợp lệ
+		const resOrigin = await app.request(
+			"/api/student/invitations/some-id/accept",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "student-alice",
+					Origin: "https://evil.example",
+					"Content-Type": "application/json",
+				},
+			},
+		);
+		expect(resOrigin.status).toBe(403);
+		expect((await resOrigin.json()) as { error: string }).toEqual({
+			error: "origin not allowed",
+		});
+
+		// (ii) Invalid content-type (vector simple-request cross-site)
+		const resContentType = await app.request(
+			"/api/student/invitations/some-id/reject",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "student-alice",
+					Origin: "http://localhost:8003",
+					"Content-Type": "text/plain",
+				},
+			},
+		);
+		expect(resContentType.status).toBe(415);
+		expect((await resContentType.json()) as { error: string }).toEqual({
+			error: "content-type must be application/json",
+		});
 	});
 });
