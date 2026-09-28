@@ -63,6 +63,36 @@ describe("buildTestPayload — zod rule từ packages/api (Task 3.4 verify)", ()
 		}
 	});
 
+	it("rich text: editor rỗng <p></p> → description rơi khỏi payload; HTML thật giữ nguyên", () => {
+		const emptyTags = buildTestPayload({
+			...emptyTestHeader(),
+			title: "Mock",
+			description: "<p></p>",
+		});
+		expect(emptyTags.ok).toBe(true);
+		if (emptyTags.ok) expect(emptyTags.payload.description).toBeUndefined();
+
+		const rich = buildTestPayload({
+			...emptyTestHeader(),
+			title: "Mock",
+			description: "<p>Full <strong>mock</strong> test</p>",
+		});
+		expect(rich.ok).toBe(true);
+		if (rich.ok)
+			expect(rich.payload.description).toBe(
+				"<p>Full <strong>mock</strong> test</p>",
+			);
+
+		// Client-side cap (plain 2000) qua chính zod schema — không còn maxLength.
+		const over = buildTestPayload({
+			...emptyTestHeader(),
+			title: "Mock",
+			description: `<p>${"a".repeat(2001)}</p>`,
+		});
+		expect(over.ok).toBe(false);
+		if (!over.ok) expect(over.errors.description).toBeTruthy();
+	});
+
 	it("time limit sai dạng chặn trước zod với message hướng dẫn", () => {
 		const built = buildTestPayload({
 			...emptyTestHeader(),

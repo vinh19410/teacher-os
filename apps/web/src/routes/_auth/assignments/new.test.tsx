@@ -163,6 +163,23 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.sub).toContain("Chưa giao lớp");
 		});
 
+		it("6b. Rich text: tag-only prompt counts as missing content (rich text plan)", () => {
+			const empty = actionCopyFor({ ...baseValue, prompt: "<p></p>" }, "ready");
+			expect(empty.title).toBe("Thiếu nội dung đề");
+
+			const brOnly = actionCopyFor(
+				{ ...baseValue, prompt: "<p><br></p>" },
+				"ready",
+			);
+			expect(brOnly.title).toBe("Thiếu nội dung đề");
+
+			const real = actionCopyFor(
+				{ ...baseValue, prompt: "<p>Some prompt</p>" },
+				"ready",
+			);
+			expect(real.title).toBe("Sẵn sàng lưu vào ngân hàng");
+		});
+
 		it("7. Reading diagram ready missing image (#269, phase-04 copy)", () => {
 			const res = actionCopyFor(
 				{

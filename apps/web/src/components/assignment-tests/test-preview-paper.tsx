@@ -1,3 +1,4 @@
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import {
 	bankLabel,
 	isBankableType,
@@ -24,9 +25,9 @@ import { computeTestRanges } from "@/lib/test-ranges";
 function partHasContent(part: TestPreviewPartDraft): boolean {
 	return Boolean(
 		part.title.trim() ||
-			part.intro.trim() ||
-			part.passage.trim() ||
-			part.prompt.trim() ||
+			!isEmptyRichText(part.intro) ||
+			!isEmptyRichText(part.passage) ||
+			!isEmptyRichText(part.prompt) ||
 			part.optionBank.length > 0 ||
 			part.items.length > 0,
 	);

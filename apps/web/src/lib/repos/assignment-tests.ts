@@ -8,6 +8,7 @@ import {
 } from "@teacher-os/api/contracts";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import type { AssignmentPrompt } from "@/lib/mock-data";
+import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
 import type { TestAnswerDiffRow } from "@/lib/test-answer-key";
 
 /**
@@ -91,6 +92,8 @@ export function groupOptions(tests: KernelAssignmentTestRow[]): string[] {
  * hàng; mọi field nullable collapse về "" để composer không thấy hole.
  */
 export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
+	// Bank rows may be legacy plain text — the editor load must go through the
+	// legacy adapter or their newlines collapse and vanish on the next save.
 	return {
 		skill: (prompt.skill ?? "writing") as string,
 		part: prompt.part ?? prompt.task,
@@ -98,16 +101,16 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 		title: prompt.title,
 		band: prompt.band,
 		source: prompt.source,
-		prompt: prompt.prompt,
-		passage: prompt.passage ?? "",
-		intro: prompt.intro ?? "",
-		transcript: prompt.transcript ?? "",
+		prompt: normalizeLegacyRichText(prompt.prompt),
+		passage: normalizeLegacyRichText(prompt.passage ?? ""),
+		intro: normalizeLegacyRichText(prompt.intro ?? ""),
+		transcript: normalizeLegacyRichText(prompt.transcript ?? ""),
 		cueTopic: prompt.cueTopic ?? "",
 		cuePoints: prompt.cuePoints ?? "",
 		audioName: prompt.audioName ?? "",
 		imageUrl: prompt.imageUrl ?? "",
 		optionBank: prompt.optionBank ?? [],
-		note: prompt.note,
+		note: normalizeLegacyRichText(prompt.note),
 		items: (prompt.questions ?? []).map((question) => ({
 			stem: question.stem,
 			opts: question.opts ?? null,

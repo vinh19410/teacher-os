@@ -1,9 +1,12 @@
 @import "@teacher-os/ui/globals.css";
 
-/* RichTextEditor (Tiptap): placeholder on the first empty paragraph */
+/* RichTextEditor (Tiptap): editable area + placeholder on first paragraph */
 .ProseMirror {
 	min-height: 5rem;
 	outline: none;
+	padding: 10px 12px;
+	font-size: 0.875rem;
+	line-height: 1.5;
 }
 .ProseMirror p.is-editor-empty:first-child::before {
 	color: var(--meta);

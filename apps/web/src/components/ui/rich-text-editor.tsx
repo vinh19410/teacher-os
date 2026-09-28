@@ -100,6 +100,7 @@ export function RichTextEditor({
 	"aria-describedby": ariaDescribedby,
 	ariaLabel,
 	className,
+	contentClassName,
 }: {
 	value: string;
 	onChange: (html: string) => void;
@@ -110,6 +111,8 @@ export function RichTextEditor({
 	/** Standalone label when not rendered inside a Field. */
 	ariaLabel?: string;
 	className?: string;
+	/** Extra classes for the editable area (e.g. a taller min-height). */
+	contentClassName?: string;
 }) {
 	const onChangeRef = useRef(onChange);
 	useEffect(() => {
@@ -208,10 +211,7 @@ export function RichTextEditor({
 					);
 				})}
 			</div>
-			<EditorContent
-				editor={editor}
-				className="[&_.ProseMirror]:min-h-20 [&_.ProseMirror]:px-3 [&_.ProseMirror]:py-[10px] [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-[1.5]"
-			/>
+			<EditorContent editor={editor} className={contentClassName} />
 		</div>
 	);
 }

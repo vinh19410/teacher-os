@@ -5,6 +5,7 @@ import {
 	isAssignmentImageUrl,
 	type KernelAssignmentTestRow,
 } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { useEffect, useMemo, useState } from "react";
 import { AnswersCheckingPanel } from "@/components/assignment-tests/answers-checking-panel";
 import { PromptPickerDialog } from "@/components/assignment-tests/prompt-picker-dialog";
@@ -57,6 +58,7 @@ import {
 	groupOptions,
 	partsSetPayload,
 } from "@/lib/repos/assignment-tests";
+import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
 import { computeTestRanges } from "@/lib/test-ranges";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
@@ -315,7 +317,18 @@ export function TestBuilderShell({
 			part,
 			promptId: null,
 			value: draft
-				? { ...draft, skill: header.skill, part }
+				? {
+						...draft,
+						skill: header.skill,
+						part,
+						// Slot drafts may be legacy plain text — same adapter rule as
+						// /assignments/new: never load plain \n into the editor raw.
+						prompt: normalizeLegacyRichText(draft.prompt),
+						passage: normalizeLegacyRichText(draft.passage),
+						intro: normalizeLegacyRichText(draft.intro),
+						transcript: normalizeLegacyRichText(draft.transcript),
+						note: normalizeLegacyRichText(draft.note),
+					}
 				: {
 						skill: header.skill,
 						part,
@@ -770,9 +783,9 @@ function composerFieldErrors(
 ): Record<string, string | undefined> {
 	const errors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) errors.title = "Nhập tiêu đề bài tập.";
-	if (value.skill === "writing" && !value.prompt.trim())
+	if (value.skill === "writing" && isEmptyRichText(value.prompt))
 		errors.prompt = "Dán hoặc soạn đề trước khi lưu.";
-	if (value.skill === "reading" && !value.passage.trim())
+	if (value.skill === "reading" && isEmptyRichText(value.passage))
 		errors.passage = "Nhập đoạn đọc.";
 	if (
 		value.skill === "listening" &&
@@ -810,14 +823,15 @@ function composerSaveAllowed(
 	const hasCore =
 		value.title.trim() &&
 		(value.skill === "writing"
-			? !!value.prompt.trim()
+			? !isEmptyRichText(value.prompt)
 			: value.skill === "reading"
-				? !!value.passage.trim() && value.items.some((item) => item.stem.trim())
+				? !isEmptyRichText(value.passage) &&
+					value.items.some((item) => item.stem.trim())
 				: value.skill === "listening"
 					? value.items.some((item) => item.stem.trim())
 					: value.part === "part2"
 						? !!value.cueTopic.trim()
-						: !!value.prompt.trim());
+						: !isEmptyRichText(value.prompt));
 	if (!hasCore) return false;
 	if (Object.values(errors).some(Boolean)) return false;
 	if (isAutoSkill(value.skill) && status === "ready")

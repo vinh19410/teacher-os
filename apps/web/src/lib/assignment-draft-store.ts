@@ -1,3 +1,4 @@
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 
 /**
@@ -15,8 +16,11 @@ export const ASSIGNMENT_DRAFT_KEY = "assignment-draft";
 export const ASSIGNMENT_DRAFT_SCHEMA_VERSION = 1;
 /** Teacher-visible drafts expire after a week (no infinite resurrect banner). */
 export const ASSIGNMENT_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-/** Drafts are plain text content only — stay far below the ~5MB quota. */
-export const ASSIGNMENT_DRAFT_MAX_LENGTH = 200 * 1024;
+/**
+ * HTML drafts carry markup overhead (~2.5x the plain content via the contract
+ * raw cap) — 512KB keeps a legal multi-passage payload under the ceiling.
+ */
+export const ASSIGNMENT_DRAFT_MAX_LENGTH = 512 * 1024;
 
 export interface StoredAssignmentDraft {
 	schemaVersion: number;
@@ -121,7 +125,14 @@ export function saveAssignmentDraft(
 	if (!store) return;
 	try {
 		const serialized = JSON.stringify(draft);
-		if (serialized.length > ASSIGNMENT_DRAFT_MAX_LENGTH) return;
+		if (serialized.length > ASSIGNMENT_DRAFT_MAX_LENGTH) {
+			// Not silent: a skipped save means the draft will be LOST on reload —
+			// the console is the only channel autosave has to say so.
+			console.warn(
+				`Assignment draft skipped: ${serialized.length} chars exceed the ${ASSIGNMENT_DRAFT_MAX_LENGTH} cap.`,
+			);
+			return;
+		}
 		store.setItem(ASSIGNMENT_DRAFT_KEY, serialized);
 	} catch {
 		// QuotaExceeded / private-mode failures: keep composing, save nothing.
@@ -176,18 +187,20 @@ export function clearAssignmentDraft(
  * banner on the next visit.
  */
 export function composerDraftHasContent(value: ComposerValue): boolean {
+	// Rich fields are HTML — "<p></p>" must not trigger an autosave. Plain
+	// fields (cuePoints, audioName, imageUrl, title, source) keep .trim().
 	if (
 		value.title.trim() ||
 		value.source.trim() ||
-		value.prompt.trim() ||
-		value.passage.trim() ||
-		value.intro.trim() ||
-		value.transcript.trim() ||
+		!isEmptyRichText(value.prompt) ||
+		!isEmptyRichText(value.passage) ||
+		!isEmptyRichText(value.intro) ||
+		!isEmptyRichText(value.transcript) ||
 		value.cueTopic.trim() ||
 		value.cuePoints.trim() ||
 		value.audioName.trim() ||
 		value.imageUrl.trim() ||
-		value.note.trim()
+		!isEmptyRichText(value.note)
 	)
 		return true;
 	// `?? []`: pre-phase-02 drafts may legitimately lack the field at runtime.

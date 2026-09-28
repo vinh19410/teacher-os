@@ -2,6 +2,7 @@ import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { countBlanks } from "@/lib/cloze";
 import {
 	QUESTION_ALTS_MAX,
@@ -62,11 +63,13 @@ export function hasAuthoringContent(value: ComposerValue): boolean {
 	)
 		return true;
 	if (value.optionBank.some((row) => row.trim())) return true;
+	// Rich fields are HTML — emptiness must be measured on their plain text
+	// (a bare "<p></p>" is NOT authored content). cuePoints stays plain (Q2).
 	return Boolean(
-		value.passage.trim() ||
-			value.prompt.trim() ||
-			value.intro.trim() ||
-			value.transcript.trim() ||
+		!isEmptyRichText(value.passage) ||
+			!isEmptyRichText(value.prompt) ||
+			!isEmptyRichText(value.intro) ||
+			!isEmptyRichText(value.transcript) ||
 			value.cueTopic.trim() ||
 			value.cuePoints.trim(),
 	);

@@ -1,3 +1,4 @@
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import { isValidPin } from "@/lib/image-pin";
 
@@ -14,8 +15,11 @@ export const ASSIGNMENT_TEST_DRAFT_KEY = "teacher-os:test-draft:new";
 export const ASSIGNMENT_TEST_DRAFT_SCHEMA_VERSION = 2;
 /** Teacher-visible drafts expire after a week (no infinite resurrect banner). */
 export const ASSIGNMENT_TEST_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-/** 3 passage × ~20KB vẫn ổn — trần giữ như single-part store. */
-export const ASSIGNMENT_TEST_DRAFT_MAX_LENGTH = 200 * 1024;
+/**
+ * 3 passage × ~20KB plain, inflated ~2.5x by HTML markup (contract raw cap)
+ * — 512KB keeps a legal full-test payload under the ceiling.
+ */
+export const ASSIGNMENT_TEST_DRAFT_MAX_LENGTH = 512 * 1024;
 
 export interface StoredAssignmentTestDraft {
 	schemaVersion: number;
@@ -141,7 +145,13 @@ export function saveAssignmentTestDraft(
 	if (!store) return;
 	try {
 		const serialized = JSON.stringify(draft);
-		if (serialized.length > ASSIGNMENT_TEST_DRAFT_MAX_LENGTH) return;
+		if (serialized.length > ASSIGNMENT_TEST_DRAFT_MAX_LENGTH) {
+			// Not silent: a skipped save means the draft will be LOST on reload.
+			console.warn(
+				`Test draft skipped: ${serialized.length} chars exceed the ${ASSIGNMENT_TEST_DRAFT_MAX_LENGTH} cap.`,
+			);
+			return;
+		}
 		store.setItem(ASSIGNMENT_TEST_DRAFT_KEY, serialized);
 	} catch {
 		// QuotaExceeded / private-mode failures: keep composing, save nothing.
@@ -202,7 +212,7 @@ export function testDraftHasContent(
 ): boolean {
 	if (
 		test.title.trim() ||
-		test.description.trim() ||
+		!isEmptyRichText(test.description) ||
 		test.collection.trim() ||
 		test.testGroup.trim()
 	)
@@ -212,20 +222,24 @@ export function testDraftHasContent(
 	);
 }
 
-/** Local mirror of the single-part store's content check (file not touched). */
+/**
+ * Local mirror of the single-part store's content check — the two stores have
+ * separate shapes and validators, so this stays a hand-synced copy.
+ */
 function composerDraftHasContent(value: ComposerValue): boolean {
+	// Rich fields are HTML — "<p></p>" must not trigger an autosave.
 	if (
 		value.title.trim() ||
 		value.source.trim() ||
-		value.prompt.trim() ||
-		value.passage.trim() ||
-		value.intro.trim() ||
-		value.transcript.trim() ||
+		!isEmptyRichText(value.prompt) ||
+		!isEmptyRichText(value.passage) ||
+		!isEmptyRichText(value.intro) ||
+		!isEmptyRichText(value.transcript) ||
 		value.cueTopic.trim() ||
 		value.cuePoints.trim() ||
 		value.audioName.trim() ||
 		value.imageUrl.trim() ||
-		value.note.trim()
+		!isEmptyRichText(value.note)
 	)
 		return true;
 	if ((value.optionBank ?? []).some((row) => row.trim())) return true;
