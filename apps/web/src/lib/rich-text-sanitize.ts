@@ -32,12 +32,16 @@ const CONFIG = {
 
 // Force every link to open in a new tab safely. Payloads cannot smuggle their
 // own rel — it is not in ALLOWED_ATTR, and this hook re-sets it after filtering.
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-	if (node.nodeName === "A") {
-		(node as Element).setAttribute("target", "_blank");
-		(node as Element).setAttribute("rel", "noopener noreferrer");
-	}
-});
+// Without a DOM (node tests) DOMPurify's factory returns a minimal stub with no
+// hook API — RichTextBody never sanitizes there anyway, so skip registration.
+if (typeof DOMPurify.addHook === "function") {
+	DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+		if (node.nodeName === "A") {
+			(node as Element).setAttribute("target", "_blank");
+			(node as Element).setAttribute("rel", "noopener noreferrer");
+		}
+	});
+}
 
 export function sanitizeRichText(dirty: string): string {
 	// String(): widen away the TrustedHTML overload — trusted types are off,

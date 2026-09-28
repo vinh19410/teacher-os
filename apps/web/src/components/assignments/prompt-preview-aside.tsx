@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { RichTextBody } from "@/components/ui/rich-text-body";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
@@ -58,11 +60,17 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				</p>
 			)}
 
-			{skillId === "reading" && (
-				<p className="mt-3 whitespace-pre-line text-fg text-sm leading-[1.55]">
-					{prompt.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
-				</p>
-			)}
+			{skillId === "reading" &&
+				(isEmptyRichText(prompt.passage ?? "") ? (
+					<p className="mt-3 text-fg text-sm leading-[1.55]">
+						Đoạn đọc sẽ hiện ở đây.
+					</p>
+				) : (
+					<RichTextBody
+						text={prompt.passage ?? ""}
+						className="mt-3 text-fg text-sm leading-[1.55]"
+					/>
+				))}
 
 			{skillId === "reading" &&
 				typeId === "diagram" &&
@@ -105,10 +113,11 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
-					{prompt.intro?.trim() && (
-						<p className="whitespace-pre-line text-muted-fg text-xs">
-							{prompt.intro.trim()}
-						</p>
+					{!isEmptyRichText(prompt.intro ?? "") && (
+						<RichTextBody
+							text={prompt.intro ?? ""}
+							className="text-muted-fg text-xs"
+						/>
 					)}
 					{bankable &&
 						(bank.length > 0 ? (
@@ -173,10 +182,14 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				</div>
 			)}
 
-			{!isAuto && !isSpeakingPart2 && (
-				<p className="mt-3 whitespace-pre-wrap text-fg text-sm leading-[1.55]">
-					{prompt.prompt.trim()}
-				</p>
+			{!isAuto && !isSpeakingPart2 && !isEmptyRichText(prompt.prompt) && (
+				// This surface rendered plain rows with pre-wrap — keep that exact
+				// whitespace behavior for legacy rows via legacyWhitespace.
+				<RichTextBody
+					text={prompt.prompt}
+					legacyWhitespace="pre-wrap"
+					className="mt-3 text-fg text-sm leading-[1.55]"
+				/>
 			)}
 
 			<div className="mt-3 flex flex-wrap gap-2">
@@ -186,12 +199,12 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
-				{prompt.note?.trim() && <Tag>Có hướng dẫn thêm</Tag>}
+				{!isEmptyRichText(prompt.note ?? "") && <Tag>Có hướng dẫn thêm</Tag>}
 			</div>
 
-			{prompt.prompt.trim() && skillId === "writing" && (
+			{!isEmptyRichText(prompt.prompt) && skillId === "writing" && (
 				<p className="mt-2 font-mono text-[11px] text-meta">
-					{wordCount(prompt.prompt)} từ
+					{wordCount(htmlToPlainText(prompt.prompt))} từ
 				</p>
 			)}
 
