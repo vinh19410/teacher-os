@@ -12,6 +12,7 @@ import { mapSyllabi } from "./syllabus";
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
+	assignmentTests: [],
 	students: [],
 	classes: [],
 	syllabi: [
@@ -187,6 +188,7 @@ describe("mapSyllabi", () => {
 		const empty: KernelSnapshot = {
 			assignmentPrompts: [],
 			classAssignments: [],
+			assignmentTests: [],
 			students: [],
 			classes: [],
 			syllabi: [],

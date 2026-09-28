@@ -306,6 +306,45 @@ export const ASSIGNMENT_PART_TYPES: Record<
 	},
 };
 
+/**
+ * Full-test builder: slot layout per skill — mỗi slot là MỘT prompt ngân hàng
+ * (design "IELTS Full Test Builder", 2026-09-28). Slot id khớp key `parts`
+ * của ASSIGNMENT_PART_TYPES; label là display text cho UI builder/preview.
+ */
+export const ASSIGNMENT_TEST_PRESETS: Record<
+	AssignmentSkill,
+	{ slots: { part: string; label: string }[] }
+> = {
+	reading: {
+		slots: [
+			{ part: "p1", label: "Passage 1" },
+			{ part: "p2", label: "Passage 2" },
+			{ part: "p3", label: "Passage 3" },
+		],
+	},
+	listening: {
+		slots: [
+			{ part: "s1", label: "Section 1" },
+			{ part: "s2", label: "Section 2" },
+			{ part: "s3", label: "Section 3" },
+			{ part: "s4", label: "Section 4" },
+		],
+	},
+	writing: {
+		slots: [
+			{ part: "task1", label: "Task 1" },
+			{ part: "task2", label: "Task 2" },
+		],
+	},
+	speaking: {
+		slots: [
+			{ part: "part1", label: "Part 1" },
+			{ part: "part2", label: "Part 2" },
+			{ part: "part3", label: "Part 3" },
+		],
+	},
+};
+
 export const ASSIGNMENT_ANSWER_CHOICES = {
 	tfng: ["TRUE", "FALSE", "NOT GIVEN"],
 	ynng: ["YES", "NO", "NOT GIVEN"],
@@ -648,6 +687,85 @@ export const assignmentPromptCreateSchema = z
 export type AssignmentPromptCreate = z.infer<
 	typeof assignmentPromptCreateSchema
 >;
+
+/**
+ * Full test CRUD (design "IELTS Full Test Builder"). `timeLimitSeconds`
+ * null = không giới hạn (Writing/Speaking); cap 3*3600 = full IELTS timed
+ * paper. Parts KHÔNG nằm ở create — dùng PUT parts riêng (replace-all).
+ */
+export const assignmentTestCreateSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		description: z.string().trim().max(2000).optional(),
+		skill: z.enum(ASSIGNMENT_SKILLS),
+		timeLimitSeconds: z
+			.number()
+			.int()
+			.gt(0)
+			.max(3 * 3600)
+			.nullable(),
+		collection: z.string().trim().max(200).optional(),
+		testGroup: z.string().trim().max(100).optional(),
+	})
+	.strict();
+export type AssignmentTestCreate = z.infer<typeof assignmentTestCreateSchema>;
+
+/** Meta/status update — partial của create; parts đổi qua parts-set riêng. */
+export const assignmentTestUpdateSchema = assignmentTestCreateSchema
+	.partial()
+	.extend({ status: z.enum(["draft", "ready"]).optional() })
+	.strict();
+export type AssignmentTestUpdate = z.infer<typeof assignmentTestUpdateSchema>;
+
+/**
+ * Replace-all parts body (PUT /assignments/tests/:id/parts). Slot id phải
+ * thuộc UNION các preset (slot id toàn cục duy nhất); membership theo skill
+ * CỦA TEST và cap "≤ số slot preset" do route kiểm (route có test.skill từ
+ * DB — phase-02). Contract chặn: slot lạ, trùng part, quá 4 slot (listening
+ * là preset lớn nhất).
+ */
+export const assignmentTestPartsSetSchema = z
+	.array(
+		z
+			.object({
+				part: z.string().trim().min(1).max(20),
+				promptId: z.string().trim().min(1).max(100),
+				qStartOverride: z.number().int().gt(0).optional(),
+			})
+			.strict(),
+	)
+	.max(4)
+	.superRefine((parts, ctx) => {
+		const validSlots: Record<string, true> = Object.fromEntries(
+			Object.values(ASSIGNMENT_TEST_PRESETS).flatMap((preset) =>
+				preset.slots.map((slot) => [slot.part, true] as const),
+			),
+		);
+		const seen = new Set<string>();
+		for (const [index, item] of parts.entries()) {
+			if (!validSlots[item.part]) {
+				ctx.addIssue({
+					code: "custom",
+					path: [index, "part"],
+					message: "invalid part slot",
+				});
+				continue;
+			}
+			if (seen.has(item.part)) {
+				ctx.addIssue({
+					code: "custom",
+					path: [index, "part"],
+					message: "duplicate part",
+				});
+				continue;
+			}
+			seen.add(item.part);
+		}
+	});
+export type AssignmentTestPartsSet = z.infer<
+	typeof assignmentTestPartsSetSchema
+>;
+
 /**
  * Giao đề ngân hàng cho lớp (#208). `due` là ISO yyyy-mm-dd (so được với
  * hôm nay — precedent `invoice.due`, khác `assignment.due` display dd/mm);
@@ -1005,6 +1123,31 @@ export interface KernelClassAssignmentRow {
 	targets: Array<{ studentId: string; submittedAt: string | null }>;
 }
 
+/** Một slot của full test — position là thứ tự slot trong preset. */
+export interface KernelAssignmentTestPartRow {
+	testId: string;
+	promptId: string;
+	part: string;
+	position: number;
+	qStartOverride: number | null;
+}
+
+/**
+ * Full test snapshot row (parts đã group theo test). Không nhúng passage/
+ * transcript — UI lấy prompt detail từ assignmentPrompts theo promptId.
+ */
+export interface KernelAssignmentTestRow {
+	id: string;
+	title: string;
+	description: string | null;
+	skill: AssignmentSkill | string;
+	timeLimitSeconds: number | null;
+	collection: string | null;
+	testGroup: string | null;
+	status: "draft" | "ready" | string;
+	parts: KernelAssignmentTestPartRow[];
+}
+
 export interface KernelReportRow {
 	id: string;
 	studentId: string;
@@ -1042,6 +1185,7 @@ export interface KernelSnapshot {
 	notifs: KernelNotifRow[];
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
+	assignmentTests: KernelAssignmentTestRow[];
 }
 
 export interface CreatedResponse {

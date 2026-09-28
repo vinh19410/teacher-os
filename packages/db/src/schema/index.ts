@@ -1,5 +1,6 @@
 export * from "./assignment";
 export * from "./assignment-prompt";
+export * from "./assignment-test";
 export * from "./auth";
 export * from "./class";
 export * from "./class-assignment";

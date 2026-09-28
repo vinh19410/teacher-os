@@ -43,7 +43,7 @@ Trọng tâm: giáo viên soạn được **đủ 1 bộ IELTS Reading** (3 pass
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Schema & Contracts](./phase-01-schema-and-contracts.md) | Pending |
+| 1 | [Schema & Contracts](./phase-01-schema-and-contracts.md) | Done |
 | 2 | [Server Routes & Snapshot](./phase-02-server-routes-snapshot.md) | Pending |
 | 3 | [Test Builder UI](./phase-03-test-builder-ui.md) | Pending |
 | 4 | [Full-Test Preview](./phase-04-full-test-preview.md) | Pending |

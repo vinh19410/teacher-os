@@ -263,6 +263,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		commentBank: mapCommentBank(snapshot),
 		enrollments: mapEnrollments(snapshot),
 		classAssignments: mapClassAssignments(snapshot),
+		assignmentTests: snapshot.assignmentTests ?? [],
 	};
 }
 
@@ -403,6 +404,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"assignments",
 	"assignmentPrompts",
 	"classAssignments",
+	"assignmentTests",
 	"invoices",
 	"reports",
 	"notifs",

@@ -9,6 +9,7 @@ import { mapStudents } from "./students";
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
+	assignmentTests: [],
 	students: [
 		{
 			id: "st-1",
@@ -117,6 +118,7 @@ describe("mapStudents", () => {
 		const empty: KernelSnapshot = {
 			assignmentPrompts: [],
 			classAssignments: [],
+			assignmentTests: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -140,6 +142,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
 		classAssignments: [],
+		assignmentTests: [],
 		students: [
 			{
 				id: "st-1",
@@ -281,6 +284,7 @@ describe("mapStudents parked package (issue #104)", () => {
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
 		classAssignments: [],
+		assignmentTests: [],
 		students: [
 			{
 				id: "st-1",

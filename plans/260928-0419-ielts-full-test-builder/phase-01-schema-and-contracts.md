@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Schema & Contracts"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: []
@@ -94,8 +94,8 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 1.1 — 2 bảng schema + barrel export
-- [ ] Task 1.2 — Migration 0029 + comment DEPLOY ORDER
-- [ ] Task 1.3 — Contracts (presets, zod, DTOs, KernelSnapshot)
-- [ ] Task 1.4 — `emptyKernelData` stub + vitest xanh
-- [ ] `pnpm check-types` toàn workspace exit 0
+- [x] Task 1.1 — 2 bảng schema + barrel export
+- [x] Task 1.2 — Migration 0029 + comment DEPLOY ORDER
+- [x] Task 1.3 — Contracts (presets, zod, DTOs, KernelSnapshot)
+- [x] Task 1.4 — `emptyKernelData` stub + vitest xanh
+- [x] `pnpm check-types` toàn workspace exit 0

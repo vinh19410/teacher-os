@@ -2,6 +2,7 @@ import type {
 	AssignmentQuestion,
 	AssignmentSkill,
 	ClassType,
+	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
 } from "@teacher-os/api/contracts";
 
@@ -233,6 +234,9 @@ export type KernelHydratedData = Pick<
 	enrollments: KernelEnrollmentRow[];
 	/** #208: lượt giao bài đã persist; MockData itself has no such collection. */
 	classAssignments: ClassAssignment[];
+	/** Full-test builder: full tests (parts đã group theo test);
+	 * MockData itself has no such collection. */
+	assignmentTests: KernelAssignmentTestRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

@@ -641,6 +641,7 @@ describe("runtime state boundary", () => {
 		const { emptyKernelData } = await import("./kernel-state");
 		expect(Object.keys(emptyKernelData).sort()).toEqual([
 			"assignmentPrompts",
+			"assignmentTests",
 			"assignments",
 			"classAssignments",
 			"classes",

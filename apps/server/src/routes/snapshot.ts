@@ -465,5 +465,8 @@ export async function loadSnapshot(
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],
 		})),
+		// Full-test builder (phase-01): stub cho typecheck + web shape guard;
+		// phase-02 Task 2.3 thay bằng org-scoped load + parts grouping.
+		assignmentTests: [],
 	};
 }

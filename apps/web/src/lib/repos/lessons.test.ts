@@ -10,6 +10,7 @@ import { mapLessons } from "./lessons";
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
+	assignmentTests: [],
 	students: [
 		{
 			id: "st-1",
@@ -138,6 +139,7 @@ describe("mapLessons", () => {
 			mapLessons({
 				assignmentPrompts: [],
 				classAssignments: [],
+				assignmentTests: [],
 				students: [],
 				classes: [],
 				syllabi: [],
