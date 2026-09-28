@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Full-Test Preview"
-status: pending
+status: done
 priority: P1
 effort: "4h"
 dependencies: [3]
@@ -76,7 +76,7 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 4.1 — Handoff draft preview (+ fallback id)
-- [ ] Task 4.2 — Preview paper 1–40 + 2 case phân bố
-- [ ] Task 4.3 — Nút Xem trước + route + quay lại an toàn
-- [ ] `pnpm -F web test` + `pnpm check-types` exit 0
+- [x] Task 4.1 — Handoff draft preview (+ fallback id)
+- [x] Task 4.2 — Preview paper 1–40 + 2 case phân bố
+- [x] Task 4.3 — Nút Xem trước + route + quay lại an toàn
+- [x] `pnpm -F web test` + `pnpm check-types` exit 0

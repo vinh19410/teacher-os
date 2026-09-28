@@ -45,6 +45,7 @@ import {
 	saveAssignmentTestDraft,
 	testDraftHasContent,
 } from "@/lib/assignment-test-draft-store";
+import { saveTestPreviewDraft } from "@/lib/assignment-test-preview-draft";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
@@ -432,6 +433,42 @@ export function TestBuilderShell({
 		setSavedNotice("Đã tải lại dữ liệu mới nhất từ máy chủ.");
 	}
 
+	/** Task 4.3: lưu handoff sessionStorage rồi mở preview — không qua server. */
+	function handlePreview() {
+		saveTestPreviewDraft(
+			{
+				test: {
+					title: header.title,
+					skill: header.skill,
+					timeLimitSeconds: built.ok ? built.payload.timeLimitSeconds : null,
+					collection: header.collection,
+					testGroup: header.testGroup,
+				},
+				parts: slots.map((slot) => {
+					const promptId = assigned[slot.part] ?? null;
+					const prompt = promptId ? promptById.get(promptId) : undefined;
+					const slotDraft = slotDrafts[slot.part] ?? null;
+					return {
+						part: slot.part,
+						label: slot.label,
+						qStartOverride: overrides[slot.part] ?? null,
+						promptId,
+						type: prompt?.type ?? slotDraft?.type ?? "",
+						title: prompt?.title ?? slotDraft?.title ?? "",
+						intro: prompt?.intro ?? slotDraft?.intro ?? "",
+						passage: prompt?.passage ?? slotDraft?.passage ?? "",
+						prompt: prompt?.prompt ?? slotDraft?.prompt ?? "",
+						audioName: prompt?.audioName ?? slotDraft?.audioName ?? "",
+						optionBank: prompt?.optionBank ?? slotDraft?.optionBank ?? [],
+						items: prompt?.questions ?? slotDraft?.items ?? [],
+					};
+				}),
+			},
+			mode === "edit" ? (test?.id ?? null) : null,
+		);
+		navigate({ to: "/assignments/tests/preview" });
+	}
+
 	function acceptDraftBanner() {
 		clearAssignmentTestDraft();
 		setBannerOpen(false);
@@ -640,16 +677,21 @@ export function TestBuilderShell({
 								? "Tạo bộ đề rồi gán part ở bước sau."
 								: "Thay đổi part lưu ngay vào bộ đề."}
 						</span>
-						<Button
-							type="submit"
-							disabled={!built.ok || submit.saving || submit.submitBlocked}
-						>
-							{submit.saving
-								? "Đang lưu…"
-								: mode === "create"
-									? "Tạo bộ đề"
-									: "Lưu thông tin"}
-						</Button>
+						<div className="flex flex-wrap gap-2">
+							<Button type="button" variant="secondary" onClick={handlePreview}>
+								Xem trước
+							</Button>
+							<Button
+								type="submit"
+								disabled={!built.ok || submit.saving || submit.submitBlocked}
+							>
+								{submit.saving
+									? "Đang lưu…"
+									: mode === "create"
+										? "Tạo bộ đề"
+										: "Lưu thông tin"}
+							</Button>
+						</div>
 					</div>
 				</div>
 			</form>

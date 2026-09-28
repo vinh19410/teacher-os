@@ -126,4 +126,13 @@ describe("TestBuilderShell (phase-03 Tasks 3.3/3.4/3.5)", () => {
 		// Còn 2 slot trống.
 		expect(html.match(/Chọn từ ngân hàng/g)?.length).toBe(2);
 	});
+
+	it("phase-04 Task 4.3: nút Xem trước có mặt ở cả create lẫn edit", () => {
+		const createHtml = renderToStaticMarkup(<TestBuilderShell mode="create" />);
+		expect(createHtml).toContain("Xem trước");
+		const editHtml = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={editTest} />,
+		);
+		expect(editHtml).toContain("Xem trước");
+	});
 });
