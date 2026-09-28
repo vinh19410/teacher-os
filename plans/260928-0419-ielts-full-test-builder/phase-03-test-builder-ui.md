@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Test Builder UI"
-status: pending
+status: done
 priority: P1
 effort: "7h"
 dependencies: [2]
@@ -117,10 +117,10 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 3.1 — computeTestRanges + 4 case (viết TRƯỚC)
-- [ ] Task 3.2 — Composer prop lockPart
-- [ ] Task 3.3 — Routes + shell 2 cột
-- [ ] Task 3.4 — Header form + datalist collection/group
-- [ ] Task 3.5 — Part slots + picker + composer nhúng
-- [ ] Task 3.6 — Draft store schemaVersion 2
-- [ ] `pnpm -F web test` + `pnpm check-types` exit 0
+- [x] Task 3.1 — computeTestRanges + 4 case (viết TRƯỚC)
+- [x] Task 3.2 — Composer prop lockPart
+- [x] Task 3.3 — Routes + shell 2 cột
+- [x] Task 3.4 — Header form + datalist collection/group
+- [x] Task 3.5 — Part slots + picker + composer nhúng
+- [x] Task 3.6 — Draft store schemaVersion 2
+- [x] `pnpm -F web test` + `pnpm check-types` exit 0

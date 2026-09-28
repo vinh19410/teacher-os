@@ -54,6 +54,15 @@ describe("routes-matcher", () => {
 			expect(isValidAppRoute("/syllabus/syll-xyz-456/")).toBe(true);
 			expect(isValidAppRoute("/assignments/assign-789")).toBe(true);
 			expect(isValidAppRoute("/assignments/assign-789/")).toBe(true);
+			// Full-test edit route (phase-03): /assignments/tests/<id> — hai
+			// segment sau /assignments, cần prefix riêng của nó.
+			expect(isValidAppRoute("/assignments/tests/0192f0c0-test-id")).toBe(true);
+			expect(isValidAppRoute("/assignments/tests/0192f0c0-test-id/")).toBe(
+				true,
+			);
+			// Prefix reasoning test "new"/"preview" vẫn match exact route ở trên.
+			expect(isValidAppRoute("/assignments/tests/new")).toBe(true);
+			expect(isValidAppRoute("/assignments/tests/preview")).toBe(true);
 		});
 
 		it("rejects non-existent pages reported in QC issue #113", () => {

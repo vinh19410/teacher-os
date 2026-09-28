@@ -1,7 +1,14 @@
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 
-import { mapAssignmentTests } from "./assignment-tests";
+import type { AssignmentPrompt } from "@/lib/mock-data";
+import {
+	collectionOptions,
+	composerFromPrompt,
+	groupOptions,
+	mapAssignmentTests,
+	partsSetPayload,
+} from "./assignment-tests";
 import { kernelCommand, mapKernelSnapshot } from "./kernel";
 
 /** Row mẫu đầy đủ field — mọi test khác derive từ đây. */
@@ -184,5 +191,102 @@ describe("kernelCommand assignment-test actions (full-test builder phase-2)", ()
 			questions: [{ stem: "Q1", answer: "FALSE", alts: "" }],
 			note: "đã sửa",
 		});
+	});
+});
+
+describe("builder view-model helpers (full-test builder phase-3)", () => {
+	test("partsSetPayload orders slots by preset position and drops empty slots", () => {
+		// Gán thiếu slot giữa (p2 trống) — replace-all chỉ mang slot đã gán,
+		// thứ tự mảng theo preset reading p1,p2,p3.
+		const payload = partsSetPayload("reading", {
+			p1: "prompt-1",
+			p2: null,
+			p3: "prompt-3",
+		});
+		expect(payload).toEqual([
+			{ part: "p1", promptId: "prompt-1" },
+			{ part: "p3", promptId: "prompt-3" },
+		]);
+	});
+
+	test("partsSetPayload full 3-slot reading → position order p1,p2,p3 với override giữ nguyên", () => {
+		const payload = partsSetPayload(
+			"reading",
+			{ p1: "a", p2: "b", p3: "c" },
+			{ p2: 20 },
+		);
+		expect(payload.map((item) => item.part)).toEqual(["p1", "p2", "p3"]);
+		expect(payload.map((item) => item.promptId)).toEqual(["a", "b", "c"]);
+		expect(payload[1].qStartOverride).toBe(20);
+	});
+
+	test("partsSetPayload listening preset → 4 slot theo thứ tự s1..s4", () => {
+		const payload = partsSetPayload("listening", {
+			s1: "l1",
+			s2: "l2",
+			s3: "l3",
+			s4: "l4",
+		});
+		expect(payload.map((item) => item.part)).toEqual(["s1", "s2", "s3", "s4"]);
+	});
+
+	test("collectionOptions/groupOptions distinct bỏ trống", () => {
+		const tests = mapAssignmentTests({
+			assignmentTests: [fullRow],
+		} as unknown as KernelSnapshot);
+		const more = [
+			...tests,
+			{
+				...tests[0],
+				id: "at2",
+				collection: "Cambridge IELTS 12",
+				testGroup: null,
+			},
+			{ ...tests[0], id: "at3", collection: null, testGroup: "TEST 6" },
+		];
+		expect(collectionOptions(more)).toEqual(["Cambridge IELTS 12"]);
+		expect(groupOptions(more)).toEqual(["TEST 5", "TEST 6"]);
+	});
+
+	test("composerFromPrompt bridge mọi field với fallback legacy", () => {
+		const prompt: AssignmentPrompt = {
+			id: "p1-row",
+			skill: "reading",
+			part: "p2",
+			type: "headings",
+			task: "p2",
+			genre: "headings",
+			title: "Passage 2",
+			band: "7.0",
+			source: "Cambridge 18",
+			prompt: "",
+			passage: "Text…",
+			note: "ghi chú",
+			status: "ready",
+			createdAt: "2026-09-28T00:00:00Z",
+			questions: [
+				{ stem: "Q14", opts: null, answer: "iv", alts: "", pin: null },
+			],
+		};
+		const value = composerFromPrompt(prompt);
+		expect(value.skill).toBe("reading");
+		expect(value.part).toBe("p2");
+		expect(value.passage).toBe("Text…");
+		expect(value.items).toEqual([
+			{ stem: "Q14", opts: null, answer: "iv", alts: "", pin: null },
+		]);
+
+		// Legacy row: skill/part/type vắng mặt → fallback task/genre/writing.
+		const legacy = composerFromPrompt({
+			...prompt,
+			skill: undefined,
+			part: undefined,
+			type: undefined,
+			task: "task2",
+			genre: "discuss",
+		});
+		expect(legacy.skill).toBe("writing");
+		expect(legacy.part).toBe("task2");
+		expect(legacy.type).toBe("discuss");
 	});
 });
