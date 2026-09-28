@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Answers Checking"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: [4]
@@ -80,7 +80,7 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 5.1 — parse + compare thuần + vitest
-- [ ] Task 5.2 — Panel View/Paste/Compare
-- [ ] Task 5.3 — Apply có confirm + idempotent
-- [ ] `pnpm -F web test` + `pnpm check-types` exit 0
+- [x] Task 5.1 — parse + compare thuần + vitest
+- [x] Task 5.2 — Panel View/Paste/Compare
+- [x] Task 5.3 — Apply có confirm + idempotent
+- [x] `pnpm -F web test` + `pnpm check-types` exit 0

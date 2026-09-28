@@ -1,5 +1,6 @@
 import {
 	ASSIGNMENT_TEST_PRESETS,
+	type AssignmentQuestion,
 	type AssignmentSkill,
 	type AssignmentTestPartsSet,
 	type KernelAssignmentTestRow,
@@ -7,6 +8,7 @@ import {
 } from "@teacher-os/api/contracts";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import type { AssignmentPrompt } from "@/lib/mock-data";
+import type { TestAnswerDiffRow } from "@/lib/test-answer-key";
 
 /**
  * Full-test builder (phase-02): field-for-field projection của snapshot
@@ -114,4 +116,89 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 			pin: question.pin ?? null,
 		})),
 	};
+}
+
+/**
+ * Apply answer key (phase-05 Task 5.3) — slot part có prompt gán, nguồn
+ * questions là snapshot (panel không fetch riêng). Số câu tuyệt đối =
+ * `qStart + index` từ computeTestRanges — mọi lookup theo number, không
+ * bao giờ theo vị trí trong part.
+ */
+export interface AnswerKeyApplySlot {
+	part: string;
+	promptId: string;
+	qStart: number;
+	questions: AssignmentQuestion[];
+}
+
+export interface AnswerKeyPartChange {
+	part: string;
+	promptId: string;
+	/** Số câu (tuyệt đối) sẽ bị ghi đè answer/alts. */
+	numbers: number[];
+	/** Questions mới: giữ nguyên stem/opts/pin, chỉ thay answer + alts
+	 * (alts là chuỗi join " / " — cùng shape prompt đang lưu). */
+	questions: AssignmentQuestion[];
+}
+
+/**
+ * Diff → thay đổi theo part. CHỈ câu `mismatch` được ghi (câu match giữ
+ * nguyên, không ghi lại — chống đè mất alts đang có); part không còn câu
+ * lệch rơi khỏi kết quả. Part-local index không bao giờ dùng làm số câu.
+ */
+export function answerKeyPartChanges(
+	diffs: TestAnswerDiffRow[],
+	slots: AnswerKeyApplySlot[],
+): AnswerKeyPartChange[] {
+	const expectedByNumber = new Map<number, { answer: string; alts: string }>();
+	for (const row of diffs) {
+		if (row.status === "mismatch" && row.expected)
+			expectedByNumber.set(row.number, row.expected);
+	}
+	const changes: AnswerKeyPartChange[] = [];
+	for (const slot of slots) {
+		const numbers: number[] = [];
+		const questions = slot.questions.map((question, index) => {
+			const expected = expectedByNumber.get(slot.qStart + index);
+			if (!expected) return question;
+			numbers.push(slot.qStart + index);
+			return { ...question, answer: expected.answer, alts: expected.alts };
+		});
+		if (numbers.length > 0)
+			changes.push({
+				part: slot.part,
+				promptId: slot.promptId,
+				numbers,
+				questions,
+			});
+	}
+	return changes;
+}
+
+export interface AnswerKeyApplyOutcome {
+	appliedParts: number;
+	appliedQuestions: number;
+	/** Part lỗi khiến vòng dừng — null = ghi hết. */
+	failedPart: string | null;
+}
+
+/**
+ * Ghi key tuần tự từng part qua PATCH prompt (phase-2 route, org-scoped).
+ * Part lỗi → DỪNG, KHÔNG rollback part đã ghi (idempotent: chạy lại Apply
+ * chỉ đụng câu còn lệch — compare sau ghi ra 0 mismatch thì 0 PATCH).
+ * `patch` resolve false = part đó chưa ghi được.
+ */
+export async function runAnswerKeyApply(
+	changes: AnswerKeyPartChange[],
+	patch: (change: AnswerKeyPartChange) => Promise<boolean>,
+): Promise<AnswerKeyApplyOutcome> {
+	let appliedParts = 0;
+	let appliedQuestions = 0;
+	for (const change of changes) {
+		const ok = await patch(change);
+		if (!ok) return { appliedParts, appliedQuestions, failedPart: change.part };
+		appliedParts += 1;
+		appliedQuestions += change.numbers.length;
+	}
+	return { appliedParts, appliedQuestions, failedPart: null };
 }

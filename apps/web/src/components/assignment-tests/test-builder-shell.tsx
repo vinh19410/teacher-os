@@ -6,6 +6,7 @@ import {
 	type KernelAssignmentTestRow,
 } from "@teacher-os/api/contracts";
 import { useEffect, useMemo, useState } from "react";
+import { AnswersCheckingPanel } from "@/components/assignment-tests/answers-checking-panel";
 import { PromptPickerDialog } from "@/components/assignment-tests/prompt-picker-dialog";
 import {
 	buildTestPayload,
@@ -19,6 +20,7 @@ import {
 	emptyComposer,
 	isAutoSkill,
 	isImageBased,
+	kindOf,
 	partOf,
 } from "@/components/assignments/assignment-presets";
 import {
@@ -49,6 +51,7 @@ import { saveTestPreviewDraft } from "@/lib/assignment-test-preview-draft";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
+	type AnswerKeyPartChange,
 	collectionOptions,
 	composerFromPrompt,
 	groupOptions,
@@ -139,6 +142,8 @@ export function TestBuilderShell({
 	const [composer, setComposer] = useState<OpenComposer | null>(null);
 	const [pickerPart, setPickerPart] = useState<string | null>(null);
 	const [showHeaderErrors, setShowHeaderErrors] = useState(false);
+	const [answersOpen, setAnswersOpen] = useState(false);
+	const [answersKeyText, setAnswersKeyText] = useState("");
 	const [showComposerErrors, setShowComposerErrors] = useState(false);
 	const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
@@ -187,6 +192,23 @@ export function TestBuilderShell({
 	const totalQuestions = slotViews.reduce(
 		(sum, slot) => sum + (slot.prompt ? slot.count : 0),
 		0,
+	);
+
+	// Panel Soát đáp án (phase-05): chỉ part có prompt — questions đọc từ
+	// snapshot (promptById), panel không fetch riêng.
+	const answerSlots = useMemo(
+		() =>
+			slotViews
+				.filter((slot) => slot.prompt !== null && assigned[slot.part])
+				.map((slot) => ({
+					part: slot.part,
+					label: slot.label,
+					promptId: assigned[slot.part] as string,
+					qStart: slot.qStart,
+					kind: kindOf(slot.prompt?.type ?? slot.prompt?.genre ?? ""),
+					questions: slot.prompt?.questions ?? [],
+				})),
+		[slotViews, assigned],
 	);
 
 	const collections = useMemo(
@@ -253,6 +275,17 @@ export function TestBuilderShell({
 			testId: test.id,
 			parts: partsSetPayload(header.skill, nextAssigned, overrides),
 		});
+	}
+
+	/** Phase-05 Apply: PATCH questions của 1 part (giữ stem/opts/pin, chỉ
+	 * thay answer/alts). false = lỗi/chưa refresh → Apply dừng ở part đó. */
+	async function patchAnswerKeyPart(change: AnswerKeyPartChange) {
+		const result = await submit.run({
+			type: "update-assignment-prompt",
+			promptId: change.promptId,
+			payload: { questions: change.questions },
+		});
+		return result?.kind === "refreshed";
 	}
 
 	function handleAssign(part: string, promptId: string) {
@@ -599,6 +632,18 @@ export function TestBuilderShell({
 						/>
 					))}
 				</Card>
+				{answersOpen && (
+					<Card variant="white" className="flex flex-col gap-4 py-4">
+						<SectionLabel>Soát đáp án</SectionLabel>
+						<AnswersCheckingPanel
+							slots={answerSlots}
+							keyText={answersKeyText}
+							onKeyTextChange={setAnswersKeyText}
+							busy={submit.saving}
+							onPatchPart={patchAnswerKeyPart}
+						/>
+					</Card>
+				)}
 				{composer && (
 					<Card variant="white" className="flex flex-col gap-4 py-4">
 						<SectionLabel>{`${
@@ -678,6 +723,13 @@ export function TestBuilderShell({
 								: "Thay đổi part lưu ngay vào bộ đề."}
 						</span>
 						<div className="flex flex-wrap gap-2">
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={() => setAnswersOpen((open) => !open)}
+							>
+								{answersOpen ? "Đóng soát đáp án" : "Soát đáp án"}
+							</Button>
 							<Button type="button" variant="secondary" onClick={handlePreview}>
 								Xem trước
 							</Button>

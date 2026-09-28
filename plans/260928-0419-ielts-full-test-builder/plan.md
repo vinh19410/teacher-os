@@ -47,7 +47,7 @@ Trọng tâm: giáo viên soạn được **đủ 1 bộ IELTS Reading** (3 pass
 | 2 | [Server Routes & Snapshot](./phase-02-server-routes-snapshot.md) | Done |
 | 3 | [Test Builder UI](./phase-03-test-builder-ui.md) | Done |
 | 4 | [Full-Test Preview](./phase-04-full-test-preview.md) | Done |
-| 5 | [Answers Checking](./phase-05-answers-checking.md) | Pending |
+| 5 | [Answers Checking](./phase-05-answers-checking.md) | Done |
 | 6 | [E2E & Extensibility](./phase-06-e2e-extensibility.md) | Pending |
 
 ## Success Criteria

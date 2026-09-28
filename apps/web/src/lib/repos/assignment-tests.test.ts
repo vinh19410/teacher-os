@@ -1,13 +1,22 @@
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
+	compareAnswerKey,
+	parseTestAnswerKey,
+	testAnswerCells,
+} from "@/lib/test-answer-key";
+import {
+	type AnswerKeyApplySlot,
+	type AnswerKeyPartChange,
+	answerKeyPartChanges,
 	collectionOptions,
 	composerFromPrompt,
 	groupOptions,
 	mapAssignmentTests,
 	partsSetPayload,
+	runAnswerKeyApply,
 } from "./assignment-tests";
 import { kernelCommand, mapKernelSnapshot } from "./kernel";
 
@@ -288,5 +297,203 @@ describe("builder view-model helpers (full-test builder phase-3)", () => {
 		expect(legacy.skill).toBe("writing");
 		expect(legacy.part).toBe("task2");
 		expect(legacy.type).toBe("discuss");
+	});
+});
+
+describe("answer-key apply helpers (full-test builder phase-5)", () => {
+	const tfngQuestions = (answers: string[]) =>
+		answers.map((answer, index) => ({
+			stem: `Q${index + 1}`,
+			opts: null,
+			answer,
+			alts: "",
+			pin: null,
+		}));
+
+	/** Reading 13/13/14 với p2 mcq — số tuyệt đối là mốc duy nhất. */
+	const readingSlots = (): AnswerKeyApplySlot[] => [
+		{
+			part: "p1",
+			promptId: "prompt-p1",
+			qStart: 1,
+			questions: tfngQuestions(Array.from({ length: 13 }, () => "TRUE")),
+		},
+		{
+			part: "p2",
+			promptId: "prompt-p2",
+			qStart: 14,
+			questions: Array.from({ length: 13 }, (_, index) => ({
+				stem: `Q${14 + index}`,
+				opts: ["A", "B", "C", "D"],
+				answer: "A",
+				alts: "",
+			})),
+		},
+	];
+
+	const diffFor = (text: string, slots: AnswerKeyApplySlot[]) => {
+		const { entries } = parseTestAnswerKey(
+			text,
+			slots.map((slot) => ({
+				part: slot.part,
+				qStart: slot.qStart,
+				count: slot.questions.length,
+				kind: slot.part === "p2" ? ("mcq4" as const) : ("tfng" as const),
+			})),
+		);
+		return compareAnswerKey(entries, testAnswerCells(slots));
+	};
+
+	test("answerKeyPartChanges: chỉ mismatch được ghi, giữ stem/opts, số câu tuyệt đối", () => {
+		// Q2 lệch (TRUE≠FALSE), Q15 lệch (A≠C) — p2 qStart 14: Q15 = index 1.
+		const changes = answerKeyPartChanges(
+			diffFor("1. TRUE\n2. FALSE\n15. C", readingSlots()),
+			readingSlots(),
+		);
+		expect(changes.map((change) => change.part)).toEqual(["p1", "p2"]);
+		expect(changes[0]).toMatchObject({
+			part: "p1",
+			promptId: "prompt-p1",
+			numbers: [2],
+		});
+		expect(changes[0]?.questions[1]).toMatchObject({
+			stem: "Q2",
+			answer: "FALSE",
+		});
+		expect(changes[1]).toMatchObject({ part: "p2", numbers: [15] });
+		// opts giữ nguyên — chỉ answer/alts thay.
+		expect(changes[1]?.questions[1]?.opts).toEqual(["A", "B", "C", "D"]);
+		expect(changes[1]?.questions[1]?.answer).toBe("C");
+		// Câu match không bị clone lại (same reference).
+		const slots = readingSlots();
+		const next = answerKeyPartChanges(diffFor("2. FALSE", slots), slots);
+		expect(next).toHaveLength(1);
+		expect(next[0]?.questions[0]).toBe(slots[0]?.questions[0]);
+	});
+
+	test("answerKeyPartChanges: all-match → không part nào đổi", () => {
+		const slots = readingSlots();
+		expect(
+			answerKeyPartChanges(diffFor("1. TRUE\n14. A", slots), slots),
+		).toEqual([]);
+	});
+
+	test("runAnswerKeyApply: PATCH tuần tự từng part, lỗi part sau thì dừng — không rollback", async () => {
+		const patch = vi.fn(
+			async (change: AnswerKeyPartChange) => change.part !== "p2",
+		);
+		const changes: AnswerKeyPartChange[] = [
+			{ part: "p1", promptId: "a", numbers: [1], questions: [] },
+			{ part: "p2", promptId: "b", numbers: [2], questions: [] },
+			{ part: "p3", promptId: "c", numbers: [3], questions: [] },
+		];
+		const outcome = await runAnswerKeyApply(changes, patch);
+		// p2 lỗi → p3 không bị gọi.
+		expect(patch.mock.calls.map(([change]) => change.part)).toEqual([
+			"p1",
+			"p2",
+		]);
+		expect(outcome).toEqual({
+			appliedParts: 1,
+			appliedQuestions: 1,
+			failedPart: "p2",
+		});
+	});
+
+	test("runAnswerKeyApply: 0 changes → 0 PATCH (idempotent precondition)", async () => {
+		const patch = vi.fn(async () => true);
+		expect(await runAnswerKeyApply([], patch)).toEqual({
+			appliedParts: 0,
+			appliedQuestions: 0,
+			failedPart: null,
+		});
+		expect(patch).not.toHaveBeenCalled();
+	});
+
+	test("idempotency chấp nhận: apply key 40 dòng 2 lần — lần 2 ra 0 thay đổi", () => {
+		// Đề 13+13+14 với đáp án đang lệch key ở mọi câu (trống hoặc sai).
+		const keyText = [
+			...Array.from(
+				{ length: 13 },
+				(_, i) => `${i + 1}. ${i % 2 ? "FALSE" : "TRUE"}`,
+			),
+			...Array.from({ length: 13 }, (_, i) => `${i + 14}. ${"ABCD"[i % 4]}`),
+			...Array.from(
+				{ length: 13 },
+				(_, i) => `${i + 27}. word${i + 27} / alt${i + 27}`,
+			),
+			"40. final / last",
+		].join("\n");
+		const slots: AnswerKeyApplySlot[] = [
+			{
+				part: "p1",
+				promptId: "prompt-p1",
+				qStart: 1,
+				questions: tfngQuestions(Array.from({ length: 13 }, () => "")),
+			},
+			{
+				part: "p2",
+				promptId: "prompt-p2",
+				qStart: 14,
+				questions: Array.from({ length: 13 }, (_, index) => ({
+					stem: `Q${14 + index}`,
+					opts: null,
+					// Đề trống đáp án — mọi dòng key là mismatch (kịch bản chấp nhận).
+					answer: "",
+					alts: "",
+				})),
+			},
+			{
+				part: "p3",
+				promptId: "prompt-p3",
+				qStart: 27,
+				questions: Array.from({ length: 14 }, (_, index) => ({
+					stem: `Q${27 + index}`,
+					opts: null,
+					answer: "",
+					alts: "",
+				})),
+			},
+		];
+		const ranges = slots.map((slot) => ({
+			part: slot.part,
+			qStart: slot.qStart,
+			count: slot.questions.length,
+			kind:
+				slot.part === "p1"
+					? ("tfng" as const)
+					: slot.part === "p2"
+						? ("mcq4" as const)
+						: ("text" as const),
+		}));
+
+		// Lần 1: mọi câu lệch → 3 part đều có PATCH.
+		const first = answerKeyPartChanges(
+			compareAnswerKey(
+				parseTestAnswerKey(keyText, ranges).entries,
+				testAnswerCells(slots),
+			),
+			slots,
+		);
+		expect(first.map((change) => change.numbers.length)).toEqual([13, 13, 14]);
+
+		// Giả lập server ghi xong: thay questions bằng bản PATCH gửi đi.
+		const applied: AnswerKeyApplySlot[] = slots.map((slot) => ({
+			part: slot.part,
+			promptId: slot.promptId,
+			qStart: slot.qStart,
+			questions:
+				first.find((change) => change.promptId === slot.promptId)?.questions ??
+				slot.questions,
+		}));
+		// Lần 2: compare lại với CÙNG key → 0 mismatch → 0 PATCH.
+		const second = answerKeyPartChanges(
+			compareAnswerKey(
+				parseTestAnswerKey(keyText, ranges).entries,
+				testAnswerCells(applied),
+			),
+			applied,
+		);
+		expect(second).toEqual([]);
 	});
 });

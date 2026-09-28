@@ -135,4 +135,15 @@ describe("TestBuilderShell (phase-03 Tasks 3.3/3.4/3.5)", () => {
 		);
 		expect(editHtml).toContain("Xem trước");
 	});
+
+	it("phase-05 Task 5.2: nút Soát đáp án có mặt ở cả create lẫn edit", () => {
+		const createHtml = renderToStaticMarkup(<TestBuilderShell mode="create" />);
+		expect(createHtml).toContain("Soát đáp án");
+		const editHtml = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={editTest} />,
+		);
+		expect(editHtml).toContain("Soát đáp án");
+		// Mặc định đóng — panel không render cho đến khi bấm toggle.
+		expect(createHtml).not.toContain("View All Answers");
+	});
 });
