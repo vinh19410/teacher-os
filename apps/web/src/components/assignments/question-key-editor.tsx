@@ -7,6 +7,7 @@ import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
 	isBankableType,
+	isImageBased,
 	type QuestionItem,
 	qStartOf,
 	TYPE_HINTS,
@@ -17,6 +18,7 @@ import {
 } from "./bulk-key-paste";
 import { ClozeEditor } from "./cloze-editor";
 import { OptionBankEditor } from "./option-bank-editor";
+import { PinEditor } from "./pin-editor";
 import { TableGridEditor } from "./table-grid-editor";
 
 const KNOWN_HINTS = new Set(Object.values(TYPE_HINTS).map((hint) => hint));
@@ -61,14 +63,15 @@ export function QuestionKeyEditor({
 	questionsError?: string;
 }) {
 	const qStart = qStartOf(skill, partId);
-	// Guarded by skill too — a drifted draft must not surface the URL field
-	// for a non-reading skill where no validation gate pairs with it (#269).
-	const isDiagram = skill === "reading" && typeId === "diagram";
+	// Phase-04 FR2/FR3 — image-based pairs (reading diagram + listening map,
+	// skill-qualified) surface the URL field + pin editor; `map` gains the
+	// field it never had while writing task1's shared `map` id stays clear.
+	const isImage = isImageBased(skill, typeId);
 	// Same scheme policy as the contract — the thumbnail never renders an
 	// unsafe URL, even while the field still carries a draft value.
 	const safeImageUrl = imageUrl.trim();
 	const showThumbnail =
-		isDiagram &&
+		isImage &&
 		safeImageUrl.length > 0 &&
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
 	const hint = TYPE_HINTS[typeId];
@@ -84,13 +87,17 @@ export function QuestionKeyEditor({
 		errors: BulkKeyPasteLineError[];
 		appliedCount: number;
 	} | null>(null);
+	// Phase-04 FR3 — pin → row selection (one-way: the pin editor drives it).
+	const [selectedPin, setSelectedPin] = useState<number | null>(null);
 	// A skill/part/type wipe resets the questions — a paste panel holding the
-	// old type's raw lines must not survive it (review: INFO #3).
+	// old type's raw lines (or a pin selection pointing at wiped rows) must
+	// not survive it (review: INFO #3).
 	// biome-ignore lint/correctness/useExhaustiveDependencies: skill/partId/typeId are the reset identity, not data used in the body — deliberate reset-on-structural-change
 	useEffect(() => {
 		setPasteOpen(false);
 		setPasteRaw("");
 		setPasteOutcome(null);
+		setSelectedPin(null);
 	}, [skill, partId, typeId]);
 	const addQuestion = () => {
 		if (atMax) return false;
@@ -180,10 +187,12 @@ export function QuestionKeyEditor({
 					onItemsChange={onItemsChange}
 				/>
 			)}
-			{isDiagram && (
+			{isImage && (
 				<div className="flex flex-col gap-1">
 					<Field
-						label="Ảnh biểu đồ (URL)"
+						label={
+							skill === "listening" ? "Ảnh bản đồ (URL)" : "Ảnh biểu đồ (URL)"
+						}
 						help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
 						error={imageUrlError}
 					>
@@ -195,12 +204,13 @@ export function QuestionKeyEditor({
 						/>
 					</Field>
 					{showThumbnail && (
-						<img
-							src={safeImageUrl}
-							alt="Ảnh biểu đồ đề Reading"
-							className="max-h-48 rounded-md border border-line"
-							referrerPolicy="no-referrer"
-							loading="lazy"
+						<PinEditor
+							imageUrl={safeImageUrl}
+							items={items}
+							qStart={qStart}
+							selectedIndex={selectedPin}
+							onItemsChange={onItemsChange}
+							onSelect={setSelectedPin}
 						/>
 					)}
 				</div>
@@ -242,6 +252,8 @@ export function QuestionKeyEditor({
 				items={items}
 				showErrors={showErrors}
 				requireFilled={status === "ready"}
+				requirePin={isImage && status === "ready"}
+				selectedIndex={selectedPin}
 				optionBank={optionBank}
 				onItemsChange={onItemsChange}
 				onAddQuestion={addQuestion}

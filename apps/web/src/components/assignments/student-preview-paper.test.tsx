@@ -154,3 +154,71 @@ describe("StudentPreviewPaper — cloze marker rendering (phase-03 FR5)", () => 
 		expect(html).not.toContain("<input");
 	});
 });
+
+describe("StudentPreviewPaper — image pins (phase-04 FR5)", () => {
+	const diagramBase = base({
+		skill: "reading",
+		part: "p1",
+		type: "diagram",
+		intro: "Label the diagram. ONE WORD ONLY.",
+		imageUrl: "https://example.com/machine.png",
+		items: [
+			{
+				...emptyItem("diagram"),
+				stem: "Part 4 of the machine",
+				answer: "piston",
+				pin: { x: 30, y: 60 },
+			},
+			{
+				...emptyItem("diagram"),
+				stem: "Part 5 of the machine",
+				answer: "valve",
+			},
+		],
+	});
+
+	it("renders numbered pins at their percents beside a fill-in input", () => {
+		const html = renderToStaticMarkup(<StudentPreviewPaper {...diagramBase} />);
+		expect(html).toContain('alt="Ảnh đề"');
+		expect(html).toMatch(/left:30%/);
+		expect(html).toMatch(/top:60%/);
+		expect(html).toContain('aria-label="Điền đáp án câu 1"');
+		// The pin-less second question renders no overlay pin.
+		expect(html).not.toContain('aria-label="Điền đáp án câu 2"');
+	});
+
+	it("keeps the plain thumbnail when no question carries a pin (legacy)", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...diagramBase}
+				items={[{ ...emptyItem("diagram"), stem: "Part 4", answer: "piston" }]}
+			/>,
+		);
+		expect(html).toContain('alt="Ảnh biểu đồ đề Reading"');
+		expect(html).not.toContain('aria-label="Điền đáp án câu 1"');
+	});
+
+	it("listening map renders the image with pins too (skill-qualified)", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					skill: "listening",
+					part: "s2",
+					type: "map",
+					imageUrl: "https://example.com/campus.png",
+					optionBank: ["Reception", "Cafe"],
+					items: [
+						{
+							...emptyItem("map"),
+							stem: "11",
+							answer: "A",
+							pin: { x: 40, y: 40 },
+						},
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain('alt="Ảnh đề"');
+		expect(html).toMatch(/left:40%/);
+	});
+});

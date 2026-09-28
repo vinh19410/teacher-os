@@ -165,6 +165,64 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 		}
 	});
 
+	test("corrupted question pin (non-object / out-of-range) is ignored (phase-04)", () => {
+		const store = fakeStorage();
+		const bads = [
+			{
+				...draft(),
+				value: {
+					...composerValue(),
+					items: [
+						{
+							stem: "S",
+							answer: "TRUE",
+							opts: null,
+							alts: "",
+							pin: "top-left",
+						},
+					],
+				},
+			},
+			{
+				...draft(),
+				value: {
+					...composerValue(),
+					items: [
+						{
+							stem: "S",
+							answer: "TRUE",
+							opts: null,
+							alts: "",
+							pin: { x: 200, y: 10 },
+						},
+					],
+				},
+			},
+		];
+		for (const bad of bads) {
+			store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(bad));
+			expect(readAssignmentDraft(store)).toBeNull();
+			expect(store.size).toBe(0);
+		}
+		// A valid pin (and pin: null) stays valid.
+		const withPins = draft({
+			value: composerValue({
+				items: [
+					{
+						stem: "S",
+						answer: "TRUE",
+						opts: null,
+						alts: "",
+						pin: { x: 10, y: 90 },
+					},
+					{ stem: "S2", answer: "", opts: null, alts: "", pin: null },
+				],
+			}),
+		});
+		store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(withPins));
+		expect(readAssignmentDraft(store)).not.toBeNull();
+	});
+
 	test("corrupted question opts (non-array) is ignored — must not crash the grid", () => {
 		const store = fakeStorage();
 		const bads = [

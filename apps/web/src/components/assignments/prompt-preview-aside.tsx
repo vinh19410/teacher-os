@@ -75,6 +75,19 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					/>
 				)}
 
+			{skillId === "listening" &&
+				typeId === "map" &&
+				prompt.imageUrl?.trim() &&
+				ASSIGNMENT_IMAGE_SRC_PATTERN.test(prompt.imageUrl.trim()) && (
+					<img
+						src={prompt.imageUrl.trim()}
+						alt="Ảnh bản đồ đề Listening"
+						className="mt-3 max-h-48 rounded-md border border-line"
+						referrerPolicy="no-referrer"
+						loading="lazy"
+					/>
+				)}
+
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
 					{prompt.intro?.trim() && (

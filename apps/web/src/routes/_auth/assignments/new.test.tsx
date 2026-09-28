@@ -163,7 +163,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.sub).toContain("Chưa giao lớp");
 		});
 
-		it("7. Reading diagram ready missing image (#269)", () => {
+		it("7. Reading diagram ready missing image (#269, phase-04 copy)", () => {
 			const res = actionCopyFor(
 				{
 					...baseValue,
@@ -176,8 +176,22 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 				},
 				"ready",
 			);
-			expect(res.title).toBe("Thiếu ảnh biểu đồ");
+			expect(res.title).toBe("Thiếu ảnh hoặc ghim nhãn");
 			expect(res.sub).toContain("Dán link ảnh");
+			// The pin half of the gate names the missing pin per question.
+			const withImage = actionCopyFor(
+				{
+					...baseValue,
+					skill: "reading",
+					part: "p1",
+					type: "diagram",
+					passage: "Some passage",
+					imageUrl: "https://example.com/d.png",
+					items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
+				},
+				"ready",
+			);
+			expect(withImage.sub).toContain("chưa đặt ghim");
 		});
 
 		it("8. Reading image URL not https (#269)", () => {
@@ -306,7 +320,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			items: [{ stem: "Q1", answer: "steam", opts: null, alts: "" }],
 		};
 		const html = renderToStaticMarkup(<NewAssignmentRoute />);
-		expect(html).toContain("Thiếu ảnh biểu đồ");
+		expect(html).toContain("Thiếu ảnh hoặc ghim nhãn");
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);

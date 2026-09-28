@@ -1,4 +1,5 @@
 import {
+	ASSIGNMENT_IMAGE_BASED_TYPES,
 	ASSIGNMENT_OPTION_BANK_TYPES,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_SKILLS,
@@ -13,8 +14,10 @@ import {
 	bankLabel,
 	emptyComposer,
 	emptyItem,
+	IMAGE_BASED_PAIRS,
 	isAutoSkill,
 	isBankableType,
+	isImageBased,
 	KIND,
 	kindOf,
 	partOf,
@@ -250,6 +253,32 @@ describe("assignment presets catalog (#218 v5)", () => {
 			// type id but must never be bankable.
 			expect(BANKABLE_PAIRS.has("writing:map")).toBe(false);
 			expect(BANKABLE_PAIRS.has("listening:map")).toBe(true);
+		});
+
+		describe("image pin helpers (phase-04 FR2)", () => {
+			test("IMAGE_BASED_PAIRS mirrors the contracts skill-qualified set exactly", () => {
+				const fromContracts = new Set(
+					Object.entries(ASSIGNMENT_IMAGE_BASED_TYPES).flatMap(
+						([skill, types]) => types.map((type) => `${skill}:${type}`),
+					),
+				);
+				expect([...IMAGE_BASED_PAIRS].sort()).toEqual(
+					[...fromContracts].sort(),
+				);
+				expect(IMAGE_BASED_PAIRS.size).toBe(2);
+				// The red-team #1 trap again: writing task1 `map` is prompt-only and
+				// never image-gated; listening s2 `map` is.
+				expect(IMAGE_BASED_PAIRS.has("writing:map")).toBe(false);
+				expect(IMAGE_BASED_PAIRS.has("listening:map")).toBe(true);
+				expect(IMAGE_BASED_PAIRS.has("reading:diagram")).toBe(true);
+			});
+
+			test("isImageBased is skill-qualified", () => {
+				expect(isImageBased("reading", "diagram")).toBe(true);
+				expect(isImageBased("listening", "map")).toBe(true);
+				expect(isImageBased("writing", "map")).toBe(false);
+				expect(isImageBased("reading", "map")).toBe(false);
+			});
 		});
 
 		test("isBankableType is skill-qualified", () => {

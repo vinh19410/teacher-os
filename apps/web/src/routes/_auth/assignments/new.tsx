@@ -4,12 +4,14 @@ import { type FormEvent, useEffect, useState } from "react";
 import {
 	emptyComposer,
 	isAutoSkill,
+	isImageBased,
 	type QuestionItem,
 } from "@/components/assignments/assignment-presets";
 import {
 	applyComposerFieldChange,
 	clozeStemIssue,
 	hasAuthoringContent,
+	imagePinIssue,
 	optionBankIssue,
 	structuralChangeKind,
 } from "@/components/assignments/composer-transitions";
@@ -103,15 +105,13 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 			title: "Link ảnh chưa hợp lệ",
 			sub: "Ảnh chỉ nhận link https (tối đa 500 ký tự). Sửa link trước khi lưu.",
 		};
-	if (
-		value.skill === "reading" &&
-		value.type === "diagram" &&
-		status === "ready" &&
-		!value.imageUrl.trim()
-	)
+	// Phase-04 FR2 mirror: image-based pairs (reading diagram + listening map,
+	// skill-qualified) gate ready on the image AND per-question pins.
+	const pinIssue = imagePinIssue(value, status);
+	if (pinIssue)
 		return {
-			title: "Thiếu ảnh biểu đồ",
-			sub: "Dán link ảnh https trước khi lưu sẵn sàng giao.",
+			title: "Thiếu ảnh hoặc ghim nhãn",
+			sub: pinIssue,
 		};
 	// Phase-02 FR2/FR3 mirror: the option-bank rules surface as one message —
 	// the same text the bank panel and the save gate show.
@@ -258,11 +258,11 @@ export function NewAssignmentRoute() {
 	)
 		fieldErrors.audioName = "Đính file nghe (MP3 hoặc WAV).";
 	const trimmedImageUrl = value.imageUrl.trim();
-	if (value.skill === "reading") {
+	if (isImageBased(value.skill, value.type)) {
 		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl))
 			fieldErrors.imageUrl = "Chỉ nhận link ảnh https (tối đa 500 ký tự).";
-		else if (value.type === "diagram" && status === "ready" && !trimmedImageUrl)
-			fieldErrors.imageUrl = "Dán link ảnh biểu đồ (https) trước khi lưu.";
+		else if (status === "ready" && !trimmedImageUrl)
+			fieldErrors.imageUrl = "Dán link ảnh (https) trước khi lưu.";
 	}
 	if (
 		value.skill === "speaking" &&
@@ -278,6 +278,9 @@ export function NewAssignmentRoute() {
 	// statuses (contract parse-time); shown at the key editor and the gate.
 	const stemIssue = clozeStemIssue(value, status);
 	if (stemIssue) fieldErrors.questions = stemIssue;
+	// Phase-04 FR2 mirror — image-based pairs gate ready on image + pins.
+	const pinIssue = imagePinIssue(value, status);
+	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
 	const canSave =
 		hasCoreContent(value) &&
 		!(
@@ -286,8 +289,7 @@ export function NewAssignmentRoute() {
 			!value.audioName.trim()
 		) &&
 		!(
-			value.skill === "reading" &&
-			value.type === "diagram" &&
+			isImageBased(value.skill, value.type) &&
 			status === "ready" &&
 			!value.imageUrl.trim()
 		) &&
@@ -298,6 +300,7 @@ export function NewAssignmentRoute() {
 		) &&
 		!bankIssue &&
 		!stemIssue &&
+		!pinIssue &&
 		!(
 			isAutoSkill(value.skill) &&
 			status === "ready" &&

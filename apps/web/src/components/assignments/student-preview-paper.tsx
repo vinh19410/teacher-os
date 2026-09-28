@@ -1,5 +1,6 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { Tag } from "@/components/ui/tag";
+import { isValidPin } from "@/lib/image-pin";
 import {
 	bankLabel,
 	isBankableType,
@@ -49,13 +50,20 @@ export function StudentPreviewPaper(props: {
 	// The preview draft never passes the server contract — this renderer is
 	// the only guard, so verify the scheme here before any <img> exists.
 	const rawImageUrl = props.imageUrl?.trim() ?? "";
+	// Phase-04 FR2/FR5 — image-based pairs are skill-qualified (reading
+	// diagram + listening map); writing task1's shared `map` id stays clear.
+	const imageBased =
+		(skillId === "reading" && typeId === "diagram") ||
+		(skillId === "listening" && typeId === "map");
 	const diagramImageUrl =
-		skillId === "reading" &&
-		typeId === "diagram" &&
-		rawImageUrl &&
-		ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
+		imageBased && rawImageUrl && ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
 			? rawImageUrl
 			: "";
+	// Pins render over the image when present; legacy rows (or a pin-less
+	// draft) keep the plain thumbnail + key list below — never broken.
+	const pinnedItems = (props.items ?? []).filter((item) =>
+		isValidPin(item.pin),
+	);
 	return (
 		<div className="rounded-lg border border-line bg-surface-warm p-5">
 			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
@@ -77,15 +85,49 @@ export function StudentPreviewPaper(props: {
 					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
 				</p>
 			)}
-			{diagramImageUrl && (
-				<img
-					src={diagramImageUrl}
-					alt="Ảnh biểu đồ đề Reading"
-					className="mt-3 max-h-72 rounded-md border border-line"
-					referrerPolicy="no-referrer"
-					loading="lazy"
-				/>
-			)}
+			{diagramImageUrl &&
+				(pinnedItems.length > 0 ? (
+					<div className="relative mt-3 w-fit max-w-full">
+						<img
+							src={diagramImageUrl}
+							alt="Ảnh đề"
+							className="block max-h-72 w-auto max-w-full rounded-md border border-line"
+							referrerPolicy="no-referrer"
+							loading="lazy"
+						/>
+						{pinnedItems.map((item) => {
+							const index = (props.items ?? []).indexOf(item);
+							const number = (part.qStart ?? 1) + index;
+							return (
+								<span
+									key={number}
+									className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1"
+									style={{
+										left: `${item.pin?.x ?? 0}%`,
+										top: `${item.pin?.y ?? 0}%`,
+									}}
+								>
+									<span className="flex h-5 w-5 items-center justify-center rounded-full border border-fg bg-bg font-medium font-mono text-[10px]">
+										{number}
+									</span>
+									<input
+										readOnly
+										aria-label={`Điền đáp án câu ${number}`}
+										className="w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px]"
+									/>
+								</span>
+							);
+						})}
+					</div>
+				) : (
+					<img
+						src={diagramImageUrl}
+						alt="Ảnh biểu đồ đề Reading"
+						className="mt-3 max-h-72 rounded-md border border-line"
+						referrerPolicy="no-referrer"
+						loading="lazy"
+					/>
+				))}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
 					{props.intro?.trim() && (
