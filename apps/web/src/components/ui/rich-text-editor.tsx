@@ -14,7 +14,7 @@ type ToolbarAction = {
 
 function promptLinkHref(): string | null {
 	const url = window.prompt("Địa chỉ liên kết (https://…)");
-	return url && url.trim() ? url.trim() : null;
+	return url?.trim() || null;
 }
 
 const TOOLBAR_ACTIONS: ToolbarAction[] = [
