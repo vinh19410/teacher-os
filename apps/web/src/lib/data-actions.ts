@@ -1,5 +1,9 @@
 import type {
 	AssignmentPromptCreate,
+	AssignmentPromptUpdate,
+	AssignmentTestCreate,
+	AssignmentTestPartsSet,
+	AssignmentTestUpdate,
 	ClassType,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
@@ -206,7 +210,33 @@ export type KernelAction =
 			payload: { classId: string; tuitionFee: number | null };
 	  }
 	| { type: "activate-enrollment"; enrollmentId: string }
-	| { type: "delete-enrollment"; enrollmentId: string };
+	| { type: "delete-enrollment"; enrollmentId: string }
+	| {
+			/** Full-test builder (phase-2): tạo full test mới (luôn draft) —
+			 * parts ghép sau qua set-assignment-test-parts (replace-all). */
+			type: "create-assignment-test";
+			payload: AssignmentTestCreate;
+	  }
+	| {
+			/** Meta/status update của test; skill immutable phía server. */
+			type: "update-assignment-test";
+			testId: string;
+			payload: AssignmentTestUpdate;
+	  }
+	| { type: "delete-assignment-test"; testId: string }
+	| {
+			/** Replace TOÀN BỘ parts của test (PUT) — server chạy db.batch. */
+			type: "set-assignment-test-parts";
+			testId: string;
+			parts: AssignmentTestPartsSet;
+	  }
+	| {
+			/** Nút Apply (phase-5): sửa questions/title/note/status của prompt
+			 * đã có — skill/part không patch được (legacy task/genre). */
+			type: "update-assignment-prompt";
+			promptId: string;
+			payload: AssignmentPromptUpdate;
+	  };
 
 /** Backwards-compatible name for data-store consumers. */
 export type Action = KernelAction;

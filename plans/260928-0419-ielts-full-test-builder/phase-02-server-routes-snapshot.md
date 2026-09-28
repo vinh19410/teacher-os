@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server Routes & Snapshot"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: [1]
@@ -97,8 +97,8 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 2.1 — Routes CRUD + set parts + validate slot
-- [ ] Task 2.2 — PATCH /prompts/:id + update schema
-- [ ] Task 2.3 — Snapshot enrich assignmentTests
-- [ ] Task 2.4 — KernelAction + repo mapper + routes-matcher + vitest
-- [ ] `pnpm check-types` + `pnpm -F web test` exit 0
+- [x] Task 2.1 — Routes CRUD + set parts + validate slot
+- [x] Task 2.2 — PATCH /prompts/:id + update schema
+- [x] Task 2.3 — Snapshot enrich assignmentTests
+- [x] Task 2.4 — KernelAction + repo mapper + routes-matcher + vitest
+- [x] `pnpm check-types` + `pnpm -F web test` exit 0

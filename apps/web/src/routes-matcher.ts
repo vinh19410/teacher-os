@@ -13,6 +13,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
+	"/assignments/tests/new": true,
+	"/assignments/tests/preview": true,
 	"/classes": true,
 	"/students": true,
 	"/syllabus": true,

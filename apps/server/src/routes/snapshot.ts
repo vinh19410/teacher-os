@@ -10,6 +10,10 @@ import {
 } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
+import {
+	assignmentTest,
+	assignmentTestPart,
+} from "@teacher-os/db/schema/assignment-test";
 import { classTable } from "@teacher-os/db/schema/class";
 import {
 	classAssignment,
@@ -182,6 +186,8 @@ export async function loadSnapshot(
 		reportRows,
 		notifRows,
 		commentBankRows,
+		assignmentTestRows,
+		assignmentTestPartRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -260,6 +266,29 @@ export async function loadSnapshot(
 		loadReports(db, orgId),
 		loadNotifs(db, orgId),
 		loadCommentBank(db, orgId),
+		db
+			.select()
+			.from(assignmentTest)
+			.where(eq(assignmentTest.orgId, orgId))
+			.orderBy(asc(assignmentTest.createdAt), asc(assignmentTest.id)),
+		db
+			.select({
+				testId: assignmentTestPart.testId,
+				promptId: assignmentTestPart.promptId,
+				part: assignmentTestPart.part,
+				position: assignmentTestPart.position,
+				qStartOverride: assignmentTestPart.qStartOverride,
+			})
+			.from(assignmentTestPart)
+			// Org scope qua join với test (part không có orgId — schema
+			// phase-01); KHÔNG join prompt: DTO test không nhúng
+			// passage/transcript, UI tự tra assignmentPrompts theo promptId.
+			.innerJoin(
+				assignmentTest,
+				eq(assignmentTestPart.testId, assignmentTest.id),
+			)
+			.where(eq(assignmentTest.orgId, orgId))
+			.orderBy(asc(assignmentTestPart.position)),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -285,6 +314,24 @@ export async function loadSnapshot(
 			submittedAt: target.submittedAt,
 		});
 		targetsByAssignment.set(target.assignmentId, list);
+	}
+
+	// Full-test builder: parts group theo testId (mẫu targetsByAssignment),
+	// thứ tự position do query đảm bảo.
+	const partsByTest = new Map<
+		string,
+		KernelSnapshot["assignmentTests"][number]["parts"]
+	>();
+	for (const part of assignmentTestPartRows) {
+		const list = partsByTest.get(part.testId) ?? [];
+		list.push({
+			testId: part.testId,
+			promptId: part.promptId,
+			part: part.part,
+			position: part.position,
+			qStartOverride: part.qStartOverride ?? null,
+		});
+		partsByTest.set(part.testId, list);
 	}
 
 	const lessonsByModule = new Map<
@@ -465,8 +512,18 @@ export async function loadSnapshot(
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],
 		})),
-		// Full-test builder (phase-01): stub cho typecheck + web shape guard;
-		// phase-02 Task 2.3 thay bằng org-scoped load + parts grouping.
-		assignmentTests: [],
+		// Full-test builder (phase-02 Task 2.3): org-scoped load + parts đã
+		// group; test chưa ghép part nào giữ `parts: []`.
+		assignmentTests: assignmentTestRows.map((row) => ({
+			id: row.id,
+			title: row.title,
+			description: row.description ?? null,
+			skill: row.skill,
+			timeLimitSeconds: row.timeLimitSeconds ?? null,
+			collection: row.collection ?? null,
+			testGroup: row.testGroup ?? null,
+			status: row.status,
+			parts: partsByTest.get(row.id) ?? [],
+		})),
 	};
 }

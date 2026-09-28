@@ -446,7 +446,7 @@ export function isAssignmentImageUrl(value: string): boolean {
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
-export const assignmentPromptCreateSchema = z
+const assignmentPromptBaseSchema = z
 	.object({
 		skill: z.enum(ASSIGNMENT_SKILLS),
 		part: z.string().trim().min(1).max(20),
@@ -502,8 +502,10 @@ export const assignmentPromptCreateSchema = z
 		note: z.string().max(2000),
 		status: z.enum(["draft", "ready"]),
 	})
-	.strict()
-	.superRefine((value, ctx) => {
+	.strict();
+
+export const assignmentPromptCreateSchema =
+	assignmentPromptBaseSchema.superRefine((value, ctx) => {
 		const config = ASSIGNMENT_PART_TYPES[value.skill];
 		if (!config.parts.includes(value.part)) {
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
@@ -686,6 +688,42 @@ export const assignmentPromptCreateSchema = z
 	});
 export type AssignmentPromptCreate = z.infer<
 	typeof assignmentPromptCreateSchema
+>;
+
+/**
+ * PATCH /assignments/prompts/:id (full-test builder phase-2): partial của
+ * create, giữ validate từng question (inner schema strict + answer choice
+ * theo `type` khi body có). `skill`/`part` KHÔNG patch được — legacy
+ * `task`/`genre` derive từ chúng lúc create, đổi là lệch round-trip; các
+ * rule phụ thuộc skill (part/type membership, questions-per-skill, ready
+ * gating) cần row DB nên route kiểm sau khi load prompt theo org.
+ */
+export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
+	.omit({ skill: true, part: true })
+	.partial()
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.imageUrl && !isAssignmentImageUrl(value.imageUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["imageUrl"],
+				message: "imageUrl must be an https URL",
+			});
+		const kind = value.type ? answerKindByType[value.type] : undefined;
+		if (kind && value.questions) {
+			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+			for (const [index, question] of value.questions.entries()) {
+				if (question.answer && !choices.includes(question.answer as never))
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "invalid answer choice",
+					});
+			}
+		}
+	});
+export type AssignmentPromptUpdate = z.infer<
+	typeof assignmentPromptUpdateSchema
 >;
 
 /**

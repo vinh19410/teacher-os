@@ -142,7 +142,9 @@ export function buildApp(deps: AppDeps) {
 		"/*",
 		cors({
 			origin: deps.corsOrigin,
-			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			// PATCH: full-test builder phase-2 (PATCH /assignments/prompts/:id,
+			// /assignments/tests/:id) — coordinator-approved 2026-09-28.
+			allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 			allowHeaders: ["Content-Type", "Authorization", "x-student-org-id"],
 			credentials: true,
 		}),
