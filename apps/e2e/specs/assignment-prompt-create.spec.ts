@@ -362,9 +362,7 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 	// Wait for the 1s autosave debounce to actually land, then simulate an
 	// accidental reload.
 	await expect
-		.poll(() =>
-			page.evaluate(() => localStorage.getItem("assignment-draft")),
-		)
+		.poll(() => page.evaluate(() => localStorage.getItem("assignment-draft")))
 		.not.toBeNull();
 	await page.reload();
 
@@ -418,9 +416,7 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");
 	// Autosave lands in localStorage too (1s debounce).
 	await expect
-		.poll(() =>
-			page.evaluate(() => localStorage.getItem("assignment-draft")),
-		)
+		.poll(() => page.evaluate(() => localStorage.getItem("assignment-draft")))
 		.not.toBeNull();
 
 	await page.getByRole("button", { name: "Xem trước" }).click();

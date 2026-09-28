@@ -67,13 +67,11 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 	});
 	await expect(pinSurface).toBeVisible();
 	// Missing pins keep the gate closed even with image + audio.
-	await page
-		.getByLabel("Đính file nghe / MP3 hoặc WAV")
-		.setInputFiles({
-			name: "section2.mp3",
-			mimeType: "audio/mpeg",
-			buffer: Buffer.from("fake-audio"),
-		});
+	await page.getByLabel("Đính file nghe / MP3 hoặc WAV").setInputFiles({
+		name: "section2.mp3",
+		mimeType: "audio/mpeg",
+		buffer: Buffer.from("fake-audio"),
+	});
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
 	).toBeDisabled();

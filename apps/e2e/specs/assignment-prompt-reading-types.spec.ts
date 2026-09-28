@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import { createClient } from "@libsql/client";
+import { expect, test } from "@playwright/test";
 import { signUpViaUi } from "./helpers";
 
 /**
@@ -11,7 +11,6 @@ import { signUpViaUi } from "./helpers";
  * bank-sourced key chips, sentend distinctness, positional delete reset and
  * the snapshot round trip through the prompt bank page.
  */
-
 
 test("create a ready summary prompt and leak-check the preview", async ({
 	page,
@@ -244,7 +243,12 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 		await page.getByRole("button", { name: "Thêm mục" }).click();
 	}
 	for (const [index, entry] of BANK.entries()) {
-		await page.getByRole("textbox", { name: `Mục ${String.fromCharCode(65 + index)}`, exact: true }).fill(entry);
+		await page
+			.getByRole("textbox", {
+				name: `Mục ${String.fromCharCode(65 + index)}`,
+				exact: true,
+			})
+			.fill(entry);
 	}
 
 	// Ready without a bank-sized coverage is blocked — with the typed bank and
@@ -255,9 +259,7 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 			.getByRole("button", { name: `Câu ${27 + index}: ${answer}` })
 			.click();
 	}
-	await expect(
-		page.getByRole("button", { name: "Câu 27: F" }),
-	).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Câu 27: F" })).toHaveCount(0);
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
@@ -287,9 +289,7 @@ test("sentend blocks a second question from keying an already-used label", async
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 2" }).click();
-	await page
-		.getByRole("button", { name: "Matching sentence endings" })
-		.click();
+	await page.getByRole("button", { name: "Matching sentence endings" }).click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await page
@@ -308,9 +308,15 @@ test("sentend blocks a second question from keying an already-used label", async
 	for (let i = 0; i < 3; i += 1) {
 		await page.getByRole("button", { name: "Thêm mục" }).click();
 	}
-	await page.getByRole("textbox", { name: "Mục A", exact: true }).fill("to raise heavy barges over ridges.");
-	await page.getByRole("textbox", { name: "Mục B", exact: true }).fill("when railways took the freight.");
-	await page.getByRole("textbox", { name: "Mục C", exact: true }).fill("after the great frost fair.");
+	await page
+		.getByRole("textbox", { name: "Mục A", exact: true })
+		.fill("to raise heavy barges over ridges.");
+	await page
+		.getByRole("textbox", { name: "Mục B", exact: true })
+		.fill("when railways took the freight.");
+	await page
+		.getByRole("textbox", { name: "Mục C", exact: true })
+		.fill("after the great frost fair.");
 
 	// First question keys A; the second question's A chip is then disabled —
 	// each option is used exactly once (formal sentend rule).
@@ -354,7 +360,9 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 		await page.getByRole("button", { name: "Thêm mục" }).click();
 	}
 	for (const label of ["A", "B", "C", "D", "E"]) {
-		await page.getByRole("textbox", { name: `Mục ${label}`, exact: true }).fill(`Option ${label} content`);
+		await page
+			.getByRole("textbox", { name: `Mục ${label}`, exact: true })
+			.fill(`Option ${label} content`);
 	}
 	await page.getByRole("button", { name: "Câu 27: A" }).click();
 	await page.getByRole("button", { name: "Câu 28: C" }).click();
@@ -362,12 +370,14 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 	// Delete row B: the later key (Câu 28 was C ≥ B's position) must reset —
 	// silently re-binding C onto "Option D content" is the red-team #4 bug.
 	await page.getByRole("button", { name: "Xóa mục B" }).click();
-	await expect(
-		page.getByRole("button", { name: "Câu 27: A" }),
-	).toHaveAttribute("aria-pressed", "true");
-	await expect(
-		page.getByRole("button", { name: "Câu 28: C" }),
-	).toHaveAttribute("aria-pressed", "false");
+	await expect(page.getByRole("button", { name: "Câu 27: A" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await expect(page.getByRole("button", { name: "Câu 28: C" })).toHaveAttribute(
+		"aria-pressed",
+		"false",
+	);
 	await expect(
 		page.getByText("Thiếu đáp án chấm tự động").first(),
 	).toBeVisible();
@@ -425,9 +435,7 @@ test("a legacy prompt without a bank previews with the intro fallback and a miss
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-271 Legacy headings/ }).click();
 	// Old intro fallback still renders — and the silence is broken loudly.
-	await expect(
-		page.getByText("Match the headings i–ii").first(),
-	).toBeVisible();
+	await expect(page.getByText("Match the headings i–ii").first()).toBeVisible();
 	await expect(
 		page.getByText("Thiếu ngân hàng lựa chọn").first(),
 	).toBeVisible();
@@ -562,7 +570,9 @@ test("tablecomp composes via the grid: 2×3 table with 2 blanks previews as labe
 	await expect(blanks).toHaveCount(2);
 	await expect(page.getByText("Hàng 1 — Cột 1:").first()).toBeVisible();
 	await expect(page.getByText("Hàng 1 — Cột 2:").first()).toBeVisible();
-	await expect(page.getByText("Steam engine / Invention").first()).toBeVisible();
+	await expect(
+		page.getByText("Steam engine / Invention").first(),
+	).toBeVisible();
 	const previewBody = await page.locator("body").innerText();
 	expect(previewBody).not.toContain("piston");
 	expect(previewBody).not.toContain("1769");
@@ -598,7 +608,9 @@ test("cloze apply is blocked above the caps: over 40 blanks and a 500-char segme
 
 	// Raw mode: 41 blanks → the 40-blank cap blocks apply with a message.
 	await page.getByRole("button", { name: "Cú pháp thô" }).click();
-	const fortyOne = Array.from({ length: 41 }, (_, i) => `w${i} *k${i}*`).join(" ");
+	const fortyOne = Array.from({ length: 41 }, (_, i) => `w${i} *k${i}*`).join(
+		" ",
+	);
 	await page.getByLabel("Văn bản cú pháp thô").fill(fortyOne);
 	await expect(page.getByText("Tìm thấy 41 chỗ trống")).toBeVisible();
 	await expect(page.getByText("Tối đa 40 chỗ trống")).toBeVisible();
