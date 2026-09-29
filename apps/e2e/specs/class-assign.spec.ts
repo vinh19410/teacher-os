@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { fillRichEditor, seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 — Giao bài trên lớp:
@@ -51,9 +51,11 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	// 5. Create 1 ready prompt and 1 draft prompt in the bank
 	await page.goto("/assignments/new");
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("Some people think that university education should be free...");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people think that university education should be free...",
+	);
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
@@ -62,9 +64,11 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
 	await page.getByRole("button", { name: "Bản nháp" }).first().click();
 	await page.getByLabel("Tiêu đề").fill("QC-208 Draft Prompt");
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("Draft body not ready to assign...");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Draft body not ready to assign...",
+	);
 	await page.getByRole("button", { name: "Lưu bản nháp" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),

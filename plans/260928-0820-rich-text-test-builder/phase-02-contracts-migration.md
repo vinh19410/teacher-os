@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Contracts migration"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [1]

@@ -1,7 +1,7 @@
 ---
 title: "Rich text cho luồng tạo bài tập (prompt composer + test builder)"
 description: "Thay 7 textarea soạn nội dung bằng Tiptap (HTML), lưu HTML string vào contract/DB hiện có, render rich mọi nơi hiển thị với DOMPurify + tương thích ngược plain text; cuePoints giữ plain."
-status: pending
+status: in-progress
 priority: P2
 effort: 3d
 branch: vinh19410/feat/rich-text-test-builder
@@ -43,10 +43,10 @@ issue: 280
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Rich text foundation](./phase-01-rich-text-foundation.md) | Pending |
-| 2 | [Contracts migration](./phase-02-contracts-migration.md) | Pending |
-| 3 | [Builder UI swap](./phase-03-builder-ui-swap.md) | Pending |
-| 4 | [Render surfaces](./phase-04-render-surfaces.md) | Pending |
+| 1 | [Rich text foundation](./phase-01-rich-text-foundation.md) | Completed |
+| 2 | [Contracts migration](./phase-02-contracts-migration.md) | Completed |
+| 3 | [Builder UI swap](./phase-03-builder-ui-swap.md) | Completed |
+| 4 | [Render surfaces](./phase-04-render-surfaces.md) | Completed |
 | 5 | [Tests e2e regression](./phase-05-tests-e2e-regression.md) | Pending |
 
 ## Success Criteria

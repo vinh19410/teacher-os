@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Design "IELTS Full Test Builder" (phase-06 Task 6.1) — the whole
@@ -111,9 +111,11 @@ async function composeReadingPart(
 		await page.getByRole("button", { name: "Bản nháp" }).first().click();
 	}
 	await page.getByLabel("Tiêu đề").fill(opts.title);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill(`Passage body for ${opts.title}. It has no answers inside.`);
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		`Passage body for ${opts.title}. It has no answers inside.`,
+	);
 
 	const stems = page.getByLabel("Nội dung câu hỏi phía học viên");
 	const chip = (number: number, answer: string) =>
@@ -198,9 +200,11 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 	await expect(page.getByText("Soạn mới part — Passage 3")).toBeVisible();
 	// The header form also has a "Tiêu đề" field — the composer is last.
 	await page.getByLabel("Tiêu đề").last().fill(P3_TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill(`Passage body for ${P3_TITLE}. It has no answers inside.`);
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		`Passage body for ${P3_TITLE}. It has no answers inside.`,
+	);
 	const stems = page.getByLabel("Nội dung câu hỏi phía học viên");
 	await stems.first().fill(`Statement 1 of ${P3_TITLE}`);
 	await page.getByRole("button", { name: "Câu 27: YES", exact: true }).click();
@@ -256,9 +260,15 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 
 	// --- Save → edit route (parts snapshot-persisted server-side). ---
 	await page.getByRole("button", { name: "Tạo bộ đề" }).click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/[^/]+$/, {
-		timeout: 30_000,
-	});
+	// Wait for the REAL edit URL: a bare /tests/[^/]+ regex also matches the
+	// still-current /tests/new, letting the "Xem trước" click below race the
+	// pending submit navigation (which then overwrites the preview URL).
+	await page.waitForURL(
+		(url) =>
+			/^\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
+			!url.pathname.endsWith("/new"),
+		{ timeout: 30_000 },
+	);
 	await expect(page.getByText("3/3 parts · 40 questions")).toBeVisible();
 
 	// --- Full-test preview: student paper, continuous numbering, no key. ---
@@ -288,7 +298,11 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 	await expect(page.getByText("Đáp án đúng")).toHaveCount(0);
 
 	await page.getByRole("button", { name: "Quay lại soạn" }).click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/[^/]+$/);
+	await page.waitForURL(
+		(url) =>
+			/^\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
+			!url.pathname.endsWith("/new"),
+	);
 	await expect(page.getByText("3/3 parts · 40 questions")).toBeVisible();
 
 	// --- Reload: slots + applied key survive from the server snapshot. ---

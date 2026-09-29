@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Render surfaces"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: [1, 3]
