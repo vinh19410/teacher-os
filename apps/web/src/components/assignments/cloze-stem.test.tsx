@@ -113,4 +113,19 @@ describe("ClozeStemText — interactive mode (RT#8 take-screen respec)", () => {
 		expect(html).toContain("width:6ch");
 		expect(html).not.toContain("readonly");
 	});
+
+	it("caps the interactive input at the autosave contract limit (500)", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText stem="____" onChange={() => {}} />,
+		);
+		// code-review F2: paste dài không sinh PATCH 400 lặp mãi.
+		expect(html).toContain('maxLength="500"');
+	});
+
+	it("preview (readOnly) input carries no maxLength dependence", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText stem="____" answer="stepwells" />,
+		);
+		expect(html).toContain("readOnly");
+	});
 });

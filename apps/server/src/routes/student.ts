@@ -40,11 +40,13 @@ import {
 import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import { gradeQuiz } from "../lib/grade-quiz";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
+import { parsePin } from "./snapshot";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -114,10 +116,7 @@ function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
-					pin:
-						record.pin && typeof record.pin === "object"
-							? (record.pin as { x: number; y: number })
-							: null,
+					pin: parsePin(record.pin),
 				},
 			];
 		});
@@ -575,10 +574,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			if (!contentType.toLowerCase().startsWith("application/json")) {
 				return c.json({ error: "content-type must be application/json" }, 415);
 			}
-			const contentLength = Number(c.req.header("Content-Length") ?? "0");
-			if (contentLength > 4096) {
-				return c.json({ error: "payload too large" }, 413);
-			}
+			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
+			// Content-Length không lọt) — precedent kernel.ts /syllabi.
+			return bodyLimit({
+				maxSize: 4096,
+				onError: (bc) => bc.json({ error: "payload too large" }, 413),
+			})(c, next);
 		}
 		return next();
 	};
@@ -860,6 +861,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.where(
 				and(
 					eq(quizAttempt.assignmentId, assignmentId),
+					eq(quizAttempt.orgId, orgId),
 					eq(quizAttempt.studentId, s.id),
 				),
 			);
@@ -946,6 +948,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const attemptFilter = and(
 			eq(quizAttempt.assignmentId, assignmentId),
+			eq(quizAttempt.orgId, orgId),
 			eq(quizAttempt.studentId, s.id),
 		);
 		const [existing] = await db.select().from(quizAttempt).where(attemptFilter);

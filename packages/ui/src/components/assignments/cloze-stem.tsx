@@ -1,3 +1,4 @@
+import { QUIZ_ANSWER_VALUE_MAX } from "@teacher-os/api/contracts";
 import {
 	countBlanks,
 	parseTableStem,
@@ -55,6 +56,9 @@ function blankInput({
 				aria-label={ariaLabel}
 				className={className}
 				style={style}
+				// Cap bằng contract autosave (code-review F2) — paste dài không
+				// sinh PATCH 400.
+				maxLength={QUIZ_ANSWER_VALUE_MAX}
 				value={value ?? ""}
 				onChange={(event) => onChange(event.target.value)}
 			/>

@@ -1,7 +1,9 @@
+import { QUIZ_ANSWER_VALUE_MAX } from "@teacher-os/api/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createQuizAttemptStore,
 	QUIZ_AUTOSAVE_DEBOUNCE_MS,
+	QUIZ_DRAIN_MAX_WAVES,
 	type QuizAnswerSender,
 	quizAttemptMirrorKey,
 } from "@/lib/quiz-attempt-store";
@@ -263,5 +265,82 @@ describe("QuizAttemptStore — flush/finalize/dispose", () => {
 		h.store.dispose();
 		expect(h.send).toHaveBeenCalledWith(0, "bye", undefined);
 		expect(mirrorOf(h)).toBeNull();
+	});
+});
+
+describe("QuizAttemptStore — code-review fixes (F1/F2/F3/F5)", () => {
+	it("F1: drain REJECT sau số wave giới hạn khi PATCH lỗi transient 5xx — không treo submit, không flood", async () => {
+		const h = makeStore({ send: () => Promise.reject(statusError(503)) });
+		h.store.setAnswer(0, "glue");
+		await expect(h.store.drain()).rejects.toThrow("http 503");
+		expect(h.send).toHaveBeenCalledTimes(QUIZ_DRAIN_MAX_WAVES);
+		expect(h.send).toHaveBeenNthCalledWith(1, 0, "glue", undefined);
+		expect(h.store.getSnapshot().saveState).toBe("error");
+		expect(h.store.isDirty()).toBe(true);
+	});
+
+	it("F1b: lỗi tất định (400) cũng bị chặn — key GIỮ trong pending, drain throw, không retry nóng", async () => {
+		let calls = 0;
+		const h = makeStore({
+			send: () => {
+				calls += 1;
+				return Promise.reject(statusError(400));
+			},
+		});
+		h.store.setAnswer(1, "poison");
+		await expect(h.store.drain()).rejects.toThrow("http 400");
+		expect(calls).toBe(QUIZ_DRAIN_MAX_WAVES);
+		expect(h.store.isDirty()).toBe(true);
+		// Không có debounce retry cho lỗi tất định.
+		await vi.advanceTimersByTimeAsync(QUIZ_AUTOSAVE_DEBOUNCE_MS * 3);
+		expect(calls).toBe(QUIZ_DRAIN_MAX_WAVES);
+	});
+
+	it("F2: setAnswer clamp value vượt QUIZ_ANSWER_VALUE_MAX", () => {
+		const h = makeStore();
+		h.store.setAnswer(0, "x".repeat(QUIZ_ANSWER_VALUE_MAX + 100));
+		expect(h.store.getAnswer(0)).toBe("x".repeat(QUIZ_ANSWER_VALUE_MAX));
+		const mirror = JSON.parse(mirrorOf(h) as string) as {
+			answers: Record<string, string>;
+		};
+		expect(mirror.answers["0"]).toHaveLength(QUIZ_ANSWER_VALUE_MAX);
+	});
+
+	it("F3: PATCH cùng câu không đảo thứ tự — value mới hơn tới server SAU value cũ", async () => {
+		const gates: Array<ReturnType<typeof deferred>> = [];
+		const h = makeStore({
+			send: (_q: number, _value: string) => {
+				const gate = deferred();
+				gates.push(gate);
+				return gate.promise;
+			},
+		});
+		h.store.setAnswer(0, "v1");
+		void h.store.drain();
+		expect(h.send).toHaveBeenCalledTimes(1);
+
+		// Edit tiếp trong lúc v1 đang bay.
+		h.store.setAnswer(0, "v2");
+		gates[0].resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		// v2 chỉ được dispatch SAU khi v1 settle — server thấy đúng thứ tự.
+		expect(h.send).toHaveBeenCalledTimes(2);
+		expect(h.send).toHaveBeenLastCalledWith(0, "v2", undefined);
+		gates[1].resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+	});
+
+	it("F5: getHalted phản ánh lý do halt sau 401", async () => {
+		const h = makeStore({
+			send: () => Promise.reject(statusError(401)),
+			onAuthError: vi.fn(),
+		});
+		h.store.setAnswer(0, "a");
+		await h.store.drain();
+		expect(h.store.getHalted()).toBe("auth");
 	});
 });

@@ -14,6 +14,7 @@ import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import { isHttpError, reauth, studentQueryClient } from "@/lib/query-client";
 import {
+	quizAttemptMirrorKey,
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
@@ -26,6 +27,13 @@ import {
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
 
+/** Drain halt (401/409 đã tự xử lý reauth/redirect) — bỏ qua POST submit. */
+class QuizSubmitSkippedError extends Error {
+	constructor() {
+		super("quiz autosave halted before submit");
+	}
+}
+
 /** URL summary của attempt (route Phase 4) — redirect cứng full-document. */
 const attemptSummaryHref = (attemptId: string): string =>
 	`/learn/quizzes/attempt/${attemptId}`;
@@ -37,6 +45,13 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 		);
 		// Đã nộp (tab khác / lượt vào trước) → thẳng summary, không vào take.
 		if (detail.attempt?.status === "submitted") {
+			// Mirror của attempt đã đóng là rác — xoá ngay kẻo tích tụ
+			// (code-review F6: orphan key sau cross-tab submit).
+			try {
+				localStorage.removeItem(quizAttemptMirrorKey(detail.attempt.id));
+			} catch {
+				// Storage hỏng/blocked — redirect vẫn ưu tiên.
+			}
 			throw redirect({ href: attemptSummaryHref(detail.attempt.id) });
 		}
 		// Snapshot answers lúc LOAD — baseline cho resume reconciliation;
@@ -135,6 +150,11 @@ function QuizTakePage() {
 			const current = storeRef.current;
 			if (current === null) throw new Error("No active attempt to submit");
 			await current.drain();
+			// Autosave đã halt (401 đang reauth / 409 đang redirect) — POST
+			// submit lúc này chỉ đua với redirect (code-review F5).
+			if (current.getHalted() !== null) {
+				throw new QuizSubmitSkippedError();
+			}
 			await submitQuizAttempt(current.attemptId);
 			return { attemptId: current.attemptId };
 		},
@@ -144,6 +164,7 @@ function QuizTakePage() {
 			window.location.assign(attemptSummaryHref(submittedId));
 		},
 		onError: (error) => {
+			if (error instanceof QuizSubmitSkippedError) return;
 			toast.error("Không nộp được bài", {
 				description:
 					isHttpError(error) && error.status === 401

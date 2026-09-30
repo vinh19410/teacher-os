@@ -1,3 +1,4 @@
+import { QUIZ_ANSWER_VALUE_MAX } from "@teacher-os/api/contracts";
 import {
 	useCallback,
 	useEffect,
@@ -8,6 +9,13 @@ import {
 
 /** Debounce autosave PATCH (RT#7) — 600ms sau lần gõ cuối. */
 export const QUIZ_AUTOSAVE_DEBOUNCE_MS = 600;
+
+/**
+ * Số wave tối đa drain-before-submit flush lại các key lỗi transient
+ * (mạng/5xx) trước khi từ chối — chặn retry vô hạn khoá nút nộp + flood
+ * server (code-review F1).
+ */
+export const QUIZ_DRAIN_MAX_WAVES = 2;
 
 /** localStorage key của mirror: `quiz-attempt:{attemptId}` (RT#11/#14). */
 export const quizAttemptMirrorKey = (attemptId: string): string =>
@@ -77,6 +85,9 @@ export interface QuizAttemptStore {
 	isDirty(): boolean;
 	flush(opts?: { keepalive?: boolean }): void;
 	drain(): Promise<void>;
+	/** Lý do dừng hiện tại (null = còn chạy) — submit gate dùng để bỏ POST
+	 * * khi autosave đã halt 401/409 (code-review F5). */
+	getHalted(): QuizAttemptHaltReason | null;
 	finalize(): void;
 	dispose(): void;
 }
@@ -107,6 +118,12 @@ export function createQuizAttemptStore(
 	const answers = new Map<number, string>();
 	const pending = new Map<number, string>();
 	const inflight = new Set<Promise<void>>();
+	/** Key đang có PATCH bay — key này không dispatch lần nữa (giữ thứ tự). */
+	const inflightQ = new Set<number>();
+	/** Key từng bị skip vì đang bay — settle xong sẽ dispatch bản mới nhất. */
+	const skippedQs = new Set<number>();
+	/** Lỗi send gần nhất — drain ném lại khi hết wave (mutation onError). */
+	let lastSendError: unknown = null;
 	const listeners = new Set<() => void>();
 	let halted: QuizAttemptHaltReason | null = null;
 	let saveState: QuizSaveState = "saved";
@@ -176,10 +193,25 @@ export function createQuizAttemptStore(
 
 	const flushPending = (opts?: { keepalive?: boolean }): void => {
 		if (halted !== null || pending.size === 0) return;
-		const batch = Array.from(pending.entries());
-		pending.clear();
+		const batch: Array<[number, string]> = [];
+		for (const entry of Array.from(pending.entries())) {
+			if (inflightQ.has(entry[0])) {
+				// PATCH cho q đang bay: giữ lại pending, đợi settle rồi gửi
+				// BẢN MỚI NHẤT — hai PATCH cùng q không thể đảo thứ tự ở
+				// server (last-write-wins phải là value mới hơn, code-review F3).
+				skippedQs.add(entry[0]);
+				continue;
+			}
+			batch.push(entry);
+		}
+		for (const [q] of batch) {
+			pending.delete(q);
+			skippedQs.delete(q);
+		}
+		if (batch.length === 0) return;
 		saveState = "saving";
 		for (const [q, value] of batch) {
+			inflightQ.add(q);
 			const promise = (async () => {
 				try {
 					await send(q, value, opts);
@@ -202,21 +234,37 @@ export function createQuizAttemptStore(
 						waveFailed = true;
 						cancelTimer();
 						pending.clear();
+						skippedQs.clear();
 						clearMirror();
 						onAlreadySubmitted?.();
 						return;
 					}
 					waveFailed = true;
 					saveState = "error";
-					// Re-queue để flush/drain/keepalive kế tiếp retry — chỉ khi
-					// value vẫn là mới nhất học viên gõ.
-					if (answers.get(q) === value) pending.set(q, value);
+					lastSendError = error;
+					const retryable =
+						status === undefined || status === 408 || status >= 500;
+					if (!retryable) {
+						// 400/404/413/415… là lỗi tất định (contract/owner) —
+						// KHÔNG debounce-retry nóng, nhưng GIỮ key trong pending:
+						// drain sẽ throw (không nộp bài thiếu câu một cách im lặng),
+						// mirror vẫn có value để reconcile sau reload.
+						if (answers.get(q) === value) pending.set(q, value);
+						return;
+					}
+					// Transient (mạng/5xx): re-queue chỉ khi value vẫn là mới
+					// nhất học viên gõ; debounce làm backoff cho lần retry.
+					if (answers.get(q) === value) {
+						pending.set(q, value);
+						schedule();
+					}
 					return;
 				}
 			})();
 			inflight.add(promise);
 			void promise.then(() => {
 				inflight.delete(promise);
+				inflightQ.delete(q);
 				if (inflight.size > 0) {
 					// Vẫn còn PATCH đang bay — wave chưa kết luận.
 					saveState = "saving";
@@ -228,6 +276,11 @@ export function createQuizAttemptStore(
 					saveState = pending.size === 0 ? "saved" : "saving";
 				}
 				emit();
+				// q vừa settle mà học viên đã gõ tiếp (key từng bị skip) →
+				// dispatch NGAY bản mới nhất, không đợi debounce.
+				if (halted === null && skippedQs.has(q) && pending.has(q)) {
+					flushPending();
+				}
 			});
 		}
 		emit();
@@ -256,15 +309,22 @@ export function createQuizAttemptStore(
 		cancelTimer();
 		if (halted !== null) return;
 		waveFailed = false;
-		for (;;) {
+		for (let wave = 0; wave < QUIZ_DRAIN_MAX_WAVES; wave += 1) {
 			flushPending();
-			if (inflight.size === 0) {
-				if (pending.size === 0 || halted !== null) return;
-				continue;
+			if (inflight.size === 0 && (pending.size === 0 || halted !== null)) {
+				return;
 			}
-			await Promise.all(Array.from(inflight));
+			if (inflight.size > 0) {
+				// promise trong `inflight` không bao giờ reject (catch ở trong).
+				await Promise.all(Array.from(inflight));
+			}
 			if (halted !== null) return;
+			if (pending.size === 0) return;
 		}
+		// Hết wave mà vẫn còn key transient lỗi — nộp tiếp là nói dối học viên:
+		// throw để submit mutation onError báo lỗi + mở lại nút "Nộp bài"
+		// (code-review F1: drain phải có giới hạn).
+		throw lastSendError ?? new Error("quiz autosave did not settle");
 	};
 
 	/**
@@ -306,9 +366,12 @@ export function createQuizAttemptStore(
 			return snapshot;
 		},
 		setAnswer(q, value) {
-			if (answers.get(q) === value) return;
-			answers.set(q, value);
-			pending.set(q, value);
+			// Cap bằng contract server (quizAnswerPatchSchema max 500) — paste
+			// dài không tạo PATCH 400 cứ lặp mãi (code-review F2).
+			const capped = value.slice(0, QUIZ_ANSWER_VALUE_MAX);
+			if (answers.get(q) === capped) return;
+			answers.set(q, capped);
+			pending.set(q, capped);
 			writeMirror();
 			if (halted === null) {
 				saveState = "saving";
@@ -324,6 +387,7 @@ export function createQuizAttemptStore(
 		},
 		flush,
 		drain,
+		getHalted: () => halted,
 		/** Sau submit thành công: dừng hẳn + xoá mirror (attempt đã đóng). */
 		finalize() {
 			cancelTimer();

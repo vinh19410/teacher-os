@@ -79,7 +79,7 @@ function parseSkills(raw: string): string[] {
  * percents; anything else (legacy rows, corrupt JSON) falls back to null so
  * the snapshot shape stays `pin | null` (never `undefined` — the web shape
  * guards check for null). */
-function parsePin(raw: unknown): { x: number; y: number } | null {
+export function parsePin(raw: unknown): { x: number; y: number } | null {
 	if (!raw || typeof raw !== "object") return null;
 	const record = raw as Record<string, unknown>;
 	const { x, y } = record;

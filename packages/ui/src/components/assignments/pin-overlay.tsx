@@ -1,4 +1,7 @@
-import type { AssignmentQuestion } from "@teacher-os/api/contracts";
+import {
+	type AssignmentQuestion,
+	QUIZ_ANSWER_VALUE_MAX,
+} from "@teacher-os/api/contracts";
 
 /**
  * Pin-validity guard — pins are percents of the image box, so only finite
@@ -80,6 +83,8 @@ export function PinOverlay({
 						</span>
 						<input
 							readOnly={!interactive}
+							// Cap bằng contract autosave (code-review F2).
+							maxLength={QUIZ_ANSWER_VALUE_MAX}
 							aria-label={`Điền đáp án câu ${number}`}
 							className="w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px]"
 							value={interactive ? (answers?.[index] ?? "") : undefined}

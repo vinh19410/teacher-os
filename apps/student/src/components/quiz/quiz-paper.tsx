@@ -76,13 +76,16 @@ export function QuizPaper({
 			: "";
 	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
 	const hasPins = questions.some((question) => question.pin != null);
+	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
+	// về hàng cloze/choice thường để VẪN trả lời được (code-review F4).
+	const usePinOverlay = hasPins && diagramImageUrl !== "";
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
 	for (const question of questions) {
 		// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
 		// widget bằng radio pills dưới list.
 		choiceRowsByQ.set(
 			question.q,
-			question.pin != null
+			usePinOverlay && question.pin != null
 				? []
 				: questionChoiceRows(question, typeId, detail.optionBank),
 		);
@@ -90,7 +93,7 @@ export function QuizPaper({
 	// PinOverlay đòi AssignmentQuestion (answer/alts required ở authoring side)
 	// nhưng chỉ ĐỌC `pin` + key answers theo OFFSET trong mảng — nên phải truyền
 	// ĐỦ questions (không lọc pin), qStart=1: offset == q == key answers map.
-	const pinOverlay = hasPins ? (
+	const pinOverlay = usePinOverlay ? (
 		<PinOverlay
 			imageUrl={diagramImageUrl}
 			items={questions as unknown as AssignmentQuestion[]}
@@ -120,26 +123,25 @@ export function QuizPaper({
 				/>
 			)}
 
-			{diagramImageUrl &&
-				(hasPins ? (
-					// Review: fieldset disabled khoá toàn bộ input pin; onAnswer vẫn
-					// truyền để PinOverlay giữ controlled value (đáp án học viên).
-					reviewMode ? (
-						<fieldset disabled className="m-0 border-0 p-0">
-							{pinOverlay}
-						</fieldset>
-					) : (
-						pinOverlay
-					)
+			{usePinOverlay ? (
+				// Review: fieldset disabled khoá toàn bộ input pin; onAnswer vẫn
+				// truyền để PinOverlay giữ controlled value (đáp án học viên).
+				reviewMode ? (
+					<fieldset disabled className="m-0 border-0 p-0">
+						{pinOverlay}
+					</fieldset>
 				) : (
-					<img
-						src={diagramImageUrl}
-						alt="Ảnh đề bài"
-						className="max-h-72 rounded-md border border-line"
-						referrerPolicy="no-referrer"
-						loading="lazy"
-					/>
-				))}
+					pinOverlay
+				)
+			) : diagramImageUrl ? (
+				<img
+					src={diagramImageUrl}
+					alt="Ảnh đề bài"
+					className="max-h-72 rounded-md border border-line"
+					referrerPolicy="no-referrer"
+					loading="lazy"
+				/>
+			) : null}
 
 			{isAuto && !isEmptyRichText(detail.intro) && (
 				<RichTextBody text={detail.intro} className="text-muted-fg text-sm" />

@@ -106,6 +106,47 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 
 		// Mỗi test một lượt giao riêng (1 attempt / assignment / student) —
 		// state không chéo giữa các test.
+		// Pin malformed (string coord / out-of-range) — parsePin phải sanitize
+		// thành null, không tràn xuống wire (code-review: pin guard).
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-badpin",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "info",
+			title: "Bad Pin Practice",
+			prompt: "Label the diagram.",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify([
+				{
+					stem: "Câu 1 — pin x là chuỗi",
+					opts: null,
+					answer: "Alpha",
+					alts: "",
+					pin: { x: "50", y: 50 },
+				},
+				{
+					stem: "Câu 2 — pin ngoài 0–100",
+					opts: null,
+					answer: "Beta",
+					alts: "",
+					pin: { x: 150, y: -1 },
+				},
+				{
+					stem: "Câu 3 — pin hợp lệ",
+					opts: null,
+					answer: "Gamma",
+					alts: "",
+					pin: { x: 25, y: 75 },
+				},
+			]),
+			optionBank: JSON.stringify(["Alpha", "Beta", "Gamma", "Delta"]),
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		for (const assignmentId of [
 			"ca-q1",
 			"ca-q2",
@@ -114,12 +155,14 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q5",
 			"ca-q6",
 			"ca-q7",
+			"ca-q8",
+			"ca-q9",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
 				orgId: "org-1",
 				classId: "class-1",
-				promptId: "prompt-quiz",
+				promptId: assignmentId === "ca-q8" ? "prompt-badpin" : "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -554,5 +597,55 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const summaryBody = (await summary.json()) as QuizAttemptSummary;
 		expect(summaryBody.items[0]?.key).toBe("Paris");
 		expect(summaryBody.items[0]?.verdict).toBe("correct");
+	});
+
+	// code-review: pin malformed không tràn xuống wire — parsePin sanitize null.
+	test("malformed question pins are sanitized to null in take payloads", async () => {
+		await startAttempt("ca-q8");
+		const take = await app.request("/api/student/assignments/ca-q8/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const body = (await take.json()) as StudentQuizDetail;
+		expect(body.questions.map((question) => question.pin)).toEqual([
+			null,
+			null,
+			{ x: 25, y: 75 },
+		]);
+	});
+
+	// code-review: body cap đo byte THẬT — stream không Content-Length vẫn 413.
+	test("oversized streaming body without Content-Length is rejected 413", async () => {
+		const attemptId = await startAttempt("ca-q9");
+		// Stream thật (không Content-Length do fetch tự sinh với string body)
+		// — cap phải đo BYTE THẬT, không tin header client khai.
+		const streamed = new Request(
+			`http://localhost/api/student/attempts/${attemptId}/answer`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "google-verified",
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "application/json",
+				},
+				body: new ReadableStream<Uint8Array>({
+					start(controller) {
+						controller.enqueue(
+							new TextEncoder().encode(
+								JSON.stringify({ q: 0, value: "x".repeat(8192) }),
+							),
+						);
+						controller.close();
+					},
+				}),
+				duplex: "half",
+				// workers-types không khai báo duplex (Node undici cần cho
+				// stream body) — cast hẹp chỉ tại điểm xây Request test.
+			} as RequestInit & { duplex: "half" },
+		);
+		expect(streamed.headers.get("Content-Length")).toBeNull();
+		const res = await app.request(streamed);
+		expect(res.status).toBe(413);
+		expect(await res.json()).toEqual({ error: "payload too large" });
 	});
 });
