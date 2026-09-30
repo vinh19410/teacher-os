@@ -148,23 +148,69 @@ describe("buildQuizSim — normalize items malformed (mirror parseQuizQuestions)
 	});
 });
 
-describe("buildQuizSim — resolver type đúng công thức StudentPreviewPaper", () => {
-	it("type rỗng/không nhận diện resolve qua preset fallback — mcq không thành cloze", () => {
-		// `type: ""` (không phải undefined) — `??` không nhảy qua, chuỗi rỗng
-		// xuống typeOf và phải resolve về type thật của part preset.
-		const emptyType = buildQuizSim(
+describe("buildQuizSim — resolver type RAW khớp công thức render của tab 'Đề bài'", () => {
+	it("type truyền nguyên văn (formula `type ?? genre ?? 'discuss'`)", () => {
+		const sim = buildQuizSim(
+			draft({ skill: "reading", part: "p3", type: "mcq", items }),
+		);
+		expect(sim?.detail.type).toBe("mcq");
+		const byGenre = buildQuizSim(
+			draft({ skill: "listening", part: "s1", genre: "form", items }),
+		);
+		expect(byGenre?.detail.type).toBe("form");
+	});
+
+	it("draft giữ type lệch part (đổi part trong composer không reset type) — KHÔNG resolve fallback đổi widget", () => {
+		// p1 không có type `mcq` (thuộc p3) — nếu resolve qua typeOf thì fallback
+		// `tfng` đổi pill TRUE/FALSE/NOT GIVEN và letter key "C" không chọn được.
+		// Giữ raw `mcq` để tab Làm thử render cùng widget như tab "Đề bài".
+		const sim = buildQuizSim(
+			draft({ skill: "reading", part: "p1", type: "mcq", items }),
+		);
+		expect(sim?.detail.type).toBe("mcq");
+		expect(answerKindByType[sim?.detail.type ?? ""]).toBe("mcq4");
+	});
+
+	it("type rỗng truyền nguyên văn — không 'fill chuỗi rỗng' bằng fallback bịa", () => {
+		const sim = buildQuizSim(
 			draft({ skill: "reading", part: "p1", type: "", items }),
 		);
-		expect(emptyType).not.toBeNull();
-		expect(answerKindByType[emptyType?.detail.type ?? ""]).toBeDefined();
+		expect(sim?.detail.type).toBe("");
+	});
+});
 
-		const missingType = buildQuizSim(
-			draft({ skill: "reading", part: "p1", genre: "", items }),
+describe("buildQuizSim — sanitize opts/pin như parseQuizQuestions phía server", () => {
+	it("opts lẫn object non-string bị lọc — không crash render take", () => {
+		const dirty = [
+			{
+				stem: "Câu opts bẩn ____.",
+				opts: ["London", { bad: 1 }, "Paris"],
+				answer: "B",
+				alts: "",
+			},
+		] as unknown as QuestionItem[];
+		const sim = buildQuizSim(
+			draft({ skill: "reading", part: "p3", type: "mcq", items: dirty }),
 		);
-		expect(missingType).not.toBeNull();
-		expect(answerKindByType[missingType?.detail.type ?? ""]).toBeDefined();
-		// Cùng part → cùng fallback (hiển thị preset tab "Đề bài" khớp take).
-		expect(emptyType?.detail.type).toBe(missingType?.detail.type);
+		expect(sim?.fullQuestions[0]?.opts).toEqual(["London", "Paris"]);
+		expect(sim?.takeQuestions[0]?.opts).toEqual(["London", "Paris"]);
+	});
+
+	it("pin invalid-but-truthy về null — câu fallback hàng cloze, không thành câu chết", () => {
+		const pinned = [
+			{
+				stem: "Label the map",
+				opts: null,
+				answer: "A",
+				alts: "",
+				pin: { x: 999, y: 50 }, // ngoài 0–100
+			},
+		] as unknown as QuestionItem[];
+		const sim = buildQuizSim(
+			draft({ skill: "reading", part: "p1", type: "note", items: pinned }),
+		);
+		expect(sim?.fullQuestions[0]?.pin).toBeNull();
+		expect(sim?.takeQuestions[0]?.pin).toBeNull();
 	});
 });
 

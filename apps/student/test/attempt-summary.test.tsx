@@ -22,12 +22,14 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { Link } from "@tanstack/react-router";
+import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
 import {
 	formatAttemptDuration,
 	formatVietnamSubmittedAt,
 } from "@/lib/attempt-format";
+import { cn } from "@/lib/cn";
 
 const summary: QuizAttemptSummary = {
 	id: "att-1",
@@ -106,9 +108,12 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 			skippedCount={summary.skippedCount}
 			totalCount={summary.totalCount}
 			action={
+				// Compose y hệt route summary: variant default + mt-5 — pin để
+				// regression đổi variant/mất spacing bị test bắt (red-team #8).
 				<Link
 					to="/learn/quizzes/attempt/$attemptId/detail"
 					params={{ attemptId: summary.id }}
+					className={cn(buttonVariants(), "mt-5")}
 				>
 					Xem giải thích chi tiết
 				</Link>
@@ -134,6 +139,12 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 	it("CTA 'Xem giải thích chi tiết' trỏ thẳng route detail của attempt", () => {
 		expect(html).toContain("Xem giải thích chi tiết");
 		expect(html).toContain('href="/learn/quizzes/attempt/att-1/detail"');
+		// Variant default (không phải secondary) + spacing mt-5 giữ nguyên.
+		const cta = html.match(
+			/<a[^>]*href="\/learn\/quizzes\/attempt\/att-1\/detail"[^>]*>/,
+		);
+		expect(cta?.[0]).toContain("mt-5");
+		expect(cta?.[0]).not.toContain("secondary");
 	});
 });
 

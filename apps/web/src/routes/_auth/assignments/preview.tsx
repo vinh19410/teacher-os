@@ -12,7 +12,7 @@ import {
 	type PreviewDraft,
 	readPreviewDraft,
 } from "@/lib/assignment-preview-draft";
-import { buildQuizSim, draftSimKey } from "@/lib/assignment-quiz-sim";
+import { buildQuizSim } from "@/lib/assignment-quiz-sim";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import { useQuizSimulation } from "@/lib/use-quiz-simulation";
@@ -68,12 +68,12 @@ export function PreviewAssignmentRoute() {
 	const [answer, setAnswer] = useState("");
 	// Simulation chỉ tồn tại với đề auto-graded (reading/listening) có items —
 	// resolver/gating khớp khối isAuto của StudentPreviewPaper. simKey là
-	// string ổn định (bank prompt.id | draft fingerprint) vì draft map tạo
-	// object mới mỗi render; useQuizSimulation reset bài làm khi key đổi
+	// fingerprint NỘI DUNG (mặc định của buildQuizSim) cho cả bank lẫn draft:
+	// draft map tạo object mới mỗi render nên không dùng object identity, và
+	// đề bank bị sửa ở nơi khác rồi kernel refresh về cùng ?id vẫn phải reset
+	// simulation cũ. useQuizSimulation reset bài làm khi key đổi
 	// (search-only navigation ?id=A → ?id=B không remount route).
-	const sim = draft
-		? buildQuizSim(draft, bankPrompt ? bankPrompt.id : draftSimKey(draft))
-		: null;
+	const sim = draft ? buildQuizSim(draft) : null;
 	const [tab, setTab] = useState<"paper" | "sim">("paper");
 	const quiz = useQuizSimulation(sim);
 

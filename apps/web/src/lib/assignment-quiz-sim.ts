@@ -3,11 +3,9 @@ import type {
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
-import {
-	type QuestionItem,
-	typeOf,
-} from "@/components/assignments/assignment-presets";
+import type { QuestionItem } from "@/components/assignments/assignment-presets";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
+import { isValidPin } from "@/lib/image-pin";
 
 /** Simulation dựng được từ draft preview (đề auto-graded + items hợp lệ). */
 export interface QuizSimulation {
@@ -47,11 +45,14 @@ export function draftSimKey(draft: PreviewDraft): string {
  * auto-graded (writing/speaking) hoặc không dựng được items nào — route giữ
  * nguyên layout hiện trạng.
  *
- * Resolver khớp công thức `StudentPreviewPaper`: `skill ?? "writing"`
- * (skill KHÔNG fallback task/genre), `part ?? task`, `type ?? genre`; type
- * rỗng/không nhận diện resolve qua preset fallback (`typeOf`) — cùng resolver
- * hiển thị preset ở tab "Đề bài", tránh `answerKindByType[""]` undefined làm
- * câu mcq render thành cloze tự do và chấm sai so với key letter.
+ * Resolver KHỚP NGUYÊN VĂN công thức render câu hỏi của `StudentPreviewPaper`
+ * (L41-47): `skill ?? "writing"` (skill KHÔNG fallback task/genre),
+ * `type ?? genre ?? "discuss"` — dùng type RAW, không resolve qua preset
+ * fallback: tab "Đề bài" render opts/cloze bằng chính chuỗi này, và take
+ * screen student cũng nhận type raw từ payload server. Resolve thêm một tầng
+ * fallback nào ở đây sẽ làm 2 tab hiện widget khác nhau cho cùng một draft
+ * (vd draft giữ type `mcq` sau khi đổi part → fallback `tfng` đổi pill + chấm
+ * sai letter key).
  */
 export function buildQuizSim(
 	draft: PreviewDraft,
@@ -59,15 +60,11 @@ export function buildQuizSim(
 ): QuizSimulation | null {
 	const skillId = draft.skill ?? "writing";
 	if (skillId !== "reading" && skillId !== "listening") return null;
-	const partId = draft.part ?? draft.task ?? "task2";
-	const typeId = typeOf(
-		skillId,
-		partId,
-		draft.type ?? draft.genre ?? "discuss",
-	).id;
-	// Normalize mirror tinh thần `parseQuizQuestions` (server): default
-	// `alts`/`answer` rỗng, bỏ item thiếu stem — không để TypeError trong
-	// `gradeQuiz` khi giáo viên bấm "Nộp bài" với items legacy malformed.
+	const typeId = draft.type ?? draft.genre ?? "discuss";
+	// Normalize mirror `parseQuizQuestions` (server): default `alts`/`answer`
+	// rỗng, lọc opts non-string, pin invalid về null, bỏ item thiếu stem —
+	// không để TypeError trong `gradeQuiz` lúc nộp hay crash render take với
+	// items legacy malformed.
 	const fullQuestions = (draft.items ?? [])
 		.filter((item) => typeof item.stem === "string" && item.stem.trim() !== "")
 		.map(normalizeQuestion);
@@ -96,13 +93,20 @@ export function buildQuizSim(
 	return { detail, takeQuestions, fullQuestions, note: draft.note, simKey };
 }
 
-/** Item soạn/draft có thể thiếu field ở runtime (JSON cũ) — ép về contract. */
+/** Item soạn/draft có thể thiếu field ở runtime (JSON cũ) — ép về contract
+ * với cùng rule sanitize như `parseQuizQuestions`/`parsePin` phía server:
+ * opts chỉ giữ string, pin không hợp lệ về null (câu fallback hàng cloze
+ * thường — vẫn trả lời được, không thành "câu chết" không widget). */
 function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 	return {
 		stem: item.stem,
-		opts: Array.isArray(item.opts) ? item.opts : null,
+		opts: Array.isArray(item.opts)
+			? item.opts.filter(
+					(option): option is string => typeof option === "string",
+				)
+			: null,
 		answer: typeof item.answer === "string" ? item.answer : "",
 		alts: typeof item.alts === "string" ? item.alts : "",
-		pin: item.pin ?? null,
+		pin: isValidPin(item.pin) ? item.pin : null,
 	};
 }

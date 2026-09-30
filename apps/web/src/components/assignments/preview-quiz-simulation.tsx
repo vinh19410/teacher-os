@@ -7,7 +7,7 @@ import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
 import type { QuizReviewInfo } from "@teacher-os/ui/components/quiz/quiz-review-item";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { QuizSimulation } from "@/lib/assignment-quiz-sim";
 
@@ -34,7 +34,9 @@ export function PreviewQuizSimulation({
 	onSubmit: () => void;
 	onReset: () => void;
 }) {
-	const parts = useMemo(() => buildQuizParts(sim.takeQuestions), [sim]);
+	// sim được dựng lại mỗi render ở route nên memo theo identity không bao giờ
+	// hit — buildQuizParts là map thuần rẻ, gọi trực tiếp cho đúng.
+	const parts = buildQuizParts(sim.takeQuestions);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const selectQuestion = (q: number) => {
 		setCurrentQuestion(q);

@@ -231,3 +231,51 @@ describe("PreviewAssignmentRoute — bank mode ?id= (#282)", () => {
 		expect(html).not.toContain("Bài làm của học viên");
 	});
 });
+
+describe("PreviewAssignmentRoute — segmented control cho đề auto-graded (#285)", () => {
+	const readingDraft = {
+		task: "p1",
+		genre: "note",
+		title: "QC-285 Sim tabs",
+		band: "7.0",
+		source: "",
+		prompt: "",
+		note: "Hướng dẫn: điền ONE WORD ONLY.",
+		status: "ready",
+		skill: "reading",
+		part: "p1",
+		type: "note",
+		passage: "Passage text.",
+		intro: "",
+		items: [
+			{
+				stem: "The tower is made of ____.",
+				answer: "SECRET_QC_285_KEY",
+				opts: null,
+				alts: "SECRET_QC_285_ALT",
+			},
+		],
+	};
+
+	it("đề auto-graded: 2 tab hiện, ẩn textarea mô phỏng, chỉ tab 'Đề bài' nằm trong DOM", () => {
+		stubStorageWith(JSON.stringify(readingDraft));
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain('role="tab"');
+		expect(html).toContain("Đề bài");
+		// Static markup escape `&` → `&amp;`.
+		expect(html).toContain("Làm thử &amp; Soi bài");
+		// Validation S1: khối textarea vô dụng với cloze/mcq bị ẩn.
+		expect(html).not.toContain("Bài làm của học viên (mô phỏng)");
+		// Render điều kiện đúng 1 tab: take view chưa mount ở tab mặc định.
+		expect(html).not.toContain("Nộp bài");
+		// Answer key không render ở tab "Đề bài".
+		expect(html).not.toContain("SECRET_QC_285_KEY");
+	});
+
+	it("đề writing: không có tab, textarea mô phỏng giữ nguyên hiện trạng", () => {
+		stubStorageWith(JSON.stringify(draft));
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).not.toContain('role="tab"');
+		expect(html).toContain("Bài làm của học viên (mô phỏng)");
+	});
+});
