@@ -1,6 +1,6 @@
 import type { AssignmentQuestion } from "@teacher-os/api/contracts";
+import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { describe, expect, test } from "vitest";
-import { gradeQuiz } from "./grade-quiz";
 
 function q(partial: Partial<AssignmentQuestion> = {}): AssignmentQuestion {
 	return {

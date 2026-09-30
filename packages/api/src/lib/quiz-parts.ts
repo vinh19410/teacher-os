@@ -1,4 +1,4 @@
-import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import type { StudentQuizQuestion } from "../contracts";
 
 /** Một câu hỏi trong part, mang sẵn index `q` (0-based, key của answers
  * map + PATCH body) và số hiển thị `number` (q + qStart). */

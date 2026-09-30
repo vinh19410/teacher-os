@@ -3,13 +3,13 @@ import {
 	answerKindByType,
 	type StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
+import type { QuizPartQuestion } from "@teacher-os/api/lib/quiz-parts";
 import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
 import {
 	type QuizReviewInfo,
 	QuizReviewItem,
-} from "@/components/quiz/quiz-review-item";
-import { cn } from "@/lib/cn";
-import type { QuizPartQuestion } from "@/lib/quiz-parts";
+} from "@teacher-os/ui/components/quiz/quiz-review-item";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 /** Một hàng lựa chọn: label vị trí (A/i…) hoặc text thuần (TRUE/FALSE…). */
 export interface QuizChoiceRow {

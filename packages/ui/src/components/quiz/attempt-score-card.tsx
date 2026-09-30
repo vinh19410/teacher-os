@@ -1,24 +1,23 @@
-import { Link } from "@tanstack/react-router";
-import { buttonVariants } from "@teacher-os/ui/components/button";
-import { cn } from "@/lib/cn";
+import type { ReactNode } from "react";
 
 /**
  * Thẻ điểm trang kết quả (Selfomy parity): "Điểm" = số câu đúng ở dạng lớn
  * (RAW count, không percent — quyết định validation plan), hàng đếm Câu đúng
- * / Câu sai / Câu bỏ qua, CTA sang màn soi chi tiết.
+ * / Câu sai / Câu bỏ qua, CTA tùy ngữ cảnh qua `action` (route student compose
+ * Link sang màn soi chi tiết; simulation web compose nút "Làm lại").
  */
 export function AttemptScoreCard({
 	correctCount,
 	wrongCount,
 	skippedCount,
 	totalCount,
-	attemptId,
+	action,
 }: {
 	correctCount: number;
 	wrongCount: number;
 	skippedCount: number;
 	totalCount: number;
-	attemptId: string;
+	action?: ReactNode;
 }) {
 	return (
 		<section
@@ -60,13 +59,7 @@ export function AttemptScoreCard({
 				</div>
 			</dl>
 
-			<Link
-				to="/learn/quizzes/attempt/$attemptId/detail"
-				params={{ attemptId }}
-				className={cn(buttonVariants(), "mt-5")}
-			>
-				Xem giải thích chi tiết
-			</Link>
+			{action}
 		</section>
 	);
 }

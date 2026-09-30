@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web preview take + review simulation"
-status: pending
+status: completed
 priority: P2
 effort: "6h"
 dependencies: [2]
