@@ -1,17 +1,13 @@
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import type { QuizAttemptDetail, QuizVerdict } from "@teacher-os/api/contracts";
-import {
-	createFileRoute,
-	Link,
-	redirect,
-} from "@tanstack/react-router";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/cn";
 import Loader from "@/components/loader";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { QuizNavigator } from "@/components/quiz/quiz-navigator";
 import { QuizPaper } from "@/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
+import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import { buildQuizParts } from "@/lib/quiz-parts";
 import {
@@ -71,7 +67,10 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	const quizQuery = useStudentQuizDetail(attempt.assignmentId);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 
-	const parts = useMemo(() => buildQuizParts(attempt.questions), [attempt.questions]);
+	const parts = useMemo(
+		() => buildQuizParts(attempt.questions),
+		[attempt.questions],
+	);
 	const answers = useMemo(
 		() =>
 			Object.fromEntries(

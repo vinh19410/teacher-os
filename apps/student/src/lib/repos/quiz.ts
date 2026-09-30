@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type QuizAttemptDetail,
 	type QuizAttemptSummary,
+	type QuizSubmitResult,
 	quizAttemptDetailSchema,
 	quizAttemptSummarySchema,
-	type QuizSubmitResult,
 	quizSubmitResultSchema,
 	type StudentQuizDetail,
 	studentQuizDetailSchema,

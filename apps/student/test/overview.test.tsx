@@ -22,10 +22,7 @@ vi.mock("@tanstack/react-router", () => ({
 		children: React.ReactNode;
 	}) => (
 		<a
-			href={props.to.replace(
-				"$assignmentId",
-				props.params?.assignmentId ?? "",
-			)}
+			href={props.to.replace("$assignmentId", props.params?.assignmentId ?? "")}
 			aria-label={props["aria-label"]}
 		>
 			{props.children}
@@ -148,7 +145,6 @@ describe("AssignmentRow", () => {
 	};
 
 	it("renders assignment title, class name, and status badge", () => {
-
 		const html = renderToStaticMarkup(<AssignmentRow assignment={asg} />);
 		expect(html).toContain("Writing Task 1 – Bar Chart");
 		expect(html).toContain("IELTS Intensive");
@@ -161,7 +157,10 @@ describe("AssignmentRow", () => {
 	});
 
 	it("links submitted class_assignment rows for review, not retake", () => {
-		const submitted: StudentAssignment = { ...asg, submittedAt: "2026-09-01T00:00:00Z" };
+		const submitted: StudentAssignment = {
+			...asg,
+			submittedAt: "2026-09-01T00:00:00Z",
+		};
 		const html = renderToStaticMarkup(<AssignmentRow assignment={submitted} />);
 		expect(html).toContain('href="/learn/quizzes/a1"');
 		expect(html).toContain("Xem lại kết quả");

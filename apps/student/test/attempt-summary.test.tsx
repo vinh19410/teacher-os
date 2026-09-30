@@ -58,17 +58,28 @@ describe("formatAttemptDuration — submittedAt − startedAt", () => {
 
 	it("dưới 1 phút → chỉ giây; tròn phút → chỉ phút", () => {
 		expect(
-			formatAttemptDuration("2026-09-30T10:00:00.000Z", "2026-09-30T10:00:45.000Z"),
+			formatAttemptDuration(
+				"2026-09-30T10:00:00.000Z",
+				"2026-09-30T10:00:45.000Z",
+			),
 		).toBe("45 giây");
 		expect(
-			formatAttemptDuration("2026-09-30T10:00:00.000Z", "2026-09-30T10:03:00.000Z"),
+			formatAttemptDuration(
+				"2026-09-30T10:00:00.000Z",
+				"2026-09-30T10:03:00.000Z",
+			),
 		).toBe("3 phút");
 	});
 
 	it("ISO hỏng hoặc submitted trước started → rỗng (không âm)", () => {
-		expect(formatAttemptDuration("không-phải-iso", "2026-09-30T10:00:00.000Z")).toBe("");
 		expect(
-			formatAttemptDuration("2026-09-30T10:00:00.000Z", "2026-09-30T09:59:00.000Z"),
+			formatAttemptDuration("không-phải-iso", "2026-09-30T10:00:00.000Z"),
+		).toBe("");
+		expect(
+			formatAttemptDuration(
+				"2026-09-30T10:00:00.000Z",
+				"2026-09-30T09:59:00.000Z",
+			),
 		).toBe("");
 	});
 });
@@ -118,7 +129,9 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 });
 
 describe("AttemptCompactList — n → đáp án học viên → Đáp án đúng", () => {
-	const html = renderToStaticMarkup(<AttemptCompactList items={summary.items} />);
+	const html = renderToStaticMarkup(
+		<AttemptCompactList items={summary.items} />,
+	);
 
 	it("mỗi câu một dòng, đánh số từ 1, đúng thứ tự payload", () => {
 		expect(html).toContain('data-testid="attempt-compact-list"');

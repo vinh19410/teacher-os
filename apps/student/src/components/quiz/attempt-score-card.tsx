@@ -30,7 +30,7 @@ export function AttemptScoreCard({
 			</p>
 			<p
 				data-testid="attempt-correct-count"
-				className="mt-1 font-display font-semibold text-fg text-5xl leading-none"
+				className="mt-1 font-display font-semibold text-5xl text-fg leading-none"
 			>
 				{correctCount}
 			</p>

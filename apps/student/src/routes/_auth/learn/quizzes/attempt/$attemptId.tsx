@@ -10,34 +10,37 @@ import { AttemptCompactList } from "@/components/quiz/attempt-compact-list";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { AttemptScoreCard } from "@/components/quiz/attempt-score-card";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
+import {
+	formatAttemptDuration,
+	formatVietnamSubmittedAt,
+} from "@/lib/attempt-format";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
-import { formatAttemptDuration, formatVietnamSubmittedAt } from "@/lib/attempt-format";
 import {
 	attemptSummaryQueryOptions,
 	useAttemptSummary,
 } from "@/lib/repos/quiz";
 
-export const Route = createFileRoute(
-	"/_auth/learn/quizzes/attempt/$attemptId",
-)({
-	loader: async ({ params: { attemptId } }) => {
-		try {
-			await studentQueryClient.ensureQueryData(
-				attemptSummaryQueryOptions(attemptId),
-			);
-		} catch (error) {
-			// 409 = attempt còn in_progress (RT#6) — không render partial. Body
-			// 409 không mang assignmentId nên không dựng được URL take screen;
-			// overview là điểm hạ cánh an toàn (row bài tập dẫn về take).
-			if (isHttpError(error) && error.status === 409) {
-				throw redirect({ to: "/" });
+export const Route = createFileRoute("/_auth/learn/quizzes/attempt/$attemptId")(
+	{
+		loader: async ({ params: { attemptId } }) => {
+			try {
+				await studentQueryClient.ensureQueryData(
+					attemptSummaryQueryOptions(attemptId),
+				);
+			} catch (error) {
+				// 409 = attempt còn in_progress (RT#6) — không render partial. Body
+				// 409 không mang assignmentId nên không dựng được URL take screen;
+				// overview là điểm hạ cánh an toàn (row bài tập dẫn về take).
+				if (isHttpError(error) && error.status === 409) {
+					throw redirect({ to: "/" });
+				}
+				throw error;
 			}
-			throw error;
-		}
+		},
+		component: AttemptRouteView,
+		errorComponent: AttemptReviewError,
 	},
-	component: AttemptRouteView,
-	errorComponent: AttemptReviewError,
-});
+);
 
 /**
  * Route cha của .../detail — URL summary vẽ màn kết quả, URL .../detail nhả

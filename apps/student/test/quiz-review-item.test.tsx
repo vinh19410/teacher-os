@@ -28,7 +28,9 @@ const paperFields = (overrides: Partial<PaperFields> = {}): PaperFields => ({
 	...overrides,
 });
 
-const reviewInfo = (overrides: Partial<QuizReviewInfo> = {}): QuizReviewInfo => ({
+const reviewInfo = (
+	overrides: Partial<QuizReviewInfo> = {},
+): QuizReviewInfo => ({
 	verdict: "correct",
 	key: "Paris",
 	alts: "",
@@ -144,7 +146,9 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 		// Lựa chọn học viên vẫn hiển thị (value, không editable).
 		expect(html).toContain('checked="" value="TRUE"');
 		// Chip verdict + Đáp án render trong mỗi câu.
-		expect((html.match(/data-testid="quiz-review-item"/g) ?? []).length).toBe(2);
+		expect((html.match(/data-testid="quiz-review-item"/g) ?? []).length).toBe(
+			2,
+		);
 		expect(html).toContain("Đáp án:");
 		expect(html).not.toMatch(/cursor-pointer/);
 	});
@@ -161,7 +165,11 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 				currentQuestion={null}
 				mode="review"
 				review={{
-					0: reviewInfo({ verdict: "correct", key: "glue", answer: "gluestick" }),
+					0: reviewInfo({
+						verdict: "correct",
+						key: "glue",
+						answer: "gluestick",
+					}),
 				}}
 			/>,
 		);

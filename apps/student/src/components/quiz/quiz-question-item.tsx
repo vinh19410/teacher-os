@@ -4,12 +4,12 @@ import {
 	type StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
-import { cn } from "@/lib/cn";
-import type { QuizPartQuestion } from "@/lib/quiz-parts";
 import {
 	type QuizReviewInfo,
 	QuizReviewItem,
 } from "@/components/quiz/quiz-review-item";
+import { cn } from "@/lib/cn";
+import type { QuizPartQuestion } from "@/lib/quiz-parts";
 
 /** Một hàng lựa chọn: label vị trí (A/i…) hoặc text thuần (TRUE/FALSE…). */
 export interface QuizChoiceRow {
