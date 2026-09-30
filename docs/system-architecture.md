@@ -29,7 +29,7 @@ Teacher OS is a monorepo: a React teacher web app, a React student portal, a Hon
 | Web asset worker: static assets, SPA routes, HTTP 404 for unknown paths | [apps/web/src/worker.ts](../apps/web/src/worker.ts) with route classification in [apps/web/src/routes-matcher.ts](../apps/web/src/routes-matcher.ts) |
 | Syllabus import file parsing (client-side; files never reach the server) | [apps/web/src/lib/syllabus-import.ts](../apps/web/src/lib/syllabus-import.ts) |
 | Assignment prompt bank create and per-student grading routes | [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) (subrouter of the kernel tree) |
-| Student portal app and its bridge (mounted standalone at `/api/student`, outside the kernel tree) | [apps/student](../apps/student) and [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) |
+| Student portal app and its bridge (mounted standalone at `/api/student`, outside the kernel tree; includes quiz attempt endpoints — snapshot at start, atomic autosave, server-side grading) | [apps/student](../apps/student) and [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) |
 | Web security headers and CSP stamping | [apps/web/src/security-headers.ts](../apps/web/src/security-headers.ts), applied by [apps/web/src/worker.ts](../apps/web/src/worker.ts) to every response |
 | Deploy topology and auth cookie namespace | [packages/infra/src/topology.ts](../packages/infra/src/topology.ts) (derivation) and [packages/auth/src/topology.ts](../packages/auth/src/topology.ts) (validation) |
 | Static landing page: zero-framework marketing site deployed at apex | [apps/landing](../apps/landing) |
