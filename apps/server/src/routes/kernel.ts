@@ -85,10 +85,11 @@ export function kernelRoutes(deps: {
 					: [];
 
 	// Cookies are SameSite=None, so CSRF defense is an explicit Origin check:
-	// cross-site POSTs (or non-browser calls without the right Origin) fail closed.
+	// cross-site writes (POST/PUT/PATCH/DELETE, or non-browser calls without
+	// the right Origin) fail closed.
 	// POST bodies are JSON-only; form posts die on content-type before parsing.
 	kernel.use("*", async (c, next) => {
-		if (c.req.method === "POST" || c.req.method === "DELETE") {
+		if (["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) {
 			const origin = c.req.header("Origin") ?? "";
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);

@@ -883,7 +883,6 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			intro: prompt.intro,
 			prompt: prompt.prompt,
 			passage: prompt.passage,
-			transcript: prompt.transcript,
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
@@ -1082,7 +1081,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	 * (RT#5): CAS UPDATE status in_progress → submitted; thắng CAS mới chấm
 	 * từ snapshot + ghi counts + stamp class_assignment_target.submittedAt
 	 * trong MỘT db.batch. Thua CAS (double submit) → counts từ data đã
-	 * freeze, không ghi gì, không re-stamp.
+	 * freeze; nếu stamp submittedAt còn thiếu (batch hỏng sau flip ở request
+	 * trước) → re-stamp idempotent để tự chữa.
 	 */
 	router.post("/attempts/:attemptId/submit", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
@@ -1127,25 +1127,43 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const answers = parseQuizAnswers(attempt.answers);
 		const grade = gradeQuiz(questions, answers);
 
-		if (flipped.length > 0) {
-			// Đóng non-goal #208: write-path đánh dấu đã nộp (ISO datetime).
-			const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-				db
-					.update(quizAttempt)
-					.set({ correctCount: grade.correctCount })
-					.where(owner),
-				db
-					.update(classAssignmentTarget)
-					.set({ submittedAt: new Date().toISOString() })
-					.where(
-						and(
-							eq(classAssignmentTarget.orgId, orgId),
-							eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
-							eq(classAssignmentTarget.studentId, s.id),
-						),
+		// Đóng non-goal #208: write-path đánh dấu đã nộp (ISO datetime).
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db
+				.update(quizAttempt)
+				.set({ correctCount: grade.correctCount })
+				.where(owner),
+			db
+				.update(classAssignmentTarget)
+				.set({ submittedAt: new Date().toISOString() })
+				.where(
+					and(
+						eq(classAssignmentTarget.orgId, orgId),
+						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+						eq(classAssignmentTarget.studentId, s.id),
 					),
-			];
+				),
+		];
+
+		if (flipped.length > 0) {
 			await db.batch(statements);
+		} else {
+			// Request trước có thể đã thắng flip nhưng db.batch hỏng ngay sau
+			// đó (D1 transient) — stamp mất vĩnh viễn nếu không tự chữa. Grade
+			// thuần từ data đã freeze nên ghi lặp vô hại.
+			const [target] = await db
+				.select({ submittedAt: classAssignmentTarget.submittedAt })
+				.from(classAssignmentTarget)
+				.where(
+					and(
+						eq(classAssignmentTarget.orgId, orgId),
+						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+						eq(classAssignmentTarget.studentId, s.id),
+					),
+				);
+			if (target && target.submittedAt === null) {
+				await db.batch(statements);
+			}
 		}
 
 		return c.json({

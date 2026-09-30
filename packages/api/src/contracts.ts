@@ -1689,8 +1689,9 @@ export type StudentQuizQuestion = z.infer<typeof studentQuizQuestionSchema>;
 /**
  * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take screen.
  * Paper fields đọc từ prompt hiện tại; `questions` lấy từ `questionsSnapshot`
- * của attempt khi đã start (RT#3), còn `note` và answer key không bao giờ
- * xuống wire. `attempt.answers` cho resume; null khi chưa start.
+ * của attempt khi đã start (RT#3), còn `note`, `transcript` (nguồn suy ra đáp
+ * án listening) và answer key không bao giờ xuống wire — transcript không có
+ * mặt trong payload. `attempt.answers` cho resume; null khi chưa start.
  */
 export const studentQuizDetailSchema = z
 	.object({
@@ -1704,7 +1705,6 @@ export const studentQuizDetailSchema = z
 		intro: z.string(),
 		prompt: z.string(),
 		passage: z.string(),
-		transcript: z.string(),
 		cueTopic: z.string(),
 		cuePoints: z.string(),
 		audioName: z.string(),

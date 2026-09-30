@@ -17,7 +17,6 @@ const paperFields = (overrides: Partial<PaperFields> = {}): PaperFields => ({
 	intro: "Đọc đoạn văn và chọn TRUE / FALSE / NOT GIVEN.",
 	prompt: "",
 	passage: "<p>Đoạn đọc về kênh đào.</p>",
-	transcript: "",
 	cueTopic: "",
 	cuePoints: "",
 	audioName: "",

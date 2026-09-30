@@ -19,7 +19,6 @@ const paperFields = (overrides: Partial<PaperFields> = {}): PaperFields => ({
 	intro: "",
 	prompt: "",
 	passage: "<p>Đoạn đọc về kênh đào.</p>",
-	transcript: "",
 	cueTopic: "",
 	cuePoints: "",
 	audioName: "",

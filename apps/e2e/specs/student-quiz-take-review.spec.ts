@@ -507,7 +507,14 @@ test.describe("Student quiz take & review", () => {
 		expect(quizGets.length).toBeGreaterThan(0);
 		for (const captured of quizGets) {
 			const keys = collectKeys(captured.json);
-			for (const banned of ["answer", "alts", "note", "verdict", "key"]) {
+			for (const banned of [
+				"answer",
+				"alts",
+				"note",
+				"verdict",
+				"key",
+				"transcript",
+			]) {
 				expect(keys.has(banned), `quiz GET leaked key "${banned}"`).toBe(false);
 			}
 		}

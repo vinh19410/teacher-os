@@ -98,6 +98,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			title: "Reading Practice 1",
 			prompt: "Read the passage and answer.",
 			passage: "<p>Passage body</p>",
+			transcript: "<p>Transcript bí mật — chỉ giáo viên đọc</p>",
 			questions: JSON.stringify(QUIZ_QUESTIONS),
 			optionBank: JSON.stringify(["Alpha", "Beta", "Gamma", "Delta"]),
 			note: "<p>Teacher-only explanation note</p>",
@@ -402,15 +403,17 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const take = JSON.parse(takeText) as StudentQuizDetail;
 		expect(take.attempt?.id).toBe(attemptId);
 		expect(take.attempt?.status).toBe("in_progress");
-		// RT#6: không key, không alts, không note của đề.
+		// RT#6: không key, không alts, không note, không transcript của đề.
 		for (const leaked of [
 			'"answer"',
 			'"alts"',
+			'"transcript"',
 			"Paris",
 			"northern",
 			"TRUE",
 			"YES",
 			"Teacher-only explanation note",
+			"Transcript bí mật",
 		]) {
 			expect(takeText.includes(leaked), leaked).toBe(false);
 		}
@@ -574,6 +577,27 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(detailBody.questions[0]?.key).toBe("Paris");
 		expect(detailBody.questions[0]?.alts).toBe("paris");
 		expect(detailBody.questions[0]?.verdict).toBe("skipped");
+	});
+
+	// Flip thắng nhưng batch stamp hỏng ở request trước (D1 transient) —
+	// submit lại phải tự chữa stamp, không để mất vĩnh viễn.
+	test("submit retry heals a missing submittedAt stamp", async () => {
+		const attemptId = await startAttempt("ca-q10");
+		expect((await submit(attemptId)).status).toBe(200);
+
+		// Giả lập batch hỏng sau flip: attempt đã submitted nhưng stamp mất.
+		await libsql
+			.update(schema.classAssignmentTarget)
+			.set({ submittedAt: null })
+			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q10"));
+
+		const retry = await submit(attemptId);
+		expect(retry.status).toBe(200);
+		const [healed] = await libsql
+			.select({ submittedAt: schema.classAssignmentTarget.submittedAt })
+			.from(schema.classAssignmentTarget)
+			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q10"));
+		expect(healed?.submittedAt).not.toBeNull();
 	});
 
 	// (e) hai PATCH interleaved (q3, q7) — cả hai còn nguyên nhờ json_set atomic

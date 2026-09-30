@@ -1550,6 +1550,41 @@ describe("kernel origin + content-type guards", () => {
 		expect(res.status).toBe(403);
 	});
 
+	test("PUT and PATCH without Origin header are 403", async () => {
+		const put = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			origin: null,
+			body: {},
+		});
+		expect(put.status).toBe(403);
+		const patch = await t.call("/api/kernel/settings", {
+			session,
+			method: "PATCH",
+			origin: null,
+			body: {},
+		});
+		expect(patch.status).toBe(403);
+	});
+
+	test("PUT with a foreign Origin is 403; allowed Origin reaches validation", async () => {
+		const evil = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			origin: "https://evil.example",
+			body: {},
+		});
+		expect(evil.status).toBe(403);
+		// Origin hợp lệ → qua guard, chết ở zod validation (400) như PUT test
+		// "rejects invalid payload" đã chứng minh.
+		const legit = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			body: { maxAbsencesBeforeAlert: -5 },
+		});
+		expect(legit.status).toBe(400);
+	});
+
 	test("POST with a non-JSON content-type is 415", async () => {
 		const res = await t.app.request("/api/classes", {
 			method: "POST",

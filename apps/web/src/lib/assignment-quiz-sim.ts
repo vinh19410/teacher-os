@@ -77,13 +77,14 @@ export function buildQuizSim(
 		}),
 	);
 	const detail: QuizPaperDetail = {
+		// Transcript (nguồn đáp án listening) không thuộc paper take —
+		// QuizPaper không render và student wire không bao giờ mang nó.
 		skill: skillId,
 		type: typeId,
 		band: draft.band,
 		intro: draft.intro ?? "",
 		prompt: draft.prompt,
 		passage: draft.passage ?? "",
-		transcript: draft.transcript ?? "",
 		cueTopic: draft.cueTopic ?? "",
 		cuePoints: draft.cuePoints ?? "",
 		audioName: draft.audioName ?? "",

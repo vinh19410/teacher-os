@@ -30,7 +30,6 @@ export type QuizPaperDetail = Pick<
 	| "intro"
 	| "prompt"
 	| "passage"
-	| "transcript"
 	| "cueTopic"
 	| "cuePoints"
 	| "audioName"
