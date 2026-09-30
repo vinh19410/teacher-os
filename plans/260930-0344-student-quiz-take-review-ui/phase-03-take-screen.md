@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Take screen — /learn/quizzes/:assignmentId"
-status: pending
+status: done
 priority: P1
 effort: "6h"
 dependencies: [1, 2]
@@ -42,31 +42,31 @@ start/resume/submit-guard — theo UX Selfomy capture, visual bằng tokens `@te
 
 ## Requirements
 
-- [ ] Route `/learn/quizzes/$assignmentId` (loader: quiz detail + attempt state);
+- [x] Route `/learn/quizzes/$assignmentId` (loader: quiz detail + attempt state);
       submitted → redirect `/learn/quizzes/attempt/:attemptId`.
-- [ ] Runtime shell: header exit (về overview) + title + nút "Nộp bài".
-- [ ] Paper tương tác: choice types = radio pill rows (full-row click, keyboard,
+- [x] Runtime shell: header exit (về overview) + title + nút "Nộp bài".
+- [x] Paper tương tác: choice types = radio pill rows (full-row click, keyboard,
       `radiogroup` + `aria-label="Câu {n}"`); cloze types = inline text input + số câu
       prefix; width input theo GIÁ TRỊ học viên gõ (không theo answer — xem Phase 2 respec).
-- [ ] Footer navigator: part tabs + nút số câu (đã làm = accent fill, chưa = surface +
+- [x] Footer navigator: part tabs + nút số câu (đã làm = accent fill, chưa = surface +
       line border), click scroll-to + highlight câu hiện tại.
-- [ ] Autosave store: `save-state` element `role="status"` `data-testid="save-state"`
+- [x] Autosave store: `save-state` element `role="status"` `data-testid="save-state"`
       với 3 trạng thái terminal `saving | saved | error`; debounce 600ms; flush khi
       `pagehide`/`visibilitychange` (`fetch keepalive`).
-- [ ] **Drain-before-submit**: nút "Nộp bài" cancel debounce, flush pending, await mọi
+- [x] **Drain-before-submit**: nút "Nộp bài" cancel debounce, flush pending, await mọi
       in-flight PATCH rồi mới POST submit; disable nút khi `saving`. [RT#7]
-- [ ] **Resume reconciliation**: mirror answers vào localStorage key
+- [x] **Resume reconciliation**: mirror answers vào localStorage key
       `quiz-attempt:{attemptId}` (kèm timestamp); khi resume, merge mirror đè lên server
       state cho những key pending/unsent, re-queue delta PATCH. Reset mirror + store khi
       unmount, khi submit xong, và khi org-switch (key đã theo attemptId). [RT#11/#14]
-- [ ] **Lỗi 401 trên mutation**: autosave store bắt HttpError 401 → halt queue + banner
+- [x] **Lỗi 401 trên mutation**: autosave store bắt HttpError 401 → halt queue + banner
       lỗi cố định + redirect reauth giữ attempt URL làm returnUrl (QueryCache onError
       không phủ mutation). [RT#11]
-- [ ] **PATCH 409 `submitted`**: redirect cứng sang `/learn/quizzes/attempt/:attemptId`
+- [x] **PATCH 409 `submitted`**: redirect cứng sang `/learn/quizzes/attempt/:attemptId`
       (tab thứ 2 sau khi tab kia nộp) — không toast storm. [RT#11]
-- [ ] Dialogs: start confirm, resume (khi attempt in_progress + có answers), submit guard
+- [x] Dialogs: start confirm, resume (khi attempt in_progress + có answers), submit guard
       đếm câu trống; `beforeunload` guard khi còn thay đổi chưa flush.
-- [ ] Overview `AssignmentRow`: link chỉ cho `source === "class_assignment"`; chưa nộp →
+- [x] Overview `AssignmentRow`: link chỉ cho `source === "class_assignment"`; chưa nộp →
       take, đã nộp → review summary.
 
 ## Architecture
@@ -108,14 +108,14 @@ lib/quiz-attempt-store.ts                       → answers state + debounce + f
 
 ## Todo
 
-- [ ] Repos + route + loader + submitted-redirect
-- [ ] Paper + inputs (choice/cloze) + flat rendering
-- [ ] Navigator + states + scroll-to
-- [ ] Autosave store: debounce/flush/drain/mirror + save-state element
-- [ ] 401 halt + 409 redirect handling
-- [ ] Lifecycle dialogs + beforeunload guard
-- [ ] Overview row source-gated link
-- [ ] Unit tests + typecheck
+- [x] Repos + route + loader + submitted-redirect
+- [x] Paper + inputs (choice/cloze) + flat rendering
+- [x] Navigator + states + scroll-to
+- [x] Autosave store: debounce/flush/drain/mirror + save-state element
+- [x] 401 halt + 409 redirect handling
+- [x] Lifecycle dialogs + beforeunload guard
+- [x] Overview row source-gated link
+- [x] Unit tests + typecheck
 
 ## Success Criteria
 

@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E + full verification"
-status: pending
+status: done
 priority: P1
 effort: "4h"
 dependencies: [4]
@@ -42,16 +42,16 @@ full gates của repo.
 
 ## Requirements
 
-- [ ] Spec `student-quiz-take-review.spec.ts` chạy xanh trên CI config hiện có
+- [x] Spec `student-quiz-take-review.spec.ts` chạy xanh trên CI config hiện có
       (chromium, workers 1, timezone Asia/Ho_Chi_Minh).
-- [ ] Assert: start dialog → trả lời (1 radio đúng, 1 radio sai, 1 blank đúng qua alts,
+- [x] Assert: start dialog → trả lời (1 radio đúng, 1 radio sai, 1 blank đúng qua alts,
       còn lại bỏ trống) → reload giữa chừng resume + answers còn → submit guard đếm
       đúng số câu trống → summary counters đúng (ví dụ 2 đúng / 1 sai / N bỏ) →
       detail chip + Đáp án + giải thích đúng.
-- [ ] Variant drain: điền câu cuối → submit NGAY (không chờ saved) → câu đó được tính.
-- [ ] Assert overview row đổi trạng thái sau nộp và link sang summary.
-- [ ] Network leak-check 3 lớp: take body text, take JSON keys, in-progress summary.
-- [ ] Full gates: `pnpm --filter student test`, `pnpm --filter web test`,
+- [x] Variant drain: điền câu cuối → submit NGAY (không chờ saved) → câu đó được tính.
+- [x] Assert overview row đổi trạng thái sau nộp và link sang summary.
+- [x] Network leak-check 3 lớp: take body text, take JSON keys, in-progress summary.
+- [x] Full gates: `pnpm --filter student test`, `pnpm --filter web test`,
       `pnpm --filter server test`, `check-types` (turbo), `pnpm check`,
       `pnpm --filter e2e e2e` (toàn bộ specs, không chỉ spec mới).
 
@@ -67,10 +67,10 @@ full gates của repo.
 
 ## Todo
 
-- [ ] Spec E2E trọn flow (take → autosave/reload → submit → summary → detail)
-- [ ] Leak-check payload take
-- [ ] Full gates xanh
-- [ ] Dọn scaffolding
+- [x] Spec E2E trọn flow (take → autosave/reload → submit → summary → detail)
+- [x] Leak-check payload take
+- [x] Full gates xanh
+- [x] Dọn scaffolding
 
 ## Success Criteria
 
