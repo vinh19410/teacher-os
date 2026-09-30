@@ -210,6 +210,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q8",
 			"ca-q9",
 			"ca-q10",
+			"ca-q11",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -582,21 +583,21 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 	// Flip thắng nhưng batch stamp hỏng ở request trước (D1 transient) —
 	// submit lại phải tự chữa stamp, không để mất vĩnh viễn.
 	test("submit retry heals a missing submittedAt stamp", async () => {
-		const attemptId = await startAttempt("ca-q10");
+		const attemptId = await startAttempt("ca-q11");
 		expect((await submit(attemptId)).status).toBe(200);
 
 		// Giả lập batch hỏng sau flip: attempt đã submitted nhưng stamp mất.
 		await libsql
 			.update(schema.classAssignmentTarget)
 			.set({ submittedAt: null })
-			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q10"));
+			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q11"));
 
 		const retry = await submit(attemptId);
 		expect(retry.status).toBe(200);
 		const [healed] = await libsql
 			.select({ submittedAt: schema.classAssignmentTarget.submittedAt })
 			.from(schema.classAssignmentTarget)
-			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q10"));
+			.where(eq(schema.classAssignmentTarget.id, "cat-ca-q11"));
 		expect(healed?.submittedAt).not.toBeNull();
 	});
 
