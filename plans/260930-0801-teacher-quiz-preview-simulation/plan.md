@@ -85,7 +85,7 @@ Không có API/DB mới: simulation dựng từ prompt data giáo viên đã s�
 |---|-------|--------|
 | 1 | [Quiz logic into api package](./phase-01-quiz-logic-into-api-package.md) | Completed |
 | 2 | [Shared quiz renderers in ui package](./phase-02-shared-quiz-renderers-in-ui-package.md) | Completed |
-| 3 | [Web preview take + review simulation](./phase-03-web-preview-take-review-simulation.md) | Pending |
+| 3 | [Web preview take + review simulation](./phase-03-web-preview-take-review-simulation.md) | Completed |
 
 ## Success Criteria
 

@@ -1,17 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { wordCount } from "@/components/assignments/assignment-presets";
+import { PreviewQuizSimulation } from "@/components/assignments/preview-quiz-simulation";
 import { StudentPreviewPaper } from "@/components/assignments/student-preview-paper";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
+import { Tabs } from "@/components/ui/tabs";
 import {
 	type PreviewDraft,
 	readPreviewDraft,
 } from "@/lib/assignment-preview-draft";
+import { buildQuizSim, draftSimKey } from "@/lib/assignment-quiz-sim";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
+import { useQuizSimulation } from "@/lib/use-quiz-simulation";
 
 export const Route = createFileRoute("/_auth/assignments/preview")({
 	validateSearch: (search: Record<string, unknown>): { id?: string } => ({
@@ -62,6 +66,16 @@ export function PreviewAssignmentRoute() {
 	const [storageDraft] = useState(() => readPreviewDraft());
 	const draft = bankPrompt ? previewDraftFromPrompt(bankPrompt) : storageDraft;
 	const [answer, setAnswer] = useState("");
+	// Simulation chỉ tồn tại với đề auto-graded (reading/listening) có items —
+	// resolver/gating khớp khối isAuto của StudentPreviewPaper. simKey là
+	// string ổn định (bank prompt.id | draft fingerprint) vì draft map tạo
+	// object mới mỗi render; useQuizSimulation reset bài làm khi key đổi
+	// (search-only navigation ?id=A → ?id=B không remount route).
+	const sim = draft
+		? buildQuizSim(draft, bankPrompt ? bankPrompt.id : draftSimKey(draft))
+		: null;
+	const [tab, setTab] = useState<"paper" | "sim">("paper");
+	const quiz = useQuizSimulation(sim);
 
 	if (id && !bankPrompt) {
 		return (
@@ -148,7 +162,11 @@ export function PreviewAssignmentRoute() {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<PageHead
 					title="Xem trước bài tập"
-					lead="Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
+					lead={
+						sim
+							? "Xem trước đề bài đúng như học viên sẽ đọc, hoặc làm thử rồi soi bài như học viên. Bài làm ở đây không được lưu."
+							: "Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
+					}
 				/>
 				{bankPrompt ? (
 					<Button
@@ -168,45 +186,69 @@ export function PreviewAssignmentRoute() {
 			</div>
 
 			<div className="mt-5 flex flex-col gap-5">
-				<StudentPreviewPaper
-					task={draft.task}
-					genre={draft.genre}
-					skill={draft.skill}
-					part={draft.part}
-					type={draft.type}
-					title={draft.title}
-					band={draft.band}
-					source={draft.source}
-					prompt={draft.prompt}
-					note={draft.note}
-					status={draft.status}
-					passage={draft.passage}
-					intro={draft.intro}
-					audioName={draft.audioName}
-					imageUrl={draft.imageUrl}
-					optionBank={draft.optionBank}
-					items={draft.items}
-				/>
-
-				<Card variant="white" className="flex flex-col gap-3">
-					<h2 className="font-display font-semibold text-[17px]">
-						Bài làm của học viên (mô phỏng)
-					</h2>
-					<Textarea
-						value={answer}
-						onChange={(e) => setAnswer(e.target.value)}
-						className="min-h-42"
-						placeholder="Học viên sẽ viết bài ở đây…"
+				{sim && (
+					<Tabs
+						tabs={[
+							{ id: "paper", label: "Đề bài" },
+							{ id: "sim", label: "Làm thử & Soi bài" },
+						]}
+						active={tab}
+						onChange={(id) => setTab(id === "sim" ? "sim" : "paper")}
 					/>
-					<div className="flex items-center justify-between">
-						<span className="font-mono text-meta text-xs">
-							Bản xem trước — bài làm không được lưu.
-						</span>
-						<span className="font-mono text-meta text-xs">
-							{wordCount(answer)} từ
-						</span>
-					</div>
-				</Card>
+				)}
+
+				{sim && tab === "sim" ? (
+					<PreviewQuizSimulation
+						sim={sim}
+						answers={quiz.answers}
+						grade={quiz.grade}
+						onAnswer={quiz.onAnswer}
+						onSubmit={quiz.submit}
+						onReset={quiz.reset}
+					/>
+				) : (
+					<StudentPreviewPaper
+						task={draft.task}
+						genre={draft.genre}
+						skill={draft.skill}
+						part={draft.part}
+						type={draft.type}
+						title={draft.title}
+						band={draft.band}
+						source={draft.source}
+						prompt={draft.prompt}
+						note={draft.note}
+						status={draft.status}
+						passage={draft.passage}
+						intro={draft.intro}
+						audioName={draft.audioName}
+						imageUrl={draft.imageUrl}
+						optionBank={draft.optionBank}
+						items={draft.items}
+					/>
+				)}
+
+				{!sim && (
+					<Card variant="white" className="flex flex-col gap-3">
+						<h2 className="font-display font-semibold text-[17px]">
+							Bài làm của học viên (mô phỏng)
+						</h2>
+						<Textarea
+							value={answer}
+							onChange={(e) => setAnswer(e.target.value)}
+							className="min-h-42"
+							placeholder="Học viên sẽ viết bài ở đây…"
+						/>
+						<div className="flex items-center justify-between">
+							<span className="font-mono text-meta text-xs">
+								Bản xem trước — bài làm không được lưu.
+							</span>
+							<span className="font-mono text-meta text-xs">
+								{wordCount(answer)} từ
+							</span>
+						</div>
+					</Card>
+				)}
 			</div>
 		</div>
 	);
