@@ -1,12 +1,12 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { QuizPaper } from "@/components/quiz/quiz-paper";
+import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
 	type QuizChoiceRow,
 	questionChoiceRows,
-} from "@/components/quiz/quiz-question-item";
-import { buildQuizParts } from "@/lib/quiz-parts";
+} from "@teacher-os/ui/components/quiz/quiz-question-item";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
 
 type PaperFields = Parameters<typeof QuizPaper>[0]["detail"];
 

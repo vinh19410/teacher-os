@@ -1,7 +1,7 @@
 ---
 title: "Teacher preview: quiz take + review simulation"
 description: "Đưa trải nghiệm làm thử + soi bài của học viên vào trang preview giáo viên /assignments/preview — simulation thuần client-side, tái dùng renderer/logic đã extract từ #283/#284."
-status: pending
+status: completed
 priority: P2
 effort: 12h
 issue: 285
@@ -83,22 +83,22 @@ Không có API/DB mới: simulation dựng từ prompt data giáo viên đã s�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Quiz logic into api package](./phase-01-quiz-logic-into-api-package.md) | Pending |
-| 2 | [Shared quiz renderers in ui package](./phase-02-shared-quiz-renderers-in-ui-package.md) | Pending |
-| 3 | [Web preview take + review simulation](./phase-03-web-preview-take-review-simulation.md) | Pending |
+| 1 | [Quiz logic into api package](./phase-01-quiz-logic-into-api-package.md) | Completed |
+| 2 | [Shared quiz renderers in ui package](./phase-02-shared-quiz-renderers-in-ui-package.md) | Completed |
+| 3 | [Web preview take + review simulation](./phase-03-web-preview-take-review-simulation.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Giáo viên mở `/assignments/preview?id=<đề reading/listening>` thấy 2 tab;
+- [x] Giáo viên mở `/assignments/preview?id=<đề reading/listening>` thấy 2 tab;
       tab "Làm thử & Soi bài" cho điền đáp án, nộp, thấy đúng/sai/bỏ + Đáp án +
       Giải thích khớp `gradeQuiz`; làm lại reset sạch.
-- [ ] Take view không chứa answer key/alts/note ở DOM (unit test pin).
-- [ ] Đề writing/speaking và draft không phải auto-graded: trang giữ đúng hiện
+- [x] Take view không chứa answer key/alts/note ở DOM (unit test pin).
+- [x] Đề writing/speaking và draft không phải auto-graded: trang giữ đúng hiện
       trạng (không có tab).
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter {web,student,server} test`
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter {web,student,server} test`
       xanh; e2e `student-quiz-take-review.spec.ts` xanh sau extraction (chạy
       scoped ngay ở phase 1-2, full suite ở phase 3).
-- [ ] Student app: 6 component quiz đã move sang `@teacher-os/ui/components/quiz`;
+- [x] Student app: 6 component quiz đã move sang `@teacher-os/ui/components/quiz`;
       thư mục `apps/student/src/components/quiz/` còn lại đúng 3 file
       student-specific (`attempt-review-error.tsx`, `quiz-lifecycle-dialogs.tsx`,
       `quiz-runtime-header.tsx`); grep import của 6 component đã move = 0.

@@ -1,4 +1,7 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
+import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -6,10 +9,7 @@ import {
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
-import { QuizNavigator } from "@/components/quiz/quiz-navigator";
-import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
-import { buildQuizParts } from "@/lib/quiz-parts";
 
 // QuizRuntimeHeader dùng TanStack Link (exit về overview) — stub thành <a>
 // để renderToStaticMarkup chạy không cần router context.

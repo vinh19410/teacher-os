@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Quiz logic into api package"
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 dependencies: []

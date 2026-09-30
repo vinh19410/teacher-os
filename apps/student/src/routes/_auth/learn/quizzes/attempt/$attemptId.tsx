@@ -1,19 +1,22 @@
 import {
 	createFileRoute,
+	Link,
 	Outlet,
 	redirect,
 	useChildMatches,
 } from "@tanstack/react-router";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
+import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
-import { AttemptCompactList } from "@/components/quiz/attempt-compact-list";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
-import { AttemptScoreCard } from "@/components/quiz/attempt-score-card";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
 	formatAttemptDuration,
 	formatVietnamSubmittedAt,
 } from "@/lib/attempt-format";
+import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import {
 	attemptSummaryQueryOptions,
@@ -102,7 +105,15 @@ function AttemptSummaryPage() {
 						wrongCount={summary.wrongCount}
 						skippedCount={summary.skippedCount}
 						totalCount={summary.totalCount}
-						attemptId={attemptId}
+						action={
+							<Link
+								to="/learn/quizzes/attempt/$attemptId/detail"
+								params={{ attemptId }}
+								className={cn(buttonVariants(), "mt-5")}
+							>
+								Xem giải thích chi tiết
+							</Link>
+						}
 					/>
 				</div>
 

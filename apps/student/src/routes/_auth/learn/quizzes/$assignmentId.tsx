@@ -1,5 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+	buildQuizParts,
+	isAnsweredValue,
+} from "@teacher-os/api/lib/quiz-parts";
+import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
+import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
+import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
@@ -8,9 +15,6 @@ import {
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
-import { QuizNavigator } from "@/components/quiz/quiz-navigator";
-import { QuizPaper } from "@/components/quiz/quiz-paper";
-import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
 import {
 	isReadingSplitPane,
 	QuizReadingSplitLayout,
@@ -22,7 +26,6 @@ import {
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
-import { buildQuizParts, isAnsweredValue } from "@/lib/quiz-parts";
 import {
 	patchQuizAnswer,
 	quizDetailQueryOptions,

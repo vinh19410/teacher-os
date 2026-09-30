@@ -1,7 +1,4 @@
-import type {
-	AssignmentQuestion,
-	QuizVerdict,
-} from "@teacher-os/api/contracts";
+import type { AssignmentQuestion, QuizVerdict } from "../contracts";
 
 export type { QuizVerdict };
 
