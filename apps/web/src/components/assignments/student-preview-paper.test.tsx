@@ -266,3 +266,29 @@ describe("StudentPreviewPaper — rich text render (rich text plan phase 4)", ()
 		expect(html).toContain("2 từ");
 	});
 });
+
+describe("StudentPreviewPaper — per-question type (mixed prompts)", () => {
+	it("renders the row widget by the question type, not the prompt type", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					type: "note",
+					items: [
+						// Câu tablecomp trong đề note: layout "Hàng — Cột" của riêng
+						// type câu (trước đây key theo prompt type nên render thô).
+						{
+							stem: "[table] r1 c2: chế tác / vật liệu",
+							answer: "iron",
+							opts: null,
+							alts: "",
+							type: "tablecomp",
+						},
+						{ ...emptyItem("note"), stem: "plain note row ____" },
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Hàng 1 — Cột 2:");
+		expect(html).toContain("chế tác / vật liệu");
+	});
+});

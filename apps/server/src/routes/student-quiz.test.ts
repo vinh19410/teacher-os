@@ -215,11 +215,11 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 				orgId: "org-1",
 				classId: "class-1",
 				promptId:
-				assignmentId === "ca-q8"
-					? "prompt-badpin"
-					: assignmentId === "ca-q10"
-						? "prompt-mixed"
-						: "prompt-quiz",
+					assignmentId === "ca-q8"
+						? "prompt-badpin"
+						: assignmentId === "ca-q10"
+							? "prompt-mixed"
+							: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});

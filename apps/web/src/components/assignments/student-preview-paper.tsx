@@ -124,7 +124,9 @@ export function StudentPreviewPaper(props: {
 								<ClozeStemText
 									stem={item.stem}
 									answer={item.answer}
-									typeId={typeId}
+									// Widget theo type TỪNG CÂU (đề trộn dạng) — câu không
+									// khai type đi theo dạng đề.
+									typeId={item.type ?? typeId}
 									number={(part.qStart ?? 1) + index}
 								/>
 							) : (

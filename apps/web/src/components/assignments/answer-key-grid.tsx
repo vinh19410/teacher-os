@@ -2,11 +2,13 @@ import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
 import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
+import { Input, Select } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import {
 	answerChoices,
+	emptyItem,
 	kindOf,
+	partOf,
 	type QuestionItem,
 	qStartOf,
 } from "./assignment-presets";
@@ -111,25 +113,26 @@ export function AnswerKeyGrid({
 	 * place; returns whether a row was actually added. */
 	onAddQuestion: () => boolean;
 }) {
-	const kind = kindOf(typeId);
-	const kindAlphabet = answerChoices(kind);
-	// Bank-sourced chips (FR4): positional labels limited to the bank size.
-	// An empty bank falls back to the full alphabet so a draft can still be
-	// keyed before the teacher fills the bank.
-	const bankChips =
-		optionBank &&
-		optionBank.length > 0 &&
-		(kind === "letter" || kind === "roman")
-			? ASSIGNMENT_ANSWER_CHOICES[kind].slice(
-					0,
-					Math.min(optionBank.length, ASSIGNMENT_ANSWER_CHOICES[kind].length),
-				)
-			: null;
-	const choices = bankChips ?? kindAlphabet;
-	// FR4: sentend uses each option exactly once (formal format) — labels
-	// already keyed on ANOTHER row render disabled + faded. features and the
-	// other matching kinds may reuse labels.
-	const enforceDistinct = typeId === "sentend";
+	// Per-question type: widget của TỪNG hàng key theo `item.type ?? typeId`
+	// (đề trộn dạng) — câu không khai type đi theo dạng đề như cũ.
+	const typeCatalog = partOf(skill, partId).types;
+	const rowTypeOf = (item: QuestionItem) => item.type ?? typeId;
+	const rowChoicesOf = (item: QuestionItem): readonly string[] | null => {
+		const kind = kindOf(rowTypeOf(item));
+		// Bank-sourced chips (FR4): positional labels limited to the bank size.
+		// An empty bank falls back to the full alphabet so a draft can still be
+		// keyed before the teacher fills the bank.
+		const bankChips =
+			optionBank &&
+			optionBank.length > 0 &&
+			(kind === "letter" || kind === "roman")
+				? ASSIGNMENT_ANSWER_CHOICES[kind].slice(
+						0,
+						Math.min(optionBank.length, ASSIGNMENT_ANSWER_CHOICES[kind].length),
+					)
+				: null;
+		return bankChips ?? answerChoices(kind);
+	};
 	const qStart = qStartOf(skill, partId);
 	const [blurred, setBlurred] = useState<ReadonlySet<number>>(new Set());
 	const update = (index: number, patch: Partial<QuestionItem>) => {
@@ -138,6 +141,19 @@ export function AnswerKeyGrid({
 				itemIndex === index ? { ...item, ...patch } : item,
 			),
 		);
+	};
+	/** Đổi dạng bài của 1 câu: reset opts/answer theo kind mới (đáp án cũ có
+	 * thể sai kind) nhưng GIỮ stem + pin; "" = theo dạng đề (type null). */
+	const changeRowType = (index: number, nextType: string) => {
+		const item = items[index];
+		if (rowTypeOf(item) === (nextType || typeId)) return;
+		const fresh = nextType ? emptyItem(nextType) : emptyItem(typeId);
+		update(index, {
+			...fresh,
+			stem: item.stem,
+			pin: item.pin,
+			type: nextType ? nextType : null,
+		});
 	};
 	const remove = (index: number) => {
 		onItemsChange(items.filter((_, itemIndex) => itemIndex !== index));
@@ -178,14 +194,18 @@ export function AnswerKeyGrid({
 			return;
 		}
 		if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+		// Phím tắt đáp án theo kind CỦA CÂU đang focus.
+		const rowItem = items[index];
+		const rowKind = kindOf(rowTypeOf(rowItem));
+		const choices = rowChoicesOf(rowItem);
 		if (!choices) return;
 		const wanted = event.key.toLowerCase();
 		const hit =
-			KEY_ANSWERS[kind]?.[wanted] ??
-			((kind === "mcq4" || kind === "mcq3" || kind === "letter") &&
+			KEY_ANSWERS[rowKind]?.[wanted] ??
+			((rowKind === "mcq4" || rowKind === "mcq3" || rowKind === "letter") &&
 			/^[a-h]$/.test(wanted)
 				? wanted.toUpperCase()
-				: kind === "roman" && /^[1-8]$/.test(wanted)
+				: rowKind === "roman" && /^[1-8]$/.test(wanted)
 					? DIGIT_ROMANS[Number(wanted) - 1]
 					: undefined);
 		if (hit && choices.includes(hit)) {
@@ -210,6 +230,10 @@ export function AnswerKeyGrid({
 			</div>
 			{items.map((item, index) => {
 				const number = qStart + index;
+				const rowKind = kindOf(rowTypeOf(item));
+				const choices = rowChoicesOf(item);
+				// FR4 (sentend): labels keyed on another row are unusable here.
+				const enforceDistinct = rowTypeOf(item) === "sentend";
 				const rowErrors = questionRowError(
 					item,
 					choices,
@@ -228,7 +252,8 @@ export function AnswerKeyGrid({
 								(key !== "pin" || showErrors),
 						)
 					: [];
-				const mcqChoices = kind === "mcq4" || kind === "mcq3" ? choices : null;
+				const mcqChoices =
+					rowKind === "mcq4" || rowKind === "mcq3" ? choices : null;
 				const options = item.opts ?? mcqChoices?.map(() => "") ?? [];
 				// FR4 (sentend): labels keyed on another row are unusable here.
 				const usedByOthers = new Set(
@@ -283,7 +308,24 @@ export function AnswerKeyGrid({
 							)}
 						</div>
 						<div className="flex flex-col gap-1">
-							{choices && kind !== "text" ? (
+							<Select
+								value={item.type ?? ""}
+								aria-label={`Dạng bài câu ${number}`}
+								onChange={(event) => changeRowType(index, event.target.value)}
+								className="w-full text-xs"
+							>
+								<option value="">
+									Theo dạng đề ·{" "}
+									{typeCatalog.find((entry) => entry.id === typeId)?.label ??
+										typeId}
+								</option>
+								{typeCatalog.map((entry) => (
+									<option key={entry.id} value={entry.id}>
+										{entry.label}
+									</option>
+								))}
+							</Select>
+							{choices && rowKind !== "text" ? (
 								<div className="flex flex-wrap gap-1.5">
 									{choices.map((choice) => {
 										const taken =

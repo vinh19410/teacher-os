@@ -406,7 +406,10 @@ export function isOptionBankable(skill: string, type: string): boolean {
  * cho nhãn dạng bài ở authoring. Type lạ (đề cũ, snapshot fallback) rơi vào
  * `quizTypeDisplay()` thay vì crash renderer.
  */
-export const QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: string }> = {
+export const QUIZ_TYPE_DISPLAY: Record<
+	string,
+	{ label: string; instruction: string }
+> = {
 	tfng: {
 		label: "True / False / Not Given",
 		instruction:
@@ -455,7 +458,8 @@ export const QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: str
 	},
 	sent4: {
 		label: "Sentence completion",
-		instruction: "Complete the sentences below. Write ONE WORD ONLY for each answer.",
+		instruction:
+			"Complete the sentences below. Write ONE WORD ONLY for each answer.",
 	},
 	note: {
 		label: "Note completion",
@@ -504,7 +508,8 @@ export const QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: str
 	},
 	map: {
 		label: "Map labelling",
-		instruction: "Label the map below. Write the correct letter A–H for each location.",
+		instruction:
+			"Label the map below. Write the correct letter A–H for each location.",
 	},
 	match2: {
 		label: "Matching",
@@ -513,7 +518,10 @@ export const QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: str
 };
 
 /** Entry hiển thị cho type bất kỳ — type lạ giữ nguyên id làm label. */
-export function quizTypeDisplay(type: string): { label: string; instruction: string } {
+export function quizTypeDisplay(type: string): {
+	label: string;
+	instruction: string;
+} {
 	return QUIZ_TYPE_DISPLAY[type] ?? { label: type, instruction: "" };
 }
 

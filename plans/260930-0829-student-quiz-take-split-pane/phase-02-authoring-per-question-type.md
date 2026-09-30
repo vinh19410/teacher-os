@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Authoring — chọn type từng câu trong composer"
-status: todo
+status: done
 priority: P1
 effort: 5h
 dependencies: [1]
@@ -30,20 +30,20 @@ dạng bài; câu mới mặc định theo type của prompt; UI key editor + pr
 
 ## Requirements
 
-- [ ] Mỗi hàng câu hỏi (auto skills) có select dạng bài, danh sách = catalog
+- [x] Mỗi hàng câu hỏi (auto skills) có select dạng bài, danh sách = catalog
       type của part hiện tại (`SKILLS[skill].parts[part].types`); giá trị
       mặc định = type prompt; đổi type của câu KHÔNG đổi type prompt.
-- [ ] Đổi type câu → `opts` khởi tạo đúng kind (`emptyItem(typeId)`: mcq4/mcq3
+- [x] Đổi type câu → `opts` khởi tạo đúng kind (`emptyItem(typeId)`: mcq4/mcq3
       có opts, các kind khác null) và hàng answer key thích ứng kind (pill
       choice vs free text — theo `answerChoices(kind)` sẵn có).
-- [ ] Câu type khác type prompt vẫn nằm cùng `items[]`, tuần tự giữ vị trí —
+- [x] Câu type khác type prompt vẫn nằm cùng `items[]`, tuần tự giữ vị trí —
       thứ tự cụm = thứ tự câu (không có khái niệm reorder cụm riêng).
-- [ ] Submit gửi `questions[].type` (field Phase 1); câu không đổi type gửi
+- [x] Submit gửi `questions[].type` (field Phase 1); câu không đổi type gửi
       `null`/omit để payload cũ gọn.
-- [ ] Teacher preview (`student-preview-paper.tsx`) hiển thị đúng widget theo
+- [x] Teacher preview (`student-preview-paper.tsx`) hiển thị đúng widget theo
       type TỪNG CÂU (pill vs cloze) — sửa chỗ đang key theo `value.type`
       prompt-level.
-- [ ] `TYPE_HINTS` placeholder intro giữ nguyên (authoring hint, không phải
+- [x] `TYPE_HINTS` placeholder intro giữ nguyên (authoring hint, không phải
       instruction take screen —.take screen dùng `QUIZ_TYPE_DISPLAY` Phase 1).
 
 ## Related Code Files
@@ -73,10 +73,10 @@ dạng bài; câu mới mặc định theo type của prompt; UI key editor + pr
 
 ## Todo
 
-- [ ] Select per-row + catalog helper
-- [ ] Adapt opts/answer-key theo type câu
-- [ ] Preview theo type từng câu
-- [ ] Tests composer + editors + preview
+- [x] Select per-row + catalog helper
+- [x] Adapt opts/answer-key theo type câu
+- [x] Preview theo type từng câu
+- [x] Tests composer + editors + preview
 
 ## Success Criteria
 

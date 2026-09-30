@@ -1,8 +1,13 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AnswerKeyGrid } from "./answer-key-grid";
 import { emptyItem } from "./assignment-presets";
+
+afterEach(cleanup);
 
 function tfngItems(count: number, answers: string[] = []) {
 	return Array.from({ length: count }, (_, index) => ({
@@ -356,5 +361,113 @@ describe("AnswerKeyGrid — option bank chips (phase-02 FR4)", () => {
 		});
 		expect(html).toContain('aria-label="Câu 27: A"');
 		expect(html).toContain('aria-label="Câu 27: D"');
+	});
+});
+
+describe("AnswerKeyGrid — per-question type (mixed prompts)", () => {
+	it("renders a per-row type select listing the part catalog plus the prompt type default", () => {
+		const html = renderGrid({
+			typeId: "note",
+			skill: "reading",
+			partId: "p1",
+		});
+		expect(html).toContain('aria-label="Dạng bài câu 1"');
+		// Catalog p1: tfng, sent, note, shortans, diagram.
+		for (const option of ["tfng", "sent", "note", "shortans", "diagram"]) {
+			expect(html).toContain(`value="${option}"`);
+		}
+		// Default option = theo dạng đề (prompt type).
+		expect(html).toContain("Theo dạng đề");
+	});
+
+	it("keys the answer widget off the question type, not the prompt type", () => {
+		const html = renderGrid({
+			typeId: "note",
+			skill: "reading",
+			partId: "p1",
+			items: [
+				{
+					stem: "T/F/NG statement",
+					answer: "TRUE",
+					opts: null,
+					alts: "",
+					type: "tfng",
+				},
+				{ stem: "Cloze ____", answer: "river", opts: null, alts: "" },
+			],
+		});
+		// Row 1 (tfng): chips; Row 2 (prompt type note): free text + alts.
+		expect(html).toContain('aria-label="Câu 1: TRUE"');
+		expect(html).toContain('aria-label="Câu 1: NOT GIVEN"');
+		expect(html).toContain('aria-label="Đáp án chấm tự động"');
+		expect(html).toContain('aria-label="Chấp nhận thêm, cách nhau bằng /"');
+	});
+
+	it("changing a row type resets opts/answer but keeps stem and pin", async () => {
+		const onItemsChange = vi.fn();
+		const { container } = render(
+			<AnswerKeyGrid
+				typeId="note"
+				skill="reading"
+				partId="p1"
+				items={[
+					{
+						stem: "Keep my stem",
+						answer: "river",
+						opts: null,
+						alts: "rivers",
+						pin: { x: 10, y: 20 },
+					},
+				]}
+				showErrors={false}
+				onItemsChange={onItemsChange}
+				onAddQuestion={vi.fn()}
+			/>,
+		);
+		const select = container.querySelector(
+			'select[aria-label="Dạng bài câu 1"]',
+		) as HTMLSelectElement;
+		expect(select).not.toBeNull();
+		fireEvent.change(select, { target: { value: "tfng" } });
+		expect(onItemsChange).toHaveBeenCalledTimes(1);
+		const next = onItemsChange.mock.calls[0][0][0];
+		expect(next).toEqual({
+			stem: "Keep my stem",
+			opts: null,
+			answer: "",
+			alts: "",
+			pin: { x: 10, y: 20 },
+			type: "tfng",
+		});
+	});
+
+	it("reverting a row to the prompt default sends type null", () => {
+		const onItemsChange = vi.fn();
+		const { container } = render(
+			<AnswerKeyGrid
+				typeId="note"
+				skill="reading"
+				partId="p1"
+				items={[
+					{
+						stem: "Statement",
+						answer: "TRUE",
+						opts: null,
+						alts: "",
+						type: "tfng",
+					},
+				]}
+				showErrors={false}
+				onItemsChange={onItemsChange}
+				onAddQuestion={vi.fn()}
+			/>,
+		);
+		const select = container.querySelector(
+			'select[aria-label="Dạng bài câu 1"]',
+		) as HTMLSelectElement;
+		fireEvent.change(select, { target: { value: "" } });
+		const next = onItemsChange.mock.calls[0][0][0];
+		expect(next.type).toBeNull();
+		expect(next.stem).toBe("Statement");
 	});
 });
