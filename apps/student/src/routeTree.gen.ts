@@ -13,6 +13,7 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
+import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -33,16 +34,24 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthLearnQuizzesAssignmentIdRoute =
+  AuthLearnQuizzesAssignmentIdRouteImport.update({
+    id: '/learn/quizzes/$assignmentId',
+    path: '/learn/quizzes/$assignmentId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/': typeof AuthIndexRoute
+  '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +59,20 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/onboarding'
+  fullPaths: '/' | '/login' | '/onboarding' | '/learn/quizzes/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/onboarding' | '/'
-  id: '__root__' | '/_auth' | '/login' | '/_auth/onboarding' | '/_auth/'
+  to: '/login' | '/onboarding' | '/' | '/learn/quizzes/$assignmentId'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/login'
+    | '/_auth/onboarding'
+    | '/_auth/'
+    | '/_auth/learn/quizzes/$assignmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,17 +110,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/learn/quizzes/$assignmentId': {
+      id: '/_auth/learn/quizzes/$assignmentId'
+      path: '/learn/quizzes/$assignmentId'
+      fullPath: '/learn/quizzes/$assignmentId'
+      preLoaderRoute: typeof AuthLearnQuizzesAssignmentIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
   }
 }
 
 interface AuthRouteRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
