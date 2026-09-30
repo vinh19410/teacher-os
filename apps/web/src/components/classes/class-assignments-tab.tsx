@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { useMemo, useState } from "react";
 import {
 	partOf,
@@ -20,7 +21,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
-import { RichTextBody } from "@/components/ui/rich-text-body";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";

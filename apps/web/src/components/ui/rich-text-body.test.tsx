@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import { sanitizeRichText } from "@teacher-os/ui/lib/rich-text-sanitize";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { sanitizeRichText } from "@/lib/rich-text-sanitize";
-import { RichTextBody } from "./rich-text-body";
 
 afterEach(cleanup);
 

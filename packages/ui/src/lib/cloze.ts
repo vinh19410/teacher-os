@@ -1,4 +1,4 @@
-import type { QuestionItem } from "@/components/assignments/assignment-presets";
+import type { AssignmentQuestion } from "@teacher-os/api/contracts";
 
 /**
  * Cloze + table-completion helpers (phase-03). The marker `____` (≥ 4
@@ -70,7 +70,7 @@ export interface ClozeSegment {
  * `\*` is a literal asterisk both outside and inside a blank; an
  * UNTERMINATED `*` stays a literal (predictable over greedy). Blank content
  * splits on `/` — first part is the answer, the rest become `alts`
- * ("/"-separated, same convention as `QuestionItem.alts`). Segments split at
+ * ("/"-separated, same convention as `AssignmentQuestion.alts`). Segments split at
  * each blank; text after the last blank joins the last segment's stem.
  */
 export function parseClozeRaw(text: string): ClozeSegment[] {
@@ -126,6 +126,7 @@ export function parseClozeRaw(text: string): ClozeSegment[] {
 	}
 	if (segments.length === 0) return [];
 	const lastSegment = segments[segments.length - 1];
+	if (!lastSegment) return [];
 	segments[segments.length - 1] = {
 		...lastSegment,
 		stem: lastSegment.stem + buffer,
@@ -211,7 +212,7 @@ export function buildClozeSegments(
 		.sort((a, b) => a.token.start - b.token.start);
 	if (ordered.length === 0) return [];
 	return ordered.map(({ blank, token }, position) => {
-		const previous = position === 0 ? { end: 0 } : ordered[position - 1].token;
+		const previous = ordered[position - 1]?.token ?? { end: 0 };
 		const gap = text.slice(previous.end, token.start);
 		const trailing =
 			position === ordered.length - 1 ? text.slice(token.end) : "";
@@ -224,7 +225,9 @@ export function buildClozeSegments(
 }
 
 /** Segments → existing wire shape (`opts: null` — text kinds have no options). */
-export function segmentsToItems(segments: ClozeSegment[]): QuestionItem[] {
+export function segmentsToItems(
+	segments: ClozeSegment[],
+): AssignmentQuestion[] {
 	return segments.map((segment) => ({
 		stem: segment.stem,
 		opts: null,
@@ -285,8 +288,8 @@ export function parseTableStem(stem: string): TableStemRef | null {
 	return {
 		row: Number(match[1]),
 		col: Number(match[2]),
-		rowTitle: match[3].trim(),
-		colTitle: match[4].trim(),
+		rowTitle: (match[3] ?? "").trim(),
+		colTitle: (match[4] ?? "").trim(),
 	};
 }
 

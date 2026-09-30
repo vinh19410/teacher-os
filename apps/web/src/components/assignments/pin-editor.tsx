@@ -15,61 +15,6 @@ import type { QuestionItem } from "./assignment-presets";
  * falls back to plain key entry with a visible warning.
  */
 
-/**
- * Student-facing pin overlay (phase-04 FR5) — numbered pins at their
- * percents beside a fill-in input. Shared by the student preview paper and
- * the bank-list aside so the snapshot round-trip is assertable in e2e.
- * Answers NEVER render here (input is empty + readOnly).
- */
-export function PinOverlay({
-	imageUrl,
-	items,
-	qStart,
-	imageAlt = "Ảnh đề",
-}: {
-	imageUrl: string;
-	items: QuestionItem[];
-	qStart: number;
-	imageAlt?: string;
-}) {
-	const pinned = items
-		.map((item, index) => ({ item, index }))
-		.filter(({ item }) => isValidPin(item.pin));
-	return (
-		<div className="relative mt-3 w-fit max-w-full">
-			<img
-				src={imageUrl}
-				alt={imageAlt}
-				className="block max-h-72 w-auto max-w-full rounded-md border border-line"
-				referrerPolicy="no-referrer"
-				loading="lazy"
-			/>
-			{pinned.map(({ item, index }) => {
-				const number = qStart + index;
-				return (
-					<span
-						key={number}
-						className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1"
-						style={{
-							left: `${item.pin?.x ?? 0}%`,
-							top: `${item.pin?.y ?? 0}%`,
-						}}
-					>
-						<span className="flex h-5 w-5 items-center justify-center rounded-full border border-fg bg-bg font-medium font-mono text-[10px]">
-							{number}
-						</span>
-						<input
-							readOnly
-							aria-label={`Điền đáp án câu ${number}`}
-							className="w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px]"
-						/>
-					</span>
-				);
-			})}
-		</div>
-	);
-}
-
 export function PinEditor({
 	imageUrl,
 	items,

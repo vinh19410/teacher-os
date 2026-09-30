@@ -11,6 +11,7 @@ export * from "./lesson";
 export * from "./membership";
 export * from "./notif";
 export * from "./organization";
+export * from "./quiz-attempt";
 export * from "./report";
 export * from "./session-package";
 export * from "./settings";

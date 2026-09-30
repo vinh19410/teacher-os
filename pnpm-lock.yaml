@@ -553,12 +553,18 @@ importers:
       '@shadcn/react':
         specifier: ^0.2.1
         version: 0.2.1(@types/react@19.2.18)(react@19.2.8)
+      '@teacher-os/api':
+        specifier: workspace:*
+        version: link:../api
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.16
       lucide-react:
         specifier: 'catalog:'
         version: 1.31.0(react@19.2.8)

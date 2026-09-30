@@ -1460,6 +1460,145 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+// --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
+
+export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
+export type QuizAttemptStatus = (typeof QUIZ_ATTEMPT_STATUSES)[number];
+
+/** Verdict per question — tính server-side từ questionsSnapshot (Phase 1). */
+export const QUIZ_VERDICTS = ["correct", "wrong", "skipped"] as const;
+export type QuizVerdict = (typeof QUIZ_VERDICTS)[number];
+
+/** Cap answer value per autosave PATCH (RT#16) — matches the 4096-byte body cap. */
+export const QUIZ_ANSWER_VALUE_MAX = 500;
+
+/** Body của POST start/submit — exactly `{}` (mirror lessonActionSchema). */
+export const quizAttemptActionSchema = z.object({}).strict();
+export type QuizAttemptAction = z.infer<typeof quizAttemptActionSchema>;
+
+/** Autosave 1 câu: `q` là index 0-based; range check chạy server-side với
+ * snapshot length (contract không biết độ dài đề). */
+export const quizAnswerPatchSchema = z
+	.object({
+		q: z.number().int().min(0),
+		value: z.string().max(QUIZ_ANSWER_VALUE_MAX),
+	})
+	.strict();
+export type QuizAnswerPatch = z.infer<typeof quizAnswerPatchSchema>;
+
+/** Câu hỏi đã sanitize cho take surface — `answer`/`alts` bị strip (RT#6). */
+export const studentQuizQuestionSchema = z
+	.object({
+		stem: z.string(),
+		opts: z.array(z.string()).nullable(),
+		pin: z.object({ x: z.number(), y: z.number() }).nullish(),
+	})
+	.strict();
+export type StudentQuizQuestion = z.infer<typeof studentQuizQuestionSchema>;
+
+/**
+ * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take screen.
+ * Paper fields đọc từ prompt hiện tại; `questions` lấy từ `questionsSnapshot`
+ * của attempt khi đã start (RT#3), còn `note` và answer key không bao giờ
+ * xuống wire. `attempt.answers` cho resume; null khi chưa start.
+ */
+export const studentQuizDetailSchema = z
+	.object({
+		assignmentId: z.string(),
+		title: z.string(),
+		due: z.string(),
+		skill: z.string(),
+		part: z.string(),
+		type: z.string(),
+		band: z.string(),
+		intro: z.string(),
+		prompt: z.string(),
+		passage: z.string(),
+		transcript: z.string(),
+		cueTopic: z.string(),
+		cuePoints: z.string(),
+		audioName: z.string(),
+		imageUrl: z.string(),
+		optionBank: z.array(z.string()),
+		questions: z.array(studentQuizQuestionSchema),
+		attempt: z
+			.object({
+				id: z.string(),
+				status: z.enum(QUIZ_ATTEMPT_STATUSES),
+				answers: z.record(z.string(), z.string()),
+			})
+			.nullable(),
+	})
+	.strict();
+export type StudentQuizDetail = z.infer<typeof studentQuizDetailSchema>;
+
+/** POST submit → counters (idempotent: double submit trả đúng shape này). */
+export const quizSubmitResultSchema = z
+	.object({
+		correctCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+		wrongCount: z.number().int().min(0),
+		skippedCount: z.number().int().min(0),
+	})
+	.strict();
+export type QuizSubmitResult = z.infer<typeof quizSubmitResultSchema>;
+
+/** Một dòng compact cho summary list: n → đáp án học viên → đáp án đúng. */
+export const quizAttemptItemSchema = z
+	.object({
+		verdict: z.enum(QUIZ_VERDICTS),
+		key: z.string(),
+		answer: z.string().nullable(),
+	})
+	.strict();
+export type QuizAttemptItem = z.infer<typeof quizAttemptItemSchema>;
+
+/**
+ * GET /api/student/attempts/:attemptId — summary sau nộp. 409 khi attempt
+ * còn `in_progress` (RT#6) nên payload thành công luôn là đã submit.
+ */
+export const quizAttemptSummarySchema = z
+	.object({
+		id: z.string(),
+		assignmentId: z.string(),
+		title: z.string(),
+		status: z.enum(QUIZ_ATTEMPT_STATUSES),
+		correctCount: z.number().int().min(0),
+		wrongCount: z.number().int().min(0),
+		skippedCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+		/** ISO datetime — duration hiển thị = submittedAt − startedAt. */
+		startedAt: z.string(),
+		submittedAt: z.string(),
+		items: z.array(quizAttemptItemSchema),
+	})
+	.strict();
+export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
+
+/**
+ * GET /api/student/attempts/:attemptId/detail — review đầy đủ: paper render
+ * từ snapshot (stem/opts/pin) + key/alts/verdict/đáp án học viên per câu +
+ * `note` của đề (withhold ở take, chỉ reveal sau submit). Cùng gate 409
+ * in_progress như summary.
+ */
+export const quizAttemptDetailSchema = quizAttemptSummarySchema
+	.omit({ items: true })
+	.extend({
+		note: z.string(),
+		questions: z.array(
+			studentQuizQuestionSchema
+				.extend({
+					key: z.string(),
+					alts: z.string(),
+					verdict: z.enum(QUIZ_VERDICTS),
+					answer: z.string().nullable(),
+				})
+				.strict(),
+		),
+	})
+	.strict();
+export type QuizAttemptDetail = z.infer<typeof quizAttemptDetailSchema>;
+
 /**
  * Student Invitation & Multi-Org Contracts (Phase 2).
  */

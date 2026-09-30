@@ -1,8 +1,8 @@
 import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { countBlanks } from "@/lib/cloze";
 import { cn } from "@/lib/cn";
 import {
 	answerChoices,

@@ -1,10 +1,10 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
+import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@teacher-os/ui/lib/cloze";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,

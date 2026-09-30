@@ -3,7 +3,7 @@ import {
 	ASSIGNMENT_OPTION_BANK_MAX,
 } from "@teacher-os/api/contracts";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
-import { countBlanks } from "@/lib/cloze";
+import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import {
 	QUESTION_ALTS_MAX,
 	QUESTION_ANSWER_MAX,

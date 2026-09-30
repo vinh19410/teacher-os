@@ -1,7 +1,11 @@
+import { sanitizeRichText } from "@teacher-os/ui/lib/rich-text-sanitize";
+import { cn } from "@teacher-os/ui/lib/utils";
 import { useMemo } from "react";
-import { cn } from "@/lib/cn";
-import { looksLikeHtml } from "@/lib/rich-text-legacy";
-import { sanitizeRichText } from "@/lib/rich-text-sanitize";
+
+// Quick "does this already contain HTML markup?" heuristic — same regex as
+// web's `rich-text-legacy` (kept private per surface: the web adapter also
+// feeds the Tiptap editor, this copy only picks the render branch here).
+const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
 
 /**
  * The single rendering sink for rich text content.
@@ -23,7 +27,7 @@ export function RichTextBody({
 	legacyWhitespace?: "pre-line" | "pre-wrap";
 }) {
 	const isHtml = useMemo(() => {
-		if (!looksLikeHtml(text)) return false;
+		if (!HTML_TAG_RE.test(text)) return false;
 		if (typeof DOMParser === "undefined") return true;
 		// Regex pre-check passed; confirm with a real parse so text like "a<b>c"
 		// that happens to contain a closing angle bracket is not misdetected.

@@ -1,6 +1,3 @@
-import { memo, useCallback, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input, Textarea } from "@/components/ui/field";
 import {
 	buildClozeSegments,
 	CLOZE_MAX_BLANKS,
@@ -12,7 +9,10 @@ import {
 	parseClozeRaw,
 	segmentsToItems,
 	tokenizePassage,
-} from "@/lib/cloze";
+} from "@teacher-os/ui/lib/cloze";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import type { QuestionItem } from "./assignment-presets";
 
@@ -28,7 +28,7 @@ import type { QuestionItem } from "./assignment-presets";
  * Caps (segment ≤ 500 chars, blanks ≤ 40) block BEFORE writing items — the
  * server only answers a generic "invalid body" (FR2). Overwriting composed
  * items asks first (FR2); the confirm is hoisted out of state updaters
- * (red-team #8 pattern). All segment math lives in `@/lib/cloze`.
+ * (red-team #8 pattern). All segment math lives in `@teacher-os/ui/lib/cloze`.
  */
 
 const TRANSCRIPT_TYPES = new Set(["form", "notes", "sent4", "flow"]);
