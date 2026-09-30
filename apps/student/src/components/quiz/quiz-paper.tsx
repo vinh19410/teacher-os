@@ -51,6 +51,7 @@ export function QuizPaper({
 	currentQuestion,
 	mode = "take",
 	review,
+	hidePassage = false,
 }: {
 	detail: QuizPaperDetail;
 	parts: QuizPart[];
@@ -63,6 +64,8 @@ export function QuizPaper({
 	mode?: "take" | "review";
 	/** Dữ liệu review theo `q` (chip verdict + đáp án + giải thích). */
 	review?: Record<number, QuizReviewInfo>;
+	/** Split-pane reading: passage đã render ở pane trái — paper không lặp. */
+	hidePassage?: boolean;
 }) {
 	const reviewMode = mode === "review";
 	const skill = detail.skill;
@@ -122,12 +125,14 @@ export function QuizPaper({
 				</p>
 			)}
 
-			{skill === "reading" && !isEmptyRichText(detail.passage) && (
-				<RichTextBody
-					text={detail.passage}
-					className="text-sm leading-[1.55]"
-				/>
-			)}
+			{skill === "reading" &&
+				!hidePassage &&
+				!isEmptyRichText(detail.passage) && (
+					<RichTextBody
+						text={detail.passage}
+						className="text-sm leading-[1.55]"
+					/>
+				)}
 
 			{usePinOverlay ? (
 				// Review: fieldset disabled khoá toàn bộ input pin; onAnswer vẫn

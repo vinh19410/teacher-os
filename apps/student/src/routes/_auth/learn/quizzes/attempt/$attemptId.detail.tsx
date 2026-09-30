@@ -7,6 +7,10 @@ import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { QuizNavigator } from "@/components/quiz/quiz-navigator";
 import { QuizPaper } from "@/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
+import {
+	isReadingSplitPane,
+	QuizReadingSplitLayout,
+} from "@/components/quiz/quiz-reading-layout";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import { buildQuizParts } from "@/lib/quiz-parts";
@@ -108,6 +112,26 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 		return <Loader />;
 	}
 
+	const navigator = (
+		<QuizNavigator
+			parts={parts}
+			answers={answers}
+			current={currentQuestion}
+			onSelect={(q) => {
+				setCurrentQuestion(q);
+				scrollToQuestion(q);
+			}}
+			mode="review"
+			verdicts={verdicts}
+		/>
+	);
+	// Cùng layout split-pane như take screen — học viên soi bài thấy đúng
+	// cấu trúc đã làm (reading + passage).
+	const splitPane = isReadingSplitPane(
+		quizQuery.data.skill,
+		quizQuery.data.passage,
+	);
+
 	return (
 		<div className="flex min-h-svh flex-col bg-surface/30">
 			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-line border-b bg-bg/95 px-4 backdrop-blur">
@@ -128,28 +152,40 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 					</h1>
 				</div>
 			</header>
-			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
-				<QuizPaper
-					detail={quizQuery.data}
-					parts={parts}
-					answers={answers}
-					onAnswer={() => undefined}
-					currentQuestion={currentQuestion}
-					mode="review"
-					review={review}
-				/>
-			</main>
-			<QuizNavigator
-				parts={parts}
-				answers={answers}
-				current={currentQuestion}
-				onSelect={(q) => {
-					setCurrentQuestion(q);
-					scrollToQuestion(q);
-				}}
-				mode="review"
-				verdicts={verdicts}
-			/>
+			{splitPane ? (
+				<QuizReadingSplitLayout
+					passage={quizQuery.data.passage}
+					navigator={navigator}
+				>
+					<div className="mx-auto w-full max-w-[720px]">
+						<QuizPaper
+							detail={quizQuery.data}
+							parts={parts}
+							answers={answers}
+							onAnswer={() => undefined}
+							currentQuestion={currentQuestion}
+							mode="review"
+							review={review}
+							hidePassage
+						/>
+					</div>
+				</QuizReadingSplitLayout>
+			) : (
+				<>
+					<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
+						<QuizPaper
+							detail={quizQuery.data}
+							parts={parts}
+							answers={answers}
+							onAnswer={() => undefined}
+							currentQuestion={currentQuestion}
+							mode="review"
+							review={review}
+						/>
+					</main>
+					{navigator}
+				</>
+			)}
 		</div>
 	);
 }
