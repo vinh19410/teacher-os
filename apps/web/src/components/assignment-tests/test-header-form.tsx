@@ -2,8 +2,10 @@ import {
 	type AssignmentTestCreate,
 	assignmentTestCreateSchema,
 } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { useId } from "react";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Input, Select } from "@/components/ui/field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 /**
  * Header form của full-test builder (phase-03 Task 3.4) — metadata bộ đề
@@ -95,7 +97,11 @@ export function buildTestPayload(value: TestHeaderFormValue): BuiltTestPayload {
 	}
 	const payload: AssignmentTestCreate = {
 		title: value.title.trim(),
-		description: value.description.trim() || undefined,
+		// Rich HTML — empty means no markup text at all (<p></p> included); the
+		// 2000-char cap runs client-side through the same zod schema below.
+		description: isEmptyRichText(value.description)
+			? undefined
+			: value.description,
 		skill: value.skill as AssignmentTestCreate["skill"],
 		timeLimitSeconds,
 		collection: value.collection.trim() || undefined,
@@ -164,11 +170,11 @@ export function TestHeaderForm({
 				help="Không bắt buộc — hiển thị khi giao bộ đề."
 				error={showErrors ? errors.description : undefined}
 			>
-				<Textarea
+				<RichTextEditor
 					value={value.description}
-					maxLength={2000}
-					className="min-h-22"
-					onChange={(event) => onChange({ description: event.target.value })}
+					onChange={(description) => onChange({ description })}
+					placeholder="Giới thiệu ngắn về bộ đề…"
+					contentClassName="[&_.ProseMirror]:min-h-22"
 				/>
 			</Field>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">

@@ -1,9 +1,11 @@
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import {
 	bankLabel,
 	isBankableType,
 	kindOf,
 } from "@/components/assignments/assignment-presets";
 import { ClozeStemText } from "@/components/assignments/cloze-stem";
+import { RichTextBody } from "@/components/ui/rich-text-body";
 import type {
 	TestPreviewDraft,
 	TestPreviewPartDraft,
@@ -24,9 +26,9 @@ import { computeTestRanges } from "@/lib/test-ranges";
 function partHasContent(part: TestPreviewPartDraft): boolean {
 	return Boolean(
 		part.title.trim() ||
-			part.intro.trim() ||
-			part.passage.trim() ||
-			part.prompt.trim() ||
+			!isEmptyRichText(part.intro) ||
+			!isEmptyRichText(part.passage) ||
+			!isEmptyRichText(part.prompt) ||
 			part.optionBank.length > 0 ||
 			part.items.length > 0,
 	);
@@ -112,20 +114,22 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 								{part.title.trim()}
 							</p>
 						)}
-						{part.passage.trim() && (
-							<div className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-								{part.passage.trim()}
-							</div>
+						{!isEmptyRichText(part.passage) && (
+							<RichTextBody
+								text={part.passage}
+								className="mt-3 text-sm leading-[1.55]"
+							/>
 						)}
 						{part.audioName.trim() && (
 							<p className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">
 								🔊 {part.audioName.trim()}
 							</p>
 						)}
-						{part.prompt.trim() && (
-							<div className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-								{part.prompt.trim()}
-							</div>
+						{!isEmptyRichText(part.prompt) && (
+							<RichTextBody
+								text={part.prompt}
+								className="mt-3 text-sm leading-[1.55]"
+							/>
 						)}
 						{part.items.length > 0 && (
 							<div className="mt-4 flex flex-col gap-2">
@@ -133,10 +137,11 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 									Questions {qStart}
 									{count > 0 ? `–${qStart + count - 1}` : ""}
 								</p>
-								{part.intro.trim() && (
-									<p className="whitespace-pre-line text-muted-fg text-sm">
-										{part.intro.trim()}
-									</p>
+								{!isEmptyRichText(part.intro) && (
+									<RichTextBody
+										text={part.intro}
+										className="text-muted-fg text-sm"
+									/>
 								)}
 								{bankable &&
 									(bank.length > 0 ? (

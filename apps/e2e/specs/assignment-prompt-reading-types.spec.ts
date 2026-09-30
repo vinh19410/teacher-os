@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Issue #269 — the new reading question types compose end to end: summary
@@ -31,14 +31,16 @@ test("create a ready summary prompt and leak-check the preview", async ({
 		.click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill(
-			"Monsoon rains refill the stepwells each year. Engineers cut tunnels into the rock to channel the flow.",
-		);
-	await page
-		.getByLabel("Hướng dẫn đề")
-		.fill("Complete the summary. NO MORE THAN THREE WORDS from the passage.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Monsoon rains refill the stepwells each year. Engineers cut tunnels into the rock to channel the flow.",
+	);
+	await fillRichEditor(
+		page,
+		"Hướng dẫn đề",
+		"Complete the summary. NO MORE THAN THREE WORDS from the passage.",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -107,12 +109,16 @@ test("create a ready diagram prompt with an https image URL", async ({
 		.click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("The boiler heated the water until it drove the crankshaft below.");
-	await page
-		.getByLabel("Hướng dẫn đề")
-		.fill("Label the diagram. ONE WORD ONLY from the passage.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"The boiler heated the water until it drove the crankshaft below.",
+	);
+	await fillRichEditor(
+		page,
+		"Hướng dẫn đề",
+		"Label the diagram. ONE WORD ONLY from the passage.",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -214,9 +220,11 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 	await page.getByRole("button", { name: "Matching features" }).click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("The great exhibitors of the nineteenth century shaped engineering.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"The great exhibitors of the nineteenth century shaped engineering.",
+	);
 
 	// Four questions (p3 → Câu 27–30).
 	for (let i = 0; i < 3; i += 1) {
@@ -292,9 +300,11 @@ test("sentend blocks a second question from keying an already-used label", async
 	await page.getByRole("button", { name: "Matching sentence endings" }).click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Every ending fragment completes exactly one sentence.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Every ending fragment completes exactly one sentence.",
+	);
 	await page.getByRole("button", { name: "Thêm câu" }).click();
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
@@ -343,9 +353,11 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 	await page.getByRole("button", { name: "Matching features" }).click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Deleting a row renumbers the labels — old keys must not re-bind.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Deleting a row renumbers the labels — old keys must not re-bind.",
+	);
 	await page.getByRole("button", { name: "Thêm câu" }).click();
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
@@ -466,12 +478,16 @@ test("summary composes via click-to-blank: 4 clicked words become 4 keyed questi
 	// The passage must NOT contain the four words the teacher will blank —
 	// the preview renders the passage verbatim and the leak-check relies on
 	// the answers appearing nowhere in the student paper.
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Victorian builders changed the landscape of the city forever.");
-	await page
-		.getByLabel("Hướng dẫn đề")
-		.fill("Complete the summary. NO MORE THAN THREE WORDS from the passage.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Victorian builders changed the landscape of the city forever.",
+	);
+	await fillRichEditor(
+		page,
+		"Hướng dẫn đề",
+		"Complete the summary. NO MORE THAN THREE WORDS from the passage.",
+	);
 
 	// Paste → tokenize → click four words → apply. Zero typing of answers.
 	await page.getByLabel("Dán đoạn văn bản").fill(PASSAGE);
@@ -530,12 +546,16 @@ test("tablecomp composes via the grid: 2×3 table with 2 blanks previews as labe
 
 	// exact: the grid editor adds its own "Tiêu đề cột/hàng" labels.
 	await page.getByLabel("Tiêu đề", { exact: true }).fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("The table lists Victorian inventions and their dates.");
-	await page
-		.getByLabel("Hướng dẫn đề")
-		.fill("Complete the table. ONE WORD ONLY from the passage.");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"The table lists Victorian inventions and their dates.",
+	);
+	await fillRichEditor(
+		page,
+		"Hướng dẫn đề",
+		"Complete the table. ONE WORD ONLY from the passage.",
+	);
 
 	// Grow the default 2×2 grid to 2×3 and fill titles + two data cells.
 	await page.getByRole("button", { name: "Thêm cột" }).click();
@@ -602,7 +622,7 @@ test("cloze apply is blocked above the caps: over 40 blanks and a 500-char segme
 		.click();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page.getByLabel("Đoạn đọc").fill("Cap check passage.");
+	await fillRichEditor(page, "Đoạn đọc", "Cap check passage.");
 	// No items yet — apply must stay blocked before the grid grows.
 	await expect(page.getByText("1/40 câu")).toBeVisible();
 

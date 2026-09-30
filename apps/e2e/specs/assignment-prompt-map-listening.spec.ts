@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Phase-04 (image pins): the listening `map` pair is image-gated AND
@@ -107,9 +107,11 @@ test("writing task1 map is never image/pin-gated (skill-qualified)", async ({
 	await page.getByRole("button", { name: "Bản đồ" }).click();
 
 	await page.getByLabel("Tiêu đề").fill("QC-271 Writing Map");
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("The maps show the town centre in 1990 and today.");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"The maps show the town centre in 1990 and today.",
+	);
 	// No image URL, no questions, no pins — a writing map saves ready.
 	await expect(
 		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),

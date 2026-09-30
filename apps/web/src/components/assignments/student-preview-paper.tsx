@@ -1,4 +1,6 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { RichTextBody } from "@/components/ui/rich-text-body";
 import { Tag } from "@/components/ui/tag";
 import { isValidPin } from "@/lib/image-pin";
 import {
@@ -81,11 +83,15 @@ export function StudentPreviewPaper(props: {
 					🔊 {props.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
-			{skillId === "reading" && (
-				<p className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
-				</p>
-			)}
+			{skillId === "reading" &&
+				(isEmptyRichText(props.passage ?? "") ? (
+					<p className="mt-3 text-sm leading-[1.55]">Đoạn đọc sẽ hiện ở đây.</p>
+				) : (
+					<RichTextBody
+						text={props.passage ?? ""}
+						className="mt-3 text-sm leading-[1.55]"
+					/>
+				))}
 			{diagramImageUrl &&
 				(pinnedItems.length > 0 ? (
 					<PinOverlay
@@ -104,10 +110,11 @@ export function StudentPreviewPaper(props: {
 				))}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
-					{props.intro?.trim() && (
-						<p className="whitespace-pre-line text-muted-fg text-sm">
-							{props.intro.trim()}
-						</p>
+					{!isEmptyRichText(props.intro ?? "") && (
+						<RichTextBody
+							text={props.intro ?? ""}
+							className="text-muted-fg text-sm"
+						/>
 					)}
 					{bankable &&
 						(bank.length > 0 ? (
@@ -170,11 +177,20 @@ export function StudentPreviewPaper(props: {
 					</ul>
 				</div>
 			)}
-			{!isAuto && !(skillId === "speaking" && partId === "part2") && (
-				<p className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-					{props.prompt.trim() || "Đề sẽ hiện ở đây khi bạn soạn."}
-				</p>
-			)}
+			{!isAuto &&
+				!(skillId === "speaking" && partId === "part2") &&
+				(isEmptyRichText(props.prompt) ? (
+					// RichTextBody renders a block div — a div cannot sit inside the
+					// old <p> wrapper (invalid nesting), so this is a <div> now.
+					<div className="mt-3 text-sm leading-[1.55]">
+						Đề sẽ hiện ở đây khi bạn soạn.
+					</div>
+				) : (
+					<RichTextBody
+						text={props.prompt}
+						className="mt-3 text-sm leading-[1.55]"
+					/>
+				))}
 			<div className="mt-3 flex flex-wrap gap-2">
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
@@ -182,12 +198,12 @@ export function StudentPreviewPaper(props: {
 				<Tag>{`Band ${props.band}`}</Tag>
 				{props.source.trim() && <Tag>{props.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
-				{props.note.trim() && <Tag>Có hướng dẫn thêm</Tag>}
+				{!isEmptyRichText(props.note) && <Tag>Có hướng dẫn thêm</Tag>}
 				<Tag>{props.status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}</Tag>
 			</div>
-			{props.prompt.trim() && skillId === "writing" && (
+			{!isEmptyRichText(props.prompt) && skillId === "writing" && (
 				<p className="mt-2 font-mono text-[11px] text-meta">
-					{wordCount(props.prompt)} từ
+					{wordCount(htmlToPlainText(props.prompt))} từ
 				</p>
 			)}
 		</div>

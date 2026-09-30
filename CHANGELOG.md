@@ -10,6 +10,24 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-30
+
+### Added
+- Rich text cho luồng tạo bài tập: 7 field soạn nội dung (5 Textarea `PromptComposer`: prompt writing/passage/transcript/prompt speaking/note + intro `QuestionKeyEditor` + description `TestHeaderForm`) chuyển sang Tiptap v3 — toolbar In đậm/In nghiêng/Gạch chân/Danh sách/Liên kết, placeholder tiếng Việt, autosave draft giữ nguyên; `cuePoints` giữ plain text (semantics mỗi dòng 1 ý) (#280)
+- `richTextField` trong `packages/api/src/rich-text.ts`: cap nội dung đo trên plain text đã strip thẻ + collapse whitespace, raw cap ×2.5 bảo vệ vận chuyển — contract zod `.strict()` và cột SQLite giữ nguyên shape string
+- `RichTextBody` — render sink duy nhất đi qua DOMPurify (allowlist thẻ/attr chặt, hook ép `a` mở tab mới `rel="noopener noreferrer"`); hàng plain cũ tự phát hiện và render y hệt trước kia (pre-line/pre-wrap), không data migration
+- Adapter `normalizeLegacyRichText` tại 3 cửa nạp editor (restore draft `/assignments/new`, slot draft test-builder, bank-edit `composerFromPrompt`) — escape + `\n`→`<br>`, chống mất xuống dòng vĩnh viễn khi sửa draft/hàng cũ
+- E2E `rich-text-content.spec.ts`: bold persist qua save/reload, payload XSS (`<img onerror>`) lưu được nhưng vô hiệu khi render, multi-line giữ xuống dòng qua editor round-trip
+
+### Changed
+- 11 gate "có nội dung" (`.trim()`) đổi sang `isEmptyRichText` — `<p></p>` bị coi là rỗng ở nút lưu, autosave skip, gate `ready` server 400 trên POST create; 3 superRefine gate (writing prompt, reading passage, speaking part1) tương tự
+- Trần draft store 200KB → 512KB (HTML inflation ×2.5) + `console.warn` khi skip thay vì im lặng
+- Word count passage/prompt đếm trên plain text trích từ HTML (`htmlToPlainText` chèn `\n` ranh giới block)
+- Preview giáo viên/học viên + tab Lớp học render rich qua `RichTextBody`; chip "Chèn câu lệnh chuẩn" nhận diện hint đã có qua plain text (không confirm oan lần 2)
+
+### Fixed
+- E2E full-test builder: đợi URL edit thật sau "Tạo bộ đề" — regex cũ `/tests/[^/]+` khớp cả `/tests/new` khiến "Xem trước" đua với navigate của submit đang treo (#280)
+
 ## 2026-09-28
 
 ### Added

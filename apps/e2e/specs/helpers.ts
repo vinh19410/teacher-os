@@ -186,6 +186,20 @@ export async function gotoWeek(
 	await page.goto(`/schedule?week=${weekStartISO}`);
 }
 
+/** Fill a rich text editor (Tiptap contenteditable) by its Field label.
+ * Works because RichTextEditor wires aria-labelledby through the Field label
+ * id — `getByLabel` resolves straight to the .ProseMirror element, and
+ * Playwright's `fill()` supports contenteditable officially. */
+export async function fillRichEditor(
+	page: Page,
+	label: string,
+	text: string,
+): Promise<void> {
+	const editor = page.getByLabel(label, { exact: true });
+	await editor.click();
+	await editor.fill(text);
+}
+
 /** Kích hoạt enrollment qua API seam (/api/enrollments/:id/accept).
  * Mang theo session cookie và Origin header. */
 export async function acceptEnrollment(

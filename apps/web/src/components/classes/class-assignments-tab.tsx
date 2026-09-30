@@ -20,6 +20,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
+import { RichTextBody } from "@/components/ui/rich-text-body";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
@@ -572,13 +573,23 @@ export function ClassAssignmentsTab({
 									? `${previewPart.spec} · hạn ${fmtDue(due)}`
 									: `hạn ${fmtDue(due)}`}
 							</p>
-							<p className="mt-3 whitespace-pre-wrap text-fg text-sm leading-[1.55]">
-								{selectedPrompt
-									? selectedPrompt.skill === "reading"
-										? selectedPrompt.passage || selectedPrompt.prompt
-										: selectedPrompt.prompt
-									: "Đề sẽ hiện khi bạn chọn từ ngân hàng."}
-							</p>
+							{selectedPrompt ? (
+								// This surface showed the raw string with pre-wrap —
+								// legacy plain rows keep that exact whitespace behavior.
+								<RichTextBody
+									text={
+										selectedPrompt.skill === "reading"
+											? (selectedPrompt.passage ?? selectedPrompt.prompt)
+											: selectedPrompt.prompt
+									}
+									legacyWhitespace="pre-wrap"
+									className="mt-3 text-fg text-sm leading-[1.55]"
+								/>
+							) : (
+								<p className="mt-3 text-fg text-sm leading-[1.55]">
+									Đề sẽ hiện khi bạn chọn từ ngân hàng.
+								</p>
+							)}
 							{selectedPrompt && previewType && (
 								<div className="mt-3 flex flex-wrap gap-2">
 									{previewSkill && <Tag>{previewSkill.name}</Tag>}

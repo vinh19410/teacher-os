@@ -67,7 +67,11 @@ export function Field({
 		: children;
 	return (
 		<div className="flex flex-col gap-1">
-			<label htmlFor={target} className="font-medium text-muted-fg text-xs">
+			<label
+				id={`${target}-label`}
+				htmlFor={target}
+				className="font-medium text-muted-fg text-xs"
+			>
 				{label}
 			</label>
 			{control}

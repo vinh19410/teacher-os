@@ -1,6 +1,8 @@
+import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { SectionLabel } from "@/components/ui/section-label";
 import {
 	isAutoSkill,
@@ -169,10 +171,11 @@ export function PromptComposer({
 					help={part.help}
 					error={showErrors ? errors.prompt : undefined}
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.prompt}
-						onChange={(event) => onFieldChange({ prompt: event.target.value })}
-						className="min-h-42"
+						onChange={(prompt) => onFieldChange({ prompt })}
+						placeholder="Dán hoặc soạn đề bài…"
+						contentClassName="[&_.ProseMirror]:min-h-42"
 					/>
 				</Field>
 			)}
@@ -182,16 +185,17 @@ export function PromptComposer({
 					help={part.help}
 					error={showErrors ? errors.passage : undefined}
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.passage}
-						onChange={(event) => onFieldChange({ passage: event.target.value })}
-						className="min-h-52"
+						onChange={(passage) => onFieldChange({ passage })}
+						placeholder="Dán đoạn đọc vào đây…"
+						contentClassName="[&_.ProseMirror]:min-h-52"
 					/>
 				</Field>
 			)}
 			{value.skill === "reading" && (
 				<span className="-mt-3 text-right font-mono text-meta text-xs">
-					{wordCount(value.passage)} từ
+					{wordCount(htmlToPlainText(value.passage))} từ
 				</span>
 			)}
 			{value.skill === "listening" && (
@@ -261,12 +265,11 @@ export function PromptComposer({
 					label="Transcript (chỉ giáo viên)"
 					help="Dán lời thoại để đối chiếu khi chấm."
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.transcript}
-						onChange={(event) =>
-							onFieldChange({ transcript: event.target.value })
-						}
-						className="min-h-32"
+						onChange={(transcript) => onFieldChange({ transcript })}
+						placeholder="Dán lời thoại…"
+						contentClassName="[&_.ProseMirror]:min-h-32"
 					/>
 				</Field>
 			)}
@@ -299,20 +302,20 @@ export function PromptComposer({
 						help={part.help}
 						error={showErrors ? errors.prompt : undefined}
 					>
-						<Textarea
+						<RichTextEditor
 							value={value.prompt}
-							onChange={(event) =>
-								onFieldChange({ prompt: event.target.value })
-							}
-							className="min-h-42"
+							onChange={(prompt) => onFieldChange({ prompt })}
+							placeholder="Soạn câu hỏi giám khảo…"
+							contentClassName="[&_.ProseMirror]:min-h-42"
 						/>
 					</Field>
 				))}
 			<Field label="Hướng dẫn thêm (không bắt buộc)">
-				<Textarea
+				<RichTextEditor
 					value={value.note}
-					onChange={(event) => onFieldChange({ note: event.target.value })}
-					className="min-h-22"
+					onChange={(note) => onFieldChange({ note })}
+					placeholder="Ghi chú thêm cho học viên…"
+					contentClassName="[&_.ProseMirror]:min-h-22"
 				/>
 			</Field>
 			{isAuto && (

@@ -1,7 +1,9 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@/lib/cloze";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
@@ -106,13 +108,16 @@ export function QuestionKeyEditor({
 	};
 	const insertPresetIntro = () => {
 		if (!hint) return;
-		if (!intro.trim() || KNOWN_HINTS.has(intro.trim())) {
-			onIntroChange(hint);
+		// intro is rich HTML — compare on the extracted plain text so both a
+		// legacy plain hint and its editor round-trip count as "the preset".
+		const introPlain = htmlToPlainText(intro).trim();
+		if (!introPlain || KNOWN_HINTS.has(introPlain)) {
+			onIntroChange(`<p>${hint}</p>`);
 			return;
 		}
 		// Custom teacher text: never overwrite silently.
 		if (window.confirm("Thay câu lệnh hiện tại bằng câu lệnh chuẩn?")) {
-			onIntroChange(hint);
+			onIntroChange(`<p>${hint}</p>`);
 		}
 	};
 	const applyPaste = () => {
@@ -158,11 +163,11 @@ export function QuestionKeyEditor({
 				</button>
 			)}
 			<Field label="Hướng dẫn đề">
-				<Textarea
+				<RichTextEditor
 					value={intro}
+					onChange={onIntroChange}
 					placeholder={hint}
-					onChange={(event) => onIntroChange(event.target.value)}
-					className="min-h-24"
+					contentClassName="[&_.ProseMirror]:min-h-24"
 				/>
 			</Field>
 			{showClozeEditor && (
