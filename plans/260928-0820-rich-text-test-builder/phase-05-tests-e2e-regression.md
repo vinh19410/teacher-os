@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Tests e2e regression"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [2, 3, 4]
