@@ -2,13 +2,48 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PREVIEW_DRAFT_KEY } from "@/lib/assignment-preview-draft";
+import type { AssignmentPrompt } from "@/lib/mock-data";
+
+let mockSearch: { id?: string } = {};
 
 vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: () => (options: unknown) => options,
+	createFileRoute: () => (options: Record<string, unknown>) => ({
+		...options,
+		useSearch: () => mockSearch,
+	}),
 	useNavigate: () => vi.fn(),
+	useSearch: () => mockSearch,
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
+}));
+
+const bankPromptFixture: AssignmentPrompt[] = [
+	{
+		id: "p-bank-1",
+		skill: "reading",
+		part: "p3",
+		type: "features",
+		task: "p3",
+		genre: "features",
+		title: "QC-282 Bank Features",
+		band: "7.0",
+		source: "Cambridge 12",
+		prompt: "",
+		intro: "Questions 27–30 · Match each feature with the correct person.",
+		passage: "The canal builders changed the landscape forever.",
+		optionBank: ["Isambard Kingdom Brunel", "Charles Darwin"],
+		questions: [
+			{ stem: "27 The first boat", opts: null, answer: "A", alts: "" },
+		],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-28T00:00:00.000Z",
+	},
+];
+
+vi.mock("@/lib/data-store", () => ({
+	useData: () => ({ data: { assignmentPrompts: bankPromptFixture } }),
 }));
 
 import { PreviewAssignmentRoute } from "./preview";
@@ -37,6 +72,7 @@ const draft = {
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	mockSearch = {};
 });
 
 describe("PreviewAssignmentRoute (#213)", () => {
@@ -162,5 +198,36 @@ describe("PreviewAssignmentRoute (#213)", () => {
 		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
 		expect(html).not.toContain("<img");
 		expect(html).not.toContain("javascript:alert(1)");
+	});
+});
+
+describe("PreviewAssignmentRoute — bank mode ?id= (#282)", () => {
+	it("renders the saved prompt paper with bank chrome", () => {
+		mockSearch = { id: "p-bank-1" };
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain("QC-282 Bank Features");
+		expect(html).toContain("The canal builders changed the landscape forever.");
+		expect(html).toContain("Ngân hàng lựa chọn");
+		expect(html).toContain("Isambard Kingdom Brunel");
+		expect(html).toContain("27 The first boat");
+		expect(html).toContain("Quay lại danh sách");
+		expect(html).not.toContain("Quay lại soạn đề");
+		expect(html).not.toContain("Chưa có bản nháp nào để xem trước.");
+	});
+
+	it("?id= wins over a stale composer draft in sessionStorage", () => {
+		mockSearch = { id: "p-bank-1" };
+		stubStorageWith(JSON.stringify(draft));
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain("QC-282 Bank Features");
+		expect(html).not.toContain("QC Preview Essay");
+	});
+
+	it("unknown id shows the honest empty state back to the bank", () => {
+		mockSearch = { id: "nope" };
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain("Không tìm thấy đề này.");
+		expect(html).toContain("Quay lại danh sách");
+		expect(html).not.toContain("Bài làm của học viên");
 	});
 });

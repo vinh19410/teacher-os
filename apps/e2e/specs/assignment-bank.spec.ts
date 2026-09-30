@@ -99,6 +99,18 @@ test("bank lists prompts with filters, search, and preview", async ({
 		page.getByText("Đề này chưa giao lớp. Giao cho học viên ở trang"),
 	).toBeVisible();
 
+	// Xem trước (#282) → trang riêng góc nhìn học viên (?id=).
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview\?id=/);
+	// Title trong StudentPreviewPaper là <p class="font-display">, không phải heading.
+	await expect(page.getByText("QC-208 Bank Chart Draft").first()).toBeVisible();
+	await expect(page.getByText("Xem trước phía học viên").first()).toBeVisible();
+	await page.getByRole("button", { name: "Quay lại danh sách" }).click();
+	await expect(page).toHaveURL(/\/assignments$/);
+	await expect(
+		page.getByRole("heading", { name: "QC-208 Bank Discuss" }),
+	).toBeVisible();
+
 	// Persistence: reload keeps the list.
 	await page.reload();
 	await expect(

@@ -6,18 +6,90 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
-import { readPreviewDraft } from "@/lib/assignment-preview-draft";
+import {
+	type PreviewDraft,
+	readPreviewDraft,
+} from "@/lib/assignment-preview-draft";
+import { useData } from "@/lib/data-store";
+import type { AssignmentPrompt } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_auth/assignments/preview")({
+	validateSearch: (search: Record<string, unknown>): { id?: string } => ({
+		id: typeof search.id === "string" ? search.id : undefined,
+	}),
 	component: PreviewAssignmentRoute,
 });
 
+/** Bank mode (?id=) — map a saved prompt onto the preview draft shape.
+ * Field-for-field; `questions` doubles as `QuestionItem`
+ * (assignment-presets aliases the contract type). */
+function previewDraftFromPrompt(p: AssignmentPrompt): PreviewDraft {
+	return {
+		task: p.task,
+		genre: p.genre,
+		title: p.title,
+		band: p.band,
+		source: p.source,
+		prompt: p.prompt,
+		note: p.note ?? "",
+		status: p.status,
+		skill: p.skill,
+		part: p.part,
+		type: p.type,
+		passage: p.passage,
+		intro: p.intro,
+		transcript: p.transcript,
+		cueTopic: p.cueTopic,
+		cuePoints: p.cuePoints,
+		audioName: p.audioName,
+		imageUrl: p.imageUrl,
+		optionBank: p.optionBank,
+		items: p.questions,
+	};
+}
+
 export function PreviewAssignmentRoute() {
 	const navigate = useNavigate();
+	const { id } = Route.useSearch();
+	const { data } = useData();
+	// Bank mode (?id=) resolves a saved prompt from the snapshot; an explicit
+	// id must win over a stale composer draft still in sessionStorage.
+	const bankPrompt = id
+		? (data.assignmentPrompts.find((p) => p.id === id) ?? null)
+		: null;
 	// Read without clearing: reloading the preview keeps working; the create
 	// page consumes (takes) the snapshot on its own mount.
-	const [draft] = useState(() => readPreviewDraft());
+	const [storageDraft] = useState(() => readPreviewDraft());
+	const draft = bankPrompt ? previewDraftFromPrompt(bankPrompt) : storageDraft;
 	const [answer, setAnswer] = useState("");
+
+	if (id && !bankPrompt) {
+		return (
+			<div>
+				<PageHead
+					title="Xem trước bài tập"
+					lead="Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
+				/>
+				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
+					<h2 className="font-display font-semibold text-lg">
+						Không tìm thấy đề này.
+					</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+						Đề có thể đã bị xóa khỏi ngân hàng. Quay lại danh sách để chọn đề
+						khác.
+					</p>
+					<div className="mt-6 flex justify-center">
+						<Button
+							variant="secondary"
+							onClick={() => navigate({ to: "/assignments" })}
+						>
+							Quay lại danh sách
+						</Button>
+					</div>
+				</Card>
+			</div>
+		);
+	}
 
 	if (!draft) {
 		return (
@@ -58,14 +130,18 @@ export function PreviewAssignmentRoute() {
 				>
 					Bài tập
 				</Link>
-				<span aria-hidden="true">›</span>
-				<button
-					type="button"
-					onClick={() => navigate({ to: "/assignments/new" })}
-					className="underline-offset-[3px] hover:text-fg hover:underline"
-				>
-					Tạo mới
-				</button>
+				{!bankPrompt && (
+					<>
+						<span aria-hidden="true">›</span>
+						<button
+							type="button"
+							onClick={() => navigate({ to: "/assignments/new" })}
+							className="underline-offset-[3px] hover:text-fg hover:underline"
+						>
+							Tạo mới
+						</button>
+					</>
+				)}
 				<span aria-hidden="true">›</span>
 				<span>Xem trước</span>
 			</nav>
@@ -74,12 +150,21 @@ export function PreviewAssignmentRoute() {
 					title="Xem trước bài tập"
 					lead="Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
 				/>
-				<Button
-					variant="secondary"
-					onClick={() => navigate({ to: "/assignments/new" })}
-				>
-					Quay lại soạn đề
-				</Button>
+				{bankPrompt ? (
+					<Button
+						variant="secondary"
+						onClick={() => navigate({ to: "/assignments" })}
+					>
+						Quay lại danh sách
+					</Button>
+				) : (
+					<Button
+						variant="secondary"
+						onClick={() => navigate({ to: "/assignments/new" })}
+					>
+						Quay lại soạn đề
+					</Button>
+				)}
 			</div>
 
 			<div className="mt-5 flex flex-col gap-5">

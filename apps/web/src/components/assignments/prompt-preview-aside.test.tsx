@@ -5,6 +5,7 @@ vi.mock("@tanstack/react-router", () => ({
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
+	useNavigate: () => vi.fn(),
 }));
 
 import type { AssignmentPrompt } from "@/lib/mock-data";
@@ -183,5 +184,12 @@ describe("PromptPreviewAside — rich text render (rich text plan phase 4)", () 
 			/>,
 		);
 		expect(html).not.toContain("<p></p>");
+	});
+});
+
+describe("PromptPreviewAside — Xem trước CTA (#282)", () => {
+	it("renders the full-page preview button for the selected prompt", () => {
+		const html = renderToStaticMarkup(<PromptPreviewAside prompt={prompt()} />);
+		expect(html).toContain("Xem trước</button>");
 	});
 });

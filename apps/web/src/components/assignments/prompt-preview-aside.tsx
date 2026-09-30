@@ -1,6 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { Button } from "@/components/ui/button";
 import { RichTextBody } from "@/components/ui/rich-text-body";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
@@ -24,6 +25,7 @@ interface PromptPreviewAsideProps {
 }
 
 export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
+	const navigate = useNavigate();
 	const skillId = prompt.skill ?? "writing";
 	const partId = prompt.part ?? prompt.task ?? "task2";
 	const typeId = prompt.type ?? prompt.genre ?? "discuss";
@@ -218,6 +220,16 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				</Link>
 				.
 			</div>
+
+			<Button
+				variant="secondary"
+				className="mt-3 w-full"
+				onClick={() =>
+					navigate({ to: "/assignments/preview", search: { id: prompt.id } })
+				}
+			>
+				Xem trước
+			</Button>
 		</aside>
 	);
 }
