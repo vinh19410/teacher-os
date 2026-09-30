@@ -695,6 +695,23 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"note",
 			"note",
 		]);
+
+		// Review sau nộp: attempt detail mang type từng câu (header cụm dùng
+		// chung cấu trúc take).
+		await patchAnswer(attemptId, 0, "TRUE");
+		expect((await submit(attemptId)).status).toBe(200);
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+			"note",
+		]);
 	});
 
 	// code-review: pin malformed không tràn xuống wire — parsePin sanitize null.

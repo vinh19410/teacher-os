@@ -49,7 +49,7 @@ describe("QuizPaper — choice (tfng) full-row radio pills", () => {
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields()}
-				parts={buildQuizParts(questions)}
+				parts={buildQuizParts(questions, "tfng")}
 				answers={{}}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -70,7 +70,7 @@ describe("QuizPaper — choice (tfng) full-row radio pills", () => {
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields()}
-				parts={buildQuizParts(questions)}
+				parts={buildQuizParts(questions, "tfng")}
 				answers={{ 0: "FALSE" }}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -88,7 +88,7 @@ describe("QuizPaper — cloze input width theo GIÁ TRỊ học viên", () => {
 		const base = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields({ type: "shortans" })}
-				parts={buildQuizParts(questions)}
+				parts={buildQuizParts(questions, "tfng")}
 				answers={{}}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -100,7 +100,7 @@ describe("QuizPaper — cloze input width theo GIÁ TRỊ học viên", () => {
 		const filled = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields({ type: "shortans" })}
-				parts={buildQuizParts(questions)}
+				parts={buildQuizParts(questions, "tfng")}
 				answers={{ 0: "gluestick" }}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -131,7 +131,7 @@ describe("QuizPaper — pin questions trả lời qua PinOverlay", () => {
 					imageUrl: "https://example.com/map.png",
 					optionBank: ["Entrance", "Cafe", "Gate", "Desk"],
 				})}
-				parts={buildQuizParts(questions)}
+				parts={buildQuizParts(questions, "tfng")}
 				answers={{ 0: "A" }}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -150,7 +150,7 @@ describe("QuizPaper — không render answer key", () => {
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields({ type: "shortans" })}
-				parts={buildQuizParts([clozeQuestion("Name: ____")])}
+				parts={buildQuizParts([clozeQuestion("Name: ____")], "shortans")}
 				answers={{}}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -197,5 +197,83 @@ describe("questionChoiceRows — suy luận pills theo type + bank", () => {
 
 	it("type text (shortans/notes) → không pills (cloze input)", () => {
 		expect(rows({ opts: null }, "shortans", [])).toEqual([]);
+	});
+});
+
+describe("QuizPaper — header cụm theo type từng câu (#286)", () => {
+	const mixedQuestions: StudentQuizQuestion[] = [
+		{ stem: "T/F/NG statement 1", opts: null, pin: null, type: "tfng" },
+		{ stem: "T/F/NG statement 2", opts: null, pin: null, type: "tfng" },
+		{ stem: "Flow ____ one", opts: null, pin: null, type: "flowchart" },
+		{ stem: "Note ____ two", opts: null, pin: null },
+	];
+
+	function renderMixed() {
+		return renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					type: "note",
+					intro: "<p>Ghi chú riêng của giáo viên.</p>",
+				})}
+				parts={buildQuizParts(mixedQuestions, "note")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+	}
+
+	it("mỗi cụm có header Questions X–Y + nhãn dạng bài + instruction chuẩn", () => {
+		const html = renderMixed();
+		expect(html).toContain("Questions 1–2");
+		expect(html).toContain("True / False / Not Given");
+		expect(html).toContain(
+			"Do the following statements agree with the information given in the passage?",
+		);
+		expect(html).toContain("Questions 3");
+		expect(html).toContain("Flow-chart completion");
+		expect(html).toContain("Questions 4");
+		expect(html).toContain("Note completion");
+		// Section aria mô tả cụm.
+		expect(html).toContain(
+			'aria-label="Questions 1–2 · True / False / Not Given"',
+		);
+	});
+
+	it("câu tfng trong đề note có pill lựa chọn (hết lỗi không chỗ nhập)", () => {
+		const html = renderMixed();
+		expect(html).toContain('aria-label="Câu 1"');
+		expect(html).toContain('value="TRUE"');
+		expect(html).toContain('value="NOT GIVEN"');
+		// Câu note (type prompt) vẫn là cloze input.
+		expect(html).toContain('aria-label="Điền đáp án câu 4"');
+	});
+
+	it("intro prompt vẫn render 1 lần phía trên, không lặp theo cụm", () => {
+		const html = renderMixed();
+		expect(html.indexOf("Ghi chú riêng của giáo viên.")).toBeGreaterThanOrEqual(
+			0,
+		);
+		expect((html.match(/Ghi chú riêng của giáo viên\./g) ?? []).length).toBe(1);
+	});
+
+	it("đề cũ 1 type hiển thị 1 header cụm duy nhất", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[
+						{ stem: "s1", opts: null, pin: null },
+						{ stem: "s2", opts: null, pin: null },
+					],
+					"tfng",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Questions 1–2");
+		expect(html).toContain("True / False / Not Given");
 	});
 });

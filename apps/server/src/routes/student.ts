@@ -1183,6 +1183,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.select({
 				title: classAssignment.title,
 				note: assignmentPrompt.note,
+				type: assignmentPrompt.type,
 			})
 			.from(classAssignment)
 			.innerJoin(
@@ -1202,6 +1203,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			grade,
 			title: header?.title ?? "",
 			note: header?.note ?? "",
+			promptType: header?.type ?? "",
 		};
 	};
 
@@ -1259,7 +1261,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, note } = loaded;
+		const { attempt, questions, answers, grade, title, note, promptType } =
+			loaded;
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1277,6 +1280,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				return {
 					stem: question.stem,
 					opts: question.opts,
+					// Type hiệu dụng như take payload — review screen phân cụm cùng
+					// cấu trúc bài làm.
+					type: question.type ?? promptType,
 					pin: question.pin ?? null,
 					key: question.answer,
 					alts: question.alts,

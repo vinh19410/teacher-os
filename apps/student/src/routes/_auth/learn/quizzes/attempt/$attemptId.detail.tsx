@@ -67,9 +67,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	const quizQuery = useStudentQuizDetail(attempt.assignmentId);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 
+	// Attempt detail đã mang type từng câu (server resolve fallback
+	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
 	const parts = useMemo(
-		() => buildQuizParts(attempt.questions),
-		[attempt.questions],
+		() => buildQuizParts(attempt.questions, quizQuery.data?.type ?? ""),
+		[attempt.questions, quizQuery.data?.type],
 	);
 	const answers = useMemo(
 		() =>

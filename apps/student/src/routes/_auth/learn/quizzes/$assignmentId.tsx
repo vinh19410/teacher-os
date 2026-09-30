@@ -129,8 +129,8 @@ function QuizTakePage() {
 	storeRef.current = store;
 
 	const parts = useMemo(
-		() => buildQuizParts(detail?.questions ?? []),
-		[detail?.questions],
+		() => buildQuizParts(detail?.questions ?? [], detail?.type ?? ""),
+		[detail?.questions, detail?.type],
 	);
 	const allQuestions = useMemo(
 		() => parts.flatMap((part) => part.questions),
