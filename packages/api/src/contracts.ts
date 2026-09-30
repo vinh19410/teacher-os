@@ -808,7 +808,14 @@ export const assignmentPromptCreateSchema =
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
 		// ≥ questions / label-in-bank / sentend-distinct rules gate `ready`
 		// only — drafts may carry a partial bank while the teacher is keying.
-		if (!isOptionBankable(value.skill, value.type)) {
+		// #286: đề trộn dạng — bank áp khi type ĐỀ hoặc bất kỳ CÂU bankable
+		// (`optionBankKindFor`); câu tự do trong đề trộn không bị ép nhãn.
+		const bankKind = optionBankKindFor(
+			value.skill,
+			value.type,
+			value.questions.map((question) => question.type),
+		);
+		if (!bankKind) {
 			if (value.optionBank.length > 0)
 				ctx.addIssue({
 					code: "custom",
@@ -817,24 +824,28 @@ export const assignmentPromptCreateSchema =
 				});
 		} else if (value.status === "ready") {
 			const { optionBank } = value;
-			if (optionBank.length < 2 || optionBank.length < value.questions.length)
+			// Chỉ những câu có kind hiệu dụng trùng bankKind dùng bank này.
+			const bankQuestions = value.questions
+				.map((question, index) => ({ question, index }))
+				.filter(
+					({ question }) =>
+						answerKindByType[question.type ?? value.type] === bankKind,
+				);
+			if (optionBank.length < 2 || optionBank.length < bankQuestions.length)
 				ctx.addIssue({
 					code: "custom",
 					path: ["optionBank"],
-					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every question`,
+					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
 				});
-			if (value.questions.length > ASSIGNMENT_OPTION_BANK_MAX)
+			if (bankQuestions.length > ASSIGNMENT_OPTION_BANK_MAX)
 				ctx.addIssue({
 					code: "custom",
 					path: ["questions"],
 					message: `bankable types allow at most ${ASSIGNMENT_OPTION_BANK_MAX} questions (label alphabet size)`,
 				});
-			const bankKind = answerKindByType[value.type];
-			const labels = bankKind
-				? ASSIGNMENT_ANSWER_CHOICES[bankKind]
-				: ASSIGNMENT_ANSWER_CHOICES.letter;
+			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
 			const used = new Set<string>();
-			for (const [index, question] of value.questions.entries()) {
+			for (const { question, index } of bankQuestions) {
 				if (!question.answer.trim()) continue;
 				const labelIndex = labels.indexOf(question.answer as never);
 				if (labelIndex < 0 || labelIndex >= optionBank.length)
@@ -843,7 +854,7 @@ export const assignmentPromptCreateSchema =
 						path: ["questions", index, "answer"],
 						message: "answer must be a label inside the option bank",
 					});
-				if (value.type === "sentend") {
+				if ((question.type ?? value.type) === "sentend") {
 					// Formal-format rule: sentend uses each option exactly once;
 					// features and the other matching kinds may reuse labels.
 					if (used.has(question.answer))
@@ -880,10 +891,15 @@ export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
 				path: ["imageUrl"],
 				message: "imageUrl must be an https URL",
 			});
-		const kind = value.type ? answerKindByType[value.type] : undefined;
-		if (kind && value.questions) {
-			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+		// Answer-choice theo type HIỆU DỤNG từng câu (mirror create — #286):
+		// ép kind của type prompt lên mọi câu sẽ false-reject đề trộn dạng
+		// (prompt tfng + câu note answer tự do) ngay tại schema, mù field.
+		if (value.questions) {
 			for (const [index, question] of value.questions.entries()) {
+				const kind =
+					answerKindByType[question.type ?? value.type ?? ""] ?? null;
+				if (!kind) continue;
+				const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
 				if (question.answer && !choices.includes(question.answer as never))
 					ctx.addIssue({
 						code: "custom",

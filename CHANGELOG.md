@@ -13,6 +13,12 @@ Quy ước khi cập nhật:
 ## 2026-09-30
 
 ### Added
+- Redesign trang làm bài quiz học viên theo cấu trúc đề thi thật (#286): đề reading chia 2 pane cạnh nhau ở viewport ≥ lg (bài đọc trái, bài làm phải, mỗi pane cuộn độc lập; màn hẹp xếp chồng 1 cột như cũ) áp cho cả take lẫn review screen; mỗi cụm câu hỏi có header `Questions X–Y` + nhãn dạng bài + instruction chuẩn IELTS đặt ngay phía trên cụm thay vì gom 1 khối ở đầu trang
+- `type` per-question (optional, fallback `prompt.type`) trong contract authoring + payload student (#286): giáo viên trộn nhiều dạng câu trong 1 prompt qua select dạng bài từng hàng trong answer-key grid (widget/answer key thích ứng theo type câu); câu T/F/NG nhét trong prompt cloze giờ có pill lựa chọn (hết lỗi không có chỗ nhập đáp án)
+- `QUIZ_TYPE_DISPLAY` + `quizTypeDisplay()` trong `packages/api/contracts` (#286): map type → label + instruction EN chuẩn IELTS dùng chung authoring/take/review, type lạ fallback không crash
+- Option bank hiển thị khi type đề HOẶC bất kỳ câu bankable qua helper dùng chung `optionBankKindFor()` (#286) — cụm bankable trong prompt không-bankable không còn "choose from the option bank" mà thiếu bank
+
+### Added
 - Rich text cho luồng tạo bài tập: 7 field soạn nội dung (5 Textarea `PromptComposer`: prompt writing/passage/transcript/prompt speaking/note + intro `QuestionKeyEditor` + description `TestHeaderForm`) chuyển sang Tiptap v3 — toolbar In đậm/In nghiêng/Gạch chân/Danh sách/Liên kết, placeholder tiếng Việt, autosave draft giữ nguyên; `cuePoints` giữ plain text (semantics mỗi dòng 1 ý) (#280)
 - `richTextField` trong `packages/api/src/rich-text.ts`: cap nội dung đo trên plain text đã strip thẻ + collapse whitespace, raw cap ×2.5 bảo vệ vận chuyển — contract zod `.strict()` và cột SQLite giữ nguyên shape string
 - `RichTextBody` — render sink duy nhất đi qua DOMPurify (allowlist thẻ/attr chặt, hook ép `a` mở tab mới `rel="noopener noreferrer"`); hàng plain cũ tự phát hiện và render y hệt trước kia (pre-line/pre-wrap), không data migration
@@ -30,6 +36,8 @@ Quy ước khi cập nhật:
 - Preview giáo viên/học viên + tab Lớp học render rich qua `RichTextBody`; chip "Chèn câu lệnh chuẩn" nhận diện hint đã có qua plain text (không confirm oan lần 2)
 
 ### Fixed
+- Kernel snapshot `parseQuestions` + bridge `composerFromPrompt` giờ forward `type` per-question (#286): trước đó edit/Apply đề trộn dạng qua test-builder xoá âm thầm toàn bộ type đã soạn (data loss)
+- PATCH `/api/assignments/prompts/:id` mirror validation của create cho per-question type: type câu phải thuộc catalog part, answer-choice kiểm theo type hiệu dụng của câu (#286)
 - E2E full-test builder: đợi URL edit thật sau "Tạo bộ đề" — regex cũ `/tests/[^/]+` khớp cả `/tests/new` khiến "Xem trước" đua với navigate của submit đang treo (#280)
 
 ## 2026-09-28

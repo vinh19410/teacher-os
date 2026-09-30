@@ -310,3 +310,139 @@ describe("QUIZ_TYPE_DISPLAY — shared display metadata", () => {
 		}
 	});
 });
+
+describe("assignmentPromptCreateSchema — option bank cho đề trộn dạng (#286)", () => {
+	const readingBase = {
+		...readingP1Draft,
+		status: "ready",
+		passage: "<p>Passage body</p>",
+	} as const;
+
+	it("chấp nhận bank khi CÂU bankable trong prompt không-bankable", () => {
+		// p1 không có type bankable nào — mượn cấu trúc p2: prompt summary
+		// (không bankable) + câu headings (bankable, roman).
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "summary",
+			optionBank: ["Tiêu đề I", "Tiêu đề II"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+					type: "headings",
+				},
+				{
+					stem: "Gap ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("câu tự do trong đề bankable không bị ép nhãn bank", () => {
+		// Prompt headings (bankable) + câu summary free-text answer — schema
+		// cũ ép mọi câu vào nhãn i–viii → 400 mù.
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "headings",
+			optionBank: ["Tiêu đề I", "Tiêu đề II"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+				},
+				{
+					stem: "Gap ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: "summary",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("vẫn từ chối bank khi không đề nào lẫn câu nào bankable", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			optionBank: ["Không hợp lệ"],
+			questions: [typedQuestion("note")],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("optionBank");
+		}
+	});
+
+	it("bank ready phải phủ đủ số câu bankable (không tính câu tự do)", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "summary",
+			optionBank: ["Chỉ một mục"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+					type: "headings",
+				},
+				{
+					stem: "Paragraph B",
+					opts: null,
+					answer: "ii",
+					alts: "",
+					type: "headings",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("optionBank");
+		}
+	});
+});
+
+describe("assignmentPromptUpdateSchema — answer choice theo type từng câu (#286)", () => {
+	it("không ép choice của prompt type lên câu khác type", () => {
+		// Payload client thật: type prompt tfng + câu note answer tự do —
+		// schema cũ reject "river" ∉ [TRUE/FALSE/NOT GIVEN] mù field.
+		const result = assignmentPromptUpdateSchema.safeParse({
+			type: "tfng",
+			questions: [
+				{ stem: "S1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+				{
+					stem: "S2 ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: "note",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("vẫn chặn answer sai kind của chính câu đó", () => {
+		const result = assignmentPromptUpdateSchema.safeParse({
+			type: "tfng",
+			questions: [
+				{ stem: "S1", opts: null, answer: "maybe", alts: "", type: "tfng" },
+			],
+		});
+		expect(result.success).toBe(false);
+	});
+});

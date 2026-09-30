@@ -5585,6 +5585,29 @@ describe("assignment prompt bank (issue #202)", () => {
 			});
 			expect(badChoice.status).toBe(400);
 
+			// PATCH kiểu client THẬT (Apply/edit luôn gửi type prompt + full
+			// questions): đề prompt note + câu tfng answer hợp lệ KHÔNG bị
+			// superRefine ép choice của prompt type lên mọi câu (finding re-run
+			// #1 — schema cũ false-reject payload này mù field).
+			const realClient = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					type: "note",
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				},
+			});
+			expect(realClient.status).toBe(200);
+
 			// PATCH hợp lệ: type câu thuộc catalog + answer hợp kind → persist.
 			const good = await t.call(`/api/assignments/prompts/${id}`, {
 				session: orgA,
