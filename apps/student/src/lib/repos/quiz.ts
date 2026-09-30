@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type QuizAttemptDetail,
+	type QuizAttemptSummary,
+	quizAttemptDetailSchema,
+	quizAttemptSummarySchema,
 	type QuizSubmitResult,
 	quizSubmitResultSchema,
 	type StudentQuizDetail,
@@ -126,4 +130,58 @@ export async function submitQuizAttempt(
 		{ method: "POST", body: JSON.stringify({}) },
 		(raw) => quizSubmitResultSchema.parse(raw),
 	);
+}
+
+/**
+ * GET /api/student/attempts/:attemptId — summary sau nộp. 409 khi attempt
+ * còn `in_progress` (RT#6) — route loader bắt HttpError status 409 để
+ * redirect, không bao giờ render partial.
+ */
+export async function fetchAttemptSummary(
+	attemptId: string,
+): Promise<QuizAttemptSummary> {
+	return request(
+		`/api/student/attempts/${encodeURIComponent(attemptId)}`,
+		{ method: "GET" },
+		(raw) => quizAttemptSummarySchema.parse(raw),
+	);
+}
+
+export function attemptSummaryQueryOptions(attemptId: string) {
+	return {
+		queryKey: ["student", "attempt", attemptId] as const,
+		queryFn: () => fetchAttemptSummary(attemptId),
+		staleTime: 60_000,
+	};
+}
+
+export function useAttemptSummary(attemptId: string) {
+	return useQuery(attemptSummaryQueryOptions(attemptId));
+}
+
+/**
+ * GET /api/student/attempts/:attemptId/detail — review đầy đủ: questions từ
+ * snapshot (RT#3) + key/alts/verdict/đáp án học viên + `note` (withhold ở
+ * take, chỉ reveal sau submit). Cùng gate 409 in_progress như summary.
+ */
+export async function fetchAttemptDetail(
+	attemptId: string,
+): Promise<QuizAttemptDetail> {
+	return request(
+		`/api/student/attempts/${encodeURIComponent(attemptId)}/detail`,
+		{ method: "GET" },
+		(raw) => quizAttemptDetailSchema.parse(raw),
+	);
+}
+
+export function attemptDetailQueryOptions(attemptId: string) {
+	return {
+		queryKey: ["student", "attempt", attemptId, "detail"] as const,
+		queryFn: () => fetchAttemptDetail(attemptId),
+		staleTime: 60_000,
+	};
+}
+
+export function useAttemptDetail(attemptId: string) {
+	return useQuery(attemptDetailQueryOptions(attemptId));
 }

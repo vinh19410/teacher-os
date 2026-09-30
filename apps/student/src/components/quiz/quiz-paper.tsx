@@ -15,6 +15,7 @@ import {
 	QuizQuestionItem,
 	questionChoiceRows,
 } from "@/components/quiz/quiz-question-item";
+import type { QuizReviewInfo } from "@/components/quiz/quiz-review-item";
 import type { QuizPart, QuizPartQuestion } from "@/lib/quiz-parts";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
@@ -47,6 +48,8 @@ export function QuizPaper({
 	answers,
 	onAnswer,
 	currentQuestion,
+	mode = "take",
+	review,
 }: {
 	detail: QuizPaperDetail;
 	parts: QuizPart[];
@@ -55,7 +58,12 @@ export function QuizPaper({
 	onAnswer: (q: number, value: string) => void;
 	/** Câu đang được highlight từ navigator (null = không câu nào). */
 	currentQuestion: number | null;
+	/** review = chấm xong: input disabled, giá trị = đáp án học viên. */
+	mode?: "take" | "review";
+	/** Dữ liệu review theo `q` (chip verdict + đáp án + giải thích). */
+	review?: Record<number, QuizReviewInfo>;
 }) {
+	const reviewMode = mode === "review";
 	const skill = detail.skill;
 	const typeId = detail.type;
 	const isAuto = skill === "reading" || skill === "listening";
@@ -79,6 +87,19 @@ export function QuizPaper({
 				: questionChoiceRows(question, typeId, detail.optionBank),
 		);
 	}
+	// PinOverlay đòi AssignmentQuestion (answer/alts required ở authoring side)
+	// nhưng chỉ ĐỌC `pin` + key answers theo OFFSET trong mảng — nên phải truyền
+	// ĐỦ questions (không lọc pin), qStart=1: offset == q == key answers map.
+	const pinOverlay = hasPins ? (
+		<PinOverlay
+			imageUrl={diagramImageUrl}
+			items={questions as unknown as AssignmentQuestion[]}
+			qStart={1}
+			answers={answers}
+			onAnswer={reviewMode ? () => undefined : onAnswer}
+			imageAlt="Ảnh đề bài"
+		/>
+	) : null;
 
 	return (
 		<article className="flex flex-col gap-4">
@@ -101,18 +122,15 @@ export function QuizPaper({
 
 			{diagramImageUrl &&
 				(hasPins ? (
-					<PinOverlay
-						imageUrl={diagramImageUrl}
-						// PinOverlay đòi AssignmentQuestion (answer/alts required ở
-						// authoring side) nhưng chỉ ĐỌC `pin` + key answers theo OFFSET
-						// trong mảng — nên phải truyền ĐỦ questions (không lọc pin),
-						// qStart=1: offset == q == key answers map.
-						items={questions as unknown as AssignmentQuestion[]}
-						qStart={1}
-						answers={answers}
-						onAnswer={onAnswer}
-						imageAlt="Ảnh đề bài"
-					/>
+					// Review: fieldset disabled khoá toàn bộ input pin; onAnswer vẫn
+					// truyền để PinOverlay giữ controlled value (đáp án học viên).
+					reviewMode ? (
+						<fieldset disabled className="m-0 border-0 p-0">
+							{pinOverlay}
+						</fieldset>
+					) : (
+						pinOverlay
+					)
 				) : (
 					<img
 						src={diagramImageUrl}
@@ -166,6 +184,8 @@ export function QuizPaper({
 									answers={answers}
 									onAnswer={onAnswer}
 									current={currentQuestion === question.q}
+									mode={mode}
+									review={review?.[question.q]}
 								/>
 							))}
 						</div>

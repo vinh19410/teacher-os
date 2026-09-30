@@ -6,6 +6,10 @@ import {
 import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
 import { cn } from "@/lib/cn";
 import type { QuizPartQuestion } from "@/lib/quiz-parts";
+import {
+	type QuizReviewInfo,
+	QuizReviewItem,
+} from "@/components/quiz/quiz-review-item";
 
 /** Một hàng lựa chọn: label vị trí (A/i…) hoặc text thuần (TRUE/FALSE…). */
 export interface QuizChoiceRow {
@@ -51,6 +55,8 @@ export function QuizQuestionItem({
 	answers,
 	onAnswer,
 	current,
+	mode = "take",
+	review,
 }: {
 	question: QuizPartQuestion;
 	/** [] → câu cloze (input inline); >0 → radiogroup pill rows. */
@@ -59,7 +65,12 @@ export function QuizQuestionItem({
 	answers: Record<number, string>;
 	onAnswer: (q: number, value: string) => void;
 	current: boolean;
+	/** review = chấm xong: fieldset disabled khoá mọi input của câu. */
+	mode?: "take" | "review";
+	/** Dữ liệu review của câu — chỉ render khi mode="review". */
+	review?: QuizReviewInfo;
 }) {
+	const reviewMode = mode === "review";
 	const value = answers[question.q] ?? "";
 	return (
 		<fieldset
@@ -67,6 +78,9 @@ export function QuizQuestionItem({
 			tabIndex={-1}
 			aria-label={`Câu ${question.number}`}
 			data-question={question.q}
+			// disabled fieldset chặn radio + cloze input của câu mà không cần
+			// đụng vào widget trong @teacher-os/ui (ClozeStemText/PinOverlay).
+			disabled={reviewMode}
 			className={cn(
 				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
 				current
@@ -100,10 +114,12 @@ export function QuizQuestionItem({
 							<label
 								key={row.value}
 								className={cn(
-									"flex cursor-pointer items-center gap-2.5 rounded-md border px-3 py-2 transition-colors",
+									"flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors",
+									reviewMode ? "cursor-default" : "cursor-pointer",
 									selected
 										? "border-accent-blue bg-accent-soft"
-										: "border-line bg-bg hover:border-fg-2",
+										: "border-line bg-bg",
+									!reviewMode && !selected && "hover:border-fg-2",
 								)}
 							>
 								<input
@@ -125,6 +141,7 @@ export function QuizQuestionItem({
 					})}
 				</div>
 			)}
+			{reviewMode && review && <QuizReviewItem info={review} />}
 		</fieldset>
 	);
 }
