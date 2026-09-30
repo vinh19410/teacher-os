@@ -44,17 +44,17 @@ trang, không mang lại giá trị thêm vì trang đích đã tồn tại.
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Bank-mode preview route](./phase-01-bank-mode-preview-route.md) | Pending |
-| 2 | [Nút Xem trước và e2e](./phase-02-preview-button-and-e2e.md) | Pending |
+| 1 | [Bank-mode preview route](./phase-01-bank-mode-preview-route.md) | Done |
+| 2 | [Nút Xem trước và e2e](./phase-02-preview-button-and-e2e.md) | Done |
 
 ## Success Criteria
 
-- [ ] Chọn đề bất kỳ ở `/assignments` → nút "Xem trước" xuất hiện trong aside; bấm → URL `/assignments/preview?id=<promptId>` → trang render `StudentPreviewPaper` với đầy đủ nội dung đề đã lưu (đề reading: passage, image, bank, câu hỏi; writing: prompt + answer sheet mô phỏng; số từ hoạt động).
-- [ ] Breadcrumb bank mode `Bài tập › Xem trước`; nút back "Quay lại danh sách" trả về `/assignments`.
-- [ ] `?id=` không hợp lệ → empty state trung thực + link về `/assignments` (không trắng trang, không crash).
-- [ ] `?id=` hiện diện → ưu tiên đề theo id, draft cũ trong sessionStorage không được phép chiếm trang.
-- [ ] Không có `?id=` → hành vi draft mode hiện tại giữ nguyên (test hiện có pass).
-- [ ] `pnpm --filter web run test` pass toàn bộ; e2e `assignment-bank.spec.ts` pass.
+- [x] Chọn đề bất kỳ ở `/assignments` → nút "Xem trước" xuất hiện trong aside; bấm → URL `/assignments/preview?id=<promptId>` → trang render `StudentPreviewPaper` với đầy đủ nội dung đề đã lưu (đề reading: passage, image, bank, câu hỏi; writing: prompt + answer sheet mô phỏng; số từ hoạt động).
+- [x] Breadcrumb bank mode `Bài tập › Xem trước`; nút back "Quay lại danh sách" trả về `/assignments`.
+- [x] `?id=` không hợp lệ → empty state trung thực + link về `/assignments` (không trắng trang, không crash).
+- [x] `?id=` hiện diện → ưu tiên đề theo id, draft cũ trong sessionStorage không được phép chiếm trang.
+- [x] Không có `?id=` → hành vi draft mode hiện tại giữ nguyên (test hiện có pass).
+- [x] `pnpm --filter web run test` pass toàn bộ; e2e `assignment-bank.spec.ts` pass.
 
 ## Dependencies
 

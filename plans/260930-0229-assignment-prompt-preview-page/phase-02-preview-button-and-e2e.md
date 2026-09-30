@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Nút Xem trước trên /assignments + e2e"
-status: todo
+status: done
 priority: P1
 effort: "2h"
 dependencies: [1]

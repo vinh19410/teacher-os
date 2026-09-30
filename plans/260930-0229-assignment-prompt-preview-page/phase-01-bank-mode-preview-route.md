@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Bank-mode preview route (?id=)"
-status: todo
+status: done
 priority: P1
 effort: "2h"
 dependencies: []
