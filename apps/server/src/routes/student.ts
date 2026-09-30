@@ -22,6 +22,7 @@ import {
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
@@ -42,7 +43,6 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
-import { gradeQuiz } from "../lib/grade-quiz";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";

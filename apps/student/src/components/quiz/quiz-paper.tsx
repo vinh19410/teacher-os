@@ -6,6 +6,10 @@ import {
 	isOptionBankable,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
+import type {
+	QuizPart,
+	QuizPartQuestion,
+} from "@teacher-os/api/lib/quiz-parts";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
 import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
@@ -16,7 +20,6 @@ import {
 	questionChoiceRows,
 } from "@/components/quiz/quiz-question-item";
 import type { QuizReviewInfo } from "@/components/quiz/quiz-review-item";
-import type { QuizPart, QuizPartQuestion } from "@/lib/quiz-parts";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<

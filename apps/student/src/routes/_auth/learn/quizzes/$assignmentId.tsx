@@ -1,5 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+	buildQuizParts,
+	isAnsweredValue,
+} from "@teacher-os/api/lib/quiz-parts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
@@ -18,7 +22,6 @@ import {
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
-import { buildQuizParts, isAnsweredValue } from "@/lib/quiz-parts";
 import {
 	patchQuizAnswer,
 	quizDetailQueryOptions,

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import type { QuizAttemptDetail, QuizVerdict } from "@teacher-os/api/contracts";
+import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { useEffect, useMemo, useState } from "react";
 import Loader from "@/components/loader";
@@ -9,7 +10,6 @@ import { QuizPaper } from "@/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
-import { buildQuizParts } from "@/lib/quiz-parts";
 import {
 	attemptDetailQueryOptions,
 	quizDetailQueryOptions,

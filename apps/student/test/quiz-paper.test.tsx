@@ -1,4 +1,5 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { QuizPaper } from "@/components/quiz/quiz-paper";
@@ -6,7 +7,6 @@ import {
 	type QuizChoiceRow,
 	questionChoiceRows,
 } from "@/components/quiz/quiz-question-item";
-import { buildQuizParts } from "@/lib/quiz-parts";
 
 type PaperFields = Parameters<typeof QuizPaper>[0]["detail"];
 

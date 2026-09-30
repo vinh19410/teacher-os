@@ -1,11 +1,11 @@
 import type { QuizVerdict } from "@teacher-os/api/contracts";
-import { useEffect, useState } from "react";
-import { cn } from "@/lib/cn";
 import {
 	countAnswered,
 	isAnsweredValue,
 	type QuizPart,
-} from "@/lib/quiz-parts";
+} from "@teacher-os/api/lib/quiz-parts";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
 
 /** Nút số câu tô màu theo verdict (review mode) thay vì theo answered. */
 const VERDICT_BUTTON_CLASSES: Record<QuizVerdict, string> = {
