@@ -19,6 +19,8 @@ export interface QuizSeedQuestion {
 	opts: string[] | null;
 	answer: string;
 	alts: string;
+	/** Dạng bài riêng của câu (đề trộn dạng) — fallback type prompt. */
+	type?: string;
 }
 
 export interface QuizSeedPrompt {

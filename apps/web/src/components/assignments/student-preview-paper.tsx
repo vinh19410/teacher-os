@@ -47,9 +47,15 @@ export function StudentPreviewPaper(props: {
 	const isAuto = skillId === "reading" || skillId === "listening";
 	// FR6: bankable matching types show the structured bank; an empty bank
 	// (legacy prompts) falls back to the intro text AND warns — never silent.
-	const bankable = isBankableType(skillId, typeId);
+	// Đề trộn dạng: bank hiện khi type đề HOẶC bất kỳ câu bankable (#286).
+	const bankTypeId = isBankableType(skillId, typeId)
+		? typeId
+		: ((props.items ?? []).find(
+				(item) => item.type && isBankableType(skillId, item.type),
+			)?.type ?? null);
+	const bankable = bankTypeId !== null;
 	const bank = props.optionBank ?? [];
-	const bankKind = kindOf(typeId);
+	const bankKind = kindOf(bankTypeId ?? typeId);
 	// The preview draft never passes the server contract — this renderer is
 	// the only guard, so verify the scheme here before any <img> exists.
 	const rawImageUrl = props.imageUrl?.trim() ?? "";
@@ -124,7 +130,9 @@ export function StudentPreviewPaper(props: {
 								<ClozeStemText
 									stem={item.stem}
 									answer={item.answer}
-									typeId={typeId}
+									// Widget theo type TỪNG CÂU (đề trộn dạng) — câu không
+									// khai type đi theo dạng đề.
+									typeId={item.type ?? typeId}
 									number={(part.qStart ?? 1) + index}
 								/>
 							) : (

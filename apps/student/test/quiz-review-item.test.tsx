@@ -133,7 +133,7 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields()}
-				parts={buildQuizParts(tfngQuestions)}
+				parts={buildQuizParts(tfngQuestions, "tfng")}
 				answers={{ 0: "TRUE", 1: "" }}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -157,9 +157,10 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields({ type: "shortans" })}
-				parts={buildQuizParts([
-					{ stem: "The river ____ the city.", opts: null, pin: null },
-				])}
+				parts={buildQuizParts(
+					[{ stem: "The river ____ the city.", opts: null, pin: null }],
+					"shortans",
+				)}
 				answers={{ 0: "gluestick" }}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -183,7 +184,7 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields()}
-				parts={buildQuizParts(tfngQuestions)}
+				parts={buildQuizParts(tfngQuestions, "tfng")}
 				answers={{}}
 				onAnswer={() => undefined}
 				currentQuestion={null}
@@ -196,7 +197,7 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 });
 
 describe("QuizNavigator mode=review — nút số câu tô màu theo verdict", () => {
-	const parts = buildQuizParts(tfngQuestions);
+	const parts = buildQuizParts(tfngQuestions, "tfng");
 
 	it("màu theo verdict + status line đếm đúng/sai/bỏ qua", () => {
 		const html = renderToStaticMarkup(

@@ -137,40 +137,51 @@ export function optionBankIssue(
 	value: ComposerValue,
 	status: "draft" | "ready",
 ): string | null {
-	if (!isBankableType(value.skill, value.type)) return null;
+	// #286 đề trộn dạng: bank áp khi type ĐỀ hoặc bất kỳ CÂU bankable —
+	// mirror `optionBankKindFor` của contract (prompt-first, rồi câu đầu).
+	const bankTypeId = isBankableType(value.skill, value.type)
+		? value.type
+		: (value.items.find(
+				(item) => item.type && isBankableType(value.skill, item.type),
+			)?.type ?? null);
+	if (!bankTypeId) return null;
 	if (value.optionBank.length > ASSIGNMENT_OPTION_BANK_MAX)
 		return `Ngân hàng lựa chọn tối đa ${ASSIGNMENT_OPTION_BANK_MAX} mục.`;
 	if (value.optionBank.some((row) => !row.trim() || row.trim().length > 200))
 		return "Ngân hàng lựa chọn: điền nội dung cho mọi mục (1–200 ký tự).";
 	if (status !== "ready") return null;
+	// Chỉ các câu có kind hiệu dụng trùng bank mới dùng bank này — câu tự do
+	// trong đề trộn không bị ép nhãn.
+	const kind = kindOf(bankTypeId);
+	const bankItems = value.items.filter(
+		(item) => kindOf(item.type ?? value.type) === kind,
+	);
 	if (value.optionBank.length < 2)
 		return "Ngân hàng lựa chọn cần tối thiểu 2 mục trước khi lưu sẵn sàng giao.";
-	if (value.items.length > ASSIGNMENT_OPTION_BANK_MAX)
+	if (bankItems.length > ASSIGNMENT_OPTION_BANK_MAX)
 		// Root cause first: more questions than labels can never be covered.
 		return `Dạng này tối đa ${ASSIGNMENT_OPTION_BANK_MAX} câu — số nhãn chỉ có ${ASSIGNMENT_OPTION_BANK_MAX} giá trị.`;
-	if (value.optionBank.length < value.items.length)
-		return `Ngân hàng lựa chọn phải phủ đủ ${value.items.length} câu.`;
-	const kind = kindOf(value.type);
+	if (value.optionBank.length < bankItems.length)
+		return `Ngân hàng lựa chọn phải phủ đủ ${bankItems.length} câu.`;
 	const labels =
 		kind === "letter" || kind === "roman"
 			? ASSIGNMENT_ANSWER_CHOICES[kind]
 			: null;
 	if (labels) {
-		for (const item of value.items) {
+		for (const item of bankItems) {
 			if (!item.answer.trim()) continue;
 			const labelIndex = labels.indexOf(item.answer as never);
 			if (labelIndex < 0 || labelIndex >= value.optionBank.length)
 				return `Đáp án “${item.answer}” nằm ngoài Ngân hàng lựa chọn — khóa lại theo nhãn hiện có.`;
 		}
 	}
-	if (value.type === "sentend") {
-		const used = new Set<string>();
-		for (const item of value.items) {
-			if (!item.answer.trim()) continue;
-			if (used.has(item.answer))
-				return "Matching sentence endings: mỗi nhãn chỉ dùng cho đúng một câu.";
-			used.add(item.answer);
-		}
+	const used = new Set<string>();
+	for (const item of bankItems) {
+		if ((item.type ?? value.type) !== "sentend") continue;
+		if (!item.answer.trim()) continue;
+		if (used.has(item.answer))
+			return "Matching sentence endings: mỗi nhãn chỉ dùng cho đúng một câu.";
+		used.add(item.answer);
 	}
 	return null;
 }

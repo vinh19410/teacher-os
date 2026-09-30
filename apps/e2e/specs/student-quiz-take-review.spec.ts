@@ -44,8 +44,12 @@ const QUIZ_LEAK_STRINGS = [
 let fixture: QuizFixture;
 let assignmentMcqId = "";
 let assignmentClozeId = "";
+let assignmentMixedId = "";
 const titleMcq = "Trắc nghiệm đọc: Một ngày của An";
 const titleCloze = "Đọc điền từ: Trái cây lạ";
+const titleMixed = "Đề trộn dạng: Hồ Gươm";
+const titleLegacy = "Đề 1 dạng: Tháp Rùa";
+const titleSplit = "Đề dài: Hồ Gươm bản đầy đủ";
 
 interface CapturedJson {
 	url: string;
@@ -203,10 +207,94 @@ test.beforeAll(async ({ browser }) => {
 					},
 				],
 			},
+			{
+				// #286 — đề trộn dạng trong 1 prompt: cụm tfng (1–2) + note (3–4).
+				title: titleMixed,
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				note: "Đề trộn dạng để kiểm tra header cụm.",
+				passage:
+					"<p>Hồ Gươm nằm ở trung tâm Hà Nội. Xung quanh hồ có nhiều cây xanh cổ thụ.</p>",
+				intro: "<p>Ghi chú: đọc kỹ đoạn văn trước khi làm bài.</p>",
+				questions: [
+					{
+						stem: "Hồ Gươm nằm ở ngoại thành Hà Nội.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+						type: "tfng",
+					},
+					{
+						stem: "Xung quanh hồ có cây xanh.",
+						opts: null,
+						answer: "TRUE",
+						alts: "",
+						type: "tfng",
+					},
+					{
+						stem: "Hồ này được đặt tên là ____.",
+						opts: null,
+						answer: "Gươm",
+						alts: "",
+					},
+					{
+						stem: "Xung quanh hồ có nhiều cây ____.",
+						opts: null,
+						answer: "xanh",
+						alts: "cổ thụ",
+					},
+				],
+			},
+			{
+				// #286 — đề legacy 1 type dành riêng cho test header đơn (các đề
+				// khác bị test trước nộp hết, link đổi sang "Xem lại kết quả").
+				title: titleLegacy,
+				skill: "reading",
+				part: "p1",
+				type: "shortans",
+				note: "Đề 1 dạng.",
+				passage: "<p>Tháp Rùa nằm giữa Hồ Gươm.</p>",
+				questions: [
+					{
+						stem: "Tháp Rùa nằm ở đâu?",
+						opts: null,
+						answer: "Hồ Gươm",
+						alts: "giữa Hồ Gươm",
+					},
+					{
+						stem: "Tháp nằm ____ Hồ Gươm.",
+						opts: null,
+						answer: "giữa",
+						alts: "",
+					},
+				],
+			},
+			{
+				// #286 — đề reading dài cho test split-pane: passage + bài làm
+				// đều tràn chiều cao pane để kiểm tra cuộn độc lập.
+				title: titleSplit,
+				skill: "reading",
+				part: "p1",
+				type: "sent",
+				note: "Đề dài cho split-pane.",
+				passage: `<p>${Array.from(
+					{ length: 30 },
+					(_, i) =>
+						`Đoạn văn thứ ${i + 1} kể về lịch sử Hồ Gươm và những truyền thuyết xung quanh ngôi đền cổ bên kia hồ.`,
+				).join("</p><p>")}</p>`,
+				questions: Array.from({ length: 8 }, (_, i) => ({
+					stem: `Theo đoạn văn, hồ có tên gọi là thứ ____ ${i + 1}.`,
+					opts: null,
+					answer: `năm ${i + 1}`,
+					alts: "",
+				})),
+			},
 		],
 	});
 	assignmentMcqId = fixture.assignmentIds[0] ?? "";
 	assignmentClozeId = fixture.assignmentIds[1] ?? "";
+	assignmentMixedId = fixture.assignmentIds[2] ?? "";
 
 	// Real portal signup once: signup → verify screen → mail-log link →
 	// auto sign-in → overview (onboarding pre-set by the seed).
@@ -500,5 +588,144 @@ test.describe("Student quiz take & review", () => {
 			list.locator("li").nth(2).locator("[data-verdict='correct']"),
 		).toHaveText("khí hậu ẩm");
 		await expect(list.locator("li").nth(2)).toContainText("Đáp án: khí hậu ẩm");
+	});
+
+	// #286 — đề trộn dạng: header cụm + instruction chuẩn đặt ngay trên từng
+	// cụm; câu tfng trong đề note có pill lựa chọn; review cùng cấu trúc.
+	test("mixed-type paper renders per-cluster instruction headers and typed widgets", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleMixed);
+		await expect(page).toHaveURL(
+			new RegExp(`/learn/quizzes/${assignmentMixedId}`),
+		);
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 0/4 câu",
+		);
+
+		// 2 cụm: Questions 1–2 (tfng) + Questions 3–4 (note) — mỗi cụm có
+		// nhãn dạng bài + instruction chuẩn phía trên câu của nó.
+		const tfngSection = page.locator(
+			'section[aria-label="Questions 1–2 · True / False / Not Given"]',
+		);
+		const noteSection = page.locator(
+			'section[aria-label="Questions 3–4 · Note completion"]',
+		);
+		await expect(tfngSection).toBeVisible();
+		await expect(noteSection).toBeVisible();
+		await expect(
+			tfngSection.getByText(
+				"Do the following statements agree with the information given in the passage?",
+			),
+		).toBeVisible();
+		await expect(
+			noteSection.getByText(
+				"Complete the notes below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+			),
+		).toBeVisible();
+
+		// Câu tfng trả lời bằng pill TRUE/FALSE/NOT GIVEN (hết lỗi "không có
+		// chỗ nhập"); câu note vẫn là ô điền.
+		await page
+			.locator('[data-question="0"] label', { hasText: "FALSE" })
+			.click();
+		await page
+			.locator('[data-question="1"] label', { hasText: "TRUE" })
+			.click();
+		await page.getByLabel("Điền đáp án câu 3").fill("Gươm");
+		await page.getByLabel("Điền đáp án câu 4").fill("cổ thụ");
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 4/4 câu",
+		);
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
+		await expect(page.getByTestId("attempt-correct-count")).toHaveText("4");
+
+		// Review screen giữ nguyên cấu trúc cụm đã làm + split-pane như take.
+		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await expect(page).toHaveURL(/\/detail$/);
+		await expect(
+			page.locator(
+				'section[aria-label="Questions 1–2 · True / False / Not Given"]',
+			),
+		).toBeVisible();
+		await expect(
+			page.locator('section[aria-label="Questions 3–4 · Note completion"]'),
+		).toBeVisible();
+		await expect(page.getByTestId("reading-passage-pane")).toBeVisible();
+		await expect(page.getByTestId("reading-work-pane")).toBeVisible();
+	});
+
+	// #286 — reading split-pane: passage trái / bài làm phải, cuộn độc lập ở
+	// viewport rộng; xếp chồng ở viewport hẹp.
+	test("reading paper splits into two independently scrolling panes on wide viewports", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleSplit);
+		const passagePane = page.getByTestId("reading-passage-pane");
+		const workPane = page.getByTestId("reading-work-pane");
+		await expect(passagePane).toBeVisible();
+		await expect(workPane).toBeVisible();
+
+		// Desktop (≥ lg): 2 pane nằm cạnh nhau — passage bên trái.
+		const passageBox = await passagePane.boundingBox();
+		const workBox = await workPane.boundingBox();
+		expect(passageBox?.x).toBeLessThan(workBox?.x ?? Number.POSITIVE_INFINITY);
+
+		// Cuộn độc lập (input wheel thật của user): cuộn pane đọc — pane làm
+		// và trang đứng yên; rồi cuộn pane làm — pane đọc giữ nguyên vị trí.
+		await passagePane.hover();
+		await page.mouse.wheel(0, 600);
+		await expect
+			.poll(() => passagePane.evaluate((el) => el.scrollTop))
+			.toBeGreaterThan(0);
+		expect(await workPane.evaluate((el) => el.scrollTop)).toBe(0);
+		expect(
+			await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0),
+		).toBe(0);
+		const passageScrolled = await passagePane.evaluate((el) => el.scrollTop);
+		await workPane.hover();
+		await page.mouse.wheel(0, 600);
+		await expect
+			.poll(() => workPane.evaluate((el) => el.scrollTop))
+			.toBeGreaterThan(0);
+		expect(await passagePane.evaluate((el) => el.scrollTop)).toBe(
+			passageScrolled,
+		);
+
+		// Viewport hẹp (< lg): xếp chồng — 2 pane cùng cột trái.
+		await page.setViewportSize({ width: 375, height: 667 });
+		const stackedPassage = await passagePane.boundingBox();
+		const stackedWork = await workPane.boundingBox();
+		expect(Math.round(stackedPassage?.x ?? -1)).toBe(
+			Math.round(stackedWork?.x ?? -2),
+		);
+	});
+
+	// #286 — đề cũ 1 type: đúng 1 header cụm duy nhất, không vỡ cấu trúc cũ.
+	test("single-type legacy paper shows exactly one cluster header", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleLegacy);
+		await expect(
+			page.locator(
+				'section[aria-label="Questions 1–2 · Short-answer questions"]',
+			),
+		).toBeVisible();
+		await expect(page.locator("article section")).toHaveCount(1);
 	});
 });

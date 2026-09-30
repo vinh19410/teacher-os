@@ -1,8 +1,12 @@
 import {
+	ASSIGNMENT_OPTION_BANK_TYPES,
+	answerKindByType,
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 	assignmentTestCreateSchema,
 	assignmentTestUpdateSchema,
+	QUIZ_TYPE_DISPLAY,
+	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import { describe, expect, it } from "vitest";
 
@@ -201,5 +205,244 @@ describe("update schemas keep rich caps after .partial()", () => {
 			timeLimitSeconds: 3600,
 		});
 		expect(result.success).toBe(true);
+	});
+});
+
+/** Reading p1 draft đủ điều kiện — per-question type tests đổi сверху. */
+const readingP1Draft = {
+	skill: "reading",
+	part: "p1",
+	type: "note",
+	title: "Reading Mixed",
+	band: "6.5",
+	source: "",
+	prompt: "Read and answer.",
+	passage: "<p>Passage body</p>",
+	intro: "",
+	transcript: "",
+	cueTopic: "",
+	cuePoints: "",
+	audioName: "",
+	imageUrl: "",
+	optionBank: [],
+	note: "",
+	status: "draft",
+} as const;
+
+const typedQuestion = (type?: string) => ({
+	stem: "Statement about the passage",
+	opts: null,
+	answer: type === "tfng" ? "TRUE" : "river",
+	alts: "",
+	pin: null,
+	...(type ? { type } : {}),
+});
+
+describe("assignmentPromptCreateSchema — per-question type", () => {
+	it("accepts questions whose type belongs to the part catalog", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("tfng"), typedQuestion("note")],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts legacy questions without a per-question type", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion(), typedQuestion()],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects a per-question type outside the part catalog at questions.N.type", () => {
+		// flowchart là type của p3 — không thuộc catalog p1.
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("flowchart")],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("questions.0.type");
+		}
+	});
+
+	it("validates answer choices against the question type, not the prompt type", () => {
+		// Prompt type note (free text) nhưng câu tfng phải dùng choice hợp lệ.
+		const bad = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [{ ...typedQuestion("tfng"), answer: "maybe" }],
+		});
+		expect(bad.success).toBe(false);
+		if (!bad.success) {
+			const paths = bad.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("questions.0.answer");
+		}
+
+		const good = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("tfng")],
+		});
+		expect(good.success).toBe(true);
+	});
+});
+
+describe("QUIZ_TYPE_DISPLAY — shared display metadata", () => {
+	it("returns label + IELTS instruction for a known type", () => {
+		const tfng = quizTypeDisplay("tfng");
+		expect(tfng.label).toBe("True / False / Not Given");
+		expect(tfng.instruction).toContain("TRUE / FALSE / NOT GIVEN");
+	});
+
+	it("falls back to the raw type id with empty instruction for unknown types", () => {
+		expect(quizTypeDisplay("nope")).toEqual({ label: "nope", instruction: "" });
+	});
+
+	it("covers every answer-kind and option-bank type used by the catalog", () => {
+		const knownTypes = [
+			...Object.keys(answerKindByType),
+			...ASSIGNMENT_OPTION_BANK_TYPES.reading,
+			...ASSIGNMENT_OPTION_BANK_TYPES.listening,
+		];
+		for (const type of knownTypes) {
+			expect(QUIZ_TYPE_DISPLAY[type], type).toBeDefined();
+		}
+	});
+});
+
+describe("assignmentPromptCreateSchema — option bank cho đề trộn dạng (#286)", () => {
+	const readingBase = {
+		...readingP1Draft,
+		status: "ready",
+		passage: "<p>Passage body</p>",
+	} as const;
+
+	it("chấp nhận bank khi CÂU bankable trong prompt không-bankable", () => {
+		// p1 không có type bankable nào — mượn cấu trúc p2: prompt summary
+		// (không bankable) + câu headings (bankable, roman).
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "summary",
+			optionBank: ["Tiêu đề I", "Tiêu đề II"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+					type: "headings",
+				},
+				{
+					stem: "Gap ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("câu tự do trong đề bankable không bị ép nhãn bank", () => {
+		// Prompt headings (bankable) + câu summary free-text answer — schema
+		// cũ ép mọi câu vào nhãn i–viii → 400 mù.
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "headings",
+			optionBank: ["Tiêu đề I", "Tiêu đề II"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+				},
+				{
+					stem: "Gap ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: "summary",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("vẫn từ chối bank khi không đề nào lẫn câu nào bankable", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			optionBank: ["Không hợp lệ"],
+			questions: [typedQuestion("note")],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("optionBank");
+		}
+	});
+
+	it("bank ready phải phủ đủ số câu bankable (không tính câu tự do)", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingBase,
+			part: "p2",
+			type: "summary",
+			optionBank: ["Chỉ một mục"],
+			questions: [
+				{
+					stem: "Paragraph A",
+					opts: null,
+					answer: "i",
+					alts: "",
+					type: "headings",
+				},
+				{
+					stem: "Paragraph B",
+					opts: null,
+					answer: "ii",
+					alts: "",
+					type: "headings",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("optionBank");
+		}
+	});
+});
+
+describe("assignmentPromptUpdateSchema — answer choice theo type từng câu (#286)", () => {
+	it("không ép choice của prompt type lên câu khác type", () => {
+		// Payload client thật: type prompt tfng + câu note answer tự do —
+		// schema cũ reject "river" ∉ [TRUE/FALSE/NOT GIVEN] mù field.
+		const result = assignmentPromptUpdateSchema.safeParse({
+			type: "tfng",
+			questions: [
+				{ stem: "S1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+				{
+					stem: "S2 ____",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: "note",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("vẫn chặn answer sai kind của chính câu đó", () => {
+		const result = assignmentPromptUpdateSchema.safeParse({
+			type: "tfng",
+			questions: [
+				{ stem: "S1", opts: null, answer: "maybe", alts: "", type: "tfng" },
+			],
+		});
+		expect(result.success).toBe(false);
 	});
 });

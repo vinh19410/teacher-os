@@ -1,9 +1,9 @@
 import {
 	ASSIGNMENT_IMAGE_SRC_PATTERN,
 	type AssignmentQuestion,
-	answerKindByType,
 	isImageBasedType,
-	isOptionBankable,
+	optionBankKindFor,
+	quizTypeDisplay,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
 import type {
@@ -53,6 +53,7 @@ export function QuizPaper({
 	currentQuestion,
 	mode = "take",
 	review,
+	hidePassage = false,
 }: {
 	detail: QuizPaperDetail;
 	parts: QuizPart[];
@@ -65,12 +66,13 @@ export function QuizPaper({
 	mode?: "take" | "review";
 	/** Dữ liệu review theo `q` (chip verdict + đáp án + giải thích). */
 	review?: Record<number, QuizReviewInfo>;
+	/** Split-pane reading: passage đã render ở pane trái — paper không lặp. */
+	hidePassage?: boolean;
 }) {
 	const reviewMode = mode === "review";
 	const skill = detail.skill;
 	const typeId = detail.type;
 	const isAuto = skill === "reading" || skill === "listening";
-	const bankKind = answerKindByType[typeId];
 	const rawImageUrl = detail.imageUrl.trim();
 	const diagramImageUrl =
 		isImageBasedType(skill, typeId) &&
@@ -78,6 +80,13 @@ export function QuizPaper({
 			? rawImageUrl
 			: "";
 	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
+	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
+	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
+	const bankKind = optionBankKindFor(
+		skill,
+		typeId,
+		questions.map((question) => question.type),
+	);
 	const hasPins = questions.some((question) => question.pin != null);
 	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
 	// về hàng cloze/choice thường để VẪN trả lời được (code-review F4).
@@ -85,12 +94,17 @@ export function QuizPaper({
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
 	for (const question of questions) {
 		// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
-		// widget bằng radio pills dưới list.
+		// widget bằng radio pills dưới list. Widget key theo type HIỆU DỤNG của
+		// câu (đề trộn dạng), fallback type đề.
 		choiceRowsByQ.set(
 			question.q,
 			usePinOverlay && question.pin != null
 				? []
-				: questionChoiceRows(question, typeId, detail.optionBank),
+				: questionChoiceRows(
+						question,
+						question.type ?? typeId,
+						detail.optionBank,
+					),
 		);
 	}
 	// PinOverlay đòi AssignmentQuestion (answer/alts required ở authoring side)
@@ -119,12 +133,14 @@ export function QuizPaper({
 				</p>
 			)}
 
-			{skill === "reading" && !isEmptyRichText(detail.passage) && (
-				<RichTextBody
-					text={detail.passage}
-					className="text-sm leading-[1.55]"
-				/>
-			)}
+			{skill === "reading" &&
+				!hidePassage &&
+				!isEmptyRichText(detail.passage) && (
+					<RichTextBody
+						text={detail.passage}
+						className="text-sm leading-[1.55]"
+					/>
+				)}
 
 			{usePinOverlay ? (
 				// Review: fieldset disabled khoá toàn bộ input pin; onAnswer vẫn
@@ -150,9 +166,7 @@ export function QuizPaper({
 				<RichTextBody text={detail.intro} className="text-muted-fg text-sm" />
 			)}
 
-			{isOptionBankable(skill, typeId) && bankKind && (
-				<OptionBankList bank={detail.optionBank} kind={bankKind} />
-			)}
+			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
 
 			{skill === "speaking" && (
 				<div className="text-sm">
@@ -173,29 +187,46 @@ export function QuizPaper({
 				<RichTextBody text={detail.prompt} className="text-sm leading-[1.55]" />
 			)}
 
-			<div className="flex flex-col gap-2">
-				{parts.map((part) => (
-					<section key={part.id} aria-label={part.label}>
-						{parts.length > 1 && (
-							<h2 className="mb-2 font-display font-semibold">{part.label}</h2>
-						)}
-						<div className="flex flex-col gap-2.5">
-							{part.questions.map((question) => (
-								<QuizQuestionItem
-									key={question.q}
-									question={question}
-									choiceRows={choiceRowsByQ.get(question.q) ?? []}
-									type={typeId}
-									answers={answers}
-									onAnswer={onAnswer}
-									current={currentQuestion === question.q}
-									mode={mode}
-									review={review?.[question.q]}
-								/>
-							))}
-						</div>
-					</section>
-				))}
+			<div className="flex flex-col gap-4">
+				{parts.map((part) => {
+					// Header cụm: đúng cấu trúc đề thi thật — số câu + nhãn dạng bài
+					// + instruction chuẩn IELTS từ map dùng chung. Type lạ (đề cũ
+					// snapshot) fallback label = chính type id, instruction rỗng.
+					const display = quizTypeDisplay(part.typeId);
+					return (
+						<section
+							key={part.id}
+							aria-label={`${part.label} · ${display.label}`}
+						>
+							{isAuto && (
+								<header className="mb-2 flex flex-col gap-0.5">
+									<h2 className="font-display font-semibold">{part.label}</h2>
+									<p className="font-medium text-[13px]">{display.label}</p>
+									{display.instruction && (
+										<p className="text-muted-fg text-sm">
+											{display.instruction}
+										</p>
+									)}
+								</header>
+							)}
+							<div className="flex flex-col gap-2.5">
+								{part.questions.map((question) => (
+									<QuizQuestionItem
+										key={question.q}
+										question={question}
+										choiceRows={choiceRowsByQ.get(question.q) ?? []}
+										type={question.type ?? typeId}
+										answers={answers}
+										onAnswer={onAnswer}
+										current={currentQuestion === question.q}
+										mode={mode}
+										review={review?.[question.q]}
+									/>
+								))}
+							</div>
+						</section>
+					);
+				})}
 			</div>
 
 			{questions.length === 0 && (

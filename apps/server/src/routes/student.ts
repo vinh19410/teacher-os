@@ -116,6 +116,7 @@ function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
+					type: typeof record.type === "string" ? record.type : null,
 					pin: parsePin(record.pin),
 				},
 			];
@@ -891,6 +892,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			questions: questions.map((question) => ({
 				stem: question.stem,
 				opts: question.opts,
+				// Type hiệu dụng của câu: type riêng (đề trộn dạng) ?? type
+				// prompt — payload student luôn có type cụ thể để client phân
+				// cụm; snapshot cũ parse `type: null` cũng fallback về đây.
+				type: question.type ?? prompt.type,
 				pin: question.pin ?? null,
 			})),
 			attempt: attempt
@@ -1178,6 +1183,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.select({
 				title: classAssignment.title,
 				note: assignmentPrompt.note,
+				type: assignmentPrompt.type,
 			})
 			.from(classAssignment)
 			.innerJoin(
@@ -1197,6 +1203,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			grade,
 			title: header?.title ?? "",
 			note: header?.note ?? "",
+			promptType: header?.type ?? "",
 		};
 	};
 
@@ -1254,7 +1261,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, note } = loaded;
+		const { attempt, questions, answers, grade, title, note, promptType } =
+			loaded;
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1272,6 +1280,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				return {
 					stem: question.stem,
 					opts: question.opts,
+					// Type hiệu dụng như take payload — review screen phân cụm cùng
+					// cấu trúc bài làm.
+					type: question.type ?? promptType,
 					pin: question.pin ?? null,
 					key: question.answer,
 					alts: question.alts,

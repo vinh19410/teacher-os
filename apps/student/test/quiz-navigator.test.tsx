@@ -28,7 +28,7 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 	it("đã làm = accent fill; chưa = surface + border; status line đếm đúng", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
-				parts={buildQuizParts(fiveQuestions)}
+				parts={buildQuizParts(fiveQuestions, "tfng")}
 				answers={{ 0: "TRUE", 2: "glue" }}
 				current={null}
 				onSelect={() => undefined}
@@ -53,7 +53,7 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 	it("đề 1 phần → không render part tabs (N=1 hôm nay)", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
-				parts={buildQuizParts(fiveQuestions)}
+				parts={buildQuizParts(fiveQuestions, "tfng")}
 				answers={{}}
 				current={null}
 				onSelect={() => undefined}
@@ -66,7 +66,7 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 	it("highlight câu hiện tại qua aria-current + outline", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
-				parts={buildQuizParts(fiveQuestions)}
+				parts={buildQuizParts(fiveQuestions, "tfng")}
 				answers={{}}
 				current={3}
 				onSelect={() => undefined}

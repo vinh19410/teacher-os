@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Take screen — chia cụm + header instruction trên từng cụm"
-status: todo
+status: done
 priority: P1
 effort: 4h
 dependencies: [1]
@@ -38,24 +38,24 @@ ngay phía trên cụm — thay cho hiện trạng gom hết instruction (intro 
 
 ## Requirements
 
-- [ ] `buildQuizParts(questions, promptType)` gom câu liên tiếp cùng type
+- [x] `buildQuizParts(questions, promptType)` gom câu liên tiếp cùng type
       (`question.type ?? promptType` — fallback kép theo Phase 1) thành từng
       part; part giữ shape hiện tại + thêm `typeId: string`. Đề 1 type → vẫn
       1 part (không đổi hiển thị cũ).
-- [ ] `part.label` = `Questions {first}–{last}` (1 câu thì `Questions {n}`).
-- [ ] `QuizPaper`: mỗi part (auto skills) render header cụm phía trên câu hỏi:
+- [x] `part.label` = `Questions {first}–{last}` (1 câu thì `Questions {n}`).
+- [x] `QuizPaper`: mỗi part (auto skills) render header cụm phía trên câu hỏi:
       dòng đậm `Questions X–Y`, dòng nhãn dạng bài (label từ
       `QUIZ_TYPE_DISPLAY`), dòng instruction (muted, text-sm). Header hiện ở
       CẢ take lẫn review mode.
-- [ ] `questionChoiceRows` nhận type TỪNG CÂU (`question.type`) thay vì
+- [x] `questionChoiceRows` nhận type TỪNG CÂU (`question.type`) thay vì
       `detail.type`; `ClozeStemText typeId` theo câu.
-- [ ] `intro` prompt vẫn render 1 lần phía trên cụm đầu (giữ vị trí tương đối
+- [x] `intro` prompt vẫn render 1 lần phía trên cụm đầu (giữ vị trí tương đối
       sau passage/ảnh, trước cụm đầu tiên) — nơi cho ghi chú riêng của giáo
       viên; không tự xoá nội dung intro cũ.
-- [ ] Option bank + PinOverlay/ảnh đề giữ logic prompt-level (như hiện tại).
-- [ ] Navigator: part tabs bật theo `parts.length > 1` (đã có sẵn) — tab label
+- [x] Option bank + PinOverlay/ảnh đề giữ logic prompt-level (như hiện tại).
+- [x] Navigator: part tabs bật theo `parts.length > 1` (đã có sẵn) — tab label
       = `Questions X–Y`, click scroll tới câu đầu cụm (đã có `onSelect`).
-- [ ] Pin overlay: nếu cụm chứa pin question, pin overlay render trên cùng cụm
+- [x] Pin overlay: nếu cụm chứa pin question, pin overlay render trên cùng cụm
       đó (hoặc giữ toàn-bài như hiện tại nếu phức tạp — ưu tiên giữ hiện trạng,
       ghi chú trong PR).
 
@@ -90,10 +90,10 @@ ngay phía trên cụm — thay cho hiện trạng gom hết instruction (intro 
 
 ## Todo
 
-- [ ] Test + implement `buildQuizParts` clustering
-- [ ] Header cụm trong `QuizPaper` (take + review dùng chung)
-- [ ] Per-question type cho choice rows + cloze width
-- [ ] E2E mixed-type + regression
+- [x] Test + implement `buildQuizParts` clustering
+- [x] Header cụm trong `QuizPaper` (take + review dùng chung)
+- [x] Per-question type cho choice rows + cloze width
+- [x] E2E mixed-type + regression
 
 ## Success Criteria
 

@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Reading split-pane — passage trái / bài làm phải"
-status: todo
+status: done
 priority: P1
 effort: 4h
 dependencies: [3]
@@ -32,22 +32,22 @@ cột như hiện tại. Các skill khác không đổi layout.
 
 ## Requirements
 
-- [ ] Điều kiện split-pane: `detail.skill === "reading"` và passage không rỗng
+- [x] Điều kiện split-pane: `detail.skill === "reading"` và passage không rỗng
       (`!isEmptyRichText(detail.passage)`). Còn lại giữ 1 cột hiện tại.
-- [ ] Desktop ≥ `lg`: 2 cột ngang (passage trái ~50%, bài làm phải ~50%), chiều
+- [x] Desktop ≥ `lg`: 2 cột ngang (passage trái ~50%, bài làm phải ~50%), chiều
       cao mỗi pane = viewport trừ runtime header (`h-14`) trừ navigator;
       mỗi pane `overflow-y-auto` riêng — cuộn bài đọc KHÔNG làm bài chạy theo
       và ngược lại.
-- [ ] Mobile < `lg`: xếp chồng (passage trên, bài làm dưới), cuộn trang như
+- [x] Mobile < `lg`: xếp chồng (passage trên, bài làm dưới), cuộn trang như
       hiện tại — không tab, không collapse (KISS).
-- [ ] Pane trái: label "Bài đọc" + `RichTextBody` passage; pane phải: label
+- [x] Pane trái: label "Bài đọc" + `RichTextBody` passage; pane phải: label
       "Bài làm" + intro (nếu có) + option bank/ảnh đề + các cụm câu hỏi
       (Phase 3).
-- [ ] Ảnh đề/pin overlay + option bank nằm pane PHẢI (thuộc bài làm).
-- [ ] `scrollToQuestion` từ navigator vẫn đưa câu vào tầm mắt trong pane phải
+- [x] Ảnh đề/pin overlay + option bank nằm pane PHẢI (thuộc bài làm).
+- [x] `scrollToQuestion` từ navigator vẫn đưa câu vào tầm mắt trong pane phải
       (kiểm `scroll-mt-*` đủ cho header cụm dính nếu có).
-- [ ] Review screen áp cùng layout (passage trái, câu hỏi + verdict phải).
-- [ ] Không thay đổi logic attempt/autosave/submit — thuần layout.
+- [x] Review screen áp cùng layout (passage trái, câu hỏi + verdict phải).
+- [x] Không thay đổi logic attempt/autosave/submit — thuần layout.
 
 ## Related Code Files
 
@@ -84,10 +84,10 @@ cột như hiện tại. Các skill khác không đổi layout.
 
 ## Todo
 
-- [ ] Layout 2 pane + trừ chiều cao header/navigator
-- [ ] Tách passage slot khỏi `QuizPaper` khi split
-- [ ] Áp cho review screen
-- [ ] Component tests + e2e scroll độc lập + stacked mobile
+- [x] Layout 2 pane + trừ chiều cao header/navigator
+- [x] Tách passage slot khỏi `QuizPaper` khi split
+- [x] Áp cho review screen
+- [x] Component tests + e2e scroll độc lập + stacked mobile
 
 ## Success Criteria
 

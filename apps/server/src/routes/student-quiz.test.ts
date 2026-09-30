@@ -147,6 +147,57 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			status: "ready",
 		});
 
+		// Đề reading trộn dạng câu hỏi trong 1 prompt — per-question `type`
+		// (tfng ×2 + note ×2, cả hai thuộc catalog type của part p1).
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-mixed",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "note",
+			title: "Mixed Types Practice",
+			prompt: "Read the passage and answer.",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify([
+				{
+					stem: "Câu 1 — tfng",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+					type: "tfng",
+				},
+				{
+					stem: "Câu 2 — tfng",
+					opts: null,
+					answer: "FALSE",
+					alts: "",
+					pin: null,
+					type: "tfng",
+				},
+				{
+					stem: "Câu 3 — note",
+					opts: null,
+					answer: "river",
+					alts: "",
+					pin: null,
+					type: "note",
+				},
+				{
+					stem: "Câu 4 — không khai type → fallback prompt.type",
+					opts: null,
+					answer: "bank",
+					alts: "",
+					pin: null,
+				},
+			]),
+			optionBank: "[]",
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		for (const assignmentId of [
 			"ca-q1",
 			"ca-q2",
@@ -157,12 +208,18 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q7",
 			"ca-q8",
 			"ca-q9",
+			"ca-q10",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
 				orgId: "org-1",
 				classId: "class-1",
-				promptId: assignmentId === "ca-q8" ? "prompt-badpin" : "prompt-quiz",
+				promptId:
+					assignmentId === "ca-q8"
+						? "prompt-badpin"
+						: assignmentId === "ca-q10"
+							? "prompt-mixed"
+							: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -597,6 +654,64 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const summaryBody = (await summary.json()) as QuizAttemptSummary;
 		expect(summaryBody.items[0]?.key).toBe("Paris");
 		expect(summaryBody.items[0]?.verdict).toBe("correct");
+	});
+
+	// Per-question type: đề trộn dạng → payload mang type từng câu; đề cũ
+	// fallback prompt.type cho mọi câu (diff wire chỉ thêm field).
+	test("per-question type reaches take payload; legacy prompts fall back to prompt type", async () => {
+		const mixed = await app.request("/api/student/assignments/ca-q10/quiz", {
+			headers: OWNER,
+		});
+		expect(mixed.status).toBe(200);
+		const mixedBody = (await mixed.json()) as StudentQuizDetail;
+		expect(mixedBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+			"note", // câu không khai type → resolve prompt.type
+		]);
+
+		// Đề cũ (không per-question type): mọi câu nhận type của prompt.
+		const legacy = await app.request("/api/student/assignments/ca-q1/quiz", {
+			headers: OWNER,
+		});
+		expect(legacy.status).toBe(200);
+		const legacyBody = (await legacy.json()) as StudentQuizDetail;
+		expect(legacyBody.questions).toHaveLength(8);
+		for (const question of legacyBody.questions) {
+			expect(question.type).toBe("info");
+		}
+
+		// Snapshot sau start cũng resolve per-question type (resume không lệch).
+		const attemptId = await startAttempt("ca-q10");
+		const resumed = await app.request("/api/student/assignments/ca-q10/quiz", {
+			headers: OWNER,
+		});
+		const resumedBody = (await resumed.json()) as StudentQuizDetail;
+		expect(resumedBody.attempt?.id).toBe(attemptId);
+		expect(resumedBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+			"note",
+		]);
+
+		// Review sau nộp: attempt detail mang type từng câu (header cụm dùng
+		// chung cấu trúc take).
+		await patchAnswer(attemptId, 0, "TRUE");
+		expect((await submit(attemptId)).status).toBe(200);
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+			"note",
+		]);
 	});
 
 	// code-review: pin malformed không tràn xuống wire — parsePin sanitize null.

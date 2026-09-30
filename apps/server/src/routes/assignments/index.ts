@@ -1,7 +1,9 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
+	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_PART_TYPES,
 	type AssignmentSkill,
+	answerKindByType,
 	assignmentGradeSchema,
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
@@ -141,6 +143,7 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 			.select({
 				skill: assignmentPrompt.skill,
 				part: assignmentPrompt.part,
+				type: assignmentPrompt.type,
 			})
 			.from(assignmentPrompt)
 			.where(
@@ -153,12 +156,35 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 
 		// Rule phụ thuộc skill/part của ROW (contract không có context):
 		// type membership + questions chỉ hợp cho reading/listening.
-		if (body.data.type !== undefined) {
-			const types =
-				ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
-				[];
-			if (!types.includes(body.data.type))
-				return c.json({ error: "invalid type" }, 400);
+		const partTypes =
+			ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
+			[];
+		if (body.data.type !== undefined && !partTypes.includes(body.data.type)) {
+			return c.json({ error: "invalid type" }, 400);
+		}
+		// Per-question type (#286) — mirror rule của create: type câu phải thuộc
+		// catalog part; answer-choice theo type HIỆU DỤNG (type câu ?? type
+		// payload ?? type row) thay vì chỉ type prompt.
+		if (body.data.questions !== undefined) {
+			const effectivePromptType = body.data.type ?? row.type;
+			for (const [index, question] of body.data.questions.entries()) {
+				if (question.type && !partTypes.includes(question.type))
+					return c.json(
+						{ error: "invalid question type", question: index },
+						400,
+					);
+				const kind =
+					answerKindByType[question.type ?? effectivePromptType] ?? null;
+				if (kind) {
+					const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+					if (question.answer && !choices.includes(question.answer as never)) {
+						return c.json(
+							{ error: "invalid answer choice", question: index },
+							400,
+						);
+					}
+				}
+			}
 		}
 		if (
 			body.data.questions?.length &&

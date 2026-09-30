@@ -15,6 +15,10 @@ import {
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
+import {
+	isReadingSplitPane,
+	QuizReadingSplitLayout,
+} from "@/components/quiz/quiz-reading-layout";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import { isHttpError, reauth, studentQueryClient } from "@/lib/query-client";
 import {
@@ -132,8 +136,8 @@ function QuizTakePage() {
 	storeRef.current = store;
 
 	const parts = useMemo(
-		() => buildQuizParts(detail?.questions ?? []),
-		[detail?.questions],
+		() => buildQuizParts(detail?.questions ?? [], detail?.type ?? ""),
+		[detail?.questions, detail?.type],
 	);
 	const allQuestions = useMemo(
 		() => parts.flatMap((part) => part.questions),
@@ -283,6 +287,17 @@ function QuizTakePage() {
 
 	const submitDisabled =
 		submitMutation.isPending || snapshot.halted !== null || !storeActive;
+	const navigator = (
+		<QuizNavigator
+			parts={parts}
+			answers={answers}
+			current={currentQuestion}
+			onSelect={handleSelectQuestion}
+		/>
+	);
+	// Reading có passage → split-pane: bài đọc trái, bài làm phải, cuộn độc
+	// lập; skill khác / passage rỗng giữ 1 cột như cũ.
+	const splitPane = isReadingSplitPane(detail.skill, detail.passage);
 
 	return (
 		<div className="flex min-h-svh flex-col bg-surface/30">
@@ -302,21 +317,33 @@ function QuizTakePage() {
 					đến trang đăng nhập…
 				</div>
 			)}
-			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
-				<QuizPaper
-					detail={detail}
-					parts={parts}
-					answers={answers}
-					onAnswer={handleAnswer}
-					currentQuestion={currentQuestion}
-				/>
-			</main>
-			<QuizNavigator
-				parts={parts}
-				answers={answers}
-				current={currentQuestion}
-				onSelect={handleSelectQuestion}
-			/>
+			{splitPane ? (
+				<QuizReadingSplitLayout passage={detail.passage} navigator={navigator}>
+					<div className="mx-auto w-full max-w-[720px]">
+						<QuizPaper
+							detail={detail}
+							parts={parts}
+							answers={answers}
+							onAnswer={handleAnswer}
+							currentQuestion={currentQuestion}
+							hidePassage
+						/>
+					</div>
+				</QuizReadingSplitLayout>
+			) : (
+				<>
+					<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
+						<QuizPaper
+							detail={detail}
+							parts={parts}
+							answers={answers}
+							onAnswer={handleAnswer}
+							currentQuestion={currentQuestion}
+						/>
+					</main>
+					{navigator}
+				</>
+			)}
 			{needsResumeDialog && (
 				<QuizResumeDialog
 					open
