@@ -1,9 +1,8 @@
 import {
 	ASSIGNMENT_IMAGE_SRC_PATTERN,
 	type AssignmentQuestion,
-	answerKindByType,
 	isImageBasedType,
-	isOptionBankable,
+	optionBankKindFor,
 	quizTypeDisplay,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
@@ -71,7 +70,6 @@ export function QuizPaper({
 	const skill = detail.skill;
 	const typeId = detail.type;
 	const isAuto = skill === "reading" || skill === "listening";
-	const bankKind = answerKindByType[typeId];
 	const rawImageUrl = detail.imageUrl.trim();
 	const diagramImageUrl =
 		isImageBasedType(skill, typeId) &&
@@ -79,6 +77,13 @@ export function QuizPaper({
 			? rawImageUrl
 			: "";
 	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
+	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
+	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
+	const bankKind = optionBankKindFor(
+		skill,
+		typeId,
+		questions.map((question) => question.type),
+	);
 	const hasPins = questions.some((question) => question.pin != null);
 	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
 	// về hàng cloze/choice thường để VẪN trả lời được (code-review F4).
@@ -158,9 +163,7 @@ export function QuizPaper({
 				<RichTextBody text={detail.intro} className="text-muted-fg text-sm" />
 			)}
 
-			{isOptionBankable(skill, typeId) && bankKind && (
-				<OptionBankList bank={detail.optionBank} kind={bankKind} />
-			)}
+			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
 
 			{skill === "speaking" && (
 				<div className="text-sm">

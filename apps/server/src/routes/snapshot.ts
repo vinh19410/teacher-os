@@ -120,6 +120,10 @@ function parseQuestions(
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
+					// Per-question type (#286) — forward như pin: write path persist
+					// field này trong cùng JSON, đây là read path duy nhất; strip nó
+					// thì mọi edit/Apply qua test-builder xoá âm thầm type đã soạn.
+					type: typeof record.type === "string" ? record.type : null,
 					// Phase-04 FR7 — forward the pin or the image labels vanish on
 					// the first reload (the write path persists them inside this
 					// same JSON; this destructure is the only read path).

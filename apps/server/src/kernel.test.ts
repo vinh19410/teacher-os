@@ -5498,6 +5498,122 @@ describe("assignment prompt bank (issue #202)", () => {
 				"Liệt kê III",
 			]);
 		});
+
+		// #286 — per-question type: snapshot PHẢI forward type (strip nó thì
+		// mọi edit/Apply qua test-builder xoá âm thầm type đã soạn), và PATCH
+		// mirror validation của create (catalog part + answer-choice theo
+		// type hiệu dụng của câu).
+		test("per-question type survives the snapshot round-trip and PATCH mirrors create validation (#286)", async () => {
+			const post = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p1",
+					type: "note",
+					title: "Reading Mixed — per-question type",
+					optionBank: [],
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				}),
+			});
+			expect(post.status).toBe(201);
+			const { id } = (await post.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.questions).toEqual([
+				{
+					stem: "Statement one",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					type: "tfng",
+					pin: null,
+				},
+				{
+					stem: "Note ____ two",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			]);
+
+			// PATCH: type câu ngoài catalog part (flowchart là type p3) → 400.
+			const badType = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "flowchart",
+						},
+					],
+				},
+			});
+			expect(badType.status).toBe(400);
+
+			// PATCH: answer không thuộc bộ choice của type HIỆU DỤNG câu → 400
+			// (trước #286 update chỉ soi type prompt là note → bỏ qua).
+			const badChoice = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "maybe",
+							alts: "",
+							type: "tfng",
+						},
+					],
+				},
+			});
+			expect(badChoice.status).toBe(400);
+
+			// PATCH hợp lệ: type câu thuộc catalog + answer hợp kind → persist.
+			const good = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					title: "Reading Mixed — edited",
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "FALSE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				},
+			});
+			expect(good.status).toBe(200);
+			const edited = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(edited?.title).toBe("Reading Mixed — edited");
+			expect(edited?.questions[0]).toMatchObject({
+				answer: "FALSE",
+				type: "tfng",
+			});
+			expect(edited?.questions[1]).toMatchObject({ type: null });
+		});
 	});
 });
 

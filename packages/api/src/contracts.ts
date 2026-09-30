@@ -401,6 +401,28 @@ export function isOptionBankable(skill: string, type: string): boolean {
 }
 
 /**
+ * Kind của option bank cần hiển thị (#286, đề trộn dạng): bank vẫn là
+ * PROMPT-level nhưng hiển thị khi type đề HOẶC bất kỳ câu bankable — nếu
+ * không, cụm bankable trong đề không-bankable có instruction "choose from
+ * the option bank" mà học viên không có list nào để chọn. Trả về undefined
+ * khi không ai cần bank.
+ */
+export function optionBankKindFor(
+	skill: string,
+	promptType: string,
+	questionTypes: readonly (string | null | undefined)[],
+): keyof typeof ASSIGNMENT_ANSWER_CHOICES | undefined {
+	if (isOptionBankable(skill, promptType)) return answerKindByType[promptType];
+	for (const type of questionTypes) {
+		const effective = type ?? promptType;
+		if (isOptionBankable(skill, effective)) {
+			return answerKindByType[effective];
+		}
+	}
+	return undefined;
+}
+
+/**
  * Hiển thị chuẩn của từng dạng câu hỏi (label + instruction EN theo nguyên
  * văn đề IELTS) — nguồn DUY NHẤT cho header cụm trên take/review screen và
  * cho nhãn dạng bài ở authoring. Type lạ (đề cũ, snapshot fallback) rơi vào

@@ -275,6 +275,16 @@ describe("builder view-model helpers (full-test builder phase-3)", () => {
 			createdAt: "2026-09-28T00:00:00Z",
 			questions: [
 				{ stem: "Q14", opts: null, answer: "iv", alts: "", pin: null },
+				// #286 — per-question type phải sống sót qua bridge, nếu không
+				// edit/Apply qua test-builder xoá âm thầm type của đề trộn dạng.
+				{
+					stem: "Q15",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+					type: "tfng",
+				},
 			],
 		};
 		const value = composerFromPrompt(prompt);
@@ -282,7 +292,22 @@ describe("builder view-model helpers (full-test builder phase-3)", () => {
 		expect(value.part).toBe("p2");
 		expect(value.passage).toBe("Text…");
 		expect(value.items).toEqual([
-			{ stem: "Q14", opts: null, answer: "iv", alts: "", pin: null },
+			{
+				stem: "Q14",
+				opts: null,
+				answer: "iv",
+				alts: "",
+				type: null,
+				pin: null,
+			},
+			{
+				stem: "Q15",
+				opts: null,
+				answer: "TRUE",
+				alts: "",
+				type: "tfng",
+				pin: null,
+			},
 		]);
 
 		// Legacy row: skill/part/type vắng mặt → fallback task/genre/writing.

@@ -65,6 +65,13 @@ export function QuestionKeyEditor({
 	questionsError?: string;
 }) {
 	const qStart = qStartOf(skill, partId);
+	// Bank là prompt-level nhưng editor hiện khi type đề HOẶC bất kỳ câu
+	// bankable (đề trộn dạng) — không thì cụm bankable không có chỗ nhập bank
+	// mà instruction take screen vẫn nói "choose from the option bank".
+	const bankTypeId = isBankableType(skill, typeId)
+		? typeId
+		: (items.find((item) => item.type && isBankableType(skill, item.type))
+				?.type ?? null);
 	// Phase-04 FR2/FR3 — image-based pairs (reading diagram + listening map,
 	// skill-qualified) surface the URL field + pin editor; `map` gains the
 	// field it never had while writing task1's shared `map` id stays clear.
@@ -181,9 +188,9 @@ export function QuestionKeyEditor({
 					{questionsError}
 				</p>
 			)}
-			{isBankableType(skill, typeId) && (
+			{bankTypeId && (
 				<OptionBankEditor
-					typeId={typeId}
+					typeId={bankTypeId}
 					bank={optionBank}
 					items={items}
 					showErrors={showErrors}

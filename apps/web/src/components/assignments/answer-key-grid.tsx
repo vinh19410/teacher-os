@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import {
 	answerChoices,
 	emptyItem,
+	isImageBased,
 	kindOf,
 	partOf,
 	type QuestionItem,
@@ -143,15 +144,18 @@ export function AnswerKeyGrid({
 		);
 	};
 	/** Đổi dạng bài của 1 câu: reset opts/answer theo kind mới (đáp án cũ có
-	 * thể sai kind) nhưng GIỮ stem + pin; "" = theo dạng đề (type null). */
+	 * thể sai kind) nhưng GIỮ stem; pin chỉ giữ khi type hiệu dụng vẫn là
+	 * loại ảnh — pin trên câu không-ảnh sẽ route câu vào PinOverlay lệch.
+	 * "" = theo dạng đề (type null). */
 	const changeRowType = (index: number, nextType: string) => {
 		const item = items[index];
 		if (rowTypeOf(item) === (nextType || typeId)) return;
 		const fresh = nextType ? emptyItem(nextType) : emptyItem(typeId);
+		const nextEffective = nextType || typeId;
 		update(index, {
 			...fresh,
 			stem: item.stem,
-			pin: item.pin,
+			pin: isImageBased(skill, nextEffective) ? item.pin : null,
 			type: nextType ? nextType : null,
 		});
 	};

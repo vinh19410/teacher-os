@@ -277,3 +277,48 @@ describe("QuizPaper — header cụm theo type từng câu (#286)", () => {
 		expect(html).toContain("True / False / Not Given");
 	});
 });
+
+describe("QuizPaper — option bank cho đề trộn dạng (#286 H2)", () => {
+	it("hiện bank khi CÂU bankable trong prompt không-bankable", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					type: "summary", // p2, không bankable
+					optionBank: ["Heading I", "Heading II"],
+				})}
+				parts={buildQuizParts(
+					[
+						{
+							stem: "Paragraph A ____",
+							opts: null,
+							pin: null,
+							type: "headings", // p2 bankable
+						},
+					],
+					"summary",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Ngân hàng lựa chọn");
+		expect(html).toContain("Heading I");
+	});
+
+	it("prompt không bankable + không câu bankable → không có bank", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "note", optionBank: [] })}
+				parts={buildQuizParts(
+					[{ stem: "Note ____", opts: null, pin: null }],
+					"note",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("Ngân hàng lựa chọn");
+	});
+});

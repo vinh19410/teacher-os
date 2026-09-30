@@ -116,6 +116,9 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 			opts: question.opts ?? null,
 			answer: question.answer,
 			alts: question.alts ?? "",
+			// Per-question type (#286) — bridge giữ nguyên để edit/Apply qua
+			// test-builder không xoá type đã soạn của đề trộn dạng.
+			type: question.type ?? null,
 			pin: question.pin ?? null,
 		})),
 	};

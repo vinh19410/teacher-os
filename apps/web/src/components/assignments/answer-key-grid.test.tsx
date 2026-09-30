@@ -403,7 +403,7 @@ describe("AnswerKeyGrid — per-question type (mixed prompts)", () => {
 		expect(html).toContain('aria-label="Chấp nhận thêm, cách nhau bằng /"');
 	});
 
-	it("changing a row type resets opts/answer but keeps stem and pin", async () => {
+	it("changing a row type resets opts/answer, keeps stem, drops pin off image types", async () => {
 		const onItemsChange = vi.fn();
 		const { container } = render(
 			<AnswerKeyGrid
@@ -431,13 +431,50 @@ describe("AnswerKeyGrid — per-question type (mixed prompts)", () => {
 		fireEvent.change(select, { target: { value: "tfng" } });
 		expect(onItemsChange).toHaveBeenCalledTimes(1);
 		const next = onItemsChange.mock.calls[0][0][0];
+		// tfng không phải loại ảnh → pin bị drop (tránh route câu vào
+		// PinOverlay lệch trên take screen).
 		expect(next).toEqual({
 			stem: "Keep my stem",
 			opts: null,
 			answer: "",
 			alts: "",
-			pin: { x: 10, y: 20 },
+			pin: null,
 			type: "tfng",
+		});
+
+		// Type ảnh (diagram thuộc p1) → pin giữ nguyên khi câu revert về
+		// dạng đề (câu phải đang có type riêng, không thì là no-op).
+		const onKeepPin = vi.fn();
+		const again = render(
+			<AnswerKeyGrid
+				typeId="diagram"
+				skill="reading"
+				partId="p1"
+				items={[
+					{
+						stem: "Pinned stem",
+						answer: "TRUE",
+						opts: null,
+						alts: "",
+						pin: { x: 10, y: 20 },
+						type: "tfng",
+					},
+				]}
+				showErrors={false}
+				onItemsChange={onKeepPin}
+				onAddQuestion={vi.fn()}
+			/>,
+		);
+		fireEvent.change(
+			again.container.querySelector(
+				'select[aria-label="Dạng bài câu 1"]',
+			) as HTMLSelectElement,
+			{ target: { value: "" } },
+		);
+		expect(onKeepPin.mock.calls[0][0][0]).toMatchObject({
+			stem: "Pinned stem",
+			pin: { x: 10, y: 20 },
+			type: null,
 		});
 	});
 
