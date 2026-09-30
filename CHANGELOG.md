@@ -29,6 +29,7 @@ Quy ước khi cập nhật:
 - 6 endpoint `/api/student/*` quiz/attempt trong `studentRoutes()` (requireStudent + CSRF Origin/Content-Type guard + body cap); grading pure fn server-side (normalize + alts " / "); payload take không chứa answer key — leak-check 3 lớp trong e2e `student-quiz-take-review.spec.ts`
 - Renderer paper dùng chung dời về `@teacher-os/ui` (`ClozeStemText` respec interactive — width theo value học viên, không theo answer key; `PinOverlay` + optional answers/onAnswer; `OptionBankList`; `lib/cloze`, `lib/rich-text-sanitize`) — web chuyển import sạch, không shim
 - Tab "Làm thử & Soi bài" trên preview giáo viên `/assignments/preview` (#285): đề auto-graded reading/listening (bank `?id=` lẫn draft sessionStorage) có segmented control 2 tab — giáo viên làm bài tương tác (cloze/radio/pin như học viên), nộp → review chấm client-side bằng `gradeQuiz` (score card + verdict chip + Đáp án + thay thế + Giải thích từ note), "Làm lại" reset; không lưu, không API, take render từ questions đã strip key (mirror leak contract server), state lift ở route nên đổi tab không mất bài làm, đổi đề tự reset qua `simKey`
+- "Xem trước" đề đã lưu theo góc nhìn học viên (#282): nút "Xem trước" cho đề đang chọn ở `/assignments` điều hướng đến trang preview riêng `/assignments/preview?id=` hiển thị đúng như học viên nhìn thấy; e2e mở rộng `assignment-bank.spec.ts`
 
 ### Changed
 - Quiz logic + renderer extract dùng chung: `gradeQuiz`/`quiz-parts` dời về `packages/api/src/lib/`, 6 quiz render component (quiz-paper/question-item/review-item/navigator/score-card/compact-list) dời về `@teacher-os/ui/components/quiz/` — pure move, cutover server/student sạch không shim (#285); `AttemptScoreCard` bỏ router Link student, nhận `action?: ReactNode` (route student tự compose Link giữ nguyên UX); `QuizNavigator.verdicts` unify number-key
@@ -59,6 +60,9 @@ Quy ước khi cập nhật:
 
 ### Removed
 - Drift-guard `kernel-runtime.contract.test.ts` bỏ positive pin yêu cầu dashboard phải có flow check-in (`useDirectKernelAction`/`void run`/`disabled={busy…}`), thay bằng negative pin theo hướng UI mới (#278)
+
+### CI/Infra
+- Script dev của web/landing/student đổi tên thành `dev:bare`; root `dev:web`/`dev:landing`/`dev:student` chuyển sang chạy qua `pnpm --filter <app>`, `dev:server` giữ turbo filter
 
 ## 2026-09-25
 

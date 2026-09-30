@@ -365,9 +365,13 @@ migration, missing operator authority, or missing zone/DNS readiness.
 | Release | Commit | Operator (deploy) | Restore authority | Staging rehearsal | Smoke (Chrome/Safari) | GO |
 | --- | --- | --- | --- | --- | --- | --- |
 | prod UAT r2 (2026-08-30) | merge of `659e837` (develop) | AI agent (directed by Vinh Tran) | Vinh Tran | recorded throwaway-D1 proof of repaired `0006` (ledger 2026-08-20) | pass — Chrome incognito r2 (2026-08-30) + Safari private r2.1 (2026-08-31), 6/6 steps each | **GO 2026-08-31** (r2 + r2.1; Google OAuth leg by operator-approved deviation — email-auth evidence, Google round-trip to be retired at pilot onboarding) |
+| prod release v0.0.7 (2026-09-28) | merge `e088abb` (PR #277, develop) | automated `deploy.yml` on merge to `main`; promotion run by AI agent (directed by Vinh Tran) | Vinh Tran | not recorded — migrations 0026–0028 are additive-only (rollback notes below) | automated `/readyz` smoke pass (Deploy Production run on `e088abb`, 2026-09-28); Chrome/Safari browser smoke **not recorded** | shipped without a recorded GO — flagged as outstanding in the 2026-09-28 ship journal |
+| prod release v0.0.10 (promotion prep) | pending — merge of `develop` at promotion time | pending | Vinh Tran | pending — migrations 0029–0030 additive-only; rehearse on staging per preflight 6 | pending | pending |
 
 Fill one row per release; evidence (sanitized command output, screenshots
-without secrets) attaches to the tracking issue on GitHub.
+without secrets) attaches to the tracking issue on GitHub. One row per **prod
+release** (merge to `main`), not per version bump on `develop`: the 0.0.8–0.0.9
+bumps never promoted, so no row exists for them and the next release is v0.0.10.
 
 **2026-08-20 — NO-GO before deploy (no sign-off row: no release occurred).**
 Phase 6 pre-deploy gates ran and the topology gate failed: `APP_DOMAIN` unset in
@@ -577,3 +581,39 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
   2. Partial unique index `student_invitation_org_email_pending_uq` trên `(org_id, lower(trim(email))) WHERE status = 'pending'` chống spam duplicate lời mời pending.
   3. Drop index `student_email_uq` (toàn cục) và tạo index `student_org_email_uq` scoped theo `(org_id, lower(trim(email)))` cho phép học viên học cùng lúc nhiều tổ chức (multi-org).
 - **Rollback safety:** Forward-only. Dữ liệu `student_invitation` cascade delete theo tổ chức/người dùng.
+
+## Rollback safety: migrations 0026–0030 (additive-only)
+
+Tất cả các migration từ 0026 đến 0030 đều **additive-only** — chỉ thêm cột
+nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bảng hiện có:
+
+- **0026** (`0026_legal_master_chief.sql`): thêm 6 cột nullable vào `student`
+  (trường khảo sát onboarding — `exam_interest`, `target_score`,
+  `learning_goals`, `learning_goals_note`, `daily_study_hours`,
+  `onboarding_completed_at`).
+- **0027** (`0027_unknown_lizard.sql`): thêm `assignment_prompt.image_url`
+  (`text DEFAULT '' NOT NULL`).
+- **0028** (`0028_salty_purifiers.sql`): thêm
+  `assignment_prompt.option_bank` (`text DEFAULT '[]' NOT NULL`) — file
+  migration có ghi chú deploy-order: chạy migration trước worker mới.
+- **0029** (`0029_marvelous_vapor.sql`): tạo bảng `assignment_test` +
+  `assignment_test_part` (unique `(test_id, part)`) cho full-test builder.
+- **0030** (`0030_previous_drax.sql`): tạo bảng `quiz_attempt` (unique
+  `(assignment_id, student_id)` — 1 lượt làm bài mỗi lượt giao) cho luồng học
+  viên làm bài trên student portal.
+
+Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
+"Rollback code"):
+
+- Code cũ không đọc/ghi bất kỳ cột hoặc bảng nào ở trên, nên việc bảng/cột mới
+  còn sót lại trong D1 sau rollback là vô hại — **không có bước hoàn tác dữ liệu**.
+- Mọi migration đều forward-only: không DROP, không sửa file migration đã apply.
+- Chiều ngược lại mới rủi ro: worker mới cần bảng của 0029/0030 (và cột của
+  0028) — deploy thiếu migration làm `/readyz` trả 503 vì probe tự sinh danh
+  sách object bắt buộc từ schema barrel
+  ([apps/server/src/routes/readiness.ts](../apps/server/src/routes/readiness.ts)).
+  Alchemy apply migration trong cùng deploy; nếu tách bước, chạy migration
+  trước worker (deploy-order note trong header file 0028/0029).
+- Dữ liệu `quiz_attempt` / `assignment_test` cascade delete theo org /
+  assignment / student; rollback worker không đụng tới dữ liệu này (chỉ
+  procedure restore Time Travel mới ảnh hưởng).
