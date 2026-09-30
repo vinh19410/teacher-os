@@ -11,7 +11,7 @@ import {
 import { env } from "@teacher-os/env/web";
 import { HttpError } from "@/lib/query-client";
 
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
 	const raw = env.VITE_SERVER_URL;
 	return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
@@ -26,7 +26,7 @@ export function setActiveStudentOrgId(orgId: string): void {
 	localStorage.setItem("active_student_org_id", orgId);
 }
 
-function getStudentHeaders(
+export function getStudentHeaders(
 	extra: Record<string, string> = {},
 ): Record<string, string> {
 	const headers: Record<string, string> = {

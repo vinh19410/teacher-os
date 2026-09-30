@@ -1,11 +1,9 @@
 import { performance } from "node:perf_hooks";
-import { describe, expect, it } from "vitest";
-
-import { QUESTION_STEM_MAX } from "@/components/assignments/answer-key-grid";
 import {
 	addTableRow,
 	buildClozeSegments,
 	buildTableStem,
+	CLOZE_EDITOR_TYPES,
 	CLOZE_MARKER,
 	CLOZE_MAX_BLANKS,
 	CLOZE_STEM_MAX,
@@ -21,6 +19,7 @@ import {
 	removeTableRow,
 	segmentsToItems,
 	splitStemByMarker,
+	TABLECOMP_TYPE,
 	type TableGridState,
 	tableApplyIssues,
 	tableSegments,
@@ -28,7 +27,10 @@ import {
 	toggleTableCell,
 	tokenizePassage,
 	updateTableCell,
-} from "./cloze";
+} from "@teacher-os/ui/lib/cloze";
+import { describe, expect, it } from "vitest";
+
+import { QUESTION_STEM_MAX } from "@/components/assignments/answer-key-grid";
 
 describe("countBlanks (phase-03 FR7 — shared composer + preview helper)", () => {
 	it("counts a single marker", () => {
@@ -495,8 +497,7 @@ describe("table grid state (phase-03 FR4 — grid editor math)", () => {
 });
 
 describe("CLOZE_EDITOR_TYPES (phase-03 — 8 cloze types; tablecomp has its own grid)", () => {
-	it("covers exactly the completion types that get the click-to-blank editor", async () => {
-		const { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } = await import("./cloze");
+	it("covers exactly the completion types that get the click-to-blank editor", () => {
 		expect([...CLOZE_EDITOR_TYPES].sort()).toEqual(
 			[
 				"flow",

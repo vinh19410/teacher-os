@@ -13,6 +13,9 @@ import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
+import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
+import { Route as AuthLearnQuizzesAttemptAttemptIdRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId'
+import { Route as AuthLearnQuizzesAttemptAttemptIdDetailRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId.detail'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -33,16 +36,40 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthLearnQuizzesAssignmentIdRoute =
+  AuthLearnQuizzesAssignmentIdRouteImport.update({
+    id: '/learn/quizzes/$assignmentId',
+    path: '/learn/quizzes/$assignmentId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
+const AuthLearnQuizzesAttemptAttemptIdRoute =
+  AuthLearnQuizzesAttemptAttemptIdRouteImport.update({
+    id: '/learn/quizzes/attempt/$attemptId',
+    path: '/learn/quizzes/attempt/$attemptId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
+const AuthLearnQuizzesAttemptAttemptIdDetailRoute =
+  AuthLearnQuizzesAttemptAttemptIdDetailRouteImport.update({
+    id: '/detail',
+    path: '/detail',
+    getParentRoute: () => AuthLearnQuizzesAttemptAttemptIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
+  '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
+  '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/': typeof AuthIndexRoute
+  '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
+  '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
+  '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +77,36 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
+  '/_auth/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
+  '/_auth/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/learn/quizzes/$assignmentId'
+    | '/learn/quizzes/attempt/$attemptId'
+    | '/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/onboarding' | '/'
-  id: '__root__' | '/_auth' | '/login' | '/_auth/onboarding' | '/_auth/'
+  to:
+    | '/login'
+    | '/onboarding'
+    | '/'
+    | '/learn/quizzes/$assignmentId'
+    | '/learn/quizzes/attempt/$attemptId'
+    | '/learn/quizzes/attempt/$attemptId/detail'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/login'
+    | '/_auth/onboarding'
+    | '/_auth/'
+    | '/_auth/learn/quizzes/$assignmentId'
+    | '/_auth/learn/quizzes/attempt/$attemptId'
+    | '/_auth/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,17 +144,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/learn/quizzes/$assignmentId': {
+      id: '/_auth/learn/quizzes/$assignmentId'
+      path: '/learn/quizzes/$assignmentId'
+      fullPath: '/learn/quizzes/$assignmentId'
+      preLoaderRoute: typeof AuthLearnQuizzesAssignmentIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/learn/quizzes/attempt/$attemptId': {
+      id: '/_auth/learn/quizzes/attempt/$attemptId'
+      path: '/learn/quizzes/attempt/$attemptId'
+      fullPath: '/learn/quizzes/attempt/$attemptId'
+      preLoaderRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/learn/quizzes/attempt/$attemptId/detail': {
+      id: '/_auth/learn/quizzes/attempt/$attemptId/detail'
+      path: '/detail'
+      fullPath: '/learn/quizzes/attempt/$attemptId/detail'
+      preLoaderRoute: typeof AuthLearnQuizzesAttemptAttemptIdDetailRouteImport
+      parentRoute: typeof AuthLearnQuizzesAttemptAttemptIdRoute
+    }
   }
 }
+
+interface AuthLearnQuizzesAttemptAttemptIdRouteChildren {
+  AuthLearnQuizzesAttemptAttemptIdDetailRoute: typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
+}
+
+const AuthLearnQuizzesAttemptAttemptIdRouteChildren: AuthLearnQuizzesAttemptAttemptIdRouteChildren =
+  {
+    AuthLearnQuizzesAttemptAttemptIdDetailRoute:
+      AuthLearnQuizzesAttemptAttemptIdDetailRoute,
+  }
+
+const AuthLearnQuizzesAttemptAttemptIdRouteWithChildren =
+  AuthLearnQuizzesAttemptAttemptIdRoute._addFileChildren(
+    AuthLearnQuizzesAttemptAttemptIdRouteChildren,
+  )
 
 interface AuthRouteRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
+  AuthLearnQuizzesAttemptAttemptIdRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
+  AuthLearnQuizzesAttemptAttemptIdRoute:
+    AuthLearnQuizzesAttemptAttemptIdRouteWithChildren,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

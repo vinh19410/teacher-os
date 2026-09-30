@@ -1,11 +1,11 @@
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
+import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import {
-	bankLabel,
 	isBankableType,
 	kindOf,
 } from "@/components/assignments/assignment-presets";
-import { ClozeStemText } from "@/components/assignments/cloze-stem";
-import { RichTextBody } from "@/components/ui/rich-text-body";
 import type {
 	TestPreviewDraft,
 	TestPreviewPartDraft,
@@ -143,31 +143,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 										className="text-muted-fg text-sm"
 									/>
 								)}
-								{bankable &&
-									(bank.length > 0 ? (
-										<div className="rounded-md border border-line bg-surface p-3">
-											<p className="font-medium text-muted-fg text-xs">
-												Ngân hàng lựa chọn
-											</p>
-											<ol className="mt-1.5 flex flex-col gap-1">
-												{bank.map((row, index) => (
-													<li key={index} className="text-sm">
-														<span className="font-medium font-mono">
-															{bankLabel(bankKind, index)}
-														</span>{" "}
-														{row}
-													</li>
-												))}
-											</ol>
-										</div>
-									) : (
-										<p
-											role="alert"
-											className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
-										>
-											Thiếu ngân hàng lựa chọn
-										</p>
-									))}
+								{bankable && <OptionBankList bank={bank} kind={bankKind} />}
 								{part.items.map((item, index) => (
 									<div key={index} className="text-sm">
 										<strong>{qStart + index}.</strong>{" "}

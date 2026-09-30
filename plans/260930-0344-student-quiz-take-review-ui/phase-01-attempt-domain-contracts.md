@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Attempt domain — DB, contracts, server routes, grading"
-status: pending
+status: done
 priority: P1
 effort: "5h"
 dependencies: []
@@ -51,18 +51,18 @@ contracts, 6 endpoint `/api/student/*` (lấy đề sạch, start/resume, autosa
 
 ## Requirements
 
-- [ ] Bảng `quiz_attempt` + migration (`pnpm db:generate`): `id, orgId, assignmentId FK
+- [x] Bảng `quiz_attempt` + migration (`pnpm db:generate`): `id, orgId, assignmentId FK
       class_assignment, studentId FK student, status 'in_progress'|'submitted',
       questionsSnapshot TEXT (JSON đầy đủ key), answers TEXT (JSON `{"<qIndex>":"<value>"}`),
       correctCount INTEGER nullable, startedAt INTEGER ms, submittedAt INTEGER ms nullable`;
       `unique(assignmentId, studentId)`; index orgId.
-- [ ] Contracts: `studentQuizDetailSchema` (sanitized), `quizAnswerPatchSchema`,
+- [x] Contracts: `studentQuizDetailSchema` (sanitized), `quizAnswerPatchSchema`,
       `quizSubmitResultSchema`, `quizAttemptSummarySchema`, `quizAttemptDetailSchema`.
-- [ ] 6 endpoint trong `studentRoutes()` với `requireStudent` + CSRF Origin guard +
+- [x] 6 endpoint trong `studentRoutes()` với `requireStudent` + CSRF Origin guard +
       target-ownership predicate.
-- [ ] `gradeQuiz` pure fn + unit tests (case-insensitivity, " / " alts, empty, skipped,
+- [x] `gradeQuiz` pure fn + unit tests (case-insensitivity, " / " alts, empty, skipped,
       multiset nếu authoring có multi-part).
-- [ ] Submit stamp `class_assignment_target.submittedAt` (ISO datetime) — đóng non-goal #208.
+- [x] Submit stamp `class_assignment_target.submittedAt` (ISO datetime) — đóng non-goal #208.
 
 ## Architecture
 
@@ -135,12 +135,12 @@ per-request rate limit cấp infra (WAF/DO) là follow-up, không dựng DO buck
 
 ## Todo
 
-- [ ] Schema + migration quiz_attempt (questionsSnapshot)
-- [ ] Contracts student quiz/attempt
-- [ ] gradeQuiz + unit tests (tdd trước routes)
-- [ ] 6 endpoints trong studentRoutes() + requireStudent + Origin/CT guard
-- [ ] Atomic PATCH + flip-first submit + snapshot render/grade
-- [ ] Route tests (401/403/404/idempotency/races/snapshot/leak)
+- [x] Schema + migration quiz_attempt (questionsSnapshot)
+- [x] Contracts student quiz/attempt
+- [x] gradeQuiz + unit tests (tdd trước routes)
+- [x] 6 endpoints trong studentRoutes() + requireStudent + Origin/CT guard
+- [x] Atomic PATCH + flip-first submit + snapshot render/grade
+- [x] Route tests (401/403/404/idempotency/races/snapshot/leak)
 
 ## Success Criteria
 

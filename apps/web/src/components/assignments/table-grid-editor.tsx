@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
 import {
 	addTableCol,
 	addTableRow,
@@ -14,7 +11,10 @@ import {
 	toggleTableCell,
 	updateTableBlank,
 	updateTableCell,
-} from "@/lib/cloze";
+} from "@teacher-os/ui/lib/cloze";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import type { QuestionItem } from "./assignment-presets";
 import { hasItemContent } from "./cloze-editor";

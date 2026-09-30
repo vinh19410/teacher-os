@@ -12,6 +12,24 @@ vi.mock("@/lib/auth-client", () => ({
 	},
 }));
 
+// AssignmentRow giờ dùng TanStack Link (route take #283) — stub thành <a>
+// thuần để renderToStaticMarkup chạy không cần router context.
+vi.mock("@tanstack/react-router", () => ({
+	Link: (props: {
+		to: string;
+		params?: Record<string, string>;
+		"aria-label"?: string;
+		children: React.ReactNode;
+	}) => (
+		<a
+			href={props.to.replace("$assignmentId", props.params?.assignmentId ?? "")}
+			aria-label={props["aria-label"]}
+		>
+			{props.children}
+		</a>
+	),
+}));
+
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { ClassCard } from "@/components/overview/class-card";
@@ -115,21 +133,44 @@ describe("ClassCard", () => {
 });
 
 describe("AssignmentRow", () => {
-	it("renders assignment title, class name, and status badge", () => {
-		const asg: StudentAssignment = {
-			id: "a1",
-			title: "Writing Task 1 – Bar Chart",
-			source: "class_assignment",
-			classId: "c1",
-			className: "IELTS Intensive",
-			due: "2099-01-10",
-			submittedAt: null,
-			scores: null,
-		};
+	const asg: StudentAssignment = {
+		id: "a1",
+		title: "Writing Task 1 – Bar Chart",
+		source: "class_assignment",
+		classId: "c1",
+		className: "IELTS Intensive",
+		due: "2099-01-10",
+		submittedAt: null,
+		scores: null,
+	};
 
+	it("renders assignment title, class name, and status badge", () => {
 		const html = renderToStaticMarkup(<AssignmentRow assignment={asg} />);
 		expect(html).toContain("Writing Task 1 – Bar Chart");
 		expect(html).toContain("IELTS Intensive");
+	});
+
+	it("links class_assignment rows to the quiz take screen", () => {
+		const html = renderToStaticMarkup(<AssignmentRow assignment={asg} />);
+		expect(html).toContain('href="/learn/quizzes/a1"');
+		expect(html).toContain('aria-label="Làm bài: Writing Task 1 – Bar Chart"');
+	});
+
+	it("links submitted class_assignment rows for review, not retake", () => {
+		const submitted: StudentAssignment = {
+			...asg,
+			submittedAt: "2026-09-01T00:00:00Z",
+		};
+		const html = renderToStaticMarkup(<AssignmentRow assignment={submitted} />);
+		expect(html).toContain('href="/learn/quizzes/a1"');
+		expect(html).toContain("Xem lại kết quả");
+	});
+
+	it("renders grading-source rows WITHOUT any link (RT#10)", () => {
+		const grading: StudentAssignment = { ...asg, source: "grading" };
+		const html = renderToStaticMarkup(<AssignmentRow assignment={grading} />);
+		expect(html).toContain("Writing Task 1 – Bar Chart");
+		expect(html).not.toContain("<a ");
 	});
 });
 

@@ -18,6 +18,10 @@ Quy ước khi cập nhật:
 - `RichTextBody` — render sink duy nhất đi qua DOMPurify (allowlist thẻ/attr chặt, hook ép `a` mở tab mới `rel="noopener noreferrer"`); hàng plain cũ tự phát hiện và render y hệt trước kia (pre-line/pre-wrap), không data migration
 - Adapter `normalizeLegacyRichText` tại 3 cửa nạp editor (restore draft `/assignments/new`, slot draft test-builder, bank-edit `composerFromPrompt`) — escape + `\n`→`<br>`, chống mất xuống dòng vĩnh viễn khi sửa draft/hàng cũ
 - E2E `rich-text-content.spec.ts`: bold persist qua save/reload, payload XSS (`<img onerror>`) lưu được nhưng vô hiệu khi render, multi-line giữ xuống dòng qua editor round-trip
+- Luồng học viên làm bài + xem lại bài làm trên student portal (#283): route `/learn/quizzes/:assignmentId` (paper 1 cột + navigator footer + autosave debounce 600ms drain-before-submit + mirror localStorage resume), trang kết quả `/learn/quizzes/attempt/:attemptId` (Điểm + đúng/sai/bỏ qua) và trang soi chi tiết `.../detail` (verdict chip + Đáp án + Giải thích từ snapshot)
+- Bảng `quiz_attempt` (migration 0030): snapshot đề lúc start (đề đổi sau khi giao không ảnh hưởng bài đang làm/chấm), answers JSON map autosave atomic `json_set`, unique `(assignmentId, studentId)` — 1 lượt/lượt giao; `class_assignment_target.submittedAt` được stamp khi nộp (đóng non-goal #208)
+- 6 endpoint `/api/student/*` quiz/attempt trong `studentRoutes()` (requireStudent + CSRF Origin/Content-Type guard + body cap); grading pure fn server-side (normalize + alts " / "); payload take không chứa answer key — leak-check 3 lớp trong e2e `student-quiz-take-review.spec.ts`
+- Renderer paper dùng chung dời về `@teacher-os/ui` (`ClozeStemText` respec interactive — width theo value học viên, không theo answer key; `PinOverlay` + optional answers/onAnswer; `OptionBankList`; `lib/cloze`, `lib/rich-text-sanitize`) — web chuyển import sạch, không shim
 
 ### Changed
 - 11 gate "có nội dung" (`.trim()`) đổi sang `isEmptyRichText` — `<p></p>` bị coi là rỗng ở nút lưu, autosave skip, gate `ready` server 400 trên POST create; 3 superRefine gate (writing prompt, reading passage, speaking part1) tương tự

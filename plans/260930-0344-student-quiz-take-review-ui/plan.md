@@ -1,7 +1,7 @@
 ---
 title: "Student quiz take + review UI (Selfomy reference)"
 description: "Luồng học viên làm bài và xem lại bài làm trên student portal — vertical slice từ DB/contracts tới UI, tham khảo UX Selfomy (test123456.hoc.sh)."
-status: pending
+status: completed
 priority: P1
 effort: 22h
 issue: 283
@@ -73,20 +73,20 @@ chỉ thêm nguồn parts.
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Attempt domain — DB, contracts, server routes, grading](./phase-01-attempt-domain-contracts.md) | Pending |
-| 2 | [Shared paper renderer extraction](./phase-02-shared-paper-renderer.md) | Pending |
-| 3 | [Take screen](./phase-03-take-screen.md) | Pending |
-| 4 | [Result + review screens](./phase-04-result-review-screens.md) | Pending |
-| 5 | [E2E + full verification](./phase-05-e2e-verification.md) | Pending |
+| 1 | [Attempt domain — DB, contracts, server routes, grading](./phase-01-attempt-domain-contracts.md) | Done |
+| 2 | [Shared paper renderer extraction](./phase-02-shared-paper-renderer.md) | Done |
+| 3 | [Take screen](./phase-03-take-screen.md) | Done |
+| 4 | [Result + review screens](./phase-04-result-review-screens.md) | Done |
+| 5 | [E2E + full verification](./phase-05-e2e-verification.md) | Done |
 
 ## Success Criteria
 
-- [ ] Học viên bấm assignment row trên overview → làm bài (radio pills + blanks inline)
+- [x] Học viên bấm assignment row trên overview → làm bài (radio pills + blanks inline)
       → reload giữa chừng còn nguyên answers (autosave) → nộp (guard đếm câu trống) →
       thấy điểm + đúng/sai/bỏ qua → vào detail soi từng câu với Đáp án + giải thích.
-- [ ] Payload take không lộ answer key (e2e assert).
-- [ ] `submittedAt` của target được stamp khi nộp; overview badge đổi "Đã nộp".
-- [ ] Full gates xanh: `pnpm --filter student test`, `pnpm --filter web test`, server
+- [x] Payload take không lộ answer key (e2e assert).
+- [x] `submittedAt` của target được stamp khi nộp; overview badge đổi "Đã nộp".
+- [x] Full gates xanh: `pnpm --filter student test`, `pnpm --filter web test`, server
       tests, `check-types` các app, `pnpm check`, e2e spec mới.
 
 ## Non-Goals

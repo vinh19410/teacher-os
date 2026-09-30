@@ -61,7 +61,7 @@ export const classAssignmentTarget = sqliteTable(
 		studentId: text("student_id")
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
-		submittedAt: text("submitted_at"), // ISO yyyy-MM-ddTHH:mm | null
+		submittedAt: text("submitted_at"), // ISO 8601 datetime string (toISOString()) | null
 	},
 	(table) => [
 		uniqueIndex("class_assignment_target_assignment_student_uq").on(

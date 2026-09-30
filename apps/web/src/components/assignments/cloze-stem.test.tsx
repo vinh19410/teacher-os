@@ -1,7 +1,6 @@
+import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-
-import { ClozeStemText } from "./cloze-stem";
 
 describe("ClozeStemText — marker rendering (phase-03 FR5)", () => {
 	it("splits the stem at the marker into before-text, input and after-text", () => {
@@ -73,5 +72,60 @@ describe("ClozeStemText — tablecomp labeled rows (phase-03 FR5)", () => {
 		);
 		expect(html).toContain("A hand-typed stem");
 		expect(html).toContain("<input");
+	});
+});
+
+describe("ClozeStemText — interactive mode (RT#8 take-screen respec)", () => {
+	it("sizes the editable blank from the learner value, never the key", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText
+				stem="Rains refill the ____ each year."
+				answer="stepwells"
+				value="Bees"
+				onChange={() => {}}
+			/>,
+		);
+		// max(6, value.length + 2): a short value floors at the 6ch preview
+		// minimum; the 9-char key would have made it 13ch (key-length oracle).
+		expect(html).toContain("width:6ch");
+		expect(html).not.toContain("width:13ch");
+		expect(html).not.toContain("stepwells");
+	});
+
+	it("grows with the value and renders an editable controlled input", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText
+				stem="____ opens the passage."
+				value="Pollination"
+				onChange={() => {}}
+			/>,
+		);
+		expect(html).toContain("width:13ch");
+		expect(html).toContain('value="Pollination"');
+		expect(html).not.toContain("readonly");
+	});
+
+	it("works with no answer key at all (take payloads carry none)", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText stem="____" onChange={() => {}} />,
+		);
+		expect(html).toContain("<input");
+		expect(html).toContain("width:6ch");
+		expect(html).not.toContain("readonly");
+	});
+
+	it("caps the interactive input at the autosave contract limit (500)", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText stem="____" onChange={() => {}} />,
+		);
+		// code-review F2: paste dài không sinh PATCH 400 lặp mãi.
+		expect(html).toContain('maxLength="500"');
+	});
+
+	it("preview (readOnly) input carries no maxLength dependence", () => {
+		const html = renderToStaticMarkup(
+			<ClozeStemText stem="____" answer="stepwells" />,
+		);
+		expect(html).toContain("readOnly");
 	});
 });

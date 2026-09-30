@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import type { StudentAssignment } from "@teacher-os/api/contracts";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 
@@ -8,7 +9,7 @@ export function AssignmentRow({
 }) {
 	const derived = deriveAssignmentStatus(assignment);
 
-	return (
+	const rowContent = (
 		<div className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-line bg-surface/30 p-4 transition-[border-color,background] hover:border-line-hover hover:bg-surface sm:flex-row sm:items-center sm:justify-between">
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
@@ -35,5 +36,27 @@ export function AssignmentRow({
 				</span>
 			</div>
 		</div>
+	);
+
+	// Link CHỈ row class_assignment (RT#10) — row từ nguồn chấm giữ render
+	// cũ (không href, tránh 404 take). Chưa nộp → take screen; đã nộp → take
+	// screen cũng vào được: loader redirect sang summary của attempt (row
+	// không mang attemptId trên wire).
+	if (assignment.source !== "class_assignment") {
+		return rowContent;
+	}
+	return (
+		<Link
+			to="/learn/quizzes/$assignmentId"
+			params={{ assignmentId: assignment.id }}
+			aria-label={
+				assignment.submittedAt
+					? `Xem lại kết quả: ${assignment.title}`
+					: `Làm bài: ${assignment.title}`
+			}
+			className="block rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-accent-blue"
+		>
+			{rowContent}
+		</Link>
 	);
 }

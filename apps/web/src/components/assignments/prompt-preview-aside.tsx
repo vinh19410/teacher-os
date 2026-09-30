@@ -1,12 +1,14 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
+import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
+import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { Button } from "@/components/ui/button";
-import { RichTextBody } from "@/components/ui/rich-text-body";
 import { Tag } from "@/components/ui/tag";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
-	bankLabel,
 	isAutoSkill,
 	isBankableType,
 	isImageBased,
@@ -17,8 +19,6 @@ import {
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
-import { ClozeStemText } from "./cloze-stem";
-import { PinOverlay } from "./pin-editor";
 
 interface PromptPreviewAsideProps {
 	prompt: AssignmentPrompt;
@@ -121,31 +121,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 							className="text-muted-fg text-xs"
 						/>
 					)}
-					{bankable &&
-						(bank.length > 0 ? (
-							<div className="rounded-md border border-line bg-surface p-3">
-								<p className="font-medium text-muted-fg text-xs">
-									Ngân hàng lựa chọn
-								</p>
-								<ol className="mt-1.5 flex flex-col gap-1">
-									{bank.map((row, index) => (
-										<li key={index} className="text-fg text-sm">
-											<span className="font-medium font-mono">
-												{bankLabel(bankKind, index)}
-											</span>{" "}
-											{row}
-										</li>
-									))}
-								</ol>
-							</div>
-						) : (
-							<p
-								role="alert"
-								className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
-							>
-								Thiếu ngân hàng lựa chọn
-							</p>
-						))}
+					{bankable && <OptionBankList bank={bank} kind={bankKind} />}
 					{(prompt.questions ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{qStartOf(skillId, partId) + index}.</strong>{" "}

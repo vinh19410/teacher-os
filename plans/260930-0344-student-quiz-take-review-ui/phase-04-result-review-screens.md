@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Result + review screens"
-status: pending
+status: done
 priority: P1
 effort: "4h"
 dependencies: [3]
@@ -38,16 +38,16 @@ read-only với verdict chip + Đáp án + giải thích.
 
 ## Requirements
 
-- [ ] Summary: header exit + title; submitted-at + thời lượng hoàn thành ("X phút Y
+- [x] Summary: header exit + title; submitted-at + thời lượng hoàn thành ("X phút Y
       giây"); score card (Điểm = correctCount lớn, Câu đúng / Câu sai / Câu bỏ qua);
       CTA "Xem giải thích chi tiết"; list compact per part (`n → đáp án học viên ("—"
       nếu bỏ) → Đáp án đúng`).
-- [ ] Detail: paper read-only (input disabled) + per-question verdict chip — đúng =
+- [x] Detail: paper read-only (input disabled) + per-question verdict chip — đúng =
       success token, sai = danger chip hiện đáp án học viên, bỏ = "Chưa trả lời" muted;
       dòng "Đáp án: X" (+ alts) dưới mỗi câu; disclosure "Giải thích" render `note`.
-- [ ] Navigator footer ở detail: giữ part tabs + số câu, màu theo verdict (đúng
+- [x] Navigator footer ở detail: giữ part tabs + số câu, màu theo verdict (đúng
       success / sai danger / bỏ muted).
-- [ ] Overview: row đã nộp link thẳng summary; summary có breadcrumb/exit về overview.
+- [x] Overview: row đã nộp link thẳng summary; summary có breadcrumb/exit về overview.
 
 ## Architecture
 
@@ -81,11 +81,11 @@ lib/repos/quiz.ts                          → +useAttemptSummary/useAttemptDeta
 
 ## Todo
 
-- [ ] Repos summary/detail
-- [ ] Summary screen (score card + compact list + duration)
-- [ ] Detail screen (review items + đáp án + giải thích)
-- [ ] Navigator verdict variant + wiring links
-- [ ] Unit tests + typecheck
+- [x] Repos summary/detail
+- [x] Summary screen (score card + compact list + duration)
+- [x] Detail screen (review items + đáp án + giải thích)
+- [x] Navigator verdict variant + wiring links
+- [x] Unit tests + typecheck
 
 ## Success Criteria
 

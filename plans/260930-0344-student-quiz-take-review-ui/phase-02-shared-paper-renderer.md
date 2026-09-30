@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Shared paper renderer extraction"
-status: pending
+status: done
 priority: P1
 effort: "3h"
 dependencies: []
@@ -48,10 +48,10 @@ app dùng lại — không sinh bản renderer thứ hai.
 
 ## Requirements
 
-- [ ] `packages/ui` export các component trên qua entry hiện có (pattern
+- [x] `packages/ui` export các component trên qua entry hiện có (pattern
       `@teacher-os/ui/components/...`).
-- [ ] Web consumers đổi import; không file nào ở web còn import path cũ.
-- [ ] Web tests hiện có (colocated) vẫn xanh — test component theo import mới.
+- [x] Web consumers đổi import; không file nào ở web còn import path cũ.
+- [x] Web tests hiện có (colocated) vẫn xanh — test component theo import mới.
 
 ## Files to Create / Modify
 
@@ -81,11 +81,11 @@ app dùng lại — không sinh bản renderer thứ hai.
 
 ## Todo
 
-- [ ] Inventory usages + callers
-- [ ] Move components + libs + deps (dompurify, @teacher-os/api) xuống @teacher-os/ui
-- [ ] ClozeStemText respec (answer optional, width theo value) + PinOverlay extension
-- [ ] Cập nhật imports web (src + tests), cập nhật tests theo width mới
-- [ ] Xóa bản gốc, gates xanh
+- [x] Inventory usages + callers
+- [x] Move components + libs + deps (dompurify, @teacher-os/api) xuống @teacher-os/ui
+- [x] ClozeStemText respec (answer optional, width theo value) + PinOverlay extension
+- [x] Cập nhật imports web (src + tests), cập nhật tests theo width mới
+- [x] Xóa bản gốc, gates xanh
 
 ## Success Criteria
 
