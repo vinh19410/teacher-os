@@ -1,7 +1,7 @@
 ---
 title: "Ship release v0.0.10 — promote develop → main"
 date: 2026-09-30
-summary: "Release promotion develop→main v0.0.7→v0.0.10 (24 commits, 202 files, +27931/−676): rich text Tiptap #280, IELTS full test builder, student quiz take/review #283, teacher preview sim #285, student-view preview #282, dashboard schedule #278. Gates local 7/7 xanh (1763 unit + e2e 108/1 skip/0 fail); two-pass review tìm 1 Critical (transcript listening lộ wire take) + 1 High (mất vĩnh viễn stamp submittedAt khi batch hỏng sau flip) + 1 Medium CSRF gap — cả 3 fixed kèm regression tests, re-verify xanh; bump 0.0.10 standalone, changelog bổ sung 2 dòng thiếu (#282, CI/Infra), docs sync 4 file."
+summary: "Release promotion develop→main v0.0.7→v0.0.10: rich text Tiptap #280, IELTS full test builder, student quiz take/review #283, teacher preview sim #285, student-view preview #282, dashboard schedule #278, quiz take split-pane + per-question type #286 (merge #288 giữa ship). Two-pass review tìm 1 Critical (transcript listening lộ wire take) + 1 High (mất vĩnh viễn stamp submittedAt khi batch hỏng sau flip) + 1 Medium CSRF gap — cả 3 fixed kèm regression tests. Gates chạy 2 lần 0 fail: tại a119905 (1.763 unit + e2e 108) và sau rebase #288 (1.801 unit + e2e 111/1 skip); changelog bổ sung 2 dòng thiếu (#282, CI/Infra), docs sync 4 file."
 ---
 
 # Ship release v0.0.10 — promote develop → main
@@ -17,6 +17,7 @@ Release promotion theo precedent #277 (`chore(release): vX.Y.Z`), không có pla
 - **Changelog:** date-based, đã phủ đủ trừ 2 chỗ — bổ sung dòng #282 (student-view preview page, feat có user-facing) và mục CI/Infra 2026-09-28 (dev:bare rename).
 - **Docs (docs-manager subagent):** 4 file +46/−2 — sửa link chết rich-text sink trong codebase-summary (sink đã dời sang `@teacher-os/ui` ở #285), thêm architectural rule single DOMPurify sink + durable decisions (`assignment_test` composition/numbering, `quiz_attempt` 1-lượt/snapshot/server-grade/no-key-on-wire) vào PDR, runbook thêm rollback-safety migrations 0026–0030 (trả nợ recorded debt từ ship v0.0.7) + sign-off rows (v0.0.7 hồi cứu truthful "not recorded" cho smoke; v0.0.10 pending chờ evidence deploy thật).
 - **Vận hành subagent:** code-reviewer dính 429 usage-limit ngay trước lúc ghi báo cáo — resume từ transcript với lệnh "ghi ngay, không thu thập thêm" thành công; journal do lead viết inline (journal-writer cùng pool quota Claude).
+- **Mid-ship merge #288 (#286):** giữa pipeline, PR #288 (reading split-pane + per-cluster instructions + per-question `type`) merge vào `origin/develop` (10 commits, 36 files) — push bị reject, rebase 2 promotion commits lên trên (git tự drop commit bump vì 0.0.10 đã có upstream), dời fixture heal test sang `ca-q11` tránh đụng fixture `prompt-mixed` mới của #286 trên ca-q10, rồi **chạy lại toàn bộ gate mirror tại HEAD mới**: biome 574 files sạch, check-types 7/7, unit uncached **1.801 passed / 0 failed** (server 445, web 1.150, student 125, auth 59), build 4/4, e2e **111 passed / 1 skip / 0 fail**. Review coverage phần #286: review riêng của PR #288 + ak:review-pr trên release PR (Step 13) + CI.
 
 ## Code review (two-pass toàn delta, report `plans/reports/code-reviewer-260930-2033-release-v0010-review.md`)
 
