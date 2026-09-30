@@ -256,13 +256,19 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 		expect(readAssignmentDraft(store)).not.toBeNull();
 	});
 
-	test("oversized payload is not written (200KB cap)", () => {
+	test("oversized payload is not written and warns (512KB HTML cap)", () => {
 		const store = fakeStorage();
 		const bloated = composerValue({
 			passage: "x".repeat(ASSIGNMENT_DRAFT_MAX_LENGTH),
 		});
-		saveAssignmentDraft(draft({ value: bloated }), store);
-		expect(store.size).toBe(0);
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			saveAssignmentDraft(draft({ value: bloated }), store);
+			expect(store.size).toBe(0);
+			expect(warn).toHaveBeenCalledTimes(1);
+		} finally {
+			warn.mockRestore();
+		}
 	});
 
 	test("QuotaExceeded while saving never throws", () => {
@@ -300,6 +306,30 @@ describe("composerDraftHasContent — autosave skip gate (FR6)", () => {
 			composerDraftHasContent(
 				composerValue({
 					items: [{ stem: "s", answer: "TRUE", opts: null, alts: "" }],
+				}),
+			),
+		).toBe(true);
+	});
+
+	test("rich text: tag-only fields (<p></p>) do NOT trigger autosave", () => {
+		const tagOnly = composerValue({
+			title: "",
+			prompt: "<p></p>",
+			passage: "<p><br></p>",
+			intro: "<p> </p>",
+			transcript: "<p></p>",
+			note: "<p></p>",
+			items: [emptyItem("tfng")],
+		});
+		expect(composerDraftHasContent(tagOnly)).toBe(false);
+		expect(
+			composerDraftHasContent(
+				composerValue({
+					title: "",
+					passage: "<p><br></p>",
+					intro: "<p> </p>",
+					items: [emptyItem("tfng")],
+					prompt: "<p>x</p>",
 				}),
 			),
 		).toBe(true);

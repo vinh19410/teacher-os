@@ -1,0 +1,52 @@
+import { sql } from "drizzle-orm";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+import { classAssignment } from "./class-assignment";
+import { organization } from "./organization";
+import { student } from "./student";
+
+/**
+ * Một lượt làm bài quiz của học viên (#283). Unique (assignmentId, studentId)
+ * — 1 attempt mỗi lượt giao, không retake v1. `questionsSnapshot` là bản
+ * chụp đề ĐẦY ĐỦ KEY (answer/alts) tại lúc start: teacher PATCH prompt sau
+ * đó không đổi đề học viên đang làm cũng như grading (RT#3 — cùng precedent
+ * title-snapshot của `class_assignment`). `answers` là JSON object
+ * `{"<qIndex>": "<value>"}` được autosave từng câu bằng json_set atomic;
+ * `correctCount` chỉ được ghi lúc submit (null = chưa nộp), wrong/skipped
+ * luôn derive được từ snapshot + answers đã freeze.
+ */
+export const quizAttempt = sqliteTable(
+	"quiz_attempt",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		assignmentId: text("assignment_id")
+			.notNull()
+			.references(() => classAssignment.id, { onDelete: "cascade" }),
+		studentId: text("student_id")
+			.notNull()
+			.references(() => student.id, { onDelete: "cascade" }),
+		status: text("status").notNull().default("in_progress"), // "in_progress" | "submitted"
+		questionsSnapshot: text("questions_snapshot").notNull(),
+		answers: text("answers").notNull().default("{}"),
+		correctCount: integer("correct_count"),
+		startedAt: integer("started_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+	},
+	(table) => [
+		uniqueIndex("quiz_attempt_assignment_student_uq").on(
+			table.assignmentId,
+			table.studentId,
+		),
+		index("quiz_attempt_org_idx").on(table.orgId),
+	],
+);

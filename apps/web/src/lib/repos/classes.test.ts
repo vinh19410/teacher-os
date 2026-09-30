@@ -9,6 +9,7 @@ import { mapClasses } from "./classes";
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
+	assignmentTests: [],
 	students: [
 		{
 			id: "st-1",
@@ -186,6 +187,7 @@ describe("mapClasses", () => {
 		const empty: KernelSnapshot = {
 			assignmentPrompts: [],
 			classAssignments: [],
+			assignmentTests: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -206,6 +208,7 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 	const snapshot: KernelSnapshot = {
 		assignmentPrompts: [],
 		classAssignments: [],
+		assignmentTests: [],
 		students: [],
 		classes: [
 			{
@@ -358,6 +361,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		return {
 			assignmentPrompts: [],
 			classAssignments: [],
+			assignmentTests: [],
 			students: [],
 			classes: [baseClass],
 			syllabi: [],
@@ -439,6 +443,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		const snapshot: KernelSnapshot = {
 			assignmentPrompts: [],
 			classAssignments: [],
+			assignmentTests: [],
 			students: [],
 			classes: [
 				{

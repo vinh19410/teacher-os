@@ -3,7 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "node serve.mjs",
+		"dev:bare": "node serve.mjs",
 		"build": "node build.mjs",
 		"test": "node --test"
 	}

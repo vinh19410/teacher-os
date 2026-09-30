@@ -1,6 +1,8 @@
+import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { SectionLabel } from "@/components/ui/section-label";
 import {
 	isAutoSkill,
@@ -39,6 +41,7 @@ export function PromptComposer({
 	errors = {},
 	showErrors,
 	status,
+	lockPart = false,
 	onFieldChange,
 }: {
 	value: ComposerValue;
@@ -46,6 +49,13 @@ export function PromptComposer({
 	showErrors: boolean;
 	/** Threaded to the key editor for FR9 (missing answers block `ready` only). */
 	status: "draft" | "ready";
+	/**
+	 * Full-test builder (phase-03 Task 3.2): khóa skill/part của slot khi
+	 * composer nhúng vào test-builder — giáo viên không thể đổi skill giữa
+	 * chừng làm part lệch preset của test. ChipFilter đổi skill/part được
+	 * thay bằng chip tĩnh; `/assignments/new` giữ nguyên hành vi (false).
+	 */
+	lockPart?: boolean;
 	onFieldChange: (patch: Partial<ComposerValue>) => void;
 }) {
 	const skill = skillOf(value.skill);
@@ -61,45 +71,60 @@ export function PromptComposer({
 					{skill.heading}
 				</h2>
 			</div>
-			<div className="flex flex-col gap-1.5">
-				<span className="font-medium text-muted-fg text-xs">Kỹ năng</span>
-				<ChipFilter
-					options={SKILLS.map((entry) => entry.name)}
-					value={skill.name}
-					onChange={(label) => {
-						const next =
-							SKILLS.find((entry) => entry.name === label) ?? SKILLS[0];
-						// ChipFilter re-fires on the selected chip — a stray click on
-						// the current skill must not confirm or wipe (#269 guard,
-						// review #2: the patch below always carries part/type).
-						if (next.id === value.skill) return;
-						onFieldChange({
-							skill: next.id,
-							part: next.parts[0].id,
-							type: next.parts[0].types[0].id,
-						});
-					}}
-				/>
-			</div>
-			<div className="flex flex-col gap-1.5">
-				<span className="font-medium text-muted-fg text-xs">
-					{skill.partLabel}
-				</span>
-				<ChipFilter
-					options={skill.parts.map((entry) => entry.label)}
-					value={part.label}
-					onChange={(label) => {
-						const next =
-							skill.parts.find((entry) => entry.label === label) ??
-							skill.parts[0];
-						// Same re-fire guard: the patch always carries the part's
-						// default type, so a stray click could otherwise reset the
-						// type (review #2).
-						if (next.id === value.part) return;
-						onFieldChange({ part: next.id, type: next.types[0].id });
-					}}
-				/>
-			</div>
+			{lockPart ? (
+				// Slot đã khóa skill/part — hiển thị chip tĩnh từ value, không
+				// ChipFilter (đổi skill/part giữa chừng làm lệch preset test).
+				<div className="flex flex-wrap gap-2">
+					<span className="rounded-full border border-fg bg-fg px-[14px] py-[6px] font-medium text-bg text-xs">
+						{skill.name}
+					</span>
+					<span className="rounded-full border border-line px-[14px] py-[6px] font-medium text-xs">
+						{part.label}
+					</span>
+				</div>
+			) : (
+				<>
+					<div className="flex flex-col gap-1.5">
+						<span className="font-medium text-muted-fg text-xs">Kỹ năng</span>
+						<ChipFilter
+							options={SKILLS.map((entry) => entry.name)}
+							value={skill.name}
+							onChange={(label) => {
+								const next =
+									SKILLS.find((entry) => entry.name === label) ?? SKILLS[0];
+								// ChipFilter re-fires on the selected chip — a stray click on
+								// the current skill must not confirm or wipe (#269 guard,
+								// review #2: the patch below always carries part/type).
+								if (next.id === value.skill) return;
+								onFieldChange({
+									skill: next.id,
+									part: next.parts[0].id,
+									type: next.parts[0].types[0].id,
+								});
+							}}
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<span className="font-medium text-muted-fg text-xs">
+							{skill.partLabel}
+						</span>
+						<ChipFilter
+							options={skill.parts.map((entry) => entry.label)}
+							value={part.label}
+							onChange={(label) => {
+								const next =
+									skill.parts.find((entry) => entry.label === label) ??
+									skill.parts[0];
+								// Same re-fire guard: the patch always carries the part's
+								// default type, so a stray click could otherwise reset the
+								// type (review #2).
+								if (next.id === value.part) return;
+								onFieldChange({ part: next.id, type: next.types[0].id });
+							}}
+						/>
+					</div>
+				</>
+			)}
 			<div className="flex flex-col gap-1.5">
 				<span className="font-medium text-muted-fg text-xs">
 					{skill.typeLabel}
@@ -146,10 +171,11 @@ export function PromptComposer({
 					help={part.help}
 					error={showErrors ? errors.prompt : undefined}
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.prompt}
-						onChange={(event) => onFieldChange({ prompt: event.target.value })}
-						className="min-h-42"
+						onChange={(prompt) => onFieldChange({ prompt })}
+						placeholder="Dán hoặc soạn đề bài…"
+						contentClassName="[&_.ProseMirror]:min-h-42"
 					/>
 				</Field>
 			)}
@@ -159,16 +185,17 @@ export function PromptComposer({
 					help={part.help}
 					error={showErrors ? errors.passage : undefined}
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.passage}
-						onChange={(event) => onFieldChange({ passage: event.target.value })}
-						className="min-h-52"
+						onChange={(passage) => onFieldChange({ passage })}
+						placeholder="Dán đoạn đọc vào đây…"
+						contentClassName="[&_.ProseMirror]:min-h-52"
 					/>
 				</Field>
 			)}
 			{value.skill === "reading" && (
 				<span className="-mt-3 text-right font-mono text-meta text-xs">
-					{wordCount(value.passage)} từ
+					{wordCount(htmlToPlainText(value.passage))} từ
 				</span>
 			)}
 			{value.skill === "listening" && (
@@ -238,12 +265,11 @@ export function PromptComposer({
 					label="Transcript (chỉ giáo viên)"
 					help="Dán lời thoại để đối chiếu khi chấm."
 				>
-					<Textarea
+					<RichTextEditor
 						value={value.transcript}
-						onChange={(event) =>
-							onFieldChange({ transcript: event.target.value })
-						}
-						className="min-h-32"
+						onChange={(transcript) => onFieldChange({ transcript })}
+						placeholder="Dán lời thoại…"
+						contentClassName="[&_.ProseMirror]:min-h-32"
 					/>
 				</Field>
 			)}
@@ -276,20 +302,20 @@ export function PromptComposer({
 						help={part.help}
 						error={showErrors ? errors.prompt : undefined}
 					>
-						<Textarea
+						<RichTextEditor
 							value={value.prompt}
-							onChange={(event) =>
-								onFieldChange({ prompt: event.target.value })
-							}
-							className="min-h-42"
+							onChange={(prompt) => onFieldChange({ prompt })}
+							placeholder="Soạn câu hỏi giám khảo…"
+							contentClassName="[&_.ProseMirror]:min-h-42"
 						/>
 					</Field>
 				))}
 			<Field label="Hướng dẫn thêm (không bắt buộc)">
-				<Textarea
+				<RichTextEditor
 					value={value.note}
-					onChange={(event) => onFieldChange({ note: event.target.value })}
-					className="min-h-22"
+					onChange={(note) => onFieldChange({ note })}
+					placeholder="Ghi chú thêm cho học viên…"
+					contentClassName="[&_.ProseMirror]:min-h-22"
 				/>
 			</Field>
 			{isAuto && (

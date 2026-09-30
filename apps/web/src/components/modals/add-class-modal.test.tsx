@@ -48,7 +48,7 @@ import {
 
 function linkedSelectId(html: string) {
 	const match = html.match(
-		/<label for="([^"]+)"[^>]*>Template giáo trình<\/label>/,
+		/<label[^>]*for="([^"]+)"[^>]*>Template giáo trình<\/label>/,
 	);
 	expect(match?.[1]).toBeTruthy();
 	const id = match?.[1] ?? "";

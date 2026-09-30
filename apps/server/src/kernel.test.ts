@@ -1550,6 +1550,41 @@ describe("kernel origin + content-type guards", () => {
 		expect(res.status).toBe(403);
 	});
 
+	test("PUT and PATCH without Origin header are 403", async () => {
+		const put = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			origin: null,
+			body: {},
+		});
+		expect(put.status).toBe(403);
+		const patch = await t.call("/api/kernel/settings", {
+			session,
+			method: "PATCH",
+			origin: null,
+			body: {},
+		});
+		expect(patch.status).toBe(403);
+	});
+
+	test("PUT with a foreign Origin is 403; allowed Origin reaches validation", async () => {
+		const evil = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			origin: "https://evil.example",
+			body: {},
+		});
+		expect(evil.status).toBe(403);
+		// Origin hợp lệ → qua guard, chết ở zod validation (400) như PUT test
+		// "rejects invalid payload" đã chứng minh.
+		const legit = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			body: { maxAbsencesBeforeAlert: -5 },
+		});
+		expect(legit.status).toBe(400);
+	});
+
 	test("POST with a non-JSON content-type is 415", async () => {
 		const res = await t.app.request("/api/classes", {
 			method: "POST",
@@ -5497,6 +5532,145 @@ describe("assignment prompt bank (issue #202)", () => {
 				"Liệt kê II",
 				"Liệt kê III",
 			]);
+		});
+
+		// #286 — per-question type: snapshot PHẢI forward type (strip nó thì
+		// mọi edit/Apply qua test-builder xoá âm thầm type đã soạn), và PATCH
+		// mirror validation của create (catalog part + answer-choice theo
+		// type hiệu dụng của câu).
+		test("per-question type survives the snapshot round-trip and PATCH mirrors create validation (#286)", async () => {
+			const post = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p1",
+					type: "note",
+					title: "Reading Mixed — per-question type",
+					optionBank: [],
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				}),
+			});
+			expect(post.status).toBe(201);
+			const { id } = (await post.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.questions).toEqual([
+				{
+					stem: "Statement one",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					type: "tfng",
+					pin: null,
+				},
+				{
+					stem: "Note ____ two",
+					opts: null,
+					answer: "river",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			]);
+
+			// PATCH: type câu ngoài catalog part (flowchart là type p3) → 400.
+			const badType = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "flowchart",
+						},
+					],
+				},
+			});
+			expect(badType.status).toBe(400);
+
+			// PATCH: answer không thuộc bộ choice của type HIỆU DỤNG câu → 400
+			// (trước #286 update chỉ soi type prompt là note → bỏ qua).
+			const badChoice = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "maybe",
+							alts: "",
+							type: "tfng",
+						},
+					],
+				},
+			});
+			expect(badChoice.status).toBe(400);
+
+			// PATCH kiểu client THẬT (Apply/edit luôn gửi type prompt + full
+			// questions): đề prompt note + câu tfng answer hợp lệ KHÔNG bị
+			// superRefine ép choice của prompt type lên mọi câu (finding re-run
+			// #1 — schema cũ false-reject payload này mù field).
+			const realClient = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					type: "note",
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				},
+			});
+			expect(realClient.status).toBe(200);
+
+			// PATCH hợp lệ: type câu thuộc catalog + answer hợp kind → persist.
+			const good = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					title: "Reading Mixed — edited",
+					questions: [
+						{
+							stem: "Statement one",
+							opts: null,
+							answer: "FALSE",
+							alts: "",
+							type: "tfng",
+						},
+						{ stem: "Note ____ two", opts: null, answer: "river", alts: "" },
+					],
+				},
+			});
+			expect(good.status).toBe(200);
+			const edited = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(edited?.title).toBe("Reading Mixed — edited");
+			expect(edited?.questions[0]).toMatchObject({
+				answer: "FALSE",
+				type: "tfng",
+			});
+			expect(edited?.questions[1]).toMatchObject({ type: null });
 		});
 	});
 });

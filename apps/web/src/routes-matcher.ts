@@ -13,6 +13,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
+	"/assignments/tests/new": true,
+	"/assignments/tests/preview": true,
 	"/classes": true,
 	"/students": true,
 	"/syllabus": true,
@@ -23,6 +25,10 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
  */
 export const VALID_DYNAMIC_PREFIXES = [
 	"/assignments/",
+	// Full-test edit route /assignments/tests/$id — prefix cha
+	// "/assignments/" chỉ nhận MỘT segment, "tests/<id>" có slash nên cần
+	// prefix riêng (exact /tests/new + /tests/preview đã có ở trên).
+	"/assignments/tests/",
 	"/classes/",
 	"/students/",
 	"/syllabus/",

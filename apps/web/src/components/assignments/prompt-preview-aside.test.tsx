@@ -5,6 +5,7 @@ vi.mock("@tanstack/react-router", () => ({
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
+	useNavigate: () => vi.fn(),
 }));
 
 import type { AssignmentPrompt } from "@/lib/mock-data";
@@ -139,5 +140,56 @@ describe("PromptPreviewAside — cloze marker rendering (phase-03 FR5)", () => {
 		);
 		expect(html).toContain("An old summary stem?");
 		expect(html).not.toContain("<input");
+	});
+});
+
+describe("PromptPreviewAside — rich text render (rich text plan phase 4)", () => {
+	it("legacy plain prompt keeps pre-wrap whitespace", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					task: "task2",
+					genre: "discuss",
+					passage: undefined,
+					prompt: "Dòng 1\nDòng 2",
+				})}
+			/>,
+		);
+		expect(html).toContain("Dòng 1\nDòng 2");
+		expect(html).toContain("whitespace-pre-wrap");
+	});
+
+	it("tag-only note hides the extra-guidance tag", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside prompt={prompt({ note: "<p><br></p>" })} />,
+		);
+		expect(html).not.toContain("Có hướng dẫn thêm");
+	});
+
+	it("empty prompt renders nothing in the prompt block (no fallback text here)", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					task: "task2",
+					genre: "discuss",
+					passage: undefined,
+					prompt: "<p></p>",
+				})}
+			/>,
+		);
+		expect(html).not.toContain("<p></p>");
+	});
+});
+
+describe("PromptPreviewAside — Xem trước CTA (#282)", () => {
+	it("renders the full-page preview button for the selected prompt", () => {
+		const html = renderToStaticMarkup(<PromptPreviewAside prompt={prompt()} />);
+		expect(html).toContain("Xem trước</button>");
 	});
 });

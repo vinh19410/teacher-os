@@ -17,6 +17,7 @@ import {
 } from "@/lib/kernel-load-state";
 import type { KernelHydratedData } from "@/lib/mock-data";
 import { mapAssignmentPrompts } from "./assignment-prompts";
+import { mapAssignmentTests } from "./assignment-tests";
 import { mapAssignments } from "./assignments";
 import { mapClassAssignments } from "./class-assignments";
 import { mapClasses } from "./classes";
@@ -33,7 +34,7 @@ export type KernelSlice = KernelHydratedData;
 
 export interface KernelRequest {
 	path: string;
-	method?: "POST" | "DELETE";
+	method?: "POST" | "PUT" | "PATCH" | "DELETE";
 	body: unknown;
 }
 
@@ -238,6 +239,42 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "DELETE",
 				body: undefined,
 			};
+		case "create-assignment-test":
+			// assignmentTestCreateSchema là .strict() — payload là toàn bộ
+			// body; key optional undefined rơi khỏi JSON.stringify, server
+			// tự `?? null`.
+			return {
+				path: "/api/assignments/tests",
+				body: { ...action.payload },
+			};
+		case "update-assignment-test":
+			// Partial payload — key nào không gửi giữ nguyên giá trị cũ.
+			return {
+				path: `/api/assignments/tests/${action.testId}`,
+				method: "PATCH",
+				body: { ...action.payload },
+			};
+		case "delete-assignment-test":
+			return {
+				path: `/api/assignments/tests/${action.testId}`,
+				method: "DELETE",
+				body: undefined,
+			};
+		case "set-assignment-test-parts":
+			// Replace-all: body là đúng mảng parts (max 4, .strict() từng item).
+			return {
+				path: `/api/assignments/tests/${action.testId}/parts`,
+				method: "PUT",
+				body: action.parts,
+			};
+		case "update-assignment-prompt":
+			// Nút Apply (phase-5): partial — skill/part không có trong update
+			// schema nên không bao giờ nằm trên wire.
+			return {
+				path: `/api/assignments/prompts/${action.promptId}`,
+				method: "PATCH",
+				body: { ...action.payload },
+			};
 	}
 }
 
@@ -248,6 +285,8 @@ export function kernelCommand(action: KernelAction): KernelRequest {
  * - Syllabus mapping (incl. totalLessons recompute) lives in repos/syllabus.ts.
  * - Lesson mapping (incl. sid resolve) lives in repos/lessons.ts.
  * - Assignment mapping (studentId→sid) lives in repos/assignments.ts.
+ * - Assignment-test mapping (defensive defaults) lives in
+ *   repos/assignment-tests.ts.
  */
 export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 	return {
@@ -263,6 +302,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		commentBank: mapCommentBank(snapshot),
 		enrollments: mapEnrollments(snapshot),
 		classAssignments: mapClassAssignments(snapshot),
+		assignmentTests: mapAssignmentTests(snapshot),
 	};
 }
 
@@ -403,6 +443,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"assignments",
 	"assignmentPrompts",
 	"classAssignments",
+	"assignmentTests",
 	"invoices",
 	"reports",
 	"notifs",

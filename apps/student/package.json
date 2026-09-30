@@ -8,7 +8,7 @@
 		"serve": "vite preview",
 		"start": "vite",
 		"check-types": "vite build && tsc --noEmit",
-		"dev": "vite dev",
+		"dev:bare": "vite dev",
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},

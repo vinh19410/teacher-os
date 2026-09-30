@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 / #267 — Trang Bài tập (gộp bank): filters (skill + part),
@@ -14,9 +14,11 @@ test("bank lists prompts with filters, search, and preview", async ({
 	// Seed: 1 ready Task 2 prompt + 1 draft Task 1 prompt via /assignments/new.
 	await page.goto("/assignments/new");
 	await page.getByLabel("Tiêu đề").fill("QC-208 Bank Discuss");
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("Some people think QC-208 bank discuss prompt body.");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people think QC-208 bank discuss prompt body.",
+	);
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
@@ -26,9 +28,11 @@ test("bank lists prompts with filters, search, and preview", async ({
 	await page.getByRole("button", { name: "Bản nháp" }).first().click();
 	await page.getByRole("button", { name: "Task 1 · 150 từ" }).first().click();
 	await page.getByLabel("Tiêu đề").fill("QC-208 Bank Chart Draft");
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("The chart below shows QC-208 draft chart body.");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"The chart below shows QC-208 draft chart body.",
+	);
 	await page.getByRole("button", { name: "Lưu bản nháp" }).first().click();
 	await expect(
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
@@ -93,6 +97,18 @@ test("bank lists prompts with filters, search, and preview", async ({
 	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
 	await expect(
 		page.getByText("Đề này chưa giao lớp. Giao cho học viên ở trang"),
+	).toBeVisible();
+
+	// Xem trước (#282) → trang riêng góc nhìn học viên (?id=).
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview\?id=/);
+	// Title trong StudentPreviewPaper là <p class="font-display">, không phải heading.
+	await expect(page.getByText("QC-208 Bank Chart Draft").first()).toBeVisible();
+	await expect(page.getByText("Xem trước phía học viên").first()).toBeVisible();
+	await page.getByRole("button", { name: "Quay lại danh sách" }).click();
+	await expect(page).toHaveURL(/\/assignments$/);
+	await expect(
+		page.getByRole("heading", { name: "QC-208 Bank Discuss" }),
 	).toBeVisible();
 
 	// Persistence: reload keeps the list.

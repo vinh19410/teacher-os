@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { createStudentQueryClient } from "./lib/query-client";
+import { studentQueryClient } from "./lib/query-client";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
@@ -22,12 +22,10 @@ if (!rootElement) {
 	throw new Error("Root element not found");
 }
 
-const queryClient = createStudentQueryClient();
-
 if (!rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
 	root.render(
-		<QueryClientProvider client={queryClient}>
+		<QueryClientProvider client={studentQueryClient}>
 			<RouterProvider router={router} />
 		</QueryClientProvider>,
 	);

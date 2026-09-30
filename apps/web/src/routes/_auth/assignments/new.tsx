@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { type FormEvent, useEffect, useState } from "react";
 import {
 	emptyComposer,
@@ -38,6 +39,7 @@ import {
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
 import { useData } from "@/lib/data-store";
+import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export const Route = createFileRoute("/_auth/assignments/new")({
@@ -69,16 +71,17 @@ function countAnswers(value: ComposerValue) {
 }
 function hasCoreContent(value: ComposerValue) {
 	if (!value.title.trim()) return false;
-	if (value.skill === "writing") return !!value.prompt.trim();
+	if (value.skill === "writing") return !isEmptyRichText(value.prompt);
 	if (value.skill === "reading")
 		return (
-			!!value.passage.trim() && value.items.some((item) => item.stem.trim())
+			!isEmptyRichText(value.passage) &&
+			value.items.some((item) => item.stem.trim())
 		);
 	if (value.skill === "listening")
 		return value.items.some((item) => item.stem.trim());
 	return value.part === "part2"
 		? !!value.cueTopic.trim()
-		: !!value.prompt.trim();
+		: !isEmptyRichText(value.prompt);
 }
 export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	const auto = isAutoSkill(value.skill);
@@ -201,6 +204,12 @@ export function NewAssignmentRoute() {
 	const [bannerDraft] = useState<StoredAssignmentDraft | null>(() =>
 		restored ? null : readAssignmentDraft(),
 	);
+	// Legacy adapter (plan decision 9): stored values may be plain text with
+	// \n — loading them raw into the editor would collapse the newlines and
+	// destroy them on the next save. normalizeLegacyRichText escapes and
+	// converts to <br> only when the string has no markup yet.
+	const restoreRich = (text: string | undefined) =>
+		normalizeLegacyRichText(text ?? "");
 	const [value, setValue] = useState<ComposerValue>(() =>
 		restored
 			? {
@@ -209,9 +218,11 @@ export function NewAssignmentRoute() {
 					skill: restored.skill ?? "writing",
 					part: restored.part ?? restored.task,
 					type: restored.type ?? restored.genre,
-					passage: restored.passage ?? "",
-					intro: restored.intro ?? "",
-					transcript: restored.transcript ?? "",
+					prompt: restoreRich(restored.prompt),
+					passage: restoreRich(restored.passage),
+					intro: restoreRich(restored.intro),
+					transcript: restoreRich(restored.transcript),
+					note: restoreRich(restored.note),
 					cueTopic: restored.cueTopic ?? "",
 					cuePoints: restored.cuePoints ?? "",
 					audioName: restored.audioName ?? "",
@@ -220,7 +231,15 @@ export function NewAssignmentRoute() {
 					items: restored.items ?? [],
 				}
 			: bannerDraft
-				? { ...freshComposer(), ...bannerDraft.value }
+				? {
+						...freshComposer(),
+						...bannerDraft.value,
+						prompt: restoreRich(bannerDraft.value.prompt),
+						passage: restoreRich(bannerDraft.value.passage),
+						intro: restoreRich(bannerDraft.value.intro),
+						transcript: restoreRich(bannerDraft.value.transcript),
+						note: restoreRich(bannerDraft.value.note),
+					}
 				: freshComposer(),
 	);
 	const [status, setStatus] = useState<"draft" | "ready">(
@@ -247,9 +266,9 @@ export function NewAssignmentRoute() {
 	}, [value, status, saved]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
-	if (value.skill === "writing" && !value.prompt.trim())
+	if (value.skill === "writing" && isEmptyRichText(value.prompt))
 		fieldErrors.prompt = "Dán hoặc soạn đề trước khi lưu.";
-	if (value.skill === "reading" && !value.passage.trim())
+	if (value.skill === "reading" && isEmptyRichText(value.passage))
 		fieldErrors.passage = "Nhập đoạn đọc.";
 	if (
 		value.skill === "listening" &&

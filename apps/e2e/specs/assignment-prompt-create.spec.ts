@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Issue #202 — bank-first assignment prompt creation: compose → save to the
@@ -21,11 +21,11 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	).toBeDisabled();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Nội dung đề")
-		.fill(
-			"Some people think that all university students should study whatever they like.\n\nDiscuss both these views and give your own opinion.",
-		);
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people think that all university students should study whatever they like.\n\nDiscuss both these views and give your own opinion.",
+	);
 	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
 
 	await expect(
@@ -50,9 +50,11 @@ test("create a draft prompt with the draft tag", async ({ page }) => {
 
 	await page.getByRole("button", { name: "Bản nháp" }).first().click();
 	await page.getByLabel("Tiêu đề").fill("QC-202 Bản nháp");
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("Some people believe that unpaid community service…");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people believe that unpaid community service…",
+	);
 	await page.getByRole("button", { name: "Lưu bản nháp" }).first().click();
 
 	await expect(
@@ -72,9 +74,11 @@ test("preview as a student, return to the form without losing it, then save read
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Nội dung đề")
-		.fill("Some people believe that preview should match the student view…");
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people believe that preview should match the student view…",
+	);
 
 	// Preview is a page handoff now, not an inline paper.
 	await page.getByRole("button", { name: "Xem trước" }).click();
@@ -96,7 +100,8 @@ test("preview as a student, return to the form without losing it, then save read
 	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
-	await expect(page.getByLabel("Nội dung đề")).toHaveValue(
+	// contenteditable: assert rendered text, not textarea value
+	await expect(page.getByLabel("Nội dung đề")).toHaveText(
 		/Some people believe that preview/,
 	);
 
@@ -129,9 +134,11 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	await expect(submitBtn).toBeDisabled();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Stepwells are underground reservoirs found across India...");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Stepwells are underground reservoirs found across India...",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -259,9 +266,11 @@ test("author a 3-question tfng set with grid clicks only (FR1)", async ({
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Stepwells are underground reservoirs…");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Stepwells are underground reservoirs…",
+	);
 
 	// Row 1 exists out of the box; add two more via the gated button.
 	await page
@@ -350,9 +359,11 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Stepwells are underground reservoirs…");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Stepwells are underground reservoirs…",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -406,9 +417,11 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 	// Listening so the transcript round trip is exercised (FR6 bug fix).
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
-	await page
-		.getByLabel("Transcript (chỉ giáo viên)")
-		.fill("W: Good morning. M: Hello!");
+	await fillRichEditor(
+		page,
+		"Transcript (chỉ giáo viên)",
+		"W: Good morning. M: Hello!",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -427,7 +440,7 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 	// Preview draft won: no banner, form fully restored including transcript.
 	await expect(page.getByText("Đã phục hồi bản nháp")).toBeHidden();
 	await expect(page.getByLabel("Tiêu đề")).toHaveValue(TITLE);
-	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveValue(
+	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveText(
 		/Good morning/,
 	);
 });
@@ -440,9 +453,11 @@ test("type change with authored content confirms; same-skill keeps transcript (F
 
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Carry Transcript");
-	await page
-		.getByLabel("Transcript (chỉ giáo viên)")
-		.fill("W: Good morning. M: Hello!");
+	await fillRichEditor(
+		page,
+		"Transcript (chỉ giáo viên)",
+		"W: Good morning. M: Hello!",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -485,7 +500,7 @@ test("type change with authored content confirms; same-skill keeps transcript (F
 	await expect(
 		page.getByRole("button", { name: "Câu 1: A" }).first(),
 	).toBeVisible();
-	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveValue(
+	await expect(page.getByLabel("Transcript (chỉ giáo viên)")).toHaveText(
 		/Good morning/,
 	);
 	await expect(
@@ -501,9 +516,11 @@ test("skill change with authored content confirms and resets on accept (FR5)", a
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Skill Confirm");
-	await page
-		.getByLabel("Đoạn đọc")
-		.fill("Stepwells are underground reservoirs…");
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Stepwells are underground reservoirs…",
+	);
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
 		.first()
@@ -520,7 +537,7 @@ test("skill change with authored content confirms and resets on accept (FR5)", a
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await expect.poll(() => confirms).toBe(1);
 	// Dismissed: authored content untouched.
-	await expect(page.getByLabel("Đoạn đọc")).toHaveValue(/Stepwells/);
+	await expect(page.getByLabel("Đoạn đọc")).toHaveText(/Stepwells/);
 	await expect(
 		page.getByRole("button", { name: "Câu 1: TRUE" }),
 	).toHaveAttribute("aria-pressed", "true");

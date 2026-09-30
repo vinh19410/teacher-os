@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isEmptyRichText, richTextField } from "./rich-text";
 
 /**
  * Kernel API contracts — Wave 0.
@@ -306,6 +307,45 @@ export const ASSIGNMENT_PART_TYPES: Record<
 	},
 };
 
+/**
+ * Full-test builder: slot layout per skill — mỗi slot là MỘT prompt ngân hàng
+ * (design "IELTS Full Test Builder", 2026-09-28). Slot id khớp key `parts`
+ * của ASSIGNMENT_PART_TYPES; label là display text cho UI builder/preview.
+ */
+export const ASSIGNMENT_TEST_PRESETS: Record<
+	AssignmentSkill,
+	{ slots: { part: string; label: string }[] }
+> = {
+	reading: {
+		slots: [
+			{ part: "p1", label: "Passage 1" },
+			{ part: "p2", label: "Passage 2" },
+			{ part: "p3", label: "Passage 3" },
+		],
+	},
+	listening: {
+		slots: [
+			{ part: "s1", label: "Section 1" },
+			{ part: "s2", label: "Section 2" },
+			{ part: "s3", label: "Section 3" },
+			{ part: "s4", label: "Section 4" },
+		],
+	},
+	writing: {
+		slots: [
+			{ part: "task1", label: "Task 1" },
+			{ part: "task2", label: "Task 2" },
+		],
+	},
+	speaking: {
+		slots: [
+			{ part: "part1", label: "Part 1" },
+			{ part: "part2", label: "Part 2" },
+			{ part: "part3", label: "Part 3" },
+		],
+	},
+};
+
 export const ASSIGNMENT_ANSWER_CHOICES = {
 	tfng: ["TRUE", "FALSE", "NOT GIVEN"],
 	ynng: ["YES", "NO", "NOT GIVEN"],
@@ -361,6 +401,153 @@ export function isOptionBankable(skill: string, type: string): boolean {
 }
 
 /**
+ * Kind của option bank cần hiển thị (#286, đề trộn dạng): bank vẫn là
+ * PROMPT-level nhưng hiển thị khi type đề HOẶC bất kỳ câu bankable — nếu
+ * không, cụm bankable trong đề không-bankable có instruction "choose from
+ * the option bank" mà học viên không có list nào để chọn. Trả về undefined
+ * khi không ai cần bank.
+ */
+export function optionBankKindFor(
+	skill: string,
+	promptType: string,
+	questionTypes: readonly (string | null | undefined)[],
+): keyof typeof ASSIGNMENT_ANSWER_CHOICES | undefined {
+	if (isOptionBankable(skill, promptType)) return answerKindByType[promptType];
+	for (const type of questionTypes) {
+		const effective = type ?? promptType;
+		if (isOptionBankable(skill, effective)) {
+			return answerKindByType[effective];
+		}
+	}
+	return undefined;
+}
+
+/**
+ * Hiển thị chuẩn của từng dạng câu hỏi (label + instruction EN theo nguyên
+ * văn đề IELTS) — nguồn DUY NHẤT cho header cụm trên take/review screen và
+ * cho nhãn dạng bài ở authoring. Type lạ (đề cũ, snapshot fallback) rơi vào
+ * `quizTypeDisplay()` thay vì crash renderer.
+ */
+export const QUIZ_TYPE_DISPLAY: Record<
+	string,
+	{ label: string; instruction: string }
+> = {
+	tfng: {
+		label: "True / False / Not Given",
+		instruction:
+			"Do the following statements agree with the information given in the passage? Write TRUE / FALSE / NOT GIVEN.",
+	},
+	ynng: {
+		label: "Yes / No / Not Given",
+		instruction:
+			"Do the following statements agree with the views of the writer? Write YES / NO / NOT GIVEN.",
+	},
+	mcq: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B, C or D.",
+	},
+	mcq1: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B or C.",
+	},
+	mcq3: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B or C.",
+	},
+	headings: {
+		label: "Matching headings",
+		instruction:
+			"Choose the correct heading for each paragraph from the list of headings. Write the correct roman numeral i–viii.",
+	},
+	info: {
+		label: "Matching information",
+		instruction:
+			"Which section contains the following information? Write the correct letter A–H.",
+	},
+	features: {
+		label: "Matching features",
+		instruction:
+			"Match each statement with the correct person/place. Choose from the option bank.",
+	},
+	sentend: {
+		label: "Matching sentence endings",
+		instruction: "Complete each sentence with the correct ending A–H.",
+	},
+	sent: {
+		label: "Sentence completion",
+		instruction:
+			"Complete the sentences below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	sent4: {
+		label: "Sentence completion",
+		instruction:
+			"Complete the sentences below. Write ONE WORD ONLY for each answer.",
+	},
+	note: {
+		label: "Note completion",
+		instruction:
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	notes: {
+		label: "Note completion",
+		instruction:
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	shortans: {
+		label: "Short-answer questions",
+		instruction:
+			"Answer the questions below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage.",
+	},
+	diagram: {
+		label: "Diagram label completion",
+		instruction:
+			"Label the diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+	},
+	summary: {
+		label: "Summary completion",
+		instruction:
+			"Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	tablecomp: {
+		label: "Table completion",
+		instruction:
+			"Complete the table below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	flowchart: {
+		label: "Flow-chart completion",
+		instruction:
+			"Complete the flow-chart below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	flow: {
+		label: "Flow-chart completion",
+		instruction:
+			"Complete the flow-chart below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	form: {
+		label: "Form completion",
+		instruction:
+			"Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+	},
+	map: {
+		label: "Map labelling",
+		instruction:
+			"Label the map below. Write the correct letter A–H for each location.",
+	},
+	match2: {
+		label: "Matching",
+		instruction: "Choose your answers from the option bank A–H.",
+	},
+};
+
+/** Entry hiển thị cho type bất kỳ — type lạ giữ nguyên id làm label. */
+export function quizTypeDisplay(type: string): {
+	label: string;
+	instruction: string;
+} {
+	return QUIZ_TYPE_DISPLAY[type] ?? { label: type, instruction: "" };
+}
+
+/**
  * Phase-04 FR2 — the (skill, type) pairs whose prompts label an IMAGE:
  * reading `diagram` + listening `map`. Skill-qualified ON PURPOSE (same
  * red-team rule as the option bank): writing task1 shares the `map` type id
@@ -407,7 +594,7 @@ export function isAssignmentImageUrl(value: string): boolean {
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
-export const assignmentPromptCreateSchema = z
+const assignmentPromptBaseSchema = z
 	.object({
 		skill: z.enum(ASSIGNMENT_SKILLS),
 		part: z.string().trim().min(1).max(20),
@@ -415,11 +602,15 @@ export const assignmentPromptCreateSchema = z
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
 		source: z.string().trim().max(200),
-		prompt: z.string().trim().max(5000),
-		passage: z.string().trim().max(20000),
-		intro: z.string().max(2000),
-		transcript: z.string().max(10000),
+		// Rich text (HTML string) — the meaningful cap is measured on the
+		// plain text without markup; raw cap guards transport. intro/transcript/
+		// note gain a leading trim of the HTML string (harmless around tags).
+		prompt: richTextField(5000),
+		passage: richTextField(20000),
+		intro: richTextField(2000),
+		transcript: richTextField(10000),
 		cueTopic: z.string().trim().max(500),
+		// cuePoints stays PLAIN text (one idea per line) — do not convert.
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
 		imageUrl: z.string().trim().max(500).default(""),
@@ -431,6 +622,13 @@ export const assignmentPromptCreateSchema = z
 						opts: z.array(z.string().max(500)).max(6).nullish(),
 						answer: z.string().trim().max(200),
 						alts: z.string().max(500).default(""),
+						/**
+						 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
+						 * prompt). Optional — câu không khai type nhận fallback
+						 * `prompt.type` khi server dựng payload student, đề cũ
+						 * không cần migration.
+						 */
+						type: z.string().trim().min(1).max(20).nullish(),
 						/**
 						 * Phase-04 FR1 — label pin on the prompt image, percents of
 						 * the image box (0–100, center of the pin). Nullish for
@@ -460,11 +658,13 @@ export const assignmentPromptCreateSchema = z
 			.array(z.string().trim().min(1).max(200))
 			.max(ASSIGNMENT_OPTION_BANK_MAX)
 			.default([]),
-		note: z.string().max(2000),
+		note: richTextField(2000),
 		status: z.enum(["draft", "ready"]),
 	})
-	.strict()
-	.superRefine((value, ctx) => {
+	.strict();
+
+export const assignmentPromptCreateSchema =
+	assignmentPromptBaseSchema.superRefine((value, ctx) => {
 		const config = ASSIGNMENT_PART_TYPES[value.skill];
 		if (!config.parts.includes(value.part)) {
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
@@ -473,6 +673,17 @@ export const assignmentPromptCreateSchema = z
 		if (!(config.types[value.part] ?? []).includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
 		}
+		// Đề trộn dạng: type riêng của câu phải thuộc catalog type của part.
+		const partTypes = config.types[value.part] ?? [];
+		for (const [index, question] of value.questions.entries()) {
+			if (question.type && !partTypes.includes(question.type)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "type"],
+					message: "invalid type",
+				});
+			}
+		}
 		const auto = value.skill === "reading" || value.skill === "listening";
 		if (!auto && value.questions.length)
 			ctx.addIssue({
@@ -480,14 +691,14 @@ export const assignmentPromptCreateSchema = z
 				path: ["questions"],
 				message: "questions only apply to reading or listening",
 			});
-		if (value.skill === "writing" && !value.prompt.trim())
+		if (value.skill === "writing" && isEmptyRichText(value.prompt))
 			ctx.addIssue({
 				code: "custom",
 				path: ["prompt"],
 				message: "prompt required",
 			});
 		if (value.skill === "reading") {
-			if (!value.passage.trim())
+			if (isEmptyRichText(value.passage))
 				ctx.addIssue({
 					code: "custom",
 					path: ["passage"],
@@ -572,31 +783,39 @@ export const assignmentPromptCreateSchema = z
 					path: ["cueTopic"],
 					message: "cue topic required",
 				});
-			if (value.part !== "part2" && !value.prompt.trim())
+			if (value.part !== "part2" && isEmptyRichText(value.prompt))
 				ctx.addIssue({
 					code: "custom",
 					path: ["prompt"],
 					message: "prompt required",
 				});
 		}
-		const kind = answerKindByType[value.type];
-		if (kind) {
+		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
+		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
+		for (const [index, question] of value.questions.entries()) {
+			const kind = answerKindByType[question.type ?? value.type];
+			if (!kind) continue;
 			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			for (const [index, question] of value.questions.entries()) {
-				if (question.answer && !choices.includes(question.answer as never))
-					ctx.addIssue({
-						code: "custom",
-						path: ["questions", index, "answer"],
-						message: "invalid answer choice",
-					});
-			}
+			if (question.answer && !choices.includes(question.answer as never))
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "answer"],
+					message: "invalid answer choice",
+				});
 		}
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
 		// ≥ questions / label-in-bank / sentend-distinct rules gate `ready`
 		// only — drafts may carry a partial bank while the teacher is keying.
-		if (!isOptionBankable(value.skill, value.type)) {
+		// #286: đề trộn dạng — bank áp khi type ĐỀ hoặc bất kỳ CÂU bankable
+		// (`optionBankKindFor`); câu tự do trong đề trộn không bị ép nhãn.
+		const bankKind = optionBankKindFor(
+			value.skill,
+			value.type,
+			value.questions.map((question) => question.type),
+		);
+		if (!bankKind) {
 			if (value.optionBank.length > 0)
 				ctx.addIssue({
 					code: "custom",
@@ -605,24 +824,28 @@ export const assignmentPromptCreateSchema = z
 				});
 		} else if (value.status === "ready") {
 			const { optionBank } = value;
-			if (optionBank.length < 2 || optionBank.length < value.questions.length)
+			// Chỉ những câu có kind hiệu dụng trùng bankKind dùng bank này.
+			const bankQuestions = value.questions
+				.map((question, index) => ({ question, index }))
+				.filter(
+					({ question }) =>
+						answerKindByType[question.type ?? value.type] === bankKind,
+				);
+			if (optionBank.length < 2 || optionBank.length < bankQuestions.length)
 				ctx.addIssue({
 					code: "custom",
 					path: ["optionBank"],
-					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every question`,
+					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
 				});
-			if (value.questions.length > ASSIGNMENT_OPTION_BANK_MAX)
+			if (bankQuestions.length > ASSIGNMENT_OPTION_BANK_MAX)
 				ctx.addIssue({
 					code: "custom",
 					path: ["questions"],
 					message: `bankable types allow at most ${ASSIGNMENT_OPTION_BANK_MAX} questions (label alphabet size)`,
 				});
-			const bankKind = answerKindByType[value.type];
-			const labels = bankKind
-				? ASSIGNMENT_ANSWER_CHOICES[bankKind]
-				: ASSIGNMENT_ANSWER_CHOICES.letter;
+			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
 			const used = new Set<string>();
-			for (const [index, question] of value.questions.entries()) {
+			for (const { question, index } of bankQuestions) {
 				if (!question.answer.trim()) continue;
 				const labelIndex = labels.indexOf(question.answer as never);
 				if (labelIndex < 0 || labelIndex >= optionBank.length)
@@ -631,7 +854,7 @@ export const assignmentPromptCreateSchema = z
 						path: ["questions", index, "answer"],
 						message: "answer must be a label inside the option bank",
 					});
-				if (value.type === "sentend") {
+				if ((question.type ?? value.type) === "sentend") {
 					// Formal-format rule: sentend uses each option exactly once;
 					// features and the other matching kinds may reuse labels.
 					if (used.has(question.answer))
@@ -648,6 +871,126 @@ export const assignmentPromptCreateSchema = z
 export type AssignmentPromptCreate = z.infer<
 	typeof assignmentPromptCreateSchema
 >;
+
+/**
+ * PATCH /assignments/prompts/:id (full-test builder phase-2): partial của
+ * create, giữ validate từng question (inner schema strict + answer choice
+ * theo `type` khi body có). `skill`/`part` KHÔNG patch được — legacy
+ * `task`/`genre` derive từ chúng lúc create, đổi là lệch round-trip; các
+ * rule phụ thuộc skill (part/type membership, questions-per-skill, ready
+ * gating) cần row DB nên route kiểm sau khi load prompt theo org.
+ */
+export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
+	.omit({ skill: true, part: true })
+	.partial()
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.imageUrl && !isAssignmentImageUrl(value.imageUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["imageUrl"],
+				message: "imageUrl must be an https URL",
+			});
+		// Answer-choice theo type HIỆU DỤNG từng câu (mirror create — #286):
+		// ép kind của type prompt lên mọi câu sẽ false-reject đề trộn dạng
+		// (prompt tfng + câu note answer tự do) ngay tại schema, mù field.
+		if (value.questions) {
+			for (const [index, question] of value.questions.entries()) {
+				const kind =
+					answerKindByType[question.type ?? value.type ?? ""] ?? null;
+				if (!kind) continue;
+				const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+				if (question.answer && !choices.includes(question.answer as never))
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "invalid answer choice",
+					});
+			}
+		}
+	});
+export type AssignmentPromptUpdate = z.infer<
+	typeof assignmentPromptUpdateSchema
+>;
+
+/**
+ * Full test CRUD (design "IELTS Full Test Builder"). `timeLimitSeconds`
+ * null = không giới hạn (Writing/Speaking); cap 3*3600 = full IELTS timed
+ * paper. Parts KHÔNG nằm ở create — dùng PUT parts riêng (replace-all).
+ */
+export const assignmentTestCreateSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		description: richTextField(2000).optional(),
+		skill: z.enum(ASSIGNMENT_SKILLS),
+		timeLimitSeconds: z
+			.number()
+			.int()
+			.gt(0)
+			.max(3 * 3600)
+			.nullable(),
+		collection: z.string().trim().max(200).optional(),
+		testGroup: z.string().trim().max(100).optional(),
+	})
+	.strict();
+export type AssignmentTestCreate = z.infer<typeof assignmentTestCreateSchema>;
+
+/** Meta/status update — partial của create; parts đổi qua parts-set riêng. */
+export const assignmentTestUpdateSchema = assignmentTestCreateSchema
+	.partial()
+	.extend({ status: z.enum(["draft", "ready"]).optional() })
+	.strict();
+export type AssignmentTestUpdate = z.infer<typeof assignmentTestUpdateSchema>;
+
+/**
+ * Replace-all parts body (PUT /assignments/tests/:id/parts). Slot id phải
+ * thuộc UNION các preset (slot id toàn cục duy nhất); membership theo skill
+ * CỦA TEST và cap "≤ số slot preset" do route kiểm (route có test.skill từ
+ * DB — phase-02). Contract chặn: slot lạ, trùng part, quá 4 slot (listening
+ * là preset lớn nhất).
+ */
+export const assignmentTestPartsSetSchema = z
+	.array(
+		z
+			.object({
+				part: z.string().trim().min(1).max(20),
+				promptId: z.string().trim().min(1).max(100),
+				qStartOverride: z.number().int().gt(0).optional(),
+			})
+			.strict(),
+	)
+	.max(4)
+	.superRefine((parts, ctx) => {
+		const validSlots: Record<string, true> = Object.fromEntries(
+			Object.values(ASSIGNMENT_TEST_PRESETS).flatMap((preset) =>
+				preset.slots.map((slot) => [slot.part, true] as const),
+			),
+		);
+		const seen = new Set<string>();
+		for (const [index, item] of parts.entries()) {
+			if (!validSlots[item.part]) {
+				ctx.addIssue({
+					code: "custom",
+					path: [index, "part"],
+					message: "invalid part slot",
+				});
+				continue;
+			}
+			if (seen.has(item.part)) {
+				ctx.addIssue({
+					code: "custom",
+					path: [index, "part"],
+					message: "duplicate part",
+				});
+				continue;
+			}
+			seen.add(item.part);
+		}
+	});
+export type AssignmentTestPartsSet = z.infer<
+	typeof assignmentTestPartsSetSchema
+>;
+
 /**
  * Giao đề ngân hàng cho lớp (#208). `due` là ISO yyyy-mm-dd (so được với
  * hôm nay — precedent `invoice.due`, khác `assignment.due` display dd/mm);
@@ -960,6 +1303,8 @@ export interface AssignmentQuestion {
 	opts: string[] | null;
 	answer: string;
 	alts: string;
+	/** Dạng bài riêng của câu — nullish khi câu đi theo type của prompt. */
+	type?: string | null;
 	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
 	 * non-image types and legacy image rows. */
 	pin?: { x: number; y: number } | null;
@@ -1005,6 +1350,31 @@ export interface KernelClassAssignmentRow {
 	targets: Array<{ studentId: string; submittedAt: string | null }>;
 }
 
+/** Một slot của full test — position là thứ tự slot trong preset. */
+export interface KernelAssignmentTestPartRow {
+	testId: string;
+	promptId: string;
+	part: string;
+	position: number;
+	qStartOverride: number | null;
+}
+
+/**
+ * Full test snapshot row (parts đã group theo test). Không nhúng passage/
+ * transcript — UI lấy prompt detail từ assignmentPrompts theo promptId.
+ */
+export interface KernelAssignmentTestRow {
+	id: string;
+	title: string;
+	description: string | null;
+	skill: AssignmentSkill | string;
+	timeLimitSeconds: number | null;
+	collection: string | null;
+	testGroup: string | null;
+	status: "draft" | "ready" | string;
+	parts: KernelAssignmentTestPartRow[];
+}
+
 export interface KernelReportRow {
 	id: string;
 	studentId: string;
@@ -1042,6 +1412,7 @@ export interface KernelSnapshot {
 	notifs: KernelNotifRow[];
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
+	assignmentTests: KernelAssignmentTestRow[];
 }
 
 export interface CreatedResponse {
@@ -1272,6 +1643,151 @@ export const studentOverviewSchema = z.object({
 	assignments: z.array(studentAssignmentSchema),
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
+
+// --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
+
+export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
+export type QuizAttemptStatus = (typeof QUIZ_ATTEMPT_STATUSES)[number];
+
+/** Verdict per question — tính server-side từ questionsSnapshot (Phase 1). */
+export const QUIZ_VERDICTS = ["correct", "wrong", "skipped"] as const;
+export type QuizVerdict = (typeof QUIZ_VERDICTS)[number];
+
+/** Cap answer value per autosave PATCH (RT#16) — matches the 4096-byte body cap. */
+export const QUIZ_ANSWER_VALUE_MAX = 500;
+
+/** Body của POST start/submit — exactly `{}` (mirror lessonActionSchema). */
+export const quizAttemptActionSchema = z.object({}).strict();
+export type QuizAttemptAction = z.infer<typeof quizAttemptActionSchema>;
+
+/** Autosave 1 câu: `q` là index 0-based; range check chạy server-side với
+ * snapshot length (contract không biết độ dài đề). */
+export const quizAnswerPatchSchema = z
+	.object({
+		q: z.number().int().min(0),
+		value: z.string().max(QUIZ_ANSWER_VALUE_MAX),
+	})
+	.strict();
+export type QuizAnswerPatch = z.infer<typeof quizAnswerPatchSchema>;
+
+/** Câu hỏi đã sanitize cho take surface — `answer`/`alts` bị strip (RT#6). */
+export const studentQuizQuestionSchema = z
+	.object({
+		stem: z.string(),
+		opts: z.array(z.string()).nullable(),
+		/** Dạng bài hiệu dụng của câu (server resolve `question.type ??
+		 * prompt.type`). OPTIONAL phía client dù server luôn gửi: client
+		 * student strict-parse payload, bundle cũ + server mới không được
+		 * throw trong cửa sổ deploy — client đọc `question.type ??
+		 * detail.type` (fallback kép). */
+		type: z.string().optional(),
+		pin: z.object({ x: z.number(), y: z.number() }).nullish(),
+	})
+	.strict();
+export type StudentQuizQuestion = z.infer<typeof studentQuizQuestionSchema>;
+
+/**
+ * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take screen.
+ * Paper fields đọc từ prompt hiện tại; `questions` lấy từ `questionsSnapshot`
+ * của attempt khi đã start (RT#3), còn `note`, `transcript` (nguồn suy ra đáp
+ * án listening) và answer key không bao giờ xuống wire — transcript không có
+ * mặt trong payload. `attempt.answers` cho resume; null khi chưa start.
+ */
+export const studentQuizDetailSchema = z
+	.object({
+		assignmentId: z.string(),
+		title: z.string(),
+		due: z.string(),
+		skill: z.string(),
+		part: z.string(),
+		type: z.string(),
+		band: z.string(),
+		intro: z.string(),
+		prompt: z.string(),
+		passage: z.string(),
+		cueTopic: z.string(),
+		cuePoints: z.string(),
+		audioName: z.string(),
+		imageUrl: z.string(),
+		optionBank: z.array(z.string()),
+		questions: z.array(studentQuizQuestionSchema),
+		attempt: z
+			.object({
+				id: z.string(),
+				status: z.enum(QUIZ_ATTEMPT_STATUSES),
+				answers: z.record(z.string(), z.string()),
+			})
+			.nullable(),
+	})
+	.strict();
+export type StudentQuizDetail = z.infer<typeof studentQuizDetailSchema>;
+
+/** POST submit → counters (idempotent: double submit trả đúng shape này). */
+export const quizSubmitResultSchema = z
+	.object({
+		correctCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+		wrongCount: z.number().int().min(0),
+		skippedCount: z.number().int().min(0),
+	})
+	.strict();
+export type QuizSubmitResult = z.infer<typeof quizSubmitResultSchema>;
+
+/** Một dòng compact cho summary list: n → đáp án học viên → đáp án đúng. */
+export const quizAttemptItemSchema = z
+	.object({
+		verdict: z.enum(QUIZ_VERDICTS),
+		key: z.string(),
+		answer: z.string().nullable(),
+	})
+	.strict();
+export type QuizAttemptItem = z.infer<typeof quizAttemptItemSchema>;
+
+/**
+ * GET /api/student/attempts/:attemptId — summary sau nộp. 409 khi attempt
+ * còn `in_progress` (RT#6) nên payload thành công luôn là đã submit.
+ */
+export const quizAttemptSummarySchema = z
+	.object({
+		id: z.string(),
+		assignmentId: z.string(),
+		title: z.string(),
+		status: z.enum(QUIZ_ATTEMPT_STATUSES),
+		correctCount: z.number().int().min(0),
+		wrongCount: z.number().int().min(0),
+		skippedCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+		/** ISO datetime — duration hiển thị = submittedAt − startedAt. */
+		startedAt: z.string(),
+		submittedAt: z.string(),
+		items: z.array(quizAttemptItemSchema),
+	})
+	.strict();
+export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
+
+/**
+ * GET /api/student/attempts/:attemptId/detail — review đầy đủ: paper render
+ * từ snapshot (stem/opts/pin) + key/alts/verdict/đáp án học viên per câu +
+ * `note` của đề (withhold ở take, chỉ reveal sau submit). Cùng gate 409
+ * in_progress như summary.
+ */
+export const quizAttemptDetailSchema = quizAttemptSummarySchema
+	.omit({ items: true })
+	.extend({
+		note: z.string(),
+		questions: z.array(
+			studentQuizQuestionSchema
+				.extend({
+					key: z.string(),
+					alts: z.string(),
+					verdict: z.enum(QUIZ_VERDICTS),
+					answer: z.string().nullable(),
+				})
+				.strict(),
+		),
+	})
+	.strict();
+export type QuizAttemptDetail = z.infer<typeof quizAttemptDetailSchema>;
 
 /**
  * Student Invitation & Multi-Org Contracts (Phase 2).

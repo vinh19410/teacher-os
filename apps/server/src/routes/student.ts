@@ -1,39 +1,52 @@
 import {
 	ACCOUNT_ERROR_CODES,
+	type AssignmentQuestion,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EnrollmentStatus,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
+	type QuizAttemptDetail,
+	type QuizAttemptStatus,
+	type QuizAttemptSummary,
+	quizAnswerPatchSchema,
+	quizAttemptActionSchema,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
 	type StudentMe,
 	type StudentOrgItem,
 	type StudentOverview,
+	type StudentQuizDetail,
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
+	assignmentPrompt,
 	classAssignment,
 	classAssignmentTarget,
 	classTable,
 	enrollment,
 	lesson,
 	organization,
+	quizAttempt,
 	student,
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
 import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
+import { parsePin } from "./snapshot";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -79,6 +92,68 @@ function parseTargetScore(
 	const allowed =
 		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
 	return parseEnum(raw, allowed);
+}
+
+/** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
+ * fallback style as snapshot.ts parseQuestions: corrupt rows → []). */
+function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) {
+			console.warn(`[student] invalid quiz questions JSON for ${rowId}`);
+			return [];
+		}
+		return parsed.flatMap((item) => {
+			if (!item || typeof item !== "object") return [];
+			const record = item as Record<string, unknown>;
+			return [
+				{
+					stem: typeof record.stem === "string" ? record.stem : "",
+					opts: Array.isArray(record.opts)
+						? record.opts.filter(
+								(option): option is string => typeof option === "string",
+							)
+						: null,
+					answer: typeof record.answer === "string" ? record.answer : "",
+					alts: typeof record.alts === "string" ? record.alts : "",
+					type: typeof record.type === "string" ? record.type : null,
+					pin: parsePin(record.pin),
+				},
+			];
+		});
+	} catch {
+		console.warn(`[student] invalid quiz questions JSON for ${rowId}`);
+		return [];
+	}
+}
+
+/** answers JSON `{"<qIndex>":"<value>"}` → guarded record (corrupt → {}). */
+function parseQuizAnswers(raw: string): Record<string, string> {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			return {};
+		}
+		const answers: Record<string, string> = {};
+		for (const [key, value] of Object.entries(parsed)) {
+			if (typeof value === "string") answers[key] = value;
+		}
+		return answers;
+	} catch {
+		return {};
+	}
+}
+
+/** optionBank JSON string[] → guarded (corrupt/legacy → []). */
+function parseQuizOptionBank(raw: string): string[] {
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		return Array.isArray(parsed)
+			? parsed.filter((item): item is string => typeof item === "string")
+			: [];
+	} catch {
+		return [];
+	}
 }
 
 function buildStudentMe(
@@ -476,6 +551,42 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
+	// --- Student quiz take & review (#283) --------------------------------
+	// RT#1: requireStudent là closure của studentRoutes() nên mọi endpoint
+	// quiz/attempt PHẢI khai báo ngay trong router này (bootstrapMiddleware
+	// bỏ qua /api/student — router mount riêng sẽ không có auth).
+	router.use("/assignments/:assignmentId/quiz", requireStudent);
+	router.use("/assignments/:assignmentId/quiz/*", requireStudent);
+	router.use("/attempts/*", requireStudent);
+
+	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
+	// session gate `use("*")` nên request không có session vẫn 401 trước khi
+	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16).
+	const quizWriteGuard = async (
+		c: Context<StudentEnv>,
+		next: () => Promise<void>,
+	) => {
+		if (c.req.method === "POST" || c.req.method === "PATCH") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
+			// Content-Length không lọt) — precedent kernel.ts /syllabi.
+			return bodyLimit({
+				maxSize: 4096,
+				onError: (bc) => bc.json({ error: "payload too large" }, 413),
+			})(c, next);
+		}
+		return next();
+	};
+	router.use("/assignments/:assignmentId/quiz/*", quizWriteGuard);
+	router.use("/attempts/*", quizWriteGuard);
+
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
 		return c.json(buildStudentMe(sessionUser, s));
@@ -693,6 +804,512 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			},
 			404,
 		);
+	});
+
+	/**
+	 * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take.
+	 * Ownership: student phải là target của lượt giao (inner join target,
+	 * org predicate) — không phải target → 404. Questions lấy từ snapshot
+	 * khi attempt tồn tại (RT#3); answer/alts/note không bao giờ xuống wire
+	 * (RT#6).
+	 */
+	router.get("/assignments/:assignmentId/quiz", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const assignmentId = c.req.param("assignmentId");
+		const db = deps.getDb();
+
+		const [row] = await db
+			.select({
+				title: classAssignment.title,
+				due: classAssignment.due,
+				promptId: classAssignment.promptId,
+			})
+			.from(classAssignment)
+			.innerJoin(
+				classAssignmentTarget,
+				and(
+					eq(classAssignmentTarget.assignmentId, classAssignment.id),
+					eq(classAssignmentTarget.orgId, orgId),
+					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			);
+		if (!row) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		const [prompt] = await db
+			.select()
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.id, row.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			);
+		if (!prompt) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		const [attempt] = await db
+			.select()
+			.from(quizAttempt)
+			.where(
+				and(
+					eq(quizAttempt.assignmentId, assignmentId),
+					eq(quizAttempt.orgId, orgId),
+					eq(quizAttempt.studentId, s.id),
+				),
+			);
+
+		const questions = parseQuizQuestions(
+			attempt ? attempt.questionsSnapshot : prompt.questions,
+			attempt?.id ?? row.promptId,
+		);
+
+		const detail: StudentQuizDetail = {
+			assignmentId,
+			title: row.title,
+			due: row.due,
+			skill: prompt.skill,
+			part: prompt.part,
+			type: prompt.type,
+			band: prompt.band,
+			intro: prompt.intro,
+			prompt: prompt.prompt,
+			passage: prompt.passage,
+			cueTopic: prompt.cueTopic,
+			cuePoints: prompt.cuePoints,
+			audioName: prompt.audioName,
+			imageUrl: prompt.imageUrl,
+			optionBank: parseQuizOptionBank(prompt.optionBank),
+			questions: questions.map((question) => ({
+				stem: question.stem,
+				opts: question.opts,
+				// Type hiệu dụng của câu: type riêng (đề trộn dạng) ?? type
+				// prompt — payload student luôn có type cụ thể để client phân
+				// cụm; snapshot cũ parse `type: null` cũng fallback về đây.
+				type: question.type ?? prompt.type,
+				pin: question.pin ?? null,
+			})),
+			attempt: attempt
+				? {
+						id: attempt.id,
+						status: attempt.status as QuizAttemptStatus,
+						answers: parseQuizAnswers(attempt.answers),
+					}
+				: null,
+		};
+		return c.json(detail);
+	});
+
+	/**
+	 * POST /api/student/assignments/:assignmentId/quiz/start — snapshot đề
+	 * (đầy đủ key) vào attempt lúc start. Idempotent resume: đã có attempt
+	 * in_progress → trả lại cùng attemptId; unique-race → re-read (backstop
+	 * enrollment-activation.ts:206-209). 409 nếu đã submit (không retake v1).
+	 */
+	router.post("/assignments/:assignmentId/quiz/start", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const assignmentId = c.req.param("assignmentId");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		if (!quizAttemptActionSchema.safeParse(raw).success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const [target] = await db
+			.select({ promptId: classAssignment.promptId })
+			.from(classAssignment)
+			.innerJoin(
+				classAssignmentTarget,
+				and(
+					eq(classAssignmentTarget.assignmentId, classAssignment.id),
+					eq(classAssignmentTarget.orgId, orgId),
+					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			);
+		if (!target) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		const attemptFilter = and(
+			eq(quizAttempt.assignmentId, assignmentId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, s.id),
+		);
+		const [existing] = await db.select().from(quizAttempt).where(attemptFilter);
+		if (existing) {
+			if (existing.status === "submitted") {
+				return c.json({ error: "attempt already submitted" }, 409);
+			}
+			return c.json({ attemptId: existing.id }, 200);
+		}
+
+		const [prompt] = await db
+			.select({ questions: assignmentPrompt.questions })
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.id, target.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			);
+		if (!prompt) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		const attemptId = crypto.randomUUID();
+		try {
+			await db.insert(quizAttempt).values({
+				id: attemptId,
+				orgId,
+				assignmentId,
+				studentId: s.id,
+				questionsSnapshot: JSON.stringify(
+					parseQuizQuestions(prompt.questions, target.promptId),
+				),
+				answers: "{}",
+				startedAt: new Date(),
+			});
+			return c.json({ attemptId }, 201);
+		} catch (err) {
+			// Unique (assignmentId, studentId) race — request đồng thời khác
+			// đã insert: re-read và resume attempt đó.
+			const [raced] = await db.select().from(quizAttempt).where(attemptFilter);
+			if (raced) {
+				if (raced.status === "submitted") {
+					return c.json({ error: "attempt already submitted" }, 409);
+				}
+				return c.json({ attemptId: raced.id }, 200);
+			}
+			throw err;
+		}
+	});
+
+	/**
+	 * PATCH /api/student/attempts/:attemptId/answer — autosave 1 câu.
+	 * Atomic json_set (D1 không có transaction — KHÔNG read-modify-write):
+	 * ownership = WHERE predicate org+student (IDOR guard, RT#4); path dạng
+	 * '$."<q>"' string key nhất quán với JSON lưu. 0 rows → phân biệt 404/409
+	 * qua status read sau đó.
+	 */
+	router.patch("/attempts/:attemptId/answer", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		const parsed = quizAnswerPatchSchema.safeParse(raw);
+		if (!parsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const { q, value } = parsed.data;
+
+		const owner = and(
+			eq(quizAttempt.id, attemptId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, s.id),
+		);
+		const [attempt] = await db
+			.select({
+				status: quizAttempt.status,
+				questionsSnapshot: quizAttempt.questionsSnapshot,
+			})
+			.from(quizAttempt)
+			.where(owner);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.status === "submitted") {
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+
+		const questions = parseQuizQuestions(attempt.questionsSnapshot, attemptId);
+		if (q >= questions.length) {
+			return c.json({ error: "question index out of range" }, 400);
+		}
+
+		const updated = await db
+			.update(quizAttempt)
+			.set({
+				// q binds as TEXT: a number param renders "3.0" in SQLite string
+				// concat and would corrupt the JSON key.
+				answers: sql`json_set(${quizAttempt.answers}, '$."' || ${String(q)} || '"', json_quote(${value}))`,
+			})
+			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.returning({ id: quizAttempt.id });
+
+		if (updated.length === 0) {
+			// Submit xảy ra giữa read và write — phân biệt qua status read.
+			const [reread] = await db
+				.select({ status: quizAttempt.status })
+				.from(quizAttempt)
+				.where(owner);
+			if (!reread) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+		return c.json({ ok: true });
+	});
+
+	/**
+	 * POST /api/student/attempts/:attemptId/submit — flip-first idempotent
+	 * (RT#5): CAS UPDATE status in_progress → submitted; thắng CAS mới chấm
+	 * từ snapshot + ghi counts + stamp class_assignment_target.submittedAt
+	 * trong MỘT db.batch. Thua CAS (double submit) → counts từ data đã
+	 * freeze; nếu stamp submittedAt còn thiếu (batch hỏng sau flip ở request
+	 * trước) → re-stamp idempotent để tự chữa.
+	 */
+	router.post("/attempts/:attemptId/submit", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		if (!quizAttemptActionSchema.safeParse(raw).success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const owner = and(
+			eq(quizAttempt.id, attemptId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, s.id),
+		);
+
+		const flipped = await db
+			.update(quizAttempt)
+			.set({ status: "submitted", submittedAt: new Date() })
+			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.returning({ id: quizAttempt.id });
+
+		const [attempt] = await db
+			.select({
+				assignmentId: quizAttempt.assignmentId,
+				questionsSnapshot: quizAttempt.questionsSnapshot,
+				answers: quizAttempt.answers,
+			})
+			.from(quizAttempt)
+			.where(owner);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+
+		const questions = parseQuizQuestions(attempt.questionsSnapshot, attemptId);
+		const answers = parseQuizAnswers(attempt.answers);
+		const grade = gradeQuiz(questions, answers);
+
+		// Đóng non-goal #208: write-path đánh dấu đã nộp (ISO datetime).
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db
+				.update(quizAttempt)
+				.set({ correctCount: grade.correctCount })
+				.where(owner),
+			db
+				.update(classAssignmentTarget)
+				.set({ submittedAt: new Date().toISOString() })
+				.where(
+					and(
+						eq(classAssignmentTarget.orgId, orgId),
+						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+						eq(classAssignmentTarget.studentId, s.id),
+					),
+				),
+		];
+
+		if (flipped.length > 0) {
+			await db.batch(statements);
+		} else {
+			// Request trước có thể đã thắng flip nhưng db.batch hỏng ngay sau
+			// đó (D1 transient) — stamp mất vĩnh viễn nếu không tự chữa. Grade
+			// thuần từ data đã freeze nên ghi lặp vô hại.
+			const [target] = await db
+				.select({ submittedAt: classAssignmentTarget.submittedAt })
+				.from(classAssignmentTarget)
+				.where(
+					and(
+						eq(classAssignmentTarget.orgId, orgId),
+						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+						eq(classAssignmentTarget.studentId, s.id),
+					),
+				);
+			if (target && target.submittedAt === null) {
+				await db.batch(statements);
+			}
+		}
+
+		return c.json({
+			correctCount: grade.correctCount,
+			totalCount: grade.totalCount,
+			wrongCount: grade.wrongCount,
+			skippedCount: grade.skippedCount,
+		});
+	});
+
+	/**
+	 * Loader chung cho summary/detail: ownership predicate + gate 409 khi
+	 * in_progress (RT#6) + grade từ snapshot (RT#3). Title/note từ snapshot
+	 * của lượt giao + prompt hiện tại.
+	 */
+	const loadAttemptForReview = async (
+		attemptId: string,
+		s: typeof student.$inferSelect,
+		orgId: string,
+	) => {
+		const db = deps.getDb();
+		const owner = and(
+			eq(quizAttempt.id, attemptId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, s.id),
+		);
+		const [attempt] = await db.select().from(quizAttempt).where(owner);
+		if (!attempt) return { error: 404 } as const;
+		if (attempt.status !== "submitted") return { error: 409 } as const;
+
+		const questions = parseQuizQuestions(attempt.questionsSnapshot, attempt.id);
+		const answers = parseQuizAnswers(attempt.answers);
+		const grade = gradeQuiz(questions, answers);
+		const [header] = await db
+			.select({
+				title: classAssignment.title,
+				note: assignmentPrompt.note,
+				type: assignmentPrompt.type,
+			})
+			.from(classAssignment)
+			.innerJoin(
+				assignmentPrompt,
+				eq(assignmentPrompt.id, classAssignment.promptId),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, attempt.assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			);
+		return {
+			attempt,
+			questions,
+			answers,
+			grade,
+			title: header?.title ?? "",
+			note: header?.note ?? "",
+			promptType: header?.type ?? "",
+		};
+	};
+
+	/** GET /api/student/attempts/:attemptId — summary sau nộp (409 in_progress). */
+	router.get("/attempts/:attemptId", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const loaded = await loadAttemptForReview(
+			c.req.param("attemptId"),
+			s,
+			orgId,
+		);
+		if ("error" in loaded) {
+			return loaded.error === 404
+				? c.json({ error: "attempt not found" }, 404)
+				: c.json({ error: "attempt not yet submitted" }, 409);
+		}
+		const { attempt, questions, answers, grade, title } = loaded;
+		const summary: QuizAttemptSummary = {
+			id: attempt.id,
+			assignmentId: attempt.assignmentId,
+			title,
+			status: "submitted",
+			correctCount: grade.correctCount,
+			wrongCount: grade.wrongCount,
+			skippedCount: grade.skippedCount,
+			totalCount: grade.totalCount,
+			startedAt: attempt.startedAt.toISOString(),
+			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
+			items: questions.map((question, index) => {
+				const given = answers[String(index)];
+				return {
+					verdict: grade.verdicts[index] ?? "skipped",
+					key: question.answer,
+					answer: given !== undefined && given.trim().length > 0 ? given : null,
+				};
+			}),
+		};
+		return c.json(summary);
+	});
+
+	/**
+	 * GET /api/student/attempts/:attemptId/detail — review đầy đủ sau nộp:
+	 * paper từ snapshot + key/alts/verdict/đáp án học viên + note đề
+	 * (409 in_progress).
+	 */
+	router.get("/attempts/:attemptId/detail", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const loaded = await loadAttemptForReview(
+			c.req.param("attemptId"),
+			s,
+			orgId,
+		);
+		if ("error" in loaded) {
+			return loaded.error === 404
+				? c.json({ error: "attempt not found" }, 404)
+				: c.json({ error: "attempt not yet submitted" }, 409);
+		}
+		const { attempt, questions, answers, grade, title, note, promptType } =
+			loaded;
+		const detail: QuizAttemptDetail = {
+			id: attempt.id,
+			assignmentId: attempt.assignmentId,
+			title,
+			status: "submitted",
+			correctCount: grade.correctCount,
+			wrongCount: grade.wrongCount,
+			skippedCount: grade.skippedCount,
+			totalCount: grade.totalCount,
+			startedAt: attempt.startedAt.toISOString(),
+			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
+			note,
+			questions: questions.map((question, index) => {
+				const given = answers[String(index)];
+				return {
+					stem: question.stem,
+					opts: question.opts,
+					// Type hiệu dụng như take payload — review screen phân cụm cùng
+					// cấu trúc bài làm.
+					type: question.type ?? promptType,
+					pin: question.pin ?? null,
+					key: question.answer,
+					alts: question.alts,
+					verdict: grade.verdicts[index] ?? "skipped",
+					answer: given !== undefined && given.trim().length > 0 ? given : null,
+				};
+			}),
+		};
+		return c.json(detail);
 	});
 
 	return router;

@@ -1,6 +1,6 @@
 {
 	"name": "teacher-os",
-	"version": "0.0.7",
+	"version": "0.0.10",
 	"private": true,
 	"workspaces": [
 		"apps/*",
@@ -11,10 +11,10 @@
 		"dev": "turbo run dev",
 		"build": "turbo run build",
 		"check-types": "turbo run check-types",
-		"dev:web": "turbo run dev -F web --",
+		"dev:web": "pnpm --filter web run dev:bare",
 		"dev:server": "turbo run dev -F server --",
-		"dev:landing": "turbo run dev -F landing --",
-		"dev:student": "turbo run dev -F student --",
+		"dev:landing": "pnpm --filter landing run dev:bare",
+		"dev:student": "pnpm --filter student run dev:bare",
 		"db:generate": "turbo run db:generate -F @teacher-os/db --",
 		"deploy": "turbo run deploy -F @teacher-os/infra --",
 		"destroy": "turbo run destroy -F @teacher-os/infra --",

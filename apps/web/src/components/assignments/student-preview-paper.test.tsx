@@ -222,3 +222,73 @@ describe("StudentPreviewPaper — image pins (phase-04 FR5)", () => {
 		expect(html).toMatch(/left:40%/);
 	});
 });
+
+describe("StudentPreviewPaper — rich text render (rich text plan phase 4)", () => {
+	it("legacy plain rows keep newlines via the pre-line branch", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					passage: undefined,
+					prompt: "Dòng 1\nDòng 2",
+				})}
+			/>,
+		);
+		expect(html).toContain("Dòng 1\nDòng 2");
+		expect(html).toContain("whitespace-pre-line");
+	});
+
+	it("tag-only note hides the extra-guidance tag", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper {...base({ note: "<p></p>" })} />,
+		);
+		expect(html).not.toContain("Có hướng dẫn thêm");
+		const withNote = renderToStaticMarkup(
+			<StudentPreviewPaper {...base({ note: "<p>Chú ý</p>" })} />,
+		);
+		expect(withNote).toContain("Có hướng dẫn thêm");
+	});
+
+	it("word count runs on plain text extracted from HTML", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					passage: undefined,
+					prompt: "<p>one two</p>",
+				})}
+			/>,
+		);
+		expect(html).toContain("2 từ");
+	});
+});
+
+describe("StudentPreviewPaper — per-question type (mixed prompts)", () => {
+	it("renders the row widget by the question type, not the prompt type", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					type: "note",
+					items: [
+						// Câu tablecomp trong đề note: layout "Hàng — Cột" của riêng
+						// type câu (trước đây key theo prompt type nên render thô).
+						{
+							stem: "[table] r1 c2: chế tác / vật liệu",
+							answer: "iron",
+							opts: null,
+							alts: "",
+							type: "tablecomp",
+						},
+						{ ...emptyItem("note"), stem: "plain note row ____" },
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Hàng 1 — Cột 2:");
+		expect(html).toContain("chế tác / vật liệu");
+	});
+});

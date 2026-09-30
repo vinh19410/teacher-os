@@ -1,8 +1,12 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
+import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
+import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
+import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { Tag } from "@/components/ui/tag";
 import { isValidPin } from "@/lib/image-pin";
 import {
-	bankLabel,
 	isBankableType,
 	kindOf,
 	partOf,
@@ -11,8 +15,6 @@ import {
 	typeOf,
 	wordCount,
 } from "./assignment-presets";
-import { ClozeStemText } from "./cloze-stem";
-import { PinOverlay } from "./pin-editor";
 
 export function StudentPreviewPaper(props: {
 	skill?: string;
@@ -45,9 +47,15 @@ export function StudentPreviewPaper(props: {
 	const isAuto = skillId === "reading" || skillId === "listening";
 	// FR6: bankable matching types show the structured bank; an empty bank
 	// (legacy prompts) falls back to the intro text AND warns — never silent.
-	const bankable = isBankableType(skillId, typeId);
+	// Đề trộn dạng: bank hiện khi type đề HOẶC bất kỳ câu bankable (#286).
+	const bankTypeId = isBankableType(skillId, typeId)
+		? typeId
+		: ((props.items ?? []).find(
+				(item) => item.type && isBankableType(skillId, item.type),
+			)?.type ?? null);
+	const bankable = bankTypeId !== null;
 	const bank = props.optionBank ?? [];
-	const bankKind = kindOf(typeId);
+	const bankKind = kindOf(bankTypeId ?? typeId);
 	// The preview draft never passes the server contract — this renderer is
 	// the only guard, so verify the scheme here before any <img> exists.
 	const rawImageUrl = props.imageUrl?.trim() ?? "";
@@ -81,11 +89,15 @@ export function StudentPreviewPaper(props: {
 					🔊 {props.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
-			{skillId === "reading" && (
-				<p className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-					{props.passage?.trim() || "Đoạn đọc sẽ hiện ở đây."}
-				</p>
-			)}
+			{skillId === "reading" &&
+				(isEmptyRichText(props.passage ?? "") ? (
+					<p className="mt-3 text-sm leading-[1.55]">Đoạn đọc sẽ hiện ở đây.</p>
+				) : (
+					<RichTextBody
+						text={props.passage ?? ""}
+						className="mt-3 text-sm leading-[1.55]"
+					/>
+				))}
 			{diagramImageUrl &&
 				(pinnedItems.length > 0 ? (
 					<PinOverlay
@@ -104,36 +116,13 @@ export function StudentPreviewPaper(props: {
 				))}
 			{isAuto && (
 				<div className="mt-3 flex flex-col gap-2">
-					{props.intro?.trim() && (
-						<p className="whitespace-pre-line text-muted-fg text-sm">
-							{props.intro.trim()}
-						</p>
+					{!isEmptyRichText(props.intro ?? "") && (
+						<RichTextBody
+							text={props.intro ?? ""}
+							className="text-muted-fg text-sm"
+						/>
 					)}
-					{bankable &&
-						(bank.length > 0 ? (
-							<div className="rounded-md border border-line bg-surface p-3">
-								<p className="font-medium text-muted-fg text-xs">
-									Ngân hàng lựa chọn
-								</p>
-								<ol className="mt-1.5 flex flex-col gap-1">
-									{bank.map((row, index) => (
-										<li key={index} className="text-sm">
-											<span className="font-medium font-mono">
-												{bankLabel(bankKind, index)}
-											</span>{" "}
-											{row}
-										</li>
-									))}
-								</ol>
-							</div>
-						) : (
-							<p
-								role="alert"
-								className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
-							>
-								Thiếu ngân hàng lựa chọn
-							</p>
-						))}
+					{bankable && <OptionBankList bank={bank} kind={bankKind} />}
 					{(props.items ?? []).map((item, index) => (
 						<div key={index} className="text-sm">
 							<strong>{(part.qStart ?? 1) + index}.</strong>{" "}
@@ -141,7 +130,9 @@ export function StudentPreviewPaper(props: {
 								<ClozeStemText
 									stem={item.stem}
 									answer={item.answer}
-									typeId={typeId}
+									// Widget theo type TỪNG CÂU (đề trộn dạng) — câu không
+									// khai type đi theo dạng đề.
+									typeId={item.type ?? typeId}
 									number={(part.qStart ?? 1) + index}
 								/>
 							) : (
@@ -170,11 +161,20 @@ export function StudentPreviewPaper(props: {
 					</ul>
 				</div>
 			)}
-			{!isAuto && !(skillId === "speaking" && partId === "part2") && (
-				<p className="mt-3 whitespace-pre-line text-sm leading-[1.55]">
-					{props.prompt.trim() || "Đề sẽ hiện ở đây khi bạn soạn."}
-				</p>
-			)}
+			{!isAuto &&
+				!(skillId === "speaking" && partId === "part2") &&
+				(isEmptyRichText(props.prompt) ? (
+					// RichTextBody renders a block div — a div cannot sit inside the
+					// old <p> wrapper (invalid nesting), so this is a <div> now.
+					<div className="mt-3 text-sm leading-[1.55]">
+						Đề sẽ hiện ở đây khi bạn soạn.
+					</div>
+				) : (
+					<RichTextBody
+						text={props.prompt}
+						className="mt-3 text-sm leading-[1.55]"
+					/>
+				))}
 			<div className="mt-3 flex flex-wrap gap-2">
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
@@ -182,12 +182,12 @@ export function StudentPreviewPaper(props: {
 				<Tag>{`Band ${props.band}`}</Tag>
 				{props.source.trim() && <Tag>{props.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
-				{props.note.trim() && <Tag>Có hướng dẫn thêm</Tag>}
+				{!isEmptyRichText(props.note) && <Tag>Có hướng dẫn thêm</Tag>}
 				<Tag>{props.status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}</Tag>
 			</div>
-			{props.prompt.trim() && skillId === "writing" && (
+			{!isEmptyRichText(props.prompt) && skillId === "writing" && (
 				<p className="mt-2 font-mono text-[11px] text-meta">
-					{wordCount(props.prompt)} từ
+					{wordCount(htmlToPlainText(props.prompt))} từ
 				</p>
 			)}
 		</div>

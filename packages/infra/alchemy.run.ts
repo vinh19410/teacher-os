@@ -181,7 +181,7 @@ export default Alchemy.Stack(
 				workersDev: false,
 			}),
 			dev: {
-				command: "pnpm dev",
+				command: "pnpm dev:bare",
 				url: "http://localhost:8002",
 			},
 		});

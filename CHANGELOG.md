@@ -10,6 +10,60 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-09-30
+
+### Added
+- Redesign trang làm bài quiz học viên theo cấu trúc đề thi thật (#286): đề reading chia 2 pane cạnh nhau ở viewport ≥ lg (bài đọc trái, bài làm phải, mỗi pane cuộn độc lập; màn hẹp xếp chồng 1 cột như cũ) áp cho cả take lẫn review screen; mỗi cụm câu hỏi có header `Questions X–Y` + nhãn dạng bài + instruction chuẩn IELTS đặt ngay phía trên cụm thay vì gom 1 khối ở đầu trang
+- `type` per-question (optional, fallback `prompt.type`) trong contract authoring + payload student (#286): giáo viên trộn nhiều dạng câu trong 1 prompt qua select dạng bài từng hàng trong answer-key grid (widget/answer key thích ứng theo type câu); câu T/F/NG nhét trong prompt cloze giờ có pill lựa chọn (hết lỗi không có chỗ nhập đáp án)
+- `QUIZ_TYPE_DISPLAY` + `quizTypeDisplay()` trong `packages/api/contracts` (#286): map type → label + instruction EN chuẩn IELTS dùng chung authoring/take/review, type lạ fallback không crash
+- Option bank hiển thị khi type đề HOẶC bất kỳ câu bankable qua helper dùng chung `optionBankKindFor()` (#286) — cụm bankable trong prompt không-bankable không còn "choose from the option bank" mà thiếu bank
+
+### Added
+- Rich text cho luồng tạo bài tập: 7 field soạn nội dung (5 Textarea `PromptComposer`: prompt writing/passage/transcript/prompt speaking/note + intro `QuestionKeyEditor` + description `TestHeaderForm`) chuyển sang Tiptap v3 — toolbar In đậm/In nghiêng/Gạch chân/Danh sách/Liên kết, placeholder tiếng Việt, autosave draft giữ nguyên; `cuePoints` giữ plain text (semantics mỗi dòng 1 ý) (#280)
+- `richTextField` trong `packages/api/src/rich-text.ts`: cap nội dung đo trên plain text đã strip thẻ + collapse whitespace, raw cap ×2.5 bảo vệ vận chuyển — contract zod `.strict()` và cột SQLite giữ nguyên shape string
+- `RichTextBody` — render sink duy nhất đi qua DOMPurify (allowlist thẻ/attr chặt, hook ép `a` mở tab mới `rel="noopener noreferrer"`); hàng plain cũ tự phát hiện và render y hệt trước kia (pre-line/pre-wrap), không data migration
+- Adapter `normalizeLegacyRichText` tại 3 cửa nạp editor (restore draft `/assignments/new`, slot draft test-builder, bank-edit `composerFromPrompt`) — escape + `\n`→`<br>`, chống mất xuống dòng vĩnh viễn khi sửa draft/hàng cũ
+- E2E `rich-text-content.spec.ts`: bold persist qua save/reload, payload XSS (`<img onerror>`) lưu được nhưng vô hiệu khi render, multi-line giữ xuống dòng qua editor round-trip
+- Luồng học viên làm bài + xem lại bài làm trên student portal (#283): route `/learn/quizzes/:assignmentId` (paper 1 cột + navigator footer + autosave debounce 600ms drain-before-submit + mirror localStorage resume), trang kết quả `/learn/quizzes/attempt/:attemptId` (Điểm + đúng/sai/bỏ qua) và trang soi chi tiết `.../detail` (verdict chip + Đáp án + Giải thích từ snapshot)
+- Bảng `quiz_attempt` (migration 0030): snapshot đề lúc start (đề đổi sau khi giao không ảnh hưởng bài đang làm/chấm), answers JSON map autosave atomic `json_set`, unique `(assignmentId, studentId)` — 1 lượt/lượt giao; `class_assignment_target.submittedAt` được stamp khi nộp (đóng non-goal #208)
+- 6 endpoint `/api/student/*` quiz/attempt trong `studentRoutes()` (requireStudent + CSRF Origin/Content-Type guard + body cap); grading pure fn server-side (normalize + alts " / "); payload take không chứa answer key — leak-check 3 lớp trong e2e `student-quiz-take-review.spec.ts`
+- Renderer paper dùng chung dời về `@teacher-os/ui` (`ClozeStemText` respec interactive — width theo value học viên, không theo answer key; `PinOverlay` + optional answers/onAnswer; `OptionBankList`; `lib/cloze`, `lib/rich-text-sanitize`) — web chuyển import sạch, không shim
+- Tab "Làm thử & Soi bài" trên preview giáo viên `/assignments/preview` (#285): đề auto-graded reading/listening (bank `?id=` lẫn draft sessionStorage) có segmented control 2 tab — giáo viên làm bài tương tác (cloze/radio/pin như học viên), nộp → review chấm client-side bằng `gradeQuiz` (score card + verdict chip + Đáp án + thay thế + Giải thích từ note), "Làm lại" reset; không lưu, không API, take render từ questions đã strip key (mirror leak contract server), state lift ở route nên đổi tab không mất bài làm, đổi đề tự reset qua `simKey`
+- "Xem trước" đề đã lưu theo góc nhìn học viên (#282): nút "Xem trước" cho đề đang chọn ở `/assignments` điều hướng đến trang preview riêng `/assignments/preview?id=` hiển thị đúng như học viên nhìn thấy; e2e mở rộng `assignment-bank.spec.ts`
+
+### Changed
+- Quiz logic + renderer extract dùng chung: `gradeQuiz`/`quiz-parts` dời về `packages/api/src/lib/`, 6 quiz render component (quiz-paper/question-item/review-item/navigator/score-card/compact-list) dời về `@teacher-os/ui/components/quiz/` — pure move, cutover server/student sạch không shim (#285); `AttemptScoreCard` bỏ router Link student, nhận `action?: ReactNode` (route student tự compose Link giữ nguyên UX); `QuizNavigator.verdicts` unify number-key
+- 11 gate "có nội dung" (`.trim()`) đổi sang `isEmptyRichText` — `<p></p>` bị coi là rỗng ở nút lưu, autosave skip, gate `ready` server 400 trên POST create; 3 superRefine gate (writing prompt, reading passage, speaking part1) tương tự
+- Trần draft store 200KB → 512KB (HTML inflation ×2.5) + `console.warn` khi skip thay vì im lặng
+- Word count passage/prompt đếm trên plain text trích từ HTML (`htmlToPlainText` chèn `\n` ranh giới block)
+- Preview giáo viên/học viên + tab Lớp học render rich qua `RichTextBody`; chip "Chèn câu lệnh chuẩn" nhận diện hint đã có qua plain text (không confirm oan lần 2)
+
+### Fixed
+- Kernel snapshot `parseQuestions` + bridge `composerFromPrompt` giờ forward `type` per-question (#286): trước đó edit/Apply đề trộn dạng qua test-builder xoá âm thầm toàn bộ type đã soạn (data loss)
+- PATCH `/api/assignments/prompts/:id` mirror validation của create cho per-question type: type câu phải thuộc catalog part, answer-choice kiểm theo type hiệu dụng của câu (#286)
+- E2E full-test builder: đợi URL edit thật sau "Tạo bộ đề" — regex cũ `/tests/[^/]+` khớp cả `/tests/new` khiến "Xem trước" đua với navigate của submit đang treo (#280)
+
+## 2026-09-28
+
+### Added
+- IELTS Full Test Builder: soạn bộ đề trọn vẹn (`/assignments/tests/new`) ghép nhiều part thành một đề — header (title/time limit/preset 4 kỹ năng/collection/group), outline số câu chạy liên tục, mỗi slot gán 1 part từ ngân hàng hoặc soạn mới ngay trong builder (composer khóa skill/part), autosave bản nháp riêng; entity `assignment_test` + `assignment_test_part` (unique theo slot, `qStartOverride` nullable) trong snapshot kernel
+- Đánh số câu liên tục 1–40 qua `computeTestRanges` (`apps/web/src/lib/test-ranges.ts`) — nguồn số duy nhất cho outline/preview/soát đáp án; contract test source-parse cấm `qStartOf` (số tĩnh 1/14/27 của catalog part) trong code test-builder
+- Full-test preview (`/assignments/tests/preview`): render trọn bộ đề đúng format đề thi (READING PASSAGE 1–3, Questions 1–40, time limit) bàn giao qua sessionStorage — không hiển thị đáp án
+- Answers Checking trong builder: View All Answers (grid số câu tuyệt đối), paste key 40 dòng (`1. TRUE` / `1. Car / Cars`), Compare diff match/mismatch, Apply ghi đè answer/alts thẳng vào prompt gốc từng part (idempotent — chỉ câu thực sự khác)
+- Extensibility 3 kỹ năng còn lại chỉ là config: slot layout render từ `ASSIGNMENT_TEST_PRESETS` trong `packages/api/src/contracts.ts` (Listening 4 section, Writing 2 task, Speaking 3 part) — unit test 4 preset khóa hành vi này
+- E2E full-flow `assignment-test-create.spec.ts`: tự seed 2 part reading, soạn part thứ 3 inline, soát đáp án 2 mismatch → sửa → Apply, preview 1–40 không lộ key, reload giữ nguyên bộ đề + key đã ghi
+
+### Changed
+- Card lịch dạy trên `/dashboard` (section "Lịch hôm nay" & "Lịch sắp tới") hiển thị gọn: chỉ còn tên lớp + dòng meta `time · dur' · type · topic`; bỏ avatar chữ-cái-đầu của lớp và toàn bộ danh sách học viên trong card — mọi buổi học có trong data đều hiển thị card kể cả khi thiếu student record (#278)
+- Nút "Điểm danh" nhanh không còn trên dashboard; check-in vẫn đầy đủ ở class detail (tab "Buổi học") và modal `/schedule` (#278)
+- Time limit của bộ đề để trống được (null = không giới hạn, hợp cho Speaking/Writing) — khớp contract `timeLimitSeconds` nullable; dạng gõ sai vẫn chặn kèm thông báo hướng dẫn
+
+### Removed
+- Drift-guard `kernel-runtime.contract.test.ts` bỏ positive pin yêu cầu dashboard phải có flow check-in (`useDirectKernelAction`/`void run`/`disabled={busy…}`), thay bằng negative pin theo hướng UI mới (#278)
+
+### CI/Infra
+- Script dev của web/landing/student đổi tên thành `dev:bare`; root `dev:web`/`dev:landing`/`dev:student` chuyển sang chạy qua `pnpm --filter <app>`, `dev:server` giữ turbo filter
+
 ## 2026-09-25
 
 ### Added

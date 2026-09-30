@@ -56,3 +56,10 @@ export function createStudentQueryClient(): QueryClient {
 		}),
 	});
 }
+
+/**
+ * App-scoped QueryClient duy nhất của student app — main.tsx mount vào
+ * Provider và route loader (#283) dùng cho ensureQueryData để hai phía chia
+ * cùng một cache.
+ */
+export const studentQueryClient = createStudentQueryClient();
