@@ -18,8 +18,8 @@ import {
 	type QuizChoiceRow,
 	QuizQuestionItem,
 	questionChoiceRows,
-} from "@/components/quiz/quiz-question-item";
-import type { QuizReviewInfo } from "@/components/quiz/quiz-review-item";
+} from "@teacher-os/ui/components/quiz/quiz-question-item";
+import type { QuizReviewInfo } from "@teacher-os/ui/components/quiz/quiz-review-item";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<

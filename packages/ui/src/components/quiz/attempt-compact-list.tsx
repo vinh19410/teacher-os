@@ -1,5 +1,5 @@
 import type { QuizAttemptItem, QuizVerdict } from "@teacher-os/api/contracts";
-import { cn } from "@/lib/cn";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 const VERDICT_TEXT_CLASSES: Record<QuizVerdict, string> = {
 	correct: "text-success",

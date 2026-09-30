@@ -4,6 +4,9 @@ import {
 	buildQuizParts,
 	isAnsweredValue,
 } from "@teacher-os/api/lib/quiz-parts";
+import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
+import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
+import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
@@ -12,9 +15,6 @@ import {
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
-import { QuizNavigator } from "@/components/quiz/quiz-navigator";
-import { QuizPaper } from "@/components/quiz/quiz-paper";
-import { scrollToQuestion } from "@/components/quiz/quiz-question-item";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import { isHttpError, reauth, studentQueryClient } from "@/lib/query-client";
 import {

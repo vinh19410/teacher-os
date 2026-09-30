@@ -4,8 +4,8 @@ import {
 	isAnsweredValue,
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
+import { cn } from "@teacher-os/ui/lib/utils";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/cn";
 
 /** Nút số câu tô màu theo verdict (review mode) thay vì theo answered. */
 const VERDICT_BUTTON_CLASSES: Record<QuizVerdict, string> = {

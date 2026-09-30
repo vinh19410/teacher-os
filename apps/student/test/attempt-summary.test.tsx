@@ -2,8 +2,9 @@ import type { QuizAttemptSummary } from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// AttemptScoreCard dùng TanStack Link (CTA sang detail) — stub thành <a>
-// thuần để renderToStaticMarkup chạy không cần router context.
+// Route summary compose TanStack Link (CTA sang detail) vào `action` của
+// ScoreCard — stub thành <a> thuần để renderToStaticMarkup chạy không cần
+// router context; test compose action đúng như route $attemptId.tsx.
 vi.mock("@tanstack/react-router", () => ({
 	Link: (props: {
 		to: string;
@@ -20,8 +21,9 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
-import { AttemptCompactList } from "@/components/quiz/attempt-compact-list";
-import { AttemptScoreCard } from "@/components/quiz/attempt-score-card";
+import { Link } from "@tanstack/react-router";
+import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
+import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
 import {
 	formatAttemptDuration,
 	formatVietnamSubmittedAt,
@@ -103,7 +105,14 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 			wrongCount={summary.wrongCount}
 			skippedCount={summary.skippedCount}
 			totalCount={summary.totalCount}
-			attemptId={summary.id}
+			action={
+				<Link
+					to="/learn/quizzes/attempt/$attemptId/detail"
+					params={{ attemptId: summary.id }}
+				>
+					Xem giải thích chi tiết
+				</Link>
+			}
 		/>,
 	);
 

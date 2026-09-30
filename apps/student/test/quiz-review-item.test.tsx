@@ -1,14 +1,14 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { QuizNavigator } from "@/components/quiz/quiz-navigator";
-import { QuizPaper } from "@/components/quiz/quiz-paper";
+import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
+import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
 	type QuizReviewInfo,
 	QuizReviewItem,
 	quizReviewChipText,
-} from "@/components/quiz/quiz-review-item";
+} from "@teacher-os/ui/components/quiz/quiz-review-item";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
 
 type PaperFields = Parameters<typeof QuizPaper>[0]["detail"];
 

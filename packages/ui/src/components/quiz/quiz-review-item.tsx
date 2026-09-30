@@ -1,5 +1,5 @@
 import type { QuizVerdict } from "@teacher-os/api/contracts";
-import { cn } from "@/lib/cn";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 /** Dữ liệu review 1 câu (từ detail payload — key/verdict chỉ có sau nộp). */
 export interface QuizReviewInfo {

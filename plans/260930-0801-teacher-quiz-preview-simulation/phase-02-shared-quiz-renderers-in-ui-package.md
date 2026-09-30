@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Shared quiz renderers in ui package"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: [1]
