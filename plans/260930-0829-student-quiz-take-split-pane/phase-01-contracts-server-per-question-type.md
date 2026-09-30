@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Contracts + server — per-question type & instruction metadata"
-status: todo
+status: done
 priority: P1
 effort: 3h
 dependencies: []
@@ -29,26 +29,26 @@ render header cụm từ một nguồn duy nhất.
 
 ## Requirements
 
-- [ ] `assignmentPromptBaseSchema.questions[i]` thêm
+- [x] `assignmentPromptBaseSchema.questions[i]` thêm
       `type: z.string().trim().min(1).max(20).nullish()` — optional, đề cũ
       vẫn hợp lệ (strict schema chấp nhận field absent).
-- [ ] `AssignmentQuestion` (type exported) phản ánh field mới
+- [x] `AssignmentQuestion` (type exported) phản ánh field mới
       (`type: string | null | undefined`).
-- [ ] `superRefine` authoring: nếu câu có `type` thì phải nằm trong danh mục
+- [x] `superRefine` authoring: nếu câu có `type` thì phải nằm trong danh mục
       type của part đó (`config.types`), không thì 400 `invalid` tại
       `questions.N.type`.
-- [ ] Thêm `QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: string }>`
+- [x] Thêm `QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: string }>`
       vào `contracts.ts` + helper `quizTypeDisplay(type)` trả entry fallback
       (`{ label: type, instruction: "" }`) cho type lạ.
-- [ ] `parseQuizQuestions` giữ field `type` (string → string, thiếu → null).
-- [ ] GET `/assignments/:assignmentId/quiz`: `questions[].type` =
+- [x] `parseQuizQuestions` giữ field `type` (string → string, thiếu → null).
+- [x] GET `/assignments/:assignmentId/quiz`: `questions[].type` =
       `question.type ?? prompt.type` — student payload LUÔN có type cụ thể.
-- [ ] `studentQuizQuestionSchema` thêm `type: z.string().optional()` —
+- [x] `studentQuizQuestionSchema` thêm `type: z.string().optional()` —
       OPTIONAL ở phía client dù server luôn gửi: client student strict-parse
       payload (`apps/student/src/lib/repos/quiz.ts:61`), tab đang mở với bundle
       cũ sẽ throw nếu server mới gửi field lạ / strict-schema thêm field bắt
       buộc. Client đọc `question.type ?? detail.type` (fallback kép).
-- [ ] Grader (`grade-quiz`) KHÔNG đổi.
+- [x] Grader (`grade-quiz`) KHÔNG đổi.
 
 ### Nội dung `QUIZ_TYPE_DISPLAY` (chuẩn IELTS, chỉnh chữ khi implement nếu cần)
 
@@ -94,10 +94,10 @@ render header cụm từ một nguồn duy nhất.
 
 ## Todo
 
-- [ ] Contract field + superRefine validation
-- [ ] `QUIZ_TYPE_DISPLAY` map + fallback helper
-- [ ] Server parse + resolve `type ?? prompt.type`
-- [ ] Server tests (mixed + legacy)
+- [x] Contract field + superRefine validation
+- [x] `QUIZ_TYPE_DISPLAY` map + fallback helper
+- [x] Server parse + resolve `type ?? prompt.type`
+- [x] Server tests (mixed + legacy)
 
 ## Success Criteria
 

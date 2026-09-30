@@ -1,8 +1,12 @@
 import {
+	ASSIGNMENT_OPTION_BANK_TYPES,
+	QUIZ_TYPE_DISPLAY,
+	answerKindByType,
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 	assignmentTestCreateSchema,
 	assignmentTestUpdateSchema,
+	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import { describe, expect, it } from "vitest";
 
@@ -201,5 +205,108 @@ describe("update schemas keep rich caps after .partial()", () => {
 			timeLimitSeconds: 3600,
 		});
 		expect(result.success).toBe(true);
+	});
+});
+
+/** Reading p1 draft đủ điều kiện — per-question type tests đổi сверху. */
+const readingP1Draft = {
+	skill: "reading",
+	part: "p1",
+	type: "note",
+	title: "Reading Mixed",
+	band: "6.5",
+	source: "",
+	prompt: "Read and answer.",
+	passage: "<p>Passage body</p>",
+	intro: "",
+	transcript: "",
+	cueTopic: "",
+	cuePoints: "",
+	audioName: "",
+	imageUrl: "",
+	optionBank: [],
+	note: "",
+	status: "draft",
+} as const;
+
+const typedQuestion = (type?: string) => ({
+	stem: "Statement about the passage",
+	opts: null,
+	answer: type === "tfng" ? "TRUE" : "river",
+	alts: "",
+	pin: null,
+	...(type ? { type } : {}),
+});
+
+describe("assignmentPromptCreateSchema — per-question type", () => {
+	it("accepts questions whose type belongs to the part catalog", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("tfng"), typedQuestion("note")],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts legacy questions without a per-question type", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion(), typedQuestion()],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects a per-question type outside the part catalog at questions.N.type", () => {
+		// flowchart là type của p3 — không thuộc catalog p1.
+		const result = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("flowchart")],
+		});
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			const paths = result.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("questions.0.type");
+		}
+	});
+
+	it("validates answer choices against the question type, not the prompt type", () => {
+		// Prompt type note (free text) nhưng câu tfng phải dùng choice hợp lệ.
+		const bad = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [{ ...typedQuestion("tfng"), answer: "maybe" }],
+		});
+		expect(bad.success).toBe(false);
+		if (!bad.success) {
+			const paths = bad.error.issues.map((issue) => issue.path.join("."));
+			expect(paths).toContain("questions.0.answer");
+		}
+
+		const good = assignmentPromptCreateSchema.safeParse({
+			...readingP1Draft,
+			questions: [typedQuestion("tfng")],
+		});
+		expect(good.success).toBe(true);
+	});
+});
+
+describe("QUIZ_TYPE_DISPLAY — shared display metadata", () => {
+	it("returns label + IELTS instruction for a known type", () => {
+		const tfng = quizTypeDisplay("tfng");
+		expect(tfng.label).toBe("True / False / Not Given");
+		expect(tfng.instruction).toContain("TRUE / FALSE / NOT GIVEN");
+	});
+
+	it("falls back to the raw type id with empty instruction for unknown types", () => {
+		expect(quizTypeDisplay("nope")).toEqual({ label: "nope", instruction: "" });
+	});
+
+	it("covers every answer-kind and option-bank type used by the catalog", () => {
+		const knownTypes = [
+			...Object.keys(answerKindByType),
+			...ASSIGNMENT_OPTION_BANK_TYPES.reading,
+			...ASSIGNMENT_OPTION_BANK_TYPES.listening,
+		];
+		for (const type of knownTypes) {
+			expect(QUIZ_TYPE_DISPLAY[type], type).toBeDefined();
+		}
 	});
 });

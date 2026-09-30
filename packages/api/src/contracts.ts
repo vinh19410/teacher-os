@@ -401,6 +401,123 @@ export function isOptionBankable(skill: string, type: string): boolean {
 }
 
 /**
+ * Hiển thị chuẩn của từng dạng câu hỏi (label + instruction EN theo nguyên
+ * văn đề IELTS) — nguồn DUY NHẤT cho header cụm trên take/review screen và
+ * cho nhãn dạng bài ở authoring. Type lạ (đề cũ, snapshot fallback) rơi vào
+ * `quizTypeDisplay()` thay vì crash renderer.
+ */
+export const QUIZ_TYPE_DISPLAY: Record<string, { label: string; instruction: string }> = {
+	tfng: {
+		label: "True / False / Not Given",
+		instruction:
+			"Do the following statements agree with the information given in the passage? Write TRUE / FALSE / NOT GIVEN.",
+	},
+	ynng: {
+		label: "Yes / No / Not Given",
+		instruction:
+			"Do the following statements agree with the views of the writer? Write YES / NO / NOT GIVEN.",
+	},
+	mcq: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B, C or D.",
+	},
+	mcq1: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B or C.",
+	},
+	mcq3: {
+		label: "Multiple choice",
+		instruction: "Choose the correct letter A, B or C.",
+	},
+	headings: {
+		label: "Matching headings",
+		instruction:
+			"Choose the correct heading for each paragraph from the list of headings. Write the correct roman numeral i–viii.",
+	},
+	info: {
+		label: "Matching information",
+		instruction:
+			"Which section contains the following information? Write the correct letter A–H.",
+	},
+	features: {
+		label: "Matching features",
+		instruction:
+			"Match each statement with the correct person/place. Choose from the option bank.",
+	},
+	sentend: {
+		label: "Matching sentence endings",
+		instruction: "Complete each sentence with the correct ending A–H.",
+	},
+	sent: {
+		label: "Sentence completion",
+		instruction:
+			"Complete the sentences below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	sent4: {
+		label: "Sentence completion",
+		instruction: "Complete the sentences below. Write ONE WORD ONLY for each answer.",
+	},
+	note: {
+		label: "Note completion",
+		instruction:
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	notes: {
+		label: "Note completion",
+		instruction:
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	shortans: {
+		label: "Short-answer questions",
+		instruction:
+			"Answer the questions below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage.",
+	},
+	diagram: {
+		label: "Diagram label completion",
+		instruction:
+			"Label the diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+	},
+	summary: {
+		label: "Summary completion",
+		instruction:
+			"Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	tablecomp: {
+		label: "Table completion",
+		instruction:
+			"Complete the table below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	flowchart: {
+		label: "Flow-chart completion",
+		instruction:
+			"Complete the flow-chart below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	flow: {
+		label: "Flow-chart completion",
+		instruction:
+			"Complete the flow-chart below. Choose ONE WORD ONLY from the passage for each answer.",
+	},
+	form: {
+		label: "Form completion",
+		instruction:
+			"Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+	},
+	map: {
+		label: "Map labelling",
+		instruction: "Label the map below. Write the correct letter A–H for each location.",
+	},
+	match2: {
+		label: "Matching",
+		instruction: "Choose your answers from the option bank A–H.",
+	},
+};
+
+/** Entry hiển thị cho type bất kỳ — type lạ giữ nguyên id làm label. */
+export function quizTypeDisplay(type: string): { label: string; instruction: string } {
+	return QUIZ_TYPE_DISPLAY[type] ?? { label: type, instruction: "" };
+}
+
+/**
  * Phase-04 FR2 — the (skill, type) pairs whose prompts label an IMAGE:
  * reading `diagram` + listening `map`. Skill-qualified ON PURPOSE (same
  * red-team rule as the option bank): writing task1 shares the `map` type id
@@ -476,6 +593,13 @@ const assignmentPromptBaseSchema = z
 						answer: z.string().trim().max(200),
 						alts: z.string().max(500).default(""),
 						/**
+						 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
+						 * prompt). Optional — câu không khai type nhận fallback
+						 * `prompt.type` khi server dựng payload student, đề cũ
+						 * không cần migration.
+						 */
+						type: z.string().trim().min(1).max(20).nullish(),
+						/**
 						 * Phase-04 FR1 — label pin on the prompt image, percents of
 						 * the image box (0–100, center of the pin). Nullish for
 						 * non-image types and legacy image rows. `.strict()` on the
@@ -518,6 +642,17 @@ export const assignmentPromptCreateSchema =
 		}
 		if (!(config.types[value.part] ?? []).includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
+		}
+		// Đề trộn dạng: type riêng của câu phải thuộc catalog type của part.
+		const partTypes = config.types[value.part] ?? [];
+		for (const [index, question] of value.questions.entries()) {
+			if (question.type && !partTypes.includes(question.type)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "type"],
+					message: "invalid type",
+				});
+			}
 		}
 		const auto = value.skill === "reading" || value.skill === "listening";
 		if (!auto && value.questions.length)
@@ -625,17 +760,18 @@ export const assignmentPromptCreateSchema =
 					message: "prompt required",
 				});
 		}
-		const kind = answerKindByType[value.type];
-		if (kind) {
+		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
+		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
+		for (const [index, question] of value.questions.entries()) {
+			const kind = answerKindByType[question.type ?? value.type];
+			if (!kind) continue;
 			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			for (const [index, question] of value.questions.entries()) {
-				if (question.answer && !choices.includes(question.answer as never))
-					ctx.addIssue({
-						code: "custom",
-						path: ["questions", index, "answer"],
-						message: "invalid answer choice",
-					});
-			}
+			if (question.answer && !choices.includes(question.answer as never))
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "answer"],
+					message: "invalid answer choice",
+				});
 		}
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
@@ -1121,6 +1257,8 @@ export interface AssignmentQuestion {
 	opts: string[] | null;
 	answer: string;
 	alts: string;
+	/** Dạng bài riêng của câu — nullish khi câu đi theo type của prompt. */
+	type?: string | null;
 	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
 	 * non-image types and legacy image rows. */
 	pin?: { x: number; y: number } | null;
@@ -1491,6 +1629,12 @@ export const studentQuizQuestionSchema = z
 	.object({
 		stem: z.string(),
 		opts: z.array(z.string()).nullable(),
+		/** Dạng bài hiệu dụng của câu (server resolve `question.type ??
+		 * prompt.type`). OPTIONAL phía client dù server luôn gửi: client
+		 * student strict-parse payload, bundle cũ + server mới không được
+		 * throw trong cửa sổ deploy — client đọc `question.type ??
+		 * detail.type` (fallback kép). */
+		type: z.string().optional(),
 		pin: z.object({ x: z.number(), y: z.number() }).nullish(),
 	})
 	.strict();

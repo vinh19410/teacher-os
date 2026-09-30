@@ -116,6 +116,7 @@ function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
 						: null,
 					answer: typeof record.answer === "string" ? record.answer : "",
 					alts: typeof record.alts === "string" ? record.alts : "",
+					type: typeof record.type === "string" ? record.type : null,
 					pin: parsePin(record.pin),
 				},
 			];
@@ -891,6 +892,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			questions: questions.map((question) => ({
 				stem: question.stem,
 				opts: question.opts,
+				// Type hiệu dụng của câu: type riêng (đề trộn dạng) ?? type
+				// prompt — payload student luôn có type cụ thể để client phân
+				// cụm; snapshot cũ parse `type: null` cũng fallback về đây.
+				type: question.type ?? prompt.type,
 				pin: question.pin ?? null,
 			})),
 			attempt: attempt

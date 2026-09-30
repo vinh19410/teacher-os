@@ -1,7 +1,7 @@
 ---
 title: "Student quiz take redesign: reading split-pane + instruction từng cụm"
 description: "Redesign trang làm bài /learn/quizzes/:assignmentId — reading chia 2 pane cuộn độc lập (bài đọc trái, bài làm phải) và mỗi cụm câu hỏi có khối hướng dẫn riêng đặt ngay phía trên cụm đó."
-status: pending
+status: in-progress
 priority: P1
 effort: 16h
 issue: 286
