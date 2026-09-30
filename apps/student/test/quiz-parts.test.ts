@@ -1,6 +1,6 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { describe, expect, it } from "vitest";
-import { buildQuizParts } from "@/lib/quiz-parts";
 
 const question = (stem: string, type?: string): StudentQuizQuestion => ({
 	stem,

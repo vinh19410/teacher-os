@@ -35,8 +35,9 @@ export function PreviewQuizSimulation({
 	onReset: () => void;
 }) {
 	// sim được dựng lại mỗi render ở route nên memo theo identity không bao giờ
-	// hit — buildQuizParts là map thuần rẻ, gọi trực tiếp cho đúng.
-	const parts = buildQuizParts(sim.takeQuestions);
+	// hit — buildQuizParts là map thuần rẻ, gọi trực tiếp cho đúng. Type prompt
+	// từ paper chrome của sim làm fallback cho câu chưa khai type riêng.
+	const parts = buildQuizParts(sim.takeQuestions, sim.detail.type);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const selectQuestion = (q: number) => {
 		setCurrentQuestion(q);
