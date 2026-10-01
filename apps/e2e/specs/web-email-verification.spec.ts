@@ -36,8 +36,10 @@ test.describe("Web Email Verification", () => {
 		await expect(page.getByText("Email verified")).toBeVisible();
 
 		await page.getByRole("button", { name: "Go to workspace" }).click();
-		// Full load qua kernel load gate — URL về origin web, rời trang xác nhận.
-		await expect(page).toHaveURL(/^(?!.*verify-email).+$/, { timeout: 20_000 });
+		// Full load qua kernel load gate — pin đúng origin web đích.
+		await expect(page).toHaveURL(new RegExp(`^${WEB_ORIGIN}`), {
+			timeout: 20_000,
+		});
 
 		// DB assert chỉ đọc: email_verified đã flip.
 		const client = createClient({

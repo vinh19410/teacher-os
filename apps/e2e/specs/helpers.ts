@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page } from "@playwright/test";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
+import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -87,8 +87,10 @@ export async function verifyStudentEmailFromMailLog(
 	await expect(page.getByText("Email đã được xác thực")).toBeVisible();
 
 	await page.getByRole("button", { name: "Vào cổng học viên" }).click();
-	// URL rời trang xác nhận; gate tự quyết /onboarding hay portal.
-	await expect(page).toHaveURL(/^(?!.*verify-email).+$/, { timeout: 20_000 });
+	// Pin đúng origin student đích; gate tự quyết /onboarding hay portal.
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_ORIGIN}`), {
+		timeout: 20_000,
+	});
 }
 
 /**

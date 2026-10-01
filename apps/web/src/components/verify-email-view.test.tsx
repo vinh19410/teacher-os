@@ -76,6 +76,24 @@ describe("VerifyEmailView", () => {
 		expect(screen.queryByText("Go to workspace")).toBeNull();
 	});
 
+	it("shows failure feedback and keeps the retry button when the resend errors", async () => {
+		useSession.mockReturnValue({
+			data: { user: { email: "t@school.edu", emailVerified: false } },
+			isPending: false,
+		});
+		sendVerificationEmail.mockResolvedValue({
+			error: { code: "RATE_LIMITED" },
+		});
+		render(<VerifyEmailView error="INVALID_TOKEN" />);
+
+		fireEvent.click(screen.getByText("Send a new link"));
+
+		expect(
+			await screen.findByText("Couldn't send a new link. Try again."),
+		).toBeTruthy();
+		expect(screen.getByText("Send a new link")).toBeTruthy();
+	});
+
 	it("offers resend for a signed-in unverified user and calls back to /verify-email?verified=ok", async () => {
 		useSession.mockReturnValue({
 			data: { user: { email: "t@school.edu", emailVerified: false } },

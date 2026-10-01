@@ -17,14 +17,13 @@ export default function VerifyEmailView({
 	const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">(
 		"idle",
 	);
+	const [resendFailed, setResendFailed] = useState(false);
 	const { data: session, isPending } = authClient.useSession();
-	const user = session?.user as
-		| { email?: string; emailVerified?: boolean }
-		| undefined;
+	const user = session?.user;
 
 	// Page state comes only from the query marker the callbackURL baked in:
 	// a successful better-auth redirect preserves the callback URL untouched,
-	// failures append &error=<code> (D2). The marker must be a value TanStack
+	// failures append &error=<code>. The marker must be a value TanStack
 	// Router's default parseSearch keeps as a string — JSON-parsable values
 	// ("1", "true") arrive typed and get pruned by URL-sync.
 	const success = !error && verified === "ok";
@@ -34,6 +33,7 @@ export default function VerifyEmailView({
 	const handleResend = async () => {
 		if (!userEmail) return;
 		setResendStatus("sending");
+		setResendFailed(false);
 		try {
 			const res = await authClient.sendVerificationEmail({
 				email: userEmail,
@@ -50,14 +50,17 @@ export default function VerifyEmailView({
 					window.location.reload();
 					return;
 				}
+				setResendFailed(true);
 				setResendStatus("idle");
 				return;
 			}
 			// Success copy replaces the button: no toast that could contradict
-			// the card state (D4).
+			// the card state.
 			setResendStatus("sent");
 		} catch {
-			// Back to idle so the user can retry by clicking again.
+			// Keep the button clickable, but say the attempt failed — a silent
+			// return to idle reads as "nothing happened".
+			setResendFailed(true);
 			setResendStatus("idle");
 			return;
 		}
@@ -119,6 +122,11 @@ export default function VerifyEmailView({
 								"Send a new link"
 							)}
 						</Button>
+						{resendFailed && (
+							<p className="mt-2 w-full text-danger text-sm">
+								Couldn't send a new link. Try again.
+							</p>
+						)}
 					</div>
 				)
 			) : !isPending && !canResend ? (

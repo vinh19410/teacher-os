@@ -39,7 +39,7 @@ export function SignUpForm({
 					name: value.name.trim(),
 					// Link xác thực phải landing trang xác nhận, không phải gate
 					// /login. Marker `verified=ok` sống sót qua redirect thành công
-					// của better-auth (D2).
+					// của better-auth.
 					callbackURL: `${window.location.origin}/verify-email?verified=ok`,
 				});
 				if (error) {

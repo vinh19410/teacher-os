@@ -12,14 +12,13 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 	const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">(
 		"idle",
 	);
+	const [resendFailed, setResendFailed] = useState(false);
 	const { data: session, isPending } = authClient.useSession();
-	const user = session?.user as
-		| { email?: string; emailVerified?: boolean }
-		| undefined;
+	const user = session?.user;
 
 	// Trạng thái trang chỉ đọc từ query marker mà callbackURL nướng sẵn:
 	// redirect thành công của better-auth giữ nguyên callback URL, lỗi thì
-	// append &error=<code> (D2). Marker phải là giá trị parseSearch mặc định
+	// append &error=<code>. Marker phải là giá trị parseSearch mặc định
 	// của TanStack Router giữ nguyên string — giá trị JSON-parsable ("1",
 	// "true") bị parse thành number/boolean rồi URL-sync prune mất param.
 	// Mirror logic 3 nhánh của view web.
@@ -30,6 +29,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 	const handleResend = async () => {
 		if (!userEmail) return;
 		setResendStatus("sending");
+		setResendFailed(false);
 		try {
 			const res = await authClient.sendVerificationEmail({
 				email: userEmail,
@@ -46,13 +46,16 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 					window.location.reload();
 					return;
 				}
+				setResendFailed(true);
 				setResendStatus("idle");
 				return;
 			}
 			// Copy thành công thay nút — không toast đôi lúc sai trạng thái.
 			setResendStatus("sent");
 		} catch {
-			// Về idle để bấm lại được.
+			// Giữ nút bấm lại được, nhưng nói rõ lần gửi đã lỗi — về idle câm
+			// lặng thì user tưởng bấm không ăn.
+			setResendFailed(true);
 			setResendStatus("idle");
 			return;
 		}
@@ -101,7 +104,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 						Đã gửi lại — kiểm tra hộp thư
 					</p>
 				) : (
-					<div className="mt-6 flex justify-center">
+					<div className="mt-6 flex flex-wrap justify-center">
 						<button
 							type="button"
 							onClick={() => void handleResend()}
@@ -117,6 +120,11 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 								"Gửi lại email"
 							)}
 						</button>
+						{resendFailed && (
+							<p className="mt-2 w-full text-danger text-sm">
+								Không gửi được email mới. Vui lòng thử lại.
+							</p>
+						)}
 					</div>
 				)
 			) : !isPending && !canResend ? (

@@ -40,5 +40,3 @@ Teacher verify email trên browser **chưa có session** nhận **403 ROLE_MISMA
 - Ship beta → PR vào `develop`, label `ready to ship beta` theo quy trình #292. Stable promotion chờ quy trình riêng.
 
 > Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
-
-> Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
