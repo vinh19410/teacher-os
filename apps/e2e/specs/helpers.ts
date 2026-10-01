@@ -61,6 +61,36 @@ export async function readVerificationEmails(): Promise<
 	});
 }
 
+/** Bóc URL verify từ mail log cho `email` (poll 20×500ms), mở link và bấm
+ * CTA trên trang xác nhận — landing phải là /verify-email?verified=ok của
+ * cổng student, không còn landing thẳng gate. */
+export async function verifyStudentEmailFromMailLog(
+	page: Page,
+	email: string,
+): Promise<void> {
+	let verifyUrl: string | undefined;
+	for (let i = 0; i < 20; i++) {
+		const emails = await readVerificationEmails();
+		const entry = emails.find(
+			(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
+		);
+		if (entry?.url) {
+			verifyUrl = entry.url;
+			break;
+		}
+		await page.waitForTimeout(500);
+	}
+	expect(verifyUrl, "verification email logged").toBeDefined();
+
+	await page.goto(verifyUrl as string);
+	await expect(page).toHaveURL(/\/verify-email\?verified=ok/);
+	await expect(page.getByText("Email đã được xác thực")).toBeVisible();
+
+	await page.getByRole("button", { name: "Vào cổng học viên" }).click();
+	// URL rời trang xác nhận; gate tự quyết /onboarding hay portal.
+	await expect(page).toHaveURL(/^(?!.*verify-email).+$/, { timeout: 20_000 });
+}
+
 /**
  * Seed a student record directly into local.db for E2E tests (Decision D6).
  * Resolves the target org from the logged-in teacher's email, or falls back

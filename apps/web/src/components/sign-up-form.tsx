@@ -41,6 +41,10 @@ export default function SignUpForm({
 					email: value.email,
 					password: value.password,
 					name: value.name,
+					// The verify-email link must land on the confirmation page,
+					// not a bare "OK" on the API origin. The `verified=ok` marker
+					// survives the successful better-auth redirect (D2).
+					callbackURL: `${window.location.origin}/verify-email?verified=ok`,
 				});
 				if (error) {
 					toast.error(authErrorMessage(error, AUTH_FAILED));

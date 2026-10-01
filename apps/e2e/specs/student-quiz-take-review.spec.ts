@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { readVerificationEmails } from "./helpers";
+import { verifyStudentEmailFromMailLog } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
 import { STUDENT_ORIGIN } from "./origins";
 
@@ -310,20 +310,8 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 
-	let verifyUrl: string | undefined;
-	for (let i = 0; i < 20; i++) {
-		const emails = await readVerificationEmails();
-		const entry = emails.find(
-			(e) => e.to.trim().toLowerCase() === studentEmail.toLowerCase(),
-		);
-		if (entry?.url) {
-			verifyUrl = entry.url;
-			break;
-		}
-		await page.waitForTimeout(500);
-	}
-	expect(verifyUrl, "verification email logged").toBeDefined();
-	await page.goto(verifyUrl as string);
+	// Mail-log link → confirmation page CTA → gate routes into the portal.
+	await verifyStudentEmailFromMailLog(page, studentEmail);
 
 	// Seeded student has onboarding_completed_at → overview, no wizard.
 	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {

@@ -43,7 +43,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 		try {
 			const res = await authClient.sendVerificationEmail({
 				email: userEmail,
-				callbackURL: `${window.location.origin}/login`,
+				callbackURL: `${window.location.origin}/verify-email?verified=ok`,
 			});
 			if (res.error) {
 				const msg = res.error.message || "";

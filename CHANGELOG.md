@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-10-01
 
 ### Added
+- Trang xác nhận email sau verify cho cả teacher và học viên: bấm link trong mail landing về `/verify-email` của đúng cổng (card trạng thái + gửi lại link khi hết hạn) thay vì response trần của API (#297)
 - Quên mật khẩu qua email cho cả hai cổng (#292): teacher ("Forgot password?" trên login) và học viên ("Quên mật khẩu?") xin liên kết đặt lại tại `/forgot-password`; link trong mail (token 1 giờ, thu hồi mọi session khi đổi) đưa về `/reset-password` của đúng cổng đã xin; mail gửi nền qua `waitUntil` để response không phân biệt email có/không tài khoản, chỉ gửi khi role khớp cổng đích; token được che trong log HTTP server và xóa khỏi URL sau khi vào trang
 
 ### Fixed
