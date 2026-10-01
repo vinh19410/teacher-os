@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { createLogMailer, createResendMailer } from "./mailer";
+import { resetPasswordEmailTemplate } from "./reset-password-email-template";
 import { verificationEmailTemplate } from "./verification-email-template";
 
 describe("verificationEmailTemplate", () => {
@@ -29,6 +30,38 @@ describe("verificationEmailTemplate", () => {
 		expect(text).toContain("hiệu lực 1 giờ");
 		// URL must be on its own line
 		expect(text).toMatch(/^https?:\/\/\S+$/m);
+	});
+});
+
+describe("resetPasswordEmailTemplate", () => {
+	const sampleUrl =
+		"https://api.example.com/api/auth/reset-password/tok123?callbackURL=https%3A%2F%2Fapp.example.com%2Freset-password&x=1";
+
+	test("generates valid HTML meeting email client and branding requirements", () => {
+		const { html, text } = resetPasswordEmailTemplate({ url: sampleUrl });
+
+		expect(html).toContain('lang="vi"');
+		expect(html).toContain('color-scheme" content="light dark"');
+		expect(html).toContain("Đặt lại mật khẩu");
+		expect(html).toContain("TeacherOS");
+		expect(html).toContain("1 giờ");
+		expect(html).toContain('role="presentation"');
+
+		const escaped = sampleUrl.replace(/&/g, "&amp;");
+		expect(html).toContain(`href="${escaped}"`);
+		expect(html.length).toBeLessThan(15_000);
+
+		expect(text).toContain(sampleUrl);
+		expect(text).toContain("1 giờ");
+		expect(text).toMatch(/^https?:\/\/\S+$/m);
+	});
+
+	test("escapes markup in the url instead of injecting it", () => {
+		const { html } = resetPasswordEmailTemplate({
+			url: 'https://x.test/a?b="><script>alert(1)</script>',
+		});
+		expect(html).not.toContain("<script>alert(1)</script>");
+		expect(html).toContain("&lt;script&gt;");
 	});
 });
 

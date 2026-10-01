@@ -1,8 +1,14 @@
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
 	useSearch: () => ({ returnUrl: "/" }),
+	Link: ({ to, children, ...rest }: { to: string; children?: ReactNode }) => (
+		<a href={to} {...rest}>
+			{children}
+		</a>
+	),
 }));
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
@@ -71,6 +77,13 @@ describe("SignInForm", () => {
 		const buttonMatch = html.match(/<button[^>]*>Đăng nhập<\/button>/);
 		expect(buttonMatch?.[0]).toBeDefined();
 		expect(buttonMatch?.[0]).not.toMatch(/\sdisabled=/);
+	});
+
+	it("links to the forgot-password page next to the password field", () => {
+		const html = renderToStaticMarkup(<SignInForm hidden={false} />);
+		expect(html).toMatch(
+			/<a [^>]*href="\/forgot-password"[^>]*>Quên mật khẩu\?<\/a>/,
+		);
 	});
 });
 

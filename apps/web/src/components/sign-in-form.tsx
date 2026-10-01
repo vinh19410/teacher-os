@@ -1,10 +1,10 @@
 import { useForm } from "@tanstack/react-form";
-import { useSearch } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AuthField, fieldErrors } from "@/components/auth/auth-field";
-import { NoticeInfo, NoticeOk } from "@/components/auth/notices";
+import { NoticeOk } from "@/components/auth/notices";
 import { resetFieldErrors } from "@/components/auth/reset-field-errors";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
@@ -20,7 +20,6 @@ export default function SignInForm({
 	onSubmittingChange?: (submitting: boolean) => void;
 }) {
 	const { returnUrl } = useSearch({ from: "/login" });
-	const [showForgotNote, setShowForgotNote] = useState(false);
 	const [signedIn, setSignedIn] = useState(false);
 
 	const form = useForm({
@@ -92,12 +91,6 @@ export default function SignInForm({
 			}}
 			className="fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
 		>
-			{showForgotNote && !signedIn && (
-				<NoticeInfo>
-					Password reset isn't enabled in this pilot yet. Contact your admin to
-					recover access.
-				</NoticeInfo>
-			)}
 			{signedIn && (
 				<NoticeOk title="Signed in">Opening your workspace…</NoticeOk>
 			)}
@@ -135,14 +128,12 @@ export default function SignInForm({
 						placeholder="••••••••"
 						passwordToggle
 						labelRowExtra={
-							<button
-								type="button"
-								aria-expanded={showForgotNote}
-								onClick={() => setShowForgotNote((visible) => !visible)}
+							<Link
+								to="/forgot-password"
 								className="-mr-1 rounded-[4px] px-1 py-[6px] font-[510] text-accent-blue text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 							>
 								Forgot password?
-							</button>
+							</Link>
 						}
 						value={field.state.value}
 						onChange={(value) => {

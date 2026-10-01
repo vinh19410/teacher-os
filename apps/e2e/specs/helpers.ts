@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page } from "@playwright/test";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
+import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -44,6 +44,7 @@ export interface VerificationEmailEntry {
 	to: string;
 	subject?: string;
 	url?: string;
+	kind?: string;
 	error?: string;
 	at?: string;
 }
@@ -57,6 +58,38 @@ export async function readVerificationEmails(): Promise<
 		const content = readFileSync(logPath, "utf8");
 		const lines = content.split("\n").filter((l) => l.trim().length > 0);
 		return lines.map((l) => JSON.parse(l) as VerificationEmailEntry);
+	});
+}
+
+/** Bóc URL verify từ mail log cho `email` (poll 20×500ms), mở link và bấm
+ * CTA trên trang xác nhận — landing phải là /verify-email?verified=ok của
+ * cổng student, không còn landing thẳng gate. */
+export async function verifyStudentEmailFromMailLog(
+	page: Page,
+	email: string,
+): Promise<void> {
+	let verifyUrl: string | undefined;
+	for (let i = 0; i < 20; i++) {
+		const emails = await readVerificationEmails();
+		const entry = emails.find(
+			(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
+		);
+		if (entry?.url) {
+			verifyUrl = entry.url;
+			break;
+		}
+		await page.waitForTimeout(500);
+	}
+	expect(verifyUrl, "verification email logged").toBeDefined();
+
+	await page.goto(verifyUrl as string);
+	await expect(page).toHaveURL(/\/verify-email\?verified=ok/);
+	await expect(page.getByText("Email đã được xác thực")).toBeVisible();
+
+	await page.getByRole("button", { name: "Vào cổng học viên" }).click();
+	// Pin đúng origin student đích; gate tự quyết /onboarding hay portal.
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_ORIGIN}`), {
+		timeout: 20_000,
 	});
 }
 

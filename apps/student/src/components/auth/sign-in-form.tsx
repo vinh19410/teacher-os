@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { useSearch } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AuthField, fieldErrors } from "@/components/auth/auth-field";
@@ -119,6 +119,14 @@ export function SignInForm({
 							autoComplete="current-password"
 							placeholder="Nhập mật khẩu"
 							passwordToggle
+							labelRowExtra={
+								<Link
+									to="/forgot-password"
+									className="rounded-[4px] font-[590] text-accent-blue text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+								>
+									Quên mật khẩu?
+								</Link>
+							}
 							value={field.state.value}
 							onChange={(next) => {
 								resetFieldErrors(form, "password");

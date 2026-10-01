@@ -1,6 +1,9 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { readVerificationEmails } from "./helpers";
+import {
+	readVerificationEmails,
+	verifyStudentEmailFromMailLog,
+} from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
 
 test.describe("Student Portal Email Verification", () => {
@@ -51,26 +54,9 @@ test.describe("Student Portal Email Verification", () => {
 		});
 		await expect(resendButton).toBeVisible();
 
-		// 5. Lấy URL verify từ mail log
-		let verifyUrl: string | undefined;
-		for (let i = 0; i < 20; i++) {
-			const emails = await readVerificationEmails();
-			const entry = emails.find(
-				(e) => e.to.toLowerCase() === email.toLowerCase(),
-			);
-			if (entry?.url) {
-				verifyUrl = entry.url;
-				break;
-			}
-			await page.waitForTimeout(500);
-		}
-
-		expect(verifyUrl).toBeDefined();
-		if (!verifyUrl) throw new Error("No verifyUrl found");
-
-		// 6. Click URL verify
-		await page.goto(verifyUrl);
-		// 7. Better-Auth verify + auto sign-in → gate onboarding đưa user mới sang /onboarding
+		// 5-7. Lấy link từ mail log, mở link, bấm CTA — landing phải là trang
+		// xác nhận /verify-email?verified=ok, rồi gate đưa user mới sang /onboarding
+		await verifyStudentEmailFromMailLog(page, email);
 		await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
 		await expect(
 			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
