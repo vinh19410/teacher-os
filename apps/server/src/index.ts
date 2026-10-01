@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
 import {
 	createLogMailer,
@@ -61,6 +62,7 @@ const getAuth = (): Auth => {
 			googleClientId: env.GOOGLE_CLIENT_ID,
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 			mailer,
+			runInBackground: (promise) => waitUntil(promise),
 		});
 	}
 	return auth;
