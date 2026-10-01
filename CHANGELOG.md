@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-10-01
 
+### Added
+- Quên mật khẩu qua email cho cả hai cổng (#292): teacher ("Forgot password?" trên login) và học viên ("Quên mật khẩu?") xin liên kết đặt lại tại `/forgot-password`; link trong mail (token 1 giờ, thu hồi mọi session khi đổi) đưa về `/reset-password` của đúng cổng đã xin; mail gửi nền qua `waitUntil` để response không phân biệt email có/không tài khoản, chỉ gửi khi role khớp cổng đích; token được che trong log HTTP server và xóa khỏi URL sau khi vào trang
+
 ### Fixed
 - Student đăng ký xong không nhận được mail kích hoạt tài khoản (#293): workflow deploy chỉ truyền 5 biến vào Alchemy nên worker luôn rơi về `MAILER_IMPL=log` (chỉ in mail ra console). Giờ `RESEND_API_KEY`, `MAILER_IMPL`, `MAIL_FROM` được truyền từ GitHub environment tương ứng
 
