@@ -10,6 +10,18 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-01
+
+### Fixed
+- Student đăng ký xong không nhận được mail kích hoạt tài khoản (#293): workflow deploy chỉ truyền 5 biến vào Alchemy nên worker luôn rơi về `MAILER_IMPL=log` (chỉ in mail ra console). Giờ `RESEND_API_KEY`, `MAILER_IMPL`, `MAIL_FROM` được truyền từ GitHub environment tương ứng
+
+### CI/Infra
+- `deploy.yml` và `deploy-staging.yml` truyền `RESEND_API_KEY` (secret), `MAILER_IMPL` và `MAIL_FROM` (variable) vào bước `alchemy deploy` (#293)
+
+### Docs
+- Runbook: cách đặt biến mail trên GitHub environment `production`/`staging` và cảnh báo `MAIL_FROM` thiếu `>` (#293)
+- Plan quên mật khẩu qua email (#292)
+
 ## 2026-09-30
 
 ### Added
