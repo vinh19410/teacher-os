@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readVerificationEmails, signUpViaUi } from "./helpers";
+import { signUpViaUi, verifyStudentEmailFromMailLog } from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
 
 test.describe("Student Org Invitation & Multi-Org Switcher", () => {
@@ -75,27 +75,12 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 				timeout: 15_000,
 			});
 
-			// Read verification email from log
-			let verifyUrl: string | undefined;
-			for (let i = 0; i < 20; i++) {
-				const emails = await readVerificationEmails();
-				const entry = emails.find(
-					(e) => e.to.toLowerCase() === studentEmail.toLowerCase(),
-				);
-				if (entry?.url) {
-					verifyUrl = entry.url;
-					break;
-				}
-				await studentPage.waitForTimeout(500);
-			}
+			// Read verification email from log, open it, click the CTA on the
+			// confirmation page — landing must be the /verify-email page, then
+			// the gate routes the student into the portal
+			await verifyStudentEmailFromMailLog(studentPage, studentEmail);
 
-			expect(verifyUrl).toBeDefined();
-			if (!verifyUrl) throw new Error("No verifyUrl found");
-
-			// Click verification link
-			await studentPage.goto(verifyUrl);
-
-			// Should redirect to portal
+			// Should be in the portal now
 			await expect(studentPage).toHaveURL(new RegExp(STUDENT_ORIGIN), {
 				timeout: 30_000,
 			});

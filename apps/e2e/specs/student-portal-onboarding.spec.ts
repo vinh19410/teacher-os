@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { readVerificationEmails } from "./helpers";
+import { verifyStudentEmailFromMailLog } from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
 
 test.describe("Student Portal Onboarding Wizard", () => {
@@ -43,25 +43,9 @@ test.describe("Student Portal Onboarding Wizard", () => {
 			timeout: 15_000,
 		});
 
-		// 3. Lấy link verify email từ mailer
-		let verifyUrl: string | undefined;
-		for (let i = 0; i < 20; i++) {
-			const emails = await readVerificationEmails();
-			const entry = emails.find(
-				(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
-			);
-			if (entry?.url) {
-				verifyUrl = entry.url;
-				break;
-			}
-			await page.waitForTimeout(500);
-		}
-
-		expect(verifyUrl).toBeDefined();
-		if (!verifyUrl) throw new Error("No verifyUrl found");
-
-		// 4. Click link verify -> tự đăng nhập -> rơi vào /onboarding
-		await page.goto(verifyUrl);
+		// 3-4. Lấy link từ mail log, mở link, bấm CTA — landing trang xác nhận,
+		// rồi gate tự đăng nhập đưa user mới sang /onboarding
+		await verifyStudentEmailFromMailLog(page, email);
 		await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
 		await expect(
 			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),

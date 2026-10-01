@@ -37,7 +37,10 @@ export function SignUpForm({
 					email: value.email.trim(),
 					password: value.password,
 					name: value.name.trim(),
-					callbackURL: `${window.location.origin}/login`,
+					// Link xác thực phải landing trang xác nhận, không phải gate
+					// /login. Marker `verified=ok` sống sót qua redirect thành công
+					// của better-auth.
+					callbackURL: `${window.location.origin}/verify-email?verified=ok`,
 				});
 				if (error) {
 					toast.error(authErrorMessage(error, AUTH_FAILED));

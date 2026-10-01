@@ -15,6 +15,7 @@ describe("routes-matcher", () => {
 		const validStaticRoutes = [
 			"/",
 			"/login",
+			"/verify-email",
 			"/forgot-password",
 			"/reset-password",
 			"/dashboard",
