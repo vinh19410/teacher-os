@@ -44,6 +44,7 @@ export interface VerificationEmailEntry {
 	to: string;
 	subject?: string;
 	url?: string;
+	kind?: string;
 	error?: string;
 	at?: string;
 }
