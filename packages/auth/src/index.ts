@@ -8,8 +8,13 @@ import {
 	validateUpdateUserName,
 } from "./avatar-policy";
 import type { Mailer } from "./mail/mailer";
+import { resetPasswordEmailTemplate } from "./mail/reset-password-email-template";
 import { verificationEmailTemplate } from "./mail/verification-email-template";
-import { OAUTH_APP_STATE_KEY, resolveRequestApp } from "./role";
+import {
+	OAUTH_APP_STATE_KEY,
+	resolveRequestApp,
+	resolveUserRole,
+} from "./role";
 import {
 	authBaseURL,
 	authCookiePrefix,
@@ -58,6 +63,12 @@ export interface CreateAuthInput {
 	googleClientId: string;
 	googleClientSecret: string;
 	mailer: Mailer;
+	/**
+	 * Chạy tác vụ nền sau khi response đã trả (Workers: `waitUntil`). Có thì mail
+	 * đặt lại mật khẩu gửi ngoài đường request, nên thời gian phản hồi không lộ
+	 * email có tài khoản hay không. Không có thì better-auth tự `await`.
+	 */
+	runInBackground?: (promise: Promise<unknown>) => void;
 }
 
 /** Tài khoản học viên không thể đăng nhập vào trang giáo viên (plan #260 D4). */
@@ -122,6 +133,42 @@ export function createAuth(input: CreateAuthInput) {
 		},
 		emailAndPassword: {
 			enabled: true,
+			resetPasswordTokenExpiresIn: 60 * 60,
+			revokeSessionsOnPasswordReset: true,
+			// better-auth bọc callback này trong try/catch rồi bỏ lỗi, nên ném lỗi
+			// không bao giờ tới client; lỗi gửi mail chỉ có thể được log tại đây.
+			sendResetPassword: async ({ user, url }) => {
+				const callbackURL = new URL(url).searchParams.get("callbackURL");
+				let targetApp: string | null = null;
+				try {
+					targetApp = callbackURL
+						? resolveRequestApp({
+								origin: new URL(callbackURL).origin,
+								studentOrigins: input.studentOrigins,
+								teacherOrigins,
+							})
+						: null;
+				} catch {
+					targetApp = null;
+				}
+				// Chặn gửi link sang cổng khác role của tài khoản; response vẫn trung tính.
+				if (targetApp !== resolveUserRole(await getUserRole(user.id))) return;
+
+				const { html, text } = resetPasswordEmailTemplate({ url });
+				try {
+					await input.mailer.send({
+						to: user.email,
+						subject: "Đặt lại mật khẩu TeacherOS của bạn",
+						html,
+						text,
+					});
+				} catch (error) {
+					console.error("[auth] reset-password email failed", {
+						userId: user.id,
+						message: error instanceof Error ? error.message : "unknown",
+					});
+				}
+			},
 		},
 		emailVerification: {
 			sendVerificationEmail: async ({ user, url }, request) => {
@@ -227,6 +274,9 @@ export function createAuth(input: CreateAuthInput) {
 			},
 		},
 		advanced: {
+			...(input.runInBackground && {
+				backgroundTasks: { handler: input.runInBackground },
+			}),
 			defaultCookieAttributes: {
 				sameSite: "none",
 				secure: true,

@@ -7,6 +7,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import { redactResetToken } from "./log-redaction";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
@@ -105,7 +106,9 @@ function bootstrapMiddleware(deps: AppDeps) {
 export function buildApp(deps: AppDeps) {
 	const app = new Hono<{ Variables: { kernelCtx: KernelCtx } }>();
 
-	app.use(logger());
+	app.use(
+		logger((line, ...rest) => console.log(redactResetToken(line), ...rest)),
+	);
 	app.use(
 		"/*",
 		secureHeaders({
