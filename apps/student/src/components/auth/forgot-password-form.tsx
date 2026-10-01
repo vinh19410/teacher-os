@@ -34,6 +34,7 @@ export function ForgotPasswordForm() {
 	const form = useForm({
 		defaultValues: { email: "" },
 		onSubmit: async ({ value }) => {
+			if (cooldown > 0) return;
 			try {
 				const { error } = await authClient.requestPasswordReset({
 					email: value.email.trim(),
