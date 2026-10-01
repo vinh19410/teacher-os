@@ -76,3 +76,55 @@ describe("buildQuizParts — phân cụm theo type từng câu (#286)", () => {
 		expect(buildQuizParts([], "tfng")).toEqual([]);
 	});
 });
+
+describe("buildQuizParts — intro chia cụm theo marker Questions X–Y (#301)", () => {
+	const intro3 =
+		"<p>Questions 1–4</p><p>Do the following statements agree…</p>" +
+		"<p>Questions 5–8 · Flow-chart completion — Write ONE WORD ONLY from the passage.</p>" +
+		"<p>Questions 9–13</p><p>Complete the notes below.</p>";
+
+	it("13 câu không khai type + intro 3 marker → 3 part theo section", () => {
+		const questions = Array.from({ length: 13 }, (_, i) => question(`q ${i}`));
+		const parts = buildQuizParts(questions, "note", intro3);
+		expect(parts.map((part) => part.label)).toEqual([
+			"Questions 1–4",
+			"Questions 5–8",
+			"Questions 9–13",
+		]);
+		expect(parts[1].instructionHtml).toContain("Write ONE WORD ONLY");
+		expect(parts.flatMap((part) => part.questions.map(({ q }) => q))).toEqual(
+			Array.from({ length: 13 }, (_, q) => q),
+		);
+	});
+
+	it("intro chỉ phủ 1–4: phần còn lại gom theo type, không instructionHtml", () => {
+		const questions = [
+			question("a"),
+			question("b"),
+			question("c"),
+			question("d"),
+			question("e", "tfng"),
+			question("f", "tfng"),
+		];
+		const parts = buildQuizParts(
+			questions,
+			"note",
+			"<p>Questions 1–4</p><p>Write TRUE.</p>",
+		);
+		expect(parts).toHaveLength(2);
+		expect(parts[0].instructionHtml).toContain("Write TRUE.");
+		expect(parts[1]).toMatchObject({
+			label: "Questions 5–6",
+			typeId: "tfng",
+		});
+		expect(parts[1].instructionHtml).toBeUndefined();
+	});
+
+	it("intro marker không hợp lệ (vượt biên) → y hệt khi không có intro", () => {
+		const questions = Array.from({ length: 13 }, (_, i) => question(`q ${i}`));
+		const bad = "<p>Questions 1–4</p><p>x</p><p>Questions 5–14</p><p>y</p>";
+		expect(buildQuizParts(questions, "note", bad)).toEqual(
+			buildQuizParts(questions, "note"),
+		);
+	});
+});

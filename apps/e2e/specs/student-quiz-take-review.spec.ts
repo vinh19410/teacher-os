@@ -50,6 +50,7 @@ const titleCloze = "Đọc điền từ: Trái cây lạ";
 const titleMixed = "Đề trộn dạng: Hồ Gươm";
 const titleLegacy = "Đề 1 dạng: Tháp Rùa";
 const titleSplit = "Đề dài: Hồ Gươm bản đầy đủ";
+const titleIntroSections = "Đề intro chia cụm: Văn Miếu";
 
 interface CapturedJson {
 	url: string;
@@ -289,6 +290,47 @@ test.beforeAll(async ({ browser }) => {
 					answer: `năm ${i + 1}`,
 					alts: "",
 				})),
+			},
+			{
+				// #301 — đề intro chia cụm: giáo viên dán các khối "Questions X–Y"
+				// vào intro, KHÔNG khai type từng câu (đề cũ) — instruction của
+				// giáo viên phải hiện ngay trên đúng nhóm câu của nó. Phần tử CUỐI
+				// mảng để không lệch index assignmentIds[0..2] đang dùng.
+				title: titleIntroSections,
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				note: "Đề intro chia cụm.",
+				passage:
+					"<p>Văn Miếu được xây năm 1070. Đây là trường đại học đầu tiên của Việt Nam.</p>",
+				intro:
+					"<p>Đọc kỹ đoạn văn.</p><p>Questions 1–2</p><p>Write TRUE or FALSE for each statement.</p><p>Questions 3–4 · Flow-chart completion — Write ONE WORD ONLY from the passage for each answer.</p>",
+				questions: [
+					{
+						stem: "Văn Miếu được xây năm ____.",
+						opts: null,
+						answer: "1070",
+						alts: "",
+					},
+					{
+						stem: "Đây là trường đại học ____ của Việt Nam.",
+						opts: null,
+						answer: "đầu tiên",
+						alts: "",
+					},
+					{
+						stem: "Văn Miếu được xây vào thế ____.",
+						opts: null,
+						answer: "11",
+						alts: "",
+					},
+					{
+						stem: "Trường nằm tại thành phố ____.",
+						opts: null,
+						answer: "Hà Nội",
+						alts: "",
+					},
+				],
 			},
 		],
 	});
@@ -722,5 +764,55 @@ test.describe("Student quiz take & review", () => {
 			),
 		).toBeVisible();
 		await expect(page.locator("article section")).toHaveCount(1);
+	});
+
+	// #301 — intro dán các khối "Questions X–Y": mỗi instruction của giáo
+	// viên hiện ngay trên đúng nhóm câu (take lẫn review), đề cũ không khai
+	// type từng câu vẫn được tách.
+	test("intro pasted with Questions markers renders each instruction above its own question range", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleIntroSections);
+		const s1 = page.locator('section[aria-label="Questions 1–2"]');
+		const s2 = page.locator('section[aria-label="Questions 3–4"]');
+		await expect(s1).toBeVisible();
+		await expect(s2).toBeVisible();
+		await expect(
+			s1.getByText("Write TRUE or FALSE for each statement."),
+		).toBeVisible();
+		await expect(
+			s2.getByText("Write ONE WORD ONLY from the passage for each answer.", {
+				exact: false,
+			}),
+		).toBeVisible();
+		await expect(s1.locator("[data-question]")).toHaveCount(2);
+		await expect(s2.locator("[data-question]")).toHaveCount(2);
+		// Preamble render đúng 1 lần ở đầu trang.
+		await expect(page.getByText("Đọc kỹ đoạn văn.")).toHaveCount(1);
+		// Navigator có tab theo từng section.
+		await expect(
+			page.getByRole("tab", { name: "Questions 3–4" }),
+		).toBeVisible();
+
+		await page.getByLabel("Điền đáp án câu 1").fill("1070");
+		await page.getByLabel("Điền đáp án câu 2").fill("đầu tiên");
+		await page.getByLabel("Điền đáp án câu 3").fill("11");
+		await page.getByLabel("Điền đáp án câu 4").fill("Hà Nội");
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await expect(page).toHaveURL(/\/detail$/);
+		await expect(
+			page.locator('section[aria-label="Questions 1–2"]'),
+		).toBeVisible();
+		await expect(
+			page.locator('section[aria-label="Questions 3–4"]'),
+		).toBeVisible();
 	});
 });
