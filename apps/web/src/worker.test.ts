@@ -72,6 +72,8 @@ describe("apps/web worker fetch handler", () => {
 		for (const path of [
 			"/",
 			"/login",
+			"/forgot-password",
+			"/reset-password",
 			"/dashboard",
 			"/classes/c-123",
 			"/students/s-456",

@@ -15,6 +15,8 @@ describe("routes-matcher", () => {
 		const validStaticRoutes = [
 			"/",
 			"/login",
+			"/forgot-password",
+			"/reset-password",
 			"/dashboard",
 			"/profile",
 			"/reports",
@@ -40,6 +42,17 @@ describe("routes-matcher", () => {
 				expect(isValidAppRoute(`${route}/`)).toBe(true);
 			});
 		}
+
+		// The drift guard below returns early when the gitignored
+		// routeTree.gen.ts is absent, so the password-reset routes (the mail
+		// link lands on /reset-password) are asserted directly here.
+		it("accepts the password-reset routes with and without trailing slash", () => {
+			for (const route of ["/forgot-password", "/reset-password"]) {
+				expect(isValidAppRoute(route)).toBe(true);
+				expect(isValidAppRoute(`${route}/`)).toBe(true);
+				expect(isValidAppRoute(`${route}?token=abc`)).toBe(true);
+			}
+		});
 
 		it("accepts valid dynamic sub-routes (with and without trailing slashes)", () => {
 			expect(
