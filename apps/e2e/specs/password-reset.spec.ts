@@ -143,6 +143,14 @@ test.describe("Password reset via email", () => {
 		expect(await studentSignIn(page, email, OLD_PASSWORD)).not.toBe(200);
 		await expect(page.locator("#signin-password")).toBeVisible();
 
+		// The invalid-link view also works with no session at all — the reset
+		// page never depends on session state (F5).
+		await page.context().clearCookies();
+		await page.goto(`${STUDENT_ORIGIN}/reset-password?error=INVALID_TOKEN`);
+		await expect(
+			page.getByText("Liên kết đặt lại không hợp lệ hoặc đã hết hạn."),
+		).toBeVisible();
+
 		// The reset page stays usable with a live session (no session redirect),
 		// and a rejected link (better-auth redirects with ?error=INVALID_TOKEN)
 		// shows the invalid-link view instead of a form holding a dead token.
@@ -194,6 +202,11 @@ test.describe("Password reset via email", () => {
 		page,
 	}) => {
 		await signUpViaUi(page, { password: OLD_PASSWORD });
+		// A re-pasted stale link still carries ?token=…: the page strips it from
+		// the URL (F14) and offers the form — it does not show the dead-link view.
+		await page.goto("/reset-password?token=dead-token");
+		await expect(page).not.toHaveURL(/token=/);
+		await expect(page.locator("#rp-new-password")).toBeVisible();
 		// A dead/expired mail link lands as ?error=INVALID_TOKEN after the
 		// better-auth callback rejects the token.
 		await page.goto("/reset-password?error=INVALID_TOKEN");
