@@ -6,6 +6,7 @@ import {
 	quizTypeDisplay,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
+import { splitQuizIntro } from "@teacher-os/api/lib/quiz-intro-sections";
 import type {
 	QuizPart,
 	QuizPartQuestion,
@@ -79,6 +80,13 @@ export function QuizPaper({
 			? rawImageUrl
 			: "";
 	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
+	// Chỉ cắt intro khi parts THẬT SỰ được dựng từ intro (có instructionHtml):
+	// caller nào quên truyền intro cho buildQuizParts vẫn thấy nguyên blob ở
+	// đầu trang, không bao giờ mất nội dung.
+	const introSplit = parts.some((part) => part.instructionHtml !== undefined)
+		? splitQuizIntro(detail.intro, questions.length)
+		: null;
+	const introPreamble = introSplit ? introSplit.preamble : detail.intro;
 	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
 	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
 	const bankKind = optionBankKindFor(
@@ -161,8 +169,8 @@ export function QuizPaper({
 				/>
 			) : null}
 
-			{isAuto && !isEmptyRichText(detail.intro) && (
-				<RichTextBody text={detail.intro} className="text-muted-fg text-sm" />
+			{isAuto && !isEmptyRichText(introPreamble) && (
+				<RichTextBody text={introPreamble} className="text-muted-fg text-sm" />
 			)}
 
 			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
@@ -191,20 +199,36 @@ export function QuizPaper({
 					// Header cụm: đúng cấu trúc đề thi thật — số câu + nhãn dạng bài
 					// + instruction chuẩn IELTS từ map dùng chung. Type lạ (đề cũ
 					// snapshot) fallback label = chính type id, instruction rỗng.
+					// Part từ section intro (#301) hiển thị instruction của giáo viên
+					// thay 2 dòng chuẩn; section chỉ có marker fallback về chuẩn.
 					const display = quizTypeDisplay(part.typeId);
+					const fromIntro = part.instructionHtml !== undefined;
+					const hasOwn =
+						fromIntro && !isEmptyRichText(part.instructionHtml ?? "");
 					return (
 						<section
 							key={part.id}
-							aria-label={`${part.label} · ${display.label}`}
+							aria-label={
+								fromIntro ? part.label : `${part.label} · ${display.label}`
+							}
 						>
 							{isAuto && (
 								<header className="mb-2 flex flex-col gap-0.5">
 									<h2 className="font-display font-semibold">{part.label}</h2>
-									<p className="font-medium text-[13px]">{display.label}</p>
-									{display.instruction && (
-										<p className="text-muted-fg text-sm">
-											{display.instruction}
-										</p>
+									{hasOwn ? (
+										<RichTextBody
+											text={part.instructionHtml ?? ""}
+											className="text-muted-fg text-sm"
+										/>
+									) : (
+										<>
+											<p className="font-medium text-[13px]">{display.label}</p>
+											{display.instruction && (
+												<p className="text-muted-fg text-sm">
+													{display.instruction}
+												</p>
+											)}
+										</>
 									)}
 								</header>
 							)}

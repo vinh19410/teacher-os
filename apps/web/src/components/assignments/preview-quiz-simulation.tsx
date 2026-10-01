@@ -36,8 +36,13 @@ export function PreviewQuizSimulation({
 }) {
 	// sim được dựng lại mỗi render ở route nên memo theo identity không bao giờ
 	// hit — buildQuizParts là map thuần rẻ, gọi trực tiếp cho đúng. Type prompt
-	// từ paper chrome của sim làm fallback cho câu chưa khai type riêng.
-	const parts = buildQuizParts(sim.takeQuestions, sim.detail.type);
+	// từ paper chrome của sim làm fallback cho câu chưa khai type riêng; intro
+	// truyền vào để instruction theo cụm Questions X–Y hiển thị như take (#301).
+	const parts = buildQuizParts(
+		sim.takeQuestions,
+		sim.detail.type,
+		sim.detail.intro,
+	);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const selectQuestion = (q: number) => {
 		setCurrentQuestion(q);
@@ -48,25 +53,25 @@ export function PreviewQuizSimulation({
 		// Review — mirror composition của detail route student: score card +
 		// compact list + paper mode review (inputs disabled qua fieldset) +
 		// navigator theo verdict. Note đề dùng chung cho mọi câu (prompt-level).
+		const perQuestion = sim.fullQuestions.map((question, q) => ({
+			verdict: grade.verdicts[q] ?? "skipped",
+			key: question.answer,
+			alts: question.alts,
+			answer: answers[q]?.trim() ? (answers[q] as string) : null,
+		}));
 		const review = Object.fromEntries(
-			sim.fullQuestions.map((question, q): [number, QuizReviewInfo] => [
+			perQuestion.map((info, q): [number, QuizReviewInfo] => [
 				q,
-				{
-					verdict: grade.verdicts[q] ?? "skipped",
-					key: question.answer,
-					alts: question.alts,
-					answer: answers[q]?.trim() ? (answers[q] as string) : null,
-					note: sim.note,
-				},
+				{ ...info, note: sim.note },
 			]),
 		);
 		const verdicts = Object.fromEntries(
 			grade.verdicts.map((verdict, q): [number, QuizVerdict] => [q, verdict]),
 		);
-		const items = sim.fullQuestions.map((question, q) => ({
-			verdict: grade.verdicts[q] ?? "skipped",
-			key: question.answer,
-			answer: answers[q]?.trim() ? (answers[q] as string) : null,
+		const items = perQuestion.map(({ verdict, key, answer }) => ({
+			verdict,
+			key,
+			answer,
 		}));
 		return (
 			<div className="flex flex-col gap-5">

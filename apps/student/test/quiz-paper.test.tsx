@@ -277,6 +277,65 @@ describe("QuizPaper — header cụm theo type từng câu (#286)", () => {
 	});
 });
 
+describe("QuizPaper — instruction giáo viên theo từng cụm (#301)", () => {
+	const sectionQuestions: StudentQuizQuestion[] = Array.from(
+		{ length: 6 },
+		(_, i) => ({ stem: `Câu ${i + 1} ____`, opts: null, pin: null }),
+	);
+	const introSections =
+		"<p>Read carefully.</p><p>Questions 1–2</p><p>Write TRUE or FALSE.</p>" +
+		"<p>Questions 3–6 · Flow-chart completion — Write ONE WORD ONLY from the passage for each answer.</p>";
+
+	function renderIntro(introValue: string) {
+		return renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "note", intro: introValue })}
+				parts={buildQuizParts(sectionQuestions, "note", introValue)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+	}
+
+	it("header theo section: aria-label = Questions X–Y, không hậu tố dạng bài", () => {
+		const html = renderIntro(introSections);
+		expect(html).toContain('aria-label="Questions 1–2"');
+		expect(html).toContain('aria-label="Questions 3–6"');
+	});
+
+	it("instruction của giáo viên đứng ngay trên đúng nhóm câu của nó", () => {
+		const html = renderIntro(introSections);
+		const writeTrue = html.indexOf("Write TRUE or FALSE.");
+		expect(writeTrue).toBeGreaterThan(-1);
+		expect(writeTrue).toBeLessThan(html.indexOf('data-question="0"'));
+		const oneWord = html.indexOf("Write ONE WORD ONLY");
+		expect(oneWord).toBeGreaterThan(html.indexOf('data-question="1"'));
+		expect(oneWord).toBeLessThan(html.indexOf('data-question="2"'));
+	});
+
+	it("marker không lặp trong instruction; preamble 1 lần đứng trước header", () => {
+		const html = renderIntro(introSections);
+		// 2 lần = aria-label section + header h2; instruction không lặp marker.
+		expect((html.match(/Questions 1–2/g) ?? []).length).toBe(2);
+		expect((html.match(/Read carefully\./g) ?? []).length).toBe(1);
+		expect(html.indexOf("Read carefully.")).toBeLessThan(
+			html.indexOf("Questions 1–2"),
+		);
+	});
+
+	it("section chỉ có marker → fallback nhãn + instruction chuẩn của map", () => {
+		const html = renderIntro(
+			"<p>Questions 1–2</p><p>Questions 3–6</p><p>x</p>",
+		);
+		expect(html).toContain("Note completion");
+		expect(html).toContain(
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS",
+		);
+		expect(html).toContain('aria-label="Questions 1–2"');
+	});
+});
+
 describe("QuizPaper — option bank cho đề trộn dạng (#286 H2)", () => {
 	it("hiện bank khi CÂU bankable trong prompt không-bankable", () => {
 		const html = renderToStaticMarkup(

@@ -74,8 +74,13 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	// Attempt detail đã mang type từng câu (server resolve fallback
 	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
 	const parts = useMemo(
-		() => buildQuizParts(attempt.questions, quizQuery.data?.type ?? ""),
-		[attempt.questions, quizQuery.data?.type],
+		() =>
+			buildQuizParts(
+				attempt.questions,
+				quizQuery.data?.type ?? "",
+				quizQuery.data?.intro ?? "",
+			),
+		[attempt.questions, quizQuery.data?.type, quizQuery.data?.intro],
 	);
 	const answers = useMemo(
 		() =>
