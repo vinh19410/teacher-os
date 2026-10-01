@@ -37,20 +37,27 @@ rmSync(MAIL_LOG_PATH, { force: true });
 
 const recordingMailer: Mailer = {
 	async send(input) {
-		const match = input.text.match(/https?:\/\/[^\s]*\/verify-email\?[^\s]+/);
-		const line = match
-			? JSON.stringify({
-					to: input.to,
-					subject: input.subject,
-					url: match[0],
-					at: new Date().toISOString(),
-				})
-			: JSON.stringify({
-					to: input.to,
-					subject: input.subject,
-					error: "no-verify-url",
-					at: new Date().toISOString(),
-				});
+		const verifyMatch = input.text.match(
+			/https?:\/\/[^\s]*\/verify-email\?[^\s]+/,
+		);
+		const resetMatch = input.text.match(
+			/https?:\/\/[^\s]*\/api\/auth\/reset-password\/[^\s?]+\?[^\s]+/,
+		);
+		const base = {
+			to: input.to,
+			subject: input.subject,
+		};
+		const at = new Date().toISOString();
+		const line = verifyMatch
+			? JSON.stringify({ ...base, url: verifyMatch[0], at })
+			: resetMatch
+				? JSON.stringify({
+						...base,
+						url: resetMatch[0],
+						kind: "password-reset",
+						at,
+					})
+				: JSON.stringify({ ...base, error: "no-verify-url", at });
 		appendFileSync(MAIL_LOG_PATH, `${line}\n`, "utf8");
 	},
 };
