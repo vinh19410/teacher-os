@@ -3,6 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
 	useSearch: () => ({ returnUrl: "/" }),
+	Link: ({
+		to,
+		children,
+		...rest
+	}: {
+		to: string;
+		children?: React.ReactNode;
+	}) => (
+		<a href={to} {...rest}>
+			{children}
+		</a>
+	),
 }));
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
@@ -31,5 +43,13 @@ describe("SignInForm (issue #165)", () => {
 		expect(html).toMatch(/id="si-email"[^>]*aria-required="true"/);
 		expect(html).toMatch(/id="si-password"[^>]*required/);
 		expect(html).toMatch(/id="si-password"[^>]*aria-required="true"/);
+	});
+
+	it("links Forgot password? to /forgot-password instead of the pilot notice", () => {
+		const html = renderToStaticMarkup(<SignInForm hidden={false} />);
+		expect(html).toMatch(
+			/<a href="\/forgot-password"[^>]*>Forgot password\?<\/a>/,
+		);
+		expect(html).not.toContain("isn't enabled");
 	});
 });

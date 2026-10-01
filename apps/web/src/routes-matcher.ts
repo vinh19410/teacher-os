@@ -4,6 +4,8 @@
 export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/": true,
 	"/login": true,
+	"/forgot-password": true,
+	"/reset-password": true,
 	"/dashboard": true,
 	"/profile": true,
 	"/reports": true,
