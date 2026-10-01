@@ -1,7 +1,7 @@
 ---
 title: "Quên mật khẩu qua email"
 description: "Người dùng xin liên kết đặt lại mật khẩu qua email, bấm link, rồi đặt mật khẩu mới trên đúng cổng đã xin."
-status: pending
+status: completed
 priority: P1
 effort: 13h
 issue: 292
