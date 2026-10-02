@@ -18,8 +18,10 @@ const TABS: Array<{ id: FilterTab; label: string }> = [
 
 export function AssignmentList({
 	assignments,
+	showClassName = true,
 }: {
 	assignments: StudentAssignment[];
+	showClassName?: boolean;
 }) {
 	const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
@@ -131,7 +133,11 @@ export function AssignmentList({
 				) : (
 					<div className="space-y-2.5">
 						{filtered.map(({ assignment }) => (
-							<AssignmentRow key={assignment.id} assignment={assignment} />
+							<AssignmentRow
+								key={assignment.id}
+								assignment={assignment}
+								showClassName={showClassName}
+							/>
 						))}
 					</div>
 				)}

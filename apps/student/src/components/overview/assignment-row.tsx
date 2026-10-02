@@ -4,8 +4,11 @@ import { deriveAssignmentStatus } from "@/lib/assignment-status";
 
 export function AssignmentRow({
 	assignment,
+	showClassName = true,
 }: {
 	assignment: StudentAssignment;
+	/** Ẩn tên lớp khi row đã nằm trong trang của chính lớp đó. */
+	showClassName?: boolean;
 }) {
 	const derived = deriveAssignmentStatus(assignment);
 
@@ -18,7 +21,7 @@ export function AssignmentRow({
 					</h4>
 				</div>
 				<div className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted-fg">
-					{assignment.className && (
+					{showClassName && assignment.className && (
 						<>
 							<span>{assignment.className}</span>
 							<span aria-hidden="true">·</span>

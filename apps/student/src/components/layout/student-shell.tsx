@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { BookOpen, Home, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { AvatarMenu } from "@/components/layout/avatar-menu";
@@ -73,10 +74,14 @@ export function StudentShell({
 					</div>
 
 					<nav className="space-y-1">
-						<div className="flex items-center gap-3 rounded-[var(--radius-md)] bg-surface px-3 py-2.5 font-[590] text-[14px] text-fg shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+						{/* Luôn active: trang chủ và trang lớp đều thuộc mục "Trang chủ". */}
+						<Link
+							to="/"
+							className="flex items-center gap-3 rounded-[var(--radius-md)] bg-surface px-3 py-2.5 font-[590] text-[14px] text-fg shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						>
 							<Home className="h-4 w-4 text-accent-blue" />
 							<span>Trang chủ</span>
-						</div>
+						</Link>
 						<div
 							className="flex items-center justify-between rounded-[var(--radius-md)] px-3 py-2.5 font-[510] text-[14px] text-muted-fg opacity-60"
 							aria-disabled="true"
