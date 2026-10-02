@@ -23,18 +23,31 @@ describe("QuizReadingSplitLayout — reading split-pane (#286)", () => {
 		);
 	});
 
-	it("mỗi pane có thanh cuộn riêng ở lg (overflow-y-auto) + chiều cao khớp header", () => {
+	it("mỗi pane có thanh cuộn riêng ở lg (overflow-y-auto) + wrapper khoá chiều cao khớp header", () => {
 		const html = renderLayout();
 		expect(html).toMatch(/lg:overflow-y-auto/g);
 		expect(html).toContain("lg:h-[calc(100svh-3.5rem)]");
 		expect(html).toContain("lg:grid-cols-2");
 	});
 
-	it("navigator nằm trong pane bài làm (không ăn chiều cao pane đọc)", () => {
+	it("giữ testid trên đúng phần tử cuộn của từng pane", () => {
 		const html = renderLayout();
-		const navIndex = html.indexOf('data-testid="nav"');
-		const workIndex = html.indexOf('aria-label="Bài làm"');
-		expect(workIndex).toBeLessThan(navIndex);
+		const passageTag = html.match(
+			/<section[^>]*reading-passage-pane[^>]*>/,
+		)?.[0];
+		const workTag = html.match(/<div[^>]*reading-work-pane[^>]*>/)?.[0];
+		expect(passageTag).toContain("lg:overflow-y-auto");
+		expect(workTag).toContain("lg:overflow-y-auto");
+	});
+
+	it("navigator nằm ngoài pane bài làm, là anh em của grid 2 pane (full-width)", () => {
+		const html = renderLayout();
+		const navIndex = html.indexOf('<footer data-testid="nav"');
+		const lastSectionClose = html.lastIndexOf("</section>");
+		// Sau section "Bài làm" chỉ còn đúng thẻ đóng grid rồi tới navigator.
+		expect(html.slice(lastSectionClose, navIndex)).toBe("</section></div>");
+		expect(navIndex).toBeGreaterThan(lastSectionClose);
+		expect(html.endsWith("</footer></div>")).toBe(true);
 	});
 
 	it("dưới lg hai pane xếp chồng — không khoá chiều cao/overflow ở mobile", () => {

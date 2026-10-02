@@ -508,3 +508,121 @@ describe("AnswerKeyGrid — per-question type (mixed prompts)", () => {
 		expect(next.stem).toBe("Statement");
 	});
 });
+
+describe("AnswerKeyGrid — cảnh báo câu T/F/NG đang theo dạng điền chữ", () => {
+	const noteItems = [
+		{ stem: "The roof was wood.", answer: "FALSE", opts: null, alts: "" },
+		{ stem: "The walls were red.", answer: "TRUE", opts: null, alts: "" },
+		{ stem: "No data on doors.", answer: "NOT GIVEN", opts: null, alts: "" },
+		{ stem: "Floors were stone.", answer: "FALSE", opts: null, alts: "" },
+		{
+			stem: "Houses used ____ frames.",
+			answer: "timber",
+			opts: null,
+			alts: "",
+		},
+	];
+
+	function renderNote(
+		props: Partial<Parameters<typeof AnswerKeyGrid>[0]> = {},
+	) {
+		return render(
+			<AnswerKeyGrid
+				typeId="note"
+				skill="reading"
+				partId="p1"
+				items={noteItems}
+				showErrors={false}
+				onItemsChange={vi.fn()}
+				onAddQuestion={vi.fn()}
+				{...props}
+			/>,
+		);
+	}
+
+	it("warns once for the run of questions 1-4 and not for the blank question", () => {
+		const { getAllByRole, getByRole } = renderNote();
+		const warnings = getAllByRole("group", { name: /Gợi ý dạng bài/ });
+		expect(warnings).toHaveLength(1);
+		expect(warnings[0].textContent).toContain("Câu 1–4");
+		expect(warnings[0].textContent).toContain("Note completion");
+		expect(
+			getByRole("button", {
+				name: "Đặt dạng True / False / Not Given cho câu 1–4",
+			}),
+		).not.toBeNull();
+	});
+
+	it("numbers the warning with the real question numbers from qStart", () => {
+		const { getByRole } = renderNote({
+			typeId: "flowchart",
+			partId: "p3",
+			items: [
+				{ stem: "Claim A", answer: "YES", opts: null, alts: "" },
+				{ stem: "Claim B", answer: "NOT GIVEN", opts: null, alts: "" },
+			],
+		});
+		expect(
+			getByRole("button", {
+				name: "Đặt dạng Yes / No / Not Given cho câu 27–28",
+			}),
+		).not.toBeNull();
+	});
+
+	it("one click sets type on the run only and keeps stem, answer and the other rows", () => {
+		const onItemsChange = vi.fn();
+		const { getByRole } = renderNote({ onItemsChange });
+		fireEvent.click(
+			getByRole("button", {
+				name: "Đặt dạng True / False / Not Given cho câu 1–4",
+			}),
+		);
+		expect(onItemsChange).toHaveBeenCalledTimes(1);
+		const next = onItemsChange.mock.calls[0][0];
+		expect(next).toEqual([
+			{ ...noteItems[0], type: "tfng" },
+			{ ...noteItems[1], type: "tfng" },
+			{ ...noteItems[2], type: "tfng" },
+			{ ...noteItems[3], type: "tfng" },
+			noteItems[4],
+		]);
+	});
+
+	it("shows no warning once questions already carry a type", () => {
+		const { queryAllByRole } = renderNote({
+			items: noteItems.map((item, index) =>
+				index < 4 ? { ...item, type: "tfng" } : item,
+			),
+		});
+		expect(queryAllByRole("group", { name: /Gợi ý dạng bài/ })).toHaveLength(0);
+	});
+
+	it("shows no warning or button when the part catalog lacks the inferred type", () => {
+		// Listening s1 catalog không có tfng/ynng; type `form` thì có suy luận.
+		const { queryAllByRole, queryByRole } = renderNote({
+			typeId: "form",
+			skill: "listening",
+			partId: "s1",
+		});
+		expect(queryAllByRole("group", { name: /Gợi ý dạng bài/ })).toHaveLength(0);
+		expect(queryByRole("button", { name: /Đặt dạng/ })).toBeNull();
+	});
+
+	it("places the warning before the row fieldset so Enter on the button cannot add a question", () => {
+		const onAddQuestion = vi.fn();
+		const { getByRole, container } = renderNote({ onAddQuestion });
+		const button = getByRole("button", {
+			name: "Đặt dạng True / False / Not Given cho câu 1–4",
+		});
+		// Handler Enter nằm trên fieldset của hàng (data-qindex); nút không được lồng trong đó.
+		expect(button.closest("fieldset[data-qindex]")).toBeNull();
+		const firstRow = container.querySelector('fieldset[data-qindex="0"]');
+		expect(
+			button.compareDocumentPosition(firstRow as Node) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		fireEvent.keyDown(button, { key: "Enter" });
+		fireEvent.keyDown(button, { key: " " });
+		expect(onAddQuestion).not.toHaveBeenCalled();
+	});
+});
