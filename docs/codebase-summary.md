@@ -13,7 +13,7 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/server/src/app.ts](../apps/server/src/app.ts) - server app composition and bootstrap middleware
 - [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) - kernel route tree
 - [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) - assignment-prompt bank create and per-student grading routes, mounted inside the kernel tree
-- [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) - student portal bridge (provisioning, invitations, multi-org switch, onboarding, enrollment acceptance, quiz take/attempt endpoints with answer-key snapshot + server-side grading), mounted standalone at `/api/student`
+- [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) - student portal bridge (provisioning, invitations, multi-org switch, onboarding, enrollment acceptance, quiz take/attempt endpoints with answer-key snapshot + server-side grading, speaking media upload/playback via `MediaStore`), mounted standalone at `/api/student`
 - [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) - snapshot loader
 - [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) - shared API contracts
 - [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) - database schema barrel
