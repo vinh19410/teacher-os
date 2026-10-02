@@ -89,6 +89,13 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 			),
 		[attempt.questions],
 	);
+	// Đề Writing (#304): bài nộp nằm ở `essay` (không phải answers map) —
+	// inject key "0" để nhánh Writing của QuizPaper review hiện đúng bài đã
+	// nộp thay vì textarea trống khi học viên mở thẳng URL .../detail.
+	const reviewAnswers = useMemo(
+		() => (attempt.essay != null ? { ...answers, 0: attempt.essay } : answers),
+		[answers, attempt.essay],
+	);
 	const review = useMemo(
 		() =>
 			Object.fromEntries(
@@ -120,7 +127,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	const navigator = (
 		<QuizNavigator
 			parts={parts}
-			answers={answers}
+			answers={reviewAnswers}
 			current={currentQuestion}
 			onSelect={(q) => {
 				setCurrentQuestion(q);
@@ -166,7 +173,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						<QuizPaper
 							detail={quizQuery.data}
 							parts={parts}
-							answers={answers}
+							answers={reviewAnswers}
 							onAnswer={() => undefined}
 							currentQuestion={currentQuestion}
 							mode="review"
@@ -181,7 +188,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						<QuizPaper
 							detail={quizQuery.data}
 							parts={parts}
-							answers={answers}
+							answers={reviewAnswers}
 							onAnswer={() => undefined}
 							currentQuestion={currentQuestion}
 							mode="review"

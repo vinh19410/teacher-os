@@ -1,5 +1,6 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { stripEssayControls } from "@teacher-os/ui/components/quiz/quiz-essay-input";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
 	type QuizChoiceRow,
@@ -378,5 +379,92 @@ describe("QuizPaper — option bank cho đề trộn dạng (#286 H2)", () => {
 			/>,
 		);
 		expect(html).not.toContain("Ngân hàng lựa chọn");
+	});
+});
+
+describe("QuizPaper — đề Writing essay input (#304)", () => {
+	const writingFields = paperFields({
+		skill: "writing",
+		type: "chart",
+		prompt: "<p>The graph shows marriage and age…</p>",
+		passage: "",
+	});
+
+	it("render textarea 'Bài viết của bạn', không empty-state", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts([], "chart")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Bài viết của bạn");
+		expect(html).toContain("quiz-essay-input");
+		expect(html).toContain('spellCheck="false"');
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("stripEssayControls bỏ C0 control char, giữ \\n \\t \\r (chặn wedge 413)", () => {
+		expect(stripEssayControls("Line one\nLine two\u0007")).toBe(
+			"Line one\nLine two",
+		);
+		expect(stripEssayControls("a\u0000b\u001Fc")).toBe("abc");
+		// U+2028/U+2029 cũng escape 6 byte trong JSON — strip cùng lớp lỗi
+		// (code-review F3, paste từ PDF/editor khác).
+		expect(stripEssayControls("x\u2028y\u2029z")).toBe("xyz");
+		expect(stripEssayControls("keep \n\t\r")).toBe("keep \n\t\r");
+		expect(stripEssayControls("")).toBe("");
+	});
+
+	it("mode review: textarea readOnly, value từ answers[0] (đề đã nộp)", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts([], "chart")}
+				answers={{ 0: "Bài đã nộp." }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+			/>,
+		);
+		expect(html).toContain("readonly");
+		expect(html).toContain("Bài đã nộp.");
+	});
+
+	it("đề Writing vi phạm invariant (có questions) → KHÔNG render essay, câu hỏi thật giữ nguyên", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts(
+					[{ stem: "Câu lạ", opts: null, pin: null }],
+					"chart",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("Bài viết của bạn");
+		// Fail-safe: widget câu hỏi vẫn render bình thường, không có key `0`
+		// đè lẫn essay.
+		expect(html).toContain("Câu lạ");
+	});
+
+	it("Reading không có textarea essay", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Câu 1", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("Bài viết của bạn");
 	});
 });

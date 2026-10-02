@@ -146,23 +146,31 @@ export function QuizResumeDialog({
 	);
 }
 
-/** Chốt nộp bài khi còn câu trống (Selfomy parity — đếm câu chưa làm). */
+/** Chốt nộp bài khi còn câu trống (Selfomy parity — đếm câu chưa làm).
+ * Đề Writing (#304) truyền copy riêng qua `title`/`description`. */
 export function QuizSubmitGuardDialog({
 	open,
 	unansweredCount,
+	title,
+	description,
 	onConfirm,
 	onCancel,
 }: {
 	open: boolean;
 	unansweredCount: number;
+	title?: string;
+	description?: string;
 	onConfirm: () => void;
 	onCancel: () => void;
 }) {
 	return (
 		<QuizDialog
 			open={open}
-			title="Bạn còn câu hỏi chưa làm"
-			description={`Bạn còn ${unansweredCount} câu hỏi chưa làm. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể thay đổi đáp án.`}
+			title={title ?? "Bạn còn câu hỏi chưa làm"}
+			description={
+				description ??
+				`Bạn còn ${unansweredCount} câu hỏi chưa làm. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể thay đổi đáp án.`
+			}
 			confirmLabel="Nộp bài"
 			cancelLabel="Quay lại"
 			onConfirm={onConfirm}

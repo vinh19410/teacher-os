@@ -18,7 +18,10 @@ import { student } from "./student";
  * title-snapshot của `class_assignment`). `answers` là JSON object
  * `{"<qIndex>": "<value>"}` được autosave từng câu bằng json_set atomic;
  * `correctCount` chỉ được ghi lúc submit (null = chưa nộp), wrong/skipped
- * luôn derive được từ snapshot + answers đã freeze.
+ * luôn derive được từ snapshot + answers đã freeze. `essay` là bài viết
+ * Writing (#304) — tách khỏi `answers` vì map đó gắn index câu hỏi (đề
+ * Writing không có câu nào), cap 500 ký tự và đi vào gradeQuiz; cap riêng
+ * 10.000 ký tự qua PATCH /attempts/:id/essay.
  */
 export const quizAttempt = sqliteTable(
 	"quiz_attempt",
@@ -36,6 +39,7 @@ export const quizAttempt = sqliteTable(
 		status: text("status").notNull().default("in_progress"), // "in_progress" | "submitted"
 		questionsSnapshot: text("questions_snapshot").notNull(),
 		answers: text("answers").notNull().default("{}"),
+		essay: text("essay").notNull().default(""),
 		correctCount: integer("correct_count"),
 		startedAt: integer("started_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

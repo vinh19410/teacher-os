@@ -6,11 +6,13 @@ import {
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
+	QUIZ_ESSAY_BODY_MAX,
 	type QuizAttemptDetail,
 	type QuizAttemptStatus,
 	type QuizAttemptSummary,
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
+	quizEssayPatchSchema,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
 	type StudentClassDetail,
@@ -586,8 +588,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			}
 			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
 			// Content-Length không lọt) — precedent kernel.ts /syllabi.
+			// Route /essay (#304) cap riêng 48KB: bài Writing tới 10.000 ký tự
+			// UTF-8 (vẫn dưới giới hạn 64KB của fetch keepalive); các route
+			// quiz khác giữ 4096.
 			return bodyLimit({
-				maxSize: 4096,
+				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
 				onError: (bc) => bc.json({ error: "payload too large" }, 413),
 			})(c, next);
 		}
@@ -911,6 +916,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						id: attempt.id,
 						status: attempt.status as QuizAttemptStatus,
 						answers: parseQuizAnswers(attempt.answers),
+						essay: attempt.essay,
 					}
 				: null,
 		};
@@ -1086,6 +1092,90 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	});
 
 	/**
+	 * PATCH /api/student/attempts/:attemptId/essay — autosave bài viết
+	 * Writing (#304). Tách khỏi PATCH /answer và map `answers` vì map đó
+	 * gắn index câu hỏi, cap 500 ký tự và đi vào gradeQuiz, trong khi đề
+	 * Writing luôn có `questions: []` (key `0` của essay không bao giờ đụng
+	 * namespace answer thật). Chỉ đề Writing ghi được: skill đọc từ
+	 * `assignment_prompt` qua join class_assignment (invariant "skill
+	 * immutable trên PATCH prompt" — đã pin bởi test của route assignments).
+	 * Body cap 48KB riêng cho route này (quizWriteGuard); UPDATE có điều
+	 * kiện `status = 'in_progress'` (CAS, cùng precedent PATCH answer — D1
+	 * không có transaction).
+	 */
+	router.patch("/attempts/:attemptId/essay", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		const parsed = quizEssayPatchSchema.safeParse(raw);
+		if (!parsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const owner = and(
+			eq(quizAttempt.id, attemptId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, s.id),
+		);
+		const [attempt] = await db
+			.select({
+				status: quizAttempt.status,
+				skill: assignmentPrompt.skill,
+			})
+			.from(quizAttempt)
+			.innerJoin(
+				classAssignment,
+				and(
+					eq(classAssignment.id, quizAttempt.assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(owner);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.status === "submitted") {
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+		if (attempt.skill !== "writing") {
+			return c.json({ error: "essay not allowed" }, 400);
+		}
+
+		const updated = await db
+			.update(quizAttempt)
+			.set({ essay: parsed.data.text })
+			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.returning({ id: quizAttempt.id });
+
+		if (updated.length === 0) {
+			// Submit xảy ra giữa read và write — phân biệt qua status read.
+			const [reread] = await db
+				.select({ status: quizAttempt.status })
+				.from(quizAttempt)
+				.where(owner);
+			if (!reread) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+		return c.json({ ok: true });
+	});
+
+	/**
 	 * POST /api/student/attempts/:attemptId/submit — flip-first idempotent
 	 * (RT#5): CAS UPDATE status in_progress → submitted; thắng CAS mới chấm
 	 * từ snapshot + ghi counts + stamp class_assignment_target.submittedAt
@@ -1211,11 +1301,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				title: classAssignment.title,
 				note: assignmentPrompt.note,
 				type: assignmentPrompt.type,
+				// Skill quyết định summary/detail có lộ essay (#304) — join có
+				// predicate orgId, nhất quán chuẩn IDOR với PATCH essay.
+				skill: assignmentPrompt.skill,
 			})
 			.from(classAssignment)
 			.innerJoin(
 				assignmentPrompt,
-				eq(assignmentPrompt.id, classAssignment.promptId),
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
 			)
 			.where(
 				and(
@@ -1231,6 +1327,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			title: header?.title ?? "",
 			note: header?.note ?? "",
 			promptType: header?.type ?? "",
+			skill: header?.skill ?? "",
 		};
 	};
 
@@ -1247,7 +1344,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title } = loaded;
+		const { attempt, questions, answers, grade, title, skill } = loaded;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1267,6 +1364,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					answer: given !== undefined && given.trim().length > 0 ? given : null,
 				};
 			}),
+			// Bài Writing lộ kèm số từ ở summary (#304); đề khác luôn null.
+			essay: skill === "writing" ? attempt.essay : null,
 		};
 		return c.json(summary);
 	});
@@ -1288,8 +1387,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, note, promptType } =
-			loaded;
+		const {
+			attempt,
+			questions,
+			answers,
+			grade,
+			title,
+			note,
+			promptType,
+			skill,
+		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
@@ -1303,6 +1410,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			startedAt: attempt.startedAt.toISOString(),
 			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
 			note,
+			// Bài Writing lộ ở review-detail (#304); đề khác luôn null.
+			essay: skill === "writing" ? attempt.essay : null,
 			questions: questions.map((question, index) => {
 				const given = answers[String(index)];
 				return {

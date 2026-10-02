@@ -38,6 +38,7 @@ function makeStore(
 		stored: Record<string, string>;
 		onAuthError: () => void;
 		onAlreadySubmitted: () => void;
+		valueMax: number;
 	}> = {},
 ) {
 	const attemptId = overrides.attemptId ?? `attempt-${crypto.randomUUID()}`;
@@ -52,6 +53,7 @@ function makeStore(
 		storage,
 		onAuthError: overrides.onAuthError,
 		onAlreadySubmitted: overrides.onAlreadySubmitted,
+		valueMax: overrides.valueMax,
 	});
 	return { store, attemptId, storage, send };
 }
@@ -304,6 +306,40 @@ describe("QuizAttemptStore — code-review fixes (F1/F2/F3/F5)", () => {
 			answers: Record<string, string>;
 		};
 		expect(mirror.answers["0"]).toHaveLength(QUIZ_ANSWER_VALUE_MAX);
+	});
+
+	// (#304) Đề Writing khởi tạo store với valueMax = QUIZ_ESSAY_MAX — bài
+	// viết dài hơn 500 ký tự không bị cắt, vẫn clamp ở ngưỡng mới.
+	it("valueMax tuỳ biến cho phép value dài hơn 500 và vẫn clamp ở ngưỡng mới", () => {
+		const essayMax = 10000;
+		const h = makeStore({ valueMax: essayMax });
+		h.store.setAnswer(0, "x".repeat(5000));
+		expect(h.store.getAnswer(0)).toHaveLength(5000);
+		h.store.setAnswer(0, "y".repeat(essayMax + 1));
+		expect(h.store.getAnswer(0)).toHaveLength(essayMax);
+	});
+
+	// (#304, RT J) Essay resume qua mirror: gõ xong reload NGAY trước
+	// debounce — mirror key "0" mới hơn server phải thắng reconciliation và
+	// re-queue PATCH (đường autosave essay dùng đúng key 0 này).
+	it("reconcile key 0: mirror mới hơn server thắng và re-queue PATCH essay", async () => {
+		const attemptId = "attempt-essay-resume";
+		const h = makeStore({
+			attemptId,
+			serverAnswers: { "0": "old server draft" },
+			stored: {
+				[quizAttemptMirrorKey(attemptId)]: JSON.stringify({
+					t: 456,
+					answers: { "0": "newer mirror draft" },
+				}),
+			},
+		});
+		expect(h.store.getAnswer(0)).toBe("newer mirror draft");
+
+		await vi.advanceTimersByTimeAsync(QUIZ_AUTOSAVE_DEBOUNCE_MS);
+		expect(h.send).toHaveBeenCalledWith(0, "newer mirror draft", {
+			keepalive: false,
+		});
 	});
 
 	it("F3: PATCH cùng câu không đảo thứ tự — value mới hơn tới server SAU value cũ", async () => {

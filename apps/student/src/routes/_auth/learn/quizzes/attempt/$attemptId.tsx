@@ -5,6 +5,8 @@ import {
 	redirect,
 	useChildMatches,
 } from "@tanstack/react-router";
+import type { QuizAttemptSummary } from "@teacher-os/api/contracts";
+import { countWords } from "@teacher-os/api/lib/word-count";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
@@ -55,6 +57,101 @@ function AttemptRouteView() {
 	return <AttemptSummaryPage />;
 }
 
+/**
+ * Body màn kết quả — export để unit test cả 2 nhánh (#304, red-team I):
+ * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
+ * giữ nguyên score card + bảng đáp án.
+ */
+export function AttemptSummaryBody({
+	summary,
+	attemptId,
+}: {
+	summary: QuizAttemptSummary;
+	attemptId: string;
+}) {
+	const duration = formatAttemptDuration(
+		summary.startedAt,
+		summary.submittedAt,
+	);
+	const essay = summary.essay ?? null;
+
+	if (essay !== null) {
+		const wordCount = countWords(essay);
+		return (
+			<>
+				<p className="text-muted-fg text-sm">
+					Bạn đã nộp bài lúc{" "}
+					<span className="font-medium text-fg">
+						{formatVietnamSubmittedAt(summary.submittedAt)}
+					</span>
+					{duration && (
+						<>
+							{" · hoàn thành trong "}
+							<span className="font-medium text-fg">{duration}</span>
+						</>
+					)}
+					.
+				</p>
+				<h2 className="mt-6 mb-1 font-display font-semibold text-fg">
+					Bài viết của bạn
+				</h2>
+				<p className="text-muted-fg text-sm" data-testid="essay-summary-count">
+					{wordCount} từ
+				</p>
+				<div className="mt-2 whitespace-pre-wrap rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7]">
+					{essay.trim() === "" ? (
+						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
+					) : (
+						essay
+					)}
+				</div>
+				<p className="mt-3 text-muted-fg text-sm">
+					Giáo viên sẽ chấm bài viết của bạn.
+				</p>
+			</>
+		);
+	}
+
+	return (
+		<>
+			<p className="text-muted-fg text-sm">
+				Bạn đã nộp bài lúc{" "}
+				<span className="font-medium text-fg">
+					{formatVietnamSubmittedAt(summary.submittedAt)}
+				</span>
+				{duration && (
+					<>
+						{" · hoàn thành trong "}
+						<span className="font-medium text-fg">{duration}</span>
+					</>
+				)}
+				.
+			</p>
+			<div className="mt-4">
+				<AttemptScoreCard
+					correctCount={summary.correctCount}
+					wrongCount={summary.wrongCount}
+					skippedCount={summary.skippedCount}
+					totalCount={summary.totalCount}
+					action={
+						<Link
+							to="/learn/quizzes/attempt/$attemptId/detail"
+							params={{ attemptId }}
+							className={cn(buttonVariants(), "mt-5")}
+						>
+							Xem giải thích chi tiết
+						</Link>
+					}
+				/>
+			</div>
+			<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+				Bảng đáp án
+			</h2>
+			<AttemptCompactList items={summary.items} />
+		</>
+	);
+}
+
 function AttemptSummaryPage() {
 	const { attemptId } = Route.useParams();
 	const summaryQuery = useAttemptSummary(attemptId);
@@ -72,11 +169,6 @@ function AttemptSummaryPage() {
 		return <Loader />;
 	}
 
-	const duration = formatAttemptDuration(
-		summary.startedAt,
-		summary.submittedAt,
-	);
-
 	return (
 		<div className="flex min-h-svh flex-col bg-surface/30">
 			<QuizRuntimeHeader
@@ -85,42 +177,7 @@ function AttemptSummaryPage() {
 				onSubmitClick={null}
 			/>
 			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
-				<p className="text-muted-fg text-sm">
-					Bạn đã nộp bài lúc{" "}
-					<span className="font-medium text-fg">
-						{formatVietnamSubmittedAt(summary.submittedAt)}
-					</span>
-					{duration && (
-						<>
-							{" · hoàn thành trong "}
-							<span className="font-medium text-fg">{duration}</span>
-						</>
-					)}
-					.
-				</p>
-
-				<div className="mt-4">
-					<AttemptScoreCard
-						correctCount={summary.correctCount}
-						wrongCount={summary.wrongCount}
-						skippedCount={summary.skippedCount}
-						totalCount={summary.totalCount}
-						action={
-							<Link
-								to="/learn/quizzes/attempt/$attemptId/detail"
-								params={{ attemptId }}
-								className={cn(buttonVariants(), "mt-5")}
-							>
-								Xem giải thích chi tiết
-							</Link>
-						}
-					/>
-				</div>
-
-				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
-					Bảng đáp án
-				</h2>
-				<AttemptCompactList items={summary.items} />
+				<AttemptSummaryBody summary={summary} attemptId={attemptId} />
 			</main>
 		</div>
 	);

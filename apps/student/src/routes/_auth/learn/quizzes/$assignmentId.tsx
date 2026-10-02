@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { QUIZ_ESSAY_MAX, WRITING_MIN_WORDS } from "@teacher-os/api/contracts";
 import {
 	buildQuizParts,
 	isAnsweredValue,
 } from "@teacher-os/api/lib/quiz-parts";
+import { countWords } from "@teacher-os/api/lib/word-count";
+import { QuizEssayFooter } from "@teacher-os/ui/components/quiz/quiz-essay-footer";
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
@@ -28,6 +31,7 @@ import {
 } from "@/lib/quiz-attempt-store";
 import {
 	patchQuizAnswer,
+	patchQuizEssay,
 	quizDetailQueryOptions,
 	submitQuizAttempt,
 	useStartQuizAttempt,
@@ -63,7 +67,16 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 		}
 		// Snapshot answers lúc LOAD — baseline cho resume reconciliation;
 		// refetch sau đó không dùng lại (đè answers cục bộ mới hơn của học viên).
-		return { serverAnswers: detail.attempt?.answers ?? {} };
+		// Đề Writing (#304) autosave vào cột `essay` riêng, không vào map
+		// `answers` — resume baseline lấy từ đó với key `0`.
+		return {
+			serverAnswers:
+				detail.skill === "writing"
+					? detail.attempt?.essay
+						? { "0": detail.attempt.essay }
+						: {}
+					: (detail.attempt?.answers ?? {}),
+		};
 	},
 	component: QuizTakePage,
 	errorComponent: QuizTakeError,
@@ -115,13 +128,20 @@ function QuizTakePage() {
 		attempt.status === "in_progress" &&
 		serverHasAnswers &&
 		!resumeConfirmed;
+	// Store chỉ tạo khi attempt đang chạy — attempt derive từ `detail` nên
+	// store luôn được tạo SAU khi biết skill (isWriting) — không có cửa sổ
+	// store giữ sai sender/clamp (red-team K).
 	const storeActive =
 		attempt !== null && attempt.status === "in_progress" && !needsResumeDialog;
+	const isWriting = detail?.skill === "writing";
 
 	const store = useQuizAttemptStore({
 		attemptId: storeActive ? attemptId : null,
 		serverAnswers,
-		send: (q, value, opts) => patchQuizAnswer(attemptId ?? "", q, value, opts),
+		send: isWriting
+			? (_q, value, opts) => patchQuizEssay(attemptId ?? "", value, opts)
+			: (q, value, opts) => patchQuizAnswer(attemptId ?? "", q, value, opts),
+		valueMax: isWriting ? QUIZ_ESSAY_MAX : undefined,
 		onAuthError: () => {
 			setAuthBanner(true);
 			// reauth() giữ URL hiện tại làm returnUrl — quay lại đúng take screen.
@@ -154,6 +174,17 @@ function QuizTakePage() {
 	const unansweredCount = allQuestions.filter(
 		({ q }) => !isAnsweredValue(answers[q]),
 	).length;
+	// Đếm từ Writing (#304): essay đi qua store với key `0` như mọi answers.
+	const essayText = answers[0] ?? "";
+	const wordCount = countWords(essayText);
+	const minWords = isWriting
+		? (WRITING_MIN_WORDS[detail?.part ?? ""] ?? null)
+		: null;
+	// Guard nộp Writing: bài trống hoặc thiếu từ chỉ CẢNH BÁO qua dialog,
+	// học viên vẫn xác nhận nộp được (user chốt) — khác logic unansweredCount.
+	const essayEmpty = essayText.trim() === "";
+	const essayGuardOpen =
+		isWriting && (essayEmpty || (minWords !== null && wordCount < minWords));
 
 	const submitMutation = useMutation({
 		// Drain-before-submit (RT#7): cancel debounce + flush pending + await
@@ -194,12 +225,26 @@ function QuizTakePage() {
 		scrollToQuestion(q);
 	};
 	const handleSubmitClick = () => {
-		if (unansweredCount > 0) {
+		if (essayGuardOpen || unansweredCount > 0) {
 			setGuardOpen(true);
 			return;
 		}
 		submitMutation.mutate();
 	};
+
+	// RT red-team G: sau khi rời take screen (store dispose flush PATCH cuối),
+	// đánh dấu query detail stale để lần vào lại bằng SPA nav trong cửa sổ
+	// staleTime 60s loader đọc `attempt.essay`/answers MỚI từ server — nếu
+	// không, cache cũ hiện textarea trống dù server còn bài (writing khuếch
+	// đại vì bài dài). Inactive query chỉ đánh dấu stale; refetch xảy ra ở
+	// mount kế tiếp sau khi PATCH đã kịp lên server.
+	useEffect(() => {
+		return () => {
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "quiz", assignmentId],
+			});
+		};
+	}, [assignmentId, queryClient]);
 
 	useEffect(() => {
 		if (store === null) return;
@@ -257,7 +302,17 @@ function QuizTakePage() {
 							{detail.title}
 						</h2>
 						<p className="mt-2 text-muted-fg text-sm">
-							{allQuestions.length} câu hỏi · Band {detail.band}
+							{isWriting ? (
+								<>
+									Bài viết
+									{minWords !== null && ` · tối thiểu ${minWords} từ`} · Band{" "}
+									{detail.band}
+								</>
+							) : (
+								<>
+									{allQuestions.length} câu hỏi · Band {detail.band}
+								</>
+							)}
 						</p>
 						<p className="mt-1 text-muted-fg text-sm">
 							Bài làm được lưu tự động trong khi bạn làm.
@@ -292,7 +347,11 @@ function QuizTakePage() {
 
 	const submitDisabled =
 		submitMutation.isPending || snapshot.halted !== null || !storeActive;
-	const navigator = (
+	// Writing thay navigator số câu bằng footer đếm từ (#304) — giữ testid
+	// navigator-progress nên helper e2e openPaper dùng chung được.
+	const navigator = isWriting ? (
+		<QuizEssayFooter text={essayText} minWords={minWords} />
+	) : (
 		<QuizNavigator
 			parts={parts}
 			answers={answers}
@@ -361,6 +420,22 @@ function QuizTakePage() {
 			<QuizSubmitGuardDialog
 				open={guardOpen}
 				unansweredCount={unansweredCount}
+				// Copy riêng cho Writing (#304): nộp trống / thiếu từ là cảnh báo,
+				// học viên vẫn xác nhận nộp được.
+				title={
+					isWriting
+						? essayEmpty
+							? "Bạn chưa viết bài"
+							: "Bài viết chưa đủ số từ"
+						: undefined
+				}
+				description={
+					isWriting
+						? essayEmpty
+							? "Bài viết đang trống. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết."
+							: `Bài viết có ${wordCount}/${minWords ?? 0} từ. Bài thi IELTS thiếu từ sẽ bị trừ điểm. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết.`
+						: undefined
+				}
 				onConfirm={() => {
 					setGuardOpen(false);
 					submitMutation.mutate();
