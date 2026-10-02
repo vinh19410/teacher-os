@@ -89,6 +89,10 @@ const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 describe("student speaking media (/api/student/attempts/:id/media)", () => {
 	let app: ServerApp;
 	let appWithoutStore: ServerApp;
+	/** App có db chạy hook ngay trước câu UPDATE kế tiếp — ép race tất định
+	 * giữa bước đọc và CAS của handler. */
+	let racingApp: ServerApp;
+	let beforeNextUpdate: (() => Promise<void>) | null = null;
 	let libsql: Db;
 	const memory = createMemoryMediaStore();
 	const background: Promise<unknown>[] = [];
@@ -214,6 +218,40 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			},
 		});
 		appWithoutStore = buildApp(baseDeps);
+		const racingDb = new Proxy(libsql, {
+			get(target, prop, receiver) {
+				const hook = beforeNextUpdate;
+				if (prop !== "update" || hook === null) {
+					return Reflect.get(target, prop, receiver);
+				}
+				beforeNextUpdate = null;
+				type Update = ReturnType<Db["update"]>;
+				return (table: Parameters<Db["update"]>[0]) => ({
+					set: (values: Parameters<Update["set"]>[0]) => ({
+						where: (
+							where: Parameters<ReturnType<Update["set"]>["where"]>[0],
+						) => ({
+							returning: async (fields: Record<string, never>) => {
+								await hook();
+								return target
+									.update(table)
+									.set(values)
+									.where(where)
+									.returning(fields);
+							},
+						}),
+					}),
+				});
+			},
+		});
+		racingApp = buildApp({
+			...baseDeps,
+			getDb: () => racingDb,
+			getMediaStore: () => memory.store,
+			runInBackground: (promise) => {
+				background.push(promise);
+			},
+		});
 	});
 
 	/** Start hoặc resume (200) attempt của lượt giao — idempotent như route. */
@@ -694,24 +732,31 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		expect(JSON.stringify(body)).not.toContain("chỉ lộ sau khi nộp");
 	});
 
-	test("concurrent deletes of the same file both succeed", async () => {
+	test("a DELETE that loses the CAS to another delete is still idempotent", async () => {
 		const attemptId = await startAttempt("ca-s6");
 		expect((await putMedia(attemptId, bytesOf(10, 6))).status).toBe(200);
 		await settle();
 
-		// Hai tab / double-click: request thua CAS re-read thấy file đã gỡ —
-		// trạng thái mong muốn đã đạt nên vẫn 200, không báo MEDIA_CONFLICT.
-		// (Nếu lịch chạy khiến request sau đọc khi file đã gỡ, nhánh trả sớm
-		// cũng 200 — hợp đồng quan sát được là như nhau.)
-		const [first, second] = await Promise.all([
-			deleteMedia(attemptId),
-			deleteMedia(attemptId),
-		]);
-		expect([first.status, second.status]).toEqual([200, 200]);
-		await settle();
-		expect(
-			[...memory.objects.keys()].some((key) => key.includes(attemptId)),
-		).toBe(false);
+		// Tab khác gỡ file đúng lúc request này đã đọc key nhưng chưa CAS.
+		beforeNextUpdate = async () => {
+			await libsql
+				.update(schema.quizAttempt)
+				.set({
+					mediaKey: null,
+					mediaName: null,
+					mediaType: null,
+					mediaSize: null,
+					mediaUploadedAt: null,
+				})
+				.where(eq(schema.quizAttempt.id, attemptId));
+		};
+		const res = await racingApp.request(
+			`/api/student/attempts/${attemptId}/media`,
+			{ method: "DELETE", headers: { ...OWNER, Origin: STUDENT_ORIGIN } },
+		);
+		expect(beforeNextUpdate).toBeNull();
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
 		expect((await getMedia(attemptId)).status).toBe(404);
 	});
 });

@@ -343,6 +343,8 @@ export function SpeakingSubmissionPanel({
 	busyRef.current = busy;
 	const hasMediaRef = useRef(false);
 	hasMediaRef.current = media !== null;
+	const failedRef = useRef(false);
+	failedRef.current = state.kind === "error";
 
 	const refetch = () =>
 		void queryClient.invalidateQueries({
@@ -396,7 +398,9 @@ export function SpeakingSubmissionPanel({
 					? "Đang tải file — đợi tải xong rồi thử lại."
 					: hasMediaRef.current
 						? 'Dùng nút "Thay file" để đổi file bài nói.'
-						: "Thả file vào vùng tải lên.",
+						: failedRef.current
+							? 'Dùng nút "Chọn file khác" để chọn lại file.'
+							: "Thả file vào vùng tải lên.",
 			);
 		};
 		window.addEventListener("dragover", onDragOver);
