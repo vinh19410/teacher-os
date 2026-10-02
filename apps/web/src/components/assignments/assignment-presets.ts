@@ -371,7 +371,6 @@ export function emptyComposer(skillId: string, typeId: string) {
 		items: isAutoSkill(skillId) ? [emptyItem(typeId)] : [],
 	};
 }
-export function wordCount(text: string): number {
-	const value = text.trim();
-	return value ? value.split(/\s+/).length : 0;
-}
+// Single source of truth #304: teacher preview và student footer đếm từ
+// cùng một cách (trước đây web giữ bản copy riêng dễ lệch số đếm).
+export { countWords as wordCount } from "@teacher-os/api/lib/word-count";

@@ -218,6 +218,13 @@
       "when": 1790743775775,
       "tag": "0030_previous_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1790921250542,
+      "tag": "0031_classy_victor_mancha",
+      "breakpoints": true
     }
   ]
 }

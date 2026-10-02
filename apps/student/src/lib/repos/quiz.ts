@@ -114,10 +114,28 @@ export async function patchQuizAnswer(
 			body: JSON.stringify({ q, value }),
 			keepalive: opts?.keepalive,
 		},
-		(raw) => {
-			// `{ ok: true }` — không có gì cần giữ lại.
-			return raw as Record<string, unknown>;
+		// `{ ok: true }` — không có gì cần giữ lại.
+		(raw) => raw as Record<string, unknown>,
+	);
+}
+
+/**
+ * Autosave bài viết Writing (#304) — cùng pattern keepalive với
+ * `patchQuizAnswer`, nhưng body `{ text }` và cap riêng 48KB phía server.
+ */
+export async function patchQuizEssay(
+	attemptId: string,
+	text: string,
+	opts?: { keepalive?: boolean },
+): Promise<void> {
+	await request(
+		`/api/student/attempts/${encodeURIComponent(attemptId)}/essay`,
+		{
+			method: "PATCH",
+			body: JSON.stringify({ text }),
+			keepalive: opts?.keepalive,
 		},
+		(raw) => raw as Record<string, unknown>,
 	);
 }
 
