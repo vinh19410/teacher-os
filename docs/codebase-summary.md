@@ -13,7 +13,7 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/server/src/app.ts](../apps/server/src/app.ts) - server app composition and bootstrap middleware
 - [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) - kernel route tree
 - [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) - assignment-prompt bank create and per-student grading routes, mounted inside the kernel tree
-- [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) - student portal bridge (provisioning, invitations, multi-org switch, onboarding, enrollment acceptance, quiz take/attempt endpoints with answer-key snapshot + server-side grading), mounted standalone at `/api/student`
+- [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) - student portal bridge (provisioning, invitations, multi-org switch, onboarding, enrollment acceptance, class detail for the student's own active enrollment, quiz take/attempt endpoints with answer-key snapshot + server-side grading), mounted standalone at `/api/student`
 - [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) - snapshot loader
 - [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) - shared API contracts
 - [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) - database schema barrel
@@ -22,7 +22,7 @@ This is the navigation surface for the repository. It points to the owning files
 ## Directory map
 
 - `apps/web` - route files, UI shell, client state, and kernel-facing repository helpers
-- `apps/student` - student portal (React + TanStack Router): login/sign-up, onboarding, overview, and quiz take/review routes (`/learn/quizzes/...` with autosave) on its own origin
+- `apps/student` - student portal (React + TanStack Router): login/sign-up, onboarding, overview, class detail (`/classes/$classId`), and quiz take/review routes (`/learn/quizzes/...` with autosave) on its own origin
 - `apps/landing` - static landing page, zero-framework, public/index.html from Open Design design, build = copy, serve.mjs :8002, zero dependencies
 - `apps/server` - Hono app, auth/session handling, snapshot loaders, and org-scoped kernel routes
 - `apps/e2e` - Playwright specs that boot the real server app under Node with a fresh local D1 database
