@@ -51,6 +51,7 @@ const titleMixed = "Đề trộn dạng: Hồ Gươm";
 const titleLegacy = "Đề 1 dạng: Tháp Rùa";
 const titleSplit = "Đề dài: Hồ Gươm bản đầy đủ";
 const titleIntroSections = "Đề intro chia cụm: Văn Miếu";
+const titleTfngNote = "Đề T/F/NG không khai dạng: Cổ Loa";
 
 interface CapturedJson {
 	url: string;
@@ -328,6 +329,46 @@ test.beforeAll(async ({ browser }) => {
 						stem: "Trường nằm tại thành phố ____.",
 						opts: null,
 						answer: "Hà Nội",
+						alts: "",
+					},
+				],
+			},
+			{
+				// #303 — đề note, câu 1–2 KHÔNG khai type và stem không có ____ (đáp án
+				// TRUE / NOT GIVEN): server suy ra tfng nên học viên có radio để chọn.
+				// Phần tử CUỐI mảng để không lệch các index assignmentIds đang dùng.
+				title: titleTfngNote,
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				note: "Đề T/F/NG không khai dạng.",
+				passage:
+					"<p>Thành Cổ Loa được xây dựng vào thế kỷ thứ ba trước Công nguyên. Thành có ba vòng thành đất đắp quanh kinh đô.</p>",
+				intro:
+					"<p>Đọc kỹ đoạn văn.</p><p>Questions 1–2</p><p>Write TRUE, FALSE or NOT GIVEN for each statement.</p><p>Questions 3–4 · Note completion — Write ONE WORD ONLY from the passage for each answer.</p>",
+				questions: [
+					{
+						stem: "Thành Cổ Loa được xây vào thế kỷ thứ ba trước Công nguyên.",
+						opts: null,
+						answer: "TRUE",
+						alts: "",
+					},
+					{
+						stem: "Thành Cổ Loa được xây để chống giặc phương Bắc.",
+						opts: null,
+						answer: "NOT GIVEN",
+						alts: "",
+					},
+					{
+						stem: "Thành có ____ vòng thành đất.",
+						opts: null,
+						answer: "ba",
+						alts: "",
+					},
+					{
+						stem: "Các vòng thành bao quanh ____.",
+						opts: null,
+						answer: "kinh đô",
 						alts: "",
 					},
 				],
@@ -792,10 +833,9 @@ test.describe("Student quiz take & review", () => {
 		await expect(s2.locator("[data-question]")).toHaveCount(2);
 		// Preamble render đúng 1 lần ở đầu trang.
 		await expect(page.getByText("Đọc kỹ đoạn văn.")).toHaveCount(1);
-		// Navigator có tab theo từng section.
-		await expect(
-			page.getByRole("tab", { name: "Questions 3–4" }),
-		).toBeVisible();
+		// Navigator phẳng: không tab nhóm, đủ nút số câu theo thứ tự.
+		await expect(page.getByRole("tab")).toHaveCount(0);
+		await expect(page.locator("footer button[data-question]")).toHaveCount(4);
 
 		await page.getByLabel("Điền đáp án câu 1").fill("1070");
 		await page.getByLabel("Điền đáp án câu 2").fill("đầu tiên");
@@ -814,5 +854,72 @@ test.describe("Student quiz take & review", () => {
 		await expect(
 			page.locator('section[aria-label="Questions 3–4"]'),
 		).toBeVisible();
+	});
+
+	// #303 — câu T/F/NG nằm trong đề type điền chữ, không khai type riêng và
+	// không có marker: vẫn có radio để chọn; navigator phẳng nằm ngoài pane
+	// "Bài làm", trải full chiều ngang.
+	test("markerless TRUE/NOT GIVEN questions in a note paper get radios and the navigator spans the full width", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleTfngNote);
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 0/4 câu",
+		);
+
+		const q1 = page.locator('[data-question="0"]');
+		const q2 = page.locator('[data-question="1"]');
+		const trueRadio = q1.getByRole("radio", { name: "TRUE", exact: true });
+		await expect(trueRadio).toBeVisible();
+		await expect(
+			q1.getByRole("radio", { name: "FALSE", exact: true }),
+		).toBeVisible();
+		await expect(q1.getByRole("radio", { name: "NOT GIVEN" })).toBeVisible();
+
+		// Navigator: không tab, đủ 4 nút, nằm ngoài pane "Bài làm" và rộng
+		// bằng viewport (không còn bị chặn max-w).
+		await expect(page.getByRole("tab")).toHaveCount(0);
+		await expect(page.locator("footer button[data-question]")).toHaveCount(4);
+		await expect(
+			page.locator('section[aria-label="Bài làm"] footer'),
+		).toHaveCount(0);
+		const navBox = await page
+			.getByTestId("navigator-progress")
+			.locator("xpath=ancestor::footer")
+			.boundingBox();
+		const viewport = page.viewportSize();
+		expect(navBox?.width ?? 0).toBeGreaterThanOrEqual(
+			(viewport?.width ?? Number.POSITIVE_INFINITY) - 1,
+		);
+
+		await trueRadio.check();
+		await q2.getByRole("radio", { name: "NOT GIVEN" }).check();
+		await page.getByLabel("Điền đáp án câu 3").fill("ba");
+		await page.getByLabel("Điền đáp án câu 4").fill("kinh đô");
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 4/4 câu",
+		);
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
+		await expect(page.getByTestId("attempt-correct-count")).toHaveText("4");
+
+		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await expect(page).toHaveURL(/\/detail$/);
+		const reviewQ1 = page.locator('[data-question="0"]');
+		await expect(reviewQ1.getByTestId("quiz-review-item")).toHaveAttribute(
+			"data-verdict",
+			"correct",
+		);
+		await expect(
+			reviewQ1.getByRole("radio", { name: "TRUE", exact: true }),
+		).toBeChecked();
 	});
 });

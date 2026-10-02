@@ -199,6 +199,47 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			status: "ready",
 		});
 
+		// Đề note-completion có câu T/F/NG không khai type (đề legacy): stem không
+		// marker + đáp án TFNG → server suy ra type tfng cho câu đó.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-note-tfng",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "note",
+			title: "Note With TFNG Practice",
+			prompt: "Read the passage and answer.",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify([
+				{
+					stem: "The roof was made of wood.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "The walls were painted.",
+					opts: null,
+					answer: "NOT GIVEN",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "Houses used ____ frames.",
+					opts: null,
+					answer: "timber",
+					alts: "",
+					pin: null,
+				},
+			]),
+			optionBank: "[]",
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		for (const assignmentId of [
 			"ca-q1",
 			"ca-q2",
@@ -211,6 +252,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q9",
 			"ca-q10",
 			"ca-q11",
+			"ca-q12",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -221,7 +263,9 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 						? "prompt-badpin"
 						: assignmentId === "ca-q10"
 							? "prompt-mixed"
-							: "prompt-quiz",
+							: assignmentId === "ca-q12"
+								? "prompt-note-tfng"
+								: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -736,6 +780,53 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"tfng",
 			"note",
 			"note",
+		]);
+	});
+
+	// Đề điền chữ có câu T/F/NG không khai type: take + review đều ra tfng để
+	// học viên có radio; câu có marker giữ type đề.
+	test("markerless TFNG answers in a note prompt are inferred as tfng in take and review", async () => {
+		const take = await app.request("/api/student/assignments/ca-q12/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.type).toBe("note");
+		expect(takeBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+
+		const attemptId = await startAttempt("ca-q12");
+		// Sau startAttempt take đọc từ snapshot (câu không có type) — vẫn suy luận.
+		const takeAfterStart = await app.request(
+			"/api/student/assignments/ca-q12/quiz",
+			{ headers: OWNER },
+		);
+		expect(takeAfterStart.status).toBe(200);
+		const takeAfterStartBody =
+			(await takeAfterStart.json()) as StudentQuizDetail;
+		expect(
+			takeAfterStartBody.questions.map((question) => question.type),
+		).toEqual(["tfng", "tfng", "note"]);
+		expect((await patchAnswer(attemptId, 0, "TRUE")).status).toBe(200);
+		expect((await submit(attemptId)).status).toBe(200);
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+		expect(reviewBody.questions.map((question) => question.verdict)).toEqual([
+			"correct",
+			"skipped",
+			"skipped",
 		]);
 	});
 

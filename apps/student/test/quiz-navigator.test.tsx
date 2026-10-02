@@ -50,7 +50,34 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 		expect((html.match(/<button/g) ?? []).length).toBe(5);
 	});
 
-	it("đề 1 phần → không render part tabs (N=1 hôm nay)", () => {
+	it("đề nhiều cụm → không có tab nhóm, đủ nút số câu theo thứ tự", () => {
+		const mixed: StudentQuizQuestion[] = [
+			{ stem: "A", opts: null, pin: null, type: "tfng" },
+			{ stem: "B", opts: null, pin: null, type: "tfng" },
+			{ stem: "C ____", opts: null, pin: null, type: "note" },
+			{ stem: "D ____", opts: null, pin: null, type: "note" },
+			{ stem: "E ____", opts: null, pin: null, type: "note" },
+		];
+		const parts = buildQuizParts(mixed, "note");
+		expect(parts.length).toBeGreaterThan(1);
+		const html = renderToStaticMarkup(
+			<QuizNavigator
+				parts={parts}
+				answers={{}}
+				current={null}
+				onSelect={() => undefined}
+			/>,
+		);
+		expect(html).not.toContain("tablist");
+		expect(html).not.toContain('role="tab"');
+		expect(html).not.toContain("Questions 1–2");
+		const order = [...html.matchAll(/data-question="(\d+)"/g)].map((match) =>
+			Number(match[1]),
+		);
+		expect(order).toEqual([0, 1, 2, 3, 4]);
+	});
+
+	it("thanh trải full chiều ngang — không còn max-w-[720px]; dưới lg giới hạn chiều cao có cuộn", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
 				parts={buildQuizParts(fiveQuestions, "tfng")}
@@ -59,8 +86,9 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 				onSelect={() => undefined}
 			/>,
 		);
-		expect(html).not.toContain('role="tablist"');
-		expect(html).toContain('data-question="4"');
+		expect(html).not.toContain("max-w-[720px]");
+		expect(html).toContain("max-h-[30svh]");
+		expect(html).toContain("overflow-y-auto");
 	});
 
 	it("highlight câu hiện tại qua aria-current + outline", () => {

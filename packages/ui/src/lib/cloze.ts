@@ -1,4 +1,8 @@
 import type { AssignmentQuestion } from "@teacher-os/api/contracts";
+import {
+	CLOZE_EDITOR_TYPES,
+	CLOZE_MARKER_SOURCE,
+} from "@teacher-os/api/lib/infer-question-types";
 
 /**
  * Cloze + table-completion helpers (phase-03). The marker `____` (≥ 4
@@ -13,7 +17,6 @@ import type { AssignmentQuestion } from "@teacher-os/api/contracts";
 
 /** Minimum blank form written into stems (also the display placeholder). */
 export const CLOZE_MARKER = "____";
-const CLOZE_MARKER_SOURCE = "_{4,}";
 /** Matches one marker run anywhere in a stem. Stateless (no /g reuse). */
 export const CLOZE_MARKER_PATTERN = new RegExp(CLOZE_MARKER_SOURCE);
 
@@ -27,17 +30,9 @@ export const CLOZE_TOKENIZE_PERF_CHARS = 20_000;
 export const CLOZE_RENDER_TOKEN_CAP = 5000;
 
 /** The completion types that embed the click-to-blank editor. `shortans`
- * keeps the phase-01 plain text row; `tablecomp` gets the grid editor. */
-export const CLOZE_EDITOR_TYPES: ReadonlySet<string> = new Set([
-	"sent",
-	"note",
-	"summary",
-	"flowchart",
-	"form",
-	"notes",
-	"sent4",
-	"flow",
-]);
+ * keeps the plain text row; `tablecomp` gets the grid editor.
+ * Single source lives in `@teacher-os/api` (shared with type inference). */
+export { CLOZE_EDITOR_TYPES };
 export const TABLECOMP_TYPE = "tablecomp";
 
 /** Number of marker runs in `stem` (0 = legacy/verbatim, ≥ 2 = row error). */
