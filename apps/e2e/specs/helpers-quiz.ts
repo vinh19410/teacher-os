@@ -32,6 +32,8 @@ export interface QuizSeedPrompt {
 	note: string;
 	/** Rich-text HTML rendered above the questions (reading passage). */
 	passage: string;
+	/** Đề bài rich-text HTML (#304 — Writing prompt-only cần nội dung đề). */
+	prompt?: string;
 	intro?: string;
 	questions: QuizSeedQuestion[];
 }
@@ -110,7 +112,8 @@ export async function seedQuizFixture(opts: {
 					prompt.title,
 					"7.0",
 					"",
-					"",
+					// Đề bài (writing prompt-only #304) — mặc định "" như cũ.
+					prompt.prompt ?? "",
 					prompt.intro ?? "",
 					prompt.passage,
 					"",

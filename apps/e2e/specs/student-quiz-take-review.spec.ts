@@ -51,6 +51,7 @@ const titleMixed = "Đề trộn dạng: Hồ Gươm";
 const titleLegacy = "Đề 1 dạng: Tháp Rùa";
 const titleSplit = "Đề dài: Hồ Gươm bản đầy đủ";
 const titleIntroSections = "Đề intro chia cụm: Văn Miếu";
+const titleWriting = "Đề writing: marriage and age";
 
 interface CapturedJson {
 	url: string;
@@ -332,6 +333,20 @@ test.beforeAll(async ({ browser }) => {
 					},
 				],
 			},
+			{
+				// #304 — đề Writing prompt-only: textarea bài viết + đếm từ +
+				// guard nộp thiếu từ + summary hiện bài. Phần tử CUỐI mảng để
+				// không lệch index assignmentIds[0..2] đang dùng.
+				title: titleWriting,
+				skill: "writing",
+				part: "task1",
+				type: "chart",
+				note: "Đề Writing sample.",
+				passage: "",
+				prompt:
+					"<p>The graph shows the proportion of marriages and the median age of first marriages in Australia between 1960 and 2000. Summarise the information by selecting and reporting the main features.</p>",
+				questions: [],
+			},
 		],
 	});
 	assignmentMcqId = fixture.assignmentIds[0] ?? "";
@@ -555,8 +570,15 @@ test.describe("Student quiz take & review", () => {
 			`${STUDENT_ORIGIN}/learn/quizzes/attempt/${startedAttemptId}`,
 		);
 		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+		// captureJsonGets push body async (res.json().then) — poll thay vì
+		// assert tức thời để không đua với microtask capture (flake khi máy load).
+		await expect
+			.poll(
+				() => attemptGets.filter((c) => c.status === 409).length,
+				{ timeout: 5_000 },
+			)
+			.toBeGreaterThan(0);
 		const inProgressGets = attemptGets.filter((c) => c.status === 409);
-		expect(inProgressGets.length).toBeGreaterThan(0);
 		for (const captured of inProgressGets) {
 			const keys = collectKeys(captured.json);
 			for (const banned of [
@@ -814,5 +836,70 @@ test.describe("Student quiz take & review", () => {
 		await expect(
 			page.locator('section[aria-label="Questions 3–4"]'),
 		).toBeVisible();
+	});
+
+	// #304 — Writing paper: textarea bài viết + autosave + đếm từ theo mục
+	// tiêu Task 1 + guard nộp thiếu từ + summary hiện lại bài đã nộp.
+	test("writing paper: essay autosaves with live word count, survives reload and SPA return, guards a short submit, and shows on summary", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleWriting);
+		// Empty-state cũ biến mất, textarea essay hiện ra.
+		await expect(page.getByText("không có câu hỏi tự chấm")).toHaveCount(0);
+		const textarea = page.getByLabel("Bài viết của bạn");
+		await expect(textarea).toBeVisible();
+		await expect(page.getByTestId("essay-word-count")).toHaveText("0");
+
+		// Gõ bài: đếm từ live (7 từ) + mục tiêu Task 1, autosave về "saved".
+		const draft = "The graph shows a clear upward trend.";
+		await textarea.fill(draft);
+		await expect(page.getByTestId("essay-word-count")).toHaveText("7");
+		await expect(page.getByTestId("navigator-progress")).toContainText(
+			"7 từ · tối thiểu 150",
+		);
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		// Hard reload → resume dialog → tiếp tục: bài còn nguyên.
+		await page.reload();
+		const resume = page.getByRole("alertdialog", { name: "Tiếp tục bài làm" });
+		await expect(resume).toBeVisible();
+		await resume.getByRole("button", { name: "Tiếp tục" }).click();
+		await expect(textarea).toHaveValue(draft);
+
+		// SPA-return (RT red-team G): Thoát về overview rồi vào lại đề trong
+		// cửa sổ staleTime 60s — query bị invalidate sau dispose nên loader
+		// đọc essay MỚI từ server, vẫn hiện resume dialog và giữ nguyên bài.
+		await page.getByRole("link", { name: "Thoát" }).click();
+		await page.getByRole("link", { name: `Làm bài: ${titleWriting}` }).click();
+		const resumeAgain = page.getByRole("alertdialog", {
+			name: "Tiếp tục bài làm",
+		});
+		await expect(resumeAgain).toBeVisible();
+		await resumeAgain.getByRole("button", { name: "Tiếp tục" }).click();
+		await expect(page.getByLabel("Bài viết của bạn")).toHaveValue(draft);
+
+		// Nộp thiếu từ → guard dialog copy riêng Writing; xác nhận vẫn nộp.
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		const guard = page.getByRole("alertdialog", {
+			name: "Bài viết chưa đủ số từ",
+		});
+		await expect(guard).toBeVisible();
+		await guard.getByRole("button", { name: "Nộp bài" }).click();
+
+		// Summary: hiện bài + số từ, không còn score card / link chi tiết.
+		await expect(
+			page.getByRole("heading", { name: "Bài viết của bạn" }),
+		).toBeVisible();
+		await expect(page.getByText(draft)).toBeVisible();
+		await expect(page.getByTestId("essay-summary-count")).toContainText("7 từ");
+		await expect(
+			page.getByRole("link", { name: "Xem giải thích chi tiết" }),
+		).toHaveCount(0);
 	});
 });

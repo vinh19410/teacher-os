@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 // Route summary compose TanStack Link (CTA sang detail) vào `action` của
 // ScoreCard — stub thành <a> thuần để renderToStaticMarkup chạy không cần
 // router context; test compose action đúng như route $attemptId.tsx.
+// #304: mock đủ surface route module cần ở import-time để test import thẳng
+// AttemptSummaryBody (extract khỏi AttemptSummaryPage — red-team I).
 vi.mock("@tanstack/react-router", () => ({
 	Link: (props: {
 		to: string;
@@ -19,6 +21,10 @@ vi.mock("@tanstack/react-router", () => ({
 			{props.children}
 		</a>
 	),
+	createFileRoute: () => () => ({}),
+	Outlet: () => null,
+	redirect: () => undefined,
+	useChildMatches: () => [],
 }));
 
 import { Link } from "@tanstack/react-router";
@@ -30,6 +36,7 @@ import {
 	formatVietnamSubmittedAt,
 } from "@/lib/attempt-format";
 import { cn } from "@/lib/cn";
+import { AttemptSummaryBody } from "@/routes/_auth/learn/quizzes/attempt/$attemptId";
 
 const summary: QuizAttemptSummary = {
 	id: "att-1",
@@ -175,5 +182,59 @@ describe("AttemptCompactList — n → đáp án học viên → Đáp án đún
 		expect((html.match(/data-verdict="correct"/g) ?? []).length).toBe(2);
 		expect(html).toContain('data-verdict="wrong"');
 		expect(html).toContain('data-verdict="skipped"');
+	});
+});
+
+describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
+	const writingSummary: QuizAttemptSummary = {
+		...summary,
+		correctCount: 0,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 0,
+		items: [],
+		essay: "The graph shows a clear upward trend.",
+	};
+
+	it("Writing: hiện bài đã nộp + số từ, KHÔNG score card / bảng đáp án / CTA chi tiết", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={writingSummary}
+				attemptId={writingSummary.id}
+			/>,
+		);
+		expect(html).toContain("Bài viết của bạn");
+		expect(html).toContain("The graph shows a clear upward trend.");
+		expect(html).toContain("7 từ");
+		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
+		expect(html).not.toContain("Xem giải thích chi tiết");
+		expect(html).not.toContain("Bảng đáp án");
+		expect(html).not.toContain("attempt-correct-count");
+	});
+
+	it("Writing nộp trống: dòng 'Bạn đã nộp bài trống.' + 0 từ", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{ ...writingSummary, essay: "" }}
+				attemptId={writingSummary.id}
+			/>,
+		);
+		expect(html).toContain("Bạn đã nộp bài trống.");
+		expect(html).toContain("0 từ");
+	});
+
+	it("Summary Reading (essay null hoặc payload cũ không có field) vẫn hiện score card", () => {
+		for (const essay of [null, undefined]) {
+			const html = renderToStaticMarkup(
+				<AttemptSummaryBody
+					summary={{ ...summary, essay }}
+					attemptId={summary.id}
+				/>,
+			);
+			expect(html).toContain("attempt-correct-count");
+			expect(html).toContain("Xem giải thích chi tiết");
+			expect(html).toContain("Bảng đáp án");
+			expect(html).not.toContain("Bài viết của bạn");
+		}
 	});
 });

@@ -1656,6 +1656,30 @@ export type QuizVerdict = (typeof QUIZ_VERDICTS)[number];
 /** Cap answer value per autosave PATCH (RT#16) — matches the 4096-byte body cap. */
 export const QUIZ_ANSWER_VALUE_MAX = 500;
 
+/** Cap bài viết Writing (#304): Task 2 thường 250–400 từ ≈ 2.500 ký tự,
+ * 10.000 là dư ~4 lần. Riêng route /essay có body cap 48KB (đủ cho 10.000
+ * ký tự UTF-8 3 byte cộng escape JSON, vẫn dưới giới hạn 64KB của fetch
+ * keepalive); các route quiz khác giữ cap 4096 byte. */
+export const QUIZ_ESSAY_MAX = 10000;
+export const QUIZ_ESSAY_BODY_MAX = 48 * 1024;
+
+/** Autosave bài viết Writing: route PATCH /attempts/:id/essay, body `{ text }`.
+ * Tách khỏi map `answers` vì map đó gắn với index câu hỏi, cap 500 ký tự và
+ * đi vào gradeQuiz — đề Writing không có câu nào. */
+export const quizEssayPatchSchema = z
+	.object({
+		text: z.string().max(QUIZ_ESSAY_MAX),
+	})
+	.strict();
+export type QuizEssayPatch = z.infer<typeof quizEssayPatchSchema>;
+
+/** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
+ * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
+export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {
+	task1: 150,
+	task2: 250,
+};
+
 /** Body của POST start/submit — exactly `{}` (mirror lessonActionSchema). */
 export const quizAttemptActionSchema = z.object({}).strict();
 export type QuizAttemptAction = z.infer<typeof quizAttemptActionSchema>;
@@ -1716,6 +1740,9 @@ export const studentQuizDetailSchema = z
 				id: z.string(),
 				status: z.enum(QUIZ_ATTEMPT_STATUSES),
 				answers: z.record(z.string(), z.string()),
+				/** Bài viết Writing đã autosave — optional để bundle cũ + server
+				 * mới không throw trong cửa sổ deploy (#304). */
+				essay: z.string().optional(),
 			})
 			.nullable(),
 	})
@@ -1761,6 +1788,14 @@ export const quizAttemptSummarySchema = z
 		startedAt: z.string(),
 		submittedAt: z.string(),
 		items: z.array(quizAttemptItemSchema),
+		/** Bài viết Writing đã nộp — null/undefined khi đề không phải Writing.
+		 * Optional bảo vệ chiều client mới + server cũ (key vắng mặt không
+		 * throw). CHIỀU NGƯỢC lại không bảo vệ được: schema này `.strict()`
+		 * nên bundle cũ (chưa có key essay) parse payload mới sẽ throw
+		 * Unrecognized key cho tới khi reload lấy bundle mới (#304,
+		 * code-review F2 — cùng cửa sổ đã chấp nhận ở precedent `type`
+		 * #286; server + student phải deploy cùng release). */
+		essay: z.string().nullable().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

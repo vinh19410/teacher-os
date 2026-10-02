@@ -3,6 +3,7 @@ import {
 	type AssignmentQuestion,
 	isImageBasedType,
 	optionBankKindFor,
+	QUIZ_ESSAY_MAX,
 	quizTypeDisplay,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
@@ -15,6 +16,7 @@ import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
 import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import { QuizEssayInput } from "@teacher-os/ui/components/quiz/quiz-essay-input";
 import {
 	type QuizChoiceRow,
 	QuizQuestionItem,
@@ -73,13 +75,17 @@ export function QuizPaper({
 	const skill = detail.skill;
 	const typeId = detail.type;
 	const isAuto = skill === "reading" || skill === "listening";
+	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
+	// Đề Writing prompt-only (#304): essay bind key `0` của map `answers` —
+	// cùng namespace với câu hỏi thật nên chỉ render khi đề RỖNG câu (fail
+	// an toàn: dữ liệu vi phạm invariant rơi về empty-state, không đè nhau).
+	const isWritingEssay = skill === "writing" && questions.length === 0;
 	const rawImageUrl = detail.imageUrl.trim();
 	const diagramImageUrl =
 		isImageBasedType(skill, typeId) &&
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
 			? rawImageUrl
 			: "";
-	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
 	// Chỉ cắt intro khi parts THẬT SỰ được dựng từ intro (có instructionHtml):
 	// caller nào quên truyền intro cho buildQuizParts vẫn thấy nguyên blob ở
 	// đầu trang, không bao giờ mất nội dung.
@@ -194,6 +200,15 @@ export function QuizPaper({
 				<RichTextBody text={detail.prompt} className="text-sm leading-[1.55]" />
 			)}
 
+			{isWritingEssay && (
+				<QuizEssayInput
+					value={answers[0] ?? ""}
+					onChange={(value) => onAnswer(0, value)}
+					readOnly={reviewMode}
+					maxLength={QUIZ_ESSAY_MAX}
+				/>
+			)}
+
 			<div className="flex flex-col gap-4">
 				{parts.map((part) => {
 					// Header cụm: đúng cấu trúc đề thi thật — số câu + nhãn dạng bài
@@ -252,7 +267,7 @@ export function QuizPaper({
 				})}
 			</div>
 
-			{questions.length === 0 && (
+			{questions.length === 0 && !isWritingEssay && (
 				<p className="text-muted-fg text-sm" role="note">
 					Đề này không có câu hỏi tự chấm — liên hệ giáo viên để biết thêm hướng
 					dẫn nộp bài.
