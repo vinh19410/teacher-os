@@ -1,6 +1,7 @@
 import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import { countBlanks } from "@teacher-os/ui/lib/cloze";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
@@ -40,7 +41,48 @@ const KEY_ANSWERS: Record<string, Record<string, string>> = {
 	tfng: { t: "TRUE", f: "FALSE", n: "NOT GIVEN" },
 	ynng: { y: "YES", n: "NO", g: "NOT GIVEN" },
 };
+/** Nhãn đáp án của dạng 3 trạng thái — dùng trong cảnh báo câu bị suy luận. */
+const INFERRED_TYPE_LABELS: Record<string, { answers: string; kind: string }> =
+	{
+		tfng: {
+			answers: "TRUE / FALSE / NOT GIVEN",
+			kind: "True / False / Not Given",
+		},
+		ynng: { answers: "YES / NO / NOT GIVEN", kind: "Yes / No / Not Given" },
+	};
 const DIGIT_ROMANS = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii"];
+
+/** Dải câu liên tiếp đang bị suy luận sang cùng một dạng 3 trạng thái. */
+interface InferredRun {
+	type: string;
+	indices: number[];
+}
+
+/** Câu không khai type mà đáp án là T/F/NG (hoặc Y/N/NG) nằm trong đề điền
+ * chữ: runtime suy ra tfng/ynng cho học viên; ở đây gom thành dải để cảnh báo
+ * giáo viên gán dạng đúng. */
+function inferredRuns(items: QuestionItem[], typeId: string): InferredRun[] {
+	const inferred = inferQuestionTypes(items, typeId);
+	const runs: InferredRun[] = [];
+	items.forEach((item, index) => {
+		const type = inferred[index];
+		if (item.type || type === typeId) return;
+		const last = runs[runs.length - 1];
+		if (last && last.type === type && last.indices.at(-1) === index - 1) {
+			last.indices.push(index);
+		} else {
+			runs.push({ type, indices: [index] });
+		}
+	});
+	return runs;
+}
+
+/** `X–Y` (một câu: `X`) theo số câu thật `qStart + index`. */
+function runRangeLabel(run: InferredRun, qStart: number): string {
+	const first = qStart + run.indices[0];
+	const last = qStart + run.indices[run.indices.length - 1];
+	return first === last ? `${first}` : `${first}–${last}`;
+}
 
 export function questionRowError(
 	item: QuestionItem,
@@ -136,6 +178,26 @@ export function AnswerKeyGrid({
 	};
 	const qStart = qStartOf(skill, partId);
 	const [blurred, setBlurred] = useState<ReadonlySet<number>>(new Set());
+	// Chỉ cảnh báo khi dạng suy luận gán được ở part này — server từ chối type
+	// ngoài catalog của part, nên nút 1-click không được đề xuất type đó.
+	const warnRuns = inferredRuns(items, typeId).filter((run) =>
+		typeCatalog.some((entry) => entry.id === run.type),
+	);
+	const warnRunStartingAt = (index: number) =>
+		warnRuns.find((run) => run.indices[0] === index);
+	/** Đặt type cho cả dải — chỉ đổi `type`, giữ stem/answer/alts/pin (đáp án
+	 * TRUE/FALSE/NOT GIVEN đã hợp lệ với kind mới). */
+	const applyRunType = (run: InferredRun) => {
+		const targets = new Set(run.indices);
+		onItemsChange(
+			items.map((item, index) =>
+				targets.has(index) ? { ...item, type: run.type } : item,
+			),
+		);
+		// Nút bị gỡ cùng cảnh báo — trả focus về hàng đầu của dải để người dùng
+		// bàn phím không rơi về document.body.
+		focusRowAfterAdd(run.indices[0]);
+	};
 	const update = (index: number, patch: Partial<QuestionItem>) => {
 		onItemsChange(
 			items.map((item, itemIndex) =>
@@ -265,142 +327,171 @@ export function AnswerKeyGrid({
 						.filter((_, otherIndex) => otherIndex !== index)
 						.map((other) => other.answer.trim()),
 				);
+				const warnRun = warnRunStartingAt(index);
+				const warnLabels = warnRun ? INFERRED_TYPE_LABELS[warnRun.type] : null;
+				const rangeLabel = warnRun ? runRangeLabel(warnRun, qStart) : "";
 				return (
-					<fieldset
-						key={`${partId}-${index}`}
-						data-qindex={index}
-						tabIndex={-1}
-						aria-label={`Câu ${number}`}
-						onKeyDown={(event) => handleKeyDown(event, index)}
-						onBlur={(event) => {
-							if (!event.currentTarget.contains(event.relatedTarget)) {
-								setBlurred((current) => new Set(current).add(index));
-							}
-						}}
-						className={cn(
-							"grid gap-2 rounded-md border bg-surface p-3 outline-none focus-visible:border-fg sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
-							selectedIndex === index ? "border-fg" : "border-line",
+					<Fragment key={`${partId}-${index}`}>
+						{warnRun && warnLabels && (
+							// Sibling đứng TRƯỚC fieldset (không lồng): Enter trong fieldset
+							// thêm câu mới, nên nút phải nằm ngoài nó.
+							<fieldset
+								aria-label={`Gợi ý dạng bài câu ${rangeLabel}`}
+								className="flex min-w-0 flex-col gap-2 rounded-md bg-warn-soft p-3 text-warn text-xs sm:flex-row sm:items-center sm:justify-between"
+							>
+								<p>
+									Câu {rangeLabel} có đáp án dạng {warnLabels.answers} nhưng
+									đang theo dạng đề{" "}
+									{typeCatalog.find((entry) => entry.id === typeId)?.label ??
+										typeId}
+									. Học viên sẽ thấy lựa chọn {warnLabels.kind}; nên gán dạng
+									cho đúng.
+								</p>
+								<Button
+									type="button"
+									size="sm"
+									variant="secondary"
+									onClick={() => applyRunType(warnRun)}
+								>
+									Đặt dạng {warnLabels.kind} cho câu {rangeLabel}
+								</Button>
+							</fieldset>
 						)}
-					>
-						<strong className="pt-2 font-mono text-sm">Câu {number}</strong>
-						<div className="flex flex-col gap-1">
-							<Input
-								value={item.stem}
-								aria-label="Nội dung câu hỏi phía học viên"
-								onChange={(event) =>
-									update(index, { stem: event.target.value })
+						<fieldset
+							data-qindex={index}
+							tabIndex={-1}
+							aria-label={`Câu ${number}`}
+							onKeyDown={(event) => handleKeyDown(event, index)}
+							onBlur={(event) => {
+								if (!event.currentTarget.contains(event.relatedTarget)) {
+									setBlurred((current) => new Set(current).add(index));
 								}
-							/>
-							{mcqChoices && mcqChoices.length > 0 && (
-								<div className="grid gap-2 pt-1 sm:grid-cols-2">
-									{options.map((option, optionIndex) => (
+							}}
+							className={cn(
+								"grid gap-2 rounded-md border bg-surface p-3 outline-none focus-visible:border-fg sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
+								selectedIndex === index ? "border-fg" : "border-line",
+							)}
+						>
+							<strong className="pt-2 font-mono text-sm">Câu {number}</strong>
+							<div className="flex flex-col gap-1">
+								<Input
+									value={item.stem}
+									aria-label="Nội dung câu hỏi phía học viên"
+									onChange={(event) =>
+										update(index, { stem: event.target.value })
+									}
+								/>
+								{mcqChoices && mcqChoices.length > 0 && (
+									<div className="grid gap-2 pt-1 sm:grid-cols-2">
+										{options.map((option, optionIndex) => (
+											<Input
+												key={optionIndex}
+												value={option}
+												aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
+												placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
+												onChange={(event) =>
+													update(index, {
+														opts: options.map((value, idx) =>
+															idx === optionIndex ? event.target.value : value,
+														),
+													})
+												}
+											/>
+										))}
+									</div>
+								)}
+							</div>
+							<div className="flex flex-col gap-1">
+								<Select
+									value={item.type ?? ""}
+									aria-label={`Dạng bài câu ${number}`}
+									onChange={(event) => changeRowType(index, event.target.value)}
+									className="w-full text-xs"
+								>
+									<option value="">
+										Theo dạng đề ·{" "}
+										{typeCatalog.find((entry) => entry.id === typeId)?.label ??
+											typeId}
+									</option>
+									{typeCatalog.map((entry) => (
+										<option key={entry.id} value={entry.id}>
+											{entry.label}
+										</option>
+									))}
+								</Select>
+								{choices && rowKind !== "text" ? (
+									<div className="flex flex-wrap gap-1.5">
+										{choices.map((choice) => {
+											const taken =
+												enforceDistinct &&
+												usedByOthers.has(choice) &&
+												item.answer !== choice;
+											return (
+												<button
+													type="button"
+													key={choice}
+													aria-pressed={item.answer === choice}
+													aria-label={`Câu ${number}: ${choice}`}
+													disabled={taken}
+													onClick={() => update(index, { answer: choice })}
+													className={cn(
+														"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
+														item.answer === choice
+															? "border-fg bg-fg text-bg"
+															: "border-line bg-bg text-fg-2 hover:border-fg",
+														taken &&
+															"cursor-not-allowed opacity-40 hover:border-line",
+													)}
+												>
+													{choice}
+												</button>
+											);
+										})}
+									</div>
+								) : (
+									<>
 										<Input
-											key={optionIndex}
-											value={option}
-											aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
-											placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
+											value={item.answer}
+											aria-label="Đáp án chấm tự động"
 											onChange={(event) =>
-												update(index, {
-													opts: options.map((value, idx) =>
-														idx === optionIndex ? event.target.value : value,
-													),
-												})
+												update(index, { answer: event.target.value })
 											}
 										/>
+										<Input
+											value={item.alts}
+											aria-label="Chấp nhận thêm, cách nhau bằng /"
+											placeholder="Nhận thêm: alt1 / alt2"
+											onChange={(event) =>
+												update(index, { alts: event.target.value })
+											}
+										/>
+									</>
+								)}
+							</div>
+							{items.length > 1 ? (
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									aria-label={`Xóa câu ${number}`}
+									onClick={() => remove(index)}
+								>
+									Xóa
+								</Button>
+							) : (
+								<span />
+							)}
+							{errorEntries.length > 0 && (
+								<div role="alert" className="sm:col-span-4">
+									{errorEntries.map((key) => (
+										<p key={key} className="text-danger text-xs">
+											{rowErrors[key]}
+										</p>
 									))}
 								</div>
 							)}
-						</div>
-						<div className="flex flex-col gap-1">
-							<Select
-								value={item.type ?? ""}
-								aria-label={`Dạng bài câu ${number}`}
-								onChange={(event) => changeRowType(index, event.target.value)}
-								className="w-full text-xs"
-							>
-								<option value="">
-									Theo dạng đề ·{" "}
-									{typeCatalog.find((entry) => entry.id === typeId)?.label ??
-										typeId}
-								</option>
-								{typeCatalog.map((entry) => (
-									<option key={entry.id} value={entry.id}>
-										{entry.label}
-									</option>
-								))}
-							</Select>
-							{choices && rowKind !== "text" ? (
-								<div className="flex flex-wrap gap-1.5">
-									{choices.map((choice) => {
-										const taken =
-											enforceDistinct &&
-											usedByOthers.has(choice) &&
-											item.answer !== choice;
-										return (
-											<button
-												type="button"
-												key={choice}
-												aria-pressed={item.answer === choice}
-												aria-label={`Câu ${number}: ${choice}`}
-												disabled={taken}
-												onClick={() => update(index, { answer: choice })}
-												className={cn(
-													"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
-													item.answer === choice
-														? "border-fg bg-fg text-bg"
-														: "border-line bg-bg text-fg-2 hover:border-fg",
-													taken &&
-														"cursor-not-allowed opacity-40 hover:border-line",
-												)}
-											>
-												{choice}
-											</button>
-										);
-									})}
-								</div>
-							) : (
-								<>
-									<Input
-										value={item.answer}
-										aria-label="Đáp án chấm tự động"
-										onChange={(event) =>
-											update(index, { answer: event.target.value })
-										}
-									/>
-									<Input
-										value={item.alts}
-										aria-label="Chấp nhận thêm, cách nhau bằng /"
-										placeholder="Nhận thêm: alt1 / alt2"
-										onChange={(event) =>
-											update(index, { alts: event.target.value })
-										}
-									/>
-								</>
-							)}
-						</div>
-						{items.length > 1 ? (
-							<Button
-								type="button"
-								size="sm"
-								variant="ghost"
-								aria-label={`Xóa câu ${number}`}
-								onClick={() => remove(index)}
-							>
-								Xóa
-							</Button>
-						) : (
-							<span />
-						)}
-						{errorEntries.length > 0 && (
-							<div role="alert" className="sm:col-span-4">
-								{errorEntries.map((key) => (
-									<p key={key} className="text-danger text-xs">
-										{rowErrors[key]}
-									</p>
-								))}
-							</div>
-						)}
-					</fieldset>
+						</fieldset>
+					</Fragment>
 				);
 			})}
 		</section>

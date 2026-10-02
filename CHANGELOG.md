@@ -14,6 +14,13 @@ Quy ước khi cập nhật:
 
 ### Added
 - Trang làm bài học viên có ô nhập bài viết cho đề Writing: autosave như các dạng câu hỏi (reload có dialog tiếp tục), đếm từ trực tiếp với mục tiêu Task 1 (150) / Task 2 (250) — thiếu từ chỉ cảnh báo không chặn nộp; màn kết quả và trang soi bài hiện lại bài đã nộp kèm số từ thay cho score card 0/0 (#304)
+- Answer-key grid cảnh báo các câu bị suy luận thành True/False/Not Given và có nút đặt dạng cho cả cụm câu chỉ bằng một lần bấm (#303)
+
+### Changed
+- Thanh điều hướng câu hỏi bỏ hàng tab nhóm "Questions X–Y", hiện toàn bộ số câu theo thứ tự và trải full chiều ngang màn hình; ở màn đọc chia đôi thanh nằm dưới cả hai pane, dưới `lg` giới hạn 30% chiều cao màn hình và cuộn khi đề dài (#303)
+
+### Fixed
+- Trang làm bài/soi bài và preview mô phỏng của giáo viên: câu True / False / Not Given nằm trong đề dạng điền chữ (note, sentence completion…) mà không khai dạng riêng và không có chỗ trống `____` giờ hiện đủ radio TRUE / FALSE / NOT GIVEN (hoặc YES / NO / NOT GIVEN) thay vì chỉ in đề bài không có chỗ trả lời; đề cũ và bài đang làm dở tự đúng, không cần migrate dữ liệu (#303)
 
 ## 2026-10-01
 

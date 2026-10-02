@@ -5,7 +5,6 @@ import {
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
 import { cn } from "@teacher-os/ui/lib/utils";
-import { useEffect, useState } from "react";
 
 /** Nút số câu tô màu theo verdict (review mode) thay vì theo answered. */
 const VERDICT_BUTTON_CLASSES: Record<QuizVerdict, string> = {
@@ -20,6 +19,12 @@ const VERDICT_ARIA_LABELS: Record<QuizVerdict, string> = {
 	skipped: "bỏ qua",
 };
 
+/**
+ * Thanh điều hướng câu hỏi: một dải phẳng chứa toàn bộ nút số câu theo thứ
+ * tự (flex-wrap, trái → phải), trải full chiều ngang của vùng chứa — không
+ * chia tab theo nhóm câu. Dưới lg, đề dài bị giới hạn 30svh và cuộn nội bộ
+ * để không chiếm quá nửa màn hình điện thoại; từ lg trở lên hiện đủ.
+ */
 export function QuizNavigator({
 	parts,
 	answers,
@@ -40,15 +45,6 @@ export function QuizNavigator({
 	verdicts?: Record<number, QuizVerdict>;
 }) {
 	const reviewMode = mode === "review";
-	const [activePartIndex, setActivePartIndex] = useState(0);
-	const currentPartIndex = parts.findIndex((part) =>
-		part.questions.some((question) => question.q === current),
-	);
-	useEffect(() => {
-		if (currentPartIndex >= 0) setActivePartIndex(currentPartIndex);
-	}, [currentPartIndex]);
-	const safeActiveIndex = activePartIndex < parts.length ? activePartIndex : 0;
-	const activePart = parts[safeActiveIndex];
 	const allQuestions = parts.flatMap((part) => part.questions);
 	const answeredCount = countAnswered(answers, allQuestions);
 	const verdictCount = (verdict: QuizVerdict): number =>
@@ -56,8 +52,8 @@ export function QuizNavigator({
 			.length;
 
 	return (
-		<footer className="sticky bottom-0 z-20 border-line border-t bg-bg/95 backdrop-blur">
-			<div className="mx-auto w-full max-w-[720px] px-4 py-3">
+		<footer className="sticky bottom-0 z-20 max-h-[30svh] overflow-y-auto border-line border-t bg-bg/95 backdrop-blur lg:max-h-none lg:overflow-visible">
+			<div className="w-full px-4 py-3">
 				<p
 					role="status"
 					data-testid="navigator-progress"
@@ -68,76 +64,44 @@ export function QuizNavigator({
 						? `Đúng ${verdictCount("correct")} câu · Sai ${verdictCount("wrong")} · Bỏ qua ${verdictCount("skipped")}`
 						: `Đã trả lời ${answeredCount}/${allQuestions.length} câu`}
 				</p>
-				{parts.length > 1 && (
-					<div
-						role="tablist"
-						aria-label="Các phần của đề"
-						className="mb-2 flex flex-wrap gap-1.5"
-					>
-						{parts.map((part, index) => (
+				<div className="flex flex-wrap gap-1.5">
+					{allQuestions.map((question) => {
+						const answered = isAnsweredValue(answers[question.q]);
+						const isCurrent = current === question.q;
+						const verdict = reviewMode
+							? (verdicts?.[question.q] ?? null)
+							: null;
+						return (
 							<button
 								type="button"
-								key={part.id}
-								role="tab"
-								aria-selected={index === safeActiveIndex}
-								onClick={() => {
-									setActivePartIndex(index);
-									const first = part.questions[0];
-									if (first) onSelect(first.q);
-								}}
+								key={question.q}
+								data-question={question.q}
+								data-answered={answered}
+								data-verdict={verdict ?? undefined}
+								aria-label={`Câu ${question.number}${
+									verdict
+										? ` — ${VERDICT_ARIA_LABELS[verdict]}`
+										: answered
+											? " — đã trả lời"
+											: " — chưa trả lời"
+								}`}
+								aria-current={isCurrent ? "true" : undefined}
+								onClick={() => onSelect(question.q)}
 								className={cn(
-									"rounded-md border px-2.5 py-1 font-medium text-xs transition-colors",
-									index === safeActiveIndex
-										? "border-accent-blue bg-accent-soft text-accent-blue"
-										: "border-line bg-surface text-muted-fg hover:border-fg-2",
+									"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-accent-blue",
+									verdict
+										? VERDICT_BUTTON_CLASSES[verdict]
+										: answered
+											? "border-transparent bg-primary text-primary-foreground"
+											: "border-line bg-surface text-fg hover:border-fg-2",
+									isCurrent && "outline-2 outline-accent-blue outline-offset-1",
 								)}
 							>
-								{part.label}
+								{question.number}
 							</button>
-						))}
-					</div>
-				)}
-				{activePart && (
-					<div className="flex flex-wrap gap-1.5">
-						{activePart.questions.map((question) => {
-							const answered = isAnsweredValue(answers[question.q]);
-							const isCurrent = current === question.q;
-							const verdict = reviewMode
-								? (verdicts?.[question.q] ?? null)
-								: null;
-							return (
-								<button
-									type="button"
-									key={question.q}
-									data-question={question.q}
-									data-answered={answered}
-									data-verdict={verdict ?? undefined}
-									aria-label={`Câu ${question.number}${
-										verdict
-											? ` — ${VERDICT_ARIA_LABELS[verdict]}`
-											: answered
-												? " — đã trả lời"
-												: " — chưa trả lời"
-									}`}
-									aria-current={isCurrent ? "true" : undefined}
-									onClick={() => onSelect(question.q)}
-									className={cn(
-										"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-accent-blue",
-										verdict
-											? VERDICT_BUTTON_CLASSES[verdict]
-											: answered
-												? "border-transparent bg-primary text-primary-foreground"
-												: "border-line bg-surface text-fg hover:border-fg-2",
-										isCurrent &&
-											"outline-2 outline-accent-blue outline-offset-1",
-									)}
-								>
-									{question.number}
-								</button>
-							);
-						})}
-					</div>
-				)}
+						);
+					})}
+				</div>
 			</div>
 		</footer>
 	);

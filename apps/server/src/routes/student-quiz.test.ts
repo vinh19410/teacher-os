@@ -199,6 +199,47 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			status: "ready",
 		});
 
+		// Đề note-completion có câu T/F/NG không khai type (đề legacy): stem không
+		// marker + đáp án TFNG → server suy ra type tfng cho câu đó.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-note-tfng",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "note",
+			title: "Note With TFNG Practice",
+			prompt: "Read the passage and answer.",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify([
+				{
+					stem: "The roof was made of wood.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "The walls were painted.",
+					opts: null,
+					answer: "NOT GIVEN",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "Houses used ____ frames.",
+					opts: null,
+					answer: "timber",
+					alts: "",
+					pin: null,
+				},
+			]),
+			optionBank: "[]",
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		// Đề Writing prompt-only (#304) — `questions: []`, không answer key.
 		await libsql.insert(schema.assignmentPrompt).values({
 			id: "prompt-writing",
@@ -236,6 +277,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q15",
 			"ca-q16",
 			"ca-q17",
+			"ca-q18",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -246,9 +288,13 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 						? "prompt-badpin"
 						: assignmentId === "ca-q10"
 							? "prompt-mixed"
-							: ["ca-q12", "ca-q13", "ca-q14", "ca-q16"].includes(assignmentId)
-								? "prompt-writing"
-								: "prompt-quiz",
+							: assignmentId === "ca-q12"
+								? "prompt-note-tfng"
+								: ["ca-q13", "ca-q14", "ca-q16", "ca-q18"].includes(
+											assignmentId,
+										)
+									? "prompt-writing"
+									: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -431,7 +477,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 
 		// RT O: guard quizWriteGuard bị sửa cho /essay — CSRF phải khoá cả
 		// route 48KB này (origin sai → 403, content-type sai → 415).
-		const writingAttempt = await startAttempt("ca-q12");
+		const writingAttempt = await startAttempt("ca-q13");
 		const essayBadOrigin = await patchEssay(writingAttempt, "A graph.", {
 			...writeHeaders(),
 			Origin: "https://evil.example",
@@ -818,6 +864,53 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		]);
 	});
 
+	// Đề điền chữ có câu T/F/NG không khai type: take + review đều ra tfng để
+	// học viên có radio; câu có marker giữ type đề.
+	test("markerless TFNG answers in a note prompt are inferred as tfng in take and review", async () => {
+		const take = await app.request("/api/student/assignments/ca-q12/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.type).toBe("note");
+		expect(takeBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+
+		const attemptId = await startAttempt("ca-q12");
+		// Sau startAttempt take đọc từ snapshot (câu không có type) — vẫn suy luận.
+		const takeAfterStart = await app.request(
+			"/api/student/assignments/ca-q12/quiz",
+			{ headers: OWNER },
+		);
+		expect(takeAfterStart.status).toBe(200);
+		const takeAfterStartBody =
+			(await takeAfterStart.json()) as StudentQuizDetail;
+		expect(
+			takeAfterStartBody.questions.map((question) => question.type),
+		).toEqual(["tfng", "tfng", "note"]);
+		expect((await patchAnswer(attemptId, 0, "TRUE")).status).toBe(200);
+		expect((await submit(attemptId)).status).toBe(200);
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+		expect(reviewBody.questions.map((question) => question.verdict)).toEqual([
+			"correct",
+			"skipped",
+			"skipped",
+		]);
+	});
+
 	// code-review: pin malformed không tràn xuống wire — parsePin sanitize null.
 	test("malformed question pins are sanitized to null in take payloads", async () => {
 		await startAttempt("ca-q8");
@@ -870,13 +963,13 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 
 	// (#304) Writing: essay autosave → resume qua take payload → summary lộ bài.
 	test("writing essay autosaves, resumes via take payload and shows on summary", async () => {
-		const attemptId = await startAttempt("ca-q13");
+		const attemptId = await startAttempt("ca-q14");
 		const essay = "The graph shows a clear upward trend in marriages.";
 
 		expect((await patchEssay(attemptId, essay)).status).toBe(200);
 
 		// Resume qua take payload: attempt.essay trả lại bài đã autosave.
-		const take = await app.request("/api/student/assignments/ca-q13/quiz", {
+		const take = await app.request("/api/student/assignments/ca-q14/quiz", {
 			headers: OWNER,
 		});
 		const takeBody = (await take.json()) as StudentQuizDetail;
@@ -915,7 +1008,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(await notWriting.json()).toEqual({ error: "essay not allowed" });
 
 		// Đề Writing: vượt QUIZ_ESSAY_MAX (10.000 ký tự) → 400 invalid body.
-		const writingAttempt = await startAttempt("ca-q14");
+		const writingAttempt = await startAttempt("ca-q16");
 		const overMax = await patchEssay(writingAttempt, "x".repeat(10001));
 		expect(overMax.status).toBe(400);
 		expect(await overMax.json()).toEqual({ error: "invalid body" });
@@ -956,7 +1049,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 	// (#304) Route /essay nhận body > 4096 byte (cap riêng 48KB) trong khi
 	// /answer vẫn 413; vượt 48KB → 413; đúng biên 10.000 ký tự → 200.
 	test("essay route accepts bodies above 4096 bytes while answer route still rejects them", async () => {
-		const attemptId = await startAttempt("ca-q16");
+		const attemptId = await startAttempt("ca-q18");
 
 		// ~9.000 ký tự ASCII → ~9KB: vượt cap cũ 4096 nhưng dưới 48KB.
 		const longEssay = "word ".repeat(1800).trim(); // 9000 ký tự

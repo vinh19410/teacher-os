@@ -25,6 +25,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
+import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
@@ -877,6 +878,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			attempt?.id ?? row.promptId,
 		);
 
+		const effectiveTypes = inferQuestionTypes(questions, prompt.type);
+
 		const detail: StudentQuizDetail = {
 			assignmentId,
 			title: row.title,
@@ -893,13 +896,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			audioName: prompt.audioName,
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
-			questions: questions.map((question) => ({
+			questions: questions.map((question, index) => ({
 				stem: question.stem,
 				opts: question.opts,
 				// Type hiệu dụng của câu: type riêng (đề trộn dạng) ?? type
 				// prompt — payload student luôn có type cụ thể để client phân
-				// cụm; snapshot cũ parse `type: null` cũng fallback về đây.
-				type: question.type ?? prompt.type,
+				// cụm; snapshot cũ parse `type: null` cũng fallback về đây. Câu
+				// không khai type trong đề điền chữ mà đáp án là T/F/NG (hoặc
+				// Y/N/NG) được suy ra tfng/ynng để học viên có lựa chọn.
+				type: effectiveTypes[index] ?? prompt.type,
 				pin: question.pin ?? null,
 			})),
 			attempt: attempt
@@ -1388,6 +1393,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType,
 			skill,
 		} = loaded;
+		const effectiveTypes = inferQuestionTypes(questions, promptType);
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1407,9 +1413,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				return {
 					stem: question.stem,
 					opts: question.opts,
-					// Type hiệu dụng như take payload — review screen phân cụm cùng
-					// cấu trúc bài làm.
-					type: question.type ?? promptType,
+					// Type hiệu dụng như take payload (gồm suy luận tfng/ynng) —
+					// review screen phân cụm cùng cấu trúc bài làm.
+					type: effectiveTypes[index] ?? promptType,
 					pin: question.pin ?? null,
 					key: question.answer,
 					alts: question.alts,
