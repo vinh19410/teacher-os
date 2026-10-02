@@ -22,7 +22,10 @@ vi.mock("@tanstack/react-router", () => ({
 		children: React.ReactNode;
 	}) => (
 		<a
-			href={props.to.replace("$assignmentId", props.params?.assignmentId ?? "")}
+			href={Object.entries(props.params ?? {}).reduce(
+				(href, [key, value]) => href.replace(`$${key}`, value),
+				props.to,
+			)}
 			aria-label={props["aria-label"]}
 		>
 			{props.children}
@@ -50,6 +53,7 @@ describe("ClassCard", () => {
 			status: "active",
 			enrollmentId: "enr-1",
 			enrollmentStatus: "active",
+			teacher: null,
 			nextSession: {
 				date: "2099-01-05",
 				time: "18:30",
@@ -79,6 +83,7 @@ describe("ClassCard", () => {
 			status: "active",
 			enrollmentId: "enr-2",
 			enrollmentStatus: "active",
+			teacher: null,
 			nextSession: null,
 		};
 
@@ -99,6 +104,7 @@ describe("ClassCard", () => {
 			status: "active",
 			enrollmentId: "enr-3",
 			enrollmentStatus: "active",
+			teacher: null,
 			nextSession: null,
 		};
 
@@ -120,6 +126,7 @@ describe("ClassCard", () => {
 			status: "active",
 			enrollmentId: "enr-inv",
 			enrollmentStatus: "invited",
+			teacher: null,
 			nextSession: null,
 		};
 
@@ -129,6 +136,68 @@ describe("ClassCard", () => {
 		expect(html).toContain("Giáo viên đã mời bạn vào lớp");
 		// Chưa kích hoạt thì không hiển thị tiến độ khóa học
 		expect(html).not.toContain("Tiến độ khóa học");
+		// Card chờ kích hoạt không mở trang lớp: không có link, chỉ có nút.
+		expect(html).not.toContain("<a ");
+		expect(html).toContain('<button type="button"');
+	});
+
+	const activeClass: StudentClass = {
+		id: "class-42",
+		name: "IELTS Linked",
+		level: "Band 6.0",
+		mode: "Online",
+		schedule: "T3 · 19:00–20:30",
+		sessionsDone: 2,
+		sessionsTotal: 12,
+		status: "active",
+		enrollmentId: "enr-42",
+		enrollmentStatus: "active",
+		nextSession: null,
+		teacher: {
+			name: "Cô Lan",
+			email: "lan.teacher@example.com",
+			image: "https://lh3.googleusercontent.com/a/lan",
+		},
+	};
+
+	it("shows the teacher avatar, name and plain-text email on the card", () => {
+		const html = renderToStaticMarkup(<ClassCard cls={activeClass} />);
+		expect(html).toContain("Cô Lan");
+		expect(html).toContain("lan.teacher@example.com");
+		expect(html).toContain('src="https://lh3.googleusercontent.com/a/lan"');
+		expect(html).toContain('referrerPolicy="no-referrer"');
+		// Không lồng link mailto trong card đã là link.
+		expect(html).not.toContain("mailto:");
+	});
+
+	it("falls back to the teacher initial when there is no image", () => {
+		const html = renderToStaticMarkup(
+			<ClassCard
+				cls={{
+					...activeClass,
+					teacher: { name: "lan", email: "lan@example.com", image: null },
+				}}
+			/>,
+		);
+		expect(html).not.toContain("<img");
+		expect(html).toMatch(/>L<\/span>/);
+	});
+
+	it("hides the teacher row when the class has no teacher", () => {
+		const html = renderToStaticMarkup(
+			<ClassCard cls={{ ...activeClass, teacher: null }} />,
+		);
+		expect(html).not.toContain("Giáo viên:");
+		expect(html).toContain("IELTS Linked");
+	});
+
+	it("makes an active class card a link to its class detail page", () => {
+		const html = renderToStaticMarkup(<ClassCard cls={activeClass} />);
+		// Stretched link quanh tên lớp: accessible name là tên lớp, phần
+		// còn lại của card (giáo viên, tiến độ) nằm ngoài link.
+		expect(html).toContain('<a href="/classes/class-42">IELTS Linked</a>');
+		expect(html.match(/<a /g)).toHaveLength(1);
+		expect(html).not.toContain("aria-label");
 	});
 });
 
@@ -148,6 +217,14 @@ describe("AssignmentRow", () => {
 		const html = renderToStaticMarkup(<AssignmentRow assignment={asg} />);
 		expect(html).toContain("Writing Task 1 – Bar Chart");
 		expect(html).toContain("IELTS Intensive");
+	});
+
+	it("hides the class name when showClassName is false", () => {
+		const html = renderToStaticMarkup(
+			<AssignmentRow assignment={asg} showClassName={false} />,
+		);
+		expect(html).toContain("Writing Task 1 – Bar Chart");
+		expect(html).not.toContain("IELTS Intensive");
 	});
 
 	it("links class_assignment rows to the quiz take screen", () => {

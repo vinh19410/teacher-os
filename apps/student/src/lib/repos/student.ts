@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type StudentClassDetail,
 	type StudentInvitationItem,
 	type StudentMe,
 	type StudentOnboardingPayload,
 	type StudentOrgItem,
 	type StudentOverview,
+	studentClassDetailSchema,
 	studentMeSchema,
 	studentOverviewSchema,
 } from "@teacher-os/api/contracts";
@@ -128,6 +130,39 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 
 	const data = (await res.json()) as unknown;
 	return studentOverviewSchema.parse(data);
+}
+
+export async function fetchStudentClassDetail(
+	classId: string,
+): Promise<StudentClassDetail> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	const data = (await res.json()) as unknown;
+	return studentClassDetailSchema.parse(data);
 }
 
 export async function fetchStudentNotifications(): Promise<
@@ -279,6 +314,14 @@ export function useStudentOverview() {
 	return useQuery({
 		queryKey: ["student", "overview"],
 		queryFn: fetchStudentOverview,
+		staleTime: 60_000,
+	});
+}
+
+export function useStudentClassDetail(classId: string) {
+	return useQuery({
+		queryKey: ["student", "class", classId],
+		queryFn: () => fetchStudentClassDetail(classId),
 		staleTime: 60_000,
 	});
 }

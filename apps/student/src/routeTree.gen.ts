@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
+import { Route as AuthClassesClassIdRouteImport } from './routes/_auth/classes/$classId'
 import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdDetailRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId.detail'
@@ -54,6 +55,11 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthClassesClassIdRoute = AuthClassesClassIdRouteImport.update({
+  id: '/classes/$classId',
+  path: '/classes/$classId',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const AuthLearnQuizzesAssignmentIdRoute =
   AuthLearnQuizzesAssignmentIdRouteImport.update({
     id: '/learn/quizzes/$assignmentId',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/classes/$classId': typeof AuthClassesClassIdRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/': typeof AuthIndexRoute
+  '/classes/$classId': typeof AuthClassesClassIdRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
   '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/_auth/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/_auth/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/onboarding'
+    | '/classes/$classId'
     | '/learn/quizzes/$assignmentId'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/onboarding'
     | '/'
+    | '/classes/$classId'
     | '/learn/quizzes/$assignmentId'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/_auth/onboarding'
     | '/_auth/'
+    | '/_auth/classes/$classId'
     | '/_auth/learn/quizzes/$assignmentId'
     | '/_auth/learn/quizzes/attempt/$attemptId'
     | '/_auth/learn/quizzes/attempt/$attemptId/detail'
@@ -204,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/classes/$classId': {
+      id: '/_auth/classes/$classId'
+      path: '/classes/$classId'
+      fullPath: '/classes/$classId'
+      preLoaderRoute: typeof AuthClassesClassIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/learn/quizzes/$assignmentId': {
       id: '/_auth/learn/quizzes/$assignmentId'
       path: '/learn/quizzes/$assignmentId'
@@ -246,6 +265,7 @@ const AuthLearnQuizzesAttemptAttemptIdRouteWithChildren =
 interface AuthRouteRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
   AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
   AuthLearnQuizzesAttemptAttemptIdRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
 }
@@ -253,6 +273,7 @@ interface AuthRouteRouteChildren {
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthClassesClassIdRoute: AuthClassesClassIdRoute,
   AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
   AuthLearnQuizzesAttemptAttemptIdRoute:
     AuthLearnQuizzesAttemptAttemptIdRouteWithChildren,
