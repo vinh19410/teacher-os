@@ -21,7 +21,10 @@ import { student } from "./student";
  * luôn derive được từ snapshot + answers đã freeze. `essay` là bài viết
  * Writing (#304) — tách khỏi `answers` vì map đó gắn index câu hỏi (đề
  * Writing không có câu nào), cap 500 ký tự và đi vào gradeQuiz; cap riêng
- * 10.000 ký tự qua PATCH /attempts/:id/essay.
+ * 10.000 ký tự qua PATCH /attempts/:id/essay. `media_*` là file bài nói
+ * Speaking học viên tải lên (#305): `mediaKey` trỏ vào object trong bucket
+ * R2 `MEDIA`, null = chưa có file. Mỗi lần upload sinh key mới và ghi CAS
+ * theo key cũ, nên DB không bao giờ trỏ vào object đang bị ghi đè.
  */
 export const quizAttempt = sqliteTable(
 	"quiz_attempt",
@@ -40,6 +43,11 @@ export const quizAttempt = sqliteTable(
 		questionsSnapshot: text("questions_snapshot").notNull(),
 		answers: text("answers").notNull().default("{}"),
 		essay: text("essay").notNull().default(""),
+		mediaKey: text("media_key"),
+		mediaName: text("media_name"),
+		mediaType: text("media_type"),
+		mediaSize: integer("media_size"),
+		mediaUploadedAt: integer("media_uploaded_at", { mode: "timestamp_ms" }),
 		correctCount: integer("correct_count"),
 		startedAt: integer("started_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

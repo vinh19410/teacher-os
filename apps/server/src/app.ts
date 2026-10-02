@@ -7,6 +7,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
@@ -14,6 +15,14 @@ import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
+// Re-export cho adapter lưu trữ của e2e (package `server` chỉ export
+// `.`, `./app`, `./session`).
+export {
+	enforceDeclaredSize,
+	MediaSizeMismatchError,
+	type MediaStore,
+	type StoredMedia,
+} from "./lib/media-store";
 
 export interface KernelCtx {
 	orgId: string;
@@ -31,6 +40,17 @@ export interface AppDeps {
 	corsOrigin: string | string[];
 	getSessionUser(headers: Headers): Promise<SessionUser | null>;
 	authHandler(req: Request): Response | Promise<Response>;
+	/**
+	 * Kho file bài nói Speaking (#305) — R2 ở production, đĩa ở e2e. Optional:
+	 * test hiện có không cần storage; vắng mặt (hoặc binding thiếu → trả
+	 * undefined) thì các route media trả 503.
+	 */
+	getMediaStore?(): MediaStore | undefined;
+	/**
+	 * Chạy việc dọn dẹp sau response (xoá object R2 bù trừ) — production
+	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
+	 */
+	runInBackground?(promise: Promise<unknown>): void;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -109,6 +129,14 @@ export function buildApp(deps: AppDeps) {
 	app.use(
 		logger((line, ...rest) => console.log(redactResetToken(line), ...rest)),
 	);
+	// File bài nói học viên (#305): CORP same-site thay cho `cross-origin`
+	// global — cookie SameSite=None nên trang ngoài nhúng được `<video src>`
+	// tới API. Đăng ký TRƯỚC secureHeaders: secureHeaders ghi header sau
+	// next(), middleware ngoài cùng hơn mới ghi được giá trị cuối.
+	app.use("/api/student/attempts/:attemptId/media", async (c, next) => {
+		await next();
+		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+	});
 	app.use(
 		"/*",
 		secureHeaders({
@@ -148,7 +176,14 @@ export function buildApp(deps: AppDeps) {
 			// PATCH: full-test builder phase-2 (PATCH /assignments/prompts/:id,
 			// /assignments/tests/:id) — coordinator-approved 2026-09-28.
 			allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-			allowHeaders: ["Content-Type", "Authorization", "x-student-org-id"],
+			// X-File-Name: tên file bài nói Speaking (#305), upload là raw body
+			// nên tên đi qua header (encodeURIComponent).
+			allowHeaders: [
+				"Content-Type",
+				"Authorization",
+				"x-student-org-id",
+				"X-File-Name",
+			],
 			credentials: true,
 		}),
 	);

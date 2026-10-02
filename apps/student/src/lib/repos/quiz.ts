@@ -1,14 +1,19 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	QUIZ_MEDIA_TYPES,
 	type QuizAttemptDetail,
+	type QuizAttemptMedia,
 	type QuizAttemptSummary,
 	type QuizSubmitResult,
 	quizAttemptDetailSchema,
+	quizAttemptMediaSchema,
 	quizAttemptSummarySchema,
 	quizSubmitResultSchema,
 	type StudentQuizDetail,
 	studentQuizDetailSchema,
 } from "@teacher-os/api/contracts";
+import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import { z } from "zod";
 import { HttpError } from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
@@ -202,4 +207,147 @@ export function attemptDetailQueryOptions(attemptId: string) {
 
 export function useAttemptDetail(attemptId: string) {
 	return useQuery(attemptDetailQueryOptions(attemptId));
+}
+
+const quizMediaUploadResultSchema = z.object({ media: quizAttemptMediaSchema });
+
+/**
+ * PUT file bài nói Speaking (#305) — raw body, tên file qua `X-File-Name`.
+ * Dùng XMLHttpRequest thay vì `request()`/fetch vì fetch không báo tiến
+ * trình upload; `signal` abort → xhr.abort() và reject AbortError.
+ */
+export function uploadQuizMedia(
+	attemptId: string,
+	file: File,
+	type: string,
+	opts: { onProgress?: (fraction: number) => void; signal?: AbortSignal } = {},
+): Promise<QuizAttemptMedia> {
+	return new Promise((resolve, reject) => {
+		if (opts.signal?.aborted) {
+			reject(new DOMException("Upload aborted", "AbortError"));
+			return;
+		}
+		const xhr = new XMLHttpRequest();
+		xhr.open(
+			"PUT",
+			`${getApiBaseUrl()}/api/student/attempts/${encodeURIComponent(attemptId)}/media`,
+		);
+		xhr.withCredentials = true;
+		const headers = getStudentHeaders({
+			"Content-Type": type,
+			"X-File-Name": encodeURIComponent(file.name),
+		});
+		for (const [name, value] of Object.entries(headers)) {
+			xhr.setRequestHeader(name, value);
+		}
+		xhr.upload.onprogress = (event) => {
+			if (event.lengthComputable && event.total > 0) {
+				opts.onProgress?.(event.loaded / event.total);
+			}
+		};
+		const onAbort = () => xhr.abort();
+		opts.signal?.addEventListener("abort", onAbort, { once: true });
+		const cleanup = () => opts.signal?.removeEventListener("abort", onAbort);
+		xhr.onload = () => {
+			cleanup();
+			let body: unknown = null;
+			try {
+				body = JSON.parse(xhr.responseText);
+			} catch {
+				body = null;
+			}
+			if (xhr.status >= 200 && xhr.status < 300) {
+				const parsed = quizMediaUploadResultSchema.safeParse(body);
+				if (parsed.success) {
+					resolve(parsed.data.media);
+				} else {
+					reject(new HttpError(xhr.status, "Invalid upload response"));
+				}
+				return;
+			}
+			const record = (body ?? {}) as { code?: string; error?: string };
+			reject(
+				new HttpError(xhr.status, `Upload failed with status ${xhr.status}`, {
+					code: record.code ?? record.error,
+				}),
+			);
+		};
+		xhr.onerror = () => {
+			cleanup();
+			reject(new HttpError(0, "Network error during upload"));
+		};
+		xhr.onabort = () => {
+			cleanup();
+			reject(new DOMException("Upload aborted", "AbortError"));
+		};
+		xhr.send(file);
+	});
+}
+
+/** DELETE file bài nói trước khi nộp — idempotent phía server. */
+export async function deleteQuizMedia(attemptId: string): Promise<void> {
+	await request(
+		`/api/student/attempts/${encodeURIComponent(attemptId)}/media`,
+		{ method: "DELETE" },
+		(raw) => raw as Record<string, unknown>,
+	);
+}
+
+/**
+ * Tải file bài nói về blob URL để phát lại. Không dùng `<audio src>` trỏ
+ * thẳng API: thẻ media không gửi được header `x-student-org-id`, thiếu nó
+ * học viên đa org rơi về org đầu tiên → 404 sai. Chỉ nhận Content-Type
+ * trong allowlist và dựng Blob với đúng type đó — blob URL thuộc origin
+ * student nên không được phép mang nội dung kiểu khác (HTML, SVG…).
+ */
+export async function fetchQuizMediaObjectUrl(
+	attemptId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/attempts/${encodeURIComponent(attemptId)}/media`,
+		{
+			method: "GET",
+			credentials: "include",
+			headers: getStudentHeaders({ Accept: "*/*" }),
+			signal,
+		},
+	);
+	if (!res.ok) {
+		const { code } = await parseErrorBody(res);
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+	const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");
+	if (!Object.hasOwn(QUIZ_MEDIA_TYPES, type)) {
+		throw new HttpError(res.status, "Unexpected media content type");
+	}
+	// Blob bọc blob gốc (không copy byte) chỉ để ép type đã kiểm.
+	const blob = new Blob([await res.blob()], { type });
+	return URL.createObjectURL(blob);
+}
+
+/**
+ * Ghi media mới vào cache take payload — cache là nguồn sự thật duy nhất
+ * của take screen (không giữ bản sao state riêng dễ lệch server).
+ */
+export async function setQuizDetailMedia(
+	queryClient: QueryClient,
+	assignmentId: string,
+	media: QuizAttemptMedia | null,
+): Promise<void> {
+	const { queryKey } = quizDetailQueryOptions(assignmentId);
+	// Refetch đang bay (sau hủy/conflict) có thể trả về sau và đè media mới
+	// bằng dữ liệu cũ — hủy nó trước khi ghi.
+	await queryClient.cancelQueries({ queryKey });
+	queryClient.setQueryData<StudentQuizDetail>(queryKey, (detail) =>
+		detail?.attempt
+			? { ...detail, attempt: { ...detail.attempt, media } }
+			: detail,
+	);
 }

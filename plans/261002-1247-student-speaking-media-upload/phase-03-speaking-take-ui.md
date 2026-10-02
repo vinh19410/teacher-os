@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "UI màn nộp bài Speaking: đề, hướng dẫn, dropzone, player"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [2]
@@ -52,7 +52,7 @@ Học viên mở đề Speaking và thấy đúng câu hỏi/cue card cùng hư�
 
 ## Files to Create / Modify
 - Modify: `packages/ui/src/components/quiz/quiz-paper.tsx`
-- Create: `packages/ui/src/components/quiz/media-dropzone.tsx`
+- Create: `packages/ui/src/components/quiz/media-dropzone.tsx`, `packages/ui/src/components/quiz/quiz-speaking-footer.tsx` <!-- Updated: Red Team 2026-10-02 -->
 - Create: `apps/student/src/components/quiz/speaking-submission-panel.tsx`
 - Create: `apps/student/src/components/quiz/quiz-media-player.tsx`
 - Modify: `apps/student/src/lib/repos/quiz.ts`
@@ -74,12 +74,13 @@ Học viên mở đề Speaking và thấy đúng câu hỏi/cue card cùng hư�
   - Reading không đổi.
 
 ### 3.2 `MediaDropzone` (packages/ui, thuần trình bày)
-- [ ] Props: `accept: string`, `maxBytes: number`, `disabled?: boolean`, `onFile(file: File): void`, `onReject(reason: "type" | "size" | "multiple"): void`, `hint?: ReactNode`.
+- [ ] Validate dùng chung: thêm `validateQuizMediaFiles(files: ArrayLike<File>, maxBytes): { ok: true; file: File; type: string } | { ok: false; reason: "type" | "size" | "multiple"; file?: File }` vào `packages/api/src/lib/quiz-media.ts` (test ở `quiz-media.test.ts`). Dropzone và input ẩn "Thay file" đều gọi hàm này, nên chỉ có một đường validate. <!-- Updated: Red Team 2026-10-02 -->
+- [ ] Props: `accept: string`, `maxBytes: number`, `disabled?: boolean`, `onFile(file: File, type: string): void`, `onReject(reason: "type" | "size" | "multiple", file?: File): void`, `hint?: ReactNode`.
 - [ ] Cấu trúc: một `<div role="button" tabIndex={0}>`, `aria-describedby` trỏ vào hint, nhãn "Kéo thả file vào đây hoặc chọn file", kèm `<input type="file" hidden accept={accept}>`. Click hoặc Enter/Space mở input. `aria-disabled` khi `disabled`.
 - [ ] Drag & drop:
   - `onDragEnter`/`onDragOver` gọi `preventDefault` và set `dragging` (đếm enter/leave để không nhấp nháy khi rê qua phần tử con).
   - `onDrop` lấy `dataTransfer.files`. Nhiều hơn 1 file → `onReject("multiple")`.
-  - Validate bằng `resolveQuizMediaType` (null → `"type"`) và `file.size > maxBytes` (→ `"size"`), sau đó mới `onFile`. Validate y hệt cho input change. Reset `input.value` để chọn lại cùng file vẫn kích hoạt.
+  - Validate bằng `validateQuizMediaFiles`, sau đó mới `onFile`. Validate y hệt cho input change. Reset `input.value` để chọn lại cùng file vẫn kích hoạt.
 - [ ] Style:
   - Idle: `rounded-[var(--radius-lg)] border-2 border-dashed border-line bg-bg px-6 py-10 text-center`, hover `border-accent-blue/60`.
   - Dragging: `border-solid border-accent-blue bg-accent-blue/5`, chữ đổi thành "Thả để tải lên".
@@ -102,10 +103,11 @@ Học viên mở đề Speaking và thấy đúng câu hỏi/cue card cùng hư�
   - 2xx thì parse `z.object({ media: quizAttemptMediaSchema })`. Lỗi thì reject `HttpError(status, …, { code })` đọc từ JSON body. Lỗi mạng (`onerror`) thì reject `HttpError(0, …)`.
   - Comment giải thích vì sao dùng XHR mà không dùng `request()`: cần progress khi upload.
 - [ ] `deleteQuizMedia(attemptId)` qua `request()` với method DELETE, không body (nên không có Content-Type).
-- [ ] `fetchQuizMediaObjectUrl(attemptId): Promise<string>` dùng `fetch` + `credentials: "include"` + `getStudentHeaders()`, rồi `URL.createObjectURL(await res.blob())`. Lỗi thì throw `HttpError`. Comment giải thích vì sao không dùng `<audio src>` trực tiếp: header `x-student-org-id` (Key Decision 9).
+- [ ] `fetchQuizMediaObjectUrl(attemptId): Promise<string>` dùng `fetch` + `credentials: "include"` + `getStudentHeaders({ Accept: "*/*" })`. Response có `content-type` (lowercase, bỏ `;params`) không thuộc `QUIZ_MEDIA_TYPES` thì throw, không tạo URL. Hợp lệ thì `URL.createObjectURL(new Blob([await res.arrayBuffer()], { type }))` với type đã kiểm. <!-- Updated: Red Team 2026-10-02 --> Lỗi thì throw `HttpError`. Comment giải thích vì sao không dùng `<audio src>` trực tiếp: header `x-student-org-id` (Key Decision 9).
 
 ### 3.4 `SpeakingSubmissionPanel` (apps/student)
-- [ ] Props: `attemptId: string`, `part: string`, `media: QuizAttemptMedia | null`, `onMediaChange(media | null)`, `onUploadingChange(boolean)`, `disabled: boolean` (đang nộp hoặc store halted).
+- [ ] Props: `assignmentId: string`, `attemptId: string`, `part: string`, `media: QuizAttemptMedia | null` (đọc từ cache query detail), `onUploadingChange(boolean)`, `disabled: boolean` (đang nộp hoặc store halted). <!-- Updated: Red Team 2026-10-02 -->
+- [ ] **Một nguồn sự thật:** panel không giữ bản sao `media`. PUT/DELETE thành công thì gọi `queryClient.setQueryData(["student","quiz",assignmentId], d => ({ ...d, attempt: { ...d.attempt, media } }))`. Sau abort, lỗi mạng (status 0), `MEDIA_CONFLICT` thì `invalidateQueries` cùng key để render lại theo server.
 - [ ] Card "Hướng dẫn làm bài" (`rounded-[var(--radius-lg)] border border-line bg-surface/50 p-4 text-sm`), heading mono eyebrow, các bullet:
 
   | part | Hướng dẫn chuẩn |
@@ -116,47 +118,49 @@ Học viên mở đề Speaking và thấy đúng câu hỏi/cue card cùng hư�
   | khác | (không có dòng này) |
 
   Thêm hai bullet cố định: "Ghi âm hoặc quay video câu trả lời bằng điện thoại/máy tính, rồi tải lên **1 file**." và "Định dạng: {nhãn từ `QUIZ_MEDIA_TYPES`, bỏ trùng} · tối đa 50 MB · video nên quay 720p để file nhẹ."
-- [ ] Heading eyebrow "Bài nói của bạn" và state machine nội bộ: `idle | uploading { file, progress, controller } | error { file, message }`. File đã lưu đến từ prop `media`.
-  - **Chưa có file, idle:** `MediaDropzone`. `onReject` hiện lỗi inline `role="alert"` `text-danger text-sm`:
+- [ ] Heading eyebrow "Bài nói của bạn" và state machine nội bộ: `idle | uploading { file, progress, controller } | processing { file } | error { file, message }`. File đã lưu đến từ prop `media`.
+  - **Chưa có file, idle:** `MediaDropzone`. `onReject` (dùng chung cho dropzone và "Thay file") hiện lỗi inline `role="alert"` `text-danger text-sm` ngay dưới heading "Bài nói của bạn", ở mọi state:
     - type: "Định dạng không hỗ trợ. Hãy chọn file MP3, M4A, WAV, WEBM, OGG, MP4 hoặc MOV."
     - size: "File {formatMediaSize} vượt quá 50 MB. Hãy cắt ngắn hoặc quay lại ở 720p."
     - multiple: "Chỉ tải lên 1 file."
-  - **Uploading:** `Attachment state="uploading"` gồm icon `MusicIcon` hoặc `VideoIcon`, tên file, `formatMediaSize`, thanh tiến trình (`<div role="progressbar" aria-valuenow>` cao 4px `bg-accent-blue` trên `bg-line`), "% đã tải", và `AttachmentAction` "Hủy" (abort). Gọi `onUploadingChange(true/false)`. Thông báo `aria-live="polite"` khi hoàn tất: "Đã tải lên {name}".
-  - **Thành công:** `onMediaChange(media)`. Giữ `localPreviewUrl = URL.createObjectURL(file)` để preview ngay, revoke khi đổi file hoặc unmount.
+  - **Uploading:** `Attachment state="uploading"` gồm icon `MusicIcon` hoặc `VideoIcon`, tên file, `formatMediaSize`, thanh tiến trình (`<div role="progressbar" aria-valuenow>` cao 4px `bg-accent-blue` trên `bg-line`), "% đã tải", và `AttachmentAction` "Hủy" (abort). Khi `progress >= 1` (byte cuối đã gửi) chuyển sang `processing`: `Attachment state="processing"`, chữ "Đang xử lý…", **ẩn nút Hủy** vì server có thể đang commit. Gọi `onUploadingChange(true/false)` (true suốt uploading + processing). <!-- Updated: Red Team 2026-10-02 --> Thông báo `aria-live="polite"` khi hoàn tất: "Đã tải lên {name}".
+  - **Thành công:** `setQueryData` như trên. Giữ `localPreviewUrl = URL.createObjectURL(file)` để preview ngay, revoke khi đổi file hoặc unmount.
   - **Đã có file** (`media !== null`): `Attachment state="done"` hiện tên, dung lượng, "Đã tải lên {formatVietnamSubmittedAt(media.uploadedAt)}" (helper có sẵn ở `apps/student/src/lib/attempt-format.ts:31`). Actions:
-    - "Thay file": mở input ẩn, file mới đi qua cùng validate và upload. Server xoá object cũ.
-    - "Xoá": confirm nhẹ bằng `QuizDialog` có sẵn ("Xoá file bài nói?"), rồi `deleteQuizMedia` → `onMediaChange(null)`.
+    - "Thay file": mở input ẩn, file mới đi qua `validateQuizMediaFiles` và upload. Server xoá object cũ. Bị từ chối thì hiện alert chung, file hiện tại giữ nguyên.
+    - "Xoá": confirm nhẹ bằng `QuizDialog` có sẵn ("Xoá file bài nói?"), rồi `deleteQuizMedia` → `setQueryData(media: null)`.
 
     Bên dưới là `QuizMediaPlayer`.
   - **Lỗi upload:** `Attachment state="error"` + message. Message theo lỗi:
     - 413: "File vượt quá 50 MB."
     - 415: "Định dạng không hỗ trợ."
-    - 409 `MEDIA_CONFLICT`: "File vừa được thay ở tab khác — đã tải lại." Kèm `invalidateQueries(["student","quiz",assignmentId])`.
+    - 409 `MEDIA_CONFLICT`: "File vừa được thay ở tab khác — đã tải lại." Kèm `invalidateQueries(["student","quiz",assignmentId])`; xong thì về state idle.
     - 409 `ATTEMPT_SUBMITTED`: chuyển sang summary.
     - 401: `reauth()`.
-    - Mạng (status 0): "Không tải lên được — kiểm tra kết nối."
+    - Mạng (status 0): "Không tải lên được — kiểm tra kết nối." Kèm `invalidateQueries`, vì server có thể đã commit.
 
     Actions: "Thử lại" (upload lại đúng file) và "Chọn file khác".
 - [ ] `beforeunload` guard khi đang `uploading`.
 - [ ] Toàn bộ action disable khi `disabled`.
 - [ ] Test `speaking-submission-panel.test.tsx` (mock `@/lib/repos/quiz`):
   - Hiện bullet theo part2.
-  - Chọn file thì `uploadQuizMedia` được gọi với type đã resolve, progress 50% hiện "50%", resolve thì gọi `onMediaChange`.
+  - Chọn file thì `uploadQuizMedia` được gọi với type đã resolve, progress 50% hiện "50%", progress 100% thì hiện "Đang xử lý…" và không còn nút "Hủy", resolve thì cache query có `attempt.media` mới.
   - Upload reject 413 thì hiện message và nút "Thử lại".
-  - `media` có sẵn thì hiện tên file và "Thay file"/"Xoá"; xoá thì gọi `deleteQuizMedia` rồi `onMediaChange(null)`.
+  - `media` có sẵn thì hiện tên file và "Thay file"/"Xoá"; xoá thì gọi `deleteQuizMedia` rồi cache có `attempt.media === null`.
+  - "Thay file" với file `.pdf` hiện "Định dạng không hỗ trợ" và giữ file cũ.
   - Hủy thì abort được gọi và quay về dropzone.
 
 ### 3.5 `QuizMediaPlayer` (apps/student)
 - [ ] Props: `media: QuizAttemptMedia`, `attemptId: string`, `localUrl?: string | null`.
 - [ ] Có `localUrl` thì render player ngay. Không có thì hiện nút "Nghe lại bài nói" (video: "Xem lại bài nói"). Bấm thì `fetchQuizMediaObjectUrl`; đang tải hiện spinner `Loader`; lỗi hiện "Không tải được file. Thử lại". Revoke URL khi unmount.
 - [ ] Player: `isVideoMediaType` → `<video controls playsInline preload="metadata" className="max-h-80 w-full rounded-md border border-line bg-fg/5">`, còn lại `<audio controls preload="metadata" className="w-full">`. Thêm `aria-label="Bài nói đã nộp"`.
+- [ ] Bắt sự kiện `error` của thẻ media: hiện "Trình duyệt không phát được định dạng này." kèm link "Tải file về" (`<a href={url} download={media.name}>`). Hướng dẫn trong card: iPhone nên chọn Cài đặt → Camera → Định dạng → "Tương thích nhất". <!-- Updated: Red Team 2026-10-02 -->
 
 ### 3.6 Route take `$assignmentId.tsx`
-- [ ] `const isSpeaking = detail?.skill === "speaking"`. State `const [media, setMedia] = useState(attempt?.media ?? null)`, đồng bộ lại khi `attempt?.media` đổi sau refetch (effect key theo `attempt?.media?.uploadedAt`). State `uploading`.
+- [ ] `const isSpeaking = detail?.skill === "speaking"`. `const media = attempt?.media ?? null`, derive trực tiếp từ cache query (không `useState` bản sao, không effect đồng bộ). State `uploading`. <!-- Updated: Red Team 2026-10-02 -->
 - [ ] Gate card trước start: Speaking hiện "Bài nói · {PART_LABEL} · nộp 1 file audio/video (tối đa 50 MB) · Band X" thay cho "0 câu hỏi". `PART_LABEL` lấy từ `ASSIGNMENT_TEST_PRESETS.speaking.slots` theo `part`, part lạ thì bỏ.
-- [ ] Sau start, Speaking: trong `<main>` render `QuizPaper` rồi `SpeakingSubmissionPanel` (attemptId, part, media, onMediaChange=setMedia, onUploadingChange=setUploading, disabled=submitMutation.isPending || halted). Không render `QuizNavigator`. Header `saveState={null}` với Speaking (không có autosave text).
+- [ ] Sau start, Speaking: trong `<main>` render `QuizPaper` rồi `SpeakingSubmissionPanel` (assignmentId, attemptId, part, media, onUploadingChange=setUploading, disabled=submitMutation.isPending || halted). Thay `QuizNavigator` bằng `QuizSpeakingFooter` (`packages/ui`, cùng khuôn `QuizEssayFooter` của #304) mang `data-testid="navigator-progress"` để helper e2e `openPaper` dùng chung được; nội dung "Chưa tải file bài nói" / "Đã tải file bài nói". Header `saveState={null}` với Speaking (không có autosave text). <!-- Updated: Red Team 2026-10-02 -->
 - [ ] `submitDisabled` thêm `|| (isSpeaking && (media === null || uploading))`. Dưới panel, khi `media === null`, có hint `text-muted-fg text-sm`: "Tải file bài nói lên để nộp bài."
-- [ ] `handleSubmitClick` với Speaking thì gọi thẳng `submitMutation.mutate()` (không có guard dialog). `onError`: 400 `MEDIA_REQUIRED` thì toast "Bạn cần tải file bài nói lên trước khi nộp" và refetch detail.
+- [ ] `handleSubmitClick` với Speaking đã tự gọi thẳng `submitMutation.mutate()` (`unansweredCount === 0`, `essayGuardOpen === false`), không cần sửa. `onError`: 400 `MEDIA_REQUIRED` thì toast "Bạn cần tải file bài nói lên trước khi nộp"; 409 `MEDIA_CONFLICT` thì toast "File bài nói vừa thay đổi — hãy thử nộp lại". Cả hai `invalidateQueries` detail. <!-- Updated: Red Team 2026-10-02 -->
 - [ ] Không đổi nhánh Reading/Listening/Writing.
 
 ## Verification

@@ -468,3 +468,83 @@ describe("QuizPaper — đề Writing essay input (#304)", () => {
 		expect(html).not.toContain("Bài viết của bạn");
 	});
 });
+
+describe("QuizPaper — đề Speaking hiển thị đúng theo part (#305)", () => {
+	const renderSpeaking = (overrides: Partial<PaperFields>) =>
+		renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "speaking",
+					type: "place",
+					intro: "",
+					passage: "",
+					...overrides,
+				})}
+				parts={buildQuizParts([], "place")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+
+	it("Part 2: cue card có topic + bullet, không empty-state", () => {
+		const html = renderSpeaking({
+			cueTopic: "a place you like to visit",
+			cuePoints: "where it is\nwhy you like it",
+		});
+		expect(html).toContain("Describe a place you like to visit.");
+		expect(html).toContain("You should say:");
+		expect(html).toContain("<li>where it is</li>");
+		expect(html).toContain("<li>why you like it</li>");
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("Part 1: hiện câu hỏi prompt, không có cue card rỗng", () => {
+		const html = renderSpeaking({
+			prompt: "<p>Do you work or are you a student?</p>",
+		});
+		expect(html).toContain("Do you work or are you a student?");
+		expect(html).not.toContain("Describe");
+		expect(html).not.toContain("You should say:");
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("intro của giáo viên hiện dưới eyebrow", () => {
+		const html = renderSpeaking({
+			intro: "<p>Hãy ghi âm trong một lần, không cắt ghép.</p>",
+			cueTopic: "a book",
+		});
+		expect(html).toContain("Hãy ghi âm trong một lần");
+		expect(html.indexOf("Hãy ghi âm")).toBeLessThan(html.indexOf("Describe"));
+	});
+
+	it("hướng dẫn thêm (note) của giáo viên hiện cho Speaking", () => {
+		const html = renderSpeaking({
+			note: "<p>Nói tự nhiên, không đọc giấy.</p>",
+			cueTopic: "a book",
+		});
+		expect(html).toContain("Nói tự nhiên, không đọc giấy.");
+	});
+
+	it("Part 2 không hiện prompt cũ còn sót khi giáo viên đổi part", () => {
+		const html = renderSpeaking({
+			cueTopic: "a place you like to visit",
+			prompt: "<p>Do you work or are you a student?</p>",
+		});
+		expect(html).toContain("Describe a place you like to visit.");
+		expect(html).not.toContain("Do you work or are you a student?");
+	});
+
+	it("Reading không đổi: đề rỗng câu vẫn có empty-state", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts([], "tfng")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("không có câu hỏi tự chấm");
+	});
+});

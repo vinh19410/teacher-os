@@ -6,13 +6,26 @@ import {
 	useChildMatches,
 } from "@tanstack/react-router";
 import type { QuizAttemptSummary } from "@teacher-os/api/contracts";
+import {
+	formatMediaSize,
+	isVideoMediaType,
+} from "@teacher-os/api/lib/quiz-media";
 import { countWords } from "@teacher-os/api/lib/word-count";
+import {
+	Attachment,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentMedia,
+	AttachmentTitle,
+} from "@teacher-os/ui/components/attachment";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
+import { MusicIcon, VideoIcon } from "lucide-react";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import { QuizMediaPlayer } from "@/components/quiz/quiz-media-player";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
 	formatAttemptDuration,
@@ -58,7 +71,8 @@ function AttemptRouteView() {
 }
 
 /**
- * Body màn kết quả — export để unit test cả 2 nhánh (#304, red-team I):
+ * Body màn kết quả — export để unit test các nhánh (#304, red-team I):
+ * Speaking (`skill === "speaking"`, #305) hiện bài nói đã nộp + nghe lại;
  * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
  * giữ nguyên score card + bảng đáp án.
  */
@@ -74,24 +88,69 @@ export function AttemptSummaryBody({
 		summary.submittedAt,
 	);
 	const essay = summary.essay ?? null;
+	const submittedLine = (
+		<p className="text-muted-fg text-sm">
+			Bạn đã nộp bài lúc{" "}
+			<span className="font-medium text-fg">
+				{formatVietnamSubmittedAt(summary.submittedAt)}
+			</span>
+			{duration && (
+				<>
+					{" · hoàn thành trong "}
+					<span className="font-medium text-fg">{duration}</span>
+				</>
+			)}
+			.
+		</p>
+	);
+
+	// Field `skill` optional (server cũ vắng mặt) → rơi về nhánh khác.
+	if (summary.skill === "speaking") {
+		const media = summary.media ?? null;
+		return (
+			<>
+				{submittedLine}
+				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+					Bài nói của bạn
+				</h2>
+				{media ? (
+					<div className="flex flex-col gap-3">
+						<Attachment state="done" className="w-full rounded-md bg-bg">
+							<AttachmentMedia>
+								{isVideoMediaType(media.type) ? (
+									<VideoIcon aria-hidden />
+								) : (
+									<MusicIcon aria-hidden />
+								)}
+							</AttachmentMedia>
+							<AttachmentContent>
+								<AttachmentTitle data-testid="speaking-media-name">
+									{media.name}
+								</AttachmentTitle>
+								<AttachmentDescription>
+									{formatMediaSize(media.size)}
+								</AttachmentDescription>
+							</AttachmentContent>
+						</Attachment>
+						<QuizMediaPlayer media={media} attemptId={attemptId} />
+					</div>
+				) : (
+					<p className="text-muted-fg text-sm">
+						Bài này được nộp khi chưa có file bài nói.
+					</p>
+				)}
+				<p className="mt-3 text-muted-fg text-sm">
+					Giáo viên sẽ chấm bài nói của bạn.
+				</p>
+			</>
+		);
+	}
 
 	if (essay !== null) {
 		const wordCount = countWords(essay);
 		return (
 			<>
-				<p className="text-muted-fg text-sm">
-					Bạn đã nộp bài lúc{" "}
-					<span className="font-medium text-fg">
-						{formatVietnamSubmittedAt(summary.submittedAt)}
-					</span>
-					{duration && (
-						<>
-							{" · hoàn thành trong "}
-							<span className="font-medium text-fg">{duration}</span>
-						</>
-					)}
-					.
-				</p>
+				{submittedLine}
 				<h2 className="mt-6 mb-1 font-display font-semibold text-fg">
 					Bài viết của bạn
 				</h2>
@@ -114,19 +173,7 @@ export function AttemptSummaryBody({
 
 	return (
 		<>
-			<p className="text-muted-fg text-sm">
-				Bạn đã nộp bài lúc{" "}
-				<span className="font-medium text-fg">
-					{formatVietnamSubmittedAt(summary.submittedAt)}
-				</span>
-				{duration && (
-					<>
-						{" · hoàn thành trong "}
-						<span className="font-medium text-fg">{duration}</span>
-					</>
-				)}
-				.
-			</p>
+			{submittedLine}
 			<div className="mt-4">
 				<AttemptScoreCard
 					correctCount={summary.correctCount}

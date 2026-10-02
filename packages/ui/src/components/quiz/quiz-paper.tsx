@@ -38,6 +38,7 @@ export type QuizPaperDetail = Pick<
 	| "audioName"
 	| "imageUrl"
 	| "optionBank"
+	| "note"
 >;
 
 const SKILL_LABELS: Record<string, string> = {
@@ -80,6 +81,16 @@ export function QuizPaper({
 	// cùng namespace với câu hỏi thật nên chỉ render khi đề RỖNG câu (fail
 	// an toàn: dữ liệu vi phạm invariant rơi về empty-state, không đè nhau).
 	const isWritingEssay = skill === "writing" && questions.length === 0;
+	// Speaking (#305) nộp bằng file bài nói ở panel riêng của take screen —
+	// paper chỉ hiển thị đề: intro giáo viên, cue card (Part 2), câu hỏi
+	// `prompt` (Part 1/3), không có empty-state "không có câu hỏi tự chấm".
+	const isSpeaking = skill === "speaking";
+	const cueTopic = detail.cueTopic.trim();
+	const cuePoints = detail.cuePoints
+		.split("\n")
+		.map((point) => point.trim())
+		.filter(Boolean);
+	const hasCueCard = isSpeaking && (cueTopic !== "" || cuePoints.length > 0);
 	const rawImageUrl = detail.imageUrl.trim();
 	const diagramImageUrl =
 		isImageBasedType(skill, typeId) &&
@@ -181,22 +192,40 @@ export function QuizPaper({
 
 			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
 
-			{skill === "speaking" && (
-				<div className="text-sm">
-					<p>Describe {detail.cueTopic.trim() || "the topic"}.</p>
-					<p className="mt-2 font-medium">You should say:</p>
-					<ul className="ml-5 list-disc text-muted-fg">
-						{detail.cuePoints
-							.split("\n")
-							.filter(Boolean)
-							.map((point) => (
-								<li key={point}>{point}</li>
-							))}
-					</ul>
+			{/* Speaking (#305): hướng dẫn của giáo viên ngay dưới eyebrow — ô
+			 * "Hướng dẫn thêm" (`note`) của composer; `intro` cho dữ liệu cũ. */}
+			{isSpeaking &&
+				[detail.intro, detail.note ?? ""]
+					.filter((text) => !isEmptyRichText(text))
+					.map((text) => (
+						<RichTextBody
+							key={text}
+							text={text}
+							className="text-muted-fg text-sm"
+						/>
+					))}
+
+			{/* Cue card chỉ khi đề có topic (Part 2) — Part 1/3 là câu hỏi
+			 * trong `prompt`, không còn cue card rỗng "the topic". */}
+			{hasCueCard && (
+				<div className="rounded-md border border-line bg-surface/50 p-4 text-sm">
+					{cueTopic !== "" && <p>Describe {cueTopic}.</p>}
+					{cuePoints.length > 0 && (
+						<>
+							<p className="mt-2 font-medium">You should say:</p>
+							<ul className="ml-5 list-disc text-muted-fg">
+								{cuePoints.map((point) => (
+									<li key={point}>{point}</li>
+								))}
+							</ul>
+						</>
+					)}
 				</div>
 			)}
 
-			{!isAuto && skill !== "speaking" && !isEmptyRichText(detail.prompt) && (
+			{/* Part 2 có cue card thì không hiện `prompt`: composer ẩn ô câu hỏi
+			 * ở Part 2 nhưng vẫn lưu prompt cũ khi giáo viên đổi part. */}
+			{!isAuto && !hasCueCard && !isEmptyRichText(detail.prompt) && (
 				<RichTextBody text={detail.prompt} className="text-sm leading-[1.55]" />
 			)}
 
@@ -267,7 +296,7 @@ export function QuizPaper({
 				})}
 			</div>
 
-			{questions.length === 0 && !isWritingEssay && (
+			{questions.length === 0 && !isWritingEssay && !isSpeaking && (
 				<p className="text-muted-fg text-sm" role="note">
 					Đề này không có câu hỏi tự chấm — liên hệ giáo viên để biết thêm hướng
 					dẫn nộp bài.

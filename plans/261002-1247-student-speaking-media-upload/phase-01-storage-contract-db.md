@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "R2 + MediaStore + contract + DB"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []
@@ -22,7 +22,7 @@ Server có chỗ lưu file bài nói (R2 ở production/dev, đĩa ở e2e) qua 
 
 ## Files to Create / Modify
 - Modify: `packages/infra/alchemy.run.ts`
-- Create: `apps/server/src/lib/media-store.ts`
+- Create: `apps/server/src/lib/media-store.ts` (interface thuần, không type Cloudflare), `apps/server/src/lib/r2-media-store.ts` (adapter R2, chỉ `index.ts` import) <!-- Updated: Red Team 2026-10-02 -->
 - Modify: `apps/server/src/app.ts`, `apps/server/src/routes/student.ts` (chỉ phần interface deps), `apps/server/src/index.ts`
 - Create: `apps/e2e/src/fs-media-store.ts`
 - Modify: `apps/e2e/src/boot.ts`
@@ -40,7 +40,8 @@ Server có chỗ lưu file bài nói (R2 ở production/dev, đĩa ở e2e) qua 
 - [ ] `pnpm --filter @teacher-os/infra check-types` phải xanh. Nếu `Cloudflare.R2` không tồn tại ở `alchemy@2.0.0-beta.72` thì **dừng lại hỏi user** có nâng alchemy không. Không tự nâng.
 
 ### 1.2 `MediaStore` (server)
-- [ ] `apps/server/src/lib/media-store.ts`:
+<!-- Updated: Red Team 2026-10-02 - tách interface/adapter, đếm byte thật, runInBackground -->
+- [ ] `apps/server/src/lib/media-store.ts` chỉ chứa interface và lỗi dùng chung, không tham chiếu `R2Bucket` hay global Cloudflare nào: e2e (`tsconfig types: ["node"]`) type-check `server/app` → `app.ts` → file này. Export thêm `class MediaSizeMismatchError extends Error`. `app.ts` re-export `type MediaStore` để e2e import qua `server/app` (package `server` chỉ export `.`, `./app`, `./session`).
   ```ts
   export interface StoredMedia {
     body: ReadableStream<Uint8Array>;
@@ -55,13 +56,13 @@ Server có chỗ lưu file bài nói (R2 ở production/dev, đĩa ở e2e) qua 
   }
   export function createR2MediaStore(bucket: R2Bucket): MediaStore
   ```
-  `createR2MediaStore` gọi `bucket.put(key, body, { httpMetadata: { contentType } })`. R2 nhận được stream của request vì request có Content-Length cố định. `get` map `R2ObjectBody` → `{ body, contentType: httpMetadata?.contentType ?? "application/octet-stream", size }`. `delete` gọi `bucket.delete(key)`.
-- [ ] `AppDeps` và `StudentRouteDeps` thêm `getMediaStore?(): MediaStore`, kèm docblock giải thích vì sao optional: các test hiện có không cần storage, và thiếu store thì route media trả 503. `buildApp` truyền xuống `studentRoutes`.
-- [ ] `index.ts`: `getMediaStore: () => (mediaStore ??= createR2MediaStore(env.MEDIA))`, lazy và memoized giống `db`.
+- [ ] `apps/server/src/lib/r2-media-store.ts`: `createR2MediaStore(bucket: R2Bucket): MediaStore`. `put` gọi `bucket.put(key, body.pipeThrough(new FixedLengthStream(size)), { httpMetadata: { contentType } })`. `FixedLengthStream` là API native của Workers: R2 nhận stream có độ dài biết trước, và byte thật lệch `size` thì stream lỗi; adapter map lỗi đó thành `MediaSizeMismatchError`. `get` map `R2ObjectBody` → `{ body, contentType: httpMetadata?.contentType ?? "application/octet-stream", size }`. `delete` gọi `bucket.delete(key)`.
+- [ ] `AppDeps` và `StudentRouteDeps` thêm `getMediaStore?(): MediaStore | undefined` và `runInBackground?(promise: Promise<unknown>): void`, kèm docblock giải thích vì sao optional: các test hiện có không cần storage, và thiếu store thì route media trả 503. Thiếu `runInBackground` thì handler tự `void promise.catch(log)`. `buildApp` truyền xuống `studentRoutes`.
+- [ ] `index.ts`: `getMediaStore: () => env.MEDIA ? (mediaStore ??= createR2MediaStore(env.MEDIA)) : undefined` (binding thiếu → 503, không phải TypeError 500), lazy và memoized giống `db`. `runInBackground: (p) => waitUntil(p)` theo precedent auth.
 
 ### 1.3 Store cho e2e
 - [ ] `apps/e2e/src/fs-media-store.ts`: `createFsMediaStore(dir: string): MediaStore`.
-  - `put` ghi stream xuống `join(dir, encodeURIComponent(key))` bằng `Readable.fromWeb` + `pipeline`, và ghi sidecar `.json` chứa `{ contentType, size }`.
+  - `put` ghi stream xuống `join(dir, encodeURIComponent(key))` bằng `Readable.fromWeb` + `pipeline`, đếm byte trong lúc ghi; lệch `size` thì xoá file dở và ném `MediaSizeMismatchError`. Ghi sidecar `.json` chứa `{ contentType, size }` sau khi ghi xong. Type của stream Node/web khác workers-types nên cast tại biên adapter. <!-- Updated: Red Team 2026-10-02 -->
   - `get` đọc sidecar, trả `Readable.toWeb(createReadStream(...))`. Không có file thì trả null.
   - `delete` dùng `rm(..., { force: true })` cho cả hai file.
 - [ ] `boot.ts`: tạo thư mục `mkdtemp(join(os.tmpdir(), "teacher-os-e2e-media-"))` lúc boot và truyền `getMediaStore: () => store` vào `buildApp`. Comment rõ: đây là adapter lưu trữ thật cho runtime Node, giống libsql thay D1.
@@ -84,21 +85,22 @@ Server có chỗ lưu file bài nói (R2 ở production/dev, đĩa ở e2e) qua 
   - `QUIZ_MEDIA_TYPES: Readonly<Record<string, string>>` là map MIME → nhãn: `audio/mpeg: "MP3"`, `audio/mp4` và `audio/x-m4a: "M4A"`, `audio/aac: "AAC"`, `audio/wav`, `audio/x-wav` và `audio/wave: "WAV"`, `audio/webm: "WEBM"`, `audio/ogg: "OGG"`, `video/mp4: "MP4"`, `video/quicktime: "MOV"`, `video/webm: "WEBM"`.
   - `quizAttemptMediaSchema = z.object({ name: z.string(), type: z.string(), size: z.number().int().min(0), uploadedAt: z.string() }).strict()` và type `QuizAttemptMedia`.
   - `studentQuizDetailSchema.attempt` thêm `media: quizAttemptMediaSchema.nullable().optional()`. Optional để client mới chạy được với server cũ.
-  - `quizAttemptSummarySchema` thêm `skill: z.string()` và `media: quizAttemptMediaSchema.nullable()`. `quizAttemptDetailSchema` kế thừa hai field này qua `.omit({ items })`, nên handler detail cũng phải set chúng.
+  - `quizAttemptSummarySchema` thêm `skill: z.string().optional()` và `media: quizAttemptMediaSchema.nullable().optional()`, optional theo precedent `essay` của #304 (client mới + server cũ không throw). `quizAttemptDetailSchema` kế thừa hai field này qua `.omit({ items })`, nên handler detail cũng set chúng. <!-- Updated: Red Team 2026-10-02 -->
 - [ ] `packages/api/src/lib/quiz-media.ts`:
   - `resolveQuizMediaType(fileName: string, browserType: string): string | null`. Trả `browserType` (lowercase, bỏ `;params`) nếu nằm trong `QUIZ_MEDIA_TYPES`. Nếu không thì tra theo đuôi file: `mp3 → audio/mpeg`, `m4a → audio/mp4`, `aac → audio/aac`, `wav → audio/wav`, `weba → audio/webm`, `ogg`/`oga → audio/ogg`, `mp4 → video/mp4`, `mov → video/quicktime`, `webm → video/webm`. Không khớp thì trả null.
   - `isVideoMediaType(type: string): boolean`.
   - `formatMediaSize(bytes: number): string`, ví dụ "820 KB" hoặc "12,4 MB" (dấu phẩy thập phân theo vi-VN).
-  - `sanitizeMediaFileName(raw: string): string | null`. Cắt mọi thứ trước `/` hoặc `\` cuối cùng, bỏ ký tự điều khiển `\p{Cc}`, trim. Rỗng hoặc dài hơn `QUIZ_MEDIA_NAME_MAX` thì trả null. Server và client dùng chung hàm này.
+  - `sanitizeMediaFileName(raw: string): string | null`. Cắt mọi thứ trước `/` hoặc `\` cuối cùng, bỏ ký tự điều khiển `\p{Cc}` và ký tự định dạng `\p{Cf}` (bidi override như U+202E, zero-width), trim. <!-- Updated: Red Team 2026-10-02 --> Rỗng hoặc dài hơn `QUIZ_MEDIA_NAME_MAX` thì trả null. Server và client dùng chung hàm này.
 - [ ] `apps/student/test/quiz-media.test.ts`:
   - `resolveQuizMediaType`: `File.type` rỗng với `.m4a` → `audio/mp4`; `audio/x-m4a` giữ nguyên; `video/quicktime`; `.MOV` viết hoa; `application/pdf` + `.pdf` → null; `text/html` + `.mp3` → `audio/mpeg` (tên file thắng MIME lạ, server vẫn kiểm lại).
   - `formatMediaSize`: 0, 1023, 1.5MB, 50MB.
-  - `sanitizeMediaFileName`: path `C:\fakepath\a.mp3` → `a.mp3`; `../../x.mp3` → `x.mp3`; chuỗi có `\u0000`; chuỗi toàn khoảng trắng → null; 201 ký tự → null.
+  - `sanitizeMediaFileName`: path `C:\fakepath\a.mp3` → `a.mp3`; `../../x.mp3` → `x.mp3`; chuỗi có `\u0000`; chuỗi có `\u202E` bị bỏ ký tự đó; chuỗi toàn khoảng trắng → null; 201 ký tự → null.
 
 ## Verification
 - `pnpm --filter @teacher-os/infra check-types`: xanh.
 - `pnpm --filter student test -- quiz-media`: xanh.
-- `pnpm check-types`: xanh. Hai field `skill` và `media` mới trong summary sẽ làm lỗi type ở các fixture đang dựng `QuizAttemptSummary`/`QuizAttemptDetail` (student test, server). Sửa ngay trong phase này bằng `skill: "reading", media: null`. Nếu handler server chưa set field thì tạm set `skill: header.skill`, `media: null`; Phase 2 sẽ hoàn thiện.
+- `pnpm check-types`: xanh, gồm cả `pnpm --filter e2e check-types` (bắt lỗi nếu `R2Bucket` lọt vào module e2e type-check). Hai field mới là optional nên fixture cũ không vỡ. Handler server set `skill: loaded.skill`, `media: null` ngay ở phase này; Phase 2 hoàn thiện `media`. <!-- Updated: Red Team 2026-10-02 -->
+- Thủ công: `pnpm dev` boot được với binding `MEDIA` (alchemy dev tạo bucket local). Nếu fail vì tài khoản chưa bật R2, ghi bước bật R2 cho dev vào runbook ở Phase 4.
 
 ## Risks
 - `alchemy dev` cần tạo bucket local ở lần chạy đầu. Chạy `pnpm dev` một lần để chắc dev stack (port 8000/8001/8003) vẫn boot.
