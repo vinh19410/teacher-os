@@ -100,6 +100,7 @@ export function MediaDropzone({
 		// biome-ignore lint/a11y/useSemanticElements: vùng thả file chứa nhãn và nút giả; <button> không nhận drop + nội dung khối.
 		<div
 			role="button"
+			data-slot="media-dropzone"
 			tabIndex={disabled ? -1 : 0}
 			aria-disabled={disabled || undefined}
 			aria-label="Kéo thả file vào đây hoặc chọn file"

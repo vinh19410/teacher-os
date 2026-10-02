@@ -302,6 +302,7 @@ export async function deleteQuizMedia(attemptId: string): Promise<void> {
  */
 export async function fetchQuizMediaObjectUrl(
 	attemptId: string,
+	signal?: AbortSignal,
 ): Promise<string> {
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/attempts/${encodeURIComponent(attemptId)}/media`,
@@ -309,6 +310,7 @@ export async function fetchQuizMediaObjectUrl(
 			method: "GET",
 			credentials: "include",
 			headers: getStudentHeaders({ Accept: "*/*" }),
+			signal,
 		},
 	);
 	if (!res.ok) {
@@ -325,7 +327,8 @@ export async function fetchQuizMediaObjectUrl(
 	if (!Object.hasOwn(QUIZ_MEDIA_TYPES, type)) {
 		throw new HttpError(res.status, "Unexpected media content type");
 	}
-	const blob = new Blob([await res.arrayBuffer()], { type });
+	// Blob bọc blob gốc (không copy byte) chỉ để ép type đã kiểm.
+	const blob = new Blob([await res.blob()], { type });
 	return URL.createObjectURL(blob);
 }
 
@@ -333,16 +336,18 @@ export async function fetchQuizMediaObjectUrl(
  * Ghi media mới vào cache take payload — cache là nguồn sự thật duy nhất
  * của take screen (không giữ bản sao state riêng dễ lệch server).
  */
-export function setQuizDetailMedia(
+export async function setQuizDetailMedia(
 	queryClient: QueryClient,
 	assignmentId: string,
 	media: QuizAttemptMedia | null,
-): void {
-	queryClient.setQueryData<StudentQuizDetail>(
-		quizDetailQueryOptions(assignmentId).queryKey,
-		(detail) =>
-			detail?.attempt
-				? { ...detail, attempt: { ...detail.attempt, media } }
-				: detail,
+): Promise<void> {
+	const { queryKey } = quizDetailQueryOptions(assignmentId);
+	// Refetch đang bay (sau hủy/conflict) có thể trả về sau và đè media mới
+	// bằng dữ liệu cũ — hủy nó trước khi ghi.
+	await queryClient.cancelQueries({ queryKey });
+	queryClient.setQueryData<StudentQuizDetail>(queryKey, (detail) =>
+		detail?.attempt
+			? { ...detail, attempt: { ...detail.attempt, media } }
+			: detail,
 	);
 }

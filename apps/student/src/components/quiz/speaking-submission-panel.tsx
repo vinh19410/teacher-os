@@ -127,11 +127,12 @@ export function SpeakingSubmissionView({
 	onReplace: () => void;
 	onDelete: () => void;
 }) {
-	let body: React.ReactNode;
-	if (state.kind === "uploading" || state.kind === "processing") {
+	const uploading = state.kind === "uploading" || state.kind === "processing";
+	let uploadBlock: React.ReactNode = null;
+	if (uploading) {
 		const percent =
 			state.kind === "uploading" ? Math.round(state.progress * 100) : 100;
-		body = (
+		uploadBlock = (
 			<Attachment
 				state={state.kind}
 				className="w-full rounded-md border-line bg-bg"
@@ -169,7 +170,7 @@ export function SpeakingSubmissionView({
 			</Attachment>
 		);
 	} else if (state.kind === "error") {
-		body = (
+		uploadBlock = (
 			<Attachment state="error" className="w-full rounded-md bg-bg">
 				<AttachmentMedia>
 					<AlertTriangleIcon aria-hidden />
@@ -181,14 +182,16 @@ export function SpeakingSubmissionView({
 					</AttachmentDescription>
 				</AttachmentContent>
 				<AttachmentActions className="gap-1">
-					<AttachmentAction
-						size="sm"
-						variant="outline"
-						onClick={onRetry}
-						disabled={disabled}
-					>
-						Thử lại
-					</AttachmentAction>
+					{state.retryable && (
+						<AttachmentAction
+							size="sm"
+							variant="outline"
+							onClick={onRetry}
+							disabled={disabled}
+						>
+							Thử lại
+						</AttachmentAction>
+					)}
 					<AttachmentAction
 						size="sm"
 						variant="ghost"
@@ -200,8 +203,13 @@ export function SpeakingSubmissionView({
 				</AttachmentActions>
 			</Attachment>
 		);
-	} else if (media !== null) {
-		body = (
+	}
+
+	// File đã lưu luôn hiện (kể cả khi lần thay file vừa lỗi) — footer và nút
+	// Nộp dựa trên file này, học viên phải thấy được thứ mình sẽ nộp. Chỉ ẩn
+	// trong lúc đang tải file thay thế.
+	const mediaBlock =
+		media !== null && !uploading ? (
 			<div className="flex flex-col gap-3">
 				<Attachment state="done" className="w-full rounded-md bg-bg">
 					<AttachmentMedia>
@@ -223,6 +231,7 @@ export function SpeakingSubmissionView({
 							variant="outline"
 							onClick={onReplace}
 							disabled={disabled}
+							data-focus-target="replace"
 						>
 							Thay file
 						</AttachmentAction>
@@ -243,9 +252,10 @@ export function SpeakingSubmissionView({
 					localUrl={localUrl}
 				/>
 			</div>
-		);
-	} else {
-		body = (
+		) : null;
+
+	const dropzone =
+		media === null && state.kind === "idle" ? (
 			<MediaDropzone
 				accept={MEDIA_ACCEPT}
 				maxBytes={QUIZ_MEDIA_MAX_BYTES}
@@ -254,8 +264,15 @@ export function SpeakingSubmissionView({
 				onReject={onReject}
 				hint="Audio hoặc video · tối đa 50 MB"
 			/>
-		);
-	}
+		) : null;
+
+	const body = (
+		<div className="flex flex-col gap-3">
+			{uploadBlock}
+			{mediaBlock}
+			{dropzone}
+		</div>
+	);
 
 	return (
 		<section aria-labelledby="speaking-submission-heading" className="mt-2">
@@ -313,12 +330,27 @@ export function SpeakingSubmissionPanel({
 	} | null>(null);
 	const controllerRef = useRef<AbortController | null>(null);
 	const replaceInputRef = useRef<HTMLInputElement>(null);
+	const panelRef = useRef<HTMLDivElement>(null);
+	// Phần tử nhận focus sau lần render kế tiếp — phần tử đang focus (dropzone,
+	// nút Xoá) bị unmount khi đổi trạng thái, không trả focus thì về <body>.
+	const pendingFocus = useRef<string | null>(null);
 	const busy = state.kind === "uploading" || state.kind === "processing";
+	// Handler beforeunload đọc ref, không đọc state: redirect (409/401) chạy
+	// trong cùng call stack với setState nên listener cũ vẫn còn gắn — phải
+	// tắt đồng bộ trước khi điều hướng, không thì trình duyệt hỏi "Leave
+	// site?" và học viên bấm Ở lại sẽ kẹt.
+	const busyRef = useRef(false);
+	busyRef.current = busy;
 
 	const refetch = () =>
 		void queryClient.invalidateQueries({
 			queryKey: quizDetailQueryOptions(assignmentId).queryKey,
 		});
+	const leaveFor = (navigate: () => void) => {
+		busyRef.current = false;
+		setState({ kind: "idle" });
+		navigate();
+	};
 
 	useEffect(() => {
 		onUploadingChange(busy);
@@ -337,14 +369,48 @@ export function SpeakingSubmissionPanel({
 	}, [preview]);
 
 	useEffect(() => {
-		if (!busy) return;
 		const handler = (event: BeforeUnloadEvent) => {
+			if (!busyRef.current) return;
 			event.preventDefault();
 			event.returnValue = "";
 		};
 		window.addEventListener("beforeunload", handler);
 		return () => window.removeEventListener("beforeunload", handler);
-	}, [busy]);
+	}, []);
+
+	// Thả file ra ngoài dropzone (đã có file, đang lỗi…) mặc định làm trình
+	// duyệt mở file và rời bài làm — chặn ở window, nhắc dùng vùng tải lên.
+	useEffect(() => {
+		const hasFiles = (event: DragEvent) =>
+			Array.from(event.dataTransfer?.types ?? []).includes("Files");
+		const onDragOver = (event: DragEvent) => {
+			if (hasFiles(event)) event.preventDefault();
+		};
+		const onDrop = (event: DragEvent) => {
+			if (!hasFiles(event) || event.defaultPrevented) return;
+			event.preventDefault();
+			setNotice(
+				'Thả file vào vùng tải lên, hoặc dùng nút "Thay file" để đổi file.',
+			);
+		};
+		window.addEventListener("dragover", onDragOver);
+		window.addEventListener("drop", onDrop);
+		return () => {
+			window.removeEventListener("dragover", onDragOver);
+			window.removeEventListener("drop", onDrop);
+		};
+	}, []);
+
+	useEffect(() => {
+		if (pendingFocus.current === null) return;
+		const target = panelRef.current?.querySelector<HTMLElement>(
+			pendingFocus.current,
+		);
+		if (target) {
+			target.focus();
+			pendingFocus.current = null;
+		}
+	});
 
 	const startUpload = (file: File, type: string) => {
 		const controller = new AbortController();
@@ -355,12 +421,13 @@ export function SpeakingSubmissionPanel({
 			signal: controller.signal,
 			onProgress: (fraction) => setState(progressState(file, type, fraction)),
 		})
-			.then((uploaded) => {
-				setQuizDetailMedia(queryClient, assignmentId, uploaded);
+			.then(async (uploaded) => {
+				await setQuizDetailMedia(queryClient, assignmentId, uploaded);
 				setPreview({
 					url: URL.createObjectURL(file),
 					uploadedAt: uploaded.uploadedAt,
 				});
+				pendingFocus.current = '[data-focus-target="replace"]';
 				setState({ kind: "idle" });
 				setAnnouncement(`Đã tải lên ${uploaded.name}`);
 			})
@@ -372,11 +439,10 @@ export function SpeakingSubmissionPanel({
 						refetch();
 						return;
 					case "submitted":
-						onAlreadySubmitted();
+						leaveFor(onAlreadySubmitted);
 						return;
 					case "reauth":
-						setState({ kind: "idle" });
-						onAuthError();
+						leaveFor(onAuthError);
 						return;
 					case "notice":
 						setState({ kind: "idle" });
@@ -384,7 +450,13 @@ export function SpeakingSubmissionPanel({
 						refetch();
 						return;
 					case "show":
-						setState({ kind: "error", file, type, message: failure.message });
+						setState({
+							kind: "error",
+							file,
+							type,
+							message: failure.message,
+							retryable: failure.retryable,
+						});
 						if (failure.refetch) refetch();
 				}
 			})
@@ -401,9 +473,11 @@ export function SpeakingSubmissionPanel({
 		setDeleting(true);
 		try {
 			await deleteQuizMedia(attemptId);
-			setQuizDetailMedia(queryClient, assignmentId, null);
+			await setQuizDetailMedia(queryClient, assignmentId, null);
 			setNotice(null);
 			setConfirmDelete(false);
+			pendingFocus.current = '[data-slot="media-dropzone"]';
+			setAnnouncement("Đã xoá file bài nói");
 		} catch (error) {
 			setConfirmDelete(false);
 			if (isHttpError(error) && error.status === 401) {
@@ -431,7 +505,7 @@ export function SpeakingSubmissionPanel({
 			: null;
 
 	return (
-		<>
+		<div ref={panelRef}>
 			<SpeakingSubmissionView
 				attemptId={attemptId}
 				media={media}
@@ -488,6 +562,6 @@ export function SpeakingSubmissionPanel({
 				onConfirm={() => void handleDelete()}
 				onCancel={() => setConfirmDelete(false)}
 			/>
-		</>
+		</div>
 	);
 }

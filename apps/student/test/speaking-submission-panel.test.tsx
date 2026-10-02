@@ -87,16 +87,46 @@ describe("SpeakingSubmissionView — các trạng thái panel nộp bài", () =>
 		expect(html).not.toContain(">Hủy<");
 	});
 
-	it("lỗi upload: thông điệp + Thử lại + Chọn file khác", () => {
+	it("lỗi mạng: thông điệp + Thử lại + Chọn file khác", () => {
+		const html = renderView({
+			kind: "error",
+			file,
+			type: "audio/mp4",
+			message: "Không tải lên được — kiểm tra kết nối.",
+			retryable: true,
+		});
+		expect(html).toContain("Không tải lên được — kiểm tra kết nối.");
+		expect(html).toContain("Thử lại");
+		expect(html).toContain("Chọn file khác");
+	});
+
+	it("lỗi không thử lại được (413): chỉ còn Chọn file khác", () => {
 		const html = renderView({
 			kind: "error",
 			file,
 			type: "audio/mp4",
 			message: "File vượt quá 50 MB.",
+			retryable: false,
 		});
 		expect(html).toContain("File vượt quá 50 MB.");
-		expect(html).toContain("Thử lại");
+		expect(html).not.toContain("Thử lại");
 		expect(html).toContain("Chọn file khác");
+	});
+
+	it("thay file lỗi: file đã lưu vẫn hiện để học viên thấy thứ sẽ nộp", () => {
+		const html = renderView(
+			{
+				kind: "error",
+				file,
+				type: "audio/mp4",
+				message: "File vượt quá 50 MB.",
+				retryable: false,
+			},
+			{ media: { ...media, name: "saved.m4a" } },
+		);
+		expect(html).toContain("File vượt quá 50 MB.");
+		expect(html).toContain("saved.m4a");
+		expect(html).toContain("Thay file");
 	});
 
 	it("đã có file: tên, dung lượng, Thay file, Xoá và nút nghe lại", () => {

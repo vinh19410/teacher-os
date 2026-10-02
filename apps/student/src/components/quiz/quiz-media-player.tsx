@@ -2,7 +2,8 @@ import type { QuizAttemptMedia } from "@teacher-os/api/contracts";
 import { isVideoMediaType } from "@teacher-os/api/lib/quiz-media";
 import { Button } from "@teacher-os/ui/components/button";
 import { Loader2Icon, PlayIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { isHttpError, reauth } from "@/lib/query-client";
 import { fetchQuizMediaObjectUrl } from "@/lib/repos/quiz";
 
 /**
@@ -27,6 +28,13 @@ export function QuizMediaPlayer({
 	const [playbackError, setPlaybackError] = useState(false);
 	const isVideo = isVideoMediaType(media.type);
 
+	// Tải dở khi unmount (Thay file/Xoá đổi key, rời trang trong app): hủy
+	// request và không tạo URL mới — blob tới sau unmount sẽ không ai revoke.
+	const loadController = useRef<AbortController | null>(null);
+	useEffect(() => {
+		return () => loadController.current?.abort();
+	}, []);
+
 	useEffect(() => {
 		return () => {
 			if (fetchedUrl) URL.revokeObjectURL(fetchedUrl);
@@ -36,14 +44,29 @@ export function QuizMediaPlayer({
 	const url = localUrl ?? fetchedUrl;
 
 	const load = async () => {
+		const controller = new AbortController();
+		loadController.current = controller;
 		setLoading(true);
 		setLoadError(false);
 		try {
-			setFetchedUrl(await fetchQuizMediaObjectUrl(attemptId));
-		} catch {
+			const objectUrl = await fetchQuizMediaObjectUrl(
+				attemptId,
+				controller.signal,
+			);
+			if (controller.signal.aborted) {
+				URL.revokeObjectURL(objectUrl);
+				return;
+			}
+			setFetchedUrl(objectUrl);
+		} catch (error) {
+			if (controller.signal.aborted) return;
+			if (isHttpError(error) && error.status === 401) {
+				reauth();
+				return;
+			}
 			setLoadError(true);
 		} finally {
-			setLoading(false);
+			if (!controller.signal.aborted) setLoading(false);
 		}
 	};
 
@@ -81,7 +104,7 @@ export function QuizMediaPlayer({
 					controls
 					playsInline
 					preload="metadata"
-					aria-label="Bài nói đã nộp"
+					aria-label="Bản ghi bài nói"
 					onError={() => setPlaybackError(true)}
 					className="max-h-80 w-full rounded-md border border-line bg-fg/5"
 				/>
@@ -91,7 +114,7 @@ export function QuizMediaPlayer({
 					src={url}
 					controls
 					preload="metadata"
-					aria-label="Bài nói đã nộp"
+					aria-label="Bản ghi bài nói"
 					onError={() => setPlaybackError(true)}
 					className="w-full"
 				/>

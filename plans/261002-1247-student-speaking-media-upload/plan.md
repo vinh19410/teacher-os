@@ -89,10 +89,10 @@ Plan này làm màn nộp bài Speaking đầy đủ cho học viên:
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [R2 + MediaStore + contract + DB](./phase-01-storage-contract-db.md) | Pending |
-| 2 | [Endpoints media: upload / xoá / phát + chặn nộp rỗng](./phase-02-media-endpoints.md) | Pending |
-| 3 | [UI màn nộp bài Speaking: đề, hướng dẫn, dropzone, player](./phase-03-speaking-take-ui.md) | Pending |
-| 4 | [Màn kết quả Speaking + e2e + gate cuối](./phase-04-summary-e2e-gates.md) | Pending |
+| 1 | [R2 + MediaStore + contract + DB](./phase-01-storage-contract-db.md) | Done |
+| 2 | [Endpoints media: upload / xoá / phát + chặn nộp rỗng](./phase-02-media-endpoints.md) | Done |
+| 3 | [UI màn nộp bài Speaking: đề, hướng dẫn, dropzone, player](./phase-03-speaking-take-ui.md) | Done |
+| 4 | [Màn kết quả Speaking + e2e + gate cuối](./phase-04-summary-e2e-gates.md) | Done |
 
 Chạy tuần tự 1 → 2 → 3 → 4, sau khi #304 đã merge vào `develop`.
 
@@ -155,6 +155,26 @@ Chạy tuần tự 1 → 2 → 3 → 4, sau khi #304 đã merge vào `develop`.
 
 ### Whole-Plan Consistency Sweep
 - `plan.md` và 4 phase thống nhất ở các điểm: 50MB / `QUIZ_MEDIA_MAX_BYTES`; 1 file và 5 cột `media_*`; mã lỗi `ATTEMPT_SUBMITTED` / `MEDIA_CONFLICT` / `MEDIA_REQUIRED`; summary thêm `skill` + `media`; migration `0032`; phát lại bằng blob. Không còn mâu thuẫn.
+
+## Implementation Notes (2026-10-02)
+
+Lệch so với phase file, kèm lý do:
+- **Test media server** đặt ở file riêng `apps/server/src/routes/student-quiz-media.test.ts` (seed + store Map riêng) thay vì mở rộng `student-quiz.test.ts` (đã hơn 1.000 dòng). Ca 401 cho PUT/DELETE/GET media cũng nằm ở file mới.
+- **Test UI** không mock tương tác DOM: app student chạy vitest môi trường `node` với `renderToStaticMarkup`, không có testing-library, và repo không thêm dependency. Logic thuần (trạng thái tiến trình, ánh xạ lỗi, validate) có unit test; markup từng trạng thái panel có test tĩnh; tương tác thật (kéo-thả, Thay file, Xoá, Hủy) phủ bằng e2e.
+- **Đếm byte thật** dùng chung `enforceDeclaredSize` (TransformStream) cho cả adapter R2, fs (e2e) và Map (test); adapter R2 nối thêm `FixedLengthStream`. Không map lỗi theo message của runtime.
+- **CORP `same-site`** set bằng middleware riêng cho path media, đăng ký trước `secureHeaders` trong `app.ts`: test xác nhận `secureHeaders` ghi đè header set trong handler.
+- **Lý do từ chối file rỗng** tách thành `empty` (thông điệp "File rỗng") thay vì gộp vào `size`.
+- **PUT/DELETE** trên `/attempts/*` chỉ kiểm Origin (route media là route duy nhất dùng hai method này); POST/PATCH giữ guard JSON + bodyLimit, có test.
+- **Chưa xác minh `alchemy dev` local**: port 8000/8001/8003 đang bị dev stack của phiên khác chiếm (`strictPort`). Ghi vào bước kiểm tra của người review.
+- `ak plan update --issue` lỗi (CLI index của `ak` không chạy); liên kết plan ↔ issue nằm ở comment issue #305.
+
+### Code review (2026-10-02)
+- Hai reviewer độc lập (server, client): 0 Critical, 5 Important, 11 Minor; đã sửa toàn bộ trừ 2 mục ghi dưới.
+- **Hướng dẫn của giáo viên lấy từ `note` (user chốt):** composer Speaking chỉ có ô "Hướng dẫn thêm" (`note`), không có ô `intro`. Take payload gửi `note` **chỉ với đề Speaking** (không có đáp án nên không lộ); Reading/Listening/Writing vẫn giữ kín `note` tới sau khi nộp. `intro` vẫn render cho dữ liệu cũ. Thay cho KD11 (intro).
+- Part 2 có cue card thì không hiện `prompt` (composer ẩn ô câu hỏi ở Part 2 nhưng còn lưu prompt cũ khi đổi part).
+- Guard: chỉ PUT/DELETE đúng path media bỏ qua JSON + bodyLimit (đúng red-team #8). DELETE song song idempotent. `filename*` theo RFC 8187.
+- Client: `busyRef` chặn hộp "Leave site?" trên redirect 409/401; `useBlocker` hỏi trước khi rời take screen bằng điều hướng trong app khi đang tải; lỗi thay file vẫn hiện file đã lưu, ẩn "Thử lại" với lỗi không thử lại được; validate tên file ở client khớp server; thả file ra ngoài vùng tải không làm trình duyệt rời trang; trả focus sau upload/xoá; `cancelQueries` trước khi ghi cache; player hủy tải khi unmount và xử lý 401.
+- Không làm: unit test `createR2MediaStore` (cần `FixedLengthStream` của Workers, Node không có) và thả file lên card media để thay (đã có nút "Thay file", thả ngoài vùng được chặn kèm hướng dẫn).
 
 ## Red Team Review
 

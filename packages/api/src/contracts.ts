@@ -1770,6 +1770,10 @@ export const studentQuizDetailSchema = z
 		audioName: z.string(),
 		imageUrl: z.string(),
 		optionBank: z.array(z.string()),
+		/** "Hướng dẫn thêm" của giáo viên — CHỈ có với đề Speaking (#305):
+		 * đề Speaking không có answer key nên note là hướng dẫn cho học viên;
+		 * đề tự chấm vẫn giữ kín note tới sau khi nộp (RT#6). */
+		note: z.string().optional(),
 		questions: z.array(studentQuizQuestionSchema),
 		attempt: z
 			.object({

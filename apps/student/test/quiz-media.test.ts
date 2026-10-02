@@ -97,7 +97,7 @@ describe("validateQuizMediaFiles — validate dùng chung dropzone và Thay file
 		});
 	});
 
-	it("nhiều file → multiple; không có file → multiple", () => {
+	it("nhiều file → multiple; thả không có file (chữ, link) → none", () => {
 		const a = fileOfSize("a.mp3", "audio/mpeg", 10);
 		expect(validateQuizMediaFiles([a, a], QUIZ_MEDIA_MAX_BYTES)).toEqual({
 			ok: false,
@@ -105,7 +105,7 @@ describe("validateQuizMediaFiles — validate dùng chung dropzone và Thay file
 		});
 		expect(validateQuizMediaFiles([], QUIZ_MEDIA_MAX_BYTES)).toEqual({
 			ok: false,
-			reason: "multiple",
+			reason: "none",
 		});
 	});
 
@@ -121,6 +121,15 @@ describe("validateQuizMediaFiles — validate dùng chung dropzone và Thay file
 			ok: false,
 			reason: "size",
 			file: big,
+		});
+	});
+
+	it("tên file quá 200 ký tự → name (server cũng từ chối)", () => {
+		const long = fileOfSize(`${"a".repeat(201)}.mp3`, "audio/mpeg", 10);
+		expect(validateQuizMediaFiles([long], QUIZ_MEDIA_MAX_BYTES)).toEqual({
+			ok: false,
+			reason: "name",
+			file: long,
 		});
 	});
 

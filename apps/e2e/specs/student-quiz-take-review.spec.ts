@@ -425,9 +425,9 @@ test.beforeAll(async ({ browser }) => {
 				skill: "speaking",
 				part: "part2",
 				type: "place",
-				note: "",
+				// "Hướng dẫn thêm" (note) — ô giáo viên thật sự nhập cho Speaking.
+				note: "<p>Hãy ghi âm trong một lần, không cắt ghép.</p>",
 				passage: "",
-				intro: "<p>Hãy ghi âm trong một lần, không cắt ghép.</p>",
 				cueTopic: "a place you like to visit",
 				cuePoints: "where it is\nwhen you go there\nwhy you like it",
 				questions: [],
@@ -1099,7 +1099,7 @@ test.describe("Student quiz take & review", () => {
 			"speaking-sample.mp3",
 		);
 		await expect(page.getByRole("button", { name: "Xoá" })).toBeVisible();
-		await expect(page.getByLabel("Bài nói đã nộp")).toBeAttached();
+		await expect(page.getByLabel("Bản ghi bài nói")).toBeAttached();
 		await expect(submitButton).toBeEnabled();
 
 		// "Thay file" bằng PDF → bị từ chối ở client, file cũ còn nguyên.
@@ -1178,5 +1178,65 @@ test.describe("Student quiz take & review", () => {
 		await expect(
 			page.getByText("Tải file bài nói lên để nộp bài."),
 		).toBeVisible();
+	});
+
+	test("speaking paper: leaving mid-upload asks first, cancel returns to the dropzone, retry succeeds", async ({
+		page,
+	}) => {
+		await signIn(page);
+		await openPaper(page, titleSpeakingRemove);
+
+		// Giữ PUT lại trong trình duyệt: upload treo ở trạng thái đang tải.
+		let release: () => void = () => undefined;
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		await page.route("**/api/student/attempts/*/media", async (route) => {
+			if (route.request().method() !== "PUT") return route.continue();
+			await held;
+			await route.continue().catch(() => undefined);
+		});
+
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(page.getByRole("progressbar")).toBeVisible();
+		const submitButton = page.getByRole("button", { name: "Nộp bài" });
+		await expect(submitButton).toBeDisabled();
+
+		// "Thoát" trong lúc đang tải → hỏi xác nhận; Ở lại thì vẫn ở take screen.
+		await page.getByRole("link", { name: "Thoát" }).click();
+		const leave = page.getByRole("alertdialog", {
+			name: "Đang tải file bài nói",
+		});
+		await expect(leave).toBeVisible();
+		await leave.getByRole("button", { name: "Ở lại" }).click();
+		await expect(leave).toHaveCount(0);
+		await expect(page.getByRole("progressbar")).toBeVisible();
+
+		// Hủy → về dropzone, chưa có file, vẫn không nộp được.
+		await page.getByRole("button", { name: "Hủy" }).click();
+		await expect(
+			page.getByRole("button", { name: /Kéo thả file/ }),
+		).toBeVisible();
+		await expect(page.getByTestId("speaking-media-name")).toHaveCount(0);
+		await expect(submitButton).toBeDisabled();
+
+		// Bỏ chặn mạng, tải lại → thành công.
+		release();
+		await page.unroute("**/api/student/attempts/*/media");
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"speaking-sample.mp3",
+		);
+		await expect(submitButton).toBeEnabled();
 	});
 });

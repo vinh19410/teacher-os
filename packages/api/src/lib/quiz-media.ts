@@ -74,24 +74,36 @@ export function sanitizeMediaFileName(raw: string): string | null {
 	return cleaned;
 }
 
-export type QuizMediaRejectReason = "type" | "size" | "empty" | "multiple";
+export type QuizMediaRejectReason =
+	| "none"
+	| "multiple"
+	| "type"
+	| "size"
+	| "empty"
+	| "name";
 
 /**
  * Validate file học viên chọn/thả — một đường validate duy nhất cho
- * dropzone và nút "Thay file". Đúng 1 file, MIME resolve được, 0 < size ≤ max.
+ * dropzone và nút "Thay file", khớp các bước kiểm của server: đúng 1 file
+ * (thả chữ/link → `none`), MIME resolve được, 0 < size ≤ max, tên file hợp
+ * lệ sau `sanitizeMediaFileName` (server từ chối tên rỗng hoặc > 200 ký tự).
  */
 export function validateQuizMediaFiles(
 	files: ArrayLike<File>,
 	maxBytes: number,
 ):
 	| { ok: true; file: File; type: string }
-	| { ok: false; reason: "multiple" }
-	| { ok: false; reason: "type" | "size" | "empty"; file: File } {
+	| { ok: false; reason: "none" | "multiple" }
+	| { ok: false; reason: "type" | "size" | "empty" | "name"; file: File } {
+	if (files.length === 0) return { ok: false, reason: "none" };
 	const file = files.length === 1 ? files[0] : undefined;
 	if (!file) return { ok: false, reason: "multiple" };
 	const type = resolveQuizMediaType(file.name, file.type);
 	if (type === null) return { ok: false, reason: "type", file };
 	if (file.size === 0) return { ok: false, reason: "empty", file };
 	if (file.size > maxBytes) return { ok: false, reason: "size", file };
+	if (sanitizeMediaFileName(file.name) === null) {
+		return { ok: false, reason: "name", file };
+	}
 	return { ok: true, file, type };
 }

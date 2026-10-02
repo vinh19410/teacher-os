@@ -109,6 +109,15 @@ function parseTargetScore(
 	return parseEnum(raw, allowed);
 }
 
+/** Percent-encode cho `filename*` (RFC 8187 attr-char): encodeURIComponent
+ * còn để lọt `'()*`. */
+function encodeRfc8187(value: string): string {
+	return encodeURIComponent(value).replace(
+		/['()*]/g,
+		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+	);
+}
+
 /** Cột media_* của attempt → payload wire (không lộ object key). */
 function toQuizAttemptMedia(row: {
 	mediaKey: string | null;
@@ -593,12 +602,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
 	// session gate `use("*")` nên request không có session vẫn 401 trước khi
-	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16). PUT/DELETE chỉ
-	// dùng cho route media bài nói (#305): kiểm Origin nhưng bỏ qua bước
-	// JSON + bodyLimit — bodyLimit đọc/bọc stream mà handler cần chuyển
-	// nguyên vào R2; handler tự kiểm Content-Type/Content-Length và đếm byte
-	// thật. Audio/video Content-Type vẫn kích hoạt preflight nên không có lối
-	// form cross-site. POST/PATCH (kể cả tới path media) giữ guard JSON.
+	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16). Mọi method ghi
+	// (POST/PATCH/PUT/DELETE) đều kiểm Origin. Chỉ PUT/DELETE đúng route
+	// media bài nói (#305) bỏ qua bước JSON + bodyLimit — bodyLimit đọc/bọc
+	// stream mà handler cần chuyển nguyên vào R2; handler tự kiểm
+	// Content-Type/Content-Length và đếm byte thật. Audio/video Content-Type
+	// vẫn kích hoạt preflight nên không có lối form cross-site. Route ghi khác
+	// (kể cả PUT/DELETE thêm sau này) giữ guard JSON + bodyLimit.
+	const MEDIA_ROUTE_PATH = /^\/api\/student\/attempts\/[^/]+\/media$/;
 	const quizWriteGuard = async (
 		c: Context<StudentEnv>,
 		next: () => Promise<void>,
@@ -614,7 +625,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
 			}
-			if (method === "PUT" || method === "DELETE") {
+			if (
+				(method === "PUT" || method === "DELETE") &&
+				MEDIA_ROUTE_PATH.test(c.req.path)
+			) {
 				return next();
 			}
 			const contentType = c.req.header("Content-Type") ?? "";
@@ -1005,6 +1019,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			audioName: prompt.audioName,
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
+			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
+			// cho học viên. Skill khác giữ kín note tới sau khi nộp (RT#6).
+			...(prompt.skill === "speaking" ? { note: prompt.note } : {}),
 			questions: questions.map((question, index) => ({
 				stem: question.stem,
 				opts: question.opts,
@@ -1441,6 +1458,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			if (reread.status === "submitted") {
 				return c.json(ATTEMPT_SUBMITTED, 409);
 			}
+			// DELETE song song (2 tab / double-click) đã gỡ file — trạng thái
+			// mong muốn đã đạt, giữ idempotent thay vì báo conflict.
+			if (reread.mediaKey === null) {
+				return c.json({ ok: true });
+			}
 			return c.json(MEDIA_CONFLICT, 409);
 		}
 		inBackground("delete removed object", () => store.delete(oldKey));
@@ -1481,7 +1503,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			headers: {
 				"Content-Type": attempt.mediaType ?? object.contentType,
 				"Content-Length": String(object.size),
-				"Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(attempt.mediaName ?? "media")}`,
+				"Content-Disposition": `inline; filename*=UTF-8''${encodeRfc8187(attempt.mediaName ?? "media")}`,
 				"X-Content-Type-Options": "nosniff",
 				"Content-Security-Policy": "default-src 'none'; sandbox",
 				"Cache-Control": "private, no-store",

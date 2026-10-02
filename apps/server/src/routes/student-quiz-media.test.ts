@@ -30,6 +30,8 @@ const OWNER = { "x-test-user": "google-verified" };
  * R2 nguyên vẹn" (không middleware nào được đọc mất stream upload). */
 function createMemoryMediaStore() {
 	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();
+	/** Chạy sau khi object đã ghi, trước khi handler CAS — ép race tất định. */
+	const hooks: { afterPut: (() => Promise<void>) | null } = { afterPut: null };
 	const store: MediaStore = {
 		async put(key, body, { contentType, size }) {
 			const counted = enforceDeclaredSize(body, size);
@@ -37,6 +39,9 @@ function createMemoryMediaStore() {
 				await new Response(counted.stream).arrayBuffer(),
 			);
 			objects.set(key, { bytes, contentType });
+			const afterPut = hooks.afterPut;
+			hooks.afterPut = null;
+			if (afterPut) await afterPut();
 		},
 		async get(key) {
 			const object = objects.get(key);
@@ -51,7 +56,7 @@ function createMemoryMediaStore() {
 			objects.delete(key);
 		},
 	};
-	return { store, objects };
+	return { store, objects, hooks };
 }
 
 function bytesOf(length: number, fill: number): Uint8Array {
@@ -146,7 +151,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 				cuePoints: "where it is\nwhy you like it",
 				questions: "[]",
 				optionBank: "[]",
-				note: "",
+				note: "<p>Nói tự nhiên, không đọc giấy.</p>",
 				status: "ready",
 			},
 			{
@@ -164,7 +169,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 					{ stem: "Q1", opts: null, answer: "A", alts: "", pin: null },
 				]),
 				optionBank: "[]",
-				note: "",
+				note: "<p>Đáp án câu 1 là A — chỉ lộ sau khi nộp.</p>",
 				status: "ready",
 			},
 		]);
@@ -173,6 +178,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			["ca-s2", "prompt-speaking"],
 			["ca-s3", "prompt-speaking"],
 			["ca-s4", "prompt-speaking"],
+			["ca-s5", "prompt-speaking"],
 			["ca-r1", "prompt-reading"],
 		];
 		for (const [id, promptId] of assignments) {
@@ -209,6 +215,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		appWithoutStore = buildApp(baseDeps);
 	});
 
+	/** Start hoặc resume (200) attempt của lượt giao — idempotent như route. */
 	async function startAttempt(assignmentId: string): Promise<string> {
 		const res = await app.request(
 			`/api/student/assignments/${assignmentId}/quiz/start`,
@@ -222,7 +229,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 				body: "{}",
 			},
 		);
-		expect(res.status).toBe(201);
+		expect([200, 201]).toContain(res.status);
 		return ((await res.json()) as { attemptId: string }).attemptId;
 	}
 
@@ -310,6 +317,8 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		const takeBody = (await take.json()) as StudentQuizDetail;
 		expect(takeBody.attempt?.media).toMatchObject({ size: 2048 });
 		expect(JSON.stringify(takeBody)).not.toContain("quiz-media/");
+		// "Hướng dẫn thêm" của giáo viên là hướng dẫn cho học viên ở Speaking.
+		expect(takeBody.note).toBe("<p>Nói tự nhiên, không đọc giấy.</p>");
 
 		// Thay file: key mới, object cũ bị xoá → store chỉ còn 1 object.
 		const replaced = await putMedia(attemptId, bytesOf(3000, 7), {
@@ -550,7 +559,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 	});
 
 	test("media routes return 503 without a media store", async () => {
-		const attemptId = await startAttempt("ca-s3").catch(() => "missing");
+		const attemptId = await startAttempt("ca-s3");
 		const put = await putMedia(attemptId, bytesOf(5, 1), {}, appWithoutStore);
 		expect(put.status).toBe(503);
 		const del = await appWithoutStore.request(
@@ -616,5 +625,71 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			expect(allowHeaders).toContain("x-student-org-id");
 			expect(res.headers.get("access-control-allow-methods")).toContain(method);
 		}
+	});
+
+	test("PUT that loses the CAS to a concurrent change returns MEDIA_CONFLICT and discards its object", async () => {
+		const attemptId = await startAttempt("ca-s5");
+		expect((await putMedia(attemptId, bytesOf(10, 1))).status).toBe(200);
+		await settle();
+		const keysBefore = new Set(memory.objects.keys());
+
+		// Tab khác thay file đúng lúc request này đã ghi object nhưng chưa CAS.
+		memory.hooks.afterPut = async () => {
+			await libsql
+				.update(schema.quizAttempt)
+				.set({ mediaKey: `quiz-media/org-1/${attemptId}/other-tab` })
+				.where(eq(schema.quizAttempt.id, attemptId));
+		};
+		const res = await putMedia(attemptId, bytesOf(10, 9), {
+			"X-File-Name": "late.mp3",
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toEqual({
+			error: "media changed",
+			code: "MEDIA_CONFLICT",
+		});
+		await settle();
+		// Object của request thua bị xoá; object cũ (DB đã rời đi) giữ nguyên
+		// cho job đối chiếu — không có object mới nào sót lại.
+		expect(new Set(memory.objects.keys())).toEqual(keysBefore);
+	});
+
+	test("media GET encodes the file name per RFC 8187", async () => {
+		const id = await startAttempt("ca-s3");
+		expect(
+			(
+				await putMedia(id, bytesOf(8, 4), {
+					"X-File-Name": encodeURIComponent("it's (1).mp3"),
+				})
+			).status,
+		).toBe(200);
+		const res = await getMedia(id);
+		expect(res.headers.get("content-disposition")).toBe(
+			"inline; filename*=UTF-8''it%27s%20%281%29.mp3",
+		);
+	});
+
+	test("PUT/DELETE outside the media route still go through the JSON guard", async () => {
+		for (const method of ["PUT", "DELETE"]) {
+			const res = await app.request("/api/student/attempts/any/answer", {
+				method,
+				headers: {
+					...OWNER,
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "text/plain",
+				},
+				body: "hello",
+			});
+			expect(res.status, method).toBe(415);
+		}
+	});
+
+	test("auto-graded take payload still withholds the teacher note", async () => {
+		const take = await app.request("/api/student/assignments/ca-r1/quiz", {
+			headers: OWNER,
+		});
+		const body = (await take.json()) as Record<string, unknown>;
+		expect(body).not.toHaveProperty("note");
+		expect(JSON.stringify(body)).not.toContain("chỉ lộ sau khi nộp");
 	});
 });

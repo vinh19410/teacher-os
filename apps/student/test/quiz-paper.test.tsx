@@ -518,6 +518,23 @@ describe("QuizPaper — đề Speaking hiển thị đúng theo part (#305)", ()
 		expect(html.indexOf("Hãy ghi âm")).toBeLessThan(html.indexOf("Describe"));
 	});
 
+	it("hướng dẫn thêm (note) của giáo viên hiện cho Speaking", () => {
+		const html = renderSpeaking({
+			note: "<p>Nói tự nhiên, không đọc giấy.</p>",
+			cueTopic: "a book",
+		});
+		expect(html).toContain("Nói tự nhiên, không đọc giấy.");
+	});
+
+	it("Part 2 không hiện prompt cũ còn sót khi giáo viên đổi part", () => {
+		const html = renderSpeaking({
+			cueTopic: "a place you like to visit",
+			prompt: "<p>Do you work or are you a student?</p>",
+		});
+		expect(html).toContain("Describe a place you like to visit.");
+		expect(html).not.toContain("Do you work or are you a student?");
+	});
+
 	it("Reading không đổi: đề rỗng câu vẫn có empty-state", () => {
 		const html = renderToStaticMarkup(
 			<QuizPaper

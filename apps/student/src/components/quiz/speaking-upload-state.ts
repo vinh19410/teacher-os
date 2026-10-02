@@ -14,7 +14,14 @@ export type SpeakingUploadState =
 	| { kind: "idle" }
 	| { kind: "uploading"; file: File; type: string; progress: number }
 	| { kind: "processing"; file: File; type: string }
-	| { kind: "error"; file: File; type: string; message: string };
+	| {
+			kind: "error";
+			file: File;
+			type: string;
+			message: string;
+			/** false = thử lại cùng file chắc chắn lỗi (413/415/400). */
+			retryable: boolean;
+	  };
 
 /** Byte cuối đã rời trình duyệt → `processing`: server có thể đang commit,
  * nên không còn cho Hủy (hủy lúc này vẫn có thể lưu file). */
@@ -29,7 +36,7 @@ export function progressState(
 }
 
 export type UploadFailure =
-	| { action: "show"; message: string; refetch: boolean }
+	| { action: "show"; message: string; refetch: boolean; retryable: boolean }
 	| { action: "notice"; message: string; refetch: true }
 	| { action: "submitted" }
 	| { action: "reauth" }
@@ -45,6 +52,7 @@ export function uploadFailure(error: unknown): UploadFailure {
 			action: "show",
 			message: "Không tải lên được file. Vui lòng thử lại.",
 			refetch: true,
+			retryable: true,
 		};
 	}
 	if (error.status === 401) return { action: "reauth" };
@@ -59,13 +67,19 @@ export function uploadFailure(error: unknown): UploadFailure {
 		};
 	}
 	if (error.status === 413) {
-		return { action: "show", message: "File vượt quá 50 MB.", refetch: false };
+		return {
+			action: "show",
+			message: "File vượt quá 50 MB.",
+			refetch: false,
+			retryable: false,
+		};
 	}
 	if (error.status === 415) {
 		return {
 			action: "show",
 			message: "Định dạng không hỗ trợ.",
 			refetch: false,
+			retryable: false,
 		};
 	}
 	if (error.status === 0) {
@@ -73,12 +87,23 @@ export function uploadFailure(error: unknown): UploadFailure {
 			action: "show",
 			message: "Không tải lên được — kiểm tra kết nối.",
 			refetch: true,
+			retryable: true,
+		};
+	}
+	// 400 (tên/kích thước file không hợp lệ) — thử lại cùng file vô ích.
+	if (error.status === 400) {
+		return {
+			action: "show",
+			message: "File không hợp lệ. Hãy chọn file khác.",
+			refetch: false,
+			retryable: false,
 		};
 	}
 	return {
 		action: "show",
 		message: "Không tải lên được file. Vui lòng thử lại.",
 		refetch: true,
+		retryable: true,
 	};
 }
 
@@ -106,6 +131,10 @@ export function rejectMessage(
 			return "File rỗng. Hãy chọn file khác.";
 		case "multiple":
 			return "Chỉ tải lên 1 file.";
+		case "none":
+			return "Không đọc được file. Hãy kéo thả hoặc chọn 1 file audio/video.";
+		case "name":
+			return "Tên file quá dài hoặc không hợp lệ. Hãy đổi tên file (tối đa 200 ký tự) rồi chọn lại.";
 	}
 }
 

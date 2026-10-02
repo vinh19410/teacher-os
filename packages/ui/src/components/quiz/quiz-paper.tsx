@@ -38,6 +38,7 @@ export type QuizPaperDetail = Pick<
 	| "audioName"
 	| "imageUrl"
 	| "optionBank"
+	| "note"
 >;
 
 const SKILL_LABELS: Record<string, string> = {
@@ -89,6 +90,7 @@ export function QuizPaper({
 		.split("\n")
 		.map((point) => point.trim())
 		.filter(Boolean);
+	const hasCueCard = isSpeaking && (cueTopic !== "" || cuePoints.length > 0);
 	const rawImageUrl = detail.imageUrl.trim();
 	const diagramImageUrl =
 		isImageBasedType(skill, typeId) &&
@@ -190,14 +192,22 @@ export function QuizPaper({
 
 			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
 
-			{/* Speaking (#305): hướng dẫn của giáo viên ngay dưới eyebrow. */}
-			{isSpeaking && !isEmptyRichText(detail.intro) && (
-				<RichTextBody text={detail.intro} className="text-muted-fg text-sm" />
-			)}
+			{/* Speaking (#305): hướng dẫn của giáo viên ngay dưới eyebrow — ô
+			 * "Hướng dẫn thêm" (`note`) của composer; `intro` cho dữ liệu cũ. */}
+			{isSpeaking &&
+				[detail.intro, detail.note ?? ""]
+					.filter((text) => !isEmptyRichText(text))
+					.map((text) => (
+						<RichTextBody
+							key={text}
+							text={text}
+							className="text-muted-fg text-sm"
+						/>
+					))}
 
 			{/* Cue card chỉ khi đề có topic (Part 2) — Part 1/3 là câu hỏi
 			 * trong `prompt`, không còn cue card rỗng "the topic". */}
-			{isSpeaking && cuePoints.length + cueTopic.length > 0 && (
+			{hasCueCard && (
 				<div className="rounded-md border border-line bg-surface/50 p-4 text-sm">
 					{cueTopic !== "" && <p>Describe {cueTopic}.</p>}
 					{cuePoints.length > 0 && (
@@ -213,7 +223,9 @@ export function QuizPaper({
 				</div>
 			)}
 
-			{!isAuto && !isEmptyRichText(detail.prompt) && (
+			{/* Part 2 có cue card thì không hiện `prompt`: composer ẩn ô câu hỏi
+			 * ở Part 2 nhưng vẫn lưu prompt cũ khi giáo viên đổi part. */}
+			{!isAuto && !hasCueCard && !isEmptyRichText(detail.prompt) && (
 				<RichTextBody text={detail.prompt} className="text-sm leading-[1.55]" />
 			)}
 

@@ -30,15 +30,20 @@ describe("progressState — thanh tiến trình upload bài nói (#305)", () => 
 });
 
 describe("uploadFailure — lỗi upload → thông điệp + hành động", () => {
-	it("413/415 hiện lỗi, cho thử lại", () => {
+	it("413/415/400 hiện lỗi, không cho thử lại cùng file", () => {
 		expect(uploadFailure(new HttpError(413, "x"))).toEqual({
 			action: "show",
 			message: "File vượt quá 50 MB.",
 			refetch: false,
+			retryable: false,
 		});
 		expect(uploadFailure(new HttpError(415, "x"))).toMatchObject({
 			action: "show",
 			message: "Định dạng không hỗ trợ.",
+			retryable: false,
+		});
+		expect(uploadFailure(new HttpError(400, "x"))).toMatchObject({
+			retryable: false,
 		});
 	});
 
@@ -47,6 +52,7 @@ describe("uploadFailure — lỗi upload → thông điệp + hành động", ()
 			action: "show",
 			message: "Không tải lên được — kiểm tra kết nối.",
 			refetch: true,
+			retryable: true,
 		});
 	});
 
@@ -95,6 +101,8 @@ describe("rejectMessage — từ chối ngay ở client", () => {
 		);
 		expect(rejectMessage("empty")).toBe("File rỗng. Hãy chọn file khác.");
 		expect(rejectMessage("multiple")).toBe("Chỉ tải lên 1 file.");
+		expect(rejectMessage("none")).toContain("Không đọc được file");
+		expect(rejectMessage("name")).toContain("Tên file quá dài");
 	});
 });
 

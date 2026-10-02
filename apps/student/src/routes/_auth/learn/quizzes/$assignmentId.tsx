@@ -1,5 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	redirect,
+	useBlocker,
+	useNavigate,
+} from "@tanstack/react-router";
 import {
 	ASSIGNMENT_TEST_PRESETS,
 	QUIZ_ESSAY_MAX,
@@ -19,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
 import {
+	QuizDialog,
 	QuizResumeDialog,
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
@@ -129,6 +135,16 @@ function QuizTakePage() {
 	const [authBanner, setAuthBanner] = useState(false);
 	// Speaking (#305): đang upload/xử lý file → chặn nộp.
 	const [mediaUploading, setMediaUploading] = useState(false);
+	const mediaUploadingRef = useRef(false);
+	mediaUploadingRef.current = mediaUploading;
+	// Rời take screen bằng điều hướng trong app (Thoát, Back) unmount panel
+	// và hủy upload dở — beforeunload không bắt được, nên hỏi xác nhận.
+	// Reload/đóng tab do beforeunload của panel lo.
+	const uploadBlocker = useBlocker({
+		shouldBlockFn: () => mediaUploadingRef.current,
+		enableBeforeUnload: false,
+		withResolver: true,
+	});
 
 	const startMutation = useStartQuizAttempt(assignmentId);
 	const serverHasAnswers = Object.keys(serverAnswers).length > 0;
@@ -493,6 +509,16 @@ function QuizTakePage() {
 					}}
 				/>
 			)}
+			<QuizDialog
+				open={uploadBlocker.status === "blocked"}
+				title="Đang tải file bài nói"
+				description="Rời trang bây giờ sẽ hủy việc tải file. Bạn có chắc muốn rời trang?"
+				confirmLabel="Rời trang"
+				cancelLabel="Ở lại"
+				tone="danger"
+				onConfirm={() => uploadBlocker.proceed?.()}
+				onCancel={() => uploadBlocker.reset?.()}
+			/>
 			<QuizSubmitGuardDialog
 				open={guardOpen}
 				unansweredCount={unansweredCount}
