@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Màn kết quả Speaking + e2e + gate cuối"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [3]

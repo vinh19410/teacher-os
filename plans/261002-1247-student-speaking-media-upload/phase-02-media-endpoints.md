@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Endpoints media: upload / xoá / phát + chặn nộp rỗng"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: [1]

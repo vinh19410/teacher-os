@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "R2 + MediaStore + contract + DB"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []

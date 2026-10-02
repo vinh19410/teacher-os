@@ -1,7 +1,7 @@
 ---
 title: "Quiz take: màn nộp bài Speaking — upload file audio/video (drag & drop)"
 description: "Đề Speaking ở trang làm bài học viên hiển thị đúng câu hỏi/cue card và hướng dẫn, có vùng upload kéo-thả để nộp một file audio/video lưu trên R2, và màn kết quả phát lại bài đã nộp."
-status: pending
+status: completed
 priority: P1
 effort: "15h"
 issue: 305
