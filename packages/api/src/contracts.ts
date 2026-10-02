@@ -1673,6 +1673,42 @@ export const quizEssayPatchSchema = z
 	.strict();
 export type QuizEssayPatch = z.infer<typeof quizEssayPatchSchema>;
 
+/** Bài nói Speaking (#305): 1 file audio/video mỗi attempt, user chốt 50MB —
+ * dưới trần 100MB body request của Worker gói Free/Pro, đủ cho audio và
+ * video 720p ngắn. Upload là raw body PUT stream thẳng vào R2. */
+export const QUIZ_MEDIA_MAX_BYTES = 50 * 1024 * 1024;
+export const QUIZ_MEDIA_NAME_MAX = 200;
+
+/** Allowlist MIME bài nói → nhãn định dạng hiển thị. Server chỉ nhận
+ * Content-Type trong map này; client chuẩn hoá theo đuôi file trước khi gửi
+ * (`resolveQuizMediaType`). */
+export const QUIZ_MEDIA_TYPES: Readonly<Record<string, string>> = {
+	"audio/mpeg": "MP3",
+	"audio/mp4": "M4A",
+	"audio/x-m4a": "M4A",
+	"audio/aac": "AAC",
+	"audio/wav": "WAV",
+	"audio/x-wav": "WAV",
+	"audio/wave": "WAV",
+	"audio/webm": "WEBM",
+	"audio/ogg": "OGG",
+	"video/mp4": "MP4",
+	"video/quicktime": "MOV",
+	"video/webm": "WEBM",
+};
+
+/** File bài nói đã tải lên của một attempt (không lộ object key). */
+export const quizAttemptMediaSchema = z
+	.object({
+		name: z.string(),
+		type: z.string(),
+		size: z.number().int().min(0),
+		/** ISO datetime. */
+		uploadedAt: z.string(),
+	})
+	.strict();
+export type QuizAttemptMedia = z.infer<typeof quizAttemptMediaSchema>;
+
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
 export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {
@@ -1743,6 +1779,9 @@ export const studentQuizDetailSchema = z
 				/** Bài viết Writing đã autosave — optional để bundle cũ + server
 				 * mới không throw trong cửa sổ deploy (#304). */
 				essay: z.string().optional(),
+				/** File bài nói Speaking đã tải lên (#305) — optional cùng lý
+				 * do với `essay`. */
+				media: quizAttemptMediaSchema.nullable().optional(),
 			})
 			.nullable(),
 	})
@@ -1796,6 +1835,13 @@ export const quizAttemptSummarySchema = z
 		 * code-review F2 — cùng cửa sổ đã chấp nhận ở precedent `type`
 		 * #286; server + student phải deploy cùng release). */
 		essay: z.string().nullable().optional(),
+		/** Skill của đề (#305) — summary rẽ nhánh Speaking theo field này.
+		 * Optional cùng precedent `essay`: vắng mặt = server cũ, xử lý như đề
+		 * không phải Speaking. */
+		skill: z.string().optional(),
+		/** File bài nói đã nộp — null khi đề không phải Speaking hoặc bài
+		 * Speaking cũ nộp trước #305. */
+		media: quizAttemptMediaSchema.nullable().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

@@ -6,7 +6,8 @@ import {
 } from "@teacher-os/auth/mail/mailer";
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
-import { buildApp, type Db } from "./app";
+import { buildApp, type Db, type MediaStore } from "./app";
+import { createR2MediaStore } from "./lib/r2-media-store";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -20,6 +21,7 @@ export function parseCORSOrigins(raw: string): string[] {
 // Cast: drizzle's schema generic is invariant; Db keeps the route-facing surface.
 let db: Db | undefined;
 let auth: Auth | undefined;
+let mediaStore: MediaStore | undefined;
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
@@ -73,4 +75,12 @@ export default buildApp({
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) => getSessionUser(getAuth(), headers),
 	authHandler: (req) => getAuth().handler(req),
+	// Binding MEDIA thiếu (deploy chưa tạo bucket) → undefined → route 503,
+	// không phải TypeError 500.
+	getMediaStore: () => {
+		if (!env.MEDIA) return undefined;
+		mediaStore ??= createR2MediaStore(env.MEDIA);
+		return mediaStore;
+	},
+	runInBackground: (promise) => waitUntil(promise),
 });
