@@ -98,19 +98,19 @@ Chạy tuần tự 1 → 2 → 3 → 4, sau khi #304 đã merge vào `develop`.
 
 ## Success Criteria
 
-- [ ] Đề Speaking Part 1/3 hiện câu hỏi (`prompt`), Part 2 hiện cue card. Hướng dẫn của giáo viên (`intro`) và card "Hướng dẫn làm bài" đều hiện. Không còn dòng "không có câu hỏi tự chấm".
-- [ ] Vùng upload nhận cả kéo-thả lẫn bấm chọn (bàn phím Enter/Space mở hộp chọn file). File sai định dạng hoặc > 50MB bị từ chối ngay ở client với thông báo rõ, không gửi request.
-- [ ] Đang upload thì có thanh tiến trình % và nút Hủy. Xong thì hiện tên file, dung lượng và player audio/video. Thay file và Xoá đều hoạt động. Reload trang thì file đã tải lên vẫn hiện.
-- [ ] Nút "Nộp bài" bị disable khi chưa có file hoặc đang upload. Server trả 400 `media required` nếu bị gọi thẳng.
-- [ ] Sau khi nộp, summary hiện "Bài nói của bạn" và "Nghe lại" phát đúng file. Không còn score card 0/0.
-- [ ] PUT media: 200 với chủ attempt; 404 với học viên/org khác; 409 khi đã nộp; 400 khi đề không phải Speaking, thiếu/sai tên file hoặc file rỗng; 411 khi thiếu Content-Length; 413 khi > 50MB; 415 khi sai MIME; 403 khi Origin lạ. GET media có `nosniff` + CSP sandbox.
-- [ ] Reading/Listening/Writing không hồi quy. Các route quiz JSON vẫn giữ cap 4096 (hoặc 48KB cho `/essay` theo #304).
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter student test`, `pnpm --filter web test`, `pnpm --filter @teacher-os/infra check-types`, e2e `student-quiz-take-review` (ports 8100/8101/8103) đều xanh.
+- [x] Đề Speaking Part 1/3 hiện câu hỏi (`prompt`), Part 2 hiện cue card. Hướng dẫn của giáo viên (`note` — ô "Hướng dẫn thêm" của composer; `intro` vẫn render cho dữ liệu cũ) và card "Hướng dẫn làm bài" đều hiện. Không còn dòng "không có câu hỏi tự chấm".
+- [x] Vùng upload nhận cả kéo-thả lẫn bấm chọn (bàn phím Enter/Space mở hộp chọn file). File sai định dạng hoặc > 50MB bị từ chối ngay ở client với thông báo rõ, không gửi request.
+- [x] Đang upload thì có thanh tiến trình % và nút Hủy. Xong thì hiện tên file, dung lượng và player audio/video. Thay file và Xoá đều hoạt động. Reload trang thì file đã tải lên vẫn hiện.
+- [x] Nút "Nộp bài" bị disable khi chưa có file hoặc đang upload. Server trả 400 `media required` nếu bị gọi thẳng.
+- [x] Sau khi nộp, summary hiện "Bài nói của bạn" và "Nghe lại" phát đúng file. Không còn score card 0/0.
+- [x] PUT media: 200 với chủ attempt; 404 với học viên/org khác; 409 khi đã nộp; 400 khi đề không phải Speaking, thiếu/sai tên file hoặc file rỗng; 411 khi thiếu Content-Length; 413 khi > 50MB; 415 khi sai MIME; 403 khi Origin lạ. GET media có `nosniff` + CSP sandbox.
+- [x] Reading/Listening/Writing không hồi quy. Các route quiz JSON vẫn giữ cap 4096 (hoặc 48KB cho `/essay` theo #304).
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter student test`, `pnpm --filter web test`, `pnpm --filter @teacher-os/infra check-types`, e2e `student-quiz-take-review` (ports 8100/8101/8103) đều xanh.
 
 ## Risks
 
 - **Bật R2 trên tài khoản Cloudflare:** account phải kích hoạt R2 (free tier) trước khi `alchemy deploy` tạo bucket. Nếu chưa bật, deploy staging sẽ fail ở bước tạo bucket. Phải kiểm tra trước khi ship beta và ghi vào `docs/production-release-runbook.md`.
-- **Cửa sổ deploy:** field mới của summary là optional, nên client mới + server cũ an toàn. Chiều bundle cũ + server mới vẫn throw "Unrecognized key" vì schema `.strict()`, cùng cửa sổ đã chấp nhận ở #304; reload là hết. Field `attempt.media` ở GET quiz nằm trong object con không strict nên an toàn. <!-- Updated: Red Team 2026-10-02 -->
+- **Cửa sổ deploy:** field mới của summary là optional, nên client mới + server cũ an toàn. Chiều bundle cũ + server mới vẫn throw "Unrecognized key" vì schema `.strict()`, cùng cửa sổ đã chấp nhận ở #304; reload là hết. Ngoài màn kết quả, **màn làm bài đề Speaking** cũng lỗi parse với bundle cũ vì key top-level `note` mới (bundle cũ đằng nào cũng không nộp được đề Speaking: server trả `MEDIA_REQUIRED`). Field `attempt.media` ở GET quiz nằm trong object con không strict nên an toàn. <!-- Updated: Red Team 2026-10-02 -->
 - **Object mồ côi:** các nguồn còn lại là:
   - Worker bị huỷ giữa `put` và CAS, hoặc giữa CAS và lệnh xoá object cũ.
   - Lệnh xoá best-effort bị lỗi.
@@ -164,7 +164,7 @@ Lệch so với phase file, kèm lý do:
 - **Đếm byte thật** dùng chung `enforceDeclaredSize` (TransformStream) cho cả adapter R2, fs (e2e) và Map (test); adapter R2 nối thêm `FixedLengthStream`. Không map lỗi theo message của runtime.
 - **CORP `same-site`** set bằng middleware riêng cho path media, đăng ký trước `secureHeaders` trong `app.ts`: test xác nhận `secureHeaders` ghi đè header set trong handler.
 - **Lý do từ chối file rỗng** tách thành `empty` (thông điệp "File rỗng") thay vì gộp vào `size`.
-- **PUT/DELETE** trên `/attempts/*` chỉ kiểm Origin (route media là route duy nhất dùng hai method này); POST/PATCH giữ guard JSON + bodyLimit, có test.
+- **Guard ghi**: chỉ PUT/DELETE đúng path `/attempts/:id/media` bỏ qua JSON + bodyLimit (sau code review; bản đầu cho mọi PUT/DELETE chỉ kiểm Origin). Mọi route ghi khác giữ guard, có test cho cả POST/PATCH tới path media và PUT/DELETE tới path khác.
 - **Chưa xác minh `alchemy dev` local**: port 8000/8001/8003 đang bị dev stack của phiên khác chiếm (`strictPort`). Ghi vào bước kiểm tra của người review.
 - `ak plan update --issue` lỗi (CLI index của `ak` không chạy); liên kết plan ↔ issue nằm ở comment issue #305.
 

@@ -341,6 +341,8 @@ export function SpeakingSubmissionPanel({
 	// site?" và học viên bấm Ở lại sẽ kẹt.
 	const busyRef = useRef(false);
 	busyRef.current = busy;
+	const hasMediaRef = useRef(false);
+	hasMediaRef.current = media !== null;
 
 	const refetch = () =>
 		void queryClient.invalidateQueries({
@@ -390,7 +392,11 @@ export function SpeakingSubmissionPanel({
 			if (!hasFiles(event) || event.defaultPrevented) return;
 			event.preventDefault();
 			setNotice(
-				'Thả file vào vùng tải lên, hoặc dùng nút "Thay file" để đổi file.',
+				busyRef.current
+					? "Đang tải file — đợi tải xong rồi thử lại."
+					: hasMediaRef.current
+						? 'Dùng nút "Thay file" để đổi file bài nói.'
+						: "Thả file vào vùng tải lên.",
 			);
 		};
 		window.addEventListener("dragover", onDragOver);

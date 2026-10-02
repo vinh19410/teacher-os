@@ -179,6 +179,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			["ca-s3", "prompt-speaking"],
 			["ca-s4", "prompt-speaking"],
 			["ca-s5", "prompt-speaking"],
+			["ca-s6", "prompt-speaking"],
 			["ca-r1", "prompt-reading"],
 		];
 		for (const [id, promptId] of assignments) {
@@ -691,5 +692,26 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		const body = (await take.json()) as Record<string, unknown>;
 		expect(body).not.toHaveProperty("note");
 		expect(JSON.stringify(body)).not.toContain("chỉ lộ sau khi nộp");
+	});
+
+	test("concurrent deletes of the same file both succeed", async () => {
+		const attemptId = await startAttempt("ca-s6");
+		expect((await putMedia(attemptId, bytesOf(10, 6))).status).toBe(200);
+		await settle();
+
+		// Hai tab / double-click: request thua CAS re-read thấy file đã gỡ —
+		// trạng thái mong muốn đã đạt nên vẫn 200, không báo MEDIA_CONFLICT.
+		// (Nếu lịch chạy khiến request sau đọc khi file đã gỡ, nhánh trả sớm
+		// cũng 200 — hợp đồng quan sát được là như nhau.)
+		const [first, second] = await Promise.all([
+			deleteMedia(attemptId),
+			deleteMedia(attemptId),
+		]);
+		expect([first.status, second.status]).toEqual([200, 200]);
+		await settle();
+		expect(
+			[...memory.objects.keys()].some((key) => key.includes(attemptId)),
+		).toBe(false);
+		expect((await getMedia(attemptId)).status).toBe(404);
 	});
 });
