@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-10-02
 
 ### Added
+- Trang làm bài học viên có màn nộp bài Speaking: đề hiển thị đúng theo part (câu hỏi Part 1/3, cue card Part 2) kèm hướng dẫn của giáo viên và card "Hướng dẫn làm bài"; học viên kéo thả hoặc chọn 1 file audio/video (MP3, M4A, WAV, WEBM, OGG, MP4, MOV, tối đa 50 MB) có thanh tiến trình, nghe/xem lại, thay hoặc xoá file; nút "Nộp bài" chỉ mở khi đã có file (server cũng chặn); màn kết quả hiện "Bài nói của bạn" và nghe lại được thay cho score card 0/0 (#305)
 - Trang làm bài học viên có ô nhập bài viết cho đề Writing: autosave như các dạng câu hỏi (reload có dialog tiếp tục), đếm từ trực tiếp với mục tiêu Task 1 (150) / Task 2 (250) — thiếu từ chỉ cảnh báo không chặn nộp; màn kết quả và trang soi bài hiện lại bài đã nộp kèm số từ thay cho score card 0/0 (#304)
 - Answer-key grid cảnh báo các câu bị suy luận thành True/False/Not Given và có nút đặt dạng cho cả cụm câu chỉ bằng một lần bấm (#303)
 
@@ -21,6 +22,9 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Trang làm bài/soi bài và preview mô phỏng của giáo viên: câu True / False / Not Given nằm trong đề dạng điền chữ (note, sentence completion…) mà không khai dạng riêng và không có chỗ trống `____` giờ hiện đủ radio TRUE / FALSE / NOT GIVEN (hoặc YES / NO / NOT GIVEN) thay vì chỉ in đề bài không có chỗ trả lời; đề cũ và bài đang làm dở tự đúng, không cần migrate dữ liệu (#303)
+
+### CI/Infra
+- Bucket R2 private `media` bind vào Worker server (`MEDIA`) và migration 0032 thêm 5 cột `media_*` trên `quiz_attempt`; release đầu cần bật R2 trên tài khoản Cloudflare và cấp quyền "Workers R2 Storage: Edit" cho token deploy (xem runbook) (#305)
 
 ## 2026-10-01
 

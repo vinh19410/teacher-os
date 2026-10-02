@@ -35,6 +35,10 @@ export interface QuizSeedPrompt {
 	/** Đề bài rich-text HTML (#304 — Writing prompt-only cần nội dung đề). */
 	prompt?: string;
 	intro?: string;
+	/** Cue card Speaking Part 2 (#305) — mặc định "". */
+	cueTopic?: string;
+	/** Bullet cue card, mỗi dòng một ý — mặc định "". */
+	cuePoints?: string;
 	questions: QuizSeedQuestion[];
 }
 
@@ -117,8 +121,8 @@ export async function seedQuizFixture(opts: {
 					prompt.intro ?? "",
 					prompt.passage,
 					"",
-					"",
-					"",
+					prompt.cueTopic ?? "",
+					prompt.cuePoints ?? "",
 					"",
 					"",
 					JSON.stringify(prompt.questions),

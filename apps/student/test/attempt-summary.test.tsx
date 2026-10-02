@@ -238,3 +238,64 @@ describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
 		}
 	});
 });
+
+describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305)", () => {
+	const speaking: QuizAttemptSummary = {
+		...summary,
+		correctCount: 0,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 0,
+		items: [],
+		essay: null,
+		skill: "speaking",
+		media: {
+			name: "answer-v2.mp3",
+			type: "audio/mpeg",
+			size: 820 * 1024,
+			uploadedAt: "2026-09-30T10:20:00.000Z",
+		},
+	};
+
+	it("có file: tên file, dung lượng, nút nghe lại, không có score card", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={speaking} attemptId="att-1" />,
+		);
+		expect(html).toContain("Bài nói của bạn");
+		expect(html).toContain("answer-v2.mp3");
+		expect(html).toContain("820 KB");
+		expect(html).toContain("Nghe lại bài nói");
+		expect(html).toContain("Giáo viên sẽ chấm bài nói của bạn.");
+		expect(html).not.toContain("Xem giải thích chi tiết");
+		expect(html).not.toContain("Bảng đáp án");
+	});
+
+	it("bài Speaking cũ nộp khi chưa có file", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{ ...speaking, media: null }}
+				attemptId="att-1"
+			/>,
+		);
+		expect(html).toContain("Bài này được nộp khi chưa có file bài nói.");
+		expect(html).not.toContain("Nghe lại bài nói");
+	});
+
+	it("Reading có skill/media vẫn hiện score card", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{ ...summary, skill: "reading", media: null }}
+				attemptId="att-1"
+			/>,
+		);
+		expect(html).toContain("Xem giải thích chi tiết");
+		expect(html).not.toContain("Bài nói của bạn");
+	});
+
+	it("server cũ không gửi skill/media: vẫn hiện score card, không throw", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={summary} attemptId="att-1" />,
+		);
+		expect(html).toContain("Xem giải thích chi tiết");
+	});
+});

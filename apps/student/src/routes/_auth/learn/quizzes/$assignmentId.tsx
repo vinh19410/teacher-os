@@ -1,6 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { QUIZ_ESSAY_MAX, WRITING_MIN_WORDS } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_TEST_PRESETS,
+	QUIZ_ESSAY_MAX,
+	WRITING_MIN_WORDS,
+} from "@teacher-os/api/contracts";
 import {
 	buildQuizParts,
 	isAnsweredValue,
@@ -10,6 +14,7 @@ import { QuizEssayFooter } from "@teacher-os/ui/components/quiz/quiz-essay-foote
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
+import { QuizSpeakingFooter } from "@teacher-os/ui/components/quiz/quiz-speaking-footer";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
@@ -23,6 +28,10 @@ import {
 	QuizReadingSplitLayout,
 } from "@/components/quiz/quiz-reading-layout";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
+import {
+	SpeakingGuideCard,
+	SpeakingSubmissionPanel,
+} from "@/components/quiz/speaking-submission-panel";
 import { isHttpError, reauth, studentQueryClient } from "@/lib/query-client";
 import {
 	quizAttemptMirrorKey,
@@ -118,6 +127,8 @@ function QuizTakePage() {
 	const [guardOpen, setGuardOpen] = useState(false);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const [authBanner, setAuthBanner] = useState(false);
+	// Speaking (#305): đang upload/xử lý file → chặn nộp.
+	const [mediaUploading, setMediaUploading] = useState(false);
 
 	const startMutation = useStartQuizAttempt(assignmentId);
 	const serverHasAnswers = Object.keys(serverAnswers).length > 0;
@@ -134,6 +145,15 @@ function QuizTakePage() {
 	const storeActive =
 		attempt !== null && attempt.status === "in_progress" && !needsResumeDialog;
 	const isWriting = detail?.skill === "writing";
+	const isSpeaking = detail?.skill === "speaking";
+	// File bài nói đọc thẳng từ cache take payload — panel ghi cache khi
+	// upload/xoá, không giữ bản sao state dễ lệch server (#305).
+	const media = attempt?.media ?? null;
+	const speakingPartLabel = isSpeaking
+		? (ASSIGNMENT_TEST_PRESETS.speaking?.slots.find(
+				(slot) => slot.part === detail?.part,
+			)?.label ?? null)
+		: null;
 
 	const store = useQuizAttemptStore({
 		attemptId: storeActive ? attemptId : null,
@@ -208,6 +228,22 @@ function QuizTakePage() {
 		},
 		onError: (error) => {
 			if (error instanceof QuizSubmitSkippedError) return;
+			// Speaking (#305): server chặn nộp khi chưa có file / file vừa đổi
+			// ở tab khác — refetch để panel hiện đúng file trên server.
+			if (
+				isHttpError(error) &&
+				(error.code === "MEDIA_REQUIRED" || error.code === "MEDIA_CONFLICT")
+			) {
+				void queryClient.invalidateQueries({
+					queryKey: ["student", "quiz", assignmentId],
+				});
+				toast.error(
+					error.code === "MEDIA_REQUIRED"
+						? "Bạn cần tải file bài nói lên trước khi nộp"
+						: "File bài nói vừa thay đổi — hãy thử nộp lại",
+				);
+				return;
+			}
 			toast.error("Không nộp được bài", {
 				description:
 					isHttpError(error) && error.status === 401
@@ -302,7 +338,13 @@ function QuizTakePage() {
 							{detail.title}
 						</h2>
 						<p className="mt-2 text-muted-fg text-sm">
-							{isWriting ? (
+							{isSpeaking ? (
+								<>
+									Bài nói
+									{speakingPartLabel && ` · ${speakingPartLabel}`} · nộp 1 file
+									audio/video (tối đa 50 MB) · Band {detail.band}
+								</>
+							) : isWriting ? (
 								<>
 									Bài viết
 									{minWords !== null && ` · tối thiểu ${minWords} từ`} · Band{" "}
@@ -346,10 +388,15 @@ function QuizTakePage() {
 	}
 
 	const submitDisabled =
-		submitMutation.isPending || snapshot.halted !== null || !storeActive;
+		submitMutation.isPending ||
+		snapshot.halted !== null ||
+		!storeActive ||
+		(isSpeaking && (media === null || mediaUploading));
 	// Writing thay navigator số câu bằng footer đếm từ (#304) — giữ testid
 	// navigator-progress nên helper e2e openPaper dùng chung được.
-	const navigator = isWriting ? (
+	const navigator = isSpeaking ? (
+		<QuizSpeakingFooter hasMedia={media !== null} />
+	) : isWriting ? (
 		<QuizEssayFooter text={essayText} minWords={minWords} />
 	) : (
 		<QuizNavigator
@@ -367,7 +414,8 @@ function QuizTakePage() {
 		<div className="flex min-h-svh flex-col bg-surface/30">
 			<QuizRuntimeHeader
 				title={detail.title}
-				saveState={store ? snapshot.saveState : null}
+				// Speaking không autosave gì — file lưu ngay khi tải lên.
+				saveState={store && !isSpeaking ? snapshot.saveState : null}
 				onSubmitClick={handleSubmitClick}
 				submitDisabled={submitDisabled}
 			/>
@@ -404,6 +452,34 @@ function QuizTakePage() {
 							onAnswer={handleAnswer}
 							currentQuestion={currentQuestion}
 						/>
+						{isSpeaking && attemptId && (
+							<div className="mt-6 flex flex-col gap-4">
+								<SpeakingGuideCard part={detail.part} />
+								<SpeakingSubmissionPanel
+									assignmentId={assignmentId}
+									attemptId={attemptId}
+									media={media}
+									disabled={
+										submitMutation.isPending ||
+										snapshot.halted !== null ||
+										!storeActive
+									}
+									onUploadingChange={setMediaUploading}
+									onAlreadySubmitted={() =>
+										window.location.assign(attemptSummaryHref(attemptId))
+									}
+									onAuthError={() => {
+										setAuthBanner(true);
+										reauth();
+									}}
+								/>
+								{media === null && (
+									<p className="text-muted-fg text-sm">
+										Tải file bài nói lên để nộp bài.
+									</p>
+								)}
+							</div>
+						)}
 					</main>
 					{navigator}
 				</>
