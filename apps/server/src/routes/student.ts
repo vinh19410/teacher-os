@@ -2,7 +2,6 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
 	DAILY_STUDY_HOUR_OPTIONS,
-	type EnrollmentStatus,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
@@ -18,6 +17,7 @@ import {
 	quizEssayPatchSchema,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
+	type StudentClassDetail,
 	type StudentMe,
 	type StudentOrgItem,
 	type StudentOverview,
@@ -25,7 +25,6 @@ import {
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
-import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
@@ -48,7 +47,7 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -58,6 +57,14 @@ import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
 import { parsePin } from "./snapshot";
+import {
+	loadClassAssignmentItems,
+	loadNextSession,
+	loadOrgTeacher,
+	orderStudentLessons,
+	studentClassColumns,
+	toStudentClass,
+} from "./student-class";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -589,6 +596,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
+	router.use("/classes/:classId", requireStudent);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -726,100 +734,31 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const db = deps.getDb();
 		const todayISO = vietnamTodayISO();
 
-		const enrollmentRows = await db
-			.select({
-				id: classTable.id,
-				name: classTable.name,
-				level: classTable.level,
-				mode: classTable.mode,
-				schedule: classTable.schedule,
-				sessionsDone: classTable.sessionsDone,
-				sessionsTotal: classTable.sessionsTotal,
-				status: classTable.status,
-				enrollmentId: enrollment.id,
-				enrollmentStatus: enrollment.status,
-			})
-			.from(enrollment)
-			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-			.where(and(eq(enrollment.orgId, orgId), eq(enrollment.studentId, s.id)))
-			.orderBy(asc(classTable.createdAt), asc(classTable.id));
+		const [enrollmentRows, teacher] = await Promise.all([
+			db
+				.select(studentClassColumns)
+				.from(enrollment)
+				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+				.where(and(eq(enrollment.orgId, orgId), eq(enrollment.studentId, s.id)))
+				.orderBy(asc(classTable.createdAt), asc(classTable.id)),
+			loadOrgTeacher(db, orgId),
+		]);
 
 		const classes = await Promise.all(
-			enrollmentRows.map(async (cls) => {
-				const nextSessions = await db
-					.select({
-						date: lesson.date,
-						time: lesson.time,
-						topic: lesson.topic,
-					})
-					.from(lesson)
-					.where(
-						and(
-							eq(lesson.orgId, orgId),
-							eq(lesson.classId, cls.id),
-							isNotNull(lesson.date),
-							gte(lesson.date, todayISO),
-						),
-					)
-					.orderBy(asc(lesson.date), asc(lesson.day), asc(lesson.time))
-					.limit(1);
-
-				const first = nextSessions[0];
-				const nextSession =
-					first?.date != null
-						? { date: first.date, time: first.time, topic: first.topic }
-						: null;
-
-				return {
-					id: cls.id,
-					name: cls.name,
-					level: cls.level,
-					mode: cls.mode,
-					schedule: formatSchedule(cls.schedule),
-					sessionsDone: cls.sessionsDone,
-					sessionsTotal: cls.sessionsTotal,
-					status: cls.status,
-					enrollmentId: cls.enrollmentId,
-					// DB lưu text; lifecycle chỉ ghi 'invited' | 'active' (schema enrollment).
-					enrollmentStatus: cls.enrollmentStatus as EnrollmentStatus,
-					nextSession,
-				};
-			}),
+			enrollmentRows.map(async (cls) =>
+				toStudentClass(
+					cls,
+					await loadNextSession(db, orgId, cls.id, todayISO),
+					teacher,
+				),
+			),
 		);
 
-		const targetRows = await db
-			.select({
-				id: classAssignment.id,
-				title: classAssignment.title,
-				classId: classAssignment.classId,
-				className: classTable.name,
-				due: classAssignment.due,
-				submittedAt: classAssignmentTarget.submittedAt,
-			})
-			.from(classAssignmentTarget)
-			.innerJoin(
-				classAssignment,
-				eq(classAssignmentTarget.assignmentId, classAssignment.id),
-			)
-			.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
-			.where(
-				and(
-					eq(classAssignmentTarget.orgId, orgId),
-					eq(classAssignmentTarget.studentId, s.id),
-				),
-			)
-			.orderBy(desc(classAssignment.createdAt));
-
-		const classAssignmentItems = targetRows.map((row) => ({
-			id: row.id,
-			title: row.title,
-			source: "class_assignment" as const,
-			classId: row.classId,
-			className: row.className ?? null,
-			due: row.due,
-			submittedAt: row.submittedAt ?? null,
-			scores: null,
-		}));
+		const classAssignmentItems = await loadClassAssignmentItems(
+			db,
+			orgId,
+			s.id,
+		);
 
 		const gradingRows = await db
 			.select({
@@ -852,6 +791,71 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			assignments: [...classAssignmentItems, ...gradingItems],
 		};
 
+		return c.json(response);
+	});
+
+	router.get("/classes/:classId", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId");
+		const db = deps.getDb();
+
+		// IDOR guard: chỉ enrollment `active` của chính học viên trong org đang
+		// chọn. Lớp org khác, lớp không ghi danh và enrollment `invited` đều 404.
+		const [row] = await db
+			.select({ ...studentClassColumns, startDate: classTable.startDate })
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+		if (!row) return c.json({ error: "class not found" }, 404);
+
+		const [teacher, nextSession, lessons, assignments] = await Promise.all([
+			loadOrgTeacher(db, orgId),
+			loadNextSession(db, orgId, row.id, vietnamTodayISO()),
+			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
+			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
+			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
+			db
+				.select({
+					id: lesson.id,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+				})
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.enrollmentId, row.enrollmentId),
+					),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
+				),
+			loadClassAssignmentItems(db, orgId, s.id, row.id),
+		]);
+
+		const response: StudentClassDetail = {
+			class: {
+				...toStudentClass(row, nextSession, teacher),
+				startDate: row.startDate,
+			},
+			lessons: orderStudentLessons(lessons),
+			assignments,
+		};
 		return c.json(response);
 	});
 

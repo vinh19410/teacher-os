@@ -1591,6 +1591,14 @@ export const studentNextSessionSchema = z.object({
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
+/** Giáo viên phụ trách lớp = giáo viên sở hữu org (membership role 'teacher' sớm nhất). */
+export const studentTeacherSchema = z.object({
+	name: z.string(),
+	email: z.string(),
+	image: z.string().nullable().catch(null),
+});
+export type StudentTeacher = z.infer<typeof studentTeacherSchema>;
+
 export const studentClassSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -1609,6 +1617,8 @@ export const studentClassSchema = z.object({
 	 */
 	enrollmentId: z.string().catch(""),
 	enrollmentStatus: z.enum(ENROLLMENT_STATUSES).catch("active"),
+	/** null = org không có membership giáo viên; `.catch` giữ client chạy với server cũ. */
+	teacher: studentTeacherSchema.nullable().catch(null),
 });
 export type StudentClass = z.infer<typeof studentClassSchema>;
 
@@ -1643,6 +1653,27 @@ export const studentOverviewSchema = z.object({
 	assignments: z.array(studentAssignmentSchema),
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
+
+/** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
+export const studentClassLessonSchema = z.object({
+	id: z.string(),
+	/** yyyy-mm-dd; null = lớp legacy (null theo cả lớp). */
+	date: z.string().nullable(),
+	/** Thứ trong tuần, Monday = 1. */
+	day: z.number().int(),
+	time: z.string(),
+	dur: z.number().int(),
+	status: z.string(),
+	topic: z.string(),
+});
+export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
+
+export const studentClassDetailSchema = z.object({
+	class: studentClassSchema.extend({ startDate: z.string() }),
+	lessons: z.array(studentClassLessonSchema),
+	assignments: z.array(studentAssignmentSchema),
+});
+export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
 
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 

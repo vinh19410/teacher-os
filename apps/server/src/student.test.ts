@@ -3,6 +3,7 @@ import {
 	STUDENT_ERROR_CODES,
 	type StudentAssignment,
 	type StudentClass,
+	type StudentClassDetail,
 	type StudentMe,
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
@@ -248,6 +249,15 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						userId: "u-fresh",
 						userName: "Fresh Student",
 						email: "fresh@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				if (userKey === "org2-student") {
+					return {
+						userId: "u-org2",
+						userName: "Org Two Student",
+						email: "org2@test.local",
 						emailVerified: true,
 						role: "student",
 					};
@@ -580,6 +590,264 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		const jsonClass = overview.classes.find((c) => c.id === "class-json");
 		expect(jsonClass).toBeDefined();
 		expect(jsonClass?.schedule).toBe("T2 & T4 & T6 · 19:00–20:30");
+	});
+
+	describe("class teacher & GET /api/student/classes/:classId", () => {
+		beforeAll(async () => {
+			await libsql.insert(schema.student).values([
+				{
+					id: "student-org2",
+					orgId: "org-2",
+					name: "Org Two Student",
+					email: "org2@test.local",
+					phone: "0903333333",
+				},
+				{
+					id: "student-peer",
+					orgId: "org-1",
+					name: "Peer Student",
+					email: "peer@test.local",
+					phone: "0904444444",
+				},
+			]);
+			await libsql.insert(schema.classTable).values([
+				{
+					id: "class-pending",
+					orgId: "org-1",
+					name: "IELTS Pending",
+					schedule: "T7 09:00–10:30",
+					status: "active",
+				},
+				{
+					id: "class-not-mine",
+					orgId: "org-1",
+					name: "IELTS Not Mine",
+					schedule: "CN 09:00–10:30",
+					status: "active",
+				},
+			]);
+			await libsql
+				.update(schema.classTable)
+				.set({ startDate: "2026-01-01" })
+				.where(eq(schema.classTable.id, "class-1"));
+			await libsql.insert(schema.enrollment).values([
+				{
+					id: "enr-org2",
+					orgId: "org-2",
+					classId: "class-2",
+					studentId: "student-org2",
+				},
+				{
+					id: "enr-pending",
+					orgId: "org-1",
+					classId: "class-pending",
+					studentId: "student-1",
+					status: "invited",
+				},
+				{
+					id: "enr-peer",
+					orgId: "org-1",
+					classId: "class-1",
+					studentId: "student-peer",
+				},
+				{
+					id: "enr-peer-2",
+					orgId: "org-1",
+					classId: "class-not-mine",
+					studentId: "student-peer",
+				},
+			]);
+			await libsql.insert(schema.lesson).values([
+				{
+					id: "les-0",
+					orgId: "org-1",
+					classId: "class-1",
+					enrollmentId: "enr-1",
+					day: 4,
+					time: "18:30",
+					dur: 90,
+					date: "2026-01-05",
+					status: "completed",
+					topic: "Reading Skimming",
+				},
+				{
+					id: "les-peer",
+					orgId: "org-1",
+					classId: "class-1",
+					enrollmentId: "enr-peer",
+					day: 1,
+					time: "18:30",
+					dur: 90,
+					date: "2099-01-01",
+					status: "absent",
+					topic: "Writing Task 2",
+				},
+			]);
+			// Bài tập của lớp khác cùng học viên — không được lọt vào trang lớp class-1.
+			await libsql.insert(schema.classAssignment).values({
+				id: "ca-json",
+				orgId: "org-1",
+				classId: "class-json",
+				promptId: "prompt-1",
+				title: "Other class essay",
+				due: "2099-02-01",
+			});
+			await libsql.insert(schema.classAssignmentTarget).values({
+				id: "cat-json",
+				orgId: "org-1",
+				assignmentId: "ca-json",
+				studentId: "student-1",
+			});
+		});
+
+		test("overview attaches the org teacher to every class", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			expect(overview.classes.length).toBeGreaterThan(1);
+			for (const cls of overview.classes) {
+				expect(cls.teacher).toEqual({
+					name: "Teacher One",
+					email: "teacher@test.local",
+					image: null,
+				});
+			}
+		});
+
+		test("overview returns teacher null when the org has no teacher membership", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "org2-student" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			expect(overview.classes.map((c) => c.id)).toEqual(["class-2"]);
+			expect(overview.classes[0]?.teacher).toBeNull();
+		});
+
+		test("returns the class, the student's own lessons and the class assignments", async () => {
+			const res = await app.request("/api/student/classes/class-1", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const detail = (await res.json()) as StudentClassDetail;
+			expect(detail.class).toMatchObject({
+				id: "class-1",
+				name: "IELTS Foundation",
+				startDate: "2026-01-01",
+				enrollmentId: "enr-1",
+				enrollmentStatus: "active",
+				nextSession: {
+					date: "2099-01-01",
+					time: "18:30",
+					topic: "Writing Task 2",
+				},
+			});
+			expect(detail.class.teacher?.name).toBe("Teacher One");
+			expect(detail.lessons).toEqual([
+				{
+					id: "les-0",
+					date: "2026-01-05",
+					day: 4,
+					time: "18:30",
+					dur: 90,
+					status: "completed",
+					topic: "Reading Skimming",
+				},
+				{
+					id: "les-1",
+					date: "2099-01-01",
+					day: 1,
+					time: "18:30",
+					dur: 90,
+					status: "upcoming",
+					topic: "Writing Task 2",
+				},
+			]);
+			expect(detail.assignments.map((a) => a.id)).toEqual(["ca-1"]);
+			expect(detail.assignments[0]).toMatchObject({
+				source: "class_assignment",
+				classId: "class-1",
+				className: "IELTS Foundation",
+			});
+		});
+
+		test("404 for an invited enrollment", async () => {
+			const res = await app.request("/api/student/classes/class-pending", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(404);
+			expect(await res.json()).toEqual({ error: "class not found" });
+		});
+
+		test("404 for a class in another org or a class the student is not enrolled in", async () => {
+			for (const classId of ["class-2", "class-not-mine", "class-missing"]) {
+				const res = await app.request(`/api/student/classes/${classId}`, {
+					headers: { "x-test-user": "google-verified" },
+				});
+				expect(res.status).toBe(404);
+				expect(await res.json()).toEqual({ error: "class not found" });
+			}
+		});
+
+		test("legacy class lessons (no dates) interleave weekday slots, attended first within a slot", async () => {
+			await libsql.insert(schema.classTable).values({
+				id: "class-legacy",
+				orgId: "org-1",
+				name: "IELTS Legacy",
+				schedule: "T2 & T4 18:30–20:00",
+				status: "active",
+			});
+			await libsql.insert(schema.enrollment).values({
+				id: "enr-legacy",
+				orgId: "org-1",
+				classId: "class-legacy",
+				studentId: "student-1",
+			});
+			const legacy = (id: string, day: number, status: string) => ({
+				id,
+				orgId: "org-1",
+				classId: "class-legacy",
+				enrollmentId: "enr-legacy",
+				day,
+				time: "18:30",
+				dur: 90,
+				date: null,
+				status,
+			});
+			await libsql
+				.insert(schema.lesson)
+				.values([
+					legacy("leg-a1", 1, "upcoming"),
+					legacy("leg-a2", 1, "completed"),
+					legacy("leg-a3", 1, "upcoming"),
+					legacy("leg-b1", 3, "cancelled"),
+					legacy("leg-b2", 3, "upcoming"),
+					legacy("leg-b3", 3, "absent"),
+				]);
+
+			const res = await app.request("/api/student/classes/class-legacy", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const detail = (await res.json()) as StudentClassDetail;
+			expect(detail.lessons.map((l) => l.id)).toEqual([
+				"leg-a2",
+				"leg-b3",
+				"leg-a1",
+				"leg-b1",
+				"leg-a3",
+				"leg-b2",
+			]);
+		});
+
+		test("401 without a session", async () => {
+			const res = await app.request("/api/student/classes/class-1", {
+				headers: { "x-test-user": "none" },
+			});
+			expect(res.status).toBe(401);
+		});
 	});
 
 	describe("POST /api/student/onboarding", () => {
