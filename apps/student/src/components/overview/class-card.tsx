@@ -49,7 +49,7 @@ export function ClassCard({
 						<Link
 							to="/classes/$classId"
 							params={{ classId: cls.id }}
-							className="after:absolute after:inset-0 after:rounded-[var(--radius-lg)] focus-visible:outline-none"
+							className="after:absolute after:inset-0 after:rounded-[var(--radius-lg)] focus-visible:shadow-none focus-visible:outline-none"
 						>
 							{cls.name}
 						</Link>
