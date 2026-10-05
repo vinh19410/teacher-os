@@ -1,8 +1,9 @@
 import { createClient } from "@libsql/client";
-import type {
-	QuizAttemptDetail,
-	QuizAttemptSummary,
-	StudentQuizDetail,
+import {
+	QUIZ_ANSWER_VALUE_MAX,
+	type QuizAttemptDetail,
+	type QuizAttemptSummary,
+	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
@@ -76,7 +77,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		]);
 
 		// Org-2 + dòng student CÙNG email (unique index là per-org nên hợp lệ) —
-		// phục vụ test cross-org qua header x-student-org-id. createdAt CỎ hơn
+		// phục vụ test cross-org qua header x-student-org-id. createdAt CŨ hơn
 		// student-1 để default org resolution (rows[0] = mới nhất) của mọi test
 		// khác vẫn trỏ về student-1/org-1.
 		await libsql
@@ -598,10 +599,15 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		);
 		expect(detailRes.status).toBe(409);
 
-		// Caps: q ngoài snapshot → 400; q âm → 400; value > 500 → 400.
-		expect((await patchAnswer(attemptId, 8, "A")).status).toBe(400);
+		// Caps: q ngoài snapshot → 400; q âm → 400; value vượt max → 400.
+		expect(
+			(await patchAnswer(attemptId, QUIZ_QUESTIONS.length, "A")).status,
+		).toBe(400);
 		expect((await patchAnswer(attemptId, -1, "A")).status).toBe(400);
-		expect((await patchAnswer(attemptId, 0, "x".repeat(501))).status).toBe(400);
+		expect(
+			(await patchAnswer(attemptId, 0, "x".repeat(QUIZ_ANSWER_VALUE_MAX + 1)))
+				.status,
+		).toBe(400);
 	});
 
 	// (c) student cùng org không phải chủ attempt → 404 trên /attempts/* + quiz
@@ -1160,8 +1166,12 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 	test("answer patch rejects out-of-bound inputs with 400", async () => {
 		const attemptId = await startAttempt("ca-q20");
 
-		// value 501 ký tự > QUIZ_ANSWER_VALUE_MAX → 400 invalid body (zod).
-		const tooLong = await patchAnswer(attemptId, 0, "x".repeat(501));
+		// value vượt QUIZ_ANSWER_VALUE_MAX → 400 invalid body (zod).
+		const tooLong = await patchAnswer(
+			attemptId,
+			0,
+			"x".repeat(QUIZ_ANSWER_VALUE_MAX + 1),
+		);
 		expect(tooLong.status).toBe(400);
 		expect(await tooLong.json()).toEqual({ error: "invalid body" });
 
@@ -1169,8 +1179,10 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect((await patchAnswer(attemptId, -1, "A")).status).toBe(400);
 		expect((await patchAnswer(attemptId, 1.5, "A")).status).toBe(400);
 
-		// q == snapshot length (8) và xa hơn → range check server-side 400.
-		expect((await patchAnswer(attemptId, 8, "A")).status).toBe(400);
+		// q == snapshot length và xa hơn → range check server-side 400.
+		expect(
+			(await patchAnswer(attemptId, QUIZ_QUESTIONS.length, "A")).status,
+		).toBe(400);
 		expect((await patchAnswer(attemptId, 100, "A")).status).toBe(400);
 
 		// Không có gì được ghi xuống attempt.
@@ -1226,8 +1238,9 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 	});
 
 	// (scenario A2) Cùng email, org khác qua header x-student-org-id —
-	// predicate org+student phải chặn attempt của org-1 dù dòng student của
-	// org-2 thuộc cùng danh tính đăng nhập.
+	// danh tính org-2 (student id riêng) không chạm được attempt của org-1:
+	// mọi route đều 404. Test chứng minh chặn cross-identity qua org header,
+	// chưa tách riêng predicate orgId khỏi predicate studentId.
 	test("org switcher cannot reach another org's attempt (cross-org IDOR)", async () => {
 		const attemptId = await startAttempt("ca-q22");
 		const org2Read = {

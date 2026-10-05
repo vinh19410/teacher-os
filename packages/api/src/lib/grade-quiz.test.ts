@@ -41,7 +41,8 @@ describe("gradeQuiz — verdicts (#283)", () => {
 		// Pin hành vi hiện tại (scenario I6): normalize KHÔNG canonicalize
 		// Unicode — NFD (dấu tổ hợp) không khớp NFC (dấu dựng sẵn). Nếu muốn
 		// chấp nhận cả hai, phải thêm normalize("NFC") vào grader trước.
-		const nfd = "Ha\u0323 No\u0323i";
+		const nfd = "Hà Nội".normalize("NFD");
+		expect(nfd).not.toBe("Hà Nội"); // literal tổ hợp thật, chặn phantom pin
 		expect(
 			gradeQuiz([question({ answer: "Hà Nội" })], { "0": nfd }).verdicts,
 		).toEqual(["wrong"]);

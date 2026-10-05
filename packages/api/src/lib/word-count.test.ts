@@ -17,7 +17,8 @@ describe("countWords — quy ước IELTS (#304, scenario I7)", () => {
 	});
 
 	test("emoji và CJK đếm theo chunk phân tách whitespace", () => {
-		// Pin hành vi: emoji không có space → dính vào từ kế bên (1 chunk).
+		// Pin hành vi (characterization — trim + split whitespace, chưa phải
+		// quy ước đếm từ IELTS chính thức): emoji đứng riêng thành 1 chunk.
 		expect(countWords("great 😀 job")).toBe(3);
 		expect(countWords("great😀job")).toBe(1);
 		// CJK không có khoảng trắng giữa các chữ → cả cụm là 1 "từ".
