@@ -1,5 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useState } from "react";
+import {
+	fmtDue,
+	studentSubmissionStatus,
+} from "@/components/assignments/assignment-status";
+import { StatusTag } from "@/components/assignments/status-tag";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +19,10 @@ import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
+import {
+	type StudentAssignmentRow,
+	studentAssignmentRows,
+} from "@/lib/repos/student-assignments";
 import { useStudents } from "@/lib/repos/use-students";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
@@ -61,6 +71,53 @@ const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
 	unpaid: "warn",
 };
 
+/** #317 — cells tab Bài tập theo nhánh kind: class row (flow #208) plain text
+ * + StatusTag; grading row giữ hành vi cũ (link trang chấm, Band, text). */
+function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
+	if (row.kind === "class") {
+		const status = studentSubmissionStatus(
+			{ submittedAt: row.submittedAt },
+			row.due,
+			todayVN,
+		);
+		return [
+			<div className="flex flex-col gap-0.5">
+				<span className="font-medium text-fg">{row.title}</span>
+				{row.className !== "" && (
+					<span className="font-mono text-meta text-xs">{row.className}</span>
+				)}
+			</div>,
+			row.typeLabel ?? "—",
+			fmtDue(row.due),
+			"—",
+			<StatusTag tone={status.tone}>{status.label}</StatusTag>,
+		];
+	}
+	return [
+		<Link
+			to="/assignments/$assignmentId"
+			params={{ assignmentId: row.id }}
+			className="font-medium text-accent-blue hover:text-accent-active"
+		>
+			{row.title}
+		</Link>,
+		row.typeLabel ?? "—",
+		row.due === "" ? "—" : fmtDue(row.due),
+		row.scores ? (
+			<span className="font-mono font-semibold text-accent-blue">
+				{averageBand(row.scores).toFixed(1)}
+			</span>
+		) : (
+			"—"
+		),
+		row.gradingStatus === "graded"
+			? "Đã chấm"
+			: row.gradingStatus === "late"
+				? "Trễ"
+				: "Chưa nộp",
+	];
+}
+
 function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
 	const { studentById } = useStudents();
@@ -75,7 +132,8 @@ function StudentDetailRoute() {
 
 	const lessons = data.lessons.filter((l) => l.sid === studentId);
 	const invoices = data.invoices.filter((i) => i.sid === studentId);
-	const assignments = data.assignments.filter((a) => a.sid === studentId);
+	const assignments = studentAssignmentRows(data, studentId);
+	const todayVN = vietnamTodayISO();
 	const studentClasses = classesByStudent(data, studentId);
 
 	return (
@@ -248,35 +306,9 @@ function StudentDetailRoute() {
 				<Card variant="white" className="p-0">
 					<DataTable
 						headers={["Bài tập", "Loại", "Hạn", "Band", "Trạng thái"]}
-						rows={assignments.map((a) => ({
+						rows={assignments.map((row) => ({
 							onClick: undefined,
-							cells: [
-								<Link
-									key={a.id}
-									to="/assignments/$assignmentId"
-									params={{ assignmentId: a.id }}
-									className="font-medium text-accent-blue hover:text-accent-active"
-								>
-									{a.title}
-								</Link>,
-								a.type,
-								a.due,
-								a.scores ? (
-									<span
-										key={`${a.id}-band`}
-										className="font-mono font-semibold text-accent-blue"
-									>
-										{averageBand(a.scores).toFixed(1)}
-									</span>
-								) : (
-									"—"
-								),
-								a.status === "graded"
-									? "Đã chấm"
-									: a.status === "late"
-										? "Trễ"
-										: "Chưa nộp",
-							],
+							cells: assignmentRowCells(row, todayVN),
 						}))}
 					/>
 				</Card>
