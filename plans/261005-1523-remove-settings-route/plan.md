@@ -1,7 +1,7 @@
 ---
 title: "Remove /settings route"
 description: "Gỡ trang Cài đặt (/settings) cùng endpoint /api/kernel/settings và contract zod vì không tính năng nào dùng workspace settings; giữ bảng DB workspace_settings."
-status: pending
+status: completed
 priority: P2
 effort: "0.5d"
 branch: chore/remove-settings-route
