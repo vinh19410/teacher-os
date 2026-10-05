@@ -1,8 +1,9 @@
 import { createClient } from "@libsql/client";
-import type {
-	QuizAttemptDetail,
-	QuizAttemptSummary,
-	StudentQuizDetail,
+import {
+	QUIZ_ANSWER_VALUE_MAX,
+	type QuizAttemptDetail,
+	type QuizAttemptSummary,
+	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
@@ -74,6 +75,22 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 				phone: "0901111111",
 			},
 		]);
+
+		// Org-2 + dòng student CÙNG email (unique index là per-org nên hợp lệ) —
+		// phục vụ test cross-org qua header x-student-org-id. createdAt CŨ hơn
+		// student-1 để default org resolution (rows[0] = mới nhất) của mọi test
+		// khác vẫn trỏ về student-1/org-1.
+		await libsql
+			.insert(schema.organization)
+			.values({ id: "org-2", name: "Academy 2" });
+		await libsql.insert(schema.student).values({
+			id: "student-org2",
+			orgId: "org-2",
+			name: "Minh Tran",
+			email: "minh@gmail.com",
+			phone: "0901234567",
+			createdAt: new Date("2020-01-01T00:00:00Z"),
+		});
 
 		await libsql.insert(schema.classTable).values({
 			id: "class-1",
@@ -259,6 +276,27 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			status: "ready",
 		});
 
+		// Bản sao 8 câu của prompt-quiz dùng RIÊNG cho các test scenario mới
+		// (T1/I1/I3/I4/D1/A2): test (h) đè questions của prompt-quiz sau khi
+		// chạy, nên attempt mở trên prompt-quiz sau (h) sẽ freeze đề 1 câu.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-quiz-2",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "info",
+			title: "Reading Practice 2",
+			prompt: "Read the passage and answer.",
+			passage: "<p>Passage body</p>",
+			transcript: "<p>Transcript bí mật — chỉ giáo viên đọc</p>",
+			questions: JSON.stringify(QUIZ_QUESTIONS),
+			optionBank: JSON.stringify(["Alpha", "Beta", "Gamma", "Delta"]),
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		for (const assignmentId of [
 			"ca-q1",
 			"ca-q2",
@@ -278,6 +316,10 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q16",
 			"ca-q17",
 			"ca-q18",
+			"ca-q19",
+			"ca-q20",
+			"ca-q21",
+			"ca-q22",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -294,7 +336,11 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 											assignmentId,
 										)
 									? "prompt-writing"
-									: "prompt-quiz",
+									: ["ca-q19", "ca-q20", "ca-q21", "ca-q22"].includes(
+												assignmentId,
+											)
+										? "prompt-quiz-2"
+										: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -553,10 +599,15 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		);
 		expect(detailRes.status).toBe(409);
 
-		// Caps: q ngoài snapshot → 400; q âm → 400; value > 500 → 400.
-		expect((await patchAnswer(attemptId, 8, "A")).status).toBe(400);
+		// Caps: q ngoài snapshot → 400; q âm → 400; value vượt max → 400.
+		expect(
+			(await patchAnswer(attemptId, QUIZ_QUESTIONS.length, "A")).status,
+		).toBe(400);
 		expect((await patchAnswer(attemptId, -1, "A")).status).toBe(400);
-		expect((await patchAnswer(attemptId, 0, "x".repeat(501))).status).toBe(400);
+		expect(
+			(await patchAnswer(attemptId, 0, "x".repeat(QUIZ_ANSWER_VALUE_MAX + 1)))
+				.status,
+		).toBe(400);
 	});
 
 	// (c) student cùng org không phải chủ attempt → 404 trên /attempts/* + quiz
@@ -1074,5 +1125,165 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const attempt2 = await startAttempt("ca-q17");
 		const answerBig = await patchAnswer(attempt2, 0, "x".repeat(5000));
 		expect(answerBig.status).toBe(413);
+	});
+
+	// (scenario T1) Hai request start đua nhau — unique (assignmentId,
+	// studentId) đảm bảo chỉ một insert thắng; request thua re-read (backstop)
+	// và trả CÙNG attemptId. Assert theo bất biến, không theo thứ tự schedule.
+	test("concurrent quiz start requests converge to a single attempt", async () => {
+		const results = await Promise.all([
+			app.request("/api/student/assignments/ca-q19/quiz/start", {
+				method: "POST",
+				headers: writeHeaders(),
+				body: "{}",
+			}),
+			app.request("/api/student/assignments/ca-q19/quiz/start", {
+				method: "POST",
+				headers: writeHeaders(),
+				body: "{}",
+			}),
+		]);
+		// Đúng một request thắng insert (201), request kia resume (200) —
+		// không bao giờ 201×2 (unique chặn) hay 500 (catch re-read).
+		expect(results.map((r) => r.status).sort()).toEqual([200, 201]);
+		const attemptIds = await Promise.all(
+			results.map(
+				async (r) => ((await r.json()) as { attemptId: string }).attemptId,
+			),
+		);
+		expect(new Set(attemptIds).size).toBe(1);
+
+		// DB chỉ có đúng một dòng attempt cho assignment này.
+		const rows = await libsql
+			.select({ id: schema.quizAttempt.id })
+			.from(schema.quizAttempt)
+			.where(eq(schema.quizAttempt.assignmentId, "ca-q19"));
+		expect(rows).toHaveLength(1);
+	});
+
+	// (scenarios I1 + I3) Chặn input biên của PATCH /answer trước khi chạm DB:
+	// value > 500 ký tự và q âm/lẻ là 400 zod; q ngoài snapshot là 400 range.
+	test("answer patch rejects out-of-bound inputs with 400", async () => {
+		const attemptId = await startAttempt("ca-q20");
+
+		// value vượt QUIZ_ANSWER_VALUE_MAX → 400 invalid body (zod).
+		const tooLong = await patchAnswer(
+			attemptId,
+			0,
+			"x".repeat(QUIZ_ANSWER_VALUE_MAX + 1),
+		);
+		expect(tooLong.status).toBe(400);
+		expect(await tooLong.json()).toEqual({ error: "invalid body" });
+
+		// q âm và q lẻ → zod 400 (int, min 0).
+		expect((await patchAnswer(attemptId, -1, "A")).status).toBe(400);
+		expect((await patchAnswer(attemptId, 1.5, "A")).status).toBe(400);
+
+		// q == snapshot length và xa hơn → range check server-side 400.
+		expect(
+			(await patchAnswer(attemptId, QUIZ_QUESTIONS.length, "A")).status,
+		).toBe(400);
+		expect((await patchAnswer(attemptId, 100, "A")).status).toBe(400);
+
+		// Không có gì được ghi xuống attempt.
+		const take = await app.request("/api/student/assignments/ca-q20/quiz", {
+			headers: OWNER,
+		});
+		expect(((await take.json()) as StudentQuizDetail).attempt?.answers).toEqual(
+			{},
+		);
+	});
+
+	// (scenarios I4 + D1) json_set giữ nguyên giá trị chứa ký tự JSON đặc biệt
+	// (json_quote escape đúng) và key luôn là chuỗi index nguyên — key "0.0"
+	// là regression thật khi param số bind REAL thay vì TEXT (String(q)).
+	test("special-character answers round-trip and keys stay integer strings", async () => {
+		const attemptId = await startAttempt("ca-q21");
+		const weird = 'say "ok" \\ done 😀';
+		expect((await patchAnswer(attemptId, 0, "  PARIS  ")).status).toBe(200);
+		expect((await patchAnswer(attemptId, 2, "TRUE")).status).toBe(200);
+		expect((await patchAnswer(attemptId, 7, weird)).status).toBe(200);
+
+		// Take payload trả raw đúng từng ký tự — storage không normalize.
+		const take = await app.request("/api/student/assignments/ca-q21/quiz", {
+			headers: OWNER,
+		});
+		const body = (await take.json()) as StudentQuizDetail;
+		expect(body.attempt?.answers).toEqual({
+			"0": "  PARIS  ",
+			"2": "TRUE",
+			"7": weird,
+		});
+
+		// Raw JSON trong DB: đúng key "0"/"2"/"7", không bao giờ "0.0".
+		const [stored] = await libsql
+			.select({ answers: schema.quizAttempt.answers })
+			.from(schema.quizAttempt)
+			.where(eq(schema.quizAttempt.id, attemptId));
+		expect(Object.keys(JSON.parse(stored?.answers ?? "{}")).sort()).toEqual([
+			"0",
+			"2",
+			"7",
+		]);
+
+		// Grader đọc được JSON không corrupt: q0 correct (normalize hoa/thường
+		// + whitespace), q2 correct, q7 wrong, còn lại skipped.
+		const submitRes = await submit(attemptId);
+		expect(await submitRes.json()).toEqual({
+			correctCount: 2,
+			totalCount: 8,
+			wrongCount: 1,
+			skippedCount: 5,
+		});
+	});
+
+	// (scenario A2) Cùng email, org khác qua header x-student-org-id —
+	// danh tính org-2 (student id riêng) không chạm được attempt của org-1:
+	// mọi route đều 404. Test chứng minh chặn cross-identity qua org header,
+	// chưa tách riêng predicate orgId khỏi predicate studentId.
+	test("org switcher cannot reach another org's attempt (cross-org IDOR)", async () => {
+		const attemptId = await startAttempt("ca-q22");
+		const org2Read = {
+			"x-test-user": "google-verified",
+			"x-student-org-id": "org-2",
+		};
+		const org2Write = {
+			...org2Read,
+			Origin: STUDENT_ORIGIN,
+			"Content-Type": "application/json",
+		};
+
+		const patch = await app.request(
+			`/api/student/attempts/${attemptId}/answer`,
+			{
+				method: "PATCH",
+				headers: org2Write,
+				body: JSON.stringify({ q: 0, value: "Paris" }),
+			},
+		);
+		expect(patch.status).toBe(404);
+
+		const summary = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: org2Read,
+		});
+		expect(summary.status).toBe(404);
+
+		const submitRes = await app.request(
+			`/api/student/attempts/${attemptId}/submit`,
+			{ method: "POST", headers: org2Write, body: "{}" },
+		);
+		expect(submitRes.status).toBe(404);
+
+		// Positive control: cơ chế header hoạt động — chọn org-1 vẫn thao tác
+		// được attempt (chứng minh 404 ở trên do org guard, không phải header hỏng).
+		const control = await app.request(
+			`/api/student/attempts/${attemptId}/answer`,
+			{
+				method: "PATCH",
+				headers: { ...writeHeaders(), "x-student-org-id": "org-1" },
+				body: JSON.stringify({ q: 0, value: "Paris" }),
+			},
+		);
+		expect(control.status).toBe(200);
 	});
 });
