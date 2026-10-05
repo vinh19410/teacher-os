@@ -67,6 +67,7 @@ import {
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
 import { activateEnrollment } from "./enrollment-activation";
+import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 
@@ -2145,6 +2146,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/notifs", notifRoutes(deps));
 	kernel.route("/comment-bank", commentBankRoutes(deps));
 	kernel.route("/bank-link", bankLinkRoutes(deps));
+	kernel.route("/payment-transactions", paymentTransactionRoutes(deps));
 
 	return kernel;
 }

@@ -2,8 +2,12 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import type { BankHubContext } from "../lib/bank-hub/bank-hub-client";
-import { bankHubWebhookEventSchema } from "../lib/bank-hub/bank-hub-types";
+import {
+	bankHubIpnSchema,
+	bankHubWebhookEventSchema,
+} from "../lib/bank-hub/bank-hub-types";
 import { applyAccountEvent } from "../lib/bank-hub/bank-link-service";
+import { ingestTransaction } from "../lib/payments/ingest-transaction";
 import { safeEqual } from "../lib/safe-equal";
 
 /**
@@ -46,6 +50,59 @@ export function bankHubWebhookRoutes(deps: {
 		}
 		const result = await applyAccountEvent(deps.getDb(), hub, event);
 		return c.json({ success: true, applied: result === "applied" });
+	});
+
+	// Balance-change IPN (#320). SePay retries ONLY on network errors — a 4xx
+	// or 5xx here means the transaction is never delivered again, so the
+	// schema is deliberately loose (5 required fields) and org-resolution API
+	// failures ack 200 instead of 500 (the reconciliation sweep recovers).
+	router.post("/ipn", async (c) => {
+		const hub = deps.getBankHub?.();
+		if (!hub) return c.json({ error: "BANKHUB_DISABLED" }, 503);
+		const auth = c.req.header("Authorization") ?? "";
+		const providedKey = auth.startsWith("Apikey ")
+			? auth.slice("Apikey ".length)
+			: "";
+		if (!safeEqual(providedKey, hub.ipnApiKey)) {
+			return c.json({ error: "unauthorized" }, 401);
+		}
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		const parsed = bankHubIpnSchema.safeParse(raw);
+		if (!parsed.success) {
+			const candidate = raw as { transaction_id?: unknown };
+			console.error(
+				`[ipn] payload failed required-field validation (transaction_id=${typeof candidate.transaction_id === "string" ? candidate.transaction_id : "unknown"})`,
+			);
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const tx = parsed.data;
+		const result = await ingestTransaction(
+			deps.getDb(),
+			hub,
+			{
+				transactionId: tx.transaction_id,
+				transferType: tx.transfer_type,
+				amount: tx.amount,
+				bankAccountXid: tx.bank_account_xid,
+				content: tx.content,
+				paymentCode: tx.payment_code ?? null,
+				referenceCode: tx.reference_code ?? "",
+				transactionDate: tx.transaction_date ?? "",
+				rawJson: JSON.stringify(raw),
+			},
+			{ saveNoCode: false },
+		);
+		if (result === "api-error") {
+			console.error(
+				`[ipn] Bank Hub API failed during org resolution (transaction_id=${tx.transaction_id}) — recoverable via reconcile`,
+			);
+		}
+		return c.json({ success: true });
 	});
 
 	return router;

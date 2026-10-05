@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Phase 4: IPN, khớp giao dịch và đối soát"
-status: todo
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [1, 2, 3]
@@ -132,11 +132,11 @@ recomputeInvoice(invId) =
 
 ## Todo
 
-- [ ] `ingest-transaction.ts` + `recompute-invoice.ts` (một D1 batch)
-- [ ] Test matrix ingest (partial, replay, paid-thiếu/paid-đủ, foreign_code, no_code, skip, case-insensitive, fallback API lỗi)
-- [ ] Route IPN + test auth/limit/parse lỏng
-- [ ] `payment-transactions` list (che foreign, limit 50)/assign/ignore + test
-- [ ] `/bank-link/reconcile` (mọi xid) + cooldown + test với fake client phân trang
+- [x] `ingest-transaction.ts` + `recompute-invoice.ts` (một D1 batch)
+- [x] Test matrix ingest (partial, replay, paid-thiếu/paid-đủ, foreign_code, no_code, skip, case-insensitive, fallback API lỗi)
+- [x] Route IPN + test auth/limit/parse lỏng
+- [x] `payment-transactions` list (che foreign, limit 50)/assign/ignore + test
+- [x] `/bank-link/reconcile` (mọi xid) + cooldown + test với fake client phân trang
 
 ## Success Criteria
 

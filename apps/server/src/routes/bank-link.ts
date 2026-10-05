@@ -10,13 +10,20 @@ import { eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
-import type { BankHubContext } from "../lib/bank-hub/bank-hub-client";
+import {
+	type BankHubContext,
+	BankHubError,
+} from "../lib/bank-hub/bank-hub-client";
 import {
 	ensureCompany,
 	maskAccount,
 	type OrgBankLinkRow,
 	syncFromBankHub,
 } from "../lib/bank-hub/bank-link-service";
+import {
+	clientTransactionToIngest,
+	ingestTransaction,
+} from "../lib/payments/ingest-transaction";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type BankLinkContext = Context<Env>;
@@ -197,6 +204,108 @@ export function bankLinkRoutes(deps: {
 				expiresAt: token.expiresAt,
 			}),
 		);
+	});
+
+	// Manual reconciliation sweep (#320): pulls recent credits for EVERY
+	// account xid the org has ever linked (current + past_bank_account_xids)
+	// and ingests them through the same path as the IPN — the safety net for
+	// deliveries lost to 4xx/5xx (SePay never retries those).
+	router.post("/reconcile", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const hub = deps.getBankHub?.();
+		if (!hub) {
+			return c.json(
+				{
+					error: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
+					code: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
+				},
+				503,
+			);
+		}
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(orgBankLink)
+			.where(eq(orgBankLink.orgId, ctx.orgId))
+			.limit(1);
+		if (!row?.companyXid) {
+			return c.json({ scanned: 0, matched: 0, unmatched: 0 });
+		}
+		const nowSec = Math.floor(Date.now() / 1000);
+		if (nowSec - row.lastReconciledAt < 60) {
+			return c.json(
+				{ error: "reconcile cooldown", code: "RECONCILE_COOLDOWN" },
+				429,
+			);
+		}
+
+		let pastXids: string[] = [];
+		try {
+			const parsed: unknown = JSON.parse(row.pastBankAccountXids || "[]");
+			if (Array.isArray(parsed)) {
+				pastXids = parsed.filter((x): x is string => typeof x === "string");
+			}
+		} catch {
+			pastXids = [];
+		}
+		const xids = Array.from(
+			new Set(
+				[row.bankAccountXid, ...pastXids].filter((x): x is string =>
+					Boolean(x),
+				),
+			),
+		);
+
+		const startDate = new Date(Date.now() - 7 * 24 * 3600 * 1000)
+			.toISOString()
+			.slice(0, 10);
+		let scanned = 0;
+		let matched = 0;
+		let unmatched = 0;
+		try {
+			for (const xid of xids) {
+				// per_page=100, max 5 pages per account (500 tx / 7 days ceiling).
+				for (let page = 1; page <= 5; page += 1) {
+					const result = await hub.client.listTransactions({
+						bankAccountXid: xid,
+						transferType: "credit",
+						startDate,
+						page,
+						perPage: 100,
+					});
+					for (const transaction of result.data) {
+						scanned += 1;
+						const outcome = await ingestTransaction(
+							db,
+							hub,
+							clientTransactionToIngest(transaction),
+							{ saveNoCode: true },
+						);
+						if (outcome === "matched") matched += 1;
+						else if (outcome === "unmatched") unmatched += 1;
+					}
+					const totalPages = result.meta?.totalPages ?? page;
+					if (page >= totalPages) break;
+				}
+			}
+		} catch (err) {
+			// Respect Bank Hub rate limiting instead of sleeping in the Worker.
+			if (err instanceof BankHubError && err.status === 429) {
+				c.header("Retry-After", String(err.retryAfter ?? 60));
+				return c.json(
+					{ error: "bank hub rate limited", code: "BANKHUB_RATE_LIMITED" },
+					429,
+				);
+			}
+			throw err;
+		}
+
+		await db
+			.update(orgBankLink)
+			.set({ lastReconciledAt: nowSec, updatedAt: new Date() })
+			.where(eq(orgBankLink.orgId, ctx.orgId));
+		return c.json({ scanned, matched, unmatched });
 	});
 
 	router.post("/sync", async (c) => {

@@ -2022,3 +2022,32 @@ export interface StudentInvoiceItem {
 	due: string;
 	type: string;
 }
+
+/** #320 — one row of the teacher's unmatched-transaction queue. */
+export interface PaymentTransactionItem {
+	id: string;
+	amount: number;
+	/** Null on foreign_code rows — another org's transfer memo is secret. */
+	content: string | null;
+	referenceCode: string;
+	transactionDate: string;
+	unmatchedReason:
+		| ""
+		| "unknown_code"
+		| "invoice_paid"
+		| "no_code"
+		| "foreign_code"
+		| string;
+	paymentCode: string | null;
+}
+
+export const paymentAssignSchema = z
+	.object({ invoiceId: z.string().min(1) })
+	.strict();
+export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
+
+export interface ReconcileResult {
+	scanned: number;
+	matched: number;
+	unmatched: number;
+}

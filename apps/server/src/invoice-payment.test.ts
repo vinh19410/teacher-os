@@ -121,9 +121,7 @@ describe("invoice payment instructions (#320)", () => {
 	function get(path: string, token?: string): Promise<Response> {
 		return Promise.resolve(
 			app.request(path, {
-				headers: token
-					? { cookie: `better-auth.session_token=${token}` }
-					: {},
+				headers: token ? { cookie: `better-auth.session_token=${token}` } : {},
 			}),
 		);
 	}
