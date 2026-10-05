@@ -38,7 +38,7 @@ Trang `/settings` (4 tab: Tài khoản, Mẫu tin Zalo, Quy tắc, Dữ liệu) 
 |---|-------|--------|------|
 | 1 | Gỡ trang /settings phía web | completed | [phase-01-remove-web-settings-route.md](phase-01-remove-web-settings-route.md) |
 | 2 | Gỡ endpoint + contract settings phía server | completed | [phase-02-remove-settings-api-and-contract.md](phase-02-remove-settings-api-and-contract.md) |
-| 3 | Đồng bộ plan phụ thuộc, docs, verify | in-progress (còn comment #320 sau khi có PR) | [phase-03-sync-dependent-plans-and-docs.md](phase-03-sync-dependent-plans-and-docs.md) |
+| 3 | Đồng bộ plan phụ thuộc, docs, verify | completed | [phase-03-sync-dependent-plans-and-docs.md](phase-03-sync-dependent-plans-and-docs.md) |
 
 Phase 2 phụ thuộc phase 1 (web phải hết import contract trước khi xoá contract). Phase 3 chạy sau cùng.
 

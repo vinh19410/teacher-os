@@ -26,7 +26,7 @@ Các plan đang mở không còn trỏ tới trang/module đã xoá; CHANGELOG g
 - [x] 2. Thêm mục CHANGELOG.
 - [x] 3. Chạy full gate local (PR vào `develop` không có CI): `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test`.
 - [x] 4. E2E: `grep -rln "settings" apps/e2e --include='*.ts'` — nếu có spec đụng `/settings` thì sửa; sau đó `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
-- [ ] 5. Comment lên #320.
+- [x] 5. Comment lên #320 (issues/320#issuecomment-5991712634).
 
 ## Verification
 - Tất cả lệnh ở bước 3–4 xanh.
