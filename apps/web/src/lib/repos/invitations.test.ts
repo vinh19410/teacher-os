@@ -4,7 +4,7 @@ import {
 	fetchPendingInvitations,
 	sendStudentInvitation,
 } from "./invitations";
-import { getApiBaseUrl } from "./settings";
+import { getApiBaseUrl } from "./api-base-url";
 
 describe("invitations repo", () => {
 	const originalFetch = globalThis.fetch;

@@ -22,7 +22,6 @@ describe("routes-matcher", () => {
 			"/profile",
 			"/reports",
 			"/schedule",
-			"/settings",
 			"/tuition",
 			"/assignments",
 			"/assignments/new",
@@ -91,6 +90,8 @@ describe("routes-matcher", () => {
 			expect(isValidAppRoute("/foo")).toBe(false);
 			expect(isValidAppRoute("/api/unknown")).toBe(false);
 			expect(isValidAppRoute("/admin")).toBe(false);
+			// Route /settings đã bị gỡ (issue #321) — xử lý như path không hợp lệ.
+			expect(isValidAppRoute("/settings")).toBe(false);
 			expect(isValidAppRoute("/settings/extra/nested")).toBe(false);
 		});
 
