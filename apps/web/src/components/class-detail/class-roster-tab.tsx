@@ -6,21 +6,66 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
+import { cn } from "@/lib/cn";
+import {
+	INVOICE_STATUS_LABEL,
+	INVOICE_STATUS_VARIANT,
+} from "@/lib/format-invoice";
 import {
 	type ClassGroup,
 	fmtVND,
 	type KernelHydratedData,
 	type Student,
 } from "@/lib/mock-data";
+import type { RosterDebt } from "@/lib/tuition-from-kernel";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface ClassRosterTabProps {
 	cls: ClassGroup;
 	data: KernelHydratedData;
 	studentById: (id: string) => Student | undefined;
-	rosterDebt: Map<string, { outstanding: number; invoiceCount: number }>;
+	rosterDebt: Map<string, RosterDebt>;
 	run: DirectKernelAction["run"];
 	busy: boolean;
+}
+
+/** Ô "Học phí" của tab Học viên (#322): badge trạng thái cùng nhãn/màu với
+ * /tuition, kèm số tiền còn nợ. Không entry trong map = "Chưa lập phiếu";
+ * học viên được mời giữ nguyên "—". */
+export function RosterTuitionCell({
+	debt,
+	isInvited,
+}: {
+	debt?: RosterDebt;
+	isInvited: boolean;
+}) {
+	if (isInvited) {
+		return <span className="font-mono text-meta text-xs">—</span>;
+	}
+	if (!debt) {
+		return <Badge variant="muted">Chưa lập phiếu</Badge>;
+	}
+	const badge = (
+		<Badge variant={INVOICE_STATUS_VARIANT[debt.status]} dot>
+			{INVOICE_STATUS_LABEL[debt.status]}
+		</Badge>
+	);
+	if (debt.status === "paid") {
+		return badge;
+	}
+	return (
+		<span className="flex items-center gap-2 whitespace-nowrap">
+			{badge}
+			<span
+				className={cn(
+					"font-mono",
+					debt.status === "overdue" && "font-semibold text-danger",
+				)}
+			>
+				{fmtVND(debt.outstanding)}
+			</span>
+		</span>
+	);
 }
 
 export function ClassRosterTab({
@@ -89,38 +134,11 @@ export function ClassRosterTab({
 										{s.pkg.remaining}/{s.pkg.total}
 									</span>
 								),
-								(() => {
-									if (isInvited) {
-										return (
-											<span key="fee" className="font-mono text-meta text-xs">
-												—
-											</span>
-										);
-									}
-									const d = rosterDebt.get(s.id);
-									if (!d || d.invoiceCount === 0) {
-										return (
-											<span key="fee" className="font-mono text-meta text-xs">
-												—
-											</span>
-										);
-									}
-									if (d.outstanding > 0) {
-										return (
-											<span
-												key="fee"
-												className="font-mono font-semibold text-danger"
-											>
-												{fmtVND(d.outstanding)}
-											</span>
-										);
-									}
-									return (
-										<span key="fee" className="font-mono text-meta text-xs">
-											Đã đủ
-										</span>
-									);
-								})(),
+								<RosterTuitionCell
+									key="fee"
+									debt={rosterDebt.get(s.id)}
+									isInvited={isInvited}
+								/>,
 								isInvited ? (
 									<Badge key="b" variant="warn">
 										Đã mời

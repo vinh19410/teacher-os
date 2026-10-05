@@ -208,6 +208,13 @@ export function mondayWeekStartISO(iso: string): string {
 	return addDaysISO(iso, -vnWeekdayMon0(iso));
 }
 
+/** yyyy-mm-dd của hôm nay (giờ VN) + n ngày — specs học phí (#322) dùng hạn
+ * tương đối thay vì ngày cố định để badge "Quá hạn" suy ra từ `due` không tự
+ * lật trạng thái khi lịch chạy qua mốc nào đó. */
+export function isoInDaysFromTodayVN(n: number): string {
+	return addDaysISO(vietnamTodayISO(), n);
+}
+
 /** Navigate the /schedule grid to an explicit week. Issue #121: specs must
  * never depend on "current week" — on a VN Sunday a "start tomorrow" seed
  * lands its dated rows in the NEXT Monday-start week, so week-scoped

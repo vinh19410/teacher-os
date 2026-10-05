@@ -16,7 +16,12 @@ import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
-import { invoiceCode, invoiceType } from "@/lib/format-invoice";
+import {
+	INVOICE_STATUS_LABEL,
+	INVOICE_STATUS_VARIANT,
+	invoiceCode,
+	invoiceType,
+} from "@/lib/format-invoice";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import {
@@ -24,6 +29,7 @@ import {
 	studentAssignmentRows,
 } from "@/lib/repos/student-assignments";
 import { useStudents } from "@/lib/repos/use-students";
+import { effectiveInvoiceStatus } from "@/lib/tuition-from-kernel";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
@@ -59,16 +65,6 @@ const STATUS_VARIANT: Record<
 	upcoming: "accent",
 	cancelled: "muted",
 	absent: "danger",
-};
-const INV_STATUS_LABEL: Record<string, string> = {
-	paid: "Đã thu",
-	overdue: "Quá hạn",
-	unpaid: "Chưa thu",
-};
-const INV_VARIANT: Record<string, "success" | "danger" | "warn"> = {
-	paid: "success",
-	overdue: "danger",
-	unpaid: "warn",
 };
 
 /** #317 — cells tab Bài tập theo nhánh kind: class row (flow #208) plain text
@@ -285,19 +281,26 @@ function StudentDetailRoute() {
 				<Card variant="white" className="p-0">
 					<DataTable
 						headers={["Mã", "Loại", "Số tiền", "Ngày", "Trạng thái"]}
-						rows={invoices.map((inv) => ({
-							cells: [
-								invoiceCode(inv.id),
-								invoiceType(inv.type),
-								<span key={inv.id} className="font-mono">
-									{fmtVND(inv.amount)}
-								</span>,
-								inv.date,
-								<Badge key={`${inv.id}-b`} variant={INV_VARIANT[inv.status]}>
-									{INV_STATUS_LABEL[inv.status]}
-								</Badge>,
-							],
-						}))}
+						rows={invoices.map((inv) => {
+							// #322 — "Quá hạn" suy ra từ `due`, cùng helper với roster.
+							const status = effectiveInvoiceStatus(inv, todayVN);
+							return {
+								cells: [
+									invoiceCode(inv.id),
+									invoiceType(inv.type),
+									<span key={inv.id} className="font-mono">
+										{fmtVND(inv.amount)}
+									</span>,
+									inv.date,
+									<Badge
+										key={`${inv.id}-b`}
+										variant={INVOICE_STATUS_VARIANT[status]}
+									>
+										{INVOICE_STATUS_LABEL[status]}
+									</Badge>,
+								],
+							};
+						})}
 					/>
 				</Card>
 			)}

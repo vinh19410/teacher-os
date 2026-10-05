@@ -25,6 +25,7 @@ import { CLASS_TYPE_LABELS, classMeta, fmtVND } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { todayISOVietnam } from "@/lib/week-grid";
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
 	component: ClassDetailRoute,
@@ -131,8 +132,16 @@ function ClassDetailRoute() {
 	const classAssignments = useMemo(() => {
 		return (data.classAssignments ?? []).filter((ca) => ca.classId === classId);
 	}, [data.classAssignments, classId]);
+	// "Hôm nay" tính trong memo (#322): data đổi/reload là tính lại; tab mở
+	// qua nửa đêm không tự chuyển "Quá hạn" cho tới khi có refetch — chấp nhận.
 	const rosterDebt = useMemo(
-		() => rosterDebtByStudent(classId, data.enrollments, data.invoices),
+		() =>
+			rosterDebtByStudent(
+				classId,
+				data.enrollments,
+				data.invoices,
+				todayISOVietnam(),
+			),
 		[classId, data.enrollments, data.invoices],
 	);
 	const openAssignmentsCount = useMemo(() => {
