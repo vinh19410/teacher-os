@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server: API chấm bài + snapshot + summary học viên"
-status: pending
+status: completed
 priority: P1
 effort: "4.5h"
 dependencies: [1]

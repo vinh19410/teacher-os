@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E + docs + gate cuối"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: [1, 2, 3, 4]
@@ -153,6 +153,15 @@ Một spec Playwright chạy trọn vòng trên app thật cho cả Writing và 
   7. `pnpm --filter student test`
   8. `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e -- teacher-grade-submission student-quiz-take-review student-class-detail class-assign`
 - **Success criteria:** cả 8 bước đạt.
+
+> **Kết quả thực chạy (2026-10-05):** bước 2 fail 1/3 dòng — `assignments/index.tsx`
+> bị biome `--write` reformat (drift format sẵn trên develop, run #318; diff thuần
+> format, không đổi logic). Failure Protocol → `kongming` xác nhận GO: giữ nguyên
+> trạng thái biome đã format, **exclude khỏi commit** (commit theo path list),
+> không revert. 7 bước còn lại exit 0 (api 32, server 522, web 1242, student 237,
+> e2e 4 spec 17 pass). Lệnh e2e thực tế dùng filter positional (bỏ `--` vì
+> `playwright test -- <filter>` không lọc). Follow-up khuyến nghị: chore commit
+> format riêng cho file này trên develop để main CI (biome check read-only) không đỏ.
 
 ### Task 5.6 — Dọn tiến trình
 - **Goal:** không để lại dev server hay e2e server mồ côi (theo rule quản lý tiến trình).

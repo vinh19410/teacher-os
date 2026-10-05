@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Student: hiện band + nhận xét ở màn kết quả"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: [1, 2]
