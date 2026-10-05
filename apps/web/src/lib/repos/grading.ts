@@ -9,7 +9,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import { HttpError } from "@/lib/kernel-load-state";
-import { getApiBaseUrl } from "./settings";
+import { getApiBaseUrl } from "./api-base-url";
 
 export const gradingQueryKey = (attemptId: string) =>
 	["kernel", "grading", attemptId] as const;

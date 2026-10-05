@@ -37,7 +37,8 @@ export type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];
 /**
  * Tab active sống trong URL (`?tab=`) để nút "← Về lớp" của trang chấm
  * (#319) mở đúng tab Bài tập. Passthrough validation — tab lạ hoặc thiếu
- * không throw, chỉ rơi về mặc định (cùng pattern `validateSettingsSearch`).
+ * không throw, chỉ rơi về mặc định (cùng pattern `validateSearch` của route
+ * `profile`).
  */
 export function validateClassDetailSearch(search: Record<string, unknown>): {
 	tab?: ClassDetailTab;

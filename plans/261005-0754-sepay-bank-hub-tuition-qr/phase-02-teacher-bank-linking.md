@@ -11,7 +11,7 @@ dependencies: [1]
 
 ## Overview
 
-Giáo viên vào **Cài đặt → tab "Nhận học phí"**, bấm "Liên kết tài khoản" →
+Giáo viên vào **trang ngân hàng "Nhận học phí"** <!-- Updated: settings route removed 2026-10-05 — `/settings` đã gỡ (issue #321); dùng trang riêng, đề xuất route `/payments` (đối chiếu `/tuition` đang tồn tại) -->, bấm "Liên kết tài khoản" →
 server đảm bảo org có Company trong Bank Hub, tạo link token → web mở
 `hosted_link_url` trong iframe modal. Trạng thái liên kết được cập nhật theo
 **hai đường độc lập**: (a) client nhận `postMessage FINISHED_*` → gọi
@@ -23,7 +23,7 @@ server đảm bảo org có Company trong Bank Hub, tạo link token → web m�
 - [research/bank-hub-research.md](./research/bank-hub-research.md) — Hosted Link, webhook events
 - `apps/server/src/app.ts:190-197` (thứ tự mount; `/readyz` mount ngoài `/api/*`)
 - `apps/server/src/routes/kernel.ts` (CSRF Origin + JSON guard cho POST, `kernelCtx.orgId`)
-- `apps/web/src/routes/_auth/settings.tsx:114` (danh sách tab), `:43` (validate `tab` search param)
+- ~~`apps/web/src/routes/_auth/settings.tsx:114` (danh sách tab), `:43` (validate `tab` search param)~~ — file đã xoá (issue #321); thay bằng route mới `apps/web/src/routes/_auth/payments.tsx` (đề xuất) + entry `routes-matcher.ts` (`VALID_EXACT_ROUTES`) + `app-shell.tsx` (routeTitles) + mục sidebar
 - `apps/web/src/security-headers.ts:9` (CSP hiện không có `frame-src` ⇒ rơi về `default-src 'self'` ⇒ iframe SePay bị chặn)
 - `apps/web/src/components/ui/modal.tsx`
 
@@ -49,7 +49,7 @@ Phi chức năng:
 ## Architecture
 
 ```
-Web (settings "Nhận học phí")                 Server (Hono, kernel tree)              SePay Bank Hub
+Web (trang ngân hàng, đề xuất `/payments`)      Server (Hono, kernel tree)              SePay Bank Hub
  ── GET  /api/bank-link ───────────────────▶  đọc org_bank_link (DTO an toàn)
  ── POST /api/bank-link/link-token ────────▶  ensureCompany(org) ── create/get ─────▶ /v1/company/*
     {purpose: link|unlink|reactivate}          createLinkToken ───────────────────────▶ /v1/link-token/create
@@ -85,8 +85,9 @@ cùng file sau này chứa IPN (phase 4):
 - Create tests: `apps/server/src/bank-link.test.ts`, `apps/server/src/bank-hub-webhooks.test.ts`
 - Modify: `apps/server/src/app.ts` (mount webhooks), `apps/server/src/routes/kernel.ts` (mount subrouter)
 - Modify: `packages/api/src/contracts.ts` (`BankLinkStatus` DTO, `bankLinkTokenRequestSchema`)
-- Create: `apps/web/src/components/settings/bank-link-panel.tsx`, `apps/web/src/components/modals/bank-hub-link-modal.tsx`, `apps/web/src/lib/repos/bank-link.ts` (+ tests)
-- Modify: `apps/web/src/routes/_auth/settings.tsx` (tab `payments` "Nhận học phí"), `apps/web/src/security-headers.ts` (+ test) thêm `frame-src`
+- Create: `apps/web/src/components/bank-link/bank-link-panel.tsx` <!-- Updated: settings route removed 2026-10-05 — thư mục `components/settings/` không còn ngữ cảnh; đặt trong thư mục riêng -->, `apps/web/src/components/modals/bank-hub-link-modal.tsx`, `apps/web/src/lib/repos/bank-link.ts` (+ tests)
+- Create: `apps/web/src/routes/_auth/payments.tsx` (đề xuất — trang "Nhận học phí" thay tab `/settings?tab=payments` đã gỡ; đối chiếu `/tuition` đang tồn tại trước khi chốt route) + mục sidebar + entry `routes-matcher.ts`/`app-shell.tsx`
+- Modify: `apps/web/src/security-headers.ts` (+ test) thêm `frame-src`
 
 ## Implementation Steps
 
@@ -106,13 +107,13 @@ cùng file sau này chứa IPN (phase 4):
 - [ ] Routes `/api/bank-link/*` mount trong kernel tree
 - [ ] Webhook `/webhooks/sepay/bankhub/events` + `safeEqual`
 - [ ] Server tests (tenant isolation, secret, stale event, 503)
-- [ ] Web tab "Nhận học phí" + modal iframe + repo + tests
+- [ ] Web trang "Nhận học phí" (route riêng `/payments` đề xuất) + modal iframe + repo + tests
 - [ ] CSP `frame-src` + test
 - [ ] Verify 3 viewport + keyboard
 
 ## Success Criteria
 
-- `pnpm --filter server test -- bank-link bank-hub-webhooks` xanh; `pnpm --filter web test -- bank-link security-headers settings` xanh.
+- `pnpm --filter server test -- bank-link bank-hub-webhooks` xanh; `pnpm --filter web test -- bank-link security-headers` xanh.
 - Thủ công (sandbox, phase 6): liên kết MBBank mẫu → panel hiện "Đã liên kết • MBBank •••6789" mà không cần reload; huỷ liên kết → trạng thái cập nhật.
 
 ## Risk Assessment

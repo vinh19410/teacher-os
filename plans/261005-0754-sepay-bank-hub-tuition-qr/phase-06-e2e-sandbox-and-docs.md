@@ -35,7 +35,7 @@ runbook.
 
 1. `apps/e2e/src/fake-bank-hub.ts` + route trang giả + wire trong `boot.ts`.
 2. Spec `apps/e2e/specs/tuition-bank-transfer.spec.ts`:
-   1. Giáo viên mở Cài đặt → Nhận học phí → Liên kết → iframe giả → Hoàn tất → panel "Đã liên kết".
+   1. Giáo viên mở trang ngân hàng (đề xuất `/payments` — "Cài đặt" đã gỡ theo issue #321) → Nhận học phí → Liên kết → iframe giả → Hoàn tất → panel "Đã liên kết". <!-- Updated: settings route removed 2026-10-05 -->
    2. Tạo phiếu 500.000đ → mở "Thu học phí" → thấy QR (`img[src*="vietqr.app"]` có `amount=500000`, `des=TOS…`) → copy link.
    3. Học viên (portal) thấy phiếu trong "Học phí" → mở chi tiết thấy cùng mã.
    4. `simulateIpn` 200.000đ → trong ≤ 10 s portal hiện "Đã nhận 200.000đ / 500.000đ"; giáo viên thấy "Thu một phần".

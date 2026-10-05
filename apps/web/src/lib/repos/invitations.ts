@@ -5,7 +5,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import type { StudentInvitationItem } from "@teacher-os/api/contracts";
-import { getApiBaseUrl } from "./settings";
+import { getApiBaseUrl } from "./api-base-url";
 
 export const pendingInvitationsQueryKey = ["students", "invitations"] as const;
 

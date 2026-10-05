@@ -42,7 +42,7 @@ khớp" và nút "Đối soát".
 
 **Giáo viên `/tuition`:**
 - Cột trạng thái: thêm "Thu một phần" (dùng token màu warn theo `DESIGN.md`), cột số tiền hiện `paid/amount` khi một phần.
-- Hành động dòng "Thu học phí" → `InvoicePaymentModal`: `PaymentQrPanel` + "Sao chép link" (`${location.origin}/pay/${payToken}`) + "Sao chép tin nhắc nợ" + "Tạo link mới" (xoay `pay_token`, xác nhận trước vì link cũ hết hiệu lực). Org chưa liên kết → CTA tới `/settings?tab=payments`.
+- Hành động dòng "Thu học phí" → `InvoicePaymentModal`: `PaymentQrPanel` + "Sao chép link" (`${location.origin}/pay/${payToken}`) + "Sao chép tin nhắc nợ" + "Tạo link mới" (xoay `pay_token`, xác nhận trước vì link cũ hết hiệu lực). Org chưa liên kết → CTA tới trang ngân hàng riêng (đề xuất `/payments` — `/settings?tab=payments` đã gỡ theo issue #321). <!-- Updated: settings route removed 2026-10-05 -->
 - Khu "Giao dịch chưa khớp (n)": bảng ngày/số tiền/nội dung/lý do; "Gán vào phiếu" (chọn trong phiếu chưa thu của org) và "Bỏ qua"; nút "Đối soát" (disable khi đang chạy, hiện kết quả `{matched, unmatched}`; 429 → "Vừa đối soát, thử lại sau 1 phút").
 - Server: `POST /api/invoices/:id/rotate-pay-token` (org-scoped, sinh token mới).
 

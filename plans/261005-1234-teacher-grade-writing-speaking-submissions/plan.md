@@ -7,12 +7,14 @@ effort: "16h"
 issue: 319
 branch: develop
 tags: [feature, frontend, backend, database, quiz, grading]
-blockedBy: []
+blockedBy: [261005-1523-remove-settings-route]
 blocks: []
 created: 2026-10-05
 ---
 
 # Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp
+
+> **📌 ĐÃ THỰC THI + ĐÃ ĐỒNG BỘ (#319 merged; #321 sửa tiếp).** Plan #321 gỡ `repos/settings.ts` — code thực thi của plan này đã được cập nhật trong nhánh #321 (`grading.ts` import `getApiBaseUrl` từ `./api-base-url`; cite trong phase-03 đổi sang precedent/symbol còn tồn tại). Không cần hành động thêm. <!-- Updated: settings route removed 2026-10-05 -->
 
 ## Overview
 
@@ -157,7 +159,7 @@ User chốt 5 quyết định qua phỏng vấn (3 trước khi soạn plan, 2 s
 ### Verification Results
 - Tier: Full (5 phase), do `kongming` kiểm chứng bằng đọc code thật.
 - Claims checked: khoảng 40 | Verified: tất cả claim còn lại sau khi sửa | Failed: 5 (H1–H5, đã sửa trong plan) | Unverified: 0.
-- Các claim đã xác minh gồm: Hono nested route thừa hưởng Origin guard (`kernel.ts:91-109`, `:2120-2123`); role gate (`app.ts:86`); CORP override (`app.ts:136-139`); mốc dòng contracts (1342, 1732–1741, 1851–1882); `loadAttemptForReview` select full row (`student.ts:1650`); `validateSearch` key optional không bắt buộc `search` ở Link (precedent `settings.tsx:39-52`, `sidebar.tsx:177`); `routeTree.gen.ts` bị gitignore; `kernelQueryKey` được observe nên invalidate sẽ refetch; testid `media-dropzone-input`; zod 4 `.refine` trong `.strict()`; drizzle `text(mode:"json").$type`.
+- Các claim đã xác minh gồm: Hono nested route thừa hưởng Origin guard (anchor theo symbol: `kernel.use("*")` guard đầu `kernelRoutes`, mount `kernel.route("/assignments", …)` — cite theo số dòng (`kernel.ts:91-109`, `:2120-2123`) đã lệch sau khi issue #321 gỡ handler settings, ~135 dòng); role gate (`app.ts:86`); CORP override (`app.ts:136-139`); mốc dòng contracts (1342, 1732–1741, 1851–1882); `loadAttemptForReview` select full row (`student.ts:1650`); `validateSearch` key optional không bắt buộc `search` ở Link (precedent `profile.tsx:26-28`, `login.tsx:20` — precedent cũ `settings.tsx:39-52` đã xoá cùng trang `/settings`); `routeTree.gen.ts` bị gitignore; `kernelQueryKey` được observe nên invalidate sẽ refetch; testid `media-dropzone-input`; zod 4 `.refine` trong `.strict()`; drizzle `text(mode:"json").$type`. <!-- Updated: settings route removed 2026-10-05 -->
 
 ### Whole-Plan Consistency Sweep
 Đã chạy chung với sweep của Red Team Review ở trên. Không còn mâu thuẫn.

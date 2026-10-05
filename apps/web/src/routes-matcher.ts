@@ -11,7 +11,6 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/profile": true,
 	"/reports": true,
 	"/schedule": true,
-	"/settings": true,
 	"/tuition": true,
 	"/assignments": true,
 	"/assignments/new": true,

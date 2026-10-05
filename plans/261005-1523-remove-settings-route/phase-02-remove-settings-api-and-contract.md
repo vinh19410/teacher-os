@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Gỡ endpoint + contract settings phía server"
-status: pending
+status: completed
 priority: P2
 effort: "1.5h"
 dependencies: [1]
@@ -24,12 +24,12 @@ Xoá `/api/kernel/settings` (GET/PUT/POST) và contract zod tương ứng; giữ
 - Không đụng: `packages/db/src/schema/settings.ts`, `packages/db/src/schema/index.ts:17`, migrations.
 
 ## Tasks & Steps
-- [ ] 1. Xoá handler + import trong `kernel.ts`.
-- [ ] 2. Xoá 4 export trong `contracts.ts`; `grep -rn "workspaceSettings\|WorkspaceSettings" apps packages/api/src --include='*.ts' --include='*.tsx'` chỉ còn khớp `packages/db` (không có).
-- [ ] 3. Origin guard tests: sau khi xoá, kernel không còn route PUT/PATCH nào, nhưng guard là `kernel.use("*")` (`kernel.ts:91`) nên vẫn chạy trước khi trả 404.
+- [x] 1. Xoá handler + import trong `kernel.ts`.
+- [x] 2. Xoá 4 export trong `contracts.ts`; `grep -rn "workspaceSettings\|WorkspaceSettings" apps packages/api/src --include='*.ts' --include='*.tsx'` chỉ còn khớp `packages/db` (không có).
+- [x] 3. Origin guard tests: guard là `kernel.use("*")` (`kernel.ts:91-95`, chỉ áp POST/PUT/PATCH/DELETE) chạy trước routing. PUT/PATCH `/api/classes` không khớp route nào trong kernel router (`/classes` chỉ có GET `:798` và POST `:811`) → sau guard trả 404. Lưu ý kernel router vẫn còn PUT/PATCH qua mount `/assignments` (`kernel.ts:2120`) — đừng chọn path đó cho test.
   - "PUT and PATCH without Origin header are 403": đổi path sang `/api/classes` (giữ method PUT/PATCH) → vẫn 403.
-  - "PUT with a foreign Origin is 403; allowed Origin reaches validation": đổi thành "…allowed Origin passes the guard" — foreign Origin → 403; Origin hợp lệ → status **khác 403** (kỳ vọng 404 vì không còn route PUT). Sửa comment tiếng Việt tương ứng.
-- [ ] 4. Thêm assertion `GET /api/kernel/settings` (có session) → 404 để khoá việc gỡ endpoint.
+  - "PUT with a foreign Origin is 403; allowed Origin reaches validation": đổi thành "…allowed Origin passes the guard" — foreign Origin → 403; Origin hợp lệ → **assert cứng `toBe(404)`** (không dùng `not.toBe(403)` — assertion lỏng sẽ nuốt cả 500/401, làm mất giá trị regression của CSRF guard). Kèm comment: 404 đến từ routing (không còn route PUT trên kernel router); nếu sau này thêm route PUT thì phải xem lại test này có chủ đích. Sửa comment tiếng Việt tương ứng.
+- [x] 4. Thêm assertion khoá việc gỡ endpoint với **teacher session** (student session bị chặn 403 ở bootstrap `app.ts:84-91` trước khi tới kernel): GET + PUT + POST `/api/kernel/settings` → 404 (Origin hợp lệ).
 
 ## Verification
 - `pnpm --filter server test -- kernel` xanh.
