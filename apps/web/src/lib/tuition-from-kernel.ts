@@ -1,7 +1,15 @@
 /** Tuition KPIs and due-date formatting from kernel-mapped store data
  * (issues #62/#135) — pure helpers, same pattern as dashboard-from-kernel. */
-import type { Invoice, Student } from "./mock-data";
+import type { Invoice, InvoiceStatus, Student } from "./mock-data";
 import { formatDayMonth, isValidISODate } from "./week-grid";
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** `due` dùng được: đúng dạng yyyy-mm-dd VÀ ngày có thật trên lịch
+ * (2026-02-30 bị loại) — dùng chung cho effectiveInvoiceStatus và formatDue. */
+function isValidDue(iso: string): boolean {
+	return ISO_DATE_RE.test(iso) && isValidISODate(iso);
+}
 
 export interface TuitionTotals {
 	/** Sum of paid invoice amounts (VND). */
@@ -25,6 +33,24 @@ export function tuitionTotals(invoices: Invoice[]): TuitionTotals {
 	return { collected, outstanding };
 }
 
+/**
+ * Trạng thái hiển thị của một hóa đơn (#322): server chỉ ghi unpaid/paid,
+ * không có writer nào chuyển sang "overdue", nên "Quá hạn" suy ra từ `due`
+ * (ISO yyyy-mm-dd, so chuỗi — không parse Date, xem tiền lệ UTC-drift ở
+ * week-grid). Hạn đúng hôm nay chưa quá hạn; hạn rỗng/không hợp lệ giữ
+ * "unpaid". Status lạ (coerced legacy) coi là chưa thu, cùng convention với
+ * tuitionTotals.
+ */
+export function effectiveInvoiceStatus(
+	invoice: Pick<Invoice, "status" | "due">,
+	todayISO: string,
+): InvoiceStatus {
+	if (invoice.status === "paid") return "paid";
+	if (invoice.status === "overdue") return "overdue";
+	const validDue = isValidDue(invoice.due);
+	return validDue && invoice.due < todayISO ? "overdue" : "unpaid";
+}
+
 /** Structural enrollment ref — KernelEnrollmentRow và mọi fixture test đều
  * gán được, module này không cần import contracts. */
 export interface RosterEnrollmentRef {
@@ -38,8 +64,11 @@ export interface RosterDebt {
 	/** Sum of unpaid + overdue invoice amounts (VND) for this class. */
 	outstanding: number;
 	/** All invoices of the class's enrollments, any status — để phân biệt
-	 * "Đã đủ" (có hóa đơn, đã thu đủ) với "—" (chưa có hóa đơn nào). */
+	 * "Đã thu" (có hóa đơn, đã thu đủ) với "—" (chưa có hóa đơn nào). */
 	invoiceCount: number;
+	/** Trạng thái tổng hợp (#322): "overdue" nếu ≥1 hóa đơn quá hạn (kể cả
+	 * suy ra từ `due`), else "unpaid" nếu còn nợ, else "paid". */
+	status: InvoiceStatus;
 }
 
 /**
@@ -49,11 +78,13 @@ export interface RosterDebt {
  * với tuitionTotals. Edge đã biết: học viên rời lớp rồi enroll lại thì hóa
  * đơn cũ trỏ enrollmentId đã xóa (invoice.enrollmentId là text, không FK)
  * và không được đếm — chấp nhận vì hóa đơn đó thuộc enrollment cũ.
+ * "Chưa lập phiếu" = học viên KHÔNG có entry trong map (#322).
  */
 export function rosterDebtByStudent(
 	classId: string,
 	enrollments: RosterEnrollmentRef[],
-	invoices: Pick<Invoice, "eid" | "amount" | "status">[],
+	invoices: Pick<Invoice, "eid" | "amount" | "status" | "due">[],
+	todayISO: string,
 ): Map<string, RosterDebt> {
 	const eidToSid = new Map<string, string>();
 	for (const e of enrollments) {
@@ -63,9 +94,21 @@ export function rosterDebtByStudent(
 	for (const inv of invoices) {
 		const sid = eidToSid.get(inv.eid);
 		if (!sid) continue;
-		const cur = acc.get(sid) ?? { outstanding: 0, invoiceCount: 0 };
+		const cur = acc.get(sid) ?? {
+			outstanding: 0,
+			invoiceCount: 0,
+			status: "paid" as InvoiceStatus,
+		};
 		cur.invoiceCount += 1;
-		if (inv.status !== "paid") cur.outstanding += inv.amount;
+		const eff = effectiveInvoiceStatus(inv, todayISO);
+		if (eff !== "paid") {
+			cur.outstanding += inv.amount;
+			if (eff === "overdue" || cur.status === "overdue") {
+				cur.status = "overdue";
+			} else {
+				cur.status = "unpaid";
+			}
+		}
 		acc.set(sid, cur);
 	}
 	return acc;
@@ -81,12 +124,10 @@ export function packagesEndingSoon(students: Student[]): number {
 	return students.filter((s) => s.hasPackage && s.pkg.remaining <= 4).length;
 }
 
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
 /** `dd/mm` from the wire's ISO due date. String slicing only — the repo has
  * a past UTC-drift bug from Date-parsing date-only strings (see week-grid).
  * Empty/legacy dues and non-ISO junk render an em dash. */
 export function formatDue(iso: string): string {
-	if (!ISO_DATE_RE.test(iso) || !isValidISODate(iso)) return "—";
+	if (!isValidDue(iso)) return "—";
 	return formatDayMonth(iso);
 }

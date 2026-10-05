@@ -11,24 +11,25 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { invoiceCode, invoiceType } from "@/lib/format-invoice";
+import {
+	INVOICE_STATUS_LABEL,
+	INVOICE_STATUS_VARIANT,
+	invoiceCode,
+	invoiceType,
+} from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
 import {
+	effectiveInvoiceStatus,
 	formatDue,
 	packagesEndingSoon,
 	tuitionTotals,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { todayISOVietnam } from "@/lib/week-grid";
 
 export const Route = createFileRoute("/_auth/tuition")({
 	component: TuitionRoute,
 });
-
-const INV_LABEL: Record<string, string> = {
-	paid: "Đã thu",
-	overdue: "Quá hạn",
-	unpaid: "Chưa thu",
-};
 
 export function TuitionRoute() {
 	const navigate = useNavigate();
@@ -41,6 +42,8 @@ export function TuitionRoute() {
 	// so totals track the server without local arithmetic.
 	const { collected, outstanding } = tuitionTotals(data.invoices);
 	const endingSoon = packagesEndingSoon(data.students);
+	// "Hôm nay" một lần cho cả bảng (#322) — badge "Quá hạn" suy ra từ `due`.
+	const today = todayISOVietnam();
 
 	return (
 		<div>
@@ -186,6 +189,7 @@ export function TuitionRoute() {
 							emptyMessage="Chưa có hóa đơn."
 							rows={data.invoices.map((i) => {
 								const s = data.students.find((st) => st.id === i.sid);
+								const status = effectiveInvoiceStatus(i, today);
 								return {
 									cells: [
 										<span key="id" className="font-mono text-meta text-xs">
@@ -204,19 +208,9 @@ export function TuitionRoute() {
 										<span key="due" className="font-mono text-meta text-xs">
 											{i.status === "paid" ? "—" : formatDue(i.due)}
 										</span>,
-										i.status === "paid" ? (
-											<Badge key="b" variant="success" dot>
-												{INV_LABEL.paid}
-											</Badge>
-										) : i.status === "overdue" ? (
-											<Badge key="b" variant="danger" dot>
-												{INV_LABEL.overdue}
-											</Badge>
-										) : (
-											<Badge key="b" variant="warn" dot>
-												{INV_LABEL.unpaid}
-											</Badge>
-										),
+										<Badge key="b" variant={INVOICE_STATUS_VARIANT[status]} dot>
+											{INVOICE_STATUS_LABEL[status]}
+										</Badge>,
 										i.status !== "paid" ? (
 											<Button
 												key="act"

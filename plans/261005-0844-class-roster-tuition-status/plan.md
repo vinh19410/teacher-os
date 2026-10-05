@@ -1,7 +1,7 @@
 ---
 title: "Tab Học viên (chi tiết lớp) hiển thị trạng thái học phí"
 description: "Cột Học phí ở tab Học viên đổi sang badge trạng thái (Đã thu / Chưa thu / Quá hạn / Chưa lập phiếu) kèm số tiền còn nợ; Quá hạn suy ra từ ngày đến hạn bằng helper dùng chung cho cả trang Học phí và hồ sơ học viên."
-status: pending
+status: completed
 priority: P2
 effort: 4h
 issue: 322

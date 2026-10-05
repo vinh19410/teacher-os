@@ -28,7 +28,7 @@ hạn → Đã thu.
 
 ## Tasks & Steps
 
-- [ ] **`class-roster-tab.tsx`**: tách IIFE ô Học phí (dòng ~89-125) thành
+- [x] **`class-roster-tab.tsx`**: tách IIFE ô Học phí (dòng ~89-125) thành
   component export `RosterTuitionCell({ debt, isInvited })`:
   - `isInvited` → `<span className="font-mono text-meta text-xs">—</span>` (giữ nguyên)
   - `!debt` → `<Badge variant="muted">Chưa lập phiếu</Badge>`
@@ -39,21 +39,21 @@ hạn → Đã thu.
     `font-semibold text-danger` khi `overdue`.
   - Nhãn/variant lấy từ `@/lib/format-invoice`, không hard-code.
   - Cập nhật type prop `rosterDebt` sang `Map<string, RosterDebt>` (import type từ `@/lib/tuition-from-kernel`).
-- [ ] **`$classId.tsx`** (`:134-137`): `rosterDebtByStudent(classId, data.enrollments, data.invoices, todayISOVietnam())`
+- [x] **`$classId.tsx`** (`:134-137`): `rosterDebtByStudent(classId, data.enrollments, data.invoices, todayISOVietnam())`
   trong `useMemo`; comment ngắn: ngày tính lại khi data đổi/reload, tab mở qua
   nửa đêm không tự chuyển.
-- [ ] **`tuition.tsx`**: xóa `INV_LABEL`; trong bảng Hóa đơn tính
+- [x] **`tuition.tsx`**: xóa `INV_LABEL`; trong bảng Hóa đơn tính
   `const status = effectiveInvoiceStatus(i, today)` (với `const today = todayISOVietnam()`
   một lần trong component) rồi render
   `<Badge variant={INVOICE_STATUS_VARIANT[status]} dot>{INVOICE_STATUS_LABEL[status]}</Badge>`.
   Cột hạn và nút "Đã nhận" giữ điều kiện `i.status !== "paid"` hiện tại.
-- [ ] **`students/$studentId.tsx`**: xóa `INV_STATUS_LABEL`/`INV_VARIANT`
+- [x] **`students/$studentId.tsx`**: xóa `INV_STATUS_LABEL`/`INV_VARIANT`
   (`:63-72`), badge ở `:296` dùng `effectiveInvoiceStatus` + map dùng chung.
-- [ ] **`class-roster-tab.test.tsx`**: theo mẫu `renderToStaticMarkup` của
+- [x] **`class-roster-tab.test.tsx`**: theo mẫu `renderToStaticMarkup` của
   `components/classes/class-assignments-tab.test.tsx`, test `RosterTuitionCell`
   5 ca: invited (`—`), không có debt (`Chưa lập phiếu`), paid (`Đã thu`, không
   có số tiền), unpaid (`Chưa thu` + `400.000đ`), overdue (`Quá hạn` + class `text-danger`).
-- [ ] **`class-roster-tuition-debt.spec.ts`**:
+- [x] **`class-roster-tuition-debt.spec.ts`**:
   - Thêm helper ngày tương đối giờ VN (ví dụ `isoInDays(n)` dùng
     `Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" })`), `createInvoice(page, amount, due)`.
   - Trước hóa đơn: `rosterFee("Chưa lập phiếu")`.
@@ -61,10 +61,10 @@ hạn → Đã thu.
   - Hóa đơn 2 (hạn −1 ngày): `Quá hạn` + `800.000đ`; kiểm tra thêm hàng hóa đơn đó ở `/tuition` hiện `Quá hạn`.
   - Thu hết: `Đã thu`, không còn `800.000đ`, còn nguyên sau reload.
   - Cập nhật JSDoc đầu file (bỏ "Đã đủ").
-- [ ] **`create-invoice.spec.ts`** (`:130`, `:152`): đổi hạn cố định
+- [x] **`create-invoice.spec.ts`** (`:130`, `:152`): đổi hạn cố định
   `2026-12-25` sang hôm nay + 30 ngày (giờ VN), kỳ vọng `dd/mm` tính từ cùng
   ngày đó, để "Chưa thu" ở `:142` không thành "Quá hạn" sau 25/12/2026.
-- [ ] Verify UI ở 1440×900, 768×1024, 375×812: ô Học phí không xuống dòng vỡ
+- [x] Verify UI ở 1440×900, 768×1024, 375×812: ô Học phí không xuống dòng vỡ
   badge (bảng có `overflow-x-auto`), focus bàn phím của row không đổi. Chụp
   screenshot roster cho PR.
 

@@ -32,7 +32,7 @@ bộ nhãn/màu badge dùng chung thay cho 3 bản sao rải rác.
 
 ## Tasks & Steps
 
-- [ ] **`effectiveInvoiceStatus`** trong `tuition-from-kernel.ts`:
+- [x] **`effectiveInvoiceStatus`** trong `tuition-from-kernel.ts`:
   ```ts
   /** Trạng thái hiển thị: server chỉ ghi unpaid/paid, nên "Quá hạn" suy ra
    * từ `due` (ISO, so chuỗi — không parse Date). Hạn đúng hôm nay chưa quá
@@ -49,15 +49,15 @@ bộ nhãn/màu badge dùng chung thay cho 3 bản sao rải rác.
   }
   ```
   Dời khai báo `ISO_DATE_RE` lên trên (hiện nằm cuối file, sau `packagesEndingSoon`).
-- [ ] **`RosterDebt`** thêm `status: InvoiceStatus` — tổng hợp trên các hóa
+- [x] **`RosterDebt`** thêm `status: InvoiceStatus` — tổng hợp trên các hóa
   đơn của lớp: có hóa đơn `overdue` → `"overdue"`; còn `unpaid` → `"unpaid"`;
   tất cả đã thu → `"paid"`. Cập nhật JSDoc (bỏ chữ "Đã đủ", nói rõ "Chưa lập
   phiếu" = không có entry trong map).
-- [ ] **`rosterDebtByStudent(classId, enrollments, invoices, todayISO)`**:
+- [x] **`rosterDebtByStudent(classId, enrollments, invoices, todayISO)`**:
   `invoices` đổi thành `Pick<Invoice, "eid" | "amount" | "status" | "due">[]`;
   dùng `effectiveInvoiceStatus` cho từng hóa đơn; `outstanding` giữ quy tắc
   cũ (status ≠ paid).
-- [ ] **`format-invoice.ts`** thêm:
+- [x] **`format-invoice.ts`** thêm:
   ```ts
   export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
   	paid: "Đã thu",
@@ -69,17 +69,17 @@ bộ nhãn/màu badge dùng chung thay cho 3 bản sao rải rác.
   	"success" | "warn" | "danger"
   > = { paid: "success", unpaid: "warn", overdue: "danger" };
   ```
-- [ ] **Unit tests** `tuition-from-kernel.test.ts`, khối `describe("effectiveInvoiceStatus")`:
+- [x] **Unit tests** `tuition-from-kernel.test.ts`, khối `describe("effectiveInvoiceStatus")`:
   - paid có hạn quá khứ → `paid`
   - unpaid hạn hôm qua → `overdue`; hạn đúng hôm nay → `unpaid`; hạn ngày mai → `unpaid`
   - hạn `""` → `unpaid`; hạn không có thật `2026-02-30` → `unpaid`
   - status lưu sẵn `overdue`, hạn tương lai → `overdue`
-- [ ] **Unit tests** `rosterDebtByStudent`: cập nhật fixture hiện có (thêm
+- [x] **Unit tests** `rosterDebtByStudent`: cập nhật fixture hiện có (thêm
   `due`, truyền `todayISO` cố định `"2026-10-05"`), thêm ca:
   - 1 unpaid hạn tương lai + 1 unpaid quá hạn → `status: "overdue"`, outstanding cộng cả hai
   - tất cả paid → `status: "paid"`, `outstanding: 0`
   - hóa đơn của lớp khác quá hạn không kéo trạng thái lớp này
-- [ ] `format-invoice.test.ts`: một assertion map nhãn/variant đủ 3 key.
+- [x] `format-invoice.test.ts`: một assertion map nhãn/variant đủ 3 key.
 
 ## Verification
 
