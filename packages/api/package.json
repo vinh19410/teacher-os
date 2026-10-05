@@ -7,13 +7,15 @@
 		}
 	},
 	"scripts": {
-		"check-types": "tsc -b"
+		"check-types": "tsc -b",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@teacher-os/config": "workspace:*",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "^4.1.10"
 	}
 }
