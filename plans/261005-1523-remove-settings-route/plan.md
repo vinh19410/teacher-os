@@ -35,22 +35,22 @@ Trang `/settings` (4 tab: Tài khoản, Mẫu tin Zalo, Quy tắc, Dữ liệu) 
 
 | # | Phase | Status | File |
 |---|-------|--------|------|
-| 1 | Gỡ trang /settings phía web | pending | [phase-01-remove-web-settings-route.md](phase-01-remove-web-settings-route.md) |
-| 2 | Gỡ endpoint + contract settings phía server | pending | [phase-02-remove-settings-api-and-contract.md](phase-02-remove-settings-api-and-contract.md) |
-| 3 | Đồng bộ plan phụ thuộc, docs, verify | pending | [phase-03-sync-dependent-plans-and-docs.md](phase-03-sync-dependent-plans-and-docs.md) |
+| 1 | Gỡ trang /settings phía web | completed | [phase-01-remove-web-settings-route.md](phase-01-remove-web-settings-route.md) |
+| 2 | Gỡ endpoint + contract settings phía server | completed | [phase-02-remove-settings-api-and-contract.md](phase-02-remove-settings-api-and-contract.md) |
+| 3 | Đồng bộ plan phụ thuộc, docs, verify | in-progress (còn comment #320 sau khi có PR) | [phase-03-sync-dependent-plans-and-docs.md](phase-03-sync-dependent-plans-and-docs.md) |
 
 Phase 2 phụ thuộc phase 1 (web phải hết import contract trước khi xoá contract). Phase 3 chạy sau cùng.
 
 ## Acceptance Criteria
 
-- [ ] Sidebar không còn nhóm "Hệ thống"/mục "Cài đặt"; topbar map không còn `/_auth/settings`.
-- [ ] Truy cập `/settings` cho kết quả giống một path không hợp lệ khác (vd `/admin`) — không crash, không render trang cũ.
-- [ ] `GET/PUT/POST /api/kernel/settings` với **teacher session** trả 404 — GET không qua origin guard; PUT/POST với Origin hợp lệ qua guard rồi 404; Origin thiếu/lạ → 403.
-- [ ] Không còn symbol `workspaceSettingsSchema`, `workspaceSettingsUpdateSchema`, `WorkspaceSettings*`, `workspaceSettingsQueryOptions` trong `apps/` và `packages/api/src`.
-- [ ] Bảng `workspace_settings` và `packages/db/src/schema/settings.ts` còn nguyên; không có migration mới.
-- [ ] Test origin guard (PUT/PATCH) vẫn chạy và xanh với path thay thế.
-- [ ] Plan SePay + plan chấm bài không còn trỏ tới `settings.tsx`/`/settings`/`repos/settings`; #320 có comment ghi chú.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test` xanh.
+- [x] Sidebar không còn nhóm "Hệ thống"/mục "Cài đặt"; topbar map không còn `/_auth/settings`.
+- [x] Truy cập `/settings` cho kết quả giống một path không hợp lệ khác (vd `/admin`) — không crash, không render trang cũ.
+- [x] `GET/PUT/POST /api/kernel/settings` với **teacher session** trả 404 — GET không qua origin guard; PUT/POST với Origin hợp lệ qua guard rồi 404; Origin thiếu/lạ → 403.
+- [x] Không còn symbol `workspaceSettingsSchema`, `workspaceSettingsUpdateSchema`, `WorkspaceSettings*`, `workspaceSettingsQueryOptions` trong `apps/` và `packages/api/src`.
+- [x] Bảng `workspace_settings` và `packages/db/src/schema/settings.ts` còn nguyên; không có migration mới.
+- [x] Test origin guard (PUT/PATCH) vẫn chạy và xanh với path thay thế.
+- [x] Plan SePay + plan chấm bài không còn trỏ tới `settings.tsx`/`/settings`/`repos/settings`; #320 có comment ghi chú.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test` xanh.
 
 ## Rủi ro
 

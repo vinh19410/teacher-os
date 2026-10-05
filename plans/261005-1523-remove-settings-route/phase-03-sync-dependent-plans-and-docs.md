@@ -22,10 +22,10 @@ Các plan đang mở không còn trỏ tới trang/module đã xoá; CHANGELOG g
 - Điều phối worktree (trước khi comment #320): `git worktree list` — nếu branch SePay/chấm bài đã có commit thì phối hợp merge order (merge removal trước, SePay rebase); nếu chưa (0 commit phía trước develop) thì edit plan text trên branch này là đủ.
 
 ## Tasks & Steps
-- [ ] 1. Sửa plan SePay + plan chấm bài như trên; grep `settings`, `Cài đặt\|Mẫu tin Zalo` và `kernel", "settings` trong 2 thư mục plan đó chỉ còn khớp ghi chú cập nhật (chuỗi tiếng Việt "Cài đặt" không khớp grep "settings" — SePay `plan.md:20,38,72` và `phase-06:38` chỉ chứa chữ "Cài đặt").
-- [ ] 2. Thêm mục CHANGELOG.
-- [ ] 3. Chạy full gate local (PR vào `develop` không có CI): `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test`.
-- [ ] 4. E2E: `grep -rln "settings" apps/e2e --include='*.ts'` — nếu có spec đụng `/settings` thì sửa; sau đó `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
+- [x] 1. Sửa plan SePay + plan chấm bài như trên; grep `settings`, `Cài đặt\|Mẫu tin Zalo` và `kernel", "settings` trong 2 thư mục plan đó chỉ còn khớp ghi chú cập nhật (chuỗi tiếng Việt "Cài đặt" không khớp grep "settings" — SePay `plan.md:20,38,72` và `phase-06:38` chỉ chứa chữ "Cài đặt").
+- [x] 2. Thêm mục CHANGELOG.
+- [x] 3. Chạy full gate local (PR vào `develop` không có CI): `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test`.
+- [x] 4. E2E: `grep -rln "settings" apps/e2e --include='*.ts'` — nếu có spec đụng `/settings` thì sửa; sau đó `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
 - [ ] 5. Comment lên #320.
 
 ## Verification
