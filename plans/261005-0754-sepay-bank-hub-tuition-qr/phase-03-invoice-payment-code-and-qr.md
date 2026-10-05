@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Mã thanh toán, pay token và QR"
-status: todo
+status: completed
 priority: P1
 effort: "1d"
 dependencies: [1, 2]
@@ -85,16 +85,16 @@ null) → dùng `bank_code`; thiếu cả hai → `payable=false`.
 
 ## Todo
 
-- [ ] `payment-code.ts` + test
-- [ ] `vietqr.ts` + test
-- [ ] `message-template.ts` + test (giữ default `tplDebt` hiện có)
-- [ ] `POST /invoices` sinh mã + token
-- [ ] `payment-instructions.ts` + `ensurePaymentRefs`
-- [ ] `GET /api/invoices/:id/payment`
-- [ ] `GET /api/student/invoices`, `/invoices/:id/payment`
-- [ ] `GET /public/pay/:token` mount ngoài `/api/*`
-- [ ] Snapshot `paidAmount`
-- [ ] Web `routes-matcher` + route `/pay/$token`
+- [x] `payment-code.ts` + test
+- [x] `vietqr.ts` + test
+- [x] `message-template.ts` + test (giữ default `tplDebt` hiện có)
+- [x] `POST /invoices` sinh mã + token
+- [x] `payment-instructions.ts` + `ensurePaymentRefs`
+- [x] `GET /api/invoices/:id/payment`
+- [x] `GET /api/student/invoices`, `/invoices/:id/payment`
+- [x] `GET /public/pay/:token` mount ngoài `/api/*`
+- [x] Snapshot `paidAmount`
+- [x] Web `routes-matcher` + route `/pay/$token`
 
 ## Success Criteria
 

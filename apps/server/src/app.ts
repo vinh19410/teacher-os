@@ -12,6 +12,7 @@ import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
+import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
@@ -200,6 +201,9 @@ export function buildApp(deps: AppDeps) {
 	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
 	// middleware and Better Auth never run — auth is the X-Secret-Key header.
 	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// Public pay page data (#320): outside /api/* (bootstrap 403s student
+	// roles there) and readable signed-out — the token is the capability.
+	app.route("/public/pay", publicPayRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

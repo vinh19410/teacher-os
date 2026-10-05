@@ -35,6 +35,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	"/classes/",
 	"/students/",
 	"/syllabus/",
+	// Public pay page (#320) — outside the auth layout by design.
+	"/pay/",
 ];
 
 /**

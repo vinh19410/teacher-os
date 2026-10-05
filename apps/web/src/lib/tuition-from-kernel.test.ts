@@ -41,6 +41,7 @@ function invoice(partial: Partial<Invoice> & Pick<Invoice, "status">): Invoice {
 		sid: "s1",
 		eid: "",
 		amount: 1000000,
+		paidAmount: 0,
 		date: "",
 		type: "",
 		method: "—",

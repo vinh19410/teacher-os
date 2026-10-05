@@ -50,6 +50,7 @@ export async function loadInvoices(
 			date: invoice.date,
 			type: invoice.type,
 			method: invoice.method,
+			paidAmount: invoice.paidAmount,
 		})
 		.from(invoice)
 		.innerJoin(

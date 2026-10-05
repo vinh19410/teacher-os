@@ -29,6 +29,10 @@ import {
 	workspaceSettingsSchema,
 	workspaceSettingsUpdateSchema,
 } from "@teacher-os/api/contracts";
+import {
+	generatePaymentCode,
+	generatePayToken,
+} from "@teacher-os/api/lib/payment-code";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
@@ -56,6 +60,10 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import {
+	ensurePaymentRefs,
+	loadPaymentInstructions,
+} from "../lib/payment-instructions";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
 import { activateEnrollment } from "./enrollment-activation";
@@ -1520,6 +1528,9 @@ export function kernelRoutes(deps: {
 			amount: input.amount,
 			due,
 			note: input.note,
+			// #320: every new invoice gets its transfer code + public pay token.
+			paymentCode: generatePaymentCode(),
+			payToken: generatePayToken(),
 		});
 		return c.json({ id: invoiceId } satisfies CreatedResponse, 201);
 	});
@@ -1544,6 +1555,17 @@ export function kernelRoutes(deps: {
 			return c.json({ error: "invoice not found" }, 404);
 		}
 		return c.json({ ok: true });
+	});
+
+	// #320: transfer instructions for one invoice (teacher view, org-scoped).
+	kernel.get("/invoices/:id/payment", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const row = await ensurePaymentRefs(db, c.req.param("id"), ctx.orgId);
+		if (!row) return c.json({ error: "invoice not found" }, 404);
+		const instructions = await loadPaymentInstructions({ db, invoice: row });
+		return c.json({ ...instructions, payToken: row.payToken });
 	});
 
 	kernel.get("/syllabi", async (c) => {

@@ -1296,6 +1296,11 @@ export interface KernelInvoiceRow {
 	date: string;
 	type: string;
 	method: string;
+	/**
+	 * #320 — ledger-recomputed paid total (SUM of matched
+	 * payment_transaction amounts). Stays 0 for manually mark-paid invoices.
+	 */
+	paidAmount: number;
 }
 
 export interface AssignmentQuestion {
@@ -1971,3 +1976,49 @@ export const bankLinkTokenResponseSchema = z.object({
 	expiresAt: z.string(),
 });
 export type BankLinkTokenResponse = z.infer<typeof bankLinkTokenResponseSchema>;
+
+// --- Invoice payment instructions (#320) ---
+
+export const PAYMENT_ERROR_CODES = {
+	INVOICE_NOT_FOUND: "PAYMENT_INVOICE_NOT_FOUND",
+	NO_BANK_LINK: "PAYMENT_NO_BANK_LINK",
+} as const;
+
+export interface PaymentBankInfo {
+	brandName: string;
+	accountNumber: string;
+	holderName: string;
+}
+
+export interface PaymentInstructions {
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	note: string;
+	/** false when the org has no linked account or the invoice is settled. */
+	payable: boolean;
+	reason?: "NO_BANK_LINK" | "PAID";
+	bank?: PaymentBankInfo;
+	memo?: string;
+	qrUrl?: string;
+}
+
+/** Public /pay/<token> view: no teacher free-text (note) and no due date. */
+export type PublicPayView = Omit<PaymentInstructions, "note" | "due"> & {
+	orgName: string;
+	studentName: string;
+};
+
+export interface StudentInvoiceItem {
+	id: string;
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	type: string;
+}
