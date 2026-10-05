@@ -170,11 +170,20 @@ Có sẵn hàm `ieltsOverallBand`, các schema zod cho điểm/nhận xét/bài 
   2. Bổ sung câu cuối vào JSDoc đầu bảng: "`grade_*` là điểm + nhận xét giáo viên chấm bài Writing/Speaking; lưu là ghi đè (học viên thấy ngay)."
   3. Chạy `pnpm db:generate` ở root repo. Drizzle-kit sinh `packages/db/src/migrations/0033_<tên>.sql` và cập nhật `meta/_journal.json` + `meta/0033_snapshot.json`.
   4. Mở file `.sql` vừa sinh và xác nhận nó chỉ có đúng 3 câu `ALTER TABLE \`quiz_attempt\` ADD …`, không có `DROP` hay tạo lại bảng.
-- **Success criteria:** file `0033_*.sql` tồn tại với đúng 3 câu `ALTER TABLE` ADD.
+  5. Chèn header comment vào đầu file `0033_*.sql`, theo precedent `0028_salty_purifiers.sql:1-4`:
+     ```sql
+     -- Điểm giáo viên chấm bài Writing/Speaking (quiz_attempt.grade_*).
+     -- DEPLOY ORDER (bắt buộc): chạy `db:migrate:deploy` TRƯỚC khi deploy worker —
+     -- snapshot giáo viên và summary học viên select cột grade_*, thiếu cột thì
+     -- mọi trang giáo viên và màn kết quả học viên trả 500 (/readyz không kiểm cột).
+     ```
+     Câu chữ header KHÔNG được chứa từ "drop", vì Verify bên dưới đếm từ đó. <!-- Updated: Red Team 2026-10-05 -->
+- **Success criteria:** file `0033_*.sql` tồn tại với đúng 3 câu `ALTER TABLE` ADD và có header DEPLOY ORDER.
 - **Verify:**
   - `ls packages/db/src/migrations/0033_*.sql` in ra đúng 1 file.
   - `grep -c "ALTER TABLE \`quiz_attempt\` ADD" packages/db/src/migrations/0033_*.sql` in ra `3`.
   - `grep -ci "drop\|__new_" packages/db/src/migrations/0033_*.sql` in ra `0`.
+  - `grep -c "DEPLOY ORDER" packages/db/src/migrations/0033_*.sql` in ra `1`.
 
 ### Task 1.5 — Gate phase
 - **Goal:** package api xanh. Server vẫn chạy migration được.

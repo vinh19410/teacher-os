@@ -28,7 +28,7 @@ dependencies: [1, 2]
 - Modify: `apps/web/src/routes/_auth/classes/$classId.tsx` (`validateSearch` + tab khởi tạo)
 - Modify: `apps/web/src/routes-matcher.ts` + `apps/web/src/routes-matcher.test.ts`
 
-**KHÔNG sửa** `apps/web/src/routes/_auth/assignments/index.tsx`, `index.test.tsx`, `components/ui/chip-filter.tsx`. Ba file này đang có thay đổi chưa commit của việc khác.
+**KHÔNG sửa** `apps/web/src/routes/_auth/assignments/index.tsx`, `index.test.tsx`, `components/ui/chip-filter.tsx`. Ba file này thuộc việc lọc trang Bài tập, nằm ngoài phạm vi plan.
 
 ## Tasks
 
@@ -103,8 +103,12 @@ dependencies: [1, 2]
   3. Mỗi tiêu chí, theo thứ tự `criteriaForSkill(skill)`:
      - `<Field label={criterionLabel(skill, key, part)}>` bọc đúng MỘT control. `Field` (`apps/web/src/components/ui/field.tsx:17`) tự gắn `label` vào id của control con duy nhất.
      - Control con là `<Select id={\`grade-${key}\`}>` với option đầu `value=""` "—", tiếp theo là 19 option `0, 0.5, …, 9`. Option `value` là `String(n)`, nhãn là `formatBand(n)`.
-  4. `complete` = mọi key có giá trị khác `""`. Khi `complete` thì hiện "Band tổng" + `formatBand(ieltsOverallBand(values.map(Number)))` trong phần tử có `data-testid="grade-overall-band"`; chưa đủ thì hiện "—".
-  5. `<Textarea id="grade-feedback" maxLength={QUIZ_FEEDBACK_MAX} placeholder="Nhận xét cho học viên (tuỳ chọn)…">`. Dưới textarea có bộ đếm `{feedback.length}/{QUIZ_FEEDBACK_MAX}`.
+  4. `complete` = mọi key có giá trị khác `""`. Render đúng cấu trúc:
+     ```tsx
+     <p>Band tổng <span data-testid="grade-overall-band" aria-live="polite">{complete ? formatBand(ieltsOverallBand(values.map(Number))) : "—"}</span></p>
+     ```
+     Span `grade-overall-band` CHỈ chứa con số (hoặc "—"), không chứa chữ "Band tổng", vì unit test và e2e so khớp đúng text này. <!-- Updated: Red Team 2026-10-05 -->
+  5. `<Field label="Nhận xét cho học viên"><Textarea id="grade-feedback" maxLength={QUIZ_FEEDBACK_MAX} placeholder="Tuỳ chọn…" /></Field>` (`Field` bọc đúng một control nên tự gắn label). Dưới textarea có bộ đếm `{feedback.length}/{QUIZ_FEEDBACK_MAX}`.
   6. Nút submit `<Button type="submit" disabled={!complete || saving}>`: nhãn "Lưu điểm", khi `saving` thì "Đang lưu…". Submit thì gọi `onSave({ scores: Object.fromEntries(keys.map(k => [k, Number(scores[k])])), feedback })`.
   7. `error` khác null thì hiện `<p role="alert" className="text-danger text-sm">{error}</p>`. `savedAt` khác null thì hiện `<p className="text-success text-sm" data-testid="grade-saved">Đã lưu · {fmtWhen(savedAt)}</p>` (`fmtWhen` từ `@/components/assignments/assignment-status`).
 - **Success criteria:** component render đúng nhãn theo skill/part.
@@ -136,7 +140,7 @@ dependencies: [1, 2]
      Giữ các comment `biome-ignore lint/a11y/useMediaCaption` như bản gốc.
   2. `SubmissionView({ submission }: { submission: TeacherSubmission })` render:
      - **Đề bài:** `SectionLabel` "Đề bài".
-       - Writing: `RichTextBody text={submission.prompt.prompt}` (import `@teacher-os/ui/components/assignments/rich-text-body`, precedent ở `class-assignments-tab.tsx:4`). Nếu `prompt.imageUrl !== ""` thì thêm `<img src={…} alt="Hình minh hoạ đề Task 1" className="max-h-96 rounded-md border border-line" />`.
+       - Writing: `RichTextBody text={submission.prompt.prompt}` (import `@teacher-os/ui/components/assignments/rich-text-body`, precedent ở `class-assignments-tab.tsx:4`). Chỉ khi `ASSIGNMENT_IMAGE_SRC_PATTERN.test(prompt.imageUrl.trim())` (import từ `@teacher-os/api/contracts`, cùng điều kiện `packages/ui/src/components/quiz/quiz-paper.tsx:94-99`) thì thêm `<img src={prompt.imageUrl.trim()} alt="Hình minh hoạ đề Task 1" referrerPolicy="no-referrer" loading="lazy" className="max-h-96 rounded-md border border-line" />`. `referrerPolicy` ngăn URL `/grading/<attemptId>` lộ qua Referer tới host ảnh. <!-- Updated: Red Team 2026-10-05 -->
        - Speaking: nếu `cueTopic !== ""` thì hiện cue card: tiêu đề "Describe {cueTopic}", danh sách `cuePoints.split("\n").filter(Boolean)`. Nếu `prompt.prompt !== ""` thì `RichTextBody` cho câu hỏi Part 1/3.
      - **Bài làm:** `SectionLabel` "Bài làm của học viên".
        - Writing: `<p data-testid="essay-word-count">{countWords(essay)} từ{min ? \` · tối thiểu ${min}\` : ""}</p>`, với `min = WRITING_MIN_WORDS[part]` và `countWords` từ `@teacher-os/api/lib/word-count`. Dưới đó là `<div className="whitespace-pre-wrap …" data-testid="essay-text">`. Essay `trim() === ""` thì hiện "Học viên đã nộp bài trống.".
@@ -161,6 +165,18 @@ dependencies: [1, 2]
 - **Goal:** trang chấm hoàn chỉnh: tải bài, lỗi có thông báo, lưu điểm cập nhật cache + snapshot.
 - **Target files and symbols:** `apps/web/src/routes/_auth/grading/$attemptId.tsx`, `export const Route = createFileRoute("/_auth/grading/$attemptId")({ component: GradingRoute })`.
 - **Steps:**
+  0. **Làm trước tiên** (chuyển từ Task 3.10 lên đây, vì link "← Về lớp" ở bước 4 dùng `search={{ tab: "assignments" }}` và typecheck chỉ qua khi route lớp đã có search schema). Trong `apps/web/src/routes/_auth/classes/$classId.tsx`, theo đúng precedent `validateSettingsSearch` ở `apps/web/src/routes/_auth/settings.tsx:39-50`: <!-- Updated: Red Team 2026-10-05 -->
+     ```ts
+     const CLASS_DETAIL_TABS = ["roster", "sessions", "assignments", "notes"] as const;
+     type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];
+     export function validateClassDetailSearch(search: Record<string, unknown>): { tab?: ClassDetailTab } {
+       const tab = search.tab;
+       return typeof tab === "string" && (CLASS_DETAIL_TABS as readonly string[]).includes(tab)
+         ? { tab: tab as ClassDetailTab } : {};
+     }
+     ```
+     - Thêm `validateSearch: validateClassDetailSearch,` vào options `createFileRoute` (dòng 29).
+     - Trong `ClassDetailRoute`: thêm `const search = Route.useSearch();` và đổi `useState("roster")` (dòng 104) thành `useState<string>(search.tab ?? "roster")`. Không đổi `handleTabChange` (URL không cần đồng bộ khi bấm tab).
   1. Trong `GradingRoute`:
      - `const { attemptId } = Route.useParams();`
      - `const { data, error, isPending } = useQuery(submissionQueryOptions(attemptId));`
@@ -183,7 +199,7 @@ dependencies: [1, 2]
      - `GradeForm` có `key` theo `gradedAt`, nên sau khi lưu form remount với giá trị mới từ server (không giữ state cũ).
   6. Route tree được sinh bởi plugin khi build. KHÔNG sửa tay `routeTree.gen.ts` (file này không được git track).
 - **Success criteria:** route build được; typecheck sinh route `/grading/$attemptId`.
-- **Verify:** `pnpm --filter web check-types` exits 0. Lệnh này chạy `vite build && tsc --noEmit`, nên đồng thời sinh lại route tree và typecheck `search={{ tab: "assignments" }}` của Task 3.10.
+- **Verify:** `pnpm --filter web check-types` exits 0. Lệnh này chạy `vite build && tsc --noEmit`, nên đồng thời sinh lại route tree và typecheck `search={{ tab: "assignments" }}` (route lớp đã có `validateSearch` từ bước 0). Nếu lỗi kiểu "Property 'search' is missing" ở các `<Link to="/classes/$classId">` có sẵn thì đó là fail → Failure Protocol.
 
 ### Task 3.9 — Nút ở tab Bài tập
 - **Goal:** mỗi target đã nộp đề Writing/Speaking có nút "Chấm bài", hoặc tag "Đã chấm · Band X" kèm link "Xem / sửa điểm".
@@ -203,6 +219,7 @@ dependencies: [1, 2]
          </>
        ) : (
          <Link to="/grading/$attemptId" params={{ attemptId: target.attemptId }}
+           aria-label={`Chấm bài của ${s?.name ?? target.studentId}`}
            className={GRADE_LINK_BUTTON_CLASS}>
            Chấm bài
          </Link>
@@ -214,31 +231,14 @@ dependencies: [1, 2]
 - **Success criteria:** nút/tag chỉ xuất hiện khi đủ điều kiện.
 - **Verify:** no verification needed (Task 3.11 test bao trùm).
 
-### Task 3.10 — Mở thẳng tab Bài tập + SPA route matcher
-- **Goal:** link "← Về lớp" mở đúng tab Bài tập. Worker không trả 404 cho `/grading/<id>`.
-- **Target files and symbols:**
-  - `apps/web/src/routes/_auth/classes/$classId.tsx`: `createFileRoute` ở dòng 29, `useState("roster")` ở dòng 104;
-  - `apps/web/src/routes-matcher.ts`: `VALID_DYNAMIC_PREFIXES`;
-  - `apps/web/src/routes-matcher.test.ts`.
+### Task 3.10 — SPA route matcher
+- **Goal:** worker và vite dev không trả 404 cho `/grading/<id>`. (Phần `validateSearch` của route lớp đã chuyển lên Task 3.8 bước 0.) <!-- Updated: Red Team 2026-10-05 -->
+- **Target files and symbols:** `apps/web/src/routes-matcher.ts` (`VALID_DYNAMIC_PREFIXES`), `apps/web/src/routes-matcher.test.ts`.
 - **Steps:**
-  1. Trong `$classId.tsx`, theo đúng precedent `validateSettingsSearch` ở `apps/web/src/routes/_auth/settings.tsx:39-50`:
-     ```ts
-     const CLASS_DETAIL_TABS = ["roster", "sessions", "assignments", "notes"] as const;
-     type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];
-     export function validateClassDetailSearch(search: Record<string, unknown>): { tab?: ClassDetailTab } {
-       const tab = search.tab;
-       return typeof tab === "string" && (CLASS_DETAIL_TABS as readonly string[]).includes(tab)
-         ? { tab: tab as ClassDetailTab } : {};
-     }
-     ```
-     Thêm `validateSearch: validateClassDetailSearch,` vào options `createFileRoute`.
-  2. Trong `ClassDetailRoute`: `const search = Route.useSearch();`, đổi `useState("roster")` thành `useState<string>(search.tab ?? "roster")`. Không đổi `handleTabChange` (URL không cần đồng bộ khi bấm tab).
-  3. `routes-matcher.ts`: thêm `"/grading/",` vào `VALID_DYNAMIC_PREFIXES`.
-  4. `routes-matcher.test.ts`: thêm assertion `expect(isValidAppRoute("/grading/att-123")).toBe(true);`, `expect(isValidAppRoute("/grading")).toBe(false);`, `expect(isValidAppRoute("/grading/a/b")).toBe(false);`, đặt cạnh khối test `/classes/` (dòng khoảng 65).
-- **Success criteria:** matcher nhận `/grading/<id>`. Mọi `<Link to="/classes/$classId">` hiện có vẫn compile mà không cần `search`.
-- **Verify:**
-  - `pnpm --filter web test -- routes-matcher` exits 0.
-  - `pnpm --filter web check-types` exits 0. Nếu lỗi kiểu "Property 'search' is missing" ở các Link tới `/classes/$classId` có sẵn, thì đó là fail → Failure Protocol.
+  1. `routes-matcher.ts`: thêm `"/grading/",` vào `VALID_DYNAMIC_PREFIXES`.
+  2. `routes-matcher.test.ts`: thêm assertion `expect(isValidAppRoute("/grading/att-123")).toBe(true);`, `expect(isValidAppRoute("/grading")).toBe(false);`, `expect(isValidAppRoute("/grading/a/b")).toBe(false);`, đặt cạnh khối test `/classes/` (dòng khoảng 65).
+- **Success criteria:** matcher nhận `/grading/<id>`.
+- **Verify:** `pnpm --filter web test -- routes-matcher` exits 0, không có `failed`.
 
 ### Task 3.11 — Test tab Bài tập
 - **Goal:** khoá 3 trạng thái nút trong sub-row.
