@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server: API chấm bài + snapshot + summary học viên"
-status: pending
+status: completed
 priority: P1
 effort: "4.5h"
 dependencies: [1]
@@ -21,6 +21,7 @@ Giáo viên đọc được bài nộp Writing/Speaking (kèm file nói), lưu �
 - Modify: `apps/server/src/routes/kernel.ts` (mở rộng type deps + mount `/grading`)
 - Modify: `apps/server/src/routes/snapshot.ts` (targets thêm 3 field)
 - Modify: `apps/server/src/app.ts` (CORP `same-site` cho path media giáo viên)
+- Modify: `apps/server/src/kernel.test.ts` (expected `targets` có thêm 3 field, dòng khoảng 5785–5790) <!-- Updated: Red Team 2026-10-05 -->
 
 ## Tasks
 
@@ -131,14 +132,17 @@ Giáo viên đọc được bài nộp Writing/Speaking (kèm file nói), lưu �
      - `startedAt: row.startedAt.toISOString()`;
      - `submittedAt: row.submittedAt ? row.submittedAt.toISOString() : ""`;
      - `prompt: { prompt, imageUrl, cueTopic, cuePoints, note }`. Các cột prompt có thể null ở dữ liệu cũ; dùng `?? ""` cho từng field.
-  5. `routes.get("/:attemptId", …)`: `ctx` thiếu thì trả `unauthorized`; load; lỗi thì trả `errorResponse`; còn lại trả `c.json(toSubmission(...) satisfies TeacherSubmission)`.
+  5. **Cả 3 route** đều mở đầu bằng `const ctx = c.get("kernelCtx"); if (!ctx) return unauthorized(c);`, đặt TRƯỚC `getMediaStore` và TRƯỚC `readBody`. Type `Env` khai `kernelCtx` non-optional nên tsc không ép bước này; request không session phải ra 401, không được ra 500 hay 503. <!-- Updated: Red Team 2026-10-05 -->
+     `routes.get("/:attemptId", …)`: kiểm `ctx`; load; lỗi thì trả `errorResponse`; còn lại trả `c.json(toSubmission(...) satisfies TeacherSubmission)`.
   6. `routes.get("/:attemptId/media", …)`:
+     - kiểm `ctx` (bước 5) trước mọi thứ;
      - `deps.getMediaStore?.()` undefined thì trả 503 `{ error: "media storage unavailable" }`;
      - load lỗi thì trả `errorResponse`;
      - `skill !== "speaking"` hoặc `row.mediaKey === null` thì trả 404 `{ error: "media not found" }`;
      - `store.get(key)` null thì trả 404;
      - còn lại `return mediaObjectResponse(object, row)`.
   7. `routes.post("/:attemptId/grade", …)`:
+     0. Kiểm `ctx` (bước 5).
      1. `readBody(c, quizGradeInputSchema)`. Lỗi thì trả response của nó (400 `invalid json` / `invalid body`; nhận xét > 5000 ký tự rơi vào đây).
      2. Load. Lỗi thì trả `errorResponse`.
      3. `const scores = parseGradeScores(skill, body.data.scores)`. Null thì trả 400 `{ error: "invalid scores" }`.
@@ -184,32 +188,37 @@ Giáo viên đọc được bài nộp Writing/Speaking (kèm file nói), lưu �
        submittedAttemptRows.map((row) => [`${row.assignmentId}:${row.studentId}`, row]),
      );
      ```
-     Thêm import `quizAttempt` từ `@teacher-os/db/schema/quiz-attempt` (hoặc từ barrel mà `snapshot.ts` đang dùng; xem khối import dòng 1–30), cùng `and` từ `drizzle-orm` nếu chưa có, và `ieltsOverallBand` từ `@teacher-os/api/lib/ielts-band`.
+     Thêm import `quizAttempt` từ `@teacher-os/db/schema/quiz-attempt` (hoặc từ barrel mà `snapshot.ts` đang dùng; xem khối import dòng 1–30), và `toQuizAttemptGrade` từ `../lib/quiz-grade`. `and` đã được import sẵn (dòng 32).
   2. Trong vòng lặp, đổi `list.push({...})` thành:
      ```ts
      const attempt = attemptByTarget.get(`${target.assignmentId}:${target.studentId}`);
-     const scores = attempt?.gradedAt ? Object.values(attempt.gradeScores ?? {}) : [];
+     // Một nguồn duy nhất quyết định "đã chấm" — cùng hàm với API chấm và summary học viên.
+     const graded = attempt
+       ? toQuizAttemptGrade({ gradeScores: attempt.gradeScores, gradeFeedback: "", gradedAt: attempt.gradedAt })
+       : null;
      list.push({
        studentId: target.studentId,
        submittedAt: target.submittedAt,
        attemptId: attempt?.id ?? null,
-       gradedAt: attempt?.gradedAt && scores.length > 0 ? attempt.gradedAt.toISOString() : null,
-       band: attempt?.gradedAt && scores.length > 0 ? ieltsOverallBand(scores) : null,
+       gradedAt: graded?.gradedAt ?? null,
+       band: graded?.band ?? null,
      });
      ```
   3. `student.ts`: trong handler summary, sau khi dựng `const summary: QuizAttemptSummary = {...}`, thêm:
      ```ts
      // Điểm giáo viên chấm: CHỈ thêm key khi đã chấm — bundle cũ (schema
      // strict) không vỡ ở attempt chưa chấm.
-     const grade = toQuizAttemptGrade(attempt);
-     if (grade) {
-       summary.grade = grade;
+     const teacherGrade = toQuizAttemptGrade(attempt);
+     if (teacherGrade) {
+       summary.grade = teacherGrade;
        summary.part = part;
      }
      ```
-     Để có `part`: trong `loadAttemptForReview` (`student.ts`, dòng khoảng 1655–1690), thêm `part: assignmentPrompt.part` vào select `header` và `part: header?.part ?? ""` vào object trả về; trong handler summary destructure thêm `part`. Import `toQuizAttemptGrade` từ `../lib/quiz-grade`. `attempt` ở đây là row đầy đủ (`db.select().from(quizAttempt)` trong `loadAttemptForReview`), nên đã có 3 cột mới. KHÔNG thêm `grade` vào handler `/detail`.
-- **Success criteria:** type `KernelSnapshot` khớp (không còn lỗi type ở `snapshot.ts`); summary có `grade` khi chấm.
-- **Verify:** no verification needed (Task 2.6 + 2.7 bao trùm).
+     **Không đặt tên biến là `grade`**: handler đã destructure `grade` (kết quả `gradeQuiz`) ở `student.ts:1705`, trùng tên sẽ lỗi "already declared". Đổi dòng destructure thành `const { attempt, questions, answers, grade, title, skill, part } = loaded;`. <!-- Updated: Red Team 2026-10-05 -->
+     Để có `part`: trong `loadAttemptForReview` (`student.ts`, dòng khoảng 1655–1690), thêm `part: assignmentPrompt.part` vào select `header` và `part: header?.part ?? ""` vào object trả về. Import `toQuizAttemptGrade` từ `../lib/quiz-grade`. `attempt` ở đây là row đầy đủ (`db.select().from(quizAttempt)` trong `loadAttemptForReview`), nên đã có 3 cột mới. KHÔNG thêm `grade` vào handler `/detail`.
+  4. `apps/server/src/kernel.test.ts` (dòng khoảng 5785–5790): `toEqual(expect.arrayContaining([...]))` so sánh đầy đủ từng phần tử, nên phải đổi expected thành `{ studentId: studentIdA1, submittedAt: null, attemptId: null, gradedAt: null, band: null }`, tương tự cho `studentIdA2`. Sau đó chạy `grep -n "submittedAt: null }" apps/server/src/*.test.ts apps/server/src/routes/*.test.ts` và sửa theo cùng cách mọi assertion khác trên `targets` mà lệnh này tìm ra. <!-- Updated: Red Team 2026-10-05 -->
+- **Success criteria:** type `KernelSnapshot` khớp (không còn lỗi type ở `snapshot.ts`); summary có `grade` khi chấm; test snapshot cũ cập nhật.
+- **Verify:** `pnpm --filter server test -- kernel.test` exits 0, không có `failed`.
 
 ### Task 2.6 — Test tích hợp `grading.test.ts`
 - **Goal:** khoá mọi mã trạng thái, tenancy, validate điểm, stream media, snapshot và summary học viên.
@@ -274,6 +283,7 @@ Giáo viên đọc được bài nộp Writing/Speaking (kèm file nói), lưu �
          - `GET /api/student/attempts/att-s2` → 200 và JSON KHÔNG có key `grade` lẫn `part` (`expect("grade" in json).toBe(false)`, `expect("part" in json).toBe(false)`).
 
          `att-s2` là attempt Speaking riêng, không bao giờ được chấm, để thứ tự test tất định: seed thêm `ca-s2` + target + `att-s2` status `submitted`, có media.
+     17. Không session (bỏ header `x-test-user`): `GET /api/grading/att-w`, `GET /api/grading/att-s/media` và `POST /api/grading/att-w/grade` (kèm origin hợp lệ + JSON body hợp lệ) đều trả 401. <!-- Updated: Red Team 2026-10-05 -->
 - **Success criteria:** mọi case pass.
 - **Verify:** `pnpm --filter server test -- grading` exits 0, output có `grading.test.ts` và không có `failed`.
 

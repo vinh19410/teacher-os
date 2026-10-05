@@ -1,0 +1,189 @@
+// @vitest-environment jsdom
+import type {
+	QuizAttemptGrade,
+	QuizGradeInput,
+} from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { GradeForm } from "./grade-form";
+
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
+
+function selectFor(criterion: string): HTMLSelectElement {
+	return document.getElementById(`grade-${criterion}`) as HTMLSelectElement;
+}
+
+function choose(scores: Record<string, string>) {
+	for (const [key, value] of Object.entries(scores)) {
+		fireEvent.change(selectFor(key), { target: { value } });
+	}
+}
+
+describe("GradeForm (#319)", () => {
+	test("Writing task1 hiện Task Achievement, task2 hiện Task Response", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task1"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(screen.getByText("Task Achievement")).toBeTruthy();
+		expect(screen.getByText("Coherence & Cohesion")).toBeTruthy();
+		cleanup();
+
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(screen.getByText("Task Response")).toBeTruthy();
+	});
+
+	test("Speaking hiện Pronunciation và không có nhãn Writing", () => {
+		render(
+			<GradeForm
+				skill="speaking"
+				part="part2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(screen.getByText("Pronunciation")).toBeTruthy();
+		expect(screen.queryByText("Task Response")).toBeNull();
+		expect(screen.queryByText("Task Achievement")).toBeNull();
+	});
+
+	test("Ban đầu nút Lưu disable và band tổng là —", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		const save = screen.getByRole("button", { name: "Lưu điểm" });
+		expect((save as HTMLButtonElement).disabled).toBe(true);
+		expect(screen.getByTestId("grade-overall-band").textContent).toBe("—");
+	});
+
+	test("Đủ 4 tiêu chí: band 6.5 live và nút enable", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		choose({ task: "6", coherence: "6.5", lexical: "6", grammar: "6.5" });
+		expect(screen.getByTestId("grade-overall-band").textContent).toBe("6.5");
+		const save = screen.getByRole("button", { name: "Lưu điểm" });
+		expect((save as HTMLButtonElement).disabled).toBe(false);
+	});
+
+	test("Submit gọi onSave đúng payload", () => {
+		const onSave = vi.fn();
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={onSave}
+			/>,
+		);
+		choose({ task: "6", coherence: "6.5", lexical: "6", grammar: "6.5" });
+		fireEvent.click(screen.getByRole("button", { name: "Lưu điểm" }));
+		expect(onSave).toHaveBeenCalledTimes(1);
+		expect(onSave).toHaveBeenCalledWith({
+			scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6.5 },
+			feedback: "",
+		} satisfies QuizGradeInput);
+	});
+
+	test("Đã chấm: form điền sẵn điểm, nhận xét và band", () => {
+		const initial: QuizAttemptGrade = {
+			scores: { fluency: 7, lexical: 7, grammar: 7, pronunciation: 8 },
+			band: 7.5,
+			feedback: "Tốt",
+			gradedAt: "2026-10-05T00:00:00.000Z",
+		};
+		render(
+			<GradeForm
+				skill="speaking"
+				part="part2"
+				initial={initial}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(selectFor("fluency").value).toBe("7");
+		expect(selectFor("pronunciation").value).toBe("8");
+		expect(screen.getByTestId("grade-overall-band").textContent).toBe("7.5");
+		expect(
+			(document.getElementById("grade-feedback") as HTMLTextAreaElement).value,
+		).toBe("Tốt");
+		const save = screen.getByRole("button", { name: "Lưu điểm" });
+		expect((save as HTMLButtonElement).disabled).toBe(false);
+	});
+
+	test("Lỗi lưu hiện role alert", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error="Không lưu được điểm. Thử lại."
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Không lưu được điểm. Thử lại.",
+		);
+	});
+
+	test("saving=true đổi nhãn nút và giữ disable", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "Đang lưu…" })).toBeTruthy();
+	});
+});
