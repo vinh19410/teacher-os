@@ -22,6 +22,15 @@ vi.mock("@/lib/repos/use-syllabus", () => ({
 	}),
 }));
 
+// AddClassModal đọc conflicts qua useClasses (#315) — mock để render tĩnh
+// không cần DataProvider (useData throw khi thiếu provider).
+vi.mock("@/lib/repos/use-classes", () => ({
+	useClasses: () => ({
+		classes: [],
+		classById: () => undefined,
+	}),
+}));
+
 vi.mock("@/lib/use-kernel-form-submit", () => ({
 	useKernelFormSubmit: () => ({
 		saving: false,
