@@ -10,6 +10,7 @@ blockedBy: []
 blocks: []
 created: 2026-10-05
 issue: 321
+linked-pr: 324
 ---
 
 # Remove /settings route
@@ -49,7 +50,7 @@ Phase 2 phụ thuộc phase 1 (web phải hết import contract trước khi xo�
 - [x] Không còn symbol `workspaceSettingsSchema`, `workspaceSettingsUpdateSchema`, `WorkspaceSettings*`, `workspaceSettingsQueryOptions` trong `apps/` và `packages/api/src`.
 - [x] Bảng `workspace_settings` và `packages/db/src/schema/settings.ts` còn nguyên; không có migration mới.
 - [x] Test origin guard (PUT/PATCH) vẫn chạy và xanh với path thay thế.
-- [x] Plan SePay + plan chấm bài không còn trỏ tới `settings.tsx`/`/settings`/`repos/settings`; #320 có comment ghi chú *(comment đăng ở bước ship khi đã có PR link)*.
+- [x] Plan SePay + plan chấm bài không còn trỏ tới `settings.tsx`/`/settings`/`repos/settings`; #320 có comment ghi chú (đã đăng: issues/320#issuecomment-5991712634).
 - [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test` xanh.
 
 ## Rủi ro
