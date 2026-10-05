@@ -24,6 +24,7 @@ import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-c
 import { MusicIcon, VideoIcon } from "lucide-react";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
+import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { QuizMediaPlayer } from "@/components/quiz/quiz-media-player";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
@@ -74,7 +75,8 @@ function AttemptRouteView() {
  * Body màn kết quả — export để unit test các nhánh (#304, red-team I):
  * Speaking (`skill === "speaking"`, #305) hiện bài nói đã nộp + nghe lại;
  * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
- * giữ nguyên score card + bảng đáp án.
+ * giữ nguyên score card + bảng đáp án. Writing/Speaking đã chấm
+ * (`summary.grade`) hiện band + tiêu chí + nhận xét thay dòng chờ chấm.
  */
 export function AttemptSummaryBody({
 	summary,
@@ -88,6 +90,8 @@ export function AttemptSummaryBody({
 		summary.submittedAt,
 	);
 	const essay = summary.essay ?? null;
+	const grade = summary.grade ?? null;
+	const part = summary.part ?? "";
 	const submittedLine = (
 		<p className="text-muted-fg text-sm">
 			Bạn đã nộp bài lúc{" "}
@@ -139,9 +143,13 @@ export function AttemptSummaryBody({
 						Bài này được nộp khi chưa có file bài nói.
 					</p>
 				)}
-				<p className="mt-3 text-muted-fg text-sm">
-					Giáo viên sẽ chấm bài nói của bạn.
-				</p>
+				{grade ? (
+					<AttemptGradeCard grade={grade} skill="speaking" part={part} />
+				) : (
+					<p className="mt-3 text-muted-fg text-sm">
+						Giáo viên sẽ chấm bài nói của bạn.
+					</p>
+				)}
 			</>
 		);
 	}
@@ -164,9 +172,13 @@ export function AttemptSummaryBody({
 						essay
 					)}
 				</div>
-				<p className="mt-3 text-muted-fg text-sm">
-					Giáo viên sẽ chấm bài viết của bạn.
-				</p>
+				{grade ? (
+					<AttemptGradeCard grade={grade} skill="writing" part={part} />
+				) : (
+					<p className="mt-3 text-muted-fg text-sm">
+						Giáo viên sẽ chấm bài viết của bạn.
+					</p>
+				)}
 			</>
 		);
 	}

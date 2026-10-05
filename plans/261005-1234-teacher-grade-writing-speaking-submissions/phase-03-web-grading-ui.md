@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web giáo viên: trang chấm + nút ở tab Bài tập"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1, 2]

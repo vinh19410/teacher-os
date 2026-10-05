@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contract + DB + hàm band dùng chung"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: []

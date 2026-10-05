@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { createClient } from "@libsql/client";
+import { type Client, createClient } from "@libsql/client";
 import { expect, type Page } from "@playwright/test";
 import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
@@ -93,6 +93,44 @@ export async function verifyStudentEmailFromMailLog(
 	});
 }
 
+/** Org đầu tiên của giáo viên (bootstrap tạo ở request /api đầu tiên sau
+ * đăng ký, có thể sau khi URL đã sang /dashboard) — retry tới khi bootstrap
+ * xong thay vì throw ngay (flaky một lần query). */
+export async function orgIdForTeacherEmail(email: string): Promise<string> {
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await client.execute("PRAGMA busy_timeout = 5000;");
+	try {
+		const res = await withBusyRetry(async () => {
+			const rs = await client.execute({
+				sql: `SELECT m.org_id AS id FROM membership m JOIN user u ON u.id = m.user_id
+					WHERE lower(u.email) = lower(?) ORDER BY m.created_at, m.id LIMIT 1`,
+				args: [email],
+			});
+			if (!rs.rows[0]) throw new Error("no org yet, waiting for bootstrap");
+			return rs;
+		}, 30);
+		return String(res.rows[0]?.id);
+	} finally {
+		client.close();
+	}
+}
+
+/** Org đầu tiên trong DB — fallback khi seed không truyền teacherEmail. */
+async function firstOrgId(client: Client): Promise<string> {
+	const orgRow = await withBusyRetry(async () => {
+		const res = await client.execute(
+			"SELECT id FROM organization ORDER BY created_at ASC, id ASC LIMIT 1",
+		);
+		if (!res.rows[0]) {
+			throw new Error("seedStudent: no org yet, waiting for bootstrap");
+		}
+		return res;
+	}, 30);
+	return String(orgRow.rows[0]?.id);
+}
+
 /**
  * Seed a student record directly into local.db for E2E tests (Decision D6).
  * Resolves the target org from the logged-in teacher's email, or falls back
@@ -117,24 +155,12 @@ export async function seedStudent(opts: {
 				.replace(/[^a-z0-9]+/g, "") || "student";
 		const email = opts.email ?? `${slug}.${Date.now()}@e2e.test`;
 
-		const teacherEmail = opts.teacherEmail;
-		const orgRow = await withBusyRetry(async () => {
-			const res = teacherEmail
-				? await client.execute({
-						sql: `SELECT m.org_id AS id FROM membership m JOIN user u ON u.id = m.user_id
-							WHERE lower(u.email) = lower(?) ORDER BY m.created_at, m.id LIMIT 1`,
-						args: [teacherEmail],
-					})
-				: await client.execute(
-						"SELECT id FROM organization ORDER BY created_at ASC, id ASC LIMIT 1",
-					);
-			if (!res.rows[0]) {
-				throw new Error("seedStudent: no org yet, waiting for bootstrap");
-			}
-			return res;
-		}, 30);
+		const orgId = opts.teacherEmail
+			? // Org lookup tự mở client riêng và retry tới khi bootstrap xong.
+				await orgIdForTeacherEmail(opts.teacherEmail)
+			: // Fallback dùng client đang mở của seedStudent.
+				await firstOrgId(client);
 
-		const orgId = String(orgRow.rows[0]?.id);
 		const id = crypto.randomUUID();
 		const now = Date.now();
 

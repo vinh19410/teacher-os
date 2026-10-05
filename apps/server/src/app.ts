@@ -137,6 +137,11 @@ export function buildApp(deps: AppDeps) {
 		await next();
 		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 	});
+	// Media giáo viên (chấm bài) — cùng lý do override CORP như route học viên ở trên.
+	app.use("/api/grading/:attemptId/media", async (c, next) => {
+		await next();
+		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+	});
 	app.use(
 		"/*",
 		secureHeaders({
