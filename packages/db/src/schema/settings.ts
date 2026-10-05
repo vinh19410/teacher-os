@@ -2,6 +2,10 @@ import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
+// TOMBSTONE (issue #321): bảng giữ nguyên chỉ để dữ liệu cũ không mất và
+// revert được — toàn bộ API/web reader-writer đã gỡ. Feature mới KHÔNG tái
+// sử dụng bảng này cho ngữ nghĩa khác (row cũ còn template giáo viên tự sửa);
+// tạo bảng riêng khi cần preference per-org.
 export const workspaceSettings = sqliteTable("workspace_settings", {
 	orgId: text("org_id")
 		.primaryKey()
