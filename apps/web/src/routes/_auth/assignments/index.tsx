@@ -31,9 +31,11 @@ export const Route = createFileRoute("/_auth/assignments/")({
 	// nguyên trạng thái; giá trị lạ rơi về mặc định khi đọc lại.
 	// Annotate input tùy chọn để Link/navigate tới /assignments không bị
 	// bắt buộc truyền search (TanRouter suy input type từ tham số đầu).
-	validateSearch: (
-		input: { q?: string; skill?: string; part?: string },
-	): { q?: string; skill?: string; part?: string } => ({
+	validateSearch: (input: {
+		q?: string;
+		skill?: string;
+		part?: string;
+	}): { q?: string; skill?: string; part?: string } => ({
 		q: typeof input.q === "string" ? input.q : undefined,
 		skill: typeof input.skill === "string" ? input.skill : undefined,
 		part: typeof input.part === "string" ? input.part : undefined,

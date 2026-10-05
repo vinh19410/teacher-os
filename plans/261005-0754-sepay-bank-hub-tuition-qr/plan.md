@@ -19,7 +19,7 @@ created: 2026-10-05
 ## Overview
 
 Giáo viên (một org) liên kết tài khoản ngân hàng của mình qua **SePay Bank Hub
-Hosted Link** (iframe trong modal ở Cài đặt). Mỗi phiếu học phí (`invoice`)
+Hosted Link** (iframe trong modal). <!-- Updated: settings route removed 2026-10-05 — trang Cài đặt (/settings) đã bị gỡ theo issue #321; UI liên kết ngân hàng đặt ở trang riêng, đề xuất `/payments` (đối chiếu `/tuition` đang tồn tại: gắn panel vào `/tuition` hoặc khác biệt hoá rõ route mới, quyết định cuối khi review plan này). --> Mỗi phiếu học phí (`invoice`)
 nhận một **mã thanh toán** duy nhất (`TOS` + 8 ký tự) và một **pay token** công
 khai. Học viên xem QR trong portal; phụ huynh mở link công khai `/pay/<token>`.
 QR là VietQR tĩnh (`vietqr.app/img`) trỏ về tài khoản đã liên kết, số tiền là
@@ -37,7 +37,7 @@ Bank Hub (developer.sepay.vn/vi/bankhub, đọc 2026-10-05) — tóm tắt tại
 
 | # | Goal | Priority |
 |---|------|----------|
-| 1 | Giáo viên liên kết / huỷ liên kết / khôi phục tài khoản ngân hàng qua Hosted Link, trạng thái hiển thị ở Cài đặt | P1 |
+| 1 | Giáo viên liên kết / huỷ liên kết / khôi phục tài khoản ngân hàng qua Hosted Link, trạng thái hiển thị ở trang riêng `/payments` (đề xuất — `/settings` đã gỡ, xem ghi chú ở Overview) | P1 |
 | 2 | Mỗi phiếu học phí có mã thanh toán + QR VietQR (số tiền còn nợ) — trong portal học viên và link công khai | P1 |
 | 3 | IPN tự cộng dồn thanh toán, đủ tiền thì "Đã thu"; chống trùng, không cross-tenant | P1 |
 | 4 | Giao dịch có mã nhưng không khớp → danh sách "chưa khớp", giáo viên gán hoặc bỏ qua | P2 |
@@ -71,7 +71,7 @@ Thứ tự phụ thuộc: 1 → 2 → 3 → 4 → 5 → 6 (tuần tự; 2 và 3 
 
 ## Success Criteria
 
-- [ ] Sandbox: giáo viên liên kết tài khoản mẫu MBBank → Cài đặt hiện "Đã liên kết • MBBank •••6789".
+- [ ] Sandbox: giáo viên liên kết tài khoản mẫu MBBank → trang ngân hàng hiện "Đã liên kết • MBBank •••6789".
 - [ ] Tạo phiếu 500.000đ → portal và `/pay/<token>` hiện QR với `amount=500000`, `des=TOS…`.
 - [ ] `POST /v1/transaction/create` (sandbox) 200.000đ rồi 300.000đ cùng mã → phiếu "Thu một phần 200.000/500.000" rồi "Đã thu".
 - [ ] Gửi lại cùng `transaction_id` không cộng tiền lần hai; IPN sai `Apikey` → 401.
