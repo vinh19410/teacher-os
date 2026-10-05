@@ -12,6 +12,15 @@ Quy ước khi cập nhật:
 
 ## 2026-10-05
 
+### Changed
+- Trang Bài tập: bộ lọc "Phần thi" khi xem "Tất cả" kỹ năng giờ nhóm chip theo kỹ năng (Writing / Reading / Listening / Speaking) thay vì một hàng 12 phần thi trộn lẫn; chọn một kỹ năng vẫn chỉ hiện phần thi của kỹ năng đó
+- Chip lọc kỹ năng/phần thi hiện badge số đề sẽ còn nếu bấm (đếm theo từ khoá đang gõ, có ở cả chế độ một kỹ năng); chip 0 đề vẫn full contrast, badge "0" báo trước ngõ cụt
+- Bộ lọc trang Bài tập sống trong URL (`?q= &skill= &part=`): reload, back/forward và link chia sẻ giữ nguyên trạng thái lọc; ô tìm kiếm debounce 300ms lên URL để không rớt ký tự khi gõ
+- Dưới `lg`: card bộ lọc gập mặc định thành hàng "Bộ lọc" kèm badge số filter đang áp dụng và đếm `n/m đề`; desktop luôn mở như cũ
+
+### Fixed
+- Bộ chip lọc có ngữ cảnh nhóm cho screen reader (`role="group"` + `aria-label` "Kỹ năng" / "Phần thi — <kỹ năng>"); badge đếm ẩn với AT để accessible name chip ổn định cho voice control và e2e selector exact
+
 ### CI/Infra
 - Thêm suite Vitest cho `packages/api` (script `test` + `vitest.config.ts`): unit `grade-quiz` (alt separator `" / "`, pin NFC/NFD), `infer-question-types` (TFNG biên, 8 case), `word-count` (emoji/CJK/hyphen); mở rộng integration `student-quiz.test.ts` của server: IDOR cross-org qua `x-student-org-id`, start race (1×201 + 1×200 cùng attemptId, 1 row), answer value >500 ký tự, `q` âm/lẻ/ngoài range, `json_quote` round-trip, raw JSON key `"3.0"` regression (#313)
 
