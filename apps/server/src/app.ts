@@ -18,6 +18,14 @@ import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
+// Re-export cho e2e fake (pattern tương tự MediaStore ở dưới).
+export type {
+	BankHubAccount,
+	BankHubClient,
+	BankHubContext,
+	BankHubLinkPurpose,
+	BankHubTransaction,
+} from "./lib/bank-hub/bank-hub-client";
 // Re-export cho adapter lưu trữ của e2e (package `server` chỉ export
 // `.`, `./app`, `./session`).
 export {

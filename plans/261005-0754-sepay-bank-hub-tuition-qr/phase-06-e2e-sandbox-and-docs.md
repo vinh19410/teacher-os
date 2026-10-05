@@ -57,11 +57,11 @@ kiến trúc và runbook.
 
 ## Todo
 
-- [ ] Fake Bank Hub + trang hosted link giả + wiring E2E
-- [ ] Spec `tuition-bank-transfer.spec.ts` (7 bước)
-- [ ] Script `bankhub-setup.ts`
+- [x] Fake Bank Hub + trang hosted link giả + wiring E2E
+- [x] Spec `tuition-bank-transfer.spec.ts` (7 bước)
+- [x] Script `bankhub-setup.ts`
 - [ ] Sandbox verification + report; cập nhật allowlist/CSP nếu cần
-- [ ] Docs: system-architecture, production-release-runbook, codebase-summary
+- [x] Docs: system-architecture, production-release-runbook, codebase-summary
 
 ## Success Criteria
 
