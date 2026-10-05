@@ -14,7 +14,7 @@ created: 2026-10-05
 
 # Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp
 
-> **⚠️ CHỜ REBASE — plan #321 (`chore/remove-settings-route`) gỡ `apps/web/src/lib/repos/settings.ts` và dịch các dòng trong `apps/server/src/routes/kernel.ts` (~135 dòng).** Phase 03 của plan này đã được cập nhật sẵn trong nhánh #321 (`getApiBaseUrl` từ `./api-base-url`, cite kernel.ts đổi sang symbol anchor). Rebase lên `develop` sau khi #321 merge rồi mới thực thi. <!-- Updated: settings route removed 2026-10-05 -->
+> **📌 ĐÃ THỰC THI + ĐÃ ĐỒNG BỘ (#319 merged; #321 sửa tiếp).** Plan #321 gỡ `repos/settings.ts` — code thực thi của plan này đã được cập nhật trong nhánh #321 (`grading.ts` import `getApiBaseUrl` từ `./api-base-url`; cite trong phase-03 đổi sang precedent/symbol còn tồn tại). Không cần hành động thêm. <!-- Updated: settings route removed 2026-10-05 -->
 
 ## Overview
 
