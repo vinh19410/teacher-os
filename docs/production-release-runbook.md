@@ -587,9 +587,9 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
   3. Drop index `student_email_uq` (toàn cục) và tạo index `student_org_email_uq` scoped theo `(org_id, lower(trim(email)))` cho phép học viên học cùng lúc nhiều tổ chức (multi-org).
 - **Rollback safety:** Forward-only. Dữ liệu `student_invitation` cascade delete theo tổ chức/người dùng.
 
-## Rollback safety: migrations 0026–0030 (additive-only)
+## Rollback safety: migrations 0026–0032 (additive-only)
 
-Tất cả các migration từ 0026 đến 0030 đều **additive-only** — chỉ thêm cột
+Tất cả các migration từ 0026 đến 0032 đều **additive-only** — chỉ thêm cột
 nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bảng hiện có:
 
 - **0026** (`0026_legal_master_chief.sql`): thêm 6 cột nullable vào `student`
@@ -606,6 +606,10 @@ nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bả
 - **0030** (`0030_previous_drax.sql`): tạo bảng `quiz_attempt` (unique
   `(assignment_id, student_id)` — 1 lượt làm bài mỗi lượt giao) cho luồng học
   viên làm bài trên student portal.
+- **0031** (`0031_classy_victor_mancha.sql`): thêm `quiz_attempt.essay`
+  (`text DEFAULT '' NOT NULL`) cho bài viết Writing (#304).
+- **0032** (`0032_mature_saracen.sql`): thêm 5 cột nullable `media_*` vào
+  `quiz_attempt` cho bài nói Speaking (#305).
 
 Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 "Rollback code"):
@@ -622,3 +626,53 @@ Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 - Dữ liệu `quiz_attempt` / `assignment_test` cascade delete theo org /
   assignment / student; rollback worker không đụng tới dữ liệu này (chỉ
   procedure restore Time Travel mới ảnh hưởng).
+
+## Speaking media storage (R2 + migration 0032) — issue #305
+
+Bài nói Speaking của học viên (1 file audio/video ≤ 50 MB mỗi lượt làm bài)
+lưu trong bucket R2 private `media`, bind vào Worker server dưới tên `MEDIA`
+([packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts)). Worker
+là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media`.
+
+### Preflight (release đầu tiên có #305)
+
+1. **Bật R2 trên tài khoản Cloudflare** (Dashboard → R2 → Purchase/Enable,
+   free tier). Chưa bật thì `alchemy deploy` fail ở bước tạo bucket. Cần cả
+   cho `alchemy dev` local (bucket local tạo ở lần chạy đầu).
+2. **Quyền token**: `CLOUDFLARE_API_TOKEN` của operator và của GitHub
+   environment (prod + staging, xem "Automated production deploy") phải có
+   quyền **Workers R2 Storage: Edit**. Thiếu quyền thì CI deploy fail giữa
+   chừng sau khi đã đổi một phần resource.
+3. **Diễn tập trên staging trước** (`deploy-staging.yml`), rồi mới prod.
+4. **Backup D1** trước khi apply migration `0031_classy_victor_mancha.sql` +
+   `0032_mature_saracen.sql` (theo quy trình Time Travel ở mục "D1 ledger").
+   0031 thêm `quiz_attempt.essay` (`text DEFAULT '' NOT NULL`, #304); 0032 gồm
+   5 câu `ALTER TABLE quiz_attempt ADD` cột nullable `media_key`, `media_name`,
+   `media_type`, `media_size`, `media_uploaded_at`.
+
+### Post-deploy
+
+- `/readyz` chỉ kiểm bảng và index, **không kiểm cột**. Chạy thêm
+  `SELECT media_key FROM quiz_attempt LIMIT 0` trên D1 của stage vừa deploy;
+  lỗi "no such column" là NO-GO (mọi màn làm bài/kết quả sẽ 500).
+- Bucket private: `wrangler r2 bucket list` thấy mỗi stage có bucket riêng
+  (staging không dùng chung bucket prod), và
+  `wrangler r2 bucket dev-url get <tên bucket>` báo dev URL **tắt**. Không bật
+  public domain cho bucket này.
+- Smoke: học viên mở một đề Speaking, tải 1 file mp3 nhỏ, reload thấy file
+  còn, nộp bài, màn kết quả "Nghe lại bài nói" phát được.
+
+### Cửa sổ deploy và rollback
+
+- Field `skill`/`media` mới của summary là optional: bundle student mới +
+  server cũ chạy được. Bundle cũ đang mở + server mới có thể lỗi parse ở màn
+  kết quả cho tới khi học viên reload (cùng cửa sổ đã chấp nhận ở #304).
+- Rollback code an toàn: code cũ không đọc cột `media_*` và không bind
+  `MEDIA`; cột và bucket còn sót lại là vô hại. Migration forward-only.
+- Thiếu binding `MEDIA` (bucket chưa tạo) thì các route media trả 503, không
+  ảnh hưởng Reading/Listening/Writing; đề Speaking không nộp được cho tới khi
+  bucket có.
+- Object mồ côi (Worker bị huỷ giữa upload và ghi DB, lệnh xoá best-effort
+  lỗi, hoặc cascade xoá lượt giao/học viên) không tự dọn ở v1. Không dùng
+  lifecycle rule theo prefix `quiz-media/` — nó xoá cả bài đã nộp; dọn bằng
+  job đối chiếu với `quiz_attempt.media_key` (follow-up).

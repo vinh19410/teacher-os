@@ -10,11 +10,32 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-02
+
+### Added
+- Trang làm bài học viên có màn nộp bài Speaking: đề hiển thị đúng theo part (câu hỏi Part 1/3, cue card Part 2) kèm hướng dẫn của giáo viên và card "Hướng dẫn làm bài"; học viên kéo thả hoặc chọn 1 file audio/video (MP3, M4A, WAV, WEBM, OGG, MP4, MOV, tối đa 50 MB) có thanh tiến trình, nghe/xem lại, thay hoặc xoá file; nút "Nộp bài" chỉ mở khi đã có file (server cũng chặn); màn kết quả hiện "Bài nói của bạn" và nghe lại được thay cho score card 0/0 (#305)
+- Portal học viên: card "Lớp học của tôi" hiện giáo viên (avatar, tên, email); bấm card lớp đã tham gia mở trang chi tiết lớp `/classes/:classId` gồm thông tin lớp, giáo viên (link email), danh sách buổi học của chính học viên (Đã học / Sắp tới / Vắng / Đã huỷ, đánh dấu buổi tới) và bài tập của lớp; endpoint `GET /api/student/classes/:classId` chỉ trả cho học viên đang học lớp đó. Mục "Trang chủ" ở sidebar thành link (#307)
+- Trang làm bài học viên có ô nhập bài viết cho đề Writing: autosave như các dạng câu hỏi (reload có dialog tiếp tục), đếm từ trực tiếp với mục tiêu Task 1 (150) / Task 2 (250) — thiếu từ chỉ cảnh báo không chặn nộp; màn kết quả và trang soi bài hiện lại bài đã nộp kèm số từ thay cho score card 0/0 (#304)
+- Answer-key grid cảnh báo các câu bị suy luận thành True/False/Not Given và có nút đặt dạng cho cả cụm câu chỉ bằng một lần bấm (#303)
+
+### Changed
+- Thanh điều hướng câu hỏi bỏ hàng tab nhóm "Questions X–Y", hiện toàn bộ số câu theo thứ tự và trải full chiều ngang màn hình; ở màn đọc chia đôi thanh nằm dưới cả hai pane, dưới `lg` giới hạn 30% chiều cao màn hình và cuộn khi đề dài (#303)
+
+### Fixed
+- Trang làm bài/soi bài và preview mô phỏng của giáo viên: câu True / False / Not Given nằm trong đề dạng điền chữ (note, sentence completion…) mà không khai dạng riêng và không có chỗ trống `____` giờ hiện đủ radio TRUE / FALSE / NOT GIVEN (hoặc YES / NO / NOT GIVEN) thay vì chỉ in đề bài không có chỗ trả lời; đề cũ và bài đang làm dở tự đúng, không cần migrate dữ liệu (#303)
+
+### CI/Infra
+- Bucket R2 private `media` bind vào Worker server (`MEDIA`) và migration 0032 thêm 5 cột `media_*` trên `quiz_attempt`; release đầu cần bật R2 trên tài khoản Cloudflare và cấp quyền "Workers R2 Storage: Edit" cho token deploy (xem runbook) (#305)
+- Migration 0031 thêm cột `essay` (`text DEFAULT '' NOT NULL`) trên `quiz_attempt` cho bài Writing; cùng 0032 đều additive-only, runbook cập nhật bước backup D1 và bảng rollback-safety 0026–0032 (#304, #305)
+
 ## 2026-10-01
 
 ### Added
 - Trang xác nhận email sau verify cho cả teacher và học viên: bấm link trong mail landing về `/verify-email` của đúng cổng (card trạng thái + gửi lại link khi hết hạn) thay vì response trần của API (#297)
 - Quên mật khẩu qua email cho cả hai cổng (#292): teacher ("Forgot password?" trên login) và học viên ("Quên mật khẩu?") xin liên kết đặt lại tại `/forgot-password`; link trong mail (token 1 giờ, thu hồi mọi session khi đổi) đưa về `/reset-password` của đúng cổng đã xin; mail gửi nền qua `waitUntil` để response không phân biệt email có/không tài khoản, chỉ gửi khi role khớp cổng đích; token được che trong log HTTP server và xóa khỏi URL sau khi vào trang
+
+### Changed
+- Trang làm bài/soi bài: intro có các khối "Questions X–Y …" được tách và hiển thị instruction ngay trên đúng nhóm câu đó (kể cả đề cũ không khai dạng từng câu); intro không có marker giữ hiển thị như cũ (#301)
 
 ### Fixed
 - Student đăng ký xong không nhận được mail kích hoạt tài khoản (#293): workflow deploy chỉ truyền 5 biến vào Alchemy nên worker luôn rơi về `MAILER_IMPL=log` (chỉ in mail ra console). Giờ `RESEND_API_KEY`, `MAILER_IMPL`, `MAIL_FROM` được truyền từ GitHub environment tương ứng

@@ -105,13 +105,40 @@ export function createAuth(input: CreateAuthInput) {
 		return rows[0]?.role ?? null;
 	}
 
-	/** App nguồn của request hiện tại: Origin trước, OAuth state làm fallback. */
+	/**
+	 * Origin của callbackURL trên link xác thực email (#299): bấm link trong mail
+	 * là GET navigation không có Origin header. callbackURL đã qua originCheck
+	 * của better-auth, và resolveRequestApp chỉ tin origin khớp chính xác.
+	 */
+	function verifyEmailCallbackOrigin(
+		ctx: { path?: string; query?: Record<string, unknown> } | null | undefined,
+	): string | null {
+		if (ctx?.path !== "/verify-email") return null;
+		const callbackURL = ctx.query?.callbackURL;
+		if (typeof callbackURL !== "string") return null;
+		try {
+			return new URL(callbackURL).origin;
+		} catch {
+			return null;
+		}
+	}
+
+	/** App nguồn của request hiện tại: Origin trước, rồi callbackURL của link
+	 * xác thực email, OAuth state làm fallback. */
 	async function resolveRequestAppForContext(
-		ctx: { request?: Request | null } | null | undefined,
+		ctx:
+			| {
+					request?: Request | null;
+					path?: string;
+					query?: Record<string, unknown>;
+			  }
+			| null
+			| undefined,
 	): Promise<string> {
 		const oauthApp = await readOAuthApp();
 		return resolveRequestApp({
-			origin: ctx?.request?.headers?.get("origin") ?? null,
+			origin:
+				ctx?.request?.headers?.get("origin") ?? verifyEmailCallbackOrigin(ctx),
 			oauthApp,
 			studentOrigins: input.studentOrigins,
 			teacherOrigins,
@@ -261,13 +288,27 @@ export function createAuth(input: CreateAuthInput) {
 						const requiredApp = await resolveRequestAppForContext(ctx);
 						const userRole = await getUserRole(session.userId);
 						if (userRole !== requiredApp) {
-							throw new APIError("FORBIDDEN", {
+							const error = new APIError("FORBIDDEN", {
 								message:
 									userRole === "student"
 										? ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE
 										: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE,
 								code: "ROLE_MISMATCH",
 							});
+							// Link xác thực email (#299): email đã được xác thực trước bước
+							// này; bỏ auto sign-in và đưa người dùng về trang callback kèm
+							// ?error= thay vì 403 JSON trần tại URL của API.
+							const callbackURL = ctx?.query?.callbackURL;
+							if (
+								ctx?.path === "/verify-email" &&
+								typeof callbackURL === "string"
+							) {
+								const separator = callbackURL.includes("?") ? "&" : "?";
+								throw ctx.redirect(
+									`${callbackURL}${separator}error=ROLE_MISMATCH`,
+								);
+							}
+							throw error;
 						}
 					},
 				},

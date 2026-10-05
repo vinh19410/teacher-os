@@ -95,6 +95,11 @@ export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
 });
 
+// Private bucket for student speaking submissions (audio/video). No public
+// domain and no forceDestroy: objects are student data, read and written only
+// by the server Worker through /api/student/attempts/:id/media.
+export const media = Cloudflare.R2.Bucket("media", {});
+
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
@@ -103,6 +108,7 @@ export const server = Cloudflare.Worker("server", {
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,
+		MEDIA: media,
 		CORS_ORIGIN: corsOriginConfig,
 		STUDENT_ORIGINS: studentOriginsConfig,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),

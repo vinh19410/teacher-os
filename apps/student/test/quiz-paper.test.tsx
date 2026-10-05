@@ -1,5 +1,6 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { stripEssayControls } from "@teacher-os/ui/components/quiz/quiz-essay-input";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
 	type QuizChoiceRow,
@@ -277,6 +278,65 @@ describe("QuizPaper — header cụm theo type từng câu (#286)", () => {
 	});
 });
 
+describe("QuizPaper — instruction giáo viên theo từng cụm (#301)", () => {
+	const sectionQuestions: StudentQuizQuestion[] = Array.from(
+		{ length: 6 },
+		(_, i) => ({ stem: `Câu ${i + 1} ____`, opts: null, pin: null }),
+	);
+	const introSections =
+		"<p>Read carefully.</p><p>Questions 1–2</p><p>Write TRUE or FALSE.</p>" +
+		"<p>Questions 3–6 · Flow-chart completion — Write ONE WORD ONLY from the passage for each answer.</p>";
+
+	function renderIntro(introValue: string) {
+		return renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "note", intro: introValue })}
+				parts={buildQuizParts(sectionQuestions, "note", introValue)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+	}
+
+	it("header theo section: aria-label = Questions X–Y, không hậu tố dạng bài", () => {
+		const html = renderIntro(introSections);
+		expect(html).toContain('aria-label="Questions 1–2"');
+		expect(html).toContain('aria-label="Questions 3–6"');
+	});
+
+	it("instruction của giáo viên đứng ngay trên đúng nhóm câu của nó", () => {
+		const html = renderIntro(introSections);
+		const writeTrue = html.indexOf("Write TRUE or FALSE.");
+		expect(writeTrue).toBeGreaterThan(-1);
+		expect(writeTrue).toBeLessThan(html.indexOf('data-question="0"'));
+		const oneWord = html.indexOf("Write ONE WORD ONLY");
+		expect(oneWord).toBeGreaterThan(html.indexOf('data-question="1"'));
+		expect(oneWord).toBeLessThan(html.indexOf('data-question="2"'));
+	});
+
+	it("marker không lặp trong instruction; preamble 1 lần đứng trước header", () => {
+		const html = renderIntro(introSections);
+		// 2 lần = aria-label section + header h2; instruction không lặp marker.
+		expect((html.match(/Questions 1–2/g) ?? []).length).toBe(2);
+		expect((html.match(/Read carefully\./g) ?? []).length).toBe(1);
+		expect(html.indexOf("Read carefully.")).toBeLessThan(
+			html.indexOf("Questions 1–2"),
+		);
+	});
+
+	it("section chỉ có marker → fallback nhãn + instruction chuẩn của map", () => {
+		const html = renderIntro(
+			"<p>Questions 1–2</p><p>Questions 3–6</p><p>x</p>",
+		);
+		expect(html).toContain("Note completion");
+		expect(html).toContain(
+			"Complete the notes below. Choose NO MORE THAN THREE WORDS",
+		);
+		expect(html).toContain('aria-label="Questions 1–2"');
+	});
+});
+
 describe("QuizPaper — option bank cho đề trộn dạng (#286 H2)", () => {
 	it("hiện bank khi CÂU bankable trong prompt không-bankable", () => {
 		const html = renderToStaticMarkup(
@@ -319,5 +379,172 @@ describe("QuizPaper — option bank cho đề trộn dạng (#286 H2)", () => {
 			/>,
 		);
 		expect(html).not.toContain("Ngân hàng lựa chọn");
+	});
+});
+
+describe("QuizPaper — đề Writing essay input (#304)", () => {
+	const writingFields = paperFields({
+		skill: "writing",
+		type: "chart",
+		prompt: "<p>The graph shows marriage and age…</p>",
+		passage: "",
+	});
+
+	it("render textarea 'Bài viết của bạn', không empty-state", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts([], "chart")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Bài viết của bạn");
+		expect(html).toContain("quiz-essay-input");
+		expect(html).toContain('spellCheck="false"');
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("stripEssayControls bỏ C0 control char, giữ \\n \\t \\r (chặn wedge 413)", () => {
+		expect(stripEssayControls("Line one\nLine two\u0007")).toBe(
+			"Line one\nLine two",
+		);
+		expect(stripEssayControls("a\u0000b\u001Fc")).toBe("abc");
+		// U+2028/U+2029 cũng escape 6 byte trong JSON — strip cùng lớp lỗi
+		// (code-review F3, paste từ PDF/editor khác).
+		expect(stripEssayControls("x\u2028y\u2029z")).toBe("xyz");
+		expect(stripEssayControls("keep \n\t\r")).toBe("keep \n\t\r");
+		expect(stripEssayControls("")).toBe("");
+	});
+
+	it("mode review: textarea readOnly, value từ answers[0] (đề đã nộp)", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts([], "chart")}
+				answers={{ 0: "Bài đã nộp." }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+			/>,
+		);
+		expect(html).toContain("readonly");
+		expect(html).toContain("Bài đã nộp.");
+	});
+
+	it("đề Writing vi phạm invariant (có questions) → KHÔNG render essay, câu hỏi thật giữ nguyên", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={writingFields}
+				parts={buildQuizParts(
+					[{ stem: "Câu lạ", opts: null, pin: null }],
+					"chart",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("Bài viết của bạn");
+		// Fail-safe: widget câu hỏi vẫn render bình thường, không có key `0`
+		// đè lẫn essay.
+		expect(html).toContain("Câu lạ");
+	});
+
+	it("Reading không có textarea essay", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Câu 1", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("Bài viết của bạn");
+	});
+});
+
+describe("QuizPaper — đề Speaking hiển thị đúng theo part (#305)", () => {
+	const renderSpeaking = (overrides: Partial<PaperFields>) =>
+		renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "speaking",
+					type: "place",
+					intro: "",
+					passage: "",
+					...overrides,
+				})}
+				parts={buildQuizParts([], "place")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+
+	it("Part 2: cue card có topic + bullet, không empty-state", () => {
+		const html = renderSpeaking({
+			cueTopic: "a place you like to visit",
+			cuePoints: "where it is\nwhy you like it",
+		});
+		expect(html).toContain("Describe a place you like to visit.");
+		expect(html).toContain("You should say:");
+		expect(html).toContain("<li>where it is</li>");
+		expect(html).toContain("<li>why you like it</li>");
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("Part 1: hiện câu hỏi prompt, không có cue card rỗng", () => {
+		const html = renderSpeaking({
+			prompt: "<p>Do you work or are you a student?</p>",
+		});
+		expect(html).toContain("Do you work or are you a student?");
+		expect(html).not.toContain("Describe");
+		expect(html).not.toContain("You should say:");
+		expect(html).not.toContain("không có câu hỏi tự chấm");
+	});
+
+	it("intro của giáo viên hiện dưới eyebrow", () => {
+		const html = renderSpeaking({
+			intro: "<p>Hãy ghi âm trong một lần, không cắt ghép.</p>",
+			cueTopic: "a book",
+		});
+		expect(html).toContain("Hãy ghi âm trong một lần");
+		expect(html.indexOf("Hãy ghi âm")).toBeLessThan(html.indexOf("Describe"));
+	});
+
+	it("hướng dẫn thêm (note) của giáo viên hiện cho Speaking", () => {
+		const html = renderSpeaking({
+			note: "<p>Nói tự nhiên, không đọc giấy.</p>",
+			cueTopic: "a book",
+		});
+		expect(html).toContain("Nói tự nhiên, không đọc giấy.");
+	});
+
+	it("Part 2 không hiện prompt cũ còn sót khi giáo viên đổi part", () => {
+		const html = renderSpeaking({
+			cueTopic: "a place you like to visit",
+			prompt: "<p>Do you work or are you a student?</p>",
+		});
+		expect(html).toContain("Describe a place you like to visit.");
+		expect(html).not.toContain("Do you work or are you a student?");
+	});
+
+	it("Reading không đổi: đề rỗng câu vẫn có empty-state", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts([], "tfng")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("không có câu hỏi tự chấm");
 	});
 });

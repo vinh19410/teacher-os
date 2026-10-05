@@ -32,8 +32,23 @@ export interface QuizSeedPrompt {
 	note: string;
 	/** Rich-text HTML rendered above the questions (reading passage). */
 	passage: string;
+	/** Đề bài rich-text HTML (#304 — Writing prompt-only cần nội dung đề). */
+	prompt?: string;
 	intro?: string;
+	/** Cue card Speaking Part 2 (#305) — mặc định "". */
+	cueTopic?: string;
+	/** Bullet cue card, mỗi dòng một ý — mặc định "". */
+	cuePoints?: string;
 	questions: QuizSeedQuestion[];
+}
+
+export interface QuizSeedLesson {
+	/** yyyy-mm-dd; the weekday (`lesson.day`, Monday = 1) derives from it. */
+	date: string;
+	time: string;
+	dur: number;
+	status: "upcoming" | "completed" | "absent" | "cancelled";
+	topic: string;
 }
 
 export interface QuizFixture {
@@ -42,6 +57,8 @@ export interface QuizFixture {
 	studentId: string;
 	/** Parallel to `prompts`: class_assignment ids, one per prompt. */
 	assignmentIds: string[];
+	/** Set when `invitedClassName` was passed. */
+	invitedClassId: string | null;
 }
 
 function openDb(): Client {
@@ -57,6 +74,12 @@ export async function seedQuizFixture(opts: {
 	studentName: string;
 	studentEmail: string;
 	prompts: QuizSeedPrompt[];
+	/** Org-owning teacher (user + membership role 'teacher'). */
+	teacher?: { name: string; email: string };
+	/** Lesson rows of the student's enrollment in the seeded class. */
+	lessons?: QuizSeedLesson[];
+	/** Second class in the same org with an 'invited' enrollment. */
+	invitedClassName?: string;
 }): Promise<QuizFixture> {
 	const db = openDb();
 	await db.execute("PRAGMA busy_timeout = 5000;");
@@ -82,11 +105,61 @@ export async function seedQuizFixture(opts: {
 				VALUES (?,?,?,?,?,?)`,
 			args: [studentId, orgId, opts.studentName, opts.studentEmail, now, now],
 		});
+		const enrollmentId = crypto.randomUUID();
 		await db.execute({
 			sql: `INSERT INTO enrollment (id, org_id, class_id, student_id, status, created_at)
 				VALUES (?,?,?,?, 'active', ?)`,
-			args: [crypto.randomUUID(), orgId, classId, studentId, now],
+			args: [enrollmentId, orgId, classId, studentId, now],
 		});
+
+		if (opts.teacher) {
+			const userId = crypto.randomUUID();
+			await db.execute({
+				sql: `INSERT INTO user (id, name, email, email_verified, role, created_at, updated_at)
+					VALUES (?,?,?, 1, 'teacher', ?, ?)`,
+				args: [userId, opts.teacher.name, opts.teacher.email, now, now],
+			});
+			await db.execute({
+				sql: `INSERT INTO membership (id, org_id, user_id, role, created_at)
+					VALUES (?,?,?, 'teacher', ?)`,
+				args: [crypto.randomUUID(), orgId, userId, now],
+			});
+		}
+
+		for (const l of opts.lessons ?? []) {
+			const weekday = new Date(`${l.date}T00:00:00Z`).getUTCDay();
+			await db.execute({
+				sql: `INSERT INTO lesson (id, org_id, class_id, enrollment_id, day, time, dur, date, status, topic, created_at)
+					VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+				args: [
+					crypto.randomUUID(),
+					orgId,
+					classId,
+					enrollmentId,
+					weekday === 0 ? 7 : weekday,
+					l.time,
+					l.dur,
+					l.date,
+					l.status,
+					l.topic,
+					now,
+				],
+			});
+		}
+
+		let invitedClassId: string | null = null;
+		if (opts.invitedClassName) {
+			invitedClassId = crypto.randomUUID();
+			await db.execute({
+				sql: "INSERT INTO class (id, org_id, name, created_at) VALUES (?,?,?,?)",
+				args: [invitedClassId, orgId, opts.invitedClassName, now + 1],
+			});
+			await db.execute({
+				sql: `INSERT INTO enrollment (id, org_id, class_id, student_id, status, created_at)
+					VALUES (?,?,?,?, 'invited', ?)`,
+				args: [crypto.randomUUID(), orgId, invitedClassId, studentId, now],
+			});
+		}
 
 		const assignmentIds: string[] = [];
 		for (const prompt of opts.prompts) {
@@ -110,12 +183,13 @@ export async function seedQuizFixture(opts: {
 					prompt.title,
 					"7.0",
 					"",
-					"",
+					// Đề bài (writing prompt-only #304) — mặc định "" như cũ.
+					prompt.prompt ?? "",
 					prompt.intro ?? "",
 					prompt.passage,
 					"",
-					"",
-					"",
+					prompt.cueTopic ?? "",
+					prompt.cuePoints ?? "",
 					"",
 					"",
 					JSON.stringify(prompt.questions),
@@ -137,7 +211,7 @@ export async function seedQuizFixture(opts: {
 			assignmentIds.push(assignmentId);
 		}
 
-		return { orgId, classId, studentId, assignmentIds };
+		return { orgId, classId, studentId, assignmentIds, invitedClassId };
 	} finally {
 		db.close();
 	}

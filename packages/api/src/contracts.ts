@@ -1591,6 +1591,14 @@ export const studentNextSessionSchema = z.object({
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
+/** Giáo viên phụ trách lớp = giáo viên sở hữu org (membership role 'teacher' sớm nhất). */
+export const studentTeacherSchema = z.object({
+	name: z.string(),
+	email: z.string(),
+	image: z.string().nullable().catch(null),
+});
+export type StudentTeacher = z.infer<typeof studentTeacherSchema>;
+
 export const studentClassSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -1609,6 +1617,8 @@ export const studentClassSchema = z.object({
 	 */
 	enrollmentId: z.string().catch(""),
 	enrollmentStatus: z.enum(ENROLLMENT_STATUSES).catch("active"),
+	/** null = org không có membership giáo viên; `.catch` giữ client chạy với server cũ. */
+	teacher: studentTeacherSchema.nullable().catch(null),
 });
 export type StudentClass = z.infer<typeof studentClassSchema>;
 
@@ -1644,6 +1654,27 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+/** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
+export const studentClassLessonSchema = z.object({
+	id: z.string(),
+	/** yyyy-mm-dd; null = lớp legacy (null theo cả lớp). */
+	date: z.string().nullable(),
+	/** Thứ trong tuần, Monday = 1. */
+	day: z.number().int(),
+	time: z.string(),
+	dur: z.number().int(),
+	status: z.string(),
+	topic: z.string(),
+});
+export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
+
+export const studentClassDetailSchema = z.object({
+	class: studentClassSchema.extend({ startDate: z.string() }),
+	lessons: z.array(studentClassLessonSchema),
+	assignments: z.array(studentAssignmentSchema),
+});
+export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
+
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
 export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
@@ -1655,6 +1686,66 @@ export type QuizVerdict = (typeof QUIZ_VERDICTS)[number];
 
 /** Cap answer value per autosave PATCH (RT#16) — matches the 4096-byte body cap. */
 export const QUIZ_ANSWER_VALUE_MAX = 500;
+
+/** Cap bài viết Writing (#304): Task 2 thường 250–400 từ ≈ 2.500 ký tự,
+ * 10.000 là dư ~4 lần. Riêng route /essay có body cap 48KB (đủ cho 10.000
+ * ký tự UTF-8 3 byte cộng escape JSON, vẫn dưới giới hạn 64KB của fetch
+ * keepalive); các route quiz khác giữ cap 4096 byte. */
+export const QUIZ_ESSAY_MAX = 10000;
+export const QUIZ_ESSAY_BODY_MAX = 48 * 1024;
+
+/** Autosave bài viết Writing: route PATCH /attempts/:id/essay, body `{ text }`.
+ * Tách khỏi map `answers` vì map đó gắn với index câu hỏi, cap 500 ký tự và
+ * đi vào gradeQuiz — đề Writing không có câu nào. */
+export const quizEssayPatchSchema = z
+	.object({
+		text: z.string().max(QUIZ_ESSAY_MAX),
+	})
+	.strict();
+export type QuizEssayPatch = z.infer<typeof quizEssayPatchSchema>;
+
+/** Bài nói Speaking (#305): 1 file audio/video mỗi attempt, user chốt 50MB —
+ * dưới trần 100MB body request của Worker gói Free/Pro, đủ cho audio và
+ * video 720p ngắn. Upload là raw body PUT stream thẳng vào R2. */
+export const QUIZ_MEDIA_MAX_BYTES = 50 * 1024 * 1024;
+export const QUIZ_MEDIA_NAME_MAX = 200;
+
+/** Allowlist MIME bài nói → nhãn định dạng hiển thị. Server chỉ nhận
+ * Content-Type trong map này; client chuẩn hoá theo đuôi file trước khi gửi
+ * (`resolveQuizMediaType`). */
+export const QUIZ_MEDIA_TYPES: Readonly<Record<string, string>> = {
+	"audio/mpeg": "MP3",
+	"audio/mp4": "M4A",
+	"audio/x-m4a": "M4A",
+	"audio/aac": "AAC",
+	"audio/wav": "WAV",
+	"audio/x-wav": "WAV",
+	"audio/wave": "WAV",
+	"audio/webm": "WEBM",
+	"audio/ogg": "OGG",
+	"video/mp4": "MP4",
+	"video/quicktime": "MOV",
+	"video/webm": "WEBM",
+};
+
+/** File bài nói đã tải lên của một attempt (không lộ object key). */
+export const quizAttemptMediaSchema = z
+	.object({
+		name: z.string(),
+		type: z.string(),
+		size: z.number().int().min(0),
+		/** ISO datetime. */
+		uploadedAt: z.string(),
+	})
+	.strict();
+export type QuizAttemptMedia = z.infer<typeof quizAttemptMediaSchema>;
+
+/** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
+ * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
+export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {
+	task1: 150,
+	task2: 250,
+};
 
 /** Body của POST start/submit — exactly `{}` (mirror lessonActionSchema). */
 export const quizAttemptActionSchema = z.object({}).strict();
@@ -1710,12 +1801,22 @@ export const studentQuizDetailSchema = z
 		audioName: z.string(),
 		imageUrl: z.string(),
 		optionBank: z.array(z.string()),
+		/** "Hướng dẫn thêm" của giáo viên — CHỈ có với đề Speaking (#305):
+		 * đề Speaking không có answer key nên note là hướng dẫn cho học viên;
+		 * đề tự chấm vẫn giữ kín note tới sau khi nộp (RT#6). */
+		note: z.string().optional(),
 		questions: z.array(studentQuizQuestionSchema),
 		attempt: z
 			.object({
 				id: z.string(),
 				status: z.enum(QUIZ_ATTEMPT_STATUSES),
 				answers: z.record(z.string(), z.string()),
+				/** Bài viết Writing đã autosave — optional để bundle cũ + server
+				 * mới không throw trong cửa sổ deploy (#304). */
+				essay: z.string().optional(),
+				/** File bài nói Speaking đã tải lên (#305) — optional cùng lý
+				 * do với `essay`. */
+				media: quizAttemptMediaSchema.nullable().optional(),
 			})
 			.nullable(),
 	})
@@ -1761,6 +1862,21 @@ export const quizAttemptSummarySchema = z
 		startedAt: z.string(),
 		submittedAt: z.string(),
 		items: z.array(quizAttemptItemSchema),
+		/** Bài viết Writing đã nộp — null/undefined khi đề không phải Writing.
+		 * Optional bảo vệ chiều client mới + server cũ (key vắng mặt không
+		 * throw). CHIỀU NGƯỢC lại không bảo vệ được: schema này `.strict()`
+		 * nên bundle cũ (chưa có key essay) parse payload mới sẽ throw
+		 * Unrecognized key cho tới khi reload lấy bundle mới (#304,
+		 * code-review F2 — cùng cửa sổ đã chấp nhận ở precedent `type`
+		 * #286; server + student phải deploy cùng release). */
+		essay: z.string().nullable().optional(),
+		/** Skill của đề (#305) — summary rẽ nhánh Speaking theo field này.
+		 * Optional cùng precedent `essay`: vắng mặt = server cũ, xử lý như đề
+		 * không phải Speaking. */
+		skill: z.string().optional(),
+		/** File bài nói đã nộp — null khi đề không phải Speaking hoặc bài
+		 * Speaking cũ nộp trước #305. */
+		media: quizAttemptMediaSchema.nullable().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

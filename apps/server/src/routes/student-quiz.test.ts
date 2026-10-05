@@ -199,6 +199,66 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			status: "ready",
 		});
 
+		// Đề note-completion có câu T/F/NG không khai type (đề legacy): stem không
+		// marker + đáp án TFNG → server suy ra type tfng cho câu đó.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-note-tfng",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "note",
+			title: "Note With TFNG Practice",
+			prompt: "Read the passage and answer.",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify([
+				{
+					stem: "The roof was made of wood.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "The walls were painted.",
+					opts: null,
+					answer: "NOT GIVEN",
+					alts: "",
+					pin: null,
+				},
+				{
+					stem: "Houses used ____ frames.",
+					opts: null,
+					answer: "timber",
+					alts: "",
+					pin: null,
+				},
+			]),
+			optionBank: "[]",
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
+		// Đề Writing prompt-only (#304) — `questions: []`, không answer key.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-writing",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "writing",
+			part: "task1",
+			type: "chart",
+			title: "Writing Task 1 Practice",
+			prompt:
+				"<p>The graph shows marriage and age from 1960 to 2000 in Australia. Summarise the information.</p>",
+			passage: "",
+			questions: "[]",
+			optionBank: "[]",
+			note: "<p>note</p>",
+			status: "ready",
+		});
+
 		for (const assignmentId of [
 			"ca-q1",
 			"ca-q2",
@@ -211,6 +271,13 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q9",
 			"ca-q10",
 			"ca-q11",
+			"ca-q12",
+			"ca-q13",
+			"ca-q14",
+			"ca-q15",
+			"ca-q16",
+			"ca-q17",
+			"ca-q18",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -221,7 +288,13 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 						? "prompt-badpin"
 						: assignmentId === "ca-q10"
 							? "prompt-mixed"
-							: "prompt-quiz",
+							: assignmentId === "ca-q12"
+								? "prompt-note-tfng"
+								: ["ca-q13", "ca-q14", "ca-q16", "ca-q18"].includes(
+											assignmentId,
+										)
+									? "prompt-writing"
+									: "prompt-quiz",
 				title: `Quiz ${assignmentId}`,
 				due: "2099-01-10",
 			});
@@ -291,6 +364,18 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		});
 	}
 
+	async function patchEssay(
+		attemptId: string,
+		text: string,
+		headersOverride?: HeadersInit,
+	): Promise<Response> {
+		return app.request(`/api/student/attempts/${attemptId}/essay`, {
+			method: "PATCH",
+			headers: headersOverride ?? writeHeaders(),
+			body: JSON.stringify({ text }),
+		});
+	}
+
 	async function submit(attemptId: string): Promise<Response> {
 		return app.request(`/api/student/attempts/${attemptId}/submit`, {
 			method: "POST",
@@ -299,8 +384,8 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		});
 	}
 
-	// (a) 401 khi không có session cookie — cả 6 endpoint mới
-	test("(a) unauthenticated requests return 401 on all six endpoints", async () => {
+	// (a) 401 khi không có session cookie — cả 7 endpoint mới
+	test("(a) unauthenticated requests return 401 on all seven endpoints", async () => {
 		const noSessionWrite = {
 			Origin: STUDENT_ORIGIN,
 			"Content-Type": "application/json",
@@ -317,6 +402,14 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 					method: "PATCH",
 					headers: noSessionWrite,
 					body: '{"q":0,"value":"A"}',
+				},
+			],
+			[
+				"/api/student/attempts/any/essay",
+				{
+					method: "PATCH",
+					headers: noSessionWrite,
+					body: '{"text":"A"}',
 				},
 			],
 			[
@@ -381,6 +474,35 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		);
 		expect(oversized.status).toBe(413);
 		expect(await oversized.json()).toEqual({ error: "payload too large" });
+
+		// RT O: guard quizWriteGuard bị sửa cho /essay — CSRF phải khoá cả
+		// route 48KB này (origin sai → 403, content-type sai → 415).
+		const writingAttempt = await startAttempt("ca-q13");
+		const essayBadOrigin = await patchEssay(writingAttempt, "A graph.", {
+			...writeHeaders(),
+			Origin: "https://evil.example",
+		});
+		expect(essayBadOrigin.status).toBe(403);
+		expect(await essayBadOrigin.json()).toEqual({
+			error: "origin not allowed",
+		});
+
+		const essayTextPlain = await app.request(
+			`/api/student/attempts/${writingAttempt}/essay`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "google-verified",
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "text/plain",
+				},
+				body: '{"text":"A graph."}',
+			},
+		);
+		expect(essayTextPlain.status).toBe(415);
+		expect(await essayTextPlain.json()).toEqual({
+			error: "content-type must be application/json",
+		});
 	});
 
 	// (i) GET quiz không chứa key; summary/detail in_progress → 409; caps q/value
@@ -564,6 +686,8 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			key: "Paris",
 			answer: null,
 		});
+		// RT D: đề Reading không bao giờ lộ essay — null trên cả summary lẫn detail.
+		expect(summaryBody.essay).toBeNull();
 		expect(summaryBody.submittedAt).not.toBe("");
 
 		const detail = await app.request(
@@ -575,6 +699,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(detail.status).toBe(200);
 		const detailBody = (await detail.json()) as QuizAttemptDetail;
 		expect(detailBody.note).toBe("<p>Teacher-only explanation note</p>");
+		expect(detailBody.essay).toBeNull();
 		expect(detailBody.questions[0]?.key).toBe("Paris");
 		expect(detailBody.questions[0]?.alts).toBe("paris");
 		expect(detailBody.questions[0]?.verdict).toBe("skipped");
@@ -739,6 +864,53 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		]);
 	});
 
+	// Đề điền chữ có câu T/F/NG không khai type: take + review đều ra tfng để
+	// học viên có radio; câu có marker giữ type đề.
+	test("markerless TFNG answers in a note prompt are inferred as tfng in take and review", async () => {
+		const take = await app.request("/api/student/assignments/ca-q12/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.type).toBe("note");
+		expect(takeBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+
+		const attemptId = await startAttempt("ca-q12");
+		// Sau startAttempt take đọc từ snapshot (câu không có type) — vẫn suy luận.
+		const takeAfterStart = await app.request(
+			"/api/student/assignments/ca-q12/quiz",
+			{ headers: OWNER },
+		);
+		expect(takeAfterStart.status).toBe(200);
+		const takeAfterStartBody =
+			(await takeAfterStart.json()) as StudentQuizDetail;
+		expect(
+			takeAfterStartBody.questions.map((question) => question.type),
+		).toEqual(["tfng", "tfng", "note"]);
+		expect((await patchAnswer(attemptId, 0, "TRUE")).status).toBe(200);
+		expect((await submit(attemptId)).status).toBe(200);
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.questions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+		expect(reviewBody.questions.map((question) => question.verdict)).toEqual([
+			"correct",
+			"skipped",
+			"skipped",
+		]);
+	});
+
 	// code-review: pin malformed không tràn xuống wire — parsePin sanitize null.
 	test("malformed question pins are sanitized to null in take payloads", async () => {
 		await startAttempt("ca-q8");
@@ -787,5 +959,120 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const res = await app.request(streamed);
 		expect(res.status).toBe(413);
 		expect(await res.json()).toEqual({ error: "payload too large" });
+	});
+
+	// (#304) Writing: essay autosave → resume qua take payload → summary lộ bài.
+	test("writing essay autosaves, resumes via take payload and shows on summary", async () => {
+		const attemptId = await startAttempt("ca-q14");
+		const essay = "The graph shows a clear upward trend in marriages.";
+
+		expect((await patchEssay(attemptId, essay)).status).toBe(200);
+
+		// Resume qua take payload: attempt.essay trả lại bài đã autosave.
+		const take = await app.request("/api/student/assignments/ca-q14/quiz", {
+			headers: OWNER,
+		});
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.attempt?.essay).toBe(essay);
+		expect(takeBody.questions).toHaveLength(0);
+
+		// Nộp: totalCount 0 (không có câu nào), summary + detail lộ bài + null reading.
+		expect((await submit(attemptId)).status).toBe(200);
+
+		const summary = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: OWNER,
+		});
+		expect(summary.status).toBe(200);
+		const summaryBody = (await summary.json()) as QuizAttemptSummary;
+		expect(summaryBody.essay).toBe(essay);
+		expect(summaryBody.totalCount).toBe(0);
+		expect(summaryBody.items).toHaveLength(0);
+
+		// RT D: detail cũng phải set essay — quên sẽ làm zod parse client fail.
+		const detail = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(detail.status).toBe(200);
+		const detailBody = (await detail.json()) as QuizAttemptDetail;
+		expect(detailBody.essay).toBe(essay);
+	});
+
+	// (#304) Guards của PATCH essay: đề không phải Writing 400, vượt max 400,
+	// học viên khác 404, đã nộp 409.
+	test("essay patch guards: non-writing 400, over max 400, other student 404, after submit 409", async () => {
+		// Đề Reading: PATCH essay → 400 essay not allowed.
+		const readingAttempt = await startAttempt("ca-q15");
+		const notWriting = await patchEssay(readingAttempt, "Some essay.");
+		expect(notWriting.status).toBe(400);
+		expect(await notWriting.json()).toEqual({ error: "essay not allowed" });
+
+		// Đề Writing: vượt QUIZ_ESSAY_MAX (10.000 ký tự) → 400 invalid body.
+		const writingAttempt = await startAttempt("ca-q16");
+		const overMax = await patchEssay(writingAttempt, "x".repeat(10001));
+		expect(overMax.status).toBe(400);
+		expect(await overMax.json()).toEqual({ error: "invalid body" });
+
+		// Học viên cùng org không phải chủ → 404 (IDOR guard như PATCH answer).
+		const otherWrite = {
+			"x-test-user": "ambiguous",
+			Origin: STUDENT_ORIGIN,
+			"Content-Type": "application/json",
+		};
+		const otherStudent = await patchEssay(
+			writingAttempt,
+			"Hijack.",
+			otherWrite,
+		);
+		expect(otherStudent.status).toBe(404);
+
+		// Body sai schema (thiếu text) → 400.
+		const badBody = await app.request(
+			`/api/student/attempts/${writingAttempt}/essay`,
+			{
+				method: "PATCH",
+				headers: writeHeaders(),
+				body: '{"value":"nope"}',
+			},
+		);
+		expect(badBody.status).toBe(400);
+
+		// Nộp xong → PATCH essay 409 (CAS như PATCH answer).
+		expect((await submit(writingAttempt)).status).toBe(200);
+		const afterSubmit = await patchEssay(writingAttempt, "Too late.");
+		expect(afterSubmit.status).toBe(409);
+		expect(await afterSubmit.json()).toEqual({
+			error: "attempt already submitted",
+		});
+	});
+
+	// (#304) Route /essay nhận body > 4096 byte (cap riêng 48KB) trong khi
+	// /answer vẫn 413; vượt 48KB → 413; đúng biên 10.000 ký tự → 200.
+	test("essay route accepts bodies above 4096 bytes while answer route still rejects them", async () => {
+		const attemptId = await startAttempt("ca-q18");
+
+		// ~9.000 ký tự ASCII → ~9KB: vượt cap cũ 4096 nhưng dưới 48KB.
+		const longEssay = "word ".repeat(1800).trim(); // 9000 ký tự
+		expect((await patchEssay(attemptId, longEssay)).status).toBe(200);
+
+		// Đúng biên 10.000 ký tự → 200 (schema max = QUIZ_ESSAY_MAX).
+		expect((await patchEssay(attemptId, "x".repeat(10000))).status).toBe(200);
+
+		// > 48KB (QUIZ_ESSAY_BODY_MAX) → 413 từ bodyLimit của guard.
+		const tooBig = await app.request(
+			`/api/student/attempts/${attemptId}/essay`,
+			{
+				method: "PATCH",
+				headers: writeHeaders(),
+				body: JSON.stringify({ text: "x".repeat(50000) }),
+			},
+		);
+		expect(tooBig.status).toBe(413);
+		expect(await tooBig.json()).toEqual({ error: "payload too large" });
+
+		// /answer giữ cap 4096: body ~5KB vẫn 413.
+		const attempt2 = await startAttempt("ca-q17");
+		const answerBig = await patchAnswer(attempt2, 0, "x".repeat(5000));
+		expect(answerBig.status).toBe(413);
 	});
 });

@@ -6,7 +6,9 @@
  * credentials even for emulated resources.
  */
 
-import { appendFileSync, rmSync } from "node:fs";
+import { appendFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
@@ -16,6 +18,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { getSessionUser } from "server/session";
+import { createFsMediaStore } from "./fs-media-store";
 
 // Port override chỉ phục vụ chạy e2e song song với dev server đang chiếm
 // 8000 (workerd của main worktree) — mặc định giữ 8000 như CI (playwright
@@ -89,11 +92,17 @@ const auth = createAuth({
 	mailer: recordingMailer,
 });
 
+// File bài nói Speaking (#305) ghi xuống thư mục tạm mỗi lần boot — adapter
+// lưu trữ thật cho runtime Node, giống libsql thay D1.
+const MEDIA_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-media-"));
+const mediaStore = createFsMediaStore(MEDIA_DIR);
+
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
 	corsOrigin: CORS_ORIGINS,
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
+	getMediaStore: () => mediaStore,
 });
 
 const server = serve({ fetch: app.fetch, port: PORT, hostname: HOSTNAME }, () =>
@@ -102,6 +111,10 @@ const server = serve({ fetch: app.fetch, port: PORT, hostname: HOSTNAME }, () =>
 
 // Playwright teardown SIGTERMs the whole pnpm → tsx → node chain; close
 // cleanly so back-to-back runs never fight over the port.
-const shutdown = () => server.close(() => process.exit(0));
+const shutdown = () =>
+	server.close(() => {
+		rmSync(MEDIA_DIR, { recursive: true, force: true });
+		process.exit(0);
+	});
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);

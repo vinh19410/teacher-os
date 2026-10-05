@@ -2,6 +2,7 @@ import type {
 	AssignmentQuestion,
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
+import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
 import type { QuestionItem } from "@/components/assignments/assignment-presets";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
@@ -69,10 +70,14 @@ export function buildQuizSim(
 		.filter((item) => typeof item.stem === "string" && item.stem.trim() !== "")
 		.map(normalizeQuestion);
 	if (fullQuestions.length === 0) return null;
+	// Type hiệu dụng từng câu — cùng helper với take/review payload của server
+	// (type riêng ?? type đề, kèm suy luận tfng/ynng cho câu T/F/NG markerless).
+	const types = inferQuestionTypes(fullQuestions, typeId);
 	const takeQuestions: StudentQuizQuestion[] = fullQuestions.map(
-		(question) => ({
+		(question, index) => ({
 			stem: question.stem,
 			opts: question.opts,
+			type: types[index] ?? typeId,
 			pin: question.pin ?? null,
 		}),
 	);
@@ -108,6 +113,7 @@ function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 			: null,
 		answer: typeof item.answer === "string" ? item.answer : "",
 		alts: typeof item.alts === "string" ? item.alts : "",
+		type: typeof item.type === "string" && item.type !== "" ? item.type : null,
 		pin: isValidPin(item.pin) ? item.pin : null,
 	};
 }

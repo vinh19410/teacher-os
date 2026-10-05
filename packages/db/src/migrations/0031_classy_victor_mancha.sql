@@ -1,0 +1,1 @@
+ALTER TABLE `quiz_attempt` ADD `essay` text DEFAULT '' NOT NULL;

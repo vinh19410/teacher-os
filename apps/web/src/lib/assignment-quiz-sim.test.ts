@@ -128,6 +128,69 @@ describe("buildQuizSim — take questions strip key (mirror server)", () => {
 	});
 });
 
+describe("buildQuizSim — type hiệu dụng từng câu", () => {
+	it("câu khai type riêng giữ nguyên type trong takeQuestions", () => {
+		const sim = buildQuizSim(
+			draft({
+				skill: "reading",
+				part: "p3",
+				type: "note",
+				items: [
+					{ ...items[0], type: "mcq" },
+					{ ...items[1], type: "note" },
+				] as QuestionItem[],
+			}),
+		);
+		expect(sim?.takeQuestions.map((question) => question.type)).toEqual([
+			"mcq",
+			"note",
+		]);
+	});
+
+	it("đề type note có câu markerless đáp án TFNG → tfng; câu có marker giữ type đề", () => {
+		const sim = buildQuizSim(
+			draft({
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				items: [
+					{
+						stem: "The roof was made of wood.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+					},
+					{
+						stem: "The walls were painted.",
+						opts: null,
+						answer: "NOT GIVEN",
+						alts: "",
+					},
+					...items.slice(1),
+				],
+			}),
+		);
+		expect(sim?.takeQuestions.map((question) => question.type)).toEqual([
+			"tfng",
+			"tfng",
+			"note",
+		]);
+		// Key vẫn nằm ở fullQuestions, take không lộ đáp án.
+		expect(sim?.fullQuestions[0]?.answer).toBe("FALSE");
+		expect(JSON.stringify(sim?.takeQuestions)).not.toContain("FALSE");
+	});
+
+	it("câu không khai type và không suy luận được nhận type đề", () => {
+		const sim = buildQuizSim(
+			draft({ skill: "reading", part: "p3", type: "mcq", items }),
+		);
+		expect(sim?.takeQuestions.map((question) => question.type)).toEqual([
+			"mcq",
+			"mcq",
+		]);
+	});
+});
+
 describe("buildQuizSim — normalize items malformed (mirror parseQuizQuestions)", () => {
 	it("item thiếu alts/answer ở runtime → default rỗng; thiếu stem → bỏ", () => {
 		const malformed = [

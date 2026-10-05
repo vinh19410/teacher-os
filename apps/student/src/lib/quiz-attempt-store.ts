@@ -55,6 +55,10 @@ interface QuizAttemptStoreOptions {
 	onAuthError?: () => void;
 	/** 409 `submitted` trên PATCH: redirect cứng sang attempt route. */
 	onAlreadySubmitted?: () => void;
+	/** Cap ký tự setAnswer clamp trước khi queue PATCH — mặc định
+	 * `QUIZ_ANSWER_VALUE_MAX` (500); đề Writing dùng `QUIZ_ESSAY_MAX`
+	 * (#304). Bất biến theo attempt vì 1 attempt gắn 1 skill. */
+	valueMax?: number;
 	debounceMs?: number;
 	storage?: MirrorStorage;
 	now?: () => number;
@@ -109,6 +113,7 @@ export function createQuizAttemptStore(
 		send,
 		onAuthError,
 		onAlreadySubmitted,
+		valueMax = QUIZ_ANSWER_VALUE_MAX,
 		debounceMs = QUIZ_AUTOSAVE_DEBOUNCE_MS,
 		storage = defaultStorage(),
 		now = Date.now,
@@ -366,9 +371,10 @@ export function createQuizAttemptStore(
 			return snapshot;
 		},
 		setAnswer(q, value) {
-			// Cap bằng contract server (quizAnswerPatchSchema max 500) — paste
-			// dài không tạo PATCH 400 cứ lặp mãi (code-review F2).
-			const capped = value.slice(0, QUIZ_ANSWER_VALUE_MAX);
+			// Cap bằng contract server (schema max của route đang dùng — 500
+			// cho /answer, QUIZ_ESSAY_MAX cho /essay #304) — paste dài không
+			// tạo PATCH 400 cứ lặp mãi (code-review F2).
+			const capped = value.slice(0, valueMax);
 			if (answers.get(q) === capped) return;
 			answers.set(q, capped);
 			pending.set(q, capped);
@@ -415,6 +421,9 @@ export interface UseQuizAttemptStoreOptions {
 	send: QuizAnswerSender;
 	onAuthError?: () => void;
 	onAlreadySubmitted?: () => void;
+	/** Forward xuống store (#304) — đọc một lúc tạo store, bất biến theo
+	 * attemptId (deps chỉ `[attemptId]`). */
+	valueMax?: number;
 }
 
 /**
@@ -443,6 +452,7 @@ export function useQuizAttemptStore(
 			send: (q, value, opts) => current.send(q, value, opts),
 			onAuthError: () => current.onAuthError?.(),
 			onAlreadySubmitted: () => current.onAlreadySubmitted?.(),
+			valueMax: current.valueMax,
 		});
 		setStore(created);
 		return () => {

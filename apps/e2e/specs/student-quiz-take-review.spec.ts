@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { verifyStudentEmailFromMailLog } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
@@ -50,6 +51,15 @@ const titleCloze = "Đọc điền từ: Trái cây lạ";
 const titleMixed = "Đề trộn dạng: Hồ Gươm";
 const titleLegacy = "Đề 1 dạng: Tháp Rùa";
 const titleSplit = "Đề dài: Hồ Gươm bản đầy đủ";
+const titleIntroSections = "Đề intro chia cụm: Văn Miếu";
+const titleTfngNote = "Đề T/F/NG không khai dạng: Cổ Loa";
+const titleWriting = "Đề writing: marriage and age";
+const titleSpeaking = "Đề speaking: a place you like";
+const titleSpeakingRemove = "Đề speaking: a person you admire";
+/** MP3 thật (1 giây im lặng) để thẻ <audio> load được metadata. */
+const SPEAKING_SAMPLE = readFileSync(
+	new URL("../fixtures/speaking-sample.mp3", import.meta.url),
+);
 
 interface CapturedJson {
 	url: string;
@@ -116,6 +126,29 @@ async function openPaper(page: Page, title: string): Promise<void> {
 		await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
 	}
 	await expect(paper).toBeVisible();
+}
+
+/** Thả 1 file lên dropzone bằng DataTransfer thật (drag & drop, #305). */
+async function dropMediaFile(
+	page: Page,
+	name: string,
+	type: string,
+	bytes: Buffer,
+): Promise<void> {
+	const dataTransfer = await page.evaluateHandle(
+		({ base64, fileName, fileType }) => {
+			const binary = Uint8Array.from(atob(base64), (char) =>
+				char.charCodeAt(0),
+			);
+			const transfer = new DataTransfer();
+			transfer.items.add(new File([binary], fileName, { type: fileType }));
+			return transfer;
+		},
+		{ base64: bytes.toString("base64"), fileName: name, fileType: type },
+	);
+	const dropzone = page.getByRole("button", { name: /Kéo thả file/ });
+	await dropzone.dispatchEvent("dragenter", { dataTransfer });
+	await dropzone.dispatchEvent("drop", { dataTransfer });
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -289,6 +322,126 @@ test.beforeAll(async ({ browser }) => {
 					answer: `năm ${i + 1}`,
 					alts: "",
 				})),
+			},
+			{
+				// #301 — đề intro chia cụm: giáo viên dán các khối "Questions X–Y"
+				// vào intro, KHÔNG khai type từng câu (đề cũ) — instruction của
+				// giáo viên phải hiện ngay trên đúng nhóm câu của nó. Phần tử CUỐI
+				// mảng để không lệch index assignmentIds[0..2] đang dùng.
+				title: titleIntroSections,
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				note: "Đề intro chia cụm.",
+				passage:
+					"<p>Văn Miếu được xây năm 1070. Đây là trường đại học đầu tiên của Việt Nam.</p>",
+				intro:
+					"<p>Đọc kỹ đoạn văn.</p><p>Questions 1–2</p><p>Write TRUE or FALSE for each statement.</p><p>Questions 3–4 · Flow-chart completion — Write ONE WORD ONLY from the passage for each answer.</p>",
+				questions: [
+					{
+						stem: "Văn Miếu được xây năm ____.",
+						opts: null,
+						answer: "1070",
+						alts: "",
+					},
+					{
+						stem: "Đây là trường đại học ____ của Việt Nam.",
+						opts: null,
+						answer: "đầu tiên",
+						alts: "",
+					},
+					{
+						stem: "Văn Miếu được xây vào thế ____.",
+						opts: null,
+						answer: "11",
+						alts: "",
+					},
+					{
+						stem: "Trường nằm tại thành phố ____.",
+						opts: null,
+						answer: "Hà Nội",
+						alts: "",
+					},
+				],
+			},
+			{
+				// #303 — đề note, câu 1–2 KHÔNG khai type và stem không có ____ (đáp án
+				// TRUE / NOT GIVEN): server suy ra tfng nên học viên có radio để chọn.
+				// Phần tử CUỐI mảng để không lệch các index assignmentIds đang dùng.
+				title: titleTfngNote,
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				note: "Đề T/F/NG không khai dạng.",
+				passage:
+					"<p>Thành Cổ Loa được xây dựng vào thế kỷ thứ ba trước Công nguyên. Thành có ba vòng thành đất đắp quanh kinh đô.</p>",
+				intro:
+					"<p>Đọc kỹ đoạn văn.</p><p>Questions 1–2</p><p>Write TRUE, FALSE or NOT GIVEN for each statement.</p><p>Questions 3–4 · Note completion — Write ONE WORD ONLY from the passage for each answer.</p>",
+				questions: [
+					{
+						stem: "Thành Cổ Loa được xây vào thế kỷ thứ ba trước Công nguyên.",
+						opts: null,
+						answer: "TRUE",
+						alts: "",
+					},
+					{
+						stem: "Thành Cổ Loa được xây để chống giặc phương Bắc.",
+						opts: null,
+						answer: "NOT GIVEN",
+						alts: "",
+					},
+					{
+						stem: "Thành có ____ vòng thành đất.",
+						opts: null,
+						answer: "ba",
+						alts: "",
+					},
+					{
+						stem: "Các vòng thành bao quanh ____.",
+						opts: null,
+						answer: "kinh đô",
+						alts: "",
+					},
+				],
+			},
+			{
+				// #304 — đề Writing prompt-only: textarea bài viết + đếm từ +
+				// guard nộp thiếu từ + summary hiện bài. Phần tử CUỐI mảng để
+				// không lệch index assignmentIds[0..2] đang dùng.
+				title: titleWriting,
+				skill: "writing",
+				part: "task1",
+				type: "chart",
+				note: "Đề Writing sample.",
+				passage: "",
+				prompt:
+					"<p>The graph shows the proportion of marriages and the median age of first marriages in Australia between 1960 and 2000. Summarise the information by selecting and reporting the main features.</p>",
+				questions: [],
+			},
+			{
+				// #305 — đề Speaking Part 2: cue card + intro + upload file bài
+				// nói. Phần tử CUỐI mảng để không lệch index assignmentIds.
+				title: titleSpeaking,
+				skill: "speaking",
+				part: "part2",
+				type: "place",
+				// "Hướng dẫn thêm" (note) — ô giáo viên thật sự nhập cho Speaking.
+				note: "<p>Hãy ghi âm trong một lần, không cắt ghép.</p>",
+				passage: "",
+				cueTopic: "a place you like to visit",
+				cuePoints: "where it is\nwhen you go there\nwhy you like it",
+				questions: [],
+			},
+			{
+				title: titleSpeakingRemove,
+				skill: "speaking",
+				part: "part2",
+				type: "person",
+				note: "",
+				passage: "",
+				cueTopic: "a person you admire",
+				cuePoints: "who the person is\nwhy you admire them",
+				questions: [],
 			},
 		],
 	});
@@ -513,8 +666,14 @@ test.describe("Student quiz take & review", () => {
 			`${STUDENT_ORIGIN}/learn/quizzes/attempt/${startedAttemptId}`,
 		);
 		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+		// captureJsonGets push body async (res.json().then) — poll thay vì
+		// assert tức thời để không đua với microtask capture (flake khi máy load).
+		await expect
+			.poll(() => attemptGets.filter((c) => c.status === 409).length, {
+				timeout: 5_000,
+			})
+			.toBeGreaterThan(0);
 		const inProgressGets = attemptGets.filter((c) => c.status === 409);
-		expect(inProgressGets.length).toBeGreaterThan(0);
 		for (const captured of inProgressGets) {
 			const keys = collectKeys(captured.json);
 			for (const banned of [
@@ -722,5 +881,362 @@ test.describe("Student quiz take & review", () => {
 			),
 		).toBeVisible();
 		await expect(page.locator("article section")).toHaveCount(1);
+	});
+
+	// #301 — intro dán các khối "Questions X–Y": mỗi instruction của giáo
+	// viên hiện ngay trên đúng nhóm câu (take lẫn review), đề cũ không khai
+	// type từng câu vẫn được tách.
+	test("intro pasted with Questions markers renders each instruction above its own question range", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleIntroSections);
+		const s1 = page.locator('section[aria-label="Questions 1–2"]');
+		const s2 = page.locator('section[aria-label="Questions 3–4"]');
+		await expect(s1).toBeVisible();
+		await expect(s2).toBeVisible();
+		await expect(
+			s1.getByText("Write TRUE or FALSE for each statement."),
+		).toBeVisible();
+		await expect(
+			s2.getByText("Write ONE WORD ONLY from the passage for each answer.", {
+				exact: false,
+			}),
+		).toBeVisible();
+		await expect(s1.locator("[data-question]")).toHaveCount(2);
+		await expect(s2.locator("[data-question]")).toHaveCount(2);
+		// Preamble render đúng 1 lần ở đầu trang.
+		await expect(page.getByText("Đọc kỹ đoạn văn.")).toHaveCount(1);
+		// Navigator phẳng: không tab nhóm, đủ nút số câu theo thứ tự.
+		await expect(page.getByRole("tab")).toHaveCount(0);
+		await expect(page.locator("footer button[data-question]")).toHaveCount(4);
+
+		await page.getByLabel("Điền đáp án câu 1").fill("1070");
+		await page.getByLabel("Điền đáp án câu 2").fill("đầu tiên");
+		await page.getByLabel("Điền đáp án câu 3").fill("11");
+		await page.getByLabel("Điền đáp án câu 4").fill("Hà Nội");
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await expect(page).toHaveURL(/\/detail$/);
+		await expect(
+			page.locator('section[aria-label="Questions 1–2"]'),
+		).toBeVisible();
+		await expect(
+			page.locator('section[aria-label="Questions 3–4"]'),
+		).toBeVisible();
+	});
+
+	// #304 — Writing paper: textarea bài viết + autosave + đếm từ theo mục
+	// tiêu Task 1 + guard nộp thiếu từ + summary hiện lại bài đã nộp.
+	test("writing paper: essay autosaves with live word count, survives reload and SPA return, guards a short submit, and shows on summary", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleWriting);
+		// Empty-state cũ biến mất, textarea essay hiện ra.
+		await expect(page.getByText("không có câu hỏi tự chấm")).toHaveCount(0);
+		const textarea = page.getByLabel("Bài viết của bạn");
+		await expect(textarea).toBeVisible();
+		await expect(page.getByTestId("essay-word-count")).toHaveText("0");
+
+		// Gõ bài: đếm từ live (7 từ) + mục tiêu Task 1, autosave về "saved".
+		const draft = "The graph shows a clear upward trend.";
+		await textarea.fill(draft);
+		await expect(page.getByTestId("essay-word-count")).toHaveText("7");
+		await expect(page.getByTestId("navigator-progress")).toContainText(
+			"7 từ · tối thiểu 150",
+		);
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		// Hard reload → resume dialog → tiếp tục: bài còn nguyên.
+		await page.reload();
+		const resume = page.getByRole("alertdialog", { name: "Tiếp tục bài làm" });
+		await expect(resume).toBeVisible();
+		await resume.getByRole("button", { name: "Tiếp tục" }).click();
+		await expect(textarea).toHaveValue(draft);
+
+		// SPA-return (RT red-team G): Thoát về overview rồi vào lại đề trong
+		// cửa sổ staleTime 60s — query bị invalidate sau dispose nên loader
+		// đọc essay MỚI từ server, vẫn hiện resume dialog và giữ nguyên bài.
+		await page.getByRole("link", { name: "Thoát" }).click();
+		await page.getByRole("link", { name: `Làm bài: ${titleWriting}` }).click();
+		const resumeAgain = page.getByRole("alertdialog", {
+			name: "Tiếp tục bài làm",
+		});
+		await expect(resumeAgain).toBeVisible();
+		await resumeAgain.getByRole("button", { name: "Tiếp tục" }).click();
+		await expect(page.getByLabel("Bài viết của bạn")).toHaveValue(draft);
+
+		// Nộp thiếu từ → guard dialog copy riêng Writing; xác nhận vẫn nộp.
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		const guard = page.getByRole("alertdialog", {
+			name: "Bài viết chưa đủ số từ",
+		});
+		await expect(guard).toBeVisible();
+		await guard.getByRole("button", { name: "Nộp bài" }).click();
+
+		// Summary: hiện bài + số từ, không còn score card / link chi tiết.
+		await expect(
+			page.getByRole("heading", { name: "Bài viết của bạn" }),
+		).toBeVisible();
+		await expect(page.getByText(draft)).toBeVisible();
+		await expect(page.getByTestId("essay-summary-count")).toContainText("7 từ");
+		await expect(
+			page.getByRole("link", { name: "Xem giải thích chi tiết" }),
+		).toHaveCount(0);
+	});
+
+	// #303 — câu T/F/NG nằm trong đề type điền chữ, không khai type riêng và
+	// không có marker: vẫn có radio để chọn; navigator phẳng nằm ngoài pane
+	// "Bài làm", trải full chiều ngang.
+	test("markerless TRUE/NOT GIVEN questions in a note paper get radios and the navigator spans the full width", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+
+		await openPaper(page, titleTfngNote);
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 0/4 câu",
+		);
+
+		const q1 = page.locator('[data-question="0"]');
+		const q2 = page.locator('[data-question="1"]');
+		const trueRadio = q1.getByRole("radio", { name: "TRUE", exact: true });
+		await expect(trueRadio).toBeVisible();
+		await expect(
+			q1.getByRole("radio", { name: "FALSE", exact: true }),
+		).toBeVisible();
+		await expect(q1.getByRole("radio", { name: "NOT GIVEN" })).toBeVisible();
+
+		// Navigator: không tab, đủ 4 nút, nằm ngoài pane "Bài làm" và rộng
+		// bằng viewport (không còn bị chặn max-w).
+		await expect(page.getByRole("tab")).toHaveCount(0);
+		await expect(page.locator("footer button[data-question]")).toHaveCount(4);
+		await expect(
+			page.locator('section[aria-label="Bài làm"] footer'),
+		).toHaveCount(0);
+		const navBox = await page
+			.getByTestId("navigator-progress")
+			.locator("xpath=ancestor::footer")
+			.boundingBox();
+		const viewport = page.viewportSize();
+		expect(navBox?.width ?? 0).toBeGreaterThanOrEqual(
+			(viewport?.width ?? Number.POSITIVE_INFINITY) - 1,
+		);
+
+		await trueRadio.check();
+		await q2.getByRole("radio", { name: "NOT GIVEN" }).check();
+		await page.getByLabel("Điền đáp án câu 3").fill("ba");
+		await page.getByLabel("Điền đáp án câu 4").fill("kinh đô");
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Đã trả lời 4/4 câu",
+		);
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		await page.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
+		await expect(page.getByTestId("attempt-correct-count")).toHaveText("4");
+
+		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await expect(page).toHaveURL(/\/detail$/);
+		const reviewQ1 = page.locator('[data-question="0"]');
+		await expect(reviewQ1.getByTestId("quiz-review-item")).toHaveAttribute(
+			"data-verdict",
+			"correct",
+		);
+		await expect(
+			reviewQ1.getByRole("radio", { name: "TRUE", exact: true }),
+		).toBeChecked();
+	});
+
+	// #305 — Speaking: đề đúng theo part + hướng dẫn, kéo-thả file bài nói,
+	// từ chối file sai định dạng, file còn sau reload, thay file, nộp và
+	// nghe lại trên summary.
+	test("speaking paper: drag-and-drop upload, survives reload, replace, submit and play back on summary", async ({
+		page,
+	}) => {
+		page.on("dialog", (dialog) => void dialog.accept());
+		await signIn(page);
+		await openPaper(page, titleSpeaking);
+
+		await expect(
+			page.getByText("Describe a place you like to visit."),
+		).toBeVisible();
+		await expect(page.getByText("You should say:")).toBeVisible();
+		await expect(page.getByText("Hãy ghi âm trong một lần")).toBeVisible();
+		const guide = page.getByRole("region", { name: "Hướng dẫn làm bài" });
+		await expect(guide).toContainText("1 phút chuẩn bị");
+		await expect(page.getByText("không có câu hỏi tự chấm")).toHaveCount(0);
+		const submitButton = page.getByRole("button", { name: "Nộp bài" });
+		await expect(submitButton).toBeDisabled();
+		await expect(page.getByTestId("navigator-progress")).toHaveText(
+			"Chưa tải file bài nói",
+		);
+
+		// Kéo-thả file thật → tải lên → player + Xoá, nút Nộp mở.
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"speaking-sample.mp3",
+		);
+		await expect(page.getByRole("button", { name: "Xoá" })).toBeVisible();
+		await expect(page.getByLabel("Bản ghi bài nói")).toBeAttached();
+		await expect(submitButton).toBeEnabled();
+
+		// "Thay file" bằng PDF → bị từ chối ở client, file cũ còn nguyên.
+		await page.getByTestId("speaking-replace-input").setInputFiles({
+			name: "bai-lam.pdf",
+			mimeType: "application/pdf",
+			buffer: Buffer.from("%PDF-1.4 not audio"),
+		});
+		await expect(page.getByText("Định dạng không hỗ trợ")).toBeVisible();
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"speaking-sample.mp3",
+		);
+
+		// Reload: file vẫn còn; "Nghe lại" tải blob qua API.
+		await page.reload();
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"speaking-sample.mp3",
+		);
+		await page.getByRole("button", { name: "Nghe lại bài nói" }).click();
+		await expect(page.locator('audio[src^="blob:"]')).toBeAttached();
+
+		// Thay file hợp lệ: tên mới thay tên cũ.
+		await page.getByTestId("speaking-replace-input").setInputFiles({
+			name: "answer-v2.mp3",
+			mimeType: "audio/mpeg",
+			buffer: SPEAKING_SAMPLE,
+		});
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"answer-v2.mp3",
+		);
+
+		// Nộp → summary hiện bài nói, nghe lại được, không có score card.
+		await submitButton.click();
+		await expect(
+			page.getByRole("heading", { name: "Bài nói của bạn" }),
+		).toBeVisible();
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"answer-v2.mp3",
+		);
+		await expect(
+			page.getByText("Giáo viên sẽ chấm bài nói của bạn."),
+		).toBeVisible();
+		await expect(
+			page.getByRole("link", { name: "Xem giải thích chi tiết" }),
+		).toHaveCount(0);
+		await page.getByRole("button", { name: "Nghe lại bài nói" }).click();
+		await expect(page.locator('audio[src^="blob:"]')).toBeAttached();
+	});
+
+	test("speaking paper: removing the file disables submit again", async ({
+		page,
+	}) => {
+		await signIn(page);
+		await openPaper(page, titleSpeakingRemove);
+		const submitButton = page.getByRole("button", { name: "Nộp bài" });
+
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(submitButton).toBeEnabled();
+
+		await page.getByRole("button", { name: "Xoá" }).click();
+		const confirm = page.getByRole("alertdialog", {
+			name: "Xoá file bài nói?",
+		});
+		await confirm.getByRole("button", { name: "Xoá" }).click();
+
+		await expect(
+			page.getByRole("button", { name: /Kéo thả file/ }),
+		).toBeVisible();
+		await expect(page.getByTestId("speaking-media-name")).toHaveCount(0);
+		await expect(submitButton).toBeDisabled();
+		await expect(
+			page.getByText("Tải file bài nói lên để nộp bài."),
+		).toBeVisible();
+	});
+
+	test("speaking paper: leaving mid-upload asks first, cancel returns to the dropzone, retry succeeds", async ({
+		page,
+	}) => {
+		await signIn(page);
+		await openPaper(page, titleSpeakingRemove);
+
+		// Giữ PUT lại trong trình duyệt: upload treo ở trạng thái đang tải.
+		let release: () => void = () => undefined;
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		await page.route("**/api/student/attempts/*/media", async (route) => {
+			if (route.request().method() !== "PUT") return route.continue();
+			await held;
+			await route.continue().catch(() => undefined);
+		});
+
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(page.getByRole("progressbar")).toBeVisible();
+		const submitButton = page.getByRole("button", { name: "Nộp bài" });
+		await expect(submitButton).toBeDisabled();
+
+		// "Thoát" trong lúc đang tải → hỏi xác nhận; Ở lại thì vẫn ở take screen.
+		await page.getByRole("link", { name: "Thoát" }).click();
+		const leave = page.getByRole("alertdialog", {
+			name: "Đang tải file bài nói",
+		});
+		await expect(leave).toBeVisible();
+		await leave.getByRole("button", { name: "Ở lại" }).click();
+		await expect(leave).toHaveCount(0);
+		await expect(page.getByRole("progressbar")).toBeVisible();
+
+		// Hủy → về dropzone, chưa có file, vẫn không nộp được.
+		await page.getByRole("button", { name: "Hủy" }).click();
+		await expect(
+			page.getByRole("button", { name: /Kéo thả file/ }),
+		).toBeVisible();
+		await expect(page.getByTestId("speaking-media-name")).toHaveCount(0);
+		await expect(submitButton).toBeDisabled();
+
+		// Bỏ chặn mạng, tải lại → thành công.
+		release();
+		await page.unroute("**/api/student/attempts/*/media");
+		await dropMediaFile(
+			page,
+			"speaking-sample.mp3",
+			"audio/mpeg",
+			SPEAKING_SAMPLE,
+		);
+		await expect(page.getByTestId("speaking-media-name")).toHaveText(
+			"speaking-sample.mp3",
+		);
+		await expect(submitButton).toBeEnabled();
 	});
 });

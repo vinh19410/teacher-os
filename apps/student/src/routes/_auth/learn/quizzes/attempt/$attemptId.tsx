@@ -5,12 +5,27 @@ import {
 	redirect,
 	useChildMatches,
 } from "@tanstack/react-router";
+import type { QuizAttemptSummary } from "@teacher-os/api/contracts";
+import {
+	formatMediaSize,
+	isVideoMediaType,
+} from "@teacher-os/api/lib/quiz-media";
+import { countWords } from "@teacher-os/api/lib/word-count";
+import {
+	Attachment,
+	AttachmentContent,
+	AttachmentDescription,
+	AttachmentMedia,
+	AttachmentTitle,
+} from "@teacher-os/ui/components/attachment";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
+import { MusicIcon, VideoIcon } from "lucide-react";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import { QuizMediaPlayer } from "@/components/quiz/quiz-media-player";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
 	formatAttemptDuration,
@@ -55,6 +70,135 @@ function AttemptRouteView() {
 	return <AttemptSummaryPage />;
 }
 
+/**
+ * Body màn kết quả — export để unit test các nhánh (#304, red-team I):
+ * Speaking (`skill === "speaking"`, #305) hiện bài nói đã nộp + nghe lại;
+ * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
+ * giữ nguyên score card + bảng đáp án.
+ */
+export function AttemptSummaryBody({
+	summary,
+	attemptId,
+}: {
+	summary: QuizAttemptSummary;
+	attemptId: string;
+}) {
+	const duration = formatAttemptDuration(
+		summary.startedAt,
+		summary.submittedAt,
+	);
+	const essay = summary.essay ?? null;
+	const submittedLine = (
+		<p className="text-muted-fg text-sm">
+			Bạn đã nộp bài lúc{" "}
+			<span className="font-medium text-fg">
+				{formatVietnamSubmittedAt(summary.submittedAt)}
+			</span>
+			{duration && (
+				<>
+					{" · hoàn thành trong "}
+					<span className="font-medium text-fg">{duration}</span>
+				</>
+			)}
+			.
+		</p>
+	);
+
+	// Field `skill` optional (server cũ vắng mặt) → rơi về nhánh khác.
+	if (summary.skill === "speaking") {
+		const media = summary.media ?? null;
+		return (
+			<>
+				{submittedLine}
+				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+					Bài nói của bạn
+				</h2>
+				{media ? (
+					<div className="flex flex-col gap-3">
+						<Attachment state="done" className="w-full rounded-md bg-bg">
+							<AttachmentMedia>
+								{isVideoMediaType(media.type) ? (
+									<VideoIcon aria-hidden />
+								) : (
+									<MusicIcon aria-hidden />
+								)}
+							</AttachmentMedia>
+							<AttachmentContent>
+								<AttachmentTitle data-testid="speaking-media-name">
+									{media.name}
+								</AttachmentTitle>
+								<AttachmentDescription>
+									{formatMediaSize(media.size)}
+								</AttachmentDescription>
+							</AttachmentContent>
+						</Attachment>
+						<QuizMediaPlayer media={media} attemptId={attemptId} />
+					</div>
+				) : (
+					<p className="text-muted-fg text-sm">
+						Bài này được nộp khi chưa có file bài nói.
+					</p>
+				)}
+				<p className="mt-3 text-muted-fg text-sm">
+					Giáo viên sẽ chấm bài nói của bạn.
+				</p>
+			</>
+		);
+	}
+
+	if (essay !== null) {
+		const wordCount = countWords(essay);
+		return (
+			<>
+				{submittedLine}
+				<h2 className="mt-6 mb-1 font-display font-semibold text-fg">
+					Bài viết của bạn
+				</h2>
+				<p className="text-muted-fg text-sm" data-testid="essay-summary-count">
+					{wordCount} từ
+				</p>
+				<div className="mt-2 whitespace-pre-wrap rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7]">
+					{essay.trim() === "" ? (
+						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
+					) : (
+						essay
+					)}
+				</div>
+				<p className="mt-3 text-muted-fg text-sm">
+					Giáo viên sẽ chấm bài viết của bạn.
+				</p>
+			</>
+		);
+	}
+
+	return (
+		<>
+			{submittedLine}
+			<div className="mt-4">
+				<AttemptScoreCard
+					correctCount={summary.correctCount}
+					wrongCount={summary.wrongCount}
+					skippedCount={summary.skippedCount}
+					totalCount={summary.totalCount}
+					action={
+						<Link
+							to="/learn/quizzes/attempt/$attemptId/detail"
+							params={{ attemptId }}
+							className={cn(buttonVariants(), "mt-5")}
+						>
+							Xem giải thích chi tiết
+						</Link>
+					}
+				/>
+			</div>
+			<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+				Bảng đáp án
+			</h2>
+			<AttemptCompactList items={summary.items} />
+		</>
+	);
+}
+
 function AttemptSummaryPage() {
 	const { attemptId } = Route.useParams();
 	const summaryQuery = useAttemptSummary(attemptId);
@@ -72,11 +216,6 @@ function AttemptSummaryPage() {
 		return <Loader />;
 	}
 
-	const duration = formatAttemptDuration(
-		summary.startedAt,
-		summary.submittedAt,
-	);
-
 	return (
 		<div className="flex min-h-svh flex-col bg-surface/30">
 			<QuizRuntimeHeader
@@ -85,42 +224,7 @@ function AttemptSummaryPage() {
 				onSubmitClick={null}
 			/>
 			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
-				<p className="text-muted-fg text-sm">
-					Bạn đã nộp bài lúc{" "}
-					<span className="font-medium text-fg">
-						{formatVietnamSubmittedAt(summary.submittedAt)}
-					</span>
-					{duration && (
-						<>
-							{" · hoàn thành trong "}
-							<span className="font-medium text-fg">{duration}</span>
-						</>
-					)}
-					.
-				</p>
-
-				<div className="mt-4">
-					<AttemptScoreCard
-						correctCount={summary.correctCount}
-						wrongCount={summary.wrongCount}
-						skippedCount={summary.skippedCount}
-						totalCount={summary.totalCount}
-						action={
-							<Link
-								to="/learn/quizzes/attempt/$attemptId/detail"
-								params={{ attemptId }}
-								className={cn(buttonVariants(), "mt-5")}
-							>
-								Xem giải thích chi tiết
-							</Link>
-						}
-					/>
-				</div>
-
-				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
-					Bảng đáp án
-				</h2>
-				<AttemptCompactList items={summary.items} />
+				<AttemptSummaryBody summary={summary} attemptId={attemptId} />
 			</main>
 		</div>
 	);

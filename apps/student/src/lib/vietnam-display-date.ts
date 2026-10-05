@@ -1,4 +1,5 @@
-const VI_DAY_NAMES = [
+/** Index theo `Date.getUTCDay()`: 0 = Chủ Nhật … 6 = Thứ Bảy. */
+export const VI_DAY_NAMES = [
 	"Chủ Nhật",
 	"Thứ Hai",
 	"Thứ Ba",
@@ -35,4 +36,10 @@ export function formatVietnamDateFromISO(iso: string): string {
 	const dd = String(d).padStart(2, "0");
 	const mm = String(m).padStart(2, "0");
 	return `${dayName}, ${dd}/${mm}`;
+}
+
+/** "Thứ Hai, 05/01/2026" — kèm năm cho mốc có thể khác năm hiện tại. */
+export function formatVietnamFullDate(iso: string): string {
+	const short = formatVietnamDateFromISO(iso);
+	return short === iso ? iso : `${short}/${iso.slice(0, 4)}`;
 }

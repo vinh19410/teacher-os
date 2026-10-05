@@ -74,8 +74,13 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	// Attempt detail đã mang type từng câu (server resolve fallback
 	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
 	const parts = useMemo(
-		() => buildQuizParts(attempt.questions, quizQuery.data?.type ?? ""),
-		[attempt.questions, quizQuery.data?.type],
+		() =>
+			buildQuizParts(
+				attempt.questions,
+				quizQuery.data?.type ?? "",
+				quizQuery.data?.intro ?? "",
+			),
+		[attempt.questions, quizQuery.data?.type, quizQuery.data?.intro],
 	);
 	const answers = useMemo(
 		() =>
@@ -83,6 +88,13 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 				attempt.questions.map((question, q) => [q, question.answer ?? ""]),
 			),
 		[attempt.questions],
+	);
+	// Đề Writing (#304): bài nộp nằm ở `essay` (không phải answers map) —
+	// inject key "0" để nhánh Writing của QuizPaper review hiện đúng bài đã
+	// nộp thay vì textarea trống khi học viên mở thẳng URL .../detail.
+	const reviewAnswers = useMemo(
+		() => (attempt.essay != null ? { ...answers, 0: attempt.essay } : answers),
+		[answers, attempt.essay],
 	);
 	const review = useMemo(
 		() =>
@@ -115,7 +127,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	const navigator = (
 		<QuizNavigator
 			parts={parts}
-			answers={answers}
+			answers={reviewAnswers}
 			current={currentQuestion}
 			onSelect={(q) => {
 				setCurrentQuestion(q);
@@ -161,7 +173,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						<QuizPaper
 							detail={quizQuery.data}
 							parts={parts}
-							answers={answers}
+							answers={reviewAnswers}
 							onAnswer={() => undefined}
 							currentQuestion={currentQuestion}
 							mode="review"
@@ -176,7 +188,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						<QuizPaper
 							detail={quizQuery.data}
 							parts={parts}
-							answers={answers}
+							answers={reviewAnswers}
 							onAnswer={() => undefined}
 							currentQuestion={currentQuestion}
 							mode="review"

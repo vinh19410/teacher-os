@@ -2,18 +2,22 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
 	DAILY_STUDY_HOUR_OPTIONS,
-	type EnrollmentStatus,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
+	QUIZ_ESSAY_BODY_MAX,
+	QUIZ_MEDIA_MAX_BYTES,
 	type QuizAttemptDetail,
+	type QuizAttemptMedia,
 	type QuizAttemptStatus,
 	type QuizAttemptSummary,
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
+	quizEssayPatchSchema,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
+	type StudentClassDetail,
 	type StudentMe,
 	type StudentOrgItem,
 	type StudentOverview,
@@ -21,8 +25,13 @@ import {
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
-import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
+import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import {
+	isAllowedQuizMediaType,
+	normalizeMediaType,
+	sanitizeMediaFileName,
+} from "@teacher-os/api/lib/quiz-media";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
@@ -38,20 +47,33 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
+import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
 import { parsePin } from "./snapshot";
+import {
+	loadClassAssignmentItems,
+	loadNextSession,
+	loadOrgTeacher,
+	orderStudentLessons,
+	studentClassColumns,
+	toStudentClass,
+} from "./student-class";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
 	getSessionUser(headers: Headers): Promise<SessionUser | null>;
 	corsOrigin?: string | string[];
+	/** Xem `AppDeps.getMediaStore` — vắng mặt thì route media trả 503. */
+	getMediaStore?(): MediaStore | undefined;
+	/** Xem `AppDeps.runInBackground`. */
+	runInBackground?(promise: Promise<unknown>): void;
 }
 
 interface StudentContext {
@@ -92,6 +114,32 @@ function parseTargetScore(
 	const allowed =
 		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
 	return parseEnum(raw, allowed);
+}
+
+/** Percent-encode cho `filename*` (RFC 8187 attr-char): encodeURIComponent
+ * còn để lọt `'()*`. */
+function encodeRfc8187(value: string): string {
+	return encodeURIComponent(value).replace(
+		/['()*]/g,
+		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+	);
+}
+
+/** Cột media_* của attempt → payload wire (không lộ object key). */
+function toQuizAttemptMedia(row: {
+	mediaKey: string | null;
+	mediaName: string | null;
+	mediaType: string | null;
+	mediaSize: number | null;
+	mediaUploadedAt: Date | null;
+}): QuizAttemptMedia | null {
+	if (row.mediaKey === null) return null;
+	return {
+		name: row.mediaName ?? "",
+		type: row.mediaType ?? "",
+		size: row.mediaSize ?? 0,
+		uploadedAt: row.mediaUploadedAt ? row.mediaUploadedAt.toISOString() : "",
+	};
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
@@ -548,6 +596,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
+	router.use("/classes/:classId", requireStudent);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -561,15 +610,34 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
 	// session gate `use("*")` nên request không có session vẫn 401 trước khi
-	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16).
+	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16). Mọi method ghi
+	// (POST/PATCH/PUT/DELETE) đều kiểm Origin. Chỉ PUT/DELETE đúng route
+	// media bài nói (#305) bỏ qua bước JSON + bodyLimit — bodyLimit đọc/bọc
+	// stream mà handler cần chuyển nguyên vào R2; handler tự kiểm
+	// Content-Type/Content-Length và đếm byte thật. Audio/video Content-Type
+	// vẫn kích hoạt preflight nên không có lối form cross-site. Route ghi khác
+	// (kể cả PUT/DELETE thêm sau này) giữ guard JSON + bodyLimit.
+	const MEDIA_ROUTE_PATH = /^\/api\/student\/attempts\/[^/]+\/media$/;
 	const quizWriteGuard = async (
 		c: Context<StudentEnv>,
 		next: () => Promise<void>,
 	) => {
-		if (c.req.method === "POST" || c.req.method === "PATCH") {
+		const method = c.req.method;
+		if (
+			method === "POST" ||
+			method === "PATCH" ||
+			method === "PUT" ||
+			method === "DELETE"
+		) {
 			const origin = c.req.header("Origin") ?? "";
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
+			}
+			if (
+				(method === "PUT" || method === "DELETE") &&
+				MEDIA_ROUTE_PATH.test(c.req.path)
+			) {
+				return next();
 			}
 			const contentType = c.req.header("Content-Type") ?? "";
 			if (!contentType.toLowerCase().startsWith("application/json")) {
@@ -577,8 +645,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			}
 			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
 			// Content-Length không lọt) — precedent kernel.ts /syllabi.
+			// Route /essay (#304) cap riêng 48KB: bài Writing tới 10.000 ký tự
+			// UTF-8 (vẫn dưới giới hạn 64KB của fetch keepalive); các route
+			// quiz khác giữ 4096.
 			return bodyLimit({
-				maxSize: 4096,
+				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
 				onError: (bc) => bc.json({ error: "payload too large" }, 413),
 			})(c, next);
 		}
@@ -586,6 +657,72 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	};
 	router.use("/assignments/:assignmentId/quiz/*", quizWriteGuard);
 	router.use("/attempts/*", quizWriteGuard);
+
+	const ownedAttempt = (attemptId: string, studentId: string, orgId: string) =>
+		and(
+			eq(quizAttempt.id, attemptId),
+			eq(quizAttempt.orgId, orgId),
+			eq(quizAttempt.studentId, studentId),
+		);
+
+	/**
+	 * Attempt của chính học viên + skill của đề (join class_assignment →
+	 * assignment_prompt, cả hai có predicate orgId — chuẩn IDOR của quiz
+	 * domain). Dùng chung cho essay (#304), media và submit (#305). Skill
+	 * immutable trên PATCH prompt nên đọc một lần là đủ cho CAS sau đó.
+	 */
+	const loadOwnedAttemptWithSkill = async (
+		attemptId: string,
+		studentId: string,
+		orgId: string,
+	) => {
+		const [row] = await deps
+			.getDb()
+			.select({
+				status: quizAttempt.status,
+				skill: assignmentPrompt.skill,
+				mediaKey: quizAttempt.mediaKey,
+				mediaName: quizAttempt.mediaName,
+				mediaType: quizAttempt.mediaType,
+				mediaSize: quizAttempt.mediaSize,
+				mediaUploadedAt: quizAttempt.mediaUploadedAt,
+			})
+			.from(quizAttempt)
+			.innerJoin(
+				classAssignment,
+				and(
+					eq(classAssignment.id, quizAttempt.assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(ownedAttempt(attemptId, studentId, orgId));
+		return row;
+	};
+
+	/** Việc dọn dẹp sau response (xoá object R2 bù trừ) — không bao giờ làm
+	 * fail request; lỗi chỉ log (precedent provisioning ở trên). */
+	const inBackground = (label: string, work: () => Promise<unknown>) => {
+		const promise = work().catch((error: unknown) => {
+			console.error(`[student-media] ${label} failed`, { error });
+		});
+		if (deps.runInBackground) deps.runInBackground(promise);
+	};
+
+	const ATTEMPT_SUBMITTED = {
+		error: "attempt already submitted",
+		code: "ATTEMPT_SUBMITTED",
+	} as const;
+	const MEDIA_CONFLICT = {
+		error: "media changed",
+		code: "MEDIA_CONFLICT",
+	} as const;
 
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
@@ -597,100 +734,31 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const db = deps.getDb();
 		const todayISO = vietnamTodayISO();
 
-		const enrollmentRows = await db
-			.select({
-				id: classTable.id,
-				name: classTable.name,
-				level: classTable.level,
-				mode: classTable.mode,
-				schedule: classTable.schedule,
-				sessionsDone: classTable.sessionsDone,
-				sessionsTotal: classTable.sessionsTotal,
-				status: classTable.status,
-				enrollmentId: enrollment.id,
-				enrollmentStatus: enrollment.status,
-			})
-			.from(enrollment)
-			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-			.where(and(eq(enrollment.orgId, orgId), eq(enrollment.studentId, s.id)))
-			.orderBy(asc(classTable.createdAt), asc(classTable.id));
+		const [enrollmentRows, teacher] = await Promise.all([
+			db
+				.select(studentClassColumns)
+				.from(enrollment)
+				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+				.where(and(eq(enrollment.orgId, orgId), eq(enrollment.studentId, s.id)))
+				.orderBy(asc(classTable.createdAt), asc(classTable.id)),
+			loadOrgTeacher(db, orgId),
+		]);
 
 		const classes = await Promise.all(
-			enrollmentRows.map(async (cls) => {
-				const nextSessions = await db
-					.select({
-						date: lesson.date,
-						time: lesson.time,
-						topic: lesson.topic,
-					})
-					.from(lesson)
-					.where(
-						and(
-							eq(lesson.orgId, orgId),
-							eq(lesson.classId, cls.id),
-							isNotNull(lesson.date),
-							gte(lesson.date, todayISO),
-						),
-					)
-					.orderBy(asc(lesson.date), asc(lesson.day), asc(lesson.time))
-					.limit(1);
-
-				const first = nextSessions[0];
-				const nextSession =
-					first?.date != null
-						? { date: first.date, time: first.time, topic: first.topic }
-						: null;
-
-				return {
-					id: cls.id,
-					name: cls.name,
-					level: cls.level,
-					mode: cls.mode,
-					schedule: formatSchedule(cls.schedule),
-					sessionsDone: cls.sessionsDone,
-					sessionsTotal: cls.sessionsTotal,
-					status: cls.status,
-					enrollmentId: cls.enrollmentId,
-					// DB lưu text; lifecycle chỉ ghi 'invited' | 'active' (schema enrollment).
-					enrollmentStatus: cls.enrollmentStatus as EnrollmentStatus,
-					nextSession,
-				};
-			}),
+			enrollmentRows.map(async (cls) =>
+				toStudentClass(
+					cls,
+					await loadNextSession(db, orgId, cls.id, todayISO),
+					teacher,
+				),
+			),
 		);
 
-		const targetRows = await db
-			.select({
-				id: classAssignment.id,
-				title: classAssignment.title,
-				classId: classAssignment.classId,
-				className: classTable.name,
-				due: classAssignment.due,
-				submittedAt: classAssignmentTarget.submittedAt,
-			})
-			.from(classAssignmentTarget)
-			.innerJoin(
-				classAssignment,
-				eq(classAssignmentTarget.assignmentId, classAssignment.id),
-			)
-			.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
-			.where(
-				and(
-					eq(classAssignmentTarget.orgId, orgId),
-					eq(classAssignmentTarget.studentId, s.id),
-				),
-			)
-			.orderBy(desc(classAssignment.createdAt));
-
-		const classAssignmentItems = targetRows.map((row) => ({
-			id: row.id,
-			title: row.title,
-			source: "class_assignment" as const,
-			classId: row.classId,
-			className: row.className ?? null,
-			due: row.due,
-			submittedAt: row.submittedAt ?? null,
-			scores: null,
-		}));
+		const classAssignmentItems = await loadClassAssignmentItems(
+			db,
+			orgId,
+			s.id,
+		);
 
 		const gradingRows = await db
 			.select({
@@ -723,6 +791,71 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			assignments: [...classAssignmentItems, ...gradingItems],
 		};
 
+		return c.json(response);
+	});
+
+	router.get("/classes/:classId", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId");
+		const db = deps.getDb();
+
+		// IDOR guard: chỉ enrollment `active` của chính học viên trong org đang
+		// chọn. Lớp org khác, lớp không ghi danh và enrollment `invited` đều 404.
+		const [row] = await db
+			.select({ ...studentClassColumns, startDate: classTable.startDate })
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+		if (!row) return c.json({ error: "class not found" }, 404);
+
+		const [teacher, nextSession, lessons, assignments] = await Promise.all([
+			loadOrgTeacher(db, orgId),
+			loadNextSession(db, orgId, row.id, vietnamTodayISO()),
+			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
+			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
+			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
+			db
+				.select({
+					id: lesson.id,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+				})
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.enrollmentId, row.enrollmentId),
+					),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
+				),
+			loadClassAssignmentItems(db, orgId, s.id, row.id),
+		]);
+
+		const response: StudentClassDetail = {
+			class: {
+				...toStudentClass(row, nextSession, teacher),
+				startDate: row.startDate,
+			},
+			lessons: orderStudentLessons(lessons),
+			assignments,
+		};
 		return c.json(response);
 	});
 
@@ -872,6 +1005,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			attempt?.id ?? row.promptId,
 		);
 
+		const effectiveTypes = inferQuestionTypes(questions, prompt.type);
+
 		const detail: StudentQuizDetail = {
 			assignmentId,
 			title: row.title,
@@ -888,13 +1023,18 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			audioName: prompt.audioName,
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
-			questions: questions.map((question) => ({
+			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
+			// cho học viên. Skill khác giữ kín note tới sau khi nộp (RT#6).
+			...(prompt.skill === "speaking" ? { note: prompt.note } : {}),
+			questions: questions.map((question, index) => ({
 				stem: question.stem,
 				opts: question.opts,
 				// Type hiệu dụng của câu: type riêng (đề trộn dạng) ?? type
 				// prompt — payload student luôn có type cụ thể để client phân
-				// cụm; snapshot cũ parse `type: null` cũng fallback về đây.
-				type: question.type ?? prompt.type,
+				// cụm; snapshot cũ parse `type: null` cũng fallback về đây. Câu
+				// không khai type trong đề điền chữ mà đáp án là T/F/NG (hoặc
+				// Y/N/NG) được suy ra tfng/ynng để học viên có lựa chọn.
+				type: effectiveTypes[index] ?? prompt.type,
 				pin: question.pin ?? null,
 			})),
 			attempt: attempt
@@ -902,6 +1042,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						id: attempt.id,
 						status: attempt.status as QuizAttemptStatus,
 						answers: parseQuizAnswers(attempt.answers),
+						essay: attempt.essay,
+						media: toQuizAttemptMedia(attempt),
 					}
 				: null,
 		};
@@ -1077,6 +1219,303 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	});
 
 	/**
+	 * PATCH /api/student/attempts/:attemptId/essay — autosave bài viết
+	 * Writing (#304). Tách khỏi PATCH /answer và map `answers` vì map đó
+	 * gắn index câu hỏi, cap 500 ký tự và đi vào gradeQuiz, trong khi đề
+	 * Writing luôn có `questions: []` (key `0` của essay không bao giờ đụng
+	 * namespace answer thật). Chỉ đề Writing ghi được: skill đọc từ
+	 * `assignment_prompt` qua join class_assignment (invariant "skill
+	 * immutable trên PATCH prompt" — đã pin bởi test của route assignments).
+	 * Body cap 48KB riêng cho route này (quizWriteGuard); UPDATE có điều
+	 * kiện `status = 'in_progress'` (CAS, cùng precedent PATCH answer — D1
+	 * không có transaction).
+	 */
+	router.patch("/attempts/:attemptId/essay", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const db = deps.getDb();
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+		const parsed = quizEssayPatchSchema.safeParse(raw);
+		if (!parsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const owner = ownedAttempt(attemptId, s.id, orgId);
+		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.status === "submitted") {
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+		if (attempt.skill !== "writing") {
+			return c.json({ error: "essay not allowed" }, 400);
+		}
+
+		const updated = await db
+			.update(quizAttempt)
+			.set({ essay: parsed.data.text })
+			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.returning({ id: quizAttempt.id });
+
+		if (updated.length === 0) {
+			// Submit xảy ra giữa read và write — phân biệt qua status read.
+			const [reread] = await db
+				.select({ status: quizAttempt.status })
+				.from(quizAttempt)
+				.where(owner);
+			if (!reread) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
+			return c.json({ error: "attempt already submitted" }, 409);
+		}
+		return c.json({ ok: true });
+	});
+
+	/**
+	 * PUT /api/student/attempts/:attemptId/media — tải lên file bài nói
+	 * Speaking (#305), 1 file mỗi attempt. Raw body (không multipart) stream
+	 * thẳng vào MediaStore; tên file qua header `X-File-Name`
+	 * (encodeURIComponent). Kiểm rẻ trước (header), DB sau, R2 cuối. Mỗi lần
+	 * upload sinh object key mới rồi ghi CAS theo key cũ (D1 không có
+	 * transaction): DB không bao giờ trỏ vào object đang bị ghi đè; thua CAS
+	 * thì object mới bị xoá bù, thắng thì object cũ bị xoá (best-effort, qua
+	 * runInBackground). quizWriteGuard đã kiểm Origin và cố ý bỏ qua
+	 * bodyLimit cho route này — cap 50MB đo trên byte thật trong store.
+	 */
+	router.put("/attempts/:attemptId/media", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const store = deps.getMediaStore?.();
+		if (!store) {
+			return c.json({ error: "media storage unavailable" }, 503);
+		}
+
+		const lengthHeader = c.req.header("Content-Length");
+		const size =
+			lengthHeader !== undefined && /^\d+$/.test(lengthHeader)
+				? Number(lengthHeader)
+				: Number.NaN;
+		if (!Number.isSafeInteger(size)) {
+			return c.json({ error: "length required" }, 411);
+		}
+		if (size === 0) {
+			return c.json({ error: "empty file" }, 400);
+		}
+		if (size > QUIZ_MEDIA_MAX_BYTES) {
+			return c.json({ error: "payload too large" }, 413);
+		}
+		const contentType = normalizeMediaType(c.req.header("Content-Type") ?? "");
+		if (!isAllowedQuizMediaType(contentType)) {
+			return c.json({ error: "unsupported media type" }, 415);
+		}
+		let name: string | null = null;
+		try {
+			name = sanitizeMediaFileName(
+				decodeURIComponent(c.req.header("X-File-Name") ?? ""),
+			);
+		} catch {
+			name = null;
+		}
+		if (name === null) {
+			return c.json({ error: "invalid file name" }, 400);
+		}
+
+		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.status === "submitted") {
+			return c.json(ATTEMPT_SUBMITTED, 409);
+		}
+		if (attempt.skill !== "speaking") {
+			return c.json({ error: "media not allowed" }, 400);
+		}
+		const body = c.req.raw.body;
+		if (body === null) {
+			return c.json({ error: "empty file" }, 400);
+		}
+
+		const oldKey = attempt.mediaKey;
+		const newKey = `quiz-media/${orgId}/${attemptId}/${crypto.randomUUID()}`;
+		const discardNew = () =>
+			inBackground("discard new object", () => store.delete(newKey));
+		try {
+			await store.put(newKey, body, { contentType, size });
+		} catch (error) {
+			discardNew();
+			if (error instanceof MediaSizeMismatchError) {
+				return c.json({ error: "size mismatch" }, 400);
+			}
+			throw error;
+		}
+
+		const owner = ownedAttempt(attemptId, s.id, orgId);
+		const uploadedAt = new Date();
+		let updated: { id: string }[];
+		try {
+			updated = await deps
+				.getDb()
+				.update(quizAttempt)
+				.set({
+					mediaKey: newKey,
+					mediaName: name,
+					mediaType: contentType,
+					mediaSize: size,
+					mediaUploadedAt: uploadedAt,
+				})
+				.where(
+					and(
+						owner,
+						eq(quizAttempt.status, "in_progress"),
+						oldKey === null
+							? isNull(quizAttempt.mediaKey)
+							: eq(quizAttempt.mediaKey, oldKey),
+					),
+				)
+				.returning({ id: quizAttempt.id });
+		} catch (error) {
+			discardNew();
+			throw error;
+		}
+
+		if (updated.length === 0) {
+			discardNew();
+			const reread = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+			if (!reread) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
+			if (reread.status === "submitted") {
+				return c.json(ATTEMPT_SUBMITTED, 409);
+			}
+			return c.json(MEDIA_CONFLICT, 409);
+		}
+
+		if (oldKey !== null) {
+			inBackground("delete replaced object", () => store.delete(oldKey));
+		}
+		const media: QuizAttemptMedia = {
+			name,
+			type: contentType,
+			size,
+			uploadedAt: uploadedAt.toISOString(),
+		};
+		return c.json({ media });
+	});
+
+	/**
+	 * DELETE /api/student/attempts/:attemptId/media — gỡ file bài nói trước
+	 * khi nộp (#305). Idempotent khi chưa có file; CAS theo key hiện tại như
+	 * PUT, object bị xoá best-effort sau khi DB đã gỡ tham chiếu.
+	 */
+	router.delete("/attempts/:attemptId/media", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const store = deps.getMediaStore?.();
+		if (!store) {
+			return c.json({ error: "media storage unavailable" }, 503);
+		}
+		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.status === "submitted") {
+			return c.json(ATTEMPT_SUBMITTED, 409);
+		}
+		if (attempt.skill !== "speaking") {
+			return c.json({ error: "media not allowed" }, 400);
+		}
+		const oldKey = attempt.mediaKey;
+		if (oldKey === null) {
+			return c.json({ ok: true });
+		}
+
+		const updated = await deps
+			.getDb()
+			.update(quizAttempt)
+			.set({
+				mediaKey: null,
+				mediaName: null,
+				mediaType: null,
+				mediaSize: null,
+				mediaUploadedAt: null,
+			})
+			.where(
+				and(
+					ownedAttempt(attemptId, s.id, orgId),
+					eq(quizAttempt.status, "in_progress"),
+					eq(quizAttempt.mediaKey, oldKey),
+				),
+			)
+			.returning({ id: quizAttempt.id });
+		if (updated.length === 0) {
+			const reread = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+			if (!reread) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
+			if (reread.status === "submitted") {
+				return c.json(ATTEMPT_SUBMITTED, 409);
+			}
+			// DELETE song song (2 tab / double-click) đã gỡ file — trạng thái
+			// mong muốn đã đạt, giữ idempotent thay vì báo conflict.
+			if (reread.mediaKey === null) {
+				return c.json({ ok: true });
+			}
+			return c.json(MEDIA_CONFLICT, 409);
+		}
+		inBackground("delete removed object", () => store.delete(oldKey));
+		return c.json({ ok: true });
+	});
+
+	/**
+	 * GET /api/student/attempts/:attemptId/media — phát lại file bài nói cho
+	 * chủ attempt ở mọi trạng thái (#305). Content-Type lấy từ DB (đã kiểm
+	 * allowlist lúc upload); `nosniff` + CSP sandbox để file giả MIME không
+	 * chạy được như HTML. CORP `same-site` được set ở app.ts (secureHeaders
+	 * global ghi đè header của handler).
+	 */
+	router.get("/attempts/:attemptId/media", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const attemptId = c.req.param("attemptId");
+		const store = deps.getMediaStore?.();
+		if (!store) {
+			return c.json({ error: "media storage unavailable" }, 503);
+		}
+		const [attempt] = await deps
+			.getDb()
+			.select({
+				mediaKey: quizAttempt.mediaKey,
+				mediaName: quizAttempt.mediaName,
+				mediaType: quizAttempt.mediaType,
+			})
+			.from(quizAttempt)
+			.where(ownedAttempt(attemptId, s.id, orgId));
+		if (!attempt || attempt.mediaKey === null) {
+			return c.json({ error: "media not found" }, 404);
+		}
+		const object = await store.get(attempt.mediaKey);
+		if (!object) {
+			return c.json({ error: "media not found" }, 404);
+		}
+		return new Response(object.body, {
+			headers: {
+				"Content-Type": attempt.mediaType ?? object.contentType,
+				"Content-Length": String(object.size),
+				"Content-Disposition": `inline; filename*=UTF-8''${encodeRfc8187(attempt.mediaName ?? "media")}`,
+				"X-Content-Type-Options": "nosniff",
+				"Content-Security-Policy": "default-src 'none'; sandbox",
+				"Cache-Control": "private, no-store",
+			},
+		});
+	});
+
+	/**
 	 * POST /api/student/attempts/:attemptId/submit — flip-first idempotent
 	 * (RT#5): CAS UPDATE status in_progress → submitted; thắng CAS mới chấm
 	 * từ snapshot + ghi counts + stamp class_assignment_target.submittedAt
@@ -1099,20 +1538,30 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json({ error: "invalid body" }, 400);
 		}
 
-		const owner = and(
-			eq(quizAttempt.id, attemptId),
-			eq(quizAttempt.orgId, orgId),
-			eq(quizAttempt.studentId, s.id),
-		);
+		const owner = ownedAttempt(attemptId, s.id, orgId);
+
+		// Đề Speaking (#305) chỉ nộp được khi đã có file: predicate nằm ngay
+		// trong câu UPDATE flip nên atomic với DELETE media song song. Attempt
+		// không tồn tại → skill undefined → giữ luồng cũ (404 ở re-read).
+		const header = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		const requiresMedia = header?.skill === "speaking";
 
 		const flipped = await db
 			.update(quizAttempt)
 			.set({ status: "submitted", submittedAt: new Date() })
-			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.where(
+				and(
+					owner,
+					eq(quizAttempt.status, "in_progress"),
+					requiresMedia ? isNotNull(quizAttempt.mediaKey) : undefined,
+				),
+			)
 			.returning({ id: quizAttempt.id });
 
 		const [attempt] = await db
 			.select({
+				status: quizAttempt.status,
+				mediaKey: quizAttempt.mediaKey,
 				assignmentId: quizAttempt.assignmentId,
 				questionsSnapshot: quizAttempt.questionsSnapshot,
 				answers: quizAttempt.answers,
@@ -1121,6 +1570,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.where(owner);
 		if (!attempt) {
 			return c.json({ error: "attempt not found" }, 404);
+		}
+		// Thua flip mà attempt vẫn đang làm (chỉ xảy ra với predicate media):
+		// trả lỗi TRƯỚC nhánh self-heal — nhánh đó stamp submittedAt của lượt
+		// giao và chỉ đúng khi attempt thật sự đã submitted.
+		if (flipped.length === 0 && attempt.status !== "submitted") {
+			return attempt.mediaKey === null
+				? c.json({ error: "media required", code: "MEDIA_REQUIRED" }, 400)
+				: c.json(MEDIA_CONFLICT, 409);
 		}
 
 		const questions = parseQuizQuestions(attempt.questionsSnapshot, attemptId);
@@ -1202,11 +1659,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				title: classAssignment.title,
 				note: assignmentPrompt.note,
 				type: assignmentPrompt.type,
+				// Skill quyết định summary/detail có lộ essay (#304) — join có
+				// predicate orgId, nhất quán chuẩn IDOR với PATCH essay.
+				skill: assignmentPrompt.skill,
 			})
 			.from(classAssignment)
 			.innerJoin(
 				assignmentPrompt,
-				eq(assignmentPrompt.id, classAssignment.promptId),
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
 			)
 			.where(
 				and(
@@ -1222,6 +1685,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			title: header?.title ?? "",
 			note: header?.note ?? "",
 			promptType: header?.type ?? "",
+			skill: header?.skill ?? "",
 		};
 	};
 
@@ -1238,7 +1702,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title } = loaded;
+		const { attempt, questions, answers, grade, title, skill } = loaded;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1258,6 +1722,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					answer: given !== undefined && given.trim().length > 0 ? given : null,
 				};
 			}),
+			// Bài Writing lộ kèm số từ ở summary (#304); đề khác luôn null.
+			essay: skill === "writing" ? attempt.essay : null,
+			// Bài nói Speaking (#305) — summary rẽ nhánh theo skill.
+			skill,
+			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 		};
 		return c.json(summary);
 	});
@@ -1279,8 +1748,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, note, promptType } =
-			loaded;
+		const {
+			attempt,
+			questions,
+			answers,
+			grade,
+			title,
+			note,
+			promptType,
+			skill,
+		} = loaded;
+		const effectiveTypes = inferQuestionTypes(questions, promptType);
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1293,14 +1771,18 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			startedAt: attempt.startedAt.toISOString(),
 			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
 			note,
+			// Bài Writing lộ ở review-detail (#304); đề khác luôn null.
+			essay: skill === "writing" ? attempt.essay : null,
+			skill,
+			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 			questions: questions.map((question, index) => {
 				const given = answers[String(index)];
 				return {
 					stem: question.stem,
 					opts: question.opts,
-					// Type hiệu dụng như take payload — review screen phân cụm cùng
-					// cấu trúc bài làm.
-					type: question.type ?? promptType,
+					// Type hiệu dụng như take payload (gồm suy luận tfng/ynng) —
+					// review screen phân cụm cùng cấu trúc bài làm.
+					type: effectiveTypes[index] ?? promptType,
 					pin: question.pin ?? null,
 					key: question.answer,
 					alts: question.alts,

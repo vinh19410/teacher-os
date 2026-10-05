@@ -26,6 +26,7 @@ Teacher OS is a monorepo: a React teacher web app, a React student portal, a Hon
 | Persistent rows and constraints | [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) |
 | Kernel DTOs and request bodies | [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) |
 | API Cloudflare worker and D1 wiring | [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) |
+| Speaking submission files: private R2 bucket bound as `MEDIA`, reached only through an injected `MediaStore` (R2 in production, disk in E2E) and `/api/student/attempts/:id/media` | [apps/server/src/lib/media-store.ts](../apps/server/src/lib/media-store.ts), [apps/server/src/lib/r2-media-store.ts](../apps/server/src/lib/r2-media-store.ts), and [apps/e2e/src/fs-media-store.ts](../apps/e2e/src/fs-media-store.ts) |
 | Web asset worker: static assets, SPA routes, HTTP 404 for unknown paths | [apps/web/src/worker.ts](../apps/web/src/worker.ts) with route classification in [apps/web/src/routes-matcher.ts](../apps/web/src/routes-matcher.ts) |
 | Syllabus import file parsing (client-side; files never reach the server) | [apps/web/src/lib/syllabus-import.ts](../apps/web/src/lib/syllabus-import.ts) |
 | Assignment prompt bank create and per-student grading routes | [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) (subrouter of the kernel tree) |
