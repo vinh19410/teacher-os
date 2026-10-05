@@ -26,6 +26,7 @@ Quy ước khi cập nhật:
 
 ### CI/Infra
 - Bucket R2 private `media` bind vào Worker server (`MEDIA`) và migration 0032 thêm 5 cột `media_*` trên `quiz_attempt`; release đầu cần bật R2 trên tài khoản Cloudflare và cấp quyền "Workers R2 Storage: Edit" cho token deploy (xem runbook) (#305)
+- Migration 0031 thêm cột `essay` (`text DEFAULT '' NOT NULL`) trên `quiz_attempt` cho bài Writing; cùng 0032 đều additive-only, runbook cập nhật bước backup D1 và bảng rollback-safety 0026–0032 (#304, #305)
 
 ## 2026-10-01
 
