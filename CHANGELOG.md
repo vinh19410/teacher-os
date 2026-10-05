@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-10-05
 
+### Added
+- Modal Tạo lớp cảnh báo realtime (không chặn submit) khi lịch đang chọn trùng thứ + giao giờ + giao khoảng ngày chạy với lớp đã tạo: liệt kê tối đa 3 lớp trùng (tên, thứ giao, giờ), tự ẩn khi đổi giờ/ngày hết trùng hoặc đang lưu; bỏ qua lớp legacy free-text/qua đêm và lớp đã hết buổi (window suy từ `skeletonOf`, không dùng cột `status` vacuous) (#315)
+
 ### Changed
 - Trang Bài tập: bộ lọc "Phần thi" khi xem "Tất cả" kỹ năng giờ nhóm chip theo kỹ năng (Writing / Reading / Listening / Speaking) thay vì một hàng 12 phần thi trộn lẫn; chọn một kỹ năng vẫn chỉ hiện phần thi của kỹ năng đó
 - Chip lọc kỹ năng/phần thi hiện badge số đề sẽ còn nếu bấm (đếm theo từ khoá đang gõ, có ở cả chế độ một kỹ năng); chip 0 đề vẫn full contrast, badge "0" báo trước ngõ cụt

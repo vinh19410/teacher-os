@@ -3,7 +3,7 @@ import {
 	type ClassType,
 	IELTS_SKILLS,
 } from "@teacher-os/api/contracts";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -17,7 +17,9 @@ import {
 import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, dayNames, type Syllabus } from "@/lib/mock-data";
+import { useClasses } from "@/lib/repos/use-classes";
 import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { findScheduleConflicts } from "@/lib/schedule-conflicts";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -132,6 +134,37 @@ export function AddClassModal({
 			isFutureDateInputValue(current) ? current : minimumStartDate,
 		);
 	}, [minimumStartDate, open]);
+
+	// #315: cảnh báo realtime khi lịch chọn trùng lớp đang chạy — không chặn
+	// submit (giáo viên có thể cố ý dạy song song). Ẩn khi saving/notice để
+	// khỏi tự cảnh báo chính lớp vừa tạo trong optimistic store.
+	const { classes } = useClasses();
+	// Parse như path submit (issue #105): draft sai schema không đóng góp run
+	// window và không đưa vào skeletonOf một total không chặn (trục draft;
+	// trục stored class đã clamp trong helper theo precedent class-sessions).
+	const parsedDraftTotal = Number.parseInt(total, 10);
+	const draftTotal =
+		Number.isInteger(parsedDraftTotal) &&
+		parsedDraftTotal >= 1 &&
+		parsedDraftTotal <= 52
+			? parsedDraftTotal
+			: 0;
+	const scheduleConflicts = useMemo(
+		() =>
+			findScheduleConflicts(
+				{
+					days,
+					start: startTime,
+					end: endTime,
+					startDate,
+					sessionsTotal: draftTotal,
+				},
+				classes,
+			),
+		[days, startTime, endTime, startDate, draftTotal, classes],
+	);
+	const showScheduleConflicts =
+		!saving && !notice && scheduleConflicts.length > 0;
 
 	// Mục đã base theo syllabus thì view-only: điều kiện khóa trùng
 	// điều kiện auto-fill trong changeTemplateId — khóa đúng khi giá trị
@@ -329,6 +362,31 @@ export function AddClassModal({
 						/>
 					</Field>
 				</div>
+				{showScheduleConflicts && (
+					<div
+						role="status"
+						data-testid="schedule-conflict-warning"
+						className="rounded-sm border border-warn border-solid bg-warn-soft p-3 text-warn text-xs"
+					>
+						<p className="font-medium">Lịch bị trùng với lớp đang học</p>
+						<ul className="mt-1 space-y-0.5">
+							{scheduleConflicts
+								.slice(0, 3)
+								.map(({ cls, sharedDays, schedule }) => (
+									// JSX text children — React escape tên lớp tự do;
+									// không bao giờ HTML inner.
+									<li key={cls.id} className="break-words">
+										{cls.name} ·{" "}
+										{sharedDays.map((d) => dayNames[d]).join(" & ")} ·{" "}
+										{schedule.start}–{schedule.end}
+									</li>
+								))}
+							{scheduleConflicts.length > 3 && (
+								<li>+{scheduleConflicts.length - 3} lớp khác</li>
+							)}
+						</ul>
+					</div>
+				)}
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Field label="Tổng số buổi">
 						<Input
