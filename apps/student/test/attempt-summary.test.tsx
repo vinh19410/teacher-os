@@ -1,4 +1,7 @@
-import type { QuizAttemptSummary } from "@teacher-os/api/contracts";
+import type {
+	QuizAttemptGrade,
+	QuizAttemptSummary,
+} from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -297,5 +300,104 @@ describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305
 			<AttemptSummaryBody summary={summary} attemptId="att-1" />,
 		);
 		expect(html).toContain("Xem giải thích chi tiết");
+	});
+});
+
+describe("AttemptSummaryBody — Kết quả chấm của giáo viên (#319)", () => {
+	const writingGrade: QuizAttemptGrade = {
+		scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6.5 },
+		band: 6.5,
+		feedback: "Tốt.\nCần ví dụ.",
+		gradedAt: "2026-10-05T03:00:00.000Z",
+	};
+	const writingGraded: QuizAttemptSummary = {
+		...summary,
+		correctCount: 0,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 0,
+		items: [],
+		essay: "The graph shows a clear upward trend.",
+		grade: writingGrade,
+		part: "task1",
+	};
+
+	it("Writing đã chấm: band + tiêu chí TA + nhận xét, thay dòng chờ chấm", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={writingGraded}
+				attemptId={writingGraded.id}
+			/>,
+		);
+		expect(html).toContain("Kết quả chấm của giáo viên");
+		expect(html).toContain("6.5");
+		expect(html).toContain("Task Achievement");
+		expect(html).toContain("Coherence &amp; Cohesion");
+		expect(html).toContain("Tốt.");
+		expect(html).toContain("Cần ví dụ.");
+		expect(html).not.toContain("Giáo viên sẽ chấm bài viết của bạn.");
+	});
+
+	it("Writing chưa chấm (không có key grade): giữ dòng chờ chấm", () => {
+		const ungraded = { ...writingGraded } as QuizAttemptSummary;
+		delete ungraded.grade;
+		delete ungraded.part;
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={ungraded} attemptId={ungraded.id} />,
+		);
+		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
+		expect(html).not.toContain("Kết quả chấm của giáo viên");
+	});
+
+	it("Speaking đã chấm: band 7.0 + Pronunciation; nhận xét rỗng thì ẩn", () => {
+		const speakingGraded: QuizAttemptSummary = {
+			...summary,
+			correctCount: 0,
+			wrongCount: 0,
+			skippedCount: 0,
+			totalCount: 0,
+			items: [],
+			essay: null,
+			skill: "speaking",
+			media: {
+				name: "answer-v2.mp3",
+				type: "audio/mpeg",
+				size: 820 * 1024,
+				uploadedAt: "2026-09-30T10:20:00.000Z",
+			},
+			grade: {
+				scores: { fluency: 7, lexical: 7, grammar: 7, pronunciation: 7 },
+				band: 7,
+				feedback: "",
+				gradedAt: "2026-10-05T03:00:00.000Z",
+			},
+			part: "part2",
+		};
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={speakingGraded}
+				attemptId={speakingGraded.id}
+			/>,
+		);
+		expect(html).toContain("7.0");
+		expect(html).toContain("Pronunciation");
+		expect(html).not.toContain('data-testid="grade-feedback"');
+		expect(html).not.toContain("Giáo viên sẽ chấm bài nói của bạn.");
+	});
+
+	it("Nhận xét chứa HTML render dạng text (escape qua JSX text node)", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{
+					...writingGraded,
+					grade: {
+						...writingGrade,
+						feedback: "<b>x</b>",
+					},
+				}}
+				attemptId={writingGraded.id}
+			/>,
+		);
+		expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
 	});
 });

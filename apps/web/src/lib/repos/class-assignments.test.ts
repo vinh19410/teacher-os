@@ -33,9 +33,56 @@ describe("mapClassAssignments (#208)", () => {
 				note: "Làm cẩn thận",
 				createdAt: "2026-09-18T10:00:00.000Z",
 				targets: [
-					{ studentId: "s-1", submittedAt: "2026-09-20T14:30" },
-					{ studentId: "s-2", submittedAt: null },
+					{
+						studentId: "s-1",
+						submittedAt: "2026-09-20T14:30",
+						attemptId: null,
+						gradedAt: null,
+						band: null,
+					},
+					{
+						studentId: "s-2",
+						submittedAt: null,
+						attemptId: null,
+						gradedAt: null,
+						band: null,
+					},
 				],
+			},
+		]);
+	});
+
+	test("maps grading state (attemptId/gradedAt/band) per target (#319)", () => {
+		const snapshot = {
+			classAssignments: [
+				{
+					id: "ca-2",
+					classId: "c-1",
+					promptId: "p-1",
+					title: "Speaking Part 2",
+					due: "2026-09-28",
+					note: "",
+					createdAt: "2026-09-19T09:00:00.000Z",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-09-20T14:30",
+							attemptId: "att-1",
+							gradedAt: "2026-09-21T10:00:00.000Z",
+							band: 6.5,
+						},
+					],
+				},
+			],
+		} as unknown as KernelSnapshot;
+
+		expect(mapClassAssignments(snapshot)[0]?.targets).toEqual([
+			{
+				studentId: "s-1",
+				submittedAt: "2026-09-20T14:30",
+				attemptId: "att-1",
+				gradedAt: "2026-09-21T10:00:00.000Z",
+				band: 6.5,
 			},
 		]);
 	});

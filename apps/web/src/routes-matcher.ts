@@ -11,7 +11,6 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/profile": true,
 	"/reports": true,
 	"/schedule": true,
-	"/settings": true,
 	"/tuition": true,
 	"/assignments": true,
 	"/assignments/new": true,
@@ -33,6 +32,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	// prefix riêng (exact /tests/new + /tests/preview đã có ở trên).
 	"/assignments/tests/",
 	"/classes/",
+	// Trang chấm bài Writing/Speaking (#319) — /grading/$attemptId.
+	"/grading/",
 	"/students/",
 	"/syllabus/",
 ];

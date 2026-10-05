@@ -27,7 +27,32 @@ import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 import { todayISOVietnam } from "@/lib/week-grid";
 
+const CLASS_DETAIL_TABS = [
+	"roster",
+	"sessions",
+	"assignments",
+	"notes",
+] as const;
+export type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];
+
+/**
+ * Tab active sống trong URL (`?tab=`) để nút "← Về lớp" của trang chấm
+ * (#319) mở đúng tab Bài tập. Passthrough validation — tab lạ hoặc thiếu
+ * không throw, chỉ rơi về mặc định (cùng pattern `validateSearch` của route
+ * `profile`).
+ */
+export function validateClassDetailSearch(search: Record<string, unknown>): {
+	tab?: ClassDetailTab;
+} {
+	const tab = search.tab;
+	return typeof tab === "string" &&
+		(CLASS_DETAIL_TABS as readonly string[]).includes(tab)
+		? { tab: tab as ClassDetailTab }
+		: {};
+}
+
 export const Route = createFileRoute("/_auth/classes/$classId")({
+	validateSearch: validateClassDetailSearch,
 	component: ClassDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
@@ -102,7 +127,8 @@ function ClassDetailRoute() {
 	const { classById } = useClasses();
 	const { syllabusById, studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
-	const [tab, setTab] = useState("roster");
+	const search = Route.useSearch();
+	const [tab, setTab] = useState<string>(search.tab ?? "roster");
 	const [manageOpen, setManageOpen] = useState(false);
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"

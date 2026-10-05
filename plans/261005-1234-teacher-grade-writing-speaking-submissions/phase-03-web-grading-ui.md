@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web giáo viên: trang chấm + nút ở tab Bài tập"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1, 2]
@@ -61,8 +61,8 @@ dependencies: [1, 2]
   - `fetchSubmissionMediaObjectUrl`
   - `submissionQueryOptions`
 - **Steps:**
-  1. Theo mẫu `apps/web/src/lib/repos/settings.ts`: `getApiBaseUrl()` lấy từ `./settings` (import lại hàm đã export, không viết bản thứ hai). Mọi request đều `credentials: "include"`.
-  2. `export const gradingQueryKey = (attemptId: string) => ["kernel", "grading", attemptId] as const;` (precedent key `["kernel", "settings"]`).
+  1. Theo mẫu `apps/web/src/lib/repos/api-base-url.ts` <!-- Updated: settings route removed 2026-10-05 — `repos/settings.ts` đã xoá (issue #321), `getApiBaseUrl()` dời sang module dùng chung -->: `getApiBaseUrl()` lấy từ `./api-base-url` (import lại hàm đã export, không viết bản thứ hai). Mọi request đều `credentials: "include"`.
+  2. `export const gradingQueryKey = (attemptId: string) => ["kernel", "grading", attemptId] as const;` (precedent key `pendingInvitationsQueryKey` trong `apps/web/src/lib/repos/invitations.ts:10` — precedent cũ `["kernel", "settings"]` đã xoá cùng `repos/settings.ts`).
   3. `fetchSubmission(attemptId, baseUrl = getApiBaseUrl(), signal?)`:
      - `GET ${baseUrl}/api/grading/${encodeURIComponent(attemptId)}`;
      - `!res.ok` thì `throw new HttpError(res.status, \`Failed to load submission: ${res.status}\`)` (`HttpError` từ `@/lib/kernel-load-state`);
@@ -165,7 +165,7 @@ dependencies: [1, 2]
 - **Goal:** trang chấm hoàn chỉnh: tải bài, lỗi có thông báo, lưu điểm cập nhật cache + snapshot.
 - **Target files and symbols:** `apps/web/src/routes/_auth/grading/$attemptId.tsx`, `export const Route = createFileRoute("/_auth/grading/$attemptId")({ component: GradingRoute })`.
 - **Steps:**
-  0. **Làm trước tiên** (chuyển từ Task 3.10 lên đây, vì link "← Về lớp" ở bước 4 dùng `search={{ tab: "assignments" }}` và typecheck chỉ qua khi route lớp đã có search schema). Trong `apps/web/src/routes/_auth/classes/$classId.tsx`, theo đúng precedent `validateSettingsSearch` ở `apps/web/src/routes/_auth/settings.tsx:39-50`: <!-- Updated: Red Team 2026-10-05 -->
+  0. **Làm trước tiên** (chuyển từ Task 3.10 lên đây, vì link "← Về lớp" ở bước 4 dùng `search={{ tab: "assignments" }}` và typecheck chỉ qua khi route lớp đã có search schema). Trong `apps/web/src/routes/_auth/classes/$classId.tsx`, theo đúng precedent `validateSearch` của route `profile` (`apps/web/src/routes/_auth/profile.tsx:26-28` — key optional, fallback `undefined`) hoặc route `login` (`login.tsx:20`); precedent cũ `validateSettingsSearch` ở `settings.tsx:39-50` đã xoá cùng trang `/settings` (issue #321). <!-- Updated: Red Team 2026-10-05; settings route removed 2026-10-05 -->
      ```ts
      const CLASS_DETAIL_TABS = ["roster", "sessions", "assignments", "notes"] as const;
      type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];

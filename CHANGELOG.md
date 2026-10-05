@@ -13,6 +13,8 @@ Quy ước khi cập nhật:
 ## 2026-10-05
 
 ### Added
+- Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp từ tab Bài tập của lớp: trang chấm hiện đề + essay (số từ) hoặc phát file bài nói, chấm 4 tiêu chí IELTS (0–9, bước 0.5) với band tổng tự tính và nhận xét; sửa điểm được bất cứ lúc nào (#319)
+- Màn kết quả học viên hiện band, điểm 4 tiêu chí và nhận xét của giáo viên ngay khi được chấm (#319)
 - Modal Tạo lớp cảnh báo realtime (không chặn submit) khi lịch đang chọn trùng thứ + giao giờ + giao khoảng ngày chạy với lớp đã tạo: liệt kê tối đa 3 lớp trùng (tên, thứ giao, giờ), tự ẩn khi đổi giờ/ngày hết trùng hoặc đang lưu; bỏ qua lớp legacy free-text/qua đêm và lớp đã hết buổi (window suy từ `skeletonOf`, không dùng cột `status` vacuous) (#315)
 
 ### Changed
@@ -23,6 +25,9 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Bộ chip lọc có ngữ cảnh nhóm cho screen reader (`role="group"` + `aria-label` "Kỹ năng" / "Phần thi — <kỹ năng>"); badge đếm ẩn với AT để accessible name chip ổn định cho voice control và e2e selector exact
+
+### Removed
+- Gỡ trang Cài đặt (`/settings`) và API `/api/kernel/settings` (GET/PUT/POST) cùng contract `workspaceSettings*` — chưa tính năng nào dùng workspace settings (chỉ chính trang này ghi/đọc); helper `getApiBaseUrl()` tách sang `lib/repos/api-base-url.ts` cho `invitations` dùng tiếp. Bảng DB `workspace_settings` giữ nguyên (không migration), khôi phục bằng revert (#321)
 
 ### CI/Infra
 - Thêm suite Vitest cho `packages/api` (script `test` + `vitest.config.ts`): unit `grade-quiz` (alt separator `" / "`, pin NFC/NFD), `infer-question-types` (TFNG biên, 8 case), `word-count` (emoji/CJK/hyphen); mở rộng integration `student-quiz.test.ts` của server: IDOR cross-org qua `x-student-org-id`, start race (1×201 + 1×200 cùng attemptId, 1 row), answer value >500 ký tự, `q` âm/lẻ/ngoài range, `json_quote` round-trip, raw JSON key `"3.0"` regression (#313)

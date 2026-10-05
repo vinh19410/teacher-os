@@ -113,6 +113,38 @@ const testPrompts: AssignmentPrompt[] = [
 		status: "draft",
 		createdAt: "2026-09-18T09:00:00.000Z",
 	},
+	{
+		id: "p-writing",
+		skill: "writing",
+		part: "task2",
+		type: "opinion",
+		task: "task2",
+		genre: "opinion",
+		title: "Writing Task 2 — Grade",
+		band: "7.0",
+		source: "",
+		prompt: "Some people think...",
+		questions: [],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-18T08:00:00.000Z",
+	},
+	{
+		id: "p-reading",
+		skill: "reading",
+		part: "p1",
+		type: "info",
+		task: "task1",
+		genre: "",
+		title: "Reading — True/False",
+		band: "6.0",
+		source: "",
+		prompt: "Read the passage...",
+		questions: [],
+		note: "",
+		status: "ready",
+		createdAt: "2026-09-18T07:00:00.000Z",
+	},
 ];
 
 const testAssignments: ClassAssignment[] = [
@@ -166,8 +198,18 @@ let currentDataFixture = {
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 	useNavigate: () => vi.fn(),
-	Link: (props: { to: string; children?: React.ReactNode }) => (
-		<a href={props.to}>{props.children}</a>
+	Link: (props: {
+		to: string;
+		children?: React.ReactNode;
+		params?: Record<string, string>;
+		className?: string;
+	}) => (
+		<a
+			href={props.to.replace("$attemptId", props.params?.attemptId ?? "")}
+			className={props.className}
+		>
+			{props.children}
+		</a>
 	),
 }));
 
@@ -264,5 +306,73 @@ describe("ClassAssignmentsTab (#208)", () => {
 
 		expect(html).toContain("Chưa giao bài nào cho lớp này.");
 		expect(html).toContain("Chưa giao bài");
+	});
+
+	it("shows grade links only for submitted writing/speaking targets", () => {
+		const caGrade: ClassAssignment = {
+			id: "ca-grade",
+			classId: "cl-1",
+			promptId: "p-writing",
+			title: "Writing Task 2 — Grade",
+			due: "2030-01-05",
+			note: "",
+			createdAt: "2026-09-20T10:00:00.000Z",
+			targets: [
+				{
+					studentId: "st-1",
+					submittedAt: "2026-09-20T10:00:00.000Z",
+					attemptId: "att-1",
+					gradedAt: null,
+					band: null,
+				},
+				{
+					studentId: "st-2",
+					submittedAt: "2026-09-20T11:00:00.000Z",
+					attemptId: "att-2",
+					gradedAt: "2026-09-21T10:00:00.000Z",
+					band: 6.5,
+				},
+			],
+		};
+		const caRead: ClassAssignment = {
+			id: "ca-read",
+			classId: "cl-1",
+			promptId: "p-reading",
+			title: "Reading — True/False",
+			due: "2030-01-06",
+			note: "",
+			createdAt: "2026-09-20T09:00:00.000Z",
+			targets: [
+				{
+					studentId: "st-1",
+					submittedAt: "2026-09-20T12:00:00.000Z",
+					attemptId: "att-3",
+					gradedAt: null,
+					band: null,
+				},
+			],
+		};
+		currentDataFixture = {
+			classAssignments: [...testAssignments, caGrade, caRead],
+			assignmentPrompts: testPrompts,
+			students: testStudents,
+		};
+
+		const html = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="list"
+				onViewChange={vi.fn()}
+			/>,
+		);
+
+		// Chưa chấm + đã nộp đề Writing → nút "Chấm bài".
+		expect(html).toContain('href="/grading/att-1"');
+		expect(html).toContain("Chấm bài");
+		// Đã chấm → tag Band + link sửa điểm.
+		expect(html).toContain("Đã chấm · Band 6.5");
+		expect(html).toContain('href="/grading/att-2"');
+		// Đề Reading tự chấm → không có lối chấm tay.
+		expect(html).not.toContain("/grading/att-3");
 	});
 });

@@ -22,6 +22,7 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import {
@@ -31,6 +32,7 @@ import {
 } from "@teacher-os/db/schema/syllabus";
 import { and, asc, desc, eq } from "drizzle-orm";
 import type { Db } from "../app";
+import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
 
 /** Shared explicit projection for the list endpoint and kernel snapshot. */
@@ -307,15 +309,50 @@ export async function loadSnapshot(
 		.select()
 		.from(classAssignmentTarget)
 		.where(eq(classAssignmentTarget.orgId, orgId));
+	// Trạng thái chấm theo target: chỉ attempt đã nộp, chỉ 5 cột nhẹ
+	// (không kéo essay/answers/snapshot đề).
+	const submittedAttemptRows = await db
+		.select({
+			id: quizAttempt.id,
+			assignmentId: quizAttempt.assignmentId,
+			studentId: quizAttempt.studentId,
+			gradeScores: quizAttempt.gradeScores,
+			gradedAt: quizAttempt.gradedAt,
+		})
+		.from(quizAttempt)
+		.where(
+			and(eq(quizAttempt.orgId, orgId), eq(quizAttempt.status, "submitted")),
+		);
+	const attemptByTarget = new Map(
+		submittedAttemptRows.map((row) => [
+			`${row.assignmentId}:${row.studentId}`,
+			row,
+		]),
+	);
 	const targetsByAssignment = new Map<
 		string,
 		KernelSnapshot["classAssignments"][number]["targets"]
 	>();
 	for (const target of classAssignmentTargetRows) {
 		const list = targetsByAssignment.get(target.assignmentId) ?? [];
+		const attempt = attemptByTarget.get(
+			`${target.assignmentId}:${target.studentId}`,
+		);
+		// Một nguồn duy nhất quyết định "đã chấm" — cùng hàm với API chấm và
+		// summary học viên.
+		const graded = attempt
+			? toQuizAttemptGrade({
+					gradeScores: attempt.gradeScores,
+					gradeFeedback: "",
+					gradedAt: attempt.gradedAt,
+				})
+			: null;
 		list.push({
 			studentId: target.studentId,
 			submittedAt: target.submittedAt,
+			attemptId: attempt?.id ?? null,
+			gradedAt: graded?.gradedAt ?? null,
+			band: graded?.band ?? null,
 		});
 		targetsByAssignment.set(target.assignmentId, list);
 	}
