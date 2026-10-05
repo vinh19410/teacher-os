@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import type { Invoice, Student } from "./mock-data";
 import {
 	formatDue,
@@ -164,5 +164,48 @@ describe("rosterDebtByStudent (#216)", () => {
 		const debts = rosterDebtByStudent("C1", enrollments, []);
 		expect(debts.has("S1")).toBe(false);
 		expect(debts.has("S2")).toBe(false);
+	});
+});
+
+describe("tuitionTotals with partial ledger payments (#320)", () => {
+	function inv(overrides: Partial<Invoice>): Invoice {
+		return {
+			id: "INV-P",
+			sid: "s1",
+			eid: "",
+			amount: 500000,
+			paidAmount: 0,
+			status: "unpaid",
+			date: "",
+			type: "",
+			method: "—",
+			due: "",
+			note: "",
+			...overrides,
+		};
+	}
+
+	it("splits unpaid invoices by the ledger's paidAmount", () => {
+		const { collected, outstanding } = tuitionTotals([
+			inv({ paidAmount: 200000 }),
+		]);
+		expect(collected).toBe(200000);
+		expect(outstanding).toBe(300000);
+	});
+
+	it("counts a paid invoice in full even when paidAmount lags (mark-paid)", () => {
+		const { collected, outstanding } = tuitionTotals([
+			inv({ status: "paid", paidAmount: 0 }),
+		]);
+		expect(collected).toBe(500000);
+		expect(outstanding).toBe(0);
+	});
+
+	it("clamps a paidAmount above the amount defensively", () => {
+		const { collected, outstanding } = tuitionTotals([
+			inv({ paidAmount: 600000 }),
+		]);
+		expect(collected).toBe(500000);
+		expect(outstanding).toBe(0);
 	});
 });

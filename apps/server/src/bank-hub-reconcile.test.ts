@@ -125,7 +125,9 @@ describe("bank-link reconcile (#320)", () => {
 					}
 					queriedAccounts.push(input.bankAccountXid);
 					return (
-						pagesByAccount.get(input.bankAccountXid)?.[(input.page ?? 1) - 1] ?? {
+						pagesByAccount.get(input.bankAccountXid)?.[
+							(input.page ?? 1) - 1
+						] ?? {
 							data: [],
 							meta: { page: 1, perPage: 100, total: 0, totalPages: 1 },
 						}

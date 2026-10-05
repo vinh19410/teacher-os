@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
+import {
+	InvoicePaymentModal,
+	UnmatchedTransactions,
+} from "@/components/modals/invoice-payment-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +39,8 @@ export function TuitionRoute() {
 	const { data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [modalOpen, setModalOpen] = useState(false);
+	// #320: invoice currently open in the "Thu học phí" QR modal.
+	const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
 	// Issues #62/#135 — every number on this page derives from the kernel
 	// store; nothing is hardcoded. The command bus refetches after mark-paid,
@@ -196,7 +202,11 @@ export function TuitionRoute() {
 											<Tag>{invoiceType(i.type)}</Tag>
 										</span>,
 										<span key="a" className="font-mono">
-											{fmtVND(i.amount)}
+											{i.status !== "paid" &&
+											i.paidAmount > 0 &&
+											i.paidAmount < i.amount
+												? `${fmtVND(i.paidAmount)} / ${fmtVND(i.amount)}`
+												: fmtVND(i.amount)}
 										</span>,
 										<span key="d" className="font-mono text-meta text-xs">
 											{i.date}
@@ -208,6 +218,10 @@ export function TuitionRoute() {
 											<Badge key="b" variant="success" dot>
 												{INV_LABEL.paid}
 											</Badge>
+										) : i.paidAmount > 0 ? (
+											<Badge key="b" variant="warn" dot>
+												Thu một phần
+											</Badge>
 										) : i.status === "overdue" ? (
 											<Badge key="b" variant="danger" dot>
 												{INV_LABEL.overdue}
@@ -218,25 +232,33 @@ export function TuitionRoute() {
 											</Badge>
 										),
 										i.status !== "paid" ? (
-											<Button
-												key="act"
-												variant="ghost"
-												size="sm"
-												disabled={busy || isPending(i.id)}
-												onClick={() =>
-													void run(
-														i.id,
-														{
-															type: "mark-invoice-paid",
-															invoiceId: i.id,
-															method: i.method === "—" ? "CK" : i.method,
-														},
-														"Đã ghi nhận thanh toán.",
-													)
-												}
-											>
-												{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
-											</Button>
+											<div key="act" className="flex justify-end gap-1">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => setPayingInvoiceId(i.id)}
+												>
+													Thu học phí
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={busy || isPending(i.id)}
+													onClick={() =>
+														void run(
+															i.id,
+															{
+																type: "mark-invoice-paid",
+																invoiceId: i.id,
+																method: i.method === "—" ? "CK" : i.method,
+															},
+															"Đã ghi nhận thanh toán.",
+														)
+													}
+												>
+													{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
+												</Button>
+											</div>
 										) : (
 											<span key="m" className="font-mono text-meta text-xs">
 												{i.method}
@@ -249,6 +271,24 @@ export function TuitionRoute() {
 					</Card>
 				)}
 			</div>
+			<UnmatchedTransactions
+				openInvoices={data.invoices
+					.filter((i) => i.status !== "paid" || i.paidAmount < i.amount)
+					.map((i) => ({
+						id: i.id,
+						label:
+							invoiceCode(i.id) +
+							" · " +
+							(data.students.find((st) => st.id === i.sid)?.name ?? "") +
+							" · còn " +
+							fmtVND(i.amount - i.paidAmount),
+					}))}
+			/>
+			<InvoicePaymentModal
+				invoiceId={payingInvoiceId}
+				open={payingInvoiceId !== null}
+				onClose={() => setPayingInvoiceId(null)}
+			/>
 			<AddInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);

@@ -1558,6 +1558,22 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
+	// #320: rotate the public pay token (old links die — the modal confirms).
+	kernel.post("/invoices/:id/rotate-pay-token", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const [updated] = await db
+			.update(invoice)
+			.set({ payToken: generatePayToken() })
+			.where(
+				and(eq(invoice.id, c.req.param("id")), eq(invoice.orgId, ctx.orgId)),
+			)
+			.returning({ payToken: invoice.payToken });
+		if (!updated) return c.json({ error: "invoice not found" }, 404);
+		return c.json({ payToken: updated.payToken });
+	});
+
 	// #320: transfer instructions for one invoice (teacher view, org-scoped).
 	kernel.get("/invoices/:id/payment", async (c) => {
 		const ctx = c.get("kernelCtx");

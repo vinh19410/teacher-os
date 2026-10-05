@@ -118,6 +118,19 @@ describe("invoice payment instructions (#320)", () => {
 		});
 	});
 
+	function post(path: string, token?: string): Promise<Response> {
+		return Promise.resolve(
+			app.request(path, {
+				method: "POST",
+				headers: {
+					cookie: token ? `better-auth.session_token=${token}` : "",
+					origin: CORS_ORIGIN,
+					"content-type": "application/json",
+				},
+			}),
+		);
+	}
+
 	function get(path: string, token?: string): Promise<Response> {
 		return Promise.resolve(
 			app.request(path, {
@@ -178,6 +191,29 @@ describe("invoice payment instructions (#320)", () => {
 			`/api/student/invoices/${legacyInvoiceId}/payment`,
 		);
 		expect(detail.status).toBe(401);
+	});
+
+	test("rotate-pay-token issues a fresh token, org-scoped", async () => {
+		const before = await get(
+			`/api/invoices/${legacyInvoiceId}/payment`,
+			teacherToken,
+		);
+		const first = (await before.json()) as { payToken: string };
+		const res = await post(
+			`/api/invoices/${legacyInvoiceId}/rotate-pay-token`,
+			teacherToken,
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { payToken: string };
+		expect(body.payToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
+		expect(body.payToken).not.toBe(first.payToken);
+
+		// Another org cannot rotate someone else's invoice.
+		const foreign = await post(
+			`/api/invoices/${legacyInvoiceId}/rotate-pay-token`,
+			otherToken,
+		);
+		expect(foreign.status).toBe(404);
 	});
 
 	test("org id stays scoped when the linked row is missing", async () => {

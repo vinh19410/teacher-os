@@ -75,14 +75,14 @@ khớp" và nút "Đối soát".
 
 ## Todo
 
-- [ ] `PaymentQrPanel` (packages/ui) + test
-- [ ] `tuitionTotals` theo `paidAmount` + test
-- [ ] Repo `payments.ts` + polling có điều kiện
-- [ ] `InvoicePaymentModal` (copy link, copy tin nhắc nợ, tạo link mới)
-- [ ] `UnmatchedTransactions` + nút Đối soát
-- [ ] `POST /api/invoices/:id/rotate-pay-token` + test
-- [ ] Trang công khai `/pay/$token`
-- [ ] Portal: danh sách học phí + trang chi tiết QR
+- [x] `PaymentQrPanel` (packages/ui) + test
+- [x] `tuitionTotals` theo `paidAmount` + test
+- [x] Repo `payments.ts` + polling có điều kiện
+- [x] `InvoicePaymentModal` (copy link, copy tin nhắc nợ, tạo link mới)
+- [x] `UnmatchedTransactions` + nút Đối soát
+- [x] `POST /api/invoices/:id/rotate-pay-token` + test
+- [x] Trang công khai `/pay/$token`
+- [x] Portal: danh sách học phí + trang chi tiết QR
 - [ ] Verify 3 viewport + keyboard + screenshot
 
 ## Success Criteria

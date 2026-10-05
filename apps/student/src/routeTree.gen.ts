@@ -17,6 +17,7 @@ import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthClassesClassIdRouteImport } from './routes/_auth/classes/$classId'
+import { Route as AuthTuitionInvoiceIdRouteImport } from './routes/_auth/tuition/$invoiceId'
 import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdDetailRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId.detail'
@@ -60,6 +61,11 @@ const AuthClassesClassIdRoute = AuthClassesClassIdRouteImport.update({
   path: '/classes/$classId',
   getParentRoute: () => AuthRouteRoute,
 } as any)
+const AuthTuitionInvoiceIdRoute = AuthTuitionInvoiceIdRouteImport.update({
+  id: '/tuition/$invoiceId',
+  path: '/tuition/$invoiceId',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
 const AuthLearnQuizzesAssignmentIdRoute =
   AuthLearnQuizzesAssignmentIdRouteImport.update({
     id: '/learn/quizzes/$assignmentId',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
+  '/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthOnboardingRoute
   '/': typeof AuthIndexRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
+  '/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
+  '/_auth/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
   '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/_auth/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/_auth/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/onboarding'
     | '/classes/$classId'
+    | '/tuition/$invoiceId'
     | '/learn/quizzes/$assignmentId'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/'
     | '/classes/$classId'
+    | '/tuition/$invoiceId'
     | '/learn/quizzes/$assignmentId'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_auth/'
     | '/_auth/classes/$classId'
+    | '/_auth/tuition/$invoiceId'
     | '/_auth/learn/quizzes/$assignmentId'
     | '/_auth/learn/quizzes/attempt/$attemptId'
     | '/_auth/learn/quizzes/attempt/$attemptId/detail'
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthClassesClassIdRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/tuition/$invoiceId': {
+      id: '/_auth/tuition/$invoiceId'
+      path: '/tuition/$invoiceId'
+      fullPath: '/tuition/$invoiceId'
+      preLoaderRoute: typeof AuthTuitionInvoiceIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/learn/quizzes/$assignmentId': {
       id: '/_auth/learn/quizzes/$assignmentId'
       path: '/learn/quizzes/$assignmentId'
@@ -266,6 +285,7 @@ interface AuthRouteRouteChildren {
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
+  AuthTuitionInvoiceIdRoute: typeof AuthTuitionInvoiceIdRoute
   AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
   AuthLearnQuizzesAttemptAttemptIdRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
 }
@@ -274,6 +294,7 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthClassesClassIdRoute: AuthClassesClassIdRoute,
+  AuthTuitionInvoiceIdRoute: AuthTuitionInvoiceIdRoute,
   AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
   AuthLearnQuizzesAttemptAttemptIdRoute:
     AuthLearnQuizzesAttemptAttemptIdRouteWithChildren,

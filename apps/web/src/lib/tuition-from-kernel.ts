@@ -15,11 +15,16 @@ export function tuitionTotals(invoices: Invoice[]): TuitionTotals {
 	let outstanding = 0;
 	for (const invoice of invoices) {
 		if (invoice.status === "paid") {
+			// A paid invoice counts in full: mark-paid manual rows keep
+			// paidAmount 0 (teacher collected by another channel), so the
+			// status — not the ledger — drives the KPI for paid invoices.
 			collected += invoice.amount;
 		} else {
-			// unpaid and overdue are both money not yet received; anything else
-			// (coerced legacy statuses) errs on the outstanding side.
-			outstanding += invoice.amount;
+			// unpaid and overdue split by the ledger's partial progress (#320);
+			// anything else (coerced legacy statuses) errs on outstanding.
+			const received = Math.min(invoice.paidAmount, invoice.amount);
+			collected += received;
+			outstanding += invoice.amount - received;
 		}
 	}
 	return { collected, outstanding };

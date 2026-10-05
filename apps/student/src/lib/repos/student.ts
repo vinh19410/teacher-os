@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type PaymentInstructions,
 	type StudentClassDetail,
 	type StudentInvitationItem,
+	type StudentInvoiceItem,
 	type StudentMe,
 	type StudentOnboardingPayload,
 	type StudentOrgItem,
@@ -387,4 +389,36 @@ export function useAcceptClassEnrollment() {
 			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
 		},
 	});
+}
+
+// --- Học phí (#320) -------------------------------------------------------
+
+/** Unsettled tuition invoices of THIS student in the CURRENT org. */
+export async function fetchStudentInvoices(): Promise<StudentInvoiceItem[]> {
+	const res = await fetch(`${getApiBaseUrl()}/api/student/invoices`, {
+		method: "GET",
+		headers: getStudentHeaders(),
+		credentials: "include",
+	});
+	if (!res.ok) {
+		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+	}
+	return (await res.json()) as StudentInvoiceItem[];
+}
+
+export async function fetchStudentInvoicePayment(
+	invoiceId: string,
+): Promise<PaymentInstructions> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/invoices/${invoiceId}/payment`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+	}
+	return (await res.json()) as PaymentInstructions;
 }
