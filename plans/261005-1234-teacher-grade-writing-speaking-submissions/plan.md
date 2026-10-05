@@ -7,12 +7,14 @@ effort: "16h"
 issue: 319
 branch: develop
 tags: [feature, frontend, backend, database, quiz, grading]
-blockedBy: []
+blockedBy: [261005-1523-remove-settings-route]
 blocks: []
 created: 2026-10-05
 ---
 
 # Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp
+
+> **⚠️ CHỜ REBASE — plan #321 (`chore/remove-settings-route`) gỡ `apps/web/src/lib/repos/settings.ts` và dịch các dòng trong `apps/server/src/routes/kernel.ts` (~135 dòng).** Phase 03 của plan này đã được cập nhật sẵn trong nhánh #321 (`getApiBaseUrl` từ `./api-base-url`, cite kernel.ts đổi sang symbol anchor). Rebase lên `develop` sau khi #321 merge rồi mới thực thi. <!-- Updated: settings route removed 2026-10-05 -->
 
 ## Overview
 

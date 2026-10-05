@@ -7,12 +7,14 @@ effort: 6d
 issue: 320
 branch: feat/sepay-bank-hub-tuition-qr
 tags: [feature, backend, frontend, database, api, payments, sepay]
-blockedBy: []
+blockedBy: [261005-1523-remove-settings-route]
 blocks: []
 created: 2026-10-05
 ---
 
-# Tích hợp SePay Bank Hub — học phí qua VietQR
+> **⚠️ BLOCKED — chờ plan #321 (`chore/remove-settings-route`) merge trước.** Trang `/settings` và tab `payments` bị gỡ; các mục UI liên kết ngân hàng của plan này được rewrite sang trang riêng `/payments` (đối chiếu `/tuition`) trong chính plan #321 phase 3. Đừng thực thi plan này trước khi rebase lên `develop` sau merge #321. <!-- Updated: settings route removed 2026-10-05 -->
+
+---
 
 ## Overview
 
