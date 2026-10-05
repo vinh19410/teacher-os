@@ -5,11 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
-import {
-	type BankLinkRequestError,
-	bankLinkQueryKey,
-	bankLinkQueryOptions,
-} from "@/lib/repos/bank-link";
+import { bankLinkQueryKey, bankLinkQueryOptions } from "@/lib/repos/bank-link";
 import { getApiBaseUrl } from "@/lib/repos/settings";
 
 export type BankLinkPurpose = "link" | "unlink" | "reactivate";

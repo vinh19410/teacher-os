@@ -69,7 +69,8 @@ export function createFakeBankHub(options: { origin: string }): FakeBankHub {
 		createLinkToken: async (input) => {
 			tokenSeq += 1;
 			const xid = `lt-e2e-${tokenSeq}`;
-			const accountXid = input.bankAccountXid ?? `ba-e2e-${(accountSeq += 1)}`;
+			accountSeq += 1;
+			const accountXid = input.bankAccountXid ?? `ba-e2e-${accountSeq}`;
 			linkTokens.set(xid, { purpose: input.purpose, accountXid });
 			return {
 				xid,

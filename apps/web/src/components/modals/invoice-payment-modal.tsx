@@ -11,7 +11,6 @@ import {
 	ignoreTransaction,
 	invoicePaymentQueryKey,
 	invoicePaymentQueryOptions,
-	POLL_CAP_MS,
 	POLL_INTERVAL_MS,
 	reconcileBankLink,
 	rotatePayToken,

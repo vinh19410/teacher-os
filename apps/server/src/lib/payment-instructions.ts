@@ -86,7 +86,7 @@ export async function loadPaymentInstructions(input: {
 		.from(orgBankLink)
 		.where(eq(orgBankLink.orgId, inv.orgId))
 		.limit(1);
-	if (!link || link.status !== "linked" || !link.accountNumber) {
+	if (link?.status !== "linked" || !link.accountNumber) {
 		return { ...base, payable: false, reason: "NO_BANK_LINK" };
 	}
 	const bin = link.bankBin || link.bankCode;

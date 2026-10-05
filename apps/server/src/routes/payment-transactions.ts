@@ -90,7 +90,7 @@ export function paymentTransactionRoutes(deps: { getDb(): Db }) {
 				),
 			)
 			.limit(1);
-		if (!tx || tx.matchStatus !== "unmatched") {
+		if (tx?.matchStatus !== "unmatched") {
 			return c.json({ error: "transaction not found" }, 404);
 		}
 
