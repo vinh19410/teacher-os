@@ -140,8 +140,8 @@ export function AddClassModal({
 	// khỏi tự cảnh báo chính lớp vừa tạo trong optimistic store.
 	const { classes } = useClasses();
 	// Parse như path submit (issue #105): draft sai schema không đóng góp run
-	// window — và không bao giờ đưa vào skeletonOf một total không chặn
-	// (1e6 buổi ≈ 1s block main thread trên mỗi keystroke).
+	// window và không đưa vào skeletonOf một total không chặn (trục draft;
+	// trục stored class đã clamp trong helper theo precedent class-sessions).
 	const parsedDraftTotal = Number.parseInt(total, 10);
 	const draftTotal =
 		Number.isInteger(parsedDraftTotal) &&

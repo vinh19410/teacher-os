@@ -94,7 +94,13 @@ export function findScheduleConflicts(
 		// warn dù user đang sửa tổng số buổi).
 		const classStart = parseStartDateStrict(cls.startDate);
 		if (draftStart !== null && classStart !== null) {
-			const classEnd = lastSessionDate(schedule, classStart, cls.sessionsTotal);
+			// Stored rows pre-date the 1..52 schema cap — mirror class-sessions'
+			// guard: a legacy total must not walk the O(total) skeleton into a
+			// render hang. Out-of-range ⇒ unknown end ⇒ treated as still running.
+			const classEnd =
+				cls.sessionsTotal >= 1 && cls.sessionsTotal <= 52
+					? lastSessionDate(schedule, classStart, cls.sessionsTotal)
+					: null;
 			if (classEnd !== null && draftStart > classEnd) continue;
 			if (draftEnd !== null && classStart > draftEnd) continue;
 		}

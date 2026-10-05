@@ -176,6 +176,15 @@ describe("findScheduleConflicts — rule boundaries", () => {
 		).toHaveLength(1);
 	});
 
+	test("stored legacy sessionsTotal ngoài cap (1e6) không walk skeleton — unknown end vẫn conflict nếu đang chạy", () => {
+		// Legacy row pre-cap (schema cũ min(0) không max): total lớn phải được
+		// coi như unknown end (∞) thay vì freeze O(total) trên render path.
+		const hit = findScheduleConflicts(draft, [
+			cls({ startDate: "2026-09-01", sessionsTotal: 1_000_000 }),
+		]);
+		expect(hit).toHaveLength(1);
+	});
+
 	test("sharedDays are deduped, ascending, and sharedDays-only (draft [2,0] vs class [0,2,4])", () => {
 		const hit = findScheduleConflicts({ ...draft, days: [2, 0, 2] }, [
 			// [0,2,4] × 12 buổi từ 2026-09-15 → buổi cuối 2026-10-12, còn
