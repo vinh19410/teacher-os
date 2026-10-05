@@ -8,6 +8,7 @@ const mockNavigate = vi.fn();
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 	useNavigate: () => mockNavigate,
+	useSearch: () => ({}),
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
@@ -215,7 +216,7 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain("Tạo bài tập đầu tiên");
 	});
 
-	it("renders filter UI: search input, skill chips and part chips", () => {
+	it("renders filter UI: search, skill chips, part chips grouped by skill with counts", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
@@ -223,10 +224,35 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
 		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
-		expect(html).toContain("Writing");
+		expect(html).toContain("Kỹ năng");
 		expect(html).toContain("Listening");
 		expect(html).toContain("Speaking");
 		expect(html).toContain("Tất cả phần");
+		// Skill="Tất cả" → 4 nhóm part dán nhãn kỹ năng thay vì tường 12 chip trộn.
+		expect(html).toContain('aria-label="Phần thi Writing"');
+		expect(html).toContain('aria-label="Phần thi Reading"');
+		expect(html).toContain('aria-label="Phần thi Listening"');
+		expect(html).toContain('aria-label="Phần thi Speaking"');
+		expect(html).toContain('aria-label="Kỹ năng"');
+		// Fixture: 3 Writing + 1 Reading → badge đếm trên chip, 0 cho skill rỗng.
+		expect(html).toContain(">3</span>");
+		expect(html).toContain(">1</span>");
+		expect(html).toContain(">0</span>");
+		// Badge đếm ẩn với AT để accessible name chip giữ nguyên cho e2e.
+		expect(html).toContain('aria-hidden="true"');
+	});
+
+	it("renders the mobile filter toggle with aria wiring", () => {
+		mockStoreData = {
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+
+		expect(html).toContain("Bộ lọc");
+		expect(html).toContain('aria-controls="assignment-filters-body"');
+		expect(html).toContain('aria-expanded="true"');
+		expect(html).toContain('id="assignment-filters-body"');
 	});
 
 	it("pins the create CTA to the dedicated prompt page (#202)", () => {
