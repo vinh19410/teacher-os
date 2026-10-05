@@ -1938,3 +1938,36 @@ export interface StudentOrgItem {
 	name: string;
 	isCurrent: boolean;
 }
+
+// --- Bank Hub account linking (issue #320) ---
+
+export const BANK_LINK_ERROR_CODES = {
+	BANKHUB_DISABLED: "BANKHUB_DISABLED",
+	ALREADY_LINKED: "BANK_LINK_ALREADY_LINKED",
+	NO_LINKED_ACCOUNT: "BANK_LINK_NO_LINKED_ACCOUNT",
+	BAD_HOSTED_LINK_ORIGIN: "BANK_LINK_BAD_HOSTED_LINK_ORIGIN",
+	COMPANY_SETTLING: "BANK_LINK_COMPANY_SETTLING",
+} as const;
+export type BankLinkErrorCode =
+	(typeof BANK_LINK_ERROR_CODES)[keyof typeof BANK_LINK_ERROR_CODES];
+
+export const bankLinkStatusSchema = z.object({
+	enabled: z.boolean(),
+	status: z.enum(["none", "linked", "inactive", "unlinked"]),
+	brandName: z.string(),
+	accountNumberMasked: z.string(),
+	holderName: z.string(),
+	linkedAt: z.string().nullable(),
+});
+export type BankLinkStatus = z.infer<typeof bankLinkStatusSchema>;
+
+export const bankLinkTokenRequestSchema = z
+	.object({ purpose: z.enum(["link", "unlink", "reactivate"]) })
+	.strict();
+export type BankLinkTokenRequest = z.infer<typeof bankLinkTokenRequestSchema>;
+
+export const bankLinkTokenResponseSchema = z.object({
+	hostedLinkUrl: z.string().min(1),
+	expiresAt: z.string(),
+});
+export type BankLinkTokenResponse = z.infer<typeof bankLinkTokenResponseSchema>;

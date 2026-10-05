@@ -10,6 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
+import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
@@ -196,6 +197,9 @@ export function buildApp(deps: AppDeps) {
 	app.use("/api/*", bootstrapMiddleware(deps));
 	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
 	app.get("/", (c) => c.text("OK"));
+	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
+	// middleware and Better Auth never run — auth is the X-Secret-Key header.
+	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

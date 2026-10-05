@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Giáo viên liên kết ngân hàng"
-status: todo
+status: completed
 priority: P1
 effort: "1.5d"
 dependencies: [1]
@@ -107,13 +107,13 @@ cùng file sau này chứa IPN (phase 4):
 
 ## Todo
 
-- [ ] Contracts DTO + schema
-- [ ] `bank-link-service.ts` (ensureCompany, sync, applyAccountEvent, mask)
-- [ ] Routes `/api/bank-link/*` mount trong kernel tree
-- [ ] Webhook `/webhooks/sepay/bankhub/events` + `safeEqual`
-- [ ] Server tests (tenant isolation, secret, stale event, 503)
-- [ ] Web tab "Nhận học phí" + modal iframe + repo + tests
-- [ ] CSP `frame-src` + test
+- [x] Contracts DTO + schema
+- [x] `bank-link-service.ts` (ensureCompany, sync, applyAccountEvent, mask)
+- [x] Routes `/api/bank-link/*` mount trong kernel tree
+- [x] Webhook `/webhooks/sepay/bankhub/events` + `safeEqual`
+- [x] Server tests (tenant isolation, secret, stale event, 503)
+- [x] Web tab "Nhận học phí" + modal iframe + repo + tests
+- [x] CSP `frame-src` + test
 - [ ] Verify 3 viewport + keyboard
 
 ## Success Criteria

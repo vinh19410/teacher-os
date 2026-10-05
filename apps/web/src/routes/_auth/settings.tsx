@@ -11,6 +11,7 @@ import type {
 } from "@teacher-os/api/contracts";
 import { workspaceSettingsSchema } from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
+import { BankLinkPanel } from "@/components/settings/bank-link-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +28,13 @@ import {
 	workspaceSettingsQueryOptions,
 } from "@/lib/repos/settings";
 
-const SETTINGS_TAB_IDS = ["account", "templates", "rules", "data"] as const;
+const SETTINGS_TAB_IDS = [
+	"account",
+	"payments",
+	"templates",
+	"rules",
+	"data",
+] as const;
 export type SettingsTab = (typeof SETTINGS_TAB_IDS)[number];
 
 /**
@@ -112,6 +119,7 @@ export function SettingsPage({
 			<Tabs
 				tabs={[
 					{ id: "account", label: "Tài khoản" },
+					{ id: "payments", label: "Nhận học phí" },
 					{ id: "templates", label: "Mẫu tin Zalo" },
 					{ id: "rules", label: "Quy tắc" },
 					{ id: "data", label: "Dữ liệu" },
@@ -216,6 +224,7 @@ export function SettingsPage({
 				</div>
 			)}
 
+			{tab === "payments" && <BankLinkPanel />}
 			{tab === "templates" && (
 				<TemplatesTab
 					form={form}

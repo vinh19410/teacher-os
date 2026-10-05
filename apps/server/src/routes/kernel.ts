@@ -57,6 +57,7 @@ import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { assignmentRoutes } from "./assignments";
+import { bankLinkRoutes } from "./bank-link";
 import { activateEnrollment } from "./enrollment-activation";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
@@ -2121,6 +2122,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
 	kernel.route("/comment-bank", commentBankRoutes(deps));
+	kernel.route("/bank-link", bankLinkRoutes(deps));
 
 	return kernel;
 }
