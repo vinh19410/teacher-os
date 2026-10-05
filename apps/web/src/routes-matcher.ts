@@ -32,6 +32,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	// prefix riêng (exact /tests/new + /tests/preview đã có ở trên).
 	"/assignments/tests/",
 	"/classes/",
+	// Trang chấm bài Writing/Speaking (#319) — /grading/$attemptId.
+	"/grading/",
 	"/students/",
 	"/syllabus/",
 ];

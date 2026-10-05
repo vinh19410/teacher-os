@@ -41,3 +41,5 @@ Commit #318 (tab Bài tập trang học viên) xuất hiện giữa phiên. Nó 
 - Backup D1 và chạy migration 0033 trước khi deploy worker.
 
 > Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
+
+> Update 2026-10-05 (cook): Task 5.5 bước 2 sha-gate fail 1/3 — `assignments/index.tsx` bị biome `--write` reformat do drift format sẵn trên develop (run #318); kongming GO: giữ trạng thái biome, exclude khỏi commit, không revert. Chi tiết trong phase-05.

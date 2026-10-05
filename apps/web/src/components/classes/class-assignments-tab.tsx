@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { formatBand, isGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
@@ -25,7 +26,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import type { ClassGroup, Student } from "@/lib/mock-data";
+import type { ClassAssignment, ClassGroup, Student } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export interface ClassAssignmentsTabProps {
@@ -41,6 +42,50 @@ const PICKER_SKILL_OPTIONS = [
 	"Listening",
 	"Speaking",
 ];
+
+// Nút "Chấm bài" trông như Button primary size sm — `Button` không export
+// class variant nên chép tĩnh (Link, không phải button thật).
+const GRADE_LINK_BUTTON_CLASS =
+	"inline-flex items-center whitespace-nowrap rounded-full bg-accent-blue px-[14px] py-[6px] font-medium text-accent-on text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+
+/** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
+ * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
+ * attempt (chưa nộp) không render gì. */
+function TargetGradeActions({
+	target,
+	studentName,
+}: {
+	target: ClassAssignment["targets"][number];
+	studentName: string;
+}) {
+	if (!target.attemptId) return null;
+	if (target.band != null && target.gradedAt) {
+		return (
+			<>
+				<StatusTag tone="ok">
+					{`Đã chấm · Band ${formatBand(target.band)}`}
+				</StatusTag>
+				<Link
+					to="/grading/$attemptId"
+					params={{ attemptId: target.attemptId }}
+					className="font-medium text-accent-blue text-xs hover:text-accent-active"
+				>
+					Xem / sửa điểm
+				</Link>
+			</>
+		);
+	}
+	return (
+		<Link
+			to="/grading/$attemptId"
+			params={{ attemptId: target.attemptId }}
+			aria-label={`Chấm bài của ${studentName}`}
+			className={GRADE_LINK_BUTTON_CLASS}
+		>
+			Chấm bài
+		</Link>
+	);
+}
 
 export function ClassAssignmentsTab({
 	classGroup,
@@ -693,6 +738,10 @@ export function ClassAssignmentsTab({
 						const doneCount = ca.targets.filter(
 							(t) => t.submittedAt !== null,
 						).length;
+						const skill =
+							data.assignmentPrompts?.find((p) => p.id === ca.promptId)
+								?.skill ?? "";
+						const gradable = isGradableSkill(skill);
 
 						return (
 							<article
@@ -741,6 +790,12 @@ export function ClassAssignmentsTab({
 															: "Chưa có bài nộp"}
 													</span>
 													<StatusTag tone={sub.tone}>{sub.label}</StatusTag>
+													{gradable && (
+														<TargetGradeActions
+															target={target}
+															studentName={s?.name ?? target.studentId}
+														/>
+													)}
 												</div>
 											</div>
 										);

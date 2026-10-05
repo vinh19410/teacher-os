@@ -610,6 +610,14 @@ nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bả
   (`text DEFAULT '' NOT NULL`) cho bài viết Writing (#304).
 - **0032** (`0032_mature_saracen.sql`): thêm 5 cột nullable `media_*` vào
   `quiz_attempt` cho bài nói Speaking (#305).
+- **0033** (`0033_adorable_felicia_hardy.sql`): thêm
+  `quiz_attempt.grade_scores` (text JSON nullable), `grade_feedback`
+  (`text DEFAULT '' NOT NULL`), `graded_at` (integer nullable) cho giáo viên
+  chấm bài Writing/Speaking (#319). **DEPLOY ORDER**: migration phải chạy
+  TRƯỚC worker; worker mới select cột `grade_*` ở `loadSnapshot` (mọi trang
+  giáo viên) và ở select full `quiz_attempt` (màn làm bài/kết quả học viên)
+  — thiếu cột thì các trang đó trả 500, trong khi `/readyz` vẫn xanh vì probe
+  không kiểm cột.
 
 Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 "Rollback code"):
@@ -654,7 +662,9 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
 
 - `/readyz` chỉ kiểm bảng và index, **không kiểm cột**. Chạy thêm
   `SELECT media_key FROM quiz_attempt LIMIT 0` trên D1 của stage vừa deploy;
-  lỗi "no such column" là NO-GO (mọi màn làm bài/kết quả sẽ 500).
+  lỗi "no such column" là NO-GO (mọi màn làm bài/kết quả sẽ 500). Tương tự
+  cho release chấm bài (#319): chạy
+  `SELECT grade_scores, grade_feedback, graded_at FROM quiz_attempt LIMIT 0`.
 - Bucket private: `wrangler r2 bucket list` thấy mỗi stage có bucket riêng
   (staging không dùng chung bucket prod), và
   `wrangler r2 bucket dev-url get <tên bucket>` báo dev URL **tắt**. Không bật

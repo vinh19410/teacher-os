@@ -1,7 +1,7 @@
 ---
 title: "Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp"
 description: "Giáo viên mở bài Writing (essay) hoặc Speaking (file audio/video) học viên đã nộp từ tab Bài tập của lớp, chấm 4 tiêu chí IELTS + nhận xét; học viên thấy band và nhận xét ngay trên màn kết quả."
-status: pending
+status: completed
 priority: P1
 effort: "16h"
 issue: 319
@@ -79,24 +79,24 @@ Plan này làm trọn vòng chấm bài:
 
 | # | Phase | Status | Effort |
 |---|-------|--------|--------|
-| 1 | [Contract + DB + hàm band dùng chung](./phase-01-contract-db-band.md) | Pending | 2.5h |
-| 2 | [Server: API chấm bài + snapshot + summary học viên](./phase-02-server-grading-api.md) | Pending | 4.5h |
-| 3 | [Web giáo viên: trang chấm + nút ở tab Bài tập](./phase-03-web-grading-ui.md) | Pending | 5h |
-| 4 | [Student: hiện band + nhận xét ở màn kết quả](./phase-04-student-grade-display.md) | Pending | 1.5h |
-| 5 | [E2E + docs + gate cuối](./phase-05-e2e-docs-gates.md) | Pending | 2.5h |
+| 1 | [Contract + DB + hàm band dùng chung](./phase-01-contract-db-band.md) | Done | 2.5h |
+| 2 | [Server: API chấm bài + snapshot + summary học viên](./phase-02-server-grading-api.md) | Done | 4.5h |
+| 3 | [Web giáo viên: trang chấm + nút ở tab Bài tập](./phase-03-web-grading-ui.md) | Done | 5h |
+| 4 | [Student: hiện band + nhận xét ở màn kết quả](./phase-04-student-grade-display.md) | Done | 1.5h |
+| 5 | [E2E + docs + gate cuối](./phase-05-e2e-docs-gates.md) | Done | 2.5h |
 
 Chạy tuần tự 1 → 2 → 3 → 4 → 5. Phase 3 và 4 chỉ phụ thuộc Phase 1–2 nên có thể đảo thứ tự, nhưng không chạy song song (cùng sửa `CHANGELOG.md` ở Phase 5).
 
 ## Success Criteria
 
-- [ ] Ở tab Bài tập của lớp, học viên đã nộp đề Writing/Speaking chưa chấm có nút "Chấm bài". Đề Reading/Listening và học viên chưa nộp không có nút.
-- [ ] Trang `/grading/$attemptId` với Writing hiện đề (kể cả ảnh Task 1), essay giữ xuống dòng, số từ và mục tiêu tối thiểu theo part. Với Speaking, trang hiện cue card/câu hỏi, tên file, dung lượng và nút "Nghe bài nói"/"Xem bài nói"; bấm vào thì phát đúng file.
-- [ ] Form chấm có 4 select tiêu chí đúng theo skill. Band tổng cập nhật ngay khi đổi. Nút "Lưu điểm" disable tới khi đủ 4 tiêu chí. Lưu xong hiện "Đã lưu", tag ở tab Bài tập đổi thành "Đã chấm · Band X".
-- [ ] Mở lại trang chấm của bài đã chấm thì form điền sẵn điểm và nhận xét cũ. Sửa rồi lưu thì ghi đè.
-- [ ] Màn kết quả học viên của bài đã chấm hiện band tổng, 4 tiêu chí (nhãn tiếng Anh IELTS) và nhận xét, thay cho dòng "Giáo viên sẽ chấm…". Bài chưa chấm giữ nguyên dòng cũ.
-- [ ] API: giáo viên org khác nhận 404 (IDOR). Attempt `in_progress` trả 409. Đề reading trả 400. Thiếu tiêu chí, thừa key, điểm lẻ 0.25 hoặc > 9 trả 400. Nhận xét > 5000 ký tự trả 400. Origin lạ trả 403. Session học viên trả 403 (role gate có sẵn). Không có session trả 401.
-- [ ] Reading/Listening, luồng nộp Writing/Speaking của học viên và luồng legacy `/assignments/$assignmentId` không hồi quy.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test` và e2e `teacher-grade-submission`, `student-quiz-take-review`, `student-class-detail`, `class-assign` (ports 8100/8101/8103) đều xanh.
+- [x] Ở tab Bài tập của lớp, học viên đã nộp đề Writing/Speaking chưa chấm có nút "Chấm bài". Đề Reading/Listening và học viên chưa nộp không có nút.
+- [x] Trang `/grading/$attemptId` với Writing hiện đề (kể cả ảnh Task 1), essay giữ xuống dòng, số từ và mục tiêu tối thiểu theo part. Với Speaking, trang hiện cue card/câu hỏi, tên file, dung lượng và nút "Nghe bài nói"/"Xem bài nói"; bấm vào thì phát đúng file.
+- [x] Form chấm có 4 select tiêu chí đúng theo skill. Band tổng cập nhật ngay khi đổi. Nút "Lưu điểm" disable tới khi đủ 4 tiêu chí. Lưu xong hiện "Đã lưu", tag ở tab Bài tập đổi thành "Đã chấm · Band X".
+- [x] Mở lại trang chấm của bài đã chấm thì form điền sẵn điểm và nhận xét cũ. Sửa rồi lưu thì ghi đè.
+- [x] Màn kết quả học viên của bài đã chấm hiện band tổng, 4 tiêu chí (nhãn tiếng Anh IELTS) và nhận xét, thay cho dòng "Giáo viên sẽ chấm…". Bài chưa chấm giữ nguyên dòng cũ.
+- [x] API: giáo viên org khác nhận 404 (IDOR). Attempt `in_progress` trả 409. Đề reading trả 400. Thiếu tiêu chí, thừa key, điểm lẻ 0.25 hoặc > 9 trả 400. Nhận xét > 5000 ký tự trả 400. Origin lạ trả 403. Session học viên trả 403 (role gate có sẵn). Không có session trả 401.
+- [x] Reading/Listening, luồng nộp Writing/Speaking của học viên và luồng legacy `/assignments/$assignmentId` không hồi quy.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test` và e2e `teacher-grade-submission`, `student-quiz-take-review`, `student-class-detail`, `class-assign` (ports 8100/8101/8103) đều xanh.
 
 ## Risks
 

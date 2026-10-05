@@ -53,8 +53,10 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import type { MediaStore } from "../lib/media-store";
 import { assignmentRoutes } from "./assignments";
 import { activateEnrollment } from "./enrollment-activation";
+import { gradingRoutes } from "./grading";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 
@@ -67,6 +69,7 @@ type KernelContext = Context<Env>;
 
 export function kernelRoutes(deps: {
 	getDb(): Db;
+	getMediaStore?(): MediaStore | undefined;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
 }) {
@@ -1985,6 +1988,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
 	kernel.route("/comment-bank", commentBankRoutes(deps));
+	kernel.route("/grading", gradingRoutes(deps));
 
 	return kernel;
 }

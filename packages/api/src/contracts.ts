@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isBandStep } from "./lib/ielts-band";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 /**
@@ -1347,7 +1348,16 @@ export interface KernelClassAssignmentRow {
 	due: string;
 	note: string;
 	createdAt: string;
-	targets: Array<{ studentId: string; submittedAt: string | null }>;
+	targets: Array<{
+		studentId: string;
+		submittedAt: string | null;
+		/** Attempt đã nộp (status submitted) — null khi chưa nộp/chưa có attempt. */
+		attemptId: string | null;
+		/** ISO datetime lần chấm gần nhất — null khi chưa chấm. */
+		gradedAt: string | null;
+		/** Band tổng (ieltsOverallBand) — null khi chưa chấm. */
+		band: number | null;
+	}>;
 }
 
 /** Một slot của full test — position là thứ tự slot trong preset. */
@@ -1693,6 +1703,78 @@ export const quizAttemptMediaSchema = z
 	.strict();
 export type QuizAttemptMedia = z.infer<typeof quizAttemptMediaSchema>;
 
+/** Nhận xét giáo viên cho bài Writing/Speaking — plain text. */
+export const QUIZ_FEEDBACK_MAX = 5000;
+/** Điểm một tiêu chí IELTS: 0–9, bước 0.5. */
+export const bandScoreSchema = z
+	.number()
+	.refine(isBandStep, "band step 0.5 in 0..9");
+export const writingGradeScoresSchema = z
+	.object({
+		task: bandScoreSchema,
+		coherence: bandScoreSchema,
+		lexical: bandScoreSchema,
+		grammar: bandScoreSchema,
+	})
+	.strict();
+export const speakingGradeScoresSchema = z
+	.object({
+		fluency: bandScoreSchema,
+		lexical: bandScoreSchema,
+		grammar: bandScoreSchema,
+		pronunciation: bandScoreSchema,
+	})
+	.strict();
+/** POST /api/grading/:attemptId/grade — scores validate theo skill ở server. */
+export const quizGradeInputSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+	})
+	.strict();
+export type QuizGradeInput = z.infer<typeof quizGradeInputSchema>;
+/** Điểm đã chấm — band luôn derive từ scores (ieltsOverallBand). */
+export const quizAttemptGradeSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		band: z.number(),
+		feedback: z.string(),
+		/** ISO datetime lần lưu gần nhất. */
+		gradedAt: z.string(),
+	})
+	.strict();
+export type QuizAttemptGrade = z.infer<typeof quizAttemptGradeSchema>;
+
+/** GET /api/grading/:attemptId — bài nộp Writing/Speaking cho giáo viên chấm. */
+export const teacherSubmissionSchema = z
+	.object({
+		attemptId: z.string(),
+		classAssignmentId: z.string(),
+		classId: z.string(),
+		className: z.string(),
+		title: z.string(),
+		due: z.string(),
+		student: z.object({ id: z.string(), name: z.string() }).strict(),
+		skill: z.enum(["writing", "speaking"]),
+		part: z.string(),
+		prompt: z
+			.object({
+				prompt: z.string(),
+				imageUrl: z.string(),
+				cueTopic: z.string(),
+				cuePoints: z.string(),
+				note: z.string(),
+			})
+			.strict(),
+		startedAt: z.string(),
+		submittedAt: z.string(),
+		essay: z.string().nullable(),
+		media: quizAttemptMediaSchema.nullable(),
+		grade: quizAttemptGradeSchema.nullable(),
+	})
+	.strict();
+export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
+
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
 export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {
@@ -1830,6 +1912,12 @@ export const quizAttemptSummarySchema = z
 		/** File bài nói đã nộp — null khi đề không phải Speaking hoặc bài
 		 * Speaking cũ nộp trước #305. */
 		media: quizAttemptMediaSchema.nullable().optional(),
+		/** Điểm giáo viên chấm (Writing/Speaking). Server CHỈ gửi key khi đã
+		 * chấm — bundle cũ (strict) chỉ lỗi parse ở attempt đã chấm. */
+		grade: quizAttemptGradeSchema.nullable().optional(),
+		/** Part của đề (task1/task2/part1…) — server CHỈ gửi kèm `grade`, để
+		 * nhãn tiêu chí Writing đúng TA/TR; cùng lý do strict ở trên. */
+		part: z.string().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

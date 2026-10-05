@@ -5703,8 +5703,20 @@ describe("class assignment give flow (#208)", () => {
 		expect(assigned?.targets).toHaveLength(2);
 		expect(assigned?.targets).toEqual(
 			expect.arrayContaining([
-				{ studentId: studentIdA1, submittedAt: null },
-				{ studentId: studentIdA2, submittedAt: null },
+				{
+					studentId: studentIdA1,
+					submittedAt: null,
+					attemptId: null,
+					gradedAt: null,
+					band: null,
+				},
+				{
+					studentId: studentIdA2,
+					submittedAt: null,
+					attemptId: null,
+					gradedAt: null,
+					band: null,
+				},
 			]),
 		);
 	});
