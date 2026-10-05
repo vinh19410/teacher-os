@@ -7,6 +7,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
 import { kernelRoutes } from "./routes/kernel";
@@ -46,6 +47,11 @@ export interface AppDeps {
 	 * undefined) thì các route media trả 503.
 	 */
 	getMediaStore?(): MediaStore | undefined;
+	/**
+	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
+	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
+	 */
+	getBankHub?(): BankHubContext | undefined;
 	/**
 	 * Chạy việc dọn dẹp sau response (xoá object R2 bù trừ) — production
 	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
