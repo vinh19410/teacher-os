@@ -40,10 +40,10 @@ function migration(nameStart: string): string {
 	return file;
 }
 
-describe("bank hub migration 0033", () => {
+describe("bank hub migration 0034", () => {
 	test("adds nullable payment columns to existing invoices with safe defaults", async () => {
 		const client = createClient({ url: "file::memory:" });
-		await applyThrough(client, "0032_mature_saracen.sql");
+		await applyThrough(client, "0033_adorable_felicia_hardy.sql");
 
 		await client.execute(
 			"INSERT INTO organization (id, name) VALUES ('org-1', 'Academy')",
@@ -55,7 +55,7 @@ describe("bank hub migration 0033", () => {
 			"INSERT INTO invoice (id, org_id, student_id, amount, status, created_at) VALUES ('inv-1', 'org-1', 'stu-1', 500000, 'unpaid', 1000)",
 		);
 
-		await applyFile(client, migration("0033_"));
+		await applyFile(client, migration("0034_"));
 
 		const invoice = await client.execute(
 			"SELECT payment_code, pay_token, paid_amount FROM invoice WHERE id = 'inv-1'",
@@ -79,8 +79,8 @@ describe("bank hub migration 0033", () => {
 
 	test("creates org_bank_link and payment_transaction with documented constraints", async () => {
 		const client = createClient({ url: "file::memory:" });
-		await applyThrough(client, "0032_mature_saracen.sql");
-		await applyFile(client, migration("0033_"));
+		await applyThrough(client, "0033_adorable_felicia_hardy.sql");
+		await applyFile(client, migration("0034_"));
 
 		await client.execute(
 			"INSERT INTO organization (id, name) VALUES ('org-1', 'Academy')",

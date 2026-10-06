@@ -1,11 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PaymentTransactionItem } from "@teacher-os/api/contracts";
-import { fillMessageTemplate } from "@teacher-os/api/lib/message-template";
 import { PaymentQrPanel } from "@teacher-os/ui/components/payments/payment-qr-panel";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { fmtVND } from "@/lib/mock-data";
+import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 import {
 	fetchUnmatchedTransactions,
 	ignoreTransaction,
@@ -17,10 +16,6 @@ import {
 	shouldPollPayment,
 	unmatchedTransactionsQueryKey,
 } from "@/lib/repos/payments";
-import {
-	getApiBaseUrl,
-	workspaceSettingsQueryOptions,
-} from "@/lib/repos/settings";
 
 function useCopiedLabel() {
 	const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
@@ -33,10 +28,11 @@ function useCopiedLabel() {
 }
 
 /**
- * "Thu học phí" modal (#320): shared QR panel + copy pay link + copy the
- * org's Zalo debt template + rotate pay token (with confirm — parents may
- * still hold the old link). Polls every 5 s while open, tab-visible and
- * within the 15-minute cap.
+ * "Thu học phí" modal (#320): shared QR panel + copy pay link + rotate pay
+ * token (with confirm — parents may still hold the old link). Polls every
+ * 5 s while open, tab-visible and within the 15-minute cap. (Zalo template
+ * copy was dropped when /settings + workspace-settings API were removed in
+ * #324 — follow-up if templates come back.)
  */
 export function InvoicePaymentModal({
 	invoiceId,
@@ -69,11 +65,6 @@ export function InvoicePaymentModal({
 				: false;
 		},
 	});
-	const settings = useQuery({
-		...workspaceSettingsQueryOptions(baseUrl),
-		enabled: open,
-	});
-
 	const payLink = payment.data
 		? `${window.location.origin}/pay/${payment.data.payToken}`
 		: "";
@@ -109,28 +100,6 @@ export function InvoicePaymentModal({
 								{copiedLabel === "link"
 									? "✓ Đã sao chép link"
 									: "Sao chép link thanh toán"}
-							</Button>
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={!settings.data || !payment.data}
-								onClick={() =>
-									copy(
-										"tpl",
-										fillMessageTemplate(
-											settings.data?.tplDebt ?? "{{qr_link}}",
-											{
-												qr_link: payLink,
-												amount: fmtVND(payment.data?.amountDue ?? 0),
-												student_name: "",
-											},
-										),
-									)
-								}
-							>
-								{copiedLabel === "tpl"
-									? "✓ Đã sao chép tin nhắn"
-									: "Sao chép tin nhắc nợ"}
 							</Button>
 							{confirmRotate ? (
 								<>

@@ -61,3 +61,6 @@ tmp
 temp
 .mail-preview/
 apps/e2e/.mail-log.jsonl
+
+# Agent tooling
+.zcode/

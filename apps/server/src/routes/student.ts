@@ -53,11 +53,13 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
+import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
@@ -119,32 +121,6 @@ function parseTargetScore(
 	const allowed =
 		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
 	return parseEnum(raw, allowed);
-}
-
-/** Percent-encode cho `filename*` (RFC 8187 attr-char): encodeURIComponent
- * còn để lọt `'()*`. */
-function encodeRfc8187(value: string): string {
-	return encodeURIComponent(value).replace(
-		/['()*]/g,
-		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-	);
-}
-
-/** Cột media_* của attempt → payload wire (không lộ object key). */
-function toQuizAttemptMedia(row: {
-	mediaKey: string | null;
-	mediaName: string | null;
-	mediaType: string | null;
-	mediaSize: number | null;
-	mediaUploadedAt: Date | null;
-}): QuizAttemptMedia | null {
-	if (row.mediaKey === null) return null;
-	return {
-		name: row.mediaName ?? "",
-		type: row.mediaType ?? "",
-		size: row.mediaSize ?? 0,
-		uploadedAt: row.mediaUploadedAt ? row.mediaUploadedAt.toISOString() : "",
-	};
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
@@ -1562,16 +1538,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!object) {
 			return c.json({ error: "media not found" }, 404);
 		}
-		return new Response(object.body, {
-			headers: {
-				"Content-Type": attempt.mediaType ?? object.contentType,
-				"Content-Length": String(object.size),
-				"Content-Disposition": `inline; filename*=UTF-8''${encodeRfc8187(attempt.mediaName ?? "media")}`,
-				"X-Content-Type-Options": "nosniff",
-				"Content-Security-Policy": "default-src 'none'; sandbox",
-				"Cache-Control": "private, no-store",
-			},
-		});
+		return mediaObjectResponse(object, attempt);
 	});
 
 	/**
@@ -1721,6 +1688,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				// Skill quyết định summary/detail có lộ essay (#304) — join có
 				// predicate orgId, nhất quán chuẩn IDOR với PATCH essay.
 				skill: assignmentPrompt.skill,
+				// Part để nhãn tiêu chí chấm Writing đúng TA/TR (#319).
+				part: assignmentPrompt.part,
 			})
 			.from(classAssignment)
 			.innerJoin(
@@ -1745,6 +1714,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			note: header?.note ?? "",
 			promptType: header?.type ?? "",
 			skill: header?.skill ?? "",
+			part: header?.part ?? "",
 		};
 	};
 
@@ -1761,7 +1731,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, skill } = loaded;
+		const { attempt, questions, answers, grade, title, skill, part } = loaded;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1787,6 +1757,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 		};
+		// Điểm giáo viên chấm: CHỈ thêm key khi đã chấm — bundle cũ (schema
+		// strict) không vỡ ở attempt chưa chấm.
+		const teacherGrade = toQuizAttemptGrade(attempt);
+		if (teacherGrade) {
+			summary.grade = teacherGrade;
+			summary.part = part;
+		}
 		return c.json(summary);
 	});
 

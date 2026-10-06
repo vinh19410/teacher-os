@@ -10,9 +10,22 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-06
+
+### Added
+- Nhận học phí qua VietQR (#320): giáo viên liên kết tài khoản ngân hàng qua SePay Bank Hub tại trang riêng `/payments` (sidebar "Nhận học phí"); mỗi hoá đơn có mã chuyển khoản `TOS` + 8 ký tự và link công khai `/pay/<token>` kèm QR; tiền về tự cộng dồn qua IPN, đủ thì "Đã thu"; chuyển nhầm/không có mã vào hàng "Giao dịch chưa khớp" để gán hoặc bỏ qua; nút "Đối soát" kéo lại giao dịch 7 ngày của mọi tài khoản đã từng liên kết
+- Portal học viên: khu "Học phí" trên trang chủ và trang chi tiết hoá đơn với QR (ẩn khi không còn nợ) (#320)
+
+### Changed
+- Tổng "Đã thu/Còn nợ" ở Học phí tính theo số tiền ledger đã nhận của hoá đơn chưa đóng; hoá đơn "Thu một phần" hiện badge riêng và cột số tiền dạng `đã nhận / tổng` (#320)
+
+---
+
 ## 2026-10-05
 
 ### Added
+- Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp từ tab Bài tập của lớp: trang chấm hiện đề + essay (số từ) hoặc phát file bài nói, chấm 4 tiêu chí IELTS (0–9, bước 0.5) với band tổng tự tính và nhận xét; sửa điểm được bất cứ lúc nào (#319)
+- Màn kết quả học viên hiện band, điểm 4 tiêu chí và nhận xét của giáo viên ngay khi được chấm (#319)
 - Modal Tạo lớp cảnh báo realtime (không chặn submit) khi lịch đang chọn trùng thứ + giao giờ + giao khoảng ngày chạy với lớp đã tạo: liệt kê tối đa 3 lớp trùng (tên, thứ giao, giờ), tự ẩn khi đổi giờ/ngày hết trùng hoặc đang lưu; bỏ qua lớp legacy free-text/qua đêm và lớp đã hết buổi (window suy từ `skeletonOf`, không dùng cột `status` vacuous) (#315)
 
 ### Changed
@@ -23,6 +36,9 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Bộ chip lọc có ngữ cảnh nhóm cho screen reader (`role="group"` + `aria-label` "Kỹ năng" / "Phần thi — <kỹ năng>"); badge đếm ẩn với AT để accessible name chip ổn định cho voice control và e2e selector exact
+
+### Removed
+- Gỡ trang Cài đặt (`/settings`) và API `/api/kernel/settings` (GET/PUT/POST) cùng contract `workspaceSettings*` — chưa tính năng nào dùng workspace settings (chỉ chính trang này ghi/đọc); helper `getApiBaseUrl()` tách sang `lib/repos/api-base-url.ts` cho `invitations` dùng tiếp. Bảng DB `workspace_settings` giữ nguyên (không migration), khôi phục bằng revert (#321)
 
 ### CI/Infra
 - Thêm suite Vitest cho `packages/api` (script `test` + `vitest.config.ts`): unit `grade-quiz` (alt separator `" / "`, pin NFC/NFD), `infer-question-types` (TFNG biên, 8 case), `word-count` (emoji/CJK/hyphen); mở rộng integration `student-quiz.test.ts` của server: IDOR cross-org qua `x-student-org-id`, start race (1×201 + 1×200 cùng attemptId, 1 row), answer value >500 ký tự, `q` âm/lẻ/ngoài range, `json_quote` round-trip, raw JSON key `"3.0"` regression (#313)

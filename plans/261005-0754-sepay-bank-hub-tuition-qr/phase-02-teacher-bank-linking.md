@@ -11,7 +11,7 @@ dependencies: [1]
 
 ## Overview
 
-Giáo viên vào **Cài đặt → tab "Nhận học phí"**, bấm "Liên kết tài khoản" →
+Giáo viên vào **trang riêng `/payments`** <!-- Updated 2026-10-06: `/settings` đã gỡ theo #321/#324; UI là trang riêng + sidebar "Nhận học phí" -->, bấm "Liên kết tài khoản" →
 server đảm bảo org có Company trong Bank Hub, tạo link token → web mở
 `hosted_link_url` trong iframe modal. Trạng thái liên kết được cập nhật theo
 **hai đường độc lập**: (a) client nhận `postMessage FINISHED_*` → gọi
@@ -91,8 +91,8 @@ cùng file sau này chứa IPN (phase 4):
 - Create tests: `apps/server/src/bank-link.test.ts`, `apps/server/src/bank-hub-webhooks.test.ts`
 - Modify: `apps/server/src/app.ts` (mount webhooks), `apps/server/src/routes/kernel.ts` (mount subrouter)
 - Modify: `packages/api/src/contracts.ts` (`BankLinkStatus` DTO, `bankLinkTokenRequestSchema`)
-- Create: `apps/web/src/components/settings/bank-link-panel.tsx`, `apps/web/src/components/modals/bank-hub-link-modal.tsx`, `apps/web/src/lib/repos/bank-link.ts` (+ tests)
-- Modify: `apps/web/src/routes/_auth/settings.tsx` (tab `payments` "Nhận học phí"), `apps/web/src/security-headers.ts` (+ test) thêm `frame-src`
+- Create: `apps/web/src/components/payments/bank-link-panel.tsx`, `apps/web/src/components/modals/bank-hub-link-modal.tsx`, `apps/web/src/lib/repos/bank-link.ts` (+ tests), `apps/web/src/routes/_auth/payments.tsx` <!-- Updated 2026-10-06: settings.tsx đã gỡ -->
+- Modify: `apps/web/src/components/layout/sidebar.tsx` (nav "Nhận học phí"), `apps/web/src/routes-matcher.ts` (static `/payments`), `apps/web/src/security-headers.ts` (+ test) thêm `frame-src`
 
 ## Implementation Steps
 

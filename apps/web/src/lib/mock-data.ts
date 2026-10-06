@@ -94,7 +94,14 @@ export interface ClassAssignment {
 	due: string;
 	note: string;
 	createdAt: string;
-	targets: Array<{ studentId: string; submittedAt: string | null }>;
+	targets: Array<{
+		studentId: string;
+		submittedAt: string | null;
+		/** Optional: fixture/mock cũ không có — coi như null (#319). */
+		attemptId?: string | null;
+		gradedAt?: string | null;
+		band?: number | null;
+	}>;
 }
 
 export interface Invoice {

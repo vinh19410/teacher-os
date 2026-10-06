@@ -5,7 +5,7 @@ import type {
 	BankLinkTokenResponse,
 } from "@teacher-os/api/contracts";
 import { bankLinkStatusSchema } from "@teacher-os/api/contracts";
-import { getApiBaseUrl } from "@/lib/repos/settings";
+import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
 export const bankLinkQueryKey = ["bank-link"] as const;
 

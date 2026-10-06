@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getApiBaseUrl } from "./api-base-url";
 import {
 	cancelStudentInvitation,
 	fetchPendingInvitations,
 	sendStudentInvitation,
 } from "./invitations";
-import { getApiBaseUrl } from "./settings";
 
 describe("invitations repo", () => {
 	const originalFetch = globalThis.fetch;

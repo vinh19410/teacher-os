@@ -4,7 +4,7 @@ import type {
 	PaymentTransactionItem,
 	ReconcileResult,
 } from "@teacher-os/api/contracts";
-import { getApiBaseUrl } from "@/lib/repos/settings";
+import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
 export const POLL_INTERVAL_MS = 5000;
 /** Widely-shared links must not poll D1 forever (#320). */

@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import { invoiceCode, invoiceType } from "./format-invoice";
+import {
+	INVOICE_STATUS_LABEL,
+	INVOICE_STATUS_VARIANT,
+	invoiceCode,
+	invoiceType,
+} from "./format-invoice";
 
 describe("invoiceCode (issue #176)", () => {
 	test("uses INV + the last 8 chars uppercased", () => {
@@ -22,5 +27,25 @@ describe("invoiceType (issue #176)", () => {
 
 	test("a real type passes through untouched", () => {
 		expect(invoiceType("Gói học viên")).toBe("Gói học viên");
+	});
+});
+
+describe("INVOICE_STATUS_LABEL / INVOICE_STATUS_VARIANT (#322)", () => {
+	test("map đủ 3 trạng thái — nhãn khớp /tuition, variant khớp Badge", () => {
+		expect(Object.keys(INVOICE_STATUS_LABEL).sort()).toEqual([
+			"overdue",
+			"paid",
+			"unpaid",
+		]);
+		expect(INVOICE_STATUS_LABEL).toEqual({
+			paid: "Đã thu",
+			unpaid: "Chưa thu",
+			overdue: "Quá hạn",
+		});
+		expect(INVOICE_STATUS_VARIANT).toEqual({
+			paid: "success",
+			unpaid: "warn",
+			overdue: "danger",
+		});
 	});
 });

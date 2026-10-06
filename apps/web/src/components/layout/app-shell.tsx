@@ -24,7 +24,6 @@ export const routeTitles: Record<string, string> = {
 	"/_auth/syllabus/$syllabusId": "Giáo trình",
 	...(PARENT_REPORTS_ENABLED ? { "/_auth/reports": "Báo cáo phụ huynh" } : {}),
 	"/_auth/profile": "Hồ sơ",
-	"/_auth/settings": "Cài đặt",
 };
 
 function useCurrentTitle(): string {

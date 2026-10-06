@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { BankLinkTokenResponse } from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
-import type { BankLinkPurpose } from "@/components/settings/bank-link-panel";
+import type { BankLinkPurpose } from "@/components/payments/bank-link-panel";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 import {
 	BankLinkRequestError,
 	bankLinkQueryKey,
@@ -11,7 +12,6 @@ import {
 	createBankLinkToken,
 	syncBankLink,
 } from "@/lib/repos/bank-link";
-import { getApiBaseUrl } from "@/lib/repos/settings";
 
 function errorMessage(err: unknown): string {
 	if (err instanceof BankLinkRequestError) {

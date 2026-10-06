@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "619ab60f-4aba-4211-8ece-7f3a9b0b8c2c",
+  "id": "d07a0b7b-e9e6-4e1f-a980-99f8acd75606",
   "prevId": "2024c8fc-8591-4b53-8f0a-cca88f112de9",
   "tables": {
     "assignment_prompt": {
@@ -1583,28 +1583,6 @@
           "autoincrement": false,
           "default": "'—'"
         },
-        "payment_code": {
-          "name": "payment_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pay_token": {
-          "name": "pay_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "paid_amount": {
-          "name": "paid_amount",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -1635,20 +1613,6 @@
             "enrollment_id"
           ],
           "isUnique": false
-        },
-        "invoice_payment_code_uq": {
-          "name": "invoice_payment_code_uq",
-          "columns": [
-            "payment_code"
-          ],
-          "isUnique": true
-        },
-        "invoice_pay_token_uq": {
-          "name": "invoice_pay_token_uq",
-          "columns": [
-            "pay_token"
-          ],
-          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -2030,153 +1994,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "org_bank_link": {
-      "name": "org_bank_link",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "company_xid": {
-          "name": "company_xid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "bank_account_xid": {
-          "name": "bank_account_xid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "past_bank_account_xids": {
-          "name": "past_bank_account_xids",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'[]'"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'none'"
-        },
-        "brand_name": {
-          "name": "brand_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "bank_bin": {
-          "name": "bank_bin",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "bank_code": {
-          "name": "bank_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "account_number": {
-          "name": "account_number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "account_holder_name": {
-          "name": "account_holder_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "last_event_at": {
-          "name": "last_event_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "last_reconciled_at": {
-          "name": "last_reconciled_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "linked_at": {
-          "name": "linked_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
-        }
-      },
-      "indexes": {
-        "org_bank_link_company_xid_uq": {
-          "name": "org_bank_link_company_xid_uq",
-          "columns": [
-            "company_xid"
-          ],
-          "isUnique": true
-        },
-        "org_bank_link_bank_account_xid_uq": {
-          "name": "org_bank_link_bank_account_xid_uq",
-          "columns": [
-            "bank_account_xid"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "org_bank_link_org_id_organization_id_fk": {
-          "name": "org_bank_link_org_id_organization_id_fk",
-          "tableFrom": "org_bank_link",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "organization": {
       "name": "organization",
       "columns": {
@@ -2205,168 +2022,6 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "payment_transaction": {
-      "name": "payment_transaction",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "provider": {
-          "name": "provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'sepay_bankhub'"
-        },
-        "provider_txn_id": {
-          "name": "provider_txn_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bank_account_xid": {
-          "name": "bank_account_xid",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "amount": {
-          "name": "amount",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "reference_code": {
-          "name": "reference_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "transaction_date": {
-          "name": "transaction_date",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "payment_code": {
-          "name": "payment_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "invoice_id": {
-          "name": "invoice_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "match_status": {
-          "name": "match_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'unmatched'"
-        },
-        "unmatched_reason": {
-          "name": "unmatched_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "raw": {
-          "name": "raw",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "''"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
-        }
-      },
-      "indexes": {
-        "payment_transaction_provider_txn_uq": {
-          "name": "payment_transaction_provider_txn_uq",
-          "columns": [
-            "provider",
-            "provider_txn_id"
-          ],
-          "isUnique": true
-        },
-        "payment_transaction_org_match_idx": {
-          "name": "payment_transaction_org_match_idx",
-          "columns": [
-            "org_id",
-            "match_status"
-          ],
-          "isUnique": false
-        },
-        "payment_transaction_invoice_idx": {
-          "name": "payment_transaction_invoice_idx",
-          "columns": [
-            "invoice_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "payment_transaction_org_id_organization_id_fk": {
-          "name": "payment_transaction_org_id_organization_id_fk",
-          "tableFrom": "payment_transaction",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -2470,6 +2125,28 @@
         },
         "correct_count": {
           "name": "correct_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "grade_scores": {
+          "name": "grade_scores",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "grade_feedback": {
+          "name": "grade_feedback",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "graded_at": {
+          "name": "graded_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

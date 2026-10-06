@@ -1,6 +1,7 @@
 import { describe, expect, it, test } from "vitest";
 import type { Invoice, Student } from "./mock-data";
 import {
+	effectiveInvoiceStatus,
 	formatDue,
 	packagesEndingSoon,
 	rosterDebtByStudent,
@@ -115,55 +116,152 @@ describe("formatDue", () => {
 	});
 });
 
+describe("effectiveInvoiceStatus (#322)", () => {
+	const TODAY = "2026-10-05";
+
+	test("paid stays paid regardless of due", () => {
+		expect(
+			effectiveInvoiceStatus({ status: "paid", due: "2026-01-01" }, TODAY),
+		).toBe("paid");
+	});
+
+	test("unpaid past due derives overdue", () => {
+		expect(
+			effectiveInvoiceStatus({ status: "unpaid", due: "2026-10-04" }, TODAY),
+		).toBe("overdue");
+	});
+
+	// Hạn đúng hôm nay chưa quá hạn — so chuỗi ISO, không parse Date.
+	test("unpaid due today or tomorrow stays unpaid", () => {
+		expect(
+			effectiveInvoiceStatus({ status: "unpaid", due: TODAY }, TODAY),
+		).toBe("unpaid");
+		expect(
+			effectiveInvoiceStatus({ status: "unpaid", due: "2026-10-06" }, TODAY),
+		).toBe("unpaid");
+	});
+
+	test("empty or calendar-invalid due stays unpaid", () => {
+		expect(effectiveInvoiceStatus({ status: "unpaid", due: "" }, TODAY)).toBe(
+			"unpaid",
+		);
+		expect(
+			effectiveInvoiceStatus({ status: "unpaid", due: "2026-02-30" }, TODAY),
+		).toBe("unpaid");
+	});
+
+	test("stored overdue stays overdue even with a future due", () => {
+		expect(
+			effectiveInvoiceStatus({ status: "overdue", due: "2030-01-01" }, TODAY),
+		).toBe("overdue");
+	});
+});
+
 describe("rosterDebtByStudent (#216)", () => {
 	const enrollments = [
 		{ id: "E1", classId: "C1", studentId: "S1" },
 		{ id: "E2", classId: "C2", studentId: "S1" },
 		{ id: "E3", classId: "C1", studentId: "S2" },
 	];
+	const TODAY = "2026-10-05";
 
 	test("paid invoices count toward invoiceCount but not outstanding", () => {
-		const debts = rosterDebtByStudent("C1", enrollments, [
-			{ eid: "E1", amount: 400000, status: "paid" },
-		]);
-		expect(debts.get("S1")).toEqual({ outstanding: 0, invoiceCount: 1 });
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[{ eid: "E1", amount: 400000, status: "paid", due: "" }],
+			TODAY,
+		);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 0,
+			invoiceCount: 1,
+			status: "paid",
+		});
 	});
 
 	test("unpaid and overdue both add to outstanding", () => {
-		const debts = rosterDebtByStudent("C1", enrollments, [
-			{ eid: "E1", amount: 400000, status: "unpaid" },
-			{ eid: "E1", amount: 100000, status: "overdue" },
-			{ eid: "E1", amount: 50000, status: "unpaid" },
-		]);
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{ eid: "E1", amount: 400000, status: "unpaid", due: "" },
+				{ eid: "E1", amount: 100000, status: "overdue", due: "" },
+				{ eid: "E1", amount: 50000, status: "unpaid", due: "" },
+			],
+			TODAY,
+		);
 		expect(debts.get("S1")).toEqual({
 			outstanding: 550000,
 			invoiceCount: 3,
+			status: "overdue",
 		});
 	});
 
 	test("invoices of other classes and legacy empty-eid rows are excluded", () => {
-		const debts = rosterDebtByStudent("C1", enrollments, [
-			{ eid: "E2", amount: 999000, status: "unpaid" }, // class C2
-			{ eid: "", amount: 500000, status: "unpaid" }, // legacy
-			{ eid: "E-DELETED", amount: 250000, status: "unpaid" }, // unknown
-		]);
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{ eid: "E2", amount: 999000, status: "unpaid", due: "" }, // class C2
+				{ eid: "", amount: 500000, status: "unpaid", due: "" }, // legacy
+				{ eid: "E-DELETED", amount: 250000, status: "unpaid", due: "" }, // unknown
+			],
+			TODAY,
+		);
 		expect(debts.size).toBe(0);
 	});
 
 	test("multiple invoices of one student accumulate", () => {
-		const debts = rosterDebtByStudent("C1", enrollments, [
-			{ eid: "E1", amount: 400000, status: "unpaid" },
-			{ eid: "E1", amount: 300000, status: "unpaid" },
-			{ eid: "E3", amount: 250000, status: "unpaid" },
-		]);
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{ eid: "E1", amount: 400000, status: "unpaid", due: "" },
+				{ eid: "E1", amount: 300000, status: "unpaid", due: "" },
+				{ eid: "E3", amount: 250000, status: "unpaid", due: "" },
+			],
+			TODAY,
+		);
 		expect(debts.get("S1")?.outstanding).toBe(700000);
+		expect(debts.get("S1")?.status).toBe("unpaid");
 		expect(debts.get("S2")?.outstanding).toBe(250000);
 	});
 
 	test("students without invoices are absent from the map", () => {
-		const debts = rosterDebtByStudent("C1", enrollments, []);
+		const debts = rosterDebtByStudent("C1", enrollments, [], TODAY);
 		expect(debts.has("S1")).toBe(false);
 		expect(debts.has("S2")).toBe(false);
+	});
+
+	test("one past-due unpaid invoice marks the whole class debt overdue (#322)", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-11-04" },
+				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-10-04" },
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 800000,
+			invoiceCount: 2,
+			status: "overdue",
+		});
+	});
+
+	test("a past-due invoice of another class does not taint this class status", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-11-04" },
+				{ eid: "E2", amount: 900000, status: "unpaid", due: "2026-01-01" },
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")?.status).toBe("unpaid");
+		expect(debts.get("S1")?.outstanding).toBe(400000);
 	});
 });
 
