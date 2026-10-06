@@ -2,7 +2,11 @@
  * Offline backfill CLI (issue #98 Phase 1 / runbook Step B). Reads the two
  * wrangler dump files, plans per-class date stamps with the shared skeleton
  * core, prints idempotent UPDATE SQL on stdout and a conformance summary
- * (with NULL-stay reasons — archive them to the issue) on stderr:
+ * (with NULL-stay reasons — archive them to the issue) on stderr. Within each
+ * enrollment+weekday bucket completed lessons take the earliest dates, then
+ * cancelled, then the rest (mirrors the legacy renderer). The lessons dump
+ * MUST include `l.status` (the CLI throws without it) and every emitted UPDATE
+ * is guarded by `date IS NULL AND status = <dump status>`:
  *
  *   npx -y tsx apps/server/scripts/backfill-date.ts classes.json lessons.json \
  *     > backfill.sql 2> summary.txt
@@ -12,26 +16,21 @@
 import { readFileSync } from "node:fs";
 import {
 	type BackfillClassInput,
-	type BackfillLessonInput,
 	buildBackfillPlan,
 	emitBackfillSql,
 } from "@teacher-os/api/skeleton";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	futureCompletedUpdates,
+	type LessonDumpRow,
+	toBackfillLessonInputs,
+} from "../src/backfill-dump";
 
 interface ClassDumpRow {
 	id: string;
 	schedule: string;
 	start_date: string;
 	sessions_total: number;
-}
-
-interface LessonDumpRow {
-	id: string;
-	class_id: string;
-	enrollment_id: string;
-	day: number;
-	time: string;
-	created_at_ms: number;
-	seq: number;
 }
 
 function main(): void {
@@ -55,15 +54,7 @@ function main(): void {
 		startDateRaw: c.start_date ?? "",
 		total: c.sessions_total ?? 0,
 	}));
-	const lessonInputs: BackfillLessonInput[] = lessons.map((l) => ({
-		id: l.id,
-		classId: l.class_id,
-		enrollmentId: l.enrollment_id,
-		day: l.day,
-		time: l.time,
-		createdAtMs: Number(l.created_at_ms) || 0,
-		seq: Number(l.seq) || 0,
-	}));
+	const lessonInputs = toBackfillLessonInputs(lessons);
 
 	const plan = buildBackfillPlan(classInputs, lessonInputs);
 	for (const entry of plan.classes) {
@@ -71,6 +62,11 @@ function main(): void {
 			entry.conforms
 				? `${entry.classId} STAMPED`
 				: `${entry.classId} NULL (${entry.reason})`,
+		);
+	}
+	for (const u of futureCompletedUpdates(plan.updates, vietnamTodayISO())) {
+		console.error(
+			`FUTURE_COMPLETED lesson=${u.id} date=${u.date} — completed lesson stamped after today; review before applying`,
 		);
 	}
 	process.stdout.write(`${emitBackfillSql(plan.updates)}\n`);

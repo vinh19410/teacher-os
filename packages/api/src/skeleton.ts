@@ -222,11 +222,28 @@ export interface BackfillLessonInput extends ConformsRow {
 	createdAtMs: number;
 	/** Stable dump-provided ordinal (e.g. SQLite rowid) — createdAt truncates ms. */
 	seq: number;
+	/** `lesson.status` at dump time — drives the in-bucket ordering and guards the emitted UPDATE. */
+	status: string;
 }
 
 export interface BackfillUpdate {
 	id: string;
 	date: string;
+	/** Status the plan was computed against; the UPDATE only applies while it still holds. */
+	status: string;
+}
+
+/**
+ * Settled-first rank inside a backfill bucket. Mirrors the legacy renderer
+ * (`sidStateAt` in the web `class-sessions.ts`): completed lessons are the
+ * prefix, then cancelled, then everything still open — so a teacher's past
+ * check-ins land on the earliest skeleton dates, not wherever `createdAt`
+ * happened to put them.
+ */
+function backfillStatusRank(status: string): number {
+	if (status === "completed") return 0;
+	if (status === "cancelled") return 1;
+	return 2;
 }
 
 export interface BackfillResult {
@@ -243,10 +260,11 @@ export interface BackfillResult {
  * Offline backfill planner (issue #98 Phase 1). Decides each class wholly:
  * conforming classes get EVERY row stamped (never mixed), non-conforming get
  * zero updates. Within one enrollment+weekday bucket, the k-th row by
- * `(createdAt ASC, seq ASC)` takes the k-th skeleton date — matching the
- * sequential-head heuristic the legacy renderer assumed. Inputs arrive from
- * the wrangler dump; the caller re-runs freely (pure), while emitted SQL
- * stays idempotent via `WHERE date IS NULL`.
+ * `(status rank, createdAt ASC, seq ASC)` takes the k-th skeleton date —
+ * completed → cancelled → rest, matching the prefix the legacy renderer
+ * (`sidStateAt`) shows. Inputs arrive from the wrangler dump; the caller
+ * re-runs freely (pure), while emitted SQL stays idempotent via
+ * `WHERE date IS NULL AND status = <dump status>`.
  */
 export function buildBackfillPlan(
 	classes: BackfillClassInput[],
@@ -303,10 +321,11 @@ export function buildBackfillPlan(
 			buckets.set(key, list);
 		}
 		for (const list of buckets.values()) {
-			list.sort((a, b) =>
-				a.createdAtMs !== b.createdAtMs
-					? a.createdAtMs - b.createdAtMs
-					: a.seq - b.seq,
+			list.sort(
+				(a, b) =>
+					backfillStatusRank(a.status) - backfillStatusRank(b.status) ||
+					a.createdAtMs - b.createdAtMs ||
+					a.seq - b.seq,
 			);
 		}
 		summary.push({ classId: cls.classId, conforms: true });
@@ -317,7 +336,7 @@ export function buildBackfillPlan(
 			const dates = skeleton.get(row.day);
 			const date = dates?.[ordinal];
 			if (!date) continue;
-			updates.push({ id: row.id, date });
+			updates.push({ id: row.id, date, status: row.status });
 		}
 	}
 	return { classes: summary, updates };
@@ -330,13 +349,15 @@ function sqlString(value: string): string {
 
 /**
  * Emit idempotent UPDATE lines: one statement per row, always guarded by
- * `WHERE … AND date IS NULL` so re-running the generated file is a no-op.
+ * `WHERE … AND date IS NULL` so re-running the generated file is a no-op, and
+ * by the dump-time `status` so a check-in landing between dump and apply skips
+ * the row (the delta loop re-plans it) instead of stamping a stale ordinal.
  */
 export function emitBackfillSql(updates: BackfillUpdate[]): string {
 	return updates
 		.map(
 			(update) =>
-				`UPDATE lesson SET date = ${sqlString(update.date)} WHERE id = ${sqlString(update.id)} AND date IS NULL;`,
+				`UPDATE lesson SET date = ${sqlString(update.date)} WHERE id = ${sqlString(update.id)} AND date IS NULL AND status = ${sqlString(update.status)};`,
 		)
 		.join("\n");
 }

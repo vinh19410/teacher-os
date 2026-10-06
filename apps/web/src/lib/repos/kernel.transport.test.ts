@@ -87,6 +87,19 @@ describe("HttpError.reason transport (K7)", () => {
 		).rejects.toMatchObject({ status: 409, reason: "date-occupied" });
 	});
 
+	test("422 future-session body (error + reason both machine codes) attaches the code", async () => {
+		stubFetchOnce(
+			422,
+			JSON.stringify({ error: "future-session", reason: "future-session" }),
+		);
+		await expect(
+			postKernelCommand(BASE, {
+				type: "check-in",
+				lessonId: "l",
+			} as KernelAction),
+		).rejects.toMatchObject({ status: 422, reason: "future-session" });
+	});
+
 	test("body-rác (plain text / weird JSON) silently leaves reason undefined", async () => {
 		stubFetchOnce(400, "oops");
 		await expect(

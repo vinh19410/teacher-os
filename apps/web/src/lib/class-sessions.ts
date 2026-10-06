@@ -42,7 +42,7 @@ import {
 	skeletonOf,
 } from "@teacher-os/api/skeleton";
 import { addMinutes, parseSchedule } from "@/lib/format-schedule";
-import type { Lesson, Syllabus } from "@/lib/mock-data";
+import type { ClassGroup, Lesson, Syllabus } from "@/lib/mock-data";
 import { formatDayMonth } from "@/lib/week-grid";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -649,4 +649,106 @@ export function sessionAttendanceState(
 			: "upcoming",
 		sids,
 	};
+}
+
+/** Status of one student at one occurrence; `absent` only exists on dated rows. */
+export type OccurrenceStatus = SessionStatus | "absent";
+
+export interface OccurrenceSidState {
+	sid: string;
+	status: OccurrenceStatus;
+	/**
+	 * The one row Điểm danh / Hủy / Sửa write to; null = no valid row (settled,
+	 * absent, or a legacy occurrence that is not this student's sequential head).
+	 */
+	targetLessonId: string | null;
+	/** Hủy/Sửa need a target; the date never blocks them (future sessions stay editable). */
+	canCancelEdit: boolean;
+	/** Điểm danh needs a target AND an occurrence date that has arrived. */
+	canCheckIn: boolean;
+}
+
+/**
+ * Per-student state of ONE occurrence. Unlike `sessionAttendanceState` this
+ * never collapses to an aggregate "future": the /schedule popup must show each
+ * student's own status and know which single row each action writes to.
+ * - dated (v2): the bucket row of the student IS the truth;
+ * - legacy: in-order prefix status, and only the sequential head owns a row.
+ */
+export function occurrenceSidStates(
+	session: ClassSession,
+	todayISO: string,
+): OccurrenceSidState[] {
+	const dateArrived = sessionIsEligibleDate(session, todayISO);
+	return sessionStudents(session).map((sid) => {
+		let status: OccurrenceStatus = "upcoming";
+		let targetLessonId: string | null = null;
+		if (session.mode === "v2") {
+			const row = session.rows
+				.filter((r) => r.sid === sid)
+				.sort((a, b) => a.id.localeCompare(b.id))[0];
+			if (
+				row?.status === "completed" ||
+				row?.status === "cancelled" ||
+				row?.status === "absent"
+			) {
+				status = row.status;
+			} else if (row) {
+				targetLessonId = row.id;
+			}
+		} else {
+			const stats = slotStatsBySid(session.rows).get(sid);
+			status = stats ? sidStateAt(stats, session.slotIndex) : "upcoming";
+			if (status === "upcoming" && isSequentialHead(session, sid)) {
+				targetLessonId = firstUpcomingLessonId(session, sid);
+			}
+		}
+		const canCancelEdit = targetLessonId !== null;
+		return {
+			sid,
+			status,
+			targetLessonId,
+			canCancelEdit,
+			canCheckIn: canCancelEdit && dateArrived,
+		};
+	});
+}
+
+export type ClassOccurrenceLookup =
+	| { kind: "found"; session: ClassSession }
+	/** The class model is valid but this column date is not on its schedule. */
+	| { kind: "outside-schedule" }
+	/** No trustworthy model (free-text schedule, rows moved off their slot). */
+	| { kind: "unresolved" };
+
+/**
+ * Resolve the occurrence a /schedule block stands for.
+ * - Dated entry: its `(classId, date)` bucket alone is the occurrence. Going
+ *   through `buildClassSessions` would let any undated row of the same class
+ *   push the whole class onto the legacy walk and mis-read the dated rows.
+ * - Undated entry: the legacy walk over the class's UNDATED rows only, matched
+ *   by the column date the block was drawn in.
+ */
+export function findClassOccurrence(
+	cls: Pick<ClassGroup, "id" | "schedule" | "startDate" | "sessionsTotal">,
+	lessons: readonly Lesson[],
+	ref: { dateISO: string | null; columnDateISO?: string; time: string },
+): ClassOccurrenceLookup {
+	const classLessons = lessons.filter((l) => l.classId === cls.id);
+	if (ref.dateISO != null) {
+		const bucket = classLessons.filter((l) => l.date === ref.dateISO);
+		const [session] = buildClassSessionsV2(bucket);
+		return session ? { kind: "found", session } : { kind: "unresolved" };
+	}
+	const sessions = buildClassSessions({
+		schedule: cls.schedule,
+		startDate: cls.startDate,
+		lessons: classLessons.filter((l) => l.date == null),
+		sessionsTotal: cls.sessionsTotal,
+	});
+	if (!sessions) return { kind: "unresolved" };
+	const session = sessions.find(
+		(s) => s.dateISO === ref.columnDateISO && s.time === ref.time,
+	);
+	return session ? { kind: "found", session } : { kind: "outside-schedule" };
 }

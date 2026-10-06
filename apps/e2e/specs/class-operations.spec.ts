@@ -12,7 +12,10 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
  * M1 DOD scenario (issue #59, docs/project-roadmap.md:44):
- * login → tạo lớp có lịch → thấy buổi sinh → check-in → reload giữ data.
+ * login → tạo lớp có lịch → thấy buổi sinh → buổi tương lai chưa điểm danh được
+ * → reload giữ data. The create-class form cannot start a class today, so this
+ * UI-created class is entirely in the future; the persisted check-in half of
+ * the DOD runs on a class that starts today in the next test.
  *
  * Load-bearing facts (verified against the DOM):
  * - Lessons are generated when a STUDENT is added to the class
@@ -20,13 +23,12 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
  * - Tabs render role="tab" inside a tablist (issue #119 added the ARIA
  *   roles) — use getByRole("tab").
  * - Lesson blocks on /schedule carry the class name (issue #162) → .first().
- * - In ClassSessionModal, each student has a row with role="group";
- *   "Điểm danh" marks attendance and the opacity-60 class on the session
- *   block is the deterministic completion barrier.
+ * - In ClassSessionModal, each student has a row with role="group"; the
+ *   "Điểm danh" button only exists once the session date has arrived.
  * - Tab "Buổi học" (Issue #89) renders "Đã học"/"Sắp tới" badges on the timeline;
  *   the exact-count asserts below only run while standing on "Buổi học".
  */
-test("login → tạo lớp có lịch → thấy buổi → check-in → reload giữ data", async ({
+test("login → tạo lớp có lịch → thấy buổi → buổi tương lai không điểm danh được → reload giữ data", async ({
 	page,
 }) => {
 	const CLASS_NAME = "E2E IELTS Writing nhóm tối";
@@ -78,7 +80,7 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	// occurrence future → badges only, never an in-place check-in button.
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);
 
-	// 5. Check in on /schedule. The class starts TOMORROW, so its dated rows
+	// 5. Open the session on /schedule. The class starts TOMORROW, so its dated rows
 	// live in the week containing the first T2/T4 occurrence — pin that week
 	// explicitly (issue #121): on a VN Sunday run "tomorrow" is a Monday and
 	// the current-week grid would be empty once /schedule renders dated rows
@@ -104,26 +106,26 @@ test("login → tạo lớp có lịch → thấy buổi → check-in → reload
 	await expect(lesson).toBeVisible();
 	await lesson.click();
 
-	// Modal displays class session details and lists the enrolled student
+	// Modal lists the enrolled student, still "Sắp tới": a future session can be
+	// edited or cancelled but never checked in (server answers 422 too).
 	const studentRow = page.getByRole("group", { name: STUDENT_NAME });
 	await expect(studentRow).toBeVisible();
-	await studentRow.getByRole("button", { name: "Điểm danh" }).click();
-	await expect(page.getByText("Đã điểm danh.")).toBeVisible();
-	await expect(studentRow.getByText("Hoàn thành")).toBeVisible();
+	await expect(studentRow.getByText("Sắp tới")).toBeVisible();
+	await expect(
+		studentRow.getByRole("button", { name: "Điểm danh" }),
+	).toHaveCount(0);
+	await expect(studentRow.getByRole("button", { name: "Hủy" })).toBeVisible();
 	await page.getByLabel("Đóng").click();
 
-	// Completion barrier: the block gains opacity-60 only after the
-	// check-in POST finished and the kernel refetch applied.
-	await expect(lesson).toHaveClass(/opacity-60/);
-	// 6. Reload keeps the data — proof it was persisted server-side.
+	// 6. Reload keeps the data: nothing was settled.
 	await page.reload();
 	await expect(
 		page.locator("button.lesson-block", { hasText: CLASS_NAME }).first(),
-	).toHaveClass(/opacity-60/);
+	).not.toHaveClass(/opacity-60/);
 	// Badge counts live on the class "Buổi học" tab, never on /schedule.
 	await openClassScheduleTab(page, CLASS_NAME);
-	await expect(page.getByText("Đã học", { exact: true })).toHaveCount(1);
-	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(11);
+	await expect(page.getByText("Đã học", { exact: true })).toHaveCount(0);
+	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 });
 
 /**

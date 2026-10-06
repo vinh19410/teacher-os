@@ -51,7 +51,18 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, asc, desc, eq, inArray, max, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	lte,
+	max,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -119,6 +130,15 @@ export function kernelRoutes(deps: {
 
 	function unauthorized(c: KernelContext) {
 		return c.json({ error: "unauthorized" }, 401);
+	}
+
+	/**
+	 * Check-in on a session whose date is after today (VN) is refused. 422, not
+	 * 409: the web client maps 409 to a "heal stale snapshot" copy. `error`
+	 * carries the machine code too because the client reads `error ?? reason`.
+	 */
+	function futureSession(c: KernelContext) {
+		return c.json({ error: "future-session", reason: "future-session" }, 422);
 	}
 
 	async function readBody<S extends z.ZodType>(
@@ -1034,6 +1054,12 @@ export function kernelRoutes(deps: {
 		if (row.status !== "upcoming") {
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
+		// Undated legacy rows carry no date to compare — the web UI gates them.
+		const today = vietnamTodayISO();
+		const checkingIn = nextStatus === "completed";
+		if (checkingIn && row.date !== null && row.date > today) {
+			return futureSession(c);
+		}
 
 		// Conditional write: the status guard must also live in the WHERE
 		// clause so two concurrent POSTs (two tabs) cannot both pass the
@@ -1046,6 +1072,11 @@ export function kernelRoutes(deps: {
 					eq(lesson.id, lessonId),
 					eq(lesson.orgId, ctx.orgId),
 					eq(lesson.status, "upcoming"),
+					// Re-assert the date guard in the write itself: the row may have
+					// been moved between the pre-read and this UPDATE.
+					checkingIn
+						? or(isNull(lesson.date), lte(lesson.date, today))
+						: undefined,
 				),
 			)
 			.returning({ id: lesson.id });
@@ -1283,6 +1314,9 @@ export function kernelRoutes(deps: {
 				{ error: "occurrence not found", reason: "not-found" },
 				404,
 			);
+		}
+		if (nextStatus === "completed" && dateISO > vietnamTodayISO()) {
+			return futureSession(c);
 		}
 		const rows = await occurrenceUpdate(
 			db,
