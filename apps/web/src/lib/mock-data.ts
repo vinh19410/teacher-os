@@ -94,7 +94,14 @@ export interface ClassAssignment {
 	due: string;
 	note: string;
 	createdAt: string;
-	targets: Array<{ studentId: string; submittedAt: string | null }>;
+	targets: Array<{
+		studentId: string;
+		submittedAt: string | null;
+		/** Optional: fixture/mock cũ không có — coi như null (#319). */
+		attemptId?: string | null;
+		gradedAt?: string | null;
+		band?: number | null;
+	}>;
 }
 
 export interface Invoice {
@@ -104,6 +111,8 @@ export interface Invoice {
 	 * create API. Nguồn: KernelInvoiceRow.enrollmentId trên snapshot. */
 	eid: string;
 	amount: number;
+	/** #320 — ledger-recomputed paid total; 0 on manually mark-paid rows. */
+	paidAmount: number;
 	status: InvoiceStatus;
 	date: string;
 	type: string;

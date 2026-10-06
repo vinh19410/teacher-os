@@ -17,6 +17,9 @@ export function mapClassAssignments(
 		targets: row.targets.map((target) => ({
 			studentId: target.studentId,
 			submittedAt: target.submittedAt ?? null,
+			attemptId: target.attemptId ?? null,
+			gradedAt: target.gradedAt ?? null,
+			band: target.band ?? null,
 		})),
 	}));
 }

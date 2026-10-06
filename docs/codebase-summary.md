@@ -15,6 +15,9 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) - assignment-prompt bank create and per-student grading routes, mounted inside the kernel tree
 - [apps/server/src/routes/student.ts](../apps/server/src/routes/student.ts) - student portal bridge (provisioning, invitations, multi-org switch, onboarding, enrollment acceptance, class detail for the student's own active enrollment, quiz take/attempt endpoints with answer-key snapshot + server-side grading, speaking media upload/playback via `MediaStore`), mounted standalone at `/api/student`
 - [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) - snapshot loader
+- [apps/server/src/routes/bank-hub-webhooks.ts](../apps/server/src/routes/bank-hub-webhooks.ts) - SePay Bank Hub inbound webhooks (lifecycle events + balance IPN), mounted outside `/api/*` (#320)
+- [apps/server/src/routes/bank-link.ts](../apps/server/src/routes/bank-link.ts) - teacher bank-account linking via hosted link + manual reconciliation, kernel-tree subrouter (#320)
+- [apps/server/src/lib/payments/ingest-transaction.ts](../apps/server/src/lib/payments/ingest-transaction.ts) - the single ledger write path for inbound transfers (idempotent matching, tenant-scoped codes) (#320)
 - [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) - shared API contracts
 - [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) - database schema barrel
 - [packages/infra/alchemy.run.ts](../packages/infra/alchemy.run.ts) - Cloudflare and D1 wiring

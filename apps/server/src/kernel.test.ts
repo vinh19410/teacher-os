@@ -8,11 +8,8 @@
  */
 
 import { createClient } from "@libsql/client";
-import type {
-	KernelSnapshot,
-	WorkspaceSettings,
-} from "@teacher-os/api/contracts";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -167,6 +164,7 @@ async function createTestApp() {
 			status?: string;
 			topic?: string;
 			zoom?: string;
+			date?: string;
 		},
 	): Promise<string> {
 		const id = crypto.randomUUID();
@@ -182,6 +180,7 @@ async function createTestApp() {
 			status: row.status ?? "upcoming",
 			topic: row.topic ?? "Mock test",
 			zoom: row.zoom ?? "",
+			date: row.date ?? null,
 		});
 		return id;
 	}
@@ -1551,14 +1550,14 @@ describe("kernel origin + content-type guards", () => {
 	});
 
 	test("PUT and PATCH without Origin header are 403", async () => {
-		const put = await t.call("/api/kernel/settings", {
+		const put = await t.call("/api/classes", {
 			session,
 			method: "PUT",
 			origin: null,
 			body: {},
 		});
 		expect(put.status).toBe(403);
-		const patch = await t.call("/api/kernel/settings", {
+		const patch = await t.call("/api/classes", {
 			session,
 			method: "PATCH",
 			origin: null,
@@ -1567,22 +1566,44 @@ describe("kernel origin + content-type guards", () => {
 		expect(patch.status).toBe(403);
 	});
 
-	test("PUT with a foreign Origin is 403; allowed Origin reaches validation", async () => {
-		const evil = await t.call("/api/kernel/settings", {
+	test("PUT with a foreign Origin is 403; allowed Origin passes the guard", async () => {
+		const evil = await t.call("/api/classes", {
 			session,
 			method: "PUT",
 			origin: "https://evil.example",
 			body: {},
 		});
 		expect(evil.status).toBe(403);
-		// Origin hợp lệ → qua guard, chết ở zod validation (400) như PUT test
-		// "rejects invalid payload" đã chứng minh.
-		const legit = await t.call("/api/kernel/settings", {
+		// Origin hợp lệ → qua origin guard. PUT /api/classes không khớp route
+		// nào trong kernel router (/classes chỉ có GET và POST) nên routing
+		// trả 404. Assert cứng 404 để giữ giá trị regression của guard — nếu
+		// sau này thêm route PUT cho /api/classes thì phải xem lại test này
+		// một cách có chủ đích.
+		const legit = await t.call("/api/classes", {
 			session,
 			method: "PUT",
-			body: { maxAbsencesBeforeAlert: -5 },
+			body: {},
 		});
-		expect(legit.status).toBe(400);
+		expect(legit.status).toBe(404);
+	});
+
+	test("removed workspace settings endpoint returns 404 (issue #321)", async () => {
+		// Teacher session — student session bị chặn 403 ở bootstrap trước khi
+		// tới kernel router nên không dùng để khoá endpoint này.
+		const get = await t.call("/api/kernel/settings", { session });
+		expect(get.status).toBe(404);
+		const put = await t.call("/api/kernel/settings", {
+			session,
+			method: "PUT",
+			body: {},
+		});
+		expect(put.status).toBe(404);
+		const post = await t.call("/api/kernel/settings", {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(post.status).toBe(404);
 	});
 
 	test("POST with a non-JSON content-type is 415", async () => {
@@ -3278,6 +3299,128 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 		expect(cancelCompleted.status).toBe(409);
 	});
 
+	describe("future-session guard on check-in", () => {
+		const today = vietnamTodayISO();
+		const tomorrow = addDaysISO(today, 1);
+
+		async function statusOf(lessonId: string): Promise<string | undefined> {
+			return (await t.kernel(session)).lessons.find((l) => l.id === lessonId)
+				?.status;
+		}
+
+		test("dated lesson after today → 422 future-session (error and reason), row untouched", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(422);
+			expect(await res.json()).toEqual({
+				error: "future-session",
+				reason: "future-session",
+			});
+			expect(await statusOf(lessonId)).toBe("upcoming");
+		});
+
+		test("dated lesson today → 200", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: today,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+			expect(await statusOf(lessonId)).toBe("completed");
+		});
+
+		test("undated lesson → 200 (no date to compare)", async () => {
+			const lessonId = await t.insertLesson(session, { classId, enrollmentId });
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+		});
+
+		test("already-settled future lesson keeps the 409 heal, not 422", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+				status: "completed",
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(409);
+		});
+
+		test("cancelling a future lesson is still allowed", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/cancel`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+			expect(await statusOf(lessonId)).toBe("cancelled");
+		});
+
+		test("occurrence check-in: future bucket → 422, today's bucket → 200", async () => {
+			const futureDay = addDaysISO(today, 3);
+			const futureId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: futureDay,
+			});
+			const blocked = await t.call(
+				`/api/classes/${classId}/sessions/${futureDay}/check-in`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(blocked.status).toBe(422);
+			expect(await blocked.json()).toEqual({
+				error: "future-session",
+				reason: "future-session",
+			});
+			expect(await statusOf(futureId)).toBe("upcoming");
+
+			// Cancelling the same future bucket stays allowed.
+			const cancel = await t.call(
+				`/api/classes/${classId}/sessions/${futureDay}/cancel`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(cancel.status).toBe(200);
+
+			const todayLessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: today,
+			});
+			const ok = await t.call(
+				`/api/classes/${classId}/sessions/${today}/check-in`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(ok.status).toBe(200);
+			expect(await statusOf(todayLessonId)).toBe("completed");
+		});
+	});
+
 	test("lesson whose enrollment belongs to another class is rejected (binding)", async () => {
 		const otherClassId = await t.createClass(session, "Lớp khác");
 		const otherStudentId = await t.addStudent(session, "HV khác", {
@@ -4187,106 +4330,6 @@ describe("student package minimums (issue #115)", () => {
 			method: "GET",
 		});
 		expect(res.status).toBe(200);
-	});
-});
-
-describe("workspace settings persistence (issue #179)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
-	let sessionA: TestSession;
-	let sessionB: TestSession;
-
-	beforeAll(async () => {
-		t = await createTestApp();
-		sessionA = await t.insertUser("Giáo viên A");
-		sessionB = await t.insertUser("Giáo viên B");
-	});
-
-	test("GET returns default settings for new workspace", async () => {
-		const res = await t.call("/api/kernel/settings", {
-			session: sessionA,
-			method: "GET",
-		});
-		expect(res.status).toBe(200);
-		const settings = (await res.json()) as WorkspaceSettings;
-		expect(settings).toMatchObject({
-			defaultUnitPrice: "400.000đ",
-			absenceNoticeHours: "2 giờ trước buổi học",
-			unexcusedDeduct: "Có, trừ 1 buổi",
-			maxAbsencesBeforeAlert: 2,
-			reminderSchedule: "T−24h và T−1h",
-			overdueDebtReminder: "Sau 3 ngày và 7 ngày",
-			packageEndReminder: "Khi còn 3 buổi",
-			preferredChannel: "Zalo trước, email dự phòng",
-		});
-		expect(typeof settings.tplReminder).toBe("string");
-		expect(typeof settings.tplDebt).toBe("string");
-		expect(typeof settings.tplReport).toBe("string");
-	});
-
-	test("PUT saves settings and GET returns updated values", async () => {
-		const update = {
-			defaultUnitPrice: "500.000đ",
-			tplReminder: "Nhắc lịch mới: {{date}}",
-			tplDebt: "Học phí mới: {{amount}}",
-			tplReport: "Báo cáo mới: {{sessions}}",
-			maxAbsencesBeforeAlert: 3,
-			preferredChannel: "Chỉ Zalo",
-		};
-		const putRes = await t.call("/api/kernel/settings", {
-			session: sessionA,
-			method: "PUT",
-			body: update,
-		});
-		expect(putRes.status).toBe(200);
-		const putJson = (await putRes.json()) as WorkspaceSettings;
-		expect(putJson).toMatchObject(update);
-		expect(putJson.absenceNoticeHours).toBe("2 giờ trước buổi học"); // unchanged default
-
-		// Verify persistence on subsequent GET
-		const getRes = await t.call("/api/kernel/settings", {
-			session: sessionA,
-			method: "GET",
-		});
-		expect(getRes.status).toBe(200);
-		const getJson = await getRes.json();
-		expect(getJson).toMatchObject(update);
-	});
-
-	test("POST /api/kernel/settings also updates settings", async () => {
-		const postRes = await t.call("/api/kernel/settings", {
-			session: sessionA,
-			method: "POST",
-			body: {
-				defaultUnitPrice: "600.000đ",
-			},
-		});
-		expect(postRes.status).toBe(200);
-		const postJson = (await postRes.json()) as WorkspaceSettings;
-		expect(postJson.defaultUnitPrice).toBe("600.000đ");
-		expect(postJson.tplReminder).toBe("Nhắc lịch mới: {{date}}"); // previous update kept
-	});
-
-	test("PUT rejects invalid payload with 400", async () => {
-		const res = await t.call("/api/kernel/settings", {
-			session: sessionA,
-			method: "PUT",
-			body: {
-				maxAbsencesBeforeAlert: -5, // min is 0
-			},
-		});
-		expect(res.status).toBe(400);
-	});
-
-	test("multi-tenant isolation: Org A settings do not leak to Org B", async () => {
-		const resB = await t.call("/api/kernel/settings", {
-			session: sessionB,
-			method: "GET",
-		});
-		expect(resB.status).toBe(200);
-		const jsonB = (await resB.json()) as WorkspaceSettings;
-		// Org B should still have pristine defaults
-		expect(jsonB.defaultUnitPrice).toBe("400.000đ");
-		expect(jsonB.preferredChannel).toBe("Zalo trước, email dự phòng");
 	});
 });
 
@@ -5784,8 +5827,20 @@ describe("class assignment give flow (#208)", () => {
 		expect(assigned?.targets).toHaveLength(2);
 		expect(assigned?.targets).toEqual(
 			expect.arrayContaining([
-				{ studentId: studentIdA1, submittedAt: null },
-				{ studentId: studentIdA2, submittedAt: null },
+				{
+					studentId: studentIdA1,
+					submittedAt: null,
+					attemptId: null,
+					gradedAt: null,
+					band: null,
+				},
+				{
+					studentId: studentIdA2,
+					submittedAt: null,
+					attemptId: null,
+					gradedAt: null,
+					band: null,
+				},
 			]),
 		);
 	});

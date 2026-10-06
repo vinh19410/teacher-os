@@ -129,6 +129,27 @@ export const server = Cloudflare.Worker("server", {
 		RESEND_API_KEY: Config.string("RESEND_API_KEY").pipe(
 			Config.withDefault(""),
 		),
+		// SePay Bank Hub (#320): blank secret ⇒ getBankHub() trả undefined ⇒
+		// các route ngân hàng trả 503 BANKHUB_DISABLED (dev không cần cấu hình).
+		// Same pattern as RESEND_API_KEY — redacted conflicts with withDefault.
+		SEPAY_BANKHUB_CLIENT_ID: Config.string("SEPAY_BANKHUB_CLIENT_ID").pipe(
+			Config.withDefault(""),
+		),
+		SEPAY_BANKHUB_CLIENT_SECRET: Config.string(
+			"SEPAY_BANKHUB_CLIENT_SECRET",
+		).pipe(Config.withDefault("")),
+		SEPAY_BANKHUB_IPN_API_KEY: Config.string("SEPAY_BANKHUB_IPN_API_KEY").pipe(
+			Config.withDefault(""),
+		),
+		SEPAY_BANKHUB_WEBHOOK_SECRET: Config.string(
+			"SEPAY_BANKHUB_WEBHOOK_SECRET",
+		).pipe(Config.withDefault("")),
+		// Production deploys MUST set the production host; sandbox is the
+		// documented default so a forgotten value fails safe (sandbox keys are
+		// useless against it and no real money moves).
+		SEPAY_BANKHUB_BASE_URL: Config.string("SEPAY_BANKHUB_BASE_URL").pipe(
+			Config.withDefault("https://bankhub-api-sandbox.sepay.vn"),
+		),
 	},
 	dev: {
 		port: 8000,

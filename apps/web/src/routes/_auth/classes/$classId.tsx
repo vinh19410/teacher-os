@@ -25,8 +25,34 @@ import { CLASS_TYPE_LABELS, classMeta, fmtVND } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { todayISOVietnam } from "@/lib/week-grid";
+
+const CLASS_DETAIL_TABS = [
+	"roster",
+	"sessions",
+	"assignments",
+	"notes",
+] as const;
+export type ClassDetailTab = (typeof CLASS_DETAIL_TABS)[number];
+
+/**
+ * Tab active sống trong URL (`?tab=`) để nút "← Về lớp" của trang chấm
+ * (#319) mở đúng tab Bài tập. Passthrough validation — tab lạ hoặc thiếu
+ * không throw, chỉ rơi về mặc định (cùng pattern `validateSearch` của route
+ * `profile`).
+ */
+export function validateClassDetailSearch(search: Record<string, unknown>): {
+	tab?: ClassDetailTab;
+} {
+	const tab = search.tab;
+	return typeof tab === "string" &&
+		(CLASS_DETAIL_TABS as readonly string[]).includes(tab)
+		? { tab: tab as ClassDetailTab }
+		: {};
+}
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
+	validateSearch: validateClassDetailSearch,
 	component: ClassDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
@@ -101,7 +127,8 @@ function ClassDetailRoute() {
 	const { classById } = useClasses();
 	const { syllabusById, studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
-	const [tab, setTab] = useState("roster");
+	const search = Route.useSearch();
+	const [tab, setTab] = useState<string>(search.tab ?? "roster");
 	const [manageOpen, setManageOpen] = useState(false);
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"
@@ -131,8 +158,16 @@ function ClassDetailRoute() {
 	const classAssignments = useMemo(() => {
 		return (data.classAssignments ?? []).filter((ca) => ca.classId === classId);
 	}, [data.classAssignments, classId]);
+	// "Hôm nay" tính trong memo (#322): data đổi/reload là tính lại; tab mở
+	// qua nửa đêm không tự chuyển "Quá hạn" cho tới khi có refetch — chấp nhận.
 	const rosterDebt = useMemo(
-		() => rosterDebtByStudent(classId, data.enrollments, data.invoices),
+		() =>
+			rosterDebtByStudent(
+				classId,
+				data.enrollments,
+				data.invoices,
+				todayISOVietnam(),
+			),
 		[classId, data.enrollments, data.invoices],
 	);
 	const openAssignmentsCount = useMemo(() => {

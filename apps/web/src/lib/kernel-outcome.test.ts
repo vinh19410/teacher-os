@@ -4,7 +4,11 @@
  */
 import { describe, expect, test } from "vitest";
 import { HttpError } from "./kernel-load-state";
-import { planDirectOutcome } from "./kernel-outcome";
+import {
+	FUTURE_SESSION_MESSAGE,
+	occurrenceSummary,
+	planDirectOutcome,
+} from "./kernel-outcome";
 
 describe("planDirectOutcome", () => {
 	test("refreshed reports success and settles", () => {
@@ -75,5 +79,42 @@ describe("planDirectOutcome", () => {
 		expect(plan.message).toMatch(/có thể đã lưu/);
 		expect(plan.message).not.toMatch(/chưa được ghi/);
 		expect(plan.reconcile).toBe("check");
+	});
+});
+
+describe("future-session rejection (422)", () => {
+	const futureSession = {
+		kind: "definite-failure" as const,
+		status: 422,
+		error: new Error("future-session"),
+		reason: "future-session",
+	};
+
+	test("planDirectOutcome: dedicated copy, and reconciles so a stale tab resyncs", () => {
+		expect(planDirectOutcome(futureSession, "x")).toEqual({
+			toastKind: "error",
+			message: FUTURE_SESSION_MESSAGE,
+			reconcile: "check",
+		});
+		expect(FUTURE_SESSION_MESSAGE).toBe(
+			"Chưa tới ngày học — chưa thể điểm danh.",
+		);
+	});
+
+	test("occurrenceSummary: same copy on the class-detail path", () => {
+		expect(occurrenceSummary(futureSession, "x")).toEqual({
+			kind: "error",
+			message: FUTURE_SESSION_MESSAGE,
+		});
+	});
+
+	test("a 422 without the future-session reason keeps the generic failure copy", () => {
+		const other = { ...futureSession, reason: "something-else" };
+		expect(planDirectOutcome(other, "x").message).toBe(
+			"Không lưu được — dữ liệu chưa được ghi lên máy chủ.",
+		);
+		expect(occurrenceSummary(other, "x").message).toBe(
+			"Không lưu được — dữ liệu chưa được ghi lên máy chủ.",
+		);
 	});
 });

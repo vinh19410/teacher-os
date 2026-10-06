@@ -12,6 +12,7 @@ import type { LessonType } from "@/lib/mock-data";
 import { dayNames } from "@/lib/mock-data";
 import {
 	distinctStudentsBySid,
+	resolveWeekColumnEntries,
 	selectProjectedWeekBlocks,
 	selectWeekColumnSessions,
 	weekSlotCount,
@@ -68,7 +69,12 @@ export function ScheduleRoute() {
 	// undated legacy rows keep the weekday-template behavior; classes with
 	// zero lesson rows contribute display-only projected blocks.
 	const columns = dayNames.map((_, i) =>
-		selectWeekColumnSessions(data.lessons, i + 1, dates),
+		resolveWeekColumnEntries(
+			selectWeekColumnSessions(data.lessons, i + 1, dates),
+			data.classes,
+			data.lessons,
+			dates[i],
+		),
 	);
 	const projected = selectProjectedWeekBlocks(
 		data.classes,

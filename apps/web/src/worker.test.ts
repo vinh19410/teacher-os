@@ -98,6 +98,9 @@ describe("apps/web worker fetch handler", () => {
 			"/about",
 			"/signup",
 			"/register",
+			// Route /settings đã gỡ (issue #321) — pin ở tầng worker luôn,
+			// không chỉ ở routes-matcher.test.ts.
+			"/settings",
 		];
 
 		for (const path of unknownPaths) {

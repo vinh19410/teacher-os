@@ -25,6 +25,8 @@ import { student } from "./student";
  * Speaking học viên tải lên (#305): `mediaKey` trỏ vào object trong bucket
  * R2 `MEDIA`, null = chưa có file. Mỗi lần upload sinh key mới và ghi CAS
  * theo key cũ, nên DB không bao giờ trỏ vào object đang bị ghi đè.
+ * `grade_*` là điểm + nhận xét giáo viên chấm bài Writing/Speaking; lưu là
+ * ghi đè (học viên thấy ngay).
  */
 export const quizAttempt = sqliteTable(
 	"quiz_attempt",
@@ -49,6 +51,14 @@ export const quizAttempt = sqliteTable(
 		mediaSize: integer("media_size"),
 		mediaUploadedAt: integer("media_uploaded_at", { mode: "timestamp_ms" }),
 		correctCount: integer("correct_count"),
+		/** Điểm giáo viên chấm Writing/Speaking: JSON `{criterion: band}`;
+		 * null = chưa chấm. Band tổng derive (ieltsOverallBand), không lưu. */
+		gradeScores: text("grade_scores", { mode: "json" }).$type<Record<
+			string,
+			number
+		> | null>(),
+		gradeFeedback: text("grade_feedback").notNull().default(""),
+		gradedAt: integer("graded_at", { mode: "timestamp_ms" }),
 		startedAt: integer("started_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

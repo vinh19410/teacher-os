@@ -87,6 +87,21 @@ const navSections: {
 				),
 			},
 			{
+				to: "/payments",
+				label: "Nhận học phí",
+				icon: (
+					<svg
+						aria-hidden="true"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="1.6"
+					>
+						<path d="M12 3v18M7 7h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8" />
+					</svg>
+				),
+			},
+			{
 				to: "/assignments",
 				label: "Bài tập",
 				icon: (
@@ -170,27 +185,6 @@ const navSections: {
 				},
 			]
 		: []),
-	{
-		label: "Hệ thống",
-		items: [
-			{
-				to: "/settings",
-				label: "Cài đặt",
-				icon: (
-					<svg
-						aria-hidden="true"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.6"
-					>
-						<circle cx="12" cy="12" r="3" />
-						<path d="M19 12c0 .5 0 1-.1 1.5l2 1.5-2 3.4-2.4-1c-.7.6-1.5 1-2.4 1.3L14 21h-4l-.4-2.3c-.9-.3-1.7-.8-2.4-1.3l-2.4 1-2-3.4 2-1.5c-.1-.5-.1-1-.1-1.5s0-1 .1-1.5l-2-1.5 2-3.4 2.4 1c.7-.6 1.5-1 2.4-1.3L10 3h4l.4 2.3c.9.3 1.7.8 2.4 1.3l2.4-1 2 3.4-2 1.5c.1.5.1 1 .1 1.5z" />
-					</svg>
-				),
-			},
-		],
-	},
 ];
 
 export function extractUserPlan(user: unknown): string | null {

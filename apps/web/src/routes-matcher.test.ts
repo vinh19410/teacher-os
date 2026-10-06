@@ -22,7 +22,6 @@ describe("routes-matcher", () => {
 			"/profile",
 			"/reports",
 			"/schedule",
-			"/settings",
 			"/tuition",
 			"/assignments",
 			"/assignments/new",
@@ -77,6 +76,11 @@ describe("routes-matcher", () => {
 			// Prefix reasoning test "new"/"preview" vẫn match exact route ở trên.
 			expect(isValidAppRoute("/assignments/tests/new")).toBe(true);
 			expect(isValidAppRoute("/assignments/tests/preview")).toBe(true);
+			// Trang chấm bài (#319): /grading/<attemptId> — một segment.
+			expect(isValidAppRoute("/grading/att-123")).toBe(true);
+			expect(isValidAppRoute("/grading/att-123/")).toBe(true);
+			expect(isValidAppRoute("/grading")).toBe(false);
+			expect(isValidAppRoute("/grading/a/b")).toBe(false);
 		});
 
 		it("rejects non-existent pages reported in QC issue #113", () => {
@@ -91,6 +95,8 @@ describe("routes-matcher", () => {
 			expect(isValidAppRoute("/foo")).toBe(false);
 			expect(isValidAppRoute("/api/unknown")).toBe(false);
 			expect(isValidAppRoute("/admin")).toBe(false);
+			// Route /settings đã bị gỡ (issue #321) — xử lý như path không hợp lệ.
+			expect(isValidAppRoute("/settings")).toBe(false);
 			expect(isValidAppRoute("/settings/extra/nested")).toBe(false);
 		});
 

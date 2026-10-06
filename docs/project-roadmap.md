@@ -82,7 +82,7 @@ Trạng thái: **Đang thực hiện** (2026-09-18) — #67 labeled in progress;
 
 **DÙNG ĐƯỢC khi hoàn thành**: tác giả tự vận hành M1–M3 hằng ngày trên production như giáo viên; pilot log chạy.
 
-**CHƯA DÙNG ĐƯỢC tại M4**: pilot vận hành chưa bắt đầu. Tạo assignment, tạo/gửi report, settings persist đã lên production (release 0.0.4, 2026-09-18).
+**CHƯA DÙNG ĐƯỢC tại M4**: pilot vận hành chưa bắt đầu. Tạo assignment, tạo/gửi report, settings persist đã lên production (release 0.0.4, 2026-09-18). *(Cập nhật 2026-10-05: feature settings persist đã bị gỡ — trang `/settings` + API `/api/kernel/settings` xoá theo issue #321 vì không tính năng nào dùng; bảng DB giữ nguyên.)*
 
 **DOD**:
 - [ ] Org thật trên production do tác giả onboard và vận hành ≥2 lớp theo lịch (data thật nếu có, nếu không dữ liệu mô phỏng vận hành theo nhịp thật); sign-in Google production thành công (đóng deviation OAuth từ M3).
@@ -97,7 +97,7 @@ Trạng thái: **Đang thực hiện** (2026-09-21) — DOD-1 (#69) có evidence
 
 **DÙNG ĐƯỢC khi hoàn thành**: bản ổn định sau pilot + decision record quý sau.
 
-**CHƯA DÙNG ĐƯỢC tại M5**: feature mới theo quyết định (ứng viên đầu: assignment create, report create, settings persist — chỉ thêm nếu pilot chứng minh blocker).
+**CHƯA DÙNG ĐƯỢC tại M5**: feature mới theo quyết định (ứng viên đầu: assignment create, report create — ứng viên "settings persist" đã loại 2026-10-05, feature bị gỡ theo issue #321 — chỉ thêm nếu pilot chứng minh blocker).
 
 **DOD**:
 - [x] Toàn bộ pilot blocker fix; regression E2E xanh. *(evidence: pilot log 0 blocker — pilot chưa bắt đầu nên không có blocker nào để fix, triage 5 nguồn trong [evidence report](../plans/260921-0505-issue69-m5-pilot-blockers-regression-e2e/reports/evidence-regression-e2e.md); regression E2E xanh — local 66 pass/0 fail tại `beda711` + CI workflow E2E xanh trên develop `e41c0a3` và trên PR của issue này; ghi chú: DOD-1 được đóng ở dạng vacuous — nếu pilot (#67) bắt đầu và ghi blocker, dòng này mở lại)*

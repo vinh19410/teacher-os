@@ -8,17 +8,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { formatSessionDate } from "@/lib/class-sessions";
+import {
+	findClassOccurrence,
+	formatSessionDate,
+	occurrenceSidStates,
+} from "@/lib/class-sessions";
 import { useData } from "@/lib/data-store";
 import { lessonDayLabel } from "@/lib/format-schedule";
 import type { Lesson } from "@/lib/mock-data";
 import {
-	distinctStudentsBySid,
+	fallbackSidStates,
 	findSessionRows,
 	type SessionRef,
 } from "@/lib/schedule-week";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import { todayISOVietnam } from "@/lib/week-grid";
 
 export interface ClassSessionModalRef extends SessionRef {
 	columnDateISO?: string;
@@ -108,6 +113,22 @@ export function ClassSessionModal({
 		? rows.find((r) => r.id === editingLessonId)
 		: null;
 
+	// Each student's state at THIS occurrence. Legacy undated entries bundle a
+	// whole course, so reading `rows` directly would show an arbitrary week's
+	// row (and write to it); the occurrence model picks the right row instead.
+	const todayISO = todayISOVietnam();
+	const lookup = cls
+		? findClassOccurrence(cls, data.lessons, {
+				dateISO: sessionRef.dateISO,
+				columnDateISO: sessionRef.columnDateISO,
+				time: sessionRef.time,
+			})
+		: null;
+	const sidStates =
+		lookup?.kind === "found"
+			? occurrenceSidStates(lookup.session, todayISO)
+			: fallbackSidStates(rows, todayISO);
+
 	return (
 		<Modal
 			open={open}
@@ -181,18 +202,19 @@ export function ClassSessionModal({
 					/* Student Rows List */
 					<div className="flex flex-col gap-3">
 						<div className="font-medium text-muted-fg text-xs">
-							Danh sách học viên ({distinctStudentsBySid(rows).length})
+							Danh sách học viên ({sidStates.length})
 						</div>
 						<div className="flex flex-col divide-y divide-line-soft">
-							{distinctStudentsBySid(rows).map((row) => {
-								const student = studentById(row.sid);
-								const studentName = student?.name ?? `Học viên #${row.sid}`;
-								const isRowPending = isPending(row.id);
+							{sidStates.map((state) => {
+								const student = studentById(state.sid);
+								const studentName = student?.name ?? `Học viên #${state.sid}`;
+								const targetId = state.targetLessonId;
+								const isRowPending = targetId !== null && isPending(targetId);
 
 								return (
 									// biome-ignore lint/a11y/useSemanticElements: role="group" with aria-label is used to scope per-student action controls in UI and e2e
 									<div
-										key={row.id}
+										key={state.sid}
 										role="group"
 										aria-label={studentName}
 										className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
@@ -211,19 +233,19 @@ export function ClassSessionModal({
 										</div>
 
 										<div className="flex items-center gap-2">
-											{row.status === "completed" ? (
+											{state.status === "completed" ? (
 												<Badge variant="success" dot>
 													Hoàn thành
 												</Badge>
-											) : row.status === "cancelled" ? (
+											) : state.status === "cancelled" ? (
 												<Badge variant="danger">Đã hủy</Badge>
-											) : row.status === "absent" ? (
+											) : state.status === "absent" ? (
 												<Badge variant="danger">Vắng mặt</Badge>
 											) : (
 												<Badge variant="accent">Sắp tới</Badge>
 											)}
 
-											{row.status === "upcoming" && (
+											{targetId !== null && state.canCancelEdit && (
 												<div className="ml-2 flex items-center gap-1.5">
 													<Button
 														variant="secondary"
@@ -231,10 +253,12 @@ export function ClassSessionModal({
 														disabled={busy || isRowPending || saving}
 														onClick={() => {
 															resetEditState();
-															setEditingLessonId(row.id);
+															setEditingLessonId(targetId);
 														}}
 													>
-														{row.date ? "Sửa buổi học" : "Sửa"}
+														{rows.find((r) => r.id === targetId)?.date
+															? "Sửa buổi học"
+															: "Sửa"}
 													</Button>
 													<Button
 														variant="secondary"
@@ -242,27 +266,29 @@ export function ClassSessionModal({
 														disabled={busy || isRowPending || saving}
 														onClick={() =>
 															void runRowAction(
-																row.id,
-																{ type: "cancel-lesson", lessonId: row.id },
+																targetId,
+																{ type: "cancel-lesson", lessonId: targetId },
 																"Đã hủy buổi học.",
 															)
 														}
 													>
 														Hủy
 													</Button>
-													<Button
-														size="sm"
-														disabled={busy || isRowPending || saving}
-														onClick={() =>
-															void runRowAction(
-																row.id,
-																{ type: "check-in", lessonId: row.id },
-																"Đã điểm danh.",
-															)
-														}
-													>
-														Điểm danh
-													</Button>
+													{state.canCheckIn && (
+														<Button
+															size="sm"
+															disabled={busy || isRowPending || saving}
+															onClick={() =>
+																void runRowAction(
+																	targetId,
+																	{ type: "check-in", lessonId: targetId },
+																	"Đã điểm danh.",
+																)
+															}
+														>
+															Điểm danh
+														</Button>
+													)}
 												</div>
 											)}
 										</div>

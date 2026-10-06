@@ -14,7 +14,12 @@
  * All date math is UTC-anchored `yyyy-mm-dd` strings (week-grid convention).
  */
 
-import { projectClassSessions } from "@/lib/class-sessions";
+import {
+	findClassOccurrence,
+	type OccurrenceSidState,
+	projectClassSessions,
+	sessionStatus,
+} from "@/lib/class-sessions";
 import type {
 	ClassGroup,
 	Lesson,
@@ -227,4 +232,71 @@ export function weekSlotCount(
 		slots.add(`${block.day}|${block.time}`);
 	}
 	return slots.size;
+}
+
+/**
+ * Per-student state when the occurrence cannot be resolved (divergent rows,
+ * free-text schedule): keep the row-based actions the popup always had — they
+ * are the only way to settle such a class. A student bundles many rows, so the
+ * earliest UPCOMING row (id-asc) is the target and the state; only a student
+ * with nothing left to settle shows the first row's final status. Điểm danh is
+ * hidden on a target that carries a date after today.
+ */
+export function fallbackSidStates(
+	rows: readonly Lesson[],
+	todayISO: string,
+): OccurrenceSidState[] {
+	return distinctStudentsBySid(rows).map((first) => {
+		const target = rows
+			.filter((r) => r.sid === first.sid && r.status === "upcoming")
+			.sort((a, b) => a.id.localeCompare(b.id))[0];
+		const targetLessonId = target?.id ?? null;
+		const canCancelEdit = targetLessonId !== null;
+		const future = target?.date != null && target.date > todayISO;
+		return {
+			sid: first.sid,
+			status: target ? "upcoming" : first.status,
+			targetLessonId,
+			canCancelEdit,
+			canCheckIn: canCancelEdit && !future,
+		};
+	});
+}
+
+/**
+ * Legacy undated blocks bundle a whole course (weeks × students). Re-read each
+ * one for the column date it is drawn in: its status becomes that occurrence's
+ * own status, and a block whose column is outside the class schedule (the
+ * weekday template repeats forever) is dropped. Dated blocks and blocks whose
+ * class model cannot be resolved are returned untouched.
+ */
+export function resolveWeekColumnEntries(
+	entries: readonly WeekSessionEntry[],
+	classes: readonly ClassGroup[],
+	lessons: readonly Lesson[],
+	columnDateISO: string,
+): WeekSessionEntry[] {
+	const out: WeekSessionEntry[] = [];
+	for (const entry of entries) {
+		const cls =
+			entry.dateISO === null
+				? classes.find((c) => c.id === entry.classId)
+				: undefined;
+		if (!cls) {
+			out.push(entry);
+			continue;
+		}
+		const lookup = findClassOccurrence(cls, lessons, {
+			dateISO: null,
+			columnDateISO,
+			time: entry.time,
+		});
+		if (lookup.kind === "outside-schedule") continue;
+		out.push(
+			lookup.kind === "found"
+				? { ...entry, status: sessionStatus(lookup.session) }
+				: entry,
+		);
+	}
+	return out;
 }

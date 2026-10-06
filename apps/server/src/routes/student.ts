@@ -40,6 +40,7 @@ import {
 	classAssignmentTarget,
 	classTable,
 	enrollment,
+	invoice,
 	lesson,
 	organization,
 	quizAttempt,
@@ -52,7 +53,13 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
+import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import {
+	ensurePaymentRefs,
+	loadPaymentInstructions,
+} from "../lib/payment-instructions";
+import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
@@ -114,32 +121,6 @@ function parseTargetScore(
 	const allowed =
 		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
 	return parseEnum(raw, allowed);
-}
-
-/** Percent-encode cho `filename*` (RFC 8187 attr-char): encodeURIComponent
- * còn để lọt `'()*`. */
-function encodeRfc8187(value: string): string {
-	return encodeURIComponent(value).replace(
-		/['()*]/g,
-		(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-	);
-}
-
-/** Cột media_* của attempt → payload wire (không lộ object key). */
-function toQuizAttemptMedia(row: {
-	mediaKey: string | null;
-	mediaName: string | null;
-	mediaType: string | null;
-	mediaSize: number | null;
-	mediaUploadedAt: Date | null;
-}): QuizAttemptMedia | null {
-	if (row.mediaKey === null) return null;
-	return {
-		name: row.mediaName ?? "",
-		type: row.mediaType ?? "",
-		size: row.mediaSize ?? 0,
-		uploadedAt: row.mediaUploadedAt ? row.mediaUploadedAt.toISOString() : "",
-	};
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
@@ -607,6 +588,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/assignments/:assignmentId/quiz", requireStudent);
 	router.use("/assignments/:assignmentId/quiz/*", requireStudent);
 	router.use("/attempts/*", requireStudent);
+	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
+	router.use("/invoices", requireStudent);
+	router.use("/invoices/*", requireStudent);
 
 	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
 	// session gate `use("*")` nên request không có session vẫn 401 trước khi
@@ -727,6 +711,57 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
 		return c.json(buildStudentMe(sessionUser, s));
+	});
+
+	// #320: tuition invoices of THIS student in the CURRENT org only.
+	router.get("/invoices", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+		const rows = await db
+			.select({
+				id: invoice.id,
+				amount: invoice.amount,
+				paidAmount: invoice.paidAmount,
+				status: invoice.status,
+				due: invoice.due,
+				type: invoice.type,
+			})
+			.from(invoice)
+			.where(and(eq(invoice.orgId, orgId), eq(invoice.studentId, s.id)))
+			.orderBy(asc(invoice.createdAt), asc(invoice.id));
+		return c.json(
+			rows.map((row) => ({
+				id: row.id,
+				invoiceCode: `INV-${row.id.slice(-8).toUpperCase()}`,
+				amount: row.amount,
+				paidAmount: row.paidAmount,
+				amountDue: Math.max(row.amount - row.paidAmount, 0),
+				status: row.status,
+				due: row.due,
+				type: row.type,
+			})),
+		);
+	});
+
+	router.get("/invoices/:id/payment", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(invoice)
+			.where(
+				and(
+					eq(invoice.id, c.req.param("id")),
+					eq(invoice.orgId, orgId),
+					eq(invoice.studentId, s.id),
+				),
+			)
+			.limit(1);
+		if (!row) return c.json({ error: "invoice not found" }, 404);
+		const refs = await ensurePaymentRefs(db, row.id, orgId);
+		if (!refs) return c.json({ error: "invoice not found" }, 404);
+		const instructions = await loadPaymentInstructions({ db, invoice: refs });
+		return c.json(instructions);
 	});
 
 	router.get("/overview", async (c) => {
@@ -1503,16 +1538,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!object) {
 			return c.json({ error: "media not found" }, 404);
 		}
-		return new Response(object.body, {
-			headers: {
-				"Content-Type": attempt.mediaType ?? object.contentType,
-				"Content-Length": String(object.size),
-				"Content-Disposition": `inline; filename*=UTF-8''${encodeRfc8187(attempt.mediaName ?? "media")}`,
-				"X-Content-Type-Options": "nosniff",
-				"Content-Security-Policy": "default-src 'none'; sandbox",
-				"Cache-Control": "private, no-store",
-			},
-		});
+		return mediaObjectResponse(object, attempt);
 	});
 
 	/**
@@ -1662,6 +1688,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				// Skill quyết định summary/detail có lộ essay (#304) — join có
 				// predicate orgId, nhất quán chuẩn IDOR với PATCH essay.
 				skill: assignmentPrompt.skill,
+				// Part để nhãn tiêu chí chấm Writing đúng TA/TR (#319).
+				part: assignmentPrompt.part,
 			})
 			.from(classAssignment)
 			.innerJoin(
@@ -1686,6 +1714,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			note: header?.note ?? "",
 			promptType: header?.type ?? "",
 			skill: header?.skill ?? "",
+			part: header?.part ?? "",
 		};
 	};
 
@@ -1702,7 +1731,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, skill } = loaded;
+		const { attempt, questions, answers, grade, title, skill, part } = loaded;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1728,6 +1757,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 		};
+		// Điểm giáo viên chấm: CHỈ thêm key khi đã chấm — bundle cũ (schema
+		// strict) không vỡ ở attempt chưa chấm.
+		const teacherGrade = toQuizAttemptGrade(attempt);
+		if (teacherGrade) {
+			summary.grade = teacherGrade;
+			summary.part = part;
+		}
 		return c.json(summary);
 	});
 

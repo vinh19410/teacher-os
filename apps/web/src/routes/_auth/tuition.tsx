@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
+import {
+	InvoicePaymentModal,
+	UnmatchedTransactions,
+} from "@/components/modals/invoice-payment-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,36 +15,41 @@ import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
-import { invoiceCode, invoiceType } from "@/lib/format-invoice";
+import {
+	INVOICE_STATUS_LABEL,
+	INVOICE_STATUS_VARIANT,
+	invoiceCode,
+	invoiceType,
+} from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
 import {
+	effectiveInvoiceStatus,
 	formatDue,
 	packagesEndingSoon,
 	tuitionTotals,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { todayISOVietnam } from "@/lib/week-grid";
 
 export const Route = createFileRoute("/_auth/tuition")({
 	component: TuitionRoute,
 });
-
-const INV_LABEL: Record<string, string> = {
-	paid: "Đã thu",
-	overdue: "Quá hạn",
-	unpaid: "Chưa thu",
-};
 
 export function TuitionRoute() {
 	const navigate = useNavigate();
 	const { data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [modalOpen, setModalOpen] = useState(false);
+	// #320: invoice currently open in the "Thu học phí" QR modal.
+	const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
 	// Issues #62/#135 — every number on this page derives from the kernel
 	// store; nothing is hardcoded. The command bus refetches after mark-paid,
 	// so totals track the server without local arithmetic.
 	const { collected, outstanding } = tuitionTotals(data.invoices);
 	const endingSoon = packagesEndingSoon(data.students);
+	// "Hôm nay" một lần cho cả bảng (#322) — badge "Quá hạn" suy ra từ `due`.
+	const today = todayISOVietnam();
 
 	return (
 		<div>
@@ -186,6 +195,7 @@ export function TuitionRoute() {
 							emptyMessage="Chưa có hóa đơn."
 							rows={data.invoices.map((i) => {
 								const s = data.students.find((st) => st.id === i.sid);
+								const status = effectiveInvoiceStatus(i, today);
 								return {
 									cells: [
 										<span key="id" className="font-mono text-meta text-xs">
@@ -196,7 +206,11 @@ export function TuitionRoute() {
 											<Tag>{invoiceType(i.type)}</Tag>
 										</span>,
 										<span key="a" className="font-mono">
-											{fmtVND(i.amount)}
+											{i.status !== "paid" &&
+											i.paidAmount > 0 &&
+											i.paidAmount < i.amount
+												? `${fmtVND(i.paidAmount)} / ${fmtVND(i.amount)}`
+												: fmtVND(i.amount)}
 										</span>,
 										<span key="d" className="font-mono text-meta text-xs">
 											{i.date}
@@ -204,39 +218,55 @@ export function TuitionRoute() {
 										<span key="due" className="font-mono text-meta text-xs">
 											{i.status === "paid" ? "—" : formatDue(i.due)}
 										</span>,
-										i.status === "paid" ? (
-											<Badge key="b" variant="success" dot>
-												{INV_LABEL.paid}
+										status === "paid" ? (
+											<Badge
+												key="b"
+												variant={INVOICE_STATUS_VARIANT[status]}
+												dot
+											>
+												{INVOICE_STATUS_LABEL[status]}
 											</Badge>
-										) : i.status === "overdue" ? (
-											<Badge key="b" variant="danger" dot>
-												{INV_LABEL.overdue}
+										) : i.paidAmount > 0 ? (
+											<Badge key="b" variant="warn" dot>
+												Thu một phần
 											</Badge>
 										) : (
-											<Badge key="b" variant="warn" dot>
-												{INV_LABEL.unpaid}
+											<Badge
+												key="b"
+												variant={INVOICE_STATUS_VARIANT[status]}
+												dot
+											>
+												{INVOICE_STATUS_LABEL[status]}
 											</Badge>
 										),
 										i.status !== "paid" ? (
-											<Button
-												key="act"
-												variant="ghost"
-												size="sm"
-												disabled={busy || isPending(i.id)}
-												onClick={() =>
-													void run(
-														i.id,
-														{
-															type: "mark-invoice-paid",
-															invoiceId: i.id,
-															method: i.method === "—" ? "CK" : i.method,
-														},
-														"Đã ghi nhận thanh toán.",
-													)
-												}
-											>
-												{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
-											</Button>
+											<div key="act" className="flex justify-end gap-1">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={() => setPayingInvoiceId(i.id)}
+												>
+													Thu học phí
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={busy || isPending(i.id)}
+													onClick={() =>
+														void run(
+															i.id,
+															{
+																type: "mark-invoice-paid",
+																invoiceId: i.id,
+																method: i.method === "—" ? "CK" : i.method,
+															},
+															"Đã ghi nhận thanh toán.",
+														)
+													}
+												>
+													{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
+												</Button>
+											</div>
 										) : (
 											<span key="m" className="font-mono text-meta text-xs">
 												{i.method}
@@ -249,6 +279,24 @@ export function TuitionRoute() {
 					</Card>
 				)}
 			</div>
+			<UnmatchedTransactions
+				openInvoices={data.invoices
+					.filter((i) => i.status !== "paid" || i.paidAmount < i.amount)
+					.map((i) => ({
+						id: i.id,
+						label:
+							invoiceCode(i.id) +
+							" · " +
+							(data.students.find((st) => st.id === i.sid)?.name ?? "") +
+							" · còn " +
+							fmtVND(i.amount - i.paidAmount),
+					}))}
+			/>
+			<InvoicePaymentModal
+				invoiceId={payingInvoiceId}
+				open={payingInvoiceId !== null}
+				onClose={() => setPayingInvoiceId(null)}
+			/>
 			<AddInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>
 	);

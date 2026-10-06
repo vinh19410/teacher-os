@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isBandStep } from "./lib/ielts-band";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 /**
@@ -1296,6 +1297,11 @@ export interface KernelInvoiceRow {
 	date: string;
 	type: string;
 	method: string;
+	/**
+	 * #320 — ledger-recomputed paid total (SUM of matched
+	 * payment_transaction amounts). Stays 0 for manually mark-paid invoices.
+	 */
+	paidAmount: number;
 }
 
 export interface AssignmentQuestion {
@@ -1347,7 +1353,16 @@ export interface KernelClassAssignmentRow {
 	due: string;
 	note: string;
 	createdAt: string;
-	targets: Array<{ studentId: string; submittedAt: string | null }>;
+	targets: Array<{
+		studentId: string;
+		submittedAt: string | null;
+		/** Attempt đã nộp (status submitted) — null khi chưa nộp/chưa có attempt. */
+		attemptId: string | null;
+		/** ISO datetime lần chấm gần nhất — null khi chưa chấm. */
+		gradedAt: string | null;
+		/** Band tổng (ieltsOverallBand) — null khi chưa chấm. */
+		band: number | null;
+	}>;
 }
 
 /** Một slot của full test — position là thứ tự slot trong preset. */
@@ -1418,53 +1433,6 @@ export interface KernelSnapshot {
 export interface CreatedResponse {
 	id: string;
 }
-
-export const workspaceSettingsSchema = z.object({
-	defaultUnitPrice: z.string().min(1).default("400.000đ"),
-	tplReminder: z
-		.string()
-		.min(1)
-		.default(
-			"Chào phụ huynh, mai ({{date}}) học viên {{student_name}} có buổi học lúc {{time}} hình thức {{mode}}. Link: {{zoom_link}}. Nhắc em chuẩn bị bài nhé ạ.",
-		),
-	tplDebt: z
-		.string()
-		.min(1)
-		.default(
-			"Phụ huynh ơi, học phí gói của {{student_name}} còn nợ {{amount}}. Giáo viên gửi QR MoMo {{qr_link}}. Nhờ phụ huynh thanh toán giúp ạ.",
-		),
-	tplReport: z
-		.string()
-		.min(1)
-		.default(
-			"Tuần này {{student_name}} học {{sessions}} buổi, chuyên cần {{attendance}}. Band gần nhất: {{latest_band}}. Việc ở nhà: {{homework}}. Chi tiết: {{report_link}}",
-		),
-	absenceNoticeHours: z.string().min(1).default("2 giờ trước buổi học"),
-	unexcusedDeduct: z.string().min(1).default("Có, trừ 1 buổi"),
-	maxAbsencesBeforeAlert: z.number().int().min(0).default(2),
-	reminderSchedule: z.string().min(1).default("T−24h và T−1h"),
-	overdueDebtReminder: z.string().min(1).default("Sau 3 ngày và 7 ngày"),
-	packageEndReminder: z.string().min(1).default("Khi còn 3 buổi"),
-	preferredChannel: z.string().min(1).default("Zalo trước, email dự phòng"),
-});
-export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
-
-export const workspaceSettingsUpdateSchema = z.object({
-	defaultUnitPrice: z.string().min(1).optional(),
-	tplReminder: z.string().min(1).optional(),
-	tplDebt: z.string().min(1).optional(),
-	tplReport: z.string().min(1).optional(),
-	absenceNoticeHours: z.string().min(1).optional(),
-	unexcusedDeduct: z.string().min(1).optional(),
-	maxAbsencesBeforeAlert: z.number().int().min(0).optional(),
-	reminderSchedule: z.string().min(1).optional(),
-	overdueDebtReminder: z.string().min(1).optional(),
-	packageEndReminder: z.string().min(1).optional(),
-	preferredChannel: z.string().min(1).optional(),
-});
-export type WorkspaceSettingsUpdate = z.infer<
-	typeof workspaceSettingsUpdateSchema
->;
 
 /**
  * Student Portal API contracts.
@@ -1740,6 +1708,78 @@ export const quizAttemptMediaSchema = z
 	.strict();
 export type QuizAttemptMedia = z.infer<typeof quizAttemptMediaSchema>;
 
+/** Nhận xét giáo viên cho bài Writing/Speaking — plain text. */
+export const QUIZ_FEEDBACK_MAX = 5000;
+/** Điểm một tiêu chí IELTS: 0–9, bước 0.5. */
+export const bandScoreSchema = z
+	.number()
+	.refine(isBandStep, "band step 0.5 in 0..9");
+export const writingGradeScoresSchema = z
+	.object({
+		task: bandScoreSchema,
+		coherence: bandScoreSchema,
+		lexical: bandScoreSchema,
+		grammar: bandScoreSchema,
+	})
+	.strict();
+export const speakingGradeScoresSchema = z
+	.object({
+		fluency: bandScoreSchema,
+		lexical: bandScoreSchema,
+		grammar: bandScoreSchema,
+		pronunciation: bandScoreSchema,
+	})
+	.strict();
+/** POST /api/grading/:attemptId/grade — scores validate theo skill ở server. */
+export const quizGradeInputSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+	})
+	.strict();
+export type QuizGradeInput = z.infer<typeof quizGradeInputSchema>;
+/** Điểm đã chấm — band luôn derive từ scores (ieltsOverallBand). */
+export const quizAttemptGradeSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		band: z.number(),
+		feedback: z.string(),
+		/** ISO datetime lần lưu gần nhất. */
+		gradedAt: z.string(),
+	})
+	.strict();
+export type QuizAttemptGrade = z.infer<typeof quizAttemptGradeSchema>;
+
+/** GET /api/grading/:attemptId — bài nộp Writing/Speaking cho giáo viên chấm. */
+export const teacherSubmissionSchema = z
+	.object({
+		attemptId: z.string(),
+		classAssignmentId: z.string(),
+		classId: z.string(),
+		className: z.string(),
+		title: z.string(),
+		due: z.string(),
+		student: z.object({ id: z.string(), name: z.string() }).strict(),
+		skill: z.enum(["writing", "speaking"]),
+		part: z.string(),
+		prompt: z
+			.object({
+				prompt: z.string(),
+				imageUrl: z.string(),
+				cueTopic: z.string(),
+				cuePoints: z.string(),
+				note: z.string(),
+			})
+			.strict(),
+		startedAt: z.string(),
+		submittedAt: z.string(),
+		essay: z.string().nullable(),
+		media: quizAttemptMediaSchema.nullable(),
+		grade: quizAttemptGradeSchema.nullable(),
+	})
+	.strict();
+export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
+
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
 export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {
@@ -1877,6 +1917,12 @@ export const quizAttemptSummarySchema = z
 		/** File bài nói đã nộp — null khi đề không phải Speaking hoặc bài
 		 * Speaking cũ nộp trước #305. */
 		media: quizAttemptMediaSchema.nullable().optional(),
+		/** Điểm giáo viên chấm (Writing/Speaking). Server CHỈ gửi key khi đã
+		 * chấm — bundle cũ (strict) chỉ lỗi parse ở attempt đã chấm. */
+		grade: quizAttemptGradeSchema.nullable().optional(),
+		/** Part của đề (task1/task2/part1…) — server CHỈ gửi kèm `grade`, để
+		 * nhãn tiêu chí Writing đúng TA/TR; cùng lý do strict ở trên. */
+		part: z.string().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
@@ -1937,4 +1983,112 @@ export interface StudentOrgItem {
 	id: string;
 	name: string;
 	isCurrent: boolean;
+}
+
+// --- Bank Hub account linking (issue #320) ---
+
+export const BANK_LINK_ERROR_CODES = {
+	BANKHUB_DISABLED: "BANKHUB_DISABLED",
+	ALREADY_LINKED: "BANK_LINK_ALREADY_LINKED",
+	NO_LINKED_ACCOUNT: "BANK_LINK_NO_LINKED_ACCOUNT",
+	BAD_HOSTED_LINK_ORIGIN: "BANK_LINK_BAD_HOSTED_LINK_ORIGIN",
+	COMPANY_SETTLING: "BANK_LINK_COMPANY_SETTLING",
+} as const;
+export type BankLinkErrorCode =
+	(typeof BANK_LINK_ERROR_CODES)[keyof typeof BANK_LINK_ERROR_CODES];
+
+export const bankLinkStatusSchema = z.object({
+	enabled: z.boolean(),
+	status: z.enum(["none", "linked", "inactive", "unlinked"]),
+	brandName: z.string(),
+	accountNumberMasked: z.string(),
+	holderName: z.string(),
+	linkedAt: z.string().nullable(),
+});
+export type BankLinkStatus = z.infer<typeof bankLinkStatusSchema>;
+
+export const bankLinkTokenRequestSchema = z
+	.object({ purpose: z.enum(["link", "unlink", "reactivate"]) })
+	.strict();
+export type BankLinkTokenRequest = z.infer<typeof bankLinkTokenRequestSchema>;
+
+export const bankLinkTokenResponseSchema = z.object({
+	hostedLinkUrl: z.string().min(1),
+	expiresAt: z.string(),
+});
+export type BankLinkTokenResponse = z.infer<typeof bankLinkTokenResponseSchema>;
+
+// --- Invoice payment instructions (#320) ---
+
+export const PAYMENT_ERROR_CODES = {
+	INVOICE_NOT_FOUND: "PAYMENT_INVOICE_NOT_FOUND",
+	NO_BANK_LINK: "PAYMENT_NO_BANK_LINK",
+} as const;
+
+export interface PaymentBankInfo {
+	brandName: string;
+	accountNumber: string;
+	holderName: string;
+}
+
+export interface PaymentInstructions {
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	note: string;
+	/** false when the org has no linked account or the invoice is settled. */
+	payable: boolean;
+	reason?: "NO_BANK_LINK" | "PAID";
+	bank?: PaymentBankInfo;
+	memo?: string;
+	qrUrl?: string;
+}
+
+/** Public /pay/<token> view: no teacher free-text (note) and no due date. */
+export type PublicPayView = Omit<PaymentInstructions, "note" | "due"> & {
+	orgName: string;
+	studentName: string;
+};
+
+export interface StudentInvoiceItem {
+	id: string;
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	type: string;
+}
+
+/** #320 — one row of the teacher's unmatched-transaction queue. */
+export interface PaymentTransactionItem {
+	id: string;
+	amount: number;
+	/** Null on foreign_code rows — another org's transfer memo is secret. */
+	content: string | null;
+	referenceCode: string;
+	transactionDate: string;
+	unmatchedReason:
+		| ""
+		| "unknown_code"
+		| "invoice_paid"
+		| "no_code"
+		| "foreign_code"
+		| string;
+	paymentCode: string | null;
+}
+
+export const paymentAssignSchema = z
+	.object({ invoiceId: z.string().min(1) })
+	.strict();
+export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
+
+export interface ReconcileResult {
+	scanned: number;
+	matched: number;
+	unmatched: number;
 }

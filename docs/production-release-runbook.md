@@ -79,6 +79,10 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
+| `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | operator env → Worker binding (#320) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
+| `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
+| `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
+| `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 
 ## Deploy preflight (all releases)
 
@@ -415,7 +419,7 @@ After `pnpm alchemy deploy --stage prod`:
 
 ```
 wrangler d1 execute teacher-os-db --remote --json \
-  "SELECT l.id,l.class_id,l.enrollment_id,l.day,l.time,l.created_at AS created_at_ms,l.rowid AS seq FROM lesson l;" \
+  "SELECT l.id,l.class_id,l.enrollment_id,l.day,l.time,l.created_at AS created_at_ms,l.rowid AS seq,l.status FROM lesson l;" \
   > dump-undated.json
 wrangler d1 execute teacher-os-db --remote --json \
   "SELECT id,schedule,start_date,sessions_total FROM class" > dump-classes.json
@@ -429,6 +433,40 @@ conforms() derives count-vectors from the rows it receives; feeding it only the
 undated remainder would misread post-A classes and make this delta loop diverge
 (review F3). Emitted SQL stays safe on a superset because every UPDATE guards
 `AND date IS NULL`.
+
+The dump MUST carry `l.status`: inside each enrollment+weekday bucket the planner
+stamps completed lessons on the earliest skeleton dates, then cancelled, then the
+rest (the order the legacy table renders), and the CLI refuses a dump without
+`status`. Every UPDATE also guards `AND status = '<status in the dump>'`, so a
+check-in landing between dump and apply leaves that row NULL for the next delta
+loop instead of stamping it against a stale ordinal; if that re-plan collides
+with an already-stamped date, the duplicate detector below catches it. The
+ordering is lossy by nature (it cannot recover which week a teacher really
+settled once a mid-course session was cancelled) and the CLI prints
+`FUTURE_COMPLETED …` on stderr for any completed lesson it would stamp after
+today — resolve those by hand before applying.
+
+Backfill only stamps `date IS NULL` rows. A prior run of the older, status-blind
+planner may have stamped completed rows on wrong dates. Detect them with the two
+queries below, scoped to rows born BEFORE Step A (`:deploy_ts`, same scoping as
+the duplicate detector): a class born dated after Step A can legitimately have a
+later session checked in while an earlier one is still open, and before the
+future-session guard shipped a teacher could check in a future date. Any row
+returned is an operator review item — either fix it by hand or explain on the
+issue why it is legitimate; this procedure never auto-corrects prod:
+
+```sql
+-- completed lessons stamped in the future
+SELECT class_id, enrollment_id, date FROM lesson
+WHERE status = 'completed' AND date > :today_vn AND created_at <= :deploy_ts;
+-- completed lessons dated AFTER a not-completed lesson of the same enrollment+weekday
+SELECT a.class_id, a.enrollment_id, a.day, a.date FROM lesson a
+WHERE a.status = 'completed' AND a.date IS NOT NULL AND a.created_at <= :deploy_ts
+  AND EXISTS (
+    SELECT 1 FROM lesson b
+    WHERE b.enrollment_id = a.enrollment_id AND b.day = a.day
+      AND b.status <> 'completed' AND b.date IS NOT NULL AND b.date < a.date);
+```
 
 `backfill-date.ts` prints a per-class conformance summary. ARCHIVE the list of
 NULL-staying classes with their fail reason (`schedule-unparseable`,
@@ -484,7 +522,7 @@ detected by the third query above.
 One-line migration adding the unique index `(class_id, enrollment_id, date)`
 via drizzle-kit generate in its own PR. Checklist before merge:
 
-1. Step B verification output archived on the issue (all three detectors).
+1. Step B verification output archived on the issue (all three detectors plus the two settled-order detectors; each returned row fixed or explained).
 2. Re-run the dup detector once more pre-deploy — post-A traffic may have
    produced duplicates that need the heal SQL above FIRST.
 
@@ -610,6 +648,14 @@ nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bả
   (`text DEFAULT '' NOT NULL`) cho bài viết Writing (#304).
 - **0032** (`0032_mature_saracen.sql`): thêm 5 cột nullable `media_*` vào
   `quiz_attempt` cho bài nói Speaking (#305).
+- **0033** (`0033_adorable_felicia_hardy.sql`): thêm
+  `quiz_attempt.grade_scores` (text JSON nullable), `grade_feedback`
+  (`text DEFAULT '' NOT NULL`), `graded_at` (integer nullable) cho giáo viên
+  chấm bài Writing/Speaking (#319). **DEPLOY ORDER**: migration phải chạy
+  TRƯỚC worker; worker mới select cột `grade_*` ở `loadSnapshot` (mọi trang
+  giáo viên) và ở select full `quiz_attempt` (màn làm bài/kết quả học viên)
+  — thiếu cột thì các trang đó trả 500, trong khi `/readyz` vẫn xanh vì probe
+  không kiểm cột.
 
 Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 "Rollback code"):
@@ -654,7 +700,9 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
 
 - `/readyz` chỉ kiểm bảng và index, **không kiểm cột**. Chạy thêm
   `SELECT media_key FROM quiz_attempt LIMIT 0` trên D1 của stage vừa deploy;
-  lỗi "no such column" là NO-GO (mọi màn làm bài/kết quả sẽ 500).
+  lỗi "no such column" là NO-GO (mọi màn làm bài/kết quả sẽ 500). Tương tự
+  cho release chấm bài (#319): chạy
+  `SELECT grade_scores, grade_feedback, graded_at FROM quiz_attempt LIMIT 0`.
 - Bucket private: `wrangler r2 bucket list` thấy mỗi stage có bucket riêng
   (staging không dùng chung bucket prod), và
   `wrangler r2 bucket dev-url get <tên bucket>` báo dev URL **tắt**. Không bật
@@ -676,3 +724,57 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
   lỗi, hoặc cascade xoá lượt giao/học viên) không tự dọn ở v1. Không dùng
   lifecycle rule theo prefix `quiz-media/` — nó xoá cả bài đã nộp; dọn bằng
   job đối chiếu với `quiz_attempt.media_key` (follow-up).
+
+## SePay Bank Hub go-live (migration 0034) — issue #320
+
+Tuition transfer matching (#320) ships disabled by default: with the four
+`SEPAY_BANKHUB_*` secrets blank, `getBankHub()` returns `undefined` and every
+bank route answers `503 BANKHUB_DISABLED` (UI shows "Chưa bật"). Enabling is
+a per-stage operation.
+
+### Checklist trước khi bật production
+
+1. Xin credential đối tác từ SePay: `client_id`/`client_secret` (merchant
+   TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
+   `https://api.<domain>/webhooks/sepay/bankhub/ipn`.
+2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
+   KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
+   (bắt buộc set tường minh ở production — default rơi về sandbox host).
+   Deploy qua CI hiện CHƯA truyền các biến này: bước `pnpm alchemy deploy`
+   trong `.github/workflows/deploy.yml` (prod) và `deploy-staging.yml`
+   (staging) không có `SEPAY_BANKHUB_*` trong khối `env:`, nên
+   `packages/infra/alchemy.run.ts` rơi về default (secret rỗng, base URL
+   sandbox) và Worker deploy từ CI luôn ở trạng thái tắt; đặt tay trên
+   Cloudflare dashboard cũng bị ghi đè ở lần deploy kế tiếp. Trước khi bật,
+   phải mở rộng khối `env:` của bước deploy ở cả hai workflow để đọc 4 secret
+   (`secrets.*`) và `SEPAY_BANKHUB_BASE_URL` (`vars.*`) từ GitHub environment
+   của stage — cùng pattern với `RESEND_API_KEY`/`MAILER_IMPL` — rồi đặt giá
+   trị bằng `gh secret set … --env <stage>` / `gh variable set … --env <stage>`.
+3. Chạy `apps/server/scripts/bankhub-setup.ts` (đọc env, không in secret):
+   đăng ký webhook lifecycle
+   `https://api.<domain>/webhooks/sepay/bankhub/events` (auth `SECRET_KEY`,
+   `allow_events: ["*"]`) và merchant-config whitelist
+   `transaction_whitelist_remark_keywords: ["TOS"]`.
+4. Sandbox gate (trước go-live production, ghi kết quả vào
+   `plans/261005-0754-sepay-bank-hub-tuition-qr/reports/sandbox-verification.md`):
+   host thật của `hosted_link_url` (cập nhật const `BANK_HUB_LINK_ORIGINS` nếu
+   khác); `transaction_amount` mặc định của company mới (nếu 0 → xác nhận
+   `company/edit` → `Unlimited`); tên event khôi phục (`REACTIVATE`);
+   `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
+   keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
+   không có `completion_redirect_uri`.
+5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang "Nhận học phí"
+   (`/payments`) → tạo
+   phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
+   "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
+6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng
+   secret-blank, không cần migration revert (migration 0034 additive-only).
+
+### Hạn chế đã biết (chấp nhận cho beta)
+
+- Đối soát quét 7 ngày gần nhất của mọi `bank_account_xid` đã từng liên kết;
+  giao dịch trong thời gian TK bị ngân hàng vô hiệu hoá (OCB/MSB/KLB/TPB)
+  không được Bank Hub đồng bộ bù — giáo viên đối chiếu sao kê tay nếu có tiền
+  trong cửa sổ đó.
+- SePay không retry IPN khi nhận 4xx/5xx: parse-lỏng chặn schema-drift, nhưng
+  lỗi DB thật vẫn làm mất delivery — nút "Đối soát" là đường bù.

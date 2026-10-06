@@ -10,7 +10,43 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-06
+
+### Added
+- Nhận học phí qua VietQR (#320): giáo viên liên kết tài khoản ngân hàng qua SePay Bank Hub tại trang riêng `/payments` (sidebar "Nhận học phí"); mỗi hoá đơn có mã chuyển khoản `TOS` + 8 ký tự và link công khai `/pay/<token>` kèm QR; tiền về tự cộng dồn qua IPN, đủ thì "Đã thu"; chuyển nhầm/không có mã vào hàng "Giao dịch chưa khớp" để gán hoặc bỏ qua; nút "Đối soát" kéo lại giao dịch 7 ngày của mọi tài khoản đã từng liên kết
+- Portal học viên: khu "Học phí" trên trang chủ và trang chi tiết hoá đơn với QR (ẩn khi không còn nợ) (#320)
+
+### Changed
+- Tổng "Đã thu/Còn nợ" ở Học phí tính theo số tiền ledger đã nhận của hoá đơn chưa đóng; hoá đơn "Thu một phần" hiện badge riêng và cột số tiền dạng `đã nhận / tổng` (#320)
+
+### Fixed
+- Popup buổi học trên `/schedule` hiện đúng trạng thái từng học viên cho lớp legacy chưa có ngày: không còn chọn row theo UUID nhỏ nhất của cả khoá; chỉ học viên ở đúng buổi kế tiếp mới có Hủy/Sửa/Điểm danh và thao tác ghi vào đúng row đó; card lịch legacy hiện trạng thái đúng buổi trong tuần đang xem và ẩn ở tuần ngoài lịch lớp (#326)
+- Không điểm danh được buổi chưa tới ngày: nút Điểm danh ẩn ở popup /schedule, và `POST /lessons/:id/check-in` + `POST /classes/:id/sessions/:date/check-in` trả 422 `future-session` (toast "Chưa tới ngày học — chưa thể điểm danh."); Hủy/Sửa buổi tương lai vẫn cho phép (#326)
+- Backfill ngày cho dữ liệu legacy xếp theo trạng thái (completed → cancelled → còn lại) thay vì chỉ theo `createdAt`, CLI từ chối dump thiếu `status`, SQL kèm guard `status`, runbook Step B bổ sung truy vấn phát hiện dữ liệu đã backfill sai (#326)
+- Test server của #320 gọi route `/api/kernel/settings` đã gỡ ở #324 → bootstrap org qua `/api/kernel` (#326)
+
+---
+
 ## 2026-10-05
+
+### Added
+- Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp từ tab Bài tập của lớp: trang chấm hiện đề + essay (số từ) hoặc phát file bài nói, chấm 4 tiêu chí IELTS (0–9, bước 0.5) với band tổng tự tính và nhận xét; sửa điểm được bất cứ lúc nào (#319)
+- Màn kết quả học viên hiện band, điểm 4 tiêu chí và nhận xét của giáo viên ngay khi được chấm (#319)
+- Tab Học viên ở chi tiết lớp: cột Học phí hiện badge trạng thái cùng nhãn-màu với trang Học phí (Chưa lập phiếu / Đã thu / Chưa thu + số tiền / Quá hạn + số tiền đỏ đậm); "Quá hạn" suy từ hạn đóng theo giờ VN, nhất quán giữa `/tuition`, hồ sơ học viên và roster (#325)
+- Modal Tạo lớp cảnh báo realtime (không chặn submit) khi lịch đang chọn trùng thứ + giao giờ + giao khoảng ngày chạy với lớp đã tạo: liệt kê tối đa 3 lớp trùng (tên, thứ giao, giờ), tự ẩn khi đổi giờ/ngày hết trùng hoặc đang lưu; bỏ qua lớp legacy free-text/qua đêm và lớp đã hết buổi (window suy từ `skeletonOf`, không dùng cột `status` vacuous) (#315)
+
+### Changed
+- Trang Bài tập: bộ lọc "Phần thi" khi xem "Tất cả" kỹ năng giờ nhóm chip theo kỹ năng (Writing / Reading / Listening / Speaking) thay vì một hàng 12 phần thi trộn lẫn; chọn một kỹ năng vẫn chỉ hiện phần thi của kỹ năng đó
+- Chip lọc kỹ năng/phần thi hiện badge số đề sẽ còn nếu bấm (đếm theo từ khoá đang gõ, có ở cả chế độ một kỹ năng); chip 0 đề vẫn full contrast, badge "0" báo trước ngõ cụt
+- Bộ lọc trang Bài tập sống trong URL (`?q= &skill= &part=`): reload, back/forward và link chia sẻ giữ nguyên trạng thái lọc; ô tìm kiếm debounce 300ms lên URL để không rớt ký tự khi gõ
+- Dưới `lg`: card bộ lọc gập mặc định thành hàng "Bộ lọc" kèm badge số filter đang áp dụng và đếm `n/m đề`; desktop luôn mở như cũ
+
+### Fixed
+- Tab Bài tập ở chi tiết học viên hiện bài đã giao qua flow Giao bài tập (gộp với bài chấm legacy, sắp theo hạn tăng dần) thay vì luôn trống (#318)
+- Bộ chip lọc có ngữ cảnh nhóm cho screen reader (`role="group"` + `aria-label` "Kỹ năng" / "Phần thi — <kỹ năng>"); badge đếm ẩn với AT để accessible name chip ổn định cho voice control và e2e selector exact
+
+### Removed
+- Gỡ trang Cài đặt (`/settings`) và API `/api/kernel/settings` (GET/PUT/POST) cùng contract `workspaceSettings*` — chưa tính năng nào dùng workspace settings (chỉ chính trang này ghi/đọc); helper `getApiBaseUrl()` tách sang `lib/repos/api-base-url.ts` cho `invitations` dùng tiếp. Bảng DB `workspace_settings` giữ nguyên (không migration), khôi phục bằng revert (#321)
 
 ### CI/Infra
 - Thêm suite Vitest cho `packages/api` (script `test` + `vitest.config.ts`): unit `grade-quiz` (alt separator `" / "`, pin NFC/NFD), `infer-question-types` (TFNG biên, 8 case), `word-count` (emoji/CJK/hyphen); mở rộng integration `student-quiz.test.ts` của server: IDOR cross-org qua `x-student-org-id`, start race (1×201 + 1×200 cùng attemptId, 1 row), answer value >500 ký tự, `q` âm/lẻ/ngoài range, `json_quote` round-trip, raw JSON key `"3.0"` regression (#313)

@@ -1,5 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import {
+	createFileRoute,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	partOf,
 	SKILLS,
@@ -22,6 +27,19 @@ import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_auth/assignments/")({
+	// Bộ lọc sống trong URL (?q= &skill= &part=) để reload/back/share giữ
+	// nguyên trạng thái; giá trị lạ rơi về mặc định khi đọc lại.
+	// Annotate input tùy chọn để Link/navigate tới /assignments không bị
+	// bắt buộc truyền search (TanRouter suy input type từ tham số đầu).
+	validateSearch: (input: {
+		q?: string;
+		skill?: string;
+		part?: string;
+	}): { q?: string; skill?: string; part?: string } => ({
+		q: typeof input.q === "string" ? input.q : undefined,
+		skill: typeof input.skill === "string" ? input.skill : undefined,
+		part: typeof input.part === "string" ? input.part : undefined,
+	}),
 	component: AssignmentsRoute,
 });
 
@@ -43,14 +61,99 @@ function promptSkillPartType(prompt: AssignmentPrompt) {
 	};
 }
 
+function promptMatchesQuery(prompt: AssignmentPrompt, q: string) {
+	const { skill, part, type } = promptSkillPartType(prompt);
+	const t = typeOf(skill, part, type);
+	return (
+		prompt.title.toLowerCase().includes(q) ||
+		prompt.source.toLowerCase().includes(q) ||
+		t.label.toLowerCase().includes(q)
+	);
+}
+
+// Giá trị mặc định ("all"/rỗng) không lên URL — link chia sẻ chỉ mang filter thật.
+function filtersToSearch(q: string, skill: "all" | SkillId, part: string) {
+	return {
+		...(q ? { q } : {}),
+		...(skill !== "all" ? { skill } : {}),
+		...(part !== "all" ? { part } : {}),
+	};
+}
+
 export function AssignmentsRoute() {
 	const navigate = useNavigate();
 	const { data } = useData();
+	const searchParams = useSearch({ from: "/_auth/assignments/" });
 
-	const [skillFilter, setSkillFilter] = useState<"all" | SkillId>("all");
-	const [partFilter, setPartFilter] = useState<string>("all");
-	const [query, setQuery] = useState("");
+	const skillFilter: "all" | SkillId = SKILL_FILTERS.some(
+		(f) => f.id === searchParams.skill,
+	)
+		? (searchParams.skill as "all" | SkillId)
+		: "all";
+	const partPresets = useMemo(() => {
+		if (skillFilter !== "all") {
+			return SKILLS.find((s) => s.id === skillFilter)?.parts ?? [];
+		}
+		return SKILLS.flatMap((s) => s.parts);
+	}, [skillFilter]);
+	const partFilter = partPresets.some((p) => p.id === searchParams.part)
+		? (searchParams.part as string)
+		: "all";
+	// Query giữ state local rồi debounce lên URL 300ms — điều hướng mỗi phím
+	// gõ làm input (controlled bởi URL) rớt ký tự khi navigate commit trễ.
+	const [query, setQuery] = useState(() => searchParams.q ?? "");
+	const lastEmittedQuery = useRef(query);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
+
+	const activeFilterCount =
+		(skillFilter !== "all" ? 1 : 0) +
+		(partFilter !== "all" ? 1 : 0) +
+		(query.trim() !== "" ? 1 : 0);
+	const hasActiveFilter = activeFilterCount > 0;
+
+	// <lg: gộp card bộ lọc để danh sách đề lên trước; desktop luôn mở.
+	const [filtersOpen, setFiltersOpen] = useState(
+		() =>
+			typeof window === "undefined" ||
+			window.innerWidth >= 1024 ||
+			hasActiveFilter,
+	);
+
+	function setFilters(next: {
+		q: string;
+		skill: "all" | SkillId;
+		part: string;
+	}) {
+		lastEmittedQuery.current = next.q;
+		navigate({
+			to: "/assignments",
+			search: filtersToSearch(next.q, next.skill, next.part),
+			replace: true,
+		});
+	}
+
+	// q đổi từ phía URL (back/forward, link chia sẻ) → synced xuống state.
+	useEffect(() => {
+		const urlQ = searchParams.q ?? "";
+		if (urlQ !== lastEmittedQuery.current) {
+			lastEmittedQuery.current = urlQ;
+			setQuery(urlQ);
+		}
+	}, [searchParams.q]);
+
+	// Ngừng gõ 300ms → đẩy q lên URL (reload/share giữ được từ khóa).
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (query === lastEmittedQuery.current) return;
+			lastEmittedQuery.current = query;
+			navigate({
+				to: "/assignments",
+				search: filtersToSearch(query, skillFilter, partFilter),
+				replace: true,
+			});
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [query, skillFilter, partFilter, navigate]);
 
 	// Distinct classes that used each prompt
 	const usedClassesByPromptId = useMemo(() => {
@@ -63,28 +166,69 @@ export function AssignmentsRoute() {
 		return map;
 	}, [data.classAssignments]);
 
-	// Dynamic parts based on selected skill
-	const partPresets = useMemo(() => {
-		if (skillFilter !== "all") {
-			return SKILLS.find((s) => s.id === skillFilter)?.parts ?? [];
+	// Số đề mỗi chip theo query hiện tại — giáo viên thấy trước kết quả
+	// trước khi bấm. Chip skill đếm không phụ thuộc part (bấm skill reset
+	// part), chip part đếm trong nhóm skill của nó. Một pass cho cả hai.
+	const matchCounts = useMemo(() => {
+		const q = query.trim().toLowerCase();
+		const bySkill = new Map<string, number>();
+		const byPart = new Map<string, number>();
+		for (const p of data.assignmentPrompts) {
+			if (q && !promptMatchesQuery(p, q)) continue;
+			const { skill, part } = promptSkillPartType(p);
+			bySkill.set(skill, (bySkill.get(skill) ?? 0) + 1);
+			const key = `${skill}:${part}`;
+			byPart.set(key, (byPart.get(key) ?? 0) + 1);
 		}
-		return SKILLS.flatMap((s) => s.parts);
-	}, [skillFilter]);
+		return { bySkill, byPart };
+	}, [data.assignmentPrompts, query]);
 
-	const partOptions = ["Tất cả phần", ...partPresets.map((p) => p.label)];
+	// Chip đếm theo label cho ChipFilter.counts.
+	const skillChipCounts = useMemo(() => {
+		const counts: Record<string, number> = {};
+		for (const filter of SKILL_FILTERS) {
+			if (filter.id !== "all") {
+				counts[filter.label] = matchCounts.bySkill.get(filter.id) ?? 0;
+			}
+		}
+		return counts;
+	}, [matchCounts]);
+
+	const partChipCountsBySkill = useMemo(() => {
+		const bySkill: Record<string, Record<string, number>> = {};
+		for (const skill of SKILLS) {
+			const counts: Record<string, number> = {};
+			for (const part of skill.parts) {
+				counts[part.label] =
+					matchCounts.byPart.get(`${skill.id}:${part.id}`) ?? 0;
+			}
+			bySkill[skill.id] = counts;
+		}
+		return bySkill;
+	}, [matchCounts]);
 
 	function handleSkillChange(label: string) {
-		setSkillFilter(SKILL_FILTERS.find((f) => f.label === label)?.id ?? "all");
-		setPartFilter("all");
+		const next = SKILL_FILTERS.find((f) => f.label === label)?.id ?? "all";
+		// Đổi skill luôn reset part — part cũ thuộc skill khác sẽ ngõ cụt.
+		setFilters({ q: query, skill: next, part: "all" });
 	}
 
 	function handlePartChange(label: string) {
 		if (label === "Tất cả phần") {
-			setPartFilter("all");
+			setFilters({ q: query, skill: skillFilter, part: "all" });
 			return;
 		}
 		const found = partPresets.find((p) => p.label === label);
-		setPartFilter(found?.id ?? "all");
+		setFilters({ q: query, skill: skillFilter, part: found?.id ?? "all" });
+	}
+
+	function handleQueryChange(value: string) {
+		// Chỉ set state — effect debounce sẽ đẩy q lên URL.
+		setQuery(value);
+	}
+	function clearFilters() {
+		setQuery("");
+		setFilters({ q: "", skill: "all", part: "all" });
 	}
 
 	const selectedSkillLabel =
@@ -100,24 +244,16 @@ export function AssignmentsRoute() {
 		const q = query.trim().toLowerCase();
 		return data.assignmentPrompts
 			.filter((p) => {
-				const { skill, part, type } = promptSkillPartType(p);
+				const { skill, part } = promptSkillPartType(p);
 				if (skillFilter !== "all" && skill !== skillFilter) return false;
 				if (partFilter !== "all" && part !== partFilter) return false;
-				if (q) {
-					const t = typeOf(skill, part, type);
-					const matchTitle = p.title.toLowerCase().includes(q);
-					const matchSource = p.source.toLowerCase().includes(q);
-					const matchType = t.label.toLowerCase().includes(q);
-					if (!matchTitle && !matchSource && !matchType) return false;
-				}
+				if (q && !promptMatchesQuery(p, q)) return false;
 				return true;
 			})
 			.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 	}, [data.assignmentPrompts, skillFilter, partFilter, query]);
 
 	const totalPrompts = data.assignmentPrompts.length;
-	const hasActiveFilter =
-		skillFilter !== "all" || partFilter !== "all" || query.trim() !== "";
 
 	// Active selection (defaults to first item in filtered list)
 	const activePrompt = useMemo(() => {
@@ -159,68 +295,135 @@ export function AssignmentsRoute() {
 					<div className="flex flex-col gap-4">
 						{/* Filter Card */}
 						<Card variant="white" className="flex flex-col gap-4 p-5">
-							{/* In-page search input */}
-							<div>
-								<input
-									type="text"
-									value={query}
-									onChange={(e) => setQuery(e.target.value)}
-									placeholder="Tìm đề theo tiêu đề hoặc nguồn"
-									aria-label="Tìm đề theo tiêu đề hoặc nguồn"
-									className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm placeholder:text-muted-fg focus:border-fg focus:outline-none"
-								/>
-							</div>
-
-							{/* Skill Filter */}
-							<div className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
-									Kỹ năng
-								</span>
-								<ChipFilter
-									options={SKILL_OPTIONS}
-									value={selectedSkillLabel}
-									onChange={handleSkillChange}
-								/>
-							</div>
-
-							{/* Part Filter */}
-							<div id="part-block" className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
-									Phần thi
-								</span>
-								<ChipFilter
-									options={partOptions}
-									value={selectedPartLabel}
-									onChange={handlePartChange}
-								/>
-							</div>
-
-							{/* Card Footer: Count + Clear */}
-							<div className="flex items-center justify-between border-border-soft border-t pt-3">
-								<p
-									id="result-count"
-									aria-live="polite"
-									className="font-mono text-meta text-xs"
+							{/* Mobile: gập bộ lọc để danh sách đề lên trước (desktop ẩn) */}
+							<div className="flex items-center justify-between border-border-soft border-b pb-3 lg:hidden">
+								<button
+									type="button"
+									onClick={() => setFiltersOpen((v) => !v)}
+									aria-expanded={filtersOpen}
+									aria-controls="assignment-filters-body"
+									className="flex items-center gap-1.5 font-medium text-fg text-sm"
 								>
-									Đang hiện{" "}
-									<strong className="font-semibold text-fg">
-										{filteredPrompts.length}
-									</strong>{" "}
-									/ {totalPrompts} đề
+									Bộ lọc
+									{activeFilterCount > 0 && (
+										<span className="rounded-full bg-fg px-1.5 font-mono text-[10px] text-bg leading-4">
+											{activeFilterCount}
+										</span>
+									)}
+									<ChevronDown
+										aria-hidden="true"
+										className={cn(
+											"size-4 text-meta motion-safe:transition-transform motion-safe:duration-150",
+											filtersOpen && "rotate-180",
+										)}
+									/>
+								</button>
+								<p aria-hidden="true" className="font-mono text-meta text-xs">
+									{filteredPrompts.length}/{totalPrompts} đề
 								</p>
-								{hasActiveFilter && (
-									<button
-										type="button"
-										onClick={() => {
-											setSkillFilter("all");
-											setPartFilter("all");
-											setQuery("");
-										}}
-										className="font-medium text-muted-fg text-xs hover:text-fg"
-									>
-										Xóa bộ lọc
-									</button>
+							</div>
+							<div
+								id="assignment-filters-body"
+								className={cn(
+									"flex flex-col gap-4",
+									!filtersOpen && "hidden lg:flex",
 								)}
+							>
+								{/* In-page search input */}
+								<div>
+									<input
+										type="text"
+										value={query}
+										onChange={(e) => handleQueryChange(e.target.value)}
+										placeholder="Tìm đề theo tiêu đề hoặc nguồn"
+										aria-label="Tìm đề theo tiêu đề hoặc nguồn"
+										className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm placeholder:text-muted-fg focus:border-fg focus:outline-none"
+									/>
+								</div>
+
+								{/* Skill Filter */}
+								<div className="flex flex-col gap-1.5">
+									<span className="font-medium text-muted-fg text-xs">
+										Kỹ năng
+									</span>
+									<ChipFilter
+										options={SKILL_OPTIONS}
+										value={selectedSkillLabel}
+										onChange={handleSkillChange}
+										ariaLabel="Kỹ năng"
+										counts={skillChipCounts}
+									/>
+								</div>
+
+								{/* Part Filter — khi xem "Tất cả", nhóm chip theo kỹ năng
+								    thay vì một bức tường 12 phần thi trộn 4 kỹ năng */}
+								<div id="part-block" className="flex flex-col gap-1.5">
+									<span className="font-medium text-muted-fg text-xs">
+										Phần thi
+									</span>
+									<ChipFilter
+										options={
+											skillFilter === "all"
+												? ["Tất cả phần"]
+												: ["Tất cả phần", ...partPresets.map((p) => p.label)]
+										}
+										value={selectedPartLabel}
+										onChange={handlePartChange}
+										ariaLabel="Phần thi"
+										counts={
+											skillFilter === "all"
+												? undefined
+												: partChipCountsBySkill[skillFilter]
+										}
+									/>
+									{skillFilter === "all" &&
+										SKILLS.map((skill) => {
+											const selectedLabel =
+												skill.parts.find((p) => p.id === partFilter)?.label ??
+												"";
+											return (
+												<div
+													key={skill.id}
+													className="flex flex-wrap items-center gap-x-3 gap-y-2"
+												>
+													<span className="shrink-0 font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+														{skill.name}
+													</span>
+													<ChipFilter
+														options={skill.parts.map((p) => p.label)}
+														value={selectedLabel}
+														onChange={handlePartChange}
+														ariaLabel={`Phần thi ${skill.name}`}
+														counts={partChipCountsBySkill[skill.id]}
+													/>
+												</div>
+											);
+										})}
+								</div>
+
+								{/* Card Footer: Count + Clear */}
+								<div className="flex items-center justify-between border-border-soft border-t pt-3">
+									<p
+										id="result-count"
+										aria-live="polite"
+										className="font-mono text-meta text-xs"
+									>
+										Đang hiện{" "}
+										<strong className="font-semibold text-fg">
+											{filteredPrompts.length}
+										</strong>{" "}
+										/ {totalPrompts} đề
+									</p>
+									{hasActiveFilter && (
+										<button
+											type="button"
+											onClick={clearFilters}
+											className="font-medium text-muted-fg text-xs hover:text-fg"
+										>
+											Xóa bộ lọc
+										</button>
+									)}
+								</div>
 							</div>
 						</Card>
 

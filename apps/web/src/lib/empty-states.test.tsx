@@ -1,6 +1,18 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { ClassGroup, Invoice, Student, Syllabus } from "@/lib/mock-data";
+
+// /tuition now embeds query-backed sections (#320 unmatched transactions) —
+// static rendering needs a QueryClient like the app shell provides.
+function renderWithClient(ui: React.ReactElement): string {
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return renderToStaticMarkup(
+		<QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+	);
+}
 
 const mockNavigate = vi.fn();
 
@@ -117,7 +129,7 @@ describe("List empty states (Issue #118)", () => {
 		mockStoreData.students = [];
 		mockStoreData.invoices = [];
 
-		const html = renderToStaticMarkup(<TuitionRoute />);
+		const html = renderWithClient(<TuitionRoute />);
 		expect(html).toContain('data-testid="tuition-packages-empty"');
 		expect(html).toContain("Chưa có gói học nào đang hoạt động.");
 		expect(html).toContain('data-testid="tuition-invoices-empty"');
@@ -128,7 +140,7 @@ describe("List empty states (Issue #118)", () => {
 	it("renders empty state card on /syllabus when 0 templates exist", () => {
 		mockStoreData.syllabi = [];
 
-		const html = renderToStaticMarkup(<SyllabusRoute />);
+		const html = renderWithClient(<SyllabusRoute />);
 		expect(html).toContain('data-testid="syllabus-empty-state"');
 		expect(html).toContain("Chưa có syllabus nào");
 		expect(html).toContain("+ Tạo syllabus");
@@ -138,7 +150,7 @@ describe("List empty states (Issue #118)", () => {
 		mockStoreData.classes = [];
 		mockStoreData.lessons = [];
 
-		const html = renderToStaticMarkup(<ScheduleRoute />);
+		const html = renderWithClient(<ScheduleRoute />);
 		expect(html).toContain('data-testid="schedule-empty-state"');
 		expect(html).toContain("Chưa có lịch dạy nào");
 		expect(html).toContain("Quản lý lớp học");
@@ -167,7 +179,7 @@ describe("List empty states (Issue #118)", () => {
 		];
 		mockStoreData.lessons = [];
 
-		const html = renderToStaticMarkup(<ScheduleRoute />);
+		const html = renderWithClient(<ScheduleRoute />);
 		expect(html).not.toContain('data-testid="schedule-empty-state"');
 		expect(html).toContain("Học thử (Trial)");
 		expect(html).toContain("Thi thử (Mock)");

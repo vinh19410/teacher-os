@@ -74,6 +74,8 @@ export async function seedQuizFixture(opts: {
 	studentName: string;
 	studentEmail: string;
 	prompts: QuizSeedPrompt[];
+	/** Seed vào org có sẵn (org của giáo viên đăng ký qua UI) — bỏ qua insert organization. */
+	orgId?: string;
 	/** Org-owning teacher (user + membership role 'teacher'). */
 	teacher?: { name: string; email: string };
 	/** Lesson rows of the student's enrollment in the seeded class. */
@@ -84,16 +86,18 @@ export async function seedQuizFixture(opts: {
 	const db = openDb();
 	await db.execute("PRAGMA busy_timeout = 5000;");
 	try {
-		const orgId = crypto.randomUUID();
+		const orgId = opts.orgId ?? crypto.randomUUID();
 		const classId = crypto.randomUUID();
 		const studentId = crypto.randomUUID();
 		const now = Date.now();
 		const due = addDaysISO(vietnamTodayISO(), 30);
 
-		await db.execute({
-			sql: "INSERT INTO organization (id, name, created_at) VALUES (?,?,?)",
-			args: [orgId, opts.orgName, now],
-		});
+		if (!opts.orgId) {
+			await db.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?,?,?)",
+				args: [orgId, opts.orgName, now],
+			});
+		}
 		await db.execute({
 			sql: "INSERT INTO class (id, org_id, name, created_at) VALUES (?,?,?,?)",
 			args: [classId, orgId, opts.className, now],
@@ -212,6 +216,47 @@ export async function seedQuizFixture(opts: {
 		}
 
 		return { orgId, classId, studentId, assignmentIds, invitedClassId };
+	} finally {
+		db.close();
+	}
+}
+
+/**
+ * Seed một attempt Writing đã nộp (#319): `quiz_attempt` status submitted kèm
+ * essay + stamp `class_assignment_target.submittedAt` (cột TEXT ISO — khác
+ * `quiz_attempt.*_at` là integer ms) để tab Bài tập hiện "Đã nộp" và nút
+ * "Chấm bài". Trả về attemptId cho URL `/grading/<id>`.
+ */
+export async function seedSubmittedEssay(opts: {
+	orgId: string;
+	assignmentId: string;
+	studentId: string;
+	essay: string;
+}): Promise<string> {
+	const db = openDb();
+	await db.execute("PRAGMA busy_timeout = 5000;");
+	try {
+		const attemptId = crypto.randomUUID();
+		await db.execute({
+			sql: `INSERT INTO quiz_attempt
+					(id, org_id, assignment_id, student_id, status, questions_snapshot, answers, essay, started_at, submitted_at)
+				VALUES (?,?,?,?,'submitted','[]','{}',?,?,?)`,
+			args: [
+				attemptId,
+				opts.orgId,
+				opts.assignmentId,
+				opts.studentId,
+				opts.essay,
+				Date.now() - 600_000,
+				Date.now(),
+			],
+		});
+		await db.execute({
+			sql: `UPDATE class_assignment_target SET submitted_at = ?
+				WHERE assignment_id = ? AND student_id = ?`,
+			args: [new Date().toISOString(), opts.assignmentId, opts.studentId],
+		});
+		return attemptId;
 	} finally {
 		db.close();
 	}

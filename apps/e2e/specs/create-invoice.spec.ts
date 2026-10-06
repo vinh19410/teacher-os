@@ -1,5 +1,5 @@
 import { expect, type Page, type Request, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { isoInDaysFromTodayVN, seedStudent, signUpViaUi } from "./helpers";
 
 /**
  * QC scenario for issue #61: the "Tạo hóa đơn" modal used to be a no-op —
@@ -125,9 +125,12 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	// labeled with the student before submitting.
 	await expect(dialog.getByLabel("Học viên *")).toContainText(STUDENT_NAME);
 	await dialog.getByLabel("Số tiền (VND) *").fill("400000");
-	// Explicit due, not the modal's "today" default: deterministic across
-	// midnight races and the UTC CI runner (advisory round).
-	await dialog.getByLabel("Ngày đến hạn *").fill("2026-12-25");
+	// Explicit due relative to today (VN timezone), not the modal's "today"
+	// default: deterministic across midnight races and the UTC CI runner
+	// (advisory round); a fixed date would flip "Chưa thu" → "Quá hạn" once
+	// the calendar passes it (#322 derives overdue from `due`).
+	const due = isoInDaysFromTodayVN(30);
+	await dialog.getByLabel("Ngày đến hạn *").fill(due);
 	await dialog.getByLabel("Ghi chú").fill("QC-135 ghi chú");
 	await dialog
 		.getByRole("button", { name: "Tạo hóa đơn", exact: true })
@@ -146,10 +149,11 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("0đ");
 	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("400.000đ");
 
-	// The unpaid row shows the entered due as dd/mm plus the note tooltip
-	// (issue #135).
+	// The unpaid row shows the entered due as dd/mm (same date we filled)
+	// plus the note tooltip (issue #135).
+	const [, dueMonth, dueDay] = due.split("-");
 	const row = invoiceTable(page).filter({ hasText: "400.000đ" });
-	await expect(row.getByText("25/12")).toBeVisible();
+	await expect(row.getByText(`${dueDay}/${dueMonth}`)).toBeVisible();
 	await expect(row.locator('[title="QC-135 ghi chú"]')).toBeVisible();
 
 	// Mark paid → the command bus refetches → KPIs flip in place (issue #62).
