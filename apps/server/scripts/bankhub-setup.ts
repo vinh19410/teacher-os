@@ -4,7 +4,7 @@
  *
  *   SEPAY_BANKHUB_BASE_URL=… SEPAY_BANKHUB_CLIENT_ID=… SEPAY_BANKHUB_CLIENT_SECRET=… \
  *   BANKHUB_WEBHOOK_URL=https://api.<domain>/webhooks/sepay/bankhub/events \
- *   BANKHUB_WEBHOOK_SECRET=… [BANKHUB_IPN_API_KEY=…] pnpm --filter server exec tsx scripts/bankhub-setup.ts
+ *   BANKHUB_WEBHOOK_SECRET=… [BANKHUB_IPN_API_KEY=…] npx tsx apps/server/scripts/bankhub-setup.ts
  *
  * Registers the lifecycle webhook (X-Secret-Key) and the merchant keyword
  * whitelist ("TOS" — only tuition transfers reach the IPN). Never prints
