@@ -19,6 +19,12 @@ Quy ước khi cập nhật:
 ### Changed
 - Tổng "Đã thu/Còn nợ" ở Học phí tính theo số tiền ledger đã nhận của hoá đơn chưa đóng; hoá đơn "Thu một phần" hiện badge riêng và cột số tiền dạng `đã nhận / tổng` (#320)
 
+### Fixed
+- Popup buổi học trên `/schedule` hiện đúng trạng thái từng học viên cho lớp legacy chưa có ngày: không còn chọn row theo UUID nhỏ nhất của cả khoá; chỉ học viên ở đúng buổi kế tiếp mới có Hủy/Sửa/Điểm danh và thao tác ghi vào đúng row đó; card lịch legacy hiện trạng thái đúng buổi trong tuần đang xem và ẩn ở tuần ngoài lịch lớp (#326)
+- Không điểm danh được buổi chưa tới ngày: nút Điểm danh ẩn ở popup /schedule, và `POST /lessons/:id/check-in` + `POST /classes/:id/sessions/:date/check-in` trả 422 `future-session` (toast "Chưa tới ngày học — chưa thể điểm danh."); Hủy/Sửa buổi tương lai vẫn cho phép (#326)
+- Backfill ngày cho dữ liệu legacy xếp theo trạng thái (completed → cancelled → còn lại) thay vì chỉ theo `createdAt`, CLI từ chối dump thiếu `status`, SQL kèm guard `status`, runbook Step B bổ sung truy vấn phát hiện dữ liệu đã backfill sai (#326)
+- Test server của #320 gọi route `/api/kernel/settings` đã gỡ ở #324 → bootstrap org qua `/api/kernel` (#326)
+
 ---
 
 ## 2026-10-05

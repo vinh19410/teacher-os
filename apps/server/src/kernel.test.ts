@@ -9,7 +9,7 @@
 
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import {
 	session as authSession,
@@ -164,6 +164,7 @@ async function createTestApp() {
 			status?: string;
 			topic?: string;
 			zoom?: string;
+			date?: string;
 		},
 	): Promise<string> {
 		const id = crypto.randomUUID();
@@ -179,6 +180,7 @@ async function createTestApp() {
 			status: row.status ?? "upcoming",
 			topic: row.topic ?? "Mock test",
 			zoom: row.zoom ?? "",
+			date: row.date ?? null,
 		});
 		return id;
 	}
@@ -3295,6 +3297,128 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 			body: {},
 		});
 		expect(cancelCompleted.status).toBe(409);
+	});
+
+	describe("future-session guard on check-in", () => {
+		const today = vietnamTodayISO();
+		const tomorrow = addDaysISO(today, 1);
+
+		async function statusOf(lessonId: string): Promise<string | undefined> {
+			return (await t.kernel(session)).lessons.find((l) => l.id === lessonId)
+				?.status;
+		}
+
+		test("dated lesson after today → 422 future-session (error and reason), row untouched", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(422);
+			expect(await res.json()).toEqual({
+				error: "future-session",
+				reason: "future-session",
+			});
+			expect(await statusOf(lessonId)).toBe("upcoming");
+		});
+
+		test("dated lesson today → 200", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: today,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+			expect(await statusOf(lessonId)).toBe("completed");
+		});
+
+		test("undated lesson → 200 (no date to compare)", async () => {
+			const lessonId = await t.insertLesson(session, { classId, enrollmentId });
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+		});
+
+		test("already-settled future lesson keeps the 409 heal, not 422", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+				status: "completed",
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/check-in`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(409);
+		});
+
+		test("cancelling a future lesson is still allowed", async () => {
+			const lessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: tomorrow,
+			});
+			const res = await t.call(`/api/lessons/${lessonId}/cancel`, {
+				session,
+				method: "POST",
+				body: {},
+			});
+			expect(res.status).toBe(200);
+			expect(await statusOf(lessonId)).toBe("cancelled");
+		});
+
+		test("occurrence check-in: future bucket → 422, today's bucket → 200", async () => {
+			const futureDay = addDaysISO(today, 3);
+			const futureId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: futureDay,
+			});
+			const blocked = await t.call(
+				`/api/classes/${classId}/sessions/${futureDay}/check-in`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(blocked.status).toBe(422);
+			expect(await blocked.json()).toEqual({
+				error: "future-session",
+				reason: "future-session",
+			});
+			expect(await statusOf(futureId)).toBe("upcoming");
+
+			// Cancelling the same future bucket stays allowed.
+			const cancel = await t.call(
+				`/api/classes/${classId}/sessions/${futureDay}/cancel`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(cancel.status).toBe(200);
+
+			const todayLessonId = await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: today,
+			});
+			const ok = await t.call(
+				`/api/classes/${classId}/sessions/${today}/check-in`,
+				{ session, method: "POST", body: {} },
+			);
+			expect(ok.status).toBe(200);
+			expect(await statusOf(todayLessonId)).toBe("completed");
+		});
 	});
 
 	test("lesson whose enrollment belongs to another class is rejected (binding)", async () => {

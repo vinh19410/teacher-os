@@ -13,6 +13,7 @@ import {
 	buildBackfillPlan,
 	type ConformsRow,
 	conforms,
+	emitBackfillSql,
 	parseStartDateStrict,
 	parseStoredSchedule,
 	skeletonOf,
@@ -466,6 +467,7 @@ describe("parity: skeleton-dated grouping ≡ legacy heuristic", () => {
 					time: r.time,
 					createdAtMs: i,
 					seq: i,
+					status: "upcoming",
 				})),
 			);
 			expect(plan.classes[0]?.conforms).toBe(true);
@@ -520,7 +522,12 @@ describe("parity: skeleton-dated grouping ≡ legacy heuristic", () => {
 					total: 4,
 				},
 			],
-			rows.map((r) => ({ ...r, time: "19:00", classId: "c1" })),
+			rows.map((r) => ({
+				...r,
+				time: "19:00",
+				classId: "c1",
+				status: "upcoming",
+			})),
 		);
 		const byId = new Map(plan.updates.map((u) => [u.id, u.date]));
 		// Skeleton: Tue → 08-25, 09-01 · Fri → 08-28, 09-04.
@@ -590,6 +597,7 @@ describe("buildBackfillPlan: divergent classes stay NULL", () => {
 				time: "21:00",
 				createdAtMs: 1,
 				seq: 1,
+				status: "upcoming",
 			},
 		];
 		const plan = buildBackfillPlan(
@@ -614,5 +622,87 @@ describe("buildBackfillPlan: divergent classes stay NULL", () => {
 			{ classId: "badclass", conforms: false, reason: "slot-divergence" },
 			{ classId: "emptyclass", conforms: true },
 		]);
+	});
+});
+
+describe("buildBackfillPlan: status-ordered stamping", () => {
+	const TUE_ONLY = '{"days":[1],"start":"19:00","end":"20:30"}';
+	const cls = (total: number) => [
+		{
+			classId: "c1",
+			scheduleRaw: TUE_ONLY,
+			startDateRaw: "2026-08-25",
+			total,
+		},
+	];
+	const row = (
+		id: string,
+		status: string,
+		createdAtMs: number,
+		seq: number,
+		enrollmentId = "e1",
+	) => ({
+		id,
+		classId: "c1",
+		enrollmentId,
+		day: 2,
+		time: "19:00",
+		createdAtMs,
+		seq,
+		status,
+	});
+	const dateOf = (plan: ReturnType<typeof buildBackfillPlan>, id: string) =>
+		plan.updates.find((u) => u.id === id)?.date;
+
+	test("completed row created last still takes the first skeleton date", () => {
+		const plan = buildBackfillPlan(cls(3), [
+			row("up-1", "upcoming", 1, 1),
+			row("up-2", "upcoming", 2, 2),
+			row("done", "completed", 99, 99),
+		]);
+		expect(dateOf(plan, "done")).toBe("2026-08-25");
+		expect(dateOf(plan, "up-1")).toBe("2026-09-01");
+		expect(dateOf(plan, "up-2")).toBe("2026-09-08");
+	});
+
+	test("order is completed < cancelled < everything else", () => {
+		const plan = buildBackfillPlan(cls(3), [
+			row("up", "upcoming", 1, 1),
+			row("cancel", "cancelled", 2, 2),
+			row("done", "completed", 3, 3),
+		]);
+		expect(dateOf(plan, "done")).toBe("2026-08-25");
+		expect(dateOf(plan, "cancel")).toBe("2026-09-01");
+		expect(dateOf(plan, "up")).toBe("2026-09-08");
+	});
+
+	test("same status keeps (createdAt, seq) tie-break", () => {
+		const plan = buildBackfillPlan(cls(4), [
+			row("late", "completed", 5, 1),
+			row("early", "completed", 1, 2),
+			row("tie-b", "upcoming", 7, 4),
+			row("tie-a", "upcoming", 7, 3),
+		]);
+		expect(dateOf(plan, "early")).toBe("2026-08-25");
+		expect(dateOf(plan, "late")).toBe("2026-09-01");
+		expect(dateOf(plan, "tie-a")).toBe("2026-09-08");
+		expect(dateOf(plan, "tie-b")).toBe("2026-09-15");
+	});
+
+	test("each update carries the dump status for the SQL guard", () => {
+		const plan = buildBackfillPlan(cls(1), [row("done", "completed", 1, 1)]);
+		expect(plan.updates).toEqual([
+			{ id: "done", date: "2026-08-25", status: "completed" },
+		]);
+	});
+});
+
+describe("emitBackfillSql", () => {
+	test("guards on date IS NULL and the status seen in the dump", () => {
+		expect(
+			emitBackfillSql([{ id: "a'b", date: "2026-08-25", status: "completed" }]),
+		).toBe(
+			"UPDATE lesson SET date = '2026-08-25' WHERE id = 'a''b' AND date IS NULL AND status = 'completed';",
+		);
 	});
 });

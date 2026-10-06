@@ -419,7 +419,7 @@ After `pnpm alchemy deploy --stage prod`:
 
 ```
 wrangler d1 execute teacher-os-db --remote --json \
-  "SELECT l.id,l.class_id,l.enrollment_id,l.day,l.time,l.created_at AS created_at_ms,l.rowid AS seq FROM lesson l;" \
+  "SELECT l.id,l.class_id,l.enrollment_id,l.day,l.time,l.created_at AS created_at_ms,l.rowid AS seq,l.status FROM lesson l;" \
   > dump-undated.json
 wrangler d1 execute teacher-os-db --remote --json \
   "SELECT id,schedule,start_date,sessions_total FROM class" > dump-classes.json
@@ -433,6 +433,40 @@ conforms() derives count-vectors from the rows it receives; feeding it only the
 undated remainder would misread post-A classes and make this delta loop diverge
 (review F3). Emitted SQL stays safe on a superset because every UPDATE guards
 `AND date IS NULL`.
+
+The dump MUST carry `l.status`: inside each enrollment+weekday bucket the planner
+stamps completed lessons on the earliest skeleton dates, then cancelled, then the
+rest (the order the legacy table renders), and the CLI refuses a dump without
+`status`. Every UPDATE also guards `AND status = '<status in the dump>'`, so a
+check-in landing between dump and apply leaves that row NULL for the next delta
+loop instead of stamping it against a stale ordinal; if that re-plan collides
+with an already-stamped date, the duplicate detector below catches it. The
+ordering is lossy by nature (it cannot recover which week a teacher really
+settled once a mid-course session was cancelled) and the CLI prints
+`FUTURE_COMPLETED …` on stderr for any completed lesson it would stamp after
+today — resolve those by hand before applying.
+
+Backfill only stamps `date IS NULL` rows. A prior run of the older, status-blind
+planner may have stamped completed rows on wrong dates. Detect them with the two
+queries below, scoped to rows born BEFORE Step A (`:deploy_ts`, same scoping as
+the duplicate detector): a class born dated after Step A can legitimately have a
+later session checked in while an earlier one is still open, and before the
+future-session guard shipped a teacher could check in a future date. Any row
+returned is an operator review item — either fix it by hand or explain on the
+issue why it is legitimate; this procedure never auto-corrects prod:
+
+```sql
+-- completed lessons stamped in the future
+SELECT class_id, enrollment_id, date FROM lesson
+WHERE status = 'completed' AND date > :today_vn AND created_at <= :deploy_ts;
+-- completed lessons dated AFTER a not-completed lesson of the same enrollment+weekday
+SELECT a.class_id, a.enrollment_id, a.day, a.date FROM lesson a
+WHERE a.status = 'completed' AND a.date IS NOT NULL AND a.created_at <= :deploy_ts
+  AND EXISTS (
+    SELECT 1 FROM lesson b
+    WHERE b.enrollment_id = a.enrollment_id AND b.day = a.day
+      AND b.status <> 'completed' AND b.date IS NOT NULL AND b.date < a.date);
+```
 
 `backfill-date.ts` prints a per-class conformance summary. ARCHIVE the list of
 NULL-staying classes with their fail reason (`schedule-unparseable`,
@@ -488,7 +522,7 @@ detected by the third query above.
 One-line migration adding the unique index `(class_id, enrollment_id, date)`
 via drizzle-kit generate in its own PR. Checklist before merge:
 
-1. Step B verification output archived on the issue (all three detectors).
+1. Step B verification output archived on the issue (all three detectors plus the two settled-order detectors; each returned row fixed or explained).
 2. Re-run the dup detector once more pre-deploy — post-A traffic may have
    produced duplicates that need the heal SQL above FIRST.
 

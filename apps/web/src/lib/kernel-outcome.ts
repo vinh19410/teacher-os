@@ -9,6 +9,17 @@ export type DirectOutcomePlan = {
 	reconcile: "none" | "check" | "heal-409";
 };
 
+/** Server refused a check-in on a session dated after today (422 `future-session`). */
+export const FUTURE_SESSION_MESSAGE = "Chưa tới ngày học — chưa thể điểm danh.";
+
+function isFutureSession(result: KernelCommandResult): boolean {
+	return (
+		result.kind === "definite-failure" &&
+		result.status === 422 &&
+		result.reason === "future-session"
+	);
+}
+
 const SET_MISMATCH_ACTIONS = new Set<KernelAction["type"]>([
 	"delete-module",
 	"delete-lesson",
@@ -37,6 +48,14 @@ export function planDirectOutcome(
 				reconcile: "none",
 			};
 		case "definite-failure":
+			if (isFutureSession(result)) {
+				// The tab's idea of "today" disagreed with the server's — resync.
+				return {
+					toastKind: "error",
+					message: FUTURE_SESSION_MESSAGE,
+					reconcile: "check",
+				};
+			}
 			if (result.status === 409) {
 				if (actionType && SET_MISMATCH_ACTIONS.has(actionType)) {
 					return {
@@ -117,6 +136,9 @@ export function occurrenceSummary(
 		return { kind: "success", message: `${prefix}${suffix}` };
 	}
 	if (result.kind === "definite-failure") {
+		if (isFutureSession(result)) {
+			return { kind: "error", message: FUTURE_SESSION_MESSAGE };
+		}
 		if (result.status === 409) {
 			switch (result.reason) {
 				case "use-occurrence-endpoint":

@@ -151,7 +151,7 @@ describe("bank-link reconcile (#320)", () => {
 			getBankHub: () => hub,
 		});
 
-		const boot = await api("/api/kernel/settings");
+		const boot = await api("/api/kernel");
 		expect(boot.status).toBe(200);
 		const m = await client.execute({
 			sql: "SELECT org_id FROM membership WHERE user_id = 'u-1'",
