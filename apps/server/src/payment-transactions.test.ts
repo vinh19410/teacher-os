@@ -69,7 +69,7 @@ describe("payment-transactions teacher routes (#320)", () => {
 			token,
 			userId: "u-1",
 		});
-		const boot = await app.request("/api/kernel/settings", {
+		const boot = await app.request("/api/kernel", {
 			headers: { cookie: `better-auth.session_token=${token}` },
 		});
 		expect(boot.status).toBe(200);

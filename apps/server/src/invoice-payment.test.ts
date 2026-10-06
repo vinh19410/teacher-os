@@ -80,7 +80,7 @@ describe("invoice payment instructions (#320)", () => {
 
 		// Bootstrap the teacher org through the API (auto-creates org+membership),
 		// then read its id.
-		const boot = await app.request("/api/kernel/settings", {
+		const boot = await app.request("/api/kernel", {
 			headers: { cookie: `better-auth.session_token=${teacherToken}` },
 		});
 		expect(boot.status).toBe(200);
@@ -168,7 +168,7 @@ describe("invoice payment instructions (#320)", () => {
 	});
 
 	test("another org gets an indistinguishable 404", async () => {
-		const boot = await app.request("/api/kernel/settings", {
+		const boot = await app.request("/api/kernel", {
 			headers: { cookie: `better-auth.session_token=${otherToken}` },
 		});
 		expect(boot.status).toBe(200);
