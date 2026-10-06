@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Nền tảng Bank Hub — client, secrets, schema"
-status: todo
+status: completed
 priority: P1
 effort: "1d"
 dependencies: []
@@ -33,10 +33,10 @@ chỉ dựng nền và test đơn vị.
 
 ## Requirements
 
-- Client hỗ trợ: `createCompany`, `getCompany`, `createLinkToken`, `getBankAccount`, `listBankAccounts`, `listTransactions`, `createSandboxTransaction`.
+- Client hỗ trợ: `createCompany`, `getCompany`, `editCompany` (`POST /v1/company/edit/{xid}` — phase 2 cần đặt `transaction_amount` thành `Unlimited`), `createLinkToken`, `getBankAccount`, `listBankAccounts`, `listTransactions`. `createSandboxTransaction` **không** nằm trong client (chỉ là công cụ sandbox, 403 trên production) — phase 6 đặt helper riêng trong `apps/server/scripts/bankhub-setup.ts`. <!-- RT2 #S3/#B2 -->
 - Lỗi được chuẩn hoá thành `BankHubError { status, code?, message }`; không log `client_secret`, access token hay body chứa token.
-- Env mới: 4 bí mật `Config.redacted` — `SEPAY_BANKHUB_CLIENT_ID`, `SEPAY_BANKHUB_CLIENT_SECRET`, `SEPAY_BANKHUB_IPN_API_KEY`, `SEPAY_BANKHUB_WEBHOOK_SECRET`; 2 cấu hình thường `Config.string` — `SEPAY_BANKHUB_BASE_URL` (mặc định sandbox ở dev), `SEPAY_BANKHUB_LINK_ORIGINS` (CSV, mặc định `https://bankhub.sepay.vn`).
-- Thiếu bất kỳ secret nào ⇒ `getBankHub()` trả `undefined` ⇒ route Bank Hub trả `503 { code: "BANKHUB_DISABLED" }` (giống media trả 503) — local/dev không vỡ.
+- Env mới (5 biến): 4 bí mật `SEPAY_BANKHUB_CLIENT_ID`, `SEPAY_BANKHUB_CLIENT_SECRET`, `SEPAY_BANKHUB_IPN_API_KEY`, `SEPAY_BANKHUB_WEBHOOK_SECRET` khai báo `Config.string().pipe(Config.withDefault(""))` — **không** dùng `Config.redacted` vì redacted là required lúc eval deploy: thiếu giá trị làm `alchemy dev/deploy` ném ConfigError trước khi Worker chạy, phá yêu cầu "local/dev không vỡ" (repo đã ghi giới hạn này tại `packages/infra/alchemy.run.ts:129-131` cùng pattern `RESEND_API_KEY`). 1 cấu hình thường `Config.string` — `SEPAY_BANKHUB_BASE_URL` (mặc định sandbox ở dev). Origin hosted-link **không** qua env: dùng const dùng chung `BANK_HUB_LINK_ORIGINS` ở `packages/api` (phase 2) để server validate và web CSP cùng một nguồn sự thật. <!-- RT2 #A1/#A3 -->
+- Thiếu bất kỳ secret nào (chuỗi rỗng) ⇒ `getBankHub()` trả `undefined` ⇒ route Bank Hub trả `503 { code: "BANKHUB_DISABLED" }` (giống media trả 503) — local/dev không vỡ.
 
 ## Architecture
 
@@ -59,10 +59,13 @@ getBankHub?(): BankHubContext | undefined;
 
 1. **`org_bank_link`** (1 dòng / org; PK `org_id` FK organization cascade):
    `company_xid` text unique not null, `bank_account_xid` text unique nullable,
+   `past_bank_account_xids` text not null default "[]" (JSON array — các
+   `bank_account_xid` đã từng liên kết trước khi đổi TK; đối soát phase 4 quét
+   cả các xid này để không mất giao dịch về TK cũ), <!-- RT2 #S2/#F1 -->
    `status` text (`none|linked|inactive|unlinked`), `brand_name`, `bank_bin`,
    `bank_code`, `account_number`, `account_holder_name` (text default ""),
    `last_event_at` integer default 0 (unix giây của webhook event mới nhất đã
-   áp dụng — chống event đến sai thứ tự), `last_reconciled_at` integer default 0
+   áp dụng — chống event đến sai thứ tự; `sync` từ client cũng advance), `last_reconciled_at` integer default 0
    (cooldown nút đối soát), `linked_at`, `updated_at` (timestamp_ms).
 2. **`invoice`** thêm: `payment_code` text nullable **unique**, `pay_token`
    text nullable **unique**, `paid_amount` integer not null default 0.
@@ -72,8 +75,9 @@ getBankHub?(): BankHubContext | undefined;
    `content` text, `reference_code` text, `transaction_date` text,
    `payment_code` text nullable, `invoice_id` text nullable (no FK),
    `match_status` text (`matched|unmatched|ignored`),
-   `unmatched_reason` text default "" (`unknown_code|invoice_paid|invoice_missing`),
-   `raw` text (JSON gốc), `created_at`.
+   `unmatched_reason` text default "" (`unknown_code|invoice_paid|no_code|foreign_code`),
+   `raw` text default "" (JSON gốc — **chỉ điền khi giao dịch chưa khớp** phục
+   vụ debug/đối soát; giao dịch matched để rỗng, giảm PII và storage), `created_at`. <!-- RT2 #B5 -->
    **UNIQUE(`provider`, `provider_txn_id`)** = khoá chống trùng;
    index (`org_id`, `match_status`), index (`invoice_id`).
 
@@ -84,7 +88,8 @@ getBankHub?(): BankHubContext | undefined;
 - Create: `packages/db/src/migrations/0033_*.sql` (+ `meta/` do drizzle-kit sinh)
 - Modify: `packages/db/src/schema/invoice.ts`, `packages/db/src/schema/index.ts`
 - Modify: `apps/server/src/app.ts` (`AppDeps.getBankHub`), `apps/server/src/index.ts` (memo client từ env)
-- Modify: `packages/infra/alchemy.run.ts` (6 binding env), `packages/env/env.d.ts` (type binding)
+- Modify: `packages/infra/alchemy.run.ts` (5 binding env), `packages/env/env.d.ts` (type binding)
+- Modify: `packages/api/src/contracts.ts` hoặc lib mới (`BANK_HUB_LINK_ORIGINS` const dùng chung — phase 2 tiêu thụ)
 - Tên biến (không giá trị) ghi vào `docs/production-release-runbook.md` ở phase 6 — repo không có file env mẫu
 
 ## Implementation Steps
@@ -94,15 +99,15 @@ getBankHub?(): BankHubContext | undefined;
 3. Test đơn vị với fetch giả (vitest): token được tái sử dụng, 401 → đúng 1 lần gọi `/v1/token` mới, 429 không retry, không log secret.
 4. Thêm schema 3 bảng/cột; chạy `pnpm db:generate`; đọc SQL sinh ra — đảm bảo `ALTER TABLE invoice ADD` cho 3 cột (D1/SQLite: cột unique nullable thêm bằng `CREATE UNIQUE INDEX`, không phải constraint inline).
 5. Backup D1 local trước khi chạy migration local (quy tắc repo); test migration theo mẫu `*-migration.test.ts` hiện có (vd `student-email-unique-migration.test.ts`): DB có invoice cũ → sau migration `paid_amount = 0`, `payment_code` NULL.
-6. Wire `AppDeps.getBankHub` + memo trong `index.ts`; thêm 6 env vào `alchemy.run.ts` (`Config.redacted` cho 4 bí mật, `Config.string` có default cho base URL và link origins) và type vào `packages/env/env.d.ts`.
+6. Wire `AppDeps.getBankHub` + memo trong `index.ts`; thêm 5 env vào `alchemy.run.ts` (4 bí mật theo pattern `Config.string().pipe(Config.withDefault(""))`, base URL `Config.string` có default) và type vào `packages/env/env.d.ts`; `getBankHub()` coi secret rỗng là thiếu.
 
 ## Todo
 
-- [ ] `bank-hub-types.ts` + `bank-hub-client.ts`
-- [ ] `bank-hub-client.test.ts` (token cache, 401 refresh, 429, redaction)
-- [ ] Schema `org_bank_link`, `payment_transaction`, cột mới của `invoice`
-- [ ] Migration `0033` + migration test (dữ liệu cũ giữ nguyên)
-- [ ] `AppDeps.getBankHub` + wiring `index.ts` + `alchemy.run.ts` + `env.d.ts`
+- [x] `bank-hub-types.ts` + `bank-hub-client.ts`
+- [x] `bank-hub-client.test.ts` (token cache, 401 refresh, 429, redaction)
+- [x] Schema `org_bank_link`, `payment_transaction`, cột mới của `invoice`
+- [x] Migration `0033` + migration test (dữ liệu cũ giữ nguyên)
+- [x] `AppDeps.getBankHub` + wiring `index.ts` + `alchemy.run.ts` (env.d.ts infer tự alchemy)
 
 ## Success Criteria
 
@@ -117,11 +122,12 @@ getBankHub?(): BankHubContext | undefined;
 | `ttl` thực tế khác docs (ví dụ 60000) | Cache `min(ttl, 3600)` giây + refresh khi 401 |
 | Migration unique trên cột nullable vỡ trên D1 | Dùng unique index; test migration với dữ liệu thật dạng snapshot |
 | Isolate Workers không chia sẻ cache token | Chấp nhận — mỗi isolate tự xin token, số lần thấp |
+| Secret `withDefault("")` mất masking `Config.redacted` | Chấp nhận — cùng pattern `RESEND_API_KEY` hiện có; giá trị chỉ ở Worker env, không log (assert trong test) |
 
 ## Security Considerations
 
 - Secrets chỉ ở Worker env; không bao giờ trả về client, không vào snapshot.
-- `raw` IPN lưu nguyên văn — không chứa dữ liệu thẻ; có tên người chuyển (PII) → chỉ đọc được qua route org-scoped của giáo viên.
+- `raw` IPN chỉ lưu cho giao dịch **chưa khớp** (matched để rỗng) — có tên người chuyển (PII), phục vụ debug/đối soát; không có endpoint nào trả `raw`, không đưa vào snapshot. <!-- RT2 #B5 -->
 
 ## Next Steps
 

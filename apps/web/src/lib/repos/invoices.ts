@@ -20,6 +20,7 @@ export function mapInvoices(snapshot: KernelSnapshot): Invoice[] {
 		sid: row.studentId,
 		eid: row.enrollmentId,
 		amount: row.amount,
+		paidAmount: row.paidAmount,
 		status: coerceStatus(row.status),
 		date: row.date,
 		type: row.type,

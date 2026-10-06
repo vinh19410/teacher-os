@@ -111,6 +111,8 @@ export interface Invoice {
 	 * create API. Nguồn: KernelInvoiceRow.enrollmentId trên snapshot. */
 	eid: string;
 	amount: number;
+	/** #320 — ledger-recomputed paid total; 0 on manually mark-paid rows. */
+	paidAmount: number;
 	status: InvoiceStatus;
 	date: string;
 	type: string;

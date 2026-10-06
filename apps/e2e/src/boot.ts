@@ -18,6 +18,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { getSessionUser } from "server/session";
+import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
 
 // Port override chỉ phục vụ chạy e2e song song với dev server đang chiếm
@@ -97,16 +98,31 @@ const auth = createAuth({
 const MEDIA_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-media-"));
 const mediaStore = createFsMediaStore(MEDIA_DIR);
 
+// Fake Bank Hub (#320): hosted-link pages + client stub cho E2E.
+const fakeBankHub = createFakeBankHub({
+	origin: `http://localhost:${PORT}`,
+});
+
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
 	corsOrigin: CORS_ORIGINS,
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
+	getBankHub: () => fakeBankHub.hub,
 });
 
-const server = serve({ fetch: app.fetch, port: PORT, hostname: HOSTNAME }, () =>
-	console.log(`[e2e-boot] api on http://${HOSTNAME}:${PORT}`),
+// Fake SePay hosted-link pages (#320) ride the same API server — the iframe
+// src is relative (/__fake-bankhub/...) so the postMessage origin check in
+// the web app sees the API origin, exactly like the real hosted link.
+const server = serve(
+	{
+		fetch: (request) =>
+			fakeBankHub.handleFakePage(request) ?? app.fetch(request),
+		port: PORT,
+		hostname: HOSTNAME,
+	},
+	() => console.log(`[e2e-boot] api on http://${HOSTNAME}:${PORT}`),
 );
 
 // Playwright teardown SIGTERMs the whole pnpm → tsx → node chain; close

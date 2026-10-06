@@ -10,6 +10,17 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-06
+
+### Added
+- Nhận học phí qua VietQR (#320): giáo viên liên kết tài khoản ngân hàng qua SePay Bank Hub tại trang riêng `/payments` (sidebar "Nhận học phí"); mỗi hoá đơn có mã chuyển khoản `TOS` + 8 ký tự và link công khai `/pay/<token>` kèm QR; tiền về tự cộng dồn qua IPN, đủ thì "Đã thu"; chuyển nhầm/không có mã vào hàng "Giao dịch chưa khớp" để gán hoặc bỏ qua; nút "Đối soát" kéo lại giao dịch 7 ngày của mọi tài khoản đã từng liên kết
+- Portal học viên: khu "Học phí" trên trang chủ và trang chi tiết hoá đơn với QR (ẩn khi không còn nợ) (#320)
+
+### Changed
+- Tổng "Đã thu/Còn nợ" ở Học phí tính theo số tiền ledger đã nhận của hoá đơn chưa đóng; hoá đơn "Thu một phần" hiện badge riêng và cột số tiền dạng `đã nhận / tổng` (#320)
+
+---
+
 ## 2026-10-05
 
 ### Added

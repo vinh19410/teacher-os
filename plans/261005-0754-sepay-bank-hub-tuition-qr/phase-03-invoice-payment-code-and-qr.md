@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Mã thanh toán, pay token và QR"
-status: todo
+status: completed
 priority: P1
 effort: "1d"
 dependencies: [1, 2]
@@ -43,9 +43,9 @@ học viên (portal), công khai (`/public/pay/:token`).
 - Endpoints:
   - Giáo viên: `GET /api/invoices/:id/payment` → `PaymentInstructions & { payToken }` (org-scoped).
   - Học viên: `GET /api/student/invoices` (danh sách phiếu của chính học viên trong org đang chọn) và `GET /api/student/invoices/:id/payment`.
-  - Công khai: `GET /public/pay/:token` → `PaymentInstructions & { orgName, studentName }`; `Cache-Control: no-store`; token sai → 404 chung.
+  - Công khai: `GET /public/pay/:token` → `PublicPayView = Omit<PaymentInstructions, "note" | "due"> & { orgName, studentName }` — **DTO riêng, không trả `note`** (ghi chú phiếu là free-text của giáo viên, link `/pay/<token>` lan truyền ngoài tầm kiểm soát); `Cache-Control: no-store`; token sai → 404 chung. <!-- RT2 #S4 -->
 - Web: route công khai `/pay/$token` (ngoài `_auth`) + thêm `"/pay/"` vào `VALID_DYNAMIC_PREFIXES`.
-- Helper `fillMessageTemplate(tpl, vars)` cho `{{student_name}}`, `{{amount}}`, `{{qr_link}}` (dùng ở phase 5 "Sao chép tin nhắc nợ"); đổi chữ mặc định `tplDebt` từ "QR MoMo {{qr_link}}" thành "link chuyển khoản {{qr_link}}" (chỉ ảnh hưởng org mới).
+- Helper `fillMessageTemplate(tpl, vars)` cho `{{student_name}}`, `{{amount}}`, `{{qr_link}}` (dùng ở phase 5 "Sao chép tin nhắc nợ"). **Không đổi** default `tplDebt`: claim "chỉ ảnh hưởng org mới" là sai (org chưa từng lưu settings đọc zod default tại thời điểm request — `kernel.ts:342`) và đổi chữ nhắc nợ không nằm trong phạm vi issue. <!-- RT2 #A5/#B7 -->
 
 ## Architecture
 
@@ -68,7 +68,7 @@ null) → dùng `bank_code`; thiếu cả hai → `payable=false`.
 - Modify: `apps/server/src/routes/kernel.ts` (`POST /invoices` sinh mã; `GET /invoices/:id/payment`)
 - Modify: `apps/server/src/routes/student.ts` (`/invoices`, `/invoices/:id/payment` + `requireStudent`)
 - Modify: `apps/server/src/app.ts` (mount `/public/pay`)
-- Modify: `packages/api/src/contracts.ts` (`PaymentInstructions`, `StudentInvoiceItem`, `KernelInvoiceRow.paidAmount`, default `tplDebt`)
+- Modify: `packages/api/src/contracts.ts` (`PaymentInstructions`, `PublicPayView`, `StudentInvoiceItem`, `KernelInvoiceRow.paidAmount`)
 - Modify: `apps/server/src/routes/snapshot.ts` (`loadInvoices` thêm `paidAmount`)
 - Modify: `apps/web/src/routes-matcher.ts` (+ test), create `apps/web/src/routes/pay.$token.tsx` (UI hoàn thiện ở phase 5)
 
@@ -85,16 +85,16 @@ null) → dùng `bank_code`; thiếu cả hai → `payable=false`.
 
 ## Todo
 
-- [ ] `payment-code.ts` + test
-- [ ] `vietqr.ts` + test
-- [ ] `message-template.ts` + test; đổi default `tplDebt`
-- [ ] `POST /invoices` sinh mã + token
-- [ ] `payment-instructions.ts` + `ensurePaymentRefs`
-- [ ] `GET /api/invoices/:id/payment`
-- [ ] `GET /api/student/invoices`, `/invoices/:id/payment`
-- [ ] `GET /public/pay/:token` mount ngoài `/api/*`
-- [ ] Snapshot `paidAmount`
-- [ ] Web `routes-matcher` + route `/pay/$token`
+- [x] `payment-code.ts` + test
+- [x] `vietqr.ts` + test
+- [x] `message-template.ts` + test (giữ default `tplDebt` hiện có)
+- [x] `POST /invoices` sinh mã + token
+- [x] `payment-instructions.ts` + `ensurePaymentRefs`
+- [x] `GET /api/invoices/:id/payment`
+- [x] `GET /api/student/invoices`, `/invoices/:id/payment`
+- [x] `GET /public/pay/:token` mount ngoài `/api/*`
+- [x] Snapshot `paidAmount`
+- [x] Web `routes-matcher` + route `/pay/$token`
 
 ## Success Criteria
 
@@ -107,8 +107,8 @@ null) → dùng `bank_code`; thiếu cả hai → `payable=false`.
 | Rủi ro | Giảm thiểu |
 |---|---|
 | Ngân hàng cắt nội dung dài | Memo chỉ là mã (≤ 17 ký tự kể cả `SEVQR `) |
-| Học viên sửa nội dung khi chuyển | Giao dịch vào "chưa khớp" (phase 4) để giáo viên gán |
-| Lộ link công khai | Chỉ lộ số tiền/nội dung chuyển khoản/tên học viên; không có thao tác ghi; giáo viên có thể "Tạo link mới" (xoay `pay_token`) ở phase 5 |
+| Học viên xoá/sửa nội dung khi chuyển (mất mã) | IPN real-time **không** tới (whitelist keyword phía SePay) và server không lưu; giáo viên đối chiếu sao kê tay. Giao dịch **có** mã nhưng mã sai → "chưa khớp" (phase 4) để gán | <!-- RT2 #F2 -->
+| Lộ link công khai | Chỉ lộ số tiền/nội dung chuyển khoản/tên học viên (DTO public đã bỏ `note`/`due`); không có thao tác ghi; giáo viên có thể "Tạo link mới" (xoay `pay_token`) ở phase 5 | <!-- RT2 #S4 -->
 
 ## Security Considerations
 

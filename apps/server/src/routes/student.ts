@@ -40,6 +40,7 @@ import {
 	classAssignmentTarget,
 	classTable,
 	enrollment,
+	invoice,
 	lesson,
 	organization,
 	quizAttempt,
@@ -54,6 +55,10 @@ import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import {
+	ensurePaymentRefs,
+	loadPaymentInstructions,
+} from "../lib/payment-instructions";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -583,6 +588,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/assignments/:assignmentId/quiz", requireStudent);
 	router.use("/assignments/:assignmentId/quiz/*", requireStudent);
 	router.use("/attempts/*", requireStudent);
+	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
+	router.use("/invoices", requireStudent);
+	router.use("/invoices/*", requireStudent);
 
 	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
 	// session gate `use("*")` nên request không có session vẫn 401 trước khi
@@ -703,6 +711,57 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/me", (c) => {
 		const { student: s, sessionUser } = c.get("studentCtx");
 		return c.json(buildStudentMe(sessionUser, s));
+	});
+
+	// #320: tuition invoices of THIS student in the CURRENT org only.
+	router.get("/invoices", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+		const rows = await db
+			.select({
+				id: invoice.id,
+				amount: invoice.amount,
+				paidAmount: invoice.paidAmount,
+				status: invoice.status,
+				due: invoice.due,
+				type: invoice.type,
+			})
+			.from(invoice)
+			.where(and(eq(invoice.orgId, orgId), eq(invoice.studentId, s.id)))
+			.orderBy(asc(invoice.createdAt), asc(invoice.id));
+		return c.json(
+			rows.map((row) => ({
+				id: row.id,
+				invoiceCode: `INV-${row.id.slice(-8).toUpperCase()}`,
+				amount: row.amount,
+				paidAmount: row.paidAmount,
+				amountDue: Math.max(row.amount - row.paidAmount, 0),
+				status: row.status,
+				due: row.due,
+				type: row.type,
+			})),
+		);
+	});
+
+	router.get("/invoices/:id/payment", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(invoice)
+			.where(
+				and(
+					eq(invoice.id, c.req.param("id")),
+					eq(invoice.orgId, orgId),
+					eq(invoice.studentId, s.id),
+				),
+			)
+			.limit(1);
+		if (!row) return c.json({ error: "invoice not found" }, 404);
+		const refs = await ensurePaymentRefs(db, row.id, orgId);
+		if (!refs) return c.json({ error: "invoice not found" }, 404);
+		const instructions = await loadPaymentInstructions({ db, invoice: refs });
+		return c.json(instructions);
 	});
 
 	router.get("/overview", async (c) => {

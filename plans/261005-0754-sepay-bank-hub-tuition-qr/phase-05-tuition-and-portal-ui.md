@@ -29,7 +29,7 @@ khớp" và nút "Đối soát".
 ## Key Insights
 
 - QR chỉ là hướng dẫn; trạng thái "Đã thanh toán" chỉ đến từ server (IPN). UI poll endpoint payment mỗi 5 s **khi panel đang mở và phiếu chưa paid**, dừng khi paid / đóng / tab ẩn (`refetchIntervalInBackground: false`).
-- `tuitionTotals` hiện cộng theo `status`; với thanh toán một phần, "Đã thu" phải cộng `paidAmount` của cả phiếu chưa đủ, "Còn nợ" = `amount - paidAmount` của phiếu chưa paid. Phiếu `paid` thủ công (paidAmount 0) tính đủ `amount`.
+- `tuitionTotals` hiện cộng theo `status`; với thanh toán một phần, "Đã thu" phải cộng `paidAmount` của cả phiếu chưa đủ, "Còn nợ" = `amount - paidAmount` của phiếu chưa paid. Phiếu `paid` tính đủ `amount` — **kể cả** trường hợp `0 < paidAmount < amount` (mark-paid thủ công khi mới chuyển khoản một phần: giáo viên đã xác nhận thu đủ bằng kênh khác; số này có thể lớn hơn SUM sổ cái `matched`, quy ước ghi rõ ở test). <!-- RT2 #F5 -->
 - Template `tplDebt` của org đã có `{{qr_link}}` → "Sao chép tin nhắc nợ" điền bằng `fillMessageTemplate` (phase 3).
 
 ## Requirements
@@ -42,11 +42,11 @@ khớp" và nút "Đối soát".
 
 **Giáo viên `/tuition`:**
 - Cột trạng thái: thêm "Thu một phần" (dùng token màu warn theo `DESIGN.md`), cột số tiền hiện `paid/amount` khi một phần.
-- Hành động dòng "Thu học phí" → `InvoicePaymentModal`: `PaymentQrPanel` + "Sao chép link" (`${location.origin}/pay/${payToken}`) + "Sao chép tin nhắc nợ" + "Tạo link mới" (xoay `pay_token`, xác nhận trước vì link cũ hết hiệu lực). Org chưa liên kết → CTA tới trang ngân hàng riêng (đề xuất `/payments` — `/settings?tab=payments` đã gỡ theo issue #321). <!-- Updated: settings route removed 2026-10-05 -->
-- Khu "Giao dịch chưa khớp (n)": bảng ngày/số tiền/nội dung/lý do; "Gán vào phiếu" (chọn trong phiếu chưa thu của org) và "Bỏ qua"; nút "Đối soát" (disable khi đang chạy, hiện kết quả `{matched, unmatched}`; 429 → "Vừa đối soát, thử lại sau 1 phút").
+- Hành động dòng "Thu học phí" → `InvoicePaymentModal`: `PaymentQrPanel` + "Sao chép link" (`${location.origin}/pay/${payToken}`) + "Sao chép tin nhắc nợ" + "Tạo link mới" (xoay `pay_token`, xác nhận trước vì link cũ hết hiệu lực). Org chưa liên kết → CTA tới `/payments`. <!-- Updated 2026-10-06: "Sao chép tin nhắc nợ" bỏ khỏi modal — API workspace-settings đã gỡ theo #324; follow-up nếu template quay lại -->
+- Khu "Giao dịch chưa khớp (n)": bảng ngày/số tiền/nội dung/lý do (giao dịch `foreign_code` hiển thị nhãn "Chuyển khoản lạ", không có nội dung/mã — server đã che); "Gán vào phiếu" (chọn trong phiếu chưa thu của org, gồm phiếu `paid` còn thiếu tiền) và "Bỏ qua"; nút "Đối soát" (disable khi đang chạy, hiện kết quả `{matched, unmatched}`; 429 → "Vừa đối soát, thử lại sau 1 phút").
 - Server: `POST /api/invoices/:id/rotate-pay-token` (org-scoped, sinh token mới).
 
-**Trang công khai `/pay/$token` (web, ngoài `_auth`):** header tên lớp/giáo viên (`orgName`), tên học viên, `PaymentQrPanel`, poll 5 s; token sai → trang lỗi thân thiện (không lộ lý do).
+**Trang công khai `/pay/$token` (web, ngoài `_auth`):** header tên lớp/giáo viên (`orgName`), tên học viên, `PaymentQrPanel`, poll 5 s **giới hạn như panel giáo viên**: chỉ khi tab hiển thị + chưa paid, dừng sau 15 phút rồi hiện nút "Làm mới" — link công khai được share rộng, không poll vô hạn vào D1 (server không có rate-limit infra). <!-- RT2 #B4 -->; token sai → trang lỗi thân thiện (không lộ lý do).
 
 **Portal học viên:**
 - Overview: khu "Học phí" liệt kê phiếu chưa thu (số tiền còn nợ, hạn, trạng thái); rỗng thì ẩn.
@@ -75,20 +75,20 @@ khớp" và nút "Đối soát".
 
 ## Todo
 
-- [ ] `PaymentQrPanel` (packages/ui) + test
-- [ ] `tuitionTotals` theo `paidAmount` + test
-- [ ] Repo `payments.ts` + polling có điều kiện
-- [ ] `InvoicePaymentModal` (copy link, copy tin nhắc nợ, tạo link mới)
-- [ ] `UnmatchedTransactions` + nút Đối soát
-- [ ] `POST /api/invoices/:id/rotate-pay-token` + test
-- [ ] Trang công khai `/pay/$token`
-- [ ] Portal: danh sách học phí + trang chi tiết QR
+- [x] `PaymentQrPanel` (packages/ui) + test
+- [x] `tuitionTotals` theo `paidAmount` + test
+- [x] Repo `payments.ts` + polling có điều kiện
+- [x] `InvoicePaymentModal` (copy link, copy tin nhắc nợ, tạo link mới)
+- [x] `UnmatchedTransactions` + nút Đối soát
+- [x] `POST /api/invoices/:id/rotate-pay-token` + test
+- [x] Trang công khai `/pay/$token`
+- [x] Portal: danh sách học phí + trang chi tiết QR
 - [ ] Verify 3 viewport + keyboard + screenshot
 
 ## Success Criteria
 
 - `pnpm --filter web test` (gồm `payment-qr-panel.test.tsx`), `pnpm --filter student test`, `pnpm --filter @teacher-os/ui check-types` xanh.
-- Phiếu một phần hiển thị "Thu một phần 200.000đ / 500.000đ" ở cả 3 bề mặt; tổng "Đã thu/Còn nợ" khớp số liệu sổ cái.
+- Phiếu một phần hiển thị "Thu một phần 200.000đ / 500.000đ" ở cả 3 bề mặt; tổng "Đã thu/Còn nợ" khớp sổ cái cho phiếu chưa paid; phiếu `paid` tính đủ `amount` (quy ước đã ghi ở `tuitionTotals`).
 - Poll dừng khi phiếu paid (kiểm bằng test hook hoặc network tab).
 
 ## Risk Assessment

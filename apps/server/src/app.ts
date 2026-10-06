@@ -7,14 +7,25 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
+import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
+import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
+// Re-export cho e2e fake (pattern tương tự MediaStore ở dưới).
+export type {
+	BankHubAccount,
+	BankHubClient,
+	BankHubContext,
+	BankHubLinkPurpose,
+	BankHubTransaction,
+} from "./lib/bank-hub/bank-hub-client";
 // Re-export cho adapter lưu trữ của e2e (package `server` chỉ export
 // `.`, `./app`, `./session`).
 export {
@@ -46,6 +57,11 @@ export interface AppDeps {
 	 * undefined) thì các route media trả 503.
 	 */
 	getMediaStore?(): MediaStore | undefined;
+	/**
+	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
+	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
+	 */
+	getBankHub?(): BankHubContext | undefined;
 	/**
 	 * Chạy việc dọn dẹp sau response (xoá object R2 bù trừ) — production
 	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
@@ -195,6 +211,12 @@ export function buildApp(deps: AppDeps) {
 	app.use("/api/*", bootstrapMiddleware(deps));
 	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
 	app.get("/", (c) => c.text("OK"));
+	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
+	// middleware and Better Auth never run — auth is the X-Secret-Key header.
+	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// Public pay page data (#320): outside /api/* (bootstrap 403s student
+	// roles there) and readable signed-out — the token is the capability.
+	app.route("/public/pay", publicPayRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

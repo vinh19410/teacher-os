@@ -7,6 +7,10 @@ import {
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db, type MediaStore } from "./app";
+import {
+	type BankHubContext,
+	createBankHubContext,
+} from "./lib/bank-hub/bank-hub-client";
 import { createR2MediaStore } from "./lib/r2-media-store";
 import { getSessionUser } from "./session";
 
@@ -22,6 +26,7 @@ export function parseCORSOrigins(raw: string): string[] {
 let db: Db | undefined;
 let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
+let bankHub: BankHubContext | undefined;
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
@@ -81,6 +86,18 @@ export default buildApp({
 		if (!env.MEDIA) return undefined;
 		mediaStore ??= createR2MediaStore(env.MEDIA);
 		return mediaStore;
+	},
+	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
+	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
+	getBankHub: () => {
+		bankHub ??= createBankHubContext({
+			clientId: env.SEPAY_BANKHUB_CLIENT_ID,
+			clientSecret: env.SEPAY_BANKHUB_CLIENT_SECRET,
+			ipnApiKey: env.SEPAY_BANKHUB_IPN_API_KEY,
+			webhookSecret: env.SEPAY_BANKHUB_WEBHOOK_SECRET,
+			baseUrl: env.SEPAY_BANKHUB_BASE_URL,
+		});
+		return bankHub;
 	},
 	runInBackground: (promise) => waitUntil(promise),
 });

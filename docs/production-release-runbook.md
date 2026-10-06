@@ -79,6 +79,10 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
+| `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | operator env → Worker binding (#320) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
+| `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
+| `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
+| `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 
 ## Deploy preflight (all releases)
 
@@ -686,3 +690,46 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
   lỗi, hoặc cascade xoá lượt giao/học viên) không tự dọn ở v1. Không dùng
   lifecycle rule theo prefix `quiz-media/` — nó xoá cả bài đã nộp; dọn bằng
   job đối chiếu với `quiz_attempt.media_key` (follow-up).
+
+## SePay Bank Hub go-live (migration 0033) — issue #320
+
+Tuition transfer matching (#320) ships disabled by default: with the four
+`SEPAY_BANKHUB_*` secrets blank, `getBankHub()` returns `undefined` and every
+bank route answers `503 BANKHUB_DISABLED` (UI shows "Chưa bật"). Enabling is
+a per-stage operation.
+
+### Checklist trước khi bật production
+
+1. Xin credential đối tác từ SePay: `client_id`/`client_secret` (merchant
+   TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
+   `https://api.<domain>/webhooks/sepay/bankhub/ipn`.
+2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
+   KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
+   (bắt buộc set tường minh ở production — default rơi về sandbox host).
+3. Chạy `apps/server/scripts/bankhub-setup.ts` (đọc env, không in secret):
+   đăng ký webhook lifecycle
+   `https://api.<domain>/webhooks/sepay/bankhub/events` (auth `SECRET_KEY`,
+   `allow_events: ["*"]`) và merchant-config whitelist
+   `transaction_whitelist_remark_keywords: ["TOS"]`.
+4. Sandbox gate (trước go-live production, ghi kết quả vào
+   `plans/261005-0754-sepay-bank-hub-tuition-qr/reports/sandbox-verification.md`):
+   host thật của `hosted_link_url` (cập nhật const `BANK_HUB_LINK_ORIGINS` nếu
+   khác); `transaction_amount` mặc định của company mới (nếu 0 → xác nhận
+   `company/edit` → `Unlimited`); tên event khôi phục (`REACTIVATE`);
+   `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
+   keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
+   không có `completion_redirect_uri`.
+5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ Cài đặt → tạo
+   phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
+   "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
+6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng
+   secret-blank, không cần migration revert (migration 0033 additive-only).
+
+### Hạn chế đã biết (chấp nhận cho beta)
+
+- Đối soát quét 7 ngày gần nhất của mọi `bank_account_xid` đã từng liên kết;
+  giao dịch trong thời gian TK bị ngân hàng vô hiệu hoá (OCB/MSB/KLB/TPB)
+  không được Bank Hub đồng bộ bù — giáo viên đối chiếu sao kê tay nếu có tiền
+  trong cửa sổ đó.
+- SePay không retry IPN khi nhận 4xx/5xx: parse-lỏng chặn schema-drift, nhưng
+  lỗi DB thật vẫn làm mất delivery — nút "Đối soát" là đường bù.

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useMemo } from "react";
@@ -9,9 +10,11 @@ import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { GreetingHeader } from "@/components/overview/greeting-header";
 import { StudentErrorView } from "@/components/overview/student-error-view";
+import { TuitionList } from "@/components/overview/tuition-list";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
 import {
+	fetchStudentInvoices,
 	useAcceptClassEnrollment,
 	useStudentMe,
 	useStudentOverview,
@@ -127,8 +130,25 @@ function StudentOverviewPage() {
 				)}
 			</section>
 
+			{/* Học phí (#320) — chỉ hiện khi còn khoản chưa đóng */}
+			<StudentTuitionSection />
+
 			{/* Bài tập */}
 			<AssignmentList assignments={overview.assignments} />
 		</StudentShell>
 	);
+}
+
+/**
+ * Học phí (#320): danh sách khoản chưa đóng của học viên — ẩn khi rỗng.
+ * Tách component để chỉ fetch khi overview đã load xong (cùng org header).
+ */
+function StudentTuitionSection() {
+	const invoices = useQuery({
+		queryKey: ["student-invoices"],
+		queryFn: fetchStudentInvoices,
+		staleTime: 30_000,
+	});
+	if (invoices.isError || !invoices.data) return null;
+	return <TuitionList invoices={invoices.data} />;
 }

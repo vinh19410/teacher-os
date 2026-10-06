@@ -1,7 +1,7 @@
 ---
 title: "Tích hợp SePay Bank Hub: giáo viên liên kết ngân hàng, học phí thu qua VietQR tự gạch nợ"
 description: "Giáo viên liên kết tài khoản ngân hàng qua SePay Bank Hub Hosted Link; mỗi phiếu học phí sinh mã QR VietQR có mã thanh toán riêng, IPN của Bank Hub tự cộng dồn và gạch nợ."
-status: pending
+status: completed
 priority: P1
 effort: 6d
 issue: 320
@@ -12,7 +12,7 @@ blocks: []
 created: 2026-10-05
 ---
 
-> **⚠️ BLOCKED — chờ plan #321 (`chore/remove-settings-route`) merge trước.** Trang `/settings` và tab `payments` bị gỡ; các mục UI liên kết ngân hàng của plan này được rewrite sang trang riêng `/payments` (đối chiếu `/tuition`) trong chính plan #321 phase 3. Đừng thực thi plan này trước khi rebase lên `develop` sau merge #321. <!-- Updated: settings route removed 2026-10-05 -->
+> **✅ Đã unblock (2026-10-05):** #321/#324 gỡ `/settings` đã merge vào `develop`; UI liên kết ngân hàng triển khai ở **trang riêng `/payments`** (sidebar "Nhận học phí"), kèm rebase trên `develop` (#319, #324, #325 — migration của plan renumber 0033→0034). Nút "Sao chép tin nhắc nợ" tạm bỏ vì API workspace-settings đã gỡ kèm #324 — follow-up nếu template quay lại.
 
 ---
 
@@ -109,6 +109,15 @@ Tự rà inline theo 4 lens (Security, Assumption, Failure mode, Scope) — khô
 | 5 | Medium | `paidAmount` trong snapshot làm vỡ contract/fixture test web | Accept — cập nhật 3 file test | 3 |
 
 Rejected (không có bằng chứng lỗi): >3 phase / >8 file — phạm vi do người dùng yêu cầu (HOLD SCOPE); IPN không có timestamp chống replay — đã có chống trùng `transaction_id`.
+
+### Session 2 — 2026-10-05 (4 reviewer subagent song song, Full tier)
+
+4 lens: Security Adversary / Failure Mode Analyst / Assumption Destroyer / Scope & Complexity Critic (kèm Fact Checker, Flow Tracer, Scope Auditor, Contract Verifier). 18 finding sau dedup — 18 accept, 0 reject. Fact-check 25 claims: 22 verified, 2 failed (đã xử lý), 1 unverified. Chi tiết đầy đủ trong PR #320 (bảng 18 finding + dispositions). Điểm chính: `Config.redacted` → `withDefault("")` (đỡ crash dev), bỏ phantom API list-company, predicate `bank_account_xid` trong webhook, `past_bank_account_xids` cho đối soát mọi TK, `no_code`/`foreign_code` + che DTO, const `BANK_HUB_LINK_ORIGINS` một nguồn sự thật, bỏ đổi default `tplDebt` (scope creep), PublicPayView bỏ `note`, parse-lỏng IPN, poll cap 15 phút.
+
+#### Whole-Plan Consistency Sweep (Session 2)
+
+- Đã quét lại thuật ngữ cũ trên mọi file sau khi áp 18 finding — không còn mâu thuẫn (chi tiết sweep trong PR).
+- Cập nhật 2026-10-06 sau merge #324: mọi tham chiếu "Cài đặt → tab Nhận học phí" chuyển sang trang riêng `/payments`; nút copy `tplDebt` bỏ khỏi phase 5 (API settings đã gỡ).
 
 ### Whole-Plan Consistency Sweep
 

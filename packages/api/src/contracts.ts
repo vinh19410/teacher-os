@@ -1297,6 +1297,11 @@ export interface KernelInvoiceRow {
 	date: string;
 	type: string;
 	method: string;
+	/**
+	 * #320 — ledger-recomputed paid total (SUM of matched
+	 * payment_transaction amounts). Stays 0 for manually mark-paid invoices.
+	 */
+	paidAmount: number;
 }
 
 export interface AssignmentQuestion {
@@ -1978,4 +1983,112 @@ export interface StudentOrgItem {
 	id: string;
 	name: string;
 	isCurrent: boolean;
+}
+
+// --- Bank Hub account linking (issue #320) ---
+
+export const BANK_LINK_ERROR_CODES = {
+	BANKHUB_DISABLED: "BANKHUB_DISABLED",
+	ALREADY_LINKED: "BANK_LINK_ALREADY_LINKED",
+	NO_LINKED_ACCOUNT: "BANK_LINK_NO_LINKED_ACCOUNT",
+	BAD_HOSTED_LINK_ORIGIN: "BANK_LINK_BAD_HOSTED_LINK_ORIGIN",
+	COMPANY_SETTLING: "BANK_LINK_COMPANY_SETTLING",
+} as const;
+export type BankLinkErrorCode =
+	(typeof BANK_LINK_ERROR_CODES)[keyof typeof BANK_LINK_ERROR_CODES];
+
+export const bankLinkStatusSchema = z.object({
+	enabled: z.boolean(),
+	status: z.enum(["none", "linked", "inactive", "unlinked"]),
+	brandName: z.string(),
+	accountNumberMasked: z.string(),
+	holderName: z.string(),
+	linkedAt: z.string().nullable(),
+});
+export type BankLinkStatus = z.infer<typeof bankLinkStatusSchema>;
+
+export const bankLinkTokenRequestSchema = z
+	.object({ purpose: z.enum(["link", "unlink", "reactivate"]) })
+	.strict();
+export type BankLinkTokenRequest = z.infer<typeof bankLinkTokenRequestSchema>;
+
+export const bankLinkTokenResponseSchema = z.object({
+	hostedLinkUrl: z.string().min(1),
+	expiresAt: z.string(),
+});
+export type BankLinkTokenResponse = z.infer<typeof bankLinkTokenResponseSchema>;
+
+// --- Invoice payment instructions (#320) ---
+
+export const PAYMENT_ERROR_CODES = {
+	INVOICE_NOT_FOUND: "PAYMENT_INVOICE_NOT_FOUND",
+	NO_BANK_LINK: "PAYMENT_NO_BANK_LINK",
+} as const;
+
+export interface PaymentBankInfo {
+	brandName: string;
+	accountNumber: string;
+	holderName: string;
+}
+
+export interface PaymentInstructions {
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	note: string;
+	/** false when the org has no linked account or the invoice is settled. */
+	payable: boolean;
+	reason?: "NO_BANK_LINK" | "PAID";
+	bank?: PaymentBankInfo;
+	memo?: string;
+	qrUrl?: string;
+}
+
+/** Public /pay/<token> view: no teacher free-text (note) and no due date. */
+export type PublicPayView = Omit<PaymentInstructions, "note" | "due"> & {
+	orgName: string;
+	studentName: string;
+};
+
+export interface StudentInvoiceItem {
+	id: string;
+	invoiceCode: string;
+	amount: number;
+	paidAmount: number;
+	amountDue: number;
+	status: string;
+	due: string;
+	type: string;
+}
+
+/** #320 — one row of the teacher's unmatched-transaction queue. */
+export interface PaymentTransactionItem {
+	id: string;
+	amount: number;
+	/** Null on foreign_code rows — another org's transfer memo is secret. */
+	content: string | null;
+	referenceCode: string;
+	transactionDate: string;
+	unmatchedReason:
+		| ""
+		| "unknown_code"
+		| "invoice_paid"
+		| "no_code"
+		| "foreign_code"
+		| string;
+	paymentCode: string | null;
+}
+
+export const paymentAssignSchema = z
+	.object({ invoiceId: z.string().min(1) })
+	.strict();
+export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
+
+export interface ReconcileResult {
+	scanned: number;
+	matched: number;
+	unmatched: number;
 }

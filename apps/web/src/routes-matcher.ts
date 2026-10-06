@@ -12,6 +12,7 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/reports": true,
 	"/schedule": true,
 	"/tuition": true,
+	"/payments": true,
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
@@ -36,6 +37,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	"/grading/",
 	"/students/",
 	"/syllabus/",
+	// Public pay page (#320) — outside the auth layout by design.
+	"/pay/",
 ];
 
 /**

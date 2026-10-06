@@ -1,3 +1,10 @@
+import { BANK_HUB_LINK_ORIGINS } from "@teacher-os/api/lib/bank-hub-origins";
+
+// frame-src mở đúng host SePay Bank Hub cho iframe hosted-link (#320), sinh
+// từ cùng const mà server dùng để validate hosted_link_url — một nguồn sự
+// thật, không bao giờ lệch nhau.
+const FRAME_SRC = BANK_HUB_LINK_ORIGINS.join(" ");
+
 export const SECURITY_HEADERS: Record<string, string> = {
 	"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 	"X-Content-Type-Options": "nosniff",
@@ -5,8 +12,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
 	"Referrer-Policy": "strict-origin-when-cross-origin",
 	"Permissions-Policy":
 		"camera=(), microphone=(), geolocation=(), browsing-topics=()",
-	"Content-Security-Policy":
-		"default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;",
+	"Content-Security-Policy": `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-src ${FRAME_SRC}; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
 };
 
 export function isLocalHost(hostname: string): boolean {
