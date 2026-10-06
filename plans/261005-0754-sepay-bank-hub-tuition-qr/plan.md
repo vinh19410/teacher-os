@@ -1,7 +1,7 @@
 ---
 title: "Tích hợp SePay Bank Hub: giáo viên liên kết ngân hàng, học phí thu qua VietQR tự gạch nợ"
 description: "Giáo viên liên kết tài khoản ngân hàng qua SePay Bank Hub Hosted Link; mỗi phiếu học phí sinh mã QR VietQR có mã thanh toán riêng, IPN của Bank Hub tự cộng dồn và gạch nợ."
-status: pending
+status: completed
 priority: P1
 effort: 6d
 issue: 320
