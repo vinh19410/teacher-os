@@ -32,6 +32,7 @@ Quy ước khi cập nhật:
 ### Added
 - Giáo viên xem và chấm bài Writing/Speaking học viên đã nộp từ tab Bài tập của lớp: trang chấm hiện đề + essay (số từ) hoặc phát file bài nói, chấm 4 tiêu chí IELTS (0–9, bước 0.5) với band tổng tự tính và nhận xét; sửa điểm được bất cứ lúc nào (#319)
 - Màn kết quả học viên hiện band, điểm 4 tiêu chí và nhận xét của giáo viên ngay khi được chấm (#319)
+- Tab Học viên ở chi tiết lớp: cột Học phí hiện badge trạng thái cùng nhãn-màu với trang Học phí (Chưa lập phiếu / Đã thu / Chưa thu + số tiền / Quá hạn + số tiền đỏ đậm); "Quá hạn" suy từ hạn đóng theo giờ VN, nhất quán giữa `/tuition`, hồ sơ học viên và roster (#325)
 - Modal Tạo lớp cảnh báo realtime (không chặn submit) khi lịch đang chọn trùng thứ + giao giờ + giao khoảng ngày chạy với lớp đã tạo: liệt kê tối đa 3 lớp trùng (tên, thứ giao, giờ), tự ẩn khi đổi giờ/ngày hết trùng hoặc đang lưu; bỏ qua lớp legacy free-text/qua đêm và lớp đã hết buổi (window suy từ `skeletonOf`, không dùng cột `status` vacuous) (#315)
 
 ### Changed
@@ -41,6 +42,7 @@ Quy ước khi cập nhật:
 - Dưới `lg`: card bộ lọc gập mặc định thành hàng "Bộ lọc" kèm badge số filter đang áp dụng và đếm `n/m đề`; desktop luôn mở như cũ
 
 ### Fixed
+- Tab Bài tập ở chi tiết học viên hiện bài đã giao qua flow Giao bài tập (gộp với bài chấm legacy, sắp theo hạn tăng dần) thay vì luôn trống (#318)
 - Bộ chip lọc có ngữ cảnh nhóm cho screen reader (`role="group"` + `aria-label` "Kỹ năng" / "Phần thi — <kỹ năng>"); badge đếm ẩn với AT để accessible name chip ổn định cho voice control và e2e selector exact
 
 ### Removed

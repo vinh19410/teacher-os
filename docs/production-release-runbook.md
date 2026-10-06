@@ -725,7 +725,7 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
   lifecycle rule theo prefix `quiz-media/` — nó xoá cả bài đã nộp; dọn bằng
   job đối chiếu với `quiz_attempt.media_key` (follow-up).
 
-## SePay Bank Hub go-live (migration 0033) — issue #320
+## SePay Bank Hub go-live (migration 0034) — issue #320
 
 Tuition transfer matching (#320) ships disabled by default: with the four
 `SEPAY_BANKHUB_*` secrets blank, `getBankHub()` returns `undefined` and every
@@ -740,6 +740,16 @@ a per-stage operation.
 2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
    KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
    (bắt buộc set tường minh ở production — default rơi về sandbox host).
+   Deploy qua CI hiện CHƯA truyền các biến này: bước `pnpm alchemy deploy`
+   trong `.github/workflows/deploy.yml` (prod) và `deploy-staging.yml`
+   (staging) không có `SEPAY_BANKHUB_*` trong khối `env:`, nên
+   `packages/infra/alchemy.run.ts` rơi về default (secret rỗng, base URL
+   sandbox) và Worker deploy từ CI luôn ở trạng thái tắt; đặt tay trên
+   Cloudflare dashboard cũng bị ghi đè ở lần deploy kế tiếp. Trước khi bật,
+   phải mở rộng khối `env:` của bước deploy ở cả hai workflow để đọc 4 secret
+   (`secrets.*`) và `SEPAY_BANKHUB_BASE_URL` (`vars.*`) từ GitHub environment
+   của stage — cùng pattern với `RESEND_API_KEY`/`MAILER_IMPL` — rồi đặt giá
+   trị bằng `gh secret set … --env <stage>` / `gh variable set … --env <stage>`.
 3. Chạy `apps/server/scripts/bankhub-setup.ts` (đọc env, không in secret):
    đăng ký webhook lifecycle
    `https://api.<domain>/webhooks/sepay/bankhub/events` (auth `SECRET_KEY`,
@@ -753,11 +763,12 @@ a per-stage operation.
    `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
    keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
    không có `completion_redirect_uri`.
-5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ Cài đặt → tạo
+5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang "Nhận học phí"
+   (`/payments`) → tạo
    phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
    "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
 6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng
-   secret-blank, không cần migration revert (migration 0033 additive-only).
+   secret-blank, không cần migration revert (migration 0034 additive-only).
 
 ### Hạn chế đã biết (chấp nhận cho beta)
 
