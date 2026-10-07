@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Nhãn 'còn X' ở /tuition và hồ sơ học viên + CHANGELOG + gate cuối"
-status: todo
+status: done
 effort: "1h"
 dependencies: [1]
 ---

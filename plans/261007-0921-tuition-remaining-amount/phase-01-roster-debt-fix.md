@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Sửa rosterDebtByStudent trừ paidAmount + roster 'còn X' + e2e strings"
-status: todo
+status: done
 effort: "1h"
 dependencies: []
 ---

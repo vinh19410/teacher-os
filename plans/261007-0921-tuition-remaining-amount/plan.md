@@ -50,8 +50,8 @@ HỒ SƠ HỌC VIÊN              [Chưa thu]                →  [Chưa thu] c�
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Sửa rosterDebtByStudent trừ paidAmount + roster "còn X" + e2e strings](./phase-01-roster-debt-fix.md) | Pending |
-| 2 | [Nhãn "còn X" ở /tuition và hồ sơ học viên + CHANGELOG + gate cuối](./phase-02-tuition-profile-consistency.md) | Pending |
+| 1 | [Sửa rosterDebtByStudent trừ paidAmount + roster "còn X" + e2e strings](./phase-01-roster-debt-fix.md) | Completed |
+| 2 | [Nhãn "còn X" ở /tuition và hồ sơ học viên + CHANGELOG + gate cuối](./phase-02-tuition-profile-consistency.md) | Completed |
 
 Chạy tuần tự 1 → 2. Phase 2 chỉ chạy khi Phase 1 pass unit test (`pnpm --filter web test`) và e2e roster spec.
 
@@ -73,8 +73,8 @@ Chạy tuần tự 1 → 2. Phase 2 chỉ chạy khi Phase 1 pass unit test (`pn
 ## Red Team Review
 
 ### Session — 2026-10-07
-**Findings:** 7 sau dedupe (2 reviewer: Security Adversary + Assumption Destroyer) — 6 accepted, 1 rejected
-**Severity breakdown:** 0 Critical, 1 High, 6 Medium
+**Findings:** 8 sau dedupe (2 reviewer: Security Adversary + Assumption Destroyer) — 7 accepted, 1 rejected
+**Severity breakdown:** 0 Critical, 1 High, 7 Medium
 
 | # | Finding | Severity | Disposition | Applied To |
 |---|---------|----------|-------------|------------|
