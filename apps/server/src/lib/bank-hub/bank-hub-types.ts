@@ -51,7 +51,8 @@ export const bankHubAccountRawSchema = z.object({
 	bank_code: z.string().nullish(),
 	account_holder_name: z.string().nullish(),
 	account_number: z.string().nullish(),
-	active: z.union([z.boolean(), z.number()]).nullish(),
+	// SQLite-backed API: booleans serialize as "0"/"1" strings, not 0/1/bool.
+	active: z.union([z.boolean(), z.number(), z.string()]).nullish(),
 });
 
 export const bankHubTransactionRawSchema = z.object({

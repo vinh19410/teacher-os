@@ -322,6 +322,67 @@ describe("createBankHubClient", () => {
 		});
 	});
 
+	test('parses account booleans that arrive as SQLite "0"/"1" strings', async () => {
+		// SePay's API is SQLite-backed and serializes booleans as strings:
+		// live sandbox /v1/bank-account returns active: "1", which must not
+		// fail schema validation nor coerce to `false`.
+		const cfg = newConfig();
+		const { fetch: fetchImpl } = mockFetch(async (req) => {
+			if (isTokenRequest(req)) return tokenResponse("tok-1", 900);
+			const { pathname } = new URL(req.url);
+			if (pathname === "/v1/bank-account") {
+				return jsonResponse({
+					code: "200",
+					data: [
+						{
+							xid: "8919b3ff-c1f3-11f1-b21a-a6006ab65aca",
+							company_xid: "8d212891-9927-4199-9566-eaaa4d597af4",
+							brand_name: "ACB",
+							bank_bin: "970416",
+							bank_code: "ACB",
+							account_holder_name: "NGUYEN VAN A",
+							account_number: "0071000123",
+							accumulated: "0.00",
+							account_type: "individual",
+							bank_api_connected: "1",
+							active: "1",
+							last_transaction: null,
+							created_at: "2026-10-07 09:05:14",
+							updated_at: "2026-10-07 09:05:14",
+						},
+						{ xid: "acc-2", active: "0" },
+					],
+					meta: {
+						per_page: 20,
+						total: 1,
+						has_more: false,
+						current_page: 1,
+						page_count: 1,
+					},
+				});
+			}
+			return jsonResponse({ code: "200", data: { xid: "acc-1", active: "1" } });
+		});
+
+		const client = createBankHubClient(cfg, fetchImpl);
+		const accounts = await client.listBankAccounts("company-1");
+		expect(accounts[0]).toEqual({
+			xid: "8919b3ff-c1f3-11f1-b21a-a6006ab65aca",
+			companyXid: "8d212891-9927-4199-9566-eaaa4d597af4",
+			brandName: "ACB",
+			bankBin: "970416",
+			bankCode: "ACB",
+			accountHolderName: "NGUYEN VAN A",
+			accountNumber: "0071000123",
+			active: true,
+		});
+		expect(accounts[1]?.active).toBe(false);
+
+		// The webhook path reads the single-account endpoint — same shape.
+		const single = await client.getBankAccount("acc-1");
+		expect(single.active).toBe(true);
+	});
+
 	test("sends the documented method, path and payload for every endpoint", async () => {
 		const cfg = newConfig();
 		const { calls, fetch: fetchImpl } = mockFetch(async (req) => {

@@ -151,7 +151,7 @@ function toAccount(raw: {
 	bank_code?: string | null;
 	account_holder_name?: string | null;
 	account_number?: string | null;
-	active?: boolean | number | null;
+	active?: boolean | number | string | null;
 }): BankHubAccount {
 	return {
 		xid: raw.xid,
@@ -161,7 +161,7 @@ function toAccount(raw: {
 		bankCode: raw.bank_code ?? "",
 		accountHolderName: raw.account_holder_name ?? "",
 		accountNumber: raw.account_number ?? "",
-		active: raw.active === true || raw.active === 1,
+		active: raw.active === true || raw.active === 1 || raw.active === "1",
 	};
 }
 
