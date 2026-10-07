@@ -98,6 +98,8 @@ describe("routes-matcher", () => {
 			// Route /settings đã bị gỡ (issue #321) — xử lý như path không hợp lệ.
 			expect(isValidAppRoute("/settings")).toBe(false);
 			expect(isValidAppRoute("/settings/extra/nested")).toBe(false);
+			// Route /payments đã gỡ (#338) — panel bank link dời về /profile.
+			expect(isValidAppRoute("/payments")).toBe(false);
 		});
 
 		it("drift guard: every route declared in routeTree.gen.ts passes isValidAppRoute", () => {

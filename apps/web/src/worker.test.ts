@@ -101,6 +101,8 @@ describe("apps/web worker fetch handler", () => {
 			// Route /settings đã gỡ (issue #321) — pin ở tầng worker luôn,
 			// không chỉ ở routes-matcher.test.ts.
 			"/settings",
+			// Route /payments đã gỡ (#338) — panel bank link dời về /profile.
+			"/payments",
 		];
 
 		for (const path of unknownPaths) {

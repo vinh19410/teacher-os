@@ -37,6 +37,16 @@ describe("profile route", () => {
 		expect(src).toMatch(/to: "\/profile", search: \{\}, replace: true/);
 		expect(src).not.toMatch(/to: "\/_auth\//);
 	});
+
+	test("renders the bank link panel after the Google card (#338)", () => {
+		// Route /payments đã gỡ — panel bank link sống trên /profile, sau
+		// GoogleLinkCard để hai card "liên kết tài khoản" nằm liền nhau.
+		expect(src).toMatch(/<BankLinkPanel \/>/);
+		const googleIndex = src.indexOf("<GoogleLinkCard />");
+		const bankIndex = src.indexOf("<BankLinkPanel />");
+		expect(googleIndex).toBeGreaterThan(-1);
+		expect(bankIndex).toBeGreaterThan(googleIndex);
+	});
 });
 
 describe("google link card", () => {
