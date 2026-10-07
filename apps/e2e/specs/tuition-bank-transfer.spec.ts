@@ -137,7 +137,8 @@ test.describe("Tuition bank transfer (#320)", () => {
 		await signUpViaUi(page, { email: teacherEmail, password: PASSWORD });
 		await teacherSignIn(page);
 
-		await page.goto(`${WEB_ORIGIN}/payments`);
+		// #338: panel bank link dời từ trang riêng /payments vào trang Hồ sơ.
+		await page.goto(`${WEB_ORIGIN}/profile`);
 		await expect(page.getByText("Nhận học phí qua chuyển khoản")).toBeVisible();
 		await page
 			.getByRole("button", { name: "Liên kết tài khoản ngân hàng" })

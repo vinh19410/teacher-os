@@ -107,7 +107,9 @@ describe("applySecurityHeaders (issue #203)", () => {
 describe("CSP frame-src for the Bank Hub hosted link (#320)", () => {
 	it("allows exactly the shared BANK_HUB_LINK_ORIGINS", () => {
 		const headers = applySecurityHeaders(
-			new Request("https://app.teacheros.io.vn/payments"),
+			// CSP là global (không route-scoped) — URL mẫu là /profile sau khi
+			// route /payments gỡ (#338).
+			new Request("https://app.teacheros.io.vn/profile"),
 			new Headers({ "Content-Type": "text/html" }),
 		);
 		const csp = headers.get("content-security-policy") ?? "";

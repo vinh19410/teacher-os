@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 /**
  * Regression spec for issue #113 (QC P1):
- * 1. Non-existent pages (/this-page-does-not-exist-qc-test, /help, /about, /signup, /register)
+ * 1. Non-existent pages (/this-page-does-not-exist-qc-test, /help, /about, /signup, /register, /payments)
  *    must render the branded TeacherOS 404 UI (never plain 12px "Not Found").
  * 2. HTTP status code must be 404 (never 200).
  * 3. Dotfiles (/.env, /.git) must return 404 plain text (never SPA HTML).
@@ -47,7 +47,8 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 		await expect(page).toHaveURL(/\/login$/);
 	});
 
-	for (const path of ["/help", "/about", "/signup", "/register"]) {
+	// /payments gỡ theo #338 (panel dời về /profile) — xử lý như path lạ.
+	for (const path of ["/help", "/about", "/signup", "/register", "/payments"]) {
 		test(`direct navigation to ${path} returns HTTP 404 and renders branded 404 UI`, async ({
 			page,
 		}) => {

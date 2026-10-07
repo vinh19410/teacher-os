@@ -15,7 +15,7 @@ import {
 export type BankLinkPurpose = "link" | "unlink" | "reactivate";
 
 /**
- * Trang "Nhận học phí" (`/payments`): trạng thái liên kết tài khoản ngân hàng qua
+ * Trang Hồ sơ (`/profile`, #338): trạng thái liên kết tài khoản ngân hàng qua
  * SePay Bank Hub (#320). Bảng trạng thái theo phase-02 plan: none → modal
  * "Liên kết", inactive (ngân hàng chủ động, OCB/MSB/KLB/TPB) → "Khôi phục",
  * linked → "Huỷ liên kết".

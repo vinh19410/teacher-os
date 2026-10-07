@@ -18,6 +18,9 @@ Quy ước khi cập nhật:
 ### Changed
 - Màn kết quả học viên: bài Writing đã chấm hiện 2 khung (bài viết bên trái | "Kết quả chấm của giáo viên" bên phải dính khi cuộn); ghi chú của giáo viên hiện ngay sau đoạn được highlight thay cho danh sách riêng dưới bài (#336)
 
+### Removed
+- Gỡ trang riêng `/payments` và mục sidebar "Nhận học phí" — liên kết tài khoản ngân hàng (SePay Bank Hub) chuyển vào trang Hồ sơ `/profile` (card "Nhận học phí qua chuyển khoản", sau card Google); đường vào qua avatar → Hồ sơ (#338)
+
 ## 2026-10-06
 
 ### Added

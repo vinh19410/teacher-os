@@ -769,8 +769,8 @@ a per-stage operation.
    `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
    keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
    không có `completion_redirect_uri`.
-5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang "Nhận học phí"
-   (`/payments`) → tạo
+5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang Hồ sơ
+   (`/profile`, card "Nhận học phí qua chuyển khoản" — #338) → tạo
    phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
    "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
 6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng

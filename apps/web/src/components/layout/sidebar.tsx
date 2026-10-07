@@ -87,21 +87,6 @@ const navSections: {
 				),
 			},
 			{
-				to: "/payments",
-				label: "Nhận học phí",
-				icon: (
-					<svg
-						aria-hidden="true"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.6"
-					>
-						<path d="M12 3v18M7 7h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8" />
-					</svg>
-				),
-			},
-			{
 				to: "/assignments",
 				label: "Bài tập",
 				icon: (
