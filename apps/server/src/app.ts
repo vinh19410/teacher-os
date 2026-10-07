@@ -10,6 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
+import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicPayRoutes } from "./routes/public-pay";
@@ -214,6 +215,9 @@ export function buildApp(deps: AppDeps) {
 	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
 	// middleware and Better Auth never run — auth is the X-Secret-Key header.
 	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// Postman-facing sandbox mock-transaction wrapper: same outside-/api
+	// treatment, auth is the IPN Apikey header (see routes/bank-hub-mock.ts).
+	app.route("/dev/bank-hub", bankHubMockRoutes(deps));
 	// Public pay page data (#320): outside /api/* (bootstrap 403s student
 	// roles there) and readable signed-out — the token is the capability.
 	app.route("/public/pay", publicPayRoutes(deps));

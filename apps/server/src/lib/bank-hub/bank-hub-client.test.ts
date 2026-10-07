@@ -521,6 +521,87 @@ describe("createBankHubClient", () => {
 		}
 	});
 
+	test("createMockTransaction posts the documented body and unwraps the envelope", async () => {
+		const cfg = newConfig();
+		const { calls, fetch: fetchImpl } = mockFetch(async (req) => {
+			if (isTokenRequest(req)) return tokenResponse("tok-1", 900);
+			const { pathname } = new URL(req.url);
+			if (req.method === "POST" && pathname === "/v1/transaction/create") {
+				return jsonResponse(
+					{
+						code: 201,
+						message: "Created",
+						data: {
+							transaction_id: "txn-mock-1",
+							reference_number: "FT261007",
+							transaction_date: "2026-10-07 15:30:00",
+							amount: 500_000,
+							transfer_type: "credit",
+							accumulated: 5_000_000,
+						},
+					},
+					201,
+				);
+			}
+			return jsonResponse({ code: "404" }, 404);
+		});
+
+		const client = createBankHubClient(cfg, fetchImpl);
+		const tx = await client.createMockTransaction({
+			bankAccountXid: "acc-1",
+			transferType: "credit",
+			amount: 500_000,
+			content: "Thanh toan DH123456",
+		});
+
+		expect(tx).toEqual({
+			transactionId: "txn-mock-1",
+			referenceNumber: "FT261007",
+			transactionDate: "2026-10-07 15:30:00",
+			amount: 500_000,
+			transferType: "credit",
+			accumulated: 5_000_000,
+		});
+		const apiCalls = calls.filter((c) => !isTokenRequest(c));
+		expect(apiCalls).toHaveLength(1);
+		const create = apiCalls[0];
+		expect(create?.method).toBe("POST");
+		expect(create && new URL(create.url).pathname).toBe(
+			"/v1/transaction/create",
+		);
+		expect(create?.authorization).toBe("Bearer tok-1");
+		expect(create?.body && JSON.parse(create.body)).toEqual({
+			bank_account_xid: "acc-1",
+			transfer_type: "credit",
+			amount: 500_000,
+			transaction_content: "Thanh toan DH123456",
+		});
+	});
+
+	test("createMockTransaction falls back to the request transferType when the response omits it", async () => {
+		const cfg = newConfig();
+		const { fetch: fetchImpl } = mockFetch(async (req) => {
+			if (isTokenRequest(req)) return tokenResponse("tok-1", 900);
+			return jsonResponse({
+				code: 201,
+				data: { transaction_id: "txn-mock-2" },
+			});
+		});
+
+		const client = createBankHubClient(cfg, fetchImpl);
+		const tx = await client.createMockTransaction({
+			bankAccountXid: "acc-1",
+			transferType: "debit",
+			amount: 1_000,
+			content: "rut tien gia lap",
+		});
+
+		expect(tx.transactionId).toBe("txn-mock-2");
+		expect(tx.transferType).toBe("debit");
+		expect(tx.amount).toBeNull();
+		expect(tx.accumulated).toBeNull();
+	});
+
 	test("never logs the client secret or access token", async () => {
 		const spies = (["log", "info", "warn", "error"] as const).map((method) =>
 			vi.spyOn(console, method).mockImplementation(() => {}),

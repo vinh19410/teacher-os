@@ -41,6 +41,9 @@ function stubClient(): BankHubClient {
 			throw new Error("not used in webhook tests");
 		},
 		listTransactions: async () => ({ data: [] }),
+		createMockTransaction: async () => {
+			throw new Error("not used in webhook tests");
+		},
 	};
 }
 

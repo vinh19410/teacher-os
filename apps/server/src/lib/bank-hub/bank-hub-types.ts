@@ -82,6 +82,21 @@ export const bankHubTransactionListSchema = z.object({
 		.optional(),
 });
 
+/**
+ * Body of POST /v1/transaction/create (sandbox mock transaction). Docs show
+ * the {code, message, data} envelope with transaction_id in data — only
+ * transaction_id is load-bearing, the rest stay loose (shape rules are not
+ * uniform across endpoints).
+ */
+export const bankHubMockTransactionRawSchema = z.object({
+	transaction_id: z.string().min(1),
+	reference_number: z.string().nullish(),
+	transaction_date: z.string().nullish(),
+	amount: z.coerce.number().nullish(),
+	transfer_type: z.string().nullish(),
+	accumulated: z.coerce.number().nullish(),
+});
+
 /** Bank Hub lifecycle webhook envelope (X-Secret-Key auth, phase 2). */
 export const bankHubWebhookEventSchema = z.object({
 	timestamp: z.coerce.number(),

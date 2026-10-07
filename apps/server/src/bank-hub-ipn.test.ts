@@ -192,6 +192,9 @@ describe("bank hub IPN ingest (#320)", () => {
 				},
 				listBankAccounts: async () => [],
 				listTransactions: async () => ({ data: [] }),
+				createMockTransaction: async () => {
+					throw new Error("not used");
+				},
 			},
 		};
 		app = buildApp({

@@ -133,6 +133,9 @@ describe("bank-link reconcile (#320)", () => {
 						}
 					);
 				},
+				createMockTransaction: async () => {
+					throw new Error("not used");
+				},
 			} satisfies BankHubClient,
 		};
 		void rateLimited;

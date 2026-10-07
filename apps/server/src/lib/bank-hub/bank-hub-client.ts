@@ -4,6 +4,7 @@ import {
 	bankHubCompanyRawSchema,
 	bankHubEnvelope,
 	bankHubLinkTokenRawSchema,
+	bankHubMockTransactionRawSchema,
 	bankHubTokenResponseSchema,
 	bankHubTransactionListSchema,
 } from "./bank-hub-types";
@@ -94,6 +95,15 @@ export interface BankHubTransactionPage {
 	};
 }
 
+export interface BankHubMockTransaction {
+	transactionId: string;
+	referenceNumber: string;
+	transactionDate: string;
+	amount: number | null;
+	transferType: string;
+	accumulated: number | null;
+}
+
 export type BankHubLinkPurpose =
 	| "LINK_BANK_ACCOUNT"
 	| "UNLINK_BANK_ACCOUNT"
@@ -127,6 +137,17 @@ export interface BankHubClient {
 		page?: number;
 		perPage?: number;
 	}): Promise<BankHubTransactionPage>;
+	/**
+	 * Sandbox-only mock transaction (docs: "Giả lập giao dịch"). SePay itself
+	 * answers 403 on the production host, so callers gate on BankHubContext
+	 * env before reaching this.
+	 */
+	createMockTransaction(input: {
+		bankAccountXid: string;
+		transferType: "credit" | "debit";
+		amount: number;
+		content: string;
+	}): Promise<BankHubMockTransaction>;
 }
 
 function toCompany(raw: {
@@ -400,6 +421,25 @@ export function createBankHubClient(
 							totalPages: page.meta.total_pages,
 						}
 					: undefined,
+			})),
+		createMockTransaction: (input) =>
+			request({
+				method: "POST",
+				path: "/v1/transaction/create",
+				body: {
+					bank_account_xid: input.bankAccountXid,
+					transfer_type: input.transferType,
+					amount: input.amount,
+					transaction_content: input.content,
+				},
+				schema: bankHubEnvelope(bankHubMockTransactionRawSchema),
+			}).then((raw) => ({
+				transactionId: raw.data.transaction_id,
+				referenceNumber: raw.data.reference_number ?? "",
+				transactionDate: raw.data.transaction_date ?? "",
+				amount: raw.data.amount ?? null,
+				transferType: raw.data.transfer_type ?? input.transferType,
+				accumulated: raw.data.accumulated ?? null,
 			})),
 	};
 }

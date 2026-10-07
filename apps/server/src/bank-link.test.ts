@@ -103,6 +103,9 @@ function createFakeHub(): FakeHub {
 			return accounts;
 		},
 		listTransactions: async () => ({ data: [] }),
+		createMockTransaction: async () => {
+			throw new Error("not used");
+		},
 	};
 	return {
 		hub: {
