@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Student: hiện highlight + ghi chú ở màn kết quả"
-status: pending
+status: completed
 priority: P2
 effort: "1.5h"
 dependencies: [1, 2, 3]

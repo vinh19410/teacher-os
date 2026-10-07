@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Web giáo viên: bôi đen để highlight, danh sách ghi chú"
-status: pending
+status: completed
 priority: P2
 effort: "5h"
 dependencies: [1, 2]

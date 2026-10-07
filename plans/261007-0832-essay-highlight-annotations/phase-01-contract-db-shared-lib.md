@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contract + DB + logic highlight dùng chung"
-status: pending
+status: completed
 priority: P2
 effort: "2.5h"
 dependencies: []
