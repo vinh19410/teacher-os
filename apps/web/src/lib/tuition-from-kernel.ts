@@ -66,7 +66,9 @@ export interface RosterEnrollmentRef {
 
 /** Per-student tuition debt scoped to ONE class's enrollments. */
 export interface RosterDebt {
-	/** Sum of unpaid + overdue invoice amounts (VND) for this class. */
+	/** Sum of remaining (amount − min(paidAmount, amount)) of unpaid +
+	 * overdue invoices (VND) for this class; 0 possible on overpay clamp
+	 * while the ledger awaits reconciliation (#340). */
 	outstanding: number;
 	/** All invoices of the class's enrollments, any status — để phân biệt
 	 * "Đã thu" (có hóa đơn, đã thu đủ) với "—" (chưa có hóa đơn nào). */
@@ -77,18 +79,20 @@ export interface RosterDebt {
 }
 
 /**
- * Roster-tab debt (#216): tiền chưa thu của từng học viên CHỈ theo
+ * Roster-tab debt (#216): tiền CHƯA THU của từng học viên CHỈ theo
  * enrollment của lớp đã cho. Invoices của lớp khác và legacy rows
  * (`eid: ""`) không tính; status ≠ "paid" đều là chưa thu, cùng convention
- * với tuitionTotals. Edge đã biết: học viên rời lớp rồi enroll lại thì hóa
- * đơn cũ trỏ enrollmentId đã xóa (invoice.enrollmentId là text, không FK)
- * và không được đếm — chấp nhận vì hóa đơn đó thuộc enrollment cũ.
- * "Chưa lập phiếu" = học viên KHÔNG có entry trong map (#322).
+ * với tuitionTotals: partial trừ ledger `paidAmount` với clamp `Math.min`
+ * (#320/#340), mark-paid thủ công (`paidAmount: 0`, status `paid`) do status
+ * quyết định nên không đi qua nhánh trừ. Edge đã biết: học viên rời lớp rồi
+ * enroll lại thì hóa đơn cũ trỏ enrollmentId đã xóa (invoice.enrollmentId là
+ * text, không FK) và không được đếm — chấp nhận vì hóa đơn đó thuộc
+ * enrollment cũ. "Chưa lập phiếu" = học viên KHÔNG có entry trong map (#322).
  */
 export function rosterDebtByStudent(
 	classId: string,
 	enrollments: RosterEnrollmentRef[],
-	invoices: Pick<Invoice, "eid" | "amount" | "status" | "due">[],
+	invoices: Pick<Invoice, "eid" | "amount" | "paidAmount" | "status" | "due">[],
 	todayISO: string,
 ): Map<string, RosterDebt> {
 	const eidToSid = new Map<string, string>();
@@ -107,7 +111,7 @@ export function rosterDebtByStudent(
 		cur.invoiceCount += 1;
 		const eff = effectiveInvoiceStatus(inv, todayISO);
 		if (eff !== "paid") {
-			cur.outstanding += inv.amount;
+			cur.outstanding += inv.amount - Math.min(inv.paidAmount, inv.amount);
 			if (eff === "overdue" || cur.status === "overdue") {
 				cur.status = "overdue";
 			} else {

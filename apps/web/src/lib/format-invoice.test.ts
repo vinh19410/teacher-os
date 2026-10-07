@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
 
 import {
+	formatRemainingVND,
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 	invoiceCode,
+	invoiceRemainingLabel,
 	invoiceType,
 } from "./format-invoice";
 
@@ -47,5 +49,65 @@ describe("INVOICE_STATUS_LABEL / INVOICE_STATUS_VARIANT (#322)", () => {
 			unpaid: "warn",
 			overdue: "danger",
 		});
+	});
+});
+
+// #340 — copy đơn nguồn của nhãn "còn Xđ" dùng chung roster + /tuition + hồ sơ.
+describe("formatRemainingVND (#340)", () => {
+	test("prefix 'còn ' + fmtVND", () => {
+		expect(formatRemainingVND(8000000)).toBe("còn 8.000.000đ");
+		expect(formatRemainingVND(400000)).toBe("còn 400.000đ");
+	});
+});
+
+describe("invoiceRemainingLabel (#340)", () => {
+	test("paid → null (badge Đã thu tự nói đủ)", () => {
+		expect(
+			invoiceRemainingLabel({
+				amount: 10000000,
+				paidAmount: 0,
+				status: "paid",
+			}),
+		).toBeNull();
+	});
+
+	test("chưa thu gì (paidAmount 0) → null — cell Số tiền đã hiện đủ amount", () => {
+		expect(
+			invoiceRemainingLabel({
+				amount: 10000000,
+				paidAmount: 0,
+				status: "unpaid",
+			}),
+		).toBeNull();
+	});
+
+	test("thu một phần → 'còn Xđ'", () => {
+		expect(
+			invoiceRemainingLabel({
+				amount: 10000000,
+				paidAmount: 2000000,
+				status: "unpaid",
+			}),
+		).toBe("còn 8.000.000đ");
+	});
+
+	test("thu một phần quá hạn → vẫn 'còn Xđ' (đỏ do caller styling)", () => {
+		expect(
+			invoiceRemainingLabel({
+				amount: 10000000,
+				paidAmount: 2000000,
+				status: "overdue",
+			}),
+		).toBe("còn 8.000.000đ");
+	});
+
+	test("overpay clamp → null (tránh 'còn 0đ')", () => {
+		expect(
+			invoiceRemainingLabel({
+				amount: 400000,
+				paidAmount: 500000,
+				status: "unpaid",
+			}),
+		).toBeNull();
 	});
 });

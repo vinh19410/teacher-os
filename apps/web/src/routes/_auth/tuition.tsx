@@ -14,11 +14,13 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
+import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import {
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 	invoiceCode,
+	invoiceRemainingLabel,
 	invoiceType,
 } from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
@@ -196,6 +198,9 @@ export function TuitionRoute() {
 							rows={data.invoices.map((i) => {
 								const s = data.students.find((st) => st.id === i.sid);
 								const status = effectiveInvoiceStatus(i, today);
+								// #340 — số còn thiếu của hóa đơn thu một phần; null với
+								// paid/chưa-thu-gì/overpay (clamp), khi đó chỉ badge.
+								const remaining = invoiceRemainingLabel(i);
 								return {
 									cells: [
 										<span key="id" className="font-mono text-meta text-xs">
@@ -227,9 +232,28 @@ export function TuitionRoute() {
 												{INVOICE_STATUS_LABEL[status]}
 											</Badge>
 										) : i.paidAmount > 0 ? (
-											<Badge key="b" variant="warn" dot>
-												Thu một phần
-											</Badge>
+											// Badge "Thu một phần" giữ slot trạng thái; nhãn
+											// "còn X" kèm cạnh, đỏ khi hóa đơn quá hạn —
+											// nhất quán styling với roster/hồ sơ.
+											<span
+												key="b"
+												className="flex items-center gap-2 whitespace-nowrap"
+											>
+												<Badge variant="warn" dot>
+													Thu một phần
+												</Badge>
+												{remaining && (
+													<span
+														className={cn(
+															"font-mono",
+															status === "overdue" &&
+																"font-semibold text-danger",
+														)}
+													>
+														{remaining}
+													</span>
+												)}
+											</span>
 										) : (
 											<Badge
 												key="b"
