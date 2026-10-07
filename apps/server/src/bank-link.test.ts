@@ -234,6 +234,16 @@ describe("bank-link routes", () => {
 		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
 	});
 
+	test("accepts the sandbox hosted-link origin", async () => {
+		fake.setHostedUrl("https://bankhub-sandbox.sepay.vn/link/x");
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userB.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
+	});
+
 	test("maps a Bank Hub failure on link-token to 502 without leaking the message", async () => {
 		fake.setLinkTokenError(new BankHubError(500, "sandbox exploded"));
 		const res = await api(app, "POST", "/api/bank-link/link-token", {

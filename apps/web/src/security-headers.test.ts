@@ -111,7 +111,8 @@ describe("CSP frame-src for the Bank Hub hosted link (#320)", () => {
 			new Headers({ "Content-Type": "text/html" }),
 		);
 		const csp = headers.get("content-security-policy") ?? "";
-		expect(csp).toContain("frame-src https://bankhub.sepay.vn;");
+		expect(csp).toContain("frame-src https://bankhub.sepay.vn");
+		expect(csp).toContain("https://bankhub-sandbox.sepay.vn;");
 		// Sourced from the same const the server validates against.
 		expect(csp).toContain(BANK_HUB_LINK_ORIGINS.join(" "));
 	});
