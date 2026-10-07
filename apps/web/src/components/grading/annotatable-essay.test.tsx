@@ -60,10 +60,8 @@ function baseProps(
 	};
 }
 
-/** Bôi đen `text` trong text node của khối essay, rồi bắn pointerup — cùng
- * đường vào như chuột thật. Render component với `props` trước. */
-function selectText(text: string, props = baseProps()) {
-	render(<AnnotatableEssay {...props} />);
+/** Đặt Range cho `text` trong khối essay (không bắn sự kiện). */
+function setSelection(text: string): HTMLElement {
 	const container = screen.getByTestId("essay-text");
 	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
 	let node = walker.nextNode();
@@ -76,10 +74,20 @@ function selectText(text: string, props = baseProps()) {
 			const selection = window.getSelection();
 			selection?.removeAllRanges();
 			selection?.addRange(range);
-			break;
+			return container;
 		}
 		node = walker.nextNode();
 	}
+	throw new Error(`text not found in essay: ${text}`);
+}
+
+/** Mô phỏng thao tác bôi đen thật: nhấn chuột → selection hình thành → thả
+ * tay — popover chỉ được mở ở bước thả tay. Render với `props` trước. */
+function selectText(text: string, props = baseProps()) {
+	render(<AnnotatableEssay {...props} />);
+	const container = screen.getByTestId("essay-text");
+	fireEvent.pointerDown(container);
+	setSelection(text);
 	fireEvent.pointerUp(container);
 	return props;
 }
@@ -89,6 +97,19 @@ describe("AnnotatableEssay (#332)", () => {
 		selectText("many benef");
 		const dialog = screen.getByRole("dialog", { name: "Thêm highlight" });
 		expect(dialog.textContent).toContain("many benefits");
+	});
+
+	test("đang kéo (pointer chưa thả) selectionchange không bật popover; thả tay mới bật", async () => {
+		render(<AnnotatableEssay {...baseProps()} />);
+		const container = screen.getByTestId("essay-text");
+		fireEvent.pointerDown(container);
+		setSelection("benefits");
+		document.dispatchEvent(new Event("selectionchange"));
+		// Chờ đủ qua debounce 250ms — handler chạy nhưng bị gate đang-kéo chặn.
+		await new Promise((resolve) => setTimeout(resolve, 350));
+		expect(screen.queryByRole("dialog", { name: "Thêm highlight" })).toBeNull();
+		fireEvent.pointerUp(container);
+		expect(screen.getByRole("dialog", { name: "Thêm highlight" })).toBeTruthy();
 	});
 
 	test("gõ ghi chú rồi Lưu highlight → onCreate nhận offset đúng", async () => {
