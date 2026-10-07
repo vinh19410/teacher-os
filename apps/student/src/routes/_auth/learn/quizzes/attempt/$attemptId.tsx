@@ -27,7 +27,6 @@ import { useEffect } from "react";
 import Loader from "@/components/loader";
 import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
-import { EssayAnnotationList } from "@/components/quiz/essay-annotation-list";
 import { QuizMediaPlayer } from "@/components/quiz/quiz-media-player";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
@@ -74,11 +73,28 @@ function AttemptRouteView() {
 }
 
 /**
+ * Writing đã chấm → chia 2 khung (bài viết | kết quả chấm) ở ≥ 921px (#336).
+ * Nguồn sự thật duy nhất cho quyết định chia khung — `AttemptSummaryBody` và
+ * `AttemptSummaryPage` đều gọi hàm này; thêm skill/nhánh mới thì cập nhật ở
+ * đây. Điều kiện khớp thứ tự nhánh render: Speaking rơi vào nhánh riêng,
+ * Writing cần `essay != null`, khung phải cần `grade != null`.
+ */
+export function isSplitWritingResult(summary: QuizAttemptSummary): boolean {
+	return (
+		summary.skill !== "speaking" &&
+		(summary.essay ?? null) !== null &&
+		(summary.grade ?? null) !== null
+	);
+}
+
+/**
  * Body màn kết quả — export để unit test các nhánh (#304, red-team I):
  * Speaking (`skill === "speaking"`, #305) hiện bài nói đã nộp + nghe lại;
  * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
  * giữ nguyên score card + bảng đáp án. Writing/Speaking đã chấm
  * (`summary.grade`) hiện band + tiêu chí + nhận xét thay dòng chờ chấm.
+ * Writing đã chấm (#336) chia 2 khung ≥ 921px, ghi chú giáo viên hiện inline
+ * ngay sau highlight.
  */
 export function AttemptSummaryBody({
 	summary,
@@ -158,14 +174,21 @@ export function AttemptSummaryBody({
 
 	if (essay !== null) {
 		const wordCount = countWords(essay);
-		// Highlight + ghi chú giáo viên (#332): server CHỈ gửi `annotations`
-		// khi bài đã chấm — client chỉ đọc `?? []`.
+		// Ghi chú giáo viên hiện inline ngay sau highlight (#336): server CHỈ
+		// gửi `annotations` khi bài đã chấm — client chỉ đọc `?? []`.
 		const annotations = summary.annotations ?? [];
 		const emptyEssay = essay.trim() === "";
-		return (
-			<>
-				{submittedLine}
-				<h2 className="mt-6 mb-1 font-display font-semibold text-fg">
+		const split = isSplitWritingResult(summary);
+		const essayFrame = (
+			<section
+				aria-labelledby="essay-heading"
+				className="min-w-0"
+				data-testid="essay-frame"
+			>
+				<h2
+					className="mt-6 mb-1 font-display font-semibold text-fg"
+					id="essay-heading"
+				>
 					Bài viết của bạn
 				</h2>
 				<p className="text-muted-fg text-sm" data-testid="essay-summary-count">
@@ -175,12 +198,41 @@ export function AttemptSummaryBody({
 					{emptyEssay ? (
 						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
 					) : (
-						<EssayWithHighlights essay={essay} annotations={annotations} />
+						<EssayWithHighlights
+							essay={essay}
+							annotations={annotations}
+							inlineNotes
+						/>
 					)}
 				</div>
-				{!emptyEssay && (
-					<EssayAnnotationList essay={essay} annotations={annotations} />
-				)}
+			</section>
+		);
+		// split ≡ grade != null trong nhánh này (Speaking đã early-return,
+		// essay != null) — guard `grade` để TS thu hẹp kiểu.
+		if (split && grade) {
+			return (
+				<>
+					{submittedLine}
+					<div
+						className="app:grid app:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] app:items-start app:gap-6"
+						data-testid="writing-result-split"
+					>
+						{essayFrame}
+						<AttemptGradeCard
+							grade={grade}
+							part={part}
+							scrollable
+							skill="writing"
+							className="app:sticky app:top-20 min-w-0"
+						/>
+					</div>
+				</>
+			);
+		}
+		return (
+			<>
+				{submittedLine}
+				{essayFrame}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="writing" part={part} />
 				) : (
@@ -244,7 +296,12 @@ function AttemptSummaryPage() {
 				saveState={null}
 				onSubmitClick={null}
 			/>
-			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
+			<main
+				className={cn(
+					"mx-auto w-full flex-1 px-4 py-6",
+					isSplitWritingResult(summary) ? "max-w-[1120px]" : "max-w-[720px]",
+				)}
+			>
 				<AttemptSummaryBody summary={summary} attemptId={attemptId} />
 			</main>
 		</div>

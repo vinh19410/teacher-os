@@ -93,6 +93,24 @@ function selectText(text: string, props = baseProps()) {
 }
 
 describe("AnnotatableEssay (#332)", () => {
+	test("không bao giờ render ghi chú inline (#336) — component bôi đen giữ bất biến DOM chọn được", () => {
+		render(
+			<AnnotatableEssay
+				{...baseProps({
+					annotations: [
+						annotation(
+							"a-1",
+							ESSAY.indexOf("many benefits"),
+							ESSAY.indexOf("many benefits") + 13,
+							"Đúng từ.",
+						),
+					],
+				})}
+			/>,
+		);
+		expect(screen.queryByTestId("essay-inline-note")).toBeNull();
+	});
+
 	test("bôi đen một phần từ → popover hiện trích đoạn bắt dính cả từ", () => {
 		selectText("many benef");
 		const dialog = screen.getByRole("dialog", { name: "Thêm highlight" });

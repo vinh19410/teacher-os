@@ -34,12 +34,16 @@ import { Link } from "@tanstack/react-router";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
+import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import {
 	formatAttemptDuration,
 	formatVietnamSubmittedAt,
 } from "@/lib/attempt-format";
 import { cn } from "@/lib/cn";
-import { AttemptSummaryBody } from "@/routes/_auth/learn/quizzes/attempt/$attemptId";
+import {
+	AttemptSummaryBody,
+	isSplitWritingResult,
+} from "@/routes/_auth/learn/quizzes/attempt/$attemptId";
 
 const summary: QuizAttemptSummary = {
 	id: "att-1",
@@ -431,7 +435,7 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 		],
 	};
 
-	it("Đã chấm + 2 annotation: 2 mark đánh số theo thứ tự + danh sách 2 mục", () => {
+	it("Đã chấm + 2 annotation: 2 mark đánh số + ghi chú inline ngay sau mark, không còn danh sách (#336)", () => {
 		const html = renderToStaticMarkup(
 			<AttemptSummaryBody summary={annotated} attemptId={annotated.id} />,
 		);
@@ -440,16 +444,35 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 		expect(html).toContain('data-n="2"');
 		// Số khớp thứ tự xuất hiện: "clear" n=1, "upward" n=2.
 		expect(html.indexOf('data-n="1"')).toBeLessThan(html.indexOf('data-n="2"'));
-		expect(html).toContain('data-testid="essay-annotation-list"');
-		expect(html).toContain("Đúng từ.");
+		// Ghi chú inline (#336): 2 span note ngay sau mark tương ứng.
+		expect((html.match(/essay-inline-note/g) ?? []).length).toBe(2);
+		const clearMark = html.indexOf(">clear</mark>");
+		expect(html.indexOf("Đúng từ.")).toBeGreaterThan(clearMark);
+		expect(html.indexOf("Đúng từ.")).toBeLessThan(html.indexOf("upward"));
 		expect(html).toContain("Dùng rising.");
+		// Danh sách riêng đã bỏ khỏi màn học viên.
+		expect(html).not.toContain("essay-annotation-list");
 		// Đoạn essay phân mảnh đúng — nối lại đủ essay gốc.
 		expect(html).toContain("The graph shows a ");
 		expect(html).toContain(">clear</mark>");
 		expect(html).toContain(" trend.");
 	});
 
-	it("Đã chấm nhưng không có key annotations: không mark, không danh sách, vẫn grade card", () => {
+	it("Đã chấm: chia 2 khung — grade card nằm sau essay-frame (#336)", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={annotated} attemptId={annotated.id} />,
+		);
+		expect(html).toContain('data-testid="writing-result-split"');
+		expect(html.indexOf("essay-frame")).toBeGreaterThan(-1);
+		expect(html.indexOf("essay-frame")).toBeLessThan(
+			html.indexOf('data-testid="attempt-grade"'),
+		);
+		// Card nhận sticky + chống tràn cột 2fr; max-h/overflow nằm trong scrollable.
+		expect(html).toContain("app:sticky");
+		expect(html).toContain("min-w-0");
+	});
+
+	it("Đã chấm nhưng không có key annotations: không mark, không ghi chú, vẫn chia khung + grade card", () => {
 		const noAnnotations = { ...annotated } as QuizAttemptSummary;
 		delete noAnnotations.annotations;
 		const html = renderToStaticMarkup(
@@ -459,11 +482,12 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 			/>,
 		);
 		expect(html).not.toContain("<mark");
-		expect(html).not.toContain("essay-annotation-list");
+		expect(html).not.toContain("essay-inline-note");
+		expect(html).toContain('data-testid="writing-result-split"');
 		expect(html).toContain("Kết quả chấm của giáo viên");
 	});
 
-	it("Chưa chấm: không mark, không danh sách (server không gửi key)", () => {
+	it("Chưa chấm: không mark, không ghi chú inline, không chia khung", () => {
 		const ungraded = { ...annotated } as QuizAttemptSummary;
 		delete ungraded.grade;
 		delete ungraded.part;
@@ -472,8 +496,21 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 			<AttemptSummaryBody summary={ungraded} attemptId={ungraded.id} />,
 		);
 		expect(html).not.toContain("<mark");
-		expect(html).not.toContain("essay-annotation-list");
+		expect(html).not.toContain("essay-inline-note");
+		expect(html).not.toContain("writing-result-split");
 		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
+	});
+
+	it("Ghi chú rỗng không sinh span inline (#336)", () => {
+		const emptyNote = {
+			...annotated,
+			annotations: [{ id: "ann-1", start, end: start + 5, note: "" }],
+		};
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={emptyNote} attemptId={emptyNote.id} />,
+		);
+		expect((html.match(/<mark /g) ?? []).length).toBe(1);
+		expect(html).not.toContain("essay-inline-note");
 	});
 
 	it("Ghi chú chứa HTML render dạng text (escape qua JSX)", () => {
@@ -489,5 +526,139 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 			/>,
 		);
 		expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
+	});
+});
+
+describe("isSplitWritingResult (#336)", () => {
+	const graded: QuizAttemptSummary = {
+		...summary,
+		correctCount: 0,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 0,
+		items: [],
+		essay: "The graph shows a clear upward trend.",
+		skill: "writing",
+		part: "task1",
+		grade: {
+			scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			band: 6,
+			feedback: "",
+			gradedAt: "2026-10-07T03:00:00.000Z",
+		},
+	};
+
+	it("Writing đã chấm → true (kể cả essay rỗng '')", () => {
+		expect(isSplitWritingResult(graded)).toBe(true);
+		expect(isSplitWritingResult({ ...graded, essay: "" })).toBe(true);
+	});
+
+	it("Writing chưa chấm → false", () => {
+		const ungraded = { ...graded } as QuizAttemptSummary;
+		delete ungraded.grade;
+		expect(isSplitWritingResult(ungraded)).toBe(false);
+	});
+
+	it("Speaking đã chấm → false", () => {
+		const speaking: QuizAttemptSummary = {
+			...summary,
+			correctCount: 0,
+			wrongCount: 0,
+			skippedCount: 0,
+			totalCount: 0,
+			items: [],
+			essay: null,
+			skill: "speaking",
+			part: "part2",
+			grade: {
+				scores: { fluency: 7, lexical: 7, grammar: 7, pronunciation: 7 },
+				band: 7,
+				feedback: "",
+				gradedAt: "2026-10-07T03:00:00.000Z",
+			},
+		};
+		expect(isSplitWritingResult(speaking)).toBe(false);
+	});
+
+	it("Reading (essay null/undefined) → false", () => {
+		expect(isSplitWritingResult({ ...graded, essay: null })).toBe(false);
+		const noEssay = { ...graded } as QuizAttemptSummary;
+		delete noEssay.essay;
+		expect(isSplitWritingResult(noEssay)).toBe(false);
+	});
+});
+
+describe("AttemptGradeCard — scrollable + className (#336)", () => {
+	const grade: QuizAttemptGrade = {
+		scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6.5 },
+		band: 6.5,
+		feedback: "Tốt.\nCần ví dụ.",
+		gradedAt: "2026-10-07T03:00:00.000Z",
+	};
+
+	it("scrollable: section có max-h + overflow-y-auto + overscroll-contain + focus ring + tabIndex, feedback break-words", () => {
+		const html = renderToStaticMarkup(
+			<AttemptGradeCard
+				grade={grade}
+				skill="writing"
+				part="task1"
+				scrollable
+			/>,
+		);
+		expect(html).toContain("overflow-y-auto");
+		expect(html).toContain("max-h-");
+		expect(html).toContain("overscroll-contain");
+		expect(html).toContain("focus-visible:outline-none");
+		expect(html).toContain('tabindex="0"');
+		expect(html).toContain("break-words");
+	});
+
+	it("không scrollable (nhánh Speaking): không tabindex, không overflow, giữ class gốc", () => {
+		const html = renderToStaticMarkup(
+			<AttemptGradeCard grade={grade} skill="speaking" part="part2" />,
+		);
+		expect(html).not.toContain("tabindex");
+		expect(html).not.toContain("overflow-y-auto");
+		expect(html).toContain("mt-6");
+	});
+
+	it("dưới 921px (matchMedia matches=false): không tabindex — không dead tab stop", () => {
+		// File chạy node env (không có window) — dựng window tạm cho hook đọc
+		// matchMedia, xoá ngay sau test.
+		const g = globalThis as unknown as { window?: unknown };
+		g.window = {
+			matchMedia: vi.fn(() => ({
+				matches: false,
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+			})),
+		};
+		try {
+			const html = renderToStaticMarkup(
+				<AttemptGradeCard
+					grade={grade}
+					skill="writing"
+					part="task1"
+					scrollable
+				/>,
+			);
+			expect(html).not.toContain('tabindex="0"');
+		} finally {
+			delete g.window;
+		}
+	});
+
+	it("className gộp thêm không mất class gốc (sticky + min-w-0)", () => {
+		const html = renderToStaticMarkup(
+			<AttemptGradeCard
+				grade={grade}
+				skill="writing"
+				part="task1"
+				className="app:sticky app:top-20 min-w-0"
+			/>,
+		);
+		expect(html).toContain("mt-6");
+		expect(html).toContain("app:sticky");
+		expect(html).toContain("min-w-0");
 	});
 });
