@@ -4,12 +4,12 @@
  * and the web CSP `frame-src` is generated from it, so the two can never
  * drift. No runtime env — origin changes are a code change (SePay product
  * domain, rare).
- *
- * The sandbox hosted-link host is appended after sandbox verification
- * (plans/261005-0754-sepay-bank-hub-tuition-qr reports, phase 6).
  */
 export const BANK_HUB_LINK_ORIGINS: readonly string[] = [
 	"https://bankhub.sepay.vn",
+	// The sandbox hosted-link lives on its own subdomain — drop either entry
+	// and local linking 502s on origin validation.
+	"https://bankhub-sandbox.sepay.vn",
 ];
 
 /**

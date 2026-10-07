@@ -56,8 +56,9 @@ dependsOn: []
 
 ## Validation
 
-- `pnpm --filter web check-types` (hoặc `pnpm check-types`) xanh.
-- Chạy `pnpm --filter web test -- grade-form`: các test chọn điểm bằng `fireEvent.change` vẫn chạy (range nhận `change` giống select). Test kiểm `select.value` sẽ đỏ cho tới khi phase 02 sửa.
+- `pnpm check`, `pnpm --filter web check-types` (hoặc `pnpm check-types`) xanh.
+- Chạy `pnpm --filter web test -- grade-form`: cả 8 test cũ VẪN XANH — `selectFor()` cast unchecked nên đọc được `.value` trên `<input>` range. Suite xanh sau phase 01 KHÔNG chứng minh hành vi "chưa chọn" (test unset nằm ở phase 02).
+- e2e sẽ ĐỎ sau phase 01 (`selectOption` trên `<input>` throws) → hai phase phải land cùng một PR.
 
 ## Risk / Rollback
 

@@ -15,7 +15,11 @@ export const bankHubTokenResponseSchema = z.object({
 // the 201 body.
 export const bankHubTokenSchema = bankHubTokenResponseSchema;
 
-/** {code, data} envelope used by every API other than /v1/token. */
+/**
+ * {code, data} envelope — confirmed on the company endpoints. /v1/token and
+ * /v1/link-token/create return flat bodies instead; response shapes are not
+ * uniform across endpoints, so never assume one from another.
+ */
 export function bankHubEnvelope<T extends z.ZodTypeAny>(data: T) {
 	return z.object({
 		code: z.unknown().optional(),

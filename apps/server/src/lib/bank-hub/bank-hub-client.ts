@@ -290,9 +290,17 @@ export function createBankHubClient(
 		const json: unknown = await res.json().catch(() => undefined);
 		const parsed = opts.schema.safeParse(json);
 		if (!parsed.success) {
+			// Paths and codes only — values may hold link_token or account data.
+			const issues = parsed.error.issues
+				.map((i) => `${i.path.join(".") || "(root)"}: ${i.code}`)
+				.join("; ");
+			const keys =
+				json && typeof json === "object" && !Array.isArray(json)
+					? Object.keys(json).join(",")
+					: typeof json;
 			throw new BankHubError(
 				res.status,
-				`Bank Hub response for ${opts.path} is malformed`,
+				`Bank Hub response for ${opts.path} is malformed (${issues}; keys=${keys})`,
 			);
 		}
 		return parsed.data;
@@ -300,7 +308,6 @@ export function createBankHubClient(
 
 	const companyEnvelope = bankHubEnvelope(bankHubCompanyRawSchema);
 	const accountEnvelope = bankHubEnvelope(bankHubAccountRawSchema);
-	const linkTokenEnvelope = bankHubEnvelope(bankHubLinkTokenRawSchema);
 	const accountListEnvelope = bankHubEnvelope(bankHubAccountRawSchema.array());
 
 	return {
@@ -349,12 +356,13 @@ export function createBankHubClient(
 						: {}),
 					...(input.language !== undefined ? { language: input.language } : {}),
 				},
-				schema: linkTokenEnvelope,
+				// 201 body is flat — no {code, data} envelope like company endpoints.
+				schema: bankHubLinkTokenRawSchema,
 			}).then((raw) => ({
-				xid: raw.data.xid,
-				hostedLinkUrl: raw.data.hosted_link_url,
-				linkToken: raw.data.link_token,
-				expiresAt: raw.data.expires_at,
+				xid: raw.xid,
+				hostedLinkUrl: raw.hosted_link_url,
+				linkToken: raw.link_token,
+				expiresAt: raw.expires_at,
 			})),
 		getBankAccount: (xid) =>
 			request({
