@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
-import { bankLinkQueryKey, bankLinkQueryOptions } from "@/lib/repos/bank-link";
+import {
+	bankLinkQueryKey,
+	bankLinkQueryOptions,
+	syncBankLink,
+} from "@/lib/repos/bank-link";
 
 export type BankLinkPurpose = "link" | "unlink" | "reactivate";
 
@@ -93,7 +97,14 @@ export function BankLinkPanel() {
 				purpose={modalPurpose ?? "link"}
 				onClose={(changed) => {
 					setModalPurpose(null);
-					if (changed) void refresh();
+					if (!changed) return;
+					// FINISHED postMessage is not guaranteed: SePay can refuse
+					// in-page (e.g. an already-linked account) or close silently.
+					// Pull the server truth once whenever the hosted flow was
+					// entered, then let the query refetch.
+					void syncBankLink(baseUrl)
+						.catch(() => undefined)
+						.then(refresh);
 				}}
 			/>
 		</Card>

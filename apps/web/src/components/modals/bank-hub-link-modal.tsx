@@ -105,7 +105,10 @@ export function BankHubLinkModal({
 			const data = e.data as { event?: string } | null;
 			if (!data?.event) return;
 			if (data.event === "BANKHUB_CLOSE_LINK") {
-				onClose(false);
+				// SePay can close the flow itself (e.g. refusing an already-linked
+				// account) without any FINISHED event — state may still have
+				// changed, so the panel must re-sync rather than trust this close.
+				onClose(true);
 				return;
 			}
 			if (data.event.startsWith("FINISHED_")) {
