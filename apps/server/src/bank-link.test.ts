@@ -42,17 +42,21 @@ interface FakeHub {
 	hub: BankHubContext;
 	linkCalls: string[];
 	companyCreations(): number;
+	companyEdits(): { xid: string; transactionAmount: number | "Unlimited" }[];
 	setAccounts(accounts: BankHubAccount[]): void;
 	setHostedUrl(url: string): void;
 	setLinkTokenError(err: unknown): void;
 	setListAccountsError(err: unknown): void;
+	setCompanyAmount(amount: number | "Unlimited"): void;
 }
 
 function createFakeHub(): FakeHub {
 	let accounts: BankHubAccount[] = [account()];
 	let hostedUrl = "https://bankhub.sepay.vn/link/abc";
 	let creations = 0;
+	let companyAmount: number | "Unlimited" = 0;
 	const linkCalls: string[] = [];
+	const edits: { xid: string; transactionAmount: number | "Unlimited" }[] = [];
 	let linkTokenError: unknown;
 	let listAccountsError: unknown;
 	const client: BankHubClient = {
@@ -62,21 +66,27 @@ function createFakeHub(): FakeHub {
 				xid: `company-${creations}`,
 				fullName: input.fullName,
 				status: "Active",
-				transactionAmount: 0,
+				transactionAmount: companyAmount,
 			};
 		},
 		getCompany: async (xid) => ({
 			xid,
 			fullName: "",
 			status: "Active",
-			transactionAmount: "Unlimited",
+			transactionAmount: companyAmount,
 		}),
-		editCompany: async (xid) => ({
-			xid,
-			fullName: "",
-			status: "Active",
-			transactionAmount: "Unlimited",
-		}),
+		editCompany: async (xid, patch) => {
+			edits.push({
+				xid,
+				transactionAmount: patch.transactionAmount ?? "Unlimited",
+			});
+			return {
+				xid,
+				fullName: "",
+				status: "Active",
+				transactionAmount: "Unlimited",
+			};
+		},
 		createLinkToken: async (input) => {
 			if (linkTokenError) throw linkTokenError;
 			linkCalls.push(input.purpose);
@@ -103,6 +113,7 @@ function createFakeHub(): FakeHub {
 		},
 		linkCalls,
 		companyCreations: () => creations,
+		companyEdits: () => edits,
 		setAccounts: (next) => {
 			accounts = next;
 		},
@@ -114,6 +125,9 @@ function createFakeHub(): FakeHub {
 		},
 		setListAccountsError: (err) => {
 			listAccountsError = err;
+		},
+		setCompanyAmount: (amount) => {
+			companyAmount = amount;
 		},
 	};
 }
@@ -222,6 +236,36 @@ describe("bank-link routes", () => {
 		});
 		expect(second.status).toBe(200);
 		expect(fake.companyCreations()).toBe(1);
+	});
+
+	test("forces transaction_amount Unlimited right after company creation", async () => {
+		// Bank Hub only delivers IPNs for companies with transaction_amount > 0
+		// or "Unlimited"; new companies default to 0, so the edit is mandatory.
+		const userC = await insertUser("Teacher C");
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userC.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		const lastEdit = fake.companyEdits().at(-1);
+		expect(lastEdit).toMatchObject({
+			xid: expect.stringMatching(/^company-\d+$/),
+			transactionAmount: "Unlimited",
+		});
+	});
+
+	test("repairs a cached company still on the zero limit", async () => {
+		// The fresh-create edit may have been lost (crash/network) — the cached
+		// company path must re-check and self-heal on the next link attempt.
+		fake.setCompanyAmount(0);
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userA.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		const lastEdit = fake.companyEdits().at(-1);
+		expect(lastEdit).toMatchObject({ transactionAmount: "Unlimited" });
+		fake.setCompanyAmount("Unlimited");
 	});
 
 	test("rejects a hosted link outside the allowlist with 502", async () => {

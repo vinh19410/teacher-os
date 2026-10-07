@@ -1,7 +1,11 @@
 import { orgBankLink } from "@teacher-os/db/schema/org-bank-link";
 import { eq } from "drizzle-orm";
 import type { Db } from "../../app";
-import { type BankHubContext, BankHubError } from "./bank-hub-client";
+import {
+	type BankHubCompany,
+	type BankHubContext,
+	BankHubError,
+} from "./bank-hub-client";
 import type { BankHubWebhookEvent } from "./bank-hub-types";
 
 export type OrgBankLinkRow = typeof orgBankLink.$inferSelect;
@@ -26,13 +30,30 @@ function parsePastXids(
 }
 
 /**
+ * Bank Hub only delivers balance IPNs for companies whose transaction_amount
+ * is > 0 or "Unlimited" — new companies default to 0 and would silently never
+ * confirm a payment. Every company this flow owns is forced to "Unlimited";
+ * running the check on the cached-company path too means a failed edit
+ * self-heals on the next link attempt.
+ */
+async function ensureUnlimitedTransactionAmount(
+	hub: BankHubContext,
+	company: BankHubCompany,
+): Promise<void> {
+	if (company.transactionAmount === "Unlimited") return;
+	await hub.client.editCompany(company.xid, { transactionAmount: "Unlimited" });
+}
+
+/**
  * Idempotently make sure the org has a Bank Hub company, recording its xid
- * in org_bank_link. The row is inserted (status "none") BEFORE createCompany
- * so a racing tab or webhook observes the in-flight state; after a duplicate
- * full_name 400 the loser re-reads the row the winner filled in. There is no
- * list/search-company API in Bank Hub, so a crash between createCompany and
- * the row update leaves the org with a one-click retry (new company create
- * fails again → row still empty → user-facing error), not silent corruption.
+ * in org_bank_link, and that its transaction_amount is "Unlimited" (the IPN
+ * delivery gate — see ensureUnlimitedTransactionAmount). The row is inserted
+ * (status "none") BEFORE createCompany so a racing tab or webhook observes
+ * the in-flight state; after a duplicate full_name 400 the loser re-reads the
+ * row the winner filled in. There is no list/search-company API in Bank Hub,
+ * so a crash between createCompany and the row update leaves the org with a
+ * one-click retry (new company create fails again → row still empty →
+ * user-facing error), not silent corruption.
  */
 export async function ensureCompany(
 	db: Db,
@@ -42,20 +63,29 @@ export async function ensureCompany(
 	const read = () =>
 		db.select().from(orgBankLink).where(eq(orgBankLink.orgId, orgId)).limit(1);
 	const [existing] = await read();
-	if (existing?.companyXid) return existing;
+	if (existing?.companyXid) {
+		const company = await hub.client.getCompany(existing.companyXid);
+		await ensureUnlimitedTransactionAmount(hub, company);
+		return existing;
+	}
 
 	await db
 		.insert(orgBankLink)
 		.values({ orgId, status: "none" })
 		.onConflictDoNothing();
 	const [afterInsert] = await read();
-	if (afterInsert?.companyXid) return afterInsert;
+	if (afterInsert?.companyXid) {
+		const company = await hub.client.getCompany(afterInsert.companyXid);
+		await ensureUnlimitedTransactionAmount(hub, company);
+		return afterInsert;
+	}
 
 	try {
 		const company = await hub.client.createCompany({
 			fullName: `teacheros-${orgId}`,
 			status: "Active",
 		});
+		await ensureUnlimitedTransactionAmount(hub, company);
 		const [updated] = await db
 			.update(orgBankLink)
 			.set({ companyXid: company.xid, updatedAt: new Date() })
