@@ -12,17 +12,16 @@ import {
 } from "@teacher-os/api/lib/ielts-band";
 import { useState } from "react";
 import { fmtWhen } from "@/components/assignments/assignment-status";
+import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
-import { Field, Select, Textarea } from "@/components/ui/field";
-
-/** 19 mức điểm IELTS 0–9 bước 0.5, value là String(n), nhãn `formatBand`. */
-const BAND_OPTIONS = Array.from({ length: 19 }, (_, i) => i / 2);
+import { Field, Textarea } from "@/components/ui/field";
 
 /**
- * Form chấm 4 tiêu chí IELTS (#319). Band tổng tự tính từ scores đã chọn
- * (`ieltsOverallBand`) và chỉ hiện khi đủ 4 tiêu chí; nút Lưu disable tới
- * khi đủ. `key` theo `gradedAt` ở caller để sau khi lưu form remount với
- * giá trị server mới.
+ * Form chấm 4 tiêu chí IELTS (#319) bằng BandSlider (#331). Mỗi tiêu chí là
+ * `number | null` — `null` nghĩa là chưa chọn, nút Lưu chỉ mở khi đủ 4.
+ * Band tổng tự tính từ scores đã chọn (`ieltsOverallBand`) và chỉ hiện khi
+ * đủ. `key` theo `gradedAt` ở caller để sau khi lưu form remount với giá
+ * trị server mới.
  */
 export function GradeForm({
 	skill,
@@ -42,15 +41,13 @@ export function GradeForm({
 	onSave(input: QuizGradeInput): void;
 }) {
 	const keys = criteriaForSkill(skill);
-	const [scores, setScores] = useState<Record<string, string>>(() =>
-		Object.fromEntries(
-			keys.map((key) => [key, String(initial?.scores[key] ?? "")]),
-		),
+	const [scores, setScores] = useState<Record<string, number | null>>(() =>
+		Object.fromEntries(keys.map((key) => [key, initial?.scores[key] ?? null])),
 	);
 	const [feedback, setFeedback] = useState(initial?.feedback ?? "");
 
-	const complete = keys.every((key) => scores[key] !== "");
-	const values = keys.map((key) => Number(scores[key]));
+	const complete = keys.every((key) => scores[key] !== null);
+	const values = complete ? keys.map((key) => scores[key] as number) : [];
 
 	return (
 		<form
@@ -60,7 +57,7 @@ export function GradeForm({
 				if (!complete || saving) return;
 				onSave({
 					scores: Object.fromEntries(
-						keys.map((key) => [key, Number(scores[key])]),
+						keys.map((key) => [key, scores[key] as number]),
 					),
 					feedback,
 				});
@@ -68,20 +65,11 @@ export function GradeForm({
 		>
 			{keys.map((key) => (
 				<Field key={key} label={criterionLabel(skill, key, part)}>
-					<Select
+					<BandSlider
 						id={`grade-${key}`}
 						value={scores[key]}
-						onChange={(event) =>
-							setScores((prev) => ({ ...prev, [key]: event.target.value }))
-						}
-					>
-						<option value="">—</option>
-						{BAND_OPTIONS.map((band) => (
-							<option key={band} value={String(band)}>
-								{formatBand(band)}
-							</option>
-						))}
-					</Select>
+						onChange={(band) => setScores((prev) => ({ ...prev, [key]: band }))}
+					/>
 				</Field>
 			))}
 

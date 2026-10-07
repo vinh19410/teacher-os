@@ -74,6 +74,24 @@ async function openPaper(page: Page, title: string): Promise<void> {
 	await expect(paper).toBeVisible();
 }
 
+/** #331 — Set band trên input[type=range] qua native prototype setter rồi
+ * dispatch `input`. Playwright `fill()` không dùng được: nó gán value bằng
+ * JS thường, tracker của React 19 đồng bộ ngay trong instance setter nên
+ * event `input` sau đó bị coi là "không đổi" và onChange không chạy. */
+async function setBand(page: Page, label: string, band: string): Promise<void> {
+	await page.getByLabel(label).evaluate((el, value) => {
+		const input = el as HTMLInputElement;
+		const setter = Object.getOwnPropertyDescriptor(
+			HTMLInputElement.prototype,
+			"value",
+		)?.set;
+		if (!setter) throw new Error("HTMLInputElement value setter unavailable");
+		setter.call(input, value);
+		input.dispatchEvent(new Event("input", { bubbles: true }));
+		input.dispatchEvent(new Event("change", { bubbles: true }));
+	}, band);
+}
+
 test.beforeAll(async ({ browser }) => {
 	test.setTimeout(120_000);
 	teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
@@ -175,12 +193,20 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 
 		const save = teacherPage.getByRole("button", { name: "Lưu điểm" });
 		await expect(save).toBeDisabled();
-		await teacherPage.getByLabel("Task Response").selectOption("6");
-		await teacherPage.getByLabel("Coherence & Cohesion").selectOption("6.5");
-		await teacherPage.getByLabel("Lexical Resource").selectOption("6");
-		await teacherPage
-			.getByLabel("Grammatical Range & Accuracy")
-			.selectOption("6.5");
+
+		// Bấm giữa track khi chưa chọn vẫn ghi 4.5 (#331); Lưu vẫn khoá.
+		// aria-valuetext flip "Chưa chấm" → "4.5" mới chứng minh commit xảy
+		// ra — toHaveValue không falsifiable vì placeholder cũng là 4.5.
+		const taskSlider = teacherPage.getByLabel("Task Response");
+		await taskSlider.click();
+		await expect(taskSlider).toHaveValue("4.5");
+		await expect(taskSlider).toHaveAttribute("aria-valuetext", "4.5");
+		await expect(save).toBeDisabled();
+
+		await setBand(teacherPage, "Task Response", "6");
+		await setBand(teacherPage, "Coherence & Cohesion", "6.5");
+		await setBand(teacherPage, "Lexical Resource", "6");
+		await setBand(teacherPage, "Grammatical Range & Accuracy", "6.5");
 		await expect(teacherPage.getByTestId("grade-overall-band")).toHaveText(
 			"6.5",
 		);
@@ -262,12 +288,10 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await teacherPage.getByRole("button", { name: "Nghe bài nói" }).click();
 		await expect(teacherPage.locator('audio[src^="blob:"]')).toBeAttached();
 
-		await teacherPage.getByLabel("Fluency & Coherence").selectOption("7");
-		await teacherPage.getByLabel("Lexical Resource").selectOption("7");
-		await teacherPage
-			.getByLabel("Grammatical Range & Accuracy")
-			.selectOption("7");
-		await teacherPage.getByLabel("Pronunciation").selectOption("7");
+		await setBand(teacherPage, "Fluency & Coherence", "7");
+		await setBand(teacherPage, "Lexical Resource", "7");
+		await setBand(teacherPage, "Grammatical Range & Accuracy", "7");
+		await setBand(teacherPage, "Pronunciation", "7");
 		await teacherPage.getByRole("button", { name: "Lưu điểm" }).click();
 		await expect(teacherPage.getByTestId("grade-saved")).toBeVisible();
 		await expect(teacherPage.getByTestId("grade-overall-band")).toHaveText(

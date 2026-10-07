@@ -12,13 +12,13 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-function selectFor(criterion: string): HTMLSelectElement {
-	return document.getElementById(`grade-${criterion}`) as HTMLSelectElement;
+function sliderFor(criterion: string): HTMLInputElement {
+	return document.getElementById(`grade-${criterion}`) as HTMLInputElement;
 }
 
 function choose(scores: Record<string, string>) {
 	for (const [key, value] of Object.entries(scores)) {
-		fireEvent.change(selectFor(key), { target: { value } });
+		fireEvent.change(sliderFor(key), { target: { value } });
 	}
 }
 
@@ -68,6 +68,86 @@ describe("GradeForm (#319)", () => {
 		expect(screen.getByText("Pronunciation")).toBeTruthy();
 		expect(screen.queryByText("Task Response")).toBeNull();
 		expect(screen.queryByText("Task Achievement")).toBeNull();
+	});
+
+	test("Mỗi tiêu chí là range 0–9 bước 0.5 (#331)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		for (const key of ["task", "coherence", "lexical", "grammar"]) {
+			const slider = sliderFor(key);
+			expect(slider.tagName).toBe("INPUT");
+			expect(slider.type).toBe("range");
+			expect(slider.min).toBe("0");
+			expect(slider.max).toBe("9");
+			expect(slider.step).toBe("0.5");
+		}
+	});
+
+	test("Chưa chấm: thanh mờ, aria-valuetext Chưa chấm, Lưu disable", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		for (const key of ["task", "coherence", "lexical", "grammar"]) {
+			const slider = sliderFor(key);
+			expect(slider.getAttribute("aria-valuetext")).toBe("Chưa chấm");
+			expect(slider.getAttribute("data-unset")).toBe("true");
+		}
+		expect(screen.getByTestId("grade-overall-band").textContent).toBe("—");
+		expect(
+			(screen.getByRole("button", { name: "Lưu điểm" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+	});
+
+	test("Bấm vị trí placeholder khi chưa chọn vẫn ghi 4.5 (#331)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		fireEvent.pointerUp(sliderFor("task"));
+		expect(sliderFor("task").getAttribute("aria-valuetext")).toBe("4.5");
+		expect(sliderFor("task").getAttribute("data-unset")).toBeNull();
+	});
+
+	test("Đổi slider cập nhật aria-valuetext theo formatBand (#331)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={null}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		fireEvent.change(sliderFor("task"), { target: { value: "6" } });
+		expect(sliderFor("task").getAttribute("aria-valuetext")).toBe("6.0");
+		expect(sliderFor("task").getAttribute("data-unset")).toBeNull();
 	});
 
 	test("Ban đầu nút Lưu disable và band tổng là —", () => {
@@ -145,8 +225,8 @@ describe("GradeForm (#319)", () => {
 				onSave={() => {}}
 			/>,
 		);
-		expect(selectFor("fluency").value).toBe("7");
-		expect(selectFor("pronunciation").value).toBe("8");
+		expect(sliderFor("fluency").value).toBe("7");
+		expect(sliderFor("pronunciation").value).toBe("8");
 		expect(screen.getByTestId("grade-overall-band").textContent).toBe("7.5");
 		expect(
 			(document.getElementById("grade-feedback") as HTMLTextAreaElement).value,
