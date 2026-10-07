@@ -1750,6 +1750,36 @@ export const quizAttemptGradeSchema = z
 	.strict();
 export type QuizAttemptGrade = z.infer<typeof quizAttemptGradeSchema>;
 
+/** Highlight + ghi chú giáo viên trên essay Writing (#332). Offset là index
+ * UTF-16 (String.slice) trên essay đã nộp — essay đóng băng sau nộp. */
+export const QUIZ_ANNOTATION_NOTE_MAX = 1000;
+export const QUIZ_ANNOTATIONS_MAX = 200;
+export const QUIZ_ANNOTATION_SPAN_MAX = 1000;
+export const essayAnnotationSchema = z
+	.object({
+		id: z.string(),
+		start: z.number().int().min(0),
+		end: z.number().int().min(1),
+		note: z.string(),
+	})
+	.strict();
+export type EssayAnnotation = z.infer<typeof essayAnnotationSchema>;
+/** POST /api/grading/:attemptId/annotations — biên kiểm thêm theo essay ở server. */
+export const essayAnnotationCreateSchema = z
+	.object({
+		start: z.number().int().min(0),
+		end: z.number().int().min(1),
+		note: z.string().max(QUIZ_ANNOTATION_NOTE_MAX),
+	})
+	.strict()
+	.refine((v) => v.end > v.start, "end must be greater than start");
+export type EssayAnnotationCreate = z.infer<typeof essayAnnotationCreateSchema>;
+/** PATCH /api/grading/:attemptId/annotations/:annotationId. */
+export const essayAnnotationPatchSchema = z
+	.object({ note: z.string().max(QUIZ_ANNOTATION_NOTE_MAX) })
+	.strict();
+export type EssayAnnotationPatch = z.infer<typeof essayAnnotationPatchSchema>;
+
 /** GET /api/grading/:attemptId — bài nộp Writing/Speaking cho giáo viên chấm. */
 export const teacherSubmissionSchema = z
 	.object({
@@ -1776,6 +1806,9 @@ export const teacherSubmissionSchema = z
 		essay: z.string().nullable(),
 		media: quizAttemptMediaSchema.nullable(),
 		grade: quizAttemptGradeSchema.nullable(),
+		/** Highlight + ghi chú trên essay (#332) — server luôn gửi; optional
+		 * để bundle mới + server cũ không throw. Speaking luôn `[]`. */
+		annotations: z.array(essayAnnotationSchema).optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
@@ -1923,6 +1956,9 @@ export const quizAttemptSummarySchema = z
 		/** Part của đề (task1/task2/part1…) — server CHỈ gửi kèm `grade`, để
 		 * nhãn tiêu chí Writing đúng TA/TR; cùng lý do strict ở trên. */
 		part: z.string().optional(),
+		/** Highlight + ghi chú giáo viên (#332) — server CHỈ gửi khi đã chấm +
+		 * Writing + có ít nhất 1 highlight, cùng lý do strict của `grade`. */
+		annotations: z.array(essayAnnotationSchema).optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

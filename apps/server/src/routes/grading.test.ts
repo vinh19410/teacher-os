@@ -564,3 +564,462 @@ describe("teacher grading (/api/grading/:attemptId)", () => {
 		expect(res.status).toBe(401);
 	});
 });
+
+describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+	// Essay cố định cho bộ test highlight: "It was a fine day in Hanoi."
+	// "fine" = (9, 13), "day" = (14, 17).
+	const ANNOT_ESSAY = "It was a fine day in Hanoi.";
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await libsql.insert(schema.user).values([
+			{
+				id: "t-1",
+				name: "Cô Lan",
+				email: "lan@test.local",
+				role: "teacher",
+			},
+			{
+				id: "t-2",
+				name: "Thầy Nam",
+				email: "nam@test.local",
+				role: "teacher",
+			},
+		]);
+		await libsql.insert(schema.membership).values([
+			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
+			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
+		]);
+		await libsql.insert(schema.student).values({
+			id: "student-1",
+			orgId: "org-1",
+			name: "Minh Tran",
+			email: "minh@gmail.com",
+			phone: "0901234567",
+		});
+		await libsql.insert(schema.classTable).values({
+			id: "class-1",
+			orgId: "org-1",
+			name: "IELTS Foundation",
+			level: "IELTS 5.0–6.0",
+			mode: "Online",
+			schedule: "T2 & T5 18:30–20:00",
+			sessionsDone: 0,
+			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "prompt-writing",
+				orgId: "org-1",
+				task: "task2",
+				genre: "essay",
+				skill: "writing",
+				part: "task2",
+				type: "essay",
+				title: "Writing Task 2",
+				prompt: "<p>Some people think that children should learn to code.</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "<p>Ít nhất 250 từ.</p>",
+				status: "ready",
+			},
+			{
+				id: "prompt-speaking",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "speaking",
+				part: "part2",
+				type: "place",
+				title: "Speaking Part 2",
+				intro: "<p>Ghi âm một lần.</p>",
+				prompt: "",
+				passage: "",
+				cueTopic: "a place you like to visit",
+				cuePoints: "where it is\nwhy you like it",
+				questions: "[]",
+				optionBank: "[]",
+				note: "<p>Nói tự nhiên, không đọc giấy.</p>",
+				status: "ready",
+			},
+		]);
+		for (const id of ["ca-w", "ca-w2", "ca-w3", "ca-s"]) {
+			const promptId = id === "ca-s" ? "prompt-speaking" : "prompt-writing";
+			await libsql.insert(schema.classAssignment).values({
+				id,
+				orgId: "org-1",
+				classId: "class-1",
+				promptId,
+				title: `Quiz ${id}`,
+				due: "2099-01-10",
+			});
+			await libsql.insert(schema.classAssignmentTarget).values({
+				id: `cat-${id}`,
+				orgId: "org-1",
+				assignmentId: id,
+				studentId: "student-1",
+				submittedAt: null,
+			});
+		}
+		await libsql.insert(schema.quizAttempt).values([
+			{
+				id: "att-w",
+				orgId: "org-1",
+				assignmentId: "ca-w",
+				studentId: "student-1",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay: "Another essay for cross-attempt checks.",
+				submittedAt: new Date("2026-10-06T00:30:00Z"),
+			},
+			{
+				id: "att-w2",
+				orgId: "org-1",
+				assignmentId: "ca-w2",
+				studentId: "student-1",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay: ANNOT_ESSAY,
+				submittedAt: new Date("2026-10-06T01:00:00Z"),
+			},
+			{
+				id: "att-w2-open",
+				orgId: "org-1",
+				assignmentId: "ca-w3",
+				studentId: "student-1",
+				status: "in_progress",
+				questionsSnapshot: "[]",
+			},
+			{
+				id: "att-s",
+				orgId: "org-1",
+				assignmentId: "ca-s",
+				studentId: "student-1",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				mediaKey: "quiz-media/org-1/att-s/k1",
+				mediaName: "bai-noi.mp3",
+				mediaType: "audio/mpeg",
+				mediaSize: 4,
+				mediaUploadedAt: new Date("2026-10-06T01:30:00Z"),
+				submittedAt: new Date("2026-10-06T01:35:00Z"),
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	const jsonHeaders = (
+		user: Record<string, string> = TEACHER,
+		origin = TEACHER_ORIGIN,
+		withContentType = true,
+	): Record<string, string> => {
+		const headers: Record<string, string> = { ...user, origin };
+		if (withContentType) headers["content-type"] = "application/json";
+		return headers;
+	};
+
+	const postAnnotation = (
+		attemptId: string,
+		body: unknown,
+		user: Record<string, string> = TEACHER,
+		origin = TEACHER_ORIGIN,
+		withContentType = true,
+	) =>
+		app.request(`/api/grading/${attemptId}/annotations`, {
+			method: "POST",
+			headers: jsonHeaders(user, origin, withContentType),
+			body: typeof body === "string" ? body : JSON.stringify(body),
+		});
+
+	const patchAnnotation = (
+		attemptId: string,
+		annotationId: string,
+		body: unknown,
+		user: Record<string, string> = TEACHER,
+	) =>
+		app.request(`/api/grading/${attemptId}/annotations/${annotationId}`, {
+			method: "PATCH",
+			headers: jsonHeaders(user),
+			body: JSON.stringify(body),
+		});
+
+	const deleteAnnotation = (
+		attemptId: string,
+		annotationId: string,
+		user: Record<string, string> = TEACHER,
+	) =>
+		app.request(`/api/grading/${attemptId}/annotations/${annotationId}`, {
+			method: "DELETE",
+			headers: jsonHeaders(user),
+		});
+
+	const getSubmission = async (attemptId: string) => {
+		const res = await app.request(`/api/grading/${attemptId}`, {
+			headers: TEACHER,
+		});
+		return (await res.json()) as TeacherSubmission;
+	};
+
+	/** Body error mang `code` (OVERLAP, INVALID_SPAN…) — đọc gọn một dòng. */
+	const errorCode = async (res: Response) =>
+		((await res.json()) as { code?: string }).code;
+
+	test("POST hợp lệ trả 201 và GET thấy annotation", async () => {
+		const res = await postAnnotation("att-w2", {
+			start: 9,
+			end: 13,
+			note: "Dùng 'pleasant' tự nhiên hơn.",
+		});
+		expect(res.status).toBe(201);
+		const created = (await res.json()) as {
+			id: string;
+			start: number;
+			end: number;
+			note: string;
+		};
+		expect(created).toMatchObject({
+			start: 9,
+			end: 13,
+			note: "Dùng 'pleasant' tự nhiên hơn.",
+		});
+		expect(created.id).toBeTruthy();
+
+		const submission = await getSubmission("att-w2");
+		expect(submission.annotations).toHaveLength(1);
+		expect(submission.annotations?.[0]).toMatchObject({
+			start: 9,
+			end: 13,
+			note: "Dùng 'pleasant' tự nhiên hơn.",
+		});
+	});
+
+	test("POST thứ tự ngược thì GET vẫn sắp theo start", async () => {
+		const res = await postAnnotation("att-w2", {
+			start: 22,
+			end: 27,
+			note: "",
+		});
+		expect(res.status).toBe(201);
+		const submission = await getSubmission("att-w2");
+		expect(submission.annotations?.map((a) => [a.start, a.end])).toEqual([
+			[9, 13],
+			[22, 27],
+		]);
+	});
+
+	test("POST chồng một phần trả 409 OVERLAP; chạm biên vẫn 201", async () => {
+		const overlap = await postAnnotation("att-w2", {
+			start: 10,
+			end: 14,
+			note: "",
+		});
+		expect(overlap.status).toBe(409);
+		expect(await errorCode(overlap)).toBe("OVERLAP");
+		const touching = await postAnnotation("att-w2", {
+			start: 14,
+			end: 17,
+			note: "",
+		});
+		expect(touching.status).toBe(201);
+	});
+
+	test("POST offset sai biên/toàn khoảng trắng/quá dài trả 400 INVALID_SPAN", async () => {
+		const beyond = await postAnnotation("att-w2", {
+			start: 0,
+			end: 1000,
+			note: "",
+		});
+		expect(beyond.status).toBe(400);
+		expect(await errorCode(beyond)).toBe("INVALID_SPAN");
+		const whitespace = await postAnnotation("att-w2", {
+			start: 6,
+			end: 7,
+			note: "",
+		});
+		expect(whitespace.status).toBe(400);
+		expect(await errorCode(whitespace)).toBe("INVALID_SPAN");
+	});
+
+	test("POST body sai (end<=start, thừa key, note quá dài) trả 400", async () => {
+		const reversed = await postAnnotation("att-w2", { start: 5, end: 5 });
+		expect(reversed.status).toBe(400);
+		const extraKey = await postAnnotation("att-w2", {
+			start: 0,
+			end: 2,
+			note: "",
+			extra: true,
+		});
+		expect(extraKey.status).toBe(400);
+		const longNote = await postAnnotation("att-w2", {
+			start: 0,
+			end: 2,
+			note: "x".repeat(1001),
+		});
+		expect(longNote.status).toBe(400);
+	});
+
+	test("POST trên attempt Speaking trả 400 SKILL_NOT_ANNOTATABLE", async () => {
+		const res = await postAnnotation("att-s", { start: 0, end: 2, note: "" });
+		expect(res.status).toBe(400);
+		expect(await errorCode(res)).toBe("SKILL_NOT_ANNOTATABLE");
+		const submission = await getSubmission("att-s");
+		expect(submission.annotations).toEqual([]);
+	});
+
+	test("POST attempt chưa nộp trả 409 NOT_SUBMITTED", async () => {
+		const res = await postAnnotation("att-w2-open", {
+			start: 0,
+			end: 2,
+			note: "",
+		});
+		expect(res.status).toBe(409);
+		expect(await errorCode(res)).toBe("NOT_SUBMITTED");
+	});
+
+	test("POST giáo viên org khác trả 404 (IDOR)", async () => {
+		const res = await postAnnotation(
+			"att-w2",
+			{ start: 0, end: 2, note: "" },
+			{ "x-test-user": "teacher-2" },
+		);
+		expect(res.status).toBe(404);
+	});
+
+	test("PATCH đổi note thì GET thấy note mới", async () => {
+		const submission = await getSubmission("att-w2");
+		const target = submission.annotations?.find((a) => a.start === 9);
+		expect(target).toBeTruthy();
+		const res = await patchAnnotation("att-w2", target?.id ?? "", {
+			note: "Chữa lại: dùng quá khứ đơn.",
+		});
+		expect(res.status).toBe(200);
+		const updated = (await res.json()) as { note: string };
+		expect(updated.note).toBe("Chữa lại: dùng quá khứ đơn.");
+		const after = await getSubmission("att-w2");
+		expect(after.annotations?.find((a) => a.start === 9)?.note).toBe(
+			"Chữa lại: dùng quá khứ đơn.",
+		);
+	});
+
+	test("PATCH/DELETE annotationId của attempt khác cùng org trả 404", async () => {
+		const submission = await getSubmission("att-w2");
+		const foreignId = submission.annotations?.[0]?.id ?? "";
+		expect(foreignId).toBeTruthy();
+		const patched = await patchAnnotation("att-w2", foreignId, { note: "x" });
+		expect(patched.status).toBe(200);
+		// att-w (writing, org-1) nhưng annotation thuộc att-w2 → 0 rows.
+		const wrongAttempt = await app.request(
+			`/api/grading/att-w/annotations/${foreignId}`,
+			{ method: "PATCH", headers: jsonHeaders(), body: '{"note":"x"}' },
+		);
+		expect(wrongAttempt.status).toBe(404);
+		const wrongAttemptDelete = await app.request(
+			`/api/grading/att-w/annotations/${foreignId}`,
+			{ method: "DELETE", headers: jsonHeaders() },
+		);
+		expect(wrongAttemptDelete.status).toBe(404);
+	});
+
+	test("PATCH annotation không tồn tại trả 404", async () => {
+		const res = await patchAnnotation("att-w2", "no-such-id", { note: "x" });
+		expect(res.status).toBe(404);
+	});
+
+	test("DELETE trả 204 và GET không còn annotation", async () => {
+		const submission = await getSubmission("att-w2");
+		const before = submission.annotations?.length ?? 0;
+		const target = submission.annotations?.[submission.annotations.length - 1];
+		expect(target).toBeTruthy();
+		const res = await deleteAnnotation("att-w2", target?.id ?? "");
+		expect(res.status).toBe(204);
+		const after = await getSubmission("att-w2");
+		expect(after.annotations).toHaveLength(before - 1);
+	});
+
+	test("Không session trả 401 cho cả 3 route", async () => {
+		const post = await postAnnotation("att-w2", { start: 0, end: 2 }, {});
+		expect(post.status).toBe(401);
+		const patch = await patchAnnotation("att-w2", "any", { note: "" }, {});
+		expect(patch.status).toBe(401);
+		const del = await deleteAnnotation("att-w2", "any", {});
+		expect(del.status).toBe(401);
+	});
+
+	test("Origin lạ trả 403, session học viên trả 403", async () => {
+		const evil = await postAnnotation(
+			"att-w2",
+			{ start: 0, end: 2 },
+			TEACHER,
+			"https://evil.example",
+		);
+		expect(evil.status).toBe(403);
+		const student = await postAnnotation(
+			"att-w2",
+			{ start: 0, end: 2 },
+			{ "x-test-user": "student-u" },
+		);
+		expect(student.status).toBe(403);
+	});
+
+	test("POST thiếu Content-Type application/json trả 415", async () => {
+		const res = await postAnnotation(
+			"att-w2",
+			{ start: 0, end: 2 },
+			TEACHER,
+			TEACHER_ORIGIN,
+			false,
+		);
+		expect(res.status).toBe(415);
+	});
+
+	test("PATCH/DELETE giáo viên org khác trả 404 (IDOR)", async () => {
+		const submission = await getSubmission("att-w2");
+		const foreignId = submission.annotations?.[0]?.id ?? "";
+		const patched = await patchAnnotation(
+			"att-w2",
+			foreignId,
+			{ note: "x" },
+			{ "x-test-user": "teacher-2" },
+		);
+		expect(patched.status).toBe(404);
+		const deleted = await deleteAnnotation("att-w2", foreignId, {
+			"x-test-user": "teacher-2",
+		});
+		expect(deleted.status).toBe(404);
+	});
+
+	test("POST highlight thứ 201 trả 400 TOO_MANY_ANNOTATIONS", async () => {
+		const submission = await getSubmission("att-w2");
+		const current = submission.annotations?.length ?? 0;
+		await libsql.insert(schema.quizAttemptAnnotation).values(
+			Array.from({ length: 200 - current }, (_, i) => ({
+				id: `seed-ann-${i}`,
+				orgId: "org-1",
+				attemptId: "att-w2",
+				startOffset: 0,
+				endOffset: 1,
+			})),
+		);
+		// Mọi slot đã bị seed chiếm (0,1) — POST đoạn khác vẫn chạm trần 200.
+		const res = await postAnnotation("att-w2", { start: 3, end: 4, note: "" });
+		expect(res.status).toBe(400);
+		expect(await errorCode(res)).toBe("TOO_MANY_ANNOTATIONS");
+	});
+});

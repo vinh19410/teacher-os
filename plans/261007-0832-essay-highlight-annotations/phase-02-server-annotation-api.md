@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server: API highlight + payload giáo viên/học viên"
-status: pending
+status: completed
 priority: P2
 effort: "3h"
 dependencies: [1]

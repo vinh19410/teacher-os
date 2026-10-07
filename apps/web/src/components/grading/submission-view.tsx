@@ -6,7 +6,12 @@ import {
 import { formatMediaSize } from "@teacher-os/api/lib/quiz-media";
 import { countWords } from "@teacher-os/api/lib/word-count";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import { EssayWithHighlights } from "@teacher-os/ui/components/quiz/essay-with-highlights";
 import { SectionLabel } from "@/components/ui/section-label";
+import {
+	AnnotatableEssay,
+	type AnnotatableEssayProps,
+} from "./annotatable-essay";
 import { SubmissionMediaPlayer } from "./submission-media-player";
 
 /**
@@ -14,12 +19,15 @@ import { SubmissionMediaPlayer } from "./submission-media-player";
  * xét là plain text render qua JSX text node — không dùng
  * dangerouslySetInnerHTML, không có bề mặt XSS. Ảnh Task 1 chỉ render khi
  * URL qua pattern allowlist; `referrerPolicy` ngăn URL trang chấm lộ qua
- * Referer tới host ảnh.
+ * Referer tới host ảnh. `annotation` bật công cụ highlight cho bài Writing
+ * (#332) — vắng mặt thì essay chỉ hiển thị kèm highlight sẵn có.
  */
 export function SubmissionView({
 	submission: sub,
+	annotation,
 }: {
 	submission: TeacherSubmission;
+	annotation?: Omit<AnnotatableEssayProps, "essay" | "annotations">;
 }) {
 	const minWords = WRITING_MIN_WORDS[sub.part];
 	const imageUrl = sub.prompt.imageUrl.trim();
@@ -79,12 +87,20 @@ export function SubmissionView({
 								{countWords(sub.essay)} từ
 								{minWords !== undefined ? ` · tối thiểu ${minWords}` : ""}
 							</p>
-							<div
-								data-testid="essay-text"
-								className="whitespace-pre-wrap rounded-md border border-line bg-card p-4 text-fg text-sm leading-relaxed"
-							>
-								{sub.essay}
-							</div>
+							{annotation ? (
+								<AnnotatableEssay
+									essay={sub.essay}
+									annotations={sub.annotations ?? []}
+									{...annotation}
+								/>
+							) : (
+								<EssayWithHighlights
+									essay={sub.essay}
+									annotations={sub.annotations ?? []}
+									data-testid="essay-text"
+									className="rounded-md border border-line bg-card p-4 text-fg text-sm leading-relaxed"
+								/>
+							)}
 						</div>
 					) : (
 						<p className="text-muted-fg text-sm">Học viên đã nộp bài trống.</p>

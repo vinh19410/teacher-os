@@ -1,7 +1,15 @@
 import {
+	type EssayAnnotation,
+	essayAnnotationCreateSchema,
+	essayAnnotationPatchSchema,
+	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
 	type TeacherSubmission,
 } from "@teacher-os/api/contracts";
+import {
+	isValidAnnotationSpan,
+	overlapsAny,
+} from "@teacher-os/api/lib/essay-annotations";
 import {
 	type GradableSkill,
 	isGradableSkill,
@@ -11,13 +19,19 @@ import {
 	classAssignment,
 	classTable,
 	quizAttempt,
+	quizAttemptAnnotation,
 	student,
 } from "@teacher-os/db/schema/index";
 import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
+import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
+import {
+	loadEssayAnnotations,
+	toEssayAnnotation,
+} from "../lib/quiz-annotation";
 import { parseGradeScores, toQuizAttemptGrade } from "../lib/quiz-grade";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -67,6 +81,26 @@ export function gradingRoutes(deps: {
 
 	function unauthorized(c: GradingContext) {
 		return c.json({ error: "unauthorized" }, 401);
+	}
+
+	/** Parse JSON body theo schema — cùng pattern try/catch + safeParse với
+	 * student.ts: 400 "invalid json" khi body không phải JSON, 400 "invalid
+	 * body" khi fail schema. */
+	async function parseJsonBody<T>(
+		c: GradingContext,
+		schema: ZodType<T>,
+	): Promise<{ ok: true; data: T } | { ok: false; response: Response }> {
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return { ok: false, response: c.json({ error: "invalid json" }, 400) };
+		}
+		const body = schema.safeParse(raw);
+		if (!body.success) {
+			return { ok: false, response: c.json({ error: "invalid body" }, 400) };
+		}
+		return { ok: true, data: body.data };
 	}
 
 	/** Attempt + đề + học viên theo org — mọi join có predicate orgId
@@ -163,6 +197,7 @@ export function gradingRoutes(deps: {
 	function toSubmission(
 		row: GradableAttemptRow,
 		skill: GradableSkill,
+		annotations: EssayAnnotation[],
 	): TeacherSubmission {
 		return {
 			attemptId: row.id,
@@ -186,6 +221,8 @@ export function gradingRoutes(deps: {
 			essay: skill === "writing" ? row.essay : null,
 			media: skill === "speaking" ? toQuizAttemptMedia(row) : null,
 			grade: toQuizAttemptGrade(row),
+			// Speaking không có highlight (#332) — luôn rỗng.
+			annotations,
 		};
 	}
 
@@ -198,7 +235,11 @@ export function gradingRoutes(deps: {
 			ctx.orgId,
 		);
 		if ("error" in loaded) return errorResponse(c, loaded.error);
-		return c.json(toSubmission(loaded.row, loaded.skill));
+		const annotations =
+			loaded.skill === "writing"
+				? await loadEssayAnnotations(deps.getDb(), loaded.row.id, ctx.orgId)
+				: [];
+		return c.json(toSubmission(loaded.row, loaded.skill, annotations));
 	});
 
 	/**
@@ -232,17 +273,8 @@ export function gradingRoutes(deps: {
 	routes.post("/:attemptId/grade", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		// Parse body inline — cùng pattern try/catch + safeParse với student.ts.
-		let raw: unknown;
-		try {
-			raw = await c.req.json();
-		} catch {
-			return c.json({ error: "invalid json" }, 400);
-		}
-		const body = quizGradeInputSchema.safeParse(raw);
-		if (!body.success) {
-			return c.json({ error: "invalid body" }, 400);
-		}
+		const body = await parseJsonBody(c, quizGradeInputSchema);
+		if (!body.ok) return body.response;
 		const loaded = await loadGradableAttempt(
 			deps.getDb(),
 			c.req.param("attemptId"),
@@ -271,10 +303,7 @@ export function gradingRoutes(deps: {
 			)
 			.returning({ id: quizAttempt.id });
 		if (updated.length === 0) {
-			return c.json(
-				{ error: "attempt not yet submitted", code: "NOT_SUBMITTED" },
-				409,
-			);
+			return errorResponse(c, 409);
 		}
 		const grade = toQuizAttemptGrade({
 			gradeScores: scores,
@@ -285,6 +314,126 @@ export function gradingRoutes(deps: {
 			return c.json({ error: "grade persistence failed" }, 500);
 		}
 		return c.json(grade);
+	});
+
+	/**
+	 * POST /api/grading/:attemptId/annotations — tạo highlight mới (#332).
+	 * Mỗi highlight lưu ngay, không gắn nút "Lưu điểm". Thứ tự kiểm cùng
+	 * pattern route /grade; server không bắt dính từ (client gửi đoạn đã
+	 * snap), chỉ đảm bảo đoạn hợp lệ, không chồng, không vượt hạn mức.
+	 */
+	routes.post("/:attemptId/annotations", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await parseJsonBody(c, essayAnnotationCreateSchema);
+		if (!body.ok) return body.response;
+		const loaded = await loadGradableAttempt(
+			deps.getDb(),
+			c.req.param("attemptId"),
+			ctx.orgId,
+		);
+		if ("error" in loaded) return errorResponse(c, loaded.error);
+		if (loaded.skill !== "writing") {
+			return c.json(
+				{ error: "skill not annotatable", code: "SKILL_NOT_ANNOTATABLE" },
+				400,
+			);
+		}
+		const { start, end, note } = body.data;
+		if (!isValidAnnotationSpan(loaded.row.essay, start, end)) {
+			return c.json(
+				{ error: "invalid annotation span", code: "INVALID_SPAN" },
+				400,
+			);
+		}
+		const db = deps.getDb();
+		const existing = await loadEssayAnnotations(db, loaded.row.id, ctx.orgId);
+		if (existing.length >= QUIZ_ANNOTATIONS_MAX) {
+			return c.json(
+				{ error: "too many annotations", code: "TOO_MANY_ANNOTATIONS" },
+				400,
+			);
+		}
+		if (overlapsAny(existing, start, end)) {
+			return c.json(
+				{ error: "annotation overlaps existing", code: "OVERLAP" },
+				409,
+			);
+		}
+		const [row] = await db
+			.insert(quizAttemptAnnotation)
+			.values({
+				id: crypto.randomUUID(),
+				orgId: ctx.orgId,
+				attemptId: loaded.row.id,
+				startOffset: start,
+				endOffset: end,
+				note,
+			})
+			.returning();
+		if (!row) {
+			return c.json({ error: "annotation persistence failed" }, 500);
+		}
+		return c.json(toEssayAnnotation(row), 201);
+	});
+
+	/** PATCH /api/grading/:attemptId/annotations/:annotationId — đổi ghi chú.
+	 * Không kiểm skill: annotation chỉ tồn tại trên attempt Writing (POST đã
+	 * chặn) và predicate attemptId đủ chặn chéo. */
+	routes.patch("/:attemptId/annotations/:annotationId", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await parseJsonBody(c, essayAnnotationPatchSchema);
+		if (!body.ok) return body.response;
+		const loaded = await loadGradableAttempt(
+			deps.getDb(),
+			c.req.param("attemptId"),
+			ctx.orgId,
+		);
+		if ("error" in loaded) return errorResponse(c, loaded.error);
+		const [row] = await deps
+			.getDb()
+			.update(quizAttemptAnnotation)
+			.set({ note: body.data.note, updatedAt: new Date() })
+			.where(
+				and(
+					eq(quizAttemptAnnotation.id, c.req.param("annotationId")),
+					eq(quizAttemptAnnotation.attemptId, loaded.row.id),
+					eq(quizAttemptAnnotation.orgId, ctx.orgId),
+				),
+			)
+			.returning();
+		if (!row) {
+			return c.json({ error: "annotation not found" }, 404);
+		}
+		return c.json(toEssayAnnotation(row));
+	});
+
+	/** DELETE /api/grading/:attemptId/annotations/:annotationId — gỡ highlight. */
+	routes.delete("/:attemptId/annotations/:annotationId", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const loaded = await loadGradableAttempt(
+			deps.getDb(),
+			c.req.param("attemptId"),
+			ctx.orgId,
+		);
+		if ("error" in loaded) return errorResponse(c, loaded.error);
+		const deleted = await deps
+			.getDb()
+			.delete(quizAttemptAnnotation)
+			.where(
+				and(
+					eq(quizAttemptAnnotation.id, c.req.param("annotationId")),
+					eq(quizAttemptAnnotation.attemptId, loaded.row.id),
+					eq(quizAttemptAnnotation.orgId, ctx.orgId),
+				),
+			)
+			.returning({ id: quizAttemptAnnotation.id });
+		if (!deleted[0]) {
+			return c.json({ error: "annotation not found" }, 404);
+		}
+		return c.body(null, 204);
 	});
 
 	return routes;

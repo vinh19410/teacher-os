@@ -401,3 +401,93 @@ describe("AttemptSummaryBody — Kết quả chấm của giáo viên (#319)", (
 		expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
 	});
 });
+
+describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () => {
+	const essay = "The graph shows a clear upward trend.";
+	const start = essay.indexOf("clear");
+	const annotated: QuizAttemptSummary = {
+		...summary,
+		correctCount: 0,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 0,
+		items: [],
+		essay,
+		grade: {
+			scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			band: 6,
+			feedback: "",
+			gradedAt: "2026-10-07T03:00:00.000Z",
+		},
+		part: "task1",
+		annotations: [
+			{
+				id: "ann-2",
+				start: essay.indexOf("upward"),
+				end: essay.indexOf("upward") + 6,
+				note: "Dùng rising.",
+			},
+			{ id: "ann-1", start, end: start + 5, note: "Đúng từ." },
+		],
+	};
+
+	it("Đã chấm + 2 annotation: 2 mark đánh số theo thứ tự + danh sách 2 mục", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={annotated} attemptId={annotated.id} />,
+		);
+		expect((html.match(/<mark /g) ?? []).length).toBe(2);
+		expect(html).toContain('data-n="1"');
+		expect(html).toContain('data-n="2"');
+		// Số khớp thứ tự xuất hiện: "clear" n=1, "upward" n=2.
+		expect(html.indexOf('data-n="1"')).toBeLessThan(html.indexOf('data-n="2"'));
+		expect(html).toContain('data-testid="essay-annotation-list"');
+		expect(html).toContain("Đúng từ.");
+		expect(html).toContain("Dùng rising.");
+		// Đoạn essay phân mảnh đúng — nối lại đủ essay gốc.
+		expect(html).toContain("The graph shows a ");
+		expect(html).toContain(">clear</mark>");
+		expect(html).toContain(" trend.");
+	});
+
+	it("Đã chấm nhưng không có key annotations: không mark, không danh sách, vẫn grade card", () => {
+		const noAnnotations = { ...annotated } as QuizAttemptSummary;
+		delete noAnnotations.annotations;
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={noAnnotations}
+				attemptId={noAnnotations.id}
+			/>,
+		);
+		expect(html).not.toContain("<mark");
+		expect(html).not.toContain("essay-annotation-list");
+		expect(html).toContain("Kết quả chấm của giáo viên");
+	});
+
+	it("Chưa chấm: không mark, không danh sách (server không gửi key)", () => {
+		const ungraded = { ...annotated } as QuizAttemptSummary;
+		delete ungraded.grade;
+		delete ungraded.part;
+		delete ungraded.annotations;
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={ungraded} attemptId={ungraded.id} />,
+		);
+		expect(html).not.toContain("<mark");
+		expect(html).not.toContain("essay-annotation-list");
+		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
+	});
+
+	it("Ghi chú chứa HTML render dạng text (escape qua JSX)", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{
+					...annotated,
+					annotations: [
+						{ id: "ann-1", start, end: start + 5, note: "<b>x</b>" },
+					],
+				}}
+				attemptId={annotated.id}
+			/>,
+		);
+		expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
+	});
+});

@@ -21,11 +21,13 @@ import {
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
+import { EssayWithHighlights } from "@teacher-os/ui/components/quiz/essay-with-highlights";
 import { MusicIcon, VideoIcon } from "lucide-react";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
 import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import { EssayAnnotationList } from "@/components/quiz/essay-annotation-list";
 import { QuizMediaPlayer } from "@/components/quiz/quiz-media-player";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
@@ -156,6 +158,10 @@ export function AttemptSummaryBody({
 
 	if (essay !== null) {
 		const wordCount = countWords(essay);
+		// Highlight + ghi chú giáo viên (#332): server CHỈ gửi `annotations`
+		// khi bài đã chấm — client chỉ đọc `?? []`.
+		const annotations = summary.annotations ?? [];
+		const emptyEssay = essay.trim() === "";
 		return (
 			<>
 				{submittedLine}
@@ -166,12 +172,15 @@ export function AttemptSummaryBody({
 					{wordCount} từ
 				</p>
 				<div className="mt-2 whitespace-pre-wrap rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7]">
-					{essay.trim() === "" ? (
+					{emptyEssay ? (
 						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
 					) : (
-						essay
+						<EssayWithHighlights essay={essay} annotations={annotations} />
 					)}
 				</div>
+				{!emptyEssay && (
+					<EssayAnnotationList essay={essay} annotations={annotations} />
+				)}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="writing" part={part} />
 				) : (

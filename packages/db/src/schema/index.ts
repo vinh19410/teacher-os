@@ -14,6 +14,7 @@ export * from "./org-bank-link";
 export * from "./organization";
 export * from "./payment-transaction";
 export * from "./quiz-attempt";
+export * from "./quiz-attempt-annotation";
 export * from "./report";
 export * from "./session-package";
 export * from "./settings";

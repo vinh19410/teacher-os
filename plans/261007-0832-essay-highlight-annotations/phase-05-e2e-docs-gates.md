@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E + docs + gate cuối"
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 dependencies: [1, 2, 3, 4]

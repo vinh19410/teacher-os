@@ -1,7 +1,7 @@
 ---
 title: "Highlight + ghi chú trên bài Writing khi chấm"
 description: "Giáo viên bôi đen từ/cụm từ trong essay ở trang chấm để highlight và ghi chú; mỗi highlight lưu ngay, học viên thấy highlight + ghi chú trên màn kết quả khi bài đã có điểm."
-status: pending
+status: completed
 priority: P2
 effort: "14h"
 issue: 332

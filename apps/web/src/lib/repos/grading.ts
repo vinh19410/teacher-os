@@ -1,5 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
+	type EssayAnnotation,
+	type EssayAnnotationCreate,
+	type EssayAnnotationPatch,
+	essayAnnotationSchema,
 	QUIZ_MEDIA_TYPES,
 	type QuizAttemptGrade,
 	type QuizGradeInput,
@@ -14,18 +18,35 @@ import { getApiBaseUrl } from "./api-base-url";
 export const gradingQueryKey = (attemptId: string) =>
 	["kernel", "grading", attemptId] as const;
 
+/** Fetch chung cho các route /api/grading — luôn gửi cookie và ném
+ * HttpError kèm status khi response không ok. */
+async function gradingFetch(
+	path: string,
+	init: RequestInit,
+	action: string,
+	baseUrl: string,
+): Promise<Response> {
+	const res = await fetch(`${baseUrl}/api/grading${path}`, {
+		credentials: "include",
+		...init,
+	});
+	if (!res.ok) {
+		throw new HttpError(res.status, `Failed to ${action}: ${res.status}`);
+	}
+	return res;
+}
+
 export async function fetchSubmission(
 	attemptId: string,
 	baseUrl: string = getApiBaseUrl(),
 	signal?: AbortSignal,
 ): Promise<TeacherSubmission> {
-	const res = await fetch(
-		`${baseUrl}/api/grading/${encodeURIComponent(attemptId)}`,
-		{ credentials: "include", signal },
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}`,
+		{ signal },
+		"load submission",
+		baseUrl,
 	);
-	if (!res.ok) {
-		throw new HttpError(res.status, `Failed to load submission: ${res.status}`);
-	}
 	return teacherSubmissionSchema.parse(await res.json());
 }
 
@@ -34,18 +55,16 @@ export async function saveGrade(
 	input: QuizGradeInput,
 	baseUrl: string = getApiBaseUrl(),
 ): Promise<QuizAttemptGrade> {
-	const res = await fetch(
-		`${baseUrl}/api/grading/${encodeURIComponent(attemptId)}/grade`,
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/grade`,
 		{
 			method: "POST",
-			credentials: "include",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(input),
 		},
+		"save grade",
+		baseUrl,
 	);
-	if (!res.ok) {
-		throw new HttpError(res.status, `Failed to save grade: ${res.status}`);
-	}
 	return quizAttemptGradeSchema.parse(await res.json());
 }
 
@@ -91,4 +110,57 @@ export function submissionQueryOptions(
 		queryFn: ({ signal }) => fetchSubmission(attemptId, baseUrl, signal),
 		retry: false,
 	});
+}
+
+/** POST /api/grading/:attemptId/annotations — tạo highlight (#332). */
+export async function createAnnotation(
+	attemptId: string,
+	input: EssayAnnotationCreate,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<EssayAnnotation> {
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/annotations`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+		"create annotation",
+		baseUrl,
+	);
+	return essayAnnotationSchema.parse(await res.json());
+}
+
+/** PATCH …/annotations/:annotationId — sửa ghi chú. */
+export async function updateAnnotation(
+	attemptId: string,
+	annotationId: string,
+	input: EssayAnnotationPatch,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<EssayAnnotation> {
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/annotations/${encodeURIComponent(annotationId)}`,
+		{
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+		"update annotation",
+		baseUrl,
+	);
+	return essayAnnotationSchema.parse(await res.json());
+}
+
+/** DELETE …/annotations/:annotationId — gỡ highlight (204, không body). */
+export async function deleteAnnotation(
+	attemptId: string,
+	annotationId: string,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<void> {
+	await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/annotations/${encodeURIComponent(annotationId)}`,
+		{ method: "DELETE" },
+		"delete annotation",
+		baseUrl,
+	);
 }
