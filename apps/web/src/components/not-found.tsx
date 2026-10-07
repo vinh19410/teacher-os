@@ -66,7 +66,7 @@ export function NotFoundPage() {
 
 			{/* Footer */}
 			<footer className="border-line-soft border-t py-4 text-center text-muted-fg text-xs">
-				© 2026 Teacher OS · Quản lý lớp gia sư 1:1
+				© 2022 Teacher OS · Quản lý lớp gia sư 1:1
 			</footer>
 		</div>
 	);

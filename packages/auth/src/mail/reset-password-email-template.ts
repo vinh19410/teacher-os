@@ -78,7 +78,7 @@ Nhấn nút bên dưới để đặt lại mật khẩu TeacherOS. Liên kết 
               Bạn nhận được email này vì có người yêu cầu đặt lại mật khẩu cho địa chỉ email của bạn trên TeacherOS.
             </p>
             <p class="text-muted" style="margin:0; font-size:12px; line-height:18px; color:#94a3b8;">
-              &copy; 2026 TeacherOS. Mọi quyền được bảo lưu.
+              &copy; 2022 TeacherOS. Mọi quyền được bảo lưu.
             </p>
           </td>
         </tr>
