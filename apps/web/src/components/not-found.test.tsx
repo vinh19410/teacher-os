@@ -30,6 +30,6 @@ describe("NotFoundPage component", () => {
 
 	it("renders copyright footer", () => {
 		const html = renderToStaticMarkup(<NotFoundPage />);
-		expect(html).toContain("© 2026 Teacher OS");
+		expect(html).toContain("© 2022 Teacher OS");
 	});
 });

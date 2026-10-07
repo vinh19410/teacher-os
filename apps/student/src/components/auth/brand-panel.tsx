@@ -43,7 +43,7 @@ export default function BrandPanel({ now: _now }: BrandPanelProps = {}) {
 			</div>
 
 			<p className="text-[color-mix(in_oklab,var(--bg),transparent_55%)] text-xs max-[960px]:hidden">
-				© 2026 Teacher OS · Học viên
+				© 2022 Teacher OS · Học viên
 			</p>
 		</section>
 	);
