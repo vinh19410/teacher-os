@@ -13,6 +13,7 @@ import type { Db, KernelCtx } from "../app";
 import {
 	type BankHubContext,
 	BankHubError,
+	type BankHubLinkToken,
 } from "../lib/bank-hub/bank-hub-client";
 import {
 	ensureCompany,
@@ -85,6 +86,34 @@ export function bankLinkRoutes(deps: {
 		return { ok: true, data: parsed.data };
 	}
 
+	/**
+	 * Client-safe mapping for a failed Bank Hub call: 429 keeps SePay's
+	 * Retry-After, everything else is a 502. The upstream message stays in the
+	 * server log — the response body only carries our stable error code.
+	 */
+	function bankHubFailure(c: BankLinkContext, err: BankHubError): Response {
+		console.error(
+			`[bank-hub] ${err.status}${err.code ? ` ${err.code}` : ""}: ${err.message}`,
+		);
+		if (err.status === 429) {
+			c.header("Retry-After", String(err.retryAfter ?? 60));
+			return c.json(
+				{
+					error: BANK_LINK_ERROR_CODES.BANKHUB_RATE_LIMITED,
+					code: BANK_LINK_ERROR_CODES.BANKHUB_RATE_LIMITED,
+				},
+				429,
+			);
+		}
+		return c.json(
+			{
+				error: BANK_LINK_ERROR_CODES.BANKHUB_UPSTREAM,
+				code: BANK_LINK_ERROR_CODES.BANKHUB_UPSTREAM,
+			},
+			502,
+		);
+	}
+
 	router.get("/", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -108,7 +137,12 @@ export function bankLinkRoutes(deps: {
 		// when the bank-side INACTIVED webhook was lost (SePay never retries
 		// 5xx).
 		if (c.req.query("refresh") === "1" && row?.companyXid) {
-			row = (await syncFromBankHub(db, hub, ctx.orgId)) ?? row;
+			try {
+				row = (await syncFromBankHub(db, hub, ctx.orgId)) ?? row;
+			} catch (err) {
+				if (err instanceof BankHubError) return bankHubFailure(c, err);
+				throw err;
+			}
 		}
 		return c.json(toStatus(row));
 	});
@@ -158,23 +192,29 @@ export function bankLinkRoutes(deps: {
 				409,
 			);
 		}
-		const company = await ensureCompany(db, hub, ctx.orgId);
-		if (!company.companyXid) {
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-					code: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-				},
-				409,
-			);
+		let token: BankHubLinkToken;
+		try {
+			const company = await ensureCompany(db, hub, ctx.orgId);
+			if (!company.companyXid) {
+				return c.json(
+					{
+						error: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
+						code: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
+					},
+					409,
+				);
+			}
+			token = await hub.client.createLinkToken({
+				companyXid: company.companyXid,
+				purpose: PURPOSE_BY_REQUEST[body.data.purpose],
+				...(body.data.purpose !== "link" && row?.bankAccountXid
+					? { bankAccountXid: row.bankAccountXid }
+					: {}),
+			});
+		} catch (err) {
+			if (err instanceof BankHubError) return bankHubFailure(c, err);
+			throw err;
 		}
-		const token = await hub.client.createLinkToken({
-			companyXid: company.companyXid,
-			purpose: PURPOSE_BY_REQUEST[body.data.purpose],
-			...(body.data.purpose !== "link" && row?.bankAccountXid
-				? { bankAccountXid: row.bankAccountXid }
-				: {}),
-		});
 		let origin: string;
 		try {
 			origin = new URL(token.hostedLinkUrl).origin;
@@ -290,14 +330,7 @@ export function bankLinkRoutes(deps: {
 				}
 			}
 		} catch (err) {
-			// Respect Bank Hub rate limiting instead of sleeping in the Worker.
-			if (err instanceof BankHubError && err.status === 429) {
-				c.header("Retry-After", String(err.retryAfter ?? 60));
-				return c.json(
-					{ error: "bank hub rate limited", code: "BANKHUB_RATE_LIMITED" },
-					429,
-				);
-			}
+			if (err instanceof BankHubError) return bankHubFailure(c, err);
 			throw err;
 		}
 
@@ -322,7 +355,13 @@ export function bankLinkRoutes(deps: {
 			);
 		}
 		const db = deps.getDb();
-		const row = await syncFromBankHub(db, hub, ctx.orgId);
+		let row: OrgBankLinkRow | undefined;
+		try {
+			row = await syncFromBankHub(db, hub, ctx.orgId);
+		} catch (err) {
+			if (err instanceof BankHubError) return bankHubFailure(c, err);
+			throw err;
+		}
 		return c.json(toStatus(row));
 	});
 

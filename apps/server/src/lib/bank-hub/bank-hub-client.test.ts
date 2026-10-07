@@ -340,15 +340,16 @@ describe("createBankHubClient", () => {
 				});
 			}
 			if (req.method === "POST" && pathname === "/v1/link-token/create") {
-				return jsonResponse({
-					code: "200",
-					data: {
+				// Flat 201 body — no {code, data} envelope (docs + sandbox).
+				return jsonResponse(
+					{
 						xid: "lt-1",
 						hosted_link_url: "https://bankhub.sepay.vn/link/lt-1",
 						link_token: "ltok-1",
-						expires_at: "2026-01-01T01:00:00Z",
+						expires_at: "2026-01-01 01:00:00",
 					},
-				});
+					201,
+				);
 			}
 			if (req.method === "GET" && pathname === "/v1/company/company-1") {
 				return jsonResponse({
