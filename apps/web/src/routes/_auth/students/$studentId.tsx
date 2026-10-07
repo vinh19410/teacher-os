@@ -14,12 +14,14 @@ import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
+import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import {
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 	invoiceCode,
+	invoiceRemainingLabel,
 	invoiceType,
 } from "@/lib/format-invoice";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
@@ -284,6 +286,9 @@ function StudentDetailRoute() {
 						rows={invoices.map((inv) => {
 							// #322 — "Quá hạn" suy ra từ `due`, cùng helper với roster.
 							const status = effectiveInvoiceStatus(inv, todayVN);
+							// #340 — nhãn "còn X" kèm badge khi hóa đơn được thu một
+							// phần (helper tự ẩn với paid/overpay).
+							const remaining = invoiceRemainingLabel(inv);
 							return {
 								cells: [
 									invoiceCode(inv.id),
@@ -292,12 +297,31 @@ function StudentDetailRoute() {
 										{fmtVND(inv.amount)}
 									</span>,
 									inv.date,
-									<Badge
-										key={`${inv.id}-b`}
-										variant={INVOICE_STATUS_VARIANT[status]}
-									>
-										{INVOICE_STATUS_LABEL[status]}
-									</Badge>,
+									remaining ? (
+										<span
+											key={`${inv.id}-b`}
+											className="flex items-center gap-2 whitespace-nowrap"
+										>
+											<Badge variant={INVOICE_STATUS_VARIANT[status]}>
+												{INVOICE_STATUS_LABEL[status]}
+											</Badge>
+											<span
+												className={cn(
+													"font-mono",
+													status === "overdue" && "font-semibold text-danger",
+												)}
+											>
+												{remaining}
+											</span>
+										</span>
+									) : (
+										<Badge
+											key={`${inv.id}-b`}
+											variant={INVOICE_STATUS_VARIANT[status]}
+										>
+											{INVOICE_STATUS_LABEL[status]}
+										</Badge>
+									),
 								],
 							};
 						})}

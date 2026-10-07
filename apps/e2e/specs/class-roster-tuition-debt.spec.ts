@@ -2,12 +2,13 @@ import { expect, type Page, test } from "@playwright/test";
 import { isoInDaysFromTodayVN, seedStudent, signUpViaUi } from "./helpers";
 
 /**
- * Issues #216 + #322 — class-detail roster "Học phí" cell follows the tuition
- * lifecycle of the class's own enrollments: badge "Chưa lập phiếu" while the
- * active student has no invoice, "Chưa thu" + amount for a future-due one,
- * "Quá hạn" + red debt once a due date passes, "Đã thu" after full payment
- * (survives reload). "Quá hạn" is derived client-side from `due`, so spec
- * dues are relative to today (VN timezone) instead of a fixed date that
+ * Issues #216 + #322 + #340 — class-detail roster "Học phí" cell follows the
+ * tuition lifecycle of the class's own enrollments: badge "Chưa lập phiếu"
+ * while the active student has no invoice, "Chưa thu" + 'còn <amount>'
+ * (outstanding, subtracting ledger partial payments) for a future-due one,
+ * "Quá hạn" + red remaining debt once a due date passes, "Đã thu" after full
+ * payment (survives reload). "Quá hạn" is derived client-side from `due`, so
+ * spec dues are relative to today (VN timezone) instead of a fixed date that
  * would flip overdue on its own.
  */
 const STUDENT_NAME = "QC Roster E2E";
@@ -59,7 +60,7 @@ function rosterRow(page: Page) {
 }
 
 /** The "Học phí" cell content of the roster row, addressed by its exact
- * rendered text (— / badge label / fmtVND) — scoped inside the row. */
+ * rendered text (— / badge label / "còn <amount>") — scoped inside the row. */
 function rosterFee(page: Page, text: string) {
 	return rosterRow(page).getByText(text, { exact: true });
 }
@@ -124,18 +125,18 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 	await expect(page.getByText("Chưa có học viên")).toBeHidden();
 	await expect(rosterFee(page, "Chưa lập phiếu")).toBeVisible();
 
-	// First invoice, due in 30 days → "Chưa thu" + outstanding amount.
+	// First invoice, due in 30 days → "Chưa thu" + remaining amount.
 	await createInvoice(page, "400000", isoInDaysFromTodayVN(30));
 	await openClassDetail(page);
 	await expect(rosterFee(page, "Chưa thu")).toBeVisible();
-	await expect(rosterFee(page, "400.000đ")).toBeVisible();
+	await expect(rosterFee(page, "còn 400.000đ")).toBeVisible();
 	await expect(rosterFee(page, "Chưa lập phiếu")).toBeHidden();
 
 	// Second invoice already past due → "Quá hạn" + both amounts owed.
 	await createInvoice(page, "400000", isoInDaysFromTodayVN(-1));
 	await openClassDetail(page);
 	await expect(rosterFee(page, "Quá hạn")).toBeVisible();
-	await expect(rosterFee(page, "800.000đ")).toBeVisible();
+	await expect(rosterFee(page, "còn 800.000đ")).toBeVisible();
 
 	// The same past-due invoice shows "Quá hạn" on /tuition (shared helper,
 	// #322): exactly one row — the +30d one stays "Chưa thu".
@@ -148,7 +149,7 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 	await markAllInvoicesPaid(page);
 	await openClassDetail(page);
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();
-	await expect(rosterFee(page, "800.000đ")).toBeHidden();
+	await expect(rosterFee(page, "còn 800.000đ")).toBeHidden();
 	await page.reload();
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();
 });

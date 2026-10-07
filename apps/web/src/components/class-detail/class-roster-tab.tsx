@@ -8,15 +8,11 @@ import { DataTable } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/cn";
 import {
+	formatRemainingVND,
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 } from "@/lib/format-invoice";
-import {
-	type ClassGroup,
-	fmtVND,
-	type KernelHydratedData,
-	type Student,
-} from "@/lib/mock-data";
+import type { ClassGroup, KernelHydratedData, Student } from "@/lib/mock-data";
 import type { RosterDebt } from "@/lib/tuition-from-kernel";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -30,8 +26,12 @@ export interface ClassRosterTabProps {
 }
 
 /** Ô "Học phí" của tab Học viên (#322): badge trạng thái cùng nhãn/màu với
- * /tuition, kèm số tiền còn nợ. Không entry trong map = "Chưa lập phiếu";
- * học viên được mời giữ nguyên "—". */
+ * /tuition, kèm "còn X" — số tiền chưa thu của enrollment trong lớp, đã trừ
+ * ledger partial (#320/#340, qua `formatRemainingVND` copy đơn nguồn). Ô này
+ * không có cột Số tiền riêng nên nhãn hiện cho mọi hóa đơn chưa paid, kể cả
+ * chưa thu gì. Overpay clamp (outstanding ≤ 0) chỉ hiện badge — tránh "còn
+ * 0đ". Không entry trong map = "Chưa lập phiếu"; học viên được mời giữ
+ * nguyên "—". */
 export function RosterTuitionCell({
 	debt,
 	isInvited,
@@ -50,7 +50,7 @@ export function RosterTuitionCell({
 			{INVOICE_STATUS_LABEL[debt.status]}
 		</Badge>
 	);
-	if (debt.status === "paid") {
+	if (debt.status === "paid" || debt.outstanding <= 0) {
 		return badge;
 	}
 	return (
@@ -62,7 +62,7 @@ export function RosterTuitionCell({
 					debt.status === "overdue" && "font-semibold text-danger",
 				)}
 			>
-				{fmtVND(debt.outstanding)}
+				{formatRemainingVND(debt.outstanding)}
 			</span>
 		</span>
 	);

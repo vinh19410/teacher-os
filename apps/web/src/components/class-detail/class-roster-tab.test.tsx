@@ -46,7 +46,7 @@ describe("RosterTuitionCell (#322)", () => {
 		expect(html).not.toContain("400.000đ");
 	});
 
-	it("unpaid renders Chưa thu + số tiền còn nợ", () => {
+	it("unpaid renders Chưa thu + 'còn' số tiền còn nợ (#340)", () => {
 		const html = renderToStaticMarkup(
 			<RosterTuitionCell
 				isInvited={false}
@@ -54,11 +54,38 @@ describe("RosterTuitionCell (#322)", () => {
 			/>,
 		);
 		expect(html).toContain("Chưa thu");
-		expect(html).toContain("400.000đ");
+		expect(html).toContain("còn 400.000đ");
 		expect(html).not.toContain("Quá hạn");
 	});
 
-	it("overdue renders Quá hạn + số tiền đỏ", () => {
+	// #340 — ledger partial payment: roster shows the remaining, not the raw
+	// invoice amount (user example: 2tr paid of 10tr → còn 8.000.000đ).
+	it("partial debt renders remaining outstanding, not the raw amount", () => {
+		const html = renderToStaticMarkup(
+			<RosterTuitionCell
+				isInvited={false}
+				debt={debt({ status: "unpaid", outstanding: 8000000 })}
+			/>,
+		);
+		expect(html).toContain("Chưa thu");
+		expect(html).toContain("còn 8.000.000đ");
+	});
+
+	// Overpay clamp (outstanding ≤ 0 while ledger awaits reconciliation):
+	// badge only — "còn 0đ" would be a false signal.
+	it("clamped outstanding renders badge only, no 'còn 0đ'", () => {
+		const html = renderToStaticMarkup(
+			<RosterTuitionCell
+				isInvited={false}
+				debt={debt({ status: "unpaid", outstanding: 0 })}
+			/>,
+		);
+		expect(html).toContain("Chưa thu");
+		expect(html).not.toContain("còn 0đ");
+		expect(html).not.toContain("0đ</span>");
+	});
+
+	it("overdue renders Quá hạn + 'còn' số tiền đỏ", () => {
 		const html = renderToStaticMarkup(
 			<RosterTuitionCell
 				isInvited={false}
@@ -66,7 +93,7 @@ describe("RosterTuitionCell (#322)", () => {
 			/>,
 		);
 		expect(html).toContain("Quá hạn");
-		expect(html).toContain("800.000đ");
+		expect(html).toContain("còn 800.000đ");
 		expect(html).toContain("text-danger");
 	});
 });

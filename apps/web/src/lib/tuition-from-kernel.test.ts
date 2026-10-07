@@ -169,7 +169,7 @@ describe("rosterDebtByStudent (#216)", () => {
 		const debts = rosterDebtByStudent(
 			"C1",
 			enrollments,
-			[{ eid: "E1", amount: 400000, status: "paid", due: "" }],
+			[{ eid: "E1", amount: 400000, paidAmount: 0, status: "paid", due: "" }],
 			TODAY,
 		);
 		expect(debts.get("S1")).toEqual({
@@ -184,9 +184,15 @@ describe("rosterDebtByStudent (#216)", () => {
 			"C1",
 			enrollments,
 			[
-				{ eid: "E1", amount: 400000, status: "unpaid", due: "" },
-				{ eid: "E1", amount: 100000, status: "overdue", due: "" },
-				{ eid: "E1", amount: 50000, status: "unpaid", due: "" },
+				{ eid: "E1", amount: 400000, paidAmount: 0, status: "unpaid", due: "" },
+				{
+					eid: "E1",
+					amount: 100000,
+					paidAmount: 0,
+					status: "overdue",
+					due: "",
+				},
+				{ eid: "E1", amount: 50000, paidAmount: 0, status: "unpaid", due: "" },
 			],
 			TODAY,
 		);
@@ -202,9 +208,15 @@ describe("rosterDebtByStudent (#216)", () => {
 			"C1",
 			enrollments,
 			[
-				{ eid: "E2", amount: 999000, status: "unpaid", due: "" }, // class C2
-				{ eid: "", amount: 500000, status: "unpaid", due: "" }, // legacy
-				{ eid: "E-DELETED", amount: 250000, status: "unpaid", due: "" }, // unknown
+				{ eid: "E2", amount: 999000, paidAmount: 0, status: "unpaid", due: "" }, // class C2
+				{ eid: "", amount: 500000, paidAmount: 0, status: "unpaid", due: "" }, // legacy
+				{
+					eid: "E-DELETED",
+					amount: 250000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "",
+				}, // unknown
 			],
 			TODAY,
 		);
@@ -216,9 +228,9 @@ describe("rosterDebtByStudent (#216)", () => {
 			"C1",
 			enrollments,
 			[
-				{ eid: "E1", amount: 400000, status: "unpaid", due: "" },
-				{ eid: "E1", amount: 300000, status: "unpaid", due: "" },
-				{ eid: "E3", amount: 250000, status: "unpaid", due: "" },
+				{ eid: "E1", amount: 400000, paidAmount: 0, status: "unpaid", due: "" },
+				{ eid: "E1", amount: 300000, paidAmount: 0, status: "unpaid", due: "" },
+				{ eid: "E3", amount: 250000, paidAmount: 0, status: "unpaid", due: "" },
 			],
 			TODAY,
 		);
@@ -238,8 +250,20 @@ describe("rosterDebtByStudent (#216)", () => {
 			"C1",
 			enrollments,
 			[
-				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-11-04" },
-				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-10-04" },
+				{
+					eid: "E1",
+					amount: 400000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-11-04",
+				},
+				{
+					eid: "E1",
+					amount: 400000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-10-04",
+				},
 			],
 			TODAY,
 		);
@@ -255,13 +279,146 @@ describe("rosterDebtByStudent (#216)", () => {
 			"C1",
 			enrollments,
 			[
-				{ eid: "E1", amount: 400000, status: "unpaid", due: "2026-11-04" },
-				{ eid: "E2", amount: 900000, status: "unpaid", due: "2026-01-01" },
+				{
+					eid: "E1",
+					amount: 400000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-11-04",
+				},
+				{
+					eid: "E2",
+					amount: 900000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-01-01",
+				},
 			],
 			TODAY,
 		);
 		expect(debts.get("S1")?.status).toBe("unpaid");
 		expect(debts.get("S1")?.outstanding).toBe(400000);
+	});
+
+	// #340 — partial ledger payments subtract paidAmount, same clamp
+	// convention as tuitionTotals (#320).
+	test("partial payment subtracts paidAmount from outstanding", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{
+					eid: "E1",
+					amount: 10000000,
+					paidAmount: 2000000,
+					status: "unpaid",
+					due: "",
+				},
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 8000000,
+			invoiceCount: 1,
+			status: "unpaid",
+		});
+	});
+
+	test("partial payment with past due is overdue with remaining outstanding", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{
+					eid: "E1",
+					amount: 10000000,
+					paidAmount: 2000000,
+					status: "unpaid",
+					due: "2026-10-04",
+				},
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 8000000,
+			invoiceCount: 1,
+			status: "overdue",
+		});
+	});
+
+	test("paidAmount above the amount clamps outstanding to zero, status stays unpaid", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{
+					eid: "E1",
+					amount: 400000,
+					paidAmount: 500000,
+					status: "unpaid",
+					due: "",
+				},
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")).toEqual({
+			outstanding: 0,
+			invoiceCount: 1,
+			status: "unpaid",
+		});
+	});
+
+	test("partial and fully-unpaid invoices of one student accumulate remaining", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{
+					eid: "E1",
+					amount: 10000000,
+					paidAmount: 2000000,
+					status: "unpaid",
+					due: "",
+				},
+				{
+					eid: "E1",
+					amount: 1000000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "",
+				},
+			],
+			TODAY,
+		);
+		expect(debts.get("S1")?.outstanding).toBe(9000000);
+		expect(debts.get("S1")?.status).toBe("unpaid");
+	});
+
+	test("clamp applies per invoice, not on the summed total", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			enrollments,
+			[
+				{
+					eid: "E1",
+					amount: 400000,
+					paidAmount: 500000,
+					status: "unpaid",
+					due: "",
+				},
+				{
+					eid: "E1",
+					amount: 1000000,
+					paidAmount: 200000,
+					status: "unpaid",
+					due: "",
+				},
+			],
+			TODAY,
+		);
+		// 0 (overpay clamp) + 800000 (partial) — a clamp-on-total refactor
+		// would wrongly yield 700000 here.
+		expect(debts.get("S1")?.outstanding).toBe(800000);
 	});
 });
 
