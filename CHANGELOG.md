@@ -15,6 +15,9 @@ Quy ước khi cập nhật:
 ### Added
 - Chấm Writing: giáo viên bôi đen từ/cụm từ trong bài để highlight và ghi chú (lưu ngay, sửa/xoá trong danh sách dưới bài); học viên thấy highlight đánh số và ghi chú ở màn kết quả khi bài đã có điểm (#332)
 
+### Changed
+- Màn kết quả học viên: bài Writing đã chấm hiện 2 khung (bài viết bên trái | "Kết quả chấm của giáo viên" bên phải dính khi cuộn); ghi chú của giáo viên hiện ngay sau đoạn được highlight thay cho danh sách riêng dưới bài (#336)
+
 ## 2026-10-06
 
 ### Added

@@ -21,7 +21,14 @@ import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
 const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const studentEmail = `annot.student.${runToken}@test.local`;
-const ESSAY = "Living in a city has many benefits.\nFirst, jobs are plentiful.";
+// Đủ dài để trang kết quả cuộn được — phục vụ assertion sticky (#336).
+const ESSAY = `Living in a city has many benefits.
+First, jobs are plentiful.
+${Array.from(
+	{ length: 14 },
+	(_, i) =>
+		`Điểm ${i + 1}: city dwellers can reach museums, offices and hospitals within minutes, which saves hours every single week and makes daily routines far more predictable than in rural areas where transport is sparse.`,
+).join("\n")}`;
 
 test.describe.configure({ mode: "serial" });
 
@@ -198,7 +205,8 @@ test.describe("Teacher essay annotations (#332)", () => {
 	test("student sees highlights only after the attempt is graded", async ({
 		browser,
 	}) => {
-		// Chưa chấm: không highlight, không danh sách, dòng chờ chấm.
+		// Chưa chấm: không highlight, không ghi chú inline, không chia khung,
+		// dòng chờ chấm.
 		const studentContext = await browser.newContext();
 		const studentPage = await studentContext.newPage();
 		await signIn(studentPage);
@@ -209,11 +217,13 @@ test.describe("Teacher essay annotations (#332)", () => {
 			studentPage.getByText("Giáo viên sẽ chấm bài viết của bạn."),
 		).toBeVisible();
 		await expect(studentPage.locator("mark")).toHaveCount(0);
-		await expect(studentPage.getByTestId("essay-annotation-list")).toHaveCount(
+		await expect(studentPage.getByTestId("essay-inline-note")).toHaveCount(0);
+		await expect(studentPage.getByTestId("writing-result-split")).toHaveCount(
 			0,
 		);
 
-		// Giáo viên chấm qua API (không phụ thuộc widget chọn điểm).
+		// Giáo viên chấm qua API (không phụ thuộc widget chọn điểm) — feedback
+		// dài để card tràn max-h, phục vụ assertion card cuộn được.
 		const gradeRes = await teacherPage.request.post(
 			`${API_ORIGIN}/api/grading/${attemptId}/grade`,
 			{
@@ -223,20 +233,124 @@ test.describe("Teacher essay annotations (#332)", () => {
 				},
 				data: {
 					scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6.5 },
-					feedback: "",
+					feedback: Array.from(
+						{ length: 30 },
+						(_, i) =>
+							`Nhận xét dòng ${i + 1}: bài viết dùng ví dụ tốt, cần mở rộng lập luận và kiểm tra lại dấu câu cho kỹ hơn.`,
+					).join("\n"),
 				},
 			},
 		);
 		expect(gradeRes.status()).toBe(200);
 
-		// Học viên reload → thấy 2 highlight + ghi chú + band 6.5.
+		// Học viên reload → thấy 2 highlight + ghi chú nằm NGAY SAU highlight
+		// (#336), band 6.5; danh sách riêng đã bỏ.
 		await studentPage.reload();
 		await expect(markNth(studentPage, 1)).toHaveText(/benefits/);
 		await expect(markNth(studentPage, 2)).toHaveText(/plentiful/);
-		const noteList = studentPage.getByTestId("essay-annotation-list");
-		await expect(noteList).toContainText("Dùng 'advantages' cho đa dạng.");
-		await expect(noteList).toContainText("Từ hay.");
+		await expect(
+			studentPage.locator(
+				'mark[data-n="1"] + [data-testid="essay-inline-note"]',
+			),
+		).toContainText("Dùng 'advantages' cho đa dạng.");
+		await expect(
+			studentPage.locator(
+				'mark[data-n="2"] + [data-testid="essay-inline-note"]',
+			),
+		).toContainText("Từ hay.");
+		await expect(studentPage.getByTestId("essay-annotation-list")).toHaveCount(
+			0,
+		);
 		await expect(studentPage.getByTestId("grade-band")).toHaveText("6.5");
+
+		// Bố cục 2 khung ở ≥ 921px (viewport mặc định Playwright 1280×720).
+		const essayFrame = studentPage.getByTestId("essay-frame");
+		const gradeCard = studentPage.getByTestId("attempt-grade");
+		const essayFrameBox = await essayFrame.boundingBox();
+		const cardBox = await gradeCard.boundingBox();
+		expect(essayFrameBox).not.toBeNull();
+		expect(cardBox).not.toBeNull();
+		// Card bên phải khung bài viết.
+		expect(essayFrameBox?.x ?? 0).toBeLessThan(cardBox?.x ?? 0);
+		// Đỉnh thẳng hàng: heading "Bài viết của bạn" ≈ card (so cặp ý nghĩa,
+		// không so biên section — h2 và card cùng mt-6 trong grid BFC).
+		const essayHeadingBox = await essayFrame.locator("h2").boundingBox();
+		expect(essayHeadingBox).not.toBeNull();
+		expect(
+			Math.abs((essayHeadingBox?.y ?? 0) - (cardBox?.y ?? 0)),
+		).toBeLessThanOrEqual(4);
+		// max-w-[1120px] hiệu lực — nhồi trong 720px thì khung trái chỉ ~400px.
+		expect(essayFrameBox?.width ?? 0).toBeGreaterThanOrEqual(500);
+		// `app:sticky` phải sinh CSS thật (bắt variant chết).
+		expect(
+			await gradeCard.evaluate((el) => getComputedStyle(el).position),
+		).toBe("sticky");
+
+		// Sticky dính khi cuộn: ở đáy trang card bị clamp tại
+		// innerHeight − 24 (py-6 dưới) − max-h (100svh − 6rem) = 720 − 24 − 624
+		// = 72 (subpixel thực đo 71.98) — nhỏ hơn top-20 vì card cao hơn phần
+		// viewport còn lại. Band [64, 88] khoá cả hai mép mà không ghim con số.
+		await studentPage.evaluate(() =>
+			window.scrollTo(0, document.body.scrollHeight),
+		);
+		await expect
+			.poll(async () => (await gradeCard.boundingBox())?.y ?? -1, {
+				timeout: 5_000,
+			})
+			.toBeLessThanOrEqual(88);
+		const stickyY = (await gradeCard.boundingBox())?.y ?? -1;
+		expect(stickyY).toBeGreaterThanOrEqual(64);
+
+		// Card tràn max-h → cuộn được bằng bàn phím (scrollable + tabIndex).
+		const viewportHeight = await studentPage.evaluate(() => window.innerHeight);
+		const scrollInfo = await gradeCard.evaluate((el) => ({
+			scrollHeight: el.scrollHeight,
+			clientHeight: el.clientHeight,
+			maxHeight: getComputedStyle(el).maxHeight,
+		}));
+		expect(scrollInfo.scrollHeight).toBeGreaterThan(scrollInfo.clientHeight);
+		expect(scrollInfo.maxHeight).not.toBe("none");
+		// max-h thực sự giới hạn chiều cao card (không chỉ tồn tại trên giấy).
+		expect(scrollInfo.clientHeight).toBeLessThanOrEqual(
+			viewportHeight - 96 + 1,
+		);
+		await gradeCard.focus();
+		await expect(gradeCard).toBeFocused();
+		await studentPage.keyboard.press("ArrowDown");
+		// Chromium cuộn container focus bằng animation — poll cho scrollTop
+		// cập nhật thay vì đo ngay sau keypress.
+		await expect
+			.poll(async () => gradeCard.evaluate((el) => el.scrollTop))
+			.toBeGreaterThan(0);
+
+		// Dải hẹp nhất ≥ 921px (960 — snap nửa màn hình 1920): không tràn ngang.
+		await studentPage.setViewportSize({ width: 960, height: 900 });
+		await expect
+			.poll(() =>
+				studentPage.evaluate(() => document.documentElement.scrollWidth),
+			)
+			.toBeLessThanOrEqual(960);
+
+		// < 921px: xếp dọc — card nằm dưới khung bài viết, không tràn ngang.
+		await studentPage.setViewportSize({ width: 768, height: 1024 });
+		await expect
+			.poll(() =>
+				studentPage.evaluate(() => document.documentElement.scrollWidth),
+			)
+			.toBeLessThanOrEqual(768);
+		await studentPage.setViewportSize({ width: 375, height: 812 });
+		await expect
+			.poll(() =>
+				studentPage.evaluate(() => document.documentElement.scrollWidth),
+			)
+			.toBeLessThanOrEqual(375);
+		const mobileFrame = await essayFrame.boundingBox();
+		const mobileCard = await gradeCard.boundingBox();
+		expect(mobileFrame).not.toBeNull();
+		expect(mobileCard).not.toBeNull();
+		expect(mobileCard?.y ?? 0).toBeGreaterThan(
+			(mobileFrame?.y ?? 0) + (mobileFrame?.height ?? 0),
+		);
 		await studentContext.close();
 	});
 });
