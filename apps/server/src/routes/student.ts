@@ -59,6 +59,7 @@ import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { loadEssayAnnotations } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -1760,9 +1761,19 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		// Điểm giáo viên chấm: CHỈ thêm key khi đã chấm — bundle cũ (schema
 		// strict) không vỡ ở attempt chưa chấm.
 		const teacherGrade = toQuizAttemptGrade(attempt);
-		if (teacherGrade) {
-			summary.grade = teacherGrade;
-			summary.part = part;
+		if (!teacherGrade) return c.json(summary);
+		summary.grade = teacherGrade;
+		summary.part = part;
+		// Highlight + ghi chú (#332): CHỈ thêm khi đã chấm + Writing + có
+		// ít nhất 1 highlight — học viên không thấy highlight dở dang;
+		// bundle cũ (strict) chỉ lỗi parse ở đúng attempt này.
+		if (skill === "writing") {
+			const annotations = await loadEssayAnnotations(
+				deps.getDb(),
+				attempt.id,
+				orgId,
+			);
+			if (annotations.length > 0) summary.annotations = annotations;
 		}
 		return c.json(summary);
 	});

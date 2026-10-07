@@ -320,6 +320,8 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q20",
 			"ca-q21",
 			"ca-q22",
+			"ca-q23",
+			"ca-q24",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -332,9 +334,14 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 							? "prompt-mixed"
 							: assignmentId === "ca-q12"
 								? "prompt-note-tfng"
-								: ["ca-q13", "ca-q14", "ca-q16", "ca-q18"].includes(
-											assignmentId,
-										)
+								: [
+											"ca-q13",
+											"ca-q14",
+											"ca-q16",
+											"ca-q18",
+											"ca-q23",
+											"ca-q24",
+										].includes(assignmentId)
 									? "prompt-writing"
 									: ["ca-q19", "ca-q20", "ca-q21", "ca-q22"].includes(
 												assignmentId,
@@ -1047,6 +1054,87 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(detail.status).toBe(200);
 		const detailBody = (await detail.json()) as QuizAttemptDetail;
 		expect(detailBody.essay).toBe(essay);
+	});
+
+	// (#332) Summary chỉ lộ highlight khi ĐÃ chấm + có ít nhất 1 highlight.
+	test("summary reveals teacher annotations only after grading", async () => {
+		const essay = "The graph shows a clear upward trend in marriages.";
+		const attemptId = await startAttempt("ca-q23");
+		expect((await patchEssay(attemptId, essay)).status).toBe(200);
+		expect((await submit(attemptId)).status).toBe(200);
+
+		// Giáo viên highlight trước, chấm sau: 2 annotation đã tồn tại trong DB.
+		await libsql.insert(schema.quizAttemptAnnotation).values([
+			{
+				id: "ann-late",
+				orgId: "org-1",
+				attemptId,
+				startOffset: 0,
+				endOffset: 3,
+				note: "Mở bài ổn.",
+			},
+			{
+				id: "ann-early",
+				orgId: "org-1",
+				attemptId,
+				startOffset: 4,
+				endOffset: 9,
+				note: "Graph: viết hoa giữa câu.",
+			},
+		]);
+
+		// Chưa chấm → KHÔNG có key `annotations` (học viên không thấy dở dang).
+		const beforeGrade = await app.request(
+			`/api/student/attempts/${attemptId}`,
+			{ headers: OWNER },
+		);
+		expect(beforeGrade.status).toBe(200);
+		const beforeBody = (await beforeGrade.json()) as Record<string, unknown>;
+		expect("annotations" in beforeBody).toBe(false);
+
+		// Chấm điểm (ghi thẳng DB như giáo viên lưu qua route grade).
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				gradeFeedback: "Khá.",
+				gradedAt: new Date("2026-10-06T05:00:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, attemptId));
+
+		const afterGrade = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: OWNER,
+		});
+		const afterBody = (await afterGrade.json()) as QuizAttemptSummary;
+		expect(afterBody.grade?.band).toBe(6);
+		// Sắp theo start dù seed ngược thứ tự id.
+		expect(afterBody.annotations?.map((a) => [a.start, a.end])).toEqual([
+			[0, 3],
+			[4, 9],
+		]);
+		expect(afterBody.annotations?.map((a) => a.note)).toEqual([
+			"Mở bài ổn.",
+			"Graph: viết hoa giữa câu.",
+		]);
+
+		// Đã chấm nhưng 0 highlight → không có key.
+		const noAnnAttempt = await startAttempt("ca-q24");
+		expect((await patchEssay(noAnnAttempt, "Another essay.")).status).toBe(200);
+		expect((await submit(noAnnAttempt)).status).toBe(200);
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				gradeFeedback: "",
+				gradedAt: new Date("2026-10-06T05:30:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, noAnnAttempt));
+		const noAnn = await app.request(`/api/student/attempts/${noAnnAttempt}`, {
+			headers: OWNER,
+		});
+		const noAnnBody = (await noAnn.json()) as Record<string, unknown>;
+		expect(noAnnBody.grade).toBeTruthy();
+		expect("annotations" in noAnnBody).toBe(false);
 	});
 
 	// (#304) Guards của PATCH essay: đề không phải Writing 400, vượt max 400,

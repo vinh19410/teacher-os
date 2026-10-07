@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-07
+
+### Added
+- Chấm Writing: giáo viên bôi đen từ/cụm từ trong bài để highlight và ghi chú (lưu ngay, sửa/xoá trong danh sách dưới bài); học viên thấy highlight đánh số và ghi chú ở màn kết quả khi bài đã có điểm (#332)
+
 ## 2026-10-06
 
 ### Added

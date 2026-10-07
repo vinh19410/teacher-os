@@ -656,6 +656,12 @@ nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bả
   giáo viên) và ở select full `quiz_attempt` (màn làm bài/kết quả học viên)
   — thiếu cột thì các trang đó trả 500, trong khi `/readyz` vẫn xanh vì probe
   không kiểm cột.
+- **0035** (`0035_ambiguous_freak.sql`): tạo bảng `quiz_attempt_annotation`
+  (highlight + ghi chú giáo viên trên bài Writing, FK cascade theo
+  `quiz_attempt`, #332). **DEPLOY ORDER**: migration chạy TRƯỚC worker; worker
+  mới query bảng này ở GET `/api/grading/:attemptId` và summary học viên đã
+  chấm — thiếu bảng thì trả 500, `/readyz` không phát hiện. Rollback code:
+  bảng còn sót vô hại, không có bước hoàn tác dữ liệu.
 
 Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 "Rollback code"):
