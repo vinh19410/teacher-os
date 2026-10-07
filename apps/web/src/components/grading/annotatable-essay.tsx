@@ -102,6 +102,9 @@ export function AnnotatableEssay({
 	const essayRef = useRef<HTMLDivElement>(null);
 	const popoverRef = useRef<HTMLDivElement>(null);
 	const debounceRef = useRef<number | null>(null);
+	/** Đang giữa thao tác kéo chọn (pointer nhấn trên khối essay) — cờ này
+	 * chặn popover bật giữa chừng trong lúc kéo. */
+	const draggingRef = useRef(false);
 	const [draft, setDraft] = useState<SelectionDraft | null>(null);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -166,20 +169,42 @@ export function AnnotatableEssay({
 		setDraft(readSelection());
 	}, [readSelection]);
 
-	// Bắt vùng chọn: pointerup/keyup trên khối essay phủ chuột + bàn phím
-	// (Shift+mũi tên); selectionchange (debounce) phủ cảm ứng, khi menu
-	// copy/paste native chiếm pointer.
+	// Bôi đen bằng chuột/cảm ứng: pointerdown trên khối essay đánh dấu đang
+	// kéo (đóng luôn popover cũ), popover chỉ đọc vùng chọn khi thả tay —
+	// pointerup nghe trên window vì kéo có thể nhả ngoài khối essay. Bàn phím
+	// (Shift+mũi tên) mỗi lần nhả phím là kết thúc một bước chọn.
 	useEffect(() => {
 		const container = essayRef.current;
 		if (!container) return;
-		container.addEventListener("pointerup", applySelection);
-		container.addEventListener("keyup", applySelection);
-		return () => {
-			container.removeEventListener("pointerup", applySelection);
-			container.removeEventListener("keyup", applySelection);
+		const onPointerDown = () => {
+			draggingRef.current = true;
+			setDraft(null);
+			setDeleteError(null);
 		};
+		container.addEventListener("pointerdown", onPointerDown);
+		return () => container.removeEventListener("pointerdown", onPointerDown);
+	}, []);
+
+	useEffect(() => {
+		const onPointerUp = () => {
+			if (!draggingRef.current) return;
+			draggingRef.current = false;
+			applySelection();
+		};
+		window.addEventListener("pointerup", onPointerUp);
+		return () => window.removeEventListener("pointerup", onPointerUp);
 	}, [applySelection]);
 
+	useEffect(() => {
+		const container = essayRef.current;
+		if (!container) return;
+		container.addEventListener("keyup", applySelection);
+		return () => container.removeEventListener("keyup", applySelection);
+	}, [applySelection]);
+
+	// selectionchange (debounce) phủ cảm ứng: kéo handle chọn của hệ điều
+	// hành không phát pointer event. Bỏ qua khi pointer đang nhấn để popover
+	// không bật giữa chừng thao tác kéo.
 	useEffect(() => {
 		const onSelectionChange = () => {
 			if (debounceRef.current !== null) {
@@ -188,6 +213,7 @@ export function AnnotatableEssay({
 			debounceRef.current = window.setTimeout(() => {
 				const container = essayRef.current;
 				const sel = window.getSelection();
+				if (draggingRef.current) return;
 				if (
 					!container ||
 					!sel ||

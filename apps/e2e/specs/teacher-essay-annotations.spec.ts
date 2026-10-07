@@ -51,11 +51,13 @@ async function signIn(page: Page): Promise<void> {
 const markNth = (page: Page, n: number) => page.locator(`mark[data-n="${n}"]`);
 
 /** Bôi đen `text` trong khối essay bằng Range thật trên text node (offset
- * giữa từ), rồi bắn pointerup — cùng đường vào popover như kéo chuột. */
+ * giữa từ) — nhấn chuột trước rồi thả tay sau, cùng đường vào popover như
+ * kéo chuột (popover chỉ mở khi thả tay). */
 async function selectEssayText(page: Page, text: string): Promise<void> {
 	await page.evaluate((needle) => {
 		const container = document.querySelector('[data-testid="essay-text"]');
 		if (!container) throw new Error("essay-text not rendered");
+		container.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
 		const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
 		let node = walker.nextNode();
 		while (node) {
