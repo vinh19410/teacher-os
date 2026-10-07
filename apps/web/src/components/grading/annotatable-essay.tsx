@@ -427,7 +427,10 @@ export function AnnotatableEssay({
 													variant="ghost"
 													size="sm"
 													aria-label={`Xoá highlight ${n}`}
-													onClick={() => setConfirmDeleteId(annotation.id)}
+													onClick={() => {
+														setDeleteError(null);
+														setConfirmDeleteId(annotation.id);
+													}}
 												>
 													Xoá
 												</Button>

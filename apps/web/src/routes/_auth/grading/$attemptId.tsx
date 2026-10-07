@@ -152,17 +152,17 @@ function GradingRoute() {
 	 * highlight hiển thị ngay tại vị trí thao tác (popover/hàng sửa/xác nhận
 	 * xoá). 409 ở route này chỉ có thể là OVERLAP (NOT_SUBMITTED không xảy ra
 	 * vì trang chỉ mở bài đã nộp). */
-	async function withFriendlyError(action: Promise<unknown>) {
+	async function withFriendlyError(
+		action: Promise<unknown>,
+		fallback = "Không lưu được highlight. Thử lại.",
+	) {
 		try {
 			await action;
 		} catch (loadError) {
 			throw new Error(
 				isHttpError(loadError)
-					? annotationErrorMessage(
-							loadError.status,
-							"Không lưu được highlight. Thử lại.",
-						)
-					: "Không lưu được highlight. Thử lại.",
+					? annotationErrorMessage(loadError.status, fallback)
+					: fallback,
 			);
 		}
 	}
@@ -209,7 +209,10 @@ function GradingRoute() {
 												updateMutation.mutateAsync({ id, note }),
 											),
 										onDelete: (id) =>
-											withFriendlyError(deleteMutation.mutateAsync(id)),
+											withFriendlyError(
+												deleteMutation.mutateAsync(id),
+												"Không xoá được highlight. Thử lại.",
+											),
 									}
 								: undefined
 						}
