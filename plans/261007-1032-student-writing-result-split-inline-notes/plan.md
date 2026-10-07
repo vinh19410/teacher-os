@@ -76,7 +76,7 @@ Chạy tuần tự 1 → 2 → 3. Phase 2 dùng prop `inlineNotes` của Phase 1
 - [x] Ở ≥ 921px, bài Writing đã chấm hiện 2 khung: bài viết bên trái, "Kết quả chấm của giáo viên" bên phải; cuộn essay dài thì khung phải vẫn ở đầu màn hình.
 - [x] Mỗi highlight có ghi chú hiện ghi chú ngay sau đoạn tô (`mark[data-n="1"] + [data-testid="essay-inline-note"]`); highlight không có ghi chú không chèn gì.
 - [x] Không còn danh sách "Ghi chú của giáo viên" (`essay-annotation-list`) ở màn học viên.
-- [x] Dưới 921px (768×1024, 375×812) xếp dọc: bài viết rồi kết quả chấm, không tràn ngang; ghi chú dài xuống dòng vẫn giữ nền và viền.
+- [x] Dưới 921px (768×1024, 375×812) xếp dọc: bài viết rồi kết quả chấm, không tràn ngang (e2e assert `scrollWidth`); ghi chú dài xuống dòng vẫn giữ nền và viền (mệnh đề này **visual-only** — bằng chứng là screenshot PR, CSS rendering không assert giá rẻ bằng unit/e2e).
 - [x] Bài Writing chưa chấm, Speaking, Reading/Listening hiện như cũ.
 - [x] Trang chấm của giáo viên không đổi: không có `essay-inline-note`, bôi đen tạo highlight vẫn đúng offset (e2e `teacher-essay-annotations` xanh).
 - [x] Ghi chú chứa HTML vẫn render dạng text.

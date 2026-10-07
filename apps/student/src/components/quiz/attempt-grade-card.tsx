@@ -37,8 +37,6 @@ export function AttemptGradeCard({
 	scrollable?: boolean;
 	className?: string;
 }) {
-	// node env không có window → mặc định desktop để test markup tĩnh; jsdom
-	// CÓ matchMedia (luôn matches=false) → rơi nhánh mobile.
 	const [isWide, setIsWide] = useState(
 		() =>
 			typeof window === "undefined" ||
