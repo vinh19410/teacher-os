@@ -45,7 +45,7 @@ export function BandSlider({
 						if (value === null) onChange(Number(event.currentTarget.value));
 					}}
 					className={cn(
-						"h-8 w-full cursor-pointer rounded-full accent-[var(--fg)] transition-opacity duration-150 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+						"h-8 w-full cursor-pointer rounded-full accent-[var(--fg)] transition-opacity duration-150 ease-[cubic-bezier(0.28,0,0.22,1)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 						unset && "opacity-40",
 						className,
 					)}

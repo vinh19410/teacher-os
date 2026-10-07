@@ -195,9 +195,12 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await expect(save).toBeDisabled();
 
 		// Bấm giữa track khi chưa chọn vẫn ghi 4.5 (#331); Lưu vẫn khoá.
+		// aria-valuetext flip "Chưa chấm" → "4.5" mới chứng minh commit xảy
+		// ra — toHaveValue không falsifiable vì placeholder cũng là 4.5.
 		const taskSlider = teacherPage.getByLabel("Task Response");
 		await taskSlider.click();
 		await expect(taskSlider).toHaveValue("4.5");
+		await expect(taskSlider).toHaveAttribute("aria-valuetext", "4.5");
 		await expect(save).toBeDisabled();
 
 		await setBand(teacherPage, "Task Response", "6");
