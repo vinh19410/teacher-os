@@ -467,9 +467,18 @@ describe("AttemptSummaryBody — Highlight + ghi chú giáo viên (#332)", () =>
 		expect(html.indexOf("essay-frame")).toBeLessThan(
 			html.indexOf('data-testid="attempt-grade"'),
 		);
-		// Card nhận sticky + chống tràn cột 2fr; max-h/overflow nằm trong scrollable.
+		// Card nhận sticky + chống tràn cột; max-h/overflow nằm trong scrollable.
 		expect(html).toContain("app:sticky");
 		expect(html).toContain("min-w-0");
+		// Heading + "Chấm lúc" nằm NGOÀI card (attempt-grade-body) — biên trên
+		// card thẳng hàng card bài viết, đối xứng cột trái (heading → meta → card).
+		expect(html).toContain('data-testid="attempt-grade-body"');
+		expect(html.indexOf("Kết quả chấm của giáo viên")).toBeLessThan(
+			html.indexOf('data-testid="attempt-grade-body"'),
+		);
+		expect(html.indexOf("Chấm lúc")).toBeLessThan(
+			html.indexOf('data-testid="attempt-grade-body"'),
+		);
 	});
 
 	it("Đã chấm nhưng không có key annotations: không mark, không ghi chú, vẫn chia khung + grade card", () => {
@@ -611,6 +620,14 @@ describe("AttemptGradeCard — scrollable + className (#336)", () => {
 		expect(html).toContain("focus-visible:outline-none");
 		expect(html).toContain('tabindex="0"');
 		expect(html).toContain("break-words");
+		// Heading ngoài card: "Kết quả chấm của giáo viên" và "Chấm lúc" nằm
+		// trước attempt-grade-body (tabindex gắn trên body, không trên section).
+		expect(html.indexOf("Kết quả chấm của giáo viên")).toBeLessThan(
+			html.indexOf('data-testid="attempt-grade-body"'),
+		);
+		expect(html.indexOf("Chấm lúc")).toBeLessThan(
+			html.indexOf('data-testid="attempt-grade-body"'),
+		);
 	});
 
 	it("không scrollable (nhánh Speaking): không tabindex, không overflow, giữ class gốc", () => {
@@ -619,7 +636,12 @@ describe("AttemptGradeCard — scrollable + className (#336)", () => {
 		);
 		expect(html).not.toContain("tabindex");
 		expect(html).not.toContain("overflow-y-auto");
+		expect(html).not.toContain("attempt-grade-body");
 		expect(html).toContain("mt-6");
+		// "Chấm lúc" giữ vị trí cũ: cuối card, text-xs.
+		expect(html.indexOf("Chấm lúc")).toBeGreaterThan(
+			html.indexOf('data-testid="grade-feedback"'),
+		);
 	});
 
 	it("dưới 921px (matchMedia matches=false): không tabindex — không dead tab stop", () => {

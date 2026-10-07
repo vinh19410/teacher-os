@@ -266,18 +266,29 @@ test.describe("Teacher essay annotations (#332)", () => {
 		// Bố cục 2 khung ở ≥ 921px (viewport mặc định Playwright 1280×720).
 		const essayFrame = studentPage.getByTestId("essay-frame");
 		const gradeCard = studentPage.getByTestId("attempt-grade");
+		const gradeBody = studentPage.getByTestId("attempt-grade-body");
 		const essayFrameBox = await essayFrame.boundingBox();
 		const cardBox = await gradeCard.boundingBox();
 		expect(essayFrameBox).not.toBeNull();
 		expect(cardBox).not.toBeNull();
 		// Card bên phải khung bài viết.
 		expect(essayFrameBox?.x ?? 0).toBeLessThan(cardBox?.x ?? 0);
-		// Đỉnh thẳng hàng: heading "Bài viết của bạn" ≈ card (so cặp ý nghĩa,
-		// không so biên section — h2 và card cùng mt-6 trong grid BFC).
+		// Heading hai cột thẳng hàng (cùng mt-6 trong grid BFC).
 		const essayHeadingBox = await essayFrame.locator("h2").boundingBox();
+		const gradeHeadingBox = await gradeCard.locator("h2").boundingBox();
 		expect(essayHeadingBox).not.toBeNull();
+		expect(gradeHeadingBox).not.toBeNull();
 		expect(
-			Math.abs((essayHeadingBox?.y ?? 0) - (cardBox?.y ?? 0)),
+			Math.abs((essayHeadingBox?.y ?? 0) - (gradeHeadingBox?.y ?? 0)),
+		).toBeLessThanOrEqual(4);
+		// Biên trên 2 card thẳng hàng: card điểm bắt đầu sau heading + meta
+		// "Chấm lúc", đối xứng card bài viết (heading → meta → card).
+		const essayCardBox = await essayFrame.locator("> div").boundingBox();
+		const gradeBodyBox = await gradeBody.boundingBox();
+		expect(essayCardBox).not.toBeNull();
+		expect(gradeBodyBox).not.toBeNull();
+		expect(
+			Math.abs((essayCardBox?.y ?? 0) - (gradeBodyBox?.y ?? 0)),
 		).toBeLessThanOrEqual(4);
 		// max-w-[1120px] hiệu lực — nhồi trong 720px thì khung trái chỉ ~400px.
 		expect(essayFrameBox?.width ?? 0).toBeGreaterThanOrEqual(500);
@@ -286,10 +297,11 @@ test.describe("Teacher essay annotations (#332)", () => {
 			await gradeCard.evaluate((el) => getComputedStyle(el).position),
 		).toBe("sticky");
 
-		// Sticky dính khi cuộn: ở đáy trang card bị clamp tại
-		// innerHeight − 24 (py-6 dưới) − max-h (100svh − 6rem) = 720 − 24 − 624
-		// = 72 (subpixel thực đo 71.98) — nhỏ hơn top-20 vì card cao hơn phần
-		// viewport còn lại. Band [64, 88] khoá cả hai mép mà không ghim con số.
+		// Sticky dính khi cuộn: ở đáy trang cột card (section chứa heading +
+		// card) bị clamp tại innerHeight − 24 (py-6 dưới) − max-h (100svh −
+		// 6rem) = 720 − 24 − 624 = 72 (subpixel thực đo 71.98) — nhỏ hơn
+		// top-20 vì cột cao hơn phần viewport còn lại. Band [64, 88] khoá cả
+		// hai mép mà không ghim con số.
 		await studentPage.evaluate(() =>
 			window.scrollTo(0, document.body.scrollHeight),
 		);
@@ -301,26 +313,28 @@ test.describe("Teacher essay annotations (#332)", () => {
 		const stickyY = (await gradeCard.boundingBox())?.y ?? -1;
 		expect(stickyY).toBeGreaterThanOrEqual(64);
 
-		// Card tràn max-h → cuộn được bằng bàn phím (scrollable + tabIndex).
+		// Card tràn max-h → cuộn được bằng bàn phím (scrollable + tabIndex nằm
+		// trên attempt-grade-body; max-h giới hạn trên section).
 		const viewportHeight = await studentPage.evaluate(() => window.innerHeight);
-		const scrollInfo = await gradeCard.evaluate((el) => ({
+		const scrollInfo = await gradeBody.evaluate((el) => ({
 			scrollHeight: el.scrollHeight,
 			clientHeight: el.clientHeight,
-			maxHeight: getComputedStyle(el).maxHeight,
 		}));
 		expect(scrollInfo.scrollHeight).toBeGreaterThan(scrollInfo.clientHeight);
-		expect(scrollInfo.maxHeight).not.toBe("none");
-		// max-h thực sự giới hạn chiều cao card (không chỉ tồn tại trên giấy).
+		expect(
+			await gradeCard.evaluate((el) => getComputedStyle(el).maxHeight),
+		).not.toBe("none");
+		// max-h thực sự giới hạn chiều cao vùng cuộn (không chỉ tồn tại trên giấy).
 		expect(scrollInfo.clientHeight).toBeLessThanOrEqual(
 			viewportHeight - 96 + 1,
 		);
-		await gradeCard.focus();
-		await expect(gradeCard).toBeFocused();
+		await gradeBody.focus();
+		await expect(gradeBody).toBeFocused();
 		await studentPage.keyboard.press("ArrowDown");
 		// Chromium cuộn container focus bằng animation — poll cho scrollTop
 		// cập nhật thay vì đo ngay sau keypress.
 		await expect
-			.poll(async () => gradeCard.evaluate((el) => el.scrollTop))
+			.poll(async () => gradeBody.evaluate((el) => el.scrollTop))
 			.toBeGreaterThan(0);
 
 		// Dải hẹp nhất ≥ 921px (960 — snap nửa màn hình 1920): không tràn ngang.

@@ -214,7 +214,7 @@ export function AttemptSummaryBody({
 				<>
 					{submittedLine}
 					<div
-						className="app:grid app:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] app:items-start app:gap-6"
+						className="app:grid app:grid-cols-2 app:items-start app:gap-6"
 						data-testid="writing-result-split"
 					>
 						{essayFrame}
