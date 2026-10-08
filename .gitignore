@@ -64,6 +64,7 @@ apps/e2e/.mail-log.jsonl
 
 # Agent tooling
 .zcode/
+.claude/
 node_modules/
 .e2e/artifacts/
 .e2e/cache/
