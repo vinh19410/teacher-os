@@ -13,6 +13,7 @@ import {
 import { StatusTag } from "@/components/assignments/status-tag";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
 import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
+import { StudentTuitionSummary } from "@/components/tuition/student-tuition-summary";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,10 @@ import {
 	studentAssignmentRows,
 } from "@/lib/repos/student-assignments";
 import { useStudents } from "@/lib/repos/use-students";
-import { effectiveInvoiceStatus } from "@/lib/tuition-from-kernel";
+import {
+	effectiveInvoiceStatus,
+	studentTuitionSummary,
+} from "@/lib/tuition-from-kernel";
 
 export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
@@ -280,37 +284,47 @@ function StudentDetailRoute() {
 			)}
 
 			{tab === "tuition" && (
-				<Card variant="white" className="p-0">
-					<DataTable
-						headers={["Mã", "Loại", "Số tiền", "Ngày", "Trạng thái"]}
-						rows={invoices.map((inv) => {
-							// #322 — "Quá hạn" suy ra từ `due`, cùng helper với roster.
-							const status = effectiveInvoiceStatus(inv, todayVN);
-							return {
-								// #345 — click/Enter trên dòng mở trang chi tiết hóa đơn.
-								onClick: () =>
-									navigate({
-										to: "/tuition/$invoiceId",
-										params: { invoiceId: inv.id },
-										search: {},
-									}),
-								cells: [
-									invoiceCode(inv.id),
-									invoiceType(inv.type),
-									<span key={inv.id} className="font-mono">
-										{fmtVND(inv.amount)}
-									</span>,
-									inv.date,
-									<InvoiceStatusCell
-										key={`${inv.id}-b`}
-										invoice={inv}
-										status={status}
-									/>,
-								],
-							};
-						})}
+				<>
+					<StudentTuitionSummary
+						summary={studentTuitionSummary(
+							studentId,
+							data.classes,
+							data.enrollments,
+							data.invoices,
+						)}
 					/>
-				</Card>
+					<Card variant="white" className="p-0">
+						<DataTable
+							headers={["Mã", "Loại", "Số tiền", "Ngày", "Trạng thái"]}
+							rows={invoices.map((inv) => {
+								// #322 — "Quá hạn" suy ra từ `due`, cùng helper với roster.
+								const status = effectiveInvoiceStatus(inv, todayVN);
+								return {
+									// #345 — click/Enter trên dòng mở trang chi tiết hóa đơn.
+									onClick: () =>
+										navigate({
+											to: "/tuition/$invoiceId",
+											params: { invoiceId: inv.id },
+											search: {},
+										}),
+									cells: [
+										invoiceCode(inv.id),
+										invoiceType(inv.type),
+										<span key={inv.id} className="font-mono">
+											{fmtVND(inv.amount)}
+										</span>,
+										inv.date,
+										<InvoiceStatusCell
+											key={`${inv.id}-b`}
+											invoice={inv}
+											status={status}
+										/>,
+									],
+								};
+							})}
+						/>
+					</Card>
+				</>
 			)}
 
 			{tab === "assign" && (

@@ -1,6 +1,6 @@
 /** Tuition KPIs and due-date formatting from kernel-mapped store data
  * (issues #62/#135) — pure helpers, same pattern as dashboard-from-kernel. */
-import type { Invoice, InvoiceStatus, Student } from "./mock-data";
+import type { ClassGroup, Invoice, InvoiceStatus, Student } from "./mock-data";
 import { formatDayMonth, isValidISODate } from "./week-grid";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,20 +18,29 @@ export interface TuitionTotals {
 	outstanding: number;
 }
 
+/**
+ * Tiền đã thu của MỘT hóa đơn (#347) — cùng rule `tuitionTotals` (#320):
+ * `status = "paid"` tính đủ `amount` (mark-paid thủ công giữ `paidAmount` 0,
+ * status chứ không phải ledger quyết định), còn lại → `min(paidAmount, amount)`
+ * với clamp đề phòng ledger vượt số tiền. Single source cho tuitionTotals,
+ * revenueByPeriod và trang chi tiết hóa đơn.
+ */
+export function invoiceReceived(
+	invoice: Pick<Invoice, "amount" | "paidAmount" | "status">,
+): number {
+	if (invoice.status === "paid") return invoice.amount;
+	return Math.min(invoice.paidAmount, invoice.amount);
+}
+
 export function tuitionTotals(invoices: Invoice[]): TuitionTotals {
 	let collected = 0;
 	let outstanding = 0;
 	for (const invoice of invoices) {
-		if (invoice.status === "paid") {
-			// A paid invoice counts in full: mark-paid manual rows keep
-			// paidAmount 0 (teacher collected by another channel), so the
-			// status — not the ledger — drives the KPI for paid invoices.
-			collected += invoice.amount;
-		} else {
-			// unpaid and overdue split by the ledger's partial progress (#320);
-			// anything else (coerced legacy statuses) errs on outstanding.
-			const received = Math.min(invoice.paidAmount, invoice.amount);
-			collected += received;
+		const received = invoiceReceived(invoice);
+		collected += received;
+		// unpaid and overdue split by the ledger's partial progress (#320);
+		// anything else (coerced legacy statuses) errs on outstanding.
+		if (invoice.status !== "paid") {
 			outstanding += invoice.amount - received;
 		}
 	}
@@ -167,10 +176,8 @@ export function revenueByPeriod(
 		// Valid invoice outside the window (older than the window start) —
 		// excluded from the chart on purpose, not a dropped row.
 		if (!bucket) continue;
-		const received =
-			inv.status === "paid" ? inv.amount : Math.min(inv.paidAmount, inv.amount);
 		bucket.issued += inv.amount;
-		bucket.collected += received;
+		bucket.collected += invoiceReceived(inv);
 	}
 
 	return { buckets, dropped };
@@ -269,6 +276,124 @@ export function rosterDebtByStudent(
  */
 export function packagesEndingSoon(students: Student[]): number {
 	return students.filter((s) => s.hasPackage && s.pkg.remaining <= 4).length;
+}
+
+/** Một dòng trong bảng học phí theo lớp của hồ sơ học viên (#347). */
+export interface StudentClassTuition {
+	classId: string;
+	className: string;
+	/** "active" | "invited" hoặc status lạ (coerced legacy) — hiển thị như invited. */
+	enrollmentStatus: string;
+	/** Học phí mỗi học viên của lớp; null = chưa thiết lập. */
+	fee: number | null;
+	/** Σ `invoiceReceived` trên hóa đơn của enrollment này — tính cho mọi
+	 * enrollment, kể cả chưa counted (đã thu trên lớp chưa set phí vẫn phải thấy). */
+	paid: number;
+	/** fee === null ? 0 : max(0, fee − paid). */
+	remaining: number;
+	/** fee === null ? 0 : max(0, paid − fee). */
+	overpaid: number;
+	/** enrollmentStatus === "active" && fee !== null — dòng được cộng vào 3 tổng. */
+	counted: boolean;
+}
+
+/** Tổng hợp học phí của MỘT học viên theo các lớp đang học (#347). */
+export interface StudentTuitionSummary {
+	/** Các lớp học viên có enrollment, theo thứ tự data.classes. */
+	classes: StudentClassTuition[];
+	/** Σ fee các lớp counted — học 2 lớp thì cộng cả 2. */
+	totalFee: number;
+	/** Σ paid các lớp counted. */
+	totalPaid: number;
+	/** Σ remaining các lớp counted. */
+	totalRemaining: number;
+	/** 0 → UI hiện "—" và hướng dẫn thiết lập học phí. */
+	countedClasses: number;
+	/** Σ tiền đã thu trên hóa đơn của học viên có `eid` không trỏ enrollment
+	 * lớp hiện tại (legacy `eid: ""` là nguồn thật; dangling eid giữ phòng hộ
+	 * như `rosterDebtByStudent` — server chặn xóa enrollment active). */
+	unlinkedPaid: number;
+}
+
+/**
+ * Tổng hợp học phí theo lớp cho tab Học phí của hồ sơ học viên (#347), theo
+ * quy tắc đã chốt: chỉ lớp enrollment `active` CÓ thiết lập học phí được cộng
+ * vào 3 tổng; "Đã đóng" từng lớp đi đúng rule `tuitionTotals` qua
+ * `invoiceReceived` (mark-paid thủ công tính đủ, thu một phần trừ ledger với
+ * clamp); còn lại mỗi lớp = max(0, fee − paid), đóng dư không bù sang lớp
+ * khác. Hóa đơn không gắn lớp hiện tại không vào 3 tổng — tiền đã thu của nó
+ * về `unlinkedPaid` để UI hiện ghi chú riêng. Caller truyền thẳng `data.*`.
+ */
+export function studentTuitionSummary(
+	studentId: string,
+	classes: Pick<ClassGroup, "id" | "name" | "tuitionFee">[],
+	enrollments: Array<RosterEnrollmentRef & { status: string }>,
+	invoices: Pick<Invoice, "sid" | "eid" | "amount" | "paidAmount" | "status">[],
+): StudentTuitionSummary {
+	const classById = new Map(classes.map((c) => [c.id, c]));
+	// Một enrollment duy nhất cho mỗi (classId, studentId) — unique index bên
+	// server — nên tra được theo cả eid lẫn classId; enrollment trỏ lớp không
+	// còn trong `classes` bị bỏ qua (không có tên lớp để hiện).
+	type EnrollRef = RosterEnrollmentRef & { status: string };
+	const enrollmentByEid = new Map<string, EnrollRef>();
+	const enrollmentByClass = new Map<string, EnrollRef>();
+	for (const e of enrollments) {
+		if (e.studentId !== studentId || !classById.has(e.classId)) continue;
+		enrollmentByEid.set(e.id, e);
+		enrollmentByClass.set(e.classId, e);
+	}
+	const acc = new Map<string, number>();
+	let unlinkedPaid = 0;
+	for (const inv of invoices) {
+		if (inv.sid !== studentId) continue;
+		const enrollment = enrollmentByEid.get(inv.eid);
+		if (!enrollment) {
+			unlinkedPaid += invoiceReceived(inv);
+			continue;
+		}
+		acc.set(
+			enrollment.classId,
+			(acc.get(enrollment.classId) ?? 0) + invoiceReceived(inv),
+		);
+	}
+	const classRows: StudentClassTuition[] = [];
+	let totalFee = 0;
+	let totalPaid = 0;
+	let totalRemaining = 0;
+	let countedClasses = 0;
+	for (const cls of classes) {
+		const enrollment = enrollmentByClass.get(cls.id);
+		if (!enrollment) continue;
+		const paid = acc.get(cls.id) ?? 0;
+		const fee = cls.tuitionFee;
+		const counted = enrollment.status === "active" && fee !== null;
+		const remaining = fee === null ? 0 : Math.max(0, fee - paid);
+		const overpaid = fee === null ? 0 : Math.max(0, paid - fee);
+		classRows.push({
+			classId: cls.id,
+			className: cls.name,
+			enrollmentStatus: enrollment.status,
+			fee,
+			paid,
+			remaining,
+			overpaid,
+			counted,
+		});
+		if (enrollment.status === "active" && fee !== null) {
+			countedClasses += 1;
+			totalFee += fee;
+			totalPaid += paid;
+			totalRemaining += remaining;
+		}
+	}
+	return {
+		classes: classRows,
+		totalFee,
+		totalPaid,
+		totalRemaining,
+		countedClasses,
+		unlinkedPaid,
+	};
 }
 
 /** `dd/mm` from the wire's ISO due date. String slicing only — the repo has

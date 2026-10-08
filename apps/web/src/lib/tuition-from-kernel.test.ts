@@ -3,9 +3,11 @@ import type { Invoice, Student } from "./mock-data";
 import {
 	effectiveInvoiceStatus,
 	formatDue,
+	invoiceReceived,
 	packagesEndingSoon,
 	revenueByPeriod,
 	rosterDebtByStudent,
+	studentTuitionSummary,
 	tuitionTotals,
 } from "./tuition-from-kernel";
 
@@ -667,5 +669,341 @@ describe("revenueByPeriod (issue #343)", () => {
 		expect(
 			series.buckets.every((b) => b.issued === 0 && b.collected === 0),
 		).toBe(true);
+	});
+});
+
+describe("invoiceReceived (#347)", () => {
+	test("mark-paid thủ công (paidAmount 0) tính đủ amount", () => {
+		expect(
+			invoiceReceived({ status: "paid", amount: 2000000, paidAmount: 0 }),
+		).toBe(2000000);
+	});
+
+	test("unpaid thu một phần → min(paidAmount, amount)", () => {
+		expect(
+			invoiceReceived({
+				status: "unpaid",
+				amount: 3000000,
+				paidAmount: 1000000,
+			}),
+		).toBe(1000000);
+	});
+
+	test("paidAmount vượt amount trên hóa đơn chưa paid → clamp về amount", () => {
+		expect(
+			invoiceReceived({
+				status: "unpaid",
+				amount: 1000000,
+				paidAmount: 1500000,
+			}),
+		).toBe(1000000);
+	});
+});
+
+describe("studentTuitionSummary (#347)", () => {
+	/** Lớp theo đúng thứ tự data.classes. */
+	const CLASSES = [
+		{ id: "C1", name: "[TEST] Foundation 2", tuitionFee: 10000000 },
+		{ id: "C2", name: "IELTS 6.5", tuitionFee: 6000000 },
+	];
+	const ENROLLMENTS = [
+		{ id: "E1", classId: "C1", studentId: "s1", status: "active" },
+		{ id: "E2", classId: "C2", studentId: "s1", status: "active" },
+	];
+	/** Hóa đơn của s1 trỏ enrollment E1/E2, có createdAt cho đủ Invoice. */
+	function stuInvoice(
+		partial: Partial<Invoice> & Pick<Invoice, "status">,
+	): Invoice {
+		return invoice({ sid: "s1", ...partial });
+	}
+
+	test("một lớp 10tr đã thu 2tr (mark-paid) → Tổng 10tr / Đã đóng 2tr / Còn lại 8tr", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[{ id: "E1", classId: "C1", studentId: "s1", status: "active" }],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.totalFee).toBe(10000000);
+		expect(summary.totalPaid).toBe(2000000);
+		expect(summary.totalRemaining).toBe(8000000);
+		expect(summary.countedClasses).toBe(1);
+		expect(summary.classes[0]).toMatchObject({
+			classId: "C1",
+			className: "[TEST] Foundation 2",
+			fee: 10000000,
+			paid: 2000000,
+			remaining: 8000000,
+			overpaid: 0,
+			counted: true,
+		});
+	});
+
+	test("hai lớp active → Tổng cộng dồn 16tr, paid/remaining đúng từng lớp", () => {
+		const summary = studentTuitionSummary("s1", CLASSES, ENROLLMENTS, [
+			stuInvoice({
+				eid: "E1",
+				amount: 2000000,
+				status: "paid",
+				paidAmount: 0,
+			}),
+			stuInvoice({
+				eid: "E2",
+				amount: 1000000,
+				paidAmount: 1000000,
+				status: "paid",
+			}),
+		]);
+		expect(summary.totalFee).toBe(16000000);
+		expect(summary.totalPaid).toBe(3000000);
+		expect(summary.totalRemaining).toBe(13000000);
+		expect(summary.countedClasses).toBe(2);
+		expect(summary.classes[0]).toMatchObject({ classId: "C1", paid: 2000000 });
+		expect(summary.classes[1]).toMatchObject({ classId: "C2", paid: 1000000 });
+	});
+
+	test("thu một phần qua ledger: unpaid 3tr / paidAmount 1tr → paid 1tr", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 3000000,
+					paidAmount: 1000000,
+					status: "unpaid",
+				}),
+			],
+		);
+		expect(summary.totalPaid).toBe(1000000);
+		expect(summary.totalRemaining).toBe(9000000);
+	});
+
+	test("mark-paid thủ công giữ paidAmount 0 vẫn tính đủ amount", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 4000000,
+					paidAmount: 0,
+					status: "paid",
+				}),
+			],
+		);
+		expect(summary.totalPaid).toBe(4000000);
+	});
+
+	test("paidAmount vượt amount trên hóa đơn chưa paid → clamp về amount", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 1000000,
+					paidAmount: 1500000,
+					status: "unpaid",
+				}),
+			],
+		);
+		expect(summary.totalPaid).toBe(1000000);
+	});
+
+	test("lớp invited có học phí → counted false, không vào tổng", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[{ id: "E1", classId: "C1", studentId: "s1", status: "invited" }],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.classes[0]).toMatchObject({
+			counted: false,
+			enrollmentStatus: "invited",
+			paid: 2000000,
+		});
+		expect(summary.totalFee).toBe(0);
+		expect(summary.totalPaid).toBe(0);
+		expect(summary.countedClasses).toBe(0);
+	});
+
+	test("status lạ (pending) → counted false, không vào tổng (red-team #8)", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[{ id: "E1", classId: "C1", studentId: "s1", status: "pending" }],
+			[],
+		);
+		expect(summary.classes[0]).toMatchObject({
+			counted: false,
+			enrollmentStatus: "pending",
+		});
+		expect(summary.totalFee).toBe(0);
+		expect(summary.countedClasses).toBe(0);
+	});
+
+	test("lớp chưa thiết lập học phí → counted false, remaining 0, paid vẫn tính thật", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[{ id: "C1", name: "IELTS 6.5", tuitionFee: null }],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.classes[0]).toMatchObject({
+			fee: null,
+			counted: false,
+			paid: 2000000,
+			remaining: 0,
+			overpaid: 0,
+		});
+		expect(summary.totalFee).toBe(0);
+		expect(summary.totalPaid).toBe(0);
+		expect(summary.countedClasses).toBe(0);
+	});
+
+	test("đóng dư: fee 5tr đã thu 6tr → remaining 0, overpaid 1tr", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[{ id: "C1", name: "C1", tuitionFee: 5000000 }],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 4000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+				stuInvoice({
+					eid: "E1",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.classes[0]).toMatchObject({
+			paid: 6000000,
+			remaining: 0,
+			overpaid: 1000000,
+		});
+		expect(summary.totalRemaining).toBe(0);
+	});
+
+	test("hóa đơn eid rỗng và trỏ enrollment lạ → unlinkedPaid, không đổi 3 tổng", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[ENROLLMENTS[0]],
+			[
+				stuInvoice({
+					eid: "",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+				stuInvoice({
+					eid: "E-DELETED",
+					amount: 500000,
+					paidAmount: 500000,
+					status: "unpaid",
+				}),
+				stuInvoice({
+					eid: "E1",
+					amount: 2000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.unlinkedPaid).toBe(2500000);
+		expect(summary.totalFee).toBe(10000000);
+		expect(summary.totalPaid).toBe(2000000);
+		expect(summary.totalRemaining).toBe(8000000);
+	});
+
+	test("hóa đơn và enrollment của học viên khác bị bỏ qua", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			CLASSES,
+			[
+				...ENROLLMENTS,
+				{ id: "E3", classId: "C1", studentId: "s2", status: "active" },
+			],
+			[
+				stuInvoice({
+					sid: "s2",
+					eid: "E3",
+					amount: 9000000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+				stuInvoice({
+					sid: "s2",
+					eid: "E1",
+					amount: 500000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.totalPaid).toBe(0);
+		expect(summary.unlinkedPaid).toBe(0);
+	});
+
+	test("enrollment trỏ lớp không có trong classes → bỏ qua row, hóa đơn vào unlinkedPaid", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[
+				ENROLLMENTS[0],
+				{ id: "E9", classId: "C-GONE", studentId: "s1", status: "active" },
+			],
+			[
+				stuInvoice({
+					eid: "E9",
+					amount: 700000,
+					status: "paid",
+					paidAmount: 0,
+				}),
+			],
+		);
+		expect(summary.classes).toHaveLength(1);
+		expect(summary.classes[0]?.classId).toBe("C1");
+		expect(summary.unlinkedPaid).toBe(700000);
+	});
+
+	test("học viên không có lớp → classes rỗng, mọi tổng 0", () => {
+		const summary = studentTuitionSummary("s1", CLASSES, [], []);
+		expect(summary.classes).toEqual([]);
+		expect(summary.totalFee).toBe(0);
+		expect(summary.totalPaid).toBe(0);
+		expect(summary.totalRemaining).toBe(0);
+		expect(summary.countedClasses).toBe(0);
+		expect(summary.unlinkedPaid).toBe(0);
 	});
 });
