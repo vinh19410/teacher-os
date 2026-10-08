@@ -1,7 +1,7 @@
 ---
 title: "Redesign web + student theo design mới (dark-first, accent cam)"
 description: "Áp dụng hệ thống thiết kế mới từ vinh19410/teacheros-design cho apps/web và apps/student: dark mặc định + toggle Light, accent cam, Inter Tight + DM Mono, trạng thái đơn sắc + cam. Chỉ đổi giao diện; không đổi hành vi, dữ liệu, API hay copy tiếng Việt."
-status: pending
+status: in-progress
 priority: P2
 effort: 36h
 issue: 349

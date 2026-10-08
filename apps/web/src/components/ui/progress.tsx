@@ -12,11 +12,7 @@ export function Progress({
 	className?: string;
 }) {
 	const fillClass =
-		variant === "low"
-			? "bg-danger"
-			: variant === "warn"
-				? "bg-warn"
-				: "bg-hot";
+		variant === "low" ? "bg-danger" : variant === "warn" ? "bg-warn" : "bg-hot";
 	return (
 		<div
 			className={cn(

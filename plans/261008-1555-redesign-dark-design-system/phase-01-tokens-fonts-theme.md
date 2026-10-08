@@ -131,4 +131,22 @@ Revert commit phase 1 (chỉ đụng globals.css, packages/ui, 2 index.html, 2 r
 
 ## Kết quả đo
 
-_(điền khi thực thi bước 1)_
+Script `node` WCAG 2.x (relative luminance), đo 2026-10-08:
+
+| Cặp | Dark | Light | Ngưỡng |
+|---|---|---|---|
+| fg/bg | 17.68 | 19.80 | 4.5 ✅ |
+| meta/bg | 5.89 | 5.33 | 4.5 ✅ |
+| meta/surface (input sunk) | 5.18 | 4.76 | 4.5 ✅ |
+| accent/bg | 6.38 | 5.05 | 4.5 ✅ |
+| accent/surface | 5.61 | 4.51 | 4.5 ✅ |
+| accent-on/accent | 6.38 | 5.05 | 4.5 ✅ |
+| fg/raise (card) | 16.87 | 19.80 | 4.5 ✅ |
+| meta/raise | 5.62 | 5.33 | 4.5 ✅ |
+| destructive/bg | 7.16 | 4.83 | 4.5 ✅ |
+| fg/chip (badge) | 12.13 | 16.31 | 4.5 ✅ |
+
+`--line-strong` chốt (ranh giới input ≥ 3:1 trên `--surface`, chừa margin cho anti-alias 1px):
+- **Dark `#6b6b6b`** → 3.27 trên surface `#1a1a1a` (`#666666` chỉ đạt 3.03 — sát ngưỡng).
+- **Light `#888888`** → 3.17 trên surface `#f2f2f2` (`#8c8c8c` chỉ đạt 3.00).
+Tham chiếu: viền cũ `#262626`/surface dark chỉ 1.15; light accent design `#e8490f` 3.90 (lý do đổi `#c93d0b` = 5.05).

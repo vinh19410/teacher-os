@@ -40,7 +40,7 @@ function RootComponent() {
 			<div className="min-h-svh">
 				<Outlet />
 			</div>
-			<Toaster richColors theme="light" />
+			<Toaster />
 		</>
 	);
 }

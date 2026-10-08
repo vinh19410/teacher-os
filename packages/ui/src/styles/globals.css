@@ -1,3 +1,6 @@
+@import "@fontsource-variable/inter-tight";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -7,49 +10,52 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Teacher OS — tokens frozen verbatim from open-design/v1/teacher-os.html :root.
- * These export names are canonical: --muted is the export TEXT gray,
- * --accent is the saturated blue, --border is the strong line gray.
- * shadcn semantic remapping happens ONLY in @theme inline below (utility layer),
- * so no var() ever references a name that was redefined.
+ * Teacher OS — design tokens from vinh19410/teacheros-design@fcf60a5 (Figma Make
+ * export), adapted to the existing token names: keep the NAME, change the VALUE.
+ * Dark is the default theme (:root); `.light` on <html> overrides it (declared
+ * after :root so it wins the tie in specificity). Names stay canonical:
+ * --muted is the export TEXT gray, --accent is the saturated orange,
+ * --border is the strong line gray. shadcn semantic remapping happens ONLY in
+ * @theme inline below (utility layer), so no var() ever references a name that
+ * was redefined.
+ * Status colors are monochrome + orange; red is reserved for destructive
+ * actions (--destructive), never for status.
  */
 :root {
-	--bg: #ffffff;
-	--surface: #f5f5f7;
-	--surface-warm: #fbfbfd;
-	--fg: #1d1d1f;
-	--fg-2: #424245;
-	--muted: #6e6e73;
-	--meta: #86868b;
-	--border: #d2d2d7;
-	--border-soft: #e8e8ed;
-	--accent: #0071e3;
-	--accent-on: #ffffff;
-	--accent-hover: #0077ed;
-	--accent-active: #0066cc;
-	--success: #16a34a;
-	--warn: #eab308;
-	--danger: #dc2626;
-	--font-display:
-		"SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial,
-		sans-serif;
-	--font-body:
-		"SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial,
-		sans-serif;
-	--font-mono:
-		"SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas,
-		monospace;
+	color-scheme: dark;
+	--bg: #0a0a0a;
+	--surface: #1a1a1a;
+	--surface-warm: #111111;
+	--fg: #f2f2f2;
+	--fg-2: #e6e6e6;
+	--muted: #8c8c8c;
+	--meta: #8c8c8c;
+	--border: #262626;
+	--border-soft: #161616;
+	--line-strong: #6b6b6b;
+	--chip: #2e2e2e;
+	--accent: #ff5b1f;
+	--accent-on: #0a0a0a;
+	--accent-hover: color-mix(in oklab, var(--accent), white 14%);
+	--accent-active: color-mix(in oklab, var(--accent), black 10%);
+	--success: var(--fg-2);
+	--warn: var(--meta);
+	--danger: var(--accent);
+	--destructive: #f87171;
+	--font-display: "Inter Tight Variable", "Inter Tight", system-ui, sans-serif;
+	--font-body: "Inter Tight Variable", "Inter Tight", system-ui, sans-serif;
+	--font-mono: "DM Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
 	--text-xs: 12px;
 	--text-sm: 14px;
-	--text-base: 17px;
+	--text-base: 15px;
 	--text-lg: 21px;
 	--text-xl: 28px;
 	--text-2xl: 40px;
 	--text-3xl: 56px;
 	--text-4xl: 80px;
 	--leading-body: 1.47;
-	--leading-tight: 1.05;
-	--tracking-display: -0.015em;
+	--leading-tight: 0.95;
+	--tracking-display: -0.045em;
 	--space-1: 4px;
 	--space-2: 8px;
 	--space-3: 12px;
@@ -61,14 +67,14 @@
 	--section-y-desktop: 100px;
 	--section-y-tablet: 64px;
 	--section-y-phone: 40px;
-	--radius-sm: 8px;
-	--radius-md: 12px;
-	--radius-lg: 18px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
 	--radius-pill: 980px;
 	--elev-flat: none;
 	--elev-ring: 0 0 0 1px var(--border);
 	--elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
-	--focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
+	--focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 	--motion-fast: 150ms;
 	--motion-base: 220ms;
 	--ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
@@ -81,6 +87,7 @@
 	--success-soft: color-mix(in oklab, var(--success), transparent 88%);
 	--warn-soft: color-mix(in oklab, var(--warn), transparent 86%);
 	--danger-soft: color-mix(in oklab, var(--danger), transparent 88%);
+	--destructive-soft: color-mix(in oklab, var(--destructive), transparent 88%);
 	--gap-xs: var(--space-2);
 	--gap-sm: var(--space-3);
 	--gap-md: var(--space-5);
@@ -92,9 +99,9 @@
 	/* shadcn semantic block — non-colliding names only */
 	--background: var(--bg);
 	--foreground: var(--fg);
-	--card: var(--bg);
+	--card: var(--surface-warm);
 	--card-foreground: var(--fg);
-	--popover: var(--bg);
+	--popover: var(--surface-warm);
 	--popover-foreground: var(--fg);
 	--primary: var(--accent);
 	--primary-foreground: var(--accent-on);
@@ -102,15 +109,15 @@
 	--secondary-foreground: var(--fg-2);
 	--muted-foreground: var(--muted);
 	--accent-foreground: var(--fg);
-	--destructive: var(--danger);
-	--input: var(--border);
+	/* --destructive is defined once above (red, destructive actions only). */
+	--input: var(--line-strong);
 	--ring: var(--accent);
 	--chart-1: var(--accent);
 	--chart-2: var(--success);
 	--chart-3: var(--warn);
 	--chart-4: var(--meta);
 	--chart-5: var(--danger);
-	--radius: 18px;
+	--radius: 6px;
 	--sidebar: var(--surface);
 	--sidebar-foreground: var(--fg);
 	--sidebar-primary: var(--accent);
@@ -119,6 +126,37 @@
 	--sidebar-accent-foreground: var(--accent);
 	--sidebar-border: var(--border);
 	--sidebar-ring: var(--accent);
+}
+
+/*
+ * Light theme override — declared after :root so it wins the (0,1,0) tie.
+ * Light accent is #c93d0b, not the design's #e8490f: the design value measures
+ * 3.90 contrast on white (fails AA for normal text), #c93d0b measures 5.05.
+ * Intentional deviation, recorded in DESIGN.md.
+ */
+.light {
+	color-scheme: light;
+	--bg: #ffffff;
+	--surface: #f2f2f2;
+	--surface-warm: #ffffff;
+	--fg: #0a0a0a;
+	--fg-2: #262626;
+	--muted: #6b6b6b;
+	--meta: #6b6b6b;
+	--border: #e4e4e4;
+	--border-soft: #f4f4f4;
+	--line-strong: #888888;
+	--chip: #e9e9e9;
+	--accent: #c93d0b;
+	--accent-on: #ffffff;
+	--accent-hover: color-mix(in oklab, var(--accent), black 10%);
+	--accent-active: color-mix(in oklab, var(--accent), black 20%);
+	--success: var(--fg-2);
+	--warn: var(--meta);
+	--danger: var(--accent);
+	--destructive: #dc2626;
+	--elev-raised: 0 12px 32px rgba(0, 0, 0, 0.06);
+	--focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
 @theme inline {
@@ -131,8 +169,10 @@
 	/*
    * App-kit utilities (export roles). Naming avoids the shadcn collision:
    * - text gray  → muted-fg     (shadcn `muted` stays a SURFACE below)
-   * - blue       → hot  (shadcn `accent` stays a hover SURFACE below)
-   * - line grays → line / line-soft (shadcn `border` mirrors line below)
+   * - orange     → hot          (renamed from accent-blue; shadcn `accent`
+   *                             stays a hover SURFACE below)
+   * - line grays → line / line-soft / line-strong (shadcn `border` mirrors
+   *                             the card line below)
    */
 	--color-bg: var(--bg);
 	--color-surface: var(--surface);
@@ -143,6 +183,8 @@
 	--color-meta: var(--meta);
 	--color-line: var(--border);
 	--color-line-soft: var(--border-soft);
+	--color-line-strong: var(--line-strong);
+	--color-chip: var(--chip);
 	--color-hot: var(--accent);
 	--color-accent-on: var(--accent-on);
 	--color-accent-hover: var(--accent-hover);
@@ -150,11 +192,13 @@
 	--color-success: var(--success);
 	--color-warn: var(--warn);
 	--color-danger: var(--danger);
+	--color-destructive: var(--destructive);
 	--color-accent-soft: var(--accent-soft);
 	--color-fg-soft: var(--fg-soft);
 	--color-success-soft: var(--success-soft);
 	--color-warn-soft: var(--warn-soft);
 	--color-danger-soft: var(--danger-soft);
+	--color-destructive-soft: var(--destructive-soft);
 
 	/*
    * shadcn aliases — complete enumeration of vars consumed by
@@ -163,9 +207,9 @@
    */
 	--color-background: var(--bg);
 	--color-foreground: var(--fg);
-	--color-card: var(--bg);
+	--color-card: var(--surface-warm);
 	--color-card-foreground: var(--fg);
-	--color-popover: var(--bg);
+	--color-popover: var(--surface-warm);
 	--color-popover-foreground: var(--fg);
 	--color-primary: var(--accent);
 	--color-primary-foreground: var(--accent-on);
@@ -175,9 +219,9 @@
 	--color-muted-foreground: var(--muted);
 	--color-accent: var(--accent-soft);
 	--color-accent-foreground: var(--fg);
-	--color-destructive: var(--danger);
+	--color-destructive: var(--destructive);
 	--color-border: var(--border);
-	--color-input: var(--border);
+	--color-input: var(--line-strong);
 	--color-ring: var(--accent);
 	--color-chart-1: var(--accent);
 	--color-chart-2: var(--success);
@@ -196,7 +240,7 @@
 	/* type scale (export values) */
 	--text-xs: 12px;
 	--text-sm: 14px;
-	--text-base: 17px;
+	--text-base: 15px;
 	--text-lg: 21px;
 	--text-xl: 28px;
 	--text-2xl: 40px;
@@ -204,10 +248,10 @@
 	--text-4xl: 80px;
 
 	/* radius scale — per-size, non-linear, NOT derived from one base */
-	--radius-sm: 8px;
-	--radius-md: 12px;
-	--radius-lg: 18px;
-	--radius-xl: 18px;
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 8px;
 	--radius-2xl: 980px;
 	--radius-3xl: 980px;
 	--radius-4xl: 980px;
@@ -243,6 +287,52 @@
 	}
 	::placeholder {
 		color: var(--meta);
+	}
+	::selection {
+		background: var(--accent);
+		color: var(--accent-on);
+	}
+	input[type="range"] {
+		accent-color: var(--accent);
+	}
+	mark.anno {
+		background: color-mix(in srgb, var(--accent) 22%, transparent);
+		border-bottom: 2px solid var(--accent);
+		color: inherit;
+		border-radius: 2px;
+	}
+}
+
+@layer utilities {
+	/* Card: raise surface, hairline border, small radius (design `neu`). */
+	.neu {
+		background: var(--surface-warm);
+		border: 1px solid var(--border);
+		border-radius: 4px;
+	}
+	/* Outlined control: transparent, hairline border, hover border ink. */
+	.neu-sm {
+		background: transparent;
+		border: 1px solid var(--border);
+		transition:
+			background var(--motion-fast),
+			color var(--motion-fast),
+			border-color var(--motion-fast);
+	}
+	.neu-sm:hover {
+		border-color: var(--fg);
+	}
+	/* Sunk input: surface fill, no border (pair with ring on focus). */
+	.neu-in {
+		background: var(--surface);
+		border: 0;
+	}
+	.no-scrollbar::-webkit-scrollbar {
+		width: 0;
+		height: 0;
+	}
+	.no-scrollbar {
+		scrollbar-width: none;
 	}
 }
 

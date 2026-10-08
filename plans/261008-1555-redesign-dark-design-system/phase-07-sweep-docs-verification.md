@@ -39,6 +39,9 @@ toàn bộ gate local và e2e xanh; PR có screenshot đủ ma trận.
      — whitelist như trên.
    - Token cũ không còn ý nghĩa: `accent-blue` (phải 0), `rounded-full` trên nút (chỉ chip/avatar/toggle), `richColors`.
    - `text-danger` gắn với nút/link xóa → đổi `destructive`.
+   - Selector e2e bám class: quét **đủ pattern**, không chỉ `locator("…class…")` — thêm
+     `waitForSelector`, `toHaveCSS`, `page.$`, `evaluate(` trong `apps/e2e/specs`
+     (checkpoint kongming 2026-10-08 đã quét trước, sạch, nhưng quy tắc phải lặp lại ở đây).
 2. Contrast: chạy lại script đo của phase 1 cho mọi cặp token; thêm cặp phát sinh khi làm
    trang (ví dụ `text-meta` trên `neu-in`). Mọi chữ thường ≥ 4.5, chữ lớn/ranh giới ≥ 3.
 3. Gate local:
@@ -52,6 +55,13 @@ toàn bộ gate local và e2e xanh; PR có screenshot đủ ma trận.
    ```
    Trước khi chạy e2e: kiểm port 8100/8101/8103 trống (`lsof -i :8101`), dừng tiến trình cũ do
    mình khởi động; không đụng dev stack 8000/8001/8003 của user.
+   **Lưu ý (kongming):** e2e chạy dev server và `applySecurityHeaders` bỏ CSP khi
+   `isLocalHost` (`apps/web/src/security-headers.ts:98-102`) → gate local **không bao giờ
+   test CSP**. Acceptance #1 (không nháy) và #2 (font self-host) phải verify trên **build
+   production**, không phải dev (xem bước 3b).
+3b. Smoke CSP trên build production: `pnpm --filter web build` + preview (workerd), kiểm
+   một lần: `/theme-init.js` trả 200; không có request tới `fonts.googleapis.com` trong
+   Network; console không có violation CSP; reload light qua CPU throttle không thấy nháy.
 4. Screenshot (built-in browser hoặc Playwright script tạm, không commit): 1440×900, 768×1024,
    375×812 × dark + light cho: login, dashboard, classes, class detail, students, student
    detail, schedule, assignments, test builder, grading, tuition, invoice detail, `/pay/$token`,

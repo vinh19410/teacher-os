@@ -83,9 +83,7 @@ export function QuizQuestionItem({
 			disabled={reviewMode}
 			className={cn(
 				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
-				current
-					? "border-hot bg-accent-soft"
-					: "border-transparent bg-bg",
+				current ? "border-hot bg-accent-soft" : "border-transparent bg-bg",
 			)}
 		>
 			<div className="leading-[1.6]">
@@ -116,9 +114,7 @@ export function QuizQuestionItem({
 								className={cn(
 									"flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors",
 									reviewMode ? "cursor-default" : "cursor-pointer",
-									selected
-										? "border-hot bg-accent-soft"
-										: "border-line bg-bg",
+									selected ? "border-hot bg-accent-soft" : "border-line bg-bg",
 									!reviewMode && !selected && "hover:border-fg-2",
 								)}
 							>
