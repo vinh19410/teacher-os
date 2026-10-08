@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type {
+	InvoiceTransactionItem,
 	PaymentInstructions,
 	PaymentTransactionItem,
 	ReconcileResult,
@@ -49,6 +50,34 @@ export function invoicePaymentQueryOptions(
 	return queryOptions({
 		queryKey: invoicePaymentQueryKey(invoiceId),
 		queryFn: ({ signal }) => fetchInvoicePayment(invoiceId, baseUrl, signal),
+	});
+}
+
+/** #345 — matched bank transactions of one invoice (detail page table). */
+export const invoiceTransactionsQueryKey = (invoiceId: string) =>
+	["invoice-transactions", invoiceId] as const;
+
+export async function fetchInvoiceTransactions(
+	invoiceId: string,
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<InvoiceTransactionItem[]> {
+	const res = await fetch(`${baseUrl}/api/invoices/${invoiceId}/transactions`, {
+		credentials: "include",
+		signal,
+	});
+	if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.status}`);
+	return (await res.json()) as InvoiceTransactionItem[];
+}
+
+export function invoiceTransactionsQueryOptions(
+	invoiceId: string,
+	baseUrl: string = getApiBaseUrl(),
+) {
+	return queryOptions({
+		queryKey: invoiceTransactionsQueryKey(invoiceId),
+		queryFn: ({ signal }) =>
+			fetchInvoiceTransactions(invoiceId, baseUrl, signal),
 	});
 }
 

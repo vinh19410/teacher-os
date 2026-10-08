@@ -1,4 +1,9 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useNavigate,
+} from "@tanstack/react-router";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useState } from "react";
 import {
@@ -7,6 +12,7 @@ import {
 } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
+import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,16 +20,9 @@ import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
-import {
-	INVOICE_STATUS_LABEL,
-	INVOICE_STATUS_VARIANT,
-	invoiceCode,
-	invoiceRemainingLabel,
-	invoiceType,
-} from "@/lib/format-invoice";
+import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import {
@@ -118,6 +117,7 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 
 function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
+	const navigate = useNavigate();
 	const { studentById } = useStudents();
 	const { data } = useData();
 	const student = studentById(studentId);
@@ -286,10 +286,14 @@ function StudentDetailRoute() {
 						rows={invoices.map((inv) => {
 							// #322 — "Quá hạn" suy ra từ `due`, cùng helper với roster.
 							const status = effectiveInvoiceStatus(inv, todayVN);
-							// #340 — nhãn "còn X" kèm badge khi hóa đơn được thu một
-							// phần (helper tự ẩn với paid/overpay).
-							const remaining = invoiceRemainingLabel(inv);
 							return {
+								// #345 — click/Enter trên dòng mở trang chi tiết hóa đơn.
+								onClick: () =>
+									navigate({
+										to: "/tuition/$invoiceId",
+										params: { invoiceId: inv.id },
+										search: {},
+									}),
 								cells: [
 									invoiceCode(inv.id),
 									invoiceType(inv.type),
@@ -297,31 +301,11 @@ function StudentDetailRoute() {
 										{fmtVND(inv.amount)}
 									</span>,
 									inv.date,
-									remaining ? (
-										<span
-											key={`${inv.id}-b`}
-											className="flex items-center gap-2 whitespace-nowrap"
-										>
-											<Badge variant={INVOICE_STATUS_VARIANT[status]}>
-												{INVOICE_STATUS_LABEL[status]}
-											</Badge>
-											<span
-												className={cn(
-													"font-mono",
-													status === "overdue" && "font-semibold text-danger",
-												)}
-											>
-												{remaining}
-											</span>
-										</span>
-									) : (
-										<Badge
-											key={`${inv.id}-b`}
-											variant={INVOICE_STATUS_VARIANT[status]}
-										>
-											{INVOICE_STATUS_LABEL[status]}
-										</Badge>
-									),
+									<InvoiceStatusCell
+										key={`${inv.id}-b`}
+										invoice={inv}
+										status={status}
+									/>,
 								],
 							};
 						})}

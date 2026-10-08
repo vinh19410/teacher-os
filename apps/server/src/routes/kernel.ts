@@ -1,5 +1,6 @@
 import type {
 	CreatedResponse,
+	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
 } from "@teacher-os/api/contracts";
 import {
@@ -44,6 +45,7 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import {
@@ -1484,6 +1486,42 @@ export function kernelRoutes(deps: {
 		if (!row) return c.json({ error: "invoice not found" }, 404);
 		const instructions = await loadPaymentInstructions({ db, invoice: row });
 		return c.json({ ...instructions, payToken: row.payToken });
+	});
+
+	// #345: matched bank transactions for one invoice (teacher detail page,
+	// org-scoped; raw/provider payloads stay server-side per #320 retention).
+	kernel.get("/invoices/:id/transactions", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const invoiceId = c.req.param("id");
+		const [inv] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.orgId, ctx.orgId)));
+		if (!inv) return c.json({ error: "invoice not found" }, 404);
+		const rows = await db
+			.select()
+			.from(paymentTransaction)
+			.where(
+				and(
+					eq(paymentTransaction.orgId, ctx.orgId),
+					eq(paymentTransaction.invoiceId, invoiceId),
+					eq(paymentTransaction.matchStatus, "matched"),
+				),
+			)
+			.orderBy(desc(paymentTransaction.createdAt), desc(paymentTransaction.id))
+			.limit(100);
+		return c.json(
+			rows.map((tx) => ({
+				id: tx.id,
+				amount: tx.amount,
+				content: tx.content,
+				referenceCode: tx.referenceCode,
+				transactionDate: tx.transactionDate,
+				createdAt: tx.createdAt.toISOString(),
+			})) satisfies InvoiceTransactionItem[],
+		);
 	});
 
 	kernel.get("/syllabi", async (c) => {

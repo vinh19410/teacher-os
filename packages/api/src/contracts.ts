@@ -2132,6 +2132,19 @@ export const paymentAssignSchema = z
 	.strict();
 export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
 
+/** #345 — one matched bank transaction on the teacher's invoice detail page. */
+export interface InvoiceTransactionItem {
+	id: string;
+	amount: number;
+	/** Transfer memo as typed by the payer. */
+	content: string;
+	referenceCode: string;
+	/** Provider timestamp string, as stored (e.g. "2026-10-05 10:00:00"). */
+	transactionDate: string;
+	/** ISO 8601 — server ingest time (Drizzle timestamp_ms → Date → toISOString()). */
+	createdAt: string;
+}
+
 export interface ReconcileResult {
 	scanned: number;
 	matched: number;

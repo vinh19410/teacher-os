@@ -36,6 +36,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	"/grading/",
 	"/students/",
 	"/syllabus/",
+	// Chi tiết hóa đơn (#345) — /tuition/$invoiceId dưới layout auth.
+	"/tuition/",
 	// Public pay page (#320) — outside the auth layout by design.
 	"/pay/",
 ];

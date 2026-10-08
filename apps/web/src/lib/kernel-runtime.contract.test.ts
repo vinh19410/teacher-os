@@ -281,7 +281,7 @@ describe("kernel-backed store wiring", () => {
 	});
 
 	test("direct actions await the outcome, disable while pending and report visibly", () => {
-		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		const tuition = readSrc("../routes/_auth/tuition/index.tsx");
 		expect(tuition).toMatch(/useDirectKernelAction\(\)/);
 		expect(tuition).toMatch(/void run\(/);
 		expect(tuition).toMatch(/disabled=\{busy \|\| isPending\(i\.id\)\}/);
@@ -472,7 +472,7 @@ describe("kernel-backed store wiring", () => {
 	});
 
 	test("tuition debt KPI renders neutral for 0đ and list pages have localized filter chips (#170)", () => {
-		const tuition = readSrc("../routes/_auth/tuition.tsx");
+		const tuition = readSrc("../routes/_auth/tuition/index.tsx");
 		expect(tuition).not.toMatch(
 			/label="Còn nợ \(VND\)"\s+className="\[&>div:first-child\]:text-danger"/,
 		);

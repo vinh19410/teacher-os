@@ -103,7 +103,7 @@ import { ClassesRoute } from "@/routes/_auth/classes/index";
 import { ScheduleRoute } from "@/routes/_auth/schedule";
 import { StudentsRoute } from "@/routes/_auth/students/index";
 import { SyllabusRoute } from "@/routes/_auth/syllabus/index";
-import { TuitionRoute } from "@/routes/_auth/tuition";
+import { TuitionRoute } from "@/routes/_auth/tuition/index";
 
 describe("List empty states (Issue #118)", () => {
 	it("renders empty state card on /students when 0 students exist", () => {

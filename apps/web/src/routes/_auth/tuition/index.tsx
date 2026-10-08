@@ -5,6 +5,7 @@ import {
 	InvoicePaymentModal,
 	UnmatchedTransactions,
 } from "@/components/modals/invoice-payment-modal";
+import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,8 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import {
-	INVOICE_STATUS_LABEL,
-	INVOICE_STATUS_VARIANT,
-	invoiceCode,
-	invoiceRemainingLabel,
-	invoiceType,
-} from "@/lib/format-invoice";
+import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
 import {
 	effectiveInvoiceStatus,
@@ -43,7 +37,7 @@ const RevenueChart = lazy(() =>
 	})),
 );
 
-export const Route = createFileRoute("/_auth/tuition")({
+export const Route = createFileRoute("/_auth/tuition/")({
 	// #343 — kỳ doanh thu sống trong URL (?ky=month|quarter|year). Parse
 	// non-throw như schedule: giá trị lạ rơi về undefined → component dùng
 	// mặc định "month", validateSearch không throw/redirect.
@@ -244,10 +238,15 @@ export function TuitionRoute() {
 							rows={data.invoices.map((i) => {
 								const s = data.students.find((st) => st.id === i.sid);
 								const status = effectiveInvoiceStatus(i, today);
-								// #340 — số còn thiếu của hóa đơn thu một phần; null với
-								// paid/chưa-thu-gì/overpay (clamp), khi đó chỉ badge.
-								const remaining = invoiceRemainingLabel(i);
 								return {
+									// #345 — click/Enter trên dòng mở trang chi tiết;
+									// nút trong dòng chặn propagation ở cell hành động.
+									onClick: () =>
+										navigate({
+											to: "/tuition/$invoiceId",
+											params: { invoiceId: i.id },
+											search: { ky: search.ky },
+										}),
 									cells: [
 										<span key="id" className="font-mono text-meta text-xs">
 											{invoiceCode(i.id)}
@@ -269,48 +268,18 @@ export function TuitionRoute() {
 										<span key="due" className="font-mono text-meta text-xs">
 											{i.status === "paid" ? "—" : formatDue(i.due)}
 										</span>,
-										status === "paid" ? (
-											<Badge
-												key="b"
-												variant={INVOICE_STATUS_VARIANT[status]}
-												dot
-											>
-												{INVOICE_STATUS_LABEL[status]}
-											</Badge>
-										) : i.paidAmount > 0 ? (
-											// Badge "Thu một phần" giữ slot trạng thái; nhãn
-											// "còn X" kèm cạnh, đỏ khi hóa đơn quá hạn —
-											// nhất quán styling với roster/hồ sơ.
-											<span
-												key="b"
-												className="flex items-center gap-2 whitespace-nowrap"
-											>
-												<Badge variant="warn" dot>
-													Thu một phần
-												</Badge>
-												{remaining && (
-													<span
-														className={cn(
-															"font-mono",
-															status === "overdue" &&
-																"font-semibold text-danger",
-														)}
-													>
-														{remaining}
-													</span>
-												)}
-											</span>
-										) : (
-											<Badge
-												key="b"
-												variant={INVOICE_STATUS_VARIANT[status]}
-												dot
-											>
-												{INVOICE_STATUS_LABEL[status]}
-											</Badge>
-										),
+										<InvoiceStatusCell invoice={i} status={status} />,
 										i.status !== "paid" ? (
-											<div key="act" className="flex justify-end gap-1">
+											// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation (click + Enter/Space) để nút trong dòng không kích hoạt điều hướng của row (#345)
+											<div
+												key="act"
+												className="flex justify-end gap-1"
+												onClick={(e) => e.stopPropagation()}
+												onKeyDown={(e) => {
+													if (e.key === " " || e.key === "Enter")
+														e.stopPropagation();
+												}}
+											>
 												<Button
 													variant="ghost"
 													size="sm"

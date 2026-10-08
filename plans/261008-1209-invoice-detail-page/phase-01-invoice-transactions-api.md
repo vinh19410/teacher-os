@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "API lịch sử giao dịch theo hóa đơn"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: []
@@ -49,6 +49,9 @@ export interface InvoiceTransactionItem {
 3. Import `paymentTransaction` schema + `desc` vào `kernel.ts` nếu chưa có.
 4. Server tests (vitest, in-memory libsql + migrations):
    - 401 khi không có session.
+   - 403 khi session role `student` — stub `getSessionUser` trả `{ role: "student" }`, assert code
+     `STUDENT_ON_TEACHER_APP` (gate bootstrap `app.ts:105-114`; khoá threat model portal-session
+     đọc ledger tài chính, tham chiếu e2e `account-role-separation.spec.ts:8-13`).
    - 404 cho id không tồn tại; 404 cho invoice của org khác (seed org thứ hai).
    - Trả đúng giao dịch `matched` của invoice; KHÔNG trả `unmatched`/`ignored`, KHÔNG trả matched của invoice khác.
    - Thứ tự mới nhất trước; `createdAt` là ISO string parse được; payload không có key `raw`/`providerTxnId`/`bankAccountXid`.
