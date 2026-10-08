@@ -1,7 +1,7 @@
 ---
 title: "Trang chi tiết hóa đơn: click dòng hóa đơn để xem toàn bộ thông tin"
 description: "Click một dòng hóa đơn ở /tuition hoặc tab Học phí trong hồ sơ học viên sẽ mở trang /tuition/$invoiceId hiển thị đầy đủ mọi thông tin hóa đơn đang có: thông tin chung, số tiền, học viên/lớp, thanh toán chuyển khoản (QR, link /pay) và lịch sử giao dịch ngân hàng đã khớp."
-status: pending
+status: completed
 priority: P2
 effort: "7h"
 issue: 345
@@ -53,9 +53,10 @@ Dữ liệu lấy từ 3 nguồn:
   logic copy link / rotate token / polling nằm trong
   `apps/web/src/components/modals/invoice-payment-modal.tsx:37-150`.
 - **Requested:** click dòng → trang detail, hiển thị **hết** thông tin hiện có — deliver đủ.
-- **Complexity:** ~14 files (1 contract, 1 server route + 1 server test, 1 repo web, 1 hook/
-  component dùng chung tách từ modal, 2 route mới/di chuyển, 2 route sửa row click, 1 app-shell,
-  2 test web cập nhật path, 1 test web mới, 1 e2e spec mới, CHANGELOG), 3 phases.
+- **Complexity:** ~18 files (1 contract, 1 server route + 1 server test, 1 repo web, 1 hook + 1
+  actions component tách từ modal kèm unit test mới, 1 status-cell dùng chung 3 surface,
+  2 route mới/di chuyển, 2 route sửa row click, 1 app-shell, 1 routes-matcher + test drift-guard,
+  2 test web cập nhật path, 1 test web route detail mới, 1 e2e spec mới, CHANGELOG), 3 phases.
 - **Mode:** auto → fast-with-scout (codebase đã scout, không cần research ngoài; không `--yagni`).
 
 ## Goals
@@ -128,23 +129,25 @@ flowchart LR
 
 ## Success Criteria
 
-- [ ] Click và Enter/Space trên dòng hóa đơn ở `/tuition` → URL `/tuition/<id>`; click nút "Thu học phí"/"Đã nhận" trong dòng KHÔNG điều hướng (modal/mark-paid vẫn chạy).
-- [ ] Click dòng ở tab "Học phí" hồ sơ học viên → `/tuition/<id>`.
-- [ ] Trang detail hiện: mã rút gọn + UUID, trạng thái effective (kể cả "Thu một phần" + "còn X"), loại, ngày lập, `createdAt` (giờ VN), hạn đóng, phương thức, ghi chú, tổng/đã thu/còn lại + progress, học viên (link), lớp (link hoặc "—"), QR + memo + bank, link `/pay`, bảng lịch sử giao dịch.
+- [x] Click và Enter/Space trên dòng hóa đơn ở `/tuition` → URL `/tuition/<id>`; click nút "Thu học phí"/"Đã nhận" trong dòng KHÔNG điều hướng (modal/mark-paid vẫn chạy).
+- [x] Click dòng ở tab "Học phí" hồ sơ học viên → `/tuition/<id>`.
+- [x] Trang detail hiện: mã rút gọn + UUID, trạng thái effective (kể cả "Thu một phần" + "còn X"), loại, ngày lập, `createdAt` (giờ VN), hạn đóng, phương thức, ghi chú, tổng/đã thu/còn lại + progress, học viên (link), lớp (link hoặc "—"), QR + memo + bank, link `/pay`, bảng lịch sử giao dịch.
 - [ ] Invoice mark-paid thủ công (`status=paid`, `paidAmount=0`) hiện "Đã thu" đủ số tiền theo rule `tuitionTotals`, lịch sử giao dịch rỗng có giải thích.
-- [ ] id không tồn tại/khác org → notFound "Không tìm thấy hóa đơn" + link về `/tuition`; API trả 404.
-- [ ] Topbar title "Doanh thu" trên cả `/tuition` và `/tuition/<id>`; sidebar "Doanh thu" active.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test` xanh.
-- [ ] E2E spec mới pass, các spec `/tuition` cũ không vỡ: `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
-- [ ] Screenshot 3 viewport (1440×900, 768×1024, 375×812) lưu `screenshots/`, keyboard focus OK theo `REVIEW.md`.
+- [x] id không tồn tại/khác org → notFound "Không tìm thấy hóa đơn" + link về `/tuition`; API trả 404. Deep-link trực tiếp `/tuition/<id>` trả HTTP 200 (prefix `/tuition/` trong `routes-matcher.ts`).
+- [x] IPN về khi trang detail đang mở → badge, số tiền còn lại và lịch sử giao dịch tự cập nhật không reload (paidAmount-watch + poll transactions).
+- [x] Topbar title "Doanh thu" trên cả `/tuition` và `/tuition/<id>`; sidebar "Doanh thu" active.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter server test` xanh.
+- [x] E2E spec mới pass, các spec `/tuition` cũ không vỡ: `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
+- [x] Screenshot 3 viewport (1440×900, 768×1024, 375×812) lưu `plans/261008-1209-invoice-detail-page/screenshots/`, keyboard focus OK theo `REVIEW.md`.
 
 ## Rủi ro chính
 
 | Rủi ro | Giảm thiểu |
 |--------|-----------|
-| Di chuyển `tuition.tsx` → `tuition/index.tsx` đổi route id (`/_auth/tuition` → `/_auth/tuition/`), vỡ `routeTitles` và 2 test đọc path file | Cập nhật `app-shell.tsx` theo id thực trong `routeTree.gen.ts`; sửa `kernel-runtime.contract.test.ts:284,475` và import `empty-states.test.tsx:106` |
+| Di chuyển `tuition.tsx` → `tuition/index.tsx` đổi route id (`/_auth/tuition` → `/_auth/tuition/`), vỡ `routeTitles`, drift-guard `routes-matcher.test.ts` và 2 test đọc path file; prod worker/vite dùng `isValidAppRoute` (`routes-matcher.ts`) nên thiếu prefix `/tuition/` → deep-link `/tuition/<id>` trả HTTP 404 | Thêm `"/tuition/"` vào `VALID_DYNAMIC_PREFIXES` (`apps/web/src/routes-matcher.ts`) + case test; cập nhật `app-shell.tsx` theo id thực trong `routeTree.gen.ts`; sửa `kernel-runtime.contract.test.ts:284,475` và import `empty-states.test.tsx:106`; e2e assert deep-link HTTP 200 |
 | Row `onClick` nuốt click của nút trong dòng | Bọc cell hành động bằng wrapper `stopPropagation` (click + keydown Enter/Space) theo precedent roster |
-| Nhân bản logic copy/rotate/poll giữa modal và trang | Tách hook/component dùng chung trong `invoice-payment-modal.tsx` (Phase 2 step 2), modal và trang cùng gọi |
+| Kernel snapshot KHÔNG tự poll (`staleTime: Infinity`, không `refetchInterval`) — khi IPN về giữa chừng, header/badge/số tiền đứng im vì snapshot stale | Watch `paidAmount` từ payment query (so giá trị trước/sau bằng ref, chỉ invalidate khi ĐỔI GIÁ TRỊ) → invalidate `invoiceTransactionsQueryKey(id)` + `["kernel"]`; e2e khoá "IPN về khi trang mở → cập nhật không reload" |
+| Tách hook khỏi modal có thể đổi timing poll | Unit test hook TRƯỚC khi refactor (poll gating + cap, `confirmRotate` reset, invalidation); giữ nguyên `openedAt`, `POLL_INTERVAL_MS`, cap 15 phút; reset `openedAt` khi tab visible lại (trang detail sống lâu hơn modal) |
 | Lộ PII giao dịch | DTO chỉ trả field hiển thị; matched rows đã có `raw=""`; tenant predicate trên cả invoice lẫn transaction |
 
 ## Dependencies
@@ -166,3 +169,49 @@ flowchart LR
   - Helper e2e: `seedInvoice` cứng `enrollment_id=''` (`tuition-bank-transfer.spec.ts:36-63`), IPN qua `simulateIpn` (`:79`). ✔ (đã điều chỉnh Phase 3)
 - **Red-team:** không chạy (mode auto → fast-with-scout); không có auth mới ngoài 1 GET org-scoped theo đúng pattern `/payment`.
 - **Recommendation:** proceed.
+
+## Red Team Review
+
+### Session — 2026-10-08
+**Findings:** 10 sau dedup (10 accepted, 0 rejected) — 3 reviewer song song: Security Adversary,
+Failure Mode Analyst, Assumption Destroyer. Tất cả finding đều có evidence `file:line`.
+**Severity breakdown:** 1 Critical, 3 High, 6 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | `VALID_DYNAMIC_PREFIXES` thiếu `"/tuition/"` → drift-guard test đỏ + prod deep-link `/tuition/<id>` HTTP 404 (worker.ts/vite.config dùng `isValidAppRoute`) | Critical | Accept | Phase 2, Phase 3 |
+| 2 | Chỉ dẫn "commit routeTree.gen.ts" trái `.gitignore:12` (file gitignored, drift guard biết rõ) | High | Accept | Phase 2 |
+| 3 | Kernel snapshot KHÔNG poll (`staleTime: Infinity`, không refetchInterval) — invalidation `paidAmount` là linchpin nhưng chôn trong mệnh đề phụ, không step/test; risk table viện dẫn "poll snapshot" không tồn tại | High | Accept | Phase 2, plan.md Risks |
+| 4 | Safety net refactor modal là phantom: `payment-qr-panel.test.tsx` không render modal; rotate/copy/confirmRotate zero coverage; precedent fetch-mock sai; mock router thiếu `useParams` | High | Accept | Phase 2 |
+| 5 | Payable-gate của modal mâu thuẫn SC "link /pay luôn hiển thị" (payable=false khi paid/no-bank) | Medium | Accept | Phase 2 |
+| 6 | Thiếu test student-role → 403 cho endpoint mới (threat model có thật: app.ts bootstrap 403 student) | Medium | Accept | Phase 1 |
+| 7 | Mâu thuẫn path screenshot (plan.md "screenshots/" vs Phase 3 plan folder) | Medium | Accept | plan.md |
+| 8 | Phase 3 under-specified: seeding class/enrollment, locator strict-mode theo số tiền, thiếu case Enter-trên-nút | Medium | Accept | Phase 3 |
+| 9 | Filter `?ky=` mất qua link "← Doanh thu" (vi phạm convention URL-first của AGENTS.md) | Medium | Accept | Phase 2 |
+| 10 | Poll cliff 15 phút im lặng vĩnh viễn trên trang có vòng đời dài; thiếu InvoiceStatusCell trong Files list + nhãn badge lệch giữa tab Học phí và `/tuition` | Medium | Accept | Phase 2 |
+
+**Fact-check tổng:** các claim chính của plan (DataTable onClick+keyboard, DataProvider null trước
+snapshot, route id đổi qua thư mục, 3 test tham chiếu path cũ, harness test server, seedInvoice/
+simulateIpn, helpers format/tuition) đều VERIFIED với file:line — không có claim "không tồn tại".
+
+### Whole-Plan Consistency Sweep
+- Files reread: plan.md, phase-01, phase-02, phase-03 (sau khi áp accepted findings).
+- Decision deltas: routes-matcher vào Phase 2/3; bỏ commit routeTree.gen.ts; paidAmount-watch
+  thành step riêng; unit test hook trước refactor; payable 3 trạng thái; student-role 403;
+  screenshot path chuẩn hoá; seeding e2e chi tiết; `?ky=` giữ qua search; InvoiceStatusCell
+  dùng chung 3 surface.
+- Reconciled stale references: risk row "nhân bản logic modal" → thay bằng risk snapshot-poll +
+  test-trước-refactor; complexity count 14 → ~18 files.
+- Unresolved contradictions: 0.
+
+### Session cook — 2026-10-08
+- Phase 1: `invoice-transactions.test.ts` 8 test (401/403 student/404 lạ+cross-org/matched-only/
+  ordering/DTO keys/ISO/empty) + endpoint trong `kernel.ts`; 19/19 test liên quan xanh.
+- Phase 2: characterization test modal 7 case TRƯỚC refactor (tìm ra export thiếu
+  `InvoiceStatusCell`... không — tìm ra `InvoiceDetailRoute` thiếu `export`, mock router cần
+  `useParams`); tách `useInvoicePayment` + `InvoicePaymentActions` + `usePaidAmountWatch`;
+  `InvoiceStatusCell` dùng chung 3 surface; routes-matcher + test; `?ky=` giữ qua URL.
+- Phase 3: e2e `invoice-detail.spec.ts` 9 test (9/9), full suite 150 pass; sửa flake xid
+  (`ba-e2e-1` hardcode → đọc xid thật từ DB) ở cả `tuition-bank-transfer.spec.ts`; 3 screenshot.
+- Gates: `pnpm check` xanh (2 warning pre-existing), `check-types` 7/7, web 1349/1349,
+  server 19/19, e2e 150 pass. Simplifier scoped chạy (Step 3.S) — 6 file gọn, gates giữ xanh.

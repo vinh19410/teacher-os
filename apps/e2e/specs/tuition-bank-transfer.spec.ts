@@ -25,6 +25,7 @@ const SECOND_TOKEN = "e2epaytoken-second-000000000b";
 
 let teacherEmail: string;
 let studentEmail: string;
+let myAccountXid = "";
 function openDb() {
 	const client = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
@@ -76,6 +77,23 @@ async function orgIdOfTeacher(): Promise<string> {
 	}
 }
 
+/** Fake hub cấp xid tuần tự dùng chung cho mọi spec chạy song song — đọc
+ * xid THẬT của org này sau khi link, tránh IPN resolve nhầm org khác. */
+async function accountXidOfTeacher(): Promise<string> {
+	const client = openDb();
+	try {
+		const res = await client.execute({
+			sql: `SELECT l.bank_account_xid AS xid FROM org_bank_link l
+				JOIN membership m ON m.org_id = l.org_id JOIN user u ON u.id = m.user_id
+				WHERE lower(u.email) = lower(?) ORDER BY l.last_event_at DESC LIMIT 1`,
+			args: [teacherEmail],
+		});
+		return String(res.rows[0]?.xid ?? "");
+	} finally {
+		client.close();
+	}
+}
+
 async function simulateIpn(
 	request: import("@playwright/test").APIRequestContext,
 	input: { transactionId: string; amount: number; content: string },
@@ -89,7 +107,7 @@ async function simulateIpn(
 			gateway: "MBBank",
 			transaction_date: "2026-10-05 10:00:00",
 			account_number: "0123456789",
-			bank_account_xid: "ba-e2e-1",
+			bank_account_xid: myAccountXid,
 			content: input.content,
 			transfer_type: "credit",
 			amount: input.amount,
@@ -151,6 +169,8 @@ test.describe("Tuition bank transfer (#320)", () => {
 			timeout: 20_000,
 		});
 		await expect(page.getByText("•••6789")).toBeVisible();
+		myAccountXid = await accountXidOfTeacher();
+		expect(myAccountXid).not.toBe("");
 	});
 
 	test("invoice shows QR with the right amount and memo; public link works", async ({

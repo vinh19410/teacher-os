@@ -81,6 +81,15 @@ describe("routes-matcher", () => {
 			expect(isValidAppRoute("/grading/att-123/")).toBe(true);
 			expect(isValidAppRoute("/grading")).toBe(false);
 			expect(isValidAppRoute("/grading/a/b")).toBe(false);
+			// Chi tiết hóa đơn (#345): /tuition/<invoiceId> — một segment; /
+			// tuition/<id>/extra phải từ chối như các prefix khác.
+			expect(
+				isValidAppRoute("/tuition/6da91f92-1faf-40a6-ac57-09724ad29bf3"),
+			).toBe(true);
+			expect(
+				isValidAppRoute("/tuition/6da91f92-1faf-40a6-ac57-09724ad29bf3/"),
+			).toBe(true);
+			expect(isValidAppRoute("/tuition/inv-1/extra")).toBe(false);
 		});
 
 		it("rejects non-existent pages reported in QC issue #113", () => {
@@ -124,7 +133,8 @@ describe("routes-matcher", () => {
 					.replace(/\$studentId/g, "sample-id")
 					.replace(/\$classId/g, "sample-id")
 					.replace(/\$syllabusId/g, "sample-id")
-					.replace(/\$assignmentId/g, "sample-id");
+					.replace(/\$assignmentId/g, "sample-id")
+					.replace(/\$invoiceId/g, "sample-id");
 				expect(
 					isValidAppRoute(concretePath),
 					`Route "${path}" (resolved as "${concretePath}") should be recognized as valid`,

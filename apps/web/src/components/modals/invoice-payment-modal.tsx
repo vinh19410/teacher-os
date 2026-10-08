@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PaymentTransactionItem } from "@teacher-os/api/contracts";
 import { PaymentQrPanel } from "@teacher-os/ui/components/payments/payment-qr-panel";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
@@ -10,6 +10,7 @@ import {
 	ignoreTransaction,
 	invoicePaymentQueryKey,
 	invoicePaymentQueryOptions,
+	invoiceTransactionsQueryKey,
 	POLL_INTERVAL_MS,
 	reconcileBankLink,
 	rotatePayToken,
@@ -28,35 +29,32 @@ function useCopiedLabel() {
 }
 
 /**
- * "Thu học phí" modal (#320): shared QR panel + copy pay link + rotate pay
- * token (with confirm — parents may still hold the old link). Polls every
- * 5 s while open, tab-visible and within the 15-minute cap. (Zalo template
- * copy was dropped when /settings + workspace-settings API were removed in
- * #324 — follow-up if templates come back.)
+ * Payment poll + pay link dùng chung giữa "Thu học phí" modal và trang chi
+ * tiết hóa đơn (#345). Polls every 5 s while `active`, tab-visible and within
+ * the 15-minute cap; coming back to the tab resets the cap — a detail page
+ * can legally outlive the modal's original horizon while the teacher waits
+ * for a transfer.
  */
-export function InvoicePaymentModal({
-	invoiceId,
-	open,
-	onClose,
-}: {
-	invoiceId: string | null;
-	open: boolean;
-	onClose: () => void;
-}) {
+export function useInvoicePayment(invoiceId: string | null, active: boolean) {
 	const baseUrl = getApiBaseUrl();
-	const queryClient = useQueryClient();
-	const { copiedLabel, copy } = useCopiedLabel();
-	const [confirmRotate, setConfirmRotate] = useState(false);
-	const [openedAt] = useState(() => Date.now());
+	const [openedAt, setOpenedAt] = useState(() => Date.now());
+
+	useEffect(() => {
+		const onVisible = () => {
+			if (!document.hidden) setOpenedAt(Date.now());
+		};
+		document.addEventListener("visibilitychange", onVisible);
+		return () => document.removeEventListener("visibilitychange", onVisible);
+	}, []);
 
 	const payment = useQuery({
 		...invoicePaymentQueryOptions(invoiceId ?? "none", baseUrl),
-		enabled: open && invoiceId !== null,
+		enabled: active && invoiceId !== null,
 		refetchInterval: (query) => {
 			const data = query.state.data;
 			if (!data) return false;
 			return shouldPollPayment({
-				panelOpen: open,
+				panelOpen: active,
 				payable: data.payable,
 				openedAt,
 				now: Date.now(),
@@ -68,6 +66,76 @@ export function InvoicePaymentModal({
 	const payLink = payment.data
 		? `${window.location.origin}/pay/${payment.data.payToken}`
 		: "";
+	return { payment, payLink, openedAt };
+}
+
+/**
+ * #345 — the kernel snapshot does NOT poll (staleTime Infinity, no
+ * refetchInterval), so a transfer landing mid-session would leave the detail
+ * header's amounts stale forever. Watch `paidAmount` by VALUE (not object
+ * identity) and pull the shared caches forward exactly when money moved.
+ * `baselinePaidAmount` là số tiền snapshot kernel đang hiển thị: snapshot
+ * stale lúc mount (tiền về TRƯỚC khi mở trang) phải heal ngay ở lần observe
+ * đầu — không được nuốt thành "baseline" của payment query. Ref keyed theo
+ * invoice id để điều hướng /tuition/$a → /tuition/$b không invalidate giả.
+ */
+export function usePaidAmountWatch(
+	invoiceId: string | null,
+	paidAmount: number | undefined,
+	baselinePaidAmount?: number,
+) {
+	const queryClient = useQueryClient();
+	const seen = useRef<{ id: string; value: number } | null>(null);
+	const invalidate = () => {
+		if (invoiceId === null) return;
+		void queryClient.invalidateQueries({
+			queryKey: invoiceTransactionsQueryKey(invoiceId),
+		});
+		void queryClient.invalidateQueries({ queryKey: ["kernel"] });
+	};
+	useEffect(() => {
+		if (invoiceId === null || paidAmount === undefined) return;
+		const prev = seen.current;
+		if (prev === null || prev.id !== invoiceId) {
+			seen.current = { id: invoiceId, value: paidAmount };
+			// Stale-on-mount: payment thấy khác snapshot → tiền đã về trước
+			// lúc mở trang, heal header ngay thay vì coi đó là baseline.
+			if (
+				baselinePaidAmount !== undefined &&
+				baselinePaidAmount !== paidAmount
+			) {
+				invalidate();
+			}
+			return;
+		}
+		if (prev.value === paidAmount) return;
+		seen.current = { id: invoiceId, value: paidAmount };
+		invalidate();
+	}, [invoiceId, paidAmount, baselinePaidAmount, queryClient]);
+}
+
+/**
+ * Copy link + rotate token with confirm, dùng chung modal và trang detail
+ * (#345). `payable` chỉ ẩn rotate (link cũ vô nghĩa khi phiếu đã đủ tiền);
+ * copy link vẫn hiện — /pay hiển thị trạng thái phiếu kể cả khi đã trả.
+ * Modal cũ ẩn cả footer khi !payable; giữ hành vi đó ở modal bằng cách chỉ
+ * mount component này khi `payable` (characterization test pin).
+ */
+export function InvoicePaymentActions({
+	invoiceId,
+	payable,
+	payLink,
+	active,
+}: {
+	invoiceId: string | null;
+	payable: boolean;
+	payLink: string;
+	active: boolean;
+}) {
+	const baseUrl = getApiBaseUrl();
+	const queryClient = useQueryClient();
+	const { copiedLabel, copy } = useCopiedLabel();
+	const [confirmRotate, setConfirmRotate] = useState(false);
 
 	const rotate = useMutation({
 		mutationFn: () => rotatePayToken(invoiceId ?? "", baseUrl),
@@ -80,8 +148,80 @@ export function InvoicePaymentModal({
 	});
 
 	useEffect(() => {
-		if (!open) setConfirmRotate(false);
-	}, [open]);
+		if (!active) setConfirmRotate(false);
+	}, [active]);
+
+	return (
+		<div className="flex flex-col gap-2">
+			<div className="flex flex-wrap gap-2">
+				<Button
+					variant="secondary"
+					size="sm"
+					onClick={() => copy("link", payLink)}
+				>
+					{copiedLabel === "link"
+						? "✓ Đã sao chép link"
+						: "Sao chép link thanh toán"}
+				</Button>
+				{payable &&
+					(confirmRotate ? (
+						<>
+							<Button
+								variant="primary"
+								size="sm"
+								disabled={rotate.isPending}
+								onClick={() => rotate.mutate()}
+							>
+								{rotate.isPending ? "Đang tạo…" : "Xác nhận tạo link mới"}
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setConfirmRotate(false)}
+							>
+								Không
+							</Button>
+						</>
+					) : (
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setConfirmRotate(true)}
+						>
+							Tạo link mới
+						</Button>
+					))}
+			</div>
+			{payable && confirmRotate && (
+				<p className="text-warn text-xs">
+					Link cũ sẽ hết hiệu lực — phụ huynh vẫn lưu link cũ sẽ không mở được
+					trang thanh toán.
+				</p>
+			)}
+		</div>
+	);
+}
+
+/**
+ * "Thu học phí" modal (#320): shared QR panel + copy pay link + rotate pay
+ * token (with confirm — parents may still hold the old link). Polls every
+ * 5 s while open, tab-visible and within the 15-minute cap — the cap now
+ * resets khi tab visible lại (#345, dùng chung hook với trang detail nên
+ * hành vi áp cho cả modal; teacher quay lại tab vẫn nhận tiền mới).
+ * (Zalo template
+ * copy was dropped when /settings + workspace-settings API were removed in
+ * #324 — follow-up if templates come back.)
+ */
+export function InvoicePaymentModal({
+	invoiceId,
+	open,
+	onClose,
+}: {
+	invoiceId: string | null;
+	open: boolean;
+	onClose: () => void;
+}) {
+	const { payment, payLink } = useInvoicePayment(invoiceId, open);
 
 	return (
 		<Modal
@@ -90,52 +230,12 @@ export function InvoicePaymentModal({
 			title="Thu học phí"
 			footer={
 				payment.data?.payable ? (
-					<div className="flex flex-col gap-2">
-						<div className="flex flex-wrap gap-2">
-							<Button
-								variant="secondary"
-								size="sm"
-								onClick={() => copy("link", payLink)}
-							>
-								{copiedLabel === "link"
-									? "✓ Đã sao chép link"
-									: "Sao chép link thanh toán"}
-							</Button>
-							{confirmRotate ? (
-								<>
-									<Button
-										variant="primary"
-										size="sm"
-										disabled={rotate.isPending}
-										onClick={() => rotate.mutate()}
-									>
-										{rotate.isPending ? "Đang tạo…" : "Xác nhận tạo link mới"}
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setConfirmRotate(false)}
-									>
-										Không
-									</Button>
-								</>
-							) : (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setConfirmRotate(true)}
-								>
-									Tạo link mới
-								</Button>
-							)}
-						</div>
-						{confirmRotate && (
-							<p className="text-warn text-xs">
-								Link cũ sẽ hết hiệu lực — phụ huynh vẫn lưu link cũ sẽ không mở
-								được trang thanh toán.
-							</p>
-						)}
-					</div>
+					<InvoicePaymentActions
+						invoiceId={invoiceId}
+						payable={payment.data.payable}
+						payLink={payLink}
+						active={open}
+					/>
 				) : undefined
 			}
 		>
