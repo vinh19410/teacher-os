@@ -109,6 +109,7 @@ export const seedData: MockData = {
 			method: "CK",
 			due: "",
 			note: "",
+			createdAt: Date.parse("2026-08-01T02:00:00.000Z"),
 		},
 		{
 			id: "INV-084",
@@ -122,6 +123,7 @@ export const seedData: MockData = {
 			method: "MoMo",
 			due: "",
 			note: "",
+			createdAt: Date.parse("2026-07-15T02:00:00.000Z"),
 		},
 		{
 			id: "INV-086",
@@ -135,6 +137,7 @@ export const seedData: MockData = {
 			method: "—",
 			due: "",
 			note: "",
+			createdAt: Date.parse("2026-08-05T02:00:00.000Z"),
 		},
 	],
 	assignments: [

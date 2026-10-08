@@ -121,6 +121,10 @@ export interface Invoice {
 	 * concern. Empty on legacy rows created before the create API. */
 	due: string;
 	note: string;
+	/** #343 — creation timestamp (ms) parsed from KernelInvoiceRow.createdAt
+	 * (ISO wire). 0 on unparseable/legacy-snapshot rows: the invoice is
+	 * excluded from revenue buckets and counted as dropped, never silent. */
+	createdAt: number;
 }
 export interface Scores {
 	task: number;

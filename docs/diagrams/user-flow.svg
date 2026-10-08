@@ -117,9 +117,9 @@
         <rect x="1290" y="332" width="150" height="56" rx="8" fill="var(--ak-node-bg)" stroke="var(--ak-node-border)" stroke-width="1.5" />
         <text x="1365" y="356" font-size="12" font-weight="600" fill="var(--ak-text-primary)" text-anchor="middle" font-family="var(--ak-font-sans)">Lịch dạy (tuần)</text>
         <text x="1365" y="374" font-size="10" fill="var(--ak-text-muted)" text-anchor="middle" font-family="var(--ak-font-sans)">action</text>
-      </g><g class="ak-node" data-node-id="tuition" data-label="Học phí — hóa đơn · thu tiền" data-role="action" data-desc="" tabindex="0">
+      </g><g class="ak-node" data-node-id="tuition" data-label="Doanh thu — biểu đồ doanh thu · hóa đơn · thu tiền" data-role="action" data-desc="" tabindex="0">
         <rect x="1500" y="332" width="150" height="56" rx="8" fill="var(--ak-node-bg)" stroke="var(--ak-node-border)" stroke-width="1.5" />
-        <text x="1575" y="356" font-size="12" font-weight="600" fill="var(--ak-text-primary)" text-anchor="middle" font-family="var(--ak-font-sans)">Học phí — hóa đơn · thu tiền</text>
+        <text x="1575" y="356" font-size="12" font-weight="600" fill="var(--ak-text-primary)" text-anchor="middle" font-family="var(--ak-font-sans)">Doanh thu — biểu đồ doanh thu · hóa đơn · thu tiền</text>
         <text x="1575" y="374" font-size="10" fill="var(--ak-text-muted)" text-anchor="middle" font-family="var(--ak-font-sans)">action</text>
       </g><g class="ak-node" data-node-id="assignments" data-label="Bài tập — giao bài · chấm điểm" data-role="action" data-desc="" tabindex="0">
         <rect x="1710" y="332" width="150" height="56" rx="8" fill="var(--ak-node-bg)" stroke="var(--ak-node-border)" stroke-width="1.5" />

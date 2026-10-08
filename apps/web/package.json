@@ -33,6 +33,7 @@
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"read-excel-file": "^9.3.10",
+		"recharts": "^3.10.1",
 		"sonner": "catalog:",
 		"zod": "catalog:"
 	},
