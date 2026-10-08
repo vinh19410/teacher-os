@@ -126,6 +126,35 @@ describe("StudentTuitionSummary", () => {
 		expect(within(overRow).getByText("Dư 1.000.000đ")).toBeTruthy();
 	});
 
+	it("Còn lại > 0 → số trên thẻ đỏ text-danger như KPI Doanh thu", () => {
+		render(
+			<StudentTuitionSummary
+				summary={baseSummary({
+					classes: [
+						{
+							classId: "C1",
+							className: "C1",
+							enrollmentStatus: "active",
+							fee: 10000000,
+							paid: 2000000,
+							remaining: 8000000,
+							overpaid: 0,
+							counted: true,
+						},
+					],
+					totalFee: 10000000,
+					totalPaid: 2000000,
+					totalRemaining: 8000000,
+					countedClasses: 1,
+				})}
+			/>,
+		);
+		// StatCard: Card root chứa class variant, label là div con — đi 1 cấp lên.
+		const card = screen.getByText("Còn lại (VND)").closest("div")!
+			.parentElement!;
+		expect(card.className).toContain("[&>div:first-child]:text-danger");
+	});
+
 	it("lớp invited hiện badge 'Đã mời' và ô Còn lại 'Chưa kích hoạt — chưa tính'", () => {
 		render(
 			<StudentTuitionSummary

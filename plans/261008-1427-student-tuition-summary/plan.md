@@ -66,14 +66,14 @@ Plan chỉ đổi client. Không đổi server, DB hay contract API: `class.tuit
 
 ## Success Criteria
 
-- [ ] Student Test 1 (Foundation 2, 10.000.000đ, đã thu 2.000.000đ) hiện Tổng 10.000.000đ / Đã đóng 2.000.000đ / Còn lại 8.000.000đ.
-- [ ] Học viên đang học 2 lớp có học phí: Tổng = tổng học phí 2 lớp; bảng theo lớp hiện đúng từng lớp.
-- [ ] Thu một phần qua chuyển khoản (ledger `paidAmount`) và mark-paid thủ công đều được tính đúng.
-- [ ] Lớp "Đã mời" và lớp chưa thiết lập học phí không cộng vào tổng, có nhãn giải thích.
-- [ ] Hóa đơn không gắn lớp không làm lệch 3 con số; ghi chú hiện khi có tiền đã thu.
-- [ ] Bảng hóa đơn bên dưới giữ nguyên hành vi (click dòng mở `/tuition/$invoiceId`).
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter e2e e2e` (full suite — gate local theo AGENTS.md) xanh.
-- [ ] Screenshot tab Học phí ở 1440×900, 768×1024, 375×812 đính kèm PR (theo `REVIEW.md`).
+- [x] Student Test 1 (Foundation 2, 10.000.000đ, đã thu 2.000.000đ) hiện Tổng 10.000.000đ / Đã đóng 2.000.000đ / Còn lại 8.000.000đ.
+- [x] Học viên đang học 2 lớp có học phí: Tổng = tổng học phí 2 lớp; bảng theo lớp hiện đúng từng lớp.
+- [x] Thu một phần qua chuyển khoản (ledger `paidAmount`) và mark-paid thủ công đều được tính đúng.
+- [x] Lớp "Đã mời" và lớp chưa thiết lập học phí không cộng vào tổng, có nhãn giải thích.
+- [x] Hóa đơn không gắn lớp không làm lệch 3 con số; ghi chú hiện khi có tiền đã thu.
+- [x] Bảng hóa đơn bên dưới giữ nguyên hành vi (click dòng mở `/tuition/$invoiceId`).
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test`, `pnpm --filter e2e e2e` (full suite — gate local theo AGENTS.md) xanh.
+- [x] Screenshot tab Học phí ở 1440×900, 768×1024, 375×812 đính kèm PR (theo `REVIEW.md`).
 
 ## Rủi ro
 
