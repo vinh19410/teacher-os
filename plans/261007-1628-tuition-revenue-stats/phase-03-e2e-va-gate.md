@@ -38,7 +38,7 @@ bộ lệnh local) và chụp screenshot 3 viewport theo REVIEW.md.
 
 - [x] 2 specs vỡ selector đã sửa sang "Doanh thu", pass.
 - [x] `tuition-bank-transfer.spec.ts` giữ nguyên và vẫn pass (bằng chứng student app không ảnh hưởng).
-- [ ] Spec mới `apps/e2e/specs/tuition-revenue-chart.spec.ts`: seed 2 invoice **khác tháng**
+- [x] Spec mới `apps/e2e/specs/tuition-revenue-chart.spec.ts`: seed 2 invoice **khác tháng**
       (tháng này paid + tháng trước unpaid, qua direct-SQL) → thấy section biểu đồ với nhãn 2 tháng,
       toggle "Quý" đổi URL thành `?ky=quarter`.
 - [x] Full gate local xanh: `pnpm check`, `pnpm check-types`, `pnpm --filter web test`,
