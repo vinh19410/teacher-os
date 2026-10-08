@@ -113,10 +113,10 @@ export function MediaDropzone({
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 			className={cn(
-				"flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border-2 border-line border-dashed bg-bg px-6 py-10 text-center transition-colors focus-visible:outline-2 focus-visible:outline-accent-blue",
+				"flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border-2 border-line border-dashed bg-bg px-6 py-10 text-center transition-colors focus-visible:outline-2 focus-visible:outline-hot",
 				dragging
-					? "border-accent-blue border-solid bg-accent-blue/5"
-					: "hover:border-accent-blue/60",
+					? "border-hot border-solid bg-hot/5"
+					: "hover:border-hot/60",
 				disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
 			)}
 		>

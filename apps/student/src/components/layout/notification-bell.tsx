@@ -74,7 +74,7 @@ export function NotificationBell({
 					)}
 				>
 					<div className="flex items-center gap-3">
-						<Bell className={cn("h-4 w-4", count > 0 && "text-accent-blue")} />
+						<Bell className={cn("h-4 w-4", count > 0 && "text-hot")} />
 						<span>Thông báo</span>
 					</div>
 					{count > 0 && (
@@ -125,7 +125,7 @@ export function NotificationBell({
 						<div className="flex items-center justify-between border-line border-b px-4 py-3">
 							<h3 className="font-semibold text-fg text-sm">Thông báo</h3>
 							{count > 0 && (
-								<span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-[11px] text-accent-blue">
+								<span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-[11px] text-hot">
 									{count} mới
 								</span>
 							)}
@@ -159,7 +159,7 @@ export function NotificationBell({
 											className="flex flex-col gap-2.5 p-3.5 transition-colors hover:bg-surface/50"
 										>
 											<div className="flex items-start gap-2.5">
-												<span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-blue">
+												<span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-hot">
 													<Building2 className="h-4 w-4" />
 												</span>
 												<div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -185,7 +185,7 @@ export function NotificationBell({
 													type="button"
 													onClick={() => handleAccept(inv.id)}
 													disabled={isCurrentProcessing}
-													className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-accent-blue px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-accent-hover active:scale-95 disabled:opacity-50"
+													className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-hot px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-accent-hover active:scale-95 disabled:opacity-50"
 												>
 													{isCurrentProcessing ? (
 														<Loader2 className="h-3.5 w-3.5 animate-spin" />

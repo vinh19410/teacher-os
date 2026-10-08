@@ -50,7 +50,7 @@ export function NotFoundPage() {
 					<div className="mt-8 flex flex-wrap items-center justify-center gap-3">
 						<a
 							href="/dashboard"
-							className="inline-flex items-center gap-2 rounded-full bg-accent-blue px-6 py-2.5 font-medium text-accent-on text-sm transition hover:bg-accent-hover active:scale-[0.98]"
+							className="inline-flex items-center gap-2 rounded-full bg-hot px-6 py-2.5 font-medium text-accent-on text-sm transition hover:bg-accent-hover active:scale-[0.98]"
 						>
 							Về bảng điều khiển
 						</a>

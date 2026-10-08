@@ -125,7 +125,7 @@ export function QuizMediaPlayer({
 					<a
 						href={url}
 						download={media.name}
-						className="text-accent-blue underline-offset-4 hover:underline"
+						className="text-hot underline-offset-4 hover:underline"
 					>
 						Tải file về
 					</a>

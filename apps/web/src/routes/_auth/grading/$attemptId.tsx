@@ -133,7 +133,7 @@ function GradingRoute() {
 				<p className="text-fg text-sm">{message}</p>
 				<Link
 					to="/classes"
-					className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+					className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 				>
 					← Về danh sách lớp
 				</Link>
@@ -184,7 +184,7 @@ function GradingRoute() {
 						to="/classes/$classId"
 						params={{ classId: data.classId }}
 						search={{ tab: "assignments" }}
-						className="font-medium text-accent-blue text-sm hover:text-accent-active"
+						className="font-medium text-hot text-sm hover:text-accent-active"
 					>
 						← Về lớp
 					</Link>

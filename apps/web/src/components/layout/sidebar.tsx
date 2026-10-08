@@ -276,7 +276,7 @@ export function Sidebar({
 								onClick={onNavigate}
 								title={item.label}
 								className={cn(
-									"flex items-center gap-3 rounded-sm px-3 py-2 font-medium text-fg-2 text-sm transition-colors duration-[150ms] hover:bg-line-soft hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-soft active:text-accent-blue aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-blue [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100",
+									"flex items-center gap-3 rounded-sm px-3 py-2 font-medium text-fg-2 text-sm transition-colors duration-[150ms] hover:bg-line-soft hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-soft active:text-hot aria-[current=page]:bg-accent-soft aria-[current=page]:text-hot [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100",
 									// Collapsed-branch classes are always app:-prefixed (D10).
 									collapsed && "app:justify-center app:px-0",
 								)}
@@ -326,7 +326,7 @@ export function Sidebar({
 								</span>
 								{plan && (
 									<span
-										className="ml-1 shrink-0 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-accent-blue tracking-[0.04em]"
+										className="ml-1 shrink-0 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-hot tracking-[0.04em]"
 										data-testid="sidebar-user-plan"
 									>
 										{plan}

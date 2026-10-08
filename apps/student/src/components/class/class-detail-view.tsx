@@ -67,7 +67,7 @@ export function ClassDetailView({
 									</p>
 									<a
 										href={`mailto:${teacher.email}`}
-										className="block truncate rounded-[var(--radius-sm)] text-[13px] text-accent-blue hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										className="block truncate rounded-[var(--radius-sm)] text-[13px] text-hot hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 									>
 										{teacher.email}
 									</a>

@@ -13,7 +13,7 @@ export function NoticeInfo({ children }: { children: ReactNode }) {
 				strokeWidth="2"
 				strokeLinecap="round"
 				aria-hidden="true"
-				className="mt-[1px] h-4 w-4 flex-none text-accent-blue"
+				className="mt-[1px] h-4 w-4 flex-none text-hot"
 			>
 				<circle cx="12" cy="12" r="9" />
 				<path d="M12 8h.01M11 12h1v4h1" />

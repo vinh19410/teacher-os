@@ -69,7 +69,7 @@ export function QuizDialog({
 				aria-describedby={descriptionId}
 				tabIndex={-1}
 				onKeyDown={handleKeyDown}
-				className="w-full max-w-sm rounded-[var(--radius-lg)] border border-line bg-bg p-5 shadow-lg focus-visible:outline-2 focus-visible:outline-accent-blue"
+				className="w-full max-w-sm rounded-[var(--radius-lg)] border border-line bg-bg p-5 shadow-lg focus-visible:outline-2 focus-visible:outline-hot"
 			>
 				<h2 id={titleId} className="font-display font-semibold text-fg">
 					{title}

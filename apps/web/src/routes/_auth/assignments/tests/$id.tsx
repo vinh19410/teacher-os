@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_auth/assignments/tests/$id")({
 			<p className="mb-2 text-sm">Không tìm thấy bộ đề.</p>
 			<Link
 				to="/assignments"
-				className="text-accent-blue text-sm underline-offset-[3px] hover:underline"
+				className="text-hot text-sm underline-offset-[3px] hover:underline"
 			>
 				Về trang Bài tập
 			</Link>

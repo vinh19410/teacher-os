@@ -155,7 +155,7 @@ export function SpeakingSubmissionView({
 						className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-line"
 					>
 						<div
-							className="h-full bg-accent-blue transition-[width]"
+							className="h-full bg-hot transition-[width]"
 							style={{ width: `${percent}%` }}
 						/>
 					</div>

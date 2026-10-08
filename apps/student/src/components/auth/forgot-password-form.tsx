@@ -112,7 +112,7 @@ export function ForgotPasswordForm() {
 			<p className="mt-[22px] text-center text-muted-fg text-sm">
 				<Link
 					to="/login"
-					className="-mx-2 rounded-[4px] px-2 py-[6px] font-[590] text-accent-blue text-sm underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="-mx-2 rounded-[4px] px-2 py-[6px] font-[590] text-hot text-sm underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 				>
 					Quay lại đăng nhập
 				</Link>

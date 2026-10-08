@@ -220,7 +220,7 @@ export function PromptComposer({
 								<span className="text-sm">{value.audioName}</span>
 								<button
 									type="button"
-									className="text-accent-blue text-xs"
+									className="text-hot text-xs"
 									onClick={() => onFieldChange({ audioName: "" })}
 								>
 									Gỡ file

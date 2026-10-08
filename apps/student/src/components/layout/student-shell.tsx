@@ -79,7 +79,7 @@ export function StudentShell({
 							to="/"
 							className="flex items-center gap-3 rounded-[var(--radius-md)] bg-surface px-3 py-2.5 font-[590] text-[14px] text-fg shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 						>
-							<Home className="h-4 w-4 text-accent-blue" />
+							<Home className="h-4 w-4 text-hot" />
 							<span>Trang chủ</span>
 						</Link>
 						<div

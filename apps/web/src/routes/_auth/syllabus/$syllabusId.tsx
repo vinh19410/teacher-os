@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 			</p>
 			<Link
 				to="/syllabus"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về danh sách syllabus
 			</Link>
@@ -333,7 +333,7 @@ function SyllabusDetail({
 								<button
 									type="button"
 									onClick={() => setAddLessonModuleId(m.id)}
-									className="mt-2 w-full px-5 pb-3 text-left font-medium text-accent-blue text-xs hover:text-accent-active"
+									className="mt-2 w-full px-5 pb-3 text-left font-medium text-hot text-xs hover:text-accent-active"
 								>
 									+ Thêm buổi học
 								</button>

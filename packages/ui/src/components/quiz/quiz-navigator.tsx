@@ -88,13 +88,13 @@ export function QuizNavigator({
 								aria-current={isCurrent ? "true" : undefined}
 								onClick={() => onSelect(question.q)}
 								className={cn(
-									"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-accent-blue",
+									"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-hot",
 									verdict
 										? VERDICT_BUTTON_CLASSES[verdict]
 										: answered
 											? "border-transparent bg-primary text-primary-foreground"
 											: "border-line bg-surface text-fg hover:border-fg-2",
-									isCurrent && "outline-2 outline-accent-blue outline-offset-1",
+									isCurrent && "outline-2 outline-hot outline-offset-1",
 								)}
 							>
 								{question.number}

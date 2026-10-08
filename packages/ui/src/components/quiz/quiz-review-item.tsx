@@ -70,7 +70,7 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 			</p>
 			{info.note.trim().length > 0 && (
 				<details className="mt-1.5">
-					<summary className="cursor-pointer select-none font-medium text-accent-blue">
+					<summary className="cursor-pointer select-none font-medium text-hot">
 						Giải thích
 					</summary>
 					<p className="mt-1 whitespace-pre-wrap text-muted-fg leading-[1.55]">

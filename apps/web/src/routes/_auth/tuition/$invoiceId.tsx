@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_auth/tuition/$invoiceId")({
 			</p>
 			<Link
 				to="/tuition"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về Doanh thu
 			</Link>
@@ -141,7 +141,7 @@ export function InvoiceDetailRoute() {
 					<Link
 						to="/tuition"
 						search={backSearch}
-						className="font-medium text-accent-blue text-sm hover:text-accent-active"
+						className="font-medium text-hot text-sm hover:text-accent-active"
 					>
 						← Doanh thu
 					</Link>
@@ -285,7 +285,7 @@ export function InvoiceDetailRoute() {
 									className="flex items-center gap-2 font-medium text-sm hover:text-accent-active"
 								>
 									<Avatar text={student.avatar} size="sm" />
-									<span className="text-accent-blue hover:text-accent-active">
+									<span className="text-hot hover:text-accent-active">
 										{student.name}
 									</span>
 								</Link>
@@ -296,7 +296,7 @@ export function InvoiceDetailRoute() {
 								<Link
 									to="/classes/$classId"
 									params={{ classId: cls.id }}
-									className="font-medium text-accent-blue text-sm hover:text-accent-active"
+									className="font-medium text-hot text-sm hover:text-accent-active"
 								>
 									{cls.name}
 								</Link>

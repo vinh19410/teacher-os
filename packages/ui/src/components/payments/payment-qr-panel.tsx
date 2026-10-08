@@ -157,7 +157,7 @@ export function PaymentQrPanel({
 									</span>
 									<button
 										type="button"
-										className="rounded-md px-2 py-1 text-accent-blue text-xs hover:bg-accent-blue/10 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										className="rounded-md px-2 py-1 text-hot text-xs hover:bg-hot/10 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 										onClick={() => copy(row.label, row.value)}
 									>
 										{copied === row.label ? strings.copied : strings.copy}

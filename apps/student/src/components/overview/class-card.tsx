@@ -94,7 +94,7 @@ export function ClassCard({
 							type="button"
 							disabled={accepting || !onAccept}
 							onClick={() => onAccept?.(cls.enrollmentId)}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-pill)] bg-accent-blue font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background] duration-150 hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-pill)] bg-hot font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background] duration-150 hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
@@ -120,7 +120,7 @@ export function ClassBadges({ cls }: { cls: StudentClass }) {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			{cls.level && (
-				<span className="rounded-full bg-accent-soft px-2.5 py-0.5 font-[510] text-[11px] text-accent-blue">
+				<span className="rounded-full bg-accent-soft px-2.5 py-0.5 font-[510] text-[11px] text-hot">
 					{cls.level}
 				</span>
 			)}
@@ -153,7 +153,7 @@ export function ClassProgress({ cls }: { cls: StudentClass }) {
 			</div>
 			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-line-soft">
 				<div
-					className="h-full rounded-full bg-accent-blue transition-all duration-300"
+					className="h-full rounded-full bg-hot transition-all duration-300"
 					style={{ width: `${progressPercent}%` }}
 				/>
 			</div>

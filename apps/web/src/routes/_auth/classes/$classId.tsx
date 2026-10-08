@@ -62,7 +62,7 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 			</p>
 			<Link
 				to="/classes"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về danh sách lớp
 			</Link>
@@ -213,7 +213,7 @@ function ClassDetailRoute() {
 							<button
 								type="button"
 								onClick={() => setFeeModalOpen(true)}
-								className="cursor-pointer font-sans text-accent-blue text-xs hover:underline"
+								className="cursor-pointer font-sans text-hot text-xs hover:underline"
 							>
 								Sửa
 							</button>

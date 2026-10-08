@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 type Variant = "accent" | "success" | "warn" | "danger" | "muted";
 
 const variantClasses: Record<Variant, string> = {
-	accent: "bg-accent-soft text-accent-blue",
+	accent: "bg-accent-soft text-hot",
 	success: "bg-success-soft text-success",
 	warn: "bg-warn-soft text-warn",
 	danger: "bg-danger-soft text-danger",

@@ -73,7 +73,7 @@ export function AuthField({
 						"h-12 w-full rounded-[var(--radius-md)] border border-line bg-bg px-[15px] text-fg text-sm",
 						"transition-[border-color,box-shadow] duration-[150ms] motion-reduce:transition-none",
 						"hover:border-[color-mix(in_oklab,var(--fg),transparent_72%)]",
-						"focus:border-accent-blue focus:shadow-[var(--focus-ring)] focus:outline-none",
+						"focus:border-hot focus:shadow-[var(--focus-ring)] focus:outline-none",
 						passwordToggle && "pr-[50px]",
 						invalid &&
 							"border-danger focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--danger),transparent_68%)]",

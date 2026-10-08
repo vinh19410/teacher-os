@@ -57,7 +57,7 @@ export function AssignmentRow({
 					? `Xem lại kết quả: ${assignment.title}`
 					: `Làm bài: ${assignment.title}`
 			}
-			className="block rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-accent-blue"
+			className="block rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-hot"
 		>
 			{rowContent}
 		</Link>

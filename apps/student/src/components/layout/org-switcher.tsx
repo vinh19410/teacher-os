@@ -44,7 +44,7 @@ export function OrgSwitcher() {
 				data-testid="org-switcher-single"
 				className="flex h-8 max-w-[180px] items-center gap-1.5 rounded-lg border border-line bg-surface/50 px-2.5 font-medium text-fg text-xs"
 			>
-				<Building2 className="h-3.5 w-3.5 shrink-0 text-accent-blue" />
+				<Building2 className="h-3.5 w-3.5 shrink-0 text-hot" />
 				<span className="truncate">{currentOrg.name}</span>
 			</div>
 		);
@@ -72,7 +72,7 @@ export function OrgSwitcher() {
 				className="flex h-8 max-w-[180px] items-center justify-between gap-1.5 rounded-lg border border-line bg-surface/60 px-2.5 font-medium text-fg text-xs transition-colors hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
-					<Building2 className="h-3.5 w-3.5 shrink-0 text-accent-blue" />
+					<Building2 className="h-3.5 w-3.5 shrink-0 text-hot" />
 					<span className="truncate">{currentOrg?.name || "Chọn tổ chức"}</span>
 				</div>
 				<ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-fg" />
@@ -107,7 +107,7 @@ export function OrgSwitcher() {
 									>
 										<span className="truncate text-fg">{org.name}</span>
 										{isSelected && (
-											<Check className="h-4 w-4 shrink-0 text-accent-blue" />
+											<Check className="h-4 w-4 shrink-0 text-hot" />
 										)}
 									</button>
 								);

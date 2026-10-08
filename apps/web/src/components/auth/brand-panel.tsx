@@ -65,7 +65,7 @@ export default function BrandPanel({ now }: BrandPanelProps = {}) {
 							</div>
 							<div className="mt-[2px] text-muted-fg text-xs">Room 204</div>
 						</div>
-						<span className="whitespace-nowrap rounded-[var(--radius-pill)] bg-accent-blue px-[10px] py-[3px] font-[590] text-[11px] text-accent-on uppercase tracking-[0.06em]">
+						<span className="whitespace-nowrap rounded-[var(--radius-pill)] bg-hot px-[10px] py-[3px] font-[590] text-[11px] text-accent-on uppercase tracking-[0.06em]">
 							Now
 						</span>
 					</div>
@@ -98,7 +98,7 @@ export default function BrandPanel({ now }: BrandPanelProps = {}) {
 							Syllabus · Midterm review
 						</span>
 						<span className="h-[6px] w-[120px] overflow-hidden rounded-[var(--radius-pill)] bg-surface">
-							<span className="block h-full w-[78%] rounded-[var(--radius-pill)] bg-accent-blue" />
+							<span className="block h-full w-[78%] rounded-[var(--radius-pill)] bg-hot" />
 						</span>
 						<span className="font-mono text-fg-2 text-xs">78%</span>
 					</div>

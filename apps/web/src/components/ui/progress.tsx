@@ -16,7 +16,7 @@ export function Progress({
 			? "bg-danger"
 			: variant === "warn"
 				? "bg-warn"
-				: "bg-accent-blue";
+				: "bg-hot";
 	return (
 		<div
 			className={cn(

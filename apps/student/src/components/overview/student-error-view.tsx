@@ -85,13 +85,13 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
 		description = `Email ${userEmail ? `(${userEmail})` : ""} hiện chưa tham gia lớp học nào. Nếu giáo viên đã gửi lời mời, vui lòng bấm vào biểu tượng Chuông thông báo ở góc trên để chấp nhận tham gia lớp.`;
-		icon = <AlertCircle className="h-8 w-8 text-accent-blue" />;
+		icon = <AlertCircle className="h-8 w-8 text-hot" />;
 	} else if (isEmailUnverified) {
 		title = "Email chưa được xác thực";
 		description = userEmail
 			? `Chúng tôi đã gửi liên kết xác thực đến ${userEmail}. Mở email và nhấn nút “Xác thực email” để kích hoạt hồ sơ học viên. Nếu không thấy, hãy kiểm tra mục Spam hoặc gửi lại liên kết.`
 			: "Chúng tôi đã gửi liên kết xác thực đến email của bạn. Mở email và nhấn nút “Xác thực email” để kích hoạt hồ sơ học viên. Nếu không thấy, hãy kiểm tra mục Spam hoặc gửi lại liên kết.";
-		icon = <MailCheck className="h-8 w-8 text-accent-blue" />;
+		icon = <MailCheck className="h-8 w-8 text-hot" />;
 	} else if (code === STUDENT_ERROR_CODES.AMBIGUOUS) {
 		title = "Thông tin tài khoản chưa rõ ràng";
 		description =
@@ -131,7 +131,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 										className={`flex items-center gap-2 rounded-[var(--radius-pill)] border px-5 py-2.5 font-[510] text-[14px] transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
 											resendStatus === "sent"
 												? "border-success/30 bg-success-soft text-success"
-												: "border-accent-blue/30 bg-accent-soft text-accent-blue hover:bg-accent-soft/80"
+												: "border-hot/30 bg-accent-soft text-hot hover:bg-accent-soft/80"
 										}`}
 									>
 										{resendStatus === "sending" ? (

@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/cn";
 
 const controlClasses =
-	"focus:shadow-[var(--focus-ring)] border-line focus:border-accent-blue placeholder:text-meta bg-bg text-fg focus:outline-none w-full rounded-sm border border-solid px-3 py-[10px] text-sm transition-[border-color,box-shadow] duration-[150ms]";
+	"focus:shadow-[var(--focus-ring)] border-line focus:border-hot placeholder:text-meta bg-bg text-fg focus:outline-none w-full rounded-sm border border-solid px-3 py-[10px] text-sm transition-[border-color,box-shadow] duration-[150ms]";
 
 export function Field({
 	label,

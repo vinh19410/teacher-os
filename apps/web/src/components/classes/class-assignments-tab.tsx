@@ -46,7 +46,7 @@ const PICKER_SKILL_OPTIONS = [
 // Nút "Chấm bài" trông như Button primary size sm — `Button` không export
 // class variant nên chép tĩnh (Link, không phải button thật).
 const GRADE_LINK_BUTTON_CLASS =
-	"inline-flex items-center whitespace-nowrap rounded-full bg-accent-blue px-[14px] py-[6px] font-medium text-accent-on text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+	"inline-flex items-center whitespace-nowrap rounded-full bg-hot px-[14px] py-[6px] font-medium text-accent-on text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
 
 /** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
  * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
@@ -68,7 +68,7 @@ function TargetGradeActions({
 				<Link
 					to="/grading/$attemptId"
 					params={{ attemptId: target.attemptId }}
-					className="font-medium text-accent-blue text-xs hover:text-accent-active"
+					className="font-medium text-hot text-xs hover:text-accent-active"
 				>
 					Xem / sửa điểm
 				</Link>

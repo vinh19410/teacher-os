@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_auth/schedule")({
 });
 
 const typeBlockClass: Record<LessonType, string> = {
-	"1:1": "border-l-accent-blue bg-accent-soft",
+	"1:1": "border-l-hot bg-accent-soft",
 	"1:2": "border-l-success bg-success-soft",
 	trial: "border-l-warn bg-warn-soft",
 	mock: "border-l-fg bg-fg-soft",
@@ -182,14 +182,14 @@ export function ScheduleRoute() {
 									<div className="pb-3 text-center">
 										<div
 											className={`font-semibold text-[11px] uppercase tracking-[0.04em] ${
-												isToday ? "text-accent-blue" : "text-muted-fg"
+												isToday ? "text-hot" : "text-muted-fg"
 											}`}
 										>
 											{dn}
 										</div>
 										<div
 											className={`font-mono text-[11px] ${
-												isToday ? "text-accent-blue" : "text-line-meta"
+												isToday ? "text-hot" : "text-line-meta"
 											}`}
 										>
 											{formatDayMonth(dates[i])}

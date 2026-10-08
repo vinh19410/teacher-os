@@ -39,7 +39,7 @@ export function TeacherAvatar({
 		<span
 			aria-hidden="true"
 			className={cn(
-				"flex shrink-0 items-center justify-center rounded-full bg-accent-blue font-[590] text-accent-on shadow-sm",
+				"flex shrink-0 items-center justify-center rounded-full bg-hot font-[590] text-accent-on shadow-sm",
 				SIZE_CLASS[size],
 			)}
 		>

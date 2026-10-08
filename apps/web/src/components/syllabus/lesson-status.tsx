@@ -3,7 +3,7 @@ import type { SyllabusLesson } from "@/lib/mock-data";
 
 export const lessonDotClass: Record<SyllabusLesson["status"], string> = {
 	done: "bg-success",
-	current: "bg-accent-blue shadow-[0_0_0_3px_var(--accent-soft)]",
+	current: "bg-hot shadow-[0_0_0_3px_var(--accent-soft)]",
 	upcoming: "bg-line",
 };
 

@@ -27,7 +27,7 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 						"whitespace-nowrap border-b-2 border-b-transparent border-none bg-transparent px-4 py-3 font-medium text-sm transition-colors duration-[150ms]",
 						"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 						t.id === active
-							? "border-b-accent-blue text-accent-blue"
+							? "border-b-hot text-hot"
 							: "text-muted-fg hover:text-fg",
 					)}
 				>

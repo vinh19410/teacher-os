@@ -56,7 +56,7 @@ export function AvatarMenu({
 							: "hover:bg-surface/80",
 					)}
 				>
-					<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-blue font-[590] text-accent-on text-sm shadow-sm">
+					<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-hot font-[590] text-accent-on text-sm shadow-sm">
 						{initial}
 					</span>
 					<div className="min-w-0 flex-1 leading-[1.3]">
@@ -78,7 +78,7 @@ export function AvatarMenu({
 					aria-label="Tài khoản học viên"
 					className="flex items-center gap-2 rounded-full p-1 text-left transition-colors hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 				>
-					<span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-blue font-[590] text-accent-on text-xs">
+					<span className="flex h-8 w-8 items-center justify-center rounded-full bg-hot font-[590] text-accent-on text-xs">
 						{initial}
 					</span>
 					{name && (

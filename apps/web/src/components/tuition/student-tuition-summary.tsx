@@ -37,7 +37,7 @@ function classCell(row: StudentClassTuition) {
 			<Link
 				to="/classes/$classId"
 				params={{ classId: row.classId }}
-				className="font-medium text-accent-blue hover:text-accent-active"
+				className="font-medium text-hot hover:text-accent-active"
 			>
 				{row.className}
 			</Link>

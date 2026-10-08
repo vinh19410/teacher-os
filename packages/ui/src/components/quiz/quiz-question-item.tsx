@@ -84,7 +84,7 @@ export function QuizQuestionItem({
 			className={cn(
 				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
 				current
-					? "border-accent-blue bg-accent-soft"
+					? "border-hot bg-accent-soft"
 					: "border-transparent bg-bg",
 			)}
 		>
@@ -117,7 +117,7 @@ export function QuizQuestionItem({
 									"flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors",
 									reviewMode ? "cursor-default" : "cursor-pointer",
 									selected
-										? "border-accent-blue bg-accent-soft"
+										? "border-hot bg-accent-soft"
 										: "border-line bg-bg",
 									!reviewMode && !selected && "hover:border-fg-2",
 								)}
@@ -128,7 +128,7 @@ export function QuizQuestionItem({
 									value={row.value}
 									checked={selected}
 									onChange={() => onAnswer(question.q, row.value)}
-									className="size-4 shrink-0 accent-accent-blue"
+									className="size-4 shrink-0 accent-hot"
 								/>
 								{row.label && (
 									<span className="w-5 shrink-0 text-center font-medium font-mono text-muted-fg">

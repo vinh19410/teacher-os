@@ -13,7 +13,7 @@ const LESSON_STATUS: Record<string, { label: string; badgeClass: string }> = {
 	},
 	upcoming: {
 		label: "Sắp tới",
-		badgeClass: "border-accent-blue/20 bg-accent-soft text-accent-blue",
+		badgeClass: "border-hot/20 bg-accent-soft text-hot",
 	},
 	absent: {
 		label: "Vắng",
@@ -76,7 +76,7 @@ export function ClassLessonList({
 						aria-current={isNext ? "true" : undefined}
 						className={cn(
 							"flex flex-col gap-2 rounded-[var(--radius-md)] border bg-surface/30 p-4 sm:flex-row sm:items-center sm:justify-between",
-							isNext ? "border-accent-blue bg-accent-soft/40" : "border-line",
+							isNext ? "border-hot bg-accent-soft/40" : "border-line",
 						)}
 					>
 						<div className="min-w-0 flex-1">
@@ -96,7 +96,7 @@ export function ClassLessonList({
 						</div>
 						<div className="flex items-center gap-2">
 							{isNext && (
-								<span className="rounded-full bg-accent-blue px-2.5 py-0.5 font-[590] text-[12px] text-accent-on">
+								<span className="rounded-full bg-hot px-2.5 py-0.5 font-[590] text-[12px] text-accent-on">
 									Buổi tới
 								</span>
 							)}

@@ -121,7 +121,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 							key={idx}
 							className={cn(
 								"h-1.5 flex-1 rounded-full transition-colors",
-								step >= idx ? "bg-accent-blue" : "bg-line",
+								step >= idx ? "bg-hot" : "bg-line",
 							)}
 						/>
 					))}
@@ -227,7 +227,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						className={cn(
 							"inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] px-4 py-2 font-medium text-sm transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							isCurrentStepValid
-								? "cursor-pointer bg-accent-blue text-accent-on hover:bg-accent-hover"
+								? "cursor-pointer bg-hot text-accent-on hover:bg-accent-hover"
 								: "cursor-not-allowed border border-line bg-surface text-muted-fg opacity-50",
 						)}
 					>
@@ -239,7 +239,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						type="button"
 						disabled={submitMutation.isPending}
 						onClick={handleSubmit}
-						className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-accent-blue px-5 py-2 font-medium text-accent-on text-sm transition-all hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-hot px-5 py-2 font-medium text-accent-on text-sm transition-all hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{submitMutation.isPending ? (
 							<>

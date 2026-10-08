@@ -88,7 +88,7 @@ export function StudentsRoute() {
 						className={cn(
 							"-mb-[5px] border-b-2 px-3 py-1.5 font-medium text-sm transition-colors",
 							activeTab === "students"
-								? "border-accent-blue font-semibold text-accent-blue"
+								? "border-hot font-semibold text-hot"
 								: "border-transparent text-meta hover:text-fg",
 						)}
 					>
@@ -100,7 +100,7 @@ export function StudentsRoute() {
 						className={cn(
 							"-mb-[5px] flex items-center gap-1.5 border-b-2 px-3 py-1.5 font-medium text-sm transition-colors",
 							activeTab === "invitations"
-								? "border-accent-blue font-semibold text-accent-blue"
+								? "border-hot font-semibold text-hot"
 								: "border-transparent text-meta hover:text-fg",
 						)}
 					>

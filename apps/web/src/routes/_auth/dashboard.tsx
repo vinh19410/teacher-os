@@ -64,7 +64,7 @@ function DashboardRoute() {
 				<h2 className="font-semibold text-xl">Lịch hôm nay</h2>
 				<Link
 					to="/schedule"
-					className="px-2 font-medium text-accent-blue text-xs hover:text-accent-active"
+					className="px-2 font-medium text-hot text-xs hover:text-accent-active"
 				>
 					Xem tuần →
 				</Link>

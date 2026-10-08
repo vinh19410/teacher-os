@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_auth/students/$studentId")({
 			</p>
 			<Link
 				to="/students"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về danh sách học viên
 			</Link>
@@ -98,14 +98,14 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 		<Link
 			to="/assignments/$assignmentId"
 			params={{ assignmentId: row.id }}
-			className="font-medium text-accent-blue hover:text-accent-active"
+			className="font-medium text-hot hover:text-accent-active"
 		>
 			{row.title}
 		</Link>,
 		row.typeLabel ?? "—",
 		row.due === "" ? "—" : fmtDue(row.due),
 		row.scores ? (
-			<span className="font-mono font-semibold text-accent-blue">
+			<span className="font-mono font-semibold text-hot">
 				{averageBand(row.scores).toFixed(1)}
 			</span>
 		) : (
@@ -213,7 +213,7 @@ function StudentDetailRoute() {
 											<Link
 												to="/classes/$classId"
 												params={{ classId: c.id }}
-												className="font-medium text-accent-blue hover:text-accent-active"
+												className="font-medium text-hot hover:text-accent-active"
 											>
 												{c.name}
 											</Link>

@@ -1,7 +1,7 @@
 import type { Notif } from "@/lib/mock-data";
 
 const dotColors: Record<Notif["dot"], string> = {
-	accent: "bg-accent-blue",
+	accent: "bg-hot",
 	danger: "bg-danger",
 	warn: "bg-warn",
 };

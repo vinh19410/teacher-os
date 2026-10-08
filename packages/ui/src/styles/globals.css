@@ -131,7 +131,7 @@
 	/*
    * App-kit utilities (export roles). Naming avoids the shadcn collision:
    * - text gray  → muted-fg     (shadcn `muted` stays a SURFACE below)
-   * - blue       → accent-blue  (shadcn `accent` stays a hover SURFACE below)
+   * - blue       → hot  (shadcn `accent` stays a hover SURFACE below)
    * - line grays → line / line-soft (shadcn `border` mirrors line below)
    */
 	--color-bg: var(--bg);
@@ -143,7 +143,7 @@
 	--color-meta: var(--meta);
 	--color-line: var(--border);
 	--color-line-soft: var(--border-soft);
-	--color-accent-blue: var(--accent);
+	--color-hot: var(--accent);
 	--color-accent-on: var(--accent-on);
 	--color-accent-hover: var(--accent-hover);
 	--color-accent-active: var(--accent-active);

@@ -111,7 +111,7 @@ function QuizTakeError({ error }: { error: unknown }) {
 			</p>
 			<a
 				href="/"
-				className="text-accent-blue text-sm underline-offset-4 hover:underline"
+				className="text-hot text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ
 			</a>

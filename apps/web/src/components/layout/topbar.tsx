@@ -112,7 +112,7 @@ export function Topbar({
 			</div>
 			<div
 				ref={searchWrapRef}
-				className="topbar-search relative ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-accent-blue focus-within:shadow-[var(--focus-ring)] max-app:hidden"
+				className="topbar-search relative ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-hot focus-within:shadow-[var(--focus-ring)] max-app:hidden"
 			>
 				<svg
 					aria-hidden="true"

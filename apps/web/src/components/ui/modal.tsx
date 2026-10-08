@@ -83,7 +83,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 						type="button"
 						onClick={onClose}
 						aria-label="Đóng"
-						className="cursor-pointer border-none bg-transparent px-2 text-accent-blue text-sm"
+						className="cursor-pointer border-none bg-transparent px-2 text-hot text-sm"
 					>
 						✕
 					</button>

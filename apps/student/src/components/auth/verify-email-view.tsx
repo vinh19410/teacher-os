@@ -65,7 +65,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 		return (
 			<div className="text-center">
 				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft">
-					<MailCheck className="h-7 w-7 text-accent-blue" />
+					<MailCheck className="h-7 w-7 text-hot" />
 				</div>
 				<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
 					Email đã được xác thực
@@ -77,7 +77,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 					<button
 						type="button"
 						onClick={() => window.location.assign("/")}
-						className="w-full rounded-full bg-accent-blue px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+						className="w-full rounded-full bg-hot px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 					>
 						Vào cổng học viên
 					</button>
@@ -109,7 +109,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 							type="button"
 							onClick={() => void handleResend()}
 							disabled={resendStatus === "sending"}
-							className="flex items-center gap-2 rounded-full bg-accent-blue px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+							className="flex items-center gap-2 rounded-full bg-hot px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 						>
 							{resendStatus === "sending" ? (
 								<>
@@ -131,7 +131,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 				<p className="mt-6">
 					<a
 						href="/login"
-						className="font-[590] text-accent-blue text-sm underline-offset-[3px] hover:underline"
+						className="font-[590] text-hot text-sm underline-offset-[3px] hover:underline"
 					>
 						Về đăng nhập
 					</a>

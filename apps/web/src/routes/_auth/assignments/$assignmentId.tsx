@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_auth/assignments/$assignmentId")({
 			</p>
 			<Link
 				to="/assignments"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về danh sách bài tập
 			</Link>
@@ -72,7 +72,7 @@ function AssignmentDetailRoute() {
 				</div>
 				{avg ? (
 					<div className="text-center">
-						<div className="font-display font-semibold text-4xl text-accent-blue">
+						<div className="font-display font-semibold text-4xl text-hot">
 							{avg}
 						</div>
 						<div className="font-mono text-meta text-xs">Band trung bình</div>
@@ -134,9 +134,9 @@ function AssignmentDetailRoute() {
 									type="button"
 									key={c.id}
 									onClick={() => appendComment(c.text)}
-									className="rounded-sm border border-line-soft border-solid px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-[150ms] hover:border-accent-blue hover:bg-accent-soft"
+									className="rounded-sm border border-line-soft border-solid px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-[150ms] hover:border-hot hover:bg-accent-soft"
 								>
-									<span className="mb-0.5 block font-mono text-[10px] text-accent-blue uppercase tracking-[0.04em]">
+									<span className="mb-0.5 block font-mono text-[10px] text-hot uppercase tracking-[0.04em]">
 										{c.tag}
 									</span>
 									{c.text}
