@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-10-08
 
 ### Added
+- Hồ sơ học viên, tab "Học phí": thêm Tổng học phí / Đã đóng / Còn lại tính theo học phí các lớp đang học (cộng dồn nhiều lớp) và bảng theo lớp; trước đó chỉ liệt kê hóa đơn nên không biết học viên còn phải đóng bao nhiêu (#347)
 - Trang chi tiết hóa đơn `/tuition/<id>`: click (hoặc Enter/Space) vào dòng hóa đơn ở Doanh thu hoặc tab "Học phí" của hồ sơ học viên để xem đầy đủ thông tin (mã, loại, hạn, phương thức, ghi chú, số tiền đã thu/còn lại, học viên/lớp), QR + link thanh toán và lịch sử giao dịch ngân hàng đã khớp; nút trong dòng vẫn hoạt động như cũ, filter kỳ `?ky=` được giữ khi quay lại danh sách (#345)
 - API mới `GET /api/invoices/:id/transactions`: lịch sử giao dịch ngân hàng đã khớp của một hóa đơn (org-scoped, không trả payload raw/định danh nội bộ) (#345)
 

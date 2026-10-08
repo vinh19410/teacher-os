@@ -61,26 +61,31 @@ Ghi chú triển khai:
 - Lọc `enrollments` theo `studentId`, `invoices` theo `sid === studentId` bên trong helper để caller truyền thẳng `data.*`.
 - Map `eid → classId` từ enrollment của học viên; hóa đơn có `eid` không nằm trong map (gồm `""`) cộng vào `unlinkedPaid`.
 - Enrollment trỏ lớp không còn trong `classes` thì bỏ qua (không có tên lớp để hiện); hóa đơn của nó tính vào `unlinkedPaid`.
-- Dùng `invoiceReceived` thay biểu thức `received` trùng lặp trong `revenueByPeriod` (cùng file, output không đổi). `tuitionTotals` và `$invoiceId.tsx` giữ nguyên.
+- Dùng `invoiceReceived` thay TẤT CẢ các bản copy của rule "tiền đã thu" trong scope client:
+  `revenueByPeriod` (cùng file), `tuitionTotals` (cùng file), và biểu thức inline ở
+  `apps/web/src/routes/_auth/tuition/$invoiceId.tsx:113` (red-team #9 — dedup invariant
+  tài chính; safety net: unit test cũ của `revenueByPeriod`/`tuitionTotals` + e2e
+  `invoice-detail.spec.ts`). Output không đổi ở cả ba.
 - Comment helper bằng tiếng Việt, giải thích invariant (cùng giọng các helper khác trong file); không ghi số phase/plan trong comment.
 
 ## Tasks & Steps
 
-1. [ ] Thêm `invoiceReceived` và dùng nó trong `revenueByPeriod`.
-2. [ ] Thêm type `StudentClassTuition`, `StudentTuitionSummary` và hàm `studentTuitionSummary`.
-3. [ ] Viết unit test (mỗi case một `it`):
+1. [x] Thêm `invoiceReceived` và dùng nó trong `revenueByPeriod`.
+2. [x] Thêm type `StudentClassTuition`, `StudentTuitionSummary` và hàm `studentTuitionSummary`.
+3. [x] Viết unit test (mỗi case một `it`):
    - 1 lớp 10.000.000đ, hóa đơn 2.000.000đ `paid` → totalFee 10.000.000, totalPaid 2.000.000, totalRemaining 8.000.000.
    - 2 lớp active có học phí (10.000.000 + 6.000.000) → totalFee 16.000.000; paid/remaining đúng từng lớp.
    - Thu một phần: hóa đơn `unpaid`, `amount` 3.000.000, `paidAmount` 1.000.000 → paid 1.000.000.
    - Mark-paid thủ công: `status: "paid"`, `paidAmount: 0` → paid = amount.
    - `paidAmount > amount` trên hóa đơn chưa paid → clamp về amount.
    - Lớp `invited` có học phí → `counted: false`, không vào tổng.
-   - Lớp `tuitionFee: null` → `counted: false`, `remaining 0`; `countedClasses` = 0 khi chỉ có lớp đó.
+   - Status lạ (`"pending"`) có học phí → `counted: false`, không vào tổng (red-team #8).
+   - Lớp `tuitionFee: null` → `counted: false`, `remaining 0`; `paid` vẫn tính thật trên hóa đơn của enrollment đó; `countedClasses` = 0 khi chỉ có lớp đó.
    - Đóng dư: fee 5.000.000, paid 6.000.000 → remaining 0, overpaid 1.000.000.
    - Hóa đơn `eid: ""` và hóa đơn trỏ enrollment không tồn tại → `unlinkedPaid`, không đổi 3 con số tổng.
    - Hóa đơn/enrollment của học viên khác bị bỏ qua.
    - Học viên không có lớp → `classes: []`, mọi tổng 0, `countedClasses` 0.
-4. [ ] Chạy test hẹp rồi lint/type.
+4. [x] Chạy test hẹp rồi lint/type.
 
 ## Verification
 

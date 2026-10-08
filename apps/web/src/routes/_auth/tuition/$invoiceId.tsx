@@ -23,6 +23,7 @@ import {
 import {
 	effectiveInvoiceStatus,
 	formatDue,
+	invoiceReceived,
 	type RevenuePeriod,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
@@ -109,8 +110,7 @@ export function InvoiceDetailRoute() {
 	const status = effectiveInvoiceStatus(inv, today);
 	// Rule `tuitionTotals` (#320): mark-paid thủ công giữ paidAmount 0 nhưng
 	// tính ĐÃ THU đủ — status, không phải ledger, drive con số cho paid.
-	const received =
-		inv.status === "paid" ? inv.amount : Math.min(inv.paidAmount, inv.amount);
+	const received = invoiceReceived(inv);
 	const remaining = inv.amount - received;
 	const manuallyPaid = inv.status === "paid" && inv.paidAmount === 0;
 
