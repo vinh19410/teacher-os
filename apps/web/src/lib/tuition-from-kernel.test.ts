@@ -4,6 +4,7 @@ import {
 	effectiveInvoiceStatus,
 	formatDue,
 	packagesEndingSoon,
+	revenueByPeriod,
 	rosterDebtByStudent,
 	tuitionTotals,
 } from "./tuition-from-kernel";
@@ -48,6 +49,7 @@ function invoice(partial: Partial<Invoice> & Pick<Invoice, "status">): Invoice {
 		method: "—",
 		due: "",
 		note: "",
+		createdAt: Date.parse("2026-01-10T09:00:00+07:00"),
 		...partial,
 	};
 }
@@ -436,6 +438,7 @@ describe("tuitionTotals with partial ledger payments (#320)", () => {
 			method: "—",
 			due: "",
 			note: "",
+			createdAt: Date.parse("2026-01-10T09:00:00+07:00"),
 			...overrides,
 		};
 	}
@@ -462,5 +465,207 @@ describe("tuitionTotals with partial ledger payments (#320)", () => {
 		]);
 		expect(collected).toBe(500000);
 		expect(outstanding).toBe(0);
+	});
+});
+
+describe("revenueByPeriod (issue #343)", () => {
+	// Mốc "bây giờ" cố định: VN 15/11/2026 — cửa sổ kỳ deterministic.
+	const NOW = new Date("2026-11-15T10:00:00+07:00");
+	/** ms từ ISO có offset +07:00 tường minh — không phụ thuộc timezone máy test. */
+	const vn = (iso: string) => Date.parse(iso);
+
+	test("mark-paid (paidAmount 0) tính full amount — rule tuitionTotals", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "paid",
+					paidAmount: 0,
+					amount: 5400000,
+					createdAt: vn("2026-11-02T09:00:00+07:00"),
+				}),
+			],
+			"month",
+			NOW,
+		);
+		expect(series.dropped).toBe(0);
+		expect(series.buckets[series.buckets.length - 1]).toEqual({
+			key: "2026-11",
+			label: "T11",
+			issued: 5400000,
+			collected: 5400000,
+		});
+	});
+
+	test("unpaid thu một phần → collected = min(paidAmount, amount)", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "unpaid",
+					amount: 100000,
+					paidAmount: 50000,
+					createdAt: vn("2026-11-02T09:00:00+07:00"),
+				}),
+			],
+			"month",
+			NOW,
+		);
+		expect(series.buckets[series.buckets.length - 1]).toMatchObject({
+			issued: 100000,
+			collected: 50000,
+		});
+	});
+
+	test("unpaid overpaid → collected clamp bằng amount", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "unpaid",
+					amount: 100000,
+					paidAmount: 150000,
+					createdAt: vn("2026-11-02T09:00:00+07:00"),
+				}),
+			],
+			"month",
+			NOW,
+		);
+		expect(series.buckets[series.buckets.length - 1]).toMatchObject({
+			issued: 100000,
+			collected: 100000,
+		});
+	});
+
+	test("unpaid 0 đồng → chỉ vào issued", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "unpaid",
+					amount: 100000,
+					paidAmount: 0,
+					createdAt: vn("2026-11-02T09:00:00+07:00"),
+				}),
+			],
+			"month",
+			NOW,
+		);
+		expect(series.buckets[series.buckets.length - 1]).toMatchObject({
+			issued: 100000,
+			collected: 0,
+		});
+	});
+
+	test("cửa sổ tháng: 12 bucket liên tục 2025-12 → 2026-11, rỗng vẫn 0/0", () => {
+		const series = revenueByPeriod([], "month", NOW);
+		expect(series.buckets).toHaveLength(12);
+		expect(series.buckets[0]).toMatchObject({ key: "2025-12", label: "T12" });
+		expect(series.buckets[11]).toMatchObject({ key: "2026-11", label: "T11" });
+		expect(
+			series.buckets.every((b) => b.issued === 0 && b.collected === 0),
+		).toBe(true);
+	});
+
+	test("cửa sổ quý: 8 bucket liên tục 2025-Q1 → 2026-Q4", () => {
+		const series = revenueByPeriod([], "quarter", NOW);
+		expect(series.buckets.map((b) => b.key)).toEqual([
+			"2025-Q1",
+			"2025-Q2",
+			"2025-Q3",
+			"2025-Q4",
+			"2026-Q1",
+			"2026-Q2",
+			"2026-Q3",
+			"2026-Q4",
+		]);
+		expect(series.buckets[7]).toMatchObject({ label: "Q4" });
+	});
+
+	test("cửa sổ năm: capped 5 — hóa đơn 2015 ngoài cửa sổ, không tính dropped", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "paid",
+					amount: 1000000,
+					createdAt: vn("2015-06-10T08:00:00+07:00"),
+				}),
+			],
+			"year",
+			NOW,
+		);
+		expect(series.buckets.map((b) => b.key)).toEqual([
+			"2022",
+			"2023",
+			"2024",
+			"2025",
+			"2026",
+		]);
+		expect(series.dropped).toBe(0);
+		expect(series.buckets.every((b) => b.issued === 0)).toBe(true);
+	});
+
+	test("biên múi giờ: 23:30 VN ngày 31/10 vào bucket T10", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "paid",
+					amount: 500000,
+					createdAt: vn("2026-10-31T23:30:00+07:00"),
+				}),
+			],
+			"month",
+			NOW,
+		);
+		expect(series.buckets.find((b) => b.key === "2026-10")).toMatchObject({
+			label: "T10",
+			issued: 500000,
+		});
+	});
+
+	test("biên múi giờ ngược: 05:00 VN 01/11 (UTC còn 31/10) vào T11, không T10", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "paid",
+					amount: 700000,
+					createdAt: vn("2026-11-01T05:00:00+07:00"),
+				}),
+			],
+			"month",
+			new Date("2026-11-20T10:00:00+07:00"),
+		);
+		expect(series.buckets.find((b) => b.key === "2026-11")).toMatchObject({
+			issued: 700000,
+		});
+		expect(series.buckets.find((b) => b.key === "2026-10")?.issued).toBe(0);
+	});
+
+	test("kỳ quý: hóa đơn tháng 11 vào 2026-Q4 với nhãn Q4", () => {
+		const series = revenueByPeriod(
+			[
+				invoice({
+					status: "paid",
+					amount: 300000,
+					createdAt: vn("2026-11-02T09:00:00+07:00"),
+				}),
+			],
+			"quarter",
+			NOW,
+		);
+		expect(series.buckets[series.buckets.length - 1]).toEqual({
+			key: "2026-Q4",
+			label: "Q4",
+			issued: 300000,
+			collected: 300000,
+		});
+	});
+
+	test("hóa đơn createdAt 0 → loại khỏi bucket + dropped = 1", () => {
+		const series = revenueByPeriod(
+			[invoice({ status: "paid", amount: 900000, createdAt: 0 })],
+			"month",
+			NOW,
+		);
+		expect(series.dropped).toBe(1);
+		expect(
+			series.buckets.every((b) => b.issued === 0 && b.collected === 0),
+		).toBe(true);
 	});
 });

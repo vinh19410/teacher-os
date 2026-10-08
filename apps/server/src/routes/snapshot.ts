@@ -40,7 +40,7 @@ export async function loadInvoices(
 	db: Db,
 	orgId: string,
 ): Promise<KernelSnapshot["invoices"]> {
-	return db
+	const rows = await db
 		.select({
 			id: invoice.id,
 			studentId: invoice.studentId,
@@ -53,6 +53,7 @@ export async function loadInvoices(
 			type: invoice.type,
 			method: invoice.method,
 			paidAmount: invoice.paidAmount,
+			createdAt: invoice.createdAt,
 		})
 		.from(invoice)
 		.innerJoin(
@@ -61,6 +62,12 @@ export async function loadInvoices(
 		)
 		.where(eq(invoice.orgId, orgId))
 		.orderBy(asc(invoice.createdAt), asc(invoice.id));
+	// #343 — `timestamp_ms` lands as a JS Date; the wire convention is an
+	// explicit ISO string (same as the other createdAt projections below).
+	return rows.map((row) => ({
+		...row,
+		createdAt: row.createdAt.toISOString(),
+	}));
 }
 
 /**

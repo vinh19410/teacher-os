@@ -120,8 +120,9 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
 
-	// Trang Học phí: derive gói từ lớp (12 buổi, trạng thái Đang học)
-	await page.getByText("Học phí", { exact: true }).first().click();
+	// Trang Doanh thu (#343 — menu /tuition đổi tên): derive gói từ lớp
+	// (12 buổi, trạng thái Đang học)
+	await page.getByText("Doanh thu", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
 	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
 	await expect(tuitionRow).toBeVisible();

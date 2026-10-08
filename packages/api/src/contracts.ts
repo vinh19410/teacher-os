@@ -1302,6 +1302,13 @@ export interface KernelInvoiceRow {
 	 * payment_transaction amounts). Stays 0 for manually mark-paid invoices.
 	 */
 	paidAmount: number;
+	/**
+	 * #343 — ISO 8601 creation timestamp (server clock); the anchor for
+	 * revenue-by-period bucketing. Drizzle `timestamp_ms` maps to a JS
+	 * `Date`, so the snapshot loader serializes it explicitly with
+	 * `.toISOString()` — never `Number()` this on the wire.
+	 */
+	createdAt: string;
 }
 
 export interface AssignmentQuestion {

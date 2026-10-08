@@ -27,5 +27,9 @@ export function mapInvoices(snapshot: KernelSnapshot): Invoice[] {
 		method: row.method,
 		due: row.due,
 		note: row.note,
+		// #343 — ISO wire → ms; unparseable/missing (deploy skew) falls back
+		// to 0 so revenueByPeriod can count the row as dropped instead of
+		// crashing on NaN math.
+		createdAt: Date.parse(row.createdAt) || 0,
 	}));
 }

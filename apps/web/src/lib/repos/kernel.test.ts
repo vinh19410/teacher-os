@@ -179,6 +179,7 @@ const snapshot: KernelSnapshot = {
 			date: "19/08",
 			type: "Gói buổi",
 			method: "—",
+			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 	],
 	reports: [
@@ -280,6 +281,7 @@ describe("mapKernelSnapshot", () => {
 				method: "—",
 				due: "2026-08-19",
 				note: "",
+				createdAt: Date.parse("2026-08-01T00:00:00.000Z"),
 			},
 		]);
 	});

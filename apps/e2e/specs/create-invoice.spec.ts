@@ -80,7 +80,8 @@ function kpiNum(page: Page, label: string) {
 }
 
 async function openCreateInvoiceModal(page: Page) {
-	await page.getByText("Học phí", { exact: true }).first().click();
+	// #343 — menu /tuition đổi tên "Doanh thu"; text này render bởi app web.
+	await page.getByText("Doanh thu", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
 	await page.getByRole("button", { name: "+ Tạo hóa đơn" }).click();
 	const dialog = page.getByRole("dialog");

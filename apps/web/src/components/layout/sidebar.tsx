@@ -71,7 +71,7 @@ const navSections: {
 			},
 			{
 				to: "/tuition",
-				label: "Học phí",
+				label: "Doanh thu",
 				icon: (
 					<svg
 						aria-hidden="true"

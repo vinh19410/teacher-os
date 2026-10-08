@@ -20,7 +20,7 @@
 			{
 				"id": "ch3",
 				"title": "3 · Điều hướng workspace",
-				"narrative": "AppShell + sidebar là hub điều hướng cố định: Dashboard (lịch hôm nay, điểm danh, học viên rủi ro), Lớp học, Học viên, Syllabus (nhập Excel/CSV), Lịch dạy, Học phí, Bài tập, Báo cáo phụ huynh. Topbar có tìm kiếm toàn cục nhảy thẳng tới học viên/lớp.",
+				"narrative": "AppShell + sidebar là hub điều hướng cố định: Dashboard (lịch hôm nay, điểm danh, học viên rủi ro), Lớp học, Học viên, Syllabus (nhập Excel/CSV), Lịch dạy, Doanh thu, Bài tập, Báo cáo phụ huynh. Topbar có tìm kiếm toàn cục nhảy thẳng tới học viên/lớp.",
 				"focus_nodes": [
 					"shell",
 					"dash",
@@ -149,7 +149,7 @@
 			"id": "tuition",
 			"lane": "lane-workspace",
 			"kind": "action",
-			"label": "Học phí — hóa đơn · thu tiền"
+			"label": "Doanh thu — biểu đồ doanh thu · hóa đơn · thu tiền"
 		},
 		{
 			"id": "assignments",

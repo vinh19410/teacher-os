@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
 import {
 	InvoicePaymentModal,
@@ -28,12 +28,33 @@ import {
 	effectiveInvoiceStatus,
 	formatDue,
 	packagesEndingSoon,
+	type RevenuePeriod,
+	revenueByPeriod,
 	tuitionTotals,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 import { todayISOVietnam } from "@/lib/week-grid";
 
+// #343 — lazy-load chart: recharts (~100 kB gzip) phải thành chunk riêng chỉ
+// /tuition tải, không được nằm trong entry bundle của mọi route.
+const RevenueChart = lazy(() =>
+	import("@/components/tuition/revenue-chart").then((m) => ({
+		default: m.RevenueChart,
+	})),
+);
+
 export const Route = createFileRoute("/_auth/tuition")({
+	// #343 — kỳ doanh thu sống trong URL (?ky=month|quarter|year). Parse
+	// non-throw như schedule: giá trị lạ rơi về undefined → component dùng
+	// mặc định "month", validateSearch không throw/redirect.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { ky?: RevenuePeriod } => ({
+		ky:
+			search.ky === "month" || search.ky === "quarter" || search.ky === "year"
+				? search.ky
+				: undefined,
+	}),
 	component: TuitionRoute,
 });
 
@@ -44,6 +65,8 @@ export function TuitionRoute() {
 	const [modalOpen, setModalOpen] = useState(false);
 	// #320: invoice currently open in the "Thu học phí" QR modal.
 	const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
+	const search = Route.useSearch();
+	const period: RevenuePeriod = search.ky ?? "month";
 
 	// Issues #62/#135 — every number on this page derives from the kernel
 	// store; nothing is hardcoded. The command bus refetches after mark-paid,
@@ -52,10 +75,22 @@ export function TuitionRoute() {
 	const endingSoon = packagesEndingSoon(data.students);
 	// "Hôm nay" một lần cho cả bảng (#322) — badge "Quá hạn" suy ra từ `due`.
 	const today = todayISOVietnam();
+	// #343 — bucket doanh thu theo múi giờ đã xử lý trong helper
+	// (Asia/Ho_Chi_Minh); kỳ hiện tại tự cập nhật khi polling snapshot.
+	const revenue = useMemo(
+		() => revenueByPeriod(data.invoices, period, new Date()),
+		[data.invoices, period],
+	);
+
+	// `ky` là search param duy nhất của route — object form giữ URL sạch,
+	// replace để toggle filter không dồn history (tiền lệ /assignments).
+	const setPeriod = (next: RevenuePeriod) => {
+		void navigate({ to: "/tuition", search: { ky: next }, replace: true });
+	};
 
 	return (
 		<div>
-			<PageHead title="Học phí" lead={`Đã thu ${fmtVND(collected)}`} />
+			<PageHead title="Doanh thu" lead={`Đã thu ${fmtVND(collected)}`} />
 			<div className="grid grid-cols-3 gap-4 max-app:grid-cols-1">
 				<StatCard num={fmtVND(collected)} label="Đã thu (VND)" />
 				<StatCard
@@ -71,6 +106,17 @@ export function TuitionRoute() {
 					className="[&>div:first-child]:text-warn"
 				/>
 			</div>
+
+			<Card variant="white" className="mt-8 p-0">
+				<Suspense fallback={null}>
+					<RevenueChart
+						buckets={revenue.buckets}
+						period={period}
+						dropped={revenue.dropped}
+						onPeriodChange={setPeriod}
+					/>
+				</Suspense>
+			</Card>
 
 			<div className="mt-8">
 				<SectionLabel>Gói học đang hoạt động</SectionLabel>
