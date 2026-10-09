@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Dòng hóa đơn đã thanh toán + số liệu thu tay"
-status: pending
+status: completed
 priority: P2
 effort: 1.5h
 dependencies: []
