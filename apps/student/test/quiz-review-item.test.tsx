@@ -3,6 +3,7 @@ import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
+	QuizReviewChip,
 	type QuizReviewInfo,
 	QuizReviewItem,
 	quizReviewChipText,
@@ -43,43 +44,51 @@ const tfngQuestions: StudentQuizQuestion[] = [
 	{ stem: "The river flows north.", opts: null, pin: null },
 ];
 
-describe("QuizReviewItem — chip verdict", () => {
-	it("đúng → chip success token 'Đúng'", () => {
+describe("QuizReviewChip — token verdict + icon (issue #351)", () => {
+	it("đúng → verdict-correct token, chữ 'Đúng', icon svg aria-hidden", () => {
 		const html = renderToStaticMarkup(
-			<QuizReviewItem info={reviewInfo({ verdict: "correct" })} />,
+			<QuizReviewChip info={reviewInfo({ verdict: "correct" })} />,
 		);
-		expect(html).toContain('data-verdict="correct"');
-		expect(html).toContain("bg-success-soft");
-		expect(html).toMatch(/data-testid="quiz-review-chip"[^>]*>Đúng</);
+		expect(html).toContain('data-testid="quiz-review-chip"');
+		expect(html).toContain("bg-verdict-correct-soft");
+		expect(html).toContain("text-verdict-correct");
+		expect(html).toContain("<svg");
+		expect(html).toContain('aria-hidden="true"');
+		expect(html).toContain(">Đúng</span>");
+		// Icon là svg — text node của chip không lẫn ký tự ✓.
+		expect(quizReviewChipText({ verdict: "correct", answer: "B" })).toBe(
+			"Đúng",
+		);
 	});
 
-	it("sai → chip danger hiển thị đáp án học viên", () => {
+	it("sai → verdict-wrong token, hiển thị đáp án học viên", () => {
 		const html = renderToStaticMarkup(
-			<QuizReviewItem
+			<QuizReviewChip
 				info={reviewInfo({ verdict: "wrong", answer: "tape" })}
 			/>,
 		);
-		expect(html).toContain('data-verdict="wrong"');
-		expect(html).toContain("bg-danger-soft");
-		expect(html).toMatch(/data-testid="quiz-review-chip"[^>]*>tape</);
+		expect(html).toContain("bg-verdict-wrong-soft");
+		expect(html).toContain("text-verdict-wrong");
+		expect(html).toContain(">tape</span>");
 	});
 
-	it("bỏ qua → chip muted 'Chưa trả lời'", () => {
+	it("bỏ qua → muted 'Chưa trả lời', viền đứt", () => {
 		const html = renderToStaticMarkup(
-			<QuizReviewItem
+			<QuizReviewChip
 				info={reviewInfo({ verdict: "skipped", answer: null })}
 			/>,
 		);
-		expect(html).toContain('data-verdict="skipped"');
 		expect(html).toContain("text-muted-fg");
+		expect(html).toContain("border-dashed");
+		expect(html).toContain(">Chưa trả lời</span>");
 		expect(quizReviewChipText({ verdict: "skipped", answer: null })).toBe(
 			"Chưa trả lời",
 		);
 	});
 });
 
-describe("QuizReviewItem — dòng Đáp án", () => {
-	it("Đáp án: X + '— thay thế: a / b' khi có alts", () => {
+describe("QuizReviewItem — dòng Đáp án + Bạn trả lời", () => {
+	it("Đáp án: X tô verdict-correct + '— thay thế: a / b' khi có alts", () => {
 		const html = renderToStaticMarkup(
 			<QuizReviewItem
 				info={reviewInfo({
@@ -89,6 +98,7 @@ describe("QuizReviewItem — dòng Đáp án", () => {
 			/>,
 		);
 		expect(html).toContain("Đáp án:");
+		expect(html).toContain("text-verdict-correct");
 		expect(html).toContain(">glue</span>");
 		expect(html).toContain("thay thế:");
 		expect(html).toContain("adhesive / paste");
@@ -100,6 +110,37 @@ describe("QuizReviewItem — dòng Đáp án", () => {
 		);
 		expect(html).toContain("Đáp án:");
 		expect(html).not.toContain("thay thế");
+	});
+
+	it("wrong → dòng 'Bạn trả lời' gạch ngang màu verdict-wrong", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ verdict: "wrong", key: "C", answer: "A" })}
+			/>,
+		);
+		expect(html).toContain("Bạn trả lời:");
+		expect(html).toContain("line-through");
+		expect(html).toContain("text-verdict-wrong");
+		expect(html).toContain(">A</span>");
+	});
+
+	it("correct → không có dòng 'Bạn trả lời'", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ verdict: "correct", answer: "Paris" })}
+			/>,
+		);
+		expect(html).not.toContain("Bạn trả lời");
+	});
+
+	it("khối giữ data-testid + data-verdict; khung nền chuyển lên cấp câu", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem info={reviewInfo({ verdict: "wrong" })} />,
+		);
+		expect(html).toContain('data-testid="quiz-review-item"');
+		expect(html).toContain('data-verdict="wrong"');
+		// Không còn khối nền surface riêng (nền verdict nằm ở fieldset câu).
+		expect(html).not.toContain("bg-surface");
 	});
 });
 
@@ -195,10 +236,10 @@ describe("QuizPaper mode=review — paper read-only từ đáp án học viên",
 	});
 });
 
-describe("QuizNavigator mode=review — nút số câu tô màu theo verdict", () => {
+describe("QuizNavigator mode=review — nút số câu nền đặc + icon verdict (#351)", () => {
 	const parts = buildQuizParts(tfngQuestions, "tfng");
 
-	it("màu theo verdict + status line đếm đúng/sai/bỏ qua", () => {
+	it("nền đặc theo verdict (chữ verdict-on) + icon svg + status line đếm", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
 				parts={parts}
@@ -211,14 +252,37 @@ describe("QuizNavigator mode=review — nút số câu tô màu theo verdict", (
 		);
 		expect(html).toContain('data-verdict="correct"');
 		expect(html).toContain('data-verdict="skipped"');
-		expect(html).toContain("bg-success-soft");
+		expect(html).toContain("bg-verdict-correct");
+		expect(html).toContain("text-verdict-on");
 		expect(html).toContain("text-muted-fg");
-		expect(html).toContain("Đúng 1 câu · Sai 0 · Bỏ qua 1");
+		// Icon nhỏ ở góc mỗi nút verdict.
+		expect(html).toContain("absolute -top-1 -right-1");
+		expect(html.replace(/<[^>]+>/g, "")).toContain(
+			"Đúng 1 câu · Sai 0 · Bỏ qua 1",
+		);
 		// Verdict thay answered-state: nút đúng không dùng fill primary.
 		expect(html).not.toContain("bg-primary");
 	});
 
-	it("take mode giữ answered-state (không data-verdict)", () => {
+	it("status line tô số theo verdict nhưng textContent giữ nguyên chuỗi", () => {
+		const html = renderToStaticMarkup(
+			<QuizNavigator
+				parts={parts}
+				answers={{}}
+				current={null}
+				onSelect={() => undefined}
+				mode="review"
+				verdicts={{ 0: "wrong", 1: "skipped" }}
+			/>,
+		);
+		expect(html).toContain("text-verdict-correct");
+		expect(html).toContain("text-verdict-wrong");
+		expect(html.replace(/<[^>]+>/g, "")).toContain(
+			"Đúng 0 câu · Sai 1 · Bỏ qua 1",
+		);
+	});
+
+	it("take mode giữ answered-state (không data-verdict, không icon)", () => {
 		const html = renderToStaticMarkup(
 			<QuizNavigator
 				parts={parts}

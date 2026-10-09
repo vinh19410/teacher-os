@@ -190,6 +190,16 @@ describe("AttemptCompactList — n → đáp án học viên → Đáp án đún
 		expect(html).toContain('data-verdict="wrong"');
 		expect(html).toContain('data-verdict="skipped"');
 	});
+
+	it("icon verdict trước đáp án; sai gạch ngang; key xanh khi có chấm (#351)", () => {
+		// Mỗi dòng có một icon svg verdict.
+		expect((html.match(/<svg/g) ?? []).length).toBe(summary.items.length);
+		// Đáp án sai gạch ngang theo verdict-wrong.
+		expect(html).toContain("line-through");
+		expect(html).toContain("text-verdict-wrong");
+		// Key xanh khi câu được chấm (đúng/sai).
+		expect(html).toContain("text-verdict-correct");
+	});
 });
 
 describe("AttemptSummaryBody — nhánh Writing (#304)", () => {

@@ -1,7 +1,9 @@
 import {
 	type AssignmentQuestion,
 	QUIZ_ANSWER_VALUE_MAX,
+	type QuizVerdict,
 } from "@teacher-os/api/contracts";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 /**
  * Pin-validity guard — pins are percents of the image box, so only finite
@@ -25,6 +27,16 @@ function isValidPin(pin: unknown): pin is { x: number; y: number } {
 }
 
 /**
+ * Ô pin tô theo verdict khi soi bài (undefined = take/preview, không đổi) —
+ * cùng ngôn ngữ với cloze (issue #351).
+ */
+const VERDICT_PIN_CLASSES: Record<QuizVerdict, string> = {
+	correct: "border-verdict-correct text-verdict-correct",
+	wrong: "border-verdict-wrong text-verdict-wrong line-through",
+	skipped: "border-dashed border-meta text-muted-fg",
+};
+
+/**
  * Student-facing pin overlay (phase-04 FR5) — numbered pins at their
  * percents beside a fill-in input. Shared by the teacher preview papers and
  * the bank-list aside so the snapshot round-trip is assertable in e2e; the
@@ -42,6 +54,7 @@ export function PinOverlay({
 	imageAlt = "Ảnh đề",
 	answers,
 	onAnswer,
+	verdicts,
 }: {
 	imageUrl: string;
 	items: AssignmentQuestion[];
@@ -53,6 +66,8 @@ export function PinOverlay({
 	/** Take-screen edit callback for the pin input at `items` offset
 	 * `index`. Its presence makes the pin inputs editable. */
 	onAnswer?: (index: number, value: string) => void;
+	/** Verdict theo offset `items` — chỉ review truyền; tô viền ô pin. */
+	verdicts?: Record<number, QuizVerdict>;
 }) {
 	const pinned = items
 		.map((item, index) => ({ item, index }))
@@ -69,6 +84,7 @@ export function PinOverlay({
 			/>
 			{pinned.map(({ item, index }) => {
 				const number = qStart + index;
+				const verdict = verdicts?.[index];
 				return (
 					<span
 						key={number}
@@ -86,7 +102,12 @@ export function PinOverlay({
 							// Cap bằng contract autosave (code-review F2).
 							maxLength={QUIZ_ANSWER_VALUE_MAX}
 							aria-label={`Điền đáp án câu ${number}`}
-							className="w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px]"
+							// disabled:opacity-100 — fieldset review disabled không được
+							// làm mờ màu verdict của ô pin (#351).
+							className={cn(
+								"w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px] disabled:opacity-100",
+								verdict && VERDICT_PIN_CLASSES[verdict],
+							)}
 							value={interactive ? (answers?.[index] ?? "") : undefined}
 							onChange={
 								interactive

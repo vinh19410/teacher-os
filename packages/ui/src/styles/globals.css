@@ -19,7 +19,10 @@
  * @theme inline below (utility layer), so no var() ever references a name that
  * was redefined.
  * Status colors are monochrome + orange; red is reserved for destructive
- * actions (--destructive), never for status.
+ * actions (--destructive), never for status. Single deliberate exception:
+ * the grading verdict pair (--verdict-correct/--verdict-wrong) below is
+ * green/red but ONLY for quiz grading/review surfaces, always paired with a
+ * ✓/✗ icon (DESIGN.md → Tokens).
  */
 :root {
 	color-scheme: dark;
@@ -42,6 +45,9 @@
 	--warn: var(--meta);
 	--danger: var(--accent);
 	--destructive: #f87171;
+	--verdict-correct: #4ade80;
+	--verdict-wrong: #f87171;
+	--verdict-on: #0a0a0a;
 	--font-display: "Inter Tight Variable", "Inter Tight", system-ui, sans-serif;
 	--font-body: "Inter Tight Variable", "Inter Tight", system-ui, sans-serif;
 	--font-mono: "DM Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
@@ -88,6 +94,16 @@
 	--warn-soft: color-mix(in oklab, var(--warn), transparent 86%);
 	--danger-soft: color-mix(in oklab, var(--danger), transparent 88%);
 	--destructive-soft: color-mix(in oklab, var(--destructive), transparent 88%);
+	--verdict-correct-soft: color-mix(
+		in oklab,
+		var(--verdict-correct),
+		transparent 86%
+	);
+	--verdict-wrong-soft: color-mix(
+		in oklab,
+		var(--verdict-wrong),
+		transparent 86%
+	);
 	--gap-xs: var(--space-2);
 	--gap-sm: var(--space-3);
 	--gap-md: var(--space-5);
@@ -155,6 +171,19 @@
 	--warn: var(--meta);
 	--danger: var(--accent);
 	--destructive: #dc2626;
+	--verdict-correct: #166534;
+	--verdict-wrong: #b91c1c;
+	--verdict-on: #ffffff;
+	--verdict-correct-soft: color-mix(
+		in oklab,
+		var(--verdict-correct),
+		transparent 90%
+	);
+	--verdict-wrong-soft: color-mix(
+		in oklab,
+		var(--verdict-wrong),
+		transparent 90%
+	);
 	--elev-raised: 0 12px 32px rgba(0, 0, 0, 0.06);
 	--focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
@@ -199,6 +228,11 @@
 	--color-warn-soft: var(--warn-soft);
 	--color-danger-soft: var(--danger-soft);
 	--color-destructive-soft: var(--destructive-soft);
+	--color-verdict-correct: var(--verdict-correct);
+	--color-verdict-wrong: var(--verdict-wrong);
+	--color-verdict-on: var(--verdict-on);
+	--color-verdict-correct-soft: var(--verdict-correct-soft);
+	--color-verdict-wrong-soft: var(--verdict-wrong-soft);
 
 	/*
    * shadcn aliases — complete enumeration of vars consumed by

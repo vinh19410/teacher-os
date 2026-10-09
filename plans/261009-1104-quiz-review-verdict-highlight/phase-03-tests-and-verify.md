@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Test, e2e và verify 3 viewport × 2 theme"
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 dependencies: [2]

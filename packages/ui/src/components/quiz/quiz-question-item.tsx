@@ -1,14 +1,22 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	answerKindByType,
+	type QuizVerdict,
 	type StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
+import { isAcceptedAnswer } from "@teacher-os/api/lib/grade-quiz";
 import type { QuizPartQuestion } from "@teacher-os/api/lib/quiz-parts";
 import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
 import {
+	QuizReviewChip,
 	type QuizReviewInfo,
 	QuizReviewItem,
 } from "@teacher-os/ui/components/quiz/quiz-review-item";
+import {
+	VERDICT_ACCENT_CLASSES,
+	VERDICT_BLOCK_CLASSES,
+	VerdictIcon,
+} from "@teacher-os/ui/components/quiz/quiz-verdict";
 import { cn } from "@teacher-os/ui/lib/utils";
 
 /** Một hàng lựa chọn: label vị trí (A/i…) hoặc text thuần (TRUE/FALSE…). */
@@ -48,6 +56,71 @@ export function questionChoiceRows(
 /** Anchor DOM của câu `q` (0-based) — navigator scroll-to + focus target. */
 export const questionAnchorId = (q: number): string => `quiz-q-${q + 1}`;
 
+/** Style review áp cho MỘT hàng lựa chọn (issue #351). */
+interface ChoiceRowReview {
+	rowClass: string;
+	textClass: string;
+	accent: string;
+	/** "check" = chọn đúng, "you" = học viên chọn, "key" = hàng đáp án đúng. */
+	mark: "check" | "you" | "key" | null;
+}
+
+/**
+ * Hàng học viên chọn tô theo verdict của câu: đúng = tick "check", sai = gạch
+ * ngang + "Bạn chọn", bỏ qua = "Bạn chọn" màu meta.
+ */
+const SELECTED_ROW_REVIEW: Record<QuizVerdict, ChoiceRowReview> = {
+	correct: {
+		rowClass:
+			"border-verdict-correct/60 bg-verdict-correct-soft text-verdict-correct",
+		textClass: "text-verdict-correct",
+		accent: VERDICT_ACCENT_CLASSES.correct,
+		mark: "check",
+	},
+	wrong: {
+		rowClass: "border-verdict-wrong/60 bg-verdict-wrong-soft",
+		textClass: "text-verdict-wrong line-through",
+		accent: VERDICT_ACCENT_CLASSES.wrong,
+		mark: "you",
+	},
+	skipped: {
+		rowClass: "border-line-strong/40 bg-surface",
+		textClass: "text-muted-fg",
+		accent: VERDICT_ACCENT_CLASSES.skipped,
+		mark: "you",
+	},
+};
+
+/**
+ * Style review của MỘT hàng lựa chọn: khi sai/bỏ qua, hàng đáp án đúng có
+ * viền xanh + "Đáp án đúng" — so khớp key qua `isAcceptedAnswer`, cùng rule
+ * normalize với grader. Take mode không gọi hàm này.
+ */
+function choiceRowReview(
+	review: QuizReviewInfo,
+	selected: boolean,
+	rowValue: string,
+): ChoiceRowReview {
+	if (selected) return SELECTED_ROW_REVIEW[review.verdict];
+	if (
+		review.verdict !== "correct" &&
+		isAcceptedAnswer(rowValue, review.key, review.alts)
+	) {
+		return {
+			rowClass: "border-2 border-verdict-correct",
+			textClass: "text-verdict-correct",
+			accent: VERDICT_ACCENT_CLASSES.correct,
+			mark: "key",
+		};
+	}
+	return {
+		rowClass: "text-muted-fg",
+		textClass: "text-muted-fg",
+		accent: VERDICT_ACCENT_CLASSES.skipped,
+		mark: null,
+	};
+}
+
 export function QuizQuestionItem({
 	question,
 	choiceRows,
@@ -75,24 +148,36 @@ export function QuizQuestionItem({
 	// Câu pill thuần (TRUE/FALSE/NOT GIVEN, roman headings…) xếp hàng ngang
 	// như design Exam; MCQ có text lựa chọn giữ hàng full-width cho chữ dài.
 	const pillOnly = choiceRows.length > 0 && choiceRows.every((r) => !r.label);
+	const verdict = reviewMode && review ? review.verdict : null;
+	// Khung câu: review tô theo verdict (viền trong suốt, màu nằm ở viền trái
+	// + nền soft); take giữ selection cam như cũ.
+	const frameClass = verdict
+		? "border-transparent"
+		: current
+			? "border-hot bg-accent-soft"
+			: "border-transparent bg-transparent";
 	return (
 		<fieldset
 			id={questionAnchorId(question.q)}
 			tabIndex={-1}
 			aria-label={`Câu ${question.number}`}
 			data-question={question.q}
+			data-verdict={verdict ?? undefined}
 			// disabled fieldset chặn radio + cloze input của câu mà không cần
 			// đụng vào widget trong @teacher-os/ui (ClozeStemText/PinOverlay).
 			disabled={reviewMode}
 			className={cn(
 				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
-				current
-					? "border-hot bg-accent-soft"
-					: "border-transparent bg-transparent",
+				frameClass,
+				verdict && VERDICT_BLOCK_CLASSES[verdict],
+				// Câu đang mở ở review: outline cam đè LÊN nền verdict, không
+				// thay thế nó (bg-accent-soft sẽ xoá nền verdict).
+				reviewMode && current && "outline-2 outline-hot outline-offset-2",
 			)}
 		>
 			<div className="leading-[1.6]">
 				<strong className="font-semibold">{question.number}.</strong>{" "}
+				{verdict && review && <QuizReviewChip info={review} />}{" "}
 				{choiceRows.length === 0 ? (
 					<ClozeStemText
 						stem={question.stem}
@@ -100,6 +185,7 @@ export function QuizQuestionItem({
 						number={question.number}
 						value={value}
 						onChange={(next) => onAnswer(question.q, next)}
+						verdict={reviewMode ? review?.verdict : undefined}
 					/>
 				) : (
 					question.stem
@@ -116,6 +202,10 @@ export function QuizQuestionItem({
 				>
 					{choiceRows.map((row) => {
 						const selected = value === row.value;
+						const rv =
+							reviewMode && review
+								? choiceRowReview(review, selected, row.value)
+								: null;
 						return (
 							<label
 								key={row.value}
@@ -128,18 +218,22 @@ export function QuizQuestionItem({
 									pillOnly &&
 										cn(
 											"inline-flex font-mono text-[10px] uppercase tracking-[0.08em]",
-											selected
-												? "border-transparent bg-surface font-medium text-hot"
-												: "neu-sm hover:text-hot",
+											rv
+												? rv.rowClass
+												: selected
+													? "border-transparent bg-surface font-medium text-hot"
+													: "neu-sm hover:text-hot",
 										),
 									// MCQ/heading: hàng full-width, chữ thường.
 									!pillOnly &&
 										cn(
 											"flex",
-											selected
-												? "border-transparent bg-surface text-hot"
-												: "neu-sm",
-											!reviewMode && !selected && "hover:border-fg",
+											rv
+												? rv.rowClass
+												: selected
+													? "border-transparent bg-surface text-hot"
+													: "neu-sm",
+											!reviewMode && !rv && !selected && "hover:border-fg",
 										),
 								)}
 							>
@@ -149,7 +243,10 @@ export function QuizQuestionItem({
 									value={row.value}
 									checked={selected}
 									onChange={() => onAnswer(question.q, row.value)}
-									className="size-4 shrink-0 accent-hot"
+									className={cn(
+										"size-4 shrink-0",
+										rv ? rv.accent : "accent-hot",
+									)}
 								/>
 								{row.label && (
 									<span className="w-5 shrink-0 text-center font-medium font-mono text-muted-fg">
@@ -159,11 +256,25 @@ export function QuizQuestionItem({
 								<span
 									className={cn(
 										selected && "font-medium",
-										!selected && "text-fg",
+										rv ? rv.textClass : !selected && "text-fg",
 									)}
 								>
 									{row.text}
 								</span>
+								{rv?.mark && (
+									<span className="ml-auto inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em]">
+										<VerdictIcon
+											verdict={
+												rv.mark === "key" || rv.mark === "check"
+													? "correct"
+													: (verdict ?? "skipped")
+											}
+											className="size-3"
+										/>
+										{rv.mark === "you" && "Bạn chọn"}
+										{rv.mark === "key" && "Đáp án đúng"}
+									</span>
+								)}
 							</label>
 						);
 					})}

@@ -4,6 +4,7 @@ import {
 	isImageBasedType,
 	optionBankKindFor,
 	QUIZ_ESSAY_MAX,
+	type QuizVerdict,
 	quizTypeDisplay,
 	type StudentQuizDetail,
 } from "@teacher-os/api/contracts";
@@ -134,6 +135,13 @@ export function QuizPaper({
 	// PinOverlay đòi AssignmentQuestion (answer/alts required ở authoring side)
 	// nhưng chỉ ĐỌC `pin` + key answers theo OFFSET trong mảng — nên phải truyền
 	// ĐỦ questions (không lọc pin), qStart=1: offset == q == key answers map.
+	// Verdict soi bài (#351) cũng keyed theo offset đó — dựng từ review record.
+	const pinVerdicts: Record<number, QuizVerdict> | undefined =
+		reviewMode && review
+			? Object.fromEntries(
+					Object.entries(review).map(([q, info]) => [Number(q), info.verdict]),
+				)
+			: undefined;
 	const pinOverlay = usePinOverlay ? (
 		<PinOverlay
 			imageUrl={diagramImageUrl}
@@ -141,6 +149,7 @@ export function QuizPaper({
 			qStart={1}
 			answers={answers}
 			onAnswer={reviewMode ? () => undefined : onAnswer}
+			verdicts={pinVerdicts}
 			imageAlt="Ảnh đề bài"
 		/>
 	) : null;

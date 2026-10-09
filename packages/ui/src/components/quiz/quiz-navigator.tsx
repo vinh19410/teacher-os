@@ -4,14 +4,11 @@ import {
 	isAnsweredValue,
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
+import {
+	VERDICT_SOLID_CLASSES,
+	VerdictIcon,
+} from "@teacher-os/ui/components/quiz/quiz-verdict";
 import { cn } from "@teacher-os/ui/lib/utils";
-
-/** Nút số câu tô màu theo verdict (review mode) thay vì theo answered. */
-const VERDICT_BUTTON_CLASSES: Record<QuizVerdict, string> = {
-	correct: "border-success/40 bg-success-soft text-success",
-	wrong: "border-danger/40 bg-danger-soft text-danger",
-	skipped: "border-line bg-surface text-muted-fg",
-};
 
 const VERDICT_ARIA_LABELS: Record<QuizVerdict, string> = {
 	correct: "đúng",
@@ -60,9 +57,21 @@ export function QuizNavigator({
 					aria-live="polite"
 					className="mb-2 font-mono text-meta text-xs"
 				>
-					{reviewMode
-						? `Đúng ${verdictCount("correct")} câu · Sai ${verdictCount("wrong")} · Bỏ qua ${verdictCount("skipped")}`
-						: `Đã trả lời ${answeredCount}/${allQuestions.length} câu`}
+					{reviewMode ? (
+						<>
+							Đúng{" "}
+							<span className="text-verdict-correct">
+								{verdictCount("correct")}
+							</span>{" "}
+							câu · Sai{" "}
+							<span className="text-verdict-wrong">
+								{verdictCount("wrong")}
+							</span>{" "}
+							· Bỏ qua {verdictCount("skipped")}
+						</>
+					) : (
+						`Đã trả lời ${answeredCount}/${allQuestions.length} câu`
+					)}
 				</p>
 				<div className="flex flex-wrap gap-1.5">
 					{allQuestions.map((question) => {
@@ -88,9 +97,9 @@ export function QuizNavigator({
 								aria-current={isCurrent ? "true" : undefined}
 								onClick={() => onSelect(question.q)}
 								className={cn(
-									"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-hot",
+									"relative flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-hot",
 									verdict
-										? VERDICT_BUTTON_CLASSES[verdict]
+										? VERDICT_SOLID_CLASSES[verdict]
 										: answered
 											? "border-transparent bg-primary text-primary-foreground"
 											: "border-line bg-surface text-fg hover:border-fg-2",
@@ -98,6 +107,12 @@ export function QuizNavigator({
 								)}
 							>
 								{question.number}
+								{verdict && (
+									<VerdictIcon
+										verdict={verdict}
+										className="absolute -top-1 -right-1 size-2.5 rounded-full bg-bg p-px"
+									/>
+								)}
 							</button>
 						);
 					})}
