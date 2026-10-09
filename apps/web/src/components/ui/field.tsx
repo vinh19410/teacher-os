@@ -11,8 +11,11 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 
+// Sunk control (design `neu-in`) with an explicit strong boundary: the bare
+// surface fill only reaches 1.15:1 against the page, so inputs carry a
+// --line-strong border (>=3:1, WCAG 1.4.11) plus the orange focus ring.
 const controlClasses =
-	"focus:shadow-[var(--focus-ring)] border-line focus:border-hot placeholder:text-meta bg-bg text-fg focus:outline-none w-full rounded-sm border border-solid px-3 py-[10px] text-sm transition-[border-color,box-shadow] duration-[150ms]";
+	"w-full bg-surface rounded-md border border-line-strong px-4 py-2.5 text-fg text-sm placeholder:text-meta transition-shadow duration-[150ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-hot/40 focus-visible:shadow-[var(--focus-ring)]";
 
 export function Field({
 	label,
@@ -70,7 +73,7 @@ export function Field({
 			<label
 				id={`${target}-label`}
 				htmlFor={target}
-				className="font-medium text-muted-fg text-xs"
+				className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]"
 			>
 				{label}
 			</label>

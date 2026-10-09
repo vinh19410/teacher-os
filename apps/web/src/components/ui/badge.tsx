@@ -3,12 +3,15 @@ import { cn } from "@/lib/cn";
 
 type Variant = "accent" | "success" | "warn" | "danger" | "muted";
 
+// Status language is monochrome + orange (design TuitionBadge):
+// success = filled chip, accent = solid ink outline, warn = dashed mute
+// outline, danger (overdue/error) = filled hot, muted = sunk fill.
 const variantClasses: Record<Variant, string> = {
-	accent: "bg-accent-soft text-hot",
-	success: "bg-success-soft text-success",
-	warn: "bg-warn-soft text-warn",
-	danger: "bg-danger-soft text-danger",
-	muted: "bg-line-soft text-muted-fg",
+	success: "bg-chip text-fg",
+	accent: "border border-fg text-fg",
+	warn: "border border-dashed border-meta text-meta",
+	danger: "bg-hot font-bold text-accent-on",
+	muted: "neu-in text-fg",
 };
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -28,7 +31,7 @@ export function Badge({
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-[5px] rounded-full px-[10px] py-[3px] font-semibold text-[11px] tracking-[0.01em]",
+				"inline-flex items-center gap-[5px] rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest",
 				dot &&
 					"before:h-1.5 before:w-1.5 before:rounded-full before:bg-current before:content-['']",
 				variantClasses[variant],

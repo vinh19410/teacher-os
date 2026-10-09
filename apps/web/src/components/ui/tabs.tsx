@@ -12,7 +12,7 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 		<div
 			role="tablist"
 			className={cn(
-				"mb-5 flex gap-1 overflow-x-auto border-line border-b",
+				"neu-in mb-5 inline-flex max-w-full gap-1 overflow-x-auto rounded-lg p-1.5",
 				className,
 			)}
 		>
@@ -24,11 +24,9 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 					aria-selected={t.id === active}
 					onClick={() => onChange(t.id)}
 					className={cn(
-						"whitespace-nowrap border-b-2 border-b-transparent border-none bg-transparent px-4 py-3 font-medium text-sm transition-colors duration-[150ms]",
+						"whitespace-nowrap rounded-md border-none bg-transparent px-4 py-2 font-medium text-sm transition-all duration-[150ms]",
 						"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-						t.id === active
-							? "border-b-hot text-hot"
-							: "text-muted-fg hover:text-fg",
+						t.id === active ? "neu-sm text-hot" : "text-muted-fg hover:text-fg",
 					)}
 				>
 					{t.label}
