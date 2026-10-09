@@ -48,9 +48,7 @@ export function NoticeOk({
 				<path d="M20 6 9 17l-5-5" />
 			</svg>
 			<span>
-				<strong className="block font-[590] text-[color-mix(in_oklab,var(--success),black_24%)]">
-					{title}
-				</strong>
+				<strong className="block font-[590] text-fg">{title}</strong>
 				{children && <span className="text-fg-2">{children}</span>}
 			</span>
 		</div>

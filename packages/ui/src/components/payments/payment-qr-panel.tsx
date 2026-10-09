@@ -128,10 +128,12 @@ export function PaymentQrPanel({
 			{data.payable && data.bank && (
 				<div className="flex flex-col items-center gap-4">
 					{data.qrUrl ? (
+						// White backing plate: bank scanners need the dark-module
+						// contrast regardless of theme (intentional non-token color).
 						<img
 							src={data.qrUrl}
 							alt={`Mã QR chuyển khoản ${fmt(data.amountDue)} cho ${data.bank.holderName}`}
-							className="h-64 w-64 border border-line"
+							className="h-64 w-64 border border-line bg-white"
 						/>
 					) : (
 						<div className="flex h-64 w-64 items-center justify-center border border-line text-muted-fg text-xs">
@@ -144,12 +146,14 @@ export function PaymentQrPanel({
 								key={row.label}
 								className="flex items-center justify-between gap-3 border-line border-b py-2 last:border-b-0"
 							>
-								<dt className="shrink-0 text-muted-fg text-xs">{row.label}</dt>
+								<dt className="shrink-0 font-mono text-[10px] text-meta uppercase tracking-[0.15em]">
+									{row.label}
+								</dt>
 								<dd className="flex items-center gap-2 text-right">
 									<span
 										className={
 											row.mono
-												? "select-all font-mono text-xs"
+												? "select-all font-mono text-hot text-xs"
 												: "select-all text-xs"
 										}
 									>

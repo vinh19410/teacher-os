@@ -16,7 +16,7 @@ export function SubmitButton({
 		<button
 			type="submit"
 			disabled={disabled}
-			className="mt-2 flex h-12 w-full items-center justify-center gap-[9px] rounded-[var(--radius-pill)] bg-hot font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background,transform] duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
+			className="mt-2 flex h-12 w-full items-center justify-center gap-[9px] rounded-lg bg-fg font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)] hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40"
 		>
 			{spinning && (
 				<span

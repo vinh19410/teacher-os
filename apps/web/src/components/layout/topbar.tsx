@@ -1,7 +1,10 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouteContext } from "@tanstack/react-router";
+import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Avatar } from "@/components/ui/avatar";
 import { useData } from "@/lib/data-store";
 import { searchGlobal } from "@/lib/global-search";
+import { initialsFromName } from "@/lib/initials";
 import { NotifPanel } from "./notif-panel";
 
 export function Topbar({
@@ -16,6 +19,8 @@ export function Topbar({
 	onToggleCollapse: () => void;
 }) {
 	const navigate = useNavigate();
+	const { session } = useRouteContext({ from: "/_auth" });
+	const user = session?.data?.user;
 	const { data } = useData();
 	const [notifOpen, setNotifOpen] = useState(false);
 	const [query, setQuery] = useState("");
@@ -67,12 +72,12 @@ export function Topbar({
 	const showResults = searchOpen && query.trim().length > 0;
 
 	return (
-		<header className="topbar sticky top-0 z-20 flex items-center gap-4 border-line border-b border-solid px-6 py-3 backdrop-blur-[16px] [-webkit-backdrop-filter:blur(16px)]">
+		<header className="topbar sticky top-0 z-20 flex items-center gap-4 app:px-12 px-6 py-3">
 			<button
 				type="button"
 				aria-label="Menu"
 				onClick={onMenuClick}
-				className="grid app:hidden h-9 w-9 place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+				className="neu-sm grid app:hidden h-9 w-9 place-items-center rounded-md text-fg-2 transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 			>
 				<svg
 					aria-hidden="true"
@@ -93,7 +98,7 @@ export function Topbar({
 				}
 				title="Thu gọn/mở rộng thanh điều hướng"
 				data-testid="sidebar-toggle"
-				className="grid h-9 w-9 place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none max-app:hidden"
+				className="neu-sm grid h-9 w-9 place-items-center rounded-md text-fg-2 transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none max-app:hidden"
 			>
 				<svg
 					aria-hidden="true"
@@ -112,7 +117,7 @@ export function Topbar({
 			</div>
 			<div
 				ref={searchWrapRef}
-				className="topbar-search relative ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-sm border border-line-soft border-solid bg-surface px-3 py-2 transition-shadow focus-within:border-hot focus-within:shadow-[var(--focus-ring)] max-app:hidden"
+				className="topbar-search neu-in relative ml-auto flex max-w-[360px] flex-1 items-center gap-2 rounded-full px-5 py-2.5 transition-shadow focus-within:ring-2 focus-within:ring-hot/40 max-app:hidden"
 			>
 				<svg
 					aria-hidden="true"
@@ -151,7 +156,7 @@ export function Topbar({
 						id="global-search-listbox"
 						role="listbox"
 						data-testid="global-search-results"
-						className="absolute top-full left-0 z-50 mt-2 max-h-[360px] w-full min-w-[280px] overflow-y-auto rounded-lg border border-line border-solid bg-bg shadow-[var(--elev-raised)]"
+						className="neu absolute top-full left-0 z-50 mt-2 max-h-[360px] w-full min-w-[280px] overflow-y-auto rounded-md bg-surface-warm"
 					>
 						{results.length === 0 ? (
 							<div
@@ -169,10 +174,10 @@ export function Topbar({
 									data-testid="global-search-result-item"
 									key={`${r.type}-${r.id}`}
 									onClick={() => goTo(r)}
-									className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left hover:bg-surface"
+									className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:text-hot"
 								>
 									<span className="min-w-0">
-										<span className="block truncate font-medium text-fg text-sm">
+										<span className="block truncate font-medium text-sm">
 											{r.label}
 										</span>
 										{r.sublabel && (
@@ -190,12 +195,29 @@ export function Topbar({
 					</div>
 				)}
 			</div>
+			{user && (
+				// Design puts a round avatar shortcut at the topbar's right edge;
+				// the sidebar footer keeps the fuller profile block (e2e hooks its
+				// testids there).
+				<Link
+					to="/profile"
+					aria-label="Hồ sơ cá nhân"
+					className="shrink-0 rounded-full focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+				>
+					<Avatar
+						text={initialsFromName(user.name || "Giáo viên")}
+						src={user.image}
+						size="sm"
+					/>
+				</Link>
+			)}
+			<ThemeToggle />
 			<div ref={bellWrapRef} className="relative max-app:ml-auto">
 				<button
 					type="button"
 					aria-label="Thông báo"
 					onClick={() => setNotifOpen((v) => !v)}
-					className="relative grid h-9 w-9 place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="neu-sm relative grid h-9 w-9 place-items-center rounded-md text-fg-2 transition-colors duration-[150ms] hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 				>
 					<svg
 						aria-hidden="true"

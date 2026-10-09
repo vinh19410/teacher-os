@@ -54,7 +54,7 @@ function ShellBody({
 				collapsed={collapsed}
 				onToggleCollapse={onToggleCollapse}
 			/>
-			<main className="content max-w-full flex-1 overflow-x-hidden p-6 max-app:p-4">
+			<main className="content mx-auto max-w-[1280px] max-w-full flex-1 overflow-x-hidden app:px-12 px-6 py-10 max-app:p-4">
 				<Outlet />
 			</main>
 		</div>
@@ -91,7 +91,7 @@ export function AppShell() {
 			<div
 				className={cn(
 					"app grid min-h-svh grid-cols-1 transition-[grid-template-columns] duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:transition-none",
-					collapsed ? "app:grid-cols-[64px_1fr]" : "app:grid-cols-[248px_1fr]",
+					collapsed ? "app:grid-cols-[64px_1fr]" : "app:grid-cols-[220px_1fr]",
 				)}
 			>
 				<Sidebar
@@ -103,7 +103,7 @@ export function AppShell() {
 					// biome-ignore lint/a11y/noStaticElementInteractions: scrim exists only on mobile; Escape handler + click both close it
 					<div
 						role="presentation"
-						className="scrim fixed inset-0 z-90 app:hidden bg-[color-mix(in_oklab,var(--fg),transparent_60%)]"
+						className="scrim fixed inset-0 z-90 app:hidden bg-black/60"
 						onClick={() => setSidebarOpen(false)}
 					/>
 				)}

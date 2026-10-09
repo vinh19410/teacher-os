@@ -63,7 +63,7 @@ export default function GoogleOAuthButton() {
 			type="button"
 			disabled={isRedirecting}
 			onClick={handleGoogleSignIn}
-			className="mt-[26px] flex h-12 w-full items-center justify-center gap-[10px] rounded-[var(--radius-pill)] border border-line bg-bg font-[510] text-sm tracking-[0.02em] transition-[border-color,background,transform] duration-[150ms] hover:border-fg hover:bg-surface-warm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40"
+			className="neu-sm mt-[26px] flex h-12 w-full items-center justify-center gap-[10px] rounded-lg font-medium text-fg text-sm tracking-[0.02em] transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-40"
 		>
 			<GoogleIcon />
 			{isRedirecting ? "Redirecting…" : "Continue with Google"}

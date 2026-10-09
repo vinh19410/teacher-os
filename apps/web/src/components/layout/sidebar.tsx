@@ -208,14 +208,22 @@ export function Sidebar({
 	return (
 		<aside
 			className={cn(
-				// Desktop: fill the grid track (app:w-full); the base w-[280px] is the mobile drawer width.
+				// Desktop: floating card inside the grid track (raise surface, hairline
+				// border, small radius) — margins only when expanded, because the
+				// 64px collapsed rail must keep its full width for the avatar (D2).
+				// Mobile: slide-in drawer (w-[280px]).
 				// Base px-4 serves the mobile drawer; when collapsed we only append app:px-2 to override
 				// horizontal padding on desktop. Geometry invariant (D2): rail_width - 2*aside_px >= 48px
 				// for the Avatar md (40px) plus focus-ring room -> 64 - 2*8 = 48.
 				// cn() joins fragments with explicit spaces — biome --write trims edge
 				// whitespace inside JSX className literals, so string concat is unsafe here.
-				"sidebar app:sticky app:top-0 flex app:h-svh app:w-full flex-col overflow-y-auto border-line app:border-r app:border-solid bg-surface px-4 pt-8 pb-5",
-				collapsed && "app:px-2",
+				"sidebar neu app:sticky flex flex-col overflow-y-auto bg-surface-warm px-4 pt-8 pb-5",
+				// w-[280px] below is the mobile drawer; on desktop it is replaced by
+				// the track width minus the floating-card margins (expanded) or the
+				// full 64px rail (collapsed, D2 avatar room).
+				collapsed
+					? "app:top-0 app:h-svh app:w-full app:px-2"
+					: "app:top-4 app:mx-4 app:my-4 app:h-[calc(100svh-2rem)] app:w-[calc(100%-2rem)]",
 				open
 					? "fixed top-0 left-0 z-100 w-[280px] translate-x-0 border-r border-solid shadow-[var(--elev-raised)] transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]"
 					: "fixed top-0 left-0 z-100 w-[280px] -translate-x-full app:translate-x-0 app:border-none app:shadow-none transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
@@ -226,21 +234,18 @@ export function Sidebar({
 				to="/"
 				onClick={onNavigate}
 				title="Về trang chủ"
-				className="-mt-2 mb-3 flex items-center gap-2 self-start rounded-sm p-2 transition-colors duration-[150ms] hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+				className="-mt-2 mb-3 flex items-center gap-2 self-start rounded-sm p-2 transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 			>
-				<div className="grid h-8 w-8 place-items-center rounded-sm bg-fg font-display font-semibold text-[15px] text-bg tracking-[-0.02em]">
-					T
-				</div>
 				<div
 					className={cn(
-						"flex items-center gap-2 font-display font-semibold text-base tracking-[-0.01em]",
+						"font-mono text-fg text-xs uppercase tracking-[0.25em]",
 						// Collapsed-branch classes are always app:-prefixed (D10) so they cannot leak into the mobile drawer.
 						collapsed && "app:hidden",
 					)}
 				>
-					<span>Teacher OS</span>
-					<VersionBadge />
+					Teacher<span className="text-hot">/</span>OS
 				</div>
+				<VersionBadge />
 			</Link>
 			<nav className="flex flex-1 flex-col gap-0.5">
 				{navSections.map((section) => (
@@ -250,7 +255,7 @@ export function Sidebar({
 							// by app:-variants (D11) so the mobile drawer keeps full labels even when collapsed.
 							<div
 								className={cn(
-									"px-3 pt-4 pb-2 font-mono text-[10px] text-meta uppercase tracking-[0.08em]",
+									"px-3 pt-4 pb-2 font-mono text-[10px] text-meta uppercase tracking-[0.18em]",
 									collapsed && "app:hidden",
 								)}
 							>
@@ -265,7 +270,7 @@ export function Sidebar({
 									// styling stays unconditional, safely dead while hidden.
 									"hidden",
 									collapsed &&
-										"mx-auto my-2 app:block w-6 border-line-soft border-t",
+										"mx-auto my-2 app:block w-6 border-line border-t",
 								)}
 							/>
 						)}
@@ -276,11 +281,22 @@ export function Sidebar({
 								onClick={onNavigate}
 								title={item.label}
 								className={cn(
-									"flex items-center gap-3 rounded-sm px-3 py-2 font-medium text-fg-2 text-sm transition-colors duration-[150ms] hover:bg-line-soft hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-soft active:text-hot aria-[current=page]:bg-accent-soft aria-[current=page]:text-hot [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100",
+									"group aria-[current=page]:neu-in flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none aria-[current=page]:font-medium aria-[current=page]:text-hot [&>svg]:h-[18px] [&>svg]:w-[18px] [&>svg]:shrink-0 [&>svg]:opacity-70 aria-[current=page]:[&>svg]:opacity-100",
 									// Collapsed-branch classes are always app:-prefixed (D10).
 									collapsed && "app:justify-center app:px-0",
 								)}
 							>
+								{/* Design marker ■ on the active item — decorative, hidden
+									from the accessible name (e2e locates by label text). */}
+								<span
+									aria-hidden="true"
+									className={cn(
+										"hidden text-[8px] text-hot leading-none group-aria-[current=page]:inline",
+										collapsed && "app:hidden",
+									)}
+								>
+									■
+								</span>
 								{item.icon}
 								<span className={collapsed ? "app:sr-only" : undefined}>
 									{item.label}
@@ -290,7 +306,7 @@ export function Sidebar({
 					</div>
 				))}
 			</nav>
-			<div className="mt-auto border-line-soft border-t border-solid pt-4">
+			<div className="mt-auto border-line border-t border-solid pt-4">
 				<div
 					className={cn(
 						"flex items-center gap-3 p-2",
@@ -305,7 +321,7 @@ export function Sidebar({
 							displayName ? `${displayName} (${user.email})` : "Hồ sơ cá nhân"
 						}
 						aria-label="Hồ sơ cá nhân"
-						className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left hover:bg-line-soft focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<Avatar
 							text={initials}
@@ -316,7 +332,7 @@ export function Sidebar({
 						<div className="min-w-0 flex-1 leading-[1.3]">
 							<div
 								className={cn(
-									"flex items-center font-semibold text-sm",
+									"flex items-center font-medium text-sm",
 									// Collapsed-branch classes are always app:-prefixed (D10).
 									collapsed && "app:hidden",
 								)}
@@ -326,7 +342,7 @@ export function Sidebar({
 								</span>
 								{plan && (
 									<span
-										className="ml-1 shrink-0 rounded-full bg-accent-soft px-[7px] py-px font-mono font-semibold text-[10px] text-hot tracking-[0.04em]"
+										className="ml-1 shrink-0 font-mono text-[10px] text-meta uppercase tracking-[0.08em]"
 										data-testid="sidebar-user-plan"
 									>
 										{plan}
@@ -335,7 +351,7 @@ export function Sidebar({
 							</div>
 							<div
 								className={cn(
-									"truncate text-muted-fg text-xs",
+									"truncate font-mono text-[10px] text-meta",
 									// Kept visible for screen readers when collapsed (phase-02 M1)
 									// so the testid and accessible email survive in the rail too.
 									collapsed && "app:sr-only",
@@ -361,7 +377,7 @@ export function Sidebar({
 							});
 						}}
 						className={cn(
-							"ml-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-sm border border-line-soft border-solid bg-bg text-fg-2 transition-colors duration-[150ms] hover:border-line hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+							"neu-sm ml-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-sm text-fg-2 transition-colors duration-[150ms] hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							collapsed && "app:ml-0",
 						)}
 					>

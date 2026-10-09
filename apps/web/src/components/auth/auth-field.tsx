@@ -49,7 +49,7 @@ export function AuthField({
 			<div className="mb-[7px] flex items-baseline justify-between gap-[10px]">
 				<label
 					htmlFor={id}
-					className="font-[510] text-[13px] text-fg-2 tracking-[0.01em]"
+					className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]"
 				>
 					{label}
 				</label>
@@ -70,13 +70,12 @@ export function AuthField({
 					aria-invalid={invalid || undefined}
 					aria-describedby={invalid ? `${id}-status` : undefined}
 					className={cn(
-						"h-12 w-full rounded-[var(--radius-md)] border border-line bg-bg px-[15px] text-fg text-sm",
-						"transition-[border-color,box-shadow] duration-[150ms] motion-reduce:transition-none",
-						"hover:border-[color-mix(in_oklab,var(--fg),transparent_72%)]",
-						"focus:border-hot focus:shadow-[var(--focus-ring)] focus:outline-none",
+						"h-12 w-full rounded-md border border-line-strong bg-surface px-[15px] text-fg text-sm",
+						"transition-shadow duration-[150ms] motion-reduce:transition-none",
+						"focus:outline-none focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-2 focus-visible:ring-hot/40",
 						passwordToggle && "pr-[50px]",
 						invalid &&
-							"border-danger focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--danger),transparent_68%)]",
+							"border-destructive/60 focus-visible:shadow-[0_0_0_4px_color-mix(in_oklab,var(--destructive),transparent_68%)]",
 					)}
 				/>
 				{passwordToggle && (
@@ -109,10 +108,7 @@ export function AuthField({
 				aria-live="polite"
 			>
 				{invalid ? (
-					<p
-						role="alert"
-						className="text-[color-mix(in_oklab,var(--danger),black_18%)]"
-					>
+					<p role="alert" className="text-danger">
 						{errors[0]}
 					</p>
 				) : (

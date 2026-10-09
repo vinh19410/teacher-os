@@ -47,7 +47,7 @@ function RouteComponent() {
 						</span>
 					</div>
 
-					<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+					<h2 className="font-display font-extrabold text-[28px] leading-[1.15] tracking-[-0.02em] max-[420px]:text-[24px]">
 						Verify your email
 					</h2>
 					<p className="mt-2 text-muted-fg text-sm">
