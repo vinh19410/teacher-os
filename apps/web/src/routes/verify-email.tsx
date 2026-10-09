@@ -28,7 +28,7 @@ function RouteComponent() {
 			>
 				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
 					<div className="mb-[26px] hidden items-center justify-center gap-[10px] max-[960px]:flex">
-						<span className="font-mono text-xs uppercase tracking-[0.25em] text-fg">
+						<span className="font-mono text-fg text-xs uppercase tracking-[0.25em]">
 							Teacher<span className="text-hot">/</span>OS
 						</span>
 					</div>

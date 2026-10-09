@@ -54,7 +54,7 @@ function ShellBody({
 				collapsed={collapsed}
 				onToggleCollapse={onToggleCollapse}
 			/>
-			<main className="content mx-auto max-w-[1280px] max-w-full flex-1 overflow-x-hidden app:px-12 px-6 py-10 max-app:p-4">
+			<main className="content mx-auto max-w-[1280px] flex-1 overflow-x-hidden app:px-12 px-6 py-10 max-app:p-4">
 				<Outlet />
 			</main>
 		</div>

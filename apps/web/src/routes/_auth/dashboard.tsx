@@ -15,7 +15,6 @@ import {
 	atRiskRows,
 	type DashboardRiskReason,
 	formatDashboardGreeting,
-	formatDashboardLead,
 	groupLessonsByClassSession,
 	lessonsToday,
 	upcomingLessonsThisWeek,

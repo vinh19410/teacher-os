@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
 	applyTheme,
 	readTheme,
@@ -7,44 +7,67 @@ import {
 } from "../lib/theme";
 
 /**
+ * Single shared theme store: every consumer (ThemeToggle, Toaster, …) reads
+ * the same snapshot — the class on <html> — so sibling instances can never
+ * desync within a tab (cross-tab sync rides the `storage` event, and the
+ * pre-render /theme-init.js script seeds the class before React mounts).
+ */
+const snapshot = (): Theme =>
+	document.documentElement.classList.contains("light") ? "light" : "dark";
+
+const serverSnapshot = (): Theme => "dark";
+
+const listeners = new Set<() => void>();
+const emit = () => {
+	for (const listener of listeners) listener();
+};
+
+function subscribe(listener: () => void): () => void {
+	listeners.add(listener);
+	return () => listeners.delete(listener);
+}
+
+if (typeof window !== "undefined") {
+	window.addEventListener("storage", (event) => {
+		if (event.key === THEME_STORAGE_KEY) {
+			applyTheme(readTheme());
+			emit();
+		}
+	});
+}
+
+/**
  * Theme state for the app. Applies the theme to <html> on change and
- * persists the choice; cross-tab sync happens through the `storage` event.
- * Persistence is written only on explicit set/toggle, never on mount, so a
- * first visit leaves localStorage untouched (dark stays the implicit default).
+ * persists the choice. Persistence is written only on explicit set/toggle,
+ * never on mount, so a first visit leaves localStorage untouched (dark
+ * stays the implicit default).
  */
 export function useTheme(): {
 	theme: Theme;
 	setTheme: (theme: Theme) => void;
 	toggle: () => void;
 } {
-	const [theme, setThemeState] = useState<Theme>(readTheme);
+	const theme = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
 
+	// Keep the <html> class in lockstep even on the first hydration (the
+	// /theme-init.js script normally did this before React mounted).
 	useEffect(() => {
 		applyTheme(theme);
 	}, [theme]);
 
-	useEffect(() => {
-		const onStorage = (event: StorageEvent) => {
-			if (event.key === THEME_STORAGE_KEY) {
-				setThemeState(event.newValue === "light" ? "light" : "dark");
-			}
-		};
-		window.addEventListener("storage", onStorage);
-		return () => window.removeEventListener("storage", onStorage);
-	}, []);
-
 	const setTheme = useCallback((next: Theme) => {
-		setThemeState(next);
+		applyTheme(next);
 		try {
 			window.localStorage.setItem(THEME_STORAGE_KEY, next);
 		} catch {
 			// Private mode (Safari): theme still applies for this session.
 		}
+		emit();
 	}, []);
 
 	const toggle = useCallback(() => {
-		setTheme(theme === "dark" ? "light" : "dark");
-	}, [setTheme, theme]);
+		setTheme(snapshot() === "dark" ? "light" : "dark");
+	}, [setTheme]);
 
 	return { theme, setTheme, toggle };
 }

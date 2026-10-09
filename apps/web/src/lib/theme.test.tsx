@@ -114,7 +114,9 @@ describe("useTheme", () => {
 	});
 
 	it("setTheme('dark') sau light quay lại dark và ghi storage", () => {
+		// Mô phỏng theme-init: class light đã trên <html> trước khi React mount.
 		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "light" }));
+		document.documentElement.classList.add("light");
 		const { result } = renderHook(() => useTheme());
 		expect(result.current.theme).toBe("light");
 
@@ -128,6 +130,8 @@ describe("useTheme", () => {
 		const { result } = renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
 
+		// Tab khác ghi storage — handler áp lại theme từ storage rồi mới emit.
+		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "light" }));
 		act(() => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
@@ -151,5 +155,21 @@ describe("useTheme", () => {
 		expect(() => act(() => result.current.setTheme("light"))).not.toThrow();
 		expect(result.current.theme).toBe("light");
 		expect(document.documentElement.classList.contains("light")).toBe(true);
+	});
+
+	it("hai instance useTheme cùng tab dùng chung một snapshot (toggle ở chỗ này, chỗ kia theo)", () => {
+		// Regression #349 review: Toaster và ThemeToggle mount 2 hook riêng —
+		// phải đọc cùng một nguồn (class trên <html>), không state rời.
+		const a = renderHook(() => useTheme());
+		const b = renderHook(() => useTheme());
+		expect(a.result.current.theme).toBe("dark");
+		expect(b.result.current.theme).toBe("dark");
+
+		act(() => a.result.current.toggle());
+		expect(a.result.current.theme).toBe("light");
+		expect(b.result.current.theme).toBe("light");
+
+		act(() => b.result.current.setTheme("dark"));
+		expect(a.result.current.theme).toBe("dark");
 	});
 });

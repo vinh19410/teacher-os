@@ -76,6 +76,8 @@ giấy trên nền đen, **một accent cam duy nhất** cho hành động và t
 - **QR:** luôn đặt trên nền trắng (máy quét cần tương phản) — điểm trắng duy nhất được phép.
 - **Bài viết đọc hiểu:** passage weight thường `leading-[1.85]`, KHÔNG dùng weight 800 của
   `.font-serif` design (khó đọc đoạn dài) — lệch có chủ đích.
+- **Quiz runtime "Đã lưu"/"Lỗi":** cùng màu cam như mọi trạng thái — phân biệt bằng chữ;
+  đây là hệ quả có chủ đích của ngôn ngữ đơn sắc + cam (không có màu thứ hai cho trạng thái).
 
 ## Voice
 

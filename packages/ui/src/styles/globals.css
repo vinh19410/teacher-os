@@ -303,37 +303,39 @@
 	}
 }
 
-@layer utilities {
-	/* Card: raise surface, hairline border, small radius (design `neu`). */
-	.neu {
-		background: var(--surface-warm);
-		border: 1px solid var(--border);
-		border-radius: 4px;
-	}
-	/* Outlined control: transparent, hairline border, hover border ink. */
-	.neu-sm {
-		background: transparent;
-		border: 1px solid var(--border);
-		transition:
-			background var(--motion-fast),
-			color var(--motion-fast),
-			border-color var(--motion-fast);
-	}
-	.neu-sm:hover {
+/* Card: raise surface, hairline border, small radius (design `neu`).
+   Registered through @utility so Tailwind sorts them together with the
+   generated utilities — later classes in the same className (bg-bg, bg-fg,
+   border-fg, rounded-*) win the cascade instead of losing the tie to a
+   plain @layer block (code-review finding #349-1). */
+@utility neu {
+	background: var(--surface-warm);
+	border: 1px solid var(--border);
+	border-radius: 4px;
+}
+/* Outlined control: transparent, hairline border, hover border ink. */
+@utility neu-sm {
+	background: transparent;
+	border: 1px solid var(--border);
+	transition:
+		background var(--motion-fast),
+		color var(--motion-fast),
+		border-color var(--motion-fast);
+	&:hover {
 		border-color: var(--fg);
 	}
-	/* Sunk input: surface fill, no border (pair with ring on focus). */
-	.neu-in {
-		background: var(--surface);
-		border: 0;
-	}
-	.no-scrollbar::-webkit-scrollbar {
+}
+/* Sunk fill: surface background, no border (pair with ring on focus). */
+@utility neu-in {
+	background: var(--surface);
+	border: 0;
+}
+@utility no-scrollbar {
+	&::-webkit-scrollbar {
 		width: 0;
 		height: 0;
 	}
-	.no-scrollbar {
-		scrollbar-width: none;
-	}
+	scrollbar-width: none;
 }
 
 @keyframes modal-in {
