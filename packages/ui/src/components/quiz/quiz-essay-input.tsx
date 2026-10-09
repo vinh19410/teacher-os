@@ -62,8 +62,8 @@ export function QuizEssayInput({
 				maxLength={maxLength}
 				placeholder="Viết bài của bạn ở đây…"
 				className={cn(
-					"min-h-[420px] w-full resize-y rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7] outline-none transition-colors placeholder:text-muted-fg focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50",
-					readOnly && "bg-surface/60",
+					"neu-sm min-h-[420px] w-full resize-y rounded-md p-4 text-[15px] leading-[1.7] outline-none placeholder:text-muted-fg focus-visible:border-hot focus-visible:ring-2 focus-visible:ring-hot/40",
+					readOnly && "border-transparent bg-surface",
 				)}
 			/>
 		</div>

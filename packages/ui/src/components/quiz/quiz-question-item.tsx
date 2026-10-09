@@ -72,6 +72,9 @@ export function QuizQuestionItem({
 }) {
 	const reviewMode = mode === "review";
 	const value = answers[question.q] ?? "";
+	// Câu pill thuần (TRUE/FALSE/NOT GIVEN, roman headings…) xếp hàng ngang
+	// như design Exam; MCQ có text lựa chọn giữ hàng full-width cho chữ dài.
+	const pillOnly = choiceRows.length > 0 && choiceRows.every((r) => !r.label);
 	return (
 		<fieldset
 			id={questionAnchorId(question.q)}
@@ -83,11 +86,13 @@ export function QuizQuestionItem({
 			disabled={reviewMode}
 			className={cn(
 				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
-				current ? "border-hot bg-accent-soft" : "border-transparent bg-bg",
+				current
+					? "border-hot bg-accent-soft"
+					: "border-transparent bg-transparent",
 			)}
 		>
 			<div className="leading-[1.6]">
-				<strong className="font-mono">{question.number}.</strong>{" "}
+				<strong className="font-semibold">{question.number}.</strong>{" "}
 				{choiceRows.length === 0 ? (
 					<ClozeStemText
 						stem={question.stem}
@@ -104,7 +109,10 @@ export function QuizQuestionItem({
 				<div
 					role="radiogroup"
 					aria-label={`Câu ${question.number}`}
-					className="mt-2 flex flex-col gap-1.5"
+					className={cn(
+						"mt-2 flex gap-1.5",
+						pillOnly ? "flex-wrap" : "flex-col",
+					)}
 				>
 					{choiceRows.map((row) => {
 						const selected = value === row.value;
@@ -112,10 +120,27 @@ export function QuizQuestionItem({
 							<label
 								key={row.value}
 								className={cn(
-									"flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors",
+									"items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors",
 									reviewMode ? "cursor-default" : "cursor-pointer",
-									selected ? "border-hot bg-accent-soft" : "border-line bg-bg",
-									!reviewMode && !selected && "hover:border-fg-2",
+									// Pill thuần (T/F/NG): nút mono nhỏ theo design Exam;
+									// chọn = nền sunk + chữ cam, viền trong suốt để không
+									// đè border-state của neu-sm.
+									pillOnly &&
+										cn(
+											"inline-flex font-mono text-[10px] uppercase tracking-[0.08em]",
+											selected
+												? "border-transparent bg-surface font-medium text-hot"
+												: "neu-sm hover:text-hot",
+										),
+									// MCQ/heading: hàng full-width, chữ thường.
+									!pillOnly &&
+										cn(
+											"flex",
+											selected
+												? "border-transparent bg-surface text-hot"
+												: "neu-sm",
+											!reviewMode && !selected && "hover:border-fg",
+										),
 								)}
 							>
 								<input
@@ -131,7 +156,14 @@ export function QuizQuestionItem({
 										{row.label}
 									</span>
 								)}
-								<span className="text-fg">{row.text}</span>
+								<span
+									className={cn(
+										selected && "font-medium",
+										!selected && "text-fg",
+									)}
+								>
+									{row.text}
+								</span>
 							</label>
 						);
 					})}

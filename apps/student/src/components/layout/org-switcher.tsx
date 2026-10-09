@@ -27,7 +27,7 @@ export function OrgSwitcher() {
 
 	if (isLoading) {
 		return (
-			<div className="flex h-8 items-center gap-2 rounded-lg bg-surface/60 px-2.5 text-muted-fg text-xs">
+			<div className="neu-in flex h-8 items-center gap-2 rounded-md px-2.5 text-meta text-xs">
 				<Building2 className="h-4 w-4 animate-pulse" />
 				<span className="max-w-[140px] truncate">Đang tải...</span>
 			</div>
@@ -42,7 +42,7 @@ export function OrgSwitcher() {
 		return (
 			<div
 				data-testid="org-switcher-single"
-				className="flex h-8 max-w-[180px] items-center gap-1.5 rounded-lg border border-line bg-surface/50 px-2.5 font-medium text-fg text-xs"
+				className="neu-sm flex h-8 max-w-[180px] items-center gap-1.5 rounded-md px-2.5 font-medium text-fg text-xs"
 			>
 				<Building2 className="h-3.5 w-3.5 shrink-0 text-hot" />
 				<span className="truncate">{currentOrg.name}</span>
@@ -69,7 +69,7 @@ export function OrgSwitcher() {
 				aria-expanded={isOpen}
 				aria-haspopup="listbox"
 				data-testid="org-switcher-trigger"
-				className="flex h-8 max-w-[180px] items-center justify-between gap-1.5 rounded-lg border border-line bg-surface/60 px-2.5 font-medium text-fg text-xs transition-colors hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+				className="neu-sm flex h-8 max-w-[180px] items-center justify-between gap-1.5 rounded-md px-2.5 font-medium text-fg text-xs transition-colors hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 			>
 				<div className="flex min-w-0 items-center gap-1.5">
 					<Building2 className="h-3.5 w-3.5 shrink-0 text-hot" />
@@ -88,9 +88,9 @@ export function OrgSwitcher() {
 					<div
 						role="listbox"
 						data-testid="org-switcher-menu"
-						className="absolute left-0 z-50 mt-1.5 w-60 rounded-[var(--radius-md)] border border-line bg-bg p-1 shadow-[var(--elev-raised)]"
+						className="neu absolute left-0 z-50 mt-1.5 w-60 rounded-lg p-1"
 					>
-						<div className="border-line-soft border-b px-2.5 py-1.5 font-medium text-[11px] text-muted-fg uppercase tracking-wider">
+						<div className="border-line-soft border-b px-2.5 py-1.5 font-mono text-[10px] text-meta uppercase tracking-[0.18em]">
 							Tổ chức học tập
 						</div>
 						<div className="py-1">
@@ -103,7 +103,7 @@ export function OrgSwitcher() {
 										role="option"
 										aria-selected={isSelected}
 										onClick={() => handleSelectOrg(org.id)}
-										className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-left font-[510] text-xs transition-colors hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left font-[510] text-xs transition-colors hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 									>
 										<span className="truncate text-fg">{org.name}</span>
 										{isSelected && (

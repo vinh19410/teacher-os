@@ -101,15 +101,15 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 
 	return (
 		<div className="flex min-h-[70svh] items-center justify-center p-4">
-			<div className="w-full max-w-[480px] rounded-[var(--radius-lg)] border border-line bg-surface/50 p-6 text-center shadow-[var(--elev-raised)] sm:p-8">
-				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface">
+			<div className="neu w-full max-w-[480px] rounded-lg p-6 text-center sm:p-8">
+				<div className="neu-in mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
 					{icon}
 				</div>
 
-				<h2 className="font-[620] font-display text-[22px] text-fg tracking-tight">
+				<h2 className="font-display font-extrabold text-[22px] text-fg tracking-[-0.02em]">
 					{title}
 				</h2>
-				<p className="mt-2 text-[14px] text-muted-fg leading-relaxed">
+				<p className="mt-2 text-[14px] text-meta leading-relaxed">
 					{description}
 				</p>
 
@@ -128,10 +128,10 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 										type="button"
 										onClick={handleResend}
 										disabled={resendStatus === "sending"}
-										className={`flex items-center gap-2 rounded-[var(--radius-pill)] border px-5 py-2.5 font-[510] text-[14px] transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
+										className={`neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
 											resendStatus === "sent"
-												? "border-success/30 bg-success-soft text-success"
-												: "border-hot/30 bg-accent-soft text-hot hover:bg-accent-soft/80"
+												? "text-fg"
+												: "text-hot hover:text-hot"
 										}`}
 									>
 										{resendStatus === "sending" ? (
@@ -156,7 +156,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 								<button
 									type="button"
 									onClick={() => window.location.reload()}
-									className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-line bg-bg px-5 py-2.5 font-[510] text-[14px] text-fg transition-colors hover:border-line-hover hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+									className="neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] text-fg transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 								>
 									<RefreshCw className="h-4 w-4" />
 									<span>Tôi đã xác thực — Kiểm tra lại</span>
@@ -166,7 +166,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 							<button
 								type="button"
 								onClick={handleSignOut}
-								className="mt-1 flex items-center gap-1.5 font-[480] text-[13px] text-muted-fg hover:text-fg"
+								className="mt-1 flex items-center gap-1.5 font-[480] text-[13px] text-meta transition-colors hover:text-hot"
 							>
 								<LogOut className="h-3.5 w-3.5" />
 								<span>Đăng xuất</span>
@@ -176,7 +176,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 						<button
 							type="button"
 							onClick={handleSignOut}
-							className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-line bg-bg px-5 py-2.5 font-[510] text-[14px] text-fg transition-colors hover:border-line-hover hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							className="neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] text-fg transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 						>
 							<LogOut className="h-4 w-4" />
 							<span>Đăng xuất</span>

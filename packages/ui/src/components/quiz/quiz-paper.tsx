@@ -162,7 +162,7 @@ export function QuizPaper({
 				!isEmptyRichText(detail.passage) && (
 					<RichTextBody
 						text={detail.passage}
-						className="text-sm leading-[1.55]"
+						className="text-sm leading-[1.85]"
 					/>
 				)}
 

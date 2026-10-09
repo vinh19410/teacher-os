@@ -58,7 +58,7 @@ export function QuizNavigator({
 					role="status"
 					data-testid="navigator-progress"
 					aria-live="polite"
-					className="mb-2 text-[13px] text-muted-fg"
+					className="mb-2 font-mono text-meta text-xs"
 				>
 					{reviewMode
 						? `Đúng ${verdictCount("correct")} câu · Sai ${verdictCount("wrong")} · Bỏ qua ${verdictCount("skipped")}`

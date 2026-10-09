@@ -67,17 +67,17 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft">
 					<MailCheck className="h-7 w-7 text-hot" />
 				</div>
-				<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+				<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
 					Email đã được xác thực
 				</h2>
-				<p className="mt-2 text-muted-fg text-sm">
+				<p className="mt-2 text-meta text-sm">
 					Địa chỉ email của bạn đã được xác nhận. Bạn sẵn sàng bắt đầu.
 				</p>
 				<div className="mt-6 flex justify-center">
 					<button
 						type="button"
 						onClick={() => window.location.assign("/")}
-						className="w-full rounded-full bg-hot px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+						className="w-full rounded-lg bg-fg px-[18px] py-[10px] font-medium text-bg text-sm transition-colors duration-[150ms] hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 					>
 						Vào cổng học viên
 					</button>
@@ -91,25 +91,23 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 			<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft">
 				<CircleAlert className="h-7 w-7 text-danger" />
 			</div>
-			<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+			<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
 				Liên kết không hoạt động
 			</h2>
-			<p className="mt-2 text-muted-fg text-sm">
+			<p className="mt-2 text-meta text-sm">
 				Liên kết xác thực không hợp lệ, đã được sử dụng hoặc đã hết hạn. Hãy yêu
 				cầu liên kết mới hoặc đăng nhập để tiếp tục.
 			</p>
 			{!isPending && canResend && userEmail ? (
 				resendStatus === "sent" ? (
-					<p className="mt-6 text-sm text-success">
-						Đã gửi lại — kiểm tra hộp thư
-					</p>
+					<p className="mt-6 text-fg text-sm">Đã gửi lại — kiểm tra hộp thư</p>
 				) : (
 					<div className="mt-6 flex flex-wrap justify-center">
 						<button
 							type="button"
 							onClick={() => void handleResend()}
 							disabled={resendStatus === "sending"}
-							className="flex items-center gap-2 rounded-full bg-hot px-[18px] py-[10px] font-medium text-accent-on text-sm transition-colors duration-[150ms] hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+							className="flex items-center gap-2 rounded-lg bg-fg px-[18px] py-[10px] font-medium text-bg text-sm transition-colors duration-[150ms] hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 						>
 							{resendStatus === "sending" ? (
 								<>

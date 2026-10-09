@@ -9,19 +9,19 @@ import {
 const LESSON_STATUS: Record<string, { label: string; badgeClass: string }> = {
 	completed: {
 		label: "Đã học",
-		badgeClass: "border-success/20 bg-success-soft text-success",
+		badgeClass: "bg-success-soft text-success",
 	},
 	upcoming: {
 		label: "Sắp tới",
-		badgeClass: "border-hot/20 bg-accent-soft text-hot",
+		badgeClass: "border border-hot/40 text-hot",
 	},
 	absent: {
 		label: "Vắng",
-		badgeClass: "border-warn/20 bg-warn-soft text-warn",
+		badgeClass: "bg-hot font-medium text-accent-on",
 	},
 	cancelled: {
 		label: "Đã huỷ",
-		badgeClass: "border-line bg-surface-warm text-muted-fg",
+		badgeClass: "neu-in text-muted-fg",
 	},
 };
 
@@ -63,45 +63,52 @@ export function ClassLessonList({
 	const nextId = findNextLessonId(lessons, todayISO);
 
 	return (
-		<ol className="space-y-2.5">
+		<ol>
 			{lessons.map((lesson, i) => {
 				const isNext = lesson.id === nextId;
 				const status = LESSON_STATUS[lesson.status] ?? {
 					label: lesson.status,
-					badgeClass: "border-line bg-surface-warm text-muted-fg",
+					badgeClass: "neu-in text-muted-fg",
 				};
 				return (
+					// Danh sách buổi dạng hàng `border-t` theo design — không card
+					// riêng từng buổi; buổi tới nổi bật bằng chip "Buổi tới" cam.
 					<li
 						key={lesson.id}
 						aria-current={isNext ? "true" : undefined}
 						className={cn(
-							"flex flex-col gap-2 rounded-[var(--radius-md)] border bg-surface/30 p-4 sm:flex-row sm:items-center sm:justify-between",
-							isNext ? "border-hot bg-accent-soft/40" : "border-line",
+							"flex flex-col gap-2 border-line border-t py-3 sm:flex-row sm:items-center sm:justify-between",
+							isNext && "text-fg",
 						)}
 					>
 						<div className="min-w-0 flex-1">
 							<div className="flex flex-wrap items-baseline gap-2">
-								<span className="font-[590] text-[15px] text-fg">
+								<span
+									className={cn(
+										"font-medium text-[15px]",
+										isNext ? "text-hot" : "text-fg",
+									)}
+								>
 									Buổi {i + 1}
 								</span>
-								<span className="text-[13px] text-fg-2">
+								<span className="font-mono text-[12px] text-meta">
 									{lessonDayLabel(lesson)} · {lesson.time} · {lesson.dur} phút
 								</span>
 							</div>
 							{lesson.topic && (
-								<p className="mt-1 truncate text-[13px] text-muted-fg">
+								<p className="mt-1 truncate text-[13px] text-meta">
 									{lesson.topic}
 								</p>
 							)}
 						</div>
 						<div className="flex items-center gap-2">
 							{isNext && (
-								<span className="rounded-full bg-hot px-2.5 py-0.5 font-[590] text-[12px] text-accent-on">
+								<span className="rounded-full bg-hot px-2.5 py-0.5 font-medium font-mono text-[10px] text-accent-on uppercase tracking-[0.08em]">
 									Buổi tới
 								</span>
 							)}
 							<span
-								className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-[590] text-[12px] tracking-tight ${status.badgeClass}`}
+								className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] ${status.badgeClass}`}
 							>
 								{status.label}
 							</span>

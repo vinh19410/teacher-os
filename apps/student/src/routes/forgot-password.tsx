@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import BrandPanel from "@/components/auth/brand-panel";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
@@ -8,7 +9,10 @@ export const Route = createFileRoute("/forgot-password")({
 
 function RouteComponent() {
 	return (
-		<main className="grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
+		<main className="relative grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
+			<div className="absolute top-4 right-4 z-10">
+				<ThemeToggle />
+			</div>
 			<BrandPanel />
 			<section
 				aria-label="Quên mật khẩu"
@@ -16,26 +20,15 @@ function RouteComponent() {
 			>
 				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
 					<div className="mb-[26px] hidden items-center justify-center gap-[10px] max-[960px]:flex">
-						<svg
-							viewBox="0 0 34 34"
-							aria-hidden="true"
-							className="block h-[30px] w-[30px]"
-						>
-							<rect width="34" height="34" rx="9" fill="var(--accent)" />
-							<path
-								d="M9.5 12.5c3-1.8 5-1.8 7.5 0 2.5-1.8 4.5-1.8 7.5 0M17 12.5V22"
-								stroke="#ffffff"
-								strokeWidth="1.9"
-								strokeLinecap="round"
-								fill="none"
-							/>
-						</svg>
-						<span className="font-display font-semibold text-[17px] text-fg tracking-[-0.01em]">
-							Teacher OS · Học viên
+						<span className="font-mono text-fg text-sm uppercase tracking-[0.25em]">
+							Teacher<span className="text-hot">/</span>OS
+						</span>
+						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.25em]">
+							· Học viên
 						</span>
 					</div>
 
-					<h2 className="mb-6 font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+					<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
 						Quên mật khẩu
 					</h2>
 					<p className="-mt-4 mb-6 text-muted-fg text-sm">

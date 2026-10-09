@@ -122,7 +122,7 @@ export function SignInForm({
 							labelRowExtra={
 								<Link
 									to="/forgot-password"
-									className="rounded-[4px] font-[590] text-hot text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+									className="rounded-[4px] font-medium text-hot text-xs underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 								>
 									Quên mật khẩu?
 								</Link>

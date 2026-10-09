@@ -42,16 +42,14 @@ function StudentTuitionDetailRoute() {
 	if (me.isLoading || payment.isLoading) {
 		return (
 			<div className="p-6">
-				<p className="text-muted-fg text-sm">Đang tải…</p>
+				<p className="text-meta text-sm">Đang tải…</p>
 			</div>
 		);
 	}
 	if (payment.isError || !payment.data) {
 		return (
 			<div className="p-6">
-				<p className="text-muted-fg text-sm">
-					Không mở được phiếu học phí này.
-				</p>
+				<p className="text-meta text-sm">Không mở được phiếu học phí này.</p>
 			</div>
 		);
 	}
@@ -59,10 +57,30 @@ function StudentTuitionDetailRoute() {
 	return (
 		<div className="mx-auto flex w-full max-w-md flex-col gap-6 p-6">
 			<header>
-				<p className="text-muted-fg text-xs">{me.data?.student.name ?? ""}</p>
-				<h1 className="font-semibold text-lg">
-					{data.invoiceCode} · {data.amount.toLocaleString("vi-VN")}đ
+				<p className="text-meta text-xs">{me.data?.student.name ?? ""}</p>
+				<h1 className="mt-1 font-display font-extrabold text-2xl tracking-[-0.02em]">
+					<span className="font-mono text-hot">{data.invoiceCode}</span>
+					{" · "}
+					{data.amount.toLocaleString("vi-VN")}đ
 				</h1>
+				<div className="mt-4 grid grid-cols-2 gap-4">
+					<div className="neu rounded-md p-4">
+						<div className="font-mono text-[10px] text-meta uppercase tracking-[0.18em]">
+							Đã đóng
+						</div>
+						<div className="mt-2 font-medium font-mono text-fg text-lg leading-none">
+							{data.paidAmount.toLocaleString("vi-VN")}đ
+						</div>
+					</div>
+					<div className="rounded-md bg-fg p-4">
+						<div className="font-mono text-[10px] text-meta uppercase tracking-[0.18em]">
+							Còn lại
+						</div>
+						<div className="mt-2 font-medium font-mono text-hot text-lg leading-none">
+							{data.amountDue.toLocaleString("vi-VN")}đ
+						</div>
+					</div>
+				</div>
 			</header>
 			<PaymentQrPanel data={data} />
 		</div>

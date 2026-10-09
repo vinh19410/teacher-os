@@ -26,17 +26,8 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 			role="tablist"
 			aria-label="Đăng nhập hoặc tạo tài khoản"
 			onKeyDown={onKeyDown}
-			className="relative mb-7 grid grid-cols-2 rounded-[var(--radius-pill)] bg-surface p-1"
+			className="neu-in relative mb-7 grid grid-cols-2 rounded-lg p-1.5"
 		>
-			<span
-				aria-hidden="true"
-				className={cn(
-					"absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-[var(--radius-pill)] bg-bg",
-					"shadow-[0_1px_4px_rgba(0,0,0,0.12),inset_0_0_0_1px_var(--border-soft)]",
-					"transition-transform duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:transition-none",
-					mode === "signup" ? "translate-x-full" : "translate-x-0",
-				)}
-			/>
 			<button
 				type="button"
 				role="tab"
@@ -48,8 +39,10 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 				tabIndex={mode === "signin" ? 0 : -1}
 				onClick={() => onChange("signin")}
 				className={cn(
-					"relative z-[1] h-10 whitespace-nowrap rounded-[var(--radius-pill)] text-muted-fg text-sm transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
-					mode === "signin" && "font-[590] text-fg",
+					"h-10 whitespace-nowrap rounded-md border-none bg-transparent text-sm transition-all duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
+					mode === "signin"
+						? "neu-sm font-medium text-hot"
+						: "text-muted-fg hover:text-fg",
 				)}
 			>
 				Đăng nhập
@@ -65,8 +58,10 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 				tabIndex={mode === "signup" ? 0 : -1}
 				onClick={() => onChange("signup")}
 				className={cn(
-					"relative z-[1] h-10 whitespace-nowrap rounded-[var(--radius-pill)] text-muted-fg text-sm transition-colors duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
-					mode === "signup" && "font-[590] text-fg",
+					"h-10 whitespace-nowrap rounded-md border-none bg-transparent text-sm transition-all duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
+					mode === "signup"
+						? "neu-sm font-medium text-hot"
+						: "text-muted-fg hover:text-fg",
 				)}
 			>
 				Đăng ký

@@ -101,37 +101,39 @@ function StudentOverviewPage() {
 				dueSoonCount={dueSoonCount}
 			/>
 
-			{/* Lớp học của tôi */}
-			<section>
-				<h2 className="mb-4 font-[620] font-display text-[20px] text-fg tracking-tight">
-					Lớp học của tôi
-				</h2>
+			{/* Lưới design Home: lớp học chiếm cột trái rộng, học phí cột phải. */}
+			<div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.5fr_1fr] lg:items-start">
+				<section className="min-w-0">
+					<h2 className="mb-4 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+						Lớp học của tôi
+					</h2>
 
-				{overview.classes.length === 0 ? (
-					<OverviewEmptyState
-						icon="calendar"
-						title="Bạn chưa tham gia lớp học nào"
-						description="Khi giáo viên ghi danh bạn vào lớp, thông tin khóa học và buổi học tiếp theo sẽ hiển thị tại đây."
-					/>
-				) : (
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{overview.classes.map((cls) => (
-							<ClassCard
-								key={cls.id}
-								cls={cls}
-								onAccept={handleAcceptEnrollment}
-								accepting={
-									acceptEnrollmentMutation.isPending &&
-									acceptEnrollmentMutation.variables === cls.enrollmentId
-								}
-							/>
-						))}
-					</div>
-				)}
-			</section>
+					{overview.classes.length === 0 ? (
+						<OverviewEmptyState
+							icon="calendar"
+							title="Bạn chưa tham gia lớp học nào"
+							description="Khi giáo viên ghi danh bạn vào lớp, thông tin khóa học và buổi học tiếp theo sẽ hiển thị tại đây."
+						/>
+					) : (
+						<div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+							{overview.classes.map((cls) => (
+								<ClassCard
+									key={cls.id}
+									cls={cls}
+									onAccept={handleAcceptEnrollment}
+									accepting={
+										acceptEnrollmentMutation.isPending &&
+										acceptEnrollmentMutation.variables === cls.enrollmentId
+									}
+								/>
+							))}
+						</div>
+					)}
+				</section>
 
-			{/* Học phí (#320) — chỉ hiện khi còn khoản chưa đóng */}
-			<StudentTuitionSection />
+				{/* Học phí (#320) — chỉ hiện khi còn khoản chưa đóng. */}
+				<StudentTuitionSection />
+			</div>
 
 			{/* Bài tập */}
 			<AssignmentList assignments={overview.assignments} />

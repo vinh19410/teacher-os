@@ -76,7 +76,9 @@ describe("EssayWithHighlights (#332)", () => {
 			/>,
 		);
 		const mark = container.querySelector("mark");
-		expect(mark?.className).toContain("bg-warn-soft");
+		// Redesign phase 6: lỗi bài viết dùng mark.anno (nền cam nhạt + gạch
+		// chân cam theo token) thay bg-warn-soft.
+		expect(mark?.className).toContain("anno");
 		expect(mark?.className).toContain("after:content-[attr(data-n)]");
 		expect(mark?.className).toContain("cursor-pointer");
 	});

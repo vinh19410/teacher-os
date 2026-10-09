@@ -67,7 +67,9 @@ export function EssayWithHighlights({
 									data-annotation-id={seg.annotation.id}
 									{...extra}
 									className={cn(
-										"rounded-sm bg-warn-soft px-0.5 text-fg",
+										// mark.anno (globals.css): nền cam nhạt + gạch chân cam —
+										// lỗi bài viết theo design `Results`.
+										"anno rounded-sm px-0.5 text-fg",
 										"after:ml-0.5 after:align-super after:font-mono after:text-[10px] after:text-meta after:content-[attr(data-n)]",
 										activeId === seg.annotation.id && "ring-1 ring-fg",
 										extra?.className,
@@ -79,7 +81,7 @@ export function EssayWithHighlights({
 									<span
 										data-testid="essay-inline-note"
 										data-annotation-id={seg.annotation.id}
-										className="mx-1 break-words rounded-sm border-warn border-l-2 bg-surface box-decoration-clone px-1.5 py-0.5 text-fg-2 text-sm"
+										className="mx-1 break-words rounded-md bg-hot box-decoration-clone px-1.5 py-0.5 align-middle text-accent-on text-xs"
 									>
 										<span className="sr-only">Ghi chú {seg.n}: </span>
 										{seg.annotation.note}

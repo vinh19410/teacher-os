@@ -72,9 +72,9 @@ export function SpeakingGuideCard({ part }: { part: string }) {
 	return (
 		<section
 			aria-label="Hướng dẫn làm bài"
-			className="rounded-[var(--radius-lg)] border border-line bg-surface/50 p-4 text-sm"
+			className="neu rounded-lg p-4 text-sm"
 		>
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
 				Hướng dẫn làm bài
 			</p>
 			<ul className="mt-2 ml-5 list-disc space-y-1">

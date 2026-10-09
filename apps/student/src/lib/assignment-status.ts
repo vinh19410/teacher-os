@@ -92,7 +92,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "graded",
 			statusLabel: `Điểm: ${bandScore}`,
-			badgeClass: "bg-success-soft text-success border-success/20",
+			badgeClass: "bg-success-soft text-success",
 			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
 			bandScore,
 			sortOrder: 4,
@@ -104,7 +104,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "submitted",
 			statusLabel: "Đã nộp",
-			badgeClass: "bg-success-soft text-success border-success/20",
+			badgeClass: "bg-success-soft text-success",
 			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
 			bandScore: null,
 			sortOrder: 3,
@@ -116,7 +116,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg border-line",
+			badgeClass: "bg-surface text-muted-fg",
 			dueText: "Không có hạn",
 			bandScore: null,
 			sortOrder: 2,
@@ -129,7 +129,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg border-line",
+			badgeClass: "bg-surface text-muted-fg",
 			dueText: assignment.due,
 			bandScore: null,
 			sortOrder: 2,
@@ -143,7 +143,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "overdue",
 			statusLabel: "Quá hạn",
-			badgeClass: "bg-danger-soft text-danger border-danger/20",
+			badgeClass: "bg-hot font-medium text-accent-on",
 			dueText: `Hạn: ${dueFormatted} · quá ${overdueDays} ngày`,
 			bandScore: null,
 			sortOrder: 0, // Overdue first
@@ -155,7 +155,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "due-soon",
 			statusLabel: "Sắp đến hạn",
-			badgeClass: "bg-warning-soft text-[#a16207] border-warning/20",
+			badgeClass: "border border-dashed border-meta text-meta",
 			dueText: `Hạn: ${dueFormatted} · ${relativeMsg}`,
 			bandScore: null,
 			sortOrder: 1,
@@ -165,7 +165,7 @@ export function deriveAssignmentStatus(
 	return {
 		status: "not-submitted",
 		statusLabel: "Chưa nộp",
-		badgeClass: "bg-surface text-muted-fg border-line",
+		badgeClass: "bg-surface text-muted-fg",
 		dueText: `Hạn: ${dueFormatted} · còn ${diff} ngày`,
 		bandScore: null,
 		sortOrder: 2,
