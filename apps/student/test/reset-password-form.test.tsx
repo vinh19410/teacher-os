@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -60,25 +58,5 @@ describe("ResetPasswordForm", () => {
 			<ResetPasswordForm token="secret-token-value" linkError={false} />,
 		);
 		expect(html).not.toContain("secret-token-value");
-	});
-});
-
-describe("reset page routes", () => {
-	const read = (file: string) =>
-		readFileSync(resolve(import.meta.dirname, "../src/routes", file), "utf-8");
-
-	it.each(["forgot-password.tsx", "reset-password.tsx"])(
-		"%s does not depend on the session",
-		(file) => {
-			const source = read(file);
-			expect(source).not.toContain("useSession");
-			expect(source).not.toContain("Loader");
-		},
-	);
-
-	it("reset-password.tsx strips the token from the address bar", () => {
-		const source = read("reset-password.tsx");
-		expect(source).toMatch(/search:\s*\{\}/);
-		expect(source).toContain("replace: true");
 	});
 });

@@ -55,6 +55,12 @@ const classFixture = {
 	name: "IELTS Cơ bản",
 } as unknown as ClassGroup;
 
+// Static imports (vi.mock above is hoisted): loading the route inside a
+// test body charged module transform time to the 5s test timeout, which
+// timed out under a busy parallel run.
+import { usePaidAmountWatch } from "@/components/modals/invoice-payment-modal";
+import { InvoiceDetailRoute } from "./$invoiceId";
+
 function invoiceFixture(overrides?: Partial<Invoice>): Invoice {
 	return {
 		id: "inv-abcdef12",
@@ -143,7 +149,6 @@ function jsonOk(body: unknown) {
  * trả innerHTML — renderToStaticMarkup không flush async nên panel đứng
  * "Đang tải…". Mọi fixture đều có nút copy (cả settled) làm mốc chờ. */
 async function renderDetail(): Promise<string> {
-	const { InvoiceDetailRoute } = await import("./$invoiceId");
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
@@ -226,7 +231,6 @@ describe("Invoice detail route (#345)", () => {
 	it("unknown invoice id throws notFound", async () => {
 		currentInvoiceId = "inv-ghost";
 		storeInvoices = [];
-		const { InvoiceDetailRoute } = await import("./$invoiceId");
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});
@@ -256,9 +260,6 @@ describe("Invoice detail route (#345)", () => {
 
 describe("usePaidAmountWatch (#345)", () => {
 	it("invalidates transactions + kernel only when the paid amount changes", async () => {
-		const { usePaidAmountWatch } = await import(
-			"@/components/modals/invoice-payment-modal"
-		);
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});
@@ -294,9 +295,6 @@ describe("usePaidAmountWatch (#345)", () => {
 	it("heals a stale kernel snapshot on the first observation", async () => {
 		// Kernel stale (paidAmount 0 trên màn) + payment lần đầu thấy 200000:
 		// tiền đã về TRƯỚC lúc mở trang — phải heal ngay, không nuốt baseline.
-		const { usePaidAmountWatch } = await import(
-			"@/components/modals/invoice-payment-modal"
-		);
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});
@@ -339,9 +337,6 @@ describe("usePaidAmountWatch (#345)", () => {
 	});
 
 	it("does not carry the baseline across invoices", async () => {
-		const { usePaidAmountWatch } = await import(
-			"@/components/modals/invoice-payment-modal"
-		);
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});

@@ -79,6 +79,28 @@
 	},
 	"overrides": [
 		{
+			"includes": [
+				"apps/web/src/lib/repos/**/*.ts",
+				"!apps/web/src/lib/repos/use-*.ts",
+				"!apps/web/src/lib/repos/**/*.test.ts"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@/lib/data-store": "Repo mapping modules stay pure (unit-testable without the provider) — read the store through a use-*.ts hook instead.",
+									"@/lib/data-provider": "Repo mapping modules stay pure (unit-testable without the provider) — read the store through a use-*.ts hook instead."
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		{
 			"includes": ["packages/env/src/web.ts"],
 			"linter": {
 				"rules": {

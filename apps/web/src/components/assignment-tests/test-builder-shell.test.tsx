@@ -43,10 +43,30 @@ const promptP1 = {
 	createdAt: "2026-09-27T00:00:00Z",
 };
 
+// A real-world passage 2 with 12 questions after a 13-question passage 1,
+// and a 14-question passage 3: the outline must number 1–13 / 14–25 / 26–39,
+// not the static preset 1 / 14 / 27.
+const promptP2 = {
+	...promptP1,
+	id: "prompt-p2",
+	part: "p2",
+	task: "p2",
+	title: "Passage 2 — Glass",
+	questions: questions(12),
+};
+const promptP3 = {
+	...promptP1,
+	id: "prompt-p3",
+	part: "p3",
+	task: "p3",
+	title: "Passage 3 — Memory",
+	questions: questions(14),
+};
+
 vi.mock("@/lib/data-store", () => ({
 	useData: () => ({
 		data: {
-			assignmentPrompts: [promptP1],
+			assignmentPrompts: [promptP1, promptP2, promptP3],
 			assignmentTests: [
 				{
 					id: "at-x",
@@ -126,6 +146,27 @@ describe("TestBuilderShell (phase-03 Tasks 3.3/3.4/3.5)", () => {
 		expect(html).toContain("Kỹ năng cố định theo parts đã gắn.");
 		// Còn 2 slot trống.
 		expect(html.match(/Chọn từ ngân hàng/g)?.length).toBe(2);
+	});
+
+	it("numbers every part from the real question counts, not the preset starts", () => {
+		const fullTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: (["p1", "p2", "p3"] as const).map((part, position) => ({
+				testId: "at-1",
+				promptId: `prompt-${part}`,
+				part,
+				position,
+				qStartOverride: null,
+			})),
+		};
+		const html = renderToStaticMarkup(
+			<TestBuilderShell mode="edit" test={fullTest} />,
+		);
+		expect(html).toContain("3/3 parts · 39 questions");
+		expect(html).toContain("Câu 1–13");
+		expect(html).toContain("Câu 14–25");
+		expect(html).toContain("Câu 26–39");
+		expect(html).not.toContain("Câu 27–");
 	});
 
 	it("phase-04 Task 4.3: nút Xem trước có mặt ở cả create lẫn edit", () => {

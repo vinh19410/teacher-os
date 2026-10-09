@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+// @vitest-environment jsdom
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/auth-client", () => ({
@@ -7,7 +9,29 @@ vi.mock("@/lib/auth-client", () => ({
 	},
 }));
 
-import { extractUserPlan } from "./sidebar";
+const session: { user: Record<string, unknown> } = { user: {} };
+
+vi.mock("@tanstack/react-router", () => ({
+	useNavigate: () => vi.fn(),
+	useRouteContext: () => ({ session: { data: { user: session.user } } }),
+	redirect: (opts: unknown) => opts,
+	Link: ({
+		to,
+		children,
+		onClick: _onClick,
+		...rest
+	}: {
+		to: string;
+		children?: React.ReactNode;
+		onClick?: unknown;
+	} & Record<string, unknown>) => (
+		<a href={to} {...rest}>
+			{children}
+		</a>
+	),
+}));
+
+import { extractUserPlan, Sidebar } from "./sidebar";
 
 describe("extractUserPlan", () => {
 	it("returns null for non-object, null, or undefined user", () => {
@@ -52,37 +76,68 @@ describe("extractUserPlan", () => {
 	});
 });
 
-describe("Sidebar component contract", () => {
-	const src = readFileSync(new URL("./sidebar.tsx", import.meta.url), "utf-8");
-
-	it("does not hardcode the PRO badge", () => {
-		// Ensures no static PRO badge literal is rendered in sidebar
-		expect(src).not.toMatch(/>\s*PRO\s*<\/span>/);
-	});
-
-	it("renders plan badge conditionally with data-testid='sidebar-user-plan'", () => {
-		expect(src).toMatch(/\{plan && \(/);
-		expect(src).toMatch(/data-testid="sidebar-user-plan"/);
-		expect(src).toMatch(/\{plan\}/);
-	});
-
-	it("provides title hover attribute on user displayName", () => {
-		expect(src).toMatch(/<span[^>]*title=\{displayName\}/);
-	});
-
-	it("provides title hover attribute on user email", () => {
-		expect(src).toMatch(
-			/data-testid="sidebar-user-email"[^>]*title=\{user\.email\}/,
+describe("Sidebar profile footer", () => {
+	function renderSidebar(user: Record<string, unknown>) {
+		session.user = user;
+		return renderToStaticMarkup(
+			<Sidebar open={false} onNavigate={() => {}} collapsed={false} />,
 		);
+	}
+
+	function profileLink(html: string): HTMLAnchorElement {
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		const link = doc.querySelector('a[aria-label="Hồ sơ cá nhân"]');
+		if (!link) throw new Error("profile link not rendered");
+		return link as HTMLAnchorElement;
+	}
+
+	it("renders no plan badge for a user without a plan", () => {
+		const html = renderSidebar({ name: "Cô Lan", email: "lan@example.com" });
+		expect(html).not.toContain('data-testid="sidebar-user-plan"');
+		expect(html).not.toMatch(/>\s*PRO\s*<\/span>/);
 	});
 
-	it("provides accessible aria-label and title on profile Link", () => {
-		expect(src).toMatch(/to="\/profile"/);
-		expect(src).toMatch(/aria-label="Hồ sơ cá nhân"/);
-		expect(src).toMatch(/title=\{[\s\S]*Hồ sơ cá nhân/);
+	it("renders the user's own plan in the badge", () => {
+		const link = profileLink(
+			renderSidebar({ name: "Cô Lan", email: "lan@example.com", tier: "VIP" }),
+		);
+		const badge = link.querySelector('[data-testid="sidebar-user-plan"]');
+		expect(badge?.textContent).toBe("VIP");
 	});
 
-	it("uses flex-1 min-w-0 to maximize available horizontal space", () => {
-		expect(src).toMatch(/to="\/profile"[\s\S]*?flex-1/);
+	it("exposes the full name and email on hover for truncated text", () => {
+		const link = profileLink(
+			renderSidebar({ name: "Nguyễn Thị Lan", email: "lan@example.com" }),
+		);
+		expect(
+			link.querySelector('span[title="Nguyễn Thị Lan"]')?.textContent,
+		).toBe("Nguyễn Thị Lan");
+		const email = link.querySelector('[data-testid="sidebar-user-email"]');
+		expect(email?.getAttribute("title")).toBe("lan@example.com");
+		expect(email?.textContent).toBe("lan@example.com");
+	});
+
+	it("links the footer to /profile with an accessible name and hover title", () => {
+		const link = profileLink(
+			renderSidebar({ name: "Nguyễn Thị Lan", email: "lan@example.com" }),
+		);
+		expect(link.getAttribute("href")).toBe("/profile");
+		expect(link.getAttribute("title")).toBe("Nguyễn Thị Lan (lan@example.com)");
+	});
+
+	it("falls back to a generic teacher name when the user has none", () => {
+		const link = profileLink(
+			renderSidebar({ name: "", email: "x@example.com" }),
+		);
+		expect(link.querySelector('span[title="Giáo viên"]')).not.toBeNull();
+	});
+
+	it("lets the profile link take the remaining row width", () => {
+		const link = profileLink(
+			renderSidebar({ name: "Cô Lan", email: "lan@example.com" }),
+		);
+		expect(link.className.split(" ")).toEqual(
+			expect.arrayContaining(["flex-1", "min-w-0"]),
+		);
 	});
 });

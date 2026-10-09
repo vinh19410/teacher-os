@@ -27,7 +27,7 @@ export function ImportSyllabusModal({
 	// The list loads with the snapshot (may be empty on first paint), so the
 	// stored id can go stale — always derive the effective selection.
 	const [selectedId, setSelectedId] = useState("");
-	const { saving, notice, submitBlocked, run, reconcile } =
+	const { saving, error, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 	const templateId = templates.some((t) => t.id === selectedId)
 		? selectedId
@@ -84,6 +84,11 @@ export function ImportSyllabusModal({
 							))}
 						</Select>
 					</Field>
+				)}
+				{error && (
+					<p role="alert" className="text-danger text-xs">
+						{error}
+					</p>
 				)}
 				{notice && (
 					<KernelSubmitNotice
