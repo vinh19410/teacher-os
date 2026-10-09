@@ -86,6 +86,19 @@ describe("ReportsRoute Zalo OA channel state & empty state (Issue #172)", () => 
 
 		// Create report action exists
 		expect(html).toContain("+ Tạo báo cáo tuần");
+
+		// #107: the empty org shows only its own data — none of the old demo
+		// rows, names or fixed dates.
+		for (const demo of [
+			"Minh Anh",
+			"Quốc Bảo",
+			"18/08",
+			"17/08",
+			"4 báo cáo tuần này",
+			"Task 2 University",
+		]) {
+			expect(html).not.toContain(demo);
+		}
 	});
 
 	it("renders report count and connection badge when reports exist", () => {

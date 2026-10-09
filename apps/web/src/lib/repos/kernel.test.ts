@@ -10,6 +10,7 @@ import {
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
 import { createKernelQueryClient } from "@/lib/query-client";
+import { mapClasses } from "./classes";
 import {
 	classifyWriteFailure,
 	createKernelCommandBus,
@@ -21,6 +22,8 @@ import {
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./kernel";
+import { mapStudents } from "./students";
+import { mapSyllabi } from "./syllabus";
 
 // The real QueryClient brings the real reauth path with it; only the
 // auth-client transport (and its env dependency) is mocked away.
@@ -209,6 +212,14 @@ const snapshot: KernelSnapshot = {
 
 describe("mapKernelSnapshot", () => {
 	const slice = mapKernelSnapshot(snapshot);
+
+	test("projects students, classes and syllabi exactly like their repos", () => {
+		// One projection per collection: the store and the repo hooks can never
+		// disagree about a student's package or a class roster.
+		expect(slice.students).toEqual(mapStudents(snapshot));
+		expect(slice.classes).toEqual(mapClasses(snapshot));
+		expect(slice.syllabi).toEqual(mapSyllabi(snapshot));
+	});
 
 	test("student pkg comes from the newest ACTIVE package only", () => {
 		const s1 = slice.students.find((s) => s.id === "st-1");

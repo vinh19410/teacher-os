@@ -4,11 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 import type { AssignmentPrompt, ClassAssignment } from "@/lib/mock-data";
 
 const mockNavigate = vi.fn();
+/** URL search params (?skill=&part=&q=) the route reads its filters from. */
+const mockSearch = vi.hoisted(() => ({
+	current: {} as Record<string, string>,
+}));
 
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 	useNavigate: () => mockNavigate,
-	useSearch: () => ({}),
+	useSearch: () => mockSearch.current,
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
@@ -240,6 +244,26 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain(">0</span>");
 		// Badge đếm ẩn với AT để accessible name chip giữ nguyên cho e2e.
 		expect(html).toContain('aria-hidden="true"');
+	});
+
+	it("counts prompts from the live bank, not a fixed number", () => {
+		mockStoreData = {
+			assignmentPrompts: bankFixture,
+			classAssignments: classAssignmentsFixture,
+		};
+		const total = bankFixture.length;
+		expect(renderToStaticMarkup(<AssignmentsRoute />)).toContain(
+			`${total}/${total} đề`,
+		);
+		// Fixture: 3 Writing + 1 Reading — a skill filter in the URL narrows it.
+		mockSearch.current = { skill: "reading" };
+		try {
+			expect(renderToStaticMarkup(<AssignmentsRoute />)).toContain(
+				`1/${total} đề`,
+			);
+		} finally {
+			mockSearch.current = {};
+		}
 	});
 
 	it("renders the mobile filter toggle with aria wiring", () => {
