@@ -75,17 +75,19 @@ export function PromptComposer({
 				// Slot đã khóa skill/part — hiển thị chip tĩnh từ value, không
 				// ChipFilter (đổi skill/part giữa chừng làm lệch preset test).
 				<div className="flex flex-wrap gap-2">
-					<span className="rounded-full border border-fg bg-fg px-[14px] py-[6px] font-medium text-bg text-xs">
+					<span className="neu-in rounded-md px-[14px] py-[6px] font-medium text-hot text-xs">
 						{skill.name}
 					</span>
-					<span className="rounded-full border border-line px-[14px] py-[6px] font-medium text-xs">
+					<span className="neu-sm rounded-md px-[14px] py-[6px] font-medium text-xs">
 						{part.label}
 					</span>
 				</div>
 			) : (
 				<>
 					<div className="flex flex-col gap-1.5">
-						<span className="font-medium text-muted-fg text-xs">Kỹ năng</span>
+						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+							Kỹ năng
+						</span>
 						<ChipFilter
 							options={SKILLS.map((entry) => entry.name)}
 							value={skill.name}
@@ -105,7 +107,7 @@ export function PromptComposer({
 						/>
 					</div>
 					<div className="flex flex-col gap-1.5">
-						<span className="font-medium text-muted-fg text-xs">
+						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
 							{skill.partLabel}
 						</span>
 						<ChipFilter
@@ -126,7 +128,7 @@ export function PromptComposer({
 				</>
 			)}
 			<div className="flex flex-col gap-1.5">
-				<span className="font-medium text-muted-fg text-xs">
+				<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
 					{skill.typeLabel}
 				</span>
 				<ChipFilter
@@ -149,7 +151,7 @@ export function PromptComposer({
 			</Field>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 				<div className="flex flex-col gap-1.5">
-					<span className="font-medium text-muted-fg text-xs">
+					<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
 						Band mục tiêu
 					</span>
 					<ChipFilter
@@ -199,10 +201,10 @@ export function PromptComposer({
 				</span>
 			)}
 			{value.skill === "listening" && (
-				<div className="rounded-md border border-line bg-bg p-3">
+				<div className="neu-in rounded-md p-3">
 					<p className="font-medium text-muted-fg text-xs">File nghe</p>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
-						<label className="inline-flex cursor-pointer rounded-full border border-line px-3 py-2 font-medium text-xs">
+						<label className="neu-sm inline-flex cursor-pointer rounded-md px-3 py-2 font-medium text-xs transition-colors hover:text-hot">
 							<input
 								type="file"
 								className="sr-only"

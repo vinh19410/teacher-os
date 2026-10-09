@@ -311,7 +311,7 @@ export function UnmatchedTransactions({
 	return (
 		<div className="mt-8">
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<h2 className="font-semibold text-xl">
+				<h2 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
 					Giao dịch chưa khớp{rows.length > 0 ? ` (${rows.length})` : ""}
 				</h2>
 				<Button
@@ -342,12 +342,12 @@ export function UnmatchedTransactions({
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-sm">
 						<thead>
-							<tr className="text-muted-fg text-xs">
-								<th className="py-2 pr-4">Thời gian</th>
-								<th className="py-2 pr-4">Số tiền</th>
-								<th className="py-2 pr-4">Nội dung</th>
-								<th className="py-2 pr-4">Lý do</th>
-								<th className="py-2">Xử lý</th>
+							<tr className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+								<th className="py-2 pr-4 font-normal">Thời gian</th>
+								<th className="py-2 pr-4 font-normal">Số tiền</th>
+								<th className="py-2 pr-4 font-normal">Nội dung</th>
+								<th className="py-2 pr-4 font-normal">Lý do</th>
+								<th className="py-2 font-normal">Xử lý</th>
 							</tr>
 						</thead>
 						<tbody>

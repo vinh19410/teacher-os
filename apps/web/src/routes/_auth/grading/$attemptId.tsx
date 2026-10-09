@@ -133,7 +133,7 @@ function GradingRoute() {
 				<p className="text-fg text-sm">{message}</p>
 				<Link
 					to="/classes"
-					className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
+					className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
 				>
 					← Về danh sách lớp
 				</Link>
@@ -169,10 +169,10 @@ function GradingRoute() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			<Card variant="white">
+			<Card>
 				<div className="flex flex-wrap items-start justify-between gap-3">
 					<div className="flex flex-col gap-1">
-						<h1 className="font-display font-semibold text-[18px] text-fg">
+						<h1 className="font-display font-extrabold text-[18px] text-fg tracking-[-0.02em]">
 							{data.title}
 						</h1>
 						<p className="font-mono text-meta text-xs">
@@ -184,15 +184,15 @@ function GradingRoute() {
 						to="/classes/$classId"
 						params={{ classId: data.classId }}
 						search={{ tab: "assignments" }}
-						className="font-medium text-hot text-sm hover:text-accent-active"
+						className="font-mono text-[12px] text-meta transition-colors hover:text-hot"
 					>
 						← Về lớp
 					</Link>
 				</div>
 			</Card>
 
-			<div className="grid grid-cols-[2fr_1fr] items-start gap-5 max-app:grid-cols-1">
-				<Card variant="white">
+			<div className="grid grid-cols-[1.3fr_1fr] items-start gap-5 max-app:grid-cols-1">
+				<Card>
 					<SubmissionView
 						submission={data}
 						annotation={
@@ -218,7 +218,7 @@ function GradingRoute() {
 						}
 					/>
 				</Card>
-				<Card variant="white">
+				<Card>
 					<SectionLabel>Chấm điểm</SectionLabel>
 					<GradeForm
 						key={data.grade?.gradedAt ?? "new"}

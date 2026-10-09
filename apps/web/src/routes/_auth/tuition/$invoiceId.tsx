@@ -9,9 +9,8 @@ import {
 import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, StatCard } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { Progress } from "@/components/ui/progress";
 import { useData } from "@/lib/data-store";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
@@ -51,7 +50,7 @@ export const Route = createFileRoute("/_auth/tuition/$invoiceId")({
 			</p>
 			<Link
 				to="/tuition"
-				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
 			>
 				← Về Doanh thu
 			</Link>
@@ -141,12 +140,12 @@ export function InvoiceDetailRoute() {
 					<Link
 						to="/tuition"
 						search={backSearch}
-						className="font-medium text-hot text-sm hover:text-accent-active"
+						className="font-mono text-[12px] text-meta transition-colors hover:text-hot"
 					>
 						← Doanh thu
 					</Link>
 					<div className="mt-1 flex flex-wrap items-center gap-3">
-						<h1 className="font-display font-semibold text-[28px]">
+						<h1 className="font-display font-extrabold text-[28px] tracking-[-0.045em]">
 							{invoiceCode(inv.id)}
 						</h1>
 						<InvoiceStatusCell invoice={inv} status={status} />
@@ -178,8 +177,8 @@ export function InvoiceDetailRoute() {
 
 			<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-6 max-app:grid-cols-1">
 				<div className="flex flex-col gap-6">
-					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+					<Card>
+						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 							Thông tin hóa đơn
 						</div>
 						<dl>
@@ -218,63 +217,25 @@ export function InvoiceDetailRoute() {
 						</dl>
 					</Card>
 
-					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
-							Số tiền
-						</div>
-						<div className="grid grid-cols-3 gap-4 max-app:grid-cols-3">
-							<div>
-								<div className="font-mono text-meta text-muted-fg text-xs">
-									Tổng
-								</div>
-								<div className="font-mono font-semibold text-base">
-									{fmtVND(inv.amount)}
-								</div>
-							</div>
-							<div>
-								<div className="font-mono text-meta text-muted-fg text-xs">
-									Đã thu
-								</div>
-								<div className="font-mono font-semibold text-base">
-									{fmtVND(received)}
-								</div>
-							</div>
-							<div>
-								<div className="font-mono text-meta text-muted-fg text-xs">
-									Còn lại
-								</div>
-								<div
-									className={
-										remaining > 0
-											? "font-mono font-semibold text-base text-danger"
-											: "font-mono font-semibold text-base"
-									}
-								>
-									{fmtVND(remaining)}
-								</div>
-							</div>
-						</div>
-						<Progress
-							className="mt-4"
-							value={inv.amount > 0 ? (received / inv.amount) * 100 : 0}
-							variant={
-								remaining <= 0
-									? "default"
-									: status === "overdue"
-										? "low"
-										: "warn"
-							}
+					{/* 3 stat tiles: Số tiền / Đã thu / Còn lại (hot khi còn phải thu) */}
+					<div className="grid grid-cols-3 gap-4">
+						<StatCard num={fmtVND(inv.amount)} label="Số tiền" />
+						<StatCard num={fmtVND(received)} label="Đã thu" />
+						<StatCard
+							num={fmtVND(remaining)}
+							label="Còn lại"
+							hot={remaining > 0}
 						/>
-						{manuallyPaid && (
-							<p className="mt-2 text-muted-fg text-xs">
-								Ghi nhận thủ công — tiền thu qua kênh khác (tiền mặt, chuyển
-								khoản ngoài hệ thống).
-							</p>
-						)}
-					</Card>
+					</div>
+					{manuallyPaid && (
+						<p className="text-muted-fg text-xs">
+							Ghi nhận thủ công — tiền thu qua kênh khác (tiền mặt, chuyển khoản
+							ngoài hệ thống).
+						</p>
+					)}
 
-					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+					<Card>
+						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 							Học viên &amp; lớp
 						</div>
 						<div className="flex flex-wrap items-center gap-x-8 gap-y-3">
@@ -282,12 +243,10 @@ export function InvoiceDetailRoute() {
 								<Link
 									to="/students/$studentId"
 									params={{ studentId: student.id }}
-									className="flex items-center gap-2 font-medium text-sm hover:text-accent-active"
+									className="flex items-center gap-2 font-medium text-sm transition-colors hover:text-hot"
 								>
 									<Avatar text={student.avatar} size="sm" />
-									<span className="text-hot hover:text-accent-active">
-										{student.name}
-									</span>
+									<span>{student.name}</span>
 								</Link>
 							) : (
 								<span className="text-muted-fg text-sm">—</span>
@@ -296,7 +255,7 @@ export function InvoiceDetailRoute() {
 								<Link
 									to="/classes/$classId"
 									params={{ classId: cls.id }}
-									className="font-medium text-hot text-sm hover:text-accent-active"
+									className="font-medium text-sm transition-colors hover:text-hot"
 								>
 									{cls.name}
 								</Link>
@@ -307,8 +266,8 @@ export function InvoiceDetailRoute() {
 					</Card>
 				</div>
 
-				<Card variant="white">
-					<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+				<Card>
+					<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 						Thanh toán chuyển khoản
 					</div>
 					{payment.data ? (
@@ -338,8 +297,8 @@ export function InvoiceDetailRoute() {
 				</Card>
 			</div>
 
-			<Card variant="white" className="mt-6 p-0">
-				<div className="p-6 pb-0 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+			<Card className="mt-6 p-0">
+				<div className="p-6 pb-0 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 					Lịch sử giao dịch
 				</div>
 				<div className="p-4">
@@ -366,11 +325,13 @@ export function InvoiceDetailRoute() {
 								<span key="a" className="font-mono">
 									{fmtVND(tx.amount)}
 								</span>,
-								tx.content || "—",
+								<span key="c" className="font-mono text-xs">
+									{tx.content || "—"}
+								</span>,
 								<span key="r" className="font-mono text-meta text-xs">
 									{tx.referenceCode || "—"}
 								</span>,
-								<span key="c" className="font-mono text-meta text-xs">
+								<span key="t" className="font-mono text-meta text-xs">
 									{formatReceivedAt(tx.createdAt)}
 								</span>,
 							],

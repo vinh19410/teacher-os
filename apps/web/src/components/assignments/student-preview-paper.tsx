@@ -74,8 +74,8 @@ export function StudentPreviewPaper(props: {
 		isValidPin(item.pin),
 	);
 	return (
-		<div className="rounded-lg border border-line bg-surface-warm p-5">
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+		<div className="neu rounded-lg p-5">
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
 				Xem trước phía học viên
 			</p>
 			<p className="mt-1 font-display font-semibold text-[17px]">
@@ -85,7 +85,7 @@ export function StudentPreviewPaper(props: {
 				{part.spec} · Band {props.band}
 			</p>
 			{skillId === "listening" && (
-				<p className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">
+				<p className="neu-in mt-3 rounded-md p-3 text-sm">
 					🔊 {props.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}

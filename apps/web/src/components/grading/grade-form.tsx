@@ -73,16 +73,19 @@ export function GradeForm({
 				</Field>
 			))}
 
-			<p className="text-fg text-sm">
-				Band tổng{" "}
+			{/* Band tổng — nhãn mono + số extrabold cam (design `Grading`) */}
+			<div className="flex items-end justify-between gap-3 border-line-soft border-t pt-4">
+				<span className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
+					Band tổng
+				</span>
 				<span
 					data-testid="grade-overall-band"
 					aria-live="polite"
-					className="font-semibold"
+					className="font-display font-extrabold text-4xl text-hot leading-none tracking-[-0.045em]"
 				>
 					{complete ? formatBand(ieltsOverallBand(values)) : "—"}
 				</span>
-			</p>
+			</div>
 
 			<Field label="Nhận xét cho học viên">
 				<Textarea
@@ -108,7 +111,7 @@ export function GradeForm({
 				</p>
 			)}
 
-			<Button type="submit" disabled={!complete || saving}>
+			<Button type="submit" className="w-full" disabled={!complete || saving}>
 				{saving ? "Đang lưu…" : "Lưu điểm"}
 			</Button>
 		</form>

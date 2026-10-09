@@ -119,7 +119,8 @@ describe("TestBuilderShell (phase-03 Tasks 3.3/3.4/3.5)", () => {
 		expect(html).toContain("Passage 1 — Stepwells");
 		// 13 câu thật → Câu 1–13 (computeTestRanges, không qStart tĩnh).
 		expect(html).toContain("Câu 1–13");
-		expect(html).toContain("Gỡ khỏi test");
+		// Nút gỡ render icon ✕ — accessible name giữ nhãn đầy đủ.
+		expect(html).toContain('aria-label="Gỡ khỏi test"');
 		expect(html).toContain("Chỉnh sửa");
 		// Skill khóa ở edit mode.
 		expect(html).toContain("Kỹ năng cố định theo parts đã gắn.");

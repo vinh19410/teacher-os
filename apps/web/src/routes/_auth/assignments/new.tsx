@@ -443,11 +443,11 @@ export function NewAssignmentRoute() {
 		<div>
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 font-mono text-[12px] text-meta"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-hot hover:underline"
 				>
 					Bài tập
 				</Link>
@@ -461,7 +461,7 @@ export function NewAssignmentRoute() {
 			{bannerOpen && !saved && (
 				<div
 					role="status"
-					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+					className="neu-in mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2"
 				>
 					<span className="text-xs">
 						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.
@@ -511,7 +511,7 @@ export function NewAssignmentRoute() {
 								<span className="text-muted-fg text-xs">{actionCopy.sub}</span>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
+								<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
 									Trạng thái
 								</span>
 								<ChipFilter

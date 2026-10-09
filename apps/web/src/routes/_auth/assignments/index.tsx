@@ -265,15 +265,16 @@ export function AssignmentsRoute() {
 
 	return (
 		<div>
-			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-				<PageHead
-					title="Bài tập"
-					lead="Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
-				/>
-				<Button onClick={() => navigate({ to: "/assignments/new" })}>
-					+ Tạo bài tập
-				</Button>
-			</div>
+			<PageHead
+				kicker="Ngân hàng đề"
+				title="Bài tập"
+				lead="Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
+				action={
+					<Button onClick={() => navigate({ to: "/assignments/new" })}>
+						+ Tạo bài tập
+					</Button>
+				}
+			/>
 
 			{totalPrompts === 0 ? (
 				<Card variant="white" className="p-8 text-center">
@@ -294,9 +295,9 @@ export function AssignmentsRoute() {
 					{/* Left column: Filters + List */}
 					<div className="flex flex-col gap-4">
 						{/* Filter Card */}
-						<Card variant="white" className="flex flex-col gap-4 p-5">
+						<Card className="flex flex-col gap-4 p-5">
 							{/* Mobile: gập bộ lọc để danh sách đề lên trước (desktop ẩn) */}
-							<div className="flex items-center justify-between border-border-soft border-b pb-3 lg:hidden">
+							<div className="flex items-center justify-between border-line-soft border-b pb-3 lg:hidden">
 								<button
 									type="button"
 									onClick={() => setFiltersOpen((v) => !v)}
@@ -329,7 +330,7 @@ export function AssignmentsRoute() {
 									!filtersOpen && "hidden lg:flex",
 								)}
 							>
-								{/* In-page search input */}
+								{/* In-page search input — sunk control như Field (phase 2) */}
 								<div>
 									<input
 										type="text"
@@ -337,7 +338,7 @@ export function AssignmentsRoute() {
 										onChange={(e) => handleQueryChange(e.target.value)}
 										placeholder="Tìm đề theo tiêu đề hoặc nguồn"
 										aria-label="Tìm đề theo tiêu đề hoặc nguồn"
-										className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm placeholder:text-muted-fg focus:border-fg focus:outline-none"
+										className="w-full rounded-md border border-line-strong bg-surface px-4 py-2.5 text-fg text-sm placeholder:text-meta focus:outline-none focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-2 focus-visible:ring-hot/40"
 									/>
 								</div>
 
@@ -402,7 +403,7 @@ export function AssignmentsRoute() {
 								</div>
 
 								{/* Card Footer: Count + Clear */}
-								<div className="flex items-center justify-between border-border-soft border-t pt-3">
+								<div className="flex items-center justify-between border-line-soft border-t pt-3">
 									<p
 										id="result-count"
 										aria-live="polite"
@@ -418,7 +419,7 @@ export function AssignmentsRoute() {
 										<button
 											type="button"
 											onClick={clearFilters}
-											className="font-medium text-muted-fg text-xs hover:text-fg"
+											className="font-medium text-muted-fg text-xs transition-colors hover:text-hot"
 										>
 											Xóa bộ lọc
 										</button>
@@ -444,7 +445,7 @@ export function AssignmentsRoute() {
 								aria-label="Đề trong danh sách"
 								className="flex flex-col gap-2"
 							>
-								{filteredPrompts.map((prompt) => {
+								{filteredPrompts.map((prompt, index) => {
 									const isSelected = activePrompt?.id === prompt.id;
 									const {
 										skill: pSkill,
@@ -463,15 +464,26 @@ export function AssignmentsRoute() {
 											aria-pressed={isSelected}
 											onClick={() => setSelectedId(prompt.id)}
 											className={cn(
-												"grid min-h-[72px] w-full grid-cols-[1fr_auto] items-center gap-4 rounded-xl border p-4 text-left transition-all duration-150",
-												isSelected
-													? "border-fg bg-surface shadow-xs ring-1 ring-fg"
-													: "border-line bg-bg hover:border-fg/60 hover:bg-surface/50",
+												"group grid w-full grid-cols-[auto_1fr_auto] items-center gap-4 border-line border-t py-4 text-left transition-colors duration-150 first:border-t-0",
+												isSelected && "bg-surface",
 											)}
 										>
+											{/* Số thứ tự mono theo design (cột "#") */}
+											<span
+												aria-hidden="true"
+												className="font-mono text-[11px] text-meta tabular-nums"
+											>
+												{String(index + 1).padStart(2, "0")}
+											</span>
+
 											{/* Left: Title + meta */}
-											<div className="flex flex-col gap-1.5 overflow-hidden">
-												<h3 className="truncate font-display font-semibold text-[15px] text-fg">
+											<div className="flex min-w-0 flex-col gap-1.5">
+												<h3
+													className={cn(
+														"truncate font-display font-semibold text-[15px] text-fg transition-colors duration-150 group-hover:text-hot",
+														isSelected && "text-hot",
+													)}
+												>
 													{prompt.title}
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs">

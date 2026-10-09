@@ -1,13 +1,14 @@
 /**
- * #343 — Biểu đồ doanh thu trên /tuition: cột "Phát hành" (vệt nền neutral)
- * + cột "Đã thu" (accent) đè giữa theo bullet-style, cửa sổ Tháng/Quý/Năm.
+ * #343 — Biểu đồ doanh thu trên /tuition: cột "Phát hành" (chip xám) +
+ * cột "Đã thu" (accent cam) đè giữa theo bullet-style, cửa sổ Tháng/Quý/Năm.
  *
  * Kỹ thuật overlay: mỗi Bar dùng xAxisId riêng — hai band scale cùng hình
  * học nên cả hai bar đều được căn GIỮA slot thay vì xếp cạnh nhau (mặc định
  * recharts đặt 2 series cạnh nhau trong cùng category). Animation tắt hoàn
- * toàn theo DESIGN.md (không entrance choreography); selection toggle = đen
- * đặc `border-fg bg-fg text-bg`; `role="img"` + aria-label CHỈ bọc khối
- * chart, không bọc toggle (nút focusable bên trong role="img" vi phạm ARIA).
+ * toàn theo DESIGN.md (không entrance choreography); selection toggle =
+ * sunk + chữ cam (`bg-surface text-hot`, pattern chip phase 2); `role="img"`
+ * + aria-label CHỈ bọc khối chart, không bọc toggle (nút focusable bên trong
+ * role="img" vi phạm ARIA).
  */
 import { useEffect } from "react";
 import {
@@ -74,7 +75,7 @@ function RevenueTooltip({
 	const bucket = payload?.[0]?.payload;
 	if (!active || !bucket) return null;
 	return (
-		<div className="rounded-md border border-line bg-bg px-3 py-2 text-xs shadow-sm">
+		<div className="neu rounded-md px-3 py-2 text-xs">
 			<p className="mb-1 font-medium">{fullLabel(bucket.key, period)}</p>
 			<TooltipEntry
 				label="Đã thu"
@@ -145,7 +146,9 @@ export function RevenueChart({
 	return (
 		<div className="p-6" data-testid="revenue-chart-section">
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-				<h2 className="font-semibold text-xl">Doanh thu</h2>
+				<h2 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
+					Doanh thu
+				</h2>
 				{/* biome-ignore lint/a11y/useSemanticElements: role="group" + aria-label theo pattern ChipFilter cho SR/e2e */}
 				<div role="group" aria-label="Kỳ doanh thu" className="flex gap-1">
 					{PERIODS.map((p) => (
@@ -156,11 +159,9 @@ export function RevenueChart({
 							data-testid={`revenue-period-${p.value}`}
 							onClick={() => onPeriodChange(p.value)}
 							className={cn(
-								"rounded-full border px-3 py-[5px] text-xs transition-colors duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
+								"neu-sm rounded-md px-3 py-[5px] font-medium text-xs transition-colors duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
 								"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-								p.value === period
-									? "border-fg bg-fg text-bg"
-									: "border-line bg-bg text-fg-2 hover:border-fg",
+								p.value === period && "border-transparent bg-surface text-hot",
 							)}
 						>
 							{p.label}
@@ -171,7 +172,7 @@ export function RevenueChart({
 
 			{isEmpty ? (
 				<div
-					className="flex min-h-[200px] items-center justify-center rounded-md border border-line-soft bg-surface-warm"
+					className="neu-in flex min-h-[200px] items-center justify-center rounded-md"
 					data-testid="revenue-chart-empty"
 				>
 					<p className="text-center text-meta text-sm">
@@ -214,8 +215,8 @@ export function RevenueChart({
 									dataKey="issued"
 									xAxisId="backdrop"
 									maxBarSize={28}
-									fill="var(--surface)"
-									stroke="var(--line-soft)"
+									// Cột thường = chip xám (design `Tuition` chart).
+									fill="var(--chip)"
 									isAnimationActive={false}
 								/>
 								<Bar
@@ -232,7 +233,7 @@ export function RevenueChart({
 						<span className="flex items-center gap-1.5">
 							<span
 								aria-hidden="true"
-								className="inline-block h-2.5 w-2.5 rounded-[3px] border border-line-soft bg-surface"
+								className="inline-block h-2.5 w-2.5 rounded-[3px] bg-chip"
 							/>
 							Phát hành
 						</span>

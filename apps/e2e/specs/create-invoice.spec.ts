@@ -57,26 +57,30 @@ async function setupOrgWithEnrollment(page: Page): Promise<string> {
 }
 
 /** The Card holding the "Hóa đơn" DataTable (scoped away from the package
- * cards above, which also render VND amounts). */
+ * cards above, which also render VND amounts). Redesign phase 5: selector
+ * đổi từ `div.mt-8` sang testid vì utility layout class không còn ổn định. */
 function invoiceRegion(page: Page) {
-	return page
-		.locator("div.mt-8")
-		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) });
+	return page.getByTestId("tuition-invoices-section");
 }
 
 function invoiceTable(page: Page) {
 	return invoiceRegion(page).locator("tbody tr");
 }
 
-/** One KPI StatCard inside the 3-card grid, addressed by its label. */
+/** One KPI StatCard inside the KPI grid, addressed by its label. Selector
+ * đổi từ `.grid.grid-cols-3 > div` (bám utility Tailwind) sang testid của
+ * grid trong cùng commit đổi markup (plan redesign, bảng "E2E bám class"). */
 function kpiCard(page: Page, label: string) {
-	return page.locator(".grid.grid-cols-3 > div").filter({ hasText: label });
+	return page
+		.locator('[data-testid="tuition-kpis"] > div')
+		.filter({ hasText: label });
 }
 
 /** The big number div of a KPI card — exact-matched, because "0đ" is a
- * substring of every vi-VN amount ending in zero. */
+ * substring of every vi-VN amount ending in zero. `> div` giữ selector ở
+ * div số (con đầu của StatCard) sau khi StatCard bọc thêm Card ở phase 2. */
 function kpiNum(page: Page, label: string) {
-	return kpiCard(page, label).locator("div").first();
+	return kpiCard(page, label).locator("> div").first();
 }
 
 async function openCreateInvoiceModal(page: Page) {

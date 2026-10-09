@@ -84,21 +84,23 @@ export function TuitionRoute() {
 
 	return (
 		<div>
-			<PageHead title="Doanh thu" lead={`Đã thu ${fmtVND(collected)}`} />
-			<div className="grid grid-cols-3 gap-4 max-app:grid-cols-1">
+			<PageHead
+				kicker="Doanh thu · VietQR qua SePay"
+				title="Doanh thu"
+				lead={`Đã thu ${fmtVND(collected)}`}
+			/>
+			<div
+				className="grid grid-cols-3 gap-4 max-app:grid-cols-1"
+				data-testid="tuition-kpis"
+			>
 				<StatCard num={fmtVND(collected)} label="Đã thu (VND)" />
+				{/* Số còn phải thu cần chú ý → tile hot (nền ink, số cam). */}
 				<StatCard
 					num={fmtVND(outstanding)}
 					label="Còn nợ (VND)"
-					className={
-						outstanding > 0 ? "[&>div:first-child]:text-danger" : undefined
-					}
+					hot={outstanding > 0}
 				/>
-				<StatCard
-					num={String(endingSoon)}
-					label="Gói sắp hết"
-					className="[&>div:first-child]:text-warn"
-				/>
+				<StatCard num={String(endingSoon)} label="Gói sắp hết" />
 			</div>
 
 			<Card variant="white" className="mt-8 p-0">
@@ -125,84 +127,84 @@ export function TuitionRoute() {
 						</p>
 					</Card>
 				) : (
-					<Card variant="white" className="p-0">
-						<DataTable
-							headers={[
-								"Học viên",
-								"Đã học",
-								"Còn",
-								"Tiến độ",
-								"Hết hạn",
-								"Trạng thái",
-							]}
-							emptyMessage="Chưa có gói học."
-							rows={data.students.map((s) => ({
-								onClick: () =>
-									navigate({
-										to: "/students/$studentId",
-										params: { studentId: s.id },
-									}),
-								cells: [
-									<div key="s" className="flex items-center gap-2">
-										<Avatar text={s.avatar} size="sm" />
-										{s.name}
-									</div>,
-									<span key="d" className="font-mono">
-										{s.hasPackage ? `${s.pkg.done}/${s.pkg.total}` : "—"}
-									</span>,
-									<span
-										key="r"
-										className={
-											s.hasPackage && s.pkg.remaining <= 3
-												? "font-mono font-semibold text-danger"
-												: "font-mono font-semibold"
-										}
-									>
-										{s.hasPackage ? s.pkg.remaining : "—"}
-									</span>,
-									<Progress
-										key="p"
-										value={s.hasPackage ? (s.pkg.done / s.pkg.total) * 100 : 0}
-										variant={
-											!s.hasPackage
-												? "default"
-												: s.pkg.remaining <= 2
-													? "low"
-													: s.pkg.remaining <= 4
-														? "warn"
-														: "default"
-										}
-									/>,
-									<span key="e" className="font-mono text-meta text-xs">
-										{s.pkg.expiry}
-									</span>,
-									!s.hasPackage ? (
-										<Badge key="b" variant="muted">
-											Chưa có gói
-										</Badge>
-									) : s.pkg.remaining <= 2 ? (
-										<Badge key="b" variant="danger">
-											Sắp hết
-										</Badge>
-									) : s.pkg.remaining <= 4 ? (
-										<Badge key="b" variant="warn">
-											Sắp hết
-										</Badge>
-									) : (
-										<Badge key="b" variant="success" dot>
-											Đang học
-										</Badge>
-									),
-								],
-							}))}
-						/>
-					</Card>
+					<DataTable
+						headers={[
+							"Học viên",
+							"Đã học",
+							"Còn",
+							"Tiến độ",
+							"Hết hạn",
+							"Trạng thái",
+						]}
+						emptyMessage="Chưa có gói học."
+						rows={data.students.map((s) => ({
+							onClick: () =>
+								navigate({
+									to: "/students/$studentId",
+									params: { studentId: s.id },
+								}),
+							cells: [
+								<div key="s" className="flex items-center gap-2">
+									<Avatar text={s.avatar} size="sm" />
+									{s.name}
+								</div>,
+								<span key="d" className="font-mono">
+									{s.hasPackage ? `${s.pkg.done}/${s.pkg.total}` : "—"}
+								</span>,
+								<span
+									key="r"
+									className={
+										s.hasPackage && s.pkg.remaining <= 3
+											? "font-mono font-semibold text-danger"
+											: "font-mono font-semibold"
+									}
+								>
+									{s.hasPackage ? s.pkg.remaining : "—"}
+								</span>,
+								<Progress
+									key="p"
+									value={s.hasPackage ? (s.pkg.done / s.pkg.total) * 100 : 0}
+									variant={
+										!s.hasPackage
+											? "default"
+											: s.pkg.remaining <= 2
+												? "low"
+												: s.pkg.remaining <= 4
+													? "warn"
+													: "default"
+									}
+								/>,
+								<span key="e" className="font-mono text-meta text-xs">
+									{s.pkg.expiry}
+								</span>,
+								!s.hasPackage ? (
+									<Badge key="b" variant="muted">
+										Chưa có gói
+									</Badge>
+								) : s.pkg.remaining <= 2 ? (
+									<Badge key="b" variant="danger">
+										Sắp hết
+									</Badge>
+								) : s.pkg.remaining <= 4 ? (
+									<Badge key="b" variant="warn">
+										Sắp hết
+									</Badge>
+								) : (
+									<Badge key="b" variant="success" dot>
+										Đang học
+									</Badge>
+								),
+							],
+						}))}
+					/>
 				)}
 			</div>
 
-			<div className="mt-8">
+			<div className="mt-8" data-testid="tuition-invoices-section">
 				<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-					<h2 className="font-semibold text-xl">Hóa đơn</h2>
+					<h2 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
+						Hóa đơn
+					</h2>
 					<Button size="sm" onClick={() => setModalOpen(true)}>
 						+ Tạo hóa đơn
 					</Button>
@@ -222,100 +224,103 @@ export function TuitionRoute() {
 						</p>
 					</Card>
 				) : (
-					<Card variant="white" className="p-0">
-						<DataTable
-							headers={[
-								"Mã",
-								"Học viên",
-								"Loại",
-								"Số tiền",
-								"Ngày",
-								"Đến hạn",
-								"Trạng thái",
-								"",
-							]}
-							emptyMessage="Chưa có hóa đơn."
-							rows={data.invoices.map((i) => {
-								const s = data.students.find((st) => st.id === i.sid);
-								const status = effectiveInvoiceStatus(i, today);
-								return {
-									// #345 — click/Enter trên dòng mở trang chi tiết;
-									// nút trong dòng chặn propagation ở cell hành động.
-									onClick: () =>
-										navigate({
-											to: "/tuition/$invoiceId",
-											params: { invoiceId: i.id },
-											search: { ky: search.ky },
-										}),
-									cells: [
-										<span key="id" className="font-mono text-meta text-xs">
-											{invoiceCode(i.id)}
-										</span>,
-										s?.name ?? "",
-										<span key="t" title={i.note || undefined}>
-											<Tag>{invoiceType(i.type)}</Tag>
-										</span>,
-										<span key="a" className="font-mono">
-											{i.status !== "paid" &&
-											i.paidAmount > 0 &&
-											i.paidAmount < i.amount
-												? `${fmtVND(i.paidAmount)} / ${fmtVND(i.amount)}`
-												: fmtVND(i.amount)}
-										</span>,
-										<span key="d" className="font-mono text-meta text-xs">
-											{i.date}
-										</span>,
-										<span key="due" className="font-mono text-meta text-xs">
-											{i.status === "paid" ? "—" : formatDue(i.due)}
-										</span>,
-										<InvoiceStatusCell invoice={i} status={status} />,
-										i.status !== "paid" ? (
-											// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation (click + Enter/Space) để nút trong dòng không kích hoạt điều hướng của row (#345)
-											<div
-												key="act"
-												className="flex justify-end gap-1"
-												onClick={(e) => e.stopPropagation()}
-												onKeyDown={(e) => {
-													if (e.key === " " || e.key === "Enter")
-														e.stopPropagation();
-												}}
+					<DataTable
+						headers={[
+							"Mã",
+							"Học viên",
+							"Loại",
+							"Số tiền",
+							"Ngày",
+							"Đến hạn",
+							"Trạng thái",
+							"",
+						]}
+						emptyMessage="Chưa có hóa đơn."
+						rows={data.invoices.map((i) => {
+							const s = data.students.find((st) => st.id === i.sid);
+							const status = effectiveInvoiceStatus(i, today);
+							return {
+								// #345 — click/Enter trên dòng mở trang chi tiết;
+								// nút trong dòng chặn propagation ở cell hành động.
+								onClick: () =>
+									navigate({
+										to: "/tuition/$invoiceId",
+										params: { invoiceId: i.id },
+										search: { ky: search.ky },
+									}),
+								cells: [
+									// Mã hóa đơn như mã chuyển khoản: mono + underline,
+									// hover cam kế thừa từ hover:text-hot của row.
+									<span
+										key="id"
+										className="font-mono text-xs underline decoration-line-strong underline-offset-2"
+									>
+										{invoiceCode(i.id)}
+									</span>,
+									s?.name ?? "",
+									<span key="t" title={i.note || undefined}>
+										<Tag>{invoiceType(i.type)}</Tag>
+									</span>,
+									<span key="a" className="font-mono">
+										{i.status !== "paid" &&
+										i.paidAmount > 0 &&
+										i.paidAmount < i.amount
+											? `${fmtVND(i.paidAmount)} / ${fmtVND(i.amount)}`
+											: fmtVND(i.amount)}
+									</span>,
+									<span key="d" className="font-mono text-meta text-xs">
+										{i.date}
+									</span>,
+									<span key="due" className="font-mono text-meta text-xs">
+										{i.status === "paid" ? "—" : formatDue(i.due)}
+									</span>,
+									<InvoiceStatusCell invoice={i} status={status} />,
+									i.status !== "paid" ? (
+										// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation (click + Enter/Space) để nút trong dòng không kích hoạt điều hướng của row (#345)
+										<div
+											key="act"
+											className="flex justify-end gap-1"
+											onClick={(e) => e.stopPropagation()}
+											onKeyDown={(e) => {
+												if (e.key === " " || e.key === "Enter")
+													e.stopPropagation();
+											}}
+										>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => setPayingInvoiceId(i.id)}
 											>
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => setPayingInvoiceId(i.id)}
-												>
-													Thu học phí
-												</Button>
-												<Button
-													variant="ghost"
-													size="sm"
-													disabled={busy || isPending(i.id)}
-													onClick={() =>
-														void run(
-															i.id,
-															{
-																type: "mark-invoice-paid",
-																invoiceId: i.id,
-																method: i.method === "—" ? "CK" : i.method,
-															},
-															"Đã ghi nhận thanh toán.",
-														)
-													}
-												>
-													{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
-												</Button>
-											</div>
-										) : (
-											<span key="m" className="font-mono text-meta text-xs">
-												{i.method}
-											</span>
-										),
-									],
-								};
-							})}
-						/>
-					</Card>
+												Thu học phí
+											</Button>
+											<Button
+												variant="ghost"
+												size="sm"
+												disabled={busy || isPending(i.id)}
+												onClick={() =>
+													void run(
+														i.id,
+														{
+															type: "mark-invoice-paid",
+															invoiceId: i.id,
+															method: i.method === "—" ? "CK" : i.method,
+														},
+														"Đã ghi nhận thanh toán.",
+													)
+												}
+											>
+												{isPending(i.id) ? "Đang lưu…" : "Đã nhận"}
+											</Button>
+										</div>
+									) : (
+										<span key="m" className="font-mono text-meta text-xs">
+											{i.method}
+										</span>
+									),
+								],
+							};
+						})}
+					/>
 				)}
 			</div>
 			<UnmatchedTransactions

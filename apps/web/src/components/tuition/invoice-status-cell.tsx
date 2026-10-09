@@ -28,7 +28,8 @@ export function InvoiceStatusCell({
 	if (remaining) {
 		return (
 			<span className="flex items-center gap-2 whitespace-nowrap">
-				<Badge variant="warn" dot>
+				{/* Một phần = viền ink (design TuitionBadge); quá hạn mới cam đặc. */}
+				<Badge variant="accent" dot>
 					Thu một phần
 				</Badge>
 				<span
