@@ -1,7 +1,7 @@
 ---
 title: "Màn soi bài: highlight câu đúng/sai nổi bật, dễ phân biệt"
 description: "Màn review đáp án (student detail + tab Làm thử & Soi bài của giáo viên) đổi sang cặp màu chấm điểm xanh lá/đỏ riêng kèm icon ✓/✗, tô cả khối câu, đánh dấu lựa chọn đúng/sai, chip verdict to hơn và navigator nền đặc có icon."
-status: pending
+status: completed
 priority: P2
 effort: 6h
 issue: 351
@@ -66,26 +66,26 @@ giáo viên (`teacher-grade-submission`).
 
 | # | Phase | Status | Effort | Depends |
 |---|---|---|---|---|
-| 1 | [Token verdict + ngoại lệ DESIGN.md](phase-01-verdict-tokens.md) | pending | 1h | — |
-| 2 | [UI review: khối câu, lựa chọn, chip, navigator, compact list](phase-02-review-ui.md) | pending | 3h | 1 |
-| 3 | [Test, e2e và verify 3 viewport × 2 theme](phase-03-tests-and-verify.md) | pending | 2h | 2 |
+| 1 | [Token verdict + ngoại lệ DESIGN.md](phase-01-verdict-tokens.md) | completed | 1h | — |
+| 2 | [UI review: khối câu, lựa chọn, chip, navigator, compact list](phase-02-review-ui.md) | completed | 3h | 1 |
+| 3 | [Test, e2e và verify 3 viewport × 2 theme](phase-03-tests-and-verify.md) | completed | 2h | 2 |
 
 ## Acceptance criteria
 
-- [ ] Ở màn detail, nhìn lướt là phân biệt được câu đúng (viền trái + nền xanh nhạt + chip ✓ Đúng)
+- [x] Ở màn detail, nhìn lướt là phân biệt được câu đúng (viền trái + nền xanh nhạt + chip ✓ Đúng)
       với câu sai (viền trái + nền đỏ nhạt + chip ✗ <đáp án>) và câu bỏ qua (viền đứt xám), ở cả dark và light.
-- [ ] Câu choice (MCQ/TFNG/heading): hàng học viên chọn tô theo verdict (đúng = xanh + ✓,
+- [x] Câu choice (MCQ/TFNG/heading): hàng học viên chọn tô theo verdict (đúng = xanh + ✓,
       sai = đỏ + ✗ + gạch ngang). Khi học viên chọn sai hoặc bỏ qua, hàng đáp án đúng có viền xanh + ✓ "Đáp án đúng".
-- [ ] Câu điền (cloze/pin): ô input có viền dưới theo verdict và gạch ngang khi sai.
+- [x] Câu điền (cloze/pin): ô input có viền dưới theo verdict và gạch ngang khi sai.
       Dòng "Đáp án:" hiện key bằng màu xanh.
-- [ ] Đáp án đã chọn ở review **không còn** dùng `text-hot` (cam).
-- [ ] Navigator: nút số câu có nền đặc theo verdict (chữ `--verdict-on`) và icon ✓/✗ nhỏ `aria-hidden`.
+- [x] Đáp án đã chọn ở review **không còn** dùng `text-hot` (cam).
+- [x] Navigator: nút số câu có nền đặc theo verdict (chữ `--verdict-on`) và icon ✓/✗ nhỏ `aria-hidden`.
       `aria-label` giữ nguyên ("Câu 3 — đúng").
-- [ ] Contract test/e2e giữ nguyên: `data-verdict`, `data-testid`, chữ chip ("Đúng" / đáp án học viên /
+- [x] Contract test/e2e giữ nguyên: `data-verdict`, `data-testid`, chữ chip ("Đúng" / đáp án học viên /
       "Chưa trả lời") và dòng trạng thái "Đúng N câu · Sai N · Bỏ qua N".
-- [ ] Chế độ take không đổi gì (không có class verdict, không có icon).
-- [ ] Toàn bộ chữ verdict đạt ≥4.5:1 và viền ≥3:1 ở cả 2 theme. `DESIGN.md` ghi rõ ngoại lệ.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter student test`, `pnpm --filter web test`,
+- [x] Chế độ take không đổi gì (không có class verdict, không có icon).
+- [x] Toàn bộ chữ verdict đạt ≥4.5:1 và viền ≥3:1 ở cả 2 theme. `DESIGN.md` ghi rõ ngoại lệ.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter student test`, `pnpm --filter web test`,
       e2e `student-quiz-take-review` đều pass. PR kèm screenshot 3 viewport × 2 theme.
 
 ## Rủi ro

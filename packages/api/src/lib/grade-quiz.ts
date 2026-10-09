@@ -30,10 +30,24 @@ function normalize(value: string): string {
  * kind — no multi-part answers exist), so there is no multiset compare.
  * Blank candidates are dropped so an empty alt can never match a blank.
  */
-function candidatesFor(question: AssignmentQuestion): string[] {
-	return [question.answer, ...question.alts.split(ALT_SEPARATOR)]
+function acceptedCandidates(key: string, alts: string): string[] {
+	return [key, ...alts.split(ALT_SEPARATOR)]
 		.map(normalize)
 		.filter((candidate) => candidate.length > 0);
+}
+
+/**
+ * Same match rule the grader applies (exact after normalize against `answer`
+ * + alts) — exported so the review UI can highlight the correct choice row
+ * with the grader's own semantics instead of reimplementing them (#351).
+ */
+export function isAcceptedAnswer(
+	value: string,
+	key: string,
+	alts: string,
+): boolean {
+	const given = normalize(value);
+	return given.length > 0 && acceptedCandidates(key, alts).includes(given);
 }
 
 /**
@@ -51,7 +65,9 @@ export function gradeQuiz(
 	const verdicts = questions.map((question, index): QuizVerdict => {
 		const given = normalize(answers[String(index)] ?? "");
 		if (given.length === 0) return "skipped";
-		return candidatesFor(question).includes(given) ? "correct" : "wrong";
+		return acceptedCandidates(question.answer, question.alts).includes(given)
+			? "correct"
+			: "wrong";
 	});
 	return {
 		verdicts,

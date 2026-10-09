@@ -29,6 +29,15 @@ giấy trên nền đen, **một accent cam duy nhất** cho hành động và t
 - **Trạng thái đơn sắc + cam:** `--success` = `--fg-2`, `--warn` = `--meta`, `--danger` = `--accent`
   (quá hạn/lỗi = cam đặc). **Đỏ `--destructive` chỉ cho hành động phá hủy** (xóa, hủy vĩnh viễn,
   hủy liên kết) — không bao giờ dùng đỏ cho trạng thái.
+- **Ngoại lệ chấm điểm (có chủ đích):** `--verdict-correct` / `--verdict-wrong` (xanh lá/đỏ)
+  **chỉ** dùng để biểu thị đúng/sai ở màn soi bài và chấm điểm quiz, **luôn kèm icon ✓/✗** (SVG
+  `aria-hidden`) để tín hiệu không phụ thuộc màu. Không dùng cho trạng thái nào khác; đỏ verdict
+  không thay `--destructive`. `--success`/`--danger` giữ nguyên ngôn ngữ đơn sắc + cam. Nền nhạt
+  `-soft`: dark mix `transparent 86%`, light `90%`. Contrast đã đo (WCAG): chữ trên `--surface`
+  — correct 9.99 (dark) / 6.37 (light), wrong 6.29 / 5.78; trên `-soft` — 8.95 / 6.14 và 6.09 /
+  5.45; chữ trên nền đặc `--verdict-on` 11.36 / 7.13 — đều ≥4.5:1. Viền ĐẶC (viền trái 3px
+  khối câu, viền 2px hàng đáp án đúng) ≥3:1; viền alpha `/50`–`/60` (chip, hàng đã chọn) là
+  decorative — tín hiệu đúng/sai do chữ + icon ✓/✗ mang, không phụ thuộc viền.
 - **Type:** Inter Tight Variable (display + body), **DM Mono** cho kicker/nhãn/đếm/số liệu
   (`--font-mono`). `--text-base` 15px. Tiêu đề lớn: `font-display font-extrabold`,
   `leading-[0.95]`, `tracking-[-0.045em]`; kicker mono 11px uppercase `tracking-[0.2em] text-hot`.
@@ -78,6 +87,10 @@ giấy trên nền đen, **một accent cam duy nhất** cho hành động và t
   `.font-serif` design (khó đọc đoạn dài) — lệch có chủ đích.
 - **Quiz runtime "Đã lưu"/"Lỗi":** cùng màu cam như mọi trạng thái — phân biệt bằng chữ;
   đây là hệ quả có chủ đích của ngôn ngữ đơn sắc + cam (không có màu thứ hai cho trạng thái).
+- **Soi bài (review quiz):** khối câu có viền trái 3px + nền soft theo verdict
+  (`--verdict-*`); skipped = viền đứt `--meta`, không thêm màu; đáp án đã chọn KHÔNG dùng
+  `text-hot` ở review — tô theo verdict, hàng đáp án đúng có viền xanh + nhãn "Đáp án đúng";
+  chip verdict kèm icon ✓/✗ đặt cạnh số câu. Take mode không có class verdict nào.
 
 ## Voice
 
@@ -87,7 +100,9 @@ giấy trên nền đen, **một accent cam duy nhất** cho hành động và t
 
 ## Don't
 
-- Không thêm màu thứ hai cho trạng thái: đơn sắc + cam; đỏ chỉ `--destructive` cho hành động phá hủy.
+- Không thêm màu thứ hai cho trạng thái: đơn sắc + cam; đỏ chỉ `--destructive` cho hành động phá
+  hủy — **trừ cặp verdict của màn soi bài** (`--verdict-correct`/`--verdict-wrong`, xem Tokens);
+  đỏ verdict không thay cho `--destructive`.
 - Không dùng accent làm nền chip selection (nền cam chỉ cho badge quá hạn/kind thi/CTA hover).
 - Không hard-code hex — trừ nền trắng QR và SVG logo (whitelist phase-07 sweep).
 - Không render bức tường chip phẳng trộn nhiều taxonomy — luôn nhóm có nhãn.

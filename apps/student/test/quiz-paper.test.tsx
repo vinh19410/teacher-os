@@ -6,6 +6,7 @@ import {
 	type QuizChoiceRow,
 	questionChoiceRows,
 } from "@teacher-os/ui/components/quiz/quiz-question-item";
+import type { QuizReviewInfo } from "@teacher-os/ui/components/quiz/quiz-review-item";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -546,5 +547,190 @@ describe("QuizPaper — đề Speaking hiển thị đúng theo part (#305)", ()
 			/>,
 		);
 		expect(html).toContain("không có câu hỏi tự chấm");
+	});
+});
+
+describe("QuizPaper mode=review — tô verdict từng câu (#351)", () => {
+	const reviewInfo = (overrides: Partial<QuizReviewInfo>): QuizReviewInfo => ({
+		verdict: "wrong",
+		key: "B",
+		alts: "",
+		answer: "A",
+		note: "",
+		...overrides,
+	});
+
+	it("học viên chọn sai: hàng đã chọn 'Bạn chọn' gạch ngang verdict-wrong, hàng key 'Đáp án đúng' verdict-correct", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Statement 1.", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{ 0: "TRUE" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: reviewInfo({ verdict: "wrong", key: "FALSE", answer: "TRUE" }),
+				}}
+			/>,
+		);
+		// Hàng đã chọn sai: gạch ngang + nhãn "Bạn chọn".
+		expect(html).toContain("line-through");
+		expect(html).toContain("Bạn chọn");
+		// Hàng đáp án đúng: nhãn + viền xanh.
+		expect(html).toContain("Đáp án đúng");
+		expect(html).toContain("border-verdict-correct");
+		expect(html).toContain("text-verdict-wrong");
+		// Fieldset câu mang data-verdict + viền trái verdict.
+		expect(html).toContain('data-verdict="wrong"');
+		expect(html).toContain("border-l-verdict-wrong");
+	});
+
+	it("học viên chọn đúng: hàng đã chọn có ✓, không nhãn 'Đáp án đúng'/'Bạn chọn'", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Statement 1.", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{ 0: "TRUE" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: reviewInfo({ verdict: "correct", key: "TRUE", answer: "TRUE" }),
+				}}
+			/>,
+		);
+		expect(html).toContain("text-verdict-correct");
+		// Icon ✓ ở 2 chỗ: chip verdict + cuối hàng đã chọn (check path SVG).
+		expect(
+			(html.match(/M2 6\.5 5 9\.5 10 3\.5/g) ?? []).length,
+		).toBeGreaterThanOrEqual(2);
+		expect(html).not.toContain("Đáp án đúng");
+		expect(html).not.toContain("Bạn chọn");
+	});
+
+	it("bỏ qua: hàng đáp án đúng được đánh dấu; khối câu viền đứt", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Statement 1.", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: reviewInfo({ verdict: "skipped", key: "TRUE", answer: null }),
+				}}
+			/>,
+		);
+		expect(html).toContain("Đáp án đúng");
+		expect(html).toContain('data-verdict="skipped"');
+		expect(html).toContain("border-l-meta border-dashed");
+	});
+
+	it("review không còn text-hot; câu đang mở có outline cam đè nền verdict", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Statement 1.", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{ 0: "TRUE" }}
+				onAnswer={() => undefined}
+				currentQuestion={0}
+				mode="review"
+				review={{
+					0: reviewInfo({ verdict: "correct", key: "TRUE", answer: "TRUE" }),
+				}}
+			/>,
+		);
+		expect(html).not.toContain("text-hot");
+		// Câu current trong review: outline cam đè LÊN nền verdict (F1 #351),
+		// không dùng bg-accent-soft vì nó xoá nền verdict của khối câu.
+		expect(html).toContain("outline-hot");
+		expect(html).not.toContain("bg-accent-soft");
+	});
+
+	it("câu MCQ đánh dấu hàng key theo rule normalize của grader (letter)", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "mcq3" })}
+				parts={buildQuizParts(
+					[
+						{
+							stem: "What binds the model?",
+							opts: ["Glue", "Tape", "Nails"],
+							pin: null,
+						},
+					],
+					"mcq4",
+				)}
+				answers={{ 0: "B" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: reviewInfo({ verdict: "wrong", key: "A", answer: "B" }),
+				}}
+			/>,
+		);
+		// Hàng A (key) được đánh dấu dù học viên chọn B.
+		expect(html).toContain("Đáp án đúng");
+		expect(html).toContain("Bạn chọn");
+	});
+
+	it("câu cloze review: ô input tô viền dưới theo verdict", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "shortans" })}
+				parts={buildQuizParts(
+					[{ stem: "The river ____ the city.", opts: null, pin: null }],
+					"shortans",
+				)}
+				answers={{ 0: "northside" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: reviewInfo({
+						verdict: "wrong",
+						key: "north",
+						answer: "northside",
+					}),
+				}}
+			/>,
+		);
+		expect(html).toContain("border-b-verdict-wrong");
+		expect(html).toContain("line-through");
+		expect(html).toContain("disabled:opacity-100");
+	});
+
+	it("take mode: không có class verdict, không nhãn phụ, giữ text-hot cho selected", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields()}
+				parts={buildQuizParts(
+					[{ stem: "Statement 1.", opts: null, pin: null }],
+					"tfng",
+				)}
+				answers={{ 0: "TRUE" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).not.toContain("data-verdict");
+		expect(html).not.toContain("Đáp án đúng");
+		expect(html).not.toContain("Bạn chọn");
+		expect(html).toContain("text-hot");
 	});
 });
