@@ -1,7 +1,7 @@
 ---
 title: "Student overview: dòng hóa đơn đã thanh toán chỉ hiện số tiền + badge"
 description: "Ở cột Học phí của student overview, hóa đơn đã thanh toán chỉ hiện số tiền và badge 'Đã thanh toán' thay vì '0đ' + 'Đã nhận x / y', đồng thời tính đúng hóa đơn được giáo viên đánh dấu thu tay."
-status: pending
+status: completed
 priority: P2
 effort: 1.5h
 issue: 352
@@ -76,7 +76,7 @@ khi quyết định có hiện QR
 
 | # | Phase | Status | Effort |
 |---|---|---|---|
-| 01 | [Dòng hóa đơn đã thanh toán + số liệu thu tay](phase-01-paid-invoice-row.md) | pending | 1.5h |
+| 01 | [Dòng hóa đơn đã thanh toán + số liệu thu tay](phase-01-paid-invoice-row.md) | done | 1.5h |
 
 ## Câu hỏi mở
 

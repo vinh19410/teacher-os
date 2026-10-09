@@ -127,19 +127,26 @@ export function ClassBadges({ cls }: { cls: StudentClass }) {
 	);
 }
 
-/** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền cam. */
+/** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền cam,
+ * success = `bg-chip` (badge "Đã thanh toán" theo DESIGN.md). */
 export function Tag({
 	children,
 	hot = false,
+	success = false,
 }: {
 	children: React.ReactNode;
 	hot?: boolean;
+	success?: boolean;
 }) {
 	return (
 		<span
 			className={cn(
 				"inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em]",
-				hot ? "bg-hot font-medium text-accent-on" : "neu-in text-fg-2",
+				hot
+					? "bg-hot font-medium text-accent-on"
+					: success
+						? "bg-chip text-fg"
+						: "neu-in text-fg-2",
 			)}
 		>
 			{children}

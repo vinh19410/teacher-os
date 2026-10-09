@@ -131,7 +131,7 @@ function StudentOverviewPage() {
 					)}
 				</section>
 
-				{/* Học phí (#320) — chỉ hiện khi còn khoản chưa đóng. */}
+				{/* Học phí (#320) — ẩn khi không có hóa đơn nào. */}
 				<StudentTuitionSection />
 			</div>
 
@@ -142,8 +142,9 @@ function StudentOverviewPage() {
 }
 
 /**
- * Học phí (#320): danh sách khoản chưa đóng của học viên — ẩn khi rỗng.
- * Tách component để chỉ fetch khi overview đã load xong (cùng org header).
+ * Học phí (#320): danh sách hóa đơn của học viên — khoản đã thanh toán hiện
+ * gọn với badge, ẩn khi rỗng. Tách component để chỉ fetch khi overview đã
+ * load xong (cùng org header).
  */
 function StudentTuitionSection() {
 	const invoices = useQuery({
