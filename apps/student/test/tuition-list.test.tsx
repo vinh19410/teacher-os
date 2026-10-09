@@ -43,7 +43,8 @@ describe("TuitionList", () => {
 		};
 		const html = renderToStaticMarkup(<TuitionList invoices={[settled]} />);
 		expect(html).toContain("Đã thanh toán");
-		expect(html).toContain("5.000.000đ");
+		// Pin số tiền ở ROW (span) — MiniStat "Đã đóng" cũng chứa chuỗi này.
+		expect(html).toContain(">5.000.000đ</span>");
 		// Không còn dòng 0đ ở cột phải của row (ô "Còn lại" tổng vẫn 0đ là đúng).
 		expect(html).not.toContain(">0đ</span>");
 		expect(html).not.toContain("Đã nhận");
