@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-semibold text-xl">
+			<h1 className="font-display font-extrabold text-xl tracking-[-0.02em]">
 				Không tìm thấy học viên
 			</h1>
 			<p className="mt-2 text-muted-fg text-sm">
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_auth/students/$studentId")({
 			</p>
 			<Link
 				to="/students"
-				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-hot"
 			>
 				← Về danh sách học viên
 			</Link>
@@ -98,7 +98,7 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 		<Link
 			to="/assignments/$assignmentId"
 			params={{ assignmentId: row.id }}
-			className="font-medium text-hot hover:text-accent-active"
+			className="font-medium text-hot hover:text-hot"
 		>
 			{row.title}
 		</Link>,
@@ -140,10 +140,16 @@ function StudentDetailRoute() {
 
 	return (
 		<div>
+			<Link
+				to="/students"
+				className="mb-4 inline-block font-mono text-meta text-xs hover:text-hot"
+			>
+				← Học viên
+			</Link>
 			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
 				<Avatar text={student.avatar} size="lg" />
 				<div className="min-w-[200px] flex-1">
-					<h1 className="font-display font-semibold text-[28px]">
+					<h1 className="font-display font-extrabold text-3xl leading-[0.95] tracking-[-0.03em] max-app:text-2xl">
 						{student.name}
 					</h1>
 					<div className="mt-2 flex flex-wrap gap-4">
@@ -202,7 +208,7 @@ function StudentDetailRoute() {
 			{tab === "profile" && (
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 							Lớp học
 						</div>
 						{studentClasses.length > 0 ? (
@@ -213,7 +219,7 @@ function StudentDetailRoute() {
 											<Link
 												to="/classes/$classId"
 												params={{ classId: c.id }}
-												className="font-medium text-hot hover:text-accent-active"
+												className="font-medium text-hot hover:text-hot"
 											>
 												{c.name}
 											</Link>
@@ -239,7 +245,7 @@ function StudentDetailRoute() {
 						)}
 					</Card>
 					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 							Phụ huynh
 						</div>
 						<div className="flex flex-col gap-4">
@@ -254,7 +260,7 @@ function StudentDetailRoute() {
 								<span className="font-mono">{student.parent.phone}</span>
 							</div>
 						</div>
-						<div className="mt-5 mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.06em]">
+						<div className="mt-5 mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 							Ghi chú nội bộ
 						</div>
 						<p className="rounded-sm bg-surface-warm p-3 text-fg-2 text-sm leading-[1.5]">

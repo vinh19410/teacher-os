@@ -62,7 +62,7 @@ export function ReportsRoute() {
 		<div>
 			<PageHead
 				title="Báo cáo phụ huynh"
-				lead={
+				kicker={
 					isZaloConnected ? (
 						reportCount > 0 ? (
 							`Gửi qua Zalo OA · ${reportCount} báo cáo`
@@ -83,7 +83,9 @@ export function ReportsRoute() {
 				}
 			/>
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<h2 className="font-semibold text-xl">Báo cáo đã gửi</h2>
+				<h2 className="font-display font-extrabold text-2xl tracking-[-0.02em]">
+					Báo cáo đã gửi
+				</h2>
 				<Button size="sm" onClick={() => setModalOpen(true)}>
 					+ Tạo báo cáo tuần
 				</Button>

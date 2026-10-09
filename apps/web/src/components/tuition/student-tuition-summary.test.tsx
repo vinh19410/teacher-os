@@ -149,10 +149,11 @@ describe("StudentTuitionSummary", () => {
 				})}
 			/>,
 		);
-		// StatCard: Card root chứa class variant, label là div con — đi 1 cấp lên.
+		// StatCard hot (redesign #349): nền ink nổi bật, số cam — Card root mang
+		// class hot, label là div con — đi 1 cấp lên.
 		const card = screen.getByText("Còn lại (VND)").closest("div")!
 			.parentElement!;
-		expect(card.className).toContain("[&>div:first-child]:text-danger");
+		expect(card.className).toContain("bg-fg");
 	});
 
 	it("lớp invited hiện badge 'Đã mời' và ô Còn lại 'Chưa kích hoạt — chưa tính'", () => {

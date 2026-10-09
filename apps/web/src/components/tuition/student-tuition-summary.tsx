@@ -37,7 +37,7 @@ function classCell(row: StudentClassTuition) {
 			<Link
 				to="/classes/$classId"
 				params={{ classId: row.classId }}
-				className="font-medium text-hot hover:text-accent-active"
+				className="font-medium text-hot"
 			>
 				{row.className}
 			</Link>
@@ -72,11 +72,8 @@ export function StudentTuitionSummary({ summary }: { summary: Summary }) {
 				<StatCard
 					num={counted ? fmtVND(summary.totalRemaining) : EMPTY}
 					label="Còn lại (VND)"
-					className={
-						summary.totalRemaining > 0
-							? "[&>div:first-child]:text-danger"
-							: undefined
-					}
+					// #347 tiền lệ KPI: còn nợ cần chú ý → thẻ hot (nền ink, số cam).
+					hot={counted && summary.totalRemaining > 0}
 				/>
 			</div>
 			{summary.unlinkedPaid > 0 && (

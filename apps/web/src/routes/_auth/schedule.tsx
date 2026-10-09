@@ -86,16 +86,16 @@ export function ScheduleRoute() {
 	return (
 		<div>
 			<PageHead
+				kicker={`Tuần ${formatWeekRange(weekStart)} · ${slotCount} buổi`}
 				title="Lịch dạy"
-				lead={`Tuần ${formatWeekRange(weekStart)} · ${slotCount} buổi`}
 			/>
 			<div className="mb-4 flex items-center justify-between gap-2">
 				<Link
 					to="/schedule"
 					search={{ week: addWeeks(weekStart, -1) }}
-					className="font-mono text-meta text-muted-fg text-xs hover:text-fg"
+					className="neu-sm rounded-md font-mono text-meta text-xs hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 				>
-					← Tuần trước
+					<span className="block px-3 py-1.5">← Tuần trước</span>
 				</Link>
 				<Link
 					to="/schedule"
@@ -110,7 +110,7 @@ export function ScheduleRoute() {
 					className={`font-mono text-meta text-xs ${
 						isCurrentWeek
 							? "pointer-events-none text-fg-2"
-							: "text-muted-fg hover:text-fg"
+							: "text-muted-fg hover:text-hot"
 					}`}
 				>
 					Tuần này
@@ -118,9 +118,9 @@ export function ScheduleRoute() {
 				<Link
 					to="/schedule"
 					search={{ week: addWeeks(weekStart, 1) }}
-					className="font-mono text-meta text-muted-fg text-xs hover:text-fg"
+					className="neu-sm rounded-md font-mono text-meta text-xs hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 				>
-					Tuần sau →
+					<span className="block px-3 py-1.5">Tuần sau →</span>
 				</Link>
 			</div>
 			{data.classes.length === 0 ? (
@@ -178,10 +178,15 @@ export function ScheduleRoute() {
 							].sort((a, b) => a.time.localeCompare(b.time));
 							const isToday = dates[i] === todayIso;
 							return (
-								<div key={dn} className="day-col flex flex-col">
+								<div
+									key={dn}
+									className={`day-col neu flex min-h-[220px] flex-col p-3 ${
+										isToday ? "ring-2 ring-hot/30" : ""
+									}`}
+								>
 									<div className="pb-3 text-center">
 										<div
-											className={`font-semibold text-[11px] uppercase tracking-[0.04em] ${
+											className={`font-medium font-mono text-[11px] uppercase tracking-[0.15em] ${
 												isToday ? "text-hot" : "text-muted-fg"
 											}`}
 										>
@@ -189,7 +194,7 @@ export function ScheduleRoute() {
 										</div>
 										<div
 											className={`font-mono text-[11px] ${
-												isToday ? "text-hot" : "text-line-meta"
+												isToday ? "text-hot" : "text-meta"
 											}`}
 										>
 											{formatDayMonth(dates[i])}

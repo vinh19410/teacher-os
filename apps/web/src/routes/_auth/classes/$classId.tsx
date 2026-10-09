@@ -189,10 +189,16 @@ function ClassDetailRoute() {
 
 	return (
 		<div>
+			<Link
+				to="/classes"
+				className="mb-4 inline-block font-mono text-meta text-xs hover:text-hot"
+			>
+				← Lớp học
+			</Link>
 			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
 				<div className="min-w-[200px] flex-1">
-					<div className="flex flex-wrap items-center gap-2">
-						<h1 className="font-display font-semibold text-[28px]">
+					<div className="flex flex-wrap items-baseline gap-2">
+						<h1 className="font-display font-extrabold text-3xl leading-[0.95] tracking-[-0.03em] max-app:text-2xl">
 							{cls.name}
 						</h1>
 						<Tag>{CLASS_TYPE_LABELS[cls.type]}</Tag>

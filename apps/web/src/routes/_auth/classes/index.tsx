@@ -5,10 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
-import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
-import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
@@ -23,6 +21,8 @@ const MODE_MAP: Record<string, string> = {
 	"Trực tuyến": "Online",
 	"Trực tiếp": "Offline",
 };
+// Contract #170: list pages keep their localized Vietnamese labels.
+const SYLLABUS_LABEL = "Giáo trình";
 
 export function ClassesRoute() {
 	const navigate = useNavigate();
@@ -44,10 +44,13 @@ export function ClassesRoute() {
 
 	return (
 		<div>
-			<PageHead title="Lớp học" lead={`${activeCount} lớp đang hoạt động`} />
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+			<PageHead
+				kicker={`${activeCount} lớp đang hoạt động`}
+				title="Lớp học"
+				action={<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>}
+			/>
+			<div className="mb-6">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>
 			</div>
 			{classes.length === 0 ? (
 				<Card
@@ -55,7 +58,7 @@ export function ClassesRoute() {
 					className="p-8 text-center"
 					data-testid="classes-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
+					<h2 className="font-display font-extrabold text-lg">
 						Chưa có lớp học nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
@@ -70,77 +73,68 @@ export function ClassesRoute() {
 					</p>
 				</Card>
 			) : (
-				<Card variant="white" className="p-0">
-					<DataTable
-						headers={[
-							"Lớp",
-							"Giáo trình",
-							"Sĩ số",
-							"Tiến độ",
-							"Lịch",
-							"Trạng thái",
-						]}
-						emptyMessage="Chưa có lớp học."
-						rows={list.map((c) => {
-							const sy = data.syllabi.find((s) => s.id === c.syllabusId);
-							const pct =
-								c.sessionsTotal > 0
-									? (c.sessionsDone / c.sessionsTotal) * 100
-									: 0;
-							return {
-								onClick: () =>
+				<div className="grid gap-6 md:grid-cols-2">
+					{list.map((c, i) => {
+						const sy = data.syllabi.find((s) => s.id === c.syllabusId);
+						const pct =
+							c.sessionsTotal > 0
+								? (c.sessionsDone / c.sessionsTotal) * 100
+								: 0;
+						return (
+							<button
+								key={c.id}
+								type="button"
+								onClick={() =>
 									navigate({
 										to: "/classes/$classId",
 										params: { classId: c.id },
-									}),
-								cells: [
-									<div key="n">
-										<div className="flex items-center gap-2">
-											<span className="font-semibold text-sm">{c.name}</span>
-											<Tag>{CLASS_TYPE_LABELS[c.type]}</Tag>
+									})
+								}
+								className="neu group rounded-md p-6 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							>
+								<div className="flex items-baseline justify-between gap-3 font-mono text-[11px] text-meta uppercase tracking-widest">
+									<span>
+										{String(i + 1).padStart(2, "0")} ·{" "}
+										{CLASS_TYPE_LABELS[c.type]}
+									</span>
+									<span>{classMeta(c)}</span>
+								</div>
+								<h3 className="mt-4 font-display font-extrabold text-2xl tracking-[-0.02em] transition-colors group-hover:text-hot">
+									{c.name}
+								</h3>
+								<div className="mt-2 font-mono text-meta text-sm">
+									{formatSchedule(c.schedule)}
+								</div>
+								<div className="mt-1 flex items-center gap-3 text-xs">
+									<span className="text-muted-fg">
+										{c.studentIds.length} học viên
+									</span>
+									<span className="truncate text-meta">
+										{SYLLABUS_LABEL}:{" "}
+										{sy ? sy.name : <span className="font-mono">chưa gán</span>}
+									</span>
+								</div>
+								{c.sessionsTotal > 0 && (
+									<div className="mt-5">
+										<Progress value={pct} />
+										<div className="mt-1 font-mono text-[11px] text-meta">
+											Tiến độ {c.sessionsDone}/{c.sessionsTotal} buổi
 										</div>
-										<div className="font-mono text-meta text-xs">
-											{classMeta(c)}
-										</div>
-									</div>,
-									sy ? (
-										<span key="sy">{sy.name}</span>
-									) : (
-										<span key="sy" className="font-mono text-meta text-xs">
-											Chưa gán
-										</span>
-									),
-									<span key="c" className="font-mono">
-										{c.studentIds.length}
-									</span>,
-									<div key="p" className="min-w-[100px]">
-										<Progress
-											value={pct}
-											variant={
-												pct >= 67 ? "default" : pct >= 34 ? "warn" : "low"
-											}
-										/>
-										<div className="mt-[3px] font-mono text-meta text-xs">
-											{c.sessionsDone}/{c.sessionsTotal} buổi
-										</div>
-									</div>,
-									<span key="s" className="font-mono text-meta text-xs">
-										{formatSchedule(c.schedule)}
-									</span>,
-									c.status === "active" ? (
-										<Badge key="b" variant="success" dot>
+									</div>
+								)}
+								<div className="mt-3">
+									{c.status === "active" ? (
+										<Badge variant="success" dot>
 											Đang học
 										</Badge>
 									) : (
-										<Badge key="b" variant="muted">
-											Tạm dừng
-										</Badge>
-									),
-								],
-							};
-						})}
-					/>
-				</Card>
+										<Badge variant="muted">Tạm dừng</Badge>
+									)}
+								</div>
+							</button>
+						);
+					})}
+				</div>
 			)}
 			<AddClassModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>

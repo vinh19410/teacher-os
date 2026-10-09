@@ -244,17 +244,16 @@ function SyllabusDetail({
 
 			{sy.modules.map((m, mi) => {
 				return (
-					<div
-						key={m.id}
-						className="mb-4 overflow-hidden rounded-lg border border-line-soft border-solid bg-bg"
-					>
+					<div key={m.id} className="neu mb-4 overflow-hidden rounded-md">
 						<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4 transition-colors duration-[150ms] hover:bg-surface">
 							<button
 								type="button"
 								onClick={() => toggle(m.id)}
 								className="text-left"
 							>
-								<h3 className="font-semibold text-sm">{m.title}</h3>
+								<h3 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+									{m.title}
+								</h3>
 							</button>
 							<div className="flex flex-wrap items-center gap-3">
 								<button
@@ -290,7 +289,7 @@ function SyllabusDetail({
 										// giữa class tĩnh và class điều kiện.
 										className={cn(
 											"grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]",
-											isTestSessionKind(l.kind) && "bg-warn-soft/50",
+											isTestSessionKind(l.kind) && "bg-warn-soft",
 										)}
 									>
 										<div>
