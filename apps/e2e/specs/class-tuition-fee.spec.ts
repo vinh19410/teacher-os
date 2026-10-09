@@ -31,7 +31,8 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(addDialog).toBeHidden();
 
 		// Go into class detail
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
@@ -91,7 +92,8 @@ test.describe("class tuition fee (issue #227)", () => {
 		await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 		await expect(dialog).toBeHidden();
 
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
@@ -150,7 +152,8 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(addDialog).toBeHidden();
 
 		// Go into class detail
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);

@@ -18,7 +18,7 @@ async function createSyllabusTemplate(page: Page, name: string) {
 	return templateId;
 }
 
-test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền amber, đổi loại cập nhật nhãn", async ({
+test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền tint xám, đổi loại cập nhật nhãn", async ({
 	page,
 }) => {
 	await signUpViaUi(page);
@@ -44,7 +44,7 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await expect(addDialog).toBeHidden();
 	await expect(page.getByText("Buổi thường", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(0);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(0);
 
 	// Sửa buổi thành "Thi giữa kỳ" → badge + tint hiện. Locator scope vào
 	// lesson row (grid 1fr_auto) để không trúng nút Sửa của module header.
@@ -59,11 +59,11 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(1);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(1);
 	// Chống false-positive: class attribute khớp substring chưa đủ — computed
 	// style phải là màu thật (biome từng gộp mất space giữa 2 class trong
 	// className template, token dính nhưng CSS không áp dụng).
-	const tinted = page.locator("[class*='bg-warn-soft/50']").first();
+	const tinted = page.locator('[data-testid="test-session-row"]').first();
 	const tintBg = await tinted.evaluate(
 		(el) => getComputedStyle(el).backgroundColor,
 	);
@@ -80,7 +80,7 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await expect(editDialog2).toBeHidden();
 	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(1);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(1);
 });
 
 test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight hiện", async ({
@@ -114,7 +114,7 @@ test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight h
 	await expect(page.getByText("Module thủ công")).toBeHidden();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(2);
 });
 
 test("màn hình lớp không có select Loại; sửa buổi thi từ lớp giữ nguyên kind (guard #154)", async ({
@@ -198,5 +198,5 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await page.goto(`/syllabus/${copy.id}`);
 	await expect(page.getByText("Buổi 3 — giữa kỳ đã đổi")).toBeVisible();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(2);
 });

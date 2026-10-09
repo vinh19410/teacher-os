@@ -45,9 +45,11 @@ export function TuitionList({ invoices }: { invoices: StudentInvoiceItem[] }) {
 	const totalDue = invoices.reduce((sum, inv) => sum + inv.amountDue, 0);
 	return (
 		<section className="neu self-start rounded-lg p-6">
-			<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			{/* Heading role pinned by e2e (tuition-bank-transfer) — styled as the
+			design's mono kicker, still a real h2 for the outline. */}
+			<h2 className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
 				Học phí
-			</p>
+			</h2>
 
 			<div className="mt-4 grid grid-cols-2 gap-4">
 				<MiniStat label="Đã đóng" value={fmtVnd(totalPaid)} />

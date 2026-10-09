@@ -283,7 +283,10 @@ function SyllabusDetail({
 								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
-										// Buổi thi tint nền amber; kind lạ không bao giờ
+										data-testid={
+											isTestSessionKind(l.kind) ? "test-session-row" : undefined
+										}
+										// Buổi thi tint nền xám; kind lạ không bao giờ
 										// highlight (isTestSessionKind kiểm tra dương, #154).
 										// cn() — concat template bị biome gộp mất space
 										// giữa class tĩnh và class điều kiện.
