@@ -71,3 +71,14 @@ export const VERDICT_ACCENT_CLASSES: Record<QuizVerdict, string> = {
 	wrong: "accent-verdict-wrong",
 	skipped: "accent-meta",
 };
+
+/**
+ * Icon góc trên nút navigator (nền chấm = --bg): stroke phải là MÀU VERDICT —
+ * nếu kế thừa currentColor của chữ nút (--verdict-on == --bg) thì icon
+ * vô hình ở cả 2 theme (code review PR #355 F1).
+ */
+export const VERDICT_BADGE_CLASSES: Record<QuizVerdict, string> = {
+	correct: "text-verdict-correct",
+	wrong: "text-verdict-wrong",
+	skipped: "text-meta",
+};

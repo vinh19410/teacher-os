@@ -42,12 +42,9 @@ export function AttemptCompactList({
 							có ellipsis) — giữ hành vi cắt "…" như trước #351. */}
 						<span className="truncate">{item.answer ?? "—"}</span>
 					</span>
-					<span
-						className={cn(
-							"shrink-0 font-mono text-[13px]",
-							item.verdict !== "skipped" ? "text-verdict-correct" : "text-fg-2",
-						)}
-					>
+					{/* Key luôn xanh — cùng rule với dòng "Đáp án:" ở màn detail
+						(review PR #355 F5: một ngôn ngữ cho cùng datum). */}
+					<span className="shrink-0 font-mono text-[13px] text-verdict-correct">
 						Đáp án: {item.key}
 					</span>
 				</li>

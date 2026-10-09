@@ -45,7 +45,9 @@ export function QuizReviewChip({ info }: { info: QuizReviewInfo }) {
 			)}
 		>
 			<VerdictIcon verdict={info.verdict} className="size-3.5" />
-			{quizReviewChipText(info)}
+			{/* truncate phải nằm trên text node — flex item ẩn danh không có
+				ellipsis (cùng pattern với attempt-compact-list). */}
+			<span className="truncate">{quizReviewChipText(info)}</span>
 		</span>
 	);
 }

@@ -5,6 +5,7 @@ import {
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
 import {
+	VERDICT_BADGE_CLASSES,
 	VERDICT_SOLID_CLASSES,
 	VerdictIcon,
 } from "@teacher-os/ui/components/quiz/quiz-verdict";
@@ -97,7 +98,7 @@ export function QuizNavigator({
 								aria-current={isCurrent ? "true" : undefined}
 								onClick={() => onSelect(question.q)}
 								className={cn(
-									"relative flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-hot",
+									"relative flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-hot focus-visible:outline-offset-2",
 									verdict
 										? VERDICT_SOLID_CLASSES[verdict]
 										: answered
@@ -110,7 +111,12 @@ export function QuizNavigator({
 								{verdict && (
 									<VerdictIcon
 										verdict={verdict}
-										className="absolute -top-1 -right-1 size-2.5 rounded-full bg-bg p-px"
+										// stroke màu verdict trên chấm --bg: kế thừa
+										// currentColor (--verdict-on == --bg) sẽ vô hình.
+										className={cn(
+											"absolute -top-1 -right-1 size-2.5 rounded-full bg-bg p-px",
+											VERDICT_BADGE_CLASSES[verdict],
+										)}
 									/>
 								)}
 							</button>

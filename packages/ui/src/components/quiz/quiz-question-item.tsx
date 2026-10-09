@@ -67,7 +67,7 @@ interface ChoiceRowReview {
 
 /**
  * Hàng học viên chọn tô theo verdict của câu: đúng = tick "check", sai = gạch
- * ngang + "Bạn chọn", bỏ qua = "Bạn chọn" màu meta.
+ * ngang + "Bạn chọn".
  */
 const SELECTED_ROW_REVIEW: Record<QuizVerdict, ChoiceRowReview> = {
 	correct: {
@@ -83,6 +83,8 @@ const SELECTED_ROW_REVIEW: Record<QuizVerdict, ChoiceRowReview> = {
 		accent: VERDICT_ACCENT_CLASSES.wrong,
 		mark: "you",
 	},
+	// Unreachable — defensive: grader định nghĩa skipped ⇔ answer rỗng ⇒
+	// không có hàng nào selected. Giữ để đủ Record<QuizVerdict, ...>.
 	skipped: {
 		rowClass: "border-line-strong/40 bg-surface",
 		textClass: "text-muted-fg",
@@ -113,8 +115,10 @@ function choiceRowReview(
 			mark: "key",
 		};
 	}
+	// Hàng không nổi bật: viền tường minh trong suốt — để preflight currentColor
+	// sẽ vẽ viền 1px xám đậm hơn hairline của hệ (review PR #355 F2).
 	return {
-		rowClass: "text-muted-fg",
+		rowClass: "border-transparent text-muted-fg",
 		textClass: "text-muted-fg",
 		accent: VERDICT_ACCENT_CLASSES.skipped,
 		mark: null,
