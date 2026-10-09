@@ -97,7 +97,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 
 ### CI pipelines
 
-- Pull requests and pushes to `main`/`develop` run quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml)) and the Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)); their required shape is asserted by `pnpm run test:ci-workflow`.
+- Pull requests and pushes to `main` run quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml)); pull requests to `main` run the Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)), and every prod deploy ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) reruns it and ships only if it passes. Their required shape is asserted by `pnpm run test:ci-workflow`.
 - Staging auto-deploy is disabled: merging into `develop` no longer deploys. [.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml) stays runnable as a manual `workflow_dispatch` run — it re-runs the same quality gates, deploys Alchemy stage `staging` with credentials from the GitHub `staging` environment, then polls `/readyz` and runs an auth sign-up round-trip smoke plus service-worker stub checks.
 - Merging `develop` into `main` ships production automatically: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) re-runs the same quality gates, deploys Alchemy stage `prod` with credentials from the GitHub `production` environment, then polls `/readyz` until the API reports ready.
 

@@ -154,7 +154,8 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 `.github/workflows/deploy.yml` deploys stage `prod` automatically on every
 push to `main` (i.e. merging `develop` into `main` is the release trigger).
 The workflow reproduces this runbook's gates in order: the same quality steps
-as CI, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+as CI and the full Playwright E2E suite (the reusable `e2e.yml`, credential-free)
+must both pass — a red E2E blocks the release — then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. Deploys are serialized
