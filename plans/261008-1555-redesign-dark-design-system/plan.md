@@ -1,7 +1,7 @@
 ---
 title: "Redesign web + student theo design mới (dark-first, accent cam)"
 description: "Áp dụng hệ thống thiết kế mới từ vinh19410/teacheros-design cho apps/web và apps/student: dark mặc định + toggle Light, accent cam, Inter Tight + DM Mono, trạng thái đơn sắc + cam. Chỉ đổi giao diện; không đổi hành vi, dữ liệu, API hay copy tiếng Việt."
-status: pending
+status: completed
 priority: P2
 effort: 36h
 issue: 349
@@ -94,13 +94,13 @@ markup, không để e2e đỏ giữa các phase.
 
 | # | Phase | Status | Effort | Phụ thuộc |
 |---|-------|--------|--------|-----------|
-| 1 | [Nền tảng: token dark/light, font self-host, theme toggle](./phase-01-tokens-fonts-theme.md) | Pending | 5h | — |
-| 2 | [Primitive dùng chung + minh họa SVG](./phase-02-shared-primitives.md) | Pending | 5h | 1 |
-| 3 | [Shell giáo viên + trang auth/pay/404](./phase-03-teacher-shell-and-auth.md) | Pending | 4h | 2 |
-| 4 | [Trang giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo](./phase-04-teacher-pages-core.md) | Pending | 6h | 3 |
-| 5 | [Trang giáo viên: bài tập, đề thi, chấm bài, học phí](./phase-05-teacher-pages-assignments-tuition.md) | Pending | 6h | 3 |
-| 6 | [App học viên: shell, tổng quan, làm bài, kết quả, auth](./phase-06-student-app.md) | Pending | 6h | 2 |
-| 7 | [Sweep, DESIGN.md, e2e + screenshot 3 viewport × 2 theme](./phase-07-sweep-docs-verification.md) | Pending | 4h | 4, 5, 6 |
+| 1 | [Nền tảng: token dark/light, font self-host, theme toggle](./phase-01-tokens-fonts-theme.md) | Done | 5h | — |
+| 2 | [Primitive dùng chung + minh họa SVG](./phase-02-shared-primitives.md) | Done | 5h | 1 |
+| 3 | [Shell giáo viên + trang auth/pay/404](./phase-03-teacher-shell-and-auth.md) | Done | 4h | 2 |
+| 4 | [Trang giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo](./phase-04-teacher-pages-core.md) | Done | 6h | 3 |
+| 5 | [Trang giáo viên: bài tập, đề thi, chấm bài, học phí](./phase-05-teacher-pages-assignments-tuition.md) | Done | 6h | 3 |
+| 6 | [App học viên: shell, tổng quan, làm bài, kết quả, auth](./phase-06-student-app.md) | Done | 6h | 2 |
+| 7 | [Sweep, DESIGN.md, e2e + screenshot 3 viewport × 2 theme](./phase-07-sweep-docs-verification.md) | Done | 4h | 4, 5, 6 |
 
 Phase 4, 5, 6 độc lập về file sau khi phase 3 (và 2 cho phase 6) xong; có thể làm tuần tự
 trên cùng nhánh. Một nhánh `feat/redesign-dark-design-system` → một PR vào `develop`, commit

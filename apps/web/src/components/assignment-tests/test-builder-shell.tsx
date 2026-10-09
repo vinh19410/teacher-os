@@ -544,7 +544,7 @@ export function TestBuilderShell({
 	const pickerSlot = slots.find((slot) => slot.part === pickerPart);
 
 	return (
-		<div className="grid grid-cols-[280px_1fr] gap-6 max-app:grid-cols-1">
+		<div className="grid grid-cols-[1fr_1.3fr] gap-6 max-app:grid-cols-1">
 			{/* Cột trái — outline theo mẫu Selfomy ("3 groups, 13 questions"). */}
 			<Card
 				variant="white"
@@ -557,14 +557,16 @@ export function TestBuilderShell({
 				<span className="font-mono text-meta text-xs">
 					{assignedCount}/{slots.length} parts · {totalQuestions} questions
 				</span>
-				<ol className="flex flex-col gap-2">
+				<ol className="flex flex-col">
 					{slotViews.map((slot) => (
 						<li
 							key={slot.part}
-							className="flex flex-col rounded-md border border-line px-3 py-2"
+							className="flex flex-col border-line border-t py-2 transition-colors duration-150 first:border-t-0 hover:text-hot"
 						>
-							<span className="font-medium text-xs">{slot.label}</span>
-							<span className="text-muted-fg text-xs">
+							<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+								{slot.label}
+							</span>
+							<span className="text-xs">
 								{slot.prompt ? (
 									<>
 										{slot.prompt.title}
@@ -593,7 +595,7 @@ export function TestBuilderShell({
 				{bannerOpen && (
 					<div
 						role="status"
-						className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+						className="neu-in flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2"
 					>
 						<span className="text-xs">
 							Đã phục hồi bản nháp bộ đề — kiểm tra rồi tiếp tục, hoặc Hủy để
@@ -673,7 +675,7 @@ export function TestBuilderShell({
 						/>
 						<div className="flex flex-wrap items-center justify-between gap-3 border-line border-t pt-3">
 							<div className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
+								<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
 									Trạng thái
 								</span>
 								<ChipFilter

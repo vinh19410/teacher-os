@@ -37,7 +37,7 @@ function RouteComponent() {
 				className="flex items-center justify-center px-[clamp(20px,3vw,48px)] py-[clamp(28px,4vh,56px)] max-[960px]:items-start max-[420px]:px-4 max-[420px]:pt-6 max-[420px]:pb-10"
 			>
 				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
-					<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+					<h2 className="font-display font-extrabold text-[28px] leading-[1.15] tracking-[-0.02em] max-[420px]:text-[24px]">
 						Choose a new password
 					</h2>
 					<p className="mt-2 mb-[26px] text-muted-fg text-sm">

@@ -54,7 +54,30 @@ primitive, chỉ sửa layout nơi design khác rõ.
 
 ## Ghi chú lệch design
 
-_(điền khi thực thi)_
+Điền khi thực thi (2026-10-09):
+
+1. **Grading — "Band tổng" không nằm ở page head `action`**: band sống trong state của
+   `GradeForm` (tính từ 4 slider, chỉ hiện khi đủ); đưa lên head phải lift state + đổi API
+   component mà e2e/unit đang pin (`grade-overall-band`). Hiển thị ngay trên form = nhãn
+   mono uppercase + số extrabold 4xl cam, testid/aria-live giữ nguyên.
+2. **`/tuition` giữ 3 stat tiles `grid-cols-3`** thay 2×2 design: app có đúng 3 số liệu
+   (Đã thu / Còn nợ / Gói sắp hết), không thêm số liệu mock.
+3. **`/tuition` kicker** literal "Doanh thu · VietQR qua SePay" (trùng từ h1 — đúng pattern
+   eyebrow design); lead "Đã thu X" giữ vì e2e/info dựa vào KPI + lead.
+4. Tile "Gói sắp hết" bỏ override `text-warn` → số màu fg thường (chỉ "Còn nợ" nhấn `hot`).
+5. **`/tuition/$invoiceId` bỏ thanh Progress** trong khối số tiền (design không vẽ; mức đã
+   thu đọc được từ 2 StatCard) — note "Ghi nhận thủ công" giữ nguyên.
+6. **Test builder giữ cấu trúc outline trái + editor phải** (design vẽ bank trái/đề phải với
+   dữ liệu mock); chỉ đổi tỉ lệ `[1fr_1.3fr]` + ngôn ngữ thị giác.
+7. **Nút "Gỡ khỏi test" → "✕"** nhưng là gỡ-khỏi-bộ-đề (không phá hủy dữ liệu) → ghost
+   hover cam, KHÔNG đỏ; accessible name giữ nguyên. Xóa câu/cột/hàng editor (mất nội dung
+   đã nhập) → đỏ `danger`.
+8. **Highlight `mark.anno`**: nền lấy từ `EssayWithHighlights` (phase 6 đổi sang `anno`);
+   trang chấm chỉ đè số chú thích sup `after:text-hot`. Không nhân bản class.
+9. StatusTag đề (`draft/used/ok`) giữ mapping token — token phase 1 đã đơn sắc + cam.
+10. Empty/not-found cards giữ `variant="white"`; bỏ Card `p-0` bọc 2 bảng `/tuition`
+    (DataTable tự có wrapper neu — tránh card lồng card).
+11. Spec `create-invoice`: `kpiNum` đổi thêm `> div` (StatCard bọc thêm Card div).
 
 ## Rollback
 

@@ -190,7 +190,7 @@ export function AddInvoiceModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-line border-t pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

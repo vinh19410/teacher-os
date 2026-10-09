@@ -65,10 +65,11 @@ export function StudentsRoute() {
 				});
 	return (
 		<div>
-			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<PageHead
+					kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
 					title="Học viên"
-					lead={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ · ${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
+					lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				/>
 				<Button
 					variant="primary"
@@ -80,16 +81,16 @@ export function StudentsRoute() {
 				</Button>
 			</div>
 
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<div className="flex items-center gap-2 border-line border-b pb-1">
+			<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+				<div className="neu-in inline-flex items-center gap-1 rounded-lg p-1.5">
 					<button
 						type="button"
 						onClick={() => setActiveTab("students")}
 						className={cn(
-							"-mb-[5px] border-b-2 px-3 py-1.5 font-medium text-sm transition-colors",
+							"rounded-md px-3 py-2 font-medium text-sm transition-colors",
 							activeTab === "students"
-								? "border-accent-blue font-semibold text-accent-blue"
-								: "border-transparent text-meta hover:text-fg",
+								? "neu-sm text-hot"
+								: "text-muted-fg hover:text-fg",
 						)}
 					>
 						Học viên ({students.length})
@@ -98,15 +99,15 @@ export function StudentsRoute() {
 						type="button"
 						onClick={() => setActiveTab("invitations")}
 						className={cn(
-							"-mb-[5px] flex items-center gap-1.5 border-b-2 px-3 py-1.5 font-medium text-sm transition-colors",
+							"flex items-center gap-1.5 rounded-md px-3 py-2 font-medium text-sm transition-colors",
 							activeTab === "invitations"
-								? "border-accent-blue font-semibold text-accent-blue"
-								: "border-transparent text-meta hover:text-fg",
+								? "neu-sm text-hot"
+								: "text-muted-fg hover:text-fg",
 						)}
 					>
 						<span>Lời mời đang chờ</span>
 						{pendingInvites.length > 0 && (
-							<span className="inline-flex items-center justify-center rounded-full bg-warn-soft px-1.5 py-0.5 font-bold text-[10px] text-warn">
+							<span className="inline-flex items-center justify-center rounded-full bg-hot px-1.5 py-0.5 font-bold font-mono text-[10px] text-accent-on">
 								{pendingInvites.length}
 							</span>
 						)}
@@ -127,7 +128,7 @@ export function StudentsRoute() {
 					className="p-8 text-center"
 					data-testid="students-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
+					<h2 className="font-display font-extrabold text-lg">
 						Chưa có học viên nào
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">

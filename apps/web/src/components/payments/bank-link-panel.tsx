@@ -33,7 +33,12 @@ export function BankLinkPanel() {
 
 	return (
 		<Card variant="white">
-			<SectionLabel>Nhận học phí qua chuyển khoản</SectionLabel>
+			<div>
+				<div className="mb-3 font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					SePay Bank Hub
+				</div>
+				<SectionLabel>Nhận học phí qua chuyển khoản</SectionLabel>
+			</div>
 			{isLoading ? (
 				<p className="text-muted-fg text-sm">Đang tải trạng thái…</p>
 			) : !status?.enabled ? (
@@ -61,7 +66,7 @@ export function BankLinkPanel() {
 						)}
 					</div>
 					<Button
-						variant="secondary"
+						variant="danger"
 						size="sm"
 						className="self-start"
 						onClick={() => setModalPurpose("unlink")}

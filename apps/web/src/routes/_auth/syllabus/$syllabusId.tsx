@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 			</p>
 			<Link
 				to="/syllabus"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
 			>
 				← Về danh sách syllabus
 			</Link>
@@ -244,17 +244,16 @@ function SyllabusDetail({
 
 			{sy.modules.map((m, mi) => {
 				return (
-					<div
-						key={m.id}
-						className="mb-4 overflow-hidden rounded-lg border border-line-soft border-solid bg-bg"
-					>
+					<div key={m.id} className="neu mb-4 overflow-hidden rounded-md">
 						<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4 transition-colors duration-[150ms] hover:bg-surface">
 							<button
 								type="button"
 								onClick={() => toggle(m.id)}
 								className="text-left"
 							>
-								<h3 className="font-semibold text-sm">{m.title}</h3>
+								<h3 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+									{m.title}
+								</h3>
 							</button>
 							<div className="flex flex-wrap items-center gap-3">
 								<button
@@ -284,13 +283,16 @@ function SyllabusDetail({
 								{m.lessons.map((l, li) => (
 									<div
 										key={l.id}
-										// Buổi thi tint nền amber; kind lạ không bao giờ
+										data-testid={
+											isTestSessionKind(l.kind) ? "test-session-row" : undefined
+										}
+										// Buổi thi tint nền xám; kind lạ không bao giờ
 										// highlight (isTestSessionKind kiểm tra dương, #154).
 										// cn() — concat template bị biome gộp mất space
 										// giữa class tĩnh và class điều kiện.
 										className={cn(
 											"grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]",
-											isTestSessionKind(l.kind) && "bg-warn-soft/50",
+											isTestSessionKind(l.kind) && "bg-warn-soft",
 										)}
 									>
 										<div>
@@ -333,7 +335,7 @@ function SyllabusDetail({
 								<button
 									type="button"
 									onClick={() => setAddLessonModuleId(m.id)}
-									className="mt-2 w-full px-5 pb-3 text-left font-medium text-accent-blue text-xs hover:text-accent-active"
+									className="mt-2 w-full px-5 pb-3 text-left font-medium text-hot text-xs hover:text-accent-active"
 								>
 									+ Thêm buổi học
 								</button>

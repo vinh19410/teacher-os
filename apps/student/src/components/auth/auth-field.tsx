@@ -44,10 +44,10 @@ export function AuthField({
 
 	return (
 		<div className="mb-[14px]">
-			<div className="mb-[6px] flex items-baseline justify-between gap-2">
+			<div className="mb-[7px] flex items-baseline justify-between gap-2">
 				<label
 					htmlFor={id}
-					className="font-[510] text-[13px] text-fg tracking-[-0.005em]"
+					className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]"
 				>
 					{label}
 					{required && (
@@ -74,10 +74,11 @@ export function AuthField({
 						invalid ? `${id}-error` : hint ? `${id}-hint` : undefined
 					}
 					className={cn(
-						"h-11 w-full rounded-[var(--radius-md)] border bg-bg px-[13px] text-[15px] text-fg transition-[border-color,box-shadow] duration-[150ms] placeholder:text-muted-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-						invalid
-							? "border-danger focus-visible:shadow-[0_0_0_3px_color-mix(in_oklab,var(--danger),transparent_82%)]"
-							: "border-line hover:border-line-hover",
+						// Input sunk (`neu-in`) với viền mạnh đạt ranh giới ≥3:1,
+						// focus ring cam theo phase 3 phía web.
+						"h-11 w-full rounded-md border border-line-strong bg-surface px-[13px] text-[15px] text-fg transition-shadow duration-[150ms] placeholder:text-muted-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40",
+						invalid &&
+							"border-destructive/60 focus-visible:shadow-[0_0_0_4px_color-mix(in_oklab,var(--destructive),transparent_68%)]",
 						passwordToggle && "pr-11",
 					)}
 				/>

@@ -168,7 +168,7 @@ export function ClassSessionsManageModal({
 										<button
 											type="button"
 											onClick={() => setAddLessonModuleId(m.id)}
-											className="mt-2 w-full px-5 pb-3 text-left font-medium text-accent-blue text-xs hover:text-accent-active"
+											className="mt-2 w-full px-5 pb-3 text-left font-medium text-hot text-xs hover:text-accent-active"
 										>
 											+ Thêm buổi học
 										</button>

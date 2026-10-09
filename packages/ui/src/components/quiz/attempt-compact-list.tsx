@@ -20,14 +20,14 @@ export function AttemptCompactList({
 		<ul
 			data-testid="attempt-compact-list"
 			aria-label="Bảng đáp án theo câu"
-			className="overflow-hidden rounded-[var(--radius-md)] border border-line bg-bg"
+			className="neu overflow-hidden rounded-md"
 		>
 			{items.map((item, index) => (
 				<li
 					key={index}
 					className="flex items-baseline gap-3 border-line-soft border-b px-4 py-2 text-sm last:border-b-0"
 				>
-					<span className="w-6 shrink-0 text-right font-mono text-muted-fg">
+					<span className="w-6 shrink-0 text-right font-mono text-meta">
 						{index + 1}
 					</span>
 					<span
@@ -45,7 +45,7 @@ export function AttemptCompactList({
 				</li>
 			))}
 			{items.length === 0 && (
-				<li className="px-4 py-3 text-muted-fg text-sm">
+				<li className="px-4 py-3 text-meta text-sm">
 					Đề này không có câu hỏi tự chấm.
 				</li>
 			)}

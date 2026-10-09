@@ -55,26 +55,35 @@ export function AttemptGradeCard({
 		return () => mq.removeEventListener("change", onChange);
 	}, [scrollable]);
 
-	const bandBlock = (
+	// Nhãn "Band tổng" mono uppercase + số band extrabold cam (design Results:
+	// "BAND" mono, số display 8xl — hạ còn 7xl/5xl cho vừa card học viên).
+	const bandBlock = (bandSizeClass: string) => (
 		<p className="mt-2">
+			<span className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+				Band tổng
+			</span>
 			<span
-				className="font-display font-semibold text-3xl text-fg"
+				className={cn(
+					"mt-1 block font-display font-extrabold text-hot leading-none tracking-[-0.03em]",
+					bandSizeClass,
+				)}
 				data-testid="grade-band"
 			>
 				{formatBand(grade.band)}
-			</span>{" "}
-			<span className="text-muted-fg text-sm">Band tổng</span>
+			</span>
 		</p>
 	);
+	// Tiêu chí dạng hàng `border-t` theo design `Results` — nhãn trái, điểm mono phải.
 	const criteriaBlock = (
-		<dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+		<dl className="mt-3">
 			{criteriaForSkill(skill).map((key) =>
 				grade.scores[key] !== undefined ? (
-					<div key={key} className="contents">
-						<dt className="text-muted-fg">
-							{criterionLabel(skill, key, part)}
-						</dt>
-						<dd className="font-medium text-fg">
+					<div
+						key={key}
+						className="flex items-baseline justify-between gap-4 border-line border-t py-2 text-sm"
+					>
+						<dt className="text-meta">{criterionLabel(skill, key, part)}</dt>
+						<dd className="font-medium font-mono text-fg">
 							{formatBand(grade.scores[key])}
 						</dd>
 					</div>
@@ -87,7 +96,7 @@ export function AttemptGradeCard({
 			<>
 				<h3 className="mt-4 font-medium text-fg text-sm">Nhận xét</h3>
 				<p
-					className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-[1.7]"
+					className="mt-1 whitespace-pre-wrap break-words text-[15px] italic leading-[1.7]"
 					data-testid="grade-feedback"
 				>
 					{grade.feedback}
@@ -107,19 +116,19 @@ export function AttemptGradeCard({
 			>
 				<h2
 					id="grade-heading"
-					className="mt-6 mb-1 app:shrink-0 font-display font-semibold text-fg"
+					className="mt-6 mb-1 app:shrink-0 font-display font-extrabold text-fg tracking-[-0.02em]"
 				>
 					Kết quả chấm của giáo viên
 				</h2>
-				<p className="app:shrink-0 text-muted-fg text-sm">
+				<p className="app:shrink-0 font-mono text-meta text-xs">
 					Chấm lúc {formatVietnamSubmittedAt(grade.gradedAt)}
 				</p>
 				<div
-					className="mt-2 app:min-h-0 app:flex-1 app:overflow-y-auto app:overscroll-contain rounded-md border border-line bg-bg p-4 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="neu mt-2 app:min-h-0 app:flex-1 app:overflow-y-auto app:overscroll-contain rounded-lg p-5 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					data-testid="attempt-grade-body"
 					tabIndex={isWide ? 0 : undefined}
 				>
-					{bandBlock}
+					{bandBlock("text-7xl")}
 					{criteriaBlock}
 					{feedbackBlock}
 				</div>
@@ -130,16 +139,19 @@ export function AttemptGradeCard({
 	return (
 		<section
 			aria-labelledby="grade-heading"
-			className={cn("mt-6 rounded-md border border-line bg-bg p-4", className)}
+			className={cn("neu mt-6 rounded-lg p-5", className)}
 			data-testid="attempt-grade"
 		>
-			<h2 id="grade-heading" className="font-display font-semibold text-fg">
+			<h2
+				id="grade-heading"
+				className="font-display font-extrabold text-fg tracking-[-0.02em]"
+			>
 				Kết quả chấm của giáo viên
 			</h2>
-			{bandBlock}
+			{bandBlock("text-5xl")}
 			{criteriaBlock}
 			{feedbackBlock}
-			<p className="mt-3 text-muted-fg text-xs">
+			<p className="mt-3 font-mono text-meta text-xs">
 				Chấm lúc {formatVietnamSubmittedAt(grade.gradedAt)}
 			</p>
 		</section>

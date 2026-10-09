@@ -20,11 +20,11 @@ export default function AccountBlockedView() {
 
 	return (
 		<div className="flex min-h-[100svh] items-center justify-center bg-bg p-4">
-			<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in rounded-[var(--radius-lg)] border border-line bg-surface/50 p-8 text-center shadow-[var(--elev-raised)] duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
+			<div className="neu fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in rounded-md bg-surface-warm p-8 text-center duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
 				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface">
 					<ShieldAlert className="h-8 w-8 text-danger" />
 				</div>
-				<h2 className="font-[620] font-display text-[22px] text-fg tracking-tight">
+				<h2 className="font-display font-extrabold text-[22px] text-fg tracking-[-0.02em]">
 					Đây là tài khoản học viên
 				</h2>
 				<p className="mt-2 text-[14px] text-muted-fg leading-relaxed">
@@ -35,7 +35,7 @@ export default function AccountBlockedView() {
 					<button
 						type="button"
 						onClick={handleSignOut}
-						className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-line bg-bg px-5 py-2.5 font-[510] text-[14px] text-fg transition-colors hover:border-fg hover:bg-surface focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] text-fg transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<LogOut className="h-4 w-4" />
 						<span>Đăng xuất</span>

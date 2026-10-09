@@ -155,7 +155,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						to="/learn/quizzes/attempt/$attemptId"
 						params={{ attemptId: attempt.id }}
 						aria-label="Quay lại trang kết quả"
-						className="rounded-md px-2 py-1 text-accent-blue text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-accent-blue"
+						className="rounded-md px-2 py-1 text-hot text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-hot"
 					>
 						← Kết quả
 					</Link>

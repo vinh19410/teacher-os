@@ -476,9 +476,9 @@ describe("kernel-backed store wiring", () => {
 		expect(tuition).not.toMatch(
 			/label="Còn nợ \(VND\)"\s+className="\[&>div:first-child\]:text-danger"/,
 		);
-		expect(tuition).toMatch(
-			/outstanding > 0 \? "\[&>div:first-child\]:text-danger" : undefined/,
-		);
+		// Redesign phase 5: KPI còn nợ dùng StatCard `hot` (tile ink + số cam)
+		// thay cho className override — vẫn chỉ bật khi outstanding > 0.
+		expect(tuition).toMatch(/hot=\{outstanding > 0\}/);
 
 		const students = readSrc("../routes/_auth/students/index.tsx");
 		expect(students).toMatch(

@@ -13,17 +13,19 @@ export function AssignmentRow({
 	const derived = deriveAssignmentStatus(assignment);
 
 	const rowContent = (
-		<div className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-line bg-surface/30 p-4 transition-[border-color,background] hover:border-line-hover hover:bg-surface sm:flex-row sm:items-center sm:justify-between">
+		<div className="neu-sm flex flex-col gap-2 rounded-md p-4 transition-colors sm:flex-row sm:items-center sm:justify-between">
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
-					<h4 className="truncate font-[590] text-[15px] text-fg">
+					<h4 className="truncate font-medium text-[15px] text-fg">
 						{assignment.title}
 					</h4>
 				</div>
-				<div className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted-fg">
+				<div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[12px] text-meta">
 					{showClassName && assignment.className && (
 						<>
-							<span>{assignment.className}</span>
+							<span className="font-sans text-[13px] text-meta">
+								{assignment.className}
+							</span>
 							<span aria-hidden="true">·</span>
 						</>
 					)}
@@ -33,7 +35,7 @@ export function AssignmentRow({
 
 			<div className="flex items-center gap-3">
 				<span
-					className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-[590] text-[12px] tracking-tight ${derived.badgeClass}`}
+					className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] ${derived.badgeClass}`}
 				>
 					{derived.statusLabel}
 				</span>
@@ -57,7 +59,7 @@ export function AssignmentRow({
 					? `Xem lại kết quả: ${assignment.title}`
 					: `Làm bài: ${assignment.title}`
 			}
-			className="block rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-accent-blue"
+			className="block rounded-[var(--radius-md)] focus-visible:outline-2 focus-visible:outline-hot"
 		>
 			{rowContent}
 		</Link>

@@ -162,7 +162,7 @@ export function SessionActionsModal({
 		>
 			<div className="space-y-5">
 				{notice && (
-					<p role="status" className="text-accent-blue text-sm">
+					<p role="status" className="text-hot text-sm">
 						{notice}
 					</p>
 				)}

@@ -101,7 +101,7 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 			/>,
 		);
 		expect(html).toContain('aria-current="true"');
-		expect(html).toContain("outline-accent-blue");
+		expect(html).toContain("outline-hot");
 	});
 });
 

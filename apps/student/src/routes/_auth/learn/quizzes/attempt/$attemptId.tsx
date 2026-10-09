@@ -186,17 +186,22 @@ export function AttemptSummaryBody({
 				data-testid="essay-frame"
 			>
 				<h2
-					className="mt-6 mb-1 font-display font-semibold text-fg"
+					className="mt-6 mb-1 font-display font-extrabold text-fg"
 					id="essay-heading"
 				>
 					Bài viết của bạn
 				</h2>
-				<p className="text-muted-fg text-sm" data-testid="essay-summary-count">
+				<p
+					className="font-mono text-meta text-sm"
+					data-testid="essay-summary-count"
+				>
 					{wordCount} từ
 				</p>
-				<div className="mt-2 whitespace-pre-wrap rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7]">
+				{/* Khối bài viết kiểu design `Results`: cột trái có border-l,
+				 * chữ lớn giãn dòng, không card. */}
+				<div className="mt-2 whitespace-pre-wrap border-line border-l-2 pl-5 text-lg leading-[1.9]">
 					{emptyEssay ? (
-						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
+						<span className="text-meta">Bạn đã nộp bài trống.</span>
 					) : (
 						<EssayWithHighlights
 							essay={essay}
@@ -214,7 +219,7 @@ export function AttemptSummaryBody({
 				<>
 					{submittedLine}
 					<div
-						className="app:grid app:grid-cols-2 app:items-start app:gap-6"
+						className="app:grid app:grid-cols-[1.3fr_1fr] app:items-start app:gap-8"
 						data-testid="writing-result-split"
 					>
 						{essayFrame}
@@ -264,7 +269,7 @@ export function AttemptSummaryBody({
 					}
 				/>
 			</div>
-			<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+			<h2 className="mt-6 mb-2 font-display font-extrabold text-fg tracking-[-0.02em]">
 				Bảng đáp án
 			</h2>
 			<AttemptCompactList items={summary.items} />

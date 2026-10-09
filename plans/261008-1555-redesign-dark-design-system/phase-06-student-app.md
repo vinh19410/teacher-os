@@ -52,7 +52,33 @@ chồng: phase này chỉ sửa `apps/student/**` và `packages/ui/src/component
 
 ## Ghi chú lệch design
 
-_(điền khi thực thi)_
+Điền khi thực thi (2026-10-09, phase 6):
+
+1. Shell **bỏ sidebar** → header một hàng theo design `StudentPortal`; nav phụ
+   "Bài tập / Hồ sơ (Sắp có)" biến mất theo (design không có sidebar).
+2. Overview **không nhét bảng bài tập vào card lớp**: giữ section "Bài tập" riêng với
+   tab lọc (dữ liệu list phẳng + tab lọc là hành vi hiện có; tách theo lớp đụng IA/e2e
+   row "Làm bài:").
+3. Card học phí home **không có QR + nội dung chuyển khoản**: `StudentInvoiceItem`
+   không mang memo/QR; thêm fetch payment instructions ở home = đổi hành vi dữ liệu
+   (non-goal). QR nằm ở `/tuition/$invoiceId`.
+4. Không có Tag "buổi vắng" ở home: payload chỉ có `sessionsDone/sessionsTotal`,
+   không có đếm attended/missed/cancelled.
+5. Class card không có dữ liệu **phòng học** — chỉ giáo viên + email.
+6. Class detail kicker dùng chữ "Lớp học" (payload chi tiết lớp không mang tên org).
+7. Số band kết quả dùng `text-7xl` (split) / `text-5xl` (dồn cột) thay 8xl của design
+   cho vừa card.
+8. T/F/NG giữ **label + radio** (a11y + e2e bấm label), chỉ khoác style nút mono
+   neu-sm; MCQ giữ hàng full-width.
+9. Dropzone speaking dùng `bg-surface` + viền đứt thay `neu-in` (utility đặt
+   `border: 0` xung đột viền đứt).
+10. Thanh runtime **không có đồng hồ đếm ngược** (app không có timer; thêm là tính
+    năng mới — non-goal). Chờ "Đã lưu" hiển thị uppercase mono cam.
+
+Test cập nhật theo chủ đích: `avatar-menu`, `notification-bell` (bỏ test biến thể
+sidebar đã xóa — suite 251→250), `overview` (mock repos/student cho kicker org),
+`class-detail` ("← Trang chủ" → "Trang chủ"), web `essay-with-highlights.test`
+(`bg-warn-soft` → `mark.anno`).
 
 ## Rollback
 

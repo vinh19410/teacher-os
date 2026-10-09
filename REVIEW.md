@@ -7,6 +7,15 @@ Chạy cho mọi PR đụng UI. Ghi kèm screenshot cho thay đổi hình ảnh.
 - [ ] 1440×900, 768×1024, 375×812 — không tràn ngang, không chữ bị cắt, không element chồng nhau.
 - [ ] 320px reflow: không horizontal scroll.
 
+## Theme (dark mặc định + light)
+
+- [ ] Kiểm cả **dark và light** — screenshot 2 theme cho màn hình chính của PR.
+- [ ] Toggle sáng/tối hoạt động; reload giữ lựa chọn (`localStorage.theme`); không nháy theme
+      sai khi reload (script `/theme-init.js` chạy trước render).
+- [ ] Focus ring cam thấy rõ ở cả hai theme; ranh giới input ≥ 3:1 (dùng `border-line-strong`).
+- [ ] Không còn `bg-white`/hex cứng ngoài whitelist (nền trắng QR, SVG logo).
+- [ ] Đỏ chỉ xuất hiện ở hành động phá hủy; trạng thái quá hạn/lỗi = cam.
+
 ## Bộ lọc / list page (quy ước chung)
 
 - [ ] Chip lọc nhóm có nhãn khi taxonomy > 1 cấp (`aria-label` theo nhóm).

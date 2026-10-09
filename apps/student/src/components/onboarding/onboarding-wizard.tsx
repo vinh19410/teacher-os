@@ -108,10 +108,10 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 	};
 
 	return (
-		<div className="mx-auto w-full max-w-[560px] space-y-6 rounded-[var(--radius-lg)] border border-line bg-surface/50 p-6 shadow-[var(--elev-raised)] sm:p-8">
+		<div className="neu mx-auto w-full max-w-[560px] space-y-6 rounded-lg p-6 sm:p-8">
 			{/* Progress Indicator */}
 			<div className="space-y-2">
-				<div className="flex items-center justify-between font-medium text-muted-fg text-xs">
+				<div className="flex items-center justify-between font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
 					<span>Thiết lập mục tiêu học tập</span>
 					<span>Bước {Math.min(step + 1, 4)}/4</span>
 				</div>
@@ -121,7 +121,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 							key={idx}
 							className={cn(
 								"h-1.5 flex-1 rounded-full transition-colors",
-								step >= idx ? "bg-accent-blue" : "bg-line",
+								step >= idx ? "bg-hot" : "bg-surface",
 							)}
 						/>
 					))}
@@ -209,7 +209,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					<button
 						type="button"
 						onClick={() => setStep((s) => s - 1)}
-						className="inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] border border-line bg-bg px-3.5 py-2 font-medium text-fg text-sm transition-colors hover:border-line-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="neu-sm inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 font-medium text-fg text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<ArrowLeft className="h-4 w-4" />
 						<span>Quay lại</span>
@@ -225,10 +225,10 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						aria-disabled={!isCurrentStepValid}
 						onClick={() => setStep((s) => s + 1)}
 						className={cn(
-							"inline-flex items-center gap-1.5 rounded-[var(--radius-lg)] px-4 py-2 font-medium text-sm transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+							"inline-flex items-center gap-1.5 rounded-lg px-4 py-2 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							isCurrentStepValid
-								? "cursor-pointer bg-accent-blue text-accent-on hover:bg-accent-hover"
-								: "cursor-not-allowed border border-line bg-surface text-muted-fg opacity-50",
+								? "cursor-pointer bg-fg text-bg hover:bg-hot hover:text-accent-on"
+								: "neu-in cursor-not-allowed text-muted-fg opacity-50",
 						)}
 					>
 						<span>Tiếp tục</span>
@@ -239,7 +239,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						type="button"
 						disabled={submitMutation.isPending}
 						onClick={handleSubmit}
-						className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-accent-blue px-5 py-2 font-medium text-accent-on text-sm transition-all hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex items-center gap-2 rounded-lg bg-fg px-5 py-2 font-medium text-bg text-sm transition-colors hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{submitMutation.isPending ? (
 							<>

@@ -66,7 +66,24 @@ Tất cả path tương đối `apps/web/src/`.
 
 ## Ghi chú lệch design
 
-_(điền khi thực thi)_
+Điền khi thực thi (2026-10-09):
+
+- **Class detail** không có PageHead riêng (app có Card header + 6 StatCard,
+  design không vẽ chi tiết này) → giữ cấu trúc, khoác ngôn ngữ mới: h1 extrabold
+  3xl, thêm link quay lại mono "← Lớp học", StatCard tự theo primitive mới.
+- **`/classes`** đổi từ DataTable sang **lưới card neu 2 cột** theo design
+  `Classes` (e2e không bám bảng này — specs navigate bằng tên lớp).
+- **student-tuition-summary**: "Còn lại > 0" dùng **StatCard `hot`** (nền ink, số
+  cam) thay vì `[&>div:first-child]:text-danger`; unit test #347 đổi assertion
+  sang `bg-fg` cùng commit.
+- **Schedule**: 7 cột ngày → card `neu` min-h 220px, hôm nay `ring-2 ring-hot/30`
+  + nhãn cam (đúng plan); lesson-block + opacity-60/75/35 **giữ nguyên** (e2e bám).
+- **Syllabus**: module card `neu rounded-md`, tiêu đề extrabold xl; dot trạng thái
+  done/current = `bg-hot`, upcoming = `bg-surface border-line` (theo design
+  SyllabusTree); tint buổi thi đổi từ amber sang `bg-warn-soft` (đơn sắc xám).
+- **Profile**: 2 cột `[1.4fr_1fr]` — trái form/avatar/google, phải card Bank Hub
+  với kicker cam "SEPAY BANK HUB"; nút Huỷ liên kết → `variant="danger"` (đỏ).
+- **Reports** (`/reports`): kicker = ngữ cảnh Zalo OA + số báo cáo; h2 extrabold.
 
 ## Rollback
 

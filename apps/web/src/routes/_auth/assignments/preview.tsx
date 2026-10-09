@@ -136,11 +136,11 @@ export function PreviewAssignmentRoute() {
 		<div className="max-w-3xl">
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 font-mono text-[12px] text-meta"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-hot hover:underline"
 				>
 					Bài tập
 				</Link>
@@ -150,7 +150,7 @@ export function PreviewAssignmentRoute() {
 						<button
 							type="button"
 							onClick={() => navigate({ to: "/assignments/new" })}
-							className="underline-offset-[3px] hover:text-fg hover:underline"
+							className="underline-offset-[3px] transition-colors hover:text-hot hover:underline"
 						>
 							Tạo mới
 						</button>
@@ -229,8 +229,8 @@ export function PreviewAssignmentRoute() {
 				)}
 
 				{!sim && (
-					<Card variant="white" className="flex flex-col gap-3">
-						<h2 className="font-display font-semibold text-[17px]">
+					<Card className="flex flex-col gap-3">
+						<h2 className="font-display font-extrabold text-[17px] tracking-[-0.03em]">
 							Bài làm của học viên (mô phỏng)
 						</h2>
 						<Textarea

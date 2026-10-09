@@ -70,8 +70,8 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 	const contentParts = draft.parts.filter(partHasContent);
 
 	return (
-		<div className="rounded-lg border border-line bg-surface-warm p-6">
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+		<div className="neu rounded-lg p-6">
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
 				Xem trước phía học viên — full test
 			</p>
 			<h1 className="mt-1 font-display font-semibold text-[22px]">
@@ -121,7 +121,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 							/>
 						)}
 						{part.audioName.trim() && (
-							<p className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">
+							<p className="neu-in mt-3 rounded-md p-3 text-sm">
 								🔊 {part.audioName.trim()}
 							</p>
 						)}

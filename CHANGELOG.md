@@ -10,6 +10,14 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-09
+
+### Changed
+- Redesign giao diện app giáo viên (`apps/web`) và app học viên (`apps/student`) theo design mới: **dark là theme mặc định** với toggle Sáng/Tối lưu lựa chọn (không nháy khi reload nhờ script chống nháy), accent chuyển sang **cam**, font mới **Inter Tight + DM Mono** (self-host), tiêu đề lớn extrabold có kicker mono, card viền mảnh nền nổi, input nền chìm, trạng thái đơn sắc + cam — đỏ chỉ dành cho nút phá hủy (#349)
+- Toàn bộ trang giáo viên (dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo, bài tập, đề thi, chấm bài, học phí) và app học viên (tổng quan, làm bài, kết quả, học phí, onboarding, đăng nhập) khoác ngôn ngữ thị giác mới; danh sách lớp đổi từ bảng sang lưới card; shell học viên đổi sang header một hàng (#349)
+
+---
+
 ## 2026-10-08
 
 ### Added

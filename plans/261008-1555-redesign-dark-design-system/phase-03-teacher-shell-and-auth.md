@@ -69,6 +69,24 @@ lại mật khẩu, xác minh email, `/pay/$token`, 404, tài khoản bị chặ
 - Keyboard: Tab qua sidebar → topbar → nội dung; focus ring cam thấy rõ ở cả 2 theme; toggle
   theme bằng Enter/Space.
 
+## Ghi chú thực thi (2026-10-09)
+
+- Sidebar card nổi: **margin `m-4` chỉ khi expanded** — rail 64px collapsed giữ full
+  width (invariant D2 avatar). Expanded aside width thực tế = **188px** (track 220 −
+  margin 32); e2e `sidebar-collapse` đổi kỳ vọng 248→188 trong cùng commit.
+- brand-panel: **bỏ mock widget "Today / 3 classes"** (demo date issue #171) thay bằng
+  minh họa TeacherDesk theo design Login; `brand-panel.test.tsx` viết lại assertion
+  (wordmark + headline 2 nửa vì span tách text node).
+- AuthTabs: slider pill động → **segmented 2 nút** (mất animation trượt, khớp design).
+- Input auth: dùng `bg-surface + border-line-strong` trực tiếp (không class `neu-in`
+  vì neu-in đặt `border: 0` xung đột viền ranh giới).
+- Topbar thêm **ThemeToggle + avatar shortcut** (đường vào hồ sơ thứ hai cạnh sidebar
+  footer — theo design, không phá e2e testid sidebar).
+- Copy trang login giữ **tiếng Anh hiện trạng** (non-goal đổi copy tiếng Việt).
+- e2e phase 3 chạy: login-smoke, global-search, 404-branded-status, sidebar-collapse —
+  17/17 pass sau khi sửa width; signin-validation/password-reset/web-email-verification
+  để phase 7 chạy trọn bộ.
+
 ## Rollback
 
 Revert commit phase 3; primitive phase 2 vẫn chạy với shell cũ.

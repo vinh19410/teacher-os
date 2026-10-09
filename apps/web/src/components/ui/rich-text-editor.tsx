@@ -182,7 +182,7 @@ export function RichTextEditor({
 	return (
 		<div
 			className={cn(
-				"w-full rounded-sm border border-line border-solid transition-[border-color,box-shadow] duration-[150ms] focus-within:border-accent-blue focus-within:shadow-[var(--focus-ring)]",
+				"w-full rounded-sm border border-line border-solid transition-[border-color,box-shadow] duration-[150ms] focus-within:border-hot focus-within:shadow-[var(--focus-ring)]",
 				className,
 			)}
 		>
@@ -203,7 +203,7 @@ export function RichTextEditor({
 							onClick={() => action.run(editor)}
 							className={cn(
 								"flex h-7 w-7 items-center justify-center rounded-sm hover:bg-fg/10",
-								active && "bg-fg/10 text-accent-blue",
+								active && "bg-fg/10 text-hot",
 							)}
 						>
 							{action.icon}

@@ -56,7 +56,7 @@ export function SubmissionView({
 								<RichTextBody text={sub.prompt.prompt} />
 							)}
 							{sub.prompt.cueTopic !== "" && (
-								<div className="rounded-md border border-line bg-card p-4">
+								<div className="neu-in rounded-md p-4">
 									<p className="font-medium text-fg text-sm">
 										Describe {sub.prompt.cueTopic}
 									</p>
@@ -98,7 +98,7 @@ export function SubmissionView({
 									essay={sub.essay}
 									annotations={sub.annotations ?? []}
 									data-testid="essay-text"
-									className="rounded-md border border-line bg-card p-4 text-fg text-sm leading-relaxed"
+									className="border-line border-l-2 pl-5 text-fg text-lg leading-[1.9]"
 								/>
 							)}
 						</div>

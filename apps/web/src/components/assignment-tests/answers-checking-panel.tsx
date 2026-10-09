@@ -263,7 +263,8 @@ function AnswerCellView({ cell }: { cell: TestAnswerCell }) {
 		<div
 			title={answered ? full : "Chưa có đáp án"}
 			className={`flex flex-col gap-0.5 rounded-md border px-2 py-1.5 ${
-				answered ? "border-line" : "border-warn/40 bg-warn-soft"
+				// Thiếu đáp án = cần chú ý → cam (ngôn ngữ đơn sắc + cam).
+				answered ? "border-line" : "border-hot/40 bg-accent-soft"
 			}`}
 		>
 			<span className="flex items-center justify-between gap-1">
@@ -273,7 +274,7 @@ function AnswerCellView({ cell }: { cell: TestAnswerCell }) {
 				</span>
 			</span>
 			<span className="truncate text-xs">
-				{answered ? full : <span className="text-warn">Chưa có đáp án</span>}
+				{answered ? full : <span className="text-hot">Chưa có đáp án</span>}
 			</span>
 		</div>
 	);

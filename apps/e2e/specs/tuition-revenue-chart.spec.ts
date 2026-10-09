@@ -154,9 +154,13 @@ test("doanh thu: chart 2 tháng theo created_at + toggle Quý đổi URL (?ky=qu
 		page.getByRole("heading", { name: "Doanh thu" }).first(),
 	).toBeVisible();
 
-	// KPI khớp rule mark-paid: full amount tính đã thu.
+	// KPI khớp rule mark-paid: full amount tính đã thu. Selector đổi từ
+	// `.grid.grid-cols-3 > div` sang testid cùng commit đổi markup (plan
+	// redesign, bảng "E2E bám class").
 	await expect(
-		page.locator(".grid.grid-cols-3 > div").filter({ hasText: "Đã thu (VND)" }),
+		page
+			.locator('[data-testid="tuition-kpis"] > div')
+			.filter({ hasText: "Đã thu (VND)" }),
 	).toContainText("1.500.000đ");
 
 	// Cửa sổ tháng: nhãn 2 tháng có hóa đơn đều trên trục; kỳ rỗng vẫn fill.

@@ -7,13 +7,12 @@ import {
 	useStudentNotifications,
 } from "@/lib/repos/student";
 
-interface NotificationBellProps {
-	variant?: "sidebar" | "compact";
-}
-
-export function NotificationBell({
-	variant = "compact",
-}: NotificationBellProps) {
+/**
+ * Chuông thông báo theo design `StudentPortal`: nút vuông `neu-sm` 36px với
+ * badge số mono nền cam đè góc trên phải; panel lời mời `neu rounded-lg`,
+ * nút Chấp nhận = primary (ink → cam hover), Từ chối = secondary (`neu-sm`).
+ */
+export function NotificationBell() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -59,52 +58,24 @@ export function NotificationBell({
 	}, [isOpen]);
 
 	return (
-		<div className={cn("relative", variant === "sidebar" && "w-full")}>
-			{variant === "sidebar" ? (
-				<button
-					type="button"
-					onClick={() => setIsOpen((prev) => !prev)}
-					aria-expanded={isOpen}
-					aria-label="Thông báo"
-					className={cn(
-						"flex w-full items-center justify-between rounded-[var(--radius-md)] px-3 py-2 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-						isOpen
-							? "bg-surface text-fg shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
-							: "text-muted-fg hover:bg-surface hover:text-fg",
-					)}
-				>
-					<div className="flex items-center gap-3">
-						<Bell className={cn("h-4 w-4", count > 0 && "text-accent-blue")} />
-						<span>Thông báo</span>
-					</div>
-					{count > 0 && (
-						<span
-							data-testid="notification-badge"
-							className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 font-bold text-[11px] text-white leading-none shadow-sm"
-						>
-							{count}
-						</span>
-					)}
-				</button>
-			) : (
-				<button
-					type="button"
-					onClick={() => setIsOpen((prev) => !prev)}
-					aria-expanded={isOpen}
-					aria-label="Thông báo"
-					className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-fg transition-colors hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
-				>
-					<Bell className="h-5 w-5" />
-					{count > 0 && (
-						<span
-							data-testid="notification-badge"
-							className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 font-bold text-[10px] text-white leading-none"
-						>
-							{count}
-						</span>
-					)}
-				</button>
-			)}
+		<div className="relative">
+			<button
+				type="button"
+				onClick={() => setIsOpen((prev) => !prev)}
+				aria-expanded={isOpen}
+				aria-label="Thông báo"
+				className="neu-sm relative grid h-9 w-9 place-items-center rounded-md text-fg-2 transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+			>
+				<Bell aria-hidden="true" className="h-[17px] w-[17px]" />
+				{count > 0 && (
+					<span
+						data-testid="notification-badge"
+						className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center bg-hot px-0.5 font-mono text-[10px] text-accent-on leading-none"
+					>
+						{count}
+					</span>
+				)}
+			</button>
 			{isOpen && (
 				<>
 					<div
@@ -115,17 +86,12 @@ export function NotificationBell({
 					<div
 						role="dialog"
 						aria-label="Danh sách thông báo"
-						className={cn(
-							"z-50 rounded-[var(--radius-md)] border border-line bg-bg shadow-[var(--elev-raised)]",
-							variant === "sidebar"
-								? "fixed bottom-5 left-[268px] w-[360px] max-w-[calc(100vw-280px)]"
-								: "absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] md:fixed md:top-auto md:right-auto md:bottom-5 md:left-[268px] md:mt-0 md:w-[360px] md:max-w-[calc(100vw-280px)]",
-						)}
+						className="neu absolute top-full right-0 z-50 mt-2 max-h-[420px] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg"
 					>
 						<div className="flex items-center justify-between border-line border-b px-4 py-3">
 							<h3 className="font-semibold text-fg text-sm">Thông báo</h3>
 							{count > 0 && (
-								<span className="rounded-full bg-accent-soft px-2 py-0.5 font-medium text-[11px] text-accent-blue">
+								<span className="font-mono text-[10px] text-meta">
 									{count} mới
 								</span>
 							)}
@@ -133,12 +99,12 @@ export function NotificationBell({
 
 						<div className="max-h-[380px] divide-y divide-line overflow-y-auto">
 							{isLoading ? (
-								<div className="flex items-center justify-center p-6 text-muted-fg text-xs">
+								<div className="flex items-center justify-center p-6 text-meta text-xs">
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 									Đang tải thông báo...
 								</div>
 							) : count === 0 ? (
-								<div className="flex flex-col items-center justify-center p-6 text-center text-muted-fg text-xs">
+								<div className="flex flex-col items-center justify-center p-6 text-center text-meta text-xs">
 									<p>Không có thông báo mới</p>
 								</div>
 							) : (
@@ -154,12 +120,9 @@ export function NotificationBell({
 									});
 
 									return (
-										<div
-											key={inv.id}
-											className="flex flex-col gap-2.5 p-3.5 transition-colors hover:bg-surface/50"
-										>
+										<div key={inv.id} className="flex flex-col gap-2.5 p-3.5">
 											<div className="flex items-start gap-2.5">
-												<span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-blue">
+												<span className="neu-in mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-hot">
 													<Building2 className="h-4 w-4" />
 												</span>
 												<div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -174,7 +137,7 @@ export function NotificationBell({
 														</strong>
 														.
 													</p>
-													<span className="text-[11px] text-muted-fg">
+													<span className="font-mono text-[10px] text-meta">
 														{dateFormatted}
 													</span>
 												</div>
@@ -185,7 +148,7 @@ export function NotificationBell({
 													type="button"
 													onClick={() => handleAccept(inv.id)}
 													disabled={isCurrentProcessing}
-													className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-accent-blue px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-accent-hover active:scale-95 disabled:opacity-50"
+													className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-fg px-3 py-1.5 font-medium text-bg text-xs transition-colors duration-150 hover:bg-hot hover:text-accent-on active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
 												>
 													{isCurrentProcessing ? (
 														<Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -199,7 +162,9 @@ export function NotificationBell({
 													type="button"
 													onClick={() => handleReject(inv.id)}
 													disabled={isCurrentProcessing}
-													className="inline-flex items-center justify-center gap-1 rounded-md border border-line px-3 py-1.5 font-medium text-muted-fg text-xs transition-colors hover:bg-surface hover:text-fg active:scale-95 disabled:opacity-50"
+													className={cn(
+														"neu-sm inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 font-medium text-fg text-xs transition-colors active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+													)}
 												>
 													<X className="h-3.5 w-3.5" />
 													<span>Từ chối</span>

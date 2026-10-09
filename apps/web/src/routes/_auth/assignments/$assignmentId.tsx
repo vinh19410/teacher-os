@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_auth/assignments/$assignmentId")({
 			</p>
 			<Link
 				to="/assignments"
-				className="mt-4 inline-block font-medium text-accent-blue text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
 			>
 				← Về danh sách bài tập
 			</Link>
@@ -60,10 +60,10 @@ function AssignmentDetailRoute() {
 
 	return (
 		<div>
-			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-4">
+			<Card className="mb-5 flex flex-wrap items-center gap-4">
 				<Avatar text={student?.avatar ?? "?"} size="lg" />
 				<div className="min-w-[200px] flex-1">
-					<h1 className="font-display font-semibold text-2xl">
+					<h1 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
 						{assignment.title}
 					</h1>
 					<div className="mt-1 font-mono text-meta text-xs">
@@ -72,7 +72,7 @@ function AssignmentDetailRoute() {
 				</div>
 				{avg ? (
 					<div className="text-center">
-						<div className="font-display font-semibold text-4xl text-accent-blue">
+						<div className="font-display font-extrabold text-4xl text-hot tracking-[-0.045em]">
 							{avg}
 						</div>
 						<div className="font-mono text-meta text-xs">Band trung bình</div>
@@ -94,11 +94,11 @@ function AssignmentDetailRoute() {
 							["Lexical Resource", assignment.scores.lexical],
 							["Grammatical Range", assignment.scores.grammar],
 						].map(([label, score]) => (
-							<Card key={label} variant="white" className="px-4 py-3">
-								<div className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]">
+							<Card key={label} className="px-4 py-3">
+								<div className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
 									{label}
 								</div>
-								<div className="mt-1 font-display font-semibold text-2xl">
+								<div className="mt-1 font-mono font-semibold text-2xl">
 									{score}
 								</div>
 							</Card>
@@ -110,7 +110,7 @@ function AssignmentDetailRoute() {
 			<div className="grid grid-cols-[2fr_1fr] items-start gap-5 max-app:grid-cols-1">
 				<div>
 					<SectionLabel>Nhận xét</SectionLabel>
-					<Card variant="white">
+					<Card>
 						<Textarea
 							value={commentValue}
 							onChange={(e) => setComment(e.target.value)}
@@ -127,16 +127,16 @@ function AssignmentDetailRoute() {
 				</div>
 				<div>
 					<SectionLabel>Ngân hàng nhận xét</SectionLabel>
-					<Card variant="white">
+					<Card>
 						<div className="flex flex-col gap-2">
 							{data.commentBank.map((c) => (
 								<button
 									type="button"
 									key={c.id}
 									onClick={() => appendComment(c.text)}
-									className="rounded-sm border border-line-soft border-solid px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-[150ms] hover:border-accent-blue hover:bg-accent-soft"
+									className="neu-sm rounded-md px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-150 hover:text-hot"
 								>
-									<span className="mb-0.5 block font-mono text-[10px] text-accent-blue uppercase tracking-[0.04em]">
+									<span className="mb-0.5 block font-mono text-[10px] text-hot uppercase tracking-[0.08em]">
 										{c.tag}
 									</span>
 									{c.text}

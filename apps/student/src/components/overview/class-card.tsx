@@ -39,7 +39,7 @@ export function ClassCard({
 			<div>
 				<ClassBadges cls={cls} />
 
-				<h3 className="mt-3 font-[620] font-display text-[18px] text-fg leading-snug">
+				<h3 className="mt-3 font-display font-extrabold text-2xl text-fg leading-tight tracking-[-0.02em]">
 					{isInvited ? (
 						cls.name
 					) : (
@@ -49,7 +49,7 @@ export function ClassCard({
 						<Link
 							to="/classes/$classId"
 							params={{ classId: cls.id }}
-							className="after:absolute after:inset-0 after:rounded-[var(--radius-lg)] focus-visible:shadow-none focus-visible:outline-none"
+							className="after:absolute after:inset-0 after:rounded-lg focus-visible:shadow-none focus-visible:outline-none"
 						>
 							{cls.name}
 						</Link>
@@ -57,7 +57,7 @@ export function ClassCard({
 				</h3>
 
 				{cls.schedule && (
-					<p className="mt-1 text-[13px] text-muted-fg leading-normal">
+					<p className="mt-1.5 font-mono text-fg-2 text-xs">
 						{formatSchedule(cls.schedule)}
 					</p>
 				)}
@@ -70,12 +70,12 @@ export function ClassCard({
 							size="sm"
 						/>
 						<div className="min-w-0 leading-[1.3]">
-							<p className="truncate font-[590] text-[13px] text-fg">
-								<span className="font-[510] text-muted-fg">Giáo viên: </span>
-								{cls.teacher.name}
+							<p className="truncate text-[13px] text-meta">
+								<span>Giáo viên: </span>
+								<span className="text-fg-2">{cls.teacher.name}</span>
 							</p>
 							{/* Text thường, không mailto: lớp phủ của link card nằm trên. */}
-							<p className="truncate text-[12px] text-muted-fg">
+							<p className="truncate text-[12px] text-meta">
 								{cls.teacher.email}
 							</p>
 						</div>
@@ -86,7 +86,7 @@ export function ClassCard({
 			<div className="mt-5 border-line-soft border-t pt-4">
 				{isInvited ? (
 					<>
-						<p className="text-[12px] text-muted-fg leading-normal">
+						<p className="text-[12px] text-meta leading-normal">
 							Giáo viên đã mời bạn vào lớp. Xác nhận tham gia để bắt đầu khóa
 							học và nhận lịch buổi học.
 						</p>
@@ -94,7 +94,7 @@ export function ClassCard({
 							type="button"
 							disabled={accepting || !onAccept}
 							onClick={() => onAccept?.(cls.enrollmentId)}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-[var(--radius-pill)] bg-accent-blue font-[590] text-accent-on text-sm tracking-[0.02em] transition-[background] duration-150 hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:bg-accent-active disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-fg font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
@@ -103,7 +103,7 @@ export function ClassCard({
 					<>
 						<ClassProgress cls={cls} />
 
-						<p className="mt-3 truncate text-[12px] text-fg-2">
+						<p className="mt-3 truncate font-mono text-[12px] text-fg-2">
 							{nextSessionText}
 						</p>
 					</>
@@ -113,28 +113,37 @@ export function ClassCard({
 	);
 }
 
-const CARD_CLASS =
-	"flex flex-col justify-between rounded-[var(--radius-lg)] border border-line bg-surface/50 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-[border-color,background] hover:border-line-hover hover:bg-surface";
+const CARD_CLASS = "neu flex flex-col justify-between rounded-lg p-6";
 
+/** Chip trạng thái kiểu design `Tag`: mono 10px uppercase, nền sunk; hot =
+ * nền cam đặc (chờ kích hoạt cần hành động của học viên). */
 export function ClassBadges({ cls }: { cls: StudentClass }) {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
-			{cls.level && (
-				<span className="rounded-full bg-accent-soft px-2.5 py-0.5 font-[510] text-[11px] text-accent-blue">
-					{cls.level}
-				</span>
-			)}
-			{cls.mode && (
-				<span className="rounded-full bg-surface-warm px-2.5 py-0.5 font-[510] text-[11px] text-muted-fg">
-					{cls.mode}
-				</span>
-			)}
-			{cls.enrollmentStatus === "invited" && (
-				<span className="rounded-full bg-warn-soft px-2.5 py-0.5 font-[510] text-[11px] text-warn">
-					Chờ kích hoạt
-				</span>
-			)}
+			{cls.level && <Tag>{cls.level}</Tag>}
+			{cls.mode && <Tag>{cls.mode}</Tag>}
+			{cls.enrollmentStatus === "invited" && <Tag hot>Chờ kích hoạt</Tag>}
 		</div>
+	);
+}
+
+/** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền cam. */
+export function Tag({
+	children,
+	hot = false,
+}: {
+	children: React.ReactNode;
+	hot?: boolean;
+}) {
+	return (
+		<span
+			className={cn(
+				"inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em]",
+				hot ? "bg-hot font-medium text-accent-on" : "neu-in text-fg-2",
+			)}
+		>
+			{children}
+		</span>
 	);
 }
 
@@ -146,14 +155,14 @@ export function ClassProgress({ cls }: { cls: StudentClass }) {
 	return (
 		<>
 			<div className="flex items-center justify-between text-[12px]">
-				<span className="text-muted-fg">Tiến độ khóa học</span>
-				<span className="font-[590] text-fg">
+				<span className="text-meta">Tiến độ khóa học</span>
+				<span className="font-medium font-mono text-fg">
 					Buổi {cls.sessionsDone}/{cls.sessionsTotal}
 				</span>
 			</div>
-			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-line-soft">
+			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface">
 				<div
-					className="h-full rounded-full bg-accent-blue transition-all duration-300"
+					className="h-full rounded-full bg-hot transition-all duration-300"
 					style={{ width: `${progressPercent}%` }}
 				/>
 			</div>

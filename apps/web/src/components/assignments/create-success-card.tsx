@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
 	partOf,
 	type QuestionItem,
@@ -37,18 +36,19 @@ export function CreateSuccessCard({
 	const auto = skill === "reading" || skill === "listening";
 	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
-		<Card
-			variant="white"
-			className="flex max-w-2xl flex-col gap-4 p-8"
+		// neu-in có border:0 nên card viền trái dùng nền sunk trực tiếp
+		// (bg-surface) thay vì qua utility neu-in.
+		<div
+			className="flex max-w-2xl flex-col gap-4 rounded-md border-hot border-l-4 bg-surface p-8"
 			aria-live="polite"
 		>
 			<div
 				aria-hidden="true"
-				className="grid h-11 w-11 place-items-center rounded-full bg-[color-mix(in_oklab,var(--success),transparent_88%)] text-success"
+				className="neu-in grid h-11 w-11 place-items-center rounded-full text-fg"
 			>
 				✓
 			</div>
-			<h2 className="font-display font-semibold text-[22px]">
+			<h2 className="font-display font-extrabold text-[22px] tracking-[-0.03em]">
 				{status === "draft" ? "Đã lưu bản nháp" : "Đã thêm vào ngân hàng"}
 			</h2>
 			<p className="text-muted-fg">
@@ -79,8 +79,13 @@ export function CreateSuccessCard({
 					["Trạng thái", status === "draft" ? "Bản nháp" : "Sẵn sàng giao"],
 					["Giao lớp", "Chưa giao"],
 				].map(([key, value]) => (
-					<li key={key} className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">{key}</span>
+					<li
+						key={key}
+						className="flex items-center justify-between gap-4 border-line-soft border-t py-2 first:border-t-0 first:pt-0"
+					>
+						<span className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
+							{key}
+						</span>
 						<strong className="text-right text-sm">{value}</strong>
 					</li>
 				))}
@@ -91,17 +96,17 @@ export function CreateSuccessCard({
 				</Button>
 				<Link
 					to="/assignments"
-					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm hover:text-fg"
+					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm transition-colors hover:text-hot"
 				>
 					Xem danh sách bài tập
 				</Link>
 				<Link
 					to="/classes"
-					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm hover:text-fg"
+					className="inline-flex items-center rounded-full px-2 font-medium text-fg-2 text-sm transition-colors hover:text-hot"
 				>
 					Mở trang Lớp học
 				</Link>
 			</div>
-		</Card>
+		</div>
 	);
 }

@@ -151,9 +151,9 @@ export function QuestionKeyEditor({
 		setPasteOutcome(null);
 	};
 	return (
-		<div className="flex flex-col gap-4 rounded-md border border-line bg-bg p-4">
+		<div className="neu-in flex flex-col gap-4 rounded-md p-4">
 			<div>
-				<h3 className="font-display font-semibold text-base">
+				<h3 className="font-display font-extrabold text-base tracking-[-0.02em]">
 					Câu hỏi và đáp án đúng
 				</h3>
 				<p className="text-muted-fg text-xs">
@@ -164,7 +164,7 @@ export function QuestionKeyEditor({
 				<button
 					type="button"
 					onClick={insertPresetIntro}
-					className="self-start rounded-full border border-line bg-bg px-[14px] py-[6px] font-medium text-xs transition-all hover:border-fg"
+					className="neu-sm self-start rounded-md px-[14px] py-[6px] font-medium text-xs transition-colors hover:text-hot"
 				>
 					Chèn câu lệnh chuẩn
 				</button>
@@ -316,7 +316,7 @@ export function BulkKeyPastePanel({
 		<div
 			role="dialog"
 			aria-label="Thêm key hàng loạt"
-			className="flex flex-col gap-2 rounded-md border border-line bg-bg p-3"
+			className="neu-in flex flex-col gap-2 rounded-md p-3"
 		>
 			<p className="text-muted-fg text-xs">
 				Mỗi dòng: <code>1. TRUE</code> hoặc{" "}

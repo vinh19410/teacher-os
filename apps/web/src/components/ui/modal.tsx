@@ -65,7 +65,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 		// biome-ignore lint/a11y/useKeyWithClickEvents: keyboard close is the global Escape handler attached in the open effect
 		<div
 			ref={overlayRef}
-			className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-[color-mix(in_oklab,var(--fg),transparent_55%)] px-4 py-8 backdrop-blur-[4px]"
+			className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
 			onClick={(e) => {
 				if (e.target === overlayRef.current) onClose();
 			}}
@@ -75,22 +75,24 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 				role="dialog"
 				aria-modal="true"
 				aria-label={title}
-				className="w-full max-w-[480px] animate-[modal-in_220ms_cubic-bezier(0.28,0,0.22,1)] rounded-lg bg-bg shadow-[var(--elev-raised)]"
+				className="neu w-full max-w-[480px] animate-[modal-in_220ms_cubic-bezier(0.28,0,0.22,1)] rounded-md bg-surface-warm"
 			>
-				<div className="flex items-center justify-between border-line-soft border-b px-6 py-5">
-					<h3 className="font-semibold text-lg">{title}</h3>
+				<div className="flex items-center justify-between border-line border-b px-6 py-5">
+					<h3 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+						{title}
+					</h3>
 					<button
 						type="button"
 						onClick={onClose}
 						aria-label="Đóng"
-						className="cursor-pointer border-none bg-transparent px-2 text-accent-blue text-sm"
+						className="cursor-pointer border-none bg-transparent px-2 font-mono text-sm transition-colors hover:text-hot"
 					>
 						✕
 					</button>
 				</div>
 				<div className="flex flex-col gap-4 p-6">{children}</div>
 				{footer && (
-					<div className="flex justify-end gap-2 border-line-soft border-t px-6 py-4">
+					<div className="flex justify-end gap-2 border-line border-t px-6 py-4">
 						{footer}
 					</div>
 				)}

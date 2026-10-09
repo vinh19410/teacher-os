@@ -11,8 +11,11 @@ function BackHomeLink({ children }: { children: string }) {
 	return (
 		<Link
 			to="/"
-			className="rounded-[var(--radius-sm)] text-[13px] text-muted-fg transition-colors hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+			className="rounded-sm text-[13px] text-meta transition-colors hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 		>
+			{/* Mũi tên trang trí: accessible name giữ đúng "Trang chủ" (e2e bấm
+			 * link exact name này để về overview). */}
+			<span aria-hidden="true">← </span>
 			{children}
 		</Link>
 	);
@@ -30,14 +33,17 @@ export function ClassDetailView({
 
 	return (
 		<>
-			<BackHomeLink>← Trang chủ</BackHomeLink>
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+				Lớp học
+			</p>
+			<BackHomeLink>Trang chủ</BackHomeLink>
 
 			<header className="mt-4">
 				<ClassBadges cls={cls} />
-				<h1 className="mt-3 font-[620] font-display text-[28px] text-fg leading-tight tracking-tight">
+				<h1 className="mt-3 font-display font-extrabold text-[clamp(32px,4.5vw,56px)] text-fg leading-[0.95] tracking-[-0.045em]">
 					{cls.name}
 				</h1>
-				<div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted-fg">
+				<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-fg-2 text-xs">
 					{cls.schedule && <span>{formatSchedule(cls.schedule)}</span>}
 					{cls.startDate && (
 						<span>Khai giảng: {formatVietnamFullDate(cls.startDate)}</span>
@@ -50,8 +56,8 @@ export function ClassDetailView({
 
 			<div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
 				<aside className="lg:order-2">
-					<section className="rounded-[var(--radius-lg)] border border-line bg-surface/50 p-5">
-						<h2 className="font-[620] font-display text-[16px] text-fg tracking-tight">
+					<section className="neu rounded-lg p-5">
+						<h2 className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
 							Giáo viên
 						</h2>
 						{teacher ? (
@@ -62,19 +68,19 @@ export function ClassDetailView({
 									size="md"
 								/>
 								<div className="min-w-0 leading-[1.35]">
-									<p className="truncate font-[590] text-[15px] text-fg">
+									<p className="truncate font-medium text-[15px] text-fg">
 										{teacher.name}
 									</p>
 									<a
 										href={`mailto:${teacher.email}`}
-										className="block truncate rounded-[var(--radius-sm)] text-[13px] text-accent-blue hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										className="block truncate rounded-sm text-[13px] text-hot hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 									>
 										{teacher.email}
 									</a>
 								</div>
 							</div>
 						) : (
-							<p className="mt-3 text-[13px] text-muted-fg">
+							<p className="mt-3 text-[13px] text-meta">
 								Chưa có thông tin giáo viên.
 							</p>
 						)}
@@ -83,7 +89,7 @@ export function ClassDetailView({
 
 				<div className="min-w-0 lg:order-1">
 					<section>
-						<h2 className="mb-4 font-[620] font-display text-[20px] text-fg tracking-tight">
+						<h2 className="mb-4 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
 							Buổi học
 						</h2>
 						<ClassLessonList lessons={detail.lessons} todayISO={todayISO} />
@@ -101,11 +107,11 @@ export function ClassDetailView({
 
 export function ClassNotFound() {
 	return (
-		<div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-line-soft bg-surface/20 px-6 py-14 text-center">
-			<h1 className="font-[620] font-display text-[22px] text-fg">
+		<div className="neu flex flex-col items-center justify-center rounded-lg px-6 py-14 text-center">
+			<h1 className="font-display font-extrabold text-[22px] text-fg tracking-[-0.02em]">
 				Không tìm thấy lớp
 			</h1>
-			<p className="mt-2 max-w-[44ch] text-[14px] text-muted-fg">
+			<p className="mt-2 max-w-[44ch] text-[14px] text-meta">
 				Lớp này không tồn tại, bạn chưa tham gia, hoặc thuộc tổ chức khác.
 			</p>
 			<div className="mt-5">

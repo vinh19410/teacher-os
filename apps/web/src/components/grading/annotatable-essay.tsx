@@ -276,7 +276,9 @@ export function AnnotatableEssay({
 			role: "button",
 			"aria-label": `Highlight ${n}: ${annotation.note || "chưa có ghi chú"}`,
 			className:
-				"cursor-pointer focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+				// Nền highlight (`mark.anno`) đến từ className gốc của
+				// EssayWithHighlights; ở đây chỉ đè số chú thích sup sang cam.
+				"cursor-pointer after:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 			onClick: jump,
 			onKeyDown: (e: ReactKeyboardEvent<HTMLElement>) => {
 				if (e.key === "Enter" || e.key === " ") {
@@ -310,7 +312,7 @@ export function AnnotatableEssay({
 					activeId={activeId}
 					markProps={buildMarkProps}
 					data-testid="essay-text"
-					className="rounded-md border border-line bg-card p-4 text-fg text-sm leading-relaxed focus-visible:outline-none"
+					className="border-line border-l-2 pl-5 text-fg text-lg leading-[1.9] focus-visible:outline-none"
 					tabIndex={draft === null ? undefined : -1}
 				/>
 				{draft && (

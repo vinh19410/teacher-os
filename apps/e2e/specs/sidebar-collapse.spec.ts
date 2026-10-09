@@ -26,12 +26,12 @@ async function expectSidebarWidth(page: Page, px: number) {
 		.toBeLessThanOrEqual(2);
 }
 
-test("desktop: toggle co rail còn 64px và mở lại đúng 248px", async ({
+test("desktop: toggle co rail còn 64px và mở lại đúng 188px (track 220 với margin card nổi)", async ({
 	page,
 }) => {
 	await page.setViewportSize(DESKTOP);
 	await signUpViaUi(page);
-	await expectSidebarWidth(page, 248);
+	await expectSidebarWidth(page, 188);
 
 	const toggle = page.getByTestId("sidebar-toggle");
 	await expect(toggle).toHaveAttribute(
@@ -51,7 +51,7 @@ test("desktop: toggle co rail còn 64px và mở lại đúng 248px", async ({
 		"aria-label",
 		"Thu gọn thanh điều hướng",
 	);
-	await expectSidebarWidth(page, 248);
+	await expectSidebarWidth(page, 188);
 });
 
 test("persistence: reload giữ trạng thái collapsed/expanded qua localStorage", async ({
@@ -74,7 +74,7 @@ test("persistence: reload giữ trạng thái collapsed/expanded qua localStorag
 
 	await page.getByTestId("sidebar-toggle").click();
 	await page.reload();
-	await expectSidebarWidth(page, 248);
+	await expectSidebarWidth(page, 188);
 });
 
 test("mobile <921px với collapsed=true: drawer vẫn full-label 280px", async ({

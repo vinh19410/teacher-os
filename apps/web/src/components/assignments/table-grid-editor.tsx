@@ -107,7 +107,7 @@ export function TableGridEditor({
 										<Button
 											type="button"
 											size="sm"
-											variant="ghost"
+											variant="danger"
 											aria-label={`Xóa cột ${col + 1}`}
 											disabled={grid.colTitles.length <= 1}
 											onClick={() => {
@@ -144,7 +144,7 @@ export function TableGridEditor({
 										<Button
 											type="button"
 											size="sm"
-											variant="ghost"
+											variant="danger"
 											aria-label={`Xóa hàng ${row + 1}`}
 											disabled={grid.rowTitles.length <= 1}
 											onClick={() => {

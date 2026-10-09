@@ -38,7 +38,7 @@ export function QuizReadingSplitLayout({
 					</p>
 					<RichTextBody
 						text={passage}
-						className="mt-2 text-sm leading-[1.55]"
+						className="mt-2 text-sm leading-[1.85]"
 					/>
 				</section>
 				<section

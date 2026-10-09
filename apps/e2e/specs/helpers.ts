@@ -193,7 +193,9 @@ export async function seedStudent(opts: {
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
-	const classRow = page.locator("tbody").getByText(className);
+	// Redesign #349: the classes list is a card grid — the class title is the
+	// only h3 on the page; clicking it bubbles to the card button.
+	const classRow = page.locator("h3", { hasText: className });
 	await expect(classRow).toBeVisible();
 	await classRow.click();
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();

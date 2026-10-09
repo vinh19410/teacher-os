@@ -94,8 +94,12 @@ function PayTokenRoute() {
 	return (
 		<main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
 			<header>
-				<p className="text-muted-fg text-xs">{view.orgName}</p>
-				<h1 className="font-semibold text-lg">{view.studentName}</h1>
+				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					{view.orgName}
+				</p>
+				<h1 className="mt-1 font-display font-extrabold text-3xl leading-[0.95] tracking-[-0.045em]">
+					{view.studentName}
+				</h1>
 			</header>
 			<PaymentQrPanel data={view} />
 			{view.payable && pollExhausted && (

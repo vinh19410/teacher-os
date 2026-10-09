@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -71,7 +72,10 @@ function RouteComponent() {
 	}
 
 	return (
-		<main className="grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
+		<main className="relative grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
+			<div className="absolute top-4 right-4 z-10">
+				<ThemeToggle />
+			</div>
 			<BrandPanel />
 			<section
 				aria-label="Account access"
@@ -79,26 +83,12 @@ function RouteComponent() {
 			>
 				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
 					<div className="mb-[26px] hidden items-center justify-center gap-[10px] max-[960px]:flex">
-						<svg
-							viewBox="0 0 34 34"
-							aria-hidden="true"
-							className="block h-[30px] w-[30px]"
-						>
-							<rect width="34" height="34" rx="9" fill="var(--accent)" />
-							<path
-								d="M9.5 12.5c3-1.8 5-1.8 7.5 0 2.5-1.8 4.5-1.8 7.5 0M17 12.5V22"
-								stroke="#ffffff"
-								strokeWidth="1.9"
-								strokeLinecap="round"
-								fill="none"
-							/>
-						</svg>
-						<span className="font-display font-semibold text-[17px] text-fg tracking-[-0.01em]">
-							Teacher OS
+						<span className="font-mono text-fg text-xs uppercase tracking-[0.25em]">
+							Teacher<span className="text-hot">/</span>OS
 						</span>
 					</div>
 
-					<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+					<h2 className="font-display font-extrabold text-[28px] leading-[1.15] tracking-[-0.02em] max-[420px]:text-[24px]">
 						{mode === "signin" ? "Welcome back" : "Create your account"}
 					</h2>
 					<p className="mt-2 text-muted-fg text-sm">
@@ -117,11 +107,11 @@ function RouteComponent() {
 
 					<div
 						aria-hidden="true"
-						className="my-[22px] flex items-center gap-[14px] font-[590] text-[11px] text-meta uppercase tracking-[0.09em]"
+						className="my-[22px] flex items-center gap-[14px] font-mono text-[10px] text-meta uppercase tracking-[0.18em]"
 					>
-						<span className="h-px flex-1 bg-line-soft" />
+						<span className="h-px flex-1 bg-line" />
 						<span>or use email</span>
-						<span className="h-px flex-1 bg-line-soft" />
+						<span className="h-px flex-1 bg-line" />
 					</div>
 
 					<SignInForm
@@ -143,7 +133,7 @@ function RouteComponent() {
 							onClick={() =>
 								changeMode(mode === "signin" ? "signup" : "signin")
 							}
-							className="-mx-2 rounded-[4px] px-2 py-[6px] font-[590] text-accent-blue text-sm underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+							className="-mx-2 rounded-[4px] px-2 py-[6px] text-meta text-sm underline underline-offset-[3px] transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 						>
 							{mode === "signin" ? "Create an account" : "Sign in"}
 						</button>

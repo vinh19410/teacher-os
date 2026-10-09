@@ -99,19 +99,24 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 
 function QuizTakeError({ error }: { error: unknown }) {
 	const notFound = isHttpError(error) && error.status === 404;
+	const code = isHttpError(error) ? error.code : undefined;
 	return (
 		<div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-bg p-6 text-center">
-			<h1 className="font-display font-semibold">
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+				{notFound ? "404" : "Lỗi"}
+			</p>
+			<h1 className="font-display font-extrabold text-3xl tracking-[-0.045em]">
 				{notFound ? "Không tìm thấy bài tập" : "Không tải được bài tập"}
 			</h1>
-			<p className="max-w-sm text-muted-fg text-sm">
+			<p className="max-w-sm text-meta text-sm">
 				{notFound
 					? "Bài tập này không còn giao cho bạn hoặc đã bị gỡ."
 					: "Đã có lỗi khi tải đề. Vui lòng thử lại."}
 			</p>
+			{code && <p className="font-mono text-meta text-xs">{code}</p>}
 			<a
 				href="/"
-				className="text-accent-blue text-sm underline-offset-4 hover:underline"
+				className="text-hot text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ
 			</a>
@@ -346,14 +351,14 @@ function QuizTakePage() {
 					onSubmitClick={null}
 				/>
 				<main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col justify-center px-4 py-8">
-					<div className="rounded-[var(--radius-lg)] border border-line bg-bg p-6">
-						<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+					<div className="neu rounded-lg p-6">
+						<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
 							Bài kiểm tra
 						</p>
-						<h2 className="mt-1 font-display font-semibold text-fg">
+						<h2 className="mt-1 font-display font-extrabold text-fg text-xl tracking-[-0.02em]">
 							{detail.title}
 						</h2>
-						<p className="mt-2 text-muted-fg text-sm">
+						<p className="mt-2 font-mono text-meta text-xs uppercase tracking-[0.08em]">
 							{isSpeaking ? (
 								<>
 									Bài nói
@@ -372,7 +377,7 @@ function QuizTakePage() {
 								</>
 							)}
 						</p>
-						<p className="mt-1 text-muted-fg text-sm">
+						<p className="mt-1 text-meta text-sm">
 							Bài làm được lưu tự động trong khi bạn làm.
 						</p>
 					</div>

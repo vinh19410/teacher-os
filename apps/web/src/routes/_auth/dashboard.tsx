@@ -4,6 +4,7 @@ import {
 	redirect,
 	useRouteContext,
 } from "@tanstack/react-router";
+import { MorningSpot } from "@teacher-os/ui/components/illustrations";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -14,7 +15,6 @@ import {
 	atRiskRows,
 	type DashboardRiskReason,
 	formatDashboardGreeting,
-	formatDashboardLead,
 	groupLessonsByClassSession,
 	lessonsToday,
 	upcomingLessonsThisWeek,
@@ -54,84 +54,119 @@ function DashboardRoute() {
 		}
 	}
 
+	// Kicker = weekday + date in Vietnamese, per the design's dashboard head.
+	const kicker = now.toLocaleDateString("vi-VN", {
+		weekday: "long",
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	});
+
 	return (
 		<div>
 			<PageHead
+				kicker={kicker}
 				title={formatDashboardGreeting(displayName, now)}
-				lead={formatDashboardLead(now, todayGroups.length)}
+				action={
+					<MorningSpot decorative className="-mb-4 hidden w-44 md:block" />
+				}
 			/>
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<h2 className="font-semibold text-xl">Lịch hôm nay</h2>
-				<Link
-					to="/schedule"
-					className="px-2 font-medium text-accent-blue text-xs hover:text-accent-active"
-				>
-					Xem tuần →
-				</Link>
-			</div>
-			<div className="flex flex-col gap-4">
-				{todayGroups.length === 0 && (
-					<p className="font-mono text-meta text-xs">
-						Không có buổi học nào hôm nay.
-					</p>
-				)}
-				{todayGroups.map((g) => {
-					const className = classById(g.classId)?.name ?? "Lớp";
+			<div className="gap-10 lg:grid lg:grid-cols-[1.4fr_1fr]">
+				<section>
+					<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+						<h2 className="font-display font-extrabold text-2xl tracking-[-0.02em]">
+							Lịch hôm nay
+						</h2>
+						<Link
+							to="/schedule"
+							className="font-mono text-hot text-xs hover:underline"
+						>
+							Xem tuần →
+						</Link>
+					</div>
+					<div className="flex flex-col">
+						{todayGroups.length === 0 && (
+							<p className="font-mono text-meta text-xs">
+								Không có buổi học nào hôm nay.
+							</p>
+						)}
+						{todayGroups.map((g) => {
+							const className = classById(g.classId)?.name ?? "Lớp";
 
-					return (
-						<Card key={`${g.classId}-${g.time}`} variant="white">
-							<div className="font-semibold text-sm">{className}</div>
-							<div className="font-mono text-meta text-xs">
-								{g.time} · {g.dur}' · {g.type} · {g.topic}
-							</div>
-						</Card>
-					);
-				})}
-			</div>
-			<div className="mt-8">
-				<SectionLabel>Lịch sắp tới</SectionLabel>
-				{upcoming.length === 0 ? (
-					<p className="font-mono text-meta text-xs">
-						Không có buổi học nào trong phần còn lại của tuần.
-					</p>
-				) : (
-					upcomingGroups.map((group) => {
-						const classSessions = groupLessonsByClassSession(group.lessons);
-						return (
-							<div key={group.day}>
-								<div className="mt-4 mb-2 font-semibold text-sm">
-									{lessonDayLabel(group.day)}
+							return (
+								<div
+									key={`${g.classId}-${g.time}`}
+									className="grid grid-cols-[80px_1fr] items-center gap-4 border-line border-t py-4"
+								>
+									<span className="font-mono text-2xl leading-none">
+										{g.time}
+									</span>
+									<span>
+										<span className="block font-medium">{className}</span>
+										<span className="text-meta text-sm">
+											{g.dur}&apos; · {g.type} · {g.topic}
+										</span>
+									</span>
 								</div>
-								<div className="flex flex-col gap-2">
-									{classSessions.map((g) => {
-										const className = classById(g.classId)?.name ?? "Lớp";
+							);
+						})}
+					</div>
+					<div className="mt-8">
+						<SectionLabel>Lịch sắp tới</SectionLabel>
+						{upcoming.length === 0 ? (
+							<p className="font-mono text-meta text-xs">
+								Không có buổi học nào trong phần còn lại của tuần.
+							</p>
+						) : (
+							upcomingGroups.map((group) => {
+								const classSessions = groupLessonsByClassSession(group.lessons);
+								return (
+									<div key={group.day}>
+										<div className="mt-4 mb-2 font-medium text-sm">
+											{lessonDayLabel(group.day)}
+										</div>
+										<div className="flex flex-col">
+											{classSessions.map((g) => {
+												const className = classById(g.classId)?.name ?? "Lớp";
 
-										return (
-											<Card
-												key={`${group.day}-${g.classId}-${g.time}`}
-												variant="white"
-											>
-												<div className="font-semibold text-sm">{className}</div>
-												<div className="font-mono text-meta text-xs">
-													{g.time} · {g.dur}&apos; · {g.type} · {g.topic}
-												</div>
-											</Card>
-										);
-									})}
-								</div>
-							</div>
-						);
-					})
-				)}
-			</div>
-			<div className="mt-8">
-				<SectionLabel>Học viên rủi ro</SectionLabel>
-				{risk.length === 0 ? (
-					<p className="font-mono text-meta text-xs">
-						Không có học viên rủi ro.
-					</p>
-				) : (
-					<Card variant="white" className="p-0">
+												return (
+													<div
+														key={`${group.day}-${g.classId}-${g.time}`}
+														className="grid grid-cols-[80px_1fr] items-center gap-4 border-line border-t py-4"
+													>
+														<span className="font-mono text-2xl leading-none">
+															{g.time}
+														</span>
+														<span>
+															<span className="block font-medium">
+																{className}
+															</span>
+															<span className="text-meta text-sm">
+																{g.dur}&apos; · {g.type} · {g.topic}
+															</span>
+														</span>
+													</div>
+												);
+											})}
+										</div>
+									</div>
+								);
+							})
+						)}
+					</div>
+				</section>
+				<Card className="mb-10 self-start p-6 lg:mb-0">
+					<div className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+						Học viên rủi ro
+					</div>
+					<h2 className="mt-1 mb-5 font-display font-extrabold text-2xl tracking-[-0.02em]">
+						Cần kiểm tra
+					</h2>
+					{risk.length === 0 ? (
+						<p className="font-mono text-meta text-xs">
+							Không có học viên rủi ro.
+						</p>
+					) : (
 						<DataTable
 							headers={["Học viên", "Vấn đề", "Còn"]}
 							rows={risk.map((row) => ({
@@ -153,8 +188,8 @@ function DashboardRoute() {
 								],
 							}))}
 						/>
-					</Card>
-				)}
+					)}
+				</Card>
 			</div>
 		</div>
 	);

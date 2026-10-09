@@ -45,11 +45,11 @@ export function QuizEssayFooter({
 				 * SR (code-review F1); announce chỉ ở span sr-only milestone dưới. */}
 				<p
 					data-testid="navigator-progress"
-					className="text-[13px] text-muted-fg"
+					className="font-mono text-fg-2 text-xs"
 				>
 					<span
 						data-testid="essay-word-count"
-						className={cn("font-medium", belowMin ? "text-warn" : "text-fg")}
+						className={cn("font-medium", belowMin ? "text-hot" : "text-fg")}
 					>
 						{wordCount}
 					</span>

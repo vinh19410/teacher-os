@@ -39,11 +39,10 @@ export function ChipFilter({
 						aria-pressed={opt === value}
 						onClick={() => onChange(opt)}
 						className={cn(
-							"rounded-full border px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
+							"neu-sm rounded-md px-[14px] py-[6px] font-medium text-xs transition-all duration-[150ms] ease-[cubic-bezier(0.28,0,0.22,1)]",
 							"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-							opt === value
-								? "border-fg bg-fg text-bg"
-								: "border-line bg-bg text-fg-2 hover:border-fg",
+							opt === value &&
+								"border-transparent bg-surface font-medium text-hot",
 						)}
 					>
 						{opt}
@@ -52,7 +51,7 @@ export function ChipFilter({
 								aria-hidden="true"
 								className={cn(
 									"ml-1.5 font-mono text-[10px] tabular-nums",
-									opt === value ? "text-bg/70" : "text-meta",
+									opt === value ? "text-hot" : "text-meta",
 								)}
 							>
 								{count}

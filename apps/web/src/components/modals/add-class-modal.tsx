@@ -366,9 +366,14 @@ export function AddClassModal({
 					<div
 						role="status"
 						data-testid="schedule-conflict-warning"
-						className="rounded-sm border border-warn border-solid bg-warn-soft p-3 text-warn text-xs"
+						className="rounded-md bg-warn-soft p-3 text-warn text-xs"
 					>
-						<p className="font-medium">Lịch bị trùng với lớp đang học</p>
+						<p className="font-medium">
+							<span className="mr-2 bg-hot px-1 font-mono text-[10px] text-accent-on uppercase tracking-widest">
+								Trùng lịch
+							</span>
+							Lịch bị trùng với lớp đang học
+						</p>
 						<ul className="mt-1 space-y-0.5">
 							{scheduleConflicts
 								.slice(0, 3)

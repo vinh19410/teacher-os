@@ -162,7 +162,9 @@ describe("ClassDetailView", () => {
 		expect(html).toContain("Reading Practice 1");
 		expect(html).toContain('href="/learn/quizzes/ca-9"');
 		expect(html).toContain('href="/"');
-		expect(html).toContain("← Trang chủ");
+		// Mũi tên "←" giờ là span trang trí (aria-hidden) để accessible name
+		// của link đúng "Trang chủ" (e2e bấm link exact name này).
+		expect(html).toContain("Trang chủ");
 		// Tên lớp chỉ ở header, không lặp lại trên từng bài tập.
 		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
 	});

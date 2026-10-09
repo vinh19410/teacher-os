@@ -11,8 +11,8 @@ export const QUIZ_SAVE_STATE_LABELS: Record<QuizSaveState, string> = {
 };
 
 const SAVE_STATE_CLASSES: Record<QuizSaveState, string> = {
-	saving: "text-muted-fg",
-	saved: "text-success",
+	saving: "text-meta",
+	saved: "text-hot",
 	error: "text-danger",
 };
 
@@ -55,7 +55,7 @@ export function QuizRuntimeHeader({
 						data-state={saveState}
 						aria-live="polite"
 						className={cn(
-							"font-medium text-[13px]",
+							"font-mono text-xs uppercase tracking-[0.08em]",
 							SAVE_STATE_CLASSES[saveState],
 						)}
 					>
@@ -64,7 +64,11 @@ export function QuizRuntimeHeader({
 				)}
 				{children}
 				{onSubmitClick !== null && (
-					<Button onClick={onSubmitClick} disabled={submitDisabled}>
+					<Button
+						onClick={onSubmitClick}
+						disabled={submitDisabled}
+						className="rounded-lg bg-fg text-bg hover:bg-hot hover:text-accent-on"
+					>
 						Nộp bài
 					</Button>
 				)}
