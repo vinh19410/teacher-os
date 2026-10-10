@@ -15,6 +15,10 @@ giấy trên nền đen, **một accent cam duy nhất** cho hành động và t
 - **Dark là mặc định** (`:root`); `.light` trên `<html>` là override. Toggle ở topbar teacher +
   student và trang login, lưu `localStorage.theme` (`"dark"` | `"light"`), đồng bộ giữa tab qua
   sự kiện `storage`.
+- Toggle là **switch icon**, không có chữ: track pill hai icon nền (`Sun` trái / `Moon` phải, màu
+  `text-meta`), núm tròn màu mực (`bg-fg`, icon `text-bg`) trượt 150ms mang icon theme hiện tại —
+  bật (núm phải, mặt trăng) = tối. `ThemeToggle` dùng chung từ `@teacher-os/ui`, semantics
+  `role="switch"` + `aria-checked` (đang tối) + `aria-label="Giao diện tối"` cố định.
 - Chống nháy: script tĩnh `/theme-init.js` chạy đồng bộ trong `<head>` (CSP `script-src 'self'`
   — không inline script). `useTheme()` trong `@teacher-os/ui/hooks/use-theme` là nguồn duy nhất.
 - Light accent là `#c93d0b`, **không phải** `#e8490f` của design: giá trị design đo 3.90 contrast

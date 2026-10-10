@@ -1,12 +1,20 @@
 // @vitest-environment jsdom
 
+import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import { useTheme } from "@teacher-os/ui/hooks/use-theme";
 import {
 	applyTheme,
 	readTheme,
 	THEME_STORAGE_KEY,
 } from "@teacher-os/ui/lib/theme";
-import { act, renderHook } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	renderHook,
+	screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -171,5 +179,46 @@ describe("useTheme", () => {
 
 		act(() => b.result.current.setTheme("dark"));
 		expect(a.result.current.theme).toBe("dark");
+	});
+});
+
+describe("ThemeToggle", () => {
+	// Vitest không bật globals → RTL auto-cleanup không đăng ký; state theme
+	// đọc từ class trên <html> nên phải reset cùng storage trước mỗi test.
+	beforeEach(() => {
+		installStorage(memoryStorage());
+		document.documentElement.className = "";
+	});
+
+	afterEach(cleanup);
+
+	it("render switch 'Giao diện tối' checked mặc định, không còn chữ Tối/Sáng", () => {
+		render(<ThemeToggle />);
+		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
+		expect(sw.getAttribute("aria-checked")).toBe("true");
+		expect(screen.queryByText("Tối")).toBeNull();
+		expect(screen.queryByText("Sáng")).toBeNull();
+	});
+
+	it("click → unchecked, class light trên <html>, ghi storage light", () => {
+		const storage = memoryStorage();
+		installStorage(storage);
+		render(<ThemeToggle />);
+		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
+
+		fireEvent.click(sw);
+		expect(sw.getAttribute("aria-checked")).toBe("false");
+		expect(document.documentElement.classList.contains("light")).toBe(true);
+		expect(storage.getItem(THEME_STORAGE_KEY)).toBe("light");
+	});
+
+	it("click lần nữa → checked lại, không còn class light", () => {
+		render(<ThemeToggle />);
+		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
+
+		fireEvent.click(sw);
+		fireEvent.click(sw);
+		expect(sw.getAttribute("aria-checked")).toBe("true");
+		expect(document.documentElement.classList.contains("light")).toBe(false);
 	});
 });
