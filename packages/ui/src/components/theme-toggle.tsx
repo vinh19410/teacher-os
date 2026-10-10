@@ -21,7 +21,7 @@ export function ThemeToggle({ className }: { className?: string }) {
 			aria-label="Giao diện tối"
 			onClick={toggle}
 			className={cn(
-				"neu-sm relative inline-flex h-8 w-14 shrink-0 items-center rounded-full text-meta focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+				"neu-sm relative inline-flex h-8 w-14 shrink-0 rounded-full text-meta focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 				className,
 			)}
 		>
