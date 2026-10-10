@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-10
+
+### Changed
+- Nút chuyển giao diện Sáng/Tối (topbar giáo viên, shell + các trang đăng nhập học viên) đổi từ pill chữ "Tối/Sáng" sang **switch icon**: núm tròn màu mực trượt 150ms mang icon mặt trăng (tối) / mặt trời (sáng), hai icon nền mờ hai đầu; semantics chuyển sang `role="switch"` + `aria-checked` để screen reader đọc được trạng thái. Logic lưu theme và đồng bộ giữa tab giữ nguyên (#356)
+
 ## 2026-10-09
 
 ### Changed
