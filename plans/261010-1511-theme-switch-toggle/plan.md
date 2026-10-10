@@ -1,7 +1,7 @@
 ---
 title: "ThemeToggle: đổi nút sáng/tối thành switch icon mặt trời/mặt trăng"
 description: "Thay nút pill (chấm tròn + chữ Tối/Sáng) bằng switch có núm trượt mang icon mặt trời/mặt trăng, role=switch, dùng chung cho web + student."
-status: pending
+status: completed
 priority: P3
 effort: 1h
 issue: 356
