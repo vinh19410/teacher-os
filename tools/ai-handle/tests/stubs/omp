@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Test stub for the OMP agent CLI. The prompt arrives on stdin.
+
+Per-call mode comes from the first line of $AI_HANDLE_TEST_DIR/omp-modes
+(consumed), else $AI_HANDLE_TEST_OMP_MODE, else "ok". Modes:
+  ok          ships like /ak:vibe --ship: the PR exists and is MERGED into develop
+  open        the PR is left OPEN (the agent could not merge it)
+  mergedfail  the PR is MERGED, then the run exits 1 (e.g. while watching CI)
+  fail, hang, netfail   no PR; exit 1, never return, network error
+Every call is logged to omp-calls.log and its prompt saved to
+omp-prompts/<n>.txt. PRs are written to the gh stub's board file.
+"""
+import fcntl
+import json
+import os
+import re
+import sys
+import subprocess
+import time
+
+TD = os.environ.get("AI_HANDLE_TEST_DIR", "/tmp/ai-handle-test")
+os.makedirs(TD + "/omp-prompts", exist_ok=True)
+
+
+def next_mode():
+    path = TD + "/omp-modes"
+    try:
+        with open(path, "r+") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            lines = [l for l in f.read().splitlines() if l.strip()]
+            if lines:
+                f.seek(0)
+                f.truncate()
+                f.write("\n".join(lines[1:]) + ("\n" if lines[1:] else ""))
+                return lines[0].strip()
+    except FileNotFoundError:
+        pass
+    return os.environ.get("AI_HANDLE_TEST_OMP_MODE", "ok")
+
+
+def git(*args):
+    subprocess.run(["git", "-c", "user.email=t@e.com", "-c", "user.name=t", *args],
+                   check=True, capture_output=True)
+
+
+def issue_number(prompt):
+    m = re.search(r"issues/(\d+)", prompt)
+    return int(m.group(1)) if m else 1
+
+
+def pr_number(prompt):
+    return os.environ.get("AI_HANDLE_TEST_PR") or str(99 + issue_number(prompt))
+
+
+def branch_name(prompt):
+    n = issue_number(prompt)
+    return os.environ.get("AI_HANDLE_TEST_BRANCH") or ("ai/issue-test" if n == 1 else "ai/issue-%d" % n)
+
+
+def commit_files(prompt):
+    """AI_HANDLE_TEST_OMP_FILES: write, commit and push a branch like a real run."""
+    files = os.environ.get("AI_HANDLE_TEST_OMP_FILES", "").split()
+    if not files:
+        return
+    branch = branch_name(prompt)
+    git("checkout", "-q", "-B", branch)
+    for f in files:
+        os.makedirs(os.path.dirname(f) or ".", exist_ok=True)
+        with open(f, "a") as fh:
+            fh.write("change %s\n" % time.time())
+        git("add", f)
+    git("commit", "-q", "-m", "stub change")
+    git("push", "-q", "-f", "origin", branch)
+
+
+def ship_pr(prompt, state):
+    """Record the agent's PR in the gh stub's board file (created or updated)."""
+    board = os.environ.get("AI_HANDLE_TEST_BOARD", TD + "/board.json")
+    with open(board + ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        with open(board) as f:
+            data = json.load(f)
+        num = int(pr_number(prompt))
+        prs = data.setdefault("prs", [])
+        pr = next((p for p in prs if p["number"] == num), None)
+        if pr is None:
+            pr = {"number": num, "url": "https://github.com/vinh19410/teacher-os/pull/%d" % num, "title": "agent change",
+                  "body": "Closes #%d" % issue_number(prompt), "headRefName": branch_name(prompt),
+                  "baseRefName": "develop", "labels": [], "files": [], "checks": []}
+            prs.append(pr)
+        pr["state"] = state
+        tmp = board + ".tmp.%d" % os.getpid()
+        with open(tmp, "w") as f:
+            json.dump(data, f, indent=1)
+        os.replace(tmp, board)
+
+
+def main():
+    args = sys.argv[1:]
+    prompt = sys.stdin.read()
+    is_ops = "# Ops diagnosis (read-only)" in prompt
+    is_release = "# Release draft (read-only)" in prompt
+    mode = "readonly" if (is_ops or is_release) else next_mode()
+    with open(TD + "/omp-calls.log", "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write("mode=%s cwd=%s args=%s\n" % (mode, os.getcwd(), " ".join(args)))
+        f.flush()
+        n = sum(1 for _ in open(TD + "/omp-calls.log"))
+    with open(TD + "/omp-prompts/%d.txt" % n, "w") as f:
+        f.write(prompt)
+    if "--session-dir" in args:
+        sdir = args[args.index("--session-dir") + 1]
+        os.makedirs(sdir, exist_ok=True)
+        with open(os.path.join(sdir, "session.jsonl"), "a") as f:
+            f.write(json.dumps({"type": "message", "message": {"role": "assistant", "timestamp": int(time.time() * 1000),
+                    "usage": {"input": 1000, "output": 100, "cost": {"total": 0.5}}}}) + "\n")
+    if is_ops:
+        print('Diagnosis.\n```json\n{"severity":"P2","failure_cause":"infrastructure","summary":"the stub ops agent blames the network","runbook":["check the network","run watch.sh --status"]}\n```')
+        return
+    if is_release:
+        print('Release draft for the stub.\n```json\n{"current_version":"0.0.15","next_version":"0.0.16","bump":"patch","blocking_risks":[]}\n```')
+        return
+    time.sleep(float(os.environ.get("AI_HANDLE_TEST_OMP_SLEEP", "0")))
+    if mode == "hang":
+        while True:
+            time.sleep(1)
+    if mode == "netfail":
+        print("Error: request failed: fetch failed (ECONNRESET)")
+        sys.exit(1)
+    if mode == "fail":
+        print("error: tests failed")
+        sys.exit(1)
+    if os.environ.get("AI_HANDLE_TEST_OMP_NOPR") == "1":
+        print("Completion Report\nstatus: done")
+        return
+    commit_files(prompt)
+    ship_pr(prompt, "OPEN" if mode == "open" else "MERGED")
+    print("Completion Report\nstatus: done\nbranch: " + branch_name(prompt) + "\nPR: https://github.com/vinh19410/teacher-os/pull/" + pr_number(prompt))
+    if mode == "mergedfail":
+        print("error: develop CI did not turn green")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

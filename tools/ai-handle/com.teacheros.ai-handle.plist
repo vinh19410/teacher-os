@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Board-driven ai-handle watcher. Deployed copy:
+     cp tools/ai-handle/com.teacheros.ai-handle.plist ~/Library/LaunchAgents/
+     + sync tools/ai-handle/watch.sh to ~/.local/lib/teacher-os-ai-handle/watch.sh
+     launchctl bootout gui/$(id -u)/com.teacheros.ai-handle 2>/dev/null || true
+     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.teacheros.ai-handle.plist -->
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.teacheros.ai-handle</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/bin/bash</string>
+      <string>/Users/vinhtran/.local/lib/teacher-os-ai-handle/watch.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>PATH</key>
+      <string>/Users/vinhtran/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <!-- workers are detached children: do not kill them when this job exits -->
+    <key>AbandonProcessGroup</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartInterval</key>
+    <integer>300</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/vinhtran/.local/state/teacher-os-ai-handle/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/vinhtran/.local/state/teacher-os-ai-handle/launchd.err.log</string>
+  </dict>
+</plist>

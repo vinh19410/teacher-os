@@ -20,3 +20,15 @@
   và `/assignments` làm mẫu.
 - Verify UI ở 3 viewport (1440×900, 768×1024, 375×812) + keyboard focus theo `REVIEW.md`; PR
   đụng hình ảnh kèm screenshot.
+
+## GitHub Issues
+
+- Mỗi khi tạo GitHub issue mới trong repo này (ví dụ `gh issue create`), **luôn thêm label `ai-handle`** theo mặc định (`--label ai-handle`).
+- Chỉ bỏ label này khi người dùng yêu cầu rõ ràng cho issue đó.
+- Lưu ý: label `ai-handle` chỉ là điều kiện để agent nhận việc; người duyệt vẫn phải kéo card sang **Ready** trên board "Teacher OS" thì agent mới bắt đầu làm (xem `tools/ai-handle/README.md`).
+
+## Luồng ak-plan → ak-git cp
+
+- Khi skill `ak-plan` hoàn tất (plan đã được duyệt/chốt), **luôn gọi tiếp skill `ak-git cp`** để commit và push các file đã tạo ra trong session (plan, journal, các file liên quan).
+- Không tự viết lệnh git thủ công thay cho `ak-git cp` trừ khi skill đó lỗi.
+

@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""Test stub for the GitHub CLI used by tools/ai-handle/watch.sh.
+
+State lives in $AI_HANDLE_TEST_BOARD (JSON). Every invocation is appended to
+$AI_HANDLE_TEST_CALLS; board mutations also log a MUT line. Knobs:
+  offline file / AI_HANDLE_TEST_OFFLINE=1  every network-ish command fails
+  AI_HANDLE_TEST_SLOW_READY=<s>            sleep after a mutation to Ready
+  AI_HANDLE_TEST_SLOW_ITEMS=<s>            sleep after reading the items snapshot
+"""
+import fcntl
+import json
+import os
+import sys
+import time
+
+TD = os.environ.get("AI_HANDLE_TEST_DIR", "/tmp/ai-handle-test")
+BOARD = os.environ.get("AI_HANDLE_TEST_BOARD", TD + "/board.json")
+CALLS = os.environ.get("AI_HANDLE_TEST_CALLS", TD + "/calls.log")
+LOCK = BOARD + ".lock"
+STATUSES = ["Backlog", "Ready", "In progress", "In review", "Ready to ship", "Done"]
+
+
+def offline():
+    return os.environ.get("AI_HANDLE_TEST_OFFLINE") == "1" or os.path.exists(TD + "/offline")
+
+
+def log(line):
+    with open(CALLS, "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write(line.replace("\n", "\\n") + "\n")
+
+
+class Board:
+    def __enter__(self):
+        self.lock = open(LOCK, "w")
+        fcntl.flock(self.lock, fcntl.LOCK_EX)
+        with open(BOARD) as f:
+            self.data = json.load(f)
+        return self
+
+    def __exit__(self, *exc):
+        if exc[0] is None:
+            tmp = BOARD + ".tmp.%d" % os.getpid()
+            with open(tmp, "w") as f:
+                json.dump(self.data, f, indent=1)
+            os.replace(tmp, BOARD)
+        self.lock.close()
+
+    def item(self, number=None, item_id=None):
+        for it in self.data["items"]:
+            if (number is not None and it["number"] == int(number)) or (item_id and it["id"] == item_id):
+                return it
+        return None
+
+
+def field_values(it):
+    return [{"__typename": "ProjectV2ItemFieldSingleSelectValue", "name": it["status"], "field": {"name": "Status"}}]
+
+
+def parse_flags(args):
+    fields, rest, i = {}, [], 0
+    while i < len(args):
+        a = args[i]
+        if a in ("-f", "-F", "--raw-field", "--field"):
+            k, _, v = args[i + 1].partition("=")
+            fields[k] = v
+            i += 2
+        else:
+            rest.append(a)
+            i += 1
+    return fields, rest
+
+
+def add_to_board(v):
+    with Board() as b:
+        issue = next((i for i in b.data.get("issues", []) if i["node_id"] == v["c"]), None)
+        if issue is None:
+            print("no such issue node", file=sys.stderr)
+            sys.exit(1)
+        item = {"id": "ITEM_%d" % issue["number"], "number": issue["number"], "title": issue["title"],
+                "state": "OPEN", "url": issue["url"], "repo": "vinh19410/teacher-os", "status": "",
+                "labels": list(issue.get("labels", [])), "body": issue["body"], "comments": []}
+        b.data["items"].append(item)
+        log("MUT add-item %s" % item["id"])
+    print(json.dumps({"data": {"addProjectV2ItemById": {"item": {"id": item["id"]}}}}))
+
+
+def graphql(args):
+    v, _ = parse_flags(args)
+    q = v.get("query", "")
+    if "addProjectV2ItemById" in q:
+        return add_to_board(v)
+    if "mutation" in q:
+        with Board() as b:
+            it = b.item(item_id=v["i"])
+            if it is None:
+                print("item not found", file=sys.stderr)
+                sys.exit(1)
+            if "singleSelectOptionId" in q:
+                name = next((n for n, oid in b.data["options"].items() if oid == v["o"]), v["o"])
+                it["status"] = name
+                log("MUT status %s %s" % (it["id"], name))
+            else:
+                it.setdefault("dates", {})[v["f"]] = v["d"]
+                log("MUT date %s %s %s" % (it["id"], v["f"], v["d"]))
+        if "singleSelectOptionId" in q and name == "Ready":
+            time.sleep(float(os.environ.get("AI_HANDLE_TEST_SLOW_READY", "0")))
+        print(json.dumps({"data": {"updateProjectV2ItemFieldValue": {"projectV2Item": {"id": v["i"]}}}}))
+        return
+    with Board() as b:
+        d = b.data
+        if "node(id" in q:
+            it = b.item(item_id=v["id"])
+            out = {"data": {"node": {"fieldValues": {"nodes": field_values(it)}} if it else None}}
+        elif "items(first" in q:
+            nodes = []
+            for it in d["items"]:
+                nodes.append({
+                    "id": it["id"],
+                    "fieldValues": {"nodes": field_values(it)},
+                    "content": {
+                        "__typename": "Issue", "number": it["number"], "title": it["title"],
+                        "url": it["url"], "state": it["state"], "body": it.get("body", ""),
+                        "repository": {"nameWithOwner": it.get("repo", "vinh19410/teacher-os")},
+                        "labels": {"nodes": [{"name": n} for n in it["labels"]]},
+                    },
+                })
+            out = {"data": {"user": {"projectV2": {"items": {
+                "pageInfo": {"hasNextPage": False, "endCursor": None}, "nodes": nodes}}}}}
+        else:
+            opts = [{"id": oid, "name": n} for n, oid in d["options"].items()]
+            out = {"data": {"user": {"projectV2": {"id": "PVT_test", "title": "Teacher OS", "fields": {"nodes": [
+                {"__typename": "ProjectV2SingleSelectField", "id": "F_status", "name": "Status", "options": opts},
+                {"__typename": "ProjectV2Field", "id": "F_start", "name": "Start date", "dataType": "DATE"},
+                {"__typename": "ProjectV2Field", "id": "F_target", "name": "Target date", "dataType": "DATE"},
+            ]}}}}}
+    print(json.dumps(out))
+    if "items(first" in q:
+        time.sleep(float(os.environ.get("AI_HANDLE_TEST_SLOW_ITEMS", "0")))
+
+
+def issue_json(it):
+    return {"number": it["number"], "title": it["title"], "body": it.get("body", ""),
+            "state": it["state"].lower(), "labels": [{"name": n} for n in it["labels"]],
+            "html_url": it["url"]}
+
+
+def flag_value(args, name):
+    for i, a in enumerate(args):
+        if a == name and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+def main():
+    argv = sys.argv[1:]
+    log("gh " + " ".join(argv))
+    if argv[:2] == ["auth", "status"]:
+        return
+    if argv[:2] == ["auth", "token"]:
+        print("test-token")
+        return
+    if offline():
+        print("error connecting to api.github.com: dial tcp: lookup api.github.com: no such host", file=sys.stderr)
+        sys.exit(1)
+    cmd = argv[0] if argv else ""
+    if cmd == "api":
+        if argv[1] == "graphql":
+            return graphql(argv[2:])
+        path = argv[1]
+        parts = path.split("/")
+        if len(parts) >= 4 and parts[0] == "repos" and parts[3] == "issues":
+            with Board() as b:
+                it = b.item(number=parts[4])
+                if it is None:
+                    created = next((i for i in b.data.get("issues", []) if i["number"] == int(parts[4])), None)
+                    if created is None:
+                        sys.exit(1)
+                    print(json.dumps({"number": created["number"], "title": created["title"], "body": created["body"],
+                                      "state": "open", "labels": [{"name": n} for n in created.get("labels", [])],
+                                      "html_url": created["url"], "node_id": created["node_id"]}))
+                    return
+                if len(parts) > 5 and parts[5] == "comments":
+                    print(json.dumps(it.get("comments", [])))
+                else:
+                    print(json.dumps(issue_json(it)))
+            return
+    if cmd == "issue" and argv[1] == "create":
+        with Board() as b:
+            n = max([i["number"] for i in b.data.get("issues", [])] + [200]) + 1
+            labels = [argv[i + 1] for i, a in enumerate(argv) if a == "--label"]
+            url = "https://github.com/vinh19410/teacher-os/issues/%d" % n
+            b.data.setdefault("issues", []).append({"number": n, "title": flag_value(argv, "--title") or "",
+                "body": flag_value(argv, "--body") or "", "labels": labels, "node_id": "NODE_%d" % n, "url": url})
+            log("ISSUE-CREATE #%d labels=%s title=%s" % (n, ",".join(labels) or "none", flag_value(argv, "--title") or ""))
+        print(url)
+        return
+    if cmd == "issue" and argv[1] == "list":
+        term = flag_value(argv, "--search") or ""
+        if '"' in term:
+            term = term.split('"')[1]
+        else:
+            term = term.split(" in:body")[0]
+        with Board() as b:
+            hits = [{"number": i["number"]} for i in b.data.get("issues", []) if term and term in i["body"]]
+        print(json.dumps(hits))
+        return
+    if cmd == "issue":
+        sub, num = argv[1], argv[2]
+        with Board() as b:
+            it = b.item(number=num)
+            if it is None:
+                sys.exit(1)
+            if sub == "comment":
+                body = flag_value(argv, "--body")
+                if body is None:
+                    body = open(flag_value(argv, "--body-file")).read()
+                it.setdefault("comments", []).append({"body": body})
+                log("COMMENT issue #%s" % num)
+            elif sub == "edit":
+                for i, a in enumerate(argv):
+                    if a == "--add-label" and argv[i + 1] not in it["labels"]:
+                        it["labels"].append(argv[i + 1])
+                        log("LABEL +%s #%s" % (argv[i + 1], num))
+                    if a == "--remove-label" and argv[i + 1] in it["labels"]:
+                        it["labels"].remove(argv[i + 1])
+                        log("LABEL -%s #%s" % (argv[i + 1], num))
+            elif sub == "view":
+                print(json.dumps(issue_json(it)))
+        return
+    if cmd == "label":
+        return
+    try:
+        import gh_stub_pr  # optional PR/run/search handlers, added by later test phases
+    except ImportError:
+        gh_stub_pr = None
+    if gh_stub_pr and gh_stub_pr.handle(argv, Board, log):
+        return
+    print("gh stub: unsupported: " + " ".join(argv), file=sys.stderr)
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

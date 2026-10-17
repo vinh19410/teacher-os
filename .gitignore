@@ -62,6 +62,10 @@ temp
 .mail-preview/
 apps/e2e/.mail-log.jsonl
 
+# Python bytecode (ai-handle tooling)
+__pycache__/
+*.pyc
+
 # Agent tooling
 .zcode/
 .claude/

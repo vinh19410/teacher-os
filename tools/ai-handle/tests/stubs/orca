@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""Test stub for the Orca CLI. It fakes the surface watch.sh uses —
+`worktree create/rm` (a real git worktree of the sandbox clone carries the
+simulated agent), `terminal read/wait/close/rename/list`, `open` — against
+one state file, and simulates the agent session the old omp stub simulated
+synchronously.
+
+The launch mode comes from the first line of $AI_HANDLE_TEST_DIR/omp-modes
+(consumed), else AI_HANDLE_TEST_OMP_MODE, else "ok". Modes: ok, open,
+mergedfail, fail, hang, netfail (same meanings as the omp stub). Every launch
+logs "LAUNCH mode=..." to omp-calls.log and saves its prompt to
+omp-prompts/<n>.txt so the existing assertions keep working.
+
+Timing: the simulated session "finishes" AI_HANDLE_TEST_OMP_SLEEP seconds
+after launch; only then do its side effects happen (branch commits and the
+PR written to the gh stub's board file) and its output lines appear. `hang`
+never finishes. A $AI_HANDLE_TEST_DIR/orca-down file makes every runtime call
+fail with "Orca is not running"; `orca open` removes it.
+
+State: $AI_HANDLE_TEST_DIR/orca-state.json (flock-protected).
+"""
+import fcntl
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+TD = os.environ.get("AI_HANDLE_TEST_DIR", "/tmp/ai-handle-test")
+STATE = TD + "/orca-state.json"
+CALLS = TD + "/omp-calls.log"
+PROMPTS = TD + "/omp-prompts"
+os.makedirs(PROMPTS, exist_ok=True)
+
+ENVELOPE_ID = "stub-orca"
+
+
+def log_call(line):
+    """Every stubbed orca invocation, one line each (READ/WAIT grow per tick)."""
+    with open(TD + "/orca-calls.log", "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write(line + "\n")
+
+
+def next_mode():
+    path = TD + "/omp-modes"
+    try:
+        with open(path, "r+") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            lines = [l for l in f.read().splitlines() if l.strip()]
+            if lines:
+                f.seek(0)
+                f.truncate()
+                f.write("\n".join(lines[1:]) + ("\n" if lines[1:] else ""))
+                return lines[0].strip()
+    except FileNotFoundError:
+        pass
+    return os.environ.get("AI_HANDLE_TEST_OMP_MODE", "ok")
+
+
+def load_state():
+    try:
+        with open(STATE) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"next": 1, "terminals": {}}
+
+
+def save_state(data):
+    tmp = STATE + ".tmp.%d" % os.getpid()
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=1)
+    os.replace(tmp, STATE)
+
+
+def with_state(fn):
+    with open(STATE + ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = load_state()
+        out = fn(data)
+        save_state(data)
+        return out
+
+
+def emit(result):
+    print(json.dumps({"id": ENVELOPE_ID, "ok": True, "result": result}))
+
+
+def fail(code, message):
+    print(json.dumps({"id": ENVELOPE_ID, "ok": False, "error": {"code": code, "message": message}}))
+    sys.exit(1)
+
+
+def issue_number(prompt):
+    m = re.search(r"issues/(\d+)", prompt)
+    return int(m.group(1)) if m else 1
+
+
+def pr_number(prompt):
+    return os.environ.get("AI_HANDLE_TEST_PR") or str(99 + issue_number(prompt))
+
+
+def branch_name(prompt):
+    n = issue_number(prompt)
+    return os.environ.get("AI_HANDLE_TEST_BRANCH") or ("ai/issue-test" if n == 1 else "ai/issue-%d" % n)
+
+
+def finalize(term):
+    """The simulated session ends: side effects now, output lines and exit code."""
+    if term["finalized"]:
+        return
+    mode = term["mode"]
+    if mode == "hang":
+        term["ready_at"] = float("inf")
+        return
+    term["finalized"] = True
+    term["status"] = "exited"
+    term["exited"] = True
+    prompt = term["prompt"]
+    if mode == "netfail":
+        term["lines"] = ["Error: request failed: fetch failed (ECONNRESET)"]
+        term["exit_code"] = 1
+        return
+    if mode == "fail":
+        term["lines"] = ["error: tests failed"]
+        term["exit_code"] = 1
+        return
+    term["exit_code"] = 0
+    term["lines"] = ["Completion Report", "status: done"]
+    if os.environ.get("AI_HANDLE_TEST_OMP_NOPR") == "1":
+        return
+    commit_files(term["cwd"], prompt)
+    ship_pr(prompt, "OPEN" if mode == "open" else "MERGED")
+    term["lines"] += ["branch: " + branch_name(prompt),
+                      "PR: https://github.com/vinh19410/teacher-os/pull/" + pr_number(prompt)]
+    if mode == "mergedfail":
+        term["lines"] += ["error: develop CI did not turn green"]
+        term["exit_code"] = 1
+
+
+def commit_files(cwd, prompt):
+    files = os.environ.get("AI_HANDLE_TEST_OMP_FILES", "").split()
+    if not files:
+        return
+
+    def git(*args):
+        subprocess.run(["git", "-c", "user.email=t@e.com", "-c", "user.name=t", *args],
+                       check=True, capture_output=True, cwd=cwd)
+
+    git("checkout", "-q", "-B", branch_name(prompt))
+    for f in files:
+        path = os.path.join(cwd, f)
+        os.makedirs(os.path.dirname(path) or cwd, exist_ok=True)
+        with open(path, "a") as fh:
+            fh.write("change %s\n" % time.time())
+        git("add", f)
+    git("commit", "-q", "-m", "stub change")
+    git("push", "-q", "-f", "origin", branch_name(prompt))
+
+
+def ship_pr(prompt, state):
+    board = os.environ.get("AI_HANDLE_TEST_BOARD", TD + "/board.json")
+    with open(board + ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        with open(board) as f:
+            data = json.load(f)
+        num = int(pr_number(prompt))
+        prs = data.setdefault("prs", [])
+        pr = next((p for p in prs if p["number"] == num), None)
+        if pr is None:
+            pr = {"number": num, "url": "https://github.com/vinh19410/teacher-os/pull/%d" % num, "title": "agent change",
+                  "body": "Closes #%d" % issue_number(prompt), "headRefName": branch_name(prompt),
+                  "baseRefName": "develop", "labels": [], "files": [], "checks": []}
+            prs.append(pr)
+        pr["state"] = state
+        tmp = board + ".tmp.%d" % os.getpid()
+        with open(tmp, "w") as f:
+            json.dump(data, f, indent=1)
+        os.replace(tmp, board)
+
+
+def runtime_down():
+    return os.path.exists(TD + "/orca-down")
+
+
+def summarize_args(args):
+    """One log line per launch: the prompt body is summarized, not inlined."""
+    out = []
+    for i, a in enumerate(args):
+        if i > 0 and args[i - 1] == "--prompt":
+            out.append("<prompt %d chars>" % len(a))
+        else:
+            out.append(a)
+    return " ".join(out)
+
+
+def do_worktree_create(args):
+    """`orca worktree create --agent ... --prompt ...`: make a REAL git worktree
+    of the sandbox clone (like Orca makes one of the project repo), put the
+    simulated agent terminal in it, and answer with the worktree-create shape."""
+    prompt = args[args.index("--prompt") + 1] if "--prompt" in args else ""
+    name = args[args.index("--name") + 1] if "--name" in args else "wt"
+    mode = next_mode()
+    log_call("WORKTREE-CREATE mode=%s name=%s agent=%s" % (
+        mode, name, args[args.index("--agent") + 1] if "--agent" in args else "?"))
+    with open(CALLS, "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write("LAUNCH mode=%s name=%s cwd=%s args=%s\n" % (mode, name, os.getcwd(), summarize_args(args)))
+        f.flush()
+        n = sum(1 for _ in open(CALLS))
+    with open("%s/%d.txt" % (PROMPTS, n), "w") as f:
+        f.write(prompt)
+    if runtime_down():
+        fail("runtime_unreachable", "Orca is not running")
+
+    clone = os.environ.get("TEACHER_OS_AI_HANDLE_CLONE_DIR", TD + "/clone")
+    wt_path = os.path.join(TD, "orca-workspaces", name)
+    subprocess.run(["git", "worktree", "remove", "--force", wt_path],
+                   cwd=clone, capture_output=True)
+    made = subprocess.run(["git", "worktree", "add", wt_path, "-b", name, "origin/develop"],
+                          cwd=clone, capture_output=True)
+    if made.returncode != 0:
+        fail("worktree_create_failed", made.stderr.decode()[:200])
+    wt_id = "wt-test::%s" % wt_path
+
+    def create(data):
+        handle = "term_test_%d" % data["next"]
+        data["next"] += 1
+        sleep = float(os.environ.get("AI_HANDLE_TEST_OMP_SLEEP", "0"))
+        data["terminals"][handle] = {
+            "title": None, "status": "running", "cwd": wt_path, "worktree_id": wt_id,
+            "prompt": prompt, "mode": mode, "prompt_n": n, "created": time.time(),
+            "ready_at": time.time() + sleep, "finalized": False, "exited": False,
+            "closed": False, "lines": [], "exit_code": None,
+        }
+        return handle
+
+    handle = with_state(create)
+    kind = "structured" if os.environ.get("AI_HANDLE_TEST_ORCA_CHAT") == "1" else "terminal"
+    emit({"worktree": {"id": wt_id, "path": wt_path, "branch": "refs/heads/" + name,
+                       "displayName": name},
+          "launch": {"outcome": {"kind": kind, "handle": handle},
+                     "operationId": "op_test_%s" % handle.rsplit("_", 1)[-1]}})
+
+
+def do_worktree_rm(args):
+    sel = args[args.index("--worktree") + 1]
+    path = sel[len("id:wt-test::"):] if sel.startswith("id:wt-test::") else sel
+    log_call("WORKTREE-RM %s" % os.path.basename(path))
+    clone = os.environ.get("TEACHER_OS_AI_HANDLE_CLONE_DIR", TD + "/clone")
+    subprocess.run(["git", "worktree", "remove", "--force", path],
+                   cwd=clone, capture_output=True)
+    subprocess.run(["git", "branch", "-D", os.path.basename(path)],
+                   cwd=clone, capture_output=True)
+    emit({"removed": True, "removing": True})
+
+
+def get_terminal(data, handle):
+    term = data["terminals"].get(handle)
+    if term is None or term.get("closed"):
+        return None
+    return term
+
+
+def do_terminal_read(args):
+    handle = args[args.index("--terminal") + 1]
+    log_call("READ %s" % handle)
+    cursor = int(args[args.index("--cursor") + 1]) if "--cursor" in args else 0
+    if runtime_down():
+        fail("runtime_unreachable", "Orca is not running")
+
+    def read(data):
+        term = get_terminal(data, handle)
+        if term is None:
+            return None
+        if time.time() >= term["ready_at"]:
+            finalize(term)
+        lines = term["lines"]
+        return {"handle": handle, "status": term["status"], "tail": lines[cursor:],
+                "truncated": False, "limited": False, "oldestCursor": "0",
+                "nextCursor": str(len(lines)), "latestCursor": str(len(lines)),
+                "returnedLineCount": len(lines[cursor:]), "source": "stream"}
+
+    out = with_state(read)
+    if out is None:
+        fail("terminal_handle_stale", "no such terminal: %s" % handle)
+    emit({"terminal": out})
+
+
+def do_terminal_wait(args):
+    handle = args[args.index("--terminal") + 1]
+    log_call("WAIT %s" % handle)
+    timeout_ms = int(args[args.index("--timeout-ms") + 1]) if "--timeout-ms" in args else 5000
+    if runtime_down():
+        fail("runtime_unreachable", "Orca is not running")
+
+    def wait_once(data):
+        term = get_terminal(data, handle)
+        if term is None:
+            return "stale"
+        if time.time() >= term["ready_at"]:
+            finalize(term)
+        if term["exited"]:
+            return {"satisfied": True, "status": "exited", "exitCode": term["exit_code"]}
+        return "timeout"
+
+    out = with_state(wait_once)
+    if out == "stale":
+        fail("terminal_handle_stale", "no such terminal: %s" % handle)
+    if out == "timeout":
+        # Block like the real CLI, then answer once more.
+        time.sleep(min(timeout_ms / 1000.0, 5.0))
+        out = with_state(wait_once)
+        if out != "timeout":
+            emit({"wait": out})
+            return
+        fail("timeout", "timeout")
+    emit({"wait": out})
+
+
+def do_terminal_close(args):
+    handle = args[args.index("--terminal") + 1]
+    log_call("CLOSE %s" % handle)
+
+    def close(data):
+        term = data["terminals"].get(handle)
+        if term is not None:
+            term["closed"] = True
+        return True
+
+    with_state(close)
+    emit({"close": {"handle": handle, "ptyKilled": True}})
+
+
+def do_terminal_rename(args):
+    handle = args[args.index("--terminal") + 1]
+    title = args[args.index("--title") + 1] if "--title" in args else None
+    log_call("RENAME %s %s" % (handle, title))
+
+    def rename(data):
+        term = data["terminals"].get(handle)
+        if term is not None:
+            term["title"] = title
+        return True
+
+    with_state(rename)
+    emit({"rename": {"handle": handle, "title": title}})
+
+
+def do_terminal_list(args):
+    sel = args[args.index("--worktree") + 1] if "--worktree" in args else ""
+    if sel.startswith("id:"):
+        wt_id = sel[len("id:"):]
+        match = lambda t: t.get("worktree_id") == wt_id
+    elif sel.startswith("path:"):
+        path = sel[len("path:"):]
+        match = lambda t: t["cwd"] == path
+    else:
+        match = lambda t: True
+
+    def list_terms(data):
+        return [{"handle": h, "title": t["title"], "status": t["status"]}
+                for h, t in data["terminals"].items()
+                if not t.get("closed") and match(t)]
+
+    emit({"terminals": with_state(list_terms), "totalCount": 0, "truncated": False})
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        fail("usage", "orca stub: no command")
+    cmd, sub = args[0], args[1] if len(args) > 1 else ""
+    if cmd == "open":
+        # "Starting Orca" fixes the runtime: the down flag goes away.
+        try:
+            os.remove(TD + "/orca-down")
+        except FileNotFoundError:
+            pass
+        emit({"open": True})
+    elif cmd == "worktree" and sub == "create":
+        do_worktree_create(args[2:])
+    elif cmd == "worktree" and sub == "rm":
+        do_worktree_rm(args[2:])
+    elif cmd == "terminal" and sub == "read":
+        do_terminal_read(args[2:])
+    elif cmd == "terminal" and sub == "wait":
+        do_terminal_wait(args[2:])
+    elif cmd == "terminal" and sub == "close":
+        do_terminal_close(args[2:])
+    elif cmd == "terminal" and sub == "rename":
+        do_terminal_rename(args[2:])
+    elif cmd == "terminal" and sub == "list":
+        do_terminal_list(args[2:])
+    else:
+        fail("unsupported", "orca stub: %s %s" % (cmd, sub))
+
+
+if __name__ == "__main__":
+    main()

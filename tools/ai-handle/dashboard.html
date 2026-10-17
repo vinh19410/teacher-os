@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="dashboard-token" content="__DASHBOARD_TOKEN__">
+<title>ai-handle dashboard</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f0f2f5; --border: #dde1e6; --text: #1d2125;
+  --muted: #626f7a; --accent: #2f6fde; --accent-text: #ffffff;
+  --ok: #1f8a4c; --ok-bg: #e3f4ea; --warn: #9a6400; --warn-bg: #fdf1d8;
+  --bad: #c0362c; --bad-bg: #fbe4e2; --info: #2f6fde; --info-bg: #e5eefc;
+  --log-bg: #11151a; --log-text: #d7dde3;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171b; --panel: #1c2026; --panel-2: #242a31; --border: #313841; --text: #e3e7eb;
+    --muted: #96a1ab; --accent: #5b92f0; --accent-text: #0d1117;
+    --ok: #57c584; --ok-bg: #1b3326; --warn: #e2ad4f; --warn-bg: #3a2e16;
+    --bad: #f07a70; --bad-bg: #3d1f1d; --info: #7aa7f5; --info-bg: #1d2a40;
+    --log-bg: #0b0e11; --log-text: #cfd6dd;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 6px; padding: 5px 11px; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button.danger { color: var(--bad); }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+input, select { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
+a { color: var(--accent); }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.muted { color: var(--muted); }
+
+header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 10px 18px; background: var(--panel); border-bottom: 1px solid var(--border); }
+header h1 { font-size: 15px; margin: 0; font-weight: 650; }
+.stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; line-height: 1.2; }
+.stat b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11.5px; color: var(--muted); }
+.spacer { flex: 1; }
+.actions { display: flex; gap: 8px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: middle; }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
+
+nav.tabs { display: flex; gap: 2px; padding: 0 18px; background: var(--panel); border-bottom: 1px solid var(--border); }
+nav.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 9px 12px; color: var(--muted); }
+nav.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+main { padding: 14px 18px 40px; }
+.banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; background: var(--bad-bg); color: var(--bad); }
+.banner.warn { background: var(--warn-bg); color: var(--warn); }
+
+.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.board { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; align-items: start; }
+.col { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-width: 0; }
+.col h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 2px 4px 8px; display: flex; justify-content: space-between; }
+.cards { display: flex; flex-direction: column; gap: 6px; max-height: 62vh; overflow-y: auto; }
+.card { text-align: left; width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; display: flex; flex-direction: column; gap: 3px; }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card .row { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.card .n { font-weight: 650; font-variant-numeric: tabular-nums; }
+.card .meta { font-size: 12px; color: var(--muted); }
+.badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--panel-2); color: var(--muted); white-space: nowrap; }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.info { background: var(--info-bg); color: var(--info); }
+.empty { color: var(--muted); font-size: 12.5px; padding: 6px 4px; }
+
+aside.detail { position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 62vw); background: var(--panel); border-left: 1px solid var(--border); box-shadow: -8px 0 24px rgba(0,0,0,.12); z-index: 10; display: flex; flex-direction: column; }
+aside.detail[hidden] { display: none; }
+.detail-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.detail-head h2 { margin: 0; font-size: 16px; }
+.detail-body { overflow-y: auto; padding: 4px 16px 24px; }
+section h3 { font-size: 13px; margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+details { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; }
+details > summary { cursor: pointer; font-weight: 600; }
+ul.plain { margin: 6px 0; padding-left: 18px; }
+pre.text { white-space: pre-wrap; word-break: break-word; background: var(--panel-2); padding: 8px 10px; border-radius: 6px; margin: 6px 0; max-height: 260px; overflow: auto; }
+
+.log-wrap { position: relative; }
+pre.log { background: var(--log-bg); color: var(--log-text); font-family: var(--mono); font-size: 12px; line-height: 1.4; margin: 0; padding: 10px 12px; border-radius: 6px; height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+.log-full pre.log { height: calc(100vh - 210px); }
+.log-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 12.5px; }
+
+.output { position: fixed; right: 18px; bottom: 18px; width: min(560px, 90vw); max-height: 50vh; overflow: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.18); z-index: 20; padding: 10px 12px; }
+.output[hidden] { display: none; }
+.output .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); padding: 18px; width: min(420px, 90vw); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog p { margin: 0 0 10px; }
+dialog .btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+dialog input { width: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ai-handle</h1>
+  <div class="stats" id="stats" aria-live="polite"></div>
+  <div class="spacer"></div>
+  <div class="actions">
+    <button id="btn-kickstart" title="launchctl kickstart com.teacheros.ai-handle">Chạy một lượt ngay</button>
+    <button id="btn-pause"></button>
+  </div>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="runs" aria-selected="true">Run</button>
+  <button role="tab" data-tab="ledger" aria-selected="false">Ledger</button>
+  <button role="tab" data-tab="poller" aria-selected="false">Log poller</button>
+  <button role="tab" data-tab="workers" aria-selected="false">Log workers</button>
+</nav>
+<main>
+  <div id="banner"></div>
+  <div id="tab-runs">
+    <div class="toolbar">
+      <input id="filter" type="search" placeholder="Lọc theo số issue" inputmode="numeric" aria-label="Lọc theo số issue">
+      <span class="muted" id="updated"></span>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+  <div id="tab-ledger" hidden>
+    <div class="toolbar">
+      <label>Khoảng thời gian
+        <select id="since">
+          <option value="24h">24 giờ</option>
+          <option value="7d" selected>7 ngày</option>
+          <option value="30d">30 ngày</option>
+          <option value="90d">90 ngày</option>
+        </select>
+      </label>
+    </div>
+    <div id="ledger"></div>
+  </div>
+  <div id="tab-poller" class="log-full" hidden></div>
+  <div id="tab-workers" class="log-full" hidden></div>
+</main>
+
+<aside class="detail" id="detail" hidden aria-label="Chi tiết issue"></aside>
+
+<div class="output" id="output" hidden role="status"></div>
+
+<dialog id="confirm">
+  <form method="dialog">
+    <p id="confirm-text"></p>
+    <label for="confirm-input" class="muted">Gõ lại số issue để xác nhận</label>
+    <input id="confirm-input" autocomplete="off" inputmode="numeric">
+    <div class="btns">
+      <button value="cancel" formnovalidate>Huỷ</button>
+      <button value="ok" id="confirm-ok" class="primary" disabled>Xác nhận</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const TOKEN = document.querySelector('meta[name="dashboard-token"]').content;
+const STATUS_ORDER = ["running", "implemented", "awaiting_review", "failed", "blocked", "merged", "done"];
+const STATUS_LABEL = {
+  running: "Đang chạy", implemented: "Đã implement", awaiting_review: "Chờ review", failed: "Thất bại",
+  blocked: "Bị chặn", merged: "Đã merge", done: "Xong", other: "Khác",
+};
+const STATUS_TONE = { running: "info", implemented: "info", awaiting_review: "warn", failed: "bad", blocked: "bad", merged: "ok", done: "ok" };
+const REPO_URL = "https://github.com/vinh19410/teacher-os";
+const LOG_MAX_CHARS = 1500000;
+
+const $ = (id) => document.getElementById(id);
+const state = { tab: "runs", runs: [], overview: null, selected: null, detail: null, streams: {} };
+
+// ---- DOM helpers: data is untrusted, so only textContent / createElement ----
+function el(tag, attrs, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat()) {
+    if (c === null || c === undefined || c === false) continue;
+    node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return node;
+}
+const badge = (text, tone) => el("span", { class: "badge" + (tone ? " " + tone : ""), text });
+const safeGithubUrl = (u) => (typeof u === "string" && u.startsWith("https://github.com/")) ? u : null;
+const link = (href, text) => href ? el("a", { href, target: "_blank", rel: "noopener noreferrer", text }) : el("span", { text });
+const stripAnsi = (s) => s.replace(/\x1b\[[0-9;?]*[ -\/]*[@-~]/g, "").replace(/\x1b\][^\x07]*(\x07|\x1b\\)/g, "");
+
+function ago(epoch) {
+  if (!epoch) return "—";
+  const s = Math.max(0, Math.round(Date.now() / 1000 - epoch));
+  if (s < 60) return s + " giây trước";
+  if (s < 3600) return Math.round(s / 60) + " phút trước";
+  if (s < 86400) return Math.round(s / 3600) + " giờ trước";
+  return Math.round(s / 86400) + " ngày trước";
+}
+const when = (epoch) => epoch ? new Date(epoch * 1000).toLocaleString("vi-VN") : "—";
+const secs = (s) => s === null || s === undefined ? "" : s < 90 ? s + "s" : s < 5400 ? Math.round(s / 60) + "m" : (s / 3600).toFixed(1) + "h";
+const num = (x) => x === null || x === undefined ? "" : Number(x).toLocaleString("vi-VN");
+
+// ---- API ----
+async function getJSON(path) {
+  const res = await fetch(path, { cache: "no-store" });
+  const data = await res.json().catch(() => ({ error: "phản hồi không phải JSON (" + res.status + ")" }));
+  if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+async function api(path, body) {
+  showOutput({ pending: true, title: path });
+  try {
+    const res = await fetch(path, {
+      method: "POST", cache: "no-store",
+      headers: { "Content-Type": "application/json", "X-Dashboard-Token": TOKEN },
+      body: JSON.stringify(body || {}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) showOutput({ title: path, ok: false, exit_code: res.status, stdout: "", stderr: data.error || ("HTTP " + res.status) });
+    else showOutput(Object.assign({ title: path }, data));
+  } catch (e) {
+    showOutput({ title: path, ok: false, exit_code: null, stdout: "", stderr: String(e) });
+  }
+  refresh();
+  if (state.selected) loadDetail(state.selected, true);
+}
+
+function showOutput(r) {
+  const box = $("output");
+  box.replaceChildren();
+  box.hidden = false;
+  const head = el("div", { class: "row" },
+    el("strong", { text: r.title }),
+    r.pending ? badge("đang chạy…", "info") : badge(r.ok ? "ok" : "lỗi", r.ok ? "ok" : "bad"),
+    el("button", { text: "Đóng", onclick: () => { box.hidden = true; } }));
+  box.append(head);
+  if (r.pending) return;
+  box.append(el("div", { class: "muted mono", text: "exit code: " + (r.exit_code ?? "—") + (r.argv ? "  ·  " + r.argv.join(" ") : "") }));
+  if (r.stdout) box.append(el("pre", { class: "text mono", text: stripAnsi(r.stdout) }));
+  if (r.stderr) box.append(el("pre", { class: "text mono", text: stripAnsi(r.stderr) }));
+  if (!r.stdout && !r.stderr) box.append(el("div", { class: "muted", text: "(không có output)" }));
+}
+
+// ---- overview + board ----
+async function refresh() {
+  try {
+    const [overview, runs] = await Promise.all([getJSON("/api/overview"), getJSON("/api/runs")]);
+    state.overview = overview;
+    state.runs = runs.runs;
+    renderStats();
+    renderBoard();
+    setBanner(overview.error);
+    $("updated").textContent = "Cập nhật " + new Date().toLocaleTimeString("vi-VN");
+  } catch (e) {
+    setBanner("Không gọi được dashboard: " + e.message);
+  }
+}
+
+function setBanner(msg, tone) {
+  const b = $("banner");
+  b.replaceChildren();
+  if (msg) b.append(el("div", { class: "banner" + (tone ? " " + tone : ""), text: msg }));
+}
+
+function renderStats() {
+  const o = state.overview;
+  const stat = (value, label, dot) => el("div", { class: "stat" },
+    el("b", {}, dot ? el("span", { class: "dot " + dot }) : null, value), el("span", { text: label }));
+  const children = [
+    stat(o.live + "/" + o.max_concurrent, "worker sống / tối đa", o.live ? "ok" : null),
+    stat(o.paused ? "Đang pause" : "Đang nhận việc", "dispatch mới", o.paused ? "warn" : "ok"),
+  ];
+  if (o.orphans) children.push(stat(String(o.orphans), "lock mồ côi", "bad"));
+  if (o.stale) children.push(stat(String(o.stale), "heartbeat quá cũ", "warn"));
+  children.push(stat(String(o.outbox), "outbox đang chờ", o.outbox ? "warn" : null));
+  children.push(el("div", { class: "stat", title: o.last_pass.line || "" },
+    el("b", { text: ago(o.last_pass.log_mtime) }),
+    el("span", { text: o.last_pass.line ? o.last_pass.line.replace(/^pass done: /, "lượt gần nhất: ") : "chưa thấy lượt quét nào" })));
+  $("stats").replaceChildren(...children);
+  const pause = $("btn-pause");
+  pause.textContent = o.paused ? "Resume" : "Pause";
+  pause.title = o.paused ? "Khôi phục MAX_CONCURRENT trước khi pause" : "Đặt MAX_CONCURRENT=0 trong watch.conf (worker đang chạy không bị dừng)";
+}
+
+function lockBadge(lock) {
+  if (!lock) return null;
+  if (lock.orphan) return badge("lock mồ côi", "bad");
+  if (lock.stale) return badge("heartbeat " + secs(lock.heartbeat_age), "warn");
+  return badge("worker sống", "ok");
+}
+
+function renderBoard() {
+  const filter = $("filter").value.trim();
+  const runs = state.runs.filter((r) => !filter || String(r.n).includes(filter));
+  const groups = {};
+  for (const r of runs) {
+    const key = STATUS_ORDER.includes(r.status) ? r.status : "other";
+    (groups[key] = groups[key] || []).push(r);
+  }
+  const cols = STATUS_ORDER.concat(groups.other ? ["other"] : []).map((key) => {
+    const items = groups[key] || [];
+    return el("section", { class: "col", "aria-label": STATUS_LABEL[key] },
+      el("h2", {}, el("span", { text: STATUS_LABEL[key] }), el("span", { text: String(items.length) })),
+      el("div", { class: "cards" }, items.length ? items.map(card) : el("div", { class: "empty", text: "Trống" })));
+  });
+  $("board").replaceChildren(...cols);
+  if (!state.runs.length) $("board").replaceChildren(el("div", { class: "empty", text: "Chưa có run nào trong state.json." }));
+}
+
+function card(r) {
+  const pr = (r.prs || []).map((u) => (u.match(/\/pull\/(\d+)$/) || [])[1]).filter(Boolean);
+  return el("button", {
+    class: "card" + (state.selected === r.n ? " selected" : ""), onclick: () => openDetail(r.n),
+    "aria-label": "Mở chi tiết issue " + r.n,
+  },
+    el("div", { class: "row" }, el("span", { class: "n", text: "#" + r.n }), lockBadge(r.lock)),
+    el("div", { class: "meta" },
+      [r.stage ? "stage " + r.stage : null, r.attempts + " lần thử", r.infra_attempts ? r.infra_attempts + " lỗi hạ tầng" : null,
+       pr.length ? "PR #" + pr.join(", #") : null, r.status === "other" || !STATUS_ORDER.includes(r.status) ? r.status : null]
+        .filter(Boolean).join(" · ")));
+}
+
+// ---- detail panel ----
+function openDetail(n) {
+  if (state.selected !== n) closeStream("detail");
+  state.selected = n;
+  state.github = null;
+  renderBoard();
+  loadDetail(n, false);
+}
+
+function closeDetail() {
+  closeStream("detail");
+  state.selected = null;
+  $("detail").hidden = true;
+  renderBoard();
+}
+
+async function loadDetail(n, keepLog) {
+  const panel = $("detail");
+  panel.hidden = false;
+  if (!keepLog) panel.replaceChildren(el("div", { class: "detail-head" }, el("h2", { text: "#" + n }), el("span", { class: "muted", text: "Đang tải…" })));
+  let d;
+  try {
+    d = await getJSON("/api/issue/" + n);
+  } catch (e) {
+    panel.replaceChildren(detailHead(n, null), el("div", { class: "detail-body" }, el("div", { class: "banner", text: e.message })));
+    return;
+  }
+  if (state.selected !== n) return;
+  state.detail = d;
+  const logBox = keepLog && state.streams.detail ? state.streams.detail.wrap : null;
+  const body = el("div", { class: "detail-body" },
+    d.error ? el("div", { class: "banner", text: d.error }) : null,
+    attemptsSection(d),
+    el("section", {}, el("h3", { text: "Log trực tiếp" }), logBox || logViewer("detail", "/api/stream?issue=" + n)),
+    evidenceSection(d),
+    githubSection(n));
+  panel.replaceChildren(detailHead(n, d), body);
+}
+
+function detailHead(n, d) {
+  const s = d ? d.summary : null;
+  return el("div", { class: "detail-head" },
+    el("h2", {}, link(REPO_URL + "/issues/" + n, "#" + n)),
+    s ? badge(STATUS_LABEL[s.status] || s.status, STATUS_TONE[s.status]) : null,
+    s && s.stage ? badge("stage " + s.stage) : null,
+    s ? lockBadge(s.lock) : null,
+    s && s.lock && s.lock.pid ? el("span", { class: "muted mono", text: "pid " + s.lock.pid }) : null,
+    el("div", { class: "spacer" }),
+    el("button", { text: "Dispatch", title: "watch.sh --issue " + n, onclick: () => api("/api/action/dispatch", { issue: n }) }),
+    el("button", { text: "Recover", title: "watch.sh --recover " + n, onclick: () => confirmAction("recover", n) }),
+    el("button", { class: "danger", text: "Reset", title: "watch.sh --reset " + n, onclick: () => confirmAction("reset", n) }),
+    el("button", { text: "Đóng", onclick: closeDetail, "aria-label": "Đóng chi tiết" }));
+}
+
+function attemptsSection(d) {
+  const stateAttempts = (d.run && d.run.attempts) || [];
+  const ledgerRows = d.ledger_attempts || [];
+  const maxK = Math.max(stateAttempts.length, ...ledgerRows.map((r) => r.attempt || 0), 0);
+  const rows = [];
+  for (let k = 1; k <= maxK; k++) {
+    const s = stateAttempts[k - 1] || {};
+    const ls = ledgerRows.filter((r) => r.attempt === k);
+    (ls.length ? ls : [{}]).forEach((l, i) => rows.push(attemptRow(i ? "" : k, i ? {} : s, l)));
+  }
+  for (const l of ledgerRows.filter((r) => !r.attempt)) rows.push(attemptRow("—", {}, l));
+  const total = ledgerRows.reduce((sum, r) => sum + (r.cost_usd || 0), 0);
+  return el("section", {},
+    el("h3", {}, "Các lần thử", total ? badge("tổng $" + total.toFixed(2)) : null),
+    rows.length ? el("table", {},
+      el("thead", {}, el("tr", {}, ["#", "Bắt đầu", "Nguyên nhân", "Stage", "Kết quả", "Risk", "Thời lượng", "Tokens vào/ra", "Chi phí"].map((h) => el("th", { text: h })))),
+      el("tbody", {}, rows)) : el("div", { class: "empty", text: "Chưa có lần thử nào." }));
+}
+
+function attemptRow(k, s, l) {
+  const tone = { merged: "ok", failed: "bad", blocked: "bad", awaiting_review: "warn", infra_failure: "warn", worker_lost: "warn" }[l.outcome];
+  return el("tr", {},
+    el("td", { text: String(k) }),
+    el("td", { text: s.ts ? when(s.ts) : "", title: s.log || "" }),
+    el("td", { text: s.cause || l.failure_cause || "" }),
+    el("td", { text: l.stage || "" }),
+    el("td", {}, l.outcome ? badge(l.outcome, tone) : ""),
+    el("td", { text: l.risk || "" }),
+    el("td", { class: "num", text: secs(l.duration_s) }),
+    el("td", { class: "num", text: l.tokens_in || l.tokens_out ? num(l.tokens_in) + " / " + num(l.tokens_out) : "" }),
+    el("td", { class: "num", text: l.cost_usd === null || l.cost_usd === undefined ? "" : "$" + l.cost_usd.toFixed(2) }));
+}
+
+function evidenceSection(d) {
+  const items = (d.evidence || []).slice().reverse().map((ev, i) => {
+    const v = ev.verdict && !ev.verdict.error ? ev.verdict : {};
+    const checks = v.checks || (ev.checks && ev.checks.checks) || [];
+    const delta = (v.delta && Object.keys(v.delta).length ? v.delta : ev.delta) || {};
+    const verdictTone = v.verdict === "pass" ? "ok" : v.verdict ? "bad" : null;
+    return el("details", { open: i === 0 },
+      el("summary", {}, "Lần thử " + ev.attempt + " ", v.verdict ? badge(v.verdict, verdictTone) : badge("chưa có verdict"),
+        ev.llm_status ? " " : null, ev.llm_status ? badge("verifier: " + ev.llm_status.trim(), ev.llm_status.trim() === "ok" ? null : "warn") : null),
+      ev.verdict && ev.verdict.error ? el("div", { class: "banner", text: ev.verdict.error }) : null,
+      v.summary ? el("p", { text: v.summary }) : null,
+      checks.length ? el("table", {},
+        el("thead", {}, el("tr", {}, ["Check", "Kết quả", "Thời lượng"].map((h) => el("th", { text: h })))),
+        el("tbody", {}, checks.map((c) => el("tr", {},
+          el("td", { class: "mono", text: c.name }),
+          el("td", {}, !c.ran ? badge("không chạy") : c.passed ? badge("pass", "ok") : badge("fail", "bad")),
+          el("td", { class: "num", text: secs(c.duration_s) }))))) : null,
+      delta.assertions_before !== undefined ? el("p", { class: "muted" },
+        "Test delta: assertion " + delta.assertions_before + " → " + delta.assertions_after,
+        delta.decreased ? " (giảm)" : "",
+        (delta.deleted_test_files || []).length ? " · xoá test: " + delta.deleted_test_files.join(", ") : "") : null,
+      (v.reasons || []).length ? el("ul", { class: "plain" }, v.reasons.map((r) => el("li", { text: r }))) : null,
+      (v.ac_coverage || []).length ? el("details", {},
+        el("summary", { text: "Acceptance criteria (" + v.ac_coverage.filter((a) => a.covered).length + "/" + v.ac_coverage.length + ")" }),
+        el("ul", { class: "plain" }, v.ac_coverage.map((a) => el("li", {}, badge(a.covered ? "đạt" : "chưa", a.covered ? "ok" : "bad"), " ", a.ac,
+          a.evidence ? el("div", { class: "muted", text: a.evidence }) : null)))) : null,
+      ev.comment_md ? el("details", {}, el("summary", { text: "comment.md" }), el("pre", { class: "text", text: ev.comment_md })) : null,
+      ev.risk_comment_md ? el("details", {}, el("summary", { text: "risk-comment.md" }), el("pre", { class: "text", text: ev.risk_comment_md })) : null);
+  });
+  return el("section", {}, el("h3", { text: "Evidence" }), items.length ? items : el("div", { class: "empty", text: "Chưa có evidence." }));
+}
+
+function githubSection(n) {
+  const box = el("div", {}, el("div", { class: "empty", text: "Mở để tải trạng thái issue, cột board, PR và CI (gọi gh)." }));
+  const det = el("details", {}, el("summary", { text: "GitHub" }), box);
+  det.addEventListener("toggle", async () => {
+    if (!det.open || det.dataset.loaded) return;
+    det.dataset.loaded = "1";
+    box.replaceChildren(el("div", { class: "muted", text: "Đang gọi gh…" }));
+    try {
+      box.replaceChildren(renderGithub(await getJSON("/api/issue/" + n + "/github")));
+    } catch (e) {
+      delete det.dataset.loaded;
+      box.replaceChildren(el("div", { class: "banner", text: e.message }));
+    }
+  });
+  return el("section", {}, el("h3", { text: "GitHub" }), det);
+}
+
+function renderGithub(g) {
+  const out = [];
+  const i = g.issue || {};
+  if (i.error) out.push(el("div", { class: "banner", text: "gh issue view: " + i.error }));
+  else {
+    const column = (i.projectItems || []).map((p) => (p.status && p.status.name ? p.status.name : "?") + " (" + p.title + ")").join(", ");
+    out.push(el("p", {}, link(safeGithubUrl(i.url), "#" + i.number), " ", i.title || "", " ",
+      badge(i.state || "?", i.state === "OPEN" ? "info" : null)));
+    out.push(el("p", {}, el("span", { class: "muted", text: "Cột board: " }), column || "không có trên board"));
+    if ((i.labels || []).length) out.push(el("p", {}, ...i.labels.map((l) => [badge(l.name), " "])));
+  }
+  for (const pr of g.prs || []) {
+    if (pr.error) { out.push(el("div", { class: "banner", text: (pr.url || "PR") + ": " + pr.error })); continue; }
+    const c = pr.checks || {};
+    out.push(el("p", {}, link(safeGithubUrl(pr.url), "PR #" + pr.number), " ",
+      badge(pr.state, pr.state === "MERGED" ? "ok" : pr.state === "OPEN" ? "info" : null), " ",
+      pr.mergeable ? badge("mergeable: " + pr.mergeable, pr.mergeable === "CONFLICTING" ? "bad" : null) : null, " ",
+      pr.reviewDecision ? badge(pr.reviewDecision) : null, " ",
+      badge("CI ✓" + (c.success || 0) + " ✗" + (c.failure || 0) + " …" + (c.pending || 0), c.failure ? "bad" : c.pending ? "warn" : "ok")));
+  }
+  if (!(g.prs || []).length) out.push(el("p", { class: "muted", text: "Chưa có PR trong state." }));
+  out.push(el("p", { class: "muted", text: "Lấy lúc " + when(g.fetched_at) + " (cache 30s)" }));
+  return el("div", {}, out);
+}
+
+// ---- confirmation ----
+function confirmAction(name, n) {
+  const dlg = $("confirm"), input = $("confirm-input"), ok = $("confirm-ok");
+  $("confirm-text").textContent = name === "reset"
+    ? "Xoá state local của issue #" + n + " (watch.sh --reset " + n + "). watch.sh sẽ từ chối nếu worker còn sống."
+    : "Đưa card của issue #" + n + " về Ready (watch.sh --recover " + n + "). watch.sh sẽ từ chối nếu worker còn sống.";
+  input.value = "";
+  ok.disabled = true;
+  input.oninput = () => { ok.disabled = input.value.trim() !== String(n); };
+  dlg.onclose = () => { if (dlg.returnValue === "ok" && input.value.trim() === String(n)) api("/api/action/" + name, { issue: n }); };
+  dlg.returnValue = "";  // Escape keeps the previous value otherwise
+  dlg.showModal();
+  input.focus();
+}
+
+// ---- live log viewer (SSE) ----
+function logViewer(key, url) {
+  closeStream(key);
+  const pre = el("pre", { class: "log", tabindex: "0", "aria-label": "Log" });
+  const dot = el("span", { class: "dot" });
+  const name = el("span", { class: "mono muted", text: "đang kết nối…" });
+  const follow = el("button", { text: "Tạm dừng cuộn" });
+  const s = { pre, follow: true, es: null, wrap: null, chars: 0 };
+  follow.addEventListener("click", () => { s.follow = !s.follow; follow.textContent = s.follow ? "Tạm dừng cuộn" : "Tiếp tục cuộn"; if (s.follow) pre.scrollTop = pre.scrollHeight; });
+  pre.addEventListener("scroll", () => {
+    const atBottom = pre.scrollHeight - pre.scrollTop - pre.clientHeight < 24;
+    if (!atBottom && s.follow) { s.follow = false; follow.textContent = "Tiếp tục cuộn"; }
+    else if (atBottom && !s.follow) { s.follow = true; follow.textContent = "Tạm dừng cuộn"; }
+  });
+  const es = new EventSource(url);
+  s.es = es;
+  es.onopen = () => { dot.className = "dot ok"; };
+  es.onerror = () => { dot.className = "dot bad"; };
+  es.addEventListener("file", (e) => {
+    name.textContent = e.data || "(chưa có file log)";
+    pre.textContent = "";
+    s.chars = 0;
+  });
+  es.onmessage = (e) => {
+    const text = stripAnsi(e.data) + "\n";
+    pre.append(text);
+    s.chars += text.length;
+    if (s.chars > LOG_MAX_CHARS) {  // keep the newest half
+      const keep = pre.textContent.slice(-LOG_MAX_CHARS / 2);
+      pre.textContent = keep;
+      s.chars = keep.length;
+    }
+    if (s.follow) pre.scrollTop = pre.scrollHeight;
+  };
+  s.wrap = el("div", { class: "log-wrap" }, el("div", { class: "log-bar" }, dot, name, el("div", { class: "spacer" }), follow), pre);
+  state.streams[key] = s;
+  return s.wrap;
+}
+
+function closeStream(key) {
+  const s = state.streams[key];
+  if (s && s.es) s.es.close();
+  delete state.streams[key];
+}
+
+// ---- tabs ----
+function selectTab(tab) {
+  state.tab = tab;
+  for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+  for (const t of ["runs", "ledger", "poller", "workers"]) $("tab-" + t).hidden = t !== tab;
+  closeStream("poller");
+  closeStream("workers");
+  if (tab === "poller") $("tab-poller").replaceChildren(logViewer("poller", "/api/stream?log=launchd"));
+  if (tab === "workers") $("tab-workers").replaceChildren(logViewer("workers", "/api/stream?log=workers"));
+  if (tab === "ledger") loadLedger();
+}
+
+async function loadLedger() {
+  const box = $("ledger");
+  box.replaceChildren(el("div", { class: "muted", text: "Đang tải…" }));
+  try {
+    const d = await getJSON("/api/ledger?since=" + encodeURIComponent($("since").value));
+    const r = d.report;
+    if (!r) { box.replaceChildren(el("div", { class: "empty", text: d.text })); return; }
+    const pct = (x) => x === null ? "n/a" : Math.round(x * 100) + "%";
+    const cost = r.cost_per_accepted === null ? "n/a" : r.cost_basis === "usd" ? "$" + r.cost_per_accepted.toFixed(2) : r.cost_per_accepted.toFixed(1) + " phút";
+    const tiles = [
+      ["Issue đã kết thúc", r.issues_finished], ["Được chấp nhận", r.accepted], ["Chờ người", r.awaiting_review],
+      ["Bị chặn", r.blocked], ["Cost per Accepted Task", cost], ["Human Intervention Rate", pct(r.human_intervention_rate)],
+      ["Thử lại trung bình", r.avg_retries === null ? "n/a" : r.avg_retries.toFixed(1)],
+    ];
+    const kv = (obj) => Object.keys(obj).length ? el("table", {}, el("tbody", {}, Object.entries(obj).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => el("tr", {}, el("td", { class: "mono", text: k }), el("td", { class: "num", text: String(v) }))))) : el("div", { class: "empty", text: "Không có" });
+    box.replaceChildren(
+      el("div", { class: "stats", style: "margin-bottom:14px" }, tiles.map(([label, value]) => el("div", { class: "stat" }, el("b", { text: String(value) }), el("span", { text: label })))),
+      el("div", { class: "board" },
+        el("section", { class: "col" }, el("h2", { text: "Nguyên nhân thất bại" }), kv(r.failure_causes)),
+        el("section", { class: "col" }, el("h2", { text: "Kết quả theo lần thử" }), kv(r.outcomes))),
+      el("h3", { class: "muted", text: "Báo cáo dạng text (ledger.py report)" }),
+      el("pre", { class: "text", text: d.text }));
+  } catch (e) {
+    box.replaceChildren(el("div", { class: "banner", text: e.message }));
+  }
+}
+
+// ---- wiring ----
+for (const b of document.querySelectorAll("nav.tabs button")) b.addEventListener("click", () => selectTab(b.dataset.tab));
+$("filter").addEventListener("input", renderBoard);
+$("since").addEventListener("change", loadLedger);
+$("btn-kickstart").addEventListener("click", () => api("/api/action/kickstart"));
+$("btn-pause").addEventListener("click", () => api(state.overview && state.overview.paused ? "/api/action/resume" : "/api/action/pause"));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.selected && !$("confirm").open) closeDetail(); });
+
+let timer = null;
+function startPolling() { if (!timer) { refresh(); timer = setInterval(refresh, 5000); } }
+function stopPolling() { clearInterval(timer); timer = null; }
+document.addEventListener("visibilitychange", () => document.hidden ? stopPolling() : startPolling());
+startPolling();
+</script>
+</body>
+</html>
