@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<!--
+  Bake-off scene "s01-hook" (6.5 s, no voice-over) — style: cinematic-product-launch.
+  Grammar: flat dark stage + one soft vignette, 3-colour palette (bg/ink/accent, greys
+  are ink alpha steps), one centred hero, one camera move (slow push-in over the hold),
+  no flashes / pulse wrapper / mascot, every tween eased.
+-->
+<html lang="vi" data-resolution="landscape" data-ratio="16x9">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Teacher OS — s01-hook (cinematic product launch)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Local TTFs, font-display block; both families cover the Vietnamese test string. */
+      @font-face { font-family: "Inter"; src: url("assets/fonts/Inter-Variable.ttf") format("truetype"); font-weight: 100 900; font-style: normal; font-display: block; }
+      @font-face { font-family: "Be Vietnam Pro"; src: url("assets/fonts/BeVietnamPro-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: block; }
+      :root { --bg: #000000; --ink: #f2f1ee; --accent: #4a86ff; --mute: rgba(242,241,238,0.56); --hair: rgba(242,241,238,0.12); --W: 1920px; --H: 1080px; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); }
+      #root { position: relative; width: var(--W); height: var(--H); overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Inter", sans-serif; }
+      .layer { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); }
+      .abs { position: absolute; }
+      .scene { opacity: 0; visibility: hidden; }
+      .hl .w { display: inline-block; }
+      .draw { stroke-dasharray: 1; stroke-dashoffset: 1; }
+      #fade { background: #000; opacity: 1; pointer-events: none; }
+      /* The one background treatment: a single soft centre vignette on the flat stage. */
+      #vignette { background: radial-gradient(ellipse 70% 62% at 50% 46%, rgba(242,241,238,0.05) 0%, rgba(242,241,238,0) 70%); }
+
+      #hl-chaos { left: 0; right: 0; top: 398px; text-align: center; font-weight: 700; font-size: 92px; line-height: 1.16; letter-spacing: -0.03em; color: var(--ink); }
+      #hl-brand { left: 0; right: 0; top: 742px; text-align: center; font-weight: 700; font-size: 110px; line-height: 1; letter-spacing: -0.03em; color: var(--ink); }
+
+      .chip { width: 280px; height: 76px; border-radius: 16px; background: rgba(242,241,238,0.04); border: 1px solid var(--hair); display: flex; align-items: center; justify-content: center; gap: 14px; font-weight: 500; font-size: 30px; line-height: 1; letter-spacing: -0.01em; color: rgba(242,241,238,0.82); opacity: 0; visibility: hidden; }
+      .chip-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(242,241,238,0.35); }
+
+      #ws-card { left: 650px; top: 330px; width: 620px; height: 340px; border-radius: 24px; background: rgba(242,241,238,0.055); border: 1px solid rgba(242,241,238,0.16); display: flex; flex-direction: column; align-items: center; padding: 46px 56px 30px; opacity: 0; visibility: hidden; }
+      .ws-head { display: flex; align-items: center; gap: 12px; }
+      .ws-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .ws-title { font-weight: 600; font-size: 28px; line-height: 1; letter-spacing: -0.01em; color: var(--ink); }
+      .ws-sep { width: 100%; height: 1px; background: var(--hair); margin-top: 28px; }
+      .ws-rows { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+      .ws-row { height: 12px; border-radius: 6px; background: rgba(242,241,238,0.10); }
+
+      #sig { right: 40px; bottom: 22px; width: 250px; height: 130px; }
+      #sig-txt { position: absolute; right: 22px; bottom: 34px; font: 600 44px/1 "Be Vietnam Pro", sans-serif; color: rgba(242,241,238,0.38); }
+      #sig svg { position: absolute; left: 0; top: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="6.5" data-width="1920" data-height="1080">
+      <div id="bg" class="layer"></div>
+      <div id="vignette" class="layer"></div>
+      <div id="stage" class="layer">
+        <section id="sc01" class="scene layer">
+          <!-- act 1: scattered admin chaos -->
+          <div class="abs chip" style="left: 300px; top: 250px"><span class="chip-dot"></span><span>Lịch học</span></div>
+          <div class="abs chip" style="left: 1240px; top: 210px"><span class="chip-dot"></span><span>Bài chấm</span></div>
+          <div class="abs chip" style="left: 330px; top: 700px"><span class="chip-dot"></span><span>Học phí</span></div>
+          <div class="abs chip" style="left: 1220px; top: 730px"><span class="chip-dot"></span><span>Nhóm chat</span></div>
+          <div id="hl-chaos" class="abs hl" data-layout-allow-overlap>
+            <div class="line">Bạn dạy rất giỏi.</div>
+            <div class="line">Mọi thứ rải rác khắp nơi.</div>
+          </div>
+          <!-- act 2: the one clean workspace card (crossfade slot with the chaos headline) -->
+          <div id="ws-card" class="abs" data-layout-allow-overlap>
+            <div class="ws-head"><span class="ws-dot"></span><span class="ws-title">Teacher OS</span></div>
+            <div class="ws-sep"></div>
+            <div class="ws-rows">
+              <div class="ws-row" style="width: 64%"></div>
+              <div class="ws-row" style="width: 46%"></div>
+              <div class="ws-row" style="width: 55%"></div>
+            </div>
+          </div>
+          <div id="hl-brand" class="abs hl">Teacher OS</div>
+        </section>
+      </div>
+      <div id="sig" class="abs">
+        <svg viewBox="0 0 250 130" width="250" height="130"><path id="sig-line" class="draw" pathLength="1" d="M28,104 C88,94 158,110 226,88" fill="none" stroke="rgba(242,241,238,0.28)" stroke-width="3" stroke-linecap="round"/></svg>
+        <div id="sig-txt">Zuey</div>
+      </div>
+      <div id="fade" class="layer"></div>
+      <audio id="mix" src="assets/audio/mix.m4a" data-start="0" data-duration="6.5" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>/*TIMING:BEGIN*/window.TIMING={"duration":6.5,"fps":30,"beat0":0.5,"beatLen":0.5,"kick":[[0,12]],"drops":[4],"outroBeat":12,"scenes":{"s01-hook":{"start":0.5,"end":6.5,"lines":[{"on":0.5,"off":6.5,"words":[]}]}},"captions":[],"sfx":[],"env":[]};/*TIMING:END*/</script>
+    <script>
+      (() => {
+        const T = window.TIMING;
+        const tl = gsap.timeline({ paused: true });
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+        const SC = T.scenes;
+        const B = (n) => T.beat0 + T.beatLen * n; // beat n -> seconds (B(4) = 2.5 is the drop)
+
+        // headline text -> word spans for staggered entrances
+        const splitWords = (el) =>
+          Array.from(el.childNodes).forEach((n) => {
+            if (n.nodeType === 1) return splitWords(n);
+            if (n.nodeType !== 3) return;
+            const frag = document.createDocumentFragment();
+            n.textContent.split(/([ \t\r\n]+)/).forEach((p) => {
+              if (!p) return;
+              if (/^[ \t\r\n]+$/.test(p)) return frag.append(" ");
+              const s = document.createElement("span");
+              s.className = "w";
+              s.textContent = p;
+              frag.append(s);
+            });
+            n.replaceWith(frag);
+          });
+        $$(".hl").forEach(splitWords);
+
+        // single scene: visible from frame 0, the fade-up from black opens the film
+        tl.set("#sc01", { autoAlpha: 1 }, 0);
+        tl.fromTo("#fade", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power1.out" }, 0);
+
+        // ---- act 1: four admin chips drift in, untidy (entrances overlap the headline) ----
+        const chips = $$(".chip");
+        const CHIP_R = [-6, 4, 5, -4]; // resting tilt per chip
+        chips.forEach((c, i) => {
+          const t0 = 0.2 + i * 0.08; // position leads, opacity follows ~0.1 s later
+          tl.fromTo(c, { y: 30, rotation: CHIP_R[i] }, { y: 0, rotation: CHIP_R[i], duration: 0.6, ease: "power3.out" }, t0);
+          tl.fromTo(c, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.45, ease: "power2.out" }, t0 + 0.1);
+        });
+        // slow untidy drift while the headline is read; fully settled before the drop
+        chips.forEach((c, i) => {
+          const dx = (i % 2 ? -1 : 1) * (12 + i * 2);
+          const dy = (i < 2 ? 1 : -1) * (9 + (i % 2) * 4);
+          tl.to(c, { x: dx, y: dy, rotation: CHIP_R[i] + (i % 2 ? 1.5 : -1.5), duration: 0.55, ease: "sine.inOut", yoyo: true, repeat: 1 }, 1.02 + i * 0.05);
+        });
+
+        // ---- headline, keyed to beats B(0) / B(1) ----
+        const riseWords = (ws, t, d = 0.55, st = 0.05) =>
+          tl.fromTo(ws, { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: d, ease: "power3.out", stagger: st }, t);
+        riseWords($$("#hl-chaos .line:nth-child(1) .w"), B(0));
+        riseWords($$("#hl-chaos .line:nth-child(2) .w"), B(1), 0.55, 0.045);
+
+        // ---- act 2: the drop at B(4) — chaos converges into one workspace ----
+        const DROP = B(T.drops[0]); // 2.5
+        // chip-centre offsets to the card centre (960, 500), read from the fixed chip boxes
+        const TGT = [[520, 212], [-420, 252], [490, -238], [-400, -268]];
+        chips.forEach((c, i) => {
+          const [tx, ty] = TGT[i];
+          tl.to(c, { x: tx * 0.14, y: ty * 0.14, duration: 0.16, ease: "power2.in" }, DROP - 0.18); // anticipation
+          tl.to(c, { x: tx + (i - 1.5) * 26, y: ty + (i % 2 ? 20 : -20), rotation: 0, scale: 0.9, duration: 0.55, ease: "power3.inOut" }, DROP + i * 0.045);
+          tl.to(c, { autoAlpha: 0, duration: 0.2, ease: "power2.in" }, DROP + 0.3 + i * 0.04);
+        });
+        // chaos headline dissolves out while the card assembles (the crossfade's outgoing half)
+        tl.to("#hl-chaos", { y: -26, autoAlpha: 0, duration: 0.38, ease: "power2.in" }, DROP - 0.04);
+        tl.fromTo("#hl-chaos", { filter: "blur(0px)" }, { filter: "blur(8px)", duration: 0.38, ease: "power2.in", immediateRender: false }, DROP - 0.04);
+        tl.set("#hl-chaos", { filter: "none" }, DROP + 0.38);
+
+        // workspace card: position leads, opacity/blur follow ~0.1 s later (ui_choreography)
+        tl.fromTo("#ws-card", { y: 40, scale: 0.965 }, { y: 0, scale: 1, duration: 0.62, ease: "power3.out", immediateRender: false }, DROP + 0.06);
+        tl.fromTo("#ws-card", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: "power2.out", immediateRender: false }, DROP + 0.16);
+        tl.fromTo("#ws-card", { filter: "blur(10px)" }, { filter: "blur(0px)", duration: 0.55, ease: "power2.out", immediateRender: false }, DROP + 0.16);
+        tl.set("#ws-card", { filter: "none" }, DROP + 0.78);
+        // children stagger 0.04-0.08 s with overlap, after the surface leads
+        tl.fromTo("#ws-card .ws-head, #ws-card .ws-sep, #ws-card .ws-row", { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "power3.out", stagger: 0.07 }, DROP + 0.3);
+        // brand headline: incoming half of the crossfade, keyed to B(5)
+        riseWords($$("#hl-brand .w"), B(5), 0.6, 0.08);
+
+        // ---- calm hold: the one camera move — a slow push-in (1.00 -> 1.04) over the hold ----
+        tl.fromTo("#stage", { scale: 1 }, { scale: 1.04, duration: 2.5, ease: "sine.inOut", immediateRender: false }, B(7));
+
+        // ---- signature: stepped clip reveal + drawn underline, from 1.0 s ----
+        tl.fromTo("#sig-txt", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(-20% -20% -20% 0%)", duration: 0.5, ease: "steps(6)" }, 1.0);
+        tl.fromTo("#sig-line", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, ease: "power2.out" }, 1.35);
+
+        tl.set({}, {}, T.duration); // pin the timeline length to the video duration
+      })();
+    </script>
+  </body>
+</html>

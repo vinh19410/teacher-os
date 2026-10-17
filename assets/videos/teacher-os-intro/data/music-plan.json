@@ -1,0 +1,14 @@
+{
+  "positive_global_styles": ["instrumental", "light upbeat corporate electronic", "lo-fi house", "exactly 112 bpm", "steady 4/4 grid", "soft rounded kick", "crisp finger snaps and shakers", "warm analog bass", "glassy synth plucks", "airy pad chords", "muted piano accents", "clean modern production", "positive and friendly", "polished minimal mix"],
+  "negative_global_styles": ["vocals", "singing", "lyrics", "spoken word", "hard aggressive drops", "heavy 808 bass", "trap hi-hats", "brass stabs", "guitar", "orchestral", "tempo changes", "sad", "dark", "long silence"],
+  "sections": [
+    { "section_name": "Hook Chaos", "positive_local_styles": ["filtered light house groove", "muted kick", "playful synth plucks slightly scattered", "anticipation", "restrained"], "negative_local_styles": ["full drop", "loud"], "duration_ms": 9000, "lines": [] },
+    { "section_name": "Build into Drop A", "positive_local_styles": ["snare and shaker build accelerating", "airy riser", "filter opening up", "one beat of total silence at the very end"], "negative_local_styles": ["full drop"], "duration_ms": 7000, "lines": [] },
+    { "section_name": "Drop A", "positive_local_styles": ["bright light house drop", "warm bass groove locks in", "glassy chord stabs", "snaps and shakers", "sunny and satisfying"], "negative_local_styles": ["breakdown", "aggressive"], "duration_ms": 11000, "lines": [] },
+    { "section_name": "Feature Groove 1", "positive_local_styles": ["steady mid-energy groove", "kick keeps playing", "playful plucks melody", "light and productive feel", "ends with a soft drum fill and riser"], "negative_local_styles": ["silence", "no drums"], "duration_ms": 14000, "lines": [] },
+    { "section_name": "Feature Groove 2", "positive_local_styles": ["same groove with warmer pads", "subtle new counter-melody", "confident workflow feel", "ends with a rising filter build"], "negative_local_styles": ["silence", "no drums"], "duration_ms": 14000, "lines": [] },
+    { "section_name": "Stats Payoff Drop", "positive_local_styles": ["biggest light drop", "bass and chords together", "shimmering arps on top", "triumphant but clean"], "negative_local_styles": ["breakdown", "aggressive"], "duration_ms": 10000, "lines": [] },
+    { "section_name": "CTA Drop", "positive_local_styles": ["uplifting final drop", "full warm groove", "bright hook melody", "hopeful energy", "full drums until the last bar"], "negative_local_styles": ["fade", "breakdown"], "duration_ms": 10000, "lines": [] },
+    { "section_name": "Tail", "positive_local_styles": ["drums stop", "one sustained warm chord", "soft vinyl crackle", "gentle reverb tail fading"], "negative_local_styles": ["drums", "new melody"], "duration_ms": 5000, "lines": [] }
+  ]
+}

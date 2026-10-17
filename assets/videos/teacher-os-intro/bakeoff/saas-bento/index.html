@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<!--
+  Teacher OS — s01-hook (6.5s, no VO) — style: saas-bento.
+  Chaos (4 scattered admin chips) -> beat-4 drop: grid reflow into a clean bento
+  with the "Teacher OS" 2x2 anchor tile. One camera move: settleCam push on the
+  final hold. Light palette, Manrope 800 headlines, JetBrains Mono metrics.
+-->
+<html lang="vi" data-resolution="landscape" data-ratio="16x9">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Teacher OS — s01-hook (saas-bento)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Fonts: local TTF (OFL, google/fonts), both with full vietnamese subset. */
+      @font-face { font-family: "Manrope"; src: url("assets/fonts/Manrope-VF.ttf") format("truetype"); font-weight: 200 800; font-display: block; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-VF.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+      :root {
+        --bg: #f5f6f8; --ink: #0f172a; --accent: #6366f1; --tile: #ffffff;
+        --mute: #64748b; --line: #e2e8f0; --mint: #10b981; --peach: #fb923c;
+        --cell: #edf1f6;
+        --W: 1920px; --H: 1080px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); }
+      #root { position: relative; width: var(--W); height: var(--H); overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Manrope", sans-serif; }
+      .layer { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); }
+      .abs { position: absolute; }
+      .scene { opacity: 0; visibility: hidden; }
+      .mono { font-family: "JetBrains Mono", monospace; font-weight: 500; }
+      /* subtle gradient mesh (palette rule: optional, top-right corner) */
+      .mesh-tr { right: -160px; top: -170px; width: 760px; height: 760px; background: radial-gradient(closest-side, rgba(99,102,241,0.10), rgba(99,102,241,0)); }
+      .mesh-bl { left: -200px; bottom: -230px; width: 820px; height: 820px; background: radial-gradient(closest-side, rgba(16,185,129,0.08), rgba(16,185,129,0)); }
+      /* headline zone: top-left, grid below (never overlaps the grid) */
+      .hl { left: 96px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: var(--ink); }
+      .hl .w { display: inline-block; }
+      .em { font-style: normal; color: var(--accent); }
+      /* bento tiles: CSS left/top is the grid slot; chaos is transform-only */
+      .tile { width: 854px; height: 200px; background: var(--tile); border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 12px 32px rgba(15,23,42,0.08); opacity: 0; visibility: hidden; }
+      .tile-hero { height: 420px; box-shadow: 0 16px 44px rgba(99,102,241,0.16); }
+      .ring { position: absolute; inset: 0; border-radius: 28px; border: 2px solid var(--accent); opacity: 0; pointer-events: none; }
+      .ic { position: absolute; left: 32px; top: 68px; width: 64px; height: 64px; border-radius: 18px; background: rgba(99,102,241,0.10); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+      .ic svg { width: 32px; height: 32px; }
+      .t-title { position: absolute; left: 116px; top: 83px; font-size: 34px; font-weight: 700; letter-spacing: -0.01em; }
+      .frag { position: absolute; left: 470px; top: 0; height: 200px; display: flex; align-items: center; gap: 16px; opacity: 0; visibility: hidden; }
+      .cal { display: flex; gap: 8px; }
+      .cal i { width: 36px; height: 36px; border-radius: 10px; background: var(--cell); }
+      .checks { display: flex; gap: 10px; }
+      .chk { width: 44px; height: 44px; }
+      .ck { stroke-dasharray: 1; stroke-dashoffset: 1; }
+      .bars { display: flex; align-items: flex-end; gap: 14px; height: 96px; }
+      .bars i { width: 30px; border-radius: 8px; background: var(--cell); transform-origin: 50% 100%; }
+      .bars i.hot { background: var(--mint); }
+      .metric { font-size: 30px; color: var(--ink); }
+      .bub { width: 150px; height: 44px; border-radius: 14px; background: var(--cell); }
+      .bub-me { width: 110px; height: 36px; background: rgba(99,102,241,0.14); }
+      .dots3 { display: flex; gap: 6px; }
+      .dots3 i { width: 9px; height: 9px; border-radius: 50%; background: var(--mute); opacity: 0; }
+      /* anchor tile content */
+      .mark { position: absolute; left: 40px; top: 40px; width: 72px; height: 72px; border-radius: 20px; background: var(--accent); display: grid; grid-template-columns: repeat(2, 12px); grid-template-rows: repeat(2, 12px); gap: 10px; place-content: center; }
+      .mark i { width: 12px; height: 12px; border-radius: 4px; background: #fff; }
+      .hero-title { position: absolute; left: 40px; top: 168px; font-size: 72px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; }
+      .hero-sub { position: absolute; left: 40px; top: 272px; font-size: 26px; font-weight: 500; color: var(--mute); }
+      .mdots { position: absolute; left: 42px; top: 344px; display: flex; gap: 12px; }
+      .mdots i { width: 14px; height: 14px; border-radius: 50%; opacity: 0.25; }
+      .mdots i:nth-child(1) { background: var(--accent); }
+      .mdots i:nth-child(2) { background: var(--mint); }
+      .mdots i:nth-child(3) { background: var(--peach); }
+      .mdots i:nth-child(4) { background: var(--ink); }
+      .ver { position: absolute; right: 40px; top: 44px; font-size: 24px; color: var(--accent); }
+      #fade { background: var(--bg); opacity: 1; pointer-events: none; }
+      /* signature bottom-right, from 1.0s to the end */
+      #sig { right: 40px; bottom: 22px; width: 250px; height: 130px; }
+      #sig-txt { position: absolute; right: 18px; bottom: 26px; font: 800 56px/1 "Manrope"; letter-spacing: -0.02em; color: var(--ink); }
+      #sig svg { position: absolute; left: 0; top: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="6.5" data-width="1920" data-height="1080">
+      <div id="bg" class="layer">
+        <div class="abs mesh-tr"></div>
+        <div class="abs mesh-bl"></div>
+      </div>
+      <div id="pulse" class="layer">
+        <div id="stage" class="layer">
+          <section id="sc01" class="scene layer">
+            <!-- headline: chaos pair crossfades to the payoff title at the drop -->
+            <div id="hl-a" class="hl abs" style="font-size:76px; top:84px;" data-layout-allow-overlap>Bạn dạy rất giỏi.</div>
+            <div id="hl-b" class="hl abs" style="font-size:76px; top:176px;" data-layout-allow-overlap>Mọi thứ rải rác khắp nơi.</div>
+            <div id="hl-t" class="hl abs" style="font-size:96px; top:86px;" data-layout-allow-overlap>Teacher <span class="em">OS</span></div>
+
+            <!-- bento grid (CSS = final slots; 20px gaps, 96px outer margin) -->
+            <div class="tile tile-hero abs" id="tile-anchor" style="left:96px; top:270px;">
+              <div class="ring"></div>
+              <div class="mark"><i></i><i></i><i></i><i></i></div>
+              <div class="hero-title" data-layout-allow-overlap>Teacher <span class="em">OS</span></div>
+              <div class="hero-sub">Mọi thứ trong một chỗ.</div>
+              <div class="mdots"><i></i><i></i><i></i><i></i></div>
+              <div class="mono ver">v1.0</div>
+            </div>
+            <div class="tile abs" id="tile-lichhoc" style="left:970px; top:270px;">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></div>
+              <div class="t-title">Lịch học</div>
+              <div class="frag" id="frag-lichhoc">
+                <div class="cal"><i></i><i></i><i></i><i class="hot"></i><i></i><i></i><i></i></div>
+              </div>
+            </div>
+            <div class="tile abs" id="tile-baicham" style="left:970px; top:490px;">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg></div>
+              <div class="t-title">Bài chấm</div>
+              <div class="frag" id="frag-baicham">
+                <div class="checks">
+                  <svg class="chk" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <svg class="chk" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <svg class="chk" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="mono metric">28/30</div>
+              </div>
+            </div>
+            <div class="tile abs" id="tile-hocphi" style="left:96px; top:710px;">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 15h2"/></svg></div>
+              <div class="t-title">Học phí</div>
+              <div class="frag" id="frag-hocphi">
+                <div class="bars"><i style="height:36px"></i><i style="height:62px"></i><i style="height:48px"></i><i class="hot" style="height:88px"></i></div>
+                <div class="mono metric">92%</div>
+              </div>
+            </div>
+            <div class="tile abs" id="tile-nhomchat" style="left:970px; top:710px;">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg></div>
+              <div class="t-title">Nhóm chat</div>
+              <div class="frag" id="frag-nhomchat">
+                <div class="bub"></div>
+                <div class="bub bub-me"></div>
+                <div class="dots3"><i></i><i></i><i></i></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div id="sig" class="abs">
+        <svg viewBox="0 0 250 130" width="250" height="130"><path id="sig-line" class="draw" pathLength="1" d="M20,112 C80,100 150,118 236,96" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"/></svg>
+        <div id="sig-txt" data-layout-allow-overflow>Zuey</div>
+      </div>
+      <div id="fade" class="layer"></div>
+      <audio id="mix" src="assets/audio/mix.m4a" data-start="0" data-duration="6.5" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>/*TIMING:BEGIN*/window.TIMING={"duration":6.5,"fps":30,"beat0":0.5,"beatLen":0.5,"kick":[[0,12]],"drops":[4],"outroBeat":12,"scenes":{"s01-hook":{"start":0.5,"end":6.5,"lines":[{"on":0.5,"off":6.5,"words":[]}]}},"captions":[],"sfx":[],"env":[]};/*TIMING:END*/</script>
+    <script>
+      (() => {
+        const T = window.TIMING;
+        const tl = gsap.timeline({ paused: true });
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+
+        // ---------- lookups: every time comes from TIMING, never the wall clock ----------
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+        const B = (n) => T.beat0 + T.beatLen * n; // quarter note n
+        const isKick = (n) => T.kick.some(([a, b]) => n >= a && n < b);
+        const DROP = B(T.drops[0]); // beat 4 -> 2.5s
+        const FR = 1 / 30;
+        // seeded PRNG: Math.random would make every render different
+        const rng = (seed) => () => {
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+
+        // ---------- build the DOM before any tween: split headline words ----------
+        const splitWords = (el) =>
+          Array.from(el.childNodes).forEach((n) => {
+            if (n.nodeType === 1) return n.namespaceURI === "http://www.w3.org/2000/svg" ? undefined : splitWords(n);
+            if (n.nodeType !== 3) return;
+            const frag = document.createDocumentFragment();
+            n.textContent.split(/([ \t\r\n]+)/).forEach((p) => {
+              if (!p) return;
+              if (/^[ \t\r\n]+$/.test(p)) return frag.append(" ");
+              const s = document.createElement("span");
+              s.className = "w";
+              s.textContent = p;
+              // headline blocks stack in one zone and crossfade at the drop: intentional layering
+              s.setAttribute("data-layout-allow-overlap", "");
+              frag.append(s);
+            });
+            n.replaceWith(frag);
+          });
+        $$(".hl").forEach(splitWords);
+        const draw = (e, t, d = 0.6, ease = "power2.inOut") => tl.fromTo(e, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: d, ease }, t);
+        // settleCam: slow camera push over a hold so no frame is dead (finite, seek-safe)
+        const settleCam = (e, t0, t1, amt = 0.035) => tl.fromTo(e, { scale: 1 }, { scale: 1 + amt, duration: Math.max(0.1, t1 - t0), ease: "none" }, t0);
+
+        // ---------- opening: fade up from the bg colour ----------
+        tl.fromTo("#fade", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power1.out" }, 0);
+        tl.set("#sc01", { autoAlpha: 1 }, 0);
+
+        // ---------- beat reactions: 1% stage pulse on kick downbeats (texture only) ----------
+        for (let n = 0; B(n) < T.duration && n < T.outroBeat; n++) {
+          if (!isKick(n) || n % 4) continue;
+          tl.to("#pulse", { scale: 1.01, duration: 0.05, ease: "power1.out" }, B(n));
+          tl.to("#pulse", { scale: 1, duration: 0.33, ease: "power2.out" }, B(n) + 0.05);
+        }
+
+        // ---------- chaos: 4 chips drift untidily (transform-only; CSS = grid slot) ----------
+        // dx/dy = scatter offset from the tile's grid centre; rot/scale = untidiness
+        const CHIPS = [
+          { sel: "#tile-lichhoc", dx: -927, dy: 95, rot: -8, s: 0.94, seed: 41 },
+          { sel: "#tile-baicham", dx: 73, dy: -160, rot: 7, s: 0.9, seed: 87 },
+          { sel: "#tile-hocphi", dx: 957, dy: -110, rot: -5, s: 0.92, seed: 13 },
+          { sel: "#tile-nhomchat", dx: -837, dy: 0, rot: 6, s: 0.9, seed: 59 },
+        ];
+        CHIPS.forEach((c, i) => {
+          const el = $(c.sel);
+          // entrance: pop in at the scattered pose (from values are the t=0 state)
+          tl.fromTo(el, { autoAlpha: 0, x: c.dx, y: c.dy, rotation: c.rot, scale: c.s * 0.86 },
+            { autoAlpha: 1, x: c.dx, y: c.dy, rotation: c.rot, scale: c.s, duration: 0.5, ease: "back.out(1.4)" }, 0.5 + i * 0.08);
+          // two drift segments, explicit fromTo values -> seek-order safe
+          const r = rng(c.seed);
+          const a = { x: c.dx + (r() - 0.5) * 52, y: c.dy + (r() - 0.5) * 40, rot: c.rot + (r() - 0.5) * 5 };
+          const b = { x: a.x + (r() - 0.5) * 52, y: a.y + (r() - 0.5) * 40, rot: a.rot + (r() - 0.5) * 5 };
+          tl.fromTo(el, { x: c.dx, y: c.dy, rotation: c.rot }, { x: a.x, y: a.y, rotation: a.rot, duration: 0.62, ease: "sine.inOut", immediateRender: false }, 1.3);
+          tl.fromTo(el, { x: a.x, y: a.y, rotation: a.rot }, { x: b.x, y: b.y, rotation: b.rot, duration: 0.55, ease: "sine.inOut", immediateRender: false }, 1.95);
+          // the drop: grid reflow into the exact slot (power2.inOut 0.5s, 0.03s stagger)
+          tl.fromTo(el, { x: b.x, y: b.y, rotation: b.rot, scale: c.s },
+            { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.5, ease: "power2.inOut", immediateRender: false }, DROP + i * 0.03);
+        });
+
+        // ---------- headline: two chaos lines, crossfade to "Teacher OS" at the drop ----------
+        tl.fromTo("#hl-a .w", { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.05 }, 0.55);
+        tl.fromTo("#hl-b .w", { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.04 }, B(1));
+        tl.to("#hl-a .w, #hl-b .w", { autoAlpha: 0, y: -18, duration: 0.22, ease: "power2.in", stagger: 0.015 }, DROP);
+        tl.fromTo("#hl-t .w", { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.06 }, DROP + 0.18);
+
+        // ---------- anchor tile pops as the grid forms; ring fades in, brightens on the downbeat ----------
+        tl.fromTo("#tile-anchor", { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "back.out(1.4)", immediateRender: false }, DROP + 0.05);
+        tl.fromTo("#tile-anchor .ring", { opacity: 0 }, { opacity: 0.65, duration: 0.3, ease: "power1.out", immediateRender: false }, DROP + 0.4);
+        tl.fromTo("#tile-anchor .ring", { opacity: 0.65 }, { opacity: 1, duration: 0.35, ease: "power1.inOut", immediateRender: false }, B(8));
+
+        // ---------- payoff micro-UI: fragments stagger in, then animate their own state ----------
+        const FRAGS = ["#frag-lichhoc", "#frag-baicham", "#frag-hocphi", "#frag-nhomchat"];
+        FRAGS.forEach((f, i) => {
+          tl.fromTo(f, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out", immediateRender: false }, DROP + 0.52 + i * 0.05);
+        });
+        tl.fromTo("#frag-hocphi .bars i", { scaleY: 0 }, { scaleY: 1, duration: 0.45, ease: "power2.out", stagger: 0.07, immediateRender: false }, B(6) - 0.1);
+        $$("#frag-baicham .ck").forEach((p, i) => draw(p, B(6) + i * 0.1, 0.35, "power2.out"));
+        tl.fromTo("#frag-lichhoc .cal .hot", { backgroundColor: "#edf1f6" }, { backgroundColor: "#6366f1", duration: 0.3, ease: "power1.inOut", immediateRender: false }, B(7));
+        tl.fromTo("#tile-anchor .mdots i", { opacity: 0.25, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.7)", stagger: 0.12, immediateRender: false }, B(7));
+        tl.fromTo("#frag-nhomchat .dots3 i", { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.25, ease: "back.out(2)", stagger: 0.08, immediateRender: false }, B(7) + 0.2);
+
+        // ---------- beat_response: tile icons nudge 4 px on every kick after the drop ----------
+        const ICONS = $$(".tile .ic, .tile .mark");
+        for (let n = 6; n < T.outroBeat && B(n) + 0.31 < T.duration; n++) {
+          ICONS.forEach((el, i) => {
+            tl.to(el, { y: -4, duration: 0.07, ease: "power1.out" }, B(n) + i * 0.012);
+            tl.to(el, { y: 0, duration: 0.24, ease: "power2.out" }, B(n) + 0.07 + i * 0.012);
+          });
+        }
+
+        // ---------- the one camera move: settleCam push across the calm hold ----------
+        settleCam("#stage", DROP + 0.45, 6.3, 0.035);
+
+        // ---------- signature bottom-right from 1.0s ----------
+        tl.fromTo("#sig-txt", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(-20% -20% -20% 0%)", duration: 0.6, ease: "steps(8)" }, 1.0);
+        draw("#sig-line", 1.45, 0.35, "power2.out");
+
+        // ---------- outro: settle back into the bg colour ----------
+        tl.to("#fade", { opacity: 1, duration: 0.6, ease: "power1.in" }, 5.9);
+        tl.set({}, {}, T.duration); // pin the timeline length to the video duration
+      })();
+    </script>
+  </body>
+</html>

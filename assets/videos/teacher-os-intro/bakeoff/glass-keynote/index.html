@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<!--
+  glass-keynote bake-off scene "s01-hook" (HyperFrames 0.8.77 + GSAP).
+  Style: calm premium tech keynote — indigo space, drifting colour orbs,
+  frosted glass cards (semi-opaque rgba fills, NO backdrop-filter), gradient type.
+  6.5 s, no voice-over; TIMING pasted by hand. Beat grid: B(n) = 0.5 + 0.5n.
+-->
+<html lang="vi" data-resolution="landscape" data-ratio="16x9">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Teacher OS — s01-hook — glass keynote</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Local fonts (OFL, google/fonts). Instrument Serif lacks a Vietnamese subset,
+         so its italic-serif accent role is substituted by Playfair Display Italic. */
+      @font-face { font-family: "Plus Jakarta Sans"; src: url("assets/fonts/PlusJakartaSans-wght.ttf") format("truetype"); font-weight: 200 800; font-display: block; }
+      @font-face { font-family: "Playfair Display"; src: url("assets/fonts/PlayfairDisplay-Italic-wght.ttf") format("truetype"); font-weight: 400 900; font-style: italic; font-display: block; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-wght.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+      @font-face { font-family: "Be Vietnam Pro"; src: url("assets/fonts/BeVietnamPro-Bold.ttf") format("truetype"); font-weight: 700; font-display: block; }
+
+      :root {
+        --bg: #070817; --ink: #f5f3ff; --mute: #aeacd6; --dim: #8f8dbb;
+        --lilac: #c4b5fd; --violet: #8b5cf6; --pink: #f0abfc; --sky: #60a5fa;
+        --green: #34d399; --amber: #fbbf24; --red: #f87171;
+        --stroke: rgba(196, 181, 253, 0.26);
+        --grad: linear-gradient(100deg, #f0abfc 0%, #a78bfa 45%, #60a5fa 100%);
+        --W: 1920px; --H: 1080px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); }
+      #root { position: relative; width: var(--W); height: var(--H); overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Plus Jakarta Sans", sans-serif; }
+      .layer { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); }
+      .abs { position: absolute; }
+      .mono { font-family: "JetBrains Mono", monospace; }
+      .scene { opacity: 0; visibility: hidden; }
+      .hl .w { display: inline-block; }
+
+      /* background stack: orbs -> dot grid -> vignette (all static CSS, tweened by GSAP only) */
+      .orb { position: absolute; border-radius: 50%; will-change: transform; }
+      #orb1 { width: 680px; height: 680px; left: 120px; top: 80px; background: radial-gradient(circle, rgba(139, 92, 246, 0.46) 0%, rgba(139, 92, 246, 0) 70%); }
+      #orb2 { width: 560px; height: 560px; left: 1310px; top: 40px; background: radial-gradient(circle, rgba(240, 171, 252, 0.30) 0%, rgba(240, 171, 252, 0) 70%); }
+      #orb3 { width: 640px; height: 640px; left: 1170px; top: 550px; background: radial-gradient(circle, rgba(96, 165, 250, 0.28) 0%, rgba(96, 165, 250, 0) 70%); }
+      #grid { background-image: radial-gradient(rgba(196, 181, 253, 0.32) 1.4px, transparent 1.4px); background-size: 36px 36px; opacity: 0.42; -webkit-mask-image: radial-gradient(ellipse 62% 58% at 52% 46%, #000 25%, transparent 78%); mask-image: radial-gradient(ellipse 62% 58% at 52% 46%, #000 25%, transparent 78%); }
+      #vignette { background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 55%, rgba(4, 4, 14, 0.6) 100%); }
+
+      /* frosted glass material: semi-opaque vertical indigo fill, lilac stroke,
+         inner top highlight — no backdrop-filter (renderer limit) */
+      .glass { background: linear-gradient(180deg, rgba(32, 26, 70, 0.94), rgba(14, 12, 36, 0.94)); border: 1.5px solid var(--stroke); border-radius: 24px; box-shadow: 0 24px 60px rgba(3, 2, 16, 0.55), inset 0 1px 0 rgba(245, 243, 255, 0.14); }
+      .grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+      .kicker { left: 120px; top: 88px; display: flex; align-items: center; gap: 14px; }
+      .kbadge { font: 800 15px/1 "JetBrains Mono"; letter-spacing: 0.08em; color: var(--bg); padding: 8px 12px; border-radius: 10px; background: var(--grad); }
+      .ktext { font: 600 15px/1 "JetBrains Mono"; letter-spacing: 0.22em; color: var(--mute); padding-top: 2px; }
+
+      .hl { font-family: "Plus Jakarta Sans"; font-weight: 800; font-size: 70px; line-height: 1.26; letter-spacing: -0.035em; color: var(--ink); }
+      /* gradient serif accent: the fill lives on the .w spans too so every glyph paints opaquely-clipped */
+      .hl em, .hl em .w { font-family: "Playfair Display"; font-style: italic; font-weight: 600; font-size: 1.06em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+      #hl-chaos { left: 120px; top: 196px; }
+      #hl-chaos .hl + .hl { margin-top: 10px; }
+      #hl-payoff { left: 120px; top: 200px; font-family: "Plus Jakarta Sans"; font-weight: 800; font-size: 96px; line-height: 1.1; letter-spacing: -0.035em; color: var(--ink); }
+      #hl-sub { left: 120px; top: 340px; font: 700 25px/1.3 "Be Vietnam Pro"; color: var(--mute); }
+
+      /* scattered admin-chaos cards */
+      .chaos-card { padding: 20px 22px; }
+      .cc-head { display: flex; align-items: center; gap: 12px; }
+      .cc-label { font: 800 26px/1.1 "Plus Jakarta Sans"; color: var(--ink); }
+      .cc-sub { margin-top: 8px; font-size: 14.5px; letter-spacing: 0.02em; color: var(--mute); }
+
+      /* converged workspace card */
+      .ws-card { left: 650px; top: 340px; width: 620px; height: 400px; padding: 24px 30px; }
+      .ws-head { display: flex; align-items: center; gap: 8px; }
+      .wdot { width: 11px; height: 11px; border-radius: 50%; background: rgba(245, 243, 255, 0.16); }
+      .ws-path { margin-left: 10px; font-size: 13.5px; letter-spacing: 0.08em; color: var(--dim); }
+      .ws-title { margin: 14px 0 8px; font: 800 40px/1.1 "Plus Jakarta Sans"; letter-spacing: -0.03em; color: var(--ink); }
+      .ws-title em, .ws-title em .w { font-family: "Playfair Display"; font-style: italic; font-weight: 700; font-size: 1.05em; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+      .ws-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 10px 14px; border-radius: 14px; background: rgba(139, 92, 246, 0.10); border: 1px solid rgba(196, 181, 253, 0.14); }
+      .wr-label { width: 112px; font: 700 21px/1.2 "Plus Jakarta Sans"; color: var(--ink); }
+      .wr-sub { flex: 1; font-size: 14px; color: var(--mute); }
+      .pill { font: 700 12.5px/1 "JetBrains Mono"; letter-spacing: 0.06em; padding: 5px 11px; border-radius: 999px; }
+      .p-ok { color: var(--green); background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.4); }
+      .p-warn { color: var(--amber); background: rgba(251, 191, 36, 0.10); border: 1px solid rgba(251, 191, 36, 0.4); }
+      .p-info { color: var(--sky); background: rgba(96, 165, 250, 0.12); border: 1px solid rgba(96, 165, 250, 0.4); }
+
+      /* light band wipe on the drop cut */
+      #wipe { pointer-events: none; }
+      #wipeband { position: absolute; top: -340px; left: 0; width: 520px; height: 1760px; opacity: 0; visibility: hidden; transform: rotate(16deg); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16) 42%, rgba(196, 181, 253, 0.28) 56%, transparent); }
+
+      #flash { background: #fff; opacity: 0; pointer-events: none; }
+      #fade { background: #000; opacity: 1; pointer-events: none; }
+      #sig { right: 40px; bottom: 22px; width: 250px; height: 130px; }
+      #sig-txt { position: absolute; right: 22px; bottom: 30px; font: italic 700 62px/1 "Playfair Display"; color: var(--ink); }
+      #sig svg { position: absolute; left: 0; top: 0; }
+      .draw { stroke-dasharray: 1; stroke-dashoffset: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="6.5" data-width="1920" data-height="1080">
+      <div id="bg" class="layer"></div>
+      <div id="orbs" class="layer">
+        <div class="orb" id="orb1" data-layout-allow-overflow></div>
+        <div class="orb" id="orb2" data-layout-allow-overflow></div>
+        <div class="orb" id="orb3" data-layout-allow-overflow></div>
+      </div>
+      <div id="grid" class="layer"></div>
+      <div id="vignette" class="layer"></div>
+      <div id="pulse" class="layer">
+        <!-- one camera move: zoom-through into the drop (B4), then settleCam in the hold -->
+        <div id="cam" class="layer">
+          <div id="stage" class="layer">
+            <section id="sc01" class="scene layer" data-scene="s01-hook">
+              <div class="abs kicker" id="kicker">
+                <span class="kbadge">01</span>
+                <span class="ktext mono">NỀN TẢNG CHO GIÁO VIÊN</span>
+              </div>
+              <div class="abs" id="hl-chaos" data-layout-allow-overlap>
+                <div class="hl">Bạn dạy rất <em>giỏi</em>.</div>
+                <div class="hl">Mọi thứ <em>rải rác</em> khắp nơi.</div>
+              </div>
+              <div class="abs" id="hl-sub">Mọi việc dạy học trong một nơi.</div>
+              <div class="abs hl" id="hl-payoff" data-layout-allow-overlap>Teacher <em>OS</em></div>
+
+              <div class="abs glass chaos-card" id="c1" data-layout-allow-overlap style="left: 1140px; top: 200px; width: 280px;">
+                <div class="cc-head"><span class="dot" style="background: var(--red)"></span><span class="cc-label">Lịch học</span></div>
+                <div class="cc-sub mono">5 lớp · 3 trùng tiết</div>
+              </div>
+              <div class="abs glass chaos-card" id="c2" data-layout-allow-overlap style="left: 1470px; top: 440px; width: 280px;">
+                <div class="cc-head"><span class="dot" style="background: var(--amber)"></span><span class="cc-label">Bài chấm</span></div>
+                <div class="cc-sub mono">24 bài chưa chấm</div>
+              </div>
+              <div class="abs glass chaos-card" id="c3" data-layout-allow-overlap style="left: 1120px; top: 780px; width: 300px;">
+                <div class="cc-head"><span class="dot" style="background: var(--sky)"></span><span class="cc-label">Học phí</span></div>
+                <div class="cc-sub mono">7 học viên chưa nộp</div>
+              </div>
+              <div class="abs glass chaos-card" id="c4" data-layout-allow-overlap style="left: 780px; top: 840px; width: 280px;">
+                <div class="cc-head"><span class="dot" style="background: var(--violet)"></span><span class="cc-label">Nhóm chat</span></div>
+                <div class="cc-sub mono">12 nhóm Zalo riêng biệt</div>
+              </div>
+
+              <div class="abs glass ws-card" id="wscard">
+                <div class="ws-head"><span class="wdot"></span><span class="wdot"></span><span class="wdot"></span><span class="ws-path mono">teacher-os / workspace</span></div>
+                <div class="ws-title">Teacher <em>OS</em></div>
+                <div class="ws-row"><span class="dot" style="background: var(--green)"></span><span class="wr-label">Lịch học</span><span class="wr-sub mono">5 lớp · không trùng tiết</span><span class="pill p-ok">OK</span></div>
+                <div class="ws-row"><span class="dot" style="background: var(--amber)"></span><span class="wr-label">Bài chấm</span><span class="wr-sub mono">24 bài · 18 tự chấm</span><span class="pill p-warn">ĐANG</span></div>
+                <div class="ws-row"><span class="dot" style="background: var(--green)"></span><span class="wr-label">Học phí</span><span class="wr-sub mono">35 học viên · 32 đã thu</span><span class="pill p-ok">OK</span></div>
+                <div class="ws-row"><span class="dot" style="background: var(--sky)"></span><span class="wr-label">Nhóm chat</span><span class="wr-sub mono">12 nhóm · một luồng hỏi</span><span class="pill p-info">GỘP</span></div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+      <div id="wipe" class="layer" data-layout-allow-overflow><div id="wipeband"></div></div>
+      <div id="sig" class="abs">
+        <svg viewBox="0 0 250 130" width="250" height="130"><path id="sig-line" class="draw" pathLength="1" d="M20,112 C80,100 150,118 236,96" fill="none" stroke="var(--lilac)" stroke-width="6" stroke-linecap="round" /></svg>
+        <div id="sig-txt">Zuey</div>
+      </div>
+      <div id="flash" class="layer"></div>
+      <div id="fade" class="layer"></div>
+      <audio id="mix" src="assets/audio/mix.m4a" data-start="0" data-duration="6.5" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>/*TIMING:BEGIN*/window.TIMING={"duration":6.5,"fps":30,"beat0":0.5,"beatLen":0.5,"kick":[[0,12]],"drops":[4],"outroBeat":12,"scenes":{"s01-hook":{"start":0.5,"end":6.5,"lines":[{"on":0.5,"off":6.5,"words":[]}]}},"captions":[],"sfx":[],"env":[]};/*TIMING:END*/</script>
+    <script>
+      (() => {
+        const T = window.TIMING;
+        const tl = gsap.timeline({ paused: true });
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+
+        // ---------- lookups: every time comes from TIMING ----------
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+        const B = (n) => T.beat0 + T.beatLen * n; // quarter note n
+        const FR = 1 / 30;
+
+        // ---------- build the DOM before any tween ----------
+        const splitWords = (el) =>
+          Array.from(el.childNodes).forEach((n) => {
+            if (n.nodeType === 1) return splitWords(n);
+            if (n.nodeType !== 3) return;
+            const frag = document.createDocumentFragment();
+            n.textContent.split(/([ \t\r\n]+)/).forEach((p) => {
+              if (!p) return;
+              if (/^[ \t\r\n]+$/.test(p)) return frag.append(" ");
+              const s = document.createElement("span");
+              s.className = "w";
+              s.textContent = p;
+              frag.append(s);
+            });
+            n.replaceWith(frag);
+          });
+        $$(".hl").forEach(splitWords);
+        // transient overlaps are intentional: rotated chaos cards crossing during the
+        // convergence, and the headline crossfade — mark the text blocks themselves
+        $$(".chaos-card .cc-label, .chaos-card .cc-sub, #hl-chaos .w, .ws-title, .ws-path")
+          .forEach((el) => el.setAttribute("data-layout-allow-overlap", ""));
+
+        // ---------- shared vocabulary ----------
+        const flash = (t, a = 0.45) => {
+          tl.fromTo("#flash", { opacity: 0 }, { opacity: a, duration: 0.03, ease: "none", immediateRender: false }, t);
+          tl.fromTo("#flash", { opacity: a }, { opacity: 0, duration: 0.35, ease: "power2.out", immediateRender: false }, t + 0.03);
+        };
+        const slam = (e, t, o = {}) => {
+          const t0 = Math.max(0, t - (o.d ?? 0.22));
+          tl.fromTo(e, { autoAlpha: 0, scale: o.from ?? 1.25, filter: "blur(6px)" }, { autoAlpha: 1, scale: 1 - 0.03, filter: "blur(0px)", duration: Math.max(FR, t - t0), ease: "expo.in" }, t0);
+          tl.to(e, { scaleX: 1.03, scaleY: 0.96, duration: 3 * FR, ease: "power2.out" }, t);
+          tl.to(e, { scaleX: 1, scaleY: 1, duration: 0.5, ease: "back.out(1.4)" }, t + 3 * FR);
+          tl.set(e, { filter: "none" }, t + 4 * FR);
+        };
+
+        // ---------- ambient: slow sine orb drift (style: 48 s loops; this 6.5 s scene
+        // shows one unbroken leg per orb, offset rates keep them out of phase) ----------
+        // one drift tween per orb (x/y); beat pulses own scale only — no property overlap
+        const drift = [
+          ["#orb1", -90, 60, 5.9], ["#orb2", 80, 50, 6.2], ["#orb3", -70, -80, 6.5],
+        ];
+        drift.forEach(([sel, dx, dy, d]) => {
+          tl.fromTo(sel, { x: dx, y: dy }, { x: -dx, y: -dy, duration: d, ease: "sine.inOut" }, 0);
+        });
+
+        // ---------- beat response: orbs + dot grid pulse on kicks, #pulse on downbeats ----------
+        for (let n = 0; B(n) < T.duration && n < T.outroBeat; n++) {
+          tl.fromTo("#grid", { opacity: 0.42 }, { opacity: 0.72, duration: 0.12, ease: "power2.out", immediateRender: false }, B(n));
+          tl.fromTo("#grid", { opacity: 0.72 }, { opacity: 0.42, duration: 0.38, ease: "power2.out", immediateRender: false }, B(n) + 0.12);
+          $$(".orb").forEach((o) => {
+            tl.fromTo(o, { scale: 1 }, { scale: 1.045, duration: 0.12, ease: "power2.out", immediateRender: false }, B(n));
+            tl.fromTo(o, { scale: 1.045 }, { scale: 1, duration: 0.38, ease: "power2.out", immediateRender: false }, B(n) + 0.12);
+          });
+          if (n % 4 === 0) {
+            tl.fromTo("#pulse", { scale: 1 }, { scale: 1.01, duration: 0.05, ease: "power1.out", immediateRender: false }, B(n));
+            tl.fromTo("#pulse", { scale: 1.01 }, { scale: 1, duration: 0.33, ease: "power2.out", immediateRender: false }, B(n) + 0.05);
+          }
+        }
+
+        // ---------- scene window: cold open on the space, content enters at B0 ----------
+        tl.set("#sc01", { autoAlpha: 1 }, T.scenes["s01-hook"].start);
+        tl.fromTo("#fade", { opacity: 1 }, { opacity: 0, duration: 0.5, ease: "power1.out" }, 0);
+
+        // kicker + headline (words rise with overlap)
+        tl.fromTo("#kicker", { autoAlpha: 0, x: -26 }, { autoAlpha: 1, x: 0, duration: 0.45, ease: "expo.out" }, B(0));
+        tl.fromTo("#hl-chaos .hl:nth-child(1) .w", { autoAlpha: 0, yPercent: 60 }, { autoAlpha: 1, yPercent: 0, duration: 0.45, ease: "power3.out", stagger: 0.05 }, B(0) + 0.12);
+        tl.fromTo("#hl-chaos .hl:nth-child(2) .w", { autoAlpha: 0, yPercent: 60 }, { autoAlpha: 1, yPercent: 0, duration: 0.45, ease: "power3.out", stagger: 0.05 }, B(1));
+
+        // ---------- chaos cards: pop in scattered, drift untidily, then converge ----------
+        const cards = ["#c1", "#c2", "#c3", "#c4"].map((s) => $(s));
+        const rots = [-5, 3.5, -3, 4.5];
+        const glideAt = (i) => B(4) - 0.1 + i * 0.04; // 2.40 + 0.04i
+        const wsBox = $("#wscard");
+        const cx = wsBox.offsetLeft + wsBox.offsetWidth / 2;
+        const cy = wsBox.offsetTop + wsBox.offsetHeight / 2;
+        cards.forEach((el, i) => {
+          const r = rots[i];
+          const e = B(1) + 0.15 + i * 0.16; // entrances overlap the headline reveal
+          const g = glideAt(i);
+          tl.fromTo(el, { autoAlpha: 0, scale: 0.82, rotation: r * 1.8 }, { autoAlpha: 1, scale: 1, rotation: r, duration: 0.55, ease: "back.out(1.5)" }, e);
+          const w = g - e; // finite untidy float, ends exactly where the glide takes over
+          tl.fromTo(el, { y: 0 }, { y: 9, duration: w / 2, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, e);
+          const dx = cx - (el.offsetLeft + el.offsetWidth / 2);
+          const dy = cy - (el.offsetTop + el.offsetHeight / 2);
+          tl.fromTo(el, { x: 0, y: 0, scale: 1, rotation: r, autoAlpha: 1 }, { x: dx, y: dy, scale: 0.55, rotation: 0, duration: 0.55, ease: "power3.inOut", immediateRender: false }, g);
+          tl.to(el, { autoAlpha: 0, duration: 0.16, ease: "power1.in" }, g + 0.42);
+        });
+
+        // ---------- the drop (B4): flash + light band wipe + zoom-through camera ----------
+        flash(B(4), 0.45);
+        tl.set("#wipeband", { autoAlpha: 1 }, B(4) - 0.02);
+        tl.fromTo("#wipeband", { x: -1200 }, { x: 2900, duration: 0.55, ease: "power2.out", immediateRender: false }, B(4) - 0.02);
+        tl.set("#wipeband", { autoAlpha: 0 }, B(4) + 0.55);
+        tl.fromTo("#cam", { scale: 1, transformOrigin: "38% 52%" }, { scale: 1.1, duration: 0.85, ease: "power3.inOut", immediateRender: false }, B(4) - 0.08);
+
+        // headline crossfades to the payoff
+        tl.to("#hl-chaos", { autoAlpha: 0, y: -24, duration: 0.3, ease: "power2.in" }, B(4) + 0.05);
+        tl.fromTo("#hl-payoff", { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out", stagger: 0.07 }, B(4) + 0.25);
+        tl.fromTo("#hl-sub", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" }, B(7));
+
+        // workspace card lands as the chaos is absorbed, rows settle in
+        slam(wsBox, B(4) + 0.28, { soft: true });
+        $$(".ws-row").forEach((row, i) => {
+          tl.fromTo(row, { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out" }, B(4) + 0.48 + i * 0.1);
+          tl.fromTo($(".pill", row), { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.3, ease: "back.out(1.7)", immediateRender: false }, B(4) + 0.62 + i * 0.1);
+        });
+
+        // calm hold: settleCam micro push, no dead frames
+        tl.fromTo("#cam", { scale: 1.1, transformOrigin: "38% 52%" }, { scale: 1.135, duration: 3.18, ease: "none", immediateRender: false }, B(4) + 0.77);
+
+        // ---------- signature ----------
+        tl.fromTo("#sig-txt", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(-20% -20% -20% 0%)", duration: 0.6, ease: "steps(8)" }, 1.0);
+        tl.fromTo("#sig-line", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, 1.45);
+
+        // ---------- outro fade ----------
+        tl.fromTo("#fade", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.in", immediateRender: false }, 5.9);
+        tl.set({}, {}, T.duration); // pin the timeline length to the video duration
+      })();
+    </script>
+  </body>
+</html>
