@@ -35,6 +35,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [
 		{
 			id: "st-1",

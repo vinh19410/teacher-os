@@ -236,6 +236,38 @@ export type KernelAction =
 			type: "update-assignment-prompt";
 			promptId: string;
 			payload: AssignmentPromptUpdate;
+	  }
+	| {
+			/** Student Vocab SRS (#359): tạo bộ từ vựng cho một lớp. */
+			type: "create-vocab-deck";
+			payload: { classId: string; title: string; lang?: string };
+	  }
+	| {
+			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
+			type: "rename-vocab-deck";
+			payload: { deckId: string; title: string; lang?: string };
+	  }
+	| {
+			/** Xoá bộ từ vựng (deck + words + cards trong 1 db.batch server-side). */
+			type: "delete-vocab-deck";
+			deckId: string;
+	  }
+	| {
+			/** Tạo mới hoặc cập nhật một từ vựng trong deck (id optional). */
+			type: "upsert-vocab-word";
+			payload: {
+				deckId: string;
+				id?: string;
+				word: string;
+				ipa?: string | null;
+				translation?: string;
+				sortOrder?: number;
+			};
+	  }
+	| {
+			/** Xoá một từ vựng (cards của từ cũng bị xoá server-side). */
+			type: "remove-vocab-word";
+			wordId: string;
 	  };
 
 /** Backwards-compatible name for data-store consumers. */

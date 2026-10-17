@@ -6,6 +6,7 @@ const base: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [],
 	classes: [],
 	syllabi: [],

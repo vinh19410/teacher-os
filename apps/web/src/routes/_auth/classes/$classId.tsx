@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/field";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
+import { VocabDeckList } from "@/components/vocab/vocab-deck-list";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
@@ -278,12 +279,14 @@ function ClassDetailRoute() {
 					{ id: "roster", label: "Học viên" },
 					{ id: "sessions", label: "Buổi học" },
 					{ id: "assignments", label: "Bài tập" },
+					{ id: "vocab", label: "Từ vựng" },
 					{ id: "notes", label: "Ghi chú" },
 				]}
 				active={tab}
 				onChange={handleTabChange}
 			/>
 
+			{tab === "vocab" && <VocabDeckList classId={classId} />}
 			{tab === "assignments" && (
 				<ClassAssignmentsTab
 					key={classId}

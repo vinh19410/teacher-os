@@ -34,7 +34,7 @@
 			"!docs/diagrams",
 			"!**/.mail-preview",
 			"!**/apps/landing/public",
-			"!**/apps/landing/public"
+			"!**/packages/api/src/srs/vectors"
 		]
 	},
 	"formatter": {

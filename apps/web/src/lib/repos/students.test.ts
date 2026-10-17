@@ -10,6 +10,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [
 		{
 			id: "st-1",
@@ -119,6 +120,7 @@ describe("mapStudents", () => {
 			assignmentPrompts: [],
 			classAssignments: [],
 			assignmentTests: [],
+			vocabDecks: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -143,6 +145,7 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 		assignmentPrompts: [],
 		classAssignments: [],
 		assignmentTests: [],
+		vocabDecks: [],
 		students: [
 			{
 				id: "st-1",
@@ -285,6 +288,7 @@ describe("mapStudents parked package (issue #104)", () => {
 		assignmentPrompts: [],
 		classAssignments: [],
 		assignmentTests: [],
+		vocabDecks: [],
 		students: [
 			{
 				id: "st-1",

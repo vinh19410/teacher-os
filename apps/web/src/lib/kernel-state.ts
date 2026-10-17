@@ -14,4 +14,5 @@ export const emptyKernelData: KernelHydratedData = {
 	enrollments: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 };
