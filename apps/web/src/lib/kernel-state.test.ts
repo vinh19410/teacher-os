@@ -19,6 +19,7 @@ describe("emptyKernelData", () => {
 			"reports",
 			"students",
 			"syllabi",
+			"vocabDecks",
 		]);
 		for (const collection of Object.values(emptyKernelData)) {
 			expect(collection).toEqual([]);

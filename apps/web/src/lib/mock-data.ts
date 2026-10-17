@@ -4,6 +4,7 @@ import type {
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
+	KernelVocabDeckRow,
 } from "@teacher-os/api/contracts";
 
 export interface Student {
@@ -250,6 +251,8 @@ export type KernelHydratedData = Pick<
 	/** Full-test builder: full tests (parts đã group theo test);
 	 * MockData itself has no such collection. */
 	assignmentTests: KernelAssignmentTestRow[];
+	/** Student Vocab SRS (#359): deck list (aggregate wordCount) cho trang lớp. */
+	vocabDecks: KernelVocabDeckRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

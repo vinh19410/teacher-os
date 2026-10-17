@@ -1435,6 +1435,7 @@ export interface KernelSnapshot {
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
 	assignmentTests: KernelAssignmentTestRow[];
+	vocabDecks: KernelVocabDeckRow[];
 }
 
 export interface CreatedResponse {
@@ -2150,3 +2151,225 @@ export interface ReconcileResult {
 	matched: number;
 	unmatched: number;
 }
+
+// --- Student Vocab SRS Game (#359) ---
+// RELEASE TRAIN NOTE (#304): All vocab response/request schemas use `.strict()`.
+// `apps/server` and `apps/student` MUST be deployed on the same release train.
+
+/** Server-side upper bound for clamping `durationMs` (1 hour) — never rejects client input. */
+export const VOCAB_DURATION_MAX_MS = 3_600_000;
+
+export const VOCAB_ERROR_CODES = {
+	DECK_NOT_FOUND: "VOCAB_DECK_NOT_FOUND",
+	WORD_NOT_FOUND: "VOCAB_WORD_NOT_FOUND",
+	CARD_NOT_FOUND: "VOCAB_CARD_NOT_FOUND",
+	/** Review first-result trên card chưa học (state='new') — phải qua Learn. */
+	CARD_NOT_DUE: "VOCAB_CARD_NOT_DUE",
+	AUDIO_NOT_FOUND: "VOCAB_AUDIO_NOT_FOUND",
+	INVALID_AUDIO: "VOCAB_INVALID_AUDIO",
+} as const;
+export type VocabErrorCode =
+	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
+
+export interface KernelVocabDeckRow {
+	id: string;
+	classId: string;
+	title: string;
+	lang: string;
+	wordCount: number;
+	createdAt: string;
+}
+
+export const vocabDeckCreateSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		classId: z.string().min(1),
+		title: z.string().trim().min(1).max(200),
+		lang: z.string().trim().min(1).max(16).default("en"),
+	})
+	.strict();
+export type VocabDeckCreateInput = z.infer<typeof vocabDeckCreateSchema>;
+
+export const vocabDeckRenameSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string().trim().min(1).max(200),
+		lang: z.string().trim().min(1).max(16).optional(),
+	})
+	.strict();
+export type VocabDeckRenameInput = z.infer<typeof vocabDeckRenameSchema>;
+
+export const vocabDeckDeleteSchema = z
+	.object({
+		deckId: z.string().min(1),
+	})
+	.strict();
+export type VocabDeckDeleteInput = z.infer<typeof vocabDeckDeleteSchema>;
+
+/**
+ * Teacher word upsert contract. Note: `audioKey` is intentionally omitted here
+ * (red-team F3) — audio keys are generated and set exclusively by the server
+ * after a verified upload to `PUT /api/kernel/vocab/words/:wordId/audio`.
+ */
+export const vocabWordUpsertSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		deckId: z.string().min(1),
+		word: z.string().trim().min(1).max(200),
+		ipa: z.string().trim().max(200).nullable().optional(),
+		translation: z.string().trim().max(500).default(""),
+		sortOrder: z.number().int().min(0).default(0),
+	})
+	.strict();
+export type VocabWordUpsertInput = z.infer<typeof vocabWordUpsertSchema>;
+
+export const vocabWordRemoveSchema = z
+	.object({
+		wordId: z.string().min(1),
+	})
+	.strict();
+export type VocabWordRemoveInput = z.infer<typeof vocabWordRemoveSchema>;
+
+export const vocabTeacherWordSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		word: z.string(),
+		ipa: z.string().nullable(),
+		translation: z.string(),
+		audioKey: z.string().nullable(),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabTeacherWord = z.infer<typeof vocabTeacherWordSchema>;
+
+export const vocabTeacherWordsResponseSchema = z
+	.object({
+		words: z.array(vocabTeacherWordSchema),
+	})
+	.strict();
+export type VocabTeacherWordsResponse = z.infer<
+	typeof vocabTeacherWordsResponseSchema
+>;
+
+export const vocabOverviewDeckSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string(),
+		className: z.string(),
+		total: z.number().int().min(0),
+		newCount: z.number().int().min(0),
+		dueCount: z.number().int().min(0),
+	})
+	.strict();
+export type VocabOverviewDeck = z.infer<typeof vocabOverviewDeckSchema>;
+
+export const vocabOverviewSchema = z
+	.object({
+		dueCount: z.number().int().min(0),
+		nextDueAt: z.number().int().nullable(),
+		upcomingCount: z.number().int().min(0).nullable(),
+		learnedCount: z.number().int().min(0),
+		matureCount: z.number().int().min(0),
+		levelDistribution: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		streak: z.number().int().min(0),
+		retention: z.number().int().min(0).max(100).nullable(),
+		forecast: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		decks: z.array(vocabOverviewDeckSchema),
+	})
+	.strict();
+export type VocabOverview = z.infer<typeof vocabOverviewSchema>;
+
+export const vocabSessionDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		title: z.string(),
+		lang: z.string(),
+	})
+	.strict();
+export type VocabSessionDeck = z.infer<typeof vocabSessionDeckSchema>;
+
+export const vocabSessionCardSchema = z
+	.object({
+		id: z.string().min(1),
+		wordId: z.string().min(1),
+		word: z.string(),
+		translation: z.string(),
+		ipa: z.string().nullable(),
+		audioKey: z.string().nullable(),
+		level: z.number().int().min(1).max(5),
+		isWarning: z.boolean(),
+		state: z.enum(["new", "review"]),
+		intervalDays: z.number().int().min(0),
+		dueAt: z.number().int(),
+		lapses: z.number().int().min(0),
+	})
+	.strict();
+export type VocabSessionCard = z.infer<typeof vocabSessionCardSchema>;
+
+export const vocabPoolItemSchema = z
+	.object({
+		wordId: z.string().min(1),
+		word: z.string(),
+		translation: z.string(),
+		lang: z.string(),
+		deckId: z.string().min(1),
+	})
+	.strict();
+export type VocabPoolItem = z.infer<typeof vocabPoolItemSchema>;
+
+export const vocabSessionDataSchema = z
+	.object({
+		deck: vocabSessionDeckSchema,
+		cards: z.array(vocabSessionCardSchema),
+		pool: z.array(vocabPoolItemSchema),
+	})
+	.strict();
+export type VocabSessionData = z.infer<typeof vocabSessionDataSchema>;
+
+export const vocabAnswerSchema = z
+	.object({
+		clientLogId: z.string().uuid(),
+		cardId: z.string().min(1),
+		correct: z.boolean(),
+		durationMs: z.number().int().min(0),
+	})
+	.strict();
+export type VocabAnswerInput = z.infer<typeof vocabAnswerSchema>;
+
+export const vocabLearnCommitSchema = z
+	.object({
+		clientLogId: z.string().uuid(),
+		cardId: z.string().min(1),
+		/**
+		 * Equivalent to `firstTryCorrect` across all scored steps of the word
+		 * (`docs/srs-spec.md` §3b rule 7; a word with only "intro" is true).
+		 */
+		gradeGood: z.boolean(),
+		durationMs: z.number().int().min(0),
+	})
+	.strict();
+export type VocabLearnCommitInput = z.infer<typeof vocabLearnCommitSchema>;
+
+export const vocabCardMutationResponseSchema = z
+	.object({
+		card: vocabSessionCardSchema,
+	})
+	.strict();
+export type VocabCardMutationResponse = z.infer<
+	typeof vocabCardMutationResponseSchema
+>;

@@ -10,6 +10,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [
 		{
 			id: "st-1",
@@ -188,6 +189,7 @@ describe("mapClasses", () => {
 			assignmentPrompts: [],
 			classAssignments: [],
 			assignmentTests: [],
+			vocabDecks: [],
 			students: [],
 			classes: [],
 			syllabi: [],
@@ -209,6 +211,7 @@ describe("mapClasses sessionsDone derive (Wave 4)", () => {
 		assignmentPrompts: [],
 		classAssignments: [],
 		assignmentTests: [],
+		vocabDecks: [],
 		students: [],
 		classes: [
 			{
@@ -362,6 +365,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 			assignmentPrompts: [],
 			classAssignments: [],
 			assignmentTests: [],
+			vocabDecks: [],
 			students: [],
 			classes: [baseClass],
 			syllabi: [],
@@ -444,6 +448,7 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 			assignmentPrompts: [],
 			classAssignments: [],
 			assignmentTests: [],
+			vocabDecks: [],
 			students: [],
 			classes: [
 				{

@@ -158,7 +158,7 @@ function RerenderableClassDetail() {
 }
 
 describe("class detail tabs", () => {
-	it("offers roster, sessions, assignments and notes — syllabus and schedule live inside sessions", async () => {
+	it("offers roster, sessions, assignments, vocab and notes — syllabus and schedule live inside sessions", async () => {
 		startKernelServer(twoClasses());
 		renderWithKernel(<ClassDetail />);
 		const tabs = await screen.findAllByRole("tab");
@@ -166,6 +166,7 @@ describe("class detail tabs", () => {
 			"Học viên",
 			"Buổi học",
 			"Bài tập",
+			"Từ vựng",
 			"Ghi chú",
 		]);
 	});

@@ -8,7 +8,8 @@
 	},
 	"scripts": {
 		"check-types": "tsc -b",
-		"test": "vitest run"
+		"test": "vitest run",
+		"verify:vectors": "node src/srs/vectors/generate-level-vectors.mjs --check"
 	},
 	"dependencies": {
 		"zod": "catalog:"

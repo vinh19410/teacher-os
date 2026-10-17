@@ -275,6 +275,33 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "PATCH",
 				body: { ...action.payload },
 			};
+		case "create-vocab-deck":
+			// #359: vocabDeckCreateSchema .strict() — id optional không gửi
+			// (server tự sinh), lang default "en" server-side.
+			return {
+				path: "/api/kernel/vocab/decks",
+				body: { ...action.payload },
+			};
+		case "rename-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/decks/rename",
+				body: { ...action.payload },
+			};
+		case "delete-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/decks/delete",
+				body: { deckId: action.deckId },
+			};
+		case "upsert-vocab-word":
+			return {
+				path: "/api/kernel/vocab/words/upsert",
+				body: { ...action.payload },
+			};
+		case "remove-vocab-word":
+			return {
+				path: "/api/kernel/vocab/words/remove",
+				body: { wordId: action.wordId },
+			};
 	}
 }
 
@@ -303,6 +330,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		enrollments: mapEnrollments(snapshot),
 		classAssignments: mapClassAssignments(snapshot),
 		assignmentTests: mapAssignmentTests(snapshot),
+		vocabDecks: snapshot.vocabDecks ?? [],
 	};
 }
 
@@ -448,6 +476,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"reports",
 	"notifs",
 	"commentBank",
+	"vocabDecks",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in

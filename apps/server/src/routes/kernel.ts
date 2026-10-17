@@ -82,6 +82,7 @@ import { gradingRoutes } from "./grading";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
+import { vocabTeacherRoutes } from "./vocab-teacher";
 
 // Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
 // chuyển sang enrollment-activation.ts.
@@ -2103,6 +2104,9 @@ export function kernelRoutes(deps: {
 	kernel.route("/bank-link", bankLinkRoutes(deps));
 	kernel.route("/payment-transactions", paymentTransactionRoutes(deps));
 	kernel.route("/grading", gradingRoutes(deps));
+	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
+	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
+	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));
 
 	return kernel;
 }

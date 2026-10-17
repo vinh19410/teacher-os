@@ -73,6 +73,7 @@ import {
 	studentClassColumns,
 	toStudentClass,
 } from "./student-class";
+import { registerVocabRoutes } from "./vocab";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -1840,6 +1841,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		};
 		return c.json(detail);
 	});
+
+	registerVocabRoutes(router, deps, requireStudent, allowedOrigins);
 
 	return router;
 }

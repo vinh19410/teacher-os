@@ -33,6 +33,7 @@ export function snapshotFixture(
 		reports: [],
 		notifs: [],
 		commentBank: [],
+		vocabDecks: [],
 		...overrides,
 	};
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import {
 	useStudentMe,
 	useStudentOverview,
 } from "@/lib/repos/student";
+import { useVocabOverview } from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/")({
 	component: StudentOverviewPage,
@@ -136,6 +137,8 @@ function StudentOverviewPage() {
 			</div>
 
 			{/* Bài tập */}
+			<StudentVocabEntrySection />
+
 			<AssignmentList assignments={overview.assignments} />
 		</StudentShell>
 	);
@@ -154,4 +157,48 @@ function StudentTuitionSection() {
 	});
 	if (invoices.isError || !invoices.data) return null;
 	return <TuitionList invoices={invoices.data} />;
+}
+
+function StudentVocabEntrySection() {
+	const vocab = useVocabOverview();
+	const dueCount = vocab.data?.dueCount ?? 0;
+	const deckCount = vocab.data?.decks.length ?? 0;
+
+	return (
+		<section className="mt-10">
+			<div className="neu flex flex-wrap items-center justify-between gap-4 rounded-md p-5">
+				<div>
+					<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+						Spaced Repetition
+					</p>
+					<h2 className="mt-1 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+						Từ vựng của tôi
+					</h2>
+					<p className="mt-1 text-meta text-sm">
+						{deckCount > 0
+							? `${deckCount} bộ từ vựng trong lớp học của bạn`
+							: "Ôn tập từ vựng theo 5 cấp độ trí nhớ"}
+					</p>
+				</div>
+				<div className="flex items-center gap-3">
+					{dueCount > 0 ? (
+						<span
+							data-testid="vocab-home-due-badge"
+							aria-hidden="true"
+							className="rounded-full bg-hot px-2.5 py-0.5 font-mono text-accent-on text-xs"
+						>
+							{dueCount} đến hạn
+						</span>
+					) : null}
+					<Link
+						to="/vocab"
+						data-testid="vocab-home-entry"
+						className="neu-sm rounded-md px-4 py-2 font-medium text-fg text-sm transition-colors duration-150 hover:border-fg hover:text-hot"
+					>
+						Vào học từ vựng →
+					</Link>
+				</div>
+			</div>
+		</section>
+	);
 }
