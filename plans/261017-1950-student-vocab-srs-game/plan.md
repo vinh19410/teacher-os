@@ -1,7 +1,7 @@
 ---
 title: "Student Vocab SRS Game — port logic Flinto (5 level, minigames, Learn/Review)"
 description: "Port hệ thống game ôn tập từ vựng + spaced repetition của Flinto (5 memory level, interval [1,3,7,14,30], 5 minigames, vòng Learn/Review) vào teacher-os: engine pure TS + conformance vectors, schema D1 + API server, UI student học + teacher quản lý deck."
-status: pending
+status: completed
 priority: P1
 effort: 40h
 issue: 359
