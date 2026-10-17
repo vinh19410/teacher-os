@@ -69,6 +69,7 @@ __pycache__/
 # Agent tooling
 .zcode/
 .claude/
+.video_agent/
 node_modules/
 .e2e/artifacts/
 .e2e/cache/
