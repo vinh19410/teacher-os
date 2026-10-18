@@ -1,7 +1,7 @@
 ---
 title: "Built-in Vocabulary Courses (Thư viện từ vựng dùng chung)"
 description: "Nạp 20 khóa / 968 bài / 10.160 từ từ master data CSV thành thư viện dùng chung cho mọi org; teacher chọn bài trong tab Từ vựng để clone về lớp của mình thành deck SRS thường."
-status: pending
+status: completed
 priority: P2
 effort: 32h
 issue: 361
@@ -35,11 +35,11 @@ Evidence đầy đủ: [scout report](./reports/scout-report.md). Không tồn t
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Schema & Migration](./phase-01-schema-migration.md) | Pending |
-| 2 | [Seed Pipeline](./phase-02-seed-pipeline.md) | Pending |
-| 3 | [Library API + Clone + Audio](./phase-03-library-api.md) | Pending |
-| 4 | [Teacher UI](./phase-04-teacher-ui.md) | Pending |
-| 5 | [Tests & E2E](./phase-05-tests-e2e.md) | Pending |
+| 1 | [Schema & Migration](./phase-01-schema-migration.md) | Completed |
+| 2 | [Seed Pipeline](./phase-02-seed-pipeline.md) | Completed |
+| 3 | [Library API + Clone + Audio](./phase-03-library-api.md) | Completed |
+| 4 | [Teacher UI](./phase-04-teacher-ui.md) | Completed |
+| 5 | [Tests & E2E](./phase-05-tests-e2e.md) | Completed |
 
 ## Dependencies
 
@@ -50,13 +50,13 @@ Evidence đầy đủ: [scout report](./reports/scout-report.md). Không tồn t
 
 ## Success Criteria
 
-- [ ] Seed idempotent: chạy 2 lần liên tiếp cho cùng counts (20/968/10160), ids deterministic (`libcourse-*`, `libdeck-*`, `libword-*`); `--verify` in bảng đối chiếu expected vs actual.
-- [ ] Teacher org A clone 2 deck vào lớp → deck xuất hiện trong tab Từ vựng với badge "Thư viện"; teacher org B KHÔNG thấy deck của A; clone vào classId của org khác bị chặn 404.
-- [ ] Clone là deck thường: student enroll học bình thường, `ensureDeckCards` lazy provision hoạt động, `vocab_card`/`vocab_review_log` sinh đúng flow cũ; xoá deck clone không ảnh hưởng thư viện.
-- [ ] Từ có `audioUrl` (100% master data) → `listeningChoice` eligible; route `/api/student/vocab/audio/:wordId` trả audio (proxy remote khi không có `audioKey`, ưu tiên `audioKey` nếu teacher upload đè); CDN lỗi → 404 `AUDIO_NOT_FOUND`, UI degradation sẵn có.
-- [ ] Cap: clone >50 decks hoặc decks+từ >500 statements trong 1 request bị 422 kèm mã lỗi; deckIds trùng lặp bị 400; clone thành công là atomic (1 `db.batch`); request không đăng nhập → 401 mọi endpoint library.
-- [ ] Gate local pass: `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, `pnpm --filter @teacher-os/api test`, `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
-- [ ] UI verify 3 viewport (1440×900, 768×1024, 375×812) + keyboard focus theo REVIEW.md; PR kèm screenshot.
+- [x] Seed idempotent: chạy 2 lần liên tiếp cho cùng counts (20/968/10160), ids deterministic (`libcourse-*`, `libdeck-*`, `libword-*`); `--verify` in bảng đối chiếu expected vs actual.
+- [x] Teacher org A clone 2 deck vào lớp → deck xuất hiện trong tab Từ vựng với badge "Thư viện"; teacher org B KHÔNG thấy deck của A; clone vào classId của org khác bị chặn 404.
+- [x] Clone là deck thường: student enroll học bình thường, `ensureDeckCards` lazy provision hoạt động, `vocab_card`/`vocab_review_log` sinh đúng flow cũ; xoá deck clone không ảnh hưởng thư viện.
+- [x] Từ có `audioUrl` (100% master data) → `listeningChoice` eligible; route `/api/student/vocab/audio/:wordId` trả audio (proxy remote khi không có `audioKey`, ưu tiên `audioKey` nếu teacher upload đè); CDN lỗi → 404 `AUDIO_NOT_FOUND`, UI degradation sẵn có.
+- [x] Cap: clone >50 decks hoặc decks+từ >500 statements trong 1 request bị 422 kèm mã lỗi; deckIds trùng lặp bị 400; clone thành công là atomic (1 `db.batch`); request không đăng nhập → 401 mọi endpoint library.
+- [x] Gate local pass: `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, `pnpm --filter @teacher-os/api test`, `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`.
+- [x] UI verify 3 viewport (1440×900, 768×1024, 375×812) + keyboard focus theo REVIEW.md; PR kèm screenshot.
 
 ## Red Team Review
 

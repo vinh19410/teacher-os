@@ -10,7 +10,7 @@ import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 import type { MediaStore, StoredMedia } from "../lib/media-store";
 import { ensureDeckCards } from "../lib/vocab-provision";
@@ -689,5 +689,119 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		// card1 overdue (dueAt 2 ngày trước) KHÔNG nằm trong bucket nào;
 		// card2 (applyAnswer +3d khi trả lời đúng) nằm trong bucket 3.
 		expect(overview.forecast.reduce((a, b) => a + b, 0)).toBe(2);
+	});
+
+	test("remote audio proxy (#361): follows 301 cross-host redirect, works when mediaStore is undefined, enforces allowlist/5MB/content-type, and prioritizes audioKey", async () => {
+		// Add a word with audioUrl only (and no audioKey)
+		await libsql.insert(schema.vocabWord).values({
+			id: "w-remote",
+			deckId: "deck-1",
+			word: "teacher",
+			ipa: "/ˈtiːtʃər/",
+			translation: "Giáo viên",
+			audioKey: null,
+			audioUrl:
+				"https://mochien3.1-api.mochidemy.com/public/audios/question/teacher.mp3",
+			sortOrder: 3,
+		});
+
+		// 1) Session-data reports hasAudio: true for w-1 (audioKey) and w-remote (audioUrl), false for w-2
+		const sessionRes = await app.request(
+			"/api/student/vocab/decks/deck-1/session-data",
+			{ headers: { "x-test-user": "studentA" } },
+		);
+		expect(sessionRes.status).toBe(200);
+		const sessionData = vocabSessionDataSchema.parse(await sessionRes.json());
+		const cardByWordId = new Map(
+			sessionData.cards.map((c) => [c.wordId, c.hasAudio]),
+		);
+		expect(cardByWordId.get("w-1")).toBe(true);
+		expect(cardByWordId.get("w-remote")).toBe(true);
+		expect(cardByWordId.get("w-2")).toBe(false);
+
+		// 2) 301 cross-host redirect where first hop is text/html and final hop is 200 audio/mpeg
+		//    AND tested on an app instance with getMediaStore: () => undefined!
+		const appWithoutStore = buildApp({
+			getDb: () => libsql,
+			getMediaStore: () => undefined,
+			corsOrigin: [STUDENT_ORIGIN],
+			authHandler: async () => new Response("not used", { status: 404 }),
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user") ?? "";
+				return users[key] ?? null;
+			},
+		});
+
+		const mp3Bytes = new Uint8Array([0xff, 0xfb, 0x90, 0x64]);
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockImplementationOnce(
+				async () =>
+					new Response("<html>301 Moved Permanently</html>", {
+						status: 301,
+						headers: {
+							"content-type": "text/html",
+							location:
+								"https://mochien-server.mochidemy.com/public/audios/question/teacher.mp3",
+						},
+					}),
+			)
+			.mockImplementationOnce(
+				async () =>
+					new Response(mp3Bytes, {
+						status: 200,
+						headers: {
+							"content-type": "audio/mpeg",
+						},
+					}),
+			);
+
+		try {
+			const proxyRes = await appWithoutStore.request(
+				"/api/student/vocab/audio/w-remote",
+				{ headers: { "x-test-user": "studentA" } },
+			);
+			expect(proxyRes.status).toBe(200);
+			expect(proxyRes.headers.get("Content-Type")).toBe("audio/mpeg");
+			expect(proxyRes.headers.get("Cache-Control")).toBe(
+				"private, max-age=86400",
+			);
+			expect(proxyRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
+			const buf = new Uint8Array(await proxyRes.arrayBuffer());
+			expect(Array.from(buf)).toEqual([0xff, 0xfb, 0x90, 0x64]);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+			// Missing store on a word with audioKey still returns 503
+			const keyWithoutStoreRes = await appWithoutStore.request(
+				"/api/student/vocab/audio/w-1",
+				{ headers: { "x-test-user": "studentA" } },
+			);
+			expect(keyWithoutStoreRes.status).toBe(503);
+
+			// Upstream 500 -> 404 AUDIO_NOT_FOUND
+			fetchSpy.mockImplementationOnce(
+				async () => new Response("Internal Server Error", { status: 500 }),
+			);
+			const failRes = await appWithoutStore.request(
+				"/api/student/vocab/audio/w-remote",
+				{ headers: { "x-test-user": "studentA" } },
+			);
+			expect(failRes.status).toBe(404);
+
+			// Non-allowlisted host -> 404 without calling fetch
+			await libsql
+				.update(schema.vocabWord)
+				.set({ audioUrl: "https://evil.example.com/audio.mp3" })
+				.where(eq(schema.vocabWord.id, "w-remote"));
+			fetchSpy.mockClear();
+			const blockedHostRes = await appWithoutStore.request(
+				"/api/student/vocab/audio/w-remote",
+				{ headers: { "x-test-user": "studentA" } },
+			);
+			expect(blockedHostRes.status).toBe(404);
+			expect(fetchSpy).not.toHaveBeenCalled();
+		} finally {
+			fetchSpy.mockRestore();
+		}
 	});
 });

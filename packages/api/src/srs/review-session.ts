@@ -290,6 +290,31 @@ export class ReviewSession {
 	}
 
 	/**
+	 * Skips the front card without recording a result or calling `onFirstResult`
+	 * (used when remote/CDN audio fails to load on `listeningChoice`, #361).
+	 */
+	skipCurrentPrompt(nowMs = Date.now()): void {
+		if (
+			this.finished ||
+			this.feedback !== null ||
+			this.showEncouragement ||
+			this.queue.length === 0
+		) {
+			return;
+		}
+		const card = this.queue.shift();
+		if (card && !this.removedCardIds.has(card.id)) {
+			this.done += 1;
+		}
+		this.queue = this.queue.filter((c) => !this.removedCardIds.has(c.id));
+		this.feedback = null;
+		this.isRevealed = false;
+		this.turn += 1;
+		this.finished = this.queue.length === 0;
+		this.promptShownAtMs = nowMs;
+		this.preparePrompt();
+	}
+	/**
 	 * Closes the encouragement overlay per docs/srs-spec.md §3 rule 4.
 	 * If the current prompt is `selfCheck`, also advances past feedback.
 	 */

@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Seed Pipeline"
-status: todo
+status: completed
 priority: P1
 effort: 6h
 dependencies: ["phase-01"]
@@ -33,14 +33,14 @@ Script idempotent nạp 3 CSV master data (20 courses / 968 lessons / 10.160 wor
 
 ## Requirements
 
-- [ ] Seed core `packages/db/src/seed/vocab-library.ts`: parse 3 CSV (papaparse), assert cột bắt buộc tồn tại **và uniqueness key** (`new Set(ids).size === rows.length` cho cả 3 CSV — throw với message nêu rõ cột key), build deterministic rows, sinh SQL upsert chunked, expose `seedVocabLibrary(runner)` + `verifyCounts(runner)`.
-- [ ] `verifyCounts` so **id-set** (SELECT id per bảng, đối chiếu tập id từ CSV), không chỉ tổng count — bắt được re-export vừa thêm vừa xoá cùng số row. <!-- Updated: Red Team Session 1 - verify theo id-set -->
-- [ ] CLI `packages/db/scripts/seed-vocab-library.ts`: cờ `--file <sqlite-path>` (libsql), `--d1` (REST qua env), `--prune` (DELETE theo prefix `libcourse-`/`libdeck-`/`libword-` trước insert — gỡ row đã xoá khỏi CSV mới), `--verify` (in bảng đối chiếu expected vs actual), exit non-zero khi lệch.
-- [ ] `papaparse` thêm vào `packages/db` devDependencies; KHÔNG thêm dep parser nào khác.
-- [ ] **vitest vào packages/db** (hiện chưa có — `packages/db/package.json` không có devDep vitest hay script `test`): thêm `vitest` + `@teacher-os/config` (tsconfig) + script `"test": "vitest run"` theo pattern `packages/api/package.json:11,20`; không có script này thì root `pnpm test` (turbo) bỏ qua seed test mãi mãi. <!-- Updated: Red Team Session 1 - vitest gate -->
-- [ ] 3 CSV committed tại `packages/db/seed-data/vocab-library/`; `.gitignore` thêm `raw-data/`.
-- [ ] Test unit cho parser/upsert (sqlite tmp): quoted commas, idempotency chạy 2 lần, counts đúng, uniqueness key.
-- [ ] Runbook local + prod viết trong README ngắn `packages/db/scripts/README-seed-vocab-library.md`; **runbook prod có gate giấy phép**: seed `--d1` vào PROD chỉ chạy sau khi Open Question 1 của plan.md (xác nhận quyền dùng nội dung mochidemy) được owner resolves — staging tự do. <!-- Updated: Red Team Session 1 - license gate -->
+- [x] Seed core `packages/db/src/seed/vocab-library.ts`: parse 3 CSV (papaparse), assert cột bắt buộc tồn tại **và uniqueness key** (`new Set(ids).size === rows.length` cho cả 3 CSV — throw với message nêu rõ cột key), build deterministic rows, sinh SQL upsert chunked, expose `seedVocabLibrary(runner)` + `verifyCounts(runner)`.
+- [x] `verifyCounts` so **id-set** (SELECT id per bảng, đối chiếu tập id từ CSV), không chỉ tổng count — bắt được re-export vừa thêm vừa xoá cùng số row. <!-- Updated: Red Team Session 1 - verify theo id-set -->
+- [x] CLI `packages/db/scripts/seed-vocab-library.ts`: cờ `--file <sqlite-path>` (libsql), `--d1` (REST qua env), `--prune` (DELETE theo prefix `libcourse-`/`libdeck-`/`libword-` trước insert — gỡ row đã xoá khỏi CSV mới), `--verify` (in bảng đối chiếu expected vs actual), exit non-zero khi lệch.
+- [x] `papaparse` thêm vào `packages/db` devDependencies; KHÔNG thêm dep parser nào khác.
+- [x] **vitest vào packages/db** (hiện chưa có — `packages/db/package.json` không có devDep vitest hay script `test`): thêm `vitest` + `@teacher-os/config` (tsconfig) + script `"test": "vitest run"` theo pattern `packages/api/package.json:11,20`; không có script này thì root `pnpm test` (turbo) bỏ qua seed test mãi mãi. <!-- Updated: Red Team Session 1 - vitest gate -->
+- [x] 3 CSV committed tại `packages/db/seed-data/vocab-library/`; `.gitignore` thêm `raw-data/`.
+- [x] Test unit cho parser/upsert (sqlite tmp): quoted commas, idempotency chạy 2 lần, counts đúng, uniqueness key.
+- [x] Runbook local + prod viết trong README ngắn `packages/db/scripts/README-seed-vocab-library.md`; **runbook prod có gate giấy phép**: seed `--d1` vào PROD chỉ chạy sau khi Open Question 1 của plan.md (xác nhận quyền dùng nội dung mochidemy) được owner resolves — staging tự do. <!-- Updated: Red Team Session 1 - license gate -->
 
 ## Architecture
 
@@ -81,10 +81,10 @@ Verify expected: `{ course: 20, deck: 968, word: 10160 }`.
 
 ## Todo
 
-- [ ] CSV committed + `.gitignore` raw-data
-- [ ] Seed core + parser test pass
-- [ ] CLI `--file` / `--d1` / `--verify` chạy được
-- [ ] Runbook + boot e2e seed
+- [x] CSV committed + `.gitignore` raw-data
+- [x] Seed core + parser test pass
+- [x] CLI `--file` / `--d1` / `--verify` chạy được
+- [x] Runbook + boot e2e seed
 
 ## Success Criteria
 

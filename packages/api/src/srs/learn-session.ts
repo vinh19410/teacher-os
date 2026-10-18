@@ -310,6 +310,33 @@ export class LearnSession {
 	}
 
 	/**
+	 * Skips the front scored step (used when remote/CDN audio fails to load on
+	 * `listeningChoice` so the student is not penalized in SRS for a third-party outage, #361).
+	 * Does not mark `firstTryCorrectByCard` false and does not emit `onCommit` when skipping.
+	 */
+	skipCurrentPrompt(nowMs = Date.now()): void {
+		if (this.finished || this.feedback !== null || this.queue.length === 0) {
+			return;
+		}
+		const step = this.queue.shift();
+		if (
+			step &&
+			!this.removedCardIds.has(step.cardId) &&
+			this.cardsById.has(step.cardId)
+		) {
+			this.done += 1;
+			this.completeIfLast(step.cardId, nowMs);
+		}
+		this.queue = this.queue.filter((s) => !this.removedCardIds.has(s.cardId));
+		this.feedback = null;
+		this.isRevealed = false;
+		this.introRevealedOnce = false;
+		this.turn += 1;
+		this.stepShownAtMs = nowMs;
+		this.finished = this.queue.length === 0;
+		this.preparePrompt();
+	}
+	/**
 	 * §3b rule 9: removes all remaining steps of a card deleted mid-session without committing it.
 	 */
 	removeCard(cardId: string, nowMs = Date.now()): boolean {

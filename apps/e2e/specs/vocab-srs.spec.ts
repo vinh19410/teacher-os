@@ -297,7 +297,9 @@ test.describe
 				safety += 1;
 				const introFlip = page.getByTestId("vocab-intro-flip-btn");
 				if (await introFlip.isVisible()) {
-					await expect(page.getByTestId("vocab-intro-continue-btn")).toBeDisabled();
+					await expect(
+						page.getByTestId("vocab-intro-continue-btn"),
+					).toBeDisabled();
 					await introFlip.click();
 					const introContinue = page.getByTestId("vocab-intro-continue-btn");
 					await expect(introContinue).toBeEnabled();
@@ -306,8 +308,10 @@ test.describe
 				}
 				const typingInput = page.getByTestId("vocab-typing-input");
 				if (await typingInput.isVisible()) {
-					const hint = (await page.getByTestId("vocab-typing-hint").textContent()) ?? "";
-					const word = WORD_BY_FIRST_LETTER[hint.trim().charAt(0)] ?? "resilient";
+					const hint =
+						(await page.getByTestId("vocab-typing-hint").textContent()) ?? "";
+					const word =
+						WORD_BY_FIRST_LETTER[hint.trim().charAt(0)] ?? "resilient";
 					await typingInput.fill(word);
 					await page.getByTestId("vocab-typing-submit").click();
 					const feedbackContinue = page.getByTestId("vocab-continue-btn");
@@ -323,7 +327,6 @@ test.describe
 					await expect(feedbackContinue).toBeVisible();
 					await expect(feedbackContinue).toBeEnabled();
 					await feedbackContinue.click();
-					continue;
 				}
 			}
 
@@ -447,7 +450,7 @@ test.describe
 			const deleteDb = openDb();
 			try {
 				await deleteDb.execute({
-					sql: `DELETE FROM vocab_card WHERE word_id IN (SELECT id FROM vocab_word WHERE deck_id = ?)`,
+					sql: "DELETE FROM vocab_card WHERE word_id IN (SELECT id FROM vocab_word WHERE deck_id = ?)",
 					args: [deckId],
 				});
 				await deleteDb.execute({

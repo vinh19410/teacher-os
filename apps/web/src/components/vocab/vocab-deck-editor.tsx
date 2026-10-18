@@ -65,6 +65,7 @@ export function VocabDeckEditorDialog({
 				ipa: null,
 				translation: "",
 				audioKey: null,
+				audioUrl: null,
 				sortOrder: prev.length,
 			},
 		]);

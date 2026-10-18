@@ -7,6 +7,7 @@ import { Modal } from "@/components/ui/modal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
 import { VocabDeckEditorDialog } from "./vocab-deck-editor";
+import { VocabLibraryDialog } from "./vocab-library-dialog";
 
 /**
  * Section "Từ vựng" trong trang chi tiết lớp (#359): danh sách deck
@@ -19,6 +20,7 @@ export function VocabDeckList({ classId }: { classId: string }) {
 	const decks = data.vocabDecks.filter((deck) => deck.classId === classId);
 
 	const [createOpen, setCreateOpen] = useState(false);
+	const [libraryOpen, setLibraryOpen] = useState(false);
 	const [newTitle, setNewTitle] = useState("");
 	const [createSaving, setCreateSaving] = useState(false);
 	const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
@@ -60,9 +62,19 @@ export function VocabDeckList({ classId }: { classId: string }) {
 		<Card className="p-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<SectionLabel>Từ vựng SRS</SectionLabel>
-				<Button size="sm" onClick={() => setCreateOpen(true)}>
-					Tạo bộ từ
-				</Button>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-add-from-library"
+						onClick={() => setLibraryOpen(true)}
+					>
+						Thêm từ thư viện
+					</Button>
+					<Button size="sm" onClick={() => setCreateOpen(true)}>
+						Tạo bộ từ
+					</Button>
+				</div>
 			</div>
 
 			{decks.length === 0 ? (
@@ -79,9 +91,19 @@ export function VocabDeckList({ classId }: { classId: string }) {
 							className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
 						>
 							<div className="min-w-0">
-								<p className="truncate font-medium text-fg text-sm">
-									{deck.title}
-								</p>
+								<div className="flex flex-wrap items-center gap-2">
+									<p className="truncate font-medium text-fg text-sm">
+										{deck.title}
+									</p>
+									{deck.sourceLibraryDeckId ? (
+										<span
+											data-testid={`vocab-deck-library-badge-${deck.id}`}
+											className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+										>
+											Thư viện
+										</span>
+									) : null}
+								</div>
 								<p className="mt-0.5 font-mono text-[11px] text-muted-fg">
 									{deck.wordCount} từ · {deck.lang}
 								</p>
@@ -182,6 +204,11 @@ export function VocabDeckList({ classId }: { classId: string }) {
 					onClose={() => setEditingDeckId(null)}
 				/>
 			) : null}
+			<VocabLibraryDialog
+				open={libraryOpen}
+				classId={classId}
+				onClose={() => setLibraryOpen(false)}
+			/>
 		</Card>
 	);
 }

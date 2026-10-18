@@ -268,6 +268,11 @@ export type KernelAction =
 			/** Xoá một từ vựng (cards của từ cũng bị xoá server-side). */
 			type: "remove-vocab-word";
 			wordId: string;
+	  }
+	| {
+			/** Built-in Vocab Library (#361): clone các bài từ thư viện về lớp. */
+			type: "clone-vocab-library-decks";
+			payload: { classId: string; deckIds: string[] };
 	  };
 
 /** Backwards-compatible name for data-store consumers. */

@@ -2152,12 +2152,18 @@ export interface ReconcileResult {
 	unmatched: number;
 }
 
-// --- Student Vocab SRS Game (#359) ---
-// RELEASE TRAIN NOTE (#304): All vocab response/request schemas use `.strict()`.
+// --- Student Vocab SRS Game (#359) & Built-in Vocab Library (#361) ---
+// RELEASE TRAIN NOTE (#304, #361): All vocab response/request schemas use `.strict()`.
 // `apps/server` and `apps/student` MUST be deployed on the same release train.
+// Note on `hasAudio` (#361): `.default(false)` makes old payloads backward-compatible
+// with the new schema, but an older student bundle parsing `.strict()` at runtime will
+// reject the new `hasAudio` field from a newer server — always deploy worker + student together.
 
 /** Server-side upper bound for clamping `durationMs` (1 hour) — never rejects client input. */
 export const VOCAB_DURATION_MAX_MS = 3_600_000;
+
+/** Upper bound (5 MB) for proxying remote library audio files (#361). */
+export const LIBRARY_AUDIO_MAX_BYTES = 5 * 1024 * 1024;
 
 export const VOCAB_ERROR_CODES = {
 	DECK_NOT_FOUND: "VOCAB_DECK_NOT_FOUND",
@@ -2167,6 +2173,10 @@ export const VOCAB_ERROR_CODES = {
 	CARD_NOT_DUE: "VOCAB_CARD_NOT_DUE",
 	AUDIO_NOT_FOUND: "VOCAB_AUDIO_NOT_FOUND",
 	INVALID_AUDIO: "VOCAB_INVALID_AUDIO",
+	LIBRARY_COURSE_NOT_FOUND: "LIBRARY_COURSE_NOT_FOUND",
+	LIBRARY_DECK_NOT_FOUND: "LIBRARY_DECK_NOT_FOUND",
+	LIBRARY_CLONE_TOO_LARGE: "LIBRARY_CLONE_TOO_LARGE",
+	LIBRARY_CLONE_DUPLICATE_DECK: "LIBRARY_CLONE_DUPLICATE_DECK",
 } as const;
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
@@ -2178,6 +2188,7 @@ export interface KernelVocabDeckRow {
 	lang: string;
 	wordCount: number;
 	createdAt: string;
+	sourceLibraryDeckId: string | null;
 }
 
 export const vocabDeckCreateSchema = z
@@ -2238,6 +2249,7 @@ export const vocabTeacherWordSchema = z
 		ipa: z.string().nullable(),
 		translation: z.string(),
 		audioKey: z.string().nullable(),
+		audioUrl: z.string().nullable(),
 		sortOrder: z.number().int(),
 	})
 	.strict();
@@ -2251,6 +2263,87 @@ export const vocabTeacherWordsResponseSchema = z
 export type VocabTeacherWordsResponse = z.infer<
 	typeof vocabTeacherWordsResponseSchema
 >;
+
+export const vocabLibraryCourseSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+		deckCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryCourse = z.infer<typeof vocabLibraryCourseSchema>;
+
+export const vocabLibraryCoursesResponseSchema = z
+	.object({
+		courses: z.array(vocabLibraryCourseSchema),
+	})
+	.strict();
+export type VocabLibraryCoursesResponse = z.infer<
+	typeof vocabLibraryCoursesResponseSchema
+>;
+
+export const vocabLibraryDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		courseId: z.string().min(1),
+		title: z.string(),
+		imageUrl: z.string().nullable(),
+		wordCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryDeck = z.infer<typeof vocabLibraryDeckSchema>;
+
+export const vocabLibraryDecksResponseSchema = z
+	.object({
+		decks: z.array(vocabLibraryDeckSchema),
+	})
+	.strict();
+export type VocabLibraryDecksResponse = z.infer<
+	typeof vocabLibraryDecksResponseSchema
+>;
+
+export const vocabLibraryWordSchema = z
+	.object({
+		id: z.string().min(1),
+		word: z.string(),
+		ipa: z.string().nullable(),
+		pos: z.string().nullable(),
+		translation: z.string(),
+		sentenceVi: z.string().nullable(),
+		sentenceEn: z.string().nullable(),
+		pictureUrl: z.string().nullable(),
+		audioUrl: z.string().nullable(),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryWord = z.infer<typeof vocabLibraryWordSchema>;
+
+export const vocabLibraryWordsResponseSchema = z
+	.object({
+		deck: z
+			.object({
+				id: z.string().min(1),
+				title: z.string(),
+			})
+			.strict(),
+		words: z.array(vocabLibraryWordSchema),
+	})
+	.strict();
+export type VocabLibraryWordsResponse = z.infer<
+	typeof vocabLibraryWordsResponseSchema
+>;
+
+export const vocabLibraryCloneSchema = z
+	.object({
+		classId: z.string().min(1),
+		deckIds: z.array(z.string().min(1)).min(1).max(50),
+	})
+	.strict();
+export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
 
 export const vocabOverviewDeckSchema = z
 	.object({
@@ -2311,6 +2404,7 @@ export const vocabSessionCardSchema = z
 		translation: z.string(),
 		ipa: z.string().nullable(),
 		audioKey: z.string().nullable(),
+		hasAudio: z.boolean().default(false),
 		level: z.number().int().min(1).max(5),
 		isWarning: z.boolean(),
 		state: z.enum(["new", "review"]),

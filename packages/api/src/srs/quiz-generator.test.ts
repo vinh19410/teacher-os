@@ -17,6 +17,7 @@ function makeCard(overrides: Partial<VocabSessionCard> = {}): VocabSessionCard {
 		translation: "kiên cường",
 		ipa: "/rɪˈzɪl.i.ənt/",
 		audioKey: null,
+		hasAudio: false,
 		level: 1,
 		isWarning: false,
 		state: "review",
@@ -111,8 +112,25 @@ describe("QuizGenerator", () => {
 			"en",
 		);
 		expect(eligibleKinds(noDistractorsAndIneligibleTyping, [])).toEqual([]);
-	});
 
+		const hasAudioWithoutKey = toQuizCandidate(
+			makeCard({ audioKey: null, hasAudio: true }),
+			"d1",
+			"en",
+		);
+		expect(eligibleKinds(hasAudioWithoutKey, pool)).toContain(
+			"listeningChoice",
+		);
+
+		const noAudioFlagOrKey = toQuizCandidate(
+			makeCard({ audioKey: null, hasAudio: false }),
+			"d1",
+			"en",
+		);
+		expect(eligibleKinds(noAudioFlagOrKey, pool)).not.toContain(
+			"listeningChoice",
+		);
+	});
 	it("never includes distractors with normalized key equal to answer or from another language for wordChoice", () => {
 		const rng = new SeededRandom(42);
 		const candidate = toQuizCandidate(makeCard(), "d1", "en");

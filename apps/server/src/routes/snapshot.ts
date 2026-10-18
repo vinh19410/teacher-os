@@ -594,6 +594,7 @@ export async function loadSnapshot(
 			lang: row.lang,
 			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
 			createdAt: row.createdAt.toISOString(),
+			sourceLibraryDeckId: row.sourceLibraryDeckId ?? null,
 		})),
 	};
 }

@@ -42,6 +42,7 @@ function makeCard(word: string, index: number): VocabSessionCard {
 		translation: `nghĩa ${word}`,
 		ipa: null,
 		audioKey: "vocab/org/w/audio.mp3",
+		hasAudio: true,
 		level: 1,
 		isWarning: false,
 		state: "new",

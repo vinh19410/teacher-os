@@ -23,6 +23,7 @@ vi.mock("@/lib/repos/vocab", () => ({
 			translation: "x",
 			ipa: null,
 			audioKey: null,
+			hasAudio: false,
 			level: 1,
 			isWarning: false,
 			state: "review",
@@ -45,6 +46,7 @@ function makeThreeWordLearnData(): VocabSessionData {
 		translation: `nghĩa ${idx + 1}`,
 		ipa: null,
 		audioKey: null,
+		hasAudio: false,
 		level: 1,
 		isWarning: false,
 		state: "new" as const,
@@ -87,10 +89,7 @@ describe("VocabSessionView — e2e Learn loop reproduction (3 words, forgot-on-t
 
 		const typedWords: string[] = [];
 		let safety = 0;
-		while (
-			!screen.queryByTestId("vocab-summary-learn") &&
-			safety < 60
-		) {
+		while (!screen.queryByTestId("vocab-summary-learn") && safety < 60) {
 			safety += 1;
 			const introFlip = screen.queryByTestId("vocab-intro-flip-btn");
 			if (introFlip) {
@@ -101,8 +100,11 @@ describe("VocabSessionView — e2e Learn loop reproduction (3 words, forgot-on-t
 				act(() => introFlip.click());
 				await waitFor(() =>
 					expect(
-						(screen.getByTestId("vocab-intro-continue-btn") as HTMLButtonElement)
-							.disabled,
+						(
+							screen.getByTestId(
+								"vocab-intro-continue-btn",
+							) as HTMLButtonElement
+						).disabled,
 					).toBe(false),
 				);
 				act(() => screen.getByTestId("vocab-intro-continue-btn").click());

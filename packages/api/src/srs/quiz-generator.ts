@@ -27,6 +27,7 @@ export interface QuizCandidate {
 	translationKey: string;
 	ipa: string | null;
 	audioKey: string | null;
+	hasAudio?: boolean;
 	level: number;
 }
 
@@ -68,6 +69,7 @@ export function toQuizCandidate(
 		translationKey: normalizeAnswer(card.translation),
 		ipa: card.ipa,
 		audioKey: card.audioKey,
+		hasAudio: card.hasAudio === true,
 		level: card.level,
 	};
 }
@@ -165,7 +167,7 @@ function buildChoicePrompt(
  * Per docs/srs-spec.md §4:
  * - meaningChoice: level <= 4, translation not blank, >= 1 translation distractor
  * - wordChoice: level <= 4, translation not blank, >= 1 same-lang word distractor
- * - listeningChoice: audioKey != null, >= 1 same-lang word distractor
+ * - listeningChoice: (audioKey != null or hasAudio), >= 1 same-lang word distractor
  * - typing: translation not blank and typingEligible(word)
  */
 export function eligibleKinds(
@@ -191,8 +193,8 @@ export function eligibleKinds(
 		kinds.push("wordChoice");
 	}
 	if (
-		card.audioKey !== null &&
-		card.audioKey.trim().length > 0 &&
+		((card.audioKey !== null && card.audioKey.trim().length > 0) ||
+			card.hasAudio === true) &&
 		hasWordDistractor
 	) {
 		kinds.push("listeningChoice");

@@ -29,7 +29,9 @@ function VocabSessionRoutePage() {
 
 	const handleExit = async () => {
 		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: ["student", "vocab-overview"] }),
+			queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-overview"],
+			}),
 			queryClient.invalidateQueries({
 				queryKey: ["student", "vocab-session-data", deckId],
 			}),

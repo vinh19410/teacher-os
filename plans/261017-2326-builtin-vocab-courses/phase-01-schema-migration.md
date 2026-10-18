@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Schema & Migration"
-status: todo
+status: completed
 priority: P1
 effort: 4h
 dependencies: []
@@ -30,11 +30,11 @@ Tạo 3 bảng library global (không `orgId`) cho catalog từ vựng dùng chu
 
 ## Requirements
 
-- [ ] 3 bảng `vocab_library_course`, `vocab_library_deck`, `vocab_library_word` + index `(courseId)`/`(deckId)` đúng.
-- [ ] `vocab_deck.source_library_deck_id` nullable + index; `vocab_word.audio_url` nullable; không đổi cột NOT NULL nào.
-- [ ] Migration 0037 sinh bởi `pnpm db:generate`, header ghi DEPLOY ORDER, review SQL trước khi commit.
-- [ ] Contracts: 4 schema library (course/deck/words-response/clone) + mở rộng 3 schema cũ (`hasAudio`, `audioUrl`, `sourceLibraryDeckId`) + 3 error codes mới, tất cả `.strict()`.
-- [ ] Test contracts pass (pattern `packages/api/src/vocab-contracts.test.ts`).
+- [x] 3 bảng `vocab_library_course`, `vocab_library_deck`, `vocab_library_word` + index `(courseId)`/`(deckId)` đúng.
+- [x] `vocab_deck.source_library_deck_id` nullable + index; `vocab_word.audio_url` nullable; không đổi cột NOT NULL nào.
+- [x] Migration 0037 sinh bởi `pnpm db:generate`, header ghi DEPLOY ORDER, review SQL trước khi commit.
+- [x] Contracts: 4 schema library (course/deck/words-response/clone) + mở rộng 3 schema cũ (`hasAudio`, `audioUrl`, `sourceLibraryDeckId`) + 3 error codes mới, tất cả `.strict()`.
+- [x] Test contracts pass (pattern `packages/api/src/vocab-contracts.test.ts`).
 
 ## Architecture
 
@@ -86,10 +86,10 @@ Contracts thêm vào `packages/api/src/contracts.ts` (mọi object `.strict()`):
 
 ## Todo
 
-- [ ] `vocab-library.ts` schema + 2 cột mở rộng + export index
-- [ ] Migration 0037 generate + review SQL + header DEPLOY ORDER
-- [ ] Contracts library + mở rộng 3 schema + error codes
-- [ ] Test contracts pass, `pnpm check-types` sạch
+- [x] `vocab-library.ts` schema + 2 cột mở rộng + export index
+- [x] Migration 0037 generate + review SQL + header DEPLOY ORDER
+- [x] Contracts library + mở rộng 3 schema + error codes
+- [x] Test contracts pass, `pnpm check-types` sạch
 
 ## Success Criteria
 
