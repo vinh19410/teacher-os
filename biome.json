@@ -34,7 +34,9 @@
 			"!docs/diagrams",
 			"!**/.mail-preview",
 			"!**/apps/landing/public",
-			"!**/packages/api/src/srs/vectors"
+			"!**/packages/api/src/srs/vectors",
+			"!assets/videos",
+			"!tools/ai-handle"
 		]
 	},
 	"formatter": {
@@ -113,7 +115,8 @@
 		{
 			"includes": [
 				"packages/ui/src/components/input-group.tsx",
-				"packages/ui/src/components/label.tsx"
+				"packages/ui/src/components/label.tsx",
+				"apps/student/src/components/vocab/prompt-*.tsx"
 			],
 			"linter": {
 				"rules": {

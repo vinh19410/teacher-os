@@ -1,4 +1,5 @@
 import {
+	LIBRARY_AUDIO_MAX_BYTES,
 	VOCAB_DURATION_MAX_MS,
 	VOCAB_ERROR_CODES,
 	type VocabOverview,
@@ -61,6 +62,7 @@ async function loadOwnedSessionCard(
 			translation: vocabWord.translation,
 			ipa: vocabWord.ipa,
 			audioKey: vocabWord.audioKey,
+			audioUrl: vocabWord.audioUrl,
 			level: vocabCard.level,
 			isWarning: vocabCard.isWarning,
 			state: vocabCard.state,
@@ -98,6 +100,9 @@ async function loadOwnedSessionCard(
 		translation: row.translation,
 		ipa: row.ipa ?? null,
 		audioKey: row.audioKey ?? null,
+		hasAudio:
+			(row.audioKey !== null && row.audioKey.trim().length > 0) ||
+			(row.audioUrl !== null && row.audioUrl.trim().length > 0),
 		level: row.level,
 		isWarning: Boolean(row.isWarning),
 		state: row.state === "review" ? "review" : "new",
@@ -112,6 +117,128 @@ function stripDeckId(
 ): VocabSessionCard {
 	const { deckId: _deckId, ...rest } = card;
 	return rest;
+}
+
+const ALLOWED_LIBRARY_AUDIO_ORIGIN_HOSTS: Record<string, true> = {
+	"mochien3.1-api.mochidemy.com": true,
+};
+const ALLOWED_LIBRARY_AUDIO_REDIRECT_HOSTS: Record<string, true> = {
+	"mochien3.1-api.mochidemy.com": true,
+	"mochien-server.mochidemy.com": true,
+};
+const LIBRARY_AUDIO_TIMEOUT_MS = 10_000;
+const MAX_AUDIO_REDIRECT_HOPS = 3;
+
+async function proxyRemoteAudio(
+	c: Context<VocabStudentEnv>,
+	audioUrl: string,
+): Promise<Response> {
+	const notFound = () =>
+		c.json(
+			{ error: "audio not found", code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND },
+			404,
+		);
+
+	let parsedOrigin: URL;
+	try {
+		parsedOrigin = new URL(audioUrl);
+	} catch {
+		return notFound();
+	}
+
+	if (
+		parsedOrigin.protocol !== "https:" ||
+		!ALLOWED_LIBRARY_AUDIO_ORIGIN_HOSTS[parsedOrigin.hostname]
+	) {
+		return notFound();
+	}
+
+	try {
+		let currentUrl = parsedOrigin.toString();
+		let response: Response | null = null;
+
+		for (let hop = 0; hop <= MAX_AUDIO_REDIRECT_HOPS; hop++) {
+			const res = await fetch(currentUrl, {
+				method: "GET",
+				redirect: "follow",
+				signal: AbortSignal.timeout(LIBRARY_AUDIO_TIMEOUT_MS),
+			});
+			if (res.status >= 300 && res.status < 400) {
+				const location = res.headers.get("location");
+				if (!location || hop === MAX_AUDIO_REDIRECT_HOPS) {
+					return notFound();
+				}
+				const nextUrl = new URL(location, currentUrl);
+				if (
+					nextUrl.protocol !== "https:" ||
+					!ALLOWED_LIBRARY_AUDIO_REDIRECT_HOSTS[nextUrl.hostname]
+				) {
+					return notFound();
+				}
+				currentUrl = nextUrl.toString();
+				continue;
+			}
+			response = res;
+			break;
+		}
+
+		if (!response?.ok) {
+			return notFound();
+		}
+		if (response.url) {
+			try {
+				const finalUrl = new URL(response.url);
+				if (
+					finalUrl.protocol !== "https:" ||
+					!ALLOWED_LIBRARY_AUDIO_REDIRECT_HOSTS[finalUrl.hostname]
+				) {
+					return notFound();
+				}
+			} catch {
+				return notFound();
+			}
+		}
+
+		const rawContentType = (
+			response.headers.get("content-type") ?? ""
+		).toLowerCase();
+		const mimeType = rawContentType.split(";")[0]?.trim() ?? "";
+		if (!mimeType.startsWith("audio/")) {
+			return notFound();
+		}
+
+		const contentLengthHeader = response.headers.get("content-length");
+		if (contentLengthHeader) {
+			const declaredBytes = Number.parseInt(contentLengthHeader, 10);
+			if (
+				Number.isFinite(declaredBytes) &&
+				declaredBytes > LIBRARY_AUDIO_MAX_BYTES
+			) {
+				return notFound();
+			}
+		}
+
+		const buffer = await response.arrayBuffer();
+		if (
+			buffer.byteLength === 0 ||
+			buffer.byteLength > LIBRARY_AUDIO_MAX_BYTES
+		) {
+			return notFound();
+		}
+
+		return new Response(buffer, {
+			status: 200,
+			headers: {
+				"Content-Type": mimeType || "audio/mpeg",
+				"Content-Length": String(buffer.byteLength),
+				"Cache-Control": "private, max-age=86400",
+				"X-Content-Type-Options": "nosniff",
+				"Content-Security-Policy": "sandbox",
+			},
+		});
+	} catch {
+		return notFound();
+	}
 }
 
 /**
@@ -496,6 +623,7 @@ export function registerVocabRoutes(
 			translation: current.translation,
 			ipa: current.ipa,
 			audioKey: current.audioKey,
+			hasAudio: current.hasAudio,
 			level: applied.level,
 			isWarning: applied.isWarning,
 			state: applied.state,
@@ -612,6 +740,7 @@ export function registerVocabRoutes(
 			translation: current.translation,
 			ipa: current.ipa,
 			audioKey: current.audioKey,
+			hasAudio: current.hasAudio,
 			level: applied.level,
 			isWarning: applied.isWarning,
 			state: applied.state,
@@ -625,16 +754,13 @@ export function registerVocabRoutes(
 	router.get("/vocab/audio/:wordId", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const wordId = c.req.param("wordId");
-		const store = deps.getMediaStore?.();
-		if (!store) {
-			return c.json({ error: "media storage unavailable" }, 503);
-		}
 		const db = deps.getDb();
 
 		const [row] = await db
 			.select({
 				word: vocabWord.word,
 				audioKey: vocabWord.audioKey,
+				audioUrl: vocabWord.audioUrl,
 			})
 			.from(vocabWord)
 			.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
@@ -655,23 +781,41 @@ export function registerVocabRoutes(
 			)
 			.limit(1);
 
-		if (row?.audioKey === undefined || row.audioKey === null) {
+		if (!row) {
 			return c.json(
 				{ error: "audio not found", code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND },
 				404,
 			);
 		}
 
-		const object = await store.get(row.audioKey);
-		if (!object) {
-			return c.json(
-				{ error: "audio not found", code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND },
-				404,
-			);
+		if (row.audioKey !== null && row.audioKey.trim().length > 0) {
+			const store = deps.getMediaStore?.();
+			if (!store) {
+				return c.json({ error: "media storage unavailable" }, 503);
+			}
+			const object = await store.get(row.audioKey);
+			if (!object) {
+				return c.json(
+					{
+						error: "audio not found",
+						code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND,
+					},
+					404,
+				);
+			}
+			return mediaObjectResponse(object, {
+				mediaType: object.contentType,
+				mediaName: `${row.word}.mp3`,
+			});
 		}
-		return mediaObjectResponse(object, {
-			mediaType: object.contentType,
-			mediaName: `${row.word}.mp3`,
-		});
+
+		if (row.audioUrl !== null && row.audioUrl.trim().length > 0) {
+			return proxyRemoteAudio(c, row.audioUrl);
+		}
+
+		return c.json(
+			{ error: "audio not found", code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND },
+			404,
+		);
 	});
 }

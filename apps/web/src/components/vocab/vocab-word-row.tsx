@@ -84,7 +84,7 @@ export function VocabWordRow({
 			</div>
 
 			<div className="flex flex-col gap-2">
-				{row.audioKey ? (
+				{row.audioKey || row.audioUrl ? (
 					<p className="font-mono text-[10px] text-hot uppercase tracking-widest">
 						Đã có audio
 					</p>

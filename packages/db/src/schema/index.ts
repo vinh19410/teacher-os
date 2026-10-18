@@ -22,3 +22,4 @@ export * from "./student";
 export * from "./student-invitation";
 export * from "./syllabus";
 export * from "./vocab";
+export * from "./vocab-library";

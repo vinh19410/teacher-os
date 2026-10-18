@@ -95,6 +95,7 @@ export function vocabTeacherRoutes(deps: {
 				ipa: vocabWord.ipa,
 				translation: vocabWord.translation,
 				audioKey: vocabWord.audioKey,
+				audioUrl: vocabWord.audioUrl,
 				sortOrder: vocabWord.sortOrder,
 			})
 			.from(vocabWord)
@@ -113,6 +114,7 @@ export function vocabTeacherRoutes(deps: {
 				ipa: w.ipa ?? null,
 				translation: w.translation,
 				audioKey: w.audioKey ?? null,
+				audioUrl: w.audioUrl ?? null,
 				sortOrder: w.sortOrder,
 			})),
 		});

@@ -243,6 +243,27 @@ export function VocabSessionView({
 		showEncouragement,
 	]);
 
+	const handleSkip = useCallback(() => {
+		if (persistStatus !== "idle" || showEncouragement || feedback !== null) {
+			return;
+		}
+		setSelectedOption(null);
+		if (isLearn && learn) {
+			learn.skipCurrentPrompt();
+		} else if (review) {
+			review.skipCurrentPrompt();
+		}
+		bumpRender();
+	}, [
+		bumpRender,
+		feedback,
+		isLearn,
+		learn,
+		persistStatus,
+		review,
+		showEncouragement,
+	]);
+
 	// Spec §3 rule 5: selfCheck skips feedback panel and auto-continues after 240ms once persistence succeeds
 	useEffect(() => {
 		if (
@@ -413,6 +434,7 @@ export function VocabSessionView({
 								handleRespond({ type: "option", text: opt });
 							}}
 							onForgot={() => handleRespond({ type: "forgot" })}
+							onSkip={handleSkip}
 						/>
 					) : prompt.kind === "typing" ? (
 						<PromptTyping
@@ -572,7 +594,7 @@ function LearnIntroCard({
 	const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (!card.audioKey) {
+		if (!card.audioKey && !card.hasAudio) {
 			setAudioUrl(null);
 			return;
 		}
@@ -592,7 +614,7 @@ function LearnIntroCard({
 			controller.abort();
 			if (created) URL.revokeObjectURL(created);
 		};
-	}, [card.audioKey, card.wordId]);
+	}, [card.audioKey, card.hasAudio, card.wordId]);
 
 	return (
 		<div data-testid="vocab-learn-intro" className="space-y-6">

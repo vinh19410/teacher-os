@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Library API + Clone + Audio"
-status: todo
+status: completed
 priority: P1
 effort: 10h
 dependencies: ["phase-01"]
@@ -37,15 +37,15 @@ Sub-router library mới mount vào kernel (browse 3 endpoint đọc toàn cục
 
 ## Requirements
 
-- [ ] Mọi route library mở đầu `const ctx = c.get("kernelCtx"); if (!ctx) return 401` (pattern `vocab-teacher.ts:80-83`) — test unauthenticated → 401 cho cả 4 endpoint.
-- [ ] GET `/api/kernel/vocab-library/courses` trả đủ 20 courses + `deckCount` (aggregate), sort `sortOrder`.
-- [ ] GET `/api/kernel/vocab-library/courses/:courseId/decks` trả decks + `wordCount`, 404 khi course không tồn tại.
-- [ ] GET `/api/kernel/vocab-library/decks/:deckId/words?limit=&offset=` preview capped (default 20, max 50), 404 khi deck không tồn tại.
-- [ ] POST `/api/kernel/vocab-library/clone`: org-guard `classId`, dedupe `deckIds` (trùng → 400 `LIBRARY_CLONE_DUPLICATE_DECK`), cap **tổng `decks + words > 500` hoặc `decks > 50`** → 422 `LIBRARY_CLONE_TOO_LARGE`, 1 `db.batch` tạo `vocab_deck` (+`sourceLibraryDeckId`) + `vocab_word` (+`audioUrl`), trả `{ id: deckId đầu, updated: số deck, duplicates: string[] }` (các sourceLibraryDeckId đã có trong class) — envelope mở rộng additive, khớp pattern `repos/kernel.ts:391-397`.
-- [ ] Route audio student: **gate `if (!store) return 503` chỉ áp cho nhánh `audioKey`** (dời xuống trong nhánh đó — proxy không cần R2, phải chạy được khi store undefined); ưu tiên `audioKey`; rỗng thì proxy `audioUrl` (allowlist host `mochien3.1-api.mochidemy.com` cho URL gốc, https only, `redirect: "follow"`, content-type **response cuối** phải `audio/*`, `AbortSignal.timeout(10_000)`, cap `LIBRARY_AUDIO_MAX_BYTES` 5MB); trả `Cache-Control: private, max-age=86400` cho nhánh proxy (không dùng `mediaObjectResponse` no-store); cả hai rỗng → 404 `AUDIO_NOT_FOUND`.
-- [ ] `hasAudio` set đúng ở 4 construction sites; `quiz-generator.ts` eligibility OR `hasAudio`; client gate intro-audio cập nhật.
-- [ ] Student `prompt-listening-choice.tsx`: khi audio lỗi, nút "Bỏ qua" dispatch skip không commit answer (không phạt SRS vì CDN lỗi).
-- [ ] Teacher words route + `audioUrl` để word editor hiển thị đúng "Đã có audio" cho từ clone (`vocab-word-row.tsx:87` sẽ sửa ở Phase 4).
+- [x] Mọi route library mở đầu `const ctx = c.get("kernelCtx"); if (!ctx) return 401` (pattern `vocab-teacher.ts:80-83`) — test unauthenticated → 401 cho cả 4 endpoint.
+- [x] GET `/api/kernel/vocab-library/courses` trả đủ 20 courses + `deckCount` (aggregate), sort `sortOrder`.
+- [x] GET `/api/kernel/vocab-library/courses/:courseId/decks` trả decks + `wordCount`, 404 khi course không tồn tại.
+- [x] GET `/api/kernel/vocab-library/decks/:deckId/words?limit=&offset=` preview capped (default 20, max 50), 404 khi deck không tồn tại.
+- [x] POST `/api/kernel/vocab-library/clone`: org-guard `classId`, dedupe `deckIds` (trùng → 400 `LIBRARY_CLONE_DUPLICATE_DECK`), cap **tổng `decks + words > 500` hoặc `decks > 50`** → 422 `LIBRARY_CLONE_TOO_LARGE`, 1 `db.batch` tạo `vocab_deck` (+`sourceLibraryDeckId`) + `vocab_word` (+`audioUrl`), trả `{ id: deckId đầu, updated: số deck, duplicates: string[] }` (các sourceLibraryDeckId đã có trong class) — envelope mở rộng additive, khớp pattern `repos/kernel.ts:391-397`.
+- [x] Route audio student: **gate `if (!store) return 503` chỉ áp cho nhánh `audioKey`** (dời xuống trong nhánh đó — proxy không cần R2, phải chạy được khi store undefined); ưu tiên `audioKey`; rỗng thì proxy `audioUrl` (allowlist host `mochien3.1-api.mochidemy.com` cho URL gốc, https only, `redirect: "follow"`, content-type **response cuối** phải `audio/*`, `AbortSignal.timeout(10_000)`, cap `LIBRARY_AUDIO_MAX_BYTES` 5MB); trả `Cache-Control: private, max-age=86400` cho nhánh proxy (không dùng `mediaObjectResponse` no-store); cả hai rỗng → 404 `AUDIO_NOT_FOUND`.
+- [x] `hasAudio` set đúng ở 4 construction sites; `quiz-generator.ts` eligibility OR `hasAudio`; client gate intro-audio cập nhật.
+- [x] Student `prompt-listening-choice.tsx`: khi audio lỗi, nút "Bỏ qua" dispatch skip không commit answer (không phạt SRS vì CDN lỗi).
+- [x] Teacher words route + `audioUrl` để word editor hiển thị đúng "Đã có audio" cho từ clone (`vocab-word-row.tsx:87` sẽ sửa ở Phase 4).
 
 ## Architecture
 
@@ -113,10 +113,10 @@ Audio fallback (`vocab.ts:625-676`): select thêm `audioUrl`; **dòng `if (!stor
 
 ## Todo
 
-- [ ] Router library + mount + test (browse 3 + clone guard/cap/batch)
-- [ ] Audio fallback + proxy test với fetch stub
-- [ ] `hasAudio` end-to-end (contracts → server → engine → client gate)
-- [ ] Teacher words + snapshot thêm field mới
+- [x] Router library + mount + test (browse 3 + clone guard/cap/batch)
+- [x] Audio fallback + proxy test với fetch stub
+- [x] `hasAudio` end-to-end (contracts → server → engine → client gate)
+- [x] Teacher words + snapshot thêm field mới
 
 ## Success Criteria
 

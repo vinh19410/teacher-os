@@ -14,6 +14,7 @@ import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
+import { seedVocabLibrary } from "@teacher-os/db/seed/vocab-library";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
@@ -81,6 +82,15 @@ await client.execute("PRAGMA journal_mode = WAL;");
 await client.execute("PRAGMA busy_timeout = 5000;");
 const libsql = drizzle(client, { schema });
 await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+try {
+	await seedVocabLibrary(client);
+} catch (err) {
+	console.error(
+		"[vocab-library-seed] failed — every spec will fail; check CSV/EXPECTED_COUNTS first",
+		err,
+	);
+	throw err;
+}
 
 const auth = createAuth({
 	db: libsql,

@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Teacher UI"
-status: todo
+status: completed
 priority: P2
 effort: 6h
 dependencies: ["phase-03"]
@@ -32,13 +32,13 @@ Dialog "Thêm từ thư viện" trong tab Từ vựng của trang lớp: duyệt
 
 ## Requirements
 
-- [ ] Nút "Thêm từ thư viện" (secondary) cạnh "Tạo bộ từ" trong `vocab-deck-list.tsx`.
-- [ ] Dialog 2 bước: (1) list course (search, hiển thị `deckCount`), (2) list deck của course (search debounce ~300ms, checkbox multi-select, `wordCount`, dấu "đã có trong lớp").
-- [ ] Footer confirm: đếm decks/từ đã chọn, disable + giải thích khi vượt cap (50 decks hoặc decks+từ > 500), nút "Thêm vào lớp" gọi command `clone-vocab-library-decks`; trạng thái loading/error/committed đúng bus semantics; response `duplicates` không rỗng → toast cảnh báo bài trùng.
-- [ ] Badge "Thư viện" (mono 10px uppercase, `neu-in`) trên hàng deck có `sourceLibraryDeckId != null`.
-- [ ] Word editor hiển thị "Đã có audio" khi `audioKey || audioUrl` (`vocab-word-row.tsx:87`).
-- [ ] Web vitest cho dialog: filter course/deck, chọn/limit cap, cảnh báo trùng, dispatch payload đúng.
-- [ ] DESIGN.md compliance + keyboard (focus trap modal sẵn của `Modal`, focus ring, Enter/Space trên checkbox) + 3 viewport screenshot.
+- [x] Nút "Thêm từ thư viện" (secondary) cạnh "Tạo bộ từ" trong `vocab-deck-list.tsx`.
+- [x] Dialog 2 bước: (1) list course (search, hiển thị `deckCount`), (2) list deck của course (search debounce ~300ms, checkbox multi-select, `wordCount`, dấu "đã có trong lớp").
+- [x] Footer confirm: đếm decks/từ đã chọn, disable + giải thích khi vượt cap (50 decks hoặc decks+từ > 500), nút "Thêm vào lớp" gọi command `clone-vocab-library-decks`; trạng thái loading/error/committed đúng bus semantics; response `duplicates` không rỗng → toast cảnh báo bài trùng.
+- [x] Badge "Thư viện" (mono 10px uppercase, `neu-in`) trên hàng deck có `sourceLibraryDeckId != null`.
+- [x] Word editor hiển thị "Đã có audio" khi `audioKey || audioUrl` (`vocab-word-row.tsx:87`).
+- [x] Web vitest cho dialog: filter course/deck, chọn/limit cap, cảnh báo trùng, dispatch payload đúng.
+- [x] DESIGN.md compliance + keyboard (focus trap modal sẵn của `Modal`, focus ring, Enter/Space trên checkbox) + 3 viewport screenshot.
 
 ## Architecture
 
@@ -83,10 +83,10 @@ Command mapping thêm vào `commandToRequest` (`repos/kernel.ts` sau case :297):
 
 ## Todo
 
-- [ ] Action + wire command bus
-- [ ] Dialog 2 bước + search + cap footer
-- [ ] Badge "Thư viện" + "Đã có audio" theo audioUrl
-- [ ] Web test pass + screenshot 3 viewport
+- [x] Action + wire command bus
+- [x] Dialog 2 bước + search + cap footer
+- [x] Badge "Thư viện" + "Đã có audio" theo audioUrl
+- [x] Web test pass + screenshot 3 viewport
 
 ## Success Criteria
 

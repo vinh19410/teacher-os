@@ -111,6 +111,7 @@ export async function ensureDeckCards(
 			translation: vocabWord.translation,
 			ipa: vocabWord.ipa,
 			audioKey: vocabWord.audioKey,
+			audioUrl: vocabWord.audioUrl,
 			level: vocabCard.level,
 			isWarning: vocabCard.isWarning,
 			state: vocabCard.state,
@@ -142,6 +143,9 @@ export async function ensureDeckCards(
 			translation: row.translation,
 			ipa: row.ipa ?? null,
 			audioKey: row.audioKey ?? null,
+			hasAudio:
+				(row.audioKey !== null && row.audioKey.trim().length > 0) ||
+				(row.audioUrl !== null && row.audioUrl.trim().length > 0),
 			level: row.level,
 			isWarning: Boolean(row.isWarning),
 			state: row.state === "review" ? "review" : "new",

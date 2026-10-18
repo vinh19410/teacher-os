@@ -260,6 +260,13 @@
       "when": 1792269420184,
       "tag": "0036_bored_infant_terrible",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1792283390520,
+      "tag": "0037_cheerful_gambit",
+      "breakpoints": true
     }
   ]
 }

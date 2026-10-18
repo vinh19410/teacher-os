@@ -82,6 +82,7 @@ import { gradingRoutes } from "./grading";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
+import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
 
 // Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
@@ -2107,6 +2108,9 @@ export function kernelRoutes(deps: {
 	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
 	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
 	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));
+	// #361: catalog thư viện từ vựng read-global cho mọi org đã đăng nhập (vẫn 401 khi chưa đăng nhập),
+	// POST /clone kiểm tra org-guard trên classId.
+	kernel.route("/kernel/vocab-library", vocabLibraryRoutes(deps));
 
 	return kernel;
 }

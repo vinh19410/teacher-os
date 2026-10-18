@@ -1,6 +1,6 @@
 ---
 title: "Phase 5: Tests & E2E"
-status: todo
+status: completed
 priority: P2
 effort: 6h
 dependencies: ["phase-02", "phase-03", "phase-04"]
@@ -31,12 +31,12 @@ Spec e2e mới `vocab-library-clone.spec.ts` đi trọn flow: boot seed thư vi�
 
 ## Requirements
 
-- [ ] Spec `apps/e2e/specs/vocab-library-clone.spec.ts` phủ scenario chính (dưới đây), dùng port override trong lệnh chạy.
-- [ ] Assert seed: counts library == `EXPECTED_COUNTS` (import từ seed core, không hard-code) qua direct-DB ngay đầu spec.
-- [ ] Flow teacher: mở lớp → tab Từ vựng → "Thêm từ thư viện" → chọn course → tick 2 deck → clone → 2 hàng deck mới có badge "Thư viện".
-- [ ] Flow student: enroll seed DB → portal overview thấy deck clone → mở deck → session-data có `hasAudio: true` (assert qua UI minigame list hoặc intercept network response của session-data).
-- [ ] Re-clone cảnh báo: mở lại dialog, deck đã clone hiện chip "Đã có trong lớp" (không chặn).
-- [ ] Chạy đủ gate local và ghi kết quả vào PR description.
+- [x] Spec `apps/e2e/specs/vocab-library-clone.spec.ts` phủ scenario chính (dưới đây), dùng port override trong lệnh chạy.
+- [x] Assert seed: counts library == `EXPECTED_COUNTS` (import từ seed core, không hard-code) qua direct-DB ngay đầu spec.
+- [x] Flow teacher: mở lớp → tab Từ vựng → "Thêm từ thư viện" → chọn course → tick 2 deck → clone → 2 hàng deck mới có badge "Thư viện".
+- [x] Flow student: enroll seed DB → portal overview thấy deck clone → mở deck → session-data có `hasAudio: true` (assert qua UI minigame list hoặc intercept network response của session-data).
+- [x] Re-clone cảnh báo: mở lại dialog, deck đã clone hiện chip "Đã có trong lớp" (không chặn).
+- [x] Chạy đủ gate local và ghi kết quả vào PR description.
 
 ## Architecture
 
@@ -63,9 +63,9 @@ Scenario `vocab-library-clone.spec.ts` (`test.describe.serial`):
 
 ## Todo
 
-- [ ] Spec vocab-library-clone xanh (grep run)
-- [ ] Full e2e suite xanh (ports 8100/8101/8103)
-- [ ] 7 gate local pass, biên bản vào PR
+- [x] Spec vocab-library-clone xanh (grep run)
+- [x] Full e2e suite xanh (ports 8100/8101/8103)
+- [x] 7 gate local pass, biên bản vào PR
 
 ## Success Criteria
 

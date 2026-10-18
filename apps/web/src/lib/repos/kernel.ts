@@ -302,6 +302,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab/words/remove",
 				body: { wordId: action.wordId },
 			};
+		case "clone-vocab-library-decks":
+			return {
+				path: "/api/kernel/vocab-library/clone",
+				body: { ...action.payload },
+			};
 	}
 }
 
@@ -352,6 +357,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 export interface KernelCommandPayload {
 	updated?: number;
 	skipped?: number;
+	duplicates?: string[];
 }
 
 export type KernelCommandResult =
@@ -392,6 +398,7 @@ export interface KernelWriteEnvelope {
 	id?: string;
 	updated?: number;
 	skipped?: number;
+	duplicates?: string[];
 }
 
 function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
@@ -403,6 +410,12 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	if (typeof record.id === "string") envelope.id = record.id;
 	if (typeof record.updated === "number") envelope.updated = record.updated;
 	if (typeof record.skipped === "number") envelope.skipped = record.skipped;
+	if (
+		Array.isArray(record.duplicates) &&
+		record.duplicates.every((item): item is string => typeof item === "string")
+	) {
+		envelope.duplicates = record.duplicates;
+	}
 	return envelope;
 }
 
@@ -655,34 +668,23 @@ export function createKernelCommandBus(
 					}
 				: { kind: "outcome-unknown", error };
 		}
-		const { id, updated, skipped } = envelope;
+		const { id, updated, skipped, duplicates } = envelope;
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				await deps.refetch();
-				return { kind: "refreshed", id, updated, skipped };
+				return { kind: "refreshed", id, updated, skipped, duplicates };
 			} catch (error) {
-				// Session expired between the write and the refresh. The write
-				// itself committed, so report once and re-auth — a retry would
-				// hit the same dead session. Every action resolves `committed`
-				// with the acknowledged id (the comment-bank exception is
-				// absorbed: its ack IS the durable commit boundary).
 				if (isHttpError(error) && error.status === 401) {
 					deps.onAuthLost();
-					return { kind: "committed", id, updated, skipped };
+					return { kind: "committed", id, updated, skipped, duplicates };
 				}
-				// A student-role rejection on the post-write reload means the
-				// write landed but the session can no longer read — same exit.
 				if (isStudentRoleRejected(error)) {
 					deps.onRoleBlocked?.();
-					return { kind: "committed", id, updated, skipped };
+					return { kind: "committed", id, updated, skipped, duplicates };
 				}
-				// A flaky GET must not lose the acknowledged write's outcome.
 			}
 		}
-		// The 2xx acknowledgement is the durable commit boundary — the write
-		// IS saved even though the UI could not reload. Callers see
-		// `committed`, keep the input out of retry reach, and reconcile.
-		return { kind: "committed", id, updated, skipped };
+		return { kind: "committed", id, updated, skipped, duplicates };
 	}
 
 	return {

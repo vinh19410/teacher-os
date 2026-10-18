@@ -11,6 +11,7 @@ export function PromptListeningChoice({
 	selectedOption,
 	onSelectOption,
 	onForgot,
+	onSkip,
 }: {
 	wordId: string;
 	prompt: QuizPrompt;
@@ -18,6 +19,7 @@ export function PromptListeningChoice({
 	selectedOption: string | null;
 	onSelectOption: (option: string) => void;
 	onForgot: () => void;
+	onSkip?: () => void;
 }) {
 	const [audioUrl, setAudioUrl] = useState<string | null>(null);
 	const [audioError, setAudioError] = useState(false);
@@ -109,7 +111,18 @@ export function PromptListeningChoice({
 				})}
 			</div>
 
-			<div className="flex justify-center">
+			<div className="flex justify-center gap-3">
+				{audioError && onSkip ? (
+					<Button
+						type="button"
+						variant="outline"
+						data-testid="vocab-audio-skip-btn"
+						disabled={disabled}
+						onClick={onSkip}
+					>
+						Bỏ qua
+					</Button>
+				) : null}
 				<Button
 					type="button"
 					variant="ghost"

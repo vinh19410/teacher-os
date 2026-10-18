@@ -30,6 +30,7 @@ function makeReviewSessionData(count = 6): VocabSessionData {
 		translation: idx === 0 ? "quán cà phê" : `nghĩa ${idx + 1}`,
 		ipa: "/ka.fe/",
 		audioKey: null,
+		hasAudio: false,
 		level: 1,
 		isWarning: false,
 		state: "review" as const,
@@ -217,6 +218,7 @@ describe("VocabSessionView (Phase 5 UI & red-team F9/F14 invariants)", () => {
 					translation: "quán cà phê",
 					ipa: "/ka.fe/",
 					audioKey: null,
+					hasAudio: false,
 					level: 1,
 					isWarning: false,
 					state: "new",
@@ -288,5 +290,38 @@ describe("VocabSessionView (Phase 5 UI & red-team F9/F14 invariants)", () => {
 				gradeGood: false,
 			}),
 		);
+	});
+
+	it("shows 'Bỏ qua' button when remote audio fails on listeningChoice and skips without firing answer or penalizing SRS (#361)", async () => {
+		const data = makeReviewSessionData(4);
+		data.cards = data.cards.map((c) => ({
+			...c,
+			level: 5,
+			hasAudio: true,
+		}));
+		vi.mocked(vocabRepo.fetchVocabAudioObjectUrl).mockRejectedValueOnce(
+			new Error("CDN 502"),
+		);
+
+		render(
+			<VocabSessionView
+				sessionData={data}
+				rng={new SeededRandom(1)}
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-prompt-listeningChoice")).toBeTruthy();
+
+		const skipBtn = await screen.findByTestId("vocab-audio-skip-btn");
+		expect(skipBtn.textContent).toContain("Bỏ qua");
+
+		fireEvent.click(skipBtn);
+
+		// Progress advances 0/4 -> 1/4 without calling postVocabAnswer
+		expect(screen.getByTestId("vocab-session-progress").textContent).toContain(
+			"1/4",
+		);
+		expect(vocabRepo.postVocabAnswer).not.toHaveBeenCalled();
 	});
 });

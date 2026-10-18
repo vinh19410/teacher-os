@@ -30,6 +30,11 @@ export const vocabDeck = sqliteTable(
 			.references(() => classTable.id, { onDelete: "cascade" }),
 		title: text("title").notNull(),
 		lang: text("lang").notNull().default("en"),
+		/**
+		 * Con trỏ provenance tới `vocab_library_deck.id` khi bộ từ được clone từ thư viện (#361).
+		 * Chủ đích KHÔNG đặt FK để bộ từ của giáo viên sống sót kể cả khi thư viện được seed/prune lại.
+		 */
+		sourceLibraryDeckId: text("source_library_deck_id"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -40,14 +45,17 @@ export const vocabDeck = sqliteTable(
 	(table) => [
 		index("vocab_deck_org_idx").on(table.orgId),
 		index("vocab_deck_class_idx").on(table.classId),
+		index("vocab_deck_source_library_idx").on(table.sourceLibraryDeckId),
 	],
 );
 
 /**
- * Một mục từ vựng trong `vocab_deck` (#359).
- * `audioKey` do server sinh và gán sau khi giáo viên upload file âm thanh lên R2
- * (`vocab/{orgId}/{wordId}/{uuid}`), client không bao giờ tự truyền key.
- * Khi `audioKey` là null, minigame `listeningChoice` tự động không eligible.
+ * Một mục từ vựng trong `vocab_deck` (#359, #361).
+ * - `audioKey` do server sinh và gán sau khi giáo viên upload file âm thanh lên R2
+ *   (`vocab/{orgId}/{wordId}/{uuid}`), client không bao giờ tự truyền key.
+ * - `audioUrl` chỉ được ghi bởi luồng clone từ `vocab_library_word` (URL CDN được allowlist),
+ *   KHÔNG bao giờ nhận trực tiếp từ input của giáo viên/client.
+ * - Khi cả `audioKey` và `audioUrl` đều null, minigame `listeningChoice` tự động không eligible.
  */
 export const vocabWord = sqliteTable(
 	"vocab_word",
@@ -60,6 +68,7 @@ export const vocabWord = sqliteTable(
 		ipa: text("ipa"),
 		translation: text("translation").notNull().default(""),
 		audioKey: text("audio_key"),
+		audioUrl: text("audio_url"),
 		sortOrder: integer("sort_order").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

@@ -785,3 +785,9 @@ a per-stage operation.
   trong cửa sổ đó.
 - SePay không retry IPN khi nhận 4xx/5xx: parse-lỏng chặn schema-drift, nhưng
   lỗi DB thật vẫn làm mất delivery — nút "Đối soát" là đường bù.
+
+## Built-in vocabulary library (migration 0037) — issue #361
+
+- **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (migration `0037`) **TRƯỚC** khi deploy worker (`snapshot` giáo viên và các route `/api/kernel/vocab-library/*`, `/api/student/vocab/*` đọc các bảng `vocab_library_*` cùng 2 cột `vocab_deck.source_library_deck_id` và `vocab_word.audio_url`).
+- **Release train:** `vocabSessionCardSchema` thêm trường `hasAudio` với `.strict()` → `apps/server` và `apps/student` **BẮT BUỘC deploy cùng một bước** (`pnpm alchemy deploy`); không promote riêng lẻ từng gói.
+- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Chỉ chạy `--d1` trên PROD sau khi đã smoke `--d1 --verify` trên Staging và chủ sở hữu dự án đã xác nhận quyền sử dụng nội dung (Open Question 1).

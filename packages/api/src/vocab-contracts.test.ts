@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
 	VOCAB_DURATION_MAX_MS,
+	VOCAB_ERROR_CODES,
 	vocabAnswerSchema,
 	vocabDeckCreateSchema,
 	vocabLearnCommitSchema,
+	vocabLibraryCloneSchema,
+	vocabLibraryCourseSchema,
+	vocabLibraryDeckSchema,
+	vocabLibraryWordsResponseSchema,
 	vocabOverviewSchema,
+	vocabSessionCardSchema,
 	vocabSessionDataSchema,
+	vocabTeacherWordSchema,
 	vocabWordUpsertSchema,
 } from "./contracts";
 
@@ -157,5 +165,176 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 		).toBe(false);
 
 		expect(VOCAB_DURATION_MAX_MS).toBe(3_600_000);
+	});
+
+	it("defaults hasAudio to false on vocabSessionCardSchema and documents reverse release-train strictness (#361)", () => {
+		const legacyPayload = {
+			id: "c1",
+			wordId: "w1",
+			word: "café",
+			translation: "quán cà phê",
+			ipa: null,
+			audioKey: null,
+			level: 1,
+			isWarning: false,
+			state: "new" as const,
+			intervalDays: 0,
+			dueAt: 1_700_000_000_000,
+			lapses: 0,
+		};
+		const parsedLegacy = vocabSessionCardSchema.safeParse(legacyPayload);
+		expect(parsedLegacy.success).toBe(true);
+		if (parsedLegacy.success) {
+			expect(parsedLegacy.data.hasAudio).toBe(false);
+		}
+
+		const parsedWithAudio = vocabSessionCardSchema.safeParse({
+			...legacyPayload,
+			hasAudio: true,
+		});
+		expect(parsedWithAudio.success).toBe(true);
+		if (parsedWithAudio.success) {
+			expect(parsedWithAudio.data.hasAudio).toBe(true);
+		}
+
+		// Reverse direction (#304, #361 release-train note): an older client schema
+		// without `hasAudio` using `.strict()` rejects payloads containing `hasAudio`.
+		const simulatedLegacyStrictSchema = z
+			.object({
+				id: z.string().min(1),
+				wordId: z.string().min(1),
+				word: z.string(),
+				translation: z.string(),
+				ipa: z.string().nullable(),
+				audioKey: z.string().nullable(),
+				level: z.number().int().min(1).max(5),
+				isWarning: z.boolean(),
+				state: z.enum(["new", "review"]),
+				intervalDays: z.number().int().min(0),
+				dueAt: z.number().int(),
+				lapses: z.number().int().min(0),
+			})
+			.strict();
+		expect(
+			simulatedLegacyStrictSchema.safeParse({
+				...legacyPayload,
+				hasAudio: true,
+			}).success,
+		).toBe(false);
+	});
+
+	it("validates vocabLibraryCloneSchema boundaries (1..50 deckIds) and strictness (#361)", () => {
+		expect(
+			vocabLibraryCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: ["libdeck-1", "libdeck-2"],
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabLibraryCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: [],
+			}).success,
+		).toBe(false);
+
+		const sixtyOneDecks = Array.from(
+			{ length: 61 },
+			(_, idx) => `libdeck-${idx + 1}`,
+		);
+		expect(
+			vocabLibraryCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: sixtyOneDecks,
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabLibraryCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: ["libdeck-1"],
+				extraField: true,
+			}).success,
+		).toBe(false);
+	});
+
+	it("validates library browse schemas, teacher word audioUrl, and error codes (#361)", () => {
+		expect(
+			vocabLibraryCourseSchema.safeParse({
+				id: "libcourse-6",
+				name: "1000 TỪ CƠ BẢN",
+				description: "Từ vựng thông dụng",
+				target: "Mất gốc",
+				deckCount: 50,
+				sortOrder: 1,
+			}).success,
+		).toBe(true);
+		expect(
+			vocabLibraryCourseSchema.safeParse({
+				id: "libcourse-6",
+				name: "1000 TỪ CƠ BẢN",
+				description: null,
+				target: null,
+				deckCount: 50,
+				sortOrder: 1,
+				extra: 1,
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabLibraryDeckSchema.safeParse({
+				id: "libdeck-10",
+				courseId: "libcourse-6",
+				title: "School",
+				imageUrl: null,
+				wordCount: 12,
+				sortOrder: 1,
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabLibraryWordsResponseSchema.safeParse({
+				deck: { id: "libdeck-10", title: "School" },
+				words: [
+					{
+						id: "libword-44753",
+						word: "teacher",
+						ipa: "/ˈtiːtʃər/",
+						pos: "n",
+						translation: "Giáo viên",
+						sentenceVi: "Cô ấy là giáo viên",
+						sentenceEn: "She is a teacher",
+						pictureUrl: null,
+						audioUrl:
+							"https://mochien3.1-api.mochidemy.com/v3.1/audios/teacher.mp3",
+						sortOrder: 1,
+					},
+				],
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabTeacherWordSchema.safeParse({
+				id: "w1",
+				deckId: "d1",
+				word: "teacher",
+				ipa: "/ˈtiːtʃər/",
+				translation: "Giáo viên",
+				audioKey: null,
+				audioUrl:
+					"https://mochien3.1-api.mochidemy.com/v3.1/audios/teacher.mp3",
+				sortOrder: 0,
+			}).success,
+		).toBe(true);
+
+		expect(VOCAB_ERROR_CODES.LIBRARY_COURSE_NOT_FOUND).toBe(
+			"LIBRARY_COURSE_NOT_FOUND",
+		);
+		expect(VOCAB_ERROR_CODES.LIBRARY_DECK_NOT_FOUND).toBe(
+			"LIBRARY_DECK_NOT_FOUND",
+		);
+		expect(VOCAB_ERROR_CODES.LIBRARY_CLONE_TOO_LARGE).toBe(
+			"LIBRARY_CLONE_TOO_LARGE",
+		);
 	});
 });
