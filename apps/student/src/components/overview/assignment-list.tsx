@@ -7,7 +7,14 @@ import {
 	deriveAssignmentStatus,
 } from "@/lib/assignment-status";
 
-type FilterTab = "all" | "due-soon" | "overdue" | "submitted";
+export type FilterTab = "all" | "due-soon" | "overdue" | "submitted";
+
+export const ASSIGNMENT_FILTER_TABS: readonly FilterTab[] = [
+	"all",
+	"due-soon",
+	"overdue",
+	"submitted",
+];
 
 const TABS: Array<{ id: FilterTab; label: string }> = [
 	{ id: "all", label: "Tất cả" },
@@ -19,12 +26,20 @@ const TABS: Array<{ id: FilterTab; label: string }> = [
 export function AssignmentList({
 	assignments,
 	showClassName = true,
+	activeTab: controlledTab,
+	onTabChange,
+	hideHeading = false,
+	className = "mt-10",
 }: {
 	assignments: StudentAssignment[];
 	showClassName?: boolean;
+	activeTab?: FilterTab;
+	onTabChange?: (tab: FilterTab) => void;
+	hideHeading?: boolean;
+	className?: string;
 }) {
-	const [activeTab, setActiveTab] = useState<FilterTab>("all");
-
+	const [internalTab, setInternalTab] = useState<FilterTab>("all");
+	const activeTab = controlledTab ?? internalTab;
 	const categorized = useMemo(() => {
 		const listWithStatus = assignments.map((a) => ({
 			assignment: a,
@@ -69,11 +84,13 @@ export function AssignmentList({
 	}, [activeTab, categorized.list]);
 
 	return (
-		<section className="mt-10">
+		<section className={className}>
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h2 className="font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
-					Bài tập
-				</h2>
+				{!hideHeading && (
+					<h2 className="font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+						Bài tập
+					</h2>
+				)}
 
 				{/* Filter Tabs — segmented theo design Tabs: nền sunk, tab chọn
 				 * = raise + chữ cam. */}
@@ -92,7 +109,10 @@ export function AssignmentList({
 								type="button"
 								role="tab"
 								aria-selected={isSelected}
-								onClick={() => setActiveTab(tab.id)}
+								onClick={() => {
+									setInternalTab(tab.id);
+									onTabChange?.(tab.id);
+								}}
 								className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
 									isSelected
 										? "neu-sm font-medium text-hot"
@@ -101,6 +121,7 @@ export function AssignmentList({
 							>
 								<span>{tab.label}</span>
 								<span
+									aria-hidden="true"
 									className={`rounded-full px-1.5 py-0.2 font-mono text-[11px] ${
 										isSelected ? "text-hot" : "text-muted-fg"
 									}`}

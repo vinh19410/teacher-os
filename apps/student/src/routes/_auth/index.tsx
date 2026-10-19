@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useMemo } from "react";
@@ -14,8 +13,8 @@ import { TuitionList } from "@/components/overview/tuition-list";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
 import {
-	fetchStudentInvoices,
 	useAcceptClassEnrollment,
+	useStudentInvoices,
 	useStudentMe,
 	useStudentOverview,
 } from "@/lib/repos/student";
@@ -150,11 +149,7 @@ function StudentOverviewPage() {
  * load xong (cùng org header).
  */
 function StudentTuitionSection() {
-	const invoices = useQuery({
-		queryKey: ["student-invoices"],
-		queryFn: fetchStudentInvoices,
-		staleTime: 30_000,
-	});
+	const invoices = useStudentInvoices();
 	if (invoices.isError || !invoices.data) return null;
 	return <TuitionList invoices={invoices.data} />;
 }

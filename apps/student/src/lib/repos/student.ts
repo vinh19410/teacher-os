@@ -406,6 +406,14 @@ export async function fetchStudentInvoices(): Promise<StudentInvoiceItem[]> {
 	return (await res.json()) as StudentInvoiceItem[];
 }
 
+export function useStudentInvoices() {
+	return useQuery({
+		queryKey: ["student", "invoices"],
+		queryFn: fetchStudentInvoices,
+		staleTime: 30_000,
+	});
+}
+
 export async function fetchStudentInvoicePayment(
 	invoiceId: string,
 ): Promise<PaymentInstructions> {
