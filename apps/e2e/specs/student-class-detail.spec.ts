@@ -196,4 +196,130 @@ test.describe("Student class card & class detail page", () => {
 		await page.getByRole("link", { name: "Về trang chủ" }).click();
 		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
 	});
+
+	test("student header navigation switches across 5 pages and syncs assignment status filter in URL", async ({
+		page,
+	}) => {
+		await signIn(page);
+
+		const nav = page.getByRole("navigation", { name: "Điều hướng học viên" });
+		await expect(nav).toBeVisible();
+		await expect(nav.getByRole("link", { name: "Tổng quan" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+
+		// 1. Lớp học (/classes)
+		await nav.getByRole("link", { name: "Lớp học" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/classes`);
+		await expect(nav.getByRole("link", { name: "Lớp học" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Lớp học của tôi" }),
+		).toBeVisible();
+		await expect(
+			page.getByTestId("class-card").filter({ hasText: className }),
+		).toBeVisible();
+
+		// Child route (/classes/$classId) keeps "Lớp học" active in nav
+		await page
+			.getByTestId("class-card")
+			.filter({ hasText: className })
+			.getByRole("link")
+			.click();
+		await expect(page).toHaveURL(
+			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,
+		);
+		await expect(nav.getByRole("link", { name: "Lớp học" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+
+		// 2. Bài tập (/assignments) + filter ?status=
+		await nav.getByRole("link", { name: "Bài tập" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/assignments`);
+		await expect(nav.getByRole("link", { name: "Bài tập" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Bài tập của tôi" }),
+		).toBeVisible();
+		await expect(
+			page.getByRole("link", { name: `Làm bài: ${assignmentTitle}` }),
+		).toBeVisible();
+
+		await page.getByRole("tab", { name: "Đã nộp" }).click();
+		await expect(page).toHaveURL(
+			`${STUDENT_ORIGIN}/assignments?status=submitted`,
+		);
+		await expect(page.getByRole("tab", { name: "Đã nộp" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+
+		// 3. Từ vựng (/vocab)
+		await nav.getByRole("link", { name: "Từ vựng" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/vocab`);
+		await expect(nav.getByRole("link", { name: "Từ vựng" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Từ vựng của tôi" }),
+		).toBeVisible();
+
+		// 4. Học phí (/tuition) — empty state when no invoice
+		await nav.getByRole("link", { name: "Học phí" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/tuition`);
+		await expect(nav.getByRole("link", { name: "Học phí" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Học phí của tôi" }),
+		).toBeVisible();
+		await expect(page.getByText("Chưa có hóa đơn học phí")).toBeVisible();
+
+		// 5. Tổng quan (/)
+		await nav.getByRole("link", { name: "Tổng quan" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/`);
+		await expect(
+			page.getByRole("heading", { name: "Lớp học của tôi" }),
+		).toBeVisible();
+		await expect(nav.getByRole("link", { name: "Tổng quan" })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+
+		// Keyboard focus & 3 viewports (1440x900, 768x1024, 375x812)
+		await nav.getByRole("link", { name: "Tổng quan" }).focus();
+		await expect(nav.getByRole("link", { name: "Tổng quan" })).toBeFocused();
+		await page.keyboard.press("Tab");
+		await expect(nav.getByRole("link", { name: "Lớp học" })).toBeFocused();
+		const screenshots = new URL(
+			"../../../plans/261019-0648-student-portal-nav-menu/screenshots/",
+			import.meta.url,
+		).pathname;
+		for (const [w, h, name] of [
+			[1440, 900, "student-nav-1440"],
+			[768, 1024, "student-nav-768"],
+			[375, 812, "student-nav-375"],
+		] as const) {
+			await page.setViewportSize({ width: w, height: h });
+			await page.waitForTimeout(200);
+			const overflow = await page.evaluate(
+				() =>
+					document.documentElement.scrollWidth >
+					document.documentElement.clientWidth,
+			);
+			expect(overflow).toBe(false);
+			await page.screenshot({
+				path: `${screenshots}${name}.png`,
+				fullPage: true,
+			});
+		}
+	});
 });
