@@ -2201,9 +2201,20 @@ export interface KernelVocabSuggestionRow {
 	createdAt: string;
 }
 
+export const RESERVED_LIBRARY_ID_PREFIX_REGEX =
+	/^(libcourse|libdeck|libword)-/i;
+
 export const vocabDeckCreateSchema = z
 	.object({
-		id: z.string().min(1).max(128).optional(),
+		id: z
+			.string()
+			.min(1)
+			.max(128)
+			.refine(
+				(id) => !RESERVED_LIBRARY_ID_PREFIX_REGEX.test(id),
+				"Reserved library ID prefix",
+			)
+			.optional(),
 		classId: z.string().min(1).nullable().optional().default(null),
 		title: z.string().trim().min(1).max(200),
 		lang: z.string().trim().min(1).max(16).default("en"),
@@ -2234,7 +2245,15 @@ export type VocabDeckDeleteInput = z.infer<typeof vocabDeckDeleteSchema>;
  */
 export const vocabWordUpsertSchema = z
 	.object({
-		id: z.string().min(1).max(128).optional(),
+		id: z
+			.string()
+			.min(1)
+			.max(128)
+			.refine(
+				(id) => !RESERVED_LIBRARY_ID_PREFIX_REGEX.test(id),
+				"Reserved library ID prefix",
+			)
+			.optional(),
 		deckId: z.string().min(1),
 		word: z.string().trim().min(1).max(200),
 		ipa: z.string().trim().max(200).nullable().optional(),
@@ -2355,6 +2374,73 @@ export const vocabLibraryCloneSchema = z
 	.strict();
 export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
 
+export const vocabStudentLibraryCourseSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+		deckCount: z.number().int().min(0),
+		wordCount: z.number().int().min(0),
+		reviewWordCount: z.number().int().min(0),
+		learnedWordCount: z.number().int().min(0),
+		dueWordCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabStudentLibraryCourse = z.infer<
+	typeof vocabStudentLibraryCourseSchema
+>;
+
+export const vocabStudentLibraryCoursesResponseSchema = z
+	.object({
+		courses: z.array(vocabStudentLibraryCourseSchema),
+	})
+	.strict();
+export type VocabStudentLibraryCoursesResponse = z.infer<
+	typeof vocabStudentLibraryCoursesResponseSchema
+>;
+
+export const vocabStudentLibraryCourseSummarySchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+	})
+	.strict();
+export type VocabStudentLibraryCourseSummary = z.infer<
+	typeof vocabStudentLibraryCourseSummarySchema
+>;
+
+export const vocabStudentLibraryDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		courseId: z.string().min(1),
+		title: z.string(),
+		imageUrl: z.string().nullable(),
+		wordCount: z.number().int().min(0),
+		newCount: z.number().int().min(0),
+		reviewCount: z.number().int().min(0),
+		dueCount: z.number().int().min(0),
+		learnedCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabStudentLibraryDeck = z.infer<
+	typeof vocabStudentLibraryDeckSchema
+>;
+
+export const vocabStudentLibraryDecksResponseSchema = z
+	.object({
+		course: vocabStudentLibraryCourseSummarySchema.optional(),
+		decks: z.array(vocabStudentLibraryDeckSchema),
+	})
+	.strict();
+export type VocabStudentLibraryDecksResponse = z.infer<
+	typeof vocabStudentLibraryDecksResponseSchema
+>;
+
 export const vocabSuggestDeckSchema = z
 	.object({
 		id: z.string().min(1).max(128).optional(),
@@ -2403,7 +2489,8 @@ export const vocabStudentProgressDeckSchema = z
 		deckId: z.string().min(1),
 		title: z.string(),
 		classId: z.string().nullable(),
-		source: z.enum(["class", "suggested"]),
+		className: z.string().catch(""),
+		source: z.enum(["class", "suggested", "library"]).catch("class"),
 		total: z.number().int().min(0),
 		byLevel: z.tuple([
 			z.number().int().min(0),
@@ -2473,7 +2560,7 @@ export const vocabOverviewDeckSchema = z
 		deckId: z.string().min(1),
 		title: z.string(),
 		className: z.string().catch(""),
-		source: z.enum(["class", "suggested"]).catch("class"),
+		source: z.enum(["class", "suggested", "library"]).catch("class"),
 		total: z.number().int().min(0),
 		newCount: z.number().int().min(0),
 		dueCount: z.number().int().min(0),

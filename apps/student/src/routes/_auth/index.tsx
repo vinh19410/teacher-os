@@ -176,8 +176,8 @@ function StudentVocabEntrySection() {
 					</h2>
 					<p className="mt-1 text-meta text-sm">
 						{deckCount > 0
-							? `${deckCount} bộ từ vựng trong lớp học của bạn`
-							: "Ôn tập từ vựng theo 5 cấp độ trí nhớ"}
+							? `${deckCount} bộ từ đang học · 20 khóa học từ vựng có sẵn`
+							: "Khám phá 20 khóa học từ vựng theo 5 cấp độ trí nhớ"}
 					</p>
 				</div>
 				<div className="flex items-center gap-3">

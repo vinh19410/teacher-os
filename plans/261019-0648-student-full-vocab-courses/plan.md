@@ -1,11 +1,11 @@
 ---
 title: "Student Full Vocabulary Courses (Học viên tự truy cập toàn bộ khóa học từ vựng)"
 description: "Mở toàn bộ 20 khóa học / 968 bài từ vựng dùng chung cho học viên tự duyệt và học SRS trực tiếp trên Student Portal mà không cần đợi giáo viên giao hoặc gợi ý."
-status: pending
+status: completed
 priority: P1
 effort: 16h
 issue: 366
-branch: vinh19410/feat/student-full-vocab-courses
+branch: ai-handle-issue-366
 tags: [feature, backend, frontend, database, vocab, srs, student-app]
 blockedBy: []
 blocks: []
@@ -45,11 +45,11 @@ Kế hoạch này cho phép **học viên truy cập trực tiếp toàn bộ 20
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [DB Schema & Migration 0039 (vocab_card polymorphic word_id)](./phase-01-start.md) | Pending |
-| 2 | [API Contracts & Dual-Source Student Provisioning](./phase-02-api-contracts-library-access.md) | Pending |
-| 3 | [Server Student Library Routes, Overview & Teacher Progress](./phase-03-server-student-library-routes.md) | Pending |
-| 4 | [Student Portal Courses UI & Teacher Progress Badge](./phase-04-student-web-ui.md) | Pending |
-| 5 | [Tests, E2E Spec & Local Verification Gates](./phase-05-tests-e2e-gates.md) | Pending |
+| 1 | [DB Schema & Migration 0039 (vocab_card polymorphic word_id)](./phase-01-start.md) | Done |
+| 2 | [API Contracts & Dual-Source Student Provisioning](./phase-02-api-contracts-library-access.md) | Done |
+| 3 | [Server Student Library Routes, Overview & Teacher Progress](./phase-03-server-student-library-routes.md) | Done |
+| 4 | [Student Portal Courses UI & Teacher Progress Badge](./phase-04-student-web-ui.md) | Done |
+| 5 | [Tests, E2E Spec & Local Verification Gates](./phase-05-tests-e2e-gates.md) | Done |
 
 ## Dependencies
 
@@ -60,13 +60,13 @@ Kế hoạch này cho phép **học viên truy cập trực tiếp toàn bộ 20
 
 ## Success Criteria
 
-- [ ] Học viên mới (chưa ghi danh lớp nào có bộ từ, chưa có gợi ý nào từ giáo viên) vào `/vocab` thấy đầy đủ 20 khóa học từ vựng (`EXPECTED_COUNTS.course = 20`), chọn khóa → thấy danh sách bài học, bấm vào bài `libdeck-*` → vào `/vocab/libdeck-*` và hoàn thành phiên Learn + Review + nghe audio bình thường.
-- [ ] Không có bất kỳ dòng mới nào sinh thêm trong `vocab_deck` hoặc `vocab_word` khi học viên tự học bài `libdeck-*`; snapshot của giáo viên (`data.vocabDecks`) không bị phình hoặc lẫn bộ từ tự học của học viên.
-- [ ] Sau khi học viên mở/học bài `libdeck-*`, bài đó xuất hiện ngay trong mục "Bộ từ đang học" (`overview.decks` với `source: "library"`, `className` là tên khóa học) và trong tab "Tiến độ" của giáo viên (`/api/kernel/vocab/progress`) mà không bị kẹt stale cache 60s.
-- [ ] Chạy lại `seedVocabLibrary` (kể cả với `prune: true`) không làm mất `vocab_card` của học viên trên các từ `libword-*` còn trong CSV, và tự dọn sạch `vocab_card` của từ đã xóa khỏi CSV.
-- [ ] Không có truy vấn nào vượt giới hạn 100 biến SQL của Cloudflare D1 (kể cả khóa `libcourse-15` 140 bài, bài > 20 từ, hoặc học viên mở > 200 bài).
-- [ ] Toàn bộ gates local pass với `PRAGMA foreign_keys = ON`: `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/db test`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, và E2E (`E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`).
-- [ ] UI đạt chuẩn `DESIGN.md` và không tràn ngang ở 3 viewport (`1440×900`, `768×1024`, `375×812`).
+- [x] Học viên mới (chưa ghi danh lớp nào có bộ từ, chưa có gợi ý nào từ giáo viên) vào `/vocab` thấy đầy đủ 20 khóa học từ vựng (`EXPECTED_COUNTS.course = 20`), chọn khóa → thấy danh sách bài học, bấm vào bài `libdeck-*` → vào `/vocab/libdeck-*` và hoàn thành phiên Learn + Review + nghe audio bình thường.
+- [x] Không có bất kỳ dòng mới nào sinh thêm trong `vocab_deck` hoặc `vocab_word` khi học viên tự học bài `libdeck-*`; snapshot của giáo viên (`data.vocabDecks`) không bị phình hoặc lẫn bộ từ tự học của học viên.
+- [x] Sau khi học viên mở/học bài `libdeck-*`, bài đó xuất hiện ngay trong mục "Bộ từ đang học" (`overview.decks` với `source: "library"`, `className` là tên khóa học) và trong tab "Tiến độ" của giáo viên (`/api/kernel/vocab/progress`) mà không bị kẹt stale cache 60s.
+- [x] Chạy lại `seedVocabLibrary` (kể cả với `prune: true`) không làm mất `vocab_card` của học viên trên các từ `libword-*` còn trong CSV, và tự dọn sạch `vocab_card` của từ đã xóa khỏi CSV.
+- [x] Không có truy vấn nào vượt giới hạn 100 biến SQL của Cloudflare D1 (kể cả khóa `libcourse-15` 140 bài, bài > 20 từ, hoặc học viên mở > 200 bài).
+- [x] Toàn bộ gates local pass với `PRAGMA foreign_keys = ON`: `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/db test`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, và E2E (`E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`).
+- [x] UI đạt chuẩn `DESIGN.md` và không tràn ngang ở 3 viewport (`1440×900`, `768×1024`, `375×812`).
 
 ## Red Team & Validation Summary
 
@@ -84,5 +84,17 @@ Kế hoạch đã được phản biện độc lập bởi 3 Red-Team reviewers
 | RT-F8 | High | Sau phiên Learn, `learned()` đặt `state = "review", level = 1, dueAt = +1d` nên `learnedWordCount` (`level >= 2`) và `dueWordCount` đều bằng `0`; `newCount` chưa được clamp `Math.max(0, ...)` | **Accepted**: Bổ sung `reviewWordCount` / `reviewCount` (`state === "review"`) vào contracts, routes và UI thẻ khóa học/bài học; clamp `newCount = Math.max(0, wordCount - reviewCount)` (Phase 2, 3, 4). |
 | RT-F9 | Medium | `VocabProgressTab` (`apps/web`) ép kiểu `as VocabStudentProgressResponse` mà không gọi `.parse()` và `GET /api/kernel/vocab/progress` làm rơi tên khóa học (`className`) | **Accepted**: Thêm `className: z.string().catch("")` vào `vocabStudentProgressDeckSchema`, trả `className: d.className` ở `vocab-teacher.ts`, gọi `.parse()` ở `vocab-progress-tab.tsx:160` và hiển thị `Khóa ${deck.className}` (Phase 2, 3, 4). |
 | RT-F10 | Medium | `VocabCourseCatalog` lưu `selectedCourseId` và từ khóa tìm kiếm trong local state thay vì URL search params (`AGENTS.md` / `DESIGN.md`) | **Accepted**: Lưu `courseId` và `q` (debounce 300ms) trong URL search params (`validateSearch`) của `/_auth/vocab/` (Phase 4 & 5). |
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 39
+- Verified: 39 | Failed: 0 | Unverified: 0
+- Tier: Full (5 phases — Fact Checker, Contract Verifier, Failure Mode Analyst, Security Adversary)
+- Failures: None (all 10 red-team findings RT-F1..RT-F10 resolved and propagated into Phases 1–5)
+
+### Whole-Plan Consistency Sweep
+- Checked all 5 phase files (`phase-01-start.md` through `phase-05-tests-e2e-gates.md`) and `plan.md` for consistency across SQL schemas, D1 bound-variable chunking limits (`<= 10` words/insert in `ensureDeckCards`, `<= 50` deck IDs/query in `loadWordsAndCardsForAccessibleDecks`, `INNER JOIN vocab_library_deck WHERE course_id = ?`), Zod contract fields (`reviewWordCount`/`reviewCount`, `source: "library"`, `className`), cross-tenant `libword-%` deletion guards, and URL search params (`courseId`, `q` debounced 300ms).
+- Unresolved contradictions: 0.
 
 <!-- slug: student-full-vocab-courses -->

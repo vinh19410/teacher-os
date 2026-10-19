@@ -1,6 +1,7 @@
-import type {
-	VocabStudentProgressDeck,
-	VocabStudentProgressResponse,
+import {
+	type VocabStudentProgressDeck,
+	type VocabStudentProgressResponse,
+	vocabStudentProgressResponseSchema,
 } from "@teacher-os/api/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,11 @@ function DeckProgressRow({
 								? classNameLabel
 									? `Lớp ${classNameLabel}`
 									: "Lớp học"
-								: "Gợi ý"}
+								: deck.source === "library"
+									? deck.className
+										? `Khóa ${deck.className}`
+										: "Thư viện"
+									: "Gợi ý"}
 						</span>
 					</div>
 					<p className="mt-1 font-mono text-[11px] text-muted-fg">
@@ -157,7 +162,7 @@ export function VocabProgressTab() {
 				{ credentials: "include" },
 			);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			const body = (await res.json()) as VocabStudentProgressResponse;
+			const body = vocabStudentProgressResponseSchema.parse(await res.json());
 			setProgress(body);
 		} catch {
 			setLoadError(true);

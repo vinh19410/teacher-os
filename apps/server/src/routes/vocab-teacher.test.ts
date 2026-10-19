@@ -628,6 +628,7 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			deckId: indepDeckId,
 			title: "Hub Deck: Business English",
 			classId: null,
+			className: "",
 			source: "suggested",
 			total: 2,
 			byLevel: [0, 1, 0, 0, 0],
@@ -702,5 +703,107 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			.from(schema.vocabSuggestion)
 			.where(eq(schema.vocabSuggestion.deckId, indepDeckId));
 		expect(orphanSugs).toHaveLength(0);
+	});
+
+	test("includes library deck progress (source='library', className=courseName) and protects libword-* cards from teacher deletion (#366)", async () => {
+		await libsql.insert(schema.vocabLibraryCourse).values({
+			id: "libcourse-t1",
+			name: "1000 Từ Cơ Bản",
+			description: "Mô tả",
+			target: "Mất gốc",
+			sortOrder: 0,
+		});
+		await libsql.insert(schema.vocabLibraryDeck).values({
+			id: "libdeck-t1",
+			courseId: "libcourse-t1",
+			title: "Bài 1: Chào hỏi",
+			imageUrl: null,
+			sortOrder: 0,
+		});
+		await libsql.insert(schema.vocabLibraryWord).values([
+			{
+				id: "libword-t1",
+				deckId: "libdeck-t1",
+				word: "greet",
+				ipa: "/ɡriːt/",
+				pos: "v",
+				translation: "chào đón",
+				sentenceVi: null,
+				sentenceEn: null,
+				pictureUrl: null,
+				audioUrl: null,
+				sortOrder: 0,
+			},
+			{
+				id: "libword-t2",
+				deckId: "libdeck-t1",
+				word: "welcome",
+				ipa: null,
+				pos: "v",
+				translation: "hoan nghênh",
+				sentenceVi: null,
+				sentenceEn: null,
+				pictureUrl: null,
+				audioUrl: null,
+				sortOrder: 1,
+			},
+		]);
+
+		const now = Date.now();
+		await libsql.insert(schema.vocabCard).values({
+			id: "card-lib-t1",
+			studentId: "student-t1",
+			wordId: "libword-t1",
+			level: 1,
+			isWarning: false,
+			state: "review",
+			intervalDays: 1,
+			dueAt: now - 1000,
+			lapses: 0,
+		});
+
+		// Teacher cannot create deck or word with reserved lib* prefix
+		const badDeckRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				id: "libdeck-t1",
+				title: "Shadow Attempt",
+			}),
+		});
+		expect(badDeckRes.status).toBe(400);
+
+		const badWordRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				id: "libword-t1",
+				deckId: "deck-1",
+				word: "greet",
+				translation: "chào",
+			}),
+		});
+		expect(badWordRes.status).toBe(400);
+
+		// Teacher progress includes the library deck with source='library' and className='1000 Từ Cơ Bản'
+		const progRes = await app.request(
+			"/api/kernel/vocab/progress?studentId=student-t1",
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(progRes.status).toBe(200);
+		const prog = vocabStudentProgressResponseSchema.parse(await progRes.json());
+		const libProg = prog.decks.find((d) => d.deckId === "libdeck-t1");
+		expect(libProg).toMatchObject({
+			deckId: "libdeck-t1",
+			title: "Bài 1: Chào hỏi",
+			classId: null,
+			className: "1000 Từ Cơ Bản",
+			source: "library",
+			total: 2,
+			byLevel: [1, 0, 0, 0, 0],
+			dueToday: 1,
+			stateNew: 1,
+			stateReview: 1,
+		});
 	});
 });

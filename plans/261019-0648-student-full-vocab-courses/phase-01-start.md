@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: DB Schema & Migration 0039 (vocab_card polymorphic word_id)"
-status: todo
+status: done
 ---
 
 # Phase 1: DB Schema & Migration 0039 (vocab_card polymorphic word_id)
@@ -101,3 +101,15 @@ CREATE INDEX `vocab_card_word_idx` ON `vocab_card` (`word_id`);
 ## Security Considerations
 
 - Giữ nguyên `FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE cascade` và `UNIQUE(student_id, word_id)` để đảm bảo cô lập dữ liệu giữa các học viên.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

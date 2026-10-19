@@ -82,6 +82,7 @@ await client.execute("PRAGMA journal_mode = WAL;");
 await client.execute("PRAGMA busy_timeout = 5000;");
 const libsql = drizzle(client, { schema });
 await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+await client.execute("PRAGMA foreign_keys = ON;");
 try {
 	await seedVocabLibrary(client);
 } catch (err) {
