@@ -545,6 +545,7 @@ export function registerVocabRoutes(
 					id: deck.id,
 					courseId: deck.courseId,
 					title: deck.title,
+					description: deck.description ?? null,
 					imageUrl: deck.imageUrl ?? null,
 					wordCount,
 					newCount,

@@ -59,11 +59,11 @@ Spot-check: `SELECT id, title, description, image_url FROM vocab_library_deck WH
 
 ## Success Criteria
 
-- [ ] Migration 0040 apply sạch cả 2 trường hợp (DB có sẵn / DB trống), `PRAGMA foreign_keys = ON` không lỗi.
-- [ ] Re-seed local: verify counts OK; `description` khác NULL cho deck có CSV `lessonDescription`.
-- [ ] `pnpm --filter @teacher-os/api test` pass sau khi cập nhật 2 fixture ở §1.6.
-- [ ] `pnpm --filter server test` pass sau khi cập nhật 2 fixture ở §1.6; response `GET /api/student/vocab/library/courses/libcourse-1/decks` chứa `description` mỗi deck.
-- [ ] `pnpm --filter @teacher-os/db test` pass (thêm assertion description nếu suite seed có test).
+- [x] Migration 0040 apply sạch cả 2 trường hợp (DB có sẵn / DB trống), `PRAGMA foreign_keys = ON` không lỗi.
+- [x] Re-seed local: verify counts OK; `description` khác NULL cho deck có CSV `lessonDescription`.
+- [x] `pnpm --filter @teacher-os/api test` pass sau khi cập nhật 2 fixture ở §1.6.
+- [x] `pnpm --filter server test` pass sau khi cập nhật 2 fixture ở §1.6; response `GET /api/student/vocab/library/courses/libcourse-1/decks` chứa `description` mỗi deck.
+- [x] `pnpm --filter @teacher-os/db test` pass (thêm assertion description nếu suite seed có test).
 
 ## Files Owned
 

@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { VocabSuggestionItem } from "@teacher-os/api/contracts";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
 import { VocabCountdown } from "@/components/vocab/vocab-countdown";
-import { VocabCourseCatalog } from "@/components/vocab/vocab-course-catalog";
+import { VocabCoursesCta } from "@/components/vocab/vocab-courses-cta";
 import { VocabSuggestionList } from "@/components/vocab/vocab-suggestion-list";
 import { useStudentMe } from "@/lib/repos/student";
 import {
@@ -15,57 +15,14 @@ import {
 } from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/vocab/")({
-	// Lưu courseId & từ khóa tìm kiếm đã debounce trong URL search params để
-	// khi học viên mở /vocab/$deckId rồi quay lại vẫn giữ trạng thái khóa học.
-	validateSearch: (input: {
-		courseId?: string;
-		q?: string;
-	}): { courseId?: string; q?: string } => ({
-		courseId:
-			typeof input.courseId === "string" && input.courseId.trim().length > 0
-				? input.courseId.trim()
-				: undefined,
-		q:
-			typeof input.q === "string" && input.q.trim().length > 0
-				? input.q.trim()
-				: undefined,
-	}),
 	component: VocabOverviewPage,
 });
 
 function VocabOverviewPage() {
-	const search = Route.useSearch();
 	const meQuery = useStudentMe();
 	const overviewQuery = useVocabOverview();
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
-
-	const handleSelectCourse = useCallback(
-		(courseId: string | null) => {
-			void navigate({
-				to: "/vocab",
-				search: courseId ? { courseId } : {},
-				replace: true,
-			});
-		},
-		[navigate],
-	);
-
-	const handleSearchChange = useCallback(
-		(query: string) => {
-			const trimmed = query.trim();
-			if ((search.q ?? "") === trimmed) return;
-			void navigate({
-				to: "/vocab",
-				search: {
-					...(search.courseId ? { courseId: search.courseId } : {}),
-					...(trimmed ? { q: trimmed } : {}),
-				},
-				replace: true,
-			});
-		},
-		[navigate, search.courseId, search.q],
-	);
 	const [busySuggestionId, setBusySuggestionId] = useState<string | null>(null);
 	const [suggestionError, setSuggestionError] = useState<string | null>(null);
 
@@ -246,7 +203,7 @@ function VocabOverviewPage() {
 						>
 							<p className="font-semibold text-fg">Chưa có bộ từ đang học</p>
 							<p className="mt-1 text-meta text-sm">
-								Chọn một khóa học từ vựng bên dưới để bắt đầu học ngay, hoặc đợi
+								Mở mục Khóa học từ vựng bên dưới để bắt đầu học ngay, hoặc đợi
 								giáo viên giao bộ từ cho lớp của bạn.
 							</p>
 						</div>
@@ -311,12 +268,7 @@ function VocabOverviewPage() {
 					)}
 				</section>
 
-				<VocabCourseCatalog
-					selectedCourseId={search.courseId ?? null}
-					searchQuery={search.q ?? ""}
-					onSelectCourse={handleSelectCourse}
-					onSearchChange={handleSearchChange}
-				/>
+				<VocabCoursesCta />
 			</div>
 		</StudentShell>
 	);

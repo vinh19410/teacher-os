@@ -1,0 +1,1 @@
+ALTER TABLE `vocab_library_deck` ADD `description` text;

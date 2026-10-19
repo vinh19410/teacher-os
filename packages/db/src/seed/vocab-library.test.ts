@@ -31,8 +31,8 @@ describe("vocab-library seed pipeline (#361)", () => {
 				'6,"IELTS CƠ BẢN","Hơn 1200 từ, cụm từ IELTS","Ôn IELTS 6.5, Reading & Listening",2',
 			].join("\n"),
 			lessonsCsv: [
-				"id,lessonName,image,order,courseId",
-				'334,"Teacher\'s Awareness, Part 1",https://example.com/img.webp,84,6',
+				"id,lessonName,lessonDescription,image,order,courseId",
+				'334,"Teacher\'s Awareness, Part 1","84.Nhận thức của con người",https://example.com/img.webp,84,6',
 			].join("\n"),
 			lessonDetailsCsv: [
 				"id,lessonDetailId,content,phonetic,position,trans,sentenceVi,sentenceEn,picture,audio,lessonId,courseId",
@@ -54,6 +54,7 @@ describe("vocab-library seed pipeline (#361)", () => {
 				id: "libdeck-334",
 				courseId: "libcourse-6",
 				title: "Teacher's Awareness, Part 1",
+				description: "84.Nhận thức của con người",
 				imageUrl: "https://example.com/img.webp",
 				sortOrder: 84,
 			},
@@ -80,7 +81,8 @@ describe("vocab-library seed pipeline (#361)", () => {
 		expect(() =>
 			parseVocabLibraryCsvTexts({
 				coursesCsv: "id,courseName,courseDescription\n1,Course 1,Desc",
-				lessonsCsv: "id,lessonName,image,order,courseId\n10,Lesson 1,,1,1",
+				lessonsCsv:
+					"id,lessonName,lessonDescription,image,order,courseId\n10,Lesson 1,1.Bài 1,,1,1",
 				lessonDetailsCsv:
 					"id,content,phonetic,position,trans,sentenceVi,sentenceEn,picture,audio,lessonId,courseId\n100,word,/w/,n,t,sv,se,,https://a.mp3,10,1",
 			}),
@@ -90,7 +92,8 @@ describe("vocab-library seed pipeline (#361)", () => {
 			parseVocabLibraryCsvTexts({
 				coursesCsv:
 					"id,courseName,courseDescription,courseTarget,order\n1,C1,D,T,1\n1,C2,D,T,2",
-				lessonsCsv: "id,lessonName,image,order,courseId\n10,Lesson 1,,1,1",
+				lessonsCsv:
+					"id,lessonName,lessonDescription,image,order,courseId\n10,Lesson 1,1.Bài 1,,1,1",
 				lessonDetailsCsv:
 					"id,content,phonetic,position,trans,sentenceVi,sentenceEn,picture,audio,lessonId,courseId\n100,word,/w/,n,t,sv,se,,https://a.mp3,10,1",
 			}),
@@ -141,6 +144,17 @@ describe("vocab-library seed pipeline (#361)", () => {
 				"SELECT id FROM vocab_library_word LIMIT 1",
 			);
 			expect(String(sampleWord.rows[0]?.id)).toMatch(/^libword-\d+$/);
+
+			const sampleDeck = await client.execute(
+				"SELECT description FROM vocab_library_deck WHERE id = 'libdeck-334' LIMIT 1",
+			);
+			expect(sampleDeck.rows[0]?.description).toBe(
+				"84.Nhận thức của con người",
+			);
+			const firstCourse1Deck = await client.execute(
+				"SELECT title, description FROM vocab_library_deck WHERE course_id = 'libcourse-1' ORDER BY sort_order LIMIT 1",
+			);
+			expect(firstCourse1Deck.rows[0]?.description).toBe("1.Trường học");
 
 			// Swap one leaf word ID so total row count stays 10160, proving verifyCounts checks id-set rather than count only.
 			await client.execute(

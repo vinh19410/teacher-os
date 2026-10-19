@@ -8,11 +8,18 @@ import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/vocab/$deckId/session")({
+	validateSearch: (input: { course?: string }): { course?: string } => ({
+		course:
+			typeof input.course === "string" && input.course.trim().length > 0
+				? input.course.trim()
+				: undefined,
+	}),
 	component: VocabSessionRoutePage,
 });
 
 function VocabSessionRoutePage() {
 	const { deckId } = Route.useParams();
+	const { course } = Route.useSearch();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const meQuery = useStudentMe();
@@ -39,7 +46,11 @@ function VocabSessionRoutePage() {
 				queryKey: ["student", "vocab-session-data", deckId],
 			}),
 		]);
-		void navigate({ to: "/vocab/$deckId", params: { deckId } });
+		void navigate({
+			to: "/vocab/$deckId",
+			params: { deckId },
+			search: course ? { course } : {},
+		});
 	};
 
 	if (!data) {

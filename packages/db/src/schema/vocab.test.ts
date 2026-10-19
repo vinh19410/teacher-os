@@ -275,6 +275,20 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				await client.execute(stmt);
 			}
 
+			// Apply 0040 migration (vocab_library_deck.description)
+			const file0040 = files.find((f) => f.startsWith("0040_"));
+			expect(file0040).toBeDefined();
+			const sql0040 = readFileSync(
+				join(MIGRATIONS_DIR, file0040 as string),
+				"utf8",
+			);
+			for (const stmt of sql0040
+				.split("--> statement-breakpoint")
+				.map((s) => s.trim())
+				.filter(Boolean)) {
+				await client.execute(stmt);
+			}
+
 			// Explicitly enable FK outside transaction (reflecting Cloudflare D1)
 			await client.execute("PRAGMA foreign_keys = ON;");
 			const fkRes = await client.execute("PRAGMA foreign_keys;");
@@ -326,6 +340,7 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 						id: "libdeck-1",
 						courseId: "libcourse-1",
 						title: "Bài 1",
+						description: "1.Trường học",
 						imageUrl: null,
 						sortOrder: 0,
 					},
@@ -436,6 +451,7 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 							id: "libdeck-1",
 							courseId: "libcourse-1",
 							title: "Bài 1",
+							description: null,
 							imageUrl: null,
 							sortOrder: 0,
 						},

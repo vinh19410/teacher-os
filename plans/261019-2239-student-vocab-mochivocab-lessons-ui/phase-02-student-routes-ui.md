@@ -77,13 +77,13 @@ Red-team B2: param `course` phải sống sót qua cả session route, nếu kh�
 
 ## Success Criteria
 
-- [ ] `/vocab/courses` render 20 khóa + search URL param hoạt động; `/vocab/courses/libcourse-1` render 100 lesson card có ảnh + dòng VI đánh số nguyên văn từ CSV (không nhân đôi số).
-- [ ] Bấm ribbon mở Dialog đổi khóa, chọn khóa khác điều hướng đúng; Esc đóng được; keyboard focus không thoát ra ngoài dialog.
-- [ ] Bài chưa hoàn thành đầu tiên có "Bắt đầu tại đây" + auto-scroll 1 lần sau load (không lặp lại khi search/filter đổi).
-- [ ] Ảnh CDN lỗi (block 1 URL thử bằng test) → card render placeholder không vỡ layout.
-- [ ] Vào session từ lesson card rồi thoát bằng "← Danh sách bộ từ" lẫn `handleExit` sau học — URL vẫn giữ `?course=` và back-link trỏ đúng course page.
-- [ ] `pnpm --filter student test` pass với unit test mới: `deriveLessonStatus`, `deriveLessonSubtitle` (gồm case description rác "10 từ vựng" → null), switcher dialog (open/select/close), lesson card render (completed/in-progress/new + fallback ảnh), dashboard CTA.
-- [ ] `pnpm check-types` pass (route tree regenerate — chạy dev 1 lần hoặc codegen route).
+- [x] `/vocab/courses` render 20 khóa + search URL param hoạt động; `/vocab/courses/libcourse-1` render 100 lesson card có ảnh + dòng VI đánh số nguyên văn từ CSV (không nhân đôi số).
+- [x] Bấm ribbon mở Dialog đổi khóa, chọn khóa khác điều hướng đúng; Esc đóng được; keyboard focus không thoát ra ngoài dialog.
+- [x] Bài chưa hoàn thành đầu tiên có "Bắt đầu tại đây" + auto-scroll 1 lần sau load (không lặp lại khi search/filter đổi).
+- [x] Ảnh CDN lỗi (block 1 URL thử bằng test) → card render placeholder không vỡ layout.
+- [x] Vào session từ lesson card rồi thoát bằng "← Danh sách bộ từ" lẫn `handleExit` sau học — URL vẫn giữ `?course=` và back-link trỏ đúng course page.
+- [x] `pnpm --filter student test` pass với unit test mới: `deriveLessonStatus`, `deriveLessonSubtitle` (gồm case description rác "10 từ vựng" → null), switcher dialog (open/select/close), lesson card render (completed/in-progress/new + fallback ảnh), dashboard CTA.
+- [x] `pnpm check-types` pass (route tree regenerate — chạy dev 1 lần hoặc codegen route).
 
 ## Files Owned
 
