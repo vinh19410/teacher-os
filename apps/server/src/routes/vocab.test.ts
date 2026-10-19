@@ -4,6 +4,7 @@ import {
 	vocabCardMutationResponseSchema,
 	vocabOverviewSchema,
 	vocabSessionDataSchema,
+	vocabSuggestionMutationResponseSchema,
 } from "@teacher-os/api/contracts";
 import { DAY_MS } from "@teacher-os/api/srs/scheduler";
 import * as schema from "@teacher-os/db/schema/index";
@@ -330,6 +331,7 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 				deckId: "deck-1",
 				title: "Environment Vocab",
 				className: "IELTS 6.5",
+				source: "class",
 				total: 3,
 				newCount: 3,
 				dueCount: 0,
@@ -803,5 +805,389 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		} finally {
 			fetchSpy.mockRestore();
 		}
+	});
+
+	test("independent deck & suggestion lifecycle (#363): 5-site access predicate, CSRF guard, IDOR negative, dismiss 409 on accepted, re-suggest upsert, and class>suggested dedupe", async () => {
+		// Seed a teacher user + an independent deck (classId = null) with 2 words (1 with audioKey)
+		await libsql.insert(schema.user).values({
+			id: "teacher-1",
+			name: "Teacher One",
+			email: "t1@test.local",
+			emailVerified: true,
+			createdAt: new Date(1_700_000_000_000),
+			updatedAt: new Date(1_700_000_000_000),
+		});
+
+		await libsql.insert(schema.vocabDeck).values([
+			{
+				id: "deck-indep-1",
+				orgId: "org-1",
+				classId: null,
+				title: "TOEIC 600 Independent",
+				lang: "en",
+				createdAt: new Date("2026-10-10T00:00:00Z"),
+				updatedAt: new Date("2026-10-10T00:00:00Z"),
+			},
+			{
+				id: "deck-indep-2",
+				orgId: "org-1",
+				classId: null,
+				title: "Academic Collocations",
+				lang: "en",
+				createdAt: new Date("2026-10-11T00:00:00Z"),
+				updatedAt: new Date("2026-10-11T00:00:00Z"),
+			},
+		]);
+
+		const indepAudioKey = "vocab/org-1/w-indep-1/audio.mp3";
+		await mediaStore.put(
+			indepAudioKey,
+			new ReadableStream({
+				start(c) {
+					c.enqueue(new Uint8Array([0x11, 0x22, 0x33]));
+					c.close();
+				},
+			}),
+			{ contentType: "audio/mpeg", size: 3 },
+		);
+
+		await libsql.insert(schema.vocabWord).values([
+			{
+				id: "w-indep-1",
+				deckId: "deck-indep-1",
+				word: "negotiate",
+				ipa: "/nɪˈɡəʊʃieɪt/",
+				translation: "đàm phán",
+				audioKey: indepAudioKey,
+				sortOrder: 0,
+			},
+			{
+				id: "w-indep-2",
+				deckId: "deck-indep-1",
+				word: "agenda",
+				ipa: "/əˈdʒendə/",
+				translation: "chương trình nghị sự",
+				audioKey: null,
+				sortOrder: 1,
+			},
+			{
+				id: "w-indep-3",
+				deckId: "deck-indep-2",
+				word: "hypothesis",
+				ipa: "/haɪˈpɒθəsɪs/",
+				translation: "giả thuyết",
+				audioKey: null,
+				sortOrder: 0,
+			},
+		]);
+
+		// (c) Before suggestion is created/accepted: deck-indep-1 is 404 across session-data & audio
+		const preSession = await app.request(
+			"/api/student/vocab/decks/deck-indep-1/session-data",
+			{ headers: { "x-test-user": "studentA" } },
+		);
+		expect(preSession.status).toBe(404);
+
+		const preAudio = await app.request("/api/student/vocab/audio/w-indep-1", {
+			headers: { "x-test-user": "studentA" },
+		});
+		expect(preAudio.status).toBe(404);
+
+		// Seed 2 pending suggestions for student-a
+		await libsql.insert(schema.vocabSuggestion).values([
+			{
+				id: "sug-a-1",
+				orgId: "org-1",
+				teacherId: "teacher-1",
+				studentId: "student-a",
+				deckId: "deck-indep-1",
+				note: "Ôn trước thứ 7 nhé",
+				status: "pending",
+				createdAt: new Date("2026-10-19T01:00:00Z"),
+			},
+			{
+				id: "sug-a-2",
+				orgId: "org-1",
+				teacherId: "teacher-1",
+				studentId: "student-a",
+				deckId: "deck-indep-2",
+				note: "Đọc thêm",
+				status: "pending",
+				createdAt: new Date("2026-10-19T02:00:00Z"),
+			},
+		]);
+
+		// Pending suggestion does NOT grant deck access yet (session-data/audio still 404)
+		const pendingSession = await app.request(
+			"/api/student/vocab/decks/deck-indep-1/session-data",
+			{ headers: { "x-test-user": "studentA" } },
+		);
+		expect(pendingSession.status).toBe(404);
+
+		// Student A overview lists both pending suggestions with wordCount & note, but NOT in decks[]
+		const ovRes1 = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentA" },
+		});
+		const ov1 = vocabOverviewSchema.parse(await ovRes1.json());
+		expect(ov1.suggestions).toEqual([
+			{
+				id: "sug-a-1",
+				deckId: "deck-indep-1",
+				title: "TOEIC 600 Independent",
+				wordCount: 2,
+				note: "Ôn trước thứ 7 nhé",
+				createdAt: "2026-10-19T01:00:00.000Z",
+			},
+			{
+				id: "sug-a-2",
+				deckId: "deck-indep-2",
+				title: "Academic Collocations",
+				wordCount: 1,
+				note: "Đọc thêm",
+				createdAt: "2026-10-19T02:00:00.000Z",
+			},
+		]);
+		expect(ov1.decks.some((d) => d.deckId === "deck-indep-1")).toBe(false);
+
+		// (c) IDOR: Student B sees 0 suggestions and gets 404 on accept/dismiss of A's suggestion
+		const ovResB = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentB" },
+		});
+		const ovB = vocabOverviewSchema.parse(await ovResB.json());
+		expect(ovB.suggestions).toEqual([]);
+
+		const idorAccept = await app.request(
+			"/api/student/vocab/suggestions/sug-a-1/accept",
+			{
+				method: "POST",
+				headers: headersFor("studentB"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(idorAccept.status).toBe(404);
+
+		const idorDismiss = await app.request(
+			"/api/student/vocab/suggestions/sug-a-2/dismiss",
+			{
+				method: "POST",
+				headers: headersFor("studentB"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(idorDismiss.status).toBe(404);
+
+		// (c) CSRF guard: foreign Origin on accept & dismiss -> 403
+		const csrfAccept = await app.request(
+			"/api/student/vocab/suggestions/sug-a-1/accept",
+			{
+				method: "POST",
+				headers: headersFor("studentA", "https://evil.example.com"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(csrfAccept.status).toBe(403);
+
+		const csrfDismiss = await app.request(
+			"/api/student/vocab/suggestions/sug-a-2/dismiss",
+			{
+				method: "POST",
+				headers: headersFor("studentA", "https://evil.example.com"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(csrfDismiss.status).toBe(403);
+
+		// (a) Student A accepts sug-a-1 (and verify idempotency on repeat accept)
+		const acceptRes1 = await app.request(
+			"/api/student/vocab/suggestions/sug-a-1/accept",
+			{
+				method: "POST",
+				headers: headersFor("studentA"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(acceptRes1.status).toBe(200);
+		const acceptData1 = vocabSuggestionMutationResponseSchema.parse(
+			await acceptRes1.json(),
+		);
+		expect(acceptData1.status).toBe("accepted");
+		expect(acceptData1.deckId).toBe("deck-indep-1");
+
+		const acceptRes2 = await app.request(
+			"/api/student/vocab/suggestions/sug-a-1/accept",
+			{
+				method: "POST",
+				headers: headersFor("studentA"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(acceptRes2.status).toBe(200);
+		const acceptData2 = vocabSuggestionMutationResponseSchema.parse(
+			await acceptRes2.json(),
+		);
+		expect(acceptData2.respondedAt).toBe(acceptData1.respondedAt);
+
+		// (b) Dismissing an already-accepted suggestion -> 409
+		const dismissAccepted = await app.request(
+			"/api/student/vocab/suggestions/sug-a-1/dismiss",
+			{
+				method: "POST",
+				headers: headersFor("studentA"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(dismissAccepted.status).toBe(409);
+
+		// (a) Verify all 5 call sites work for accepted independent deck:
+		// Site 1: overview includes deck-indep-1 with source='suggested', className=''
+		const ovRes2 = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentA" },
+		});
+		const ov2 = vocabOverviewSchema.parse(await ovRes2.json());
+		const indepOverviewDeck = ov2.decks.find(
+			(d) => d.deckId === "deck-indep-1",
+		);
+		expect(indepOverviewDeck).toEqual({
+			deckId: "deck-indep-1",
+			title: "TOEIC 600 Independent",
+			className: "",
+			source: "suggested",
+			total: 2,
+			newCount: 2,
+			dueCount: 0,
+		});
+		expect(ov2.suggestions.map((s) => s.id)).toEqual(["sug-a-2"]);
+
+		// Site 4 & Site 5: session-data provisions cards AND pool includes words from deck-indep-1
+		const indepSessionRes = await app.request(
+			"/api/student/vocab/decks/deck-indep-1/session-data",
+			{ headers: { "x-test-user": "studentA" } },
+		);
+		expect(indepSessionRes.status).toBe(200);
+		const indepSession = vocabSessionDataSchema.parse(
+			await indepSessionRes.json(),
+		);
+		expect(indepSession.cards).toHaveLength(2);
+		expect(indepSession.pool.some((p) => p.deckId === "deck-indep-1")).toBe(
+			true,
+		);
+
+		// Site 2: learn-commit AND answer on card of independent deck
+		const indepCard1 = indepSession.cards[0];
+		expect(indepCard1).toBeDefined();
+		const learnRes = await app.request("/api/student/vocab/learn-commit", {
+			method: "POST",
+			headers: headersFor("studentA"),
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: indepCard1?.id,
+				gradeGood: true,
+				durationMs: 1200,
+			}),
+		});
+		expect(learnRes.status).toBe(200);
+		const learnedCard = vocabCardMutationResponseSchema.parse(
+			await learnRes.json(),
+		).card;
+		expect(learnedCard.state).toBe("review");
+
+		// Make indepCard1 due now and call POST /vocab/answer
+		await libsql
+			.update(schema.vocabCard)
+			.set({ dueAt: Date.now() - 1000 })
+			.where(eq(schema.vocabCard.id, indepCard1?.id ?? ""));
+		const answerRes = await app.request("/api/student/vocab/answer", {
+			method: "POST",
+			headers: headersFor("studentA"),
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: indepCard1?.id,
+				correct: true,
+				durationMs: 900,
+			}),
+		});
+		expect(answerRes.status).toBe(200);
+		const answeredCard = vocabCardMutationResponseSchema.parse(
+			await answerRes.json(),
+		).card;
+		expect(answeredCard.level).toBe(2);
+
+		// Site 3: audio on word of independent deck
+		const audioRes = await app.request("/api/student/vocab/audio/w-indep-1", {
+			headers: { "x-test-user": "studentA" },
+		});
+		expect(audioRes.status).toBe(200);
+
+		// (b) Dismiss pending sug-a-2 -> disappears from overview.suggestions
+		const dismissRes = await app.request(
+			"/api/student/vocab/suggestions/sug-a-2/dismiss",
+			{
+				method: "POST",
+				headers: headersFor("studentA"),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(dismissRes.status).toBe(200);
+		const ovRes3 = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentA" },
+		});
+		const ov3 = vocabOverviewSchema.parse(await ovRes3.json());
+		expect(ov3.suggestions).toEqual([]);
+
+		// (e) Re-suggest after dismissed flips status back to pending (upsert)
+		await libsql
+			.insert(schema.vocabSuggestion)
+			.values({
+				id: "sug-a-2-new",
+				orgId: "org-1",
+				teacherId: "teacher-1",
+				studentId: "student-a",
+				deckId: "deck-indep-2",
+				note: "Gợi ý lại lần 2",
+				status: "pending",
+				createdAt: new Date("2026-10-19T05:00:00Z"),
+			})
+			.onConflictDoUpdate({
+				target: [
+					schema.vocabSuggestion.studentId,
+					schema.vocabSuggestion.deckId,
+				],
+				set: {
+					status: "pending",
+					note: "Gợi ý lại lần 2",
+					respondedAt: null,
+				},
+			});
+		const ovRes4 = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentA" },
+		});
+		const ov4 = vocabOverviewSchema.parse(await ovRes4.json());
+		expect(ov4.suggestions).toEqual([
+			expect.objectContaining({
+				id: "sug-a-2",
+				deckId: "deck-indep-2",
+				note: "Gợi ý lại lần 2",
+			}),
+		]);
+
+		// (f) Deck simultaneously enrolled (deck-1 in class-enrolled) AND accepted suggestion
+		// appears ONCE in overview.decks with source='class' and className='IELTS 6.5'
+		await libsql.insert(schema.vocabSuggestion).values({
+			id: "sug-dup-class",
+			orgId: "org-1",
+			teacherId: "teacher-1",
+			studentId: "student-a",
+			deckId: "deck-1",
+			status: "accepted",
+			respondedAt: new Date("2026-10-19T06:00:00Z"),
+		});
+		const ovRes5 = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentA" },
+		});
+		const ov5 = vocabOverviewSchema.parse(await ovRes5.json());
+		const deck1Matches = ov5.decks.filter((d) => d.deckId === "deck-1");
+		expect(deck1Matches).toHaveLength(1);
+		expect(deck1Matches[0]?.source).toBe("class");
+		expect(deck1Matches[0]?.className).toBe("IELTS 6.5");
 	});
 });

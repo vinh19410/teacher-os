@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Khởi tạo branch & chốt quyết định kỹ thuật"
-status: todo
+status: done
 ---
 
 # Phase 1: Khởi tạo branch & chốt quyết định kỹ thuật
@@ -24,10 +24,9 @@ Tạo branch làm việc, xác nhận baseline xanh, và chốt 2 quyết địn
 
 ## Requirements
 
-- [ ] Branch `vinh19410/ai-handle-vocab-independent-hub` tạo từ `develop` mới nhất
-- [ ] Baseline gates xanh trước khi sửa
-- [ ] 2 quyết định kỹ thuật dưới đây được verify bằng evidence
-
+- [x] Branch `ai-handle-issue-363` tạo từ `develop` mới nhất (`90ad060`)
+- [x] Baseline gates xanh trước khi sửa (`pnpm check && pnpm check-types` exit 0, 12/12 packages)
+- [x] 2 quyết định kỹ thuật dưới đây được verify bằng evidence
 ## Implementation Steps
 
 1. `git checkout develop && git pull && git checkout -b vinh19410/ai-handle-vocab-independent-hub`
@@ -38,15 +37,21 @@ Tạo branch làm việc, xác nhận baseline xanh, và chốt 2 quyết địn
 
 ## Todo
 
-- [ ] Branch tạo từ develop mới nhất
-- [ ] Baseline `pnpm check` + `check-types` xanh
-- [ ] D2 verify snapshot.ts org-wide + deploy sequence guard
-- [ ] D3 verify migrate flow + precedent 0011
+- [x] Branch tạo từ develop mới nhất
+- [x] Baseline `pnpm check` + `check-types` xanh
+- [x] D2 verify snapshot.ts org-wide + deploy sequence guard
+- [x] D3 verify migrate flow + precedent 0011
 
 ## Success Criteria
 
 - Branch tồn tại, baseline xanh, 3 quyết định D1–D3 có kết luận viết trong file này (bổ sung mục "Kết quả verify" khi hoàn thành).
 
+
+## Kết quả verify
+
+- **D1 (UNIQUE index):** Đã chốt theo RT-19 — dùng `UNIQUE(student_id, deck_id)` thường + upsert flip-status.
+- **D2 (Snapshot `vocabDecks` & `vocabSuggestions`):** `apps/server/src/routes/snapshot.ts:309-314` query `vocabDeck` theo `orgId` toàn org (không filter class); dòng 590–598 map `KernelVocabDeckRow`. `apps/web/src/lib/repos/kernel.ts:477-518` dùng `SNAPSHOT_COLLECTION_KEYS` + `isSnapshotShape` (bắt buộc mỗi key trong `SNAPSHOT_COLLECTION_KEYS` phải `Array.isArray`). Do đó khi thêm `vocabSuggestions?: KernelVocabSuggestionRow[]` (optional), cần tách key optional khỏi `SNAPSHOT_COLLECTION_KEYS` (hoặc cho phép `record[key] === undefined || Array.isArray(record[key])` trong `isSnapshotShape`) và deploy server trả field trước khi deploy web.
+- **D3 (Drizzle migrate flow & precedent 0011):** `packages/db/package.json` có `db:generate` (`drizzle-kit generate`), `db:migrate:deploy` (`drizzle-kit migrate`), `test` (`vitest run`). Precedent `0011_classy_clea.sql` xác nhận pattern recreate bảng SQLite (`PRAGMA foreign_keys=OFF; CREATE TABLE __new_...; INSERT INTO __new_... SELECT ...; DROP TABLE ...; ALTER TABLE __new_... RENAME TO ...; PRAGMA foreign_keys=ON; CREATE INDEX ...`).
 ## Risk Assessment
 
 - Baseline đỏ do env local (dev stack chiếm port) → chạy lại theo memory local-dev-stack, không sửa code để "fix" baseline.
@@ -54,3 +59,15 @@ Tạo branch làm việc, xác nhận baseline xanh, và chốt 2 quyết địn
 ## Next Steps
 
 - Phase 2 (schema) phụ thuộc kết luận D1.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

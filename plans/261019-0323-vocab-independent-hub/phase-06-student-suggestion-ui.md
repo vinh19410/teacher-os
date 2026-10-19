@@ -1,6 +1,6 @@
 ---
 title: "Phase 6: Student — mục Gợi ý cho bạn trong /vocab"
-status: todo
+status: done
 ---
 
 # Phase 6: Student — mục "Gợi ý cho bạn" trong /vocab
@@ -26,12 +26,12 @@ Hiện section "Gợi ý cho bạn" trong `/vocab` khi có suggestion pending; d
 
 ## Requirements
 
-- [ ] Overview schema client cập nhật (suggestions[] + source, `.catch` compat — phase 3)
-- [ ] Section "Gợi ý cho bạn": card mỗi gợi ý (title, số từ, note teacher, ngày) + 2 hành động "Bắt đầu học" / "Ẩn"; ẩn hoàn toàn khi rỗng
-- [ ] Deck list: badge "Lớp {name}" hoặc "Gợi ý" theo `source`
-- [ ] Accept → refresh overview + điều hướng sang deck; Dismiss → biến mất (không confirm — hành động nhẹ, teacher gợi ý lại được)
-- [ ] Empty state + error state xử lý theo pattern trang hiện có
-- [ ] Tests component: render suggestion, accept gọi repo + navigate, dismiss gọi repo + remove khỏi list
+- [x] Overview schema client cập nhật (suggestions[] + source, `.catch` compat — phase 3)
+- [x] Section "Gợi ý cho bạn": card mỗi gợi ý (title, số từ, note teacher, ngày) + 2 hành động "Bắt đầu học" / "Ẩn"; ẩn hoàn toàn khi rỗng
+- [x] Deck list: badge "Lớp {name}" hoặc "Gợi ý" theo `source`
+- [x] Accept → refresh overview + điều hướng sang deck; Dismiss → biến mất (không confirm — hành động nhẹ, teacher gợi ý lại được)
+- [x] Empty state + error state xử lý theo pattern trang hiện có
+- [x] Tests component: render suggestion, accept gọi repo + navigate, dismiss gọi repo + remove khỏi list
 
 ## Related Code Files
 
@@ -50,10 +50,10 @@ Hiện section "Gợi ý cho bạn" trong `/vocab` khi có suggestion pending; d
 
 ## Todo
 
-- [ ] Repos accept/dismiss
-- [ ] VocabSuggestionList + tests
-- [ ] Section + badge nguồn trong overview
-- [ ] Flow accept → session
+- [x] Repos accept/dismiss
+- [x] VocabSuggestionList + tests
+- [x] Section + badge nguồn trong overview
+- [x] Flow accept → session
 
 ## Success Criteria
 
@@ -67,3 +67,15 @@ Hiện section "Gợi ý cho bạn" trong `/vocab` khi có suggestion pending; d
 ## Security Considerations
 
 - Không tin gì từ client ngoài id suggestion; server đã ownership-check (phase 3).
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: DB schema — classId nullable + bảng vocab_suggestion"
-status: todo
+status: done
 ---
 
 # Phase 2: DB schema — classId nullable + bảng vocab_suggestion
@@ -25,11 +25,11 @@ Migration `0038`: `vocab_deck.class_id` thành nullable (SQLite → **recreate b
 
 ## Requirements
 
-- [ ] `vocabDeck.classId` nullable; index `vocab_deck_class_idx` giữ (SQLite index chấp nhận NULL)
-- [ ] Bảng `vocab_suggestion` theo Architecture dưới đây (UNIQUE thường, FK user)
-- [ ] Migration 0038: generate → audit từng statement theo precedent 0011 → rehearse staging → apply local, seed library #361 vẫn chạy
-- [ ] `KernelVocabDeckRow.classId` → `string | null` + tests assert shape cập nhật
-- [ ] Không data migration cần thiết (deck cũ giữ classId)
+- [x] `vocabDeck.classId` nullable; index `vocab_deck_class_idx` giữ (SQLite index chấp nhận NULL)
+- [x] Bảng `vocab_suggestion` theo Architecture dưới đây (UNIQUE thường, FK user)
+- [x] Migration 0038: generate → audit từng statement theo precedent 0011 → rehearse staging → apply local, seed library #361 vẫn chạy
+- [x] `KernelVocabDeckRow.classId` → `string | null` + tests assert shape cập nhật
+- [x] Không data migration cần thiết (deck cũ giữ classId)
 
 ## Architecture
 
@@ -74,10 +74,10 @@ Transition matrix (RT-F6, chốt ở phase 3/4):
 
 ## Todo
 
-- [ ] vocabDeck.classId nullable + KernelVocabDeckRow nullable + asserts
-- [ ] vocabSuggestion table (UNIQUE thường, FK user)
-- [ ] Migration 0038 generate + audit + rehearse staging
-- [ ] Test schema packages/db + apply local + smoke seed library
+- [x] vocabDeck.classId nullable + KernelVocabDeckRow nullable + asserts
+- [x] vocabSuggestion table (UNIQUE thường, FK user)
+- [x] Migration 0038 generate + audit + rehearse staging
+- [x] Test schema packages/db + apply local + smoke seed library
 
 ## Success Criteria
 
@@ -91,3 +91,15 @@ Transition matrix (RT-F6, chốt ở phase 3/4):
 ## Security Considerations
 
 - Không có secret; org-scoping mọi query mới (where orgId) — enforce ở phase 3/4.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

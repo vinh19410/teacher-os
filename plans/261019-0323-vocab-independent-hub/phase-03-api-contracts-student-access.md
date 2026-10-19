@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: API contracts + student access rule & suggestion lifecycle"
-status: todo
+status: done
 ---
 
 # Phase 3: API contracts + student access rule & suggestion lifecycle
@@ -29,13 +29,13 @@ status: todo
 
 ## Requirements
 
-- [ ] Contracts mới/đ mở theo pattern compat: `vocabSuggestionItemSchema`, overview thêm `suggestions[]` + `decks[].source` (`.catch`/default); `className` giữ type cũ `z.string().catch("")` — KHÔNG đổi nullable trên wire; test compat 2 chiều (client schema MỚI parse payload CŨ; schema cũ parse payload mới được bắt lỗi rõ)
-- [ ] `GET /api/student/vocab/overview` trả deck riêng đã accepted + suggestions pending; union DEDUPE theo deckId (source precedence class > suggested)
-- [ ] `POST /api/student/vocab/suggestions/:id/accept` → status accepted + respondedAt (idempotent khi đã accepted) — KHÔNG provision ngay (provision giữ lazy ở session-data)
-- [ ] `POST /api/student/vocab/suggestions/:id/dismiss` → chỉ từ `pending` (đã accepted → 409)
-- [ ] Cả 2 route trên đăng ký `requireStudent` + `vocabWriteGuard` theo pattern `vocab.ts:283-296`; test Origin lạ → 403
-- [ ] Access predicate dùng chung thay enrollment-join ở ĐỦ 5 call sites (overview, loadOwnedSessionCard, audio, ensureDeckCards, loadPool)
-- [ ] IDOR âm tính: student B gọi overview/session-data/accept/suggestion của A → 403/404; deck riêng chưa accepted → 404 ở answer/learn-commit/audio
+- [x] Contracts mới/đ mở theo pattern compat: `vocabSuggestionItemSchema`, overview thêm `suggestions[]` + `decks[].source` (`.catch`/default); `className` giữ type cũ `z.string().catch("")` — KHÔNG đổi nullable trên wire; test compat 2 chiều (client schema MỚI parse payload CŨ; schema cũ parse payload mới được bắt lỗi rõ)
+- [x] `GET /api/student/vocab/overview` trả deck riêng đã accepted + suggestions pending; union DEDUPE theo deckId (source precedence class > suggested)
+- [x] `POST /api/student/vocab/suggestions/:id/accept` → status accepted + respondedAt (idempotent khi đã accepted) — KHÔNG provision ngay (provision giữ lazy ở session-data)
+- [x] `POST /api/student/vocab/suggestions/:id/dismiss` → chỉ từ `pending` (đã accepted → 409)
+- [x] Cả 2 route trên đăng ký `requireStudent` + `vocabWriteGuard` theo pattern `vocab.ts:283-296`; test Origin lạ → 403
+- [x] Access predicate dùng chung thay enrollment-join ở ĐỦ 5 call sites (overview, loadOwnedSessionCard, audio, ensureDeckCards, loadPool)
+- [x] IDOR âm tính: student B gọi overview/session-data/accept/suggestion của A → 403/404; deck riêng chưa accepted → 404 ở answer/learn-commit/audio
 
 ## Architecture
 
@@ -73,11 +73,11 @@ POST /vocab/suggestions/:id/dismiss  # pending → dismissed; accepted → 409
 
 ## Todo
 
-- [ ] Contracts compat (.catch) + contract tests 2 chiều
-- [ ] Access predicate dùng chung — 5 call sites
-- [ ] Route accept/dismiss + vocabWriteGuard + test CSRF
-- [ ] Overview union dedupe + suggestions
-- [ ] Server tests a–f
+- [x] Contracts compat (.catch) + contract tests 2 chiều
+- [x] Access predicate dùng chung — 5 call sites
+- [x] Route accept/dismiss + vocabWriteGuard + test CSRF
+- [x] Overview union dedupe + suggestions
+- [x] Server tests a–f
 
 ## Success Criteria
 
@@ -92,3 +92,15 @@ POST /vocab/suggestions/:id/dismiss  # pending → dismissed; accepted → 409
 
 - Ownership check mọi route suggestion theo `studentId` + `orgId` từ ctx (không tin input).
 - Deck riêng (classId null) tuyệt đối không lọt vào list của student chưa accepted — test âm tính bắt buộc.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

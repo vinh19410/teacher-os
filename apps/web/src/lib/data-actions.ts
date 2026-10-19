@@ -238,9 +238,9 @@ export type KernelAction =
 			payload: AssignmentPromptUpdate;
 	  }
 	| {
-			/** Student Vocab SRS (#359): tạo bộ từ vựng cho một lớp. */
+			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
 			type: "create-vocab-deck";
-			payload: { classId: string; title: string; lang?: string };
+			payload: { classId: string | null; title: string; lang?: string };
 	  }
 	| {
 			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
@@ -270,9 +270,23 @@ export type KernelAction =
 			wordId: string;
 	  }
 	| {
-			/** Built-in Vocab Library (#361): clone các bài từ thư viện về lớp. */
+			/** Built-in Vocab Library (#361, #363): clone các bài từ thư viện về lớp hoặc hub (classId = null). */
 			type: "clone-vocab-library-decks";
-			payload: { classId: string; deckIds: string[] };
+			payload: { classId: string | null; deckIds: string[] };
+	  }
+	| {
+			/** Gợi ý bộ từ vựng cho học viên (#363, idempotent). */
+			type: "suggest-vocab-deck";
+			payload: {
+				deckId: string;
+				studentId: string;
+				note?: string | null;
+			};
+	  }
+	| {
+			/** Thu hồi gợi ý bộ từ vựng (#363, soft flip dismissed). */
+			type: "revoke-vocab-suggestion";
+			suggestionId: string;
 	  };
 
 /** Backwards-compatible name for data-store consumers. */

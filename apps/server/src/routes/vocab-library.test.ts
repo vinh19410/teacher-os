@@ -536,4 +536,51 @@ describe("built-in vocab library routes (/api/kernel/vocab-library/*, #361)", ()
 			.where(eq(schema.vocabLibraryDeck.id, "libdeck-101"));
 		expect(libStillThere).toHaveLength(1);
 	});
+
+	test("POST /clone supports independent hub decks (classId: null) and reports duplicates via isNull (#363 RT-F14)", async () => {
+		const res1 = await app.request("/api/kernel/vocab-library/clone", {
+			method: "POST",
+			headers: headersFor("teacherA"),
+			body: JSON.stringify({
+				classId: null,
+				deckIds: ["libdeck-102"],
+			}),
+		});
+		expect(res1.status).toBe(201);
+		const body1 = (await res1.json()) as {
+			id: string;
+			updated: number;
+			duplicates: string[];
+		};
+		expect(body1.updated).toBe(1);
+		expect(body1.duplicates).toEqual([]);
+
+		const snapRes = await app.request("/api/kernel", {
+			headers: headersFor("teacherA"),
+		});
+		const snap = (await snapRes.json()) as KernelSnapshot;
+		const indepCloned = snap.vocabDecks.find((d) => d.id === body1.id);
+		expect(indepCloned).toMatchObject({
+			id: body1.id,
+			classId: null,
+			title: "Lesson 2: Environment",
+			sourceLibraryDeckId: "libdeck-102",
+		});
+
+		// Re-cloning into independent hub (classId omitted -> null) detects duplicate via isNull(vocabDeck.classId)
+		const res2 = await app.request("/api/kernel/vocab-library/clone", {
+			method: "POST",
+			headers: headersFor("teacherA"),
+			body: JSON.stringify({
+				deckIds: ["libdeck-102"],
+			}),
+		});
+		expect(res2.status).toBe(201);
+		const body2 = (await res2.json()) as {
+			id: string;
+			updated: number;
+			duplicates: string[];
+		};
+		expect(body2.duplicates).toEqual(["libdeck-102"]);
+	});
 });

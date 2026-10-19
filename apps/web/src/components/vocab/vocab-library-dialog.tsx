@@ -24,23 +24,28 @@ const SEARCH_DEBOUNCE_MS = 300;
  */
 export function VocabLibraryDialog({
 	open,
-	classId,
+	classId = null,
 	onClose,
 }: {
 	open: boolean;
-	classId: string;
+	classId?: string | null;
 	onClose: () => void;
 }) {
 	const { data, dispatch } = useData();
+	const targetClassId = classId ?? null;
+	const isHubMode = targetClassId === null;
 	const existingLibraryDeckIds = useMemo(() => {
 		const ids = new Set<string>();
 		for (const deck of data.vocabDecks) {
-			if (deck.classId === classId && deck.sourceLibraryDeckId) {
+			if (
+				(deck.classId ?? null) === targetClassId &&
+				deck.sourceLibraryDeckId
+			) {
 				ids.add(deck.sourceLibraryDeckId);
 			}
 		}
 		return ids;
-	}, [data.vocabDecks, classId]);
+	}, [data.vocabDecks, targetClassId]);
 
 	const [step, setStep] = useState<"courses" | "decks">("courses");
 	const [courses, setCourses] = useState<VocabLibraryCourse[]>([]);
@@ -236,7 +241,7 @@ export function VocabLibraryDialog({
 			const deckIds = [...selectedDecks.keys()];
 			const result = await dispatch({
 				type: "clone-vocab-library-decks",
-				payload: { classId, deckIds },
+				payload: { classId: targetClassId, deckIds },
 			});
 
 			if (result.kind === "refreshed") {
@@ -244,10 +249,16 @@ export function VocabLibraryDialog({
 				const dupCount = result.duplicates?.length ?? 0;
 				if (dupCount > 0) {
 					toast.warning(
-						`Đã thêm ${addedCount} bộ từ (${dupCount} bài đã có trong lớp từ trước).`,
+						isHubMode
+							? `Đã thêm ${addedCount} bộ từ (${dupCount} bài đã có trong hub từ trước).`
+							: `Đã thêm ${addedCount} bộ từ (${dupCount} bài đã có trong lớp từ trước).`,
 					);
 				} else {
-					toast.success(`Đã thêm ${addedCount} bộ từ vào lớp.`);
+					toast.success(
+						isHubMode
+							? `Đã thêm ${addedCount} bộ từ.`
+							: `Đã thêm ${addedCount} bộ từ vào lớp.`,
+					);
 				}
 				onClose();
 				return;
@@ -264,7 +275,9 @@ export function VocabLibraryDialog({
 			if (result.kind === "definite-failure") {
 				const msg = result.reason
 					? `Không thể thêm bộ từ (${result.reason}).`
-					: "Không thể thêm bộ từ vào lớp.";
+					: isHubMode
+						? "Không thể thêm bộ từ."
+						: "Không thể thêm bộ từ vào lớp.";
 				toast.error(msg);
 				setStatusNotice(msg);
 				return;
@@ -333,7 +346,11 @@ export function VocabLibraryDialog({
 									disabled={selectedCount === 0 || overCap || submitting}
 									onClick={() => void handleConfirmClone()}
 								>
-									{submitting ? "Đang thêm..." : "Thêm vào lớp"}
+									{submitting
+										? "Đang thêm..."
+										: isHubMode
+											? "Thêm bộ từ"
+											: "Thêm vào lớp"}
 								</Button>
 							) : null}
 						</div>
@@ -504,7 +521,9 @@ export function VocabLibraryDialog({
 															data-testid={`vocab-library-existing-chip-${deck.id}`}
 															className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-hot uppercase tracking-widest"
 														>
-															Đã có trong lớp
+															{isHubMode
+																? "Đã có trong hub"
+																: "Đã có trong lớp"}
 														</span>
 													) : null}
 												</div>

@@ -11,8 +11,12 @@ import {
 	vocabLibraryDeckSchema,
 	vocabLibraryWordsResponseSchema,
 	vocabOverviewSchema,
+	vocabRevokeSuggestionSchema,
 	vocabSessionCardSchema,
 	vocabSessionDataSchema,
+	vocabStudentProgressResponseSchema,
+	vocabSuggestDeckSchema,
+	vocabSuggestionItemSchema,
 	vocabTeacherWordSchema,
 	vocabWordUpsertSchema,
 } from "./contracts";
@@ -336,5 +340,184 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 		expect(VOCAB_ERROR_CODES.LIBRARY_CLONE_TOO_LARGE).toBe(
 			"LIBRARY_CLONE_TOO_LARGE",
 		);
+	});
+
+	it("validates independent deck creation, suggestion lifecycle, progress, and 2-way wire compatibility (#363)", () => {
+		// 1) Independent deck creation & library clone (classId null or omitted -> null)
+		const indepCreate = vocabDeckCreateSchema.parse({
+			title: "TOEIC Essential",
+		});
+		expect(indepCreate.classId).toBeNull();
+		expect(
+			vocabDeckCreateSchema.parse({
+				classId: null,
+				title: "TOEIC Essential",
+			}).classId,
+		).toBeNull();
+		expect(
+			vocabLibraryCloneSchema.parse({
+				deckIds: ["libdeck-10"],
+			}).classId,
+		).toBeNull();
+
+		// 2) Suggest & revoke schemas
+		expect(
+			vocabSuggestDeckSchema.safeParse({
+				deckId: "d1",
+				studentId: "s1",
+				note: "  Ôn trước thứ 7 nhé  ",
+			}),
+		).toMatchObject({
+			success: true,
+			data: {
+				deckId: "d1",
+				studentId: "s1",
+				note: "Ôn trước thứ 7 nhé",
+			},
+		});
+		expect(
+			vocabSuggestDeckSchema.safeParse({
+				deckId: "d1",
+				studentId: "s1",
+				note: "x".repeat(501),
+			}).success,
+		).toBe(false);
+		expect(
+			vocabRevokeSuggestionSchema.safeParse({ suggestionId: "sug-1" }).success,
+		).toBe(true);
+
+		// 3) 2-way compatibility on vocabOverviewSchema (RT-F4)
+		const legacyOverviewPayload = {
+			dueCount: 1,
+			nextDueAt: null,
+			upcomingCount: 0,
+			learnedCount: 5,
+			matureCount: 1,
+			levelDistribution: [1, 2, 1, 0, 1],
+			streak: 2,
+			retention: 90,
+			forecast: [1, 0, 0, 0, 0, 0, 0],
+			decks: [
+				{
+					deckId: "d1",
+					title: "Class Deck",
+					className: "IELTS A1",
+					total: 10,
+					newCount: 5,
+					dueCount: 1,
+				},
+			],
+		};
+		// New client schema parses old server payload using .catch() defaults
+		const parsedFromLegacy = vocabOverviewSchema.parse(legacyOverviewPayload);
+		expect(parsedFromLegacy.suggestions).toEqual([]);
+		expect(parsedFromLegacy.decks[0]?.source).toBe("class");
+		expect(parsedFromLegacy.decks[0]?.className).toBe("IELTS A1");
+
+		// New server payload with suggested deck (className: "") and suggestions[]
+		const newOverviewPayload = {
+			...legacyOverviewPayload,
+			decks: [
+				{
+					deckId: "d-indep",
+					title: "TOEIC 600",
+					className: "",
+					source: "suggested" as const,
+					total: 15,
+					newCount: 15,
+					dueCount: 0,
+				},
+			],
+			suggestions: [
+				{
+					id: "sug-1",
+					deckId: "d-pending",
+					title: "Academic Collocations",
+					wordCount: 20,
+					note: "Làm thử nhé",
+					createdAt: "2026-10-19T00:00:00.000Z",
+				},
+			],
+		};
+		const parsedNew = vocabOverviewSchema.parse(newOverviewPayload);
+		expect(parsedNew.decks[0]?.source).toBe("suggested");
+		expect(parsedNew.decks[0]?.className).toBe("");
+		expect(parsedNew.suggestions).toHaveLength(1);
+		expect(
+			vocabSuggestionItemSchema.parse(newOverviewPayload.suggestions[0])
+				.wordCount,
+		).toBe(20);
+
+		// Document why release train matters: old strict client schema rejects unknown top-level suggestions key
+		const legacyClientOverviewSchema = z
+			.object({
+				dueCount: z.number(),
+				nextDueAt: z.number().nullable(),
+				upcomingCount: z.number().nullable(),
+				learnedCount: z.number(),
+				matureCount: z.number(),
+				levelDistribution: z.tuple([
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+				]),
+				streak: z.number(),
+				retention: z.number().nullable(),
+				forecast: z.tuple([
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+					z.number(),
+				]),
+				decks: z.array(
+					z
+						.object({
+							deckId: z.string(),
+							title: z.string(),
+							className: z.string(),
+							total: z.number(),
+							newCount: z.number(),
+							dueCount: z.number(),
+						})
+						.strict(),
+				),
+			})
+			.strict();
+		expect(
+			legacyClientOverviewSchema.safeParse(newOverviewPayload).success,
+		).toBe(false);
+
+		// 4) Progress per-student schema
+		expect(
+			vocabStudentProgressResponseSchema.safeParse({
+				studentId: "s1",
+				decks: [
+					{
+						deckId: "d-indep",
+						title: "TOEIC 600",
+						classId: null,
+						source: "suggested",
+						total: 15,
+						byLevel: [2, 5, 0, 0, 0],
+						dueToday: 2,
+						stateNew: 8,
+						stateReview: 7,
+						lastActivityAt: "2026-10-19T03:00:00.000Z",
+					},
+				],
+				activity7Days: [
+					{
+						dateISO: "2026-10-19",
+						sessions: 5,
+						correct: 4,
+					},
+				],
+			}).success,
+		).toBe(true);
 	});
 });

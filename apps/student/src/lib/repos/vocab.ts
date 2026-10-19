@@ -5,9 +5,11 @@ import {
 	type VocabLearnCommitInput,
 	type VocabOverview,
 	type VocabSessionData,
+	type VocabSuggestionMutationResponse,
 	vocabCardMutationResponseSchema,
 	vocabOverviewSchema,
 	vocabSessionDataSchema,
+	vocabSuggestionMutationResponseSchema,
 } from "@teacher-os/api/contracts";
 import { HttpError } from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "./student";
@@ -110,6 +112,48 @@ export async function fetchVocabAudioObjectUrl(
 	}
 	const blob = await res.blob();
 	return URL.createObjectURL(blob);
+}
+
+export async function acceptVocabSuggestion(
+	id: string,
+): Promise<VocabSuggestionMutationResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/vocab/suggestions/${encodeURIComponent(id)}/accept`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({
+				"Content-Type": "application/json",
+			}),
+			credentials: "include",
+			body: JSON.stringify({}),
+		},
+	);
+	if (!res.ok) {
+		await parseErrorAndThrow(res);
+	}
+	const data = (await res.json()) as unknown;
+	return vocabSuggestionMutationResponseSchema.parse(data);
+}
+
+export async function dismissVocabSuggestion(
+	id: string,
+): Promise<VocabSuggestionMutationResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/vocab/suggestions/${encodeURIComponent(id)}/dismiss`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({
+				"Content-Type": "application/json",
+			}),
+			credentials: "include",
+			body: JSON.stringify({}),
+		},
+	);
+	if (!res.ok) {
+		await parseErrorAndThrow(res);
+	}
+	const data = (await res.json()) as unknown;
+	return vocabSuggestionMutationResponseSchema.parse(data);
 }
 
 export function useVocabOverview() {

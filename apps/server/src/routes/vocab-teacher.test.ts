@@ -1,6 +1,10 @@
 import { createClient } from "@libsql/client";
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import { vocabTeacherWordsResponseSchema } from "@teacher-os/api/contracts";
+import {
+	type KernelSnapshot,
+	vocabStudentProgressResponseSchema,
+	vocabTeacherSuggestionsResponseSchema,
+	vocabTeacherWordsResponseSchema,
+} from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -444,5 +448,259 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			{ headers: { "x-test-user": "teacher" } },
 		);
 		expect(crossRes.status).toBe(404);
+	});
+
+	test("independent deck, suggest idempotent/upsert, soft revoke, delete batch cleanup, and per-student progress with VN day grouping (#363)", async () => {
+		// 1) Create independent deck (classId: null)
+		const createRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				title: "Hub Deck: Business English",
+				lang: "en",
+			}),
+		});
+		expect(createRes.status).toBe(201);
+		const { id: indepDeckId } = (await createRes.json()) as { id: string };
+
+		// Add 2 words to indepDeckId
+		const w1Res = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: indepDeckId,
+				word: "invoice",
+				translation: "hoá đơn",
+				sortOrder: 0,
+			}),
+		});
+		const { id: w1Id } = (await w1Res.json()) as { id: string };
+
+		const w2Res = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: indepDeckId,
+				word: "revenue",
+				translation: "doanh thu",
+				sortOrder: 1,
+			}),
+		});
+		expect(w2Res.status).toBe(201);
+
+		// 2) Suggest deck to student-t1 (and test double-suggest idempotency RT-F11)
+		const sugRes1 = await app.request("/api/kernel/vocab/suggestions", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: indepDeckId,
+				studentId: "student-t1",
+				note: "Học trước buổi tới",
+			}),
+		});
+		expect(sugRes1.status).toBe(201);
+		const { id: sugId } = (await sugRes1.json()) as { id: string };
+
+		const sugRes2 = await app.request("/api/kernel/vocab/suggestions", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: indepDeckId,
+				studentId: "student-t1",
+				note: "Học trước buổi tới",
+			}),
+		});
+		expect(sugRes2.status).toBe(200);
+		const sugBody2 = (await sugRes2.json()) as { id: string };
+		expect(sugBody2.id).toBe(sugId);
+
+		// Snapshot contains vocabSuggestions (pending only) and indepDeck with classId: null
+		const snapRes1 = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap1 = (await snapRes1.json()) as KernelSnapshot;
+		expect(snap1.vocabDecks).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: indepDeckId,
+					classId: null,
+					title: "Hub Deck: Business English",
+					wordCount: 2,
+				}),
+			]),
+		);
+		expect(snap1.vocabSuggestions).toEqual([
+			expect.objectContaining({
+				id: sugId,
+				deckId: indepDeckId,
+				studentId: "student-t1",
+				note: "Học trước buổi tới",
+			}),
+		]);
+
+		// Cross-org student/deck on suggest -> 404
+		const crossDeckSug = await app.request("/api/kernel/vocab/suggestions", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: "deck-org2",
+				studentId: "student-t1",
+			}),
+		});
+		expect(crossDeckSug.status).toBe(404);
+
+		// 3) Simulate student accepting suggestion -> disappears from pending snapshot, appears in GET /decks/:deckId/suggestions & progress
+		const acceptedTime = new Date("2026-10-19T02:00:00Z");
+		await libsql
+			.update(schema.vocabSuggestion)
+			.set({ status: "accepted", respondedAt: acceptedTime })
+			.where(eq(schema.vocabSuggestion.id, sugId));
+
+		const snapRes2 = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap2 = (await snapRes2.json()) as KernelSnapshot;
+		expect(snap2.vocabSuggestions).toEqual([]);
+
+		const deckSugsRes = await app.request(
+			`/api/kernel/vocab/decks/${indepDeckId}/suggestions`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(deckSugsRes.status).toBe(200);
+		const deckSugs = vocabTeacherSuggestionsResponseSchema.parse(
+			await deckSugsRes.json(),
+		);
+		expect(deckSugs.suggestions).toEqual([
+			expect.objectContaining({
+				id: sugId,
+				status: "accepted",
+				respondedAt: acceptedTime.toISOString(),
+			}),
+		]);
+
+		// 4) Seed card (level 2, due today) and review log at 00:30 VN today (17:30 UTC yesterday) to verify VN day grouping (RT-F7)
+		const now = Date.now();
+		await libsql.insert(schema.vocabCard).values({
+			id: "card-prog-1",
+			studentId: "student-t1",
+			wordId: w1Id,
+			level: 2,
+			isWarning: false,
+			state: "review",
+			intervalDays: 1,
+			dueAt: now - 1000,
+			lapses: 0,
+		});
+
+		// Compute 00:30 VN of the current Vietnam day
+		const vnFormatter = new Intl.DateTimeFormat("en-CA", {
+			timeZone: "Asia/Ho_Chi_Minh",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		});
+		const todayVN = vnFormatter.format(new Date(now));
+		const vn0030Ms = Date.parse(`${todayVN}T00:30:00+07:00`);
+
+		await libsql.insert(schema.vocabReviewLog).values({
+			id: crypto.randomUUID(),
+			studentId: "student-t1",
+			cardId: "card-prog-1",
+			deckId: indepDeckId,
+			sessionKind: "learn",
+			grade: "good",
+			durationMs: 1100,
+			reviewedAt: new Date(vn0030Ms),
+			word: "invoice",
+			translation: "hoá đơn",
+		});
+
+		const progRes = await app.request(
+			"/api/kernel/vocab/progress?studentId=student-t1",
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(progRes.status).toBe(200);
+		const prog = vocabStudentProgressResponseSchema.parse(await progRes.json());
+		expect(prog.studentId).toBe("student-t1");
+		const indepProg = prog.decks.find((d) => d.deckId === indepDeckId);
+		expect(indepProg).toEqual({
+			deckId: indepDeckId,
+			title: "Hub Deck: Business English",
+			classId: null,
+			source: "suggested",
+			total: 2,
+			byLevel: [0, 1, 0, 0, 0],
+			dueToday: 1,
+			stateNew: 1,
+			stateReview: 1,
+			lastActivityAt: new Date(vn0030Ms).toISOString(),
+		});
+		const todayActivity = prog.activity7Days.find((d) => d.dateISO === todayVN);
+		expect(todayActivity?.sessions).toBeGreaterThanOrEqual(1);
+		expect(todayActivity?.correct).toBeGreaterThanOrEqual(1);
+
+		// 5) Revoke suggestion (soft flip to dismissed, preserving respondedAt) -> deck leaves student's progress
+		const revokeRes = await app.request(
+			"/api/kernel/vocab/suggestions/revoke",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ suggestionId: sugId }),
+			},
+		);
+		expect(revokeRes.status).toBe(200);
+
+		const [afterRevoke] = await libsql
+			.select()
+			.from(schema.vocabSuggestion)
+			.where(eq(schema.vocabSuggestion.id, sugId));
+		expect(afterRevoke?.status).toBe("dismissed");
+		expect(afterRevoke?.respondedAt?.toISOString()).toBe(
+			acceptedTime.toISOString(),
+		);
+
+		const progAfterRevoke = vocabStudentProgressResponseSchema.parse(
+			await (
+				await app.request("/api/kernel/vocab/progress?studentId=student-t1", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json(),
+		);
+		expect(progAfterRevoke.decks.some((d) => d.deckId === indepDeckId)).toBe(
+			false,
+		);
+
+		// 6) Re-suggest after revoke/dismissed flips back to pending (upsert)
+		const resugRes = await app.request("/api/kernel/vocab/suggestions", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: indepDeckId,
+				studentId: "student-t1",
+				note: "Gợi ý lại",
+			}),
+		});
+		expect(resugRes.status).toBe(200);
+		const [afterResug] = await libsql
+			.select()
+			.from(schema.vocabSuggestion)
+			.where(eq(schema.vocabSuggestion.id, sugId));
+		expect(afterResug?.status).toBe("pending");
+		expect(afterResug?.respondedAt).toBeNull();
+
+		// 7) Deleting the deck removes vocab_suggestion rows in the same batch (0 orphans)
+		const delDeckRes = await app.request("/api/kernel/vocab/decks/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ deckId: indepDeckId }),
+		});
+		expect(delDeckRes.status).toBe(200);
+
+		const orphanSugs = await libsql
+			.select()
+			.from(schema.vocabSuggestion)
+			.where(eq(schema.vocabSuggestion.deckId, indepDeckId));
+		expect(orphanSugs).toHaveLength(0);
 	});
 });

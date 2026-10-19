@@ -1,9 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import type { VocabSuggestionItem } from "@teacher-os/api/contracts";
+import { useState } from "react";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
 import { VocabCountdown } from "@/components/vocab/vocab-countdown";
+import { VocabSuggestionList } from "@/components/vocab/vocab-suggestion-list";
 import { useStudentMe } from "@/lib/repos/student";
-import { useVocabOverview } from "@/lib/repos/vocab";
+import {
+	acceptVocabSuggestion,
+	dismissVocabSuggestion,
+	useVocabOverview,
+} from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/vocab/")({
 	component: VocabOverviewPage,
@@ -12,7 +20,46 @@ export const Route = createFileRoute("/_auth/vocab/")({
 function VocabOverviewPage() {
 	const meQuery = useStudentMe();
 	const overviewQuery = useVocabOverview();
+	const queryClient = useQueryClient();
+	const navigate = useNavigate();
+	const [busySuggestionId, setBusySuggestionId] = useState<string | null>(null);
+	const [suggestionError, setSuggestionError] = useState<string | null>(null);
 
+	const handleAcceptSuggestion = async (suggestion: VocabSuggestionItem) => {
+		if (busySuggestionId) return;
+		setBusySuggestionId(suggestion.id);
+		setSuggestionError(null);
+		try {
+			await acceptVocabSuggestion(suggestion.id);
+			await queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-overview"],
+			});
+			await navigate({
+				to: "/vocab/$deckId",
+				params: { deckId: suggestion.deckId },
+			});
+		} catch {
+			setSuggestionError("Không thể mở bộ từ gợi ý. Vui lòng thử lại.");
+		} finally {
+			setBusySuggestionId(null);
+		}
+	};
+
+	const handleDismissSuggestion = async (suggestion: VocabSuggestionItem) => {
+		if (busySuggestionId) return;
+		setBusySuggestionId(suggestion.id);
+		setSuggestionError(null);
+		try {
+			await dismissVocabSuggestion(suggestion.id);
+			await queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-overview"],
+			});
+		} catch {
+			setSuggestionError("Không thể ẩn gợi ý. Vui lòng thử lại.");
+		} finally {
+			setBusySuggestionId(null);
+		}
+	};
 	if (meQuery.isLoading || overviewQuery.isLoading) {
 		return <Loader />;
 	}
@@ -51,6 +98,15 @@ function VocabOverviewPage() {
 						← Trang chủ
 					</Link>
 				</div>
+
+				{/* Gợi ý cho bạn (#363) */}
+				<VocabSuggestionList
+					suggestions={data.suggestions}
+					busyId={busySuggestionId}
+					errorMsg={suggestionError}
+					onAccept={(s) => void handleAcceptSuggestion(s)}
+					onDismiss={(s) => void handleDismissSuggestion(s)}
+				/>
 
 				{/* Stats row */}
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -161,10 +217,19 @@ function VocabOverviewPage() {
 									className="neu group flex flex-col justify-between gap-4 rounded-md p-5 transition-colors duration-150 hover:border-fg"
 								>
 									<div>
-										<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
-											{deck.className}
-										</p>
-										<h3 className="mt-1 font-display font-extrabold text-fg text-lg group-hover:text-hot">
+										<div className="flex flex-wrap items-center gap-2">
+											<span
+												data-testid={`vocab-deck-source-${deck.deckId}`}
+												className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-meta uppercase tracking-widest"
+											>
+												{deck.source === "suggested"
+													? "Gợi ý"
+													: deck.className
+														? `Lớp ${deck.className}`
+														: "Lớp học"}
+											</span>
+										</div>
+										<h3 className="mt-1.5 font-display font-extrabold text-fg text-lg group-hover:text-hot">
 											{deck.title}
 										</h3>
 									</div>
