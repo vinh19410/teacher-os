@@ -800,3 +800,11 @@ a per-stage operation.
   1. Chạy `db:migrate:deploy` (`0038`) **TRƯỚC** khi deploy worker.
   2. Deploy `apps/server` trả trường optional `vocabSuggestions` trong kernel snapshot **TRƯỚC** (hoặc đồng thời trong cùng lượt `pnpm alchemy deploy`) với `apps/web` và `apps/student`.
   3. Mặc dù `vocabOverviewSchema` và `vocabOverviewDeckSchema` dùng `.catch()` fallback cho client mới đọc payload cũ, `apps/server`, `apps/web`, và `apps/student` vẫn phải đi cùng một release train để tránh bundle cũ `.strict()` từ chối trường `suggestions` mới.
+
+## Student full vocabulary courses (migration 0039) — issue #366
+
+- **Recreate bảng `vocab_card` (`0039_ambiguous_prowler.sql`):** Bỏ ràng buộc `FOREIGN KEY (word_id) REFERENCES vocab_word(id)` bằng chuỗi `PRAGMA foreign_keys=OFF → CREATE TABLE __new_vocab_card → INSERT SELECT → DROP TABLE vocab_card → ALTER TABLE RENAME → PRAGMA foreign_keys=ON → CREATE INDEX` (giữ nguyên `FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE cascade` và 3 index) để `vocab_card.word_id` trỏ được tới cả `vocab_word.id` lẫn `vocab_library_word.id` (`libword-*`).
+- **Diễn tập, Backup & Thời điểm chạy:** Ghi lại bookmark D1 Time Travel / backup trước khi apply `0039` trên PROD; chạy trong khung giờ thấp điểm (off-hours).
+- **Deploy order & Release train:**
+  1. Chạy `db:migrate:deploy` (`0039`) **TRƯỚC** khi deploy worker để học viên học bài thư viện (`libdeck-*`) không gặp lỗi khóa ngoại `SQLITE_CONSTRAINT_FOREIGNKEY`.
+  2. Deploy đồng bộ `apps/server`, `apps/web`, và `apps/student` trong cùng một release train (vì `vocabStudentProgressDeckSchema` thêm trường `className` trên response `.strict()`).

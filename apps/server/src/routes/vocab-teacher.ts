@@ -23,14 +23,17 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gte, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
-import { loadStudentAccessibleDecks } from "../lib/vocab-provision";
+import {
+	loadStudentAccessibleDecks,
+	loadWordsAndCardsForAccessibleDecks,
+} from "../lib/vocab-provision";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type VocabTeacherContext = Context<Env>;
@@ -237,7 +240,14 @@ export function vocabTeacherRoutes(deps: {
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] =
 			wordIds.length > 0
 				? [
-						db.delete(vocabCard).where(inArray(vocabCard.wordId, wordIds)),
+						db
+							.delete(vocabCard)
+							.where(
+								and(
+									sql`${vocabCard.wordId} NOT LIKE 'libword-%'`,
+									sql`${vocabCard.wordId} IN (SELECT ${vocabWord.id} FROM ${vocabWord} WHERE ${vocabWord.deckId} = ${deck.id})`,
+								),
+							),
 						db
 							.delete(vocabSuggestion)
 							.where(eq(vocabSuggestion.deckId, deck.id)),
@@ -512,40 +522,12 @@ export function vocabTeacherRoutes(deps: {
 			st.id,
 			ctx.orgId,
 		);
-		const deckIds = accessibleDecks.map((d) => d.deckId);
-
 		const startOfWindowVN = Date.parse(
 			`${addDaysISO(todayISO, -6)}T00:00:00+07:00`,
 		);
 
-		const [words, cards, recentLogs, lastActivityRows] = await Promise.all([
-			deckIds.length > 0
-				? db
-						.select({
-							id: vocabWord.id,
-							deckId: vocabWord.deckId,
-						})
-						.from(vocabWord)
-						.where(inArray(vocabWord.deckId, deckIds))
-				: Promise.resolve([]),
-			deckIds.length > 0
-				? db
-						.select({
-							wordId: vocabCard.wordId,
-							deckId: vocabWord.deckId,
-							level: vocabCard.level,
-							state: vocabCard.state,
-							dueAt: vocabCard.dueAt,
-						})
-						.from(vocabCard)
-						.innerJoin(vocabWord, eq(vocabCard.wordId, vocabWord.id))
-						.where(
-							and(
-								eq(vocabCard.studentId, st.id),
-								inArray(vocabWord.deckId, deckIds),
-							),
-						)
-				: Promise.resolve([]),
+		const [{ words, cards }, recentLogs, lastActivityRows] = await Promise.all([
+			loadWordsAndCardsForAccessibleDecks(db, st.id, accessibleDecks),
 			db
 				.select({
 					grade: vocabReviewLog.grade,
@@ -558,23 +540,17 @@ export function vocabTeacherRoutes(deps: {
 						gte(vocabReviewLog.reviewedAt, new Date(startOfWindowVN)),
 					),
 				),
-			deckIds.length > 0
+			accessibleDecks.length > 0
 				? db
 						.select({
 							deckId: vocabReviewLog.deckId,
 							maxReviewedAt: sql<number>`max(${vocabReviewLog.reviewedAt})`,
 						})
 						.from(vocabReviewLog)
-						.where(
-							and(
-								eq(vocabReviewLog.studentId, st.id),
-								inArray(vocabReviewLog.deckId, deckIds),
-							),
-						)
+						.where(eq(vocabReviewLog.studentId, st.id))
 						.groupBy(vocabReviewLog.deckId)
 				: Promise.resolve([]),
 		]);
-
 		const wordsByDeck = new Map<string, string[]>();
 		for (const w of words) {
 			const list = wordsByDeck.get(w.deckId) ?? [];
@@ -649,6 +625,7 @@ export function vocabTeacherRoutes(deps: {
 				deckId: d.deckId,
 				title: d.title,
 				classId: d.classId,
+				className: d.className,
 				source: d.source,
 				total: wordIds.length,
 				byLevel,
@@ -758,7 +735,14 @@ export function vocabTeacherRoutes(deps: {
 		}
 
 		await db.batch([
-			db.delete(vocabCard).where(eq(vocabCard.wordId, wordRow.id)),
+			db
+				.delete(vocabCard)
+				.where(
+					and(
+						eq(vocabCard.wordId, wordRow.id),
+						sql`${vocabCard.wordId} NOT LIKE 'libword-%'`,
+					),
+				),
 			db.delete(vocabWord).where(eq(vocabWord.id, wordRow.id)),
 		]);
 		return c.json({ id: wordRow.id } satisfies CreatedResponse);

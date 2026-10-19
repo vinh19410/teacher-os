@@ -14,6 +14,8 @@ import {
 	vocabRevokeSuggestionSchema,
 	vocabSessionCardSchema,
 	vocabSessionDataSchema,
+	vocabStudentLibraryCoursesResponseSchema,
+	vocabStudentLibraryDecksResponseSchema,
 	vocabStudentProgressResponseSchema,
 	vocabSuggestDeckSchema,
 	vocabSuggestionItemSchema,
@@ -519,5 +521,142 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 				],
 			}).success,
 		).toBe(true);
+	});
+
+	it("validates student library course/deck contracts, source='library' with fallback, and blocks reserved lib* prefixes on teacher create/upsert (#366)", () => {
+		// 1) Block reserved prefixes on teacher deck create & word upsert
+		for (const badId of [
+			"libcourse-1",
+			"libdeck-10",
+			"libword-99",
+			"LIBWORD-1",
+			"LibDeck-2",
+		]) {
+			expect(
+				vocabDeckCreateSchema.safeParse({
+					id: badId,
+					title: "Shadow Attempt",
+				}).success,
+			).toBe(false);
+			expect(
+				vocabWordUpsertSchema.safeParse({
+					id: badId,
+					deckId: "deck-1",
+					word: "hello",
+					translation: "xin chào",
+				}).success,
+			).toBe(false);
+		}
+
+		// Normal custom IDs remain valid
+		expect(
+			vocabDeckCreateSchema.safeParse({
+				id: "deck-custom-1",
+				title: "Valid Deck",
+			}).success,
+		).toBe(true);
+		expect(
+			vocabWordUpsertSchema.safeParse({
+				id: "word-custom-1",
+				deckId: "deck-custom-1",
+				word: "hello",
+				translation: "xin chào",
+			}).success,
+		).toBe(true);
+
+		// 2) Student library courses response schema
+		const coursesParsed = vocabStudentLibraryCoursesResponseSchema.safeParse({
+			courses: [
+				{
+					id: "libcourse-1",
+					name: "1000 Từ Cơ Bản",
+					description: "Từ vựng nền tảng",
+					target: "Mất gốc",
+					deckCount: 50,
+					wordCount: 1000,
+					reviewWordCount: 20,
+					learnedWordCount: 5,
+					dueWordCount: 3,
+					sortOrder: 0,
+				},
+			],
+		});
+		expect(coursesParsed.success).toBe(true);
+
+		// 3) Student library decks response schema
+		const decksParsed = vocabStudentLibraryDecksResponseSchema.safeParse({
+			course: {
+				id: "libcourse-1",
+				name: "1000 Từ Cơ Bản",
+				description: "Từ vựng nền tảng",
+				target: "Mất gốc",
+			},
+			decks: [
+				{
+					id: "libdeck-1",
+					courseId: "libcourse-1",
+					title: "Bài 1: Chào hỏi",
+					imageUrl: null,
+					wordCount: 20,
+					newCount: 15,
+					reviewCount: 5,
+					dueCount: 2,
+					learnedCount: 1,
+					sortOrder: 0,
+				},
+			],
+		});
+		expect(decksParsed.success).toBe(true);
+
+		// 4) Overview & teacher progress accept source="library" and className
+		const overviewParsed = vocabOverviewSchema.safeParse({
+			dueCount: 2,
+			nextDueAt: 1_700_000_000_000,
+			upcomingCount: 0,
+			learnedCount: 1,
+			matureCount: 0,
+			levelDistribution: [4, 1, 0, 0, 0],
+			streak: 1,
+			retention: 100,
+			forecast: [2, 0, 0, 0, 0, 0, 0],
+			decks: [
+				{
+					deckId: "libdeck-1",
+					title: "Bài 1: Chào hỏi",
+					className: "1000 Từ Cơ Bản",
+					source: "library",
+					total: 20,
+					newCount: 15,
+					dueCount: 2,
+				},
+			],
+			suggestions: [],
+		});
+		expect(overviewParsed.success).toBe(true);
+
+		const progressParsed = vocabStudentProgressResponseSchema.safeParse({
+			studentId: "s1",
+			decks: [
+				{
+					deckId: "libdeck-1",
+					title: "Bài 1: Chào hỏi",
+					classId: null,
+					className: "1000 Từ Cơ Bản",
+					source: "library",
+					total: 20,
+					byLevel: [4, 1, 0, 0, 0],
+					dueToday: 2,
+					stateNew: 15,
+					stateReview: 5,
+					lastActivityAt: "2026-10-19T03:00:00.000Z",
+				},
+			],
+			activity7Days: [],
+		});
+		expect(progressParsed.success).toBe(true);
+		if (progressParsed.success) {
+			expect(progressParsed.data.decks[0]?.className).toBe("1000 Từ Cơ Bản");
+			expect(progressParsed.data.decks[0]?.source).toBe("library");
+		}
 	});
 });

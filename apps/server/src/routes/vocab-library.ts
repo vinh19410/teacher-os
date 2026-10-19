@@ -116,14 +116,12 @@ export function vocabLibraryRoutes(deps: { getDb(): Db }) {
 					count: sql<number>`count(*)`,
 				})
 				.from(vocabLibraryWord)
-				.where(
-					inArray(
-						vocabLibraryWord.deckId,
-						decks.map((d) => d.id),
-					),
+				.innerJoin(
+					vocabLibraryDeck,
+					eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
 				)
+				.where(eq(vocabLibraryDeck.courseId, courseId))
 				.groupBy(vocabLibraryWord.deckId);
-
 			for (const row of wordCounts) {
 				countByDeck.set(row.deckId, Number(row.count));
 			}

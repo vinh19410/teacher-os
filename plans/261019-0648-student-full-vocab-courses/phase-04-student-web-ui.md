@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Student Portal Courses UI & Teacher Progress Badge"
-status: todo
+status: done
 ---
 
 # Phase 4: Student Portal Courses UI & Teacher Progress Badge
@@ -98,3 +98,15 @@ Cập nhật giao diện Student Portal (`/vocab` và `/`) để học viên duy
 ## Security Considerations
 
 - Không render HTML thô (`dangerouslySetInnerHTML`); validate search params an toàn và parse response bằng Zod tại biên API.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

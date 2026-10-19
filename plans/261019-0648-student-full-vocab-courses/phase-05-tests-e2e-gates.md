@@ -1,6 +1,6 @@
 ---
 title: "Phase 5: Tests, E2E Spec & Local Verification Gates"
-status: todo
+status: done
 ---
 
 # Phase 5: Tests, E2E Spec & Local Verification Gates
@@ -74,3 +74,15 @@ Bật tường minh `PRAGMA foreign_keys = ON;` trong `apps/e2e/src/boot.ts` sau
 - 100% unit tests trong `db`, `api`, `server`, `web`, `student` pass.
 - E2E spec mới và các spec từ vựng hiện có (`vocab-srs.spec.ts`, `vocab-library-clone.spec.ts`, `vocab-hub-suggestion.spec.ts`) pass với `PRAGMA foreign_keys = ON`.
 - `pnpm check` và `pnpm check-types` không có lỗi.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

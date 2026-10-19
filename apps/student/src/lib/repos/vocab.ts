@@ -1,14 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type VocabAnswerInput,
 	type VocabCardMutationResponse,
 	type VocabLearnCommitInput,
 	type VocabOverview,
 	type VocabSessionData,
+	type VocabStudentLibraryCoursesResponse,
+	type VocabStudentLibraryDecksResponse,
 	type VocabSuggestionMutationResponse,
 	vocabCardMutationResponseSchema,
 	vocabOverviewSchema,
 	vocabSessionDataSchema,
+	vocabStudentLibraryCoursesResponseSchema,
+	vocabStudentLibraryDecksResponseSchema,
 	vocabSuggestionMutationResponseSchema,
 } from "@teacher-os/api/contracts";
 import { HttpError } from "@/lib/query-client";
@@ -156,6 +160,40 @@ export async function dismissVocabSuggestion(
 	return vocabSuggestionMutationResponseSchema.parse(data);
 }
 
+export async function fetchVocabLibraryCourses(): Promise<VocabStudentLibraryCoursesResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/vocab/library/courses`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		await parseErrorAndThrow(res);
+	}
+	const data = (await res.json()) as unknown;
+	return vocabStudentLibraryCoursesResponseSchema.parse(data);
+}
+
+export async function fetchVocabLibraryCourseDecks(
+	courseId: string,
+): Promise<VocabStudentLibraryDecksResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/vocab/library/courses/${encodeURIComponent(courseId)}/decks`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		await parseErrorAndThrow(res);
+	}
+	const data = (await res.json()) as unknown;
+	return vocabStudentLibraryDecksResponseSchema.parse(data);
+}
+
 export function useVocabOverview() {
 	return useQuery({
 		queryKey: ["student", "vocab-overview"],
@@ -164,8 +202,33 @@ export function useVocabOverview() {
 }
 
 export function useVocabSessionData(deckId: string) {
+	const queryClient = useQueryClient();
 	return useQuery({
 		queryKey: ["student", "vocab-session-data", deckId],
-		queryFn: () => fetchVocabSessionData(deckId),
+		queryFn: async () => {
+			const data = await fetchVocabSessionData(deckId);
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-overview"],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-library"],
+			});
+			return data;
+		},
+	});
+}
+
+export function useVocabLibraryCourses() {
+	return useQuery({
+		queryKey: ["student", "vocab-library", "courses"],
+		queryFn: fetchVocabLibraryCourses,
+	});
+}
+
+export function useVocabLibraryCourseDecks(courseId: string | null) {
+	return useQuery({
+		queryKey: ["student", "vocab-library", "decks", courseId],
+		queryFn: () => fetchVocabLibraryCourseDecks(courseId ?? ""),
+		enabled: Boolean(courseId),
 	});
 }

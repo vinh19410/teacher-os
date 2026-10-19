@@ -340,6 +340,12 @@ export function buildVocabLibraryUpsertStatements(
 		),
 	);
 
+	if (options?.prune) {
+		statements.push(
+			"DELETE FROM vocab_card WHERE word_id LIKE 'libword-%' AND NOT EXISTS (SELECT 1 FROM vocab_library_word WHERE vocab_library_word.id = vocab_card.word_id);",
+		);
+	}
+
 	return statements;
 }
 

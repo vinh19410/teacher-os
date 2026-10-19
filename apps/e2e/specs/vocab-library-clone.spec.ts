@@ -19,6 +19,7 @@ const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const teacherEmail = `vocablib.teacher.${runToken}@test.local`;
 const studentEmail = `vocablib.student.${runToken}@test.local`;
+const freeStudentEmail = `vocabfree.student.${runToken}@test.local`;
 const className = `Vocab Lib Class ${runToken}`;
 
 function openDb(): Client {
@@ -125,6 +126,18 @@ test.describe
 					sql: `INSERT INTO enrollment (id, org_id, class_id, student_id, status, created_at)
 						VALUES (?,?,?,?, 'active', ?)`,
 					args: [crypto.randomUUID(), orgId, classId, studentId, now],
+				});
+				await dbSetup.execute({
+					sql: `INSERT INTO student (id, org_id, name, email, onboarding_completed_at, created_at)
+						VALUES (?,?,?,?,?,?)`,
+					args: [
+						crypto.randomUUID(),
+						orgId,
+						"Free Course Student",
+						freeStudentEmail,
+						now,
+						now,
+					],
 				});
 			} finally {
 				dbSetup.close();
@@ -280,6 +293,163 @@ test.describe
 			expect(sessionDataJson.cards.length).toBeGreaterThan(0);
 			expect(sessionDataJson.cards.some((c) => c.hasAudio === true)).toBe(true);
 
+			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
+			await page.getByTestId("vocab-start-session-btn").click();
+			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
+		});
+
+		test("unassigned student browses all 20 vocabulary courses (including 140-deck course), opens libdeck-* directly without cloning to vocab_deck, enters Learn session, and sees deck in 'Bộ từ đang học' across 3 viewports (#366)", async ({
+			page,
+		}) => {
+			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.locator("#tab-signup").click();
+			await page.locator("#signup-name").fill("Free Course Student");
+			await page.locator("#signup-email").fill(freeStudentEmail);
+			await page.locator("#signup-password").fill(PASSWORD);
+			await page.locator("#panel-signup button[type='submit']").click();
+			await expect(page.getByText("Email chưa được xác thực")).toBeVisible({
+				timeout: 15_000,
+			});
+
+			await verifyStudentEmailFromMailLog(page, freeStudentEmail);
+			await expect(page.getByTestId("vocab-home-entry")).toBeVisible();
+
+			// Record org vocab_deck count before student studies library deck
+			const dbBefore = openDb();
+			let orgDeckCountBefore = 0;
+			try {
+				const countRes = await dbBefore.execute(
+					"SELECT COUNT(*) AS cnt FROM vocab_deck",
+				);
+				orgDeckCountBefore = Number(countRes.rows[0]?.cnt ?? 0);
+			} finally {
+				dbBefore.close();
+			}
+
+			await page.getByTestId("vocab-home-entry").click();
+			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
+			await expect(page.getByTestId("vocab-decks-empty")).toBeVisible();
+			await expect(page.getByTestId("vocab-courses-section")).toBeVisible();
+
+			// Verify all 20 courses are rendered
+			await expect(
+				page.locator('[data-testid^="vocab-course-card-"]'),
+			).toHaveCount(EXPECTED_COUNTS.course);
+
+			// Verify 3 viewports (1440x900, 768x1024, 375x812) on course list view
+			for (const vp of [
+				{ width: 1440, height: 900, name: "1440x900" },
+				{ width: 768, height: 1024, name: "768x1024" },
+				{ width: 375, height: 812, name: "375x812" },
+			]) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				const overflow = await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(
+					overflow,
+					`no horizontal overflow on course catalog at ${vp.name}`,
+				).toBe(false);
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			// Open 140-deck course (libcourse-15) to verify D1 100-variable safety & URL search param
+			await page.getByTestId("vocab-course-card-libcourse-15").click();
+			await expect(page).toHaveURL(/courseId=libcourse-15/);
+			await expect(
+				page.getByTestId("vocab-selected-course-title"),
+			).toBeVisible();
+			await expect(
+				page.locator('[data-testid^="vocab-course-deck-"]').first(),
+			).toBeVisible();
+
+			// Return to all courses, then open targetCourseId
+			await page.getByTestId("vocab-course-back-btn").click();
+			await expect(
+				page.getByTestId(`vocab-course-card-${targetCourseId}`),
+			).toBeVisible();
+			await page.getByTestId(`vocab-course-card-${targetCourseId}`).click();
+			await expect(
+				page.getByTestId(`vocab-course-deck-${libDeck1Id}`),
+			).toBeVisible();
+
+			// Verify 3 viewports on course decks view
+			for (const vp of [
+				{ width: 1440, height: 900, name: "1440x900" },
+				{ width: 768, height: 1024, name: "768x1024" },
+				{ width: 375, height: 812, name: "375x812" },
+			]) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				const overflow = await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(
+					overflow,
+					`no horizontal overflow on course decks at ${vp.name}`,
+				).toBe(false);
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			// Open libDeck1Id directly -> lazy provisions vocab_card without creating vocab_deck
+			const sessionDataPromise = page.waitForResponse(
+				(res) =>
+					res
+						.url()
+						.includes(`/api/student/vocab/decks/${libDeck1Id}/session-data`) &&
+					res.status() === 200,
+			);
+			await page.getByTestId(`vocab-course-deck-${libDeck1Id}`).click();
+			const sessionRes = await sessionDataPromise;
+			const sessionJson = (await sessionRes.json()) as {
+				cards: Array<{ hasAudio?: boolean }>;
+			};
+			expect(sessionJson.cards.length).toBeGreaterThan(0);
+			expect(sessionJson.cards.some((c) => c.hasAudio === true)).toBe(true);
+
+			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
+
+			// Verify vocab_deck count did NOT increase
+			const dbAfter = openDb();
+			try {
+				const countRes = await dbAfter.execute(
+					"SELECT COUNT(*) AS cnt FROM vocab_deck",
+				);
+				expect(Number(countRes.rows[0]?.cnt ?? 0)).toBe(orgDeckCountBefore);
+			} finally {
+				dbAfter.close();
+			}
+
+			// Click SPA link "← Danh sách bộ từ" -> tests React Query cache invalidation (staleTime 60s)
+			await page.getByRole("link", { name: /Danh sách bộ từ/i }).click();
+			await expect(
+				page.getByTestId(`vocab-deck-card-${libDeck1Id}`),
+			).toBeVisible();
+			await expect(
+				page.getByTestId(`vocab-deck-source-${libDeck1Id}`),
+			).toContainText("Khóa ");
+			const screenshots = new URL(
+				"../../../plans/261019-0648-student-full-vocab-courses/screenshots/",
+				import.meta.url,
+			).pathname;
+			for (const [w, h, name] of [
+				[1440, 900, "student-vocab-courses-1440"],
+				[768, 1024, "student-vocab-courses-768"],
+				[375, 812, "student-vocab-courses-375"],
+			] as const) {
+				await page.setViewportSize({ width: w, height: h });
+				await page.screenshot({
+					path: `${screenshots}${name}.png`,
+					fullPage: false,
+				});
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			// Re-open deck from "Bộ từ đang học" and start Learn session -> intro step renders
+			await page.getByTestId(`vocab-deck-card-${libDeck1Id}`).click();
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 			await page.getByTestId("vocab-start-session-btn").click();
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();

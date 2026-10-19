@@ -209,6 +209,19 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 								stateReview: 8,
 								lastActivityAt: "2026-10-19T03:00:00.000Z",
 							},
+							{
+								deckId: "libdeck-1",
+								title: "Bài 1: Chào hỏi",
+								classId: null,
+								className: "1000 Từ Cơ Bản",
+								source: "library",
+								total: 10,
+								byLevel: [2, 1, 0, 0, 0],
+								dueToday: 1,
+								stateNew: 7,
+								stateReview: 3,
+								lastActivityAt: "2026-10-19T04:00:00.000Z",
+							},
 						],
 						activity7Days: [
 							{ dateISO: "2026-10-13", sessions: 0, correct: 0 },
@@ -287,10 +300,16 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 		});
 		expect(
 			screen.getByTestId("vocab-progress-stat-learning").textContent,
-		).toContain("8");
+		).toContain("11");
 		expect(screen.getByTestId("vocab-progress-stat-due").textContent).toContain(
-			"3",
+			"4",
 		);
+		expect(
+			screen.getByTestId("vocab-progress-deck-source-deck-indep-1").textContent,
+		).toBe("Gợi ý");
+		expect(
+			screen.getByTestId("vocab-progress-deck-source-libdeck-1").textContent,
+		).toBe("Khóa 1000 Từ Cơ Bản");
 		expect(
 			screen.getByTestId("vocab-progress-deck-deck-indep-1-level-2")
 				.textContent,

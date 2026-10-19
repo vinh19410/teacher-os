@@ -4,6 +4,8 @@ import {
 	vocabCardMutationResponseSchema,
 	vocabOverviewSchema,
 	vocabSessionDataSchema,
+	vocabStudentLibraryCoursesResponseSchema,
+	vocabStudentLibraryDecksResponseSchema,
 	vocabSuggestionMutationResponseSchema,
 } from "@teacher-os/api/contracts";
 import { DAY_MS } from "@teacher-os/api/srs/scheduler";
@@ -109,6 +111,7 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		const client = createClient({ url: "file::memory:" });
 		const db = drizzle(client, { schema });
 		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		await client.execute("PRAGMA foreign_keys = ON;");
 		libsql = db as unknown as Db;
 		mediaStore = createMemoryMediaStore();
 
@@ -1189,5 +1192,307 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		expect(deck1Matches).toHaveLength(1);
 		expect(deck1Matches[0]?.source).toBe("class");
 		expect(deck1Matches[0]?.className).toBe("IELTS 6.5");
+	});
+
+	test("student full vocabulary courses (#366): browse courses & decks, chunked >10-word provisioning under PRAGMA foreign_keys=ON, cross-site guard, immediate reviewWordCount/reviewCount after learn-commit, answer, audio check, and overview source='library'", async () => {
+		// Create a student with 0 enrollments and 0 suggestions
+		users.studentZero = {
+			userId: "user-student-zero",
+			userName: "Lan Zero",
+			email: "lan-zero@test.local",
+			emailVerified: true,
+			role: "student",
+		};
+		await libsql.insert(schema.student).values({
+			id: "student-zero",
+			orgId: "org-1",
+			name: "Lan Zero",
+			email: "lan-zero@test.local",
+			phone: "0903333333",
+		});
+
+		// Seed library course, deck with 15 words (exceeds 10-row chunk threshold), and a second deck
+		await libsql.insert(schema.vocabLibraryCourse).values({
+			id: "libcourse-366",
+			name: "IELTS Academic Reading",
+			description: "Từ vựng học thuật IELTS Reading",
+			target: "Band 6.5+",
+			sortOrder: 1,
+		});
+		await libsql.insert(schema.vocabLibraryDeck).values([
+			{
+				id: "libdeck-366-1",
+				courseId: "libcourse-366",
+				title: "Bài 1: Môi trường (15 từ)",
+				imageUrl: null,
+				sortOrder: 0,
+			},
+			{
+				id: "libdeck-366-2",
+				courseId: "libcourse-366",
+				title: "Bài 2: Năng lượng",
+				imageUrl: null,
+				sortOrder: 1,
+			},
+		]);
+
+		const fifteenWords = Array.from({ length: 15 }, (_, idx) => ({
+			id: `libword-366-${idx + 1}`,
+			deckId: "libdeck-366-1",
+			word: `ecoword${idx + 1}`,
+			ipa: `/ˈiːkəʊ.${idx + 1}/`,
+			pos: "n",
+			translation: `nghĩa sinh thái ${idx + 1}`,
+			sentenceVi: `Câu ví dụ ${idx + 1}`,
+			sentenceEn: `Example sentence ${idx + 1}`,
+			pictureUrl: null,
+			audioUrl:
+				idx === 0
+					? "https://mochien3.1-api.mochidemy.com/v3.1/words/audio/eco1.mp3"
+					: null,
+			sortOrder: idx,
+		}));
+		await libsql.insert(schema.vocabLibraryWord).values([
+			...fifteenWords,
+			{
+				id: "libword-366-b1",
+				deckId: "libdeck-366-2",
+				word: "solar",
+				ipa: "/ˈsəʊ.lər/",
+				pos: "adj",
+				translation: "thuộc mặt trời",
+				sentenceVi: null,
+				sentenceEn: null,
+				pictureUrl: null,
+				audioUrl: null,
+				sortOrder: 0,
+			},
+		]);
+
+		// 1) Browse courses as studentZero (0 enrollments, 0 suggestions)
+		const coursesRes = await app.request("/api/student/vocab/library/courses", {
+			headers: { "x-test-user": "studentZero" },
+		});
+		expect(coursesRes.status).toBe(200);
+		const coursesData = vocabStudentLibraryCoursesResponseSchema.parse(
+			await coursesRes.json(),
+		);
+		const course366 = coursesData.courses.find((c) => c.id === "libcourse-366");
+		expect(course366).toEqual({
+			id: "libcourse-366",
+			name: "IELTS Academic Reading",
+			description: "Từ vựng học thuật IELTS Reading",
+			target: "Band 6.5+",
+			deckCount: 2,
+			wordCount: 16,
+			reviewWordCount: 0,
+			learnedWordCount: 0,
+			dueWordCount: 0,
+			sortOrder: 1,
+		});
+
+		// 2) Browse decks of libcourse-366 (and 404 on unknown course)
+		const notFoundDecksRes = await app.request(
+			"/api/student/vocab/library/courses/libcourse-missing/decks",
+			{ headers: { "x-test-user": "studentZero" } },
+		);
+		expect(notFoundDecksRes.status).toBe(404);
+
+		const decksRes = await app.request(
+			"/api/student/vocab/library/courses/libcourse-366/decks",
+			{ headers: { "x-test-user": "studentZero" } },
+		);
+		expect(decksRes.status).toBe(200);
+		const decksData = vocabStudentLibraryDecksResponseSchema.parse(
+			await decksRes.json(),
+		);
+		expect(decksData.course?.name).toBe("IELTS Academic Reading");
+		expect(decksData.decks).toEqual([
+			{
+				id: "libdeck-366-1",
+				courseId: "libcourse-366",
+				title: "Bài 1: Môi trường (15 từ)",
+				imageUrl: null,
+				wordCount: 15,
+				newCount: 15,
+				reviewCount: 0,
+				dueCount: 0,
+				learnedCount: 0,
+				sortOrder: 0,
+			},
+			{
+				id: "libdeck-366-2",
+				courseId: "libcourse-366",
+				title: "Bài 2: Năng lượng",
+				imageUrl: null,
+				wordCount: 1,
+				newCount: 1,
+				reviewCount: 0,
+				dueCount: 0,
+				learnedCount: 0,
+				sortOrder: 1,
+			},
+		]);
+
+		// 3) Before opening libdeck-366-1: audio for libword-366-1 is 404 (no vocab_card yet),
+		// and overview.decks is empty (unstarted library decks do NOT clutter overview.decks)
+		const preAudioRes = await app.request(
+			"/api/student/vocab/audio/libword-366-1",
+			{ headers: { "x-test-user": "studentZero" } },
+		);
+		expect(preAudioRes.status).toBe(404);
+
+		const preOvRes = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentZero" },
+		});
+		const preOv = vocabOverviewSchema.parse(await preOvRes.json());
+		expect(preOv.decks).toEqual([]);
+
+		// 4) Cross-site Sec-Fetch-Site without allowed Origin is blocked (403 FORBIDDEN_ORIGIN)
+		const crossSiteRes = await app.request(
+			"/api/student/vocab/decks/libdeck-366-1/session-data",
+			{
+				headers: {
+					"x-test-user": "studentZero",
+					"Sec-Fetch-Site": "cross-site",
+					Origin: "https://evil.example.com",
+				},
+			},
+		);
+		expect(crossSiteRes.status).toBe(403);
+
+		// 5) Open session-data for libdeck-366-1 -> lazy-provisions 15 cards in chunks of <=10,
+		// does NOT create any vocab_deck row, and includes same-course fallback word in pool
+		const orgDecksBefore = await libsql.select().from(schema.vocabDeck);
+		const sessionRes = await app.request(
+			"/api/student/vocab/decks/libdeck-366-1/session-data",
+			{ headers: { "x-test-user": "studentZero" } },
+		);
+		expect(sessionRes.status).toBe(200);
+		const sessionData = vocabSessionDataSchema.parse(await sessionRes.json());
+		expect(sessionData.deck).toEqual({
+			id: "libdeck-366-1",
+			title: "Bài 1: Môi trường (15 từ)",
+			lang: "en",
+		});
+		expect(sessionData.cards).toHaveLength(15);
+		expect(sessionData.cards[0]?.wordId).toBe("libword-366-1");
+		expect(sessionData.cards[0]?.hasAudio).toBe(true);
+		expect(sessionData.cards[1]?.hasAudio).toBe(false);
+		// Same-course fallback included "libword-366-b1" since pool had <20 words
+		expect(sessionData.pool.some((p) => p.wordId === "libword-366-b1")).toBe(
+			true,
+		);
+
+		const orgDecksAfter = await libsql.select().from(schema.vocabDeck);
+		expect(orgDecksAfter).toHaveLength(orgDecksBefore.length);
+
+		// 6) Learn-commit on first card -> state='review', level=1 -> reviewWordCount & reviewCount become 1 immediately
+		const firstCard = sessionData.cards[0];
+		if (!firstCard) throw new Error("expected first card");
+
+		const learnRes = await app.request("/api/student/vocab/learn-commit", {
+			method: "POST",
+			headers: {
+				"x-test-user": "studentZero",
+				Origin: STUDENT_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: firstCard.id,
+				gradeGood: true,
+				durationMs: 1200,
+			}),
+		});
+		expect(learnRes.status).toBe(200);
+		const learnBody = vocabCardMutationResponseSchema.parse(
+			await learnRes.json(),
+		);
+		expect(learnBody.card.state).toBe("review");
+		expect(learnBody.card.level).toBe(1);
+
+		// Verify reviewWordCount=1 on courses and reviewCount=1, newCount=14 on decks immediately
+		const coursesAfterLearn = vocabStudentLibraryCoursesResponseSchema.parse(
+			await (
+				await app.request("/api/student/vocab/library/courses", {
+					headers: { "x-test-user": "studentZero" },
+				})
+			).json(),
+		);
+		const courseAfterLearn = coursesAfterLearn.courses.find(
+			(c) => c.id === "libcourse-366",
+		);
+		expect(courseAfterLearn?.reviewWordCount).toBe(1);
+		expect(courseAfterLearn?.learnedWordCount).toBe(0);
+
+		const decksAfterLearn = vocabStudentLibraryDecksResponseSchema.parse(
+			await (
+				await app.request(
+					"/api/student/vocab/library/courses/libcourse-366/decks",
+					{ headers: { "x-test-user": "studentZero" } },
+				)
+			).json(),
+		);
+		const deck1AfterLearn = decksAfterLearn.decks.find(
+			(d) => d.id === "libdeck-366-1",
+		);
+		expect(deck1AfterLearn).toMatchObject({
+			wordCount: 15,
+			newCount: 14,
+			reviewCount: 1,
+			learnedCount: 0,
+		});
+
+		// 7) Make card due and submit review answer -> level=2 -> learnedWordCount=1 & learnedCount=1
+		await libsql
+			.update(schema.vocabCard)
+			.set({ dueAt: Date.now() - 5000 })
+			.where(eq(schema.vocabCard.id, firstCard.id));
+
+		const answerRes = await app.request("/api/student/vocab/answer", {
+			method: "POST",
+			headers: {
+				"x-test-user": "studentZero",
+				Origin: STUDENT_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: firstCard.id,
+				correct: true,
+				durationMs: 900,
+			}),
+		});
+		expect(answerRes.status).toBe(200);
+		const answerBody = vocabCardMutationResponseSchema.parse(
+			await answerRes.json(),
+		);
+		expect(answerBody.card.level).toBe(2);
+
+		// 8) Overview now includes libdeck-366-1 with source='library' and className='IELTS Academic Reading'
+		const postOvRes = await app.request("/api/student/vocab/overview", {
+			headers: { "x-test-user": "studentZero" },
+		});
+		const postOv = vocabOverviewSchema.parse(await postOvRes.json());
+		expect(postOv.learnedCount).toBe(1);
+		expect(postOv.decks).toEqual([
+			{
+				deckId: "libdeck-366-1",
+				title: "Bài 1: Môi trường (15 từ)",
+				className: "IELTS Academic Reading",
+				source: "library",
+				total: 15,
+				newCount: 14,
+				dueCount: 0,
+			},
+		]);
+
+		// 9) Audio on libword-366-2 (null audioUrl) returns 404 cleanly
+		const nullAudioRes = await app.request(
+			"/api/student/vocab/audio/libword-366-2",
+			{ headers: { "x-test-user": "studentZero" } },
+		);
+		expect(nullAudioRes.status).toBe(404);
 	});
 });

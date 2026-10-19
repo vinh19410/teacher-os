@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Server Student Library Routes, Overview & Teacher Progress"
-status: todo
+status: done
 ---
 
 # Phase 3: Server Student Library Routes, Overview & Teacher Progress
@@ -120,3 +120,15 @@ GET /api/student/vocab/library/courses/:courseId/decks
 ## Security Considerations
 
 - Chặn cross-tenant `vocab_card` deletion, chặn cross-site GET `session-data`, bắt buộc `requireStudent` cho mọi route `/api/student/vocab/library/*`, và yêu cầu học viên đã có `vocab_card` mới được proxy audio `libword-*`.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

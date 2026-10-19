@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: API Contracts & Dual-Source Student Provisioning"
-status: todo
+status: done
 ---
 
 # Phase 2: API Contracts & Dual-Source Student Provisioning
@@ -109,3 +109,15 @@ loadWordsAndCardsForAccessibleDecks(db, studentId, accessibleDecks):
 ## Security Considerations
 
 - Chặn triệt để client giáo viên truyền `id` trùng tiền tố `libcourse-*`, `libdeck-*`, `libword-*` ngay từ tầng Zod schema.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

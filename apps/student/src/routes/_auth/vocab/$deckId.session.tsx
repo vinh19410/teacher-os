@@ -33,6 +33,9 @@ function VocabSessionRoutePage() {
 				queryKey: ["student", "vocab-overview"],
 			}),
 			queryClient.invalidateQueries({
+				queryKey: ["student", "vocab-library"],
+			}),
+			queryClient.invalidateQueries({
 				queryKey: ["student", "vocab-session-data", deckId],
 			}),
 		]);

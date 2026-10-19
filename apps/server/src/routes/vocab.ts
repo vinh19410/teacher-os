@@ -4,6 +4,8 @@ import {
 	VOCAB_ERROR_CODES,
 	type VocabOverview,
 	type VocabSessionCard,
+	type VocabStudentLibraryCoursesResponse,
+	type VocabStudentLibraryDecksResponse,
 	vocabAnswerSchema,
 	vocabLearnCommitSchema,
 } from "@teacher-os/api/contracts";
@@ -17,11 +19,14 @@ import {
 	type student,
 	vocabCard,
 	vocabDeck,
+	vocabLibraryCourse,
+	vocabLibraryDeck,
+	vocabLibraryWord,
 	vocabReviewLog,
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
@@ -30,6 +35,7 @@ import {
 	ensureDeckCards,
 	loadPool,
 	loadStudentAccessibleDecks,
+	loadWordsAndCardsForAccessibleDecks,
 	studentCanAccessDeckCondition,
 } from "../lib/vocab-provision";
 import type { SessionUser } from "../session";
@@ -86,24 +92,68 @@ async function loadOwnedSessionCard(
 		)
 		.limit(1);
 
-	if (!row) return null;
+	if (row) {
+		return {
+			id: row.id,
+			wordId: row.wordId,
+			deckId: row.deckId,
+			word: row.word,
+			translation: row.translation,
+			ipa: row.ipa ?? null,
+			audioKey: row.audioKey ?? null,
+			hasAudio:
+				(row.audioKey !== null && row.audioKey.trim().length > 0) ||
+				(row.audioUrl !== null && row.audioUrl.trim().length > 0),
+			level: row.level,
+			isWarning: Boolean(row.isWarning),
+			state: row.state === "review" ? "review" : "new",
+			intervalDays: row.intervalDays,
+			dueAt: row.dueAt,
+			lapses: row.lapses,
+		};
+	}
+
+	const [libRow] = await db
+		.select({
+			id: vocabCard.id,
+			wordId: vocabLibraryWord.id,
+			deckId: vocabLibraryDeck.id,
+			word: vocabLibraryWord.word,
+			translation: vocabLibraryWord.translation,
+			ipa: vocabLibraryWord.ipa,
+			audioUrl: vocabLibraryWord.audioUrl,
+			level: vocabCard.level,
+			isWarning: vocabCard.isWarning,
+			state: vocabCard.state,
+			intervalDays: vocabCard.intervalDays,
+			dueAt: vocabCard.dueAt,
+			lapses: vocabCard.lapses,
+		})
+		.from(vocabCard)
+		.innerJoin(vocabLibraryWord, eq(vocabCard.wordId, vocabLibraryWord.id))
+		.innerJoin(
+			vocabLibraryDeck,
+			eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
+		)
+		.where(and(eq(vocabCard.id, cardId), eq(vocabCard.studentId, studentId)))
+		.limit(1);
+
+	if (!libRow) return null;
 	return {
-		id: row.id,
-		wordId: row.wordId,
-		deckId: row.deckId,
-		word: row.word,
-		translation: row.translation,
-		ipa: row.ipa ?? null,
-		audioKey: row.audioKey ?? null,
-		hasAudio:
-			(row.audioKey !== null && row.audioKey.trim().length > 0) ||
-			(row.audioUrl !== null && row.audioUrl.trim().length > 0),
-		level: row.level,
-		isWarning: Boolean(row.isWarning),
-		state: row.state === "review" ? "review" : "new",
-		intervalDays: row.intervalDays,
-		dueAt: row.dueAt,
-		lapses: row.lapses,
+		id: libRow.id,
+		wordId: libRow.wordId,
+		deckId: libRow.deckId,
+		word: libRow.word,
+		translation: libRow.translation,
+		ipa: libRow.ipa ?? null,
+		audioKey: null,
+		hasAudio: libRow.audioUrl !== null && libRow.audioUrl.trim().length > 0,
+		level: libRow.level,
+		isWarning: Boolean(libRow.isWarning),
+		state: libRow.state === "review" ? "review" : "new",
+		intervalDays: libRow.intervalDays,
+		dueAt: libRow.dueAt,
+		lapses: libRow.lapses,
 	};
 }
 
@@ -297,6 +347,216 @@ export function registerVocabRoutes(
 	router.use("/vocab/suggestions/:id/dismiss/*", requireStudent);
 	router.use("/vocab/suggestions/:id/dismiss", vocabWriteGuard);
 	router.use("/vocab/suggestions/:id/dismiss/*", vocabWriteGuard);
+	router.use("/vocab/library/courses", requireStudent);
+	router.use("/vocab/library/courses/*", requireStudent);
+
+	router.get("/vocab/library/courses", async (c) => {
+		const { student: s } = c.get("studentCtx");
+		const db = deps.getDb();
+		const now = Date.now();
+
+		const [courses, deckCounts, wordCounts, progressRows] = await Promise.all([
+			db
+				.select()
+				.from(vocabLibraryCourse)
+				.orderBy(asc(vocabLibraryCourse.sortOrder), asc(vocabLibraryCourse.id)),
+			db
+				.select({
+					courseId: vocabLibraryDeck.courseId,
+					count: sql<number>`count(*)`,
+				})
+				.from(vocabLibraryDeck)
+				.groupBy(vocabLibraryDeck.courseId),
+			db
+				.select({
+					courseId: vocabLibraryDeck.courseId,
+					count: sql<number>`count(*)`,
+				})
+				.from(vocabLibraryWord)
+				.innerJoin(
+					vocabLibraryDeck,
+					eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
+				)
+				.groupBy(vocabLibraryDeck.courseId),
+			db
+				.select({
+					courseId: vocabLibraryDeck.courseId,
+					reviewWordCount: sql<number>`count(*)`,
+					learnedWordCount: sql<number>`coalesce(sum(case when ${vocabCard.level} >= 2 then 1 else 0 end), 0)`,
+					dueWordCount: sql<number>`coalesce(sum(case when ${vocabCard.dueAt} <= ${now} then 1 else 0 end), 0)`,
+				})
+				.from(vocabCard)
+				.innerJoin(vocabLibraryWord, eq(vocabCard.wordId, vocabLibraryWord.id))
+				.innerJoin(
+					vocabLibraryDeck,
+					eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
+				)
+				.where(
+					and(eq(vocabCard.studentId, s.id), eq(vocabCard.state, "review")),
+				)
+				.groupBy(vocabLibraryDeck.courseId),
+		]);
+
+		const deckCountByCourse = new Map<string, number>();
+		for (const row of deckCounts) {
+			deckCountByCourse.set(row.courseId, Number(row.count));
+		}
+		const wordCountByCourse = new Map<string, number>();
+		for (const row of wordCounts) {
+			wordCountByCourse.set(row.courseId, Number(row.count));
+		}
+		const progressByCourse = new Map<
+			string,
+			{
+				reviewWordCount: number;
+				learnedWordCount: number;
+				dueWordCount: number;
+			}
+		>();
+		for (const row of progressRows) {
+			progressByCourse.set(row.courseId, {
+				reviewWordCount: Number(row.reviewWordCount) || 0,
+				learnedWordCount: Number(row.learnedWordCount) || 0,
+				dueWordCount: Number(row.dueWordCount) || 0,
+			});
+		}
+
+		const response: VocabStudentLibraryCoursesResponse = {
+			courses: courses.map((course) => {
+				const prog = progressByCourse.get(course.id);
+				return {
+					id: course.id,
+					name: course.name,
+					description: course.description ?? null,
+					target: course.target ?? null,
+					deckCount: deckCountByCourse.get(course.id) ?? 0,
+					wordCount: wordCountByCourse.get(course.id) ?? 0,
+					reviewWordCount: prog?.reviewWordCount ?? 0,
+					learnedWordCount: prog?.learnedWordCount ?? 0,
+					dueWordCount: prog?.dueWordCount ?? 0,
+					sortOrder: course.sortOrder,
+				};
+			}),
+		};
+		return c.json(response);
+	});
+
+	router.get("/vocab/library/courses/:courseId/decks", async (c) => {
+		const { student: s } = c.get("studentCtx");
+		const courseId = c.req.param("courseId");
+		const db = deps.getDb();
+		const now = Date.now();
+
+		const [course] = await db
+			.select({
+				id: vocabLibraryCourse.id,
+				name: vocabLibraryCourse.name,
+				description: vocabLibraryCourse.description,
+				target: vocabLibraryCourse.target,
+			})
+			.from(vocabLibraryCourse)
+			.where(eq(vocabLibraryCourse.id, courseId))
+			.limit(1);
+
+		if (!course) {
+			return c.json(
+				{
+					error: VOCAB_ERROR_CODES.LIBRARY_COURSE_NOT_FOUND,
+					code: VOCAB_ERROR_CODES.LIBRARY_COURSE_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const [decks, wordCounts, progressRows] = await Promise.all([
+			db
+				.select()
+				.from(vocabLibraryDeck)
+				.where(eq(vocabLibraryDeck.courseId, courseId))
+				.orderBy(asc(vocabLibraryDeck.sortOrder), asc(vocabLibraryDeck.id)),
+			db
+				.select({
+					deckId: vocabLibraryWord.deckId,
+					count: sql<number>`count(*)`,
+				})
+				.from(vocabLibraryWord)
+				.innerJoin(
+					vocabLibraryDeck,
+					eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
+				)
+				.where(eq(vocabLibraryDeck.courseId, courseId))
+				.groupBy(vocabLibraryWord.deckId),
+			db
+				.select({
+					deckId: vocabLibraryWord.deckId,
+					reviewCount: sql<number>`count(*)`,
+					learnedCount: sql<number>`coalesce(sum(case when ${vocabCard.level} >= 2 then 1 else 0 end), 0)`,
+					dueCount: sql<number>`coalesce(sum(case when ${vocabCard.dueAt} <= ${now} then 1 else 0 end), 0)`,
+				})
+				.from(vocabCard)
+				.innerJoin(vocabLibraryWord, eq(vocabCard.wordId, vocabLibraryWord.id))
+				.innerJoin(
+					vocabLibraryDeck,
+					eq(vocabLibraryWord.deckId, vocabLibraryDeck.id),
+				)
+				.where(
+					and(
+						eq(vocabCard.studentId, s.id),
+						eq(vocabCard.state, "review"),
+						eq(vocabLibraryDeck.courseId, courseId),
+					),
+				)
+				.groupBy(vocabLibraryWord.deckId),
+		]);
+
+		const wordCountByDeck = new Map<string, number>();
+		for (const row of wordCounts) {
+			wordCountByDeck.set(row.deckId, Number(row.count));
+		}
+		const progressByDeck = new Map<
+			string,
+			{
+				reviewCount: number;
+				learnedCount: number;
+				dueCount: number;
+			}
+		>();
+		for (const row of progressRows) {
+			progressByDeck.set(row.deckId, {
+				reviewCount: Number(row.reviewCount) || 0,
+				learnedCount: Number(row.learnedCount) || 0,
+				dueCount: Number(row.dueCount) || 0,
+			});
+		}
+
+		const response: VocabStudentLibraryDecksResponse = {
+			course: {
+				id: course.id,
+				name: course.name,
+				description: course.description ?? null,
+				target: course.target ?? null,
+			},
+			decks: decks.map((deck) => {
+				const wordCount = wordCountByDeck.get(deck.id) ?? 0;
+				const prog = progressByDeck.get(deck.id);
+				const reviewCount = prog?.reviewCount ?? 0;
+				const newCount = Math.max(0, wordCount - reviewCount);
+				return {
+					id: deck.id,
+					courseId: deck.courseId,
+					title: deck.title,
+					imageUrl: deck.imageUrl ?? null,
+					wordCount,
+					newCount,
+					reviewCount,
+					dueCount: prog?.dueCount ?? 0,
+					learnedCount: prog?.learnedCount ?? 0,
+					sortOrder: deck.sortOrder,
+				};
+			}),
+		};
+		return c.json(response);
+	});
 
 	router.get("/vocab/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
@@ -334,38 +594,8 @@ export function registerVocabRoutes(
 				.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id)),
 		]);
 
-		const deckIds = accessibleDecks.map((d) => d.deckId);
-
-		const [words, cards, logs] = await Promise.all([
-			deckIds.length > 0
-				? db
-						.select({
-							id: vocabWord.id,
-							deckId: vocabWord.deckId,
-						})
-						.from(vocabWord)
-						.where(inArray(vocabWord.deckId, deckIds))
-				: Promise.resolve([]),
-			deckIds.length > 0
-				? db
-						.select({
-							id: vocabCard.id,
-							wordId: vocabCard.wordId,
-							deckId: vocabWord.deckId,
-							level: vocabCard.level,
-							isWarning: vocabCard.isWarning,
-							state: vocabCard.state,
-							dueAt: vocabCard.dueAt,
-						})
-						.from(vocabCard)
-						.innerJoin(vocabWord, eq(vocabCard.wordId, vocabWord.id))
-						.where(
-							and(
-								eq(vocabCard.studentId, s.id),
-								inArray(vocabWord.deckId, deckIds),
-							),
-						)
-				: Promise.resolve([]),
+		const [{ words, cards }, logs] = await Promise.all([
+			loadWordsAndCardsForAccessibleDecks(db, s.id, accessibleDecks),
 			db
 				.select({
 					grade: vocabReviewLog.grade,
@@ -654,6 +884,17 @@ export function registerVocabRoutes(
 	});
 
 	router.get("/vocab/decks/:deckId/session-data", async (c) => {
+		const secFetchSite = c.req.header("Sec-Fetch-Site");
+		if (secFetchSite === "cross-site") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json(
+					{ error: "origin not allowed", code: "FORBIDDEN_ORIGIN" },
+					403,
+				);
+			}
+		}
+
 		const { student: s, orgId } = c.get("studentCtx");
 		const deckId = c.req.param("deckId");
 		const db = deps.getDb();
@@ -665,7 +906,7 @@ export function registerVocabRoutes(
 				404,
 			);
 		}
-		const pool = await loadPool(db, s.id, orgId);
+		const pool = await loadPool(db, s.id, orgId, deckId);
 		return c.json({
 			deck: ensured.deck,
 			cards: ensured.cards,
@@ -923,36 +1164,49 @@ export function registerVocabRoutes(
 		const wordId = c.req.param("wordId");
 		const db = deps.getDb();
 
-		const [row] = await db
-			.select({
-				word: vocabWord.word,
-				audioKey: vocabWord.audioKey,
-				audioUrl: vocabWord.audioUrl,
-			})
-			.from(vocabWord)
-			.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
-			.where(
-				and(
-					eq(vocabWord.id, wordId),
-					studentCanAccessDeckCondition(s.id, orgId),
-				),
-			)
-			.limit(1);
+		if (!wordId.startsWith("libword-")) {
+			const [row] = await db
+				.select({
+					word: vocabWord.word,
+					audioKey: vocabWord.audioKey,
+					audioUrl: vocabWord.audioUrl,
+				})
+				.from(vocabWord)
+				.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
+				.where(
+					and(
+						eq(vocabWord.id, wordId),
+						studentCanAccessDeckCondition(s.id, orgId),
+					),
+				)
+				.limit(1);
 
-		if (!row) {
-			return c.json(
-				{ error: "audio not found", code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND },
-				404,
-			);
-		}
+			if (row) {
+				if (row.audioKey !== null && row.audioKey.trim().length > 0) {
+					const store = deps.getMediaStore?.();
+					if (!store) {
+						return c.json({ error: "media storage unavailable" }, 503);
+					}
+					const object = await store.get(row.audioKey);
+					if (!object) {
+						return c.json(
+							{
+								error: "audio not found",
+								code: VOCAB_ERROR_CODES.AUDIO_NOT_FOUND,
+							},
+							404,
+						);
+					}
+					return mediaObjectResponse(object, {
+						mediaType: object.contentType,
+						mediaName: `${row.word}.mp3`,
+					});
+				}
 
-		if (row.audioKey !== null && row.audioKey.trim().length > 0) {
-			const store = deps.getMediaStore?.();
-			if (!store) {
-				return c.json({ error: "media storage unavailable" }, 503);
-			}
-			const object = await store.get(row.audioKey);
-			if (!object) {
+				if (row.audioUrl !== null && row.audioUrl.trim().length > 0) {
+					return proxyRemoteAudio(c, row.audioUrl);
+				}
+
 				return c.json(
 					{
 						error: "audio not found",
@@ -961,14 +1215,25 @@ export function registerVocabRoutes(
 					404,
 				);
 			}
-			return mediaObjectResponse(object, {
-				mediaType: object.contentType,
-				mediaName: `${row.word}.mp3`,
-			});
 		}
 
-		if (row.audioUrl !== null && row.audioUrl.trim().length > 0) {
-			return proxyRemoteAudio(c, row.audioUrl);
+		const [libRow] = await db
+			.select({
+				audioUrl: vocabLibraryWord.audioUrl,
+			})
+			.from(vocabLibraryWord)
+			.innerJoin(vocabCard, eq(vocabCard.wordId, vocabLibraryWord.id))
+			.where(
+				and(eq(vocabLibraryWord.id, wordId), eq(vocabCard.studentId, s.id)),
+			)
+			.limit(1);
+
+		if (
+			libRow &&
+			libRow.audioUrl !== null &&
+			libRow.audioUrl.trim().length > 0
+		) {
+			return proxyRemoteAudio(c, libRow.audioUrl);
 		}
 
 		return c.json(

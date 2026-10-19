@@ -83,10 +83,11 @@ export const vocabWord = sqliteTable(
 
 /**
  * Trạng thái SRS 5 memory levels của từng học viên trên từng từ (`docs/srs-spec.md` §1).
- * Được lazy provision khi học viên đã enroll mở deck lần đầu (`INSERT OR IGNORE`
- * theo unique `(studentId, wordId)`), với mốc `dueAt = deck.createdAt - (n - 1) + i`
- * để giữ thứ tự từ ổn định kể cả khi có request đồng thời.
- *
+ * Được lazy provision khi học viên mở deck lần đầu (`INSERT OR IGNORE`
+ * theo unique `(studentId, wordId)`).
+ * - `wordId` là polymorphic key (không đặt FK cứng sang `vocab_word.id`): trỏ tới
+ *   `vocab_word.id` (bộ từ lớp/gợi ý của giáo viên) hoặc `vocab_library_word.id`
+ *   (`libword-*` thuộc 20 khóa học từ vựng dùng chung — #366).
  * Invariants:
  * - `level` luôn trong khoảng 1..5.
  * - `isWarning` chỉ có thể `true` ở `level === 5`.
@@ -99,9 +100,7 @@ export const vocabCard = sqliteTable(
 		studentId: text("student_id")
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
-		wordId: text("word_id")
-			.notNull()
-			.references(() => vocabWord.id, { onDelete: "cascade" }),
+		wordId: text("word_id").notNull(),
 		level: integer("level").notNull().default(1),
 		isWarning: integer("is_warning", { mode: "boolean" })
 			.notNull()
