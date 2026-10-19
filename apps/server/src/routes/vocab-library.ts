@@ -10,7 +10,7 @@ import {
 	vocabLibraryWord,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -25,11 +25,10 @@ const MAX_WORDS_PREVIEW_LIMIT = 50;
 
 const cloneRawEnvelopeSchema = z
 	.object({
-		classId: z.string().min(1),
+		classId: z.string().min(1).nullable().optional().default(null),
 		deckIds: z.array(z.string().min(1)).min(1),
 	})
 	.strict();
-
 /**
  * Built-in Vocabulary Library sub-router (#361).
  * - Mounted at `/api/kernel/vocab-library`.
@@ -233,17 +232,18 @@ export function vocabLibraryRoutes(deps: { getDb(): Db }) {
 
 		const db = deps.getDb();
 
-		// IDOR guard first: verify target class belongs to caller's org before querying library tables.
-		const [cls] = await db
-			.select({ id: classTable.id })
-			.from(classTable)
-			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
-			.limit(1);
+		// IDOR guard first: when classId is provided, verify target class belongs to caller's org before querying library tables.
+		if (classId !== null) {
+			const [cls] = await db
+				.select({ id: classTable.id })
+				.from(classTable)
+				.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
+				.limit(1);
 
-		if (!cls) {
-			return c.json({ error: "class not found" }, 404);
+			if (!cls) {
+				return c.json({ error: "class not found" }, 404);
+			}
 		}
-
 		if (
 			uniqueDeckIds.length > MAX_CLONE_DECKS ||
 			!vocabLibraryCloneSchema.safeParse(baseParsed.data).success
@@ -297,12 +297,13 @@ export function vocabLibraryRoutes(deps: { getDb(): Db }) {
 			.from(vocabDeck)
 			.where(
 				and(
-					eq(vocabDeck.classId, classId),
+					classId === null
+						? isNull(vocabDeck.classId)
+						: eq(vocabDeck.classId, classId),
 					eq(vocabDeck.orgId, ctx.orgId),
 					inArray(vocabDeck.sourceLibraryDeckId, uniqueDeckIds),
 				),
 			);
-
 		const duplicates = [
 			...new Set(
 				existingDecks

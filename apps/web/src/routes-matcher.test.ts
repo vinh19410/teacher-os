@@ -31,6 +31,7 @@ describe("routes-matcher", () => {
 			"/classes",
 			"/students",
 			"/syllabus",
+			"/vocab",
 		];
 
 		for (const route of validStaticRoutes) {

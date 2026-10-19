@@ -13,7 +13,9 @@ import { vi } from "vitest";
 import { DataProvider } from "@/lib/data-provider";
 import { createKernelQueryClient } from "@/lib/query-client";
 
-type Row<K extends keyof KernelSnapshot> = KernelSnapshot[K][number];
+type Row<K extends keyof KernelSnapshot> = NonNullable<
+	KernelSnapshot[K]
+>[number];
 
 export function snapshotFixture(
 	overrides: Partial<KernelSnapshot> = {},
@@ -34,6 +36,7 @@ export function snapshotFixture(
 		notifs: [],
 		commentBank: [],
 		vocabDecks: [],
+		vocabSuggestions: [],
 		...overrides,
 	};
 }

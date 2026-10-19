@@ -1,6 +1,6 @@
 ---
 title: "Phase 7: Tests, e2e mới & gates local"
-status: todo
+status: done
 ---
 
 # Phase 7: Tests, e2e mới & gates local
@@ -23,10 +23,10 @@ Spec e2e end-to-end cho luồng mới + chạy toàn bộ gates + chuẩn bị b
 
 ## Requirements
 
-- [ ] `vocab-hub-suggestion.spec.ts` pass kịch bản acceptance
-- [ ] Toàn bộ e2e suite pass (không regression spec cũ, kể cả sidebar-collapse)
-- [ ] Gates local pass đủ bộ
-- [ ] Screenshot PR: hub tab Deck + tab Tiến độ + student "Gợi ý cho bạn" ở 1440/768/375
+- [x] `vocab-hub-suggestion.spec.ts` pass kịch bản acceptance
+- [x] Toàn bộ e2e suite pass (không regression spec cũ, kể cả sidebar-collapse)
+- [x] Gates local pass đủ bộ
+- [x] Screenshot PR: hub tab Deck + tab Tiến độ + student "Gợi ý cho bạn" ở 1440/768/375
 
 ## Architecture
 
@@ -58,10 +58,10 @@ vocab-hub-suggestion.spec.ts
 
 ## Todo
 
-- [ ] Spec e2e mới pass
-- [ ] Full e2e suite pass (restore baseline drift ngoài scope)
-- [ ] Gates pass
-- [ ] Screenshot PR
+- [x] Spec e2e mới pass
+- [x] Full e2e suite pass (restore baseline drift ngoài scope)
+- [x] Gates pass
+- [x] Screenshot PR
 
 ## Success Criteria
 
@@ -75,3 +75,15 @@ vocab-hub-suggestion.spec.ts
 ## Security Considerations
 
 - Bước IDOR âm tính nằm ở server test (phase 3) — e2e giữ happy path + 1 dismiss path cho gọn.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

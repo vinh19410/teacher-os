@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Server teacher hub — kernel commands + progress endpoints"
-status: todo
+status: done
 ---
 
 # Phase 4: Server teacher hub — kernel commands + progress endpoints
@@ -29,13 +29,13 @@ Mở teacher API: tạo deck không lớp, suggestion lifecycle (gợi ý idempo
 
 ## Requirements
 
-- [ ] `POST /kernel/vocab/decks` + clone library chấp nhận `classId: null` (zod nới; validate org ownership khi có classId; dedupe `isNull` cho deck riêng)
-- [ ] Snapshot thêm `vocabSuggestions` (optional, chỉ pending: id, deckId, studentId, note, createdAt) — server trả trước web dùng; update đủ chuỗi file web guard/fixtures
-- [ ] Command `suggest-vocab-deck` (deckId, studentId, note `z.string().trim().max(500).optional()`) — idempotent khi pending tồn tại (200 row cũ); re-suggest sau dismissed = flip pending (upsert theo UNIQUE)
-- [ ] Command `revoke-vocab-suggestion` (id) — flip status `dismissed` (soft), KHÔNG hard-delete
-- [ ] `delete-vocab-deck` batch thêm `db.delete(vocabSuggestion).where(eq(vocabSuggestion.deckId, deck.id))`
-- [ ] `GET /kernel/vocab/progress?studentId=` → per-student: mỗi deck accessible {deckId, title, classId|null, total, byLevel[1..5], dueToday, stateNew, stateReview, lastActivityAt} + activity 7 ngày {dateISO, sessions, correct} (group JS theo `vietnamTodayISO`)
-- [ ] Mọi query lọc `orgId` từ kernel ctx; studentId/deckId phải thuộc org → sai 404
+- [x] `POST /kernel/vocab/decks` + clone library chấp nhận `classId: null` (zod nới; validate org ownership khi có classId; dedupe `isNull` cho deck riêng)
+- [x] Snapshot thêm `vocabSuggestions` (optional, chỉ pending: id, deckId, studentId, note, createdAt) — server trả trước web dùng; update đủ chuỗi file web guard/fixtures
+- [x] Command `suggest-vocab-deck` (deckId, studentId, note `z.string().trim().max(500).optional()`) — idempotent khi pending tồn tại (200 row cũ); re-suggest sau dismissed = flip pending (upsert theo UNIQUE)
+- [x] Command `revoke-vocab-suggestion` (id) — flip status `dismissed` (soft), KHÔNG hard-delete
+- [x] `delete-vocab-deck` batch thêm `db.delete(vocabSuggestion).where(eq(vocabSuggestion.deckId, deck.id))`
+- [x] `GET /kernel/vocab/progress?studentId=` → per-student: mỗi deck accessible {deckId, title, classId|null, total, byLevel[1..5], dueToday, stateNew, stateReview, lastActivityAt} + activity 7 ngày {dateISO, sessions, correct} (group JS theo `vietnamTodayISO`)
+- [x] Mọi query lọc `orgId` từ kernel ctx; studentId/deckId phải thuộc org → sai 404
 
 ## Architecture
 
@@ -66,11 +66,11 @@ progress per-student:
 
 ## Todo
 
-- [ ] Create deck + clone library classId null + dedupe isNull
-- [ ] Snapshot vocabSuggestions optional pending-only + chuỗi file web
-- [ ] Commands suggest (idempotent) / revoke (soft) + delete batch cleanup
-- [ ] Progress per-student (SQL agg + JS ngày VN) + tests
-- [ ] Test double-suggest / xoá deck / revoke
+- [x] Create deck + clone library classId null + dedupe isNull
+- [x] Snapshot vocabSuggestions optional pending-only + chuỗi file web
+- [x] Commands suggest (idempotent) / revoke (soft) + delete batch cleanup
+- [x] Progress per-student (SQL agg + JS ngày VN) + tests
+- [x] Test double-suggest / xoá deck / revoke
 
 ## Success Criteria
 
@@ -85,3 +85,15 @@ progress per-student:
 
 - Teacher role + org scope trên mọi route mới (tự động trong vocabTeacherRoutes — verify bằng test 403 với student token nếu có pattern).
 - Note là input hiển thị cho student: zod trim max 500; render text node (student side), không dangerouslySetInnerHTML.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

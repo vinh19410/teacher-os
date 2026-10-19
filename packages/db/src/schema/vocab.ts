@@ -6,15 +6,16 @@ import {
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { user } from "./auth";
 import { classTable } from "./class";
 import { organization } from "./organization";
 import { student } from "./student";
 
 /**
- * Bộ từ vựng (deck) do giáo viên tạo cho một lớp học (#359).
+ * Bộ từ vựng (deck) do giáo viên tạo cho một lớp học (#359) hoặc độc lập trong org (#363, `classId = null`).
  * Mỗi deck tương ứng một Course lesson trong mô hình Flinto: còn từ `state='new'`
  * thì học sinh vào vòng Learn (§3b), học xong toàn bộ từ mới thì sang vòng Review (§3).
- * Xoá deck ở server phải xoá tường minh `vocab_deck + vocab_word + vocab_card`
+ * Xoá deck ở server phải xoá tường minh `vocab_deck + vocab_word + vocab_card + vocab_suggestion`
  * trong 1 `db.batch` (không dựa vào FK cascade do PRAGMA foreign_keys theo connection),
  * nhưng giữ nguyên `vocab_review_log` để bảo toàn streak/retention.
  */
@@ -25,9 +26,9 @@ export const vocabDeck = sqliteTable(
 		orgId: text("org_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		classId: text("class_id")
-			.notNull()
-			.references(() => classTable.id, { onDelete: "cascade" }),
+		classId: text("class_id").references(() => classTable.id, {
+			onDelete: "cascade",
+		}),
 		title: text("title").notNull(),
 		lang: text("lang").notNull().default("en"),
 		/**
@@ -152,6 +153,52 @@ export const vocabReviewLog = sqliteTable(
 		index("vocab_review_log_student_reviewed_idx").on(
 			table.studentId,
 			table.reviewedAt,
+		),
+	],
+);
+
+/**
+ * Gợi ý bộ từ vựng (không bắt buộc) từ giáo viên cho học viên (#363).
+ * - 1 row duy nhất per `(studentId, deckId)` qua `vocab_suggestion_student_deck_uq`;
+ *   re-suggest sau khi dismissed/thu hồi sẽ flip `status` về `'pending'` (upsert).
+ * - Thu hồi bởi giáo viên flip `status = 'dismissed'` (soft, giữ `respondedAt`), KHÔNG hard-delete.
+ * - Xoá deck phải xoá tường minh `vocab_suggestion` trong cùng `db.batch` (doctrine F7).
+ */
+export const vocabSuggestion = sqliteTable(
+	"vocab_suggestion",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		teacherId: text("teacher_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		studentId: text("student_id")
+			.notNull()
+			.references(() => student.id, { onDelete: "cascade" }),
+		deckId: text("deck_id")
+			.notNull()
+			.references(() => vocabDeck.id, { onDelete: "cascade" }),
+		note: text("note"),
+		status: text("status")
+			.$type<"pending" | "accepted" | "dismissed">()
+			.notNull()
+			.default("pending"),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		respondedAt: integer("responded_at", { mode: "timestamp_ms" }),
+	},
+	(table) => [
+		index("vocab_suggestion_org_idx").on(table.orgId),
+		index("vocab_suggestion_student_status_idx").on(
+			table.studentId,
+			table.status,
+		),
+		uniqueIndex("vocab_suggestion_student_deck_uq").on(
+			table.studentId,
+			table.deckId,
 		),
 	],
 );

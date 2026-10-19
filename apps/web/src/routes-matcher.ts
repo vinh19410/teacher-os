@@ -20,6 +20,7 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/classes": true,
 	"/students": true,
 	"/syllabus": true,
+	"/vocab": true,
 };
 
 /**

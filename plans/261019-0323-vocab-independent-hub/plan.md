@@ -1,11 +1,11 @@
 ---
 title: "Vocab độc lập lớp học — Teacher Hub + Gợi ý deck + Theo dõi tiến độ"
 description: "Tách từ vựng khỏi lớp học: deck không bắt buộc thuộc lớp, teacher hub riêng (quản lý deck, gợi ý deck optional cho học viên, theo dõi tiến độ SRS), student nhận gợi ý trong /vocab"
-status: pending
+status: completed
 priority: P1
 effort: 3d
 issue: 363
-branch: vinh19410/ai-handle-vocab-independent-hub
+branch: ai-handle-issue-363
 tags: [vocab, srs, db-migration, kernel, teacher-web, student-app]
 blockedBy: []
 blocks: []
@@ -46,23 +46,23 @@ Brainstorm contract (đã chốt hướng A — deck org-scoped + bảng suggest
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [Khởi tạo branch & chốt quyết định kỹ thuật](./phase-01-start.md) | Pending |
-| 2 | [DB schema: classId nullable + bảng vocab_suggestion](./phase-02-db-schema-suggestion.md) | Pending |
-| 3 | [API contracts + student access rule & suggestion lifecycle](./phase-03-api-contracts-student-access.md) | Pending |
-| 4 | [Server teacher hub: kernel commands + progress endpoints](./phase-04-teacher-kernel-hub.md) | Pending |
-| 5 | [Web teacher: sidebar + hub UI (Deck / Tiến độ / Gợi ý)](./phase-05-web-teacher-hub-ui.md) | Pending |
-| 6 | [Student: mục Gợi ý cho bạn trong /vocab](./phase-06-student-suggestion-ui.md) | Pending |
-| 7 | [Tests, e2e mới & gates local](./phase-07-tests-e2e-gates.md) | Pending |
+| 1 | [Khởi tạo branch & chốt quyết định kỹ thuật](./phase-01-start.md) | Done |
+| 2 | [DB schema: classId nullable + bảng vocab_suggestion](./phase-02-db-schema-suggestion.md) | Done |
+| 3 | [API contracts + student access rule & suggestion lifecycle](./phase-03-api-contracts-student-access.md) | Done |
+| 4 | [Server teacher hub: kernel commands + progress endpoints](./phase-04-teacher-kernel-hub.md) | Done |
+| 5 | [Web teacher: sidebar + hub UI (Deck / Tiến độ / Gợi ý)](./phase-05-web-teacher-hub-ui.md) | Done |
+| 6 | [Student: mục Gợi ý cho bạn trong /vocab](./phase-06-student-suggestion-ui.md) | Done |
+| 7 | [Tests, e2e mới & gates local](./phase-07-tests-e2e-gates.md) | Done |
 
 ## Success Criteria
 
-- [ ] Teacher tạo/clone deck mà không chọn lớp → deck hiện ở hub với badge "Riêng", KHÔNG xuất hiện ở tab vocab của lớp nào.
-- [ ] Teacher gợi ý deck (kèm ghi chú) cho học viên A → A thấy "Gợi ý cho bạn" ở `/vocab`; "Bắt đầu học" → provision card + vào session và **học trọn card qua answer/learn-commit** (predicate 5 call sites); "Ẩn" → gợi ý biến mất, teacher gợi ý lại được (flip pending); gợi ý trùng pending là idempotent (double-click an toàn).
-- [ ] Học viên B (không được gợi ý, không enrolled) gọi API deck/suggestion → 403/404; Origin lạ trên POST suggestion → 403 (CSRF).
-- [ ] Teacher thu hồi suggestion đã accepted (soft flip) → deck rời overview học viên; teacher xoá deck → suggestion được dọn trong batch (không mồ côi).
-- [ ] Teacher mở Tiến độ cho A: đúng tổng từ đang học, phân bố level 1–5, số từ đến hạn, hoạt động 7 ngày theo ngày VN — khớp dữ liệu sau khi A học 1 session (e2e).
-- [ ] Luồng cũ nguyên vẹn: tab vocab trong lớp, student /vocab với deck lớp, SRS session — `vocab-srs.spec.ts` + `vocab-library-clone.spec.ts` pass.
-- [ ] Gates local pass: `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, e2e ports 8100/8101/8103.
+- [x] Teacher tạo/clone deck mà không chọn lớp → deck hiện ở hub với badge "Riêng", KHÔNG xuất hiện ở tab vocab của lớp nào.
+- [x] Teacher gợi ý deck (kèm ghi chú) cho học viên A → A thấy "Gợi ý cho bạn" ở `/vocab`; "Bắt đầu học" → provision card + vào session và **học trọn card qua answer/learn-commit** (predicate 5 call sites); "Ẩn" → gợi ý biến mất, teacher gợi ý lại được (flip pending); gợi ý trùng pending là idempotent (double-click an toàn).
+- [x] Học viên B (không được gợi ý, không enrolled) gọi API deck/suggestion → 403/404; Origin lạ trên POST suggestion → 403 (CSRF).
+- [x] Teacher thu hồi suggestion đã accepted (soft flip) → deck rời overview học viên; teacher xoá deck → suggestion được dọn trong batch (không mồ côi).
+- [x] Teacher mở Tiến độ cho A: đúng tổng từ đang học, phân bố level 1–5, số từ đến hạn, hoạt động 7 ngày theo ngày VN — khớp dữ liệu sau khi A học 1 session (e2e).
+- [x] Luồng cũ nguyên vẹn: tab vocab trong lớp, student /vocab với deck lớp, SRS session — `vocab-srs.spec.ts` + `vocab-library-clone.spec.ts` pass.
+- [x] Gates local pass: `pnpm check`, `pnpm check-types`, `pnpm --filter server test`, `pnpm --filter web test`, `pnpm --filter student test`, e2e ports 8100/8101/8103.
 
 ## Dependencies
 

@@ -14,20 +14,24 @@ import {
 } from "@teacher-os/api/srs/scheduler";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
-	classTable,
-	enrollment,
 	type student,
 	vocabCard,
 	vocabDeck,
 	vocabReviewLog,
+	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
-import { ensureDeckCards, loadPool } from "../lib/vocab-provision";
+import {
+	ensureDeckCards,
+	loadPool,
+	loadStudentAccessibleDecks,
+	studentCanAccessDeckCondition,
+} from "../lib/vocab-provision";
 import type { SessionUser } from "../session";
 import type { StudentRouteDeps } from "./student";
 
@@ -73,20 +77,11 @@ async function loadOwnedSessionCard(
 		.from(vocabCard)
 		.innerJoin(vocabWord, eq(vocabCard.wordId, vocabWord.id))
 		.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
-		.innerJoin(
-			enrollment,
-			and(
-				eq(enrollment.classId, vocabDeck.classId),
-				eq(enrollment.orgId, vocabDeck.orgId),
-			),
-		)
 		.where(
 			and(
 				eq(vocabCard.id, cardId),
 				eq(vocabCard.studentId, studentId),
-				eq(vocabDeck.orgId, orgId),
-				eq(enrollment.studentId, studentId),
-				eq(enrollment.status, "active"),
+				studentCanAccessDeckCondition(studentId, orgId),
 			),
 		)
 		.limit(1);
@@ -294,37 +289,52 @@ export function registerVocabRoutes(
 	router.use("/vocab/learn-commit/*", vocabWriteGuard);
 	router.use("/vocab/audio/:wordId", requireStudent);
 	router.use("/vocab/audio/:wordId/*", requireStudent);
+	router.use("/vocab/suggestions/:id/accept", requireStudent);
+	router.use("/vocab/suggestions/:id/accept/*", requireStudent);
+	router.use("/vocab/suggestions/:id/accept", vocabWriteGuard);
+	router.use("/vocab/suggestions/:id/accept/*", vocabWriteGuard);
+	router.use("/vocab/suggestions/:id/dismiss", requireStudent);
+	router.use("/vocab/suggestions/:id/dismiss/*", requireStudent);
+	router.use("/vocab/suggestions/:id/dismiss", vocabWriteGuard);
+	router.use("/vocab/suggestions/:id/dismiss/*", vocabWriteGuard);
 
 	router.get("/vocab/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const db = deps.getDb();
 		const now = Date.now();
 
-		const enrolledDecks = await db
-			.select({
-				deckId: vocabDeck.id,
-				title: vocabDeck.title,
-				className: classTable.name,
-			})
-			.from(vocabDeck)
-			.innerJoin(classTable, eq(vocabDeck.classId, classTable.id))
-			.innerJoin(
-				enrollment,
-				and(
-					eq(enrollment.classId, vocabDeck.classId),
-					eq(enrollment.orgId, vocabDeck.orgId),
-				),
-			)
-			.where(
-				and(
-					eq(vocabDeck.orgId, orgId),
-					eq(enrollment.studentId, s.id),
-					eq(enrollment.status, "active"),
-				),
-			)
-			.orderBy(asc(vocabDeck.createdAt), asc(vocabDeck.id));
+		const [accessibleDecks, pendingSuggestions] = await Promise.all([
+			loadStudentAccessibleDecks(db, s.id, orgId),
+			db
+				.select({
+					id: vocabSuggestion.id,
+					deckId: vocabDeck.id,
+					title: vocabDeck.title,
+					note: vocabSuggestion.note,
+					createdAt: vocabSuggestion.createdAt,
+					wordCount: sql<number>`count(${vocabWord.id})`,
+				})
+				.from(vocabSuggestion)
+				.innerJoin(
+					vocabDeck,
+					and(
+						eq(vocabSuggestion.deckId, vocabDeck.id),
+						eq(vocabSuggestion.orgId, vocabDeck.orgId),
+					),
+				)
+				.leftJoin(vocabWord, eq(vocabWord.deckId, vocabDeck.id))
+				.where(
+					and(
+						eq(vocabSuggestion.studentId, s.id),
+						eq(vocabSuggestion.orgId, orgId),
+						eq(vocabSuggestion.status, "pending"),
+					),
+				)
+				.groupBy(vocabSuggestion.id)
+				.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id)),
+		]);
 
-		const deckIds = enrolledDecks.map((d) => d.deckId);
+		const deckIds = accessibleDecks.map((d) => d.deckId);
 
 		const [words, cards, logs] = await Promise.all([
 			deckIds.length > 0
@@ -449,7 +459,7 @@ export function registerVocabRoutes(
 				? null
 				: roundHalfAwayFromZero((goodLogs / logs.length) * 100);
 
-		const decks = enrolledDecks.map((d) => {
+		const decks = accessibleDecks.map((d) => {
 			const wordIds = wordsByDeck.get(d.deckId) ?? [];
 			let deckNewCount = 0;
 			let deckDueCount = 0;
@@ -465,11 +475,24 @@ export function registerVocabRoutes(
 				deckId: d.deckId,
 				title: d.title,
 				className: d.className,
+				source: d.source,
 				total: wordIds.length,
 				newCount: deckNewCount,
 				dueCount: deckDueCount,
 			};
 		});
+
+		const suggestions = pendingSuggestions.map((row) => ({
+			id: row.id,
+			deckId: row.deckId,
+			title: row.title,
+			wordCount: Number(row.wordCount) || 0,
+			note: row.note ?? null,
+			createdAt:
+				row.createdAt instanceof Date
+					? row.createdAt.toISOString()
+					: new Date(row.createdAt).toISOString(),
+		}));
 
 		const response: VocabOverview = {
 			dueCount,
@@ -482,8 +505,152 @@ export function registerVocabRoutes(
 			retention,
 			forecast,
 			decks,
+			suggestions,
 		};
 		return c.json(response);
+	});
+
+	router.post("/vocab/suggestions/:id/accept", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+
+		const [row] = await db
+			.select({
+				id: vocabSuggestion.id,
+				deckId: vocabSuggestion.deckId,
+				status: vocabSuggestion.status,
+				respondedAt: vocabSuggestion.respondedAt,
+			})
+			.from(vocabSuggestion)
+			.innerJoin(
+				vocabDeck,
+				and(
+					eq(vocabSuggestion.deckId, vocabDeck.id),
+					eq(vocabSuggestion.orgId, vocabDeck.orgId),
+				),
+			)
+			.where(
+				and(
+					eq(vocabSuggestion.id, id),
+					eq(vocabSuggestion.studentId, s.id),
+					eq(vocabSuggestion.orgId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!row || row.status === "dismissed") {
+			return c.json(
+				{
+					error: "suggestion not found",
+					code: VOCAB_ERROR_CODES.SUGGESTION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		if (row.status === "accepted") {
+			const respondedAt =
+				row.respondedAt instanceof Date
+					? row.respondedAt.toISOString()
+					: row.respondedAt
+						? new Date(row.respondedAt).toISOString()
+						: new Date().toISOString();
+			return c.json({
+				id: row.id,
+				deckId: row.deckId,
+				status: "accepted" as const,
+				respondedAt,
+			});
+		}
+
+		const now = new Date();
+		await db
+			.update(vocabSuggestion)
+			.set({ status: "accepted", respondedAt: now })
+			.where(
+				and(
+					eq(vocabSuggestion.id, row.id),
+					eq(vocabSuggestion.studentId, s.id),
+					eq(vocabSuggestion.orgId, orgId),
+				),
+			);
+
+		return c.json({
+			id: row.id,
+			deckId: row.deckId,
+			status: "accepted" as const,
+			respondedAt: now.toISOString(),
+		});
+	});
+
+	router.post("/vocab/suggestions/:id/dismiss", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+
+		const [row] = await db
+			.select({
+				id: vocabSuggestion.id,
+				deckId: vocabSuggestion.deckId,
+				status: vocabSuggestion.status,
+				respondedAt: vocabSuggestion.respondedAt,
+			})
+			.from(vocabSuggestion)
+			.innerJoin(
+				vocabDeck,
+				and(
+					eq(vocabSuggestion.deckId, vocabDeck.id),
+					eq(vocabSuggestion.orgId, vocabDeck.orgId),
+				),
+			)
+			.where(
+				and(
+					eq(vocabSuggestion.id, id),
+					eq(vocabSuggestion.studentId, s.id),
+					eq(vocabSuggestion.orgId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!row) {
+			return c.json(
+				{
+					error: "suggestion not found",
+					code: VOCAB_ERROR_CODES.SUGGESTION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		if (row.status === "accepted") {
+			return c.json(
+				{
+					error: "cannot dismiss accepted suggestion",
+					code: VOCAB_ERROR_CODES.SUGGESTION_ALREADY_ACCEPTED,
+				},
+				409,
+			);
+		}
+
+		const now = new Date();
+		await db
+			.update(vocabSuggestion)
+			.set({ status: "dismissed", respondedAt: now })
+			.where(
+				and(
+					eq(vocabSuggestion.id, row.id),
+					eq(vocabSuggestion.studentId, s.id),
+					eq(vocabSuggestion.orgId, orgId),
+				),
+			);
+
+		return c.json({
+			id: row.id,
+			deckId: row.deckId,
+			status: "dismissed" as const,
+			respondedAt: now.toISOString(),
+		});
 	});
 
 	router.get("/vocab/decks/:deckId/session-data", async (c) => {
@@ -764,19 +931,10 @@ export function registerVocabRoutes(
 			})
 			.from(vocabWord)
 			.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
-			.innerJoin(
-				enrollment,
-				and(
-					eq(enrollment.classId, vocabDeck.classId),
-					eq(enrollment.orgId, vocabDeck.orgId),
-				),
-			)
 			.where(
 				and(
 					eq(vocabWord.id, wordId),
-					eq(vocabDeck.orgId, orgId),
-					eq(enrollment.studentId, s.id),
-					eq(enrollment.status, "active"),
+					studentCanAccessDeckCondition(s.id, orgId),
 				),
 			)
 			.limit(1);

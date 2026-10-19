@@ -2,26 +2,35 @@ import {
 	type CreatedResponse,
 	QUIZ_MEDIA_MAX_BYTES,
 	VOCAB_ERROR_CODES,
+	type VocabStudentProgressResponse,
+	type VocabTeacherSuggestionsResponse,
 	vocabDeckCreateSchema,
 	vocabDeckDeleteSchema,
 	vocabDeckRenameSchema,
+	vocabRevokeSuggestionSchema,
+	vocabSuggestDeckSchema,
 	vocabWordRemoveSchema,
 	vocabWordUpsertSchema,
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	classTable,
+	student,
 	vocabCard,
 	vocabDeck,
+	vocabReviewLog,
+	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { loadStudentAccessibleDecks } from "../lib/vocab-provision";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type VocabTeacherContext = Context<Env>;
@@ -127,20 +136,21 @@ export function vocabTeacherRoutes(deps: {
 		if (!body.ok) return body.response;
 		const db = deps.getDb();
 
-		const [cls] = await db
-			.select({ id: classTable.id })
-			.from(classTable)
-			.where(
-				and(
-					eq(classTable.id, body.data.classId),
-					eq(classTable.orgId, ctx.orgId),
-				),
-			)
-			.limit(1);
-		if (!cls) {
-			return c.json({ error: "class not found" }, 404);
+		if (body.data.classId !== null) {
+			const [cls] = await db
+				.select({ id: classTable.id })
+				.from(classTable)
+				.where(
+					and(
+						eq(classTable.id, body.data.classId),
+						eq(classTable.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+			if (!cls) {
+				return c.json({ error: "class not found" }, 404);
+			}
 		}
-
 		const id = body.data.id ?? crypto.randomUUID();
 		const now = new Date();
 		const [created] = await db
@@ -228,6 +238,9 @@ export function vocabTeacherRoutes(deps: {
 			wordIds.length > 0
 				? [
 						db.delete(vocabCard).where(inArray(vocabCard.wordId, wordIds)),
+						db
+							.delete(vocabSuggestion)
+							.where(eq(vocabSuggestion.deckId, deck.id)),
 						db.delete(vocabWord).where(eq(vocabWord.deckId, deck.id)),
 						db
 							.delete(vocabDeck)
@@ -236,6 +249,9 @@ export function vocabTeacherRoutes(deps: {
 							),
 					]
 				: [
+						db
+							.delete(vocabSuggestion)
+							.where(eq(vocabSuggestion.deckId, deck.id)),
 						db.delete(vocabWord).where(eq(vocabWord.deckId, deck.id)),
 						db
 							.delete(vocabDeck)
@@ -246,6 +262,416 @@ export function vocabTeacherRoutes(deps: {
 
 		await db.batch(statements);
 		return c.json({ id: deck.id } satisfies CreatedResponse);
+	});
+
+	routes.get("/decks/:deckId/suggestions", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const deckId = c.req.param("deckId");
+		const db = deps.getDb();
+
+		const [deck] = await db
+			.select({ id: vocabDeck.id })
+			.from(vocabDeck)
+			.where(and(eq(vocabDeck.id, deckId), eq(vocabDeck.orgId, ctx.orgId)))
+			.limit(1);
+		if (!deck) {
+			return c.json(
+				{ error: "deck not found", code: VOCAB_ERROR_CODES.DECK_NOT_FOUND },
+				404,
+			);
+		}
+
+		const rows = await db
+			.select({
+				id: vocabSuggestion.id,
+				deckId: vocabSuggestion.deckId,
+				studentId: vocabSuggestion.studentId,
+				note: vocabSuggestion.note,
+				status: vocabSuggestion.status,
+				createdAt: vocabSuggestion.createdAt,
+				respondedAt: vocabSuggestion.respondedAt,
+			})
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.deckId, deckId),
+					eq(vocabSuggestion.orgId, ctx.orgId),
+				),
+			)
+			.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id));
+
+		const response: VocabTeacherSuggestionsResponse = {
+			suggestions: rows.map((row) => ({
+				id: row.id,
+				deckId: row.deckId,
+				studentId: row.studentId,
+				note: row.note ?? null,
+				status:
+					row.status === "accepted" || row.status === "dismissed"
+						? row.status
+						: "pending",
+				createdAt:
+					row.createdAt instanceof Date
+						? row.createdAt.toISOString()
+						: new Date(row.createdAt).toISOString(),
+				respondedAt:
+					row.respondedAt instanceof Date
+						? row.respondedAt.toISOString()
+						: row.respondedAt
+							? new Date(row.respondedAt).toISOString()
+							: null,
+			})),
+		};
+		return c.json(response);
+	});
+
+	routes.post("/suggestions", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabSuggestDeckSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const [[deck], [st]] = await Promise.all([
+			db
+				.select({ id: vocabDeck.id })
+				.from(vocabDeck)
+				.where(
+					and(
+						eq(vocabDeck.id, body.data.deckId),
+						eq(vocabDeck.orgId, ctx.orgId),
+					),
+				)
+				.limit(1),
+			db
+				.select({ id: student.id })
+				.from(student)
+				.where(
+					and(
+						eq(student.id, body.data.studentId),
+						eq(student.orgId, ctx.orgId),
+					),
+				)
+				.limit(1),
+		]);
+
+		if (!deck) {
+			return c.json(
+				{ error: "deck not found", code: VOCAB_ERROR_CODES.DECK_NOT_FOUND },
+				404,
+			);
+		}
+		if (!st) {
+			return c.json({ error: "student not found" }, 404);
+		}
+
+		const note =
+			body.data.note && body.data.note.length > 0 ? body.data.note : null;
+
+		const [existing] = await db
+			.select({
+				id: vocabSuggestion.id,
+				status: vocabSuggestion.status,
+			})
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.studentId, st.id),
+					eq(vocabSuggestion.deckId, deck.id),
+					eq(vocabSuggestion.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+
+		if (existing) {
+			if (existing.status === "pending" || existing.status === "accepted") {
+				return c.json({ id: existing.id } satisfies CreatedResponse, 200);
+			}
+			// existing.status === "dismissed" -> flip back to pending (re-suggest upsert)
+			const now = new Date();
+			await db
+				.update(vocabSuggestion)
+				.set({
+					status: "pending",
+					note,
+					teacherId: ctx.userId,
+					createdAt: now,
+					respondedAt: null,
+				})
+				.where(eq(vocabSuggestion.id, existing.id));
+			return c.json({ id: existing.id } satisfies CreatedResponse, 200);
+		}
+
+		const id = body.data.id ?? crypto.randomUUID();
+		const now = new Date();
+		const inserted = await db
+			.insert(vocabSuggestion)
+			.values({
+				id,
+				orgId: ctx.orgId,
+				teacherId: ctx.userId,
+				studentId: st.id,
+				deckId: deck.id,
+				note,
+				status: "pending",
+				createdAt: now,
+				respondedAt: null,
+			})
+			.onConflictDoNothing({
+				target: [vocabSuggestion.studentId, vocabSuggestion.deckId],
+			})
+			.returning({ id: vocabSuggestion.id });
+
+		if (inserted[0]) {
+			return c.json({ id: inserted[0].id } satisfies CreatedResponse, 201);
+		}
+
+		// Concurrent race on UNIQUE(student_id, deck_id)
+		const [raced] = await db
+			.select({ id: vocabSuggestion.id })
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.studentId, st.id),
+					eq(vocabSuggestion.deckId, deck.id),
+					eq(vocabSuggestion.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+		if (!raced) return c.json({ error: "suggestion write conflict" }, 500);
+		return c.json({ id: raced.id } satisfies CreatedResponse, 200);
+	});
+
+	routes.post("/suggestions/revoke", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabRevokeSuggestionSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const [existing] = await db
+			.select({ id: vocabSuggestion.id })
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.id, body.data.suggestionId),
+					eq(vocabSuggestion.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+
+		if (!existing) {
+			return c.json(
+				{
+					error: "suggestion not found",
+					code: VOCAB_ERROR_CODES.SUGGESTION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		// Soft flip to dismissed, preserving respondedAt (RT-F6)
+		await db
+			.update(vocabSuggestion)
+			.set({ status: "dismissed" })
+			.where(
+				and(
+					eq(vocabSuggestion.id, existing.id),
+					eq(vocabSuggestion.orgId, ctx.orgId),
+				),
+			);
+
+		return c.json({ id: existing.id } satisfies CreatedResponse);
+	});
+
+	routes.get("/progress", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const studentId = c.req.query("studentId")?.trim() ?? "";
+		if (!studentId) {
+			return c.json({ error: "studentId is required" }, 400);
+		}
+		const db = deps.getDb();
+
+		const [st] = await db
+			.select({ id: student.id })
+			.from(student)
+			.where(and(eq(student.id, studentId), eq(student.orgId, ctx.orgId)))
+			.limit(1);
+		if (!st) {
+			return c.json({ error: "student not found" }, 404);
+		}
+
+		const now = Date.now();
+		const todayISO = vietnamTodayISO(new Date(now));
+		const endOfTodayVN = Date.parse(`${todayISO}T23:59:59.999+07:00`);
+
+		const accessibleDecks = await loadStudentAccessibleDecks(
+			db,
+			st.id,
+			ctx.orgId,
+		);
+		const deckIds = accessibleDecks.map((d) => d.deckId);
+
+		const startOfWindowVN = Date.parse(
+			`${addDaysISO(todayISO, -6)}T00:00:00+07:00`,
+		);
+
+		const [words, cards, recentLogs, lastActivityRows] = await Promise.all([
+			deckIds.length > 0
+				? db
+						.select({
+							id: vocabWord.id,
+							deckId: vocabWord.deckId,
+						})
+						.from(vocabWord)
+						.where(inArray(vocabWord.deckId, deckIds))
+				: Promise.resolve([]),
+			deckIds.length > 0
+				? db
+						.select({
+							wordId: vocabCard.wordId,
+							deckId: vocabWord.deckId,
+							level: vocabCard.level,
+							state: vocabCard.state,
+							dueAt: vocabCard.dueAt,
+						})
+						.from(vocabCard)
+						.innerJoin(vocabWord, eq(vocabCard.wordId, vocabWord.id))
+						.where(
+							and(
+								eq(vocabCard.studentId, st.id),
+								inArray(vocabWord.deckId, deckIds),
+							),
+						)
+				: Promise.resolve([]),
+			db
+				.select({
+					grade: vocabReviewLog.grade,
+					reviewedAt: vocabReviewLog.reviewedAt,
+				})
+				.from(vocabReviewLog)
+				.where(
+					and(
+						eq(vocabReviewLog.studentId, st.id),
+						gte(vocabReviewLog.reviewedAt, new Date(startOfWindowVN)),
+					),
+				),
+			deckIds.length > 0
+				? db
+						.select({
+							deckId: vocabReviewLog.deckId,
+							maxReviewedAt: sql<number>`max(${vocabReviewLog.reviewedAt})`,
+						})
+						.from(vocabReviewLog)
+						.where(
+							and(
+								eq(vocabReviewLog.studentId, st.id),
+								inArray(vocabReviewLog.deckId, deckIds),
+							),
+						)
+						.groupBy(vocabReviewLog.deckId)
+				: Promise.resolve([]),
+		]);
+
+		const wordsByDeck = new Map<string, string[]>();
+		for (const w of words) {
+			const list = wordsByDeck.get(w.deckId) ?? [];
+			list.push(w.id);
+			wordsByDeck.set(w.deckId, list);
+		}
+		const cardByWordId = new Map(cards.map((card) => [card.wordId, card]));
+
+		const lastActivityByDeck = new Map<string, number>();
+		for (const row of lastActivityRows) {
+			const ms = Number(row.maxReviewedAt);
+			if (Number.isFinite(ms) && ms > 0) {
+				lastActivityByDeck.set(row.deckId, ms);
+			}
+		}
+		const last7DaysISO = [
+			addDaysISO(todayISO, -6),
+			addDaysISO(todayISO, -5),
+			addDaysISO(todayISO, -4),
+			addDaysISO(todayISO, -3),
+			addDaysISO(todayISO, -2),
+			addDaysISO(todayISO, -1),
+			todayISO,
+		];
+		const activityMap = new Map<
+			string,
+			{ sessions: number; correct: number }
+		>();
+		for (const dISO of last7DaysISO) {
+			activityMap.set(dISO, { sessions: 0, correct: 0 });
+		}
+
+		for (const log of recentLogs) {
+			const dt =
+				log.reviewedAt instanceof Date
+					? log.reviewedAt
+					: new Date(log.reviewedAt);
+			const dayISO = vietnamTodayISO(dt);
+			const bucket = activityMap.get(dayISO);
+			if (bucket) {
+				bucket.sessions += 1;
+				if (log.grade === "good") {
+					bucket.correct += 1;
+				}
+			}
+		}
+
+		const decks = accessibleDecks.map((d) => {
+			const wordIds = wordsByDeck.get(d.deckId) ?? [];
+			const byLevel: [number, number, number, number, number] = [0, 0, 0, 0, 0];
+			let dueToday = 0;
+			let stateNew = 0;
+			let stateReview = 0;
+
+			for (const wId of wordIds) {
+				const card = cardByWordId.get(wId);
+				if (!card || card.state === "new") {
+					stateNew += 1;
+				} else {
+					stateReview += 1;
+					if (card.level >= 1 && card.level <= 5) {
+						byLevel[card.level - 1] = (byLevel[card.level - 1] ?? 0) + 1;
+					}
+					if (card.dueAt <= endOfTodayVN) {
+						dueToday += 1;
+					}
+				}
+			}
+
+			const lastMs = lastActivityByDeck.get(d.deckId);
+			return {
+				deckId: d.deckId,
+				title: d.title,
+				classId: d.classId,
+				source: d.source,
+				total: wordIds.length,
+				byLevel,
+				dueToday,
+				stateNew,
+				stateReview,
+				lastActivityAt: lastMs ? new Date(lastMs).toISOString() : null,
+			};
+		});
+
+		const response: VocabStudentProgressResponse = {
+			studentId: st.id,
+			decks,
+			activity7Days: last7DaysISO.map((dateISO) => {
+				const bucket = activityMap.get(dateISO) ?? { sessions: 0, correct: 0 };
+				return {
+					dateISO,
+					sessions: bucket.sessions,
+					correct: bucket.correct,
+				};
+			}),
+		};
+		return c.json(response);
 	});
 
 	routes.post("/words/upsert", async (c) => {

@@ -1,6 +1,6 @@
 ---
 title: "Phase 5: Web teacher — sidebar + hub UI (Deck / Tiến độ / Gợi ý)"
-status: todo
+status: done
 ---
 
 # Phase 5: Web teacher — sidebar + hub UI (Deck / Tiến độ / Gợi ý)
@@ -28,12 +28,12 @@ Trang `/vocab` mới cho teacher (hub) với 2 tab: "Bộ từ vựng" (toàn or
 
 ## Requirements
 
-- [ ] Sidebar mục "Từ vựng" (icon Lucide theo DESIGN.md, section "Giảng dạy" trên "Lớp học"), test sidebar hiện có cập nhật
-- [ ] `/vocab` hub: tab "Bộ từ vựng" — grid deck org-wide (deck riêng + deck lớp), badge nguồn (Lớp {name} lookup từ `data.classes` / Riêng), nút: Tạo deck (không lớp), Thêm từ thư viện (clone không lớp), Gợi ý (per deck), mở editor như cũ
-- [ ] `VocabDeckList`/`VocabLibraryDialog` nới đủ 4 điểm ở Key Insights; test "hub hiện deck classId=null" + "tab lớp không hiện deck riêng"
-- [ ] Tab "Tiến độ": chọn học viên (combobox/search từ snapshot) → per-student decks với byLevel bar 1–5, dueToday, hoạt động 7 ngày; empty state khi chưa học gì
-- [ ] Modal Gợi ý: chọn student + note (maxLength 500 khớp server), fetch fresh pending khi mở, nút thu hồi (revoke) + nhãn trạng thái đã chấp nhận/đã ẩn
-- [ ] Tab vocab trong class detail hoạt động như cũ (regression test)
+- [x] Sidebar mục "Từ vựng" (icon Lucide theo DESIGN.md, section "Giảng dạy" trên "Lớp học"), test sidebar hiện có cập nhật
+- [x] `/vocab` hub: tab "Bộ từ vựng" — grid deck org-wide (deck riêng + deck lớp), badge nguồn (Lớp {name} lookup từ `data.classes` / Riêng), nút: Tạo deck (không lớp), Thêm từ thư viện (clone không lớp), Gợi ý (per deck), mở editor như cũ
+- [x] `VocabDeckList`/`VocabLibraryDialog` nới đủ 4 điểm ở Key Insights; test "hub hiện deck classId=null" + "tab lớp không hiện deck riêng"
+- [x] Tab "Tiến độ": chọn học viên (combobox/search từ snapshot) → per-student decks với byLevel bar 1–5, dueToday, hoạt động 7 ngày; empty state khi chưa học gì
+- [x] Modal Gợi ý: chọn student + note (maxLength 500 khớp server), fetch fresh pending khi mở, nút thu hồi (revoke) + nhãn trạng thái đã chấp nhận/đã ẩn
+- [x] Tab vocab trong class detail hoạt động như cũ (regression test)
 
 ## Architecture
 
@@ -63,12 +63,12 @@ sidebar.tsx                          # + item /vocab
 
 ## Todo
 
-- [ ] Sidebar + test
-- [ ] VocabDeckList/LibraryDialog 4 điểm + data-actions + regression tests
-- [ ] Route hub + tab Deck + badge nguồn (lookup classes)
-- [ ] Suggest dialog (fetch fresh) + thu hồi
-- [ ] Progress tab + tests
-- [ ] Screenshot 3 viewport
+- [x] Sidebar + test
+- [x] VocabDeckList/LibraryDialog 4 điểm + data-actions + regression tests
+- [x] Route hub + tab Deck + badge nguồn (lookup classes)
+- [x] Suggest dialog (fetch fresh) + thu hồi
+- [x] Progress tab + tests
+- [x] Screenshot 3 viewport
 
 ## Success Criteria
 
@@ -82,3 +82,15 @@ sidebar.tsx                          # + item /vocab
 ## Security Considerations
 
 - Toàn bộ qua kernel dispatch (CSRF đã guard); không gọi fetch trực tiếp bỏ qua command bus cho mutation.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.

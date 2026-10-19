@@ -1436,6 +1436,7 @@ export interface KernelSnapshot {
 	classAssignments: KernelClassAssignmentRow[];
 	assignmentTests: KernelAssignmentTestRow[];
 	vocabDecks: KernelVocabDeckRow[];
+	vocabSuggestions?: KernelVocabSuggestionRow[];
 }
 
 export interface CreatedResponse {
@@ -2177,24 +2178,33 @@ export const VOCAB_ERROR_CODES = {
 	LIBRARY_DECK_NOT_FOUND: "LIBRARY_DECK_NOT_FOUND",
 	LIBRARY_CLONE_TOO_LARGE: "LIBRARY_CLONE_TOO_LARGE",
 	LIBRARY_CLONE_DUPLICATE_DECK: "LIBRARY_CLONE_DUPLICATE_DECK",
+	SUGGESTION_NOT_FOUND: "VOCAB_SUGGESTION_NOT_FOUND",
+	SUGGESTION_ALREADY_ACCEPTED: "VOCAB_SUGGESTION_ALREADY_ACCEPTED",
 } as const;
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
 
 export interface KernelVocabDeckRow {
 	id: string;
-	classId: string;
+	classId: string | null;
 	title: string;
 	lang: string;
 	wordCount: number;
 	createdAt: string;
 	sourceLibraryDeckId: string | null;
 }
+export interface KernelVocabSuggestionRow {
+	id: string;
+	deckId: string;
+	studentId: string;
+	note: string | null;
+	createdAt: string;
+}
 
 export const vocabDeckCreateSchema = z
 	.object({
 		id: z.string().min(1).max(128).optional(),
-		classId: z.string().min(1),
+		classId: z.string().min(1).nullable().optional().default(null),
 		title: z.string().trim().min(1).max(200),
 		lang: z.string().trim().min(1).max(16).default("en"),
 	})
@@ -2339,17 +2349,131 @@ export type VocabLibraryWordsResponse = z.infer<
 
 export const vocabLibraryCloneSchema = z
 	.object({
-		classId: z.string().min(1),
+		classId: z.string().min(1).nullable().optional().default(null),
 		deckIds: z.array(z.string().min(1)).min(1).max(50),
 	})
 	.strict();
 export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
 
+export const vocabSuggestDeckSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		deckId: z.string().min(1),
+		studentId: z.string().min(1),
+		note: z.string().trim().max(500).nullable().optional(),
+	})
+	.strict();
+export type VocabSuggestDeckInput = z.infer<typeof vocabSuggestDeckSchema>;
+
+export const vocabRevokeSuggestionSchema = z
+	.object({
+		suggestionId: z.string().min(1),
+	})
+	.strict();
+export type VocabRevokeSuggestionInput = z.infer<
+	typeof vocabRevokeSuggestionSchema
+>;
+
+export const vocabTeacherSuggestionSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		studentId: z.string().min(1),
+		note: z.string().nullable(),
+		status: z.enum(["pending", "accepted", "dismissed"]),
+		createdAt: z.string(),
+		respondedAt: z.string().nullable(),
+	})
+	.strict();
+export type VocabTeacherSuggestion = z.infer<
+	typeof vocabTeacherSuggestionSchema
+>;
+
+export const vocabTeacherSuggestionsResponseSchema = z
+	.object({
+		suggestions: z.array(vocabTeacherSuggestionSchema),
+	})
+	.strict();
+export type VocabTeacherSuggestionsResponse = z.infer<
+	typeof vocabTeacherSuggestionsResponseSchema
+>;
+
+export const vocabStudentProgressDeckSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string(),
+		classId: z.string().nullable(),
+		source: z.enum(["class", "suggested"]),
+		total: z.number().int().min(0),
+		byLevel: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		dueToday: z.number().int().min(0),
+		stateNew: z.number().int().min(0),
+		stateReview: z.number().int().min(0),
+		lastActivityAt: z.string().nullable(),
+	})
+	.strict();
+export type VocabStudentProgressDeck = z.infer<
+	typeof vocabStudentProgressDeckSchema
+>;
+
+export const vocabStudentProgressActivityDaySchema = z
+	.object({
+		dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		sessions: z.number().int().min(0),
+		correct: z.number().int().min(0),
+	})
+	.strict();
+export type VocabStudentProgressActivityDay = z.infer<
+	typeof vocabStudentProgressActivityDaySchema
+>;
+
+export const vocabStudentProgressResponseSchema = z
+	.object({
+		studentId: z.string().min(1),
+		decks: z.array(vocabStudentProgressDeckSchema),
+		activity7Days: z.array(vocabStudentProgressActivityDaySchema),
+	})
+	.strict();
+export type VocabStudentProgressResponse = z.infer<
+	typeof vocabStudentProgressResponseSchema
+>;
+
+export const vocabSuggestionItemSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		title: z.string(),
+		wordCount: z.number().int().min(0),
+		note: z.string().nullable().catch(null),
+		createdAt: z.string(),
+	})
+	.strict();
+export type VocabSuggestionItem = z.infer<typeof vocabSuggestionItemSchema>;
+
+export const vocabSuggestionMutationResponseSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		status: z.enum(["accepted", "dismissed"]),
+		respondedAt: z.string(),
+	})
+	.strict();
+export type VocabSuggestionMutationResponse = z.infer<
+	typeof vocabSuggestionMutationResponseSchema
+>;
+
 export const vocabOverviewDeckSchema = z
 	.object({
 		deckId: z.string().min(1),
 		title: z.string(),
-		className: z.string(),
+		className: z.string().catch(""),
+		source: z.enum(["class", "suggested"]).catch("class"),
 		total: z.number().int().min(0),
 		newCount: z.number().int().min(0),
 		dueCount: z.number().int().min(0),
@@ -2383,6 +2507,7 @@ export const vocabOverviewSchema = z
 			z.number().int().min(0),
 		]),
 		decks: z.array(vocabOverviewDeckSchema),
+		suggestions: z.array(vocabSuggestionItemSchema).catch([]),
 	})
 	.strict();
 export type VocabOverview = z.infer<typeof vocabOverviewSchema>;

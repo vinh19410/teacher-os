@@ -307,6 +307,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab-library/clone",
 				body: { ...action.payload },
 			};
+		case "suggest-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/suggestions",
+				body: { ...action.payload },
+			};
+		case "revoke-vocab-suggestion":
+			return {
+				path: "/api/kernel/vocab/suggestions/revoke",
+				body: { suggestionId: action.suggestionId },
+			};
 	}
 }
 
@@ -336,6 +346,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		classAssignments: mapClassAssignments(snapshot),
 		assignmentTests: mapAssignmentTests(snapshot),
 		vocabDecks: snapshot.vocabDecks ?? [],
+		vocabSuggestions: snapshot.vocabSuggestions ?? [],
 	};
 }
 
@@ -492,12 +503,22 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"vocabDecks",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
+/**
+ * Optional snapshot collections (#363 RT-F8/F23): tolerated when absent on older
+ * server payloads so deploy skew never blanks the teacher workspace, while still
+ * verified as an array when present.
+ */
+const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
+	"vocabSuggestions",
+] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
+
 // Compile-time completeness: every KernelSnapshot collection must appear in
-// SNAPSHOT_COLLECTION_KEYS, or a new contract field would silently skip the
-// shape guard below.
+// SNAPSHOT_COLLECTION_KEYS or OPTIONAL_SNAPSHOT_COLLECTION_KEYS, or a new
+// contract field would silently skip the shape guard below.
 type MissingSnapshotKey = Exclude<
 	keyof KernelSnapshot,
-	(typeof SNAPSHOT_COLLECTION_KEYS)[number]
+	| (typeof SNAPSHOT_COLLECTION_KEYS)[number]
+	| (typeof OPTIONAL_SNAPSHOT_COLLECTION_KEYS)[number]
 >;
 const allSnapshotKeysPresent: MissingSnapshotKey extends never ? true : never =
 	true;
@@ -505,16 +526,20 @@ void allSnapshotKeysPresent;
 
 /**
  * Minimal shape guard: a `200` body only counts as a snapshot when every
- * contract collection is present and is an array. Without this, a proxy page
- * or foreign JSON envelope would map "successfully" into an empty-looking
- * workspace — exactly the failure mode this phase exists to prevent.
+ * required contract collection is present and is an array, and every optional
+ * collection is either absent or an array.
  */
 function isSnapshotShape(value: unknown): value is KernelSnapshot {
 	if (typeof value !== "object" || value === null || Array.isArray(value)) {
 		return false;
 	}
 	const record = value as Record<string, unknown>;
-	return SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key]));
+	return (
+		SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key])) &&
+		OPTIONAL_SNAPSHOT_COLLECTION_KEYS.every(
+			(key) => record[key] === undefined || Array.isArray(record[key]),
+		)
+	);
 }
 
 /** Transport: fetch the org-scoped kernel snapshot. */

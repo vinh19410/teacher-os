@@ -140,4 +140,16 @@ describe("Sidebar profile footer", () => {
 			expect.arrayContaining(["flex-1", "min-w-0"]),
 		);
 	});
+
+	it("renders 'Từ vựng' (/vocab) above 'Lớp học' (/classes) in section 'Giảng dạy' (#363)", () => {
+		const html = renderSidebar({ name: "Cô Lan", email: "lan@example.com" });
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		const links = Array.from(doc.querySelectorAll("nav a"));
+		const hrefs = links.map((a) => a.getAttribute("href"));
+		const vocabIdx = hrefs.indexOf("/vocab");
+		const classesIdx = hrefs.indexOf("/classes");
+		expect(vocabIdx).toBeGreaterThanOrEqual(0);
+		expect(classesIdx).toBeGreaterThan(vocabIdx);
+		expect(links[vocabIdx]?.textContent).toContain("Từ vựng");
+	});
 });

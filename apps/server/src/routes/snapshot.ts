@@ -30,7 +30,11 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { vocabDeck, vocabWord } from "@teacher-os/db/schema/vocab";
+import {
+	vocabDeck,
+	vocabSuggestion,
+	vocabWord,
+} from "@teacher-os/db/schema/vocab";
 import { and, asc, desc, eq } from "drizzle-orm";
 import type { Db } from "../app";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
@@ -205,6 +209,7 @@ export async function loadSnapshot(
 		assignmentTestPartRows,
 		vocabDeckRows,
 		vocabWordDeckIds,
+		vocabSuggestionRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -316,6 +321,22 @@ export async function loadSnapshot(
 			.from(vocabWord)
 			.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
 			.where(eq(vocabDeck.orgId, orgId)),
+		db
+			.select({
+				id: vocabSuggestion.id,
+				deckId: vocabSuggestion.deckId,
+				studentId: vocabSuggestion.studentId,
+				note: vocabSuggestion.note,
+				createdAt: vocabSuggestion.createdAt,
+			})
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.orgId, orgId),
+					eq(vocabSuggestion.status, "pending"),
+				),
+			)
+			.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id)),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -595,6 +616,13 @@ export async function loadSnapshot(
 			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
 			createdAt: row.createdAt.toISOString(),
 			sourceLibraryDeckId: row.sourceLibraryDeckId ?? null,
+		})),
+		vocabSuggestions: vocabSuggestionRows.map((row) => ({
+			id: row.id,
+			deckId: row.deckId,
+			studentId: row.studentId,
+			note: row.note ?? null,
+			createdAt: row.createdAt.toISOString(),
 		})),
 	};
 }

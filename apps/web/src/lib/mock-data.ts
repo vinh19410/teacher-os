@@ -5,6 +5,7 @@ import type {
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
 	KernelVocabDeckRow,
+	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
 
 export interface Student {
@@ -253,6 +254,8 @@ export type KernelHydratedData = Pick<
 	assignmentTests: KernelAssignmentTestRow[];
 	/** Student Vocab SRS (#359): deck list (aggregate wordCount) cho trang lớp. */
 	vocabDecks: KernelVocabDeckRow[];
+	/** Pending vocab suggestions (#363): danh sách gợi ý đang chờ học viên phản hồi. */
+	vocabSuggestions: KernelVocabSuggestionRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
