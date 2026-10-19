@@ -431,6 +431,22 @@ test.describe
 			await expect(
 				page.getByTestId(`vocab-deck-source-${libDeck1Id}`),
 			).toContainText("Khóa ");
+			const screenshots = new URL(
+				"../../../plans/261019-0648-student-full-vocab-courses/screenshots/",
+				import.meta.url,
+			).pathname;
+			for (const [w, h, name] of [
+				[1440, 900, "student-vocab-courses-1440"],
+				[768, 1024, "student-vocab-courses-768"],
+				[375, 812, "student-vocab-courses-375"],
+			] as const) {
+				await page.setViewportSize({ width: w, height: h });
+				await page.screenshot({
+					path: `${screenshots}${name}.png`,
+					fullPage: false,
+				});
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
 
 			// Re-open deck from "Bộ từ đang học" and start Learn session -> intro step renders
 			await page.getByTestId(`vocab-deck-card-${libDeck1Id}`).click();
