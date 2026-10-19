@@ -35,6 +35,7 @@ export const vocabLibraryDeck = sqliteTable(
 			.notNull()
 			.references(() => vocabLibraryCourse.id, { onDelete: "cascade" }),
 		title: text("title").notNull(),
+		description: text("description"),
 		imageUrl: text("image_url"),
 		sortOrder: integer("sort_order").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })

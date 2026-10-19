@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
 import { EXPECTED_COUNTS } from "@teacher-os/db/seed/vocab-library";
@@ -298,9 +299,15 @@ test.describe
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 		});
 
-		test("unassigned student browses all 20 vocabulary courses (including 140-deck course), opens libdeck-* directly without cloning to vocab_deck, enters Learn session, and sees deck in 'Bộ từ đang học' across 3 viewports (#366)", async ({
+		test("unassigned student browses /vocab/courses catalog, opens MochiVocab lesson grid /vocab/courses/$courseId with verbatim VI description & start-here badge, switches course via ribbon dialog, preserves ?course= through SRS session exit, and updates progress across 3 viewports (#366, #369)", async ({
 			page,
 		}) => {
+			const screenshots = new URL(
+				"../../../plans/261019-2239-student-vocab-mochivocab-lessons-ui/screenshots/",
+				import.meta.url,
+			).pathname;
+			mkdirSync(screenshots, { recursive: true });
+
 			await page.goto(`${STUDENT_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Free Course Student");
@@ -326,22 +333,34 @@ test.describe
 				dbBefore.close();
 			}
 
+			// 1. Dashboard CTA -> /vocab/courses
 			await page.getByTestId("vocab-home-entry").click();
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-decks-empty")).toBeVisible();
+			await expect(page.getByTestId("vocab-courses-cta")).toBeVisible();
+			await page.getByTestId("vocab-courses-cta").click();
+			await expect(page).toHaveURL(/\/vocab\/courses$/);
 			await expect(page.getByTestId("vocab-courses-section")).toBeVisible();
 
-			// Verify all 20 courses are rendered
+			// 2. Catalog: all 20 courses rendered + debounced URL search param
 			await expect(
 				page.locator('[data-testid^="vocab-course-card-"]'),
 			).toHaveCount(EXPECTED_COUNTS.course);
 
-			// Verify 3 viewports (1440x900, 768x1024, 375x812) on course list view
+			await page.getByTestId("vocab-course-search").fill("IELTS");
+			await expect(page).toHaveURL(/\/vocab\/courses\?q=IELTS/);
+			await page.getByTestId("vocab-course-search").fill("");
+			await expect(page).toHaveURL(/\/vocab\/courses$/);
+			await expect(
+				page.locator('[data-testid^="vocab-course-card-"]'),
+			).toHaveCount(EXPECTED_COUNTS.course);
+
+			// Verify 3 viewports (1440x900, 768x1024, 375x812) on /vocab/courses + screenshots
 			for (const vp of [
-				{ width: 1440, height: 900, name: "1440x900" },
-				{ width: 768, height: 1024, name: "768x1024" },
-				{ width: 375, height: 812, name: "375x812" },
-			]) {
+				{ width: 1440, height: 900, name: "1440" },
+				{ width: 768, height: 1024, name: "768" },
+				{ width: 375, height: 812, name: "375" },
+			] as const) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				const overflow = await page.evaluate(
 					() =>
@@ -352,12 +371,16 @@ test.describe
 					overflow,
 					`no horizontal overflow on course catalog at ${vp.name}`,
 				).toBe(false);
+				await page.screenshot({
+					path: `${screenshots}student-vocab-courses-${vp.name}.png`,
+					fullPage: false,
+				});
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
 
-			// Open 140-deck course (libcourse-15) to verify D1 100-variable safety & URL search param
+			// 3. Open 140-deck course (libcourse-15) to verify D1 100-variable safety & route navigation
 			await page.getByTestId("vocab-course-card-libcourse-15").click();
-			await expect(page).toHaveURL(/courseId=libcourse-15/);
+			await expect(page).toHaveURL(/\/vocab\/courses\/libcourse-15$/);
 			await expect(
 				page.getByTestId("vocab-selected-course-title"),
 			).toBeVisible();
@@ -365,22 +388,48 @@ test.describe
 				page.locator('[data-testid^="vocab-course-deck-"]').first(),
 			).toBeVisible();
 
-			// Return to all courses, then open targetCourseId
+			// Return to all courses via back button, then open targetCourseId (libcourse-1)
 			await page.getByTestId("vocab-course-back-btn").click();
+			await expect(page).toHaveURL(/\/vocab\/courses$/);
 			await expect(
 				page.getByTestId(`vocab-course-card-${targetCourseId}`),
 			).toBeVisible();
 			await page.getByTestId(`vocab-course-card-${targetCourseId}`).click();
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/courses/${targetCourseId}$`),
+			);
 			await expect(
 				page.getByTestId(`vocab-course-deck-${libDeck1Id}`),
 			).toBeVisible();
 
-			// Verify 3 viewports on course decks view
+			// Verify verbatim CSV numbered subtitle ("1.Trường học", not "1. 1.Trường học") & start-here badge
+			await expect(
+				page.getByTestId(`vocab-lesson-subtitle-${libDeck1Id}`),
+			).toHaveText("1.Trường học");
+			await expect(page.getByTestId("vocab-lesson-start-here")).toBeVisible();
+
+			// Wait briefly for first row of lesson images to settle (CDN or fallback) before capturing screenshots
+			await page
+				.waitForFunction(
+					() => {
+						const imgs = Array.from(
+							document.querySelectorAll<HTMLImageElement>(
+								'[data-testid^="vocab-lesson-img-"]',
+							),
+						).slice(0, 6);
+						return imgs.length > 0 && imgs.every((img) => img.complete);
+					},
+					undefined,
+					{ timeout: 5_000 },
+				)
+				.catch(() => undefined);
+
+			// Verify 3 viewports on lesson grid view + screenshots
 			for (const vp of [
-				{ width: 1440, height: 900, name: "1440x900" },
-				{ width: 768, height: 1024, name: "768x1024" },
-				{ width: 375, height: 812, name: "375x812" },
-			]) {
+				{ width: 1440, height: 900, name: "1440" },
+				{ width: 768, height: 1024, name: "768" },
+				{ width: 375, height: 812, name: "375" },
+			] as const) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				const overflow = await page.evaluate(
 					() =>
@@ -389,12 +438,56 @@ test.describe
 				);
 				expect(
 					overflow,
-					`no horizontal overflow on course decks at ${vp.name}`,
+					`no horizontal overflow on course lessons grid at ${vp.name}`,
 				).toBe(false);
+				await page.screenshot({
+					path: `${screenshots}student-vocab-lessons-${vp.name}.png`,
+					fullPage: false,
+				});
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
 
-			// Open libDeck1Id directly -> lazy provisions vocab_card without creating vocab_deck
+			// 5. Ribbon opens Course Switcher Dialog -> screenshots 3 viewports -> switch course & switch back
+			await page.getByTestId("vocab-course-switcher").click();
+			await expect(
+				page.getByTestId("vocab-course-switcher-dialog"),
+			).toBeVisible();
+			// Verify keyboard Escape closes dialog, then reopen via keyboard Enter on ribbon
+			await page.keyboard.press("Escape");
+			await expect(
+				page.getByTestId("vocab-course-switcher-dialog"),
+			).toBeHidden();
+			await page.getByTestId("vocab-course-switcher").focus();
+			await page.keyboard.press("Enter");
+			await expect(
+				page.getByTestId("vocab-course-switcher-dialog"),
+			).toBeVisible();
+			for (const vp of [
+				{ width: 1440, height: 900, name: "1440" },
+				{ width: 768, height: 1024, name: "768" },
+				{ width: 375, height: 812, name: "375" },
+			] as const) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				await page.screenshot({
+					path: `${screenshots}student-vocab-switcher-${vp.name}.png`,
+					fullPage: false,
+				});
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			await page.getByTestId("vocab-switcher-course-libcourse-15").click();
+			await expect(page).toHaveURL(/\/vocab\/courses\/libcourse-15$/);
+			await expect(
+				page.getByTestId("vocab-course-switcher-dialog"),
+			).toBeHidden();
+
+			await page.getByTestId("vocab-course-switcher").click();
+			await page.getByTestId(`vocab-switcher-course-${targetCourseId}`).click();
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/courses/${targetCourseId}$`),
+			);
+
+			// 6. Open libDeck1Id from lesson grid -> preserves ?course=<targetCourseId>
 			const sessionDataPromise = page.waitForResponse(
 				(res) =>
 					res
@@ -404,12 +497,18 @@ test.describe
 			);
 			await page.getByTestId(`vocab-course-deck-${libDeck1Id}`).click();
 			const sessionRes = await sessionDataPromise;
+			const apiOrigin = new URL(sessionRes.url()).origin;
 			const sessionJson = (await sessionRes.json()) as {
-				cards: Array<{ hasAudio?: boolean }>;
+				cards: Array<{ id: string; hasAudio?: boolean }>;
 			};
 			expect(sessionJson.cards.length).toBeGreaterThan(0);
 			expect(sessionJson.cards.some((c) => c.hasAudio === true)).toBe(true);
+			const firstCardId = sessionJson.cards[0]?.id ?? "";
+			expect(firstCardId.length).toBeGreaterThan(0);
 
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/${libDeck1Id}\\?course=${targetCourseId}$`),
+			);
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 
 			// Verify vocab_deck count did NOT increase
@@ -423,35 +522,58 @@ test.describe
 				dbAfter.close();
 			}
 
-			// Click SPA link "← Danh sách bộ từ" -> tests React Query cache invalidation (staleTime 60s)
-			await page.getByRole("link", { name: /Danh sách bộ từ/i }).click();
+			// Enter Learn session -> preserves ?course=<targetCourseId>
+			await page.getByTestId("vocab-start-session-btn").click();
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/${libDeck1Id}/session\\?course=${targetCourseId}$`),
+			);
+			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
+
+			// Commit 1 learned card via real /api/student/vocab/learn-commit endpoint, then exit session
+			const commitStatus = await page.evaluate(
+				async ({ origin, cardId }) => {
+					const res = await fetch(`${origin}/api/student/vocab/learn-commit`, {
+						method: "POST",
+						credentials: "include",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							clientLogId: crypto.randomUUID(),
+							cardId,
+							gradeGood: true,
+							durationMs: 1200,
+						}),
+					});
+					return res.status;
+				},
+				{ origin: apiOrigin, cardId: firstCardId },
+			);
+			expect(commitStatus).toBe(200);
+
+			// Exit session via handleExit -> preserves ?course= and invalidates vocab-library & vocab-overview caches
+			await page.getByTestId("vocab-session-exit-btn").click();
+			await expect(page.getByTestId("vocab-exit-confirm-dialog")).toBeVisible();
+			await page.getByTestId("vocab-confirm-exit-btn").click();
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/${libDeck1Id}\\?course=${targetCourseId}$`),
+			);
+
+			// 7. Click "← Bài học trong khóa" -> returns to /vocab/courses/<targetCourseId> and shows "Đang học 1/N"
+			await page.getByTestId("vocab-deck-back-link").click();
+			await expect(page).toHaveURL(
+				new RegExp(`/vocab/courses/${targetCourseId}$`),
+			);
+			await expect(
+				page.getByTestId(`vocab-lesson-status-${libDeck1Id}`),
+			).toContainText("Đang học 1/");
+
+			// Navigate back to /vocab dashboard -> sees deck in "Bộ từ đang học" with "Khóa " badge
+			await page.getByTestId("vocab-course-back-btn").click();
+			await page.getByTestId("vocab-courses-back-to-overview").click();
 			await expect(
 				page.getByTestId(`vocab-deck-card-${libDeck1Id}`),
 			).toBeVisible();
 			await expect(
 				page.getByTestId(`vocab-deck-source-${libDeck1Id}`),
 			).toContainText("Khóa ");
-			const screenshots = new URL(
-				"../../../plans/261019-0648-student-full-vocab-courses/screenshots/",
-				import.meta.url,
-			).pathname;
-			for (const [w, h, name] of [
-				[1440, 900, "student-vocab-courses-1440"],
-				[768, 1024, "student-vocab-courses-768"],
-				[375, 812, "student-vocab-courses-375"],
-			] as const) {
-				await page.setViewportSize({ width: w, height: h });
-				await page.screenshot({
-					path: `${screenshots}${name}.png`,
-					fullPage: false,
-				});
-			}
-			await page.setViewportSize({ width: 1440, height: 900 });
-
-			// Re-open deck from "Bộ từ đang học" and start Learn session -> intro step renders
-			await page.getByTestId(`vocab-deck-card-${libDeck1Id}`).click();
-			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
-			await page.getByTestId("vocab-start-session-btn").click();
-			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 		});
 	});

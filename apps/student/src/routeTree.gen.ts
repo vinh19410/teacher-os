@@ -25,6 +25,8 @@ import { Route as AuthVocabIndexRouteImport } from './routes/_auth/vocab/index'
 import { Route as AuthVocabDeckIdRouteImport } from './routes/_auth/vocab/$deckId'
 import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
 import { Route as AuthVocabDeckIdSessionRouteImport } from './routes/_auth/vocab/$deckId.session'
+import { Route as AuthVocabCoursesIndexRouteImport } from './routes/_auth/vocab/courses/index'
+import { Route as AuthVocabCoursesCourseIdRouteImport } from './routes/_auth/vocab/courses/$courseId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdDetailRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId.detail'
 
@@ -108,6 +110,17 @@ const AuthVocabDeckIdSessionRoute = AuthVocabDeckIdSessionRouteImport.update({
   path: '/session',
   getParentRoute: () => AuthVocabDeckIdRoute,
 } as any)
+const AuthVocabCoursesIndexRoute = AuthVocabCoursesIndexRouteImport.update({
+  id: '/vocab/courses/',
+  path: '/vocab/courses/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthVocabCoursesCourseIdRoute =
+  AuthVocabCoursesCourseIdRouteImport.update({
+    id: '/vocab/courses/$courseId',
+    path: '/vocab/courses/$courseId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
 const AuthLearnQuizzesAttemptAttemptIdRoute =
   AuthLearnQuizzesAttemptAttemptIdRouteImport.update({
     id: '/learn/quizzes/attempt/$attemptId',
@@ -137,6 +150,8 @@ export interface FileRoutesByFullPath {
   '/vocab/': typeof AuthVocabIndexRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
+  '/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
+  '/vocab/courses/': typeof AuthVocabCoursesIndexRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
@@ -156,6 +171,8 @@ export interface FileRoutesByTo {
   '/vocab': typeof AuthVocabIndexRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
+  '/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
+  '/vocab/courses': typeof AuthVocabCoursesIndexRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
@@ -177,6 +194,8 @@ export interface FileRoutesById {
   '/_auth/vocab/': typeof AuthVocabIndexRoute
   '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
   '/_auth/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
+  '/_auth/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
+  '/_auth/vocab/courses/': typeof AuthVocabCoursesIndexRoute
   '/_auth/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/_auth/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
@@ -198,6 +217,8 @@ export interface FileRouteTypes {
     | '/vocab/'
     | '/learn/quizzes/$assignmentId'
     | '/vocab/$deckId/session'
+    | '/vocab/courses/$courseId'
+    | '/vocab/courses/'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesByTo: FileRoutesByTo
@@ -217,6 +238,8 @@ export interface FileRouteTypes {
     | '/vocab'
     | '/learn/quizzes/$assignmentId'
     | '/vocab/$deckId/session'
+    | '/vocab/courses/$courseId'
+    | '/vocab/courses'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/attempt/$attemptId/detail'
   id:
@@ -237,6 +260,8 @@ export interface FileRouteTypes {
     | '/_auth/vocab/'
     | '/_auth/learn/quizzes/$assignmentId'
     | '/_auth/vocab/$deckId/session'
+    | '/_auth/vocab/courses/$courseId'
+    | '/_auth/vocab/courses/'
     | '/_auth/learn/quizzes/attempt/$attemptId'
     | '/_auth/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesById: FileRoutesById
@@ -363,6 +388,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVocabDeckIdSessionRouteImport
       parentRoute: typeof AuthVocabDeckIdRoute
     }
+    '/_auth/vocab/courses/': {
+      id: '/_auth/vocab/courses/'
+      path: '/vocab/courses'
+      fullPath: '/vocab/courses/'
+      preLoaderRoute: typeof AuthVocabCoursesIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/vocab/courses/$courseId': {
+      id: '/_auth/vocab/courses/$courseId'
+      path: '/vocab/courses/$courseId'
+      fullPath: '/vocab/courses/$courseId'
+      preLoaderRoute: typeof AuthVocabCoursesCourseIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/learn/quizzes/attempt/$attemptId': {
       id: '/_auth/learn/quizzes/attempt/$attemptId'
       path: '/learn/quizzes/attempt/$attemptId'
@@ -418,6 +457,8 @@ interface AuthRouteRouteChildren {
   AuthTuitionIndexRoute: typeof AuthTuitionIndexRoute
   AuthVocabIndexRoute: typeof AuthVocabIndexRoute
   AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
+  AuthVocabCoursesCourseIdRoute: typeof AuthVocabCoursesCourseIdRoute
+  AuthVocabCoursesIndexRoute: typeof AuthVocabCoursesIndexRoute
   AuthLearnQuizzesAttemptAttemptIdRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
 }
 
@@ -432,6 +473,8 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthTuitionIndexRoute: AuthTuitionIndexRoute,
   AuthVocabIndexRoute: AuthVocabIndexRoute,
   AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
+  AuthVocabCoursesCourseIdRoute: AuthVocabCoursesCourseIdRoute,
+  AuthVocabCoursesIndexRoute: AuthVocabCoursesIndexRoute,
   AuthLearnQuizzesAttemptAttemptIdRoute:
     AuthLearnQuizzesAttemptAttemptIdRouteWithChildren,
 }

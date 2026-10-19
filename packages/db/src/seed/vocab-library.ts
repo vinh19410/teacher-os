@@ -31,6 +31,7 @@ export interface VocabLibraryDeckSeedRow {
 	id: string;
 	courseId: string;
 	title: string;
+	description: string | null;
 	imageUrl: string | null;
 	sortOrder: number;
 }
@@ -96,8 +97,8 @@ function parseIntOrFallback(
 	return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function sqlLiteral(value: string | number | null): string {
-	if (value === null) return "NULL";
+function sqlLiteral(value: string | number | null | undefined): string {
+	if (value === null || value === undefined) return "NULL";
 	if (typeof value === "number") {
 		return Number.isFinite(value) ? String(Math.trunc(value)) : "0";
 	}
@@ -163,6 +164,7 @@ export function parseVocabLibraryCsvTexts(input: {
 	const rawLessons = parseCsvFile(input.lessonsCsv, "lessons.csv", [
 		"id",
 		"lessonName",
+		"lessonDescription",
 		"image",
 		"order",
 		"courseId",
@@ -201,6 +203,7 @@ export function parseVocabLibraryCsvTexts(input: {
 			id: `libdeck-${(row.id ?? "").trim()}`,
 			courseId,
 			title: (row.lessonName ?? "").trim(),
+			description: nullIfEmpty(row.lessonDescription),
 			imageUrl: nullIfEmpty(row.image),
 			sortOrder: parseIntOrFallback(row.order, idx),
 		};
@@ -316,12 +319,12 @@ export function buildVocabLibraryUpsertStatements(
 
 	const deckTuples = data.decks.map(
 		(d) =>
-			`(${sqlLiteral(d.id)},${sqlLiteral(d.courseId)},${sqlLiteral(d.title)},${sqlLiteral(d.imageUrl)},${sqlLiteral(d.sortOrder)})`,
+			`(${sqlLiteral(d.id)},${sqlLiteral(d.courseId)},${sqlLiteral(d.title)},${sqlLiteral(d.description)},${sqlLiteral(d.imageUrl)},${sqlLiteral(d.sortOrder)})`,
 	);
 	statements.push(
 		...chunkInsertStatements(
-			"INSERT INTO vocab_library_deck (id, course_id, title, image_url, sort_order) VALUES ",
-			" ON CONFLICT(id) DO UPDATE SET course_id = excluded.course_id, title = excluded.title, image_url = excluded.image_url, sort_order = excluded.sort_order, updated_at = (cast(unixepoch('subsecond') * 1000 as integer));",
+			"INSERT INTO vocab_library_deck (id, course_id, title, description, image_url, sort_order) VALUES ",
+			" ON CONFLICT(id) DO UPDATE SET course_id = excluded.course_id, title = excluded.title, description = excluded.description, image_url = excluded.image_url, sort_order = excluded.sort_order, updated_at = (cast(unixepoch('subsecond') * 1000 as integer));",
 			deckTuples,
 			maxChunkBytes,
 		),

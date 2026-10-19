@@ -48,8 +48,8 @@ Tài liệu hướng dẫn nạp dữ liệu thư viện từ vựng dùng chung
 ## 4. Chạy trên Staging / Production (Cloudflare D1 REST API)
 
 1. **Thứ tự deploy bắt buộc:**
-   - Apply migration `0037` (`db:migrate:deploy`) **TRƯỚC** khi deploy worker.
-   - Deploy `apps/server` và `apps/student` **cùng một release train** (do `vocabSessionCardSchema` dùng `.strict()` và thêm trường `hasAudio`).
+   - Apply migrations `0037`..`0040` (`db:migrate:deploy`) **TRƯỚC** khi deploy worker, sau đó re-seed `seed-vocab-library.ts --d1 --verify` để đổ cột `vocab_library_deck.description` (#369).
+   - Deploy `apps/server` và `apps/student` **cùng một release train** (do `vocabSessionCardSchema` / `vocabStudentLibraryDeckSchema` dùng `.strict()` và thêm trường `hasAudio`, `description`).
 2. **Smoke test trên Staging trước (BẮT BUỘC):**
    Không bao giờ commit `D1_DATABASE_ID` hay `CLOUDFLARE_API_TOKEN` vào repo. Truyền qua biến môi trường của operator:
    ```bash

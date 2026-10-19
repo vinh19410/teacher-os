@@ -12,6 +12,12 @@ import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/vocab/$deckId")({
+	validateSearch: (input: { course?: string }): { course?: string } => ({
+		course:
+			typeof input.course === "string" && input.course.trim().length > 0
+				? input.course.trim()
+				: undefined,
+	}),
 	component: VocabDeckRouteView,
 });
 
@@ -23,6 +29,7 @@ function VocabDeckRouteView() {
 
 function VocabDeckDetailPage() {
 	const { deckId } = Route.useParams();
+	const { course } = Route.useSearch();
 	const meQuery = useStudentMe();
 	const sessionQuery = useVocabSessionData(deckId);
 
@@ -41,12 +48,22 @@ function VocabDeckDetailPage() {
 					className="neu space-y-4 rounded-md p-6 text-center"
 				>
 					<p className="font-semibold text-fg">Không tìm thấy bộ từ vựng</p>
-					<Link
-						to="/vocab"
-						className={buttonVariants({ variant: "outline", size: "sm" })}
-					>
-						Quay lại danh sách bộ từ
-					</Link>
+					{course ? (
+						<Link
+							to="/vocab/courses/$courseId"
+							params={{ courseId: course }}
+							className={buttonVariants({ variant: "outline", size: "sm" })}
+						>
+							Quay lại bài học trong khóa
+						</Link>
+					) : (
+						<Link
+							to="/vocab"
+							className={buttonVariants({ variant: "outline", size: "sm" })}
+						>
+							Quay lại danh sách bộ từ
+						</Link>
+					)}
 				</div>
 			</StudentShell>
 		);
@@ -82,12 +99,24 @@ function VocabDeckDetailPage() {
 			<div data-testid="vocab-deck-detail" className="space-y-8">
 				<div className="flex flex-wrap items-end justify-between gap-4">
 					<div>
-						<Link
-							to="/vocab"
-							className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] hover:text-hot"
-						>
-							← Danh sách bộ từ
-						</Link>
+						{course ? (
+							<Link
+								to="/vocab/courses/$courseId"
+								params={{ courseId: course }}
+								data-testid="vocab-deck-back-link"
+								className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] hover:text-hot"
+							>
+								← Bài học trong khóa
+							</Link>
+						) : (
+							<Link
+								to="/vocab"
+								data-testid="vocab-deck-back-link"
+								className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] hover:text-hot"
+							>
+								← Danh sách bộ từ
+							</Link>
+						)}
 						<h1
 							data-testid="vocab-deck-title"
 							className="mt-2 font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]"
@@ -108,6 +137,7 @@ function VocabDeckDetailPage() {
 						<Link
 							to="/vocab/$deckId/session"
 							params={{ deckId }}
+							search={course ? { course } : {}}
 							data-testid="vocab-start-session-btn"
 							className={buttonVariants({ variant: "default" })}
 						>

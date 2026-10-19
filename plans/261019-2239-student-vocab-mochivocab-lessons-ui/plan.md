@@ -1,7 +1,7 @@
 ---
 title: "Student Vocab Courses & Lessons UI kiểu MochiVocab (lưới bài học có ảnh, ribbon khóa học, resume)"
 description: "Làm lại trải nghiệm chọn khóa học và bài học từ vựng trên Student Portal theo mô hình mochivocab: trang lưới bài học riêng với ảnh bìa, tên bài đánh số EN/VI, trạng thái hoàn thành/đang học, điểm 'Bắt đầu tại đây' và resume tự động."
-status: draft
+status: completed
 priority: P1
 effort: 14h
 issue: 369
@@ -29,7 +29,7 @@ Dữ liệu ảnh bìa **đã sẵn sàng**: `vocab_library_deck.image_url` đã
 | # | Goal | Priority |
 |---|------|----------|
 | 1 | Migration `0040` thêm `vocab_library_deck.description` + seed `lessonDescription` + contract `description` (nullable) trên `vocabLibraryDeckSchema` và `vocabStudentLibraryDeckSchema`, mọi producer response cập nhật đồng bộ (`.strict()` additive) | P1 |
-| 2 | Route `/vocab/courses/$courseId`: lưới lesson card kiểu mochivocab — ảnh bìa (`imageUrl`, object-contain, fallback text khi CDN lỗi), `{sortOrder}. {description}` VI + `title` EN, trạng thái **Hoàn thành** / **Đang học x/y** / mới, mũi tên "Bắt đầu tại đây" ở bài chưa hoàn thành đầu tiên, auto-scroll resume, responsive grid dày (mobile 2 → desktop 5–6 cột) | P1 |
+| 2 | Route `/vocab/courses/$courseId`: lưới lesson card kiểu mochivocab — ảnh bìa (`imageUrl`, object-contain, fallback text khi CDN lỗi), `{description}` VI nguyên văn từ CSV + `title` EN, trạng thái **Hoàn thành** / **Đang học x/y** / mới, mũi tên "Bắt đầu tại đây" ở bài chưa hoàn thành đầu tiên, auto-scroll resume, responsive grid dày (mobile 2 → desktop 5–6 cột) | P1 |
 | 3 | Ribbon tên khóa học là button mở **Dialog đổi khóa** (danh sách 20 khóa + progress + click điều hướng) + nút "← Tất cả khóa học" về `/vocab/courses`; trang `/vocab/courses` có search theo URL search param debounce ~300ms (quy ước list page repo) | P1 |
 | 4 | `/vocab` dashboard bỏ inline catalog (`VocabCourseCatalog`), thay bằng section CTA "Khóa học từ vựng" (+ danh mục khóa đang học rút gọn); session `/vocab/$deckId` có back-link thông minh về course page khi đến từ lesson grid (`?course=` param) | P1 |
 | 5 | Pass toàn bộ gates local: `pnpm check`, `pnpm check-types`, unit tests các package đụng đến, E2E cập nhật theo route mới + screenshot 3 viewport (1440×900, 768×1024, 375×812) | P1 |
@@ -47,9 +47,9 @@ Dữ liệu ảnh bìa **đã sẵn sàng**: `vocab_library_deck.image_url` đã
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [DB Migration 0040, Seed & Contracts (deck description)](./phase-01-db-contracts.md) | Pending |
-| 2 | [Student Routes: /vocab/courses Catalog + Lesson Grid kiểu MochiVocab](./phase-02-student-routes-ui.md) | Pending |
-| 3 | [Session Back-link, Tests, E2E & Verification Gates](./phase-03-tests-e2e-gates.md) | Pending |
+| 1 | [DB Migration 0040, Seed & Contracts (deck description)](./phase-01-db-contracts.md) | Completed |
+| 2 | [Student Routes: /vocab/courses Catalog + Lesson Grid kiểu MochiVocab](./phase-02-student-routes-ui.md) | Completed |
+| 3 | [Session Back-link, Tests, E2E & Verification Gates](./phase-03-tests-e2e-gates.md) | Completed |
 
 ## Dependencies
 
@@ -59,12 +59,12 @@ Dữ liệu ảnh bìa **đã sẵn sàng**: `vocab_library_deck.image_url` đã
 
 ## Success Criteria
 
-- [ ] Học viên vào `/vocab` thấy dashboard (stats + gợi ý + bộ từ đang học + CTA "Khóa học từ vựng"), bấm CTA → `/vocab/courses` thấy đủ 20 khóa có progress cá nhân, search hoạt động theo URL param.
-- [ ] Chọn khóa → `/vocab/courses/libcourse-1` hiển thị lưới 100 bài: mỗi card có ảnh bìa (nếu CDN lỗi thì card vẫn hiển thị dạng text), tên EN + dòng VI đánh số nguyên văn từ CSV ("1.Trường học" — không nhân đôi số); bài đã học hết có trạng thái Hoàn thành, bài đang học có "Đang học x/y", bài chưa hoàn thành đầu tiên có "Bắt đầu tại đây" và trang auto-scroll tới đó.
-- [ ] Bấm ribbon tên khóa mở Dialog đổi khóa (danh sách đầy đủ, đang chọn được đánh dấu), chọn khóa khác điều hướng sang course page mới không reload shell.
-- [ ] Bấm lesson card → vào session SRS `/vocab/libdeck-*?course=libcourse-1`; học xong thoát khỏi session (handleExit) vẫn giữ `?course=`; nút quay lại trở về đúng `/vocab/courses/libcourse-1`.
-- [ ] `vocab_library_deck.description` được seed đúng từ CSV `lessonDescription` (re-seed idempotent, verify counts OK); mọi response API chứa `description` (teacher + student).
-- [ ] Toàn bộ gates pass: `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/db test`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter student test`, E2E `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`, UI đạt `DESIGN.md`, không tràn ngang 3 viewport, screenshot kèm PR.
+- [x] Học viên vào `/vocab` thấy dashboard (stats + gợi ý + bộ từ đang học + CTA "Khóa học từ vựng"), bấm CTA → `/vocab/courses` thấy đủ 20 khóa có progress cá nhân, search hoạt động theo URL param.
+- [x] Chọn khóa → `/vocab/courses/libcourse-1` hiển thị lưới 100 bài: mỗi card có ảnh bìa (nếu CDN lỗi thì card vẫn hiển thị dạng text), tên EN + dòng VI đánh số nguyên văn từ CSV ("1.Trường học" — không nhân đôi số); bài đã học hết có trạng thái Hoàn thành, bài đang học có "Đang học x/y", bài chưa hoàn thành đầu tiên có "Bắt đầu tại đây" và trang auto-scroll tới đó.
+- [x] Bấm ribbon tên khóa mở Dialog đổi khóa (danh sách đầy đủ, đang chọn được đánh dấu), chọn khóa khác điều hướng sang course page mới không reload shell.
+- [x] Bấm lesson card → vào session SRS `/vocab/libdeck-*?course=libcourse-1`; học xong thoát khỏi session (handleExit) vẫn giữ `?course=`; nút quay lại trở về đúng `/vocab/courses/libcourse-1`.
+- [x] `vocab_library_deck.description` được seed đúng từ CSV `lessonDescription` (re-seed idempotent, verify counts OK); mọi response API chứa `description` (teacher + student).
+- [x] Toàn bộ gates pass: `pnpm check`, `pnpm check-types`, `pnpm --filter @teacher-os/db test`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter student test`, E2E `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`, UI đạt `DESIGN.md`, không tràn ngang 3 viewport, screenshot kèm PR.
 
 ## Red Team & Validation Summary
 
@@ -84,6 +84,12 @@ Plan đã được phản biện độc lập (4 persona: Security Adversary & F
 | C3 | Low | packages/ui KHÔNG có dialog primitive | Chốt: tự viết overlay theo pattern `quiz-lifecycle-dialogs.tsx` (`role="dialog"`, Esc, focus-trap, list overflow-y) |
 
 Confirm từ red-team (không cần đổi plan): TanStack Router `^1.170` static-beats-dynamic (`isFrameMoreSpecific` so `statics`) — `/vocab/courses` không bao giờ match thành `deckId="courses"`; e2e `boot.ts:84-87` **tự migrate + seed library** mỗi lần chạy (không cần bước seed thủ công); chỉ có đúng 2 producer của deck schema (`vocab.ts:548`, `vocab-library.ts:135`) đều select toàn cột; D1 100-biến không bị ảnh hưởng (thêm cột không thêm bind); suggestion flow (#363) không dính; migration tooling = `pnpm --filter @teacher-os/db db:generate` (drizzle-kit, journal tự update, 0040 là số kế tiếp).
+
+### Whole-Plan Consistency Sweep
+- Đã rà soát toàn bộ `plan.md` và `phase-01`..`phase-03` đối chiếu với 10 quyết định từ Red Team & Validation:
+  - Sửa sót dòng Goal #2 trong `plan.md` (bỏ `{sortOrder}.` trước `{description}` để khớp hoàn toàn với B1 ở Overview, Success Criteria, Phase 1 §1.7, Phase 2 §2.3, Phase 3 §3.1).
+  - Đường dẫn E2E (`apps/e2e/specs/vocab-library-clone.spec.ts`), quy tắc preserve `?course=` qua `/vocab/$deckId/session`, helper `deriveLessonSubtitle` lọc `"10 từ vựng"`, và yêu cầu deploy cùng release train (`apps/server` + `apps/student`) đã nhất quán xuyên suốt 4 file.
+- Trạng thái: **0 mâu thuẫn tồn đọng (Ready for implementation)**.
 
 ## References
 

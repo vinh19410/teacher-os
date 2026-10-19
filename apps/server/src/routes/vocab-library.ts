@@ -132,6 +132,7 @@ export function vocabLibraryRoutes(deps: { getDb(): Db }) {
 				id: deck.id,
 				courseId: deck.courseId,
 				title: deck.title,
+				description: deck.description ?? null,
 				imageUrl: deck.imageUrl ?? null,
 				wordCount: countByDeck.get(deck.id) ?? 0,
 				sortOrder: deck.sortOrder,

@@ -65,10 +65,10 @@ E2E boot **đã tự migrate + seed library từ CSV** (`apps/e2e/src/boot.ts:84
 
 ## Success Criteria
 
-- [ ] E2E mới pass toàn bộ 7 bước ở 3.1 (kèm spec cũ đã cập nhật, không còn tham chiếu `/vocab?courseId=`).
-- [ ] Screenshot 3 viewport × 3 màn nằm trong plan `screenshots/` + PR; không tràn ngang 375px (grid 2 cột, card co giãn).
-- [ ] Tất cả lệnh gates ở 3.4 exit 0.
-- [ ] PR body tiếng Việt theo precedent repo, kèm bảng so sánh trước/sau + Relates-to issue.
+- [x] E2E mới pass toàn bộ 7 bước ở 3.1 (kèm spec cũ đã cập nhật, không còn tham chiếu `/vocab?courseId=`).
+- [x] Screenshot 3 viewport × 3 màn nằm trong plan `screenshots/` + PR; không tràn ngang 375px (grid 2 cột, card co giãn).
+- [x] Tất cả lệnh gates ở 3.4 exit 0.
+- [x] PR body tiếng Việt theo precedent repo, kèm bảng so sánh trước/sau + Relates-to issue.
 
 ## Files Owned
 

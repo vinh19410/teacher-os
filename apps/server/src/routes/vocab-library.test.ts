@@ -138,6 +138,7 @@ describe("built-in vocab library routes (/api/kernel/vocab-library/*, #361)", ()
 				id: "libdeck-101",
 				courseId: "libcourse-6",
 				title: "Lesson 1: Education",
+				description: "1.Giáo dục",
 				imageUrl:
 					"https://mochien3.1-api.mochidemy.com/public/images/lesson/1.webp",
 				sortOrder: 1,
@@ -290,6 +291,7 @@ describe("built-in vocab library routes (/api/kernel/vocab-library/*, #361)", ()
 				id: "libdeck-101",
 				courseId: "libcourse-6",
 				title: "Lesson 1: Education",
+				description: "1.Giáo dục",
 				imageUrl:
 					"https://mochien3.1-api.mochidemy.com/public/images/lesson/1.webp",
 				wordCount: 2,
@@ -299,6 +301,7 @@ describe("built-in vocab library routes (/api/kernel/vocab-library/*, #361)", ()
 				id: "libdeck-102",
 				courseId: "libcourse-6",
 				title: "Lesson 2: Environment",
+				description: null,
 				imageUrl: null,
 				wordCount: 1,
 				sortOrder: 2,
