@@ -1,11 +1,11 @@
 ---
 title: "Menu điều hướng học viên (StudentShell) & tách các trang chuyên biệt"
 description: "Bổ sung thanh menu ngang responsive trong StudentShell và tách các trang chuyên biệt Lớp học (/classes), Bài tập (/assignments), Học phí (/tuition) bên cạnh Tổng quan (/) và Từ vựng (/vocab)."
-status: pending
+status: completed
 priority: P2
 effort: 4h
 issue: 365
-branch: develop
+branch: ai-handle-issue-365
 tags: [frontend, student-app, ui, navigation, a11y]
 blockedBy: []
 blocks: []
@@ -52,19 +52,19 @@ Kế hoạch này bổ sung:
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Thanh điều hướng StudentShell, chuẩn hóa query key & StudentPageGate](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Các trang chuyên biệt (/classes, /assignments, /tuition) & bọc StudentShell cho /tuition/$invoiceId](./phase-02-dedicated-student-pages.md) | Pending |
-| 3 | [Phase 3: Unit tests, E2E verification & kiểm tra 3 viewport](./phase-03-tests-and-e2e-verification.md) | Pending |
+| 1 | [Phase 1: Thanh điều hướng StudentShell, chuẩn hóa query key & StudentPageGate](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Các trang chuyên biệt (/classes, /assignments, /tuition) & bọc StudentShell cho /tuition/$invoiceId](./phase-02-dedicated-student-pages.md) | Completed |
+| 3 | [Phase 3: Unit tests, E2E verification & kiểm tra 3 viewport](./phase-03-tests-and-e2e-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Header `StudentShell` hiển thị `<nav aria-label="Điều hướng học viên">` gồm 5 link: `Tổng quan` (`/`), `Lớp học` (`/classes`), `Bài tập` (`/assignments`), `Từ vựng` (`/vocab`), `Học phí` (`/tuition`).
-- [ ] Mục đang active có `aria-current="page"`, nền `neu-in`, chữ `text-hot` và dấu `■` (`aria-hidden="true"`); các route con (`/classes/$classId`, `/vocab/$deckId`, `/vocab/$deckId/session`, `/tuition/$invoiceId`) vẫn giữ active ở mục cha tương ứng.
-- [ ] Trang `/classes` hiển thị danh sách lớp học (`ClassCard`), hỗ trợ xác nhận tham gia lớp mời và hiển thị empty state khi chưa có lớp.
-- [ ] Trang `/assignments` hiển thị danh sách bài tập với bộ lọc trạng thái lưu trên URL (`?status=due-soon|overdue|submitted`), badge đếm trên tab có `aria-hidden="true"`.
-- [ ] Trang `/tuition` hiển thị `TuitionList` khi có hóa đơn và `OverviewEmptyState` khi chưa có hóa đơn; trang `/tuition/$invoiceId` nằm trong `StudentShell` và có link `← Học phí` quay về `/tuition`.
-- [ ] Chuyển đổi tổ chức qua `OrgSwitcher` tự động làm mới dữ liệu ở cả `/`, `/classes`, `/assignments`, `/vocab`, `/tuition`.
-- [ ] Unit tests (`pnpm --filter student test`), typecheck (`pnpm check-types`), lint (`pnpm check`) và E2E (`E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`) đều pass.
+- [x] Header `StudentShell` hiển thị `<nav aria-label="Điều hướng học viên">` gồm 5 link: `Tổng quan` (`/`), `Lớp học` (`/classes`), `Bài tập` (`/assignments`), `Từ vựng` (`/vocab`), `Học phí` (`/tuition`).
+- [x] Mục đang active có `aria-current="page"`, nền `neu-in`, chữ `text-hot` và dấu `■` (`aria-hidden="true"`); các route con (`/classes/$classId`, `/vocab/$deckId`, `/vocab/$deckId/session`, `/tuition/$invoiceId`) vẫn giữ active ở mục cha tương ứng.
+- [x] Trang `/classes` hiển thị danh sách lớp học (`ClassCard`), hỗ trợ xác nhận tham gia lớp mời và hiển thị empty state khi chưa có lớp.
+- [x] Trang `/assignments` hiển thị danh sách bài tập với bộ lọc trạng thái lưu trên URL (`?status=due-soon|overdue|submitted`), badge đếm trên tab có `aria-hidden="true"`.
+- [x] Trang `/tuition` hiển thị `TuitionList` khi có hóa đơn và `OverviewEmptyState` khi chưa có hóa đơn; trang `/tuition/$invoiceId` nằm trong `StudentShell` và có link `← Học phí` quay về `/tuition`.
+- [x] Chuyển đổi tổ chức qua `OrgSwitcher` tự động làm mới dữ liệu ở cả `/`, `/classes`, `/assignments`, `/vocab`, `/tuition`.
+- [x] Unit tests (`pnpm --filter student test`), typecheck (`pnpm check-types`), lint (`pnpm check`) và E2E (`E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e`) đều pass.
 
 ## Red Team Review
 
@@ -86,4 +86,19 @@ Kế hoạch này bổ sung:
 - Decision deltas checked: 6 (bảng Red Team trên)
 - Unresolved contradictions: 0
 
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 30 (10 claims/phase across 3 phases)
+- Verified: 30 | Failed: 0 | Unverified: 0
+- Tier: Standard (Fact Checker + Contract Verifier)
+- Failures: None
+  - Phase 1: `apps/student/src/components/layout/student-shell.tsx`, `apps/student/src/lib/repos/student.ts` (`fetchStudentInvoices`, `useStudentMe`, `useStudentOverview`), `apps/student/src/routes/_auth/index.tsx` (`StudentTuitionSection`, `STUDENT_ERROR_CODES.NOT_LINKED`, `onboardingCompletedAt`), `DESIGN.md` (`neu-in text-hot` + `■`).
+  - Phase 2: `apps/student/src/components/overview/assignment-list.tsx`, `apps/student/src/components/overview/tuition-list.tsx` (`invoices.length === 0` returns `null`), `apps/student/src/routes/_auth/tuition/$invoiceId.tsx` (`["student-me"]`, `["student-invoice-payment"]`, `PaymentQrPanel`).
+  - Phase 3: `apps/student/test/overview.test.tsx` (`renderToStaticMarkup` + mocked `@tanstack/react-router`), `apps/e2e/specs/tuition-bank-transfer.spec.ts:265` (`getByRole("link", { name: /Học phí/ }).first().click()`), `apps/e2e/specs/student-class-detail.spec.ts`.
+
+### Whole-Plan Consistency Sweep (Validation Gate)
+- All phase files decomposed under the `--advice` handover contract (`Goal`, `Target files and symbols`, `Steps`, `Success criteria`, `Verify`, and literal `Failure Protocol`).
+- Unresolved contradictions: 0
 <!-- slug: student-portal-nav-menu -->

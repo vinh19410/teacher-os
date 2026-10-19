@@ -262,6 +262,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		});
 		// The unsettled invoice row links to the QR detail page.
 		await page
+			.getByRole("main")
 			.getByRole("link", { name: /Học phí/ })
 			.first()
 			.click();
