@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Auth, pay, 404 (web + student)"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: [3]

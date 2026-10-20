@@ -1652,6 +1652,18 @@ export const studentClassDetailSchema = z.object({
 });
 export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
 
+/** Roster "Bạn cùng lớp" — CHỈ tên + chữ tắt, không bao giờ trả
+ * email/band/học phí/điểm (quy ước quyền riêng lớp học #378). */
+export const classmatesResponseSchema = z.array(
+	z.object({
+		id: z.string(),
+		name: z.string(),
+		initials: z.string(),
+		isMe: z.boolean(),
+	}),
+);
+export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
+
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
 export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;

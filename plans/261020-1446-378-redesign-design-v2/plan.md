@@ -78,8 +78,8 @@ cục); route path, query param, accessible name, `data-testid` giữ nguyên tr
 | 1 | [Harness chụp đối chiếu + baseline ảnh "cũ"](./phase-01-visual-harness-baseline.md) | Completed | 5h | — |
 | 2 | [Token neutral, Geist self-host, light mặc định](./phase-02-tokens-fonts-theme.md) | Completed | 5h | 1 |
 | 3 | [Primitive dùng chung theo v2](./phase-03-shared-primitives.md) | Completed | 7h | 2 |
-| 4 | [App shell sidebar-07 dùng chung web + student](./phase-04-app-shell.md) | Pending | 6h | 3 |
-| 5 | [Auth, pay, 404 (web + student)](./phase-05-auth-public-pages.md) | Pending | 4h | 3 |
+| 4 | [App shell sidebar-07 dùng chung web + student](./phase-04-app-shell.md) | Completed | 6h | 3 |
+| 5 | [Auth, pay, 404 (web + student)](./phase-05-auth-public-pages.md) | Completed | 4h | 3 |
 | 6 | [Giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo](./phase-06-teacher-core-pages.md) | Pending | 8h | 4 |
 | 7 | [Giáo viên: bài tập, đề thi, chấm bài, học phí, vocab](./phase-07-teacher-assignments-tuition.md) | Pending | 7h | 4 |
 | 8 | [Giáo viên: ô tìm kiếm ⌘K (mới)](./phase-08-teacher-command-search.md) | Pending | 4h | 4 |

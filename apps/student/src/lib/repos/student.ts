@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type ClassmatesResponse,
+	classmatesResponseSchema,
 	type PaymentInstructions,
 	type StudentClassDetail,
 	type StudentInvitationItem,
@@ -324,6 +326,49 @@ export function useStudentClassDetail(classId: string) {
 	return useQuery({
 		queryKey: ["student", "class", classId],
 		queryFn: () => fetchStudentClassDetail(classId),
+		staleTime: 60_000,
+	});
+}
+
+export async function fetchStudentClassmates(
+	classId: string,
+): Promise<ClassmatesResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/classmates`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	const data = (await res.json()) as unknown;
+	return classmatesResponseSchema.parse(data);
+}
+
+/** Roster "Bạn cùng lớp" (#378) — chỉ bật khi tab Bạn cùng lớp đang mở. */
+export function useClassmates(classId: string, enabled: boolean) {
+	return useQuery({
+		queryKey: ["student", "class", classId, "classmates"],
+		queryFn: () => fetchStudentClassmates(classId),
+		enabled,
 		staleTime: 60_000,
 	});
 }

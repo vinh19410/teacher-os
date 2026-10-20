@@ -83,6 +83,9 @@ function StudentClassesPage() {
 											acceptEnrollmentMutation.isPending &&
 											acceptEnrollmentMutation.variables === cls.enrollmentId
 										}
+										assignments={overview.assignments.filter(
+											(a) => a.classId === cls.id,
+										)}
 									/>
 								))}
 							</div>

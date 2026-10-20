@@ -1,7 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import type { StudentClass } from "@teacher-os/api/contracts";
+import type {
+	StudentAssignment,
+	StudentClass,
+} from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
+import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
 
@@ -11,12 +15,15 @@ export interface ClassCardProps {
 	onAccept?: (enrollmentId: string) => void;
 	/** Disable nút xác nhận khi request đang bay. */
 	accepting?: boolean;
+	/** Bài tập của riêng lớp này (trang Lớp học) — vắng mặt thì ẩn bảng. */
+	assignments?: StudentAssignment[];
 }
 
 export function ClassCard({
 	cls,
 	onAccept,
 	accepting = false,
+	assignments,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
 
@@ -108,6 +115,65 @@ export function ClassCard({
 						</p>
 					</>
 				)}
+			</div>
+
+			{assignments !== undefined && assignments.length > 0 && (
+				<ClassCardAssignments assignments={assignments} />
+			)}
+		</div>
+	);
+}
+
+/** Bảng bài tập của lớp (design ClassPage): Assignment | Hạn | Trạng thái,
+ * hàng dẫn về take/review screen. Chỉ vẽ khi caller truyền dữ liệu. */
+function ClassCardAssignments({
+	assignments,
+}: {
+	assignments: StudentAssignment[];
+}) {
+	return (
+		<div className="mt-4">
+			<h4 className="font-mono text-[10px] text-meta uppercase tracking-[0.15em]">
+				Bài tập
+			</h4>
+			<div className="neu-sm mt-2 overflow-hidden rounded-md">
+				{assignments.map((assignment) => {
+					const derived = deriveAssignmentStatus(assignment);
+					const row = (
+						<div
+							key={assignment.id}
+							className="flex items-center justify-between gap-3 border-line border-t px-4 py-2.5 first:border-t-0"
+						>
+							<span className="min-w-0 flex-1 truncate font-medium text-[13px] text-fg">
+								{assignment.title}
+							</span>
+							<span className="flex-none font-mono text-[11px] text-meta tabular-nums">
+								{derived.dueText}
+							</span>
+							<span
+								className={`flex-none rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] ${derived.badgeClass}`}
+							>
+								{derived.statusLabel}
+							</span>
+						</div>
+					);
+					if (assignment.source !== "class_assignment") return row;
+					return (
+						<Link
+							key={assignment.id}
+							to="/learn/quizzes/$assignmentId"
+							params={{ assignmentId: assignment.id }}
+							aria-label={
+								assignment.submittedAt
+									? `Xem lại kết quả: ${assignment.title}`
+									: `Làm bài: ${assignment.title}`
+							}
+							className="block transition-colors hover:text-hot"
+						>
+							{row}
+						</Link>
+					);
+				})}
 			</div>
 		</div>
 	);

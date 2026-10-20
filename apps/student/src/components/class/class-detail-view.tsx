@@ -1,10 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import type { StudentClassDetail } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { BookOpen, ClipboardCheck, Target, UserRound } from "lucide-react";
+import { useState } from "react";
 import { ClassLessonList } from "@/components/class/class-lesson-list";
+import { ClassmatesTab } from "@/components/class/classmates-tab";
+import { RingStat } from "@/components/class/ring-stat";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { ClassBadges, ClassProgress } from "@/components/overview/class-card";
+import { cn } from "@/lib/cn";
 import { formatVietnamFullDate } from "@/lib/vietnam-display-date";
 
 function BackHomeLink({ children }: { children: string }) {
@@ -21,6 +26,117 @@ function BackHomeLink({ children }: { children: string }) {
 	);
 }
 
+const CLASS_TABS = [
+	{ id: "journey", label: "Hành trình học" },
+	{ id: "assignments", label: "Bài tập" },
+	{ id: "syllabus", label: "Giáo trình" },
+	{ id: "classmates", label: "Bạn cùng lớp" },
+] as const;
+
+type ClassTabId = (typeof CLASS_TABS)[number]["id"];
+
+/** Số liệu Ring tính từ dữ liệu thật của trang chi tiết lớp (#378). */
+interface ClassRingStats {
+	held: number;
+	totalSessions: number;
+	attended: number;
+	assignmentsDone: number;
+	assignmentsTotal: number;
+	/** Band trung bình các bài đã chấm (thang 9); null khi chưa có bài chấm. */
+	averageBand: number | null;
+	gradedCount: number;
+}
+
+function computeRingStats(detail: StudentClassDetail): ClassRingStats {
+	const heldLessons = detail.lessons.filter(
+		(l) => l.status === "completed" || l.status === "absent",
+	);
+	const attended = heldLessons.filter((l) => l.status === "completed").length;
+	const submitted = detail.assignments.filter(
+		(a) => a.submittedAt != null || a.scores != null,
+	);
+	const graded = detail.assignments.filter((a) => a.scores != null);
+	const averageBand =
+		graded.length > 0
+			? graded.reduce(
+					(sum, a) =>
+						sum +
+						(a.scores!.task +
+							a.scores!.coherence +
+							a.scores!.lexical +
+							a.scores!.grammar) /
+							4,
+					0,
+				) / graded.length
+			: null;
+	return {
+		held: heldLessons.length,
+		totalSessions: detail.lessons.length,
+		attended,
+		assignmentsDone: submitted.length,
+		assignmentsTotal: detail.assignments.length,
+		averageBand,
+		gradedCount: graded.length,
+	};
+}
+
+/** Tab "Giáo trình": các chủ đề của lớp theo thứ tự buổi học, tick chủ đề đã
+ * hoàn thành (mọi buổi của chủ đề đều `completed`). */
+function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
+	const topics = new Map<string, { total: number; completed: number }>();
+	for (const lesson of detail.lessons) {
+		const topic = lesson.topic || "Chưa có chủ đề";
+		const entry = topics.get(topic) ?? { total: 0, completed: 0 };
+		entry.total += 1;
+		if (lesson.status === "completed") entry.completed += 1;
+		topics.set(topic, entry);
+	}
+
+	if (topics.size === 0) {
+		return (
+			<div className="neu rounded-lg p-6">
+				<p className="text-meta text-sm">
+					Giáo trình sẽ hiển thị theo chủ đề từng buổi học.
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="neu rounded-lg">
+			<ul className="divide-y">
+				{[...topics.entries()].map(([topic, progress], i) => {
+					const done = progress.completed >= progress.total;
+					return (
+						<li
+							key={topic}
+							className="flex items-center gap-3 px-5 py-3 text-sm"
+						>
+							<span
+								aria-hidden="true"
+								className={cn(
+									"flex size-5 flex-none items-center justify-center rounded-full font-mono text-[10px]",
+									done ? "bg-hot text-accent-on" : "neu-in text-meta",
+								)}
+							>
+								{i + 1}
+							</span>
+							<span
+								className={cn("min-w-0 flex-1 truncate", !done && "text-meta")}
+							>
+								{topic}
+							</span>
+							<span className="font-mono text-[12px] text-meta tabular-nums">
+								{progress.completed}/{progress.total} buổi
+							</span>
+						</li>
+					);
+				})}
+			</ul>
+		</div>
+	);
+}
+
 export function ClassDetailView({
 	detail,
 	todayISO,
@@ -30,6 +146,8 @@ export function ClassDetailView({
 }) {
 	const cls = detail.class;
 	const teacher = cls.teacher;
+	const [tab, setTab] = useState<ClassTabId>("journey");
+	const stats = computeRingStats(detail);
 
 	return (
 		<>
@@ -54,52 +172,122 @@ export function ClassDetailView({
 				</div>
 			</header>
 
-			<div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-				<aside className="lg:order-2">
-					<section className="neu rounded-lg p-5">
-						<h2 className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
-							Giáo viên
-						</h2>
-						{teacher ? (
-							<div className="mt-4 flex min-w-0 items-center gap-3">
-								<TeacherAvatar
-									key={teacher.image}
-									teacher={teacher}
-									size="md"
-								/>
-								<div className="min-w-0 leading-[1.35]">
-									<p className="truncate font-medium text-[15px] text-fg">
-										{teacher.name}
-									</p>
-									<a
-										href={`mailto:${teacher.email}`}
-										className="block truncate rounded-sm text-[13px] text-hot hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
-									>
-										{teacher.email}
-									</a>
-								</div>
-							</div>
-						) : (
-							<p className="mt-3 text-[13px] text-meta">
-								Chưa có thông tin giáo viên.
-							</p>
-						)}
-					</section>
-				</aside>
+			{/* Dải Ring số liệu (design StudentClassDetail): tiến độ vòng tròn
+			 * cho buổi học, chuyên cần, bài tập, band trung bình. */}
+			<div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+				<RingStat
+					icon={BookOpen}
+					value={stats.held}
+					max={stats.totalSessions}
+					display={`${stats.held}/${stats.totalSessions}`}
+					label="Buổi học"
+					sub="Buổi đã diễn ra"
+				/>
+				<RingStat
+					icon={UserRound}
+					value={stats.attended}
+					max={stats.held}
+					display={`${stats.held > 0 ? Math.round((stats.attended / stats.held) * 100) : 0}%`}
+					label="Chuyên cần"
+					sub={`${stats.attended}/${stats.held} buổi đã học`}
+				/>
+				<RingStat
+					icon={ClipboardCheck}
+					value={stats.assignmentsDone}
+					max={stats.assignmentsTotal}
+					display={`${stats.assignmentsDone}/${stats.assignmentsTotal}`}
+					label="Bài tập"
+					sub="Đã hoàn thành"
+				/>
+				<RingStat
+					icon={Target}
+					value={stats.averageBand ?? 0}
+					max={9}
+					display={
+						stats.averageBand != null ? stats.averageBand.toFixed(1) : "—"
+					}
+					label="Band trung bình"
+					sub={`Trên ${stats.gradedCount} bài đã chấm`}
+				/>
+			</div>
 
-				<div className="min-w-0 lg:order-1">
+			{/* Giáo viên — luôn hiển thị phía trên tab (e2e bấm mailto từ màn
+			 * mặc định). */}
+			<section className="neu mt-8 flex items-center gap-3 rounded-lg p-5">
+				<UserRound aria-hidden="true" className="size-4 flex-none text-meta" />
+				<h2 className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+					Giáo viên
+				</h2>
+				{teacher ? (
+					<div className="ml-auto flex min-w-0 items-center gap-3">
+						<TeacherAvatar key={teacher.image} teacher={teacher} size="md" />
+						<div className="min-w-0 leading-[1.35]">
+							<p className="truncate font-medium text-[15px] text-fg">
+								{teacher.name}
+							</p>
+							<a
+								href={`mailto:${teacher.email}`}
+								className="block truncate rounded-sm text-[13px] text-hot hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							>
+								{teacher.email}
+							</a>
+						</div>
+					</div>
+				) : (
+					<p className="ml-auto text-[13px] text-meta">
+						Chưa có thông tin giáo viên.
+					</p>
+				)}
+			</section>
+
+			{/* Tabs segmented theo design: nền chìm, tab chọn nổi + chữ cam. */}
+			<div
+				role="tablist"
+				aria-label="Mục của lớp học"
+				className="neu-in mt-8 inline-flex flex-wrap items-center gap-1 rounded-lg p-1.5 text-[13px]"
+			>
+				{CLASS_TABS.map((t) => {
+					const isSelected = tab === t.id;
+					return (
+						<button
+							key={t.id}
+							type="button"
+							role="tab"
+							aria-selected={isSelected}
+							data-testid={`class-tab-${t.id}`}
+							onClick={() => setTab(t.id)}
+							className={cn(
+								"rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								isSelected
+									? "neu-sm font-medium text-hot"
+									: "text-muted-fg hover:text-fg",
+							)}
+						>
+							{t.label}
+						</button>
+					);
+				})}
+			</div>
+
+			<div className="mt-6">
+				{tab === "journey" && (
 					<section>
 						<h2 className="mb-4 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
 							Buổi học
 						</h2>
 						<ClassLessonList lessons={detail.lessons} todayISO={todayISO} />
 					</section>
-
+				)}
+				{tab === "assignments" && (
 					<AssignmentList
 						assignments={detail.assignments}
 						showClassName={false}
+						hideHeading={false}
+						className=""
 					/>
-				</div>
+				)}
+				{tab === "syllabus" && <SyllabusTab detail={detail} />}
+				{tab === "classmates" && <ClassmatesTab classId={cls.id} />}
 			</div>
 		</>
 	);

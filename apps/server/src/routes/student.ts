@@ -85,11 +85,102 @@ export interface StudentRouteDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 }
 
-interface StudentContext {
+export interface StudentContext {
 	student: typeof student.$inferSelect;
 	orgId: string;
 	userId: string;
 	sessionUser: SessionUser & { email: string };
+}
+
+export type StudentEnv = {
+	Variables: {
+		sessionUser: SessionUser & { email: string };
+		studentCtx: StudentContext;
+	};
+};
+
+/**
+ * Guard học viên dùng chung cho mọi route /api/student: nạp dòng student theo
+ * email session (tự provision khi email đã verify), chọn org theo header
+ * `x-student-org-id` và đặt `studentCtx`. Không khớp → 403 NOT_LINKED /
+ * EMAIL_UNVERIFIED.
+ */
+export function createStudentGuard(deps: StudentRouteDeps) {
+	return async (c: Context<StudentEnv>, next: () => Promise<void>) => {
+		const sessionUser = c.get("sessionUser");
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
+		let rows = await db
+			.select()
+			.from(student)
+			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.orderBy(desc(student.createdAt), asc(student.id));
+
+		if (rows.length === 0) {
+			if (sessionUser.emailVerified === true) {
+				try {
+					await provisionStudentForUser(db, {
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					});
+					rows = await db
+						.select()
+						.from(student)
+						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+						.orderBy(desc(student.createdAt), asc(student.id));
+				} catch (err) {
+					console.error("Failed to provision student for user", {
+						userId: sessionUser.userId,
+						error: err,
+					});
+				}
+			}
+
+			if (rows.length === 0) {
+				const code =
+					sessionUser.emailVerified === true
+						? STUDENT_ERROR_CODES.NOT_LINKED
+						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
+				return c.json(
+					{
+						error: code,
+						code,
+					},
+					403,
+				);
+			}
+		}
+
+		const requestedOrgId = c.req.header("x-student-org-id");
+		let matchedStudent = rows[0];
+
+		if (requestedOrgId) {
+			const found = rows.find((r) => r.orgId === requestedOrgId);
+			if (found) {
+				matchedStudent = found;
+			}
+		}
+
+		if (!matchedStudent) {
+			return c.json(
+				{
+					error: STUDENT_ERROR_CODES.NOT_LINKED,
+					code: STUDENT_ERROR_CODES.NOT_LINKED,
+				},
+				403,
+			);
+		}
+
+		c.set("studentCtx", {
+			student: matchedStudent,
+			orgId: matchedStudent.orgId,
+			userId: sessionUser.userId,
+			sessionUser,
+		});
+
+		return next();
+	};
 }
 function parseLearningGoals(raw: string | null): LearningGoalOption[] | null {
 	if (!raw) return null;
@@ -216,13 +307,6 @@ function buildStudentMe(
 		},
 	};
 }
-
-type StudentEnv = {
-	Variables: {
-		sessionUser: SessionUser & { email: string };
-		studentCtx: StudentContext;
-	};
-};
 
 export function studentRoutes(deps: StudentRouteDeps) {
 	const router = new Hono<StudentEnv>();
@@ -497,85 +581,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		return c.json(orgs);
 	});
 
-	// Org-Scoped Middleware for /me, /overview, etc.
-	const requireStudent = async (
-		c: Context<StudentEnv>,
-		next: () => Promise<void>,
-	) => {
-		const sessionUser = c.get("sessionUser");
-		const db = deps.getDb();
-		const normalizedEmail = sessionUser.email.toLowerCase();
-
-		let rows = await db
-			.select()
-			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), asc(student.id));
-
-		if (rows.length === 0) {
-			if (sessionUser.emailVerified === true) {
-				try {
-					await provisionStudentForUser(db, {
-						name: sessionUser.userName,
-						email: sessionUser.email,
-					});
-					rows = await db
-						.select()
-						.from(student)
-						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-						.orderBy(desc(student.createdAt), asc(student.id));
-				} catch (err) {
-					console.error("Failed to provision student for user", {
-						userId: sessionUser.userId,
-						error: err,
-					});
-				}
-			}
-
-			if (rows.length === 0) {
-				const code =
-					sessionUser.emailVerified === true
-						? STUDENT_ERROR_CODES.NOT_LINKED
-						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
-				return c.json(
-					{
-						error: code,
-						code,
-					},
-					403,
-				);
-			}
-		}
-
-		const requestedOrgId = c.req.header("x-student-org-id");
-		let matchedStudent = rows[0];
-
-		if (requestedOrgId) {
-			const found = rows.find((r) => r.orgId === requestedOrgId);
-			if (found) {
-				matchedStudent = found;
-			}
-		}
-
-		if (!matchedStudent) {
-			return c.json(
-				{
-					error: STUDENT_ERROR_CODES.NOT_LINKED,
-					code: STUDENT_ERROR_CODES.NOT_LINKED,
-				},
-				403,
-			);
-		}
-
-		c.set("studentCtx", {
-			student: matchedStudent,
-			orgId: matchedStudent.orgId,
-			userId: sessionUser.userId,
-			sessionUser,
-		});
-
-		return next();
-	};
+	// Org-Scoped Middleware for /me, /overview, etc. Factory để route cùng
+	// domain ở file khác (student-classmates.ts) tái dùng đúng một logic xác
+	// thực học viên + chọn org (x-student-org-id).
+	const requireStudent = createStudentGuard(deps);
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
