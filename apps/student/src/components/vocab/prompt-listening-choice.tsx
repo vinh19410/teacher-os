@@ -3,6 +3,7 @@ import { Button } from "@teacher-os/ui/components/button";
 import { Volume2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchVocabAudioObjectUrl } from "@/lib/repos/vocab";
+import { VocabPronunciationButtons } from "./vocab-pronunciation-buttons";
 
 export function PromptListeningChoice({
 	wordId,
@@ -59,30 +60,28 @@ export function PromptListeningChoice({
 				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
 					Nghe phát âm và chọn từ đúng
 				</p>
-				<div className="flex items-center gap-3">
-					<Volume2Icon aria-hidden className="size-6 text-hot" />
-					{audioUrl ? (
-						// biome-ignore lint/a11y/useMediaCaption: phát âm từ vựng đơn lẻ, câu hỏi là nghe nhận diện từ.
-						<audio
-							data-testid="vocab-audio-player"
-							src={audioUrl}
-							controls
-							preload="metadata"
-							className="max-w-full"
-						/>
-					) : audioError ? (
-						<span className="font-mono text-meta text-xs">
-							Không tải được âm thanh phát âm
-						</span>
-					) : (
-						<span
-							data-testid="vocab-audio-loading"
-							className="font-mono text-meta text-xs"
-						>
-							Đang tải âm thanh…
-						</span>
-					)}
-				</div>
+				{audioUrl ? (
+					<VocabPronunciationButtons
+						src={audioUrl}
+						testIdPrefix="vocab-audio-player"
+					/>
+				) : (
+					<div className="flex items-center gap-3">
+						<Volume2Icon aria-hidden className="size-6 text-hot" />
+						{audioError ? (
+							<span className="font-mono text-meta text-xs">
+								Không tải được âm thanh phát âm
+							</span>
+						) : (
+							<span
+								data-testid="vocab-audio-loading"
+								className="font-mono text-meta text-xs"
+							>
+								Đang tải âm thanh…
+							</span>
+						)}
+					</div>
+				)}
 			</div>
 
 			<div

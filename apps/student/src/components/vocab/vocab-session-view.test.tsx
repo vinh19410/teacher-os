@@ -324,4 +324,54 @@ describe("VocabSessionView (Phase 5 UI & red-team F9/F14 invariants)", () => {
 		);
 		expect(vocabRepo.postVocabAnswer).not.toHaveBeenCalled();
 	});
+
+	it("renders Nghe / Nghe chậm buttons on learn intro card when card has audio (#371)", async () => {
+		const learnData: VocabSessionData = {
+			deck: { id: "deck-learn", title: "French Loanwords", lang: "en" },
+			cards: [
+				{
+					id: "c-audio",
+					wordId: "w-audio",
+					word: "bonjour",
+					translation: "xin chào",
+					ipa: "/bɔ̃.ʒuʁ/",
+					audioKey: "vocab/org/w-audio/audio.mp3",
+					hasAudio: true,
+					level: 1,
+					isWarning: false,
+					state: "new",
+					intervalDays: 0,
+					dueAt: NOW,
+					lapses: 0,
+				},
+			],
+			pool: [
+				{
+					wordId: "w-audio",
+					word: "bonjour",
+					translation: "xin chào",
+					lang: "en",
+					deckId: "deck-learn",
+				},
+			],
+		};
+
+		render(
+			<VocabSessionView
+				sessionData={learnData}
+				rng={new SeededRandom(1)}
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(vocabRepo.fetchVocabAudioObjectUrl).toHaveBeenCalledWith(
+			"w-audio",
+			expect.anything(),
+		);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-intro-audio")).toBeTruthy();
+		});
+		expect(screen.getByTestId("vocab-intro-audio-normal")).toBeTruthy();
+		expect(screen.getByTestId("vocab-intro-audio-slow")).toBeTruthy();
+	});
 });

@@ -6,7 +6,6 @@ import {
 } from "@teacher-os/api/srs/review-session";
 import type { RandomSource } from "@teacher-os/api/srs/rng";
 import { Button } from "@teacher-os/ui/components/button";
-import { Volume2Icon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isHttpError } from "@/lib/query-client";
 import {
@@ -20,6 +19,7 @@ import { PromptSelfCheck } from "./prompt-self-check";
 import { PromptTyping } from "./prompt-typing";
 import { PromptWordChoice } from "./prompt-word-choice";
 import { VocabFeedbackPanel } from "./vocab-feedback-panel";
+import { VocabPronunciationButtons } from "./vocab-pronunciation-buttons";
 import { VocabSummary } from "./vocab-summary";
 import { WrongStreakOverlay } from "./wrong-streak-overlay";
 
@@ -633,14 +633,11 @@ function LearnIntroCard({
 				) : null}
 
 				{audioUrl ? (
-					<div className="flex items-center justify-center gap-2 pt-2">
-						<Volume2Icon aria-hidden className="size-4 text-hot" />
-						{/* biome-ignore lint/a11y/useMediaCaption: phát âm từ vựng */}
-						<audio
-							data-testid="vocab-intro-audio"
+					<div className="flex justify-center pt-2">
+						<VocabPronunciationButtons
 							src={audioUrl}
-							controls
-							preload="metadata"
+							testIdPrefix="vocab-intro-audio"
+							disabled={disabled}
 						/>
 					</div>
 				) : null}
