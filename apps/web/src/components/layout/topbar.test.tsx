@@ -12,8 +12,16 @@ vi.mock("@tanstack/react-router", () => ({
 const store: { notifs: Notif[] } = { notifs: [] };
 
 vi.mock("@/lib/data-store", () => ({
+	// Đủ 4 collection kernel — CommandSearch kiểm tra snapshot đã tải qua
+	// các mảng này (isSnapshotLoaded trong search-index).
 	useData: () => ({
-		data: { notifs: store.notifs, students: [], classes: [] },
+		data: {
+			notifs: store.notifs,
+			students: [],
+			classes: [],
+			assignments: [],
+			invoices: [],
+		},
 	}),
 }));
 
@@ -66,15 +74,23 @@ describe("TopbarActions notifications", () => {
 	});
 });
 
-describe("TopbarActions layout v2", () => {
-	it("keeps the global search contract for the e2e spec, hidden below md", () => {
+describe("TopbarActions layout v2 (phase 8 — trigger ⌘K)", () => {
+	it("renders the desktop trigger hidden below md with the Kbd badge", () => {
 		renderActions();
-		const input = screen.getByRole("combobox");
-		expect(input.getAttribute("placeholder")).toBe("Tìm học viên, lớp học…");
-		expect(input.getAttribute("aria-controls")).toBe("global-search-listbox");
-		// Trigger ⌘K (phase 8) cũng ẩn dưới md — giữ sẵn hành vi.
-		const wrapper = input.closest("div") as HTMLElement;
-		expect(wrapper.className).toContain("hidden");
-		expect(wrapper.className).toContain("md:flex");
+		const trigger = screen.getByTestId("command-search-trigger");
+		expect(trigger.textContent).toContain("Tìm kiếm…");
+		expect(trigger.textContent).toContain("⌘K");
+		expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+		// Theo design v2: khung w-56 ẩn dưới md.
+		expect(trigger.className).toContain("hidden");
+		expect(trigger.className).toContain("md:inline-flex");
+	});
+
+	it("renders the icon-only trigger below md with an accessible name", () => {
+		renderActions();
+		const iconTrigger = screen.getByTestId("command-search-trigger-icon");
+		expect(iconTrigger.getAttribute("aria-label")).toBe("Tìm kiếm");
+		expect(iconTrigger.getAttribute("aria-haspopup")).toBe("dialog");
+		expect(iconTrigger.className).toContain("md:hidden");
 	});
 });
