@@ -271,17 +271,25 @@ test.describe
 			await expect(page.getByTestId(`vocab-deck-new-${deckId}`)).toHaveText(
 				"3 từ mới",
 			);
+			// Stats row tổng: thẻ Từ mới tổng = cộng newCount mọi bộ đang học (#372)
+			await expect(page.getByTestId("vocab-overview-new-count")).toHaveText(
+				"3",
+			);
 
 			// Deck detail page.
 			await page.getByTestId(`vocab-deck-card-${deckId}`).click();
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 			await expect(page.getByTestId("vocab-deck-title")).toHaveText(deckTitle);
-			await expect(page.getByTestId("vocab-deck-new-count")).toHaveText("3");
+			// 3 thẻ thống kê theo bài đã bỏ (#372); thay bằng nút Bắt đầu học kèm số
+			await expect(page.getByTestId("vocab-deck-new-count")).toHaveCount(0);
+			await expect(page.getByTestId("vocab-start-learn-btn")).toContainText(
+				"Bắt đầu học (3)",
+			);
 
 			// Learn session: vòng tự-chữa (giống cách người dùng thao tác) —
 			// intro lật+continue; typing trả lời ĐÚNG theo chữ cái đầu của hint
 			// (L1 giữ chữ đầu token); choice bấm option đầu (sai → engine requeue).
-			await page.getByTestId("vocab-start-session-btn").click();
+			await page.getByTestId("vocab-start-learn-btn").click();
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 
 			const WORD_BY_FIRST_LETTER: Record<string, string> = {
@@ -408,7 +416,13 @@ test.describe
 			// sai vì đáp án hiếm khi đứng đầu sau shuffle) → drove wrong streak;
 			// overlay wrong-streak phải xuất hiện khi streak chạm 5 (spec §3 rule 4).
 			await page.getByTestId(`vocab-deck-card-${deckId}`).click();
-			await page.getByTestId("vocab-start-session-btn").click();
+			// Đã học hết từ mới: Bắt đầu học disabled kèm title giải thích (#372, review I1)
+			await expect(page.getByTestId("vocab-start-learn-btn")).toBeDisabled();
+			await expect(page.getByTestId("vocab-start-learn-btn")).toHaveAttribute(
+				"title",
+				"Đã học hết từ mới",
+			);
+			await page.getByTestId("vocab-start-review-btn").click();
 
 			let safety = 0;
 			let overlaySeen = false;

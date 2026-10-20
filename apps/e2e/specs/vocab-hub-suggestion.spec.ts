@@ -303,10 +303,14 @@ test.describe
 				.click();
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 			await expect(page.getByTestId("vocab-deck-title")).toHaveText(deckTitle1);
-			await expect(page.getByTestId("vocab-deck-new-count")).toHaveText("3");
+			// 3 thẻ thống kê theo bài đã bỏ (#372); thay bằng nút Bắt đầu học kèm số
+			await expect(page.getByTestId("vocab-deck-new-count")).toHaveCount(0);
+			await expect(page.getByTestId("vocab-start-learn-btn")).toContainText(
+				"Bắt đầu học (3)",
+			);
 
 			// 5) Complete Learn session (exercises ensureDeckCards + loadPool + learn-commit)
-			await page.getByTestId("vocab-start-session-btn").click();
+			await page.getByTestId("vocab-start-learn-btn").click();
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 
 			const WORD_BY_FIRST_LETTER: Record<string, string> = {
@@ -371,7 +375,13 @@ test.describe
 
 			await page.reload();
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
-			await page.getByTestId("vocab-start-session-btn").click();
+			// Đã học hết từ mới: Bắt đầu học disabled kèm title giải thích (#372, review I1)
+			await expect(page.getByTestId("vocab-start-learn-btn")).toBeDisabled();
+			await expect(page.getByTestId("vocab-start-learn-btn")).toHaveAttribute(
+				"title",
+				"Đã học hết từ mới",
+			);
+			await page.getByTestId("vocab-start-review-btn").click();
 
 			let reviewSafety = 0;
 			while (

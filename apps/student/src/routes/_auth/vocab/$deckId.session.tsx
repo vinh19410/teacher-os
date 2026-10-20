@@ -8,10 +8,17 @@ import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
 export const Route = createFileRoute("/_auth/vocab/$deckId/session")({
-	validateSearch: (input: { course?: string }): { course?: string } => ({
+	validateSearch: (input: {
+		course?: string;
+		mode?: string;
+	}): { course?: string; mode?: "learn" | "review" } => ({
 		course:
 			typeof input.course === "string" && input.course.trim().length > 0
 				? input.course.trim()
+				: undefined,
+		mode:
+			input.mode === "learn" || input.mode === "review"
+				? input.mode
 				: undefined,
 	}),
 	component: VocabSessionRoutePage,
@@ -19,7 +26,7 @@ export const Route = createFileRoute("/_auth/vocab/$deckId/session")({
 
 function VocabSessionRoutePage() {
 	const { deckId } = Route.useParams();
-	const { course } = Route.useSearch();
+	const { course, mode } = Route.useSearch();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const meQuery = useStudentMe();
@@ -70,6 +77,7 @@ function VocabSessionRoutePage() {
 			<VocabSessionView
 				sessionData={data}
 				sessionNonce={sessionNonce}
+				mode={mode}
 				onExit={() => void handleExit()}
 			/>
 		</StudentShell>

@@ -52,6 +52,86 @@ function makeReviewSessionData(count = 6): VocabSessionData {
 	};
 }
 
+function makeMixedSessionData(): VocabSessionData {
+	const newCards = [1, 2, 3].map((idx) => ({
+		id: `cn-${idx}`,
+		wordId: `wn-${idx}`,
+		word: `fresh${idx}`,
+		translation: `nghĩa mới ${idx}`,
+		ipa: "/fresh/",
+		audioKey: null,
+		hasAudio: false,
+		level: 0,
+		isWarning: false,
+		state: "new" as const,
+		intervalDays: 0,
+		dueAt: NOW,
+		lapses: 0,
+	}));
+	const reviewCards = [
+		{
+			id: "cr-1",
+			wordId: "wr-1",
+			word: "resilient",
+			translation: "kiên cường",
+			ipa: "/re.zi.li.ənt/",
+			audioKey: null,
+			hasAudio: false,
+			level: 1,
+			isWarning: false,
+			state: "review" as const,
+			intervalDays: 1,
+			dueAt: NOW - 60_000,
+			lapses: 0,
+		},
+	];
+	const cards = [...newCards, ...reviewCards];
+	const pool = cards.map((c) => ({
+		wordId: c.wordId,
+		word: c.word,
+		translation: c.translation,
+		lang: "en",
+		deckId: "deck-mixed",
+	}));
+	return {
+		deck: { id: "deck-mixed", title: "Mixed Deck", lang: "en" },
+		cards,
+		pool,
+	};
+}
+
+function makeReviewOnlyNotDueSessionData(): VocabSessionData {
+	const cards = [
+		{
+			id: "cr-10",
+			wordId: "wr-10",
+			word: "sustainable",
+			translation: "bền vững",
+			ipa: "/sə.teɪ.nə.bəl/",
+			audioKey: null,
+			hasAudio: false,
+			level: 1,
+			isWarning: false,
+			state: "review" as const,
+			intervalDays: 1,
+			dueAt: Date.now() + 3_600_000,
+			lapses: 0,
+		},
+	];
+	const pool = cards.map((c) => ({
+		wordId: c.wordId,
+		word: c.word,
+		translation: c.translation,
+		lang: "en",
+		deckId: "deck-notdue",
+	}));
+	return {
+		deck: { id: "deck-notdue", title: "Not Due Deck", lang: "en" },
+		cards,
+		pool,
+	};
+}
+
 describe("VocabSessionView (Phase 5 UI & red-team F9/F14 invariants)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -373,5 +453,107 @@ describe("VocabSessionView (Phase 5 UI & red-team F9/F14 invariants)", () => {
 		});
 		expect(screen.getByTestId("vocab-intro-audio-normal")).toBeTruthy();
 		expect(screen.getByTestId("vocab-intro-audio-slow")).toBeTruthy();
+	});
+});
+
+describe("VocabSessionView mode prop (#372)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("mode='review' forces review prompts even when deck still has new cards", () => {
+		render(
+			<VocabSessionView
+				sessionData={makeMixedSessionData()}
+				rng={new SeededRandom(1)}
+				mode="review"
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.queryByTestId("vocab-learn-intro")).toBeNull();
+		// Review prompt renders (selfCheck/wordChoice/meaningChoice/typing theo RNG)
+		const prompt = [
+			"vocab-prompt-selfCheck",
+			"vocab-prompt-wordChoice",
+			"vocab-prompt-meaningChoice",
+			"vocab-prompt-typing",
+		]
+			.map((id) => screen.queryByTestId(id))
+			.find(Boolean);
+		expect(prompt).toBeTruthy();
+	});
+
+	it("mode='learn' starts the learn intro on a mixed deck", () => {
+		render(
+			<VocabSessionView
+				sessionData={makeMixedSessionData()}
+				rng={new SeededRandom(1)}
+				mode="learn"
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-learn-intro")).toBeTruthy();
+	});
+
+	it("no mode keeps legacy auto behavior (learn intro when new cards exist)", () => {
+		render(
+			<VocabSessionView
+				sessionData={makeMixedSessionData()}
+				rng={new SeededRandom(1)}
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-learn-intro")).toBeTruthy();
+	});
+
+	it("mode='learn' falls back to review when deck has only non-due review cards (allowAllWhenNoneDue)", () => {
+		render(
+			<VocabSessionView
+				sessionData={makeReviewOnlyNotDueSessionData()}
+				rng={new SeededRandom(1)}
+				mode="learn"
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.queryByTestId("vocab-learn-intro")).toBeNull();
+		const prompt = [
+			"vocab-prompt-selfCheck",
+			"vocab-prompt-wordChoice",
+			"vocab-prompt-meaningChoice",
+			"vocab-prompt-typing",
+		]
+			.map((id) => screen.queryByTestId(id))
+			.find(Boolean);
+		expect(prompt).toBeTruthy();
+	});
+
+	it("changing mode prop on the same mount rebuilds the engine (review -> learn)", () => {
+		const { rerender } = render(
+			<VocabSessionView
+				sessionData={makeMixedSessionData()}
+				rng={new SeededRandom(1)}
+				mode="review"
+				onExit={() => undefined}
+			/>,
+		);
+		expect(screen.queryByTestId("vocab-learn-intro")).toBeNull();
+
+		rerender(
+			<VocabSessionView
+				sessionData={makeMixedSessionData()}
+				rng={new SeededRandom(1)}
+				mode="learn"
+				onExit={() => undefined}
+			/>,
+		);
+		expect(screen.getByTestId("vocab-learn-intro")).toBeTruthy();
 	});
 });

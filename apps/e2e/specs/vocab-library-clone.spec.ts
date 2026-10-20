@@ -295,7 +295,13 @@ test.describe
 			expect(sessionDataJson.cards.some((c) => c.hasAudio === true)).toBe(true);
 
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
-			await page.getByTestId("vocab-start-session-btn").click();
+			// Deck mới tinh: Ôn tập disabled kèm title giải thích (#372, review I1)
+			await expect(page.getByTestId("vocab-start-review-btn")).toBeDisabled();
+			await expect(page.getByTestId("vocab-start-review-btn")).toHaveAttribute(
+				"title",
+				"Chưa có từ nào để ôn",
+			);
+			await page.getByTestId("vocab-start-learn-btn").click();
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 		});
 
@@ -522,12 +528,14 @@ test.describe
 				dbAfter.close();
 			}
 
-			// Enter Learn session -> preserves ?course=<targetCourseId>
-			await page.getByTestId("vocab-start-session-btn").click();
-			await expect(page).toHaveURL(
-				new RegExp(`/vocab/${libDeck1Id}/session\\?course=${targetCourseId}$`),
-			);
+			// Enter Learn session -> preserves ?course=<targetCourseId> (+ mode=learn)
+			await page.getByTestId("vocab-start-learn-btn").click();
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
+			// Thứ tự query do router serialize — assert bằng searchParams thay vì regex (#372)
+			const sessionUrl = new URL(page.url());
+			expect(sessionUrl.pathname).toBe(`/vocab/${libDeck1Id}/session`);
+			expect(sessionUrl.searchParams.get("course")).toBe(targetCourseId);
+			expect(sessionUrl.searchParams.get("mode")).toBe("learn");
 
 			// Commit 1 learned card via real /api/student/vocab/learn-commit endpoint, then exit session
 			const commitStatus = await page.evaluate(

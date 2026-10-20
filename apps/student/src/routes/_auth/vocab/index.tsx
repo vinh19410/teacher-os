@@ -80,6 +80,9 @@ function VocabOverviewPage() {
 		);
 	}
 
+	// Thống kê tổng Từ mới (client-side, không đổi API): cộng newCount mọi bộ đang học.
+	const totalNewCount = data.decks.reduce((sum, d) => sum + d.newCount, 0);
+
 	return (
 		<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
 			<div data-testid="vocab-overview-page" className="space-y-8">
@@ -110,7 +113,18 @@ function VocabOverviewPage() {
 				/>
 
 				{/* Stats row */}
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+					<div className="neu rounded-md p-4">
+						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+							Từ mới
+						</p>
+						<p
+							data-testid="vocab-overview-new-count"
+							className="mt-1 font-display font-extrabold text-2xl text-fg"
+						>
+							{totalNewCount}
+						</p>
+					</div>
 					<div className="neu rounded-md p-4">
 						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
 							Đến hạn ôn

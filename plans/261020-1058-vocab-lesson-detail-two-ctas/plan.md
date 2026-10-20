@@ -1,7 +1,7 @@
 ---
 title: "Vocab lesson detail: bỏ 3 thẻ thống kê, chỉ giữ 2 nút Ôn tập / Bắt đầu học; thống kê gom về dashboard /vocab"
 description: "Trang chi tiết bài học từ vựng (/vocab/$deckId) bỏ hàng thẻ Từ mới / Đến hạn ôn / Đã thuộc, thay CTA tự-chọn-chế-độ bằng 2 nút rõ ràng Ôn tập và Bắt đầu học; số Từ mới tổng được thêm vào hàng thống kê tổng ở /vocab."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 372
@@ -56,18 +56,18 @@ Phân bổ chế độ hiện nằm trong `VocabSessionView` (`hasNewCards ? "le
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | [UI: 2 nút ở lesson detail, session `mode`, thẻ Từ mới tổng](./phase-01-lesson-ctas-overview-stat.md) | Pending |
-| 2 | [Tests, E2E & verification gates](./phase-02-tests-gates.md) | Pending |
+| 1 | [UI: 2 nút ở lesson detail, session `mode`, thẻ Từ mới tổng](./phase-01-lesson-ctas-overview-stat.md) | Done |
+| 2 | [Tests, E2E & verification gates](./phase-02-tests-gates.md) | Done |
 
 ## Acceptance criteria
 
-- [ ] `/vocab/$deckId` không còn thẻ Từ mới / Đến hạn ôn / Đã thuộc; header chỉ có 2 nút Ôn tập và Bắt đầu học
-- [ ] Bắt đầu học → session chế độ học từ mới (`vocab-learn-intro` hiện); Ôn tập → session chế độ ôn (`vocab-learn-intro` không hiện, prompt ôn tập hiện) kể cả khi bài vẫn còn từ mới
-- [ ] Nút disabled đúng điều kiện (hết từ mới / chưa có từ để ôn), có `title` giải thích
-- [ ] `?course=` được giữ khi vào/thoát session; thoát session không mang `mode` về trang bài học
-- [ ] Mở `/vocab/$deckId/session` không có `mode` → hành vi cũ (tự chọn learn nếu còn từ mới)
-- [ ] `/vocab` có thẻ Từ mới tổng = tổng `newCount` các bộ đang học
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter student test`, e2e vocab specs pass; screenshot 1440×900 / 768×1024 / 375×812
+- [x] `/vocab/$deckId` không còn thẻ Từ mới / Đến hạn ôn / Đã thuộc; header chỉ có 2 nút Ôn tập và Bắt đầu học
+- [x] Bắt đầu học → session chế độ học từ mới (`vocab-learn-intro` hiện); Ôn tập → session chế độ ôn (`vocab-learn-intro` không hiện, prompt ôn tập hiện) kể cả khi bài vẫn còn từ mới
+- [x] Nút disabled đúng điều kiện (hết từ mới / chưa có từ để ôn), có `title` giải thích
+- [x] `?course=` được giữ khi vào/thoát session; thoát session không mang `mode` về trang bài học
+- [x] Mở `/vocab/$deckId/session` không có `mode` → hành vi cũ (tự chọn learn nếu còn từ mới)
+- [x] `/vocab` có thẻ Từ mới tổng = tổng `newCount` các bộ đang học
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter student test`, e2e vocab specs pass; screenshot 1440×900 / 768×1024 / 375×812
 
 ## Risks
 

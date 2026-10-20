@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tests, E2E & verification gates"
-status: pending
+status: done
 effort: 1h
 ---
 
