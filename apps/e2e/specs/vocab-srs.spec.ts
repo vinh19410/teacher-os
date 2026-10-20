@@ -426,6 +426,8 @@ test.describe
 
 			let safety = 0;
 			let overlaySeen = false;
+			let wrongStreak = 0; // mirror của engine: wrong/forgot liên tiếp (§3 rule 4)
+			let overlayRequired = false; // engine buộc overlay khi mirror chạm 5
 			while (
 				!(await page.getByTestId("vocab-summary-review").isVisible()) &&
 				safety < 60
@@ -433,7 +435,18 @@ test.describe
 				safety += 1;
 				if (await page.getByTestId("vocab-wrong-streak-overlay").isVisible()) {
 					overlaySeen = true;
+					// Engine reset streak về 0 khi hiển thị overlay
+					// (review-session.ts:242-244).
+					wrongStreak = 0;
 					await page.getByTestId("vocab-dismiss-overlay").click();
+					// Dismiss chỉ tự-advance với selfCheck; typing/option vẫn mở
+					// feedback — bấm continue để qua prompt kế (selfCheck: panel
+					// đã đóng nên bỏ qua).
+					const overlayContinue = page.getByTestId("vocab-continue-btn");
+					if (await overlayContinue.isVisible()) {
+						await expect(overlayContinue).toBeEnabled();
+						await overlayContinue.click();
+					}
 					continue;
 				}
 				const typing = page.getByTestId("vocab-typing-input");
@@ -449,12 +462,40 @@ test.describe
 				}
 				const feedbackContinue = page.getByTestId("vocab-continue-btn");
 				await expect(feedbackContinue).toBeVisible();
+				// Mirror wrong-streak từ verdict thực tế (spec §3 rule 4) thay vì
+				// proxy `safety` — gate assertion ở #379. Panel và nút continue
+				// render cùng một commit React nên nút visible thì verdict đã
+				// có mặt. Whitelist chặn mirror-inflation nếu UI copy drift.
+				const verdict =
+					(await page.getByTestId("vocab-feedback-verdict").textContent()) ??
+					"";
+				expect(
+					["Chính xác", "Chưa đúng", "Chưa nhớ"],
+					"feedback verdict text drift",
+				).toContain(verdict);
+				if (verdict === "Chính xác") {
+					wrongStreak = 0;
+				} else {
+					wrongStreak += 1;
+				}
+				if (wrongStreak >= 5) {
+					overlayRequired = true;
+				}
 				await expect(feedbackContinue).toBeEnabled();
 				await feedbackContinue.click();
 			}
-			// Chỉ assert overlay khi session đủ dài để chạm streak 5.
-			if (safety >= 5) {
+			// Assertion bám điều kiện trigger thật của overlay (≥ 5 wrong/forgot
+			// liên tiếp, đếm từ feedback verdict) thay vì proxy `safety` (tăng cả
+			// vòng chờ render) — #379.
+			if (overlayRequired) {
 				expect(overlaySeen, "wrong-streak overlay appeared").toBe(true);
+			}
+			// Assert nghịch: overlay xuất hiện ⇒ mirror phải đạt 5 (phát hiện
+			// mirror drift, ví dụ verdict text trên UI đổi mà spec không cập nhật).
+			if (overlaySeen) {
+				expect(overlayRequired, "overlay implies 5 wrong/forgot counted").toBe(
+					true,
+				);
 			}
 			await expect(page.getByTestId("vocab-summary-review")).toBeVisible();
 			await page.getByTestId("vocab-summary-back").click();
