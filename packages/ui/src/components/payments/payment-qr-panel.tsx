@@ -108,20 +108,20 @@ export function PaymentQrPanel({
 			: [];
 
 	return (
-		<div className={cn("flex flex-col gap-4", className)}>
+		<div className={cn("flex flex-col gap-4 text-left", className)}>
 			<p className="font-medium text-sm">{strings.title}</p>
 			{state === "paid" && (
-				<p className="rounded-md bg-success-soft p-3 font-medium text-sm text-success">
+				<p className="rounded-md bg-success-soft p-3 text-center font-medium text-sm text-success">
 					{strings.paidFull}
 				</p>
 			)}
 			{state === "nolink" && (
-				<p className="rounded-md bg-warn-soft p-3 text-sm">
+				<p className="rounded-md bg-warn-soft p-3 text-center text-sm">
 					{strings.noBankLink}
 				</p>
 			)}
 			{state === "partial" && (
-				<p className="rounded-md bg-warn-soft p-3 font-medium text-sm">
+				<p className="rounded-md bg-warn-soft p-3 text-center font-medium text-sm">
 					{strings.partial(fmt(data.paidAmount), fmt(data.amount))}
 				</p>
 			)}
@@ -133,35 +133,35 @@ export function PaymentQrPanel({
 						<img
 							src={data.qrUrl}
 							alt={`Mã QR chuyển khoản ${fmt(data.amountDue)} cho ${data.bank.holderName}`}
-							className="h-64 w-64 border border-line bg-white"
+							className="size-64 rounded-md border bg-white p-2"
 						/>
 					) : (
-						<div className="flex h-64 w-64 items-center justify-center border border-line text-muted-fg text-xs">
+						<div className="flex size-64 items-center justify-center rounded-md border text-muted-foreground text-xs">
 							Không tạo được ảnh QR
 						</div>
 					)}
-					<dl className="w-full">
+					<dl className="w-full border-t pt-3 text-left">
 						{rows.map((row) => (
 							<div
 								key={row.label}
-								className="flex items-center justify-between gap-3 border-line border-b py-2 last:border-b-0"
+								className="flex items-center justify-between gap-3 py-1.5"
 							>
-								<dt className="shrink-0 font-mono text-[10px] text-meta uppercase tracking-[0.15em]">
+								<dt className="shrink-0 text-muted-foreground text-sm">
 									{row.label}
 								</dt>
 								<dd className="flex items-center gap-2 text-right">
 									<span
 										className={
 											row.mono
-												? "select-all font-mono text-hot text-xs"
-												: "select-all text-xs"
+												? "select-all font-medium font-mono text-foreground text-sm tabular-nums"
+												: "select-all text-sm"
 										}
 									>
 										{row.value}
 									</span>
 									<button
 										type="button"
-										className="rounded-md px-2 py-1 text-hot text-xs hover:bg-hot/10 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										className="rounded-md px-2 py-1 text-primary text-xs outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
 										onClick={() => copy(row.label, row.value)}
 									>
 										{copied === row.label ? strings.copied : strings.copy}

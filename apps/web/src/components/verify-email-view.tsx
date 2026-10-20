@@ -69,12 +69,10 @@ export default function VerifyEmailView({
 	if (success) {
 		return (
 			<div className="text-center">
-				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft">
-					<MailCheck className="h-7 w-7 text-hot" />
+				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+					<MailCheck className="size-7 text-primary" />
 				</div>
-				<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
-					Email verified
-				</h2>
+				<h2 className="font-semibold text-xl tracking-tight">Email verified</h2>
 				<p className="mt-2 text-muted-fg text-sm">
 					Your email address has been confirmed. You're all set.
 				</p>
@@ -95,7 +93,7 @@ export default function VerifyEmailView({
 			<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft">
 				<CircleAlert className="h-7 w-7 text-danger" />
 			</div>
-			<h2 className="font-[620] font-display text-[28px] leading-[1.15] tracking-[-0.015em] max-[420px]:text-[24px]">
+			<h2 className="font-semibold text-xl tracking-tight">
 				This link didn't work
 			</h2>
 			<p className="mt-2 text-muted-fg text-sm">

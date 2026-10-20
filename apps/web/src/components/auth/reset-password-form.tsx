@@ -16,7 +16,7 @@ const UPDATE_FAILED = "Couldn't update your password. Try again.";
 const PASSWORDS_MISMATCH = "Passwords do not match";
 
 const LINK_CLASS =
-	"rounded-[4px] text-meta text-sm underline underline-offset-[3px] transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+	"font-medium text-primary text-sm underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none";
 
 const resetPasswordSchema = z
 	.object({

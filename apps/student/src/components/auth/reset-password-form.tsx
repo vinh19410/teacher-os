@@ -25,7 +25,7 @@ const resetPasswordSchema = z
 	});
 
 const linkClassName =
-	"-mx-2 rounded-[4px] px-2 py-[6px] font-[590] text-hot text-sm underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+	"font-medium text-primary text-sm underline-offset-4 transition-colors hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none";
 
 function InvalidLinkView() {
 	return (

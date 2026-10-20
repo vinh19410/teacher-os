@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { StudentAuthShell } from "@/components/auth/auth-shell";
 import { type AuthMode, AuthTabs } from "@/components/auth/auth-tabs";
-import BrandPanel from "@/components/auth/brand-panel";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
@@ -74,75 +73,51 @@ function RouteComponent() {
 	}
 
 	return (
-		<main className="relative grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
-			<div className="absolute top-4 right-4 z-10">
-				<ThemeToggle />
+		<StudentAuthShell formLabel="Đăng nhập tài khoản">
+			<div className="grid gap-2 text-center">
+				<h1 className="font-bold text-2xl">
+					{mode === "signin" ? "Chào mừng trở lại" : "Tạo tài khoản học viên"}
+				</h1>
+				<p className="text-balance text-muted-foreground text-sm">
+					{mode === "signin"
+						? "Đăng nhập để xem lịch học và bài tập của bạn."
+						: "Đăng ký tài khoản học viên nhanh chóng."}
+				</p>
 			</div>
-			<BrandPanel />
-			<section
-				aria-label="Đăng nhập tài khoản"
-				className="flex items-center justify-center px-[clamp(20px,3vw,48px)] py-[clamp(28px,4vh,56px)] max-[960px]:items-start max-[420px]:px-4 max-[420px]:pt-6 max-[420px]:pb-10"
+
+			<AuthTabs mode={mode} onChange={changeMode} disabled={anySubmitting} />
+
+			<div
+				aria-hidden="true"
+				className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
 			>
-				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
-					<div className="mb-[26px] hidden items-center justify-center gap-[10px] max-[960px]:flex">
-						<span className="font-mono text-fg text-sm uppercase tracking-[0.25em]">
-							Teacher<span className="text-hot">/</span>OS
-						</span>
-						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.25em]">
-							· Học viên
-						</span>
-					</div>
+				<span className="relative z-10 bg-background px-2 text-muted-foreground">
+					Hoặc tiếp tục với
+				</span>
+			</div>
 
-					<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
-						{mode === "signin" ? "Chào mừng trở lại" : "Tạo tài khoản học viên"}
-					</h2>
-					<p className="mt-2 text-muted-fg text-sm">
-						{mode === "signin"
-							? "Đăng nhập để xem lịch học và bài tập của bạn."
-							: "Đăng ký tài khoản học viên nhanh chóng."}
-					</p>
+			<GoogleOAuthButton />
 
-					<AuthTabs
-						mode={mode}
-						onChange={changeMode}
-						disabled={anySubmitting}
-					/>
+			<SignInForm
+				hidden={mode !== "signin"}
+				onSubmittingChange={setAnySubmitting}
+			/>
+			<SignUpForm
+				hidden={mode !== "signup"}
+				onSubmittingChange={setAnySubmitting}
+			/>
 
-					<GoogleOAuthButton />
-
-					<div
-						aria-hidden="true"
-						className="my-[22px] flex items-center gap-[14px] font-[590] text-[11px] text-meta uppercase tracking-[0.09em]"
-					>
-						<span className="h-px flex-1 bg-line-soft" />
-						<span>hoặc dùng email</span>
-						<span className="h-px flex-1 bg-line-soft" />
-					</div>
-
-					<SignInForm
-						hidden={mode !== "signin"}
-						onSubmittingChange={setAnySubmitting}
-					/>
-					<SignUpForm
-						hidden={mode !== "signup"}
-						onSubmittingChange={setAnySubmitting}
-					/>
-
-					<p className="mt-[22px] text-center text-muted-fg text-sm">
-						{mode === "signin" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
-						<button
-							type="button"
-							disabled={anySubmitting}
-							onClick={() =>
-								changeMode(mode === "signin" ? "signup" : "signin")
-							}
-							className="-mx-2 rounded-[4px] px-2 py-[6px] font-[590] text-hot text-sm underline-offset-[3px] transition-colors duration-[150ms] hover:text-accent-active hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
-						>
-							{mode === "signin" ? "Tạo tài khoản" : "Đăng nhập"}
-						</button>
-					</p>
-				</div>
-			</section>
-		</main>
+			<p className="text-center text-muted-foreground text-sm">
+				{mode === "signin" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
+				<button
+					type="button"
+					disabled={anySubmitting}
+					onClick={() => changeMode(mode === "signin" ? "signup" : "signin")}
+					className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+				>
+					{mode === "signin" ? "Tạo tài khoản" : "Đăng nhập"}
+				</button>
+			</p>
+		</StudentAuthShell>
 	);
 }

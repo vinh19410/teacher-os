@@ -10,6 +10,8 @@ interface AuthTabsProps {
 	disabled?: boolean;
 }
 
+/** Tabs segmented v2 (pattern `Tabs` v2): track bg-muted, item active nổi
+ * bg-background + shadow-sm. role/id giữ nguyên cho e2e (`#tab-signin`). */
 export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 	const signInTabRef = useRef<HTMLButtonElement>(null);
 	const signUpTabRef = useRef<HTMLButtonElement>(null);
@@ -22,51 +24,44 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 		(next === "signin" ? signInTabRef.current : signUpTabRef.current)?.focus();
 	}
 
+	const TABS: Array<{
+		id: AuthMode;
+		label: string;
+		ref: React.RefObject<HTMLButtonElement | null>;
+	}> = [
+		{ id: "signin", label: "Sign in", ref: signInTabRef },
+		{ id: "signup", label: "Create account", ref: signUpTabRef },
+	];
+
 	return (
 		<div
 			role="tablist"
 			aria-label="Sign in or create account"
 			onKeyDown={onKeyDown}
-			className="neu-in mb-7 grid grid-cols-2 rounded-lg p-1.5"
+			className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-[3px] text-muted-foreground"
 		>
-			<button
-				type="button"
-				role="tab"
-				id="tab-signin"
-				ref={signInTabRef}
-				disabled={disabled}
-				aria-selected={mode === "signin"}
-				aria-controls="panel-signin"
-				tabIndex={mode === "signin" ? 0 : -1}
-				onClick={() => onChange("signin")}
-				className={cn(
-					"h-10 whitespace-nowrap rounded-md border-none bg-transparent text-sm transition-all duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
-					mode === "signin"
-						? "neu-sm font-medium text-hot"
-						: "text-muted-fg hover:text-fg",
-				)}
-			>
-				Sign in
-			</button>
-			<button
-				type="button"
-				role="tab"
-				id="tab-signup"
-				ref={signUpTabRef}
-				disabled={disabled}
-				aria-selected={mode === "signup"}
-				aria-controls="panel-signup"
-				tabIndex={mode === "signup" ? 0 : -1}
-				onClick={() => onChange("signup")}
-				className={cn(
-					"h-10 whitespace-nowrap rounded-md border-none bg-transparent text-sm transition-all duration-[150ms] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none",
-					mode === "signup"
-						? "neu-sm font-medium text-hot"
-						: "text-muted-fg hover:text-fg",
-				)}
-			>
-				Create account
-			</button>
+			{TABS.map((tab) => (
+				<button
+					type="button"
+					role="tab"
+					key={tab.id}
+					id={`tab-${tab.id}`}
+					ref={tab.ref}
+					disabled={disabled}
+					aria-selected={mode === tab.id}
+					aria-controls={`panel-${tab.id}`}
+					tabIndex={mode === tab.id ? 0 : -1}
+					onClick={() => onChange(tab.id)}
+					className={cn(
+						"inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 text-sm outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+						mode === tab.id
+							? "bg-background font-medium text-foreground shadow-sm dark:border-input dark:bg-input/30"
+							: "hover:text-foreground",
+					)}
+				>
+					{tab.label}
+				</button>
+			))}
 		</div>
 	);
 }

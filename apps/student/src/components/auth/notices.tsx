@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
+/** Alert info v2: nền accent xám, icon màu primary. */
 export function NoticeInfo({ children }: { children: ReactNode }) {
 	return (
 		<div
 			role="status"
-			className="mb-[18px] flex items-start gap-[10px] rounded-[var(--radius-md)] bg-accent-soft px-[14px] py-3 text-[13px] text-fg-2 leading-[1.45]"
+			className="flex items-start gap-2 rounded-md bg-accent px-3 py-2.5 text-[13px] text-foreground leading-[1.45]"
 		>
 			<svg
 				viewBox="0 0 24 24"
@@ -13,7 +14,7 @@ export function NoticeInfo({ children }: { children: ReactNode }) {
 				strokeWidth="2"
 				strokeLinecap="round"
 				aria-hidden="true"
-				className="mt-[1px] h-4 w-4 flex-none text-hot"
+				className="mt-[1px] size-4 flex-none text-primary"
 			>
 				<circle cx="12" cy="12" r="9" />
 				<path d="M12 8h.01M11 12h1v4h1" />
@@ -23,6 +24,7 @@ export function NoticeInfo({ children }: { children: ReactNode }) {
 	);
 }
 
+/** Alert success v2: nền success-soft, chữ success. */
 export function NoticeOk({
 	title,
 	children,
@@ -33,7 +35,7 @@ export function NoticeOk({
 	return (
 		<div
 			role="status"
-			className="mb-[18px] flex items-start gap-[10px] rounded-[var(--radius-md)] bg-success-soft px-[14px] py-3 text-[13px] leading-[1.45]"
+			className="flex items-start gap-2 rounded-md bg-success-soft px-3 py-2.5 text-[13px] leading-[1.45]"
 		>
 			<svg
 				viewBox="0 0 24 24"
@@ -43,13 +45,13 @@ export function NoticeOk({
 				strokeLinecap="round"
 				strokeLinejoin="round"
 				aria-hidden="true"
-				className="mt-[1px] h-4 w-4 flex-none text-success"
+				className="mt-[1px] size-4 flex-none text-success"
 			>
 				<path d="M20 6 9 17l-5-5" />
 			</svg>
 			<span>
-				<strong className="block font-[590] text-fg">{title}</strong>
-				{children && <span className="text-fg-2">{children}</span>}
+				<strong className="block font-medium text-foreground">{title}</strong>
+				{children && <span className="text-foreground">{children}</span>}
 			</span>
 		</div>
 	);
