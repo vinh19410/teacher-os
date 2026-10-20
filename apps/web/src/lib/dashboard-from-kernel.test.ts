@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	atRiskRows,
+	formatClassSessionMeta,
 	formatDashboardGreeting,
 	formatDashboardLead,
 	groupLessonsByClassSession,
@@ -551,5 +552,28 @@ describe("upcomingLessonsThisWeek (issue #212)", () => {
 		expect(
 			upcomingLessonsThisWeek(lessons, wednesday).map((l) => l.id),
 		).toEqual(["thu-legacy-0900", "thu-dated-1900", "fri-legacy-2000"]);
+	});
+});
+
+describe("formatClassSessionMeta (issue #373)", () => {
+	const session = {
+		classId: "cl-1",
+		time: "19:00",
+		dur: 90,
+		type: "1:1" as const,
+		lessons: [],
+	};
+
+	test("joins duration, type and topic when all present", () => {
+		expect(formatClassSessionMeta({ ...session, topic: "Line chart" })).toBe(
+			"90' · 1:1 · Line chart",
+		);
+	});
+
+	test("drops missing or whitespace-only topic — no trailing separator", () => {
+		expect(formatClassSessionMeta({ ...session, topic: "" })).toBe("90' · 1:1");
+		expect(formatClassSessionMeta({ ...session, topic: "   " })).toBe(
+			"90' · 1:1",
+		);
 	});
 });

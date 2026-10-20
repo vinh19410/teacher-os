@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tests và verify 3 viewport"
-status: pending
+status: completed
 effort: 1h
 ---
 
