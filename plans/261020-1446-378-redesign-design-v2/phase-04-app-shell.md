@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "App shell sidebar-07 dùng chung web + student"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: [3]

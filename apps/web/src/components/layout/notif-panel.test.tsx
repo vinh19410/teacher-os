@@ -40,10 +40,10 @@ describe("NotifPanel component", () => {
 
 	it("includes responsive fixed positioning classes for mobile bounds", () => {
 		const html = renderToStaticMarkup(<NotifPanel notifs={[]} />);
-		expect(html).toContain("max-app:fixed");
-		expect(html).toContain("max-app:top-14");
-		expect(html).toContain("max-app:right-4");
-		expect(html).toContain("max-app:left-4");
-		expect(html).toContain("max-app:w-auto");
+		expect(html).toContain("max-md:fixed");
+		expect(html).toContain("max-md:top-14");
+		expect(html).toContain("max-md:right-4");
+		expect(html).toContain("max-md:left-4");
+		expect(html).toContain("max-md:w-auto");
 	});
 });
