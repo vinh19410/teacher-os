@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Sửa layout hàng lịch + thứ bậc chữ"
-status: pending
+status: completed
 effort: 1h
 ---
 

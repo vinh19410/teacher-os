@@ -62,6 +62,14 @@ export function groupLessonsByClassSession(
 	}
 	return Array.from(groups.values());
 }
+
+/**
+ * Dòng meta của một buổi-lớp trên dashboard: chỉ nối các phần có giá trị,
+ * nên lesson thiếu topic không còn dấu `·` treo cuối (issue #373).
+ */
+export function formatClassSessionMeta(g: DashboardClassSession): string {
+	return [`${g.dur}'`, g.type, g.topic.trim()].filter(Boolean).join(" · ");
+}
 /**
  * Phần còn lại của tuần hiện tại (mai → Chủ nhật), khác lessonsToday có
  * chủ ý:

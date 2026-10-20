@@ -14,6 +14,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import {
 	atRiskRows,
 	type DashboardRiskReason,
+	formatClassSessionMeta,
 	formatDashboardGreeting,
 	groupLessonsByClassSession,
 	lessonsToday,
@@ -30,6 +31,26 @@ const RISK_LABEL: Record<DashboardRiskReason, string> = {
 	absent: "Vắng",
 	"missed-check-in": "Miss check-in",
 };
+
+/**
+ * Hàng lịch dùng chung cho "Lịch hôm nay" và "Lịch sắp tới" (issue #373):
+ * cột giờ co theo nội dung (`auto` + `min-w-[5ch]` chống FOUT), giờ
+ * `text-lg tabular-nums` đúng thứ bậc design thay vì token 40px;
+ * tên lớp `min-w-0 break-words` để xuống dòng trong cột của nó.
+ */
+function ScheduleRow(props: { time: string; className: string; meta: string }) {
+	return (
+		<div className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-line border-t py-4">
+			<span className="min-w-[5ch] whitespace-nowrap font-mono text-lg tabular-nums leading-none">
+				{props.time}
+			</span>
+			<span className="min-w-0">
+				<span className="block break-words font-medium">{props.className}</span>
+				<span className="text-meta text-sm">{props.meta}</span>
+			</span>
+		</div>
+	);
+}
 
 function DashboardRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
@@ -74,7 +95,7 @@ function DashboardRoute() {
 			<div className="gap-10 lg:grid lg:grid-cols-[1.4fr_1fr]">
 				<section>
 					<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-						<h2 className="font-display font-extrabold text-2xl tracking-[-0.02em]">
+						<h2 className="font-display font-extrabold text-xl tracking-[-0.02em]">
 							Lịch hôm nay
 						</h2>
 						<Link
@@ -94,20 +115,12 @@ function DashboardRoute() {
 							const className = classById(g.classId)?.name ?? "Lớp";
 
 							return (
-								<div
+								<ScheduleRow
 									key={`${g.classId}-${g.time}`}
-									className="grid grid-cols-[80px_1fr] items-center gap-4 border-line border-t py-4"
-								>
-									<span className="font-mono text-2xl leading-none">
-										{g.time}
-									</span>
-									<span>
-										<span className="block font-medium">{className}</span>
-										<span className="text-meta text-sm">
-											{g.dur}&apos; · {g.type} · {g.topic}
-										</span>
-									</span>
-								</div>
+									time={g.time}
+									className={className}
+									meta={formatClassSessionMeta(g)}
+								/>
 							);
 						})}
 					</div>
@@ -130,22 +143,12 @@ function DashboardRoute() {
 												const className = classById(g.classId)?.name ?? "Lớp";
 
 												return (
-													<div
+													<ScheduleRow
 														key={`${group.day}-${g.classId}-${g.time}`}
-														className="grid grid-cols-[80px_1fr] items-center gap-4 border-line border-t py-4"
-													>
-														<span className="font-mono text-2xl leading-none">
-															{g.time}
-														</span>
-														<span>
-															<span className="block font-medium">
-																{className}
-															</span>
-															<span className="text-meta text-sm">
-																{g.dur}&apos; · {g.type} · {g.topic}
-															</span>
-														</span>
-													</div>
+														time={g.time}
+														className={className}
+														meta={formatClassSessionMeta(g)}
+													/>
 												);
 											})}
 										</div>
@@ -159,7 +162,7 @@ function DashboardRoute() {
 					<div className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
 						Học viên rủi ro
 					</div>
-					<h2 className="mt-1 mb-5 font-display font-extrabold text-2xl tracking-[-0.02em]">
+					<h2 className="mt-1 mb-5 font-display font-extrabold text-xl tracking-[-0.02em]">
 						Cần kiểm tra
 					</h2>
 					{risk.length === 0 ? (

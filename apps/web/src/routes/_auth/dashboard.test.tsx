@@ -70,6 +70,8 @@ describe("dashboard", () => {
 						status: "cancelled",
 					}),
 					lessonRow({ id: "c", day: 5, time: "18:00", topic: "Bar chart" }),
+					// #373: lesson without topic — meta must not end with a dangling ·.
+					lessonRow({ id: "d", day: 3, time: "08:00", topic: "" }),
 				],
 			}),
 		);
@@ -82,6 +84,9 @@ describe("dashboard", () => {
 		expect(today.textContent).not.toContain("Lớp đã hủy");
 		// Friday's session is "upcoming this week", not "today".
 		expect(screen.getByText(/Bar chart/)).toBeTruthy();
+		// #373: meta joins only non-empty parts, in both variants.
+		expect(within(today).getByText("90' · 1:1 · Line chart")).toBeTruthy();
+		expect(within(today).getByText("90' · 1:1")).toBeTruthy();
 		// #278: the dashboard is read-only — check-in lives on class/schedule.
 		expect(screen.queryByRole("button", { name: /Điểm danh/ })).toBeNull();
 	});

@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-20
+
+### Fixed
+- Dashboard giáo viên: giờ học ở **Lịch hôm nay** / **Lịch sắp tới** dùng `text-lg tabular-nums` thay token 40px và cột giờ co theo nội dung (`auto` + `min-w-[5ch]`), hết tình trạng chữ `19:00` đè lên tên lớp; tên lớp dài xuống dòng trong cột của nó; tiêu đề section xuống `text-xl` đúng thứ bậc design; dòng meta chỉ nối phần có giá trị — lesson thiếu topic hết dấu `·` treo cuối (#373)
+
 ## 2026-10-10
 
 ### Changed

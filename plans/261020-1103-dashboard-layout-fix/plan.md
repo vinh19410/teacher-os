@@ -1,7 +1,7 @@
 ---
 title: "Dashboard giáo viên: sửa layout lịch bị chồng chữ sau redesign"
 description: "Giờ học mono 40px tràn cột 80px đè lên tên lớp ở /dashboard; đưa cỡ chữ về đúng tỉ lệ design, gộp hàng lịch thành 1 component, bỏ dấu · thừa khi thiếu chủ đề."
-status: pending
+status: completed
 priority: P1
 effort: 2h
 issue: 373
@@ -64,3 +64,21 @@ Lỗi nằm ở chỗ dashboard dùng token, không phải ở token. Không đ�
 
 - `dashboard.test.tsx` assert theo `textContent` (vd `toContain("19:00")`, `getByText(/Bar chart/)`). Nếu đổi cấu trúc meta, dùng matcher lỏng để test không gãy do khoảng trắng.
 - Font DM Mono load chậm (FOUT) có thể làm cột giờ đổi độ rộng một chút. `min-w` cố định theo `ch` giúp tránh nhảy layout.
+
+## Red Team Review
+
+### Session — 2026-10-20
+**Findings:** 5 (0 accepted, 5 rejected) — reviewers ran inline (subagent model unavailable in env); lenses: Security Adversary/Fact Checker + Assumption Destroyer/Scope Auditor.
+**Severity breakdown:** 0 Critical, 0 High, 1 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Plan line-number claims (dashboard.tsx:101/:137, globals.css:59/:280, --text-xl 28px) | — | Reject: verified correct (dashboard.tsx:99/:135 rows, spans :101/:137; globals.css:58-59, :279-280) | — |
+| 2 | `formatClassSessionMeta` output as injection surface | Medium | Reject: rendered via JSX text interpolation (React escapes); Lesson fields typed | — |
+| 3 | Third copy of meta row pattern missed by helper extraction | Medium | Reject: `grid-cols-[80px` unique to dashboard.tsx:99,:135 | — |
+| 4 | `min-w-[5ch]` FOUT width shift | Low | Reject: covered by plan Risks section; nowrap prevents wrap regardless | — |
+| 5 | Existing tests assert textContent — restructure may break them | Medium | Reject as plan change: already covered by plan Risks + phase-02 step 2 (loose matchers) | — |
+
+### Whole-Plan Consistency Sweep
+- Token claims (`--text-2xl: 40px`, `--text-xl: 28px`) khớp `packages/ui/src/styles/globals.css:58-59,279-280`.
+- 2 phase files nhất quán với plan.md goals/acceptance criteria; không có mâu thuẫn còn lại.
