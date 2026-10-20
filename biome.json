@@ -115,7 +115,8 @@
 			"includes": [
 				"packages/ui/src/components/input-group.tsx",
 				"packages/ui/src/components/label.tsx",
-				"apps/student/src/components/vocab/prompt-*.tsx"
+				"apps/student/src/components/vocab/prompt-*.tsx",
+				"apps/student/src/components/vocab/vocab-pronunciation-buttons.tsx"
 			],
 			"linter": {
 				"rules": {
