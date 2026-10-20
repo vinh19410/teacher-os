@@ -10,8 +10,9 @@ import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
+import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
-import { cn } from "@/lib/cn";
+
 import { useData } from "@/lib/data-store";
 import { classMeta } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
@@ -65,54 +66,39 @@ export function StudentsRoute() {
 				});
 	return (
 		<div>
-			<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-				<PageHead
-					kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
-					title="Học viên"
-					lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
-				/>
-				<Button
-					variant="primary"
-					onClick={() => setInviteModalOpen(true)}
-					className="self-start sm:self-center"
-				>
-					<UserPlus className="h-4 w-4" />
-					Mời học viên
-				</Button>
-			</div>
+			<PageHead
+				kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
+				title="Học viên"
+				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
+				action={
+					<Button
+						onClick={() => setInviteModalOpen(true)}
+						className="self-start sm:self-center"
+					>
+						<UserPlus className="h-4 w-4" />
+						Mời học viên
+					</Button>
+				}
+			/>
 
 			<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-				<div className="neu-in inline-flex items-center gap-1 rounded-lg p-1.5">
-					<button
-						type="button"
-						onClick={() => setActiveTab("students")}
-						className={cn(
-							"rounded-md px-3 py-2 font-medium text-sm transition-colors",
-							activeTab === "students"
-								? "neu-sm text-hot"
-								: "text-muted-fg hover:text-fg",
-						)}
-					>
-						Học viên ({students.length})
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("invitations")}
-						className={cn(
-							"flex items-center gap-1.5 rounded-md px-3 py-2 font-medium text-sm transition-colors",
-							activeTab === "invitations"
-								? "neu-sm text-hot"
-								: "text-muted-fg hover:text-fg",
-						)}
-					>
-						<span>Lời mời đang chờ</span>
-						{pendingInvites.length > 0 && (
-							<span className="inline-flex items-center justify-center rounded-full bg-hot px-1.5 py-0.5 font-bold font-mono text-[10px] text-accent-on">
-								{pendingInvites.length}
-							</span>
-						)}
-					</button>
-				</div>
+				<Tabs
+					tabs={[
+						{
+							id: "students",
+							label: `Học viên (${students.length})`,
+						},
+						{
+							id: "invitations",
+							label:
+								pendingInvites.length > 0
+									? `Lời mời đang chờ (${pendingInvites.length})`
+									: "Lời mời đang chờ",
+						},
+					]}
+					active={activeTab}
+					onChange={(id) => setActiveTab(id as "students" | "invitations")}
+				/>
 				{activeTab === "students" && (
 					<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				)}
@@ -128,10 +114,8 @@ export function StudentsRoute() {
 					className="p-8 text-center"
 					data-testid="students-empty-state"
 				>
-					<h2 className="font-display font-extrabold text-lg">
-						Chưa có học viên nào
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<h2 className="font-semibold text-lg">Chưa có học viên nào</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Học viên sẽ tự xuất hiện tại đây khi đăng ký và đăng nhập student
 						portal lần đầu. Giáo viên có thể thêm học viên vào lớp từ trang chi
 						tiết lớp học.
@@ -139,7 +123,7 @@ export function StudentsRoute() {
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="font-mono text-meta text-xs">
+					<p className="text-muted-foreground text-xs">
 						Không có học viên nào phù hợp với bộ lọc.
 					</p>
 				</Card>
@@ -161,7 +145,7 @@ export function StudentsRoute() {
 										<Avatar text={s.avatar} size="sm" />
 										<div>
 											<div className="font-semibold text-sm">{s.name}</div>
-											<div className="font-mono text-meta text-xs">
+											<div className="text-muted-foreground text-xs">
 												{s.phone}
 											</div>
 										</div>
@@ -181,13 +165,13 @@ export function StudentsRoute() {
 															</Badge>
 														)}
 													</div>
-													<div className="font-mono text-meta text-xs">
+													<div className="text-muted-foreground text-xs">
 														{classMeta(c)}
 													</div>
 												</div>
 											))
 										) : (
-											<span className="font-mono text-meta text-xs">
+											<span className="text-muted-foreground text-xs">
 												Chưa có lớp
 											</span>
 										)}

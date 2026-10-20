@@ -153,7 +153,7 @@ export function BankHubLinkModal({
 							</Button>
 						</div>
 					)}
-					<p className="text-muted-fg text-xs">
+					<p className="text-muted-foreground text-xs">
 						Cửa sổ liên kết do SePay Bank Hub vận hành. TeacherOS không lưu mật
 						khẩu ngân hàng của bạn.
 					</p>
@@ -164,11 +164,11 @@ export function BankHubLinkModal({
 				<iframe
 					src={token.hostedLinkUrl}
 					title="Liên kết tài khoản ngân hàng qua SePay Bank Hub"
-					className="h-[560px] w-full rounded-md border border-border-line"
+					className="h-[560px] w-full rounded-md border border-border-border"
 					allow="clipboard-write"
 				/>
 			) : (
-				<div className="flex h-56 items-center justify-center text-muted-fg text-sm">
+				<div className="flex h-56 items-center justify-center text-muted-foreground text-sm">
 					{error
 						? "Không mở được cửa sổ liên kết."
 						: "Đang mở cửa sổ liên kết…"}

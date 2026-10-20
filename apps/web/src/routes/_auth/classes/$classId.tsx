@@ -15,9 +15,9 @@ import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
+import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
-import { Tag } from "@/components/ui/tag";
 import { VocabDeckList } from "@/components/vocab/vocab-deck-list";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
@@ -57,13 +57,13 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 	component: ClassDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-semibold text-xl">Không tìm thấy lớp</h1>
-			<p className="mt-2 text-muted-fg text-sm">
+			<h1 className="font-semibold text-xl">Không tìm thấy lớp</h1>
+			<p className="mt-2 text-muted-foreground text-sm">
 				Lớp này không tồn tại hoặc dữ liệu demo đã được reset.
 			</p>
 			<Link
 				to="/classes"
-				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-primary text-sm hover:text-primary"
 			>
 				← Về danh sách lớp
 			</Link>
@@ -192,64 +192,46 @@ function ClassDetailRoute() {
 		<div>
 			<Link
 				to="/classes"
-				className="mb-4 inline-block font-mono text-meta text-xs hover:text-hot"
+				className="mb-4 inline-block text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
 			>
 				← Lớp học
 			</Link>
-			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
-				<div className="min-w-[200px] flex-1">
-					<div className="flex flex-wrap items-baseline gap-2">
-						<h1 className="font-display font-extrabold text-3xl leading-[0.95] tracking-[-0.03em] max-app:text-2xl">
-							{cls.name}
-						</h1>
-						<Tag>{CLASS_TYPE_LABELS[cls.type]}</Tag>
-					</div>
-					<div className="mt-2 flex flex-wrap items-center gap-4">
-						<span className="font-mono text-meta text-xs">
-							{classMeta(cls)}
-						</span>
-						<span className="font-mono text-meta text-xs">
-							Lịch: {formatSchedule(cls.schedule)}
-						</span>
-						<span className="font-mono text-meta text-xs">
-							Bắt đầu: {cls.startDate}
-						</span>
-						<span className="inline-flex items-center gap-1.5 font-mono text-meta text-xs">
-							Học phí:{" "}
-							{cls.tuitionFee ? `${fmtVND(cls.tuitionFee)} / học viên` : "—"}
-							<button
-								type="button"
-								onClick={() => setFeeModalOpen(true)}
-								className="cursor-pointer font-sans text-hot text-xs hover:underline"
+			<PageHead
+				kicker={`${CLASS_TYPE_LABELS[cls.type]} · ${classMeta(cls)}`}
+				title={cls.name}
+				lead={`Lịch: ${formatSchedule(cls.schedule)} · Bắt đầu: ${cls.startDate} · Học phí: ${cls.tuitionFee ? `${fmtVND(cls.tuitionFee)} / học viên` : "—"}`}
+				action={
+					<>
+						{!(tab === "assignments" && assignmentsView !== "list") && (
+							<Button
+								size="sm"
+								onClick={() => {
+									setTab("assignments");
+									setAssignmentsView("assign");
+								}}
 							>
-								Sửa
-							</button>
-						</span>
-					</div>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					{!(tab === "assignments" && assignmentsView !== "list") && (
+								Giao bài tập
+							</Button>
+						)}
 						<Button
+							variant="outline"
 							size="sm"
-							onClick={() => {
-								setTab("assignments");
-								setAssignmentsView("assign");
-							}}
+							onClick={() => setAddStudentOpen(true)}
 						>
-							Giao bài tập
+							+ Thêm học viên vào lớp
 						</Button>
-					)}
-					<Button
-						variant="secondary"
-						size="sm"
-						onClick={() => setAddStudentOpen(true)}
-					>
-						+ Thêm học viên vào lớp
-					</Button>
-				</div>
-			</Card>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setFeeModalOpen(true)}
+						>
+							Sửa
+						</Button>
+					</>
+				}
+			/>
 
-			<div className="mb-6 grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-app:grid-cols-2">
+			<div className="mb-8 grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-app:grid-cols-2">
 				<StatCard
 					num={String(cls.studentIds.length)}
 					label={

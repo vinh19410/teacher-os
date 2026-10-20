@@ -84,7 +84,7 @@ export function SessionAttendanceModal({
 				return (
 					<div
 						key={sid}
-						className="flex items-center justify-between gap-3 border-line-soft border-b py-2 last:border-b-0"
+						className="flex items-center justify-between gap-3 border-border border-b py-3 last:border-b-0"
 					>
 						<span className="font-medium text-sm">
 							{studentById(sid)?.name ?? "Học viên"}

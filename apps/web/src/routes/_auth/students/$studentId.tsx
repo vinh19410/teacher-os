@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { PageHead } from "@/components/ui/page-head";
 import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
@@ -40,15 +41,15 @@ export const Route = createFileRoute("/_auth/students/$studentId")({
 	component: StudentDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+			<h1 className="font-semibold text-xl tracking-[-0.02em]">
 				Không tìm thấy học viên
 			</h1>
-			<p className="mt-2 text-muted-fg text-sm">
+			<p className="mt-2 text-muted-foreground text-sm">
 				Học viên này không tồn tại hoặc dữ liệu demo đã được reset.
 			</p>
 			<Link
 				to="/students"
-				className="mt-4 inline-block font-medium text-hot text-sm hover:text-hot"
+				className="mt-4 inline-block font-medium text-primary text-sm hover:text-primary"
 			>
 				← Về danh sách học viên
 			</Link>
@@ -83,9 +84,9 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 		);
 		return [
 			<div className="flex flex-col gap-0.5">
-				<span className="font-medium text-fg">{row.title}</span>
+				<span className="font-medium text-foreground">{row.title}</span>
 				{row.className !== "" && (
-					<span className="font-mono text-meta text-xs">{row.className}</span>
+					<span className="text-muted-foreground text-xs">{row.className}</span>
 				)}
 			</div>,
 			row.typeLabel ?? "—",
@@ -98,14 +99,14 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 		<Link
 			to="/assignments/$assignmentId"
 			params={{ assignmentId: row.id }}
-			className="font-medium text-hot hover:text-hot"
+			className="font-medium text-primary hover:text-primary"
 		>
 			{row.title}
 		</Link>,
 		row.typeLabel ?? "—",
 		row.due === "" ? "—" : fmtDue(row.due),
 		row.scores ? (
-			<span className="font-mono font-semibold text-hot">
+			<span className="font-semibold text-primary tabular-nums">
 				{averageBand(row.scores).toFixed(1)}
 			</span>
 		) : (
@@ -142,57 +143,59 @@ function StudentDetailRoute() {
 		<div>
 			<Link
 				to="/students"
-				className="mb-4 inline-block font-mono text-meta text-xs hover:text-hot"
+				className="mb-4 inline-block text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
 			>
 				← Học viên
 			</Link>
-			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
-				<Avatar text={student.avatar} size="lg" />
-				<div className="min-w-[200px] flex-1">
-					<h1 className="font-display font-extrabold text-3xl leading-[0.95] tracking-[-0.03em] max-app:text-2xl">
-						{student.name}
-					</h1>
-					<div className="mt-2 flex flex-wrap gap-4">
-						<span className="font-mono text-meta text-xs">
+			<PageHead
+				kicker={
+					<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<span>
 							{student.phone} · Zalo: {student.zalo}
 						</span>
-						{student.email && (
-							<span className="font-mono text-meta text-xs">
-								Email: {student.email}
-							</span>
-						)}
-						<span className="font-mono text-meta text-xs">
+						{student.email && <span>Email: {student.email}</span>}
+						<span>
 							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
 						</span>
-						{student.examDate && (
-							<span className="font-mono text-meta text-xs">
-								Thi: {student.examDate}
-							</span>
-						)}
-					</div>
-					<div className="mt-2 flex flex-wrap gap-1">
-						{student.tags.map((t) => (
-							<Tag key={t}>{t}</Tag>
-						))}
-					</div>
-				</div>
-				<div className="flex flex-wrap gap-2">
-					<Button
-						variant="secondary"
-						size="sm"
-						onClick={() =>
-							window.open(`https://zalo.me/${student.zalo}`, "_blank")
-						}
-					>
-						Nhắn Zalo
-					</Button>
-					{PARENT_REPORTS_ENABLED && (
-						<Button size="sm" onClick={() => setReportOpen(true)}>
-							Tạo báo cáo
+						{student.examDate && <span>Thi: {student.examDate}</span>}
+					</span>
+				}
+				title={
+					<span className="flex items-center gap-4">
+						<span aria-hidden="true">
+							<Avatar text={student.avatar} size="lg" />
+						</span>
+						{student.name}
+					</span>
+				}
+				lead={
+					student.tags.length > 0 ? (
+						<span className="flex flex-wrap gap-1">
+							{student.tags.map((t) => (
+								<Tag key={t}>{t}</Tag>
+							))}
+						</span>
+					) : undefined
+				}
+				action={
+					<>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								window.open(`https://zalo.me/${student.zalo}`, "_blank")
+							}
+						>
+							Nhắn Zalo
 						</Button>
-					)}
-				</div>
-			</Card>
+						{PARENT_REPORTS_ENABLED && (
+							<Button size="sm" onClick={() => setReportOpen(true)}>
+								Tạo báo cáo
+							</Button>
+						)}
+					</>
+				}
+			/>
 
 			<Tabs
 				tabs={[
@@ -208,9 +211,7 @@ function StudentDetailRoute() {
 			{tab === "profile" && (
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
-							Lớp học
-						</div>
+						<div className="mb-3 text-muted-foreground text-sm">Lớp học</div>
 						{studentClasses.length > 0 ? (
 							<div className="flex flex-col gap-4">
 								{studentClasses.map((c) => (
@@ -219,7 +220,7 @@ function StudentDetailRoute() {
 											<Link
 												to="/classes/$classId"
 												params={{ classId: c.id }}
-												className="font-medium text-hot hover:text-hot"
+												className="font-medium text-primary hover:text-primary"
 											>
 												{c.name}
 											</Link>
@@ -232,38 +233,38 @@ function StudentDetailRoute() {
 												</Badge>
 											)}
 										</div>
-										<div className="mt-1 font-mono text-meta text-xs">
+										<div className="mt-1 text-muted-foreground text-xs">
 											{classMeta(c)}
 										</div>
 									</div>
 								))}
 							</div>
 						) : (
-							<p className="text-muted-fg text-sm">
+							<p className="text-muted-foreground text-sm">
 								Chưa tham gia lớp học nào.
 							</p>
 						)}
 					</Card>
 					<Card variant="white">
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
-							Phụ huynh
-						</div>
+						<div className="mb-3 text-muted-foreground text-sm">Phụ huynh</div>
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between">
-								<span className="font-mono text-meta text-xs">Tên</span>
+								<span className="text-muted-foreground text-xs">Tên</span>
 								<span className="font-medium text-sm">
 									{student.parent.name}
 								</span>
 							</div>
 							<div className="flex items-center justify-between">
-								<span className="font-mono text-meta text-xs">SĐT</span>
-								<span className="font-mono">{student.parent.phone}</span>
+								<span className="text-muted-foreground text-xs">SĐT</span>
+								<span className="text-muted-foreground">
+									{student.parent.phone}
+								</span>
 							</div>
 						</div>
-						<div className="mt-5 mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
+						<div className="mt-5 mb-3 text-muted-foreground text-sm">
 							Ghi chú nội bộ
 						</div>
-						<p className="rounded-sm bg-surface-warm p-3 text-fg-2 text-sm leading-[1.5]">
+						<p className="rounded-sm bg-muted/40 p-3 text-foreground text-sm leading-[1.5]">
 							{student.notes}
 						</p>
 					</Card>
@@ -316,7 +317,7 @@ function StudentDetailRoute() {
 									cells: [
 										invoiceCode(inv.id),
 										invoiceType(inv.type),
-										<span key={inv.id} className="font-mono">
+										<span key={inv.id} className="text-muted-foreground">
 											{fmtVND(inv.amount)}
 										</span>,
 										inv.date,

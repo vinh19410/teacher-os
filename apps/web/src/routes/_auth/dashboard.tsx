@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
-import { SectionLabel } from "@/components/ui/section-label";
+import { SectionTitle } from "@/components/ui/section-label";
+import { Stat } from "@/components/ui/stat";
 import {
 	atRiskRows,
 	type DashboardRiskReason,
@@ -22,6 +23,8 @@ import {
 } from "@/lib/dashboard-from-kernel";
 import { useData } from "@/lib/data-store";
 import { lessonDayLabel } from "@/lib/format-schedule";
+import { fmtVND } from "@/lib/mock-data";
+import { tuitionTotals } from "@/lib/tuition-from-kernel";
 
 export const Route = createFileRoute("/_auth/dashboard")({
 	component: DashboardRoute,
@@ -41,7 +44,7 @@ const RISK_LABEL: Record<DashboardRiskReason, string> = {
 function ScheduleRow(props: { time: string; className: string; meta: string }) {
 	return (
 		<div className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-line border-t py-4">
-			<span className="min-w-[5ch] whitespace-nowrap font-mono text-lg tabular-nums leading-none">
+			<span className="min-w-[5ch] whitespace-nowrap text-lg tabular-nums tabular-nums leading-none">
 				{props.time}
 			</span>
 			<span className="min-w-0">
@@ -82,6 +85,8 @@ function DashboardRoute() {
 		month: "long",
 		year: "numeric",
 	});
+	const outstanding = tuitionTotals(data.invoices).outstanding;
+	const ungraded = data.assignments.filter((a) => a.status !== "graded").length;
 
 	return (
 		<div>
@@ -92,22 +97,51 @@ function DashboardRoute() {
 					<MorningSpot decorative className="-mb-4 hidden w-44 md:block" />
 				}
 			/>
+			{/* Hàng KPI v2 (design `Dashboard`): 4 thẻ Stat, số liệu tính từ
+			kernel — không hard-code. */}
+			<div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+				<Stat
+					label="Buổi học hôm nay"
+					value={String(todayGroups.length)}
+					sub={
+						upcoming.length > 0
+							? `${upcoming.length} buổi còn lại tuần này`
+							: undefined
+					}
+				/>
+				<Stat
+					label="Học viên"
+					value={String(data.students.length)}
+					sub={`${risk.length} cần kiểm tra`}
+				/>
+				<Stat
+					label="Bài tập chưa có điểm"
+					value={String(ungraded)}
+					sub="trên tổng bài đã giao"
+				/>
+				<Stat
+					label="Còn phải thu"
+					value={fmtVND(outstanding)}
+					hot={outstanding > 0}
+					sub={`${data.invoices.length} hóa đơn`}
+				/>
+			</div>
 			<div className="gap-10 lg:grid lg:grid-cols-[1.4fr_1fr]">
 				<section>
 					<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-						<h2 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+						<h2 className="font-semibold text-lg tracking-tight">
 							Lịch hôm nay
 						</h2>
 						<Link
 							to="/schedule"
-							className="font-mono text-hot text-xs hover:underline"
+							className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
 						>
 							Xem tuần →
 						</Link>
 					</div>
 					<div className="flex flex-col">
 						{todayGroups.length === 0 && (
-							<p className="font-mono text-meta text-xs">
+							<p className="text-muted-foreground text-sm">
 								Không có buổi học nào hôm nay.
 							</p>
 						)}
@@ -125,9 +159,9 @@ function DashboardRoute() {
 						})}
 					</div>
 					<div className="mt-8">
-						<SectionLabel>Lịch sắp tới</SectionLabel>
+						<SectionTitle>Lịch sắp tới</SectionTitle>
 						{upcoming.length === 0 ? (
-							<p className="font-mono text-meta text-xs">
+							<p className="text-muted-foreground text-sm">
 								Không có buổi học nào trong phần còn lại của tuần.
 							</p>
 						) : (
@@ -159,14 +193,12 @@ function DashboardRoute() {
 					</div>
 				</section>
 				<Card className="mb-10 self-start p-6 lg:mb-0">
-					<div className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
-						Học viên rủi ro
-					</div>
-					<h2 className="mt-1 mb-5 font-display font-extrabold text-xl tracking-[-0.02em]">
-						Cần kiểm tra
-					</h2>
+					<h2 className="font-semibold leading-none">Cần kiểm tra</h2>
+					<p className="mt-1.5 mb-5 text-muted-foreground text-sm">
+						Học viên rủi ro: vắng mặt hoặc miss check-in
+					</p>
 					{risk.length === 0 ? (
-						<p className="font-mono text-meta text-xs">
+						<p className="text-muted-foreground text-sm">
 							Không có học viên rủi ro.
 						</p>
 					) : (
@@ -185,7 +217,7 @@ function DashboardRoute() {
 											</Badge>
 										))}
 									</div>,
-									<span className="font-mono">
+									<span className="tabular-nums">
 										{row.student.pkg.remaining}
 									</span>,
 								],

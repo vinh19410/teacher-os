@@ -63,12 +63,12 @@ export function ImportSyllabusModal({
 			title="Nhập giáo trình từ template"
 		>
 			<form onSubmit={submit}>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Lớp "{className}" nhận một bản sao riêng — chỉnh sửa trên lớp không
 					ảnh hưởng template hay lớp khác.
 				</p>
 				{templates.length === 0 ? (
-					<p className="font-mono text-meta text-muted-fg text-xs">
+					<p className="text-muted-foreground text-muted-foreground text-xs">
 						Chưa có template nào — tạo syllabus ở trang Syllabus trước.
 					</p>
 				) : (
@@ -97,7 +97,7 @@ export function ImportSyllabusModal({
 						disabled={saving}
 					/>
 				)}
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

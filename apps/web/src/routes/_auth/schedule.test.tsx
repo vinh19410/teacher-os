@@ -105,17 +105,19 @@ describe("schedule week grid", () => {
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByText(/^Tuần 12–18\/10 · 1 buổi$/)).toBeTruthy();
 		expect(dayColumnLabels()).toEqual([
-			"T212/10",
-			"T313/10",
-			"T414/10",
-			"T515/10",
-			"T616/10",
-			"T717/10",
-			"CN18/10",
+			"T2 12/10Hôm nay",
+			"T3 13/10",
+			"T4 14/10",
+			"T5 15/10",
+			"T6 16/10",
+			"T7 17/10",
+			"CN 18/10",
 		]);
-		const today = screen.getByText("12/10");
-		expect(today.className).toContain("text-hot");
-		expect(screen.getByText("13/10").className).not.toContain("text-hot");
+		const todayCol = document.querySelector(".day-col") as HTMLElement;
+		expect(todayCol.className).toContain("ring-ring/20");
+		expect(
+			(document.querySelectorAll(".day-col")[1] as HTMLElement).className,
+		).not.toContain("ring-ring/20");
 		expect(
 			screen
 				.getByRole("link", { name: "Tuần này" })
@@ -130,7 +132,7 @@ describe("schedule week grid", () => {
 		routerState.search = { week: "2026-10-21" };
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByText(/^Tuần 19–25\/10/)).toBeTruthy();
-		expect(dayColumnLabels()[0]).toBe("T219/10");
+		expect(dayColumnLabels()[0]).toBe("T2 19/10");
 		expect(
 			screen.getByRole("link", { name: "← Tuần trước" }).getAttribute("href"),
 		).toBe("/schedule?week=2026-10-12");

@@ -89,12 +89,12 @@ export function EnrollStudentModal({
 					/>
 				</Field>
 				<div
-					className="flex max-h-52 flex-col gap-1 overflow-y-auto border border-line-soft border-solid p-2"
+					className="flex max-h-52 flex-col gap-1 overflow-y-auto border border-border border-solid p-2"
 					role="listbox"
 					aria-label="Danh sách học viên có sẵn"
 				>
 					{filteredStudents.length === 0 ? (
-						<p className="px-1 py-2 text-muted-fg text-xs">
+						<p className="px-1 py-2 text-muted-foreground text-xs">
 							{eligibleStudents.length === 0
 								? "Tất cả học viên đã được thêm vào lớp."
 								: "Không có học viên phù hợp."}
@@ -114,7 +114,7 @@ export function EnrollStudentModal({
 								onClick={() => setSelectedStudentId(s.id)}
 							>
 								<span>{s.name}</span>
-								<span className="font-mono text-meta text-xs">{s.phone}</span>
+								<span className="text-muted-foreground text-xs">{s.phone}</span>
 							</button>
 						))
 					)}
@@ -133,7 +133,7 @@ export function EnrollStudentModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

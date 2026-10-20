@@ -58,17 +58,17 @@ export function ClassesRoute() {
 					className="p-8 text-center"
 					data-testid="classes-empty-state"
 				>
-					<h2 className="font-display font-extrabold text-lg">
+					<h2 className="font-semibold text-lg tracking-tight">
 						Chưa có lớp học nào
 					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Bấm "+ Tạo lớp" ở góc trên để xếp lịch, liên kết giáo trình và quản
 						lý danh sách học viên.
 					</p>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="font-mono text-meta text-xs">
+					<p className="text-muted-foreground text-sm">
 						Không có lớp học nào phù hợp với bộ lọc.
 					</p>
 				</Card>
@@ -90,34 +90,29 @@ export function ClassesRoute() {
 										params: { classId: c.id },
 									})
 								}
-								className="neu group rounded-md p-6 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+								className="group rounded-xl border bg-card p-6 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 							>
-								<div className="flex items-baseline justify-between gap-3 font-mono text-[11px] text-meta uppercase tracking-widest">
+								<div className="flex items-baseline justify-between gap-3 text-muted-foreground text-xs">
 									<span>
 										{String(i + 1).padStart(2, "0")} ·{" "}
 										{CLASS_TYPE_LABELS[c.type]}
 									</span>
 									<span>{classMeta(c)}</span>
 								</div>
-								<h3 className="mt-4 font-display font-extrabold text-2xl tracking-[-0.02em] transition-colors group-hover:text-hot">
+								<h3 className="mt-3 font-semibold text-lg tracking-tight">
 									{c.name}
 								</h3>
-								<div className="mt-2 font-mono text-meta text-sm">
+								<div className="mt-1 text-muted-foreground text-sm">
 									{formatSchedule(c.schedule)}
 								</div>
-								<div className="mt-1 flex items-center gap-3 text-xs">
-									<span className="text-muted-fg">
-										{c.studentIds.length} học viên
-									</span>
-									<span className="truncate text-meta">
-										{SYLLABUS_LABEL}:{" "}
-										{sy ? sy.name : <span className="font-mono">chưa gán</span>}
-									</span>
+								<div className="text-muted-foreground text-xs">
+									{c.studentIds.length} học viên · {SYLLABUS_LABEL}:{" "}
+									{sy ? sy.name : "chưa gán"}
 								</div>
 								{c.sessionsTotal > 0 && (
 									<div className="mt-5">
 										<Progress value={pct} />
-										<div className="mt-1 font-mono text-[11px] text-meta">
+										<div className="mt-1.5 text-muted-foreground text-xs">
 											Tiến độ {c.sessionsDone}/{c.sessionsTotal} buổi
 										</div>
 									</div>

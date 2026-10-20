@@ -44,7 +44,7 @@ export function CurriculumManagementSection({
 				>
 					<div className="flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
-						<div className="font-mono text-meta text-xs">
+						<div className="text-muted-foreground text-xs">
 							{sy.level} ·{" "}
 							{sy.skills.length > 0
 								? sy.skills.join(", ")
@@ -63,7 +63,7 @@ export function CurriculumManagementSection({
 				</Card>
 			) : cls.syllabusId === "" ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa
 						trên lớp không ảnh hưởng template hay lớp khác.
 					</p>
@@ -79,7 +79,7 @@ export function CurriculumManagementSection({
 				// Legacy anomaly: pointer set but not this class's copy
 				// (pre-migration data). Removing nulls the pointer only.
 				<Card variant="white" className="p-8 text-center">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Lớp có con trỏ giáo trình lệch (dữ liệu cũ) và không thể chỉnh sửa.
 						Gỡ con trỏ để bắt đầu lại với một template.
 					</p>
@@ -105,13 +105,13 @@ export function CurriculumManagementSection({
 				onClose={busy ? () => undefined : () => setConfirmRemoveOpen(false)}
 				title="Gỡ giáo trình khỏi lớp?"
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Nếu lớp đang giữ một bản sao giáo trình, toàn bộ cây (kèm tiến độ buổi
 					học) sẽ bị xóa; nếu chỉ là con trỏ lệch (dữ liệu cũ), chỉ con trỏ được
 					dọn. Template gốc và các lớp khác không bao giờ bị ảnh hưởng. Hành
 					động này không thể hoàn tác.
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

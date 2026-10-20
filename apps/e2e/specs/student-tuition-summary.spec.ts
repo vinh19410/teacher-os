@@ -18,7 +18,9 @@ const CLASS_B = "E2E Sum Lớp B";
 
 /** One KPI card of the summary grid, addressed by its label. */
 function summaryCard(page: Page, label: string) {
-	return page.locator(".grid.grid-cols-3 > div").filter({ hasText: label });
+	return page
+		.locator('[data-testid="tuition-stat-row"] > div')
+		.filter({ hasText: label });
 }
 
 /** The big number div of a summary card — exact text (no substring). */

@@ -15,7 +15,7 @@ export type KernelRun = (
 ) => Promise<KernelCommandResult>;
 
 const textBtnClass =
-	"rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40";
+	"rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
 
 type DeleteTarget =
 	| { kind: "module"; module: SyllabusModule }
@@ -155,7 +155,7 @@ export function useSyllabusMutations({
 			onClose={busy ? () => undefined : () => setTarget(null)}
 			title={target?.kind === "module" ? "Xóa module?" : "Xóa buổi học?"}
 		>
-			<p className="text-muted-fg text-sm">{confirmCopy}</p>
+			<p className="text-muted-foreground text-sm">{confirmCopy}</p>
 			<div className="mt-4 flex justify-end gap-2">
 				<Button
 					variant="secondary"

@@ -46,7 +46,7 @@ const PICKER_SKILL_OPTIONS = [
 // Nút "Chấm bài" trông như Button primary size sm — `Button` không export
 // class variant nên chép tĩnh (Link, không phải button thật).
 const GRADE_LINK_BUTTON_CLASS =
-	"inline-flex items-center whitespace-nowrap rounded-full bg-hot px-[14px] py-[6px] font-medium text-accent-on text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+	"inline-flex items-center whitespace-nowrap rounded-full bg-primary px-[14px] py-[6px] font-medium text-primary-foreground text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
 
 /** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
  * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
@@ -68,7 +68,7 @@ function TargetGradeActions({
 				<Link
 					to="/grading/$attemptId"
 					params={{ attemptId: target.attemptId }}
-					className="font-medium text-hot text-xs hover:text-accent-active"
+					className="font-medium text-primary text-xs hover:text-primary"
 				>
 					Xem / sửa điểm
 				</Link>
@@ -301,43 +301,43 @@ export function ClassAssignmentsTab({
 						<path d="M5 12l5 5L20 7" />
 					</svg>
 				</div>
-				<h2 className="font-display font-semibold text-[22px] text-fg">
+				<h2 className="font-semibold text-[22px] text-foreground">
 					Đã giao bài tập
 				</h2>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					“{lastAssigned.promptTitle}” đã giao cho lớp {classGroup.name}. Học
 					viên thấy đề và hạn nộp. Chưa có bài nộp.
 				</p>
 
 				<ul className="flex flex-col gap-2.5 border-border-soft border-y py-4">
 					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">Lớp</span>
-						<strong className="font-semibold text-fg text-sm">
+						<span className="text-muted-foreground text-sm">Lớp</span>
+						<strong className="font-semibold text-foreground text-sm">
 							{classGroup.name}
 						</strong>
 					</li>
 					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">Đề</span>
-						<strong className="font-semibold text-fg text-sm">
+						<span className="text-muted-foreground text-sm">Đề</span>
+						<strong className="font-semibold text-foreground text-sm">
 							{lastAssigned.promptTitle}
 						</strong>
 					</li>
 					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">Hạn nộp</span>
-						<strong className="font-mono text-fg text-sm">
+						<span className="text-muted-foreground text-sm">Hạn nộp</span>
+						<strong className="text-foreground text-sm">
 							{fmtDue(lastAssigned.due)}
 						</strong>
 					</li>
 					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-fg text-sm">Đã nộp</span>
-						<strong className="font-mono text-fg text-sm">
+						<span className="text-muted-foreground text-sm">Đã nộp</span>
+						<strong className="text-foreground text-sm">
 							0/{lastAssigned.studentIds.length}
 						</strong>
 					</li>
 				</ul>
 
 				<div className="flex flex-col gap-2">
-					<span className="font-mono text-[11px] text-muted-fg uppercase tracking-wider">
+					<span className="text-muted-foreground text-sm">
 						Học viên ({lastAssigned.studentIds.length})
 					</span>
 					<div className="flex flex-col gap-2">
@@ -346,11 +346,11 @@ export function ClassAssignmentsTab({
 							return (
 								<div
 									key={sid}
-									className="flex items-center justify-between rounded-lg border border-border-soft bg-surface/40 p-2.5"
+									className="flex items-center justify-between rounded-lg border border-border-soft bg-muted/40 p-2.5"
 								>
 									<div className="flex items-center gap-2.5">
 										<Avatar text={s?.avatar ?? "??"} size="sm" />
-										<span className="font-medium text-fg text-sm">
+										<span className="font-medium text-foreground text-sm">
 											{s?.name ?? sid}
 										</span>
 									</div>
@@ -403,7 +403,7 @@ export function ClassAssignmentsTab({
 							<SectionLabel>Đề sẵn sàng</SectionLabel>
 							<Link
 								to="/assignments/new"
-								className="font-medium text-muted-fg text-xs hover:text-fg"
+								className="font-medium text-muted-foreground text-xs hover:text-foreground"
 							>
 								Thêm đề mới
 							</Link>
@@ -418,7 +418,7 @@ export function ClassAssignmentsTab({
 
 						{/* Prompt Cards */}
 						{readyPrompts.length === 0 ? (
-							<div className="rounded-lg border border-border-soft bg-surface/50 p-6 text-center text-muted-fg text-sm">
+							<div className="rounded-lg border border-border-soft bg-muted/50 p-6 text-center text-muted-foreground text-sm">
 								Không có đề{" "}
 								{selectedSkillChip !== "Tất cả" ? `${selectedSkillChip} ` : ""}
 								sẵn sàng.
@@ -444,15 +444,15 @@ export function ClassAssignmentsTab({
 											className={cn(
 												"flex flex-col gap-1.5 rounded-xl border p-3.5 text-left transition-all duration-150",
 												isSelected
-													? "border-fg bg-surface shadow-xs ring-1 ring-fg"
-													: "border-line bg-bg hover:border-fg/60 hover:bg-surface/50",
+													? "border-fg bg-muted shadow-xs ring-1 ring-fg"
+													: "border-border bg-background hover:border-fg/60 hover:bg-muted/50",
 											)}
 										>
 											<div className="flex items-start justify-between gap-2">
-												<strong className="font-display font-semibold text-fg text-sm">
+												<strong className="font-semibold text-foreground text-sm">
 													{p.title}
 												</strong>
-												<span className="shrink-0 font-mono text-meta text-xs">
+												<span className="shrink-0 text-muted-foreground text-xs">
 													{part.label} · Band {p.band}
 												</span>
 											</div>
@@ -464,7 +464,7 @@ export function ClassAssignmentsTab({
 													<StatusTag tone="ok">Sẵn sàng</StatusTag>
 												)}
 												{p.source.trim() && (
-													<span className="truncate text-meta">
+													<span className="truncate text-muted-foreground">
 														{p.source.trim()}
 													</span>
 												)}
@@ -475,7 +475,7 @@ export function ClassAssignmentsTab({
 							</div>
 						)}
 
-						<p className="text-[11px] text-muted-fg">
+						<p className="text-[11px] text-muted-foreground">
 							Bản nháp không hiện ở đây. Sửa trong ngân hàng rồi mới giao.
 						</p>
 						{hasAttemptedSubmit && !promptOk && (
@@ -491,7 +491,7 @@ export function ClassAssignmentsTab({
 						<Card variant="white" className="flex flex-col gap-5 p-5">
 							<div>
 								<SectionLabel>Giao cho lớp này</SectionLabel>
-								<h2 className="mt-1 font-display font-semibold text-[20px] text-fg">
+								<h2 className="mt-1 font-semibold text-[20px] text-foreground">
 									Hạn nộp và học viên
 								</h2>
 							</div>
@@ -500,7 +500,7 @@ export function ClassAssignmentsTab({
 							<div className="flex flex-col gap-1.5">
 								<label
 									htmlFor="assignment-due-input"
-									className="font-medium text-fg text-xs"
+									className="font-medium text-foreground text-xs"
 								>
 									Hạn nộp <span className="text-danger">*</span>
 								</label>
@@ -511,7 +511,7 @@ export function ClassAssignmentsTab({
 									min={todayVN}
 									value={due}
 									onChange={(e) => setDue(e.target.value)}
-									className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm focus:border-fg focus:outline-none"
+									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm focus:border-fg focus:outline-none"
 								/>
 								{hasAttemptedSubmit && !dueOk && (
 									<p className="font-medium text-danger text-xs">
@@ -524,7 +524,7 @@ export function ClassAssignmentsTab({
 							<div className="flex flex-col gap-1.5">
 								<label
 									htmlFor="assignment-note-input"
-									className="font-medium text-muted-fg text-xs"
+									className="font-medium text-muted-foreground text-xs"
 								>
 									Nhắn học viên (không bắt buộc)
 								</label>
@@ -534,7 +534,7 @@ export function ClassAssignmentsTab({
 									value={note}
 									onChange={(e) => setNote(e.target.value)}
 									placeholder="Ví dụ: nộp trước buổi T5, lập dàn ý 4 đoạn."
-									className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm placeholder:text-muted-fg focus:border-fg focus:outline-none"
+									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-fg focus:outline-none"
 								/>
 							</div>
 
@@ -545,7 +545,7 @@ export function ClassAssignmentsTab({
 									<button
 										type="button"
 										onClick={handleToggleAllStudents}
-										className="font-medium text-muted-fg text-xs hover:text-fg"
+										className="font-medium text-muted-foreground text-xs hover:text-foreground"
 									>
 										{selectedStudentIds.length === enrolledStudents.length
 											? "Bỏ chọn tất cả"
@@ -554,7 +554,7 @@ export function ClassAssignmentsTab({
 								</div>
 
 								{enrolledStudents.length === 0 ? (
-									<p className="text-muted-fg text-xs">
+									<p className="text-muted-foreground text-xs">
 										Lớp chưa có học viên nào.
 									</p>
 								) : (
@@ -564,7 +564,7 @@ export function ClassAssignmentsTab({
 											return (
 												<label
 													key={s.id}
-													className="flex cursor-pointer items-center justify-between p-3 hover:bg-surface/50"
+													className="flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50"
 												>
 													<div className="flex items-center gap-3">
 														<input
@@ -573,14 +573,14 @@ export function ClassAssignmentsTab({
 															onChange={(e) =>
 																handleStudentToggle(s.id, e.target.checked)
 															}
-															className="h-4 w-4 rounded-sm border-line text-primary focus:ring-primary"
+															className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary"
 														/>
 														<Avatar text={s.avatar} size="sm" />
-														<span className="font-medium text-fg text-sm">
+														<span className="font-medium text-foreground text-sm">
 															{s.name}
 														</span>
 													</div>
-													<span className="font-mono text-meta text-xs">
+													<span className="text-muted-foreground text-xs">
 														{s.phone}
 													</span>
 												</label>
@@ -598,7 +598,7 @@ export function ClassAssignmentsTab({
 
 							{/* Reassign Warning Note */}
 							{isReassign && previousAssignment && (
-								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-fg-2 text-xs leading-relaxed">
+								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-foreground-2 text-xs leading-relaxed">
 									Đề này đã giao lớp này, hạn {fmtDue(previousAssignment.due)}.
 									Giao lại sẽ thêm lượt mới cho học viên đã chọn.
 								</div>
@@ -606,14 +606,14 @@ export function ClassAssignmentsTab({
 						</Card>
 
 						{/* Live Preview Paper */}
-						<div className="rounded-lg border border-line bg-surface-warm p-5">
-							<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+						<div className="rounded-lg border border-border bg-muted/40 p-5">
+							<p className="text-muted-foreground text-sm">
 								Xem trước phía học viên
 							</p>
-							<p className="mt-1 font-display font-semibold text-[17px] text-fg">
+							<p className="mt-1 font-semibold text-[17px] text-foreground">
 								{selectedPrompt ? selectedPrompt.title : "Chọn một đề"}
 							</p>
-							<p className="mt-1.5 font-mono text-meta text-xs">
+							<p className="mt-1.5 text-muted-foreground text-xs">
 								{selectedPrompt && previewPart
 									? `${previewPart.spec} · hạn ${fmtDue(due)}`
 									: `hạn ${fmtDue(due)}`}
@@ -628,10 +628,10 @@ export function ClassAssignmentsTab({
 											: selectedPrompt.prompt
 									}
 									legacyWhitespace="pre-wrap"
-									className="mt-3 text-fg text-sm leading-[1.55]"
+									className="mt-3 text-foreground text-sm leading-[1.55]"
 								/>
 							) : (
-								<p className="mt-3 text-fg text-sm leading-[1.55]">
+								<p className="mt-3 text-foreground text-sm leading-[1.55]">
 									Đề sẽ hiện khi bạn chọn từ ngân hàng.
 								</p>
 							)}
@@ -652,14 +652,16 @@ export function ClassAssignmentsTab({
 				</div>
 
 				{/* Sticky Action Bar */}
-				<div className="fixed inset-x-0 bottom-0 z-20 border-line border-t bg-bg/95 p-4 shadow-lg backdrop-blur-sm">
+				<div className="fixed inset-x-0 bottom-0 z-20 border-border border-t bg-background/95 p-4 shadow-lg backdrop-blur-sm">
 					<div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
 						{/* Left: Action copy */}
 						<div className="flex flex-col">
-							<strong className="font-display font-semibold text-fg text-sm">
+							<strong className="font-semibold text-foreground text-sm">
 								{actionState.title}
 							</strong>
-							<span className="text-muted-fg text-xs">{actionState.sub}</span>
+							<span className="text-muted-foreground text-xs">
+								{actionState.sub}
+							</span>
 						</div>
 
 						{/* Right: Buttons + Submit Notice */}
@@ -707,7 +709,7 @@ export function ClassAssignmentsTab({
 			<div className="flex items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<SectionLabel>Bài đã giao lớp này</SectionLabel>
-					<span id="assign-summary" className="font-mono text-meta text-xs">
+					<span id="assign-summary" className="text-muted-foreground text-xs">
 						{summaryText}
 					</span>
 				</div>
@@ -724,7 +726,7 @@ export function ClassAssignmentsTab({
 			{/* Empty or List */}
 			{classAssignments.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Chưa giao bài nào cho lớp này.
 					</p>
 					<div className="mt-4 flex justify-center">
@@ -747,15 +749,15 @@ export function ClassAssignmentsTab({
 							<article
 								key={ca.id}
 								aria-label={`${doneCount} trên ${ca.targets.length} đã nộp`}
-								className="assign-item rounded-xl border border-line bg-card p-5"
+								className="assign-item rounded-xl border border-border bg-card p-5"
 							>
 								{/* Item Header */}
 								<div className="flex flex-wrap items-start justify-between gap-3">
 									<div className="flex flex-col gap-1">
-										<h3 className="assign-item-title font-display font-semibold text-[16px] text-fg">
+										<h3 className="assign-item-title font-semibold text-[16px] text-foreground">
 											{ca.title}
 										</h3>
-										<p className="font-mono text-meta text-xs">
+										<p className="text-muted-foreground text-xs">
 											Hạn {fmtDue(ca.due)} · {doneCount}/{ca.targets.length} đã
 											nộp
 										</p>
@@ -779,12 +781,12 @@ export function ClassAssignmentsTab({
 											>
 												<div className="flex items-center gap-2.5">
 													<Avatar text={s?.avatar ?? "??"} size="sm" />
-													<strong className="font-medium text-fg text-sm">
+													<strong className="font-medium text-foreground text-sm">
 														{s?.name ?? target.studentId}
 													</strong>
 												</div>
 												<div className="flex items-center gap-3">
-													<span className="font-mono text-meta text-xs">
+													<span className="text-muted-foreground text-xs">
 														{target.submittedAt
 															? fmtWhen(target.submittedAt)
 															: "Chưa có bài nộp"}
