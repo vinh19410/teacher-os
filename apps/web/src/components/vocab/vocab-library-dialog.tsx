@@ -306,7 +306,7 @@ export function VocabLibraryDialog({
 					{overCap ? (
 						<p
 							data-testid="vocab-library-cap-warning"
-							className="font-mono text-hot text-xs"
+							className="font-mono text-primary text-xs"
 						>
 							Vượt giới hạn 1 lượt (tối đa {MAX_CLONE_DECKS} bộ và tổng số bộ +
 							từ ≤ {MAX_CLONE_STATEMENTS}). Vui lòng bỏ chọn bớt bài.
@@ -315,7 +315,7 @@ export function VocabLibraryDialog({
 					{batchCapHint ? (
 						<p
 							data-testid="vocab-library-batch-hint"
-							className="font-mono text-hot text-xs"
+							className="font-mono text-primary text-xs"
 						>
 							{batchCapHint}
 						</p>
@@ -323,7 +323,7 @@ export function VocabLibraryDialog({
 					{statusNotice ? (
 						<p
 							data-testid="vocab-library-status-notice"
-							className="font-mono text-hot text-xs"
+							className="font-mono text-primary text-xs"
 						>
 							{statusNotice}
 						</p>
@@ -331,7 +331,7 @@ export function VocabLibraryDialog({
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<span
 							data-testid="vocab-library-selection-summary"
-							className="font-mono text-muted-fg text-xs"
+							className="font-mono text-muted-foreground text-xs"
 						>
 							Đã chọn {selectedCount} bộ · {totalWords} từ
 						</span>
@@ -369,12 +369,12 @@ export function VocabLibraryDialog({
 					/>
 
 					{loading ? (
-						<p className="py-6 text-center font-mono text-muted-fg text-xs">
+						<p className="py-6 text-center font-mono text-muted-foreground text-xs">
 							Đang tải danh mục khóa học...
 						</p>
 					) : loadError ? (
 						<div className="space-y-2 py-6 text-center">
-							<p className="text-hot text-sm">
+							<p className="text-primary text-sm">
 								Không tải được danh mục thư viện từ vựng.
 							</p>
 							<Button
@@ -387,23 +387,23 @@ export function VocabLibraryDialog({
 							</Button>
 						</div>
 					) : filteredCourses.length === 0 ? (
-						<p className="py-6 text-center text-muted-fg text-sm">
+						<p className="py-6 text-center text-muted-foreground text-sm">
 							Không tìm thấy khóa học phù hợp.
 						</p>
 					) : (
-						<div className="max-h-[380px] divide-y divide-line overflow-y-auto rounded-md border border-line">
+						<div className="max-h-[380px] divide-y divide-border overflow-y-auto rounded-md border border-border">
 							{filteredCourses.map((course) => (
 								<div
 									key={course.id}
 									data-testid={`vocab-library-course-${course.id}`}
-									className="flex items-center justify-between gap-3 px-4 py-3"
+									className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
 								>
 									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium text-fg text-sm">
+										<p className="truncate font-medium text-foreground text-sm">
 											{course.name}
 										</p>
 										{course.description || course.target ? (
-											<p className="mt-0.5 truncate text-muted-fg text-xs">
+											<p className="mt-0.5 truncate text-muted-foreground text-xs">
 												{[course.description, course.target]
 													.filter(Boolean)
 													.join(" · ")}
@@ -411,7 +411,7 @@ export function VocabLibraryDialog({
 										) : null}
 									</div>
 									<div className="flex flex-none items-center gap-3">
-										<span className="font-mono text-[11px] text-muted-fg">
+										<span className="font-mono text-[11px] text-muted-foreground">
 											{course.deckCount} bài
 										</span>
 										<Button
@@ -463,12 +463,12 @@ export function VocabLibraryDialog({
 					/>
 
 					{loading ? (
-						<p className="py-6 text-center font-mono text-muted-fg text-xs">
+						<p className="py-6 text-center font-mono text-muted-foreground text-xs">
 							Đang tải danh sách bài học...
 						</p>
 					) : loadError ? (
 						<div className="space-y-2 py-6 text-center">
-							<p className="text-hot text-sm">
+							<p className="text-primary text-sm">
 								Không tải được danh sách bài học của khóa này.
 							</p>
 							<Button
@@ -483,11 +483,11 @@ export function VocabLibraryDialog({
 							</Button>
 						</div>
 					) : filteredDecks.length === 0 ? (
-						<p className="py-6 text-center text-muted-fg text-sm">
+						<p className="py-6 text-center text-muted-foreground text-sm">
 							Không có bài học nào khớp từ khóa.
 						</p>
 					) : (
-						<div className="max-h-[340px] divide-y divide-line overflow-y-auto rounded-md border border-line">
+						<div className="max-h-[340px] divide-y divide-border overflow-y-auto rounded-md border border-border">
 							{filteredDecks.map((deck) => {
 								const checked = selectedDecks.has(deck.id);
 								const alreadyInClass = existingLibraryDeckIds.has(deck.id);
@@ -496,7 +496,7 @@ export function VocabLibraryDialog({
 										key={deck.id}
 										data-testid={`vocab-library-deck-${deck.id}`}
 										className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
-											checked ? "neu-in" : "hover:bg-black/[0.02]"
+											checked ? "neu-in" : "hover:bg-muted/50"
 										}`}
 									>
 										<div className="flex min-w-0 flex-1 items-center gap-3">
@@ -511,7 +511,7 @@ export function VocabLibraryDialog({
 												<div className="flex flex-wrap items-center gap-2">
 													<span
 														className={`truncate font-medium text-sm ${
-															checked ? "text-hot" : "text-fg"
+															checked ? "text-primary" : "text-foreground"
 														}`}
 													>
 														{deck.title}
@@ -519,7 +519,7 @@ export function VocabLibraryDialog({
 													{alreadyInClass ? (
 														<span
 															data-testid={`vocab-library-existing-chip-${deck.id}`}
-															className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-hot uppercase tracking-widest"
+															className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
 														>
 															{isHubMode
 																? "Đã có trong hub"
@@ -529,7 +529,7 @@ export function VocabLibraryDialog({
 												</div>
 											</div>
 										</div>
-										<span className="flex-none font-mono text-[11px] text-muted-fg">
+										<span className="flex-none font-mono text-[11px] text-muted-foreground">
 											{deck.wordCount} từ
 										</span>
 									</label>

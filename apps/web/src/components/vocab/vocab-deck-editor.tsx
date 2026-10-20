@@ -151,18 +151,18 @@ export function VocabDeckEditorDialog({
 				</Button>
 			}
 		>
-			<p className="text-muted-fg text-sm">
+			<p className="text-muted-foreground text-sm">
 				Thêm, sửa hoặc xoá từng từ. File âm thanh (MP3/M4A/WAV) dùng cho
 				minigame Listening.
 			</p>
 
 			{loading ? (
-				<p className="py-6 text-center text-muted-fg text-sm">
+				<p className="py-6 text-center text-muted-foreground text-sm">
 					Đang tải danh sách từ...
 				</p>
 			) : loadError ? (
 				<div className="space-y-3 py-6 text-center">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Không tải được danh sách từ vựng.
 					</p>
 					<Button

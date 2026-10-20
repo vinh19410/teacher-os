@@ -10,7 +10,7 @@ import {
 	type GradableSkill,
 	ieltsOverallBand,
 } from "@teacher-os/api/lib/ielts-band";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fmtWhen } from "@/components/assignments/assignment-status";
 import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function GradeForm({
 	error,
 	savedAt,
 	onSave,
+	onOverallChange,
 }: {
 	skill: GradableSkill;
 	part: string;
@@ -39,6 +40,9 @@ export function GradeForm({
 	error: string | null;
 	savedAt: string | null;
 	onSave(input: QuizGradeInput): void;
+	/** Band tổng sống đẩy lên PageHead của route — form chỉ tính, không
+	 * tự render con số lớn (design `Grading`). */
+	onOverallChange?(band: string): void;
 }) {
 	const keys = criteriaForSkill(skill);
 	const [scores, setScores] = useState<Record<string, number | null>>(() =>
@@ -48,6 +52,12 @@ export function GradeForm({
 
 	const complete = keys.every((key) => scores[key] !== null);
 	const values = complete ? keys.map((key) => scores[key] as number) : [];
+	const overallText = complete ? formatBand(ieltsOverallBand(values)) : "—";
+
+	// Band tổng sống lên PageHead qua callback — route là nơi render con số.
+	useEffect(() => {
+		onOverallChange?.(overallText);
+	}, [onOverallChange, overallText]);
 
 	return (
 		<form
@@ -73,20 +83,6 @@ export function GradeForm({
 				</Field>
 			))}
 
-			{/* Band tổng — nhãn mono + số extrabold cam (design `Grading`) */}
-			<div className="flex items-end justify-between gap-3 border-line-soft border-t pt-4">
-				<span className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
-					Band tổng
-				</span>
-				<span
-					data-testid="grade-overall-band"
-					aria-live="polite"
-					className="font-display font-extrabold text-4xl text-hot leading-none tracking-[-0.045em]"
-				>
-					{complete ? formatBand(ieltsOverallBand(values)) : "—"}
-				</span>
-			</div>
-
 			<Field label="Nhận xét cho học viên">
 				<Textarea
 					id="grade-feedback"
@@ -96,12 +92,12 @@ export function GradeForm({
 					onChange={(event) => setFeedback(event.target.value)}
 				/>
 			</Field>
-			<p className="text-meta text-xs">
+			<p className="text-muted-foreground text-xs">
 				{feedback.length}/{QUIZ_FEEDBACK_MAX}
 			</p>
 
 			{error !== null && (
-				<p role="alert" className="text-danger text-sm">
+				<p role="alert" className="text-destructive text-sm">
 					{error}
 				</p>
 			)}

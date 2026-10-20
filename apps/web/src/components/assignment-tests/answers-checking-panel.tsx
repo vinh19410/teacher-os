@@ -55,7 +55,7 @@ const KIND_LABEL: Record<TestAnswerKind, string> = {
 
 const DIFF_STATUS_CLASS: Record<TestAnswerDiffStatus, string> = {
 	match: "text-success",
-	mismatch: "text-danger",
+	mismatch: "text-destructive",
 	missing: "text-warn",
 	extra: "text-warn",
 };
@@ -144,7 +144,7 @@ export function AnswersCheckingPanel({
 					View All Answers — {cells.length} câu
 				</span>
 				{cells.length === 0 ? (
-					<p className="text-muted-fg text-xs">
+					<p className="text-muted-foreground text-xs">
 						Chưa có câu hỏi nào được gán vào test — gán part có câu hỏi trước
 						khi soát đáp án.
 					</p>
@@ -167,19 +167,19 @@ export function AnswersCheckingPanel({
 					onChange={(event) => onKeyTextChange(event.target.value)}
 					className="min-h-32 font-mono"
 				/>
-				<p className="text-muted-fg text-xs">
+				<p className="text-muted-foreground text-xs">
 					Mỗi dòng 1 câu: <code>1. A</code> / <code>1. True</code> /{" "}
 					<code>1. Car / Cars</code>
 				</p>
 				{parsed.errors.length > 0 && (
 					<div role="alert" className="flex flex-col gap-1">
-						<p className="text-danger text-xs">
+						<p className="text-destructive text-xs">
 							{parsed.errors.length} dòng cần sửa (dòng hợp lệ vẫn so sánh
 							được):
 						</p>
 						<ul className="flex flex-col gap-0.5">
 							{parsed.errors.map((error) => (
-								<li key={error.line} className="text-danger text-xs">
+								<li key={error.line} className="text-destructive text-xs">
 									Dòng {error.line}: {error.message}
 								</li>
 							))}
@@ -199,14 +199,14 @@ export function AnswersCheckingPanel({
 						{summary.missing > 0 ? `, ${summary.missing} missing` : ""}
 						{summary.extra > 0 ? `, ${summary.extra} extra` : ""}
 					</span>
-					<ul className="flex flex-col divide-y divide-line rounded-md border border-line">
+					<ul className="flex flex-col divide-y divide-border rounded-md border border-border">
 						{diffs.map((row) => (
 							<AnswerDiffRowView key={row.number} row={row} />
 						))}
 					</ul>
 
 					{changes.length > 0 ? (
-						<div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+						<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3">
 							{/* Confirm preview: chỉ câu thực sự khác actual. */}
 							<p className="font-medium text-xs">
 								Sẽ đổi {changingCount} câu ở {changes.length} part:
@@ -230,12 +230,12 @@ export function AnswersCheckingPanel({
 									? "Đang ghi…"
 									: `Áp dụng ${changingCount} thay đổi`}
 							</Button>
-							<p className="text-[11px] text-muted-fg">
+							<p className="text-[11px] text-muted-foreground">
 								Ghi answer/alts thẳng vào prompt gốc của từng part — câu đã khớp
 								không ghi lại.
 							</p>
 							{applyError && (
-								<p role="alert" className="text-danger text-xs">
+								<p role="alert" className="text-destructive text-xs">
 									{applyError}
 								</p>
 							)}
@@ -264,17 +264,17 @@ function AnswerCellView({ cell }: { cell: TestAnswerCell }) {
 			title={answered ? full : "Chưa có đáp án"}
 			className={`flex flex-col gap-0.5 rounded-md border px-2 py-1.5 ${
 				// Thiếu đáp án = cần chú ý → cam (ngôn ngữ đơn sắc + cam).
-				answered ? "border-line" : "border-hot/40 bg-accent-soft"
+				answered ? "border-border" : "border-primary/40 bg-accent-soft"
 			}`}
 		>
 			<span className="flex items-center justify-between gap-1">
 				<span className="font-mono text-xs">Q{cell.number}</span>
-				<span className="text-[10px] text-muted-fg">
+				<span className="text-[10px] text-muted-foreground">
 					{KIND_LABEL[cell.kind]}
 				</span>
 			</span>
 			<span className="truncate text-xs">
-				{answered ? full : <span className="text-hot">Chưa có đáp án</span>}
+				{answered ? full : <span className="text-primary">Chưa có đáp án</span>}
 			</span>
 		</div>
 	);

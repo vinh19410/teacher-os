@@ -71,13 +71,13 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 
 	return (
 		<div className="neu rounded-lg p-6">
-			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
+			<p className="text-muted-foreground text-xs">
 				Xem trước phía học viên — full test
 			</p>
-			<h1 className="mt-1 font-display font-semibold text-[22px]">
+			<h1 className="mt-1 font-semibold text-[22px]">
 				{draft.test.title.trim() || "Bộ đề chưa đặt tên"}
 			</h1>
-			<div className="mt-1.5 flex flex-wrap gap-x-3 font-mono text-meta text-xs">
+			<div className="mt-1.5 flex flex-wrap gap-x-3 text-muted-foreground text-xs">
 				{minutes != null && <span>Time: {minutes} minutes</span>}
 				{meta && <span>{meta}</span>}
 				{total > 0 && (
@@ -88,7 +88,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 			</div>
 
 			{contentParts.length === 0 && (
-				<p className="mt-4 text-muted-fg text-sm">
+				<p className="mt-4 text-muted-foreground text-sm">
 					Chưa có part nào — hãy gán prompt vào slot rồi xem trước lại.
 				</p>
 			)}
@@ -104,13 +104,13 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 					<section
 						key={part.part}
 						aria-label={part.label}
-						className="mt-6 border-line border-t pt-5"
+						className="mt-6 border-border border-t pt-5"
 					>
-						<h2 className="font-display font-semibold text-[15px] tracking-wide">
+						<h2 className="font-semibold text-[15px] tracking-wide">
 							{partHeading(skill, part.label)}
 						</h2>
 						{part.title.trim() && (
-							<p className="mt-1 font-medium text-muted-fg text-sm">
+							<p className="mt-1 font-medium text-muted-foreground text-sm">
 								{part.title.trim()}
 							</p>
 						)}
@@ -140,7 +140,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 								{!isEmptyRichText(part.intro) && (
 									<RichTextBody
 										text={part.intro}
-										className="text-muted-fg text-sm"
+										className="text-muted-foreground text-sm"
 									/>
 								)}
 								{bankable && <OptionBankList bank={bank} kind={bankKind} />}
@@ -158,7 +158,10 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 											"Câu hỏi sẽ hiện ở đây."
 										)}
 										{item.opts?.map((option, optionIndex) => (
-											<div key={optionIndex} className="ml-5 text-muted-fg">
+											<div
+												key={optionIndex}
+												className="ml-5 text-muted-foreground"
+											>
 												{String.fromCharCode(65 + optionIndex)} {option}
 											</div>
 										))}

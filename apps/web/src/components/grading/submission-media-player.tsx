@@ -84,7 +84,7 @@ export function SubmissionMediaPlayer({
 					{isVideo ? "Xem bài nói" : "Nghe bài nói"}
 				</Button>
 				{loadError && (
-					<p role="alert" className="text-danger text-sm">
+					<p role="alert" className="text-destructive text-sm">
 						Không tải được file. Thử lại.
 					</p>
 				)}
@@ -103,7 +103,7 @@ export function SubmissionMediaPlayer({
 					preload="metadata"
 					aria-label="Bài nói của học viên"
 					onError={() => setPlaybackError(true)}
-					className="max-h-80 w-full rounded-md border border-line bg-fg/5"
+					className="max-h-80 w-full rounded-md border border-border bg-muted/50"
 				/>
 			) : (
 				// biome-ignore lint/a11y/useMediaCaption: bài nói học viên tự ghi âm, không có phụ đề.
@@ -117,12 +117,12 @@ export function SubmissionMediaPlayer({
 				/>
 			)}
 			{playbackError && (
-				<p role="alert" className="text-muted-fg text-sm">
+				<p role="alert" className="text-muted-foreground text-sm">
 					Trình duyệt không phát được định dạng này.{" "}
 					<a
 						href={fetchedUrl}
 						download={media.name}
-						className="text-hot underline-offset-4 hover:underline"
+						className="text-primary underline-offset-4 hover:underline"
 					>
 						Tải file về
 					</a>

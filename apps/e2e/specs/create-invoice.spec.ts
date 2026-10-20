@@ -87,7 +87,7 @@ async function openCreateInvoiceModal(page: Page) {
 	// #343 — menu /tuition đổi tên "Doanh thu"; text này render bởi app web.
 	await page.getByText("Doanh thu", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
-	await page.getByRole("button", { name: "+ Tạo hóa đơn" }).click();
+	await page.getByTestId("create-invoice").click();
 	const dialog = page.getByRole("dialog");
 	await expect(
 		dialog.getByRole("heading", { name: "Tạo hóa đơn" }),
@@ -152,7 +152,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	// Empty-org baseline first: collected starts at zero, outstanding rises
 	// by exactly the new invoice (issue #62).
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("0đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("400.000đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("400.000đ");
 
 	// The unpaid row shows the entered due as dd/mm (same date we filled)
 	// plus the note tooltip (issue #135).
@@ -164,7 +164,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	// Mark paid → the command bus refetches → KPIs flip in place (issue #62).
 	await row.getByRole("button", { name: "Đã nhận" }).click();
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("0đ");
 
 	// Everything survives a reload; the paid row's due cell becomes "—".
 	await page.reload();
@@ -173,7 +173,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	await expect(paidRow.getByText("Đã thu")).toBeVisible();
 	await expect(paidRow.getByText("—")).toBeVisible();
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("0đ");
 });
 
 test("tuition → tạo hóa đơn amount trống → field error, không POST, không row", async ({

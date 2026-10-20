@@ -238,7 +238,7 @@ export function GradeModal({
 						disabled={saving}
 					/>
 				)}
-				<div className="flex justify-end gap-2 border-line border-t pt-4">
+				<div className="flex justify-end gap-2 border-border border-t pt-4">
 					<Button
 						type="button"
 						variant="secondary"

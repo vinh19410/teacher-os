@@ -46,7 +46,7 @@ export function SubmissionView({
 										alt="Hình minh hoạ đề Task 1"
 										referrerPolicy="no-referrer"
 										loading="lazy"
-										className="max-h-96 rounded-md border border-line"
+										className="max-h-96 rounded-md border border-border"
 									/>
 								)}
 						</>
@@ -56,11 +56,11 @@ export function SubmissionView({
 								<RichTextBody text={sub.prompt.prompt} />
 							)}
 							{sub.prompt.cueTopic !== "" && (
-								<div className="neu-in rounded-md p-4">
-									<p className="font-medium text-fg text-sm">
+								<div className="rounded-lg border border-border bg-muted/50 p-4">
+									<p className="font-medium text-foreground text-sm">
 										Describe {sub.prompt.cueTopic}
 									</p>
-									<ul className="mt-2 list-disc pl-5 text-muted-fg text-sm">
+									<ul className="mt-2 list-disc pl-5 text-muted-foreground text-sm">
 										{sub.prompt.cuePoints
 											.split("\n")
 											.filter(Boolean)
@@ -81,10 +81,10 @@ export function SubmissionView({
 					sub.essay !== null && sub.essay.trim() !== "" ? (
 						<div className="flex flex-col gap-2">
 							<p
-								className="font-mono text-meta text-xs"
+								className="text-muted-foreground text-sm"
 								data-testid="essay-word-count"
 							>
-								{countWords(sub.essay)} từ
+								Chọn chữ để chú thích · {countWords(sub.essay)} từ
 								{minWords !== undefined ? ` · tối thiểu ${minWords}` : ""}
 							</p>
 							{annotation ? (
@@ -98,16 +98,18 @@ export function SubmissionView({
 									essay={sub.essay}
 									annotations={sub.annotations ?? []}
 									data-testid="essay-text"
-									className="border-line border-l-2 pl-5 text-fg text-lg leading-[1.9]"
+									className="border-border border-l-2 pl-5 text-foreground text-lg leading-[1.9]"
 								/>
 							)}
 						</div>
 					) : (
-						<p className="text-muted-fg text-sm">Học viên đã nộp bài trống.</p>
+						<p className="text-muted-foreground text-sm">
+							Học viên đã nộp bài trống.
+						</p>
 					)
 				) : sub.media !== null ? (
 					<div className="flex flex-col gap-2">
-						<p className="font-mono text-meta text-xs">
+						<p className="text-muted-foreground text-xs">
 							{sub.media.name} · {formatMediaSize(sub.media.size)}
 						</p>
 						<SubmissionMediaPlayer
@@ -117,7 +119,7 @@ export function SubmissionView({
 						/>
 					</div>
 				) : (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Bài này được nộp khi chưa có file bài nói.
 					</p>
 				)}

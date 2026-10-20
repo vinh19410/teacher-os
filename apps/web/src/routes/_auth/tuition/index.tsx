@@ -21,7 +21,6 @@ import { fmtVND } from "@/lib/mock-data";
 import {
 	effectiveInvoiceStatus,
 	formatDue,
-	packagesEndingSoon,
 	type RevenuePeriod,
 	revenueByPeriod,
 	tuitionTotals,
@@ -66,7 +65,11 @@ export function TuitionRoute() {
 	// store; nothing is hardcoded. The command bus refetches after mark-paid,
 	// so totals track the server without local arithmetic.
 	const { collected, outstanding } = tuitionTotals(data.invoices);
-	const endingSoon = packagesEndingSoon(data.students);
+	// Stat "Chưa khớp" = số hóa đơn chưa thu đủ (cùng nguồn với queue
+	// "Giao dịch chưa khớp" bên dưới).
+	const unmatchedCount = data.invoices.filter(
+		(i) => i.status !== "paid" || i.paidAmount < i.amount,
+	).length;
 	// "Hôm nay" một lần cho cả bảng (#322) — badge "Quá hạn" suy ra từ `due`.
 	const today = todayISOVietnam();
 	// #343 — bucket doanh thu theo múi giờ đã xử lý trong helper
@@ -88,31 +91,54 @@ export function TuitionRoute() {
 				kicker="Doanh thu · VietQR qua SePay"
 				title="Doanh thu"
 				lead={`Đã thu ${fmtVND(collected)}`}
+				// Design Tuition: CTA chính nằm ở PageHead action.
+				action={
+					<Button
+						data-testid="create-invoice"
+						onClick={() => setModalOpen(true)}
+					>
+						+ Tạo hóa đơn
+					</Button>
+				}
 			/>
-			<div
-				className="grid grid-cols-3 gap-4 max-app:grid-cols-1"
-				data-testid="tuition-kpis"
-			>
-				<StatCard num={fmtVND(collected)} label="Đã thu (VND)" />
-				{/* Số còn phải thu cần chú ý → tile hot (nền ink, số cam). */}
-				<StatCard
-					num={fmtVND(outstanding)}
-					label="Còn nợ (VND)"
-					hot={outstanding > 0}
-				/>
-				<StatCard num={String(endingSoon)} label="Gói sắp hết" />
-			</div>
-
-			<Card variant="white" className="mt-8 p-0">
-				<Suspense fallback={null}>
-					<RevenueChart
-						buckets={revenue.buckets}
-						period={period}
-						dropped={revenue.dropped}
-						onPeriodChange={setPeriod}
+			{/* Design Tuition: stat 2x2 bên trái, card biểu đồ cạnh phải. */}
+			<div className="grid gap-4 max-app:grid-cols-1 lg:grid-cols-[1fr_1.2fr]">
+				<div
+					className="grid grid-cols-2 content-start gap-4 max-app:grid-cols-1"
+					data-testid="tuition-kpis"
+				>
+					<StatCard num={fmtVND(collected)} label="Đã thu (VND)" />
+					{/* Số còn phải thu cần chú ý → tile hot (số đỏ). */}
+					<StatCard
+						num={fmtVND(outstanding)}
+						label="Còn phải thu (VND)"
+						hot={outstanding > 0}
 					/>
-				</Suspense>
-			</Card>
+					<StatCard
+						num={String(data.invoices.length)}
+						label="Số hóa đơn"
+						sub={`${data.invoices.filter((i) => i.status === "paid").length} đã thu đủ`}
+					/>
+					<StatCard
+						num={String(unmatchedCount)}
+						label="Chưa khớp"
+						sub="hóa đơn còn thiếu tiền"
+					/>
+				</div>
+				<Card
+					className="p-6 max-app:order-first"
+					data-testid="tuition-revenue-chart"
+				>
+					<Suspense fallback={null}>
+						<RevenueChart
+							buckets={revenue.buckets}
+							period={period}
+							dropped={revenue.dropped}
+							onPeriodChange={setPeriod}
+						/>
+					</Suspense>
+				</Card>
+			</div>
 
 			<div className="mt-8">
 				<SectionLabel>Gói học đang hoạt động</SectionLabel>
@@ -122,7 +148,7 @@ export function TuitionRoute() {
 						className="p-8 text-center"
 						data-testid="tuition-packages-empty"
 					>
-						<p className="font-mono text-meta text-xs">
+						<p className="text-muted-foreground text-sm">
 							Chưa có gói học nào đang hoạt động.
 						</p>
 					</Card>
@@ -155,7 +181,7 @@ export function TuitionRoute() {
 									key="r"
 									className={
 										s.hasPackage && s.pkg.remaining <= 3
-											? "font-mono font-semibold text-danger"
+											? "font-mono font-semibold text-destructive"
 											: "font-mono font-semibold"
 									}
 								>
@@ -174,7 +200,7 @@ export function TuitionRoute() {
 													: "default"
 									}
 								/>,
-								<span key="e" className="font-mono text-meta text-xs">
+								<span key="e" className="text-muted-foreground text-xs">
 									{s.pkg.expiry}
 								</span>,
 								!s.hasPackage ? (
@@ -201,24 +227,15 @@ export function TuitionRoute() {
 			</div>
 
 			<div className="mt-8" data-testid="tuition-invoices-section">
-				<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-					<h2 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
-						Hóa đơn
-					</h2>
-					<Button size="sm" onClick={() => setModalOpen(true)}>
-						+ Tạo hóa đơn
-					</Button>
-				</div>
+				<SectionLabel>Hóa đơn</SectionLabel>
 				{data.invoices.length === 0 ? (
 					<Card
 						variant="white"
 						className="p-8 text-center"
 						data-testid="tuition-invoices-empty"
 					>
-						<h3 className="font-display font-semibold text-base">
-							Chưa có hóa đơn nào
-						</h3>
-						<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+						<h3 className="font-semibold text-base">Chưa có hóa đơn nào</h3>
+						<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 							Bấm "+ Tạo hóa đơn" ở góc trên để theo dõi các khoản thu và công
 							nợ của học viên.
 						</p>
@@ -250,10 +267,10 @@ export function TuitionRoute() {
 									}),
 								cells: [
 									// Mã hóa đơn như mã chuyển khoản: mono + underline,
-									// hover cam kế thừa từ hover:text-hot của row.
+									// hover đậm kế thừa từ hover row.
 									<span
 										key="id"
-										className="font-mono text-xs underline decoration-line-strong underline-offset-2"
+										className="font-mono text-xs underline decoration-border underline-offset-2"
 									>
 										{invoiceCode(i.id)}
 									</span>,
@@ -268,10 +285,10 @@ export function TuitionRoute() {
 											? `${fmtVND(i.paidAmount)} / ${fmtVND(i.amount)}`
 											: fmtVND(i.amount)}
 									</span>,
-									<span key="d" className="font-mono text-meta text-xs">
+									<span key="d" className="text-muted-foreground text-xs">
 										{i.date}
 									</span>,
-									<span key="due" className="font-mono text-meta text-xs">
+									<span key="due" className="text-muted-foreground text-xs">
 										{i.status === "paid" ? "—" : formatDue(i.due)}
 									</span>,
 									<InvoiceStatusCell invoice={i} status={status} />,
@@ -313,7 +330,7 @@ export function TuitionRoute() {
 											</Button>
 										</div>
 									) : (
-										<span key="m" className="font-mono text-meta text-xs">
+										<span key="m" className="text-muted-foreground text-xs">
 											{i.method}
 										</span>
 									),

@@ -63,8 +63,8 @@ const TokenButton = memo(function TokenButton({
 			className={cn(
 				"rounded-sm px-[2px] text-left align-baseline",
 				blankNumber > 0
-					? "border-fg bg-fg font-medium text-bg"
-					: "hover:bg-surface-warm hover:outline hover:outline-fg",
+					? "border-primary bg-primary font-medium text-primary-foreground"
+					: "hover:border-primary hover:bg-card hover:outline",
 			)}
 		>
 			{token.text}
@@ -191,9 +191,9 @@ export function ClozeEditor({
 	const activeEntry = blanks.find((blank) => blank.tokenIndex === activeBlank);
 
 	return (
-		<div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+		<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="font-medium text-muted-fg text-xs">
+				<p className="font-medium text-muted-foreground text-xs">
 					Soạn đoạn hoàn thành — bấm vào từ để tạo chỗ trống
 				</p>
 				<div className="flex gap-1.5">
@@ -204,8 +204,8 @@ export function ClozeEditor({
 						className={cn(
 							"rounded-full border px-[10px] py-[4px] font-medium text-xs",
 							mode === "visual"
-								? "border-fg bg-fg text-bg"
-								: "border-line text-fg-2 hover:border-fg",
+								? "border-primary bg-primary text-primary-foreground"
+								: "border-border text-muted-foreground hover:border-primary",
 						)}
 					>
 						Bấm từ
@@ -217,8 +217,8 @@ export function ClozeEditor({
 						className={cn(
 							"rounded-full border px-[10px] py-[4px] font-medium text-xs",
 							mode === "raw"
-								? "border-fg bg-fg text-bg"
-								: "border-line text-fg-2 hover:border-fg",
+								? "border-primary bg-primary text-primary-foreground"
+								: "border-border text-muted-foreground hover:border-primary",
 						)}
 					>
 						Cú pháp thô
@@ -259,13 +259,13 @@ export function ClozeEditor({
 
 			{mode === "visual" && stage === "tokens" && (
 				<div className="flex flex-col gap-2">
-					<p className="text-[11px] text-meta text-muted-fg">
+					<p className="text-muted-foreground text-xs">
 						Bấm một từ để tạo chỗ trống (đáp án tự lấy từ từ đó); bấm chỗ trống
 						đã có để sửa đáp án / nhận thêm hoặc bỏ.
 					</p>
 					<fieldset
 						aria-label="Văn bản dạng từ bấm được"
-						className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-md border border-line bg-bg p-3 text-sm leading-[1.9]"
+						className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm leading-[1.9]"
 					>
 						{visibleTokens.map((token, position) => (
 							<span key={token.index}>
@@ -280,13 +280,13 @@ export function ClozeEditor({
 							</span>
 						))}
 						{overRenderCap && (
-							<p role="status" className="mt-2 text-danger text-xs">
+							<p role="status" className="mt-2 text-destructive text-xs">
 								Văn bản quá dài — chỉ hiện {CLOZE_RENDER_TOKEN_CAP} từ đầu. Hãy
 								rút ngắn đoạn trước khi đánh dấu chỗ trống.
 							</p>
 						)}
 					</fieldset>
-					<p className="font-medium text-muted-fg text-xs">
+					<p className="font-medium text-muted-foreground text-xs">
 						{blanks.length}/{CLOZE_MAX_BLANKS} chỗ trống · Số câu sẽ tạo:{" "}
 						{segments.length}
 					</p>
@@ -311,7 +311,7 @@ export function ClozeEditor({
 						}}
 						className="min-h-32 font-mono"
 					/>
-					<p className="font-medium text-muted-fg text-xs">
+					<p className="font-medium text-muted-foreground text-xs">
 						Tìm thấy {rawSegments.length} chỗ trống · Số câu sẽ tạo:{" "}
 						{segments.length}
 					</p>
@@ -322,7 +322,10 @@ export function ClozeEditor({
 									<span className="font-mono">{index + 1}.</span>{" "}
 									{segment.answer}
 									{segment.alts && (
-										<span className="text-muted-fg"> + {segment.alts}</span>
+										<span className="text-muted-foreground">
+											{" "}
+											+ {segment.alts}
+										</span>
 									)}
 								</li>
 							))}
@@ -335,9 +338,9 @@ export function ClozeEditor({
 				<div
 					role="dialog"
 					aria-label="Sửa chỗ trống"
-					className="flex flex-col gap-2 rounded-md border border-line bg-bg p-3"
+					className="flex flex-col gap-2 rounded-md border border-border bg-background p-3"
 				>
-					<p className="font-medium text-muted-fg text-xs">
+					<p className="font-medium text-muted-foreground text-xs">
 						Chỗ trống {blankNumberByToken.get(activeEntry.tokenIndex) ?? "—"}
 					</p>
 					<Input
@@ -381,7 +384,7 @@ export function ClozeEditor({
 			)}
 
 			{issues.map((issue) => (
-				<p key={issue} role="alert" className="text-danger text-xs">
+				<p key={issue} role="alert" className="text-destructive text-xs">
 					{issue}
 				</p>
 			))}
@@ -407,7 +410,7 @@ export function ClozeEditor({
 						</Button>
 					)}
 					{willReplace && (
-						<span className="text-[11px] text-meta">
+						<span className="text-[11px] text-muted-foreground">
 							Áp vào câu hỏi sẽ thay thế {items.length} câu hiện có.
 						</span>
 					)}

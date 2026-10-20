@@ -35,12 +35,12 @@ export function VocabWordRow({
 	return (
 		<div
 			data-testid={`vocab-word-row-${row.id}`}
-			className="flex flex-wrap items-end gap-2 rounded-md border border-line p-3"
+			className="flex flex-wrap items-end gap-2 rounded-md border border-border p-3"
 		>
 			<div className="min-w-[140px] flex-1">
 				<label
 					htmlFor={`vocab-word-${row.id}`}
-					className="font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+					className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 				>
 					Từ vựng
 				</label>
@@ -55,7 +55,7 @@ export function VocabWordRow({
 			<div className="w-[160px]">
 				<label
 					htmlFor={`vocab-ipa-${row.id}`}
-					className="font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+					className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 				>
 					IPA
 				</label>
@@ -70,7 +70,7 @@ export function VocabWordRow({
 			<div className="min-w-[180px] flex-[2]">
 				<label
 					htmlFor={`vocab-translation-${row.id}`}
-					className="font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+					className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 				>
 					Nghĩa tiếng Việt
 				</label>
@@ -85,7 +85,7 @@ export function VocabWordRow({
 
 			<div className="flex flex-col gap-2">
 				{row.audioKey || row.audioUrl ? (
-					<p className="font-mono text-[10px] text-hot uppercase tracking-widest">
+					<p className="font-mono text-[10px] text-primary uppercase tracking-widest">
 						Đã có audio
 					</p>
 				) : null}

@@ -554,16 +554,16 @@ export function TestBuilderShell({
 				<strong className="text-sm">
 					{header.title.trim() || "Bộ đề chưa đặt tên"}
 				</strong>
-				<span className="font-mono text-meta text-xs">
+				<span className="text-muted-foreground text-xs">
 					{assignedCount}/{slots.length} parts · {totalQuestions} questions
 				</span>
 				<ol className="flex flex-col">
 					{slotViews.map((slot) => (
 						<li
 							key={slot.part}
-							className="flex flex-col border-line border-t py-2 transition-colors duration-150 first:border-t-0 hover:text-hot"
+							className="flex flex-col border-border border-t py-2 transition-colors duration-150 first:border-t-0 hover:text-primary"
 						>
-							<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+							<span className="text-muted-foreground text-xs">
 								{slot.label}
 							</span>
 							<span className="text-xs">
@@ -673,9 +673,9 @@ export function TestBuilderShell({
 							lockPart
 							onFieldChange={handleComposerFieldChange}
 						/>
-						<div className="flex flex-wrap items-center justify-between gap-3 border-line border-t pt-3">
+						<div className="flex flex-wrap items-center justify-between gap-3 border-border border-t pt-3">
 							<div className="flex flex-col gap-1.5">
-								<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+								<span className="text-muted-foreground text-xs">
 									Trạng thái
 								</span>
 								<ChipFilter
@@ -714,7 +714,7 @@ export function TestBuilderShell({
 						</div>
 					</Card>
 				)}
-				<div className="sticky bottom-0 border-line border-t bg-bg/90 py-3 backdrop-blur">
+				<div className="sticky bottom-0 border-border border-t bg-background/90 py-3 backdrop-blur">
 					{submit.notice && (
 						<KernelSubmitNotice
 							notice={submit.notice}
@@ -723,7 +723,7 @@ export function TestBuilderShell({
 						/>
 					)}
 					{submit.error && (
-						<p role="alert" className="mb-2 text-danger text-xs">
+						<p role="alert" className="mb-2 text-destructive text-xs">
 							{submit.error}
 						</p>
 					)}
@@ -733,7 +733,7 @@ export function TestBuilderShell({
 						</p>
 					)}
 					<div className="flex flex-wrap items-center justify-between gap-3">
-						<span className="text-muted-fg text-xs">
+						<span className="text-muted-foreground text-xs">
 							{mode === "create"
 								? "Tạo bộ đề rồi gán part ở bước sau."
 								: "Thay đổi part lưu ngay vào bộ đề."}

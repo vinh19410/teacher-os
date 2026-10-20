@@ -78,7 +78,7 @@ describe("QuizReviewChip — token verdict + icon (issue #351)", () => {
 				info={reviewInfo({ verdict: "skipped", answer: null })}
 			/>,
 		);
-		expect(html).toContain("text-muted-fg");
+		expect(html).toContain("text-muted-foreground");
 		expect(html).toContain("border-dashed");
 		expect(html).toContain(">Chưa trả lời</span>");
 		expect(quizReviewChipText({ verdict: "skipped", answer: null })).toBe(
@@ -254,7 +254,7 @@ describe("QuizNavigator mode=review — nút số câu nền đặc + icon verdi
 		expect(html).toContain('data-verdict="skipped"');
 		expect(html).toContain("bg-verdict-correct");
 		expect(html).toContain("text-verdict-on");
-		expect(html).toContain("text-muted-fg");
+		expect(html).toContain("text-muted-foreground");
 		// Icon nhỏ ở góc mỗi nút verdict.
 		expect(html).toContain("absolute -top-1 -right-1");
 		expect(html.replace(/<[^>]+>/g, "")).toContain(

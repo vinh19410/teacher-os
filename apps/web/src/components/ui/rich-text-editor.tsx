@@ -170,7 +170,7 @@ export function RichTextEditor({
 			<div
 				aria-busy="true"
 				className={cn(
-					"min-h-20 w-full rounded-sm border border-line border-solid bg-bg px-3 py-[10px] text-meta text-sm",
+					"min-h-20 w-full rounded-sm border border-border border-solid bg-background px-3 py-[10px] text-muted-foreground text-sm",
 					className,
 				)}
 			>
@@ -182,14 +182,14 @@ export function RichTextEditor({
 	return (
 		<div
 			className={cn(
-				"w-full rounded-sm border border-line border-solid transition-[border-color,box-shadow] duration-[150ms] focus-within:border-hot focus-within:shadow-[var(--focus-ring)]",
+				"w-full rounded-sm border border-border border-solid transition-[border-color,box-shadow] duration-[150ms] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 				className,
 			)}
 		>
 			<div
 				role="toolbar"
 				aria-label="Định dạng văn bản"
-				className="flex flex-wrap items-center gap-0.5 border-line border-b border-solid px-1 py-1"
+				className="flex flex-wrap items-center gap-0.5 border-border border-b border-solid px-1 py-1"
 			>
 				{TOOLBAR_ACTIONS.map((action) => {
 					const active = action.isActive(editor);
@@ -202,8 +202,8 @@ export function RichTextEditor({
 							title={action.label}
 							onClick={() => action.run(editor)}
 							className={cn(
-								"flex h-7 w-7 items-center justify-center rounded-sm hover:bg-fg/10",
-								active && "bg-fg/10 text-hot",
+								"flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent",
+								active && "bg-muted text-foreground",
 							)}
 						>
 							{action.icon}

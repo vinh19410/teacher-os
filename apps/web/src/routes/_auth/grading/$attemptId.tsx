@@ -9,7 +9,7 @@ import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
 import { GradeForm } from "@/components/grading/grade-form";
 import { SubmissionView } from "@/components/grading/submission-view";
 import { Card } from "@/components/ui/card";
-import { SectionLabel } from "@/components/ui/section-label";
+import { PageHead } from "@/components/ui/page-head";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
@@ -51,6 +51,9 @@ function GradingRoute() {
 	);
 	const queryClient = useQueryClient();
 	const [savedAt, setSavedAt] = useState<string | null>(null);
+	/** Band tổng sống — GradeForm tính từ 4 slider rồi đẩy lên để PageHead
+	 * render con số lớn (design `Grading`). */
+	const [overall, setOverall] = useState("—");
 
 	/** Cập nhật mảng annotations trong cache submission — dùng chung cho
 	 * create/update/delete, cache cũ (chưa có key) giữ nguyên. */
@@ -130,10 +133,10 @@ function GradingRoute() {
 						: "Không tải được bài nộp. Thử tải lại trang.";
 		return (
 			<Card variant="white" className="mx-auto mt-10 max-w-md text-center">
-				<p className="text-fg text-sm">{message}</p>
+				<p className="text-foreground text-sm">{message}</p>
 				<Link
 					to="/classes"
-					className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
+					className="mt-4 inline-block text-muted-foreground text-sm transition-colors hover:text-foreground"
 				>
 					← Về danh sách lớp
 				</Link>
@@ -168,31 +171,39 @@ function GradingRoute() {
 	}
 
 	return (
-		<div className="flex flex-col gap-5">
-			<Card>
-				<div className="flex flex-wrap items-start justify-between gap-3">
-					<div className="flex flex-col gap-1">
-						<h1 className="font-display font-extrabold text-[18px] text-fg tracking-[-0.02em]">
-							{data.title}
-						</h1>
-						<p className="font-mono text-meta text-xs">
-							{data.student.name} · {data.className} · Nộp{" "}
-							{fmtWhen(data.submittedAt)} · Hạn {fmtDue(data.due)}
-						</p>
+		<div className="flex flex-col">
+			<Link
+				to="/classes/$classId"
+				params={{ classId: data.classId }}
+				search={{ tab: "assignments" }}
+				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Về lớp
+			</Link>
+			<PageHead
+				kicker={
+					<>
+						{data.student.name} · {data.className} · Nộp{" "}
+						{fmtWhen(data.submittedAt)} · Hạn {fmtDue(data.due)}
+					</>
+				}
+				title={data.title}
+				action={
+					<div className="text-right">
+						<div className="mb-1 text-muted-foreground text-sm">Band tổng</div>
+						<div
+							data-testid="grade-overall-band"
+							aria-live="polite"
+							className="font-semibold text-5xl tabular-nums leading-none tracking-tight md:text-6xl"
+						>
+							{overall}
+						</div>
 					</div>
-					<Link
-						to="/classes/$classId"
-						params={{ classId: data.classId }}
-						search={{ tab: "assignments" }}
-						className="font-mono text-[12px] text-meta transition-colors hover:text-hot"
-					>
-						← Về lớp
-					</Link>
-				</div>
-			</Card>
+				}
+			/>
 
-			<div className="grid grid-cols-[1.3fr_1fr] items-start gap-5 max-app:grid-cols-1">
-				<Card>
+			<div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+				<Card className="p-6">
 					<SubmissionView
 						submission={data}
 						annotation={
@@ -218,8 +229,7 @@ function GradingRoute() {
 						}
 					/>
 				</Card>
-				<Card>
-					<SectionLabel>Chấm điểm</SectionLabel>
+				<Card className="self-start p-6">
 					<GradeForm
 						key={data.grade?.gradedAt ?? "new"}
 						skill={data.skill}
@@ -228,6 +238,7 @@ function GradingRoute() {
 						saving={mutation.isPending}
 						error={mutation.error ? friendlySaveError : null}
 						savedAt={savedAt}
+						onOverallChange={setOverall}
 						onSave={(input) => mutation.mutate(input)}
 					/>
 				</Card>

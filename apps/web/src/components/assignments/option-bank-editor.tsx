@@ -86,14 +86,16 @@ export function OptionBankEditor({
 		);
 	};
 	return (
-		<div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+		<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="font-medium text-muted-fg text-xs">Ngân hàng lựa chọn</p>
-				<span className="font-mono text-meta text-xs">
+				<p className="font-medium text-muted-foreground text-xs">
+					Ngân hàng lựa chọn
+				</p>
+				<span className="text-muted-foreground text-xs">
 					{bank.length}/{OPTION_BANK_MAX} mục
 				</span>
 			</div>
-			<p className="text-[11px] text-meta text-muted-fg">
+			<p className="text-muted-foreground text-xs">
 				Mỗi dòng một mục, nhãn sinh theo thứ tự (
 				{kind === "roman" ? "i, ii, iii…" : "A, B, C…"}). Xóa một dòng sẽ reset
 				đáp án đã khóa từ vị trí đó — nhãn là vị trí, không dán theo nội dung.
@@ -153,7 +155,7 @@ export function OptionBankEditor({
 				</Button>
 			</div>
 			{showErrors && error && (
-				<p role="alert" className="text-danger text-xs">
+				<p role="alert" className="text-destructive text-xs">
 					{error}
 				</p>
 			)}

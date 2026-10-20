@@ -66,7 +66,7 @@ export function PinEditor({
 
 	return (
 		<div className="flex flex-col gap-2">
-			<p className="font-medium text-muted-fg text-xs">
+			<p className="font-medium text-muted-foreground text-xs">
 				Bấm lên ảnh để đặt ghim cho câu kế tiếp — bấm ghim đã có để chọn câu đó
 				trong lưới bên dưới.
 			</p>
@@ -98,7 +98,7 @@ export function PinEditor({
 						if (!box || box.width <= 0) return;
 						placePin(box.left + box.width / 2, box.top + box.height / 2);
 					}}
-					className="relative w-fit max-w-full cursor-crosshair overflow-hidden rounded-md border border-line"
+					className="relative w-fit max-w-full cursor-crosshair overflow-hidden rounded-md border border-border"
 				>
 					<img
 						src={safeUrl}
@@ -126,8 +126,8 @@ export function PinEditor({
 								className={cn(
 									"absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border font-medium font-mono text-[11px] shadow-sm transition-colors",
 									selectedIndex === index
-										? "border-fg bg-fg text-bg"
-										: "border-fg bg-bg text-fg hover:bg-surface-warm",
+										? "border-primary bg-primary text-primary-foreground"
+										: "border-primary bg-background text-foreground hover:bg-card",
 								)}
 							>
 								{qStart + index}
@@ -138,7 +138,7 @@ export function PinEditor({
 			) : (
 				<div
 					role="status"
-					className="rounded-md border border-danger/30 bg-surface p-2 text-danger text-xs"
+					className="rounded-md border border-destructive/30 bg-muted p-2 text-destructive text-xs"
 				>
 					{safeUrl
 						? "Ảnh không tải được — kiểm tra lại link. Bạn vẫn nhập đáp án dạng text bên dưới."
@@ -146,7 +146,7 @@ export function PinEditor({
 				</div>
 			)}
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="font-medium text-muted-fg text-xs">
+				<span className="font-medium text-muted-foreground text-xs">
 					{items.filter((item) => isValidPin(item.pin)).length}/{items.length}{" "}
 					ghim đã đặt
 				</span>

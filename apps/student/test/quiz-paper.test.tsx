@@ -655,9 +655,9 @@ describe("QuizPaper mode=review — tô verdict từng câu (#351)", () => {
 			/>,
 		);
 		expect(html).not.toContain("text-hot");
-		// Câu current trong review: outline cam đè LÊN nền verdict (F1 #351),
+		// Câu current trong review: outline primary đè LÊN nền verdict (F1 #351),
 		// không dùng bg-accent-soft vì nó xoá nền verdict của khối câu.
-		expect(html).toContain("outline-hot");
+		expect(html).toContain("outline-primary");
 		expect(html).not.toContain("bg-accent-soft");
 	});
 
@@ -715,7 +715,7 @@ describe("QuizPaper mode=review — tô verdict từng câu (#351)", () => {
 		expect(html).toContain("disabled:opacity-100");
 	});
 
-	it("take mode: không có class verdict, không nhãn phụ, giữ text-hot cho selected", () => {
+	it("take mode: không có class verdict, không nhãn phụ, giữ text-primary cho selected", () => {
 		const html = renderToStaticMarkup(
 			<QuizPaper
 				detail={paperFields()}
@@ -731,6 +731,6 @@ describe("QuizPaper mode=review — tô verdict từng câu (#351)", () => {
 		expect(html).not.toContain("data-verdict");
 		expect(html).not.toContain("Đáp án đúng");
 		expect(html).not.toContain("Bạn chọn");
-		expect(html).toContain("text-hot");
+		expect(html).toContain("text-primary");
 	});
 });
