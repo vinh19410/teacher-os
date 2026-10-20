@@ -1,22 +1,13 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { Badge } from "./badge";
 
 export function Tag({
 	children,
 	hot,
 }: {
 	children: ReactNode;
-	/** Hot tag: filled orange (final-exam, invited, attention states). */
+	/** Tag nổi bật (final-exam, invited, attention states) → badge đặc. */
 	hot?: boolean;
 }) {
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest",
-				hot ? "bg-hot text-accent-on" : "neu-in text-fg",
-			)}
-		>
-			{children}
-		</span>
-	);
+	return <Badge variant={hot ? "default" : "secondary"}>{children}</Badge>;
 }

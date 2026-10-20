@@ -1,6 +1,11 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
+/**
+ * Card v2 (design `Card`): khối phẳng border + shadow nhẹ trên nền card.
+ * `variant` giữ lại cho call site cũ ("white" từng là card nền trang) —
+ * ở v2 mọi card cùng một lớp nền nên variant không còn khác biệt.
+ */
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 	variant?: "default" | "white";
 	children: ReactNode;
@@ -15,10 +20,7 @@ export function Card({
 	return (
 		<div
 			className={cn(
-				"neu rounded-lg p-6",
-				// "white" sits directly on the page background: bg + border only,
-				// one tier below the raised default card.
-				variant === "white" && "bg-bg",
+				"flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
 				className,
 			)}
 			{...props}
@@ -31,39 +33,33 @@ export function Card({
 export interface StatCardProps {
 	num: string;
 	label: string;
-	/** Supporting line under the number (design `Stat sub`). */
+	/** Dòng phụ dưới số (design `Stat sub`). */
 	sub?: string;
-	/** Highlight tile: ink background, orange number (design `Stat hot`). */
+	/** Thẻ cần chú ý: số đỏ text-destructive (design `Stat hot`). */
 	hot?: boolean;
 	className?: string;
 }
 
 export function StatCard({ num, label, sub, hot, className }: StatCardProps) {
 	return (
-		<Card className={cn("p-5", hot && "border-fg bg-fg", className)}>
-			{/* DOM order (number, then label) is kept from the previous design —
-			unit tests and e2e depend on it. */}
+		<div
+			className={cn(
+				"rounded-xl border bg-card p-5 text-card-foreground shadow-sm",
+				className,
+			)}
+		>
+			{/* Thứ tự DOM (số trước, nhãn sau) giữ từ design cũ — unit test
+			và e2e phụ thuộc. */}
 			<div
 				className={cn(
-					"break-words font-display font-extrabold text-[clamp(1.75rem,2.6vw,3rem)] leading-[1.1] tracking-[-0.045em]",
-					hot ? "text-hot" : "text-fg",
+					"break-words font-semibold text-2xl tabular-nums tracking-tight",
+					hot && "text-destructive",
 				)}
 			>
 				{num}
 			</div>
-			<div
-				className={cn(
-					"mt-1 font-mono text-[11px] uppercase tracking-[0.18em]",
-					hot ? "text-fg" : "text-meta",
-				)}
-			>
-				{label}
-			</div>
-			{sub && (
-				<div className={cn("mt-1 text-xs", hot ? "text-fg" : "text-muted-fg")}>
-					{sub}
-				</div>
-			)}
-		</Card>
+			<div className="text-muted-foreground text-sm">{label}</div>
+			{sub && <div className="mt-1 text-muted-foreground text-xs">{sub}</div>}
+		</div>
 	);
 }

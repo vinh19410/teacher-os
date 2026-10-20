@@ -8,7 +8,8 @@ export function PageHead({
 	action,
 	className,
 }: {
-	/** Short mono eyebrow above the title — a number or context, not prose. */
+	/** Mô tả muted bên dưới title (prop `kicker` cũ map vào đây; `lead` là
+	 * dòng phụ dài hơn — có thể cùng tồn tại). */
 	kicker?: ReactNode;
 	title: ReactNode;
 	lead?: ReactNode;
@@ -22,17 +23,13 @@ export function PageHead({
 				className,
 			)}
 		>
-			<div className="min-w-0">
-				{kicker && (
-					<div className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
-						{kicker}
-					</div>
-				)}
-				<h1 className="mt-1 text-balance font-display font-extrabold text-[clamp(40px,6vw,72px)] leading-[0.95] tracking-[-0.045em]">
+			<div className="min-w-0 space-y-1">
+				<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
 					{title}
 				</h1>
-				{lead && (
-					<p className="mt-3 max-w-[60ch] text-base text-muted-fg">{lead}</p>
+				{kicker && <p className="text-muted-foreground">{kicker}</p>}
+				{lead && lead !== kicker && (
+					<p className="max-w-[60ch] text-muted-foreground text-sm">{lead}</p>
 				)}
 			</div>
 			{action && (

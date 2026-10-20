@@ -84,14 +84,18 @@ describe("tuition KPIs", () => {
 		start([invoiceRow({ status: "paid", paidAmount: 400000 })]);
 		const view = renderWithKernel(<Tuition />);
 		await screen.findByText("Còn nợ (VND)");
-		// The flagged tile is the inverted (ink) card; a 0đ debt stays plain.
-		expect(kpi("Còn nợ (VND)").className).not.toContain("bg-fg");
+		// Thẻ được đánh dấu (v2) là số đỏ text-destructive; nợ 0đ giữ thường.
+		expect(
+			screen.getByText("Còn nợ (VND)").previousElementSibling!.className,
+		).not.toContain("text-destructive");
 		view.unmount();
 
 		start([invoiceRow()]);
 		renderWithKernel(<Tuition />);
 		await screen.findByText("Còn nợ (VND)");
-		expect(kpi("Còn nợ (VND)").className).toContain("bg-fg");
+		expect(
+			screen.getByText("Còn nợ (VND)").previousElementSibling!.className,
+		).toContain("text-destructive");
 	});
 });
 

@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef } from "react";
 
 export interface ModalProps {
@@ -65,7 +66,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 		// biome-ignore lint/a11y/useKeyWithClickEvents: keyboard close is the global Escape handler attached in the open effect
 		<div
 			ref={overlayRef}
-			className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-sm"
+			className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8"
 			onClick={(e) => {
 				if (e.target === overlayRef.current) onClose();
 			}}
@@ -75,26 +76,22 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 				role="dialog"
 				aria-modal="true"
 				aria-label={title}
-				className="neu w-full max-w-[480px] animate-[modal-in_220ms_cubic-bezier(0.28,0,0.22,1)] rounded-md bg-surface-warm"
+				className="relative w-full max-w-[480px] rounded-lg border bg-background shadow-lg"
 			>
-				<div className="flex items-center justify-between border-line border-b px-6 py-5">
-					<h3 className="font-display font-extrabold text-xl tracking-[-0.02em]">
-						{title}
-					</h3>
+				<div className="flex items-start justify-between gap-4 px-6 pt-6">
+					<h3 className="pr-8 font-semibold text-lg leading-none">{title}</h3>
 					<button
 						type="button"
 						onClick={onClose}
 						aria-label="Đóng"
-						className="cursor-pointer border-none bg-transparent px-2 font-mono text-sm transition-colors hover:text-hot"
+						className="absolute top-4 right-4 rounded-xs opacity-70 outline-none transition-opacity hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-4"
 					>
-						✕
+						<X />
 					</button>
 				</div>
 				<div className="flex flex-col gap-4 p-6">{children}</div>
 				{footer && (
-					<div className="flex justify-end gap-2 border-line border-t px-6 py-4">
-						{footer}
-					</div>
+					<div className="flex justify-end gap-2 px-6 pb-6">{footer}</div>
 				)}
 			</div>
 		</div>

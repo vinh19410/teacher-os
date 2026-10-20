@@ -1,10 +1,6 @@
-import { Badge } from "@/components/ui/badge";
+import { TuitionBadge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
-import {
-	INVOICE_STATUS_LABEL,
-	INVOICE_STATUS_VARIANT,
-	invoiceRemainingLabel,
-} from "@/lib/format-invoice";
+import { invoiceRemainingLabel } from "@/lib/format-invoice";
 import type { Invoice, InvoiceStatus } from "@/lib/mock-data";
 
 /**
@@ -28,14 +24,12 @@ export function InvoiceStatusCell({
 	if (remaining) {
 		return (
 			<span className="flex items-center gap-2 whitespace-nowrap">
-				{/* Một phần = viền ink (design TuitionBadge); quá hạn mới cam đặc. */}
-				<Badge variant="accent" dot>
-					Thu một phần
-				</Badge>
+				{/* Một phần = chấm amber (design TuitionBadge); quá hạn mới đỏ đặc. */}
+				<TuitionBadge s="partial">Thu một phần</TuitionBadge>
 				<span
 					className={cn(
-						"font-mono",
-						status === "overdue" && "font-semibold text-danger",
+						"text-xs",
+						status === "overdue" && "font-semibold text-destructive",
 					)}
 				>
 					{remaining}
@@ -43,9 +37,5 @@ export function InvoiceStatusCell({
 			</span>
 		);
 	}
-	return (
-		<Badge variant={INVOICE_STATUS_VARIANT[status]} dot>
-			{INVOICE_STATUS_LABEL[status]}
-		</Badge>
-	);
+	return <TuitionBadge s={status} />;
 }
