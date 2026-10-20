@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "UI: 2 nút ở lesson detail, session mode, thẻ Từ mới tổng"
-status: pending
+status: done
 effort: 2h
 ---
 

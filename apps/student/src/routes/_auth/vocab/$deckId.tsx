@@ -73,7 +73,6 @@ function VocabDeckDetailPage() {
 	const newCount = data.cards.filter((c) => c.state === "new").length;
 	const reviewCards = data.cards.filter((c) => c.state === "review");
 	const dueCount = reviewCards.filter((c) => c.dueAt <= now).length;
-	const learnedCount = data.cards.filter((c) => c.level >= 2).length;
 
 	const futureDueAts = reviewCards
 		.filter((c) => c.dueAt > now)
@@ -87,12 +86,8 @@ function VocabDeckDetailPage() {
 				)
 			: null;
 
-	const ctaLabel =
-		newCount > 0
-			? `Học từ mới (${newCount})`
-			: dueCount > 0
-				? `Ôn tập (${dueCount})`
-				: "Ôn lại bộ từ";
+	const sessionSearch = (mode: "learn" | "review") =>
+		course ? { course, mode } : { mode };
 
 	return (
 		<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
@@ -134,52 +129,53 @@ function VocabDeckDetailPage() {
 					</div>
 
 					{data.cards.length > 0 ? (
-						<Link
-							to="/vocab/$deckId/session"
-							params={{ deckId }}
-							search={course ? { course } : {}}
-							data-testid="vocab-start-session-btn"
-							className={buttonVariants({ variant: "default" })}
-						>
-							{ctaLabel}
-						</Link>
+						<div className="flex flex-wrap gap-2">
+							{reviewCards.length > 0 ? (
+								<Link
+									to="/vocab/$deckId/session"
+									params={{ deckId }}
+									search={sessionSearch("review")}
+									data-testid="vocab-start-review-btn"
+									className={buttonVariants({ variant: "outline" })}
+								>
+									{dueCount > 0 ? `Ôn tập (${dueCount})` : "Ôn tập"}
+								</Link>
+							) : (
+								<button
+									type="button"
+									disabled
+									title="Chưa có từ nào để ôn"
+									aria-label="Ôn tập — Chưa có từ nào để ôn"
+									data-testid="vocab-start-review-btn"
+									className={buttonVariants({ variant: "outline" })}
+								>
+									Ôn tập
+								</button>
+							)}
+							{newCount > 0 ? (
+								<Link
+									to="/vocab/$deckId/session"
+									params={{ deckId }}
+									search={sessionSearch("learn")}
+									data-testid="vocab-start-learn-btn"
+									className={buttonVariants({ variant: "default" })}
+								>
+									Bắt đầu học ({newCount})
+								</Link>
+							) : (
+								<button
+									type="button"
+									disabled
+									title="Đã học hết từ mới"
+									aria-label="Bắt đầu học — Đã học hết từ mới"
+									data-testid="vocab-start-learn-btn"
+									className={buttonVariants({ variant: "default" })}
+								>
+									Bắt đầu học
+								</button>
+							)}
+						</div>
 					) : null}
-				</div>
-
-				<div className="grid grid-cols-3 gap-4">
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
-							Từ mới
-						</p>
-						<p
-							data-testid="vocab-deck-new-count"
-							className="mt-1 font-display font-extrabold text-2xl text-hot"
-						>
-							{newCount}
-						</p>
-					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
-							Đến hạn ôn
-						</p>
-						<p
-							data-testid="vocab-deck-due-count"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
-						>
-							{dueCount}
-						</p>
-					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
-							Đã thuộc (L2+)
-						</p>
-						<p
-							data-testid="vocab-deck-learned-count"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
-						>
-							{learnedCount}
-						</p>
-					</div>
 				</div>
 
 				{/* Word table */}

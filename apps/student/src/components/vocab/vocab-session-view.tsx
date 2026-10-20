@@ -39,11 +39,13 @@ interface PendingPersistTask {
 export function VocabSessionView({
 	sessionData,
 	sessionNonce = 0,
+	mode,
 	rng,
 	onExit,
 }: {
 	sessionData: VocabSessionData;
 	sessionNonce?: number;
+	mode?: "learn" | "review";
 	rng?: RandomSource;
 	onExit: () => void;
 }) {
@@ -93,19 +95,26 @@ export function VocabSessionView({
 		[bumpRender],
 	);
 
-	// Engine instance created ONCE per (deck.id, sessionNonce) (red-team F14).
+	// Engine instance created ONCE per (deck.id, sessionNonce, mode) (red-team F14).
+	// mode phải nằm trong key: đổi ?mode=learn ↔ ?mode=review trên cùng mount
+	// không remount route — engine cũ phải được tái tạo theo chế độ mới.
 	const engineRef = useRef<EngineHolder | null>(null);
-	const instanceKey = `${sessionData.deck.id}:${sessionNonce}`;
+	const instanceKey = `${sessionData.deck.id}:${sessionNonce}:${mode ?? "auto"}`;
 	if (!engineRef.current || engineRef.current.key !== instanceKey) {
 		const hasNewCards = sessionData.cards.some((c) => c.state === "new");
+		// mode === "review" → luôn ôn; mode === "learn" mà hết từ mới → fallback
+		// review (không chạy engine rỗng); không có mode → hành vi cũ (tự chọn).
+		const useLearn = mode === "review" ? false : hasNewCards;
 		const holder: EngineHolder = {
 			key: instanceKey,
-			mode: hasNewCards ? "learn" : "review",
+			mode: useLearn ? "learn" : "review",
 			learn: null,
 			review: null,
 		};
+		// Engine mới (đổi mode cùng mount) không có ngữ cảnh của phản hồi cũ.
+		pendingRespondRef.current = null;
 
-		if (hasNewCards) {
+		if (useLearn) {
 			holder.learn = new LearnSession({
 				cards: sessionData.cards,
 				pool: sessionData.pool,
@@ -200,6 +209,9 @@ export function VocabSessionView({
 			}
 			bumpRender();
 			void runPendingTasks(holder).then(() => {
+				// Engine đã swap (đổi mode cùng mount) — phản hồi buffer thuộc
+				// ngữ cảnh engine cũ, không replay vào engine mới.
+				if (engineRef.current !== holder) return;
 				const buffered = pendingRespondRef.current;
 				if (buffered) {
 					pendingRespondRef.current = null;
