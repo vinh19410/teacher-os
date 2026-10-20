@@ -114,7 +114,7 @@ function makeReviewOnlyNotDueSessionData(): VocabSessionData {
 			isWarning: false,
 			state: "review" as const,
 			intervalDays: 1,
-			dueAt: NOW + 3_600_000,
+			dueAt: Date.now() + 3_600_000,
 			lapses: 0,
 		},
 	];
