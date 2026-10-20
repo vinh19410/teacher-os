@@ -22,7 +22,8 @@
 		"test": "turbo run test && pnpm test:ci-workflow && pnpm test:topology-drift",
 		"test:ci-workflow": "node --test scripts/ci-workflow.test.mjs",
 		"test:topology-drift": "node --test scripts/topology-drift.test.mjs",
-		"test:e2e": "e2e run"
+		"test:e2e": "e2e run",
+		"design:compare": "node scripts/design-compare/capture.mjs"
 	},
 	"dependencies": {
 		"@teacher-os/env": "workspace:*",

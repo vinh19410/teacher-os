@@ -1,0 +1,582 @@
+{
+	"$comment": "Bảng ánh xạ màn design v2 ↔ app — nguồn duy nhất cho capture.mjs + verdict.md. designSteps/appSteps chạy theo thứ tự; selector là Playwright selector. {seed.<key>} thay bằng id từ seed run (.design-seed.json). auth: teacher|student|null.",
+	"viewports": {
+		"desktop": [
+			1440,
+			900
+		],
+		"tablet": [
+			768,
+			1024
+		],
+		"phone": [
+			375,
+			812
+		]
+	},
+	"themes": [
+		"light",
+		"dark"
+	],
+	"screens": [
+		{
+			"id": "login-teacher",
+			"phase": 5,
+			"auth": null,
+			"design": {
+				"hash": "",
+				"steps": []
+			},
+			"app": "/login"
+		},
+		{
+			"id": "login-reset",
+			"phase": 5,
+			"auth": null,
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"click": "text=Forgot your password?"
+					}
+				]
+			},
+			"app": "/forgot-password"
+		},
+		{
+			"id": "pay",
+			"phase": 5,
+			"auth": null,
+			"design": {
+				"hash": "#/pay/p7Hq2x",
+				"steps": []
+			},
+			"app": "/pay/{seed.payToken}"
+		},
+		{
+			"id": "t-dashboard",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/dashboard",
+				"steps": []
+			},
+			"app": "/dashboard"
+		},
+		{
+			"id": "t-classes",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/classes",
+				"steps": []
+			},
+			"app": "/classes"
+		},
+		{
+			"id": "t-class-detail",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/classes/c2",
+				"steps": []
+			},
+			"app": "/classes/{seed.classId}"
+		},
+		{
+			"id": "t-attendance",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/schedule",
+				"steps": [
+					{
+						"clickFirst": "main button:has-text('Attendance')"
+					}
+				]
+			},
+			"appSteps": [
+				{
+					"clickFirst": "button:has-text('Điểm danh')"
+				}
+			],
+			"app": "/classes/{seed.classId}"
+		},
+		{
+			"id": "t-students",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/students",
+				"steps": []
+			},
+			"app": "/students"
+		},
+		{
+			"id": "t-student-detail",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/students/s3",
+				"steps": []
+			},
+			"app": "/students/{seed.studentId}"
+		},
+		{
+			"id": "t-schedule",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/schedule",
+				"steps": []
+			},
+			"app": "/schedule"
+		},
+		{
+			"id": "t-syllabus",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/syllabus",
+				"steps": []
+			},
+			"app": "/syllabus"
+		},
+		{
+			"id": "t-syllabus-detail",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/syllabus",
+				"steps": [],
+				"patternOf": "t-syllabus"
+			},
+			"app": "/syllabus/{seed.syllabusId}"
+		},
+		{
+			"id": "t-profile",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/profile",
+				"steps": []
+			},
+			"app": "/profile"
+		},
+		{
+			"id": "t-reports",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": null,
+				"patternOf": "t-dashboard",
+				"steps": []
+			},
+			"app": "/reports"
+		},
+		{
+			"id": "t-assignments",
+			"phase": 7,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/assignments",
+				"steps": []
+			},
+			"app": "/assignments"
+		},
+		{
+			"id": "t-test-builder",
+			"phase": 7,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/assignments/tests",
+				"steps": []
+			},
+			"app": "/assignments/tests/new"
+		},
+		{
+			"id": "t-grading",
+			"phase": 7,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/grading/a1",
+				"steps": []
+			},
+			"app": "/grading/{seed.attemptId}"
+		},
+		{
+			"id": "t-tuition",
+			"phase": 7,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/tuition",
+				"steps": []
+			},
+			"app": "/tuition"
+		},
+		{
+			"id": "t-invoice",
+			"phase": 7,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/tuition/TOS9B4C7",
+				"steps": []
+			},
+			"app": "/tuition/{seed.invoiceId}"
+		},
+		{
+			"id": "t-search",
+			"phase": 8,
+			"auth": "teacher",
+			"design": {
+				"hash": "#/dashboard",
+				"steps": [
+					{
+						"click": "button:has-text('Search…')"
+					}
+				],
+				"skipViewports": [
+					"phone"
+				]
+			},
+			"appSteps": [
+				{
+					"press": "ControlOrMeta+k"
+				}
+			],
+			"app": "/dashboard"
+		},
+		{
+			"id": "s-dashboard",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": []
+			},
+			"app": "/"
+		},
+		{
+			"id": "s-classes",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Class')"
+					}
+				]
+			},
+			"app": "/classes"
+		},
+		{
+			"id": "s-class-detail",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Class')"
+					},
+					{
+						"clickFirst": "main button:has-text('View class')"
+					}
+				]
+			},
+			"app": "/classes/{seed.studentClassId}"
+		},
+		{
+			"id": "s-quiz-reading",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Reading')"
+					},
+					{
+						"clickFirst": "main .grid button"
+					}
+				]
+			},
+			"app": "/learn/quizzes/attempt/{seed.attemptReadingId}"
+		},
+		{
+			"id": "s-quiz-listening",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Listening')"
+					},
+					{
+						"clickFirst": "main .grid button"
+					}
+				]
+			},
+			"app": "/learn/quizzes/attempt/{seed.attemptListeningId}"
+		},
+		{
+			"id": "s-quiz-writing",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Writing')"
+					},
+					{
+						"clickFirst": "main .grid button"
+					}
+				]
+			},
+			"app": "/learn/quizzes/attempt/{seed.attemptWritingId}"
+		},
+		{
+			"id": "s-quiz-speaking",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Speaking')"
+					},
+					{
+						"clickFirst": "main .grid button"
+					}
+				]
+			},
+			"app": "/learn/quizzes/attempt/{seed.attemptSpeakingId}"
+		},
+		{
+			"id": "s-vocab",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Vocabulary')"
+					},
+					{
+						"clickFirst": "main .grid button"
+					}
+				]
+			},
+			"app": "/vocab"
+		},
+		{
+			"id": "s-vocab-catalog",
+			"phase": 9,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Vocabulary')"
+					}
+				]
+			},
+			"app": "/vocab/courses"
+		},
+		{
+			"id": "s-practice-reading",
+			"phase": 10,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Reading')"
+					}
+				]
+			},
+			"app": "/practice/reading"
+		},
+		{
+			"id": "s-practice-listening",
+			"phase": 10,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Listening')"
+					}
+				]
+			},
+			"app": "/practice/listening"
+		},
+		{
+			"id": "s-practice-writing",
+			"phase": 10,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Writing')"
+					}
+				]
+			},
+			"app": "/practice/writing"
+		},
+		{
+			"id": "s-practice-speaking",
+			"phase": 10,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Speaking')"
+					}
+				]
+			},
+			"app": "/practice/speaking"
+		},
+		{
+			"id": "s-practice-vocabulary",
+			"phase": 10,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Practice')"
+					},
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('Vocabulary')"
+					}
+				]
+			},
+			"app": "/practice/vocabulary"
+		},
+		{
+			"id": "s-history",
+			"phase": 11,
+			"auth": "student",
+			"design": {
+				"hash": "",
+				"steps": [
+					{
+						"openNav": true
+					},
+					{
+						"click": "button:text-is('History')"
+					}
+				]
+			},
+			"app": "/history"
+		}
+	]
+}
