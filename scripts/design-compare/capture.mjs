@@ -15,9 +15,9 @@
  *   với cột Design v2 | App cũ (nếu có raw "old") | App mới.
  */
 import { spawn, spawnSync } from "node:child_process";
-import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,7 +62,8 @@ try {
 }
 const fill = (tpl) =>
 	tpl.replace(/\{seed\.(\w+)\}/g, (_, k) => {
-		if (!seed || !(k in seed)) throw new Error(`seed.${k} thiếu trong ${SEED_FILE}`);
+		if (!seed || !(k in seed))
+			throw new Error(`seed.${k} thiếu trong ${SEED_FILE}`);
 		return String(seed[k]);
 	});
 
@@ -134,7 +135,9 @@ function cleanup() {
 		}
 	}
 	if (!keepDesign) {
-		spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "stop"], { cwd: ROOT });
+		spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "stop"], {
+			cwd: ROOT,
+		});
 	}
 }
 process.on("exit", cleanup);
@@ -201,13 +204,15 @@ if (needApp) {
 }
 if (side === "design" || side === "both") {
 	console.log("[harness] design v2…");
-	const r = spawnSync(
-		"bash",
-		[path.join(HERE, "fetch-design.sh"), "run"],
-		{ cwd: ROOT, encoding: "utf8", timeout: 300_000 },
-	);
+	const r = spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "run"], {
+		cwd: ROOT,
+		encoding: "utf8",
+		timeout: 300_000,
+	});
 	if (r.status !== 0) {
-		console.error(`[harness] design v2 không chạy được:\n${r.stdout}\n${r.stderr}`);
+		console.error(
+			`[harness] design v2 không chạy được:\n${r.stdout}\n${r.stderr}`,
+		);
 		process.exit(1);
 	}
 	await waitUrl(`${DESIGN}/`, { name: "design v2" });
@@ -255,7 +260,10 @@ async function runSteps(page, steps) {
 				await page.waitForTimeout(400);
 			}
 		} else if (st.click)
-			await page.locator(`${st.click} >> visible=true`).first().click({ timeout: 10_000 });
+			await page
+				.locator(`${st.click} >> visible=true`)
+				.first()
+				.click({ timeout: 10_000 });
 		else if (st.clickFirst)
 			await page
 				.locator(`${st.clickFirst} >> visible=true`)
@@ -298,10 +306,10 @@ ${imgs
 	)
 	.join("\n")}
 </div></body></html>`;
-	await page.setContent(html);
-	await page.evaluate(() => document.fonts.ready);
-	await page.waitForTimeout(300);
-	await page.screenshot({ path: outFile, fullPage: true });
+		await page.setContent(html);
+		await page.evaluate(() => document.fonts.ready);
+		await page.waitForTimeout(300);
+		await page.screenshot({ path: outFile, fullPage: true });
 	} finally {
 		await browser.close();
 	}
@@ -337,7 +345,9 @@ try {
 			await page.fill("#signin-email", seed.studentEmail);
 			await page.fill("#signin-password", seed.studentPassword);
 			await page.getByRole("button", { name: "Đăng nhập" }).click();
-			await page.waitForURL(new RegExp(`^${STUDENT}/(\\?.*)?$`), { timeout: 30_000 });
+			await page.waitForURL(new RegExp(`^${STUDENT}/(\\?.*)?$`), {
+				timeout: 30_000,
+			});
 			await ctx.storageState({ path: studentAuth });
 			await ctx.close();
 		}
@@ -350,45 +360,84 @@ try {
 					serviceWorkers: "block",
 					storageState: teacherAuth,
 				});
-				await tCtx.addInitScript((t) => window.localStorage.setItem("theme", t), theme);
+				await tCtx.addInitScript(
+					(t) => window.localStorage.setItem("theme", t),
+					theme,
+				);
 				const sCtx = await browser.newContext({
 					viewport: { width: vp[0], height: vp[1] },
 					reducedMotion: "reduce",
 					serviceWorkers: "block",
 					storageState: studentAuth,
 				});
-				await sCtx.addInitScript((t) => window.localStorage.setItem("theme", t), theme);
+				await sCtx.addInitScript(
+					(t) => window.localStorage.setItem("theme", t),
+					theme,
+				);
 				const aCtx = await browser.newContext({
 					viewport: { width: vp[0], height: vp[1] },
 					reducedMotion: "reduce",
 					serviceWorkers: "block",
 				});
-				await aCtx.addInitScript((t) => window.localStorage.setItem("theme", t), theme);
+				await aCtx.addInitScript(
+					(t) => window.localStorage.setItem("theme", t),
+					theme,
+				);
 				const tPage = await tCtx.newPage();
 				const sPage = await sCtx.newPage();
 				const aPage = await aCtx.newPage();
 
 				for (const sc of screens) {
-					const rawFile = path.join(RAW, label, sc.id, `${vpName}-${theme}.png`);
+					const rawFile = path.join(
+						RAW,
+						label,
+						sc.id,
+						`${vpName}-${theme}.png`,
+					);
 					if (!existsSync(rawFile)) {
 						console.log(`[harness] app ${label} ${sc.id}/${vpName}-${theme}…`);
 						try {
 							if (sc.auth === "teacher") {
-								await tPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
+								await tPage.goto(`${WEB}${fill(sc.app)}`, {
+									waitUntil: "load",
+								});
 							} else if (sc.auth === "student") {
-								await sPage.goto(`${STUDENT}${fill(sc.app)}`, { waitUntil: "load" });
+								await sPage.goto(`${STUDENT}${fill(sc.app)}`, {
+									waitUntil: "load",
+								});
 							} else {
-								await aPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
+								await aPage.goto(`${WEB}${fill(sc.app)}`, {
+									waitUntil: "load",
+								});
 							}
-							await settle(sc.auth === "student" ? sPage : sc.auth === "teacher" ? tPage : aPage);
+							await settle(
+								sc.auth === "student"
+									? sPage
+									: sc.auth === "teacher"
+										? tPage
+										: aPage,
+							);
 							await runSteps(
-								sc.auth === "student" ? sPage : sc.auth === "teacher" ? tPage : aPage,
+								sc.auth === "student"
+									? sPage
+									: sc.auth === "teacher"
+										? tPage
+										: aPage,
 								sc.appSteps,
 							);
-							await shoot(sc.auth === "student" ? sPage : sc.auth === "teacher" ? tPage : aPage, rawFile);
+							await shoot(
+								sc.auth === "student"
+									? sPage
+									: sc.auth === "teacher"
+										? tPage
+										: aPage,
+								rawFile,
+							);
 							done.push(`${sc.id}/${vpName}-${theme} (app)`);
 						} catch (err) {
-							failures.push(`app ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`);
+							failures.push(
+								`app ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`,
+							);
 						}
 					}
 				}
@@ -411,7 +460,12 @@ try {
 				for (const sc of screens) {
 					if (!sc.design) continue;
 					if (sc.design.skipViewports?.includes(vpName)) continue;
-					const rawFile = path.join(RAW, "design", sc.id, `${vpName}-${theme}.png`);
+					const rawFile = path.join(
+						RAW,
+						"design",
+						sc.id,
+						`${vpName}-${theme}.png`,
+					);
 					if (existsSync(rawFile)) continue;
 					console.log(`[harness] design ${sc.id}/${vpName}-${theme}…`);
 					try {
@@ -422,7 +476,11 @@ try {
 						if (isStudent) {
 							await page.click("button[type=submit]");
 							await page.click("button:text-is('student')");
-						} else if (sc.design.hash !== null && sc.id !== "login-teacher" && sc.id !== "login-reset") {
+						} else if (
+							sc.design.hash !== null &&
+							sc.id !== "login-teacher" &&
+							sc.id !== "login-reset"
+						) {
 							await page.click("button[type=submit]");
 						}
 						// Hash TRƯỚC steps: SPA render theo hash, steps bấm nút trên trang đích.
@@ -440,7 +498,9 @@ try {
 						await shoot(page, rawFile);
 						done.push(`${sc.id}/${vpName}-${theme} (design)`);
 					} catch (err) {
-						failures.push(`design ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`);
+						failures.push(
+							`design ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`,
+						);
 					}
 				}
 				await ctx.close();
@@ -457,14 +517,31 @@ try {
 					const outFile = path.join(outDir, `${vpName}-${theme}.png`);
 					if (existsSync(outFile)) continue;
 					console.log(`[harness] ghép ${sc.id}/${vpName}-${theme}…`);
-					const designFile = path.join(RAW, "design", sc.id, `${vpName}-${theme}.png`);
-					const oldFile = path.join(RAW, "old", sc.id, `${vpName}-${theme}.png`);
-					const newFile = path.join(RAW, "new", sc.id, `${vpName}-${theme}.png`);
+					const designFile = path.join(
+						RAW,
+						"design",
+						sc.id,
+						`${vpName}-${theme}.png`,
+					);
+					const oldFile = path.join(
+						RAW,
+						"old",
+						sc.id,
+						`${vpName}-${theme}.png`,
+					);
+					const newFile = path.join(
+						RAW,
+						"new",
+						sc.id,
+						`${vpName}-${theme}.png`,
+					);
 					const cols = [];
 					if (sc.design !== null && existsSync(designFile))
 						cols.push({ title: "Design v2", file: designFile });
-					if (existsSync(oldFile)) cols.push({ title: "App cũ", file: oldFile });
-					if (existsSync(newFile)) cols.push({ title: "App mới", file: newFile });
+					if (existsSync(oldFile))
+						cols.push({ title: "App cũ", file: oldFile });
+					if (existsSync(newFile))
+						cols.push({ title: "App mới", file: newFile });
 					if (cols.length === 0) continue;
 					await mkdir(outDir, { recursive: true });
 					await compose(outFile, cols);
@@ -481,8 +558,9 @@ try {
 if (!existsSync(VERDICT)) {
 	const rows = cfg.screens
 		.flatMap((s) =>
-			Object.keys(cfg.viewports)
-				.flatMap((vp) => cfg.themes.map((th) => `| ${s.id} | ${vp}×${th} | TODO | |`)),
+			Object.keys(cfg.viewports).flatMap((vp) =>
+				cfg.themes.map((th) => `| ${s.id} | ${vp}×${th} | TODO | |`),
+			),
 		)
 		.join("\n");
 	await mkdir(path.dirname(VERDICT), { recursive: true });

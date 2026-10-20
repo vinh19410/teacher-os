@@ -573,7 +573,7 @@ export function ClassAssignmentsTab({
 															onChange={(e) =>
 																handleStudentToggle(s.id, e.target.checked)
 															}
-															className="h-4 w-4 rounded-sm border-line text-accent focus:ring-accent"
+															className="h-4 w-4 rounded-sm border-line text-primary focus:ring-primary"
 														/>
 														<Avatar text={s.avatar} size="sm" />
 														<span className="font-medium text-fg text-sm">

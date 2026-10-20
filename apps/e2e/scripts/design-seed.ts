@@ -10,10 +10,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, type Page } from "@playwright/test";
 import { createClient } from "@libsql/client";
-import { seedQuizFixture, seedSubmittedEssay } from "../specs/helpers-quiz";
+import { chromium, type Page } from "@playwright/test";
 import { orgIdForTeacherEmail } from "../specs/helpers";
+import { seedQuizFixture, seedSubmittedEssay } from "../specs/helpers-quiz";
 import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "../specs/origins";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -113,11 +113,41 @@ try {
 		studentEmail,
 		invitedClassName: "Writing Clinic",
 		lessons: [
-			{ date: daysFromToday(-7), time: "18:00", dur: 90, status: "completed", topic: "Listening Section 1–2" },
-			{ date: daysFromToday(-3), time: "18:00", dur: 90, status: "completed", topic: "Vocabulary: Environment" },
-			{ date: daysFromToday(0), time: "18:00", dur: 90, status: "upcoming", topic: "Reading: Matching headings" },
-			{ date: daysFromToday(4), time: "18:00", dur: 90, status: "upcoming", topic: "Writing Task 1 — Line graphs" },
-			{ date: daysFromToday(9), time: "18:00", dur: 90, status: "cancelled", topic: "Speaking Part 1 warm-up" },
+			{
+				date: daysFromToday(-7),
+				time: "18:00",
+				dur: 90,
+				status: "completed",
+				topic: "Listening Section 1–2",
+			},
+			{
+				date: daysFromToday(-3),
+				time: "18:00",
+				dur: 90,
+				status: "completed",
+				topic: "Vocabulary: Environment",
+			},
+			{
+				date: daysFromToday(0),
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Reading: Matching headings",
+			},
+			{
+				date: daysFromToday(4),
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Writing Task 1 — Line graphs",
+			},
+			{
+				date: daysFromToday(9),
+				time: "18:00",
+				dur: 90,
+				status: "cancelled",
+				topic: "Speaking Part 1 warm-up",
+			},
 		],
 		prompts: [
 			{
@@ -129,8 +159,23 @@ try {
 				passage:
 					"<p>The Bronze Age settlement predates the river diversion. Archaeologists found evidence of trade with Crete.</p>",
 				questions: [
-					{ stem: "Việc chuyển dòng sông xảy ra trước hay sau thời kỳ đồ đồng?", opts: ["Trước", "Sau", "Không đề cập", "Chồng thời gian"], answer: "Sau", alts: "" },
-					{ stem: "Bằng chứng thương mại với Crete được tìm thấy ở đâu?", opts: ["Trong lăng mộ", "Trong khu định cư", "Trên tàu đắm", "Trong hang động"], answer: "Trong khu định cư", alts: "" },
+					{
+						stem: "Việc chuyển dòng sông xảy ra trước hay sau thời kỳ đồ đồng?",
+						opts: ["Trước", "Sau", "Không đề cập", "Chồng thời gian"],
+						answer: "Sau",
+						alts: "",
+					},
+					{
+						stem: "Bằng chứng thương mại với Crete được tìm thấy ở đâu?",
+						opts: [
+							"Trong lăng mộ",
+							"Trong khu định cư",
+							"Trên tàu đắm",
+							"Trong hang động",
+						],
+						answer: "Trong khu định cư",
+						alts: "",
+					},
 				],
 			},
 			{
@@ -141,8 +186,18 @@ try {
 				note: "Điền MỘT TỪ hoặc một con số cho mỗi chỗ trống.",
 				passage: "<p>Section 1 — Đặt phòng câu lạc bộ đọc sách.</p>",
 				questions: [
-					{ stem: "Booking reference: ______", opts: null, answer: "KT4471", alts: "kt4471" },
-					{ stem: "Số điện thoại liên hệ: ______", opts: null, answer: "0938224477", alts: "" },
+					{
+						stem: "Booking reference: ______",
+						opts: null,
+						answer: "KT4471",
+						alts: "kt4471",
+					},
+					{
+						stem: "Số điện thoại liên hệ: ______",
+						opts: null,
+						answer: "0938224477",
+						alts: "",
+					},
 				],
 			},
 			{
@@ -164,7 +219,8 @@ try {
 				note: "Nói 1–2 phút về chủ đề.",
 				passage: "",
 				cueTopic: "một địa điểm bạn thích đến",
-				cuePoints: "đó là nơi nào\nbạn thường đến khi nào\nbạn thích nó vì lý do gì",
+				cuePoints:
+					"đó là nơi nào\nbạn thường đến khi nào\nbạn thích nó vì lý do gì",
 				questions: [],
 			},
 			{
@@ -233,9 +289,18 @@ try {
 		args: [syllabusId, orgId, now],
 	});
 	const modules = [
-		{ title: "Module 1 — Chẩn đoán", lessons: ["Placement mock", "Reading strategies", "Listening map"] },
-		{ title: "Module 2 — Academic Reading", lessons: ["T/F/NG deep dive", "Matching headings", "Summary completion"] },
-		{ title: "Module 3 — Writing", lessons: ["Task 1 visuals", "Task 2 argument", "Final mock test"] },
+		{
+			title: "Module 1 — Chẩn đoán",
+			lessons: ["Placement mock", "Reading strategies", "Listening map"],
+		},
+		{
+			title: "Module 2 — Academic Reading",
+			lessons: ["T/F/NG deep dive", "Matching headings", "Summary completion"],
+		},
+		{
+			title: "Module 3 — Writing",
+			lessons: ["Task 1 visuals", "Task 2 argument", "Final mock test"],
+		},
 	];
 	for (const [mIdx, mod] of modules.entries()) {
 		const moduleId = crypto.randomUUID();
@@ -298,9 +363,7 @@ try {
 	await studentPage.getByRole("button", { name: "Tạo tài khoản" }).click();
 	const verifyUrl = await readVerificationUrl(studentEmail);
 	await studentPage.goto(verifyUrl);
-	await studentPage
-		.getByRole("button", { name: "Vào cổng học viên" })
-		.click();
+	await studentPage.getByRole("button", { name: "Vào cổng học viên" }).click();
 	await studentPage.waitForURL(new RegExp(`^${STUDENT_ORIGIN}`), {
 		timeout: 30_000,
 	});
@@ -320,10 +383,9 @@ try {
 			name: `Làm bài: ${title}`,
 		});
 		await row.waitFor({ timeout: 20_000 });
-		const navPromise = studentPage.waitForURL(
-			new RegExp(`/learn/quizzes/[^/]+$`),
-			{ timeout: 30_000 },
-		);
+		const navPromise = studentPage.waitForURL(/\/learn\/quizzes\/[^/]+$/, {
+			timeout: 30_000,
+		});
 		await row.click();
 		await navPromise;
 		const startDialog = studentPage.getByRole("alertdialog", {

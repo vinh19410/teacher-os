@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Token neutral, Geist self-host, light mặc định"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1]

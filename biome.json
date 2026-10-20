@@ -33,6 +33,7 @@
 			"!**/test-results",
 			"!docs/diagrams",
 			"!**/.mail-preview",
+			"!**/.cache/design-v2",
 			"!**/apps/landing/public",
 			"!**/packages/api/src/srs/vectors",
 			"!assets/videos"

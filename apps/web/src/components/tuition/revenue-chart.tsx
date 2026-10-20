@@ -240,7 +240,7 @@ export function RevenueChart({
 						<span className="flex items-center gap-1.5">
 							<span
 								aria-hidden="true"
-								className="inline-block h-2.5 w-2.5 rounded-[3px] bg-accent"
+								className="inline-block h-2.5 w-2.5 rounded-[3px] bg-chart-1"
 							/>
 							Đã thu
 						</span>

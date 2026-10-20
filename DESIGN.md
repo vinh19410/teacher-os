@@ -2,63 +2,68 @@
 
 > Nguồn chân lý: `packages/ui/src/styles/globals.css` (tokens), `apps/web/src/components/ui/*` (components).
   Đọc file này trước khi làm UI; đổi token ở globals.css chứ không hard-code giá trị lệch scale.
-  Nguồn tham chiếu thị giác: `vinh19410/teacheros-design@fcf60a5` (Figma Make export) — bản mẫu
-  mock, không copy code.
+  Nguồn tham chiếu thị giác: `vinh19410/teacheros-design-v2@7a53fc0` (Figma Make export, shadcn
+  neutral oklch) — bản mẫu mock, không copy code/mock data.
 
 ## Bản chất thương hiệu (một dòng)
 
-"Teacher-first workspace" — một ngày dạy học yên tĩnh trong một nơi: tối mặc định, mực và
-giấy trên nền đen, **một accent cam duy nhất** cho hành động và trạng thái cần chú ý.
+"Teacher-first workspace" — một ngày dạy học yên tĩnh trong một nơi: **sáng mặc định**, mực và
+giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm; màu chỉ dùng cho trạng thái
+(emerald/amber/đỏ destructive) và biểu đồ.
 
-## Theme
+## Theme (design v2)
 
-- **Dark là mặc định** (`:root`); `.light` trên `<html>` là override. Toggle ở topbar teacher +
-  student và trang login, lưu `localStorage.theme` (`"dark"` | `"light"`), đồng bộ giữa tab qua
-  sự kiện `storage`.
-- Toggle là **switch icon**, không có chữ: track pill hai icon nền (`Sun` trái / `Moon` phải, màu
-  `text-meta`), núm tròn màu mực (`bg-fg`, icon `text-bg`) trượt 150ms mang icon theme hiện tại —
-  bật (núm phải, mặt trăng) = tối. `ThemeToggle` dùng chung từ `@teacher-os/ui`, semantics
+- **Light là mặc định** (`:root`); `.dark` trên `<html>` là override. Toggle ở shell header,
+  lưu `localStorage.theme` (`"light"` | `"dark"`), đồng bộ giữa tab qua sự kiện `storage`.
+  Lần đầu mở (không có key) → light; người dùng v1 từng chọn được giữ nguyên lựa chọn.
+- Toggle là **nút ghost icon** (`size-9 rounded-md`): đang tối hiện Sun (bấm → sáng), đang
+  sáng hiện Moon. `ThemeToggle` dùng chung từ `@teacher-os/ui`, semantics giữ nguyên:
   `role="switch"` + `aria-checked` (đang tối) + `aria-label="Giao diện tối"` cố định.
 - Chống nháy: script tĩnh `/theme-init.js` chạy đồng bộ trong `<head>` (CSP `script-src 'self'`
-  — không inline script). `useTheme()` trong `@teacher-os/ui/hooks/use-theme` là nguồn duy nhất.
-- Light accent là `#c93d0b`, **không phải** `#e8490f` của design: giá trị design đo 3.90 contrast
-  trên trắng (trượt AA chữ thường), `#c93d0b` đạt 5.05. Lệch có chủ đích.
+  — không inline script); chỉ thêm class khi storage ghi `"dark"`. `useTheme()` trong
+  `@teacher-os/ui/hooks/use-theme` là nguồn duy nhất; light = không có class nào.
 
-## Tokens (giữ TÊN, đổi GIÁ TRỊ — xem bảng đủ trong globals.css)
+## Tokens (design v2 — shadcn neutral oklch; alias tên v1 xóa ở phase 12)
 
-- **Màu (dark):** `--bg #0a0a0a`, `--surface #1a1a1a` (nền chìm: input, segmented, chip),
-  `--surface-warm #111111` (nền nổi: card `neu`), `--fg #f2f2f2`, `--meta #8c8c8c`,
-  `--line #262626` (viền card), `--line-strong #6b6b6b` (ranh giới input ≥3:1, WCAG 1.4.11),
-  `--chip #2e2e2e` (badge xám, cột chart thường), `--accent #ff5b1f` (cam, light `#c93d0b`).
-- **Trạng thái đơn sắc + cam:** `--success` = `--fg-2`, `--warn` = `--meta`, `--danger` = `--accent`
-  (quá hạn/lỗi = cam đặc). **Đỏ `--destructive` chỉ cho hành động phá hủy** (xóa, hủy vĩnh viễn,
-  hủy liên kết) — không bao giờ dùng đỏ cho trạng thái.
-- **Ngoại lệ chấm điểm (có chủ đích):** `--verdict-correct` / `--verdict-wrong` (xanh lá/đỏ)
-  **chỉ** dùng để biểu thị đúng/sai ở màn soi bài và chấm điểm quiz, **luôn kèm icon ✓/✗** (SVG
-  `aria-hidden`) để tín hiệu không phụ thuộc màu. Không dùng cho trạng thái nào khác; đỏ verdict
-  không thay `--destructive`. `--success`/`--danger` giữ nguyên ngôn ngữ đơn sắc + cam. Nền nhạt
-  `-soft`: dark mix `transparent 86%`, light `90%`. Contrast đã đo (WCAG): chữ trên `--surface`
-  — correct 9.99 (dark) / 6.37 (light), wrong 6.29 / 5.78; trên `-soft` — 8.95 / 6.14 và 6.09 /
-  5.45; chữ trên nền đặc `--verdict-on` 11.36 / 7.13 — đều ≥4.5:1. Viền ĐẶC (viền trái 3px
-  khối câu, viền 2px hàng đáp án đúng) ≥3:1; viền alpha `/50`–`/60` (chip, hàng đã chọn) là
-  decorative — tín hiệu đúng/sai do chữ + icon ✓/✗ mang, không phụ thuộc viền.
-- **Type:** Inter Tight Variable (display + body), **DM Mono** cho kicker/nhãn/đếm/số liệu
-  (`--font-mono`). `--text-base` 15px. Tiêu đề lớn: `font-display font-extrabold`,
-  `leading-[0.95]`, `tracking-[-0.045em]`; kicker mono 11px uppercase `tracking-[0.2em] text-hot`.
-- **Radius:** sm 4 / md 6 / lg 8 / xl 8; pill 980 chỉ cho chip/tag/toggle/avatar/progress track.
-- **Focus ring:** `--focus-ring` = ring cam 2px offset nền (`0 0 0 2px var(--bg), 0 0 0 4px var(--accent)`)
-  — thấy rõ cả 2 theme; input thêm `focus-visible:ring-2 ring-hot/40`.
+- **Nền tảng (light):** `--background` trắng, `--foreground` mực `oklch(0.145 0 0)`,
+  `--card` trắng + `rounded-xl border shadow-sm`, `--muted`/`--secondary`/`--accent`
+  xám nhạt `0.97` (nền chìm: segmented, chip, hover), `--border` `0.922`, `--primary` = mực,
+  `--primary-foreground` gần trắng. Dark: đảo theo bảng shadcn neutral (xem globals.css).
+- **Chữ phụ:** `--muted-foreground` light `0.525` — **lệch có chủ đích** so với design `0.556`
+  (đo 2.09:1 trên muted, trượt AA chữ thường); `0.525` đo 5.39:1 trên background,
+  4.94:1 trên muted.
+- **Ranh giới input:** `--input` light `0.556` / dark `0.708` — **lệch có chủ đích** so với
+  design (`0.922` ≈ 1.6:1) để đạt ≥3:1 (WCAG 1.4.11, DoD #6); đo 4.73:1 / 7.63:1.
+- **Trạng thái v2 (thay ngôn ngữ đơn sắc + cam của v1):** `--success` emerald (light
+  `0.508 0.118 165.612` = 5.37:1, dark `0.765 0.177 163.223`), `--warn` amber (5.05:1),
+  `--danger`/quá hạn = `--destructive` đỏ (4.76:1). Chấm màu (dot) kèm nhãn chữ muted.
+- **Ngoại lệ chấm điểm (giữ nguyên từ v1):** `--verdict-correct` / `--verdict-wrong` **chỉ**
+  cho màn soi bài/chấm quiz, luôn kèm icon ✓/✗. Contrast đo trên nền mới: correct 7.13
+  (light) / 11.36 (dark), wrong 6.47 / 7.16 — ≥4.5:1.
+- **Vai trò cam v1 đã bỏ:** `--accent` v2 là nền hover xám; `text-hot` → `--primary` (mực);
+  `accent-on` → `--primary-foreground`; `accent-soft` → `--accent` (xám); hover cam cũ
+  `accent-hover/active` → nền accent xám / primary 75%. Mọi chỗ ý là "cam" đã đổi sang
+  `primary`/`chart-1` cùng commit phase 2 (revenue-chart legend, checkbox class tab).
+- **Type:** **Geist Variable** + **Geist Mono Variable** self-host (`@fontsource-variable`,
+  CSP `font-src 'self'`). `html { font-size: 14px }`; thang chữ = rem mặc định Tailwind
+  (không override px như v1). Tiêu đề trang: `text-2xl md:text-3xl font-semibold tracking-tight`;
+  số liệu `tabular-nums`. Input `text-base md:text-sm` (16px mobile — tránh iOS zoom khi focus).
+- **Radius:** `--radius: 0.625rem`; sm/md/lg/xl derive từ đó (xl = card); `rounded-full` cho
+  pill/chip/avatar. Lưu ý: `rounded-2xl+` vẫn là 980px pill cho markup legacy — dùng
+  `rounded-full` trong code mới; dọn ở phase 12.
+- **Focus ring:** `--focus-ring` = `0 0 0 2px var(--background), 0 0 0 4px var(--ring)`; input
+  v2 dùng `focus-visible:ring-[3px] ring-ring/50`.
 - **Motion:** 150ms state change, ease `cubic-bezier(0.28,0,0.22,1)`; chỉ animate
   color/border/transform; không entrance choreography.
 
-## Utilities nền (lớp `utilities` trong globals.css)
+## Utilities nền (alias v1 — giá trị v2; xóa ở phase 12)
 
-- `.neu` — card: nền `--surface-warm`, viền 1px `--line`, radius 4px.
-- `.neu-sm` — control viền mảnh: trong suốt, viền `--line`, hover viền `--fg`.
-- `.neu-in` — nền chìm không viền (segmented container, badge xám, dot chưa tới).
-  Input KHÔNG dùng `.neu-in` trần: cần ranh giới ≥3:1 → `bg-surface` + `border-line-strong`.
-- `mark.anno` — highlight bài viết chấm: nền cam 22% + gạch dưới cam 2px.
-- `::selection` — nền cam, chữ `--accent-on`. `input[type=range]` — `accent-color: var(--accent)`.
+- `.neu` — card v2: nền `--card`, viền `--border`, radius `--radius+4px`, shadow-sm.
+- `.neu-sm` — control outline v2: trong suốt, viền `--input`, hover nền `--accent` xám.
+- `.neu-in` — nền chìm v2: `--muted`. Input dùng `inputCls` v2 (border + ring focus).
+- `mark.anno` — highlight bài viết chấm: nền `--chart-1` 18% + gạch sóng `--chart-1`.
+- `::selection` — nền `--primary`, chữ `--primary-foreground`. `input[type=range]` — accent
+  `--primary`.
 
 ## Quy tắc component
 

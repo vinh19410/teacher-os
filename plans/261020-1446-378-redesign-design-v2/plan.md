@@ -75,8 +75,8 @@ cục); route path, query param, accessible name, `data-testid` giữ nguyên tr
 
 | # | Phase | Status | Effort | Phụ thuộc |
 |---|-------|--------|--------|-----------|
-| 1 | [Harness chụp đối chiếu + baseline ảnh "cũ"](./phase-01-visual-harness-baseline.md) | Pending | 5h | — |
-| 2 | [Token neutral, Geist self-host, light mặc định](./phase-02-tokens-fonts-theme.md) | Pending | 5h | 1 |
+| 1 | [Harness chụp đối chiếu + baseline ảnh "cũ"](./phase-01-visual-harness-baseline.md) | Completed | 5h | — |
+| 2 | [Token neutral, Geist self-host, light mặc định](./phase-02-tokens-fonts-theme.md) | Completed | 5h | 1 |
 | 3 | [Primitive dùng chung theo v2](./phase-03-shared-primitives.md) | Pending | 7h | 2 |
 | 4 | [App shell sidebar-07 dùng chung web + student](./phase-04-app-shell.md) | Pending | 6h | 3 |
 | 5 | [Auth, pay, 404 (web + student)](./phase-05-auth-public-pages.md) | Pending | 4h | 3 |

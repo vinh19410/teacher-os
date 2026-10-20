@@ -11,11 +11,12 @@ import {
  * the same snapshot — the class on <html> — so sibling instances can never
  * desync within a tab (cross-tab sync rides the `storage` event, and the
  * pre-render /theme-init.js script seeds the class before React mounts).
+ * Light là mặc định: snapshot = có class `dark` hay không.
  */
 const snapshot = (): Theme =>
-	document.documentElement.classList.contains("light") ? "light" : "dark";
+	document.documentElement.classList.contains("dark") ? "dark" : "light";
 
-const serverSnapshot = (): Theme => "dark";
+const serverSnapshot = (): Theme => "light";
 
 const listeners = new Set<() => void>();
 const emit = () => {
