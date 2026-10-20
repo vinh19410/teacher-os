@@ -263,14 +263,15 @@ async function runSteps(page, steps) {
 			await page
 				.locator(`${st.click} >> visible=true`)
 				.first()
-				.click({ timeout: 10_000 });
+				// 20s: route lạnh lần đầu (lazy chunk + dep-optimize) hay quá 10s.
+				.click({ timeout: 20_000 });
 		else if (st.clickFirst)
 			await page
 				.locator(`${st.clickFirst} >> visible=true`)
 				.first()
 				// force: card design có hover:-translate-y — stability check của
 				// Playwright bị oscillate ở 1 số viewport (s-vocab/tablet).
-				.click({ timeout: 10_000, force: true });
+				.click({ timeout: 20_000, force: true });
 		else if (st.press) await page.keyboard.press(st.press);
 		else if (st.wait) await page.waitForTimeout(st.wait);
 	}
@@ -438,6 +439,34 @@ try {
 							failures.push(
 								`app ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`,
 							);
+							try {
+								const dbg =
+									sc.auth === "student"
+										? sPage
+										: sc.auth === "teacher"
+											? tPage
+											: aPage;
+								await mkdir(path.join(STATE, "debug"), { recursive: true });
+								await dbg.screenshot({
+									path: path.join(
+										STATE,
+										"debug",
+										`${sc.id}-${vpName}-${theme}.png`,
+									),
+									fullPage: true,
+								});
+								console.log(
+									`[harness] debug ${sc.id}: url=${dbg.url()} buttons=`,
+									(
+										await dbg
+											.locator("button >> visible=true")
+											.allTextContents()
+											.catch(() => [])
+									).slice(0, 20),
+								);
+							} catch {
+								/* debug dump thất bại — bỏ qua */
+							}
 						}
 					}
 				}

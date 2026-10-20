@@ -237,6 +237,18 @@ try {
 		],
 	});
 
+	// Lịch v2 cho lớp chính: không có schedule + start_date thì projection
+	// trả null → class detail rơi vào bảng legacy, KHÔNG có nút "Điểm danh"
+	// → harness không chụp được modal điểm danh (t-attendance).
+	await db.execute({
+		sql: "UPDATE class SET schedule = ?, start_date = ?, sessions_total = 5 WHERE id = ?",
+		args: [
+			JSON.stringify({ days: [1, 3, 5], start: "18:00", end: "19:30" }),
+			daysFromToday(-7),
+			fixture.classId,
+		],
+	});
+
 	// 3) Attempt Writing đã nộp → màn chấm bài.
 	const attemptId = await seedSubmittedEssay({
 		orgId,

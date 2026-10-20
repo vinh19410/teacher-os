@@ -1,11 +1,23 @@
 {
 	"$comment": "Bảng ánh xạ màn design v2 ↔ app — nguồn duy nhất cho capture.mjs + verdict.md. designSteps/appSteps chạy theo thứ tự; selector là Playwright selector. {seed.<key>} thay bằng id từ seed run (.design-seed.json). auth: teacher|student|null.",
 	"viewports": {
-		"desktop": [1440, 900],
-		"tablet": [768, 1024],
-		"phone": [375, 812]
+		"desktop": [
+			1440,
+			900
+		],
+		"tablet": [
+			768,
+			1024
+		],
+		"phone": [
+			375,
+			812
+		]
 	},
-	"themes": ["light", "dark"],
+	"themes": [
+		"light",
+		"dark"
+	],
 	"screens": [
 		{
 			"id": "login-teacher",
@@ -84,6 +96,9 @@
 				]
 			},
 			"appSteps": [
+				{
+					"click": "button:has-text('Buổi học')"
+				},
 				{
 					"clickFirst": "button:has-text('Điểm danh')"
 				}
@@ -223,7 +238,9 @@
 						"click": "button:has-text('Search…')"
 					}
 				],
-				"skipViewports": ["phone"]
+				"skipViewports": [
+					"phone"
+				]
 			},
 			"appSteps": [
 				{
