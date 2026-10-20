@@ -55,6 +55,123 @@ test.describe
 		let firstWordId = "";
 		const wordIds: string[] = [];
 
+		/**
+		 * Chạy isolated (`--grep "seeded overdue review card"`, #377): test 1–2 của
+		 * describe.serial không chạy → closure `studentId`/`deckId`/`wordIds` rỗng →
+		 * tự seed môi trường tối thiểu cho test "seeded overdue review card...".
+		 * Direct-DB theo pattern helpers-quiz.ts RT#12; auth học sinh vẫn là auth
+		 * THẬT (signup portal + verify mail-log).
+		 *
+		 * Thứ tự BẮT BUỘC: seed DB TRƯỚC khi signup — portal bridge chạy
+		 * provisionStudentForUser (match lower(trim(email)),
+		 * apps/server/src/student-provisioning.ts:22-31, return sớm khi đã có row)
+		 * nên student đã seed được tái sử dụng thay vì sinh row id khác.
+		 *
+		 * Đồng bộ shape dữ liệu với test 1: đổi shape seed ở test 1 phải sửa cả đây.
+		 */
+		async function seedIsolatedEnvironment(page: Page): Promise<void> {
+			// 1) Direct-DB: org + class + student + enrollment + deck + 3 words + cards.
+			const db = openDb();
+			try {
+				const now = Date.now();
+				orgId = crypto.randomUUID();
+				classId = crypto.randomUUID();
+				studentId = crypto.randomUUID();
+				deckId = crypto.randomUUID();
+				await db.execute({
+					sql: "INSERT INTO organization (id, name, created_at) VALUES (?,?,?)",
+					args: [orgId, `SRS Org ${runToken}`, now],
+				});
+				await db.execute({
+					sql: "INSERT INTO class (id, org_id, name, created_at) VALUES (?,?,?,?)",
+					args: [classId, orgId, className, now],
+				});
+				await db.execute({
+					sql: `INSERT INTO student (id, org_id, name, email, onboarding_completed_at, created_at)
+				VALUES (?,?,?,?,?,?)`,
+					args: [studentId, orgId, "Vocab Student", studentEmail, now, now],
+				});
+				await db.execute({
+					sql: `INSERT INTO enrollment (id, org_id, class_id, student_id, status, created_at)
+				VALUES (?,?,?,?, 'active', ?)`,
+					args: [crypto.randomUUID(), orgId, classId, studentId, now],
+				});
+				await db.execute({
+					sql: "INSERT INTO vocab_deck (id, org_id, class_id, title) VALUES (?,?,?,?)",
+					args: [deckId, orgId, classId, deckTitle],
+				});
+				const WORDS: Array<[string, string]> = [
+					["resilient", "kiên cường"],
+					["sustainable", "bền vững"],
+					["biodiversity", "đa dạng sinh học"],
+				];
+				for (const [sortOrder, [word, translation]] of WORDS.entries()) {
+					const wordId = crypto.randomUUID();
+					wordIds.push(wordId);
+					await db.execute({
+						sql: `INSERT INTO vocab_word (id, deck_id, word, translation, sort_order, created_at, updated_at)
+					VALUES (?,?,?,?,?,?,?)`,
+						args: [wordId, deckId, word, translation, sortOrder, now, now],
+					});
+					// Card đã provision state 'review' (y hệt trạng thái sau Learn
+					// session của test 2): new-count = 0 → "Bắt đầu học" disabled.
+					// Word "sustainable" seed THẲNG due quá khứ — toàn bộ state test
+					// phải có TRƯỚC lần đọc đầu tiên của app: portal home prefetch
+					// query ["student","vocab-overview"] khi mount (staleTime 60s +
+					// networkMode offlineFirst, query-client.ts) nên mutation DB sau
+					// đó không bao giờ được /vocab nhìn thấy nữa (#377).
+					const isSustainable = word === "sustainable";
+					await db.execute({
+						sql: `INSERT INTO vocab_card (id, student_id, word_id, level, state, interval_days, due_at, updated_at)
+					VALUES (?,?,?, 2, 'review', 1, ?, ?)`,
+						args: [
+							crypto.randomUUID(),
+							studentId,
+							wordId,
+							isSustainable ? now - 86_400_000 : now + 86_400_000,
+							now,
+						],
+					});
+				}
+				firstWordId = wordIds[0] ?? "";
+				// Review_log hôm nay cho streak "1 ngày" — cùng lý do seed-sớm ở
+				// trên: portal home prefetch phải thấy đủ due=1 + streak=1 ngay từ
+				// đầu. Serial path không chạy helper (test tự seed như cũ); nhánh
+				// isolated vẫn chạy seed block của test sau đó nhưng idempotent:
+				// UPDATE cùng giá trị + INSERT thêm log cùng ngày → streak vẫn "1 ngày".
+				await db.execute({
+					sql: `INSERT INTO vocab_review_log (id, student_id, card_id, deck_id, session_kind, grade, duration_ms, reviewed_at, word, translation)
+				VALUES (?,?,?,?,'review','good',1200,?,?,?)`,
+					args: [
+						crypto.randomUUID(),
+						studentId,
+						crypto.randomUUID(),
+						deckId,
+						now,
+						"seeded",
+						"seeded",
+					],
+				});
+			} finally {
+				db.close();
+			}
+
+			// 2) Auth học sinh THẬT (các bước của test 2): signup portal + verify
+			// mail-log. Verify auto-login hạ cánh portal home → test ở nhánh isolated
+			// KHÔNG gọi signInStudent nữa (form login sẽ detach vì đã có session).
+			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.locator("#tab-signup").click();
+			await page.locator("#signup-name").fill("Vocab Student");
+			await page.locator("#signup-email").fill(studentEmail);
+			await page.locator("#signup-password").fill(studentPassword);
+			await page.locator("#panel-signup button[type='submit']").click();
+			await expect(page.getByText("Email chưa được xác thực")).toBeVisible({
+				timeout: 15_000,
+			});
+			await verifyStudentEmailFromMailLog(page, studentEmail);
+			await expect(page.getByTestId("vocab-home-entry")).toBeVisible();
+		}
+
 		test("teacher creates deck with 3 words via kernel (1 word uploads audio)", async ({
 			page,
 		}) => {
@@ -370,6 +487,14 @@ test.describe
 		test("seeded overdue review card requeues on wrong, evicts after 2 forgot; deleting deck keeps streak history", async ({
 			page,
 		}) => {
+			// Chạy isolated (--grep, #377): test 1–2 không chạy → closure state
+			// rỗng → tự seed môi trường (direct-DB + auth thật) ngay đầu test.
+			// Bắt cờ TRƯỚC khi helper gán studentId.
+			const isolated = studentId === "";
+			if (isolated) {
+				await seedIsolatedEnvironment(page);
+			}
+
 			// Seed 1 card review đã due quá khứ + 1 review_log để giữ streak.
 			// Card của word đã TỒN TẠI sau Learn session (provision khi mở deck)
 			// — UPDATE thay vì INSERT (unique (student_id, word_id)).
@@ -402,7 +527,12 @@ test.describe
 				db.close();
 			}
 
-			await signInStudent(page);
+			// Đường serial: auth user đã có từ test 2 → login như cũ. Nhánh
+			// isolated: helper đã signup + verify (auto-login) → form login sẽ
+			// detach nếu đăng nhập lại (precedent comment test 2).
+			if (!isolated) {
+				await signInStudent(page);
+			}
 			await page.getByTestId("vocab-home-entry").click();
 			await expect(page.getByTestId("vocab-overview-due-count")).toHaveText(
 				"1",
