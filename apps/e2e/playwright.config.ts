@@ -1,12 +1,29 @@
 import { defineConfig } from "@playwright/test";
+// Nguồn sự thật chung url/command dev server (plan 402) — entry gốc và
+// devserver-watchdog.mjs (restart) phải dùng CÙNG định nghĩa để không drift.
+import { buildServices } from "./devserver-services.mjs";
 
 // Port override cho chạy song song với dev server chiếm 8000/8001 — mặc định
 // giữ nguyên như CI; boot:api cùng đọc env này (fail-loud semantics không đổi).
 const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
 const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
 const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
+const requireService = (name: string) => {
+	const svc = buildServices({
+		api: apiPort,
+		web: webPort,
+		student: studentPort,
+	}).find((s) => s.name === name);
+	if (!svc) throw new Error(`devserver-services thiếu service ${name}`);
+	return svc;
+};
+const webSvc = requireService("web");
+const studentSvc = requireService("student");
 export default defineConfig({
 	testDir: "./specs",
+	// #402: fail-loud khi hạ tầng dev server bất ổn giữa run (marker/heartbeat
+	// của devserver-watchdog hoặc probe cuối 3 service).
+	globalTeardown: "./global-teardown.ts",
 	timeout: 120_000,
 	expect: {
 		// Flow-critical waits (URL changes, modal close after refetch) can
@@ -45,8 +62,8 @@ export default defineConfig({
 			},
 		},
 		{
-			command: `pnpm --filter web exec vite --port ${webPort} --strictPort`,
-			url: `http://localhost:${webPort}/`,
+			command: ["pnpm", ...(webSvc.restartArgs ?? [])].join(" "),
+			url: webSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				E2E_API_PORT: String(apiPort),
@@ -54,10 +71,12 @@ export default defineConfig({
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,
+			// Tường minh: stderr vite (panic/crash rolldown, #402) forward ra output.
+			stderr: "pipe",
 		},
 		{
-			command: `pnpm --filter student exec vite --port ${studentPort} --strictPort`,
-			url: `http://localhost:${studentPort}/login`,
+			command: ["pnpm", ...(studentSvc.restartArgs ?? [])].join(" "),
+			url: studentSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				E2E_API_PORT: String(apiPort),
@@ -65,6 +84,22 @@ export default defineConfig({
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,
+			stderr: "pipe",
+		},
+		{
+			// #402: giám sát 3 service trên — vite chết giữa run được restart
+			// (tối đa 1 lần/vite), api chết → marker fail-loud. KHÔNG có `url`
+			// (playwright spawn xong không chờ) và đặt CUỐI mảng: plugin setup
+			// chạy tuần tự nên watchdog chỉ poll khi 3 service đã available.
+			name: "dev-watchdog",
+			command: "node devserver-watchdog.mjs",
+			stdout: "pipe",
+			reuseExistingServer: false,
+			env: {
+				E2E_API_PORT: String(apiPort),
+				E2E_WEB_PORT: String(webPort),
+				E2E_STUDENT_PORT: String(studentPort),
+			},
 		},
 	],
 });
