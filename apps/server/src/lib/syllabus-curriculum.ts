@@ -1,9 +1,10 @@
+import { classTable } from "@teacher-os/db/schema/class";
 import {
 	syllabus,
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Db } from "../app";
@@ -15,6 +16,69 @@ export async function findSyllabus(db: Db, syllabusId: string, orgId: string) {
 		.from(syllabus)
 		.where(and(eq(syllabus.id, syllabusId), eq(syllabus.orgId, orgId)));
 	return row;
+}
+
+/**
+ * The class's own curriculum copy, found by `syllabus.class_id` (org-scoped).
+ * This is the single source of truth for the class ↔ curriculum relation —
+ * the derived `class.syllabus_id` column is never read to locate a copy.
+ */
+export async function findClassCurriculum(
+	db: Db,
+	classId: string,
+	orgId: string,
+) {
+	const [row] = await db
+		.select()
+		.from(syllabus)
+		.where(and(eq(syllabus.classId, classId), eq(syllabus.orgId, orgId)));
+	return row;
+}
+
+/** Template row: class_id must be NULL — copies are never templates. */
+export async function findTemplate(db: Db, id: string, orgId: string) {
+	const [row] = await db
+		.select()
+		.from(syllabus)
+		.where(
+			and(
+				eq(syllabus.id, id),
+				eq(syllabus.orgId, orgId),
+				isNull(syllabus.classId),
+			),
+		);
+	return row;
+}
+
+/**
+ * Only sanctioned writer of `class.syllabus_id` per class: the pointer is a
+ * derived column mirroring `syllabus.class_id`, kept in step inside the same
+ * batch as the copy writes.
+ */
+export function setClassCurriculumPointer(
+	db: Db,
+	classId: string,
+	orgId: string,
+	copyId: string | null,
+): BatchItem<"sqlite"> {
+	return db
+		.update(classTable)
+		.set({ syllabusId: copyId })
+		.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
+}
+
+/** Detach every same-org class pointer aimed at the given syllabus. */
+export function clearPointersTo(
+	db: Db,
+	syllabusId: string,
+	orgId: string,
+): BatchItem<"sqlite"> {
+	return db
+		.update(classTable)
+		.set({ syllabusId: null })
+		.where(
+			and(eq(classTable.syllabusId, syllabusId), eq(classTable.orgId, orgId)),
+		);
 }
 
 /** Module must belong to the given syllabus AND the org — client ids are never trusted. */

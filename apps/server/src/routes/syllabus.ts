@@ -27,12 +27,16 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import {
 	buildImportBatch,
+	clearPointersTo,
+	findClassCurriculum,
 	findModule,
 	findSyllabus,
+	findTemplate,
 	hasDuplicateIds,
 	MAX_IMPORT_NODES,
 	sameIdSet,
 	selectTemplateTree,
+	setClassCurriculumPointer,
 } from "../lib/syllabus-curriculum";
 import { loadSnapshot } from "./snapshot";
 
@@ -92,12 +96,15 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			return c.json({ error: "class not found" }, 404);
 		}
 		// Deterministic duplicate check — never parse SQLite error strings.
-		if (cls.syllabusId !== null) {
+		// The copy (found via class_id, the source of truth) decides, so a
+		// stale/template pointer can never block a legitimate import.
+		const existing = await findClassCurriculum(db, classId, ctx.orgId);
+		if (existing) {
 			return c.json({ error: "Lớp đã có giáo trình" }, 409);
 		}
 
-		const tpl = await findSyllabus(db, body.data.templateId, ctx.orgId);
-		if (!tpl || tpl.classId !== null) {
+		const tpl = await findTemplate(db, body.data.templateId, ctx.orgId);
+		if (!tpl) {
 			return c.json({ error: "syllabus not found" }, 404);
 		}
 		const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
@@ -111,22 +118,15 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			classId,
 			orgId: ctx.orgId,
 		});
-		statements.push(
-			db
-				.update(classTable)
-				.set({ syllabusId: copyId })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				),
-		);
+		statements.push(setClassCurriculumPointer(db, classId, ctx.orgId, copyId));
 		try {
 			await db.batch(statements);
 		} catch {
-			// Unique index race backstop: only a concurrent import surfaces
-			// here as a set pointer — re-check instead of swallowing real
-			// errors into a 409.
-			const after = await findClassPointer(db, classId, ctx.orgId);
-			if (after?.syllabusId != null) {
+			// Unique index race backstop (syllabus_class_unique): only a
+			// concurrent import surfaces here as a copy — re-check via
+			// class_id instead of swallowing real errors into a 409.
+			const after = await findClassCurriculum(db, classId, ctx.orgId);
+			if (after) {
 				return c.json({ error: "Lớp đã có giáo trình" }, 409);
 			}
 			throw new Error("import-syllabus batch failed");
@@ -146,45 +146,21 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
 		}
-		// Pointer empty → nothing to remove (idempotent no-op).
-		if (cls.syllabusId === null) {
-			return c.json({ ok: true });
-		}
-		// Org + ownership guard: the pointed row must be THIS class's copy.
-		// A template pointer (class_id NULL) or a foreign anomaly is refused —
-		// templates are never deleted through this endpoint.
-		const [copy] = await db
-			.select({ id: syllabus.id })
-			.from(syllabus)
-			.where(
-				and(
-					eq(syllabus.id, cls.syllabusId),
-					eq(syllabus.classId, classId),
-					eq(syllabus.orgId, ctx.orgId),
-				),
-			);
+		// The copy decides (class_id is the source of truth), not the pointer:
+		// no branch on `cls.syllabusId` — a stale/template/cross-org pointer
+		// means "no curriculum" for this class.
+		const copy = await findClassCurriculum(db, classId, ctx.orgId);
 		if (!copy) {
-			// Legacy anomaly: the pointer targets a template, a foreign-org
-			// row, or a deleted row. Cleanup = null this class's pointer only;
-			// the pointed row (templates included) is never deleted here.
-			await db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				);
+			// Nothing to remove; heal any stale pointer to null (idempotent).
+			// The pointed row (templates included) is never deleted here.
+			await db.batch([setClassCurriculumPointer(db, classId, ctx.orgId, null)]);
 			return c.json({ ok: true });
 		}
 
 		// FK order (NO ACTION): null the pointer FIRST, then delete
 		// child-first (lessons → modules → syllabus), every DELETE org-scoped.
 		await db.batch([
-			db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				),
+			setClassCurriculumPointer(db, classId, ctx.orgId, null),
 			db.delete(syllabusLesson).where(
 				and(
 					eq(syllabusLesson.orgId, ctx.orgId),
@@ -742,12 +718,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		// không dựa FK cascade (same rule as remove-curriculum). Mọi statement
 		// org-scoped.
 		await db.batch([
-			db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.syllabusId, id), eq(classTable.orgId, ctx.orgId)),
-				),
+			clearPointersTo(db, id, ctx.orgId),
 			db
 				.update(syllabus)
 				.set({ sourceTemplateId: null })

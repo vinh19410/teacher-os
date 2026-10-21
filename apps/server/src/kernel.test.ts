@@ -25,7 +25,7 @@ import { notif } from "@teacher-os/db/schema/notif";
 import { organization } from "@teacher-os/db/schema/organization";
 import { report } from "@teacher-os/db/schema/report";
 import { student } from "@teacher-os/db/schema/student";
-import { syllabusLesson } from "@teacher-os/db/schema/syllabus";
+import { syllabus, syllabusLesson } from "@teacher-os/db/schema/syllabus";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -233,6 +233,7 @@ async function createTestApp() {
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
 			tuitionFee?: number | null;
+			templateId?: string;
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/classes", {
@@ -365,8 +366,11 @@ async function createTestApp() {
 	};
 }
 
+/** Tạo bởi createTestApp — hợp đồng test app dùng chung cho mọi describe. */
+type TestApp = Awaited<ReturnType<typeof createTestApp>>;
+
 describe("kernel bootstrap", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 
 	beforeAll(async () => {
 		t = await createTestApp();
@@ -412,7 +416,7 @@ describe("kernel bootstrap", () => {
 });
 
 describe("class type + structured schedule (create-class modal)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -574,7 +578,7 @@ describe("class type + structured schedule (create-class modal)", () => {
 });
 
 describe("syllabus create with imported content (excel/csv import)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -732,7 +736,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 });
 
 describe("syllabus lesson status optional + replace-content (import ghi đè)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	/** Syllabus 1 module "M1" với 1 lesson `status`, trả ids từ snapshot. */
@@ -930,7 +934,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 });
 
 describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #154)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	/** Syllabus 1 module với 3 lesson kind lesson/midterm/final, trả ids. */
@@ -1147,7 +1151,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 });
 
 describe("invoice persistence", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let studentId: string;
 
@@ -1308,7 +1312,7 @@ describe("invoice persistence", () => {
 });
 
 describe("invoice create (issue #60)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let studentId: string;
 	let classId: string;
@@ -1521,7 +1525,7 @@ describe("invoice create (issue #60)", () => {
 });
 
 describe("kernel origin + content-type guards", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -1630,7 +1634,7 @@ describe("kernel origin + content-type guards", () => {
 });
 
 describe("org isolation", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 
@@ -1715,7 +1719,7 @@ describe("org isolation", () => {
 });
 
 describe("syllabus tree and nested binding", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let syllabusId: string;
 	let moduleId: string;
@@ -1855,7 +1859,7 @@ describe("syllabus tree and nested binding", () => {
 });
 
 describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let syllabusId: string;
@@ -1983,7 +1987,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 });
 
 describe("syllabus module/lesson delete and reorder", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -2235,7 +2239,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 });
 
 describe("assignments grade (Wave 6)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let orgAId: string;
@@ -2398,7 +2402,7 @@ describe("assignments grade (Wave 6)", () => {
 });
 
 describe("reports, notifications, and comment bank (Wave 7)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let orgAId: string;
@@ -2741,7 +2745,7 @@ describe("reports, notifications, and comment bank (Wave 7)", () => {
 });
 
 describe("import syllabus + remove curriculum (issue #79)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let templateId: string;
 	let moduleAId: string;
@@ -3062,8 +3066,227 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 	});
 });
 
+describe("class curriculum pointer invariant (class_id is source of truth)", () => {
+	let t: TestApp;
+	let session: TestSession;
+	let templateId: string;
+	let moduleAId: string;
+
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/import-syllabus`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
+
+	/** Với mọi lớp: có copy (theo class_id) ⇔ con trỏ trỏ đúng copy. */
+	async function expectPointerInvariant() {
+		const classes = await t.db.select().from(classTable);
+		const rows = await t.db.select().from(syllabus);
+		const copies = rows.filter((s) => s.classId !== null);
+		for (const cls of classes) {
+			const copy = copies.find(
+				(s) => s.classId === cls.id && s.orgId === cls.orgId,
+			);
+			if (copy) {
+				expect(cls.syllabusId, `lớp ${cls.name}: con trỏ lệch copy`).toBe(
+					copy.id,
+				);
+			} else {
+				expect(
+					cls.syllabusId,
+					`lớp ${cls.name}: con trỏ không có copy`,
+				).toBeNull();
+			}
+		}
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Bất Biến");
+		templateId = await t.createSyllabus(session, "Template Bất Biến");
+		moduleAId = await t.createModule(session, templateId, "Module IA");
+		await t.call(`/api/syllabi/${templateId}/modules/${moduleAId}/lessons`, {
+			session,
+			method: "POST",
+			body: { title: "Lesson IA1", objectives: "", materials: "" },
+		});
+	});
+
+	test("FK canary: class.syllabus_id là FK thật — con trỏ tới id không tồn tại bị từ chối", async () => {
+		const classId = await t.createClass(session, "Lớp canary FK");
+		let rejected = false;
+		try {
+			await t.db
+				.update(classTable)
+				.set({ syllabusId: "ghost-syllabus-id" })
+				.where(eq(classTable.id, classId));
+		} catch {
+			rejected = true;
+		}
+		// Nếu FK không được thực thi trong test DB thì các test xoá phía dưới
+		// không chứng minh thứ tự FK nữa — test này phải đỏ để dừng pipeline.
+		expect(rejected).toBe(true);
+	});
+
+	test("tạo lớp kèm templateId: con trỏ trỏ đúng bản copy", async () => {
+		const classId = await t.createClass(session, "Lớp kèm template IB", {
+			templateId,
+		});
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.classId === classId);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.syllabusId).toBe(copy?.id);
+		await expectPointerInvariant();
+	});
+
+	test("tạo lớp trống rồi import: con trỏ theo copy mới", async () => {
+		const classId = await t.createClass(session, "Lớp import IC");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+		const snapshot = await t.kernel(session);
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+		await expectPointerInvariant();
+	});
+
+	test("import lần hai trả 409 và bất biến vẫn đúng", async () => {
+		const classId = await t.createClass(session, "Lớp import ID");
+		expect((await importSyllabus(session, classId, templateId)).status).toBe(
+			201,
+		);
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(409);
+		await expectPointerInvariant();
+	});
+
+	test("import rồi gỡ: copy biến mất, con trỏ null", async () => {
+		const classId = await t.createClass(session, "Lớp gỡ IE");
+		const importRes = await importSyllabus(session, classId, templateId);
+		expect(importRes.status).toBe(201);
+		// 201 → CreatedResponse { id } (API contract của route import).
+		const created = (await importRes.json()) as { id: string };
+		const copyId = created.id;
+		const remove = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(false);
+		await expectPointerInvariant();
+	});
+
+	test("xoá template khi lớp khác còn giữ copy: copy và con trỏ giữ nguyên", async () => {
+		const doomedId = await t.createSyllabus(session, "Template sắp xoá IF");
+		const keeperClassId = await t.createClass(session, "Lớp giữ copy IG");
+		const copyRes = await importSyllabus(session, keeperClassId, doomedId);
+		expect(copyRes.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await copyRes.json()) as { id: string };
+		const copyId = created.id;
+
+		const del = await t.call(`/api/syllabi/${doomedId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(del.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(keeperClassId);
+		expect(
+			snapshot.classes.find((c) => c.id === keeperClassId)?.syllabusId,
+		).toBe(copyId);
+		await expectPointerInvariant();
+	});
+
+	test("con trỏ cũ trỏ vào template cùng org: snapshot coi lớp chưa có copy; import thành công và trỏ về copy mới", async () => {
+		const classId = await t.createClass(session, "Lớp pointer template IH");
+		// Legacy anomaly: con trỏ thẳng vào template (cùng org, không phải copy).
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		// Nguồn sự thật class_id: lớp chưa có copy nào.
+		const before = await t.kernel(session);
+		expect(before.syllabi.some((s) => s.classId === classId)).toBe(false);
+
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+		const after = await t.kernel(session);
+		expect(after.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+		// Template nguyên vẹn (2 module gốc, không thành bản copy).
+		const tpl = after.syllabi.find((s) => s.id === templateId);
+		expect(tpl?.classId).toBeNull();
+		expect(tpl?.modules).toHaveLength(1);
+		await expectPointerInvariant();
+	});
+
+	test("con trỏ cũ trỏ vào template cùng org rồi gỡ: ok, con trỏ null, template còn", async () => {
+		const classId = await t.createClass(session, "Lớp pointer gỡ II");
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		const res = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
+		const snapshot = await t.kernel(session);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+		await expectPointerInvariant();
+	});
+
+	test("xoá template đang bị con trỏ của lớp không có copy trỏ vào: clearPointersTo chạy trước nên không 500", async () => {
+		const doomedId = await t.createSyllabus(session, "Template bị trỏ IJ");
+		const classId = await t.createClass(session, "Lớp trỏ mồ côi IK");
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: doomedId })
+			.where(eq(classTable.id, classId));
+
+		const del = await t.call(`/api/syllabi/${doomedId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(del.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === doomedId)).toBe(false);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+		await expectPointerInvariant();
+	});
+});
+
 describe("delete syllabus template (xóa template giáo trình)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	// Helper local mirror của describe import (issue #79).
 	async function importSyllabus(
@@ -3189,7 +3412,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 });
 
 describe("lesson check-in/cancel (Wave 4)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 	let enrollmentId: string;
@@ -3484,7 +3707,7 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 });
 
 describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let lessonAId: string;
@@ -3533,7 +3756,7 @@ describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
 });
 
 describe("schedule-driven lesson generation (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 
@@ -3829,7 +4052,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 });
 
 describe("sessionsTotal contract cap (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -3865,7 +4088,7 @@ describe("sessionsTotal contract cap (issue #55)", () => {
 });
 
 describe("lesson edit (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 	let enrollmentId: string;
@@ -4089,7 +4312,7 @@ describe("lesson edit (issue #55)", () => {
 });
 
 describe("lesson edit optimistic concurrency (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let lessonId: string;
 
@@ -4140,7 +4363,7 @@ describe("lesson edit optimistic concurrency (issue #55)", () => {
 });
 
 describe("enroll existing student (issue #122)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -4279,7 +4502,7 @@ describe("enroll existing student (issue #122)", () => {
 });
 
 describe("student package minimums (issue #115)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -4334,7 +4557,7 @@ describe("student package minimums (issue #115)", () => {
 });
 
 describe("assignment prompt bank (issue #202)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 
@@ -5719,7 +5942,7 @@ describe("assignment prompt bank (issue #202)", () => {
 });
 
 describe("class assignment give flow (#208)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let classIdA: string;
@@ -6051,7 +6274,7 @@ describe("class assignment give flow (#208)", () => {
 });
 
 describe("class tuition fee (học phí lớp theo học viên - issue #227)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let orgOther: TestSession;
 
@@ -6203,7 +6426,7 @@ describe("class tuition fee (học phí lớp theo học viên - issue #227)", (
 });
 
 describe("enrollment invite -> accept lifecycle (issue #253)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let otherOrg: TestSession;
 
