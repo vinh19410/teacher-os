@@ -1,0 +1,154 @@
+version: 1
+meta:
+  title: Refactor tạo và gán syllabus
+  description: Brainstorm brief cho refactor tạo syllabus và gán vào lớp. Hướng khuyến nghị là một bảng, tách Template và Giáo trình của lớp ở tầng API, service và web.
+theme:
+  preset: editorial
+blocks:
+  - type: hero
+    eyebrow: Brainstorm · 2026-10-21
+    title: Refactor tạo và gán syllabus
+    description: Giữ copy riêng từng lớp, tách rõ khái niệm Template và Giáo trình của lớp, gom quan hệ lớp ↔ giáo trình về một nguồn sự thật.
+  - type: section
+    title: Brainstorm contract
+    blocks:
+      - type: key-value
+        items:
+          - { key: Outcome, value: "Template và Giáo trình của lớp là hai khái niệm tách bạch ở API, service và web. Quan hệ lớp ↔ giáo trình có đúng một nguồn sự thật. Chọn template dùng chung một picker có preview ở cả tạo lớp và gán sau." }
+          - { key: Constraints, value: "Giữ copy riêng từng lớp, không sync. Migration viết tay, bảo toàn dữ liệu hiện có (có statement-breakpoint, kiểm ledger như sự cố 0008). Mọi query và DELETE có org_id. Giữ thứ tự batch đã ghim và MAX_IMPORT_NODES = 500. Chạy full e2e trước khi squash-merge vào develop." }
+          - { key: Non-goals, value: "Tách bảng template và class (hướng B), bảng progress (hướng C), rebuild bảng class, sync template sang lớp, wizard tạo syllabus, nối syllabus_lesson với buổi dạy thật, tối ưu kích thước snapshot." }
+          - { key: Acceptance, value: "Grep classId === null trong web ngoài lớp adapter bằng 0. Chỉ một hàm ghi class.syllabus_id và test bất biến pointer == copy xanh. kernel.ts giảm khoảng 500 dòng, test cũ xanh sau Phase 0. Số lớp lệch con trỏ sau migration bằng 0. Hành vi tạo, import CSV/Excel, gán, gỡ không đổi ngoài picker mới. Full e2e xanh." }
+          - { key: Quyết định của bạn, value: "Đổi cả schema và API được. Giữ copy riêng từng lớp. Ba lý do refactor: mô hình dữ liệu, UX tạo/gán, dọn kiến trúc." }
+  - type: section
+    title: Hiện trạng đã xác minh
+    blocks:
+      - type: list
+        items:
+          - text: "Một bảng syllabus đóng hai vai: class_id NULL là template, có giá trị là bản copy của lớp (packages/db/src/schema/syllabus.ts)."
+          - text: "Hai nguồn sự thật cho cùng một quan hệ: class.syllabus_id (FK thật) và syllabus.class_id (FK logic, có unique partial index). Hệ quả là nhánh con trỏ lệch ở remove-curriculum và ở curriculum-management-section.tsx."
+          - text: "Web rẽ nhánh theo classId trong use-syllabus, trang syllabus/$syllabusId (vừa template editor vừa hiển thị bản copy), curriculum-management-section và classes/$classId."
+          - text: "Handler module/lesson dưới /syllabi/:id/... không phân biệt template hay bản copy. status của lesson (done, current, upcoming) chỉ có nghĩa ở bản copy."
+          - text: "kernel.ts dài 2116 dòng, chứa import, remove, tạo syllabus và toàn bộ CRUD module/lesson."
+  - type: section
+    title: So sánh ba hướng mô hình dữ liệu
+    blocks:
+      - type: table
+        columns: [Hướng, Giả định quan trọng nhất, Hỏng đầu tiên khi, Chi phí migration, Đánh giá]
+        rows:
+          - ["A+ · một bảng, tách facade", "Template và bản copy dùng chung schema nội dung", "Mỗi loại cần cột riêng và cột nullable bắt đầu lan ra", "Gần 0, chỉ một migration đối soát con trỏ", "Khuyến nghị: nhỏ nhất, đủ yêu cầu"]
+          - ["B · tách bảng template và class", "Hai vòng đời khác nhau thật sự và còn tiếp tục khác", "CRUD module/lesson bị nhân đôi nếu không tham số hoá", "Trung bình, INSERT…SELECT các copy; class_id và source_template_id thành cột chết", "Sạch nhất về khái niệm, đắt nhất. Làm sau nếu cần"]
+          - ["C · tách progress theo (lớp, lesson)", "Nội dung được dùng chung giữa nhiều lớp", "Hỏng ngay từ giả định vì bạn chọn copy riêng", "Trung bình", "Không làm"]
+      - type: callout
+        tone: success
+        title: Khuyến nghị
+        text: Hướng A+. Phần lẫn lộn nằm ở tầng code (rẽ nhánh classId, handler không phân biệt), nên tách ở tầng code rẻ hơn tách bảng. Sau A+ ranh giới đã nằm sẵn, nên hướng B nếu cần về sau sẽ rẻ hơn nhiều.
+      - type: callout
+        tone: warning
+        title: Khác với điều bạn đã chọn
+        text: Bạn đã chọn "đổi mô hình dữ liệu". A+ chỉ đổi schema ở mức đối soát con trỏ, chưa tách bảng. Đây là chỗ cần bạn xác nhận trước khi sang plan (xem Câu hỏi còn mở).
+  - type: section
+    title: Better approaches
+    blocks:
+      - type: list
+        items:
+          - text: "Không tách bảng ngay. Bằng chứng: phần lẫn nằm ở rẽ nhánh trong web và handler không phân biệt loại, không nằm ở schema. Chi phí chuyển của A+ gần 0 và vẫn giữ đường đi tới B."
+          - text: "Không bỏ cột class.syllabus_id. Nó là FK thật, SQLite không DROP COLUMN cột nằm trong FK, nên phải rebuild bảng class vốn nhiều tham chiếu. Thay vào đó coi syllabus.class_id là nguồn sự thật, class.syllabus_id là cột dẫn xuất chỉ ghi qua một hàm."
+          - text: "Ngoài scope nhưng đáng ghi vào backlog: nối syllabus_lesson với buổi dạy thật để tiến độ tự dẫn xuất thay vì cờ sửa tay. Hiện chưa có FK nào nối hai bảng."
+  - type: section
+    title: Luồng triển khai
+    blocks:
+      - type: diagram-panel
+        title: Các phase giao hàng
+        caption: Phase 0 chỉ di chuyển code và merge riêng. Phase 4 là tuỳ chọn, chỉ làm khi còn nhu cầu thật.
+        spec:
+          schema_version: 1
+          diagram_type: workflow
+          meta:
+            title: Các phase giao hàng
+            description: Từ đo dữ liệu thật, tách code, đổi contract, đổi web, đổi UX, tới tách bảng tuỳ chọn.
+          lanes:
+            - { id: lane-db, label: Dữ liệu, role: system }
+            - { id: lane-code, label: Server và web, role: system }
+          steps:
+            - { id: s-measure, label: "Đo lệch con trỏ trên dữ liệu thật", lane: lane-db, kind: action }
+            - { id: s-p0, label: "Phase 0: tách routes và service, không đổi hành vi", lane: lane-code, kind: action }
+            - { id: s-p1, label: "Phase 1: route theo ngữ cảnh và migration đối soát", lane: lane-code, kind: action }
+            - { id: s-p2, label: "Phase 2: tách kiểu và hook ở web", lane: lane-code, kind: action }
+            - { id: s-p3, label: "Phase 3: TemplatePicker có preview", lane: lane-code, kind: action }
+            - { id: s-b, label: "Cần tách bảng (B)?", lane: lane-db, kind: decision }
+            - { id: s-done, label: "Xong, xoá route deprecated sau một release", lane: lane-code, kind: terminal-success }
+          transitions:
+            - { from: s-measure, to: s-p0 }
+            - { from: s-p0, to: s-p1, label: "Test cũ xanh" }
+            - { from: s-p1, to: s-p2 }
+            - { from: s-p2, to: s-p3 }
+            - { from: s-p3, to: s-b }
+            - { from: s-b, to: s-done, label: "Không", kind: branch-false }
+      - type: steps
+        items:
+          - { title: "Đo dữ liệu thật", text: "Đếm lớp có syllabus_id khác syllabus.class_id và copy có source_template_id null, trước khi viết migration." }
+          - { title: "Phase 0: tách code", text: "routes/syllabus.ts và services/syllabus-curriculum.ts (copyTemplateToClass, removeClassCurriculum, resolveTemplate, resolveClassCurriculum). POST /classes và import-syllabus dùng chung buildImportBatch. Chỉ di chuyển code, merge riêng." }
+          - { title: "Phase 1: contract mới", text: "Route /syllabus-templates/... và /classes/:id/curriculum/... với guard riêng, template không nhận status. Giữ /syllabi/:id/... ở dạng deprecated một release. Migration đối soát viết tay, thêm test bất biến pointer == copy." }
+          - { title: "Phase 2: web", text: "Kiểu SyllabusTemplate và ClassCurriculum, hook useTemplates và useClassCurriculum. Trang syllabus/$syllabusId chỉ còn là template editor. Bỏ nhánh classId === null và nhánh con trỏ lệch." }
+          - { title: "Phase 3: UX", text: "Một TemplatePicker dùng chung cho tạo lớp và gán sau, có preview chỉ đọc lấy từ snapshot sẵn có, không thêm endpoint. Giữ add-syllabus-modal, không làm wizard." }
+          - { title: "Phase 4 (tuỳ chọn)", text: "Tách bảng (B) chỉ khi A+ xong mà vẫn có nhu cầu thật." }
+  - type: section
+    title: UX đề xuất cho chọn template
+    blocks:
+      - type: card-grid
+        items:
+          - { title: "TemplatePicker dùng chung", text: "Thay dropdown trong import-syllabus-modal và dùng lại trong form tạo lớp, vì POST /classes đã nhận templateId (kernel.ts quanh dòng 729). Chọn bằng danh sách, có số buổi và kỹ năng, theo token trong DESIGN.md." }
+          - { title: "Preview chỉ đọc", text: "Hiện cây module và lesson của template đang chọn, đếm số buổi. Dữ liệu lấy từ snapshot ở client. Trạng thái cần có: rỗng, đang tải, template không còn tồn tại." }
+          - { title: "Không làm wizard", text: "Giữ add-syllabus-modal, tối đa tách phần nhập CSV/Excel thành tab hoặc bước phụ. Không tạo luồng giáo trình riêng cho lớp từ trống." }
+      - type: callout
+        tone: info
+        title: Mockup
+        text: Chưa dựng mockup hình. Phần UI nhỏ (một picker và một vùng preview), nên mockup nên làm ở bước plan, sau khi bạn xác nhận hướng và đã đọc DESIGN.md. Verify cuối cùng ở 3 viewport 1440×900, 768×1024, 375×812 cùng pnpm design:compare.
+  - type: section
+    title: Kiến trúc sau refactor
+    blocks:
+      - type: diagram-panel
+        title: Ranh giới sau Phase 2
+        caption: Hai nhóm route và hai nhóm hook cùng đọc một bảng syllabus. Ghi class.syllabus_id chỉ qua một hàm.
+        spec:
+          schema_version: 1
+          diagram_type: architecture
+          meta:
+            title: Ranh giới sau Phase 2
+            description: Route template và route giáo trình lớp đi qua service rồi vào bảng syllabus.
+          components:
+            - { id: web-tpl, label: "Web: useTemplates", role: frontend, layer: 0 }
+            - { id: web-cls, label: "Web: useClassCurriculum", role: frontend, layer: 0 }
+            - { id: rt-tpl, label: "Route /syllabus-templates", role: backend, layer: 1 }
+            - { id: rt-cls, label: "Route /classes/:id/curriculum", role: backend, layer: 1 }
+            - { id: svc, label: "Service syllabus-curriculum", role: backend, layer: 2 }
+            - { id: db, label: "Bảng syllabus, module, lesson", role: database, layer: 3 }
+          connections:
+            - { from: web-tpl, to: rt-tpl, kind: sync }
+            - { from: web-cls, to: rt-cls, kind: sync }
+            - { from: rt-tpl, to: svc, kind: sync }
+            - { from: rt-cls, to: svc, kind: sync }
+            - { from: svc, to: db, label: "batch có org_id", kind: sync }
+  - type: section
+    title: Rủi ro
+    blocks:
+      - type: risk-matrix
+        items:
+          - { area: "Migration trên dữ liệu thật: con trỏ lệch hoặc source_template_id đã bị set null", impact: high, likelihood: medium }
+          - { area: "Tách kernel.ts làm đổi thứ tự batch hoặc import vòng", impact: high, likelihood: low }
+          - { area: "Vượt giới hạn D1 batch ở đường copy mới", impact: medium, likelihood: low }
+          - { area: "Sót org_id ở route hoặc DELETE mới", impact: high, likelihood: low }
+          - { area: "Client cache gọi route cũ sau deploy Worker", impact: medium, likelihood: medium }
+      - type: callout
+        tone: warning
+        title: Điều chưa được xác minh
+        text: Kongming đã đọc schema, kernel.ts (import, remove), snapshot.ts và curriculum-management-section, nhưng chưa đọc hết các handler CRUD module/lesson (kernel.ts dòng 1549 đến 2116), add-syllabus-modal và syllabus/$syllabusId. Chưa có dữ liệu prod để đo mức lệch con trỏ. Các số rủi ro là ước lượng từ code.
+  - type: section
+    title: Câu hỏi còn mở
+    blocks:
+      - type: list
+        items:
+          - text: "Xác nhận A+ thay vì tách bảng ngay (B). Bạn đã chọn đổi mô hình dữ liệu, còn khuyến nghị này chỉ đổi schema ở mức đối soát."
+          - text: "Có cần tạo giáo trình riêng cho lớp mà không qua template không? Nếu có, cán cân nghiêng về B."
+          - text: "Có client ngoài web gọi /syllabi/:id/... không? Nếu có, giữ route cũ lâu hơn một release."
+          - text: "Dữ liệu prod có bao nhiêu lớp lệch con trỏ? Cần truy vấn trước Phase 1."
