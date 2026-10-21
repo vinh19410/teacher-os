@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Đo dữ liệu thật và khoá baseline"
-status: todo
+status: completed
 ---
 
 # Phase 1: Đo dữ liệu thật và khoá baseline

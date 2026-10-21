@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Tách server thành router và service, không đổi hành vi"
-status: todo
+status: completed
 ---
 
 # Phase 2: Tách server thành router và service, không đổi hành vi

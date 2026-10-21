@@ -1,7 +1,7 @@
 ---
 title: "Refactor tạo và gán syllabus: tách Template và Giáo trình của lớp (hướng A+)"
 description: "Giữ một bảng syllabus, tách Template và Giáo trình của lớp ở API, service và web; syllabus.class_id là nguồn sự thật duy nhất của quan hệ lớp ↔ giáo trình; TemplatePicker dùng chung."
-status: pending
+status: in-progress
 priority: P1
 effort: "5-6d"
 tags: [refactor, backend, frontend, database, api, tech-debt]

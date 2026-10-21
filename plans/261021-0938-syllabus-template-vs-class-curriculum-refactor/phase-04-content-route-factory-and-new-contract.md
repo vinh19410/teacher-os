@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Factory route nội dung và contract mới"
-status: todo
+status: completed
 ---
 
 # Phase 4: Factory route nội dung và contract mới

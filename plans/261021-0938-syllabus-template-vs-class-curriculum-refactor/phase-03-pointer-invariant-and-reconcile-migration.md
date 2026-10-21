@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Bất biến con trỏ và migration đối soát"
-status: todo
+status: completed
 ---
 
 # Phase 3: Bất biến con trỏ và migration đối soát

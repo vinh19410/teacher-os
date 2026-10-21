@@ -1,6 +1,6 @@
 ---
 title: "Phase 5: Web kiểu, hook và command bus"
-status: todo
+status: completed
 ---
 
 # Phase 5: Web kiểu, hook và command bus
