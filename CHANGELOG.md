@@ -10,6 +10,16 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-22
+
+### Changed
+- Refactor tạo và gán syllabus (issue #394): tách bạch **Template** và **Giáo trình của lớp** ở API/service/web — template là `syllabus.class_id IS NULL`, giáo trình của lớp là bản copy có `class_id`; `syllabus.class_id` là nguồn sự thật duy nhất của quan hệ lớp ↔ giáo trình, `class.syllabus_id` chỉ còn là cột dẫn xuất ghi qua `apps/server/src/lib/syllabus-curriculum.ts`. Route mới theo ngữ cảnh `/api/syllabus-templates/...` và `/api/classes/:id/curriculum/...` (route `/api/syllabi/...` cũ giữ làm alias một release); nhập trùng trả **409** thay vì 500. Web dùng chung `TemplatePicker` có preview cho tạo lớp và gán sau, class detail đọc giáo trình qua hook `useClassCurriculum` (#394)
+
+### Added
+- Migration `0042_syllabus_class_pointer_reconcile`: UPDATE idempotent same-org chữa con trỏ lớp ↔ giáo trình lệch về đúng bản copy, không xoá dòng (#394)
+
+---
+
 ## 2026-10-21
 
 ### Added
