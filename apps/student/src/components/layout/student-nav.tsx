@@ -5,7 +5,6 @@ import type {
 	ShellLinkProps,
 } from "@teacher-os/ui/components/app-shell/nav-group";
 import {
-	BookA,
 	BookOpenCheck,
 	ClipboardList,
 	History,
@@ -65,7 +64,6 @@ export const STUDENT_NAV: NavGroup[] = [
 				href: "/assignments",
 			},
 			...(PRACTICE_ROUTES_LIVE ? PRACTICE_HISTORY_ITEMS : []),
-			{ key: "vocab", label: "Từ vựng", icon: BookA, href: "/vocab" },
 			{ key: "tuition", label: "Học phí", icon: Wallet, href: "/tuition" },
 		],
 	},
@@ -100,7 +98,6 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/assignments": "assignments",
 	"/practice": "practice",
 	"/history": "history",
-	"/vocab": "vocab",
 	"/tuition": "tuition",
 };
 
@@ -121,6 +118,5 @@ export const STUDENT_PAGE_LABEL: Record<string, string> = {
 	assignments: "Bài tập",
 	practice: "Luyện tập",
 	history: "Lịch sử",
-	vocab: "Từ vựng",
 	tuition: "Học phí",
 };

@@ -13,7 +13,9 @@ import {
 	useVocabLibraryCourses,
 } from "@/lib/repos/vocab";
 
-export const Route = createFileRoute("/_auth/vocab/courses/$courseId")({
+export const Route = createFileRoute(
+	"/_auth/practice/vocabulary/courses/$courseId",
+)({
 	validateSearch: (input: { q?: string }): { q?: string } => ({
 		q:
 			typeof input.q === "string" && input.q.trim().length > 0
@@ -107,7 +109,7 @@ export function VocabCourseLessonsView({
 		>
 			<div className="space-y-3">
 				<Link
-					to="/vocab/courses"
+					to="/practice/vocabulary/courses"
 					data-testid="vocab-course-back-btn"
 					className="inline-block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 				>
@@ -225,7 +227,7 @@ function VocabCourseLessonsPage() {
 			const trimmed = query.trim();
 			if ((search.q ?? "") === trimmed) return;
 			void navigate({
-				to: "/vocab/courses/$courseId",
+				to: "/practice/vocabulary/courses/$courseId",
 				params: { courseId },
 				search: trimmed ? { q: trimmed } : {},
 				replace: true,
@@ -237,7 +239,7 @@ function VocabCourseLessonsPage() {
 	const handleSelectCourse = useCallback(
 		(nextCourseId: string) => {
 			void navigate({
-				to: "/vocab/courses/$courseId",
+				to: "/practice/vocabulary/courses/$courseId",
 				params: { courseId: nextCourseId },
 				search: {},
 			});

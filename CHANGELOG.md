@@ -16,6 +16,7 @@ Quy ước khi cập nhật:
 - Hàng chờ chấm bài Writing/Speaking cho giáo viên (`/grading`, `GET /api/grading`) kèm mục điều hướng **Chấm bài** trong nhóm IELTS trên sidebar: hợp nhất cả bài giao theo lớp (`mode='assignment'`) và bài tự luyện (`mode='practice'`, nhãn `Luyện tập`), bộ lọc URL (`?q=&mode=&skill=&status=`) có đếm chip chéo nhóm và ô tìm kiếm debounce 300ms; đồng bộ nhãn bài tự luyện chưa chấm ở Lịch sử và catalog học viên về **Chờ chấm** (#383)
 
 ### Changed
+- Gộp luồng từ vựng của học viên (`apps/student`) về một đường dẫn canonical duy nhất **`/practice/vocabulary/*`** (hub đầy đủ, deck detail, session, courses, course detail); `/vocab` và `/vocab/*` cũ redirect (`replace: true`) sang path tương ứng và giữ nguyên query (`?course=`, `?mode=`, `?q=`); bỏ mục điều hướng riêng **Từ vựng** trên sidebar học viên, truy cập thống nhất qua **Luyện tập › Vocabulary** (#387)
 - Redesign giao diện **v2** cho app giáo viên và app học viên: **light là theme mặc định** (dark là override, toggle giữ nguyên semantics), accent cam bỏ — **hành động chính = mực** theo bảng shadcn neutral oklch, font **Geist / Geist Mono Variable** self-host, thang chữ về rem mặc định Tailwind (base 14px). Shell đổi sang layout `sidebar-07` dùng chung hai app; thêm search toàn cục ⌘K (command palette) (#378)
 - Trang mới/khoác mới theo v2: catalog Luyện tập (Practice) 5 kỹ năng, Lịch sử làm bài (History), Trang bạn học (Classmates); DataTable, Badge/TuitionBadge, PageHead, Modal, chip lọc theo token v2; trạng thái = chấm emerald/amber, quá hạn/lỗi = đỏ destructive; màn chấm bài giữ riêng cặp màu verdict (#378)
 - Database: migration `0041_known_ink` (#378)
@@ -24,6 +25,7 @@ Quy ước khi cập nhật:
 - Bài viết Writing chứa HTML (`<p>…</p>`, entity `&amp;`…) từ seed hoặc dữ liệu cũ không còn hiện thẻ HTML thô trên màn chấm giáo viên (`/grading/$attemptId`) và màn kết quả học viên (`/learn/quizzes/attempt/$attemptId`): server chuẩn hoá HTML sang plain text khi đọc kèm bản đồ offset hai chiều `rawStart`/`rawEnd` (`essayToPlain`, `toEssayView`), giữ nguyên lưu trữ offset raw trong DB và căn khớp vị trí highlight `mark[data-n]` + ghi chú inline `essay-inline-note` cũng như số từ `countWords` (#382)
 
 ### Removed
+- `VocabPracticeCatalog` (lưới deck rút gọn trùng lặp tại `/practice/vocabulary`), thay bằng hub từ vựng đầy đủ (#387)
 - Toàn bộ alias token v1 (`text-meta`, `text-hot`, `bg-surface`, `neu*`, `font-display`, `accent-on/soft/hover/active`, `line*`, `chip`, spacing `--space-*/--gap-*`…) khỏi `globals.css` và markup — mọi UI giờ dùng trực tiếp utility shadcn v2 (#378)
 
 ---

@@ -5,7 +5,7 @@ import Loader from "@/components/loader";
 import { useStudentMe } from "@/lib/repos/student";
 import { useVocabLibraryCourses } from "@/lib/repos/vocab";
 
-export const Route = createFileRoute("/_auth/vocab/courses/")({
+export const Route = createFileRoute("/_auth/practice/vocabulary/courses/")({
 	validateSearch: (input: { q?: string }): { q?: string } => ({
 		q:
 			typeof input.q === "string" && input.q.trim().length > 0
@@ -62,7 +62,7 @@ export function VocabCoursesCatalogView({
 			<div className="flex flex-wrap items-end justify-between gap-4">
 				<div className="space-y-1">
 					<Link
-						to="/vocab"
+						to="/practice/vocabulary"
 						data-testid="vocab-courses-back-to-overview"
 						className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] transition-colors hover:text-primary"
 					>
@@ -189,7 +189,7 @@ function VocabCoursesPage() {
 			const trimmed = query.trim();
 			if ((search.q ?? "") === trimmed) return;
 			void navigate({
-				to: "/vocab/courses",
+				to: "/practice/vocabulary/courses",
 				search: trimmed ? { q: trimmed } : {},
 				replace: true,
 			});
@@ -200,7 +200,7 @@ function VocabCoursesPage() {
 	const handleSelectCourse = useCallback(
 		(courseId: string) => {
 			void navigate({
-				to: "/vocab/courses/$courseId",
+				to: "/practice/vocabulary/courses/$courseId",
 				params: { courseId },
 			});
 		},

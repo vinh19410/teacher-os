@@ -185,4 +185,54 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 			page.getByText("Giáo viên chưa có đề luyện tập cho kỹ năng này"),
 		).toBeVisible();
 	});
+
+	test("Luyện tập › Vocabulary mở hub từ vựng đầy đủ (keyboard focus, 3 viewports) và redirect từ /vocab (#387)", async ({
+		page,
+	}) => {
+		await signIn(page);
+		// Keyboard navigation: từ trang Tổng quan (/), focus button "Luyện tập" → Enter mở nhóm → Tab tới "Vocabulary" → Enter
+		await page.goto(`${STUDENT_ORIGIN}/`);
+		const nav = page.getByRole("navigation", { name: "Điều hướng học viên" });
+		const practiceBtn = nav.getByRole("button", { name: "Luyện tập" });
+		await practiceBtn.focus();
+		await expect(practiceBtn).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(practiceBtn).toHaveAttribute("aria-expanded", "true");
+
+		// Tab qua 5 mục con tới Vocabulary (Reading -> Listening -> Writing -> Speaking -> Vocabulary)
+		for (let i = 0; i < 5; i += 1) {
+			await page.keyboard.press("Tab");
+		}
+		const vocabNavLink = nav.getByRole("link", { name: "Vocabulary" });
+		await expect(vocabNavLink).toBeFocused();
+		await page.keyboard.press("Enter");
+
+		await expect(page).toHaveURL(/\/practice\/vocabulary$/);
+		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
+		await expect(page.getByTestId("practice-vocab-deck")).toHaveCount(0);
+
+		// Verify 3 viewports (1440×900, 768×1024, 375×812)
+		for (const vp of [
+			{ width: 1440, height: 900 },
+			{ width: 768, height: 1024 },
+			{ width: 375, height: 812 },
+		]) {
+			await page.setViewportSize(vp);
+			const hasOverflow = await page.evaluate(
+				() =>
+					document.documentElement.scrollWidth >
+					document.documentElement.clientWidth,
+			);
+			expect(
+				hasOverflow,
+				`student /practice/vocabulary overflow at ${vp.width}x${vp.height}`,
+			).toBe(false);
+		}
+		await page.setViewportSize({ width: 1280, height: 720 });
+
+		// Redirect legacy /vocab → /practice/vocabulary
+		await page.goto(`${STUDENT_ORIGIN}/vocab`);
+		await expect(page).toHaveURL(/\/practice\/vocabulary$/);
+		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
+	});
 });
