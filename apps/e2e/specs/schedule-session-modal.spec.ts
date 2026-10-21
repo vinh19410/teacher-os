@@ -20,6 +20,7 @@ const TOPIC = "Writing Task 2 — class session";
 async function addStudent(page: Page, name: string, teacherEmail?: string) {
 	await seedStudent({ teacherEmail, name });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	await enrollDialog.getByRole("option", { name }).click();

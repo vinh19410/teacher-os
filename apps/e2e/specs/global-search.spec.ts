@@ -84,6 +84,7 @@ async function createClassAndStudent(page: Page) {
 	await seedStudent({ teacherEmail: currentTeacherEmail, name: STUDENT_NAME });
 	await page.getByText(CLASS_NAME).click();
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();

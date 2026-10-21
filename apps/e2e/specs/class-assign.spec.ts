@@ -34,6 +34,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 
 	// 4. Enroll student into class
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
@@ -80,12 +81,14 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await page.getByText(CLASS_NAME).click();
 	await expect(page).toHaveURL(/\/classes\/[a-zA-Z0-9_-]+$/);
 
-	// Initial stats: open assignments = 0
-	await expect(page.getByText("bài đang mở")).toBeVisible();
-	await expect(page.getByText("đã nộp trên bài mở")).toBeVisible();
+	// Initial stats: chưa có bài nào → "bài chờ nộp" = 0, sub "Trên 0 bài đã giao".
+	await expect(page.getByText("bài chờ nộp")).toBeVisible();
+	await expect(page.getByText("Trên 0 bài đã giao")).toBeVisible();
 
-	// Tab "Bài tập"
-	await page.getByRole("tab", { name: "Bài tập", exact: true }).click();
+	// #391: tab gộp "Sessions & practice" chứa accordion bài đã giao.
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Chưa giao bài nào cho lớp này.")).toBeVisible();
 
 	// 7. Click "Giao bài tập"
@@ -121,7 +124,9 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 
 	// 11. Full reload keeps the assignment (tab resets to roster, switch to Bài tập)
 	await page.reload();
-	await page.getByRole("tab", { name: "Bài tập", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
 
@@ -135,7 +140,9 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME).click();
 	await expect(page).toHaveURL(/\/classes\/[a-zA-Z0-9_-]+$/);
-	await page.getByRole("tab", { name: "Bài tập", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await page.getByRole("button", { name: "Giao thêm đề" }).click();
 
 	// Pick same prompt → warning note appears

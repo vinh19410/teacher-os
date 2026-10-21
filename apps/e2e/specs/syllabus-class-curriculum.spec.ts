@@ -113,7 +113,8 @@ test("A: tạo lớp kèm template qua TemplatePicker — tab Buổi học thấ
 	await expect(dialog).toBeHidden();
 
 	await openClassFromList(page, `E2E 394 Lớp ${stamp}`);
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	// #391: thẻ giáo trình chuyển sang tab "Giáo trình".
+	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await expect(page.getByText(`E2E 394 Template ${stamp}`)).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Gỡ giáo trình", exact: true }),
@@ -193,8 +194,7 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	await expect(dialog).toBeHidden();
 	await openClassFromList(page, `E2E 394 Copy Lớp ${stamp}`);
 
-	// Quản lý buổi → sửa tiêu đề "Buổi A1" của BẢN COPY.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	// "Sắp xếp buổi" nằm ở page head (#391) — mở thẳng modal Quản lý buổi.
 	await page.getByRole("button", { name: "Sắp xếp buổi", exact: true }).click();
 	const manageDialog = page.getByRole("dialog");
 	// Hàng buổi trong modal dùng grid cố định (#221) — lọc đúng hàng, không
@@ -240,7 +240,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
 	await openClassFromList(page, `E2E 394 Remove Lớp ${stamp}`);
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await expect(page.getByText(`E2E 394 Remove ${stamp}`)).toBeVisible();
 
 	await page

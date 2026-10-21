@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { CLASS_TYPE_LABELS, type ClassGroup } from "@/lib/mock-data";
 import { useClassCurriculum } from "@/lib/repos/use-syllabus";
@@ -24,6 +23,7 @@ export interface CurriculumManagementSectionProps {
  * Issue #394: giáo trình đọc qua `useClassCurriculum` (nguồn sự thật
  * `syllabus.class_id`). Chỉ còn hai trạng thái: có giáo trình / chưa có —
  * nhánh "con trỏ lệch" đã xoá vì server không còn rẽ theo con trỏ.
+ * Markup theo design v2 (#391): thẻ trắng viền, empty state viền đứt.
  */
 export function CurriculumManagementSection({
 	cls,
@@ -38,10 +38,7 @@ export function CurriculumManagementSection({
 	return (
 		<div>
 			{sy ? (
-				<Card
-					variant="white"
-					className="mb-4 flex flex-wrap items-center gap-4"
-				>
+				<div className="flex flex-wrap items-center gap-4">
 					<div className="flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
 						<div className="text-muted-foreground text-xs">
@@ -60,9 +57,9 @@ export function CurriculumManagementSection({
 					>
 						Gỡ giáo trình
 					</Button>
-				</Card>
+				</div>
 			) : (
-				<Card variant="white" className="p-8 text-center">
+				<div className="rounded-lg border border-dashed p-6 text-center">
 					<p className="text-muted-foreground text-sm">
 						Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa
 						trên lớp không ảnh hưởng template hay lớp khác.
@@ -74,7 +71,7 @@ export function CurriculumManagementSection({
 					>
 						Nhập từ template
 					</Button>
-				</Card>
+				</div>
 			)}
 
 			<ImportSyllabusModal

@@ -53,6 +53,8 @@ afterEach(() => {
 });
 
 async function openEnrollDialog() {
+	// #391: nút "+ Thêm học viên vào lớp" sống trong tab Học viên.
+	fireEvent.click(await screen.findByRole("tab", { name: "Học viên" }));
 	fireEvent.click(
 		await screen.findByRole("button", { name: "+ Thêm học viên vào lớp" }),
 	);
@@ -158,14 +160,14 @@ function RerenderableClassDetail() {
 }
 
 describe("class detail tabs", () => {
-	it("offers roster, sessions, assignments, vocab and notes — syllabus and schedule live inside sessions", async () => {
+	it("offers Sessions & practice, roster, curriculum, vocab and notes — sessions & assignments merged (#391)", async () => {
 		startKernelServer(twoClasses());
 		renderWithKernel(<ClassDetail />);
 		const tabs = await screen.findAllByRole("tab");
 		expect(tabs.map((t) => t.textContent)).toEqual([
+			"Sessions & practice",
 			"Học viên",
-			"Buổi học",
-			"Bài tập",
+			"Giáo trình",
 			"Từ vựng",
 			"Ghi chú",
 		]);
@@ -224,29 +226,24 @@ describe("class detail → Buổi học tab", () => {
 	}
 
 	async function openSessionsTab() {
-		fireEvent.click(await screen.findByRole("tab", { name: "Buổi học" }));
+		fireEvent.click(
+			await screen.findByRole("tab", { name: "Sessions & practice" }),
+		);
 	}
 
-	function headers(): string[] {
-		return screen
-			.getAllByRole("columnheader")
-			.map((th) => th.textContent?.trim() ?? "");
-	}
-
-	it("lists each session with date & time, syllabus topic and status — no student column", async () => {
+	it("lists each session as a card with date & time, syllabus topic and status — no student column (#391)", async () => {
 		startKernelServer(attachedCopy());
 		renderWithKernel(<ClassDetail />);
 		await openSessionsTab();
 
-		expect(headers()).toEqual(["Ngày & Giờ", "Chủ đề", "Trạng thái"]);
-		const rows = screen.getAllByRole("row").slice(1);
+		const rows = screen.getAllByTestId("session-row");
 		expect(rows).toHaveLength(2);
 		expect(rows[0].textContent).toContain("Module A");
 		expect(rows[0].textContent).toContain("Line chart");
 		expect(rows[1].textContent).toContain("Bar chart");
 	});
 
-	it("expands a session into its lesson materials and objectives across the full row", async () => {
+	it("expands a session card into its lesson materials and objectives", async () => {
 		startKernelServer(attachedCopy());
 		renderWithKernel(<ClassDetail />);
 		await openSessionsTab();
@@ -254,12 +251,9 @@ describe("class detail → Buổi học tab", () => {
 		fireEvent.click(
 			screen.getAllByRole("button", { name: "Mở rộng chi tiết bài học" })[0],
 		);
-		const details = screen.getByRole("row", { name: "Chi tiết lesson" });
-		const cells = details.querySelectorAll("td");
-		expect(cells).toHaveLength(1);
-		expect(cells[0].getAttribute("colspan")).toBe(String(headers().length));
-		expect(details.textContent).toContain("Tài liệu: Cam 15");
-		expect(details.textContent).toContain("Mục tiêu: So sánh số liệu");
+		const card = screen.getAllByTestId("session-row")[0];
+		expect(card.textContent).toContain("Tài liệu: Cam 15");
+		expect(card.textContent).toContain("Mục tiêu: So sánh số liệu");
 	});
 
 	it("falls back to the weekday table for a legacy free-text schedule", async () => {
@@ -288,18 +282,19 @@ describe("class detail → Buổi học tab", () => {
 		renderWithKernel(<ClassDetail />);
 		await openSessionsTab();
 
-		expect(headers()).toEqual(["Ngày", "Giờ", "Chủ đề", "Trạng thái"]);
+		// #391: fallback legacy là bảng 4 cột trần trong Section "Sessions".
 		expect(screen.getByText("Task 2 cũ")).toBeTruthy();
 	});
 
 	it("shows the attached copy as one card that removes it after confirmation", async () => {
 		const server = startKernelServer(attachedCopy());
 		renderWithKernel(<ClassDetail />);
-		await openSessionsTab();
+		// #391: khối giáo trình chuyển sang tab "Giáo trình" riêng.
+		fireEvent.click(await screen.findByRole("tab", { name: "Giáo trình" }));
 
 		const card = screen
 			.getByText("Writing 7.0 (bản lớp)")
-			.closest(".mb-4") as HTMLElement;
+			.closest("section") as HTMLElement;
 		expect(card.textContent).toContain("2 buổi");
 		// Progress and the module tree belong to the header and manage modal.
 		// <Progress> has no ARIA role; its fill is the only width-styled node.
@@ -333,7 +328,8 @@ describe("class detail → Buổi học tab", () => {
 			}),
 		);
 		renderWithKernel(<ClassDetail />);
-		await openSessionsTab();
+		// #391: khối giáo trình chuyển sang tab "Giáo trình" riêng.
+		fireEvent.click(await screen.findByRole("tab", { name: "Giáo trình" }));
 
 		fireEvent.click(screen.getByRole("button", { name: "Nhập từ template" }));
 		const dialog = screen.getByRole("dialog");
@@ -360,7 +356,9 @@ describe("class screen → lesson kind stays with the syllabus", () => {
 			}),
 		);
 		renderWithKernel(<ClassDetail />);
-		fireEvent.click(await screen.findByRole("tab", { name: "Buổi học" }));
+		fireEvent.click(
+			await screen.findByRole("tab", { name: "Sessions & practice" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Sắp xếp buổi" }));
 		fireEvent.click(screen.getByRole("button", { name: "+ Thêm buổi học" }));
 		const dialog = screen

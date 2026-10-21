@@ -100,10 +100,9 @@ export function ClassRosterTab({
 				<DataTable
 					headers={[
 						"Học viên",
-						"Mục tiêu",
-						"Còn lại",
+						"Đăng ký",
+						"Band mục tiêu",
 						"Học phí",
-						"Trạng thái",
 						"Thao tác",
 					]}
 					emptyMessage="Chưa có học viên nào trong lớp."
@@ -122,32 +121,31 @@ export function ClassRosterTab({
 									<Avatar text={s.avatar} size="sm" />
 									{s.name}
 								</div>,
-								<span key="t" className="text-muted-foreground text-xs">
-									Band {s.targetBand} · {s.skills.join(", ")}
+								// #391: cột "Đăng ký" gộp trạng thái + số buổi còn lại
+								// (design: Enrollment); band/skills xem ở hồ sơ học viên.
+								<div key="e" className="flex items-center gap-2">
+									{isInvited ? (
+										<Badge variant="warn">Đã mời</Badge>
+									) : (
+										<Badge variant="success" dot>
+											Đang học
+										</Badge>
+									)}
+									<span className="text-muted-foreground text-xs tabular-nums">
+										{isInvited ? "—" : `${s.pkg.remaining}/${s.pkg.total}`}
+									</span>
+								</div>,
+								// #391: "Current band" của design không có data (Student
+								// chỉ có targetBand) → hiện band mục tiêu, không bịa band
+								// hiện tại.
+								<span key="b" className="text-sm tabular-nums">
+									Band {s.targetBand}
 								</span>,
-								isInvited ? (
-									<span key="r" className="text-muted-foreground text-xs">
-										—
-									</span>
-								) : (
-									<span key="r" className="tabular-nums">
-										{s.pkg.remaining}/{s.pkg.total}
-									</span>
-								),
 								<RosterTuitionCell
 									key="fee"
 									debt={rosterDebt.get(s.id)}
 									isInvited={isInvited}
 								/>,
-								isInvited ? (
-									<Badge key="b" variant="warn">
-										Đã mời
-									</Badge>
-								) : (
-									<Badge key="b" variant="success" dot>
-										Đang học
-									</Badge>
-								),
 								isInvited && en ? (
 									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
 									<div

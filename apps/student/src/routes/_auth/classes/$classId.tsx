@@ -69,9 +69,16 @@ function StudentClassDetailPage() {
 		return <Loader />;
 	}
 
+	// Một nguồn `now` duy nhất: todayISO suy ra từ chính now (#393).
+	const now = new Date();
+
 	return (
 		<StudentShell userName={me.student.name} userEmail={me.user.email}>
-			<ClassDetailView detail={detailQuery.data} todayISO={vietnamTodayISO()} />
+			<ClassDetailView
+				detail={detailQuery.data}
+				todayISO={vietnamTodayISO(now)}
+				now={now}
+			/>
 		</StudentShell>
 	);
 }

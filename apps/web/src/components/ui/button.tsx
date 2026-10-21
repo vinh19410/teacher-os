@@ -58,13 +58,26 @@ export function Button({
 		<button
 			type={type}
 			ref={ref}
-			className={cn(
-				"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-				variantClasses[variant],
-				sizeClasses[size],
-				className,
-			)}
+			className={buttonVariants({ variant, size, className })}
 			{...props}
 		/>
+	);
+}
+
+/** Lớp nút dùng ngoài `<button>` (vd: `Link` ghost back-link, #391). */
+export function buttonVariants({
+	variant = "default",
+	size = "default",
+	className,
+}: {
+	variant?: Variant;
+	size?: Size;
+	className?: string;
+} = {}) {
+	return cn(
+		"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+		variantClasses[variant],
+		sizeClasses[size],
+		className,
 	);
 }

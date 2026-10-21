@@ -62,6 +62,7 @@ async function enrollAndActivate(page: Page, className: string): Promise<void> {
 	await page.getByText(className, { exact: true }).click();
 	await expect(page).toHaveURL(/\/classes\/.+/);
 
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
