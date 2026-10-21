@@ -25,13 +25,15 @@ import { Route as AuthPracticeSkillRouteImport } from './routes/_auth/practice/$
 import { Route as AuthTuitionIndexRouteImport } from './routes/_auth/tuition/index'
 import { Route as AuthTuitionInvoiceIdRouteImport } from './routes/_auth/tuition/$invoiceId'
 import { Route as AuthVocabIndexRouteImport } from './routes/_auth/vocab/index'
-import { Route as AuthVocabDeckIdRouteImport } from './routes/_auth/vocab/$deckId'
+import { Route as AuthVocabSplatRouteImport } from './routes/_auth/vocab/$'
 import { Route as AuthLearnQuizzesAssignmentIdRouteImport } from './routes/_auth/learn/quizzes/$assignmentId'
-import { Route as AuthVocabDeckIdSessionRouteImport } from './routes/_auth/vocab/$deckId.session'
-import { Route as AuthVocabCoursesIndexRouteImport } from './routes/_auth/vocab/courses/index'
-import { Route as AuthVocabCoursesCourseIdRouteImport } from './routes/_auth/vocab/courses/$courseId'
+import { Route as AuthPracticeVocabularyIndexRouteImport } from './routes/_auth/practice/vocabulary/index'
+import { Route as AuthPracticeVocabularyDeckIdRouteImport } from './routes/_auth/practice/vocabulary/$deckId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId'
 import { Route as AuthLearnQuizzesPracticeTestIdRouteImport } from './routes/_auth/learn/quizzes/practice/$testId'
+import { Route as AuthPracticeVocabularyDeckIdSessionRouteImport } from './routes/_auth/practice/vocabulary/$deckId.session'
+import { Route as AuthPracticeVocabularyCoursesIndexRouteImport } from './routes/_auth/practice/vocabulary/courses/index'
+import { Route as AuthPracticeVocabularyCoursesCourseIdRouteImport } from './routes/_auth/practice/vocabulary/courses/$courseId'
 import { Route as AuthLearnQuizzesAttemptAttemptIdDetailRouteImport } from './routes/_auth/learn/quizzes/attempt/$attemptId.detail'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -113,9 +115,9 @@ const AuthVocabIndexRoute = AuthVocabIndexRouteImport.update({
   path: '/vocab/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthVocabDeckIdRoute = AuthVocabDeckIdRouteImport.update({
-  id: '/vocab/$deckId',
-  path: '/vocab/$deckId',
+const AuthVocabSplatRoute = AuthVocabSplatRouteImport.update({
+  id: '/vocab/$',
+  path: '/vocab/$',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthLearnQuizzesAssignmentIdRoute =
@@ -124,20 +126,16 @@ const AuthLearnQuizzesAssignmentIdRoute =
     path: '/learn/quizzes/$assignmentId',
     getParentRoute: () => AuthRouteRoute,
   } as any)
-const AuthVocabDeckIdSessionRoute = AuthVocabDeckIdSessionRouteImport.update({
-  id: '/session',
-  path: '/session',
-  getParentRoute: () => AuthVocabDeckIdRoute,
-} as any)
-const AuthVocabCoursesIndexRoute = AuthVocabCoursesIndexRouteImport.update({
-  id: '/vocab/courses/',
-  path: '/vocab/courses/',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-const AuthVocabCoursesCourseIdRoute =
-  AuthVocabCoursesCourseIdRouteImport.update({
-    id: '/vocab/courses/$courseId',
-    path: '/vocab/courses/$courseId',
+const AuthPracticeVocabularyIndexRoute =
+  AuthPracticeVocabularyIndexRouteImport.update({
+    id: '/practice/vocabulary/',
+    path: '/practice/vocabulary/',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
+const AuthPracticeVocabularyDeckIdRoute =
+  AuthPracticeVocabularyDeckIdRouteImport.update({
+    id: '/practice/vocabulary/$deckId',
+    path: '/practice/vocabulary/$deckId',
     getParentRoute: () => AuthRouteRoute,
   } as any)
 const AuthLearnQuizzesAttemptAttemptIdRoute =
@@ -150,6 +148,24 @@ const AuthLearnQuizzesPracticeTestIdRoute =
   AuthLearnQuizzesPracticeTestIdRouteImport.update({
     id: '/learn/quizzes/practice/$testId',
     path: '/learn/quizzes/practice/$testId',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
+const AuthPracticeVocabularyDeckIdSessionRoute =
+  AuthPracticeVocabularyDeckIdSessionRouteImport.update({
+    id: '/session',
+    path: '/session',
+    getParentRoute: () => AuthPracticeVocabularyDeckIdRoute,
+  } as any)
+const AuthPracticeVocabularyCoursesIndexRoute =
+  AuthPracticeVocabularyCoursesIndexRouteImport.update({
+    id: '/practice/vocabulary/courses/',
+    path: '/practice/vocabulary/courses/',
+    getParentRoute: () => AuthRouteRoute,
+  } as any)
+const AuthPracticeVocabularyCoursesCourseIdRoute =
+  AuthPracticeVocabularyCoursesCourseIdRouteImport.update({
+    id: '/practice/vocabulary/courses/$courseId',
+    path: '/practice/vocabulary/courses/$courseId',
     getParentRoute: () => AuthRouteRoute,
   } as any)
 const AuthLearnQuizzesAttemptAttemptIdDetailRoute =
@@ -170,18 +186,20 @@ export interface FileRoutesByFullPath {
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
   '/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
-  '/vocab/$deckId': typeof AuthVocabDeckIdRouteWithChildren
+  '/vocab/$': typeof AuthVocabSplatRoute
   '/assignments/': typeof AuthAssignmentsIndexRoute
   '/classes/': typeof AuthClassesIndexRoute
   '/practice/': typeof AuthPracticeIndexRoute
   '/tuition/': typeof AuthTuitionIndexRoute
   '/vocab/': typeof AuthVocabIndexRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
-  '/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
-  '/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
-  '/vocab/courses/': typeof AuthVocabCoursesIndexRoute
+  '/practice/vocabulary/$deckId': typeof AuthPracticeVocabularyDeckIdRouteWithChildren
+  '/practice/vocabulary/': typeof AuthPracticeVocabularyIndexRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/practice/$testId': typeof AuthLearnQuizzesPracticeTestIdRoute
+  '/practice/vocabulary/$deckId/session': typeof AuthPracticeVocabularyDeckIdSessionRoute
+  '/practice/vocabulary/courses/$courseId': typeof AuthPracticeVocabularyCoursesCourseIdRoute
+  '/practice/vocabulary/courses/': typeof AuthPracticeVocabularyCoursesIndexRoute
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRoutesByTo {
@@ -195,18 +213,20 @@ export interface FileRoutesByTo {
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
   '/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
-  '/vocab/$deckId': typeof AuthVocabDeckIdRouteWithChildren
+  '/vocab/$': typeof AuthVocabSplatRoute
   '/assignments': typeof AuthAssignmentsIndexRoute
   '/classes': typeof AuthClassesIndexRoute
   '/practice': typeof AuthPracticeIndexRoute
   '/tuition': typeof AuthTuitionIndexRoute
   '/vocab': typeof AuthVocabIndexRoute
   '/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
-  '/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
-  '/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
-  '/vocab/courses': typeof AuthVocabCoursesIndexRoute
+  '/practice/vocabulary/$deckId': typeof AuthPracticeVocabularyDeckIdRouteWithChildren
+  '/practice/vocabulary': typeof AuthPracticeVocabularyIndexRoute
   '/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/learn/quizzes/practice/$testId': typeof AuthLearnQuizzesPracticeTestIdRoute
+  '/practice/vocabulary/$deckId/session': typeof AuthPracticeVocabularyDeckIdSessionRoute
+  '/practice/vocabulary/courses/$courseId': typeof AuthPracticeVocabularyCoursesCourseIdRoute
+  '/practice/vocabulary/courses': typeof AuthPracticeVocabularyCoursesIndexRoute
   '/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRoutesById {
@@ -222,18 +242,20 @@ export interface FileRoutesById {
   '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
   '/_auth/practice/$skill': typeof AuthPracticeSkillRoute
   '/_auth/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
-  '/_auth/vocab/$deckId': typeof AuthVocabDeckIdRouteWithChildren
+  '/_auth/vocab/$': typeof AuthVocabSplatRoute
   '/_auth/assignments/': typeof AuthAssignmentsIndexRoute
   '/_auth/classes/': typeof AuthClassesIndexRoute
   '/_auth/practice/': typeof AuthPracticeIndexRoute
   '/_auth/tuition/': typeof AuthTuitionIndexRoute
   '/_auth/vocab/': typeof AuthVocabIndexRoute
   '/_auth/learn/quizzes/$assignmentId': typeof AuthLearnQuizzesAssignmentIdRoute
-  '/_auth/vocab/$deckId/session': typeof AuthVocabDeckIdSessionRoute
-  '/_auth/vocab/courses/$courseId': typeof AuthVocabCoursesCourseIdRoute
-  '/_auth/vocab/courses/': typeof AuthVocabCoursesIndexRoute
+  '/_auth/practice/vocabulary/$deckId': typeof AuthPracticeVocabularyDeckIdRouteWithChildren
+  '/_auth/practice/vocabulary/': typeof AuthPracticeVocabularyIndexRoute
   '/_auth/learn/quizzes/attempt/$attemptId': typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   '/_auth/learn/quizzes/practice/$testId': typeof AuthLearnQuizzesPracticeTestIdRoute
+  '/_auth/practice/vocabulary/$deckId/session': typeof AuthPracticeVocabularyDeckIdSessionRoute
+  '/_auth/practice/vocabulary/courses/$courseId': typeof AuthPracticeVocabularyCoursesCourseIdRoute
+  '/_auth/practice/vocabulary/courses/': typeof AuthPracticeVocabularyCoursesIndexRoute
   '/_auth/learn/quizzes/attempt/$attemptId/detail': typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
 }
 export interface FileRouteTypes {
@@ -249,18 +271,20 @@ export interface FileRouteTypes {
     | '/classes/$classId'
     | '/practice/$skill'
     | '/tuition/$invoiceId'
-    | '/vocab/$deckId'
+    | '/vocab/$'
     | '/assignments/'
     | '/classes/'
     | '/practice/'
     | '/tuition/'
     | '/vocab/'
     | '/learn/quizzes/$assignmentId'
-    | '/vocab/$deckId/session'
-    | '/vocab/courses/$courseId'
-    | '/vocab/courses/'
+    | '/practice/vocabulary/$deckId'
+    | '/practice/vocabulary/'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/practice/$testId'
+    | '/practice/vocabulary/$deckId/session'
+    | '/practice/vocabulary/courses/$courseId'
+    | '/practice/vocabulary/courses/'
     | '/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -274,18 +298,20 @@ export interface FileRouteTypes {
     | '/classes/$classId'
     | '/practice/$skill'
     | '/tuition/$invoiceId'
-    | '/vocab/$deckId'
+    | '/vocab/$'
     | '/assignments'
     | '/classes'
     | '/practice'
     | '/tuition'
     | '/vocab'
     | '/learn/quizzes/$assignmentId'
-    | '/vocab/$deckId/session'
-    | '/vocab/courses/$courseId'
-    | '/vocab/courses'
+    | '/practice/vocabulary/$deckId'
+    | '/practice/vocabulary'
     | '/learn/quizzes/attempt/$attemptId'
     | '/learn/quizzes/practice/$testId'
+    | '/practice/vocabulary/$deckId/session'
+    | '/practice/vocabulary/courses/$courseId'
+    | '/practice/vocabulary/courses'
     | '/learn/quizzes/attempt/$attemptId/detail'
   id:
     | '__root__'
@@ -300,18 +326,20 @@ export interface FileRouteTypes {
     | '/_auth/classes/$classId'
     | '/_auth/practice/$skill'
     | '/_auth/tuition/$invoiceId'
-    | '/_auth/vocab/$deckId'
+    | '/_auth/vocab/$'
     | '/_auth/assignments/'
     | '/_auth/classes/'
     | '/_auth/practice/'
     | '/_auth/tuition/'
     | '/_auth/vocab/'
     | '/_auth/learn/quizzes/$assignmentId'
-    | '/_auth/vocab/$deckId/session'
-    | '/_auth/vocab/courses/$courseId'
-    | '/_auth/vocab/courses/'
+    | '/_auth/practice/vocabulary/$deckId'
+    | '/_auth/practice/vocabulary/'
     | '/_auth/learn/quizzes/attempt/$attemptId'
     | '/_auth/learn/quizzes/practice/$testId'
+    | '/_auth/practice/vocabulary/$deckId/session'
+    | '/_auth/practice/vocabulary/courses/$courseId'
+    | '/_auth/practice/vocabulary/courses/'
     | '/_auth/learn/quizzes/attempt/$attemptId/detail'
   fileRoutesById: FileRoutesById
 }
@@ -437,11 +465,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVocabIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/vocab/$deckId': {
-      id: '/_auth/vocab/$deckId'
-      path: '/vocab/$deckId'
-      fullPath: '/vocab/$deckId'
-      preLoaderRoute: typeof AuthVocabDeckIdRouteImport
+    '/_auth/vocab/$': {
+      id: '/_auth/vocab/$'
+      path: '/vocab/$'
+      fullPath: '/vocab/$'
+      preLoaderRoute: typeof AuthVocabSplatRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/learn/quizzes/$assignmentId': {
@@ -451,25 +479,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLearnQuizzesAssignmentIdRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/vocab/$deckId/session': {
-      id: '/_auth/vocab/$deckId/session'
-      path: '/session'
-      fullPath: '/vocab/$deckId/session'
-      preLoaderRoute: typeof AuthVocabDeckIdSessionRouteImport
-      parentRoute: typeof AuthVocabDeckIdRoute
-    }
-    '/_auth/vocab/courses/': {
-      id: '/_auth/vocab/courses/'
-      path: '/vocab/courses'
-      fullPath: '/vocab/courses/'
-      preLoaderRoute: typeof AuthVocabCoursesIndexRouteImport
+    '/_auth/practice/vocabulary/': {
+      id: '/_auth/practice/vocabulary/'
+      path: '/practice/vocabulary'
+      fullPath: '/practice/vocabulary/'
+      preLoaderRoute: typeof AuthPracticeVocabularyIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/vocab/courses/$courseId': {
-      id: '/_auth/vocab/courses/$courseId'
-      path: '/vocab/courses/$courseId'
-      fullPath: '/vocab/courses/$courseId'
-      preLoaderRoute: typeof AuthVocabCoursesCourseIdRouteImport
+    '/_auth/practice/vocabulary/$deckId': {
+      id: '/_auth/practice/vocabulary/$deckId'
+      path: '/practice/vocabulary/$deckId'
+      fullPath: '/practice/vocabulary/$deckId'
+      preLoaderRoute: typeof AuthPracticeVocabularyDeckIdRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/learn/quizzes/attempt/$attemptId': {
@@ -486,6 +507,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLearnQuizzesPracticeTestIdRouteImport
       parentRoute: typeof AuthRouteRoute
     }
+    '/_auth/practice/vocabulary/$deckId/session': {
+      id: '/_auth/practice/vocabulary/$deckId/session'
+      path: '/session'
+      fullPath: '/practice/vocabulary/$deckId/session'
+      preLoaderRoute: typeof AuthPracticeVocabularyDeckIdSessionRouteImport
+      parentRoute: typeof AuthPracticeVocabularyDeckIdRoute
+    }
+    '/_auth/practice/vocabulary/courses/': {
+      id: '/_auth/practice/vocabulary/courses/'
+      path: '/practice/vocabulary/courses'
+      fullPath: '/practice/vocabulary/courses/'
+      preLoaderRoute: typeof AuthPracticeVocabularyCoursesIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/practice/vocabulary/courses/$courseId': {
+      id: '/_auth/practice/vocabulary/courses/$courseId'
+      path: '/practice/vocabulary/courses/$courseId'
+      fullPath: '/practice/vocabulary/courses/$courseId'
+      preLoaderRoute: typeof AuthPracticeVocabularyCoursesCourseIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
     '/_auth/learn/quizzes/attempt/$attemptId/detail': {
       id: '/_auth/learn/quizzes/attempt/$attemptId/detail'
       path: '/detail'
@@ -496,17 +538,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthVocabDeckIdRouteChildren {
-  AuthVocabDeckIdSessionRoute: typeof AuthVocabDeckIdSessionRoute
+interface AuthPracticeVocabularyDeckIdRouteChildren {
+  AuthPracticeVocabularyDeckIdSessionRoute: typeof AuthPracticeVocabularyDeckIdSessionRoute
 }
 
-const AuthVocabDeckIdRouteChildren: AuthVocabDeckIdRouteChildren = {
-  AuthVocabDeckIdSessionRoute: AuthVocabDeckIdSessionRoute,
-}
+const AuthPracticeVocabularyDeckIdRouteChildren: AuthPracticeVocabularyDeckIdRouteChildren =
+  {
+    AuthPracticeVocabularyDeckIdSessionRoute:
+      AuthPracticeVocabularyDeckIdSessionRoute,
+  }
 
-const AuthVocabDeckIdRouteWithChildren = AuthVocabDeckIdRoute._addFileChildren(
-  AuthVocabDeckIdRouteChildren,
-)
+const AuthPracticeVocabularyDeckIdRouteWithChildren =
+  AuthPracticeVocabularyDeckIdRoute._addFileChildren(
+    AuthPracticeVocabularyDeckIdRouteChildren,
+  )
 
 interface AuthLearnQuizzesAttemptAttemptIdRouteChildren {
   AuthLearnQuizzesAttemptAttemptIdDetailRoute: typeof AuthLearnQuizzesAttemptAttemptIdDetailRoute
@@ -530,17 +575,19 @@ interface AuthRouteRouteChildren {
   AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
   AuthPracticeSkillRoute: typeof AuthPracticeSkillRoute
   AuthTuitionInvoiceIdRoute: typeof AuthTuitionInvoiceIdRoute
-  AuthVocabDeckIdRoute: typeof AuthVocabDeckIdRouteWithChildren
+  AuthVocabSplatRoute: typeof AuthVocabSplatRoute
   AuthAssignmentsIndexRoute: typeof AuthAssignmentsIndexRoute
   AuthClassesIndexRoute: typeof AuthClassesIndexRoute
   AuthPracticeIndexRoute: typeof AuthPracticeIndexRoute
   AuthTuitionIndexRoute: typeof AuthTuitionIndexRoute
   AuthVocabIndexRoute: typeof AuthVocabIndexRoute
   AuthLearnQuizzesAssignmentIdRoute: typeof AuthLearnQuizzesAssignmentIdRoute
-  AuthVocabCoursesCourseIdRoute: typeof AuthVocabCoursesCourseIdRoute
-  AuthVocabCoursesIndexRoute: typeof AuthVocabCoursesIndexRoute
+  AuthPracticeVocabularyDeckIdRoute: typeof AuthPracticeVocabularyDeckIdRouteWithChildren
+  AuthPracticeVocabularyIndexRoute: typeof AuthPracticeVocabularyIndexRoute
   AuthLearnQuizzesAttemptAttemptIdRoute: typeof AuthLearnQuizzesAttemptAttemptIdRouteWithChildren
   AuthLearnQuizzesPracticeTestIdRoute: typeof AuthLearnQuizzesPracticeTestIdRoute
+  AuthPracticeVocabularyCoursesCourseIdRoute: typeof AuthPracticeVocabularyCoursesCourseIdRoute
+  AuthPracticeVocabularyCoursesIndexRoute: typeof AuthPracticeVocabularyCoursesIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
@@ -550,18 +597,23 @@ const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthClassesClassIdRoute: AuthClassesClassIdRoute,
   AuthPracticeSkillRoute: AuthPracticeSkillRoute,
   AuthTuitionInvoiceIdRoute: AuthTuitionInvoiceIdRoute,
-  AuthVocabDeckIdRoute: AuthVocabDeckIdRouteWithChildren,
+  AuthVocabSplatRoute: AuthVocabSplatRoute,
   AuthAssignmentsIndexRoute: AuthAssignmentsIndexRoute,
   AuthClassesIndexRoute: AuthClassesIndexRoute,
   AuthPracticeIndexRoute: AuthPracticeIndexRoute,
   AuthTuitionIndexRoute: AuthTuitionIndexRoute,
   AuthVocabIndexRoute: AuthVocabIndexRoute,
   AuthLearnQuizzesAssignmentIdRoute: AuthLearnQuizzesAssignmentIdRoute,
-  AuthVocabCoursesCourseIdRoute: AuthVocabCoursesCourseIdRoute,
-  AuthVocabCoursesIndexRoute: AuthVocabCoursesIndexRoute,
+  AuthPracticeVocabularyDeckIdRoute:
+    AuthPracticeVocabularyDeckIdRouteWithChildren,
+  AuthPracticeVocabularyIndexRoute: AuthPracticeVocabularyIndexRoute,
   AuthLearnQuizzesAttemptAttemptIdRoute:
     AuthLearnQuizzesAttemptAttemptIdRouteWithChildren,
   AuthLearnQuizzesPracticeTestIdRoute: AuthLearnQuizzesPracticeTestIdRoute,
+  AuthPracticeVocabularyCoursesCourseIdRoute:
+    AuthPracticeVocabularyCoursesCourseIdRoute,
+  AuthPracticeVocabularyCoursesIndexRoute:
+    AuthPracticeVocabularyCoursesIndexRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(

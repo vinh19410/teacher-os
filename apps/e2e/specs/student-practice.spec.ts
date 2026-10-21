@@ -180,4 +180,17 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 			page.getByText("Giáo viên chưa có đề luyện tập cho kỹ năng này"),
 		).toBeVisible();
 	});
+
+	test("Luyện tập › Vocabulary mở hub từ vựng đầy đủ và redirect từ /vocab (#387)", async ({
+		page,
+	}) => {
+		await signIn(page);
+		await page.goto(`${STUDENT_ORIGIN}/practice/vocabulary`);
+		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
+		await expect(page.getByTestId("practice-vocab-deck")).toHaveCount(0);
+
+		await page.goto(`${STUDENT_ORIGIN}/vocab`);
+		await expect(page).toHaveURL(/\/practice\/vocabulary$/);
+		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
+	});
 });

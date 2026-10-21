@@ -10,8 +10,8 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { VocabCourseLessonsView } from "@/routes/_auth/vocab/courses/$courseId";
-import { VocabCoursesCatalogView } from "@/routes/_auth/vocab/courses/index";
+import { VocabCourseLessonsView } from "@/routes/_auth/practice/vocabulary/courses/$courseId";
+import { VocabCoursesCatalogView } from "@/routes/_auth/practice/vocabulary/courses/index";
 import { VocabCourseSwitcherDialog } from "./vocab-course-switcher-dialog";
 import { VocabCoursesCta } from "./vocab-courses-cta";
 import {
@@ -177,7 +177,7 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 
 		const card1 = screen.getByTestId("vocab-course-deck-libdeck-1");
 		expect(card1.getAttribute("href")).toBe(
-			"/vocab/libdeck-1?course=libcourse-1",
+			"/practice/vocabulary/libdeck-1?course=libcourse-1",
 		);
 		expect(screen.getByTestId("vocab-lesson-start-here").textContent).toContain(
 			"Bắt đầu tại đây",
@@ -266,10 +266,10 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("VocabCoursesCta renders dashboard link to /vocab/courses", () => {
+	it("VocabCoursesCta renders dashboard link to /practice/vocabulary/courses", () => {
 		render(<VocabCoursesCta />);
 		const cta = screen.getByTestId("vocab-courses-cta");
-		expect(cta.getAttribute("href")).toBe("/vocab/courses");
+		expect(cta.getAttribute("href")).toBe("/practice/vocabulary/courses");
 	});
 
 	it("VocabCoursesCatalogView and VocabCourseLessonsView render catalog, debounce search (300ms), auto-scroll once to start-here, and switch courses via ribbon dialog", async () => {

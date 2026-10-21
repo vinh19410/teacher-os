@@ -11,7 +11,7 @@ import Loader from "@/components/loader";
 import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
-export const Route = createFileRoute("/_auth/vocab/$deckId")({
+export const Route = createFileRoute("/_auth/practice/vocabulary/$deckId")({
 	validateSearch: (input: { course?: string }): { course?: string } => ({
 		course:
 			typeof input.course === "string" && input.course.trim().length > 0
@@ -52,7 +52,7 @@ function VocabDeckDetailPage() {
 					</p>
 					{course ? (
 						<Link
-							to="/vocab/courses/$courseId"
+							to="/practice/vocabulary/courses/$courseId"
 							params={{ courseId: course }}
 							className={buttonVariants({ variant: "outline", size: "sm" })}
 						>
@@ -60,7 +60,7 @@ function VocabDeckDetailPage() {
 						</Link>
 					) : (
 						<Link
-							to="/vocab"
+							to="/practice/vocabulary"
 							className={buttonVariants({ variant: "outline", size: "sm" })}
 						>
 							Quay lại danh sách bộ từ
@@ -98,7 +98,7 @@ function VocabDeckDetailPage() {
 					<div>
 						{course ? (
 							<Link
-								to="/vocab/courses/$courseId"
+								to="/practice/vocabulary/courses/$courseId"
 								params={{ courseId: course }}
 								data-testid="vocab-deck-back-link"
 								className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] hover:text-primary"
@@ -107,7 +107,7 @@ function VocabDeckDetailPage() {
 							</Link>
 						) : (
 							<Link
-								to="/vocab"
+								to="/practice/vocabulary"
 								data-testid="vocab-deck-back-link"
 								className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] hover:text-primary"
 							>
@@ -134,7 +134,7 @@ function VocabDeckDetailPage() {
 						<div className="flex flex-wrap gap-2">
 							{reviewCards.length > 0 ? (
 								<Link
-									to="/vocab/$deckId/session"
+									to="/practice/vocabulary/$deckId/session"
 									params={{ deckId }}
 									search={sessionSearch("review")}
 									data-testid="vocab-start-review-btn"
@@ -156,7 +156,7 @@ function VocabDeckDetailPage() {
 							)}
 							{newCount > 0 ? (
 								<Link
-									to="/vocab/$deckId/session"
+									to="/practice/vocabulary/$deckId/session"
 									params={{ deckId }}
 									search={sessionSearch("learn")}
 									data-testid="vocab-start-learn-btn"

@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
 
 /**
- * Card CTA thuần dẫn từ `/vocab` dashboard sang catalog `/vocab/courses`.
+ * Card CTA thuần dẫn từ `/practice/vocabulary` dashboard sang catalog `/practice/vocabulary/courses`.
  */
 export function VocabCoursesCta() {
 	return (
 		<section className="space-y-3">
 			<Link
-				to="/vocab/courses"
+				to="/practice/vocabulary/courses"
 				data-testid="vocab-courses-cta"
 				className="group flex flex-wrap items-center justify-between gap-4 rounded-md rounded-xl border bg-card p-5 shadow-sm transition-colors duration-150 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 			>

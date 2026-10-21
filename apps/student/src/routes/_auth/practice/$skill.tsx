@@ -1,9 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import type {
-	PracticeCatalogItem,
-	PracticeSkill,
-} from "@teacher-os/api/contracts";
-import { PRACTICE_SKILLS } from "@teacher-os/api/contracts";
+import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
 import { toast } from "sonner";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
@@ -11,16 +7,9 @@ import {
 	PRACTICE_SKILL_LABELS,
 	SkillCatalog,
 } from "@/components/practice/skill-catalog";
-import { VocabPracticeCatalog } from "@/components/practice/vocab-practice-catalog";
 import { useHistoryList, useStartPractice } from "@/lib/repos/student";
 
-const SKILL_SLUGS = [
-	"reading",
-	"listening",
-	"writing",
-	"speaking",
-	"vocabulary",
-] as const;
+const SKILL_SLUGS = ["reading", "listening", "writing", "speaking"] as const;
 type SkillSlug = (typeof SKILL_SLUGS)[number];
 
 function parseSkill(raw: string | undefined): SkillSlug | null {
@@ -54,16 +43,12 @@ export const Route = createFileRoute("/_auth/practice/$skill")({
 });
 
 /** Nhãn + kicker mô tả ngắn theo skill (design-v2, tiếng Việt). */
-const SKILL_LABELS: Record<SkillSlug, string> = {
-	...PRACTICE_SKILL_LABELS,
-	vocabulary: "Từ vựng",
-};
+const SKILL_LABELS: Record<SkillSlug, string> = PRACTICE_SKILL_LABELS;
 const SKILL_KICKERS: Record<SkillSlug, string> = {
 	reading: "Bài đọc Academic trong bố cục thi thật trên máy",
 	listening: "Băng nghe Section 1–4 · phát một lần như phòng thi",
 	writing: "Task 1 + Task 2 · chấm theo 4 tiêu chí IELTS",
 	speaking: "Part 1/2/3 · ghi âm, nghe lại và xem nhận xét",
-	vocabulary: "Học flashcard rồi kiểm tra bằng bài tập tự động",
 };
 
 function PracticeSkillPage() {
@@ -73,17 +58,13 @@ function PracticeSkillPage() {
 	const navigate = useNavigate();
 	const startPractice = useStartPractice();
 
-	// HistoryButton (phase 11): đếm thật từ total của list lọc skill; trang
-	// vocabulary không mount nút nên tắt query (`enabled=false`).
-	const isPracticeSkill = (PRACTICE_SKILLS as readonly string[]).includes(
-		skill,
-	);
+	// HistoryButton (phase 11): đếm thật từ total của list lọc skill.
 	const historyCount = useHistoryList(
 		{
-			skill: isPracticeSkill ? (skill as PracticeSkill) : undefined,
+			skill,
 			page: 1,
 		},
-		isPracticeSkill,
+		true,
 	);
 
 	const handleFilterChange = (next: {
@@ -134,31 +115,25 @@ function PracticeSkillPage() {
 								{SKILL_LABELS[skill]}
 							</h1>
 						</div>
-						{isPracticeSkill && (
-							<HistoryButton
-								count={historyCount.data?.total ?? 0}
-								onClick={() =>
-									void navigate({
-										to: "/history",
-										search: { skill },
-									})
-								}
-							/>
-						)}
+						<HistoryButton
+							count={historyCount.data?.total ?? 0}
+							onClick={() =>
+								void navigate({
+									to: "/history",
+									search: { skill },
+								})
+							}
+						/>
 					</header>
 
-					{skill === "vocabulary" ? (
-						<VocabPracticeCatalog />
-					) : (
-						<SkillCatalog
-							skill={skill as PracticeSkill}
-							collection={search.collection ?? ""}
-							q={search.q ?? ""}
-							page={search.page ?? 1}
-							onFilterChange={handleFilterChange}
-							onOpen={handleOpen}
-						/>
-					)}
+					<SkillCatalog
+						skill={skill}
+						collection={search.collection ?? ""}
+						q={search.q ?? ""}
+						page={search.page ?? 1}
+						onFilterChange={handleFilterChange}
+						onOpen={handleOpen}
+					/>
 				</div>
 			)}
 		</StudentPageGate>
