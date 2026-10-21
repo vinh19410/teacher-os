@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Fetch + chạy design v2 (repo private, SHA ghim) cho harness so sánh ảnh.
 # Dùng: fetch-design.sh [run|stop]  — run: clone/install/dev trên :8200; stop: dừng đúng PID.
+# DESIGN_PORT env override (#397): capture.mjs chọn free port mỗi run để khỏi
+# đụng worktree AI song song / dev stack.
 # Idempotent: clone tồn tại → checkout lại SHA; node_modules tồn tại → bỏ qua install.
 set -euo pipefail
 
 SHA="7a53fc0fcbf415367d245539cedc3855606266a7"
 DIR=".cache/design-v2"
 PID_FILE="$DIR/.pid"
-PORT=8200
+PORT="${DESIGN_PORT:-8200}"
 LOG="$(pwd)/$DIR/.dev.log"
 
 cmd="${1:-run}"
@@ -41,7 +43,11 @@ case "$cmd" in
 		;;
 	stop)
 		if [ -f "$PID_FILE" ]; then
-			kill "$(cat "$PID_FILE")" 2>/dev/null || true
+			PID="$(cat "$PID_FILE")"
+			# #397 review F5: kill pnpm wrapper có thể để node vite cháu sống
+			# (orphan cùng class như capture.mjs) — kill con trước rồi wrapper.
+			pkill -P "$PID" 2>/dev/null || true
+			kill "$PID" 2>/dev/null || true
 			rm -f "$PID_FILE"
 			echo "design v2 stopped"
 		else

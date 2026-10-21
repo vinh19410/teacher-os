@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-22
+
+### Fixed
+- Harness `pnpm design:compare` chạy xanh lại từ đầu tới cuối (trước đó exit 1 ở bước seed với `no org yet, waiting for bootstrap`): seed đồng bộ trên sự kiện thật `GET /api/kernel` (observer + rescue goto khi client abort 15s) thay vì blind-poll DB ~21.75s; harness tự chọn **free port mỗi run** (API/WEB/STUDENT/DESIGN) — hết xung đột với worktree AI song song/dev stack từng khiến signup đi vào API của worktree khác; cleanup kill cả process group + SIGTERM/SIGHUP handler (hết orphan chiếm port), redact `token=` trong log dump, seed-fail in log stack (api/web/student); screen `t-attendance` bỏ click tab `Buổi học` đã bị #391 merge (chụp default Sessions & practice, không mutate check-in) (#397)
+
 ## 2026-10-21
 
 ### Added

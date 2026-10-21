@@ -83,14 +83,7 @@
 					}
 				]
 			},
-			"appSteps": [
-				{
-					"click": "button:has-text('Buổi học')"
-				},
-				{
-					"clickFirst": "button:has-text('Điểm danh')"
-				}
-			],
+			"appSteps": [],
 			"app": "/classes/{seed.classId}"
 		},
 		{
