@@ -1,7 +1,7 @@
 ---
 title: "Giữ dev server sống + fail-loud khi chết giữa run (e2e/design:compare)"
 description: "Watchdog giám sát api/web/student cho cả playwright e2e và design:compare: vite chết → restart có đếm ngưỡng, API chết → fail-loud, hết cascade connection-refused im lặng."
-status: in-progress
+status: completed
 priority: P1
 effort: 4h
 issue: 402
