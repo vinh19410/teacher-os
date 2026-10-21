@@ -40,7 +40,7 @@ function memoryStorage(initial: Record<string, string> = {}) {
 	};
 }
 
-function installStorage(impl: ReturnType<typeof memoryStorage>) {
+function installStorage(impl: Storage) {
 	Object.defineProperty(window, "localStorage", {
 		value: impl,
 		configurable: true,
@@ -48,45 +48,43 @@ function installStorage(impl: ReturnType<typeof memoryStorage>) {
 }
 
 describe("readTheme", () => {
-	it("mặc định dark khi không có lựa chọn trong storage", () => {
+	it("mặc định light khi không có lựa chọn trong storage", () => {
 		installStorage(memoryStorage());
-		expect(readTheme()).toBe("dark");
-	});
-
-	it("trả light khi storage ghi light", () => {
-		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "light" }));
 		expect(readTheme()).toBe("light");
 	});
 
-	it("giá trị lạ → dark", () => {
-		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "banana" }));
+	it("trả dark khi storage ghi dark", () => {
+		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "dark" }));
 		expect(readTheme()).toBe("dark");
 	});
 
-	it("storage hỏng (throw) → dark", () => {
+	it("giá trị lạ → light", () => {
+		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "banana" }));
+		expect(readTheme()).toBe("light");
+	});
+
+	it("storage hỏng (throw) → light", () => {
 		installStorage({
 			...memoryStorage(),
 			getItem: () => {
 				throw new Error("unavailable");
 			},
 		});
-		expect(readTheme()).toBe("dark");
+		expect(readTheme()).toBe("light");
 	});
 });
 
 describe("applyTheme", () => {
-	it("light: thêm class light, gỡ dark trên <html>", () => {
-		document.documentElement.className = "";
+	it("light: <html> không còn class nào (light là mặc định)", () => {
+		document.documentElement.className = "dark";
 		applyTheme("light");
-		expect(document.documentElement.classList.contains("light")).toBe(true);
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("dark: thêm class dark, gỡ light", () => {
+	it("dark: thêm class dark trên <html>", () => {
 		document.documentElement.className = "";
 		applyTheme("dark");
 		expect(document.documentElement.classList.contains("dark")).toBe(true);
-		expect(document.documentElement.classList.contains("light")).toBe(false);
 	});
 });
 
@@ -100,13 +98,13 @@ describe("useTheme", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("mặc định dark và áp class dark lên <html>", () => {
+	it("mặc định light, <html> không có class dark", () => {
 		const { result } = renderHook(() => useTheme());
-		expect(result.current.theme).toBe("dark");
-		expect(document.documentElement.classList.contains("dark")).toBe(true);
+		expect(result.current.theme).toBe("light");
+		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("toggle → light, ghi storage và class light; không ghi storage khi mount", () => {
+	it("toggle → dark, ghi storage và class dark; không ghi storage khi mount", () => {
 		const storage = memoryStorage();
 		installStorage(storage);
 		const setItem = vi.spyOn(storage, "setItem");
@@ -115,40 +113,39 @@ describe("useTheme", () => {
 		expect(setItem).not.toHaveBeenCalled();
 
 		act(() => result.current.toggle());
-		expect(result.current.theme).toBe("light");
-		expect(storage.getItem(THEME_STORAGE_KEY)).toBe("light");
-		expect(document.documentElement.classList.contains("light")).toBe(true);
-		expect(document.documentElement.classList.contains("dark")).toBe(false);
+		expect(result.current.theme).toBe("dark");
+		expect(storage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+		expect(document.documentElement.classList.contains("dark")).toBe(true);
 	});
 
-	it("setTheme('dark') sau light quay lại dark và ghi storage", () => {
-		// Mô phỏng theme-init: class light đã trên <html> trước khi React mount.
-		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "light" }));
-		document.documentElement.classList.add("light");
+	it("setTheme('light') sau dark quay lại light và ghi storage", () => {
+		// Mô phỏng theme-init: class dark đã trên <html> trước khi React mount.
+		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "dark" }));
+		document.documentElement.classList.add("dark");
 		const { result } = renderHook(() => useTheme());
-		expect(result.current.theme).toBe("light");
-
-		act(() => result.current.setTheme("dark"));
 		expect(result.current.theme).toBe("dark");
-		expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
-		expect(document.documentElement.classList.contains("dark")).toBe(true);
+
+		act(() => result.current.setTheme("light"));
+		expect(result.current.theme).toBe("light");
+		expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
 	it("storage đồng bộ giữa các tab qua sự kiện storage", () => {
 		const { result } = renderHook(() => useTheme());
-		expect(result.current.theme).toBe("dark");
+		expect(result.current.theme).toBe("light");
 
 		// Tab khác ghi storage — handler áp lại theme từ storage rồi mới emit.
-		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "light" }));
+		installStorage(memoryStorage({ [THEME_STORAGE_KEY]: "dark" }));
 		act(() => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: THEME_STORAGE_KEY,
-					newValue: "light",
+					newValue: "dark",
 				}),
 			);
 		});
-		expect(result.current.theme).toBe("light");
+		expect(result.current.theme).toBe("dark");
 	});
 
 	it("ghi storage hỏng (throw) không làm vỡ setTheme", () => {
@@ -160,9 +157,9 @@ describe("useTheme", () => {
 		});
 		const { result } = renderHook(() => useTheme());
 
-		expect(() => act(() => result.current.setTheme("light"))).not.toThrow();
-		expect(result.current.theme).toBe("light");
-		expect(document.documentElement.classList.contains("light")).toBe(true);
+		expect(() => act(() => result.current.setTheme("dark"))).not.toThrow();
+		expect(result.current.theme).toBe("dark");
+		expect(document.documentElement.classList.contains("dark")).toBe(true);
 	});
 
 	it("hai instance useTheme cùng tab dùng chung một snapshot (toggle ở chỗ này, chỗ kia theo)", () => {
@@ -170,15 +167,15 @@ describe("useTheme", () => {
 		// phải đọc cùng một nguồn (class trên <html>), không state rời.
 		const a = renderHook(() => useTheme());
 		const b = renderHook(() => useTheme());
-		expect(a.result.current.theme).toBe("dark");
-		expect(b.result.current.theme).toBe("dark");
-
-		act(() => a.result.current.toggle());
 		expect(a.result.current.theme).toBe("light");
 		expect(b.result.current.theme).toBe("light");
 
-		act(() => b.result.current.setTheme("dark"));
+		act(() => a.result.current.toggle());
 		expect(a.result.current.theme).toBe("dark");
+		expect(b.result.current.theme).toBe("dark");
+
+		act(() => b.result.current.setTheme("light"));
+		expect(a.result.current.theme).toBe("light");
 	});
 });
 
@@ -192,33 +189,33 @@ describe("ThemeToggle", () => {
 
 	afterEach(cleanup);
 
-	it("render switch 'Giao diện tối' checked mặc định, không còn chữ Tối/Sáng", () => {
+	it("render switch 'Giao diện tối' unchecked mặc định (light), không còn chữ Tối/Sáng", () => {
 		render(<ThemeToggle />);
 		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
-		expect(sw.getAttribute("aria-checked")).toBe("true");
+		expect(sw.getAttribute("aria-checked")).toBe("false");
 		expect(screen.queryByText("Tối")).toBeNull();
 		expect(screen.queryByText("Sáng")).toBeNull();
 	});
 
-	it("click → unchecked, class light trên <html>, ghi storage light", () => {
+	it("click → checked, class dark trên <html>, ghi storage dark", () => {
 		const storage = memoryStorage();
 		installStorage(storage);
 		render(<ThemeToggle />);
 		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
 
 		fireEvent.click(sw);
-		expect(sw.getAttribute("aria-checked")).toBe("false");
-		expect(document.documentElement.classList.contains("light")).toBe(true);
-		expect(storage.getItem(THEME_STORAGE_KEY)).toBe("light");
+		expect(sw.getAttribute("aria-checked")).toBe("true");
+		expect(document.documentElement.classList.contains("dark")).toBe(true);
+		expect(storage.getItem(THEME_STORAGE_KEY)).toBe("dark");
 	});
 
-	it("click lần nữa → checked lại, không còn class light", () => {
+	it("click lần nữa → unchecked lại, không còn class dark", () => {
 		render(<ThemeToggle />);
 		const sw = screen.getByRole("switch", { name: "Giao diện tối" });
 
 		fireEvent.click(sw);
 		fireEvent.click(sw);
-		expect(sw.getAttribute("aria-checked")).toBe("true");
-		expect(document.documentElement.classList.contains("light")).toBe(false);
+		expect(sw.getAttribute("aria-checked")).toBe("false");
+		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 });

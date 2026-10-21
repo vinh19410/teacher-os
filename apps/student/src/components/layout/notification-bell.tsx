@@ -8,9 +8,9 @@ import {
 } from "@/lib/repos/student";
 
 /**
- * Chuông thông báo theo design `StudentPortal`: nút vuông `neu-sm` 36px với
- * badge số mono nền cam đè góc trên phải; panel lời mời `neu rounded-lg`,
- * nút Chấp nhận = primary (ink → cam hover), Từ chối = secondary (`neu-sm`).
+ * Chuông thông báo học viên trên shell v2: nút ghost icon + badge số đếm
+ * (design: nền destructive, chữ trắng); panel popover token với nút Chấp
+ * nhận (primary) / Từ chối (outline). Logic mời org giữ nguyên v1.
  */
 export function NotificationBell() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -46,6 +46,7 @@ export function NotificationBell() {
 			setProcessingId(null);
 		}
 	};
+
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -64,13 +65,13 @@ export function NotificationBell() {
 				onClick={() => setIsOpen((prev) => !prev)}
 				aria-expanded={isOpen}
 				aria-label="Thông báo"
-				className="neu-sm relative grid h-9 w-9 place-items-center rounded-md text-fg-2 transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+				className="relative inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
 			>
-				<Bell aria-hidden="true" className="h-[17px] w-[17px]" />
+				<Bell aria-hidden="true" />
 				{count > 0 && (
 					<span
 						data-testid="notification-badge"
-						className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center bg-hot px-0.5 font-mono text-[10px] text-accent-on leading-none"
+						className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-destructive font-medium text-[10px] text-white leading-none"
 					>
 						{count}
 					</span>
@@ -86,25 +87,25 @@ export function NotificationBell() {
 					<div
 						role="dialog"
 						aria-label="Danh sách thông báo"
-						className="neu absolute top-full right-0 z-50 mt-2 max-h-[420px] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg"
+						className="absolute top-full right-0 z-50 mt-2 max-h-[420px] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md"
 					>
-						<div className="flex items-center justify-between border-line border-b px-4 py-3">
-							<h3 className="font-semibold text-fg text-sm">Thông báo</h3>
+						<div className="flex items-center justify-between border-b px-4 py-3">
+							<h3 className="font-semibold">Thông báo</h3>
 							{count > 0 && (
-								<span className="font-mono text-[10px] text-meta">
+								<span className="font-mono text-[10px] text-muted-foreground">
 									{count} mới
 								</span>
 							)}
 						</div>
 
-						<div className="max-h-[380px] divide-y divide-line overflow-y-auto">
+						<div className="max-h-[380px] divide-y">
 							{isLoading ? (
-								<div className="flex items-center justify-center p-6 text-meta text-xs">
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<div className="flex items-center justify-center p-6 text-muted-foreground text-xs">
+									<Loader2 className="mr-2 size-4 animate-spin" />
 									Đang tải thông báo...
 								</div>
 							) : count === 0 ? (
-								<div className="flex flex-col items-center justify-center p-6 text-center text-meta text-xs">
+								<div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground text-xs">
 									<p>Không có thông báo mới</p>
 								</div>
 							) : (
@@ -122,22 +123,22 @@ export function NotificationBell() {
 									return (
 										<div key={inv.id} className="flex flex-col gap-2.5 p-3.5">
 											<div className="flex items-start gap-2.5">
-												<span className="neu-in mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-hot">
-													<Building2 className="h-4 w-4" />
+												<span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
+													<Building2 className="size-4" />
 												</span>
 												<div className="flex min-w-0 flex-1 flex-col gap-1">
-													<p className="text-fg text-xs leading-relaxed">
+													<p className="text-xs leading-relaxed">
 														Giáo viên{" "}
-														<strong className="font-semibold text-fg">
+														<strong className="font-semibold">
 															{inv.inviterName || "Giáo viên"}
 														</strong>{" "}
 														đã mời bạn tham gia tổ chức{" "}
-														<strong className="font-semibold text-fg">
+														<strong className="font-semibold">
 															{inv.orgName || "Lớp học"}
 														</strong>
 														.
 													</p>
-													<span className="font-mono text-[10px] text-meta">
+													<span className="font-mono text-[10px] text-muted-foreground">
 														{dateFormatted}
 													</span>
 												</div>
@@ -148,12 +149,12 @@ export function NotificationBell() {
 													type="button"
 													onClick={() => handleAccept(inv.id)}
 													disabled={isCurrentProcessing}
-													className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-fg px-3 py-1.5 font-medium text-bg text-xs transition-colors duration-150 hover:bg-hot hover:text-accent-on active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+													className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs shadow-xs transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
 												>
 													{isCurrentProcessing ? (
-														<Loader2 className="h-3.5 w-3.5 animate-spin" />
+														<Loader2 className="size-3.5 animate-spin" />
 													) : (
-														<Check className="h-3.5 w-3.5" />
+														<Check className="size-3.5" />
 													)}
 													<span>Chấp nhận</span>
 												</button>
@@ -163,10 +164,10 @@ export function NotificationBell() {
 													onClick={() => handleReject(inv.id)}
 													disabled={isCurrentProcessing}
 													className={cn(
-														"neu-sm inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 font-medium text-fg text-xs transition-colors active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+														"inline-flex items-center justify-center gap-1 rounded-md border bg-background px-3 py-1.5 font-medium text-xs shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50",
 													)}
 												>
-													<X className="h-3.5 w-3.5" />
+													<X className="size-3.5" />
 													<span>Từ chối</span>
 												</button>
 											</div>

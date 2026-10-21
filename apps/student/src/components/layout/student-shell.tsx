@@ -1,9 +1,17 @@
+import { useRouterState } from "@tanstack/react-router";
+import { AppShell as Shell } from "@teacher-os/ui/components/app-shell/app-shell";
 import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
+import { GraduationCap } from "lucide-react";
 import type { ReactNode } from "react";
-import { AvatarMenu } from "@/components/layout/avatar-menu";
+import { AvatarMenuContent } from "@/components/layout/avatar-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
-import { OrgSwitcher } from "@/components/layout/org-switcher";
-import { StudentNav } from "@/components/layout/student-nav";
+import { useStudentTeam } from "@/components/layout/org-switcher";
+import {
+	STUDENT_NAV,
+	STUDENT_PAGE_LABEL,
+	StudentShellLink,
+	useStudentActiveKey,
+} from "@/components/layout/student-nav";
 
 interface StudentShellProps {
 	userName?: string;
@@ -12,38 +20,57 @@ interface StudentShellProps {
 }
 
 /**
- * Khung portal học viên theo design `StudentPortal`: một hàng header trong
- * container `max-w-6xl` — tên học viên extrabold bên trái, bên phải là org
- * switcher + ThemeToggle + chuông thông báo + menu tài khoản. Không còn
- * sidebar (design home chỉ có 1 cột nội dung).
+ * Khung portal học viên trên shell chung (design v2): sidebar với org
+ * switcher (TeamSwitcher), nav nhóm "Học tập" và user footer (menu Đăng
+ * xuất); header h-14 chứa breadcrumb "tổ chức › mục" + chuông + ThemeToggle.
+ * e2e account-role-separation: tên rơi về nhãn chung khi chưa load.
  */
 export function StudentShell({
 	userName,
 	userEmail,
 	children,
 }: StudentShellProps) {
-	return (
-		<div className="flex min-h-svh flex-col bg-bg text-fg">
-			<header className="border-line border-b">
-				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4 md:px-10 lg:flex-nowrap">
-					{/* e2e account-role-separation: "Đây là tài khoản học viên" chỉ
-					 * xuất hiện trên màn lỗi — tên rơi về nhãn chung khi chưa load. */}
-					<span className="truncate font-display font-extrabold text-xl tracking-[-0.01em]">
-						{userName || "Học viên"}
-					</span>
-					<StudentNav className="order-3 flex w-full flex-wrap items-center gap-1 border-line border-t pt-2.5 lg:order-none lg:w-auto lg:flex-nowrap lg:border-t-0 lg:pt-0" />
-					<div className="flex flex-none items-center gap-2.5">
-						<OrgSwitcher />
-						<ThemeToggle />
-						<NotificationBell />
-						<AvatarMenu name={userName} email={userEmail} />
-					</div>
-				</div>
-			</header>
+	const team = useStudentTeam();
+	const activeKey = useStudentActiveKey();
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const displayName = userName || "Học viên";
+	const initials = displayName.trim().charAt(0).toUpperCase() || "H";
+	const crumbs = [team?.name, STUDENT_PAGE_LABEL[activeKey]].filter(
+		(crumb): crumb is string => Boolean(crumb),
+	);
 
-			<main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8 md:px-10">
-				{children}
-			</main>
-		</div>
+	return (
+		<Shell
+			nav={STUDENT_NAV}
+			activeKey={activeKey}
+			team={team ?? undefined}
+			user={{
+				name: displayName,
+				email: userEmail,
+				initials,
+				label: "Tài khoản học viên",
+				menu: <AvatarMenuContent name={userName} email={userEmail} />,
+			}}
+			crumbs={crumbs}
+			actions={
+				<>
+					<NotificationBell />
+					<ThemeToggle />
+				</>
+			}
+			linkComponent={StudentShellLink}
+			navLabel="Điều hướng học viên"
+			logo={
+				<span
+					aria-hidden="true"
+					className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+				>
+					<GraduationCap className="size-4" />
+				</span>
+			}
+			dismissOnKeyChange={pathname}
+		>
+			{children}
+		</Shell>
 	);
 }

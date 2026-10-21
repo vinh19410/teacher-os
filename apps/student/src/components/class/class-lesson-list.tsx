@@ -13,15 +13,15 @@ const LESSON_STATUS: Record<string, { label: string; badgeClass: string }> = {
 	},
 	upcoming: {
 		label: "Sắp tới",
-		badgeClass: "border border-hot/40 text-hot",
+		badgeClass: "border border-primary/40 text-primary",
 	},
 	absent: {
 		label: "Vắng",
-		badgeClass: "bg-hot font-medium text-accent-on",
+		badgeClass: "bg-primary font-medium text-primary-foreground",
 	},
 	cancelled: {
 		label: "Đã huỷ",
-		badgeClass: "neu-in text-muted-fg",
+		badgeClass: "rounded-md bg-muted text-muted-foreground",
 	},
 };
 
@@ -68,7 +68,7 @@ export function ClassLessonList({
 				const isNext = lesson.id === nextId;
 				const status = LESSON_STATUS[lesson.status] ?? {
 					label: lesson.status,
-					badgeClass: "neu-in text-muted-fg",
+					badgeClass: "rounded-md bg-muted text-muted-foreground",
 				};
 				return (
 					// Danh sách buổi dạng hàng `border-t` theo design — không card
@@ -77,8 +77,8 @@ export function ClassLessonList({
 						key={lesson.id}
 						aria-current={isNext ? "true" : undefined}
 						className={cn(
-							"flex flex-col gap-2 border-line border-t py-3 sm:flex-row sm:items-center sm:justify-between",
-							isNext && "text-fg",
+							"flex flex-col gap-2 border-border border-t py-3 sm:flex-row sm:items-center sm:justify-between",
+							isNext && "text-foreground",
 						)}
 					>
 						<div className="min-w-0 flex-1">
@@ -86,24 +86,24 @@ export function ClassLessonList({
 								<span
 									className={cn(
 										"font-medium text-[15px]",
-										isNext ? "text-hot" : "text-fg",
+										isNext ? "text-primary" : "text-foreground",
 									)}
 								>
 									Buổi {i + 1}
 								</span>
-								<span className="font-mono text-[12px] text-meta">
+								<span className="font-mono text-[12px] text-muted-foreground">
 									{lessonDayLabel(lesson)} · {lesson.time} · {lesson.dur} phút
 								</span>
 							</div>
 							{lesson.topic && (
-								<p className="mt-1 truncate text-[13px] text-meta">
+								<p className="mt-1 truncate text-[13px] text-muted-foreground">
 									{lesson.topic}
 								</p>
 							)}
 						</div>
 						<div className="flex items-center gap-2">
 							{isNext && (
-								<span className="rounded-full bg-hot px-2.5 py-0.5 font-medium font-mono text-[10px] text-accent-on uppercase tracking-[0.08em]">
+								<span className="rounded-full bg-primary px-2.5 py-0.5 font-medium font-mono text-[10px] text-primary-foreground uppercase tracking-[0.08em]">
 									Buổi tới
 								</span>
 							)}

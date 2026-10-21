@@ -63,8 +63,10 @@ function VocabSessionRoutePage() {
 	if (!data) {
 		return (
 			<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
-				<div className="neu rounded-md p-6 text-center">
-					<p className="text-meta text-sm">Không tìm thấy bộ từ vựng.</p>
+				<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+					<p className="text-muted-foreground text-sm">
+						Không tìm thấy bộ từ vựng.
+					</p>
 				</div>
 			</StudentShell>
 		);

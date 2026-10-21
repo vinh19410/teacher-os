@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { PageHead } from "@/components/ui/page-head";
 import { useData } from "@/lib/data-store";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
 import { fmtVND } from "@/lib/mock-data";
@@ -42,15 +43,13 @@ export const Route = createFileRoute("/_auth/tuition/$invoiceId")({
 	component: InvoiceDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-semibold text-xl">
-				Không tìm thấy hóa đơn
-			</h1>
-			<p className="mt-2 text-muted-fg text-sm">
+			<h1 className="font-semibold text-xl">Không tìm thấy hóa đơn</h1>
+			<p className="mt-2 text-muted-foreground text-sm">
 				Hóa đơn này không tồn tại hoặc dữ liệu đã được reset.
 			</p>
 			<Link
 				to="/tuition"
-				className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
+				className="mt-4 inline-block text-muted-foreground text-sm transition-colors hover:text-foreground"
 			>
 				← Về Doanh thu
 			</Link>
@@ -84,7 +83,7 @@ function MetaRow({
 }) {
 	return (
 		<div className="flex items-start justify-between gap-4 py-1.5">
-			<dt className="font-mono text-meta text-muted-fg text-xs">{label}</dt>
+			<dt className="text-muted-foreground text-xs">{label}</dt>
 			<dd className="min-w-0 text-right text-sm">{children}</dd>
 		</div>
 	);
@@ -135,58 +134,58 @@ export function InvoiceDetailRoute() {
 
 	return (
 		<div>
-			<div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-				<div>
-					<Link
-						to="/tuition"
-						search={backSearch}
-						className="font-mono text-[12px] text-meta transition-colors hover:text-hot"
-					>
-						← Doanh thu
-					</Link>
-					<div className="mt-1 flex flex-wrap items-center gap-3">
-						<h1 className="font-display font-extrabold text-[28px] tracking-[-0.045em]">
-							{invoiceCode(inv.id)}
-						</h1>
+			{/* Design InvoiceDetail: BackLink muted phía trên PageHead. */}
+			<Link
+				to="/tuition"
+				search={backSearch}
+				className="mb-1 -ml-1 inline-flex items-center text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Doanh thu
+			</Link>
+			<PageHead
+				kicker={
+					student
+						? `${invoiceType(inv.type)} · ${student.name}`
+						: invoiceType(inv.type)
+				}
+				title={
+					<span className="flex flex-wrap items-center gap-3">
+						{invoiceCode(inv.id)}
 						<InvoiceStatusCell invoice={inv} status={status} />
-					</div>
-					<p className="mt-1 text-muted-fg text-sm">
-						{invoiceType(inv.type)}
-						{student ? ` · ${student.name}` : ""}
-					</p>
-				</div>
-				{inv.status !== "paid" && (
-					<Button
-						disabled={busy || isPending(inv.id)}
-						onClick={() =>
-							void run(
-								inv.id,
-								{
-									type: "mark-invoice-paid",
-									invoiceId: inv.id,
-									method: inv.method === "—" ? "CK" : inv.method,
-								},
-								"Đã ghi nhận thanh toán.",
-							)
-						}
-					>
-						{isPending(inv.id) ? "Đang lưu…" : "Đã nhận"}
-					</Button>
-				)}
-			</div>
+					</span>
+				}
+				action={
+					inv.status !== "paid" ? (
+						<Button
+							disabled={busy || isPending(inv.id)}
+							onClick={() =>
+								void run(
+									inv.id,
+									{
+										type: "mark-invoice-paid",
+										invoiceId: inv.id,
+										method: inv.method === "—" ? "CK" : inv.method,
+									},
+									"Đã ghi nhận thanh toán.",
+								)
+							}
+						>
+							{isPending(inv.id) ? "Đang lưu…" : "Đã nhận"}
+						</Button>
+					) : undefined
+				}
+			/>
 
 			<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-6 max-app:grid-cols-1">
 				<div className="flex flex-col gap-6">
 					<Card>
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
-							Thông tin hóa đơn
-						</div>
+						<h2 className="font-semibold leading-none">Thông tin hóa đơn</h2>
 						<dl>
 							<MetaRow label="Mã hóa đơn">
 								<span className="font-mono">{invoiceCode(inv.id)}</span>
 							</MetaRow>
 							<MetaRow label="Mã đầy đủ">
-								<span className="break-all font-mono text-meta text-xs">
+								<span className="break-all text-muted-foreground text-xs">
 									{inv.id}
 								</span>
 							</MetaRow>
@@ -202,7 +201,7 @@ export function InvoiceDetailRoute() {
 									<span
 										className={
 											status === "overdue"
-												? "font-semibold text-danger"
+												? "font-semibold text-destructive"
 												: undefined
 										}
 									>
@@ -228,56 +227,56 @@ export function InvoiceDetailRoute() {
 						/>
 					</div>
 					{manuallyPaid && (
-						<p className="text-muted-fg text-xs">
+						<p className="text-muted-foreground text-xs">
 							Ghi nhận thủ công — tiền thu qua kênh khác (tiền mặt, chuyển khoản
 							ngoài hệ thống).
 						</p>
 					)}
 
 					<Card>
-						<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
-							Học viên &amp; lớp
-						</div>
+						<h2 className="font-semibold leading-none">Học viên &amp; lớp</h2>
 						<div className="flex flex-wrap items-center gap-x-8 gap-y-3">
 							{student ? (
 								<Link
 									to="/students/$studentId"
 									params={{ studentId: student.id }}
-									className="flex items-center gap-2 font-medium text-sm transition-colors hover:text-hot"
+									className="flex items-center gap-2 font-medium text-sm underline-offset-4 transition-colors hover:underline"
 								>
 									<Avatar text={student.avatar} size="sm" />
 									<span>{student.name}</span>
 								</Link>
 							) : (
-								<span className="text-muted-fg text-sm">—</span>
+								<span className="text-muted-foreground text-sm">—</span>
 							)}
 							{cls ? (
 								<Link
 									to="/classes/$classId"
 									params={{ classId: cls.id }}
-									className="font-medium text-sm transition-colors hover:text-hot"
+									className="font-medium text-sm underline-offset-4 transition-colors hover:underline"
 								>
 									{cls.name}
 								</Link>
 							) : (
-								<span className="text-muted-fg text-sm">Lớp: —</span>
+								<span className="text-muted-foreground text-sm">Lớp: —</span>
 							)}
 						</div>
 					</Card>
 				</div>
 
-				<Card>
-					<div className="mb-3 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
+				<Card className="self-start">
+					<h2 className="font-semibold leading-none">
 						Thanh toán chuyển khoản
-					</div>
+					</h2>
 					{payment.data ? (
 						<PaymentQrPanel data={payment.data} />
 					) : payment.isError ? (
-						<p className="text-muted-fg text-sm">
+						<p className="text-muted-foreground text-sm">
 							Không tải được thông tin chuyển khoản.
 						</p>
 					) : (
-						<p className="text-center text-muted-fg text-sm">Đang tải…</p>
+						<p className="text-center text-muted-foreground text-sm">
+							Đang tải…
+						</p>
 					)}
 					{payment.data && (
 						<div className="mt-4">
@@ -290,7 +289,7 @@ export function InvoiceDetailRoute() {
 						</div>
 					)}
 					{payLink !== "" && (
-						<p className="mt-3 break-all font-mono text-meta text-muted-fg text-xs">
+						<p className="mt-3 break-all text-muted-foreground text-xs">
 							{payLink}
 						</p>
 					)}
@@ -298,9 +297,9 @@ export function InvoiceDetailRoute() {
 			</div>
 
 			<Card className="mt-6 p-0">
-				<div className="p-6 pb-0 font-mono text-[11px] text-meta uppercase tracking-[0.18em]">
+				<h2 className="px-6 pt-6 font-semibold leading-none">
 					Lịch sử giao dịch
-				</div>
+				</h2>
 				<div className="p-4">
 					<DataTable
 						headers={[
@@ -319,7 +318,7 @@ export function InvoiceDetailRoute() {
 						}
 						rows={txRows.map((tx) => ({
 							cells: [
-								<span key="d" className="font-mono text-meta text-xs">
+								<span key="d" className="text-muted-foreground text-xs">
 									{tx.transactionDate || "—"}
 								</span>,
 								<span key="a" className="font-mono">
@@ -328,17 +327,17 @@ export function InvoiceDetailRoute() {
 								<span key="c" className="font-mono text-xs">
 									{tx.content || "—"}
 								</span>,
-								<span key="r" className="font-mono text-meta text-xs">
+								<span key="r" className="text-muted-foreground text-xs">
 									{tx.referenceCode || "—"}
 								</span>,
-								<span key="t" className="font-mono text-meta text-xs">
+								<span key="t" className="text-muted-foreground text-xs">
 									{formatReceivedAt(tx.createdAt)}
 								</span>,
 							],
 						}))}
 					/>
 					{transactions.isError && (
-						<p className="mt-2 text-muted-fg text-xs">
+						<p className="mt-2 text-muted-foreground text-xs">
 							Không tải được lịch sử giao dịch.
 						</p>
 					)}

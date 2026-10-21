@@ -88,13 +88,15 @@ export function ClassTemplatePicker({
 			{selectedTemplate ? (
 				selectedTemplate.skills.length > 0 ? (
 					<div className="flex flex-wrap items-center gap-1">
-						<span className="text-muted-fg text-sm">Kỹ năng giáo trình</span>
+						<span className="text-muted-foreground text-sm">
+							Kỹ năng giáo trình
+						</span>
 						{selectedTemplate.skills.map((skill) => (
 							<Tag key={skill}>{skill}</Tag>
 						))}
 					</div>
 				) : (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Syllabus chưa khai báo kỹ năng
 					</p>
 				)
@@ -369,7 +371,7 @@ export function AddClassModal({
 						className="rounded-md bg-warn-soft p-3 text-warn text-xs"
 					>
 						<p className="font-medium">
-							<span className="mr-2 bg-hot px-1 font-mono text-[10px] text-accent-on uppercase tracking-widest">
+							<span className="mr-2 inline-flex rounded-md bg-destructive px-2 py-0.5 font-medium text-white text-xs">
 								Trùng lịch
 							</span>
 							Lịch bị trùng với lớp đang học
@@ -433,7 +435,7 @@ export function AddClassModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

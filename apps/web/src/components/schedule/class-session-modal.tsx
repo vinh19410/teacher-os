@@ -137,27 +137,31 @@ export function ClassSessionModal({
 		>
 			<div className="flex flex-col gap-4">
 				{/* Session Metadata */}
-				<div className="flex flex-col gap-3 border-line-soft border-b border-solid pb-4">
+				<div className="flex flex-col gap-3 border-border border-b border-solid pb-4">
 					<div className="flex flex-col gap-1">
-						<span className="font-medium text-muted-fg text-xs">Thời gian</span>
-						<div className="font-mono text-meta text-xs">
+						<span className="font-medium text-muted-foreground text-xs">
+							Thời gian
+						</span>
+						<div className="text-muted-foreground text-xs">
 							{dateDisplay} · {firstRow.time} ({firstRow.dur} phút)
 						</div>
 					</div>
 
 					{firstRow.topic && (
 						<div className="flex flex-col gap-1">
-							<span className="font-medium text-muted-fg text-xs">Chủ đề</span>
+							<span className="font-medium text-muted-foreground text-xs">
+								Chủ đề
+							</span>
 							<div className="text-sm">{firstRow.topic}</div>
 						</div>
 					)}
 
 					{firstRow.zoom && (
 						<div className="flex flex-col gap-1">
-							<span className="font-medium text-muted-fg text-xs">
+							<span className="font-medium text-muted-foreground text-xs">
 								Link Zoom/Meet
 							</span>
-							<div className="break-all font-mono text-meta text-xs">
+							<div className="break-all text-muted-foreground text-xs">
 								{firstRow.zoom}
 							</div>
 						</div>
@@ -167,7 +171,7 @@ export function ClassSessionModal({
 				{/* Dated edits apply to the whole occurrence; legacy edits target one row. */}
 				{editingLesson && editingLesson.status === "upcoming" ? (
 					<div className="flex flex-col gap-2">
-						<div className="font-medium text-muted-fg text-xs">
+						<div className="font-medium text-muted-foreground text-xs">
 							{editingLesson.date ? (
 								"Sửa buổi học cho cả lớp (tất cả học viên)"
 							) : (
@@ -201,7 +205,7 @@ export function ClassSessionModal({
 				) : (
 					/* Student Rows List */
 					<div className="flex flex-col gap-3">
-						<div className="font-medium text-muted-fg text-xs">
+						<div className="font-medium text-muted-foreground text-xs">
 							Danh sách học viên ({sidStates.length})
 						</div>
 						<div className="flex flex-col divide-y divide-line-soft">
@@ -221,11 +225,11 @@ export function ClassSessionModal({
 									>
 										<div className="flex min-w-0 items-center gap-3">
 											<div className="flex flex-col">
-												<span className="font-medium text-fg text-sm">
+												<span className="font-medium text-foreground text-sm">
 													{studentName}
 												</span>
 												{student?.phone && (
-													<span className="font-mono text-[11px] text-muted-fg">
+													<span className="text-[11px] text-muted-foreground tabular-nums">
 														{student.phone}
 													</span>
 												)}
@@ -300,7 +304,7 @@ export function ClassSessionModal({
 				)}
 
 				{/* Modal Footer */}
-				<div className="flex justify-end border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

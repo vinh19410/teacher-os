@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Primitive dùng chung theo v2"
-status: pending
+status: completed
 priority: P1
 effort: "7h"
 dependencies: [2]

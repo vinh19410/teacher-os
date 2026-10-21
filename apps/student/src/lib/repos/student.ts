@@ -1,6 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type ClassmatesResponse,
+	classmatesResponseSchema,
+	type HistoryListResponse,
+	type HistoryMonthResponse,
+	type HistorySkill,
+	type HistoryWeekResponse,
+	historyListResponseSchema,
+	historyMonthResponseSchema,
+	historyWeekResponseSchema,
 	type PaymentInstructions,
+	type PracticeCatalogResponse,
+	type PracticeSkill,
+	practiceCatalogResponseSchema,
+	type StartPracticeResponse,
 	type StudentClassDetail,
 	type StudentInvitationItem,
 	type StudentInvoiceItem,
@@ -8,6 +21,7 @@ import {
 	type StudentOnboardingPayload,
 	type StudentOrgItem,
 	type StudentOverview,
+	startPracticeResponseSchema,
 	studentClassDetailSchema,
 	studentMeSchema,
 	studentOverviewSchema,
@@ -325,6 +339,254 @@ export function useStudentClassDetail(classId: string) {
 		queryKey: ["student", "class", classId],
 		queryFn: () => fetchStudentClassDetail(classId),
 		staleTime: 60_000,
+	});
+}
+
+export async function fetchStudentClassmates(
+	classId: string,
+): Promise<ClassmatesResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/classmates`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	const data = (await res.json()) as unknown;
+	return classmatesResponseSchema.parse(data);
+}
+
+/** Roster "Bạn cùng lớp" (#378) — chỉ bật khi tab Bạn cùng lớp đang mở. */
+export function useClassmates(classId: string, enabled: boolean) {
+	return useQuery({
+		queryKey: ["student", "class", classId, "classmates"],
+		queryFn: () => fetchStudentClassmates(classId),
+		enabled,
+		staleTime: 60_000,
+	});
+}
+
+// --- Tự luyện (phase 10, #378) ---------------------------------------------
+
+/** GET /api/student/practice — catalog đề ready của org đang chọn. */
+export async function fetchPracticeCatalog(filters: {
+	skill: PracticeSkill;
+	collection?: string;
+	q?: string;
+	page?: number;
+}): Promise<PracticeCatalogResponse> {
+	const params = new URLSearchParams({ skill: filters.skill });
+	if (filters.collection) params.set("collection", filters.collection);
+	if (filters.q) params.set("q", filters.q);
+	if (filters.page && filters.page > 1)
+		params.set("page", String(filters.page));
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/practice?${params.toString()}`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{ code },
+		);
+	}
+	const data = (await res.json()) as unknown;
+	return practiceCatalogResponseSchema.parse(data);
+}
+
+export function usePracticeCatalog(filters: {
+	skill: PracticeSkill;
+	collection?: string;
+	q?: string;
+	page?: number;
+}) {
+	return useQuery({
+		queryKey: [
+			"student",
+			"practice",
+			filters.skill,
+			filters.collection ?? "",
+			filters.q ?? "",
+			filters.page ?? 1,
+		],
+		queryFn: () => fetchPracticeCatalog(filters),
+		staleTime: 30_000,
+	});
+}
+
+/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume. */
+export async function startPractice(
+	testId: string,
+): Promise<StartPracticeResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/attempts`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({
+				"Content-Type": "application/json",
+				Origin: window.location.origin,
+			}),
+			credentials: "include",
+			body: JSON.stringify({}),
+		},
+	);
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{ code },
+		);
+	}
+	const data = (await res.json()) as unknown;
+	return startPracticeResponseSchema.parse(data);
+}
+
+export function useStartPractice() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: startPractice,
+		onSuccess: (_data, testId) => {
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "quiz", "practice", testId],
+			});
+		},
+	});
+}
+
+// --- Lịch sử học tập (phase 11, #378) ---------------------------------------
+
+async function historyGet<T>(
+	path: string,
+	parse: (raw: unknown) => T,
+): Promise<T> {
+	const res = await fetch(`${getApiBaseUrl()}${path}`, {
+		method: "GET",
+		headers: getStudentHeaders(),
+		credentials: "include",
+	});
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{ code },
+		);
+	}
+	return parse(await res.json());
+}
+
+/** GET /api/student/history/month?ym= — các ngày có hoạt động của tháng. */
+export async function fetchHistoryMonth(
+	ym: string,
+): Promise<HistoryMonthResponse> {
+	return historyGet(
+		`/api/student/history/month?ym=${encodeURIComponent(ym)}`,
+		(raw) => historyMonthResponseSchema.parse(raw),
+	);
+}
+
+export function useHistoryMonth(ym: string) {
+	return useQuery({
+		queryKey: ["student", "history", "month", ym] as const,
+		queryFn: () => fetchHistoryMonth(ym),
+		staleTime: 30_000,
+	});
+}
+
+/** GET /api/student/history/week?monday= — bảng tuần theo kỹ năng. */
+export async function fetchHistoryWeek(
+	monday: string,
+): Promise<HistoryWeekResponse> {
+	return historyGet(
+		`/api/student/history/week?monday=${encodeURIComponent(monday)}`,
+		(raw) => historyWeekResponseSchema.parse(raw),
+	);
+}
+
+export function useHistoryWeek(monday: string) {
+	return useQuery({
+		queryKey: ["student", "history", "week", monday] as const,
+		queryFn: () => fetchHistoryWeek(monday),
+		staleTime: 30_000,
+	});
+}
+
+/** GET /api/student/history?skill=&page= — danh sách chi tiết phân trang.
+ * `enabled=false` cho phép trang Practice đếm HistoryButton mà không phát
+ * request ở nơi không cần (skill vocabulary). */
+export async function fetchHistoryList(filters: {
+	skill?: HistorySkill;
+	page?: number;
+}): Promise<HistoryListResponse> {
+	const params = new URLSearchParams();
+	if (filters.skill) params.set("skill", filters.skill);
+	if (filters.page && filters.page > 1)
+		params.set("page", String(filters.page));
+	const query = params.toString();
+	return historyGet(`/api/student/history${query ? `?${query}` : ""}`, (raw) =>
+		historyListResponseSchema.parse(raw),
+	);
+}
+
+export function useHistoryList(
+	filters: { skill?: HistorySkill; page?: number },
+	enabled = true,
+) {
+	return useQuery({
+		queryKey: [
+			"student",
+			"history",
+			"list",
+			filters.skill ?? "all",
+			filters.page ?? 1,
+		] as const,
+		queryFn: () => fetchHistoryList(filters),
+		enabled,
+		staleTime: 30_000,
 	});
 }
 

@@ -11,11 +11,11 @@ function NewAssignmentTestRoute() {
 		<div>
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-[12px] text-meta"
+				className="mb-3 flex items-center gap-2 text-muted-foreground text-xs"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] transition-colors hover:text-hot hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 				>
 					Bài tập
 				</Link>

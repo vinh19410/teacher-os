@@ -130,7 +130,7 @@ export default function SignInForm({
 						labelRowExtra={
 							<Link
 								to="/forgot-password"
-								className="-mr-1 rounded-[4px] px-1 py-[6px] text-meta text-xs underline underline-offset-[3px] transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+								className="font-medium text-primary text-xs underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 							>
 								Forgot password?
 							</Link>

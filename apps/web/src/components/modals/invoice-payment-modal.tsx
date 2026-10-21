@@ -4,6 +4,7 @@ import { PaymentQrPanel } from "@teacher-os/ui/components/payments/payment-qr-pa
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { SectionTitle } from "@/components/ui/section-label";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 import {
 	fetchUnmatchedTransactions,
@@ -242,7 +243,9 @@ export function InvoicePaymentModal({
 			{payment.data ? (
 				<PaymentQrPanel data={payment.data} />
 			) : (
-				<p className="p-6 text-center text-muted-fg text-sm">Đang tải…</p>
+				<p className="p-6 text-center text-muted-foreground text-sm">
+					Đang tải…
+				</p>
 			)}
 		</Modal>
 	);
@@ -310,10 +313,10 @@ export function UnmatchedTransactions({
 	const rows = unmatched.data ?? [];
 	return (
 		<div className="mt-8">
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<h2 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
+			<div className="flex flex-wrap items-start justify-between gap-4">
+				<SectionTitle description="Giao dịch ngân hàng SePay chưa gán vào hóa đơn nào">
 					Giao dịch chưa khớp{rows.length > 0 ? ` (${rows.length})` : ""}
-				</h2>
+				</SectionTitle>
 				<Button
 					size="sm"
 					variant="secondary"
@@ -324,7 +327,7 @@ export function UnmatchedTransactions({
 				</Button>
 			</div>
 			{reconcile.kind === "done" && (
-				<p className="mb-3 text-muted-fg text-xs" aria-live="polite">
+				<p className="mb-3 text-muted-foreground text-xs" aria-live="polite">
 					Đối soát xong: khớp {reconcile.matched}, chưa khớp{" "}
 					{reconcile.unmatched}.
 				</p>
@@ -335,14 +338,14 @@ export function UnmatchedTransactions({
 				</p>
 			)}
 			{rows.length === 0 ? (
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Không có giao dịch nào chờ xử lý.
 				</p>
 			) : (
 				<div className="overflow-x-auto">
 					<table className="w-full text-left text-sm">
 						<thead>
-							<tr className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+							<tr className="text-muted-foreground text-xs">
 								<th className="py-2 pr-4 font-normal">Thời gian</th>
 								<th className="py-2 pr-4 font-normal">Số tiền</th>
 								<th className="py-2 pr-4 font-normal">Nội dung</th>
@@ -352,11 +355,11 @@ export function UnmatchedTransactions({
 						</thead>
 						<tbody>
 							{rows.map((tx: PaymentTransactionItem) => (
-								<tr key={tx.id} className="border-line border-t">
-									<td className="py-2 pr-4 font-mono text-meta text-xs">
+								<tr key={tx.id} className="border-border border-t">
+									<td className="py-2 pr-4 text-muted-foreground text-xs">
 										{tx.transactionDate}
 									</td>
-									<td className="py-2 pr-4 font-mono">
+									<td className="py-2 pr-4 tabular-nums">
 										{tx.amount.toLocaleString("vi-VN")}đ
 									</td>
 									<td className="py-2 pr-4">
@@ -371,7 +374,7 @@ export function UnmatchedTransactions({
 										<div className="flex flex-wrap items-center justify-end gap-2">
 											<select
 												aria-label="Chọn hóa đơn để gán"
-												className="rounded-md border border-line bg-surface px-2 py-1 text-xs"
+												className="rounded-md border border-border bg-muted px-2 py-1 text-xs"
 												value={targets[tx.id] ?? ""}
 												onChange={(e) =>
 													setTargets((prev) => ({

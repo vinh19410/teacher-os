@@ -1,4 +1,6 @@
-import { renderToStaticMarkup } from "react-dom/server";
+// @vitest-environment jsdom
+
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const mockOrgs = vi.fn();
@@ -15,32 +17,31 @@ vi.mock("@/lib/repos/student", () => ({
 	setActiveStudentOrgId: vi.fn(),
 }));
 
-import { OrgSwitcher } from "@/components/layout/org-switcher";
+import { useStudentTeam } from "@/components/layout/org-switcher";
+import { setActiveStudentOrgId } from "@/lib/repos/student";
 
-describe("OrgSwitcher", () => {
-	it("renders nothing when org list is empty", () => {
-		mockOrgs.mockReturnValue({
-			data: [],
-			isLoading: false,
-		});
+describe("useStudentTeam", () => {
+	it("returns null when org list is empty or loading", () => {
+		mockOrgs.mockReturnValue({ data: [], isLoading: false });
+		expect(renderHook(() => useStudentTeam()).result.current).toBeNull();
 
-		const html = renderToStaticMarkup(<OrgSwitcher />);
-		expect(html).toBe("");
+		mockOrgs.mockReturnValue({ data: undefined, isLoading: true });
+		expect(renderHook(() => useStudentTeam()).result.current).toBeNull();
 	});
 
-	it("renders single org display without dropdown when user has only 1 org", () => {
+	it("maps the active org into a static single-org team (testid v1)", () => {
 		mockOrgs.mockReturnValue({
 			data: [{ id: "org-1", name: "IELTS Thầy Vinh", isCurrent: true }],
 			isLoading: false,
 		});
-
-		const html = renderToStaticMarkup(<OrgSwitcher />);
-		expect(html).toContain('data-testid="org-switcher-single"');
-		expect(html).toContain("IELTS Thầy Vinh");
-		expect(html).not.toContain('data-testid="org-switcher-trigger"');
+		const team = renderHook(() => useStudentTeam()).result.current;
+		expect(team?.name).toBe("IELTS Thầy Vinh");
+		expect(team?.orgs).toEqual([{ id: "org-1", name: "IELTS Thầy Vinh" }]);
+		// 1 org → TeamSwitcher hiển thị tĩnh với testid single.
+		expect(team?.singleTestId).toBe("org-switcher-single");
 	});
 
-	it("renders dropdown trigger with current org name when user has 2+ orgs", () => {
+	it("exposes the switcher trigger + onOrg for 2+ orgs", () => {
 		mockOrgs.mockReturnValue({
 			data: [
 				{ id: "org-1", name: "IELTS Thầy Vinh", isCurrent: true },
@@ -48,9 +49,12 @@ describe("OrgSwitcher", () => {
 			],
 			isLoading: false,
 		});
-
-		const html = renderToStaticMarkup(<OrgSwitcher />);
-		expect(html).toContain('data-testid="org-switcher-trigger"');
-		expect(html).toContain("IELTS Thầy Vinh");
+		const team = renderHook(() => useStudentTeam()).result.current;
+		expect(team?.triggerTestId).toBe("org-switcher-trigger");
+		expect(team?.menuTestId).toBe("org-switcher-menu");
+		expect(team?.activeOrgId).toBe("org-1");
+		// onOrg nhận ID org (logic setActiveStudentOrgId + invalidate giữ nguyên).
+		team?.onOrg?.("org-2");
+		expect(setActiveStudentOrgId).toHaveBeenCalledWith("org-2");
 	});
 });

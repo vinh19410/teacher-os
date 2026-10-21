@@ -68,9 +68,9 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 		<div
 			data-testid="quiz-review-item"
 			data-verdict={info.verdict}
-			className="mt-2 border-line-soft border-t pt-2 text-[13px]"
+			className="mt-2 border-border border-t pt-2 text-[13px]"
 		>
-			<p className="text-muted-fg">
+			<p className="text-muted-foreground">
 				Đáp án:{" "}
 				<span className="font-medium font-mono text-verdict-correct">
 					{info.key}
@@ -78,12 +78,14 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 				{alts.length > 0 && (
 					<>
 						{" — thay thế: "}
-						<span className="font-mono text-fg">{alts.join(" / ")}</span>
+						<span className="font-mono text-foreground">
+							{alts.join(" / ")}
+						</span>
 					</>
 				)}
 			</p>
 			{info.verdict === "wrong" && info.answer !== null && (
-				<p className="mt-1 text-muted-fg">
+				<p className="mt-1 text-muted-foreground">
 					Bạn trả lời:{" "}
 					<span className="font-mono text-verdict-wrong line-through">
 						{info.answer}
@@ -92,10 +94,10 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 			)}
 			{info.note.trim().length > 0 && (
 				<details className="mt-1.5">
-					<summary className="cursor-pointer select-none font-medium text-hot">
+					<summary className="cursor-pointer select-none font-medium text-primary">
 						Giải thích
 					</summary>
-					<p className="mt-1 whitespace-pre-wrap text-muted-fg leading-[1.55]">
+					<p className="mt-1 whitespace-pre-wrap text-muted-foreground leading-[1.55]">
 						{info.note}
 					</p>
 				</details>

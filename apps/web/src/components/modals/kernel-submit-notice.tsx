@@ -18,7 +18,7 @@ export function KernelSubmitNotice({
 	if (notice.kind === "committed") {
 		return (
 			<div role="status" className="mb-3 flex items-center gap-3">
-				<p className="flex-1 text-muted-fg text-xs">
+				<p className="flex-1 text-muted-foreground text-xs">
 					Đã lưu trên máy chủ nhưng chưa tải lại được dữ liệu.
 				</p>
 				<Button

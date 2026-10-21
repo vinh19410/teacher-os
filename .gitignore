@@ -12,6 +12,7 @@ build
 apps/web/src/routeTree.gen.ts
 local.db
 local.db-*
+local.db.bak-*
 
 # Environment variables
 .env
@@ -84,3 +85,7 @@ node_modules/
 
 # Raw master data (committed copy lives in packages/db/seed-data/vocab-library/)
 raw-data/
+
+# Design v2 compare harness (local only — private repo clone + dev server)
+.cache/design-v2/
+scripts/design-compare/.state/

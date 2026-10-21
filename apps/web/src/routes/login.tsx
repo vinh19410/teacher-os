@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ThemeToggle } from "@teacher-os/ui/components/theme-toggle";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
+import { WebAuthShell } from "@/components/auth/auth-shell";
 import { type AuthMode, AuthTabs } from "@/components/auth/auth-tabs";
-import BrandPanel from "@/components/auth/brand-panel";
 import GoogleOAuthButton from "@/components/google-oauth-button";
 import Loader from "@/components/loader";
 import SignInForm from "@/components/sign-in-form";
@@ -72,74 +70,51 @@ function RouteComponent() {
 	}
 
 	return (
-		<main className="relative grid min-h-[100svh] grid-cols-[minmax(460px,1.12fr)_minmax(420px,1fr)] max-[960px]:grid-cols-1">
-			<div className="absolute top-4 right-4 z-10">
-				<ThemeToggle />
+		<WebAuthShell formLabel="Account access">
+			<div className="grid gap-2 text-center">
+				<h1 className="font-bold text-2xl">
+					{mode === "signin" ? "Welcome back" : "Create your account"}
+				</h1>
+				<p className="text-balance text-muted-foreground text-sm">
+					{mode === "signin"
+						? "Sign in to open your workspace."
+						: "Set up your teacher workspace in a minute."}
+				</p>
 			</div>
-			<BrandPanel />
-			<section
-				aria-label="Account access"
-				className="flex items-center justify-center px-[clamp(20px,3vw,48px)] py-[clamp(28px,4vh,56px)] max-[960px]:items-start max-[420px]:px-4 max-[420px]:pt-6 max-[420px]:pb-10"
+
+			<AuthTabs mode={mode} onChange={changeMode} disabled={anySubmitting} />
+
+			<div
+				aria-hidden="true"
+				className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t"
 			>
-				<div className="fade-in slide-in-from-bottom-2 w-full max-w-[420px] animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none">
-					<div className="mb-[26px] hidden items-center justify-center gap-[10px] max-[960px]:flex">
-						<span className="font-mono text-fg text-xs uppercase tracking-[0.25em]">
-							Teacher<span className="text-hot">/</span>OS
-						</span>
-					</div>
+				<span className="relative z-10 bg-background px-2 text-muted-foreground">
+					Hoặc tiếp tục với
+				</span>
+			</div>
 
-					<h2 className="font-display font-extrabold text-[28px] leading-[1.15] tracking-[-0.02em] max-[420px]:text-[24px]">
-						{mode === "signin" ? "Welcome back" : "Create your account"}
-					</h2>
-					<p className="mt-2 text-muted-fg text-sm">
-						{mode === "signin"
-							? "Sign in to open your workspace."
-							: "Set up your teacher workspace in a minute."}
-					</p>
+			<GoogleOAuthButton />
 
-					<AuthTabs
-						mode={mode}
-						onChange={changeMode}
-						disabled={anySubmitting}
-					/>
+			<SignInForm
+				hidden={mode !== "signin"}
+				onSubmittingChange={setAnySubmitting}
+			/>
+			<SignUpForm
+				hidden={mode !== "signup"}
+				onSubmittingChange={setAnySubmitting}
+			/>
 
-					<GoogleOAuthButton />
-
-					<div
-						aria-hidden="true"
-						className="my-[22px] flex items-center gap-[14px] font-mono text-[10px] text-meta uppercase tracking-[0.18em]"
-					>
-						<span className="h-px flex-1 bg-line" />
-						<span>or use email</span>
-						<span className="h-px flex-1 bg-line" />
-					</div>
-
-					<SignInForm
-						hidden={mode !== "signin"}
-						onSubmittingChange={setAnySubmitting}
-					/>
-					<SignUpForm
-						hidden={mode !== "signup"}
-						onSubmittingChange={setAnySubmitting}
-					/>
-
-					<p className="mt-[22px] text-center text-muted-fg text-sm">
-						{mode === "signin"
-							? "New to Teacher OS?"
-							: "Already have an account?"}{" "}
-						<button
-							type="button"
-							disabled={anySubmitting}
-							onClick={() =>
-								changeMode(mode === "signin" ? "signup" : "signin")
-							}
-							className="-mx-2 rounded-[4px] px-2 py-[6px] text-meta text-sm underline underline-offset-[3px] transition-colors duration-[150ms] hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
-						>
-							{mode === "signin" ? "Create an account" : "Sign in"}
-						</button>
-					</p>
-				</div>
-			</section>
-		</main>
+			<p className="text-center text-muted-foreground text-sm">
+				{mode === "signin" ? "New to Teacher OS?" : "Already have an account?"}{" "}
+				<button
+					type="button"
+					disabled={anySubmitting}
+					onClick={() => changeMode(mode === "signin" ? "signup" : "signin")}
+					className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+				>
+					{mode === "signin" ? "Create an account" : "Sign in"}
+				</button>
+			</p>
+		</WebAuthShell>
 	);
 }

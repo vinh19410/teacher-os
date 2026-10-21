@@ -48,15 +48,13 @@ export function TestPartSlot({
 				<div className="flex items-start gap-3">
 					<span
 						aria-hidden="true"
-						className="font-display font-extrabold text-meta text-xl tabular-nums leading-[1.1]"
+						className="font-semibold text-muted-foreground text-xl tabular-nums leading-[1.1]"
 					>
 						{qStart}
 					</span>
 					<div className="flex flex-col">
-						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
-							{label}
-						</span>
-						<span className="text-muted-fg text-xs">
+						<span className="text-muted-foreground text-xs">{label}</span>
+						<span className="text-muted-foreground text-xs">
 							Chưa gán part — chọn từ ngân hàng hoặc soạn mới.
 						</span>
 					</div>
@@ -86,16 +84,14 @@ export function TestPartSlot({
 					{/* Số câu bắt đầu của slot — số thứ tự extrabold theo design */}
 					<span
 						aria-hidden="true"
-						className="font-display font-extrabold text-xl tabular-nums leading-[1.1]"
+						className="font-semibold text-xl tabular-nums leading-[1.1]"
 					>
 						{qStart}
 					</span>
 					<div className="flex min-w-0 flex-col">
-						<span className="font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
-							{label}
-						</span>
+						<span className="text-muted-foreground text-xs">{label}</span>
 						<strong className="text-sm">{prompt.title}</strong>
-						<span className="text-meta text-xs">
+						<span className="text-muted-foreground text-xs">
 							{typeLabel} · Câu {count > 0 ? `${qStart}–${last}` : qStart} ·{" "}
 							{count} câu
 						</span>

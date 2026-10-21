@@ -1,9 +1,11 @@
+// @vitest-environment jsdom
 import type {
 	StudentClassDetail,
 	StudentClassLesson,
 } from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: (props: {
@@ -147,7 +149,11 @@ const detail: StudentClassDetail = {
 };
 
 describe("ClassDetailView", () => {
-	it("renders the class header, teacher card, lessons and class assignments", () => {
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("renders the class header, teacher card, rings and lessons by default", () => {
 		const html = renderToStaticMarkup(
 			<ClassDetailView detail={detail} todayISO={TODAY} />,
 		);
@@ -158,15 +164,38 @@ describe("ClassDetailView", () => {
 		expect(html).toContain("Buổi 3/12");
 		expect(html).toContain("Cô Lan");
 		expect(html).toContain('href="mailto:lan@example.com"');
+		// Tab mặc định = Hành trình học (Buổi học).
 		expect(html).toContain("Buổi học");
-		expect(html).toContain("Reading Practice 1");
-		expect(html).toContain('href="/learn/quizzes/ca-9"');
+		// Ring stats.
+		expect(html).toContain("Chuyên cần");
+		expect(html).toContain("Band trung bình");
+		// Tabs: 4 tab design-v2 #378.
+		for (const label of [
+			"Hành trình học",
+			"Bài tập",
+			"Giáo trình",
+			"Bạn cùng lớp",
+		]) {
+			expect(html).toContain(label);
+		}
 		expect(html).toContain('href="/"');
 		// Mũi tên "←" giờ là span trang trí (aria-hidden) để accessible name
 		// của link đúng "Trang chủ" (e2e bấm link exact name này).
 		expect(html).toContain("Trang chủ");
 		// Tên lớp chỉ ở header, không lặp lại trên từng bài tập.
 		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
+		// Bài tập nằm trong tab riêng — KHÔNG còn ở view mặc định.
+		expect(html).not.toContain("Reading Practice 1");
+	});
+
+	it("shows assignments after switching to the assignments tab", () => {
+		const utils = render(<ClassDetailView detail={detail} todayISO={TODAY} />);
+		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
+		expect(screen.getByText("Reading Practice 1")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Làm bài: Reading Practice 1" }),
+		).toBeTruthy();
+		utils.unmount();
 	});
 
 	it("shows a placeholder when the class has no teacher", () => {

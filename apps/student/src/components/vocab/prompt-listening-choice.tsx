@@ -56,8 +56,8 @@ export function PromptListeningChoice({
 
 	return (
 		<div data-testid="vocab-prompt-listeningChoice" className="space-y-6">
-			<div className="neu flex flex-col items-center gap-4 rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="flex flex-col items-center gap-4 rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Nghe phát âm và chọn từ đúng
 				</p>
 				{audioUrl ? (
@@ -67,15 +67,15 @@ export function PromptListeningChoice({
 					/>
 				) : (
 					<div className="flex items-center gap-3">
-						<Volume2Icon aria-hidden className="size-6 text-hot" />
+						<Volume2Icon aria-hidden className="size-6 text-primary" />
 						{audioError ? (
-							<span className="font-mono text-meta text-xs">
+							<span className="font-mono text-muted-foreground text-xs">
 								Không tải được âm thanh phát âm
 							</span>
 						) : (
 							<span
 								data-testid="vocab-audio-loading"
-								className="font-mono text-meta text-xs"
+								className="font-mono text-muted-foreground text-xs"
 							>
 								Đang tải âm thanh…
 							</span>
@@ -100,8 +100,8 @@ export function PromptListeningChoice({
 							onClick={() => onSelectOption(opt)}
 							className={`rounded-md px-4 py-3.5 text-left font-medium text-sm transition-colors duration-150 ${
 								isSelected
-									? "neu-in text-hot"
-									: "neu-sm text-fg hover:border-fg"
+									? "rounded-md bg-muted text-primary"
+									: "rounded-md border border-input bg-transparent text-foreground hover:border-primary"
 							} disabled:pointer-events-none disabled:opacity-60`}
 						>
 							{opt}

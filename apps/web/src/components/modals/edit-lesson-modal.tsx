@@ -146,7 +146,7 @@ export function EditLessonModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

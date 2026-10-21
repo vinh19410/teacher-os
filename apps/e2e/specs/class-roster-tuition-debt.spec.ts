@@ -94,7 +94,7 @@ async function createInvoice(
 
 function invoiceRegion(page: Page) {
 	return page
-		.locator("div.mt-8")
+		.getByTestId("tuition-invoices-section")
 		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) });
 }
 

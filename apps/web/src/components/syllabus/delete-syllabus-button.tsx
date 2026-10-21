@@ -37,16 +37,16 @@ export function DeleteSyllabusButton({
 				onClose={busy ? () => undefined : () => setConfirmOpen(false)}
 				title="Xóa template giáo trình?"
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					{inUse > 0
 						? `${inUse} lớp đang dùng template "${name}" sẽ KHÔNG bị ảnh hưởng — mỗi lớp đã nhập giữ nguyên bản sao giáo trình của riêng mình (cả tiến độ buổi học).`
 						: `Chưa có lớp nào đang dùng template "${name}".`}
 				</p>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Lớp mới sẽ không thể chọn template này nữa. Hành động không thể hoàn
 					tác.
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

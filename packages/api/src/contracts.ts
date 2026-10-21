@@ -1652,6 +1652,182 @@ export const studentClassDetailSchema = z.object({
 });
 export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
 
+/** Roster "Bạn cùng lớp" — CHỈ tên + chữ tắt, không bao giờ trả
+ * email/band/học phí/điểm (quy ước quyền riêng lớp học #378). */
+export const classmatesResponseSchema = z.array(
+	z.object({
+		id: z.string(),
+		name: z.string(),
+		initials: z.string(),
+		isMe: z.boolean(),
+	}),
+);
+export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
+
+// --- Tự luyện (phase 10, #378) — /api/student/practice domain --------------
+// KHÔNG có "dictation": kỹ năng này chưa có đề trong thư viện.
+
+/** Kỹ năng có đề luyện tập trong thư viện `assignment_test`. */
+export const PRACTICE_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+] as const;
+export type PracticeSkill = (typeof PRACTICE_SKILLS)[number];
+
+/** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
+export const PRACTICE_CATALOG_PAGE_SIZE = 12;
+
+/** Kết quả gần nhất của CHÍNH học viên này với một đề luyện tập. `score`
+ * là chuỗi hiển thị sẵn ("8/13" tự chấm, "Band 6.5" đã chấm Writing/
+ * Speaking), null khi đề tự chấm mà server không derive được. */
+export const practiceAttemptSummarySchema = z
+	.object({
+		/** ISO datetime lần nộp gần nhất. */
+		submittedAt: z.string(),
+		/** "graded" = giáo viên đã chấm (gradeScores có mặt). */
+		status: z.enum(["submitted", "graded"]),
+		score: z.string().nullable(),
+	})
+	.strict();
+export type PracticeAttemptSummary = z.infer<
+	typeof practiceAttemptSummarySchema
+>;
+
+/** Một đề luyện tập trong catalog — MỘT row `assignment_test` status ready. */
+export const practiceCatalogItemSchema = z
+	.object({
+		testId: z.string(),
+		title: z.string(),
+		skill: z.enum(PRACTICE_SKILLS),
+		/** Số part đã ghép trong đề (số slot `assignment_test_part`). */
+		parts: z.number().int().min(1),
+		/** Bộ sưu tập nguồn — null khi giáo viên không đặt. */
+		collection: z.string().nullable(),
+		testGroup: z.string().nullable(),
+		/** Thời lượng theo phút (từ `timeLimitSeconds`) — null = không giới hạn. */
+		durationMin: z.number().int().nullable(),
+		/** Lượt tự luyện gần nhất của chính học viên — null = chưa làm. */
+		lastAttempt: practiceAttemptSummarySchema.nullable(),
+	})
+	.strict();
+export type PracticeCatalogItem = z.infer<typeof practiceCatalogItemSchema>;
+
+/** GET /api/student/practice?skill=&collection=&q=&page= — phân trang 12. */
+export const practiceCatalogResponseSchema = z
+	.object({
+		items: z.array(practiceCatalogItemSchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type PracticeCatalogResponse = z.infer<
+	typeof practiceCatalogResponseSchema
+>;
+
+/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume
+ * lượt đang làm (cùng shape với start attempt luồng assignment). */
+export const startPracticeResponseSchema = z
+	.object({ attemptId: z.string().min(1) })
+	.strict();
+export type StartPracticeResponse = z.infer<typeof startPracticeResponseSchema>;
+
+// --- Lịch sử học tập (phase 11, #378) — /api/student/history domain --------
+// Nguồn: quiz_attempt đã nộp (practice + assignment) và vocab_review_log
+// (sessionKind='review'), gom ngày theo giờ Việt Nam (vietnam-date.ts).
+// KHÔNG có Dictation/Mock test — hai loại này chưa có dữ liệu thật.
+
+/** Kỹ năng hiển thị trên trang Lịch sử: 4 skill có đề + Từ vựng (SRS). */
+export const HISTORY_SKILLS = [...PRACTICE_SKILLS, "vocabulary"] as const;
+export type HistorySkill = (typeof HISTORY_SKILLS)[number];
+
+/** Số dòng mỗi trang danh sách chi tiết. */
+export const HISTORY_PAGE_SIZE = 20;
+
+/** Một ngày có hoạt động. Chỉ ngày count > 0 mới xuất hiện trong mảng —
+ * client dựng lưới tháng và coi ngày vắng mặt là 0. */
+export const historyDaySchema = z
+	.object({
+		/** yyyy-mm-dd theo giờ Việt Nam. */
+		date: z.string(),
+		/** Số hoạt động: lượt nộp bài + thẻ từ vựng đã ôn. */
+		count: z.number().int().min(0),
+		/** Tổng phút học (làm bài + ôn từ) rơi vào ngày này. */
+		minutes: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryDay = z.infer<typeof historyDaySchema>;
+
+/** GET /api/student/history/month?ym=yyyy-mm (mặc định tháng hiện tại VN). */
+export const historyMonthResponseSchema = z
+	.object({
+		ym: z.string(),
+		days: z.array(historyDaySchema),
+	})
+	.strict();
+export type HistoryMonthResponse = z.infer<typeof historyMonthResponseSchema>;
+
+/** Một dòng bảng tuần: đếm hoạt động theo 7 ngày Thứ 2 → Chủ nhật. */
+export const historyWeekRowSchema = z
+	.object({
+		skill: z.enum(HISTORY_SKILLS),
+		days: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekRow = z.infer<typeof historyWeekRowSchema>;
+
+/** GET /api/student/history/week?monday=yyyy-mm-dd — ngày lẻ được chuẩn hóa
+ * về Thứ Hai của tuần chứa nó; `minutes` là tổng phút mỗi ngày cho cột
+ * "Thời gian" của WeekTable. */
+export const historyWeekResponseSchema = z
+	.object({
+		monday: z.string(),
+		rows: z.array(historyWeekRowSchema),
+		minutes: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekResponse = z.infer<typeof historyWeekResponseSchema>;
+
+/** Nguồn một dòng lịch sử: luyện tập / bài tập lớp / ôn từ vựng. */
+export const HISTORY_ENTRY_KINDS = ["practice", "assignment", "vocab"] as const;
+export type HistoryEntryKind = (typeof HISTORY_ENTRY_KINDS)[number];
+
+/** Một dòng trong danh sách chi tiết. Vocab gộp theo ngày: 1 dòng
+ * "Từ vựng" = mọi thẻ đã ôn trong ngày đó (id `vocab-<date>`). */
+export const historyEntrySchema = z
+	.object({
+		id: z.string(),
+		kind: z.enum(HISTORY_ENTRY_KINDS),
+		skill: z.enum(HISTORY_SKILLS),
+		title: z.string(),
+		/** yyyy-mm-dd giờ Việt Nam của thời điểm nộp/ôn. */
+		date: z.string(),
+		/** ISO datetime — dùng sắp xếp mới nhất trước. */
+		submittedAt: z.string(),
+		minutes: z.number().int().min(0),
+		/** Chuỗi hiển thị sẵn ("Band 6.0", "8/13") — null = chưa có điểm. */
+		score: z.string().nullable(),
+		/** auto = tự chấm · graded = giáo viên đã chấm · awaiting = chờ chấm. */
+		status: z.enum(["auto", "graded", "awaiting"]),
+		/** Attempt nguồn để mở xem lại (Writing đã chấm) — vocab luôn null. */
+		attemptId: z.string().nullable(),
+	})
+	.strict();
+export type HistoryEntry = z.infer<typeof historyEntrySchema>;
+
+/** GET /api/student/history?skill=&page= — mới nhất trước, 20 dòng/trang. */
+export const historyListResponseSchema = z
+	.object({
+		entries: z.array(historyEntrySchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryListResponse = z.infer<typeof historyListResponseSchema>;
+
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
 export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
@@ -1818,6 +1994,10 @@ export const teacherSubmissionSchema = z
 		/** Highlight + ghi chú trên essay (#332) — server luôn gửi; optional
 		 * để bundle mới + server cũ không throw. Speaking luôn `[]`. */
 		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Bài tự luyện (phase 10, #378): KHÔNG gắn lớp — `classId`/
+		 * `classAssignmentId` là chuỗi rỗng, `className` là nhãn "Luyện tập",
+		 * `due` rỗng. Optional để bundle cũ + server mới không throw. */
+		practice: z.literal(true).optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
@@ -1968,6 +2148,10 @@ export const quizAttemptSummarySchema = z
 		/** Highlight + ghi chú giáo viên (#332) — server CHỈ gửi khi đã chấm +
 		 * Writing + có ít nhất 1 highlight, cùng lý do strict của `grade`. */
 		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Lượt tự luyện (phase 10) — server CHỈ gửi khi attempt practice;
+		 * `testId` là đề thư viện nguồn để client dựng URL take/review. */
+		practice: z.literal(true).optional(),
+		testId: z.string().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

@@ -71,12 +71,12 @@ export function TableGridEditor({
 	};
 
 	return (
-		<div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-3">
+		<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="font-medium text-muted-fg text-xs">
+				<p className="font-medium text-muted-foreground text-xs">
 					Soạn bảng — nhập ô rồi bấm nút gạch dưới để biến ô thành chỗ trống
 				</p>
-				<span className="font-mono text-meta text-xs">
+				<span className="text-muted-foreground text-xs">
 					{grid.blanks.length}/40 ô trống · Số câu sẽ tạo: {segments.length}
 				</span>
 			</div>
@@ -168,10 +168,10 @@ export function TableGridEditor({
 													aria-label={`Chỗ trống ô hàng ${row + 1} cột ${col + 1}`}
 													onClick={() => setActiveCell([row, col])}
 													className={cn(
-														"w-full rounded-sm border border-fg border-dashed bg-bg px-3 py-[10px] font-mono text-sm",
+														"w-full rounded-sm border border-primary border-dashed bg-background px-3 py-[10px] font-mono text-sm",
 														activeCell?.[0] === row &&
 															activeCell?.[1] === col &&
-															"outline outline-fg",
+															"outline outline-primary",
 													)}
 												>
 													____
@@ -241,9 +241,9 @@ export function TableGridEditor({
 				<div
 					role="dialog"
 					aria-label="Sửa chỗ trống bảng"
-					className="flex flex-col gap-2 rounded-md border border-line bg-bg p-3"
+					className="flex flex-col gap-2 rounded-md border border-border bg-background p-3"
 				>
-					<p className="font-medium text-muted-fg text-xs">
+					<p className="font-medium text-muted-foreground text-xs">
 						Ô hàng {activeBlank.row + 1} — cột {activeBlank.col + 1}
 					</p>
 					<Input
@@ -298,7 +298,7 @@ export function TableGridEditor({
 			)}
 
 			{issues.map((issue) => (
-				<p key={issue} role="alert" className="text-danger text-xs">
+				<p key={issue} role="alert" className="text-destructive text-xs">
 					{issue}
 				</p>
 			))}
@@ -313,7 +313,7 @@ export function TableGridEditor({
 					Áp vào bảng
 				</Button>
 				{willReplace && (
-					<span className="text-[11px] text-meta">
+					<span className="text-[11px] text-muted-foreground">
 						Áp vào bảng sẽ thay thế {items.length} câu hiện có.
 					</span>
 				)}

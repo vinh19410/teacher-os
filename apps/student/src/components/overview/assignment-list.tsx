@@ -87,7 +87,7 @@ export function AssignmentList({
 		<section className={className}>
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				{!hideHeading && (
-					<h2 className="font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+					<h2 className="font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
 						Bài tập
 					</h2>
 				)}
@@ -97,7 +97,7 @@ export function AssignmentList({
 				<div
 					role="tablist"
 					aria-label="Lọc bài tập theo trạng thái"
-					className="neu-in inline-flex flex-wrap items-center gap-1 rounded-lg p-1.5 text-[13px]"
+					className="inline-flex flex-wrap items-center gap-1 rounded-lg rounded-md bg-muted p-1.5 text-[13px]"
 				>
 					{TABS.map((tab) => {
 						const isSelected = activeTab === tab.id;
@@ -115,15 +115,15 @@ export function AssignmentList({
 								}}
 								className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
 									isSelected
-										? "neu-sm font-medium text-hot"
-										: "text-muted-fg hover:text-fg"
+										? "rounded-md border border-input bg-transparent font-medium text-primary"
+										: "text-muted-foreground hover:text-foreground"
 								}`}
 							>
 								<span>{tab.label}</span>
 								<span
 									aria-hidden="true"
 									className={`rounded-full px-1.5 py-0.2 font-mono text-[11px] ${
-										isSelected ? "text-hot" : "text-muted-fg"
+										isSelected ? "text-primary" : "text-muted-foreground"
 									}`}
 								>
 									{count}

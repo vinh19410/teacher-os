@@ -88,7 +88,7 @@ export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 				onSubmit={handleSubmit}
 				className="flex flex-col gap-4 py-2"
 			>
-				<p className="text-meta text-sm">
+				<p className="text-muted-foreground text-sm">
 					Nhập địa chỉ email của học viên. Học viên sẽ nhận được thông báo tại
 					icon chuông trên Student Portal để chấp nhận vào lớp học của bạn.
 				</p>

@@ -837,6 +837,10 @@ test.describe("Student quiz take & review", () => {
 		await signIn(page);
 
 		await openPaper(page, titleSplit);
+		// "Bắt đầu" redirect full-document + mirror reconciliation có thể điều
+		// hướng lại ngay sau khi paper hiện — chờ load settle trước khi wheel.
+		await page.waitForLoadState("load");
+		await page.waitForTimeout(500);
 		const passagePane = page.getByTestId("reading-passage-pane");
 		const workPane = page.getByTestId("reading-work-pane");
 		await expect(passagePane).toBeVisible();
@@ -850,7 +854,23 @@ test.describe("Student quiz take & review", () => {
 		// Cuộn độc lập (input wheel thật của user): cuộn pane đọc — pane làm
 		// và trang đứng yên; rồi cuộn pane làm — pane đọc giữ nguyên vị trí.
 		await passagePane.hover();
-		await page.mouse.wheel(0, 600);
+		// Chromium nuốt wheel nếu dispatch trước khi renderer commit frame sau
+		// mousemove — ép 2 rAF để frame settle rồi mới gửi wheel.
+		await passagePane.evaluate(
+			() =>
+				new Promise((r) =>
+					requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
+				),
+		);
+		// Chromium đôi khi nuốt wheel CDP đầu tiên sau mousemove (scroll
+		// latching chưa setup) — gửi wheel liên tục tới khi pane cuộn.
+		await expect
+			.poll(async () => {
+				await page.mouse.wheel(0, 200);
+				await page.waitForTimeout(150);
+				return passagePane.evaluate((el) => el.scrollTop);
+			})
+			.toBeGreaterThan(0);
 		await expect
 			.poll(() => passagePane.evaluate((el) => el.scrollTop))
 			.toBeGreaterThan(0);
@@ -860,9 +880,18 @@ test.describe("Student quiz take & review", () => {
 		).toBe(0);
 		const passageScrolled = await passagePane.evaluate((el) => el.scrollTop);
 		await workPane.hover();
-		await page.mouse.wheel(0, 600);
+		await workPane.evaluate(
+			() =>
+				new Promise((r) =>
+					requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
+				),
+		);
 		await expect
-			.poll(() => workPane.evaluate((el) => el.scrollTop))
+			.poll(async () => {
+				await page.mouse.wheel(0, 200);
+				await page.waitForTimeout(150);
+				return workPane.evaluate((el) => el.scrollTop);
+			})
 			.toBeGreaterThan(0);
 		expect(await passagePane.evaluate((el) => el.scrollTop)).toBe(
 			passageScrolled,

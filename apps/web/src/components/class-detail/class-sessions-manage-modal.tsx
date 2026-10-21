@@ -75,18 +75,18 @@ export function ClassSessionsManageModal({
 	return (
 		<Modal open={open} onClose={onClose} title="Quản lý buổi của lớp">
 			{!validCopy ? (
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Lớp chưa có bản sao giáo trình hợp lệ để quản lý buổi.
 				</p>
 			) : (
 				<div className="flex flex-col gap-4">
-					<p className="text-muted-fg text-xs">
+					<p className="text-muted-foreground text-xs">
 						Thứ tự buổi quyết định chủ đề hiển thị trên lịch lớp.
 					</p>
 
 					<div className="max-h-[60vh] overflow-y-auto pr-1">
 						{sy.modules.length === 0 && (
-							<div className="rounded-lg border border-line-soft border-solid bg-bg p-6 text-center text-muted-fg">
+							<div className="rounded-lg border border-border border-solid bg-background p-6 text-center text-muted-foreground">
 								<p className="text-sm">
 									Bản sao chưa có module nào. Nhấn{" "}
 									<strong>+ Thêm module</strong> để bổ sung.
@@ -97,16 +97,17 @@ export function ClassSessionsManageModal({
 							return (
 								<div
 									key={m.id}
-									className="mb-4 overflow-hidden rounded-lg border border-line-soft border-solid bg-bg"
+									data-testid="module-card"
+									className="mb-4 overflow-hidden rounded-lg border border-border bg-card"
 								>
-									<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4">
+									<div className="flex flex-wrap items-center justify-between gap-4 border-border border-b bg-muted/40 px-5 py-4">
 										<h3 className="font-semibold text-sm">{m.title}</h3>
 										<div className="flex flex-wrap items-center gap-3">
 											<button
 												type="button"
 												onClick={() => setEditModuleId(m.id)}
 												disabled={busy}
-												className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+												className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 											>
 												Sửa
 											</button>
@@ -125,14 +126,14 @@ export function ClassSessionsManageModal({
 										{m.lessons.map((l, li) => (
 											<div
 												key={l.id}
-												className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[20px_1fr]"
+												className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-border border-b border-solid px-5 py-3 last:border-b-0 hover:bg-muted/40 max-app:grid-cols-[20px_1fr]"
 											>
 												<span
 													className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
 												/>
 												<div>
 													<div className="font-medium text-sm">{l.title}</div>
-													<div className="mt-0.5 text-[11px] text-muted-fg">
+													<div className="mt-0.5 text-[11px] text-muted-foreground">
 														{l.materials}
 													</div>
 												</div>
@@ -147,7 +148,7 @@ export function ClassSessionsManageModal({
 															})
 														}
 														disabled={busy}
-														className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+														className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 													>
 														Sửa
 													</button>
@@ -168,7 +169,7 @@ export function ClassSessionsManageModal({
 										<button
 											type="button"
 											onClick={() => setAddLessonModuleId(m.id)}
-											className="mt-2 w-full px-5 pb-3 text-left font-medium text-hot text-xs hover:text-accent-active"
+											className="mt-2 w-full px-5 pb-3 text-left font-medium text-primary text-xs hover:text-primary"
 										>
 											+ Thêm buổi học
 										</button>
@@ -178,7 +179,7 @@ export function ClassSessionsManageModal({
 						})}
 					</div>
 
-					<div className="flex justify-end border-line-soft border-t border-solid pt-3">
+					<div className="flex justify-end border-border border-t border-solid pt-3">
 						<Button
 							variant="secondary"
 							size="sm"

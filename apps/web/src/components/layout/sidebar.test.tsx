@@ -3,35 +3,24 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
-		signOut: vi.fn(),
-	},
-}));
-
-const session: { user: Record<string, unknown> } = { user: {} };
-
 vi.mock("@tanstack/react-router", () => ({
-	useNavigate: () => vi.fn(),
-	useRouteContext: () => ({ session: { data: { user: session.user } } }),
-	redirect: (opts: unknown) => opts,
 	Link: ({
 		to,
 		children,
-		onClick: _onClick,
 		...rest
-	}: {
-		to: string;
-		children?: React.ReactNode;
-		onClick?: unknown;
-	} & Record<string, unknown>) => (
+	}: { to: string; children?: React.ReactNode } & Record<string, unknown>) => (
 		<a href={to} {...rest}>
 			{children}
 		</a>
 	),
 }));
 
-import { extractUserPlan, Sidebar } from "./sidebar";
+import {
+	extractUserPlan,
+	TEACHER_NAV,
+	TeacherShellLink,
+	teacherActiveKey,
+} from "./sidebar";
 
 describe("extractUserPlan", () => {
 	it("returns null for non-object, null, or undefined user", () => {
@@ -76,80 +65,85 @@ describe("extractUserPlan", () => {
 	});
 });
 
-describe("Sidebar profile footer", () => {
-	function renderSidebar(user: Record<string, unknown>) {
-		session.user = user;
-		return renderToStaticMarkup(
-			<Sidebar open={false} onNavigate={() => {}} collapsed={false} />,
-		);
-	}
+describe("TEACHER_NAV v2", () => {
+	const ITEM_BY_HREF: Record<string, { label: string }> = Object.fromEntries(
+		TEACHER_NAV.flatMap((group) => group.items).map((item) => [
+			item.href,
+			{ label: item.label },
+		]),
+	);
 
-	function profileLink(html: string): HTMLAnchorElement {
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		const link = doc.querySelector('a[aria-label="Hồ sơ cá nhân"]');
-		if (!link) throw new Error("profile link not rendered");
-		return link as HTMLAnchorElement;
-	}
-
-	it("renders no plan badge for a user without a plan", () => {
-		const html = renderSidebar({ name: "Cô Lan", email: "lan@example.com" });
-		expect(html).not.toContain('data-testid="sidebar-user-plan"');
-		expect(html).not.toMatch(/>\s*PRO\s*<\/span>/);
+	it("groups teaching, IELTS and business items with app labels kept", () => {
+		expect(TEACHER_NAV.map((group) => group.group)).toEqual([
+			"Giảng dạy",
+			"IELTS",
+			"Kinh doanh",
+		]);
+		// Accessible name e2e: /syllabus và /tuition giữ nhãn app đang có.
+		expect(ITEM_BY_HREF["/syllabus"]?.label).toBe("Syllabus");
+		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Doanh thu");
+		expect(ITEM_BY_HREF["/dashboard"]?.label).toBe("Tổng quan");
+		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
+		expect(ITEM_BY_HREF["/students"]?.label).toBe("Học viên");
+		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch dạy");
+		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
+		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
+		expect(ITEM_BY_HREF["/profile"]?.label).toBe("Hồ sơ");
 	});
 
-	it("renders the user's own plan in the badge", () => {
-		const link = profileLink(
-			renderSidebar({ name: "Cô Lan", email: "lan@example.com", tier: "VIP" }),
+	it("moves 'Từ vựng' into the IELTS group per design v2 (supersedes #363 DOM order)", () => {
+		const groupByKey: Record<string, string> = Object.fromEntries(
+			TEACHER_NAV.flatMap((group) =>
+				group.items.map((item) => [item.key, group.group]),
+			),
 		);
-		const badge = link.querySelector('[data-testid="sidebar-user-plan"]');
-		expect(badge?.textContent).toBe("VIP");
+		expect(groupByKey.vocab).toBe("IELTS");
+		expect(groupByKey.classes).toBe("Giảng dạy");
+		expect(groupByKey.assignments).toBe("IELTS");
 	});
 
-	it("exposes the full name and email on hover for truncated text", () => {
-		const link = profileLink(
-			renderSidebar({ name: "Nguyễn Thị Lan", email: "lan@example.com" }),
+	it("gates the reports item behind PARENT_REPORTS_ENABLED", () => {
+		const reports = TEACHER_NAV.flatMap((group) => group.items).find(
+			(item) => item.key === "reports",
 		);
-		expect(
-			link.querySelector('span[title="Nguyễn Thị Lan"]')?.textContent,
-		).toBe("Nguyễn Thị Lan");
-		const email = link.querySelector('[data-testid="sidebar-user-email"]');
-		expect(email?.getAttribute("title")).toBe("lan@example.com");
-		expect(email?.textContent).toBe("lan@example.com");
+		expect(reports).toBeDefined();
+		expect(reports?.enabled).toBe(false);
+	});
+});
+
+describe("teacherActiveKey", () => {
+	it("maps / and /dashboard to the overview item", () => {
+		expect(teacherActiveKey("/")).toBe("dashboard");
+		expect(teacherActiveKey("/dashboard")).toBe("dashboard");
 	});
 
-	it("links the footer to /profile with an accessible name and hover title", () => {
-		const link = profileLink(
-			renderSidebar({ name: "Nguyễn Thị Lan", email: "lan@example.com" }),
-		);
-		expect(link.getAttribute("href")).toBe("/profile");
-		expect(link.getAttribute("title")).toBe("Nguyễn Thị Lan (lan@example.com)");
+	it("matches child routes by prefix", () => {
+		expect(teacherActiveKey("/classes/abc")).toBe("classes");
+		expect(teacherActiveKey("/students/u-1")).toBe("students");
+		expect(teacherActiveKey("/assignments/new")).toBe("assignments");
 	});
 
-	it("falls back to a generic teacher name when the user has none", () => {
-		const link = profileLink(
-			renderSidebar({ name: "", email: "x@example.com" }),
-		);
-		expect(link.querySelector('span[title="Giáo viên"]')).not.toBeNull();
+	it("returns empty for routes outside the nav (grading detail)", () => {
+		expect(teacherActiveKey("/grading/a-1")).toBe("");
+		expect(teacherActiveKey("/login")).toBe("");
 	});
+});
 
-	it("lets the profile link take the remaining row width", () => {
-		const link = profileLink(
-			renderSidebar({ name: "Cô Lan", email: "lan@example.com" }),
+describe("TeacherShellLink", () => {
+	it("renders an anchor through the router with the shell classes", () => {
+		const html = renderToStaticMarkup(
+			<TeacherShellLink
+				href="/classes"
+				className="h-8 rounded-md"
+				aria-current="page"
+				onClick={() => {}}
+			>
+				Lớp học
+			</TeacherShellLink>,
 		);
-		expect(link.className.split(" ")).toEqual(
-			expect.arrayContaining(["flex-1", "min-w-0"]),
-		);
-	});
-
-	it("renders 'Từ vựng' (/vocab) above 'Lớp học' (/classes) in section 'Giảng dạy' (#363)", () => {
-		const html = renderSidebar({ name: "Cô Lan", email: "lan@example.com" });
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		const links = Array.from(doc.querySelectorAll("nav a"));
-		const hrefs = links.map((a) => a.getAttribute("href"));
-		const vocabIdx = hrefs.indexOf("/vocab");
-		const classesIdx = hrefs.indexOf("/classes");
-		expect(vocabIdx).toBeGreaterThanOrEqual(0);
-		expect(classesIdx).toBeGreaterThan(vocabIdx);
-		expect(links[vocabIdx]?.textContent).toContain("Từ vựng");
+		expect(html).toContain('href="/classes"');
+		expect(html).toContain('aria-current="page"');
+		expect(html).toContain("h-8 rounded-md");
+		expect(html).toContain("Lớp học");
 	});
 });

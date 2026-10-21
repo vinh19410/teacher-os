@@ -179,8 +179,10 @@ describe("TestHeaderForm render (Task 3.4)", () => {
 		expect(html).toContain('value="Cambridge IELTS 18"');
 		expect(html).toContain('value="Mock nội bộ"');
 		expect(html).toContain('value="TEST 5"');
-		// Skill select không khóa ở create mode.
-		expect(html).not.toContain("disabled");
+		// Skill select không khóa ở create mode — class v2 input mang chuỗi
+		// `disabled:*` (utility, không render attribute) nên so sánh bằng
+		// attribute rỗng `disabled=""`.
+		expect(html).not.toContain('disabled=""');
 	});
 
 	it("skillLocked khóa preset select (edit mode — skill immutable server)", () => {

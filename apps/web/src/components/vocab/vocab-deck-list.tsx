@@ -29,21 +29,23 @@ function DeckListRow({
 	return (
 		<div
 			data-testid={`vocab-deck-row-${deck.id}`}
-			className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+			className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
 		>
 			<div className="min-w-0">
 				<div className="flex flex-wrap items-center gap-2">
-					<p className="truncate font-medium text-fg text-sm">{deck.title}</p>
+					<p className="truncate font-medium text-foreground text-sm">
+						{deck.title}
+					</p>
 					<span
 						data-testid={`vocab-deck-source-badge-${deck.id}`}
-						className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+						className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 					>
 						{sourceBadgeLabel}
 					</span>
 					{deck.sourceLibraryDeckId ? (
 						<span
 							data-testid={`vocab-deck-library-badge-${deck.id}`}
-							className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+							className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 						>
 							Thư viện
 						</span>
@@ -51,13 +53,13 @@ function DeckListRow({
 					{pendingCount > 0 ? (
 						<span
 							data-testid={`vocab-deck-pending-badge-${deck.id}`}
-							className="neu-sm rounded px-1.5 py-0.5 font-mono text-[10px] text-hot uppercase tracking-widest"
+							className="rounded rounded-md border border-input bg-transparent px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
 						>
 							{pendingCount} chờ
 						</span>
 					) : null}
 				</div>
-				<p className="mt-0.5 font-mono text-[11px] text-muted-fg">
+				<p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
 					{deck.wordCount} từ · {deck.lang}
 				</p>
 			</div>
@@ -190,13 +192,13 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			</div>
 
 			{decks.length === 0 ? (
-				<p className="mt-4 text-muted-fg text-sm">
+				<p className="mt-4 text-muted-foreground text-sm">
 					{isHubMode
 						? "Chưa có bộ từ vựng nào. Tạo bộ từ mới hoặc thêm từ thư viện để gợi ý cho học viên."
 						: "Chưa có bộ từ vựng nào cho lớp này. Tạo bộ từ để học sinh học và ôn tập theo 5 cấp độ trí nhớ."}
 				</p>
 			) : (
-				<div className="mt-4 divide-y divide-line rounded-md border border-line">
+				<div className="mt-4 divide-y divide-border rounded-md border border-border">
 					{decks.map((deck) => {
 						const sourceBadgeLabel =
 							deck.classId === null
@@ -241,7 +243,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 					</>
 				}
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					{isHubMode
 						? "Bộ từ vựng độc lập thuộc trung tâm — bạn có thể gợi ý cho từng học viên bất kỳ lúc nào."
 						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
@@ -278,7 +280,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 					</>
 				}
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Bộ từ "{deletingDeck?.title}" và toàn bộ từ vựng, tiến độ học của học
 					sinh trên bộ này sẽ bị xoá vĩnh viễn. Lịch sử ôn tập không bị mất.
 				</p>

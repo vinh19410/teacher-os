@@ -42,8 +42,8 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 		expect(html).toContain('data-answered="true"');
 		expect(html).toContain('data-answered="false"');
 		expect(html).toContain("bg-primary text-primary-foreground");
-		// Unanswered: surface + line border.
-		expect(html).toContain("border-line bg-surface");
+		// Unanswered: nền trang + viền hairline (v2).
+		expect(html).toContain("border-border bg-background");
 		// Số câu + aria label trạng thái.
 		expect(html).toContain('aria-label="Câu 1 — đã trả lời"');
 		expect(html).toContain('aria-label="Câu 2 — chưa trả lời"');
@@ -101,7 +101,7 @@ describe("QuizNavigator — trạng thái nút câu", () => {
 			/>,
 		);
 		expect(html).toContain('aria-current="true"');
-		expect(html).toContain("outline-hot");
+		expect(html).toContain("outline-primary");
 	});
 });
 

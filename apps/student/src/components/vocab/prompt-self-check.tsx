@@ -21,26 +21,28 @@ export function PromptSelfCheck({
 }) {
 	return (
 		<div data-testid="vocab-prompt-selfCheck" className="space-y-6">
-			<div className="neu rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Tự kiểm tra trí nhớ
 				</p>
 				<p
 					data-testid="vocab-prompt-question"
-					className="mt-3 font-display font-extrabold text-3xl text-fg tracking-[-0.03em]"
+					className="mt-3 font-extrabold text-3xl text-foreground tracking-[-0.03em]"
 				>
 					{word}
 				</p>
-				{ipa ? <p className="mt-1 font-mono text-meta text-sm">{ipa}</p> : null}
+				{ipa ? (
+					<p className="mt-1 font-mono text-muted-foreground text-sm">{ipa}</p>
+				) : null}
 
 				{isRevealed ? (
-					<div className="mt-6 border-line border-t pt-4">
-						<p className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+					<div className="mt-6 border-border border-t pt-4">
+						<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 							Nghĩa
 						</p>
 						<p
 							data-testid="vocab-selfcheck-translation"
-							className="mt-1 font-semibold text-fg text-lg"
+							className="mt-1 font-semibold text-foreground text-lg"
 						>
 							{translation}
 						</p>

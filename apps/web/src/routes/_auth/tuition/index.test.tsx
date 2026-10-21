@@ -75,23 +75,27 @@ describe("tuition KPIs", () => {
 			invoiceRow({ id: "inv-2", amount: 300000, studentId: "st-2" }),
 		]);
 		renderWithKernel(<Tuition />);
-		await screen.findByText("Còn nợ (VND)");
+		await screen.findByText("Còn phải thu (VND)");
 		expect(kpi("Đã thu (VND)").textContent).toContain("400.000");
-		expect(kpi("Còn nợ (VND)").textContent).toContain("300.000");
+		expect(kpi("Còn phải thu (VND)").textContent).toContain("300.000");
 	});
 
 	it("shows a zero debt neutral and only flags debt that exists", async () => {
 		start([invoiceRow({ status: "paid", paidAmount: 400000 })]);
 		const view = renderWithKernel(<Tuition />);
-		await screen.findByText("Còn nợ (VND)");
-		// The flagged tile is the inverted (ink) card; a 0đ debt stays plain.
-		expect(kpi("Còn nợ (VND)").className).not.toContain("bg-fg");
+		await screen.findByText("Còn phải thu (VND)");
+		// Thẻ được đánh dấu (v2) là số đỏ text-destructive; nợ 0đ giữ thường.
+		expect(
+			screen.getByText("Còn phải thu (VND)").previousElementSibling!.className,
+		).not.toContain("text-destructive");
 		view.unmount();
 
 		start([invoiceRow()]);
 		renderWithKernel(<Tuition />);
-		await screen.findByText("Còn nợ (VND)");
-		expect(kpi("Còn nợ (VND)").className).toContain("bg-fg");
+		await screen.findByText("Còn phải thu (VND)");
+		expect(
+			screen.getByText("Còn phải thu (VND)").previousElementSibling!.className,
+		).toContain("text-destructive");
 	});
 });
 

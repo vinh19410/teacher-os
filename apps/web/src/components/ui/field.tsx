@@ -11,11 +11,10 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 
-// Sunk control (design `neu-in`) with an explicit strong boundary: the bare
-// surface fill only reaches 1.15:1 against the page, so inputs carry a
-// --line-strong border (>=3:1, WCAG 1.4.11) plus the orange focus ring.
-const controlClasses =
-	"w-full bg-surface rounded-md border border-line-strong px-4 py-2.5 text-fg text-sm placeholder:text-meta transition-shadow duration-[150ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-hot/40 focus-visible:shadow-[var(--focus-ring)]";
+// Control v2 (design `inputCls`): viền + shadow nhẹ, focus ring 3px.
+// `text-base md:text-sm` chặn iOS tự zoom khi focus input < 16px.
+export const inputCls =
+	"flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30";
 
 export function Field({
 	label,
@@ -73,13 +72,13 @@ export function Field({
 			<label
 				id={`${target}-label`}
 				htmlFor={target}
-				className="font-mono text-[11px] text-meta uppercase tracking-[0.18em]"
+				className="font-medium text-sm leading-none"
 			>
 				{label}
 			</label>
 			{control}
 			{help && (
-				<span id={helpId} className="text-[11px] text-meta">
+				<span id={helpId} className="text-muted-foreground text-xs">
 					{help}
 				</span>
 			)}
@@ -88,7 +87,7 @@ export function Field({
 					id={errorId}
 					role="alert"
 					aria-live="polite"
-					className="text-[11px] text-danger"
+					className="text-destructive text-xs"
 				>
 					{error}
 				</span>
@@ -102,7 +101,7 @@ export function Input({
 	id,
 	...props
 }: InputHTMLAttributes<HTMLInputElement>) {
-	return <input id={id} className={cn(controlClasses, className)} {...props} />;
+	return <input id={id} className={cn(inputCls, className)} {...props} />;
 }
 
 export function Select({
@@ -112,7 +111,7 @@ export function Select({
 	...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
 	return (
-		<select id={id} className={cn(controlClasses, className)} {...props}>
+		<select id={id} className={cn(inputCls, className)} {...props}>
 			{children}
 		</select>
 	);
@@ -126,11 +125,7 @@ export function Textarea({
 	return (
 		<textarea
 			id={id}
-			className={cn(
-				controlClasses,
-				"min-h-20 resize-y leading-[1.5]",
-				className,
-			)}
+			className={cn(inputCls, "min-h-20 resize-y leading-[1.5]", className)}
 			{...props}
 		/>
 	);

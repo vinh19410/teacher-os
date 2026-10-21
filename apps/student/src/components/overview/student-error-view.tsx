@@ -73,43 +73,47 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 	let title = "Không thể truy cập cổng học viên";
 	let description =
 		"Đã xảy ra lỗi trong quá trình xác thực thông tin học viên. Vui lòng thử lại sau.";
-	let icon = <AlertCircle className="h-8 w-8 text-muted-fg" />;
+	let icon = <AlertCircle className="size-8 text-muted-foreground" />;
 
 	const isEmailUnverified = code === STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
+
+	// Nút resend thành công giữ viền outline; nhãn "Đã gửi" đổi sang chữ
+	// thường (không còn màu hot) theo ngôn ngữ v2.
+	const resendButtonClassName = `inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 font-medium text-sm shadow-xs outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50 hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 ${
+		resendStatus === "sent" ? "text-muted-foreground" : "text-primary"
+	}`;
 
 	if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
 		title = "Đây là tài khoản giáo viên";
 		description =
 			"Tài khoản này thuộc hệ thống giáo viên, không đăng nhập được cổng học viên. Vui lòng đăng xuất và dùng tài khoản học viên.";
-		icon = <ShieldAlert className="h-8 w-8 text-danger" />;
+		icon = <ShieldAlert className="size-8 text-destructive" />;
 	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
 		description = `Email ${userEmail ? `(${userEmail})` : ""} hiện chưa tham gia lớp học nào. Nếu giáo viên đã gửi lời mời, vui lòng bấm vào biểu tượng Chuông thông báo ở góc trên để chấp nhận tham gia lớp.`;
-		icon = <AlertCircle className="h-8 w-8 text-hot" />;
+		icon = <AlertCircle className="size-8 text-primary" />;
 	} else if (isEmailUnverified) {
 		title = "Email chưa được xác thực";
 		description = userEmail
 			? `Chúng tôi đã gửi liên kết xác thực đến ${userEmail}. Mở email và nhấn nút “Xác thực email” để kích hoạt hồ sơ học viên. Nếu không thấy, hãy kiểm tra mục Spam hoặc gửi lại liên kết.`
 			: "Chúng tôi đã gửi liên kết xác thực đến email của bạn. Mở email và nhấn nút “Xác thực email” để kích hoạt hồ sơ học viên. Nếu không thấy, hãy kiểm tra mục Spam hoặc gửi lại liên kết.";
-		icon = <MailCheck className="h-8 w-8 text-hot" />;
+		icon = <MailCheck className="size-8 text-primary" />;
 	} else if (code === STUDENT_ERROR_CODES.AMBIGUOUS) {
 		title = "Thông tin tài khoản chưa rõ ràng";
 		description =
 			"Hệ thống ghi nhận nhiều hơn một hồ sơ học viên trùng với email của bạn. Vui lòng liên hệ trung tâm để được chuẩn hóa danh tính.";
-		icon = <ShieldAlert className="h-8 w-8 text-danger" />;
+		icon = <ShieldAlert className="size-8 text-destructive" />;
 	}
 
 	return (
 		<div className="flex min-h-[70svh] items-center justify-center p-4">
-			<div className="neu w-full max-w-[480px] rounded-lg p-6 text-center sm:p-8">
-				<div className="neu-in mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
+			<div className="w-full max-w-[480px] rounded-xl border bg-card p-6 text-center shadow-sm sm:p-8">
+				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-muted">
 					{icon}
 				</div>
 
-				<h2 className="font-display font-extrabold text-[22px] text-fg tracking-[-0.02em]">
-					{title}
-				</h2>
-				<p className="mt-2 text-[14px] text-meta leading-relaxed">
+				<h2 className="font-semibold text-lg tracking-tight">{title}</h2>
+				<p className="mt-2 text-[14px] text-muted-foreground leading-relaxed">
 					{description}
 				</p>
 
@@ -128,11 +132,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 										type="button"
 										onClick={handleResend}
 										disabled={resendStatus === "sending"}
-										className={`neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
-											resendStatus === "sent"
-												? "text-fg"
-												: "text-hot hover:text-hot"
-										}`}
+										className={resendButtonClassName}
 									>
 										{resendStatus === "sending" ? (
 											<>
@@ -156,7 +156,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 								<button
 									type="button"
 									onClick={() => window.location.reload()}
-									className="neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] text-fg transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+									className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 font-medium text-sm shadow-xs outline-none transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 								>
 									<RefreshCw className="h-4 w-4" />
 									<span>Tôi đã xác thực — Kiểm tra lại</span>
@@ -166,7 +166,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 							<button
 								type="button"
 								onClick={handleSignOut}
-								className="mt-1 flex items-center gap-1.5 font-[480] text-[13px] text-meta transition-colors hover:text-hot"
+								className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
 							>
 								<LogOut className="h-3.5 w-3.5" />
 								<span>Đăng xuất</span>
@@ -176,7 +176,7 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 						<button
 							type="button"
 							onClick={handleSignOut}
-							className="neu-sm flex items-center gap-2 rounded-lg px-5 py-2.5 font-medium text-[14px] text-fg transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 font-medium text-sm shadow-xs outline-none transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 						>
 							<LogOut className="h-4 w-4" />
 							<span>Đăng xuất</span>

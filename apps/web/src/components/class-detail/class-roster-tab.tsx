@@ -40,7 +40,7 @@ export function RosterTuitionCell({
 	isInvited: boolean;
 }) {
 	if (isInvited) {
-		return <span className="font-mono text-meta text-xs">—</span>;
+		return <span className="text-muted-foreground text-xs">—</span>;
 	}
 	if (!debt) {
 		return <Badge variant="muted">Chưa lập phiếu</Badge>;
@@ -58,7 +58,7 @@ export function RosterTuitionCell({
 			{badge}
 			<span
 				className={cn(
-					"font-mono",
+					"tabular-nums",
 					debt.status === "overdue" && "font-semibold text-danger",
 				)}
 			>
@@ -122,15 +122,15 @@ export function ClassRosterTab({
 									<Avatar text={s.avatar} size="sm" />
 									{s.name}
 								</div>,
-								<span key="t" className="font-mono text-meta text-xs">
+								<span key="t" className="text-muted-foreground text-xs">
 									Band {s.targetBand} · {s.skills.join(", ")}
 								</span>,
 								isInvited ? (
-									<span key="r" className="font-mono text-meta text-xs">
+									<span key="r" className="text-muted-foreground text-xs">
 										—
 									</span>
 								) : (
-									<span key="r" className="font-mono">
+									<span key="r" className="tabular-nums">
 										{s.pkg.remaining}/{s.pkg.total}
 									</span>
 								),
@@ -206,12 +206,12 @@ export function ClassRosterTab({
 						: "Hủy lời mời tham gia lớp?"
 				}
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					{confirmAction?.type === "activate"
 						? `Học viên "${confirmAction.studentName}" sẽ chuyển sang trạng thái Đang học và được tạo gói học cùng lịch các buổi học trong lớp.`
 						: `Học viên "${confirmAction?.studentName}" sẽ bị xóa khỏi danh sách mời của lớp này. Bạn có thể mời lại sau.`}
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

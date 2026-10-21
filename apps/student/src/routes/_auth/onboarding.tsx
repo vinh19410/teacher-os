@@ -26,7 +26,7 @@ function StudentOnboardingPage() {
 		return <Navigate to="/" />;
 	}
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-bg p-4 sm:p-6">
+		<div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6">
 			<OnboardingWizard onCompleted={() => void navigate({ to: "/" })} />
 		</div>
 	);

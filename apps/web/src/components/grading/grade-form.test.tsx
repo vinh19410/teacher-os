@@ -93,6 +93,7 @@ describe("GradeForm (#319)", () => {
 	});
 
 	test("Chưa chấm: thanh mờ, aria-valuetext Chưa chấm, Lưu disable", () => {
+		const onOverallChange = vi.fn();
 		render(
 			<GradeForm
 				skill="writing"
@@ -102,6 +103,7 @@ describe("GradeForm (#319)", () => {
 				error={null}
 				savedAt={null}
 				onSave={() => {}}
+				onOverallChange={onOverallChange}
 			/>,
 		);
 		for (const key of ["task", "coherence", "lexical", "grammar"]) {
@@ -109,7 +111,7 @@ describe("GradeForm (#319)", () => {
 			expect(slider.getAttribute("aria-valuetext")).toBe("Chưa chấm");
 			expect(slider.getAttribute("data-unset")).toBe("true");
 		}
-		expect(screen.getByTestId("grade-overall-band").textContent).toBe("—");
+		expect(onOverallChange).toHaveBeenCalledWith("—");
 		expect(
 			(screen.getByRole("button", { name: "Lưu điểm" }) as HTMLButtonElement)
 				.disabled,
@@ -151,6 +153,7 @@ describe("GradeForm (#319)", () => {
 	});
 
 	test("Ban đầu nút Lưu disable và band tổng là —", () => {
+		const onOverallChange = vi.fn();
 		render(
 			<GradeForm
 				skill="writing"
@@ -160,14 +163,16 @@ describe("GradeForm (#319)", () => {
 				error={null}
 				savedAt={null}
 				onSave={() => {}}
+				onOverallChange={onOverallChange}
 			/>,
 		);
 		const save = screen.getByRole("button", { name: "Lưu điểm" });
 		expect((save as HTMLButtonElement).disabled).toBe(true);
-		expect(screen.getByTestId("grade-overall-band").textContent).toBe("—");
+		expect(onOverallChange).toHaveBeenCalledWith("—");
 	});
 
 	test("Đủ 4 tiêu chí: band 6.5 live và nút enable", () => {
+		const onOverallChange = vi.fn();
 		render(
 			<GradeForm
 				skill="writing"
@@ -177,10 +182,11 @@ describe("GradeForm (#319)", () => {
 				error={null}
 				savedAt={null}
 				onSave={() => {}}
+				onOverallChange={onOverallChange}
 			/>,
 		);
 		choose({ task: "6", coherence: "6.5", lexical: "6", grammar: "6.5" });
-		expect(screen.getByTestId("grade-overall-band").textContent).toBe("6.5");
+		expect(onOverallChange).toHaveBeenLastCalledWith("6.5");
 		const save = screen.getByRole("button", { name: "Lưu điểm" });
 		expect((save as HTMLButtonElement).disabled).toBe(false);
 	});
@@ -214,6 +220,7 @@ describe("GradeForm (#319)", () => {
 			feedback: "Tốt",
 			gradedAt: "2026-10-05T00:00:00.000Z",
 		};
+		const onOverallChange = vi.fn();
 		render(
 			<GradeForm
 				skill="speaking"
@@ -223,11 +230,12 @@ describe("GradeForm (#319)", () => {
 				error={null}
 				savedAt={null}
 				onSave={() => {}}
+				onOverallChange={onOverallChange}
 			/>,
 		);
 		expect(sliderFor("fluency").value).toBe("7");
 		expect(sliderFor("pronunciation").value).toBe("8");
-		expect(screen.getByTestId("grade-overall-band").textContent).toBe("7.5");
+		expect(onOverallChange).toHaveBeenCalledWith("7.5");
 		expect(
 			(document.getElementById("grade-feedback") as HTMLTextAreaElement).value,
 		).toBe("Tốt");

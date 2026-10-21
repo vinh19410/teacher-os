@@ -1,7 +1,7 @@
 ---
 phase: 8
 title: "Giáo viên: ô tìm kiếm ⌘K (mới)"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: [4]

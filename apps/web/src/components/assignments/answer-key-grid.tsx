@@ -288,7 +288,7 @@ export function AnswerKeyGrid({
 		<section aria-label="Lưới đáp án" className="flex flex-col gap-2">
 			<div
 				aria-hidden="true"
-				className="hidden gap-2 px-1 font-medium text-muted-fg text-xs sm:grid sm:grid-cols-[3.5rem_1fr_14rem_2rem]"
+				className="hidden gap-2 px-1 font-medium text-muted-foreground text-xs sm:grid sm:grid-cols-[3.5rem_1fr_14rem_2rem]"
 			>
 				<span>Câu</span>
 				<span>Nội dung câu hỏi phía học viên</span>
@@ -337,7 +337,7 @@ export function AnswerKeyGrid({
 							// thêm câu mới, nên nút phải nằm ngoài nó.
 							<fieldset
 								aria-label={`Gợi ý dạng bài câu ${rangeLabel}`}
-								className="flex min-w-0 flex-col gap-2 rounded-md bg-accent-soft p-3 text-hot text-xs sm:flex-row sm:items-center sm:justify-between"
+								className="flex min-w-0 flex-col gap-2 rounded-md bg-accent p-3 text-primary text-xs sm:flex-row sm:items-center sm:justify-between"
 							>
 								<p>
 									Câu {rangeLabel} có đáp án dạng {warnLabels.answers} nhưng
@@ -368,8 +368,8 @@ export function AnswerKeyGrid({
 								}
 							}}
 							className={cn(
-								"grid gap-2 rounded-md border bg-surface p-3 outline-none focus-visible:border-fg sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
-								selectedIndex === index ? "border-fg" : "border-line",
+								"grid gap-2 rounded-md border bg-muted p-3 outline-none focus-visible:border-primary sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
+								selectedIndex === index ? "border-primary" : "border-border",
 							)}
 						>
 							<strong className="pt-2 font-mono text-sm">Câu {number}</strong>
@@ -437,10 +437,10 @@ export function AnswerKeyGrid({
 													className={cn(
 														"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
 														item.answer === choice
-															? "border-fg bg-fg text-bg"
-															: "border-line bg-bg text-fg-2 hover:border-fg",
+															? "border-primary bg-primary text-primary-foreground"
+															: "border-border bg-background text-muted-foreground hover:border-primary",
 														taken &&
-															"cursor-not-allowed opacity-40 hover:border-line",
+															"cursor-not-allowed opacity-40 hover:border-border",
 													)}
 												>
 													{choice}
@@ -485,7 +485,7 @@ export function AnswerKeyGrid({
 							{errorEntries.length > 0 && (
 								<div role="alert" className="sm:col-span-4">
 									{errorEntries.map((key) => (
-										<p key={key} className="text-danger text-xs">
+										<p key={key} className="text-destructive text-xs">
 											{rowErrors[key]}
 										</p>
 									))}

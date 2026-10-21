@@ -44,33 +44,31 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	return (
 		<aside
 			aria-label="Xem trước đề"
-			className="neu rounded-lg p-5 lg:sticky lg:top-[76px]"
+			className="rounded-lg rounded-xl border bg-card p-5 shadow-sm lg:sticky lg:top-[76px]"
 		>
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
-				Xem trước phía học viên
-			</p>
-			<p className="mt-1 font-display font-semibold text-[17px] text-fg">
+			<p className="text-muted-foreground text-xs">Xem trước phía học viên</p>
+			<p className="mt-1 font-semibold text-[17px] text-foreground">
 				{trimmedTitle}
 			</p>
-			<p className="mt-1.5 font-mono text-meta text-xs">
+			<p className="mt-1.5 text-muted-foreground text-xs">
 				{part.spec} · Band {prompt.band}
 			</p>
 
 			{skillId === "listening" && (
-				<p className="neu-in mt-3 rounded-md p-3 text-sm">
+				<p className="mt-3 rounded-md rounded-md bg-muted p-3 text-sm">
 					🔊 {prompt.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
 
 			{skillId === "reading" &&
 				(isEmptyRichText(prompt.passage ?? "") ? (
-					<p className="mt-3 text-fg text-sm leading-[1.55]">
+					<p className="mt-3 text-foreground text-sm leading-[1.55]">
 						Đoạn đọc sẽ hiện ở đây.
 					</p>
 				) : (
 					<RichTextBody
 						text={prompt.passage ?? ""}
-						className="mt-3 text-fg text-sm leading-[1.55]"
+						className="mt-3 text-foreground text-sm leading-[1.55]"
 					/>
 				))}
 
@@ -81,7 +79,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					<img
 						src={prompt.imageUrl.trim()}
 						alt="Ảnh biểu đồ đề Reading"
-						className="mt-3 max-h-48 rounded-md border border-line"
+						className="mt-3 max-h-48 rounded-md border border-border"
 						referrerPolicy="no-referrer"
 						loading="lazy"
 					/>
@@ -94,7 +92,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					<img
 						src={prompt.imageUrl.trim()}
 						alt="Ảnh bản đồ đề Listening"
-						className="mt-3 max-h-48 rounded-md border border-line"
+						className="mt-3 max-h-48 rounded-md border border-border"
 						referrerPolicy="no-referrer"
 						loading="lazy"
 					/>
@@ -118,7 +116,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					{!isEmptyRichText(prompt.intro ?? "") && (
 						<RichTextBody
 							text={prompt.intro ?? ""}
-							className="text-muted-fg text-xs"
+							className="text-muted-foreground text-xs"
 						/>
 					)}
 					{bankable && <OptionBankList bank={bank} kind={bankKind} />}
@@ -136,7 +134,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 								"Câu hỏi sẽ hiện ở đây."
 							)}
 							{item.opts?.map((option, optionIndex) => (
-								<div key={optionIndex} className="ml-5 text-muted-fg">
+								<div key={optionIndex} className="ml-5 text-muted-foreground">
 									{String.fromCharCode(65 + optionIndex)} {option}
 								</div>
 							))}
@@ -166,7 +164,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				<RichTextBody
 					text={prompt.prompt}
 					legacyWhitespace="pre-wrap"
-					className="mt-3 text-fg text-sm leading-[1.55]"
+					className="mt-3 text-foreground text-sm leading-[1.55]"
 				/>
 			)}
 
@@ -181,16 +179,16 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 			</div>
 
 			{!isEmptyRichText(prompt.prompt) && skillId === "writing" && (
-				<p className="mt-2 font-mono text-[11px] text-meta">
+				<p className="mt-2 text-muted-foreground text-xs">
 					{wordCount(htmlToPlainText(prompt.prompt))} từ
 				</p>
 			)}
 
-			<div className="neu-in mt-4 rounded-md px-3 py-2.5 text-muted-fg text-xs leading-relaxed">
+			<div className="mt-4 rounded-md rounded-md bg-muted px-3 py-2.5 text-muted-foreground text-xs leading-relaxed">
 				Đề này chưa giao lớp. Giao cho học viên ở trang{" "}
 				<Link
 					to="/classes"
-					className="font-medium text-fg underline underline-offset-2 hover:text-hot"
+					className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
 				>
 					Lớp học
 				</Link>

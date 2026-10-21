@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "Giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo"
-status: pending
+status: completed
 priority: P1
 effort: "8h"
 dependencies: [4]

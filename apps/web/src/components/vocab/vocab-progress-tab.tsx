@@ -24,15 +24,15 @@ function DeckProgressRow({
 	return (
 		<div
 			data-testid={`vocab-progress-deck-${deck.deckId}`}
-			className="space-y-3 rounded-md border border-line p-4"
+			className="space-y-3 rounded-md border border-border p-4"
 		>
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-2">
-						<p className="font-medium text-fg text-sm">{deck.title}</p>
+						<p className="font-medium text-foreground text-sm">{deck.title}</p>
 						<span
 							data-testid={`vocab-progress-deck-source-${deck.deckId}`}
-							className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-fg uppercase tracking-widest"
+							className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 						>
 							{deck.source === "class"
 								? classNameLabel
@@ -45,7 +45,7 @@ function DeckProgressRow({
 									: "Gợi ý"}
 						</span>
 					</div>
-					<p className="mt-1 font-mono text-[11px] text-muted-fg">
+					<p className="mt-1 font-mono text-[11px] text-muted-foreground">
 						Đang học {learnedTotal}/{deck.total} từ · Chưa học {deck.stateNew}{" "}
 						từ
 						{deck.lastActivityAt
@@ -58,7 +58,9 @@ function DeckProgressRow({
 					<span
 						data-testid={`vocab-progress-deck-due-${deck.deckId}`}
 						className={`rounded px-2 py-1 font-mono text-xs ${
-							deck.dueToday > 0 ? "neu-sm text-hot" : "neu-in text-muted-fg"
+							deck.dueToday > 0
+								? "rounded-md border border-input bg-transparent text-primary"
+								: "rounded-md bg-muted text-muted-foreground"
 						}`}
 					>
 						Đến hạn hôm nay: {deck.dueToday}
@@ -80,18 +82,22 @@ function DeckProgressRow({
 						<div
 							key={level}
 							data-testid={`vocab-progress-deck-${deck.deckId}-level-${level}`}
-							className="neu-in rounded p-2"
+							className="rounded rounded-md bg-muted p-2"
 						>
 							<div className="flex items-center justify-between font-mono text-[11px]">
-								<span className="text-muted-fg">Cấp {level}</span>
-								<span className={count > 0 ? "text-fg" : "text-meta"}>
+								<span className="text-muted-foreground">Cấp {level}</span>
+								<span
+									className={
+										count > 0 ? "text-foreground" : "text-muted-foreground"
+									}
+								>
 									{count}
 								</span>
 							</div>
-							<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+							<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
 								<div
 									className={`h-full rounded-full ${
-										level === 5 ? "bg-hot" : "bg-fg"
+										level === 5 ? "bg-primary" : "bg-foreground"
 									}`}
 									style={{ width: `${pct}%` }}
 								/>
@@ -207,7 +213,7 @@ export function VocabProgressTab() {
 		return (
 			<Card className="p-5">
 				<SectionLabel>Tiến độ học từ vựng</SectionLabel>
-				<p className="mt-4 text-muted-fg text-sm">
+				<p className="mt-4 text-muted-foreground text-sm">
 					Chưa có học viên nào trong trung tâm để theo dõi tiến độ.
 				</p>
 			</Card>
@@ -221,7 +227,7 @@ export function VocabProgressTab() {
 					<div className="min-w-[220px] flex-1">
 						<label
 							htmlFor="vocab-progress-student-search"
-							className="mb-1 block font-mono text-[11px] text-meta uppercase tracking-[0.15em]"
+							className="mb-1 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]"
 						>
 							Tìm học viên
 						</label>
@@ -237,7 +243,7 @@ export function VocabProgressTab() {
 					<div className="min-w-[240px] flex-1">
 						<label
 							htmlFor="vocab-progress-student-select"
-							className="mb-1 block font-mono text-[11px] text-meta uppercase tracking-[0.15em]"
+							className="mb-1 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]"
 						>
 							Học viên đang xem
 						</label>
@@ -258,12 +264,12 @@ export function VocabProgressTab() {
 				</div>
 
 				{loading ? (
-					<p className="mt-4 font-mono text-muted-fg text-xs">
+					<p className="mt-4 font-mono text-muted-foreground text-xs">
 						Đang tải tiến độ học viên...
 					</p>
 				) : loadError ? (
 					<div className="mt-4 flex items-center gap-3">
-						<p className="text-hot text-sm">
+						<p className="text-primary text-sm">
 							Không tải được tiến độ từ vựng của học viên này.
 						</p>
 						<Button
@@ -280,25 +286,27 @@ export function VocabProgressTab() {
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 							<div
 								data-testid="vocab-progress-stat-learning"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
-								<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Từ đang học
 								</p>
-								<p className="mt-1 font-display font-extrabold text-2xl text-fg">
+								<p className="mt-1 font-extrabold text-2xl text-foreground">
 									{summary.totalLearning}
 								</p>
 							</div>
 							<div
 								data-testid="vocab-progress-stat-due"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
-								<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Đến hạn hôm nay
 								</p>
 								<p
-									className={`mt-1 font-display font-extrabold text-2xl ${
-										summary.totalDueToday > 0 ? "text-hot" : "text-fg"
+									className={`mt-1 font-extrabold text-2xl ${
+										summary.totalDueToday > 0
+											? "text-primary"
+											: "text-foreground"
 									}`}
 								>
 									{summary.totalDueToday}
@@ -306,14 +314,14 @@ export function VocabProgressTab() {
 							</div>
 							<div
 								data-testid="vocab-progress-stat-activity7d"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
-								<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Lượt ôn 7 ngày qua
 								</p>
-								<p className="mt-1 font-display font-extrabold text-2xl text-fg">
+								<p className="mt-1 font-extrabold text-2xl text-foreground">
 									{summary.sessions7d}{" "}
-									<span className="font-mono font-normal text-muted-fg text-xs">
+									<span className="font-mono font-normal text-muted-foreground text-xs">
 										({summary.correct7d} đúng)
 									</span>
 								</p>
@@ -330,19 +338,21 @@ export function VocabProgressTab() {
 									<div
 										key={day.dateISO}
 										data-testid={`vocab-progress-activity-${day.dateISO}`}
-										className="neu-in rounded p-2 text-center"
+										className="rounded rounded-md bg-muted p-2 text-center"
 									>
-										<p className="font-mono text-[10px] text-meta">
+										<p className="font-mono text-[10px] text-muted-foreground">
 											{day.dateISO.slice(5)}
 										</p>
 										<p
 											className={`mt-1 font-mono font-semibold text-sm ${
-												day.sessions > 0 ? "text-hot" : "text-muted-fg"
+												day.sessions > 0
+													? "text-primary"
+													: "text-muted-foreground"
 											}`}
 										>
 											{day.sessions}
 										</p>
-										<p className="font-mono text-[10px] text-muted-fg">
+										<p className="font-mono text-[10px] text-muted-foreground">
 											{day.correct} đúng
 										</p>
 									</div>
@@ -355,7 +365,7 @@ export function VocabProgressTab() {
 							{progress.decks.length === 0 ? (
 								<p
 									data-testid="vocab-progress-empty"
-									className="mt-3 text-muted-fg text-sm"
+									className="mt-3 text-muted-foreground text-sm"
 								>
 									Học viên chưa có bộ từ vựng nào (chưa vào lớp có bộ từ hoặc
 									chưa nhận gợi ý).

@@ -24,7 +24,7 @@ function remainingCell(row: StudentClassTuition) {
 /** Ô Học phí: chưa thiết lập hiện nhãn muted, có phí thì font-mono. */
 function feeCell(row: StudentClassTuition) {
 	if (row.fee === null) {
-		return <span className="text-muted-fg">Chưa thiết lập</span>;
+		return <span className="text-muted-foreground">Chưa thiết lập</span>;
 	}
 	return <span className="font-mono">{fmtVND(row.fee)}</span>;
 }
@@ -37,7 +37,7 @@ function classCell(row: StudentClassTuition) {
 			<Link
 				to="/classes/$classId"
 				params={{ classId: row.classId }}
-				className="font-medium text-hot"
+				className="font-medium text-primary"
 			>
 				{row.className}
 			</Link>
@@ -60,7 +60,10 @@ export function StudentTuitionSummary({ summary }: { summary: Summary }) {
 	const counted = summary.countedClasses > 0;
 	return (
 		<div className="mb-5">
-			<div className="grid grid-cols-3 gap-4 max-app:grid-cols-1">
+			<div
+				className="grid grid-cols-3 gap-4 max-app:grid-cols-1"
+				data-testid="tuition-stat-row"
+			>
 				<StatCard
 					num={counted ? fmtVND(summary.totalFee) : EMPTY}
 					label="Tổng học phí (VND)"
@@ -77,17 +80,19 @@ export function StudentTuitionSummary({ summary }: { summary: Summary }) {
 				/>
 			</div>
 			{summary.unlinkedPaid > 0 && (
-				<p className="mt-2 text-muted-fg text-sm">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Ngoài ra đã thu {fmtVND(summary.unlinkedPaid)} từ hóa đơn không gắn
 					lớp.
 				</p>
 			)}
 			{summary.classes.length === 0 ? (
-				<p className="mt-5 text-muted-fg text-sm">Chưa tham gia lớp học nào.</p>
+				<p className="mt-5 text-muted-foreground text-sm">
+					Chưa tham gia lớp học nào.
+				</p>
 			) : (
 				<>
 					{!counted && (
-						<p className="mt-2 text-muted-fg text-sm">
+						<p className="mt-2 text-muted-foreground text-sm">
 							Chưa lớp nào được thiết lập học phí. Thiết lập ở trang lớp.
 						</p>
 					)}

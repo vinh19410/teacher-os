@@ -277,8 +277,9 @@ export function AnnotatableEssay({
 			"aria-label": `Highlight ${n}: ${annotation.note || "chưa có ghi chú"}`,
 			className:
 				// Nền highlight (`mark.anno`) đến từ className gốc của
-				// EssayWithHighlights; ở đây chỉ đè số chú thích sup sang cam.
-				"cursor-pointer after:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+				// EssayWithHighlights; ở đây chỉ đè số chú thích sup sang màu
+				// primary.
+				"cursor-pointer after:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none",
 			onClick: jump,
 			onKeyDown: (e: ReactKeyboardEvent<HTMLElement>) => {
 				if (e.key === "Enter" || e.key === " ") {
@@ -312,7 +313,7 @@ export function AnnotatableEssay({
 					activeId={activeId}
 					markProps={buildMarkProps}
 					data-testid="essay-text"
-					className="border-line border-l-2 pl-5 text-fg text-lg leading-[1.9] focus-visible:outline-none"
+					className="border-border border-l-2 pl-5 text-foreground text-lg leading-[1.9] focus-visible:outline-none"
 					tabIndex={draft === null ? undefined : -1}
 				/>
 				{draft && (
@@ -321,7 +322,7 @@ export function AnnotatableEssay({
 						role="dialog"
 						aria-label="Thêm highlight"
 						className={cn(
-							"absolute z-20 rounded-lg border border-line bg-bg p-4 shadow-[var(--elev-raised)]",
+							"absolute z-20 rounded-lg border border-border bg-card p-4 shadow-lg",
 							isWide ? "w-[320px]" : "right-0 left-0",
 						)}
 						style={
@@ -331,11 +332,11 @@ export function AnnotatableEssay({
 							if (e.key === "Escape") cancelDraft(true);
 						}}
 					>
-						<p className="text-muted-fg text-sm">
+						<p className="text-muted-foreground text-sm">
 							“{excerpt(essay.slice(draft.start, draft.end), 120)}”
 						</p>
 						{draftOverlaps && (
-							<p role="alert" className="mt-2 text-[11px] text-danger">
+							<p role="alert" className="mt-2 text-destructive text-xs">
 								Đoạn này trùng với highlight khác.
 							</p>
 						)}
@@ -356,25 +357,30 @@ export function AnnotatableEssay({
 
 			<SectionLabel>{`Ghi chú trên bài viết (${ordered.length})`}</SectionLabel>
 			{ordered.length === 0 ? (
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Bôi đen từ hoặc cụm từ trong bài để highlight và ghi chú.
 				</p>
 			) : (
-				<ol aria-label="Ghi chú trên bài viết" className="flex flex-col gap-2">
+				<ol
+					aria-label="Ghi chú trên bài viết"
+					className="flex flex-col gap-2 border-border border-t pt-4"
+				>
 					{ordered.map(({ annotation, n }) => (
 						<li
 							key={annotation.id}
 							id={`annotation-${annotation.id}`}
 							tabIndex={-1}
 							className={cn(
-								"rounded-xl border border-line bg-card p-3 focus-visible:outline-none",
-								activeId === annotation.id && "ring-1 ring-fg",
+								"rounded-xl border border-border bg-card p-3 focus-visible:outline-none",
+								activeId === annotation.id && "ring-1 ring-ring",
 							)}
 						>
 							<div className="flex items-start gap-2">
-								<span className="font-mono text-meta text-xs">{n}</span>
+								<span className="font-mono text-muted-foreground text-xs tabular-nums">
+									{n}
+								</span>
 								<div className="flex min-w-0 flex-1 flex-col gap-1">
-									<p className="text-muted-fg text-sm">
+									<p className="text-muted-foreground text-sm">
 										“
 										{excerpt(essay.slice(annotation.start, annotation.end), 80)}
 										”
@@ -382,7 +388,7 @@ export function AnnotatableEssay({
 									{confirmDeleteId === annotation.id ? (
 										<div className="flex flex-col gap-2">
 											<div className="flex items-center gap-2">
-												<span className="text-fg text-sm">
+												<span className="text-foreground text-sm">
 													Xoá highlight này?
 												</span>
 												<Button
@@ -416,7 +422,7 @@ export function AnnotatableEssay({
 												</Button>
 											</div>
 											{deleteError && (
-												<p role="alert" className="text-[11px] text-danger">
+												<p role="alert" className="text-destructive text-xs">
 													{deleteError}
 												</p>
 											)}
@@ -436,9 +442,11 @@ export function AnnotatableEssay({
 									) : (
 										<>
 											{annotation.note === "" ? (
-												<p className="text-meta text-sm">Chưa có ghi chú</p>
+												<p className="text-muted-foreground text-sm">
+													Chưa có ghi chú
+												</p>
 											) : (
-												<p className="whitespace-pre-wrap text-fg text-sm">
+												<p className="whitespace-pre-wrap text-foreground text-sm">
 													{annotation.note}
 												</p>
 											)}
@@ -501,7 +509,7 @@ function CreateHighlightForm({
 				/>
 			</Field>
 			{saveError && (
-				<p role="alert" className="text-[11px] text-danger">
+				<p role="alert" className="text-destructive text-xs">
 					{saveError}
 				</p>
 			)}
@@ -559,7 +567,7 @@ function EditNoteRow({
 				/>
 			</Field>
 			{saveError && (
-				<p role="alert" className="text-[11px] text-danger">
+				<p role="alert" className="text-destructive text-xs">
 					{saveError}
 				</p>
 			)}

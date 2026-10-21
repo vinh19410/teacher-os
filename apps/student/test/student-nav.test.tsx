@@ -1,92 +1,80 @@
+// @vitest-environment jsdom
+
 import type { StudentAssignment } from "@teacher-os/api/contracts";
+import type { NavItem } from "@teacher-os/ui/components/app-shell/nav-group";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
-		signOut: vi.fn(),
-	},
-}));
-
-vi.mock("@tanstack/react-query", () => ({
-	useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-	useQuery: () => ({ data: undefined, isLoading: false, error: null }),
-}));
-
-vi.mock("@/lib/repos/student", () => ({
-	useStudentOrgs: () => ({ data: [], isLoading: false }),
-	useStudentNotifications: () => ({ data: [], isLoading: false }),
-	useAcceptInvitation: () => ({ mutate: vi.fn(), isPending: false }),
-	useRejectInvitation: () => ({ mutate: vi.fn(), isPending: false }),
-	getActiveStudentOrgId: () => null,
-	setActiveStudentOrgId: vi.fn(),
-}));
-
 vi.mock("@tanstack/react-router", () => ({
-	Link: (props: {
-		to: string;
-		activeOptions?: { exact?: boolean };
-		"data-testid"?: string;
-		className?: string;
-		children: React.ReactNode;
-	}) => (
-		<a
-			href={props.to}
-			data-testid={props["data-testid"]}
-			data-exact={String(Boolean(props.activeOptions?.exact))}
-			className={props.className}
-		>
-			{props.children}
+	Link: ({
+		to,
+		children,
+		...rest
+	}: { to: string; children?: React.ReactNode } & Record<string, unknown>) => (
+		<a href={to} {...rest}>
+			{children}
 		</a>
 	),
+	useRouterState: () => "not-used-here",
 }));
 
-import { STUDENT_NAV_ITEMS, StudentNav } from "@/components/layout/student-nav";
-import { StudentShell } from "@/components/layout/student-shell";
+import {
+	STUDENT_NAV,
+	STUDENT_PAGE_LABEL,
+	StudentShellLink,
+} from "@/components/layout/student-nav";
 import { AssignmentList } from "@/components/overview/assignment-list";
 
-describe("StudentNav", () => {
-	it("renders all 5 navigation links with aria-label and active marker ■", () => {
-		const html = renderToStaticMarkup(<StudentNav />);
-		expect(html).toContain('aria-label="Điều hướng học viên"');
-		expect(STUDENT_NAV_ITEMS).toHaveLength(5);
+describe("STUDENT_NAV v2", () => {
+	it("keeps one 'Học tập' group with the v1 labels and hrefs", () => {
+		expect(STUDENT_NAV).toHaveLength(1);
+		expect(STUDENT_NAV[0].group).toBe("Học tập");
 
-		expect(html).toContain('href="/"');
-		expect(html).toContain('data-testid="student-nav-overview"');
-		expect(html).toContain('data-exact="true"');
-		expect(html).toContain("Tổng quan");
-
-		expect(html).toContain('href="/classes"');
-		expect(html).toContain('data-testid="student-nav-classes"');
-		expect(html).toContain("Lớp học");
-
-		expect(html).toContain('href="/assignments"');
-		expect(html).toContain('data-testid="student-nav-assignments"');
-		expect(html).toContain("Bài tập");
-
-		expect(html).toContain('href="/vocab"');
-		expect(html).toContain('data-testid="student-nav-vocab"');
-		expect(html).toContain("Từ vựng");
-
-		expect(html).toContain('href="/tuition"');
-		expect(html).toContain('data-testid="student-nav-tuition"');
-		expect(html).toContain("Học phí");
-
-		expect(html).toContain('aria-hidden="true"');
-		expect(html).toContain("■");
-	});
-});
-
-describe("StudentShell", () => {
-	it("renders student name, StudentNav, and page children", () => {
-		const html = renderToStaticMarkup(
-			<StudentShell userName="Nguyễn Minh" userEmail="minh@student.vn">
-				<div data-testid="page-body">Nội dung trang</div>
-			</StudentShell>,
+		const ITEM_BY_HREF: Record<string, NavItem> = Object.fromEntries(
+			STUDENT_NAV[0].items.map((item) => [item.href, item]),
 		);
-		expect(html).toContain("Nguyễn Minh");
-		expect(html).toContain('aria-label="Điều hướng học viên"');
-		expect(html).toContain("Nội dung trang");
+		expect(ITEM_BY_HREF["/"]?.label).toBe("Tổng quan");
+		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
+		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
+		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
+		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Học phí");
+		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
+		// "Lịch sử" nằm trong list nhưng enabled=false tới phase 11.
+		expect(STUDENT_NAV[0].items).toHaveLength(7);
+		const practice = ITEM_BY_HREF["/practice"];
+		expect(practice?.label).toBe("Luyện tập");
+		expect(practice?.children?.map((child) => child.href)).toEqual([
+			"/practice/reading",
+			"/practice/listening",
+			"/practice/writing",
+			"/practice/speaking",
+			"/practice/vocabulary",
+		]);
+		expect(
+			practice?.children?.some((child) =>
+				child.label.toLowerCase().includes("dictation"),
+			),
+		).toBe(false);
+		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
+		// Phase 11: "Lịch sử" cũng đã bật cùng route /history.
+		expect(ITEM_BY_HREF["/history"]?.enabled).toBe(true);
+	});
+
+	it("renders links through the router, exact match only for '/'", () => {
+		const html = renderToStaticMarkup(
+			<StudentShellLink href="/" className="h-8" aria-current="page">
+				Tổng quan
+			</StudentShellLink>,
+		);
+		expect(html).toContain('href="/"');
+		expect(html).toContain('aria-current="page"');
+		expect(html).toContain("Tổng quan");
+	});
+
+	it("maps activeKey to crumb labels for every nav item", () => {
+		for (const item of STUDENT_NAV[0].items) {
+			expect(STUDENT_PAGE_LABEL[item.key]).toBe(item.label);
+		}
 	});
 });
 

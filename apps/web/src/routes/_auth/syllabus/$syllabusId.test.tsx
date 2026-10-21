@@ -87,7 +87,7 @@ describe("syllabus template detail", () => {
 				name: "Template Writing",
 			}),
 		).toBeTruthy();
-		expect(screen.getByText("Đang dùng 1 lớp")).toBeTruthy();
+		expect(screen.getByText(/Đang dùng 1 lớp/)).toBeTruthy();
 		expect(screen.getByText("Lớp dùng bản sao")).toBeTruthy();
 		expect(screen.queryByText("Lớp trỏ thẳng")).toBeNull();
 	});

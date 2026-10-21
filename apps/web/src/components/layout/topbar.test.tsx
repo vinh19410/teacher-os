@@ -3,21 +3,25 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Notif } from "@/lib/mock-data";
-import { Topbar } from "./topbar";
+import { TopbarActions } from "./topbar";
 
 vi.mock("@tanstack/react-router", () => ({
 	useNavigate: () => vi.fn(),
-	useRouteContext: () => ({ session: { data: { user: { name: "Cô Lan" } } } }),
-	Link: (props: { to: string; children?: React.ReactNode }) => (
-		<a href={props.to}>{props.children}</a>
-	),
 }));
 
 const store: { notifs: Notif[] } = { notifs: [] };
 
 vi.mock("@/lib/data-store", () => ({
+	// Đủ 4 collection kernel — CommandSearch kiểm tra snapshot đã tải qua
+	// các mảng này (isSnapshotLoaded trong search-index).
 	useData: () => ({
-		data: { notifs: store.notifs, students: [], classes: [] },
+		data: {
+			notifs: store.notifs,
+			students: [],
+			classes: [],
+			assignments: [],
+			invoices: [],
+		},
 	}),
 }));
 
@@ -26,20 +30,13 @@ afterEach(() => {
 	store.notifs = [];
 });
 
-function renderTopbar() {
-	return render(
-		<Topbar
-			title="Tổng quan"
-			onMenuClick={() => {}}
-			collapsed={false}
-			onToggleCollapse={() => {}}
-		/>,
-	);
+function renderActions() {
+	return render(<TopbarActions />);
 }
 
-describe("Topbar notifications", () => {
+describe("TopbarActions notifications", () => {
 	it("shows no unread badge when there are no notifications", () => {
-		renderTopbar();
+		renderActions();
 		expect(screen.queryByTestId("notif-badge")).toBeNull();
 	});
 
@@ -53,7 +50,7 @@ describe("Topbar notifications", () => {
 				dot: "accent",
 			},
 		];
-		renderTopbar();
+		renderActions();
 		const bell = screen.getByRole("button", { name: "Thông báo" });
 		expect(bell.contains(screen.getByTestId("notif-badge"))).toBe(true);
 	});
@@ -68,18 +65,32 @@ describe("Topbar notifications", () => {
 				dot: "accent",
 			},
 		];
-		renderTopbar();
+		renderActions();
 		expect(screen.queryByText("Có học phí mới")).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
 		expect(screen.getByText("Có học phí mới")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
 		expect(screen.queryByText("Có học phí mới")).toBeNull();
 	});
+});
 
-	it("pushes the bell to the right edge on mobile, where search is hidden", () => {
-		renderTopbar();
-		const bellWrap = screen.getByRole("button", { name: "Thông báo" })
-			.parentElement as HTMLElement;
-		expect(bellWrap.className).toContain("max-app:ml-auto");
+describe("TopbarActions layout v2 (phase 8 — trigger ⌘K)", () => {
+	it("renders the desktop trigger hidden below md with the Kbd badge", () => {
+		renderActions();
+		const trigger = screen.getByTestId("command-search-trigger");
+		expect(trigger.textContent).toContain("Tìm kiếm…");
+		expect(trigger.textContent).toContain("⌘K");
+		expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+		// Theo design v2: khung w-56 ẩn dưới md.
+		expect(trigger.className).toContain("hidden");
+		expect(trigger.className).toContain("md:inline-flex");
+	});
+
+	it("renders the icon-only trigger below md with an accessible name", () => {
+		renderActions();
+		const iconTrigger = screen.getByTestId("command-search-trigger-icon");
+		expect(iconTrigger.getAttribute("aria-label")).toBe("Tìm kiếm");
+		expect(iconTrigger.getAttribute("aria-haspopup")).toBe("dialog");
+		expect(iconTrigger.className).toContain("md:hidden");
 	});
 });

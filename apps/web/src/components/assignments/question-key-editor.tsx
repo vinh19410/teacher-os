@@ -151,12 +151,10 @@ export function QuestionKeyEditor({
 		setPasteOutcome(null);
 	};
 	return (
-		<div className="neu-in flex flex-col gap-4 rounded-md p-4">
+		<div className="flex flex-col gap-4 rounded-md rounded-md bg-muted p-4">
 			<div>
-				<h3 className="font-display font-extrabold text-base tracking-[-0.02em]">
-					Câu hỏi và đáp án đúng
-				</h3>
-				<p className="text-muted-fg text-xs">
+				<h3 className="font-semibold text-base">Câu hỏi và đáp án đúng</h3>
+				<p className="text-muted-foreground text-xs">
 					Đáp án đúng chỉ dùng để chấm tự động; học viên không thấy.
 				</p>
 			</div>
@@ -164,7 +162,7 @@ export function QuestionKeyEditor({
 				<button
 					type="button"
 					onClick={insertPresetIntro}
-					className="neu-sm self-start rounded-md px-[14px] py-[6px] font-medium text-xs transition-colors hover:text-hot"
+					className="self-start rounded-md rounded-md border border-input bg-transparent px-[14px] py-[6px] font-medium text-xs transition-colors hover:text-primary"
 				>
 					Chèn câu lệnh chuẩn
 				</button>
@@ -184,7 +182,7 @@ export function QuestionKeyEditor({
 				<TableGridEditor items={items} onApply={onItemsChange} />
 			)}
 			{showErrors && questionsError && (
-				<p role="alert" className="text-danger text-xs">
+				<p role="alert" className="text-destructive text-xs">
 					{questionsError}
 				</p>
 			)}
@@ -228,7 +226,7 @@ export function QuestionKeyEditor({
 				</div>
 			)}
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<span className="font-medium text-muted-fg text-xs">
+				<span className="font-medium text-muted-foreground text-xs">
 					{items.length}/{QUESTION_MAX_COUNT} câu
 				</span>
 				<Button
@@ -280,12 +278,12 @@ export function QuestionKeyEditor({
 					Thêm câu
 				</Button>
 				{atMax && (
-					<p className="text-muted-fg text-xs">
+					<p className="text-muted-foreground text-xs">
 						Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
 					</p>
 				)}
 			</div>
-			<p className="text-right font-mono text-[11px] text-meta">
+			<p className="text-right text-muted-foreground text-xs">
 				{items
 					.map(
 						(item, index) => `${qStart + index} ${item.answer.trim() || "—"}`,
@@ -316,9 +314,9 @@ export function BulkKeyPastePanel({
 		<div
 			role="dialog"
 			aria-label="Thêm key hàng loạt"
-			className="neu-in flex flex-col gap-2 rounded-md p-3"
+			className="flex flex-col gap-2 rounded-md rounded-md bg-muted p-3"
 		>
-			<p className="text-muted-fg text-xs">
+			<p className="text-muted-foreground text-xs">
 				Mỗi dòng: <code>1. TRUE</code> hoặc{" "}
 				<code>3. câu lệnh / alt1 / alt2</code>. Dòng số <code>n</code> ghi vào
 				đúng câu <code>Qn</code> của phần này — dòng sai số hoặc trùng số sẽ
@@ -333,13 +331,13 @@ export function BulkKeyPastePanel({
 			/>
 			{errors.length > 0 && (
 				<div role="alert" className="flex flex-col gap-1">
-					<p className="text-danger text-xs">
+					<p className="text-destructive text-xs">
 						{appliedCount}/{totalLines} dòng đã áp dụng — {errors.length} dòng
 						cần sửa:
 					</p>
 					<ul className="flex flex-col gap-0.5">
 						{errors.map((error) => (
-							<li key={error.line} className="text-danger text-xs">
+							<li key={error.line} className="text-destructive text-xs">
 								Dòng {error.line}: {error.message}
 							</li>
 						))}

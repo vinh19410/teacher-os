@@ -59,12 +59,12 @@ export function AttemptGradeCard({
 	// "BAND" mono, số display 8xl — hạ còn 7xl/5xl cho vừa card học viên).
 	const bandBlock = (bandSizeClass: string) => (
 		<p className="mt-2">
-			<span className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+			<span className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				Band tổng
 			</span>
 			<span
 				className={cn(
-					"mt-1 block font-display font-extrabold text-hot leading-none tracking-[-0.03em]",
+					"mt-1 block font-extrabold text-primary leading-none tracking-[-0.03em]",
 					bandSizeClass,
 				)}
 				data-testid="grade-band"
@@ -80,10 +80,12 @@ export function AttemptGradeCard({
 				grade.scores[key] !== undefined ? (
 					<div
 						key={key}
-						className="flex items-baseline justify-between gap-4 border-line border-t py-2 text-sm"
+						className="flex items-baseline justify-between gap-4 border-border border-t py-2 text-sm"
 					>
-						<dt className="text-meta">{criterionLabel(skill, key, part)}</dt>
-						<dd className="font-medium font-mono text-fg">
+						<dt className="text-muted-foreground">
+							{criterionLabel(skill, key, part)}
+						</dt>
+						<dd className="font-medium font-mono text-foreground">
 							{formatBand(grade.scores[key])}
 						</dd>
 					</div>
@@ -94,7 +96,7 @@ export function AttemptGradeCard({
 	const feedbackBlock =
 		grade.feedback.trim() !== "" ? (
 			<>
-				<h3 className="mt-4 font-medium text-fg text-sm">Nhận xét</h3>
+				<h3 className="mt-4 font-medium text-foreground text-sm">Nhận xét</h3>
 				<p
 					className="mt-1 whitespace-pre-wrap break-words text-[15px] italic leading-[1.7]"
 					data-testid="grade-feedback"
@@ -116,15 +118,15 @@ export function AttemptGradeCard({
 			>
 				<h2
 					id="grade-heading"
-					className="mt-6 mb-1 app:shrink-0 font-display font-extrabold text-fg tracking-[-0.02em]"
+					className="mt-6 mb-1 app:shrink-0 font-extrabold text-foreground tracking-[-0.02em]"
 				>
 					Kết quả chấm của giáo viên
 				</h2>
-				<p className="app:shrink-0 font-mono text-meta text-xs">
+				<p className="app:shrink-0 font-mono text-muted-foreground text-xs">
 					Chấm lúc {formatVietnamSubmittedAt(grade.gradedAt)}
 				</p>
 				<div
-					className="neu mt-2 app:min-h-0 app:flex-1 app:overflow-y-auto app:overscroll-contain rounded-lg p-5 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="mt-2 app:min-h-0 app:flex-1 app:overflow-y-auto app:overscroll-contain rounded-lg rounded-xl border bg-card p-5 shadow-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					data-testid="attempt-grade-body"
 					tabIndex={isWide ? 0 : undefined}
 				>
@@ -139,19 +141,22 @@ export function AttemptGradeCard({
 	return (
 		<section
 			aria-labelledby="grade-heading"
-			className={cn("neu mt-6 rounded-lg p-5", className)}
+			className={cn(
+				"mt-6 rounded-lg rounded-xl border bg-card p-5 shadow-sm",
+				className,
+			)}
 			data-testid="attempt-grade"
 		>
 			<h2
 				id="grade-heading"
-				className="font-display font-extrabold text-fg tracking-[-0.02em]"
+				className="font-extrabold text-foreground tracking-[-0.02em]"
 			>
 				Kết quả chấm của giáo viên
 			</h2>
 			{bandBlock("text-5xl")}
 			{criteriaBlock}
 			{feedbackBlock}
-			<p className="mt-3 font-mono text-meta text-xs">
+			<p className="mt-3 font-mono text-muted-foreground text-xs">
 				Chấm lúc {formatVietnamSubmittedAt(grade.gradedAt)}
 			</p>
 		</section>

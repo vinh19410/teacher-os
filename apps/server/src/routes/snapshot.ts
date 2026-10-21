@@ -351,8 +351,10 @@ export async function loadSnapshot(
 		.select()
 		.from(classAssignmentTarget)
 		.where(eq(classAssignmentTarget.orgId, orgId));
-	// Trạng thái chấm theo target: chỉ attempt đã nộp, chỉ 5 cột nhẹ
-	// (không kéo essay/answers/snapshot đề).
+	// Trạng thái chấm theo target: chỉ attempt đã nộp của LUỢT GIAO, chỉ 5
+	// cột nhẹ (không kéo essay/answers/snapshot đề). Phase 10 (#378): attempt
+	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp —
+	// không lọc sẽ sinh key "null:<studentId>" rác trong attemptByTarget.
 	const submittedAttemptRows = await db
 		.select({
 			id: quizAttempt.id,
@@ -363,7 +365,11 @@ export async function loadSnapshot(
 		})
 		.from(quizAttempt)
 		.where(
-			and(eq(quizAttempt.orgId, orgId), eq(quizAttempt.status, "submitted")),
+			and(
+				eq(quizAttempt.orgId, orgId),
+				eq(quizAttempt.status, "submitted"),
+				eq(quizAttempt.mode, "assignment"),
+			),
 		);
 	const attemptByTarget = new Map(
 		submittedAttemptRows.map((row) => [

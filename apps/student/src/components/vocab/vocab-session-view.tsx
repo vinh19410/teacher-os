@@ -358,12 +358,12 @@ export function VocabSessionView({
 			{/* Header progress */}
 			<div className="flex items-center justify-between gap-4">
 				<div>
-					<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 						{isLearn ? "Học từ mới" : "Ôn tập SRS"} · {sessionData.deck.title}
 					</p>
 					<p
 						data-testid="vocab-session-progress"
-						className="mt-1 font-mono text-meta text-xs"
+						className="mt-1 font-mono text-muted-foreground text-xs"
 					>
 						Tiến độ: {done}/{total}
 					</p>
@@ -384,10 +384,10 @@ export function VocabSessionView({
 				aria-valuenow={done}
 				aria-valuemin={0}
 				aria-valuemax={total}
-				className="neu-in h-2 w-full overflow-hidden rounded-full"
+				className="h-2 w-full overflow-hidden rounded-full rounded-md bg-muted"
 			>
 				<div
-					className="h-full bg-hot transition-all duration-150"
+					className="h-full bg-primary transition-all duration-150"
 					style={{ width: `${progressPct}%` }}
 				/>
 			</div>
@@ -529,11 +529,11 @@ export function VocabSessionView({
 					data-testid="vocab-deleted-dialog"
 					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
 				>
-					<div className="neu w-full max-w-md space-y-4 rounded-md p-6">
-						<h2 className="font-display font-extrabold text-fg text-xl">
+					<div className="w-full max-w-md space-y-4 rounded-md rounded-xl border bg-card p-6 shadow-sm">
+						<h2 className="font-extrabold text-foreground text-xl">
 							Bộ từ đã bị xoá hoặc thay đổi
 						</h2>
-						<p className="text-meta text-sm">
+						<p className="text-muted-foreground text-sm">
 							Giáo viên vừa xoá từ hoặc bộ từ này. Các từ đã lưu trước đó của
 							bạn vẫn được giữ nguyên.
 						</p>
@@ -558,11 +558,11 @@ export function VocabSessionView({
 					data-testid="vocab-exit-confirm-dialog"
 					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
 				>
-					<div className="neu w-full max-w-md space-y-4 rounded-md p-6">
-						<h2 className="font-display font-extrabold text-fg text-xl">
+					<div className="w-full max-w-md space-y-4 rounded-md rounded-xl border bg-card p-6 shadow-sm">
+						<h2 className="font-extrabold text-foreground text-xl">
 							Tạm dừng phiên học?
 						</h2>
-						<p className="text-meta text-sm">
+						<p className="text-muted-foreground text-sm">
 							Các từ đã hoàn thành đều đã được lưu tự động trên hệ thống.
 						</p>
 						<div className="flex justify-end gap-2">
@@ -630,18 +630,18 @@ function LearnIntroCard({
 
 	return (
 		<div data-testid="vocab-learn-intro" className="space-y-6">
-			<div className="neu space-y-4 rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="space-y-4 rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Làm quen từ mới
 				</p>
 				<p
 					data-testid="vocab-intro-word"
-					className="font-display font-extrabold text-3xl text-fg tracking-[-0.03em]"
+					className="font-extrabold text-3xl text-foreground tracking-[-0.03em]"
 				>
 					{card.word}
 				</p>
 				{card.ipa ? (
-					<p className="font-mono text-meta text-sm">{card.ipa}</p>
+					<p className="font-mono text-muted-foreground text-sm">{card.ipa}</p>
 				) : null}
 
 				{audioUrl ? (
@@ -655,19 +655,19 @@ function LearnIntroCard({
 				) : null}
 
 				{isRevealed ? (
-					<div className="mt-4 border-line border-t pt-4">
-						<p className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+					<div className="mt-4 border-border border-t pt-4">
+						<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 							Nghĩa tiếng Việt
 						</p>
 						<p
 							data-testid="vocab-intro-translation"
-							className="mt-1 font-semibold text-fg text-xl"
+							className="mt-1 font-semibold text-foreground text-xl"
 						>
 							{card.translation}
 						</p>
 					</div>
 				) : (
-					<p className="pt-2 font-mono text-meta text-xs">
+					<p className="pt-2 font-mono text-muted-foreground text-xs">
 						Hãy lật thẻ để xem nghĩa trước khi chuyển sang bước luyện tập
 					</p>
 				)}

@@ -120,12 +120,12 @@ export function LessonEditForm({
 			{attempted && !parsed.success && (
 				<div
 					role="alert"
-					className="mt-3 font-mono text-danger text-meta text-xs"
+					className="mt-3 text-danger text-muted-foreground text-xs tabular-nums"
 				>
 					{parsed.error.issues[0]?.message ?? "Dữ liệu chưa hợp lệ."}
 				</div>
 			)}
-			<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+			<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 				<Button
 					type="button"
 					variant="secondary"

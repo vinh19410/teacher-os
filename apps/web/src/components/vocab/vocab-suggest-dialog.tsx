@@ -38,27 +38,29 @@ function SuggestionItemRow({
 		>
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<span className="font-medium text-fg text-sm">{studentName}</span>
+					<span className="font-medium text-foreground text-sm">
+						{studentName}
+					</span>
 					<span
 						data-testid={`vocab-suggestion-status-${suggestion.id}`}
 						className={`rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest ${
 							suggestion.status === "accepted"
-								? "bg-chip text-fg"
+								? "bg-secondary text-foreground"
 								: suggestion.status === "pending"
-									? "neu-sm text-hot"
-									: "neu-in text-muted-fg"
+									? "rounded-md border border-input bg-transparent text-primary"
+									: "rounded-md bg-muted text-muted-foreground"
 						}`}
 					>
 						{STATUS_LABELS[suggestion.status]}
 					</span>
 				</div>
 				{suggestion.note ? (
-					<p className="mt-0.5 text-muted-fg text-xs">
+					<p className="mt-0.5 text-muted-foreground text-xs">
 						Ghi chú: {suggestion.note}
 					</p>
 				) : null}
 				{respondedText ? (
-					<p className="mt-0.5 font-mono text-[10px] text-meta">
+					<p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
 						Lúc {respondedText}
 					</p>
 				) : null}
@@ -212,13 +214,13 @@ export function VocabSuggestDialog({
 			}
 		>
 			<div className="space-y-4">
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					Học viên được gợi ý sẽ thấy bộ từ trong mục "Gợi ý cho bạn" trên cổng
 					học viên (không bắt buộc).
 				</p>
 
 				{data.students.length === 0 ? (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Chưa có học viên nào trong trung tâm.
 					</p>
 				) : (
@@ -226,7 +228,7 @@ export function VocabSuggestDialog({
 						<div>
 							<label
 								htmlFor="vocab-suggest-student"
-								className="mb-1 block font-mono text-[11px] text-meta uppercase tracking-[0.15em]"
+								className="mb-1 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]"
 							>
 								Học viên
 							</label>
@@ -248,7 +250,7 @@ export function VocabSuggestDialog({
 						<div>
 							<label
 								htmlFor="vocab-suggest-note"
-								className="mb-1 block font-mono text-[11px] text-meta uppercase tracking-[0.15em]"
+								className="mb-1 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]"
 							>
 								Lời nhắn (tùy chọn)
 							</label>
@@ -265,26 +267,26 @@ export function VocabSuggestDialog({
 					</div>
 				)}
 
-				<div className="space-y-2 border-line border-t pt-3">
-					<p className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+				<div className="space-y-2 border-border border-t pt-3">
+					<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 						Lịch sử gợi ý bộ từ này
 					</p>
 					{loading ? (
-						<p className="font-mono text-muted-fg text-xs">
+						<p className="font-mono text-muted-foreground text-xs">
 							Đang tải trạng thái gợi ý...
 						</p>
 					) : loadError ? (
-						<p className="text-hot text-xs">
+						<p className="text-primary text-xs">
 							Không tải được trạng thái gợi ý của bộ từ.
 						</p>
 					) : suggestions.length === 0 ? (
-						<p className="text-muted-fg text-xs">
+						<p className="text-muted-foreground text-xs">
 							Chưa gợi ý bộ từ này cho học viên nào.
 						</p>
 					) : (
 						<div
 							data-testid="vocab-suggestion-list"
-							className="max-h-52 divide-y divide-line overflow-y-auto rounded-md border border-line"
+							className="max-h-52 divide-y divide-border overflow-y-auto rounded-md border border-border"
 						>
 							{suggestions.map((sug) => (
 								<SuggestionItemRow

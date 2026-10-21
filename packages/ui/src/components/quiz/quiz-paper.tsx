@@ -155,13 +155,13 @@ export function QuizPaper({
 	) : null;
 
 	return (
-		<article className="flex flex-col gap-4">
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+		<article className="flex flex-col gap-4 rounded-xl bg-card text-foreground">
+			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 				{SKILL_LABELS[skill] ?? skill} · Band {detail.band}
 			</p>
 
 			{skill === "listening" && (
-				<p className="rounded-md border border-line bg-surface p-3 text-sm">
+				<p className="rounded-md border border-border bg-muted p-3 text-sm">
 					🔊 {detail.audioName.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
@@ -189,14 +189,17 @@ export function QuizPaper({
 				<img
 					src={diagramImageUrl}
 					alt="Ảnh đề bài"
-					className="max-h-72 rounded-md border border-line"
+					className="max-h-72 rounded-md border border-border"
 					referrerPolicy="no-referrer"
 					loading="lazy"
 				/>
 			) : null}
 
 			{isAuto && !isEmptyRichText(introPreamble) && (
-				<RichTextBody text={introPreamble} className="text-muted-fg text-sm" />
+				<RichTextBody
+					text={introPreamble}
+					className="text-muted-foreground text-sm"
+				/>
 			)}
 
 			{bankKind && <OptionBankList bank={detail.optionBank} kind={bankKind} />}
@@ -210,19 +213,19 @@ export function QuizPaper({
 						<RichTextBody
 							key={text}
 							text={text}
-							className="text-muted-fg text-sm"
+							className="text-muted-foreground text-sm"
 						/>
 					))}
 
 			{/* Cue card chỉ khi đề có topic (Part 2) — Part 1/3 là câu hỏi
 			 * trong `prompt`, không còn cue card rỗng "the topic". */}
 			{hasCueCard && (
-				<div className="rounded-md border border-line bg-surface/50 p-4 text-sm">
+				<div className="rounded-md border border-border bg-muted/50 p-4 text-sm">
 					{cueTopic !== "" && <p>Describe {cueTopic}.</p>}
 					{cuePoints.length > 0 && (
 						<>
 							<p className="mt-2 font-medium">You should say:</p>
-							<ul className="ml-5 list-disc text-muted-fg">
+							<ul className="ml-5 list-disc text-muted-foreground">
 								{cuePoints.map((point) => (
 									<li key={point}>{point}</li>
 								))}
@@ -267,17 +270,17 @@ export function QuizPaper({
 						>
 							{isAuto && (
 								<header className="mb-2 flex flex-col gap-0.5">
-									<h2 className="font-display font-semibold">{part.label}</h2>
+									<h2 className="font-semibold">{part.label}</h2>
 									{hasOwn ? (
 										<RichTextBody
 											text={part.instructionHtml ?? ""}
-											className="text-muted-fg text-sm"
+											className="text-muted-foreground text-sm"
 										/>
 									) : (
 										<>
 											<p className="font-medium text-[13px]">{display.label}</p>
 											{display.instruction && (
-												<p className="text-muted-fg text-sm">
+												<p className="text-muted-foreground text-sm">
 													{display.instruction}
 												</p>
 											)}
@@ -306,7 +309,7 @@ export function QuizPaper({
 			</div>
 
 			{questions.length === 0 && !isWritingEssay && !isSpeaking && (
-				<p className="text-muted-fg text-sm" role="note">
+				<p className="text-muted-foreground text-sm" role="note">
 					Đề này không có câu hỏi tự chấm — liên hệ giáo viên để biết thêm hướng
 					dẫn nộp bài.
 				</p>

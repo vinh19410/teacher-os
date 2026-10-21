@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Harness chụp đối chiếu + baseline ảnh cũ"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: []

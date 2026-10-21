@@ -116,7 +116,9 @@ test.describe("Student class card & class detail page", () => {
 		const card = page.getByTestId("class-card").filter({ hasText: className });
 		await expect(card).toContainText(teacherName);
 		await expect(card).toContainText(teacherEmail);
-		await expect(card.getByRole("link")).toHaveText(className);
+		await expect(card.getByRole("link", { name: className })).toHaveText(
+			className,
+		);
 
 		// Lớp chờ kích hoạt: card không có link, vẫn có nút "Tham gia lớp".
 		const invitedCard = page
@@ -129,7 +131,7 @@ test.describe("Student class card & class detail page", () => {
 
 		// Keyboard: Tab tới link của card rồi Enter mở trang lớp; bấm chuột vào
 		// vùng giáo viên (ngoài chữ tên lớp) cũng mở được — kiểm tra ở test sau.
-		await card.getByRole("link").focus();
+		await card.getByRole("link", { name: className }).focus();
 		await page.keyboard.press("Enter");
 		await expect(page).toHaveURL(
 			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,
@@ -151,6 +153,8 @@ test.describe("Student class card & class detail page", () => {
 		await expect(lessons.nth(1)).toHaveAttribute("aria-current", "true");
 		await expect(lessons.nth(2)).not.toContainText("Buổi tới");
 
+		// Bài tập đã chuyển vào tab riêng ("Bài tập") theo design-v2 #378.
+		await page.getByRole("tab", { name: "Bài tập" }).click();
 		await page
 			.getByRole("link", { name: `Làm bài: ${assignmentTitle}` })
 			.click();
@@ -179,6 +183,9 @@ test.describe("Student class card & class detail page", () => {
 			.getByTestId("class-card")
 			.filter({ hasText: className })
 			.getByText(teacherEmail);
+		// Card v2 cao hơn (dòng lịch + bảng bài tập) — email có thể dưới fold,
+		// mouse.click không tự scroll nên phải đưa vào view trước.
+		await email.scrollIntoViewIfNeeded();
 		const box = await email.boundingBox();
 		if (!box) throw new Error("teacher email row is not rendered");
 		await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -227,7 +234,7 @@ test.describe("Student class card & class detail page", () => {
 		await page
 			.getByTestId("class-card")
 			.filter({ hasText: className })
-			.getByRole("link")
+			.getByRole("link", { name: className })
 			.click();
 		await expect(page).toHaveURL(
 			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,

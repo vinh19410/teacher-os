@@ -1,7 +1,7 @@
 ---
 title: "Redesign web + student theo design v2 (shadcn neutral, light mặc định) + tính năng mới của design"
 description: "Lấy vinh19410/teacheros-design-v2@7a53fc0 làm base: token shadcn neutral oklch, Geist, light mặc định + toggle dark, shell sidebar-07 dùng chung, khoác lại mọi màn hình hiện có và xây các tính năng chỉ có trong design (Practice catalog, History, Classmates, ⌘K). DoD = ảnh chụp đối chiếu design ↔ app từng màn PASS."
-status: pending
+status: completed
 priority: P1
 effort: 78h
 issue: 378
@@ -75,18 +75,18 @@ cục); route path, query param, accessible name, `data-testid` giữ nguyên tr
 
 | # | Phase | Status | Effort | Phụ thuộc |
 |---|-------|--------|--------|-----------|
-| 1 | [Harness chụp đối chiếu + baseline ảnh "cũ"](./phase-01-visual-harness-baseline.md) | Pending | 5h | — |
-| 2 | [Token neutral, Geist self-host, light mặc định](./phase-02-tokens-fonts-theme.md) | Pending | 5h | 1 |
-| 3 | [Primitive dùng chung theo v2](./phase-03-shared-primitives.md) | Pending | 7h | 2 |
-| 4 | [App shell sidebar-07 dùng chung web + student](./phase-04-app-shell.md) | Pending | 6h | 3 |
-| 5 | [Auth, pay, 404 (web + student)](./phase-05-auth-public-pages.md) | Pending | 4h | 3 |
-| 6 | [Giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo](./phase-06-teacher-core-pages.md) | Pending | 8h | 4 |
-| 7 | [Giáo viên: bài tập, đề thi, chấm bài, học phí, vocab](./phase-07-teacher-assignments-tuition.md) | Pending | 7h | 4 |
-| 8 | [Giáo viên: ô tìm kiếm ⌘K (mới)](./phase-08-teacher-command-search.md) | Pending | 4h | 4 |
-| 9 | [Học viên: màn hiện có + Classmates (mới)](./phase-09-student-existing-pages.md) | Pending | 8h | 4 |
-| 10 | [Học viên: Practice catalog (mới, gồm migration)](./phase-10-student-practice.md) | Pending | 11h | 9 |
-| 11 | [Học viên: History heatmap + lịch sử chi tiết (mới)](./phase-11-student-history.md) | Pending | 7h | 10 |
-| 12 | [Sweep, DESIGN.md, e2e, DoD ảnh đối chiếu toàn bộ](./phase-12-sweep-docs-visual-dod.md) | Pending | 6h | 5, 6, 7, 8, 11 |
+| 1 | [Harness chụp đối chiếu + baseline ảnh "cũ"](./phase-01-visual-harness-baseline.md) | Completed | 5h | — |
+| 2 | [Token neutral, Geist self-host, light mặc định](./phase-02-tokens-fonts-theme.md) | Completed | 5h | 1 |
+| 3 | [Primitive dùng chung theo v2](./phase-03-shared-primitives.md) | Completed | 7h | 2 |
+| 4 | [App shell sidebar-07 dùng chung web + student](./phase-04-app-shell.md) | Completed | 6h | 3 |
+| 5 | [Auth, pay, 404 (web + student)](./phase-05-auth-public-pages.md) | Completed | 4h | 3 |
+| 6 | [Giáo viên: dashboard, lớp, học viên, lịch, giáo trình, hồ sơ, báo cáo](./phase-06-teacher-core-pages.md) | Completed | 8h | 4 |
+| 7 | [Giáo viên: bài tập, đề thi, chấm bài, học phí, vocab](./phase-07-teacher-assignments-tuition.md) | Completed | 7h | 4 |
+| 8 | [Giáo viên: ô tìm kiếm ⌘K (mới)](./phase-08-teacher-command-search.md) | Completed | 4h | 4 |
+| 9 | [Học viên: màn hiện có + Classmates (mới)](./phase-09-student-existing-pages.md) | Completed | 8h | 4 |
+| 10 | [Học viên: Practice catalog (mới, gồm migration)](./phase-10-student-practice.md) | Completed | 11h | 9 |
+| 11 | [Học viên: History heatmap + lịch sử chi tiết (mới)](./phase-11-student-history.md) | Completed | 7h | 10 |
+| 12 | [Sweep, DESIGN.md, e2e, DoD ảnh đối chiếu toàn bộ](./phase-12-sweep-docs-visual-dod.md) | Completed | 6h | 5, 6, 7, 8, 11 |
 
 Phase 6, 7, 8, 9 độc lập về file sau phase 4 (5 sau phase 3). Mỗi phase màn hình **tự chạy
 harness cho màn của mình** và chỉ đóng khi các màn đó PASS (DoD cục bộ); phase 12 chạy lại

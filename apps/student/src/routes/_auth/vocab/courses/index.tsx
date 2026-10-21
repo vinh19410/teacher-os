@@ -64,14 +64,14 @@ export function VocabCoursesCatalogView({
 					<Link
 						to="/vocab"
 						data-testid="vocab-courses-back-to-overview"
-						className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] transition-colors hover:text-hot"
+						className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] transition-colors hover:text-primary"
 					>
 						← Từ vựng
 					</Link>
-					<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 						Thư viện từ vựng
 					</p>
-					<h1 className="font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]">
+					<h1 className="font-extrabold text-3xl text-foreground leading-[0.95] tracking-[-0.045em]">
 						Khóa học từ vựng
 					</h1>
 				</div>
@@ -82,28 +82,28 @@ export function VocabCoursesCatalogView({
 					placeholder="Tìm khóa học từ vựng..."
 					value={inputValue}
 					onChange={(e) => setInputValue(e.target.value)}
-					className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2 text-fg text-sm placeholder:text-meta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40 sm:w-72"
+					className="w-full rounded-md border border-input bg-muted px-3.5 py-2 text-foreground text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-72"
 				/>
 			</div>
 
 			{coursesQuery.isLoading ? (
 				<div
 					data-testid="vocab-courses-loading"
-					className="neu rounded-md p-6 text-center text-meta text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-muted-foreground text-sm shadow-sm"
 				>
 					Đang tải danh sách khóa học từ vựng...
 				</div>
 			) : coursesQuery.isError ? (
 				<div
 					data-testid="vocab-courses-error"
-					className="neu rounded-md p-6 text-center text-danger text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-danger text-sm shadow-sm"
 				>
 					Không thể tải danh sách khóa học từ vựng. Vui lòng thử lại.
 				</div>
 			) : filteredCourses.length === 0 ? (
 				<div
 					data-testid="vocab-courses-empty"
-					className="neu rounded-md p-6 text-center text-meta text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-muted-foreground text-sm shadow-sm"
 				>
 					Không tìm thấy khóa học từ vựng phù hợp.
 				</div>
@@ -115,22 +115,22 @@ export function VocabCoursesCatalogView({
 							type="button"
 							data-testid={`vocab-course-card-${course.id}`}
 							onClick={() => onSelectCourse?.(course.id)}
-							className="neu group flex w-full flex-col justify-between gap-4 rounded-md p-5 text-left transition-colors duration-150 hover:border-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40"
+							className="group flex w-full flex-col justify-between gap-4 rounded-md rounded-xl border bg-card p-5 text-left shadow-sm transition-colors duration-150 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 						>
 							<div className="space-y-1.5">
 								{course.target ? (
 									<span
 										aria-hidden="true"
-										className="neu-in inline-block rounded px-1.5 py-0.5 font-mono text-[10px] text-meta uppercase tracking-widest"
+										className="inline-block rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 									>
 										{course.target}
 									</span>
 								) : null}
-								<h2 className="font-display font-extrabold text-fg text-lg group-hover:text-hot">
+								<h2 className="font-extrabold text-foreground text-lg group-hover:text-primary">
 									{course.name}
 								</h2>
 								{course.description ? (
-									<p className="line-clamp-2 text-meta text-sm">
+									<p className="line-clamp-2 text-muted-foreground text-sm">
 										{course.description}
 									</p>
 								) : null}
@@ -140,16 +140,16 @@ export function VocabCoursesCatalogView({
 								aria-hidden="true"
 								className="flex flex-wrap items-center gap-2 font-mono text-xs"
 							>
-								<span className="neu-in rounded-full px-2.5 py-0.5 text-meta">
+								<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-muted-foreground">
 									{course.deckCount} bài
 								</span>
-								<span className="neu-in rounded-full px-2.5 py-0.5 text-meta">
+								<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-muted-foreground">
 									{course.wordCount} từ
 								</span>
 								{course.reviewWordCount > 0 ? (
 									<span
 										data-testid={`vocab-course-review-${course.id}`}
-										className="neu-in rounded-full px-2.5 py-0.5 text-fg"
+										className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-foreground"
 									>
 										Đã học {course.reviewWordCount}/{course.wordCount} từ
 									</span>
@@ -157,7 +157,7 @@ export function VocabCoursesCatalogView({
 								{course.learnedWordCount > 0 ? (
 									<span
 										data-testid={`vocab-course-learned-${course.id}`}
-										className="neu-in rounded-full px-2.5 py-0.5 text-success"
+										className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-success"
 									>
 										{course.learnedWordCount} thành thạo
 									</span>
@@ -165,7 +165,7 @@ export function VocabCoursesCatalogView({
 								{course.dueWordCount > 0 ? (
 									<span
 										data-testid={`vocab-course-due-${course.id}`}
-										className="rounded-full bg-hot px-2.5 py-0.5 text-accent-on"
+										className="rounded-full bg-primary px-2.5 py-0.5 text-primary-foreground"
 									>
 										{course.dueWordCount} đến hạn
 									</span>

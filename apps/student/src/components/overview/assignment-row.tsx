@@ -13,17 +13,17 @@ export function AssignmentRow({
 	const derived = deriveAssignmentStatus(assignment);
 
 	const rowContent = (
-		<div className="neu-sm flex flex-col gap-2 rounded-md p-4 transition-colors sm:flex-row sm:items-center sm:justify-between">
+		<div className="flex flex-col gap-2 rounded-md rounded-md border border-input bg-transparent p-4 transition-colors sm:flex-row sm:items-center sm:justify-between">
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
-					<h4 className="truncate font-medium text-[15px] text-fg">
+					<h4 className="truncate font-medium text-[15px] text-foreground">
 						{assignment.title}
 					</h4>
 				</div>
-				<div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[12px] text-meta">
+				<div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[12px] text-muted-foreground">
 					{showClassName && assignment.className && (
 						<>
-							<span className="font-sans text-[13px] text-meta">
+							<span className="font-sans text-[13px] text-muted-foreground">
 								{assignment.className}
 							</span>
 							<span aria-hidden="true">·</span>

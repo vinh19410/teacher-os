@@ -32,14 +32,14 @@ export function GreetingHeader({
 		<section className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-6 pb-2">
 			<div className="min-w-0">
 				{currentOrg?.name && (
-					<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 						{currentOrg.name}
 					</p>
 				)}
-				<h1 className="mt-1 font-display font-extrabold text-[clamp(40px,6vw,72px)] leading-[0.95] tracking-[-0.045em]">
+				<h1 className="mt-1 font-extrabold text-[clamp(40px,6vw,72px)] leading-[0.95] tracking-[-0.045em]">
 					Chào {displayName}
 				</h1>
-				<p className="mt-3 text-meta text-sm leading-relaxed">
+				<p className="mt-3 text-muted-foreground text-sm leading-relaxed">
 					{todayVN} · {summaryText}
 				</p>
 			</div>

@@ -106,7 +106,7 @@ export function QuizMediaPlayer({
 					preload="metadata"
 					aria-label="Bản ghi bài nói"
 					onError={() => setPlaybackError(true)}
-					className="max-h-80 w-full rounded-md border border-line bg-fg/5"
+					className="max-h-80 w-full rounded-md border border-border bg-primary/5"
 				/>
 			) : (
 				// biome-ignore lint/a11y/useMediaCaption: bài nói học viên tự ghi âm, không có phụ đề.
@@ -120,12 +120,12 @@ export function QuizMediaPlayer({
 				/>
 			)}
 			{playbackError && (
-				<p role="alert" className="text-muted-fg text-sm">
+				<p role="alert" className="text-muted-foreground text-sm">
 					Trình duyệt không phát được định dạng này.{" "}
 					<a
 						href={url}
 						download={media.name}
-						className="text-hot underline-offset-4 hover:underline"
+						className="text-primary underline-offset-4 hover:underline"
 					>
 						Tải file về
 					</a>

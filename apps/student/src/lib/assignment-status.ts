@@ -116,7 +116,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg",
+			badgeClass: "bg-muted text-muted-foreground",
 			dueText: "Không có hạn",
 			bandScore: null,
 			sortOrder: 2,
@@ -129,7 +129,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg",
+			badgeClass: "bg-muted text-muted-foreground",
 			dueText: assignment.due,
 			bandScore: null,
 			sortOrder: 2,
@@ -143,7 +143,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "overdue",
 			statusLabel: "Quá hạn",
-			badgeClass: "bg-hot font-medium text-accent-on",
+			badgeClass: "bg-primary font-medium text-primary-foreground",
 			dueText: `Hạn: ${dueFormatted} · quá ${overdueDays} ngày`,
 			bandScore: null,
 			sortOrder: 0, // Overdue first
@@ -155,7 +155,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "due-soon",
 			statusLabel: "Sắp đến hạn",
-			badgeClass: "border border-dashed border-meta text-meta",
+			badgeClass: "border border-dashed border-border text-muted-foreground",
 			dueText: `Hạn: ${dueFormatted} · ${relativeMsg}`,
 			bandScore: null,
 			sortOrder: 1,
@@ -165,7 +165,7 @@ export function deriveAssignmentStatus(
 	return {
 		status: "not-submitted",
 		statusLabel: "Chưa nộp",
-		badgeClass: "bg-surface text-muted-fg",
+		badgeClass: "bg-muted text-muted-foreground",
 		dueText: `Hạn: ${dueFormatted} · còn ${diff} ngày`,
 		bandScore: null,
 		sortOrder: 2,

@@ -26,7 +26,7 @@ import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 const thClass =
-	"border-line border-b px-4 py-3 text-left font-medium font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]";
+	"border-border border-b px-4 py-3 text-left font-medium text-muted-foreground";
 
 /** Space/Enter must not bubble past a CTA (parity with the roster modal). */
 const stopActionKeyPropagation = (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -117,10 +117,10 @@ export function ClassScheduleTable({
 					rows={legacyLessons.map((l) => {
 						return {
 							cells: [
-								<span key="d" className="font-mono text-meta text-xs">
+								<span key="d" className="text-muted-foreground text-xs">
 									{lessonDayLabel(l.day)}
 								</span>,
-								<span key="t" className="font-mono">
+								<span key="t" className="tabular-nums">
 									{l.time}
 								</span>,
 								l.topic,
@@ -193,9 +193,9 @@ export function ClassScheduleTable({
 
 							return (
 								<Fragment key={`session-${s.index}`}>
-									<tr className="border-line-soft border-b transition-colors duration-[150ms]">
+									<tr className="border-border border-b transition-colors duration-[150ms]">
 										<td className="px-4 py-3 text-left">
-											<span className="font-mono text-meta text-xs">
+											<span className="text-muted-foreground text-xs">
 												{formatSessionDate(s.dateISO)} · {sessionTimeRange(s)}
 											</span>
 										</td>
@@ -208,7 +208,7 @@ export function ClassScheduleTable({
 															e.stopPropagation();
 															toggleExpand(s.index);
 														}}
-														className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-fg hover:bg-surface hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+														className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 														aria-label={
 															isExpanded
 																? "Thu gọn chi tiết bài học"
@@ -228,7 +228,7 @@ export function ClassScheduleTable({
 												<div className="flex flex-wrap items-center gap-1.5">
 													{info.moduleTitle && (
 														<span
-															className="inline-flex max-w-[140px] items-center truncate rounded-md border border-line-soft bg-surface-warm/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-fg"
+															className="inline-flex max-w-[140px] items-center truncate rounded-md border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground tabular-nums"
 															title={info.moduleTitle}
 														>
 															{info.moduleTitle}
@@ -330,24 +330,24 @@ export function ClassScheduleTable({
 									{hasDetails && isExpanded && (
 										<tr
 											key={`details-${s.index}`}
-											className="border-line-soft border-b bg-surface-warm/30 text-xs"
+											className="border-border border-b bg-muted/40/30 text-xs"
 											aria-label="Chi tiết lesson"
 										>
 											<td colSpan={3} className="px-6 py-3">
 												<div className="space-y-1.5 pl-7">
 													<div>
-														<span className="font-medium text-muted-fg">
+														<span className="font-medium text-muted-foreground">
 															Tài liệu:{" "}
 														</span>
-														<span className="text-fg-2">
+														<span className="text-foreground-2">
 															{info.materials || "Chưa có tài liệu"}
 														</span>
 													</div>
 													<div>
-														<span className="font-medium text-muted-fg">
+														<span className="font-medium text-muted-foreground">
 															Mục tiêu:{" "}
 														</span>
-														<span className="text-fg-2">
+														<span className="text-foreground-2">
 															{info.objectives || "Chưa có mục tiêu"}
 														</span>
 													</div>

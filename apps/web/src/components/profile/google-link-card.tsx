@@ -11,7 +11,7 @@ function GoogleGlyph() {
 	return (
 		<span
 			aria-hidden="true"
-			className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line-soft border-solid bg-bg font-display font-semibold text-fg"
+			className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border border-solid bg-background font-semibold text-foreground"
 		>
 			G
 		</span>
@@ -46,7 +46,9 @@ export function GoogleLinkCard() {
 		<Card variant="white">
 			<SectionLabel>Liên kết tài khoản Google</SectionLabel>
 			{loading && (
-				<p className="text-muted-fg text-sm">Đang tải trạng thái liên kết…</p>
+				<p className="text-muted-foreground text-sm">
+					Đang tải trạng thái liên kết…
+				</p>
 			)}
 			{!loading && error && (
 				<div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,7 +63,7 @@ export function GoogleLinkCard() {
 					<GoogleGlyph />
 					<div className="min-w-0 flex-1 leading-[1.35]">
 						<div className="font-semibold text-sm">Google</div>
-						<p className="truncate text-muted-fg text-xs">
+						<p className="truncate text-muted-foreground text-xs">
 							Tài khoản Google đã liên kết với hồ sơ này.
 						</p>
 					</div>
@@ -73,7 +75,7 @@ export function GoogleLinkCard() {
 					<GoogleGlyph />
 					<div className="min-w-0 flex-1 leading-[1.35]">
 						<div className="font-semibold text-sm">Google</div>
-						<p className="truncate text-muted-fg text-xs">
+						<p className="truncate text-muted-foreground text-xs">
 							Kết nối để đăng nhập nhanh bằng Google với cùng email.
 						</p>
 					</div>

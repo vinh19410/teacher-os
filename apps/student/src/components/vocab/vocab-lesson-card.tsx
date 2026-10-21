@@ -84,21 +84,21 @@ export function VocabLessonCard({
 			params={{ deckId: deck.id }}
 			search={{ course: courseId }}
 			data-testid={`vocab-course-deck-${deck.id}`}
-			className={`neu group relative flex flex-col justify-between gap-2.5 rounded-md p-3 transition-colors duration-150 hover:border-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40 ${
-				isStartHere ? "border-hot" : ""
+			className={`group relative flex flex-col justify-between gap-2.5 rounded-md rounded-xl border bg-card p-3 shadow-sm transition-colors duration-150 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+				isStartHere ? "border-primary" : ""
 			}`}
 		>
 			{isStartHere ? (
 				<span
 					data-testid="vocab-lesson-start-here"
-					className="inline-flex items-center gap-1 self-start rounded-full bg-hot px-2 py-0.5 font-mono text-[10px] text-accent-on uppercase tracking-wider"
+					className="inline-flex items-center gap-1 self-start rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] text-primary-foreground uppercase tracking-wider"
 				>
 					<span aria-hidden="true">▸</span> Bắt đầu tại đây
 				</span>
 			) : null}
 
 			<div className="space-y-2">
-				<div className="neu-in relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-sm">
+				<div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md rounded-sm bg-muted">
 					{showImage ? (
 						<img
 							src={deck.imageUrl ?? undefined}
@@ -115,10 +115,10 @@ export function VocabLessonCard({
 							aria-hidden="true"
 							className="flex h-full w-full flex-col items-center justify-center p-2 text-center"
 						>
-							<span className="line-clamp-2 font-display font-extrabold text-fg text-xs">
+							<span className="line-clamp-2 font-extrabold text-foreground text-xs">
 								{deck.title}
 							</span>
-							<span className="mt-1 font-mono text-[10px] text-meta">
+							<span className="mt-1 font-mono text-[10px] text-muted-foreground">
 								{deck.wordCount} từ
 							</span>
 						</div>
@@ -128,14 +128,14 @@ export function VocabLessonCard({
 				<div>
 					<h3
 						data-testid={`vocab-lesson-title-${deck.id}`}
-						className="line-clamp-2 font-display font-extrabold text-fg text-sm leading-snug group-hover:text-hot"
+						className="line-clamp-2 font-extrabold text-foreground text-sm leading-snug group-hover:text-primary"
 					>
 						{deck.title}
 					</h3>
 					{subtitle ? (
 						<p
 							data-testid={`vocab-lesson-subtitle-${deck.id}`}
-							className="mt-0.5 line-clamp-2 text-meta text-xs leading-snug"
+							className="mt-0.5 line-clamp-2 text-muted-foreground text-xs leading-snug"
 						>
 							{subtitle}
 						</p>
@@ -150,19 +150,19 @@ export function VocabLessonCard({
 				{status === "completed" ? (
 					<span
 						data-testid={`vocab-lesson-status-${deck.id}`}
-						className="neu-in rounded-full px-2 py-0.5 text-success"
+						className="rounded-full rounded-md bg-muted px-2 py-0.5 text-success"
 					>
 						Hoàn thành
 					</span>
 				) : status === "in-progress" ? (
 					<span
 						data-testid={`vocab-lesson-status-${deck.id}`}
-						className="neu-in rounded-full px-2 py-0.5 text-hot"
+						className="rounded-full rounded-md bg-muted px-2 py-0.5 text-primary"
 					>
 						Đang học {deck.reviewCount}/{deck.wordCount}
 					</span>
 				) : (
-					<span className="neu-in rounded-full px-2 py-0.5 text-meta">
+					<span className="rounded-full rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
 						{deck.wordCount} từ
 					</span>
 				)}
@@ -170,7 +170,7 @@ export function VocabLessonCard({
 				{deck.dueCount > 0 ? (
 					<span
 						data-testid={`vocab-course-deck-due-${deck.id}`}
-						className="rounded-full bg-hot px-2 py-0.5 text-accent-on"
+						className="rounded-full bg-primary px-2 py-0.5 text-primary-foreground"
 					>
 						{deck.dueCount} đến hạn
 					</span>

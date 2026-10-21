@@ -31,9 +31,9 @@ export function QuizReadingSplitLayout({
 				<section
 					aria-label="Bài đọc"
 					data-testid="reading-passage-pane"
-					className="border-line border-b px-4 py-6 lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-b-0"
+					className="border-border border-b px-4 py-6 lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-b-0"
 				>
-					<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+					<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 						Bài đọc
 					</p>
 					<RichTextBody
@@ -49,7 +49,7 @@ export function QuizReadingSplitLayout({
 						data-testid="reading-work-pane"
 						className="flex-1 px-4 py-6 lg:min-h-0 lg:overflow-y-auto"
 					>
-						<p className="mb-4 font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+						<p className="mb-4 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 							Bài làm
 						</p>
 						{children}

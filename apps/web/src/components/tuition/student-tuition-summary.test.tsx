@@ -149,11 +149,11 @@ describe("StudentTuitionSummary", () => {
 				})}
 			/>,
 		);
-		// StatCard hot (redesign #349): nền ink nổi bật, số cam — Card root mang
-		// class hot, label là div con — đi 1 cấp lên.
-		const card = screen.getByText("Còn lại (VND)").closest("div")!
-			.parentElement!;
-		expect(card.className).toContain("bg-fg");
+		// StatCard hot (v2): số mang text-destructive — label là div kế bên,
+		// đi 1 cấp lên rồi đọc phần tử số.
+		const label = screen.getByText("Còn lại (VND)");
+		const value = label.previousElementSibling!;
+		expect(value.className).toContain("text-destructive");
 	});
 
 	it("lớp invited hiện badge 'Đã mời' và ô Còn lại 'Chưa kích hoạt — chưa tính'", () => {

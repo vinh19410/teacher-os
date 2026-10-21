@@ -33,7 +33,7 @@ export function PendingInvitationsList({
 
 	if (isLoading) {
 		return (
-			<div className="flex min-h-[200px] items-center justify-center p-8 text-meta text-sm">
+			<div className="flex min-h-[200px] items-center justify-center p-8 text-muted-foreground text-sm">
 				Đang tải danh sách lời mời...
 			</div>
 		);
@@ -49,15 +49,15 @@ export function PendingInvitationsList({
 
 	if (pendingInvites.length === 0) {
 		return (
-			<div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-line border-dashed bg-surface/30 p-8 text-center">
-				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-meta">
+			<div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-border border-dashed bg-muted/30 p-8 text-center">
+				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
 					<Mail className="h-6 w-6" />
 				</div>
 				<div className="max-w-[360px]">
-					<h3 className="font-semibold text-fg text-sm">
+					<h3 className="font-semibold text-foreground text-sm">
 						Chưa có lời mời nào đang chờ
 					</h3>
-					<p className="mt-1 text-meta text-xs">
+					<p className="mt-1 text-muted-foreground text-xs">
 						Gửi lời mời qua email để học viên nhận thông báo và tham gia vào tổ
 						chức của bạn.
 					</p>
@@ -79,8 +79,8 @@ export function PendingInvitationsList({
 
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface">
-				<div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-line border-b bg-surface-raised px-4 py-3 font-semibold text-meta text-xs">
+			<div className="overflow-hidden rounded-[var(--radius-md)] border border-border bg-muted">
+				<div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-border border-b bg-muted-raised px-4 py-3 font-semibold text-muted-foreground text-xs">
 					<span>Email học viên</span>
 					<span className="hidden sm:inline">Trạng thái</span>
 					<span>Thao tác</span>
@@ -100,13 +100,13 @@ export function PendingInvitationsList({
 						return (
 							<li
 								key={inv.id}
-								className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 hover:bg-surface-raised/40"
+								className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 hover:bg-muted-raised/40"
 							>
 								<div className="flex flex-col">
-									<span className="font-medium text-fg text-sm">
+									<span className="font-medium text-foreground text-sm">
 										{inv.email}
 									</span>
-									<span className="text-meta text-xs">
+									<span className="text-muted-foreground text-xs">
 										Đã gửi lúc {dateFormatted}
 									</span>
 								</div>

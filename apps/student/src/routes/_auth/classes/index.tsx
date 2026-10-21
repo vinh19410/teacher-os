@@ -58,10 +58,10 @@ function StudentClassesPage() {
 				return (
 					<div data-testid="student-classes-page" className="space-y-6">
 						<header>
-							<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+							<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 								Lớp học · {overview.classes.length} lớp
 							</p>
-							<h1 className="mt-2 font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]">
+							<h1 className="mt-2 font-extrabold text-3xl text-foreground leading-[0.95] tracking-[-0.045em]">
 								Lớp học của tôi
 							</h1>
 						</header>
@@ -83,6 +83,9 @@ function StudentClassesPage() {
 											acceptEnrollmentMutation.isPending &&
 											acceptEnrollmentMutation.variables === cls.enrollmentId
 										}
+										assignments={overview.assignments.filter(
+											(a) => a.classId === cls.id,
+										)}
 									/>
 								))}
 							</div>

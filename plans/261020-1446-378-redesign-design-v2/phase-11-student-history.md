@@ -1,7 +1,7 @@
 ---
 phase: 11
 title: "Học viên: History heatmap + lịch sử chi tiết (mới)"
-status: pending
+status: completed
 priority: P2
 effort: "7h"
 dependencies: [10]

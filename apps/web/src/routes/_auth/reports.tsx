@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
-import { SectionLabel } from "@/components/ui/section-label";
+import { SectionTitle } from "@/components/ui/section-label";
+import { Stat } from "@/components/ui/stat";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 
@@ -76,22 +77,38 @@ export function ReportsRoute() {
 									? `${reportCount} báo cáo`
 									: "Chưa có báo cáo nào"}
 							</span>
-							<span className="text-muted-fg">·</span>
+							<span className="text-muted-foreground">·</span>
 							<Badge variant="muted">Zalo OA: Chưa kết nối</Badge>
 						</span>
 					)
 				}
+				action={
+					<Button size="sm" onClick={() => setModalOpen(true)}>
+						+ Tạo báo cáo tuần
+					</Button>
+				}
 			/>
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-				<h2 className="font-display font-extrabold text-2xl tracking-[-0.02em]">
+			{/* Hàng KPI theo khung Dashboard (design không có màn Reports riêng). */}
+			<div className="mb-8 grid grid-cols-3 gap-4">
+				<Stat label="Tổng báo cáo" value={String(reportCount)} />
+				<Stat
+					label="Đã gửi"
+					value={String(
+						data.reports.filter((r) => r.status !== "draft").length,
+					)}
+				/>
+				<Stat
+					label="Phụ huynh đã đọc"
+					value={String(data.reports.filter((r) => r.read).length)}
+				/>
+			</div>
+			<div className="mb-4">
+				<SectionTitle description="Báo cáo tuần gửi phụ huynh qua Zalo OA">
 					Báo cáo đã gửi
-				</h2>
-				<Button size="sm" onClick={() => setModalOpen(true)}>
-					+ Tạo báo cáo tuần
-				</Button>
+				</SectionTitle>
 			</div>
 			{data.reports.length === 0 ? (
-				<p className="font-mono text-meta text-xs">
+				<p className="text-muted-foreground text-sm">
 					Chưa có báo cáo nào được gửi.
 				</p>
 			) : (
@@ -113,24 +130,24 @@ export function ReportsRoute() {
 										<Avatar text={s?.avatar ?? "?"} size="sm" />
 										{s?.name}
 									</div>,
-									<span key="p" className="font-mono text-meta text-xs">
+									<span key="p" className="text-muted-foreground text-xs">
 										{r.period}
 									</span>,
-									<span key="n" className="font-mono">
+									<span key="n" className="text-muted-foreground tabular-nums">
 										{r.sessions}
 									</span>,
 									<Badge key="b" variant={STATUS_VARIANT[r.status]}>
 										{STATUS_LABEL[r.status]}
 									</Badge>,
-									<span key="t" className="font-mono text-meta text-xs">
+									<span key="t" className="text-muted-foreground text-xs">
 										{r.sent}
 									</span>,
 									r.read ? (
-										<span key="r" className="font-mono text-meta text-xs">
+										<span key="r" className="text-muted-foreground text-xs">
 											{r.read}
 										</span>
 									) : (
-										<span key="r" className="text-muted-fg text-xs">
+										<span key="r" className="text-muted-foreground text-xs">
 											Chưa mở
 										</span>
 									),
@@ -141,9 +158,9 @@ export function ReportsRoute() {
 				</Card>
 			)}
 			<div className="mt-8">
-				<SectionLabel>Nhật ký gửi tin nhắn</SectionLabel>
+				<SectionTitle>Nhật ký gửi tin nhắn</SectionTitle>
 				{sendLog.length === 0 ? (
-					<p className="font-mono text-meta text-xs">
+					<p className="text-muted-foreground text-xs">
 						Chưa có nhật ký gửi tin nhắn.
 					</p>
 				) : (
@@ -151,16 +168,18 @@ export function ReportsRoute() {
 						{sendLog.map((l) => (
 							<div
 								key={l.id}
-								className="grid grid-cols-[100px_1fr_auto] items-baseline gap-4 border-line-soft border-t border-solid py-3 first:border-t-0 first:pt-0 max-app:grid-cols-1 max-app:gap-1"
+								className="grid grid-cols-[100px_1fr_auto] items-baseline gap-4 border-border border-t border-solid py-3 first:border-t-0 first:pt-0 max-app:grid-cols-1 max-app:gap-1"
 							>
-								<span className="font-mono text-muted-fg text-xs">
-									{l.date}
-								</span>
+								<span className="text-muted-foreground text-xs">{l.date}</span>
 								<div>
 									<div className="font-medium text-sm">{l.title}</div>
-									<div className="mt-0.5 text-muted-fg text-xs">{l.desc}</div>
+									<div className="mt-0.5 text-muted-foreground text-xs">
+										{l.desc}
+									</div>
 								</div>
-								<span className="font-mono text-meta text-xs">{l.channel}</span>
+								<span className="text-muted-foreground text-xs">
+									{l.channel}
+								</span>
 							</div>
 						))}
 					</Card>

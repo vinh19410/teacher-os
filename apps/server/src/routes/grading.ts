@@ -17,13 +17,15 @@ import {
 } from "@teacher-os/api/lib/ielts-band";
 import {
 	assignmentPrompt,
+	assignmentTest,
+	assignmentTestPart,
 	classAssignment,
 	classTable,
 	quizAttempt,
 	quizAttemptAnnotation,
 	student,
 } from "@teacher-os/db/schema/index";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
@@ -43,7 +45,6 @@ type GradingContext = Context<Env>;
 type GradableAttemptRow = {
 	id: string;
 	status: string;
-	assignmentId: string;
 	essay: string;
 	mediaKey: string | null;
 	mediaName: string | null;
@@ -55,6 +56,9 @@ type GradableAttemptRow = {
 	gradeScores: Record<string, number> | null;
 	gradeFeedback: string;
 	gradedAt: Date | null;
+	/** Bài tự luyện (phase 10) không gắn lượt giao — id/classId/due rỗng,
+	 * className là nhãn "Luyện tập" cho hàng chờ chấm. */
+	practice: boolean;
 	caId: string;
 	classId: string;
 	title: string;
@@ -116,10 +120,15 @@ export function gradingRoutes(deps: {
 		| { error: 404 | 409 | 400 }
 		| { row: GradableAttemptRow; skill: GradableSkill }
 	> {
-		const [row] = await db
+		// Attempt gốc + học viên trước — nhánh header (lượt giao vs tự luyện
+		// phase 10) chọn query phù hợp; cả hai đều có predicate orgId (chuẩn
+		// IDOR như bản innerJoin cũ).
+		const [base] = await db
 			.select({
 				id: quizAttempt.id,
 				status: quizAttempt.status,
+				mode: quizAttempt.mode,
+				testId: quizAttempt.testId,
 				assignmentId: quizAttempt.assignmentId,
 				essay: quizAttempt.essay,
 				mediaKey: quizAttempt.mediaKey,
@@ -132,50 +141,151 @@ export function gradingRoutes(deps: {
 				gradeScores: quizAttempt.gradeScores,
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
-				caId: classAssignment.id,
-				classId: classAssignment.classId,
-				title: classAssignment.title,
-				due: classAssignment.due,
-				className: classTable.name,
 				studentId: student.id,
 				studentName: student.name,
-				skill: assignmentPrompt.skill,
-				part: assignmentPrompt.part,
-				prompt: assignmentPrompt.prompt,
-				imageUrl: assignmentPrompt.imageUrl,
-				cueTopic: assignmentPrompt.cueTopic,
-				cuePoints: assignmentPrompt.cuePoints,
-				note: assignmentPrompt.note,
 			})
 			.from(quizAttempt)
-			.innerJoin(
-				classAssignment,
-				and(
-					eq(classAssignment.id, quizAttempt.assignmentId),
-					eq(classAssignment.orgId, orgId),
-				),
-			)
-			.innerJoin(
-				assignmentPrompt,
-				and(
-					eq(assignmentPrompt.id, classAssignment.promptId),
-					eq(assignmentPrompt.orgId, orgId),
-				),
-			)
-			.innerJoin(
-				classTable,
-				and(
-					eq(classTable.id, classAssignment.classId),
-					eq(classTable.orgId, orgId),
-				),
-			)
 			.innerJoin(
 				student,
 				and(eq(student.id, quizAttempt.studentId), eq(student.orgId, orgId)),
 			)
 			.where(and(eq(quizAttempt.id, attemptId), eq(quizAttempt.orgId, orgId)));
-		if (!row) return { error: 404 };
-		if (row.status !== "submitted") return { error: 409 };
+		if (!base) return { error: 404 };
+		if (base.status !== "submitted") return { error: 409 };
+
+		const practice = base.mode === "practice";
+		/** Shape chung của header đề — fields chỉ có ở nhánh assignment là
+		 * optional; nhánh practice để undefined. */
+		type GradingHeader = {
+			caId?: string;
+			classId?: string;
+			due?: string;
+			className?: string;
+			title: string | null;
+			skill: string | null;
+			part: string | null;
+			prompt: string | null;
+			imageUrl: string | null;
+			cueTopic: string | null;
+			cuePoints: string | null;
+			note: string | null;
+		};
+		// Tự luyện: title/skill từ assignment_test, prompt fields từ prompt của
+		// part ĐẦU (position thấp nhất). Đề đã xoá (test_id set null) →
+		// FROM assignmentTest không khớp row nào → header undefined, skill=""
+		// → trả 400 SKILL_NOT_GRADABLE (beta chấp nhận: đề đã xoá không còn
+		// chấm được; attempt đã chấm trước đó vẫn giữ nguyên điểm).
+		const header: GradingHeader | undefined = practice
+			? (
+					await db
+						.select({
+							title: assignmentTest.title,
+							skill: assignmentTest.skill,
+							part: assignmentPrompt.part,
+							prompt: assignmentPrompt.prompt,
+							imageUrl: assignmentPrompt.imageUrl,
+							cueTopic: assignmentPrompt.cueTopic,
+							cuePoints: assignmentPrompt.cuePoints,
+							note: assignmentPrompt.note,
+						})
+						.from(assignmentTest)
+						.leftJoin(
+							assignmentTestPart,
+							eq(assignmentTestPart.testId, assignmentTest.id),
+						)
+						.leftJoin(
+							assignmentPrompt,
+							and(
+								eq(assignmentPrompt.id, assignmentTestPart.promptId),
+								eq(assignmentPrompt.orgId, orgId),
+							),
+						)
+						.where(
+							and(
+								// CHECK DB ép practice ⇒ test_id NOT NULL — `?? ""`
+								// chỉ để thu hẹp kiểu, id "" không bao giờ khớp.
+								eq(assignmentTest.id, base.testId ?? ""),
+								eq(assignmentTest.orgId, orgId),
+							),
+						)
+						.orderBy(asc(assignmentTestPart.position))
+						.limit(1)
+				)[0]
+			: (
+					await db
+						.select({
+							caId: classAssignment.id,
+							classId: classAssignment.classId,
+							title: classAssignment.title,
+							due: classAssignment.due,
+							className: classTable.name,
+							skill: assignmentPrompt.skill,
+							part: assignmentPrompt.part,
+							prompt: assignmentPrompt.prompt,
+							imageUrl: assignmentPrompt.imageUrl,
+							cueTopic: assignmentPrompt.cueTopic,
+							cuePoints: assignmentPrompt.cuePoints,
+							note: assignmentPrompt.note,
+						})
+						.from(classAssignment)
+						.innerJoin(
+							assignmentPrompt,
+							and(
+								eq(assignmentPrompt.id, classAssignment.promptId),
+								eq(assignmentPrompt.orgId, orgId),
+							),
+						)
+						.innerJoin(
+							classTable,
+							and(
+								eq(classTable.id, classAssignment.classId),
+								eq(classTable.orgId, orgId),
+							),
+						)
+						.where(
+							and(
+								// Attempt assignment luôn có lượt giao (CHECK DB) —
+								// `?? ""` chỉ để thu hẹp kiểu.
+								eq(classAssignment.id, base.assignmentId ?? ""),
+								eq(classAssignment.orgId, orgId),
+							),
+						)
+						.limit(1)
+				)[0];
+
+		const row: GradableAttemptRow = {
+			id: base.id,
+			status: base.status,
+			essay: base.essay,
+			mediaKey: base.mediaKey,
+			mediaName: base.mediaName,
+			mediaType: base.mediaType,
+			mediaSize: base.mediaSize,
+			mediaUploadedAt: base.mediaUploadedAt,
+			startedAt: base.startedAt,
+			submittedAt: base.submittedAt,
+			gradeScores: base.gradeScores,
+			gradeFeedback: base.gradeFeedback,
+			gradedAt: base.gradedAt,
+			practice,
+			// Tự luyện: id lớp/lượt giao + hạn không tồn tại → rỗng; className là
+			// nhãn "Luyện tập" cho hàng chờ chấm giáo viên (filter riêng).
+			caId: practice ? "" : (header?.caId ?? ""),
+			classId: practice ? "" : (header?.classId ?? ""),
+			title: header?.title ?? "",
+			due: practice ? "" : (header?.due ?? ""),
+			className: practice ? "Luyện tập" : (header?.className ?? ""),
+			studentId: base.studentId,
+			studentName: base.studentName,
+			skill: header?.skill ?? "",
+			part: header?.part ?? "",
+			// Cột prompt có thể rỗng ở dữ liệu cũ — bọc `?? ""` cho từng field.
+			prompt: header?.prompt ?? "",
+			imageUrl: header?.imageUrl ?? "",
+			cueTopic: header?.cueTopic ?? "",
+			cuePoints: header?.cuePoints ?? "",
+			note: header?.note ?? "",
+		};
 		if (!isGradableSkill(row.skill)) return { error: 400 };
 		return { row, skill: row.skill };
 	}
@@ -196,7 +306,7 @@ export function gradingRoutes(deps: {
 		);
 	}
 
-	/** Cột prompt có thể rỗng ở dữ liệu cũ — bọc `?? ""` cho từng field. */
+	/** Cột prompt đã được bọc `?? ""` ở loader — payload chỉ map phẳng. */
 	function toSubmission(
 		row: GradableAttemptRow,
 		skill: GradableSkill,
@@ -215,11 +325,11 @@ export function gradingRoutes(deps: {
 			skill,
 			part: row.part,
 			prompt: {
-				prompt: row.prompt ?? "",
-				imageUrl: row.imageUrl ?? "",
-				cueTopic: row.cueTopic ?? "",
-				cuePoints: row.cuePoints ?? "",
-				note: row.note ?? "",
+				prompt: row.prompt,
+				imageUrl: row.imageUrl,
+				cueTopic: row.cueTopic,
+				cuePoints: row.cuePoints,
+				note: row.note,
 			},
 			startedAt: row.startedAt.toISOString(),
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
@@ -228,6 +338,9 @@ export function gradingRoutes(deps: {
 			grade: toQuizAttemptGrade(row),
 			// Speaking không có highlight (#332) — luôn rỗng.
 			annotations: essayView ? essayView.annotations : [],
+			// Bài tự luyện (phase 10): CHỈ thêm key khi practice — bundle cũ
+			// (strict) không vỡ với bài nộp lượt giao.
+			...(row.practice ? { practice: true as const } : {}),
 		};
 	}
 

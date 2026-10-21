@@ -49,7 +49,7 @@ describe("students list", () => {
 		renderWithKernel(<StudentsRoute />);
 		expect(await screen.findByText("Học viên Một")).toBeTruthy();
 		expect(screen.getByText("Học viên Hai")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Học viên (2)" })).toBeTruthy();
+		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
 	});
 
 	it("adds students only by invitation — no manual create or enroll from the list", async () => {

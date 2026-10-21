@@ -1,7 +1,7 @@
 ---
 phase: 9
 title: "Học viên: màn hiện có + Classmates (mới)"
-status: pending
+status: completed
 priority: P1
 effort: "8h"
 dependencies: [4]

@@ -37,11 +37,11 @@ export const Route = createFileRoute("/_auth/schedule")({
 });
 
 const typeBlockClass: Record<LessonType, string> = {
-	"1:1": "border-l-hot bg-accent-soft",
+	"1:1": "border-l-primary bg-accent",
 	"1:2": "border-l-success bg-success-soft",
 	trial: "border-l-warn bg-warn-soft",
-	mock: "border-l-fg bg-fg-soft",
-	review: "border-l-meta bg-line-soft",
+	mock: "border-l-foreground bg-primary-soft",
+	review: "border-l-muted-foreground/50 bg-border",
 };
 
 export function ScheduleRoute() {
@@ -93,9 +93,9 @@ export function ScheduleRoute() {
 				<Link
 					to="/schedule"
 					search={{ week: addWeeks(weekStart, -1) }}
-					className="neu-sm rounded-md font-mono text-meta text-xs hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="rounded-md border bg-background px-3 py-1.5 font-medium text-sm shadow-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 				>
-					<span className="block px-3 py-1.5">← Tuần trước</span>
+					← Tuần trước
 				</Link>
 				<Link
 					to="/schedule"
@@ -107,10 +107,10 @@ export function ScheduleRoute() {
 						// aria-disabled alone does not stop keyboard activation.
 						if (isCurrentWeek) e.preventDefault();
 					}}
-					className={`font-mono text-meta text-xs ${
+					className={`rounded-md px-3 py-1.5 font-medium text-sm underline-offset-4 ${
 						isCurrentWeek
-							? "pointer-events-none text-fg-2"
-							: "text-muted-fg hover:text-hot"
+							? "pointer-events-none text-muted-foreground"
+							: "text-muted-foreground hover:text-foreground hover:underline"
 					}`}
 				>
 					Tuần này
@@ -118,9 +118,9 @@ export function ScheduleRoute() {
 				<Link
 					to="/schedule"
 					search={{ week: addWeeks(weekStart, 1) }}
-					className="neu-sm rounded-md font-mono text-meta text-xs hover:text-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+					className="rounded-md border bg-background px-3 py-1.5 font-medium text-sm shadow-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 				>
-					<span className="block px-3 py-1.5">Tuần sau →</span>
+					Tuần sau →
 				</Link>
 			</div>
 			{data.classes.length === 0 ? (
@@ -129,10 +129,8 @@ export function ScheduleRoute() {
 					className="p-8 text-center"
 					data-testid="schedule-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
-						Chưa có lịch dạy nào
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<h2 className="font-semibold text-lg">Chưa có lịch dạy nào</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Lịch dạy được tự động sắp xếp dựa trên các lớp học đang hoạt động.
 						Hãy tạo lớp học để bắt đầu theo dõi lịch dạy.
 					</p>
@@ -145,7 +143,7 @@ export function ScheduleRoute() {
 			) : (
 				<>
 					{slotCount === 0 && (
-						<div className="mb-4 rounded-md border border-line-soft bg-surface px-4 py-3 text-center text-muted-fg text-sm">
+						<div className="mb-4 rounded-md border border-border bg-muted px-4 py-3 text-center text-muted-foreground text-sm">
 							Không có buổi học nào trong tuần này.
 						</div>
 					)}
@@ -180,44 +178,42 @@ export function ScheduleRoute() {
 							return (
 								<div
 									key={dn}
-									className={`day-col neu flex min-h-[220px] flex-col p-3 ${
-										isToday ? "ring-2 ring-hot/30" : ""
+									className={`day-col flex min-h-[220px] flex-col rounded-xl border bg-card p-3 shadow-sm ${
+										isToday ? "border-ring ring-[3px] ring-ring/20" : ""
 									}`}
 								>
-									<div className="pb-3 text-center">
+									<div className="flex items-center justify-between pb-3">
 										<div
-											className={`font-medium font-mono text-[11px] uppercase tracking-[0.15em] ${
-												isToday ? "text-hot" : "text-muted-fg"
+											className={`font-medium text-sm ${
+												isToday ? "" : "text-muted-foreground"
 											}`}
 										>
-											{dn}
+											{dn} {formatDayMonth(dates[i])}
 										</div>
-										<div
-											className={`font-mono text-[11px] ${
-												isToday ? "text-hot" : "text-meta"
-											}`}
-										>
-											{formatDayMonth(dates[i])}
-										</div>
+										{isToday && (
+											<span className="rounded-md bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
+												Hôm nay
+											</span>
+										)}
 									</div>
 									<div className="min-w-0 flex-1">
 										{entries.length === 0 && (
-											<div className="font-mono text-meta text-xs">—</div>
+											<div className="text-muted-foreground text-xs">—</div>
 										)}
 										{entries.map((entry) =>
 											entry.block ? (
 												<div
 													key={entry.key}
-													className={`lesson-block mt-2 rounded-sm border-l-3 border-l-solid px-3 py-2 text-left opacity-75 ${typeBlockClass["1:1"]}`}
+													className={`lesson-block mt-2 rounded-lg border border-border border-l-3 border-l-solid bg-background px-2.5 py-2 text-left opacity-75 ${typeBlockClass["1:1"]}`}
 													title="Buổi dự kiến từ lịch lớp — chưa có học viên"
 												>
-													<div className="font-mono text-[11px] text-fg-2">
+													<div className="text-[11px] text-muted-foreground tabular-nums">
 														{entry.block.time}
 													</div>
 													<div className="font-semibold text-sm">
 														{entry.block.className}
 													</div>
-													<div className="mt-px text-[11px] text-muted-fg">
+													<div className="mt-px text-[11px] text-muted-foreground">
 														Dự kiến · chưa có học viên
 													</div>
 												</div>
@@ -240,9 +236,7 @@ export function ScheduleRoute() {
 																	columnDateISO: dates[i],
 																})
 															}
-															className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
-																typeBlockClass[s.type]
-															} ${
+															className={`lesson-block mt-2 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid bg-background px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${typeBlockClass[s.type]} ${
 																s.status === "completed"
 																	? "opacity-60"
 																	: s.status === "cancelled"
@@ -250,14 +244,14 @@ export function ScheduleRoute() {
 																		: ""
 															}`}
 														>
-															<div className="font-mono text-[11px] text-fg-2">
+															<div className="text-[11px] text-muted-foreground tabular-nums">
 																{s.time}
 															</div>
 															<div
 																className={
 																	s.status === "completed" ||
 																	s.status === "cancelled"
-																		? "font-semibold text-sm line-through decoration-meta"
+																		? "font-semibold text-sm line-through decoration-muted-foreground"
 																		: "font-semibold text-sm"
 																}
 															>
@@ -269,13 +263,13 @@ export function ScheduleRoute() {
 																		s.rows,
 																	).length;
 																	return students > 1 ? (
-																		<span className="ml-1 font-normal text-[11px] text-muted-fg">
+																		<span className="ml-1 font-normal text-[11px] text-muted-foreground">
 																			({students} HV)
 																		</span>
 																	) : null;
 																})()}
 															</div>
-															<div className="mt-px text-[11px] text-muted-fg">
+															<div className="mt-px text-[11px] text-muted-foreground">
 																{s.type} · {s.topic.substring(0, 30)}
 															</div>
 														</button>
@@ -288,9 +282,9 @@ export function ScheduleRoute() {
 							);
 						})}
 					</div>
-					<div className="mt-6 flex flex-wrap gap-4 font-mono text-[11px] text-meta">
+					<div className="mt-6 flex flex-wrap gap-4 text-muted-foreground">
 						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent-soft" />
+							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent" />
 							1:1
 						</span>
 						<span>
@@ -302,11 +296,11 @@ export function ScheduleRoute() {
 							Học thử (Trial)
 						</span>
 						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-fg-soft" />
+							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-primary-soft" />
 							Thi thử (Mock)
 						</span>
 						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-line-soft" />
+							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-border" />
 							Ôn tập (Review)
 						</span>
 					</div>

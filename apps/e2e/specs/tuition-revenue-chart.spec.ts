@@ -108,9 +108,10 @@ async function studentIdOf(orgId: string, name: string): Promise<string> {
 	}
 }
 
-/** Section biểu đồ (scope mọi assert text vào đây để tránh trùng KPI/heading). */
+/** Card biểu đồ (testid đặt ở Card bọc trong index.tsx — scope mọi assert
+ * text vào đây để tránh trùng KPI/heading). */
 function chartSection(page: Page) {
-	return page.getByTestId("revenue-chart-section");
+	return page.getByTestId("tuition-revenue-chart");
 }
 
 test("doanh thu: chart 2 tháng theo created_at + toggle Quý đổi URL (?ky=quarter)", async ({

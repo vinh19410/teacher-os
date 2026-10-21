@@ -178,7 +178,7 @@ export function AddInvoiceModal({
 				</Field>
 				<div className="flex flex-col gap-2">
 					{error && (
-						<p role="alert" className="text-danger text-xs">
+						<p role="alert" className="text-destructive text-xs">
 							{error}
 						</p>
 					)}
@@ -190,7 +190,7 @@ export function AddInvoiceModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line border-t pt-4">
+				<div className="flex justify-end gap-2 border-border border-t pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

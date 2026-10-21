@@ -109,7 +109,7 @@ export function VocabCourseLessonsView({
 				<Link
 					to="/vocab/courses"
 					data-testid="vocab-course-back-btn"
-					className="inline-block font-mono text-[11px] text-meta uppercase tracking-[0.15em] transition-colors hover:text-hot focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40"
+					className="inline-block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 				>
 					← Tất cả khóa học
 				</Link>
@@ -121,27 +121,27 @@ export function VocabCourseLessonsView({
 						aria-haspopup="dialog"
 						aria-expanded={switcherOpen}
 						onClick={() => setSwitcherOpen(true)}
-						className="neu group flex flex-1 items-center justify-between gap-4 rounded-md px-5 py-4 text-left transition-colors duration-150 hover:border-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40"
+						className="group flex flex-1 items-center justify-between gap-4 rounded-md rounded-xl border bg-card px-5 py-4 text-left shadow-sm transition-colors duration-150 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 					>
 						<div className="min-w-0 space-y-1">
-							<p className="font-mono text-[10px] text-hot uppercase tracking-[0.2em]">
+							<p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em]">
 								Khóa học đang chọn · Bấm để đổi khóa
 							</p>
 							<h1
 								data-testid="vocab-selected-course-title"
-								className="font-display font-extrabold text-2xl text-fg tracking-[-0.03em] group-hover:text-hot"
+								className="font-extrabold text-2xl text-foreground tracking-[-0.03em] group-hover:text-primary"
 							>
 								{selectedCourse?.name ?? "Danh sách bài học"}
 							</h1>
 							{selectedCourse?.description ? (
-								<p className="line-clamp-2 text-meta text-sm">
+								<p className="line-clamp-2 text-muted-foreground text-sm">
 									{selectedCourse.description}
 								</p>
 							) : null}
 						</div>
 						<span
 							aria-hidden="true"
-							className="neu-sm shrink-0 rounded-md px-3 py-1.5 font-mono text-fg text-xs transition-colors group-hover:border-fg group-hover:text-hot"
+							className="shrink-0 rounded-md rounded-md border border-input bg-transparent px-3 py-1.5 font-mono text-foreground text-xs transition-colors group-hover:border-primary group-hover:text-primary"
 						>
 							Đổi khóa ▾
 						</span>
@@ -155,7 +155,7 @@ export function VocabCourseLessonsView({
 							placeholder="Tìm bài học trong khóa..."
 							value={inputValue}
 							onChange={(e) => setInputValue(e.target.value)}
-							className="w-full rounded-md border border-line-strong bg-surface px-3.5 py-2.5 text-fg text-sm placeholder:text-meta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hot/40"
+							className="w-full rounded-md border border-input bg-muted px-3.5 py-2.5 text-foreground text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
 						/>
 					</div>
 				</div>
@@ -164,21 +164,21 @@ export function VocabCourseLessonsView({
 			{decksQuery.isLoading ? (
 				<div
 					data-testid="vocab-course-decks-loading"
-					className="neu rounded-md p-6 text-center text-meta text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-muted-foreground text-sm shadow-sm"
 				>
 					Đang tải danh sách bài học...
 				</div>
 			) : decksQuery.isError ? (
 				<div
 					data-testid="vocab-course-decks-error"
-					className="neu rounded-md p-6 text-center text-danger text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-danger text-sm shadow-sm"
 				>
 					Không thể tải danh sách bài học. Vui lòng thử lại.
 				</div>
 			) : filteredDecks.length === 0 ? (
 				<div
 					data-testid="vocab-course-decks-empty"
-					className="neu rounded-md p-6 text-center text-meta text-sm"
+					className="rounded-md rounded-xl border bg-card p-6 text-center text-muted-foreground text-sm shadow-sm"
 				>
 					Không tìm thấy bài học phù hợp.
 				</div>

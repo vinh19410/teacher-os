@@ -34,16 +34,16 @@ export function BankLinkPanel() {
 	return (
 		<Card variant="white">
 			<div>
-				<div className="mb-3 font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+				<div className="mb-3 font-medium text-primary text-sm">
 					SePay Bank Hub
 				</div>
 				<SectionLabel>Nhận học phí qua chuyển khoản</SectionLabel>
 			</div>
 			{isLoading ? (
-				<p className="text-muted-fg text-sm">Đang tải trạng thái…</p>
+				<p className="text-muted-foreground text-sm">Đang tải trạng thái…</p>
 			) : !status?.enabled ? (
 				<div className="flex flex-col gap-3">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Tính năng chưa được bật cho tài khoản này.
 					</p>
 					<Badge variant="muted">Chưa bật</Badge>
@@ -55,18 +55,18 @@ export function BankLinkPanel() {
 							<strong>{status.brandName || "Ngân hàng"}</strong>
 							<Badge variant="accent">Đã liên kết</Badge>
 						</div>
-						<span className="font-mono text-meta text-xs">
+						<span className="text-muted-foreground text-xs">
 							{status.accountNumberMasked}
 							{status.holderName ? ` · ${status.holderName}` : ""}
 						</span>
 						{status.linkedAt && (
-							<span className="text-muted-fg text-xs">
+							<span className="text-muted-foreground text-xs">
 								Liên kết {new Date(status.linkedAt).toLocaleString("vi-VN")}
 							</span>
 						)}
 					</div>
 					<Button
-						variant="danger"
+						variant="destructive"
 						size="sm"
 						className="self-start"
 						onClick={() => setModalPurpose("unlink")}
@@ -76,7 +76,7 @@ export function BankLinkPanel() {
 				</div>
 			) : (
 				<div className="flex flex-col gap-3">
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						{status.status === "inactive"
 							? "Tài khoản đang bị vô hiệu hoá phía ngân hàng. Khôi phục để tiếp tục nhận học phí."
 							: "Liên kết tài khoản ngân hàng để tạo mã QR nhận học phí — hệ thống tự xác nhận khi phụ huynh chuyển khoản."}

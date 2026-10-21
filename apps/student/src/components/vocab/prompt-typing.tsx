@@ -30,20 +30,20 @@ export function PromptTyping({
 			data-testid="vocab-prompt-typing"
 			className="space-y-6"
 		>
-			<div className="neu rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Gõ từ tiếng Anh tương ứng
 				</p>
 				<p
 					data-testid="vocab-prompt-question"
-					className="mt-3 font-display font-extrabold text-2xl text-fg tracking-[-0.02em]"
+					className="mt-3 font-extrabold text-2xl text-foreground tracking-[-0.02em]"
 				>
 					{translation}
 				</p>
 				{prompt.hint.length > 0 ? (
 					<p
 						data-testid="vocab-typing-hint"
-						className="mt-3 font-mono text-lg text-meta tracking-[0.2em]"
+						className="mt-3 font-mono text-lg text-muted-foreground tracking-[0.2em]"
 					>
 						{prompt.hint}
 					</p>

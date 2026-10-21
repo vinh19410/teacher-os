@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
+import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
@@ -43,15 +44,13 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 	component: SyllabusDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-semibold text-xl">
-				Không tìm thấy syllabus
-			</h1>
-			<p className="mt-2 text-muted-fg text-sm">
+			<h1 className="font-semibold text-xl">Không tìm thấy syllabus</h1>
+			<p className="mt-2 text-muted-foreground text-sm">
 				Syllabus này không tồn tại hoặc dữ liệu demo đã được reset.
 			</p>
 			<Link
 				to="/syllabus"
-				className="mt-4 inline-block font-medium text-hot text-sm hover:text-accent-active"
+				className="mt-4 inline-block font-medium text-primary text-sm hover:text-primary"
 			>
 				← Về danh sách syllabus
 			</Link>
@@ -142,32 +141,28 @@ function SyllabusDetail({
 
 	return (
 		<div>
-			<Card variant="white" className="mb-5 flex flex-wrap items-center gap-5">
-				<div className="min-w-[200px] flex-1">
-					<div className="mb-2 flex gap-2">
+			<PageHead
+				kicker={
+					<span className="flex flex-wrap items-center gap-1.5">
 						{sy.skills.length > 0 ? (
 							sy.skills.map((sk) => <Tag key={sk}>{sk}</Tag>)
 						) : (
 							<Tag>{CLASS_TYPE_LABELS[sy.type]}</Tag>
 						)}
 						<Tag>{sy.level}</Tag>
-					</div>
-					<h1 className="font-display font-semibold text-[28px]">{sy.name}</h1>
-					<p className="mt-2 max-w-[60ch] text-muted-fg text-sm">
-						{sy.description}
-					</p>
-				</div>
-				<div className="text-right">
-					<div className="font-mono text-meta text-muted-fg text-xs">
-						Đang dùng {assigned.length} lớp
-					</div>
-					<div className="mt-1 font-mono text-meta text-muted-fg text-xs">
-						{sy.classId === null
-							? "Template dùng chung"
-							: "Bản sao của một lớp"}
-					</div>
-				</div>
-			</Card>
+					</span>
+				}
+				title={sy.name}
+				lead={`${sy.description} · Đang dùng ${assigned.length} lớp · ${sy.classId === null ? "Template dùng chung" : "Bản sao của một lớp"}`}
+				action={
+					<Link
+						to="/syllabus"
+						className="inline-block text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+					>
+						← Giáo trình
+					</Link>
+				}
+			/>
 
 			<div className="mb-6 grid grid-cols-2 gap-4">
 				<StatCard num={String(sy.totalLessons)} label="tổng buổi" />
@@ -234,7 +229,7 @@ function SyllabusDetail({
 			)}
 
 			{sy.modules.length === 0 && (
-				<Card variant="white" className="p-8 text-center text-muted-fg">
+				<Card variant="white" className="p-8 text-center text-muted-foreground">
 					<p className="text-sm">
 						Chưa có module nào. Nhấn <strong>+ Thêm module</strong> để bắt đầu
 						xây dựng giáo trình.
@@ -244,14 +239,18 @@ function SyllabusDetail({
 
 			{sy.modules.map((m, mi) => {
 				return (
-					<div key={m.id} className="neu mb-4 overflow-hidden rounded-md">
-						<div className="flex flex-wrap items-center justify-between gap-4 border-line-soft border-b border-solid bg-surface-warm px-5 py-4 transition-colors duration-[150ms] hover:bg-surface">
+					<div
+						key={m.id}
+						data-testid="module-card"
+						className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm"
+					>
+						<div className="flex flex-wrap items-center justify-between gap-4 border-border border-b bg-muted/40 px-5 py-4 transition-colors duration-[150ms] hover:bg-muted/60">
 							<button
 								type="button"
 								onClick={() => toggle(m.id)}
 								className="text-left"
 							>
-								<h3 className="font-display font-extrabold text-xl tracking-[-0.02em]">
+								<h3 className="font-semibold text-lg tracking-tight">
 									{m.title}
 								</h3>
 							</button>
@@ -260,7 +259,7 @@ function SyllabusDetail({
 									type="button"
 									onClick={() => setEditModuleId(m.id)}
 									disabled={busy}
-									className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+									className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 								>
 									Sửa
 								</button>
@@ -273,7 +272,7 @@ function SyllabusDetail({
 									onDown={() => mutations.moveModule(mi, 1)}
 									onDelete={() => mutations.requestDeleteModule(m)}
 								/>
-								<span className="font-mono text-[11px] text-muted-fg">
+								<span className="text-muted-foreground">
 									{m.lessons.length} buổi
 								</span>
 							</div>
@@ -291,7 +290,7 @@ function SyllabusDetail({
 										// cn() — concat template bị biome gộp mất space
 										// giữa class tĩnh và class điều kiện.
 										className={cn(
-											"grid grid-cols-[1fr_auto] items-start gap-3 border-line-soft border-b border-solid px-5 py-3 last:border-b-0 hover:bg-surface-warm max-app:grid-cols-[1fr]",
+											"grid grid-cols-[1fr_auto] items-start gap-3 border-border border-b border-solid px-5 py-3 last:border-b-0 hover:bg-muted/40 max-app:grid-cols-[1fr]",
 											isTestSessionKind(l.kind) && "bg-warn-soft",
 										)}
 									>
@@ -300,10 +299,10 @@ function SyllabusDetail({
 												{l.title}
 												<LessonKindBadge kind={l.kind} />
 											</div>
-											<div className="mt-0.5 text-[11px] text-muted-fg">
+											<div className="mt-0.5 text-[11px] text-muted-foreground">
 												{l.materials}
 											</div>
-											<div className="mt-[3px] text-fg-2 text-xs leading-[1.4]">
+											<div className="mt-[3px] text-foreground-2 text-xs leading-[1.4]">
 												Mục tiêu: {l.objectives}
 											</div>
 										</div>
@@ -314,7 +313,7 @@ function SyllabusDetail({
 													setEditLessonRef({ moduleId: m.id, lessonId: l.id })
 												}
 												disabled={busy}
-												className="rounded-sm px-1.5 py-0.5 text-muted-fg text-xs transition-colors duration-[150ms] hover:bg-surface hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+												className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 											>
 												Sửa
 											</button>
@@ -335,7 +334,7 @@ function SyllabusDetail({
 								<button
 									type="button"
 									onClick={() => setAddLessonModuleId(m.id)}
-									className="mt-2 w-full px-5 pb-3 text-left font-medium text-hot text-xs hover:text-accent-active"
+									className="mt-2 w-full px-5 pb-3 text-left font-medium text-primary text-xs hover:text-primary"
 								>
 									+ Thêm buổi học
 								</button>
@@ -366,7 +365,7 @@ function SyllabusDetail({
 										<span key="n" className="font-medium text-sm">
 											{c.name}
 										</span>,
-										<span key="s" className="font-mono">
+										<span key="s" className="tabular-nums">
 											{c.studentIds.length}
 										</span>,
 										<Progress key="p" value={cpct} className="min-w-[100px]" />,
@@ -426,7 +425,7 @@ function SyllabusDetail({
 					không thể hoàn tác. Các lớp đã nhập bản sao từ template này không bị
 					ảnh hưởng.
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

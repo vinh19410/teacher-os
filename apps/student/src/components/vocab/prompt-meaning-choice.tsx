@@ -20,17 +20,19 @@ export function PromptMeaningChoice({
 }) {
 	return (
 		<div data-testid="vocab-prompt-meaningChoice" className="space-y-6">
-			<div className="neu rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Chọn nghĩa đúng
 				</p>
 				<p
 					data-testid="vocab-prompt-question"
-					className="mt-3 font-display font-extrabold text-3xl text-fg tracking-[-0.03em]"
+					className="mt-3 font-extrabold text-3xl text-foreground tracking-[-0.03em]"
 				>
 					{word}
 				</p>
-				{ipa ? <p className="mt-1 font-mono text-meta text-sm">{ipa}</p> : null}
+				{ipa ? (
+					<p className="mt-1 font-mono text-muted-foreground text-sm">{ipa}</p>
+				) : null}
 			</div>
 
 			<div
@@ -49,8 +51,8 @@ export function PromptMeaningChoice({
 							onClick={() => onSelectOption(opt)}
 							className={`rounded-md px-4 py-3.5 text-left font-medium text-sm transition-colors duration-150 ${
 								isSelected
-									? "neu-in text-hot"
-									: "neu-sm text-fg hover:border-fg"
+									? "rounded-md bg-muted text-primary"
+									: "rounded-md border border-input bg-transparent text-foreground hover:border-primary"
 							} disabled:pointer-events-none disabled:opacity-60`}
 						>
 							{opt}

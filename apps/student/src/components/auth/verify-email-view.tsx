@@ -64,20 +64,20 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 	if (success) {
 		return (
 			<div className="text-center">
-				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-soft">
-					<MailCheck className="h-7 w-7 text-hot" />
+				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+					<MailCheck className="size-7 text-primary" />
 				</div>
-				<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
+				<h2 className="font-semibold text-xl tracking-tight">
 					Email đã được xác thực
 				</h2>
-				<p className="mt-2 text-meta text-sm">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Địa chỉ email của bạn đã được xác nhận. Bạn sẵn sàng bắt đầu.
 				</p>
 				<div className="mt-6 flex justify-center">
 					<button
 						type="button"
 						onClick={() => window.location.assign("/")}
-						className="w-full rounded-lg bg-fg px-[18px] py-[10px] font-medium text-bg text-sm transition-colors duration-[150ms] hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+						className="inline-flex h-9 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary font-medium text-primary-foreground text-sm shadow-xs outline-none transition-all hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 					>
 						Vào cổng học viên
 					</button>
@@ -89,25 +89,27 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 	return (
 		<div className="text-center">
 			<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft">
-				<CircleAlert className="h-7 w-7 text-danger" />
+				<CircleAlert className="size-7 text-destructive" />
 			</div>
-			<h2 className="font-display font-extrabold text-[clamp(26px,3vw,34px)] leading-[0.95] tracking-[-0.045em]">
+			<h2 className="font-semibold text-xl tracking-tight">
 				Liên kết không hoạt động
 			</h2>
-			<p className="mt-2 text-meta text-sm">
+			<p className="mt-2 text-muted-foreground text-sm">
 				Liên kết xác thực không hợp lệ, đã được sử dụng hoặc đã hết hạn. Hãy yêu
 				cầu liên kết mới hoặc đăng nhập để tiếp tục.
 			</p>
 			{!isPending && canResend && userEmail ? (
 				resendStatus === "sent" ? (
-					<p className="mt-6 text-fg text-sm">Đã gửi lại — kiểm tra hộp thư</p>
+					<p className="mt-6 text-foreground text-sm">
+						Đã gửi lại — kiểm tra hộp thư
+					</p>
 				) : (
 					<div className="mt-6 flex flex-wrap justify-center">
 						<button
 							type="button"
 							onClick={() => void handleResend()}
 							disabled={resendStatus === "sending"}
-							className="flex items-center gap-2 rounded-lg bg-fg px-[18px] py-[10px] font-medium text-bg text-sm transition-colors duration-[150ms] hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+							className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary font-medium text-primary-foreground text-sm shadow-xs outline-none transition-all hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 						>
 							{resendStatus === "sending" ? (
 								<>
@@ -119,7 +121,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 							)}
 						</button>
 						{resendFailed && (
-							<p className="mt-2 w-full text-danger text-sm">
+							<p className="mt-2 w-full text-destructive text-sm">
 								Không gửi được email mới. Vui lòng thử lại.
 							</p>
 						)}
@@ -129,7 +131,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 				<p className="mt-6">
 					<a
 						href="/login"
-						className="font-[590] text-hot text-sm underline-offset-[3px] hover:underline"
+						className="font-medium text-primary text-sm underline-offset-4 hover:underline"
 					>
 						Về đăng nhập
 					</a>

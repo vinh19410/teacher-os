@@ -12,15 +12,13 @@ export const Route = createFileRoute("/_auth/assignments/$assignmentId")({
 	component: AssignmentDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
-			<h1 className="font-display font-semibold text-xl">
-				Không tìm thấy bài tập
-			</h1>
-			<p className="mt-2 text-muted-fg text-sm">
+			<h1 className="font-semibold text-xl">Không tìm thấy bài tập</h1>
+			<p className="mt-2 text-muted-foreground text-sm">
 				Bài tập này không tồn tại hoặc dữ liệu demo đã được reset.
 			</p>
 			<Link
 				to="/assignments"
-				className="mt-4 inline-block font-mono text-[12px] text-meta transition-colors hover:text-hot"
+				className="mt-4 inline-block text-muted-foreground text-xs transition-colors hover:text-primary"
 			>
 				← Về danh sách bài tập
 			</Link>
@@ -63,19 +61,19 @@ function AssignmentDetailRoute() {
 			<Card className="mb-5 flex flex-wrap items-center gap-4">
 				<Avatar text={student?.avatar ?? "?"} size="lg" />
 				<div className="min-w-[200px] flex-1">
-					<h1 className="font-display font-extrabold text-2xl tracking-[-0.045em]">
+					<h1 className="font-semibold text-2xl tracking-tight">
 						{assignment.title}
 					</h1>
-					<div className="mt-1 font-mono text-meta text-xs">
+					<div className="mt-1 text-muted-foreground text-xs">
 						{student?.name} · {assignment.type} · Hạn nộp: {assignment.due}
 					</div>
 				</div>
 				{avg ? (
 					<div className="text-center">
-						<div className="font-display font-extrabold text-4xl text-hot tracking-[-0.045em]">
+						<div className="font-semibold text-4xl text-primary tracking-tight">
 							{avg}
 						</div>
-						<div className="font-mono text-meta text-xs">Band trung bình</div>
+						<div className="text-muted-foreground text-xs">Band trung bình</div>
 					</div>
 				) : (
 					<Button size="sm" onClick={() => setGradeOpen(true)}>
@@ -95,9 +93,7 @@ function AssignmentDetailRoute() {
 							["Grammatical Range", assignment.scores.grammar],
 						].map(([label, score]) => (
 							<Card key={label} className="px-4 py-3">
-								<div className="font-mono text-[11px] text-meta uppercase tracking-[0.08em]">
-									{label}
-								</div>
+								<div className="text-muted-foreground text-xs">{label}</div>
 								<div className="mt-1 font-mono font-semibold text-2xl">
 									{score}
 								</div>
@@ -134,9 +130,9 @@ function AssignmentDetailRoute() {
 									type="button"
 									key={c.id}
 									onClick={() => appendComment(c.text)}
-									className="neu-sm rounded-md px-3 py-2 text-left text-fg-2 text-xs leading-[1.4] transition-colors duration-150 hover:text-hot"
+									className="rounded-md rounded-md border border-input bg-transparent px-3 py-2 text-left text-muted-foreground text-xs leading-[1.4] transition-colors duration-150 hover:text-primary"
 								>
-									<span className="mb-0.5 block font-mono text-[10px] text-hot uppercase tracking-[0.08em]">
+									<span className="mb-0.5 block font-medium text-primary text-xs">
 										{c.tag}
 									</span>
 									{c.text}

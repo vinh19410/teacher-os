@@ -16,6 +16,9 @@ import { kernelRoutes } from "./routes/kernel";
 import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
+import { studentClassmatesRoutes } from "./routes/student-classmates";
+import { studentHistoryRoutes } from "./routes/student-history";
+import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -225,6 +228,16 @@ export function buildApp(deps: AppDeps) {
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
 	app.route("/api/student", studentRoutes(deps));
+	// Bạn cùng lớp (#378): sub-app cùng mount point, route riêng
+	// /classes/:classId/classmates — guard tạo từ chung createStudentGuard.
+	app.route("/api/student", studentClassmatesRoutes(deps));
+	// Tự luyện (#378 phase 10): sub-app cùng mount point — catalog + take +
+	// start attempt practice; guard tự gắn trong router (bootstrapMiddleware
+	// bỏ qua /api/student).
+	app.route("/api/student", studentPracticeRoutes(deps));
+	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
+	// guard tự gắn trong router như practice.
+	app.route("/api/student", studentHistoryRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;
