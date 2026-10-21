@@ -105,6 +105,14 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   (`--verdict-*`); skipped = viền đứt `--border`, không thêm màu; đáp án đã chọn KHÔNG dùng
   `text-primary` ở review — tô theo verdict, hàng đáp án đúng có viền xanh + nhãn "Đáp án đúng";
   chip verdict kèm icon ✓/✗ đặt cạnh số câu. Take mode không có class verdict nào.
+- **Chi tiết lớp học viên (`/classes/$classId`, #389):** khớp khung design v2 (`StudentClass.tsx`:
+  banner việc cần làm, header + badge trạng thái + nút nhắn giáo viên, thẻ thông tin `<dl>` + footer,
+  4 vòng ring `stroke-muted`/`stroke-primary`, segmented `Tabs`, timeline buổi học 32px, bảng bài tập,
+  giáo trình icon tròn, avatar bạn cùng lớp `size-8 rounded-full`). **Lệch có chủ đích vì không bịa
+  dữ liệu server chưa trả:** giữ đích Back link `/` ("Trang chủ"); bỏ dòng bài về nhà theo buổi,
+  phòng học, học phí theo lớp, "Tham gia từ buổi", cột Skill của bài tập, nhóm module và nhãn
+  Mid/Final test trong giáo trình, "Target band" của bạn cùng lớp (quyền riêng #378), nút "Join online
+  class" (chưa có link lớp online); Ring "Band trung bình" hiện `"—"` khi endpoint lớp trả `scores: null`.
 
 ## Voice
 

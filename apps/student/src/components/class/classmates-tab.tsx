@@ -1,5 +1,6 @@
 import type { ClassmatesResponse } from "@teacher-os/api/contracts";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
+import { AvatarInitials } from "@/components/ui/avatar-initials";
 import { useClassmates } from "@/lib/repos/student";
 
 function ClassmateCard({ mate }: { mate: ClassmatesResponse[number] }) {
@@ -8,14 +9,9 @@ function ClassmateCard({ mate }: { mate: ClassmatesResponse[number] }) {
 			data-testid="classmate-card"
 			className="flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm"
 		>
-			<span
-				aria-hidden="true"
-				className="flex size-11 flex-none items-center justify-center rounded-md border border-input bg-transparent font-medium text-foreground"
-			>
-				{mate.initials}
-			</span>
+			<AvatarInitials initials={mate.initials} />
 			<div className="min-w-0">
-				<p className="truncate font-medium text-[15px] text-foreground">
+				<p className="truncate font-medium text-foreground text-sm">
 					{mate.name}
 					{mate.isMe && (
 						<span className="ml-1.5 font-normal text-muted-foreground">

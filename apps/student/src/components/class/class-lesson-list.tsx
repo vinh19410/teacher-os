@@ -1,27 +1,36 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import { Check, CircleDashed, X } from "lucide-react";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import {
 	formatVietnamDateFromISO,
 	VI_DAY_NAMES,
 } from "@/lib/vietnam-display-date";
 
-const LESSON_STATUS: Record<string, { label: string; badgeClass: string }> = {
+const LESSON_STATUS: Record<
+	string,
+	{ label: string; variant: BadgeVariant; badgeClass: string }
+> = {
 	completed: {
 		label: "Đã học",
-		badgeClass: "bg-success-soft text-success",
+		variant: "outline",
+		badgeClass: "text-foreground",
 	},
 	upcoming: {
 		label: "Sắp tới",
-		badgeClass: "border border-primary/40 text-primary",
+		variant: "secondary",
+		badgeClass: "",
 	},
 	absent: {
 		label: "Vắng",
-		badgeClass: "bg-primary font-medium text-primary-foreground",
+		variant: "destructive",
+		badgeClass: "",
 	},
 	cancelled: {
 		label: "Đã huỷ",
-		badgeClass: "rounded-md bg-muted text-muted-foreground",
+		variant: "outline",
+		badgeClass: "text-muted-foreground line-through",
 	},
 };
 
@@ -63,59 +72,97 @@ export function ClassLessonList({
 	const nextId = findNextLessonId(lessons, todayISO);
 
 	return (
-		<ol>
-			{lessons.map((lesson, i) => {
-				const isNext = lesson.id === nextId;
-				const status = LESSON_STATUS[lesson.status] ?? {
-					label: lesson.status,
-					badgeClass: "rounded-md bg-muted text-muted-foreground",
-				};
-				return (
-					// Danh sách buổi dạng hàng `border-t` theo design — không card
-					// riêng từng buổi; buổi tới nổi bật bằng chip "Buổi tới" cam.
-					<li
-						key={lesson.id}
-						aria-current={isNext ? "true" : undefined}
-						className={cn(
-							"flex flex-col gap-2 border-border border-t py-3 sm:flex-row sm:items-center sm:justify-between",
-							isNext && "text-foreground",
-						)}
-					>
-						<div className="min-w-0 flex-1">
-							<div className="flex flex-wrap items-baseline gap-2">
-								<span
-									className={cn(
-										"font-medium text-[15px]",
-										isNext ? "text-primary" : "text-foreground",
-									)}
-								>
-									Buổi {i + 1}
-								</span>
-								<span className="font-mono text-[12px] text-muted-foreground">
-									{lessonDayLabel(lesson)} · {lesson.time} · {lesson.dur} phút
-								</span>
-							</div>
-							{lesson.topic && (
-								<p className="mt-1 truncate text-[13px] text-muted-foreground">
-									{lesson.topic}
-								</p>
+		<div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+			<ol className="relative">
+				{lessons.map((lesson, i) => {
+					const isNext = lesson.id === nextId;
+					const future =
+						nextId !== null &&
+						lesson.status === "upcoming" &&
+						!isNext &&
+						lesson.date != null &&
+						lesson.date > todayISO;
+					const status = LESSON_STATUS[lesson.status] ?? {
+						label: lesson.status,
+						variant: "outline" as const,
+						badgeClass: "text-muted-foreground",
+					};
+					const Dot =
+						lesson.status === "completed"
+							? Check
+							: lesson.status === "absent" || lesson.status === "cancelled"
+								? X
+								: CircleDashed;
+
+					return (
+						<li
+							key={lesson.id}
+							aria-current={isNext ? "true" : undefined}
+							className={cn(
+								"relative grid grid-cols-[2rem_1fr] gap-4 pb-5 last:pb-0",
+								future && "opacity-60",
 							)}
-						</div>
-						<div className="flex items-center gap-2">
-							{isNext && (
-								<span className="rounded-full bg-primary px-2.5 py-0.5 font-medium font-mono text-[10px] text-primary-foreground uppercase tracking-[0.08em]">
-									Buổi tới
-								</span>
+						>
+							{i < lessons.length - 1 && (
+								<span
+									aria-hidden="true"
+									className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
+								/>
 							)}
 							<span
-								className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] ${status.badgeClass}`}
+								aria-hidden="true"
+								className={cn(
+									"relative z-10 grid size-8 place-items-center rounded-full border",
+									lesson.status === "completed" &&
+										"border-primary bg-primary text-primary-foreground",
+									lesson.status === "absent" &&
+										"border-destructive bg-destructive text-white",
+									lesson.status === "cancelled" &&
+										"bg-muted text-muted-foreground",
+									lesson.status !== "completed" &&
+										lesson.status !== "absent" &&
+										lesson.status !== "cancelled" &&
+										"bg-background text-muted-foreground",
+									isNext && "text-foreground ring-[3px] ring-ring/30",
+								)}
 							>
-								{status.label}
+								<Dot className="size-4" />
 							</span>
-						</div>
-					</li>
-				);
-			})}
-		</ol>
+							<div
+								className={cn(
+									"flex flex-wrap items-start justify-between gap-x-4 gap-y-1 pt-1",
+									isNext && "-mt-1 rounded-lg border bg-muted/40 p-3",
+								)}
+							>
+								<div className="min-w-0">
+									<div className="text-muted-foreground text-xs tabular-nums">
+										Buổi {i + 1} · {lessonDayLabel(lesson)} · {lesson.time} ·{" "}
+										{lesson.dur} phút
+									</div>
+									{lesson.topic && (
+										<div
+											className={cn(
+												"font-medium",
+												lesson.status === "cancelled" &&
+													"text-muted-foreground line-through",
+											)}
+										>
+											{lesson.topic}
+										</div>
+									)}
+								</div>
+								{isNext ? (
+									<Badge variant="default">Buổi tới</Badge>
+								) : (
+									<Badge variant={status.variant} className={status.badgeClass}>
+										{status.label}
+									</Badge>
+								)}
+							</div>
+						</li>
+					);
+				})}
+			</ol>
+		</div>
 	);
 }
