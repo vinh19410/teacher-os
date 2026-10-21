@@ -1,6 +1,6 @@
 ---
 title: "Phase 7: E2E và verify toàn bộ"
-status: todo
+status: completed
 ---
 
 # Phase 7: E2E và verify toàn bộ
