@@ -316,7 +316,9 @@ test.beforeAll(async ({ browser }) => {
 					(_, i) =>
 						`Đoạn văn thứ ${i + 1} kể về lịch sử Hồ Gươm và những truyền thuyết xung quanh ngôi đền cổ bên kia hồ.`,
 				).join("</p><p>")}</p>`,
-				questions: Array.from({ length: 8 }, (_, i) => ({
+				// Root font 14px (design v2) thu nhỏ rem 12.5% → cần 14 câu để
+				// workPane thực sự tràn chiều cao 597px ở viewport 1280×720.
+				questions: Array.from({ length: 14 }, (_, i) => ({
 					stem: `Theo đoạn văn, hồ có tên gọi là thứ ____ ${i + 1}.`,
 					opts: null,
 					answer: `năm ${i + 1}`,
@@ -837,10 +839,6 @@ test.describe("Student quiz take & review", () => {
 		await signIn(page);
 
 		await openPaper(page, titleSplit);
-		// "Bắt đầu" redirect full-document + mirror reconciliation có thể điều
-		// hướng lại ngay sau khi paper hiện — chờ load settle trước khi wheel.
-		await page.waitForLoadState("load");
-		await page.waitForTimeout(500);
 		const passagePane = page.getByTestId("reading-passage-pane");
 		const workPane = page.getByTestId("reading-work-pane");
 		await expect(passagePane).toBeVisible();
@@ -854,23 +852,7 @@ test.describe("Student quiz take & review", () => {
 		// Cuộn độc lập (input wheel thật của user): cuộn pane đọc — pane làm
 		// và trang đứng yên; rồi cuộn pane làm — pane đọc giữ nguyên vị trí.
 		await passagePane.hover();
-		// Chromium nuốt wheel nếu dispatch trước khi renderer commit frame sau
-		// mousemove — ép 2 rAF để frame settle rồi mới gửi wheel.
-		await passagePane.evaluate(
-			() =>
-				new Promise((r) =>
-					requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
-				),
-		);
-		// Chromium đôi khi nuốt wheel CDP đầu tiên sau mousemove (scroll
-		// latching chưa setup) — gửi wheel liên tục tới khi pane cuộn.
-		await expect
-			.poll(async () => {
-				await page.mouse.wheel(0, 200);
-				await page.waitForTimeout(150);
-				return passagePane.evaluate((el) => el.scrollTop);
-			})
-			.toBeGreaterThan(0);
+		await page.mouse.wheel(0, 600);
 		await expect
 			.poll(() => passagePane.evaluate((el) => el.scrollTop))
 			.toBeGreaterThan(0);
@@ -880,18 +862,9 @@ test.describe("Student quiz take & review", () => {
 		).toBe(0);
 		const passageScrolled = await passagePane.evaluate((el) => el.scrollTop);
 		await workPane.hover();
-		await workPane.evaluate(
-			() =>
-				new Promise((r) =>
-					requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
-				),
-		);
+		await page.mouse.wheel(0, 600);
 		await expect
-			.poll(async () => {
-				await page.mouse.wheel(0, 200);
-				await page.waitForTimeout(150);
-				return workPane.evaluate((el) => el.scrollTop);
-			})
+			.poll(() => workPane.evaluate((el) => el.scrollTop))
 			.toBeGreaterThan(0);
 		expect(await passagePane.evaluate((el) => el.scrollTop)).toBe(
 			passageScrolled,
