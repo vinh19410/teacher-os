@@ -11,7 +11,7 @@ import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
  * 1. Teacher navigates via sidebar "Từ vựng" (/vocab) -> creates independent decks (classId = null)
  *    with badge "Riêng", which do NOT leak into any class's "Từ vựng" tab.
  * 2. Teacher suggests deck to student S with note "Ôn trước thứ 7 nhé" (double-suggest idempotent).
- * 3. Student sees "Gợi ý cho bạn" in /vocab:
+ * 3. Student sees "Gợi ý cho bạn" in /practice/vocabulary:
  *    - Dismisses 2nd suggestion ("Ẩn" -> disappears).
  *    - Accepts 1st suggestion ("Bắt đầu học" -> navigates to deck, completes Learn session + Review answer
  *      exercising all 5 access-predicate sites).
@@ -250,8 +250,9 @@ test.describe
 			await verifyStudentEmailFromMailLog(page, studentEmail);
 			await expect(page.getByTestId("vocab-home-entry")).toBeVisible();
 
-			// 2) Student opens /vocab -> sees "Gợi ý cho bạn" with both suggestions
+			// 2) Student opens /practice/vocabulary -> sees "Gợi ý cho bạn" with both suggestions
 			await page.getByTestId("vocab-home-entry").click();
+			await expect(page).toHaveURL(`${STUDENT_ORIGIN}/practice/vocabulary`);
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-suggestions-section")).toBeVisible();
 			await expect(page.getByTestId("vocab-suggestions-section")).toContainText(
@@ -264,7 +265,7 @@ test.describe
 				deckTitle2,
 			);
 
-			// Check 3 viewports on student /vocab with suggestions visible
+			// Check 3 viewports on student /practice/vocabulary with suggestions visible
 			mkdirSync(SCREENSHOT_DIR, { recursive: true });
 			for (const vp of [
 				{ width: 1440, height: 900 },
@@ -279,7 +280,7 @@ test.describe
 				);
 				expect(
 					hasOverflow,
-					`student /vocab overflow at ${vp.width}x${vp.height}`,
+					`student /practice/vocabulary overflow at ${vp.width}x${vp.height}`,
 				).toBe(false);
 				if (vp.width === 1440) {
 					await page.screenshot({
@@ -297,10 +298,13 @@ test.describe
 				page.getByTestId("vocab-suggestions-section"),
 			).not.toContainText(deckTitle2);
 
-			// 4) Accept 1st suggestion ("Bắt đầu học") -> navigates to /vocab/$deckId1
+			// 4) Accept 1st suggestion ("Bắt đầu học") -> navigates to /practice/vocabulary/$deckId1
 			await page
 				.getByRole("button", { name: `Bắt đầu học ${deckTitle1}` })
 				.click();
+			await expect(page).toHaveURL(
+				`${STUDENT_ORIGIN}/practice/vocabulary/${deckId1}`,
+			);
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 			await expect(page.getByTestId("vocab-deck-title")).toHaveText(deckTitle1);
 			// 3 thẻ thống kê theo bài đã bỏ (#372); thay bằng nút Bắt đầu học kèm số

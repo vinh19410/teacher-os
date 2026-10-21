@@ -226,7 +226,7 @@ function StudentVocabEntrySection() {
 						</span>
 					) : null}
 					<Link
-						to="/vocab"
+						to="/practice/vocabulary"
 						data-testid="vocab-home-entry"
 						className="rounded-md rounded-md border border-input bg-transparent px-4 py-2 font-medium text-foreground text-sm transition-colors duration-150 hover:border-primary hover:text-primary"
 					>

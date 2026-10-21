@@ -80,7 +80,7 @@ export function VocabLessonCard({
 
 	return (
 		<Link
-			to="/vocab/$deckId"
+			to="/practice/vocabulary/$deckId"
 			params={{ deckId: deck.id }}
 			search={{ course: courseId }}
 			data-testid={`vocab-course-deck-${deck.id}`}

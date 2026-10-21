@@ -267,15 +267,19 @@ test.describe("Student class card & class detail page", () => {
 			"true",
 		);
 
-		// 3. Từ vựng (/vocab)
-		await nav.getByRole("link", { name: "Từ vựng" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/vocab`);
-		await expect(nav.getByRole("link", { name: "Từ vựng" })).toHaveAttribute(
-			"aria-current",
-			"page",
-		);
+		// 3. Từ vựng (/practice/vocabulary, không còn mục nav "Từ vựng" riêng)
+		await expect(nav.getByRole("link", { name: "Từ vựng" })).toHaveCount(0);
+		await nav.getByRole("button", { name: "Luyện tập" }).click();
+		await nav.getByRole("link", { name: "Vocabulary" }).click();
+		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/practice/vocabulary`);
 		await expect(
-			page.getByRole("heading", { level: 1, name: "Từ vựng của tôi" }),
+			nav.getByRole("button", { name: "Luyện tập" }),
+		).toHaveAttribute("aria-expanded", "true");
+		await expect(
+			page.getByRole("navigation", { name: "Breadcrumb" }),
+		).toContainText("Luyện tập");
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Từ vựng", exact: true }),
 		).toBeVisible();
 
 		// 4. Học phí (/tuition) — empty state when no invoice

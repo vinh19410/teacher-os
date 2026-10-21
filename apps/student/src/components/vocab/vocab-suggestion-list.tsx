@@ -67,7 +67,7 @@ function SuggestionCard({
 }
 
 /**
- * Section "Gợi ý cho bạn" trên trang `/vocab` của học viên (#363):
+ * Section "Gợi ý cho bạn" trên trang `/practice/vocabulary` của học viên (#363):
  * - Ẩn hoàn toàn khi không có gợi ý nào đang pending.
  * - "Bắt đầu học" -> accept suggestion + mở session học bộ từ.
  * - "Ẩn" -> dismiss suggestion (biến mất khỏi danh sách, không bắt buộc học).

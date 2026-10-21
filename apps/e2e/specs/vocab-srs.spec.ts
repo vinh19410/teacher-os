@@ -119,7 +119,7 @@ test.describe
 					// phải có TRƯỚC lần đọc đầu tiên của app: portal home prefetch
 					// query ["student","vocab-overview"] khi mount (staleTime 60s +
 					// networkMode offlineFirst, query-client.ts) nên mutation DB sau
-					// đó không bao giờ được /vocab nhìn thấy nữa (#377).
+					// đó không bao giờ được /practice/vocabulary nhìn thấy nữa (#377).
 					const isSustainable = word === "sustainable";
 					await db.execute({
 						sql: `INSERT INTO vocab_card (id, student_id, word_id, level, state, interval_days, due_at, updated_at)
@@ -459,7 +459,7 @@ test.describe
 			await page.getByTestId("vocab-summary-back").click();
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 
-			// Về overview để thấy countdown (chỉ render ở /vocab).
+			// Về overview để thấy countdown (chỉ render ở /practice/vocabulary).
 			await page.getByRole("link", { name: "← Danh sách bộ từ" }).click();
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 
@@ -650,9 +650,9 @@ test.describe
 				deleteDb.close();
 			}
 
-			// Sau khi xoá deck, đang ở /vocab/$deckId (404) — sang /vocab để assert
+			// Sau khi xoá deck, đang ở /practice/vocabulary/$deckId (404) — sang /practice/vocabulary để assert
 			// overview: mất deck nhưng streak giữ nguyên (review_log sống sót).
-			await page.goto(`${STUDENT_ORIGIN}/vocab`);
+			await page.goto(`${STUDENT_ORIGIN}/practice/vocabulary`);
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-overview-streak")).toHaveText(
 				"1 ngày",

@@ -1,7 +1,7 @@
 ---
 title: "Student: gộp /vocab vào /practice/vocabulary thành một path duy nhất"
 description: "Học viên đang có hai cửa vào từ vựng (/vocab hub đầy đủ và /practice/vocabulary lưới deck rút gọn đọc cùng API). Chuyển toàn bộ hub + route con sang /practice/vocabulary/*, /vocab/* redirect giữ query, bỏ mục nav 'Từ vựng' riêng và xoá VocabPracticeCatalog."
-status: pending
+status: completed
 priority: P2
 effort: "3h"
 issue: 387
@@ -56,8 +56,8 @@ dư thừa, dữ liệu như nhau, người học không biết nên vào đâu.
 
 | # | Phase | Status | Depends | File |
 |---|---|---|---|---|
-| 1 | Dời route + redirect legacy + dọn nav/link | pending | — | [phase-01-route-move-and-redirect.md](phase-01-route-move-and-redirect.md) |
-| 2 | Cập nhật test + e2e + verify 3 viewport | pending | 1 | [phase-02-tests-and-e2e.md](phase-02-tests-and-e2e.md) |
+| 1 | Dời route + redirect legacy + dọn nav/link | completed | — | [phase-01-route-move-and-redirect.md](phase-01-route-move-and-redirect.md) |
+| 2 | Cập nhật test + e2e + verify 3 viewport | completed | 1 | [phase-02-tests-and-e2e.md](phase-02-tests-and-e2e.md) |
 
 ## Acceptance Criteria
 
@@ -71,7 +71,7 @@ dư thừa, dữ liệu như nhau, người học không biết nên vào đâu.
    `/vocab/courses?q=IELTS`, `/vocab/courses/<id>` đều redirect (replace history)
    sang path tương ứng dưới `/practice/vocabulary`, query giữ nguyên.
 4. Sidebar không còn mục "Từ vựng"; "Luyện tập › Vocabulary" mở hub; khi ở mọi
-   trang `/practice/vocabulary/*` thì section "Luyện tập" active.
+   trang `/practice/vocabulary/*` thì nhóm "Luyện tập" có `aria-expanded="true"` và breadcrumb hiển thị `"Luyện tập"`.
 5. `VocabPracticeCatalog` bị xoá; `$skill.tsx` không còn nhánh `vocabulary`.
 6. Gate local xanh: `pnpm check`, `pnpm check-types`, `pnpm --filter student test`,
    các e2e spec vocab + student-practice + student-class-detail (port override AGENTS.md),
@@ -90,3 +90,37 @@ dư thừa, dữ liệu như nhau, người học không biết nên vào đâu.
 
 - Nav con "Vocabulary" hiện không tự highlight (`useStudentActiveKey` chỉ trả `practice`,
   cả 5 skill đều vậy) — giữ nguyên hành vi hiện tại, ngoài scope.
+
+## Red Team Review
+
+### Session — 2026-10-21
+**Findings:** 3 (3 accepted, 0 rejected)
+**Severity breakdown:** 0 Critical, 1 High, 2 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | `apps/student/test/student-nav.test.tsx:39-43` assert `ITEM_BY_HREF["/vocab"]?.label === "Từ vựng"` và `STUDENT_NAV[0].items` length 7 — bị thiếu trong danh sách file Phase 2 | High | Accept | Phase 2 |
+| 2 | `apps/e2e/specs/student-class-detail.spec.ts:278` assert `heading` level 1 `"Từ vựng của tôi"` cần đổi thành `"Từ vựng"` khớp với header mới ở Phase 1 Step 4, đồng thời mở nhóm `"Luyện tập"` trước khi click `"Vocabulary"` | Medium | Accept | Phase 2 |
+| 3 | `legacyVocabHref(pathname, searchStr)` cần chuẩn hoá phần đuôi (collapse leading `/` dư thừa) để không bao giờ tạo URL `//...` gây open-redirect khi truyền vào `redirect({ href })` | Medium | Accept | Phase 1, Phase 2 |
+
+### Whole-Plan Consistency Sweep
+- Đã đối chiếu toàn bộ `plan.md`, `phase-01-route-move-and-redirect.md`, `phase-02-tests-and-e2e.md` với codebase thực tế.
+- Không còn mâu thuẫn giữa mô tả header (`h1 "Từ vựng"`), bộ unit test (`student-nav.test.tsx`, `vocab-course-catalog.test.tsx`, `legacy-vocab-redirect.test.ts`), và 5 file e2e spec.
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 12
+- Verified: 12 | Failed: 0 | Unverified: 0
+- Tier: Light (Fact Checker)
+- Notes: Toàn bộ file nguồn và dòng tham chiếu trong Phase 1 & Phase 2 đều tồn tại chính xác; bổ sung `apps/student/test/student-nav.test.tsx` vào Phase 2.
+
+### Whole-Plan Consistency Sweep
+- Tất cả đường dẫn route `/_auth/practice/vocabulary/*`, redirect legacy `/vocab/*`, và test assertions đã đồng nhất xuyên suốt plan.
+
+### Kongming Advisory Review (Plan Gate)
+- **Verdict:** GO (với 4 lưu ý kỹ thuật đã cập nhật vào Phase 1 & Phase 2):
+  1. `student-nav.test.tsx`: bổ sung `expect(STUDENT_PAGE_LABEL.vocab).toBeUndefined()`.
+  2. `student-class-detail.spec.ts`: mở `<button> Luyện tập` → click `Vocabulary`, kiểm tra `aria-expanded="true"` + breadcrumb `"Luyện tập"` và `getByRole("heading", { level: 1, name: "Từ vựng", exact: true })`.
+  3. `student-practice.spec.ts`: kiểm tra cả redirect trần `/vocab` → `/practice/vocabulary` để cover `routes/_auth/vocab/index.tsx`.
+  4. `legacyVocabHref`: luôn ghép prefix cố định `"/practice/vocabulary"`, chuẩn hoá `\` → `/`, gộp `/` liên tiếp, chặn `/vocabX` và `//evil.com`, chỉ ghép `searchStr` khi bắt đầu bằng `?`.

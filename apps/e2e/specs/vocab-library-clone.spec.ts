@@ -305,7 +305,7 @@ test.describe
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 		});
 
-		test("unassigned student browses /vocab/courses catalog, opens MochiVocab lesson grid /vocab/courses/$courseId with verbatim VI description & start-here badge, switches course via ribbon dialog, preserves ?course= through SRS session exit, and updates progress across 3 viewports (#366, #369)", async ({
+		test("unassigned student browses /practice/vocabulary/courses catalog, opens MochiVocab lesson grid /practice/vocabulary/courses/$courseId with verbatim VI description & start-here badge, switches course via ribbon dialog, preserves ?course= through SRS session exit, and updates progress across 3 viewports (#366, #369)", async ({
 			page,
 		}) => {
 			const screenshots = new URL(
@@ -339,13 +339,13 @@ test.describe
 				dbBefore.close();
 			}
 
-			// 1. Dashboard CTA -> /vocab/courses
+			// 1. Dashboard CTA -> /practice/vocabulary/courses
 			await page.getByTestId("vocab-home-entry").click();
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-decks-empty")).toBeVisible();
 			await expect(page.getByTestId("vocab-courses-cta")).toBeVisible();
 			await page.getByTestId("vocab-courses-cta").click();
-			await expect(page).toHaveURL(/\/vocab\/courses$/);
+			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses$/);
 			await expect(page.getByTestId("vocab-courses-section")).toBeVisible();
 
 			// 2. Catalog: all 20 courses rendered + debounced URL search param
@@ -354,14 +354,14 @@ test.describe
 			).toHaveCount(EXPECTED_COUNTS.course);
 
 			await page.getByTestId("vocab-course-search").fill("IELTS");
-			await expect(page).toHaveURL(/\/vocab\/courses\?q=IELTS/);
+			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses\?q=IELTS/);
 			await page.getByTestId("vocab-course-search").fill("");
-			await expect(page).toHaveURL(/\/vocab\/courses$/);
+			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses$/);
 			await expect(
 				page.locator('[data-testid^="vocab-course-card-"]'),
 			).toHaveCount(EXPECTED_COUNTS.course);
 
-			// Verify 3 viewports (1440x900, 768x1024, 375x812) on /vocab/courses + screenshots
+			// Verify 3 viewports (1440x900, 768x1024, 375x812) on /practice/vocabulary/courses + screenshots
 			for (const vp of [
 				{ width: 1440, height: 900, name: "1440" },
 				{ width: 768, height: 1024, name: "768" },
@@ -386,7 +386,9 @@ test.describe
 
 			// 3. Open 140-deck course (libcourse-15) to verify D1 100-variable safety & route navigation
 			await page.getByTestId("vocab-course-card-libcourse-15").click();
-			await expect(page).toHaveURL(/\/vocab\/courses\/libcourse-15$/);
+			await expect(page).toHaveURL(
+				/\/practice\/vocabulary\/courses\/libcourse-15$/,
+			);
 			await expect(
 				page.getByTestId("vocab-selected-course-title"),
 			).toBeVisible();
@@ -396,13 +398,13 @@ test.describe
 
 			// Return to all courses via back button, then open targetCourseId (libcourse-1)
 			await page.getByTestId("vocab-course-back-btn").click();
-			await expect(page).toHaveURL(/\/vocab\/courses$/);
+			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses$/);
 			await expect(
 				page.getByTestId(`vocab-course-card-${targetCourseId}`),
 			).toBeVisible();
 			await page.getByTestId(`vocab-course-card-${targetCourseId}`).click();
 			await expect(page).toHaveURL(
-				new RegExp(`/vocab/courses/${targetCourseId}$`),
+				new RegExp(`/practice/vocabulary/courses/${targetCourseId}$`),
 			);
 			await expect(
 				page.getByTestId(`vocab-course-deck-${libDeck1Id}`),
@@ -482,7 +484,9 @@ test.describe
 			await page.setViewportSize({ width: 1440, height: 900 });
 
 			await page.getByTestId("vocab-switcher-course-libcourse-15").click();
-			await expect(page).toHaveURL(/\/vocab\/courses\/libcourse-15$/);
+			await expect(page).toHaveURL(
+				/\/practice\/vocabulary\/courses\/libcourse-15$/,
+			);
 			await expect(
 				page.getByTestId("vocab-course-switcher-dialog"),
 			).toBeHidden();
@@ -490,7 +494,7 @@ test.describe
 			await page.getByTestId("vocab-course-switcher").click();
 			await page.getByTestId(`vocab-switcher-course-${targetCourseId}`).click();
 			await expect(page).toHaveURL(
-				new RegExp(`/vocab/courses/${targetCourseId}$`),
+				new RegExp(`/practice/vocabulary/courses/${targetCourseId}$`),
 			);
 
 			// 6. Open libDeck1Id from lesson grid -> preserves ?course=<targetCourseId>
@@ -513,7 +517,9 @@ test.describe
 			expect(firstCardId.length).toBeGreaterThan(0);
 
 			await expect(page).toHaveURL(
-				new RegExp(`/vocab/${libDeck1Id}\\?course=${targetCourseId}$`),
+				new RegExp(
+					`/practice/vocabulary/${libDeck1Id}\\?course=${targetCourseId}$`,
+				),
 			);
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 
@@ -533,7 +539,9 @@ test.describe
 			await expect(page.getByTestId("vocab-learn-intro")).toBeVisible();
 			// Thứ tự query do router serialize — assert bằng searchParams thay vì regex (#372)
 			const sessionUrl = new URL(page.url());
-			expect(sessionUrl.pathname).toBe(`/vocab/${libDeck1Id}/session`);
+			expect(sessionUrl.pathname).toBe(
+				`/practice/vocabulary/${libDeck1Id}/session`,
+			);
 			expect(sessionUrl.searchParams.get("course")).toBe(targetCourseId);
 			expect(sessionUrl.searchParams.get("mode")).toBe("learn");
 
@@ -562,19 +570,21 @@ test.describe
 			await expect(page.getByTestId("vocab-exit-confirm-dialog")).toBeVisible();
 			await page.getByTestId("vocab-confirm-exit-btn").click();
 			await expect(page).toHaveURL(
-				new RegExp(`/vocab/${libDeck1Id}\\?course=${targetCourseId}$`),
+				new RegExp(
+					`/practice/vocabulary/${libDeck1Id}\\?course=${targetCourseId}$`,
+				),
 			);
 
-			// 7. Click "← Bài học trong khóa" -> returns to /vocab/courses/<targetCourseId> and shows "Đang học 1/N"
+			// 7. Click "← Bài học trong khóa" -> returns to /practice/vocabulary/courses/<targetCourseId> and shows "Đang học 1/N"
 			await page.getByTestId("vocab-deck-back-link").click();
 			await expect(page).toHaveURL(
-				new RegExp(`/vocab/courses/${targetCourseId}$`),
+				new RegExp(`/practice/vocabulary/courses/${targetCourseId}$`),
 			);
 			await expect(
 				page.getByTestId(`vocab-lesson-status-${libDeck1Id}`),
 			).toContainText("Đang học 1/");
 
-			// Navigate back to /vocab dashboard -> sees deck in "Bộ từ đang học" with "Khóa " badge
+			// Navigate back to /practice/vocabulary dashboard -> sees deck in "Bộ từ đang học" with "Khóa " badge
 			await page.getByTestId("vocab-course-back-btn").click();
 			await page.getByTestId("vocab-courses-back-to-overview").click();
 			await expect(
@@ -583,5 +593,9 @@ test.describe
 			await expect(
 				page.getByTestId(`vocab-deck-source-${libDeck1Id}`),
 			).toContainText("Khóa ");
+
+			// 8. Legacy redirect /vocab/courses?q=IELTS -> /practice/vocabulary/courses?q=IELTS
+			await page.goto(`${STUDENT_ORIGIN}/vocab/courses?q=IELTS`);
+			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses\?q=IELTS/);
 		});
 	});

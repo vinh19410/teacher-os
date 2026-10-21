@@ -7,7 +7,9 @@ import { VocabSessionView } from "@/components/vocab/vocab-session-view";
 import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
-export const Route = createFileRoute("/_auth/vocab/$deckId/session")({
+export const Route = createFileRoute(
+	"/_auth/practice/vocabulary/$deckId/session",
+)({
 	validateSearch: (input: {
 		course?: string;
 		mode?: string;
@@ -54,7 +56,7 @@ function VocabSessionRoutePage() {
 			}),
 		]);
 		void navigate({
-			to: "/vocab/$deckId",
+			to: "/practice/vocabulary/$deckId",
 			params: { deckId },
 			search: course ? { course } : {},
 		});
