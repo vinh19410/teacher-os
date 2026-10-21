@@ -28,7 +28,7 @@ export function RingStat({
 	const pct = max > 0 ? Math.min(1, value / max) : 0;
 
 	return (
-		<div className="flex flex-col items-center rounded-lg rounded-xl border bg-card p-5 text-center shadow-sm">
+		<div className="flex flex-col items-center rounded-xl border bg-card p-5 text-center text-card-foreground shadow-sm">
 			<div className="relative size-32">
 				<svg
 					viewBox="0 0 120 120"
@@ -41,7 +41,7 @@ export function RingStat({
 						r={radius}
 						fill="none"
 						strokeWidth="9"
-						className="stroke-surface"
+						className="stroke-muted"
 					/>
 					<circle
 						cx="60"
@@ -50,7 +50,7 @@ export function RingStat({
 						fill="none"
 						strokeWidth="9"
 						strokeLinecap="round"
-						className="stroke-hot transition-[stroke-dashoffset] duration-700"
+						className="stroke-primary transition-[stroke-dashoffset] duration-700"
 						strokeDasharray={circumference}
 						strokeDashoffset={circumference * (1 - pct)}
 					/>

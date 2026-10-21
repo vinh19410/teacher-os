@@ -26,10 +26,12 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
+import { ClassAssignmentTable } from "@/components/class/class-assignment-table";
 import {
 	ClassDetailView,
 	ClassNotFound,
 } from "@/components/class/class-detail-view";
+import { computeCourseMonths } from "@/components/class/class-info-card";
 import {
 	ClassLessonList,
 	findNextLessonId,
@@ -153,15 +155,24 @@ describe("ClassDetailView", () => {
 		cleanup();
 	});
 
-	it("renders the class header, teacher card, rings and lessons by default", () => {
+	it("renders the class header, todo banner, info card, rings and lessons by default", () => {
 		const html = renderToStaticMarkup(
 			<ClassDetailView detail={detail} todayISO={TODAY} />,
 		);
 		expect(html).toContain("<h1");
 		expect(html).toContain("IELTS Detail");
+		expect(html).toContain("Đang học");
+		expect(html).toContain("Nhắn giáo viên");
+		// Banner việc cần làm khi còn bài class_assignment chưa nộp.
+		expect(html).toContain("Bạn còn 1 bài chưa làm trong IELTS Detail");
+		expect(html).toContain('href="/learn/quizzes/ca-9"');
+		// Thẻ thông tin lớp (dl).
 		expect(html).toContain("Band 6.5");
-		expect(html).toContain("Khai giảng: Chủ Nhật, 01/03/2099");
-		expect(html).toContain("Buổi 3/12");
+		expect(html).toContain("Khai giảng");
+		expect(html).toContain("Chủ Nhật, 01/03/2099");
+		expect(html).toContain("Số buổi đã học");
+		expect(html).toContain("2/5 buổi");
+		expect(html).not.toContain("Tiến độ khóa học");
 		expect(html).toContain("Cô Lan");
 		expect(html).toContain('href="mailto:lan@example.com"');
 		// Tab mặc định = Hành trình học (Buổi học).
@@ -179,22 +190,48 @@ describe("ClassDetailView", () => {
 			expect(html).toContain(label);
 		}
 		expect(html).toContain('href="/"');
-		// Mũi tên "←" giờ là span trang trí (aria-hidden) để accessible name
-		// của link đúng "Trang chủ" (e2e bấm link exact name này).
+		// Icon mũi tên có aria-hidden để accessible name của link đúng "Trang chủ".
 		expect(html).toContain("Trang chủ");
-		// Tên lớp chỉ ở header, không lặp lại trên từng bài tập.
-		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
+		// Tên lớp xuất hiện ở TodoBanner và h1 (2 lần), không lặp trên từng bài tập.
+		expect(html.match(/IELTS Detail/g)).toHaveLength(2);
 		// Bài tập nằm trong tab riêng — KHÔNG còn ở view mặc định.
 		expect(html).not.toContain("Reading Practice 1");
 	});
 
-	it("shows assignments after switching to the assignments tab", () => {
+	it("hides the todo banner when all class assignments are submitted", () => {
+		const allSubmitted: StudentClassDetail = {
+			...detail,
+			assignments: detail.assignments.map((a) => ({
+				...a,
+				submittedAt: "2099-03-09T10:00:00Z",
+			})),
+		};
+		const html = renderToStaticMarkup(
+			<ClassDetailView detail={allSubmitted} todayISO={TODAY} />,
+		);
+		expect(html).not.toContain("bài chưa làm trong");
+		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
+	});
+
+	it("shows assignments table after switching to the assignments tab", () => {
 		const utils = render(<ClassDetailView detail={detail} todayISO={TODAY} />);
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
+		expect(screen.getByRole("table")).toBeTruthy();
 		expect(screen.getByText("Reading Practice 1")).toBeTruthy();
+		expect(screen.getByText("Chưa nộp")).toBeTruthy();
 		expect(
 			screen.getByRole("link", { name: "Làm bài: Reading Practice 1" }),
 		).toBeTruthy();
+		utils.unmount();
+	});
+
+	it("shows syllabus topics with Check and CircleDashed icons on syllabus tab", () => {
+		const utils = render(<ClassDetailView detail={detail} todayISO={TODAY} />);
+		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
+		expect(screen.getByText("Reading Skimming")).toBeTruthy();
+		expect(screen.getByText("1/1 buổi")).toBeTruthy();
+		expect(screen.getByText("Chưa có chủ đề")).toBeTruthy();
+		expect(screen.getByText("0/4 buổi")).toBeTruthy();
 		utils.unmount();
 	});
 
@@ -206,6 +243,7 @@ describe("ClassDetailView", () => {
 			/>,
 		);
 		expect(html).toContain("Chưa có thông tin giáo viên.");
+		expect(html).not.toContain("Nhắn giáo viên");
 		expect(html).not.toContain("mailto:");
 	});
 });
@@ -216,5 +254,72 @@ describe("ClassNotFound", () => {
 		expect(html).toContain("Không tìm thấy lớp");
 		expect(html).toContain('href="/"');
 		expect(html).toContain("Về trang chủ");
+	});
+});
+
+describe("computeCourseMonths & ClassAssignmentTable", () => {
+	it("returns null for legacy classes without dates or invalid startDate and computes months when valid", () => {
+		expect(
+			computeCourseMonths("", [lesson({ id: "l1", date: "2099-03-10" })]),
+		).toBeNull();
+		expect(
+			computeCourseMonths("2099-03-01", [lesson({ id: "l1", date: null })]),
+		).toBeNull();
+		expect(
+			computeCourseMonths("2099-03-01", [
+				lesson({ id: "l1", date: "2099-05-05" }),
+			]),
+		).toBe(2);
+	});
+
+	it("renders empty state when class has no assignments and handles graded/submitted/overdue rows", () => {
+		const emptyHtml = renderToStaticMarkup(
+			<ClassAssignmentTable assignments={[]} todayISO={TODAY} />,
+		);
+		expect(emptyHtml).toContain("Chưa có bài tập nào");
+
+		const tableHtml = renderToStaticMarkup(
+			<ClassAssignmentTable
+				todayISO={TODAY}
+				assignments={[
+					{
+						id: "a-overdue",
+						title: "Overdue Task",
+						source: "class_assignment",
+						classId: "class-9",
+						className: "IELTS Detail",
+						due: "2099-03-01",
+						submittedAt: null,
+						scores: null,
+					},
+					{
+						id: "a-submitted",
+						title: "Submitted Task",
+						source: "class_assignment",
+						classId: "class-9",
+						className: "IELTS Detail",
+						due: "2099-03-15",
+						submittedAt: "2099-03-09T10:00:00Z",
+						scores: null,
+					},
+					{
+						id: "a-graded",
+						title: "Graded Essay",
+						source: "grading",
+						classId: "class-9",
+						className: "IELTS Detail",
+						due: "2099-03-05",
+						submittedAt: "2099-03-04T10:00:00Z",
+						scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+					},
+				]}
+			/>,
+		);
+		expect(tableHtml).toContain("Quá hạn");
+		expect(tableHtml).toContain("Đã nộp");
+		expect(tableHtml).toContain("Điểm: 6.5");
+		expect(tableHtml).toContain('aria-label="Làm bài: Overdue Task"');
+		expect(tableHtml).toContain('aria-label="Xem lại kết quả: Submitted Task"');
+		expect(tableHtml).not.toContain("Xem lại kết quả: Graded Essay");
 	});
 });
