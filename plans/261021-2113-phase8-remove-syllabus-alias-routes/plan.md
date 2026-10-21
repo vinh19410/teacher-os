@@ -1,7 +1,7 @@
 ---
 title: "Phase 8: gỡ alias route syllabus cũ (issue #401)"
 description: "Gỡ toàn bộ alias route `/api/syllabi*`, `/api/classes/:id/(import-syllabus|remove-curriculum)` khỏi apps/server; `findSyllabus` giữ lại (còn dùng ở POST /classes); chuyển test sang route mới/đảo test bảo vệ alias thành assert 404; cập nhật docs + CHANGELOG; chạy full e2e."
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 issue: 401

@@ -58,7 +58,7 @@ describe("kernelCommand create-assignment-prompt (#218)", () => {
 });
 
 describe("kernelCommand delete-syllabus (#211)", () => {
-	test("maps to /api/syllabi/:id/remove with an empty body", () => {
+	test("maps to /api/syllabus-templates/:id/remove with an empty body", () => {
 		const request = kernelCommand({
 			type: "delete-syllabus",
 			syllabusId: "sy-1",

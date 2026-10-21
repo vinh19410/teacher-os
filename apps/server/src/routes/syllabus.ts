@@ -23,13 +23,11 @@ import {
 	buildImportBatch,
 	clearPointersTo,
 	findClassCurriculum,
-	findSyllabus,
 	findTemplate,
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
 	setClassCurriculumPointer,
 } from "../lib/syllabus-curriculum";
-import { loadSnapshot } from "./snapshot";
 import { mountContentRoutes } from "./syllabus-content-routes";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -75,18 +73,12 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		return row;
 	}
 
-	routes.get("/syllabi", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
-		return c.json(snapshot.syllabi);
-	});
-
 	//
 	// Shared operation handlers (design D6, issue #394): one implementation
-	// per operation, registered on BOTH the new context paths and the legacy
-	// aliases. replace-content and remove always resolve via findTemplate —
-	// a class copy is never editable/deletable through them (404).
+	// per operation, registered on the single context path (legacy aliases
+	// removed in phase 8, issue #401). replace-content and remove always
+	// resolve via findTemplate — a class copy is never editable/deletable
+	// through them (404).
 	//
 	const createTemplateHandler = async (c: SyllabusContext) => {
 		const ctx = c.get("kernelCtx");
@@ -413,52 +405,39 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 	};
 
 	//
-	// Registration: new contract paths first, legacy aliases right behind
-	// them. Alias tạm cho web cũ, xoá ở phase gỡ alias (phase 8).
+	// Registration: mỗi operation một path ngữ cảnh duy nhất — alias cũ
+	// (/syllabi, import-syllabus, remove-curriculum) đã gỡ ở phase 8 (#401).
 	//
-	for (const path of ["/syllabus-templates", "/syllabi"]) {
-		routes.post(
-			path,
-			async (c, next) => {
-				if (!c.get("kernelCtx")) return unauthorized(c);
-				return next();
-			},
-			bodyLimit({
-				maxSize: 2 * 1024 * 1024,
-				onError: (c) =>
-					c.json({ error: "Dữ liệu syllabus vượt giới hạn 2 MiB." }, 413),
-			}),
-		);
-		routes.post(path, (c) => createTemplateHandler(c));
-	}
-	for (const path of [
-		"/syllabus-templates/:id/replace-content",
-		"/syllabi/:id/replace-content", // Alias tạm cho web cũ, xoá ở phase 8.
-	]) {
-		routes.post(path, (c) => replaceContentHandler(c));
-	}
-	for (const path of [
-		"/syllabus-templates/:id/remove",
-		"/syllabi/:id/remove", // Alias tạm cho web cũ, xoá ở phase 8.
-	]) {
-		routes.post(path, (c) => removeTemplateHandler(c));
-	}
-	for (const path of [
-		"/classes/:id/curriculum/import",
-		"/classes/:id/import-syllabus", // Alias tạm cho web cũ, xoá ở phase 8.
-	]) {
-		routes.post(path, (c) => importCurriculumHandler(c));
-	}
-	for (const path of [
-		"/classes/:id/curriculum/remove",
-		"/classes/:id/remove-curriculum", // Alias tạm cho web cũ, xoá ở phase 8.
-	]) {
-		routes.post(path, (c) => removeCurriculumHandler(c));
-	}
+	routes.post(
+		"/syllabus-templates",
+		async (c, next) => {
+			if (!c.get("kernelCtx")) return unauthorized(c);
+			return next();
+		},
+		bodyLimit({
+			maxSize: 2 * 1024 * 1024,
+			onError: (c) =>
+				c.json({ error: "Dữ liệu syllabus vượt giới hạn 2 MiB." }, 413),
+		}),
+	);
+	routes.post("/syllabus-templates", (c) => createTemplateHandler(c));
+
+	routes.post("/syllabus-templates/:id/replace-content", (c) =>
+		replaceContentHandler(c),
+	);
+	routes.post("/syllabus-templates/:id/remove", (c) =>
+		removeTemplateHandler(c),
+	);
+	routes.post("/classes/:id/curriculum/import", (c) =>
+		importCurriculumHandler(c),
+	);
+	routes.post("/classes/:id/curriculum/remove", (c) =>
+		removeCurriculumHandler(c),
+	);
 
 	// Content routes (module/lesson) mounted once per scope (design D5):
-	// template scope, class-curriculum scope, and the legacy alias. Handlers
-	// only use the resolved syllabus id — never the raw :id param.
+	// template scope and class-curriculum scope. Handlers only use the
+	// resolved syllabus id — never the raw :id param.
 	mountContentRoutes(routes, {
 		basePath: "/syllabus-templates/:id",
 		resolve: async (c, db, orgId) => {
@@ -478,18 +457,6 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			const cls = await findClassPointer(db, id, orgId);
 			if (!cls) return undefined;
 			return findClassCurriculum(db, cls.id, orgId);
-		},
-		deps,
-		readBody,
-		unauthorized,
-	});
-	// Alias tạm cho web cũ, xoá ở phase gỡ alias (phase 8).
-	mountContentRoutes(routes, {
-		basePath: "/syllabi/:id",
-		resolve: async (c, db, orgId) => {
-			const id = c.req.param("id");
-			if (id === undefined) return undefined;
-			return findSyllabus(db, id, orgId);
 		},
 		deps,
 		readBody,

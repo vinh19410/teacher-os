@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Server — gỡ alias route + chuyển test (TDD)"
-status: pending
+status: done
 priority: P2
 effort: "1.5h"
 dependencies: []

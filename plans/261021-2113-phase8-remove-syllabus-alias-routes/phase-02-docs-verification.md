@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Docs/CHANGELOG + dọn stale + full verification"
-status: pending
+status: done
 priority: P2
 effort: "0.5h"
 dependencies: [1]
