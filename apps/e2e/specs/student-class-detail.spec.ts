@@ -48,6 +48,14 @@ test.beforeAll(async ({ browser }) => {
 		invitedClassName,
 		lessons: [
 			{
+				// Quá hạn 2 ngày mà chưa ai check-in → badge "Đã kết thúc" (#393).
+				date: addDaysISO(today, -2),
+				time: "08:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Buổi quá hạn chưa điểm danh",
+			},
+			{
 				date: addDaysISO(today, -1),
 				time: "18:30",
 				dur: 90,
@@ -147,11 +155,14 @@ test.describe("Student class card & class detail page", () => {
 			.locator("section")
 			.filter({ has: page.getByRole("heading", { name: "Buổi học" }) })
 			.locator("li");
-		await expect(lessons).toHaveCount(3);
-		await expect(lessons.nth(0)).toContainText("Đã học");
-		await expect(lessons.nth(1)).toContainText("Buổi tới");
-		await expect(lessons.nth(1)).toHaveAttribute("aria-current", "true");
-		await expect(lessons.nth(2)).not.toContainText("Buổi tới");
+		await expect(lessons).toHaveCount(4);
+		// Buổi upcoming đã qua giờ kết thúc (chưa ai check-in) → "Đã kết thúc".
+		await expect(lessons.nth(0)).toContainText("Đã kết thúc");
+		await expect(lessons.nth(0)).not.toContainText("Buổi tới");
+		await expect(lessons.nth(1)).toContainText("Đã học");
+		await expect(lessons.nth(2)).toContainText("Buổi tới");
+		await expect(lessons.nth(2)).toHaveAttribute("aria-current", "true");
+		await expect(lessons.nth(3)).not.toContainText("Buổi tới");
 
 		// Bài tập đã chuyển vào tab riêng ("Bài tập") theo design-v2 #378.
 		await page.getByRole("tab", { name: "Bài tập" }).click();

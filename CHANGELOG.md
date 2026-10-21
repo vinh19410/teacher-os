@@ -24,6 +24,7 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Bài viết Writing chứa HTML (`<p>…</p>`, entity `&amp;`…) từ seed hoặc dữ liệu cũ không còn hiện thẻ HTML thô trên màn chấm giáo viên (`/grading/$attemptId`) và màn kết quả học viên (`/learn/quizzes/attempt/$attemptId`): server chuẩn hoá HTML sang plain text khi đọc kèm bản đồ offset hai chiều `rawStart`/`rawEnd` (`essayToPlain`, `toEssayView`), giữ nguyên lưu trữ offset raw trong DB và căn khớp vị trí highlight `mark[data-n]` + ghi chú inline `essay-inline-note` cũng như số từ `countWords` (#382)
+- Tab **Hành trình học** ở trang chi tiết lớp học viên: buổi còn `status = upcoming` nhưng đã qua giờ kết thúc (ngày + giờ bắt đầu + thời lượng, giờ VN) vì giáo viên chưa check-in giờ hiện badge **Đã kết thúc** thay vì "Sắp tới", không bao giờ bị gán "Buổi tới" (client-side `isLessonEnded` + `findNextLessonId` nhận `now`); thẻ Tổng quan đồng bộ; dữ liệu `date` null/time lỗi giữ nguyên hiển thị cũ, không đổi API/DB (#393)
 
 ### Removed
 - `VocabPracticeCatalog` (lưới deck rút gọn trùng lặp tại `/practice/vocabulary`), thay bằng hub từ vựng đầy đủ (#387)
