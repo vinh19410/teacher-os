@@ -28,6 +28,7 @@ describe("routes-matcher", () => {
 			"/assignments/preview",
 			"/assignments/tests/new",
 			"/assignments/tests/preview",
+			"/grading",
 			"/classes",
 			"/students",
 			"/syllabus",
@@ -80,7 +81,7 @@ describe("routes-matcher", () => {
 			// Trang chấm bài (#319): /grading/<attemptId> — một segment.
 			expect(isValidAppRoute("/grading/att-123")).toBe(true);
 			expect(isValidAppRoute("/grading/att-123/")).toBe(true);
-			expect(isValidAppRoute("/grading")).toBe(false);
+			expect(isValidAppRoute("/grading")).toBe(true);
 			expect(isValidAppRoute("/grading/a/b")).toBe(false);
 			// Chi tiết hóa đơn (#345): /tuition/<invoiceId> — một segment; /
 			// tuition/<id>/extra phải từ chối như các prefix khác.

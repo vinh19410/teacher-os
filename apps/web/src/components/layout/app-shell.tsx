@@ -26,7 +26,7 @@ import { VersionBadge } from "./version-badge";
 /**
  * Crumb theo route match (tổ chức › mục › chi tiết): segment đầu là tên tổ
  * chức, phần sau tra cứu tĩnh từ routeId lá. Route không có trong bảng
- * (vd. /grading/$attemptId) → chỉ hiện tổ chức, đúng shell v1 (title rỗng).
+ * → chỉ hiện tổ chức.
  */
 const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth": ["Tổng quan"],
@@ -40,6 +40,9 @@ const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth/assignments/$assignmentId": ["Bài tập"],
 	"/_auth/assignments/new": ["Bài tập", "Tạo bài tập"],
 	"/_auth/assignments/preview": ["Bài tập", "Xem trước bài tập"],
+	"/_auth/grading": ["Chấm bài"],
+	"/_auth/grading/": ["Chấm bài"],
+	"/_auth/grading/$attemptId": ["Chấm bài"],
 	"/_auth/classes": ["Lớp học"],
 	"/_auth/classes/$classId": ["Lớp học"],
 	"/_auth/syllabus": ["Syllabus"],

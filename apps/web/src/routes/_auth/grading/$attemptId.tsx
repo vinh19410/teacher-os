@@ -16,6 +16,7 @@ import {
 	createAnnotation,
 	deleteAnnotation,
 	gradingQueryKey,
+	gradingQueueQueryKey,
 	saveGrade,
 	submissionQueryOptions,
 	updateAnnotation,
@@ -44,7 +45,7 @@ function on401Reauth(loadError: Error | null): void {
 	}
 }
 
-function GradingRoute() {
+export function GradingRoute() {
 	const { attemptId } = Route.useParams();
 	const { data, error, isPending } = useQuery(
 		submissionQueryOptions(attemptId),
@@ -78,6 +79,10 @@ function GradingRoute() {
 			void queryClient.invalidateQueries({
 				queryKey: kernelQueryKey,
 				exact: true,
+			});
+			// Hàng chờ chấm (/grading) cũng phải thấy trạng thái "Đã chấm · Band X" mới (#383).
+			void queryClient.invalidateQueries({
+				queryKey: gradingQueueQueryKey,
 			});
 			setSavedAt(grade.gradedAt);
 		},
@@ -172,19 +177,30 @@ function GradingRoute() {
 
 	return (
 		<div className="flex flex-col">
-			<Link
-				to="/classes/$classId"
-				params={{ classId: data.classId }}
-				search={{ tab: "assignments" }}
-				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
-			>
-				← Về lớp
-			</Link>
+			{data.practice || !data.classId ? (
+				<Link
+					to="/grading"
+					search={data.practice ? { mode: "practice" } : undefined}
+					className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+				>
+					← Về hàng chờ chấm
+				</Link>
+			) : (
+				<Link
+					to="/classes/$classId"
+					params={{ classId: data.classId }}
+					search={{ tab: "assignments" }}
+					className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+				>
+					← Về lớp
+				</Link>
+			)}
 			<PageHead
 				kicker={
 					<>
 						{data.student.name} · {data.className} · Nộp{" "}
-						{fmtWhen(data.submittedAt)} · Hạn {fmtDue(data.due)}
+						{fmtWhen(data.submittedAt)}
+						{data.due ? <> · Hạn {fmtDue(data.due)}</> : null}
 					</>
 				}
 				title={data.title}

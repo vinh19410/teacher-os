@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { createClient } from "@libsql/client";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
 	orgIdForTeacherEmail,
@@ -46,6 +47,36 @@ let teacherContext: BrowserContext;
 let teacherPage: Page;
 let fixture: QuizFixture;
 let writingAttemptId = "";
+const practiceWritingTitle = "Writing tự luyện: remote work";
+
+async function seedPracticeWritingTest(orgId: string): Promise<string> {
+	const db = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await db.execute("PRAGMA busy_timeout = 5000;");
+	const now = Date.now();
+	const testId = crypto.randomUUID();
+	const promptId = crypto.randomUUID();
+
+	await db.execute({
+		sql: `INSERT INTO assignment_prompt (
+				id, org_id, task, genre, skill, part, type, title, prompt, questions, status, created_at
+			) VALUES (?,?, 'task2', 'essay', 'writing', 'task2', 'opinion', 'Task 2 Remote Work', '<p>Many employees now work from home.</p>', '[]', 'ready', ?)`,
+		args: [promptId, orgId, now],
+	});
+	await db.execute({
+		sql: `INSERT INTO assignment_test (id, org_id, title, skill, time_limit_seconds, collection, test_group, status, created_at, updated_at)
+			VALUES (?,?,?, 'writing', 2400, 'Cambridge 18', 'TEST 2', 'ready', ?, ?)`,
+		args: [testId, orgId, practiceWritingTitle, now, now],
+	});
+	await db.execute({
+		sql: `INSERT INTO assignment_test_part (id, test_id, prompt_id, part, position)
+			VALUES (?,?,?, 'task2', 1)`,
+		args: [crypto.randomUUID(), testId, promptId],
+	});
+	db.close();
+	return testId;
+}
 
 /** Sign in through the portal login form (fresh context → sign-in tab). */
 async function signIn(page: Page): Promise<void> {
@@ -139,6 +170,7 @@ test.beforeAll(async ({ browser }) => {
 		studentId: fixture.studentId,
 		essay: "Living in a city has many benefits.\nFirst, jobs are plentiful.",
 	});
+	await seedPracticeWritingTest(orgId);
 
 	// Real portal signup once (fresh context → signup tab), then close —
 	// later student logins must open their own fresh context (signIn).
@@ -302,6 +334,149 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await sp.reload();
 		await expect(sp.getByTestId("grade-band")).toHaveText("7.0");
 		await expect(sp.getByText("Pronunciation")).toBeVisible();
+		await sc.close();
+	});
+
+	test("student submits practice writing → teacher grades from Luyện tập queue → student sees band in history (#383)", async ({
+		browser,
+	}) => {
+		const sc = await browser.newContext();
+		const sp = await sc.newPage();
+		await signIn(sp);
+
+		// 1) Học viên mở Luyện tập › Writing, bắt đầu đề tự luyện và nộp bài.
+		await sp.goto(`${STUDENT_ORIGIN}/practice/writing`);
+		const card = sp
+			.getByTestId("practice-test-card")
+			.filter({ hasText: practiceWritingTitle });
+		await expect(card).toContainText("Cambridge 18");
+		await card.click();
+		await expect(sp).toHaveURL(/\/learn\/quizzes\/practice\//);
+
+		const textarea = sp.getByLabel("Bài viết của bạn");
+		await expect(textarea).toBeVisible();
+		await textarea.fill(
+			"Working from home offers flexibility and saves commuting time for workers.",
+		);
+		await expect(sp.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+		await sp.getByRole("button", { name: "Nộp bài" }).click();
+		const guard = sp.getByRole("alertdialog", {
+			name: "Bài viết chưa đủ số từ",
+		});
+		await expect(guard).toBeVisible();
+		await guard.getByRole("button", { name: "Nộp bài" }).click();
+		await sp.waitForURL(/\/learn\/quizzes\/attempt\//, { timeout: 30_000 });
+		const practiceAttemptId = new URL(sp.url()).pathname.split("/").pop() ?? "";
+
+		// 2) Học viên vào Lịch sử thấy trạng thái "Chờ chấm" (không còn "Đã nộp — tự luyện").
+		await sp.goto(`${STUDENT_ORIGIN}/history`);
+		const historyRow = sp
+			.getByTestId("history-entry-row")
+			.filter({ hasText: practiceWritingTitle });
+		await expect(historyRow).toContainText("Chờ chấm");
+		await expect(historyRow).not.toContainText("Đã nộp — tự luyện");
+
+		// 3) Giáo viên bấm mục nav "Chấm bài" trong sidebar → lọc "Luyện tập" → bấm "Chấm bài".
+		await teacherPage.goto(`${WEB_ORIGIN}/dashboard`);
+		await teacherPage
+			.getByRole("navigation", { name: "Điều hướng chính" })
+			.getByRole("link", { name: "Chấm bài", exact: true })
+			.click();
+		await expect(teacherPage).toHaveURL(/\/grading(\?|$)/);
+
+		await teacherPage
+			.getByRole("group", { name: "Nguồn bài" })
+			.getByRole("button", { name: "Luyện tập" })
+			.click();
+		await expect(teacherPage).toHaveURL(/mode=practice/);
+
+		const queueRow = teacherPage
+			.getByTestId("grading-queue-table")
+			.getByRole("row")
+			.filter({ hasText: practiceWritingTitle });
+		await expect(queueRow).toContainText("Luyện tập");
+		await expect(queueRow).toContainText("Chờ chấm");
+		await queueRow
+			.getByRole("link", { name: "Chấm bài của Học Viên Chấm" })
+			.click();
+		await expect(teacherPage).toHaveURL(
+			new RegExp(`/grading/${practiceAttemptId}$`),
+		);
+
+		// 4) Giáo viên chấm 4 tiêu chí + nhận xét rồi quay lại hàng chờ chấm.
+		await expect(
+			teacherPage.getByRole("link", { name: "← Về hàng chờ chấm" }),
+		).toBeVisible();
+		await setBand(teacherPage, "Task Response", "7");
+		await setBand(teacherPage, "Coherence & Cohesion", "7");
+		await setBand(teacherPage, "Lexical Resource", "6.5");
+		await setBand(teacherPage, "Grammatical Range & Accuracy", "6.5");
+		await expect(teacherPage.getByTestId("grade-overall-band")).toHaveText(
+			"7.0",
+		);
+		await teacherPage
+			.locator("#grade-feedback")
+			.fill("Bố cục mạch lạc, từ vựng tự nhiên.");
+		await teacherPage.getByRole("button", { name: "Lưu điểm" }).click();
+		await expect(teacherPage.getByTestId("grade-saved")).toBeVisible();
+
+		await teacherPage.getByRole("link", { name: "← Về hàng chờ chấm" }).click();
+		await expect(teacherPage).toHaveURL(/\/grading\?mode=practice/);
+		await expect(queueRow).toContainText("Đã chấm · Band 7.0");
+
+		// Kiểm chứng REVIEW.md: 3 viewport (1440×900, 768×1024, 375×812) + 320px × 2 theme (light/dark) không tràn ngang.
+		const screenshotDir = new URL(
+			"../../../plans/reports/screenshots-383-grading-queue",
+			import.meta.url,
+		).pathname;
+		mkdirSync(screenshotDir, { recursive: true });
+		const viewports: Array<[string, number, number]> = [
+			["desktop", 1440, 900],
+			["tablet", 768, 1024],
+			["phone", 375, 812],
+			["reflow-320", 320, 812],
+		];
+		for (const theme of ["light", "dark"] as const) {
+			await teacherPage.evaluate((t) => {
+				localStorage.setItem("theme", t);
+				document.documentElement.classList.toggle("dark", t === "dark");
+			}, theme);
+			for (const [label, width, height] of viewports) {
+				await teacherPage.setViewportSize({ width, height });
+				const overflow = await teacherPage.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(
+					overflow,
+					`overflow at ${label} (${width}x${height}) ${theme}`,
+				).toBe(false);
+				if (label !== "reflow-320") {
+					await teacherPage.screenshot({
+						path: `${screenshotDir}/grading-queue-${label}-${theme}.png`,
+						animations: "disabled",
+					});
+				}
+			}
+		}
+		await teacherPage.evaluate(() => {
+			localStorage.setItem("theme", "light");
+			document.documentElement.classList.remove("dark");
+		});
+		await teacherPage.setViewportSize({ width: 1280, height: 720 });
+		// 5) Học viên tải lại Lịch sử → thấy điểm Band 7.0 + trạng thái Đã chấm + Xem nhận xét.
+		await sp.reload();
+		await expect(historyRow).toContainText("Band 7.0");
+		await expect(historyRow).toContainText("Đã chấm");
+		await historyRow.getByRole("button", { name: "Xem nhận xét" }).click();
+		const review = sp.getByTestId("writing-review");
+		await expect(review).toBeVisible();
+		await expect(review).toContainText("7.0");
+		await expect(review).toContainText("Bố cục mạch lạc, từ vựng tự nhiên.");
 		await sc.close();
 	});
 });

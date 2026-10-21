@@ -1,7 +1,7 @@
 ---
 title: "383-grading-queue-practice"
 description: "Hàng chờ chấm bài Writing/Speaking cho giáo viên (/grading) kèm bộ lọc Luyện tập (mode=practice), bật nav Chấm bài, đồng bộ nhãn Chờ chấm ở Lịch sử học viên và kiểm thử E2E."
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 tags: ["grading", "practice", "ielts", "web", "student", "server", "e2e"]
@@ -62,18 +62,18 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Contract & API hàng chờ chấm (`GET /api/grading`)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Giao diện hàng chờ chấm giáo viên (`/grading`) & điều hướng](./phase-02-web-grading-queue-ui.md) | Pending |
-| 3 | [Phase 3: Nhãn `'Chờ chấm'` phía học viên, E2E, Visual Check & Docs](./phase-03-student-status-and-e2e.md) | Pending |
+| 1 | [Phase 1: Contract & API hàng chờ chấm (`GET /api/grading`)](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Giao diện hàng chờ chấm giáo viên (`/grading`) & điều hướng](./phase-02-web-grading-queue-ui.md) | Completed |
+| 3 | [Phase 3: Nhãn `'Chờ chấm'` phía học viên, E2E, Visual Check & Docs](./phase-03-student-status-and-e2e.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `GET /api/grading` trả danh sách bài nộp `writing`/`speaking` đã nộp của tổ chức hiện tại cho cả `mode='assignment'` và `mode='practice'` (nhãn `className: "Luyện tập"`), chia chunk 50 `testId` khi tra `assignmentPrompt.part`, không nhân bản dòng khi đề nhiều part, ưu tiên bài chưa chấm lên đầu và bảo toàn bài chờ chấm khi vượt giới hạn nhánh.
-- [ ] Sidebar giáo viên hiển thị mục `Chấm bài` trong nhóm `IELTS` dẫn tới `/grading`, active cho cả `/grading` và `/grading/$attemptId`; `isValidAppRoute("/grading")` trả `true`.
-- [ ] Trang `/grading` lọc theo từ khóa (`q`, debounce 300ms), nguồn bài (`mode`: `Tất cả` / `Bài tập lớp` / `Luyện tập`), kỹ năng (`skill`: `Tất cả` / `Writing` / `Speaking`), trạng thái (`status`: `Tất cả` / `Chờ chấm` / `Đã chấm`) lưu trên URL, đạt đầy đủ checklist `REVIEW.md` ở 3 viewport × 2 theme + 320px không tràn ngang.
-- [ ] Trang `/grading/$attemptId` hiển thị link `← Về hàng chờ chấm` (trỏ tới `/grading`) và ẩn `· Hạn ...` khi chấm bài tự luyện; lưu điểm xong tự làm mới dữ liệu hàng chờ.
-- [ ] Lịch sử học viên (`/history`) và catalog Luyện tập (`/practice/$skill`) hiển thị `'Chờ chấm'` cho cả bài tự luyện chưa chấm (không còn `'Đã nộp — tự luyện'`).
-- [ ] Toàn bộ gates xanh: `pnpm check`, `pnpm check-types`, unit tests (`server`, `web`, `student`) và E2E (`teacher-grade-submission.spec.ts` + `student-history.spec.ts`).
+- [x] `GET /api/grading` trả danh sách bài nộp `writing`/`speaking` đã nộp của tổ chức hiện tại cho cả `mode='assignment'` và `mode='practice'` (nhãn `className: "Luyện tập"`), chia chunk 50 `testId` khi tra `assignmentPrompt.part`, không nhân bản dòng khi đề nhiều part, ưu tiên bài chưa chấm lên đầu và bảo toàn bài chờ chấm khi vượt giới hạn nhánh.
+- [x] Sidebar giáo viên hiển thị mục `Chấm bài` trong nhóm `IELTS` dẫn tới `/grading`, active cho cả `/grading` và `/grading/$attemptId`; `isValidAppRoute("/grading")` trả `true`.
+- [x] Trang `/grading` lọc theo từ khóa (`q`, debounce 300ms), nguồn bài (`mode`: `Tất cả` / `Bài tập lớp` / `Luyện tập`), kỹ năng (`skill`: `Tất cả` / `Writing` / `Speaking`), trạng thái (`status`: `Tất cả` / `Chờ chấm` / `Đã chấm`) lưu trên URL, đạt đầy đủ checklist `REVIEW.md` ở 3 viewport × 2 theme + 320px không tràn ngang.
+- [x] Trang `/grading/$attemptId` hiển thị link `← Về hàng chờ chấm` (trỏ tới `/grading`) và ẩn `· Hạn ...` khi chấm bài tự luyện; lưu điểm xong tự làm mới dữ liệu hàng chờ.
+- [x] Lịch sử học viên (`/history`) và catalog Luyện tập (`/practice/$skill`) hiển thị `'Chờ chấm'` cho cả bài tự luyện chưa chấm (không còn `'Đã nộp — tự luyện'`).
+- [x] Toàn bộ gates xanh: `pnpm check`, `pnpm check-types`, unit tests (`server`, `web`, `student`) và E2E (`teacher-grade-submission.spec.ts` + `student-history.spec.ts`).
 
 ## Red Team Review
 

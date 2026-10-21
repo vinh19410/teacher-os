@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Contract & API hàng chờ chấm (GET /api/grading)"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []

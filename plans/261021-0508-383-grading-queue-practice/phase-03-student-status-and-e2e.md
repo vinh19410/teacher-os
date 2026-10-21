@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Nhãn 'Chờ chấm' phía học viên, E2E, Visual Check & Docs"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: [1, 2]

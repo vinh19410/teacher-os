@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Giao diện hàng chờ chấm giáo viên (/grading) & điều hướng"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: [1]

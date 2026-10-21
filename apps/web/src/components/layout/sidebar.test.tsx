@@ -87,6 +87,7 @@ describe("TEACHER_NAV v2", () => {
 		expect(ITEM_BY_HREF["/students"]?.label).toBe("Học viên");
 		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch dạy");
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
+		expect(ITEM_BY_HREF["/grading"]?.label).toBe("Chấm bài");
 		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
 		expect(ITEM_BY_HREF["/profile"]?.label).toBe("Hồ sơ");
 	});
@@ -100,6 +101,7 @@ describe("TEACHER_NAV v2", () => {
 		expect(groupByKey.vocab).toBe("IELTS");
 		expect(groupByKey.classes).toBe("Giảng dạy");
 		expect(groupByKey.assignments).toBe("IELTS");
+		expect(groupByKey.grading).toBe("IELTS");
 	});
 
 	it("gates the reports item behind PARENT_REPORTS_ENABLED", () => {
@@ -123,8 +125,9 @@ describe("teacherActiveKey", () => {
 		expect(teacherActiveKey("/assignments/new")).toBe("assignments");
 	});
 
-	it("returns empty for routes outside the nav (grading detail)", () => {
-		expect(teacherActiveKey("/grading/a-1")).toBe("");
+	it("maps /grading and /grading/$attemptId to grading and returns empty for unauthenticated routes", () => {
+		expect(teacherActiveKey("/grading")).toBe("grading");
+		expect(teacherActiveKey("/grading/a-1")).toBe("grading");
 		expect(teacherActiveKey("/login")).toBe("");
 	});
 });

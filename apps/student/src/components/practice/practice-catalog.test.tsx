@@ -120,6 +120,43 @@ describe("SkillCatalog", () => {
 			expect.objectContaining({ page: 2 }),
 		);
 	});
+
+	it("card Writing/Speaking đã nộp nhưng chưa chấm hiện 'Lần gần nhất' và 'Chờ chấm' (#383)", () => {
+		vi.spyOn(repos, "usePracticeCatalog").mockReturnValue({
+			isLoading: false,
+			isError: false,
+			data: {
+				items: [
+					{
+						...ITEM,
+						testId: "test-w-1",
+						title: "Writing Mock 1",
+						skill: "writing",
+						lastAttempt: {
+							status: "submitted",
+							score: null,
+							submittedAt: "2026-10-20T10:00:00.000Z",
+						},
+					},
+				],
+				page: 1,
+				pages: 1,
+				total: 1,
+			},
+		} as never);
+		renderWithClient(
+			<SkillCatalog
+				skill="writing"
+				collection=""
+				q=""
+				page={1}
+				onFilterChange={vi.fn()}
+				onOpen={vi.fn()}
+			/>,
+		);
+		expect(screen.getByText("Lần gần nhất")).toBeTruthy();
+		expect(screen.getByText("Chờ chấm")).toBeTruthy();
+	});
 });
 
 describe("PracticeFilters", () => {
