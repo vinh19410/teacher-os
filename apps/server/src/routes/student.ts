@@ -34,7 +34,6 @@ import {
 	normalizeMediaType,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
 	assignmentPrompt,
@@ -816,7 +815,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const db = deps.getDb();
-		const todayISO = vietnamTodayISO();
+		const now = new Date();
 
 		const [enrollmentRows, teacher] = await Promise.all([
 			db
@@ -832,7 +831,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					await loadNextSession(db, orgId, cls.id, todayISO),
+					await loadNextSession(db, orgId, cls.id, now),
 					teacher,
 				),
 			),
@@ -900,9 +899,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.limit(1);
 		if (!row) return c.json({ error: "class not found" }, 404);
 
+		const now = new Date();
 		const [teacher, nextSession, lessons, assignments] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			loadNextSession(db, orgId, row.id, vietnamTodayISO()),
+			loadNextSession(db, orgId, row.id, now),
 			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
 			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
 			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.

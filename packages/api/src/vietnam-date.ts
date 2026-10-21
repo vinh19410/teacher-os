@@ -57,3 +57,20 @@ export function addMonthsISO(ym: string, n: number): string {
 	const nextMonth = (absolute % 12) + 1;
 	return `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
 }
+
+/** Thời điểm kết thúc buổi học (yyyy-mm-dd + HH:MM + thời lượng phút, giờ
+ * VN UTC+7) dạng epoch ms; null khi date/time lệch format. Input PHẢI là
+ * `yyyy-mm-dd` / `HH:MM` đã chuẩn hóa (TIME_REGEX — contracts.ts:32, ràng
+ * buộc ở mọi write path); ngoài bất biến đó hành vi là fail-open im lặng
+ * (null) — caller tự quyết fallback (server `loadNextSession` #395 và client
+ * `isLessonEnded` #393 cùng nguồn). Red-team #395: row có `date` mà `time`
+ * lệch format KHÔNG thể sinh qua write path nào (producer fail-closed + zod
+ * regex), nhánh null chỉ là phòng thủ khi invariant vỡ. */
+export function vietnamSessionEndMs(
+	date: string,
+	time: string,
+	durationMinutes: number,
+): number | null {
+	const end = Date.parse(`${date}T${time}:00+07:00`);
+	return Number.isNaN(end) ? null : end + durationMinutes * 60_000;
+}

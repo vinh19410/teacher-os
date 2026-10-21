@@ -1,4 +1,5 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { Check, CircleDashed, Clock, X } from "lucide-react";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
@@ -47,13 +48,15 @@ export function lessonDayLabel(lesson: StudentClassLesson): string {
 }
 
 /** Buổi `upcoming` đã qua thời điểm kết thúc (ngày + giờ bắt đầu + thời lượng,
- * giờ Việt Nam UTC+7) mặc dù chưa có ai check-in. Chỉ suy luận hiển thị phía
- * client; `now` được tiêm vào để test xác định, không đọc `Date` ngầm. */
+ * giờ Việt Nam UTC+7) mặc dù chưa có ai check-in. Toán học end-time dùng chung
+ * `vietnamSessionEndMs` (server `loadNextSession` #395 cùng nguồn); policy
+ * hiển thị (chỉ áp cho `upcoming`, fallback không đoán) là của client. `now`
+ * được tiêm vào để test xác định, không đọc `Date` ngầm. */
 export function isLessonEnded(lesson: StudentClassLesson, now: Date): boolean {
 	if (lesson.status !== "upcoming" || lesson.date == null) return false;
-	const end = new Date(`${lesson.date}T${lesson.time}:00+07:00`).getTime();
-	if (Number.isNaN(end)) return false;
-	return end + lesson.dur * 60_000 <= now.getTime();
+	const end = vietnamSessionEndMs(lesson.date, lesson.time, lesson.dur);
+	if (end == null) return false;
+	return end <= now.getTime();
 }
 
 /** Buổi tới = buổi `upcoming` chưa kết thúc, có ngày đầu tiên từ hôm nay trở

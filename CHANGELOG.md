@@ -10,6 +10,13 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-22
+
+### Fixed
+- Dashboard học viên (Tổng quan các lớp + khối "Buổi tới" ở chi tiết lớp): buổi hôm nay đã qua giờ kết thúc (ngày + giờ bắt đầu + thời lượng, giờ VN) không còn bị server trả làm "Buổi tới" — `loadNextSession` nhận `now`, bỏ qua buổi đã hết giờ và chọn buổi kế tiếp trong ngày (đồng bộ `isLessonEnded` client từ #393); nếu không còn buổi hợp lệ thì ẩn "Buổi tới". Phép tính end-time gom về helper chung `vietnamSessionEndMs` (`@teacher-os/api/vietnam-date`) dùng chung server + client, không đổi contract/API (#395)
+
+---
+
 ## 2026-10-21
 
 ### Added

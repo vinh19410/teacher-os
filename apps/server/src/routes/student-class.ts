@@ -8,6 +8,10 @@ import type {
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import {
+	vietnamSessionEndMs,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
+import {
 	classAssignment,
 	classAssignmentTarget,
 	classTable,
@@ -66,15 +70,26 @@ export async function loadOrgTeacher(
 	return row ? { name: row.name, email: row.email, image: row.image } : null;
 }
 
-/** Buổi gần nhất từ hôm nay trở đi của lớp (bỏ qua lớp legacy `date` null). */
+/**
+ * Buổi tới của lớp: buổi có ngày đầu tiên từ hôm nay (giờ VN) trở đi mà
+ * CHƯA qua giờ kết thúc (date + time + dur). Bỏ qua buổi hôm nay đã qua giờ
+ * (#395, đồng bộ `isLessonEnded` client #393 — predicate thuần thời gian,
+ * không lọc `status`). Lớp legacy (`date` null) không có Buổi tới.
+ */
 export async function loadNextSession(
 	db: Db,
 	orgId: string,
 	classId: string,
-	todayISO: string,
+	now: Date,
 ): Promise<StudentNextSession | null> {
-	const [first] = await db
-		.select({ date: lesson.date, time: lesson.time, topic: lesson.topic })
+	const todayISO = vietnamTodayISO(now);
+	const rows = await db
+		.select({
+			date: lesson.date,
+			time: lesson.time,
+			dur: lesson.dur,
+			topic: lesson.topic,
+		})
 		.from(lesson)
 		.where(
 			and(
@@ -84,11 +99,17 @@ export async function loadNextSession(
 				gte(lesson.date, todayISO),
 			),
 		)
-		.orderBy(asc(lesson.date), asc(lesson.day), asc(lesson.time))
-		.limit(1);
-	return first?.date != null
-		? { date: first.date, time: first.time, topic: first.topic }
-		: null;
+		.orderBy(asc(lesson.date), asc(lesson.day), asc(lesson.time));
+	for (const row of rows) {
+		if (row.date == null) continue;
+		const end = vietnamSessionEndMs(row.date, row.time, row.dur);
+		// time lệch format (end == null) → không đoán, coi là chưa kết thúc
+		// (phòng thủ invariant vỡ, nhất quán NaN→false với client #393).
+		if (end == null || end > now.getTime()) {
+			return { date: row.date, time: row.time, topic: row.topic };
+		}
+	}
+	return null;
 }
 
 export function toStudentClass(
