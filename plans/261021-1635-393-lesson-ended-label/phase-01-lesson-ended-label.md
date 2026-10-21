@@ -3,6 +3,7 @@
 ## Files được sửa
 - `apps/student/src/components/class/class-lesson-list.tsx`
 - `apps/student/src/components/class/class-detail-view.tsx` (truyền `now`)
+- `apps/student/src/components/class/class-info-card.tsx` (truyền `now` cho `findNextLessonId` — đồng bộ Tổng quan, resolve câu hỏi mở 3)
 - `apps/student/src/routes/_auth/classes/$classId.tsx` (truyền `now={new Date()}`)
 - `apps/student/test/class-detail.test.tsx`, `apps/student/test/class-primitives.test.tsx` (nếu cần)
 
@@ -11,11 +12,12 @@
 2. Thêm prop `now: Date` vào `ClassLessonList` và `ClassDetailView`; route truyền `new Date()`. `todayISO` giữ nguyên cho phần còn lại.
 3. Thêm key hiển thị `ended` vào `LESSON_STATUS` (`label: "Đã kết thúc"`, `variant: "outline"`, `badgeClass: "text-muted-foreground"`); trong render, suy ra `displayStatus = isLessonEnded(...) ? "ended" : lesson.status`.
 4. Dấu chấm timeline cho `ended`: dùng icon `X` với nền `bg-muted text-muted-foreground` như `cancelled` nhưng không gạch ngang chủ đề.
-5. `findNextLessonId` nhận thêm `now` và bỏ qua buổi đã `isLessonEnded`, để buổi hôm nay đã qua giờ không bị chọn làm "Buổi tới". Cập nhật chỗ tính `future` cho khớp.
+5. `findNextLessonId(lessons, todayISO, now: Date)` — `now` bắt buộc, bỏ qua buổi đã `isLessonEnded`, để buổi hôm nay đã qua giờ không bị chọn làm "Buổi tới" ở **cả** tab Hành trình học lẫn thẻ Tổng quan (`class-info-card.tsx:98`, null-safe sẵn: không có ứng viên → ẩn dòng "Buổi tới"). Cập nhật chỗ tính `future` cho khớp.
 
 ## Test (viết trước)
 - `isLessonEnded`: upcoming + quá `time+dur` → true; upcoming + chưa tới giờ kết thúc → false; ranh giới đúng bằng giờ kết thúc → true; `completed|absent|cancelled` → false; `date = null` → false; `time` sai định dạng → false.
 - `ClassLessonList` SSR với `now` cố định: có badge "Đã kết thúc" cho buổi quá hạn, không có "Buổi tới" gán cho buổi đã kết thúc, buổi tương lai gần nhất vẫn là "Buổi tới".
+- `findNextLessonId` với `now`: buổi hôm nay đã qua giờ kết thúc không được chọn; `ClassInfoCard` với chỉ toàn buổi đã kết thúc → không có dòng "Buổi tới" (null-safe).
 - Cập nhật các test hiện có đang giả định buổi upcoming quá khứ hiện "Sắp tới".
 
 ## Validation
@@ -24,5 +26,6 @@
 - E2E: `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 pnpm --filter e2e e2e` (spec `student-class-detail`), sau đó full suite trước khi squash-merge.
 
 ## Risk / Rollback
-- Rủi ro: lệch múi giờ trình duyệt. Giảm bằng offset `+07:00` tường minh (không dùng giờ máy). Hydration: `now` từ `new Date()` ở route client, kiểm không gây mismatch SSR.
+- Rủi ro: lệch múi giờ trình duyệt. Giảm bằng offset `+07:00` tường minh (không dùng giờ máy). (Red-team: student là Vite SPA thuần — `main.tsx` dùng `RouterProvider`, không SSR — nên rủi ro hydration không áp dụng; test render bằng `renderToStaticMarkup`.)
+- `time` ngoài định dạng (row legacy trước `TIME_REGEX`) → `Date` ra `NaN` → `isLessonEnded` trả `false`, giữ hiển thị cũ (không đoán).
 - Rollback: revert một commit, không có migration hay đổi dữ liệu.

@@ -33,8 +33,26 @@ created: 2026-10-21
 |---|---|---|
 | 1 | [Helper + badge + test](phase-01-lesson-ended-label.md) | pending |
 
-## Câu hỏi còn mở
+## Câu hỏi còn mở (đã resolve khi red-team)
 
-1. "Đã qua thời gian học" tính theo **giờ kết thúc buổi** (đề xuất, chính xác trong ngày) hay chỉ theo **ngày** (`date < hôm nay`, đơn giản hơn)? Plan mặc định giờ kết thúc.
-2. Hiểu "lớp chưa start hoặc chưa điểm danh bất kỳ ai" ở **mức buổi học** (từng dòng trong timeline). Nếu ý là mức cả lớp (badge trạng thái lớp ở header), cần plan khác.
-3. Màn `Tổng quan` (`class-info-card`, `loadNextSession`) vẫn có thể coi buổi hôm nay đã qua giờ là "buổi tiếp theo"; có muốn xử lý đồng bộ không (ngoài phạm vi plan này)?
+1. Tính theo **giờ kết thúc buổi** (`date` + `time` + `dur`, UTC+7) — khớp đúng chữ issue ("thời điểm kết thúc (ngày + giờ bắt đầu + thời lượng)").
+2. Mức **từng buổi học** trong timeline (dòng của tab Hành trình học) — khớp badge "Sắp tới" mà issue mô tả.
+3. **Có đồng bộ Tổng quan**: red-team phát hiện `findNextLessonId` dùng chung ở `class-info-card.tsx:98`; để nhất quán với issue ("không còn là … 'Buổi tới'"), helper bỏ qua buổi đã kết thúc cho cả hai surface (null-safe sẵn).
+
+## Red Team Review
+
+### Session — 2026-10-21
+**Findings:** 4 (3 accepted, 1 rejected sau fact-check) — chạy tự thực hiện 2 persona (Security Adversary/Fact Checker + Assumption Destroyer/Scope Auditor) do subagent kernel không có model.
+**Severity breakdown:** 0 Critical, 1 High, 2 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | Mâu thuẫn: bước 5 đổi `findNextLessonId` dùng chung nhưng Tổng quan bị coi ngoài phạm vi — `class-info-card.tsx:98` sẽ đổi hành vi ngầm | High | Accept | Phase 01 steps 5 + Files |
+| 2 | Claim "`time` dạng HH:MM" — đã kiểm chứng: `TIME_REGEX` (contracts.ts:32) ràng buộc ở `lessonEditSchema` (contracts.ts:1058) và `occurrenceEditSchema` (contracts.ts:1088); legacy lệch format được fallback NaN→false | Medium | Accept (verified, không đổi plan ngoài ghi nhận) | Phase 01 Risk |
+| 3 | Rủi ro hydration trong plan thừa — student là Vite SPA không SSR (`main.tsx` RouterProvider, test `renderToStaticMarkup`) | Medium | Accept | Phase 01 Risk |
+| 4 | XSS/injection qua `${date}T${time}` — rejected: dữ liệu từ API chuẩn hoá (zod), không có surface user-inject; `NaN` không render thành nội dung nào | Medium | Reject (no codebase evidence of exposure) | — |
+
+### Whole-Plan Consistency Sweep
+- Câu hỏi mở 1–3 đã resolve và xoá khỏi danh sách "còn mở"; bước 5, Files, Test ở phase-01 đồng bộ với quyết định đồng bộ Tổng quan.
+- Non-goal "không đổi `loadNextSession` phía server" giữ nguyên — `class-info-card` dùng `findNextLessonId` client-side, không đụng server.
+- Không còn mâu thuẫn chưa giải quyết.
