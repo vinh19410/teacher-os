@@ -93,7 +93,7 @@ test("A: tạo lớp kèm template qua TemplatePicker — tab Buổi học thấ
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
-		.getByPlaceholder("VD: IELTS 7.0 — Cô Mai")
+		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill(`E2E 394 Lớp ${stamp}`);
 	// TemplatePicker: chọn template, preview hiện số buổi + kỹ năng.
 	await dialog
@@ -127,7 +127,7 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
-		.getByPlaceholder("VD: IELTS 7.0 — Cô Mai")
+		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill(`E2E 394 Trống ${stamp}`);
 	// Không chọn template — "— Lớp trống —" là mặc định.
 	await expect(
@@ -176,7 +176,7 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
-		.getByPlaceholder("VD: IELTS 7.0 — Cô Mai")
+		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill(`E2E 394 Copy Lớp ${stamp}`);
 	await dialog
 		.getByLabel("Template giáo trình")
@@ -220,7 +220,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
-		.getByPlaceholder("VD: IELTS 7.0 — Cô Mai")
+		.getByPlaceholder("VD: IELTS Writing 7.0 — Nhóm tối")
 		.fill(`E2E 394 Remove Lớp ${stamp}`);
 	await dialog
 		.getByLabel("Template giáo trình")
