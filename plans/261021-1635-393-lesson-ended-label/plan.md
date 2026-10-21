@@ -1,7 +1,7 @@
 ---
 title: "Student: tab Hành trình học hiển thị \"Đã kết thúc\" cho buổi đã qua giờ mà chưa điểm danh"
 description: "Buổi học còn status upcoming nhưng đã qua giờ kết thúc (giáo viên chưa check-in, chưa điểm danh ai) hiện badge \"Đã kết thúc\" thay vì \"Sắp tới\". Thay đổi thuần hiển thị ở app student, không đổi API/DB."
-status: pending
+status: completed
 priority: P2
 effort: "2h"
 issue: 393
