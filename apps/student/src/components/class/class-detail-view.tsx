@@ -223,9 +223,11 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 export function ClassDetailView({
 	detail,
 	todayISO,
+	now,
 }: {
 	detail: StudentClassDetail;
 	todayISO: string;
+	now: Date;
 }) {
 	const cls = detail.class;
 	const teacher = cls.teacher;
@@ -274,6 +276,7 @@ export function ClassDetailView({
 			<ClassInfoCard
 				detail={detail}
 				todayISO={todayISO}
+				now={now}
 				held={stats.held}
 				totalSessions={stats.totalSessions}
 			/>
@@ -329,7 +332,11 @@ export function ClassDetailView({
 				{tab === "journey" && (
 					<section>
 						<h2 className="sr-only">Buổi học</h2>
-						<ClassLessonList lessons={detail.lessons} todayISO={todayISO} />
+						<ClassLessonList
+							lessons={detail.lessons}
+							todayISO={todayISO}
+							now={now}
+						/>
 					</section>
 				)}
 				{tab === "assignments" && (

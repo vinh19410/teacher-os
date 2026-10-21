@@ -83,11 +83,13 @@ function InfoItem({
 export function ClassInfoCard({
 	detail,
 	todayISO,
+	now,
 	held,
 	totalSessions,
 }: {
 	detail: StudentClassDetail;
 	todayISO: string;
+	now: Date;
 	held: number;
 	totalSessions: number;
 }) {
@@ -95,7 +97,7 @@ export function ClassInfoCard({
 	const teacher = cls.teacher;
 	const teacherEmail = teacher?.email.trim() ?? "";
 
-	const nextId = findNextLessonId(detail.lessons, todayISO);
+	const nextId = findNextLessonId(detail.lessons, todayISO, now);
 	const nextLesson = nextId
 		? (detail.lessons.find((l) => l.id === nextId) ?? null)
 		: null;

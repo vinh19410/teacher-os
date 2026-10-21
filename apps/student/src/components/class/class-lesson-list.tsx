@@ -1,5 +1,5 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
-import { Check, CircleDashed, X } from "lucide-react";
+import { Check, CircleDashed, Clock, X } from "lucide-react";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -32,6 +32,12 @@ const LESSON_STATUS: Record<
 		variant: "outline",
 		badgeClass: "text-muted-foreground line-through",
 	},
+	// Buổi `upcoming` đã qua giờ kết thúc (chưa ai check-in) — suy ra ở render.
+	ended: {
+		label: "Đã kết thúc",
+		variant: "outline",
+		badgeClass: "text-muted-foreground",
+	},
 };
 
 export function lessonDayLabel(lesson: StudentClassLesson): string {
@@ -40,14 +46,30 @@ export function lessonDayLabel(lesson: StudentClassLesson): string {
 	return VI_DAY_NAMES[lesson.day % 7] ?? "";
 }
 
-/** Buổi tới = buổi `upcoming` có ngày đầu tiên từ hôm nay trở đi. Lớp legacy
- * (`date` null) không có ngày cụ thể nên không highlight. */
+/** Buổi `upcoming` đã qua thời điểm kết thúc (ngày + giờ bắt đầu + thời lượng,
+ * giờ Việt Nam UTC+7) mặc dù chưa có ai check-in. Chỉ suy luận hiển thị phía
+ * client; `now` được tiêm vào để test xác định, không đọc `Date` ngầm. */
+export function isLessonEnded(lesson: StudentClassLesson, now: Date): boolean {
+	if (lesson.status !== "upcoming" || lesson.date == null) return false;
+	const end = new Date(`${lesson.date}T${lesson.time}:00+07:00`).getTime();
+	if (Number.isNaN(end)) return false;
+	return end + lesson.dur * 60_000 <= now.getTime();
+}
+
+/** Buổi tới = buổi `upcoming` chưa kết thúc, có ngày đầu tiên từ hôm nay trở
+ * đi. Lớp legacy (`date` null) không có ngày cụ thể nên không highlight;
+ * buổi hôm nay đã qua giờ kết thúc cũng bị bỏ qua (#393). */
 export function findNextLessonId(
 	lessons: StudentClassLesson[],
 	todayISO: string,
+	now: Date,
 ): string | null {
 	const next = lessons.find(
-		(l) => l.status === "upcoming" && l.date != null && l.date >= todayISO,
+		(l) =>
+			l.status === "upcoming" &&
+			l.date != null &&
+			l.date >= todayISO &&
+			!isLessonEnded(l, now),
 	);
 	return next?.id ?? null;
 }
@@ -55,9 +77,11 @@ export function findNextLessonId(
 export function ClassLessonList({
 	lessons,
 	todayISO,
+	now,
 }: {
 	lessons: StudentClassLesson[];
 	todayISO: string;
+	now: Date;
 }) {
 	if (lessons.length === 0) {
 		return (
@@ -69,30 +93,35 @@ export function ClassLessonList({
 		);
 	}
 
-	const nextId = findNextLessonId(lessons, todayISO);
+	const nextId = findNextLessonId(lessons, todayISO, now);
 
 	return (
 		<div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
 			<ol className="relative">
 				{lessons.map((lesson, i) => {
 					const isNext = lesson.id === nextId;
+					const displayStatus = isLessonEnded(lesson, now)
+						? "ended"
+						: lesson.status;
 					const future =
 						nextId !== null &&
-						lesson.status === "upcoming" &&
+						displayStatus === "upcoming" &&
 						!isNext &&
 						lesson.date != null &&
 						lesson.date > todayISO;
-					const status = LESSON_STATUS[lesson.status] ?? {
-						label: lesson.status,
+					const status = LESSON_STATUS[displayStatus] ?? {
+						label: displayStatus,
 						variant: "outline" as const,
 						badgeClass: "text-muted-foreground",
 					};
 					const Dot =
-						lesson.status === "completed"
+						displayStatus === "completed"
 							? Check
-							: lesson.status === "absent" || lesson.status === "cancelled"
+							: displayStatus === "absent" || displayStatus === "cancelled"
 								? X
-								: CircleDashed;
+								: displayStatus === "ended"
+									? Clock
+									: CircleDashed;
 
 					return (
 						<li
@@ -113,15 +142,17 @@ export function ClassLessonList({
 								aria-hidden="true"
 								className={cn(
 									"relative z-10 grid size-8 place-items-center rounded-full border",
-									lesson.status === "completed" &&
+									displayStatus === "completed" &&
 										"border-primary bg-primary text-primary-foreground",
-									lesson.status === "absent" &&
+									displayStatus === "absent" &&
 										"border-destructive bg-destructive text-white",
-									lesson.status === "cancelled" &&
+									(displayStatus === "cancelled" ||
+										displayStatus === "ended") &&
 										"bg-muted text-muted-foreground",
-									lesson.status !== "completed" &&
-										lesson.status !== "absent" &&
-										lesson.status !== "cancelled" &&
+									displayStatus !== "completed" &&
+										displayStatus !== "absent" &&
+										displayStatus !== "cancelled" &&
+										displayStatus !== "ended" &&
 										"bg-background text-muted-foreground",
 									isNext && "text-foreground ring-[3px] ring-ring/30",
 								)}
