@@ -752,3 +752,23 @@ export function findClassOccurrence(
 	);
 	return session ? { kind: "found", session } : { kind: "outside-schedule" };
 }
+
+/** Tally điểm danh của một buổi cho card buổi học (#391): đếm qua
+ * `occurrenceSidStates` — `completed` = có mặt, `absent` = vắng (dữ liệu
+ * thật của row dated v2, đếm là ĐÃ điểm danh), còn lại = chưa điểm danh.
+ * Tổng ba phần luôn bằng số học viên dự kiến của buổi. */
+export interface SessionAttendanceTally {
+	marked: number;
+	absent: number;
+	unmarked: number;
+}
+
+export function sessionAttendanceTally(
+	session: ClassSession,
+	todayISO: string,
+): SessionAttendanceTally {
+	const states = occurrenceSidStates(session, todayISO);
+	const marked = states.filter((s) => s.status === "completed").length;
+	const absent = states.filter((s) => s.status === "absent").length;
+	return { marked, absent, unmarked: states.length - marked - absent };
+}

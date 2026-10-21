@@ -1,13 +1,5 @@
+import type { SessionAttendanceTally } from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
-
-export interface AttendanceTally {
-	/** Đã điểm danh có mặt (row `completed`). */
-	marked: number;
-	/** Đã điểm danh VẮNG (row `absent`, chỉ có ở hàng v2 có ngày). */
-	absent: number;
-	/** Chưa điểm danh (chưa có dữ liệu điểm danh cho học viên đó). */
-	unmarked: number;
-}
 
 /** Thanh điểm danh của card buổi học (#391): 3 phân đoạn — "đã điểm danh"
  * (success) / "vắng" (destructive, chỉ khi có absent) / "chưa điểm danh"
@@ -19,7 +11,7 @@ export function AttendanceSummary({
 	tally,
 	total,
 }: {
-	tally: AttendanceTally;
+	tally: SessionAttendanceTally;
 	total: number;
 }) {
 	const { marked, absent, unmarked } = tally;

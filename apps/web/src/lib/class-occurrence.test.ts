@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	findClassOccurrence,
 	occurrenceSidStates,
+	sessionAttendanceTally,
 	sessionStatus,
 } from "./class-sessions";
 import type { ClassGroup, Lesson, LessonStatus } from "./mock-data";
@@ -329,5 +330,68 @@ describe("resolveWeekColumnEntries — legacy card status", () => {
 			"2026-10-06",
 		);
 		expect(free).toHaveLength(1);
+	});
+});
+
+describe("sessionAttendanceTally — 3 phân đoạn điểm danh (#391)", () => {
+	function v2Row(
+		id: string,
+		sid: string,
+		status: LessonStatus,
+	): Lesson {
+		return {
+			classId: "c1",
+			id,
+			sid,
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			date: "2026-10-06",
+			type: "1:3",
+			status,
+			topic: `Buổi ${id}`,
+			zoom: "",
+		} as Lesson;
+	}
+
+	test("completed + absent + chưa điểm danh: tổng 3 phần = số học viên; absent đếm là ĐÃ điểm danh", () => {
+		// v2 dated session: 3 học viên — 1 có mặt, 1 VẮNG (data thật), 1 chưa.
+		const session = {
+			index: 3,
+			slotIndex: 1,
+			dateISO: "2026-10-06",
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			mode: "v2" as const,
+			rows: [
+				v2Row("r-a", "sA", "completed"),
+				v2Row("r-b", "sB", "absent"),
+				v2Row("r-c", "sC", "upcoming"),
+			],
+		} as Parameters<typeof sessionAttendanceTally>[0];
+
+		const tally = sessionAttendanceTally(session, "2026-10-07");
+		expect(tally).toEqual({ marked: 1, absent: 1, unmarked: 1 });
+		expect(tally.marked + tally.absent + tally.unmarked).toBe(3);
+	});
+
+	test("buổi chưa diễn ra: cả lớp rơi vào 'chưa điểm danh'", () => {
+		const session = {
+			index: 4,
+			slotIndex: 1,
+			dateISO: "2026-10-13",
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			mode: "v2" as const,
+			rows: [v2Row("r-d", "sA", "upcoming")],
+		} as Parameters<typeof sessionAttendanceTally>[0];
+
+		expect(sessionAttendanceTally(session, "2026-10-07")).toEqual({
+			marked: 0,
+			absent: 0,
+			unmarked: 1,
+		});
 	});
 });

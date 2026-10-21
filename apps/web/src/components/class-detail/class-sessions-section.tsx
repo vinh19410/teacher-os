@@ -12,8 +12,8 @@ import { Section } from "@/components/ui/section";
 import {
 	buildClassSessions,
 	formatSessionDate,
-	occurrenceSidStates,
 	sessionAttendanceState,
+	sessionAttendanceTally,
 	sessionLessonInfo,
 	sessionRowTargets,
 	sessionStatus,
@@ -163,21 +163,11 @@ export function ClassSessionsSection({
 							info.materials || info.objectives || info.lessonId,
 						);
 						const status = sessionStatus(s);
-						// Tally điểm danh từ trạng thái từng học viên (#391): completed
-						// = có mặt, absent = vắng (dữ liệu thật của row dated v2),
-						// còn lại = chưa điểm danh.
-						const sidStates = occurrenceSidStates(s, todayISO);
-						const markedCount = sidStates.filter(
-							(x) => x.status === "completed",
-						).length;
-						const absentCount = sidStates.filter(
-							(x) => x.status === "absent",
-						).length;
-						const tally = {
-							marked: markedCount,
-							absent: absentCount,
-							unmarked: attendees.length - markedCount - absentCount,
-						};
+						// Tally điểm danh qua helper thuần (#391): completed = có mặt,
+						// absent = vắng (dữ liệu thật của row dated v2), còn lại =
+						// chưa điểm danh.
+						const tally = sessionAttendanceTally(s, todayISO);
+						const { marked: markedCount, absent: absentCount } = tally;
 						// Buổi quá khứ chưa hoàn thành: hiện tally; amber khi chưa có
 						// dữ liệu điểm danh nào.
 						const isPast =
