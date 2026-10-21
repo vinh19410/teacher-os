@@ -110,6 +110,9 @@ export type StudentEnv = {
 export function createStudentGuard(deps: StudentRouteDeps) {
 	return async (c: Context<StudentEnv>, next: () => Promise<void>) => {
 		const sessionUser = c.get("sessionUser");
+		if (!sessionUser) {
+			return c.json({ error: "unauthorized", code: "UNAUTHORIZED" }, 401);
+		}
 		const db = deps.getDb();
 		const normalizedEmail = sessionUser.email.toLowerCase();
 

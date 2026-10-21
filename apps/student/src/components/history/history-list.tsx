@@ -88,7 +88,7 @@ export function HistoryList({
 			<h2 className="font-semibold leading-none">Lịch sử chi tiết</h2>
 			<div
 				role="tablist"
-				className="no-scrollbar -mt-1 mt-4 flex gap-1 overflow-x-auto border-b"
+				className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b"
 			>
 				{tabs.map((tab) => (
 					<button

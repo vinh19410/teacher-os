@@ -71,7 +71,7 @@ function TestCard({
 				<ul className="mt-2 space-y-0.5 text-muted-foreground text-xs">
 					<li className="flex items-center gap-1.5">
 						<span className="size-1 rounded-full bg-muted-foreground/60" />
-						{item.parts} {item.parts > 1 ? "phần" : "phần"}
+						{item.parts} phần
 					</li>
 					<li className="flex items-center gap-1.5">
 						<span className="size-1 rounded-full bg-muted-foreground/60" />
@@ -131,26 +131,14 @@ export function SkillCatalog({
 		page,
 	});
 
-	if (catalogQuery.isLoading) {
-		return <Loader />;
-	}
-	if (catalogQuery.isError) {
-		return (
-			<div className="rounded-xl border border-dashed py-16 text-center text-muted-foreground text-sm">
-				Không tải được danh sách đề. Vui lòng thử lại.
-			</div>
-		);
-	}
-
 	const catalog = catalogQuery.data;
-	if (!catalog) return <Loader />;
-
 	const collections = Array.from(
-		new Set(
-			catalog.items
+		new Set([
+			...(collection ? [collection] : []),
+			...(catalog?.items ?? [])
 				.map((item) => item.collection)
 				.filter((value): value is string => value !== null),
-		),
+		]),
 	).sort();
 
 	return (
@@ -159,30 +147,41 @@ export function SkillCatalog({
 				searchLabel={SEARCH_LABELS[skill]}
 				collections={collections}
 				collectionValue={collection}
+				qValue={q}
 				onCollectionChange={(value) =>
 					onFilterChange({ collection: value, q, page: 1 })
 				}
 				onSearch={(value) => onFilterChange({ collection, q: value, page: 1 })}
 			/>
-			<p className="mb-4 text-muted-foreground text-sm tabular-nums">
-				{catalog.total} đề — trang {catalog.page} / {catalog.pages}
-			</p>
-			{catalog.items.length === 0 ? (
+			{catalogQuery.isLoading ? (
+				<Loader />
+			) : catalogQuery.isError || !catalog ? (
 				<div className="rounded-xl border border-dashed py-16 text-center text-muted-foreground text-sm">
-					Giáo viên chưa có đề luyện tập cho kỹ năng này
+					Không tải được danh sách đề. Vui lòng thử lại.
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{catalog.items.map((item) => (
-						<TestCard key={item.testId} item={item} onOpen={onOpen} />
-					))}
-				</div>
+				<>
+					<p className="mb-4 text-muted-foreground text-sm tabular-nums">
+						{catalog.total} đề — trang {catalog.page} / {catalog.pages}
+					</p>
+					{catalog.items.length === 0 ? (
+						<div className="rounded-xl border border-dashed py-16 text-center text-muted-foreground text-sm">
+							Giáo viên chưa có đề luyện tập cho kỹ năng này
+						</div>
+					) : (
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+							{catalog.items.map((item) => (
+								<TestCard key={item.testId} item={item} onOpen={onOpen} />
+							))}
+						</div>
+					)}
+					<Pager
+						page={catalog.page}
+						pages={catalog.pages}
+						onPage={(next) => onFilterChange({ collection, q, page: next })}
+					/>
+				</>
 			)}
-			<Pager
-				page={catalog.page}
-				pages={catalog.pages}
-				onPage={(next) => onFilterChange({ collection, q, page: next })}
-			/>
 		</>
 	);
 }

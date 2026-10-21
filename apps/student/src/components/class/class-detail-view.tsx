@@ -94,7 +94,7 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 
 	if (topics.size === 0) {
 		return (
-			<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
+			<div className="rounded-xl border bg-card p-6 shadow-sm">
 				<p className="text-muted-foreground text-sm">
 					Giáo trình sẽ hiển thị theo chủ đề từng buổi học.
 				</p>
@@ -103,7 +103,7 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 	}
 
 	return (
-		<div className="rounded-lg rounded-xl border bg-card shadow-sm">
+		<div className="rounded-xl border bg-card shadow-sm">
 			<ul className="divide-y">
 				{[...topics.entries()].map(([topic, progress], i) => {
 					const done = progress.completed >= progress.total;
@@ -115,9 +115,9 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 							<span
 								aria-hidden="true"
 								className={cn(
-									"flex size-5 flex-none items-center justify-center rounded-full font-mono text-[10px]",
+									"flex size-5 flex-none items-center justify-center font-mono text-[10px]",
 									done
-										? "bg-primary text-primary-foreground"
+										? "rounded-full bg-primary text-primary-foreground"
 										: "rounded-md bg-muted text-muted-foreground",
 								)}
 							>
@@ -218,7 +218,7 @@ export function ClassDetailView({
 
 			{/* Giáo viên — luôn hiển thị phía trên tab (e2e bấm mailto từ màn
 			 * mặc định). */}
-			<section className="mt-8 flex items-center gap-3 rounded-lg rounded-xl border bg-card p-5 shadow-sm">
+			<section className="mt-8 flex items-center gap-3 rounded-xl border bg-card p-5 shadow-sm">
 				<UserRound
 					aria-hidden="true"
 					className="size-4 flex-none text-muted-foreground"
