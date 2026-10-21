@@ -82,7 +82,7 @@ async function openClassFromList(page: Page, className: string) {
 	await expect(page).toHaveURL(/\/classes\/.+/);
 }
 
-test("A: tạo lớp kèm template qua TemplatePicker — tab Buổi học thấy giáo trình", async ({
+test("A: tạo lớp kèm template qua TemplatePicker — tab Giáo trình thấy giáo trình", async ({
 	page,
 }) => {
 	const stamp = Date.now();
@@ -147,7 +147,9 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await expect(dialog).toBeHidden();
 
 	await openClassFromList(page, `E2E 394 Trống ${stamp}`);
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	// #391: tab "Buổi học" đã gộp vào "Sessions & practice"; empty state
+	// giáo trình nằm ở tab "Giáo trình".
+	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await expect(
 		page.getByText("Lớp chưa có giáo trình", { exact: false }),
 	).toBeVisible();
