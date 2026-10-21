@@ -186,7 +186,7 @@
 	--color-warn: var(--warn);
 	--color-danger: var(--danger);
 	--color-destructive: var(--destructive);
-	--color-destructive-soft: var(--destructive-soft);
+	--color-success-soft: var(--success-soft);
 	--color-warn-soft: var(--warn-soft);
 	--color-danger-soft: var(--danger-soft);
 	--color-destructive-soft: var(--destructive-soft);
