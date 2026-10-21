@@ -27,7 +27,7 @@ export function TemplatePicker({
 	label?: string;
 	disabled?: boolean;
 }) {
-	if (templates.length === 0) {
+	if (templates.length === 0 && !allowEmpty) {
 		return (
 			<Field label={label}>
 				<p className="text-muted-foreground text-sm">
@@ -47,6 +47,8 @@ export function TemplatePicker({
 					disabled={disabled}
 					onChange={(event) => onChange(event.target.value)}
 				>
+					{/* allowEmpty giữ select cả khi danh sách rỗng (D8): tạo lớp
+					    trống vẫn là lựa chọn hợp lệ duy nhất. */}
 					{allowEmpty ? <option value="">{emptyLabel}</option> : null}
 					{templates.map((item) => (
 						<option key={item.id} value={item.id}>

@@ -81,6 +81,13 @@ describe("TemplatePicker", () => {
 		expect(html).not.toContain("<select");
 	});
 
+	it("(a2) allowEmpty với danh sách rỗng: vẫn có select chỉ chứa option trống", () => {
+		const html = render({ templates: [], allowEmpty: true });
+		expect(html).toContain("<select");
+		expect(html).toContain("— Lớp trống —");
+		expect(html).not.toContain("<details");
+	});
+
 	it("(b) allowEmpty: có option rỗng; value rỗng thì không có preview", () => {
 		const html = render({ allowEmpty: true, value: "" });
 		expect(html).toContain("— Lớp trống —");
