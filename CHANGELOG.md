@@ -17,6 +17,9 @@ Quy ước khi cập nhật:
 - Trang mới/khoác mới theo v2: catalog Luyện tập (Practice) 5 kỹ năng, Lịch sử làm bài (History), Trang bạn học (Classmates); DataTable, Badge/TuitionBadge, PageHead, Modal, chip lọc theo token v2; trạng thái = chấm emerald/amber, quá hạn/lỗi = đỏ destructive; màn chấm bài giữ riêng cặp màu verdict (#378)
 - Database: migration `0041_known_ink` (#378)
 
+### Fixed
+- Bài viết Writing chứa HTML (`<p>…</p>`, entity `&amp;`…) từ seed hoặc dữ liệu cũ không còn hiện thẻ HTML thô trên màn chấm giáo viên (`/grading/$attemptId`) và màn kết quả học viên (`/learn/quizzes/attempt/$attemptId`): server chuẩn hoá HTML sang plain text khi đọc kèm bản đồ offset hai chiều `rawStart`/`rawEnd` (`essayToPlain`, `toEssayView`), giữ nguyên lưu trữ offset raw trong DB và căn khớp vị trí highlight `mark[data-n]` + ghi chú inline `essay-inline-note` cũng như số từ `countWords` (#382)
+
 ### Removed
 - Toàn bộ alias token v1 (`text-meta`, `text-hot`, `bg-surface`, `neu*`, `font-display`, `accent-on/soft/hover/active`, `line*`, `chip`, spacing `--space-*/--gap-*`…) khỏi `globals.css` và markup — mọi UI giờ dùng trực tiếp utility shadcn v2 (#378)
 

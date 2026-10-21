@@ -10,6 +10,7 @@ import {
 	isValidAnnotationSpan,
 	overlapsAny,
 } from "@teacher-os/api/lib/essay-annotations";
+import { essayToPlain, plainToRaw } from "@teacher-os/api/lib/essay-plain";
 import {
 	type GradableSkill,
 	isGradableSkill,
@@ -33,6 +34,8 @@ import type { MediaStore } from "../lib/media-store";
 import {
 	loadEssayAnnotations,
 	toEssayAnnotation,
+	toEssayView,
+	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { parseGradeScores, toQuizAttemptGrade } from "../lib/quiz-grade";
 
@@ -309,6 +312,8 @@ export function gradingRoutes(deps: {
 		skill: GradableSkill,
 		annotations: EssayAnnotation[],
 	): TeacherSubmission {
+		const essayView =
+			skill === "writing" ? toEssayView(row.essay, annotations) : null;
 		return {
 			attemptId: row.id,
 			classAssignmentId: row.caId,
@@ -328,11 +333,11 @@ export function gradingRoutes(deps: {
 			},
 			startedAt: row.startedAt.toISOString(),
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
-			essay: skill === "writing" ? row.essay : null,
+			essay: essayView ? essayView.essay : null,
 			media: skill === "speaking" ? toQuizAttemptMedia(row) : null,
 			grade: toQuizAttemptGrade(row),
 			// Speaking không có highlight (#332) — luôn rỗng.
-			annotations,
+			annotations: essayView ? essayView.annotations : [],
 			// Bài tự luyện (phase 10): CHỈ thêm key khi practice — bundle cũ
 			// (strict) không vỡ với bài nộp lượt giao.
 			...(row.practice ? { practice: true as const } : {}),
@@ -453,7 +458,15 @@ export function gradingRoutes(deps: {
 			);
 		}
 		const { start, end, note } = body.data;
-		if (!isValidAnnotationSpan(loaded.row.essay, start, end)) {
+		const view = essayToPlain(loaded.row.essay);
+		if (!isValidAnnotationSpan(view.text, start, end)) {
+			return c.json(
+				{ error: "invalid annotation span", code: "INVALID_SPAN" },
+				400,
+			);
+		}
+		const rawSpan = plainToRaw(view, start, end);
+		if (!rawSpan) {
 			return c.json(
 				{ error: "invalid annotation span", code: "INVALID_SPAN" },
 				400,
@@ -467,7 +480,7 @@ export function gradingRoutes(deps: {
 				400,
 			);
 		}
-		if (overlapsAny(existing, start, end)) {
+		if (overlapsAny(existing, rawSpan.start, rawSpan.end)) {
 			return c.json(
 				{ error: "annotation overlaps existing", code: "OVERLAP" },
 				409,
@@ -479,15 +492,19 @@ export function gradingRoutes(deps: {
 				id: crypto.randomUUID(),
 				orgId: ctx.orgId,
 				attemptId: loaded.row.id,
-				startOffset: start,
-				endOffset: end,
+				startOffset: rawSpan.start,
+				endOffset: rawSpan.end,
 				note,
 			})
 			.returning();
 		if (!row) {
 			return c.json({ error: "annotation persistence failed" }, 500);
 		}
-		return c.json(toEssayAnnotation(row), 201);
+		const rawAnn = toEssayAnnotation(row);
+		return c.json(
+			toPlainAnnotation(view, rawAnn) ?? { ...rawAnn, start, end },
+			201,
+		);
 	});
 
 	/** PATCH /api/grading/:attemptId/annotations/:annotationId — đổi ghi chú.
@@ -519,7 +536,9 @@ export function gradingRoutes(deps: {
 		if (!row) {
 			return c.json({ error: "annotation not found" }, 404);
 		}
-		return c.json(toEssayAnnotation(row));
+		const view = essayToPlain(loaded.row.essay);
+		const rawAnn = toEssayAnnotation(row);
+		return c.json(toPlainAnnotation(view, rawAnn) ?? rawAnn);
 	});
 
 	/** DELETE /api/grading/:attemptId/annotations/:annotationId — gỡ highlight. */
