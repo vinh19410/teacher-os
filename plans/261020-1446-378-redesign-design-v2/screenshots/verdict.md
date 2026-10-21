@@ -34,12 +34,12 @@ Mỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở t�
 | t-classes | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-classes | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-classes | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| t-class-detail | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
+| t-class-detail | desktop×light | PASS | #391: khớp cấu trúc khối-theo-khối (xem section "verdict #391" dưới) |
+| t-class-detail | desktop×dark | PASS | #391: khớp cấu trúc khối-theo-khối (xem section "verdict #391" dưới) |
+| t-class-detail | tablet×light | PASS | #391: cùng cây component với desktop; composite regenerate kèm run #391 |
+| t-class-detail | tablet×dark | PASS | #391: cùng cây component với desktop; composite regenerate kèm run #391 |
+| t-class-detail | phone×light | PASS | #391: 375 không tràn ngang, stat 2 cột, card xếp dọc (xem section "verdict #391") |
+| t-class-detail | phone×dark | PASS | #391: cùng cây component với phone-light; composite regenerate kèm run #391 |
 | t-attendance | desktop×light | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
 | t-attendance | desktop×dark | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
 | t-attendance | tablet×light | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
@@ -214,3 +214,25 @@ Mỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở t�
 | s-history | tablet×dark | PASS | 2 MonthHeatmap + WeekTable 7×5 + DetailHistory + WritingReview, min-w-0 chống tràn 375px |
 | s-history | phone×light | PASS | 2 MonthHeatmap + WeekTable 7×5 + DetailHistory + WritingReview, min-w-0 chống tràn 375px |
 | s-history | phone×dark | PASS | 2 MonthHeatmap + WeekTable 7×5 + DetailHistory + WritingReview, min-w-0 chống tràn 375px |
+
+## Verdict #391 — t-class-detail fidelity (run 2026-10-21, label `fidelity`)
+
+Chụp `--side both --label fidelity`, 3 viewport × 2 theme, seed `design-seed.ts`.
+Nguồn design: `teacheros-design-v2@7a53fc0` `TeacherClass.tsx`. Raw app:
+`scripts/design-compare/.state/raw/fidelity/t-class-detail/`. Composite:
+`plans/261020-1446-378-redesign-design-v2/screenshots/t-class-detail/`.
+
+| Khối | Design v2 | App sau #391 | Verdict |
+|---|---|---|---|
+| Back link | Ghost `← Classes` | Ghost `← Lớp học` (buttonVariants ghost sm + ArrowLeft) | PASS |
+| Header | kicker `type · lịch · phòng`, 2 action | kicker `IELTS · T3 & T5 & T7 · 18:00–19:30 · Online`; "Giao bài tập" outline + "Sắp xếp buổi" primary | PASS (nhãn tiếng Việt, "Add session" = "Sắp xếp buổi" — lệch có chủ đích) |
+| Hàng stat | 4 thẻ | 4 thẻ: học viên (sub từ ngày) / buổi đã học x/y (sub % giáo trình) / bài trong syllabus / bài chờ nộp (sub "Trên N bài đã giao") | PASS (thẻ 3 = "Bài trong syllabus" thay Attendance rate — không có data tổng tin được) |
+| Tabs | 3 tab, "Sessions & practice" mặc định | 5 tab: Sessions & practice (mặc định) · Học viên · Giáo trình · Từ vựng · Ghi chú | PASS (giữ thêm Từ vựng/Ghi chú — tính năng thật ngoài phạm vi design) |
+| Sessions | `Section` card, `li` per buổi, số ô, thanh điểm danh, "Take/Edit attendance →", Edit | `Section` "Sessions (5)": card `li[data-testid=session-row]`, ô số `bg-primary` khi đã học, link "Điểm danh →"/"Sửa điểm danh →", thanh "n/N đã điểm danh", "Điều chỉnh" | PASS (thanh 3 phân đoạn đã/vắng/chưa — bỏ late, không có data; buổi quá khứ chưa có data amber) |
+| Assigned practice | `Section` accordion, n/N done màu, progress | `Section` "Bài đã giao lớp này (5)": accordion icon kỹ năng, "n/N đã nộp" xanh/amber, progress, mở ra học viên + "Chấm bài" outline | PASS (không có thanh Flashcard/Quiz — server chưa trả) |
+| Students | Table 5 cột | Tab Học viên: Học viên / Đăng ký / Band mục tiêu / Học phí / Thao tác; fee + `Sửa` + `+ Thêm học viên vào lớp` ở header tab | PASS (Attendance bỏ — red-team; "Current band" → "Band mục tiêu" — `Student` chỉ có targetBand) |
+| Syllabus | `SyllabusTree` | Tab Giáo trình: card gán/gỡ template trong `Section` | LỆCH CÓ CHỦ ĐÍCH (#221: cây nằm trong modal Quản lý buổi; descope tách tree) |
+
+Lệch có chủ đích đầy đủ: `DESIGN.md` mục "Lệch có chủ đích so với design v2 — trang chi tiết lớp
+teacher (#391)". Badge emoji tròn góc phải dưới trong raw là artifact của vite dev overlay, không
+thuộc UI production.

@@ -334,11 +334,7 @@ describe("resolveWeekColumnEntries — legacy card status", () => {
 });
 
 describe("sessionAttendanceTally — 3 phân đoạn điểm danh (#391)", () => {
-	function v2Row(
-		id: string,
-		sid: string,
-		status: LessonStatus,
-	): Lesson {
+	function v2Row(id: string, sid: string, status: LessonStatus): Lesson {
 		return {
 			classId: "c1",
 			id,
@@ -347,7 +343,7 @@ describe("sessionAttendanceTally — 3 phân đoạn điểm danh (#391)", () =>
 			time: "19:00",
 			dur: 90,
 			date: "2026-10-06",
-			type: "1:3",
+			type: "1:1",
 			status,
 			topic: `Buổi ${id}`,
 			zoom: "",
