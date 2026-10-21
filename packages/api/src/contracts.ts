@@ -1664,6 +1664,76 @@ export const classmatesResponseSchema = z.array(
 );
 export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
 
+// --- Tự luyện (phase 10, #378) — /api/student/practice domain --------------
+// KHÔNG có "dictation": kỹ năng này chưa có đề trong thư viện.
+
+/** Kỹ năng có đề luyện tập trong thư viện `assignment_test`. */
+export const PRACTICE_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+] as const;
+export type PracticeSkill = (typeof PRACTICE_SKILLS)[number];
+
+/** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
+export const PRACTICE_CATALOG_PAGE_SIZE = 12;
+
+/** Kết quả gần nhất của CHÍNH học viên này với một đề luyện tập. `score`
+ * là chuỗi hiển thị sẵn ("8/13" tự chấm, "Band 6.5" đã chấm Writing/
+ * Speaking), null khi đề tự chấm mà server không derive được. */
+export const practiceAttemptSummarySchema = z
+	.object({
+		/** ISO datetime lần nộp gần nhất. */
+		submittedAt: z.string(),
+		/** "graded" = giáo viên đã chấm (gradeScores có mặt). */
+		status: z.enum(["submitted", "graded"]),
+		score: z.string().nullable(),
+	})
+	.strict();
+export type PracticeAttemptSummary = z.infer<
+	typeof practiceAttemptSummarySchema
+>;
+
+/** Một đề luyện tập trong catalog — MỘT row `assignment_test` status ready. */
+export const practiceCatalogItemSchema = z
+	.object({
+		testId: z.string(),
+		title: z.string(),
+		skill: z.enum(PRACTICE_SKILLS),
+		/** Số part đã ghép trong đề (số slot `assignment_test_part`). */
+		parts: z.number().int().min(1),
+		/** Bộ sưu tập nguồn — null khi giáo viên không đặt. */
+		collection: z.string().nullable(),
+		testGroup: z.string().nullable(),
+		/** Thời lượng theo phút (từ `timeLimitSeconds`) — null = không giới hạn. */
+		durationMin: z.number().int().nullable(),
+		/** Lượt tự luyện gần nhất của chính học viên — null = chưa làm. */
+		lastAttempt: practiceAttemptSummarySchema.nullable(),
+	})
+	.strict();
+export type PracticeCatalogItem = z.infer<typeof practiceCatalogItemSchema>;
+
+/** GET /api/student/practice?skill=&collection=&q=&page= — phân trang 12. */
+export const practiceCatalogResponseSchema = z
+	.object({
+		items: z.array(practiceCatalogItemSchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type PracticeCatalogResponse = z.infer<
+	typeof practiceCatalogResponseSchema
+>;
+
+/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume
+ * lượt đang làm (cùng shape với start attempt luồng assignment). */
+export const startPracticeResponseSchema = z
+	.object({ attemptId: z.string().min(1) })
+	.strict();
+export type StartPracticeResponse = z.infer<typeof startPracticeResponseSchema>;
+
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
 export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;
@@ -1830,6 +1900,10 @@ export const teacherSubmissionSchema = z
 		/** Highlight + ghi chú trên essay (#332) — server luôn gửi; optional
 		 * để bundle mới + server cũ không throw. Speaking luôn `[]`. */
 		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Bài tự luyện (phase 10, #378): KHÔNG gắn lớp — `classId`/
+		 * `classAssignmentId` là chuỗi rỗng, `className` là nhãn "Luyện tập",
+		 * `due` rỗng. Optional để bundle cũ + server mới không throw. */
+		practice: z.literal(true).optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
@@ -1980,6 +2054,10 @@ export const quizAttemptSummarySchema = z
 		/** Highlight + ghi chú giáo viên (#332) — server CHỈ gửi khi đã chấm +
 		 * Writing + có ít nhất 1 highlight, cùng lý do strict của `grade`. */
 		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Lượt tự luyện (phase 10) — server CHỈ gửi khi attempt practice;
+		 * `testId` là đề thư viện nguồn để client dựng URL take/review. */
+		practice: z.literal(true).optional(),
+		testId: z.string().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;

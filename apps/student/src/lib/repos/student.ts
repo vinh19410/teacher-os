@@ -3,6 +3,10 @@ import {
 	type ClassmatesResponse,
 	classmatesResponseSchema,
 	type PaymentInstructions,
+	type PracticeCatalogResponse,
+	type PracticeSkill,
+	practiceCatalogResponseSchema,
+	type StartPracticeResponse,
 	type StudentClassDetail,
 	type StudentInvitationItem,
 	type StudentInvoiceItem,
@@ -10,6 +14,7 @@ import {
 	type StudentOnboardingPayload,
 	type StudentOrgItem,
 	type StudentOverview,
+	startPracticeResponseSchema,
 	studentClassDetailSchema,
 	studentMeSchema,
 	studentOverviewSchema,
@@ -371,6 +376,104 @@ export function useClassmates(classId: string, enabled: boolean) {
 		enabled,
 		staleTime: 60_000,
 	});
+}
+
+// --- Tự luyện (phase 10, #378) ---------------------------------------------
+
+/** GET /api/student/practice — catalog đề ready của org đang chọn. */
+export async function fetchPracticeCatalog(filters: {
+	skill: PracticeSkill;
+	collection?: string;
+	q?: string;
+	page?: number;
+}): Promise<PracticeCatalogResponse> {
+	const params = new URLSearchParams({ skill: filters.skill });
+	if (filters.collection) params.set("collection", filters.collection);
+	if (filters.q) params.set("q", filters.q);
+	if (filters.page && filters.page > 1)
+		params.set("page", String(filters.page));
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/practice?${params.toString()}`,
+		{
+			method: "GET",
+			headers: getStudentHeaders(),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{ code },
+		);
+	}
+	const data = (await res.json()) as unknown;
+	return practiceCatalogResponseSchema.parse(data);
+}
+
+export function usePracticeCatalog(filters: {
+	skill: PracticeSkill;
+	collection?: string;
+	q?: string;
+	page?: number;
+}) {
+	return useQuery({
+		queryKey: [
+			"student",
+			"practice",
+			filters.skill,
+			filters.collection ?? "",
+			filters.q ?? "",
+			filters.page ?? 1,
+		],
+		queryFn: () => fetchPracticeCatalog(filters),
+		staleTime: 30_000,
+	});
+}
+
+/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume. */
+export async function startPractice(
+	testId: string,
+): Promise<StartPracticeResponse> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/attempts`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({
+				"Content-Type": "application/json",
+				Origin: window.location.origin,
+			}),
+			credentials: "include",
+			body: JSON.stringify({}),
+		},
+	);
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{ code },
+		);
+	}
+	const data = (await res.json()) as unknown;
+	return startPracticeResponseSchema.parse(data);
+}
+
+export function useStartPractice() {
+	return useMutation({ mutationFn: startPractice });
 }
 
 export function useStudentNotifications() {

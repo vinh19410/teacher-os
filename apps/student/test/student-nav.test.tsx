@@ -38,8 +38,24 @@ describe("STUDENT_NAV v2", () => {
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
 		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
 		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Học phí");
-		// 5 mục (Luyện tập/Lịch sử chưa có route — flag ẩn, phase 10/11).
-		expect(STUDENT_NAV[0].items).toHaveLength(5);
+		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
+		// "Lịch sử" nằm trong list nhưng enabled=false tới phase 11.
+		expect(STUDENT_NAV[0].items).toHaveLength(7);
+		const practice = ITEM_BY_HREF["/practice"];
+		expect(practice?.label).toBe("Luyện tập");
+		expect(practice?.children?.map((child) => child.href)).toEqual([
+			"/practice/reading",
+			"/practice/listening",
+			"/practice/writing",
+			"/practice/speaking",
+			"/practice/vocabulary",
+		]);
+		expect(
+			practice?.children?.some((child) =>
+				child.label.toLowerCase().includes("dictation"),
+			),
+		).toBe(false);
+		expect(ITEM_BY_HREF["/history"]?.enabled).toBe(false);
 	});
 
 	it("renders links through the router, exact match only for '/'", () => {

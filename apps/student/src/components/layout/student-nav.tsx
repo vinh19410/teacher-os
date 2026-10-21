@@ -15,10 +15,21 @@ import {
 } from "lucide-react";
 
 /**
- * Route "Luyện tập" (phase 10) và "Lịch sử" (phase 11) chưa tồn tại —
- * flag ẩn 2 mục này khỏi nav; mở flag cùng commit thêm route.
+ * "Luyện tập" (phase 10) đã có route — bật mục này với 5 skill con (KHÔNG
+ * có Dictation: chưa có đề trong thư viện). "Lịch sử" (phase 11) chưa có
+ * route — giữ flag ẩn.
  */
-const PRACTICE_HISTORY_ROUTES_LIVE = false;
+const PRACTICE_ROUTES_LIVE = true;
+const HISTORY_ROUTES_LIVE = false;
+
+/** 5 skill luyện tập — thứ tự hiển thị ở nav và redirect trang chủ mục. */
+export const PRACTICE_NAV_SKILLS = [
+	{ slug: "reading", label: "Reading" },
+	{ slug: "listening", label: "Listening" },
+	{ slug: "writing", label: "Writing" },
+	{ slug: "speaking", label: "Speaking" },
+	{ slug: "vocabulary", label: "Vocabulary" },
+] as const;
 
 const PRACTICE_HISTORY_ITEMS: NavItem[] = [
 	{
@@ -26,8 +37,19 @@ const PRACTICE_HISTORY_ITEMS: NavItem[] = [
 		label: "Luyện tập",
 		icon: BookOpenCheck,
 		href: "/practice",
+		children: PRACTICE_NAV_SKILLS.map((skill) => ({
+			key: `practice-${skill.slug}`,
+			label: skill.label,
+			href: `/practice/${skill.slug}`,
+		})),
 	},
-	{ key: "history", label: "Lịch sử", icon: History, href: "/history" },
+	{
+		key: "history",
+		label: "Lịch sử",
+		icon: History,
+		href: "/history",
+		enabled: HISTORY_ROUTES_LIVE,
+	},
 ];
 
 /** Nav học viên theo design v2 — một nhóm "Học tập", nhãn giữ nguyên v1. */
@@ -43,7 +65,7 @@ export const STUDENT_NAV: NavGroup[] = [
 				icon: ClipboardList,
 				href: "/assignments",
 			},
-			...(PRACTICE_HISTORY_ROUTES_LIVE ? PRACTICE_HISTORY_ITEMS : []),
+			...(PRACTICE_ROUTES_LIVE ? PRACTICE_HISTORY_ITEMS : []),
 			{ key: "vocab", label: "Từ vựng", icon: BookA, href: "/vocab" },
 			{ key: "tuition", label: "Học phí", icon: Wallet, href: "/tuition" },
 		],

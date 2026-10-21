@@ -17,6 +17,7 @@ import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
+import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -229,6 +230,10 @@ export function buildApp(deps: AppDeps) {
 	// Bạn cùng lớp (#378): sub-app cùng mount point, route riêng
 	// /classes/:classId/classmates — guard tạo từ chung createStudentGuard.
 	app.route("/api/student", studentClassmatesRoutes(deps));
+	// Tự luyện (#378 phase 10): sub-app cùng mount point — catalog + take +
+	// start attempt practice; guard tự gắn trong router (bootstrapMiddleware
+	// bỏ qua /api/student).
+	app.route("/api/student", studentPracticeRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

@@ -1,11 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
+	check,
 	index,
 	integer,
 	sqliteTable,
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { assignmentTest } from "./assignment-test";
 import { classAssignment } from "./class-assignment";
 import { organization } from "./organization";
 import { student } from "./student";
@@ -27,6 +29,17 @@ import { student } from "./student";
  * theo key cũ, nên DB không bao giờ trỏ vào object đang bị ghi đè.
  * `grade_*` là điểm + nhận xét giáo viên chấm bài Writing/Speaking; lưu là
  * ghi đè (học viên thấy ngay).
+ *
+ * Phase 10 (#378) thêm tự luyện: `assignmentId` nullable vì attempt
+ * `mode='practice'` KHÔNG gắn lượt giao — `testId` trỏ đề trong thư viện
+ * `assignment_test` (SET NULL khi giáo viên xoá đề: attempt giữ nguyên điểm
+ * đã nộp, chỉ mất tiêu đề deck — review đọc title từ snapshot-grade, server
+ * hiển thị "Đề đã xoá"). Unique index trên (assignmentId, studentId) không
+ * chặn practice làm lại: SQLite unique coi NULL khác nhau nên mỗi lượt tự
+ * luyện là 1 row mới, không retake-limit v1. Ràng buộc logic
+ * assignment ⇒ assignment_id / practice ⇒ test_id ép bằng CHECK ở mức DB,
+ * route + test bảo vệ thêm. Index (org_id, student_id, mode, submitted_at)
+ * phục vụ History phase 11.
  */
 export const quizAttempt = sqliteTable(
 	"quiz_attempt",
@@ -35,12 +48,17 @@ export const quizAttempt = sqliteTable(
 		orgId: text("org_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		assignmentId: text("assignment_id")
-			.notNull()
-			.references(() => classAssignment.id, { onDelete: "cascade" }),
+		assignmentId: text("assignment_id").references(() => classAssignment.id, {
+			onDelete: "cascade",
+		}),
 		studentId: text("student_id")
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
+		testId: text("test_id").references(() => assignmentTest.id, {
+			onDelete: "set null",
+		}),
+		/** "assignment" (mặc định, dữ liệu cũ backfill) | "practice". */
+		mode: text("mode").notNull().default("assignment"),
 		status: text("status").notNull().default("in_progress"), // "in_progress" | "submitted"
 		questionsSnapshot: text("questions_snapshot").notNull(),
 		answers: text("answers").notNull().default("{}"),
@@ -70,5 +88,24 @@ export const quizAttempt = sqliteTable(
 			table.studentId,
 		),
 		index("quiz_attempt_org_idx").on(table.orgId),
+		// History phase 11: bài tự luyện của một học viên theo thời gian nộp.
+		index("quiz_attempt_student_mode_idx").on(
+			table.orgId,
+			table.studentId,
+			table.mode,
+			table.submittedAt,
+		),
+		// Ràng buộc logic phase 10: attempt gắn lượt giao không thể tự luyện
+		// và ngược lại — ép ở mức DB (route + test bảo vệ ngữ nghĩa còn lại:
+		// đề ready, cùng org). Tham chiếu qua `table` (không qua const
+		// `quizAttempt`) để tránh vòng initializer.
+		check(
+			"quiz_attempt_mode_assignment_link",
+			sql`${table.mode} <> 'assignment' or ${table.assignmentId} is not null`,
+		),
+		check(
+			"quiz_attempt_mode_practice_link",
+			sql`${table.mode} <> 'practice' or ${table.testId} is not null`,
+		),
 	],
 );

@@ -16,10 +16,21 @@ import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import {
 	attemptDetailQueryOptions,
+	type QuizTakeSource,
 	quizDetailQueryOptions,
 	useAttemptDetail,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
+
+/** Nguồn chrome paper cho review: cặp `practice`/`testId` khi là lượt tự
+ * luyện (#378), mặc định là lượt giao bài theo `assignmentId`. */
+function attemptTakeSource(
+	attempt: Pick<QuizAttemptDetail, "assignmentId" | "practice" | "testId">,
+): QuizTakeSource {
+	return attempt.practice === true && attempt.testId
+		? { kind: "practice", testId: attempt.testId }
+		: { kind: "assignment", id: attempt.assignmentId };
+}
 
 export const Route = createFileRoute(
 	"/_auth/learn/quizzes/attempt/$attemptId/detail",
@@ -41,8 +52,9 @@ export const Route = createFileRoute(
 		// Paper chrome (passage/prompt/optionBank/type) từ prompt hiện tại;
 		// questions vẫn lấy từ snapshot của attempt — server chấm theo
 		// snapshot (RT#3) và GET quiz đã trả questions snapshot khi có attempt.
+		// Lượt tự luyện (#378) lấy chrome từ route practice qua testId.
 		await studentQueryClient.ensureQueryData(
-			quizDetailQueryOptions(attemptDetail.assignmentId),
+			quizDetailQueryOptions(attemptTakeSource(attemptDetail)),
 		);
 	},
 	component: AttemptDetailPage,
@@ -68,7 +80,7 @@ function AttemptDetailPage() {
 }
 
 function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
-	const quizQuery = useStudentQuizDetail(attempt.assignmentId);
+	const quizQuery = useStudentQuizDetail(attemptTakeSource(attempt));
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 
 	// Attempt detail đã mang type từng câu (server resolve fallback
