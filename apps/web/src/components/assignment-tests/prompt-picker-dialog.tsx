@@ -45,7 +45,7 @@ export function PromptPickerDialog({
 							<button
 								key={prompt.id}
 								type="button"
-								className="neu-sm flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2 text-left transition-colors hover:text-primary"
+								className="flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md border border-input bg-transparent px-3 py-2 text-left transition-colors hover:text-primary"
 								onClick={() => onPick(prompt.id)}
 							>
 								<span className="flex flex-col">

@@ -170,7 +170,10 @@ export function PaymentQrPanel({
 							</div>
 						))}
 					</dl>
-					<p className="text-center text-muted-fg text-xs" aria-live="polite">
+					<p
+						className="text-center text-muted-foreground text-xs"
+						aria-live="polite"
+					>
 						{copied ?? strings.copyHint}
 					</p>
 				</div>

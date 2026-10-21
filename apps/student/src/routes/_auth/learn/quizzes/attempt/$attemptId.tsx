@@ -111,15 +111,15 @@ export function AttemptSummaryBody({
 	const grade = summary.grade ?? null;
 	const part = summary.part ?? "";
 	const submittedLine = (
-		<p className="text-muted-fg text-sm">
+		<p className="text-muted-foreground text-sm">
 			Bạn đã nộp bài lúc{" "}
-			<span className="font-medium text-fg">
+			<span className="font-medium text-foreground">
 				{formatVietnamSubmittedAt(summary.submittedAt)}
 			</span>
 			{duration && (
 				<>
 					{" · hoàn thành trong "}
-					<span className="font-medium text-fg">{duration}</span>
+					<span className="font-medium text-foreground">{duration}</span>
 				</>
 			)}
 			.
@@ -132,12 +132,15 @@ export function AttemptSummaryBody({
 		return (
 			<>
 				{submittedLine}
-				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+				<h2 className="mt-6 mb-2 font-semibold text-foreground">
 					Bài nói của bạn
 				</h2>
 				{media ? (
 					<div className="flex flex-col gap-3">
-						<Attachment state="done" className="w-full rounded-md bg-bg">
+						<Attachment
+							state="done"
+							className="w-full rounded-md bg-background"
+						>
 							<AttachmentMedia>
 								{isVideoMediaType(media.type) ? (
 									<VideoIcon aria-hidden />
@@ -157,14 +160,14 @@ export function AttemptSummaryBody({
 						<QuizMediaPlayer media={media} attemptId={attemptId} />
 					</div>
 				) : (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Bài này được nộp khi chưa có file bài nói.
 					</p>
 				)}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="speaking" part={part} />
 				) : (
-					<p className="mt-3 text-muted-fg text-sm">
+					<p className="mt-3 text-muted-foreground text-sm">
 						Giáo viên sẽ chấm bài nói của bạn.
 					</p>
 				)}
@@ -186,22 +189,22 @@ export function AttemptSummaryBody({
 				data-testid="essay-frame"
 			>
 				<h2
-					className="mt-6 mb-1 font-display font-extrabold text-fg"
+					className="mt-6 mb-1 font-extrabold text-foreground"
 					id="essay-heading"
 				>
 					Bài viết của bạn
 				</h2>
 				<p
-					className="font-mono text-meta text-sm"
+					className="font-mono text-muted-foreground text-sm"
 					data-testid="essay-summary-count"
 				>
 					{wordCount} từ
 				</p>
 				{/* Khối bài viết kiểu design `Results`: cột trái có border-l,
 				 * chữ lớn giãn dòng, không card. */}
-				<div className="mt-2 whitespace-pre-wrap border-line border-l-2 pl-5 text-lg leading-[1.9]">
+				<div className="mt-2 whitespace-pre-wrap border-border border-l-2 pl-5 text-lg leading-[1.9]">
 					{emptyEssay ? (
-						<span className="text-meta">Bạn đã nộp bài trống.</span>
+						<span className="text-muted-foreground">Bạn đã nộp bài trống.</span>
 					) : (
 						<EssayWithHighlights
 							essay={essay}
@@ -241,7 +244,7 @@ export function AttemptSummaryBody({
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="writing" part={part} />
 				) : (
-					<p className="mt-3 text-muted-fg text-sm">
+					<p className="mt-3 text-muted-foreground text-sm">
 						Giáo viên sẽ chấm bài viết của bạn.
 					</p>
 				)}
@@ -269,7 +272,7 @@ export function AttemptSummaryBody({
 					}
 				/>
 			</div>
-			<h2 className="mt-6 mb-2 font-display font-extrabold text-fg tracking-[-0.02em]">
+			<h2 className="mt-6 mb-2 font-extrabold text-foreground tracking-[-0.02em]">
 				Bảng đáp án
 			</h2>
 			<AttemptCompactList items={summary.items} />
@@ -295,7 +298,7 @@ function AttemptSummaryPage() {
 	}
 
 	return (
-		<div className="flex min-h-svh flex-col bg-surface/30">
+		<div className="flex min-h-svh flex-col bg-muted/30">
 			<QuizRuntimeHeader
 				title={summary.title}
 				saveState={null}

@@ -143,7 +143,7 @@ function StudentOverviewPage() {
 					<UpcomingSessions classes={overview.classes} />
 
 					<section>
-						<h2 className="mb-4 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+						<h2 className="mb-4 font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
 							Lớp học của tôi
 						</h2>
 
@@ -201,15 +201,15 @@ function StudentVocabEntrySection() {
 
 	return (
 		<section className="mt-10">
-			<div className="neu flex flex-wrap items-center justify-between gap-4 rounded-md p-5">
+			<div className="flex flex-wrap items-center justify-between gap-4 rounded-md rounded-xl border bg-card p-5 shadow-sm">
 				<div>
-					<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 						Spaced Repetition
 					</p>
-					<h2 className="mt-1 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+					<h2 className="mt-1 font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
 						Từ vựng của tôi
 					</h2>
-					<p className="mt-1 text-meta text-sm">
+					<p className="mt-1 text-muted-foreground text-sm">
 						{deckCount > 0
 							? `${deckCount} bộ từ đang học · 20 khóa học từ vựng có sẵn`
 							: "Khám phá 20 khóa học từ vựng theo 5 cấp độ trí nhớ"}
@@ -220,7 +220,7 @@ function StudentVocabEntrySection() {
 						<span
 							data-testid="vocab-home-due-badge"
 							aria-hidden="true"
-							className="rounded-full bg-hot px-2.5 py-0.5 font-mono text-accent-on text-xs"
+							className="rounded-full bg-primary px-2.5 py-0.5 font-mono text-primary-foreground text-xs"
 						>
 							{dueCount} đến hạn
 						</span>
@@ -228,7 +228,7 @@ function StudentVocabEntrySection() {
 					<Link
 						to="/vocab"
 						data-testid="vocab-home-entry"
-						className="neu-sm rounded-md px-4 py-2 font-medium text-fg text-sm transition-colors duration-150 hover:border-fg hover:text-hot"
+						className="rounded-md rounded-md border border-input bg-transparent px-4 py-2 font-medium text-foreground text-sm transition-colors duration-150 hover:border-primary hover:text-primary"
 					>
 						Vào học từ vựng →
 					</Link>

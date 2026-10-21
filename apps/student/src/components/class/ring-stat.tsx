@@ -28,7 +28,7 @@ export function RingStat({
 	const pct = max > 0 ? Math.min(1, value / max) : 0;
 
 	return (
-		<div className="neu flex flex-col items-center rounded-lg p-5 text-center">
+		<div className="flex flex-col items-center rounded-lg rounded-xl border bg-card p-5 text-center shadow-sm">
 			<div className="relative size-32">
 				<svg
 					viewBox="0 0 120 120"
@@ -56,14 +56,14 @@ export function RingStat({
 					/>
 				</svg>
 				<div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-					<Icon aria-hidden="true" className="size-4 text-meta" />
-					<span className="font-semibold text-fg text-xl tabular-nums tracking-tight">
+					<Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+					<span className="font-semibold text-foreground text-xl tabular-nums tracking-tight">
 						{display}
 					</span>
 				</div>
 			</div>
-			<div className="mt-3 font-medium text-fg">{label}</div>
-			<div className="text-meta text-xs">{sub}</div>
+			<div className="mt-3 font-medium text-foreground">{label}</div>
+			<div className="text-muted-foreground text-xs">{sub}</div>
 		</div>
 	);
 }

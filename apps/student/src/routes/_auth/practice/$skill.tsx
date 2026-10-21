@@ -127,10 +127,10 @@ function PracticeSkillPage() {
 				<div data-testid="student-practice-page" className="space-y-6">
 					<header className="flex flex-wrap items-end justify-between gap-3">
 						<div>
-							<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+							<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 								{SKILL_KICKERS[skill]}
 							</p>
-							<h1 className="mt-2 font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]">
+							<h1 className="mt-2 font-extrabold text-3xl text-foreground leading-[0.95] tracking-[-0.045em]">
 								{SKILL_LABELS[skill]}
 							</h1>
 						</div>

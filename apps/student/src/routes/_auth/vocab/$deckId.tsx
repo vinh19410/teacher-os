@@ -45,9 +45,11 @@ function VocabDeckDetailPage() {
 			<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
 				<div
 					data-testid="vocab-deck-not-found"
-					className="neu space-y-4 rounded-md p-6 text-center"
+					className="space-y-4 rounded-md rounded-xl border bg-card p-6 text-center shadow-sm"
 				>
-					<p className="font-semibold text-fg">Không tìm thấy bộ từ vựng</p>
+					<p className="font-semibold text-foreground">
+						Không tìm thấy bộ từ vựng
+					</p>
 					{course ? (
 						<Link
 							to="/vocab/courses/$courseId"
@@ -99,7 +101,7 @@ function VocabDeckDetailPage() {
 								to="/vocab/courses/$courseId"
 								params={{ courseId: course }}
 								data-testid="vocab-deck-back-link"
-								className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] hover:text-hot"
+								className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] hover:text-primary"
 							>
 								← Bài học trong khóa
 							</Link>
@@ -107,21 +109,21 @@ function VocabDeckDetailPage() {
 							<Link
 								to="/vocab"
 								data-testid="vocab-deck-back-link"
-								className="font-mono text-[11px] text-meta uppercase tracking-[0.15em] hover:text-hot"
+								className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em] hover:text-primary"
 							>
 								← Danh sách bộ từ
 							</Link>
 						)}
 						<h1
 							data-testid="vocab-deck-title"
-							className="mt-2 font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]"
+							className="mt-2 font-extrabold text-3xl text-foreground leading-[0.95] tracking-[-0.045em]"
 						>
 							{data.deck.title}
 						</h1>
 						{nextReviewIntervalLabel ? (
 							<p
 								data-testid="vocab-next-review-hint"
-								className="mt-2 font-mono text-meta text-xs"
+								className="mt-2 font-mono text-muted-foreground text-xs"
 							>
 								Đợt ôn tiếp theo sau {nextReviewIntervalLabel}
 							</p>
@@ -179,12 +181,12 @@ function VocabDeckDetailPage() {
 				</div>
 
 				{/* Word table */}
-				<section className="neu overflow-hidden rounded-md">
-					<div className="border-line border-b px-5 py-3 font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+				<section className="overflow-hidden rounded-md rounded-xl border bg-card shadow-sm">
+					<div className="border-border border-b px-5 py-3 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 						Danh sách từ ({data.cards.length})
 					</div>
 					{data.cards.length === 0 ? (
-						<p className="p-6 text-center text-meta text-sm">
+						<p className="p-6 text-center text-muted-foreground text-sm">
 							Bộ từ này chưa có từ vựng nào.
 						</p>
 					) : (
@@ -196,15 +198,19 @@ function VocabDeckDetailPage() {
 									className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-sm"
 								>
 									<div>
-										<span className="font-semibold text-fg">{card.word}</span>
+										<span className="font-semibold text-foreground">
+											{card.word}
+										</span>
 										{card.ipa ? (
-											<span className="ml-2 font-mono text-meta text-xs">
+											<span className="ml-2 font-mono text-muted-foreground text-xs">
 												{card.ipa}
 											</span>
 										) : null}
-										<p className="mt-0.5 text-meta">{card.translation}</p>
+										<p className="mt-0.5 text-muted-foreground">
+											{card.translation}
+										</p>
 									</div>
-									<span className="neu-in rounded-full px-2.5 py-0.5 font-mono text-[10px] text-meta uppercase">
+									<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
 										{card.state === "new" ? "Mới" : `Level ${card.level}`}
 									</span>
 								</div>

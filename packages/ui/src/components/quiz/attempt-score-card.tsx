@@ -20,7 +20,10 @@ export function AttemptScoreCard({
 	action?: ReactNode;
 }) {
 	return (
-		<section aria-label="Kết quả bài làm" className="neu rounded-lg p-6">
+		<section
+			aria-label="Kết quả bài làm"
+			className="rounded-lg rounded-xl border bg-card p-6 shadow-sm"
+		>
 			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				Điểm
 			</p>

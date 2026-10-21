@@ -32,7 +32,7 @@ function DeckProgressRow({
 						<p className="font-medium text-foreground text-sm">{deck.title}</p>
 						<span
 							data-testid={`vocab-progress-deck-source-${deck.deckId}`}
-							className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+							className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 						>
 							{deck.source === "class"
 								? classNameLabel
@@ -59,8 +59,8 @@ function DeckProgressRow({
 						data-testid={`vocab-progress-deck-due-${deck.deckId}`}
 						className={`rounded px-2 py-1 font-mono text-xs ${
 							deck.dueToday > 0
-								? "neu-sm text-primary"
-								: "neu-in text-muted-foreground"
+								? "rounded-md border border-input bg-transparent text-primary"
+								: "rounded-md bg-muted text-muted-foreground"
 						}`}
 					>
 						Đến hạn hôm nay: {deck.dueToday}
@@ -82,7 +82,7 @@ function DeckProgressRow({
 						<div
 							key={level}
 							data-testid={`vocab-progress-deck-${deck.deckId}-level-${level}`}
-							className="neu-in rounded p-2"
+							className="rounded rounded-md bg-muted p-2"
 						>
 							<div className="flex items-center justify-between font-mono text-[11px]">
 								<span className="text-muted-foreground">Cấp {level}</span>
@@ -286,7 +286,7 @@ export function VocabProgressTab() {
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 							<div
 								data-testid="vocab-progress-stat-learning"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
 								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Từ đang học
@@ -297,7 +297,7 @@ export function VocabProgressTab() {
 							</div>
 							<div
 								data-testid="vocab-progress-stat-due"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
 								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Đến hạn hôm nay
@@ -314,7 +314,7 @@ export function VocabProgressTab() {
 							</div>
 							<div
 								data-testid="vocab-progress-stat-activity7d"
-								className="neu-in rounded-md p-3"
+								className="rounded-md rounded-md bg-muted p-3"
 							>
 								<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 									Lượt ôn 7 ngày qua
@@ -338,7 +338,7 @@ export function VocabProgressTab() {
 									<div
 										key={day.dateISO}
 										data-testid={`vocab-progress-activity-${day.dateISO}`}
-										className="neu-in rounded p-2 text-center"
+										className="rounded rounded-md bg-muted p-2 text-center"
 									>
 										<p className="font-mono text-[10px] text-muted-foreground">
 											{day.dateISO.slice(5)}

@@ -27,7 +27,7 @@ export function VocabFeedbackPanel({
 	return (
 		<div
 			data-testid="vocab-feedback-panel"
-			className={`neu mt-6 rounded-md border-l-4 p-5 ${
+			className={`mt-6 rounded-md rounded-xl border border-l-4 bg-card p-5 shadow-sm ${
 				isCorrect
 					? "border-l-[var(--verdict-correct)] bg-[var(--verdict-correct-soft)]"
 					: "border-l-[var(--verdict-wrong)] bg-[var(--verdict-wrong-soft)]"
@@ -63,15 +63,15 @@ export function VocabFeedbackPanel({
 						</span>
 					</div>
 
-					<p className="mt-2 font-display font-extrabold text-fg text-xl">
+					<p className="mt-2 font-extrabold text-foreground text-xl">
 						{word}
 						{ipa ? (
-							<span className="ml-2 font-mono font-normal text-meta text-sm">
+							<span className="ml-2 font-mono font-normal text-muted-foreground text-sm">
 								{ipa}
 							</span>
 						) : null}
 					</p>
-					<p className="mt-1 text-fg text-sm">{translation}</p>
+					<p className="mt-1 text-foreground text-sm">{translation}</p>
 				</div>
 
 				<Button
@@ -88,9 +88,9 @@ export function VocabFeedbackPanel({
 				<div
 					role="alert"
 					data-testid="vocab-persist-error"
-					className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface px-4 py-3"
+					className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted px-4 py-3"
 				>
-					<p className="text-hot text-xs">
+					<p className="text-primary text-xs">
 						Không lưu được kết quả học do lỗi kết nối. Bạn có thể thử lại để giữ
 						nguyên tiến độ.
 					</p>

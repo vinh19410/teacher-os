@@ -42,7 +42,7 @@ const MIN_BLANK_WIDTH_CH = 6;
 const VERDICT_INPUT_CLASSES: Record<QuizVerdict, string> = {
 	correct: "border-b-verdict-correct text-verdict-correct",
 	wrong: "border-b-verdict-wrong text-verdict-wrong line-through",
-	skipped: "border-b-meta border-dashed text-muted-fg",
+	skipped: "border-b-meta border-dashed text-muted-foreground",
 };
 
 function blankInput({
@@ -63,7 +63,7 @@ function blankInput({
 	const className = cn(
 		// disabled:opacity-100 — fieldset review disabled không được làm mờ
 		// màu verdict của ô điền (#351).
-		"mx-[2px] rounded-sm border-line border-b-2 bg-bg px-1 align-baseline font-mono text-sm disabled:opacity-100",
+		"mx-[2px] rounded-sm border-border border-b-2 bg-background px-1 align-baseline font-mono text-sm disabled:opacity-100",
 		verdict && VERDICT_INPUT_CLASSES[verdict],
 	);
 	const style = { width: `${widthCh}ch` };

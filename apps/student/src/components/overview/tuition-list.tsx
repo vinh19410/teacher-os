@@ -34,14 +34,18 @@ function MiniStat({
 }) {
 	return (
 		<div
-			className={hot ? "rounded-md bg-fg p-4" : "neu rounded-md bg-surface p-4"}
+			className={
+				hot
+					? "rounded-md bg-primary p-4"
+					: "rounded-md rounded-xl border bg-card bg-muted p-4 shadow-sm"
+			}
 		>
-			<div className="font-mono text-[10px] text-meta uppercase tracking-[0.18em]">
+			<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
 				{label}
 			</div>
 			<div
 				className={`mt-2 break-words font-medium font-mono text-lg leading-none ${
-					hot ? "text-hot" : "text-fg"
+					hot ? "text-primary" : "text-foreground"
 				}`}
 			>
 				{value}
@@ -61,10 +65,10 @@ export function TuitionList({ invoices }: { invoices: StudentInvoiceItem[] }) {
 	const totalPaid = invoices.reduce((sum, inv) => sum + paidOf(inv), 0);
 	const totalDue = invoices.reduce((sum, inv) => sum + dueOf(inv), 0);
 	return (
-		<section className="neu self-start rounded-lg p-6">
+		<section className="self-start rounded-lg rounded-xl border bg-card p-6 shadow-sm">
 			{/* Heading role pinned by e2e (tuition-bank-transfer) — styled as the
 			design's mono kicker, still a real h2 for the outline. */}
-			<h2 className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<h2 className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 				Học phí
 			</h2>
 
@@ -75,16 +79,16 @@ export function TuitionList({ invoices }: { invoices: StudentInvoiceItem[] }) {
 
 			<ul className="mt-4">
 				{invoices.map((inv) => (
-					<li key={inv.id} className="border-line border-t">
+					<li key={inv.id} className="border-border border-t">
 						<Link
 							to="/tuition/$invoiceId"
 							params={{ invoiceId: inv.id }}
-							className="flex items-center justify-between gap-3 py-3 transition-colors hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+							className="flex items-center justify-between gap-3 py-3 transition-colors hover:text-primary focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 						>
 							{isSettled(inv) ? (
 								<>
 									<div className="flex min-w-0 flex-col">
-										<span className="font-medium text-fg text-sm">
+										<span className="font-medium text-foreground text-sm">
 											{inv.type || "Học phí"}
 										</span>
 									</div>
@@ -98,10 +102,10 @@ export function TuitionList({ invoices }: { invoices: StudentInvoiceItem[] }) {
 							) : (
 								<>
 									<div className="flex min-w-0 flex-col gap-0.5">
-										<span className="font-medium text-fg text-sm">
+										<span className="font-medium text-foreground text-sm">
 											{inv.type || "Học phí"}
 										</span>
-										<span className="font-mono text-[11px] text-meta">
+										<span className="font-mono text-[11px] text-muted-foreground">
 											{inv.due ? `Hạn ${inv.due}` : "Chưa có hạn đóng"}
 										</span>
 									</div>
@@ -109,7 +113,7 @@ export function TuitionList({ invoices }: { invoices: StudentInvoiceItem[] }) {
 										<span className="font-medium font-mono text-sm">
 											{fmtVnd(inv.amountDue)}
 										</span>
-										<span className="font-mono text-[11px] text-meta">
+										<span className="font-mono text-[11px] text-muted-foreground">
 											{inv.paidAmount > 0
 												? `Đã nhận ${fmtVnd(inv.paidAmount)} / ${fmtVnd(inv.amount)}`
 												: `Tổng ${fmtVnd(inv.amount)}`}

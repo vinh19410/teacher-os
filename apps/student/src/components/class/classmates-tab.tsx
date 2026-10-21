@@ -6,19 +6,21 @@ function ClassmateCard({ mate }: { mate: ClassmatesResponse[number] }) {
 	return (
 		<div
 			data-testid="classmate-card"
-			className="neu flex items-center gap-3 rounded-lg p-4"
+			className="flex items-center gap-3 rounded-lg rounded-xl border bg-card p-4 shadow-sm"
 		>
 			<span
 				aria-hidden="true"
-				className="neu-sm flex size-11 flex-none items-center justify-center rounded-full font-medium text-fg-2"
+				className="flex size-11 flex-none items-center justify-center rounded-full rounded-md border border-input bg-transparent font-medium text-foreground"
 			>
 				{mate.initials}
 			</span>
 			<div className="min-w-0">
-				<p className="truncate font-medium text-[15px] text-fg">
+				<p className="truncate font-medium text-[15px] text-foreground">
 					{mate.name}
 					{mate.isMe && (
-						<span className="ml-1.5 font-normal text-meta">(bạn)</span>
+						<span className="ml-1.5 font-normal text-muted-foreground">
+							(bạn)
+						</span>
 					)}
 				</p>
 			</div>
@@ -36,8 +38,8 @@ export function ClassmatesTab({ classId }: { classId: string }) {
 
 	if (classmatesQuery.isLoading) {
 		return (
-			<div className="neu rounded-lg p-6">
-				<p className="text-meta text-sm">Đang tải danh sách lớp…</p>
+			<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
+				<p className="text-muted-foreground text-sm">Đang tải danh sách lớp…</p>
 			</div>
 		);
 	}

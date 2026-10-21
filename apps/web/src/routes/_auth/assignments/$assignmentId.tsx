@@ -130,7 +130,7 @@ function AssignmentDetailRoute() {
 									type="button"
 									key={c.id}
 									onClick={() => appendComment(c.text)}
-									className="neu-sm rounded-md px-3 py-2 text-left text-muted-foreground text-xs leading-[1.4] transition-colors duration-150 hover:text-primary"
+									className="rounded-md rounded-md border border-input bg-transparent px-3 py-2 text-left text-muted-foreground text-xs leading-[1.4] transition-colors duration-150 hover:text-primary"
 								>
 									<span className="mb-0.5 block font-medium text-primary text-xs">
 										{c.tag}

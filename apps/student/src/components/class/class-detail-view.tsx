@@ -16,7 +16,7 @@ function BackHomeLink({ children }: { children: string }) {
 	return (
 		<Link
 			to="/"
-			className="rounded-sm text-[13px] text-meta transition-colors hover:text-hot focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+			className="rounded-sm text-[13px] text-muted-foreground transition-colors hover:text-primary focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 		>
 			{/* Mũi tên trang trí: accessible name giữ đúng "Trang chủ" (e2e bấm
 			 * link exact name này để về overview). */}
@@ -94,8 +94,8 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 
 	if (topics.size === 0) {
 		return (
-			<div className="neu rounded-lg p-6">
-				<p className="text-meta text-sm">
+			<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
+				<p className="text-muted-foreground text-sm">
 					Giáo trình sẽ hiển thị theo chủ đề từng buổi học.
 				</p>
 			</div>
@@ -103,7 +103,7 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 	}
 
 	return (
-		<div className="neu rounded-lg">
+		<div className="rounded-lg rounded-xl border bg-card shadow-sm">
 			<ul className="divide-y">
 				{[...topics.entries()].map(([topic, progress], i) => {
 					const done = progress.completed >= progress.total;
@@ -116,17 +116,22 @@ function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 								aria-hidden="true"
 								className={cn(
 									"flex size-5 flex-none items-center justify-center rounded-full font-mono text-[10px]",
-									done ? "bg-hot text-accent-on" : "neu-in text-meta",
+									done
+										? "bg-primary text-primary-foreground"
+										: "rounded-md bg-muted text-muted-foreground",
 								)}
 							>
 								{i + 1}
 							</span>
 							<span
-								className={cn("min-w-0 flex-1 truncate", !done && "text-meta")}
+								className={cn(
+									"min-w-0 flex-1 truncate",
+									!done && "text-muted-foreground",
+								)}
 							>
 								{topic}
 							</span>
-							<span className="font-mono text-[12px] text-meta tabular-nums">
+							<span className="font-mono text-[12px] text-muted-foreground tabular-nums">
 								{progress.completed}/{progress.total} buổi
 							</span>
 						</li>
@@ -151,17 +156,17 @@ export function ClassDetailView({
 
 	return (
 		<>
-			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				Lớp học
 			</p>
 			<BackHomeLink>Trang chủ</BackHomeLink>
 
 			<header className="mt-4">
 				<ClassBadges cls={cls} />
-				<h1 className="mt-3 font-display font-extrabold text-[clamp(32px,4.5vw,56px)] text-fg leading-[0.95] tracking-[-0.045em]">
+				<h1 className="mt-3 font-extrabold text-[clamp(32px,4.5vw,56px)] text-foreground leading-[0.95] tracking-[-0.045em]">
 					{cls.name}
 				</h1>
-				<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-fg-2 text-xs">
+				<div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-foreground text-xs">
 					{cls.schedule && <span>{formatSchedule(cls.schedule)}</span>}
 					{cls.startDate && (
 						<span>Khai giảng: {formatVietnamFullDate(cls.startDate)}</span>
@@ -213,28 +218,31 @@ export function ClassDetailView({
 
 			{/* Giáo viên — luôn hiển thị phía trên tab (e2e bấm mailto từ màn
 			 * mặc định). */}
-			<section className="neu mt-8 flex items-center gap-3 rounded-lg p-5">
-				<UserRound aria-hidden="true" className="size-4 flex-none text-meta" />
-				<h2 className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+			<section className="mt-8 flex items-center gap-3 rounded-lg rounded-xl border bg-card p-5 shadow-sm">
+				<UserRound
+					aria-hidden="true"
+					className="size-4 flex-none text-muted-foreground"
+				/>
+				<h2 className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 					Giáo viên
 				</h2>
 				{teacher ? (
 					<div className="ml-auto flex min-w-0 items-center gap-3">
 						<TeacherAvatar key={teacher.image} teacher={teacher} size="md" />
 						<div className="min-w-0 leading-[1.35]">
-							<p className="truncate font-medium text-[15px] text-fg">
+							<p className="truncate font-medium text-[15px] text-foreground">
 								{teacher.name}
 							</p>
 							<a
 								href={`mailto:${teacher.email}`}
-								className="block truncate rounded-sm text-[13px] text-hot hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+								className="block truncate rounded-sm text-[13px] text-primary hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 							>
 								{teacher.email}
 							</a>
 						</div>
 					</div>
 				) : (
-					<p className="ml-auto text-[13px] text-meta">
+					<p className="ml-auto text-[13px] text-muted-foreground">
 						Chưa có thông tin giáo viên.
 					</p>
 				)}
@@ -244,7 +252,7 @@ export function ClassDetailView({
 			<div
 				role="tablist"
 				aria-label="Mục của lớp học"
-				className="neu-in mt-8 inline-flex flex-wrap items-center gap-1 rounded-lg p-1.5 text-[13px]"
+				className="mt-8 inline-flex flex-wrap items-center gap-1 rounded-lg rounded-md bg-muted p-1.5 text-[13px]"
 			>
 				{CLASS_TABS.map((t) => {
 					const isSelected = tab === t.id;
@@ -259,8 +267,8 @@ export function ClassDetailView({
 							className={cn(
 								"rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								isSelected
-									? "neu-sm font-medium text-hot"
-									: "text-muted-fg hover:text-fg",
+									? "rounded-md border border-input bg-transparent font-medium text-primary"
+									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
 							{t.label}
@@ -272,7 +280,7 @@ export function ClassDetailView({
 			<div className="mt-6">
 				{tab === "journey" && (
 					<section>
-						<h2 className="mb-4 font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+						<h2 className="mb-4 font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
 							Buổi học
 						</h2>
 						<ClassLessonList lessons={detail.lessons} todayISO={todayISO} />
@@ -295,11 +303,11 @@ export function ClassDetailView({
 
 export function ClassNotFound() {
 	return (
-		<div className="neu flex flex-col items-center justify-center rounded-lg px-6 py-14 text-center">
-			<h1 className="font-display font-extrabold text-[22px] text-fg tracking-[-0.02em]">
+		<div className="flex flex-col items-center justify-center rounded-lg rounded-xl border bg-card px-6 py-14 text-center shadow-sm">
+			<h1 className="font-extrabold text-[22px] text-foreground tracking-[-0.02em]">
 				Không tìm thấy lớp
 			</h1>
-			<p className="mt-2 max-w-[44ch] text-[14px] text-meta">
+			<p className="mt-2 max-w-[44ch] text-[14px] text-muted-foreground">
 				Lớp này không tồn tại, bạn chưa tham gia, hoặc thuộc tổ chức khác.
 			</p>
 			<div className="mt-5">

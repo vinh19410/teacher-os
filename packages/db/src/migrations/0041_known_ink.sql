@@ -33,8 +33,10 @@ CREATE TABLE `__new_quiz_attempt` (
 	FOREIGN KEY (`student_id`) REFERENCES `student`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`test_id`) REFERENCES `assignment_test`(`id`) ON UPDATE no action ON DELETE set null,
 	-- Tên cột KHÔNG định tính bảng: sau RENAME vẫn đúng thứ bảng hiện tại.
-	CONSTRAINT "quiz_attempt_mode_assignment_link" CHECK("mode" <> 'assignment' or "assignment_id" is not null),
-	CONSTRAINT "quiz_attempt_mode_practice_link" CHECK("mode" <> 'practice' or "test_id" is not null)
+	-- KHÔNG có CHECK "practice ⇒ test_id": FK test_id ON DELETE set null,
+	-- CHECK chặn chính phép SET NULL → xoá đề có attempt practice lỗi
+	-- (kongming post-impl review). Ngữ nghĩa do route tạo attempt bảo vệ.
+	CONSTRAINT "quiz_attempt_mode_assignment_link" CHECK("mode" <> 'assignment' or "assignment_id" is not null)
 );--> statement-breakpoint
 -- Dữ liệu cũ: test_id/mode chưa tồn tại trên bảng cũ → NULL + 'assignment'.
 INSERT INTO `__new_quiz_attempt`("id", "org_id", "assignment_id", "student_id", "test_id", "mode", "status", "questions_snapshot", "answers", "essay", "media_key", "media_name", "media_type", "media_size", "media_uploaded_at", "correct_count", "grade_scores", "grade_feedback", "graded_at", "started_at", "submitted_at") SELECT "id", "org_id", "assignment_id", "student_id", NULL, 'assignment', "status", "questions_snapshot", "answers", "essay", "media_key", "media_name", "media_type", "media_size", "media_uploaded_at", "correct_count", "grade_scores", "grade_feedback", "graded_at", "started_at", "submitted_at" FROM `quiz_attempt`;--> statement-breakpoint

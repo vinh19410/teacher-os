@@ -37,10 +37,10 @@ export const Route = createFileRoute("/_auth/schedule")({
 });
 
 const typeBlockClass: Record<LessonType, string> = {
-	"1:1": "border-l-primary bg-accent-soft",
+	"1:1": "border-l-primary bg-accent",
 	"1:2": "border-l-success bg-success-soft",
 	trial: "border-l-warn bg-warn-soft",
-	mock: "border-l-foreground bg-fg-soft",
+	mock: "border-l-foreground bg-primary-soft",
 	review: "border-l-muted-foreground/50 bg-border",
 };
 
@@ -284,7 +284,7 @@ export function ScheduleRoute() {
 					</div>
 					<div className="mt-6 flex flex-wrap gap-4 text-muted-foreground">
 						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent-soft" />
+							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent" />
 							1:1
 						</span>
 						<span>
@@ -296,7 +296,7 @@ export function ScheduleRoute() {
 							Học thử (Trial)
 						</span>
 						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-fg-soft" />
+							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-primary-soft" />
 							Thi thử (Mock)
 						</span>
 						<span>

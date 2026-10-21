@@ -64,22 +64,24 @@ export function QuizTakeError({ error }: { error: unknown }) {
 	const notFound = isHttpError(error) && error.status === 404;
 	const code = isHttpError(error) ? error.code : undefined;
 	return (
-		<div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-bg p-6 text-center">
-			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+		<div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				{notFound ? "404" : "Lỗi"}
 			</p>
-			<h1 className="font-display font-extrabold text-3xl tracking-[-0.045em]">
+			<h1 className="font-extrabold text-3xl tracking-[-0.045em]">
 				{notFound ? "Không tìm thấy bài tập" : "Không tải được bài tập"}
 			</h1>
-			<p className="max-w-sm text-meta text-sm">
+			<p className="max-w-sm text-muted-foreground text-sm">
 				{notFound
 					? "Bài tập này không còn giao cho bạn hoặc đã bị gỡ."
 					: "Đã có lỗi khi tải đề. Vui lòng thử lại."}
 			</p>
-			{code && <p className="font-mono text-meta text-xs">{code}</p>}
+			{code && (
+				<p className="font-mono text-muted-foreground text-xs">{code}</p>
+			)}
 			<a
 				href="/"
-				className="text-hot text-sm underline-offset-4 hover:underline"
+				className="text-primary text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ
 			</a>
@@ -317,21 +319,21 @@ export function QuizTakeView({
 	// Chưa start: gate card + dialog xác nhận.
 	if (attempt === null) {
 		return (
-			<div className="flex min-h-svh flex-col bg-surface/30">
+			<div className="flex min-h-svh flex-col bg-muted/30">
 				<QuizRuntimeHeader
 					title={detail.title}
 					saveState={null}
 					onSubmitClick={null}
 				/>
 				<main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col justify-center px-4 py-8">
-					<div className="neu rounded-lg p-6">
-						<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+					<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
+						<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 							Bài kiểm tra
 						</p>
-						<h2 className="mt-1 font-display font-extrabold text-fg text-xl tracking-[-0.02em]">
+						<h2 className="mt-1 font-extrabold text-foreground text-xl tracking-[-0.02em]">
 							{detail.title}
 						</h2>
-						<p className="mt-2 font-mono text-meta text-xs uppercase tracking-[0.08em]">
+						<p className="mt-2 font-mono text-muted-foreground text-xs uppercase tracking-[0.08em]">
 							{isSpeaking ? (
 								<>
 									Bài nói
@@ -350,7 +352,7 @@ export function QuizTakeView({
 								</>
 							)}
 						</p>
-						<p className="mt-1 text-meta text-sm">
+						<p className="mt-1 text-muted-foreground text-sm">
 							Bài làm được lưu tự động trong khi bạn làm.
 						</p>
 					</div>
@@ -405,7 +407,7 @@ export function QuizTakeView({
 	const splitPane = isReadingSplitPane(detail.skill, detail.passage);
 
 	return (
-		<div className="flex min-h-svh flex-col bg-surface/30">
+		<div className="flex min-h-svh flex-col bg-muted/30">
 			<QuizRuntimeHeader
 				title={detail.title}
 				// Speaking không autosave gì — file lưu ngay khi tải lên.
@@ -468,7 +470,7 @@ export function QuizTakeView({
 									}}
 								/>
 								{media === null && (
-									<p className="text-muted-fg text-sm">
+									<p className="text-muted-foreground text-sm">
 										Tải file bài nói lên để nộp bài.
 									</p>
 								)}

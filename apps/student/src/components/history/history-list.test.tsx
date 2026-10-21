@@ -88,13 +88,19 @@ describe("HistoryList (phase 11 #378)", () => {
 		expect(screen.getByText("Xem nhận xét")).toBeTruthy();
 		cleanup();
 
-		// Chờ chấm (writing chưa chấm) KHÔNG có nút xem lại.
+		// Chờ chấm: practice writing chưa chấm hiện "Đã nộp — tự luyện" (beta
+		// chưa có queue giáo viên, kongming post-impl), assignment hiện "Chờ chấm"
+		// — cả hai đều KHÔNG có nút xem lại.
 		renderList({
-			entries: [ENTRY_AWAITING],
+			entries: [
+				ENTRY_AWAITING,
+				{ ...ENTRY_AWAITING, id: "assign-await", kind: "assignment" },
+			],
 			page: 1,
 			pages: 1,
-			total: 1,
+			total: 2,
 		});
+		expect(screen.getByText("Đã nộp — tự luyện")).toBeTruthy();
 		expect(screen.getByText("Chờ chấm")).toBeTruthy();
 		expect(screen.queryByText("Xem nhận xét")).toBeNull();
 	});

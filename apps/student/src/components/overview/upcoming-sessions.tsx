@@ -18,35 +18,42 @@ export function UpcomingSessions({
 	if (upcoming.length === 0) return null;
 
 	return (
-		<section className="neu rounded-lg p-6" data-testid="upcoming-sessions">
-			<h2 className="font-display font-extrabold text-[20px] text-fg tracking-[-0.02em]">
+		<section
+			className="rounded-lg rounded-xl border bg-card p-6 shadow-sm"
+			data-testid="upcoming-sessions"
+		>
+			<h2 className="font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
 				Sắp tới
 			</h2>
-			<p className="mt-1 text-meta text-sm">Buổi học kế tiếp của các lớp</p>
+			<p className="mt-1 text-muted-foreground text-sm">
+				Buổi học kế tiếp của các lớp
+			</p>
 			<div className="mt-4 grid gap-2">
 				{upcoming.map(({ cls, session }) => {
 					return (
 						<div
 							key={cls.id}
-							className="flex items-center gap-4 rounded-md border border-line p-3"
+							className="flex items-center gap-4 rounded-md border border-border p-3"
 						>
-							<span className="neu-in flex size-10 flex-none items-center justify-center rounded-md text-meta">
+							<span className="flex size-10 flex-none items-center justify-center rounded-md rounded-md bg-muted text-muted-foreground">
 								<CalendarClock aria-hidden="true" className="size-4" />
 							</span>
 							<span className="min-w-0 flex-1">
-								<span className="block truncate font-medium text-fg text-sm">
+								<span className="block truncate font-medium text-foreground text-sm">
 									{cls.name}
 								</span>
-								<span className="block truncate text-meta text-sm">
+								<span className="block truncate text-muted-foreground text-sm">
 									{session.topic || "Buổi học"}
 								</span>
 							</span>
 							<span className="flex-none text-right text-sm tabular-nums">
-								<span className="block text-fg">
+								<span className="block text-foreground">
 									{formatVietnamDateFromISO(session.date)}
 								</span>
 								{session.time && (
-									<span className="block text-meta">{session.time}</span>
+									<span className="block text-muted-foreground">
+										{session.time}
+									</span>
 								)}
 							</span>
 						</div>

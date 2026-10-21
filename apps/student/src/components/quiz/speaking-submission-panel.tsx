@@ -73,9 +73,9 @@ export function SpeakingGuideCard({ part }: { part: string }) {
 	return (
 		<section
 			aria-label="Hướng dẫn làm bài"
-			className="neu rounded-lg p-4 text-sm"
+			className="rounded-lg rounded-xl border bg-card p-4 text-sm shadow-sm"
 		>
-			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
+			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				Hướng dẫn làm bài
 			</p>
 			<ul className="mt-2 ml-5 list-disc space-y-1">
@@ -136,7 +136,7 @@ export function SpeakingSubmissionView({
 		uploadBlock = (
 			<Attachment
 				state={state.kind}
-				className="w-full rounded-md border-line bg-bg"
+				className="w-full rounded-md border-border bg-background"
 			>
 				<AttachmentMedia>
 					<MediaKindIcon type={state.type} />
@@ -156,7 +156,7 @@ export function SpeakingSubmissionView({
 						className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-line"
 					>
 						<div
-							className="h-full bg-hot transition-[width]"
+							className="h-full bg-primary transition-[width]"
 							style={{ width: `${percent}%` }}
 						/>
 					</div>
@@ -172,7 +172,7 @@ export function SpeakingSubmissionView({
 		);
 	} else if (state.kind === "error") {
 		uploadBlock = (
-			<Attachment state="error" className="w-full rounded-md bg-bg">
+			<Attachment state="error" className="w-full rounded-md bg-background">
 				<AttachmentMedia>
 					<AlertTriangleIcon aria-hidden />
 				</AttachmentMedia>
@@ -212,7 +212,7 @@ export function SpeakingSubmissionView({
 	const mediaBlock =
 		media !== null && !uploading ? (
 			<div className="flex flex-col gap-3">
-				<Attachment state="done" className="w-full rounded-md bg-bg">
+				<Attachment state="done" className="w-full rounded-md bg-background">
 					<AttachmentMedia>
 						<MediaKindIcon type={media.type} />
 					</AttachmentMedia>
@@ -279,7 +279,7 @@ export function SpeakingSubmissionView({
 		<section aria-labelledby="speaking-submission-heading" className="mt-2">
 			<h2
 				id="speaking-submission-heading"
-				className="mb-2 font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]"
+				className="mb-2 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]"
 			>
 				Bài nói của bạn
 			</h2>

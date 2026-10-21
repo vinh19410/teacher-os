@@ -157,14 +157,14 @@ export default function SignUpForm({
 										"flex items-center gap-[6px] transition-colors duration-[150ms] motion-reduce:transition-none",
 										met
 											? "text-[color-mix(in_oklab,var(--success),black_24%)]"
-											: "text-muted-fg",
+											: "text-muted-foreground",
 									)}
 								>
 									<span
 										aria-hidden="true"
 										className={cn(
 											"grid h-[14px] w-[14px] flex-none place-items-center rounded-full border-[1.5px]",
-											met ? "border-success bg-success" : "border-line",
+											met ? "border-success bg-success" : "border-border",
 										)}
 									>
 										{met && (

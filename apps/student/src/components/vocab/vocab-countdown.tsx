@@ -29,22 +29,22 @@ export function VocabCountdown({
 	return (
 		<div
 			data-testid="vocab-countdown"
-			className="neu flex flex-wrap items-center justify-between gap-3 rounded-md px-4 py-3"
+			className="flex flex-wrap items-center justify-between gap-3 rounded-md rounded-xl border bg-card px-4 py-3 shadow-sm"
 		>
 			<div>
-				<p className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+				<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 					Đợt ôn tiếp theo
 				</p>
 				<p
 					data-testid="vocab-countdown-label"
-					className="mt-1 font-mono font-semibold text-fg text-lg"
+					className="mt-1 font-mono font-semibold text-foreground text-lg"
 				>
 					{formatCountdown(remainingMs)}
 				</p>
 			</div>
 			<span
 				data-testid="vocab-upcoming-label"
-				className="neu-in rounded-full px-3 py-1 font-mono text-meta text-xs"
+				className="rounded-full rounded-md bg-muted px-3 py-1 font-mono text-muted-foreground text-xs"
 			>
 				{clampedUpcoming} từ sắp đến hạn
 			</span>

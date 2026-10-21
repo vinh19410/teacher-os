@@ -38,14 +38,14 @@ function DeckListRow({
 					</p>
 					<span
 						data-testid={`vocab-deck-source-badge-${deck.id}`}
-						className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+						className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 					>
 						{sourceBadgeLabel}
 					</span>
 					{deck.sourceLibraryDeckId ? (
 						<span
 							data-testid={`vocab-deck-library-badge-${deck.id}`}
-							className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
+							className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 						>
 							Thư viện
 						</span>
@@ -53,7 +53,7 @@ function DeckListRow({
 					{pendingCount > 0 ? (
 						<span
 							data-testid={`vocab-deck-pending-badge-${deck.id}`}
-							className="neu-sm rounded px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
+							className="rounded rounded-md border border-input bg-transparent px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
 						>
 							{pendingCount} chờ
 						</span>

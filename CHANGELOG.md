@@ -10,6 +10,18 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-21
+
+### Changed
+- Redesign giao diện **v2** cho app giáo viên và app học viên: **light là theme mặc định** (dark là override, toggle giữ nguyên semantics), accent cam bỏ — **hành động chính = mực** theo bảng shadcn neutral oklch, font **Geist / Geist Mono Variable** self-host, thang chữ về rem mặc định Tailwind (base 14px). Shell đổi sang layout `sidebar-07` dùng chung hai app; thêm search toàn cục ⌘K (command palette) (#378)
+- Trang mới/khoác mới theo v2: catalog Luyện tập (Practice) 5 kỹ năng, Lịch sử làm bài (History), Trang bạn học (Classmates); DataTable, Badge/TuitionBadge, PageHead, Modal, chip lọc theo token v2; trạng thái = chấm emerald/amber, quá hạn/lỗi = đỏ destructive; màn chấm bài giữ riêng cặp màu verdict (#378)
+- Database: migration `0041_known_ink` (#378)
+
+### Removed
+- Toàn bộ alias token v1 (`text-meta`, `text-hot`, `bg-surface`, `neu*`, `font-display`, `accent-on/soft/hover/active`, `line*`, `chip`, spacing `--space-*/--gap-*`…) khỏi `globals.css` và markup — mọi UI giờ dùng trực tiếp utility shadcn v2 (#378)
+
+---
+
 ## 2026-10-20
 
 ### Fixed

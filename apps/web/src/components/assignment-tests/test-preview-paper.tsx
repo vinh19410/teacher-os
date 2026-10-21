@@ -70,7 +70,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 	const contentParts = draft.parts.filter(partHasContent);
 
 	return (
-		<div className="neu rounded-lg p-6">
+		<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
 			<p className="text-muted-foreground text-xs">
 				Xem trước phía học viên — full test
 			</p>
@@ -121,7 +121,7 @@ export function TestPreviewPaper({ draft }: { draft: TestPreviewDraft }) {
 							/>
 						)}
 						{part.audioName.trim() && (
-							<p className="neu-in mt-3 rounded-md p-3 text-sm">
+							<p className="mt-3 rounded-md rounded-md bg-muted p-3 text-sm">
 								🔊 {part.audioName.trim()}
 							</p>
 						)}

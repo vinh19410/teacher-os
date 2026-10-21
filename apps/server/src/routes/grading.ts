@@ -169,7 +169,9 @@ export function gradingRoutes(deps: {
 		};
 		// Tự luyện: title/skill từ assignment_test, prompt fields từ prompt của
 		// part ĐẦU (position thấp nhất). Đề đã xoá (test_id set null) →
-		// leftJoin trả 1 row null → title rỗng, vẫn chấm được theo bài nộp.
+		// FROM assignmentTest không khớp row nào → header undefined, skill=""
+		// → trả 400 SKILL_NOT_GRADABLE (beta chấp nhận: đề đã xoá không còn
+		// chấm được; attempt đã chấm trước đó vẫn giữ nguyên điểm).
 		const header: GradingHeader | undefined = practice
 			? (
 					await db

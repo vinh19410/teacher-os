@@ -105,7 +105,7 @@ describe("AnswersCheckingPanel (phase-05 Task 5.2)", () => {
 		const html = render("", slots);
 		// 1 ở text node; title attr của cùng ô không tính (match >…<).
 		expect(html.match(/>Chưa có đáp án</g)?.length).toBe(1);
-		expect(html).toContain("bg-accent-soft");
+		expect(html).toContain("bg-accent");
 	});
 
 	it("paste 40 dòng với 2 sai → đúng 2 mismatch ở đúng số câu, đếm 38 match", () => {

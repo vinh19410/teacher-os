@@ -47,8 +47,8 @@ function SuggestionItemRow({
 							suggestion.status === "accepted"
 								? "bg-secondary text-foreground"
 								: suggestion.status === "pending"
-									? "neu-sm text-primary"
-									: "neu-in text-muted-foreground"
+									? "rounded-md border border-input bg-transparent text-primary"
+									: "rounded-md bg-muted text-muted-foreground"
 						}`}
 					>
 						{STATUS_LABELS[suggestion.status]}

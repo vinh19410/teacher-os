@@ -158,7 +158,7 @@ export function QuizQuestionItem({
 	const frameClass = verdict
 		? "border-transparent"
 		: current
-			? "border-primary bg-accent-soft"
+			? "border-primary bg-accent"
 			: "border-transparent bg-transparent";
 	return (
 		<fieldset
@@ -175,7 +175,7 @@ export function QuizQuestionItem({
 				frameClass,
 				verdict && VERDICT_BLOCK_CLASSES[verdict],
 				// Câu đang mở ở review: outline cam đè LÊN nền verdict, không
-				// thay thế nó (bg-accent-soft sẽ xoá nền verdict).
+				// thay thế nó (bg-accent sẽ xoá nền verdict).
 				reviewMode && current && "outline-2 outline-primary outline-offset-2",
 			)}
 		>
@@ -218,7 +218,7 @@ export function QuizQuestionItem({
 									reviewMode ? "cursor-default" : "cursor-pointer",
 									// Pill thuần (T/F/NG): nút mono nhỏ theo design Exam;
 									// chọn = nền sunk + chữ cam, viền trong suốt để không
-									// đè border-state của neu-sm.
+									// đè border-state của rounded-md border border-input bg-transparent.
 									pillOnly &&
 										cn(
 											"inline-flex font-mono text-[10px] uppercase tracking-[0.08em]",
@@ -226,7 +226,7 @@ export function QuizQuestionItem({
 												? rv.rowClass
 												: selected
 													? "border-transparent bg-muted font-medium text-primary"
-													: "neu-sm hover:text-primary",
+													: "rounded-md border border-input bg-transparent hover:text-primary",
 										),
 									// MCQ/heading: hàng full-width, chữ thường.
 									!pillOnly &&
@@ -236,8 +236,8 @@ export function QuizQuestionItem({
 												? rv.rowClass
 												: selected
 													? "border-transparent bg-muted text-primary"
-													: "neu-sm",
-											!reviewMode && !rv && !selected && "hover:border-fg",
+													: "rounded-md border border-input bg-transparent",
+											!reviewMode && !rv && !selected && "hover:border-primary",
 										),
 								)}
 							>

@@ -337,7 +337,7 @@ export function AnswerKeyGrid({
 							// thêm câu mới, nên nút phải nằm ngoài nó.
 							<fieldset
 								aria-label={`Gợi ý dạng bài câu ${rangeLabel}`}
-								className="flex min-w-0 flex-col gap-2 rounded-md bg-accent-soft p-3 text-primary text-xs sm:flex-row sm:items-center sm:justify-between"
+								className="flex min-w-0 flex-col gap-2 rounded-md bg-accent p-3 text-primary text-xs sm:flex-row sm:items-center sm:justify-between"
 							>
 								<p>
 									Câu {rangeLabel} có đáp án dạng {warnLabels.answers} nhưng

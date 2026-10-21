@@ -108,7 +108,7 @@ export function EnrollStudentModal({
 								aria-selected={selectedStudentId === s.id}
 								className={`flex items-center justify-between rounded px-3 py-2 text-left text-sm ${
 									selectedStudentId === s.id
-										? "bg-accent-soft font-medium"
+										? "bg-accent font-medium"
 										: "hover:bg-line-soft"
 								}`}
 								onClick={() => setSelectedStudentId(s.id)}

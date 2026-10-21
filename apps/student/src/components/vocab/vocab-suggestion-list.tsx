@@ -16,24 +16,24 @@ function SuggestionCard({
 	return (
 		<div
 			data-testid={`vocab-suggestion-card-${item.id}`}
-			className="neu flex flex-col justify-between gap-4 rounded-md p-5"
+			className="flex flex-col justify-between gap-4 rounded-md rounded-xl border bg-card p-5 shadow-sm"
 		>
 			<div>
 				<div className="flex flex-wrap items-center justify-between gap-2">
-					<span className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-hot uppercase tracking-widest">
+					<span className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest">
 						Giáo viên gợi ý
 					</span>
-					<span className="font-mono text-[11px] text-meta">
+					<span className="font-mono text-[11px] text-muted-foreground">
 						{item.wordCount} từ · {createdDate}
 					</span>
 				</div>
-				<h3 className="mt-2 font-display font-extrabold text-fg text-lg">
+				<h3 className="mt-2 font-extrabold text-foreground text-lg">
 					{item.title}
 				</h3>
 				{item.note ? (
 					<p
 						data-testid={`vocab-suggestion-note-${item.id}`}
-						className="mt-1.5 text-meta text-sm"
+						className="mt-1.5 text-muted-foreground text-sm"
 					>
 						{item.note}
 					</p>
@@ -47,7 +47,7 @@ function SuggestionCard({
 					data-testid={`vocab-suggestion-accept-${item.id}`}
 					aria-label={`Bắt đầu học ${item.title}`}
 					onClick={() => onAccept(item)}
-					className="inline-flex items-center justify-center rounded-md bg-fg px-4 py-2 font-medium text-bg text-xs transition-colors duration-150 hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
+					className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-bg text-xs transition-colors duration-150 hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
 				>
 					Bắt đầu học
 				</button>
@@ -57,7 +57,7 @@ function SuggestionCard({
 					data-testid={`vocab-suggestion-dismiss-${item.id}`}
 					aria-label={`Ẩn gợi ý ${item.title}`}
 					onClick={() => onDismiss(item)}
-					className="neu-sm inline-flex items-center justify-center rounded-md px-3.5 py-2 font-medium text-fg text-xs transition-colors duration-150 hover:border-fg focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
+					className="inline-flex items-center justify-center rounded-md rounded-md border border-input bg-transparent px-3.5 py-2 font-medium text-foreground text-xs transition-colors duration-150 hover:border-primary focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
 				>
 					Ẩn
 				</button>
@@ -96,10 +96,10 @@ export function VocabSuggestionList({
 			className="space-y-4"
 		>
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
-				<h2 className="font-display font-extrabold text-fg text-xl tracking-[-0.02em]">
+				<h2 className="font-extrabold text-foreground text-xl tracking-[-0.02em]">
 					Gợi ý cho bạn
 				</h2>
-				<span className="font-mono text-meta text-xs">
+				<span className="font-mono text-muted-foreground text-xs">
 					Không bắt buộc · Chọn bộ từ bạn muốn ôn thêm
 				</span>
 			</div>
@@ -107,7 +107,7 @@ export function VocabSuggestionList({
 			{errorMsg ? (
 				<p
 					data-testid="vocab-suggestions-error"
-					className="font-mono text-hot text-xs"
+					className="font-mono text-primary text-xs"
 				>
 					{errorMsg}
 				</p>

@@ -33,7 +33,7 @@ function isValidPin(pin: unknown): pin is { x: number; y: number } {
 const VERDICT_PIN_CLASSES: Record<QuizVerdict, string> = {
 	correct: "border-verdict-correct text-verdict-correct",
 	wrong: "border-verdict-wrong text-verdict-wrong line-through",
-	skipped: "border-dashed border-meta text-muted-fg",
+	skipped: "border-dashed border-border text-muted-foreground",
 };
 
 /**
@@ -78,7 +78,7 @@ export function PinOverlay({
 			<img
 				src={imageUrl}
 				alt={imageAlt}
-				className="block max-h-72 w-auto max-w-full rounded-md border border-line"
+				className="block max-h-72 w-auto max-w-full rounded-md border border-border"
 				referrerPolicy="no-referrer"
 				loading="lazy"
 			/>
@@ -94,7 +94,7 @@ export function PinOverlay({
 							top: `${item.pin?.y ?? 0}%`,
 						}}
 					>
-						<span className="flex h-5 w-5 items-center justify-center rounded-full border border-fg bg-bg font-medium font-mono text-[10px]">
+						<span className="flex h-5 w-5 items-center justify-center rounded-full border border-primary bg-background font-medium font-mono text-[10px]">
 							{number}
 						</span>
 						<input
@@ -105,7 +105,7 @@ export function PinOverlay({
 							// disabled:opacity-100 — fieldset review disabled không được
 							// làm mờ màu verdict của ô pin (#351).
 							className={cn(
-								"w-16 rounded-sm border border-line border-b-2 bg-bg/90 px-1 font-mono text-[11px] disabled:opacity-100",
+								"w-16 rounded-sm border border-border border-b-2 bg-background/90 px-1 font-mono text-[11px] disabled:opacity-100",
 								verdict && VERDICT_PIN_CLASSES[verdict],
 							)}
 							value={interactive ? (answers?.[index] ?? "") : undefined}

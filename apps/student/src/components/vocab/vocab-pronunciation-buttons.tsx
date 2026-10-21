@@ -94,7 +94,7 @@ export function VocabPronunciationButtons({
 				aria-pressed={playing === "normal"}
 				aria-label="Nghe phát âm tốc độ bình thường"
 				onClick={() => play("normal")}
-				className="min-h-11 border-line text-fg aria-pressed:border-hot aria-pressed:text-hot"
+				className="min-h-11 border-border text-foreground aria-pressed:border-primary aria-pressed:text-primary"
 			>
 				<Volume2Icon aria-hidden />
 				Nghe
@@ -107,7 +107,7 @@ export function VocabPronunciationButtons({
 				aria-pressed={playing === "slow"}
 				aria-label="Nghe phát âm tốc độ chậm"
 				onClick={() => play("slow")}
-				className="min-h-11 border-line text-fg aria-pressed:border-hot aria-pressed:text-hot"
+				className="min-h-11 border-border text-foreground aria-pressed:border-primary aria-pressed:text-primary"
 			>
 				<SnailIcon aria-hidden />
 				Nghe chậm

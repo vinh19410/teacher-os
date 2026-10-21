@@ -461,7 +461,7 @@ export function NewAssignmentRoute() {
 			{bannerOpen && !saved && (
 				<div
 					role="status"
-					className="neu-in mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2"
+					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md bg-muted px-3 py-2"
 				>
 					<span className="text-xs">
 						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.

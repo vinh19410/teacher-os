@@ -155,20 +155,12 @@ describe("quiz_attempt practice migration 0041", () => {
 		expect(annotations.rows.map((r) => r.id)).toEqual(["ann-1", "ann-2"]);
 	});
 
-	test("CHECK ràng buộc mode: assignment cần assignment_id, practice cần test_id", async () => {
+	test("CHECK ràng buộc mode: assignment cần assignment_id; practice KHÔNG có CHECK test_id", async () => {
 		const client = await seedLegacyData();
 		await applyFile(client, "0041_known_ink.sql");
 		await client.execute(
 			"INSERT INTO assignment_test (id, org_id, title, skill) VALUES ('test-1', 'org-1', 'Reading mini', 'reading')",
 		);
-
-		// practice thiếu test_id → từ chối.
-		await expect(
-			client.execute(
-				`INSERT INTO quiz_attempt (id, org_id, assignment_id, student_id, mode, questions_snapshot)
-					VALUES ('p-1', 'org-1', NULL, 'student-1', 'practice', '[]')`,
-			),
-		).rejects.toThrow();
 
 		// assignment thiếu assignment_id → từ chối.
 		await expect(
@@ -177,6 +169,15 @@ describe("quiz_attempt practice migration 0041", () => {
 					VALUES ('p-2', 'org-1', NULL, 'student-1', 'assignment', '[]')`,
 			),
 		).rejects.toThrow();
+
+		// Practice thiếu test_id: DB CHO PHÉP (không có CHECK — kongming:
+		// CHECK "practice ⇒ test_id" mâu thuẫn FK ON DELETE SET NULL, làm
+		// xoá đề có attempt practice lỗi 500). Ngữ nghĩa do route bảo vệ;
+		// DB chỉ cần nhận row để ON DELETE SET NULL chạy được (test dưới).
+		const practiceRows0 = await client.execute(
+			`SELECT COUNT(*) AS n FROM quiz_attempt WHERE mode='practice' AND test_id IS NULL`,
+		);
+		expect(practiceRows0.rows[0]?.n).toBe(0);
 
 		// Practice đủ test_id → chấp nhận; NHIỀU lượt cùng test (unique coi
 		// NULL khác nhau) → làm lại được.
@@ -190,6 +191,32 @@ describe("quiz_attempt practice migration 0041", () => {
 			"SELECT COUNT(*) AS n FROM quiz_attempt WHERE mode='practice'",
 		);
 		expect(practiceRows.rows[0]?.n).toBe(2);
+	});
+
+	test("xoá đề có attempt practice với FK=ON: SET NULL chạy, không 500 (kongming post-impl)", async () => {
+		const client = await seedLegacyData();
+		await applyFile(client, "0041_known_ink.sql");
+		// FK bật như D1 — libsql/libsql client mặc định OFF, phải bật tường minh.
+		await client.execute("PRAGMA foreign_keys = ON");
+		await client.execute(
+			"INSERT INTO assignment_test (id, org_id, title, skill) VALUES ('test-del', 'org-1', 'Reading xoá được', 'reading')",
+		);
+		await client.execute(
+			`INSERT INTO quiz_attempt (id, org_id, assignment_id, student_id, test_id, mode, status, questions_snapshot)
+				VALUES ('pd-1', 'org-1', NULL, 'student-1', 'test-del', 'practice', 'submitted', '[]')`,
+		);
+
+		// Trước fix: CHECK "practice ⇒ test_id" chặn SET NULL → DELETE lỗi 19.
+		await client.execute("DELETE FROM assignment_test WHERE id = 'test-del'");
+
+		const attempt = await client.execute(
+			"SELECT test_id, mode, status FROM quiz_attempt WHERE id = 'pd-1'",
+		);
+		expect(attempt.rows[0]).toEqual({
+			test_id: null,
+			mode: "practice",
+			status: "submitted",
+		});
 	});
 
 	test("unique (assignment_id, student_id) vẫn chặn trùng lượt giao sau rebuild", async () => {

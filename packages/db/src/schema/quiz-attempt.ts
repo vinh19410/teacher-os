@@ -95,17 +95,14 @@ export const quizAttempt = sqliteTable(
 			table.mode,
 			table.submittedAt,
 		),
-		// Ràng buộc logic phase 10: attempt gắn lượt giao không thể tự luyện
-		// và ngược lại — ép ở mức DB (route + test bảo vệ ngữ nghĩa còn lại:
-		// đề ready, cùng org). Tham chiếu qua `table` (không qua const
-		// `quizAttempt`) để tránh vòng initializer.
+		// Ràng buộc logic phase 10: attempt gắn lượt giao không thể tự luyện —
+		// ép ở mức DB. KHÔNG có CHECK đảo "practice ⇒ test_id": FK test_id là
+		// ON DELETE SET NULL, CHECK sẽ chặn chính phép SET NULL đó → xoá đề có
+		// attempt practice lỗi 500 (kongming post-impl review). Ngữ nghĩa
+		// "practice phải có đề" do route tạo attempt bảo vệ.
 		check(
 			"quiz_attempt_mode_assignment_link",
 			sql`${table.mode} <> 'assignment' or ${table.assignmentId} is not null`,
-		),
-		check(
-			"quiz_attempt_mode_practice_link",
-			sql`${table.mode} <> 'practice' or ${table.testId} is not null`,
 		),
 	],
 );

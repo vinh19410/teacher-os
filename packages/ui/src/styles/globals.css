@@ -15,11 +15,6 @@
  * Base font 14px (html), thang chữ = rem mặc định của Tailwind (không override
  * --text-* bằng px — override cũ làm font-size:14px vô hiệu).
  *
- * Tên token v1 (`--bg`, `--surface`, `--hot`, `--meta`, `neu*`…) được GIỮ như
- * alias trỏ sang token v2 ở `@theme inline` — markup cũ đổi màu theo ngay, từng
- * phase màn hình chuyển sang utility shadcn rồi xóa alias ở phase 12.
- * CHÚ Ý: v1 `--accent` (cam) đã BỎ — vai trò "màu hành động" thuộc `--primary`
- * (mực) theo v2; `text-hot` → primary. shadcn `--accent` là nền hover xám.
  * Trạng thái: chấm emerald (--success) / amber (--warn) theo v2; quá hạn/lỗi
  * = --destructive (đỏ); --verdict-* chỉ cho màn soi bài/chấm quiz (kèm ✓/✗).
  */
@@ -74,35 +69,11 @@
 	--verdict-wrong: #b91c1c;
 	--verdict-on: #ffffff;
 
-	/* Legacy layout/spacing (không thuộc theme màu — dọn ở phase 12). */
-	--space-1: 4px;
-	--space-2: 8px;
-	--space-3: 12px;
-	--space-4: 16px;
-	--space-5: 20px;
-	--space-6: 24px;
-	--space-8: 32px;
-	--space-12: 48px;
-	--section-y-desktop: 100px;
-	--section-y-tablet: 64px;
-	--section-y-phone: 40px;
+	/* Motion tokens (còn dùng). */
 	--leading-body: 1.47;
-	--leading-tight: 0.95;
-	--tracking-display: -0.045em;
 	--motion-fast: 150ms;
 	--motion-base: 220ms;
 	--ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
-	--container-max: 1024px;
-	--container-gutter-desktop: 22px;
-	--container-gutter-tablet: 18px;
-	--container-gutter-phone: 16px;
-	--gap-xs: var(--space-2);
-	--gap-sm: var(--space-3);
-	--gap-md: var(--space-5);
-	--gap-lg: var(--space-8);
-	--gap-xl: var(--space-12);
-	--gap-2xl: 96px;
-	--sidebar-w: 16rem;
 	--radius-pill: 980px;
 
 	/* Focus ring v2: ring xám đậm, thấy rõ trên cả 2 theme. */
@@ -123,8 +94,6 @@
 		var(--verdict-wrong),
 		transparent 90%
 	);
-	--elev-flat: none;
-	--elev-ring: 0 0 0 1px var(--border);
 	--elev-raised:
 		0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
 }
@@ -175,7 +144,6 @@
 	/* fonts — Geist Variable (fontsource tự khai báo family 'Geist Variable') */
 	--font-sans:
 		"Geist Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
-	--font-display: var(--font-sans);
 	--font-body: var(--font-sans);
 	--font-mono: "Geist Mono Variable", ui-monospace, "JetBrains Mono", monospace;
 
@@ -214,29 +182,11 @@
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
 
-	/* v1 alias — xóa ở phase 12 (markup cũ đổi theo token v2, không vỡ). */
-	--color-bg: var(--background);
-	--color-surface: var(--muted);
-	--color-surface-warm: var(--card);
-	--color-fg: var(--foreground);
-	--color-fg-2: var(--foreground);
-	--color-muted-fg: var(--muted-foreground);
-	--color-meta: var(--muted-foreground);
-	--color-line: var(--border);
-	--color-line-soft: var(--border);
-	--color-line-strong: var(--input);
-	--color-chip: var(--secondary);
-	--color-hot: var(--primary);
-	--color-accent-on: var(--primary-foreground);
-	--color-accent-hover: var(--accent);
-	--color-accent-active: color-mix(in oklab, var(--primary), transparent 25%);
 	--color-success: var(--success);
 	--color-warn: var(--warn);
 	--color-danger: var(--danger);
 	--color-destructive: var(--destructive);
-	--color-accent-soft: var(--accent);
-	--color-fg-soft: color-mix(in oklab, var(--foreground), transparent 94%);
-	--color-success-soft: var(--success-soft);
+	--color-destructive-soft: var(--destructive-soft);
 	--color-warn-soft: var(--warn-soft);
 	--color-danger-soft: var(--danger-soft);
 	--color-destructive-soft: var(--destructive-soft);
@@ -252,9 +202,6 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
-	--radius-2xl: 980px;
-	--radius-3xl: 980px;
-	--radius-4xl: 980px;
 
 	/*
 	 * 920px mobile boundary: export uses max-width:920px (920 inclusive = mobile).
@@ -308,34 +255,6 @@
 	}
 }
 
-/* v1 alias — xóa ở phase 12. Giá trị theo v2:
-   .neu   = card v2 (rounded-xl border shadow-sm)
-   .neu-sm = control outline v2 (hover nền accent xám)
-   .neu-in = nền chìm v2 (muted) */
-@utility neu {
-	background: var(--card);
-	border: 1px solid var(--border);
-	border-radius: calc(var(--radius) + 4px);
-	box-shadow:
-		0 1px 3px 0 rgb(0 0 0 / 0.05),
-		0 1px 2px -1px rgb(0 0 0 / 0.05);
-}
-@utility neu-sm {
-	background: transparent;
-	border: 1px solid var(--input);
-	transition:
-		background var(--motion-fast),
-		color var(--motion-fast),
-		border-color var(--motion-fast);
-	&:hover {
-		background: var(--accent);
-		color: var(--accent-foreground);
-	}
-}
-@utility neu-in {
-	background: var(--muted);
-	border: 0;
-}
 @utility no-scrollbar {
 	&::-webkit-scrollbar {
 		width: 0;

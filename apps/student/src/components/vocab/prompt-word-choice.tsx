@@ -18,13 +18,13 @@ export function PromptWordChoice({
 }) {
 	return (
 		<div data-testid="vocab-prompt-wordChoice" className="space-y-6">
-			<div className="neu rounded-md p-6 text-center">
-				<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+			<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+				<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 					Chọn từ tiếng Anh tương ứng
 				</p>
 				<p
 					data-testid="vocab-prompt-question"
-					className="mt-3 font-display font-extrabold text-2xl text-fg tracking-[-0.02em]"
+					className="mt-3 font-extrabold text-2xl text-foreground tracking-[-0.02em]"
 				>
 					{translation}
 				</p>
@@ -46,8 +46,8 @@ export function PromptWordChoice({
 							onClick={() => onSelectOption(opt)}
 							className={`rounded-md px-4 py-3.5 text-left font-medium text-sm transition-colors duration-150 ${
 								isSelected
-									? "neu-in text-hot"
-									: "neu-sm text-fg hover:border-fg"
+									? "rounded-md bg-muted text-primary"
+									: "rounded-md border border-input bg-transparent text-foreground hover:border-primary"
 							} disabled:pointer-events-none disabled:opacity-60`}
 						>
 							{opt}

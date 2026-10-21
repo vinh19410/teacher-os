@@ -23,7 +23,7 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   — không inline script); chỉ thêm class khi storage ghi `"dark"`. `useTheme()` trong
   `@teacher-os/ui/hooks/use-theme` là nguồn duy nhất; light = không có class nào.
 
-## Tokens (design v2 — shadcn neutral oklch; alias tên v1 xóa ở phase 12)
+## Tokens (design v2 — shadcn neutral oklch)
 
 - **Nền tảng (light):** `--background` trắng, `--foreground` mực `oklch(0.145 0 0)`,
   `--card` trắng + `rounded-xl border shadow-sm`, `--muted`/`--secondary`/`--accent`
@@ -49,56 +49,61 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   (không override px như v1). Tiêu đề trang: `text-2xl md:text-3xl font-semibold tracking-tight`;
   số liệu `tabular-nums`. Input `text-base md:text-sm` (16px mobile — tránh iOS zoom khi focus).
 - **Radius:** `--radius: 0.625rem`; sm/md/lg/xl derive từ đó (xl = card); `rounded-full` cho
-  pill/chip/avatar. Lưu ý: `rounded-2xl+` vẫn là 980px pill cho markup legacy — dùng
-  `rounded-full` trong code mới; dọn ở phase 12.
+  pill/chip/avatar (`--radius-pill` chỉ còn cho vài chip/tag legacy).
 - **Focus ring:** `--focus-ring` = `0 0 0 2px var(--background), 0 0 0 4px var(--ring)`; input
   v2 dùng `focus-visible:ring-[3px] ring-ring/50`.
 - **Motion:** 150ms state change, ease `cubic-bezier(0.28,0,0.22,1)`; chỉ animate
   color/border/transform; không entrance choreography.
 
-## Utilities nền (alias v1 — giá trị v2; xóa ở phase 12)
+## Utilities nền
 
-- `.neu` — card v2: nền `--card`, viền `--border`, radius `--radius+4px`, shadow-sm.
-- `.neu-sm` — control outline v2: trong suốt, viền `--input`, hover nền `--accent` xám.
-- `.neu-in` — nền chìm v2: `--muted`. Input dùng `inputCls` v2 (border + ring focus).
+- Card = `rounded-xl border bg-card shadow-sm`; control outline = `rounded-md border border-input
+  bg-transparent` (hover nền `--accent` xám); nền chìm = `rounded-md bg-muted`. Input dùng
+  `inputCls` v2 (border + ring focus).
 - `mark.anno` — highlight bài viết chấm: nền `--chart-1` 18% + gạch sóng `--chart-1`.
 - `::selection` — nền `--primary`, chữ `--primary-foreground`. `input[type=range]` — accent
   `--primary`.
 
 ## Quy tắc component
 
-- **Selection = nền chìm + chữ cam:** tab/chip đang chọn `neu-in text-hot` (trong segmented:
-  `neu-sm text-hot` trên container `neu-in`); nav item active có dấu ■ cam `aria-hidden` trước
-  nhãn. Khác thiết kế cũ ("selection = đen đặc") — quy tắc cũ đã BỎ.
-- **Nút chính = mực:** `Button primary` = `bg-fg text-bg`, hover chuyển `bg-hot text-accent-on`.
-  `secondary` = `neu-sm`. `danger` = viền + chữ `--destructive` (đỏ, chỉ phá hủy).
-- **PageHead:** `kicker` (mono cam, thông tin số lượng/ngữ cảnh ngắn) + tiêu đề extrabold lớn +
-  `action` (nút chính, căn đáy phải). Câu giải thích dài mới dùng `lead`.
-- **Card:** `Card` mặc định = `neu` (nền nổi + viền); `variant="white"` = nền trang + viền
-  (phân tầng thấp hơn). `StatCard` có `sub?` và `hot?` (hot = nền ink, số cam — số cần chú ý).
-- **Badge/Tag:** mono 10px uppercase tracking-widest. success = `bg-chip`, accent = viền ink,
-  warn = **viền đứt** meta, danger = **cam đặc** `bg-hot`, muted = `neu-in`. Tag có `hot?`
-  (thi cuối kỳ, đã mời).
-- **Chip lọc (`ChipFilter`/`ChipMulti`):** `neu-sm rounded-md`, chọn = nền chìm + chữ cam;
-  badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ là label); chip 0 kết quả
-  vẫn full contrast, vẫn bấm được; nhóm chip liên quan phải có `role="group"` + `aria-label`.
-- **Bộ lọc hai cấp (skill → part):** khi "Tất cả", nhóm part theo skill với nhãn mono uppercase;
+- **Selection = nền chìm:** tab/chip đang chọn `bg-muted text-foreground` (trong segmented:
+  item chọn `bg-background shadow-sm` trên container `bg-muted rounded-md`); nav item active
+  dùng nền `bg-sidebar-accent` của shell `sidebar-07`.
+- **Nút chính = mực:** `Button primary` = `bg-primary text-primary-foreground` (mực), hover
+    đậm nhạt theo token. `secondary` = `bg-secondary`/outline. `danger` = `bg-destructive`
+    (đỏ, chỉ phá hủy).
+- **PageHead v2:** tiêu đề `text-2xl md:text-3xl font-semibold tracking-tight`; dòng phụ
+  `text-muted-foreground` (`kicker` map vào đây, không còn mono cam uppercase). `action` căn
+  đáy phải; giải thích dài dùng `lead`.
+- **Card:** `Card` mặc định = `rounded-xl border bg-card shadow-sm`. `StatCard` có `sub?`;
+  số liệu `tabular-nums`.
+- **Badge/TuitionBadge v2:** Badge theo variant shadcn (`default`/`secondary`/`outline`/
+  `destructive`) với chấm màu `bg-current`; trạng thái học phí tô bằng `--success`/`--warn`/
+  `--destructive` qua `tuitionDot`, chữ muted. Hết mono 10px uppercase.
+- **Chip lọc (`ChipFilter`/`ChipMulti`):** `rounded-md border border-input bg-transparent`,
+  chọn = `bg-muted`; badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
+  là label); chip 0 kết quả vẫn full contrast, vẫn bấm được; nhóm chip liên quan phải có
+  `role="group"` + `aria-label`.
+- **Bộ lọc hai cấp (skill → part):** khi "Tất cả", nhóm part theo skill với nhãn muted;
   khi chọn 1 skill chỉ hiện part của skill đó. Filter sống trong URL.
-- **DataTable:** bọc trong `neu rounded-md`; header mono 11px uppercase `tracking-[0.15em]
-  text-meta`; hàng `border-t border-line`; hàng clickable hover **chữ cam** (không tô nền).
-- **Modal:** overlay `bg-black/60 backdrop-blur-sm` (lệch có chủ đích so design `bg-hot/80` —
-  quá gắt), panel `neu rounded-md`, tiêu đề extrabold, nút đóng ✕ mono hover cam.
+- **DataTable v2:** bọc trong `rounded-md border bg-card`; header `text-muted-foreground`
+  font-medium; hàng `border-t border-border`; hàng clickable hover nền `bg-muted` (không đổi
+  màu chữ).
+- **Modal:** overlay `bg-black/50`, panel `rounded-lg border bg-card`, tiêu đề semibold,
+  nút đóng ✕ muted hover `bg-accent`.
+- **Shell:** layout dùng chung `sidebar-07` (shadcn) — sidebar `--sidebar` dark inset, content
+  tràn sáng; search toàn cục ⌘K (Command palette, `cmdk`) mở từ header.
 - **Minh họa:** 3 SVG nét vẽ trong `@teacher-os/ui/components/illustrations` (TeacherDesk —
   login giáo viên, MorningSpot — dashboard, StudentSpot — student) stroke/fill qua token,
   `decorative` → `aria-hidden`.
 - **QR:** luôn đặt trên nền trắng (máy quét cần tương phản) — điểm trắng duy nhất được phép.
-- **Bài viết đọc hiểu:** passage weight thường `leading-[1.85]`, KHÔNG dùng weight 800 của
-  `.font-serif` design (khó đọc đoạn dài) — lệch có chủ đích.
-- **Quiz runtime "Đã lưu"/"Lỗi":** cùng màu cam như mọi trạng thái — phân biệt bằng chữ;
-  đây là hệ quả có chủ đích của ngôn ngữ đơn sắc + cam (không có màu thứ hai cho trạng thái).
+- **Bài viết đọc hiểu:** passage weight thường `leading-[1.85]`, KHÔNG dùng weight 800 (khó
+  đọc đoạn dài) — lệch có chủ đích.
+- **Trạng thái:** chấm emerald (`--success`) / amber (`--warn`); quá hạn/lỗi = `--destructive`
+  (đỏ) — phân biệt bằng chấm + chữ, không thêm màu thứ tư.
 - **Soi bài (review quiz):** khối câu có viền trái 3px + nền soft theo verdict
-  (`--verdict-*`); skipped = viền đứt `--meta`, không thêm màu; đáp án đã chọn KHÔNG dùng
-  `text-hot` ở review — tô theo verdict, hàng đáp án đúng có viền xanh + nhãn "Đáp án đúng";
+  (`--verdict-*`); skipped = viền đứt `--border`, không thêm màu; đáp án đã chọn KHÔNG dùng
+  `text-primary` ở review — tô theo verdict, hàng đáp án đúng có viền xanh + nhãn "Đáp án đúng";
   chip verdict kèm icon ✓/✗ đặt cạnh số câu. Take mode không có class verdict nào.
 
 ## Voice
@@ -109,10 +114,11 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 
 ## Don't
 
-- Không thêm màu thứ hai cho trạng thái: đơn sắc + cam; đỏ chỉ `--destructive` cho hành động phá
-  hủy — **trừ cặp verdict của màn soi bài** (`--verdict-correct`/`--verdict-wrong`, xem Tokens);
-  đỏ verdict không thay cho `--destructive`.
-- Không dùng accent làm nền chip selection (nền cam chỉ cho badge quá hạn/kind thi/CTA hover).
+- Không thêm màu thứ hai cho trạng thái: emerald/amber cho trạng thái thường, đỏ chỉ
+  `--destructive` cho hành động phá hủy/quá hạn — **trừ cặp verdict của màn soi bài**
+  (`--verdict-correct`/`--verdict-wrong`, xem Tokens); đỏ verdict không thay cho
+  `--destructive`.
+- Không dùng `--accent` (xám hover) làm nền chip selection — selection là `bg-muted`.
 - Không hard-code hex — trừ nền trắng QR và SVG logo (whitelist phase-07 sweep).
 - Không render bức tường chip phẳng trộn nhiều taxonomy — luôn nhóm có nhãn.
 - Không điều hướng URL trên mỗi phím gõ (debounce ~300ms rồi mới đẩy query lên URL).

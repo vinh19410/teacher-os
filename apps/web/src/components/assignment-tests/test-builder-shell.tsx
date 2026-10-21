@@ -595,7 +595,7 @@ export function TestBuilderShell({
 				{bannerOpen && (
 					<div
 						role="status"
-						className="neu-in flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2"
+						className="flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md bg-muted px-3 py-2"
 					>
 						<span className="text-xs">
 							Đã phục hồi bản nháp bộ đề — kiểm tra rồi tiếp tục, hoặc Hủy để

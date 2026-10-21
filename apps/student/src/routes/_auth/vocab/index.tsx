@@ -71,8 +71,8 @@ function VocabOverviewPage() {
 	if (!data) {
 		return (
 			<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
-				<div className="neu rounded-md p-6 text-center">
-					<p className="text-meta text-sm">
+				<div className="rounded-md rounded-xl border bg-card p-6 text-center shadow-sm">
+					<p className="text-muted-foreground text-sm">
 						Không tải được dữ liệu từ vựng. Vui lòng thử lại.
 					</p>
 				</div>
@@ -88,16 +88,16 @@ function VocabOverviewPage() {
 			<div data-testid="vocab-overview-page" className="space-y-8">
 				<div className="flex flex-wrap items-end justify-between gap-4">
 					<div>
-						<p className="font-mono text-[11px] text-hot uppercase tracking-[0.2em]">
+						<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
 							Spaced Repetition · 5 Memory Levels
 						</p>
-						<h1 className="mt-2 font-display font-extrabold text-3xl text-fg leading-[0.95] tracking-[-0.045em]">
+						<h1 className="mt-2 font-extrabold text-3xl text-foreground leading-[0.95] tracking-[-0.045em]">
 							Từ vựng của tôi
 						</h1>
 					</div>
 					<Link
 						to="/"
-						className="neu-sm rounded-md px-3 py-1.5 font-mono text-fg text-xs hover:border-fg"
+						className="rounded-md rounded-md border border-input bg-transparent px-3 py-1.5 font-mono text-foreground text-xs hover:border-primary"
 					>
 						← Trang chủ
 					</Link>
@@ -114,60 +114,60 @@ function VocabOverviewPage() {
 
 				{/* Stats row */}
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+					<div className="rounded-md rounded-xl border bg-card p-4 shadow-sm">
+						<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 							Từ mới
 						</p>
 						<p
 							data-testid="vocab-overview-new-count"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
+							className="mt-1 font-extrabold text-2xl text-foreground"
 						>
 							{totalNewCount}
 						</p>
 					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+					<div className="rounded-md rounded-xl border bg-card p-4 shadow-sm">
+						<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 							Đến hạn ôn
 						</p>
 						<p
 							data-testid="vocab-overview-due-count"
-							className="mt-1 font-display font-extrabold text-2xl text-hot"
+							className="mt-1 font-extrabold text-2xl text-primary"
 						>
 							{data.dueCount}
 						</p>
 					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+					<div className="rounded-md rounded-xl border bg-card p-4 shadow-sm">
+						<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 							Chuỗi ngày (Streak)
 						</p>
 						<p
 							data-testid="vocab-overview-streak"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
+							className="mt-1 font-extrabold text-2xl text-foreground"
 						>
 							{data.streak} ngày
 						</p>
 					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+					<div className="rounded-md rounded-xl border bg-card p-4 shadow-sm">
+						<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 							Đã thuộc (L2+)
 						</p>
 						<p
 							data-testid="vocab-overview-learned"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
+							className="mt-1 font-extrabold text-2xl text-foreground"
 						>
 							{data.learnedCount}
 						</p>
 					</div>
-					<div className="neu rounded-md p-4">
-						<p className="font-mono text-[10px] text-meta uppercase tracking-widest">
+					<div className="rounded-md rounded-xl border bg-card p-4 shadow-sm">
+						<p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
 							Thành thạo (L5) · Nhớ
 						</p>
 						<p
 							data-testid="vocab-overview-mature"
-							className="mt-1 font-display font-extrabold text-2xl text-fg"
+							className="mt-1 font-extrabold text-2xl text-foreground"
 						>
 							{data.matureCount}
-							<span className="ml-2 font-mono font-normal text-meta text-xs">
+							<span className="ml-2 font-mono font-normal text-muted-foreground text-xs">
 								({data.retention !== null ? `${data.retention}%` : "—"})
 							</span>
 						</p>
@@ -184,20 +184,20 @@ function VocabOverviewPage() {
 				) : null}
 
 				{/* Level distribution */}
-				<section className="neu space-y-3 rounded-md p-5">
-					<h2 className="font-mono text-[11px] text-meta uppercase tracking-[0.15em]">
+				<section className="space-y-3 rounded-md rounded-xl border bg-card p-5 shadow-sm">
+					<h2 className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
 						Phân bổ 5 cấp độ trí nhớ
 					</h2>
 					<div className="grid grid-cols-5 gap-2">
 						{data.levelDistribution.map((count, idx) => (
 							<div
 								key={`level-${idx + 1}`}
-								className="neu-in rounded-md p-3 text-center"
+								className="rounded-md rounded-md bg-muted p-3 text-center"
 							>
-								<p className="font-mono text-[10px] text-meta uppercase">
+								<p className="font-mono text-[10px] text-muted-foreground uppercase">
 									L{idx + 1}
 								</p>
-								<p className="mt-1 font-mono font-semibold text-base text-fg">
+								<p className="mt-1 font-mono font-semibold text-base text-foreground">
 									{count}
 								</p>
 							</div>
@@ -207,16 +207,18 @@ function VocabOverviewPage() {
 
 				{/* Deck list */}
 				<section className="space-y-4">
-					<h2 className="font-display font-extrabold text-fg text-xl tracking-[-0.02em]">
+					<h2 className="font-extrabold text-foreground text-xl tracking-[-0.02em]">
 						Bộ từ đang học
 					</h2>
 					{data.decks.length === 0 ? (
 						<div
 							data-testid="vocab-decks-empty"
-							className="neu rounded-md p-8 text-center"
+							className="rounded-md rounded-xl border bg-card p-8 text-center shadow-sm"
 						>
-							<p className="font-semibold text-fg">Chưa có bộ từ đang học</p>
-							<p className="mt-1 text-meta text-sm">
+							<p className="font-semibold text-foreground">
+								Chưa có bộ từ đang học
+							</p>
+							<p className="mt-1 text-muted-foreground text-sm">
 								Mở mục Khóa học từ vựng bên dưới để bắt đầu học ngay, hoặc đợi
 								giáo viên giao bộ từ cho lớp của bạn.
 							</p>
@@ -229,13 +231,13 @@ function VocabOverviewPage() {
 									to="/vocab/$deckId"
 									params={{ deckId: deck.deckId }}
 									data-testid={`vocab-deck-card-${deck.deckId}`}
-									className="neu group flex flex-col justify-between gap-4 rounded-md p-5 transition-colors duration-150 hover:border-fg"
+									className="group flex flex-col justify-between gap-4 rounded-md rounded-xl border bg-card p-5 shadow-sm transition-colors duration-150 hover:border-primary"
 								>
 									<div>
 										<div className="flex flex-wrap items-center gap-2">
 											<span
 												data-testid={`vocab-deck-source-${deck.deckId}`}
-												className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-meta uppercase tracking-widest"
+												className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-widest"
 											>
 												{deck.source === "suggested"
 													? "Gợi ý"
@@ -248,7 +250,7 @@ function VocabOverviewPage() {
 															: "Lớp học"}
 											</span>
 										</div>
-										<h3 className="mt-1.5 font-display font-extrabold text-fg text-lg group-hover:text-hot">
+										<h3 className="mt-1.5 font-extrabold text-foreground text-lg group-hover:text-primary">
 											{deck.title}
 										</h3>
 									</div>
@@ -256,13 +258,13 @@ function VocabOverviewPage() {
 										aria-hidden="true"
 										className="flex flex-wrap items-center gap-2 font-mono text-xs"
 									>
-										<span className="neu-in rounded-full px-2.5 py-0.5 text-meta">
+										<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-muted-foreground">
 											{deck.total} từ
 										</span>
 										{deck.newCount > 0 ? (
 											<span
 												data-testid={`vocab-deck-new-${deck.deckId}`}
-												className="neu-in rounded-full px-2.5 py-0.5 text-hot"
+												className="rounded-full rounded-md bg-muted px-2.5 py-0.5 text-primary"
 											>
 												{deck.newCount} từ mới
 											</span>
@@ -270,7 +272,7 @@ function VocabOverviewPage() {
 										{deck.dueCount > 0 ? (
 											<span
 												data-testid={`vocab-deck-due-${deck.deckId}`}
-												className="rounded-full bg-hot px-2.5 py-0.5 text-accent-on"
+												className="rounded-full bg-primary px-2.5 py-0.5 text-primary-foreground"
 											>
 												{deck.dueCount} đến hạn
 											</span>

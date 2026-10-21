@@ -1,7 +1,7 @@
 ---
 phase: 12
 title: "Sweep, DESIGN.md, e2e, DoD ảnh đối chiếu toàn bộ"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: [5, 6, 7, 8, 11]

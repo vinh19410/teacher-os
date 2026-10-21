@@ -73,7 +73,7 @@ export default function VerifyEmailView({
 					<MailCheck className="size-7 text-primary" />
 				</div>
 				<h2 className="font-semibold text-xl tracking-tight">Email verified</h2>
-				<p className="mt-2 text-muted-fg text-sm">
+				<p className="mt-2 text-muted-foreground text-sm">
 					Your email address has been confirmed. You're all set.
 				</p>
 				<div className="mt-6 flex justify-center">
@@ -96,7 +96,7 @@ export default function VerifyEmailView({
 			<h2 className="font-semibold text-xl tracking-tight">
 				This link didn't work
 			</h2>
-			<p className="mt-2 text-muted-fg text-sm">
+			<p className="mt-2 text-muted-foreground text-sm">
 				The verification link is invalid, already used, or has expired. Request
 				a new one, or sign in and continue.
 			</p>

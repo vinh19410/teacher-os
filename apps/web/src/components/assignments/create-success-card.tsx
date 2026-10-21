@@ -36,15 +36,15 @@ export function CreateSuccessCard({
 	const auto = skill === "reading" || skill === "listening";
 	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
-		// neu-in có border:0 nên card viền trái dùng nền sunk trực tiếp
-		// (bg-muted) thay vì qua utility neu-in.
+		// rounded-md bg-muted có border:0 nên card viền trái dùng nền sunk trực tiếp
+		// (bg-muted) thay vì qua utility rounded-md bg-muted.
 		<div
 			className="flex max-w-2xl flex-col gap-4 rounded-md border-primary border-l-4 bg-muted p-8"
 			aria-live="polite"
 		>
 			<div
 				aria-hidden="true"
-				className="neu-in grid h-11 w-11 place-items-center rounded-full text-foreground"
+				className="grid h-11 w-11 place-items-center rounded-full rounded-md bg-muted text-foreground"
 			>
 				✓
 			</div>

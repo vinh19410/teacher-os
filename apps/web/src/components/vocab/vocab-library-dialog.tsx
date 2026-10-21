@@ -496,7 +496,7 @@ export function VocabLibraryDialog({
 										key={deck.id}
 										data-testid={`vocab-library-deck-${deck.id}`}
 										className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
-											checked ? "neu-in" : "hover:bg-muted/50"
+											checked ? "rounded-md bg-muted" : "hover:bg-muted/50"
 										}`}
 									>
 										<div className="flex min-w-0 flex-1 items-center gap-3">
@@ -519,7 +519,7 @@ export function VocabLibraryDialog({
 													{alreadyInClass ? (
 														<span
 															data-testid={`vocab-library-existing-chip-${deck.id}`}
-															className="neu-in rounded px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
+															className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
 														>
 															{isHubMode
 																? "Đã có trong hub"

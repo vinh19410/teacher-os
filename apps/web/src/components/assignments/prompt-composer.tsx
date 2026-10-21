@@ -73,10 +73,10 @@ export function PromptComposer({
 				// Slot đã khóa skill/part — hiển thị chip tĩnh từ value, không
 				// ChipFilter (đổi skill/part giữa chừng làm lệch preset test).
 				<div className="flex flex-wrap gap-2">
-					<span className="neu-in rounded-md px-[14px] py-[6px] font-medium text-primary text-xs">
+					<span className="rounded-md rounded-md bg-muted px-[14px] py-[6px] font-medium text-primary text-xs">
 						{skill.name}
 					</span>
-					<span className="neu-sm rounded-md px-[14px] py-[6px] font-medium text-xs">
+					<span className="rounded-md rounded-md border border-input bg-transparent px-[14px] py-[6px] font-medium text-xs">
 						{part.label}
 					</span>
 				</div>
@@ -193,10 +193,10 @@ export function PromptComposer({
 				</span>
 			)}
 			{value.skill === "listening" && (
-				<div className="neu-in rounded-md p-3">
+				<div className="rounded-md rounded-md bg-muted p-3">
 					<p className="font-medium text-muted-foreground text-xs">File nghe</p>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
-						<label className="neu-sm inline-flex cursor-pointer rounded-md px-3 py-2 font-medium text-xs transition-colors hover:text-primary">
+						<label className="inline-flex cursor-pointer rounded-md rounded-md border border-input bg-transparent px-3 py-2 font-medium text-xs transition-colors hover:text-primary">
 							<input
 								type="file"
 								className="sr-only"

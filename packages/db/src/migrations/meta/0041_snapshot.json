@@ -2615,10 +2615,6 @@
         "quiz_attempt_mode_assignment_link": {
           "name": "quiz_attempt_mode_assignment_link",
           "value": "\"quiz_attempt\".\"mode\" <> 'assignment' or \"quiz_attempt\".\"assignment_id\" is not null"
-        },
-        "quiz_attempt_mode_practice_link": {
-          "name": "quiz_attempt_mode_practice_link",
-          "value": "\"quiz_attempt\".\"mode\" <> 'practice' or \"quiz_attempt\".\"test_id\" is not null"
         }
       }
     },

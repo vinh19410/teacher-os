@@ -19,14 +19,20 @@ export function StatCard({
 	className?: string;
 }) {
 	return (
-		<div className={cn("rounded-lg p-4", hot ? "bg-fg" : "neu", className)}>
-			<div className="font-mono text-[10px] text-meta uppercase tracking-[0.18em]">
+		<div
+			className={cn(
+				"rounded-lg p-4",
+				hot ? "bg-primary" : "rounded-xl border bg-card shadow-sm",
+				className,
+			)}
+		>
+			<div className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
 				{label}
 			</div>
 			<div
 				className={cn(
-					"mt-2 font-display font-extrabold text-2xl leading-none tracking-[-0.02em]",
-					hot ? "text-hot" : "text-fg",
+					"mt-2 font-extrabold text-2xl leading-none tracking-[-0.02em]",
+					hot ? "text-primary" : "text-foreground",
 				)}
 			>
 				{value}
@@ -35,7 +41,7 @@ export function StatCard({
 				<div
 					className={cn(
 						"mt-1.5 text-[12px]",
-						hot ? "text-accent-on/80" : "text-meta",
+						hot ? "text-primary-foreground/80" : "text-muted-foreground",
 					)}
 				>
 					{sub}

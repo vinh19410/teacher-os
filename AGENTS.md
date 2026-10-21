@@ -13,13 +13,15 @@
 
 ## Quy ước UI
 
-- Đọc `DESIGN.md` trước khi sửa/Thêm UI: token màu/type/motion và quy tắc chip/card lấy từ đó,
-  không hard-code giá trị lệch scale của `packages/ui/src/styles/globals.css`.
+- Đọc `DESIGN.md` trước khi sửa/thêm UI: token màu/type/motion lấy từ
+  `packages/ui/src/styles/globals.css` (design v2 — shadcn neutral oklch, light mặc định,
+  Geist), không hard-code giá trị lệch scale. Component shadcn trong
+  `apps/web/src/components/ui/*`; shell dùng chung `sidebar-07`, search ⌘K.
 - Trang list có bộ lọc: filter sống trong URL (search param), ô search debounce ~300ms mới đẩy
-  lên URL; taxonomy hai cấp nhóm chip theo nhãn; badge đếm `aria-hidden`. Xem `apps/web/src/components/ui/chip-filter.tsx`
-  và `/assignments` làm mẫu.
+  lên URL; taxonomy hai cấp nhóm chip theo nhãn; badge đếm `aria-hidden`. Xem
+  `apps/web/src/components/ui/chip-filter.tsx` và `/assignments` làm mẫu.
 - Verify UI ở 3 viewport (1440×900, 768×1024, 375×812) + keyboard focus theo `REVIEW.md`; PR
-  đụng hình ảnh kèm screenshot.
+  đụng hình ảnh kèm screenshot và chạy `pnpm design:compare`.
 
 ## GitHub Issues
 

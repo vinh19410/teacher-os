@@ -46,7 +46,7 @@ const PICKER_SKILL_OPTIONS = [
 // Nút "Chấm bài" trông như Button primary size sm — `Button` không export
 // class variant nên chép tĩnh (Link, không phải button thật).
 const GRADE_LINK_BUTTON_CLASS =
-	"inline-flex items-center whitespace-nowrap rounded-full bg-primary px-[14px] py-[6px] font-medium text-primary-foreground text-xs hover:bg-accent-hover focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+	"inline-flex items-center whitespace-nowrap rounded-full bg-primary px-[14px] py-[6px] font-medium text-primary-foreground text-xs hover:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
 
 /** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
  * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
@@ -444,8 +444,8 @@ export function ClassAssignmentsTab({
 											className={cn(
 												"flex flex-col gap-1.5 rounded-xl border p-3.5 text-left transition-all duration-150",
 												isSelected
-													? "border-fg bg-muted shadow-xs ring-1 ring-fg"
-													: "border-border bg-background hover:border-fg/60 hover:bg-muted/50",
+													? "border-primary bg-muted shadow-xs ring-1 ring-fg"
+													: "border-border bg-background hover:border-primary/60 hover:bg-muted/50",
 											)}
 										>
 											<div className="flex items-start justify-between gap-2">
@@ -511,7 +511,7 @@ export function ClassAssignmentsTab({
 									min={todayVN}
 									value={due}
 									onChange={(e) => setDue(e.target.value)}
-									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm focus:border-fg focus:outline-none"
+									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm focus:border-primary focus:outline-none"
 								/>
 								{hasAttemptedSubmit && !dueOk && (
 									<p className="font-medium text-danger text-xs">
@@ -534,7 +534,7 @@ export function ClassAssignmentsTab({
 									value={note}
 									onChange={(e) => setNote(e.target.value)}
 									placeholder="Ví dụ: nộp trước buổi T5, lập dàn ý 4 đoạn."
-									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-fg focus:outline-none"
+									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
 								/>
 							</div>
 

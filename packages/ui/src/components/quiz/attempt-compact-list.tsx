@@ -19,7 +19,7 @@ export function AttemptCompactList({
 		<ul
 			data-testid="attempt-compact-list"
 			aria-label="Bảng đáp án theo câu"
-			className="neu overflow-hidden rounded-md"
+			className="overflow-hidden rounded-md rounded-xl border bg-card shadow-sm"
 		>
 			{items.map((item, index) => (
 				<li

@@ -44,7 +44,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	return (
 		<aside
 			aria-label="Xem trước đề"
-			className="neu rounded-lg p-5 lg:sticky lg:top-[76px]"
+			className="rounded-lg rounded-xl border bg-card p-5 shadow-sm lg:sticky lg:top-[76px]"
 		>
 			<p className="text-muted-foreground text-xs">Xem trước phía học viên</p>
 			<p className="mt-1 font-semibold text-[17px] text-foreground">
@@ -55,7 +55,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 			</p>
 
 			{skillId === "listening" && (
-				<p className="neu-in mt-3 rounded-md p-3 text-sm">
+				<p className="mt-3 rounded-md rounded-md bg-muted p-3 text-sm">
 					🔊 {prompt.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
@@ -184,7 +184,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				</p>
 			)}
 
-			<div className="neu-in mt-4 rounded-md px-3 py-2.5 text-muted-foreground text-xs leading-relaxed">
+			<div className="mt-4 rounded-md rounded-md bg-muted px-3 py-2.5 text-muted-foreground text-xs leading-relaxed">
 				Đề này chưa giao lớp. Giao cho học viên ở trang{" "}
 				<Link
 					to="/classes"

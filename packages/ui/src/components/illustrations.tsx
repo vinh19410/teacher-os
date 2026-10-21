@@ -70,7 +70,7 @@ export function TeacherDesk({ className, decorative }: IllustrationProps) {
 			<text
 				x="196"
 				y="232"
-				fontFamily="var(--font-display)"
+				fontFamily="var(--)"
 				fontWeight="800"
 				fontSize="16"
 				fill="var(--muted)"

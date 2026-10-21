@@ -43,13 +43,13 @@ const RISK_LABEL: Record<DashboardRiskReason, string> = {
  */
 function ScheduleRow(props: { time: string; className: string; meta: string }) {
 	return (
-		<div className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-line border-t py-4">
+		<div className="grid grid-cols-[auto_1fr] items-baseline gap-4 border-border border-t py-4">
 			<span className="min-w-[5ch] whitespace-nowrap text-lg tabular-nums tabular-nums leading-none">
 				{props.time}
 			</span>
 			<span className="min-w-0">
 				<span className="block break-words font-medium">{props.className}</span>
-				<span className="text-meta text-sm">{props.meta}</span>
+				<span className="text-muted-foreground text-sm">{props.meta}</span>
 			</span>
 		</div>
 	);

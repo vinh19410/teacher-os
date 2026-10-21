@@ -157,8 +157,8 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	);
 
 	return (
-		<div className="flex min-h-svh flex-col bg-surface/30">
-			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-line border-b bg-bg/95 px-4 backdrop-blur">
+		<div className="flex min-h-svh flex-col bg-muted/30">
+			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-border border-b bg-background/95 px-4 backdrop-blur">
 				<div className="flex min-w-0 items-center gap-2">
 					<Link to="/" className={cn(buttonVariants({ variant: "ghost" }))}>
 						Thoát
@@ -167,11 +167,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						to="/learn/quizzes/attempt/$attemptId"
 						params={{ attemptId: attempt.id }}
 						aria-label="Quay lại trang kết quả"
-						className="rounded-md px-2 py-1 text-hot text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-hot"
+						className="rounded-md px-2 py-1 text-primary text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-hot"
 					>
 						← Kết quả
 					</Link>
-					<h1 className="truncate font-display font-semibold text-[15px] tracking-tight">
+					<h1 className="truncate font-semibold text-[15px] tracking-tight">
 						{attempt.title}
 					</h1>
 				</div>

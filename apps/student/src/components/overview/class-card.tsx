@@ -46,7 +46,7 @@ export function ClassCard({
 			<div>
 				<ClassBadges cls={cls} />
 
-				<h3 className="mt-3 font-display font-extrabold text-2xl text-fg leading-tight tracking-[-0.02em]">
+				<h3 className="mt-3 font-extrabold text-2xl text-foreground leading-tight tracking-[-0.02em]">
 					{isInvited ? (
 						cls.name
 					) : (
@@ -64,7 +64,7 @@ export function ClassCard({
 				</h3>
 
 				{cls.schedule && (
-					<p className="mt-1.5 font-mono text-fg-2 text-xs">
+					<p className="mt-1.5 font-mono text-foreground text-xs">
 						{formatSchedule(cls.schedule)}
 					</p>
 				)}
@@ -77,12 +77,12 @@ export function ClassCard({
 							size="sm"
 						/>
 						<div className="min-w-0 leading-[1.3]">
-							<p className="truncate text-[13px] text-meta">
+							<p className="truncate text-[13px] text-muted-foreground">
 								<span>Giáo viên: </span>
-								<span className="text-fg-2">{cls.teacher.name}</span>
+								<span className="text-foreground">{cls.teacher.name}</span>
 							</p>
 							{/* Text thường, không mailto: lớp phủ của link card nằm trên. */}
-							<p className="truncate text-[12px] text-meta">
+							<p className="truncate text-[12px] text-muted-foreground">
 								{cls.teacher.email}
 							</p>
 						</div>
@@ -90,10 +90,10 @@ export function ClassCard({
 				)}
 			</div>
 
-			<div className="mt-5 border-line-soft border-t pt-4">
+			<div className="mt-5 border-border border-t pt-4">
 				{isInvited ? (
 					<>
-						<p className="text-[12px] text-meta leading-normal">
+						<p className="text-[12px] text-muted-foreground leading-normal">
 							Giáo viên đã mời bạn vào lớp. Xác nhận tham gia để bắt đầu khóa
 							học và nhận lịch buổi học.
 						</p>
@@ -101,7 +101,7 @@ export function ClassCard({
 							type="button"
 							disabled={accepting || !onAccept}
 							onClick={() => onAccept?.(cls.enrollmentId)}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-fg font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-hot hover:text-accent-on focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
@@ -110,7 +110,7 @@ export function ClassCard({
 					<>
 						<ClassProgress cls={cls} />
 
-						<p className="mt-3 truncate font-mono text-[12px] text-fg-2">
+						<p className="mt-3 truncate font-mono text-[12px] text-foreground">
 							{nextSessionText}
 						</p>
 					</>
@@ -133,21 +133,21 @@ function ClassCardAssignments({
 }) {
 	return (
 		<div className="mt-4">
-			<h4 className="font-mono text-[10px] text-meta uppercase tracking-[0.15em]">
+			<h4 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
 				Bài tập
 			</h4>
-			<div className="neu-sm mt-2 overflow-hidden rounded-md">
+			<div className="mt-2 overflow-hidden rounded-md rounded-md border border-input bg-transparent">
 				{assignments.map((assignment) => {
 					const derived = deriveAssignmentStatus(assignment);
 					const row = (
 						<div
 							key={assignment.id}
-							className="flex items-center justify-between gap-3 border-line border-t px-4 py-2.5 first:border-t-0"
+							className="flex items-center justify-between gap-3 border-border border-t px-4 py-2.5 first:border-t-0"
 						>
-							<span className="min-w-0 flex-1 truncate font-medium text-[13px] text-fg">
+							<span className="min-w-0 flex-1 truncate font-medium text-[13px] text-foreground">
 								{assignment.title}
 							</span>
-							<span className="flex-none font-mono text-[11px] text-meta tabular-nums">
+							<span className="flex-none font-mono text-[11px] text-muted-foreground tabular-nums">
 								{derived.dueText}
 							</span>
 							<span
@@ -168,7 +168,7 @@ function ClassCardAssignments({
 									? `Xem lại kết quả: ${assignment.title}`
 									: `Làm bài: ${assignment.title}`
 							}
-							className="block transition-colors hover:text-hot"
+							className="block transition-colors hover:text-primary"
 						>
 							{row}
 						</Link>
@@ -179,7 +179,8 @@ function ClassCardAssignments({
 	);
 }
 
-const CARD_CLASS = "neu flex flex-col justify-between rounded-lg p-6";
+const CARD_CLASS =
+	"rounded-xl border bg-card shadow-sm flex flex-col justify-between rounded-lg p-6";
 
 /** Chip trạng thái kiểu design `Tag`: mono 10px uppercase, nền sunk; hot =
  * nền cam đặc (chờ kích hoạt cần hành động của học viên). */
@@ -194,7 +195,7 @@ export function ClassBadges({ cls }: { cls: StudentClass }) {
 }
 
 /** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền cam,
- * success = `bg-chip` (badge "Đã thanh toán" theo DESIGN.md). */
+ * success = `bg-secondary` (badge "Đã thanh toán" theo DESIGN.md). */
 export function Tag({
 	children,
 	hot = false,
@@ -209,10 +210,10 @@ export function Tag({
 			className={cn(
 				"inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em]",
 				hot
-					? "bg-hot font-medium text-accent-on"
+					? "bg-primary font-medium text-primary-foreground"
 					: success
-						? "bg-chip text-fg"
-						: "neu-in text-fg-2",
+						? "bg-secondary text-foreground"
+						: "rounded-md bg-muted text-foreground",
 			)}
 		>
 			{children}
@@ -228,14 +229,14 @@ export function ClassProgress({ cls }: { cls: StudentClass }) {
 	return (
 		<>
 			<div className="flex items-center justify-between text-[12px]">
-				<span className="text-meta">Tiến độ khóa học</span>
-				<span className="font-medium font-mono text-fg">
+				<span className="text-muted-foreground">Tiến độ khóa học</span>
+				<span className="font-medium font-mono text-foreground">
 					Buổi {cls.sessionsDone}/{cls.sessionsTotal}
 				</span>
 			</div>
-			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
 				<div
-					className="h-full rounded-full bg-hot transition-all duration-300"
+					className="h-full rounded-full bg-primary transition-all duration-300"
 					style={{ width: `${progressPercent}%` }}
 				/>
 			</div>
