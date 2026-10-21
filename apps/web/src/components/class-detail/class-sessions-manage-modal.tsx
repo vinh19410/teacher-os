@@ -13,14 +13,14 @@ import {
 } from "@/components/syllabus/syllabus-mutations";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import type { ClassGroup, Syllabus } from "@/lib/mock-data";
+import type { ClassGroup } from "@/lib/mock-data";
+import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface ClassSessionsManageModalProps {
 	open: boolean;
 	onClose: () => void;
 	cls: ClassGroup;
-	syllabus: Syllabus | null;
 	run: DirectKernelAction["run"];
 	isPending: DirectKernelAction["isPending"];
 	busy: boolean;
@@ -32,15 +32,18 @@ export interface ClassSessionsManageModalProps {
  * drives the topic shown on each schedule-table row (buổi N ↔ bài N).
  * Deliberately no course-level progress rollup — that lives in the page
  * header and schedule table.
+ *
+ * Issue #394: giáo trình của lớp đọc qua `useClassCurriculum` (nguồn sự thật
+ * `syllabus.class_id`) — không còn placeholder/con-trỏ-lệch branch.
  */
 export function ClassSessionsManageModal({
 	open,
 	onClose,
 	cls,
-	syllabus: sy,
 	run,
 	busy,
 }: ClassSessionsManageModalProps) {
+	const curriculum = useClassCurriculum(cls.id);
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
 	const [editModuleId, setEditModuleId] = useState<string | null>(null);
 	const [addLessonModuleId, setAddLessonModuleId] = useState<string | null>(
@@ -51,32 +54,20 @@ export function ClassSessionsManageModal({
 		lessonId: string;
 	} | null>(null);
 
-	const validCopy = open && sy && sy.classId === cls.id;
 	const mutations = useSyllabusMutations({
-		syllabus: validCopy
-			? sy
-			: {
-					id: "",
-					name: "",
-					level: "",
-					type: "ielts",
-					skills: [],
-					description: "",
-					totalLessons: 0,
-					classId: null,
-					sourceTemplateId: null,
-					modules: [],
-				},
+		target: curriculum ? { kind: "class", classId: cls.id } : null,
+		syllabus: curriculum,
 		isClassCopy: true,
 		run,
 		busy,
 	});
+	const sy = curriculum;
 
 	return (
 		<Modal open={open} onClose={onClose} title="Quản lý buổi của lớp">
-			{!validCopy ? (
+			{!sy ? (
 				<p className="text-muted-foreground text-sm">
-					Lớp chưa có bản sao giáo trình hợp lệ để quản lý buổi.
+					Lớp chưa có giáo trình để quản lý buổi.
 				</p>
 			) : (
 				<div className="flex flex-col gap-4">
@@ -194,25 +185,25 @@ export function ClassSessionsManageModal({
 			<AddModuleModal
 				open={addModuleOpen}
 				onClose={() => setAddModuleOpen(false)}
-				syllabusId={cls.syllabusId}
+				target={{ kind: "class", classId: cls.id }}
 			/>
 			<EditModuleModal
 				open={editModuleId !== null}
 				onClose={() => setEditModuleId(null)}
-				syllabusId={cls.syllabusId}
+				target={{ kind: "class", classId: cls.id }}
 				moduleId={editModuleId}
 			/>
 			<AddLessonModal
 				open={addLessonModuleId !== null}
 				onClose={() => setAddLessonModuleId(null)}
-				syllabusId={cls.syllabusId}
+				target={{ kind: "class", classId: cls.id }}
 				moduleId={addLessonModuleId}
 				showStatus
 			/>
 			<EditLessonModal
 				open={editLessonRef !== null}
 				onClose={() => setEditLessonRef(null)}
-				syllabusId={cls.syllabusId}
+				target={{ kind: "class", classId: cls.id }}
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 				showStatus

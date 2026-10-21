@@ -2,23 +2,23 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
+import type { CurriculumTarget } from "@/lib/data-actions";
+import { useTargetSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function EditModuleModal({
 	open,
 	onClose,
-	syllabusId,
+	target,
 	moduleId,
 }: {
 	open: boolean;
 	onClose: () => void;
-	syllabusId: string;
+	target: CurriculumTarget;
 	moduleId: string | null;
 }) {
-	const { syllabusById } = useData();
-	const mod = syllabusById(syllabusId)?.modules.find((m) => m.id === moduleId);
+	const mod = useTargetSyllabus(target)?.modules.find((m) => m.id === moduleId);
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
@@ -41,7 +41,7 @@ export function EditModuleModal({
 		}
 		const result = await run({
 			type: "edit-module",
-			syllabusId,
+			target,
 			moduleId,
 			payload: { title: title.trim(), description: description.trim() },
 		});

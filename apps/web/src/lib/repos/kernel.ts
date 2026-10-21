@@ -9,7 +9,7 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
-import type { KernelAction } from "@/lib/data-actions";
+import type { CurriculumTarget, KernelAction } from "@/lib/data-actions";
 import {
 	HttpError,
 	isHttpError,
@@ -71,7 +71,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "add-syllabus":
 			return {
-				path: "/api/syllabi",
+				path: "/api/syllabus-templates",
 				body: {
 					name: action.payload.name,
 					type: action.payload.type,
@@ -82,16 +82,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					modules: action.payload.modules,
 				},
 			};
-		case "import-syllabus":
+		case "import-curriculum":
 			return {
-				path: `/api/classes/${action.classId}/import-syllabus`,
+				path: `/api/classes/${action.classId}/curriculum/import`,
 				body: { templateId: action.templateId },
 			};
 		case "remove-curriculum":
 			// Body must stay exactly {} — same CSRF-safe convention as
 			// check-in/cancel.
 			return {
-				path: `/api/classes/${action.classId}/remove-curriculum`,
+				path: `/api/classes/${action.classId}/curriculum/remove`,
 				body: {},
 			};
 		case "update-class-notes":
@@ -176,56 +176,56 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "add-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules`,
+				path: `${curriculumBase(action.target)}/modules`,
 				body: { ...action.payload },
 			};
 		case "edit-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}`,
 				body: { ...action.payload },
 			};
 		case "add-lesson":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons`,
 				body: { ...action.payload },
 			};
 		case "edit-lesson":
 			// Spread để key `status` undefined tự rơi khỏi JSON — server sẽ
 			// preserve status cũ khi body không có key này.
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/${action.lessonId}`,
 				body: { ...action.payload },
 			};
 		case "replace-syllabus-content":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/replace-content`,
+				path: `/api/syllabus-templates/${action.syllabusId}/replace-content`,
 				body: { modules: action.modules },
 			};
 		case "delete-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/remove`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/remove`,
 				body: {},
 			};
 		case "delete-lesson":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
 				body: {},
 			};
 		case "delete-syllabus":
 			// Body phải stay exactly {} — same CSRF-safe convention as
 			// remove-curriculum (server schema là z.object({}).strict()).
 			return {
-				path: `/api/syllabi/${action.syllabusId}/remove`,
+				path: `/api/syllabus-templates/${action.syllabusId}/remove`,
 				body: {},
 			};
 		case "reorder-modules":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/reorder`,
+				path: `${curriculumBase(action.target)}/modules/reorder`,
 				body: { moduleIds: action.moduleIds },
 			};
 		case "reorder-lessons":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/reorder`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/reorder`,
 				body: { lessonIds: action.lessonIds },
 			};
 		case "activate-enrollment":
@@ -448,6 +448,16 @@ async function parseErrorReason(res: Response): Promise<string | undefined> {
 		// Body-rác/không-JSON: reason stays undefined; status still classifies.
 	}
 	return undefined;
+}
+
+/**
+ * Base path cho tám thao tác module/lesson theo phạm vi của `target`
+ * (design D7, issue #394): template scope hoặc giáo trình của lớp.
+ */
+function curriculumBase(target: CurriculumTarget): string {
+	return target.kind === "template"
+		? `/api/syllabus-templates/${target.syllabusId}`
+		: `/api/classes/${target.classId}/curriculum`;
 }
 
 /** Transport: POST a kernel write and resolve its parsed 2xx envelope. */

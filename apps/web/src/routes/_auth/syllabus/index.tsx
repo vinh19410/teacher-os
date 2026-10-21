@@ -10,7 +10,7 @@ import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
-import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { useTemplates } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
@@ -26,7 +26,7 @@ const SKILL_MAP: Record<string, string> = {
 
 export function SyllabusRoute() {
 	const navigate = useNavigate();
-	const { templates } = useSyllabus();
+	const templates = useTemplates();
 	const { classesForSyllabus } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);

@@ -39,6 +39,7 @@ const { classes, kernelForm, templates } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/repos/use-syllabus", () => ({
+	useTemplates: () => templates,
 	useSyllabus: () => ({
 		templates,
 		syllabi: templates,

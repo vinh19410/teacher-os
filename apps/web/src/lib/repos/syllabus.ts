@@ -5,7 +5,12 @@
  * repos/use-syllabus.ts; writes stay on the Wave 0 command bus.
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
-import type { Syllabus, SyllabusLessonKind } from "@/lib/mock-data";
+import type {
+	ClassCurriculum,
+	Syllabus,
+	SyllabusLessonKind,
+	SyllabusTemplate,
+} from "@/lib/mock-data";
 
 const LESSON_KINDS: readonly SyllabusLessonKind[] = [
 	"lesson",
@@ -61,4 +66,36 @@ export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
 			})),
 		};
 	});
+}
+
+/**
+ * Nơi DUY NHẤT trong apps/web (ngoài test) được so sánh `classId` để phân loại
+ * (design D7, issue #394): template là `classId === null`, giáo trình của lớp
+ * là bản copy `classId === <lớp>`. `templateUsage` khoá theo `sourceTemplateId`
+ * — danh sách lớp đang dùng template (chỉ đếm copy có nguồn rõ ràng).
+ */
+export function splitSyllabi(syllabi: Syllabus[]): {
+	templates: SyllabusTemplate[];
+	curriculumByClassId: Map<string, ClassCurriculum>;
+	templateUsage: Map<string, string[]>;
+} {
+	const templates: SyllabusTemplate[] = [];
+	const curriculumByClassId = new Map<string, ClassCurriculum>();
+	const templateUsage = new Map<string, string[]>();
+	for (const sy of syllabi) {
+		if (sy.classId === null) {
+			templates.push(sy as SyllabusTemplate);
+			continue;
+		}
+		curriculumByClassId.set(sy.classId, sy as ClassCurriculum);
+		if (sy.sourceTemplateId !== null) {
+			const used = templateUsage.get(sy.sourceTemplateId);
+			if (used) {
+				used.push(sy.classId);
+			} else {
+				templateUsage.set(sy.sourceTemplateId, [sy.classId]);
+			}
+		}
+	}
+	return { templates, curriculumByClassId, templateUsage };
 }

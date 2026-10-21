@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import type { KernelAction } from "@/lib/data-actions";
+import type { CurriculumTarget, KernelAction } from "@/lib/data-actions";
 import type { Syllabus, SyllabusModule } from "@/lib/mock-data";
 import { moveItem } from "@/lib/move-item";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
@@ -73,25 +73,28 @@ export function SyllabusMutationButtons({
 
 export function useSyllabusMutations({
 	syllabus,
+	target,
 	isClassCopy,
 	run,
 	busy,
 }: {
-	syllabus: Syllabus;
+	/** Null khi component render ngoài phạm vi có giáo trình — mọi op no-op. */
+	syllabus: Syllabus | null;
+	target: CurriculumTarget | null;
 	isClassCopy: boolean;
 	run: KernelRun;
 	busy: boolean;
 }) {
-	const [target, setTarget] = useState<DeleteTarget | null>(null);
-	const syllabusId = syllabus.id;
+	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
 	function moveModule(index: number, dir: -1 | 1) {
+		if (!target || !syllabus) return;
 		const next = moveItem(syllabus.modules, index, dir);
 		void run(
-			`reorder-modules:${syllabusId}`,
+			`reorder-modules:${JSON.stringify(target)}`,
 			{
 				type: "reorder-modules",
-				syllabusId,
+				target,
 				moduleIds: next.map((m) => m.id),
 			},
 			"Đã đổi thứ tự module.",
@@ -99,6 +102,7 @@ export function useSyllabusMutations({
 	}
 
 	function moveLesson(moduleId: string, index: number, dir: -1 | 1) {
+		if (!target || !syllabus) return;
 		const mod = syllabus.modules.find((m) => m.id === moduleId);
 		if (!mod) return;
 		const next = moveItem(mod.lessons, index, dir);
@@ -106,7 +110,7 @@ export function useSyllabusMutations({
 			`reorder-lessons:${moduleId}`,
 			{
 				type: "reorder-lessons",
-				syllabusId,
+				target,
 				moduleId,
 				lessonIds: next.map((l) => l.id),
 			},
@@ -115,35 +119,36 @@ export function useSyllabusMutations({
 	}
 
 	function confirmDelete() {
-		if (!target) return;
-		if (target.kind === "module") {
+		if (!deleteTarget || !target) return;
+		if (deleteTarget.kind === "module") {
 			void run(
-				`delete-module:${target.module.id}`,
+				`delete-module:${deleteTarget.module.id}`,
 				{
 					type: "delete-module",
-					syllabusId,
-					moduleId: target.module.id,
+					target,
+					moduleId: deleteTarget.module.id,
 				},
 				"Đã xóa module.",
 			);
 		} else {
 			void run(
-				`delete-lesson:${target.lessonId}`,
+				`delete-lesson:${deleteTarget.lessonId}`,
 				{
 					type: "delete-lesson",
-					syllabusId,
-					moduleId: target.moduleId,
-					lessonId: target.lessonId,
+					target,
+					moduleId: deleteTarget.moduleId,
+					lessonId: deleteTarget.lessonId,
 				},
 				"Đã xóa buổi học.",
 			);
 		}
-		setTarget(null);
+		setDeleteTarget(null);
 	}
 
-	const n = target?.kind === "module" ? target.module.lessons.length : 0;
+	const n =
+		deleteTarget?.kind === "module" ? deleteTarget.module.lessons.length : 0;
 	const confirmCopy =
-		target?.kind === "module"
+		deleteTarget?.kind === "module"
 			? isClassCopy
 				? `Xóa module này sẽ xóa cả ${n} buổi học bên trong, kèm tiến độ đã điểm danh. Hành động này không thể hoàn tác.`
 				: `Đây là giáo trình mẫu của tổ chức. Xóa module này sẽ xóa cả ${n} buổi học trên template (lớp đã import không bị ảnh hưởng). Không thể hoàn tác.`
@@ -151,9 +156,9 @@ export function useSyllabusMutations({
 
 	const confirmModal = (
 		<Modal
-			open={target !== null}
-			onClose={busy ? () => undefined : () => setTarget(null)}
-			title={target?.kind === "module" ? "Xóa module?" : "Xóa buổi học?"}
+			open={deleteTarget !== null}
+			onClose={busy ? () => undefined : () => setDeleteTarget(null)}
+			title={deleteTarget?.kind === "module" ? "Xóa module?" : "Xóa buổi học?"}
 		>
 			<p className="text-muted-foreground text-sm">{confirmCopy}</p>
 			<div className="mt-4 flex justify-end gap-2">
@@ -161,7 +166,7 @@ export function useSyllabusMutations({
 					variant="secondary"
 					size="sm"
 					disabled={busy}
-					onClick={() => setTarget(null)}
+					onClick={() => setDeleteTarget(null)}
 				>
 					Hủy
 				</Button>
@@ -182,9 +187,9 @@ export function useSyllabusMutations({
 		moveModule,
 		moveLesson,
 		requestDeleteModule: (module: SyllabusModule) =>
-			setTarget({ kind: "module", module }),
+			setDeleteTarget({ kind: "module", module }),
 		requestDeleteLesson: (moduleId: string, lessonId: string, title: string) =>
-			setTarget({ kind: "lesson", moduleId, lessonId, title }),
+			setDeleteTarget({ kind: "lesson", moduleId, lessonId, title }),
 		confirmModal,
 	};
 }

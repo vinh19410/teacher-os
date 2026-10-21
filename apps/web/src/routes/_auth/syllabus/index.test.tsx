@@ -90,7 +90,7 @@ describe("create syllabus from the gallery", () => {
 		vi.unstubAllGlobals();
 		const server = startKernelServer(snapshotFixture(), (req, srv) => {
 			srv.snapshot.syllabi.push(syllabusRow({ id: "sy-new", name: "Mới" }));
-			return req.path === "/api/syllabi"
+			return req.path === "/api/syllabus-templates"
 				? { status: 201, body: { id: "sy-new" } }
 				: undefined;
 		});

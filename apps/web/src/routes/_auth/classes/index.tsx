@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
+import { splitSyllabi } from "@/lib/repos/syllabus";
 import { useClasses } from "@/lib/repos/use-classes";
 
 export const Route = createFileRoute("/_auth/classes/")({
@@ -28,6 +29,7 @@ export function ClassesRoute() {
 	const navigate = useNavigate();
 	const { classes } = useClasses();
 	const { data } = useData();
+	const { curriculumByClassId } = splitSyllabi(data.syllabi);
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
@@ -75,7 +77,7 @@ export function ClassesRoute() {
 			) : (
 				<div className="grid gap-6 md:grid-cols-2">
 					{list.map((c, i) => {
-						const sy = data.syllabi.find((s) => s.id === c.syllabusId);
+						const sy = curriculumByClassId.get(c.id) ?? null;
 						const pct =
 							c.sessionsTotal > 0
 								? (c.sessionsDone / c.sessionsTotal) * 100

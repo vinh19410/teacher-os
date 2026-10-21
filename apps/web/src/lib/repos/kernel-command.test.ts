@@ -63,7 +63,7 @@ describe("kernelCommand delete-syllabus (#211)", () => {
 			type: "delete-syllabus",
 			syllabusId: "sy-1",
 		});
-		expect(request.path).toBe("/api/syllabi/sy-1/remove");
+		expect(request.path).toBe("/api/syllabus-templates/sy-1/remove");
 		expect(request.body).toEqual({});
 	});
 });

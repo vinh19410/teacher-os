@@ -12,6 +12,12 @@ Quy ước khi cập nhật:
 
 ## 2026-10-22
 
+### Added
+- Migration `0042_syllabus_class_pointer_reconcile`: UPDATE idempotent same-org chữa con trỏ lớp ↔ giáo trình lệch về đúng bản copy, không xoá dòng (#394)
+
+### Changed
+- Refactor tạo và gán syllabus (issue #394): tách bạch **Template** và **Giáo trình của lớp** ở API/service/web — template là `syllabus.class_id IS NULL`, giáo trình của lớp là bản copy có `class_id`; `syllabus.class_id` là nguồn sự thật duy nhất của quan hệ lớp ↔ giáo trình, `class.syllabus_id` chỉ còn là cột dẫn xuất ghi qua `apps/server/src/lib/syllabus-curriculum.ts`. Route mới theo ngữ cảnh `/api/syllabus-templates/...` và `/api/classes/:id/curriculum/...` (route `/api/syllabi/...` cũ giữ làm alias một release); nhập trùng trả **409** thay vì 500. Web dùng chung `TemplatePicker` có preview cho tạo lớp và gán sau, class detail đọc giáo trình qua hook `useClassCurriculum` (#394)
+
 ### Fixed
 - Dashboard học viên (Tổng quan các lớp + khối "Buổi tới" ở chi tiết lớp): buổi hôm nay đã qua giờ kết thúc (ngày + giờ bắt đầu + thời lượng, giờ VN) không còn bị server trả làm "Buổi tới" — `loadNextSession` nhận `now`, bỏ qua buổi đã hết giờ và chọn buổi kế tiếp trong ngày (đồng bộ `isLessonEnded` client từ #393); nếu không còn buổi hợp lệ thì ẩn "Buổi tới". Phép tính end-time gom về helper chung `vietnamSessionEndMs` (`@teacher-os/api/vietnam-date`) dùng chung server + client, không đổi contract/API (#395)
 

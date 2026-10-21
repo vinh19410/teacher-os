@@ -69,7 +69,7 @@ describe("AddSyllabusModal", () => {
 		},
 		submit: "Tạo",
 		expectedWrite: {
-			path: "/api/syllabi",
+			path: "/api/syllabus-templates",
 			body: { name: "IELTS Speaking 6.5", skills: ["Speaking"] },
 		},
 	});
@@ -79,12 +79,16 @@ describe("AddModuleModal", () => {
 	itFollowsTheKernelFormContract({
 		snapshot: syllabus,
 		render: (onClose) => (
-			<AddModuleModal open onClose={onClose} syllabusId="sy-1" />
+			<AddModuleModal
+				open
+				onClose={onClose}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+			/>
 		),
 		fill: (dialog) => type(dialog, /Tên module/, "  Module 2 — Mock test  "),
 		submit: "Thêm module",
 		expectedWrite: {
-			path: "/api/syllabi/sy-1/modules",
+			path: "/api/syllabus-templates/sy-1/modules",
 			body: { title: "Module 2 — Mock test" },
 		},
 	});
@@ -92,7 +96,11 @@ describe("AddModuleModal", () => {
 	it("requires a module name before writing", async () => {
 		const server = startKernelServer(syllabus());
 		renderWithKernel(
-			<AddModuleModal open onClose={() => {}} syllabusId="sy-1" />,
+			<AddModuleModal
+				open
+				onClose={() => {}}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+			/>,
 		);
 		const dialog = await screen.findByRole("dialog");
 		fireEvent.click(
@@ -110,14 +118,14 @@ describe("EditModuleModal", () => {
 			<EditModuleModal
 				open
 				onClose={onClose}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 			/>
 		),
 		fill: (dialog) => type(dialog, /Tên module/, "Module 1 — Nền tảng"),
 		submit: "Lưu thay đổi",
 		expectedWrite: {
-			path: "/api/syllabi/sy-1/modules/m-1",
+			path: "/api/syllabus-templates/sy-1/modules/m-1",
 			body: { title: "Module 1 — Nền tảng" },
 		},
 	});
@@ -128,7 +136,7 @@ describe("EditModuleModal", () => {
 			<EditModuleModal
 				open
 				onClose={() => {}}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 			/>,
 		);
@@ -147,7 +155,12 @@ describe("AddLessonModal", () => {
 	itFollowsTheKernelFormContract({
 		snapshot: syllabus,
 		render: (onClose) => (
-			<AddLessonModal open onClose={onClose} syllabusId="sy-1" moduleId="m-1" />
+			<AddLessonModal
+				open
+				onClose={onClose}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+				moduleId="m-1"
+			/>
 		),
 		fill: (dialog) => {
 			type(dialog, /Tên buổi học/, "Bar chart");
@@ -156,7 +169,7 @@ describe("AddLessonModal", () => {
 		},
 		submit: "Thêm buổi",
 		expectedWrite: {
-			path: "/api/syllabi/sy-1/modules/m-1/lessons",
+			path: "/api/syllabus-templates/sy-1/modules/m-1/lessons",
 			body: { title: "Bar chart", objectives: "So sánh", materials: "Cam 16" },
 		},
 	});
@@ -167,7 +180,7 @@ describe("AddLessonModal", () => {
 			<AddLessonModal
 				open
 				onClose={() => {}}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 				showKind={showKind}
 			/>,
@@ -203,14 +216,14 @@ describe("EditLessonModal", () => {
 			<EditLessonModal
 				open
 				onClose={onClose}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 				lessonId="l-1"
 			/>
 		),
 		submit: "Lưu thay đổi",
 		expectedWrite: {
-			path: "/api/syllabi/sy-1/modules/m-1/lessons/l-1",
+			path: "/api/syllabus-templates/sy-1/modules/m-1/lessons/l-1",
 			body: { title: "Line chart" },
 		},
 	});
@@ -221,7 +234,7 @@ describe("EditLessonModal", () => {
 			<EditLessonModal
 				open
 				onClose={() => {}}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 				lessonId="l-1"
 				showKind
@@ -242,7 +255,7 @@ describe("EditLessonModal", () => {
 			<EditLessonModal
 				open
 				onClose={() => {}}
-				syllabusId="sy-1"
+				target={{ kind: "template", syllabusId: "sy-1" }}
 				moduleId="m-1"
 				lessonId="l-1"
 			/>,
