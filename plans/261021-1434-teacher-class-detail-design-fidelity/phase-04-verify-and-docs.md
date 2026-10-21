@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Test, e2e, so ảnh, DESIGN.md"
-status: pending
+status: completed
 effort: "1.5h"
 dependencies: [2, 3]
 ---

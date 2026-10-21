@@ -1,7 +1,7 @@
 ---
 title: "Teacher: kéo trang chi tiết lớp (/classes/$classId) về đúng design v2"
 description: "Trang chi tiết lớp của giáo viên đã dùng primitive v2 nhưng bố cục, tab, danh sách buổi học, bài đã giao và bảng học viên còn lệch design v2, kèm vài class chết (token không tồn tại) ở bảng lịch học. Plan liệt kê từng điểm lệch và sửa theo dữ liệu thật, không bịa dữ liệu."
-status: pending
+status: completed
 priority: P2
 effort: "9h"
 issue: 391
@@ -85,7 +85,7 @@ thì chưa khớp (xem bảng dưới). Plan này nâng tiêu chí lên cấu tr
 | 1 | [Header, hàng stat, tabs + dọn token chết](./phase-01-header-stats-tabs.md) | Pending | 2h | — |
 | 2 | [Tab Sessions & practice: danh sách buổi + bài đã giao](./phase-02-sessions-and-practice.md) | Pending | 3.5h | 1 |
 | 3 | [Tab Students + Syllabus + nút Grade](./phase-03-students-syllabus-grade.md) | Pending | 2h | 1 |
-| 4 | [Test, e2e, so ảnh, DESIGN.md](./phase-04-verify-and-docs.md) | Pending | 1.5h | 2, 3 |
+| 4 | [Test, e2e, so ảnh, DESIGN.md](./phase-04-verify-and-docs.md) | Done | 1.5h | 2, 3 |
 
 Phase 2 và 3 sửa file khác nhau nhưng **chạy tuần tự 1→2→3** (chốt red-team: `$classId.tsx` đụng cả ba, tránh merge conflict trong cùng worktree).
 
