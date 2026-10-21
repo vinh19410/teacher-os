@@ -206,6 +206,8 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 		page.getByText("Không tìm thấy syllabus", { exact: true }),
 	).toBeVisible();
 	await page.goto(`/classes/${copy.classId}`);
-	await page.getByRole("tab", { name: "Sessions & practice", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Buổi 3 — giữa kỳ đã đổi")).toBeVisible();
 });
