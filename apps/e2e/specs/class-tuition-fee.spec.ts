@@ -37,6 +37,9 @@ test.describe("class tuition fee (issue #227)", () => {
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
 
+		// #391: học phí + nút Sửa sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+
 		// Verify fee displayed
 		await expect(
 			page.getByText("Học phí: 5.000.000đ / học viên"),
@@ -97,6 +100,9 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
+
+		// #391: học phí sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 
 		await expect(page.getByText("Học phí: —")).toBeVisible();
 	});
@@ -159,6 +165,8 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(page).toHaveURL(/\/classes\/.+/);
 
 		// Test in EditClassFeeModal
+		// #391: nút Sửa học phí sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 		await page.getByRole("button", { name: "Sửa", exact: true }).click();
 		const editDialog = page.getByRole("dialog");
 		await expect(editDialog.getByText("Sửa học phí lớp")).toBeVisible();

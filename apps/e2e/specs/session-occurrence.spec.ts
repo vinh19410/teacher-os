@@ -1,6 +1,6 @@
 /**
  * Occurrence identity flows (issue #98): a future occurrence can be CANCELLED
- * outright from the Buổi học tab, and the settled state survives a reload.
+ * outright from the Sessions & practice tab, and the settled state survives a reload.
  * Topic-on-occurrence-k renders the edited topic on ITS row right away and
  * after reload — the mis-fan regression that motivated option 3 of #93.
  *
@@ -39,6 +39,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	// Student joins ⇒ lessons exist ⇒ rows become addressable occurrences.
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog1 = page.getByRole("dialog");
 	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
@@ -53,13 +54,15 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await confirmModal1.getByRole("button", { name: "Kích hoạt" }).click();
 	await expect(confirmModal1).toBeHidden();
 	await expect(page.getByText("Đang học")).toBeVisible();
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	// Fully-upcoming class: every row offers Điều chỉnh; nothing settled yet.
 	const adjustButtons = page.getByRole("button", { name: "Điều chỉnh" });
 	await expect(adjustButtons.first()).toBeVisible();
 
 	// Open the modal on a FUTURE row: the LAST occurrence (never today).
-	const lastRow = page.locator("tbody tr").last();
+	const lastRow = page.locator("[data-testid='session-row']").last();
 	await lastRow.getByRole("button", { name: "Điều chỉnh" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
@@ -80,7 +83,9 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 
 	// Persisted server-side across a full reload.
 	await page.reload();
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Đã hủy", { exact: true })).toHaveCount(1);
 });
 
@@ -101,6 +106,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await page.getByText(CLASS_NAME).click();
 	await seedStudent({ teacherEmail: teacherEmail2, name: "Phạm Topic E2E" });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog2 = page.getByRole("dialog");
 	await enrollDialog2.getByRole("option", { name: "Phạm Topic E2E" }).click();
@@ -116,10 +122,12 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await expect(confirmModal2).toBeHidden();
 	await expect(page.getByText("Đang học")).toBeVisible();
 
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 
 	// Edit occurrence #3 (0-based row index 2) with a distinctive topic.
-	const targetRow = page.locator("tbody tr").nth(2);
+	const targetRow = page.locator("[data-testid='session-row']").nth(2);
 	await targetRow.getByRole("button", { name: "Điều chỉnh" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
@@ -139,10 +147,12 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 
 	// Reload persistence: the topic lives on THIS occurrence only.
 	await page.reload();
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(
 		page
-			.locator("tbody tr")
+			.locator("[data-testid='session-row']")
 			.nth(2)
 			.getByText("Occurrence số ba — chủ đề riêng"),
 	).toBeVisible();

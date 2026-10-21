@@ -173,11 +173,13 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	);
 	if (!copy) throw new Error("Kernel snapshot thiếu bản copy của template");
 
-	// Màn hình Chi tiết lớp: tab "Buổi học" chứa curriculum section. Mở Sửa
+	// Màn hình Chi tiết lớp (#391): "Sắp xếp buổi" ở header, mở modal sửa buổi.
 	// buổi thi (Buổi 3) → KHÔNG có select "Loại buổi học"; đổi title rồi lưu.
 	// Locator scope lesson row (grid 20px_1fr_auto) của curriculum section.
 	await page.goto(`/classes/${copy.classId}`);
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	// #221: the curriculum tree moved into the "Quản lý buổi" modal.
 	await page.getByRole("button", { name: "Sắp xếp buổi", exact: true }).click();
 	const examRow = page

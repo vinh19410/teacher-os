@@ -2,7 +2,7 @@
  * QC #121 regression — "tạo lớp có lịch không sinh buổi".
  *
  * A class created with a structured schedule and NO students must show its
- * projected sessions: chronologically on the "Buổi học" tab and ONLY in the
+ * projected sessions: chronologically on the "Sessions & practice" tab and ONLY in the
  * weeks that contain them on /schedule, with zero write targets; the first
  * enrollment (in-page, no reload) flips the projection to real generated
  * rows with identical dates.
@@ -39,12 +39,16 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME).click();
 
-	// Buổi học tab: all 12 projected sessions, chronological, muted badges.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
-	await expect(page.locator("tbody tr")).toHaveCount(12);
-	const firstRow = page.locator("tbody tr").first();
+	// Sessions & practice tab: all 12 projected sessions, chronological, muted badges.
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
+	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
+	const firstRow = page.locator("[data-testid='session-row']").first();
 	await expect(firstRow).toContainText("04/01");
-	await expect(page.locator("tbody tr").last()).toContainText("22/03");
+	await expect(
+		page.locator("[data-testid='session-row']").last(),
+	).toContainText("22/03");
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(12);
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Điều chỉnh" })).toHaveCount(0);
@@ -86,6 +90,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await page.getByText(CLASS_NAME).click();
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
@@ -95,8 +100,10 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await expect(page.getByText("Đã mời")).toBeVisible();
 
 	// Projection still shows "Dự kiến" because enrollment is invited
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
-	await expect(page.locator("tbody tr")).toHaveCount(12);
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
+	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(12);
 
 	// Now activate the student via "Kích hoạt" on the roster tab
@@ -111,10 +118,14 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// Now projection flips to real rows: same dates, no "Dự kiến", real targets.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
-	await expect(page.locator("tbody tr")).toHaveCount(12);
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
+	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(0);
-	await expect(page.locator("tbody tr").first()).toContainText("04/01");
+	await expect(
+		page.locator("[data-testid='session-row']").first(),
+	).toContainText("04/01");
 	await expect(
 		page.getByRole("button", { name: "Điều chỉnh" }).first(),
 	).toBeVisible();

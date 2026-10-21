@@ -98,7 +98,13 @@ export function ClassRosterTab({
 		<>
 			<Card className="p-0">
 				<DataTable
-					headers={["Học viên", "Đăng ký", "Học phí", "Thao tác"]}
+					headers={[
+						"Học viên",
+						"Đăng ký",
+						"Band mục tiêu",
+						"Học phí",
+						"Thao tác",
+					]}
 					emptyMessage="Chưa có học viên nào trong lớp."
 					rows={rosterEntries.map(({ student: s, isInvited }) => {
 						const en = data.enrollments.find(
@@ -129,6 +135,12 @@ export function ClassRosterTab({
 										{isInvited ? "—" : `${s.pkg.remaining}/${s.pkg.total}`}
 									</span>
 								</div>,
+								// #391: "Current band" của design không có data (Student
+								// chỉ có targetBand) → hiện band mục tiêu, không bịa band
+								// hiện tại.
+								<span key="b" className="text-sm tabular-nums">
+									Band {s.targetBand}
+								</span>,
 								<RosterTuitionCell
 									key="fee"
 									debt={rosterDebt.get(s.id)}

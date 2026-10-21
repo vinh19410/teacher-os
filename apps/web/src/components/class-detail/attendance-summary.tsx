@@ -1,35 +1,56 @@
 import { cn } from "@/lib/cn";
 
-/** Thanh điểm danh 2 phân đoạn của card buổi học (#391): "đã điểm danh"
- * (success) / "chưa điểm danh" (muted). Thiết kế gốc 3 màu present/late/
- * absent — app không có data "đi muộn" tin được nên gộp còn 2 (lệch có chủ
- * đích, ghi `DESIGN.md`). Nhãn phản ánh đúng hành vi ghi dữ liệu: trạng thái
- * đối tượng là "đã điểm danh", không suy ra vắng mặt. */
+export interface AttendanceTally {
+	/** Đã điểm danh có mặt (row `completed`). */
+	marked: number;
+	/** Đã điểm danh VẮNG (row `absent`, chỉ có ở hàng v2 có ngày). */
+	absent: number;
+	/** Chưa điểm danh (chưa có dữ liệu điểm danh cho học viên đó). */
+	unmarked: number;
+}
+
+/** Thanh điểm danh của card buổi học (#391): 3 phân đoạn — "đã điểm danh"
+ * (success) / "vắng" (destructive, chỉ khi có absent) / "chưa điểm danh"
+ * (muted). Thiết kế gốc 3 màu present/late/absent; kernel không có trạng
+ * thái "đi muộn" nên phân đoạn late không dựng (lệch có chủ đích, ghi
+ * `DESIGN.md`). `absent` là dữ liệu thật (row dated v2) nên đếm là ĐÃ điểm
+ * danh, không ghép vào "chưa". */
 export function AttendanceSummary({
-	marked,
+	tally,
 	total,
 }: {
-	marked: number;
+	tally: AttendanceTally;
 	total: number;
 }) {
-	const pct = total > 0 ? Math.round((marked / total) * 100) : 0;
-	const complete = total > 0 && marked >= total;
+	const { marked, absent, unmarked } = tally;
+	const done = marked + absent;
+	const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
+	const complete = total > 0 && unmarked === 0;
 	return (
 		<div className="w-28 shrink-0 text-right">
 			<div
 				className="flex h-1.5 overflow-hidden rounded-full bg-muted"
-				title={`${marked}/${total} đã điểm danh`}
+				title={`${marked}/${total} đã điểm danh${absent > 0 ? ` · ${absent} vắng` : ""}`}
 			>
 				<span
-					className={cn("h-full", complete ? "bg-success" : "bg-warn")}
-					style={{ width: `${pct}%` }}
+					className="h-full bg-success"
+					style={{ width: `${pct(marked)}%` }}
 				/>
+				{absent > 0 && (
+					<span
+						className="h-full bg-destructive"
+						style={{ width: `${pct(absent)}%` }}
+					/>
+				)}
 			</div>
 			<div className="mt-1 font-medium text-muted-foreground text-xs tabular-nums">
 				<span className={cn(complete ? "text-success" : "text-foreground")}>
-					{marked}/{total}
+					{done}/{total}
 				</span>{" "}
 				đã điểm danh
+				{absent > 0 && (
+					<span className="text-destructive"> · {absent} vắng</span>
+				)}
 			</div>
 		</div>
 	);

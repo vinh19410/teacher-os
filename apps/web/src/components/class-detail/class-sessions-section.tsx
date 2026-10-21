@@ -12,9 +12,9 @@ import { Section } from "@/components/ui/section";
 import {
 	buildClassSessions,
 	formatSessionDate,
+	occurrenceSidStates,
 	sessionAttendanceState,
 	sessionLessonInfo,
-	sessionMarkedSids,
 	sessionRowTargets,
 	sessionStatus,
 	sessionStudents,
@@ -163,13 +163,29 @@ export function ClassSessionsSection({
 							info.materials || info.objectives || info.lessonId,
 						);
 						const status = sessionStatus(s);
-						const markedCount = sessionMarkedSids(s).length;
-						// Buổi quá khứ chưa ai điểm danh và chưa huỷ → cảnh báo amber.
-						const isPastUnmarked =
+						// Tally điểm danh từ trạng thái từng học viên (#391): completed
+						// = có mặt, absent = vắng (dữ liệu thật của row dated v2),
+						// còn lại = chưa điểm danh.
+						const sidStates = occurrenceSidStates(s, todayISO);
+						const markedCount = sidStates.filter(
+							(x) => x.status === "completed",
+						).length;
+						const absentCount = sidStates.filter(
+							(x) => x.status === "absent",
+						).length;
+						const tally = {
+							marked: markedCount,
+							absent: absentCount,
+							unmarked: attendees.length - markedCount - absentCount,
+						};
+						// Buổi quá khứ chưa hoàn thành: hiện tally; amber khi chưa có
+						// dữ liệu điểm danh nào.
+						const isPast =
 							!isProjected &&
 							status === "upcoming" &&
 							s.dateISO < todayISO &&
 							attendees.length > 0;
+						const isPastUnmarked = isPast && markedCount + absentCount === 0;
 						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
 
 						return (
@@ -248,16 +264,8 @@ export function ClassSessionsSection({
 									<span className="shrink-0 font-medium text-muted-foreground text-xs">
 										Đã hủy
 									</span>
-								) : status === "completed" ? (
-									<AttendanceSummary
-										marked={markedCount}
-										total={attendees.length}
-									/>
-								) : isPastUnmarked ? (
-									<AttendanceSummary
-										marked={markedCount}
-										total={attendees.length}
-									/>
+								) : status === "completed" || isPast ? (
+									<AttendanceSummary tally={tally} total={attendees.length} />
 								) : (
 									<span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
 										<Clock className="size-3.5" />

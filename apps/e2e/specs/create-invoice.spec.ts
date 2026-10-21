@@ -35,6 +35,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<string> {
 
 	// Enroll the existing student via the class-detail picker (#122 flow).
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
@@ -222,6 +223,7 @@ test("tuition → picker hóa đơn loại trừ học viên chưa kích hoạt 
 	const INVITED_STUDENT = "HV-Chờ-Kích-Hoạt";
 	await seedStudent({ teacherEmail, name: INVITED_STUDENT });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog2 = page.getByRole("dialog");
 	const option2 = enrollDialog2.getByRole("option", { name: INVITED_STUDENT });

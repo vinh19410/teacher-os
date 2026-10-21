@@ -423,28 +423,6 @@ export function sessionStudents(session: ClassSession): string[] {
 }
 
 /**
- * Số học viên đã điểm danh tại một buổi (#391): cùng logic trạng thái với
- * `sessionStatus`/`sessionAttendanceState` nhưng KHÔNG đi qua hàm đó — nó
- * trả `sids: []` cho buổi completed/cancelled. Dùng cho thanh điểm danh
- * 2 phân đoạn (đã điểm danh / chưa) của card buổi học.
- */
-export function sessionMarkedSids(session: ClassSession): string[] {
-	if (session.mode === "v2") {
-		return [...new Set(session.rows.map((r) => r.sid))].filter((sid) => {
-			const row = [...session.rows]
-				.filter((r) => r.sid === sid)
-				.sort((a, b) => a.id.localeCompare(b.id))[0];
-			return row?.status === "completed";
-		});
-	}
-	const stats = slotStatsBySid(session.rows);
-	return sessionStudents(session).filter((sid) => {
-		const entry = stats.get(sid);
-		return entry ? sidStateAt(entry, session.slotIndex) === "completed" : false;
-	});
-}
-
-/**
  * Topic of one occurrence: edited topics of the slot distribute in order
  * (nth topic → nth occurrence of the slot), otherwise the syllabus lesson at
  * the chronological index, otherwise null (caller renders "—"). Render-only:
