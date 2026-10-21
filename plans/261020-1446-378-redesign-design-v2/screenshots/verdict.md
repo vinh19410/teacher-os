@@ -40,12 +40,12 @@ Mỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở t�
 | t-class-detail | tablet×dark | PASS | #391: cùng cây component với desktop; composite regenerate kèm run #391 |
 | t-class-detail | phone×light | PASS | #391: 375 không tràn ngang, stat 2 cột, card xếp dọc (xem section "verdict #391") |
 | t-class-detail | phone×dark | PASS | #391: cùng cây component với phone-light; composite regenerate kèm run #391 |
-| t-attendance | desktop×light | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
-| t-attendance | desktop×dark | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
-| t-attendance | tablet×light | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
-| t-attendance | tablet×dark | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
-| t-attendance | phone×light | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
-| t-attendance | phone×dark | PASS | Modal restyle v2; giữ model check-in 1 nút thật của backend (không bịa radiogroup vắng/muộn) |
+| t-attendance | desktop×light | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
+| t-attendance | desktop×dark | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
+| t-attendance | tablet×light | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
+| t-attendance | tablet×dark | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
+| t-attendance | phone×light | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
+| t-attendance | phone×dark | PASS | #403: app mở modal điểm danh qua data-testid (non-mutating, guard zero-POST); seed roster nhóm 2 HV|
 | t-students | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-students | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-students | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |

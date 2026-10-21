@@ -1,7 +1,7 @@
 ---
 title: "t-attendance: chụp modal điểm danh non-mutating khớp design v2"
 description: "Sửa cặp ảnh design:compare t-attendance bị lệch trạng thái: app thêm data-testid cho link mở modal điểm danh, seed thêm học viên thứ 2 để buổi nhóm render link, và harness click modal qua appSteps."
-status: in-progress
+status: completed
 priority: P2
 effort: 2h
 issue: 403

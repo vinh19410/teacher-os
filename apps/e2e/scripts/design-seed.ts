@@ -13,7 +13,11 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { chromium, type Page } from "@playwright/test";
 import { orgIdForTeacherEmail } from "../specs/helpers";
-import { seedQuizFixture, seedSubmittedEssay } from "../specs/helpers-quiz";
+import {
+	type QuizSeedLesson,
+	seedQuizFixture,
+	seedSubmittedEssay,
+} from "../specs/helpers-quiz";
 import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "../specs/origins";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -224,6 +228,45 @@ try {
 	const today = new Date();
 	const daysFromToday = (n: number) =>
 		new Date(today.getTime() + n * 86_400_000).toISOString().slice(0, 10);
+	// #403: tách mảng lesson ra để tạo bản sao cho học viên thứ 2 (roster nhóm
+	// cho modal điểm danh — cặp ảnh t-attendance).
+	const classLessons: QuizSeedLesson[] = [
+		{
+			date: daysFromToday(-7),
+			time: "18:00",
+			dur: 90,
+			status: "completed",
+			topic: "Listening Section 1–2",
+		},
+		{
+			date: daysFromToday(-3),
+			time: "18:00",
+			dur: 90,
+			status: "completed",
+			topic: "Vocabulary: Environment",
+		},
+		{
+			date: daysFromToday(0),
+			time: "18:00",
+			dur: 90,
+			status: "upcoming",
+			topic: "Reading: Matching headings",
+		},
+		{
+			date: daysFromToday(4),
+			time: "18:00",
+			dur: 90,
+			status: "upcoming",
+			topic: "Writing Task 1 — Line graphs",
+		},
+		{
+			date: daysFromToday(9),
+			time: "18:00",
+			dur: 90,
+			status: "cancelled",
+			topic: "Speaking Part 1 warm-up",
+		},
+	];
 	const fixture = await seedQuizFixture({
 		orgId,
 		orgName: "Lan IELTS Studio",
@@ -231,43 +274,7 @@ try {
 		studentName: "Phạm Bảo Ngọc",
 		studentEmail,
 		invitedClassName: "Writing Clinic",
-		lessons: [
-			{
-				date: daysFromToday(-7),
-				time: "18:00",
-				dur: 90,
-				status: "completed",
-				topic: "Listening Section 1–2",
-			},
-			{
-				date: daysFromToday(-3),
-				time: "18:00",
-				dur: 90,
-				status: "completed",
-				topic: "Vocabulary: Environment",
-			},
-			{
-				date: daysFromToday(0),
-				time: "18:00",
-				dur: 90,
-				status: "upcoming",
-				topic: "Reading: Matching headings",
-			},
-			{
-				date: daysFromToday(4),
-				time: "18:00",
-				dur: 90,
-				status: "upcoming",
-				topic: "Writing Task 1 — Line graphs",
-			},
-			{
-				date: daysFromToday(9),
-				time: "18:00",
-				dur: 90,
-				status: "cancelled",
-				topic: "Speaking Part 1 warm-up",
-			},
-		],
+		lessons: classLessons,
 		prompts: [
 			{
 				title: TITLE_READING,
@@ -356,6 +363,51 @@ try {
 		],
 	});
 
+	// #403: học viên thứ 2 trong lớp chính → các buổi thành nhóm (attendees >= 2)
+	// → link mở attendance modal render (`session-attendance-open-*`) và nút
+	// commit check-in 1:1 (mutating) biến mất khỏi trang. Tên trùng roster lớp
+	// c2 của design mock (s1 Nguyễn Thu Hà + s3 Phạm Bảo Ngọc) để ảnh khớp;
+	// email có runToken vì unique index student(org_id, lower(trim(email))).
+	const now = Date.now();
+	const rosterStudentId = crypto.randomUUID();
+	await db.execute({
+		sql: `INSERT INTO student (id, org_id, name, email, onboarding_completed_at, created_at)
+			VALUES (?, ?, 'Nguyễn Thu Hà', ?, ?, ?)`,
+		args: [
+			rosterStudentId,
+			orgId,
+			`design.roster2.${runToken}@test.local`,
+			now,
+			now,
+		],
+	});
+	const rosterEnrollmentId = crypto.randomUUID();
+	await db.execute({
+		sql: `INSERT INTO enrollment (id, org_id, class_id, student_id, status, created_at)
+			VALUES (?, ?, ?, ?, 'active', ?)`,
+		args: [rosterEnrollmentId, orgId, fixture.classId, rosterStudentId, now],
+	});
+	for (const l of classLessons) {
+		const weekday = new Date(`${l.date}T00:00:00Z`).getUTCDay();
+		await db.execute({
+			sql: `INSERT INTO lesson (id, org_id, class_id, enrollment_id, day, time, dur, date, status, topic, created_at)
+				VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+			args: [
+				crypto.randomUUID(),
+				orgId,
+				fixture.classId,
+				rosterEnrollmentId,
+				weekday === 0 ? 7 : weekday,
+				l.time,
+				l.dur,
+				l.date,
+				l.status,
+				l.topic,
+				now,
+			],
+		});
+	}
+
 	// Lịch v2 cho lớp chính: không có schedule + start_date thì projection
 	// trả null → class detail rơi vào bảng legacy, KHÔNG có nút "Điểm danh"
 	// → harness không chụp được modal điểm danh (t-attendance).
@@ -386,7 +438,6 @@ try {
 	const invoicePaid = crypto.randomUUID();
 	const invoicePartial = crypto.randomUUID();
 	const invoiceUnpaid = crypto.randomUUID();
-	const now = Date.now();
 	const duePaid = daysFromToday(-20);
 	const duePartial = daysFromToday(7);
 	const dueUnpaid = daysFromToday(-5);
