@@ -28,7 +28,7 @@ test("syllabus editor: mũi tên đổi thứ tự module rồi xóa module", as
 	const name = `E2E Reorder ${Date.now()}`;
 	await signUpViaUi(page);
 
-	const syllabus = await apiPost(page, "/api/syllabi", {
+	const syllabus = await apiPost(page, "/api/syllabus-templates", {
 		name,
 		type: "ielts",
 		level: "Band 7.0",
@@ -39,40 +39,64 @@ test("syllabus editor: mũi tên đổi thứ tự module rồi xóa module", as
 	const syllabusId = syllabus.id ?? "";
 	expect(syllabusId).not.toBe("");
 
-	const moduleA = await apiPost(page, `/api/syllabi/${syllabusId}/modules`, {
-		title: "Module Alpha",
-		description: "",
-	});
-	const moduleB = await apiPost(page, `/api/syllabi/${syllabusId}/modules`, {
-		title: "Module Beta",
-		description: "",
-	});
+	const moduleA = await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules`,
+		{
+			title: "Module Alpha",
+			description: "",
+		},
+	);
+	const moduleB = await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules`,
+		{
+			title: "Module Beta",
+			description: "",
+		},
+	);
 	const a = moduleA.id ?? "";
 	const b = moduleB.id ?? "";
-	await apiPost(page, `/api/syllabi/${syllabusId}/modules/${a}/lessons`, {
-		title: "A1",
-		objectives: "",
-		materials: "",
-		status: "upcoming",
-	});
-	await apiPost(page, `/api/syllabi/${syllabusId}/modules/${a}/lessons`, {
-		title: "A2",
-		objectives: "",
-		materials: "",
-		status: "upcoming",
-	});
-	await apiPost(page, `/api/syllabi/${syllabusId}/modules/${b}/lessons`, {
-		title: "B1",
-		objectives: "",
-		materials: "",
-		status: "upcoming",
-	});
-	await apiPost(page, `/api/syllabi/${syllabusId}/modules/${b}/lessons`, {
-		title: "B2",
-		objectives: "",
-		materials: "",
-		status: "upcoming",
-	});
+	await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules/${a}/lessons`,
+		{
+			title: "A1",
+			objectives: "",
+			materials: "",
+			status: "upcoming",
+		},
+	);
+	await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules/${a}/lessons`,
+		{
+			title: "A2",
+			objectives: "",
+			materials: "",
+			status: "upcoming",
+		},
+	);
+	await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules/${b}/lessons`,
+		{
+			title: "B1",
+			objectives: "",
+			materials: "",
+			status: "upcoming",
+		},
+	);
+	await apiPost(
+		page,
+		`/api/syllabus-templates/${syllabusId}/modules/${b}/lessons`,
+		{
+			title: "B2",
+			objectives: "",
+			materials: "",
+			status: "upcoming",
+		},
+	);
 
 	await page.reload();
 	await page.getByText("Syllabus", { exact: true }).first().click();

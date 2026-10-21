@@ -89,6 +89,7 @@ vi.mock("@/lib/repos/use-syllabus", () => ({
 	useSyllabus: () => ({
 		templates: mockStoreData.syllabi,
 	}),
+	useTemplates: () => mockStoreData.syllabi,
 }));
 
 vi.mock("@/lib/use-direct-kernel-action", () => ({

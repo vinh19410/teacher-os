@@ -313,7 +313,7 @@ describe("class detail → Buổi học tab", () => {
 			expect(server.writes).toEqual([
 				{
 					method: "POST",
-					path: "/api/classes/cl-1/remove-curriculum",
+					path: "/api/classes/cl-1/curriculum/remove",
 					body: {},
 				},
 			]),
@@ -334,7 +334,7 @@ describe("class detail → Buổi học tab", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Nhập từ template" }));
 		const dialog = screen.getByRole("dialog");
 		expect(
-			within(dialog).getByRole("option", { name: "Template A" }),
+			within(dialog).getByRole("option", { name: "Template A · 0 buổi" }),
 		).toBeTruthy();
 	});
 });

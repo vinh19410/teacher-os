@@ -46,7 +46,7 @@ describe("ImportSyllabusModal", () => {
 		),
 		submit: "Nhập giáo trình",
 		expectedWrite: {
-			path: "/api/classes/cl-1/import-syllabus",
+			path: "/api/classes/cl-1/curriculum/import",
 			body: { templateId: "sy-a" },
 		},
 	});
@@ -64,7 +64,7 @@ describe("ImportSyllabusModal", () => {
 			within(dialog)
 				.getAllByRole("option")
 				.map((o) => o.textContent),
-		).toEqual(["Template A", "Template B"]);
+		).toEqual(["Template A · 0 buổi", "Template B · 0 buổi"]);
 	});
 
 	it("imports the chosen template into the class and closes after the refresh", async () => {
@@ -85,7 +85,7 @@ describe("ImportSyllabusModal", () => {
 		expect(server.writes).toEqual([
 			{
 				method: "POST",
-				path: "/api/classes/cl-1/import-syllabus",
+				path: "/api/classes/cl-1/curriculum/import",
 				body: { templateId: "sy-b" },
 			},
 		]);

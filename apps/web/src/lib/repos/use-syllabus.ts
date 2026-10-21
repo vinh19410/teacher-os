@@ -1,18 +1,26 @@
 /**
- * Syllabus-module read hook (Wave 2) — the /syllabus routes' only data
- * entry. Reads from the kernel-backed store cache so command-bus writes
- * (add/edit module & lesson) land immediately; re-render granularity
+ * Syllabus-module read hooks (Wave 2 + issue #394) — the /syllabus routes'
+ * only data entry. Reads from the kernel-backed store cache so command-bus
+ * writes (add/edit module & lesson) land immediately; re-render granularity
  * matches useData (any store change) until a later wave narrows it.
  * No second fetch.
+ *
+ * Phân loại Template vs Giáo trình của lớp đi qua `splitSyllabi` (D7) —
+ * consumers dùng `useTemplates()` / `useClassCurriculum(classId)`,
+ * không tự so `classId`.
  */
 import { useMemo } from "react";
+import type { CurriculumTarget } from "@/lib/data-actions";
 import { useData } from "@/lib/data-store";
-import type { Syllabus } from "@/lib/mock-data";
+import type {
+	ClassCurriculum,
+	Syllabus,
+	SyllabusTemplate,
+} from "@/lib/mock-data";
+import { splitSyllabi } from "./syllabus";
 
 export interface SyllabusRead {
 	syllabi: Syllabus[];
-	/** Shared templates only (classId null) — the /syllabus gallery source. */
-	templates: Syllabus[];
 	syllabusById(id: string): Syllabus | undefined;
 }
 
@@ -21,9 +29,49 @@ export function useSyllabus(): SyllabusRead {
 	return useMemo(
 		() => ({
 			syllabi: data.syllabi,
-			templates: data.syllabi.filter((s) => s.classId === null),
 			syllabusById: (id: string) => data.syllabi.find((s) => s.id === id),
 		}),
 		[data],
 	);
+}
+
+/** Template dùng chung (classId null) — nguồn của TemplatePicker. */
+export function useTemplates(): SyllabusTemplate[] {
+	const { data } = useData();
+	return useMemo(() => splitSyllabi(data.syllabi).templates, [data]);
+}
+
+/** Giáo trình của đúng một lớp — đọc theo `syllabus.class_id` (nguồn sự thật). */
+export function useClassCurriculum(classId: string): ClassCurriculum | null {
+	const { data } = useData();
+	return useMemo(() => {
+		const { curriculumByClassId } = splitSyllabi(data.syllabi);
+		return curriculumByClassId.get(classId) ?? null;
+	}, [data, classId]);
+}
+
+/** Bản đồ templateId → danh sách classId đang dùng copy của nó. */
+export function useTemplateUsage(): Map<string, string[]> {
+	const { data } = useData();
+	return useMemo(() => splitSyllabi(data.syllabi).templateUsage, [data]);
+}
+
+/**
+ * Dòng syllabus tương ứng một `CurriculumTarget` — template tra theo id,
+ * class target tra qua `splitSyllabi` (nguồn sự thật class_id). `null`
+ * khi target chưa chọn hoặc copy chưa tồn tại.
+ */
+export function useTargetSyllabus(
+	target: CurriculumTarget | null,
+): Syllabus | null {
+	const { data } = useData();
+	return useMemo(() => {
+		if (!target) return null;
+		if (target.kind === "template") {
+			return data.syllabi.find((s) => s.id === target.syllabusId) ?? null;
+		}
+		return (
+			splitSyllabi(data.syllabi).curriculumByClassId.get(target.classId) ?? null
+		);
+	}, [data, target]);
 }

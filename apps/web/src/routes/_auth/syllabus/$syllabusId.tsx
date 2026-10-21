@@ -30,7 +30,7 @@ import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
-import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { useTemplates } from "@/lib/repos/use-syllabus";
 import {
 	parseSyllabusFile,
 	type SyllabusImportResult,
@@ -60,9 +60,11 @@ export const Route = createFileRoute("/_auth/syllabus/$syllabusId")({
 
 function SyllabusDetailRoute() {
 	const { syllabusId } = Route.useParams();
-	const { syllabusById } = useSyllabus();
+	// Trang này chỉ là template editor (issue #394): id bản copy của lớp hoặc
+	// id lạ đều rơi vào not-found, không còn vai trò kép.
+	const templates = useTemplates();
 	const kernel = useDirectKernelAction();
-	const sy = syllabusById(syllabusId);
+	const sy = templates.find((t) => t.id === syllabusId);
 	if (!sy) {
 		throw notFound();
 	}
@@ -96,8 +98,9 @@ function SyllabusDetail({
 	const [parsing, setParsing] = useState(false);
 	const [confirmOverwriteOpen, setConfirmOverwriteOpen] = useState(false);
 	const mutations = useSyllabusMutations({
+		target: { kind: "template", syllabusId: sy.id },
 		syllabus: sy,
-		isClassCopy: sy.classId !== null,
+		isClassCopy: false,
 		run,
 		busy,
 	});
@@ -153,7 +156,7 @@ function SyllabusDetail({
 					</span>
 				}
 				title={sy.name}
-				lead={`${sy.description} · Đang dùng ${assigned.length} lớp · ${sy.classId === null ? "Template dùng chung" : "Bản sao của một lớp"}`}
+				lead={`${sy.description} · Đang dùng ${assigned.length} lớp`}
 				action={
 					<Link
 						to="/syllabus"
@@ -172,28 +175,24 @@ function SyllabusDetail({
 			<div className="mb-3 flex items-center justify-between">
 				<SectionLabel>Nội dung giáo trình</SectionLabel>
 				<div className="flex items-center gap-2">
-					{/* Import ghi đè chỉ dành cho template (classId === null):
-					    ghi đè bản copy lớp sẽ xóa tiến độ sống của lớp đó. */}
-					{sy.classId === null && (
-						<>
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept=".csv,.xlsx"
-								className="hidden"
-								onChange={onImportFileChange}
-							/>
-							<Button
-								type="button"
-								variant="secondary"
-								size="sm"
-								disabled={parsing || busy}
-								onClick={() => fileInputRef.current?.click()}
-							>
-								Nhập từ Excel/CSV
-							</Button>
-						</>
-					)}
+					{/* Trang này luôn là template (issue #394): import ghi đè luôn
+					    khả dụng — bản copy của lớp không vào được đây nữa. */}
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".csv,.xlsx"
+						className="hidden"
+						onChange={onImportFileChange}
+					/>
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						disabled={parsing || busy}
+						onClick={() => fileInputRef.current?.click()}
+					>
+						Nhập từ Excel/CSV
+					</Button>
 					<Button
 						variant="secondary"
 						size="sm"
@@ -389,25 +388,25 @@ function SyllabusDetail({
 			<AddModuleModal
 				open={addModuleOpen}
 				onClose={() => setAddModuleOpen(false)}
-				syllabusId={sy.id}
+				target={{ kind: "template", syllabusId: sy.id }}
 			/>
 			<EditModuleModal
 				open={editModuleId !== null}
 				onClose={() => setEditModuleId(null)}
-				syllabusId={sy.id}
+				target={{ kind: "template", syllabusId: sy.id }}
 				moduleId={editModuleId}
 			/>
 			<AddLessonModal
 				open={addLessonModuleId !== null}
 				onClose={() => setAddLessonModuleId(null)}
-				syllabusId={sy.id}
+				target={{ kind: "template", syllabusId: sy.id }}
 				moduleId={addLessonModuleId}
 				showKind
 			/>
 			<EditLessonModal
 				open={editLessonRef !== null}
 				onClose={() => setEditLessonRef(null)}
-				syllabusId={sy.id}
+				target={{ kind: "template", syllabusId: sy.id }}
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 				showKind

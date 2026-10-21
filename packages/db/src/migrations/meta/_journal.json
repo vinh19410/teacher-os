@@ -295,6 +295,13 @@
       "when": 1792549010002,
       "tag": "0041_known_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1792589043473,
+      "tag": "0042_syllabus_class_pointer_reconcile",
+      "breakpoints": true
     }
   ]
 }

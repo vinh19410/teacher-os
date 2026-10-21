@@ -25,7 +25,11 @@ import { notif } from "@teacher-os/db/schema/notif";
 import { organization } from "@teacher-os/db/schema/organization";
 import { report } from "@teacher-os/db/schema/report";
 import { student } from "@teacher-os/db/schema/student";
-import { syllabusLesson } from "@teacher-os/db/schema/syllabus";
+import {
+	syllabus,
+	syllabusLesson,
+	syllabusModule,
+} from "@teacher-os/db/schema/syllabus";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -233,6 +237,7 @@ async function createTestApp() {
 			schedule?: { days: number[]; start: string; end: string };
 			sessionsTotal?: number;
 			tuitionFee?: number | null;
+			templateId?: string;
 		} = {},
 	): Promise<string> {
 		const res = await call("/api/classes", {
@@ -259,7 +264,7 @@ async function createTestApp() {
 		session: TestSession,
 		name: string,
 	): Promise<string> {
-		const res = await call("/api/syllabi", {
+		const res = await call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -280,7 +285,7 @@ async function createTestApp() {
 		syllabusId: string,
 		title: string,
 	): Promise<string> {
-		const res = await call(`/api/syllabi/${syllabusId}/modules`, {
+		const res = await call(`/api/syllabus-templates/${syllabusId}/modules`, {
 			session,
 			method: "POST",
 			body: { title, description: "" },
@@ -365,8 +370,11 @@ async function createTestApp() {
 	};
 }
 
+/** Tạo bởi createTestApp — hợp đồng test app dùng chung cho mọi describe. */
+type TestApp = Awaited<ReturnType<typeof createTestApp>>;
+
 describe("kernel bootstrap", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 
 	beforeAll(async () => {
 		t = await createTestApp();
@@ -412,7 +420,7 @@ describe("kernel bootstrap", () => {
 });
 
 describe("class type + structured schedule (create-class modal)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -574,7 +582,7 @@ describe("class type + structured schedule (create-class modal)", () => {
 });
 
 describe("syllabus create with imported content (excel/csv import)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -583,7 +591,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 	});
 
 	test("create with modules persists the ordered tree", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -652,7 +660,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 		const lessons = Array.from({ length: 501 }, (_, i) => ({
 			title: `B${i}`,
 		}));
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -672,7 +680,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 	});
 
 	test("invalid lesson status in modules is 400", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -689,7 +697,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 	});
 
 	test("create without modules still works (backward compat)", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -712,7 +720,7 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 			description: "a".repeat(2 * 1024 * 1024),
 		});
 		for (const withLength of [false, true]) {
-			const res = await t.app.request("/api/syllabi", {
+			const res = await t.app.request("/api/syllabus-templates", {
 				method: "POST",
 				headers: {
 					cookie: `better-auth.session_token=${session.token}`,
@@ -732,12 +740,12 @@ describe("syllabus create with imported content (excel/csv import)", () => {
 });
 
 describe("syllabus lesson status optional + replace-content (import ghi đè)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	/** Syllabus 1 module "M1" với 1 lesson `status`, trả ids từ snapshot. */
 	async function createWithLesson(status: "done" | "current" | "upcoming") {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -773,7 +781,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 	test("edit-lesson without status preserves the existing status", async () => {
 		const { syllabusId, moduleId, lessonId } = await createWithLesson("done");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
 			{
 				session,
 				method: "POST",
@@ -790,7 +798,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 	test("edit-lesson with an explicit status still updates it", async () => {
 		const { syllabusId, moduleId, lessonId } = await createWithLesson("done");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
 			{
 				session,
 				method: "POST",
@@ -812,7 +820,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 	test("add-lesson without status defaults to upcoming", async () => {
 		const { syllabusId, moduleId } = await createWithLesson("done");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -830,7 +838,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 	});
 
 	test("replace-content swaps the whole tree and updates totalLessons", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -853,22 +861,25 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 		expect(res.status).toBe(201);
 		const { id: syllabusId } = (await res.json()) as { id: string };
 
-		const replace = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
-			session,
-			method: "POST",
-			body: {
-				modules: [
-					{
-						title: "Mới",
-						description: "d",
-						lessons: [
-							{ title: "Buổi 1", objectives: "o", materials: "m" },
-							{ title: "Buổi 2", objectives: "", materials: "" },
-						],
-					},
-				],
+		const replace = await t.call(
+			`/api/syllabus-templates/${syllabusId}/replace-content`,
+			{
+				session,
+				method: "POST",
+				body: {
+					modules: [
+						{
+							title: "Mới",
+							description: "d",
+							lessons: [
+								{ title: "Buổi 1", objectives: "o", materials: "m" },
+								{ title: "Buổi 2", objectives: "", materials: "" },
+							],
+						},
+					],
+				},
 			},
-		});
+		);
 		expect(replace.status).toBe(200);
 
 		const snapshot = await t.kernel(session);
@@ -884,7 +895,7 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 
 	test("replace-content on an unknown syllabus is 404", async () => {
 		const res = await t.call(
-			`/api/syllabi/${crypto.randomUUID()}/replace-content`,
+			`/api/syllabus-templates/${crypto.randomUUID()}/replace-content`,
 			{
 				session,
 				method: "POST",
@@ -896,11 +907,14 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 
 	test("replace-content with empty modules is 400", async () => {
 		const { syllabusId } = await createWithLesson("upcoming");
-		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
-			session,
-			method: "POST",
-			body: { modules: [] },
-		});
+		const res = await t.call(
+			`/api/syllabus-templates/${syllabusId}/replace-content`,
+			{
+				session,
+				method: "POST",
+				body: { modules: [] },
+			},
+		);
 		expect(res.status).toBe(400);
 	});
 
@@ -909,13 +923,18 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 		const other = await t.insertUser("Cô org khác");
 		await t.kernel(other); // bootstrap org + membership cho user thứ hai
 
-		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
-			session: other,
-			method: "POST",
-			body: {
-				modules: [{ title: "M phá hoại", lessons: [{ title: "B phá hoại" }] }],
+		const res = await t.call(
+			`/api/syllabus-templates/${syllabusId}/replace-content`,
+			{
+				session: other,
+				method: "POST",
+				body: {
+					modules: [
+						{ title: "M phá hoại", lessons: [{ title: "B phá hoại" }] },
+					],
+				},
 			},
-		});
+		);
 		expect(res.status).toBe(404);
 
 		const snapshot = await t.kernel(session);
@@ -930,12 +949,12 @@ describe("syllabus lesson status optional + replace-content (import ghi đè)", 
 });
 
 describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #154)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	/** Syllabus 1 module với 3 lesson kind lesson/midterm/final, trả ids. */
 	async function createWithKinds() {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -990,7 +1009,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		const midterm = lessons[1];
 		if (!midterm) throw new Error("setup failed");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${midterm.id}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${midterm.id}`,
 			{
 				session,
 				method: "POST",
@@ -1010,7 +1029,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		const normal = lessons[0];
 		if (!normal) throw new Error("setup failed");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${normal.id}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${normal.id}`,
 			{
 				session,
 				method: "POST",
@@ -1028,7 +1047,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 	test("add-lesson without kind defaults to lesson", async () => {
 		const { syllabusId, moduleId } = await createWithKinds();
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -1044,26 +1063,29 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 
 	test("replace-content preserves mixed kinds", async () => {
 		const { syllabusId } = await createWithKinds();
-		const res = await t.call(`/api/syllabi/${syllabusId}/replace-content`, {
-			session,
-			method: "POST",
-			body: {
-				modules: [
-					{
-						title: "M mới",
-						lessons: [
-							{ title: "Thường", objectives: "", materials: "" },
-							{
-								title: "Thi lại",
-								objectives: "",
-								materials: "",
-								kind: "midterm",
-							},
-						],
-					},
-				],
+		const res = await t.call(
+			`/api/syllabus-templates/${syllabusId}/replace-content`,
+			{
+				session,
+				method: "POST",
+				body: {
+					modules: [
+						{
+							title: "M mới",
+							lessons: [
+								{ title: "Thường", objectives: "", materials: "" },
+								{
+									title: "Thi lại",
+									objectives: "",
+									materials: "",
+									kind: "midterm",
+								},
+							],
+						},
+					],
+				},
 			},
-		});
+		);
 		expect(res.status).toBe(200);
 		const snapshot = await t.kernel(session);
 		const sy = snapshot.syllabi.find((row) => row.id === syllabusId);
@@ -1074,7 +1096,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 	});
 
 	test("invalid kind in modules is 400", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -1090,7 +1112,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 
 	test("import template into a class keeps kind and resets status", async () => {
 		// Template: 1 lesson thường (status upcoming) + 1 buổi thi giữa kỳ.
-		const createRes = await t.call("/api/syllabi", {
+		const createRes = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -1121,11 +1143,14 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 		const tplMidterm = template?.modules[0]?.lessons[1];
 
 		const classId = await t.createClass(session, "Lớp copy buổi thi");
-		const importRes = await t.call(`/api/classes/${classId}/import-syllabus`, {
-			session,
-			method: "POST",
-			body: { templateId },
-		});
+		const importRes = await t.call(
+			`/api/classes/${classId}/curriculum/import`,
+			{
+				session,
+				method: "POST",
+				body: { templateId },
+			},
+		);
 		expect(importRes.status).toBe(201);
 
 		const snapshot = await t.kernel(session);
@@ -1147,7 +1172,7 @@ describe("syllabus lesson kind — buổi thi giữa kỳ/cuối kỳ (issue #15
 });
 
 describe("invoice persistence", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let studentId: string;
 
@@ -1308,7 +1333,7 @@ describe("invoice persistence", () => {
 });
 
 describe("invoice create (issue #60)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let studentId: string;
 	let classId: string;
@@ -1521,7 +1546,7 @@ describe("invoice create (issue #60)", () => {
 });
 
 describe("kernel origin + content-type guards", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -1630,7 +1655,7 @@ describe("kernel origin + content-type guards", () => {
 });
 
 describe("org isolation", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 
@@ -1715,7 +1740,7 @@ describe("org isolation", () => {
 });
 
 describe("syllabus tree and nested binding", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let syllabusId: string;
 	let moduleId: string;
@@ -1735,7 +1760,7 @@ describe("syllabus tree and nested binding", () => {
 		);
 
 		const lessonRes = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -1767,7 +1792,7 @@ describe("syllabus tree and nested binding", () => {
 	});
 
 	test("ielts with empty skills is 400", async () => {
-		const res = await t.call("/api/syllabi", {
+		const res = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -1783,7 +1808,7 @@ describe("syllabus tree and nested binding", () => {
 	});
 
 	test("communication with skills is 400; communication empty skills persists", async () => {
-		const rejected = await t.call("/api/syllabi", {
+		const rejected = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -1797,7 +1822,7 @@ describe("syllabus tree and nested binding", () => {
 		});
 		expect(rejected.status).toBe(400);
 
-		const created = await t.call("/api/syllabi", {
+		const created = await t.call("/api/syllabus-templates", {
 			session,
 			method: "POST",
 			body: {
@@ -1819,7 +1844,7 @@ describe("syllabus tree and nested binding", () => {
 	test("module edit under a foreign syllabus is 404", async () => {
 		const otherSyllabusId = await t.createSyllabus(session, "IELTS Speaking");
 		const res = await t.call(
-			`/api/syllabi/${otherSyllabusId}/modules/${moduleId}`,
+			`/api/syllabus-templates/${otherSyllabusId}/modules/${moduleId}`,
 			{
 				session,
 				method: "POST",
@@ -1838,7 +1863,7 @@ describe("syllabus tree and nested binding", () => {
 		const tree = await t.kernel(session);
 		const lessonId = tree.syllabi[0]?.modules[0]?.lessons[0]?.id ?? "";
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${otherModuleId}/lessons/${lessonId}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${otherModuleId}/lessons/${lessonId}`,
 			{
 				session,
 				method: "POST",
@@ -1855,7 +1880,7 @@ describe("syllabus tree and nested binding", () => {
 });
 
 describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let syllabusId: string;
@@ -1869,7 +1894,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 		syllabusId = await t.createSyllabus(orgA, "Cây giáo trình A");
 		moduleId = await t.createModule(orgA, syllabusId, "Module A");
 		const lessonRes = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session: orgA,
 				method: "POST",
@@ -1891,7 +1916,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 	});
 
 	test("org B cannot add a module under org A's syllabus", async () => {
-		const res = await t.call(`/api/syllabi/${syllabusId}/modules`, {
+		const res = await t.call(`/api/syllabus-templates/${syllabusId}/modules`, {
 			session: orgB,
 			method: "POST",
 			body: { title: "module gián điệp", description: "" },
@@ -1900,17 +1925,20 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 	});
 
 	test("org B cannot edit org A's module", async () => {
-		const res = await t.call(`/api/syllabi/${syllabusId}/modules/${moduleId}`, {
-			session: orgB,
-			method: "POST",
-			body: { title: "đánh cắp module", description: "" },
-		});
+		const res = await t.call(
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}`,
+			{
+				session: orgB,
+				method: "POST",
+				body: { title: "đánh cắp module", description: "" },
+			},
+		);
 		expect(res.status).toBe(404);
 	});
 
 	test("org B cannot add a lesson under org A's module", async () => {
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session: orgB,
 				method: "POST",
@@ -1927,7 +1955,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 
 	test("org B cannot edit org A's lesson", async () => {
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${lessonId}`,
 			{
 				session: orgB,
 				method: "POST",
@@ -1944,7 +1972,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 
 	test("org B cannot reorder or remove org A's modules/lessons", async () => {
 		const reorderModules = await t.call(
-			`/api/syllabi/${syllabusId}/modules/reorder`,
+			`/api/syllabus-templates/${syllabusId}/modules/reorder`,
 			{
 				session: orgB,
 				method: "POST",
@@ -1953,12 +1981,12 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 		);
 		expect(reorderModules.status).toBe(404);
 		const removeModule = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/remove`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/remove`,
 			{ session: orgB, method: "POST", body: {} },
 		);
 		expect(removeModule.status).toBe(404);
 		const reorderLessons = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/reorder`,
 			{
 				session: orgB,
 				method: "POST",
@@ -1967,7 +1995,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 		);
 		expect(reorderLessons.status).toBe(404);
 		const removeLesson = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
 			{ session: orgB, method: "POST", body: {} },
 		);
 		expect(removeLesson.status).toBe(404);
@@ -1983,7 +2011,7 @@ describe("cross-org syllabus writes (Wave 2 isolation lock)", () => {
 });
 
 describe("syllabus module/lesson delete and reorder", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -1998,7 +2026,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		title: string,
 	): Promise<string> {
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -2018,11 +2046,14 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const syllabusId = await t.createSyllabus(session, "Reorder modules");
 		const a = await t.createModule(session, syllabusId, "A");
 		const b = await t.createModule(session, syllabusId, "B");
-		const res = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
-			session,
-			method: "POST",
-			body: { moduleIds: [b, a] },
-		});
+		const res = await t.call(
+			`/api/syllabus-templates/${syllabusId}/modules/reorder`,
+			{
+				session,
+				method: "POST",
+				body: { moduleIds: [b, a] },
+			},
+		);
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ ok: true });
 		const snapshot = await t.kernel(session);
@@ -2036,7 +2067,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const l1 = await createLesson(syllabusId, moduleId, "L1");
 		const l2 = await createLesson(syllabusId, moduleId, "L2");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/reorder`,
 			{ session, method: "POST", body: { lessonIds: [l2, l1] } },
 		);
 		expect(res.status).toBe(200);
@@ -2054,7 +2085,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		await createLesson(syllabusId, gone, "Child 1");
 		await createLesson(syllabusId, gone, "Child 2");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${gone}/remove`,
+			`/api/syllabus-templates/${syllabusId}/modules/${gone}/remove`,
 			{ session, method: "POST", body: {} },
 		);
 		expect(res.status).toBe(200);
@@ -2070,7 +2101,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const keep = await createLesson(syllabusId, moduleId, "Keep");
 		const gone = await createLesson(syllabusId, moduleId, "Gone");
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${gone}/remove`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${gone}/remove`,
 			{ session, method: "POST", body: {} },
 		);
 		expect(res.status).toBe(200);
@@ -2085,20 +2116,26 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const syllabusId = await t.createSyllabus(session, "Reorder errors");
 		const a = await t.createModule(session, syllabusId, "A");
 		const b = await t.createModule(session, syllabusId, "B");
-		const dup = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
-			session,
-			method: "POST",
-			body: { moduleIds: [a, a] },
-		});
+		const dup = await t.call(
+			`/api/syllabus-templates/${syllabusId}/modules/reorder`,
+			{
+				session,
+				method: "POST",
+				body: { moduleIds: [a, a] },
+			},
+		);
 		expect(dup.status).toBe(400);
-		const extra = await t.call(`/api/syllabi/${syllabusId}/modules/reorder`, {
-			session,
-			method: "POST",
-			body: { moduleIds: [a, b], extra: true },
-		});
+		const extra = await t.call(
+			`/api/syllabus-templates/${syllabusId}/modules/reorder`,
+			{
+				session,
+				method: "POST",
+				body: { moduleIds: [a, b], extra: true },
+			},
+		);
 		expect(extra.status).toBe(400);
 		const mismatch = await t.call(
-			`/api/syllabi/${syllabusId}/modules/reorder`,
+			`/api/syllabus-templates/${syllabusId}/modules/reorder`,
 			{
 				session,
 				method: "POST",
@@ -2116,7 +2153,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const a2 = await t.createModule(session, syA, "A2");
 		const b1 = await t.createModule(session, syB, "B1");
 		const b2 = await t.createModule(session, syB, "B2");
-		const res = await t.call(`/api/syllabi/${syA}/modules/reorder`, {
+		const res = await t.call(`/api/syllabus-templates/${syA}/modules/reorder`, {
 			session,
 			method: "POST",
 			body: { moduleIds: [b1, b2] },
@@ -2140,7 +2177,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const b1 = await createLesson(sy, m2, "B1");
 		const b2 = await createLesson(sy, m2, "B2");
 		const res = await t.call(
-			`/api/syllabi/${sy}/modules/${m1}/lessons/reorder`,
+			`/api/syllabus-templates/${sy}/modules/${m1}/lessons/reorder`,
 			{ session, method: "POST", body: { lessonIds: [b1, b2] } },
 		);
 		expect(res.status).toBe(409);
@@ -2160,19 +2197,19 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const lessonId = await createLesson(syllabusId, moduleId, "L");
 		const paths: Array<{ path: string; body: unknown }> = [
 			{
-				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/remove`,
+				path: `/api/syllabus-templates/${syllabusId}/modules/${moduleId}/remove`,
 				body: {},
 			},
 			{
-				path: `/api/syllabi/${syllabusId}/modules/reorder`,
+				path: `/api/syllabus-templates/${syllabusId}/modules/reorder`,
 				body: { moduleIds: [moduleId] },
 			},
 			{
-				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
+				path: `/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/${lessonId}/remove`,
 				body: {},
 			},
 			{
-				path: `/api/syllabi/${syllabusId}/modules/${moduleId}/lessons/reorder`,
+				path: `/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons/reorder`,
 				body: { lessonIds: [lessonId] },
 			},
 		];
@@ -2211,7 +2248,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const templateModule = await t.createModule(session, templateId, "T1");
 		await createLesson(templateId, templateModule, "TL");
 		const classId = await t.createClass(session, "Lớp copy");
-		const imported = await t.call(`/api/classes/${classId}/import-syllabus`, {
+		const imported = await t.call(`/api/classes/${classId}/curriculum/import`, {
 			session,
 			method: "POST",
 			body: { templateId },
@@ -2221,7 +2258,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 		const copy = before.syllabi.find((row) => row.classId === classId);
 		expect(copy?.modules).toHaveLength(1);
 		const res = await t.call(
-			`/api/syllabi/${templateId}/modules/${templateModule}/remove`,
+			`/api/syllabus-templates/${templateId}/modules/${templateModule}/remove`,
 			{ session, method: "POST", body: {} },
 		);
 		expect(res.status).toBe(200);
@@ -2235,7 +2272,7 @@ describe("syllabus module/lesson delete and reorder", () => {
 });
 
 describe("assignments grade (Wave 6)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let orgAId: string;
@@ -2398,7 +2435,7 @@ describe("assignments grade (Wave 6)", () => {
 });
 
 describe("reports, notifications, and comment bank (Wave 7)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let orgAId: string;
@@ -2741,7 +2778,7 @@ describe("reports, notifications, and comment bank (Wave 7)", () => {
 });
 
 describe("import syllabus + remove curriculum (issue #79)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let templateId: string;
 	let moduleAId: string;
@@ -2755,7 +2792,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		status = "upcoming",
 	): Promise<string> {
 		const res = await t.call(
-			`/api/syllabi/${syllabusId}/modules/${moduleId}/lessons`,
+			`/api/syllabus-templates/${syllabusId}/modules/${moduleId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -2771,7 +2808,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		classId: string,
 		templateId: string,
 	) {
-		return t.call(`/api/classes/${classId}/import-syllabus`, {
+		return t.call(`/api/classes/${classId}/curriculum/import`, {
 			session,
 			method: "POST",
 			body: { templateId },
@@ -2928,7 +2965,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		const copyId = ((await copyRes.json()) as { id: string }).id;
 		const before = (await t.kernel(session)).syllabi.length;
 
-		const remove = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+		const remove = await t.call(`/api/classes/${classId}/curriculum/remove`, {
 			session,
 			method: "POST",
 			body: {},
@@ -2941,7 +2978,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
 		).toBeNull();
 
-		const again = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+		const again = await t.call(`/api/classes/${classId}/curriculum/remove`, {
 			session,
 			method: "POST",
 			body: {},
@@ -2957,7 +2994,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 			.set({ syllabusId: templateId })
 			.where(eq(classTable.id, classId));
 
-		const res = await t.call(`/api/classes/${classId}/remove-curriculum`, {
+		const res = await t.call(`/api/classes/${classId}/curriculum/remove`, {
 			session,
 			method: "POST",
 			body: {},
@@ -3021,7 +3058,7 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 		const classId = await t.createClass(session, "Lớp edit copy");
 		const copyRes = await importSyllabus(session, classId, templateId);
 		const copyId = ((await copyRes.json()) as { id: string }).id;
-		const added = await t.call(`/api/syllabi/${copyId}/modules`, {
+		const added = await t.call(`/api/classes/${classId}/curriculum/modules`, {
 			session,
 			method: "POST",
 			body: { title: "Module lớp thêm", description: "" },
@@ -3062,8 +3099,607 @@ describe("import syllabus + remove curriculum (issue #79)", () => {
 	});
 });
 
+describe("class curriculum pointer invariant (class_id is source of truth)", () => {
+	let t: TestApp;
+	let session: TestSession;
+	let templateId: string;
+	let moduleAId: string;
+
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/curriculum/import`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
+
+	/** Với mọi lớp: có copy (theo class_id) ⇔ con trỏ trỏ đúng copy. */
+	async function expectPointerInvariant() {
+		const classes = await t.db.select().from(classTable);
+		const rows = await t.db.select().from(syllabus);
+		const copies = rows.filter((s) => s.classId !== null);
+		for (const cls of classes) {
+			const copy = copies.find(
+				(s) => s.classId === cls.id && s.orgId === cls.orgId,
+			);
+			if (copy) {
+				expect(cls.syllabusId, `lớp ${cls.name}: con trỏ lệch copy`).toBe(
+					copy.id,
+				);
+			} else {
+				expect(
+					cls.syllabusId,
+					`lớp ${cls.name}: con trỏ không có copy`,
+				).toBeNull();
+			}
+		}
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Bất Biến");
+		templateId = await t.createSyllabus(session, "Template Bất Biến");
+		moduleAId = await t.createModule(session, templateId, "Module IA");
+		await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleAId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Lesson IA1", objectives: "", materials: "" },
+			},
+		);
+	});
+
+	test("FK canary: class.syllabus_id là FK thật — con trỏ tới id không tồn tại bị từ chối", async () => {
+		const classId = await t.createClass(session, "Lớp canary FK");
+		let rejected = false;
+		try {
+			await t.db
+				.update(classTable)
+				.set({ syllabusId: "ghost-syllabus-id" })
+				.where(eq(classTable.id, classId));
+		} catch {
+			rejected = true;
+		}
+		// Nếu FK không được thực thi trong test DB thì các test xoá phía dưới
+		// không chứng minh thứ tự FK nữa — test này phải đỏ để dừng pipeline.
+		expect(rejected).toBe(true);
+	});
+
+	test("tạo lớp kèm templateId: con trỏ trỏ đúng bản copy", async () => {
+		const classId = await t.createClass(session, "Lớp kèm template IB", {
+			templateId,
+		});
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.classId === classId);
+		expect(copy?.sourceTemplateId).toBe(templateId);
+		const cls = snapshot.classes.find((c) => c.id === classId);
+		expect(cls?.syllabusId).toBe(copy?.id);
+		await expectPointerInvariant();
+	});
+
+	test("tạo lớp trống rồi import: con trỏ theo copy mới", async () => {
+		const classId = await t.createClass(session, "Lớp import IC");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+		const snapshot = await t.kernel(session);
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+		await expectPointerInvariant();
+	});
+
+	test("import lần hai trả 409 và bất biến vẫn đúng", async () => {
+		const classId = await t.createClass(session, "Lớp import ID");
+		expect((await importSyllabus(session, classId, templateId)).status).toBe(
+			201,
+		);
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(409);
+		await expectPointerInvariant();
+	});
+
+	test("import rồi gỡ: copy biến mất, con trỏ null", async () => {
+		const classId = await t.createClass(session, "Lớp gỡ IE");
+		const importRes = await importSyllabus(session, classId, templateId);
+		expect(importRes.status).toBe(201);
+		// 201 → CreatedResponse { id } (API contract của route import).
+		const created = (await importRes.json()) as { id: string };
+		const copyId = created.id;
+		const remove = await t.call(`/api/classes/${classId}/curriculum/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(false);
+		await expectPointerInvariant();
+	});
+
+	test("xoá template khi lớp khác còn giữ copy: copy và con trỏ giữ nguyên", async () => {
+		const doomedId = await t.createSyllabus(session, "Template sắp xoá IF");
+		const keeperClassId = await t.createClass(session, "Lớp giữ copy IG");
+		const copyRes = await importSyllabus(session, keeperClassId, doomedId);
+		expect(copyRes.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await copyRes.json()) as { id: string };
+		const copyId = created.id;
+
+		const del = await t.call(`/api/syllabus-templates/${doomedId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(del.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		const copy = snapshot.syllabi.find((s) => s.id === copyId);
+		expect(copy?.classId).toBe(keeperClassId);
+		expect(
+			snapshot.classes.find((c) => c.id === keeperClassId)?.syllabusId,
+		).toBe(copyId);
+		await expectPointerInvariant();
+	});
+
+	test("con trỏ cũ trỏ vào template cùng org: snapshot coi lớp chưa có copy; import thành công và trỏ về copy mới", async () => {
+		const classId = await t.createClass(session, "Lớp pointer template IH");
+		// Legacy anomaly: con trỏ thẳng vào template (cùng org, không phải copy).
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		// Nguồn sự thật class_id: lớp chưa có copy nào.
+		const before = await t.kernel(session);
+		expect(before.syllabi.some((s) => s.classId === classId)).toBe(false);
+
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		// 201 → CreatedResponse { id }.
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+		const after = await t.kernel(session);
+		expect(after.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+		// Template nguyên vẹn (2 module gốc, không thành bản copy).
+		const tpl = after.syllabi.find((s) => s.id === templateId);
+		expect(tpl?.classId).toBeNull();
+		expect(tpl?.modules).toHaveLength(1);
+		await expectPointerInvariant();
+	});
+
+	test("con trỏ cũ trỏ vào template cùng org rồi gỡ: ok, con trỏ null, template còn", async () => {
+		const classId = await t.createClass(session, "Lớp pointer gỡ II");
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: templateId })
+			.where(eq(classTable.id, classId));
+
+		const res = await t.call(`/api/classes/${classId}/curriculum/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true });
+		const snapshot = await t.kernel(session);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+		expect(snapshot.syllabi.some((s) => s.id === templateId)).toBe(true);
+		await expectPointerInvariant();
+	});
+
+	test("xoá template đang bị con trỏ của lớp không có copy trỏ vào: clearPointersTo chạy trước nên không 500", async () => {
+		const doomedId = await t.createSyllabus(session, "Template bị trỏ IJ");
+		const classId = await t.createClass(session, "Lớp trỏ mồ côi IK");
+		await t.db
+			.update(classTable)
+			.set({ syllabusId: doomedId })
+			.where(eq(classTable.id, classId));
+
+		const del = await t.call(`/api/syllabus-templates/${doomedId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(del.status).toBe(200);
+		const snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === doomedId)).toBe(false);
+		expect(
+			snapshot.classes.find((c) => c.id === classId)?.syllabusId,
+		).toBeNull();
+		await expectPointerInvariant();
+	});
+});
+
+describe("syllabus routes by context (templates vs class curriculum)", () => {
+	let t: TestApp;
+	let session: TestSession;
+	let otherSession: TestSession;
+	let templateId: string;
+
+	async function importSyllabus(
+		session: TestSession,
+		classId: string,
+		templateId: string,
+	) {
+		return t.call(`/api/classes/${classId}/curriculum/import`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+	}
+
+	/** Với mọi lớp: có copy (theo class_id) ⇔ con trỏ trỏ đúng copy. */
+	async function expectPointerInvariant() {
+		const classes = await t.db.select().from(classTable);
+		const rows = await t.db.select().from(syllabus);
+		const copies = rows.filter((s) => s.classId !== null);
+		for (const cls of classes) {
+			const copy = copies.find(
+				(s) => s.classId === cls.id && s.orgId === cls.orgId,
+			);
+			if (copy) {
+				expect(cls.syllabusId).toBe(copy.id);
+			} else {
+				expect(cls.syllabusId).toBeNull();
+			}
+		}
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Ngữ Cảnh");
+		otherSession = await t.insertUser("Cô Khác Ngữ Cảnh");
+		templateId = await t.createSyllabus(session, "Template Ngữ Cảnh");
+		const moduleId = await t.createModule(session, templateId, "Module MC");
+		const lessonRes = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleId}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Lesson MC1", objectives: "", materials: "" },
+			},
+		);
+		expect(lessonRes.status).toBe(201);
+	});
+
+	test("8 đường nội dung chạy trọn trên /syllabus-templates/:id", async () => {
+		// 1. add module
+		const addA = await t.call(`/api/syllabus-templates/${templateId}/modules`, {
+			session,
+			method: "POST",
+			body: { title: "Module X", description: "" },
+		});
+		expect(addA.status).toBe(201);
+		const addedA = (await addA.json()) as { id: string };
+		const moduleA = addedA.id;
+		const addB = await t.call(`/api/syllabus-templates/${templateId}/modules`, {
+			session,
+			method: "POST",
+			body: { title: "Module Y", description: "" },
+		});
+		expect(addB.status).toBe(201);
+		const addedB = (await addB.json()) as { id: string };
+		const moduleB = addedB.id;
+
+		// 2. reorder modules (set đầy đủ gồm cả module gốc từ beforeAll)
+		const snapshotForOrder = await t.kernel(session);
+		const templateForOrder = snapshotForOrder.syllabi.find(
+			(s) => s.id === templateId,
+		);
+		const allModuleIds = templateForOrder?.modules.map((m) => m.id) ?? [];
+		const reorder = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/reorder`,
+			{ session, method: "POST", body: { moduleIds: allModuleIds } },
+		);
+		expect(reorder.status).toBe(200);
+
+		// 3. edit module
+		const edit = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleA}`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Module X2", description: "" },
+			},
+		);
+		expect(edit.status).toBe(200);
+
+		// 4. add lesson
+		const addLesson = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleA}/lessons`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Lesson X2a", objectives: "", materials: "" },
+			},
+		);
+		expect(addLesson.status).toBe(201);
+		const lessonCreated = (await addLesson.json()) as { id: string };
+		const lessonA = lessonCreated.id;
+
+		// 5. reorder lessons
+		const reorderLessons = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleA}/lessons/reorder`,
+			{ session, method: "POST", body: { lessonIds: [lessonA] } },
+		);
+		expect(reorderLessons.status).toBe(200);
+
+		// 6. edit lesson
+		const editLesson = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleA}/lessons/${lessonA}`,
+			{
+				session,
+				method: "POST",
+				body: { title: "Lesson X2a sửa", objectives: "", materials: "" },
+			},
+		);
+		expect(editLesson.status).toBe(200);
+
+		// 7. remove lesson
+		const removeLesson = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleA}/lessons/${lessonA}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(removeLesson.status).toBe(200);
+
+		// 8. remove module
+		const removeModule = await t.call(
+			`/api/syllabus-templates/${templateId}/modules/${moduleB}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(removeModule.status).toBe(200);
+
+		const snapshot = await t.kernel(session);
+		const tpl = snapshot.syllabi.find((s) => s.id === templateId);
+		// Module X2 (đổi tên từ Module X) và module gốc từ beforeAll còn lại.
+		expect(tpl?.modules.map((m) => m.title)).toEqual([
+			"Module MC",
+			"Module X2",
+		]);
+	});
+
+	test("8 đường nội dung chạy trọn trên /classes/:id/curriculum (bản copy lớp)", async () => {
+		const classId = await t.createClass(session, "Lớp ngữ cảnh copy");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		const base = `/api/classes/${classId}/curriculum`;
+
+		const add = await t.call(`${base}/modules`, {
+			session,
+			method: "POST",
+			body: { title: "Copy Module", description: "" },
+		});
+		expect(add.status).toBe(201);
+		const addedModule = (await add.json()) as { id: string };
+		const mid = addedModule.id;
+
+		// Reorder cần set đầy đủ: mọi module của copy (kể cả module từ template).
+		const snapshotForOrder = await t.kernel(session);
+		const copyForOrder = snapshotForOrder.syllabi.find(
+			(s) => s.classId === classId,
+		);
+		const allCopyModuleIds = copyForOrder?.modules.map((m) => m.id) ?? [];
+		const reorder = await t.call(`${base}/modules/reorder`, {
+			session,
+			method: "POST",
+			body: { moduleIds: allCopyModuleIds },
+		});
+		expect(reorder.status).toBe(200);
+
+		const edit = await t.call(`${base}/modules/${mid}`, {
+			session,
+			method: "POST",
+			body: { title: "Copy Module sửa", description: "" },
+		});
+		expect(edit.status).toBe(200);
+
+		const addLesson = await t.call(`${base}/modules/${mid}/lessons`, {
+			session,
+			method: "POST",
+			body: { title: "Copy Lesson", objectives: "", materials: "" },
+		});
+		expect(addLesson.status).toBe(201);
+		const lessonCreated = (await addLesson.json()) as { id: string };
+		const lid = lessonCreated.id;
+
+		const reorderLessons = await t.call(
+			`${base}/modules/${mid}/lessons/reorder`,
+			{ session, method: "POST", body: { lessonIds: [lid] } },
+		);
+		expect(reorderLessons.status).toBe(200);
+
+		const editLesson = await t.call(`${base}/modules/${mid}/lessons/${lid}`, {
+			session,
+			method: "POST",
+			body: { title: "Copy Lesson sửa", objectives: "", materials: "" },
+		});
+		expect(editLesson.status).toBe(200);
+
+		const removeLesson = await t.call(
+			`${base}/modules/${mid}/lessons/${lid}/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(removeLesson.status).toBe(200);
+
+		const removeModule = await t.call(`${base}/modules/${mid}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(removeModule.status).toBe(200);
+
+		// Template không bị đụng bởi mọi thao tác trên copy.
+		const snapshot = await t.kernel(session);
+		const tpl = snapshot.syllabi.find((s) => s.id === templateId);
+		expect(tpl?.modules.map((m) => m.title)).toEqual([
+			"Module MC",
+			"Module X2",
+		]);
+		await expectPointerInvariant();
+	});
+
+	test("chéo ngữ cảnh: id copy không dùng được ở /syllabus-templates, id template không dùng được ở /classes/:id/curriculum", async () => {
+		const classId = await t.createClass(session, "Lớp chéo ngữ cảnh");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+
+		const copyAsTemplate = await t.call(
+			`/api/syllabus-templates/${copyId}/modules`,
+			{ session, method: "POST", body: { title: "x", description: "" } },
+		);
+		expect(copyAsTemplate.status).toBe(404);
+
+		const templateAsClass = await t.call(
+			`/api/classes/${templateId}/curriculum/modules`,
+			{ session, method: "POST", body: { title: "x", description: "" } },
+		);
+		expect(templateAsClass.status).toBe(404);
+
+		const emptyClass = await t.createClass(session, "Lớp chưa có copy");
+		const noCopy = await t.call(
+			`/api/classes/${emptyClass}/curriculum/modules`,
+			{ session, method: "POST", body: { title: "x", description: "" } },
+		);
+		expect(noCopy.status).toBe(404);
+		expect((await noCopy.json()) as { error: string }).toEqual({
+			error: "syllabus not found",
+		});
+	});
+
+	test("chéo org: cả ba nhóm đều 404 và không có hàng nào thay đổi", async () => {
+		const classId = await t.createClass(session, "Lớp chéo org");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		const before = await t.db.select().from(syllabusModule);
+
+		const asTemplate = await t.call(
+			`/api/syllabus-templates/${templateId}/modules`,
+			{
+				session: otherSession,
+				method: "POST",
+				body: { title: "gián điệp", description: "" },
+			},
+		);
+		expect(asTemplate.status).toBe(404);
+		const asClass = await t.call(`/api/classes/${classId}/curriculum/modules`, {
+			session: otherSession,
+			method: "POST",
+			body: { title: "gián điệp", description: "" },
+		});
+		expect(asClass.status).toBe(404);
+		const asAlias = await t.call(
+			`/api/syllabus-templates/${templateId}/modules`,
+			{
+				session: otherSession,
+				method: "POST",
+				body: { title: "gián điệp", description: "" },
+			},
+		);
+		expect(asAlias.status).toBe(404);
+
+		const after = await t.db.select().from(syllabusModule);
+		expect(after.length).toBe(before.length);
+	});
+
+	test("alias không mở lỗ hổng: replace-content và remove không đụng được bản copy", async () => {
+		const classId = await t.createClass(session, "Lớp alias bảo vệ");
+		const res = await importSyllabus(session, classId, templateId);
+		expect(res.status).toBe(201);
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+		const before = await t.kernel(session);
+		const copyBefore = before.syllabi.find((s) => s.id === copyId);
+
+		const replace = await t.call(`/api/syllabi/${copyId}/replace-content`, {
+			session,
+			method: "POST",
+			body: {
+				modules: [{ title: "ghi đè", description: "", lessons: [] }],
+			},
+		});
+		expect(replace.status).toBe(404);
+		const remove = await t.call(`/api/syllabi/${copyId}/remove`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(remove.status).toBe(404);
+
+		const after = await t.kernel(session);
+		expect(after.syllabi.find((s) => s.id === copyId)).toEqual(copyBefore);
+		await expectPointerInvariant();
+	});
+
+	test("import và gỡ qua đường mới: 201 → 409 → ok; bất biến giữ nguyên sau mỗi bước", async () => {
+		const classId = await t.createClass(session, "Lớp đường mới");
+		const importNew = await t.call(
+			`/api/classes/${classId}/curriculum/import`,
+			{ session, method: "POST", body: { templateId } },
+		);
+		expect(importNew.status).toBe(201);
+		const created = (await importNew.json()) as { id: string };
+		const copyId = created.id;
+		let snapshot = await t.kernel(session);
+		expect(snapshot.classes.find((c) => c.id === classId)?.syllabusId).toBe(
+			copyId,
+		);
+		await expectPointerInvariant();
+
+		const again = await t.call(`/api/classes/${classId}/curriculum/import`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+		expect(again.status).toBe(409);
+		await expectPointerInvariant();
+
+		const removeNew = await t.call(
+			`/api/classes/${classId}/curriculum/remove`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(removeNew.status).toBe(200);
+		expect(await removeNew.json()).toEqual({ ok: true });
+		snapshot = await t.kernel(session);
+		expect(snapshot.syllabi.some((s) => s.id === copyId)).toBe(false);
+		await expectPointerInvariant();
+	});
+
+	test("test bảo vệ alias: import-syllabus cũ + module qua /syllabi/:copyId vẫn sống đến phase 8", async () => {
+		const classId = await t.createClass(session, "Lớp alias sống");
+		const res = await t.call(`/api/classes/${classId}/curriculum/import`, {
+			session,
+			method: "POST",
+			body: { templateId },
+		});
+		expect(res.status).toBe(201);
+		const created = (await res.json()) as { id: string };
+		const copyId = created.id;
+
+		const aliasModule = await t.call(`/api/syllabi/${copyId}/modules`, {
+			session,
+			method: "POST",
+			body: { title: "Module qua alias", description: "" },
+		});
+		expect(aliasModule.status).toBe(201);
+		await expectPointerInvariant();
+	});
+});
+
 describe("delete syllabus template (xóa template giáo trình)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	// Helper local mirror của describe import (issue #79).
 	async function importSyllabus(
@@ -3071,7 +3707,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 		classId: string,
 		templateId: string,
 	) {
-		return t.call(`/api/classes/${classId}/import-syllabus`, {
+		return t.call(`/api/classes/${classId}/curriculum/import`, {
 			session,
 			method: "POST",
 			body: { templateId },
@@ -3089,7 +3725,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 		await t.createModule(session, templateId, "Module B");
 		// Thêm 1 lesson qua endpoint (mirror addLesson của describe #79).
 		const lessonRes = await t.call(
-			`/api/syllabi/${templateId}/modules/${moduleAId}/lessons`,
+			`/api/syllabus-templates/${templateId}/modules/${moduleAId}/lessons`,
 			{
 				session,
 				method: "POST",
@@ -3104,11 +3740,14 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 		expect(copyRes.status).toBe(201);
 		const copyId = ((await copyRes.json()) as { id: string }).id;
 
-		const remove = await t.call(`/api/syllabi/${templateId}/remove`, {
-			session,
-			method: "POST",
-			body: {},
-		});
+		const remove = await t.call(
+			`/api/syllabus-templates/${templateId}/remove`,
+			{
+				session,
+				method: "POST",
+				body: {},
+			},
+		);
 		expect(remove.status).toBe(200);
 
 		const snapshot = await t.kernel(session);
@@ -3161,7 +3800,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 			.set({ syllabusId: templateId })
 			.where(eq(classTable.id, classId));
 
-		const res = await t.call(`/api/syllabi/${templateId}/remove`, {
+		const res = await t.call(`/api/syllabus-templates/${templateId}/remove`, {
 			session,
 			method: "POST",
 			body: {},
@@ -3177,7 +3816,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 	test("org-scoping: template của org khác là 404", async () => {
 		const other = await t.insertUser("Cô Org Khác");
 		const foreignId = await t.createSyllabus(other, "Template người khác");
-		const res = await t.call(`/api/syllabi/${foreignId}/remove`, {
+		const res = await t.call(`/api/syllabus-templates/${foreignId}/remove`, {
 			session,
 			method: "POST",
 			body: {},
@@ -3189,7 +3828,7 @@ describe("delete syllabus template (xóa template giáo trình)", () => {
 });
 
 describe("lesson check-in/cancel (Wave 4)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 	let enrollmentId: string;
@@ -3484,7 +4123,7 @@ describe("lesson check-in/cancel (Wave 4)", () => {
 });
 
 describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let lessonAId: string;
@@ -3533,7 +4172,7 @@ describe("cross-org lesson writes (Wave 4 isolation lock)", () => {
 });
 
 describe("schedule-driven lesson generation (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 
@@ -3829,7 +4468,7 @@ describe("schedule-driven lesson generation (issue #55)", () => {
 });
 
 describe("sessionsTotal contract cap (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -3865,7 +4504,7 @@ describe("sessionsTotal contract cap (issue #55)", () => {
 });
 
 describe("lesson edit (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let classId: string;
 	let enrollmentId: string;
@@ -4089,7 +4728,7 @@ describe("lesson edit (issue #55)", () => {
 });
 
 describe("lesson edit optimistic concurrency (issue #55)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let lessonId: string;
 
@@ -4140,7 +4779,7 @@ describe("lesson edit optimistic concurrency (issue #55)", () => {
 });
 
 describe("enroll existing student (issue #122)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -4279,7 +4918,7 @@ describe("enroll existing student (issue #122)", () => {
 });
 
 describe("student package minimums (issue #115)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 
 	beforeAll(async () => {
@@ -4334,7 +4973,7 @@ describe("student package minimums (issue #115)", () => {
 });
 
 describe("assignment prompt bank (issue #202)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 
@@ -5719,7 +6358,7 @@ describe("assignment prompt bank (issue #202)", () => {
 });
 
 describe("class assignment give flow (#208)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let classIdA: string;
@@ -6051,7 +6690,7 @@ describe("class assignment give flow (#208)", () => {
 });
 
 describe("class tuition fee (học phí lớp theo học viên - issue #227)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let orgOther: TestSession;
 
@@ -6203,7 +6842,7 @@ describe("class tuition fee (học phí lớp theo học viên - issue #227)", (
 });
 
 describe("enrollment invite -> accept lifecycle (issue #253)", () => {
-	let t: Awaited<ReturnType<typeof createTestApp>>;
+	let t: TestApp;
 	let session: TestSession;
 	let otherOrg: TestSession;
 

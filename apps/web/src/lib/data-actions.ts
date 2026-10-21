@@ -9,6 +9,15 @@ import type {
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
 
+/**
+ * Phạm vi của một thao tác nội dung giáo trình (design D7, issue #394):
+ * template dùng chung hoặc giáo trình riêng của một lớp. `repos/kernel.ts`
+ * suy ra path từ target — caller không tự ghép path theo `classId`.
+ */
+export type CurriculumTarget =
+	| { kind: "template"; syllabusId: string }
+	| { kind: "class"; classId: string };
+
 export type KernelAction =
 	| { type: "check-in"; lessonId: string }
 	| { type: "cancel-lesson"; lessonId: string }
@@ -128,7 +137,7 @@ export type KernelAction =
 	  }
 	| {
 			/** Deep-copy a syllabus template into the class's own curriculum (issue #79). */
-			type: "import-syllabus";
+			type: "import-curriculum";
 			classId: string;
 			templateId: string;
 	  }
@@ -146,18 +155,18 @@ export type KernelAction =
 	  }
 	| {
 			type: "add-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			payload: { title: string; description: string };
 	  }
 	| {
 			type: "edit-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			payload: { title: string; description: string };
 	  }
 	| {
 			type: "add-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			payload: {
 				title: string;
@@ -171,7 +180,7 @@ export type KernelAction =
 	  }
 	| {
 			type: "edit-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonId: string;
 			payload: {
@@ -184,23 +193,23 @@ export type KernelAction =
 	  }
 	| {
 			type: "delete-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 	  }
 	| {
 			type: "delete-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonId: string;
 	  }
 	| {
 			type: "reorder-modules";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleIds: string[];
 	  }
 	| {
 			type: "reorder-lessons";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonIds: string[];
 	  }

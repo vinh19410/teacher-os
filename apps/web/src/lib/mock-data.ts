@@ -218,6 +218,12 @@ export interface Syllabus {
 	modules: SyllabusModule[];
 }
 
+/** Template giáo trình dùng chung — `classId` chắc chắn null (issue #394). */
+export type SyllabusTemplate = Syllabus & { classId: null };
+
+/** Giáo trình của một lớp — bản copy với `classId` trỏ đúng lớp đó (issue #394). */
+export type ClassCurriculum = Syllabus & { classId: string };
+
 export interface MockData {
 	students: Student[];
 	lessons: Lesson[];

@@ -2,15 +2,16 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
+import type { CurriculumTarget } from "@/lib/data-actions";
 import type { SyllabusLessonKind, SyllabusLessonStatus } from "@/lib/mock-data";
+import { useTargetSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function EditLessonModal({
 	open,
 	onClose,
-	syllabusId,
+	target,
 	moduleId,
 	lessonId,
 	showKind,
@@ -18,7 +19,7 @@ export function EditLessonModal({
 }: {
 	open: boolean;
 	onClose: () => void;
-	syllabusId: string;
+	target: CurriculumTarget;
 	moduleId: string | null;
 	lessonId: string | null;
 	/** Chỉ màn hình syllabus bật — loại buổi là nội dung giáo trình (#154). */
@@ -26,8 +27,7 @@ export function EditLessonModal({
 	/** Chỉ màn hình lớp học bật — syllabus không sửa trạng thái buổi học. */
 	showStatus?: boolean;
 }) {
-	const { syllabusById } = useData();
-	const lesson = syllabusById(syllabusId)
+	const lesson = useTargetSyllabus(target)
 		?.modules.find((m) => m.id === moduleId)
 		?.lessons.find((l) => l.id === lessonId);
 
@@ -59,7 +59,7 @@ export function EditLessonModal({
 		}
 		const result = await run({
 			type: "edit-lesson",
-			syllabusId,
+			target,
 			moduleId,
 			lessonId,
 			payload: {

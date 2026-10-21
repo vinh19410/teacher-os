@@ -369,9 +369,14 @@ try {
 	});
 
 	// 3) Attempt Writing đã nộp → màn chấm bài.
+	// Lint cấm non-null assertion — kiểm tường minh để lỗi fixture rõ nghĩa.
+	const writingAssignmentId = fixture.assignmentIds[4];
+	if (!writingAssignmentId) {
+		throw new Error("design-seed fixture thiếu assignment #4 (Writing)");
+	}
 	const attemptId = await seedSubmittedEssay({
 		orgId,
-		assignmentId: fixture.assignmentIds[4]!,
+		assignmentId: writingAssignmentId,
 		studentId: fixture.studentId,
 		essay:
 			"<p>Remote learning has widened the gap between students with stable internet access and those without. In my view, the shift online amplifies existing inequalities rather than creating new ones.</p>",

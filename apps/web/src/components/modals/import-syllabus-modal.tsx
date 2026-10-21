@@ -1,9 +1,9 @@
 import { type FormEvent, useState } from "react";
+import { TemplatePicker } from "@/components/syllabus/template-picker";
 import { Button } from "@/components/ui/button";
-import { Field, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useClasses } from "@/lib/repos/use-classes";
-import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { useTemplates } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
@@ -22,7 +22,7 @@ export function ImportSyllabusModal({
 	onClose: () => void;
 	classId: string;
 }) {
-	const { templates } = useSyllabus();
+	const templates = useTemplates();
 	const { classById } = useClasses();
 	// The list loads with the snapshot (may be empty on first paint), so the
 	// stored id can go stale — always derive the effective selection.
@@ -43,7 +43,7 @@ export function ImportSyllabusModal({
 			return;
 		}
 		const result = await run({
-			type: "import-syllabus",
+			type: "import-curriculum",
 			classId,
 			templateId,
 		});
@@ -67,24 +67,13 @@ export function ImportSyllabusModal({
 					Lớp "{className}" nhận một bản sao riêng — chỉnh sửa trên lớp không
 					ảnh hưởng template hay lớp khác.
 				</p>
-				{templates.length === 0 ? (
-					<p className="text-muted-foreground text-muted-foreground text-xs">
-						Chưa có template nào — tạo syllabus ở trang Syllabus trước.
-					</p>
-				) : (
-					<Field label="Template">
-						<Select
-							value={templateId}
-							onChange={(e) => setSelectedId(e.target.value)}
-						>
-							{templates.map((s) => (
-								<option key={s.id} value={s.id}>
-									{s.name}
-								</option>
-							))}
-						</Select>
-					</Field>
-				)}
+				{/* TemplatePicker dùng chung (issue #394) — tự render thông báo
+				    khi danh sách rỗng; không allowEmpty vì import cần template. */}
+				<TemplatePicker
+					templates={templates}
+					value={templateId}
+					onChange={setSelectedId}
+				/>
 				{error && (
 					<p role="alert" className="text-danger text-xs">
 						{error}

@@ -149,7 +149,11 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await classDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ value: templateId });
-	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	// TemplatePicker (issue #394): kỹ năng render dạng Tag trong vùng preview
+	// aria-live (nhãn "Kỹ năng giáo trình" cũ đã bỏ).
+	await expect(
+		classDialog.locator('[aria-live="polite"]').getByText("Writing"),
+	).toBeVisible();
 	// Auto-fill số buổi (#235): template v4 có 5 buổi (2 buổi thi Buổi 3
 	// giữa kỳ + Buổi 5 cuối kỳ) → "Tổng số buổi" tự điền "5", tính cả buổi thi.
 	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("5");
@@ -194,11 +198,16 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 
-	// Bản copy ở màn hình syllabus: badge vẫn còn — kind KHÔNG bị reset.
-	// (Không exact:true — title div chứa thêm text badge.) Copy v4 có 2 buổi
-	// thi (Buổi 3 giữa kỳ + Buổi 5 cuối kỳ) → 2 dòng tint.
+	// Issue #394: id bản copy không còn mở trang /syllabus/<copy> (chỉ
+	// template) — rơi vào 404 branded. Kind không bị reset đã được khoá ở
+	// các assert edit phía trên; title mới xem được trên lịch lớp.
 	await page.goto(`/syllabus/${copy.id}`);
+	await expect(
+		page.getByText("Không tìm thấy syllabus", { exact: true }),
+	).toBeVisible();
+	await page.goto(`/classes/${copy.classId}`);
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Buổi 3 — giữa kỳ đã đổi")).toBeVisible();
-	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(2);
 });
