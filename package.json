@@ -19,9 +19,10 @@
 		"deploy": "turbo run deploy -F @teacher-os/infra --",
 		"destroy": "turbo run destroy -F @teacher-os/infra --",
 		"check": "biome check --write .",
-		"test": "turbo run test && pnpm test:ci-workflow && pnpm test:topology-drift",
+		"test": "turbo run test && pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog",
 		"test:ci-workflow": "node --test scripts/ci-workflow.test.mjs",
 		"test:topology-drift": "node --test scripts/topology-drift.test.mjs",
+		"test:devserver-watchdog": "node --test scripts/devserver-watchdog.test.mjs",
 		"test:e2e": "e2e run",
 		"design:compare": "node scripts/design-compare/capture.mjs"
 	},

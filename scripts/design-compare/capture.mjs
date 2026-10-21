@@ -99,6 +99,7 @@ if (screens.length === 0) {
 
 // ── process helpers ──────────────────────────────────────────────────────
 const children = [];
+const childNames = new Map();
 const outputTail = new Map();
 // #397: log api chứa URL verify-email/reset mang ?token=… (redactResetToken
 // phía server chỉ cover reset-password + pay). Redact tại điểm collect, trên
@@ -127,6 +128,7 @@ function start(name, cmd, opts = {}) {
 		...opts.spawn,
 	});
 	children.push(child);
+	childNames.set(child, name);
 	// Redact trên RAW buffer có carry-over đuôi (review #397 F4): nếu redact
 	// trên buf ĐÃ redact rồi slice, token cắt ngang biên slice mất tiền tố
 	// `token=` → đuôi token lọt log. rawTail giữ ~100 ký tự raw cuối để nối
@@ -192,6 +194,35 @@ process.on("SIGINT", () => process.exit(130));
 // chính kiểu orphan này dồn RAM/CPU gây máy quá tải). exit() để 'exit' chạy.
 process.on("SIGTERM", () => process.exit(143));
 process.on("SIGHUP", () => process.exit(129));
+
+// #402: dev server (api/web/student) chết giữa capture phải fail-loud NGAY
+// với log tail đầy đủ thay vì cascade connection-refused im lặng trên nửa
+// còn lại của run. KHÔNG restart ở đây: ảnh design phải deterministic
+// (quyết định kongming) — chết = hủy run, xem log, chạy lại.
+let childWatchdogTimer = null;
+function childAlive(c) {
+	return c.exitCode === null && c.signalCode === null;
+}
+function startChildWatchdog() {
+	childWatchdogTimer = setInterval(() => {
+		const dead = children.find((c) => !childAlive(c));
+		if (!dead) return;
+		stopChildWatchdog();
+		const name = childNames.get(dead) ?? "unknown";
+		console.error(
+			`[harness] ${name} CHẾT giữa run (exit=${dead.exitCode} signal=${dead.signalCode}) — hủy phần còn lại, xem log tail dưới đây rồi chạy lại.`,
+		);
+		for (const [n, b] of outputTail)
+			console.error(`--- tail ${n} ---\n${redactLog(b)}`);
+		process.exit(1); // handler 'exit' chạy cleanup (kill process group + design)
+	}, 3000);
+}
+function stopChildWatchdog() {
+	if (childWatchdogTimer) {
+		clearInterval(childWatchdogTimer);
+		childWatchdogTimer = null;
+	}
+}
 
 // ── servers ──────────────────────────────────────────────────────────────
 const browser = await chromium.launch();
@@ -377,6 +408,10 @@ ${imgs
 		await browser.close();
 	}
 }
+
+// #402: canh children trong suốt vùng capture (app + design + compose) —
+// chỉ khi needApp vì side=design không có app server nào để canh.
+if (needApp) startChildWatchdog();
 
 try {
 	// ── app side ──
@@ -641,7 +676,27 @@ try {
 			}
 		}
 	}
+} catch (err) {
+	// #402: uncaught ở đây thường là server đã chết (page.goto
+	// ERR_CONNECTION_REFUSED thoát nhanh hơn interval 3s của watchdog).
+	// Child nào đã chết → dump log tail (redact) rồi exit 1 thay vì crash
+	// khô khan không ngữ cảnh. Không có child chết → lỗi harness thật, rethrow.
+	stopChildWatchdog();
+	const dead = children.find((c) => !childAlive(c));
+	if (dead) {
+		const name = childNames.get(dead) ?? "unknown";
+		console.error(
+			`[harness] ${name} CHẾT giữa run (exit=${dead.exitCode} signal=${dead.signalCode}) — hủy phần còn lại, xem log tail dưới đây rồi chạy lại.`,
+		);
+		for (const [n, b] of outputTail)
+			console.error(`--- tail ${n} ---\n${redactLog(b)}`);
+		process.exit(1);
+	}
+	throw err;
 } finally {
+	// ĐẦU tiên: ngừng watchdog trước mọi việc khác để child chết đúng khoảnh
+	// khắc shutdown không bắn exit(1) giữa browser.close() (#402 red-team).
+	stopChildWatchdog();
 	await browser.close();
 }
 
