@@ -315,11 +315,9 @@ test.describe("Teacher essay annotations (#332)", () => {
 			await gradeCard.evaluate((el) => getComputedStyle(el).position),
 		).toBe("sticky");
 
-		// Sticky dính khi cuộn: ở đáy trang cột card (section chứa heading +
-		// card) bị clamp tại innerHeight − 24 (py-6 dưới) − max-h (100svh −
-		// 6rem) = 720 − 24 − 624 = 72 (subpixel thực đo 71.98) — nhỏ hơn
-		// top-20 vì cột cao hơn phần viewport còn lại. Band [64, 88] khoá cả
-		// hai mép mà không ghim con số.
+		// Sticky dính khi cuộn: ở root 14px (design v2), py-6 = 21px và
+		// max-h (100svh − 6rem = 636px) nên ở đáy trang stickyY ≈ 62.6px.
+		// Band [56, 88] khoá cả hai mép mà không ghim con số.
 		await studentPage.evaluate(() =>
 			window.scrollTo(0, document.body.scrollHeight),
 		);
@@ -329,8 +327,7 @@ test.describe("Teacher essay annotations (#332)", () => {
 			})
 			.toBeLessThanOrEqual(88);
 		const stickyY = (await gradeCard.boundingBox())?.y ?? -1;
-		expect(stickyY).toBeGreaterThanOrEqual(64);
-
+		expect(stickyY).toBeGreaterThanOrEqual(56);
 		// Card tràn max-h → cuộn được bằng bàn phím (scrollable + tabIndex nằm
 		// trên attempt-grade-body; max-h giới hạn trên section).
 		const viewportHeight = await studentPage.evaluate(() => window.innerHeight);
