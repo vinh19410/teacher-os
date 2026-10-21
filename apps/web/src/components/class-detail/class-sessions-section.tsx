@@ -255,6 +255,10 @@ export function ClassSessionsSection({
 										isGroupSession && (
 											<button
 												type="button"
+												// #403: selector ổn định cho harness design:compare
+												// (t-attendance appSteps) — phân biệt với nút commit
+												// check-in 1:1 cùng text "Điểm danh".
+												data-testid={`session-attendance-open-${s.index}`}
 												disabled={busy}
 												onClick={() => setModalIndex(s.index)}
 												className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
