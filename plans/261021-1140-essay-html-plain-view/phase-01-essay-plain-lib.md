@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Module thuần essay-plain.ts + bản đồ offset hai chiều (TDD)"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 ---

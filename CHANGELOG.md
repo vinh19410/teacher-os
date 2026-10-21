@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-10-21
+
+### Fixed
+- Bài viết Writing chứa HTML (`<p>…</p>`, entity `&amp;`…) từ seed hoặc dữ liệu cũ không còn hiện thẻ HTML thô trên màn chấm giáo viên (`/grading/$attemptId`) và màn kết quả học viên (`/learn/quizzes/attempt/$attemptId`): server chuẩn hoá HTML sang plain text khi đọc kèm bản đồ offset hai chiều `rawStart`/`rawEnd` (`essayToPlain`, `toEssayView`), giữ nguyên lưu trữ offset raw trong DB và căn khớp vị trí highlight `mark[data-n]` + ghi chú inline `essay-inline-note` cũng như số từ `countWords` (#382)
+
 ## 2026-10-20
 
 ### Fixed

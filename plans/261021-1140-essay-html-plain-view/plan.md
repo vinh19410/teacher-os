@@ -1,7 +1,7 @@
 ---
 title: "Essay Writing chứa HTML: render plain an toàn + giữ đúng offset highlight"
 description: "Màn chấm và màn kết quả Writing hiện thẻ <p> nguyên chữ khi essay trong DB chứa HTML. Chuẩn hoá HTML → plain text ở server khi đọc (module thuần có bản đồ offset raw↔plain), remap highlight để mọi offset client nhìn thấy là offset plain, giữ nguyên hệ thống annotation."
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 issue: 382
@@ -100,24 +100,24 @@ Kết quả người dùng: không còn thấy `<p>` trên màn chấm và màn 
 
 | # | Phase | Status | Effort |
 |---|-------|--------|--------|
-| 1 | [Module thuần `essay-plain.ts` + map offset (TDD)](./phase-01-essay-plain-lib.md) | pending | 1.5h |
-| 2 | [Server: `toEssayView` + wiring 6 đường đọc/ghi](./phase-02-server-essay-view.md) | pending | 1.5h |
-| 3 | [E2E case essay HTML + gates cuối](./phase-03-e2e-gates.md) | pending | 1h |
+| 1 | [Module thuần `essay-plain.ts` + map offset (TDD)](./phase-01-essay-plain-lib.md) | completed | 1.5h |
+| 2 | [Server: `toEssayView` + wiring 6 đường đọc/ghi](./phase-02-server-essay-view.md) | completed | 1.5h |
+| 3 | [E2E case essay HTML + gates cuối](./phase-03-e2e-gates.md) | completed | 1h |
 
 Chạy tuần tự 1 → 2 → 3.
 
 ## Success Criteria
 
-- [ ] `GET /api/student/attempts/:id` và `GET /api/grading/:id` trả essay plain
+- [x] `GET /api/student/attempts/:id` và `GET /api/grading/:id` trả essay plain
       (không còn `<p>` trong DOM `[data-testid="essay-text"]`/khối bài viết) khi
       DB chứa `<p>A</p><p>B &amp; C</p>` → client thấy `A\nB & C`.
-- [ ] Essay plain bất kỳ (`a < b`, `<3`, tab, khoảng trắng kép, CRLF): mọi
+- [x] Essay plain bất kỳ (`a < b`, `<3`, tab, khoảng trắng kép, CRLF): mọi
       endpoint trả nguyên bản từng byte; toàn bộ test hiện có pass KHÔNG sửa
       expectation.
-- [ ] Vòng trọn: teacher bôi đen `B & C` trên màn chấm → 201 trả offset plain
+- [x] Vòng trọn: teacher bôi đen `B & C` trên màn chấm → 201 trả offset plain
       khớp GET submission → reload mark đúng chỗ → học viên thấy
       `mark[data-n]` + `essay-inline-note` đúng vị trí, không thấy thẻ HTML.
-- [ ] `countWords` đếm theo plain (không đếm thẻ) trên cả 2 màn.
-- [ ] Annotation cũ có span trọn trong thẻ bị bỏ khỏi payload, không vỡ UI.
-- [ ] e2e case essay HTML xanh; `pnpm check`, `pnpm check-types`, unit test
+- [x] `countWords` đếm theo plain (không đếm thẻ) trên cả 2 màn.
+- [x] Annotation cũ có span trọn trong thẻ bị bỏ khỏi payload, không vỡ UI.
+- [x] e2e case essay HTML xanh; `pnpm check`, `pnpm check-types`, unit test
       `apps/server` + `packages/api` xanh.

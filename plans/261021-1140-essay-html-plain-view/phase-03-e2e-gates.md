@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "E2E case essay HTML + toàn bộ gate repo"
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 ---

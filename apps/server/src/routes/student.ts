@@ -2,6 +2,7 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
 	DAILY_STUDY_HOUR_OPTIONS,
+	type EssayAnnotation,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
@@ -25,6 +26,7 @@ import {
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
+import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
@@ -59,7 +61,10 @@ import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
-import { loadEssayAnnotations } from "../lib/quiz-annotation";
+import {
+	loadEssayAnnotations,
+	toPlainAnnotation,
+} from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -1079,7 +1084,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						id: attempt.id,
 						status: attempt.status as QuizAttemptStatus,
 						answers: parseQuizAnswers(attempt.answers),
-						essay: attempt.essay,
+						essay:
+							prompt.skill === "writing"
+								? essayToPlain(attempt.essay).text
+								: attempt.essay,
 						media: toQuizAttemptMedia(attempt),
 					}
 				: null,
@@ -1734,6 +1742,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
 		const { attempt, questions, answers, grade, title, skill, part } = loaded;
+		const essayView = skill === "writing" ? essayToPlain(attempt.essay) : null;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			assignmentId: attempt.assignmentId,
@@ -1754,7 +1763,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				};
 			}),
 			// Bài Writing lộ kèm số từ ở summary (#304); đề khác luôn null.
-			essay: skill === "writing" ? attempt.essay : null,
+			essay: essayView ? essayView.text : null,
 			// Bài nói Speaking (#305) — summary rẽ nhánh theo skill.
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
@@ -1768,12 +1777,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		// Highlight + ghi chú (#332): CHỈ thêm khi đã chấm + Writing + có
 		// ít nhất 1 highlight — học viên không thấy highlight dở dang;
 		// bundle cũ (strict) chỉ lỗi parse ở đúng attempt này.
-		if (skill === "writing") {
-			const annotations = await loadEssayAnnotations(
+		if (skill === "writing" && essayView) {
+			const rawAnnotations = await loadEssayAnnotations(
 				deps.getDb(),
 				attempt.id,
 				orgId,
 			);
+			const annotations = rawAnnotations
+				.map((a) => toPlainAnnotation(essayView, a))
+				.filter((a): a is EssayAnnotation => a !== null);
 			if (annotations.length > 0) summary.annotations = annotations;
 		}
 		return c.json(summary);
@@ -1820,7 +1832,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
 			note,
 			// Bài Writing lộ ở review-detail (#304); đề khác luôn null.
-			essay: skill === "writing" ? attempt.essay : null,
+			essay: skill === "writing" ? essayToPlain(attempt.essay).text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 			questions: questions.map((question, index) => {

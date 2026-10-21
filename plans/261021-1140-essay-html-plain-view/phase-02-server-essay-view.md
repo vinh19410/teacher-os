@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Server: toEssayView + wiring các đường đọc/ghi essay & annotations"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 ---

@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import type { TeacherSubmission } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
@@ -654,7 +655,7 @@ describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
 				status: "ready",
 			},
 		]);
-		for (const id of ["ca-w", "ca-w2", "ca-w3", "ca-s"]) {
+		for (const id of ["ca-w", "ca-w2", "ca-w3", "ca-w4", "ca-s"]) {
 			const promptId = id === "ca-s" ? "prompt-speaking" : "prompt-writing";
 			await libsql.insert(schema.classAssignment).values({
 				id,
@@ -700,6 +701,17 @@ describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
 				studentId: "student-1",
 				status: "in_progress",
 				questionsSnapshot: "[]",
+			},
+			{
+				id: "att-w-html",
+				orgId: "org-1",
+				assignmentId: "ca-w4",
+				studentId: "student-1",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay:
+					"<p>Remote learning has widened the gap.</p><p>Cost &amp; time matter.</p>",
+				submittedAt: new Date("2026-10-06T01:15:00Z"),
 			},
 			{
 				id: "att-s",
@@ -1021,5 +1033,69 @@ describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
 		const res = await postAnnotation("att-w2", { start: 3, end: 4, note: "" });
 		expect(res.status).toBe(400);
 		expect(await errorCode(res)).toBe("TOO_MANY_ANNOTATIONS");
+	});
+
+	test("Essay chứa HTML (<p>, &amp;): GET trả plain, POST/PATCH trả offset plain nhưng DB lưu offset raw, lọc bỏ annotation nằm trọn trong thẻ (#382)", async () => {
+		const before = await getSubmission("att-w-html");
+		expect(before.essay).toBe(
+			"Remote learning has widened the gap.\nCost & time matter.",
+		);
+
+		// "Cost & time" trên plain = 37..48, ứng với raw 46..61 ("Cost &amp; time").
+		const created = await postAnnotation("att-w-html", {
+			start: 37,
+			end: 48,
+			note: "rõ ý",
+		});
+		expect(created.status).toBe(201);
+		const createdBody = (await created.json()) as {
+			id: string;
+			start: number;
+			end: number;
+			note: string;
+		};
+		expect(createdBody).toMatchObject({
+			start: 37,
+			end: 48,
+			note: "rõ ý",
+		});
+
+		const [stored] = await libsql
+			.select()
+			.from(schema.quizAttemptAnnotation)
+			.where(eq(schema.quizAttemptAnnotation.id, createdBody.id));
+		expect(stored?.startOffset).toBe(46);
+		expect(stored?.endOffset).toBe(61);
+
+		const patched = await patchAnnotation("att-w-html", createdBody.id, {
+			note: "rõ ý — giữ nguyên",
+		});
+		expect(patched.status).toBe(200);
+		expect(await patched.json()).toMatchObject({
+			id: createdBody.id,
+			start: 37,
+			end: 48,
+			note: "rõ ý — giữ nguyên",
+		});
+
+		// Annotation cũ nằm trọn trong thẻ mở `<p>` (raw 0..3) bị lọc bỏ khỏi GET.
+		await libsql.insert(schema.quizAttemptAnnotation).values({
+			id: "ann-tag-only",
+			orgId: "org-1",
+			attemptId: "att-w-html",
+			startOffset: 0,
+			endOffset: 3,
+			note: "trong thẻ",
+		});
+
+		const after = await getSubmission("att-w-html");
+		expect(after.annotations).toEqual([
+			{
+				id: createdBody.id,
+				start: 37,
+				end: 48,
+				note: "rõ ý — giữ nguyên",
+			},
+		]);
 	});
 });
