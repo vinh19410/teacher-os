@@ -28,8 +28,8 @@ function mapSyllabus(
 
 /**
  * Id dòng syllabus tương ứng với `target` (issue #394): template tra trực
- * tiếp; class target tra qua `splitSyllabi` — nguồn sự thật `syllabus.classId`
- * — thay vì so `classId` tại đây (D7: một nơi phân loại duy nhất).
+ * tiếp; class target tra qua `splitSyllabi` — nguồn sự thật là cột
+ * `syllabus.class_id` — thay vì so `classId` tại đây (D7: một nơi phân loại duy nhất).
  */
 function targetSyllabusId(
 	state: { syllabi: Syllabus[] },
