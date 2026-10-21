@@ -31,8 +31,9 @@ type ReadBody = <S extends z.ZodType>(
 
 /**
  * One set of module/lesson content handlers shared by every syllabus scope
- * (design D5, issue #394): mounted under `/syllabus-templates/:id`,
- * `/classes/:id/curriculum`, and the legacy `/syllabi/:id` alias.
+ * (design D5, issue #394): mounted under `/syllabus-templates/:id` and
+ * `/classes/:id/curriculum` (legacy `/syllabi/:id` alias removed in
+ * phase 8, issue #401).
  * `resolve` returns the org-filtered syllabus the prefix stands for —
  * handlers only ever use `sy.id` and never read the URL's syllabus `:id`
  * param, so a class-scoped prefix cannot leak its class id in as a syllabus
