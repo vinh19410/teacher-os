@@ -1,0 +1,336 @@
+import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { type KeyboardEvent, useState } from "react";
+import { AttendanceSummary } from "@/components/class-detail/attendance-summary";
+import {
+	type OccurrenceActionResult,
+	type OccurrenceEditPayload,
+	SessionActionsModal,
+} from "@/components/class-detail/session-actions-modal";
+import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
+import { Button } from "@/components/ui/button";
+import { Section } from "@/components/ui/section";
+import {
+	buildClassSessions,
+	formatSessionDate,
+	sessionAttendanceState,
+	sessionLessonInfo,
+	sessionMarkedSids,
+	sessionRowTargets,
+	sessionStatus,
+	sessionStudents,
+	sessionTimeRange,
+} from "@/lib/class-sessions";
+import { cn } from "@/lib/cn";
+import type { KernelAction } from "@/lib/data-actions";
+import { lessonDayLabel } from "@/lib/format-schedule";
+import type { ClassGroup, Lesson, Student, Syllabus } from "@/lib/mock-data";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
+import { todayISOVietnam } from "@/lib/week-grid";
+
+/** Space/Enter must not bubble past a CTA (parity with the roster modal). */
+const stopActionKeyPropagation = (e: KeyboardEvent<HTMLButtonElement>) => {
+	if (e.key === " " || e.key === "Enter") e.stopPropagation();
+};
+
+/**
+ * Tab "Sessions & practice" — cột Sessions (#391): danh sách buổi dạng card
+ * `li[data-testid="session-row"]` thay cho bảng (#89). Giữ nguyên toàn bộ
+ * hành vi ghi từ bảng cũ: check-in 1-click cho lớp 1:1 (#91), modal điểm
+ * danh roster cho nhóm, modal Điều chỉnh (hoàn thành/huỷ/dời), chi tiết bài
+ * học mở rộng, và bảng weekday cho lịch legacy không suy ra được ngày
+ * (`sessions === null`). Render đủ N buổi — không cắt danh sách (spec đếm
+ * buổi thật).
+ */
+export function ClassSessionsSection({
+	cls,
+	lessons,
+	legacyLessons,
+	syllabus,
+	studentById,
+	run,
+	onComplete,
+	onCancelOccurrence,
+	onSaveEdit,
+	isPending,
+	busy,
+}: {
+	cls: ClassGroup;
+	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
+	lessons: Lesson[];
+	/** Student-scoped rows — exactly what the legacy fallback rendered. */
+	legacyLessons: Lesson[];
+	syllabus: Syllabus | null;
+	studentById: (id: string) => Student | undefined;
+	run: (
+		key: string,
+		action: KernelAction,
+		successText: string,
+	) => Promise<KernelCommandResult>;
+	/** #98 threaded write surface — toasts live at the route, not here. */
+	onComplete: (dateISO: string) => Promise<OccurrenceActionResult>;
+	onCancelOccurrence: (dateISO: string) => Promise<OccurrenceActionResult>;
+	onSaveEdit: (
+		dateISO: string,
+		payload: OccurrenceEditPayload,
+	) => Promise<OccurrenceActionResult>;
+	isPending: (key: string) => boolean;
+	busy: boolean;
+}) {
+	const [expandedDetails, setExpandedDetails] = useState<Set<number>>(
+		new Set(),
+	);
+	const [modalIndex, setModalIndex] = useState<number | null>(null);
+	// Identity-keyed (N4): a numeric index would dangle once a successful
+	// moveDate reorders the chronology under an open dialog.
+	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
+
+	const sessions = buildClassSessions({
+		schedule: cls.schedule,
+		startDate: cls.startDate,
+		lessons,
+		sessionsTotal: cls.sessionsTotal,
+	});
+	// Projection mode: zero real rows means every displayed session is a
+	// schedule projection — display-only, rendered with the muted "Dự kiến"
+	// badge instead of the attendance states driven by row data.
+	const isProjected = lessons.length === 0 && sessions !== null;
+
+	if (sessions === null) {
+		return (
+			<Section title="Sessions">
+				<div className="overflow-x-auto">
+					<table className="w-full border-collapse text-sm">
+						<tbody>
+							{legacyLessons.map((l) => (
+								<tr key={l.id} className="border-border border-b">
+									<td className="px-2 py-3">
+										<span className="text-muted-foreground text-xs">
+											{lessonDayLabel(l.day)}
+										</span>
+									</td>
+									<td className="px-2 py-3 tabular-nums">{l.time}</td>
+									<td className="px-2 py-3">{l.topic}</td>
+									<td className="px-2 py-3">
+										{l.status === "completed"
+											? "Đã học"
+											: l.status === "cancelled"
+												? "Đã hủy"
+												: "Sắp tới"}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			</Section>
+		);
+	}
+
+	const toggleDetails = (index: number) => {
+		setExpandedDetails((prev) => {
+			const next = new Set(prev);
+			if (next.has(index)) {
+				next.delete(index);
+			} else {
+				next.add(index);
+			}
+			return next;
+		});
+	};
+
+	// Date gate anchored to Vietnam time — once per render, never a UTC slice.
+	const todayISO = todayISOVietnam();
+	// Live session behind the roster modal: re-resolved from the derived list
+	// on every render so checked-in rows flip to badges without a snapshot.
+	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
+	const actionsSession =
+		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
+
+	return (
+		<>
+			<Section title="Sessions" count={sessions.length}>
+				<ol className="grid gap-2">
+					{sessions.map((s) => {
+						const attendees = sessionStudents(s);
+						const attendance = sessionAttendanceState(s, todayISO);
+						const isGroupSession = attendees.length >= 2;
+						const checkInId =
+							attendance.sids.find((x) => x.display === "check-in")
+								?.enrollmentLessonId ?? null;
+						const info = sessionLessonInfo(s, syllabus);
+						const isExpanded = expandedDetails.has(s.index);
+						const hasDetails = Boolean(
+							info.materials || info.objectives || info.lessonId,
+						);
+						const status = sessionStatus(s);
+						const markedCount = sessionMarkedSids(s).length;
+						// Buổi quá khứ chưa ai điểm danh và chưa huỷ → cảnh báo amber.
+						const isPastUnmarked =
+							!isProjected &&
+							status === "upcoming" &&
+							s.dateISO < todayISO &&
+							attendees.length > 0;
+						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
+
+						return (
+							<li
+								key={`session-${s.index}`}
+								data-testid="session-row"
+								className={cn(
+									"flex flex-wrap items-center gap-3 rounded-lg border p-3",
+									isPastUnmarked && "border-warn/50 bg-warn-soft",
+								)}
+							>
+								<span
+									className={cn(
+										"grid size-9 shrink-0 place-items-center rounded-md font-semibold text-sm tabular-nums",
+										status === "completed"
+											? "bg-primary text-primary-foreground"
+											: "bg-muted text-muted-foreground",
+									)}
+								>
+									{s.index}
+								</span>
+								<div className="min-w-0 flex-1">
+									<div className="flex flex-wrap items-center gap-1.5">
+										{hasDetails ? (
+											<button
+												type="button"
+												onClick={() => toggleDetails(s.index)}
+												className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+												aria-label={
+													isExpanded
+														? "Thu gọn chi tiết bài học"
+														: "Mở rộng chi tiết bài học"
+												}
+												aria-expanded={isExpanded}
+											>
+												{isExpanded ? (
+													<ChevronDown className="h-3.5 w-3.5" />
+												) : (
+													<ChevronRight className="h-3.5 w-3.5" />
+												)}
+											</button>
+										) : (
+											<span className="w-5 shrink-0" />
+										)}
+										<span className="text-muted-foreground text-xs">
+											{formatSessionDate(s.dateISO)} · {sessionTimeRange(s)}
+										</span>
+										{info.moduleTitle && (
+											<span
+												className="inline-flex max-w-[140px] items-center truncate rounded-md border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground tabular-nums"
+												title={info.moduleTitle}
+											>
+												{info.moduleTitle}
+											</span>
+										)}
+									</div>
+									<div className="mt-0.5 truncate font-medium text-sm">
+										{info.title ?? "—"}
+									</div>
+									{!isProjected && status !== "cancelled" && isGroupSession && (
+										<button
+											type="button"
+											disabled={busy}
+											onClick={() => setModalIndex(s.index)}
+											className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+										>
+											{status === "completed" ? "Sửa điểm danh" : "Điểm danh"} →
+										</button>
+									)}
+								</div>
+								{isProjected ? (
+									<span className="shrink-0 text-muted-foreground text-xs">
+										Dự kiến
+									</span>
+								) : status === "cancelled" ? (
+									<span className="shrink-0 font-medium text-muted-foreground text-xs">
+										Đã hủy
+									</span>
+								) : status === "completed" ? (
+									<AttendanceSummary
+										marked={markedCount}
+										total={attendees.length}
+									/>
+								) : isPastUnmarked ? (
+									<AttendanceSummary
+										marked={markedCount}
+										total={attendees.length}
+									/>
+								) : (
+									<span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
+										<Clock className="size-3.5" />
+										Sắp tới
+									</span>
+								)}
+								{hasAdjust && (
+									<span className="inline-flex shrink-0 items-center gap-1">
+										{attendance.kind === "actionable" &&
+										checkInId !== null &&
+										!isGroupSession ? (
+											<Button
+												type="button"
+												size="sm"
+												disabled={busy || isPending(checkInId)}
+												onClick={() => {
+													void run(
+														checkInId,
+														{ type: "check-in", lessonId: checkInId },
+														"Đã điểm danh.",
+													);
+												}}
+												onKeyDown={stopActionKeyPropagation}
+											>
+												{isPending(checkInId) ? "Đang lưu…" : "Điểm danh"}
+											</Button>
+										) : null}
+										<Button
+											type="button"
+											variant="secondary"
+											size="sm"
+											disabled={busy}
+											onClick={() => setActionsDateISO(s.dateISO)}
+											onKeyDown={stopActionKeyPropagation}
+										>
+											Điều chỉnh
+										</Button>
+									</span>
+								)}
+								{hasDetails && isExpanded && (
+									<div className="w-full border-border border-t pt-2 text-muted-foreground text-xs">
+										<div className="pl-9">
+											<span className="font-medium">Tài liệu: </span>
+											<span>{info.materials || "Chưa có tài liệu"}</span>
+										</div>
+										<div className="pl-9">
+											<span className="font-medium">Mục tiêu: </span>
+											<span>{info.objectives || "Chưa có mục tiêu"}</span>
+										</div>
+									</div>
+								)}
+							</li>
+						);
+					})}
+				</ol>
+			</Section>
+			<SessionAttendanceModal
+				session={modalSession}
+				studentById={studentById}
+				run={run}
+				isPending={isPending}
+				busy={busy}
+				onClose={() => setModalIndex(null)}
+			/>
+			<SessionActionsModal
+				key={actionsDateISO ?? "no-session-actions"}
+				session={actionsSession}
+				studentById={studentById}
+				onClose={() => setActionsDateISO(null)}
+				onComplete={onComplete}
+				onCancelOccurrence={onCancelOccurrence}
+				onSaveEdit={onSaveEdit}
+			/>
+		</>
+	);
+}

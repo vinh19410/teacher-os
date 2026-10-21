@@ -98,14 +98,7 @@ export function ClassRosterTab({
 		<>
 			<Card className="p-0">
 				<DataTable
-					headers={[
-						"Học viên",
-						"Mục tiêu",
-						"Còn lại",
-						"Học phí",
-						"Trạng thái",
-						"Thao tác",
-					]}
+					headers={["Học viên", "Đăng ký", "Học phí", "Thao tác"]}
 					emptyMessage="Chưa có học viên nào trong lớp."
 					rows={rosterEntries.map(({ student: s, isInvited }) => {
 						const en = data.enrollments.find(
@@ -122,32 +115,25 @@ export function ClassRosterTab({
 									<Avatar text={s.avatar} size="sm" />
 									{s.name}
 								</div>,
-								<span key="t" className="text-muted-foreground text-xs">
-									Band {s.targetBand} · {s.skills.join(", ")}
-								</span>,
-								isInvited ? (
-									<span key="r" className="text-muted-foreground text-xs">
-										—
+								// #391: cột "Đăng ký" gộp trạng thái + số buổi còn lại
+								// (design: Enrollment); band/skills xem ở hồ sơ học viên.
+								<div key="e" className="flex items-center gap-2">
+									{isInvited ? (
+										<Badge variant="warn">Đã mời</Badge>
+									) : (
+										<Badge variant="success" dot>
+											Đang học
+										</Badge>
+									)}
+									<span className="text-muted-foreground text-xs tabular-nums">
+										{isInvited ? "—" : `${s.pkg.remaining}/${s.pkg.total}`}
 									</span>
-								) : (
-									<span key="r" className="tabular-nums">
-										{s.pkg.remaining}/{s.pkg.total}
-									</span>
-								),
+								</div>,
 								<RosterTuitionCell
 									key="fee"
 									debt={rosterDebt.get(s.id)}
 									isInvited={isInvited}
 								/>,
-								isInvited ? (
-									<Badge key="b" variant="warn">
-										Đã mời
-									</Badge>
-								) : (
-									<Badge key="b" variant="success" dot>
-										Đang học
-									</Badge>
-								),
 								isInvited && en ? (
 									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
 									<div

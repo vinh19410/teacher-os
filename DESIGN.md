@@ -132,3 +132,32 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 - Không điều hướng URL trên mỗi phím gõ (debounce ~300ms rồi mới đẩy query lên URL).
 - Không badge đếm trong accessible name (vỡ voice control + e2e `name` exact).
 - Không chữ nhỏ dùng màu dưới 4.5:1 — đo bằng script contrast trước khi chốt token mới.
+
+## Lệch có chủ đích so với design v2 — trang chi tiết lớp teacher (#391)
+
+Nguồn đối chiếu: `teacheros-design-v2@7a53fc0` `TeacherClass.tsx`. Các lệch dưới đây là quyết định
+có chủ đích (dữ liệu thật > hình dáng design), không phải sót quét:
+
+- **Thẻ stat 3 = "Bài trong syllabus"** thay vì "Attendance rate": tổng điểm danh hợp lệ cho cả lớp
+  không tổng hợp được từ dữ liệu hiện có mà không bịa; không dựng số 89% kiểu design.
+- **Thanh điểm danh 2 phân đoạn** "đã điểm danh/chưa" thay vì 3 màu present/late/absent: kernel không
+  có trạng thái "đi muộn" tin được. Nhãn nói đúng hành vi ghi ("đã điểm danh"), không suy ra vắng mặt.
+- **Header giữ kicker `loại · lịch · hình thức`, không có `lead`**: học phí chuyển hiển thị ở tab
+  Học viên (design đặt học phí trong bảng Students; app cần thấy phí cả khi chưa có học viên).
+- **"Add session" = nút primary "Sắp xếp buổi"** mở modal Quản lý buổi: kernel không có action
+  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221).
+- **Nhãn nút giữ tiếng Việt**: "Điều chỉnh" (Edit session), "Chấm bài" (Grade), "Điểm danh →" /
+  "Sửa điểm danh →" (Take/Edit attendance →).
+- **Bỏ cột "Current band" và "Attendance" bảng Học viên**: `Student` chỉ có `targetBand` (không có
+  band hiện tại); chuyên cần không có data tin được (chốt red-team). Band mục tiêu + kỹ năng xem ở
+  hồ sơ học viên — bảng chỉ giữ Học viên / Đăng ký / Học phí / Thao tác.
+- **Không có thanh kỹ năng Flashcard/Quiz theo học viên** trong accordion bài đã giao: server chưa
+  trả dữ liệu per-skill; mở ra chỉ hiển thị trạng thái nộp + chấm.
+- **Không dựng filler roster** (học viên tên giả trong design) — app chỉ hiển thị học viên thật.
+- **Giữ tab Từ vựng + Ghi chú** thêm ngoài 3 tab design: tính năng thật, không có chỗ khác trong
+  design để đặt; tab Giáo trình thay "Syllabus".
+- **Không tách `SyllabusTree` dùng chung** (design nhúng cây ở tab Syllabus): theo #221, cây giáo trình
+  nằm trong modal Quản lý buổi, sửa nội dung không nằm ở trang lớp; tab Giáo trình chỉ còn card
+  gán/gỡ template.
+- **Card buổi học render đủ N buổi**, không cắt 6 như design: số buổi thật là dữ liệu chấm điểm
+  danh, cắt làm sai đếm.

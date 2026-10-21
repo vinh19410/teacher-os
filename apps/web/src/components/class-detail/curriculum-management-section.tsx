@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import {
 	CLASS_TYPE_LABELS,
@@ -38,10 +37,7 @@ export function CurriculumManagementSection({
 	return (
 		<div>
 			{sy && sy.classId === cls.id ? (
-				<Card
-					variant="white"
-					className="mb-4 flex flex-wrap items-center gap-4"
-				>
+				<div className="flex flex-wrap items-center gap-4">
 					<div className="flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
 						<div className="text-muted-foreground text-xs">
@@ -60,9 +56,9 @@ export function CurriculumManagementSection({
 					>
 						Gỡ giáo trình
 					</Button>
-				</Card>
+				</div>
 			) : cls.syllabusId === "" ? (
-				<Card variant="white" className="p-8 text-center">
+				<div className="rounded-lg border border-dashed p-6 text-center">
 					<p className="text-muted-foreground text-sm">
 						Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa
 						trên lớp không ảnh hưởng template hay lớp khác.
@@ -74,11 +70,11 @@ export function CurriculumManagementSection({
 					>
 						Nhập từ template
 					</Button>
-				</Card>
+				</div>
 			) : (
 				// Legacy anomaly: pointer set but not this class's copy
 				// (pre-migration data). Removing nulls the pointer only.
-				<Card variant="white" className="p-8 text-center">
+				<div className="rounded-lg border border-dashed p-6 text-center">
 					<p className="text-muted-foreground text-sm">
 						Lớp có con trỏ giáo trình lệch (dữ liệu cũ) và không thể chỉnh sửa.
 						Gỡ con trỏ để bắt đầu lại với một template.
@@ -91,7 +87,7 @@ export function CurriculumManagementSection({
 					>
 						Gỡ giáo trình
 					</Button>
-				</Card>
+				</div>
 			)}
 
 			<ImportSyllabusModal

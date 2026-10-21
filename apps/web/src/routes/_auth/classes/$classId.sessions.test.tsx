@@ -117,11 +117,15 @@ afterEach(() => {
 
 async function openSessionsTab() {
 	renderWithKernel(<ClassDetail />);
-	fireEvent.click(await screen.findByRole("tab", { name: "Buổi học" }));
+	fireEvent.click(
+		await screen.findByRole("tab", { name: "Sessions & practice" }),
+	);
 }
 
 function sessionRow(dateLabel: string): HTMLElement {
-	return screen.getByText(new RegExp(dateLabel)).closest("tr") as HTMLElement;
+	return screen
+		.getByText(new RegExp(dateLabel))
+		.closest("[data-testid='session-row']") as HTMLElement;
 }
 
 describe("1:1 class — in-place check-in", () => {
@@ -164,16 +168,18 @@ describe("1:1 class — in-place check-in", () => {
 		expect((saving as HTMLButtonElement).disabled).toBe(true);
 		expect(
 			(
-				screen.getByRole("button", {
-					name: "Gỡ giáo trình",
-				}) as HTMLButtonElement
-			).disabled,
-		).toBe(true);
-		expect(
-			(
 				within(sessionRow("19/10")).getByRole("button", {
 					name: "Điều chỉnh",
 				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		// #391: "Gỡ giáo trình" sống ở tab "Giáo trình" — busy khoá toàn trang.
+		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
+		expect(
+			(
+				(await screen.findByRole("button", {
+					name: "Gỡ giáo trình",
+				})) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
 		held.land();
@@ -186,7 +192,9 @@ describe("one action at a time across the class page", () => {
 	it("blocks check-in while the curriculum removal is still saving", async () => {
 		const held = heldWrites();
 		server = startKernelServer(mondayClass(["st-1"]), held.handler);
-		await openSessionsTab();
+		renderWithKernel(<ClassDetail />);
+		// #391: "Gỡ giáo trình" sống ở tab "Giáo trình".
+		fireEvent.click(await screen.findByRole("tab", { name: "Giáo trình" }));
 		fireEvent.click(screen.getByRole("button", { name: "Gỡ giáo trình" }));
 		fireEvent.click(
 			within(screen.getByRole("dialog")).getByRole("button", {
@@ -194,6 +202,9 @@ describe("one action at a time across the class page", () => {
 			}),
 		);
 		await waitFor(() => expect(server.writes).toHaveLength(1));
+		fireEvent.click(
+			await screen.findByRole("tab", { name: "Sessions & practice" }),
+		);
 
 		const checkIn = within(sessionRow("12/10")).getByRole("button", {
 			name: "Điểm danh",
@@ -213,7 +224,9 @@ describe("group class — attendance roster", () => {
 		server = startKernelServer(mondayClass(["st-1", "st-2"]));
 		await openSessionsTab();
 		fireEvent.click(
-			within(sessionRow("12/10")).getByRole("button", { name: "Điểm danh" }),
+			within(sessionRow("12/10")).getByRole("button", {
+				name: "Điểm danh →",
+			}),
 		);
 		const roster = screen.getByRole("dialog");
 		const second = within(roster)
