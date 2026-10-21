@@ -87,9 +87,128 @@ try {
 	await page.fill("#su-name", "Nguyễn Hoàng Lan");
 	await page.fill("#su-email", teacherEmail);
 	await page.fill("#su-password", PASSWORD);
+	// Org + membership chỉ được tạo khi request GET /api/kernel ĐẦU TIÊN đi qua
+	// bootstrapMiddleware (apps/server/src/app.ts) — request này chỉ bắn sau
+	// khi vite dev transform xong graph dashboard (luôn lạnh mỗi lần boot,
+	// warm() của harness chỉ phủ /login). Issue #397: blind-poll DB ~21.75s
+	// thất bại trên máy đang tải vì AbortSignal.timeout(15000) + retry:false
+	// của fetchKernelSnapshot biến kernel chậm thành abort KHÔNG có retry.
+	// Collector duy nhất (đăng ký trước click, không promise mồ côi theo vòng)
+	// ghi lại request/response/requestfailed có mốc thời gian; response →
+	// DB (orgIdForTeacherEmail) là oracle; chỉ requestfailed hoặc window hết
+	// mà chưa có request nào mới goto lại /dashboard bắn kernel mới.
+	type KernelObs = {
+		kind: "request" | "response" | "requestfailed";
+		at: number;
+		status?: number;
+		failure?: string;
+	};
+	const kernelObs: KernelObs[] = [];
+	const tKernel = Date.now();
+	const isKernelGet = (url: string, method: string) =>
+		method === "GET" && new URL(url).pathname === "/api/kernel";
+	page.on("request", (r) => {
+		if (isKernelGet(r.url(), r.method()))
+			kernelObs.push({ kind: "request", at: Date.now() - tKernel });
+	});
+	page.on("response", (r) => {
+		if (isKernelGet(r.url(), r.request().method()))
+			kernelObs.push({
+				kind: "response",
+				status: r.status(),
+				at: Date.now() - tKernel,
+			});
+	});
+	page.on("requestfailed", (r) => {
+		if (isKernelGet(r.url(), r.method()))
+			kernelObs.push({
+				kind: "requestfailed",
+				failure: r.failure()?.errorText,
+				at: Date.now() - tKernel,
+			});
+	});
 	await page.getByRole("button", { name: "Create account" }).click();
 	await page.waitForURL(/\/dashboard/, { timeout: 60_000 });
-	const orgId = await orgIdForTeacherEmail(teacherEmail);
+
+	// Vòng chờ kernel (tổng 120s): mỗi vòng chờ response HOẶC requestfailed
+	// (client tự abort ≤15s nhờ AbortSignal.timeout) trong window 30s. Chỉ goto
+	// /dashboard cứu khi (a) requestfailed — request đang bay ĐÃ chết, không
+	// bao giờ goto giữa chừng vì navigation hủy cả fetch đang treo; (b) window
+	// hết mà không hề có request nào (JS chưa boot). Observation `request`
+	// (đã gửi) KHÔNG kích hoạt goto. ERR_ABORTED không phân biệt abort-15s và
+	// navigation-cancel — observation ghi text thô, không khẳng định nguyên
+	// nhân; nguyên nhân thật được suy từ tổ hợp observations khi fail.
+	const kernelDeadline = Date.now() + 120_000;
+	// Baseline quan sát: 0 (từ lúc click) — kernel có thể đã bắn trong lúc
+	// waitForURL và vẫn đang bay khi vào vòng (review #397 F3: snapshot
+	// kernelObs.length tại window đầu sẽ bỏ sót request đó).
+	let seen = 0;
+	while (!kernelObs.some((o) => o.kind === "response")) {
+		const remaining = kernelDeadline - Date.now();
+		if (remaining <= 0) break;
+		const windowEnd = Date.now() + Math.min(30_000, remaining);
+		while (Date.now() < windowEnd) {
+			const fresh = kernelObs.slice(seen);
+			if (
+				fresh.some((o) => o.kind === "response" || o.kind === "requestfailed")
+			)
+				break;
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 250);
+			await promise;
+		}
+		if (kernelObs.some((o) => o.kind === "response")) break;
+		const fresh = kernelObs.slice(seen);
+		const failed = fresh.some((o) => o.kind === "requestfailed");
+		const sent = fresh.some((o) => o.kind === "request");
+		seen = kernelObs.length;
+		if (Date.now() >= kernelDeadline) break;
+		if (!failed && !sent) {
+			// JS chưa boot / chưa ai bắn request — goto để khởi động lại flow.
+		} else if (!failed) {
+			// Request vẫn đang bay (chưa tới 15s abort) — chờ tiếp trong window,
+			// không goto: navigation sẽ hủy fetch đang bay và tự gây fail giả.
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 250);
+			await promise;
+			continue;
+		}
+		// Bắn lại kernel bằng goto (không reload — trang có thể đã chuyển sang
+		// /login?returnUrl hoặc vừa full-reload); goto tự ném ERR_ABORTED thì
+		// ghi thành observation và để vòng sau thử tiếp.
+		try {
+			await page.goto(`${WEB_ORIGIN}/dashboard`, { waitUntil: "load" });
+		} catch (err) {
+			kernelObs.push({
+				kind: "requestfailed",
+				failure: `goto /dashboard: ${String(err).slice(0, 120)}`,
+				at: Date.now() - tKernel,
+			});
+		}
+	}
+	const kernelSummary = kernelObs.length
+		? kernelObs
+				.map((o) => {
+					const at = `+${o.at}ms`;
+					if (o.kind === "response") return `response ${o.status} ${at}`;
+					if (o.kind === "requestfailed")
+						return `requestfailed (${o.failure ?? "?"}) ${at}`;
+					return `request sent ${at}`;
+				})
+				.join(" -> ")
+		: "không thấy request /api/kernel nào trong 120s";
+	let orgId: string;
+	try {
+		orgId = await orgIdForTeacherEmail(teacherEmail);
+	} catch (err) {
+		// Phân biệt nhánh nguyên nhân theo observations (#397): response 401 →
+		// nghi cookie cross-origin (E2E_HOSTNAME=127.0.0.1); response 403 →
+		// role gate; chỉ request/abort/timeout → timing hoặc JS chưa boot.
+		throw new Error(
+			`orgIdForTeacherEmail thất bại. Kernel observations: ${kernelSummary}`,
+			{ cause: err },
+		);
+	}
 
 	const db = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,

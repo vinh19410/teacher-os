@@ -6,9 +6,11 @@
  *   node scripts/design-compare/capture.mjs [--screens all|id1,id2]
  *        [--side design|app|both] [--label old|new] [--keep-design]
  *
- * - Tự boot stack e2e trên 8100/8101/8103 (boot:api xoá local.db mỗi lần →
- *   luôn chạy seed mới), chạy apps/e2e/scripts/design-seed.ts để tạo dữ liệu.
- * - Design v2 chạy qua scripts/design-compare/fetch-design.sh trên :8200.
+ * - Tự boot stack e2e trên free port mỗi run (#397 — không đụng worktree AI
+ *   song song / dev stack; boot:api xoá local.db mỗi lần → luôn chạy seed
+ *   mới), chạy apps/e2e/scripts/design-seed.ts để tạo dữ liệu.
+ * - Design v2 chạy qua scripts/design-compare/fetch-design.sh
+ *   (DESIGN_PORT env, mặc định :8200 khi chạy riêng; capture chọn free port).
  * - Ảnh raw ghi vào scripts/design-compare/.state/raw/<label>/ (git-ignored);
  *   ảnh ghép side-by-side ghi vào
  *   plans/261020-1446-378-redesign-design-v2/screenshots/<id>/<viewport>-<theme>.png
@@ -16,8 +18,9 @@
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -26,10 +29,27 @@ const ROOT = path.resolve(HERE, "../..");
 const requireE2E = createRequire(path.join(ROOT, "apps/e2e/package.json"));
 const { chromium } = requireE2E("@playwright/test");
 
-const API_PORT = 8100;
-const WEB_PORT = 8101;
-const STUDENT_PORT = 8103;
-const DESIGN_PORT = 8200;
+// #397: port cố định 8100/8101/8103 bị các worktree AI song song (mỗi issue
+// một worktree, cùng override E2E_*_PORT) và dev stack chiếm — signup khi đó
+// đi vào API của worktree KHÁC, seed đọc local.db của worktree mình →
+// "no org yet" vĩnh viễn dù kernel 200 (diagnostics của fix đã bắt live:
+// request sent +649ms -> response 200 +656ms rồi poll rỗng 21.75s). Chọn
+// free port mỗi run để harness miễn nhiễm xung đột.
+const freePort = () =>
+	new Promise((resolve, reject) => {
+		const srv = net.createServer();
+		srv.listen(0, "127.0.0.1", () => {
+			const { port } = srv.address();
+			srv.close(() => resolve(port));
+		});
+		srv.on("error", reject);
+	});
+const [API_PORT, WEB_PORT, STUDENT_PORT, DESIGN_PORT] = await Promise.all([
+	freePort(),
+	freePort(),
+	freePort(),
+	freePort(),
+]);
 const WEB = `http://localhost:${WEB_PORT}`;
 const STUDENT = `http://localhost:${STUDENT_PORT}`;
 const DESIGN = `http://localhost:${DESIGN_PORT}`;
@@ -80,9 +100,20 @@ if (screens.length === 0) {
 // ── process helpers ──────────────────────────────────────────────────────
 const children = [];
 const outputTail = new Map();
+// #397: log api chứa URL verify-email/reset mang ?token=… (redactResetToken
+// phía server chỉ cover reset-password + pay). Redact tại điểm collect, trên
+// buffer ĐÃ NỐI (token có thể cắt ngang biên chunk) — phủ cả dump của waitUrl
+// lẫn dump seed-fail.
+const TOKEN_RE = /([?&]token=)[^\s&"']+/gi;
+const redactLog = (s) => s.replace(TOKEN_RE, "$1[redacted]");
 function start(name, cmd, opts = {}) {
 	const child = spawn(cmd, {
 		cwd: ROOT,
+		// #397 (smoke run): SIGTERM cho wrapper pnpm chỉ giết pnpm — node cháu
+		// (vite/boot:api) sống thành orphan, chiếm 8100/8101/8103 khiến lần chạy
+		// sau EADDRINUSE chết im lặng và waitUrl chạm vào stack CŨ (DB không
+		// wipe). detached + kill cả process group đảm bảo dọn sạch cả cây.
+		detached: process.platform !== "win32",
 		env: {
 			...process.env,
 			E2E_API_PORT: String(API_PORT),
@@ -96,9 +127,18 @@ function start(name, cmd, opts = {}) {
 		...opts.spawn,
 	});
 	children.push(child);
+	// Redact trên RAW buffer có carry-over đuôi (review #397 F4): nếu redact
+	// trên buf ĐÃ redact rồi slice, token cắt ngang biên slice mất tiền tố
+	// `token=` → đuôi token lọt log. rawTail giữ ~100 ký tự raw cuối để nối
+	// với chunk kế trước khi redact.
+	let rawTail = "";
 	let buf = "";
 	const collect = (d) => {
-		buf = (buf + d).slice(-4000);
+		const raw = rawTail + d;
+		rawTail = raw.slice(-100);
+		// Pass 2 sau slice: slice(-4000) có thể cắt token giữa chừng — pass 2
+		// redact nút prefix còn lại trong buf.
+		buf = redactLog(redactLog(raw).slice(-4000));
 		outputTail.set(name, buf);
 	};
 	child.stdout.on("data", collect);
@@ -129,7 +169,11 @@ async function waitUrl(url, { timeoutMs = 150_000, name = url } = {}) {
 function cleanup() {
 	for (const c of children) {
 		try {
-			c.kill("SIGTERM");
+			// Âm pid = cả process group (xem detached ở start()); fallback pid dương
+			// cho trường hợp group đã tan hoặc Windows.
+			if (c.pid != null && process.platform !== "win32")
+				process.kill(-c.pid, "SIGTERM");
+			else c.kill("SIGTERM");
 		} catch {
 			/* gone */
 		}
@@ -137,11 +181,17 @@ function cleanup() {
 	if (!keepDesign) {
 		spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "stop"], {
 			cwd: ROOT,
+			env: { ...process.env, DESIGN_PORT: String(DESIGN_PORT) },
 		});
 	}
 }
 process.on("exit", cleanup);
 process.on("SIGINT", () => process.exit(130));
+// Runner AI/timeout thường kill bằng SIGTERM hoặc đóng terminal (SIGHUP) —
+// 'exit' handler không chạy khi đó, các process group con thành orphan (#397:
+// chính kiểu orphan này dồn RAM/CPU gây máy quá tải). exit() để 'exit' chạy.
+process.on("SIGTERM", () => process.exit(143));
+process.on("SIGHUP", () => process.exit(129));
 
 // ── servers ──────────────────────────────────────────────────────────────
 const browser = await chromium.launch();
@@ -175,6 +225,10 @@ if (needApp) {
 	);
 	await waitUrl(`${STUDENT}/login`, { name: "student" });
 	await warm(`${WEB}/login`, "#su-name");
+	// #397: chưa có session nên /dashboard redirect về /login?returnUrl —
+	// warm được shared graph (router, auth client, auth gate). Chunk riêng của
+	// dashboard vẫn lạnh; vòng kernel-wait của design-seed phủ phần đó.
+	await warm(`${WEB}/dashboard`, "#su-name");
 	await warm(`${STUDENT}/login`, "#tab-signup");
 
 	console.log("[harness] seed dữ liệu so sánh…");
@@ -190,12 +244,19 @@ if (needApp) {
 				E2E_STUDENT_PORT: String(STUDENT_PORT),
 			},
 			encoding: "utf8",
-			timeout: 300_000,
+			// #397 review: worst-case seed = 60s waitForURL + 120s kernel wait +
+			// ~22s DB busy-retry + thân seed (~44s khoẻ) → 300s cũ có thể SIGTERM
+			// giữa chừng đúng trên máy đang tải mà issue nhắm tới.
+			timeout: 420_000,
 		},
 	);
 	if (seeded.status !== 0) {
 		console.error(
-			`[harness] seed thất bại:\n${seeded.stdout}\n${seeded.stderr}`,
+			`[harness] seed thất bại:\n${redactLog(String(seeded.stdout))}\n${redactLog(String(seeded.stderr))}\n--- log stack (api/web/student) ---\n${[
+				...outputTail.entries(),
+			]
+				.map(([n, b]) => `## ${n}\n${b}`)
+				.join("\n")}`,
 		);
 		process.exit(1);
 	}
@@ -206,6 +267,7 @@ if (side === "design" || side === "both") {
 	console.log("[harness] design v2…");
 	const r = spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "run"], {
 		cwd: ROOT,
+		env: { ...process.env, DESIGN_PORT: String(DESIGN_PORT) },
 		encoding: "utf8",
 		timeout: 300_000,
 	});

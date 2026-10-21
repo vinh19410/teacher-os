@@ -20,6 +20,7 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Dashboard học viên (Tổng quan các lớp + khối "Buổi tới" ở chi tiết lớp): buổi hôm nay đã qua giờ kết thúc (ngày + giờ bắt đầu + thời lượng, giờ VN) không còn bị server trả làm "Buổi tới" — `loadNextSession` nhận `now`, bỏ qua buổi đã hết giờ và chọn buổi kế tiếp trong ngày (đồng bộ `isLessonEnded` client từ #393); nếu không còn buổi hợp lệ thì ẩn "Buổi tới". Phép tính end-time gom về helper chung `vietnamSessionEndMs` (`@teacher-os/api/vietnam-date`) dùng chung server + client, không đổi contract/API (#395)
+- Harness `pnpm design:compare` chạy xanh lại từ đầu tới cuối (trước đó exit 1 ở bước seed với `no org yet, waiting for bootstrap`): seed đồng bộ trên sự kiện thật `GET /api/kernel` (observer + rescue goto khi client abort 15s) thay vì blind-poll DB ~21.75s; harness tự chọn **free port mỗi run** (API/WEB/STUDENT/DESIGN) — hết xung đột với worktree AI song song/dev stack từng khiến signup đi vào API của worktree khác; cleanup kill cả process group + SIGTERM/SIGHUP handler (hết orphan chiếm port), redact `token=` trong log dump, seed-fail in log stack (api/web/student); screen `t-attendance` bỏ click tab `Buổi học` đã bị #391 merge (chụp default Sessions & practice, không mutate check-in) (#397)
 
 ---
 
