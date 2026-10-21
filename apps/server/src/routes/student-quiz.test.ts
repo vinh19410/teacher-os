@@ -322,6 +322,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q22",
 			"ca-q23",
 			"ca-q24",
+			"ca-q25",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -341,6 +342,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 											"ca-q18",
 											"ca-q23",
 											"ca-q24",
+											"ca-q25",
 										].includes(assignmentId)
 									? "prompt-writing"
 									: ["ca-q19", "ca-q20", "ca-q21", "ca-q22"].includes(
@@ -1373,5 +1375,64 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			},
 		);
 		expect(control.status).toBe(200);
+	});
+
+	test("HTML-wrapped writing essay (<p> tags) renders as plain text in take, summary, and detail with aligned annotation offsets (#382)", async () => {
+		const htmlEssay = "<p>Remote learning has widened the gap.</p>";
+		const attemptId = await startAttempt("ca-q25");
+		expect((await patchEssay(attemptId, htmlEssay)).status).toBe(200);
+
+		// Take payload khi resume trả plain text (không lộ thẻ <p>).
+		const take = await app.request("/api/student/assignments/ca-q25/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.attempt?.essay).toBe(
+			"Remote learning has widened the gap.",
+		);
+
+		expect((await submit(attemptId)).status).toBe(200);
+
+		// Giáo viên highlight "widened" (raw 23..30, plain 20..27) và chấm điểm.
+		await libsql.insert(schema.quizAttemptAnnotation).values({
+			id: "ann-html-student",
+			orgId: "org-1",
+			attemptId,
+			startOffset: 23,
+			endOffset: 30,
+			note: "Động từ chuẩn.",
+		});
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				gradeFeedback: "Tốt.",
+				gradedAt: new Date("2026-10-21T05:00:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, attemptId));
+
+		const summary = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: OWNER,
+		});
+		expect(summary.status).toBe(200);
+		const summaryBody = (await summary.json()) as QuizAttemptSummary;
+		expect(summaryBody.essay).toBe("Remote learning has widened the gap.");
+		expect(summaryBody.annotations).toEqual([
+			{
+				id: "ann-html-student",
+				start: 20,
+				end: 27,
+				note: "Động từ chuẩn.",
+			},
+		]);
+
+		const detail = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(detail.status).toBe(200);
+		const detailBody = (await detail.json()) as QuizAttemptDetail;
+		expect(detailBody.essay).toBe("Remote learning has widened the gap.");
 	});
 });

@@ -36,6 +36,7 @@ let teacherContext: BrowserContext;
 let teacherPage: Page;
 let fixture: QuizFixture;
 let attemptId = "";
+let htmlAttemptId = "";
 
 /** Sau đăng nhập/đăng ký: URL về trang chủ + thấy heading Bài tập. */
 async function expectAssignmentsHome(page: Page): Promise<void> {
@@ -113,6 +114,16 @@ test.beforeAll(async ({ browser }) => {
 				prompt: "<p>Some people prefer to live in a big city.</p>",
 				questions: [],
 			},
+			{
+				title: "Writing ghi chú HTML: remote learning",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				note: "",
+				passage: "",
+				prompt: "<p>Discuss the impact of remote learning.</p>",
+				questions: [],
+			},
 		],
 	});
 	attemptId = await seedSubmittedEssay({
@@ -120,6 +131,13 @@ test.beforeAll(async ({ browser }) => {
 		assignmentId: fixture.assignmentIds[0] ?? "",
 		studentId: fixture.studentId,
 		essay: ESSAY,
+	});
+	htmlAttemptId = await seedSubmittedEssay({
+		orgId,
+		assignmentId: fixture.assignmentIds[1] ?? "",
+		studentId: fixture.studentId,
+		essay:
+			"<p>Remote learning has widened the gap between rich &amp; poor students.</p><p>Teachers need better tools.</p>",
 	});
 
 	const signupContext = await browser.newContext();
@@ -366,5 +384,63 @@ test.describe("Teacher essay annotations (#332)", () => {
 			(mobileFrame?.y ?? 0) + (mobileFrame?.height ?? 0),
 		);
 		await studentContext.close();
+	});
+
+	test("renders HTML-wrapped essay (<p> tags) as clean text with aligned highlights (#382)", async ({
+		browser,
+	}) => {
+		await teacherPage.goto(`${WEB_ORIGIN}/grading/${htmlAttemptId}`);
+		await expect(teacherPage.getByTestId("essay-text")).toBeVisible();
+		await expect(teacherPage.getByTestId("essay-text")).not.toContainText(
+			"<p>",
+		);
+		await expect(teacherPage.getByTestId("essay-word-count")).toContainText(
+			"15 từ",
+		);
+
+		await selectEssayText(teacherPage, "widened");
+		const dialog = teacherPage.getByRole("dialog", { name: "Thêm highlight" });
+		await expect(dialog).toBeVisible();
+		await dialog.locator("#annotation-note").fill("Động từ chuẩn.");
+		await teacherPage.getByRole("button", { name: "Lưu highlight" }).click();
+		await expect(markNth(teacherPage, 1)).toHaveText("widened");
+
+		const gradeRes = await teacherPage.request.post(
+			`${API_ORIGIN}/api/grading/${htmlAttemptId}/grade`,
+			{
+				headers: {
+					Origin: WEB_ORIGIN,
+					"Content-Type": "application/json",
+				},
+				data: {
+					scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+					feedback: "Bài tốt.",
+				},
+			},
+		);
+		expect(gradeRes.status()).toBe(200);
+
+		const studentContext = await browser.newContext();
+		try {
+			const studentPage = await studentContext.newPage();
+			await signIn(studentPage);
+			await studentPage.goto(
+				`${STUDENT_ORIGIN}/learn/quizzes/attempt/${htmlAttemptId}`,
+			);
+			await expect(studentPage.getByTestId("essay-frame")).not.toContainText(
+				"<p>",
+			);
+			await expect(studentPage.getByTestId("essay-summary-count")).toHaveText(
+				"15 từ",
+			);
+			await expect(markNth(studentPage, 1)).toHaveText("widened");
+			await expect(
+				studentPage.locator(
+					'mark[data-n="1"] + [data-testid="essay-inline-note"]',
+				),
+			).toContainText("Động từ chuẩn.");
+		} finally {
+			await studentContext.close();
+		}
 	});
 });
