@@ -83,7 +83,15 @@
 					}
 				]
 			},
-			"appSteps": [],
+			"appSteps": [
+				{
+					"clickFirst": "[data-testid='session-attendance-open-3']"
+				},
+				{
+					"wait": 400
+				}
+			],
+			"nonMutating": true,
 			"app": "/classes/{seed.classId}"
 		},
 		{

@@ -11,7 +11,7 @@ import type { SyllabusLessonKind } from "./mock-data";
 
 export const IMPORT_MAX_NODES = 500;
 export const IMPORT_FILE_MAX_BYTES = 2 * 1024 * 1024;
-// Mirror zod contract của POST /api/syllabi (packages/api contracts.ts) —
+// Mirror zod contract của POST /api/syllabus-templates (packages/api contracts.ts) —
 // viền này phải bắt ở parser: server fail chỉ trả 400 opaque "invalid body",
 // không chỉ ra dòng/ô nào của file.
 const MODULE_TITLE_MAX = 500;

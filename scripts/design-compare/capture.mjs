@@ -18,7 +18,7 @@
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import net from "node:net";
 import path from "node:path";
@@ -515,22 +515,34 @@ try {
 										? tPage
 										: aPage,
 							);
-							await runSteps(
+							const stepPage =
 								sc.auth === "student"
 									? sPage
 									: sc.auth === "teacher"
 										? tPage
-										: aPage,
-								sc.appSteps,
-							);
-							await shoot(
-								sc.auth === "student"
-									? sPage
-									: sc.auth === "teacher"
-										? tPage
-										: aPage,
-								rawFile,
-							);
+										: aPage;
+							// #403: màn khai báo nonMutating phải zero POST check-in —
+							// đo bằng máy thay vì tin rằng không có click lạc (ràng buộc
+							// cốt lõi của issue: 6 viewport phải cùng trạng thái seed).
+							let checkInPosts = 0;
+							const onCheckIn = (req) => {
+								if (
+									req.method() === "POST" &&
+									/\/check-in(\?|$)/.test(req.url())
+								)
+									checkInPosts++;
+							};
+							if (sc.nonMutating) stepPage.on("request", onCheckIn);
+							try {
+								await runSteps(stepPage, sc.appSteps);
+								if (sc.nonMutating && checkInPosts > 0)
+									throw new Error(
+										`non-mutating screen bị POST /check-in ×${checkInPosts}`,
+									);
+							} finally {
+								if (sc.nonMutating) stepPage.off("request", onCheckIn);
+							}
+							await shoot(stepPage, rawFile);
 							done.push(`${sc.id}/${vpName}-${theme} (app)`);
 						} catch (err) {
 							failures.push(
@@ -720,7 +732,10 @@ console.log(`[harness] xong: ${done.length} ảnh, ${failures.length} lỗi`);
 if (failures.length) {
 	await writeFile(path.join(STATE, "errors.log"), `${failures.join("\n")}\n`);
 	console.log(`[harness] lỗi ghi ở ${path.join(STATE, "errors.log")}:`);
-	for (const f of failures.slice(0, 20)) console.log("  - " + f);
+	for (const f of failures.slice(0, 20)) console.log(`  - ${f}`);
+} else {
+	// #403: errors.log stale của run fail trước không được FAIL run sạch sau.
+	await rm(path.join(STATE, "errors.log"), { force: true });
 }
 // child spawn (api/web/student/design) giữ event loop sống mãi — thoát tường minh;
 // listener 'exit' ở trên chạy cleanup (SIGTERM + stop design).

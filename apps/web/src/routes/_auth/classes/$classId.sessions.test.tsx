@@ -220,6 +220,18 @@ describe("one action at a time across the class page", () => {
 });
 
 describe("group class — attendance roster", () => {
+	it("exposes a stable per-session testid that opens the roster modal", async () => {
+		server = startKernelServer(mondayClass(["st-1", "st-2"]));
+		await openSessionsTab();
+		// #403: harness design:compare click modal qua testid này — selector
+		// phải khớp appSteps của t-attendance trong
+		// scripts/design-compare/screens.json (buổi TODAY = index 1 fixture).
+		fireEvent.click(
+			within(sessionRow("12/10")).getByTestId("session-attendance-open-1"),
+		);
+		expect(screen.getByRole("dialog")).toBeTruthy();
+	});
+
 	it("checks in the chosen student only", async () => {
 		server = startKernelServer(mondayClass(["st-1", "st-2"]));
 		await openSessionsTab();
