@@ -48,21 +48,21 @@ export const VERDICT_CHIP_CLASSES: Record<QuizVerdict, string> = {
 	correct:
 		"border-verdict-correct/50 bg-verdict-correct-soft text-verdict-correct",
 	wrong: "border-verdict-wrong/50 bg-verdict-wrong-soft text-verdict-wrong",
-	skipped: "border-dashed border-input text-muted-foreground",
+	skipped: "border-dashed border-line-strong text-muted-fg",
 };
 
 /** Nút navigator: nền đặc theo verdict, chữ --verdict-on. */
 export const VERDICT_SOLID_CLASSES: Record<QuizVerdict, string> = {
 	correct: "border-transparent bg-verdict-correct text-verdict-on",
 	wrong: "border-transparent bg-verdict-wrong text-verdict-on",
-	skipped: "border-dashed border-input bg-muted text-muted-foreground",
+	skipped: "border-dashed border-line-strong bg-surface text-muted-fg",
 };
 
 /** Chữ theo verdict (compact list, đáp án key...). */
 export const VERDICT_TEXT_CLASSES: Record<QuizVerdict, string> = {
 	correct: "text-verdict-correct",
 	wrong: "text-verdict-wrong",
-	skipped: "text-muted-foreground",
+	skipped: "text-muted-fg",
 };
 
 /** accent-color cho radio theo verdict (take giữ accent-hot). */
@@ -80,5 +80,5 @@ export const VERDICT_ACCENT_CLASSES: Record<QuizVerdict, string> = {
 export const VERDICT_BADGE_CLASSES: Record<QuizVerdict, string> = {
 	correct: "text-verdict-correct",
 	wrong: "text-verdict-wrong",
-	skipped: "text-muted-foreground",
+	skipped: "text-meta",
 };

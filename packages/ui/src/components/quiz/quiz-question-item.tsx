@@ -86,8 +86,8 @@ const SELECTED_ROW_REVIEW: Record<QuizVerdict, ChoiceRowReview> = {
 	// Unreachable — defensive: grader định nghĩa skipped ⇔ answer rỗng ⇒
 	// không có hàng nào selected. Giữ để đủ Record<QuizVerdict, ...>.
 	skipped: {
-		rowClass: "border-input/40 bg-muted",
-		textClass: "text-muted-foreground",
+		rowClass: "border-line-strong/40 bg-surface",
+		textClass: "text-muted-fg",
 		accent: VERDICT_ACCENT_CLASSES.skipped,
 		mark: "you",
 	},
@@ -118,8 +118,8 @@ function choiceRowReview(
 	// Hàng không nổi bật: viền tường minh trong suốt — để preflight currentColor
 	// sẽ vẽ viền 1px xám đậm hơn hairline của hệ (review PR #355 F2).
 	return {
-		rowClass: "border-transparent text-muted-foreground",
-		textClass: "text-muted-foreground",
+		rowClass: "border-transparent text-muted-fg",
+		textClass: "text-muted-fg",
 		accent: VERDICT_ACCENT_CLASSES.skipped,
 		mark: null,
 	};
@@ -158,7 +158,7 @@ export function QuizQuestionItem({
 	const frameClass = verdict
 		? "border-transparent"
 		: current
-			? "border-primary bg-accent-soft"
+			? "border-hot bg-accent-soft"
 			: "border-transparent bg-transparent";
 	return (
 		<fieldset
@@ -176,7 +176,7 @@ export function QuizQuestionItem({
 				verdict && VERDICT_BLOCK_CLASSES[verdict],
 				// Câu đang mở ở review: outline cam đè LÊN nền verdict, không
 				// thay thế nó (bg-accent-soft sẽ xoá nền verdict).
-				reviewMode && current && "outline-2 outline-primary outline-offset-2",
+				reviewMode && current && "outline-2 outline-hot outline-offset-2",
 			)}
 		>
 			<div className="leading-[1.6]">
@@ -225,8 +225,8 @@ export function QuizQuestionItem({
 											rv
 												? rv.rowClass
 												: selected
-													? "border-transparent bg-muted font-medium text-primary"
-													: "neu-sm hover:text-primary",
+													? "border-transparent bg-surface font-medium text-hot"
+													: "neu-sm hover:text-hot",
 										),
 									// MCQ/heading: hàng full-width, chữ thường.
 									!pillOnly &&
@@ -235,7 +235,7 @@ export function QuizQuestionItem({
 											rv
 												? rv.rowClass
 												: selected
-													? "border-transparent bg-muted text-primary"
+													? "border-transparent bg-surface text-hot"
 													: "neu-sm",
 											!reviewMode && !rv && !selected && "hover:border-fg",
 										),
@@ -253,14 +253,14 @@ export function QuizQuestionItem({
 									)}
 								/>
 								{row.label && (
-									<span className="w-5 shrink-0 text-center font-medium font-mono text-muted-foreground">
+									<span className="w-5 shrink-0 text-center font-medium font-mono text-muted-fg">
 										{row.label}
 									</span>
 								)}
 								<span
 									className={cn(
 										selected && "font-medium",
-										rv ? rv.textClass : !selected && "text-foreground",
+										rv ? rv.textClass : !selected && "text-fg",
 									)}
 								>
 									{row.text}

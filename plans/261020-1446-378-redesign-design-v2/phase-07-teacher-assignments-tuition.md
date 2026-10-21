@@ -1,7 +1,7 @@
 ---
 phase: 7
 title: "Giáo viên: bài tập, đề thi, chấm bài, học phí, vocab"
-status: pending
+status: completed
 priority: P1
 effort: "7h"
 dependencies: [4]

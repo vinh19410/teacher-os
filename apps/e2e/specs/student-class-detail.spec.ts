@@ -183,6 +183,9 @@ test.describe("Student class card & class detail page", () => {
 			.getByTestId("class-card")
 			.filter({ hasText: className })
 			.getByText(teacherEmail);
+		// Card v2 cao hơn (dòng lịch + bảng bài tập) — email có thể dưới fold,
+		// mouse.click không tự scroll nên phải đưa vào view trước.
+		await email.scrollIntoViewIfNeeded();
 		const box = await email.boundingBox();
 		if (!box) throw new Error("teacher email row is not rendered");
 		await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);

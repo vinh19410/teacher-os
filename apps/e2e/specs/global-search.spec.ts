@@ -22,6 +22,9 @@ test.beforeEach(async ({ page }) => {
 	currentTeacherEmail = await signUpViaUi(page);
 	// Fresh-org proof: query không khớp gì phải ra empty state trước khi tạo
 	// dữ liệu — chứng tỏ không có row rác nào đáp ứng query bên dưới.
+	// Trigger visible = CommandSearch đã mount (listener ⌘K đăng ký cùng mount);
+	// không chờ thì ⌘K bấm trong lúc hydrate bị mất.
+	await expect(page.getByTestId("command-search-trigger")).toBeVisible();
 	await page.keyboard.press("ControlOrMeta+k");
 	await page.getByPlaceholder("Tìm học viên, lớp học…").fill("zzz-khong-co");
 	await expect(page.getByTestId("command-search-empty")).toBeVisible();

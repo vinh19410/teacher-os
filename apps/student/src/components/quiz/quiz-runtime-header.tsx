@@ -38,17 +38,14 @@ export function QuizRuntimeHeader({
 	children?: ReactNode;
 }) {
 	return (
-		// Khung ExamFrame design-v2: thanh trên nền chìm, nhãn đề bên trái,
-		// trạng thái lưu + hành động bên phải. Logic chấm/lưu không đổi.
-		<header className="sticky top-0 z-30 flex items-center justify-between gap-3 rounded-t-xl border-line border-b bg-muted/50 px-4 py-2.5 text-xs backdrop-blur">
+		<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-line border-b bg-bg/95 px-4 backdrop-blur">
 			<div className="flex min-w-0 items-center gap-3">
-				<Link
-					to="/"
-					className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-				>
+				<Link to="/" className={cn(buttonVariants({ variant: "ghost" }))}>
 					Thoát
 				</Link>
-				<h1 className="truncate font-medium text-[13px] text-fg">{title}</h1>
+				<h1 className="truncate font-display font-semibold text-[15px] tracking-tight">
+					{title}
+				</h1>
 			</div>
 			<div className="flex flex-none items-center gap-3">
 				{saveState !== null && (

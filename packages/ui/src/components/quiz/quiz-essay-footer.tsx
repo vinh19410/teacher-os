@@ -38,21 +38,18 @@ export function QuizEssayFooter({
 	if (announce !== null) announceRef.current = announce;
 
 	return (
-		<footer className="sticky bottom-0 z-20 border-border border-t bg-background/95 backdrop-blur">
+		<footer className="sticky bottom-0 z-20 border-line border-t bg-bg/95 backdrop-blur">
 			<div className="mx-auto w-full max-w-[720px] px-4 py-3">
 				{/* Contract e2e: giữ testid navigator-progress như QuizNavigator.
 				 * KHÔNG role="status" ở đây — nội dung đổi mỗi keystroke sẽ spam
 				 * SR (code-review F1); announce chỉ ở span sr-only milestone dưới. */}
 				<p
 					data-testid="navigator-progress"
-					className="font-mono text-muted-foreground text-xs"
+					className="font-mono text-fg-2 text-xs"
 				>
 					<span
 						data-testid="essay-word-count"
-						className={cn(
-							"font-medium",
-							belowMin ? "text-primary" : "text-foreground",
-						)}
+						className={cn("font-medium", belowMin ? "text-hot" : "text-fg")}
 					>
 						{wordCount}
 					</span>

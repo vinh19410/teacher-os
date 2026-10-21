@@ -40,8 +40,9 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 			).not.toBeVisible({ timeout: 10_000 });
 
 			// Switch to "Lời mời đang chờ" tab
+			// Phase 6: dải tab dùng role=tab (không còn role=button).
 			await teacherPage
-				.getByRole("button", { name: /Lời mời đang chờ/ })
+				.getByRole("tab", { name: /Lời mời đang chờ/ })
 				.click();
 
 			// Assert studentEmail appears in pending list

@@ -113,15 +113,13 @@ export function MediaDropzone({
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 			className={cn(
-				"flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border-2 border-border border-dashed bg-muted px-6 py-10 text-center transition-colors focus-visible:outline-2 focus-visible:outline-primary",
-				dragging
-					? "border-primary border-solid bg-primary/5"
-					: "hover:border-primary/60",
+				"flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border-2 border-line border-dashed bg-surface px-6 py-10 text-center transition-colors focus-visible:outline-2 focus-visible:outline-hot",
+				dragging ? "border-hot border-solid bg-hot/5" : "hover:border-hot/60",
 				disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
 			)}
 		>
-			<UploadIcon aria-hidden className="size-6 text-muted-foreground" />
-			<p className="text-foreground text-sm">
+			<UploadIcon aria-hidden className="size-6 text-muted-fg" />
+			<p className="text-fg text-sm">
 				{dragging ? (
 					"Thả để tải lên"
 				) : (
@@ -139,7 +137,7 @@ export function MediaDropzone({
 				)}
 			</p>
 			{hint && (
-				<p id={hintId} className="text-muted-foreground text-xs">
+				<p id={hintId} className="text-muted-fg text-xs">
 					{hint}
 				</p>
 			)}

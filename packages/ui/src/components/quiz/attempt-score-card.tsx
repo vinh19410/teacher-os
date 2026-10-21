@@ -21,22 +21,20 @@ export function AttemptScoreCard({
 }) {
 	return (
 		<section aria-label="Kết quả bài làm" className="neu rounded-lg p-6">
-			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+			<p className="font-mono text-[11px] text-meta uppercase tracking-[0.2em]">
 				Điểm
 			</p>
 			<p
 				data-testid="attempt-correct-count"
-				className="mt-2 font-extrabold text-6xl text-foreground leading-none tracking-[-0.03em]"
+				className="mt-2 font-display font-extrabold text-6xl text-fg leading-none tracking-[-0.03em]"
 			>
 				{correctCount}
 			</p>
-			<p className="mt-2 text-muted-foreground text-sm">
-				trên tổng {totalCount} câu
-			</p>
+			<p className="mt-2 text-meta text-sm">trên tổng {totalCount} câu</p>
 
 			<dl className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-foreground">Câu đúng</dt>
+					<dt className="text-meta">Câu đúng</dt>
 					<dd
 						data-testid="attempt-correct"
 						className="font-medium font-mono text-success"
@@ -45,19 +43,19 @@ export function AttemptScoreCard({
 					</dd>
 				</div>
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-foreground">Câu sai</dt>
+					<dt className="text-meta">Câu sai</dt>
 					<dd
 						data-testid="attempt-wrong"
-						className="font-medium font-mono text-destructive"
+						className="font-medium font-mono text-danger"
 					>
 						{wrongCount}
 					</dd>
 				</div>
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-foreground">Câu bỏ qua</dt>
+					<dt className="text-meta">Câu bỏ qua</dt>
 					<dd
 						data-testid="attempt-skipped"
-						className="font-medium font-mono text-muted-foreground"
+						className="font-medium font-mono text-muted-fg"
 					>
 						{skippedCount}
 					</dd>

@@ -185,7 +185,7 @@ describe("CommandSearch — trigger và mở palette", () => {
 		expect(screen.getByRole("dialog")).toBeTruthy();
 	});
 
-	it("⌘K bị bỏ qua khi focus trong input thường", () => {
+	it("⌘K mở cả khi focus trong input thường (chord meta không thuộc field)", () => {
 		render(
 			<>
 				<input data-testid="other-input" />
@@ -195,10 +195,10 @@ describe("CommandSearch — trigger và mở palette", () => {
 		const other = screen.getByTestId("other-input");
 		other.focus();
 		fireEvent.keyDown(other, { key: "k", metaKey: true });
-		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(screen.getByRole("dialog")).toBeTruthy();
 	});
 
-	it("⌘K bị bỏ qua khi focus trong editor Tiptap (contenteditable)", () => {
+	it("⌘K mở cả khi focus trong editor Tiptap (contenteditable)", () => {
 		render(
 			<>
 				<div contentEditable data-testid="editor" />
@@ -208,7 +208,7 @@ describe("CommandSearch — trigger và mở palette", () => {
 		const editor = screen.getByTestId("editor") as HTMLElement;
 		editor.focus();
 		fireEvent.keyDown(editor, { key: "k", metaKey: true });
-		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(screen.getByRole("dialog")).toBeTruthy();
 	});
 
 	it("store chưa tải (data null) → trạng thái 'Đang tải…'", () => {

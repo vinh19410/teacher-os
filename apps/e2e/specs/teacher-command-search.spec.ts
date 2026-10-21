@@ -29,6 +29,8 @@ test("trigger 'Tìm kiếm… ⌘K' trên header mở palette", async ({ page })
 });
 
 test("⌘K mở palette, Escape đóng", async ({ page }) => {
+	// Trigger visible = CommandSearch đã mount — ⌘K bấm trước mount bị mất.
+	await expect(page.getByTestId("command-search-trigger")).toBeVisible();
 	await page.keyboard.press("ControlOrMeta+k");
 	await expect(page.getByRole("dialog")).toBeVisible();
 	await page.keyboard.press("Escape");

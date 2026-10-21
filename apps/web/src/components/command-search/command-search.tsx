@@ -45,21 +45,9 @@ const KIND_ICONS: Record<SearchResultKind, LucideIcon> = {
 	nav: Search,
 };
 
-/** Focus đang nằm trong field tự xử lý phím (input, textarea, editor Tiptap
- * ProseMirror là contenteditable) → ⌘K thuộc về field đó, palette không mở. */
-function isEditableTarget(target: HTMLElement | null): boolean {
-	if (!target) return false;
-	if (target.isContentEditable || target.hasAttribute("contenteditable")) {
-		return true;
-	}
-	const tag = target.tagName;
-	return (
-		tag === "INPUT" ||
-		tag === "TEXTAREA" ||
-		tag === "SELECT" ||
-		target.getAttribute("role") === "textbox"
-	);
-}
+/** ⌘K trong palette (input của palette) → ⌘K đóng lại; ngoài palette luôn mở
+ * (chuẩn GitHub/Linear — chord có meta/ctrl không thuộc về field nào: không
+ * editor nào trong app bind ⌘K). */
 
 export function CommandSearch({ data }: { data: MockData | null }) {
 	const navigate = useNavigate();
@@ -106,14 +94,6 @@ export function CommandSearch({ data }: { data: MockData | null }) {
 		function onKeyDown(event: KeyboardEvent) {
 			if (event.key !== "k" && event.key !== "K") return;
 			if (!(event.metaKey || event.ctrlKey)) return;
-			const target = event.target instanceof HTMLElement ? event.target : null;
-			// Focus trong palette (input của palette) → ⌘K đóng lại.
-			if (target?.closest('[data-slot="command-dialog"]')) {
-				event.preventDefault();
-				handleOpenChange(!open);
-				return;
-			}
-			if (isEditableTarget(target)) return;
 			event.preventDefault();
 			handleOpenChange(!open);
 		}

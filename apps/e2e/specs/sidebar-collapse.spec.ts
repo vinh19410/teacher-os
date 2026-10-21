@@ -27,12 +27,12 @@ async function expectSidebarWidth(page: Page, px: number) {
 		.toBeLessThanOrEqual(2);
 }
 
-test("desktop: toggle co rail còn 64px và mở lại đúng 256px (track 16rem của shell v2)", async ({
+test("desktop: toggle co rail còn 56px (4rem ở root 14px) và mở lại đúng 224px = 16rem ở root 14px (track 16rem của shell v2)", async ({
 	page,
 }) => {
 	await page.setViewportSize(DESKTOP);
 	await signUpViaUi(page);
-	await expectSidebarWidth(page, 256);
+	await expectSidebarWidth(page, 224);
 
 	const toggle = page.getByTestId("sidebar-toggle");
 	await expect(toggle).toHaveAttribute(
@@ -44,7 +44,7 @@ test("desktop: toggle co rail còn 64px và mở lại đúng 256px (track 16rem
 		"aria-label",
 		"Mở rộng thanh điều hướng",
 	);
-	await expectSidebarWidth(page, 64);
+	await expectSidebarWidth(page, 56);
 
 	// Expand back to the original geometry.
 	await toggle.click();
@@ -52,7 +52,7 @@ test("desktop: toggle co rail còn 64px và mở lại đúng 256px (track 16rem
 		"aria-label",
 		"Thu gọn thanh điều hướng",
 	);
-	await expectSidebarWidth(page, 256);
+	await expectSidebarWidth(page, 224);
 });
 
 test("persistence: reload giữ trạng thái collapsed/expanded qua localStorage", async ({
@@ -62,7 +62,7 @@ test("persistence: reload giữ trạng thái collapsed/expanded qua localStorag
 	await signUpViaUi(page);
 
 	await page.getByTestId("sidebar-toggle").click();
-	await expectSidebarWidth(page, 64);
+	await expectSidebarWidth(page, 56);
 	await page.reload();
 	await expect(page.getByTestId("sidebar-toggle")).toBeVisible();
 	await expect(
@@ -71,14 +71,14 @@ test("persistence: reload giữ trạng thái collapsed/expanded qua localStorag
 			SIDEBAR_COLLAPSED_KEY,
 		),
 	).resolves.toBe("true");
-	await expectSidebarWidth(page, 64);
+	await expectSidebarWidth(page, 56);
 
 	await page.getByTestId("sidebar-toggle").click();
 	await page.reload();
-	await expectSidebarWidth(page, 256);
+	await expectSidebarWidth(page, 224);
 });
 
-test("mobile <1024px với collapsed=true: drawer vẫn full-label 288px", async ({
+test("mobile <1024px với collapsed=true: drawer vẫn full-label 252px", async ({
 	page,
 }) => {
 	await page.setViewportSize(MOBILE);
@@ -103,7 +103,7 @@ test("mobile <1024px với collapsed=true: drawer vẫn full-label 288px", async
 	await expect(drawer.getByTestId("sidebar-user-email")).toBeAttached();
 
 	const box = await drawer.boundingBox();
-	expect(Math.round(box?.width ?? 0)).toBe(288);
+	expect(Math.round(box?.width ?? 0)).toBe(252); // w-72 = 18rem ở root 14px
 });
 
 test("điều hướng từ rail: click icon Học viên tới /students và testid email còn DOM", async ({
@@ -112,7 +112,7 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	await page.setViewportSize(DESKTOP);
 	await signUpViaUi(page);
 	await page.getByTestId("sidebar-toggle").click();
-	await expectSidebarWidth(page, 64);
+	await expectSidebarWidth(page, 56);
 
 	// Icon-only item still navigates; the accessible name (sr-only label)
 	// is what makes this role-based locator resolvable at all.
@@ -123,7 +123,7 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	await expect(page).toHaveURL(/\/students$/);
 	await expect(page.getByTestId("sidebar-user-email")).toBeAttached();
 
-	// Rail footer geometry (v2, rail 64px): avatar link and logout must stack
+	// Rail footer geometry (v2, rail 56px): avatar link and logout must stack
 	// vertically and stay inside the rail, not overflow horizontally.
 	const railFooter = await page.evaluate(() => {
 		const aside = document.querySelector("aside.sidebar");
