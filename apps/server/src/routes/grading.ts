@@ -2,6 +2,8 @@ import {
 	type EssayAnnotation,
 	essayAnnotationCreateSchema,
 	essayAnnotationPatchSchema,
+	type GradingQueueItem,
+	type GradingQueueResponse,
 	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
 	type TeacherSubmission,
@@ -25,7 +27,7 @@ import {
 	quizAttemptAnnotation,
 	student,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
@@ -42,6 +44,209 @@ import { parseGradeScores, toQuizAttemptGrade } from "../lib/quiz-grade";
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type GradingContext = Context<Env>;
 
+/** Giới hạn an toàn mỗi nhánh hàng chờ chấm (#383). Bài chờ chấm luôn được
+ * sắp trước bài đã chấm trong SQL nên giới hạn này không bao giờ cắt mất bài
+ * đang chờ giáo viên chấm. */
+const GRADING_QUEUE_BRANCH_LIMIT = 500;
+/** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của Cloudflare D1 (#366 RT-F2). */
+const D1_IN_ARRAY_CHUNK = 50;
+
+/**
+ * Tải hàng chờ chấm Writing/Speaking của tổ chức (#383) — hợp nhất cả bài
+ * giao theo lớp (`mode='assignment'`) và tự luyện (`mode='practice'`).
+ *
+ * - Cùng nguồn `skill` với `loadGradableAttempt`: `assignmentPrompt.skill`
+ *   cho `assignment`, `assignmentTest.skill` cho `practice`.
+ * - Truy vấn `assignmentPrompt.part` qua `assignmentTestPart` tách riêng theo
+ *   từng chunk 50 `testId` để đề nhiều part không nhân bản dòng attempt và đề
+ *   không có part vẫn hiện với `part: ""`.
+ * - Ưu tiên bài chưa chấm (`grade === null`) lên đầu trong cả SQL lẫn khi
+ *   gộp 2 nhánh trong bộ nhớ; cùng nhóm sắp theo `submittedAt` giảm dần,
+ *   tie-break `attemptId` giảm dần.
+ */
+export async function loadGradingQueue(
+	db: Db,
+	orgId: string,
+	branchLimit: number = GRADING_QUEUE_BRANCH_LIMIT,
+): Promise<GradingQueueItem[]> {
+	// POST /grade luôn ghi đủ 4 tiêu chí kèm gradedAt; chuẩn "đã chấm" ở tầng
+	// ứng dụng vẫn đi qua toQuizAttemptGrade bên dưới.
+	const gradedOrderExpr = sql<number>`case when ${quizAttempt.gradeScores} is not null and ${quizAttempt.gradedAt} is not null then 1 else 0 end`;
+
+	const [assignmentRows, practiceRows] = await Promise.all([
+		db
+			.select({
+				id: quizAttempt.id,
+				submittedAt: quizAttempt.submittedAt,
+				gradeScores: quizAttempt.gradeScores,
+				gradeFeedback: quizAttempt.gradeFeedback,
+				gradedAt: quizAttempt.gradedAt,
+				classId: classAssignment.classId,
+				className: classTable.name,
+				title: classAssignment.title,
+				due: classAssignment.due,
+				studentId: student.id,
+				studentName: student.name,
+				skill: assignmentPrompt.skill,
+				part: assignmentPrompt.part,
+			})
+			.from(quizAttempt)
+			.innerJoin(
+				classAssignment,
+				and(
+					eq(classAssignment.id, quizAttempt.assignmentId),
+					eq(classAssignment.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				classTable,
+				and(
+					eq(classTable.id, classAssignment.classId),
+					eq(classTable.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				student,
+				and(eq(student.id, quizAttempt.studentId), eq(student.orgId, orgId)),
+			)
+			.where(
+				and(
+					eq(quizAttempt.orgId, orgId),
+					eq(quizAttempt.status, "submitted"),
+					eq(quizAttempt.mode, "assignment"),
+					inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+				),
+			)
+			.orderBy(
+				asc(gradedOrderExpr),
+				desc(quizAttempt.submittedAt),
+				desc(quizAttempt.id),
+			)
+			.limit(branchLimit),
+		db
+			.select({
+				id: quizAttempt.id,
+				testId: quizAttempt.testId,
+				submittedAt: quizAttempt.submittedAt,
+				gradeScores: quizAttempt.gradeScores,
+				gradeFeedback: quizAttempt.gradeFeedback,
+				gradedAt: quizAttempt.gradedAt,
+				title: assignmentTest.title,
+				skill: assignmentTest.skill,
+				studentId: student.id,
+				studentName: student.name,
+			})
+			.from(quizAttempt)
+			.innerJoin(
+				assignmentTest,
+				and(
+					eq(assignmentTest.id, quizAttempt.testId),
+					eq(assignmentTest.orgId, orgId),
+				),
+			)
+			.innerJoin(
+				student,
+				and(eq(student.id, quizAttempt.studentId), eq(student.orgId, orgId)),
+			)
+			.where(
+				and(
+					eq(quizAttempt.orgId, orgId),
+					eq(quizAttempt.status, "submitted"),
+					eq(quizAttempt.mode, "practice"),
+					inArray(assignmentTest.skill, ["writing", "speaking"]),
+				),
+			)
+			.orderBy(
+				asc(gradedOrderExpr),
+				desc(quizAttempt.submittedAt),
+				desc(quizAttempt.id),
+			)
+			.limit(branchLimit),
+	]);
+
+	const firstPartByTestId: Record<string, string> = {};
+	const distinctTestIds = Array.from(
+		new Set(
+			practiceRows
+				.map((r) => r.testId)
+				.filter((id): id is string => typeof id === "string" && id.length > 0),
+		),
+	);
+	for (let i = 0; i < distinctTestIds.length; i += D1_IN_ARRAY_CHUNK) {
+		const chunk = distinctTestIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+		const partRows = await db
+			.select({
+				testId: assignmentTestPart.testId,
+				part: assignmentPrompt.part,
+			})
+			.from(assignmentTestPart)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, assignmentTestPart.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(inArray(assignmentTestPart.testId, chunk))
+			.orderBy(asc(assignmentTestPart.position));
+		for (const pr of partRows) {
+			if (!Object.hasOwn(firstPartByTestId, pr.testId)) {
+				firstPartByTestId[pr.testId] = pr.part ?? "";
+			}
+		}
+	}
+
+	const items: GradingQueueItem[] = [];
+	for (const row of assignmentRows) {
+		if (!isGradableSkill(row.skill)) continue;
+		items.push({
+			attemptId: row.id,
+			mode: "assignment",
+			classId: row.classId,
+			className: row.className,
+			title: row.title,
+			due: row.due,
+			student: { id: row.studentId, name: row.studentName },
+			skill: row.skill,
+			part: row.part ?? "",
+			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+			grade: toQuizAttemptGrade(row),
+		});
+	}
+	for (const row of practiceRows) {
+		if (!isGradableSkill(row.skill)) continue;
+		items.push({
+			attemptId: row.id,
+			mode: "practice",
+			classId: "",
+			className: "Luyện tập",
+			title: row.title,
+			due: "",
+			student: { id: row.studentId, name: row.studentName },
+			skill: row.skill,
+			part: (row.testId ? firstPartByTestId[row.testId] : undefined) ?? "",
+			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+			grade: toQuizAttemptGrade(row),
+		});
+	}
+
+	items.sort((a, b) => {
+		const aGraded = a.grade !== null ? 1 : 0;
+		const bGraded = b.grade !== null ? 1 : 0;
+		if (aGraded !== bGraded) return aGraded - bGraded;
+		const subCmp = b.submittedAt.localeCompare(a.submittedAt);
+		if (subCmp !== 0) return subCmp;
+		return b.attemptId.localeCompare(a.attemptId);
+	});
+	return items;
+}
 type GradableAttemptRow = {
 	id: string;
 	status: string;
@@ -343,6 +548,14 @@ export function gradingRoutes(deps: {
 			...(row.practice ? { practice: true as const } : {}),
 		};
 	}
+
+	routes.get("/", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const items = await loadGradingQueue(deps.getDb(), ctx.orgId);
+		const response: GradingQueueResponse = { items };
+		return c.json(response);
+	});
 
 	routes.get("/:attemptId", async (c) => {
 		const ctx = c.get("kernelCtx");

@@ -2002,6 +2002,34 @@ export const teacherSubmissionSchema = z
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
 
+/** Một dòng trong hàng chờ chấm Writing/Speaking (GET /api/grading, #383) —
+ * hợp nhất cả bài giao theo lớp (mode='assignment') và tự luyện
+ * (mode='practice', classId='', className='Luyện tập', due=''). */
+export const gradingQueueItemSchema = z
+	.object({
+		attemptId: z.string(),
+		mode: z.enum(["assignment", "practice"]),
+		classId: z.string(),
+		className: z.string(),
+		title: z.string(),
+		due: z.string(),
+		student: z.object({ id: z.string(), name: z.string() }).strict(),
+		skill: z.enum(["writing", "speaking"]),
+		part: z.string(),
+		submittedAt: z.string(),
+		grade: quizAttemptGradeSchema.nullable(),
+	})
+	.strict();
+export type GradingQueueItem = z.infer<typeof gradingQueueItemSchema>;
+
+/** GET /api/grading — danh sách bài nộp Writing/Speaking cho giáo viên chấm. */
+export const gradingQueueResponseSchema = z
+	.object({
+		items: z.array(gradingQueueItemSchema),
+	})
+	.strict();
+export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
+
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
 export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {

@@ -4,6 +4,8 @@ import {
 	type EssayAnnotationCreate,
 	type EssayAnnotationPatch,
 	essayAnnotationSchema,
+	type GradingQueueResponse,
+	gradingQueueResponseSchema,
 	QUIZ_MEDIA_TYPES,
 	type QuizAttemptGrade,
 	type QuizGradeInput,
@@ -17,6 +19,8 @@ import { getApiBaseUrl } from "./api-base-url";
 
 export const gradingQueryKey = (attemptId: string) =>
 	["kernel", "grading", attemptId] as const;
+
+export const gradingQueueQueryKey = ["kernel", "grading", "queue"] as const;
 
 /** Fetch chung cho các route /api/grading — luôn gửi cookie và ném
  * HttpError kèm status khi response không ok. */
@@ -34,6 +38,21 @@ async function gradingFetch(
 		throw new HttpError(res.status, `Failed to ${action}: ${res.status}`);
 	}
 	return res;
+}
+
+export async function fetchGradingQueue(
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<GradingQueueResponse> {
+	const res = await gradingFetch("", { signal }, "load grading queue", baseUrl);
+	return gradingQueueResponseSchema.parse(await res.json());
+}
+
+export function gradingQueueQueryOptions(baseUrl = getApiBaseUrl()) {
+	return queryOptions({
+		queryKey: gradingQueueQueryKey,
+		queryFn: ({ signal }) => fetchGradingQueue(baseUrl, signal),
+	});
 }
 
 export async function fetchSubmission(

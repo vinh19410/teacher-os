@@ -20,23 +20,16 @@ const STATUS_LABELS: Record<HistoryEntry["status"], string> = {
 
 function StatusTag({ entry }: { entry: HistoryEntry }) {
 	const isAwaiting = entry.status === "awaiting";
-	// Practice Writing/Speaking beta chưa có hàng chờ chấm giáo viên
-	// (kongming post-impl: follow-up riêng) — nhãn không hứa "Chờ chấm".
-	const isPracticeAwaiting = isAwaiting && entry.kind === "practice";
 	return (
 		<span
 			className={cn(
 				"inline-flex items-center rounded-md px-2 py-0.5 font-medium text-xs",
-				isAwaiting && !isPracticeAwaiting
+				isAwaiting
 					? "bg-primary text-primary-foreground"
 					: "bg-secondary text-secondary-foreground",
 			)}
 		>
-			{entry.kind === "vocab"
-				? "Đã ôn"
-				: isPracticeAwaiting
-					? "Đã nộp — tự luyện"
-					: STATUS_LABELS[entry.status]}
+			{entry.kind === "vocab" ? "Đã ôn" : STATUS_LABELS[entry.status]}
 		</span>
 	);
 }

@@ -1,5 +1,8 @@
 import { createClient } from "@libsql/client";
-import type { TeacherSubmission } from "@teacher-os/api/contracts";
+import type {
+	GradingQueueResponse,
+	TeacherSubmission,
+} from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -7,6 +10,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type MediaStore } from "../app";
 import type { SessionUser } from "../session";
+import { loadGradingQueue } from "./grading";
 
 const CORS_ORIGINS = ["http://localhost:8001", "http://localhost:8003"];
 const TEACHER_ORIGIN = "http://localhost:8001";
@@ -1097,5 +1101,505 @@ describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
 				note: "rõ ý — giữ nguyên",
 			},
 		]);
+	});
+});
+
+type HonoApp = {
+	request(
+		input: RequestInfo | URL,
+		requestInit?: RequestInit,
+	): Response | Promise<Response>;
+};
+
+describe("GET /api/grading (queue #383)", () => {
+	let app: HonoApp;
+	let libsql: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await libsql.insert(schema.user).values([
+			{
+				id: "t-1",
+				name: "Cô Lan",
+				email: "lan@test.local",
+				role: "teacher",
+			},
+			{
+				id: "t-2",
+				name: "Thầy Nam",
+				email: "nam@test.local",
+				role: "teacher",
+			},
+		]);
+		await libsql.insert(schema.membership).values([
+			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
+			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
+		]);
+		await libsql.insert(schema.student).values([
+			{
+				id: "student-1",
+				orgId: "org-1",
+				name: "Minh Tran",
+				email: "minh@gmail.com",
+				phone: "0901234567",
+			},
+			{
+				id: "student-2",
+				orgId: "org-2",
+				name: "Khánh",
+				email: "khanh@gmail.com",
+				phone: "0909999999",
+			},
+		]);
+		await libsql.insert(schema.classTable).values([
+			{
+				id: "class-1",
+				orgId: "org-1",
+				name: "IELTS Foundation",
+				level: "IELTS 5.0–6.0",
+				mode: "Online",
+				schedule: "T2 & T5 18:30–20:00",
+				sessionsDone: 0,
+				sessionsTotal: 20,
+				status: "active",
+			},
+			{
+				id: "class-2",
+				orgId: "org-2",
+				name: "Org 2 Class",
+				level: "IELTS 6.0",
+				mode: "Online",
+				schedule: "T3",
+				sessionsDone: 0,
+				sessionsTotal: 10,
+				status: "active",
+			},
+		]);
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "p-w-t1",
+				orgId: "org-1",
+				task: "task1",
+				genre: "chart",
+				skill: "writing",
+				part: "task1",
+				type: "chart",
+				title: "Writing Task 1 Prompt",
+				prompt: "<p>Chart prompt</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-w-t2",
+				orgId: "org-1",
+				task: "task2",
+				genre: "essay",
+				skill: "writing",
+				part: "task2",
+				type: "essay",
+				title: "Writing Task 2 Prompt",
+				prompt: "<p>Essay prompt</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-s-p2",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "speaking",
+				part: "part2",
+				type: "place",
+				title: "Speaking Part 2 Prompt",
+				prompt: "",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-r-p1",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "mcq",
+				title: "Reading Prompt",
+				prompt: "",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-org2-w",
+				orgId: "org-2",
+				task: "task2",
+				genre: "essay",
+				skill: "writing",
+				part: "task2",
+				type: "essay",
+				title: "Org 2 Writing",
+				prompt: "<p>Org 2</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+		]);
+		await libsql.insert(schema.classAssignment).values([
+			{
+				id: "ca-assign-w",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-w-t2",
+				title: "Bài giao Writing tuần 1",
+				due: "2026-10-30",
+			},
+			{
+				id: "ca-assign-r",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-r-p1",
+				title: "Bài giao Reading",
+				due: "2026-10-30",
+			},
+			{
+				id: "ca-org2",
+				orgId: "org-2",
+				classId: "class-2",
+				promptId: "p-org2-w",
+				title: "Bài giao Org 2",
+				due: "2026-10-30",
+			},
+		]);
+
+		// Đề tự luyện: 1 đề 2 part (task1 + task2), 1 đề speaking 0 part, 1 đề reading.
+		await libsql.insert(schema.assignmentTest).values([
+			{
+				id: "test-w-2parts",
+				orgId: "org-1",
+				title: "Mock Writing Full (2 parts)",
+				skill: "writing",
+				status: "ready",
+			},
+			{
+				id: "test-s-nopart",
+				orgId: "org-1",
+				title: "Mock Speaking No Part",
+				skill: "speaking",
+				status: "ready",
+			},
+			{
+				id: "test-r-practice",
+				orgId: "org-1",
+				title: "Mock Reading Practice",
+				skill: "reading",
+				status: "ready",
+			},
+		]);
+		await libsql.insert(schema.assignmentTestPart).values([
+			{
+				id: "atp-2",
+				testId: "test-w-2parts",
+				promptId: "p-w-t2",
+				part: "task2",
+				position: 2,
+			},
+			{
+				id: "atp-1",
+				testId: "test-w-2parts",
+				promptId: "p-w-t1",
+				part: "task1",
+				position: 1,
+			},
+		]);
+
+		await libsql.insert(schema.quizAttempt).values([
+			// 1. Assignment writing — đã chấm (nộp mới nhất nhưng đã chấm -> đứng sau bài chờ chấm)
+			{
+				id: "q-assign-graded",
+				orgId: "org-1",
+				assignmentId: "ca-assign-w",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay: "Graded essay",
+				startedAt: new Date("2026-10-20T08:00:00.000Z"),
+				submittedAt: new Date("2026-10-20T09:00:00.000Z"),
+				gradeScores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+				gradeFeedback: "Tốt",
+				gradedAt: new Date("2026-10-20T10:00:00.000Z"),
+			},
+			// 2. Practice writing (2 parts) — chờ chấm (nộp sớm hơn bài đã chấm nhưng phải đứng trước)
+			{
+				id: "q-prac-w-await",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-w-2parts",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay: "Practice essay",
+				startedAt: new Date("2026-10-19T08:00:00.000Z"),
+				submittedAt: new Date("2026-10-19T09:00:00.000Z"),
+			},
+			// 3. Practice speaking (0 parts) — chờ chấm (nộp mới hơn q-prac-w-await -> đứng đầu tiên)
+			{
+				id: "q-prac-s-await",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-s-nopart",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-19T10:00:00.000Z"),
+				submittedAt: new Date("2026-10-19T11:00:00.000Z"),
+			},
+			// Các dòng phải bị loại:
+			// - in_progress
+			{
+				id: "q-in-progress",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-w-2parts",
+				studentId: "student-1",
+				mode: "practice",
+				status: "in_progress",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-20T11:00:00.000Z"),
+			},
+			// - reading assignment
+			{
+				id: "q-reading-assign",
+				orgId: "org-1",
+				assignmentId: "ca-assign-r",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-20T11:00:00.000Z"),
+				submittedAt: new Date("2026-10-20T11:30:00.000Z"),
+			},
+			// - reading practice
+			{
+				id: "q-reading-prac",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-r-practice",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-20T11:00:00.000Z"),
+				submittedAt: new Date("2026-10-20T11:30:00.000Z"),
+			},
+			// - practice đề đã xoá (testId null)
+			{
+				id: "q-deleted-test",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: null,
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-20T11:00:00.000Z"),
+				submittedAt: new Date("2026-10-20T11:30:00.000Z"),
+			},
+			// - org khác (IDOR)
+			{
+				id: "q-org2",
+				orgId: "org-2",
+				assignmentId: "ca-org2",
+				studentId: "student-2",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-20T11:00:00.000Z"),
+				submittedAt: new Date("2026-10-20T11:30:00.000Z"),
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => libsql,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	test("trả 401 khi không có session và 403 khi gọi bằng session học viên", async () => {
+		const unauth = await app.request("/api/grading");
+		expect(unauth.status).toBe(401);
+		const studentRes = await app.request("/api/grading", {
+			headers: { "x-test-user": "student-u" },
+		});
+		expect(studentRes.status).toBe(403);
+	});
+
+	test("hợp nhất assignment + practice, không nhân bản đề 2 part, fallback part rỗng, lọc đúng org/skill/status và sắp chờ chấm trước", async () => {
+		const res = await app.request("/api/grading", { headers: TEACHER });
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as GradingQueueResponse;
+		expect(body.items.map((i) => i.attemptId)).toEqual([
+			"q-prac-s-await",
+			"q-prac-w-await",
+			"q-assign-graded",
+		]);
+
+		// Đề speaking không có part -> part: ""
+		expect(body.items[0]).toEqual({
+			attemptId: "q-prac-s-await",
+			mode: "practice",
+			classId: "",
+			className: "Luyện tập",
+			title: "Mock Speaking No Part",
+			due: "",
+			student: { id: "student-1", name: "Minh Tran" },
+			skill: "speaking",
+			part: "",
+			submittedAt: "2026-10-19T11:00:00.000Z",
+			grade: null,
+		});
+
+		// Đề writing 2 part -> chỉ 1 dòng, part lấy từ position nhỏ nhất (task1)
+		expect(body.items[1]).toEqual({
+			attemptId: "q-prac-w-await",
+			mode: "practice",
+			classId: "",
+			className: "Luyện tập",
+			title: "Mock Writing Full (2 parts)",
+			due: "",
+			student: { id: "student-1", name: "Minh Tran" },
+			skill: "writing",
+			part: "task1",
+			submittedAt: "2026-10-19T09:00:00.000Z",
+			grade: null,
+		});
+
+		// Bài giao theo lớp đã chấm
+		expect(body.items[2]).toEqual({
+			attemptId: "q-assign-graded",
+			mode: "assignment",
+			classId: "class-1",
+			className: "IELTS Foundation",
+			title: "Bài giao Writing tuần 1",
+			due: "2026-10-30",
+			student: { id: "student-1", name: "Minh Tran" },
+			skill: "writing",
+			part: "task2",
+			submittedAt: "2026-10-20T09:00:00.000Z",
+			grade: {
+				scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+				band: 6.5,
+				feedback: "Tốt",
+				gradedAt: "2026-10-20T10:00:00.000Z",
+			},
+		});
+	});
+
+	test("bảo toàn bài chờ chấm khi vượt giới hạn nhánh (branchLimit = 2) và chia chunk >50 đề tự luyện", async () => {
+		// Thêm 2 bài practice ĐÃ CHẤM nộp mới hơn q-prac-w-await và q-prac-s-await
+		await libsql.insert(schema.quizAttempt).values([
+			{
+				id: "q-prac-graded-new-1",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-w-2parts",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-21T01:00:00.000Z"),
+				submittedAt: new Date("2026-10-21T02:00:00.000Z"),
+				gradeScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				gradeFeedback: "OK",
+				gradedAt: new Date("2026-10-21T03:00:00.000Z"),
+			},
+			{
+				id: "q-prac-graded-new-2",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-w-2parts",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-21T04:00:00.000Z"),
+				submittedAt: new Date("2026-10-21T05:00:00.000Z"),
+				gradeScores: { task: 7.5, coherence: 7.5, lexical: 7.5, grammar: 7.5 },
+				gradeFeedback: "OK 2",
+				gradedAt: new Date("2026-10-21T06:00:00.000Z"),
+			},
+		]);
+
+		// Với branchLimit = 2 trên nhánh practice (đang có 2 bài chờ chấm cũ + 2 bài đã chấm mới),
+		// cả 2 bài chờ chấm cũ PHẢI được giữ lại, 2 bài đã chấm mới bị cắt bởi limit(2).
+		const limited = await loadGradingQueue(libsql, "org-1", 2);
+		const practiceIds = limited
+			.filter((i) => i.mode === "practice")
+			.map((i) => i.attemptId);
+		expect(practiceIds).toEqual(["q-prac-s-await", "q-prac-w-await"]);
+
+		// Seed thêm 55 đề practice khác nhau (vượt ngưỡng chunk 50 của D1) để kiểm chứng chunking
+		for (let i = 0; i < 55; i++) {
+			const tid = `test-bulk-${i}`;
+			await libsql.insert(schema.assignmentTest).values({
+				id: tid,
+				orgId: "org-1",
+				title: `Bulk Writing ${i}`,
+				skill: "writing",
+				status: "ready",
+			});
+			await libsql.insert(schema.assignmentTestPart).values({
+				id: `atp-bulk-${i}`,
+				testId: tid,
+				promptId: i % 2 === 0 ? "p-w-t1" : "p-w-t2",
+				part: i % 2 === 0 ? "task1" : "task2",
+				position: 1,
+			});
+			await libsql.insert(schema.quizAttempt).values({
+				id: `q-bulk-${i}`,
+				orgId: "org-1",
+				assignmentId: null,
+				testId: tid,
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				startedAt: new Date("2026-10-18T01:00:00.000Z"),
+				submittedAt: new Date("2026-10-18T02:00:00.000Z"),
+			});
+		}
+
+		const full = await loadGradingQueue(libsql, "org-1");
+		const bulkItems = full.filter((i) => i.attemptId.startsWith("q-bulk-"));
+		expect(bulkItems).toHaveLength(55);
+		expect(bulkItems.find((i) => i.attemptId === "q-bulk-0")?.part).toBe(
+			"task1",
+		);
+		expect(bulkItems.find((i) => i.attemptId === "q-bulk-54")?.part).toBe(
+			"task1",
+		);
+		expect(bulkItems.find((i) => i.attemptId === "q-bulk-53")?.part).toBe(
+			"task2",
+		);
 	});
 });

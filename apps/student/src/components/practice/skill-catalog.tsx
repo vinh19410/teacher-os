@@ -43,6 +43,10 @@ function TestCard({
 }) {
 	const isSpeaking = item.skill === "speaking";
 	const score = item.lastAttempt?.score ?? null;
+	const isAwaitingGrade =
+		(item.skill === "writing" || item.skill === "speaking") &&
+		item.lastAttempt?.status === "submitted" &&
+		score === null;
 	return (
 		<button
 			type="button"
@@ -84,7 +88,9 @@ function TestCard({
 					<span className="text-muted-foreground">
 						{item.lastAttempt?.status === "graded"
 							? "Điểm chấm"
-							: "Kết quả tốt nhất"}
+							: isAwaitingGrade
+								? "Lần gần nhất"
+								: "Kết quả tốt nhất"}
 					</span>
 					<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
 						<div
@@ -92,7 +98,9 @@ function TestCard({
 							style={{ width: `${score ? scorePercent(score) : 0}%` }}
 						/>
 					</div>
-					<span className="font-medium tabular-nums">{score ?? "—"}</span>
+					<span className="font-medium tabular-nums">
+						{isAwaitingGrade ? "Chờ chấm" : (score ?? "—")}
+					</span>
 				</div>
 			</div>
 		</button>

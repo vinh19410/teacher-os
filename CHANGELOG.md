@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-10-21
 
+### Added
+- Hàng chờ chấm bài Writing/Speaking cho giáo viên (`/grading`, `GET /api/grading`) kèm mục điều hướng **Chấm bài** trong nhóm IELTS trên sidebar: hợp nhất cả bài giao theo lớp (`mode='assignment'`) và bài tự luyện (`mode='practice'`, nhãn `Luyện tập`), bộ lọc URL (`?q=&mode=&skill=&status=`) có đếm chip chéo nhóm và ô tìm kiếm debounce 300ms; đồng bộ nhãn bài tự luyện chưa chấm ở Lịch sử và catalog học viên về **Chờ chấm** (#383)
+
 ### Changed
 - Redesign giao diện **v2** cho app giáo viên và app học viên: **light là theme mặc định** (dark là override, toggle giữ nguyên semantics), accent cam bỏ — **hành động chính = mực** theo bảng shadcn neutral oklch, font **Geist / Geist Mono Variable** self-host, thang chữ về rem mặc định Tailwind (base 14px). Shell đổi sang layout `sidebar-07` dùng chung hai app; thêm search toàn cục ⌘K (command palette) (#378)
 - Trang mới/khoác mới theo v2: catalog Luyện tập (Practice) 5 kỹ năng, Lịch sử làm bài (History), Trang bạn học (Classmates); DataTable, Badge/TuitionBadge, PageHead, Modal, chip lọc theo token v2; trạng thái = chấm emerald/amber, quá hạn/lỗi = đỏ destructive; màn chấm bài giữ riêng cặp màu verdict (#378)

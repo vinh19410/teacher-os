@@ -10,6 +10,7 @@ import {
 	CalendarDays,
 	ClipboardList,
 	LayoutDashboard,
+	PenLine,
 	School,
 	UserRound,
 	Users,
@@ -20,8 +21,7 @@ import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 /**
  * Nav giáo viên theo nhóm design v2 — nhãn tiếng Việt. Nhãn giữ nguyên tên
  * app đang có (accessible name e2e): /syllabus là "Syllabus", /tuition là
- * "Doanh thu". Route "Chấm bài" không có trang đích riêng (chỉ
- * /grading/$attemptId từ trang lớp) nên không đặt nav.
+ * "Doanh thu". Mục "Chấm bài" dẫn tới hàng chờ chấm /grading (#383).
  */
 export const TEACHER_NAV: NavGroup[] = [
 	{
@@ -57,6 +57,12 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Bài tập",
 				icon: ClipboardList,
 				href: "/assignments",
+			},
+			{
+				key: "grading",
+				label: "Chấm bài",
+				icon: PenLine,
+				href: "/grading",
 			},
 			{ key: "vocab", label: "Từ vựng", icon: BookA, href: "/vocab" },
 		],
@@ -115,8 +121,7 @@ export function extractUserPlan(user: unknown): string | null {
 
 /**
  * activeKey của nav từ pathname — khớp prefix như TanStack match (trừ "/"
- * phải exact). Route ngoài bảng (vd. /grading/$attemptId) → không mục nào
- * active, đúng như shell v1.
+ * phải exact). Route ngoài bảng (vd. /login) → không mục nào active.
  */
 const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/dashboard": "dashboard",
@@ -125,6 +130,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/assignments": "assignments",
+	"/grading": "grading",
 	"/vocab": "vocab",
 	"/tuition": "tuition",
 	"/reports": "reports",

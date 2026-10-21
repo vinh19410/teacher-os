@@ -2,9 +2,12 @@ import type { TeacherSubmission } from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError } from "@/lib/kernel-load-state";
 import {
+	fetchGradingQueue,
 	fetchSubmission,
 	fetchSubmissionMediaObjectUrl,
 	gradingQueryKey,
+	gradingQueueQueryKey,
+	gradingQueueQueryOptions,
 	saveGrade,
 	submissionQueryOptions,
 } from "./grading";
@@ -141,5 +144,39 @@ describe("grading repo (#319)", () => {
 		expect(options.queryKey).toEqual(gradingQueryKey("att-1"));
 		expect(options.queryKey).toEqual(["kernel", "grading", "att-1"]);
 		expect(options.retry).toBe(false);
+	});
+
+	test("fetchGradingQueue GET /api/grading với credentials include và parse items (#383)", async () => {
+		const stub = stubFetchOnce(() =>
+			Response.json(
+				{
+					items: [
+						{
+							attemptId: "att-prac-1",
+							mode: "practice",
+							classId: "",
+							className: "Luyện tập",
+							title: "Writing Mock 1",
+							due: "",
+							student: { id: "s-1", name: "Minh Tran" },
+							skill: "writing",
+							part: "task2",
+							submittedAt: "2026-10-20T10:00:00.000Z",
+							grade: null,
+						},
+					],
+				},
+				{ status: 200 },
+			),
+		);
+		const queue = await fetchGradingQueue(BASE);
+		stub.restore();
+		expect(stub.url()).toBe(`${BASE}/api/grading`);
+		expect(stub.init()?.credentials).toBe("include");
+		expect(queue.items).toHaveLength(1);
+		expect(queue.items[0]?.className).toBe("Luyện tập");
+		expect(gradingQueueQueryOptions(BASE).queryKey).toEqual(
+			gradingQueueQueryKey,
+		);
 	});
 });
