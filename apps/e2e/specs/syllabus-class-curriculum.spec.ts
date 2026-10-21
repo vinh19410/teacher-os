@@ -209,7 +209,9 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	const titleInput = editDialog.getByRole("textbox").first();
 	await titleInput.fill("Buổi A1 (bản copy)");
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
-	await expect(editDialog).toBeHidden();
+	// .last() sau khi save sẽ re-resolve sang manage dialog (vẫn mở có chủ
+	// đích) — assert dialog sửa theo đúng aria-label của nó.
+	await expect(page.getByRole("dialog", { name: "Sửa buổi học" })).toBeHidden();
 	await expect(manageDialog.getByText("Buổi A1 (bản copy)")).toBeVisible();
 
 	// Template gốc giữ tiêu đề cũ.
