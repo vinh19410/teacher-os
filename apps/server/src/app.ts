@@ -17,6 +17,7 @@ import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
+import { studentHistoryRoutes } from "./routes/student-history";
 import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
@@ -234,6 +235,9 @@ export function buildApp(deps: AppDeps) {
 	// start attempt practice; guard tự gắn trong router (bootstrapMiddleware
 	// bỏ qua /api/student).
 	app.route("/api/student", studentPracticeRoutes(deps));
+	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
+	// guard tự gắn trong router như practice.
+	app.route("/api/student", studentHistoryRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

@@ -38,6 +38,7 @@ import { formatVietnamSubmittedAt } from "@/lib/attempt-format";
 import { isHttpError } from "@/lib/query-client";
 import {
 	deleteQuizMedia,
+	type QuizTakeSource,
 	quizDetailQueryOptions,
 	setQuizDetailMedia,
 	uploadQuizMedia,
@@ -300,7 +301,7 @@ export function SpeakingSubmissionView({
  * server.
  */
 export function SpeakingSubmissionPanel({
-	assignmentId,
+	source,
 	attemptId,
 	media,
 	disabled,
@@ -308,7 +309,7 @@ export function SpeakingSubmissionPanel({
 	onAlreadySubmitted,
 	onAuthError,
 }: {
-	assignmentId: string;
+	source: QuizTakeSource;
 	attemptId: string;
 	media: QuizAttemptMedia | null;
 	disabled: boolean;
@@ -348,7 +349,7 @@ export function SpeakingSubmissionPanel({
 
 	const refetch = () =>
 		void queryClient.invalidateQueries({
-			queryKey: quizDetailQueryOptions(assignmentId).queryKey,
+			queryKey: quizDetailQueryOptions(source).queryKey,
 		});
 	const leaveFor = (navigate: () => void) => {
 		busyRef.current = false;
@@ -432,7 +433,7 @@ export function SpeakingSubmissionPanel({
 			onProgress: (fraction) => setState(progressState(file, type, fraction)),
 		})
 			.then(async (uploaded) => {
-				await setQuizDetailMedia(queryClient, assignmentId, uploaded);
+				await setQuizDetailMedia(queryClient, source, uploaded);
 				setPreview({
 					url: URL.createObjectURL(file),
 					uploadedAt: uploaded.uploadedAt,
@@ -483,7 +484,7 @@ export function SpeakingSubmissionPanel({
 		setDeleting(true);
 		try {
 			await deleteQuizMedia(attemptId);
-			await setQuizDetailMedia(queryClient, assignmentId, null);
+			await setQuizDetailMedia(queryClient, source, null);
 			setNotice(null);
 			setConfirmDelete(false);
 			pendingFocus.current = '[data-slot="media-dropzone"]';

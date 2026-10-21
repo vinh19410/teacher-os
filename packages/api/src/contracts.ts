@@ -1734,6 +1734,100 @@ export const startPracticeResponseSchema = z
 	.strict();
 export type StartPracticeResponse = z.infer<typeof startPracticeResponseSchema>;
 
+// --- Lịch sử học tập (phase 11, #378) — /api/student/history domain --------
+// Nguồn: quiz_attempt đã nộp (practice + assignment) và vocab_review_log
+// (sessionKind='review'), gom ngày theo giờ Việt Nam (vietnam-date.ts).
+// KHÔNG có Dictation/Mock test — hai loại này chưa có dữ liệu thật.
+
+/** Kỹ năng hiển thị trên trang Lịch sử: 4 skill có đề + Từ vựng (SRS). */
+export const HISTORY_SKILLS = [...PRACTICE_SKILLS, "vocabulary"] as const;
+export type HistorySkill = (typeof HISTORY_SKILLS)[number];
+
+/** Số dòng mỗi trang danh sách chi tiết. */
+export const HISTORY_PAGE_SIZE = 20;
+
+/** Một ngày có hoạt động. Chỉ ngày count > 0 mới xuất hiện trong mảng —
+ * client dựng lưới tháng và coi ngày vắng mặt là 0. */
+export const historyDaySchema = z
+	.object({
+		/** yyyy-mm-dd theo giờ Việt Nam. */
+		date: z.string(),
+		/** Số hoạt động: lượt nộp bài + thẻ từ vựng đã ôn. */
+		count: z.number().int().min(0),
+		/** Tổng phút học (làm bài + ôn từ) rơi vào ngày này. */
+		minutes: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryDay = z.infer<typeof historyDaySchema>;
+
+/** GET /api/student/history/month?ym=yyyy-mm (mặc định tháng hiện tại VN). */
+export const historyMonthResponseSchema = z
+	.object({
+		ym: z.string(),
+		days: z.array(historyDaySchema),
+	})
+	.strict();
+export type HistoryMonthResponse = z.infer<typeof historyMonthResponseSchema>;
+
+/** Một dòng bảng tuần: đếm hoạt động theo 7 ngày Thứ 2 → Chủ nhật. */
+export const historyWeekRowSchema = z
+	.object({
+		skill: z.enum(HISTORY_SKILLS),
+		days: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekRow = z.infer<typeof historyWeekRowSchema>;
+
+/** GET /api/student/history/week?monday=yyyy-mm-dd — ngày lẻ được chuẩn hóa
+ * về Thứ Hai của tuần chứa nó; `minutes` là tổng phút mỗi ngày cho cột
+ * "Thời gian" của WeekTable. */
+export const historyWeekResponseSchema = z
+	.object({
+		monday: z.string(),
+		rows: z.array(historyWeekRowSchema),
+		minutes: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekResponse = z.infer<typeof historyWeekResponseSchema>;
+
+/** Nguồn một dòng lịch sử: luyện tập / bài tập lớp / ôn từ vựng. */
+export const HISTORY_ENTRY_KINDS = ["practice", "assignment", "vocab"] as const;
+export type HistoryEntryKind = (typeof HISTORY_ENTRY_KINDS)[number];
+
+/** Một dòng trong danh sách chi tiết. Vocab gộp theo ngày: 1 dòng
+ * "Từ vựng" = mọi thẻ đã ôn trong ngày đó (id `vocab-<date>`). */
+export const historyEntrySchema = z
+	.object({
+		id: z.string(),
+		kind: z.enum(HISTORY_ENTRY_KINDS),
+		skill: z.enum(HISTORY_SKILLS),
+		title: z.string(),
+		/** yyyy-mm-dd giờ Việt Nam của thời điểm nộp/ôn. */
+		date: z.string(),
+		/** ISO datetime — dùng sắp xếp mới nhất trước. */
+		submittedAt: z.string(),
+		minutes: z.number().int().min(0),
+		/** Chuỗi hiển thị sẵn ("Band 6.0", "8/13") — null = chưa có điểm. */
+		score: z.string().nullable(),
+		/** auto = tự chấm · graded = giáo viên đã chấm · awaiting = chờ chấm. */
+		status: z.enum(["auto", "graded", "awaiting"]),
+		/** Attempt nguồn để mở xem lại (Writing đã chấm) — vocab luôn null. */
+		attemptId: z.string().nullable(),
+	})
+	.strict();
+export type HistoryEntry = z.infer<typeof historyEntrySchema>;
+
+/** GET /api/student/history?skill=&page= — mới nhất trước, 20 dòng/trang. */
+export const historyListResponseSchema = z
+	.object({
+		entries: z.array(historyEntrySchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryListResponse = z.infer<typeof historyListResponseSchema>;
+
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
 export const QUIZ_ATTEMPT_STATUSES = ["in_progress", "submitted"] as const;

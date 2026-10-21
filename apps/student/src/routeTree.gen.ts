@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AuthHistoryRouteImport } from './routes/_auth/history'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthAssignmentsIndexRouteImport } from './routes/_auth/assignments/index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth/classes/index'
@@ -60,6 +61,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthHistoryRoute = AuthHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
   '/': typeof AuthIndexRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/_auth/history': typeof AuthHistoryRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/history'
     | '/onboarding'
     | '/classes/$classId'
     | '/practice/$skill'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/history'
     | '/onboarding'
     | '/'
     | '/classes/$classId'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
+    | '/_auth/history'
     | '/_auth/onboarding'
     | '/_auth/'
     | '/_auth/classes/$classId'
@@ -353,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/history': {
+      id: '/_auth/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AuthHistoryRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/onboarding': {
@@ -505,6 +524,7 @@ const AuthLearnQuizzesAttemptAttemptIdRouteWithChildren =
   )
 
 interface AuthRouteRouteChildren {
+  AuthHistoryRoute: typeof AuthHistoryRoute
   AuthOnboardingRoute: typeof AuthOnboardingRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
@@ -524,6 +544,7 @@ interface AuthRouteRouteChildren {
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthHistoryRoute: AuthHistoryRoute,
   AuthOnboardingRoute: AuthOnboardingRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthClassesClassIdRoute: AuthClassesClassIdRoute,

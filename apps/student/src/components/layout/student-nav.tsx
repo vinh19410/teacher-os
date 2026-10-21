@@ -15,12 +15,11 @@ import {
 } from "lucide-react";
 
 /**
- * "Luyện tập" (phase 10) đã có route — bật mục này với 5 skill con (KHÔNG
- * có Dictation: chưa có đề trong thư viện). "Lịch sử" (phase 11) chưa có
- * route — giữ flag ẩn.
+ * "Luyện tập" (phase 10) + "Lịch sử" (phase 11, #378) đã có route — mục
+ * Luyện tập gồm 5 skill con (KHÔNG có Dictation: chưa có đề trong thư viện).
  */
 const PRACTICE_ROUTES_LIVE = true;
-const HISTORY_ROUTES_LIVE = false;
+const HISTORY_ROUTES_LIVE = true;
 
 /** 5 skill luyện tập — thứ tự hiển thị ở nav và redirect trang chủ mục. */
 export const PRACTICE_NAV_SKILLS = [

@@ -84,7 +84,7 @@ cục); route path, query param, accessible name, `data-testid` giữ nguyên tr
 | 7 | [Giáo viên: bài tập, đề thi, chấm bài, học phí, vocab](./phase-07-teacher-assignments-tuition.md) | Completed | 7h | 4 |
 | 8 | [Giáo viên: ô tìm kiếm ⌘K (mới)](./phase-08-teacher-command-search.md) | Completed | 4h | 4 |
 | 9 | [Học viên: màn hiện có + Classmates (mới)](./phase-09-student-existing-pages.md) | Completed | 8h | 4 |
-| 10 | [Học viên: Practice catalog (mới, gồm migration)](./phase-10-student-practice.md) | Pending | 11h | 9 |
+| 10 | [Học viên: Practice catalog (mới, gồm migration)](./phase-10-student-practice.md) | Completed | 11h | 9 |
 | 11 | [Học viên: History heatmap + lịch sử chi tiết (mới)](./phase-11-student-history.md) | Pending | 7h | 10 |
 | 12 | [Sweep, DESIGN.md, e2e, DoD ảnh đối chiếu toàn bộ](./phase-12-sweep-docs-visual-dod.md) | Pending | 6h | 5, 6, 7, 8, 11 |
 

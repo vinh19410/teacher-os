@@ -5,16 +5,27 @@
  * class-assignment due min-today check (#208) on both server and web.
  * Promoted from apps/e2e/specs/helpers.ts.
  */
-export function vietnamTodayISO(now: Date = new Date()): string {
+export function vietnamDateKeyOf(date: Date): string {
 	const parts = new Intl.DateTimeFormat("en-CA", {
 		timeZone: "Asia/Ho_Chi_Minh",
 		year: "numeric",
 		month: "2-digit",
 		day: "2-digit",
-	}).formatToParts(now);
+	}).formatToParts(date);
 	const get = (type: string) =>
 		parts.find((p) => p.type === type)?.value ?? "00";
 	return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/**
+ * Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice
+ * or machine-local Date, which drift a day between 00:00–07:00 VN
+ * (Workers run UTC; browsers run visitor-local). Single source for the
+ * class-assignment due min-today check (#208) on both server and web.
+ * Promoted from apps/e2e/specs/helpers.ts.
+ */
+export function vietnamTodayISO(now: Date = new Date()): string {
+	return vietnamDateKeyOf(now);
 }
 
 /** yyyy-mm-dd + n days, UTC-anchored — ISO strings carry no DST, so plain
@@ -25,4 +36,24 @@ export function addDaysISO(iso: string, n: number): string {
 	)
 		.toISOString()
 		.slice(0, 10);
+}
+
+/** Thứ Hai của tuần chứa ngày ISO — tuần lịch sử bắt đầu Thứ 2 (design
+ * MonthHeatmap). UTC-anchored nên getUTCDay() đáng tin, không lệch múi máy. */
+export function mondayOfISO(iso: string): string {
+	const dow = new Date(`${iso}T00:00:00Z`).getUTCDay();
+	return addDaysISO(iso, -((dow + 6) % 7));
+}
+
+/** yyyy-mm + n tháng (âm = lùi), luôn ngày 01 — năm nhuận handled bằng
+ * tổng tháng tuyệt đối, không đụng Date nên không bao giờ tràn ngày. */
+export function addMonthsISO(ym: string, n: number): string {
+	const parts = ym.split("-");
+	const year = Number.parseInt(parts[0] ?? "", 10);
+	const month = Number.parseInt(parts[1] ?? "", 10);
+	if (!Number.isFinite(year) || !Number.isFinite(month)) return ym;
+	const absolute = year * 12 + (month - 1) + n;
+	const nextYear = Math.floor(absolute / 12);
+	const nextMonth = (absolute % 12) + 1;
+	return `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
 }

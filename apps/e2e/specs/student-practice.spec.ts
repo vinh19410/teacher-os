@@ -113,10 +113,10 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 	}) => {
 		await signIn(page);
 
-		// Nav "Luyện tập" đã bật (phase 10) — "Lịch sử" vẫn ẩn (phase 11).
+		// Nav "Luyện tập" đã bật (phase 10); "Lịch sử" đã bật theo phase 11.
 		const nav = page.getByRole("navigation");
 		await expect(nav.getByText("Luyện tập")).toBeVisible();
-		await expect(nav.getByText("Lịch sử")).toHaveCount(0);
+		await expect(nav.getByText("Lịch sử")).toBeVisible();
 
 		// Mục cha dẫn về /practice → redirect skill đầu (/practice/reading).
 		await page.goto(`${STUDENT_ORIGIN}/practice`);

@@ -3,14 +3,16 @@ import type {
 	PracticeCatalogItem,
 	PracticeSkill,
 } from "@teacher-os/api/contracts";
+import { PRACTICE_SKILLS } from "@teacher-os/api/contracts";
 import { toast } from "sonner";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
+import { HistoryButton } from "@/components/practice/history-button";
 import {
 	PRACTICE_SKILL_LABELS,
 	SkillCatalog,
 } from "@/components/practice/skill-catalog";
 import { VocabPracticeCatalog } from "@/components/practice/vocab-practice-catalog";
-import { useStartPractice } from "@/lib/repos/student";
+import { useHistoryList, useStartPractice } from "@/lib/repos/student";
 
 const SKILL_SLUGS = [
 	"reading",
@@ -71,6 +73,19 @@ function PracticeSkillPage() {
 	const navigate = useNavigate();
 	const startPractice = useStartPractice();
 
+	// HistoryButton (phase 11): đếm thật từ total của list lọc skill; trang
+	// vocabulary không mount nút nên tắt query (`enabled=false`).
+	const isPracticeSkill = (PRACTICE_SKILLS as readonly string[]).includes(
+		skill,
+	);
+	const historyCount = useHistoryList(
+		{
+			skill: isPracticeSkill ? (skill as PracticeSkill) : undefined,
+			page: 1,
+		},
+		isPracticeSkill,
+	);
+
 	const handleFilterChange = (next: {
 		collection: string;
 		q: string;
@@ -119,7 +134,17 @@ function PracticeSkillPage() {
 								{SKILL_LABELS[skill]}
 							</h1>
 						</div>
-						{/* "Lịch sử" luyện tập thuộc phase 11 — chưa mount nút. */}
+						{isPracticeSkill && (
+							<HistoryButton
+								count={historyCount.data?.total ?? 0}
+								onClick={() =>
+									void navigate({
+										to: "/history",
+										search: { skill },
+									})
+								}
+							/>
+						)}
 					</header>
 
 					{skill === "vocabulary" ? (

@@ -14,7 +14,7 @@ export function HistoryButton({
 	onClick: () => void;
 }) {
 	return (
-		<Button variant="outline" onClick={onClick}>
+		<Button variant="outline" onClick={onClick} data-testid="history-button">
 			<HistoryIcon />
 			Lịch sử
 			{count > 0 && (

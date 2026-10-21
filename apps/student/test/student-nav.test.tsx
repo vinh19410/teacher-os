@@ -55,7 +55,9 @@ describe("STUDENT_NAV v2", () => {
 				child.label.toLowerCase().includes("dictation"),
 			),
 		).toBe(false);
-		expect(ITEM_BY_HREF["/history"]?.enabled).toBe(false);
+		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
+		// Phase 11: "Lịch sử" cũng đã bật cùng route /history.
+		expect(ITEM_BY_HREF["/history"]?.enabled).toBe(true);
 	});
 
 	it("renders links through the router, exact match only for '/'", () => {
