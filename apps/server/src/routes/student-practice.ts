@@ -11,6 +11,7 @@ import {
 	studentQuizDetailSchema,
 } from "@teacher-os/api/contracts";
 import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
+import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
 	assignmentPrompt,
 	assignmentTest,
@@ -99,9 +100,17 @@ function buildMergedQuestions(
 	parts: PracticeTestWithParts["parts"],
 	testId: string,
 ): AssignmentQuestion[] {
-	return parts.flatMap((row) =>
-		parseQuizQuestions(row.prompt.questions, `${testId}:${row.part}`),
-	);
+	return parts.flatMap((row) => {
+		const parsed = parseQuizQuestions(
+			row.prompt.questions,
+			`${testId}:${row.part}`,
+		);
+		const effectiveTypes = inferQuestionTypes(parsed, row.prompt.type);
+		return parsed.map((q, index) => ({
+			...q,
+			type: effectiveTypes[index] ?? row.prompt.type,
+		}));
+	});
 }
 
 /** Nhãn điểm lượt nộp gần nhất cho catalog: đã chấm → "Band x.x" (cùng
@@ -240,6 +249,13 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			eq(assignmentTest.orgId, orgId),
 			eq(assignmentTest.status, "ready"),
 			eq(assignmentTest.skill, skill),
+			sql`exists (
+				select 1 from ${assignmentTestPart}
+				inner join ${assignmentPrompt}
+					on ${assignmentPrompt.id} = ${assignmentTestPart.promptId}
+					and ${assignmentPrompt.orgId} = ${orgId}
+				where ${assignmentTestPart.testId} = ${assignmentTest.id}
+			)`,
 		];
 		if (collection) filters.push(eq(assignmentTest.collection, collection));
 		if (q) {

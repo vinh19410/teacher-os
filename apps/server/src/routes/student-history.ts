@@ -386,7 +386,7 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 			await vocabDayGroups(db, s.id, { start, end }),
 		);
 		const days: HistoryDay[] = [...merged.days.entries()]
-			.filter(([, day]) => day.count > 0)
+			.filter(([date, day]) => date.startsWith(ym) && day.count > 0)
 			.map(([date, day]) => ({ date, count: day.count, minutes: day.minutes }))
 			.sort((a, b) => (a.date < b.date ? -1 : 1));
 		const response: HistoryMonthResponse = { ym, days };

@@ -480,7 +480,15 @@ export async function startPractice(
 }
 
 export function useStartPractice() {
-	return useMutation({ mutationFn: startPractice });
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: startPractice,
+		onSuccess: (_data, testId) => {
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "quiz", "practice", testId],
+			});
+		},
+	});
 }
 
 // --- Lịch sử học tập (phase 11, #378) ---------------------------------------

@@ -44,28 +44,35 @@ export function PracticeFilters({
 	searchLabel,
 	collections,
 	collectionValue,
+	qValue = "",
 	onCollectionChange,
 	onSearch,
 }: {
 	searchLabel: string;
 	collections: readonly string[];
 	collectionValue: string;
+	qValue?: string;
 	onCollectionChange: (value: string) => void;
 	onSearch: (q: string) => void;
 }) {
-	const [draft, setDraft] = useState("");
+	const [draft, setDraft] = useState(qValue);
 
 	useEffect(() => {
-		// Debounce 300ms (AGENTS.md): chỉ `draft` là nguồn chạy lại — caller
-		// truyền callback ổn định (navigate), không cần liệt kê deps.
+		setDraft(qValue);
+	}, [qValue]);
+
+	useEffect(() => {
+		const trimmed = draft.trim();
+		if (trimmed === qValue) return;
+		// Debounce 300ms (AGENTS.md): chỉ khi draft khác qValue hiện tại mới
+		// đẩy URL — tránh xóa trắng ?q= khi mount hoặc re-render.
 		const timer = setTimeout(() => {
-			onSearch(draft.trim());
+			onSearch(trimmed);
 		}, 300);
 		return () => clearTimeout(timer);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: debounce
-		// chỉ phụ thuộc draft; onSearch là callback ổn định từ route.
-	}, [draft]);
-
+		// chỉ phụ thuộc draft/qValue; onSearch là callback ổn định từ route.
+	}, [draft, qValue]);
 	return (
 		<div className="mb-3 flex flex-wrap items-center gap-2">
 			<PracticeSelect
