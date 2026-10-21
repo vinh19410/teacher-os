@@ -34,6 +34,7 @@ test("class detail → enroll học viên có sẵn KHÔNG có input gói, chọ
 	await expect(classDialog).toBeHidden();
 
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
@@ -90,6 +91,7 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 
 	// Vào lớp -> "+ Thêm học viên vào lớp"
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	const option = dialog.getByRole("option", { name: STUDENT_NAME });

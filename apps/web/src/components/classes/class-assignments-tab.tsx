@@ -3,7 +3,8 @@ import { formatBand, isGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
-import { useMemo, useState } from "react";
+import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
+import { type ComponentType, useMemo, useState } from "react";
 import {
 	partOf,
 	type SkillId,
@@ -19,9 +20,10 @@ import {
 import { StatusTag } from "@/components/assignments/status-tag";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
+import { Section } from "@/components/ui/section";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
@@ -33,6 +35,8 @@ export interface ClassAssignmentsTabProps {
 	classGroup: ClassGroup;
 	view: "list" | "assign" | "success";
 	onViewChange: (view: "list" | "assign" | "success") => void;
+	/** #319: vào bằng `?tab=assignments` từ trang chấm — mở sẵn toàn bộ item. */
+	assignmentsFocus?: boolean;
 }
 
 const PICKER_SKILL_OPTIONS = [
@@ -43,10 +47,22 @@ const PICKER_SKILL_OPTIONS = [
 	"Speaking",
 ];
 
-// Nút "Chấm bài" trông như Button primary size sm — `Button` không export
-// class variant nên chép tĩnh (Link, không phải button thật).
-const GRADE_LINK_BUTTON_CLASS =
-	"inline-flex items-center whitespace-nowrap rounded-full bg-primary px-[14px] py-[6px] font-medium text-primary-foreground text-xs hover:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
+/** Icon kỹ năng cho header accordion bài đã giao (#391, design SKILL_ICON);
+ * kỹ năng lạ rơi về BookOpen. Không có data thanh kỹ năng theo học viên nên
+ * chỉ dùng ở mức icon. */
+const SKILL_ICON: Record<string, ComponentType<{ className?: string }>> = {
+	writing: PenLine,
+	reading: BookOpen,
+	listening: Headphones,
+	speaking: Mic,
+};
+
+/** Nút "Chấm bài" (Link, không phải button thật) — outline `size=sm` của
+ * design v2 (#391, thay bản chép tay kiểu v1). */
+const GRADE_LINK_BUTTON_CLASS = buttonVariants({
+	variant: "outline",
+	size: "sm",
+});
 
 /** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
  * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
@@ -91,6 +107,7 @@ export function ClassAssignmentsTab({
 	classGroup,
 	view,
 	onViewChange,
+	assignmentsFocus = false,
 }: ClassAssignmentsTabProps) {
 	const { data, studentById } = useData();
 	const submit = useKernelFormSubmit();
@@ -102,6 +119,34 @@ export function ClassAssignmentsTab({
 			.filter((ca) => ca.classId === classGroup.id)
 			.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 	}, [data.classAssignments, classGroup.id]);
+
+	/**
+	 * Accordion (#391): mặc định mở item có bài đã nộp chờ chấm (fallback:
+	 * item đầu) như design mở 1 item; `assignmentsFocus` (#319 — vào từ trang
+	 * chấm) mở toàn bộ. Toggle của người dùng đè default.
+	 */
+	const defaultOpenIds = useMemo(() => {
+		if (assignmentsFocus) {
+			return new Set(classAssignments.map((ca) => ca.id));
+		}
+		const firstPending = classAssignments.find((ca) =>
+			ca.targets.some(
+				(t) => t.submittedAt !== null && !(t.band != null && t.gradedAt),
+			),
+		);
+		const first = firstPending ?? classAssignments[0];
+		return first ? new Set([first.id]) : new Set<string>();
+	}, [classAssignments, assignmentsFocus]);
+	const [userOpenIds, setUserOpenIds] = useState<Set<string> | null>(null);
+	const toggleItem = (id: string) => {
+		const base = new Set(userOpenIds ?? defaultOpenIds);
+		if (base.has(id)) {
+			base.delete(id);
+		} else {
+			base.add(id);
+		}
+		setUserOpenIds(base);
+	};
 
 	// Enrolled students in this class
 	const enrolledStudents = useMemo(() => {
@@ -598,7 +643,7 @@ export function ClassAssignmentsTab({
 
 							{/* Reassign Warning Note */}
 							{isReassign && previousAssignment && (
-								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-foreground-2 text-xs leading-relaxed">
+								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-muted-foreground text-xs leading-relaxed">
 									Đề này đã giao lớp này, hạn {fmtDue(previousAssignment.due)}.
 									Giao lại sẽ thêm lượt mới cho học viên đã chọn.
 								</div>
@@ -704,15 +749,20 @@ export function ClassAssignmentsTab({
 			: `${doneTargetsCount}/${totalTargetsCount} đã nộp`;
 
 	return (
-		<div className="flex flex-col gap-4">
-			{/* Section Header */}
-			<div className="flex items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
-					<SectionLabel>Bài đã giao lớp này</SectionLabel>
-					<span id="assign-summary" className="text-muted-foreground text-xs">
+		<Section
+			title={
+				<>
+					Bài đã giao lớp này{" "}
+					<span
+						id="assign-summary"
+						className="font-normal text-muted-foreground text-xs"
+					>
 						{summaryText}
 					</span>
-				</div>
+				</>
+			}
+			count={classAssignments.length}
+			action={
 				<Button
 					id="list-assign-btn"
 					variant="ghost"
@@ -721,20 +771,21 @@ export function ClassAssignmentsTab({
 				>
 					Giao thêm đề
 				</Button>
-			</div>
-
-			{/* Empty or List */}
+			}
+		>
 			{classAssignments.length === 0 ? (
-				<Card variant="white" className="p-8 text-center">
+				<div className="rounded-lg border border-dashed p-6 text-center">
 					<p className="text-muted-foreground text-sm">
 						Chưa giao bài nào cho lớp này.
 					</p>
 					<div className="mt-4 flex justify-center">
-						<Button onClick={() => onViewChange("assign")}>Giao bài tập</Button>
+						<Button size="sm" onClick={() => onViewChange("assign")}>
+							Giao bài tập
+						</Button>
 					</div>
-				</Card>
+				</div>
 			) : (
-				<div id="assigned-list" className="flex flex-col gap-3">
+				<div id="assigned-list" className="flex flex-col gap-2">
 					{classAssignments.map((ca) => {
 						const rollup = rollupStatus(ca, todayVN);
 						const doneCount = ca.targets.filter(
@@ -744,70 +795,109 @@ export function ClassAssignmentsTab({
 							data.assignmentPrompts?.find((p) => p.id === ca.promptId)
 								?.skill ?? "";
 						const gradable = isGradableSkill(skill);
+						const SkillIcon = SKILL_ICON[skill] ?? BookOpen;
+						const open = (userOpenIds ?? defaultOpenIds).has(ca.id);
+						const pctDone =
+							ca.targets.length > 0
+								? Math.round((doneCount / ca.targets.length) * 100)
+								: 0;
 
 						return (
 							<article
 								key={ca.id}
 								aria-label={`${doneCount} trên ${ca.targets.length} đã nộp`}
-								className="assign-item rounded-xl border border-border bg-card p-5"
+								className="assign-item rounded-lg border"
 							>
-								{/* Item Header */}
-								<div className="flex flex-wrap items-start justify-between gap-3">
-									<div className="flex flex-col gap-1">
-										<h3 className="assign-item-title font-semibold text-[16px] text-foreground">
+								<button
+									type="button"
+									aria-expanded={open}
+									onClick={() => toggleItem(ca.id)}
+									className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+								>
+									<span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted">
+										<SkillIcon className="size-4" />
+									</span>
+									<span className="min-w-0 flex-1">
+										<span className="block truncate font-medium text-sm">
 											{ca.title}
-										</h3>
-										<p className="text-muted-foreground text-xs">
-											Hạn {fmtDue(ca.due)} · {doneCount}/{ca.targets.length} đã
-											nộp
-										</p>
-									</div>
-									<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
-								</div>
-
-								{/* Sub-rows for each student target */}
-								<div className="sub-list mt-4 flex flex-col divide-y divide-border-soft border-border-soft border-t">
-									{ca.targets.map((target) => {
-										const s = studentById(target.studentId);
-										const sub = studentSubmissionStatus(
-											target,
-											ca.due,
-											todayVN,
-										);
-										return (
-											<div
-												key={target.studentId}
-												className="sub-row flex items-center justify-between py-2.5"
+										</span>
+										<span className="block text-muted-foreground text-xs">
+											Hạn {fmtDue(ca.due)} ·{" "}
+											<span
+												className={cn(
+													"tabular-nums",
+													doneCount === ca.targets.length
+														? "text-success"
+														: doneCount === 0 && "text-warn",
+												)}
 											>
-												<div className="flex items-center gap-2.5">
-													<Avatar text={s?.avatar ?? "??"} size="sm" />
-													<strong className="font-medium text-foreground text-sm">
-														{s?.name ?? target.studentId}
-													</strong>
+												{doneCount}/{ca.targets.length} đã nộp
+											</span>
+										</span>
+									</span>
+									<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
+									<span className="hidden w-24 sm:block">
+										<span className="block h-1.5 overflow-hidden rounded-full bg-muted">
+											<span
+												className="block h-full rounded-full bg-success"
+												style={{ width: `${pctDone}%` }}
+											/>
+										</span>
+									</span>
+									<ChevronDown
+										className={cn(
+											"size-4 shrink-0 text-muted-foreground transition-transform",
+											open && "rotate-180",
+										)}
+									/>
+								</button>
+								{open && (
+									<div
+										id={`assign-body-${ca.id}`}
+										className="sub-list divide-y divide-border-soft border-border-soft border-t"
+									>
+										{ca.targets.map((target) => {
+											const s = studentById(target.studentId);
+											const sub = studentSubmissionStatus(
+												target,
+												ca.due,
+												todayVN,
+											);
+											return (
+												<div
+													key={target.studentId}
+													className="sub-row flex items-center justify-between px-4 py-2.5"
+												>
+													<div className="flex items-center gap-2.5">
+														<Avatar text={s?.avatar ?? "??"} size="sm" />
+														<strong className="font-medium text-foreground text-sm">
+															{s?.name ?? target.studentId}
+														</strong>
+													</div>
+													<div className="flex items-center gap-3">
+														<span className="text-muted-foreground text-xs">
+															{target.submittedAt
+																? fmtWhen(target.submittedAt)
+																: "Chưa có bài nộp"}
+														</span>
+														<StatusTag tone={sub.tone}>{sub.label}</StatusTag>
+														{gradable && (
+															<TargetGradeActions
+																target={target}
+																studentName={s?.name ?? target.studentId}
+															/>
+														)}
+													</div>
 												</div>
-												<div className="flex items-center gap-3">
-													<span className="text-muted-foreground text-xs">
-														{target.submittedAt
-															? fmtWhen(target.submittedAt)
-															: "Chưa có bài nộp"}
-													</span>
-													<StatusTag tone={sub.tone}>{sub.label}</StatusTag>
-													{gradable && (
-														<TargetGradeActions
-															target={target}
-															studentName={s?.name ?? target.studentId}
-														/>
-													)}
-												</div>
-											</div>
-										);
-									})}
-								</div>
+											);
+										})}
+									</div>
+								)}
 							</article>
 						);
 					})}
 				</div>
 			)}
-		</div>
+		</Section>
 	);
 }

@@ -35,6 +35,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<void> {
 
 	// Enroll via the class-detail picker.
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
@@ -69,6 +70,8 @@ async function openClassDetail(page: Page): Promise<void> {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME, { exact: true }).click();
+	// #391: tab mặc định là "Sessions & practice" — roster ở tab "Học viên".
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await expect(rosterRow(page)).toBeVisible();
 }
 
@@ -151,5 +154,8 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();
 	await expect(rosterFee(page, "còn 800.000đ")).toBeHidden();
 	await page.reload();
+	// #391: reload đưa tab về mặc định "Sessions & practice" — roster phải
+	// mở lại tab "Học viên".
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();
 });

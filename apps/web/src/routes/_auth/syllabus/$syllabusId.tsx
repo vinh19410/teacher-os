@@ -302,7 +302,7 @@ function SyllabusDetail({
 											<div className="mt-0.5 text-[11px] text-muted-foreground">
 												{l.materials}
 											</div>
-											<div className="mt-[3px] text-foreground-2 text-xs leading-[1.4]">
+											<div className="mt-[3px] text-muted-foreground text-xs leading-[1.4]">
 												Mục tiêu: {l.objectives}
 											</div>
 										</div>

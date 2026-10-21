@@ -170,7 +170,7 @@ export function SessionActionsModal({
 				<section className="space-y-2">
 					<h3 className="font-medium text-sm">Hành động cả lớp</h3>
 					{targetNames.length > 0 ? (
-						<ul className="list-disc space-y-0.5 pl-5 text-foreground-2 text-xs">
+						<ul className="list-disc space-y-0.5 pl-5 text-muted-foreground text-xs">
 							{targetNames.map((name, i) => (
 								<li key={`${name}-${i}`}>{name}</li>
 							))}

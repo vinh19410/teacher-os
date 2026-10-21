@@ -187,9 +187,9 @@ export async function seedStudent(opts: {
 		client.close();
 	}
 }
-/** Navigate to a class's "Buổi học" tab (Issue #89 merged tab) — it renders the
- * "Đã học"/"Sắp tới" badges on the timeline table. Text counts must scope to
- * "Buổi học" while on it. */
+/** Navigate to a class's merged "Sessions & practice" tab (#391) — it renders
+ * the session cards and the assigned-practice accordion. Text counts must
+ * scope to the tab while on it. */
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
@@ -198,7 +198,20 @@ export async function openClassScheduleTab(page: Page, className: string) {
 	const classRow = page.locator("h3", { hasText: className });
 	await expect(classRow).toBeVisible();
 	await classRow.click();
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
+}
+
+/** Navigate to a class's "Học viên" tab (#391) — "+ Thêm học viên vào lớp",
+ * "Sửa" học phí và chuỗi `Học phí: …` sống ở tab này. */
+export async function openClassRosterTab(page: Page, className: string) {
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await expect(page).toHaveURL(/\/classes$/);
+	const classRow = page.locator("h3", { hasText: className });
+	await expect(classRow).toBeVisible();
+	await classRow.click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 }
 
 /** Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice

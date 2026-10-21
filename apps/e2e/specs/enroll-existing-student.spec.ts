@@ -42,6 +42,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	// 4. Class detail → + Thêm học viên vào lớp opens enroll modal with picker.
 	await page.getByText(CLASS_NAME).click();
 	await expect(page.getByText("0", { exact: true }).first()).toBeVisible();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
@@ -80,7 +81,9 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	await expect(kpi.first()).toBeVisible();
 
 	// 8. The schedule's lesson series was generated for the active enrollment.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Sắp tới").first()).toBeVisible();
 	await expect(page.getByText("0/12").first()).toBeVisible();
 
@@ -124,6 +127,7 @@ test("class detail → hủy lời mời → row biến mất khỏi roster, có
 
 	// 3. Mời học viên vào lớp
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	const option = dialog.getByRole("option", { name: STUDENT_NAME });
