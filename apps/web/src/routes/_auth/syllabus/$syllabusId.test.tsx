@@ -169,7 +169,9 @@ describe("syllabus template → overwrite in flight", () => {
 			}),
 		);
 		await waitFor(() => expect(held.writes).toHaveLength(1));
-		expect(held.writes[0].path).toBe("/api/syllabi/sy-t/replace-content");
+		expect(held.writes[0].path).toBe(
+			"/api/syllabus-templates/sy-t/replace-content",
+		);
 
 		const importButton = screen.getByRole("button", {
 			name: "Nhập từ Excel/CSV",

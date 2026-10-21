@@ -24,6 +24,7 @@ import { formatSchedule } from "@/lib/format-schedule";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
 import { CLASS_TYPE_LABELS, classMeta, fmtVND } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
+import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
 import { todayISOVietnam } from "@/lib/week-grid";
@@ -126,7 +127,7 @@ function ClassDetailRoute() {
 			payload.moveDate !== undefined ? "Đã dời buổi." : "Đã cập nhật buổi.",
 		);
 	const { classById } = useClasses();
-	const { syllabusById, studentById, data } = useData();
+	const { studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const search = Route.useSearch();
 	const [tab, setTab] = useState<string>(search.tab ?? "roster");
@@ -143,12 +144,12 @@ function ClassDetailRoute() {
 			setAssignmentsView("list");
 		}
 	};
+	const sy = useClassCurriculum(classId);
 	const cls = classById(classId);
 
 	if (!cls) {
 		throw notFound();
 	}
-	const sy = syllabusById(cls.syllabusId) ?? null;
 	const classLessons = data.lessons.filter((l) =>
 		cls.studentIds.includes(l.sid),
 	);
@@ -294,7 +295,6 @@ function ClassDetailRoute() {
 					<CurriculumManagementSection
 						key={`curriculum-${cls.id}`}
 						cls={cls}
-						syllabus={sy}
 						run={run}
 						isPending={isPending}
 						busy={busy}
@@ -303,7 +303,6 @@ function ClassDetailRoute() {
 						open={manageOpen}
 						onClose={() => setManageOpen(false)}
 						cls={cls}
-						syllabus={sy}
 						run={run}
 						isPending={isPending}
 						busy={busy}

@@ -34,6 +34,7 @@ import {
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./repos/kernel";
+import { splitSyllabi } from "./repos/syllabus";
 import {
 	isRoleBlocked,
 	markRoleBlocked,
@@ -148,14 +149,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			classById: (id) => data.classes.find((c) => c.id === id),
 			syllabusById: (id) => data.syllabi.find((s) => s.id === id),
 			// "Đang dùng" = classes holding a copy imported from this template
-			// (provenance join via sourceTemplateId, issue #79) — not pointer
-			// equality, which a template copy never satisfies.
+			// (provenance join via sourceTemplateId, issue #79) — classified
+			// by splitSyllabi (design D7, issue #394).
 			classesForSyllabus: (id) =>
-				data.classes.filter((c) =>
-					data.syllabi.some(
-						(s) => s.classId === c.id && s.sourceTemplateId === id,
-					),
-				),
+				splitSyllabi(data.syllabi)
+					.templateUsage.get(id)
+					?.map((classId) => data.classes.find((c) => c.id === classId))
+					.filter((c) => c !== undefined) ?? [],
 		};
 	}, [data, dispatch, refresh]);
 

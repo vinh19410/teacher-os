@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import type { CurriculumTarget } from "@/lib/data-actions";
 import type { SyllabusLessonKind, SyllabusLessonStatus } from "@/lib/mock-data";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -9,14 +10,14 @@ import { KernelSubmitNotice } from "./kernel-submit-notice";
 export function AddLessonModal({
 	open,
 	onClose,
-	syllabusId,
+	target,
 	moduleId,
 	showKind,
 	showStatus,
 }: {
 	open: boolean;
 	onClose: () => void;
-	syllabusId: string;
+	target: CurriculumTarget;
 	moduleId: string | null;
 	/** Chỉ màn hình syllabus bật — loại buổi là nội dung giáo trình (#154). */
 	showKind?: boolean;
@@ -49,7 +50,7 @@ export function AddLessonModal({
 		}
 		const result = await run({
 			type: "add-lesson",
-			syllabusId,
+			target,
 			moduleId,
 			payload: {
 				title: title.trim(),

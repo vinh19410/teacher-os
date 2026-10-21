@@ -137,7 +137,7 @@ describe("reducer", () => {
 		expect(sy1?.totalLessons).toBe(12);
 		const next = reducer(before, {
 			type: "add-module",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			payload: { title: "Extra", description: "x" },
 		});
 		expect(next.syllabi.find((s) => s.id === "sy1")?.totalLessons).toBe(12);
@@ -158,7 +158,7 @@ describe("reducer", () => {
 		});
 		const next = reducer(created, {
 			type: "add-module",
-			syllabusId: "sy-new",
+			target: { kind: "template", syllabusId: "sy-new" },
 			payload: { title: "M", description: "x" },
 		});
 		expect(next.syllabi.find((s) => s.id === "sy-new")?.totalLessons).toBe(0);
@@ -170,7 +170,7 @@ describe("reducer", () => {
 		const expected = (sy1 ? lessonCount(sy1) : 0) + 1;
 		const next = reducer(before, {
 			type: "add-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: {
 				title: "New lesson",
@@ -189,7 +189,7 @@ describe("reducer", () => {
 		const total = before.syllabi.find((s) => s.id === "sy1")?.totalLessons;
 		const next = reducer(before, {
 			type: "edit-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			lessonId: "sy1-l1",
 			payload: {
@@ -212,7 +212,7 @@ describe("reducer", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
 			type: "add-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: {
 				title: "Lesson không status",
@@ -237,7 +237,7 @@ describe("reducer", () => {
 		).toBe("done");
 		const next = reducer(before, {
 			type: "edit-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			lessonId: "sy1-l1",
 			payload: {
@@ -258,7 +258,7 @@ describe("reducer", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
 			type: "add-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: {
 				title: "Thi giữa kỳ",
@@ -278,7 +278,7 @@ describe("reducer", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
 			type: "add-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: { title: "Lesson không kind", objectives: "o", materials: "m" },
 		});
@@ -293,7 +293,7 @@ describe("reducer", () => {
 		const before = cloneSeed();
 		const next = reducer(before, {
 			type: "edit-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			lessonId: "sy1-l1",
 			payload: {
@@ -315,7 +315,7 @@ describe("reducer", () => {
 		// Seed lesson đầu là lesson thường — dùng add để có buổi thi trước.
 		const withExam = reducer(before, {
 			type: "add-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: {
 				title: "Thi cuối kỳ",
@@ -330,7 +330,7 @@ describe("reducer", () => {
 			?.lessons.at(-1)?.id;
 		const next = reducer(withExam, {
 			type: "edit-lesson",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			lessonId: examId ?? "",
 			payload: { title: "Đổi tên chỉ", objectives: "o", materials: "m" },
@@ -348,7 +348,7 @@ describe("reducer", () => {
 		const total = before.syllabi.find((s) => s.id === "sy1")?.totalLessons;
 		const next = reducer(before, {
 			type: "edit-module",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 			payload: { title: "Renamed", description: "d" },
 		});
@@ -363,7 +363,7 @@ describe("reducer", () => {
 		expect(moduleLessons).toBeGreaterThan(0);
 		const next = reducer(before, {
 			type: "delete-module",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleId: "sy1-m1",
 		});
 		const after = next.syllabi.find((s) => s.id === "sy1");
@@ -374,7 +374,7 @@ describe("reducer", () => {
 	test("reorder-modules permutes sibling order", () => {
 		const created = reducer(cloneSeed(), {
 			type: "add-module",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			payload: { title: "Extra", description: "x" },
 		});
 		const ids =
@@ -384,7 +384,7 @@ describe("reducer", () => {
 		const reversed = [...ids].reverse();
 		const next = reducer(created, {
 			type: "reorder-modules",
-			syllabusId: "sy1",
+			target: { kind: "template", syllabusId: "sy1" },
 			moduleIds: reversed,
 		});
 		expect(
