@@ -99,12 +99,16 @@ test("A: tạo lớp kèm template qua TemplatePicker — tab Buổi học thấ
 	await dialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ label: `E2E 394 Template ${stamp} · 3 buổi` });
-	await expect(dialog.getByText("3 buổi")).toBeVisible();
-	await expect(dialog.getByText("Writing", { exact: true })).toBeVisible();
+	// Preview nằm trong vùng aria-live — scope để không đụng text của <option>.
+	const preview = dialog.locator('[aria-live="polite"]');
+	await expect(preview.getByText("3 buổi")).toBeVisible();
+	await expect(preview.getByText("Writing", { exact: true })).toBeVisible();
 	// Preview cây nội dung: "Xem nội dung" mở ra thấy module + buổi thi.
 	await dialog.getByText("Xem nội dung").click();
-	await expect(dialog.getByText("Module Alpha")).toBeVisible();
-	await expect(dialog.getByText("Thi giữa kỳ A")).toBeVisible();
+	await expect(preview.getByText("Module Alpha")).toBeVisible();
+	await expect(preview.getByText("Thi giữa kỳ A")).toBeVisible();
+	// Lịch bắt buộc: chọn tối thiểu một ngày (chip T2).
+	await dialog.getByRole("button", { name: "T2", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
 
@@ -135,6 +139,9 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 			hasText: "— Lớp trống —",
 		}),
 	).toHaveCount(1);
+	// Lớp trống: tự chọn kỹ năng + ngày (không có template auto-fill).
+	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
+	await dialog.getByRole("button", { name: "T2", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
 
@@ -181,6 +188,7 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	await dialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ label: `E2E 394 Copy ${stamp} · 3 buổi` });
+	await dialog.getByRole("button", { name: "T2", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
 	await openClassFromList(page, `E2E 394 Copy Lớp ${stamp}`);
@@ -189,17 +197,18 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
 	await page.getByRole("button", { name: "Sắp xếp buổi", exact: true }).click();
 	const manageDialog = page.getByRole("dialog");
+	// Hàng buổi trong modal dùng grid cố định (#221) — lọc đúng hàng, không
+	// bắt nhầm div cha chứa tiêu đề module.
 	const a1Row = manageDialog
-		.locator("div")
-		.filter({ hasText: /^Buổi A1/ })
+		.locator("div[class*='grid-cols-[20px_1fr_auto]']")
+		.filter({ hasText: "Buổi A1" })
 		.first();
 	await a1Row.getByRole("button", { name: "Sửa", exact: true }).click();
 	const editDialog = page.getByRole("dialog").last();
-	const titleInput = editDialog.getByPlaceholder(
-		"VD: Line chart — Mô tả xu hướng",
-	);
+	// Mirror #221 spec: ô tiêu đề là textbox đầu tiên của dialog sửa buổi.
+	const titleInput = editDialog.getByRole("textbox").first();
 	await titleInput.fill("Buổi A1 (bản copy)");
-	await editDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 	await expect(manageDialog.getByText("Buổi A1 (bản copy)")).toBeVisible();
 
@@ -225,6 +234,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	await dialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ label: `E2E 394 Remove ${stamp} · 3 buổi` });
+	await dialog.getByRole("button", { name: "T2", exact: true }).click();
 	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 	await expect(dialog).toBeHidden();
 	await openClassFromList(page, `E2E 394 Remove Lớp ${stamp}`);
@@ -282,7 +292,7 @@ test("E: id bản copy không mở được như template — 404 branded", asyn
 
 	await page.goto(`/syllabus/${copyId}`);
 	await expect(
-		page.getByText("Lỗi 404 · Không tìm thấy trang", { exact: false }),
+		page.getByText("Không tìm thấy syllabus", { exact: true }),
 	).toBeVisible();
 
 	// Còn template id thật thì vẫn mở được.
