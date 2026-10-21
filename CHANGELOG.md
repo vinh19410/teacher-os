@@ -20,6 +20,7 @@ Quy ước khi cập nhật:
 - Redesign giao diện **v2** cho app giáo viên và app học viên: **light là theme mặc định** (dark là override, toggle giữ nguyên semantics), accent cam bỏ — **hành động chính = mực** theo bảng shadcn neutral oklch, font **Geist / Geist Mono Variable** self-host, thang chữ về rem mặc định Tailwind (base 14px). Shell đổi sang layout `sidebar-07` dùng chung hai app; thêm search toàn cục ⌘K (command palette) (#378)
 - Trang mới/khoác mới theo v2: catalog Luyện tập (Practice) 5 kỹ năng, Lịch sử làm bài (History), Trang bạn học (Classmates); DataTable, Badge/TuitionBadge, PageHead, Modal, chip lọc theo token v2; trạng thái = chấm emerald/amber, quá hạn/lỗi = đỏ destructive; màn chấm bài giữ riêng cặp màu verdict (#378)
 - Database: migration `0041_known_ink` (#378)
+
 ### Fixed
 - Bài viết Writing chứa HTML (`<p>…</p>`, entity `&amp;`…) từ seed hoặc dữ liệu cũ không còn hiện thẻ HTML thô trên màn chấm giáo viên (`/grading/$attemptId`) và màn kết quả học viên (`/learn/quizzes/attempt/$attemptId`): server chuẩn hoá HTML sang plain text khi đọc kèm bản đồ offset hai chiều `rawStart`/`rawEnd` (`essayToPlain`, `toEssayView`), giữ nguyên lưu trữ offset raw trong DB và căn khớp vị trí highlight `mark[data-n]` + ghi chú inline `essay-inline-note` cũng như số từ `countWords` (#382)
 
