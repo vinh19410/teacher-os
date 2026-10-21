@@ -368,8 +368,30 @@ describe("sessionAttendanceTally — 3 phân đoạn điểm danh (#391)", () =>
 		} as Parameters<typeof sessionAttendanceTally>[0];
 
 		const tally = sessionAttendanceTally(session, "2026-10-07");
-		expect(tally).toEqual({ marked: 1, absent: 1, unmarked: 1 });
-		expect(tally.marked + tally.absent + tally.unmarked).toBe(3);
+		expect(tally).toEqual({ marked: 1, absent: 1, unmarked: 1, cancelled: 0 });
+		expect(tally.marked + tally.absent + tally.unmarked + tally.cancelled).toBe(
+			3,
+		);
+	});
+
+	test("sid bị huỷ không tính 'chưa điểm danh' — loại khỏi mẫu của card", () => {
+		const session = {
+			index: 3,
+			slotIndex: 1,
+			dateISO: "2026-10-06",
+			day: 2,
+			time: "19:00",
+			dur: 90,
+			mode: "v2" as const,
+			rows: [v2Row("r-a", "sA", "completed"), v2Row("r-b", "sB", "cancelled")],
+		} as Parameters<typeof sessionAttendanceTally>[0];
+
+		expect(sessionAttendanceTally(session, "2026-10-07")).toEqual({
+			marked: 1,
+			absent: 0,
+			unmarked: 0,
+			cancelled: 1,
+		});
 	});
 
 	test("buổi chưa diễn ra: cả lớp rơi vào 'chưa điểm danh'", () => {
@@ -388,6 +410,7 @@ describe("sessionAttendanceTally — 3 phân đoạn điểm danh (#391)", () =>
 			marked: 0,
 			absent: 0,
 			unmarked: 1,
+			cancelled: 0,
 		});
 	});
 });

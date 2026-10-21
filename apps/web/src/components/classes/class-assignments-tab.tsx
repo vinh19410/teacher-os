@@ -811,7 +811,6 @@ export function ClassAssignmentsTab({
 								<button
 									type="button"
 									aria-expanded={open}
-									aria-controls={`assign-body-${ca.id}`}
 									onClick={() => toggleItem(ca.id)}
 									className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 								>

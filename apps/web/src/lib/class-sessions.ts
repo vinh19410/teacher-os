@@ -755,12 +755,14 @@ export function findClassOccurrence(
 
 /** Tally điểm danh của một buổi cho card buổi học (#391): đếm qua
  * `occurrenceSidStates` — `completed` = có mặt, `absent` = vắng (dữ liệu
- * thật của row dated v2, đếm là ĐÃ điểm danh), còn lại = chưa điểm danh.
- * Tổng ba phần luôn bằng số học viên dự kiến của buổi. */
+ * thật của row dated v2, đếm là ĐÃ điểm danh), `cancelled` = sid bị huỷ
+ * (loại khỏi mẫu của card, không tính "chưa điểm danh"), còn lại = chưa
+ * điểm danh. marked + absent + unmarked + cancelled = số học viên dự kiến. */
 export interface SessionAttendanceTally {
 	marked: number;
 	absent: number;
 	unmarked: number;
+	cancelled: number;
 }
 
 export function sessionAttendanceTally(
@@ -770,5 +772,11 @@ export function sessionAttendanceTally(
 	const states = occurrenceSidStates(session, todayISO);
 	const marked = states.filter((s) => s.status === "completed").length;
 	const absent = states.filter((s) => s.status === "absent").length;
-	return { marked, absent, unmarked: states.length - marked - absent };
+	const cancelled = states.filter((s) => s.status === "cancelled").length;
+	return {
+		marked,
+		absent,
+		cancelled,
+		unmarked: states.length - marked - absent - cancelled,
+	};
 }

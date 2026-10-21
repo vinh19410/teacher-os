@@ -148,7 +148,9 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
 - **"Add session" = nút primary "Sắp xếp buổi"** mở modal Quản lý buổi: kernel không có action
   add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221).
 - **Nhãn nút giữ tiếng Việt**: "Điều chỉnh" (Edit session), "Chấm bài" (Grade), "Điểm danh →" /
-  "Sửa điểm danh →" (Take/Edit attendance →).
+  "Sửa điểm danh →" (Take/Edit attendance →). Link attendance chỉ hiện trên card **đã qua ngày hoặc
+  đã học** — design hiển thị trên mọi card, nhưng buổi tương lai mở modal chỉ được view rỗng nên
+  không đặt affordance thừa; buổi tương lai thao tác qua "Điều chỉnh".
 - **Bỏ cột "Attendance" bảng Học viên; "Current band" hiển thị "Band mục tiêu"**: chuyên cần không có
   data tin được (chốt red-team); `Student` chỉ có `targetBand` — dùng nhãn "Band mục tiêu" thay vì bịa
   band hiện tại. Bảng giữ 5 cột: Học viên / Đăng ký / Band mục tiêu / Học phí / Thao tác.

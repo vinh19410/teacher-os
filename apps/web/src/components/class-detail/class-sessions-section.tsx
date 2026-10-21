@@ -7,7 +7,9 @@ import {
 	SessionActionsModal,
 } from "@/components/class-detail/session-actions-modal";
 import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
 import { Section } from "@/components/ui/section";
 import {
 	buildClassSessions,
@@ -99,28 +101,34 @@ export function ClassSessionsSection({
 		return (
 			<Section title="Sessions">
 				<div className="overflow-x-auto">
-					<table className="w-full border-collapse text-sm">
-						<tbody>
-							{legacyLessons.map((l) => (
-								<tr key={l.id} className="border-border border-b">
-									<td className="px-2 py-3">
-										<span className="text-muted-foreground text-xs">
-											{lessonDayLabel(l.day)}
-										</span>
-									</td>
-									<td className="px-2 py-3 tabular-nums">{l.time}</td>
-									<td className="px-2 py-3">{l.topic}</td>
-									<td className="px-2 py-3">
-										{l.status === "completed"
-											? "Đã học"
-											: l.status === "cancelled"
-												? "Đã hủy"
-												: "Sắp tới"}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+					<DataTable
+						headers={["Ngày", "Giờ", "Chủ đề", "Trạng thái"]}
+						emptyMessage="Chưa có buổi học nào được ghi nhận."
+						rows={legacyLessons.map((l) => ({
+							cells: [
+								<span key="d" className="text-muted-foreground text-xs">
+									{lessonDayLabel(l.day)}
+								</span>,
+								<span key="t" className="tabular-nums">
+									{l.time}
+								</span>,
+								l.topic,
+								l.status === "completed" ? (
+									<Badge key="b" variant="success" dot>
+										Đã học
+									</Badge>
+								) : l.status === "cancelled" ? (
+									<Badge key="b" variant="danger">
+										Đã hủy
+									</Badge>
+								) : (
+									<Badge key="b" variant="accent">
+										Sắp tới
+									</Badge>
+								),
+							],
+						}))}
+					/>
 				</div>
 			</Section>
 		);
@@ -176,6 +184,14 @@ export function ClassSessionsSection({
 							s.dateISO < todayISO &&
 							attendees.length > 0;
 						const isPastUnmarked = isPast && markedCount + absentCount === 0;
+						// Link attendance cho buổi ĐÃ TỚI NGÀY (kể cả hôm nay — gate
+						// action trong modal vẫn chặn check-in sớm qua
+						// sessionIsEligibleDate) hoặc đã học.
+						const dateArrived =
+							!isProjected &&
+							status !== "cancelled" &&
+							s.dateISO <= todayISO &&
+							attendees.length > 0;
 						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
 
 						return (
@@ -235,16 +251,18 @@ export function ClassSessionsSection({
 									<div className="mt-0.5 truncate font-medium text-sm">
 										{info.title ?? "—"}
 									</div>
-									{!isProjected && status !== "cancelled" && isGroupSession && (
-										<button
-											type="button"
-											disabled={busy}
-											onClick={() => setModalIndex(s.index)}
-											className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
-										>
-											{status === "completed" ? "Sửa điểm danh" : "Điểm danh"} →
-										</button>
-									)}
+									{(status === "completed" || dateArrived) &&
+										isGroupSession && (
+											<button
+												type="button"
+												disabled={busy}
+												onClick={() => setModalIndex(s.index)}
+												className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+											>
+												{status === "completed" ? "Sửa điểm danh" : "Điểm danh"}{" "}
+												→
+											</button>
+										)}
 								</div>
 								{isProjected ? (
 									<span className="shrink-0 text-muted-foreground text-xs">
@@ -255,45 +273,49 @@ export function ClassSessionsSection({
 										Đã hủy
 									</span>
 								) : status === "completed" || isPast ? (
-									<AttendanceSummary tally={tally} total={attendees.length} />
+									<AttendanceSummary
+										tally={tally}
+										total={attendees.length - tally.cancelled}
+									/>
 								) : (
 									<span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
 										<Clock className="size-3.5" />
 										Sắp tới
 									</span>
 								)}
-								{hasAdjust && (
-									<span className="inline-flex shrink-0 items-center gap-1">
-										{attendance.kind === "actionable" &&
-										checkInId !== null &&
-										!isGroupSession ? (
-											<Button
-												type="button"
-												size="sm"
-												disabled={busy || isPending(checkInId)}
-												onClick={() => {
-													void run(
-														checkInId,
-														{ type: "check-in", lessonId: checkInId },
-														"Đã điểm danh.",
-													);
-												}}
-												onKeyDown={stopActionKeyPropagation}
-											>
-												{isPending(checkInId) ? "Đang lưu…" : "Điểm danh"}
-											</Button>
-										) : null}
+								{attendance.kind === "actionable" &&
+									checkInId !== null &&
+									!isGroupSession && (
+										// #91: check-in 1-click 1:1 — KHÔNG phụ thuộc hasAdjust:
+										// sessionRowTargets chỉ trả row v2, legacy 1:1 vẫn phải
+										// có nút (regression bắt được ở review #391).
 										<Button
 											type="button"
-											variant="secondary"
 											size="sm"
-											disabled={busy}
-											onClick={() => setActionsDateISO(s.dateISO)}
+											disabled={busy || isPending(checkInId)}
+											onClick={() => {
+												void run(
+													checkInId,
+													{ type: "check-in", lessonId: checkInId },
+													"Đã điểm danh.",
+												);
+											}}
 											onKeyDown={stopActionKeyPropagation}
 										>
-											Điều chỉnh
+											{isPending(checkInId) ? "Đang lưu…" : "Điểm danh"}
 										</Button>
-									</span>
+									)}
+								{hasAdjust && (
+									<Button
+										type="button"
+										variant="secondary"
+										size="sm"
+										disabled={busy}
+										onClick={() => setActionsDateISO(s.dateISO)}
+										onKeyDown={stopActionKeyPropagation}
+									>
+										Điều chỉnh
+									</Button>
 								)}
 								{hasDetails && isExpanded && (
 									<div className="w-full border-border border-t pt-2 text-muted-foreground text-xs">
