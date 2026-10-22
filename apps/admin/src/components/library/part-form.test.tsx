@@ -284,4 +284,48 @@ describe("PartForm (render tĩnh)", () => {
 		);
 		expect(emptyHtml).not.toContain("Xóa part");
 	});
+
+	it("initialValue (nháp lift ở parent) thắng bản đã lưu khi remount sau lưu/upload audio", () => {
+		const draft = {
+			...partValueFromDto(partDto),
+			title: "Nháp đang soạn",
+		};
+		const remountedHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={partDto}
+				testReady={false}
+				saving={false}
+				initialValue={draft}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		// Nội dung đang gõ phải sống sót qua remount (key theo saved.updatedAt).
+		expect(remountedHtml).toContain('value="Nháp đang soạn"');
+		// Không có nháp → giữ hành vi cũ: init từ bản đã lưu.
+		const savedHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={partDto}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		expect(savedHtml).toContain('value="Passage 1"');
+	});
 });

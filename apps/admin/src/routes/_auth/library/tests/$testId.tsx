@@ -192,8 +192,10 @@ function EditTestRoute() {
 
 	// --- Mutations ---
 	const refresh = () =>
+		// Invalidate cả prefix list: trang edit không để cache list stale
+		// 60s sau publish/unpublish/lưu part (trước đây e2e phải reload).
 		queryClient.invalidateQueries({
-			queryKey: ["admin", "library", "test", testId],
+			queryKey: ["admin", "library"],
 		});
 
 	const savePartMutation = useMutation({
@@ -432,6 +434,9 @@ function EditTestRoute() {
 							saved={activeSaved}
 							testReady={detail.status === "ready"}
 							saving={savePartMutation.isPending}
+							// Form remount khi refetch (lưu part, upload audio) —
+							// khôi phục nháp đang soạn thay vì reset về bản đã lưu.
+							initialValue={drafts.get(currentSlot)?.value}
 							onDraftChange={onDraftChange}
 							onSave={(input) =>
 								savePartMutation.mutateAsync({ slot: currentSlot, input })

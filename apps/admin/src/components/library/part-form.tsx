@@ -243,6 +243,7 @@ export function PartForm({
 	saved,
 	testReady,
 	saving,
+	initialValue,
 	onDraftChange,
 	onSave,
 	onAudioChanged,
@@ -258,6 +259,10 @@ export function PartForm({
 	/** Đề đang `ready`: khóa xóa part/audio, nội dung vẫn sửa được. */
 	testReady: boolean;
 	saving: boolean;
+	/** Nháp đang soạn của slot (state lift ở parent) — form bị remount sau
+	 * khi lưu / upload audio (key theo `saved.updatedAt`) sẽ khôi phục nội
+	 * dung đang gõ thay vì reset về bản đã lưu. */
+	initialValue?: PartFormValue;
 	/** Báo dirty + giá trị nháp lên parent (tab chấm đỏ, ready-check). */
 	onDraftChange: (
 		slot: string,
@@ -270,8 +275,10 @@ export function PartForm({
 	deleting: boolean;
 }) {
 	const uid = useId();
-	const [value, setValue] = useState<PartFormValue>(() =>
-		saved ? partValueFromDto(saved) : emptyPartValue(skill, slot),
+	const [value, setValue] = useState<PartFormValue>(
+		() =>
+			initialValue ??
+			(saved ? partValueFromDto(saved) : emptyPartValue(skill, slot)),
 	);
 	const [showErrors, setShowErrors] = useState(false);
 	const [live, setLive] = useState("");
