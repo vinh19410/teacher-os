@@ -277,11 +277,37 @@ export default Alchemy.Stack(
 			},
 		});
 
+		// Plan #413 phase 5: cổng quản trị — dev 8004, domain topology.adminHost.
+		const adminWorker = yield* Cloudflare.Website.Vite("admin", {
+			rootDir: "../../apps/admin",
+			main: "src/worker.ts",
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.adminHost,
+				},
+				workersDev: false,
+			}),
+			env: {
+				VITE_SERVER_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
+			},
+			dev: {
+				port: 8004,
+				strictPort: true,
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
 			student: studentWorker.url,
+			admin: adminWorker.url,
 		};
 	}),
 );
