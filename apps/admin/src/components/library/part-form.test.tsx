@@ -3,6 +3,7 @@ import type { LibraryPartDto } from "@teacher-os/api/library-contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
+	arePartValuesEqual,
 	BAND_OPTIONS,
 	emptyPartValue,
 	isPartDirty,
@@ -11,6 +12,7 @@ import {
 	partInputFromValue,
 	partReadyIssues,
 	partValueFromDto,
+	reconcilePartDraftsOnSaveSuccess,
 	slotTypes,
 } from "./part-form";
 
@@ -41,6 +43,91 @@ const partDto: LibraryPartDto = {
 	audio: null,
 	updatedAt: "2026-10-02T00:00:00.000Z",
 };
+
+describe("arePartValuesEqual", () => {
+	it("trả về true khi hai PartFormValue có cùng nội dung", () => {
+		const a = partValueFromDto(partDto);
+		const b = partValueFromDto(partDto);
+		expect(arePartValuesEqual(a, b)).toBe(true);
+	});
+
+	it("trả về false khi khác bất kỳ trường nào (title, passage, questions)", () => {
+		const base = partValueFromDto(partDto);
+		expect(arePartValuesEqual(base, { ...base, title: "Title khác" })).toBe(
+			false,
+		);
+		expect(
+			arePartValuesEqual(base, { ...base, passage: "<p>Passage mới</p>" }),
+		).toBe(false);
+		expect(
+			arePartValuesEqual(base, {
+				...base,
+				questions: [
+					{
+						stem: "Câu hỏi sửa",
+						opts: null,
+						answer: "True",
+						alts: "",
+						type: null,
+						pin: null,
+					},
+				],
+			}),
+		).toBe(false);
+	});
+});
+
+describe("reconcilePartDraftsOnSaveSuccess", () => {
+	it("xóa draft khi draft hiện tại bằng đúng snapshot đã gửi", () => {
+		const snapshot = partValueFromDto(partDto);
+		const drafts = new Map([
+			["p1", { dirty: true, value: snapshot }],
+			["p2", { dirty: true, value: emptyPartValue("reading", "p2") }],
+		]);
+
+		const next = reconcilePartDraftsOnSaveSuccess(drafts, "p1", snapshot);
+		expect(next.has("p1")).toBe(false);
+		expect(next.has("p2")).toBe(true);
+	});
+
+	it("giữ lại draft với dirty=true khi người dùng đã gõ thêm ký tự mới khác snapshot", () => {
+		const snapshot = partValueFromDto(partDto);
+		const typedValue = { ...snapshot, title: "Passage 1 đã gõ thêm" };
+		const drafts = new Map([["p1", { dirty: true, value: typedValue }]]);
+
+		const next = reconcilePartDraftsOnSaveSuccess(drafts, "p1", snapshot);
+		expect(next.has("p1")).toBe(true);
+		expect(next.get("p1")).toEqual({ dirty: true, value: typedValue });
+	});
+
+	it("giữ lại draft với dirty=true kể cả khi draft ban đầu có dirty=false nhưng khác snapshot", () => {
+		const snapshot = partValueFromDto(partDto);
+		const differentValue = { ...snapshot, title: "Tiêu đề cũ trước khi sửa" };
+		const drafts = new Map([["p1", { dirty: false, value: differentValue }]]);
+
+		const next = reconcilePartDraftsOnSaveSuccess(drafts, "p1", snapshot);
+		expect(next.has("p1")).toBe(true);
+		expect(next.get("p1")).toEqual({ dirty: true, value: differentValue });
+	});
+
+	it("xóa draft khi người dùng gõ thêm rồi undo về đúng snapshot", () => {
+		const snapshot = partValueFromDto(partDto);
+		const drafts = new Map([["p1", { dirty: false, value: snapshot }]]);
+
+		const next = reconcilePartDraftsOnSaveSuccess(drafts, "p1", snapshot);
+		expect(next.has("p1")).toBe(false);
+	});
+
+	it("không làm gì và giữ nguyên reference khi slot không có draft trong map", () => {
+		const drafts = new Map([
+			["p2", { dirty: true, value: emptyPartValue("reading", "p2") }],
+		]);
+		const snapshot = partValueFromDto(partDto);
+
+		const next = reconcilePartDraftsOnSaveSuccess(drafts, "p1", snapshot);
+		expect(next).toBe(drafts);
+	});
+});
 
 describe("slotTypes / emptyPartValue", () => {
 	it("dạng bài theo catalog skill (p1 reading)", () => {

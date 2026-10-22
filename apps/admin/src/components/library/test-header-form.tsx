@@ -67,6 +67,39 @@ export function parseTimeLimit(input: string): number | null {
 	return minutes * 60 + secs;
 }
 
+/** So sánh canonical 2 bản TestHeaderFormValue theo toàn bộ các trường. */
+export function areTestHeadersEqual(
+	a: TestHeaderFormValue,
+	b: TestHeaderFormValue,
+): boolean {
+	return (
+		a.title === b.title &&
+		a.description === b.description &&
+		a.skill === b.skill &&
+		a.timeLimit === b.timeLimit &&
+		a.collection === b.collection &&
+		a.testGroup === b.testGroup
+	);
+}
+
+/**
+ * Reconcile header state khi save thành công.
+ * - Nếu prev khớp snapshot đã gửi: cập nhật bản mới từ server và đánh dấu không dirty.
+ * - Nếu người dùng đã gõ thêm ký tự mới (khác snapshot): giữ lại prev với isDirty=true
+ *   để không mất dữ liệu đang soạn và useBlocker tiếp tục cảnh báo.
+ * - Nếu prev là null: trả về fromServer với isDirty=false.
+ */
+export function reconcileHeaderOnSaveSuccess(
+	prev: TestHeaderFormValue | null,
+	sent: TestHeaderFormValue,
+	fromServer: TestHeaderFormValue,
+): { nextValue: TestHeaderFormValue | null; isDirty: boolean } {
+	if (!prev || areTestHeadersEqual(prev, sent)) {
+		return { nextValue: fromServer, isDirty: false };
+	}
+	return { nextValue: prev, isDirty: true };
+}
+
 const FIELD_ERROR_TEXT: Record<string, string> = {
 	title: "Tiêu đề 1–200 ký tự.",
 	description: "Mô tả tối đa 2000 ký tự.",
