@@ -68,7 +68,7 @@ export function Field({
 			})
 		: children;
 	return (
-		<div className="flex flex-col gap-1">
+		<div className="flex flex-col gap-2">
 			<label
 				id={`${target}-label`}
 				htmlFor={target}

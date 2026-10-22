@@ -126,4 +126,15 @@ describe("Field accessibility", () => {
 		expect(textareaHtml).toContain("required");
 		expect(textareaHtml).toContain('aria-required="true"');
 	});
+
+	it("uses gap-2 for spacing between label and control (not gap-1)", () => {
+		const html = renderToStaticMarkup(
+			<Field label="Tên">
+				<Input placeholder="Tên" />
+			</Field>,
+		);
+
+		expect(html).toContain("flex flex-col gap-2");
+		expect(html).not.toContain("gap-1");
+	});
 });

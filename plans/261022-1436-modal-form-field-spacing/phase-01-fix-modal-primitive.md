@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Sửa Modal + Field primitive + test khoá hợp đồng"
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 dependencies: []

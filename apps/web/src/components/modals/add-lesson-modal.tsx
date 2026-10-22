@@ -130,7 +130,7 @@ export function AddLessonModal({
 						</Select>
 					</Field>
 				)}
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
 							{error}

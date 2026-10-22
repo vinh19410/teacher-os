@@ -40,7 +40,7 @@ export function TemplatePicker({
 	const selected = templates.find((item) => item.id === value) ?? null;
 
 	return (
-		<>
+		<div className="flex flex-col">
 			<Field label={label}>
 				<Select
 					value={value}
@@ -60,7 +60,7 @@ export function TemplatePicker({
 			{/* aria-live để màn hình đọc biết preview đổi theo template được chọn. */}
 			<div aria-live="polite">
 				{selected ? (
-					<div className="text-muted-foreground text-sm">
+					<div className="mt-2 text-muted-foreground text-sm">
 						<div className="flex flex-wrap items-center gap-1">
 							<span>{selected.totalLessons} buổi</span>
 							{selected.skills.length > 0 ? (
@@ -100,6 +100,6 @@ export function TemplatePicker({
 					</div>
 				) : null}
 			</div>
-		</>
+		</div>
 	);
 }
