@@ -1465,6 +1465,12 @@ export type StudentErrorCode =
 export const ACCOUNT_ERROR_CODES = {
 	STUDENT_ON_TEACHER_APP: "ACCOUNT_STUDENT_ROLE",
 	TEACHER_ON_STUDENT_PORTAL: "ACCOUNT_TEACHER_ROLE",
+	/** Role admin chạm kernel tree của teacher app (plan #413). */
+	ADMIN_ON_TEACHER_APP: "ACCOUNT_ADMIN_ROLE",
+	/** Sign-up trên origin admin với email ngoài ADMIN_EMAILS (plan #413). */
+	ADMIN_SIGNUP_FORBIDDEN: "ACCOUNT_ADMIN_SIGNUP_FORBIDDEN",
+	/** requireAdmin: session không thỏa admin gate (plan #413). */
+	NOT_ADMIN: "ACCOUNT_NOT_ADMIN",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];

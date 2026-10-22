@@ -57,6 +57,10 @@ const getAuth = (): Auth => {
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
+			// Plan #413: cổng admin + allowlist email admin (rỗng = không ai là
+			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
+			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
+			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),

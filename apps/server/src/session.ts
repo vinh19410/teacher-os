@@ -6,8 +6,8 @@ export interface SessionUser {
 	userName: string;
 	email?: string;
 	emailVerified?: boolean;
-	/** Auth app-role resolved from `user.role` (plan #260); gates both APIs. */
-	role: "teacher" | "student";
+	/** Auth app-role resolved from `user.role` (plan #260, admin ở plan #413). */
+	role: "teacher" | "student" | "admin";
 }
 
 export type { Auth };

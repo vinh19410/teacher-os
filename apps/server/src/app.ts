@@ -92,7 +92,9 @@ function bootstrapMiddleware(deps: AppDeps) {
 		if (
 			isAuthPath(pathname) ||
 			pathname === "/api/student" ||
-			pathname.startsWith("/api/student/")
+			pathname.startsWith("/api/student/") ||
+			pathname === "/api/admin" ||
+			pathname.startsWith("/api/admin/")
 		) {
 			return next();
 		}
@@ -108,6 +110,17 @@ function bootstrapMiddleware(deps: AppDeps) {
 				{
 					error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
 					code: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+				},
+				403,
+			);
+		}
+		// Plan #413: role admin không bao giờ bootstrap org/membership trên
+		// kernel tree — admin chỉ làm việc trên /api/admin (bypass ở trên).
+		if (session.role === "admin") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
+					code: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
 				},
 				403,
 			);
@@ -238,6 +251,10 @@ export function buildApp(deps: AppDeps) {
 	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
 	// guard tự gắn trong router như practice.
 	app.route("/api/student", studentHistoryRoutes(deps));
+	// Plan #413 phase 1: mount point cho admin console — router rỗng placeholder
+	// (routes thật ở phase 3); bootstrapMiddleware bypass /api/admin như
+	// /api/student nên không session teacher nào bootstrap org qua đường này.
+	app.route("/api/admin", new Hono<{ Variables: { kernelCtx: KernelCtx } }>());
 	app.route("/api", kernelRoutes(deps));
 
 	return app;
