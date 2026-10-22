@@ -138,6 +138,11 @@ export const db = Cloudflare.D1.Database("database", {
 // by the server Worker through /api/student/attempts/:id/media.
 export const media = Cloudflare.R2.Bucket("media", {});
 
+// Kho audio đề listening của thư viện (#413 phase 3) — private như bucket
+// media, KHÔNG forceDestroy: object audio là dữ liệu đề dùng chung, chỉ
+// server Worker đọc/ghi qua /api/admin/library/.../audio.
+export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
+
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
@@ -147,6 +152,7 @@ export const server = Cloudflare.Worker("server", {
 	env: {
 		DB: db,
 		MEDIA: media,
+		LIBRARY_AUDIO: libraryAudio,
 		CORS_ORIGIN: corsOriginConfig,
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,

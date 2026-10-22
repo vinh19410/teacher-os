@@ -32,7 +32,16 @@ const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
 const CORS_ORIGINS = [
 	`http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`,
 	`http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`,
+	// Console admin (plan #413) — CORS cho fetch từ app admin lẫn CSRF
+	// Origin guard của /api/admin.
+	`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
 ];
+// Plan #413: allowlist email admin của e2e — phase 7 đăng ký account admin
+// qua /api/auth từ origin 8004 với email nằm trong danh sách này.
+const ADMIN_EMAILS = (process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local")
+	.split(",")
+	.map((s) => s.trim())
+	.filter((s) => s.length > 0);
 // Portal origin is the role-classification student origin (plan #260,
 // red-team #7): requests carrying it classify as student instead of
 // failing the better-auth origin check.
@@ -97,6 +106,10 @@ const auth = createAuth({
 	db: libsql,
 	corsOrigin: CORS_ORIGINS,
 	studentOrigins: [STUDENT_ORIGIN],
+	// Plan #413: đăng ký account admin từ origin console với email trong
+	// allowlist (phase 7 dùng để sign-up admin thật).
+	adminOrigins: [`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`],
+	adminEmails: ADMIN_EMAILS,
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",
@@ -109,6 +122,13 @@ const auth = createAuth({
 const MEDIA_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-media-"));
 const mediaStore = createFsMediaStore(MEDIA_DIR);
 
+// Kho audio thư viện đề (#413 phase 3) — thư mục tạm RIÊNG để xoá sạch
+// không đụng media bài nói; cùng adapter FS.
+const LIBRARY_AUDIO_DIR = mkdtempSync(
+	join(tmpdir(), "teacher-os-e2e-library-audio-"),
+);
+const libraryAudioStore = createFsMediaStore(LIBRARY_AUDIO_DIR);
+
 // Fake Bank Hub (#320): hosted-link pages + client stub cho E2E.
 const fakeBankHub = createFakeBankHub({
 	origin: `http://localhost:${PORT}`,
@@ -120,6 +140,11 @@ const app = buildApp({
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
+	getLibraryAudioStore: () => libraryAudioStore,
+	adminEmails: ADMIN_EMAILS,
+	adminOrigins: [
+		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
+	],
 	getBankHub: () => fakeBankHub.hub,
 });
 
@@ -141,6 +166,7 @@ const server = serve(
 const shutdown = () =>
 	server.close(() => {
 		rmSync(MEDIA_DIR, { recursive: true, force: true });
+		rmSync(LIBRARY_AUDIO_DIR, { recursive: true, force: true });
 		process.exit(0);
 	});
 process.on("SIGTERM", shutdown);

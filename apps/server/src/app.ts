@@ -10,6 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
+import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
@@ -61,6 +62,23 @@ export interface AppDeps {
 	 * undefined) thì các route media trả 503.
 	 */
 	getMediaStore?(): MediaStore | undefined;
+	/**
+	 * Kho audio thư viện đề (#413 phase 3) — R2 ở production, đĩa ở e2e.
+	 * Vắng mặt → các route audio của /api/admin/library trả 503
+	 * LIBRARY_AUDIO_DISABLED, cùng hợp đồng với `getMediaStore`.
+	 */
+	getLibraryAudioStore?(): MediaStore | undefined;
+	/**
+	 * Plan #413: allowlist email admin (binding ADMIN_EMAILS đã parse; so
+	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
+	 */
+	adminEmails?: string[];
+	/**
+	 * Plan #413: origin của console admin dùng cho CSRF /api/admin — cố ý
+	 * tách khỏi `corsOrigin` (gồm cả origin teacher/student). Rỗng → mọi
+	 * write /api/admin bị 403 (fail-closed).
+	 */
+	adminOrigins?: string | string[];
 	/**
 	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
 	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
@@ -251,10 +269,22 @@ export function buildApp(deps: AppDeps) {
 	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
 	// guard tự gắn trong router như practice.
 	app.route("/api/student", studentHistoryRoutes(deps));
-	// Plan #413 phase 1: mount point cho admin console — router rỗng placeholder
-	// (routes thật ở phase 3); bootstrapMiddleware bypass /api/admin như
-	// /api/student nên không session teacher nào bootstrap org qua đường này.
-	app.route("/api/admin", new Hono<{ Variables: { kernelCtx: KernelCtx } }>());
+	// Plan #413 phase 3: router thật của thư viện đề — requireAdmin +
+	// CSRF Origin(adminOrigins) tự gắn trong router; bootstrapMiddleware vẫn
+	// bypass /api/admin nên không session teacher nào bootstrap org qua
+	// đường này. Mount tại /api/admin/library; các nhánh admin khác (phase
+	// sau) mount song song cùng guard.
+	app.route(
+		"/api/admin/library",
+		adminLibraryRoutes({
+			getDb: deps.getDb,
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
+			adminOrigins: deps.adminOrigins ?? [],
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			runInBackground: deps.runInBackground,
+		}),
+	);
 	app.route("/api", kernelRoutes(deps));
 
 	return app;
