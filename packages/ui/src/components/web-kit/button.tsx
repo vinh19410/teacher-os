@@ -1,5 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { cn } from "@teacher-os/ui/lib/utils";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 
 /**
  * Variant v2 (design `Btn`): default|outline|secondary|ghost|destructive|link.

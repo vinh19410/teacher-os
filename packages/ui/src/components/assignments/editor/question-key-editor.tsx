@@ -1,10 +1,14 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
+import { Button } from "@teacher-os/ui/components/web-kit/button";
+import {
+	Field,
+	Input,
+	Textarea,
+} from "@teacher-os/ui/components/web-kit/field";
+import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
 import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@teacher-os/ui/lib/cloze";
 import { useEffect, useState } from "react";
-import { Button } from "@teacher-os/ui/components/web-kit/button";
-import { Field, Input, Textarea } from "@teacher-os/ui/components/web-kit/field";
-import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,

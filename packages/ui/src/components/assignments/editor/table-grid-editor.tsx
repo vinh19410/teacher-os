@@ -1,3 +1,5 @@
+import { Button } from "@teacher-os/ui/components/web-kit/button";
+import { Input } from "@teacher-os/ui/components/web-kit/field";
 import {
 	addTableCol,
 	addTableRow,
@@ -12,10 +14,8 @@ import {
 	updateTableBlank,
 	updateTableCell,
 } from "@teacher-os/ui/lib/cloze";
-import { useState } from "react";
-import { Button } from "@teacher-os/ui/components/web-kit/button";
-import { Input } from "@teacher-os/ui/components/web-kit/field";
 import { cn } from "@teacher-os/ui/lib/utils";
+import { useState } from "react";
 import type { QuestionItem } from "./assignment-presets";
 import { hasItemContent } from "./cloze-editor";
 

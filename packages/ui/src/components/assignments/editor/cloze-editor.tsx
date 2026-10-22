@@ -1,3 +1,5 @@
+import { Button } from "@teacher-os/ui/components/web-kit/button";
+import { Input, Textarea } from "@teacher-os/ui/components/web-kit/field";
 import {
 	buildClozeSegments,
 	CLOZE_MAX_BLANKS,
@@ -10,10 +12,8 @@ import {
 	segmentsToItems,
 	tokenizePassage,
 } from "@teacher-os/ui/lib/cloze";
-import { memo, useCallback, useMemo, useRef, useState } from "react";
-import { Button } from "@teacher-os/ui/components/web-kit/button";
-import { Input, Textarea } from "@teacher-os/ui/components/web-kit/field";
 import { cn } from "@teacher-os/ui/lib/utils";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type { QuestionItem } from "./assignment-presets";
 
 /**

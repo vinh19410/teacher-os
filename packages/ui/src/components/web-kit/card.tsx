@@ -1,5 +1,5 @@
-import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@teacher-os/ui/lib/utils";
+import type { HTMLAttributes, ReactNode } from "react";
 
 /**
  * Card v2 (design `Card`): khối phẳng border + shadow nhẹ trên nền card.

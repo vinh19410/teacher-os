@@ -1,9 +1,9 @@
+import { cn } from "@teacher-os/ui/lib/utils";
 import Placeholder from "@tiptap/extension-placeholder";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, Link, List, ListOrdered, Underline } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
-import { cn } from "@teacher-os/ui/lib/utils";
 
 type ToolbarAction = {
 	label: string;
