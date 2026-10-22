@@ -592,6 +592,42 @@ export function isAssignmentImageUrl(value: string): boolean {
 }
 
 /**
+ * Một câu hỏi trong đề reading/listening — tách riêng để thư viện đề
+ * (library-contracts) tái dùng nguyên văn, không nhân bản (#413). Field
+ * giữ nguyên thứ tự và shape cũ; schema này là MỘT nguồn sự thật cho cả
+ * assignment_prompt lẫn library_test_part.
+ */
+export const assignmentQuestionSchema = z
+	.object({
+		stem: z.string().trim().max(500),
+		opts: z.array(z.string().max(500)).max(6).nullish(),
+		answer: z.string().trim().max(200),
+		alts: z.string().max(500).default(""),
+		/**
+		 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
+		 * prompt). Optional — câu không khai type nhận fallback
+		 * `prompt.type` khi server dựng payload student, đề cũ
+		 * không cần migration.
+		 */
+		type: z.string().trim().min(1).max(20).nullish(),
+		/**
+		 * Phase-04 FR1 — label pin on the prompt image, percents of
+		 * the image box (0–100, center of the pin). Nullish for
+		 * non-image types and legacy image rows. `.strict()` on the
+		 * inner object ON PURPOSE (red-team #2/#12): the old strip
+		 * mode silently dropped unknown fields — a typo'd field or
+		 * a drifted client now 400s instead of vanishing data.
+		 */
+		pin: z
+			.object({
+				x: z.number().min(0).max(100),
+				y: z.number().min(0).max(100),
+			})
+			.nullish(),
+	})
+	.strict();
+
+/**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
@@ -615,39 +651,7 @@ const assignmentPromptBaseSchema = z
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
 		imageUrl: z.string().trim().max(500).default(""),
-		questions: z
-			.array(
-				z
-					.object({
-						stem: z.string().trim().max(500),
-						opts: z.array(z.string().max(500)).max(6).nullish(),
-						answer: z.string().trim().max(200),
-						alts: z.string().max(500).default(""),
-						/**
-						 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
-						 * prompt). Optional — câu không khai type nhận fallback
-						 * `prompt.type` khi server dựng payload student, đề cũ
-						 * không cần migration.
-						 */
-						type: z.string().trim().min(1).max(20).nullish(),
-						/**
-						 * Phase-04 FR1 — label pin on the prompt image, percents of
-						 * the image box (0–100, center of the pin). Nullish for
-						 * non-image types and legacy image rows. `.strict()` on the
-						 * inner object ON PURPOSE (red-team #2/#12): the old strip
-						 * mode silently dropped unknown fields — a typo'd field or
-						 * a drifted client now 400s instead of vanishing data.
-						 */
-						pin: z
-							.object({
-								x: z.number().min(0).max(100),
-								y: z.number().min(0).max(100),
-							})
-							.nullish(),
-					})
-					.strict(),
-			)
-			.max(40),
+		questions: z.array(assignmentQuestionSchema).max(40),
 		/**
 		 * Phase-02 FR2 — structured option bank for the bankable matching
 		 * pairs (`ASSIGNMENT_OPTION_BANK_TYPES`). Every item must be 1–200

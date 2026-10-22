@@ -302,6 +302,13 @@
       "when": 1792589043473,
       "tag": "0042_syllabus_class_pointer_reconcile",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1792643499781,
+      "tag": "0043_rainy_edwin_jarvis",
+      "breakpoints": true
     }
   ]
 }
