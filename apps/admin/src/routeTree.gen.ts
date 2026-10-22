@@ -15,7 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
-import { Route as AuthLibraryTestsRouteImport } from './routes/_auth/library/tests'
+import { Route as AuthLibraryTestsIndexRouteImport } from './routes/_auth/library/tests/index'
+import { Route as AuthLibraryTestsTestIdRouteImport } from './routes/_auth/library/tests/$testId'
+import { Route as AuthLibraryTestsNewRouteImport } from './routes/_auth/library/tests/new'
 
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
@@ -46,9 +48,19 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthLibraryTestsRoute = AuthLibraryTestsRouteImport.update({
-  id: '/library/tests',
-  path: '/library/tests',
+const AuthLibraryTestsIndexRoute = AuthLibraryTestsIndexRouteImport.update({
+  id: '/library/tests/',
+  path: '/library/tests/',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthLibraryTestsTestIdRoute = AuthLibraryTestsTestIdRouteImport.update({
+  id: '/library/tests/$testId',
+  path: '/library/tests/$testId',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthLibraryTestsNewRoute = AuthLibraryTestsNewRouteImport.update({
+  id: '/library/tests/new',
+  path: '/library/tests/new',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 
@@ -58,7 +70,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/library/tests': typeof AuthLibraryTestsRoute
+  '/library/tests/$testId': typeof AuthLibraryTestsTestIdRoute
+  '/library/tests/new': typeof AuthLibraryTestsNewRoute
+  '/library/tests/': typeof AuthLibraryTestsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -66,7 +80,9 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/': typeof AuthIndexRoute
-  '/library/tests': typeof AuthLibraryTestsRoute
+  '/library/tests/$testId': typeof AuthLibraryTestsTestIdRoute
+  '/library/tests/new': typeof AuthLibraryTestsNewRoute
+  '/library/tests': typeof AuthLibraryTestsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -76,7 +92,9 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_auth/': typeof AuthIndexRoute
-  '/_auth/library/tests': typeof AuthLibraryTestsRoute
+  '/_auth/library/tests/$testId': typeof AuthLibraryTestsTestIdRoute
+  '/_auth/library/tests/new': typeof AuthLibraryTestsNewRoute
+  '/_auth/library/tests/': typeof AuthLibraryTestsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -86,7 +104,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/library/tests'
+    | '/library/tests/$testId'
+    | '/library/tests/new'
+    | '/library/tests/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -94,6 +114,8 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/'
+    | '/library/tests/$testId'
+    | '/library/tests/new'
     | '/library/tests'
   id:
     | '__root__'
@@ -103,7 +125,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/_auth/'
-    | '/_auth/library/tests'
+    | '/_auth/library/tests/$testId'
+    | '/_auth/library/tests/new'
+    | '/_auth/library/tests/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,11 +182,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/library/tests': {
-      id: '/_auth/library/tests'
+    '/_auth/library/tests/': {
+      id: '/_auth/library/tests/'
       path: '/library/tests'
-      fullPath: '/library/tests'
-      preLoaderRoute: typeof AuthLibraryTestsRouteImport
+      fullPath: '/library/tests/'
+      preLoaderRoute: typeof AuthLibraryTestsIndexRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/library/tests/$testId': {
+      id: '/_auth/library/tests/$testId'
+      path: '/library/tests/$testId'
+      fullPath: '/library/tests/$testId'
+      preLoaderRoute: typeof AuthLibraryTestsTestIdRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/library/tests/new': {
+      id: '/_auth/library/tests/new'
+      path: '/library/tests/new'
+      fullPath: '/library/tests/new'
+      preLoaderRoute: typeof AuthLibraryTestsNewRouteImport
       parentRoute: typeof AuthRouteRoute
     }
   }
@@ -170,12 +208,16 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
-  AuthLibraryTestsRoute: typeof AuthLibraryTestsRoute
+  AuthLibraryTestsTestIdRoute: typeof AuthLibraryTestsTestIdRoute
+  AuthLibraryTestsNewRoute: typeof AuthLibraryTestsNewRoute
+  AuthLibraryTestsIndexRoute: typeof AuthLibraryTestsIndexRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
-  AuthLibraryTestsRoute: AuthLibraryTestsRoute,
+  AuthLibraryTestsTestIdRoute: AuthLibraryTestsTestIdRoute,
+  AuthLibraryTestsNewRoute: AuthLibraryTestsNewRoute,
+  AuthLibraryTestsIndexRoute: AuthLibraryTestsIndexRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
