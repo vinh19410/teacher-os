@@ -657,6 +657,8 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			return c.json({ error: "audio upload failed" }, 500);
 		}
 		if (oldKey !== null) {
+			// Xoá key cũ chỉ chạy nền: fail (R2 lỗi) → orphan R2 chấp nhận được
+			// (được log ở inBackground); row đã trỏ key mới nên audio vẫn phát đúng.
 			inBackground("delete old audio object", () => store.delete(oldKey));
 		}
 		return c.json({
