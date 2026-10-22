@@ -143,6 +143,29 @@ describe("partReadyIssues (canSave = validatePartForReady)", () => {
 		expect(issues.map((issue) => issue.path)).toContain("audio");
 	});
 
+	it("listening có audio từ saved → không còn lý do audio", () => {
+		const listeningVal = {
+			...emptyPartValue("listening", "s1"),
+			questions: [
+				{
+					stem: "Question 1",
+					opts: null,
+					answer: "answer",
+					alts: "",
+					points: 1,
+					order: 1,
+				},
+			],
+		};
+		const issues = partReadyIssues(
+			"listening",
+			"s1",
+			listeningVal,
+			"track1.mp3",
+		);
+		expect(issues.map((issue) => issue.path)).not.toContain("audio");
+	});
+
 	it("đề đạt đủ (passage + câu có stem) → rỗng", () => {
 		const ok = {
 			...partValueFromDto(partDto),

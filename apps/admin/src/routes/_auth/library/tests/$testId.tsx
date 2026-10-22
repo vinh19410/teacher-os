@@ -107,11 +107,11 @@ function EditTestRoute() {
 			if (!built.ok) throw new Error("invalid");
 			return updateLibraryTest(testId, built.payload);
 		},
-		onSuccess: () => {
+		onSuccess: (updated) => {
 			toast.success("Đã lưu thông tin bộ đề.");
-			void queryClient.invalidateQueries({
-				queryKey: ["admin", "library", "test", testId],
-			});
+			headerDirtyRef.current = false;
+			setHeaderValue(headerFromDetail(updated));
+			void refresh();
 		},
 		onError: (error) => {
 			if (error instanceof Error && error.message === "invalid") return;
@@ -206,6 +206,12 @@ function EditTestRoute() {
 				slots.find((entry) => entry.part === variables.slot)?.label ??
 				variables.slot;
 			toast.success(`Đã lưu ${label}.`);
+			setDrafts((previous) => {
+				if (!previous.has(variables.slot)) return previous;
+				const next = new Map(previous);
+				next.delete(variables.slot);
+				return next;
+			});
 			await refresh();
 		},
 		onError: (error) => {
@@ -257,20 +263,28 @@ function EditTestRoute() {
 		if (!skill) return [];
 		const parts: LibraryPartInput[] = [];
 		for (const slot of slots) {
+			const saved = partsBySlot.get(slot.part);
 			const draft = drafts.get(slot.part);
 			if (draft?.dirty) {
 				const built = partInputFromValue(slot.part, draft.value);
 				// Draft hỏng schema: vẫn hiển thị qua lý do ở form part;
 				// ở đây dùng bản đã lưu (nếu có) để không mất lý do khác.
 				if (built.ok) {
+					if (saved?.audio?.name) {
+						built.input.audioName = saved.audio.name;
+					}
 					parts.push(built.input);
 					continue;
 				}
 			}
-			const saved = partsBySlot.get(slot.part);
 			if (saved) {
 				const built = partInputFromValue(slot.part, partValueFromDto(saved));
-				if (built.ok) parts.push(built.input);
+				if (built.ok) {
+					if (saved.audio?.name) {
+						built.input.audioName = saved.audio.name;
+					}
+					parts.push(built.input);
+				}
 			}
 		}
 		return parts;
@@ -441,7 +455,17 @@ function EditTestRoute() {
 							onSave={(input) =>
 								savePartMutation.mutateAsync({ slot: currentSlot, input })
 							}
-							onAudioChanged={() => void refresh()}
+							onAudioChanged={() => {
+								setDrafts((previous) => {
+									if (currentSlot === null) return previous;
+									const current = previous.get(currentSlot);
+									if (!current || current.dirty) return previous;
+									const next = new Map(previous);
+									next.delete(currentSlot);
+									return next;
+								});
+								void refresh();
+							}}
 							onDelete={() => deletePartMutation.mutate(currentSlot)}
 							deleting={deletePartMutation.isPending}
 						/>

@@ -210,6 +210,7 @@ export function partReadyIssues(
 	skill: LibrarySkill,
 	slot: string,
 	value: PartFormValue,
+	savedAudioName?: string,
 ): LibraryPartIssue[] {
 	const draftTitle = value.title.trim() || "(chưa đặt tiêu đề part)";
 	const parsed = libraryPartUpsertSchema.safeParse({
@@ -225,6 +226,7 @@ export function partReadyIssues(
 		questions: value.questions,
 		optionBank: value.optionBank,
 		note: value.note,
+		audioName: savedAudioName ?? "",
 	});
 	if (!parsed.success) {
 		return parsed.error.issues.map((issue) => ({
@@ -296,7 +298,9 @@ export function PartForm({
 	const isListening = skill === "listening";
 	const isImage = isImageBasedType(skill, value.type);
 	const issues =
-		showErrors || testReady ? partReadyIssues(skill, slot, value) : [];
+		showErrors || testReady
+			? partReadyIssues(skill, slot, value, saved?.audio?.name)
+			: [];
 	const errorFor = (field: string): string | undefined =>
 		showErrors
 			? issues.find((issue) => issue.path === field)?.message

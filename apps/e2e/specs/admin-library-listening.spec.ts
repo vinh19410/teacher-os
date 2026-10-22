@@ -61,14 +61,7 @@ async function backToListAndFindRow(page: Page, title: string) {
 	await page.getByRole("link", { name: "← Thư viện đề" }).click();
 	await expect(page).toHaveURL(/\/library\/tests$/);
 	const row = page.getByRole("row", { name: title });
-	// Admin query-client giữ cache list (staleTime dài) — reload để refetch
-	// trạng thái mới nhất (title/part sau khi sửa ở trang edit).
-	for (let i = 0; i < 3 && !(await row.isVisible()); i++) {
-		await page.reload();
-		await page
-			.getByRole("heading", { name: "Thư viện đề" })
-			.waitFor({ timeout: 30_000 });
-	}
+	await expect(row).toBeVisible();
 	return row;
 }
 
