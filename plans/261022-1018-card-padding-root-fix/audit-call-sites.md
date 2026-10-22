@@ -7,7 +7,7 @@ consumer), adjudicate lại tập trung (đặc biệt: card mở đầu bằng 
 
 ## Kết luận
 
-- **7 thay đổi** tại 5 file — tất cả là class layout (guard kongming: chỉ layout, mỗi edit ghi căn cứ):
+- **6 call site được sửa** (8 thao tác edit) tại 5 file — tất cả là class layout (guard kongming: chỉ layout, mỗi edit ghi căn cứ):
   1. `routes/_auth/assignments/$assignmentId.tsx:61` — thêm `flex-row` (rule ADD_FLEXCOL: truyền `flex`
      không có hướng tường minh; chủ ý header ngang `items-center flex-wrap`, `flex-1` của title chỉ có
      nghĩa trong hàng; pin hướng sau khi Card bỏ `flex-col` mặc định).
