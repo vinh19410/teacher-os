@@ -10,6 +10,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
 import { redactResetToken } from "./log-redaction";
+import { createAdminMeRoutes } from "./lib/require-admin";
 import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
@@ -283,6 +284,16 @@ export function buildApp(deps: AppDeps) {
 			adminOrigins: deps.adminOrigins ?? [],
 			getLibraryAudioStore: deps.getLibraryAudioStore,
 			runInBackground: deps.runInBackground,
+		}),
+	);
+	// Plan #413: GET /api/admin/me — identity admin sau gate, guard _auth của
+	// console (apps/admin/src/routes/_auth/route.tsx) dùng để quyết shell hay
+	// redirect /login?error=<mã gate>.
+	app.route(
+		"/api/admin",
+		createAdminMeRoutes({
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
 		}),
 	);
 	app.route("/api", kernelRoutes(deps));

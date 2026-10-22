@@ -1,5 +1,5 @@
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
-import type { Context } from "hono";
+import { type Context, Hono } from "hono";
 import type { SessionUser } from "../session";
 
 /** Env của router admin (phase 3 sẽ mở rộng Variables khi cần). */
@@ -47,4 +47,24 @@ export function createRequireAdmin(
 		}
 		return next();
 	};
+}
+
+/**
+ * `GET /api/admin/me` (plan #413): identity tối thiểu `{email, name}` sau
+ * khi đã qua admin gate — guard `_auth` của console dùng nó để quyết định
+ * cho vào shell hay đẩy về `/login?error=<mã gate>`. Gate dùng chung
+ * `createRequireAdmin` nên 401/403 mang đúng shape mà `lib/auth-error.ts`
+ * của apps/admin map (`ACCOUNT_NOT_ADMIN`…).
+ */
+export function createAdminMeRoutes(deps: RequireAdminDeps) {
+	const router = new Hono<AdminEnv>();
+	router.use("*", createRequireAdmin(deps));
+	router.get("/me", async (c) => {
+		const session = await deps.getSessionUser(c.req.raw.headers);
+		return c.json({
+			email: session?.email ?? "",
+			name: session?.userName ?? "",
+		});
+	});
+	return router;
 }

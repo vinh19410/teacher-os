@@ -129,7 +129,11 @@ async function libraryRequest<T>(
 /** Danh sách đề, sắp `updatedAt` giảm dần phía server. */
 export async function listLibraryTests(): Promise<LibraryTestListItem[]> {
 	const data = await libraryRequest<unknown>(TESTS_PATH);
-	return z.array(libraryTestListItemSchema).parse(data);
+	// Server trả `{tests: [...]}` (route admin-library.ts), không phải array.
+	const parsed = z
+		.object({ tests: z.array(libraryTestListItemSchema) })
+		.parse(data);
+	return parsed.tests;
 }
 
 export async function getLibraryTest(

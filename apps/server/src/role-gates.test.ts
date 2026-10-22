@@ -286,8 +286,10 @@ describe("api role gates", () => {
 	});
 
 	test("/api/admin được bootstrap bỏ qua như /api/student (mount point phase 3)", async () => {
-		// Router admin là placeholder rỗng ở phase này — mọi path /api/admin/*
-		// trả 404 của router, KHÔNG bootstrap org/membership.
+		// Router admin tự gắn requireAdmin: path lạ vẫn bị gate chặn 403
+		// (session phase này chưa verify email → ACCOUNT_NOT_ADMIN) và
+		// KHÔNG bootstrap org/membership. GET /api/admin/me là endpoint thật
+		// duy nhất ở mount này (identity sau gate).
 		const token = await signUp({
 			origin: ADMIN_ORIGIN,
 			email: ADMIN_EMAILS[3],
@@ -299,7 +301,9 @@ describe("api role gates", () => {
 				cookie: `better-auth.session_token=${token}`,
 			},
 		});
-		expect(res.status).toBe(404);
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { code?: string };
+		expect(body.code).toBe(ACCOUNT_ERROR_CODES.NOT_ADMIN);
 		expect(await countRows(schema.organization)).toBe(orgsBefore);
 	});
 });
