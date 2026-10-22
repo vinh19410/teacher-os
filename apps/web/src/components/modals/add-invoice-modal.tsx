@@ -176,7 +176,7 @@ export function AddInvoiceModal({
 						placeholder="Ghi chú cho hóa đơn (tùy chọn)"
 					/>
 				</Field>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-destructive text-xs">
 							{error}

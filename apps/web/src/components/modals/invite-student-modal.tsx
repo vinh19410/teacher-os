@@ -83,11 +83,7 @@ export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 				</div>
 			}
 		>
-			<form
-				id="invite-student-form"
-				onSubmit={handleSubmit}
-				className="flex flex-col gap-4 py-2"
-			>
+			<form id="invite-student-form" onSubmit={handleSubmit} className="py-2">
 				<p className="text-muted-foreground text-sm">
 					Nhập địa chỉ email của học viên. Học viên sẽ nhận được thông báo tại
 					icon chuông trên Student Portal để chấp nhận vào lớp học của bạn.

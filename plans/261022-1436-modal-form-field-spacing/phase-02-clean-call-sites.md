@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Dọn call site: wrapper rỗng, margin thừa, class trùng"
-status: pending
+status: completed
 priority: P1
 effort: "45m"
 dependencies: [1]
@@ -13,16 +13,18 @@ dependencies: [1]
 
 Không còn khoảng trống kép sau khi form thành flex container.
 
-## Files (tất cả trong `apps/web/src/components/modals/`)
+## Files
 
 - Wrapper trạng thái `<div className="flex flex-col gap-2">` chứa `{error && …}{notice && …}` → thêm
-  `empty:hidden`: `add-class-modal.tsx:377`, `add-invoice-modal.tsx:179`, `add-module-modal.tsx:74`,
-  `add-lesson-modal.tsx:133`, `add-syllabus-modal.tsx:237`, `edit-class-fee-modal.tsx:69`,
-  `edit-lesson-modal.tsx:135`, `enroll-student-modal.tsx:122`, `edit-module-modal.tsx:78`.
-- Bỏ `mb-3`: `grade-modal.tsx:230`, `create-report-modal.tsx:121`.
+  `empty:hidden`: `add-class-modal.tsx`, `add-invoice-modal.tsx`, `add-module-modal.tsx`,
+  `add-lesson-modal.tsx`, `add-syllabus-modal.tsx`, `edit-class-fee-modal.tsx`,
+  `edit-lesson-modal.tsx`, `enroll-student-modal.tsx`, `edit-module-modal.tsx`.
+- Bỏ `mb-3`: `grade-modal.tsx:230`, `create-report-modal.tsx:121`, `lesson-modal.tsx:95`.
 - Xoá class layout thừa trên form: `edit-class-fee-modal.tsx:61` (`flex flex-col gap-5` → bỏ),
   `invite-student-modal.tsx:86` (`flex flex-col gap-4 py-2` → `py-2`).
-
+- `TemplatePicker` (`apps/web/src/components/syllabus/template-picker.tsx`): bọc toàn bộ trong `<div className="flex flex-col">`, đặt `mt-2` lên preview bên trong khi được chọn. Không dùng `empty:hidden` trên `aria-live`.
+- `LessonEditForm` (`apps/web/src/components/schedule/lesson-edit-form.tsx`): `<form className="flex flex-col gap-4">`, bỏ wrapper `div.mt-3`, `mt-3`, `mt-4`.
+- `KernelSubmitNotice` (`apps/web/src/components/modals/kernel-submit-notice.tsx`): bỏ `mb-3` cố định trên cả 3 nhánh; bù lại `mb-3`/`mb-2` tại `test-builder-shell.tsx:719` và `assignments/new.tsx:497`.
 ## Steps
 
 1. Grep lại trước khi sửa (số dòng có thể lệch):

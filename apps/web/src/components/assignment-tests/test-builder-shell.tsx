@@ -720,6 +720,7 @@ export function TestBuilderShell({
 							notice={submit.notice}
 							onReconcile={() => void handleReconcile()}
 							disabled={submit.saving}
+							className="mb-3"
 						/>
 					)}
 					{submit.error && (

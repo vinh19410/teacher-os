@@ -11,7 +11,13 @@ export interface ModalProps {
 
 const FOCUSABLE =
 	'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-
+/**
+ * Modal dialog component.
+ *
+ * Lưu ý về layout: Thân modal áp dụng `[&>form]:flex [&>form]:flex-col [&>form]:gap-4`
+ * cho thẻ `<form>` là con trực tiếp (kể cả qua React Fragment), để các field
+ * bên trong form tự động nhận khoảng cách 14px (gap-4 = 1rem, cỡ chữ gốc 14px) như các con trực tiếp khác.
+ */
 export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 	const overlayRef = useRef<HTMLDivElement>(null);
 	const modalRef = useRef<HTMLDivElement>(null);
@@ -89,7 +95,10 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 						<X />
 					</button>
 				</div>
-				<div className="flex flex-col gap-4 p-6">{children}</div>
+				{/* Form con trực tiếp là một flex item duy nhất nên phải nhận lại nhịp gap của body */}
+				<div className="flex flex-col gap-4 p-6 [&>form]:flex [&>form]:flex-col [&>form]:gap-4">
+					{children}
+				</div>
 				{footer && (
 					<div className="flex justify-end gap-2 px-6 pb-6">{footer}</div>
 				)}
