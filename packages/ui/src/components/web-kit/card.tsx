@@ -3,8 +3,14 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 /**
  * Card v2 (design `Card`): khối phẳng border + shadow nhẹ trên nền card.
+ * Hợp đồng: Card tự lo padding 24px (`p-6`) và là block flow — con tự quản
+ * khoảng cách dọc bằng `mt-*`/`mb-*`/`space-y-*` của mình; call site cần xếp
+ * cột có khoảng cách đều thì truyền `flex flex-col gap-*` vào className.
+ * Không có CardHeader/CardContent như shadcn (những sub-component đó nhận
+ * `px-6` — dùng sẽ mất padding vì Card không sinh padding hộ).
  * `variant` giữ lại cho call site cũ ("white" từng là card nền trang) —
- * ở v2 mọi card cùng một lớp nền nên variant không còn khác biệt.
+ * ở v2 mọi card cùng một lớp nền nên variant không còn khác biệt (no-op,
+ * được khoá bởi card.test.tsx).
  */
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 	variant?: "default" | "white";
@@ -20,7 +26,7 @@ export function Card({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+				"rounded-xl border bg-card p-6 text-card-foreground shadow-sm",
 				className,
 			)}
 			{...props}

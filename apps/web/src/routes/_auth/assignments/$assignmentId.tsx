@@ -58,7 +58,7 @@ function AssignmentDetailRoute() {
 
 	return (
 		<div>
-			<Card className="mb-5 flex flex-wrap items-center gap-4">
+			<Card className="mb-5 flex flex-row flex-wrap items-center gap-4">
 				<Avatar text={student?.avatar ?? "?"} size="lg" />
 				<div className="min-w-[200px] flex-1">
 					<h1 className="font-semibold text-2xl tracking-tight">
