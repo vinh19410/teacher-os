@@ -1079,7 +1079,7 @@ export function kernelRoutes(deps: {
 		);
 	});
 
-	// Issue #60 — creation is non-idempotent, consistent with POST /syllabi.
+	// Issue #60 — creation is non-idempotent, consistent with POST /api/syllabus-templates.
 	kernel.post("/invoices", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);

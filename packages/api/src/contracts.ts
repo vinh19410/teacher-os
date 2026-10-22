@@ -1130,7 +1130,7 @@ export type InvoiceMarkPaid = z.infer<typeof invoiceMarkPaidSchema>;
  * same precedent as `moveDate`) because the regex alone accepts 2026-02-30.
  * `amount` is integer VND and must be positive — unlike package `price`
  * (min 0), an invoice is a concrete amount due. Creation is non-idempotent,
- * consistent with POST /syllabi.
+ * consistent with POST /api/syllabus-templates.
  */
 export const invoiceCreateSchema = z
 	.object({

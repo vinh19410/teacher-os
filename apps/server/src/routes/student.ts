@@ -360,7 +360,7 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 				return c.json({ error: "content-type must be application/json" }, 415);
 			}
 			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
-			// Content-Length không lọt) — precedent kernel.ts /syllabi.
+			// Content-Length không lọt) — precedent POST /api/syllabus-templates (syllabus.ts).
 			return bodyLimit({
 				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
 				onError: (bc) => bc.json({ error: "payload too large" }, 413),
