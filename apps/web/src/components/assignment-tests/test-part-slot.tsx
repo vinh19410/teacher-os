@@ -43,7 +43,7 @@ export function TestPartSlot({
 		return (
 			<Card
 				variant="white"
-				className="flex flex-wrap items-center justify-between gap-3 border-dashed py-4"
+				className="flex flex-row flex-wrap items-center justify-between gap-3 border-dashed py-4"
 			>
 				<div className="flex items-start gap-3">
 					<span
