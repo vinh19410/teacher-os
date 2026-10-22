@@ -86,23 +86,23 @@ describe("library test migration (plan #413 phase 2)", () => {
 
 		// Default cột: status draft, time 3600, questions/optionBank '[]'.
 		const test = await client.execute("SELECT * FROM library_test WHERE id = 't1'");
-		expect(test.rows[0].status).toBe("draft");
-		expect(Number(test.rows[0].time_limit_seconds)).toBe(3600);
+		expect(test.rows[0]?.status).toBe("draft");
+		expect(Number(test.rows[0]?.time_limit_seconds)).toBe(3600);
 
 		const part = await client.execute(
 			"SELECT * FROM library_test_part WHERE id = 'p1'",
 		);
-		expect(part.rows[0].questions).toBe('[{"stem":"q"}]');
-		expect(part.rows[0].option_bank).toBe("[]");
-		expect(part.rows[0].audio_key).toBeNull();
-		expect(part.rows[0].audio_uploaded_at).toBeNull();
+		expect(part.rows[0]?.questions).toBe('[{"stem":"q"}]');
+		expect(part.rows[0]?.option_bank).toBe("[]");
+		expect(part.rows[0]?.audio_key).toBeNull();
+		expect(part.rows[0]?.audio_uploaded_at).toBeNull();
 
 		// Cascade: xóa test kéo theo part.
 		await client.execute("DELETE FROM library_test WHERE id = 't1'");
 		const remaining = await client.execute(
 			"SELECT COUNT(*) AS n FROM library_test_part",
 		);
-		expect(Number(remaining.rows[0].n)).toBe(0);
+		expect(Number(remaining.rows[0]?.n)).toBe(0);
 	});
 
 	test("unique (test_id, part) chặn 2 part cùng slot", async () => {
@@ -129,7 +129,7 @@ describe("library test migration (plan #413 phase 2)", () => {
 		const rows = await client.execute(
 			"SELECT COUNT(*) AS n FROM library_test_part",
 		);
-		expect(Number(rows.rows[0].n)).toBe(2);
+		expect(Number(rows.rows[0]?.n)).toBe(2);
 	});
 
 	test("FK test_id chặn orphan; bảng cũ không bị đụng", async () => {
@@ -151,6 +151,6 @@ describe("library test migration (plan #413 phase 2)", () => {
 		const prompts = await client.execute(
 			"SELECT COUNT(*) AS n FROM assignment_prompt",
 		);
-		expect(Number(prompts.rows[0].n)).toBe(1);
+		expect(Number(prompts.rows[0]?.n)).toBe(1);
 	});
 });
