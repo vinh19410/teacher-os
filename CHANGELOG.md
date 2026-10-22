@@ -26,6 +26,9 @@ Quy ước khi cập nhật:
 ### Removed
 - Route alias syllabus từ #394: `GET/POST /api/syllabi`, `/api/syllabi/:id/{modules,replace-content,remove}`, `/api/classes/:id/{import-syllabus,remove-curriculum}` gỡ hẳn — chỉ còn route ngữ cảnh `/api/syllabus-templates/...` và `/api/classes/:id/curriculum/...` (phase 8, #401)
 
+### CI/Infra
+- Biome gate local hết tự mutate: `pnpm check` giờ là `biome check .` (read-only — không còn sửa file ngoài phạm vi khi chạy), autofix chủ động tách sang `pnpm check:fix`; exclude `plans/reports/**/*.html` (artifact report sinh tự động) khỏi biome + migrate `rules.recommended` → `rules.preset` (hết deprecation `biome.json`); format-only `apps/e2e/devserver-watchdog.mjs` (formatter error chặn gate read-only). CI quality (biome/test/check-types/build) bật thêm cho push + PR vào `develop` — develop không còn merge lúc gate đỏ im lặng; contract test khóa cấu trúc trigger `[main, develop]` + root check non-mutating; AGENTS.md đồng bộ (local gate vẫn là gate chính, remedy develop-đỏ-lỗi-format = `pnpm check:fix`) (#409)
+
 ### Docs
 - Dọn 3 comment còn trỏ route alias `/api/syllabi/...` đã gỡ (`contracts.ts` invoiceCreateSchema, `kernel.ts` POST /invoices, `student.ts` quizWriteGuard) sang route thay thế `POST /api/syllabus-templates`; comment quizWriteGuard trỏ precedent bodyLimit đúng file `syllabus.ts` (trước đó trỏ sai `kernel.ts`) (#406)
 
