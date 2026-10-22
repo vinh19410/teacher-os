@@ -4,12 +4,13 @@
 // Reading + 1 đề Listening qua API thật rồi chụp 4 trang chính ở 3 viewport
 // vào plans/reports/. Chạy: node scripts/admin-screenshots.mjs (sau khi
 // đã xuất 4 port env như bộ e2e).
-import { createClient } from "@libsql/client";
-import { chromium } from "@playwright/test";
+
 import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createClient } from "@libsql/client";
+import { chromium } from "@playwright/test";
 import { buildServices } from "../devserver-services.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -61,7 +62,12 @@ async function waitReady(url, timeoutMs) {
 
 async function main() {
 	mkdirSync(OUT_DIR, { recursive: true });
-	const ports = { api: API_PORT, web: WEB_PORT, student: STUDENT_PORT, admin: ADMIN_PORT };
+	const ports = {
+		api: API_PORT,
+		web: WEB_PORT,
+		student: STUDENT_PORT,
+		admin: ADMIN_PORT,
+	};
 	const services = Object.fromEntries(
 		buildServices(ports).map((svc) => [svc.name, svc]),
 	);
@@ -110,7 +116,9 @@ async function main() {
 	db.close();
 
 	const browser = await chromium.launch();
-	const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+	const context = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+	});
 	const page = await context.newPage();
 
 	// Đăng nhập admin qua form thật để có session cookie.
@@ -156,10 +164,7 @@ async function main() {
 		await page.setViewportSize({ width, height });
 		for (const [name, url] of targets) {
 			await page.goto(url);
-			await page
-				.getByRole("heading")
-				.first()
-				.waitFor({ timeout: 60_000 });
+			await page.getByRole("heading").first().waitFor({ timeout: 60_000 });
 			// Chờ network yên tĩnh (react-query refetch sau mount).
 			await page.waitForLoadState("networkidle").catch(() => {});
 			await page.screenshot({

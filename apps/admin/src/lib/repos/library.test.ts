@@ -87,7 +87,7 @@ const {
 
 describe("listLibraryTests", () => {
 	it("GET danh sách và zod parse từng item", async () => {
-		fetchMock.mockResolvedValue(jsonResponse(200, [listItem]));
+		fetchMock.mockResolvedValue(jsonResponse(200, { tests: [listItem] }));
 		const items = await listLibraryTests();
 		expect(items).toHaveLength(1);
 		expect(items[0]?.questionCount).toBe(13);
@@ -98,7 +98,7 @@ describe("listLibraryTests", () => {
 
 	it("response sai shape → zod lỗi, không trả dữ liệu bẩn", async () => {
 		fetchMock.mockResolvedValue(
-			jsonResponse(200, [{ ...listItem, questionCount: "13" }]),
+			jsonResponse(200, { tests: [{ ...listItem, questionCount: "13" }] }),
 		);
 		await expect(listLibraryTests()).rejects.toThrow();
 	});
