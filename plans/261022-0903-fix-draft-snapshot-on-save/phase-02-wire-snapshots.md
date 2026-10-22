@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Wire snapshot into PartForm and $testId route"
-status: pending
+status: done
 ---
 
 # Phase 2: Wire snapshot into PartForm and $testId route

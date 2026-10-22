@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Pure comparison & reconciliation helpers (TDD)"
-status: in_progress
+status: done
 ---
 
 # Phase 1: Pure comparison & reconciliation helpers (TDD)

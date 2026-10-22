@@ -123,7 +123,7 @@ export function partValueFromDto(dto: LibraryPartDto): PartFormValue {
 }
 
 /** Chuẩn hóa value về hình dạng cố định để so sánh dirty/JSON ổn định. */
-function canonicalValue(value: PartFormValue): string {
+function canonicalPartValue(value: PartFormValue): string {
 	return JSON.stringify({
 		type: value.type,
 		title: value.title,
@@ -139,6 +139,14 @@ function canonicalValue(value: PartFormValue): string {
 	});
 }
 
+/** So sánh canonical 2 bản PartFormValue theo toàn bộ nội dung. */
+export function arePartValuesEqual(
+	a: PartFormValue,
+	b: PartFormValue,
+): boolean {
+	return canonicalPartValue(a) === canonicalPartValue(b);
+}
+
 /** Dirty so với bản đã lưu (null = so với part rỗng của slot). */
 export function isPartDirty(
 	skill: LibrarySkill,
@@ -149,7 +157,33 @@ export function isPartDirty(
 	const baseline = saved
 		? partValueFromDto(saved)
 		: emptyPartValue(skill, slot);
-	return canonicalValue(baseline) !== canonicalValue(value);
+	return !arePartValuesEqual(baseline, value);
+}
+
+/**
+ * Reconcile map drafts khi save part thành công.
+ * - Nếu draft hiện tại khớp snapshot đã gửi: xóa draft để form remount theo bản server.
+ * - Nếu người dùng đã gõ thêm ký tự mới (khác snapshot): giữ lại draft với dirty=true
+ *   để không mất dữ liệu và useBlocker tiếp tục cảnh báo.
+ */
+export function reconcilePartDraftsOnSaveSuccess(
+	drafts: ReadonlyMap<string, { dirty: boolean; value: PartFormValue }>,
+	slot: string,
+	snapshot: PartFormValue,
+): ReadonlyMap<string, { dirty: boolean; value: PartFormValue }> {
+	const currentDraft = drafts.get(slot);
+	if (!currentDraft) return drafts;
+	if (arePartValuesEqual(currentDraft.value, snapshot)) {
+		const next = new Map(drafts);
+		next.delete(slot);
+		return next;
+	}
+	if (!currentDraft.dirty) {
+		const next = new Map(drafts);
+		next.set(slot, { ...currentDraft, dirty: true });
+		return next;
+	}
+	return drafts;
 }
 
 export type BuiltPartPayload =
@@ -270,7 +304,10 @@ export function PartForm({
 		slot: string,
 		draft: { dirty: boolean; value: PartFormValue },
 	) => void;
-	onSave: (input: LibraryPartInput) => Promise<unknown>;
+	onSave: (
+		input: LibraryPartInput,
+		snapshot: PartFormValue,
+	) => Promise<unknown>;
 	/** Sau khi audio upload/xóa thành công — parent refetch detail. */
 	onAudioChanged: () => void;
 	onDelete: () => void;
@@ -317,7 +354,7 @@ export function PartForm({
 			return;
 		}
 		try {
-			await onSave(built.input);
+			await onSave(built.input, value);
 			setShowErrors(false);
 			setLive("Đã lưu part.");
 		} catch {

@@ -23,13 +23,16 @@ import {
 	type PartFormValue,
 	partInputFromValue,
 	partValueFromDto,
+	reconcilePartDraftsOnSaveSuccess,
 } from "@/components/library/part-form";
 import { formatIssue } from "@/components/library/part-issues";
 import { PartTabs } from "@/components/library/part-tabs";
 import { PublishBar } from "@/components/library/publish-bar";
 import {
+	areTestHeadersEqual,
 	buildUpdatePayload,
 	formatTimeLimit,
+	reconcileHeaderOnSaveSuccess,
 	TestHeaderForm,
 	type TestHeaderFormValue,
 } from "@/components/library/test-header-form";
@@ -90,7 +93,7 @@ function EditTestRoute() {
 	const headerDirty =
 		headerValue !== null &&
 		savedHeader !== null &&
-		JSON.stringify(headerValue) !== JSON.stringify(savedHeader);
+		!areTestHeadersEqual(headerValue, savedHeader);
 	// Ref để effect sync không đè bản nháp header đang soạn khi detail
 	// refetch vì lý do khác (lưu part, đổi trạng thái).
 	const headerDirtyRef = useRef(headerDirty);
@@ -107,10 +110,16 @@ function EditTestRoute() {
 			if (!built.ok) throw new Error("invalid");
 			return updateLibraryTest(testId, built.payload);
 		},
-		onSuccess: (updated) => {
+		onSuccess: (updated, variables) => {
 			toast.success("Đã lưu thông tin bộ đề.");
-			headerDirtyRef.current = false;
-			setHeaderValue(headerFromDetail(updated));
+			setHeaderValue(
+				(prev) =>
+					reconcileHeaderOnSaveSuccess(
+						prev,
+						variables,
+						headerFromDetail(updated),
+					).nextValue,
+			);
 			void refresh();
 		},
 		onError: (error) => {
@@ -199,19 +208,26 @@ function EditTestRoute() {
 		});
 
 	const savePartMutation = useMutation({
-		mutationFn: ({ slot, input }: { slot: string; input: LibraryPartInput }) =>
-			upsertLibraryPart(testId, slot, input),
+		mutationFn: ({
+			slot,
+			input,
+		}: {
+			slot: string;
+			input: LibraryPartInput;
+			snapshot: PartFormValue;
+		}) => upsertLibraryPart(testId, slot, input),
 		onSuccess: async (_data, variables) => {
 			const label =
 				slots.find((entry) => entry.part === variables.slot)?.label ??
 				variables.slot;
 			toast.success(`Đã lưu ${label}.`);
-			setDrafts((previous) => {
-				if (!previous.has(variables.slot)) return previous;
-				const next = new Map(previous);
-				next.delete(variables.slot);
-				return next;
-			});
+			setDrafts((previous) =>
+				reconcilePartDraftsOnSaveSuccess(
+					previous,
+					variables.slot,
+					variables.snapshot,
+				),
+			);
 			await refresh();
 		},
 		onError: (error) => {
@@ -452,8 +468,12 @@ function EditTestRoute() {
 							// khôi phục nháp đang soạn thay vì reset về bản đã lưu.
 							initialValue={drafts.get(currentSlot)?.value}
 							onDraftChange={onDraftChange}
-							onSave={(input) =>
-								savePartMutation.mutateAsync({ slot: currentSlot, input })
+							onSave={(input, snapshot) =>
+								savePartMutation.mutateAsync({
+									slot: currentSlot,
+									input,
+									snapshot,
+								})
 							}
 							onAudioChanged={() => {
 								setDrafts((previous) => {

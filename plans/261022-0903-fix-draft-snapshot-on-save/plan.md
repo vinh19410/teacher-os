@@ -1,7 +1,7 @@
 ---
 title: "fix(admin): so sánh snapshot trước khi dọn draft part & header khi save thành công"
 description: "So sánh giá trị draft hiện tại với snapshot lúc gửi mutation trước khi dọn nháp part/header trong admin library test editor, chống mất ký tự gõ thêm trong lúc save."
-status: in_progress
+status: completed
 priority: P1
 effort: "1h"
 issue: 418
@@ -40,18 +40,18 @@ Giải pháp:
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Pure comparison & reconciliation helpers (TDD)](./phase-01-pure-helpers.md) | In Progress |
-| 2 | [Phase 2: Wire snapshot into PartForm and $testId route](./phase-02-wire-snapshots.md) | Pending |
+| 1 | [Phase 1: Pure comparison & reconciliation helpers (TDD)](./phase-01-pure-helpers.md) | Done |
+| 2 | [Phase 2: Wire snapshot into PartForm and $testId route](./phase-02-wire-snapshots.md) | Done |
 
 ## Acceptance Criteria
 
-- [ ] `arePartValuesEqual` so sánh canonical đầy đủ các trường của `PartFormValue`, bỏ qua thứ tự key không liên quan.
-- [ ] `areTestHeadersEqual` so sánh đầy đủ các trường của `TestHeaderFormValue`.
-- [ ] `reconcilePartDraftsOnSaveSuccess`: xóa draft nếu draft bằng snapshot; giữ nguyên draft với `dirty = true` nếu draft khác snapshot; giữ nguyên map nếu slot không có draft.
-- [ ] `reconcileHeaderOnSaveSuccess`: trả về `fromServer` và `isDirty = false` nếu `prev` khớp `sent`; giữ nguyên `prev` và `isDirty = true` nếu `prev` khác `sent`.
-- [ ] `PartForm`: truyền `value` (snapshot) vào `onSave(built.input, value)`.
-- [ ] `savePartMutation`: nhận `{ slot, input, snapshot }` và dọn draft bằng `reconcilePartDraftsOnSaveSuccess`.
-- [ ] `headerMutation`: cập nhật state qua functional updater và không xóa đè nội dung đang gõ thêm.
-- [ ] Unit tests phủ các kịch bản: gõ thêm trong lúc lưu, undo về snapshot, lưu bình thường không gõ thêm.
-- [ ] `pnpm --filter admin test` pass toàn bộ.
-- [ ] `pnpm check` và `pnpm check-types` pass không có lỗi.
+- [x] `arePartValuesEqual` so sánh canonical đầy đủ các trường của `PartFormValue`, bỏ qua thứ tự key không liên quan.
+- [x] `areTestHeadersEqual` so sánh đầy đủ các trường của `TestHeaderFormValue`.
+- [x] `reconcilePartDraftsOnSaveSuccess`: xóa draft nếu draft bằng snapshot; giữ nguyên draft với `dirty = true` nếu draft khác snapshot; giữ nguyên map nếu slot không có draft.
+- [x] `reconcileHeaderOnSaveSuccess`: trả về `fromServer` và `isDirty = false` nếu `prev` khớp `sent`; giữ nguyên `prev` và `isDirty = true` nếu `prev` khác `sent`.
+- [x] `PartForm`: truyền `value` (snapshot) vào `onSave(built.input, value)`.
+- [x] `savePartMutation`: nhận `{ slot, input, snapshot }` và dọn draft bằng `reconcilePartDraftsOnSaveSuccess`.
+- [x] `headerMutation`: cập nhật state qua functional updater và không xóa đè nội dung đang gõ thêm.
+- [x] Unit tests phủ các kịch bản: gõ thêm trong lúc lưu, undo về snapshot, lưu bình thường không gõ thêm.
+- [x] `pnpm --filter admin test` pass toàn bộ (87/87 tests).
+- [x] `pnpm check` và `pnpm check-types` pass không có lỗi.

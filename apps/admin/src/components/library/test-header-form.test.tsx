@@ -2,11 +2,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
+	areTestHeadersEqual,
 	buildCreatePayload,
 	buildUpdatePayload,
 	emptyTestHeader,
 	formatTimeLimit,
 	parseTimeLimit,
+	reconcileHeaderOnSaveSuccess,
 	TestHeaderForm,
 } from "./test-header-form";
 
@@ -28,6 +30,62 @@ describe("parseTimeLimit / formatTimeLimit", () => {
 	it("format 3600 → 60:00", () => {
 		expect(formatTimeLimit(3600)).toBe("60:00");
 		expect(formatTimeLimit(45)).toBe("0:45");
+	});
+});
+describe("areTestHeadersEqual", () => {
+	it("trả về true khi mọi trường bằng nhau", () => {
+		const a = emptyTestHeader();
+		const b = emptyTestHeader();
+		expect(areTestHeadersEqual(a, b)).toBe(true);
+	});
+
+	it("trả về false khi khác bất kỳ trường nào", () => {
+		const base = emptyTestHeader();
+		expect(areTestHeadersEqual(base, { ...base, title: "Tiêu đề mới" })).toBe(
+			false,
+		);
+		expect(
+			areTestHeadersEqual(base, { ...base, description: "Mô tả mới" }),
+		).toBe(false);
+		expect(areTestHeadersEqual(base, { ...base, skill: "listening" })).toBe(
+			false,
+		);
+		expect(areTestHeadersEqual(base, { ...base, timeLimit: "45:00" })).toBe(
+			false,
+		);
+		expect(
+			areTestHeadersEqual(base, { ...base, collection: "Cambridge" }),
+		).toBe(false);
+		expect(areTestHeadersEqual(base, { ...base, testGroup: "Practice" })).toBe(
+			false,
+		);
+	});
+});
+
+describe("reconcileHeaderOnSaveSuccess", () => {
+	it("trả về bản server và isDirty=false khi prev khớp với snapshot đã gửi", () => {
+		const sent = { ...emptyTestHeader(), title: "Title đã gửi" };
+		const fromServer = { ...sent, title: "Title đã lưu server" };
+
+		const result = reconcileHeaderOnSaveSuccess(sent, sent, fromServer);
+		expect(result).toEqual({ nextValue: fromServer, isDirty: false });
+	});
+
+	it("giữ nguyên prev và isDirty=true khi người dùng đã gõ thêm ký tự mới khác snapshot", () => {
+		const sent = { ...emptyTestHeader(), title: "Title đã gửi" };
+		const prev = { ...sent, title: "Title đã gửi và gõ thêm ký tự" };
+		const fromServer = { ...sent, title: "Title đã lưu server" };
+
+		const result = reconcileHeaderOnSaveSuccess(prev, sent, fromServer);
+		expect(result).toEqual({ nextValue: prev, isDirty: true });
+	});
+
+	it("trả về fromServer và isDirty=false khi prev là null", () => {
+		const sent = emptyTestHeader();
+		const fromServer = { ...sent, title: "Server header" };
+
+		const result = reconcileHeaderOnSaveSuccess(null, sent, fromServer);
+		expect(result).toEqual({ nextValue: fromServer, isDirty: false });
 	});
 });
 
