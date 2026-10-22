@@ -26,6 +26,9 @@ Quy ước khi cập nhật:
 ### Removed
 - Route alias syllabus từ #394: `GET/POST /api/syllabi`, `/api/syllabi/:id/{modules,replace-content,remove}`, `/api/classes/:id/{import-syllabus,remove-curriculum}` gỡ hẳn — chỉ còn route ngữ cảnh `/api/syllabus-templates/...` và `/api/classes/:id/curriculum/...` (phase 8, #401)
 
+### Docs
+- Dọn 3 comment còn trỏ route alias `/api/syllabi/...` đã gỡ (`contracts.ts` invoiceCreateSchema, `kernel.ts` POST /invoices, `student.ts` quizWriteGuard) sang route thay thế `POST /api/syllabus-templates`; comment quizWriteGuard trỏ precedent bodyLimit đúng file `syllabus.ts` (trước đó trỏ sai `kernel.ts`) (#406)
+
 ---
 
 ## 2026-10-21
