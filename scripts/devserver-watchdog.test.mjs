@@ -97,20 +97,35 @@ test("parsePorts: hợp lệ → số; sai/thiếu → throw message rõ", () =>
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "8101",
 			E2E_STUDENT_PORT: "8103",
-		E2E_ADMIN_PORT: "8104",
+			E2E_ADMIN_PORT: "8104",
 		}),
 		PORTS,
 	);
 	for (const bad of [
 		{},
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "", E2E_STUDENT_PORT: "8103", E2E_ADMIN_PORT: "8104" },
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "abc", E2E_STUDENT_PORT: "8103", E2E_ADMIN_PORT: "8104" },
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "99999", E2E_STUDENT_PORT: "8103", E2E_ADMIN_PORT: "8104" },
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "abc",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "99999",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "8101 --host 0.0.0.0",
 			E2E_STUDENT_PORT: "8103",
-		E2E_ADMIN_PORT: "8104",
+			E2E_ADMIN_PORT: "8104",
 		},
 	]) {
 		assert.throws(

@@ -114,7 +114,9 @@ function bytesOf(length: number, fill: number): Uint8Array {
 	return new Uint8Array(length).fill(fill);
 }
 
-function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+function authHeaders(
+	extra: Record<string, string> = {},
+): Record<string, string> {
 	return {
 		origin: ADMIN_ORIGIN,
 		cookie: "better-auth.session_token=t",
@@ -136,17 +138,22 @@ async function audioPut(
 		user?: string | null;
 	},
 ): Promise<Response> {
-	const headers: Record<string, string> = { origin: options.origin ?? ADMIN_ORIGIN };
+	const headers: Record<string, string> = {
+		origin: options.origin ?? ADMIN_ORIGIN,
+	};
 	if (options.user !== null) {
 		headers.cookie = "better-auth.session_token=t";
 		headers["x-test-user"] = options.user ?? "admin";
 	}
 	if (options.length !== null) {
-		headers["content-length"] = options.length ?? String(options.bytes?.byteLength ?? 0);
+		headers["content-length"] =
+			options.length ?? String(options.bytes?.byteLength ?? 0);
 	}
-	if (options.type !== null) headers["content-type"] = options.type ?? "audio/mpeg";
+	if (options.type !== null)
+		headers["content-type"] = options.type ?? "audio/mpeg";
 	if (options.name !== null) {
-		headers["x-file-name"] = options.name ?? encodeURIComponent("section-1.mp3");
+		headers["x-file-name"] =
+			options.name ?? encodeURIComponent("section-1.mp3");
 	}
 	return app.request(path, {
 		method: "PUT",
@@ -178,7 +185,8 @@ describe("admin library audio", () => {
 			getDb: () => db,
 			authHandler: () => new Response(null, { status: 404 }),
 			corsOrigin: [ADMIN_ORIGIN],
-			getSessionUser: (headers: Headers) => Promise.resolve(sessionFor(headers)),
+			getSessionUser: (headers: Headers) =>
+				Promise.resolve(sessionFor(headers)),
 			adminEmails: ADMIN_EMAILS,
 			adminOrigins: [ADMIN_ORIGIN],
 		};
@@ -225,7 +233,12 @@ describe("admin library audio", () => {
 		});
 	});
 
-	const DENIED_USERS = ["teacher", "student", "admin-unverified", "admin-outside"] as const;
+	const DENIED_USERS = [
+		"teacher",
+		"student",
+		"admin-unverified",
+		"admin-outside",
+	] as const;
 	test("role matrix trên PUT audio: 401/403, không ghi gì vào store lẫn row", async () => {
 		const keysBefore = new Set(memory.objects.keys());
 		for (const user of DENIED_USERS) {
@@ -235,13 +248,18 @@ describe("admin library audio", () => {
 			});
 			expect(res.status, `user=${user}`).toBe(403);
 		}
-		const anonymous = await audioPut(app, AUDIO_PATH, { bytes: bytesOf(4, 1), user: null });
+		const anonymous = await audioPut(app, AUDIO_PATH, {
+			bytes: bytesOf(4, 1),
+			user: null,
+		});
 		expect(anonymous.status).toBe(401);
 		expect(new Set(memory.objects.keys())).toEqual(keysBefore);
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBe("library/lt-a/s1/old");
 	});
 
@@ -265,12 +283,16 @@ describe("admin library audio", () => {
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toMatch(/^library\/lt-a\/s1\/[0-9a-f-]{36}$/);
 		expect(row?.audioName).toBe("section one.m4a");
 		expect(row?.audioContentType).toBe("audio/mp4");
 		expect(row?.audioSize).toBe(6);
-		expect(memory.objects.get(row?.audioKey ?? "")?.bytes).toEqual(bytesOf(6, 7));
+		expect(memory.objects.get(row?.audioKey ?? "")?.bytes).toEqual(
+			bytesOf(6, 7),
+		);
 
 		// Dọn key vừa upload để các test sau sạch.
 		await settle();
@@ -284,7 +306,9 @@ describe("admin library audio", () => {
 				audioSize: 4,
 				audioUploadedAt: null,
 			})
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		memory.objects.set("library/lt-a/s1/old", {
 			bytes: bytesOf(4, 9),
 			contentType: "audio/mpeg",
@@ -350,9 +374,7 @@ describe("admin library audio", () => {
 		});
 		expect(badMime.status).toBe(415);
 		const badMimeCode = (await badMime.json()) as { code?: string };
-			expect(badMimeCode.code).toBe(
-			"UNSUPPORTED_AUDIO_TYPE",
-		);
+		expect(badMimeCode.code).toBe("UNSUPPORTED_AUDIO_TYPE");
 
 		const noName = await audioPut(app, AUDIO_PATH, {
 			bytes: bytesOf(4, 1),
@@ -390,12 +412,16 @@ describe("admin library audio", () => {
 
 		expect(payload.code).toBe("INVALID_AUDIO");
 		await settle();
-		const newKeys = [...memory.objects.keys()].filter((k) => k !== "library/lt-a/s1/old");
+		const newKeys = [...memory.objects.keys()].filter(
+			(k) => k !== "library/lt-a/s1/old",
+		);
 		expect(newKeys).toEqual([]);
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBe("library/lt-a/s1/old");
 		expect(memory.objects.has("library/lt-a/s1/old")).toBe(true);
 	});
@@ -409,12 +435,16 @@ describe("admin library audio", () => {
 		await settle();
 		// Object mới (nếu store kịp set trước khi hook ném) phải được dọn;
 		// object cũ phải còn nguyên và row vẫn trỏ key cũ.
-		const newKeys = [...memory.objects.keys()].filter((k) => k !== "library/lt-a/s1/old");
+		const newKeys = [...memory.objects.keys()].filter(
+			(k) => k !== "library/lt-a/s1/old",
+		);
 		expect(newKeys).toEqual([]);
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBe("library/lt-a/s1/old");
 		expect(memory.objects.has("library/lt-a/s1/old")).toBe(true);
 	});
@@ -424,7 +454,12 @@ describe("admin library audio", () => {
 			await db
 				.update(libraryTestPart)
 				.set({ audioKey: "hijacked" })
-				.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+				.where(
+					and(
+						eq(libraryTestPart.testId, "lt-a"),
+						eq(libraryTestPart.part, "s1"),
+					),
+				);
 		};
 		const res = await audioPut(app, AUDIO_PATH, { bytes: bytesOf(6, 4) });
 		expect(res.status).toBe(409);
@@ -436,14 +471,18 @@ describe("admin library audio", () => {
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBe("hijacked");
 		expect(memory.objects.has("library/lt-a/s1/old")).toBe(true);
 		// Trả state cho test thay thế.
 		await db
 			.update(libraryTestPart)
 			.set({ audioKey: "library/lt-a/s1/old" })
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 	});
 
 	test("upload thay thế thành công → sau settle() key cũ biến mất, row trỏ key mới", async () => {
@@ -455,7 +494,9 @@ describe("admin library audio", () => {
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBeTruthy();
 		expect(row?.audioKey === "library/lt-a/s1/old").toBe(false);
 		expect(memory.objects.has("library/lt-a/s1/old")).toBe(false);
@@ -466,13 +507,19 @@ describe("admin library audio", () => {
 		const res = await audioPut(
 			app,
 			"/api/admin/library/tests/lt-a/parts/s3/audio",
-			{ bytes: bytesOf(3, 2), name: encodeURIComponent("s3.wav"), type: "audio/wav" },
+			{
+				bytes: bytesOf(3, 2),
+				name: encodeURIComponent("s3.wav"),
+				type: "audio/wav",
+			},
 		);
 		expect(res.status).toBe(200);
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s3")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s3")),
+			);
 		expect(row?.audioName).toBe("s3.wav");
 		expect(row?.audioContentType).toBe("audio/wav");
 		expect(row?.type).toBe("");
@@ -498,7 +545,10 @@ describe("admin library audio", () => {
 
 	test("DELETE audio: ready → 409; draft → xoá object nền + clear row; idempotent", async () => {
 		// Đề đang draft, s1 có audio từ test thay thế.
-		await db.update(libraryTest).set({ status: "ready" }).where(eq(libraryTest.id, "lt-a"));
+		await db
+			.update(libraryTest)
+			.set({ status: "ready" })
+			.where(eq(libraryTest.id, "lt-a"));
 		const locked = await app.request(AUDIO_PATH, {
 			method: "DELETE",
 			headers: authHeaders(),
@@ -507,10 +557,15 @@ describe("admin library audio", () => {
 		const [lockedRow] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(lockedRow?.audioKey).toBeTruthy();
 
-		await db.update(libraryTest).set({ status: "draft" }).where(eq(libraryTest.id, "lt-a"));
+		await db
+			.update(libraryTest)
+			.set({ status: "draft" })
+			.where(eq(libraryTest.id, "lt-a"));
 		const key = lockedRow?.audioKey ?? "";
 		const ok = await app.request(AUDIO_PATH, {
 			method: "DELETE",
@@ -522,7 +577,9 @@ describe("admin library audio", () => {
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")));
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
 		expect(row?.audioKey).toBeNull();
 		expect(row?.audioName).toBeNull();
 
@@ -571,11 +628,15 @@ describe("admin library audio", () => {
 	});
 
 	test("store vắng mặt → PUT/GET/DELETE audio → 503 LIBRARY_AUDIO_DISABLED", async () => {
-		const put = await audioPut(appNoStore, AUDIO_PATH, { bytes: bytesOf(4, 1) });
+		const put = await audioPut(appNoStore, AUDIO_PATH, {
+			bytes: bytesOf(4, 1),
+		});
 		expect(put.status).toBe(503);
 		const disabled = (await put.json()) as { code?: string };
 		expect(disabled.code).toBe("LIBRARY_AUDIO_DISABLED");
-		const get = await appNoStore.request(AUDIO_PATH, { headers: authHeaders() });
+		const get = await appNoStore.request(AUDIO_PATH, {
+			headers: authHeaders(),
+		});
 		expect(get.status).toBe(503);
 		const del = await appNoStore.request(AUDIO_PATH, {
 			method: "DELETE",

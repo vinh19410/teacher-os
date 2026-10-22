@@ -6,8 +6,8 @@ import {
 	ASSIGNMENT_TEST_PRESETS,
 	answerKindByType,
 	assignmentQuestionSchema,
-	isImageBasedType,
 	isAssignmentImageUrl,
+	isImageBasedType,
 	optionBankKindFor,
 } from "./contracts";
 import { isEmptyRichText, richTextField } from "./rich-text";
@@ -68,7 +68,12 @@ export const libraryTestCreateSchema = z
 		title: z.string().trim().min(1).max(200),
 		description: z.string().trim().max(2000).default(""),
 		skill: z.enum(LIBRARY_SKILLS),
-		timeLimitSeconds: z.number().int().min(60).max(4 * 3600).default(3600),
+		timeLimitSeconds: z
+			.number()
+			.int()
+			.min(60)
+			.max(4 * 3600)
+			.default(3600),
 		collection: z.string().trim().max(200).default(""),
 		testGroup: z.string().trim().max(200).default(""),
 	})
@@ -81,7 +86,12 @@ export const libraryTestUpdateSchema = z
 	.object({
 		title: z.string().trim().min(1).max(200).optional(),
 		description: z.string().trim().max(2000).optional(),
-		timeLimitSeconds: z.number().int().min(60).max(4 * 3600).optional(),
+		timeLimitSeconds: z
+			.number()
+			.int()
+			.min(60)
+			.max(4 * 3600)
+			.optional(),
 		collection: z.string().trim().max(200).optional(),
 		testGroup: z.string().trim().max(200).optional(),
 	})
@@ -176,7 +186,10 @@ function partIssues(
 		const bankQuestions = part.questions.filter(
 			(q) => answerKindByType[q.type ?? part.type] === bankKind,
 		);
-		if (part.optionBank.length < 2 || part.optionBank.length < bankQuestions.length) {
+		if (
+			part.optionBank.length < 2 ||
+			part.optionBank.length < bankQuestions.length
+		) {
 			add(
 				"optionBank",
 				`bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
@@ -291,11 +304,12 @@ export const libraryTestListItemSchema = z
 export type LibraryTestListItem = z.infer<typeof libraryTestListItemSchema>;
 
 /** Chi tiết đề kèm toàn bộ parts (DTO, không lộ audioKey). */
-export const libraryTestDetailSchema = libraryTestListItemSchema.omit({
-	partCount: true,
-	questionCount: true,
-	hasAllAudio: true,
-})
+export const libraryTestDetailSchema = libraryTestListItemSchema
+	.omit({
+		partCount: true,
+		questionCount: true,
+		hasAllAudio: true,
+	})
 	.extend({ parts: z.array(libraryPartDtoSchema) })
 	.strict();
 export type LibraryTestDetail = z.infer<typeof libraryTestDetailSchema>;

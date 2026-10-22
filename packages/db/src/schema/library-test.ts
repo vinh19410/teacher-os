@@ -42,7 +42,9 @@ export const libraryTest = sqliteTable(
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
-	(table) => [index("library_test_skill_status_idx").on(table.skill, table.status)],
+	(table) => [
+		index("library_test_skill_status_idx").on(table.skill, table.status),
+	],
 );
 
 /**

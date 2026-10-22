@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import type { LibraryPartInput } from "./library-contracts";
 import {
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
@@ -10,9 +11,10 @@ import {
 	validatePartForReady,
 	validateTestReady,
 } from "./library-contracts";
-import type { LibraryPartInput } from "./library-contracts";
 
-function readingPart(overrides: Partial<LibraryPartInput> = {}): LibraryPartInput {
+function readingPart(
+	overrides: Partial<LibraryPartInput> = {},
+): LibraryPartInput {
 	return {
 		part: "p1",
 		type: "tfng",
@@ -31,7 +33,9 @@ function readingPart(overrides: Partial<LibraryPartInput> = {}): LibraryPartInpu
 	};
 }
 
-function listeningPart(overrides: Partial<LibraryPartInput> = {}): LibraryPartInput {
+function listeningPart(
+	overrides: Partial<LibraryPartInput> = {},
+): LibraryPartInput {
 	return readingPart({
 		part: "s1",
 		type: "form",
@@ -47,7 +51,10 @@ describe("validatePartForReady", () => {
 	});
 
 	test("reading thiếu passage bị từ chối", () => {
-		const issues = validatePartForReady("reading", readingPart({ passage: "" }));
+		const issues = validatePartForReady(
+			"reading",
+			readingPart({ passage: "" }),
+		);
 		expect(issues.some((issue) => issue.path === "passage")).toBe(true);
 	});
 
@@ -71,7 +78,10 @@ describe("validatePartForReady", () => {
 	});
 
 	test("listening cũng cần ≥ 1 câu có stem", () => {
-		const issues = validatePartForReady("listening", listeningPart({ questions: [] }));
+		const issues = validatePartForReady(
+			"listening",
+			listeningPart({ questions: [] }),
+		);
 		expect(issues.some((issue) => issue.path === "questions")).toBe(true);
 	});
 
@@ -79,7 +89,9 @@ describe("validatePartForReady", () => {
 		const base = readingPart({
 			type: "diagram",
 			imageUrl: "https://cdn.example.com/d.png",
-			questions: [{ stem: "q", answer: "TRUE", alts: "", pin: { x: 10, y: 20 } }],
+			questions: [
+				{ stem: "q", answer: "TRUE", alts: "", pin: { x: 10, y: 20 } },
+			],
 		});
 		expect(validatePartForReady("reading", base)).toEqual([]);
 
@@ -100,7 +112,9 @@ describe("validatePartForReady", () => {
 				],
 			}),
 		);
-		expect(missingPin.some((issue) => issue.path === "questions.1.pin")).toBe(true);
+		expect(missingPin.some((issue) => issue.path === "questions.1.pin")).toBe(
+			true,
+		);
 
 		// listening map — image-based pair thứ hai.
 		const mapNoPin = validatePartForReady(
@@ -111,7 +125,10 @@ describe("validatePartForReady", () => {
 	});
 
 	test("type không thuộc catalog của part bị từ chối", () => {
-		const issues = validatePartForReady("reading", readingPart({ type: "task1" }));
+		const issues = validatePartForReady(
+			"reading",
+			readingPart({ type: "task1" }),
+		);
 		expect(issues.some((issue) => issue.path === "type")).toBe(true);
 		expect(
 			validatePartForReady("reading", readingPart({ part: "s1" })).some(
@@ -182,13 +199,24 @@ describe("validateTestReady", () => {
 			readingPart({ part: "p2", passage: "" }),
 			readingPart({ part: "p3" }),
 		]);
-		expect(broken.some((issue) => issue.path === "parts.p2.passage")).toBe(true);
+		expect(broken.some((issue) => issue.path === "parts.p2.passage")).toBe(
+			true,
+		);
 
 		expect(
 			validateTestReady("reading", [
 				readingPart(),
-				readingPart({ part: "p2", type: "headings", questions: [{ stem: "q", answer: "i", alts: "" }], optionBank: ["i", "ii"] }),
-				readingPart({ part: "p3", type: "ynng", questions: [{ stem: "q", answer: "YES", alts: "" }] }),
+				readingPart({
+					part: "p2",
+					type: "headings",
+					questions: [{ stem: "q", answer: "i", alts: "" }],
+					optionBank: ["i", "ii"],
+				}),
+				readingPart({
+					part: "p3",
+					type: "ynng",
+					questions: [{ stem: "q", answer: "YES", alts: "" }],
+				}),
 			]),
 		).toEqual([]);
 	});

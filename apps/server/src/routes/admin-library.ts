@@ -1,22 +1,25 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import { ASSIGNMENT_TEST_PRESETS } from "@teacher-os/api/contracts";
 import {
+	normalizeMediaType,
+	sanitizeMediaFileName,
+} from "@teacher-os/api/lib/quiz-media";
+import {
+	isLibrarySkill,
+	LIBRARY_AUDIO_MAX_BYTES,
+	LIBRARY_AUDIO_MIME,
 	type LibraryErrorCode,
 	type LibraryPartDto,
 	type LibraryPartInput,
 	type LibrarySkill,
 	type LibraryTestDetail,
 	type LibraryTestListItem,
-	LIBRARY_AUDIO_MAX_BYTES,
-	LIBRARY_AUDIO_MIME,
-	isLibrarySkill,
 	libraryPartUpsertSchema,
 	libraryTestCreateSchema,
 	libraryTestUpdateSchema,
 	validatePartForReady,
 	validateTestReady,
 } from "@teacher-os/api/library-contracts";
-import { normalizeMediaType, sanitizeMediaFileName } from "@teacher-os/api/lib/quiz-media";
 import {
 	libraryTest,
 	libraryTestPart,
@@ -113,7 +116,9 @@ function parseJsonArray(raw: string): unknown[] {
 }
 
 function parseStringArray(raw: string): string[] {
-	return parseJsonArray(raw).filter((item): item is string => typeof item === "string");
+	return parseJsonArray(raw).filter(
+		(item): item is string => typeof item === "string",
+	);
 }
 
 /** Row part → input cho validatePartForReady/validateTestReady. */
@@ -221,10 +226,7 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			.select()
 			.from(libraryTestPart)
 			.where(
-				and(
-					eq(libraryTestPart.testId, testId),
-					eq(libraryTestPart.part, part),
-				),
+				and(eq(libraryTestPart.testId, testId), eq(libraryTestPart.part, part)),
 			);
 		return row ?? null;
 	}
@@ -237,7 +239,9 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			.orderBy(asc(libraryTestPart.part));
 	}
 
-	async function loadTestDetail(testId: string): Promise<LibraryTestDetail | null> {
+	async function loadTestDetail(
+		testId: string,
+	): Promise<LibraryTestDetail | null> {
 		const row = await loadTestRow(testId);
 		if (!row) return null;
 		const parts = await loadPartRows(testId);
@@ -255,7 +259,10 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			return c.json({ error: "origin not allowed" }, 403);
 		}
 		// Upload audio raw + DELETE không có JSON body — bỏ kiểm content-type.
-		if (isRawAudioUpload(c.req.method, c.req.path) || c.req.method === "DELETE") {
+		if (
+			isRawAudioUpload(c.req.method, c.req.path) ||
+			c.req.method === "DELETE"
+		) {
 			return next();
 		}
 		const contentType = c.req.header("Content-Type") ?? "";
@@ -270,7 +277,8 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		const conditions = [];
 		const skill = c.req.query("skill");
 		if (skill !== undefined) {
-			if (!isLibrarySkill(skill)) return c.json({ error: "invalid skill" }, 400);
+			if (!isLibrarySkill(skill))
+				return c.json({ error: "invalid skill" }, 400);
 			conditions.push(eq(libraryTest.skill, skill));
 		}
 		const status = c.req.query("status");
@@ -302,7 +310,12 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 				? await withDb()
 						.select()
 						.from(libraryTestPart)
-						.where(inArray(libraryTestPart.testId, rows.map((row) => row.id)))
+						.where(
+							inArray(
+								libraryTestPart.testId,
+								rows.map((row) => row.id),
+							),
+						)
 				: [];
 		const partsByTest = new Map<string, PartRow[]>();
 		for (const part of partRows) {
@@ -344,17 +357,19 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) return c.json({ error: "unauthorized" }, 401);
 		const id = crypto.randomUUID();
-		await withDb().insert(libraryTest).values({
-			id,
-			title: body.data.title,
-			description: body.data.description || null,
-			skill: body.data.skill,
-			timeLimitSeconds: body.data.timeLimitSeconds,
-			collection: body.data.collection || null,
-			testGroup: body.data.testGroup || null,
-			status: "draft",
-			createdBy: session.userId,
-		});
+		await withDb()
+			.insert(libraryTest)
+			.values({
+				id,
+				title: body.data.title,
+				description: body.data.description || null,
+				skill: body.data.skill,
+				timeLimitSeconds: body.data.timeLimitSeconds,
+				collection: body.data.collection || null,
+				testGroup: body.data.testGroup || null,
+				status: "draft",
+				createdBy: session.userId,
+			});
 		return c.json({ id } satisfies CreatedResponse, 201);
 	});
 
@@ -418,22 +433,19 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		}
 		if (status === "ready") {
 			const parts = await loadPartRows(testId);
-			const issues = validateTestReady(
-				test.skill,
-				parts.map(toPartInput),
-			);
+			const issues = validateTestReady(test.skill, parts.map(toPartInput));
 			if (issues.length > 0) {
-				return c.json(
-					{ error: "NOT_READY", code: "NOT_READY", issues },
-					400,
-				);
+				return c.json({ error: "NOT_READY", code: "NOT_READY", issues }, 400);
 			}
 			set.status = "ready";
 		} else if (status === "draft") {
 			set.status = "draft";
 		}
 		if (Object.keys(set).length > 0) {
-			await withDb().update(libraryTest).set(set).where(eq(libraryTest.id, testId));
+			await withDb()
+				.update(libraryTest)
+				.set(set)
+				.where(eq(libraryTest.id, testId));
 		}
 		const detail = await loadTestDetail(testId);
 		return c.json(detail);
@@ -446,7 +458,9 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		if (!test) return libraryError(c, 404, "TEST_NOT_FOUND");
 		const parts = await loadPartRows(testId);
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			withDb().delete(libraryTestPart).where(eq(libraryTestPart.testId, testId)),
+			withDb()
+				.delete(libraryTestPart)
+				.where(eq(libraryTestPart.testId, testId)),
 			withDb().delete(libraryTest).where(eq(libraryTest.id, testId)),
 		];
 		await withDb().batch(statements);
@@ -534,11 +548,14 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		const part = c.req.param("part");
 		const row = await loadPartRow(testId, part);
 		if (!row) return libraryError(c, 404, "PART_NOT_FOUND");
-		await withDb().delete(libraryTestPart).where(eq(libraryTestPart.id, row.id));
+		await withDb()
+			.delete(libraryTestPart)
+			.where(eq(libraryTestPart.id, row.id));
 		if (row.audioKey !== null) {
 			const store = deps.getLibraryAudioStore?.();
 			const audioKey = row.audioKey;
-			if (store) inBackground("delete audio of part", () => store.delete(audioKey));
+			if (store)
+				inBackground("delete audio of part", () => store.delete(audioKey));
 		}
 		return c.json({ ok: true });
 	});
@@ -657,7 +674,8 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		const store = deps.getLibraryAudioStore?.();
 		if (!store) return libraryError(c, 503, LIBRARY_AUDIO_DISABLED);
 		const testId = c.req.param("id");
-		if (!(await loadTestRow(testId))) return libraryError(c, 404, "TEST_NOT_FOUND");
+		if (!(await loadTestRow(testId)))
+			return libraryError(c, 404, "TEST_NOT_FOUND");
 		const row = await loadPartRow(testId, c.req.param("part"));
 		if (!row || row.audioKey === null) {
 			return libraryError(c, 404, "PART_NOT_FOUND");

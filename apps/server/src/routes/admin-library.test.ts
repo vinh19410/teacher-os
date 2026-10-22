@@ -76,11 +76,13 @@ interface ReqOptions {
 function makeRequest(app: ServerApp, method: string, path: string) {
 	return async (options: ReqOptions = {}): Promise<Response> => {
 		const headers: Record<string, string> = {};
-		headers.origin = options.origin === null ? "" : options.origin ?? ADMIN_ORIGIN;
+		headers.origin =
+			options.origin === null ? "" : (options.origin ?? ADMIN_ORIGIN);
 		if (options.origin === null) delete headers.origin;
 		if (options.contentType !== null) {
 			headers["content-type"] =
-				options.contentType ?? (options.body !== undefined ? "application/json" : "");
+				options.contentType ??
+				(options.body !== undefined ? "application/json" : "");
 			if (!headers["content-type"]) delete headers["content-type"];
 		}
 		if (options.user !== undefined) {
@@ -90,7 +92,8 @@ function makeRequest(app: ServerApp, method: string, path: string) {
 		return app.request(path, {
 			method,
 			headers,
-			body: options.body === undefined ? undefined : JSON.stringify(options.body),
+			body:
+				options.body === undefined ? undefined : JSON.stringify(options.body),
 		});
 	};
 }
@@ -196,7 +199,11 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			})
 			.returning({ id: libraryTest.id });
 
-		const patch = makeRequest(app, "PATCH", "/api/admin/library/tests/lt-skill");
+		const patch = makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-skill",
+		);
 		const res = await patch({
 			user: "admin",
 			body: { skill: "reading", title: "Hacked" },
@@ -257,9 +264,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 				type: "headings",
 				title: "Passage 2",
 				band: "7.0",
-				questions: JSON.stringify([
-					{ stem: "Q1", answer: "i", alts: "" },
-				]),
+				questions: JSON.stringify([{ stem: "Q1", answer: "i", alts: "" }]),
 				optionBank: JSON.stringify(["i", "ii", "iii"]),
 				updatedAt: new Date(1000),
 			},
@@ -314,7 +319,9 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			{ headers: authHeaders("admin") },
 		);
 		expect(filtered.status).toBe(200);
-		const filteredPayload = (await filtered.json()) as { tests: Array<{ id: string }> };
+		const filteredPayload = (await filtered.json()) as {
+			tests: Array<{ id: string }>;
+		};
 		expect(filteredPayload.tests.map((t) => t.id)).toEqual(["lt-listen-list"]);
 
 		const badSkill = await app.request(
@@ -337,7 +344,12 @@ describe("admin library CRUD (/api/admin/library)", () => {
 				part: string;
 				questions: unknown[];
 				optionBank: string[];
-				audio: { name: string; type: string; size: number; uploadedAt: string } | null;
+				audio: {
+					name: string;
+					type: string;
+					size: number;
+					uploadedAt: string;
+				} | null;
 				updatedAt: string;
 			}>;
 			updatedAt: string;
@@ -360,20 +372,31 @@ describe("admin library CRUD (/api/admin/library)", () => {
 	});
 
 	test("PATCH header fields → 200 detail mới; strict body lạ → 400", async () => {
-		const patch = makeRequest(app, "PATCH", "/api/admin/library/tests/lt-skill");
+		const patch = makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-skill",
+		);
 		const res = await patch({
 			user: "admin",
 			body: { title: "Listening Mock v2", timeLimitSeconds: 1800 },
 		});
 		expect(res.status).toBe(200);
-		const detail = (await res.json()) as { title: string; timeLimitSeconds: number };
+		const detail = (await res.json()) as {
+			title: string;
+			timeLimitSeconds: number;
+		};
 		expect(detail.title).toBe("Listening Mock v2");
 		expect(detail.timeLimitSeconds).toBe(1800);
 
 		const bad = await patch({ user: "admin", body: { nope: 1 } });
 		expect(bad.status).toBe(400);
 
-		const missing = await makeRequest(app, "PATCH", "/api/admin/library/tests/nope")({
+		const missing = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/nope",
+		)({
 			user: "admin",
 			body: { title: "X" },
 		});
@@ -381,7 +404,11 @@ describe("admin library CRUD (/api/admin/library)", () => {
 	});
 
 	test("PATCH status ready khi đề thiếu → 400 NOT_READY kèm lý do theo part", async () => {
-		const res = await makeRequest(app, "PATCH", "/api/admin/library/tests/lt-skill")({
+		const res = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-skill",
+		)({
 			user: "admin",
 			body: { status: "ready" },
 		});
@@ -394,9 +421,14 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		const paths = new Set((payload.issues ?? []).map((i) => i.path));
 		// Listening cần đủ 4 slot — thiếu slot báo đúng theo part.
 		for (const slot of ["s1", "s2", "s3", "s4"]) {
-			expect(paths.has(`parts.${slot}`), `missing path parts.${slot}`).toBe(true);
+			expect(paths.has(`parts.${slot}`), `missing path parts.${slot}`).toBe(
+				true,
+			);
 		}
-		const [row] = await db.select().from(libraryTest).where(eq(libraryTest.id, "lt-skill"));
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, "lt-skill"));
 		expect(row?.status).toBe("draft");
 	});
 
@@ -458,20 +490,34 @@ describe("admin library CRUD (/api/admin/library)", () => {
 					),
 				);
 		}
-		const ready = await makeRequest(app, "PATCH", "/api/admin/library/tests/lt-skill")({
+		const ready = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-skill",
+		)({
 			user: "admin",
 			body: { status: "ready" },
 		});
 		expect(ready.status).toBe(200);
-		const [row] = await db.select().from(libraryTest).where(eq(libraryTest.id, "lt-skill"));
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, "lt-skill"));
 		expect(row?.status).toBe("ready");
 
-		const back = await makeRequest(app, "PATCH", "/api/admin/library/tests/lt-skill")({
+		const back = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-skill",
+		)({
 			user: "admin",
 			body: { status: "draft" },
 		});
 		expect(back.status).toBe(200);
-		const [row2] = await db.select().from(libraryTest).where(eq(libraryTest.id, "lt-skill"));
+		const [row2] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, "lt-skill"));
 		expect(row2?.status).toBe("draft");
 	});
 
@@ -521,13 +567,20 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			"/api/admin/library/tests/lt-keep/parts/s4",
 		)({ user: "admin", body: validPartBody("s4", { title: "Section 4 mới" }) });
 		expect(res.status).toBe(200);
-		const payload = (await res.json()) as { part: { title: string; audio: { name: string } | null } };
+		const payload = (await res.json()) as {
+			part: { title: string; audio: { name: string } | null };
+		};
 		expect(payload.part.title).toBe("Section 4 mới");
 		expect(payload.part.audio?.name).toBe("keep.mp3");
 		const [row] = await db
 			.select()
 			.from(libraryTestPart)
-			.where(and(eq(libraryTestPart.testId, "lt-keep"), eq(libraryTestPart.part, "s4")));
+			.where(
+				and(
+					eq(libraryTestPart.testId, "lt-keep"),
+					eq(libraryTestPart.part, "s4"),
+				),
+			);
 		expect(row?.audioKey).toBe("library/lt-keep/s4/keep");
 		expect(row?.questions ? JSON.parse(row.questions) : []).toHaveLength(1);
 	});
@@ -544,7 +597,9 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			"/api/admin/library/tests/lt-skill/parts/s1",
 		)({
 			user: "admin",
-			body: validPartBody("s1", { questions: [{ stem: "", answer: "", alts: "" }] }),
+			body: validPartBody("s1", {
+				questions: [{ stem: "", answer: "", alts: "" }],
+			}),
 		});
 		expect(invalid.status).toBe(400);
 		const payload = (await invalid.json()) as {
@@ -562,27 +617,56 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		expect(valid.status).toBe(200);
 
 		// Trả draft lại cho các test sau.
-		await db.update(libraryTest).set({ status: "draft" }).where(eq(libraryTest.id, "lt-skill"));
+		await db
+			.update(libraryTest)
+			.set({ status: "draft" })
+			.where(eq(libraryTest.id, "lt-skill"));
 	});
 
 	test("DELETE part: ready → 409 giữ row; draft → 200 xoá row", async () => {
-		await db.update(libraryTest).set({ status: "ready" }).where(eq(libraryTest.id, "lt-skill"));
+		await db
+			.update(libraryTest)
+			.set({ status: "ready" })
+			.where(eq(libraryTest.id, "lt-skill"));
 		const locked = await makeRequest(
 			app,
 			"DELETE",
 			"/api/admin/library/tests/lt-skill/parts/s1",
 		)({ user: "admin" });
 		expect(locked.status).toBe(409);
-		expect(await db.select().from(libraryTestPart).where(and(eq(libraryTestPart.testId, "lt-skill"), eq(libraryTestPart.part, "s1")))).toHaveLength(1);
+		expect(
+			await db
+				.select()
+				.from(libraryTestPart)
+				.where(
+					and(
+						eq(libraryTestPart.testId, "lt-skill"),
+						eq(libraryTestPart.part, "s1"),
+					),
+				),
+		).toHaveLength(1);
 
-		await db.update(libraryTest).set({ status: "draft" }).where(eq(libraryTest.id, "lt-skill"));
+		await db
+			.update(libraryTest)
+			.set({ status: "draft" })
+			.where(eq(libraryTest.id, "lt-skill"));
 		const ok = await makeRequest(
 			app,
 			"DELETE",
 			"/api/admin/library/tests/lt-skill/parts/s1",
 		)({ user: "admin" });
 		expect(ok.status).toBe(200);
-		expect(await db.select().from(libraryTestPart).where(and(eq(libraryTestPart.testId, "lt-skill"), eq(libraryTestPart.part, "s1")))).toHaveLength(0);
+		expect(
+			await db
+				.select()
+				.from(libraryTestPart)
+				.where(
+					and(
+						eq(libraryTestPart.testId, "lt-skill"),
+						eq(libraryTestPart.part, "s1"),
+					),
+				),
+		).toHaveLength(0);
 
 		const missing = await makeRequest(
 			app,
@@ -599,14 +683,29 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			.where(eq(libraryTestPart.testId, "lt-skill"));
 		expect(parts.length).toBeGreaterThan(0);
 
-		const res = await makeRequest(app, "DELETE", "/api/admin/library/tests/lt-skill")({
+		const res = await makeRequest(
+			app,
+			"DELETE",
+			"/api/admin/library/tests/lt-skill",
+		)({
 			user: "admin",
 		});
 		expect(res.status).toBe(200);
-		expect(await db.select().from(libraryTest).where(eq(libraryTest.id, "lt-skill"))).toHaveLength(0);
-		expect(await db.select().from(libraryTestPart).where(eq(libraryTestPart.testId, "lt-skill"))).toHaveLength(0);
+		expect(
+			await db.select().from(libraryTest).where(eq(libraryTest.id, "lt-skill")),
+		).toHaveLength(0);
+		expect(
+			await db
+				.select()
+				.from(libraryTestPart)
+				.where(eq(libraryTestPart.testId, "lt-skill")),
+		).toHaveLength(0);
 
-		const again = await makeRequest(app, "DELETE", "/api/admin/library/tests/lt-skill")({
+		const again = await makeRequest(
+			app,
+			"DELETE",
+			"/api/admin/library/tests/lt-skill",
+		)({
 			user: "admin",
 		});
 		expect(again.status).toBe(404);

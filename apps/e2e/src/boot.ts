@@ -108,7 +108,9 @@ const auth = createAuth({
 	studentOrigins: [STUDENT_ORIGIN],
 	// Plan #413: đăng ký account admin từ origin console với email trong
 	// allowlist (phase 7 dùng để sign-up admin thật).
-	adminOrigins: [`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`],
+	adminOrigins: [
+		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
+	],
 	adminEmails: ADMIN_EMAILS,
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,

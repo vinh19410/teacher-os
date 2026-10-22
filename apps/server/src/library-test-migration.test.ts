@@ -85,7 +85,9 @@ describe("library test migration (plan #413 phase 2)", () => {
 		);
 
 		// Default cột: status draft, time 3600, questions/optionBank '[]'.
-		const test = await client.execute("SELECT * FROM library_test WHERE id = 't1'");
+		const test = await client.execute(
+			"SELECT * FROM library_test WHERE id = 't1'",
+		);
 		expect(test.rows[0]?.status).toBe("draft");
 		expect(Number(test.rows[0]?.time_limit_seconds)).toBe(3600);
 
