@@ -1,7 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
-import { expect, type Page } from "@playwright/test";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { type APIRequestContext, expect, type Page } from "@playwright/test";
+import {
+	ADMIN_ORIGIN,
+	API_ORIGIN,
+	STUDENT_ORIGIN,
+	WEB_ORIGIN,
+} from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -322,4 +327,92 @@ export async function acceptAllClassEnrollments(
 	for (const en of enrollments) {
 		await acceptEnrollment(page, en.id);
 	}
+}
+
+// --- Admin console (plan #413 phase 7) --------------------------------------
+
+function sleep(ms: number): Promise<void> {
+	const { promise, resolve } = Promise.withResolvers<void>();
+	setTimeout(resolve, ms);
+	return promise;
+}
+
+/** Email admin mặc định của e2e — khớp E2E_ADMIN_EMAILS trong boot.ts. */
+export const ADMIN_EMAIL =
+	(process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local").split(",")[0]?.trim() ??
+	"admin@e2e.local";
+export const ADMIN_PASSWORD = "password-8chars";
+
+/**
+ * Đảm bảo có đúng MỘT tài khoản admin hợp lệ cho cả run: đăng ký qua API
+ * thật với Origin admin (allowlist của boot chấp nhận ADMIN_EMAIL), sau đó
+ * khóa DB đảm bảo `role='admin'` + `email_verified=1` (requireAdmin đòi cả
+ * hai; đăng ký mới của better-auth để email chưa verify). Idempotent —
+ * chạy lại khi account đã tồn tại chỉ còn nhánh UPDATE.
+ */
+export async function ensureAdminAccount(
+	request: APIRequestContext,
+): Promise<void> {
+	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+		data: { name: "E2E Admin", email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+		headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
+	});
+	if (res.status() !== 200) {
+		// Đã tồn tại (422/400) là đường lặp lại hợp lệ; từ chối khác → fail loud.
+		const body = await res.text();
+		if (!/already|exists|tồn tại|registered/i.test(body)) {
+			throw new Error(`admin sign-up failed (${res.status()}): ${body}`);
+		}
+	}
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	try {
+		await client.execute("PRAGMA busy_timeout = 5000;");
+		for (let i = 0; ; i++) {
+			const rs = await client.execute({
+				sql: "UPDATE user SET role = 'admin', email_verified = 1 WHERE lower(email) = lower(?)",
+				args: [ADMIN_EMAIL],
+			});
+			if (Number(rs.rowsAffected) > 0) break;
+			if (i >= 30) throw new Error("admin user row chưa xuất hiện sau sign-up");
+			await sleep(100 * (i + 1));
+		}
+	} finally {
+		client.close();
+	}
+}
+
+/** Đăng nhập admin qua form thật của cổng 8004 → hạ cánh trang danh sách. */
+export async function adminSignInViaUi(page: Page): Promise<void> {
+	await page.goto(`${ADMIN_ORIGIN}/login`);
+	await page.locator("#signin-email").fill(ADMIN_EMAIL);
+	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
+	await page.locator("#panel-signin button[type='submit']").click();
+	// Cold vite dev của app admin có thể chậm; flow-critical → 30s.
+	await expect(page).toHaveURL(/\/library\/tests/, { timeout: 30_000 });
+	await expect(
+		page.getByRole("heading", { name: "Thư viện đề" }),
+	).toBeVisible();
+}
+
+/** Đăng nhập admin rồi mở trang tạo bộ đề mới (link "Tạo bộ đề" có 2 bản
+ * khi list rỗng — đi thẳng URL cho ổn định). */
+export async function adminOpenNewTestPage(page: Page): Promise<void> {
+	await adminSignInViaUi(page);
+	await page.goto(`${ADMIN_ORIGIN}/library/tests/new`);
+	await expect(
+		page.getByRole("heading", { name: "Tạo bộ đề mới" }),
+	).toBeVisible();
+}
+
+/** Sinh buffer MP3 hợp lệ tối thiểu (10 MPEG1 Layer3 frame) — không commit
+ * binary fixture; header frame thật để gần hành vi file thật. */
+export function mp3FixtureBytes(): Buffer {
+	const frame = Buffer.alloc(417, 0);
+	frame[0] = 0xff; // sync
+	frame[1] = 0xfb; // MPEG1 Layer3, no CRC
+	frame[2] = 0x90; // 128 kbps, 44.1 kHz
+	frame[3] = 0x64;
+	return Buffer.concat(Array.from({ length: 10 }, () => frame));
 }

@@ -1,4 +1,4 @@
-export type AppRole = "teacher" | "student";
+export type AppRole = "teacher" | "student" | "admin";
 
 /**
  * State key stamped server-side into the OAuth `additionalData` (verification
@@ -9,9 +9,12 @@ export type AppRole = "teacher" | "student";
 export const OAUTH_APP_STATE_KEY = "app";
 
 /** DB role column → AppRole. NULL/unknown falls back to teacher (defensive for
- * out-of-band rows; migration 0024 guarantees no NULL rows after backfill). */
+ * out-of-band rows; migration 0024 guarantees no NULL rows after backfill).
+ * `admin` là role thật trong DB (plan #413) — không rơi vào nhánh teacher. */
 export function resolveUserRole(role: string | null | undefined): AppRole {
-	return role === "student" ? "student" : "teacher";
+	if (role === "student") return "student";
+	if (role === "admin") return "admin";
+	return "teacher";
 }
 
 function matchOrigin(origin: string, known: string[]): boolean {
@@ -34,6 +37,7 @@ export function resolveRequestApp(input: {
 	oauthApp?: string | null;
 	studentOrigins: string[];
 	teacherOrigins: string[];
+	adminOrigins?: string[];
 }): AppRole {
 	// matchOrigin tự loại origin rỗng/"null", nên null|undefined chỉ cần về "".
 	const origin = input.origin ?? "";
@@ -43,7 +47,14 @@ export function resolveRequestApp(input: {
 	if (matchOrigin(origin, input.teacherOrigins)) {
 		return "teacher";
 	}
-	if (input.oauthApp === "teacher" || input.oauthApp === "student") {
+	if (matchOrigin(origin, input.adminOrigins ?? [])) {
+		return "admin";
+	}
+	if (
+		input.oauthApp === "teacher" ||
+		input.oauthApp === "student" ||
+		input.oauthApp === "admin"
+	) {
 		return input.oauthApp;
 	}
 	return "student";

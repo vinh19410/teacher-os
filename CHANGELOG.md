@@ -13,6 +13,8 @@ Quy ước khi cập nhật:
 ## 2026-10-22
 
 ### Added
+- E2E cho cổng quản trị (plan #413 phase 7): 3 spec Playwright mới — `admin-auth.spec.ts` (admin vào được shell; teacher/student bị chặn ở admin origin `login?error=NOT_ADMIN`; admin bị chặn ở web + cổng học viên; sign-up admin origin email ngoài `ADMIN_EMAILS` bị từ chối), `admin-library-reading.spec.ts` (tạo đề Reading 3 passage đa dạng dạng câu: tfng chip, headings có option bank, mcq → xuất bản → sửa header → hạ nháp → xóa) và `admin-library-listening.spec.ts` (4 section, upload fixture mp3 sinh trong test → `<audio>` GET 200 đúng Content-Type → xuất bản bị chặn khi thiếu audio → xóa test → API audio 404); helper seed admin qua API + khóa DB `role='admin'`, `email_verified=1` (#413)
+- Docs đồng bộ cổng quản trị: boundary map + quy tắc "admin ngoài kernel tree" trong `docs/system-architecture.md`; runbook thêm origin `admin.<domain>`, binding `ADMIN_ORIGINS`/`ADMIN_EMAILS`, quy trình cấp admin đầu tiên, bucket `library-audio` và kiểm domain custom; `docs/codebase-summary.md` + `docs/project-roadmap.md` đánh dấu mini project admin (#413)
 - Migration `0042_syllabus_class_pointer_reconcile`: UPDATE idempotent same-org chữa con trỏ lớp ↔ giáo trình lệch về đúng bản copy, không xoá dòng (#394)
 
 ### Changed

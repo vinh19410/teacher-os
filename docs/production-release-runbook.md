@@ -18,9 +18,12 @@ environment — never editing this runbook.
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
 | Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
+| Admin console origin | `https://admin.<domain>` | Website.Vite (admin) `domain: adminHost` from `packages/infra/src/topology.ts` (plan #413) |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
 | `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
+| `ADMIN_ORIGINS` (server binding) | `https://admin.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing the admin origin fails the run (drives admin CSRF + sign-up classification, plan #413) |
+| `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set secret-like binding; matched lowercase by `requireAdmin` on every request and by the admin-origin sign-up hook (`ADMIN_SIGNUP_FORBIDDEN`) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -808,3 +811,49 @@ a per-stage operation.
 - **Deploy order & Release train:**
   1. Chạy `db:migrate:deploy` (`0039`) **TRƯỚC** khi deploy worker để học viên học bài thư viện (`libdeck-*`) không gặp lỗi khóa ngoại `SQLITE_CONSTRAINT_FOREIGNKEY`.
   2. Deploy đồng bộ `apps/server`, `apps/web`, và `apps/student` trong cùng một release train (vì `vocabStudentProgressDeckSchema` thêm trường `className` trên response `.strict()`).
+
+## Admin console go-live (plan #413)
+
+Cổng quản trị Teacher OS (`apps/admin`) chạy trên origin riêng
+`https://admin.<domain>` (staging: `admin.staging.teacheros.io.vn`; dev cục
+bộ: 8004, E2E: 8104) và API của nó nằm ở `/api/admin` trên Worker API,
+ngoài kernel tree.
+
+### Binding bắt buộc
+
+| Binding | Giá trị production | Ghi chú |
+| --- | --- | --- |
+| `ADMIN_ORIGINS` | `https://admin.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu origin admin fail loud khi deploy |
+| `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
+| `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
+
+### Quy trình cấp admin đầu tiên
+
+1. Đặt `ADMIN_EMAILS=<email-vận-hành>` trong môi trường deploy (binding,
+   không ghi vào file `.env` cho production) rồi deploy.
+2. Người vận hành mở `https://admin.<domain>/register` (route không được
+   link công khai) và đăng ký bằng đúng email trong danh sách; server từ
+   chối mọi email khác bằng 403 `ADMIN_SIGNUP_FORBIDDEN` (không tạo row
+   `user`).
+3. Verify email (mail verification của Better Auth) — `requireAdmin` đòi
+   `email_verified` bên cạnh `role='admin'` (role được stamp từ Origin
+   admin lúc sign-up).
+4. Smoke: đăng nhập tại `https://admin.<domain>/login` → shell hiện mục
+   "Thư viện đề" và `GET /api/admin/me` trả 200.
+
+### Bucket `library-audio` (kho audio đề Listening)
+
+- Bucket R2 riêng `library-audio` (tách khỏi `MEDIA` bài nói) — worker chỉ
+  đọc/ghi qua adapter inject tại `/api/admin/library/tests/:id/parts/:slot/
+  audio` (PUT upload / GET phát / DELETE dọn theo part, allowlist MIME
+  MP3/M4A/WAV/AAC/OGG/WEBM, trần 50 MB).
+- Xóa bộ đề/part phải dọn sạch object audio tương ứng; kiểm bằng cách GET
+  lại URL audio sau khi xóa — phải trả 404.
+
+### Kiểm domain custom
+
+Sau deploy, xác nhận `https://admin.<domain>` gắn đúng Worker admin,
+certificates issue thành công (giống `app.`/`student.`), và session cookie
+zone (`Domain=.<domain>`) hoạt động: đăng nhập admin rồi gọi
+`https://api.<domain>/api/admin/me` phải 200; một session teacher/student
+gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.

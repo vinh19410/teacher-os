@@ -48,6 +48,16 @@ export interface CreateAuthInput {
 	 * to the student role (least privilege, plan #260 D3).
 	 */
 	studentOrigins: string[];
+	/**
+	 * Origins of the admin console (plan #413). Sign-ups here are rejected
+	 * unless the email is in `adminEmails`; origin khớp CHÍNH XÁC mới tính.
+	 */
+	adminOrigins?: string[];
+	/**
+	 * Allowlist email admin (phân tách dấu phẩy ở binding ADMIN_EMAILS, đã
+	 * parse; so khớp lowercase). Rỗng = không ai đăng ký được role admin.
+	 */
+	adminEmails?: string[];
 	secret: string;
 	/** API origin; authBaseURL() appends the /api/auth mount path. */
 	baseURL: string;
@@ -77,6 +87,9 @@ const ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE =
 /** Tài khoản giáo viên không thể đăng nhập vào cổng học viên (plan #260 D4). */
 const ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE =
 	"Tài khoản giáo viên không thể đăng nhập vào cổng học viên.";
+/** Tài khoản quản trị chỉ dùng cổng admin; role khác không vào cổng admin (plan #413). */
+const ROLE_MISMATCH_ADMIN_MESSAGE =
+	"Tài khoản này không được phép đăng nhập vào cổng quản trị.";
 
 export function createAuth(input: CreateAuthInput) {
 	const cookieDomain = crossSubDomainCookieDomain(input.cookieDomain);
@@ -85,7 +98,9 @@ export function createAuth(input: CreateAuthInput) {
 		? input.corsOrigin
 		: [input.corsOrigin];
 	const teacherOrigins = trustedOrigins.filter(
-		(o) => !input.studentOrigins.includes(o),
+		(o) =>
+			!input.studentOrigins.includes(o) &&
+			!(input.adminOrigins ?? []).includes(o),
 	);
 
 	/** App nguồn từ OAuth state (server-side stamp tại /sign-in/social). */
@@ -142,6 +157,7 @@ export function createAuth(input: CreateAuthInput) {
 			oauthApp,
 			studentOrigins: input.studentOrigins,
 			teacherOrigins,
+			adminOrigins: input.adminOrigins ?? [],
 		});
 	}
 
@@ -173,6 +189,7 @@ export function createAuth(input: CreateAuthInput) {
 								origin: new URL(callbackURL).origin,
 								studentOrigins: input.studentOrigins,
 								teacherOrigins,
+								adminOrigins: input.adminOrigins ?? [],
 							})
 						: null;
 				} catch {
@@ -250,6 +267,7 @@ export function createAuth(input: CreateAuthInput) {
 						origin: ctx.headers?.get("origin") ?? null,
 						studentOrigins: input.studentOrigins,
 						teacherOrigins,
+						adminOrigins: input.adminOrigins ?? [],
 					});
 					return {
 						context: {
@@ -278,6 +296,22 @@ export function createAuth(input: CreateAuthInput) {
 				create: {
 					before: async (user, ctx) => {
 						const appRole = await resolveRequestAppForContext(ctx);
+						// Plan #413: origin admin không được tự cấp quyền admin cho
+						// người lạ — chỉ email trong ADMIN_EMAILS được tạo user role
+						// admin (áp cho cả email/password lẫn Google callback).
+						if (appRole === "admin") {
+							const email = user.email?.trim().toLowerCase() ?? "";
+							const allow = (input.adminEmails ?? []).some(
+								(e) => e.trim().toLowerCase() === email,
+							);
+							if (!email || !allow) {
+								throw new APIError("FORBIDDEN", {
+									message:
+										"Email này không được cấp quyền quản trị. Vui lòng dùng cổng học viên hoặc liên hệ quản trị viên.",
+									code: "ADMIN_SIGNUP_FORBIDDEN",
+								});
+							}
+						}
 						return { data: { ...user, role: appRole } };
 					},
 				},
@@ -288,11 +322,18 @@ export function createAuth(input: CreateAuthInput) {
 						const requiredApp = await resolveRequestAppForContext(ctx);
 						const userRole = await getUserRole(session.userId);
 						if (userRole !== requiredApp) {
+							// Plan #413: role admin chỉ được vào cổng admin; role khác
+							// không bao giờ vào cổng admin dù Origin có khớp.
+							const message =
+								userRole === "admin"
+									? ROLE_MISMATCH_ADMIN_MESSAGE
+									: requiredApp === "admin"
+										? ROLE_MISMATCH_ADMIN_MESSAGE
+										: userRole === "student"
+											? ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE
+											: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE;
 							const error = new APIError("FORBIDDEN", {
-								message:
-									userRole === "student"
-										? ROLE_MISMATCH_STUDENT_ON_TEACHER_MESSAGE
-										: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE,
+								message,
 								code: "ROLE_MISMATCH",
 							});
 							// Link xác thực email (#299): email đã được xác thực trước bước

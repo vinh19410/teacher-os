@@ -10,6 +10,8 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) - kernel transport, snapshot query options, and snapshot mapping
 - [apps/web/src/worker.ts](../apps/web/src/worker.ts) - web asset worker entry: static assets, SPA routes, and branded HTTP 404
 - [apps/landing/public/index.html](../apps/landing/public/index.html) - static marketing landing page entry (zero-framework, served at apex)
+- [apps/admin/src/routes/_auth/route.tsx](../apps/admin/src/routes/_auth/route.tsx) - admin console auth gate (`GET /api/admin/me`, plan #413)
+- [apps/server/src/routes/admin-library.ts](../apps/server/src/routes/admin-library.ts) - admin library CRUD + audio routes at `/api/admin/library`, mounted outside the kernel tree (`requireAdmin` gate + `ADMIN_EMAILS` allowlist + R2 bucket `library-audio`)
 - [apps/server/src/app.ts](../apps/server/src/app.ts) - server app composition and bootstrap middleware
 - [apps/server/src/routes/kernel.ts](../apps/server/src/routes/kernel.ts) - kernel route tree
 - [apps/server/src/routes/assignments/index.ts](../apps/server/src/routes/assignments/index.ts) - assignment-prompt bank create and per-student grading routes, mounted inside the kernel tree
@@ -27,6 +29,7 @@ This is the navigation surface for the repository. It points to the owning files
 - `apps/web` - route files, UI shell, client state, and kernel-facing repository helpers
 - `apps/student` - student portal (React + TanStack Router): login/sign-up, onboarding, overview, class detail (`/classes/$classId`), and quiz take/review routes (`/learn/quizzes/...` with autosave) on its own origin
 - `apps/landing` - static landing page, zero-framework, public/index.html from Open Design design, build = copy, serve.mjs :8002, zero dependencies
+- `apps/admin` - admin console (React + TanStack Router) on its own origin (`admin.<domain>`, dev 8004/8104): ba lớp gate (`ADMIN_EMAILS` allowlist + `requireAdmin` role/email gate + CSRF theo `ADMIN_ORIGINS`) và màn hình "Thư viện đề" soạn đề Reading/Listening dùng chung (#413)
 - `apps/server` - Hono app, auth/session handling, snapshot loaders, and org-scoped kernel routes
 - `apps/e2e` - Playwright specs that boot the real server app under Node with a fresh local D1 database
 - `packages/api` - Zod request schemas and wire DTOs

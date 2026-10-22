@@ -18,6 +18,10 @@ export interface DomainTopology {
 	studentHost: string;
 	/** Browser origin of the student portal. */
 	studentOrigin: string;
+	/** Admin console hostname: admin.<domain> (plan #413). */
+	adminHost: string;
+	/** Browser origin of the admin console (plan #413). */
+	adminOrigin: string;
 	/** Browser origin of the API (BETTER_AUTH_URL). */
 	apiOrigin: string;
 	/** better-auth base URL including the /api/auth mount path. */
@@ -90,6 +94,8 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		appOrigin: `https://app.${domain}`,
 		studentHost: `student.${domain}`,
 		studentOrigin: `https://student.${domain}`,
+		adminHost: `admin.${domain}`,
+		adminOrigin: `https://admin.${domain}`,
 		apiOrigin,
 		authBaseURL: `${apiOrigin}${AUTH_MOUNT_PATH}`,
 		googleRedirectURI: `${apiOrigin}${AUTH_MOUNT_PATH}/callback/google`,
