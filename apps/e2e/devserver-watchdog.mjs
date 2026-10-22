@@ -136,9 +136,7 @@ async function main() {
 
 	const restartService = (svc) => {
 		const machine = tracked.get(svc.name).machine;
-		console.log(
-			`${svc.name} đã restart (lần ${machine.restarts})`,
-		);
+		console.log(`${svc.name} đã restart (lần ${machine.restarts})`);
 		const cmd = buildRestartCommand(svc);
 		const child = spawn(
 			cmd[0],

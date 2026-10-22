@@ -36,7 +36,8 @@
 			"!**/.cache/design-v2",
 			"!**/apps/landing/public",
 			"!**/packages/api/src/srs/vectors",
-			"!assets/videos"
+			"!assets/videos",
+			"!plans/reports/**/*.html"
 		]
 	},
 	"formatter": {
@@ -47,7 +48,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"correctness": {
 				"useExhaustiveDependencies": "info"
 			},

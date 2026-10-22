@@ -19,10 +19,16 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	assert.match(yaml, /pull_request:/, "must trigger on pull_request");
 	assert.match(yaml, /push:/, "must trigger on push");
 	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.doesNotMatch(
+	// Contract locks flow-style branches lists; switching ci.yml to YAML block style requires updating this test.
+	assert.match(
 		yaml,
-		/\bdevelop\b/,
-		"must not trigger on develop (runs on main only)",
+		/pull_request:\s*\n\s*branches:\s*\[main,\s*develop\]/,
+		"pull_request must target main and develop (pre-merge gate)",
+	);
+	assert.match(
+		yaml,
+		/push:\s*\n\s*branches:\s*\[main,\s*develop\]/,
+		"push must cover main and develop (post-merge convergence)",
 	);
 	assert.match(yaml, /pnpm exec biome check \./, "must run read-only biome");
 	assert.match(yaml, /pnpm check-types/, "must run check-types");
@@ -56,6 +62,17 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 		String(rootPkg.scripts?.test ?? ""),
 		/test:ci-workflow/,
 		"root test must invoke the CI contract",
+	);
+	const checkScript = String(rootPkg.scripts?.check ?? "");
+	assert.doesNotMatch(
+		checkScript,
+		/--write/,
+		"root check must not mutate the tree",
+	);
+	assert.equal(
+		checkScript,
+		"biome check .",
+		"root check must be a read-only biome check",
 	);
 
 	const turbo = JSON.parse(readFileSync(join(repoRoot, "turbo.json"), "utf8"));
