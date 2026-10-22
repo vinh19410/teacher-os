@@ -93,7 +93,7 @@ export function LessonModal({
 						/>
 					)}
 					{error && (
-						<div role="alert" className="mb-3 text-danger text-xs">
+						<div role="alert" className="text-danger text-xs">
 							{error}
 						</div>
 					)}

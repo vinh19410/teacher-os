@@ -227,7 +227,7 @@ export function GradeModal({
 					/>
 				</Field>
 				{error && (
-					<p role="alert" className="mb-3 text-danger text-xs">
+					<p role="alert" className="text-danger text-xs">
 						{error}
 					</p>
 				)}

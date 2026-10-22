@@ -58,7 +58,7 @@ export function EditClassFeeModal({
 
 	return (
 		<Modal open={open} onClose={onClose} title="Sửa học phí lớp">
-			<form noValidate onSubmit={submit} className="flex flex-col gap-5">
+			<form noValidate onSubmit={submit}>
 				<Field label="Học phí / học viên (VND)" help="Để trống để xóa học phí">
 					<CurrencyInput
 						placeholder="Để trống để xóa học phí"
@@ -66,7 +66,7 @@ export function EditClassFeeModal({
 						onChange={setFee}
 					/>
 				</Field>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
 							{error}

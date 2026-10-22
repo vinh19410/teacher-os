@@ -498,6 +498,7 @@ export function NewAssignmentRoute() {
 								notice={submit.notice}
 								onReconcile={handleReconcile}
 								disabled={submit.saving}
+								className="mb-2"
 							/>
 						)}
 						{submit.error && (
