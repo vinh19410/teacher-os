@@ -178,7 +178,7 @@ export function InvoiceDetailRoute() {
 
 			<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-6 max-app:grid-cols-1">
 				<div className="flex flex-col gap-6">
-					<Card>
+					<Card className="flex flex-col gap-4">
 						<h2 className="font-semibold leading-none">Thông tin hóa đơn</h2>
 						<dl>
 							<MetaRow label="Mã hóa đơn">
@@ -233,7 +233,7 @@ export function InvoiceDetailRoute() {
 						</p>
 					)}
 
-					<Card>
+					<Card className="flex flex-col gap-4">
 						<h2 className="font-semibold leading-none">Học viên &amp; lớp</h2>
 						<div className="flex flex-wrap items-center gap-x-8 gap-y-3">
 							{student ? (
@@ -263,7 +263,7 @@ export function InvoiceDetailRoute() {
 					</Card>
 				</div>
 
-				<Card className="self-start">
+				<Card className="flex flex-col gap-4 self-start">
 					<h2 className="font-semibold leading-none">
 						Thanh toán chuyển khoản
 					</h2>
@@ -279,7 +279,7 @@ export function InvoiceDetailRoute() {
 						</p>
 					)}
 					{payment.data && (
-						<div className="mt-4">
+						<div>
 							<InvoicePaymentActions
 								invoiceId={inv.id}
 								payable={payment.data.payable}
@@ -289,9 +289,7 @@ export function InvoiceDetailRoute() {
 						</div>
 					)}
 					{payLink !== "" && (
-						<p className="mt-3 break-all text-muted-foreground text-xs">
-							{payLink}
-						</p>
+						<p className="break-all text-muted-foreground text-xs">{payLink}</p>
 					)}
 				</Card>
 			</div>

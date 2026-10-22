@@ -32,7 +32,7 @@ export function BankLinkPanel() {
 		queryClient.invalidateQueries({ queryKey: bankLinkQueryKey });
 
 	return (
-		<Card variant="white">
+		<Card variant="white" className="flex flex-col gap-4">
 			<div>
 				<div className="mb-3 font-medium text-primary text-sm">
 					SePay Bank Hub
