@@ -1,6 +1,6 @@
 ---
 title: "Mini project apps/admin — CRUD bộ đề IELTS Reading & Listening"
-status: pending
+status: completed
 created: 2026-10-22
 branch: develop
 mode: hard
