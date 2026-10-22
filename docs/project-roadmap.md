@@ -105,6 +105,17 @@ Trạng thái: **Đang thực hiện** (2026-09-21) — DOD-1 (#69) có evidence
 - [ ] Decision record 1 trang: mở rộng / lặp pilot / đổi hướng + top 3 blockers theo frequency. Evidence là self-pilot → ghi rõ provisional; nếu chọn mở rộng, bước kế tiếp là pilot với giáo viên thật.
 - [ ] `docs/project-roadmap.md` cập nhật phạm vi quý sau theo quyết định.
 
+## Mini project: Admin console & Thư viện đề (plan #413)
+
+Trạng thái: **Hoàn thành** (2026-10) — mini project chạy song song M5, không thuộc DOD mốc nào.
+
+Console quản trị độc lập (`apps/admin`, origin riêng `admin.<domain>` / dev 8004, E2E 8104) để vận hành soạn đề Reading/Listening dùng chung cho cả hệ thống:
+
+- Ba lớp gate: sign-up chỉ cho email trong `ADMIN_EMAILS` (`ADMIN_SIGNUP_FORBIDDEN`), `requireAdmin` kiểm `role='admin'` ∧ `email_verified` ∧ email ∈ `ADMIN_EMAILS` mỗi request, CSRF write theo `ADMIN_ORIGINS`.
+- API `/api/admin/library` nằm ngoài kernel tree; audio đề Listening lưu bucket R2 riêng `library-audio` (dev/E2E: FS store).
+- Màn hình: danh sách/filter bộ đề, soạn part theo slot catalog (Reading 3 passage, Listening 4 section), upload + phát audio, kiểm điều kiện xuất bản (`validateTestReady`), xuất bản/hạ nháp/xóa.
+- E2E: `apps/e2e/specs/admin-auth.spec.ts`, `admin-library-reading.spec.ts`, `admin-library-listening.spec.ts`.
+
 ## Thước đo thành công
 
 - Staging UAT pass toàn bộ luồng sign-in → lớp/học viên/enrollment → buổi học → reload.

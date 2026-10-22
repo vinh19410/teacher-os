@@ -8,6 +8,7 @@ export * from "./comment-bank";
 export * from "./enrollment";
 export * from "./invoice";
 export * from "./lesson";
+export * from "./library-test";
 export * from "./membership";
 export * from "./notif";
 export * from "./org-bank-link";

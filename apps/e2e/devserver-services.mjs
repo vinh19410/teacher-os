@@ -4,7 +4,7 @@
 // `devserver-watchdog.mjs` (restart) để command/env không drift. Module pure,
 // không I/O — unit test tại `scripts/devserver-watchdog.test.mjs`.
 
-/** Parse + validate 3 port từ env. Sai/thiếu → throw (watchdog exit 2). */
+/** Parse + validate 4 port từ env. Sai/thiếu → throw (watchdog exit 2). */
 export function parsePorts(env) {
 	const read = (key) => {
 		const raw = env[key];
@@ -19,6 +19,7 @@ export function parsePorts(env) {
 		api: read("E2E_API_PORT"),
 		web: read("E2E_WEB_PORT"),
 		student: read("E2E_STUDENT_PORT"),
+		admin: read("E2E_ADMIN_PORT"),
 	};
 }
 
@@ -32,10 +33,13 @@ export function parsePorts(env) {
  */
 
 /**
- * Định nghĩa 3 service được giám sát. pollUrl khớp CHÍNH XÁC url readiness
+ * Định nghĩa 4 service được giám sát. pollUrl khớp CHÍNH XÁC url readiness
  * của entry webServer trong playwright.config.ts; deadStatus khớp semantics
  * playwright (available chỉ khi status < 404, `coreBundle.js:8514-8524`) —
  * api dùng 500 vì readyz trả 503 khi DB probe hỏng (`routes/readiness.ts:73`).
+ * Admin (plan #413 phase 5): buildServices KHÔNG hỗ trợ lazy startup theo
+ * spec, nên admin luôn chạy đủ 4 vite — theo dõi memory (rolldown abort,
+ * AGENTS.md).
  * @returns {DevServerService[]}
  */
 export function buildServices(ports) {
@@ -73,6 +77,21 @@ export function buildServices(ports) {
 				"vite",
 				"--port",
 				String(ports.student),
+				"--strictPort",
+			],
+		},
+		{
+			name: "admin",
+			kind: "vite",
+			pollUrl: `http://localhost:${ports.admin}/login`,
+			deadStatus: 404,
+			restartArgs: [
+				"--filter",
+				"admin",
+				"exec",
+				"vite",
+				"--port",
+				String(ports.admin),
 				"--strictPort",
 			],
 		},

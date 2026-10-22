@@ -9,7 +9,9 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { MediaStore } from "./lib/media-store";
+import { createAdminMeRoutes } from "./lib/require-admin";
 import { redactResetToken } from "./log-redaction";
+import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { kernelRoutes } from "./routes/kernel";
@@ -62,6 +64,23 @@ export interface AppDeps {
 	 */
 	getMediaStore?(): MediaStore | undefined;
 	/**
+	 * Kho audio thư viện đề (#413 phase 3) — R2 ở production, đĩa ở e2e.
+	 * Vắng mặt → các route audio của /api/admin/library trả 503
+	 * LIBRARY_AUDIO_DISABLED, cùng hợp đồng với `getMediaStore`.
+	 */
+	getLibraryAudioStore?(): MediaStore | undefined;
+	/**
+	 * Plan #413: allowlist email admin (binding ADMIN_EMAILS đã parse; so
+	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
+	 */
+	adminEmails?: string[];
+	/**
+	 * Plan #413: origin của console admin dùng cho CSRF /api/admin — cố ý
+	 * tách khỏi `corsOrigin` (gồm cả origin teacher/student). Rỗng → mọi
+	 * write /api/admin bị 403 (fail-closed).
+	 */
+	adminOrigins?: string | string[];
+	/**
 	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
 	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
 	 */
@@ -92,7 +111,9 @@ function bootstrapMiddleware(deps: AppDeps) {
 		if (
 			isAuthPath(pathname) ||
 			pathname === "/api/student" ||
-			pathname.startsWith("/api/student/")
+			pathname.startsWith("/api/student/") ||
+			pathname === "/api/admin" ||
+			pathname.startsWith("/api/admin/")
 		) {
 			return next();
 		}
@@ -108,6 +129,17 @@ function bootstrapMiddleware(deps: AppDeps) {
 				{
 					error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
 					code: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+				},
+				403,
+			);
+		}
+		// Plan #413: role admin không bao giờ bootstrap org/membership trên
+		// kernel tree — admin chỉ làm việc trên /api/admin (bypass ở trên).
+		if (session.role === "admin") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
+					code: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
 				},
 				403,
 			);
@@ -238,6 +270,32 @@ export function buildApp(deps: AppDeps) {
 	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
 	// guard tự gắn trong router như practice.
 	app.route("/api/student", studentHistoryRoutes(deps));
+	// Plan #413 phase 3: router thật của thư viện đề — requireAdmin +
+	// CSRF Origin(adminOrigins) tự gắn trong router; bootstrapMiddleware vẫn
+	// bypass /api/admin nên không session teacher nào bootstrap org qua
+	// đường này. Mount tại /api/admin/library; các nhánh admin khác (phase
+	// sau) mount song song cùng guard.
+	app.route(
+		"/api/admin/library",
+		adminLibraryRoutes({
+			getDb: deps.getDb,
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
+			adminOrigins: deps.adminOrigins ?? [],
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			runInBackground: deps.runInBackground,
+		}),
+	);
+	// Plan #413: GET /api/admin/me — identity admin sau gate, guard _auth của
+	// console (apps/admin/src/routes/_auth/route.tsx) dùng để quyết shell hay
+	// redirect /login?error=<mã gate>.
+	app.route(
+		"/api/admin",
+		createAdminMeRoutes({
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
+		}),
+	);
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

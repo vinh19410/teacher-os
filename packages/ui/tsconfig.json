@@ -6,7 +6,10 @@
 		"types": [],
 		"paths": {
 			"@teacher-os/ui/*": ["./src/*"]
-		}
+		},
+		// editor 组件从 apps/web 原样移入（web 的 tsconfig 未开启此 flag），
+		// 行为保持迁移，不为迁移改写源码。
+		"noUncheckedIndexedAccess": false
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"],
 	"exclude": ["node_modules"]

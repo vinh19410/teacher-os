@@ -26,6 +26,7 @@ export function parseCORSOrigins(raw: string): string[] {
 let db: Db | undefined;
 let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
+let libraryAudioStore: MediaStore | undefined;
 let bankHub: BankHubContext | undefined;
 
 // One memoized auth (sharing the memoized db) per isolate, still created
@@ -57,6 +58,10 @@ const getAuth = (): Auth => {
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
+			// Plan #413: cổng admin + allowlist email admin (rỗng = không ai là
+			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
+			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
+			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -87,6 +92,17 @@ export default buildApp({
 		mediaStore ??= createR2MediaStore(env.MEDIA);
 		return mediaStore;
 	},
+	// Kho audio thư viện đề (#413 phase 3) — cùng hợp đồng: binding
+	// LIBRARY_AUDIO thiếu → undefined → route audio trả 503
+	// LIBRARY_AUDIO_DISABLED.
+	getLibraryAudioStore: () => {
+		if (!env.LIBRARY_AUDIO) return undefined;
+		libraryAudioStore ??= createR2MediaStore(env.LIBRARY_AUDIO);
+		return libraryAudioStore;
+	},
+	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
+	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
 	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
 	getBankHub: () => {

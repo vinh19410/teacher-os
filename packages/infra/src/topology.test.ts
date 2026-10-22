@@ -9,6 +9,8 @@ describe("resolveDomainTopology", () => {
 			appOrigin: "https://app.teacher-os.edu.vn",
 			studentHost: "student.teacher-os.edu.vn",
 			studentOrigin: "https://student.teacher-os.edu.vn",
+			adminHost: "admin.teacher-os.edu.vn",
+			adminOrigin: "https://admin.teacher-os.edu.vn",
 			apiOrigin: "https://api.teacher-os.edu.vn",
 			authBaseURL: "https://api.teacher-os.edu.vn/api/auth",
 			googleRedirectURI:
@@ -113,5 +115,13 @@ describe("resolveDomainTopology", () => {
 		expect(() => resolveDomainTopology("teacher os.edu.vn")).toThrow(
 			/bare domain/,
 		);
+	});
+});
+
+describe("admin host (plan #413 phase 1)", () => {
+	it("derives the admin portal host and origin from the bare domain", () => {
+		const t = resolveDomainTopology("teacher-os.edu.vn");
+		expect(t.adminHost).toBe("admin.teacher-os.edu.vn");
+		expect(t.adminOrigin).toBe("https://admin.teacher-os.edu.vn");
 	});
 });

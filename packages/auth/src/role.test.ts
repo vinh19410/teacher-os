@@ -3,6 +3,7 @@ import { resolveRequestApp, resolveUserRole } from "./role";
 
 const STUDENT = ["http://localhost:8003", "https://portal.example.com"];
 const TEACHER = ["http://localhost:8001", "https://app.example.com"];
+const ADMIN = ["http://localhost:8004", "https://admin.example.com"];
 
 describe("resolveUserRole", () => {
 	test("student maps to student", () => {
@@ -112,6 +113,82 @@ describe("resolveRequestApp", () => {
 			resolveRequestApp({
 				origin: null,
 				oauthApp: null,
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+			}),
+		).toBe("student");
+	});
+});
+
+describe("resolveUserRole — admin (plan #413 phase 1)", () => {
+	test("admin maps to admin", () => {
+		expect(resolveUserRole("admin")).toBe("admin");
+	});
+});
+
+describe("resolveRequestApp — admin origin (plan #413 phase 1)", () => {
+	test("exact admin origin → admin", () => {
+		expect(
+			resolveRequestApp({
+				origin: "http://localhost:8004",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("admin");
+		expect(
+			resolveRequestApp({
+				origin: "https://admin.example.com",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("admin");
+	});
+
+	test("admin origin matching is exact — prefix/suffix spoofs stay student", () => {
+		expect(
+			resolveRequestApp({
+				origin: "http://localhost:80040",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("student");
+		expect(
+			resolveRequestApp({
+				origin: "https://admin.example.com.evil.com",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("student");
+		expect(
+			resolveRequestApp({
+				origin: "https://evil-admin.example.com",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("student");
+	});
+
+	test("unknown origin with admin oauthApp stamp → admin", () => {
+		expect(
+			resolveRequestApp({
+				origin: "https://stranger.example.com",
+				oauthApp: "admin",
+				studentOrigins: STUDENT,
+				teacherOrigins: TEACHER,
+				adminOrigins: ADMIN,
+			}),
+		).toBe("admin");
+	});
+
+	test("missing adminOrigins behaves like an empty admin list", () => {
+		expect(
+			resolveRequestApp({
+				origin: "http://localhost:8004",
 				studentOrigins: STUDENT,
 				teacherOrigins: TEACHER,
 			}),

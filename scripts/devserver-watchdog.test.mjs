@@ -13,7 +13,7 @@ const watchdog = await import(
 	new URL(`file://${join(e2e, "devserver-watchdog.mjs")}`).href
 );
 
-const PORTS = { api: 8100, web: 8101, student: 8103 };
+const PORTS = { api: 8100, web: 8101, student: 8103, admin: 8104 };
 const ok = () => ({ ok: true });
 const refused = () => ({ ok: false, reason: "refused" });
 const stall = () => ({ ok: false, reason: "stall" });
@@ -36,11 +36,11 @@ const makeState = (kind, name, calls = []) =>
 	});
 const clock = { t: 0 };
 
-test("buildServices: đủ 3 service với url poll đúng, student CÓ url", () => {
+test("buildServices: đủ 4 service với url poll đúng, student/admin CÓ url", () => {
 	const list = services.buildServices(PORTS);
 	assert.deepEqual(
 		list.map((s) => s.name),
-		["api", "web", "student"],
+		["api", "web", "student", "admin"],
 	);
 	const byName = Object.fromEntries(list.map((s) => [s.name, s]));
 	assert.equal(byName.api.pollUrl, "http://localhost:8100/readyz");
@@ -50,9 +50,15 @@ test("buildServices: đủ 3 service với url poll đúng, student CÓ url", ()
 		"http://localhost:8103/login",
 		"student phải có url poll (red-team FailH1)",
 	);
+	assert.equal(
+		byName.admin.pollUrl,
+		"http://localhost:8104/login",
+		"admin phải có url poll (plan #413 phase 5)",
+	);
 	assert.equal(byName.api.deadStatus, 500);
 	assert.equal(byName.web.deadStatus, 404);
 	assert.equal(byName.student.deadStatus, 404);
+	assert.equal(byName.admin.deadStatus, 404);
 });
 
 test("buildRestartCommand/buildSpawnOptions: pnpm trực tiếp, không shell, không detached", () => {
@@ -91,18 +97,35 @@ test("parsePorts: hợp lệ → số; sai/thiếu → throw message rõ", () =>
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "8101",
 			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
 		}),
 		PORTS,
 	);
 	for (const bad of [
 		{},
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "", E2E_STUDENT_PORT: "8103" },
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "abc", E2E_STUDENT_PORT: "8103" },
-		{ E2E_API_PORT: "8100", E2E_WEB_PORT: "99999", E2E_STUDENT_PORT: "8103" },
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "abc",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
+		{
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "99999",
+			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
+		},
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "8101 --host 0.0.0.0",
 			E2E_STUDENT_PORT: "8103",
+			E2E_ADMIN_PORT: "8104",
 		},
 	]) {
 		assert.throws(

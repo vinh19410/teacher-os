@@ -26,7 +26,7 @@ test("runbook google redirect URI matches the mount path", () => {
 	);
 });
 
-test("dev CORS default in alchemy.run.ts matches web and student dev ports", () => {
+test("dev CORS default in alchemy.run.ts matches web, student, and admin dev ports", () => {
 	const webVite = read("../apps/web/vite.config.ts");
 	const webPort = webVite.match(/port:\s*(\d+)/)?.[1];
 	assert.ok(webPort, "dev port found in apps/web/vite.config.ts");
@@ -36,9 +36,13 @@ test("dev CORS default in alchemy.run.ts matches web and student dev ports", () 
 	assert.ok(studentPort, "dev port found in apps/student/vite.config.ts");
 	assert.equal(studentPort, "8003");
 
+	// Plan #413 phase 1: cổng admin dev chạy ở 8004 (admin app ra mắt ở phase
+	// sau nhưng origin phải có trong CORS default từ phase này).
+	const ADMIN_DEV_PORT = "8004";
+
 	const run = read("../packages/infra/alchemy.run.ts");
 	const devDefault = run.match(
-		/withDefault\("(http:\/\/localhost:\d+,http:\/\/localhost:\d+)"\)/,
+		/withDefault\(\s*"(http:\/\/localhost:\d+,http:\/\/localhost:\d+,http:\/\/localhost:\d+)"\s*,?\s*\)/,
 	)?.[1];
 	assert.ok(
 		devDefault,
@@ -46,8 +50,14 @@ test("dev CORS default in alchemy.run.ts matches web and student dev ports", () 
 	);
 	assert.equal(
 		devDefault,
-		`http://localhost:${webPort},http://localhost:${studentPort}`,
+		`http://localhost:${webPort},http://localhost:${studentPort},http://localhost:${ADMIN_DEV_PORT}`,
 	);
+
+	const adminDefault = run
+		.split("const adminOriginsConfig")[1]
+		?.match(/withDefault\("(http:\/\/localhost:(\d+))"\)/);
+	assert.ok(adminDefault, "ADMIN_ORIGINS dev default found in alchemy.run.ts");
+	assert.equal(adminDefault[2], ADMIN_DEV_PORT);
 });
 
 test("runbook never persists CORS_ORIGIN or APP_DOMAIN into .env", () => {

@@ -21,6 +21,14 @@ import { getSessionUser } from "./session";
 
 const WEB_ORIGIN = "http://localhost:8001";
 const PORTAL_ORIGIN = "http://localhost:8003";
+const ADMIN_ORIGIN = "http://localhost:8004";
+/** Allowlist email admin của test này (mỗi test một email riêng, tránh 422 trùng email). */
+const ADMIN_EMAILS = [
+	"gate-admin-1@test.local",
+	"gate-admin-2@test.local",
+	"gate-admin-3@test.local",
+	"gate-admin-4@test.local",
+];
 const MIGRATIONS_DIR = new URL(
 	"../../../packages/db/src/migrations",
 	import.meta.url,
@@ -59,8 +67,10 @@ describe("api role gates", () => {
 
 		const auth = createAuth({
 			db: libsqlDb,
-			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN],
+			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN, ADMIN_ORIGIN],
 			studentOrigins: [PORTAL_ORIGIN],
+			adminOrigins: [ADMIN_ORIGIN],
+			adminEmails: ADMIN_EMAILS,
 			secret: "test-secret-0123456789abcdef0123456789abcdef",
 			baseURL: "http://localhost:8000",
 			googleClientId: "test-dummy",
@@ -76,7 +86,10 @@ describe("api role gates", () => {
 		});
 	});
 
-	async function signUp(options: { origin: string }): Promise<string> {
+	async function signUp(options: {
+		origin: string;
+		email?: string;
+	}): Promise<string> {
 		const res = await app.request("/api/auth/sign-up/email", {
 			method: "POST",
 			headers: {
@@ -85,7 +98,7 @@ describe("api role gates", () => {
 			},
 			body: JSON.stringify({
 				name: "Gate Test",
-				email: `gate-${crypto.randomUUID()}@test.local`,
+				email: options.email ?? `gate-${crypto.randomUUID()}@test.local`,
 				password: "password-8chars",
 			}),
 		});
@@ -211,5 +224,86 @@ describe("api role gates", () => {
 		expect(res.status).toBe(403);
 		const body = (await res.json()) as { code?: string };
 		expect(body.code).toBe(ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL);
+	});
+	test("sign-up trên admin origin với email ngoài allowlist → 403 ADMIN_SIGNUP_FORBIDDEN, không có row user", async () => {
+		const usersBefore = await raw.execute("SELECT count(*) AS n FROM user");
+		const res = await app.request("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				origin: ADMIN_ORIGIN,
+			},
+			body: JSON.stringify({
+				name: "Stranger",
+				email: `stranger-${crypto.randomUUID()}@test.local`,
+				password: "password-8chars",
+			}),
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { code?: string };
+		expect(body.code).toBe("ADMIN_SIGNUP_FORBIDDEN");
+
+		const usersAfter = await raw.execute("SELECT count(*) AS n FROM user");
+		expect(Number(usersAfter.rows[0]?.n)).toBe(Number(usersBefore.rows[0]?.n));
+	});
+
+	test("admin session trên kernel API → 403 ACCOUNT_ADMIN_ROLE, không tạo org/membership", async () => {
+		const token = await signUp({
+			origin: ADMIN_ORIGIN,
+			email: ADMIN_EMAILS[1],
+		});
+		const orgsBefore = await countRows(schema.organization);
+		const membershipsBefore = await countRows(schema.membership);
+
+		const res = await app.request("/api/kernel", {
+			headers: {
+				origin: WEB_ORIGIN,
+				cookie: `better-auth.session_token=${token}`,
+			},
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { error?: string };
+		expect(body.error).toBe(ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP);
+
+		expect(await countRows(schema.organization)).toBe(orgsBefore);
+		expect(await countRows(schema.membership)).toBe(membershipsBefore);
+	});
+
+	test("admin session trên /api/student → 403 (guard whitelist role !== student)", async () => {
+		const token = await signUp({
+			origin: ADMIN_ORIGIN,
+			email: ADMIN_EMAILS[2],
+		});
+		const res = await app.request("/api/student/me", {
+			headers: {
+				origin: PORTAL_ORIGIN,
+				cookie: `better-auth.session_token=${token}`,
+			},
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { error?: string };
+		expect(body.error).toBe(ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL);
+	});
+
+	test("/api/admin được bootstrap bỏ qua như /api/student (mount point phase 3)", async () => {
+		// Router admin tự gắn requireAdmin: path lạ vẫn bị gate chặn 403
+		// (session phase này chưa verify email → ACCOUNT_NOT_ADMIN) và
+		// KHÔNG bootstrap org/membership. GET /api/admin/me là endpoint thật
+		// duy nhất ở mount này (identity sau gate).
+		const token = await signUp({
+			origin: ADMIN_ORIGIN,
+			email: ADMIN_EMAILS[3],
+		});
+		const orgsBefore = await countRows(schema.organization);
+		const res = await app.request("/api/admin/anything", {
+			headers: {
+				origin: ADMIN_ORIGIN,
+				cookie: `better-auth.session_token=${token}`,
+			},
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { code?: string };
+		expect(body.code).toBe(ACCOUNT_ERROR_CODES.NOT_ADMIN);
+		expect(await countRows(schema.organization)).toBe(orgsBefore);
 	});
 });
