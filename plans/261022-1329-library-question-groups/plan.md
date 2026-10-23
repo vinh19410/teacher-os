@@ -9,6 +9,7 @@ created: 2026-10-22
 branch: develop
 mode: advice
 brainstorm: plans/reports/brainstorm-261022-2024-question-group-exam-structure.md
+issue: https://github.com/vinh19410/teacher-os/issues/420
 ---
 
 # Thư viện đề: tầng Question Group (PR1 + PR2)
