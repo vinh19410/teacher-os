@@ -8,13 +8,16 @@ import {
 	isLibrarySkill,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
+	LIBRARY_GROUP_MAX,
 	type LibraryErrorCode,
 	type LibraryPartDto,
 	type LibraryPartInput,
+	type LibraryQuestionGroup,
 	type LibrarySkill,
 	type LibraryTestDetail,
 	type LibraryTestListItem,
 	libraryPartUpsertSchema,
+	libraryQuestionGroupSchema,
 	libraryTestCreateSchema,
 	libraryTestUpdateSchema,
 	validatePartForReady,
@@ -121,6 +124,17 @@ function parseStringArray(raw: string): string[] {
 	);
 }
 
+/** Cột `groups` → nhóm đã validate; JSON hỏng/phần tử sai shape → []
+ * (fail-soft như `questions` — nhóm ngầm là fallback an toàn vì upsert
+ * đã chặn dữ liệu sai từ lúc lưu). */
+function parseGroups(raw: string): LibraryQuestionGroup[] {
+	const parsed = libraryQuestionGroupSchema
+		.array()
+		.max(LIBRARY_GROUP_MAX)
+		.safeParse(parseJsonArray(raw));
+	return parsed.success ? parsed.data : [];
+}
+
 /** Row part → input cho validatePartForReady/validateTestReady. */
 function toPartInput(row: PartRow): LibraryPartInput {
 	return {
@@ -134,6 +148,7 @@ function toPartInput(row: PartRow): LibraryPartInput {
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
 		questions: parseJsonArray(row.questions) as LibraryPartInput["questions"],
+		groups: parseGroups(row.groups),
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,
 		audioName: row.audioName ?? "",
@@ -154,6 +169,7 @@ function toPartDto(row: PartRow): LibraryPartDto {
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
 		questions: parseJsonArray(row.questions),
+		groups: parseGroups(row.groups),
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,
 		audio:
@@ -522,6 +538,7 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			imageUrl: body.data.imageUrl,
 			questions: JSON.stringify(body.data.questions),
 			optionBank: JSON.stringify(body.data.optionBank),
+			groups: JSON.stringify(body.data.groups),
 			note: body.data.note,
 		};
 		await withDb()

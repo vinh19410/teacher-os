@@ -7,8 +7,10 @@ import {
 	type LibraryPartDto,
 	type LibraryPartInput,
 	type LibraryPartIssue,
+	type LibraryQuestionGroup,
 	type LibrarySkill,
 	libraryPartUpsertSchema,
+	libraryQuestionGroupSchema,
 	validatePartForReady,
 } from "@teacher-os/api/library-contracts";
 import {
@@ -43,6 +45,7 @@ export interface PartFormValue {
 	transcript: string;
 	imageUrl: string;
 	questions: QuestionItem[];
+	groups: LibraryQuestionGroup[];
 	optionBank: string[];
 	note: string;
 }
@@ -73,6 +76,7 @@ export function emptyPartValue(
 		transcript: "",
 		imageUrl: "",
 		questions: type ? [emptyItem(type)] : [],
+		groups: [],
 		optionBank: [],
 		note: "",
 	};
@@ -86,7 +90,10 @@ export function normalizeQuestions(raw: unknown[]): QuestionItem[] {
 			// zod output cho phép undefined (nullish) — đút về đúng hình dạng
 			// `AssignmentQuestion` (opts/pin: null tường minh) để dirty-compare
 			// và QuestionKeyEditor nhận nguyên văn.
-			return {
+			const item: QuestionItem & {
+				explanation?: string;
+				answerSet?: string;
+			} = {
 				stem: parsed.data.stem,
 				opts: parsed.data.opts ?? null,
 				answer: parsed.data.answer,
@@ -94,6 +101,13 @@ export function normalizeQuestions(raw: unknown[]): QuestionItem[] {
 				type: parsed.data.type ?? null,
 				pin: parsed.data.pin ?? null,
 			};
+			if (typeof parsed.data.explanation === "string") {
+				item.explanation = parsed.data.explanation;
+			}
+			if (typeof parsed.data.answerSet === "string") {
+				item.answerSet = parsed.data.answerSet;
+			}
+			return item;
 		}
 		const fallbackType =
 			typeof question === "object" &&
@@ -104,6 +118,31 @@ export function normalizeQuestions(raw: unknown[]): QuestionItem[] {
 				: "";
 		return emptyItem(fallbackType);
 	});
+}
+
+/** groups trên wire là unknown[] — rebuild theo thứ tự key cố định để
+ * canonical (JSON.stringify) ổn định giữa group client-dựng và server-xuất
+ * (khác key order → dirty "vĩnh viễn"). Group lỗi → bỏ qua. */
+export function normalizeGroups(raw: unknown): LibraryQuestionGroup[] {
+	if (!Array.isArray(raw)) return [];
+	const groups: LibraryQuestionGroup[] = [];
+	for (const entry of raw) {
+		const parsed = libraryQuestionGroupSchema.safeParse(entry);
+		if (!parsed.success) continue;
+		const group = parsed.data;
+		groups.push({
+			id: group.id,
+			type: group.type,
+			instruction: group.instruction,
+			startIndex: group.startIndex,
+			count: group.count,
+			optionBank: group.optionBank,
+			answersInline: group.answersInline,
+			splitContent: group.splitContent,
+			dragDrop: group.dragDrop,
+		});
+	}
+	return groups;
 }
 
 export function partValueFromDto(dto: LibraryPartDto): PartFormValue {
@@ -117,6 +156,7 @@ export function partValueFromDto(dto: LibraryPartDto): PartFormValue {
 		transcript: dto.transcript,
 		imageUrl: dto.imageUrl,
 		questions: normalizeQuestions(dto.questions),
+		groups: normalizeGroups(dto.groups),
 		optionBank: dto.optionBank,
 		note: dto.note,
 	};
@@ -134,6 +174,7 @@ function canonicalPartValue(value: PartFormValue): string {
 		transcript: value.transcript,
 		imageUrl: value.imageUrl,
 		questions: value.questions,
+		groups: value.groups,
 		optionBank: value.optionBank,
 		note: value.note,
 	});
@@ -202,6 +243,7 @@ const FIELD_ERROR_TEXT: Record<string, string> = {
 	imageUrl: "Ảnh phải là URL https hợp lệ (tối đa 500 ký tự).",
 	questions: "Tối đa 40 câu hỏi.",
 	optionBank: "Ngân hàng đáp án tối đa 8 mục.",
+	groups: "Dữ liệu nhóm câu không hợp lệ.",
 };
 
 /** Build input PUT theo ĐÚNG `libraryPartUpsertSchema` (phase 2). */
@@ -220,13 +262,21 @@ export function partInputFromValue(
 		transcript: value.transcript,
 		imageUrl: value.imageUrl,
 		questions: value.questions,
+		groups: value.groups,
 		optionBank: value.optionBank,
 		note: value.note,
 	});
 	if (!parsed.success) {
 		const errors: Record<string, string> = {};
 		for (const issue of parsed.error.issues) {
-			const key = typeof issue.path[0] === "string" ? issue.path[0] : "title";
+			// Lỗi tầng nhóm giữ path đầy đủ ("groups.1.optionBank") để
+			// GroupCard tra đúng field; field khác giữ key cấp 1 như cũ.
+			const key =
+				issue.path[0] === "groups"
+					? issue.path.join(".")
+					: typeof issue.path[0] === "string"
+						? issue.path[0]
+						: "title";
 			if (!errors[key]) errors[key] = FIELD_ERROR_TEXT[key] ?? issue.message;
 		}
 		return { ok: false, errors };
@@ -258,13 +308,21 @@ export function partReadyIssues(
 		transcript: value.transcript,
 		imageUrl: value.imageUrl,
 		questions: value.questions,
+		groups: value.groups,
 		optionBank: value.optionBank,
 		note: value.note,
 		audioName: savedAudioName ?? "",
 	});
 	if (!parsed.success) {
 		return parsed.error.issues.map((issue) => ({
-			path: typeof issue.path[0] === "string" ? issue.path[0] : "title",
+			// Lỗi tầng nhóm giữ path đầy đủ ("groups.1.optionBank") để hiển
+			// thị đúng field của nhóm; key khác giữ cấp 1 như cũ.
+			path:
+				issue.path[0] === "groups"
+					? issue.path.join(".")
+					: typeof issue.path[0] === "string"
+						? issue.path[0]
+						: "title",
 			message: FIELD_ERROR_TEXT[issue.path[0] as string] ?? issue.message,
 		}));
 	}

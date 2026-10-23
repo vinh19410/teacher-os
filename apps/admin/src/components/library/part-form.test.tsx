@@ -440,3 +440,147 @@ describe("PartForm (render tĩnh)", () => {
 		expect(savedHtml).toContain('value="Passage 1"');
 	});
 });
+
+describe("normalizeQuestions — không làm rơi explanation/answerSet (chống data-loss)", () => {
+	it("round-trip DTO → partValueFromDto → partInputFromValue giữ explanation/answerSet", () => {
+		const dtoWithExtras: LibraryPartDto = {
+			...partDto,
+			questions: [
+				{
+					stem: "Câu 1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+					explanation: "<p>Vì sao True</p>",
+					answerSet: "khoa-1",
+				},
+				{
+					stem: "Câu 2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+					answerSet: "khoa-1",
+				},
+			],
+		};
+		const value = partValueFromDto(dtoWithExtras);
+		expect(value.questions[0]?.explanation).toBe("<p>Vì sao True</p>");
+		expect(value.questions[0]?.answerSet).toBe("khoa-1");
+		const built = partInputFromValue("p1", value);
+		if (!built.ok) throw new Error(JSON.stringify(built.errors));
+		expect(built.input.questions[0]).toMatchObject({
+			explanation: "<p>Vì sao True</p>",
+			answerSet: "khoa-1",
+		});
+		// isPartDirty phải NHẬN thay đổi explanation (field không bị strip).
+		expect(isPartDirty("reading", "p1", dtoWithExtras, value)).toBe(false);
+		const edited = {
+			...value,
+			questions: value.questions.map((q, i) =>
+				i === 0 ? { ...q, explanation: "<p>Sửa giải thích</p>" } : q,
+			),
+		};
+		expect(isPartDirty("reading", "p1", dtoWithExtras, edited)).toBe(true);
+	});
+
+	it("câu không có explanation/answerSet không thêm key mới", () => {
+		const value = partValueFromDto(partDto);
+		expect("explanation" in (value.questions[0] ?? {})).toBe(false);
+		expect("answerSet" in (value.questions[0] ?? {})).toBe(false);
+	});
+});
+
+describe("groups trong PartFormValue", () => {
+	const groupDto = (id: string, startIndex: number, count: number) => ({
+		id,
+		type: "tfng",
+		instruction: "",
+		startIndex,
+		count,
+		optionBank: [],
+		answersInline: false,
+		splitContent: false,
+		dragDrop: false,
+	});
+
+	it("normalizeGroups rebuild key-order cố định → canonical ổn định, không dirty vĩnh viễn", () => {
+		// Server xuất group với key order khác client-dựng.
+		const shuffled = [
+			{
+				dragDrop: false,
+				splitContent: false,
+				answersInline: false,
+				optionBank: [],
+				count: 2,
+				startIndex: 0,
+				instruction: "",
+				type: "tfng",
+				id: "g1",
+			},
+		];
+		const dtoWithGroups: LibraryPartDto = {
+			...partDto,
+			questions: [
+				{
+					stem: "Câu 1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: shuffled,
+		};
+		const value = partValueFromDto(dtoWithGroups);
+		expect(value.groups).toEqual([groupDto("g1", 0, 2)]);
+		expect(isPartDirty("reading", "p1", dtoWithGroups, value)).toBe(false);
+		const built = partInputFromValue("p1", value);
+		if (!built.ok) throw new Error(JSON.stringify(built.errors));
+		expect(built.input.groups).toHaveLength(1);
+	});
+
+	it("lỗi tầng nhóm giữ path dotted đầy đủ (groups.1.startIndex)", () => {
+		const value = partValueFromDto(partDto);
+		const broken = {
+			...value,
+			title: "Passage 1",
+			questions: [
+				{
+					stem: "Câu 1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			// Nhóm 2 hở số câu (startIndex 2 thay vì 1) → lỗi contiguous.
+			groups: [groupDto("g1", 0, 1), groupDto("g2", 2, 1)],
+		};
+		const built = partInputFromValue("p1", broken);
+		expect(built.ok).toBe(false);
+		if (!built.ok) {
+			expect(
+				Object.keys(built.errors).some((k) => k.startsWith("groups.")),
+			).toBe(true);
+		}
+		const issues = partReadyIssues("reading", "p1", {
+			...broken,
+			passage: "<p>Đủ</p>",
+		});
+		expect(issues.some((issue) => issue.path.startsWith("groups."))).toBe(true);
+	});
+});

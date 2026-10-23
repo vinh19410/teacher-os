@@ -30,6 +30,39 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 		/answer must be a label/i,
 		"Đáp án phải là một nhãn nằm trong ngân hàng đáp án.",
 	],
+	[/invalid type for skill/i, "Dạng bài không thuộc kỹ năng này."],
+	[/question type must match its group/i, "Dạng câu phải trùng dạng của nhóm."],
+	[/first group must start at 0/i, "Nhóm câu bị chồng hoặc hở số câu."],
+	[/groups must be contiguous/i, "Nhóm câu bị chồng hoặc hở số câu."],
+	[
+		/group counts must cover every question/i,
+		"Nhóm câu bị chồng hoặc hở số câu.",
+	],
+	[/duplicate group id/i, "Nhóm câu bị chồng hoặc hở số câu."],
+	[
+		/optionBank lives on groups when groups exist/i,
+		"Ngân hàng đáp án nằm ở từng nhóm khi có nhóm.",
+	],
+	[
+		/part type must equal first group type/i,
+		"Dạng bài của part phải trùng nhóm đầu.",
+	],
+	[
+		/inline answers need a completion type/i,
+		"Chỉ dạng điền từ mới đặt ô trả lời trong nội dung.",
+	],
+	[
+		/inline question needs exactly one blank/i,
+		"Câu điền từ cần đúng một ô trống ____.",
+	],
+	[
+		/answer set needs at least two questions/i,
+		"Khóa tập đáp án cần ít nhất hai câu.",
+	],
+	[
+		/answer set must stay inside one group/i,
+		"Các câu cùng khóa tập đáp án phải nằm trong một nhóm.",
+	],
 	[/missing part/i, "Thiếu part — chưa có nội dung ở slot này."],
 ];
 
@@ -50,6 +83,7 @@ const FIELD_LABELS: Record<string, string> = {
 	audio: "Audio",
 	optionBank: "Ngân hàng đáp án",
 	questions: "Câu hỏi",
+	groups: "Nhóm câu",
 	type: "Dạng bài",
 	title: "Tiêu đề",
 	part: "Part",
@@ -76,6 +110,9 @@ export function issuePathLabel(path: string, skill: LibrarySkill): string {
 		if (/^\d+$/.test(segment)) {
 			if (labels.at(-1) === "Câu hỏi") {
 				labels[labels.length - 1] = `Câu hỏi ${Number(segment) + 1}`;
+			}
+			if (labels.at(-1) === "Nhóm câu") {
+				labels[labels.length - 1] = `Nhóm câu ${Number(segment) + 1}`;
 			}
 			continue;
 		}
