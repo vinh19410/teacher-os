@@ -218,17 +218,11 @@ export function GroupCard({
 				 * ẩn/hiện sẽ che khối "Hướng dẫn đề" khi tab Hướng dẫn active
 				 * (regression bắt bởi full e2e post-merge). */}
 				<div
-					id={
-						activeTab === "settings"
-							? undefined
-							: `${rowIdPrefix}-tabs-panel-${activeTab}`
-					}
-					role={activeTab === "settings" ? undefined : "tabpanel"}
-					aria-labelledby={
-						activeTab === "settings"
-							? undefined
-							: `${rowIdPrefix}-tabs-tab-${activeTab}`
-					}
+					id={`${rowIdPrefix}-tabs-panel-${activeTab}`}
+					role="tabpanel"
+					aria-labelledby={`${rowIdPrefix}-tabs-tab-${activeTab}`}
+					/* settings → panel ẩn: SR bỏ qua phần tử hidden, id tĩnh giữ
+					 * aria-controls của tab luôn resolve (biome useAriaProps…). */
 					hidden={activeTab === "settings"}
 				>
 					<QuestionKeyEditor
