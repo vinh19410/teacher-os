@@ -788,6 +788,27 @@ describe("PartForm thẻ part (#424 Task 3.4, render tĩnh)", () => {
 				?.split("</button>")[0] ?? "";
 		expect(introTab).toContain('aria-selected="true"');
 		expect(group1).toContain("Hướng dẫn đề");
+		// Hardening post-merge (full e2e bắt regression 9c5b36d7): "Hướng dẫn
+		// đề" phải THẬT SỰ hiển thị — không nằm trong ancestor [hidden]; panel
+		// intro phải có id/role khớp aria-controls. assert chuỗi `toContain`
+		// không phân biệt hidden/visible nên không bắt được lỗi đó.
+		const dom = document.createElement("div");
+		dom.innerHTML = html;
+		const introLabel = [...dom.querySelectorAll("#group-p1-1 label")].find(
+			(l) => l.textContent?.trim() === "Hướng dẫn đề",
+		);
+		expect(introLabel).toBeDefined();
+		if (introLabel) {
+			// Label nằm trong khối intro — regression 9c5b36d7 khiến cả khối
+			// bị wrapper [hidden] che; label visible ⇔ khối intro visible.
+			expect(introLabel.closest("[hidden]")).toBeNull();
+		}
+		const introPanel = dom.querySelector("#group-p1-1-tabs-panel-intro");
+		expect(introPanel?.getAttribute("role")).toBe("tabpanel");
+		expect(introPanel?.hasAttribute("hidden")).toBe(false);
+		expect(introPanel?.getAttribute("aria-labelledby")).toBe(
+			"group-p1-1-tabs-tab-intro",
+		);
 		// Nhóm 0 (đóng) vẫn mount ngầm với tab mặc định Câu hỏi được chọn.
 		const group0 =
 			html.split('id="group-p1-0"')[1]?.split('id="group-p1-1"')[0] ?? "";
