@@ -827,6 +827,15 @@ a per-stage operation.
   1. Chạy `db:migrate:deploy` (`0039`) **TRƯỚC** khi deploy worker để học viên học bài thư viện (`libdeck-*`) không gặp lỗi khóa ngoại `SQLITE_CONSTRAINT_FOREIGNKEY`.
   2. Deploy đồng bộ `apps/server`, `apps/web`, và `apps/student` trong cùng một release train (vì `vocabStudentProgressDeckSchema` thêm trường `className` trên response `.strict()`).
 
+
+## Library part groups (migration 0044) — issue #420/#424
+
+- **Migration `0044_library_part_groups.sql` chỉ `ADD COLUMN`:** `ALTER TABLE library_test_part ADD groups text DEFAULT '[]' NOT NULL` — thuần thêm cột có default, không recreate bảng, không cần khung giờ thấp điểm.
+- **Backup:** Ghi lại bookmark D1 Time Travel (hoặc backup/export D1) trước khi apply `0044` trên PROD.
+- **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (`0044`) **TRƯỚC** khi deploy worker — route admin `PUT /api/admin/library/tests/:testId/parts/:part` ghi cột `groups` ngay khi bundle mới lên.
+- **Deploy skew — strict DTO (red-team A2/F3):** `libraryPartDtoSchema` và `libraryPartUpsertSchema` đều `.strict()` với key `groups` → worker server (`apps/server`) và bundle admin (`apps/admin`) **PHẢI cùng một release train** (precedent #304): alchemy deploy cả hai trong cùng một lần deploy; **reload tab admin sau deploy** (tab cũ strict-reject DTO mới → trang sửa đề báo lỗi; tab cũ bấm lưu trước khi reload sẽ bị 400/last-write-wins). Nếu rollback worker về pre-#420, phải rollback/hạ admin cùng lúc — admin mới gửi `groups` làm server cũ 400 mọi lần lưu part. Migration là `ADD COLUMN` nên rollback worker **không phá** dữ liệu `groups` đã ghi.
+- **Render contract (red-team S7):** `questions[].explanation` và `groups[].instruction` là rich text — mọi render site tương lai (PR3 web học viên) **PHẢI** dùng `RichTextBody` (DOMPurify, sink `dangerouslySetInnerHTML` duy nhất tại `packages/ui/src/lib/rich-text-sanitize.ts`); không dùng `dangerouslySetInnerHTML` trực tiếp.
+
 ## Admin console go-live (plan #413)
 
 Cổng quản trị Teacher OS (`apps/admin`) chạy trên origin riêng

@@ -186,7 +186,7 @@ export function ClozeEditor({
 			)
 		)
 			return;
-		onApply(segmentsToItems(segments));
+		onApply(segmentsToItems(segments, items));
 	};
 	const activeEntry = blanks.find((blank) => blank.tokenIndex === activeBlank);
 

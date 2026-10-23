@@ -164,3 +164,17 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
   gán/gỡ template.
 - **Card buổi học render đủ N buổi**, không cắt 6 như design: số buổi thật là dữ liệu chấm điểm
   danh, cắt làm sai đếm.
+
+## Lệch có chủ đích so với design v2 — trang soạn đề admin (Quiz Builder) (#424)
+
+Nguồn đối chiếu: bố cục soạn đề Selfomy (quiz builder hai cột). Các lệch dưới đây là quyết định
+có chủ đích theo token hệ có sẵn, không phải sót quét:
+
+- **Phân cấp part → nhóm → câu bằng thụt lề + kiểu badge** (`Nhóm câu 1`, `Câu 4`, viền thẻ
+  lồng nhau) thay vì tông tím/xanh dương/xanh lá riêng của Selfomy: hệ thống chỉ có một primary;
+  không đưa màu thương hiệu nước ngoài vào token.
+- **Badge đếm trên tab là `aria-hidden`** — accessible name của tab chỉ là nhãn ("Câu hỏi"),
+  không kèm số; giữ voice control và e2e `name` exact ổn định (khớp quy tắc Don't về badge đếm).
+- **Chip trạng thái câu thu gọn dùng `--success`/`--warn`** ("Có đáp án" / "Thiếu đáp án",
+  chấm màu `bg-success`/`bg-warn`) — tái dùng cặp trạng thái thường có sẵn, đỏ vẫn chỉ dành cho
+  hành động phá hủy.

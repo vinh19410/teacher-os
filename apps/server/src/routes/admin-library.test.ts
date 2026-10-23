@@ -710,6 +710,182 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		});
 		expect(again.status).toBe(404);
 	});
+	describe("PUT part — question groups", () => {
+		function seedGroupsTest() {
+			return db.insert(libraryTest).values({
+				id: "lt-groups",
+				title: "Reading Groups Mock",
+				skill: "reading",
+				status: "draft",
+				createdBy: "u-admin",
+			});
+		}
+
+		/** Reading p1: tfng 0..2 + note inline 3..4 — mọi luật tầng nhóm
+		 * (contiguous, cover, type khớp nhóm đầu, cloze marker) đều đạt. */
+		function groupsPartBody(
+			overrides: Record<string, unknown> = {},
+		): Record<string, unknown> {
+			return {
+				part: "p1",
+				type: "tfng",
+				title: "Passage 1",
+				band: "6.5",
+				source: "",
+				intro: "",
+				passage: "<p>Passage about cranberry bogs</p>",
+				transcript: "",
+				imageUrl: "",
+				questions: [
+					{ stem: "The bogs are flooded in winter.", answer: "TRUE", alts: "" },
+					{ stem: "Growers harvest by hand.", answer: "FALSE", alts: "" },
+					{
+						stem: "The bog is drained each spring.",
+						answer: "NOT GIVEN",
+						alts: "",
+					},
+					{ stem: "Growers ____ the bogs.", answer: "flood", alts: "" },
+					{ stem: "Berries ripen ____ autumn.", answer: "in", alts: "" },
+				],
+				optionBank: [],
+				note: "",
+				groups: [
+					{
+						id: "g-tfng",
+						type: "tfng",
+						instruction: "<p>TRUE / FALSE / NOT GIVEN</p>",
+						startIndex: 0,
+						count: 3,
+					},
+					{
+						id: "g-note",
+						type: "note",
+						instruction: "<p>Complete the notes</p>",
+						startIndex: 3,
+						count: 2,
+						answersInline: true,
+					},
+				],
+				...overrides,
+			};
+		}
+
+		test("lưu groups hợp lệ → 200, DTO trả lại đúng nhóm", async () => {
+			await seedGroupsTest();
+			const res = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-groups/parts/p1",
+			)({ user: "admin", body: groupsPartBody() });
+			expect(res.status).toBe(200);
+			const { part } = (await res.json()) as {
+				part: { groups: Array<{ count: number }> };
+			};
+			expect(part.groups).toHaveLength(2);
+			expect(part.groups[1]?.count).toBe(2);
+		});
+
+		test("GET chi tiết đề → part p1 có groups y hệt payload", async () => {
+			const res = await app.request("/api/admin/library/tests/lt-groups", {
+				headers: authHeaders("admin"),
+			});
+			expect(res.status).toBe(200);
+			const detail = (await res.json()) as {
+				parts: Array<{ part: string; groups: unknown[] }>;
+			};
+			const p1 = detail.parts.find((p) => p.part === "p1");
+			// Round-trip bơm default của group schema (optionBank/flags).
+			const [g1, g2] = groupsPartBody().groups as Array<
+				Record<string, unknown>
+			>;
+			expect(p1?.groups).toEqual([
+				{
+					...g1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{ ...g2, optionBank: [], splitContent: false, dragDrop: false },
+			]);
+		});
+
+		test("dải hở giữa hai nhóm → 400 invalid body", async () => {
+			const [g1, g2] = groupsPartBody().groups as Array<
+				Record<string, unknown>
+			>;
+			const res = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-groups/parts/p1",
+			)({
+				user: "admin",
+				body: groupsPartBody({
+					groups: [
+						g1,
+						{ ...g2, startIndex: 4 }, // bỏ trống câu 3 — không contiguous
+					],
+				}),
+			});
+			expect(res.status).toBe(400);
+			expect(await res.json()).toEqual({ error: "invalid body" });
+		});
+
+		test("payload không có groups (đề cũ) → 200, part.groups là []", async () => {
+			const legacy = groupsPartBody();
+			delete legacy.groups;
+			const res = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-groups/parts/p1",
+			)({ user: "admin", body: legacy });
+			expect(res.status).toBe(200);
+			const { part } = (await res.json()) as { part: { groups: unknown[] } };
+			expect(part.groups).toEqual([]);
+		});
+
+		test("đề ready: nhóm inline thiếu marker `____` → 400 NOT_READY path questions.3.stem", async () => {
+			await db
+				.update(libraryTest)
+				.set({ status: "ready" })
+				.where(eq(libraryTest.id, "lt-groups"));
+			const [q1, q2, q3, , q5] = groupsPartBody().questions as Array<
+				Record<string, unknown>
+			>;
+			const res = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-groups/parts/p1",
+			)({
+				user: "admin",
+				body: groupsPartBody({
+					questions: [
+						q1,
+						q2,
+						q3,
+						// Câu 4 (index 3) trong nhóm inline mà thiếu marker.
+						{ stem: "Growers flood the bogs.", answer: "flood", alts: "" },
+						q5,
+					],
+				}),
+			});
+			expect(res.status).toBe(400);
+			const payload = (await res.json()) as {
+				code?: string;
+				issues?: Array<{ path: string }>;
+			};
+			expect(payload.code).toBe("NOT_READY");
+			expect(payload.issues?.some((i) => i.path === "questions.3.stem")).toBe(
+				true,
+			);
+
+			// Trả draft lại cho các test sau.
+			await db
+				.update(libraryTest)
+				.set({ status: "draft" })
+				.where(eq(libraryTest.id, "lt-groups"));
+		});
+	});
 });
 
 function authHeaders(user: keyof typeof SESSIONS): Record<string, string> {

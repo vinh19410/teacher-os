@@ -219,16 +219,24 @@ export function buildClozeSegments(
 	});
 }
 
-/** Segments → existing wire shape (`opts: null` — text kinds have no options). */
+/** Segments → existing wire shape (`opts: null` — text kinds have no options).
+ * `existing` (#420 Task 4.1b): merge mỗi segment vào item cùng vị trí để
+ * `explanation`/`answerSet`/`type`/`pin` đã soạn không bị rơi khi apply lại;
+ * item vượt số segment bị cắt (độ dài luôn = segments). */
 export function segmentsToItems(
 	segments: ClozeSegment[],
+	existing?: readonly AssignmentQuestion[],
 ): AssignmentQuestion[] {
-	return segments.map((segment) => ({
-		stem: segment.stem,
-		opts: null,
-		answer: segment.answer.trim(),
-		alts: segment.alts,
-	}));
+	return segments.map((segment, index) => {
+		const base = existing?.[index];
+		const applied = {
+			stem: segment.stem,
+			opts: null,
+			answer: segment.answer.trim(),
+			alts: segment.alts,
+		};
+		return base ? { ...base, ...applied } : applied;
+	});
 }
 
 /**

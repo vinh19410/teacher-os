@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AnswerKeyGrid } from "./answer-key-grid";
-import { emptyItem } from "./assignment-presets";
+import { emptyItem, type QuestionItem } from "./assignment-presets";
 
 afterEach(cleanup);
 
@@ -624,5 +624,231 @@ describe("AnswerKeyGrid — cảnh báo câu T/F/NG đang theo dạng điền ch
 		fireEvent.keyDown(button, { key: "Enter" });
 		fireEvent.keyDown(button, { key: " " });
 		expect(onAddQuestion).not.toHaveBeenCalled();
+	});
+});
+
+describe("AnswerKeyGrid — qStartOverride + showExplanation (#424 Task 1.1)", () => {
+	it("đánh số theo override: fieldset, nút xóa và nhãn giải thích", () => {
+		const html = renderGrid({
+			qStartOverride: 4,
+			showExplanation: true,
+			items: tfngItems(2),
+		});
+		expect(html).toContain('aria-label="Câu 4"');
+		expect(html).toContain('aria-label="Câu 5"');
+		expect(html).toContain('aria-label="Xóa câu 4"');
+		expect(html).toContain('aria-label="Xóa câu 5"');
+		expect(html).toContain("Giải thích câu 4");
+		expect(html).toContain("Giải thích câu 5");
+		expect(html).not.toContain('aria-label="Câu 1"');
+	});
+
+	it("không truyền qStartOverride → số câu theo part như cũ", () => {
+		const html = renderGrid({ items: tfngItems(1) });
+		expect(html).toContain('aria-label="Câu 1"');
+	});
+
+	it("không truyền showExplanation → không có ô giải thích", () => {
+		expect(renderGrid({ items: tfngItems(1) })).not.toContain("Giải thích câu");
+	});
+});
+
+describe("AnswerKeyGrid — hàng thu gọn (#424 Task 1.6)", () => {
+	const sentItems = [
+		{ stem: "Câu đầu", answer: "", opts: null, alts: "" },
+		{ stem: "Câu hai đã có đáp án", answer: "TRUE", opts: null, alts: "" },
+	];
+
+	it("openRow=null: chip tóm tắt, KHÔNG fieldset/ô nhập trong DOM", () => {
+		const html = renderGrid({
+			typeId: "sent",
+			collapsible: true,
+			openRow: null,
+			items: sentItems,
+		});
+		expect(html).toContain("Câu 1");
+		expect(html).toContain("Thiếu đáp án");
+		expect(html).toContain("Có đáp án");
+		expect(html).not.toContain('aria-label="Đáp án chấm tự động"');
+		// Thân hàng thu gọn bị unmount — không có fieldset hàng nào.
+		expect(html).not.toContain("data-qindex");
+	});
+
+	it("openRow=0: hàng đầu mở đủ ô nhập, hàng hai vẫn thu gọn", () => {
+		const html = renderGrid({
+			typeId: "sent",
+			collapsible: true,
+			openRow: 0,
+			items: sentItems,
+		});
+		expect(html).toContain('data-qindex="0"');
+		expect(html).not.toContain('data-qindex="1"');
+		expect(html).toContain('aria-label="Đáp án chấm tự động"');
+		// Hàng mở có viền nhấn.
+		expect(html).toContain("ring-2");
+	});
+
+	it("hàng có id theo rowIdPrefix", () => {
+		const html = renderGrid({
+			typeId: "sent",
+			collapsible: true,
+			rowIdPrefix: "grp-1",
+			items: sentItems,
+		});
+		expect(html).toContain('id="grp-1-q0"');
+		expect(html).toContain('id="grp-1-q1"');
+	});
+
+	it("collapsible vắng mặt → render phẳng như cũ (nút Xóa text giữ nguyên)", () => {
+		const html = renderGrid({ typeId: "sent", items: sentItems });
+		expect(html).toContain('data-qindex="0"');
+		expect(html).toContain('aria-label="Xóa câu 1"');
+		expect(html).not.toContain("Thiếu đáp án");
+	});
+});
+
+describe("AnswerKeyGrid — move/remove hàng đang mở (#424 Task 1.6)", () => {
+	/** Render có state ngoài để mô phỏng caller giữ items + openRow. */
+	function renderInteractive(
+		initialItems: QuestionItem[],
+		initialOpen: number | null,
+	) {
+		const state = { items: initialItems, openRow: initialOpen };
+		const onItemsChange = vi.fn((next: QuestionItem[]) => {
+			state.items = next;
+		});
+		const onOpenRowChange = vi.fn((next: number | null) => {
+			state.openRow = next;
+		});
+		const view = () => (
+			<AnswerKeyGrid
+				typeId="sent"
+				skill="reading"
+				partId="p1"
+				items={state.items}
+				showErrors={false}
+				onItemsChange={onItemsChange}
+				onAddQuestion={() => false}
+				collapsible
+				openRow={state.openRow}
+				onOpenRowChange={onOpenRowChange}
+			/>
+		);
+		const utils = render(view());
+		return {
+			...utils,
+			state,
+			onItemsChange,
+			onOpenRowChange,
+			sync: () => utils.rerender(view()),
+		};
+	}
+
+	it("move hàng đang mở: dữ liệu đổi, blurred remap, openRow dời, lỗi dán đúng hàng", () => {
+		const { container, state, sync } = renderInteractive(
+			[
+				{ stem: "", answer: "", opts: null, alts: "" },
+				{ stem: "Filled", answer: "ans", opts: null, alts: "" },
+			],
+			0,
+		);
+		// Blur hàng 0 đang mở để lộ lỗi thiếu stem/answer.
+		fireEvent.focusOut(container.querySelector('fieldset[data-qindex="0"]')!);
+		sync();
+		expect(container.textContent).toContain("Nhập nội dung câu hỏi.");
+		fireEvent.click(
+			container.querySelector('button[aria-label="Đưa câu 1 xuống"]')!,
+		);
+		expect(state.items.map((item) => item.stem)).toEqual(["Filled", ""]);
+		expect(state.openRow).toBe(1);
+		sync();
+		const rows = container.querySelectorAll("fieldset[data-qindex]");
+		expect(rows).toHaveLength(1);
+		expect(rows[0].getAttribute("data-qindex")).toBe("1");
+		// Lỗi đang hiện đi theo hàng thiếu dữ liệu (giờ là index 1 · Câu 2).
+		expect(rows[0].textContent).toContain("Nhập nội dung câu hỏi.");
+		// Hàng thu gọn Câu 1 giữ nội dung "Filled" + chip Có đáp án.
+		const collapsed = container.querySelector("#p1-q0");
+		expect(collapsed?.textContent).toContain("Filled");
+		expect(collapsed?.textContent).toContain("Có đáp án");
+	});
+
+	it("remove hàng đang mở: openRow đóng, không còn lỗi treo", () => {
+		const { container, state, sync } = renderInteractive(
+			[
+				{ stem: "", answer: "", opts: null, alts: "" },
+				{ stem: "Filled", answer: "ans", opts: null, alts: "" },
+			],
+			0,
+		);
+		fireEvent.focusOut(container.querySelector('fieldset[data-qindex="0"]')!);
+		sync();
+		expect(container.textContent).toContain("Nhập nội dung câu hỏi.");
+		fireEvent.click(container.querySelector('button[aria-label="Xóa câu 1"]')!);
+		expect(state.items.map((item) => item.stem)).toEqual(["Filled"]);
+		expect(state.openRow).toBeNull();
+		sync();
+		expect(container.querySelectorAll("fieldset[data-qindex]")).toHaveLength(0);
+		expect(container.querySelector("#p1-q0")?.textContent).toContain(
+			"Có đáp án",
+		);
+		expect(container.textContent).not.toContain("Nhập nội dung câu hỏi.");
+	});
+
+	it("hàng có lỗi đang hiện bị ép mở (ẩn nút thu gọn); hết lỗi thu gọn được và blur được clear", () => {
+		const { container, sync } = renderInteractive(
+			[{ stem: "", answer: "", opts: null, alts: "" }],
+			null,
+		);
+		fireEvent.click(container.querySelector('button[aria-label="Mở câu 1"]')!);
+		sync();
+		fireEvent.focusOut(container.querySelector('fieldset[data-qindex="0"]')!);
+		sync();
+		expect(container.textContent).toContain("Nhập nội dung câu hỏi.");
+		// Force-open: nút thu gọn của hàng lỗi ẩn đi.
+		expect(
+			container.querySelector('button[aria-label="Thu gọn câu 1"]'),
+		).toBeNull();
+		fireEvent.change(
+			container.querySelector(
+				'input[aria-label="Nội dung câu hỏi phía học viên"]',
+			)!,
+			{ target: { value: "Stem" } },
+		);
+		sync();
+		fireEvent.change(
+			container.querySelector('input[aria-label="Đáp án chấm tự động"]')!,
+			{ target: { value: "A" } },
+		);
+		sync();
+		expect(container.textContent).not.toContain("Nhập nội dung câu hỏi.");
+		fireEvent.click(
+			container.querySelector('button[aria-label="Thu gọn câu 1"]')!,
+		);
+		sync();
+		expect(container.querySelectorAll("fieldset[data-qindex]")).toHaveLength(0);
+		// Collapse đã clear blur: mở lại không lộ lỗi cũ.
+		fireEvent.click(container.querySelector('button[aria-label="Mở câu 1"]')!);
+		sync();
+		expect(container.textContent).not.toContain("Nhập nội dung câu hỏi.");
+	});
+});
+
+describe("AnswerKeyGrid — row anchor id luôn render (kongming F2)", () => {
+	it("chế độ phẳng: mỗi hàng có id `${partId}-q${index}` trên wrapper ngoài cùng", () => {
+		const html = renderGrid({ items: tfngItems(2) });
+		expect(html).toContain('id="p1-q0"');
+		expect(html).toContain('id="p1-q1"');
+	});
+
+	it("collapsible với openRow=null: hàng thu gọn vẫn có id `${rowIdPrefix}-q${index}`", () => {
+		const html = renderGrid({
+			items: tfngItems(2),
+			collapsible: true,
+			openRow: null,
+			rowIdPrefix: "group-p1-1",
+		});
+		expect(html).toContain('id="group-p1-1-q0"');
+		expect(html).toContain('id="group-p1-1-q1"');
 	});
 });

@@ -1,0 +1,1 @@
+ALTER TABLE `library_test_part` ADD `groups` text DEFAULT '[]' NOT NULL;

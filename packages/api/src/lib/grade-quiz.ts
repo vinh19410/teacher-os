@@ -16,7 +16,7 @@ export interface QuizGrade {
  * — exactly space-slash-space. A slash without surrounding spaces is part of
  * the value, never a split point.
  */
-const ALT_SEPARATOR = " / ";
+export const ALT_SEPARATOR = " / ";
 
 /** Normalize = trim + collapse whitespace + lowercase (plan RT#15). */
 function normalize(value: string): string {

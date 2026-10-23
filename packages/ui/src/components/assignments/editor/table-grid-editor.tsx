@@ -67,7 +67,7 @@ export function TableGridEditor({
 			)
 		)
 			return;
-		onApply(segmentsToItems(segments));
+		onApply(segmentsToItems(segments, items));
 	};
 
 	return (

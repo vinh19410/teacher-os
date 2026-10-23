@@ -26,10 +26,10 @@ export function AdminShell() {
 	};
 
 	return (
-		<div className="flex min-h-svh">
+		<div className="flex min-h-svh flex-col md:flex-row">
 			<aside
 				aria-label="Điều hướng quản trị"
-				className="flex w-60 flex-col gap-1 border-r bg-muted/40 p-3"
+				className="flex w-full flex-row flex-wrap items-center gap-3 border-b bg-muted/40 p-3 md:w-60 md:flex-col md:flex-nowrap md:gap-1 md:border-r md:border-b-0"
 			>
 				<div className="flex items-center gap-2 px-2 py-3 font-medium">
 					<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -37,7 +37,7 @@ export function AdminShell() {
 					</span>
 					Teacher OS · Quản trị
 				</div>
-				<nav className="grid gap-1">
+				<nav className="flex flex-row gap-1 md:grid">
 					{NAV_ITEMS.map((item) => (
 						<Link
 							key={item.to}

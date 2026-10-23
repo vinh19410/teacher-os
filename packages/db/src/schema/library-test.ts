@@ -53,6 +53,7 @@ export const libraryTest = sqliteTable(
  * cuePoints, prompt) để clone đề vào ngân hàng org sau này copy thẳng.
  * `questions`/`optionBank` là JSON text — cùng shape contract
  * `assignmentQuestionSchema` / optionBank của assignment_prompt.
+ * `groups` là JSON array QuestionGroup (contract library-contracts).
  * Audio nullable: listening ready cần đủ audio mọi part (gate ở contract).
  */
 export const libraryTestPart = sqliteTable(
@@ -75,6 +76,13 @@ export const libraryTestPart = sqliteTable(
 		questions: text("questions").notNull().default("[]"),
 		/** JSON array of strings, cap 8 mục — cùng contract assignment_prompt. */
 		optionBank: text("option_bank").notNull().default("[]"),
+		/**
+		 * JSON array QuestionGroup (library-contracts). Mỗi nhóm trỏ vào một
+		 * dải câu PHẲNG của `questions` (startIndex/count) — câu không lồng
+		 * trong nhóm để grader chấm theo index không đổi. `[]` = một nhóm ngầm
+		 * phủ cả part (đề soạn trước khi có tầng nhóm).
+		 */
+		groups: text("groups").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		audioKey: text("audio_key"),
 		audioName: text("audio_name"),

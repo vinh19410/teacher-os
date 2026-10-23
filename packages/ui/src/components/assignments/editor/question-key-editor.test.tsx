@@ -408,3 +408,63 @@ describe("BulkKeyPastePanel — per-line errors with summary (FR7)", () => {
 		expect(html).not.toContain('role="alert"');
 	});
 });
+
+describe("QuestionKeyEditor — view + qStartOverride (#424 phase-01)", () => {
+	const base = {
+		skill: "reading",
+		partId: "p1",
+		typeId: "note",
+		intro: "Questions 1–2",
+		showErrors: false,
+		status: "ready" as const,
+		onIntroChange: vi.fn(),
+		onItemsChange: vi.fn(),
+		onBankChange: vi.fn(),
+		imageUrl: "",
+		onImageUrlChange: vi.fn(),
+	};
+	const items = [
+		{ stem: "One ____", answer: "a", opts: null, alts: "" },
+		{ stem: "Two ____", answer: "b", opts: null, alts: "" },
+	];
+
+	it('view="intro": khối câu hỏi ẩn nhưng vẫn mount (hidden, không unmount)', () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} items={items} view="intro" />,
+		);
+		const hiddenAt = html.indexOf("<div hidden");
+		expect(hiddenAt).toBeGreaterThan(-1);
+		expect(html.indexOf("Lưới đáp án")).toBeGreaterThan(hiddenAt);
+		expect(html.indexOf("Hướng dẫn đề")).toBeGreaterThan(-1);
+		expect(html.indexOf("Hướng dẫn đề")).toBeLessThan(hiddenAt);
+	});
+
+	it('view="questions": khối hướng dẫn ẩn nhưng vẫn mount (hidden, không unmount)', () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} items={items} view="questions" />,
+		);
+		const hiddenAt = html.indexOf("<div hidden");
+		expect(hiddenAt).toBeGreaterThan(-1);
+		expect(html.indexOf("Hướng dẫn đề")).toBeGreaterThan(hiddenAt);
+		expect(html.indexOf("Lưới đáp án")).toBeGreaterThan(-1);
+		// Đúng một wrapper hidden — khối câu hỏi KHÔNG nằm trong đó.
+		expect(html.match(/<div hidden/g)?.length).toBe(1);
+	});
+
+	it("view mặc định (all): hai khối đều hiện, không có wrapper hidden", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} items={items} />,
+		);
+		expect(html).not.toContain("<div hidden");
+		expect(html).toContain("Hướng dẫn đề");
+		expect(html).toContain("Lưới đáp án");
+	});
+
+	it("qStartOverride truyền xuống grid: nhãn Câu 4/Câu 5", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor {...base} items={items} qStartOverride={4} />,
+		);
+		expect(html).toContain('aria-label="Câu 4"');
+		expect(html).toContain('aria-label="Câu 5"');
+	});
+});
