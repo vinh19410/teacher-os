@@ -1,7 +1,7 @@
 ---
 title: "Thư viện đề: tầng Question Group cho Reading/Listening (PR1 + PR2)"
 description: "Admin soạn được đề IELTS có nhiều nhóm câu trong một part, bố cục editor kiểu Selfomy; câu hỏi giữ mảng phẳng để grader không đổi."
-status: in-progress
+status: completed
 priority: P1
 effort: "3-4d"
 tags: [admin, library, contracts, grader, migration]
@@ -63,8 +63,8 @@ Rule xuất bản (kiểm ở `partIssues`, chỉ khi ready): dạng bài nhóm 
 | # | Phase | PR | Phụ thuộc | Status |
 |---|---|---|---|---|
 | 1 | [Trường câu hỏi dùng chung + chấm theo tập](phase-01-shared-question-fields-set-grading.md) | PR1 | — | completed |
-| 2 | [Schema nhóm, migration, contract thư viện](phase-02-library-groups-schema-contracts.md) | PR2 | 1 | pending |
-| 3 | [Route admin lưu/đọc nhóm](phase-03-library-groups-route.md) | PR2 | 2 | pending |
+| 2 | [Schema nhóm, migration, contract thư viện](phase-02-library-groups-schema-contracts.md) | PR2 | 1 | completed |
+| 3 | [Route admin lưu/đọc nhóm](phase-03-library-groups-route.md) | PR2 | 2 | completed |
 | 4 | [Editor nhóm kiểu Selfomy trong `apps/admin`](phase-04-admin-group-editor-ui.md) | PR2 | 3 | superseded — thay bằng plan `261023-0713-quiz-builder-page-refactor` |
 | 5 | [E2E, verify 3 viewport, docs](phase-05-e2e-verify-docs.md) | PR2 | 4 | superseded — thay bằng plan `261023-0713-quiz-builder-page-refactor` |
 
