@@ -1,0 +1,11 @@
+---
+title: "Fix 4 finding defer review #420/#424 (issue #426)"
+date: 2026-10-23
+summary: "4 finding Medium defer: (1) server parse questions fail-soft qua assignmentQuestionSchema — corrupt DB cho 400 NOT_READY thay 500; (2) superRefine answerSet emit [groups, gi] parity partIssues + GroupCard banner lỗi cấp nhóm + firstIssueFocusPlan nhận key không field; (3) perf soạn đề: effectivePartsFor memo per-slot + useDeferredValue — partInputFromValue 4→1/keystroke, derived 2.52→0.75ms, dirty baseline canonical memo (bắt 1 lỗi đảo dirty giữa chừng nhờ test hành vi jsdom); (4) e2e keyboard bỏ đếm 7 Tab — vòng trần 20 + toBeFocused + assert thứ tự đối chiếu cây + scroll #group-p1-1-q1, fillQuestionRow scope #slot-qN cả listening. Plan 261023-1553 qua validate + red-team 3 persona + 2 kongming gate (plan + pre-ship). Bài học merge: develop nhận #424 bằng squash nên merge 3-way đụng AA-conflict toàn file — resolve bằng checkout develop + git apply --3way patch của mình (11/11 sạch); file lạ part-issues.ts messageLabel nhân đôi bắt được bằng diff-vs-develop scope check."
+---
+
+# Fix 4 finding defer review #420/#424 (issue #426)
+
+4 finding Medium defer: (1) server parse questions fail-soft qua assignmentQuestionSchema — corrupt DB cho 400 NOT_READY thay 500; (2) superRefine answerSet emit [groups, gi] parity partIssues + GroupCard banner lỗi cấp nhóm + firstIssueFocusPlan nhận key không field; (3) perf soạn đề: effectivePartsFor memo per-slot + useDeferredValue — partInputFromValue 4→1/keystroke, derived 2.52→0.75ms, dirty baseline canonical memo (bắt 1 lỗi đảo dirty giữa chừng nhờ test hành vi jsdom); (4) e2e keyboard bỏ đếm 7 Tab — vòng trần 20 + toBeFocused + assert thứ tự đối chiếu cây + scroll #group-p1-1-q1, fillQuestionRow scope #slot-qN cả listening. Plan 261023-1553 qua validate + red-team 3 persona + 2 kongming gate (plan + pre-ship). Bài học merge: develop nhận #424 bằng squash nên merge 3-way đụng AA-conflict toàn file — resolve bằng checkout develop + git apply --3way patch của mình (11/11 sạch); file lạ part-issues.ts messageLabel nhân đôi bắt được bằng diff-vs-develop scope check.
+
+> Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
