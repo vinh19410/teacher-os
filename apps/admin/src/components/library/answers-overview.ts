@@ -22,8 +22,9 @@ export interface AnswerOverviewRow {
 	part: string;
 	partLabel: string;
 	groupIndex: number;
-	/** Offset câu trong `questions` của part — dùng làm focusTarget khi
-	 * nhảy từ panel kiểm tra đáp án. */
+	/** Offset câu TRONG NHÓM (`openRowByGroup`/id hàng `group-…-q{n}` của
+	 * PartForm theo index trong nhóm, không phải index trong part) — dùng
+	 * làm focusTarget khi nhảy từ panel kiểm tra đáp án. */
 	questionOffset: number;
 	answer: string;
 	alts: string[];
@@ -65,7 +66,7 @@ export function buildAnswersOverview(
 					part: entry.part,
 					partLabel: entry.label,
 					groupIndex: gi,
-					questionOffset: group.startIndex + offset,
+					questionOffset: offset,
 					answer,
 					alts: question.alts
 						.split(ALT_SEPARATOR)

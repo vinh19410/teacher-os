@@ -29,6 +29,7 @@ import {
 	useEffect,
 	useId,
 	useImperativeHandle,
+	useLayoutEffect,
 	useRef,
 	useState,
 } from "react";
@@ -434,6 +435,18 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 					openRowByGroup: {},
 				},
 		);
+		// Id đích cuộn chờ commit: scroll trong rAF có thể chạy TRƯỚC khi
+		// setView commit (hàng còn nằm trong subtree `hidden` → scrollIntoView
+		// no-op, không retry — kongming wave-5). Layout effect chạy ngay sau
+		// commit nên `hidden` đã được gỡ.
+		const pendingScrollId = useRef<string | null>(null);
+		useLayoutEffect(() => {
+			const id = pendingScrollId.current;
+			if (id === null) return;
+			pendingScrollId.current = null;
+			document.getElementById(id)?.scrollIntoView({ block: "start" });
+		}, [view]);
+
 		const [showErrors, setShowErrors] = useState(false);
 		const [live, setLive] = useState("");
 
@@ -494,21 +507,14 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 				}
 				return next;
 			});
-			// Hàng/nhóm luôn trong DOM (thân GroupCard ẩn bằng hidden, không
-			// unmount) — rAF một frame để state áp xong rồi cuộn.
-			requestAnimationFrame(() => {
-				const element =
-					plan.fieldKey !== undefined
-						? document.getElementById(`${uid}-${plan.fieldKey}`)
-						: plan.group !== undefined && plan.row !== undefined
-							? document.getElementById(
-									`group-${slot}-${plan.group}-q${plan.row}`,
-								)
-							: plan.group !== undefined
-								? document.getElementById(`group-${slot}-${plan.group}`)
-								: null;
-				element?.scrollIntoView({ block: "start" });
-			});
+			pendingScrollId.current =
+				plan.fieldKey !== undefined
+					? `${uid}-${plan.fieldKey}`
+					: plan.group !== undefined && plan.row !== undefined
+						? `group-${slot}-${plan.group}-q${plan.row}`
+						: plan.group !== undefined
+							? `group-${slot}-${plan.group}`
+							: null;
 		};
 
 		const handleSave = async (): Promise<boolean> => {
@@ -559,11 +565,12 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 						? previous.openRowByGroup
 						: { ...previous.openRowByGroup, [gi]: focusTarget.question },
 			}));
-			requestAnimationFrame(() => {
-				document
-					.getElementById(focusRowId(slot, gi, focusTarget.question, flat))
-					?.scrollIntoView({ block: "start" });
-			});
+			pendingScrollId.current = focusRowId(
+				slot,
+				gi,
+				focusTarget.question,
+				flat,
+			);
 			onFocusConsumed?.(focusTarget.nonce);
 		}, [focusTarget, slot, onFocusConsumed]);
 
@@ -784,6 +791,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 										? `${questionIssueCount} câu hỏi chưa đạt điều kiện xuất bản — xem chi tiết ở danh sách lý do.`
 										: undefined
 								}
+								qStartOverride={partQStart}
 								showExplanation
 							/>
 							<div>
