@@ -28,10 +28,11 @@ Luồng soạn đề có nhóm được Playwright phủ end-to-end, UI đạt 3
 - Steps: thêm `test("soạn passage có 2 nhóm câu, lưu và tải lại", ...)`:
   1. Tạo đề Reading, mở slot Passage 1, điền tiêu đề part + passage.
   2. Nhóm ngầm: chọn dạng `tfng`, nhập 3 câu + đáp án.
-  3. Bấm "Chia thành nhiều nhóm câu" → bấm "Thêm nhóm câu"; ở nhóm 2 chọn dạng "Note completion", tick "Ô trả lời nằm trong hướng dẫn", nhập hướng dẫn `Complete the notes below.`, nhập 2 câu có stem chứa `____` (vd `Growers ____ the bogs.`) + đáp án; điền "Giải thích câu 4".
+  3. Bấm "Chia thành nhiều nhóm câu" → bấm "Thêm nhóm câu"; ở nhóm 2 chọn dạng "Note completion", tick "Ô trả lời nằm trong hướng dẫn", nhập hướng dẫn `Complete the notes below.`, nhập 2 câu có stem chứa `____` (vd `Growers ____ the bogs.`) + đáp án; điền "Giải thích câu 4" và "Giải thích câu 5".
   4. Kiểm `Câu có ô trống: 2/2` hiển thị.
+  4b. (red-team F1) Mở lại `ClozeEditor` của nhóm 2, sửa một từ trong đoạn (giữ 2 marker `____`), bấm Apply — kiểm "Giải thích câu 4" và "Giải thích câu 5" vẫn còn nguyên sau khi apply (chưa lưu).
   5. Lưu part; `page.reload()`; mở lại slot Passage 1.
-  6. Kỳ vọng: `nav` "Mục lục nhóm câu" có "Nhóm câu 1" và "Nhóm câu 2"; có `Câu 1`…`Câu 5`; mở nhóm 2 thấy checkbox "Ô trả lời nằm trong hướng dẫn" vẫn được tick, stem câu 4 còn `____`, giải thích câu 4 còn nguyên.
+  6. Kỳ vọng: `nav` "Mục lục nhóm câu" có "Nhóm câu 1" và "Nhóm câu 2"; có `Câu 1`…`Câu 5`; mở nhóm 2 thấy checkbox "Ô trả lời nằm trong hướng dẫn" vẫn được tick, stem câu 4 còn `____`, giải thích câu 4 và câu 5 còn nguyên.
 - Verify: chạy đúng lệnh e2e local trong `AGENTS.md` với port override: `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 pnpm --filter e2e e2e specs/admin-library-reading.spec.ts` exits 0 và output có `passed`, không có `failed`. Nếu fail kèm `[dev-watchdog] hạ tầng dev server bất ổn` thì đó là lỗi hạ tầng (xem `AGENTS.md`), không phải lỗi test — vẫn áp Failure Protocol.
 
 ### Task 5.2 — Hồi quy e2e admin
@@ -52,7 +53,9 @@ Luồng soạn đề có nhóm được Playwright phủ end-to-end, UI đạt 3
 
 - Steps:
   1. Trong `docs/production-release-runbook.md`, thêm mục cho `0044_library_part_groups` theo đúng mẫu các mục `0037`–`0039`: chạy `db:migrate:deploy` TRƯỚC khi deploy worker (route admin ghi cột `groups`); migration chỉ `ADD COLUMN` có default, không cần khung giờ thấp điểm; ghi bookmark D1 Time Travel trước khi apply.
-  2. Nếu `grep -rln "library_test_part" docs` trả file mô tả cột của bảng, thêm dòng mô tả cột `groups` (một câu, trỏ về `packages/api/src/library-contracts.ts`).
+  2. (red-team A2/F3 — deploy skew) Cùng mục runbook ghi rõ: `libraryPartDtoSchema` và `libraryPartUpsertSchema` đều `.strict()` với key `groups` — worker server và bundle admin PHẢI cùng một release train (precedent #304): deploy admin trước hoặc đồng thời worker; admin đang mở tab cũ cần reload sau khi deploy (tab cũ strict-reject DTO mới → trang sửa đề lỗi); nếu rollback worker về pre-PR2, phải rollback/hạ admin cùng lúc (admin mới gửi `groups` → server cũ 400 mọi lần lưu part). Migration là ADD COLUMN nên rollback worker không phá dữ liệu `groups` đã ghi.
+  3. (red-team S7 — render contract) Thêm ghi chú vào rủi ro/runbook: mọi render site tương lai của `explanation`/`groups[].instruction` (PR3 web học viên) PHẢI dùng `RichTextBody` (DOMPurify — sink duy nhất `packages/ui/src/lib/rich-text-sanitize.ts`); không dùng `dangerouslySetInnerHTML` trực tiếp.
+  4. Nếu `grep -rln "library_test_part" docs` trả file mô tả cột của bảng, thêm dòng mô tả cột `groups` (một câu, trỏ về `packages/api/src/library-contracts.ts`).
 - Verify: `grep -n "0044" docs/production-release-runbook.md` in ra ít nhất 1 dòng.
 
 ### Task 5.5 — Gate cuối PR2

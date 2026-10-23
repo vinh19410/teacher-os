@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Trường câu hỏi dùng chung + chấm theo tập (PR1)"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: []
@@ -50,8 +50,15 @@ dependencies: []
       */
      answerSet: z.string().trim().min(1).max(20).nullish(),
      ```
-  4. Không sửa chỗ nào khác của schema.
-- Success criteria: TypeScript type `AssignmentQuestion` có `explanation?: string` và `answerSet?: string | null`.
+  4. **Bắt buộc (red-team A1):** `AssignmentQuestion` là **interface viết tay** tại `packages/api/src/contracts.ts` (~dòng 1318, chỉ `stem/opts/answer/alts/type/pin`), KHÔNG derive từ zod schema. Thêm vào interface:
+     ```ts
+     /** Giải thích đáp án (rich text) — mirror schema ở trên, optional không default. */
+     explanation?: string;
+     /** Khóa tập đáp án không thứ tự (IELTS "Choose TWO") — mirror schema. */
+     answerSet?: string | null;
+     ```
+  5. Không sửa chỗ nào khác của schema.
+- Success criteria: TypeScript type `AssignmentQuestion` (interface viết tay + zod schema) có `explanation?: string` và `answerSet?: string | null`.
 - Verify: `pnpm --filter @teacher-os/api check-types` exits 0.
 
 ### Task 1.2 — Test schema câu
@@ -75,8 +82,9 @@ dependencies: []
      - Tạo `verdicts: QuizVerdict[]` cùng độ dài `questions`.
      - Duyệt index `i`: nếu `questions[i].answerSet` rỗng/null → verdict tính như code cũ.
      - Gom các index có cùng `answerSet` thành nhóm (Map key → mảng index, theo thứ tự index tăng dần).
-     - Với mỗi nhóm: `used = new Set<number>()` (index câu-khóa đã khớp). Duyệt từng index `i` trong nhóm theo thứ tự tăng: `given = normalize(answers[String(i)] ?? "")`; rỗng → `skipped`; ngược lại tìm index `k` đầu tiên trong nhóm, `k ∉ used`, mà `acceptedCandidates(questions[k].answer, questions[k].alts).includes(given)` → `correct`, `used.add(k)`; không tìm thấy → `wrong`.
-  3. Cập nhật doc comment của `gradeQuiz`: thêm một đoạn mô tả nhánh `answerSet` (khớp tham lam theo thứ tự index; một đáp án chỉ được tính một lần).
+     - Với mỗi nhóm (red-team S2 — dùng khớp tối ưu, KHÔNG greedy theo index vì `alts` làm tập ứng viên giao nhau): dựng bài toán khớp hai phía — phía trái = index câu trong nhóm, phía phải = index câu-khóa, cạnh `(i,k)` tồn tại khi `acceptedCandidates(questions[k].answer, questions[k].alts).includes(normalize(answers[String(i)] ?? ""))`. Tìm **khớp cực đại** (thuật toán Kuhn: nhóm ≤ 40 câu, đủ nhỏ). Câu `i` có `given` rỗng → `skipped`; khớp được → `correct`; ngược lại `wrong`. Kết quả khớp cực đại là xác định theo tập correct; thứ tự duyệt chỉ ảnh hưởng việc chọn cặp, không ảnh hưởng số câu correct.
+     - (kongming GO-checkpoint) **Deterministic verdict:** Kuhn chỉ bảo đảm SỐ câu đúng tối đa — CÂU nào được tính đúng phụ thuộc thứ tự duyệt. Bắt buộc: loại câu `skipped` (given rỗng) khỏi đồ thị TRƯỚC khi khớp; duyệt phía trái theo index tăng dần; thử các câu-khóa `k` theo index tăng dần. Cùng input → cùng verdict mỗi câu (trang review chấm lại phải khớp chấm lần đầu). Kuhn chuẩn chỉ đánh dấu `visited` trên đỉnh CÓ cạnh — đánh dấu trước khi kiểm edge sẽ khóa nhầm đường tăng (lỗi này bị bắt ở post-phase review và đã codify bằng test hồi quy ở Task 1.4 mục 7).
+  3. Cập nhật doc comment của `gradeQuiz`: thêm một đoạn mô tả nhánh `answerSet` (khớp tối ưu — một đáp án chỉ được tính một lần).
   4. `correctCount/wrongCount/skippedCount/totalCount` giữ cách tính cũ.
 - Success criteria: test cũ không phải sửa.
 - Verify: no verification needed (Task 1.4 kiểm).
@@ -87,10 +95,12 @@ dependencies: []
 - Target: `apps/server/src/lib/grade-quiz.test.ts`, thêm `describe("gradeQuiz — answerSet (Choose TWO)", ...)` dùng helper `q()` sẵn có.
 - Steps: viết các test:
   1. Hai câu `answerSet:"s"`, key `B`,`D`; học viên trả `{"0":"D","1":"B"}` → `["correct","correct"]`.
-  2. Cùng key; trả `{"0":"B","1":"B"}` → `["correct","wrong"]` (một đáp án không tính hai lần).
+  2. Cùng key; trả `{"0":"B","1":"B"}` → `["correct","wrong"]` (một đáp án không tính hai lần; thứ tự duyệt cố định index tăng dần — determinism theo kongming checkpoint).
   3. Trả `{"0":"D"}` → `["correct","skipped"]`.
   4. Trộn: câu 0 không set (key `Paris`), câu 1–2 set `"s"` (key `B`,`D`); trả `{"0":"Paris","1":"D","2":"B"}` → cả ba `correct`, `correctCount === 3`.
   5. Hai tập khác khóa (`"s1"`, `"s2"`) không lẫn đáp án sang nhau.
+  6. (red-team S2) `alts` giao nhau: câu 0 `answer:"A", alts:"B"`, câu 1 `answer:"B"`, cùng `answerSet:"s"`; trả `{"0":"B","1":"A"}` (hoán vị hợp lệ) → `["correct","correct"]` — khớp tối ưu, không rơi vào greedy sai.
+  7. Key không kề không bị khóa `visited`: câu 0 `answer:"A", alts:"Z"`, câu 1 `answer:"B", alts:"Z"`, cùng set; trả `{"0":"A","1":"Z"}` → `["correct","correct"]` (đường tăng vẫn tìm được — regression cho lỗi Kuhn visited-before-edge).
 - Verify: `pnpm --filter server test grade-quiz --reporter=verbose` exits 0; output có `answerSet (Choose TWO)` và không có `FAIL`.
 
 ### Task 1.5 — Gate toàn repo cho PR1

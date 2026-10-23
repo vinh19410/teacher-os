@@ -10,6 +10,16 @@ Quy ước khi cập nhật:
 
 ---
 
+
+## 2026-10-23
+
+### Added
+- Câu hỏi đề IELTS nhận 2 trường optional mới `explanation` (giải thích rich text sau khi nộp) và `answerSet` (khóa tập đáp án không thứ tự, IELTS "Choose TWO") trên `assignmentQuestionSchema` + interface `AssignmentQuestion` dùng chung cho assignment_prompt lẫn library_test_part — optional không default nên câu cũ giữ nguyên shape, dirty-check web không lệch; payload student vẫn chỉ gửi `{stem, opts, type, pin}` nên `explanation`/đáp án không bao giờ tới client học viên trước khi nộp (#420 PR1)
+- `gradeQuiz` chấm các câu cùng `answerSet` như một tập không thứ tự bằng khớp hai phía cực đại (Kuhn, deterministic theo index tăng dần — cùng input luôn ra cùng verdict mỗi câu, trang review chấm lại khớp chấm lần đầu); câu không có `answerSet` chấm y như cũ; 12 test mới (8 grader + 4 schema) phủ hoán vị, alts giao nhau, đường tăng, tập trộn (#420 PR1)
+
+### Docs
+- Plan `plans/261022-1329-library-question-groups/` qua gate validate (30 claims) + red-team (16 findings, 15 apply) và 3 lần kongming counsel — chi tiết trong `## Red Team Review` của plan.md (#420)
+
 ## 2026-10-22
 
 ### Added
