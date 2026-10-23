@@ -1,7 +1,7 @@
 import {
 	ASSIGNMENT_PART_TYPES,
+	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
-	isImageBasedType,
 } from "@teacher-os/api/contracts";
 import {
 	type LibraryPartDto,
@@ -16,24 +16,45 @@ import {
 import {
 	emptyItem,
 	type QuestionItem,
+	qStartOf,
 } from "@teacher-os/ui/components/assignments/editor/assignment-presets";
 import { QuestionKeyEditor } from "@teacher-os/ui/components/assignments/editor/question-key-editor";
 import {
 	Button,
 	buttonVariants,
 } from "@teacher-os/ui/components/web-kit/button";
-import { Field, Input, Select } from "@teacher-os/ui/components/web-kit/field";
-import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
-import { useEffect, useId, useState } from "react";
-import { AudioUploader } from "./audio-uploader";
+import { Field, Select } from "@teacher-os/ui/components/web-kit/field";
+import {
+	forwardRef,
+	useEffect,
+	useId,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
+import { CardTabs } from "./card-tabs";
+import type { GroupCardTab } from "./group-card";
+import {
+	addGroup,
+	moveGroup,
+	patchGroup,
+	removeGroup,
+	setGroupItems,
+} from "./group-model";
+import { PartContentFields } from "./part-content-fields";
+import { PartGroupsPanel } from "./part-groups-panel";
 import { formatIssue } from "./part-issues";
-
-/**
- * Form nội dung MỘT part (slot) của đề thư viện. Trạng thái form sống ở
- * component (parent key theo `${slot}:${saved?.updatedAt}` để remount sau
- * khi lưu + refetch); dirty tính thuần từ `saved` → tab hiển thị chấm cảnh
- * báo và blocker chặn rời trang dùng cùng một hàm `isPartDirty`.
- */
+import {
+	type FocusTarget,
+	firstIssueFocusPlan,
+	focusKeyOf,
+	type PartFormHandle,
+	type PartTabId,
+	type PartViewState,
+	type SaveFocusPlan,
+	viewStateOnMoveGroup,
+	viewStateOnRemoveGroup,
+} from "./part-view-state";
 
 export interface PartFormValue {
 	type: string;
@@ -329,21 +350,7 @@ export function partReadyIssues(
 	return validatePartForReady(skill, parsed.data);
 }
 
-export function PartForm({
-	skill,
-	slot,
-	slotLabel,
-	testId,
-	saved,
-	testReady,
-	saving,
-	initialValue,
-	onDraftChange,
-	onSave,
-	onAudioChanged,
-	onDelete,
-	deleting,
-}: {
+export interface PartFormProps {
 	skill: LibrarySkill;
 	slot: string;
 	slotLabel: string;
@@ -357,6 +364,22 @@ export function PartForm({
 	 * khi lưu / upload audio (key theo `saved.updatedAt`) sẽ khôi phục nội
 	 * dung đang gõ thay vì reset về bản đã lưu. */
 	initialValue?: PartFormValue;
+	/** #424 Task 3.4 — số câu đầu của part theo fold từ trang; vắng mặt thì
+	 * fallback `qStartOf(skill, slot)` (render độc lập trong test). */
+	qStart?: number;
+	/** #424 Task 3.4 — cây điều hướng yêu cầu focus nhóm/câu (consume-once
+	 * theo nonce; trang reset null qua `onFocusConsumed`). */
+	focusTarget?: FocusTarget | null;
+	onFocusConsumed?: (nonce: number) => void;
+	/** Báo vị trí soạn (tab/nhóm/hàng) + view-state lên trang sau mọi thay
+	 * đổi — cây tô `aria-current` và giữ view qua remount. */
+	onActivePositionChange?: (pos: {
+		group: number | null;
+		question: number | null;
+		view?: PartViewState;
+	}) => void;
+	/** Khôi phục view-state sau remount (trang giữ `viewStateBySlot`). */
+	initialView?: PartViewState;
 	/** Báo dirty + giá trị nháp lên parent (tab chấm đỏ, ready-check). */
 	onDraftChange: (
 		slot: string,
@@ -370,284 +393,457 @@ export function PartForm({
 	onAudioChanged: () => void;
 	onDelete: () => void;
 	deleting: boolean;
-}) {
-	const uid = useId();
-	const [value, setValue] = useState<PartFormValue>(
-		() =>
-			initialValue ??
-			(saved ? partValueFromDto(saved) : emptyPartValue(skill, slot)),
-	);
-	const [showErrors, setShowErrors] = useState(false);
-	const [live, setLive] = useState("");
-
-	const dirty = isPartDirty(skill, slot, saved, value);
-	useEffect(() => {
-		onDraftChange(slot, { dirty, value });
-		// saved đổi (remount bằng key nên không xảy ra trong một mount) —
-		// deps đủ để reporter luôn bắn trạng thái nháp mới nhất.
-	}, [dirty, slot, onDraftChange, value]);
-
-	const patch = (next: Partial<PartFormValue>) =>
-		setValue((previous) => ({ ...previous, ...next }));
-
-	const isListening = skill === "listening";
-	const isImage = isImageBasedType(skill, value.type);
-	const issues =
-		showErrors || testReady
-			? partReadyIssues(skill, slot, value, saved?.audio?.name)
-			: [];
-	const errorFor = (field: string): string | undefined =>
-		showErrors
-			? issues.find((issue) => issue.path === field)?.message
-			: undefined;
-	const questionIssueCount = issues.filter((issue) =>
-		issue.path.startsWith("questions"),
-	).length;
-
-	const handleSave = async () => {
-		const built = partInputFromValue(slot, value);
-		if (!built.ok) {
-			setShowErrors(true);
-			setLive("Chưa lưu được — kiểm tra các trường có lỗi.");
-			return;
-		}
-		try {
-			await onSave(built.input, value);
-			setShowErrors(false);
-			setLive("Đã lưu part.");
-		} catch {
-			setLive("Chưa lưu được part — xem thông báo lỗi.");
-		}
-	};
-
-	return (
-		<div className="flex flex-col gap-5">
-			<div className="grid grid-cols-2 gap-4">
-				<Field
-					label="Tiêu đề part"
-					required
-					htmlFor={`${uid}-title`}
-					error={showErrors ? errorFor("title") : undefined}
-				>
-					<Input
-						id={`${uid}-title`}
-						value={value.title}
-						maxLength={200}
-						placeholder={`VD: ${slotLabel}`}
-						onChange={(event) => patch({ title: event.target.value })}
-					/>
-				</Field>
-				<Field
-					label="Dạng bài"
-					required
-					htmlFor={`${uid}-type`}
-					error={showErrors ? errorFor("type") : undefined}
-				>
-					<Select
-						id={`${uid}-type`}
-						value={value.type}
-						onChange={(event) => {
-							const type = event.target.value;
-							// Đổi dạng: câu giữ nội dung (stem/answer), chỉ câu
-							// rỗng mới nhận shape của dạng mới (same as web composer).
-							patch({
-								type,
-								questions: value.questions.map((question) =>
-									question.stem || question.answer ? question : emptyItem(type),
-								),
-							});
-						}}
-					>
-						{slotTypes(skill, slot).map((type) => (
-							<option key={type} value={type}>
-								{type}
-							</option>
-						))}
-					</Select>
-				</Field>
-			</div>
-			<div className="grid grid-cols-2 gap-4">
-				<Field label="Band điểm" htmlFor={`${uid}-band`}>
-					<Select
-						id={`${uid}-band`}
-						value={value.band}
-						onChange={(event) => patch({ band: event.target.value })}
-					>
-						{BAND_OPTIONS.map((band) => (
-							<option key={band} value={band}>
-								{band}
-							</option>
-						))}
-					</Select>
-				</Field>
-				<Field
-					label="Nguồn"
-					htmlFor={`${uid}-source`}
-					help="Không bắt buộc — tên bài gốc / tài liệu tham khảo."
-				>
-					<Input
-						id={`${uid}-source`}
-						value={value.source}
-						maxLength={200}
-						onChange={(event) => patch({ source: event.target.value })}
-					/>
-				</Field>
-			</div>
-
-			<Field
-				label="Đoạn văn (Passage)"
-				htmlFor={`${uid}-passage`}
-				help="Rich text — tối đa 20.000 ký tự."
-				error={showErrors ? errorFor("passage") : undefined}
-			>
-				<RichTextEditor
-					id={`${uid}-passage`}
-					value={value.passage}
-					onChange={(passage) => patch({ passage })}
-					placeholder="Dán đoạn văn đọc…"
-					contentClassName="[&_.ProseMirror]:min-h-48"
-				/>
-			</Field>
-
-			{isListening && (
-				<Field
-					label="Transcript (Lời thoại)"
-					htmlFor={`${uid}-transcript`}
-					help="Rich text — tối đa 10.000 ký tự."
-					error={showErrors ? errorFor("transcript") : undefined}
-				>
-					<RichTextEditor
-						id={`${uid}-transcript`}
-						value={value.transcript}
-						onChange={(transcript) => patch({ transcript })}
-						placeholder="Dán lời thoại đầy đủ của section…"
-						contentClassName="[&_.ProseMirror]:min-h-32"
-					/>
-				</Field>
-			)}
-
-			{isImage && (
-				<p className="text-muted-foreground text-xs">
-					Dạng bài dùng ảnh — nhập URL ảnh và đặt ghim cho từng câu ở khối «Câu
-					hỏi và đáp án đúng» bên dưới.
-				</p>
-			)}
-
-			{isListening && (
-				<AudioUploader
-					testId={testId}
-					slot={slot}
-					audio={saved?.audio ?? null}
-					locked={testReady}
-					onChanged={onAudioChanged}
-				/>
-			)}
-
-			<QuestionKeyEditor
-				skill={skill}
-				partId={slot}
-				typeId={value.type}
-				intro={value.intro}
-				items={value.questions as QuestionItem[]}
-				showErrors={showErrors}
-				status={testReady ? "ready" : "draft"}
-				imageUrl={value.imageUrl}
-				optionBank={value.optionBank}
-				onIntroChange={(intro) => patch({ intro })}
-				onImageUrlChange={(imageUrl) => patch({ imageUrl })}
-				onItemsChange={(questions) => patch({ questions })}
-				onBankChange={(optionBank) => patch({ optionBank })}
-				imageUrlError={errorFor("imageUrl")}
-				optionBankError={errorFor("optionBank")}
-				questionsError={
-					questionIssueCount > 0
-						? `${questionIssueCount} câu hỏi chưa đạt điều kiện xuất bản — xem chi tiết ở danh sách lý do.`
-						: undefined
-				}
-			/>
-
-			<Field label="Ghi chú nội bộ" htmlFor={`${uid}-note`}>
-				<RichTextEditor
-					id={`${uid}-note`}
-					value={value.note}
-					onChange={(note) => patch({ note })}
-					placeholder="Ghi chú cho giáo viên (học viên không thấy)…"
-					contentClassName="[&_.ProseMirror]:min-h-16"
-				/>
-			</Field>
-
-			{showErrors && issues.length > 0 && (
-				<div
-					role="alert"
-					className="rounded-md border border-destructive/40 bg-destructive/5 p-3"
-				>
-					<p className="font-medium text-destructive text-sm">
-						{slotLabel} chưa đạt điều kiện lưu/xuất bản:
-					</p>
-					<ul className="mt-1 list-disc pl-5 text-destructive text-xs">
-						{issues.map((issue) => (
-							<li key={`${issue.path}:${issue.message}`}>
-								{formatIssue(issue, skill)}
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			<div className="flex flex-wrap items-center gap-3">
-				<Button onClick={() => void handleSave()} disabled={saving}>
-					{saving ? "Đang lưu…" : "Lưu part"}
-				</Button>
-				{saved && (
-					<button
-						type="button"
-						disabled={testReady || deleting}
-						title={
-							testReady
-								? "Đề đã xuất bản — hãy hạ về nháp để xóa part."
-								: undefined
-						}
-						onClick={() => {
-							if (
-								window.confirm(
-									`Xóa nội dung ${slotLabel}? Câu hỏi và audio (nếu có) sẽ bị xóa vĩnh viễn.`,
-								)
-							) {
-								onDelete();
-							}
-						}}
-						className={buttonVariants({
-							variant: "destructive",
-							size: "sm",
-							className: testReady ? "pointer-events-none opacity-50" : "",
-						})}
-					>
-						{deleting ? "Đang xóa…" : "Xóa part"}
-					</button>
-				)}
-				{dirty && (
-					<span className="flex items-center gap-1.5 text-amber-600 text-xs">
-						<span
-							aria-hidden="true"
-							className="inline-block size-2 rounded-full bg-amber-500"
-						/>
-						Có thay đổi chưa lưu
-					</span>
-				)}
-				<p
-					aria-live="polite"
-					role="status"
-					className="text-muted-foreground text-xs"
-				>
-					{live}
-				</p>
-			</div>
-			{testReady && (
-				<p className="text-muted-foreground text-xs">
-					Đề đã xuất bản: vẫn sửa được nội dung (server sẽ kiểm tra lại luật
-					«ready» khi lưu), nhưng phải hạ về nháp để xóa part hoặc audio.
-				</p>
-			)}
-		</div>
-	);
 }
+
+export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
+	function PartForm(
+		{
+			skill,
+			slot,
+			slotLabel,
+			testId,
+			saved,
+			testReady,
+			initialValue,
+			qStart,
+			focusTarget,
+			onFocusConsumed,
+			onActivePositionChange,
+			initialView,
+			onDraftChange,
+			onSave,
+			onAudioChanged,
+			onDelete,
+			deleting,
+		},
+		ref,
+	) {
+		const uid = useId();
+		const [value, setValue] = useState<PartFormValue>(
+			() =>
+				initialValue ??
+				(saved ? partValueFromDto(saved) : emptyPartValue(skill, slot)),
+		);
+		const [view, setView] = useState<PartViewState>(
+			() =>
+				initialView ?? {
+					partTab: "content",
+					openGroup: value.groups.length > 0 ? 0 : null,
+					groupTabs: {},
+					openRowByGroup: {},
+				},
+		);
+		const [showErrors, setShowErrors] = useState(false);
+		const [live, setLive] = useState("");
+
+		const dirty = isPartDirty(skill, slot, saved, value);
+		useEffect(() => {
+			onDraftChange(slot, { dirty, value });
+			// saved đổi (remount bằng key nên không xảy ra trong một mount) —
+			// deps đủ để reporter luôn bắn trạng thái nháp mới nhất.
+		}, [dirty, slot, onDraftChange, value]);
+
+		// Vị trí soạn hiện hành (tab/nhóm/hàng) báo lên trang — cây điều
+		// hướng tô aria-current đúng và trang giữ view-state qua remount.
+		useEffect(() => {
+			onActivePositionChange?.({
+				group: view.openGroup,
+				question:
+					view.openGroup !== null
+						? (view.openRowByGroup[view.openGroup] ?? null)
+						: null,
+				view,
+			});
+		}, [view, onActivePositionChange]);
+
+		const patch = (next: Partial<PartFormValue>) =>
+			setValue((previous) => ({ ...previous, ...next }));
+
+		const partQStart = qStart ?? qStartOf(skill, slot);
+		const slotIndex =
+			(ASSIGNMENT_TEST_PRESETS[skill]?.slots ?? []).findIndex(
+				(entry) => entry.part === slot,
+			) + 1;
+		const issues =
+			showErrors || testReady
+				? partReadyIssues(skill, slot, value, saved?.audio?.name)
+				: [];
+		const errorFor = (field: string): string | undefined =>
+			showErrors
+				? issues.find((issue) => issue.path === field)?.message
+				: undefined;
+		const questionIssueCount = issues.filter((issue) =>
+			issue.path.startsWith("questions"),
+		).length;
+
+		const applyFocusPlan = (plan: SaveFocusPlan) => {
+			setView((previous) => {
+				const next: PartViewState = {
+					...previous,
+					partTab: plan.partTab,
+					groupTabs: { ...previous.groupTabs },
+					openRowByGroup: { ...previous.openRowByGroup },
+				};
+				if (plan.group !== undefined) {
+					next.openGroup = plan.group;
+					next.groupTabs[plan.group] = plan.groupTab ?? "questions";
+					if (plan.row !== undefined) {
+						next.openRowByGroup[plan.group] = plan.row;
+					}
+				}
+				return next;
+			});
+			// Hàng/nhóm luôn trong DOM (thân GroupCard ẩn bằng hidden, không
+			// unmount) — rAF một frame để state áp xong rồi cuộn.
+			requestAnimationFrame(() => {
+				const element =
+					plan.fieldKey !== undefined
+						? document.getElementById(`${uid}-${plan.fieldKey}`)
+						: plan.group !== undefined && plan.row !== undefined
+							? document.getElementById(
+									`group-${slot}-${plan.group}-q${plan.row}`,
+								)
+							: plan.group !== undefined
+								? document.getElementById(`group-${slot}-${plan.group}`)
+								: null;
+				element?.scrollIntoView({ block: "start" });
+			});
+		};
+
+		const handleSave = async (): Promise<boolean> => {
+			const built = partInputFromValue(slot, value);
+			if (!built.ok) {
+				setShowErrors(true);
+				setLive("Chưa lưu được — kiểm tra các trường có lỗi.");
+				const plan = firstIssueFocusPlan(built.errors, value);
+				if (plan) applyFocusPlan(plan);
+				return false;
+			}
+			try {
+				await onSave(built.input, value);
+				setShowErrors(false);
+				setLive("Đã lưu part.");
+				return true;
+			} catch {
+				setLive("Chưa lưu được part — xem thông báo lỗi.");
+				return false;
+			}
+		};
+
+		// Không dep array — handle mới mỗi render để không đóng băng closure
+		// `value` (F2); toolbar giữ handle qua ref luôn thấy bản mới nhất.
+		useImperativeHandle(ref, () => ({ save: handleSave }));
+
+		// focusTarget consume-once theo key serialized; nonce tăng mỗi lần
+		// bấm cây. Sau remount, trang đã reset focusTarget=null qua
+		// onFocusConsumed nên instance mới không re-fire (key rỗng).
+		const consumedFocusKey = useRef("");
+		useEffect(() => {
+			if (!focusTarget) return;
+			const key = focusKeyOf(focusTarget);
+			if (key === "" || key === consumedFocusKey.current) return;
+			consumedFocusKey.current = key;
+			const gi = focusTarget.group;
+			setView((previous) => ({
+				...previous,
+				partTab: "questions",
+				openGroup: gi,
+				groupTabs: { ...previous.groupTabs, [gi]: "questions" },
+				openRowByGroup:
+					focusTarget.question === undefined
+						? previous.openRowByGroup
+						: { ...previous.openRowByGroup, [gi]: focusTarget.question },
+			}));
+			requestAnimationFrame(() => {
+				const id =
+					focusTarget.question === undefined
+						? `group-${slot}-${gi}`
+						: `group-${slot}-${gi}-q${focusTarget.question}`;
+				document.getElementById(id)?.scrollIntoView({ block: "start" });
+			});
+			onFocusConsumed?.(focusTarget.nonce);
+		}, [focusTarget, slot, onFocusConsumed]);
+
+		const setGroupTab = (gi: number, tab: GroupCardTab) =>
+			setView((previous) => ({
+				...previous,
+				groupTabs: { ...previous.groupTabs, [gi]: tab },
+			}));
+
+		const setOpenRow = (gi: number, row: number | null) =>
+			setView((previous) => ({
+				...previous,
+				openRowByGroup: { ...previous.openRowByGroup, [gi]: row },
+			}));
+
+		const toggleGroup = (gi: number) =>
+			setView((previous) => ({
+				...previous,
+				openGroup: previous.openGroup === gi ? null : gi,
+			}));
+
+		const handleAddGroup = () => {
+			const type = value.groups.at(-1)?.type ?? value.type;
+			const next = addGroup(value, type);
+			const gi = next.groups.length - 1;
+			setValue(next);
+			// Nhóm mới tự mở ở tab Câu hỏi, hàng đầu mở sẵn.
+			setView((previous) => ({
+				...previous,
+				partTab: "questions",
+				openGroup: gi,
+				groupTabs: { ...previous.groupTabs, [gi]: "questions" },
+				openRowByGroup: { ...previous.openRowByGroup, [gi]: 0 },
+			}));
+		};
+
+		const handleRemoveGroup = (gi: number) => {
+			const next = removeGroup(value, gi);
+			setValue(next);
+			setView((previous) =>
+				viewStateOnRemoveGroup(previous, gi, next.groups.length),
+			);
+		};
+
+		const handleMoveGroup = (gi: number, dir: -1 | 1) => {
+			setValue(moveGroup(value, gi, dir));
+			setView((previous) => viewStateOnMoveGroup(previous, gi, dir));
+		};
+
+		const handleGroupItems = (gi: number, items: QuestionItem[]) => {
+			setValue((previous) => setGroupItems(previous, gi, items));
+			setView((previous) => {
+				const row = previous.openRowByGroup[gi] ?? null;
+				const clamped = row === null ? null : Math.min(row, items.length - 1);
+				return clamped === row
+					? previous
+					: {
+							...previous,
+							openRowByGroup: { ...previous.openRowByGroup, [gi]: clamped },
+						};
+			});
+		};
+
+		const hasGroups = value.groups.length > 0;
+
+		return (
+			<section className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
+				<header className="flex flex-wrap items-center gap-3">
+					<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-primary-foreground text-xs">
+						{slotIndex}
+					</span>
+					<div className="min-w-0">
+						<h3 className="font-semibold text-base">
+							{value.title.trim() || slotLabel}
+						</h3>
+						<p aria-hidden="true" className="text-muted-foreground text-xs">
+							{hasGroups
+								? `${value.groups.length} nhóm, ${value.questions.length} câu`
+								: `${value.questions.length} câu`}
+						</p>
+					</div>
+					{saved && (
+						<button
+							type="button"
+							disabled={testReady || deleting}
+							title={
+								testReady
+									? "Đề đã xuất bản — hãy hạ về nháp để xóa part."
+									: undefined
+							}
+							onClick={() => {
+								if (
+									window.confirm(
+										`Xóa nội dung ${slotLabel}? Câu hỏi và audio (nếu có) sẽ bị xóa vĩnh viễn.`,
+									)
+								) {
+									onDelete();
+								}
+							}}
+							className={buttonVariants({
+								variant: "destructive",
+								size: "sm",
+								className: testReady ? "pointer-events-none opacity-50" : "",
+							})}
+						>
+							{deleting ? "Đang xóa…" : "Xóa part"}
+						</button>
+					)}
+					{dirty && (
+						<span className="flex items-center gap-1.5 text-amber-600 text-xs">
+							<span
+								aria-hidden="true"
+								className="inline-block size-2 rounded-full bg-amber-500"
+							/>
+							Có thay đổi chưa lưu
+						</span>
+					)}
+					<p
+						aria-live="polite"
+						role="status"
+						className="text-muted-foreground text-xs"
+					>
+						{live}
+					</p>
+				</header>
+
+				<CardTabs
+					tabs={[
+						{ id: "content", label: "Nội dung" },
+						{
+							id: "questions",
+							label: "Câu hỏi",
+							count: value.questions.length,
+						},
+					]}
+					active={view.partTab}
+					onSelect={(id) =>
+						setView((previous) => ({
+							...previous,
+							partTab: id as PartTabId,
+						}))
+					}
+					idPrefix={`${uid}-part`}
+					aria-label={`Các tab ${slotLabel}`}
+				/>
+
+				<div hidden={view.partTab !== "content"}>
+					<PartContentFields
+						uid={uid}
+						skill={skill}
+						slot={slot}
+						slotLabel={slotLabel}
+						testId={testId}
+						value={value}
+						saved={saved}
+						testReady={testReady}
+						showErrors={showErrors}
+						errorFor={errorFor}
+						patch={patch}
+						onAudioChanged={onAudioChanged}
+					/>
+				</div>
+
+				<div
+					hidden={view.partTab !== "questions"}
+					className="flex flex-col gap-4"
+				>
+					{!hasGroups && (
+						<>
+							<Field
+								label="Dạng bài"
+								required
+								htmlFor={`${uid}-type`}
+								error={showErrors ? errorFor("type") : undefined}
+							>
+								<Select
+									id={`${uid}-type`}
+									value={value.type}
+									onChange={(event) => {
+										const type = event.target.value;
+										// Đổi dạng: câu giữ nội dung (stem/answer), chỉ câu
+										// rỗng mới nhận shape của dạng mới (same as web composer).
+										patch({
+											type,
+											questions: value.questions.map((question) =>
+												question.stem || question.answer
+													? question
+													: emptyItem(type),
+											),
+										});
+									}}
+								>
+									{slotTypes(skill, slot).map((type) => (
+										<option key={type} value={type}>
+											{type}
+										</option>
+									))}
+								</Select>
+							</Field>
+							<QuestionKeyEditor
+								skill={skill}
+								partId={slot}
+								typeId={value.type}
+								intro={value.intro}
+								items={value.questions as QuestionItem[]}
+								showErrors={showErrors}
+								status={testReady ? "ready" : "draft"}
+								imageUrl={value.imageUrl}
+								optionBank={value.optionBank}
+								onIntroChange={(intro) => patch({ intro })}
+								onImageUrlChange={(imageUrl) => patch({ imageUrl })}
+								onItemsChange={(questions) => patch({ questions })}
+								onBankChange={(optionBank) => patch({ optionBank })}
+								imageUrlError={errorFor("imageUrl")}
+								optionBankError={errorFor("optionBank")}
+								questionsError={
+									questionIssueCount > 0
+										? `${questionIssueCount} câu hỏi chưa đạt điều kiện xuất bản — xem chi tiết ở danh sách lý do.`
+										: undefined
+								}
+								showExplanation
+							/>
+							<div>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => setValue(addGroup(value, value.type))}
+								>
+									Chia thành nhiều nhóm câu
+								</Button>
+							</div>
+						</>
+					)}
+					{hasGroups && (
+						<PartGroupsPanel
+							skill={skill}
+							slot={slot}
+							value={value}
+							view={view}
+							qStart={partQStart}
+							showErrors={showErrors}
+							testReady={testReady}
+							errorFor={errorFor}
+							onToggleGroup={toggleGroup}
+							onSetGroupTab={setGroupTab}
+							onSetOpenRow={setOpenRow}
+							onPatchGroup={(gi, groupPatch) =>
+								setValue((previous) => patchGroup(previous, gi, groupPatch))
+							}
+							onGroupItemsChange={handleGroupItems}
+							onMoveGroup={handleMoveGroup}
+							onRemoveGroup={handleRemoveGroup}
+							onAddGroup={handleAddGroup}
+							onImageUrlChange={(imageUrl) => patch({ imageUrl })}
+						/>
+					)}
+				</div>
+
+				{showErrors && issues.length > 0 && (
+					<div
+						role="alert"
+						className="rounded-md border border-destructive/40 bg-destructive/5 p-3"
+					>
+						<p className="font-medium text-destructive text-sm">
+							{slotLabel} chưa đạt điều kiện lưu/xuất bản:
+						</p>
+						<ul className="mt-1 list-disc pl-5 text-destructive text-xs">
+							{issues.map((issue) => (
+								<li key={`${issue.path}:${issue.message}`}>
+									{formatIssue(issue, skill)}
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
+
+				{testReady && (
+					<p className="text-muted-foreground text-xs">
+						Đề đã xuất bản: vẫn sửa được nội dung (server sẽ kiểm tra lại luật
+						«ready» khi lưu), nhưng phải hạ về nháp để xóa part hoặc audio.
+					</p>
+				)}
+			</section>
+		);
+	},
+);

@@ -2,6 +2,7 @@
 import type { LibraryPartDto } from "@teacher-os/api/library-contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { addGroup } from "./group-model";
 import {
 	arePartValuesEqual,
 	BAND_OPTIONS,
@@ -15,6 +16,14 @@ import {
 	reconcilePartDraftsOnSaveSuccess,
 	slotTypes,
 } from "./part-form";
+import {
+	firstIssueFocusPlan,
+	focusKeyOf,
+	viewStateOnMoveGroup,
+	viewStateOnRemoveGroup,
+} from "./part-view-state";
+import { TestOutline } from "./test-outline";
+import { buildTestOutline } from "./test-outline-model";
 
 const partDto: LibraryPartDto = {
 	id: "part-1",
@@ -285,7 +294,6 @@ describe("PartForm (render tĩnh)", () => {
 		expect(html).toContain("Dạng bài");
 		expect(html).toContain("Band điểm");
 		expect(html).toContain("Đoạn văn (Passage)");
-		expect(html).toContain("Lưu part");
 		expect(html).toContain('value="tfng"');
 		expect(html).toContain('value="diagram"');
 		// reading không có transcript/audio
@@ -582,5 +590,400 @@ describe("groups trong PartFormValue", () => {
 			passage: "<p>Đủ</p>",
 		});
 		expect(issues.some((issue) => issue.path.startsWith("groups."))).toBe(true);
+	});
+});
+
+describe("PartForm thẻ part (#424 Task 3.4, render tĩnh)", () => {
+	const renderForm = (props: Partial<Parameters<typeof PartForm>[0]> = {}) =>
+		renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={null}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+				{...props}
+			/>,
+		);
+
+	it("hai tab Nội dung / Câu hỏi với badge đếm aria-hidden", () => {
+		const html = renderForm();
+		expect(html).toContain('role="tablist"');
+		expect(html).toContain('aria-label="Các tab Passage 1"');
+		expect(html).toContain("Nội dung");
+		expect(html).toContain("Câu hỏi");
+		// Badge đếm câu (1 câu mặc định) aria-hidden — không vào accessible name.
+		expect(html).toMatch(/Câu hỏi<span aria-hidden="true"[^>]*>1<\/span>/);
+	});
+
+	it("chế độ phẳng: một editor + nút Chia thành nhiều nhóm câu, không hàng thu gọn", () => {
+		const html = renderForm();
+		expect(html).toContain("Chia thành nhiều nhóm câu");
+		expect(html).toContain("Câu hỏi và đáp án đúng");
+		expect(html).not.toContain("Thêm nhóm câu");
+		expect(html).not.toContain("Tổng số câu của part");
+	});
+
+	it("không còn nút Lưu part (dời ra toolbar trang, phase 4)", () => {
+		const html = renderForm();
+		expect(html).not.toContain("Lưu part");
+	});
+
+	it("khôi phục view-state qua initialView sau remount", () => {
+		const groupedDto: LibraryPartDto = {
+			...partDto,
+			questions: [
+				{
+					stem: "Câu 1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 3",
+					opts: null,
+					answer: "____",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "tfng",
+					instruction: "<p>Nhóm sau</p>",
+					startIndex: 2,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const initialView = {
+			partTab: "questions" as const,
+			openGroup: 1,
+			groupTabs: { 1: "intro" as const },
+			openRowByGroup: { 1: 0 },
+		};
+		const html = renderForm({ saved: groupedDto, initialView });
+		// Tab Câu hỏi của part đang mở.
+		expect(html).toContain('aria-selected="true"');
+		// Nhóm 1 mở (thân không hidden), nhóm 0 đóng (thân hidden).
+		const group1 = html.split('id="group-p1-1"')[1] ?? "";
+		// Nhóm 1 mở ở tab Hướng dẫn của thẻ nhóm.
+		const introTab =
+			group1
+				.split('id="group-p1-1-tabs-tab-intro"')[1]
+				?.split("</button>")[0] ?? "";
+		expect(introTab).toContain('aria-selected="true"');
+		expect(group1).toContain("Hướng dẫn đề");
+		// Nhóm 0 (đóng) vẫn mount ngầm với tab mặc định Câu hỏi được chọn.
+		const group0 =
+			html.split('id="group-p1-0"')[1]?.split('id="group-p1-1"')[0] ?? "";
+		const qTab0 =
+			group0
+				.split('id="group-p1-0-tabs-tab-questions"')[1]
+				?.split("</button>")[0] ?? "";
+		expect(qTab0).toContain('aria-selected="true"');
+	});
+
+	it("addGroup → 2 nhóm; TestOutline hiện Nhóm câu 1/2 (#420 Task 4.8)", () => {
+		const split = addGroup(partValueFromDto(partDto), "tfng");
+		expect(split.groups).toHaveLength(2);
+		const sections = buildTestOutline(
+			"reading",
+			[{ part: "p1", label: "Passage 1" }],
+			new Map(),
+			new Map([["p1", { dirty: true, value: split }]]),
+		);
+		const html = renderToStaticMarkup(
+			<TestOutline
+				sections={sections}
+				active={{ part: "p1" }}
+				onSelect={vi.fn()}
+				collapsed={false}
+				onCollapsedChange={vi.fn()}
+			/>,
+		);
+		expect(html).toContain(">Nhóm câu 1</button>");
+		expect(html).toContain(">Nhóm câu 2</button>");
+	});
+
+	it("part 2 nhóm (tfng 3 câu, note 2 câu): outline đánh số Câu 1–5", () => {
+		const groupedDto: LibraryPartDto = {
+			...partDto,
+			questions: [
+				{
+					stem: "Câu 1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 3",
+					opts: null,
+					answer: "Not Given",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 4",
+					opts: null,
+					answer: "x",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "Câu 5",
+					opts: null,
+					answer: "y",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "note",
+					instruction: "",
+					startIndex: 3,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const partsBySlot = new Map([["p1", groupedDto]]);
+		const sections = buildTestOutline(
+			"reading",
+			[{ part: "p1", label: "Passage 1" }],
+			partsBySlot,
+			new Map(),
+		);
+		const html = renderToStaticMarkup(
+			<TestOutline
+				sections={sections}
+				active={{ part: "p1", group: 1 }}
+				onSelect={vi.fn()}
+				collapsed={false}
+				onCollapsedChange={vi.fn()}
+			/>,
+		);
+		// Chỉ nhóm đang chọn (nhóm 2) liệt kê câu — Câu 4, Câu 5.
+		expect(html).toContain(">Câu 4</button>");
+		expect(html).toContain(">Câu 5</button>");
+		expect(html).not.toContain(">Câu 1</button>");
+	});
+
+	it("nhóm answersInline: dòng «Câu có ô trống: 1/2» khi chỉ câu đầu có ô trống", () => {
+		const groupedDto: LibraryPartDto = {
+			...partDto,
+			type: "note",
+			questions: [
+				{
+					stem: "one ____ gap",
+					opts: null,
+					answer: "x",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "no gap here",
+					opts: null,
+					answer: "y",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "note",
+					instruction: "<p>Điền từ</p>",
+					startIndex: 0,
+					count: 2,
+					optionBank: [],
+					answersInline: true,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const html = renderForm({ saved: groupedDto });
+		expect(html).toContain("Câu có ô trống: 1/2");
+		// Bộ đếm tổng câu của part hiện khi có nhóm.
+		expect(html).toContain("Tổng số câu của part: 2/40");
+		expect(html).toContain("Thêm nhóm câu");
+	});
+});
+
+describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)", () => {
+	it("focusKeyOf: null → rỗng; nonce khác → key khác (consume-once + re-fire)", () => {
+		expect(focusKeyOf(null)).toBe("");
+		const a = focusKeyOf({ group: 1, question: 2, nonce: 3 });
+		expect(a).toBe("1:2:3");
+		// Cùng target bấm lại (nonce mới) vẫn là key mới.
+		expect(focusKeyOf({ group: 1, question: 2, nonce: 4 })).not.toBe(a);
+		// Remount với prop đã reset → rỗng, không re-fire.
+		expect(focusKeyOf(null)).toBe("");
+	});
+
+	it("firstIssueFocusPlan: lỗi nhóm → mở đúng nhóm + tab; lỗi field nội dung → tab Nội dung", () => {
+		const flat = partValueFromDto(partDto);
+		expect(firstIssueFocusPlan({ questions: "lỗi" }, flat)).toEqual({
+			partTab: "questions",
+		});
+		expect(firstIssueFocusPlan({ passage: "lỗi" }, flat)).toEqual({
+			partTab: "content",
+			fieldKey: "passage",
+		});
+		const grouped = addGroup(partValueFromDto(partDto), "tfng");
+		expect(
+			firstIssueFocusPlan({ "groups.1.optionBank": "lỗi" }, grouped),
+		).toEqual({ partTab: "questions", group: 1, groupTab: "questions" });
+		expect(firstIssueFocusPlan({ "groups.0.type": "lỗi" }, grouped)).toEqual({
+			partTab: "questions",
+			group: 0,
+			groupTab: "settings",
+		});
+	});
+
+	it("firstIssueFocusPlan: câu thiếu đáp án trong nhóm 1 → hàng tương ứng", () => {
+		const value: ReturnType<typeof partValueFromDto> = {
+			...partValueFromDto(partDto),
+			questions: [
+				{
+					stem: "đủ",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "đủ 2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "thiếu đáp án",
+					opts: null,
+					answer: "",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "tfng",
+					instruction: "",
+					startIndex: 2,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		expect(firstIssueFocusPlan({ questions: "lỗi" }, value)).toEqual({
+			partTab: "questions",
+			group: 1,
+			groupTab: "questions",
+			row: 0,
+		});
+	});
+
+	it("view-state dời key theo phần tử khi xóa/hoán đổi nhóm; openRow đi theo câu", () => {
+		const view = {
+			partTab: "questions" as const,
+			openGroup: 2,
+			groupTabs: { 0: "intro" as const, 2: "settings" as const },
+			openRowByGroup: { 0: 1, 2: 0 },
+		};
+		// Xóa nhóm 1 → key 2 dời xuống 1; openGroup theo phần tử.
+		const afterRemove = viewStateOnRemoveGroup(view, 1, 2);
+		expect(afterRemove.openRowByGroup).toEqual({ 0: 1, 1: 0 });
+		expect(afterRemove.groupTabs).toEqual({ 0: "intro", 1: "settings" });
+		expect(afterRemove.openGroup).toBe(1);
+		// Hoán đổi nhóm 0 ↔ 1 → cặp key đi theo nhóm được swap.
+		const afterMove = viewStateOnMoveGroup(afterRemove, 0, 1);
+		expect(afterMove.openRowByGroup).toEqual({ 0: 0, 1: 1 });
+		expect(afterMove.openGroup).toBe(0);
 	});
 });
