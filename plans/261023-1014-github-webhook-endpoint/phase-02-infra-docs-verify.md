@@ -34,6 +34,10 @@ Khai báo và truyền `GITHUB_WEBHOOK_SECRET` tới Worker ở mọi stage depl
    - Thêm dòng vào bảng Secret inventory: nguồn (operator tự sinh, vd `openssl rand -hex 32`), đường đi (GitHub
      environment secret → bước deploy → Worker binding), cách xoay vòng (sinh mới → cập nhật secret trên trang
      webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI).
+   - Kèm cảnh báo (red-team S3, mirror precedent dòng RESEND_API_KEY): `withDefault("")` nghĩa là mọi
+     deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về
+     rỗng ⇒ endpoint 503 và delivery GitHub fail cho tới lần deploy CI kế tiếp — deploy tay phải
+     export biến từ `.env` (hoặc chờ CI).
    - Thêm mục ngắn "GitHub webhook": Payload URL `https://api.<domain>/webhooks/github`, Content type
      `application/json` (bắt buộc — form-encoded bị 415), Secret = giá trị trên, chọn event cần nhận; kiểm bằng
      delivery `ping` trả 200 trong tab "Recent Deliveries". Secret chưa set ⇒ 503 `GITHUB_WEBHOOK_DISABLED`.
