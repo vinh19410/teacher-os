@@ -15,8 +15,11 @@ import {
 } from "@teacher-os/api/library-contracts";
 import { buttonVariants } from "@teacher-os/ui/components/web-kit/button";
 import { Card } from "@teacher-os/ui/components/web-kit/card";
+import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { AnswersCheckingPanel } from "@/components/library/answers-checking-panel";
+import { buildAnswersOverview } from "@/components/library/answers-overview";
 import { libraryErrorMessage } from "@/components/library/library-error";
 import {
 	PartForm,
@@ -26,7 +29,11 @@ import {
 	reconcilePartDraftsOnSaveSuccess,
 } from "@/components/library/part-form";
 import { formatIssue } from "@/components/library/part-issues";
-import { PartTabs } from "@/components/library/part-tabs";
+import type {
+	FocusTarget,
+	PartFormHandle,
+	PartViewState,
+} from "@/components/library/part-view-state";
 import { PublishBar } from "@/components/library/publish-bar";
 import {
 	areTestHeadersEqual,
@@ -36,6 +43,11 @@ import {
 	TestHeaderForm,
 	type TestHeaderFormValue,
 } from "@/components/library/test-header-form";
+import {
+	type OutlineTarget,
+	TestOutline,
+} from "@/components/library/test-outline";
+import { buildTestOutline } from "@/components/library/test-outline-model";
 import { isHttpError } from "@/lib/query-client";
 import {
 	deleteLibraryPart,
@@ -46,10 +58,9 @@ import {
 } from "@/lib/repos/library";
 
 /**
- * Trang edit bộ đề (phase 6): header PATCH khi blur/lưu, tab theo slot
- * (Passage 1..3 / Section 1..4), form part từng tab + PUT, thanh xuất bản
- * với lý do chặn từ `validateTestReady` (một nguồn sự thật với server).
- * Rời trang khi còn thay đổi chưa lưu → xác nhận qua `useBlocker`.
+ * Trang edit bộ đề (#424): bố cục hai cột — cây điều hướng bên trái, thẻ
+ * Part đang chọn bên phải; toolbar "Lưu part" qua imperative handle của
+ * PartForm; panel "Kiểm tra đáp án" chỉ đọc. Header vẫn PATCH khi blur.
  */
 
 export const Route = createFileRoute("/_auth/library/tests/$testId")({
@@ -168,7 +179,25 @@ function EditTestRoute() {
 		return slots;
 	}, [drafts]);
 
-	const [activeSlot, setActiveSlot] = useState<string | null>(null);
+	// --- Điều hướng (#424 A4): selection/activePosition/focusTarget/view-state
+	const [selection, setSelection] = useState<{ part: string } | null>(null);
+	const [activePosition, setActivePosition] = useState<{
+		group: number | null;
+		question: number | null;
+	}>({ group: null, question: null });
+	const [viewStateBySlot, setViewStateBySlot] = useState<
+		ReadonlyMap<string, PartViewState>
+	>(new Map());
+	const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+	const focusNonceRef = useRef(0);
+	const partFormRef = useRef<PartFormHandle>(null);
+	const [answersOpen, setAnswersOpen] = useState(false);
+	// Dưới lg cây nằm trên cột phải, thu gọn mặc định; guard matchMedia cho
+	// môi trường test thiếu implementation (precedent annotatable-essay).
+	const [outlineCollapsed, setOutlineCollapsed] = useState(() => {
+		if (typeof window.matchMedia !== "function") return true;
+		return !window.matchMedia("(min-width: 1024px)").matches;
+	});
 	const [initializedSlots, setInitializedSlots] = useState<ReadonlySet<string>>(
 		new Set(),
 	);
@@ -177,8 +206,8 @@ function EditTestRoute() {
 		detail && isLibrarySkill(detail.skill) ? detail.skill : null;
 	const slots = skill ? ASSIGNMENT_TEST_PRESETS[skill].slots : [];
 	const currentSlot =
-		activeSlot && slots.some((slot) => slot.part === activeSlot)
-			? activeSlot
+		selection && slots.some((slot) => slot.part === selection.part)
+			? selection.part
 			: (slots[0]?.part ?? null);
 
 	const partsBySlot = useMemo(() => {
@@ -186,6 +215,51 @@ function EditTestRoute() {
 		for (const part of detail?.parts ?? []) map.set(part.part, part);
 		return map;
 	}, [detail?.parts]);
+
+	// Callback identity ổn định (PartForm effect phụ thuộc): đọc slot qua ref.
+	const currentSlotRef = useRef<string | null>(null);
+	currentSlotRef.current = currentSlot;
+	const handleActivePositionChange = useCallback(
+		(pos: {
+			group: number | null;
+			question: number | null;
+			view?: PartViewState;
+		}) => {
+			setActivePosition((previous) =>
+				previous.group === pos.group && previous.question === pos.question
+					? previous
+					: { group: pos.group, question: pos.question },
+			);
+			const slot = currentSlotRef.current;
+			const view = pos.view;
+			if (!slot || !view) return;
+			setViewStateBySlot((previous) => {
+				if (previous.get(slot) === view) return previous;
+				const next = new Map(previous);
+				next.set(slot, view);
+				return next;
+			});
+		},
+		[],
+	);
+	const handleFocusConsumed = useCallback(() => setFocusTarget(null), []);
+	const jumpTo = useCallback(
+		(target: OutlineTarget) => {
+			if (target.part !== currentSlot) {
+				setSelection({ part: target.part });
+				// activePosition là của part cũ — reset để cây không tô sai.
+				setActivePosition({ group: null, question: null });
+			}
+			if (target.group === undefined) return;
+			focusNonceRef.current += 1;
+			setFocusTarget({
+				group: target.group,
+				question: target.question,
+				nonce: focusNonceRef.current,
+			});
+		},
+		[currentSlot],
+	);
 
 	// --- Blocker: rời trang khi còn thay đổi chưa lưu ---
 	const hasUnsaved =
@@ -311,6 +385,17 @@ function EditTestRoute() {
 		[skill, effectiveParts],
 	);
 
+	// --- Cây đề + bảng đáp án: cùng nguồn resolvePartValues (đánh số fold) ---
+	const sections = useMemo(
+		() => (skill ? buildTestOutline(skill, slots, partsBySlot, drafts) : []),
+		[skill, slots, partsBySlot, drafts],
+	);
+	const answerRows = useMemo(
+		() =>
+			skill ? buildAnswersOverview({ skill, slots, partsBySlot, drafts }) : [],
+		[skill, slots, partsBySlot, drafts],
+	);
+
 	if (query.isPending) {
 		return (
 			<section
@@ -353,11 +438,21 @@ function EditTestRoute() {
 		: null;
 	const activeInitialized =
 		currentSlot !== null && initializedSlots.has(currentSlot);
+	// Red-team F2: nút "Lưu part" ràng buộc đúng điều kiện PartForm được
+	// mount (slot có bản lưu HOẶC đã bấm "Thêm nội dung") — trống thì disable.
+	const partFormMounted =
+		currentSlot !== null &&
+		(partsBySlot.has(currentSlot) || initializedSlots.has(currentSlot));
+	const currentQStart =
+		currentSlot === null
+			? undefined
+			: (sections.find((section) => section.part === currentSlot)?.qStart ??
+				undefined);
 
 	return (
 		<section
 			aria-label={`Chỉnh sửa bộ đề ${detail.title}`}
-			className="mx-auto flex w-full max-w-4xl flex-col gap-5 p-6"
+			className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 p-6"
 		>
 			<div>
 				<Link
@@ -436,24 +531,62 @@ function EditTestRoute() {
 				</div>
 			</Card>
 
-			<div>
-				<PartTabs
-					slots={slots}
-					active={currentSlot ?? ""}
-					dirtySlots={dirtySlots}
-					filledSlots={new Set(partsBySlot.keys())}
-					onSelect={setActiveSlot}
-				/>
-				<div
-					role="tabpanel"
-					id={`panel-${currentSlot ?? ""}`}
-					aria-labelledby={`tab-${currentSlot ?? ""}`}
-					className="rounded-r-md rounded-b-md border border-t-0 p-5"
+			<div
+				role="toolbar"
+				aria-label="Thao tác soạn đề"
+				className="flex flex-wrap items-center gap-2"
+			>
+				<button
+					type="button"
+					className={buttonVariants({ size: "sm" })}
+					disabled={!partFormMounted || savePartMutation.isPending}
+					onClick={() => {
+						void partFormRef.current?.save();
+					}}
 				>
-					{currentSlot === null ? null : partsBySlot.has(currentSlot) ||
-						activeInitialized ? (
+					{savePartMutation.isPending ? "Đang lưu…" : "Lưu part"}
+				</button>
+				<button
+					type="button"
+					className={buttonVariants({ variant: "outline", size: "sm" })}
+					aria-expanded={answersOpen}
+					onClick={() => setAnswersOpen((open) => !open)}
+				>
+					<Check aria-hidden="true" className="size-4" />
+					Kiểm tra đáp án
+				</button>
+				{dirtySlots.size > 0 && (
+					<span className="flex items-center gap-1.5 text-amber-600 text-xs">
+						<span
+							aria-hidden="true"
+							className="inline-block size-2 rounded-full bg-amber-500"
+						/>
+						Có thay đổi chưa lưu
+					</span>
+				)}
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+				<aside className="lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
+					<TestOutline
+						sections={sections}
+						active={{
+							part: currentSlot ?? "",
+							group: activePosition.group ?? undefined,
+							question: activePosition.question ?? undefined,
+						}}
+						onSelect={jumpTo}
+						collapsed={outlineCollapsed}
+						onCollapsedChange={setOutlineCollapsed}
+					/>
+				</aside>
+
+				<Card className="gap-4 p-5">
+					{currentSlot !== null &&
+					(partsBySlot.has(currentSlot) || activeInitialized) ? (
 						<PartForm
 							key={`${currentSlot}:${activeSaved?.updatedAt ?? "draft"}`}
+							ref={partFormRef}
 							skill={skill}
 							slot={currentSlot}
 							slotLabel={
@@ -467,6 +600,12 @@ function EditTestRoute() {
 							// Form remount khi refetch (lưu part, upload audio) —
 							// khôi phục nháp đang soạn thay vì reset về bản đã lưu.
 							initialValue={drafts.get(currentSlot)?.value}
+							// Số câu đầu theo fold của cả đề (cùng nguồn với cây).
+							qStart={currentQStart}
+							focusTarget={focusTarget}
+							onFocusConsumed={handleFocusConsumed}
+							onActivePositionChange={handleActivePositionChange}
+							initialView={viewStateBySlot.get(currentSlot)}
 							onDraftChange={onDraftChange}
 							onSave={(input, snapshot) =>
 								savePartMutation.mutateAsync({
@@ -514,8 +653,21 @@ function EditTestRoute() {
 							</button>
 						</div>
 					)}
-				</div>
+				</Card>
 			</div>
+
+			{answersOpen && (
+				<AnswersCheckingPanel
+					rows={answerRows}
+					onJump={(target) =>
+						jumpTo({
+							part: target.part,
+							group: target.group,
+							question: target.question,
+						})
+					}
+				/>
+			)}
 
 			{readyIssues.length > 0 && detail.status !== "ready" && (
 				<div className="rounded-md border bg-muted/40 p-3">

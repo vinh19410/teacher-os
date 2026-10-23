@@ -22,11 +22,13 @@ export interface AnswerOverviewRow {
 	part: string;
 	partLabel: string;
 	groupIndex: number;
+	/** Offset câu trong `questions` của part — dùng làm focusTarget khi
+	 * nhảy từ panel kiểm tra đáp án. */
+	questionOffset: number;
 	answer: string;
 	alts: string[];
 	missing: boolean;
 }
-
 export interface AnswersOverviewSource {
 	skill: LibrarySkill;
 	slots: readonly PartSlot[];
@@ -63,6 +65,7 @@ export function buildAnswersOverview(
 					part: entry.part,
 					partLabel: entry.label,
 					groupIndex: gi,
+					questionOffset: group.startIndex + offset,
 					answer,
 					alts: question.alts
 						.split(ALT_SEPARATOR)

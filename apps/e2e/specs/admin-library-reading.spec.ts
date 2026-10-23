@@ -52,7 +52,10 @@ async function fillQuestionRow(
 }
 
 async function savePart(page: Page): Promise<void> {
-	await page.getByRole("button", { name: "Lưu part" }).click();
+	await page
+		.getByRole("toolbar", { name: "Thao tác soạn đề" })
+		.getByRole("button", { name: "Lưu part" })
+		.click();
 	// Sau save, parent refetch remount form (key đổi) nên thông báo live
 	// "Đã lưu part." sống rất ngắn — nhìn dấu vĩnh viễn của part đã lưu.
 	await expect(page.getByRole("button", { name: "Xóa part" })).toBeVisible();

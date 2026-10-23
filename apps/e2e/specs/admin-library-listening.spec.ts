@@ -48,7 +48,10 @@ async function fillQuestionRow(
 }
 
 async function savePart(page: Page): Promise<void> {
-	await page.getByRole("button", { name: "Lưu part" }).click();
+	await page
+		.getByRole("toolbar", { name: "Thao tác soạn đề" })
+		.getByRole("button", { name: "Lưu part" })
+		.click();
 	// Form remount sau refetch — "Đã lưu part." sống ngắn; nhìn "Xóa part".
 	await expect(page.getByRole("button", { name: "Xóa part" })).toBeVisible();
 }

@@ -3,8 +3,8 @@ import { cn } from "@/lib/cn";
 
 /**
  * Tab nhỏ dùng chung cho các thẻ (#424 Task 3.1) — tổng quát hóa pattern
- * `role=tablist/tab` + phím mũi tên/Home/End của `part-tabs.tsx` (file đó
- * bị xóa ở phase 4). Badge đếm `aria-hidden` — accessible name chỉ là
+ * `role=tablist/tab` + phím mũi tên/Home/End của tab part cũ (file bị
+ * xóa ở phase 4). Badge đếm `aria-hidden` — accessible name chỉ là
  * `label`; tab có lỗi hiển thị chấm destructive cho người nhìn.
  */
 
