@@ -29,15 +29,20 @@ Cập nhật e2e admin theo cây điều hướng, thêm e2e luồng nhóm trên
 
 ### Task 5.1 — Đổi helper chọn part
 1. `openEmptySlot(page, name)`: bấm `page.getByRole("navigation", { name: "Mục lục đề" }).getByRole("button", { name, exact: true })` rồi "Thêm nội dung". Ở viewport hẹp, mở cây trước nếu đang thu gọn.
-2. Các chỗ `getByRole("tab", { name: "Section 1" })` đổi tương tự. Field nội dung nằm ở tab "Nội dung" (mặc định), câu hỏi ở tab "Câu hỏi" — thêm bước bấm tab khi spec nhập câu.
-3. Test cũ phải pass, không xóa assertion nghiệp vụ.
+2. Các chỗ `getByRole("tab", { name: "Section 1" })` đổi tương tự. Field nội dung nằm ở tab "Nội dung" (mặc định), câu hỏi + Select "Dạng bài" cấp part (khi không nhóm) ở tab "Câu hỏi" — thêm bước bấm tab khi spec nhập câu.
+3. **Tab scoping bắt buộc** (red-team A7 — "Câu hỏi" trùng accessible name ở 3 cấp): viết helper `partTab(page, "Câu hỏi"|"Nội dung")` scope trong thẻ Part, và `groupTab(page, slot, gi, tab)` scope bằng wrapper id `group-${slot}-${gi}`; mọi `getByRole("tab")` trong spec phải đi qua helper, không tự chế selector.
+4. **Hàng câu thu gọn** (red-team F6/A3): `fillQuestionRow` thêm bước mở hàng trước khi fill — nếu hàng chưa mở, bấm `CardControls` aria-label `Mở câu {n}` (aria-label của hàng = "Câu {number}"). Part không nhóm (editor phẳng) không đổi — hàng luôn mở như cũ.
+5. Nút "Lưu part" dời lên thanh toolbar trang: đổi `page.getByRole("button", { name: "Lưu part" })` (đang ở :55 reading / :51 listening) trỏ vào toolbar `role="toolbar"`.
+6. Test cũ phải pass, không xóa assertion nghiệp vụ.
 
 ### Task 5.2 — E2E soạn part 2 nhóm trên layout mới
 Thực hiện #420 Task 5.1 (kể cả bước 4b ClozeEditor giữ giải thích) với selector mới, bổ sung:
-1. Sau khi tải lại: cây có "Nhóm câu 1", "Nhóm câu 2", "Câu 1"…"Câu 5".
+1. Sau khi tải lại: cây có "Nhóm câu 1", "Nhóm câu 2", "Câu 1"…"Câu 5" (đánh số fold).
 2. Bấm "Câu 4" trên cây → hàng câu 4 mở (thấy ô "Giải thích câu 4" có giá trị) và nằm trong viewport.
 3. Sửa tiêu đề Passage 1 (chưa lưu) → bấm "Passage 2" trên cây → bấm lại "Passage 1": tiêu đề sửa vẫn còn, cây có chấm "chưa lưu".
-4. Bấm "Kiểm tra đáp án": panel hiện "5 câu · 0 câu thiếu đáp án".
+4. (red-team F2 — khóa stale-closure save) Thêm 1 câu trả lời mới vào nhóm 1 → bấm "Lưu part" trên toolbar → reload → nội dung mới tồn tại trên server.
+5. (red-team F9 — phủ nhánh thiếu đáp án) Xóa đáp án của 1 câu (chưa lưu) → bấm "Kiểm tra đáp án": panel hiện "…· 1 câu thiếu đáp án", dòng câu đó có nhãn "Thiếu đáp án"; bấm số câu đó → nhảy đúng hàng (đi qua `onJump`). Điền lại đáp án, lưu, mở panel: "5 câu · 0 câu thiếu đáp án".
+6. (kongming GO-checkpoint — khóa fold xuyên suốt UI) Seed thêm nội dung cho Passage 2 (ít nhất 1 câu): cây hiện "Câu 6" cho câu đầu p2; nhãn hàng trong `AnswerKeyGrid` của p2 là "Câu 6" (không phải "Câu 14"); panel "Kiểm tra đáp án" liệt kê "Câu 6" dưới Passage 2. Ba chỗ phải khớp nhau — nếu page quên truyền `qStart` prop (fallback tĩnh 14), bước này bắt được.
 
 ### Task 5.3 — Hồi quy e2e admin
 ```bash
@@ -53,6 +58,7 @@ Pass khi exit 0 và không có `failed`. Lỗi `[dev-watchdog] hạ tầng dev s
 ### Task 5.5 — Docs
 1. Runbook: thực hiện #420 Task 5.4 (mục migration `0044`, deploy skew, render contract `RichTextBody`).
 2. `DESIGN.md`, mục "Lệch có chủ đích": thêm mục "Trang soạn đề admin (Quiz Builder)" — bố cục theo Selfomy nhưng phân cấp bằng thụt lề + kiểu badge, không dùng màu tím/xanh dương/xanh lá; tab có badge đếm `aria-hidden`; chip trạng thái câu dùng `--success`/`--warn`.
+3. (red-team S3) `docs/system-architecture.md:54` — cập nhật danh sách "the 7 authoring HTML fields": thêm `questions[].explanation` và `groups[].instruction`, giữ nguyên mệnh lệnh single-sink (`RichTextBody`/DOMPurify là sink `dangerouslySetInnerHTML` duy nhất — never add another).
 
 ### Task 5.6 — Gate cuối
 `pnpm check && pnpm check-types && pnpm test` exit 0 và Task 5.3 pass trên cùng nhánh. Theo memory dự án: chạy full Playwright trước khi squash-merge vào `develop`.
