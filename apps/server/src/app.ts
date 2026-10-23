@@ -14,6 +14,7 @@ import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
+import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
@@ -85,6 +86,12 @@ export interface AppDeps {
 	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
 	 */
 	getBankHub?(): BankHubContext | undefined;
+	/**
+	 * Webhook GitHub (#421) — secret HMAC dùng chung. Rỗng/vắng (chưa cấu
+	 * hình binding) thì `/webhooks/github` trả 503 GITHUB_WEBHOOK_DISABLED,
+	 * cùng hợp đồng fail-closed với `getBankHub`.
+	 */
+	githubWebhookSecret?: string;
 	/**
 	 * Chạy việc dọn dẹp sau response (xoá object R2 bù trừ) — production
 	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
@@ -250,6 +257,12 @@ export function buildApp(deps: AppDeps) {
 	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
 	// middleware and Better Auth never run — auth is the X-Secret-Key header.
 	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// GitHub webhooks (#421): cùng ngoài-/api treatment — auth là HMAC
+	// X-Hub-Signature-256 trên raw body, không session.
+	app.route(
+		"/webhooks/github",
+		githubWebhookRoutes({ secret: deps.githubWebhookSecret }),
+	);
 	// Postman-facing sandbox mock-transaction wrapper: same outside-/api
 	// treatment, auth is the IPN Apikey header (see routes/bank-hub-mock.ts).
 	app.route("/dev/bank-hub", bankHubMockRoutes(deps));

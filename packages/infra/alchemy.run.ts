@@ -196,6 +196,12 @@ export const server = Cloudflare.Worker("server", {
 		SEPAY_BANKHUB_BASE_URL: Config.string("SEPAY_BANKHUB_BASE_URL").pipe(
 			Config.withDefault("https://bankhub-api-sandbox.sepay.vn"),
 		),
+		// Webhook GitHub (#421): blank secret ⇒ /webhooks/github trả 503
+		// GITHUB_WEBHOOK_DISABLED (dev không cần cấu hình). Same pattern as
+		// RESEND_API_KEY — redacted conflicts with withDefault.
+		GITHUB_WEBHOOK_SECRET: Config.string("GITHUB_WEBHOOK_SECRET").pipe(
+			Config.withDefault(""),
+		),
 	},
 	dev: {
 		port: 8000,

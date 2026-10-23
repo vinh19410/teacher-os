@@ -85,6 +85,9 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Tên secret Actions là GH_WEBHOOK_SECRET (Actions cấm tiền tố
+          # GITHUB_); tên env/binding Worker vẫn là GITHUB_WEBHOOK_SECRET.
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
           MAILER_IMPL: ${{ vars.MAILER_IMPL }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
         run: pnpm alchemy deploy --stage prod --yes
