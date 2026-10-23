@@ -480,6 +480,40 @@ describe("library question groups", () => {
 		).toBe(true);
 	});
 
+	test("answerSet xuyên nhóm emit path ĐÚNG NHÓM chứa câu đầu (parity partIssues) — #426 F2", () => {
+		// Khóa "s" gom câu index 2 (nhóm gi=0) và index 3 (nhóm gi=1) — vắt
+		// biên 3. Quy ước parity với partIssues: gi = findIndex nhóm chứa câu
+		// ĐẦU TIÊN của khóa (index 2 → nhóm 0) — smallest member luôn ở nhóm
+		// sớm hơn khi coverage hợp lệ.
+		const questions = groupedReadingPart().questions.map((question, i) =>
+			i === 3 || i === 2 ? { ...question, answerSet: "s" } : question,
+		);
+		const cross = upsertIssues(groupedReadingPart({ questions }));
+		expect(
+			cross.some(
+				(issue) =>
+					issue.path[0] === "groups" &&
+					issue.path[1] === 0 &&
+					issue.message === "answer set must stay inside one group",
+			),
+		).toBe(true);
+
+		// Khóa 1 câu: path giữ ["questions", firstIndex] (khóa hành vi cũ).
+		const lonely = upsertIssues(
+			readingPart({
+				questions: [{ stem: "solo", answer: "TRUE", alts: "", answerSet: "x" }],
+			}),
+		);
+		expect(
+			lonely.some(
+				(issue) =>
+					issue.path[0] === "questions" &&
+					issue.path[1] === 0 &&
+					issue.message === "answer set needs at least two questions",
+			),
+		).toBe(true);
+	});
+
 	test("answersInline cần đúng 1 marker ____ mỗi câu trong dải", () => {
 		const [g1, g2] = twoGroups();
 		const issues = validatePartForReady(

@@ -191,7 +191,19 @@ export const libraryPartUpsertSchema = z
 					),
 				)
 			) {
-				addIssue(["groups"], "answer set must stay inside one group");
+				// Path CHỈ ĐÚNG NHÓM chứa câu đầu của khóa — parity với
+				// partIssues (findIndex theo firstIndex) để draft-save và ready
+				// cùng ngữ nghĩa (issue #426 F2). gi < 0 (coverage hỏng) giữ path
+				// ["groups"] chung chung — rule coverage riêng đã chặn trường hợp.
+				const gi = value.groups.findIndex(
+					(group) =>
+						firstIndex >= group.startIndex &&
+						firstIndex < group.startIndex + group.count,
+				);
+				addIssue(
+					gi >= 0 ? ["groups", gi] : ["groups"],
+					"answer set must stay inside one group",
+				);
 			}
 		}
 
