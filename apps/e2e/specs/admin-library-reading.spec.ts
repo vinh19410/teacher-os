@@ -64,19 +64,22 @@ function groupTab(page: Page, slot: string, gi: number, tab: string) {
 }
 
 /**
- * Điền 1 hàng trong "Lưới đáp án" (fieldset aria-label "Câu N" — số N là
- * đánh số liên tục theo catalog, không đoán được): nội dung câu hỏi + đáp
- * án — dạng text điền vào ô "Đáp án chấm tự động", dạng 3 trạng thái /
- * bankable khóa đáp án bằng chip nhãn. Part PHẲNG: hàng luôn mở như cũ.
+ * Điền 1 hàng trong "Lưới đáp án" (part PHẲNG — hàng luôn mở): nội dung câu
+ * hỏi + đáp án — dạng text điền vào ô "Đáp án chấm tự động", dạng 3 trạng
+ * thái / bankable khóa đáp án bằng chip nhãn. Row id ổn định
+ * `${slot}-q${index}` (AnswerKeyGrid `partId=slot`, index 0-based trong part)
+ * — scope theo section thay vì `.nth()` toàn trang (#426 F4). Hàng của THẺ
+ * NHÓM dùng `fillGroupRow` (scope `#group-{slot}-{gi}`).
  */
 async function fillQuestionRow(
 	page: Page,
+	slot: string,
 	index: number,
 	stem: string,
 	answer: string,
 ): Promise<void> {
 	if (index > 0) await page.getByRole("button", { name: "Thêm câu" }).click();
-	const row = page.locator('fieldset[aria-label^="Câu"]').nth(index);
+	const row = page.locator(`#${slot}-q${index}`);
 	await row.getByLabel("Nội dung câu hỏi phía học viên").fill(stem);
 	const answerInput = row.getByLabel("Đáp án chấm tự động");
 	if ((await answerInput.count()) > 0) {
@@ -187,12 +190,14 @@ test("tạo đề Reading 3 passage đa dạng → xuất bản → sửa → h�
 	await page.getByLabel("Dạng bài", { exact: true }).selectOption("tfng");
 	await fillQuestionRow(
 		page,
+		"p1",
 		0,
 		"Coral reefs support many marine species.",
 		"TRUE",
 	);
 	await fillQuestionRow(
 		page,
+		"p1",
 		1,
 		"Coral reefs cover most of the ocean floor.",
 		"FALSE",
@@ -209,8 +214,8 @@ test("tạo đề Reading 3 passage đa dạng → xuất bản → sửa → h�
 	);
 	await partTab(page, "Passage 2", "Câu hỏi").click();
 	await page.getByLabel("Dạng bài", { exact: true }).selectOption("headings");
-	await fillQuestionRow(page, 0, "Paragraph A: transport of food", "i");
-	await fillQuestionRow(page, 1, "Paragraph B: soil restoration", "ii");
+	await fillQuestionRow(page, "p2", 0, "Paragraph A: transport of food", "i");
+	await fillQuestionRow(page, "p2", 1, "Paragraph B: soil restoration", "ii");
 	await page.getByRole("button", { name: /Điền đủ \d+ mục/ }).click();
 	// Mọi row bank phải non-empty (contract: empty row không parse được).
 	await page.getByLabel("Mục i", { exact: true }).fill("Food transport");
@@ -231,11 +236,12 @@ test("tạo đề Reading 3 passage đa dạng → xuất bản → sửa → h�
 	await page.getByLabel("Dạng bài", { exact: true }).selectOption("mcq");
 	await fillQuestionRow(
 		page,
+		"p3",
 		0,
 		"How many hours of sleep do adults need?",
 		"A",
 	);
-	await fillQuestionRow(page, 1, "What happens during deep sleep?", "B");
+	await fillQuestionRow(page, "p3", 1, "What happens during deep sleep?", "B");
 	await savePart(page);
 
 	// --- Xuất bản ---
@@ -291,9 +297,21 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 	);
 	await partTab(page, "Passage 1", "Câu hỏi").click();
 	await page.getByLabel("Dạng bài", { exact: true }).selectOption("tfng");
-	await fillQuestionRow(page, 0, "Growers dry-harvest the bogs.", "TRUE");
-	await fillQuestionRow(page, 1, "Cranberries grow underground.", "FALSE");
-	await fillQuestionRow(page, 2, "Flooding happens in spring.", "NOT GIVEN");
+	await fillQuestionRow(page, "p1", 0, "Growers dry-harvest the bogs.", "TRUE");
+	await fillQuestionRow(
+		page,
+		"p1",
+		1,
+		"Cranberries grow underground.",
+		"FALSE",
+	);
+	await fillQuestionRow(
+		page,
+		"p1",
+		2,
+		"Flooding happens in spring.",
+		"NOT GIVEN",
+	);
 	await page.getByRole("button", { name: "Chia thành nhiều nhóm câu" }).click();
 	await expect(
 		outline(page).getByRole("button", { name: "Nhóm câu 1", exact: true }),
@@ -462,7 +480,13 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 	await page.getByLabel("Tiêu đề part").fill("Passage 2 — Seed");
 	await partTab(page, "Passage 2", "Câu hỏi").click();
 	await page.getByLabel("Dạng bài", { exact: true }).selectOption("info");
-	await fillQuestionRow(page, 0, "Paragraph A mentions the flooding.", "B");
+	await fillQuestionRow(
+		page,
+		"p2",
+		0,
+		"Paragraph A mentions the flooding.",
+		"B",
+	);
 	await savePart(page);
 	await expect(
 		outline(page).getByRole("button", { name: "Câu 6", exact: true }),
@@ -568,13 +592,41 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 			);
 		}),
 	).toBe(true);
-	// Tab tiếp tới "Câu 5" (p1 đang mở: Nhóm 1 3 câu → Nhóm 2 2 câu).
-	for (let i = 0; i < 7; i++) await page.keyboard.press("Tab");
-	expect(await page.evaluate(() => document.activeElement?.textContent)).toBe(
-		"Câu 5",
-	);
+	// Tab tiếp tới "Câu 5" (p1 đang mở: Nhóm 1 3 câu → Nhóm 2 2 câu) —
+	// KHÔNG đếm cứng số nút (#426 F4): vòng Tab có trần tới khi đúng hàng
+	// được focus, rồi assert THỨ TỰ hàng đã đi qua khớp chính cây điều
+	// hướng (danh sách kỳ vọng lấy từ DOM của outline — thêm/bớt nút không
+	// làm lệch assert, vẫn chứng minh cây đi tới được bằng bàn phím).
+	const treeRow5 = outline(page).getByRole("button", {
+		name: "Câu 5",
+		exact: true,
+	});
+	const traversed: string[] = [];
+	for (let i = 0; i < 20; i++) {
+		const rowFocused = await treeRow5.evaluate(
+			(el) => el === document.activeElement,
+		);
+		if (rowFocused) break;
+		await page.keyboard.press("Tab");
+		traversed.push(
+			(
+				await page.evaluate(() => document.activeElement?.textContent ?? "")
+			).trim(),
+		);
+	}
+	await expect(treeRow5).toBeFocused();
+	const outlineNames = await outline(page)
+		.getByRole("button")
+		.evaluateAll((els) => els.map((el) => el.textContent?.trim() ?? ""));
+	const fromPart = outlineNames.indexOf("Passage 1");
+	const toRow = outlineNames.indexOf("Câu 5");
+	expect(fromPart).toBeGreaterThanOrEqual(0);
+	expect(toRow).toBeGreaterThan(fromPart);
+	expect(traversed).toEqual(outlineNames.slice(fromPart + 1, toRow + 1));
 	await page.keyboard.press("Enter");
-	await expect(page.locator('fieldset[aria-label="Câu 5"]')).toBeInViewport();
+	// Row id ổn định: "Câu 5" = hàng index 1 (0-based) của nhóm gi=1 của p1
+	// (`group-{slot}-{gi}-q{row}` — part-form focusRowId).
+	await expect(page.locator("#group-p1-1-q1")).toBeInViewport();
 	// Mũi tên trong CardTabs của thẻ part: chọn "Nội dung" trước (arrow đi
 	// từ tab ĐANG CHỌN, không theo focus) rồi ArrowRight → "Câu hỏi".
 	await partTab(page, "Passage 1", "Nội dung").click();
