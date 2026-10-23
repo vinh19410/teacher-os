@@ -46,6 +46,12 @@ export function QuestionKeyEditor({
 	imageUrlError,
 	optionBankError,
 	questionsError,
+	qStartOverride,
+	showExplanation = false,
+	view = "all",
+	collapsibleRows = false,
+	openRow = null,
+	onOpenRowChange,
 }: {
 	skill: string;
 	partId: string;
@@ -67,8 +73,20 @@ export function QuestionKeyEditor({
 	optionBankError?: string;
 	/** Phase-03 FR7 — composer-level marker/caps mirror, shown at the block. */
 	questionsError?: string;
+	/** #424 Task 1.1 — số câu đầu (nhóm Selfomy); mặc định `qStartOf`. */
+	qStartOverride?: number;
+	/** #424 Task 1.1 — ô giải thích mỗi câu trong grid. */
+	showExplanation?: boolean;
+	/** #424 Task 1.3 — tách khối hướng dẫn khỏi khối câu hỏi (tab của
+	 * GroupCard). Hai khối LUÔN mount; `view` chỉ điều khiển `hidden` — đổi
+	 * tab không mất text đang gõ và cờ blur của grid. */
+	view?: "all" | "intro" | "questions";
+	/** #424 Task 1.6 — bật chế độ hàng thu gọn của grid (passthrough). */
+	collapsibleRows?: boolean;
+	openRow?: number | null;
+	onOpenRowChange?: (index: number | null) => void;
 }) {
-	const qStart = qStartOf(skill, partId);
+	const qStart = qStartOverride ?? qStartOf(skill, partId);
 	// Bank là prompt-level nhưng editor hiện khi type đề HOẶC bất kỳ câu
 	// bankable (đề trộn dạng) — không thì cụm bankable không có chỗ nhập bank
 	// mà instruction take screen vẫn nói "choose from the option bank".
@@ -162,138 +180,147 @@ export function QuestionKeyEditor({
 					Đáp án đúng chỉ dùng để chấm tự động; học viên không thấy.
 				</p>
 			</div>
-			{hint && (
-				<button
-					type="button"
-					onClick={insertPresetIntro}
-					className="self-start rounded-md rounded-md border border-input bg-transparent px-[14px] py-[6px] font-medium text-xs transition-colors hover:text-primary"
-				>
-					Chèn câu lệnh chuẩn
-				</button>
-			)}
-			<Field label="Hướng dẫn đề">
-				<RichTextEditor
-					value={intro}
-					onChange={onIntroChange}
-					placeholder={hint}
-					contentClassName="[&_.ProseMirror]:min-h-24"
-				/>
-			</Field>
-			{showClozeEditor && (
-				<ClozeEditor typeId={typeId} items={items} onApply={onItemsChange} />
-			)}
-			{showTableEditor && (
-				<TableGridEditor items={items} onApply={onItemsChange} />
-			)}
-			{showErrors && questionsError && (
-				<p role="alert" className="text-destructive text-xs">
-					{questionsError}
-				</p>
-			)}
-			{bankTypeId && (
-				<OptionBankEditor
-					typeId={bankTypeId}
-					bank={optionBank}
-					items={items}
-					showErrors={showErrors}
-					error={optionBankError}
-					onBankChange={onBankChange}
-					onItemsChange={onItemsChange}
-				/>
-			)}
-			{isImage && (
-				<div className="flex flex-col gap-1">
-					<Field
-						label={
-							skill === "listening" ? "Ảnh bản đồ (URL)" : "Ảnh biểu đồ (URL)"
-						}
-						help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
-						error={imageUrlError}
+			<div hidden={view === "questions"}>
+				{hint && (
+					<button
+						type="button"
+						onClick={insertPresetIntro}
+						className="self-start rounded-md rounded-md border border-input bg-transparent px-[14px] py-[6px] font-medium text-xs transition-colors hover:text-primary"
 					>
-						<Input
-							value={imageUrl}
-							placeholder="https://…"
-							maxLength={500}
-							onChange={(event) => onImageUrlChange(event.target.value)}
-						/>
-					</Field>
-					{showThumbnail && (
-						<PinEditor
-							imageUrl={safeImageUrl}
-							items={items}
-							qStart={qStart}
-							selectedIndex={selectedPin}
-							onItemsChange={onItemsChange}
-							onSelect={setSelectedPin}
-						/>
-					)}
-				</div>
-			)}
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<span className="font-medium text-muted-foreground text-xs">
-					{items.length}/{QUESTION_MAX_COUNT} câu
-				</span>
-				<Button
-					type="button"
-					size="sm"
-					variant="secondary"
-					onClick={() => setPasteOpen(true)}
-				>
-					Thêm key hàng loạt
-				</Button>
+						Chèn câu lệnh chuẩn
+					</button>
+				)}
+				<Field label="Hướng dẫn đề">
+					<RichTextEditor
+						value={intro}
+						onChange={onIntroChange}
+						placeholder={hint}
+						contentClassName="[&_.ProseMirror]:min-h-24"
+					/>
+				</Field>
 			</div>
-			{pasteOpen && (
-				<BulkKeyPastePanel
-					value={pasteRaw}
-					onValueChange={(next) => {
-						setPasteRaw(next);
-						// A stale outcome list must not linger over edited content.
-						if (pasteOutcome) setPasteOutcome(null);
-					}}
-					errors={pasteOutcome?.errors ?? []}
-					appliedCount={pasteOutcome?.appliedCount ?? 0}
-					onApply={applyPaste}
-					onClose={closePaste}
-				/>
-			)}
-			{/* Remount on skill/part/type change so the index-keyed blur flags
-			never leak across wipes (review #3). */}
-			<AnswerKeyGrid
-				key={`${skill}-${partId}-${typeId}`}
-				typeId={typeId}
-				skill={skill}
-				partId={partId}
-				items={items}
-				showErrors={showErrors}
-				requireFilled={status === "ready"}
-				requirePin={isImage && status === "ready"}
-				selectedIndex={selectedPin}
-				optionBank={optionBank}
-				onItemsChange={onItemsChange}
-				onAddQuestion={addQuestion}
-			/>
-			<div className="flex flex-col gap-1">
-				<Button
-					type="button"
-					variant="secondary"
-					onClick={addQuestion}
-					disabled={atMax}
-				>
-					Thêm câu
-				</Button>
-				{atMax && (
-					<p className="text-muted-foreground text-xs">
-						Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
+			<div hidden={view === "intro"}>
+				{showClozeEditor && (
+					<ClozeEditor typeId={typeId} items={items} onApply={onItemsChange} />
+				)}
+				{showTableEditor && (
+					<TableGridEditor items={items} onApply={onItemsChange} />
+				)}
+				{showErrors && questionsError && (
+					<p role="alert" className="text-destructive text-xs">
+						{questionsError}
 					</p>
 				)}
+				{bankTypeId && (
+					<OptionBankEditor
+						typeId={bankTypeId}
+						bank={optionBank}
+						items={items}
+						showErrors={showErrors}
+						error={optionBankError}
+						onBankChange={onBankChange}
+						onItemsChange={onItemsChange}
+					/>
+				)}
+				{isImage && (
+					<div className="flex flex-col gap-1">
+						<Field
+							label={
+								skill === "listening" ? "Ảnh bản đồ (URL)" : "Ảnh biểu đồ (URL)"
+							}
+							help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
+							error={imageUrlError}
+						>
+							<Input
+								value={imageUrl}
+								placeholder="https://…"
+								maxLength={500}
+								onChange={(event) => onImageUrlChange(event.target.value)}
+							/>
+						</Field>
+						{showThumbnail && (
+							<PinEditor
+								imageUrl={safeImageUrl}
+								items={items}
+								qStart={qStart}
+								selectedIndex={selectedPin}
+								onItemsChange={onItemsChange}
+								onSelect={setSelectedPin}
+							/>
+						)}
+					</div>
+				)}
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<span className="font-medium text-muted-foreground text-xs">
+						{items.length}/{QUESTION_MAX_COUNT} câu
+					</span>
+					<Button
+						type="button"
+						size="sm"
+						variant="secondary"
+						onClick={() => setPasteOpen(true)}
+					>
+						Thêm key hàng loạt
+					</Button>
+				</div>
+				{pasteOpen && (
+					<BulkKeyPastePanel
+						value={pasteRaw}
+						onValueChange={(next) => {
+							setPasteRaw(next);
+							// A stale outcome list must not linger over edited content.
+							if (pasteOutcome) setPasteOutcome(null);
+						}}
+						errors={pasteOutcome?.errors ?? []}
+						appliedCount={pasteOutcome?.appliedCount ?? 0}
+						onApply={applyPaste}
+						onClose={closePaste}
+					/>
+				)}
+				{/* Remount on skill/part/type change so the index-keyed blur flags
+			never leak across wipes (review #3). */}
+				<AnswerKeyGrid
+					key={`${skill}-${partId}-${typeId}`}
+					typeId={typeId}
+					skill={skill}
+					partId={partId}
+					items={items}
+					showErrors={showErrors}
+					requireFilled={status === "ready"}
+					requirePin={isImage && status === "ready"}
+					selectedIndex={selectedPin}
+					optionBank={optionBank}
+					onItemsChange={onItemsChange}
+					onAddQuestion={addQuestion}
+					qStartOverride={qStart}
+					showExplanation={showExplanation}
+					collapsible={collapsibleRows}
+					openRow={openRow}
+					onOpenRowChange={onOpenRowChange}
+				/>
+				<div className="flex flex-col gap-1">
+					<Button
+						type="button"
+						variant="secondary"
+						onClick={addQuestion}
+						disabled={atMax}
+					>
+						Thêm câu
+					</Button>
+					{atMax && (
+						<p className="text-muted-foreground text-xs">
+							Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
+						</p>
+					)}
+				</div>
+				<p className="text-right text-muted-foreground text-xs">
+					{items
+						.map(
+							(item, index) => `${qStart + index} ${item.answer.trim() || "—"}`,
+						)
+						.join(" · ")}
+				</p>
 			</div>
-			<p className="text-right text-muted-foreground text-xs">
-				{items
-					.map(
-						(item, index) => `${qStart + index} ${item.answer.trim() || "—"}`,
-					)
-					.join(" · ")}
-			</p>
 		</div>
 	);
 }

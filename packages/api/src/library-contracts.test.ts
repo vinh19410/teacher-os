@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
-import type { LibraryPartInput } from "./library-contracts";
+import type {
+	LibraryPartInput,
+	LibraryQuestionGroup,
+} from "./library-contracts";
 import {
+	countClozeMarkers,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_ERROR_CODES,
@@ -29,6 +33,7 @@ function readingPart(
 		optionBank: [],
 		note: "",
 		audioName: "",
+		groups: [],
 		...overrides,
 	};
 }
@@ -332,5 +337,185 @@ describe("constants + DTO surface", () => {
 		]) {
 			expect(LIBRARY_ERROR_CODES).toContain(code);
 		}
+	});
+});
+
+function twoGroups(): [LibraryQuestionGroup, LibraryQuestionGroup] {
+	return [
+		{
+			id: "g1",
+			type: "tfng",
+			instruction: "",
+			startIndex: 0,
+			count: 3,
+			optionBank: [],
+			answersInline: false,
+			splitContent: false,
+			dragDrop: false,
+		},
+		{
+			id: "g2",
+			type: "note",
+			instruction: "",
+			startIndex: 3,
+			count: 2,
+			optionBank: [],
+			answersInline: false,
+			splitContent: false,
+			dragDrop: false,
+		},
+	];
+}
+
+function groupedReadingPart(
+	overrides: Partial<LibraryPartInput> = {},
+): LibraryPartInput {
+	return readingPart({
+		type: "tfng",
+		questions: [
+			{ stem: "q1", answer: "TRUE", alts: "" },
+			{ stem: "q2", answer: "FALSE", alts: "" },
+			{ stem: "q3", answer: "TRUE", alts: "" },
+			{ stem: "q4", answer: "London", alts: "" },
+			{ stem: "q5", answer: "Berlin", alts: "" },
+		],
+		groups: twoGroups(),
+		...overrides,
+	});
+}
+
+function upsertPayload(part: LibraryPartInput) {
+	return libraryPartUpsertSchema.safeParse(part);
+}
+
+/** Danh sách issue parse (rỗng nếu ok) — cho các test phủ luật nhóm. */
+function upsertIssues(part: LibraryPartInput) {
+	const result = libraryPartUpsertSchema.safeParse(part);
+	return result.success ? [] : result.error.issues;
+}
+
+describe("library question groups", () => {
+	test("countClozeMarkers đếm đúng marker `____` (≥ 4 gạch dưới)", () => {
+		expect(countClozeMarkers("Growers ____ the bogs")).toBe(1);
+		expect(countClozeMarkers("a ___ b")).toBe(0);
+		expect(countClozeMarkers("____ x ______")).toBe(2);
+	});
+
+	test("upsert với groups: [] (đề cũ, nhóm ngầm) parse ok", () => {
+		expect(upsertPayload(readingPart()).success).toBe(true);
+	});
+
+	test("2 nhóm [0..2], [3..4] + 5 câu parse ok", () => {
+		expect(upsertPayload(groupedReadingPart()).success).toBe(true);
+	});
+
+	test("dải hở (startIndex 4 thay vì 3) bị từ chối ở groups.1.startIndex", () => {
+		const [g1, g2] = twoGroups();
+		const issues = upsertIssues(
+			groupedReadingPart({
+				groups: [g1, { ...g2, startIndex: 4 }],
+			}),
+		);
+		expect(
+			issues.some((issue) => {
+				const [a, b, c] = issue.path;
+				return a === "groups" && b === 1 && c === "startIndex";
+			}),
+		).toBe(true);
+	});
+
+	test("tổng count 4 với 5 câu bị từ chối ở path ['groups']", () => {
+		const [g1, g2] = twoGroups();
+		const issues = upsertIssues(
+			groupedReadingPart({
+				groups: [g1, { ...g2, count: 1 }],
+			}),
+		);
+		expect(
+			issues.some(
+				(issue) => issue.path.length === 1 && issue.path[0] === "groups",
+			),
+		).toBe(true);
+	});
+
+	test("id nhóm trùng bị từ chối", () => {
+		const [g1, g2] = twoGroups();
+		const result = upsertPayload(
+			groupedReadingPart({
+				groups: [g1, { ...g2, id: "g1" }],
+			}),
+		);
+		expect(result.success).toBe(false);
+	});
+
+	test("optionBank cấp part khác rỗng khi có nhóm bị từ chối", () => {
+		const issues = upsertIssues(groupedReadingPart({ optionBank: ["A", "B"] }));
+		expect(issues.some((issue) => issue.path[0] === "optionBank")).toBe(true);
+	});
+
+	test("answerSet xuyên nhóm bị chặn; nhóm ngầm vẫn chặn khóa 1 câu (S1)", () => {
+		const questions = groupedReadingPart().questions.map((question, i) =>
+			i === 4 || i === 0 ? { ...question, answerSet: "s" } : question,
+		);
+		const cross = upsertIssues(groupedReadingPart({ questions }));
+		expect(
+			cross.some(
+				(issue) =>
+					issue.path[0] === "groups" &&
+					issue.message === "answer set must stay inside one group",
+			),
+		).toBe(true);
+
+		const lonely = upsertIssues(
+			readingPart({
+				questions: [{ stem: "solo", answer: "TRUE", alts: "", answerSet: "x" }],
+			}),
+		);
+		expect(
+			lonely.some(
+				(issue) =>
+					issue.path[0] === "questions" &&
+					issue.message === "answer set needs at least two questions",
+			),
+		).toBe(true);
+	});
+
+	test("answersInline cần đúng 1 marker ____ mỗi câu trong dải", () => {
+		const [g1, g2] = twoGroups();
+		const issues = validatePartForReady(
+			"reading",
+			groupedReadingPart({
+				groups: [g1, { ...g2, answersInline: true }],
+			}),
+		);
+		expect(issues.some((issue) => issue.path === "questions.3.stem")).toBe(
+			true,
+		);
+	});
+
+	test("nhóm không phải dạng completion không được answersInline", () => {
+		const [g1, g2] = twoGroups();
+		const issues = validatePartForReady(
+			"reading",
+			groupedReadingPart({
+				groups: [{ ...g1, answersInline: true }, g2],
+			}),
+		);
+		expect(
+			issues.some((issue) => issue.path === "groups.0.answersInline"),
+		).toBe(true);
+	});
+
+	test("thư viện bỏ khóa dạng-bài-theo-slot: p1 dạng mcq hợp lệ", () => {
+		const issues = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "mcq",
+				questions: [{ stem: "q", answer: "A", alts: "" }],
+			}),
+		);
+		expect(
+			issues.some((issue) => issue.message === "invalid type for part"),
+		).toBe(false);
 	});
 });

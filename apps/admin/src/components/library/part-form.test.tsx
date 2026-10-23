@@ -39,6 +39,7 @@ const partDto: LibraryPartDto = {
 		},
 	],
 	optionBank: [],
+	groups: [],
 	note: "",
 	audio: null,
 	updatedAt: "2026-10-02T00:00:00.000Z",

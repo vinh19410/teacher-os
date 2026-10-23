@@ -10,6 +10,10 @@ import {
 	isImageBasedType,
 	optionBankKindFor,
 } from "./contracts";
+import {
+	CLOZE_EDITOR_TYPES,
+	CLOZE_MARKER_SOURCE,
+} from "./lib/infer-question-types";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 /**
@@ -98,9 +102,40 @@ export const libraryTestUpdateSchema = z
 	.strict();
 export type LibraryTestUpdate = z.infer<typeof libraryTestUpdateSchema>;
 
+/** Số marker ô trống `____` trong stem — cùng nghĩa `countBlanks` của
+ * packages/ui (split theo CLOZE_MARKER_SOURCE), viết lại ở api vì api
+ * không được import ui. */
+export function countClozeMarkers(stem: string): number {
+	return stem.split(new RegExp(CLOZE_MARKER_SOURCE)).length - 1;
+}
+
+/** Thư viện bỏ khóa dạng-bài-theo-slot: mọi dạng của skill dùng được ở mọi slot. */
+export function librarySkillTypes(skill: LibrarySkill): readonly string[] {
+	return [...new Set(Object.values(ASSIGNMENT_PART_TYPES[skill].types).flat())];
+}
+
 /** Upsert một slot part. Câu hỏi/optionBank/imageUrl tái dùng schema của
  * ngân hàng assignment — không nhân bản rule. `audioName` do route set sau
  * khi upload R2 (client không tự khai key). */
+export const LIBRARY_GROUP_MAX = 20;
+export const libraryQuestionGroupSchema = z
+	.object({
+		id: z.string().trim().min(1).max(40),
+		type: z.string().trim().min(1).max(20),
+		instruction: richTextField(5000),
+		startIndex: z.number().int().min(0),
+		count: z.number().int().min(1).max(40),
+		optionBank: z
+			.array(z.string().trim().min(1).max(200))
+			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.default([]),
+		answersInline: z.boolean().default(false),
+		splitContent: z.boolean().default(false),
+		dragDrop: z.boolean().default(false),
+	})
+	.strict();
+export type LibraryQuestionGroup = z.infer<typeof libraryQuestionGroupSchema>;
+
 export const libraryPartUpsertSchema = z
 	.object({
 		part: z.string().trim().min(1).max(20),
@@ -119,8 +154,83 @@ export const libraryPartUpsertSchema = z
 			.default([]),
 		note: richTextField(2000),
 		audioName: z.string().trim().max(200).default(""),
+		groups: z
+			.array(libraryQuestionGroupSchema)
+			.max(LIBRARY_GROUP_MAX)
+			.default([]),
 	})
-	.strict();
+	.strict()
+	.superRefine((value, ctx) => {
+		const addIssue = (path: (string | number)[], message: string) =>
+			ctx.addIssue({ code: "custom", path, message });
+
+		// answerSet ≥ 2 câu mỗi khóa — chạy TRƯỚC early-return nhóm ngầm để
+		// đề không nhóm vẫn bị chặn khi khóa chỉ có 1 câu (red-team S1).
+		const answerSetIndexes = new Map<string, number[]>();
+		for (const [index, question] of value.questions.entries()) {
+			if (!question.answerSet) continue;
+			const list = answerSetIndexes.get(question.answerSet) ?? [];
+			list.push(index);
+			answerSetIndexes.set(question.answerSet, list);
+		}
+		for (const indexes of answerSetIndexes.values()) {
+			const [firstIndex] = indexes;
+			if (firstIndex === undefined) continue;
+			if (indexes.length < 2) {
+				addIssue(
+					["questions", firstIndex],
+					"answer set needs at least two questions",
+				);
+				continue;
+			}
+			if (
+				value.groups.length > 0 &&
+				!value.groups.some((group) =>
+					indexes.every(
+						(i) => i >= group.startIndex && i < group.startIndex + group.count,
+					),
+				)
+			) {
+				addIssue(["groups"], "answer set must stay inside one group");
+			}
+		}
+
+		if (value.groups.length === 0) return; // nhóm ngầm — đề cũ, không kiểm tiếp.
+
+		const firstGroup = value.groups[0];
+		if (!firstGroup) return;
+		if (firstGroup.startIndex !== 0) {
+			addIssue(["groups", 0, "startIndex"], "first group must start at 0");
+		}
+		let previous = firstGroup;
+		for (const [i, group] of value.groups.entries()) {
+			if (i > 0) {
+				if (group.startIndex !== previous.startIndex + previous.count) {
+					addIssue(["groups", i, "startIndex"], "groups must be contiguous");
+				}
+			}
+			previous = group;
+		}
+		if (
+			value.groups.reduce((sum, group) => sum + group.count, 0) !==
+			value.questions.length
+		) {
+			addIssue(["groups"], "group counts must cover every question");
+		}
+		const seenIds = new Set<string>();
+		for (const [i, group] of value.groups.entries()) {
+			if (seenIds.has(group.id)) {
+				addIssue(["groups", i, "id"], "duplicate group id");
+			}
+			seenIds.add(group.id);
+		}
+		if (value.optionBank.length > 0) {
+			addIssue(["optionBank"], "optionBank lives on groups when groups exist");
+		}
+		if (value.type !== firstGroup.type) {
+			addIssue(["type"], "part type must equal first group type");
+		}
+	});
 
 /** Input shape sau khi parse (questions có `alts` default đã bơm). */
 export type LibraryPartInput = z.infer<typeof libraryPartUpsertSchema>;
@@ -145,7 +255,8 @@ function partIssues(
 		add("part", "invalid part for skill");
 		return issues;
 	}
-	if (!(config.types[part.part] ?? []).includes(part.type)) {
+	// Thư viện bỏ khóa dạng-bài-theo-slot: mọi dạng của skill dùng được ở mọi slot.
+	if (!librarySkillTypes(skill).includes(part.type)) {
 		add("type", "invalid type for part");
 	}
 
@@ -159,53 +270,150 @@ function partIssues(
 		add("audio", "audio required");
 	}
 
-	// Image-based (reading `diagram` + listening `map`): cần ảnh hợp lệ và
-	// pin trên MỌI câu — câu không pin là mất chỗ trên hình.
-	if (isImageBasedType(skill, part.type)) {
-		if (!part.imageUrl.trim() || !isAssignmentImageUrl(part.imageUrl)) {
-			add("imageUrl", "https image required for image-based part");
+	// Nhóm hiệu lực: part không khai nhóm → một nhóm ngầm phủ cả part
+	// (giữ nguyên hành vi ready của đề soạn trước khi có tầng nhóm).
+	const hasRealGroups = part.groups.length > 0;
+	const effectiveGroups = (
+		hasRealGroups
+			? part.groups.map((group, gi) => ({ group, gi }))
+			: [
+					{
+						group: {
+							id: "implicit",
+							type: part.type,
+							instruction: "",
+							startIndex: 0,
+							count: part.questions.length,
+							optionBank: part.optionBank,
+							answersInline: false,
+							splitContent: false,
+							dragDrop: false,
+						},
+						gi: -1,
+					},
+				]
+	) as { group: LibraryQuestionGroup; gi: number }[];
+
+	for (const { group, gi } of effectiveGroups) {
+		const groupPath = hasRealGroups ? `groups.${gi}` : "";
+		const bankPath = groupPath ? `${groupPath}.optionBank` : "optionBank";
+		const questions = part.questions.slice(
+			group.startIndex,
+			group.startIndex + group.count,
+		);
+		const abs = (offset: number) => group.startIndex + offset;
+
+		// Image-based (reading `diagram` + listening `map`): ảnh cấp part,
+		// pin trên MỌI câu trong dải — câu không pin là mất chỗ trên hình.
+		if (isImageBasedType(skill, group.type)) {
+			if (!part.imageUrl.trim() || !isAssignmentImageUrl(part.imageUrl)) {
+				add("imageUrl", "https image required for image-based part");
+			}
+			for (const [offset, question] of questions.entries()) {
+				if (!question.pin) add(`questions.${abs(offset)}.pin`, "pin required");
+			}
 		}
-		for (const [index, question] of part.questions.entries()) {
-			if (!question.pin) add(`questions.${index}.pin`, "pin required");
+
+		// OptionBank khớp dạng bankable — cùng luật ready của assignment:
+		// đề không bankable thì bank phải rỗng; đề bankable thì bank ≥ 2,
+		// đủ phủ câu bankable và mọi answer là nhãn trong bank.
+		const bankKind = optionBankKindFor(
+			skill,
+			group.type,
+			questions.map((q) => q.type),
+		);
+		if (!bankKind) {
+			if (group.optionBank.length > 0) {
+				add(bankPath, "optionBank only applies to bankable matching types");
+			}
+		} else {
+			const bankQuestions = questions
+				.map((question, offset) => ({ question, offset }))
+				.filter(
+					({ question }) =>
+						answerKindByType[question.type ?? group.type] === bankKind,
+				);
+			if (
+				group.optionBank.length < 2 ||
+				group.optionBank.length < bankQuestions.length
+			) {
+				add(
+					bankPath,
+					`bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+				);
+			}
+			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			bankQuestions.forEach(({ question, offset }) => {
+				if (!question.answer.trim()) return;
+				const labelIndex = labels.indexOf(question.answer as never);
+				if (labelIndex < 0 || labelIndex >= group.optionBank.length) {
+					add(
+						`questions.${abs(offset)}.answer`,
+						`offset ${offset}: answer must be a label inside the option bank`,
+					);
+				}
+			});
+		}
+
+		// Chỉ nhóm thật mới có các rule tầng nhóm.
+		if (!hasRealGroups) continue;
+		if (!librarySkillTypes(skill).includes(group.type)) {
+			add(`${groupPath}.type`, "invalid type for skill");
+		}
+		for (const [offset, question] of questions.entries()) {
+			if ((question.type ?? group.type) !== group.type) {
+				add(
+					`questions.${abs(offset)}.type`,
+					"question type must match its group",
+				);
+			}
+		}
+		if (group.answersInline && !CLOZE_EDITOR_TYPES.has(group.type)) {
+			add(
+				`${groupPath}.answersInline`,
+				"inline answers need a completion type",
+			);
+		}
+		if (group.answersInline) {
+			for (const [offset, question] of questions.entries()) {
+				if (countClozeMarkers(question.stem) !== 1) {
+					add(
+						`questions.${abs(offset)}.stem`,
+						"inline question needs exactly one blank",
+					);
+				}
+			}
 		}
 	}
 
-	// OptionBank khớp dạng bankable — cùng luật ready của assignment:
-	// đề không bankable thì bank phải rỗng; đề bankable thì bank ≥ 2,
-	// đủ phủ câu bankable và mọi answer là nhãn trong bank.
-	const bankKind = optionBankKindFor(
-		skill,
-		part.type,
-		part.questions.map((q) => q.type),
-	);
-	if (!bankKind) {
-		if (part.optionBank.length > 0) {
-			add("optionBank", "optionBank only applies to bankable matching types");
+	// answerSet: mỗi khóa ≥ 2 câu và (khi có nhóm) nằm trọn trong dải của
+	// một nhóm thật duy nhất (red-team S1).
+	const answerSetIndexes = new Map<string, number[]>();
+	for (const [index, question] of part.questions.entries()) {
+		if (!question.answerSet) continue;
+		const list = answerSetIndexes.get(question.answerSet) ?? [];
+		list.push(index);
+		answerSetIndexes.set(question.answerSet, list);
+	}
+	for (const indexes of answerSetIndexes.values()) {
+		const [first] = indexes;
+		if (first === undefined) continue;
+		if (indexes.length < 2) {
+			add(`questions.${first}`, "answer set needs at least two questions");
+			continue;
 		}
-	} else {
-		const bankQuestions = part.questions.filter(
-			(q) => answerKindByType[q.type ?? part.type] === bankKind,
+		if (!hasRealGroups) continue;
+		const insideOneGroup = part.groups.some((group) =>
+			indexes.every(
+				(i) => i >= group.startIndex && i < group.startIndex + group.count,
+			),
 		);
-		if (
-			part.optionBank.length < 2 ||
-			part.optionBank.length < bankQuestions.length
-		) {
-			add(
-				"optionBank",
-				`bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+		if (!insideOneGroup) {
+			const gi = part.groups.findIndex(
+				(g) => first >= g.startIndex && first < g.startIndex + g.count,
 			);
+			add(`groups.${gi}`, "answer set must stay inside one group");
 		}
-		const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
-		bankQuestions.forEach((question, offset) => {
-			if (!question.answer.trim()) return;
-			const labelIndex = labels.indexOf(question.answer as never);
-			if (labelIndex < 0 || labelIndex >= part.optionBank.length) {
-				add(
-					`questions.${part.questions.indexOf(question)}.answer`,
-					`offset ${offset}: answer must be a label inside the option bank`,
-				);
-			}
-		});
 	}
 	return issues;
 }
@@ -213,7 +421,8 @@ function partIssues(
 /**
  * Rule ready cho MỘT part: reading cần passage + ≥1 câu có stem;
  * listening cần ≥1 câu + audio; image-based cần imageUrl + pin mọi câu;
- * optionBank khớp dạng bankable; part/type thuộc catalog của skill.
+ * optionBank khớp dạng bankable; part/type thuộc catalog của skill;
+ * nhóm thật thêm rule dải câu, type khớp nhóm, answersInline cloze.
  * Trả về danh sách vấn đề (rỗng = đạt) để UI `canSave` tái dùng.
  */
 export function validatePartForReady(
@@ -274,6 +483,7 @@ export const libraryPartDtoSchema = z
 		transcript: z.string(),
 		imageUrl: z.string(),
 		questions: z.array(z.unknown()),
+		groups: z.array(libraryQuestionGroupSchema),
 		optionBank: z.array(z.string()),
 		note: z.string(),
 		audio: libraryPartAudioSchema.nullable(),
