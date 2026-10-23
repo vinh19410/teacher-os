@@ -125,6 +125,9 @@ export function GroupCard({
 	const typeError = errorFor(`groups.${index}.type`);
 	const answersInlineError = errorFor(`groups.${index}.answersInline`);
 	const optionBankError = errorFor(`groups.${index}.optionBank`);
+	// Lỗi cấp nhóm (key `groups.{gi}` không field — vd answerSet vắt nhóm,
+	// #426 F2): hiện banner ngay header để người dùng thấy đúng thẻ nhóm.
+	const groupError = errorFor(`groups.${index}`);
 	const blankCount = items.filter(
 		(item) => countClozeMarkers(item.stem) === 1,
 	).length;
@@ -192,6 +195,11 @@ export function GroupCard({
 					onRemove={() => setConfirmRemove(true)}
 				/>
 			</header>
+			{groupError && (
+				<p role="alert" className="text-destructive text-sm">
+					{groupError}
+				</p>
+			)}
 
 			{/* Thân luôn mount (ẩn bằng hidden) — focus theo cây cuộn tới hàng
 			    trong nhóm đóng được mà không cần render điều kiện. */}
