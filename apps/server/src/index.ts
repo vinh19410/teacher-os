@@ -115,5 +115,8 @@ export default buildApp({
 		});
 		return bankHub;
 	},
+	// Webhook GitHub (#421): secret rỗng (chưa cấu hình binding) →
+	// /webhooks/github trả 503 GITHUB_WEBHOOK_DISABLED.
+	githubWebhookSecret: env.GITHUB_WEBHOOK_SECRET,
 	runInBackground: (promise) => waitUntil(promise),
 });

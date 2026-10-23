@@ -86,6 +86,7 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
 | `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
+| `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
 
 ## Deploy preflight (all releases)
 
@@ -619,6 +620,20 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 3. **Học viên phản ánh "Đã bấm gửi lại nhưng không nhận được email"**:
    - Kiểm tra xem server có đang chạy ở chế độ `LOG-ONLY` (quên cấu hình `MAILER_IMPL=resend` hoặc thiếu `RESEND_API_KEY`) hay không.
    - Kiểm tra log server xem có lỗi gửi mail từ Resend (quota, invalid recipient).
+
+
+## GitHub webhook endpoint — issue #421
+
+- **Payload URL:** `https://api.<domain>/webhooks/github` (prod) / `https://api.staging.<domain>/webhooks/github` (staging).
+- **Content type:** `application/json` **bắt buộc** — form-encoded bị 415 theo hợp đồng endpoint.
+- **Secret:** giá trị `GITHUB_WEBHOOK_SECRET` đã đặt ở GitHub environment; chọn event cần nhận trong trang cấu hình webhook.
+- **Kiểm tra:** sau khi thêm webhook, GitHub gửi delivery `ping` — kiểm tra trả 200 trong tab "Recent Deliveries". Secret chưa set ⇒ endpoint trả 503 `GITHUB_WEBHOOK_DISABLED` (tính năng tắt, không ảnh hưởng phần khác).
+- **Tên biến:** secret Actions/environment là `GH_WEBHOOK_SECRET` (GitHub Actions cấm tên secret bắt đầu `GITHUB_`); binding Worker là `GITHUB_WEBHOOK_SECRET`.
+- Đặt secret ở **cả hai** environment (production và staging):
+  ```bash
+  gh secret set GH_WEBHOOK_SECRET --env production
+  gh secret set GH_WEBHOOK_SECRET --env staging
+  ```
 
 ## Student Invitation & Multi-Org (Migration 0025) — issue #263
 
