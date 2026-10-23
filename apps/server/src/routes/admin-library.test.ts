@@ -8,7 +8,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 import type { SessionUser } from "../session";
 
@@ -976,3 +976,270 @@ function validPartBody(
 		...overrides,
 	};
 }
+
+describe("groups corrupt guard (#425)", () => {
+	// Harness tự chứa (DB in-memory riêng) — describe này nằm ngoài scope
+	// `app`/`db` của describe chính.
+	let app: ServerApp;
+	let db: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		app = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+	});
+
+	/** Seed test + part với cột groups corrupt (`{broken json`) hoặc sạch. */
+	async function seedGuardFixture(
+		id: string,
+		opts: { corrupt: boolean; status?: "draft" | "ready" } = {
+			corrupt: true,
+		},
+	) {
+		await db.insert(libraryTest).values({
+			id,
+			title: "Groups Corrupt Guard",
+			skill: "reading",
+			status: opts.status ?? "draft",
+			createdBy: "u-admin",
+		});
+		await db.insert(libraryTestPart).values({
+			id: `ltp-${id}`,
+			testId: id,
+			part: "p1",
+			type: "tfng",
+			title: "Passage 1",
+			band: "6.5",
+			questions: JSON.stringify([
+				{ stem: "The bogs are flooded in winter.", answer: "TRUE", alts: "" },
+				{ stem: "Growers harvest by hand.", answer: "FALSE", alts: "" },
+			]),
+			groups: opts.corrupt ? "{broken json" : "[]",
+			updatedAt: new Date(1000),
+		});
+	}
+
+	async function groupsColumn(testId: string): Promise<string | null> {
+		const [row] = await db
+			.select({ groups: libraryTestPart.groups })
+			.from(libraryTestPart)
+			.where(
+				and(eq(libraryTestPart.testId, testId), eq(libraryTestPart.part, "p1")),
+			);
+		return row?.groups ?? null;
+	}
+
+	/** Body hợp lệ theo schema (p1 tfng 2 câu, không groups — nhóm ngầm). */
+	function guardPartBody(
+		overrides: Record<string, unknown> = {},
+	): Record<string, unknown> {
+		return {
+			part: "p1",
+			type: "tfng",
+			title: "Passage 1",
+			band: "6.5",
+			source: "",
+			intro: "",
+			passage: "<p>Passage about cranberry bogs</p>",
+			transcript: "",
+			imageUrl: "",
+			questions: [
+				{ stem: "The bogs are flooded in winter.", answer: "TRUE", alts: "" },
+				{ stem: "Growers harvest by hand.", answer: "FALSE", alts: "" },
+			],
+			optionBank: [],
+			note: "",
+			...overrides,
+		};
+	}
+
+	function putPart(testId: string, body: Record<string, unknown>) {
+		return makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/p1`,
+		)({ user: "admin", body });
+	}
+
+	test("PUT groups rỗng không cờ trên row corrupt → 409 GROUPS_CORRUPT, không ghi", async () => {
+		await seedGuardFixture("lt-gc-echo");
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			const res = await putPart("lt-gc-echo", guardPartBody({ groups: [] }));
+			expect(res.status).toBe(409);
+			const payload = (await res.json()) as { error?: string; code?: string };
+			expect(payload.error).toBe("GROUPS_CORRUPT");
+			expect(payload.code).toBe("GROUPS_CORRUPT");
+			expect(await groupsColumn("lt-gc-echo")).toBe("{broken json");
+			expect(
+				errorSpy.mock.calls.some(
+					([message, ctx]) =>
+						String(message).includes("[admin-library] groups corrupt") &&
+						(ctx as { reason?: string } | undefined)?.reason === "malformed",
+				),
+			).toBe(true);
+		} finally {
+			errorSpy.mockRestore();
+		}
+	});
+
+	test("PUT có discardCorruptGroups → 200, ghi + log xác nhận tường minh", async () => {
+		await seedGuardFixture("lt-gc-flag");
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			const res = await putPart("lt-gc-flag", {
+				...guardPartBody({ groups: [] }),
+				discardCorruptGroups: true,
+			});
+			expect(res.status).toBe(200);
+			expect(await groupsColumn("lt-gc-flag")).toBe("[]");
+			const logged = errorSpy.mock.calls
+				.map((call) => call.join(" "))
+				.join("\n");
+			expect(logged).toContain("discarded explicitly");
+		} finally {
+			errorSpy.mockRestore();
+		}
+	});
+
+	test("PUT groups soạn lại (non-empty) không cờ trên row corrupt → 409", async () => {
+		await seedGuardFixture("lt-gc-rebuilt");
+		const res = await putPart(
+			"lt-gc-rebuilt",
+			guardPartBody({
+				groups: [
+					{
+						id: "g-1",
+						type: "tfng",
+						instruction: "<p>TRUE / FALSE</p>",
+						startIndex: 0,
+						count: 2,
+					},
+				],
+			}),
+		);
+		expect(res.status).toBe(409);
+		const payload = (await res.json()) as { code?: string };
+		expect(payload.code).toBe("GROUPS_CORRUPT");
+		expect(await groupsColumn("lt-gc-rebuilt")).toBe("{broken json");
+	});
+
+	test("DTO gắn cờ: corrupt → true (groups []), sạch → false", async () => {
+		await seedGuardFixture("lt-gc-dto");
+		const corruptRes = await app.request("/api/admin/library/tests/lt-gc-dto", {
+			headers: authHeaders("admin"),
+		});
+		const corruptDetail = (await corruptRes.json()) as {
+			parts: Array<{ groupsCorrupt?: boolean; groups: unknown[] }>;
+		};
+		expect(corruptDetail.parts[0]?.groups).toEqual([]);
+		expect(corruptDetail.parts[0]?.groupsCorrupt).toBe(true);
+
+		await putPart("lt-gc-dto", {
+			...guardPartBody({ groups: [] }),
+			discardCorruptGroups: true,
+		});
+		const cleanRes = await app.request("/api/admin/library/tests/lt-gc-dto", {
+			headers: authHeaders("admin"),
+		});
+		const cleanDetail = (await cleanRes.json()) as {
+			parts: Array<{ groupsCorrupt?: boolean }>;
+		};
+		expect(cleanDetail.parts[0]?.groupsCorrupt).toBe(false);
+	});
+
+	test("cờ trên row SẠCH → 409 GROUPS_NOT_CORRUPT, không ghi", async () => {
+		await seedGuardFixture("lt-gc-clean", { corrupt: false });
+		const res = await putPart("lt-gc-clean", {
+			...guardPartBody({ groups: [], title: "Đè nhầm" }),
+			discardCorruptGroups: true,
+		});
+		expect(res.status).toBe(409);
+		const payload = (await res.json()) as { code?: string };
+		expect(payload.code).toBe("GROUPS_NOT_CORRUPT");
+		expect(await groupsColumn("lt-gc-clean")).toBe("[]");
+	});
+
+	test("row sạch PUT bình thường không cờ → 200 (regression)", async () => {
+		await seedGuardFixture("lt-gc-regression", { corrupt: false });
+		const res = await putPart(
+			"lt-gc-regression",
+			guardPartBody({ title: "Sửa title" }),
+		);
+		expect(res.status).toBe(200);
+	});
+
+	test("ready validation vẫn chạy sau khi cờ cho qua → 400 NOT_READY", async () => {
+		await seedGuardFixture("lt-gc-ready", {
+			corrupt: true,
+			status: "ready",
+		});
+		const res = await putPart("lt-gc-ready", {
+			...guardPartBody({
+				groups: [],
+				questions: [{ stem: "", answer: "", alts: "" }],
+			}),
+			discardCorruptGroups: true,
+		});
+		expect(res.status).toBe(400);
+		const payload = (await res.json()) as { code?: string };
+		expect(payload.code).toBe("NOT_READY");
+		expect(await groupsColumn("lt-gc-ready")).toBe("{broken json");
+	});
+
+	test("publish đề có part corrupt → 409 GROUPS_CORRUPT; sửa part xong guard nhường chỗ luật slot", async () => {
+		await seedGuardFixture("lt-gc-publish");
+		const patch = makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-gc-publish",
+		);
+		const blocked = await patch({ user: "admin", body: { status: "ready" } });
+		expect(blocked.status).toBe(409);
+		const blockedPayload = (await blocked.json()) as { code?: string };
+		expect(blockedPayload.code).toBe("GROUPS_CORRUPT");
+		const [statusRow] = await db
+			.select({ status: libraryTest.status })
+			.from(libraryTest)
+			.where(eq(libraryTest.id, "lt-gc-publish"));
+		expect(statusRow?.status).toBe("draft");
+
+		await putPart("lt-gc-publish", {
+			...guardPartBody({ groups: [] }),
+			discardCorruptGroups: true,
+		});
+		// Guard corrupt không còn chặn: lỗi duy nhất còn lại là thiếu các
+		// slot preset khác (p2, p3) — luật ready riêng, không phải corrupt.
+		const afterFix = await patch({ user: "admin", body: { status: "ready" } });
+		expect(afterFix.status).toBe(400);
+		const afterPayload = (await afterFix.json()) as {
+			code?: string;
+			issues?: Array<{ path: string; message: string }>;
+		};
+		expect(afterPayload.code).toBe("NOT_READY");
+		expect(
+			afterPayload.issues?.some((issue) => issue.message.includes("corrupt")),
+		).toBe(false);
+		expect(
+			afterPayload.issues?.every((issue) => issue.path.startsWith("parts.")),
+		).toBe(true);
+		const [statusAfter] = await db
+			.select({ status: libraryTest.status })
+			.from(libraryTest)
+			.where(eq(libraryTest.id, "lt-gc-publish"));
+		expect(statusAfter?.status).toBe("draft");
+	});
+});

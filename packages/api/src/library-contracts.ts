@@ -60,6 +60,9 @@ export const LIBRARY_ERROR_CODES = [
 	"AUDIO_TOO_LARGE",
 	"UNSUPPORTED_AUDIO_TYPE",
 	"SKILL_IMMUTABLE",
+	// #425 — groups corrupt: chặn ghi đè/lỡ phát hành, không sửa mất im lặng.
+	"GROUPS_CORRUPT",
+	"GROUPS_NOT_CORRUPT",
 ] as const;
 export type LibraryErrorCode = (typeof LIBRARY_ERROR_CODES)[number];
 
@@ -158,6 +161,9 @@ export const libraryPartUpsertSchema = z
 			.array(libraryQuestionGroupSchema)
 			.max(LIBRARY_GROUP_MAX)
 			.default([]),
+		// #425 — xác nhận tường minh "ghi đè nhóm hỏng": chỉ literal(true) được
+		// nhận; server chặn 409 GROUPS_CORRUPT khi row corrupt mà thiếu cờ này.
+		discardCorruptGroups: z.literal(true).optional(),
 	})
 	.strict()
 	.superRefine((value, ctx) => {
@@ -496,6 +502,10 @@ export const libraryPartDtoSchema = z
 		imageUrl: z.string(),
 		questions: z.array(z.unknown()),
 		groups: z.array(libraryQuestionGroupSchema),
+		// #425 — cờ "groups trên DB corrupt, đã fallback []". Default false để
+		// admin mới parse được response server cũ (deploy-skew 1 chiều); server
+		// emit luôn set field.
+		groupsCorrupt: z.boolean().default(false),
 		optionBank: z.array(z.string()),
 		note: z.string(),
 		audio: libraryPartAudioSchema.nullable(),

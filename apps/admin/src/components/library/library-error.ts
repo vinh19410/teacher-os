@@ -21,6 +21,9 @@ const CODE_MESSAGES: Record<string, string> = {
 		"Kho audio chưa được kích hoạt — liên hệ quản trị hệ thống.",
 	AUDIO_CHANGED:
 		"Audio vừa được người khác cập nhật — tải lại trang rồi thử lại.",
+	GROUPS_CORRUPT:
+		"Part này có nhóm câu hỏng trên server — bấm «Lưu đè nhóm hỏng» nếu muốn thay thế.",
+	GROUPS_NOT_CORRUPT: "Nhóm câu đã được phục hồi trên server — tải lại trang.",
 };
 
 export function libraryErrorMessage(error: unknown): string {

@@ -30,6 +30,7 @@ function dto(
 		imageUrl: "",
 		questions,
 		groups,
+		groupsCorrupt: false,
 		optionBank: [],
 		note: "",
 		audio: null,

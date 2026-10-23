@@ -9,6 +9,7 @@ import {
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_ERROR_CODES,
 	LIBRARY_SKILLS,
+	libraryPartDtoSchema,
 	libraryPartUpsertSchema,
 	libraryTestCreateSchema,
 	libraryTestUpdateSchema,
@@ -551,5 +552,102 @@ describe("library question groups", () => {
 		expect(
 			issues.some((issue) => issue.message === "invalid type for part"),
 		).toBe(false);
+	});
+});
+
+describe("#425 — groups corrupt contract (DTO cờ + upsert cờ tường minh)", () => {
+	function partDtoFixture() {
+		return {
+			id: "part-1",
+			testId: "test-1",
+			part: "p1",
+			type: "summary",
+			title: "Part 1",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "",
+			imageUrl: "",
+			questions: [],
+			groups: [],
+			optionBank: [],
+			note: "",
+			audio: null,
+			updatedAt: "2026-10-23T00:00:00.000Z",
+		};
+	}
+
+	test("DTO có groupsCorrupt true/false → parse giữ nguyên giá trị", () => {
+		expect(
+			libraryPartDtoSchema.parse({ ...partDtoFixture(), groupsCorrupt: true })
+				.groupsCorrupt,
+		).toBe(true);
+		expect(
+			libraryPartDtoSchema.parse({ ...partDtoFixture(), groupsCorrupt: false })
+				.groupsCorrupt,
+		).toBe(false);
+	});
+
+	test("DTO thiếu groupsCorrupt → parse thành công, mặc định false (deploy-skew 1 chiều)", () => {
+		expect(libraryPartDtoSchema.parse(partDtoFixture()).groupsCorrupt).toBe(
+			false,
+		);
+	});
+
+	test("upsert chấp nhận discardCorruptGroups: true (literal)", () => {
+		const parsed = libraryPartUpsertSchema.parse({
+			part: "p1",
+			type: "summary",
+			title: "Part 1",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "",
+			questions: [],
+			note: "",
+			discardCorruptGroups: true,
+		});
+		expect(parsed.discardCorruptGroups).toBe(true);
+	});
+
+	test("upsert từ chối discardCorruptGroups: false (chỉ literal(true))", () => {
+		const result = libraryPartUpsertSchema.safeParse({
+			part: "p1",
+			type: "summary",
+			title: "Part 1",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "",
+			questions: [],
+			note: "",
+			discardCorruptGroups: false,
+		});
+		expect(result.success).toBe(false);
+	});
+
+	test("upsert strict vẫn chặn field lạ", () => {
+		const result = libraryPartUpsertSchema.safeParse({
+			part: "p1",
+			type: "summary",
+			title: "Part 1",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "",
+			questions: [],
+			note: "",
+			groupsUnknownField: 1,
+		});
+		expect(result.success).toBe(false);
+	});
+
+	test("LIBRARY_ERROR_CODES có GROUPS_CORRUPT + GROUPS_NOT_CORRUPT", () => {
+		expect(LIBRARY_ERROR_CODES).toContain("GROUPS_CORRUPT");
+		expect(LIBRARY_ERROR_CODES).toContain("GROUPS_NOT_CORRUPT");
 	});
 });

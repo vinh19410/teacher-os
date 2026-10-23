@@ -23,6 +23,7 @@ function makeDto(slot: string, index: number): LibraryPartDto {
 		],
 		optionBank: [],
 		groups: [],
+		groupsCorrupt: false,
 		note: "",
 		audio: {
 			name: `${slot}.mp3`,

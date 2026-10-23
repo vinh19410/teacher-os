@@ -52,6 +52,7 @@ function dto(
 		imageUrl: "",
 		questions: Array.from({ length: questionCount }, (_, i) => question(i + 1)),
 		groups,
+		groupsCorrupt: false,
 		optionBank: [],
 		note: "",
 		audio: null,
