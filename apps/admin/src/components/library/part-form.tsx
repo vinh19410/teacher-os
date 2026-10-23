@@ -30,6 +30,7 @@ import {
 	useId,
 	useImperativeHandle,
 	useLayoutEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -460,7 +461,16 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		const [showErrors, setShowErrors] = useState(false);
 		const [live, setLive] = useState("");
 
-		const dirty = isPartDirty(skill, slot, saved, value);
+		// Dirty so với bản đã lưu: memo baseline + canonical STRING (#426 F3,
+		// kongming gate #3 — arePartValuesEqual stringify CẢ HAI đối số nên
+		// memo object không đỡ được passage 20k mỗi render; baseline stringify
+		// 1 lần/baseline, mỗi render chỉ stringify value).
+		const baseline = useMemo(
+			() => (saved ? partValueFromDto(saved) : emptyPartValue(skill, slot)),
+			[saved, skill, slot],
+		);
+		const baselineKey = useMemo(() => canonicalPartValue(baseline), [baseline]);
+		const dirty = baselineKey !== canonicalPartValue(value);
 		useEffect(() => {
 			onDraftChange(slot, { dirty, value });
 			// saved đổi (remount bằng key nên không xảy ra trong một mount) —

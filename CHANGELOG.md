@@ -19,6 +19,10 @@ Quy ước khi cập nhật:
 - Editor dùng chung mở rộng (optional, web không đổi hành vi): `AnswerKeyGrid` hàng câu thu gọn + `qStartOverride` + ô giải thích từng câu, `QuestionKeyEditor` prop `view` tách hướng dẫn/khỏi câu hỏi, `CardControls`, `questionSummary`; ClozeEditor Apply giữ `explanation`/`answerSet`/`type`/`pin` (cả table-grid) (#424 phase 1)
 
 ### Fixed
+- Library PATCH `status=ready`/publish với cột `questions` JSON corrupt (phần tử sai schema) trả 400 `NOT_READY` kèm issues có cấu trúc thay vì 500 TypeError — `toPartInput` parse `questions` fail-soft qua `assignmentQuestionSchema` như `groups` đã làm; trade-off ghi trong comment `parseQuestions` (toàn-mảng → `[]` thay vì lọc từng câu) (#426)
+- Path lỗi `answerSet` vắt nhóm thống nhất 2 luật: superRefine của `libraryPartUpsertSchema` emit `["groups", gi]` (nhóm chứa câu đầu của khóa — parity `partIssues`), GroupCard hiển thị banner lỗi cấp nhóm (key `groups.{gi}`), `firstIssueFocusPlan` nhận key nhóm không field và mở đúng tab Câu hỏi của nhóm (#426)
+- Trang soạn đề thư viện giảm work mỗi keystroke ở quy mô 4 part × 40 câu: `partInputFromValue` 4→1 lần/keystroke (memo per-slot `savedInputsBySlot` + helper thuần `effectivePartsFor` có unit test), `partValueFromDto` 3→0, khối derived 2.52→0.75ms; `useDeferredValue` tách ready-check/cây/bảng đáp án khỏi frame gõ; dirty-check memo baseline canonical string (bỏ stringify passage 20k mỗi render) (#426)
+- E2E admin library bỏ đếm Tab cứng: vòng Tab trần 20 + `toBeFocused()` + assert thứ tự hàng đối chiếu chính cây điều hướng, scroll assert theo row id ổn định `#group-p1-1-q1`; `fillQuestionRow` (reading + listening) scope hàng theo `#${slot}-q${index}` thay `.nth()` toàn trang — không giảm số assertion (#426)
 - `normalizeQuestions` của form thư viện không còn strip `explanation`/`answerSet` khi lưu part — trước đó mọi lần mở+lưu part đều mất im lặng 2 field này (#420 Task 4.4, #424)
 - Lỗi soạn đề được bắt và sửa trong đợt e2e mới: scroll race khi nhảy tới câu (rAF trước commit), panel Kiểm tra đáp án jump sai hàng nhóm ≥2, editor phẳng hiển thị "Câu 14" thay vì số fold, sidebar admin tràn ngang 375 (#424)
 

@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
+
 import type { LibraryPartDto } from "@teacher-os/api/library-contracts";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { addGroup } from "./group-model";
@@ -1133,6 +1136,55 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		}
 	});
 
+	it("#426 F2: answerSet vắt nhóm → key lỗi ĐÚNG NHÓM `groups.{gi}`, không còn key `groups` chung chung", () => {
+		// 5 câu, nhóm 3+2; khóa "s" gom câu index 2 và 3 (vắt biên 3) →
+		// superRefine emit ["groups", 0] → partInputFromValue giữ key đầy đủ
+		// "groups.0" để GroupCard tra được, message đã dịch tiếng Việt.
+		const questions = ["q1", "q2", "q3", "q4", "q5"].map((stem, i) => ({
+			stem,
+			opts: null,
+			answer: i % 2 === 0 ? "True" : "False",
+			alts: "",
+			type: null,
+			pin: null,
+			...(i === 2 || i === 3 ? { answerSet: "s" } : {}),
+		}));
+		const value = {
+			...partValueFromDto(partDto),
+			questions,
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "note",
+					instruction: "",
+					startIndex: 3,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const result = partInputFromValue("p1", value);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.errors["groups.0"]).toContain("phải nằm trong một nhóm");
+			expect(result.errors.groups).toBeUndefined();
+		}
+	});
+
 	it("kongming F2: focusRowId — part phẳng dùng id hàng slot-q-n, part có nhóm dùng prefix group-", () => {
 		// Part phẳng: AnswerKeyGrid nhận partId={slot} → id hàng `${slot}-q${n}`.
 		expect(focusRowId("p1", 0, 3, true)).toBe("p1-q3");
@@ -1141,5 +1193,94 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		// Part có nhóm: wrapper GroupCard + hàng theo rowIdPrefix group-…
 		expect(focusRowId("p1", 1, 2, false)).toBe("group-p1-1-q2");
 		expect(focusRowId("p1", 2, undefined, false)).toBe("group-p1-2");
+	});
+
+	it("#426 F2: key nhóm KHÔNG field (`groups.0`) mở tab Câu hỏi đúng nhóm, không nhảy Nội dung", () => {
+		const grouped = {
+			...partValueFromDto(partDto),
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		// Key cấp nhóm (không field): mở đúng nhóm 0, tab Câu hỏi.
+		expect(
+			firstIssueFocusPlan(
+				{ "groups.0": "Các câu cùng khóa tập đáp án phải nằm trong một nhóm." },
+				grouped,
+			),
+		).toEqual({ partTab: "questions", group: 0, groupTab: "questions" });
+		// Key có field giữ hành vi cũ (optionBank → tab Câu hỏi).
+		expect(
+			firstIssueFocusPlan({ "groups.0.optionBank": "…" }, grouped),
+		).toEqual({ partTab: "questions", group: 0, groupTab: "questions" });
+		// gi vượt số nhóm → chỉ mở tab Câu hỏi cấp part.
+		expect(firstIssueFocusPlan({ "groups.5.type": "…" }, grouped)).toEqual({
+			partTab: "questions",
+		});
+	});
+});
+
+describe("PartForm (hành vi dirty — #426 F3)", () => {
+	it("onDraftChange báo dirty:false lúc mount với saved, dirty:true sau khi sửa", async () => {
+		const onDraftChange = vi.fn();
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		try {
+			await act(async () => {
+				root.render(
+					<PartForm
+						skill="reading"
+						slot="p1"
+						slotLabel="Passage 1"
+						testId="t1"
+						saved={partDto}
+						testReady={false}
+						saving={false}
+						onDraftChange={onDraftChange}
+						onAudioChanged={vi.fn()}
+						onSave={vi.fn()}
+						onDelete={vi.fn()}
+						deleting={false}
+					/>,
+				);
+			});
+			const lastDraft = () =>
+				onDraftChange.mock.calls.at(-1)?.[1] as {
+					dirty: boolean;
+					value: { title: string };
+				};
+			expect(lastDraft().dirty).toBe(false);
+
+			// Sửa tiêu đề — input controlled có giá trị trùng title của saved.
+			const title = [...container.querySelectorAll("input")].find(
+				(input) => input.value === partDto.title,
+			);
+			if (!title) throw new Error("không tìm thấy input tiêu đề part");
+			await act(async () => {
+				// React theo dõi value bằng tracker nội bộ — phải set qua native
+				// setter thì mới ghi nhận là thay đổi của người dùng.
+				Object.getOwnPropertyDescriptor(
+					HTMLInputElement.prototype,
+					"value",
+				)?.set?.call(title, "Tiêu đề đã sửa");
+				title.dispatchEvent(new Event("input", { bubbles: true }));
+			});
+			expect(lastDraft().dirty).toBe(true);
+			expect(lastDraft().value.title).toBe("Tiêu đề đã sửa");
+		} finally {
+			await act(async () => root.unmount());
+			container.remove();
+		}
 	});
 });

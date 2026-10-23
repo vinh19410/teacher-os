@@ -1,5 +1,8 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
-import { ASSIGNMENT_TEST_PRESETS } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_TEST_PRESETS,
+	assignmentQuestionSchema,
+} from "@teacher-os/api/contracts";
 import {
 	normalizeMediaType,
 	sanitizeMediaFileName,
@@ -135,6 +138,22 @@ function parseGroups(raw: string): LibraryQuestionGroup[] {
 	return parsed.success ? parsed.data : [];
 }
 
+/**
+ * Cột `questions` → câu đã validate schema; JSON hỏng/phần tử sai shape → []
+ * (fail-soft như `groups` — ready validation chặn "at least one question"
+ * thay vì crash 500). Trade-off (kongming plan-gate): parse TOÀN MẢNG — một
+ * câu hỏng làm cả part rơi về `[]`, trong khi admin `normalizeQuestions`
+ * xử lý từng câu; chấp nhận vì dữ liệu hỏng chỉ đến từ ghi ngoài luồng
+ * (upsert schema đã chặn từ lúc lưu) và hướng chặn publish vẫn đúng.
+ */
+function parseQuestions(raw: string): LibraryPartInput["questions"] {
+	const parsed = assignmentQuestionSchema
+		.array()
+		.max(40)
+		.safeParse(parseJsonArray(raw));
+	return parsed.success ? parsed.data : [];
+}
+
 /** Row part → input cho validatePartForReady/validateTestReady. */
 function toPartInput(row: PartRow): LibraryPartInput {
 	return {
@@ -147,7 +166,7 @@ function toPartInput(row: PartRow): LibraryPartInput {
 		passage: row.passage,
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
-		questions: parseJsonArray(row.questions) as LibraryPartInput["questions"],
+		questions: parseQuestions(row.questions),
 		groups: parseGroups(row.groups),
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,

@@ -86,7 +86,10 @@ export function firstIssueFocusPlan(
 	value: PartFormValue,
 ): SaveFocusPlan | null {
 	for (const key of Object.keys(errors)) {
-		const groupMatch = /^groups\.(\d+)\.([a-z]+)$/i.exec(key);
+		// Key nhóm có thể KHÔNG có field (lỗi cấp nhóm — vd answerSet vắt
+		// nhóm `groups.0`, #426 F2) — trước fix rơi xuống nhánh part-level
+		// `{ partTab: "content" }` sai tab + cuộn tới id không tồn tại.
+		const groupMatch = /^groups\.(\d+)(?:\.([a-z]+))?$/i.exec(key);
 		if (groupMatch) {
 			const gi = Number(groupMatch[1]);
 			if (gi >= value.groups.length) return { partTab: "questions" };

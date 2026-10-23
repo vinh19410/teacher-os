@@ -521,6 +521,66 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		expect(row2?.status).toBe("draft");
 	});
 
+	test("PATCH status ready với cột questions corrupt → 400 NOT_READY kèm lý do, không 500", async () => {
+		// JSON hợp lệ nhưng phần tử sai schema (stem phải là string) — seed
+		// trực tiếp cột để mô phỏng dữ liệu ghi ngoài luồng (issue #426 F1).
+		await db.insert(libraryTest).values({
+			id: "lt-corrupt-q",
+			title: "Corrupt Questions",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(3000),
+		});
+		await db.insert(libraryTestPart).values({
+			id: "ltp-corrupt-q",
+			testId: "lt-corrupt-q",
+			part: "p1",
+			type: "tfng",
+			title: "Passage 1",
+			band: "7.0",
+			passage: "<p>P</p>",
+			questions: JSON.stringify([{ stem: 123, answer: "TRUE", alts: "" }]),
+			updatedAt: new Date(3000),
+		});
+
+		const ready = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-corrupt-q",
+		)({ user: "admin", body: { status: "ready" } });
+		// Bug cũ: cast mù `as LibraryPartInput["questions"]` → q.stem.trim()
+		// TypeError → 500. Đúng: fail-soft → chặn NOT_READY có cấu trúc.
+		expect(ready.status).toBe(400);
+		const payload = (await ready.json()) as {
+			code?: string;
+			issues?: Array<{ path: string; message: string }>;
+		};
+		expect(payload.code).toBe("NOT_READY");
+		expect((payload.issues ?? []).map((i) => i.path)).toContain(
+			"parts.p1.questions",
+		);
+
+		// Biến thể thứ hai: phần tử không phải object.
+		await db
+			.update(libraryTestPart)
+			.set({ questions: JSON.stringify(["x"]) })
+			.where(
+				and(
+					eq(libraryTestPart.testId, "lt-corrupt-q"),
+					eq(libraryTestPart.part, "p1"),
+				),
+			);
+		const again = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-corrupt-q",
+		)({ user: "admin", body: { status: "ready" } });
+		expect(again.status).toBe(400);
+		const againPayload = (await again.json()) as { code?: string };
+		expect(againPayload.code).toBe("NOT_READY");
+	});
+
 	test("PUT part: slot ngoài preset → 404 PART_NOT_FOUND; body.part lệch URL → 400", async () => {
 		const wrongSlot = await makeRequest(
 			app,
