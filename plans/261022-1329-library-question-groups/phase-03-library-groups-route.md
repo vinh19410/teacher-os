@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Route admin lưu/đọc nhóm (PR2)"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [2]
