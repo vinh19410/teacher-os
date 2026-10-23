@@ -1133,7 +1133,7 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		}
 	});
 
-	it("kongming F2: focusRowId — part phẳng dùng id hàng `${slot}-q${n}`, part có nhóm dùng prefix group-", () => {
+	it("kongming F2: focusRowId — part phẳng dùng id hàng slot-q-n, part có nhóm dùng prefix group-", () => {
 		// Part phẳng: AnswerKeyGrid nhận partId={slot} → id hàng `${slot}-q${n}`.
 		expect(focusRowId("p1", 0, 3, true)).toBe("p1-q3");
 		// RF-F6: nhóm ngầm flat cuộn tới hàng đầu tiên (id `${slot}-q0`).
