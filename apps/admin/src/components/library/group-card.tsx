@@ -213,29 +213,38 @@ export function GroupCard({
 					aria-labelledby={`${rowIdPrefix}-tabs-tab-intro`}
 					hidden={activeTab === "settings"}
 				>
-					<QuestionKeyEditor
-						skill={skill}
-						partId={rowIdPrefix}
-						typeId={group.type}
-						intro={group.instruction}
-						items={items}
-						showErrors={showErrors}
-						status={status}
-						imageUrl={imageUrl}
-						optionBank={group.optionBank}
-						onIntroChange={(instruction) => onPatch({ instruction })}
-						onImageUrlChange={onImageUrlChange}
-						onItemsChange={handleItemsChange}
-						onBankChange={(optionBank) => onPatch({ optionBank })}
-						imageUrlError={errorFor("imageUrl")}
-						optionBankError={optionBankError}
-						qStartOverride={qStart + group.startIndex}
-						showExplanation
-						view={activeTab === "intro" ? "intro" : "questions"}
-						collapsibleRows
-						openRow={openRow}
-						onOpenRowChange={onOpenRowChange}
-					/>
+					{/* Review PR F1: tab "Câu hỏi" cần panel id/labelledby riêng —
+					 * aria-controls của nó trỏ tới id này. */}
+					<div
+						id={`${rowIdPrefix}-tabs-panel-questions`}
+						role="tabpanel"
+						aria-labelledby={`${rowIdPrefix}-tabs-tab-questions`}
+						hidden={activeTab !== "questions"}
+					>
+						<QuestionKeyEditor
+							skill={skill}
+							partId={rowIdPrefix}
+							typeId={group.type}
+							intro={group.instruction}
+							items={items}
+							showErrors={showErrors}
+							status={status}
+							imageUrl={imageUrl}
+							optionBank={group.optionBank}
+							onIntroChange={(instruction) => onPatch({ instruction })}
+							onImageUrlChange={onImageUrlChange}
+							onItemsChange={handleItemsChange}
+							onBankChange={(optionBank) => onPatch({ optionBank })}
+							imageUrlError={errorFor("imageUrl")}
+							optionBankError={optionBankError}
+							qStartOverride={qStart + group.startIndex}
+							showExplanation
+							view={activeTab === "intro" ? "intro" : "questions"}
+							collapsibleRows
+							openRow={openRow}
+							onOpenRowChange={onOpenRowChange}
+						/>
+					</div>
 				</div>
 				<div
 					id={`${rowIdPrefix}-tabs-panel-settings`}
