@@ -40,7 +40,7 @@ Thực hiện #420 Task 5.1 (kể cả bước 4b ClozeEditor giữ giải thíc
 1. Sau khi tải lại: cây có "Nhóm câu 1", "Nhóm câu 2", "Câu 1"…"Câu 5" (đánh số fold).
 2. Bấm "Câu 4" trên cây → hàng câu 4 mở (thấy ô "Giải thích câu 4" có giá trị) và nằm trong viewport.
 3. Sửa tiêu đề Passage 1 (chưa lưu) → bấm "Passage 2" trên cây → bấm lại "Passage 1": tiêu đề sửa vẫn còn, cây có chấm "chưa lưu".
-4. (red-team F2 — khóa stale-closure save) Thêm 1 câu trả lời mới vào nhóm 1 → bấm "Lưu part" trên toolbar → reload → nội dung mới tồn tại trên server.
+4. (red-team F2 — khóa stale-closure save; advisory 2026-10-23: sửa câu SẴN CÓ để tổng số câu giữ nguyên 5 — không thêm câu, vỡ kỳ vọng "5 câu"/"Câu 6" ở bước 5–6) Sửa đáp án của 1 câu sẵn có trong nhóm 1 → bấm "Lưu part" trên toolbar → reload → đáp án mới tồn tại trên server.
 5. (red-team F9 — phủ nhánh thiếu đáp án) Xóa đáp án của 1 câu (chưa lưu) → bấm "Kiểm tra đáp án": panel hiện "…· 1 câu thiếu đáp án", dòng câu đó có nhãn "Thiếu đáp án"; bấm số câu đó → nhảy đúng hàng (đi qua `onJump`). Điền lại đáp án, lưu, mở panel: "5 câu · 0 câu thiếu đáp án".
 6. (kongming GO-checkpoint — khóa fold xuyên suốt UI) Seed thêm nội dung cho Passage 2 (ít nhất 1 câu): cây hiện "Câu 6" cho câu đầu p2; nhãn hàng trong `AnswerKeyGrid` của p2 là "Câu 6" (không phải "Câu 14"); panel "Kiểm tra đáp án" liệt kê "Câu 6" dưới Passage 2. Ba chỗ phải khớp nhau — nếu page quên truyền `qStart` prop (fallback tĩnh 14), bước này bắt được.
 
