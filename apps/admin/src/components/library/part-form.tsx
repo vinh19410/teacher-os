@@ -479,6 +479,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 
 		// Vị trí soạn hiện hành (tab/nhóm/hàng) báo lên trang — cây điều
 		// hướng tô aria-current đúng và trang giữ view-state qua remount.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: báo mỗi lần view đổi; onActivePositionChange ổn định qua ref ở trang
 		useEffect(() => {
 			onActivePositionChange?.({
 				group: view.openGroup,
@@ -565,6 +566,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		// bấm cây. Sau remount, trang đã reset focusTarget=null qua
 		// onFocusConsumed nên instance mới không re-fire (key rỗng).
 		const consumedFocusKey = useRef("");
+		// biome-ignore lint/correctness/useExhaustiveDependencies: focusTarget là event consume-once; đọc value hiện hành lúc fire là chủ ý
 		useEffect(() => {
 			if (!focusTarget) return;
 			const key = focusKeyOf(focusTarget);

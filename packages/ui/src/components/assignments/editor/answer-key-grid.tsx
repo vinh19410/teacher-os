@@ -305,10 +305,23 @@ export function AnswerKeyGrid({
 		// Scope theo wrapper của chính grid (review RF-F1): data-qindex trùng
 		// giữa các nhóm trên trang Quiz Builder (mọi GroupCard luôn mount) —
 		// query toàn document sẽ focus nhầm hàng của nhóm khác / subtree hidden.
-		document
-			.getElementById(`${rowIdPrefix ?? partId}-q${index}`)
-			?.querySelector<HTMLElement>("[data-qindex]")
-			?.focus();
+		const anchor = document.getElementById(
+			`${rowIdPrefix ?? partId}-q${index}`,
+		);
+		const row = anchor?.querySelector<HTMLElement>("[data-qindex]");
+		if (row) {
+			row.focus();
+			return;
+		}
+		// Hàng đích đang thu gọn (review F3) — fieldset chưa render: mở hàng
+		// rồi focus best-effort sau khi commit (focus có thể tới trễ 1 frame,
+		// quan trọng là hàng được mở).
+		if (anchor && collapsible) {
+			onOpenRowChange?.(index);
+			requestAnimationFrame(() => {
+				anchor.querySelector<HTMLElement>("[data-qindex]")?.focus();
+			});
+		}
 	};
 	const handleKeyDown = (
 		event: React.KeyboardEvent<HTMLElement>,
