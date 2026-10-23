@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Schema nhóm, migration, contract thư viện (PR2)"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: [1]

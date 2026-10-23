@@ -125,6 +125,9 @@ export function GroupCard({
 	const typeError = errorFor(`groups.${index}.type`);
 	const answersInlineError = errorFor(`groups.${index}.answersInline`);
 	const optionBankError = errorFor(`groups.${index}.optionBank`);
+	// Lỗi cấp nhóm (key `groups.{gi}` không field — vd answerSet vắt nhóm,
+	// #426 F2): hiện banner ngay header để người dùng thấy đúng thẻ nhóm.
+	const groupError = errorFor(`groups.${index}`);
 	const blankCount = items.filter(
 		(item) => countClozeMarkers(item.stem) === 1,
 	).length;
@@ -192,6 +195,11 @@ export function GroupCard({
 					onRemove={() => setConfirmRemove(true)}
 				/>
 			</header>
+			{groupError && (
+				<p role="alert" className="text-destructive text-sm">
+					{groupError}
+				</p>
+			)}
 
 			{/* Thân luôn mount (ẩn bằng hidden) — focus theo cây cuộn tới hàng
 			    trong nhóm đóng được mà không cần render điều kiện. */}
@@ -205,12 +213,17 @@ export function GroupCard({
 					aria-label={`Các tab ${label}`}
 				/>
 				{/* MỘT instance QKE cho cả 3 tab; tab Thiết lập ẩn wrapper.
-				 * Panel intro bọc panel questions (cùng một editor) để
-				 * aria-controls của từng tab trỏ tới id thật (review RF-F5). */}
+				 * Panel duy nhất đổi id/labelledby theo tab active (RF-F5 + review
+				 * PR F1): intro và questions dùng chung editor — lồng 2 wrapper
+				 * ẩn/hiện sẽ che khối "Hướng dẫn đề" khi tab Hướng dẫn active
+				 * (regression bắt bởi full e2e post-merge). */}
 				<div
-					id={`${rowIdPrefix}-tabs-panel-intro`}
+					/* settings → wrapper nhận id panel-questions (ẩn) để KHÔNG trùng
+					 * id của div Thiết lập bên dưới (aria-controls/getElementById
+					 * sẽ trỏ nhầm phần tử hidden) — advisory turns_ago=14/99. */
+					id={`${rowIdPrefix}-tabs-panel-${activeTab === "settings" ? "questions" : activeTab}`}
 					role="tabpanel"
-					aria-labelledby={`${rowIdPrefix}-tabs-tab-intro`}
+					aria-labelledby={`${rowIdPrefix}-tabs-tab-${activeTab === "settings" ? "questions" : activeTab}`}
 					hidden={activeTab === "settings"}
 				>
 					<QuestionKeyEditor

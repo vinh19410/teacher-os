@@ -52,15 +52,18 @@ function partTab(page: Page, slotLabel: string, tab: "Nội dung" | "Câu hỏi"
 		.getByRole("tab", { name: tab, exact: true });
 }
 
-/** Điền 1 hàng lưới đáp án (fieldset "Câu N") — text hoặc chip nhãn. */
+/** Điền 1 hàng lưới đáp án (part PHẲNG) — text hoặc chip nhãn. Row id ổn
+ * định `${slot}-q${index}` (AnswerKeyGrid `partId=slot`, index 0-based) —
+ * scope theo section thay vì `.nth()` toàn trang (#426 F4). */
 async function fillQuestionRow(
 	page: Page,
+	slot: string,
 	index: number,
 	stem: string,
 	answer: string,
 ): Promise<void> {
 	if (index > 0) await page.getByRole("button", { name: "Thêm câu" }).click();
-	const row = page.locator('fieldset[aria-label^="Câu"]').nth(index);
+	const row = page.locator(`#${slot}-q${index}`);
 	await row.getByLabel("Nội dung câu hỏi phía học viên").fill(stem);
 	const answerInput = row.getByLabel("Đáp án chấm tự động");
 	if ((await answerInput.count()) > 0) {
@@ -112,8 +115,20 @@ test("đề Listening 4 section + audio → chặn xuất bản khi thiếu audi
 	await openEmptySlot(page, "Section 1");
 	await page.getByLabel("Tiêu đề part").fill("Section 1 — Enquiry");
 	await partTab(page, "Section 1", "Câu hỏi").click();
-	await fillQuestionRow(page, 0, "Listening question 1 — booking name", "A");
-	await fillQuestionRow(page, 1, "Listening question 2 — total price", "B");
+	await fillQuestionRow(
+		page,
+		"s1",
+		0,
+		"Listening question 1 — booking name",
+		"A",
+	);
+	await fillQuestionRow(
+		page,
+		"s1",
+		1,
+		"Listening question 2 — total price",
+		"B",
+	);
 	// Part phẳng: "Câu 2" trên cây điều hướng mở/scroll đúng hàng
 	// `s1-q1` (kongming F2 — id hàng flat không có prefix group-).
 	await outline(page)
@@ -125,19 +140,31 @@ test("đề Listening 4 section + audio → chặn xuất bản khi thiếu audi
 	await openEmptySlot(page, "Section 2");
 	await page.getByLabel("Tiêu đề part").fill("Section 2 — Talk");
 	await partTab(page, "Section 2", "Câu hỏi").click();
-	await fillQuestionRow(page, 0, "Listening question 3 — speaker place", "A");
+	await fillQuestionRow(
+		page,
+		"s2",
+		0,
+		"Listening question 3 — speaker place",
+		"A",
+	);
 	await savePart(page);
 
 	await openEmptySlot(page, "Section 3");
 	await page.getByLabel("Tiêu đề part").fill("Section 3 — Discussion");
 	await partTab(page, "Section 3", "Câu hỏi").click();
-	await fillQuestionRow(page, 0, "Listening question 5 — topic chosen", "A");
+	await fillQuestionRow(
+		page,
+		"s3",
+		0,
+		"Listening question 5 — topic chosen",
+		"A",
+	);
 	await savePart(page);
 
 	await openEmptySlot(page, "Section 4");
 	await page.getByLabel("Tiêu đề part").fill("Section 4 — Lecture");
 	await partTab(page, "Section 4", "Câu hỏi").click();
-	await fillQuestionRow(page, 0, "The lecture is about ____", "fossil");
+	await fillQuestionRow(page, "s4", 0, "The lecture is about ____", "fossil");
 	await savePart(page);
 
 	// Chưa upload audio → chặn xuất bản kèm lý do từng section.

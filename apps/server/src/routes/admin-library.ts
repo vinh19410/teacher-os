@@ -1,5 +1,8 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
-import { ASSIGNMENT_TEST_PRESETS } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_TEST_PRESETS,
+	assignmentQuestionSchema,
+} from "@teacher-os/api/contracts";
 import {
 	normalizeMediaType,
 	sanitizeMediaFileName,
@@ -174,6 +177,22 @@ function parseGroups(
 	return { groups: [], corrupt: true, reason: "shape" };
 }
 
+/**
+ * Cột `questions` → câu đã validate schema; JSON hỏng/phần tử sai shape → []
+ * (fail-soft như `groups` — ready validation chặn "at least one question"
+ * thay vì crash 500). Trade-off (kongming plan-gate): parse TOÀN MẢNG — một
+ * câu hỏng làm cả part rơi về `[]`, trong khi admin `normalizeQuestions`
+ * xử lý từng câu; chấp nhận vì dữ liệu hỏng chỉ đến từ ghi ngoài luồng
+ * (upsert schema đã chặn từ lúc lưu) và hướng chặn publish vẫn đúng.
+ */
+function parseQuestions(raw: string): LibraryPartInput["questions"] {
+	const parsed = assignmentQuestionSchema
+		.array()
+		.max(40)
+		.safeParse(parseJsonArray(raw));
+	return parsed.success ? parsed.data : [];
+}
+
 /** Row part → input cho validatePartForReady/validateTestReady. */
 function toPartInput(row: PartRow): LibraryPartInput {
 	return {
@@ -186,7 +205,7 @@ function toPartInput(row: PartRow): LibraryPartInput {
 		passage: row.passage,
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
-		questions: parseJsonArray(row.questions) as LibraryPartInput["questions"],
+		questions: parseQuestions(row.questions),
 		groups: parseGroups(row.groups, {
 			testId: row.testId,
 			part: row.part,
@@ -592,6 +611,7 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			// Test đã ready: part chỉnh được nhưng phải đạt luật ready. Validate
 			// trên trạng thái HIỆU LỰC — audioName là của row hiện có (route
 			// giữ nguyên cột audio, client không khai), không phải của payload.
+			// `existing` đã load ở guard groups corrupt phía trên.
 			const effective: LibraryPartInput = {
 				...body.data,
 				audioName: existing?.audioName ?? "",

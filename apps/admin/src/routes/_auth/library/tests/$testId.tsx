@@ -16,10 +16,18 @@ import {
 import { buttonVariants } from "@teacher-os/ui/components/web-kit/button";
 import { Card } from "@teacher-os/ui/components/web-kit/card";
 import { Check } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useDeferredValue,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { AnswersCheckingPanel } from "@/components/library/answers-checking-panel";
 import { buildAnswersOverview } from "@/components/library/answers-overview";
+import { effectivePartsFor } from "@/components/library/effective-parts";
 import { libraryErrorMessage } from "@/components/library/library-error";
 import {
 	PartForm,
@@ -360,36 +368,36 @@ function EditTestRoute() {
 	});
 
 	// --- Ready check toàn đề: bản đã lưu + overlay bản nháp đang sửa ---
-	const effectiveParts = useMemo(() => {
-		if (!skill) return [];
-		const parts: LibraryPartInput[] = [];
+	// #426 F3: bản đã lưu parse 1 LẦN theo partsBySlot (memo per-slot) —
+	// keystroke chỉ parse đúng part đang sửa qua `effectivePartsFor`.
+	const savedInputsBySlot = useMemo(() => {
+		const inputs = new Map<string, LibraryPartInput>();
+		if (!skill) return inputs;
 		for (const slot of slots) {
 			const saved = partsBySlot.get(slot.part);
-			const draft = drafts.get(slot.part);
-			if (draft?.dirty) {
-				const built = partInputFromValue(slot.part, draft.value);
-				// Draft hỏng schema: vẫn hiển thị qua lý do ở form part;
-				// ở đây dùng bản đã lưu (nếu có) để không mất lý do khác.
-				if (built.ok) {
-					if (saved?.audio?.name) {
-						built.input.audioName = saved.audio.name;
-					}
-					parts.push(built.input);
-					continue;
-				}
-			}
-			if (saved) {
-				const built = partInputFromValue(slot.part, partValueFromDto(saved));
-				if (built.ok) {
-					if (saved.audio?.name) {
-						built.input.audioName = saved.audio.name;
-					}
-					parts.push(built.input);
-				}
+			if (!saved) continue;
+			const built = partInputFromValue(slot.part, partValueFromDto(saved));
+			if (built.ok) {
+				if (saved.audio?.name) built.input.audioName = saved.audio.name;
+				inputs.set(slot.part, built.input);
 			}
 		}
-		return parts;
-	}, [skill, slots, drafts, partsBySlot]);
+		return inputs;
+	}, [skill, slots, partsBySlot]);
+	// Gõ phím khẩn: dirtySlots/toolbar dùng `drafts` tươi; các derived nặng
+	// (ready overlay, cây, bảng đáp án) tính theo `deferredDrafts` để không
+	// chặn frame gõ (RT-4: qStart trễ ~1 frame là cosmetic — publish vẫn
+	// re-validate server-side).
+	const deferredDrafts = useDeferredValue(drafts);
+	const effectiveParts = useMemo(
+		() =>
+			skill
+				? effectivePartsFor(slots, partsBySlot, deferredDrafts, {
+						savedInputs: savedInputsBySlot,
+					})
+				: [],
+		[skill, slots, partsBySlot, deferredDrafts, savedInputsBySlot],
+	);
 
 	const readyIssues = useMemo(
 		() => (skill ? validateTestReady(skill, effectiveParts) : []),
@@ -398,13 +406,21 @@ function EditTestRoute() {
 
 	// --- Cây đề + bảng đáp án: cùng nguồn resolvePartValues (đánh số fold) ---
 	const sections = useMemo(
-		() => (skill ? buildTestOutline(skill, slots, partsBySlot, drafts) : []),
-		[skill, slots, partsBySlot, drafts],
+		() =>
+			skill ? buildTestOutline(skill, slots, partsBySlot, deferredDrafts) : [],
+		[skill, slots, partsBySlot, deferredDrafts],
 	);
 	const answerRows = useMemo(
 		() =>
-			skill ? buildAnswersOverview({ skill, slots, partsBySlot, drafts }) : [],
-		[skill, slots, partsBySlot, drafts],
+			skill
+				? buildAnswersOverview({
+						skill,
+						slots,
+						partsBySlot,
+						drafts: deferredDrafts,
+					})
+				: [],
+		[skill, slots, partsBySlot, deferredDrafts],
 	);
 
 	if (query.isPending) {

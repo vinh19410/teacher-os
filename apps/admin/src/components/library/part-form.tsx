@@ -30,6 +30,7 @@ import {
 	useId,
 	useImperativeHandle,
 	useLayoutEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -470,7 +471,16 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		const [showErrors, setShowErrors] = useState(false);
 		const [live, setLive] = useState("");
 
-		const dirty = isPartDirty(skill, slot, saved, value);
+		// Dirty so với bản đã lưu: memo baseline + canonical STRING (#426 F3,
+		// kongming gate #3 — arePartValuesEqual stringify CẢ HAI đối số nên
+		// memo object không đỡ được passage 20k mỗi render; baseline stringify
+		// 1 lần/baseline, mỗi render chỉ stringify value).
+		const baseline = useMemo(
+			() => (saved ? partValueFromDto(saved) : emptyPartValue(skill, slot)),
+			[saved, skill, slot],
+		);
+		const baselineKey = useMemo(() => canonicalPartValue(baseline), [baseline]);
+		const dirty = baselineKey !== canonicalPartValue(value);
 		useEffect(() => {
 			onDraftChange(slot, { dirty, value });
 			// saved đổi (remount bằng key nên không xảy ra trong một mount) —
@@ -479,6 +489,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 
 		// Vị trí soạn hiện hành (tab/nhóm/hàng) báo lên trang — cây điều
 		// hướng tô aria-current đúng và trang giữ view-state qua remount.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: báo mỗi lần view đổi; onActivePositionChange ổn định qua ref ở trang
 		useEffect(() => {
 			onActivePositionChange?.({
 				group: view.openGroup,
@@ -582,6 +593,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		// bấm cây. Sau remount, trang đã reset focusTarget=null qua
 		// onFocusConsumed nên instance mới không re-fire (key rỗng).
 		const consumedFocusKey = useRef("");
+		// biome-ignore lint/correctness/useExhaustiveDependencies: focusTarget là event consume-once; đọc value hiện hành lúc fire là chủ ý
 		useEffect(() => {
 			if (!focusTarget) return;
 			const key = focusKeyOf(focusTarget);
