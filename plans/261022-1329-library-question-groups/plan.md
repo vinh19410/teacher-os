@@ -65,8 +65,10 @@ Rule xuất bản (kiểm ở `partIssues`, chỉ khi ready): dạng bài nhóm 
 | 1 | [Trường câu hỏi dùng chung + chấm theo tập](phase-01-shared-question-fields-set-grading.md) | PR1 | — | completed |
 | 2 | [Schema nhóm, migration, contract thư viện](phase-02-library-groups-schema-contracts.md) | PR2 | 1 | pending |
 | 3 | [Route admin lưu/đọc nhóm](phase-03-library-groups-route.md) | PR2 | 2 | pending |
-| 4 | [Editor nhóm kiểu Selfomy trong `apps/admin`](phase-04-admin-group-editor-ui.md) | PR2 | 3 | pending |
-| 5 | [E2E, verify 3 viewport, docs](phase-05-e2e-verify-docs.md) | PR2 | 4 | pending |
+| 4 | [Editor nhóm kiểu Selfomy trong `apps/admin`](phase-04-admin-group-editor-ui.md) | PR2 | 3 | superseded — thay bằng plan `261023-0713-quiz-builder-page-refactor` |
+| 5 | [E2E, verify 3 viewport, docs](phase-05-e2e-verify-docs.md) | PR2 | 4 | superseded — thay bằng plan `261023-0713-quiz-builder-page-refactor` |
+
+Ghi chú 2026-10-23: phần UI của phase 4–5 được làm theo bố cục Quiz Builder cả trang trong [`261023-0713-quiz-builder-page-refactor`](../261023-0713-quiz-builder-page-refactor/plan.md); các task helper/test của phase 4–5 được plan đó tái dùng nguyên văn theo ID.
 
 PR1 = phase 1 (merge riêng vào `develop`). PR2 = phase 2–5 trên nhánh mới cắt từ `develop` sau khi PR1 merge.
 
