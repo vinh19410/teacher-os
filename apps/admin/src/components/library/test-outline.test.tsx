@@ -116,4 +116,28 @@ describe("TestOutline (render tĩnh)", () => {
 		const count = html.split("Nhóm câu").length - 1;
 		expect(count).toBe(1);
 	});
+
+	it("kongming F1: part đang mở hiện câu của MỌI nhóm (kể cả khi chưa chọn nhóm)", () => {
+		// Sau reload activePosition = {null, null} — cây vẫn phải liệt kê
+		// đủ câu của mọi nhóm thuộc part đang mở (spec Task 3.2 bước 5).
+		const html = render({ part: "p3" });
+		for (const n of [4, 5, 6, 7, 8]) {
+			// Câu thiếu đáp án có chấm warn span trong button → assert `>Câu n<`.
+			expect(html).toContain(`>Câu ${n}<`);
+		}
+		// Chưa chọn nhóm/câu nào → không có question nào mang aria-current.
+		const questionButtons = html.split(">Câu ").slice(1);
+		for (const fragment of questionButtons) {
+			expect(fragment).not.toContain('aria-current="true"');
+		}
+	});
+
+	it("kongming F1: aria-current câu chỉ khi khớp cả nhóm lẫn câu", () => {
+		const html = render({ part: "p3", group: 1, question: 0 });
+		expect(html).toContain('aria-current="true"');
+		// "Câu 6" (nhóm 2, offset 0) là nút duy nhất được tô.
+		const marked = html.match(/aria-current="true"[^>]*>[^<]*Câu \d+/g) ?? [];
+		expect(marked.filter((m) => m.includes("Câu 6"))).toHaveLength(1);
+		expect(marked.filter((m) => m.includes("Câu 4"))).toHaveLength(0);
+	});
 });

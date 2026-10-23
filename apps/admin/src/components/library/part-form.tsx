@@ -48,6 +48,7 @@ import {
 	type FocusTarget,
 	firstIssueFocusPlan,
 	focusKeyOf,
+	focusRowId,
 	type PartFormHandle,
 	type PartTabId,
 	type PartViewState,
@@ -544,22 +545,24 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 			if (key === "" || key === consumedFocusKey.current) return;
 			consumedFocusKey.current = key;
 			const gi = focusTarget.group;
+			// Part phẳng (không nhóm): id hàng của AnswerKeyGrid là `${slot}-q${n}`
+			// (partId={slot}), không có prefix `group-…`; không đặt openRowByGroup
+			// vì chế độ phẳng không có hàng thu gọn (kongming wave-3/4 F2).
+			const flat = value.groups.length === 0;
 			setView((previous) => ({
 				...previous,
 				partTab: "questions",
 				openGroup: gi,
 				groupTabs: { ...previous.groupTabs, [gi]: "questions" },
 				openRowByGroup:
-					focusTarget.question === undefined
+					flat || focusTarget.question === undefined
 						? previous.openRowByGroup
 						: { ...previous.openRowByGroup, [gi]: focusTarget.question },
 			}));
 			requestAnimationFrame(() => {
-				const id =
-					focusTarget.question === undefined
-						? `group-${slot}-${gi}`
-						: `group-${slot}-${gi}-q${focusTarget.question}`;
-				document.getElementById(id)?.scrollIntoView({ block: "start" });
+				document
+					.getElementById(focusRowId(slot, gi, focusTarget.question, flat))
+					?.scrollIntoView({ block: "start" });
 			});
 			onFocusConsumed?.(focusTarget.nonce);
 		}, [focusTarget, slot, onFocusConsumed]);

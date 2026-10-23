@@ -425,234 +425,243 @@ export function AnswerKeyGrid({
 					: undefined;
 				return (
 					<Fragment key={`${partId}-${index}`}>
-						{warnRun && warnLabels && (
-							// Sibling đứng TRƯỚC fieldset (không lồng): Enter trong fieldset
-							// thêm câu mới, nên nút phải nằm ngoài nó.
-							<fieldset
-								aria-label={`Gợi ý dạng bài câu ${rangeLabel}`}
-								className="flex min-w-0 flex-col gap-2 rounded-md bg-accent p-3 text-primary text-xs sm:flex-row sm:items-center sm:justify-between"
-							>
-								<p>
-									Câu {rangeLabel} có đáp án dạng {warnLabels.answers} nhưng
-									đang theo dạng đề{" "}
-									{typeCatalog.find((entry) => entry.id === typeId)?.label ??
-										typeId}
-									. Học viên sẽ thấy lựa chọn {warnLabels.kind}; nên gán dạng
-									cho đúng.
-								</p>
-								<Button
-									type="button"
-									size="sm"
-									variant="secondary"
-									onClick={() => applyRunType(warnRun)}
+						{/* Wrapper luôn render (mọi chế độ) — anchor id cho điều hướng
+						 * cây/panel cuộn tới (kongming F2): chứa cả summary thu gọn
+						 * lẫn fieldset thân hàng. */}
+						<div
+							id={`${rowIdPrefix ?? partId}-q${index}`}
+							className="flex flex-col gap-2"
+						>
+							{/* Sibling đứng TRƯỚC fieldset (không lồng): Enter trong fieldset
+							 * thêm câu mới, nên nút phải nằm ngoài nó. */}
+							{warnRun && warnLabels && (
+								<fieldset
+									aria-label={`Gợi ý dạng bài câu ${rangeLabel}`}
+									className="flex min-w-0 flex-col gap-2 rounded-md bg-accent p-3 text-primary text-xs sm:flex-row sm:items-center sm:justify-between"
 								>
-									Đặt dạng {warnLabels.kind} cho câu {rangeLabel}
-								</Button>
-							</fieldset>
-						)}
-						{collapsible && (
-							<div
-								id={`${rowIdPrefix ?? partId}-q${index}`}
-								className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-border bg-muted p-2"
-							>
-								<strong className="font-mono text-sm">Câu {number}</strong>
-								{!isOpen && summary && (
-									<>
-										<span className="min-w-0 flex-1 truncate text-muted-foreground text-xs">
-											{summary.excerpt}
-										</span>
-										{summary.choiceCount !== null && (
-											<span className="whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] font-medium text-muted-foreground text-xs">
-												{summary.choiceCount} lựa chọn
-											</span>
-										)}
-										<span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] text-muted-foreground text-xs">
-											<span
-												aria-hidden="true"
-												className={cn(
-													"size-2 rounded-full",
-													summary.hasAnswer ? "bg-success" : "bg-warn",
-												)}
-											/>
-											{summary.hasAnswer ? "Có đáp án" : "Thiếu đáp án"}
-										</span>
-										{summary.hasExplanation && (
-											<span className="whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] font-medium text-muted-foreground text-xs">
-												Có giải thích
-											</span>
-										)}
-									</>
-								)}
-								<div className="ml-auto shrink-0">
-									<CardControls
-										label={`câu ${number}`}
-										open={isOpen}
-										onToggle={forceOpen ? undefined : toggleRow}
-										onMoveUp={() => moveRow(index, -1)}
-										onMoveDown={() => moveRow(index, 1)}
-										onRemove={
-											items.length > 1 ? () => remove(index) : undefined
-										}
-										canMoveUp={index > 0}
-										canMoveDown={index < items.length - 1}
-									/>
-								</div>
-							</div>
-						)}
-						{isOpen && (
-							<fieldset
-								data-qindex={index}
-								tabIndex={-1}
-								aria-label={`Câu ${number}`}
-								onKeyDown={(event) => handleKeyDown(event, index)}
-								onBlur={(event) => {
-									if (!event.currentTarget.contains(event.relatedTarget)) {
-										setBlurred((current) => new Set(current).add(index));
-									}
-								}}
-								className={cn(
-									"grid gap-2 rounded-md border bg-muted p-3 outline-none focus-visible:border-primary sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
-									selectedIndex === index ? "border-primary" : "border-border",
-									collapsible && "ring-2 ring-ring/50",
-								)}
-							>
-								<strong className="pt-2 font-mono text-sm">Câu {number}</strong>
-								<div className="flex flex-col gap-1">
-									<Input
-										value={item.stem}
-										aria-label="Nội dung câu hỏi phía học viên"
-										onChange={(event) =>
-											update(index, { stem: event.target.value })
-										}
-									/>
-									{mcqChoices && mcqChoices.length > 0 && (
-										<div className="grid gap-2 pt-1 sm:grid-cols-2">
-											{options.map((option, optionIndex) => (
-												<Input
-													key={optionIndex}
-													value={option}
-													aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
-													placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
-													onChange={(event) =>
-														update(index, {
-															opts: options.map((value, idx) =>
-																idx === optionIndex
-																	? event.target.value
-																	: value,
-															),
-														})
-													}
-												/>
-											))}
-										</div>
-									)}
-								</div>
-								<div className="flex flex-col gap-1">
-									<Select
-										value={item.type ?? ""}
-										aria-label={`Dạng bài câu ${number}`}
-										onChange={(event) =>
-											changeRowType(index, event.target.value)
-										}
-										className="w-full text-xs"
-									>
-										<option value="">
-											Theo dạng đề ·{" "}
-											{typeCatalog.find((entry) => entry.id === typeId)
-												?.label ?? typeId}
-										</option>
-										{typeCatalog.map((entry) => (
-											<option key={entry.id} value={entry.id}>
-												{entry.label}
-											</option>
-										))}
-									</Select>
-									{choices && rowKind !== "text" ? (
-										<div className="flex flex-wrap gap-1.5">
-											{choices.map((choice) => {
-												const taken =
-													enforceDistinct &&
-													usedByOthers.has(choice) &&
-													item.answer !== choice;
-												return (
-													<button
-														type="button"
-														key={choice}
-														aria-pressed={item.answer === choice}
-														aria-label={`Câu ${number}: ${choice}`}
-														disabled={taken}
-														onClick={() => update(index, { answer: choice })}
-														className={cn(
-															"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
-															item.answer === choice
-																? "border-primary bg-primary text-primary-foreground"
-																: "border-border bg-background text-muted-foreground hover:border-primary",
-															taken &&
-																"cursor-not-allowed opacity-40 hover:border-border",
-														)}
-													>
-														{choice}
-													</button>
-												);
-											})}
-										</div>
-									) : (
-										<>
-											<Input
-												value={item.answer}
-												aria-label="Đáp án chấm tự động"
-												onChange={(event) =>
-													update(index, { answer: event.target.value })
-												}
-											/>
-											<Input
-												value={item.alts}
-												aria-label="Chấp nhận thêm, cách nhau bằng /"
-												placeholder="Nhận thêm: alt1 / alt2"
-												onChange={(event) =>
-													update(index, { alts: event.target.value })
-												}
-											/>
-										</>
-									)}
-								</div>
-								{!collapsible && items.length > 1 ? (
-									// Xóa câu = phá hủy nội dung đã nhập → đỏ destructive.
-									// Chế độ thu gọn: nút xóa sống trong CardControls của header.
+									<p>
+										Câu {rangeLabel} có đáp án dạng {warnLabels.answers} nhưng
+										đang theo dạng đề{" "}
+										{typeCatalog.find((entry) => entry.id === typeId)?.label ??
+											typeId}
+										. Học viên sẽ thấy lựa chọn {warnLabels.kind}; nên gán dạng
+										cho đúng.
+									</p>
 									<Button
 										type="button"
 										size="sm"
-										variant="danger"
-										aria-label={`Xóa câu ${number}`}
-										onClick={() => remove(index)}
+										variant="secondary"
+										onClick={() => applyRunType(warnRun)}
 									>
-										Xóa
+										Đặt dạng {warnLabels.kind} cho câu {rangeLabel}
 									</Button>
-								) : (
-									<span />
-								)}
-								{errorEntries.length > 0 && (
-									<div role="alert" className="sm:col-span-4">
-										{errorEntries.map((key) => (
-											<p key={key} className="text-destructive text-xs">
-												{rowErrors[key]}
-											</p>
-										))}
+								</fieldset>
+							)}
+							{collapsible && (
+								<div className="flex min-w-0 flex-wrap items-center gap-2 rounded-md border border-border bg-muted p-2">
+									<strong className="font-mono text-sm">Câu {number}</strong>
+									{!isOpen && summary && (
+										<>
+											<span className="min-w-0 flex-1 truncate text-muted-foreground text-xs">
+												{summary.excerpt}
+											</span>
+											{summary.choiceCount !== null && (
+												<span className="whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] font-medium text-muted-foreground text-xs">
+													{summary.choiceCount} lựa chọn
+												</span>
+											)}
+											<span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] text-muted-foreground text-xs">
+												<span
+													aria-hidden="true"
+													className={cn(
+														"size-2 rounded-full",
+														summary.hasAnswer ? "bg-success" : "bg-warn",
+													)}
+												/>
+												{summary.hasAnswer ? "Có đáp án" : "Thiếu đáp án"}
+											</span>
+											{summary.hasExplanation && (
+												<span className="whitespace-nowrap rounded-full border border-border px-[10px] py-[4px] font-medium text-muted-foreground text-xs">
+													Có giải thích
+												</span>
+											)}
+										</>
+									)}
+									<div className="ml-auto shrink-0">
+										<CardControls
+											label={`câu ${number}`}
+											open={isOpen}
+											onToggle={forceOpen ? undefined : toggleRow}
+											onMoveUp={() => moveRow(index, -1)}
+											onMoveDown={() => moveRow(index, 1)}
+											onRemove={
+												items.length > 1 ? () => remove(index) : undefined
+											}
+											canMoveUp={index > 0}
+											canMoveDown={index < items.length - 1}
+										/>
 									</div>
-								)}
-								{showExplanation && (
-									<div className="sm:col-span-4">
-										<Field label={`Giải thích câu ${number}`}>
-											<RichTextEditor
-												value={item.explanation ?? ""}
-												onChange={(value) => updateExplanation(index, value)}
-												contentClassName="[&_.ProseMirror]:min-h-16"
-											/>
-										</Field>
+								</div>
+							)}
+							{isOpen && (
+								<fieldset
+									data-qindex={index}
+									tabIndex={-1}
+									aria-label={`Câu ${number}`}
+									onKeyDown={(event) => handleKeyDown(event, index)}
+									onBlur={(event) => {
+										if (!event.currentTarget.contains(event.relatedTarget)) {
+											setBlurred((current) => new Set(current).add(index));
+										}
+									}}
+									className={cn(
+										"grid gap-2 rounded-md border bg-muted p-3 outline-none focus-visible:border-primary sm:grid-cols-[3.5rem_1fr_14rem_2rem] sm:items-start",
+										selectedIndex === index
+											? "border-primary"
+											: "border-border",
+										collapsible && "ring-2 ring-ring/50",
+									)}
+								>
+									<strong className="pt-2 font-mono text-sm">
+										Câu {number}
+									</strong>
+									<div className="flex flex-col gap-1">
+										<Input
+											value={item.stem}
+											aria-label="Nội dung câu hỏi phía học viên"
+											onChange={(event) =>
+												update(index, { stem: event.target.value })
+											}
+										/>
+										{mcqChoices && mcqChoices.length > 0 && (
+											<div className="grid gap-2 pt-1 sm:grid-cols-2">
+												{options.map((option, optionIndex) => (
+													<Input
+														key={optionIndex}
+														value={option}
+														aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
+														placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
+														onChange={(event) =>
+															update(index, {
+																opts: options.map((value, idx) =>
+																	idx === optionIndex
+																		? event.target.value
+																		: value,
+																),
+															})
+														}
+													/>
+												))}
+											</div>
+										)}
 									</div>
-								)}
-							</fieldset>
-						)}
+									<div className="flex flex-col gap-1">
+										<Select
+											value={item.type ?? ""}
+											aria-label={`Dạng bài câu ${number}`}
+											onChange={(event) =>
+												changeRowType(index, event.target.value)
+											}
+											className="w-full text-xs"
+										>
+											<option value="">
+												Theo dạng đề ·{" "}
+												{typeCatalog.find((entry) => entry.id === typeId)
+													?.label ?? typeId}
+											</option>
+											{typeCatalog.map((entry) => (
+												<option key={entry.id} value={entry.id}>
+													{entry.label}
+												</option>
+											))}
+										</Select>
+										{choices && rowKind !== "text" ? (
+											<div className="flex flex-wrap gap-1.5">
+												{choices.map((choice) => {
+													const taken =
+														enforceDistinct &&
+														usedByOthers.has(choice) &&
+														item.answer !== choice;
+													return (
+														<button
+															type="button"
+															key={choice}
+															aria-pressed={item.answer === choice}
+															aria-label={`Câu ${number}: ${choice}`}
+															disabled={taken}
+															onClick={() => update(index, { answer: choice })}
+															className={cn(
+																"rounded-full border px-[10px] py-[4px] font-medium text-xs transition-all duration-[150ms]",
+																item.answer === choice
+																	? "border-primary bg-primary text-primary-foreground"
+																	: "border-border bg-background text-muted-foreground hover:border-primary",
+																taken &&
+																	"cursor-not-allowed opacity-40 hover:border-border",
+															)}
+														>
+															{choice}
+														</button>
+													);
+												})}
+											</div>
+										) : (
+											<>
+												<Input
+													value={item.answer}
+													aria-label="Đáp án chấm tự động"
+													onChange={(event) =>
+														update(index, { answer: event.target.value })
+													}
+												/>
+												<Input
+													value={item.alts}
+													aria-label="Chấp nhận thêm, cách nhau bằng /"
+													placeholder="Nhận thêm: alt1 / alt2"
+													onChange={(event) =>
+														update(index, { alts: event.target.value })
+													}
+												/>
+											</>
+										)}
+									</div>
+									{!collapsible && items.length > 1 ? (
+										// Xóa câu = phá hủy nội dung đã nhập → đỏ destructive.
+										// Chế độ thu gọn: nút xóa sống trong CardControls của header.
+										<Button
+											type="button"
+											size="sm"
+											variant="danger"
+											aria-label={`Xóa câu ${number}`}
+											onClick={() => remove(index)}
+										>
+											Xóa
+										</Button>
+									) : (
+										<span />
+									)}
+									{errorEntries.length > 0 && (
+										<div role="alert" className="sm:col-span-4">
+											{errorEntries.map((key) => (
+												<p key={key} className="text-destructive text-xs">
+													{rowErrors[key]}
+												</p>
+											))}
+										</div>
+									)}
+									{showExplanation && (
+										<div className="sm:col-span-4">
+											<Field label={`Giải thích câu ${number}`}>
+												<RichTextEditor
+													value={item.explanation ?? ""}
+													onChange={(value) => updateExplanation(index, value)}
+													contentClassName="[&_.ProseMirror]:min-h-16"
+												/>
+											</Field>
+										</div>
+									)}
+								</fieldset>
+							)}
+						</div>
 					</Fragment>
 				);
 			})}

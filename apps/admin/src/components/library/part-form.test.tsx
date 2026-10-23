@@ -19,6 +19,7 @@ import {
 import {
 	firstIssueFocusPlan,
 	focusKeyOf,
+	focusRowId,
 	viewStateOnMoveGroup,
 	viewStateOnRemoveGroup,
 } from "./part-view-state";
@@ -826,10 +827,15 @@ describe("PartForm thẻ part (#424 Task 3.4, render tĩnh)", () => {
 				onCollapsedChange={vi.fn()}
 			/>,
 		);
-		// Chỉ nhóm đang chọn (nhóm 2) liệt kê câu — Câu 4, Câu 5.
-		expect(html).toContain(">Câu 4</button>");
-		expect(html).toContain(">Câu 5</button>");
-		expect(html).not.toContain(">Câu 1</button>");
+		// Kongming F1 (spec Task 3.2 bước 5): part đang mở liệt kê câu của MỌI nhóm —
+		// Câu 1…Câu 5; nhóm/câu đang chọn (nhóm 2) mới có aria-current.
+		for (const n of [1, 2, 3, 4, 5]) {
+			expect(html).toContain(`>Câu ${n}<`);
+		}
+		const marked = html.match(/aria-current="true"/g) ?? [];
+		// part button + nhóm 2 (đang chọn) = 2; câu không có cái nào trùng selection
+		// ({group:1} không có question) → không thêm.
+		expect(marked).toHaveLength(2);
 	});
 
 	it("nhóm answersInline: dòng «Câu có ô trống: 1/2» khi chỉ câu đầu có ô trống", () => {
@@ -985,5 +991,14 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		const afterMove = viewStateOnMoveGroup(afterRemove, 0, 1);
 		expect(afterMove.openRowByGroup).toEqual({ 0: 0, 1: 1 });
 		expect(afterMove.openGroup).toBe(0);
+	});
+
+	it("kongming F2: focusRowId — part phẳng dùng id hàng `${slot}-q${n}`, part có nhóm dùng prefix group-", () => {
+		// Part phẳng: AnswerKeyGrid nhận partId={slot} → id hàng `${slot}-q${n}`.
+		expect(focusRowId("p1", 0, 3, true)).toBe("p1-q3");
+		expect(focusRowId("s2", 0, undefined, true)).toBe("s2");
+		// Part có nhóm: wrapper GroupCard + hàng theo rowIdPrefix group-…
+		expect(focusRowId("p1", 1, 2, false)).toBe("group-p1-1-q2");
+		expect(focusRowId("p1", 2, undefined, false)).toBe("group-p1-2");
 	});
 });

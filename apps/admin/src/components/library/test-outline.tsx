@@ -116,12 +116,12 @@ export function TestOutline({
 											</span>
 										</div>
 										{isPartActive &&
-											active?.group === group.index &&
 											group.questions.map((question) => (
 												<button
 													key={question.offset}
 													type="button"
 													aria-current={
+														active?.group === group.index &&
 														active.question === question.offset
 															? "true"
 															: undefined
@@ -135,7 +135,8 @@ export function TestOutline({
 													}
 													className={cn(
 														"ml-3 flex items-center gap-1.5 rounded px-1.5 py-1 text-left hover:bg-accent",
-														active.question === question.offset
+														active?.group === group.index &&
+															active.question === question.offset
 															? "bg-muted font-medium text-foreground"
 															: "text-muted-foreground",
 													)}

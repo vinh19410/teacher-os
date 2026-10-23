@@ -833,3 +833,22 @@ describe("AnswerKeyGrid — move/remove hàng đang mở (#424 Task 1.6)", () =>
 		expect(container.textContent).not.toContain("Nhập nội dung câu hỏi.");
 	});
 });
+
+describe("AnswerKeyGrid — row anchor id luôn render (kongming F2)", () => {
+	it("chế độ phẳng: mỗi hàng có id `${partId}-q${index}` trên wrapper ngoài cùng", () => {
+		const html = renderGrid({ items: tfngItems(2) });
+		expect(html).toContain('id="p1-q0"');
+		expect(html).toContain('id="p1-q1"');
+	});
+
+	it("collapsible với openRow=null: hàng thu gọn vẫn có id `${rowIdPrefix}-q${index}`", () => {
+		const html = renderGrid({
+			items: tfngItems(2),
+			collapsible: true,
+			openRow: null,
+			rowIdPrefix: "group-p1-1",
+		});
+		expect(html).toContain('id="group-p1-1-q0"');
+		expect(html).toContain('id="group-p1-1-q1"');
+	});
+});

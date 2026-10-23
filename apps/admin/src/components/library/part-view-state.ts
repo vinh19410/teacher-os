@@ -32,6 +32,25 @@ export function focusKeyOf(target: FocusTarget | null | undefined): string {
 	return `${target.group}:${target.question ?? ""}:${target.nonce}`;
 }
 
+/**
+ * Id element đích cuộn cho focusTarget. Part phẳng (không nhóm) hàng
+ * AnswerKeyGrid dùng id `${slot}-q${n}` (partId={slot}); part có nhóm dùng
+ * `group-${slot}-${gi}(-q${n})` (kongming wave-3/4 F2).
+ */
+export function focusRowId(
+	slot: string,
+	group: number,
+	question: number | undefined,
+	flat: boolean,
+): string {
+	if (flat) {
+		return question === undefined ? slot : `${slot}-q${question}`;
+	}
+	return question === undefined
+		? `group-${slot}-${group}`
+		: `group-${slot}-${group}-q${question}`;
+}
+
 /** Điểm đến khi lưu bị chặn: tab part / nhóm / tab nhóm / hàng chứa lỗi đầu. */
 export interface SaveFocusPlan {
 	partTab: PartTabId;
