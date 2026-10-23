@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import type { LibraryPartDto } from "@teacher-os/api/library-contracts";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { LibraryHttpError } from "@/lib/repos/library";
 import { addGroup } from "./group-model";
 import {
 	arePartValuesEqual,
@@ -10,12 +13,14 @@ import {
 	isPartDirty,
 	normalizeQuestions,
 	PartForm,
+	type PartFormProps,
 	partInputFromValue,
 	partReadyIssues,
 	partValueFromDto,
 	reconcilePartDraftsOnSaveSuccess,
 	slotTypes,
 } from "./part-form";
+import type { PartFormHandle } from "./part-view-state";
 import {
 	firstIssueFocusPlan,
 	focusKeyOf,
@@ -50,6 +55,7 @@ const partDto: LibraryPartDto = {
 	],
 	optionBank: [],
 	groups: [],
+	groupsCorrupt: false,
 	note: "",
 	audio: null,
 	updatedAt: "2026-10-02T00:00:00.000Z",
@@ -1120,5 +1126,112 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		// Part có nhóm: wrapper GroupCard + hàng theo rowIdPrefix group-…
 		expect(focusRowId("p1", 1, 2, false)).toBe("group-p1-1-q2");
 		expect(focusRowId("p1", 2, undefined, false)).toBe("group-p1-2");
+	});
+});
+
+describe("#425 — groups corrupt banner + lối lưu đè", () => {
+	const corruptDto: LibraryPartDto = { ...partDto, groupsCorrupt: true };
+
+	function formProps(
+		saved: LibraryPartDto,
+		onSave: PartFormProps["onSave"],
+	): PartFormProps {
+		return {
+			skill: "reading",
+			slot: "p1",
+			slotLabel: "Passage 1",
+			testId: "t1",
+			saved,
+			testReady: false,
+			saving: false,
+			onDraftChange: () => {},
+			onSave,
+			onAudioChanged: () => {},
+			onDelete: () => {},
+			deleting: false,
+		};
+	}
+
+	it("DTO corrupt → banner cảnh báo + nút «Lưu đè nhóm hỏng»; DTO sạch → không", () => {
+		const corruptHtml = renderToStaticMarkup(
+			<PartForm {...formProps(corruptDto, vi.fn())} />,
+		);
+		expect(corruptHtml).toContain("hỏng định dạng");
+		expect(corruptHtml).toContain("Lưu đè nhóm hỏng");
+
+		const cleanHtml = renderToStaticMarkup(
+			<PartForm {...formProps(partDto, vi.fn())} />,
+		);
+		expect(cleanHtml).not.toContain("hỏng định dạng");
+		expect(cleanHtml).not.toContain("Lưu đè nhóm hỏng");
+	});
+
+	it("bấm «Lưu đè nhóm hỏng» → onSave nhận input có discardCorruptGroups: true", async () => {
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		await act(async () => {
+			root.render(<PartForm {...formProps(corruptDto, onSave)} />);
+		});
+		const button = Array.from(container.querySelectorAll("button")).find(
+			(entry) => entry.textContent === "Lưu đè nhóm hỏng",
+		);
+		expect(button).toBeDefined();
+		await act(async () => {
+			button?.click();
+		});
+		expect(onSave).toHaveBeenCalledTimes(1);
+		expect(onSave.mock.calls[0]?.[0]).toMatchObject({
+			discardCorruptGroups: true,
+		});
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+	});
+
+	it("partInputFromValue không options → input KHÔNG có discardCorruptGroups", () => {
+		const value = partValueFromDto(partDto);
+		const built = partInputFromValue("p1", value);
+		expect(built.ok).toBe(true);
+		if (built.ok) {
+			expect("discardCorruptGroups" in built.input).toBe(false);
+		}
+	});
+
+	it("onSave từ chối 409 GROUPS_CORRUPT → live message chỉ dẫn «Lưu đè nhóm hỏng»", async () => {
+		const onSave = vi
+			.fn()
+			.mockRejectedValue(
+				new LibraryHttpError(409, "API 409", { code: "GROUPS_CORRUPT" }),
+			);
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		const holder: { current: PartFormHandle | null } = { current: null };
+		function Harness() {
+			return (
+				<PartForm
+					{...formProps(partDto, onSave)}
+					ref={(instance) => {
+						holder.current = instance;
+					}}
+				/>
+			);
+		}
+		await act(async () => {
+			root.render(<Harness />);
+		});
+		expect(holder.current).not.toBeNull();
+		await act(async () => {
+			await holder.current?.save();
+		});
+		expect(container.textContent).toContain("Lưu đè nhóm hỏng");
+		expect(container.textContent).toContain("hỏng trên server");
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
 	});
 });

@@ -124,15 +124,54 @@ function parseStringArray(raw: string): string[] {
 	);
 }
 
-/** Cột `groups` → nhóm đã validate; JSON hỏng/phần tử sai shape → []
- * (fail-soft như `questions` — nhóm ngầm là fallback an toàn vì upsert
- * đã chặn dữ liệu sai từ lúc lưu). */
-function parseGroups(raw: string): LibraryQuestionGroup[] {
-	const parsed = libraryQuestionGroupSchema
-		.array()
-		.max(LIBRARY_GROUP_MAX)
-		.safeParse(parseJsonArray(raw));
-	return parsed.success ? parsed.data : [];
+type GroupsCorruptReason = "malformed" | "non-array" | "shape" | "over-cap";
+
+type GroupsParse = {
+	groups: LibraryQuestionGroup[];
+	corrupt: boolean;
+	reason?: GroupsCorruptReason;
+};
+
+/** Cột `groups` → nhóm đã validate. Phân biệt RỖNG (`[]` hợp lệ) vs CORRUPT
+ * (JSON hỏng / không phải array / phần tử sai shape / vượt LIBRARY_GROUP_MAX)
+ * — corrupt KHÔNG BAO GIỜ bị ghi đè im lặng (#425): nguồn corrupt thực tế là
+ * schema siết chặt về sau làm row cũ thành invalid, nên row corrupt phải được
+ * log + gắn cờ + chặn ghi đè cho đến khi có xác nhận tường minh. */
+function parseGroups(
+	raw: string,
+	ctx: { testId: string; part: string },
+): GroupsParse {
+	let value: unknown;
+	try {
+		value = JSON.parse(raw);
+	} catch {
+		console.error("[admin-library] groups corrupt", {
+			...ctx,
+			reason: "malformed" satisfies GroupsCorruptReason,
+		});
+		return { groups: [], corrupt: true, reason: "malformed" };
+	}
+	if (!Array.isArray(value)) {
+		console.error("[admin-library] groups corrupt", {
+			...ctx,
+			reason: "non-array" satisfies GroupsCorruptReason,
+		});
+		return { groups: [], corrupt: true, reason: "non-array" };
+	}
+	if (value.length > LIBRARY_GROUP_MAX) {
+		console.error("[admin-library] groups corrupt", {
+			...ctx,
+			reason: "over-cap" satisfies GroupsCorruptReason,
+		});
+		return { groups: [], corrupt: true, reason: "over-cap" };
+	}
+	const parsed = libraryQuestionGroupSchema.array().safeParse(value);
+	if (parsed.success) return { groups: parsed.data, corrupt: false };
+	console.error("[admin-library] groups corrupt", {
+		...ctx,
+		reason: "shape" satisfies GroupsCorruptReason,
+	});
+	return { groups: [], corrupt: true, reason: "shape" };
 }
 
 /** Row part → input cho validatePartForReady/validateTestReady. */
@@ -148,7 +187,10 @@ function toPartInput(row: PartRow): LibraryPartInput {
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
 		questions: parseJsonArray(row.questions) as LibraryPartInput["questions"],
-		groups: parseGroups(row.groups),
+		groups: parseGroups(row.groups, {
+			testId: row.testId,
+			part: row.part,
+		}).groups,
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,
 		audioName: row.audioName ?? "",
@@ -156,6 +198,10 @@ function toPartInput(row: PartRow): LibraryPartInput {
 }
 
 function toPartDto(row: PartRow): LibraryPartDto {
+	const groupsState = parseGroups(row.groups, {
+		testId: row.testId,
+		part: row.part,
+	});
 	return {
 		id: row.id,
 		testId: row.testId,
@@ -169,7 +215,8 @@ function toPartDto(row: PartRow): LibraryPartDto {
 		transcript: row.transcript,
 		imageUrl: row.imageUrl,
 		questions: parseJsonArray(row.questions),
-		groups: parseGroups(row.groups),
+		groups: groupsState.groups,
+		groupsCorrupt: groupsState.corrupt,
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,
 		audio:
@@ -449,6 +496,12 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		}
 		if (status === "ready") {
 			const parts = await loadPartRows(testId);
+			// #425 — đề có part groups corrupt không được phát hành: toPartInput
+			// fallback [] thành "nhóm ngầm" hợp lệ → validate sẽ pass im lặng.
+			const corruptPart = parts.find(
+				(row) => parseGroups(row.groups, { testId, part: row.part }).corrupt,
+			);
+			if (corruptPart) return libraryError(c, 409, "GROUPS_CORRUPT");
 			const issues = validateTestReady(test.skill, parts.map(toPartInput));
 			if (issues.length > 0) {
 				return c.json({ error: "NOT_READY", code: "NOT_READY", issues }, 400);
@@ -511,11 +564,34 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		if (body.data.part !== part) {
 			return c.json({ error: "invalid body" }, 400);
 		}
+		// #425 — groups corrupt không bao giờ bị ghi đè im lặng: đọc row hiện có
+		// TRƯỚC khi ghi (tái dùng cho ready-check bên dưới, không query 2 lần).
+		const existing = await loadPartRow(testId, part);
+		const groupsState = existing
+			? parseGroups(existing.groups, { testId, part })
+			: { groups: [], corrupt: false };
+		if (body.data.discardCorruptGroups === true && !groupsState.corrupt) {
+			// Snapshot stale: client nghĩ corrupt nhưng row đã sạch — bắt reload
+			// trước khi cho destructive-clear đè dữ liệu hợp lệ.
+			return libraryError(c, 409, "GROUPS_NOT_CORRUPT");
+		}
+		if (groupsState.corrupt && body.data.discardCorruptGroups !== true) {
+			// BẤT KỂ payload groups (rỗng hay soạn lại — UI có thể sinh non-empty
+			// từ dữ liệu ngầm qua addGroup mà admin không thấy corrupt).
+			return libraryError(c, 409, "GROUPS_CORRUPT");
+		}
+		if (groupsState.corrupt) {
+			console.error("[admin-library] corrupt groups discarded explicitly", {
+				testId,
+				part,
+				reason: groupsState.reason,
+				groupsCount: body.data.groups.length,
+			});
+		}
 		if (test.status === "ready") {
 			// Test đã ready: part chỉnh được nhưng phải đạt luật ready. Validate
 			// trên trạng thái HIỆU LỰC — audioName là của row hiện có (route
 			// giữ nguyên cột audio, client không khai), không phải của payload.
-			const existing = await loadPartRow(testId, part);
 			const effective: LibraryPartInput = {
 				...body.data,
 				audioName: existing?.audioName ?? "",

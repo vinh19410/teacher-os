@@ -19,6 +19,8 @@ Quy ước khi cập nhật:
 - Editor dùng chung mở rộng (optional, web không đổi hành vi): `AnswerKeyGrid` hàng câu thu gọn + `qStartOverride` + ô giải thích từng câu, `QuestionKeyEditor` prop `view` tách hướng dẫn/khỏi câu hỏi, `CardControls`, `questionSummary`; ClozeEditor Apply giữ `explanation`/`answerSet`/`type`/`pin` (cả table-grid) (#424 phase 1)
 
 ### Fixed
+- Editor soạn đề (cloze + tablecomp): `segmentsToItems` không còn merge `explanation`/`answerSet`/`pin`/`type` theo vị trí index — chèn/xóa blank giữa chuỗi không còn bám nhầm metadata của câu khác; metadata theo nội dung đáp án, trùng đáp án map theo thứ tự, sửa lỗi chính tả đáp án không mất giải thích (#425)
+- Admin library: `parseGroups` nhóm câu corrupt được log kèm lý do + DTO gắn cờ `groupsCorrupt`; PUT ghi đè groups corrupt (rỗng hay soạn lại) thiếu cờ tường minh `discardCorruptGroups` bị chặn 409 `GROUPS_CORRUPT`; cờ trên đề đã sạch → 409 `GROUPS_NOT_CORRUPT`; đề có part groups corrupt bị chặn xuất bản; UI part có banner cảnh báo + nút «Lưu đè nhóm hỏng» (#425)
 - `normalizeQuestions` của form thư viện không còn strip `explanation`/`answerSet` khi lưu part — trước đó mọi lần mở+lưu part đều mất im lặng 2 field này (#420 Task 4.4, #424)
 - Lỗi soạn đề được bắt và sửa trong đợt e2e mới: scroll race khi nhảy tới câu (rAF trước commit), panel Kiểm tra đáp án jump sai hàng nhóm ≥2, editor phẳng hiển thị "Câu 14" thay vì số fold, sidebar admin tràn ngang 375 (#424)
 

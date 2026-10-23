@@ -289,6 +289,47 @@ describe("segmentsToItems (phase-03 FR2 — existing {stem, opts, answer, alts} 
 			{ stem: " sat on the ____", opts: null, answer: "mat", alts: "" },
 		]);
 	});
+
+	// mirror #425 — metadata theo nội dung, không theo index.
+	const TEXT5 = "one two three four five";
+	function blanks5(): ClozeBlankEntry[] {
+		return ["one", "two", "three", "four", "five"].map(
+			(answer, tokenIndex) => ({ tokenIndex, answer, alts: "" }),
+		);
+	}
+	function items5() {
+		return segmentsToItems(buildClozeSegments(TEXT5, blanks5())).map(
+			(item, i) => ({
+				...item,
+				...(i >= 1 && i <= 3 ? { explanation: `giải thích q${i + 1}` } : {}),
+				...(i >= 3 ? { answerSet: "s" } : {}),
+			}),
+		);
+	}
+
+	it("mirror #425: xóa blank giữa — metadata theo nội dung, không gán chéo", () => {
+		const blanks = blanks5().filter((blank) => blank.answer !== "two");
+		const merged = segmentsToItems(buildClozeSegments(TEXT5, blanks), items5());
+		expect(merged[1]).toMatchObject({
+			answer: "three",
+			explanation: "giải thích q3",
+		});
+		expect(merged[1].answerSet).toBeUndefined();
+		for (const item of merged) {
+			expect(item.explanation).not.toBe("giải thích q2");
+		}
+	});
+
+	it("mirror #425: đổi answer, cấu trúc không đổi — giữ metadata (fallback vị trí)", () => {
+		const blanks = blanks5().map((blank) =>
+			blank.answer === "three" ? { ...blank, answer: "banana" } : blank,
+		);
+		const merged = segmentsToItems(buildClozeSegments(TEXT5, blanks), items5());
+		expect(merged[2]).toMatchObject({
+			answer: "banana",
+			explanation: "giải thích q3",
+		});
+	});
 });
 
 describe("clozeApplyIssues (phase-03 FR2 — caps BEFORE writing items)", () => {

@@ -33,6 +33,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { isLibraryHttpError } from "@/lib/repos/library";
 import { CardTabs } from "./card-tabs";
 import type { GroupCardTab } from "./group-card";
 import {
@@ -269,10 +270,13 @@ const FIELD_ERROR_TEXT: Record<string, string> = {
 	groups: "Dữ liệu nhóm câu không hợp lệ.",
 };
 
-/** Build input PUT theo ĐÚNG `libraryPartUpsertSchema` (phase 2). */
+/** Build input PUT theo ĐÚNG `libraryPartUpsertSchema` (phase 2).
+ * `options.discardCorruptGroups` (#425): xác nhận tường minh "ghi đè nhóm
+ * hỏng" — chỉ đi kèm nút "Lưu đè nhóm hỏng" khi DTO báo `groupsCorrupt`. */
 export function partInputFromValue(
 	slot: string,
 	value: PartFormValue,
+	options?: { discardCorruptGroups?: boolean },
 ): BuiltPartPayload {
 	const parsed = libraryPartUpsertSchema.safeParse({
 		part: slot,
@@ -288,6 +292,9 @@ export function partInputFromValue(
 		groups: value.groups,
 		optionBank: value.optionBank,
 		note: value.note,
+		...(options?.discardCorruptGroups === true
+			? { discardCorruptGroups: true as const }
+			: {}),
 	});
 	if (!parsed.success) {
 		const errors: Record<string, string> = {};
@@ -431,6 +438,9 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		ref,
 	) {
 		const uid = useId();
+		// #425 — nhóm câu trên server corrupt (đã fallback []): banner + lối
+		// "Lưu đè nhóm hỏng" tường minh; PUT thường sẽ bị server chặn 409.
+		const groupsCorrupt = saved?.groupsCorrupt === true;
 		const [value, setValue] = useState<PartFormValue>(
 			() =>
 				initialValue ??
@@ -527,8 +537,10 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 							: null;
 		};
 
-		const handleSave = async (): Promise<boolean> => {
-			const built = partInputFromValue(slot, value);
+		const handleSave = async (options?: {
+			discardCorruptGroups?: boolean;
+		}): Promise<boolean> => {
+			const built = partInputFromValue(slot, value, options);
 			if (!built.ok) {
 				setShowErrors(true);
 				setLive("Chưa lưu được — kiểm tra các trường có lỗi.");
@@ -541,7 +553,22 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 				setShowErrors(false);
 				setLive("Đã lưu part.");
 				return true;
-			} catch {
+			} catch (error) {
+				// #425 — nhóm corrupt: một surface thông báo, có lối thoát rõ.
+				if (isLibraryHttpError(error)) {
+					if (error.code === "GROUPS_CORRUPT") {
+						setLive(
+							"Part có nhóm câu hỏng trên server — bấm «Lưu đè nhóm hỏng» nếu muốn thay thế.",
+						);
+						return false;
+					}
+					if (error.code === "GROUPS_NOT_CORRUPT") {
+						setLive(
+							"Nhóm câu đã được phục hồi trên server — tải lại trang để thấy dữ liệu mới.",
+						);
+						return false;
+					}
+				}
 				setLive("Chưa lưu được part — xem thông báo lỗi.");
 				return false;
 			}
@@ -761,6 +788,29 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 					hidden={view.partTab !== "questions"}
 					className="flex flex-col gap-4"
 				>
+					{groupsCorrupt && (
+						<div
+							role="alert"
+							className="flex flex-col gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
+						>
+							<p>
+								Nhóm câu hỏi đã lưu trên server hỏng định dạng nên đang được ẩn.
+								Lưu bình thường sẽ bị chặn để tránh xóa nhầm — bấm «Lưu đè nhóm
+								hỏng» nếu chắc chắn muốn thay thế.
+							</p>
+							<div>
+								<Button
+									type="button"
+									variant="destructive"
+									onClick={() => {
+										void handleSave({ discardCorruptGroups: true });
+									}}
+								>
+									Lưu đè nhóm hỏng
+								</Button>
+							</div>
+						</div>
+					)}
 					{!hasGroups && (
 						<>
 							<Field
