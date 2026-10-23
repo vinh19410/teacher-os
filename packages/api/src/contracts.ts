@@ -624,6 +624,18 @@ export const assignmentQuestionSchema = z
 				y: z.number().min(0).max(100),
 			})
 			.nullish(),
+		/**
+		 * Giải thích đáp án (rich text) hiển thị sau khi nộp — tương ứng
+		 * "Feedback" của từng đáp án bên Selfomy. Optional, KHÔNG default để
+		 * câu cũ giữ nguyên shape.
+		 */
+		explanation: richTextField(2000).optional(),
+		/**
+		 * Khóa tập đáp án không thứ tự (IELTS "Choose TWO"): các câu cùng
+		 * khóa trong một snapshot được chấm như một tập — đáp án đúng ở câu
+		 * này được chấp nhận ở câu kia. Null/absent = chấm theo vị trí.
+		 */
+		answerSet: z.string().trim().min(1).max(20).nullish(),
 	})
 	.strict();
 
@@ -1325,6 +1337,11 @@ export interface AssignmentQuestion {
 	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
 	 * non-image types and legacy image rows. */
 	pin?: { x: number; y: number } | null;
+	/** Giải thích đáp án (rich text) — mirror schema ở assignmentQuestionSchema,
+	 * optional không default để câu cũ giữ nguyên shape. */
+	explanation?: string;
+	/** Khóa tập đáp án không thứ tự (IELTS "Choose TWO") — mirror schema. */
+	answerSet?: string | null;
 }
 
 export interface KernelAssignmentPromptRow {

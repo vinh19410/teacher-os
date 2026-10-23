@@ -130,3 +130,110 @@ describe("gradeQuiz (pure, #283)", () => {
 		});
 	});
 });
+
+describe("gradeQuiz — answerSet (Choose TWO)", () => {
+	test("hoán vị hợp lệ: đáp án của câu này ở câu kia → cả hai correct", () => {
+		const grade = gradeQuiz(
+			[q({ answer: "B", answerSet: "s" }), q({ answer: "D", answerSet: "s" })],
+			{ "0": "D", "1": "B" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "correct"]);
+	});
+
+	test("key không kề không bị khóa visited: đường tăng vẫn tìm được (kongming regression)", () => {
+		// q0 candidates {a,z}, q1 candidates {b,z}; trả (A, Z).
+		// Z khớp cả hai, A chỉ khớp q0 → phân bố đúng là a0→k0, a1→k1 (2/2).
+		const grade = gradeQuiz(
+			[
+				q({ answer: "A", alts: "Z", answerSet: "s" }),
+				q({ answer: "B", alts: "Z", answerSet: "s" }),
+			],
+			{ "0": "A", "1": "Z" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "correct"]);
+		expect(grade.correctCount).toBe(2);
+	});
+
+	test("một đáp án không tính hai lần; thứ tự duyệt cố định index tăng dần", () => {
+		const grade = gradeQuiz(
+			[q({ answer: "B", answerSet: "s" }), q({ answer: "D", answerSet: "s" })],
+			{ "0": "B", "1": "B" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "wrong"]);
+	});
+
+	test("câu bỏ trống trong tập → skipped, câu kia vẫn correct", () => {
+		const grade = gradeQuiz(
+			[q({ answer: "B", answerSet: "s" }), q({ answer: "D", answerSet: "s" })],
+			{ "0": "D" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "skipped"]);
+	});
+
+	test("trộn câu vị trí thường và câu tập: cả ba correct, correctCount === 3", () => {
+		const grade = gradeQuiz(
+			[
+				q({ answer: "Paris" }),
+				q({ answer: "B", answerSet: "s" }),
+				q({ answer: "D", answerSet: "s" }),
+			],
+			{ "0": "Paris", "1": "D", "2": "B" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "correct", "correct"]);
+		expect(grade.correctCount).toBe(3);
+	});
+
+	test("hai tập khác khóa không lẫn đáp án sang nhau", () => {
+		const grade = gradeQuiz(
+			[
+				q({ answer: "B", answerSet: "s1" }),
+				q({ answer: "D", answerSet: "s1" }),
+				q({ answer: "X", answerSet: "s2" }),
+				q({ answer: "Y", answerSet: "s2" }),
+			],
+			{ "0": "D", "1": "B", "2": "Y", "3": "X" },
+		);
+		expect(grade.verdicts).toEqual([
+			"correct",
+			"correct",
+			"correct",
+			"correct",
+		]);
+		// B/D không được chấp nhận ở tập s2:
+		const cross = gradeQuiz(
+			[
+				q({ answer: "B", answerSet: "s1" }),
+				q({ answer: "D", answerSet: "s1" }),
+				q({ answer: "X", answerSet: "s2" }),
+				q({ answer: "Y", answerSet: "s2" }),
+			],
+			{ "0": "D", "1": "B", "2": "B", "3": "X" },
+		);
+		expect(cross.verdicts).toEqual(["correct", "correct", "wrong", "correct"]);
+	});
+
+	test("alts giao nhau: hoán vị hợp lệ vẫn đúng nhờ khớp cực đại (không greedy)", () => {
+		// q0 candidates {a,b}, q1 candidates {b}; trả (B, A) là hoán vị hợp lệ.
+		const grade = gradeQuiz(
+			[
+				q({ answer: "A", alts: "B", answerSet: "s" }),
+				q({ answer: "B", answerSet: "s" }),
+			],
+			{ "0": "B", "1": "A" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "correct"]);
+	});
+
+	test("alts không giao: hoán vị vòng 3 câu vẫn toàn correct (chống hồi quy matching)", () => {
+		const grade = gradeQuiz(
+			[
+				q({ answer: "B", answerSet: "s" }),
+				q({ answer: "D", answerSet: "s" }),
+				q({ answer: "F", answerSet: "s" }),
+			],
+			{ "0": "F", "1": "B", "2": "D" },
+		);
+		expect(grade.verdicts).toEqual(["correct", "correct", "correct"]);
+		expect(grade.correctCount).toBe(3);
+	});
+});
