@@ -205,46 +205,47 @@ export function GroupCard({
 					aria-label={`Các tab ${label}`}
 				/>
 				{/* MỘT instance QKE cho cả 3 tab; tab Thiết lập ẩn wrapper.
-				 * Panel intro bọc panel questions (cùng một editor) để
-				 * aria-controls của từng tab trỏ tới id thật (review RF-F5). */}
+				 * Panel duy nhất đổi id/labelledby theo tab active (RF-F5 + review
+				 * PR F1): intro và questions dùng chung editor — lồng 2 wrapper
+				 * ẩn/hiện sẽ che khối "Hướng dẫn đề" khi tab Hướng dẫn active
+				 * (regression bắt bởi full e2e post-merge). */}
 				<div
-					id={`${rowIdPrefix}-tabs-panel-intro`}
-					role="tabpanel"
-					aria-labelledby={`${rowIdPrefix}-tabs-tab-intro`}
+					id={
+						activeTab === "settings"
+							? undefined
+							: `${rowIdPrefix}-tabs-panel-${activeTab}`
+					}
+					role={activeTab === "settings" ? undefined : "tabpanel"}
+					aria-labelledby={
+						activeTab === "settings"
+							? undefined
+							: `${rowIdPrefix}-tabs-tab-${activeTab}`
+					}
 					hidden={activeTab === "settings"}
 				>
-					{/* Review PR F1: tab "Câu hỏi" cần panel id/labelledby riêng —
-					 * aria-controls của nó trỏ tới id này. */}
-					<div
-						id={`${rowIdPrefix}-tabs-panel-questions`}
-						role="tabpanel"
-						aria-labelledby={`${rowIdPrefix}-tabs-tab-questions`}
-						hidden={activeTab !== "questions"}
-					>
-						<QuestionKeyEditor
-							skill={skill}
-							partId={rowIdPrefix}
-							typeId={group.type}
-							intro={group.instruction}
-							items={items}
-							showErrors={showErrors}
-							status={status}
-							imageUrl={imageUrl}
-							optionBank={group.optionBank}
-							onIntroChange={(instruction) => onPatch({ instruction })}
-							onImageUrlChange={onImageUrlChange}
-							onItemsChange={handleItemsChange}
-							onBankChange={(optionBank) => onPatch({ optionBank })}
-							imageUrlError={errorFor("imageUrl")}
-							optionBankError={optionBankError}
-							qStartOverride={qStart + group.startIndex}
-							showExplanation
-							view={activeTab === "intro" ? "intro" : "questions"}
-							collapsibleRows
-							openRow={openRow}
-							onOpenRowChange={onOpenRowChange}
-						/>
-					</div>
+					<QuestionKeyEditor
+						skill={skill}
+						partId={rowIdPrefix}
+						typeId={group.type}
+						intro={group.instruction}
+						items={items}
+						showErrors={showErrors}
+						status={status}
+						imageUrl={imageUrl}
+						optionBank={group.optionBank}
+						onIntroChange={(instruction) => onPatch({ instruction })}
+						onImageUrlChange={onImageUrlChange}
+						onItemsChange={handleItemsChange}
+						onBankChange={(optionBank) => onPatch({ optionBank })}
+						imageUrlError={errorFor("imageUrl")}
+						optionBankError={optionBankError}
+						qStartOverride={qStart + group.startIndex}
+						showExplanation
+						view={activeTab === "intro" ? "intro" : "questions"}
+						collapsibleRows
+						openRow={openRow}
+						onOpenRowChange={onOpenRowChange}
+					/>
 				</div>
 				<div
 					id={`${rowIdPrefix}-tabs-panel-settings`}
