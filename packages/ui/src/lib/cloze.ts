@@ -228,9 +228,12 @@ export function buildClozeSegments(
  * nhỏ) — mơ hồ cố hữu trong run trùng answer, grading không đổi. Pass 2: khi
  * `segments.length === existing.length`, segment chưa khớp kế thừa metadata
  * `existing[i]` (nếu chưa dùng) — sửa answer/typo không mất explanation
- * (kongming plan-gate). Blank mới (answer chưa có) → item sạch; blank bị xóa
- * → metadata tự rơi; xóa+chèn cùng lúc (độ dài giữ) → blank mới vẫn sạch vì
- * base cùng vị trí đã bị pass 1 dùng. */
+ * (kongming plan-gate). Giới hạn có chủ đích: xóa+chèn cùng lúc (độ dài giữ)
+ * có thể khiến blank MỚI hưởng metadata của blank vừa xóa khi base của nó đã
+ * bị segment khác dùng ở pass 1 — heuristic vị trí không phân biệt được
+ * trường hợp này (grading không đổi; xóa hẳn metadata thì mất explanation
+ * khi sửa typo). Blank mới (answer chưa có trong existing) luôn ra item sạch;
+ * blank bị xóa → metadata tự rơi. */
 export function segmentsToItems(
 	segments: ClozeSegment[],
 	existing?: readonly AssignmentQuestion[],
