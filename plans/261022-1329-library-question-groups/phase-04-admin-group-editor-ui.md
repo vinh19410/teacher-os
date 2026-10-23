@@ -16,6 +16,8 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
 ## Files to Create / Modify
 
 - Modify: `packages/ui/src/components/assignments/editor/question-key-editor.tsx` (props mới, optional)
+- Modify: `packages/ui/src/components/assignments/editor/answer-key-grid.tsx` (red-team F2: hàng câu per-item sống ở đây, không ở QuestionKeyEditor)
+- Modify: `packages/ui/src/lib/cloze.ts` (red-team F1: merge giữ field khi apply ClozeEditor) + file test tương ứng (`packages/ui/src/lib/cloze.test.ts` nếu có, nếu không tạo mới)
 - Create: `apps/admin/src/components/library/group-model.ts` (helper thuần)
 - Create: `apps/admin/src/components/library/group-model.test.ts`
 - Create: `apps/admin/src/components/library/group-card.tsx`
@@ -40,9 +42,19 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
      - `qStartOverride?: number` — số câu đầu tiên; mặc định giữ `qStartOf(skill, partId)`.
      - `showExplanation?: boolean` — mặc định `false`.
   2. Đổi `const qStart = qStartOf(skill, partId);` thành `const qStart = qStartOverride ?? qStartOf(skill, partId);`.
-  3. Khi `showExplanation` true: dưới mỗi câu (trong vòng lặp render từng item), thêm `Field` label `Giải thích câu {qStart + index}` chứa `RichTextEditor` `value={item.explanation ?? ""}`, `onChange` cập nhật `explanation` của item đó qua `onItemsChange`. Nếu giá trị rỗng sau `htmlToPlainText(...).trim()`, xóa key `explanation` khỏi item (không lưu chuỗi rỗng).
-  4. Không đổi gì khi hai prop vắng mặt.
+  3. (red-team F2) `QuestionKeyEditor` KHÔNG render từng câu — hàng câu do `AnswerKeyGrid` vẽ (`items.map` trong `answer-key-grid.tsx`). Plumb xuống: thêm prop optional `showExplanation?: boolean` cho `AnswerKeyGrid`; khi true, mỗi hàng câu hiển thị thêm `Field` label `Giải thích câu {qStart + index}` chứa `RichTextEditor` `value={item.explanation ?? ""}`, `onChange` cập nhật `explanation` của item đó qua `onItemsChange` của editor cha. Nếu giá trị rỗng sau `htmlToPlainText(...).trim()`, xóa key `explanation` khỏi item (không lưu chuỗi rỗng). KHÔNG nhét editor vào footer tóm tắt đáp án (read-only).
+  4. Không đổi gì khi hai prop vắng mặt (web composer không truyền → hàng câu không có ô giải thích).
 - Verify: `pnpm --filter @teacher-os/ui test` exits 0 và `pnpm --filter @teacher-os/ui check-types` exits 0.
+
+### Task 4.1b — ClozeEditor apply không mất field câu (red-team F1, Critical)
+
+- Goal: bấm "Áp vào câu hỏi" của `ClozeEditor` KHÔNG xóa `explanation`/`answerSet`/`type`/`pin` đã nhập của các câu trong nhóm.
+- Target: `segmentsToItems` trong `packages/ui/src/lib/cloze.ts` (hiện rebuild item mới chỉ `{stem, opts: null, answer, alts}` — `packages/ui/src/lib/cloze.ts:223-232`).
+- Steps:
+  1. Đổi chữ ký: `segmentsToItems(segments: ClozeSegment[], existing?: readonly QuestionItem[])`. Với mỗi segment index `i`: nếu `existing?.[i]` tồn tại → trả `{ ...existing[i], stem, opts: null, answer, alts }` (giữ `explanation`, `answerSet`, `type`, `pin`); ngược lại giữ hành vi cũ (item mới). Nếu `existing` dài hơn segments, các item dư bị cắt (giữ nguyên hành vi độ dài = segments).
+  2. Caller (ClozeEditor `onApply` trong `cloze-editor.tsx`) truyền `items` hiện tại vào `existing`.
+  3. Thêm unit test: 2 câu có sẵn `explanation` + `answerSet` → apply lại segments mới (đổi stem) → hai field vẫn nguyên; segments dài hơn mảng cũ → item mới không có field optional.
+- Verify: `pnpm --filter @teacher-os/ui test cloze --reporter=verbose` exits 0, output không có `FAIL`.
 
 ### Task 4.2 — Helper thuần quản lý nhóm
 
@@ -53,7 +65,7 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
   2. `reindexGroups(groups)` → gán lại `startIndex` cộng dồn theo `count`, giữ thứ tự.
   3. `splitIntoGroups(value)` → biến nhóm ngầm thành nhóm thật (`id` = `crypto.randomUUID()`), chuyển `value.optionBank` sang nhóm và `value.intro` sang `groups[0].instruction`, rồi đặt `value.optionBank = []`, `value.intro = ""` (intro cấp part không còn ô hiển thị khi có nhóm, nếu giữ lại sẽ thành dữ liệu ẩn).
   4. `addGroup(value, type)` → nếu đang ngầm thì `splitIntoGroups` trước; thêm nhóm mới cuối với 1 câu `emptyItem(type)` (import từ `@teacher-os/ui/components/assignments/editor/assignment-presets`), nối câu vào cuối `questions`, `reindexGroups`, đặt `value.type = groups[0].type`.
-  5. `removeGroup(value, gi)` → xóa nhóm và **đúng dải câu của nó** khỏi `questions`, `reindexGroups`; nếu còn 0 nhóm → trả `groups: []` (về nhóm ngầm).
+  5. `removeGroup(value, gi)` → xóa nhóm và **đúng dải câu của nó** khỏi `questions`, `reindexGroups`; nếu còn 0 nhóm → trả `groups: []` (về nhóm ngầm) VÀ (red-team F7) hoàn `instruction` của nhóm cuối còn lại về `value.intro` trước khi xóa (mirror `splitIntoGroups`) — nếu không, hướng dẫn cấp part cũ bị mất vĩnh viễn vì `splitIntoGroups` đã dời nó vào nhóm.
   6. `moveGroup(value, gi, dir: -1 | 1)` → hoán đổi nhóm VÀ dải câu tương ứng, `reindexGroups`, đặt lại `value.type = groups[0].type`.
   7. `setGroupItems(value, gi, items)` → thay dải câu của nhóm `gi` bằng `items`, cập nhật `count = items.length`, `reindexGroups`.
   8. `patchGroup(value, gi, patch)` → gộp field (type/instruction/optionBank/cờ); nếu đổi `type` thì xóa `type` riêng ở các câu trong dải và cập nhật `value.type` khi `gi === 0`.
@@ -78,10 +90,10 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
 - Steps:
   1. Thêm `groups: LibraryQuestionGroup[]` vào `PartFormValue` (import type từ `@teacher-os/api/library-contracts`).
   2. `emptyPartValue` → `groups: []`.
-  3. `partValueFromDto` → `groups: Array.isArray(dto.groups) ? (dto.groups as LibraryQuestionGroup[]) : []`.
+  3. `partValueFromDto` → `groups: normalizeGroups(dto.groups)` với `normalizeGroups` rebuild từng group theo thứ tự key cố định `{id, type, instruction, startIndex, count, optionBank, answersInline, splitContent, dragDrop}` (mirror `normalizeQuestions`; red-team A5 — không cast thô `as LibraryQuestionGroup[]` vì `canonicalPartValue` so bằng `JSON.stringify` nhạy thứ tự key: group client-dựng vs server-xuất có thể khác key order → dirty "vĩnh viễn"). Input là `unknown[]` từ DTO: phần tử không phải object hợp lệ → bỏ qua; mảng rỗng/undefined → `[]`.
   4. `canonicalPartValue`, `partInputFromValue` VÀ `partReadyIssues` (hàm này tự dựng object input riêng) → đưa `groups` vào. Thiếu ở `partReadyIssues` thì rule ready chạy trên nhóm ngầm với `optionBank=[]` và chặn lưu sai.
   5. **Bắt buộc:** `normalizeQuestions` dựng lại câu theo từng field nên đang làm rơi field lạ. Thêm: nếu `typeof raw.explanation === "string"` thì giữ `explanation`; nếu `typeof raw.answerSet === "string"` thì giữ `answerSet`. Không thêm key khi vắng mặt.
-  6. Thêm `groups: []` vào fixture DTO trong `part-form.test.tsx` (tsconfig admin quét cả file test).
+  6. (Đã xử lý ở Task 2.7 bước 1b từ phase 2 — fixture DTO `partDto` trong `part-form.test.tsx` đã có `groups: []`; không lặp lại.)
   7. Thêm test round-trip: DTO có câu kèm `explanation` → `partValueFromDto` → `partInputFromValue` vẫn giữ `explanation`.
   8. `slotTypes`: khi part có nhóm, danh sách dạng bài cho Select nhóm dùng `librarySkillTypes(skill)`; Select dạng bài cấp part chỉ hiển thị khi `groups.length === 0`.
 - Verify: `pnpm --filter admin test part-form --reporter=verbose` exits 0 (test cũ không sửa vẫn pass).
@@ -92,23 +104,24 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
 - Target: tạo `group-card.tsx`, export `GroupCard`.
 - Steps:
   1. Props: `skill`, `slot`, `index`, `group`, `items`, `qStart`, `open`, `onToggle`, `onPatch`, `onItemsChange`, `onMove(dir)`, `onRemove`, `canMoveUp`, `canMoveDown`, `imageUrl`, `onImageUrlChange`, `showErrors`, `status`, `errorFor(path)`.
-  2. Header (luôn hiện): nhãn `Nhóm câu {index+1}`, dạng bài (dùng `quizTypeDisplay(group.type).label` từ `@teacher-os/api/contracts`), dải câu `Câu {qStart+group.startIndex}–{qStart+group.startIndex+group.count-1}`, nút lên/xuống/xóa (icon, `aria-label` tương ứng "Đưa nhóm lên", "Đưa nhóm xuống", "Xóa nhóm"), nút mở/đóng `aria-expanded`.
+  2. Header (luôn hiện): nhãn `Nhóm câu {index+1}`, dạng bài (dùng `quizTypeDisplay(group.type).label` từ `@teacher-os/api/contracts`), dải câu `Câu {qStart+group.startIndex}–{qStart+group.startIndex+group.count-1}`, nút lên/xuống/xóa (icon, `aria-label` tương ứng "Đưa nhóm lên", "Đưa nhóm xuống", "Xóa nhóm"), nút mở/đóng `aria-expanded`. (red-team F7) Nút "Xóa nhóm" phải hỏi xác nhận (dialog confirm theo pattern sẵn có của admin, vd `delete-test-dialog.tsx`) — xóa nhóm là phá hoại (mất cả dải câu + đáp án + giải thích).
   3. Body (khi `open`):
      - `Select` "Dạng bài" (`librarySkillTypes(skill)`).
      - 3 checkbox: "Ô trả lời nằm trong hướng dẫn" (`answersInline`), "Tách nội dung và câu hỏi" (`splitContent`), "Cho phép kéo thả đáp án" (`dragDrop`).
      - `QuestionKeyEditor` với `typeId=group.type`, `items`, `optionBank=group.optionBank`, `intro={group.instruction}`, `onIntroChange={(v) => onPatch({ instruction: v })}` (dùng chính ô "Hướng dẫn đề" và nút "Chèn câu lệnh chuẩn" của editor làm hướng dẫn nhóm — KHÔNG thêm `RichTextEditor` riêng), `qStartOverride={qStart + group.startIndex}`, `showExplanation`, `onBankChange` → `onPatch({optionBank})`.
      - Checkbox "Ô trả lời nằm trong hướng dẫn" chỉ bật được khi `CLOZE_EDITOR_TYPES.has(group.type)` (import từ `@teacher-os/api/lib/infer-question-types`); dạng khác thì checkbox `disabled` kèm chú thích "Chỉ dùng cho dạng điền từ". Ô trống được nhập bằng `ClozeEditor` mà `QuestionKeyEditor` tự hiện cho các dạng này — không viết editor ô trống mới.
      - Khi `answersInline`: dưới editor hiện dòng `Câu có ô trống: {số câu có countClozeMarkers(stem) === 1}/{group.count}`; lệch thì dòng này dùng màu lỗi (token destructive).
-     - Hiện `errorFor("groups.{index}.instruction")`, `errorFor("groups.{index}.optionBank")`, `errorFor("groups.{index}.type")` gần field tương ứng.
+     - Hiện `errorFor("groups.{index}.optionBank")`, `errorFor("groups.{index}.type")`, `errorFor("groups.{index}.answersInline")` gần field tương ứng (path dotted sống sau Task 4.5b bước 3; KHÔNG wire `groups.{index}.instruction` — không rule nào sinh path đó).
 - Verify: `pnpm --filter admin check-types` exits 0.
 
-### Task 4.5b — Thông báo lỗi tiếng Việt cho rule nhóm
+### Task 4.5b — Thông báo lỗi tiếng Việt + wiring path cho rule nhóm
 
-- Goal: mọi message mới từ `library-contracts.ts` hiện bằng tiếng Việt.
-- Target: `apps/admin/src/components/library/part-issues.ts` (map message → text) và hằng `FIELD_ERROR_TEXT` trong cùng file.
+- Goal: mọi message mới từ `library-contracts.ts` hiện bằng tiếng Việt, và lỗi superRefine của nhóm hiển thị được.
+- Target (red-team A4/F4/F5 — KHÔNG dùng `FIELD_ERROR_TEXT` ở `part-issues.ts`, hằng đó không tồn tại ở đó): message-map thật là `MESSAGE_LABELS` (regex → label) và `FIELD_LABELS` (path key → label) trong `apps/admin/src/components/library/part-issues.ts` (:13-60); hằng `FIELD_ERROR_TEXT` (field → câu lỗi) nằm ở `part-form.tsx` (~:193).
 - Steps:
-  1. Thêm mapping cho từng message mới: `"invalid type for skill"` → "Dạng bài không thuộc kỹ năng này", `"question type must match its group"` → "Dạng câu phải trùng dạng của nhóm", các message bất biến dải câu ở phase 2 (Task 2.5) → "Nhóm câu bị chồng hoặc hở số câu", `"inline answers need a completion type"` → "Chỉ dạng điền từ mới đặt ô trả lời trong nội dung", `"inline question needs exactly one blank"` → "Câu điền từ cần đúng một ô trống ____".
-  2. Thêm key `groups` vào `FIELD_ERROR_TEXT` với nhãn "Nhóm câu".
+  1. Thêm regex mapping vào `MESSAGE_LABELS` cho từng message mới: `"invalid type for skill"` → "Dạng bài không thuộc kỹ năng này", `"question type must match its group"` → "Dạng câu phải trùng dạng của nhóm", `"first group must start at 0"` / `"groups must be contiguous"` / `"group counts must cover every question"` / `"duplicate group id"` → "Nhóm câu bị chồng hoặc hở số câu" (mỗi regex riêng để khớp chính xác), `"optionBank lives on groups when groups exist"` → "Ngân hàng đáp án nằm ở từng nhóm khi có nhóm", `"part type must equal first group type"` → "Dạng bài của part phải trùng nhóm đầu", `"inline answers need a completion type"` → "Chỉ dạng điền từ mới đặt ô trả lời trong nội dung", `"inline question needs exactly one blank"` → "Câu điền từ cần đúng một ô trống ____", `"answer set needs at least two questions"` → "Khóa tập đáp án cần ít nhất hai câu", `"answer set must stay inside one group"` → "Các câu cùng khóa tập đáp án phải nằm trong một nhóm".
+  2. Thêm key `groups` vào `FIELD_LABELS` (`part-issues.ts`) với nhãn "Nhóm câu", và key `groups` vào `FIELD_ERROR_TEXT` (`part-form.tsx`) với câu lỗi "Dữ liệu nhóm câu không hợp lệ.".
+  3. (red-team F4) `partInputFromValue` và `partReadyIssues` đang flatten `issue.path[0]` — mọi issue superRefine `["groups", i, ...]` bị hạ thành `"groups"`. Đổi: khi `issue.path[0] === "groups"` thì key = `issue.path.join(".")` (vd `"groups.1.optionBank"`) để `errorFor("groups.{index}.optionBank")` của GroupCard thực sự sống; key khác giữ `path[0]` như cũ.
 - Verify: `pnpm --filter admin check-types` exits 0.
 
 ### Task 4.6 — Component `GroupOutline`
@@ -131,17 +144,19 @@ Trong mỗi tab slot (`p1..p3` / `s1..s4`) của trang sửa đề, admin chia c
   3. State `openGroup` (index, mặc định 0). `onSelect` của outline → set `openGroup` và `document.getElementById(\`group-${slot}-${gi}\`)?.scrollIntoView({block:"start"})`; mỗi `GroupCard` bọc trong phần tử có id đó.
   4. Mọi callback của `GroupCard` gọi helper ở Task 4.2 rồi `patch(...)`/`setValue(...)` theo cách `PartForm` đang cập nhật state.
   5. Truyền `errorFor` hiện có của form vào `GroupCard`.
+  6. (red-team F9) Hiện bộ đếm tổng "Tổng số câu của part: {value.questions.length}/40" cạnh danh sách nhóm khi có nhóm; khi tổng đạt 40, các nút "Thêm câu" trong `GroupCard` bị disable (truyền xuống `QuestionKeyEditor` qua `atMaxOverride` hoặc tương đương — `QUESTION_MAX_COUNT` hiện đếm per-editor, schema chặn 40 câu/PART).
 - Verify: `pnpm --filter admin check-types` exits 0.
 
 ### Task 4.8 — Test component
 
-- Target: `part-form.test.tsx` (theo đúng cách render/test của file hiện có).
+- Target: `part-form.test.tsx`. (red-team A3: file này render bằng `renderToStaticMarkup` — KHÔNG có DOM tương tác; các assertion bấm/gõ phải đi qua helper thuần hoặc e2e phase 5, không viết test tương tác ở đây.)
 - Steps: thêm test:
-  1. Part không nhóm render một editor và nút "Chia thành nhiều nhóm câu".
-  2. Bấm nút đó → xuất hiện `nav` "Mục lục nhóm câu" với 2 mục "Nhóm câu 1", "Nhóm câu 2".
-  3. Part có 2 nhóm (`tfng` 3 câu, `note` 2 câu) từ DTO: outline hiện `Câu 1`…`Câu 5` (reading `p1` bắt đầu từ 1).
-  4. Nhóm `note` `answersInline` 2 câu, chỉ câu đầu có `____` → hiển thị `Câu có ô trống: 1/2`.
-  5. Sửa ô giải thích câu 1 → `isPartDirty` true.
+  1. (Static render) Part không nhóm render một editor và nút "Chia thành nhiều nhóm câu".
+  2. (Helper thuần thay cho click) `addGroup(emptyPartValue(skill, "p1"), type)` → value có 2 nhóm; render tĩnh value đó → có `nav` "Mục lục nhóm câu" với "Nhóm câu 1", "Nhóm câu 2".
+  3. (Static render) Part có 2 nhóm (`tfng` 3 câu, `note` 2 câu) từ DTO: outline hiện `Câu 1`…`Câu 5` (reading `p1` bắt đầu từ 1).
+  4. (Static render) Nhóm `note` `answersInline` 2 câu, chỉ câu đầu có `____` → hiển thị `Câu có ô trống: 1/2`.
+  5. (Helper thuần) `isPartDirty`: DTO gốc vs `partValueFromDto(dto)` với câu 1 có `explanation` thêm vào → `true`; không sửa → `false`.
+  6. Luồng bấm nút thật (click "Chia thành nhiều nhóm câu", sửa ô giải thích trong UI) do e2e Task 5.1 phủ — không nhân bản ở đây.
 - Verify: `pnpm --filter admin test` exits 0, output không có `FAIL`.
 
 ### Task 4.9 — Gate

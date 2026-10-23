@@ -25,8 +25,9 @@ dependencies: [2]
 - Goal: row → input/DTO có `groups`; JSON hỏng → `[]` (giống cách xử lý `questions`).
 - Target: `toPartInput`, `toPartDto` trong `admin-library.ts`.
 - Steps:
-  1. Trong `toPartInput`, thêm `groups: parseJsonArray(row.groups) as LibraryPartInput["groups"],`.
-  2. Trong `toPartDto`, thêm `groups: parseJsonArray(row.groups),` ngay sau `questions`.
+  1. Viết helper riêng cho groups (red-team S5/F8 — không cast mù): `parseGroups(raw: string): LibraryQuestionGroup[]` — `parseJsonArray(raw)` rồi `z.array(libraryQuestionGroupSchema).max(LIBRARY_GROUP_MAX).safeParse`; parse thất bại (JSON hỏng HOẶC phần tử sai shape) → trả `[]` (fail-soft như `questions`; nhóm ngầm là fallback an toàn vì upsert đã chặn dữ liệu sai từ lúc lưu).
+  2. Trong `toPartInput`, thêm `groups: parseGroups(row.groups),`.
+  3. Trong `toPartDto`, thêm `groups: parseGroups(row.groups),` ngay sau `questions`.
 - Verify: `pnpm --filter server check-types` exits 0.
 
 ### Task 3.2 — Lưu `groups` khi upsert
@@ -42,7 +43,7 @@ dependencies: [2]
 
 - Goal: test HTTP chứng minh lưu/đọc nhóm và 400 cho dải sai.
 - Target: `apps/server/src/routes/admin-library.test.ts`. Đọc các test PUT part hiện có trong file và tái dùng đúng helper tạo test/đăng nhập admin của file đó.
-- Steps: trước hết thêm `groups: []` vào mọi literal kiểu `LibraryPartInput` có sẵn trong file (nếu không, check-types fail vì field mới bắt buộc ở output type). Sau đó thêm `describe("PUT part — question groups", ...)`:
+- Steps: (red-team A7) file này KHÔNG có literal nào annotate `LibraryPartInput` — payload PUT là literal không annotate và `groups` là input optional nhờ `.default([])` ở schema, nên KHÔNG cần thêm `groups: []` vào fixture nào ở đây (fixture bắt buộc đã xử lý ở Task 2.7 và 2.7 bước 1b). Thêm `describe("PUT part — question groups", ...)`:
   1. PUT part `p1` reading với 5 câu + 2 nhóm hợp lệ (`tfng` 0..2, `note` 3..4, nhóm 2 `answersInline: true` với stem câu 4–5 dạng `"Growers ____ the bogs."`, `type` part = `"tfng"`) → 200; response `part.groups` có độ dài 2 và `part.groups[1].count === 2`.
   2. GET chi tiết đề → part `p1` có `groups` y hệt payload.
   3. PUT với dải hở → 400 `{ error: "invalid body" }`.
