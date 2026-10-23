@@ -328,6 +328,17 @@ function EditTestRoute() {
 				next.delete(slot);
 				return next;
 			});
+			// Review RF-F3: view-state của nội dung cũ không được sống sót qua
+			// xóa part — part tạo lại sẽ mount với initialView sai nhóm/tab.
+			setViewStateBySlot((previous) => {
+				if (!previous.has(slot)) return previous;
+				const next = new Map(previous);
+				next.delete(slot);
+				return next;
+			});
+			if (selection?.part === slot) {
+				setActivePosition({ group: null, question: null });
+			}
 			await refresh();
 		},
 		onError: (error) => {

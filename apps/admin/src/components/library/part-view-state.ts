@@ -44,7 +44,9 @@ export function focusRowId(
 	flat: boolean,
 ): string {
 	if (flat) {
-		return question === undefined ? slot : `${slot}-q${question}`;
+		// `slot` không trùng id nào trong DOM (review RF-F6) — nhóm ngầm của
+		// part phẳng cuộn tới hàng đầu tiên.
+		return question === undefined ? `${slot}-q0` : `${slot}-q${question}`;
 	}
 	return question === undefined
 		? `group-${slot}-${group}`
@@ -133,8 +135,11 @@ export function viewStateOnRemoveGroup(
 		return next;
 	};
 	const openGroup =
-		view.openGroup === null
-			? null
+		view.openGroup === null || groupCountAfter === 0
+			? // Xóa nhóm cuối → về chế độ phẳng; -1 phá bất biến number|null và
+				// khiến "Chia thành nhiều nhóm câu" sau đó không mở nhóm nào
+				// (review RF-F2).
+				null
 			: Math.min(
 					view.openGroup > gi ? view.openGroup - 1 : view.openGroup,
 					groupCountAfter - 1,

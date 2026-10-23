@@ -620,8 +620,87 @@ describe("PartForm thẻ part (#424 Task 3.4, render tĩnh)", () => {
 		expect(html).toContain('aria-label="Các tab Passage 1"');
 		expect(html).toContain("Nội dung");
 		expect(html).toContain("Câu hỏi");
-		// Badge đếm câu (1 câu mặc định) aria-hidden — không vào accessible name.
+		// Badge part phẳng đếm số câu (1 câu mặc định) aria-hidden — không vào
+		// accessible name.
 		expect(html).toMatch(/Câu hỏi<span aria-hidden="true"[^>]*>1<\/span>/);
+	});
+
+	it("RS-F1: part có nhóm — badge tab Câu hỏi đếm số NHÓM (không phải số câu)", () => {
+		const groupedDto: LibraryPartDto = {
+			...partDto,
+			questions: [
+				{
+					stem: "q1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "q2",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "q3",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "q4",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+				{
+					stem: "q5",
+					opts: null,
+					answer: "False",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "note",
+					instruction: "",
+					startIndex: 3,
+					count: 2,
+					optionBank: [],
+					answersInline: true,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const html = renderForm({
+			saved: groupedDto,
+			initialValue: partValueFromDto(groupedDto),
+		});
+		// 2 nhóm / 5 câu — badge phải là 2 (acceptance #424 dòng 4).
+		expect(html).toMatch(/Câu hỏi<span aria-hidden="true"[^>]*>2<\/span>/);
 	});
 
 	it("chế độ phẳng: một editor + nút Chia thành nhiều nhóm câu, không hàng thu gọn", () => {
@@ -993,10 +1072,51 @@ describe("focusKeyOf / firstIssueFocusPlan / view-state remap (helper thuần)",
 		expect(afterMove.openGroup).toBe(0);
 	});
 
+	it("RF-F2: xóa nhóm cuối → openGroup null (không -1)", () => {
+		const view = {
+			partTab: "questions" as const,
+			openGroup: 0,
+			groupTabs: { 0: "intro" as const },
+			openRowByGroup: { 0: 1 },
+		};
+		const after = viewStateOnRemoveGroup(view, 0, 0);
+		expect(after.openGroup).toBeNull();
+		expect(after.openRowByGroup).toEqual({});
+	});
+
+	it("RS-F2: lỗi superRefine answerSet hiển thị đúng message (không bị đè bởi FIELD_ERROR_TEXT)", () => {
+		// Part phẳng 2 câu cùng answerSet "s", xóa 1 câu → chỉ còn 1 câu trong
+		// khóa → superRefine chặn với message "answer set needs at least two
+		// questions", path ["questions",0] — trước fix bị hiển thị thành
+		// "Tối đa 40 câu hỏi.".
+		const value: ReturnType<typeof partValueFromDto> = {
+			...partValueFromDto(partDto),
+			questions: [
+				{
+					stem: "q1",
+					opts: null,
+					answer: "True",
+					alts: "",
+					type: null,
+					pin: null,
+					answerSet: "s",
+				},
+			],
+		};
+		const result = partInputFromValue("p1", value);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			const questionError = result.errors.questions ?? "";
+			expect(questionError).toContain("ít nhất hai câu");
+			expect(questionError).not.toContain("40 câu");
+		}
+	});
+
 	it("kongming F2: focusRowId — part phẳng dùng id hàng `${slot}-q${n}`, part có nhóm dùng prefix group-", () => {
 		// Part phẳng: AnswerKeyGrid nhận partId={slot} → id hàng `${slot}-q${n}`.
 		expect(focusRowId("p1", 0, 3, true)).toBe("p1-q3");
-		expect(focusRowId("s2", 0, undefined, true)).toBe("s2");
+		// RF-F6: nhóm ngầm flat cuộn tới hàng đầu tiên (id `${slot}-q0`).
+		expect(focusRowId("s2", 0, undefined, true)).toBe("s2-q0");
 		// Part có nhóm: wrapper GroupCard + hàng theo rowIdPrefix group-…
 		expect(focusRowId("p1", 1, 2, false)).toBe("group-p1-1-q2");
 		expect(focusRowId("p1", 2, undefined, false)).toBe("group-p1-2");

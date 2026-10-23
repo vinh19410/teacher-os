@@ -71,11 +71,20 @@ async function fillQuestionRow(
 }
 
 async function savePart(page: Page): Promise<void> {
+	// Đồng bộ bản reading (review RF-F7): PUT phải OK và nhãn nháp phải
+	// biến mất — chờ "Xóa part" vốn đã đúng sẵn là chưa đủ.
+	const putOk = page.waitForResponse(
+		(response) =>
+			response.request().method() === "PUT" &&
+			/\/parts\/.+/.test(new URL(response.url()).pathname) &&
+			response.ok(),
+	);
 	await page
 		.getByRole("toolbar", { name: "Thao tác soạn đề" })
 		.getByRole("button", { name: "Lưu part" })
 		.click();
-	// Form remount sau refetch — "Đã lưu part." sống ngắn; nhìn "Xóa part".
+	await putOk;
+	await expect(page.getByText("Có thay đổi chưa lưu")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Xóa part" })).toBeVisible();
 }
 

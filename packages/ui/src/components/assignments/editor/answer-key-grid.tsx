@@ -302,7 +302,13 @@ export function AnswerKeyGrid({
 	};
 	const focusRow = (index: number) => {
 		if (typeof document === "undefined") return;
-		document.querySelector<HTMLElement>(`[data-qindex="${index}"]`)?.focus();
+		// Scope theo wrapper của chính grid (review RF-F1): data-qindex trùng
+		// giữa các nhóm trên trang Quiz Builder (mọi GroupCard luôn mount) —
+		// query toàn document sẽ focus nhầm hàng của nhóm khác / subtree hidden.
+		document
+			.getElementById(`${rowIdPrefix ?? partId}-q${index}`)
+			?.querySelector<HTMLElement>("[data-qindex]")
+			?.focus();
 	};
 	const handleKeyDown = (
 		event: React.KeyboardEvent<HTMLElement>,

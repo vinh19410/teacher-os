@@ -204,8 +204,15 @@ export function GroupCard({
 					size="sm"
 					aria-label={`Các tab ${label}`}
 				/>
-				{/* MỘT instance QKE cho cả 3 tab; tab Thiết lập ẩn wrapper. */}
-				<div hidden={activeTab === "settings"}>
+				{/* MỘT instance QKE cho cả 3 tab; tab Thiết lập ẩn wrapper.
+				 * Panel intro bọc panel questions (cùng một editor) để
+				 * aria-controls của từng tab trỏ tới id thật (review RF-F5). */}
+				<div
+					id={`${rowIdPrefix}-tabs-panel-intro`}
+					role="tabpanel"
+					aria-labelledby={`${rowIdPrefix}-tabs-tab-intro`}
+					hidden={activeTab === "settings"}
+				>
 					<QuestionKeyEditor
 						skill={skill}
 						partId={rowIdPrefix}
@@ -230,7 +237,13 @@ export function GroupCard({
 						onOpenRowChange={onOpenRowChange}
 					/>
 				</div>
-				<div hidden={activeTab !== "settings"} className="flex flex-col gap-3">
+				<div
+					id={`${rowIdPrefix}-tabs-panel-settings`}
+					role="tabpanel"
+					aria-labelledby={`${rowIdPrefix}-tabs-tab-settings`}
+					hidden={activeTab !== "settings"}
+					className="flex flex-col gap-3"
+				>
 					<Field
 						label="Dạng bài"
 						required

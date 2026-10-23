@@ -67,6 +67,14 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 ];
 
 /** Message tiếng Anh của contract → câu tiếng Việt; lạ → nguyên văn. */
+/** Dịch message thô của schema sang tiếng Việt; null khi không khớp rule nào. */
+export function messageLabel(message: string): string | null {
+	for (const [pattern, label] of MESSAGE_LABELS) {
+		if (pattern.test(message)) return label;
+	}
+	return null;
+}
+
 export function issueMessage(issue: LibraryPartIssue): string {
 	for (const [pattern, label] of MESSAGE_LABELS) {
 		if (pattern.test(issue.message)) return label;

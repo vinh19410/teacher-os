@@ -44,7 +44,7 @@ import {
 } from "./group-model";
 import { PartContentFields } from "./part-content-fields";
 import { PartGroupsPanel } from "./part-groups-panel";
-import { formatIssue } from "./part-issues";
+import { formatIssue, messageLabel } from "./part-issues";
 import {
 	type FocusTarget,
 	firstIssueFocusPlan,
@@ -300,7 +300,14 @@ export function partInputFromValue(
 					: typeof issue.path[0] === "string"
 						? issue.path[0]
 						: "title";
-			if (!errors[key]) errors[key] = FIELD_ERROR_TEXT[key] ?? issue.message;
+			if (!errors[key]) {
+				// Message superRefine (path[0] trùng key field cũ) phải được dịch
+				// bởi MESSAGE_LABELS trước — FIELD_ERROR_TEXT[path[0]] là text của
+				// field khác (review RS-F2: "answer set..." hiện thành "Tối đa 40
+				// câu hỏi.").
+				errors[key] =
+					messageLabel(issue.message) ?? FIELD_ERROR_TEXT[key] ?? issue.message;
+			}
 		}
 		return { ok: false, errors };
 	}
@@ -346,7 +353,10 @@ export function partReadyIssues(
 					: typeof issue.path[0] === "string"
 						? issue.path[0]
 						: "title",
-			message: FIELD_ERROR_TEXT[issue.path[0] as string] ?? issue.message,
+			message:
+				messageLabel(issue.message) ??
+				FIELD_ERROR_TEXT[issue.path[0] as string] ??
+				issue.message,
 		}));
 	}
 	return validatePartForReady(skill, parsed.data);
@@ -703,7 +713,12 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 						{
 							id: "questions",
 							label: "Câu hỏi",
-							count: value.questions.length,
+							// Acceptance #424: badge đếm số NHÓM khi part có nhóm;
+							// part phẳng đếm số câu.
+							count:
+								value.groups.length > 0
+									? value.groups.length
+									: value.questions.length,
 						},
 					]}
 					active={view.partTab}
@@ -717,7 +732,12 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 					aria-label={`Các tab ${slotLabel}`}
 				/>
 
-				<div hidden={view.partTab !== "content"}>
+				<div
+					id={`${uid}-part-panel-content`}
+					role="tabpanel"
+					aria-labelledby={`${uid}-part-tab-content`}
+					hidden={view.partTab !== "content"}
+				>
 					<PartContentFields
 						uid={uid}
 						skill={skill}
@@ -735,6 +755,9 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 				</div>
 
 				<div
+					id={`${uid}-part-panel-questions`}
+					role="tabpanel"
+					aria-labelledby={`${uid}-part-tab-questions`}
 					hidden={view.partTab !== "questions"}
 					className="flex flex-col gap-4"
 				>
