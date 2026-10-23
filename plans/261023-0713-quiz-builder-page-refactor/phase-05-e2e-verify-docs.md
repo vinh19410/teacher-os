@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E, verify 3 viewport, docs"
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 dependencies: [4]

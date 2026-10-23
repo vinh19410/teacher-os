@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Bố cục trang hai cột"
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 dependencies: [3]

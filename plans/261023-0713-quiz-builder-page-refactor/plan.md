@@ -1,7 +1,7 @@
 ---
 title: "Refactor trang soạn đề thư viện theo bố cục Quiz Builder (Selfomy)"
 description: "Trang sửa đề admin chuyển từ tab part sang khung hai cột: cây Part → Nhóm → Câu bên trái, thẻ lồng nhau có tab bên phải, hàng câu thu gọn kèm chip tóm tắt."
-status: pending
+status: completed
 priority: P1
 effort: "3d"
 tags: [admin, library, ui, refactor]
@@ -45,11 +45,11 @@ Trang `apps/admin/src/routes/_auth/library/tests/$testId.tsx` hiện là một c
 
 | # | Phase | Phụ thuộc | Status |
 |---|---|---|---|
-| 1 | [Primitive editor dùng chung](./phase-01-shared-editor-primitives.md) | #420 phase 1 | Pending |
-| 2 | [Model nhóm và model cây đề](./phase-02-builder-models.md) | #420 phase 2–3, phase 1 | Pending |
-| 3 | [Cây điều hướng và thẻ Part/Nhóm](./phase-03-outline-and-cards.md) | 2 | Pending |
-| 4 | [Bố cục trang hai cột](./phase-04-page-layout.md) | 3 | Pending |
-| 5 | [E2E, verify 3 viewport, docs](./phase-05-e2e-verify-docs.md) | 4 | Pending |
+| 1 | [Primitive editor dùng chung](./phase-01-shared-editor-primitives.md) | #420 phase 1 | Completed |
+| 2 | [Model nhóm và model cây đề](./phase-02-builder-models.md) | #420 phase 2–3, phase 1 | Completed |
+| 3 | [Cây điều hướng và thẻ Part/Nhóm](./phase-03-outline-and-cards.md) | 2 | Completed |
+| 4 | [Bố cục trang hai cột](./phase-04-page-layout.md) | 3 | Completed |
+| 5 | [E2E, verify 3 viewport, docs](./phase-05-e2e-verify-docs.md) | 4 | Completed |
 
 Một PR (PR2 của #420 mở rộng) gồm #420 phase 2–3 + phase 1–5 của plan này, nhánh cắt từ `develop`.
 

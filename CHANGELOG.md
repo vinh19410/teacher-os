@@ -14,6 +14,15 @@ Quy ước khi cập nhật:
 ## 2026-10-23
 
 ### Added
+- Tầng Question Group cho đề thư viện: cột `library_test_part.groups` (migration `0044` ADD COLUMN có default `[]`), schema nhóm kèm bất biến dải câu (nhóm đầu từ 0, nối tiếp, phủ đủ câu, `answerSet` ≥2 câu và nằm trọn một nhóm), rule xuất bản theo nhóm (inline cloze cần dạng điền từ + đúng 1 marker `____`), route PUT/DTO trả và lưu `groups` (#420 phase 2–3, #424)
+- Trang soạn đề thư viện admin theo bố cục Quiz Builder hai cột: cây điều hướng Part → Nhóm câu → Câu đánh số fold theo số câu thật, thẻ Part có tab Nội dung/Câu hỏi, thẻ Nhóm có tab Hướng dẫn/Thiết lập/Câu hỏi, hàng câu thu gọn kèm chip tóm tắt, panel "Kiểm tra đáp án" chỉ đọc có jump tới câu, thanh hành động Lưu part/Kiểm tra đáp án (#424)
+- Editor dùng chung mở rộng (optional, web không đổi hành vi): `AnswerKeyGrid` hàng câu thu gọn + `qStartOverride` + ô giải thích từng câu, `QuestionKeyEditor` prop `view` tách hướng dẫn/khỏi câu hỏi, `CardControls`, `questionSummary`; ClozeEditor Apply giữ `explanation`/`answerSet`/`type`/`pin` (cả table-grid) (#424 phase 1)
+
+### Fixed
+- `normalizeQuestions` của form thư viện không còn strip `explanation`/`answerSet` khi lưu part — trước đó mọi lần mở+lưu part đều mất im lặng 2 field này (#420 Task 4.4, #424)
+- Lỗi soạn đề được bắt và sửa trong đợt e2e mới: scroll race khi nhảy tới câu (rAF trước commit), panel Kiểm tra đáp án jump sai hàng nhóm ≥2, editor phẳng hiển thị "Câu 14" thay vì số fold, sidebar admin tràn ngang 375 (#424)
+
+### Added
 - Câu hỏi đề IELTS nhận 2 trường optional mới `explanation` (giải thích rich text sau khi nộp) và `answerSet` (khóa tập đáp án không thứ tự, IELTS "Choose TWO") trên `assignmentQuestionSchema` + interface `AssignmentQuestion` dùng chung cho assignment_prompt lẫn library_test_part — optional không default nên câu cũ giữ nguyên shape, dirty-check web không lệch; payload student vẫn chỉ gửi `{stem, opts, type, pin}` nên `explanation`/đáp án không bao giờ tới client học viên trước khi nộp (#420 PR1)
 - `gradeQuiz` chấm các câu cùng `answerSet` như một tập không thứ tự bằng khớp hai phía cực đại (Kuhn, deterministic theo index tăng dần — cùng input luôn ra cùng verdict mỗi câu, trang review chấm lại khớp chấm lần đầu); câu không có `answerSet` chấm y như cũ; 12 test mới (8 grader + 4 schema) phủ hoán vị, alts giao nhau, đường tăng, tập trộn (#420 PR1)
 

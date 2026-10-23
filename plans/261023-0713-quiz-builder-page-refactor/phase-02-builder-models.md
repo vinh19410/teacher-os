@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Model nhóm và model cây đề"
-status: pending
+status: completed
 priority: P1
 effort: "0.5d"
 dependencies: ["#420 phase 2", "#420 phase 3", 1]

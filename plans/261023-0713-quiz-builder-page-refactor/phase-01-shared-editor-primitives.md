@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Primitive editor dùng chung"
-status: pending
+status: completed
 priority: P1
 effort: "0.75d"
 dependencies: ["#420 phase 1"]

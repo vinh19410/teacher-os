@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Cây điều hướng và thẻ Part/Nhóm"
-status: pending
+status: completed
 priority: P1
 effort: "0.75d"
 dependencies: [2]
