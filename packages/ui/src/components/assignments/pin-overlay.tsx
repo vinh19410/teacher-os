@@ -1,9 +1,21 @@
 import {
-	type AssignmentQuestion,
 	QUIZ_ANSWER_VALUE_MAX,
 	type QuizVerdict,
 } from "@teacher-os/api/contracts";
 import { cn } from "@teacher-os/ui/lib/utils";
+
+/**
+ * Item pin của overlay — nới từ `AssignmentQuestion` (web preview không có
+ * `q`/`number` → fallback offset) tới `QuizPartQuestion` (take/preview #433
+ * mang key toàn cục để multi-part không đè đáp án — red-team RT1/C2).
+ */
+export interface PinOverlayItem {
+	pin?: { x: number; y: number } | null;
+	/** Key answers toàn cục (0-based) — undefined = offset trong mảng. */
+	q?: number;
+	/** Số câu hiển thị toàn đề — undefined = `qStart + offset`. */
+	number?: number;
+}
 
 /**
  * Pin-validity guard — pins are percents of the image box, so only finite
@@ -57,16 +69,16 @@ export function PinOverlay({
 	verdicts,
 }: {
 	imageUrl: string;
-	items: AssignmentQuestion[];
-	/** Real question number of row 0 (`qStartOf`) — pins show `qStart+i`. */
+	items: PinOverlayItem[];
+	/** Số câu của row 0 khi item không mang `number` (fallback caller cũ). */
 	qStart: number;
 	imageAlt?: string;
-	/** Learner answers keyed by the `items` array offset (take screen). */
+	/** Learner answers keyed by `item.q ?? offset`. */
 	answers?: Record<number, string>;
-	/** Take-screen edit callback for the pin input at `items` offset
-	 * `index`. Its presence makes the pin inputs editable. */
-	onAnswer?: (index: number, value: string) => void;
-	/** Verdict theo offset `items` — chỉ review truyền; tô viền ô pin. */
+	/** Take-screen edit callback for the pin input keyed `item.q ?? offset`.
+	 * Its presence makes the pin inputs editable. */
+	onAnswer?: (q: number, value: string) => void;
+	/** Verdict theo key `item.q ?? offset` — chỉ review truyền; tô viền ô pin. */
 	verdicts?: Record<number, QuizVerdict>;
 }) {
 	const pinned = items
@@ -83,8 +95,9 @@ export function PinOverlay({
 				loading="lazy"
 			/>
 			{pinned.map(({ item, index }) => {
-				const number = qStart + index;
-				const verdict = verdicts?.[index];
+				const key = item.q ?? index;
+				const number = item.number ?? qStart + index;
+				const verdict = verdicts?.[key];
 				return (
 					<span
 						key={number}
@@ -108,10 +121,10 @@ export function PinOverlay({
 								"w-16 rounded-sm border border-border border-b-2 bg-background/90 px-1 font-mono text-[11px] disabled:opacity-100",
 								verdict && VERDICT_PIN_CLASSES[verdict],
 							)}
-							value={interactive ? (answers?.[index] ?? "") : undefined}
+							value={interactive ? (answers?.[key] ?? "") : undefined}
 							onChange={
 								interactive
-									? (event) => onAnswer?.(index, event.target.value)
+									? (event) => onAnswer?.(key, event.target.value)
 									: undefined
 							}
 						/>

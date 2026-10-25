@@ -128,3 +128,51 @@ describe("buildQuizParts — intro chia cụm theo marker Questions X–Y (#301)
 		);
 	});
 });
+
+describe("buildQuizParts — qOffset multi-part (#433)", () => {
+	it("intro marker toàn đề 'Questions 14–20' + qOffset 13 → nhãn 14–20, q/number 13+i (R2)", () => {
+		// Part 2 của đề: giáo viên dán marker theo số toàn đề; splitQuizIntro
+		// tự quy về local (offset = 13) còn nhãn cuối cùng theo qStart.
+		const questions = Array.from({ length: 7 }, (_, i) => question(`q ${i}`));
+		const parts = buildQuizParts(
+			questions,
+			"note",
+			"<p>Questions 14–20</p><p>Complete the notes below.</p>",
+			13,
+		);
+		expect(parts).toHaveLength(1);
+		expect(parts[0]).toMatchObject({
+			label: "Questions 14–20",
+			qStart: 14,
+			source: "intro",
+		});
+		// Marker đã strip khỏi instruction; nội dung giáo viên giữ nguyên.
+		expect(parts[0]?.instructionHtml).not.toContain("Questions");
+		expect(parts[0]?.instructionHtml).toContain("Complete the notes below.");
+		expect(parts[0]?.questions.map((q) => q.q)).toEqual([
+			13, 14, 15, 16, 17, 18, 19,
+		]);
+		expect(parts[0]?.questions.map((q) => q.number)).toEqual([
+			14, 15, 16, 17, 18, 19, 20,
+		]);
+	});
+
+	it("qOffset=0 (mặc định) → hành vi cũ nguyên vẹn", () => {
+		const questions = Array.from({ length: 4 }, (_, i) => question(`q ${i}`));
+		expect(buildQuizParts(questions, "note", "", 0)).toEqual(
+			buildQuizParts(questions, "note"),
+		);
+	});
+
+	it("cluster sau section mang qOffset (không chỉ section intro)", () => {
+		const questions = [
+			...Array.from({ length: 2 }, (_, i) => question(`tfng ${i}`, "tfng")),
+			...Array.from({ length: 3 }, (_, i) => question(`note ${i}`)),
+		];
+		const parts = buildQuizParts(questions, "note", "", 5);
+		expect(parts.map((part) => part.qStart)).toEqual([6, 8]);
+		expect(parts.flatMap((part) => part.questions.map(({ q }) => q))).toEqual([
+			5, 6, 7, 8, 9,
+		]);
+	});
+});

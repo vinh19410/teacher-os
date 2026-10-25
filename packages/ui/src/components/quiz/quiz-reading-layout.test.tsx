@@ -1,13 +1,14 @@
+import { QuizReadingSplitLayout } from "@teacher-os/ui/components/quiz/quiz-reading-layout";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { QuizReadingSplitLayout } from "@/components/quiz/quiz-reading-layout";
 
 describe("QuizReadingSplitLayout — reading split-pane (#286)", () => {
-	function renderLayout(node?: React.ReactNode) {
+	function renderLayout(node?: React.ReactNode, fillParent?: boolean) {
 		return renderToStaticMarkup(
 			<QuizReadingSplitLayout
 				passage="<p>Đoạn đọc bên trái.</p>"
 				navigator={node ?? <footer data-testid="nav" />}
+				fillParent={fillParent}
 			>
 				<p>paper</p>
 			</QuizReadingSplitLayout>,
@@ -55,5 +56,15 @@ describe("QuizReadingSplitLayout — reading split-pane (#286)", () => {
 		// overflow/height chỉ bật ở lg: — class cứng (không prefix) không tồn tại.
 		expect(html).not.toMatch(/[^:]overflow-y-auto/);
 		expect(html).not.toMatch(/[^:]h-\[calc/);
+	});
+
+	it("fillParent: wrapper chiếm h-full parent thay vì calc viewport (#433 RT13)", () => {
+		const html = renderLayout(undefined, true);
+		expect(html).toContain("lg:h-full");
+		expect(html).toContain("lg:min-h-0");
+		expect(html).not.toContain("lg:h-[calc(100svh-3.5rem)]");
+		// fillParent không đụng pane/navigator — cấu trúc render như cũ.
+		expect(html).toContain('aria-label="Bài đọc"');
+		expect(html.endsWith("</footer></div>")).toBe(true);
 	});
 });
