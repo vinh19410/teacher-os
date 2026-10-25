@@ -1,4 +1,8 @@
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import type {
+	QuizPart,
+	QuizPartQuestion,
+} from "@teacher-os/api/lib/quiz-parts";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { stripEssayControls } from "@teacher-os/ui/components/quiz/quiz-essay-input";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
@@ -732,5 +736,129 @@ describe("QuizPaper mode=review — tô verdict từng câu (#351)", () => {
 		expect(html).not.toContain("Đáp án đúng");
 		expect(html).not.toContain("Bạn chọn");
 		expect(html).toContain("text-primary");
+	});
+});
+
+describe("QuizPaper — part nhóm thư viện (#433)", () => {
+	const groupQuestions = (from: number, typeId: string): QuizPartQuestion[] =>
+		Array.from({ length: 2 }, (_, i) => ({
+			stem: `${typeId} ${i}`,
+			opts: null,
+			pin: null,
+			type: typeId,
+			q: from + i,
+			number: from + i + 1,
+		}));
+
+	const groupPart = (
+		index: number,
+		qStart: number,
+		typeId: string,
+		optionBank: string[],
+	): QuizPart => ({
+		id: `part-${index}`,
+		label:
+			qStart + 1 === qStart + 2
+				? `Questions ${qStart + 1}`
+				: `Questions ${qStart + 1}–${qStart + 2}`,
+		qStart,
+		typeId,
+		instructionHtml: `<p>Instruction ${typeId}</p>`,
+		...(optionBank.length > 0 ? { optionBank } : {}),
+		source: "group",
+		questions: groupQuestions(qStart, typeId),
+	});
+
+	it("mỗi nhóm bank riêng; grouped bankable KHÔNG alert 'Thiếu ngân hàng lựa chọn' (RT2)", () => {
+		const parts = [
+			groupPart(1, 0, "headings", ["I", "II", "III"]),
+			groupPart(2, 2, "sentend", ["A", "B"]),
+		];
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "headings", optionBank: [] })}
+				parts={parts}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Instruction headings");
+		expect(html).toContain("Instruction sentend");
+		expect(html).toContain("I");
+		expect(html).toContain("A");
+		expect(html).not.toContain("Thiếu ngân hàng lựa chọn");
+	});
+
+	it("caller cũ không nhóm: bankable + bank rỗng vẫn alert như trước (giữ hành vi)", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({ type: "headings", optionBank: [] })}
+				parts={buildQuizParts(
+					Array.from({ length: 2 }, (_, i) => ({
+						stem: `headings ${i}`,
+						opts: null,
+						pin: null,
+						type: "headings",
+					})),
+					"headings",
+				)}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Thiếu ngân hàng lựa chọn");
+	});
+
+	it("part nhóm + intro chứa marker 'Questions X–Y' → intro render nguyên vẹn (RT11)", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					type: "headings",
+					intro: "<p>Questions 1–2</p><p>Preamble CANARY giữ nguyên.</p>",
+				})}
+				parts={[groupPart(1, 0, "headings", ["I", "II"])]}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain("Preamble CANARY giữ nguyên.");
+		expect(html).toContain("Instruction headings");
+	});
+
+	it("pin ở part qOffset>0: key answers theo q toàn cục, nhãn số toàn đề (RT1)", () => {
+		const questions: StudentQuizQuestion[] = Array.from(
+			{ length: 2 },
+			(_, i) => ({
+				stem: `map ${i}`,
+				opts: null,
+				pin: { x: 10 + i * 10, y: 20 },
+				type: "map",
+			}),
+		);
+		const parts = buildQuizParts(questions, "map", "", 13);
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "listening",
+					type: "map",
+					intro: "",
+					passage: "",
+					imageUrl: "https://example.com/map.png",
+				})}
+				parts={parts}
+				answers={{ 13: "River" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+			/>,
+		);
+		// Nhãn pin theo số toàn đề (item.number).
+		expect(html).toContain('aria-label="Điền đáp án câu 14"');
+		expect(html).toContain('aria-label="Điền đáp án câu 15"');
+		// Giá trị ghi key `q` (13) — không phải offset trong part (0).
+		expect(html).toContain('value="River"');
+		expect(html).not.toContain('value="x"');
 	});
 });

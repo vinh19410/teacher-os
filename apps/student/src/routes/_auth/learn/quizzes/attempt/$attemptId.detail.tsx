@@ -5,13 +5,13 @@ import { buttonVariants } from "@teacher-os/ui/components/button";
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
-import { useEffect, useMemo, useState } from "react";
-import Loader from "@/components/loader";
-import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import {
 	isReadingSplitPane,
 	QuizReadingSplitLayout,
-} from "@/components/quiz/quiz-reading-layout";
+} from "@teacher-os/ui/components/quiz/quiz-reading-layout";
+import { useEffect, useMemo, useState } from "react";
+import Loader from "@/components/loader";
+import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import {

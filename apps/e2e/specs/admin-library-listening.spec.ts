@@ -212,3 +212,115 @@ test("đề Listening 4 section + audio → chặn xuất bản khi thiếu audi
 	const afterDelete = await page.request.get(src as string);
 	expect(afterDelete.status()).toBe(404);
 });
+
+test("Xem trước Listening — số câu Section 2 kế tiếp Section 1, nhãn audio, 0 request ghi", async ({
+	page,
+	request,
+}) => {
+	await ensureAdminAccount(request);
+	await createListeningTest(page);
+
+	// Section 1: 2 câu + audio (đã lưu).
+	await openEmptySlot(page, "Section 1");
+	await page.getByLabel("Tiêu đề part").fill("Section 1 — Enquiry");
+	await partTab(page, "Section 1", "Câu hỏi").click();
+	await fillQuestionRow(
+		page,
+		"s1",
+		0,
+		"Listening question 1 — booking name",
+		"A",
+	);
+	await fillQuestionRow(
+		page,
+		"s1",
+		1,
+		"Listening question 2 — total price",
+		"B",
+	);
+	await savePart(page);
+	await partTab(page, "Section 1", "Nội dung").click();
+	await page
+		.locator('input[type="file"][data-testid$="-audio-input"]')
+		.setInputFiles({
+			name: "section-1.mp3",
+			mimeType: "audio/mpeg",
+			buffer: mp3FixtureBytes(),
+		});
+	await partTab(page, "Section 1", "Nội dung").click();
+	await expect(page.getByText("section-1.mp3")).toBeVisible();
+
+	// Section 2: 2 câu NHÁP chưa lưu — số câu phải bắt đầu sau Section 1.
+	await openEmptySlot(page, "Section 2");
+	await page.getByLabel("Tiêu đề part").fill("Section 2 — Talk");
+	await partTab(page, "Section 2", "Câu hỏi").click();
+	await fillQuestionRow(
+		page,
+		"s2",
+		0,
+		"Listening question 3 — speaker place",
+		"A",
+	);
+	await fillQuestionRow(page, "s2", 1, "Listening question 4 — next tour", "B");
+
+	const writeRequests: string[] = [];
+	page.on("request", (req) => {
+		const method = req.method();
+		if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+			writeRequests.push(`${method} ${req.url()}`);
+		}
+	});
+
+	await page
+		.getByRole("toolbar", { name: "Thao tác soạn đề" })
+		.getByRole("button", { name: "Xem trước" })
+		.click();
+	const dialog = page.getByRole("dialog", { name: /Xem trước bộ đề/ });
+	await expect(dialog).toBeVisible();
+	// Tab Section 2 (đang soạn) mở mặc định với số câu toàn đề 3–4.
+	await expect(
+		dialog.getByRole("heading", { name: "Questions 3–4" }),
+	).toBeVisible();
+	await expect(dialog.getByText("Listening question 3")).toBeVisible();
+	// 1 cột (không split-pane listening) — không có pane bài đọc.
+	await expect(
+		dialog.locator('[data-testid="reading-passage-pane"]'),
+	).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	expect(writeRequests).toEqual([]);
+
+	// Tab Section 1 đã lưu: nhãn 🔊 tên file như học viên.
+	await page
+		.getByRole("toolbar", { name: "Thao tác soạn đề" })
+		.getByRole("button", { name: "Xem trước" })
+		.click();
+	await expect(dialog).toBeVisible();
+	const section1Tab = dialog.getByRole("tab", { name: /Section 1/ });
+	await section1Tab.click();
+	await expect(dialog.getByText("🔊 section-1.mp3")).toBeVisible();
+	await expect(
+		dialog.getByRole("heading", { name: "Questions 1–2" }),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	expect(writeRequests).toEqual([]);
+
+	// Dọn đề.
+	await savePart(page);
+	await assertNoUnsavedChanges(page);
+	await backToListAndDelete(page, TITLE);
+});
+
+/** Mirror reading spec: trước reload/điều hướng khi còn nháp (useBlocker). */
+async function assertNoUnsavedChanges(page: Page): Promise<void> {
+	await expect(page.getByText("Có thay đổi chưa lưu")).toHaveCount(0);
+}
+
+async function backToListAndDelete(page: Page, title: string) {
+	const row = await backToListAndFindRow(page, title);
+	await row.getByRole("button", { name: "Xóa", exact: true }).click();
+	await expect(page.getByText("Xóa bộ đề?")).toBeVisible();
+	await page.getByRole("button", { name: "Xóa bộ đề" }).click();
+	await expect(page.getByRole("row", { name: title })).toHaveCount(0);
+}

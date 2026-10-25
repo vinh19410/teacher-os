@@ -15,7 +15,7 @@ import {
 } from "@teacher-os/api/library-contracts";
 import { buttonVariants } from "@teacher-os/ui/components/web-kit/button";
 import { Card } from "@teacher-os/ui/components/web-kit/card";
-import { Check } from "lucide-react";
+import { Check, Eye } from "lucide-react";
 import {
 	useCallback,
 	useDeferredValue,
@@ -56,6 +56,8 @@ import {
 	TestOutline,
 } from "@/components/library/test-outline";
 import { buildTestOutline } from "@/components/library/test-outline-model";
+import { buildTestPreview } from "@/components/library/test-preview-model";
+import { TestPreviewOverlay } from "@/components/library/test-preview-overlay";
 import { isHttpError } from "@/lib/query-client";
 import {
 	deleteLibraryPart,
@@ -200,6 +202,13 @@ function EditTestRoute() {
 	const focusNonceRef = useRef(0);
 	const partFormRef = useRef<PartFormHandle>(null);
 	const [answersOpen, setAnswersOpen] = useState(false);
+	// Overlay Xem trước (#433): mở trên dữ liệu đã lưu + bản nháp; trong lúc
+	// mở, autosave header qua blur được HOÃN (red-team RT4 — blur vào overlay
+	// không được sinh PATCH ngầm).
+	const [previewOpen, setPreviewOpen] = useState(false);
+	const previewOpenRef = useRef(false);
+	previewOpenRef.current = previewOpen;
+	const previewTriggerRef = useRef<HTMLButtonElement>(null);
 	// Dưới lg cây nằm trên cột phải, thu gọn mặc định; guard matchMedia cho
 	// môi trường test thiếu implementation (precedent annotatable-essay).
 	const [outlineCollapsed, setOutlineCollapsed] = useState(() => {
@@ -422,6 +431,21 @@ function EditTestRoute() {
 				: [],
 		[skill, slots, partsBySlot, deferredDrafts],
 	);
+	// Tabs Xem trước: chỉ tính khi overlay đang mở, theo deferredDrafts (plan
+	// phase 2 — mở overlay không chặn frame gõ).
+	const previewTabs = useMemo(
+		() =>
+			previewOpen && skill
+				? buildTestPreview({
+						skill,
+						slots,
+						partsBySlot,
+						drafts: deferredDrafts,
+						savedInputs: savedInputsBySlot,
+					})
+				: null,
+		[previewOpen, skill, slots, partsBySlot, deferredDrafts, savedInputsBySlot],
+	);
 
 	if (query.isPending) {
 		return (
@@ -528,6 +552,16 @@ function EditTestRoute() {
 					<div
 						onBlur={(event) => {
 							if (event.currentTarget.contains(event.relatedTarget)) return;
+							// RT4: blur vào overlay Xem trước không PATCH — hoãn đến
+							// khi overlay đóng, blur tiếp theo vẫn lưu như cũ.
+							// relatedTarget: mousedown nút Xem trước blur header
+							// TRƯỚC khi onClick kịp set previewOpen (race blur→click).
+							if (
+								previewOpenRef.current ||
+								event.relatedTarget === previewTriggerRef.current
+							) {
+								return;
+							}
 							if (headerValue && headerDirty) saveHeader(headerValue);
 						}}
 					>
@@ -581,6 +615,17 @@ function EditTestRoute() {
 				>
 					<Check aria-hidden="true" className="size-4" />
 					Kiểm tra đáp án
+				</button>
+				<button
+					ref={previewTriggerRef}
+					type="button"
+					className={buttonVariants({ variant: "outline", size: "sm" })}
+					aria-haspopup="dialog"
+					aria-expanded={previewOpen}
+					onClick={() => setPreviewOpen(true)}
+				>
+					<Eye aria-hidden="true" className="size-4" />
+					Xem trước
 				</button>
 				{dirtySlots.size > 0 && (
 					<span className="flex items-center gap-1.5 text-amber-600 text-xs">
@@ -709,6 +754,21 @@ function EditTestRoute() {
 						))}
 					</ul>
 				</div>
+			)}
+
+			{previewOpen && previewTabs && (
+				<TestPreviewOverlay
+					testTitle={detail.title}
+					tabs={previewTabs}
+					initialPart={currentSlot}
+					onClose={() => {
+						setPreviewOpen(false);
+						// RT4: blur vào overlay đã HOÃN lưu header — flush đúng một
+						// lần khi đóng (điều kiện dirty đánh giá tại thời điểm này).
+						if (headerValue && headerDirty) saveHeader(headerValue);
+					}}
+					triggerRef={previewTriggerRef}
+				/>
 			)}
 		</section>
 	);

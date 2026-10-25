@@ -646,3 +646,179 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 	// --- Dọn đề ---
 	await backToListAndDelete(page, GROUPS_TITLE);
 });
+
+const PREVIEW_TITLE = `E2E Reading Preview ${Date.now()}`;
+
+test("Xem trước overlay — nháp chưa lưu render đúng, 0 request ghi, đóng giữ nháp", async ({
+	page,
+	request,
+}) => {
+	await ensureAdminAccount(request);
+	await adminOpenNewTestPage(page);
+	await page.getByLabel("Tiêu đề", { exact: true }).fill(PREVIEW_TITLE);
+	await page.getByLabel("Kỹ năng").selectOption({ label: "Reading (Đọc)" });
+	await page.getByRole("button", { name: "Tạo bộ đề" }).click();
+	await expect(page).toHaveURL(/\/library\/tests\/(?!new)[^/]+$/);
+
+	// Part 1: nhóm 1 tfng 2 câu + nhóm 2 headings có option bank — KHÔNG lưu.
+	await openEmptySlot(page, "Passage 1");
+	await page.getByLabel("Tiêu đề part").fill("Passage 1 — Preview");
+	// Plain text — fill chuỗi có tag vào rich editor sẽ bị escapeliteral
+	// (artifact fixture, không phải đường render thật của dữ liệu đã lưu).
+	await fillRichEditor(
+		page,
+		"Đoạn văn (Passage)",
+		"Preview passage về sông ngòi.",
+	);
+	await partTab(page, "Passage 1", "Câu hỏi").click();
+	await page.getByLabel("Dạng bài", { exact: true }).selectOption("tfng");
+	await fillQuestionRow(page, "p1", 0, "Câu tfng số 1.", "TRUE");
+	await fillQuestionRow(page, "p1", 1, "Câu tfng số 2.", "FALSE");
+	await page.getByRole("button", { name: "Chia thành nhiều nhóm câu" }).click();
+	const g2 = page.locator("#group-p1-1");
+	await outline(page)
+		.getByRole("button", { name: "Nhóm câu 2", exact: true })
+		.click();
+	await groupTab(page, "p1", 1, "Thiết lập").click();
+	await g2.getByLabel("Dạng bài", { exact: true }).selectOption("headings");
+	await groupTab(page, "p1", 1, "Câu hỏi").click();
+	for (let i = 0; i < 4; i++) {
+		await g2.getByRole("button", { name: "Thêm mục" }).click();
+	}
+	const bankRows: ReadonlyArray<[string, string]> = [
+		["i", "Sông dài nhất"],
+		["ii", "Sông ngược dòng"],
+		["iii", "Hồ ngọt"],
+		["iv", "Đầm mặn"],
+	];
+	for (const [label, text] of bankRows) {
+		await g2.getByLabel(`Mục ${label}`, { exact: true }).fill(text);
+	}
+	await fillGroupRow(page, "p1", 1, 3, "Heading câu 3.", "i");
+	await g2.getByRole("button", { name: "Thêm câu" }).click();
+	await fillGroupRow(page, "p1", 1, 4, "Heading câu 4.", "ii");
+	// Nháp dirty — overlay phải bật được (AC) và ưu tiên bản nháp.
+	await expect(page.getByText("Có thay đổi chưa lưu").first()).toBeVisible();
+
+	// Theo dõi mọi request ghi trong lúc overlay mở (RT4).
+	const writeRequests: string[] = [];
+	page.on("request", (req) => {
+		const method = req.method();
+		if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+			writeRequests.push(`${method} ${req.url()}`);
+		}
+	});
+
+	const toolbar = page.getByRole("toolbar", { name: "Thao tác soạn đề" });
+	const previewButton = toolbar.getByRole("button", { name: "Xem trước" });
+	await previewButton.click();
+	const dialog = page.getByRole("dialog", { name: /Xem trước bộ đề/ });
+	await expect(dialog).toBeVisible();
+	// Banner cố định + không alert giả "Thiếu ngân hàng lựa chọn" (RT2).
+	await expect(
+		dialog.getByText("Đáp án bạn chọn không được lưu"),
+	).toBeVisible();
+	await expect(dialog.getByText("Thiếu ngân hàng lựa chọn")).toHaveCount(0);
+	// Split-pane passage như học viên.
+	await expect(
+		dialog.locator('[data-testid="reading-passage-pane"]'),
+	).toContainText("Preview passage về sông ngòi.");
+	// Nhãn nhóm toàn đề + bank của nhóm 2.
+	await expect(
+		dialog.getByRole("heading", { name: "Questions 1–2" }),
+	).toBeVisible();
+	await expect(
+		dialog.getByRole("heading", { name: "Questions 3–4" }),
+	).toBeVisible();
+	await expect(dialog.getByText("Sông dài nhất")).toBeVisible();
+	// Chọn đáp án trong overlay (tfng pill câu 1).
+	await dialog.locator('input[type="radio"]').first().check();
+	// 0 request ghi trong suốt phiên overlay.
+	expect(writeRequests).toEqual([]);
+
+	// Esc đóng — trang soạn giữ nguyên nháp.
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	await expect(page.getByText("Có thay đổi chưa lưu").first()).toBeVisible();
+
+	// Mở lại — answers trống (D3).
+	await previewButton.click();
+	await expect(dialog).toBeVisible();
+	await expect(dialog.locator('input[type="radio"]:checked')).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+
+	// Header dirty → mở preview không PATCH ngầm (RT4); đóng overlay thì
+	// lưu bị hoãn được FLUSH đúng một lần (blur đã xảy ra khi mở).
+	await page.getByLabel("Tiêu đề", { exact: true }).fill(`${PREVIEW_TITLE} 2`);
+	await previewButton.click();
+	await expect(dialog).toBeVisible();
+	expect(writeRequests).toEqual([]);
+	const headerSaved = page.waitForResponse(
+		(response) =>
+			["PUT", "PATCH"].includes(response.request().method()) && response.ok(),
+	);
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	await headerSaved;
+	expect(writeRequests).toHaveLength(1);
+
+	// --- Verify 3 viewport + keyboard (RT13 + plan phase 3): navigator và
+	// pane bài làm trong viewport ở lg; mobile xếp 1 cột cuộn dọc được
+	// (overlay khóa cuộn body — wrapper nội dung tự cuộn); không tràn ngang.
+	const screensDir = resolve(
+		fileURLToPath(new URL(".", import.meta.url)),
+		"../../../plans/261025-1608-library-test-student-preview/screens",
+	);
+	mkdirSync(screensDir, { recursive: true });
+	const viewports: ReadonlyArray<[number, number]> = [
+		[1440, 900],
+		[768, 1024],
+		[375, 812],
+	];
+	for (const [width, height] of viewports) {
+		await page.setViewportSize({ width, height });
+		await previewButton.click();
+		await expect(dialog).toBeVisible();
+		await expect(dialog.getByText("Sông dài nhất")).toBeVisible();
+		const horizontalOverflow = await dialog.evaluate(
+			(el) => el.scrollWidth > el.clientWidth,
+		);
+		expect(horizontalOverflow).toBe(false);
+		const workPane = dialog.locator('[data-testid="reading-work-pane"]');
+		await expect(workPane).toBeVisible();
+		if (width >= 1024) {
+			// Split-pane ≥lg: cả 2 pane + navigator nằm trong viewport dù banner
+			// nhiều dòng (fillParent, không calc cứng).
+			await expect(workPane).toBeInViewport();
+			await expect(
+				dialog.locator('[data-testid="navigator-progress"]'),
+			).toBeInViewport();
+		} else {
+			// <lg xếp 1 cột — wrapper cuộn dọc được tới navigator.
+			await dialog
+				.locator('[data-testid="navigator-progress"]')
+				.scrollIntoViewIfNeeded();
+			await expect(
+				dialog.locator('[data-testid="navigator-progress"]'),
+			).toBeInViewport();
+		}
+		await dialog.screenshot({
+			path: resolve(screensDir, `preview-${width}.png`),
+		});
+		await page.keyboard.press("Escape");
+		await expect(dialog).toHaveCount(0);
+	}
+	// Bàn phím: Esc trả focus về nút Xem trước.
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await previewButton.click();
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	await expect(previewButton).toBeFocused();
+
+	// Dọn đề: lưu part nháp rồi xóa.
+	await savePart(page);
+	await assertNoUnsavedChanges(page);
+	await backToListAndDelete(page, `${PREVIEW_TITLE} 2`);
+});

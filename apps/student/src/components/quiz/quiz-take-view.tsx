@@ -14,6 +14,10 @@ import { QuizEssayFooter } from "@teacher-os/ui/components/quiz/quiz-essay-foote
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
+import {
+	isReadingSplitPane,
+	QuizReadingSplitLayout,
+} from "@teacher-os/ui/components/quiz/quiz-reading-layout";
 import { QuizSpeakingFooter } from "@teacher-os/ui/components/quiz/quiz-speaking-footer";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,10 +28,6 @@ import {
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
-import {
-	isReadingSplitPane,
-	QuizReadingSplitLayout,
-} from "@/components/quiz/quiz-reading-layout";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
 	SpeakingGuideCard,
