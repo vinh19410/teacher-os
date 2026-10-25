@@ -221,6 +221,10 @@ describe("TestPreviewOverlay (#433)", () => {
 			expect(render6.container.textContent).toContain(
 				"«Passage 1» đang hiển thị bản ĐÃ LƯU",
 			);
+			// RT12: banner nêu tên cả part draft-invalid, không chỉ tab suffix.
+			expect(render6.container.textContent).toContain(
+				"«Passage 2» bản nháp lỗi schema",
+			);
 			expect(render6.container.textContent).toContain("Passage 2 · nháp lỗi");
 			const tabButtons = [
 				...render6.container.querySelectorAll<HTMLButtonElement>(

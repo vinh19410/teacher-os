@@ -121,6 +121,11 @@ export function TestPreviewOverlay({
 				`«${entry.label}» có nhóm câu hỏng — đang hiển thị cấu trúc đơn giản hoá thay vì nhóm`,
 			);
 		}
+		if (entry.state === "draft-invalid") {
+			warnings.push(
+				`«${entry.label}» bản nháp lỗi schema — chưa hiển thị được trong xem trước`,
+			);
+		}
 	}
 	const flaggedGroups = (view?.unsupportedGroupFlags ?? []).map(
 		({ groupLabel, flags }) =>

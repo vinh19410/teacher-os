@@ -622,6 +622,10 @@ function EditTestRoute() {
 					className={buttonVariants({ variant: "outline", size: "sm" })}
 					aria-haspopup="dialog"
 					aria-expanded={previewOpen}
+					// RT4 (Safari): mousedown không focus button trên Safari nên
+					// relatedTarget = null, blur header bắn PATCH trước khi onClick
+					// kịp set previewOpen — chặn mặc định để focus ở nguyên chỗ.
+					onMouseDown={(event) => event.preventDefault()}
 					onClick={() => setPreviewOpen(true)}
 				>
 					<Eye aria-hidden="true" className="size-4" />
