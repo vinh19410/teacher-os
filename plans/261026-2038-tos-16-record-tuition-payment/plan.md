@@ -89,9 +89,9 @@ flowchart LR
 
 ## Red Team Review
 
-### Session — 2026-10-26
-**Findings:** 25 raw → 13 unique sau dedup (7 accepted, 6 rejected)
-**Severity breakdown:** 2 Critical, 5 High, 6 Medium
+### Session — 2026-10-27
+**Findings:** 25 raw → 14 unique sau dedup (11 accepted, 3 rejected)
+**Severity breakdown:** 2 Critical, 3 High, 9 Medium
 
 | # | Finding | Severity | Disposition | Applied To |
 |---|---------|----------|-------------|------------|
