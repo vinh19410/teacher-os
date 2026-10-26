@@ -563,6 +563,7 @@ function isSequentialHead(session: ClassSession, sid: string): boolean {
 export type SessionAttendanceDisplay =
 	| "completed"
 	| "cancelled"
+	| "absent"
 	| "check-in"
 	| "upcoming";
 
@@ -608,10 +609,16 @@ export function sessionAttendanceState(
 			const row = [...session.rows]
 				.filter((r) => r.sid === sid)
 				.sort((a, b) => a.id.localeCompare(b.id))[0];
+			// TOS-7: absent trên dòng dated đã được xử lý — không cấp check-in
+			// CTA (bấm sẽ 409 vì row.status !== "upcoming"). Rollup sessionStatus
+			// giữ nguyên ("upcoming") để ô lịch tuần không hiển thị ca toàn vắng là "Đã học".
+			if (row?.status === "absent") {
+				return { sid, enrollmentLessonId: null, display: "absent" };
+			}
 			state =
 				row?.status === "completed" || row?.status === "cancelled"
 					? row.status
-					: "upcoming"; // absent counts as not-completed, legacy parity
+					: "upcoming";
 			enrollmentLessonId = state === "upcoming" ? (row?.id ?? null) : null;
 			if (state === "completed") {
 				return { sid, enrollmentLessonId: null, display: "completed" };

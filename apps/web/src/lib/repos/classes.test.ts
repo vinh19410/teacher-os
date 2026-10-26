@@ -316,6 +316,8 @@ function lessonRow(
 		date: null,
 		type: "1:2",
 		status,
+		attendance: null,
+		attendanceNote: null,
 		topic: "",
 		zoom: "",
 	};

@@ -48,6 +48,8 @@ const lesson = (overrides: Partial<Lesson>): Lesson => ({
 	date: null,
 	type: "1:1",
 	status: "upcoming",
+	attendance: null,
+	attendanceNote: null,
 	topic: "",
 	zoom: "",
 	...overrides,

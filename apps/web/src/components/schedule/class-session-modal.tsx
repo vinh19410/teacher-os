@@ -214,6 +214,11 @@ export function ClassSessionModal({
 								const studentName = student?.name ?? `Học viên #${state.sid}`;
 								const targetId = state.targetLessonId;
 								const isRowPending = targetId !== null && isPending(targetId);
+								const datedRow =
+									sessionRef.dateISO !== null
+										? rows.find((r) => r.sid === state.sid)
+										: undefined;
+								const attendance = datedRow?.attendance ?? null;
 
 								return (
 									// biome-ignore lint/a11y/useSemanticElements: role="group" with aria-label is used to scope per-student action controls in UI and e2e
@@ -237,7 +242,19 @@ export function ClassSessionModal({
 										</div>
 
 										<div className="flex items-center gap-2">
-											{state.status === "completed" ? (
+											{attendance === "present" ? (
+												<Badge variant="success" dot>
+													Có mặt
+												</Badge>
+											) : attendance === "late" ? (
+												<Badge variant="warn" dot>
+													Đi muộn
+												</Badge>
+											) : attendance === "excused" ? (
+												<Badge variant="secondary">Vắng có phép</Badge>
+											) : attendance === "unexcused" ? (
+												<Badge variant="danger">Vắng không phép</Badge>
+											) : state.status === "completed" ? (
 												<Badge variant="success" dot>
 													Hoàn thành
 												</Badge>
@@ -248,7 +265,6 @@ export function ClassSessionModal({
 											) : (
 												<Badge variant="accent">Sắp tới</Badge>
 											)}
-
 											{targetId !== null && state.canCancelEdit && (
 												<div className="ml-2 flex items-center gap-1.5">
 													<Button

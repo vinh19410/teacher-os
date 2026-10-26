@@ -172,6 +172,7 @@ describe("dashboard", () => {
 						id: "a",
 						enrollmentId: "en-1",
 						day: 1,
+						date: "2026-10-05",
 						status: "absent",
 					}),
 					lessonRow({

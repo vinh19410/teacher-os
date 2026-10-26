@@ -46,6 +46,17 @@ export const lesson = sqliteTable(
 		date: text("date"),
 		type: text("type").notNull().default("1:1"),
 		status: text("status").notNull().default("upcoming"),
+		/**
+		 * TOS-7 (#440): trạng thái điểm danh chi tiết — `present | late |
+		 * excused | unexcused`. NULL = chưa ghi chi tiết (dòng cũ hoặc điểm
+		 * danh 1-click; quy ước hiển thị `NULL + completed` là "Có mặt").
+		 * Ánh xạ sang `status` (D2): present/late/unexcused → completed
+		 * (trừ buổi), excused → absent (không trừ) — hàm duy nhất
+		 * `lessonStatusForAttendance` ở @teacher-os/api contracts.
+		 */
+		attendance: text("attendance"),
+		/** Ghi chú học vụ của giáo viên (≤255). Teacher-only — không bao giờ chiếu vào /api/student. */
+		attendanceNote: text("attendance_note"),
 		topic: text("topic").notNull().default(""),
 		zoom: text("zoom").notNull().default(""),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })

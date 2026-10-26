@@ -6,6 +6,7 @@
 import {
 	CLASS_TYPES,
 	type ClassType,
+	type KernelLessonRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
@@ -522,6 +523,9 @@ export async function loadSnapshot(
 			date: row.date ?? null,
 			type: row.type,
 			status: row.status,
+			attendance: (row.attendance ?? null) as KernelLessonRow["attendance"],
+			attendanceNote: (row.attendanceNote ??
+				null) as KernelLessonRow["attendanceNote"],
 			topic: row.topic,
 			zoom: row.zoom,
 		})),

@@ -13,8 +13,10 @@ import {
 	invoiceMarkPaidSchema,
 	lessonActionSchema,
 	lessonEditSchema,
+	lessonStatusForAttendance,
 	occurrenceEditSchema,
 	STUDENT_INVITATION_ERROR_CODES,
+	sessionAttendanceSaveSchema,
 	studentInviteSchema,
 } from "@teacher-os/api/contracts";
 import {
@@ -42,7 +44,7 @@ import type {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, desc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -60,7 +62,11 @@ import {
 } from "../lib/syllabus-curriculum";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
-import { dashboardReminderRoutes } from "./dashboard-reminders";
+import { dailyAttendanceRoutes } from "./daily-attendance";
+import {
+	dashboardReminderRoutes,
+	resolveReminderScope,
+} from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
 import { gradingRoutes } from "./grading";
 import { paymentTransactionRoutes } from "./payment-transactions";
@@ -136,6 +142,16 @@ export function kernelRoutes(deps: {
 	): Promise<
 		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
 	> {
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "content-type must be application/json" },
+					415,
+				),
+			};
+		}
 		let raw: unknown;
 		try {
 			raw = await c.req.json();
@@ -1080,6 +1096,134 @@ export function kernelRoutes(deps: {
 		);
 	});
 
+	kernel.put("/classes/:id/sessions/:date/attendance", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+		const body = await readBody(c, sessionAttendanceSaveSchema);
+		if (!body.ok) return body.response;
+
+		const scope = resolveReminderScope();
+		if (scope.kind === "assigned" && !scope.classIds.includes(classId)) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+
+		const today = vietnamTodayISO();
+		if (dateISO > today) {
+			return futureSession(c);
+		}
+
+		const rosterRows = await db
+			.select({ id: lesson.id })
+			.from(lesson)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(lesson.enrollmentId, enrollment.id),
+					eq(enrollment.classId, lesson.classId),
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.where(
+				and(
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+					ne(lesson.status, "cancelled"),
+				),
+			);
+		if (rosterRows.length === 0) {
+			return c.json(
+				{ error: "occurrence not found", reason: "not-found" },
+				404,
+			);
+		}
+
+		const { entries } = body.data;
+		const rosterIdSet = new Set(rosterRows.map((r) => r.id));
+		const sentIdSet = new Set(entries.map((e) => e.lessonId));
+
+		for (const sentId of sentIdSet) {
+			if (!rosterIdSet.has(sentId)) {
+				return c.json(
+					{ error: "unknown lesson", reason: "unknown-lesson" },
+					422,
+				);
+			}
+		}
+
+		const missing = rosterRows
+			.map((r) => r.id)
+			.filter((id) => !sentIdSet.has(id));
+		if (missing.length > 0) {
+			return c.json(
+				{
+					error: "incomplete roster",
+					reason: "incomplete-roster",
+					missing,
+				},
+				422,
+			);
+		}
+
+		// D1 không có .transaction() tương tác; ghi bằng một db.batch nguyên tử
+		// kèm roster-snapshot guard trong WHERE. Nếu roster đổi giữa lúc đọc và
+		// ghi (ví dụ kích hoạt enrollment muộn thêm dòng upcoming), guard count
+		// lệch cho mọi câu lệnh -> toàn batch cập nhật 0 dòng -> trả 409.
+		const rosterCountGuard = sql`(SELECT count(*) FROM ${lesson} INNER JOIN ${enrollment} ON ${lesson.enrollmentId} = ${enrollment.id} AND ${enrollment.classId} = ${lesson.classId} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${dateISO} AND ${lesson.status} != 'cancelled' AND ${enrollment.status} = 'active') = ${entries.length}`;
+
+		const statements = entries.map((entry) =>
+			db
+				.update(lesson)
+				.set({
+					status: lessonStatusForAttendance(entry.attendance),
+					attendance: entry.attendance,
+					attendanceNote: entry.note,
+				})
+				.where(
+					and(
+						eq(lesson.id, entry.lessonId),
+						eq(lesson.orgId, ctx.orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, dateISO),
+						ne(lesson.status, "cancelled"),
+						lte(lesson.date, today),
+						inArray(
+							lesson.enrollmentId,
+							db
+								.select({ id: enrollment.id })
+								.from(enrollment)
+								.where(
+									and(
+										eq(enrollment.classId, classId),
+										eq(enrollment.orgId, ctx.orgId),
+										eq(enrollment.status, "active"),
+									),
+								),
+						),
+						rosterCountGuard,
+					),
+				)
+				.returning({ id: lesson.id }),
+		);
+		const [first, ...rest] = statements;
+		if (!first) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const results = await db.batch([first, ...rest]);
+		const updated = results.reduce((acc, rows) => acc + rows.length, 0);
+		if (updated !== entries.length) {
+			return c.json({ error: "roster changed", reason: "roster-changed" }, 409);
+		}
+
+		return c.json({ updated, recorded: true });
+	});
+
 	// Issue #60 — creation is non-idempotent, consistent with POST /api/syllabus-templates.
 	kernel.post("/invoices", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -1240,6 +1384,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/grading", gradingRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
+	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.
+	kernel.route("/attendance", dailyAttendanceRoutes(deps));
 	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
 	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
 	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));

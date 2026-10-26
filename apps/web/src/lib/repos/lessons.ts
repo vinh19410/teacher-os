@@ -6,7 +6,10 @@
  * independent of the env-validated runtime. Status writes go through the
  * Wave 0 command bus (check-in / cancel-lesson).
  */
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import type {
+	AttendanceStatus,
+	KernelSnapshot,
+} from "@teacher-os/api/contracts";
 import type { Lesson, LessonStatus, LessonType } from "@/lib/mock-data";
 
 const LESSON_TYPES: readonly LessonType[] = [
@@ -35,6 +38,22 @@ function coerceStatus(value: string): LessonStatus {
 		: "upcoming";
 }
 
+const ATTENDANCE_VALUES: readonly string[] = [
+	"present",
+	"late",
+	"excused",
+	"unexcused",
+];
+
+function coerceAttendance(
+	value: AttendanceStatus | string | null | undefined,
+): AttendanceStatus | null {
+	return value != null &&
+		(ATTENDANCE_VALUES as readonly string[]).includes(value)
+		? (value as AttendanceStatus)
+		: null;
+}
+
 export function mapLessons(snapshot: KernelSnapshot): Lesson[] {
 	const studentByEnrollment = new Map<string, string>();
 	for (const row of snapshot.enrollments) {
@@ -57,6 +76,8 @@ export function mapLessons(snapshot: KernelSnapshot): Lesson[] {
 			date: row.date ?? null,
 			type: coerceType(row.type),
 			status: coerceStatus(row.status),
+			attendance: coerceAttendance(row.attendance),
+			attendanceNote: row.attendanceNote ?? null,
 			topic: row.topic,
 			zoom: row.zoom,
 		});

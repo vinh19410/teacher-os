@@ -98,6 +98,18 @@ describe("/readyz", () => {
 		expect(await res.text()).toBe('{"ok":false}');
 	});
 
+	test("columns added by a later migration absent (DB stuck before 0045) is not ready", async () => {
+		// TOS-7 #440 — 0045 chỉ ADD COLUMN nên probe tables+indexes không
+		// thấy khác biệt: code mới + DB cũ phải 503 ở readyz thay vì 500
+		// "no such column" giữa giờ điểm danh.
+		const t = await createReadinessApp();
+		await t.db.run(sql`ALTER TABLE lesson DROP COLUMN attendance`);
+		await t.db.run(sql`ALTER TABLE lesson DROP COLUMN attendance_note`);
+		const res = await callReadyz(t.app);
+		expect(res.status).toBe(503);
+		expect(await res.text()).toBe('{"ok":false}');
+	});
+
 	test("database error (getDb throws) returns the same generic 503", async () => {
 		const t = await createReadinessApp({
 			getDb: () => {

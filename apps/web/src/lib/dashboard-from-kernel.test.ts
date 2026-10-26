@@ -54,6 +54,8 @@ function lesson(
 		date: null,
 		type: "1:1",
 		status: "upcoming",
+		attendance: null,
+		attendanceNote: null,
 		topic: "T",
 		zoom: "",
 		...partial,
@@ -292,10 +294,18 @@ describe("atRiskRows", () => {
 		).toEqual([]);
 	});
 
-	test("absent is a risk reason", () => {
+	test("absent dated within 14 days is a risk reason", () => {
 		const rows = atRiskRows(
 			students,
-			[lesson({ id: "a", sid: "s2", day: 5, status: "absent" })],
+			[
+				lesson({
+					id: "a",
+					sid: "s2",
+					day: 5,
+					status: "absent",
+					date: "2026-08-18",
+				}),
+			],
 			wednesday,
 		);
 		expect(rows).toEqual([{ student: s2, reasons: ["absent"] }]);
@@ -322,12 +332,107 @@ describe("atRiskRows", () => {
 
 	test("Sunday treats Mon–Sat upcoming as missed; merges reasons without duplicate students", () => {
 		const lessons: Lesson[] = [
-			lesson({ id: "a", sid: "s2", day: 2, status: "absent" }),
+			lesson({
+				id: "a",
+				sid: "s2",
+				day: 2,
+				status: "absent",
+				date: "2026-08-18",
+			}),
 			lesson({ id: "m", sid: "s2", day: 4, status: "upcoming" }),
 		];
 		expect(atRiskRows(students, lessons, sunday)).toEqual([
 			{ student: s2, reasons: ["absent", "missed-check-in"] },
 		]);
+	});
+
+	test("TOS-7: completed + unexcused in window is absent risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "u",
+					sid: "s3",
+					day: 3,
+					status: "completed",
+					attendance: "unexcused",
+					date: "2026-08-19",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
+	});
+
+	test("TOS-7: excused is a legitimate absence, never a risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "e",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					attendance: "excused",
+					date: "2026-08-19",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
+	});
+
+	test("TOS-7: absent + attendance null in window (legacy 1-click rows) stays a risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "n",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					date: "2026-08-10",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
+	});
+
+	test("TOS-7: absences older than 14 days no longer alert", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "old",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					attendance: "unexcused",
+					date: "2026-07-01",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
+	});
+
+	test("TOS-7: legacy undated rows have no absent write path, no absent reason", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({ id: "legacy", sid: "s3", day: 3, status: "absent" }),
+				lesson({
+					id: "legacy-unexcused",
+					sid: "s3",
+					day: 4,
+					status: "completed",
+					attendance: "unexcused",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
 	});
 });
 

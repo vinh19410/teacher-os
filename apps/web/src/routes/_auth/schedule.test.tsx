@@ -307,4 +307,102 @@ describe("class session dialog from the week grid", () => {
 		expect(within(reopened).queryByLabelText("Thứ")).toBeNull();
 		expect(reopened.textContent).toContain("Danh sách học viên (2)");
 	});
+
+	it("TOS-7: shows detailed attendance badge when attendance is set, keeping legacy labels when null", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						schedule: '{"days":[1],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+						sessionsTotal: 2,
+					}),
+				],
+				students: [
+					studentRow({ id: "st-1", name: "HV Có Mặt" }),
+					studentRow({ id: "st-2", name: "HV Đi Muộn" }),
+					studentRow({ id: "st-3", name: "HV Có Phép" }),
+					studentRow({ id: "st-4", name: "HV Không Phép" }),
+					studentRow({ id: "st-5", name: "HV Cũ 1-click" }),
+				],
+				enrollments: [
+					enrollmentRow({ id: "en-1", studentId: "st-1" }),
+					enrollmentRow({ id: "en-2", studentId: "st-2" }),
+					enrollmentRow({ id: "en-3", studentId: "st-3" }),
+					enrollmentRow({ id: "en-4", studentId: "st-4" }),
+					enrollmentRow({ id: "en-5", studentId: "st-5" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-10-12",
+						status: "completed",
+						attendance: "present",
+					}),
+					lessonRow({
+						id: "les-2",
+						enrollmentId: "en-2",
+						day: 1,
+						date: "2026-10-12",
+						status: "completed",
+						attendance: "late",
+					}),
+					lessonRow({
+						id: "les-3",
+						enrollmentId: "en-3",
+						day: 1,
+						date: "2026-10-12",
+						status: "absent",
+						attendance: "excused",
+					}),
+					lessonRow({
+						id: "les-4",
+						enrollmentId: "en-4",
+						day: 1,
+						date: "2026-10-12",
+						status: "completed",
+						attendance: "unexcused",
+					}),
+					lessonRow({
+						id: "les-5",
+						enrollmentId: "en-5",
+						day: 1,
+						date: "2026-10-12",
+						status: "completed",
+						attendance: null,
+					}),
+				],
+			}),
+		);
+		const dialog = await openMondaySession();
+		expect(
+			within(
+				within(dialog).getByRole("group", { name: "HV Có Mặt" }),
+			).getByText("Có mặt"),
+		).toBeTruthy();
+		expect(
+			within(
+				within(dialog).getByRole("group", { name: "HV Đi Muộn" }),
+			).getByText("Đi muộn"),
+		).toBeTruthy();
+		expect(
+			within(
+				within(dialog).getByRole("group", { name: "HV Có Phép" }),
+			).getByText("Vắng có phép"),
+		).toBeTruthy();
+		expect(
+			within(
+				within(dialog).getByRole("group", { name: "HV Không Phép" }),
+			).getByText("Vắng không phép"),
+		).toBeTruthy();
+		expect(
+			within(
+				within(dialog).getByRole("group", { name: "HV Cũ 1-click" }),
+			).getByText("Hoàn thành"),
+		).toBeTruthy();
+	});
 });
