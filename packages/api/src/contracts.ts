@@ -3320,3 +3320,108 @@ export const LESSON_STATUS_LABEL: Record<string, string> = {
 	cancelled: "Đã hủy",
 	holiday: "Nghỉ lễ — Đã dời lịch",
 };
+/** #454 — loại sự kiện chi tiết của 1 thông báo (nội dung thư cần biết sự kiện cụ thể). */
+export const NOTIFICATION_EVENT_TYPES = [
+	"class_enrolled",
+	"assignment_published",
+	"grade_returned",
+	"invoice_issued",
+	"tuition_reminder",
+	"schedule_changed",
+	"holiday_created",
+] as const;
+
+/** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
+export const NOTIFICATION_EVENT_GROUPS = [
+	"class_invite",
+	"assignment",
+	"tuition",
+	"schedule",
+] as const;
+
+export type NotificationEventType = (typeof NOTIFICATION_EVENT_TYPES)[number];
+export type NotificationEventGroup = (typeof NOTIFICATION_EVENT_GROUPS)[number];
+
+/** Ánh xạ event_type → event_group cho chip lọc (D2). */
+export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
+	NotificationEventType,
+	NotificationEventGroup
+> = {
+	class_enrolled: "class_invite",
+	assignment_published: "assignment",
+	grade_returned: "assignment",
+	invoice_issued: "tuition",
+	tuition_reminder: "tuition",
+	schedule_changed: "schedule",
+	holiday_created: "schedule",
+};
+
+export const NOTIFICATION_STATUSES = [
+	"queued",
+	"sent",
+	"read",
+	"failed",
+] as const;
+export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
+
+/** GET /api/notification-logs?q=&event=&status=&page= — 20 dòng/trang. */
+export const notificationLogQuerySchema = z.object({
+	q: z.string().optional(),
+	event: z.enum(NOTIFICATION_EVENT_GROUPS).optional(),
+	status: z.enum(NOTIFICATION_STATUSES).optional(),
+	page: z.number().int().min(1).optional(),
+});
+export type NotificationLogQuery = z.infer<typeof notificationLogQuerySchema>;
+
+export const notificationLogRowSchema = z.object({
+	id: z.string(),
+	createdAt: z.string(),
+	recipientName: z.string(),
+	recipientEmail: z.string().nullable(),
+	eventType: z.enum(NOTIFICATION_EVENT_TYPES),
+	eventGroup: z.enum(NOTIFICATION_EVENT_GROUPS),
+	channels: z.string(),
+	status: z.enum(NOTIFICATION_STATUSES),
+	title: z.string(),
+	body: z.string(),
+	linkPath: z.string(),
+	senderName: z.string(),
+	replyToEmail: z.string().nullable(),
+	sentAt: z.string().nullable(),
+	readAt: z.string().nullable(),
+	retryCount: z.number().int(),
+	lastError: z.string().nullable(),
+	refType: z.string(),
+	refId: z.string(),
+});
+export type NotificationLogRow = z.infer<typeof notificationLogRowSchema>;
+
+export const notificationLogResponseSchema = z.object({
+	rows: z.array(notificationLogRowSchema),
+	total: z.number().int(),
+	counts: z.record(z.enum([...NOTIFICATION_STATUSES, "all"]), z.number().int()),
+	page: z.number().int().min(1),
+	pageSize: z.literal(20),
+});
+export type NotificationLogResponse = z.infer<
+	typeof notificationLogResponseSchema
+>;
+
+/** Mục inbox in-app của học viên (GET /api/student/inbox). */
+export const studentInboxItemSchema = z.object({
+	id: z.string(),
+	eventType: z.enum(NOTIFICATION_EVENT_TYPES),
+	title: z.string(),
+	body: z.string(),
+	linkPath: z.string(),
+	status: z.enum(NOTIFICATION_STATUSES),
+	readAt: z.string().nullable(),
+	createdAt: z.string(),
+});
+export type StudentInboxItem = z.infer<typeof studentInboxItemSchema>;
+
+export const studentInboxResponseSchema = z.object({
+	items: z.array(studentInboxItemSchema),
+	unread: z.number().int(),
+});
+export type StudentInboxResponse = z.infer<typeof studentInboxResponseSchema>;

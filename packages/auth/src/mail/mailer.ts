@@ -3,6 +3,16 @@ export interface MailInput {
 	subject: string;
 	html: string;
 	text: string;
+	/** Header Reply-To (email chủ tổ chức, plan TOS-21 D5) — vắng mặt thì không gửi header. */
+	replyTo?: string;
+	/** Tên người gửi hiển thị ("Tên org qua Teacher OS") — vắng mặt thì from là địa chỉ trần. */
+	fromName?: string;
+}
+
+export function composeFrom(from: string, fromName?: string): string {
+	if (!fromName) return from;
+	const escaped = fromName.replaceAll('"', '\\"');
+	return `"${escaped}" <${from}>`;
 }
 
 export interface Mailer {
@@ -13,9 +23,11 @@ export function createLogMailer(): Mailer {
 	return {
 		async send(input: MailInput): Promise<void> {
 			console.info(
-				"[mail:log] to=%s subject=%s\n%s",
+				"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
 				input.to,
 				input.subject,
+				input.replyTo ?? "",
+				input.fromName ?? "",
 				input.text,
 			);
 		},
@@ -38,7 +50,8 @@ export function createResendMailer({
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				from,
+				from: composeFrom(from, input.fromName),
+				...(input.replyTo ? { reply_to: input.replyTo } : {}),
 				to: [input.to],
 				subject: input.subject,
 				html: input.html,

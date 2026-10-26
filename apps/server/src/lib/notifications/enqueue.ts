@@ -1,0 +1,99 @@
+import { user } from "@teacher-os/db/schema/auth";
+import { membership } from "@teacher-os/db/schema/membership";
+import { notificationRecord } from "@teacher-os/db/schema/notification-record";
+import { organization } from "@teacher-os/db/schema/organization";
+import { student } from "@teacher-os/db/schema/student";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import type { Db } from "../../app";
+import { eventGroupOf, type NotificationEvent } from "./templates";
+
+/** Giới hạn biến D1: mỗi INSERT tối đa số dòng này. */
+const INSERT_CHUNK = 50;
+
+export interface EnqueueResult {
+	/** id của các bản ghi MỚI được tạo (trùng khóa bị onConflictDoNothing bỏ). */
+	createdIds: string[];
+}
+
+/**
+ * Điền thông tin người nhận + snapshot sender/reply-to (D5) rồi chèn bản ghi
+ * notification_record. Trùng (org_id, idempotency_key) → bỏ qua. Trả id dòng mới.
+ */
+export async function enqueueNotifications(
+	db: Db,
+	orgId: string,
+	events: NotificationEvent[],
+): Promise<EnqueueResult> {
+	if (events.length === 0) return { createdIds: [] };
+
+	const studentIds = [...new Set(events.map((e) => e.studentId))];
+	const students = await db
+		.select({ id: student.id, email: student.email })
+		.from(student)
+		.where(and(eq(student.orgId, orgId), inArray(student.id, studentIds)));
+	const emailByStudent = new Map(students.map((s) => [s.id, s.email] as const));
+
+	const [org] = await db
+		.select({ name: organization.name })
+		.from(organization)
+		.where(eq(organization.id, orgId))
+		.limit(1);
+	const senderName = org?.name ?? "";
+
+	// Email chủ org: membership teacher/owner sớm nhất → user.email.
+	const [owner] = await db
+		.select({ email: user.email })
+		.from(membership)
+		.innerJoin(user, eq(user.id, membership.userId))
+		.where(
+			and(
+				eq(membership.orgId, orgId),
+				inArray(membership.role, ["teacher", "owner"]),
+			),
+		)
+		.orderBy(asc(membership.createdAt))
+		.limit(1);
+	const replyToEmail =
+		owner && owner.email.trim().length > 0 ? owner.email.trim() : null;
+
+	const now = new Date();
+	// Học viên không thuộc org → bỏ qua hoàn toàn (không tạo bản ghi).
+	const rows = events
+		.filter((event) => emailByStudent.has(event.studentId))
+		.map((event) => {
+			const recipientEmail = (emailByStudent.get(event.studentId) ?? "").trim();
+			const hasEmail = recipientEmail.length > 0;
+			return {
+				id: crypto.randomUUID(),
+				orgId,
+				studentId: event.studentId,
+				eventType: event.eventType,
+				eventGroup: eventGroupOf(event.eventType),
+				idempotencyKey: event.idempotencyKey,
+				title: event.title,
+				body: event.body,
+				linkPath: event.linkPath,
+				refType: event.refType,
+				refId: event.refId,
+				channels: hasEmail ? "email,in_app" : "in_app",
+				recipientEmail: hasEmail ? recipientEmail : null,
+				senderName,
+				replyToEmail,
+				// Chỉ in-app → đã "gửi" ngay khi tạo, không có gì để deliver (D4).
+				status: hasEmail ? ("queued" as const) : ("sent" as const),
+				sentAt: hasEmail ? null : now,
+			};
+		});
+
+	const createdIds: string[] = [];
+	for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+		const chunk = rows.slice(i, i + INSERT_CHUNK);
+		const inserted = await db
+			.insert(notificationRecord)
+			.values(chunk)
+			.onConflictDoNothing()
+			.returning({ id: notificationRecord.id });
+		createdIds.push(...inserted.map((r) => r.id));
+	}
+	return { createdIds };
+}

@@ -167,6 +167,17 @@
 			"app": "/reports"
 		},
 		{
+			"id": "t-notifications",
+			"phase": 6,
+			"auth": "teacher",
+			"design": {
+				"hash": null,
+				"patternOf": "t-dashboard",
+				"steps": []
+			},
+			"app": "/notifications"
+		},
+		{
 			"id": "t-assignments",
 			"phase": 7,
 			"auth": "teacher",

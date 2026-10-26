@@ -1,5 +1,6 @@
 import { waitUntil } from "cloudflare:workers";
 import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import {
 	createLogMailer,
 	createResendMailer,
@@ -29,6 +30,29 @@ let mediaStore: MediaStore | undefined;
 let libraryAudioStore: MediaStore | undefined;
 let bankHub: BankHubContext | undefined;
 
+// Plan TOS-21 (#454): mailer memoized riêng, dùng chung cho createAuth lẫn
+// buildApp (AppDeps.mailer). Giữ nguyên check MAILER_IMPL + cảnh báo log-only.
+let mailer: Mailer | undefined;
+const getMailer = (): Mailer => {
+	if (mailer) return mailer;
+	if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
+		throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
+	}
+	if (env.MAILER_IMPL !== "resend") {
+		console.error(
+			"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
+		);
+	}
+	mailer =
+		env.MAILER_IMPL === "resend"
+			? createResendMailer({
+					apiKey: env.RESEND_API_KEY,
+					from: env.MAIL_FROM,
+				})
+			: createLogMailer();
+	return mailer;
+};
+
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
 // Behavior note vs. the old construct-per-request code: better-auth's
@@ -39,21 +63,7 @@ const getAuth = (): Auth => {
 		db = createDb() as unknown as Db;
 	}
 	if (!auth) {
-		if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
-			throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
-		}
-		if (env.MAILER_IMPL !== "resend") {
-			console.error(
-				"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
-			);
-		}
-		const mailer =
-			env.MAILER_IMPL === "resend"
-				? createResendMailer({
-						apiKey: env.RESEND_API_KEY,
-						from: env.MAIL_FROM,
-					})
-				: createLogMailer();
+		const mailer = getMailer();
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
@@ -118,5 +128,13 @@ export default buildApp({
 	// Webhook GitHub (#421): secret rỗng (chưa cấu hình binding) →
 	// /webhooks/github trả 503 GITHUB_WEBHOOK_DISABLED.
 	githubWebhookSecret: env.GITHUB_WEBHOOK_SECRET,
+	// Plan TOS-21 (#454): cùng mailer memoized với auth (D6) — getter để
+	// check MAILER_IMPL vẫn chạy lười như cũ, không ở lúc import module.
+	get mailer() {
+		return getMailer();
+	},
+	// Plan TOS-21 (#454): origin cổng học viên đầu tiên cho link tuyệt đối
+	// trong email — env STUDENT_ORIGINS là chuỗi thô nên parse ở đây.
+	studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });

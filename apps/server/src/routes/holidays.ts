@@ -11,6 +11,7 @@ import {
 } from "@teacher-os/api/holiday-plan";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { notif } from "@teacher-os/db/schema/notif";
 import {
@@ -23,6 +24,11 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import { holidayCreatedEvents } from "../lib/notifications/templates";
 
 /** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của D1 (#366 RT-F2). */
 const D1_IN_ARRAY_CHUNK = 50;
@@ -340,7 +346,14 @@ export function isRollbackableConstraintError(err: unknown): boolean {
 	return /UNIQUE|NOT NULL/i.test(message);
 }
 
-export function holidayRoutes(deps: { getDb(): Db }) {
+export function holidayRoutes(deps: {
+	getDb(): Db;
+	/** #454 D9: phát holiday_created sau khi apply thành công. */
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
+	/** #454: origin cổng học viên cho link tuyệt đối trong thư. */
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+}) {
 	const holiday = new Hono<Env>();
 
 	function unauthorized(c: HolidayContext) {
@@ -498,6 +511,38 @@ export function holidayRoutes(deps: { getDb(): Db }) {
 			shiftedCount: plan.shifts.length,
 			classCount: plan.preview.affectedClassCount,
 		};
+		// #454 D9: notify=true → holiday_created cho học viên ACTIVE của các
+		// lớp bị ảnh hưởng; emit tự fail-open nên không đổi response 200.
+		if (input.notify) {
+			const affectedClassIds = [
+				...new Set(plan.shifts.map((shift) => shift.classId)),
+			];
+			const studentIds = new Set<string>();
+			for (let i = 0; i < affectedClassIds.length; i += D1_IN_ARRAY_CHUNK) {
+				const slice = affectedClassIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+				const rows = await db
+					.select({ studentId: enrollment.studentId })
+					.from(enrollment)
+					.where(
+						and(
+							eq(enrollment.orgId, ctx.orgId),
+							inArray(enrollment.classId, slice),
+							eq(enrollment.status, "active"),
+						),
+					);
+				for (const row of rows) studentIds.add(row.studentId);
+			}
+			await emitNotifications(
+				notificationDepsFrom(deps),
+				ctx.orgId,
+				holidayCreatedEvents({
+					holidayId,
+					title: input.name,
+					date: input.fromDate,
+					studentIds: [...studentIds],
+				}),
+			);
+		}
 		return c.json(result);
 	});
 

@@ -1,7 +1,7 @@
 ---
 title: "TOS-21: Tự động phát thông báo Email (kèm Reply-To) + In-app cho 4 sự kiện chính"
 description: "Dựng hàng đợi thông báo học viên (bảng notification_record + khóa chống trùng), gửi Email từ tên miền chung kèm Tên người gửi / Reply-To của tổ chức, hiển thị In-app trên cổng học viên, theo dõi queued → sent → read và màn Nhật ký thông báo [5]; nối 4 sự kiện chính vào hàng đợi."
-status: pending
+status: completed
 priority: P0
 effort: 3d
 issue: 454
@@ -92,13 +92,13 @@ stateDiagram-v2
 
 ## Acceptance criteria (từ AC-001)
 
-- [ ] Học viên có email hợp lệ được ghi danh vào lớp / được giao bài / được trả điểm / có hóa đơn mới / có buổi học bị đổi → 1 bản ghi `queued` xuất hiện ngay, chuông cổng học viên hiện thông báo tương ứng.
-- [ ] Thư gửi từ địa chỉ của `MAIL_FROM`, tên hiển thị chứa tên tổ chức, `Reply-To` = email chủ tổ chức; gửi thành công → bản ghi `sent` + `sent_at` trên màn `[5]`.
-- [ ] Học viên bấm mở thông báo → bản ghi `read` + `read_at`; badge chuông giảm.
-- [ ] Phát lại cùng sự kiện (cùng khóa chống trùng) → không tạo bản ghi / thư thứ hai.
-- [ ] Lỗi tạo thông báo hoặc lỗi gửi thư không làm hỏng thao tác nghiệp vụ gốc (ghi danh, tạo hóa đơn…).
-- [ ] Màn `[5]`: lọc theo 4 nhóm sự kiện và 4 trạng thái trên URL, tìm theo tên/email/tiêu đề, phân trang 20 dòng; chỉ thấy bản ghi của org mình.
-- [ ] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-001 xanh; verify UI 3 viewport.
+- [x] Học viên có email hợp lệ được ghi danh vào lớp / được giao bài / được trả điểm / có hóa đơn mới / có buổi học bị đổi → 1 bản ghi `queued` xuất hiện ngay, chuông cổng học viên hiện thông báo tương ứng.
+- [x] Thư gửi từ địa chỉ của `MAIL_FROM`, tên hiển thị chứa tên tổ chức, `Reply-To` = email chủ tổ chức; gửi thành công → bản ghi `sent` + `sent_at` trên màn `[5]`.
+- [x] Học viên bấm mở thông báo → bản ghi `read` + `read_at`; badge chuông giảm.
+- [x] Phát lại cùng sự kiện (cùng khóa chống trùng) → không tạo bản ghi / thư thứ hai.
+- [x] Lỗi tạo thông báo hoặc lỗi gửi thư không làm hỏng thao tác nghiệp vụ gốc (ghi danh, tạo hóa đơn…).
+- [x] Màn `[5]`: lọc theo 4 nhóm sự kiện và 4 trạng thái trên URL, tìm theo tên/email/tiêu đề, phân trang 20 dòng; chỉ thấy bản ghi của org mình.
+- [x] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-001 xanh; verify UI 3 viewport.
 
 ## Rủi ro
 

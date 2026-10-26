@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "E2E AC-001: thông báo Email + In-app cho sự kiện chính"
-status: pending
+status: completed
 priority: P0
 effort: "3h"
 dependencies: ["phase-03", "phase-04", "phase-05"]

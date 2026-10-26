@@ -22,6 +22,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/grading": true,
 	"/classes": true,
 	"/students": true,
+	// Nhật ký gửi thông báo (#454, TOS-21) — màn [5].
+	"/notifications": true,
 	"/syllabus": true,
 	"/vocab": true,
 };
