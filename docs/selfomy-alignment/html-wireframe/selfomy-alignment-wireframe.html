@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe Hub — selfomy-alignment (Teacher OS)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #111; background: #f5f5f5; }
+  .nav-shell { display: flex; flex-direction: column; height: 100vh; }
+  .nav-top { background: #111; color: #fff; padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #000; }
+  .nav-brand { font-weight: 700; font-size: 15px; }
+  .nav-brand span { color: #999; font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .nav-flows { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav-flow-tab { background: #2a2a2a; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; cursor: pointer; font: inherit; font-size: 13px; }
+  .nav-flow-tab:hover { background: #333; color: #fff; }
+  .nav-flow-tab[aria-selected="true"] { background: #fff; color: #111; border-color: #fff; font-weight: 600; }
+  .nav-open-raw { margin-left: auto; color: #bbb; font-size: 12px; text-decoration: none; border: 1px solid #444; padding: 4px 10px; border-radius: 3px; }
+  .nav-open-raw:hover { color: #fff; border-color: #888; }
+  .nav-body { flex: 1; position: relative; overflow: hidden; }
+  .nav-iframe { width: 100%; height: 100%; border: 0; background: #f5f5f5; display: none; }
+  .nav-iframe.is-active { display: block; }
+  .nav-overview { display: none; padding: 32px; overflow: auto; height: 100%; max-width: 1100px; margin: 0 auto; }
+  .nav-overview.is-active { display: block; }
+  .nav-overview h2 { margin: 0 0 8px; font-size: 18px; }
+  .nav-overview p { color: #666; margin: 0 0 20px; }
+  .flow-map { display: flex; flex-direction: column; gap: 16px; }
+  .flow-card { background: #fff; border: 1.5px solid #222; border-radius: 4px; padding: 16px 20px; box-shadow: 3px 3px 0 #ddd; }
+  .flow-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; gap: 12px; }
+  .flow-card-title { font-weight: 700; font-size: 15px; }
+  .flow-card-meta { color: #666; font-size: 12px; font-family: ui-monospace, monospace; }
+  .flow-steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .flow-step { border: 1px solid #222; background: #fafafa; padding: 6px 12px; border-radius: 3px; font-size: 13px; cursor: pointer; }
+  .flow-step:hover { background: #111; color: #fff; }
+  .flow-arrow { color: #888; font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="nav-shell">
+  <header class="nav-top">
+    <div class="nav-brand">Wireframe Hub — selfomy-alignment <span>11 màn hình · 4 luồng UX · Desktop 1024px</span></div>
+    <div class="nav-flows" role="tablist">
+      <button type="button" class="nav-flow-tab" role="tab" aria-selected="true" data-target="overview">Sơ đồ tổng (Flow Map)</button>
+      <button type="button" class="nav-flow-tab" role="tab" aria-selected="false" data-target="daily-ops-and-holiday-flow" data-src="daily-ops-and-holiday-flow.html">1. Lịch dạy & Điểm danh [1..3]</button>
+      <button type="button" class="nav-flow-tab" role="tab" aria-selected="false" data-target="debt-and-notification-flow" data-src="debt-and-notification-flow.html">2. Công nợ & Thông báo [4..5]</button>
+      <button type="button" class="nav-flow-tab" role="tab" aria-selected="false" data-target="ai-teaching-assistant-flow" data-src="ai-teaching-assistant-flow.html">3. Trợ lý AI & Chấm bài [6..7]</button>
+      <button type="button" class="nav-flow-tab" role="tab" aria-selected="false" data-target="growth-billing-and-center-flow" data-src="growth-billing-and-center-flow.html">4. Phòng thi, Ví Credit & Trung tâm [8..11]</button>
+    </div>
+    <a class="nav-open-raw" id="open-raw" href="daily-ops-and-holiday-flow.html" target="_blank" style="display:none">Mở file riêng ↗</a>
+  </header>
+
+  <main class="nav-body">
+    <section class="nav-overview is-active" id="panel-overview">
+      <h2>Sơ đồ các luồng màn hình — selfomy-alignment</h2>
+      <p>Nhấp vào từng màn hình để mở trực tiếp bản vẽ HTML tương tác đen-trắng (khung Desktop 1024px, hỗ trợ chuyển trạng thái Happy / Error / Edge và đối chiếu chú thích #[n]).</p>
+      <div class="flow-map">
+        <div class="flow-card">
+          <div class="flow-card-head">
+            <div class="flow-card-title">Flow 1: Vận hành lịch dạy, Điểm danh tổng & Nghỉ lễ tự động dời buổi</div>
+            <div class="flow-card-meta">daily-ops-and-holiday-flow.html · 3 màn hình</div>
+          </div>
+          <div class="flow-steps">
+            <button type="button" class="flow-step" data-goto-flow="daily-ops-and-holiday-flow" data-goto-screen="dashboard-reminders">[1] Bảng điều khiển — Việc cần làm</button>
+            <span class="flow-arrow">→</span>
+            <button type="button" class="flow-step" data-goto-flow="daily-ops-and-holiday-flow" data-goto-screen="daily-attendance">[2] Điểm danh tổng theo ngày</button>
+            <span class="flow-arrow">↔</span>
+            <button type="button" class="flow-step" data-goto-flow="daily-ops-and-holiday-flow" data-goto-screen="schedule-and-holiday-modal">[3] Lịch học & Tạo lịch nghỉ chung (+1 buổi)</button>
+          </div>
+        </div>
+
+        <div class="flow-card">
+          <div class="flow-card-head">
+            <div class="flow-card-title">Flow 2: Sổ công nợ học viên & Nhật ký gửi thông báo đa kênh</div>
+            <div class="flow-card-meta">debt-and-notification-flow.html · 2 màn hình</div>
+          </div>
+          <div class="flow-steps">
+            <button type="button" class="flow-step" data-goto-flow="debt-and-notification-flow" data-goto-screen="student-debt-ledger">[4] Sổ công nợ học viên & Thu học phí</button>
+            <span class="flow-arrow">→</span>
+            <button type="button" class="flow-step" data-goto-flow="debt-and-notification-flow" data-goto-screen="notification-logs">[5] Nhật ký gửi thông báo Email + In-app (Shared)</button>
+          </div>
+        </div>
+
+        <div class="flow-card">
+          <div class="flow-card-head">
+            <div class="flow-card-title">Flow 3: Nhập đề PDF/Ảnh bằng AI, Rà soát chấm bài AI 4 kỹ năng & Trợ giảng Chat AI</div>
+            <div class="flow-card-meta">ai-teaching-assistant-flow.html · 2 màn hình</div>
+          </div>
+          <div class="flow-steps">
+            <button type="button" class="flow-step" data-goto-flow="ai-teaching-assistant-flow" data-goto-screen="ai-exam-import-workspace">[6] Không gian Nhập đề PDF/Ảnh bằng AI (5 Cr)</button>
+            <span class="flow-arrow">↔</span>
+            <button type="button" class="flow-step" data-goto-flow="ai-teaching-assistant-flow" data-goto-screen="ai-grading-review-workspace">[7] Không gian Rà soát chấm bài AI & Chat AI</button>
+          </div>
+        </div>
+
+        <div class="flow-card">
+          <div class="flow-card-head">
+            <div class="flow-card-title">Flow 4: Phòng thi công khai thu Lead, Thuê bao & Ví Credit AI, Nhân sự & Cấp hạn mức Trung tâm</div>
+            <div class="flow-card-meta">growth-billing-and-center-flow.html · 4 màn hình</div>
+          </div>
+          <div class="flow-steps">
+            <button type="button" class="flow-step" data-goto-flow="growth-billing-and-center-flow" data-goto-screen="public-exam-room-config">[8] Cấu hình Phòng thi công khai & Lead</button>
+            <span class="flow-arrow">↔</span>
+            <button type="button" class="flow-step" data-goto-flow="growth-billing-and-center-flow" data-goto-screen="public-exam-guest-portal">[9] Cổng Phòng thi thử khách vãng lai</button>
+            <span class="flow-arrow">·</span>
+            <button type="button" class="flow-step" data-goto-flow="growth-billing-and-center-flow" data-goto-screen="subscription-and-credit-wallet">[10] Thuê bao, Ví Credit AI & QR (Shared)</button>
+            <span class="flow-arrow">↔</span>
+            <button type="button" class="flow-step" data-goto-flow="growth-billing-and-center-flow" data-goto-screen="center-staff-and-quota">[11] Nhân sự Trung tâm, Trần Credit & Admin</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <iframe class="nav-iframe" id="frame-daily-ops-and-holiday-flow" src="daily-ops-and-holiday-flow.html" title="Flow 1"></iframe>
+    <iframe class="nav-iframe" id="frame-debt-and-notification-flow" src="debt-and-notification-flow.html" title="Flow 2"></iframe>
+    <iframe class="nav-iframe" id="frame-ai-teaching-assistant-flow" src="ai-teaching-assistant-flow.html" title="Flow 3"></iframe>
+    <iframe class="nav-iframe" id="frame-growth-billing-and-center-flow" src="growth-billing-and-center-flow.html" title="Flow 4"></iframe>
+  </main>
+</div>
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.nav-flow-tab');
+  const overview = document.getElementById('panel-overview');
+  const frames = document.querySelectorAll('.nav-iframe');
+  const openRaw = document.getElementById('open-raw');
+
+  function showFlow(target, screenSlug) {
+    tabs.forEach((t) => { t.setAttribute('aria-selected', String(t.dataset.target === target)); });
+    overview.classList.toggle('is-active', target === 'overview');
+    frames.forEach((f) => { f.classList.toggle('is-active', f.id === `frame-${target}`); });
+    const activeTab = document.querySelector(`.nav-flow-tab[data-target="${target}"]`);
+    if (activeTab?.dataset.src) {
+      openRaw.style.display = '';
+      openRaw.href = activeTab.dataset.src + (screenSlug ? `#${screenSlug}` : '');
+      const frame = document.getElementById(`frame-${target}`);
+      if (frame && screenSlug) {
+        frame.src = `${activeTab.dataset.src}#${screenSlug}`;
+      }
+    } else {
+      openRaw.style.display = 'none';
+    }
+  }
+
+  tabs.forEach((t) => { t.addEventListener('click', () => showFlow(t.dataset.target)); });
+  document.addEventListener('click', (e) => {
+    const step = e.target.closest('[data-goto-flow]');
+    if (step) showFlow(step.dataset.gotoFlow, step.dataset.gotoScreen);
+  });
+})();
+</script>
+</body>
+</html>

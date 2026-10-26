@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Flow 3: Nhập đề PDF/Ảnh bằng AI & Rà soát chấm bài AI (selfomy-alignment)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.45; color: #111; background: #f5f5f5; }
+  .wf-bar { position: sticky; top: 0; z-index: 100; background: #111; color: #fff; padding: 8px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid #000; }
+  .wf-bar-title { font-weight: 600; margin-right: 8px; }
+  .wf-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .wf-tab { background: #2a2a2a; color: #ccc; border: 1px solid #444; padding: 5px 10px; border-radius: 3px; cursor: pointer; font: inherit; font-size: 13px; }
+  .wf-tab[aria-selected="true"] { background: #fff; color: #111; border-color: #fff; font-weight: 600; }
+  .wf-bar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .wf-stage { padding: 24px 16px 48px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .wf-page { display: none; width: 100%; max-width: 1100px; }
+  .wf-page.is-active { display: block; }
+  .wf-screen-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; }
+  .wf-screen-title { font-size: 16px; font-weight: 700; margin: 0; }
+  .wf-screen-meta { color: #666; font-size: 12px; font-family: ui-monospace, monospace; }
+  .wf-state-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  .wf-state-pill { background: #eaeaea; color: #333; border: 1px solid #bbb; padding: 3px 9px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12px; }
+  .wf-state-pill[aria-pressed="true"] { background: #111; color: #fff; border-color: #111; }
+  .wf-state { display: none; }
+  .wf-state.is-active { display: block; }
+  .wf-viewport { display: flex; justify-content: center; width: 100%; }
+  .wf-screen { background: #fff; border: 1.5px solid #222; border-radius: 4px; box-shadow: 4px 4px 0 #ddd; min-height: 520px; display: flex; flex-direction: column; overflow: hidden; }
+  .wf-page[data-device="desktop"] .wf-screen { width: 1024px; max-width: 100%; }
+  .wf-topbar { border-bottom: 1px solid #bbb; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fafafa; }
+  .wf-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .wf-card { border: 1px solid #bbb; border-radius: 3px; padding: 12px; background: #fff; }
+  .wf-row { display: flex; gap: 10px; align-items: center; }
+  .wf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wf-stack { display: flex; flex-direction: column; gap: 10px; }
+  .wf-form { max-width: 480px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .wf-field { display: flex; flex-direction: column; gap: 4px; }
+  .wf-label { font-size: 12px; font-weight: 600; color: #333; }
+  .wf-input, .wf-select, .wf-textarea { width: 100%; padding: 7px 10px; border: 1.5px solid #222; border-radius: 3px; background: #fff; font: inherit; color: #111; }
+  .wf-textarea { min-height: 76px; }
+  .wf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 12px; border: 1.5px solid #222; border-radius: 3px; background: #fff; color: #111; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+  .wf-btn-primary { background: #111; color: #fff; }
+  .wf-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .wf-badge { display: inline-block; padding: 2px 7px; border: 1px solid #666; border-radius: 3px; font-size: 11px; background: #f0f0f0; }
+  .wf-alert { border: 1.5px solid #222; border-left-width: 5px; padding: 10px 12px; background: #f8f8f8; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .wf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .wf-table th, .wf-table td { border: 1px solid #bbb; padding: 7px 10px; text-align: left; }
+  .wf-table th { background: #eaeaea; font-weight: 600; }
+  .wf-num { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #111; color: #fff; font-size: 11px; font-weight: 700; font-family: ui-monospace, monospace; margin-right: 4px; }
+  .wf-spec { margin-top: 16px; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 12px 16px; }
+			body.hide-annotations .wf-num, body.hide-annotations .wf-spec { display: none; }
+</style>
+</head>
+<body>
+<header class="wf-bar">
+  <div class="wf-bar-title">Flow 3: ai-teaching-assistant-flow (Desktop 1024px)</div>
+  <div class="wf-tabs" role="tablist">
+    <button type="button" class="wf-tab" role="tab" aria-selected="true" data-screen="ai-exam-import-workspace">[6] Không gian Nhập đề PDF/Ảnh bằng AI</button>
+    <button type="button" class="wf-tab" role="tab" aria-selected="false" data-screen="ai-grading-review-workspace">[7] Không gian Rà soát chấm bài AI &amp; Chat AI</button>
+  </div>
+  <div class="wf-bar-right">
+    <label><input type="checkbox" id="toggle-num" checked> Hiện số #[n] &amp; Bảng đặc tả</label>
+  </div>
+</header>
+
+<main class="wf-stage">
+  <!-- SCREEN [6]: ai-exam-import-workspace -->
+  <section class="wf-page is-active" id="screen-ai-exam-import-workspace" data-device="desktop">
+    <div class="wf-screen-head">
+      <h2 class="wf-screen-title">[6] Không gian Nhập đề thi từ PDF/Ảnh bằng AI (ai-exam-import-workspace)</h2>
+      <div class="wf-screen-meta">FR-015, FR-016, FR-017 · 5 Credit (Tạm giữ / Hoàn trả BR-004) · Chống trùng 0 Cr (BR-005)</div>
+    </div>
+    <div class="wf-state-bar">
+      <span>Trạng thái:</span>
+      <button type="button" class="wf-state-pill" data-state="happy" aria-pressed="true">Đối chiếu 2 cột (Tài liệu gốc ↔ Câu hỏi bóc tách &amp; Nhãn Cần rà soát lại)</button>
+      <button type="button" class="wf-state-pill" data-state="edge" aria-pressed="false">Phát hiện trùng đề thi (Mở lại bản nháp cũ 0 Credit — BR-005)</button>
+      <button type="button" class="wf-state-pill" data-state="error" aria-pressed="false">Lỗi tệp &gt; 15MB/20 trang (E-003) / Lỗi AI hoàn trả 5 Credit (E-004)</button>
+    </div>
+
+    <div class="wf-viewport">
+      <div class="wf-screen">
+        <div class="wf-topbar">
+          <strong>[6] NHẬP ĐỀ THI TỪ PDF / ẢNH BẰNG AI</strong>
+          <div><span class="wf-num">1</span><span class="wf-badge">Chi phí: 5 Credit (Tạm giữ) · Ví khả dụng: 245 Cr</span></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-card" style="border-style:dashed; text-align:center;">
+            <span class="wf-num">2</span><strong>Kéo-thả tệp PDF / JPG / PNG (&le; 15 MB, &le; 20 trang, không đặt mật khẩu)</strong> hoặc <button type="button" class="wf-btn">Chọn tệp từ máy</button>
+          </div>
+
+          <div class="wf-state is-active" data-state-panel="happy">
+            <div class="wf-grid-2">
+              <div class="wf-card wf-stack">
+                <div class="wf-row" style="justify-content:space-between;">
+                  <strong>CỘT TRÁI: TÀI LIỆU GỐC (PDF / ẢNH)</strong>
+                  <span><span class="wf-num">5</span><span class="wf-badge">&lt; Trang 1 / 12 &gt; · Zoom 100%</span></span>
+                </div>
+                <div style="border:1px solid #999; background:#f3f3f3; padding:16px; min-height:280px; font-family:Georgia, serif;">
+                  <strong>READING PASSAGE 1</strong><br>
+                  You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.<br><br>
+                  <em>Urban Farming in the 21st Century...</em><br><br>
+                  <strong>Questions 1–5 (True / False / Not Given)</strong><br>
+                  1. What is the main purpose of vertical greenhouses?<br>
+                  2. The author claims that urban rooftop farms produce more than rural farms.
+                </div>
+                <div><span class="wf-num">12</span><button type="button" class="wf-btn">Thử bóc tách lại AI</button></div>
+              </div>
+
+              <div class="wf-card wf-stack">
+                <strong>CỘT PHẢI: CÂU HỎI &amp; ĐÁP ÁN BÓC TÁCH TỪ AI</strong>
+                <div class="wf-row">
+                  <div style="flex:2;"><span class="wf-label"><span class="wf-num">6</span>Tên đề thi *</span><input class="wf-input" value="IELTS Reading Cambridge 18 Test 2"></div>
+                  <div style="flex:1;"><span class="wf-label"><span class="wf-num">7</span>Kỹ năng *</span><select class="wf-select"><option>Reading (60 phút)</option></select></div>
+                </div>
+                <div>
+                  <span class="wf-label"><span class="wf-num">8</span>Đoạn văn (Passage 1)</span>
+                  <textarea class="wf-textarea">Urban Farming in the 21st Century...</textarea>
+                </div>
+                <div class="wf-card">
+                  <span class="wf-num">9</span><strong>Câu 1 (Multiple Choice)</strong> <span class="wf-badge">Độ tin cậy cao (0.96)</span>
+                  <input class="wf-input" value="What is the main purpose of vertical greenhouses?" style="margin-top:4px;">
+                  <div class="wf-row" style="margin-top:4px;">
+                    <span>Đáp án đúng *: <strong>B</strong></span> · <span>Giải thích: Đoạn 1 dòng 3</span>
+                  </div>
+                </div>
+                <div class="wf-card" style="border-width:2px;">
+                  <span class="wf-num">10</span><strong>Câu 2 (True/False/Not Given)</strong> <span class="wf-badge" style="border-color:#111; font-weight:700;">(!) CẦN RÀ SOÁT LẠI (Mờ trang in)</span>
+                  <input class="wf-input" value="The author claims that urban rooftop farms produce more than rural farms." style="margin-top:4px;">
+                  <div class="wf-row" style="margin-top:4px;">
+                    <span>Đáp án đúng *: <select class="wf-select" style="width:140px; display:inline-block;"><option>NOT GIVEN</option></select></span>
+                  </div>
+                </div>
+                <label><span class="wf-num">11</span><input type="checkbox" checked> Tôi đã kiểm tra và xác nhận các câu gắn nhãn <strong>(!) Cần rà soát lại</strong></label>
+                <div class="wf-row" style="justify-content:flex-end;">
+                  <span class="wf-num">13</span><button type="button" class="wf-btn">Lưu bản nháp</button>
+                  <span class="wf-num">14</span><button type="button" class="wf-btn wf-btn-primary">Lưu vào Ngân hàng đề</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="edge">
+            <div class="wf-alert">
+              <div><span class="wf-num">3</span><strong>(info) Phát hiện tệp trùng mã băm (BR-selfomy-alignment-005):</strong> Tệp này trùng với đề <em>"IELTS Reading Cambridge 18 Test 2"</em> đã được bóc tách trước đó trong tổ chức. Hệ thống không gọi lại AI và không trừ 5 Credit.</div>
+              <div><span class="wf-num">4</span><button type="button" class="wf-btn wf-btn-primary">Mở lại bản nháp cũ (0 Credit)</button></div>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="error">
+            <div class="wf-stack">
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-003 (Tệp không hợp lệ):</strong> Tệp vượt quá giới hạn <strong>15 MB</strong> hoặc <strong>20 trang</strong> hoặc bị đặt mật khẩu. Không tạm giữ Credit.</div>
+              </div>
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-004 (Quá hạn 120s / Lỗi dịch vụ AI):</strong> Đã tự động giải tỏa (hoàn trả) toàn bộ <strong>5 Credit</strong> tạm giữ về ví chính.</div>
+                <button type="button" class="wf-btn">Thử bóc tách lại</button>
+              </div>
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-001 / E-007 (Thiếu Credit hoặc Chạm trần nhân sự):</strong> Ví tổ chức &lt; 5 Credit hoặc bạn đã chạm trần Credit cá nhân trong tháng.</div>
+                <div class="wf-row">
+                  <a class="wf-btn wf-btn-primary" href="growth-billing-and-center-flow.html#subscription-and-credit-wallet">Nạp thêm Credit [10] →</a>
+                  <a class="wf-btn" href="growth-billing-and-center-flow.html#center-staff-and-quota">Xem trần cá nhân [11] →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-spec">
+      <h3>Bảng đối chiếu thành phần màn [6] ai-exam-import-workspace</h3>
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Thành phần</th><th>Loại điều khiển</th><th>Quy tắc nghiệp vụ</th></tr></thead>
+        <tbody>
+          <tr><td>1..4</td><td>Dropzone tải tệp &amp; Cảnh báo chống trùng</td><td>Upload + Banner</td><td>Giới hạn `&le; 15 MB`, `&le; 20 trang` (`E-003`), tạm giữ `5 credit` (`BR-004`), mở lại đề trùng `0 credit` (`BR-005`).</td></tr>
+          <tr><td>5..14</td><td>Đối chiếu 2 cột &amp; Rà soát câu nhãn vàng</td><td>Split View</td><td>Bắt buộc tích xác nhận các câu `(!) Cần rà soát lại` trước khi xuất bản vào Ngân hàng đề (`FR-016`, `FR-017`).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCREEN [7]: ai-grading-review-workspace -->
+  <section class="wf-page" id="screen-ai-grading-review-workspace" data-device="desktop">
+    <div class="wf-screen-head">
+      <h2 class="wf-screen-title">[7] Không gian Rà soát chấm bài AI 4 kỹ năng &amp; Trợ giảng Chat AI (ai-grading-review-workspace)</h2>
+      <div class="wf-screen-meta">FR-014, FR-018..020, FR-027..028, BR-001, BR-006, BR-007</div>
+    </div>
+    <div class="wf-state-bar">
+      <span>Trạng thái:</span>
+      <button type="button" class="wf-state-pill" data-state="happy" aria-pressed="true">Giáo viên đứng lớp rà soát &amp; bấm "Chốt trả bài" (BR-001)</button>
+      <button type="button" class="wf-state-pill" data-state="edge" aria-pressed="false">Vai trò Trợ giảng (TA — Khóa nút Chốt trả bài) &amp; Chấm nhanh Writing 30 bài/tháng</button>
+      <button type="button" class="wf-state-pill" data-state="error" aria-pressed="false">Bản thu Speaking &lt; 15 từ (E-009) / Xung đột lưu đè (E-011) / Vượt 100 lượt Chat AI (E-005)</button>
+    </div>
+
+    <div class="wf-viewport">
+      <div class="wf-screen">
+        <div class="wf-topbar">
+          <div>
+            <strong>[7] RÀ SOÁT CHẤM BÀI AI: Nguyễn Minh Anh (IELTS 6.5A)</strong> ·
+            <span class="wf-num">1</span><span class="wf-badge">AI đã chấm nháp (ai_drafted — Ẩn với học viên)</span>
+          </div>
+          <div class="wf-row">
+            <span class="wf-num">2</span><span class="wf-badge">Bản nháp chấm nhanh Writing (Còn 22/30 lượt tháng)</span>
+            <span class="wf-num">3</span><button type="button" class="wf-btn">Mở Chat AI Trợ giảng</button>
+          </div>
+        </div>
+
+        <div class="wf-body">
+          <div class="wf-state is-active" data-state-panel="happy">
+            <div class="wf-grid-2">
+              <div class="wf-card wf-stack">
+                <div class="wf-row" style="justify-content:space-between;">
+                  <strong>CỘT TRÁI: BÀI LÀM GỐC CỦA HỌC VIÊN</strong>
+                  <span><span class="wf-num">4</span><span class="wf-badge">Writing Task 2</span> <span class="wf-badge">Speaking Part 2</span></span>
+                </div>
+                <div class="wf-card" style="background:#fafafa;">
+                  <span class="wf-num">5</span><strong>Trình phát ghi âm Speaking:</strong> [|&gt; Play 01:15 / 02:10] · Tốc độ: <span class="wf-badge">1.25x</span>
+                  <div style="margin-top:6px; border:1px solid #222; padding:6px 8px; background:#fff; font-size:12px;">
+                    <span class="wf-num">6</span><strong>(info) Nhãn bắt buộc (BR-selfomy-alignment-006):</strong> <em>"Gợi ý từ AI (dựa trên văn bản ghi âm — chưa đánh giá tiêu chí phát âm)"</em>
+                  </div>
+                </div>
+                <div style="border:1px solid #bbb; padding:12px; min-height:170px;">
+                  <span class="wf-num">7</span><strong>Nội dung bài viết / Văn bản gỡ băng (Transcript):</strong><br><br>
+                  "Nowadays, many people believe that <u style="font-weight:700;">[governments should invest]</u> <em>(Gợi ý nâng band AI: allocate more public funding)</em> in public transport rather than building new highways..."
+                </div>
+              </div>
+
+              <div class="wf-card wf-stack">
+                <strong>CỘT PHẢI: ĐIỂM 4 TIÊU CHÍ IELTS &amp; NHẬN XÉT (BR-001)</strong>
+                <div><span class="wf-num">8</span><strong>Bảng điểm thành phần (0.0 – 9.0, bước 0.5):</strong></div>
+                <div class="wf-grid-2">
+                  <div>Task Response (TR) *: <input class="wf-input" value="6.5"></div>
+                  <div>Coherence &amp; Cohesion (CC) *: <input class="wf-input" value="6.0"></div>
+                  <div>Lexical Resource (LR) *: <input class="wf-input" value="6.5"></div>
+                  <div>Grammatical Range (GRA) *: <input class="wf-input" value="6.0"></div>
+                </div>
+                <div><strong>=&gt; ĐIỂM TỔNG (OVERALL BAND): <span class="wf-badge" style="font-size:14px; font-weight:700;">6.5</span></strong></div>
+                <div>
+                  <span class="wf-label"><span class="wf-num">9</span>Nhận xét chi tiết &amp; Gợi ý sửa câu</span>
+                  <textarea class="wf-textarea">Bài viết có bố cục 4 đoạn rõ ràng. Cần bổ sung ví dụ thực tế ở đoạn thân bài thứ hai và đa dạng hóa cấu trúc câu phức.</textarea>
+                </div>
+                <div class="wf-row" style="justify-content:space-between; flex-wrap:wrap;">
+                  <span><span class="wf-num">10</span><button type="button" class="wf-btn">Tạo bài tập nhanh từ lỗi sai</button></span>
+                  <div class="wf-row">
+                    <span class="wf-num">11</span><button type="button" class="wf-btn">Thử chấm lại AI</button>
+                    <span class="wf-num">12</span><button type="button" class="wf-btn">Lưu bản nháp</button>
+                    <span class="wf-num">13</span><a class="wf-btn wf-btn-primary" href="debt-and-notification-flow.html#notification-logs">Chốt trả bài →</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="wf-card" style="margin-top:12px; background:#fafafa;">
+              <span class="wf-num">14</span><strong>NGĂN KÉO TRỢ GIẢNG CHAT AI (FR-028 · 100 lượt miễn phí/ngày — Còn 84/100 lượt):</strong><br>
+              <small>• Giáo viên: "Tóm tắt các lỗi ngữ pháp chính của Minh Anh và viết nháp nhận xét gửi phụ huynh"<br>
+              • Trợ giảng AI: "Minh Anh thường thiếu mạo từ 'the' và lặp từ 'important'. Đây là đoạn nhận xét mẫu gửi phụ huynh..."</small>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="edge">
+            <div class="wf-alert">
+              <div><strong>Chế độ Trợ giảng (TA — FR-029, BR-001):</strong> Trợ giảng được phép chỉnh sửa điểm nháp, sửa lời phê và bấm <strong>[12] Lưu bản nháp (teacher_reviewing)</strong>, nhưng nút <strong>[13] Chốt trả bài</strong> bị khóa (<button type="button" class="wf-btn" disabled>Chốt trả bài (Chỉ Giáo viên đứng lớp)</button>).</div>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="error">
+            <div class="wf-stack">
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-009 (Bản ghi âm Speaking &lt; 15 từ):</strong> Bản ghi âm quá ngắn hoặc không có tiếng nói. Hệ thống không gọi AI và không trừ 2 Credit. Vui lòng chấm tay hoặc yêu cầu học viên nộp lại.</div>
+              </div>
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-011 (Xung đột lưu đè điểm chấm):</strong> Bài nộp này vừa được cập nhật bởi một nhân sự khác. Vui lòng tải lại phiên bản mới nhất trước khi lưu.</div>
+                <button type="button" class="wf-btn">Tải lại bài chấm</button>
+              </div>
+              <div class="wf-alert">
+                <div><strong>(!) E-selfomy-alignment-005 (Chạm trần 100 lượt AI nhẹ miễn phí/ngày):</strong> Tổ chức đã dùng hết 100 lượt miễn phí hôm nay. Bạn có thể chờ qua 00:00 ngày mai hoặc xác nhận dùng <strong>0,5 Credit/lượt</strong>.</div>
+                <button type="button" class="wf-btn wf-btn-primary">Xác nhận dùng 0,5 Credit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-spec">
+      <h3>Bảng đối chiếu thành phần màn [7] ai-grading-review-workspace</h3>
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Thành phần</th><th>Loại điều khiển</th><th>Quy tắc nghiệp vụ</th></tr></thead>
+        <tbody>
+          <tr><td>6</td><td>Nhãn giới hạn phát âm Speaking</td><td>Mandatory banner</td><td>Hiển thị cố định câu cảnh báo chưa đánh giá tiêu chí phát âm (`FR-019`, `BR-006`).</td></tr>
+          <tr><td>12..13</td><td>Nút `Lưu bản nháp` &amp; `Chốt trả bài`</td><td>Action buttons</td><td>Khóa nút `Chốt trả bài` đối với Trợ giảng (`TA`); chỉ công bố điểm cho học viên sau khi bấm `Chốt trả bài` (`BR-001`).</td></tr>
+          <tr><td>14</td><td>Ngăn kéo `Trợ giảng Chat AI`</td><td>Chat drawer</td><td>Miễn phí 100 lượt/ngày/tổ chức; vượt trần xác nhận trừ `0,5 credit/lượt` (`FR-028`, `BR-012`, `E-005`).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.wf-tab');
+  const pages = document.querySelectorAll('.wf-page');
+  function showScreen(id) {
+    pages.forEach((p) => { p.classList.toggle('is-active', p.id === `screen-${id}`); });
+    tabs.forEach((t) => { t.setAttribute('aria-selected', String(t.dataset.screen === id)); });
+  }
+  tabs.forEach((t) => { t.addEventListener('click', () => showScreen(t.dataset.screen)); });
+  document.addEventListener('click', (e) => {
+    const goto = e.target.closest('[data-goto]');
+    if (goto) { e.preventDefault(); showScreen(goto.dataset.goto); }
+    const pill = e.target.closest('.wf-state-pill');
+    if (pill) {
+      const page = pill.closest('.wf-page');
+      const state = pill.dataset.state;
+      page.querySelectorAll('.wf-state-pill').forEach((p) => { p.setAttribute('aria-pressed', String(p === pill)); });
+      page.querySelectorAll('.wf-state').forEach((s) => { s.classList.toggle('is-active', s.dataset.statePanel === state); });
+    }
+  });
+  const toggleNum = document.getElementById('toggle-num');
+  if (toggleNum) toggleNum.addEventListener('change', () => document.body.classList.toggle('hide-annotations', !toggleNum.checked));
+  function applyHash() {
+    if (location.hash) {
+      const h = location.hash.replace(/^#(?:screen-)?/, '');
+      if (document.getElementById(`screen-${h}`)) showScreen(h);
+    }
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireframe — Flow 1: Vận hành lịch dạy, Điểm danh tổng & Nghỉ lễ (selfomy-alignment)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.45; color: #111; background: #f5f5f5; }
+  .wf-bar { position: sticky; top: 0; z-index: 100; background: #111; color: #fff; padding: 8px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid #000; }
+  .wf-bar-title { font-weight: 600; margin-right: 8px; }
+  .wf-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .wf-tab { background: #2a2a2a; color: #ccc; border: 1px solid #444; padding: 5px 10px; border-radius: 3px; cursor: pointer; font: inherit; font-size: 13px; }
+  .wf-tab:hover { background: #333; color: #fff; }
+  .wf-tab[aria-selected="true"] { background: #fff; color: #111; border-color: #fff; font-weight: 600; }
+  .wf-bar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .wf-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .wf-stage { padding: 24px 16px 48px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .wf-page { display: none; width: 100%; max-width: 1100px; }
+  .wf-page.is-active { display: block; }
+  .wf-screen-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+  .wf-screen-title { font-size: 16px; font-weight: 700; margin: 0; }
+  .wf-screen-meta { color: #666; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .wf-state-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-size: 12px; color: #666; flex-wrap: wrap; }
+  .wf-state-pill { background: #eaeaea; color: #333; border: 1px solid #bbb; padding: 3px 9px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 12px; }
+  .wf-state-pill[aria-pressed="true"] { background: #111; color: #fff; border-color: #111; }
+  .wf-state { display: none; }
+  .wf-state.is-active { display: block; }
+  .wf-viewport { display: flex; justify-content: center; width: 100%; }
+  .wf-screen { background: #fff; border: 1.5px solid #222; border-radius: 4px; box-shadow: 4px 4px 0 #ddd; min-height: 480px; display: flex; flex-direction: column; overflow: hidden; }
+  .wf-page[data-device="desktop"] .wf-screen { width: 1024px; max-width: 100%; }
+  .wf-app-shell { display: grid; grid-template-columns: 210px 1fr; min-height: 520px; }
+  .wf-sidebar { border-right: 1px solid #bbb; background: #fafafa; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .wf-nav-item { padding: 6px 8px; border-radius: 3px; border: 1px solid transparent; cursor: pointer; text-align: left; background: none; font: inherit; }
+  .wf-nav-item.is-current { background: #eaeaea; border-color: #222; font-weight: 600; }
+  .wf-topbar { border-bottom: 1px solid #bbb; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fafafa; }
+  .wf-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .wf-card { border: 1px solid #bbb; border-radius: 3px; padding: 12px; background: #fff; }
+  .wf-row { display: flex; gap: 10px; align-items: center; }
+  .wf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .wf-stack { display: flex; flex-direction: column; gap: 10px; }
+  .wf-form { max-width: 480px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .wf-field { display: flex; flex-direction: column; gap: 4px; }
+  .wf-label { font-size: 12px; font-weight: 600; color: #333; }
+  .wf-input, .wf-select { width: 100%; padding: 7px 10px; border: 1.5px solid #222; border-radius: 3px; background: #fff; font: inherit; color: #111; }
+  .wf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 12px; border: 1.5px solid #222; border-radius: 3px; background: #fff; color: #111; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+  .wf-btn-primary { background: #111; color: #fff; }
+  .wf-badge { display: inline-block; padding: 2px 7px; border: 1px solid #666; border-radius: 3px; font-size: 11px; background: #f0f0f0; }
+  .wf-alert { border: 1.5px solid #222; border-left-width: 5px; padding: 10px 12px; background: #f8f8f8; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .wf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .wf-table th, .wf-table td { border: 1px solid #bbb; padding: 7px 10px; text-align: left; }
+  .wf-table th { background: #eaeaea; font-weight: 600; }
+  .wf-num { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #111; color: #fff; font-size: 11px; font-weight: 700; font-family: ui-monospace, monospace; margin-right: 4px; vertical-align: middle; }
+  .wf-spec { margin-top: 16px; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 12px 16px; }
+			body.hide-annotations .wf-num, body.hide-annotations .wf-spec { display: none; }
+  .wf-spec h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #444; }
+</style>
+</head>
+<body>
+<header class="wf-bar">
+  <div class="wf-bar-title">Flow 1: daily-ops-and-holiday-flow (Desktop 1024px)</div>
+  <div class="wf-tabs" role="tablist">
+    <button type="button" class="wf-tab" role="tab" aria-selected="true" data-screen="dashboard-reminders">[1] Bảng điều khiển — Việc cần làm</button>
+    <button type="button" class="wf-tab" role="tab" aria-selected="false" data-screen="daily-attendance">[2] Điểm danh tổng theo ngày</button>
+    <button type="button" class="wf-tab" role="tab" aria-selected="false" data-screen="schedule-and-holiday-modal">[3] Lịch học & Tạo lịch nghỉ chung</button>
+  </div>
+  <div class="wf-bar-right">
+    <label class="wf-toggle"><input type="checkbox" id="toggle-num" checked> Hiện số #[n] & Bảng đặc tả</label>
+  </div>
+</header>
+
+<main class="wf-stage">
+  <!-- SCREEN [1]: dashboard-reminders -->
+  <section class="wf-page is-active" id="screen-dashboard-reminders" data-device="desktop">
+    <div class="wf-screen-head">
+      <h2 class="wf-screen-title">[1] Bảng điều khiển — Thẻ Việc cần làm hôm nay (dashboard-reminders)</h2>
+      <div class="wf-screen-meta">FR-006, FR-026 · Shared Screen</div>
+    </div>
+    <div class="wf-state-bar">
+      <span>Trạng thái:</span>
+      <button type="button" class="wf-state-pill" data-state="happy" aria-pressed="true">Mặc định (Có việc cần làm & Cảnh báo ân hạn)</button>
+      <button type="button" class="wf-state-pill" data-state="edge" aria-pressed="false">Vai trò Trợ giảng (TA — Ẩn thẻ Học phí)</button>
+      <button type="button" class="wf-state-pill" data-state="empty" aria-pressed="false">Hoàn tất hết việc hôm nay (Zero Inbox)</button>
+    </div>
+
+    <div class="wf-viewport">
+      <div class="wf-screen">
+        <div class="wf-app-shell">
+          <aside class="wf-sidebar">
+            <strong>Teacher OS (sidebar-07)</strong>
+            <button type="button" class="wf-nav-item is-current">Bảng điều khiển [1]</button>
+            <button type="button" class="wf-nav-item" data-goto="daily-attendance">Điểm danh ngày [2]</button>
+            <button type="button" class="wf-nav-item" data-goto="schedule-and-holiday-modal">Lịch & Nghỉ lễ [3]</button>
+            <a class="wf-nav-item" href="debt-and-notification-flow.html#student-debt-ledger">Sổ công nợ [4]</a>
+            <a class="wf-nav-item" href="debt-and-notification-flow.html#notification-logs">Nhật ký thông báo [5]</a>
+            <a class="wf-nav-item" href="ai-teaching-assistant-flow.html#ai-exam-import-workspace">Nhập đề AI [6]</a>
+            <a class="wf-nav-item" href="ai-teaching-assistant-flow.html#ai-grading-review-workspace">Chấm bài AI [7]</a>
+            <a class="wf-nav-item" href="growth-billing-and-center-flow.html#subscription-and-credit-wallet">Thuê bao & Ví Credit [10]</a>
+          </aside>
+          <div>
+            <div class="wf-topbar">
+              <div><span class="wf-num">1</span><button type="button" class="wf-btn">Tìm kiếm nhanh (⌘K)</button></div>
+              <div class="wf-row">
+                <span><span class="wf-num">2</span><span class="wf-badge">Ví AI: 245 Credit</span></span>
+                <span><span class="wf-num">3</span><span class="wf-badge">Gói Chuyên nghiệp</span></span>
+              </div>
+            </div>
+
+            <div class="wf-body">
+              <div class="wf-state is-active" data-state-panel="happy">
+                <div class="wf-alert" style="margin-bottom:14px;">
+                  <div><span class="wf-num">4</span><strong>(!) CẢNH BÁO ÂN HẠN (BR-010):</strong> Gói thuê bao tháng đã đến hạn. Còn <strong>48 giờ ân hạn</strong> trước khi tạm khóa tính năng AI (lớp học & điểm danh vẫn hoạt động bình thường).</div>
+                  <div><span class="wf-num">5</span><a class="wf-btn wf-btn-primary" href="growth-billing-and-center-flow.html#subscription-and-credit-wallet">Gia hạn ngay →</a></div>
+                </div>
+                <div class="wf-row" style="justify-content:space-between; margin-bottom:10px;">
+                  <strong>VIỆC CẦN LÀM HÔM NAY (Thứ Hai, 26/10/2026)</strong>
+                  <span><span class="wf-num">6</span><button type="button" class="wf-btn">Làm mới dữ liệu</button></span>
+                </div>
+                <div class="wf-grid-3">
+                  <div class="wf-card wf-stack">
+                    <div><span class="wf-num">7</span><strong>CA HỌC CHƯA ĐIỂM DANH</strong></div>
+                    <div style="font-size:22px; font-weight:700;">03 ca học hôm nay</div>
+                    <div style="font-size:12px; color:#444;">• IELTS 6.5A (18:00 - 19:30)<br>• IELTS 5.0B (19:30 - 21:00)</div>
+                    <div><span class="wf-num">10</span><button type="button" class="wf-btn wf-btn-primary" data-goto="daily-attendance">Mở Điểm danh ngày →</button></div>
+                  </div>
+                  <div class="wf-card wf-stack">
+                    <div><span class="wf-num">8</span><strong>BÀI TẬP QUÁ HẠN CHẤM &gt; 24H</strong></div>
+                    <div style="font-size:22px; font-weight:700;">12 bài Writing/Speaking</div>
+                    <div style="font-size:12px; color:#444;">• 08 Writing (4 bản chấm nhanh)<br>• 04 Speaking chờ giáo viên chốt</div>
+                    <div><span class="wf-num">11</span><a class="wf-btn wf-btn-primary" href="ai-teaching-assistant-flow.html#ai-grading-review-workspace">Mở Không gian chấm →</a></div>
+                  </div>
+                  <div class="wf-card wf-stack">
+                    <div><span class="wf-num">9</span><strong>HỌC PHÍ ĐẾN HẠN / QUÁ HẠN</strong></div>
+                    <div style="font-size:22px; font-weight:700;">05 học viên (15,5 tr)</div>
+                    <div style="font-size:12px; color:#444;">• 03 học viên quá hạn thu<br>• 02 học viên sắp đến hạn &le; 7 ngày</div>
+                    <div><span class="wf-num">12</span><a class="wf-btn wf-btn-primary" href="debt-and-notification-flow.html#student-debt-ledger">Mở Sổ công nợ →</a></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wf-state" data-state-panel="edge">
+                <div class="wf-alert" style="margin-bottom:14px;">
+                  <div><strong>Chế độ phân quyền Trợ giảng (TA — FR-029):</strong> Chỉ hiển thị các lớp được phân công phụ trách và tự động ẩn thẻ Học phí / Công nợ.</div>
+                </div>
+                <div class="wf-grid-3">
+                  <div class="wf-card wf-stack">
+                    <strong>CA HỌC LỚP PHỤ TRÁCH CHƯA ĐIỂM DANH</strong>
+                    <div style="font-size:22px; font-weight:700;">01 ca học (IELTS 6.5A)</div>
+                    <button type="button" class="wf-btn wf-btn-primary" data-goto="daily-attendance">Mở Điểm danh ngày →</button>
+                  </div>
+                  <div class="wf-card wf-stack">
+                    <strong>BÀI TẬP CHỜ TRỢ GIẢNG RÀ SOÁT SƠ BỘ</strong>
+                    <div style="font-size:22px; font-weight:700;">05 bài nộp</div>
+                    <a class="wf-btn wf-btn-primary" href="ai-teaching-assistant-flow.html#ai-grading-review-workspace">Mở Rà soát bài chấm →</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wf-state" data-state-panel="empty">
+                <div class="wf-card" style="text-align:center; padding:36px;">
+                  <strong>(v) Đã hoàn tất toàn bộ việc cần làm hôm nay!</strong>
+                  <p style="color:#666;">0 ca học chưa điểm danh · 0 bài chấm quá hạn 24h · 0 khoản học phí quá hạn.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-spec">
+      <h3>Bảng đối chiếu thành phần màn [1] dashboard-reminders</h3>
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Thành phần</th><th>Loại điều khiển</th><th>Quy tắc nghiệp vụ & Điều hướng</th></tr></thead>
+        <tbody>
+          <tr><td>1..3</td><td>Thanh đầu trang (⌘K, Ví Credit, Gói)</td><td>Header controls</td><td>Hiển thị số dư Ví Credit AI theo thời gian thực (`BR-002`).</td></tr>
+          <tr><td>4..5</td><td>Cảnh báo ân hạn 72h (`grace_period`)</td><td>Alert + Button</td><td>Hiển thị khi gói tháng quá hạn 30 ngày (`FR-026`, `BR-010`); bấm `Gia hạn ngay` chuyển sang màn `[10]`.</td></tr>
+          <tr><td>7..12</td><td>3 Thẻ Việc cần làm hôm nay</td><td>Summary Cards</td><td>Đếm ca chưa điểm danh (`[2]`), bài quá hạn chấm &gt; 24h (`[7]`) và học phí quá hạn (`[4]`, ẩn với `TA` theo `FR-029`).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCREEN [2]: daily-attendance -->
+  <section class="wf-page" id="screen-daily-attendance" data-device="desktop">
+    <div class="wf-screen-head">
+      <h2 class="wf-screen-title">[2] Điểm danh tổng theo ngày (daily-attendance)</h2>
+      <div class="wf-screen-meta">FR-004, FR-007 · Inline Expandable Attendance</div>
+    </div>
+    <div class="wf-state-bar">
+      <span>Trạng thái:</span>
+      <button type="button" class="wf-state-pill" data-state="happy" aria-pressed="true">Mở rộng ca học inline để điểm danh 4 trạng thái</button>
+      <button type="button" class="wf-state-pill" data-state="empty" aria-pressed="false">Ngày nghỉ / Không có ca học</button>
+    </div>
+
+    <div class="wf-viewport">
+      <div class="wf-screen">
+        <div class="wf-topbar">
+          <strong>[2] ĐIỂM DANH TỔNG THEO NGÀY</strong>
+          <div><span class="wf-num">1</span><button type="button" class="wf-btn" data-goto="schedule-and-holiday-modal">Xem Lịch học &amp; Nghỉ lễ →</button></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-row" style="flex-wrap:wrap; justify-content:space-between;">
+            <div class="wf-row">
+              <span class="wf-num">2</span><input class="wf-input" type="date" value="2026-10-26" style="width:155px;">
+              <span class="wf-num">3</span><input class="wf-input" placeholder="Tìm lớp / học viên (debounce 300ms)..." style="width:240px;">
+            </div>
+            <div class="wf-row">
+              <span class="wf-num">4</span>
+              <span class="wf-badge">Tất cả (05)</span>
+              <span class="wf-badge" style="border-color:#111; font-weight:700;">Chưa điểm danh (03)</span>
+              <span class="wf-badge">Đã xong (02)</span>
+              <span class="wf-num">5</span>
+              <select class="wf-select" style="width:160px;"><option>Tất cả giáo viên</option></select>
+            </div>
+          </div>
+
+          <div class="wf-state is-active" data-state-panel="happy">
+            <div class="wf-card wf-stack">
+              <div class="wf-row" style="justify-content:space-between; border-bottom:1px solid #ccc; padding-bottom:8px;">
+                <div><span class="wf-num">6</span><strong>[v] Ca 18:00 - 19:30 | Lớp IELTS 6.5A (Phòng 201)</strong> · GV: Minh Trần · Sĩ số: 12 HV <span class="wf-badge">Chưa lưu</span></div>
+                <div class="wf-row">
+                  <span class="wf-num">7</span><button type="button" class="wf-btn">Đánh dấu tất cả Có mặt</button>
+                  <span class="wf-num">8</span><button type="button" class="wf-btn wf-btn-primary">Lưu điểm danh ca học</button>
+                </div>
+              </div>
+              <table class="wf-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Học viên</th>
+                    <th><span class="wf-num">9</span>Trạng thái điểm danh (4 trạng thái chuẩn FR-004)</th>
+                    <th><span class="wf-num">10</span>Ghi chú học vụ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>01</td>
+                    <td>Nguyễn Minh Anh</td>
+                    <td>(•) Có mặt &nbsp; ( ) Vắng có phép &nbsp; ( ) Vắng không phép &nbsp; ( ) Đi muộn</td>
+                    <td><input class="wf-input" value="Hoàn thành đủ bài tập về nhà"></td>
+                  </tr>
+                  <tr>
+                    <td>02</td>
+                    <td>Trần Hoàng Nam</td>
+                    <td>( ) Có mặt &nbsp; (•) Vắng có phép &nbsp; ( ) Vắng không phép &nbsp; ( ) Đi muộn</td>
+                    <td><input class="wf-input" value="Phụ huynh nhắn xin nghỉ ốm"></td>
+                  </tr>
+                  <tr>
+                    <td>03</td>
+                    <td>Lê Thu Hà</td>
+                    <td>( ) Có mặt &nbsp; ( ) Vắng có phép &nbsp; ( ) Vắng không phép &nbsp; (•) Đi muộn</td>
+                    <td><input class="wf-input" value="Vào lớp trễ 15 phút"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="wf-card" style="margin-top:10px;">
+              <span class="wf-num">11</span><strong>[&gt;] Ca 19:30 - 21:00 | Lớp IELTS 5.0B (Online)</strong> · GV: Lan Phạm · Sĩ số: 15 HV <span class="wf-badge">(v) Đã lưu điểm danh (14/15 Có mặt)</span>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="empty">
+            <div class="wf-card" style="text-align:center; padding:32px;">Không có ca học nào khớp bộ lọc trong ngày đã chọn.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-spec">
+      <h3>Bảng đối chiếu thành phần màn [2] daily-attendance</h3>
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Thành phần</th><th>Loại điều khiển</th><th>Quy tắc nghiệp vụ</th></tr></thead>
+        <tbody>
+          <tr><td>2..5</td><td>Bộ lọc URL (`date`, `q`, `status`, `teacherId`)</td><td>Filter bar</td><td>Lưu trạng thái lọc trên URL search params, ô tìm kiếm debounce 300ms (`FR-007`).</td></tr>
+          <tr><td>6..10</td><td>Khung điểm danh mở rộng inline</td><td>Accordion + Table</td><td>Điểm danh 4 trạng thái chuẩn (`Có mặt`, `Vắng có phép`, `Vắng không phép`, `Đi muộn`) kèm ghi chú học vụ (`FR-004`).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SCREEN [3]: schedule-and-holiday-modal -->
+  <section class="wf-page" id="screen-schedule-and-holiday-modal" data-device="desktop">
+    <div class="wf-screen-head">
+      <h2 class="wf-screen-title">[3] Lịch học &amp; Hộp thoại Tạo lịch nghỉ chung (schedule-and-holiday-modal)</h2>
+      <div class="wf-screen-meta">FR-008, FR-009, BR-003 · Atomic Holiday Reschedule</div>
+    </div>
+    <div class="wf-state-bar">
+      <span>Trạng thái:</span>
+      <button type="button" class="wf-state-pill" data-state="happy" aria-pressed="true">Hộp thoại Tạo lịch nghỉ &amp; Xem trước dời +1 buổi (BR-003)</button>
+      <button type="button" class="wf-state-pill" data-state="edge" aria-pressed="false">Chọn phương thức "Hủy buổi" hoặc Hoàn tác lịch nghỉ</button>
+    </div>
+
+    <div class="wf-viewport">
+      <div class="wf-screen">
+        <div class="wf-topbar">
+          <div><strong>[3] LỊCH DẠY HỌC &amp; KỲ NGHỈ CHUNG</strong> · <span class="wf-num">1</span><span class="wf-badge">&lt; Tuần 26/10 - 01/11/2026 &gt;</span></div>
+          <div><span class="wf-num">2</span><button type="button" class="wf-btn wf-btn-primary">+ Tạo lịch nghỉ chung</button></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-card">
+            <span class="wf-num">3</span><strong>Sự kiện trên lịch:</strong> [Thứ Sáu 20/11: NGHỈ LỄ 20/11 — Đã tự động dời +1 buổi vào cuối khóa] <button type="button" class="wf-btn" style="padding:2px 8px; font-size:12px;">Xóa kỳ nghỉ (Hoàn tác)</button>
+          </div>
+
+          <div class="wf-state is-active" data-state-panel="happy">
+            <div class="wf-card wf-stack" style="border-width:2px;">
+              <strong>HỘP THOẠI: TẠO LỊCH NGHỈ CHUNG &amp; TỰ ĐỘNG DỜI BUỔI HỌC (FR-008, FR-009, BR-003)</strong>
+              <div class="wf-form" style="max-width:640px;">
+                <div class="wf-field">
+                  <span class="wf-label"><span class="wf-num">4</span>Tên kỳ nghỉ lễ *</span>
+                  <input class="wf-input" value="Nghỉ lễ Nhà giáo Việt Nam 20/11">
+                </div>
+                <div class="wf-row">
+                  <div class="wf-field" style="flex:1;"><span class="wf-label"><span class="wf-num">5</span>Từ ngày *</span><input class="wf-input" type="date" value="2026-11-20"></div>
+                  <div class="wf-field" style="flex:1;"><span class="wf-label"><span class="wf-num">6</span>Đến ngày *</span><input class="wf-input" type="date" value="2026-11-21"></div>
+                </div>
+                <div class="wf-field">
+                  <span class="wf-label"><span class="wf-num">7</span>Phạm vi áp dụng *</span>
+                  <div>(•) Toàn bộ tổ chức &nbsp;&nbsp; ( ) Chọn lớp học cụ thể</div>
+                </div>
+                <div class="wf-field">
+                  <span class="wf-label"><span class="wf-num">8</span>Phương thức xử lý buổi học bị trùng *</span>
+                  <div>(•) <strong>Dời lịch (+1 buổi vào cuối khóa — bảo toàn gói học phí)</strong> &nbsp;&nbsp; ( ) Hủy buổi (không sinh buổi bù)</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="wf-label" style="margin-bottom:6px;"><span class="wf-num">9</span>BẢNG XEM TRƯỚC CÁC BUỔI HỌC BỊ ẢNH HƯỞNG (03 buổi):</div>
+                <table class="wf-table">
+                  <thead>
+                    <tr><th>Lớp học</th><th>Buổi gốc bị trùng</th><th>Trạng thái hiện tại</th><th>Kết quả sau khi áp dụng (BR-003)</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>IELTS 6.5A</td><td>T6, 20/11 (Buổi 14/24)</td><td>Chưa diễn ra</td><td>→ Dời +1 buổi sang <strong>T6, 25/12/2026 (18:00)</strong></td></tr>
+                    <tr><td>IELTS 5.0B</td><td>T7, 21/11 (Buổi 08/24)</td><td>Chưa diễn ra</td><td>→ Nhảy qua Tết Dương lịch sang <strong>T3, 29/12/2026*</strong></td></tr>
+                    <tr><td>Giao tiếp 1</td><td>T6, 20/11 (Buổi 10/16)</td><td>Đã điểm danh (v)</td><td>(!) <strong>Giữ nguyên — Đã diễn ra</strong> (không dời)</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="wf-row" style="justify-content:space-between;">
+                <label><span class="wf-num">10</span><input type="checkbox" checked> Gửi thông báo Email &amp; In-app cho học viên các lớp bị ảnh hưởng</label>
+                <div class="wf-row">
+                  <span class="wf-num">11</span><button type="button" class="wf-btn" data-goto="daily-attendance">Hủy bỏ</button>
+                  <span class="wf-num">12</span><a class="wf-btn wf-btn-primary" href="debt-and-notification-flow.html#notification-logs">Xác nhận áp dụng &amp; Dời buổi →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wf-state" data-state-panel="edge">
+            <div class="wf-card">
+              <strong>Chế độ Hủy buổi / Hoàn tác lịch nghỉ:</strong> Nếu chọn <em>Hủy buổi</em>, các buổi trùng chuyển sang trạng thái <code>Đã hủy</code> mà không sinh buổi bù cuối khóa. Nếu bấm <em>Xóa kỳ nghỉ</em>, hệ thống thu hồi các buổi bù chưa diễn ra và khôi phục buổi gốc về <code>Đã lên lịch</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-spec">
+      <h3>Bảng đối chiếu thành phần màn [3] schedule-and-holiday-modal</h3>
+      <table class="wf-table">
+        <thead><tr><th>#</th><th>Thành phần</th><th>Loại điều khiển</th><th>Quy tắc nghiệp vụ</th></tr></thead>
+        <tbody>
+          <tr><td>4..8</td><td>Biểu mẫu khai báo kỳ nghỉ chung</td><td>Form controls</td><td>Hỗ trợ chọn phạm vi toàn tổ chức/từng lớp và 2 phương thức: `Dời lịch (+1 buổi)` hoặc `Hủy buổi` (`FR-008`).</td></tr>
+          <tr><td>9..12</td><td>Bảng xem trước &amp; Nút xác nhận nguyên tử</td><td>Preview table + Action</td><td>Tự nhảy qua kỳ nghỉ lễ trùng ở cuối khóa và giữ nguyên ca học đã điểm danh (`BR-003`).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.wf-tab');
+  const pages = document.querySelectorAll('.wf-page');
+  function showScreen(id) {
+    pages.forEach((p) => { p.classList.toggle('is-active', p.id === `screen-${id}`); });
+    tabs.forEach((t) => { t.setAttribute('aria-selected', String(t.dataset.screen === id)); });
+  }
+  tabs.forEach((t) => { t.addEventListener('click', () => showScreen(t.dataset.screen)); });
+  document.addEventListener('click', (e) => {
+    const goto = e.target.closest('[data-goto]');
+    if (goto) { e.preventDefault(); showScreen(goto.dataset.goto); }
+    const pill = e.target.closest('.wf-state-pill');
+    if (pill) {
+      const page = pill.closest('.wf-page');
+      const state = pill.dataset.state;
+      page.querySelectorAll('.wf-state-pill').forEach((p) => { p.setAttribute('aria-pressed', String(p === pill)); });
+      page.querySelectorAll('.wf-state').forEach((s) => { s.classList.toggle('is-active', s.dataset.statePanel === state); });
+    }
+  });
+  const toggleNum = document.getElementById('toggle-num');
+  if (toggleNum) toggleNum.addEventListener('change', () => document.body.classList.toggle('hide-annotations', !toggleNum.checked));
+  function applyHash() {
+    if (location.hash) {
+      const h = location.hash.replace(/^#(?:screen-)?/, '');
+      if (document.getElementById(`screen-${h}`)) showScreen(h);
+    }
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+})();
+</script>
+</body>
+</html>
