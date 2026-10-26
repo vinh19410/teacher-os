@@ -8,7 +8,7 @@ issue: 445
 branch: feat/tos-11-holiday-shift-makeup
 tags: [feature, backend, frontend, database, api]
 blockedBy: []
-blocks: []
+blocks: [446, 447, 448]
 created: 2026-10-26
 ---
 
