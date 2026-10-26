@@ -232,6 +232,9 @@ export async function seedSubmittedEssay(opts: {
 	assignmentId: string;
 	studentId: string;
 	essay: string;
+	/** Mốc nộp (epoch ms) — mặc định bây giờ. Thẻ "quá hạn chấm" (TOS-6)
+	 * seed 25h trước để attempt rơi vào bộ đếm > 24h. */
+	submittedAtMs?: number;
 }): Promise<string> {
 	const db = openDb();
 	await db.execute("PRAGMA busy_timeout = 5000;");
@@ -248,7 +251,7 @@ export async function seedSubmittedEssay(opts: {
 				opts.studentId,
 				opts.essay,
 				Date.now() - 600_000,
-				Date.now(),
+				opts.submittedAtMs ?? Date.now(),
 			],
 		});
 		await db.execute({

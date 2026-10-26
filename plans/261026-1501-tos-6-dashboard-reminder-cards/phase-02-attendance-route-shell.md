@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Route khung /attendance + mục sidebar"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []

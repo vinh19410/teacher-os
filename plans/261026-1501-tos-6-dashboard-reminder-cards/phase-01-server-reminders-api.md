@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "API đếm 3 thẻ nhắc việc + contract + ReminderScope"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: []
@@ -39,7 +39,7 @@ type ReminderScope =
 
 1. **Ca chưa điểm danh.** Lấy các lesson của org có `status = "upcoming"` thuộc hôm nay theo `vietnamTodayISO(now)`:
    - Lớp có `lesson.date`: so `date = today`.
-   - Lớp legacy (`date IS NULL`): so `day` với thứ trong tuần hôm nay, cùng quy ước với `lessonDayFromDate` / `lessonsToday` ở web. Đọc lại helper web trước khi viết để khớp số liệu.
+   - Lớp legacy (`date IS NULL`): so `day` với thứ trong tuần hôm nay **suy từ `today`** theo mẫu `isoToLessonWeekday` (`apps/server/src/routes/kernel.ts:656`): `new Date(`${today}T00:00:00Z`).getUTCDay()`. KHÔNG dùng `new Date().getDay()` / `lessonDayFromDate` (local time — server chạy UTC, lệch 1 ngày từ 0h–7h giờ VN).
 
    Gom theo (classId, time). Mỗi nhóm có ít nhất 1 dòng `upcoming` thì tính là 1 ca chưa điểm danh. Bỏ `cancelled`. `items` sắp theo `time` tăng dần, cắt 3 mục.
 2. **Bài quá hạn chấm > 24h.** Dùng cùng điều kiện với hàng chờ `/api/grading`:
@@ -47,9 +47,9 @@ type ReminderScope =
    - Thêm điều kiện `submittedAt < now - 24h`.
    - Trả tổng và tách số writing / speaking.
    - Ở scope `assigned`, chỉ tính nhánh assignment lọc theo `classAssignment.classId`. Nhánh practice không gắn lớp nên không tính.
-3. **Học phí.** Lấy các invoice của org chưa thu đủ (`status !== "paid" || paidAmount < amount`, khớp `tuition/index.tsx`) mà `due <= today + 7 ngày`. Hạn đã qua cũng tính.
+3. **Học phí.** Lấy các invoice của org chưa thu đủ (`status !== "paid" || paidAmount < amount` — khớp trang `/tuition`, tuition/index.tsx:71) mà `due <= today + 7 ngày`. Hạn đã qua cũng tính.
    - `students` = số `studentId` distinct.
-   - `outstanding` = tổng `amount - paidAmount`.
+   - `outstanding` = tổng `amount - Math.min(paidAmount, amount)` (clamp như tuition-from-kernel.ts:259 — trả thừa không làm tổng âm).
    - Bỏ invoice có `due` rỗng.
 
 ## Tasks & Steps
@@ -57,9 +57,10 @@ type ReminderScope =
 1. Viết test đỏ trước cho `computeReminders`:
    - (a) Lớp có date, gồm 1 ca upcoming và 1 ca completed hôm nay, thì `pending = 1`.
    - (b) Lớp legacy đếm đúng theo thứ trong tuần.
+   - (b2) Lớp legacy với `now` = 23:30 UTC Chủ nhật (06:30 sáng Thứ Hai giờ VN): phải đếm theo `day = 1` (Thứ Hai — từ `vietnamTodayISO(now)`), không phải `day = 7` mà `new Date().getDay()` của server UTC trả về.
    - (c) Ca `cancelled` không được đếm.
    - (d) Attempt submitted 25h trước được đếm, attempt 23h trước thì không.
-   - (e) Invoice quá hạn và invoice còn hạn trong 7 ngày đều được đếm. Hạn sau 8 ngày và hoá đơn đã thu đủ thì không.
+   - (e) Invoice quá hạn và invoice còn hạn trong 7 ngày đều được đếm. Hạn sau 8 ngày và hoá đơn đã thu đủ thì không. Invoice trả thừa (`paidAmount > amount`) không được đếm lần 2 và không kéo `outstanding` âm.
    - (f) Scope `assigned` chỉ đếm lớp trong `classIds`, và response không có key `tuition`.
    - (g) Cô lập org: dữ liệu của org khác không được tính.
 2. Viết contract zod và route. Response parse lại bằng schema (theo mẫu các route khác) để test hợp đồng.

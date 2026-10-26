@@ -7,6 +7,7 @@ import {
 	BarChart3,
 	BookA,
 	BookMarked,
+	CalendarCheck,
 	CalendarDays,
 	ClipboardList,
 	LayoutDashboard,
@@ -32,6 +33,14 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Tổng quan",
 				icon: LayoutDashboard,
 				href: "/dashboard",
+			},
+			// TOS-6 (#439): đích thẻ "Ca học hôm nay chưa điểm danh" + mục
+			// wireframe [2] — nội dung điểm danh thuộc TOS-7/TOS-8.
+			{
+				key: "attendance",
+				label: "Điểm danh ngày",
+				icon: CalendarCheck,
+				href: "/attendance",
 			},
 			{ key: "classes", label: "Lớp học", icon: School, href: "/classes" },
 			{ key: "students", label: "Học viên", icon: Users, href: "/students" },
@@ -125,6 +134,7 @@ export function extractUserPlan(user: unknown): string | null {
  */
 const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/dashboard": "dashboard",
+	"/attendance": "attendance",
 	"/classes": "classes",
 	"/students": "students",
 	"/schedule": "schedule",
