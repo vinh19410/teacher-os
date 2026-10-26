@@ -235,7 +235,7 @@ export async function computeReminders(
 
 /** Điểm cắm Phase 5 (FR-029): thay hàm này để suy scope từ session/membership
  * khi vai trò Trợ giảng tồn tại. Hiện tại mọi teacher là toàn org. */
-function resolveReminderScope(): ReminderScope {
+export function resolveReminderScope(): ReminderScope {
 	return { kind: "org" };
 }
 
