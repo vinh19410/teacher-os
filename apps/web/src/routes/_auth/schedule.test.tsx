@@ -453,6 +453,7 @@ describe("schedule holiday labels (TOS-11)", () => {
 						fromDate: "2026-10-12",
 						toDate: "2026-10-12",
 						scope: "org",
+						mode: "shift",
 					},
 				],
 				holidayShifts: [
@@ -477,6 +478,126 @@ describe("schedule holiday labels (TOS-11)", () => {
 		start();
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByTestId("holiday-open")).toBeTruthy();
+	});
+
+	it("TOS-13: kỳ nghỉ tương lai hiện thẻ kỳ nghỉ kèm nút 'Xóa kỳ nghỉ (Hoàn tác)' và xác nhận gọi DELETE /api/holidays/:id; kỳ nghỉ đã bắt đầu (fromDate = hôm nay) ẩn nút", async () => {
+		server = startKernelServer(
+			weekSnapshot({
+				holidays: [
+					{
+						id: "hol-started",
+						name: "Nghỉ hôm nay",
+						fromDate: "2026-10-12",
+						toDate: "2026-10-12",
+						scope: "org",
+						mode: "shift",
+					},
+					{
+						id: "hol-future",
+						name: "Nghỉ ngày mai",
+						fromDate: "2026-10-13",
+						toDate: "2026-10-13",
+						scope: "org",
+						mode: "shift",
+					},
+				],
+				holidayShifts: [
+					{
+						holidayId: "hol-future",
+						classId: "cl-1",
+						originalDate: "2026-10-13",
+						makeupDate: "2026-12-22",
+					},
+				],
+			}),
+			(req, s) => {
+				if (
+					req.method === "DELETE" &&
+					req.path === "/api/holidays/hol-future"
+				) {
+					s.snapshot = {
+						...s.snapshot,
+						holidays: (s.snapshot.holidays ?? []).filter(
+							(h) => h.id !== "hol-future",
+						),
+						holidayShifts: [],
+					};
+					return {
+						status: 200,
+						body: { restoredCount: 1, removedMakeupCount: 1 },
+					};
+				}
+				return undefined;
+			},
+		);
+		renderWithKernel(<ScheduleRoute />);
+		const cards = await screen.findAllByTestId("holiday-calendar-card");
+		expect(cards).toHaveLength(2);
+
+		const startedCard = cards.find(
+			(c) => c.getAttribute("data-holiday-id") === "hol-started",
+		);
+		const futureCard = cards.find(
+			(c) => c.getAttribute("data-holiday-id") === "hol-future",
+		);
+		if (!startedCard || !futureCard) throw new Error("missing holiday cards");
+
+		expect(
+			within(startedCard).queryByTestId("holiday-undo-trigger"),
+		).toBeNull();
+		const undoBtn = within(futureCard).getByTestId("holiday-undo-trigger");
+		expect(undoBtn.textContent).toBe("Xóa kỳ nghỉ (Hoàn tác)");
+
+		fireEvent.click(undoBtn);
+		expect(await screen.findByTestId("holiday-undo-dialog")).toBeTruthy();
+		expect(screen.getByTestId("holiday-undo-summary").textContent).toBe(
+			"Khôi phục 1 buổi gốc · Thu hồi 1 buổi bù",
+		);
+
+		fireEvent.click(screen.getByTestId("holiday-undo-confirm"));
+		await waitFor(() => {
+			expect(server.writes.map((w) => `${w.method} ${w.path}`)).toContain(
+				"DELETE /api/holidays/hol-future",
+			);
+		});
+	});
+
+	it("TOS-13: block buổi cancelled do kỳ nghỉ hiển thị 'Đã hủy — «tên kỳ nghỉ»'", async () => {
+		server = startKernelServer(
+			weekSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-10-12",
+						type: "1:2",
+						status: "cancelled",
+					}),
+				],
+				holidays: [
+					{
+						id: "hol-cancel-1",
+						name: "Nghỉ bảo trì",
+						fromDate: "2026-10-12",
+						toDate: "2026-10-12",
+						scope: "org",
+						mode: "cancel",
+					},
+				],
+				holidayCancels: [
+					{
+						holidayId: "hol-cancel-1",
+						classId: "cl-1",
+						date: "2026-10-12",
+					},
+				],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		const block = await screen.findByText("IELTS Writing");
+		const blockEl = block.closest("button");
+		expect(blockEl?.textContent).toContain("Đã hủy — Nghỉ bảo trì");
 	});
 });
 

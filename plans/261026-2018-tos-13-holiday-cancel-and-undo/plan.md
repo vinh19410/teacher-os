@@ -1,7 +1,7 @@
 ---
 title: "TOS-13: Phương thức Hủy buổi (không bù) và Xóa kỳ nghỉ tương lai (Hoàn tác)"
 description: "Thêm phương thức 'Hủy buổi' cho Lịch nghỉ chung (buổi upcoming trùng → cancelled, không sinh buổi bù) và thao tác 'Xóa kỳ nghỉ (Hoàn tác)' cho kỳ nghỉ chưa bắt đầu: thu hồi buổi bù chưa diễn ra, khôi phục buổi gốc về upcoming."
-status: pending
+status: completed
 priority: P1
 effort: 2d
 issue: 448
@@ -56,10 +56,10 @@ Nguồn: Jira [TOS-13](https://teacher-os.atlassian.net/browse/TOS-13) (subtask 
 
 | # | Phase | Ước lượng | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [phase-01-cancel-schema-and-planner-mode.md](phase-01-cancel-schema-and-planner-mode.md): bảng `holiday_session_cancel`, contract `mode`, planner chế độ cancel | 3h | pending | #445, #446 |
-| 2 | [phase-02-cancel-apply-and-undo-api.md](phase-02-cancel-apply-and-undo-api.md): apply cancel, `DELETE /api/holidays/:id`, kích hoạt enrollment, snapshot `holidayCancels` | 5h | pending | 1 |
-| 3 | [phase-03-cancel-radio-and-undo-ui.md](phase-03-cancel-radio-and-undo-ui.md): radio Hủy buổi, nút Xóa kỳ nghỉ (Hoàn tác) + hộp thoại xác nhận | 4h | pending | 2 |
-| 4 | [phase-04-e2e-ac-003.md](phase-04-e2e-ac-003.md): E2E 2 scenario AC-003 | 2h | pending | 3 |
+| 1 | [phase-01-cancel-schema-and-planner-mode.md](phase-01-cancel-schema-and-planner-mode.md): bảng `holiday_session_cancel`, contract `mode`, planner chế độ cancel | 3h | completed | #445, #446 |
+| 2 | [phase-02-cancel-apply-and-undo-api.md](phase-02-cancel-apply-and-undo-api.md): apply cancel, `DELETE /api/holidays/:id`, kích hoạt enrollment, snapshot `holidayCancels` | 5h | completed | 1 |
+| 3 | [phase-03-cancel-radio-and-undo-ui.md](phase-03-cancel-radio-and-undo-ui.md): radio Hủy buổi, nút Xóa kỳ nghỉ (Hoàn tác) + hộp thoại xác nhận | 4h | completed | 2 |
+| 4 | [phase-04-e2e-ac-003.md](phase-04-e2e-ac-003.md): E2E 2 scenario AC-003 | 2h | completed | 3 |
 
 ```mermaid
 flowchart LR
@@ -70,12 +70,12 @@ flowchart LR
 
 ## Acceptance criteria (từ AC-003)
 
-- [ ] Chọn "Hủy buổi" → Bảng xem trước ghi "→ Hủy buổi (không bù)" cho mỗi buổi trùng; xác nhận → buổi `upcoming` trong khoảng thành `cancelled`, không có lesson mới, ngày buổi cuối của lớp không đổi; buổi đã điểm danh giữ nguyên.
-- [ ] Kỳ nghỉ tương lai phương thức Dời lịch → "Xóa kỳ nghỉ (Hoàn tác)" → buổi bù chưa diễn ra bị xóa, buổi gốc về `upcoming`, kỳ nghỉ biến mất khỏi lịch.
-- [ ] Kỳ nghỉ tương lai phương thức Hủy buổi → hoàn tác khôi phục đúng các buổi do kỳ nghỉ này hủy, không khôi phục buổi hủy tay.
-- [ ] Kỳ nghỉ đã bắt đầu không có nút hoàn tác; API trả 422. Buổi bù đã điểm danh → 409, dữ liệu không đổi.
-- [ ] Org khác gọi xóa kỳ nghỉ → 404.
-- [ ] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-003 xanh.
+- [x] Chọn "Hủy buổi" → Bảng xem trước ghi "→ Hủy buổi (không bù)" cho mỗi buổi trùng; xác nhận → buổi `upcoming` trong khoảng thành `cancelled`, không có lesson mới, ngày buổi cuối của lớp không đổi; buổi đã điểm danh giữ nguyên.
+- [x] Kỳ nghỉ tương lai phương thức Dời lịch → "Xóa kỳ nghỉ (Hoàn tác)" → buổi bù chưa diễn ra bị xóa, buổi gốc về `upcoming`, kỳ nghỉ biến mất khỏi lịch.
+- [x] Kỳ nghỉ tương lai phương thức Hủy buổi → hoàn tác khôi phục đúng các buổi do kỳ nghỉ này hủy, không khôi phục buổi hủy tay.
+- [x] Kỳ nghỉ đã bắt đầu không có nút hoàn tác; API trả 422. Buổi bù đã điểm danh → 409, dữ liệu không đổi.
+- [x] Org khác gọi xóa kỳ nghỉ → 404.
+- [x] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-003 xanh.
 
 ## Rủi ro
 

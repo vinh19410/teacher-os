@@ -248,12 +248,12 @@ describe("RecordPaymentModal", () => {
 		}));
 		const paid = singleInvoice();
 		if (paid.invoices) paid.invoices[0].paidAmount = 4_500_000;
-		server.snapshotReply = () => ({ status: 200, body: paid });
 		renderWithKernel(
 			<RecordPaymentModal open onClose={() => {}} row={row()} />,
 		);
 		const dialog = await screen.findByRole("dialog");
-		typeAmount(dialog, "9,000,000");
+		server.snapshotReply = () => ({ status: 200, body: paid });
+		typeAmount(dialog, "2,000,000");
 		fireEvent.click(
 			within(dialog).getByRole("button", { name: "Lưu phiếu thu học phí" }),
 		);
@@ -275,10 +275,10 @@ describe("RecordPaymentModal", () => {
 		}));
 		const settled = singleInvoice();
 		if (settled.invoices) settled.invoices[0].paidAmount = 4_500_000;
-		server.snapshotReply = () => ({ status: 200, body: settled });
 		vi.spyOn(console, "warn").mockImplementation(() => {});
 		renderWithKernel(<RecordPaymentModal open onClose={onClose} row={row()} />);
 		const dialog = await screen.findByRole("dialog");
+		server.snapshotReply = () => ({ status: 200, body: settled });
 		typeAmount(dialog, "2,000,000");
 		fireEvent.click(
 			within(dialog).getByRole("button", { name: "Lưu phiếu thu học phí" }),
@@ -314,5 +314,117 @@ describe("RecordPaymentModal", () => {
 		expect(
 			within(dialog).getByRole("button", { name: "Lưu phiếu thu học phí" }),
 		).toBeTruthy();
+	});
+
+	it("validates invalid amounts (0 and > remaining) inline with aria-invalid/aria-describedby and disables save (TOS-17 #451)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				students: [studentRow({ id: "st-1", name: "Nguyễn Minh Anh" })],
+				invoices: [
+					invoiceRow({
+						id: "inv-1",
+						studentId: "st-1",
+						amount: 4_500_000,
+						paidAmount: 2_000_000,
+						status: "unpaid",
+						due: "2099-12-31",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(
+			<RecordPaymentModal
+				open
+				onClose={() => {}}
+				row={row({
+					totalDue: 4_500_000,
+					totalPaid: 2_000_000,
+					remaining: 2_500_000,
+				})}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		const input = within(dialog).getByLabelText(
+			/Số tiền thực thu/,
+		) as HTMLInputElement;
+		const saveBtn = within(dialog).getByRole("button", {
+			name: "Lưu phiếu thu học phí",
+		}) as HTMLButtonElement;
+
+		// Mới mở hộp thoại chưa nhập: không hiện lỗi đỏ nhưng nút Lưu đã khóa
+		expect(input.getAttribute("aria-invalid")).not.toBe("true");
+		expect(
+			within(dialog).queryByText(
+				"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ",
+			),
+		).toBeNull();
+		expect(saveBtn.disabled).toBe(true);
+
+		// Nhập 0 → lỗi inline + aria-invalid + aria-describedby + nút Lưu khóa
+		typeAmount(dialog, "0");
+		fireEvent.blur(input);
+		const errZero = within(dialog).getByText(
+			"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ",
+		);
+		expect(errZero).toBeTruthy();
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(input.getAttribute("aria-describedby")).toContain(errZero.id);
+		expect(saveBtn.disabled).toBe(true);
+
+		// Nhập 3.000.000 (vượt nợ 2.500.000) → vẫn hiện lỗi inline và nút Lưu khóa
+		typeAmount(dialog, "3,000,000");
+		expect(
+			within(dialog).getByText(
+				"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ",
+			),
+		).toBeTruthy();
+		expect(input.getAttribute("aria-invalid")).toBe("true");
+		expect(saveBtn.disabled).toBe(true);
+
+		// Sửa về 2.500.000 → hết lỗi, nút Lưu bật
+		typeAmount(dialog, "2,500,000");
+		expect(
+			within(dialog).queryByText(
+				"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ",
+			),
+		).toBeNull();
+		expect(input.getAttribute("aria-invalid")).not.toBe("true");
+		expect(saveBtn.disabled).toBe(false);
+	});
+
+	it("re-validates amount when switching to an invoice with smaller remaining debt (TOS-17 #451)", async () => {
+		startKernelServer(twoOpenInvoices());
+		renderWithKernel(
+			<RecordPaymentModal
+				open
+				onClose={() => {}}
+				row={row({
+					openInvoiceIds: ["inv-early", "inv-late"],
+					totalDue: 5_500_000,
+					remaining: 5_100_000,
+				})}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		const select = within(dialog).getByLabelText(
+			"Khoản thu *",
+		) as HTMLSelectElement;
+		const saveBtn = within(dialog).getByRole("button", {
+			name: "Lưu phiếu thu học phí",
+		}) as HTMLButtonElement;
+
+		// Chọn khoản inv-late (còn nợ 4.500.000) và nhập 2.000.000 → hợp lệ
+		fireEvent.change(select, { target: { value: "inv-late" } });
+		typeAmount(dialog, "2,000,000");
+		expect(saveBtn.disabled).toBe(false);
+
+		// Đổi sang khoản inv-early (còn nợ 600.000 < 2.000.000) → lỗi hiện lại, nút Lưu khóa
+		fireEvent.change(select, { target: { value: "inv-early" } });
+		expect(
+			within(dialog).getByText(
+				"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ",
+			),
+		).toBeTruthy();
+		expect(saveBtn.disabled).toBe(true);
 	});
 });

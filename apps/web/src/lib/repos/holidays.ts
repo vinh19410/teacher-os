@@ -7,8 +7,10 @@
 import type { HolidayDraft } from "@teacher-os/api/contracts";
 import {
 	type HolidayApplyResult,
+	type HolidayDeleteResult,
 	type HolidayPreview,
 	holidayApplyResultSchema,
+	holidayDeleteResultSchema,
 	holidayPreviewResponseSchema,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
@@ -68,6 +70,57 @@ export async function applyHoliday(
 	return holidayApplyResultSchema.parse(raw);
 }
 
+/** Hoàn tác kỳ nghỉ tương lai (TOS-13): `DELETE /api/holidays/:id`.
+ * 409 `makeup-touched` mang theo `touched: {classId, makeupDate}[]` trên Error. */
+export async function deleteHoliday(
+	holidayId: string,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<HolidayDeleteResult> {
+	const res = await fetch(
+		`${baseUrl}/api/holidays/${encodeURIComponent(holidayId)}`,
+		{
+			method: "DELETE",
+			credentials: "include",
+		},
+	);
+	const raw: unknown = await res.json().catch(() => null);
+	if (!res.ok) {
+		const error =
+			raw != null &&
+			typeof raw === "object" &&
+			"error" in raw &&
+			typeof raw.error === "string"
+				? raw.error
+				: "request-failed";
+		const touched =
+			raw != null &&
+			typeof raw === "object" &&
+			"touched" in raw &&
+			Array.isArray(raw.touched)
+				? raw.touched.filter(
+						(
+							item,
+						): item is {
+							classId: string;
+							makeupDate: string;
+						} =>
+							item != null &&
+							typeof item === "object" &&
+							"classId" in item &&
+							typeof item.classId === "string" &&
+							"makeupDate" in item &&
+							typeof item.makeupDate === "string",
+					)
+				: [];
+		throw Object.assign(new Error(error), {
+			holidayErrorCode: error,
+			status: res.status,
+			touched,
+		});
+	}
+	return holidayDeleteResultSchema.parse(raw);
+}
+
 /** Shift của một block lịch tuần: `(classId, originalDate)` → `makeupDate`. */
 export function makeupDateForShift(
 	snapshot: Pick<KernelSnapshot, "holidayShifts">,
@@ -99,7 +152,31 @@ export function holidayNameForDate(
 		if (byId) return byId.name;
 	}
 	const hit = (snapshot.holidays ?? []).find(
-		(h) => h.fromDate <= dateISO && dateISO <= h.toDate,
+		(h) => h.mode !== "cancel" && h.fromDate <= dateISO && dateISO <= h.toDate,
+	);
+	return hit?.name ?? null;
+}
+
+/** Tên kỳ nghỉ đã hủy buổi (TOS-13): chỉ khớp khi `(classId, dateISO)` nằm
+ * trong `holidayCancels` — buổi GV hủy tay không có dòng nên trả `null`. */
+export function cancelledByHolidayName(
+	snapshot: Pick<KernelSnapshot, "holidays" | "holidayCancels">,
+	classId: string,
+	dateISO: string | null,
+): string | null {
+	if (!dateISO) return null;
+	const cancel = (snapshot.holidayCancels ?? []).find(
+		(c) => c.classId === classId && c.date === dateISO,
+	);
+	if (!cancel) return null;
+	if (cancel.holidayId) {
+		const byId = (snapshot.holidays ?? []).find(
+			(h) => h.id === cancel.holidayId,
+		);
+		if (byId) return byId.name;
+	}
+	const hit = (snapshot.holidays ?? []).find(
+		(h) => h.mode === "cancel" && h.fromDate <= dateISO && dateISO <= h.toDate,
 	);
 	return hit?.name ?? null;
 }

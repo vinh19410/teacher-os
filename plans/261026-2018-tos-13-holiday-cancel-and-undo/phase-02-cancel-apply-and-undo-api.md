@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "API apply Hủy buổi, DELETE kỳ nghỉ (Hoàn tác), kích hoạt enrollment"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: ["phase-01"]

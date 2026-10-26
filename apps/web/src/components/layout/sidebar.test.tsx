@@ -20,6 +20,7 @@ import {
 	TEACHER_NAV,
 	TeacherShellLink,
 	teacherActiveKey,
+	teacherNavForViewer,
 } from "./sidebar";
 
 describe("TEACHER_NAV — Điểm danh ngày (TOS-6 #439)", () => {
@@ -53,6 +54,28 @@ describe("TEACHER_NAV — Công nợ (TOS-15 #449)", () => {
 			label: "Công nợ",
 			href: "/debts",
 		});
+	});
+});
+
+describe("teacherNavForViewer (TOS-17 #451)", () => {
+	it("giữ nguyên Doanh thu và Công nợ khi canAccessFinance = true", () => {
+		const business = teacherNavForViewer(true).find(
+			(group) => group.group === "Kinh doanh",
+		);
+		const keys = business?.items.map((item) => item.key) ?? [];
+		expect(keys).toContain("tuition");
+		expect(keys).toContain("debts");
+		expect(keys).toContain("profile");
+	});
+
+	it("ẩn Doanh thu và Công nợ khỏi nhóm Kinh doanh khi canAccessFinance = false", () => {
+		const business = teacherNavForViewer(false).find(
+			(group) => group.group === "Kinh doanh",
+		);
+		const keys = business?.items.map((item) => item.key) ?? [];
+		expect(keys).not.toContain("tuition");
+		expect(keys).not.toContain("debts");
+		expect(keys).toContain("profile");
 	});
 });
 

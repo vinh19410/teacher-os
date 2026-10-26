@@ -34,6 +34,7 @@ const PREVIEW: HolidayPreview = {
 			skippedHolidays: [],
 		},
 	],
+	cancellations: [],
 	keptCompleted: [],
 	unsupported: [],
 	affectedClassCount: 1,
@@ -59,6 +60,7 @@ beforeEach(() => {
 	repos.applyHoliday.mockReset().mockResolvedValue({
 		holidayId: "hol-1",
 		shiftedCount: 1,
+		cancelledCount: 0,
 		classCount: 1,
 	});
 });
@@ -349,5 +351,77 @@ describe("HolidayModal TOS-12: nhảy kỳ nghỉ và giữ nguyên buổi đã 
 				/\*Lớp IELTS Writing: ngày dự kiến 22\/01 trùng «Nghỉ lễ 20\/11» nên tự nhảy sang Thứ 6, 22\/01\/2027/,
 			),
 		).toBeTruthy();
+	});
+});
+
+describe("HolidayModal TOS-13: phương thức Hủy buổi (không bù)", () => {
+	it("chọn Hủy buổi → gọi lại preview với mode:'cancel', bảng hiện '→ Hủy buổi (không bù)', nút đổi nhãn và xác nhận toast Đã hủy N buổi", async () => {
+		repos.previewHoliday.mockImplementation(async (draft: { mode: string }) => {
+			if (draft.mode === "cancel") {
+				return {
+					shifts: [],
+					cancellations: [
+						{
+							classId: "cl-1",
+							className: "IELTS Writing",
+							date: "2026-11-20",
+							sessionOrdinal: 3,
+						},
+					],
+					keptCompleted: [],
+					unsupported: [],
+					affectedClassCount: 1,
+					planHash: "hash-cancel-1",
+				};
+			}
+			return PREVIEW;
+		});
+		repos.applyHoliday.mockResolvedValueOnce({
+			holidayId: "hol-cancel-1",
+			shiftedCount: 0,
+			cancelledCount: 1,
+			classCount: 1,
+		});
+		const onApplied = vi.fn();
+		const onClose = vi.fn();
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={onClose}
+				onApplied={onApplied}
+			/>,
+		);
+		fillValidForm();
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+		expect(repos.previewHoliday).toHaveBeenLastCalledWith(
+			expect.objectContaining({ mode: "shift" }),
+		);
+
+		fireEvent.click(screen.getByTestId("holiday-mode-cancel"));
+		await waitFor(() =>
+			expect(repos.previewHoliday).toHaveBeenLastCalledWith(
+				expect.objectContaining({ mode: "cancel" }),
+			),
+		);
+		await waitFor(() =>
+			expect(
+				screen.getAllByText(/→ Hủy buổi \(không bù\)/).length,
+			).toBeGreaterThanOrEqual(1),
+		);
+
+		const confirmBtn = screen.getByRole("button", {
+			name: "Xác nhận áp dụng & Hủy buổi",
+		});
+		fireEvent.click(confirmBtn);
+		await waitFor(() => expect(onApplied).toHaveBeenCalledWith(1));
+		expect(repos.applyHoliday).toHaveBeenCalledWith(
+			expect.objectContaining({ mode: "cancel" }),
+			"hash-cancel-1",
+		);
+		expect(toast.success).toHaveBeenCalledWith("Đã hủy 1 buổi.");
+		expect(onClose).toHaveBeenCalled();
 	});
 });

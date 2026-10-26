@@ -425,3 +425,75 @@ export function mp3FixtureBytes(): Buffer {
 	frame[3] = 0x64;
 	return Buffer.concat(Array.from({ length: 10 }, () => frame));
 }
+
+/**
+ * TOS-17 (#451 / D6): tạo thành viên tổ chức với `membership.role` chỉ định
+ * (`"ta"` | `"class_teacher"`) trong org của `teacherEmail` và đăng nhập sẵn
+ * trên `page` (qua cookie session của `/api/auth/sign-up/email`) trước khi
+ * trình duyệt gọi `/api/kernel` lần đầu.
+ */
+export async function seedOrgMember(
+	page: Page,
+	opts: {
+		teacherEmail: string;
+		role: "ta" | "class_teacher";
+		name?: string;
+		email?: string;
+		password?: string;
+	},
+): Promise<{ id: string; email: string; orgId: string; role: string }> {
+	const orgId = await orgIdForTeacherEmail(opts.teacherEmail);
+	const email =
+		opts.email ??
+		`e2e-${opts.role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+	const password = opts.password ?? "password-8chars";
+	const name =
+		opts.name ?? (opts.role === "ta" ? "Trợ giảng E2E" : "GV Đứng Lớp E2E");
+
+	await page.context().clearCookies();
+
+	const res = await page.request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+		data: { name, email, password },
+		headers: {
+			"Content-Type": "application/json",
+			Origin: WEB_ORIGIN,
+		},
+	});
+	if (res.status() !== 200) {
+		throw new Error(
+			`seedOrgMember sign-up failed (${res.status()}): ${await res.text()}`,
+		);
+	}
+
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await client.execute("PRAGMA busy_timeout = 5000;");
+	try {
+		const userId = await withBusyRetry(async () => {
+			const rs = await client.execute({
+				sql: "SELECT id FROM user WHERE lower(email) = lower(?) LIMIT 1",
+				args: [email],
+			});
+			const id = rs.rows[0]?.id;
+			if (!id) throw new Error("seedOrgMember: user row not found yet");
+			return String(id);
+		}, 20);
+
+		const now = Date.now();
+		await withBusyRetry(async () => {
+			await client.execute({
+				sql: "DELETE FROM membership WHERE user_id = ?",
+				args: [userId],
+			});
+			await client.execute({
+				sql: "INSERT INTO membership (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
+				args: [crypto.randomUUID(), orgId, userId, opts.role, now],
+			});
+		}, 10);
+
+		return { id: userId, email, orgId, role: opts.role };
+	} finally {
+		client.close();
+	}
+}

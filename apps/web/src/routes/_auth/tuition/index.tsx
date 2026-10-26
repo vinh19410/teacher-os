@@ -26,6 +26,7 @@ import {
 	tuitionTotals,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { useFinanceRouteGuard } from "@/lib/use-finance-route-guard";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 // #343 — lazy-load chart: recharts (~100 kB gzip) phải thành chunk riêng chỉ
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/_auth/tuition/")({
 export function TuitionRoute() {
 	const navigate = useNavigate();
 	const { data } = useData();
+	const canAccessFinance = useFinanceRouteGuard();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const [modalOpen, setModalOpen] = useState(false);
 	// #320: invoice currently open in the "Thu học phí" QR modal.
@@ -84,6 +86,8 @@ export function TuitionRoute() {
 	const setPeriod = (next: RevenuePeriod) => {
 		void navigate({ to: "/tuition", search: { ky: next }, replace: true });
 	};
+
+	if (!canAccessFinance) return null;
 
 	return (
 		<div>

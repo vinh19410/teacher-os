@@ -223,6 +223,9 @@ export function ScheduleRoute() {
 						dates={week.dates}
 						model={weekModel}
 						onOpenSession={setOpenSession}
+						onRefresh={() => {
+							void refresh();
+						}}
 					/>
 				)
 			)}

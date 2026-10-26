@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Radio Hủy buổi và nút Xóa kỳ nghỉ (Hoàn tác)"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: ["phase-02"]

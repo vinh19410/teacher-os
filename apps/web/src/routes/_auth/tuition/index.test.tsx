@@ -11,7 +11,7 @@ import {
 	studentRow,
 	type WriteHandler,
 } from "@/test/kernel-harness";
-import { resetRouterState } from "@/test/router-mock";
+import { resetRouterState, routerState } from "@/test/router-mock";
 
 vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
@@ -146,5 +146,33 @@ describe("mark an invoice paid", () => {
 		fireEvent.click(await screen.findByRole("button", { name: "Đã nhận" }));
 		await waitFor(() => expect(toast.error).toHaveBeenCalled());
 		expect(toast.success).not.toHaveBeenCalled();
+	});
+});
+
+describe("finance role guard on /tuition (TOS-17 #451)", () => {
+	it("redirects to /dashboard with toast and skips rendering when viewer.canAccessFinance is false", async () => {
+		const server = startKernelServer(
+			snapshotFixture({
+				viewer: { role: "class_teacher", canAccessFinance: false },
+			}),
+			withPayments(),
+		);
+		renderWithKernel(<Tuition />);
+		await waitFor(() => {
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/dashboard",
+				replace: true,
+			});
+		});
+		expect(toast.error).toHaveBeenCalledWith(
+			"Bạn không có quyền xem Sổ công nợ",
+			expect.objectContaining({ id: "finance-forbidden" }),
+		);
+		expect(screen.queryByText("Còn phải thu (VND)")).toBeNull();
+		expect(
+			server.writes.filter((w) =>
+				w.path.startsWith("/api/payment-transactions"),
+			),
+		).toHaveLength(0);
 	});
 });

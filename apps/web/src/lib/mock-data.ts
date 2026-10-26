@@ -6,8 +6,10 @@ import type {
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
 	KernelEventRow,
+	KernelHolidayCancelRow,
 	KernelHolidayShiftRow,
 	KernelHolidaySummary,
+	KernelViewer,
 	KernelVocabDeckRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
@@ -249,6 +251,9 @@ export interface MockData {
 	commentBank: CommentBankItem[];
 	classes: ClassGroup[];
 	syllabi: Syllabus[];
+	/** TOS-17 (#451): quyền tài chính của thành viên hiện tại; mặc định cho phép
+	 * trong fixture cũ khi không truyền. */
+	viewer?: KernelViewer;
 }
 
 export type KernelHydratedData = Pick<
@@ -279,8 +284,11 @@ export type KernelHydratedData = Pick<
 	/** TOS-11: nhãn kỳ nghỉ + "Đã dời sang dd/MM" trên lịch tuần. */
 	holidays: KernelHolidaySummary[];
 	holidayShifts: KernelHolidayShiftRow[];
+	holidayCancels: KernelHolidayCancelRow[];
 	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
 	events: KernelEventRow[];
+	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */
+	viewer?: KernelViewer;
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
