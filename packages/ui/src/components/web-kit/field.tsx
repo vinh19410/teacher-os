@@ -6,6 +6,7 @@ import {
 	isValidElement,
 	type ReactElement,
 	type ReactNode,
+	type Ref,
 	type SelectHTMLAttributes,
 	type TextareaHTMLAttributes,
 	useId,
@@ -99,9 +100,15 @@ export function Field({
 export function Input({
 	className,
 	id,
+	ref,
 	...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-	return <input id={id} className={cn(inputCls, className)} {...props} />;
+}: InputHTMLAttributes<HTMLInputElement> & {
+	/** React 19 ref-as-prop (imperative focus, e.g. TOS-8 auto-advance anchor). */
+	ref?: Ref<HTMLInputElement>;
+}) {
+	return (
+		<input id={id} ref={ref} className={cn(inputCls, className)} {...props} />
+	);
 }
 
 export function Select({

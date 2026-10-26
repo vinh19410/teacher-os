@@ -10,11 +10,13 @@ import {
 	attendanceDraftReducer,
 	createAttendanceDraft,
 	type DailyAttendanceSession,
+	markAllPresentState,
 	missingAttendanceLessonIds,
 	toSaveEntries,
 } from "@/lib/attendance-draft";
 import { cn } from "@/lib/cn";
 import { AttendanceStatusPicker } from "./attendance-status-picker";
+import { FillMissingConfirm } from "./fill-missing-confirm";
 
 export interface AttendanceSessionRowProps {
 	session: DailyAttendanceSession;
@@ -24,6 +26,10 @@ export interface AttendanceSessionRowProps {
 	saving?: boolean;
 	serverError?: string | null;
 	onSave: (entries: SessionAttendanceSave["entries"]) => void | Promise<void>;
+	/** TOS-8 D3: ca vừa được auto-advance mở — focus picker đầu tiên sau khi mount. */
+	autoFocusBulk?: boolean;
+	/** Báo route xoá cờ auto-focus để re-render sau không giành lại focus. */
+	onBulkFocusSettled?: () => void;
 }
 
 function formatTimeWindow(time: string, dur: number): string {
@@ -45,6 +51,8 @@ export function AttendanceSessionRow({
 	saving = false,
 	serverError = null,
 	onSave,
+	autoFocusBulk = false,
+	onBulkFocusSettled,
 }: AttendanceSessionRowProps) {
 	const [draft, dispatch] = useReducer(
 		attendanceDraftReducer,
@@ -52,9 +60,49 @@ export function AttendanceSessionRow({
 		createAttendanceDraft,
 	);
 	const [validationClicked, setValidationClicked] = useState(false);
+	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [focusFirstMissingAfterClose, setFocusFirstMissingAfterClose] =
+		useState(false);
+	const bodyRef = useRef<HTMLDivElement>(null);
 	const firstRadioByLessonRef = useRef<
 		Record<string, HTMLButtonElement | null>
 	>({});
+
+	// TOS-8 D3: ca vừa lưu xong được auto-advance mở — cuộn thẻ về gần nhất
+	// (chỉ cuộn khi nằm ngoài khung nhìn) và focus picker trạng thái đầu tiên,
+	// KHÔNG phải nút điền nhanh (tránh Enter mặc định đậu trên thao tác ghi
+	// hàng loạt — red-team SEC-4). Sau đó báo route xoá cờ auto-focus. Guard
+	// ref chống chạy lại khi effect reset nháp (theo dõi session.students) tạo
+	// lại draft.order ngay sau mount.
+	const settledForBulkRef = useRef(false);
+	useEffect(() => {
+		if (!autoFocusBulk || !expanded) {
+			settledForBulkRef.current = false;
+			return;
+		}
+		if (settledForBulkRef.current) return;
+		settledForBulkRef.current = true;
+		// jsdom không cài scrollIntoView — gọi tuỳ chọn để test không nổ.
+		bodyRef.current?.scrollIntoView?.({ block: "nearest" });
+		const firstLessonId = draft.order[0];
+		if (firstLessonId) {
+			firstRadioByLessonRef.current[firstLessonId]?.focus();
+		}
+		onBulkFocusSettled?.();
+	}, [autoFocusBulk, expanded, draft.order, onBulkFocusSettled]);
+
+	// TOS-8 D2 + kongming điều kiện 3: cleanup focus của `Modal` trả focus về
+	// nút lưu, nên "Quay lại chỉnh"/Esc phải focus dòng thiếu đầu tiên SAU khi
+	// modal đã đóng (cờ xử lý trong effect này).
+	useEffect(() => {
+		if (confirmOpen || !focusFirstMissingAfterClose) return;
+		setFocusFirstMissingAfterClose(false);
+		setValidationClicked(true);
+		const firstMissingId = missingAttendanceLessonIds(draft)[0];
+		if (firstMissingId) {
+			firstRadioByLessonRef.current[firstMissingId]?.focus();
+		}
+	}, [confirmOpen, focusFirstMissingAfterClose, draft]);
 
 	// Khi dữ liệu server của ca thay đổi (vd sau refetch 409 hoặc đổi ngày), đồng bộ lại nháp.
 	useEffect(() => {
@@ -70,19 +118,46 @@ export function AttendanceSessionRow({
 	).length;
 	const totalStudents = session.students.length;
 
+	const focusFirstMissing = () => {
+		setValidationClicked(true);
+		const firstMissingId = missingAttendanceLessonIds(draft)[0];
+		if (firstMissingId) {
+			firstRadioByLessonRef.current[firstMissingId]?.focus();
+		}
+	};
+
 	const handleSubmit = () => {
 		if (isFutureDate || saving || session.mode === "legacy") return;
 		const currentMissing = missingAttendanceLessonIds(draft);
 		if (currentMissing.length > 0) {
-			setValidationClicked(true);
-			const firstMissingId = currentMissing[0];
-			if (firstMissingId) {
-				firstRadioByLessonRef.current[firstMissingId]?.focus();
+			// TOS-8 D2: ca chưa recorded → hỏi xác nhận "Gán Có mặt và lưu".
+			// Ca recorded còn dòng "Chưa rõ" → giữ hành vi TOS-7 (không bulk đè lịch sử).
+			if (!session.recorded) {
+				setConfirmOpen(true);
+				return;
 			}
+			focusFirstMissing();
 			return;
 		}
 		setValidationClicked(false);
 		void onSave(toSaveEntries(draft));
+	};
+
+	// KHÔNG dispatch-then-read (red-team SEC-1): tính entries từ snapshot
+	// `draft` hiện tại qua helper thuần — `toSaveEntries` sẽ throw nếu đọc
+	// state closure sau dispatch. Dispatch chỉ để sync UI.
+	const handleConfirmFillAndSave = () => {
+		const next = markAllPresentState(draft);
+		setConfirmOpen(false);
+		setValidationClicked(false);
+		void onSave(toSaveEntries(next));
+		dispatch({ type: "markAllPresent" });
+	};
+
+	const handleCancelConfirm = () => {
+		// Focus dòng thiếu diễn ra trong effect sau khi modal đóng.
+		setFocusFirstMissingAfterClose(true);
+		setConfirmOpen(false);
 	};
 
 	const timeLabel = formatTimeWindow(session.time, session.dur);
@@ -144,7 +219,7 @@ export function AttendanceSessionRow({
 			</button>
 
 			{expanded && (
-				<div className="border-border border-t px-4 py-4">
+				<div ref={bodyRef} className="border-border border-t px-4 py-4">
 					{session.mode === "legacy" ? (
 						<div className="space-y-4">
 							<div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3.5 py-2.5">
@@ -224,6 +299,25 @@ export function AttendanceSessionRow({
 									</Button>
 								</div>
 							)}
+
+							{/* TOS-8 D1: điền nhanh chỉ điền ô trống; disabled khi ca đã
+						recorded (không bulk đè lịch sử "Chưa rõ"), ngày tương lai,
+						đang lưu, hoặc không còn ai trống. Lớp legacy không render
+						(cả nhánh dated này không chạy với legacy). */}
+							<Button
+								type="button"
+								variant="secondary"
+								disabled={
+									saving ||
+									isFutureDate ||
+									session.recorded ||
+									missingIds.length === 0
+								}
+								onClick={() => dispatch({ type: "markAllPresent" })}
+								className="min-h-11 w-full lg:min-h-9 lg:w-auto"
+							>
+								Đánh dấu tất cả Có mặt
+							</Button>
 
 							<div className="hidden border-border border-b pb-2 font-medium text-muted-foreground text-xs lg:grid lg:grid-cols-[2.5rem_minmax(10rem,1.2fr)_minmax(19rem,2fr)_minmax(12rem,1.4fr)] lg:items-center lg:gap-3">
 								<span>#</span>
@@ -309,15 +403,25 @@ export function AttendanceSessionRow({
 								})}
 							</div>
 
-							<div className="flex items-center justify-end border-border border-t pt-3">
+							{/* TOS-8: <lg hai nút xếp chồng full-width, ô bấm ≥ 44px. */}
+							<div className="flex flex-col gap-2 border-border border-t pt-3 lg:flex-row lg:items-center lg:justify-end">
 								<Button
 									type="button"
 									disabled={saving || isFutureDate}
 									onClick={handleSubmit}
+									className="min-h-11 w-full lg:min-h-9 lg:w-auto"
 								>
 									{saving ? "Đang lưu…" : "Lưu điểm danh ca học"}
 								</Button>
 							</div>
+
+							<FillMissingConfirm
+								open={confirmOpen}
+								count={missingIds.length}
+								saving={saving}
+								onConfirm={handleConfirmFillAndSave}
+								onCancel={handleCancelConfirm}
+							/>
 						</div>
 					)}
 				</div>

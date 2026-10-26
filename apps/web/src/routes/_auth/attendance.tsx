@@ -1,7 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import type { SessionAttendanceSave } from "@teacher-os/api/contracts";
-import { useEffect, useState } from "react";
+import type {
+	DailyAttendanceResponse,
+	SessionAttendanceSave,
+} from "@teacher-os/api/contracts";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttendanceSessionRow } from "@/components/attendance/attendance-session-row";
 import { Button } from "@/components/ui/button";
@@ -12,6 +15,7 @@ import type { DailyAttendanceSession } from "@/lib/attendance-draft";
 import {
 	DailyAttendanceApiError,
 	dailyAttendanceQuery,
+	dailyAttendanceQueryKey,
 	saveSessionAttendance,
 } from "@/lib/repos/daily-attendance";
 import { isValidISODate, todayISOVietnam } from "@/lib/week-grid";
@@ -91,6 +95,19 @@ export function AttendanceRoute() {
 	const [errorByKey, setErrorByKey] = useState<Record<string, string | null>>(
 		{},
 	);
+	// TOS-8 D3: ca đang được auto-advance mở (focus picker đầu tiên).
+	const [autoFocusBulkKey, setAutoFocusBulkKey] = useState<string | null>(null);
+	// Vùng aria-live persistent (kongming điều kiện 4) — luôn mount.
+	const [liveMessage, setLiveMessage] = useState("");
+	// Kongming điều kiện 2: chặn auto-advance khi date/status đổi giữa lúc lưu
+	// (sessionKey không chứa ngày) và chặn re-entry khi một ca đang lưu.
+	const latestSearchRef = useRef(search);
+	const savingRef = useRef(false);
+	const dateInputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		latestSearchRef.current = search;
+	}, [search]);
 
 	// Khi vào màn với status=pending (hoặc đổi ngày ở chế độ pending), ca chưa điểm danh đầu tiên tự mở sẵn.
 	useEffect(() => {
@@ -128,6 +145,8 @@ export function AttendanceRoute() {
 	};
 
 	const toggleSession = (key: string) => {
+		// Mở/thu gọn thủ công là ý định của người dùng — huỷ auto-focus đang chờ.
+		setAutoFocusBulkKey(null);
 		setExpandedKeys((prev) => {
 			const next = new Set(prev);
 			if (next.has(key)) next.delete(key);
@@ -140,20 +159,95 @@ export function AttendanceRoute() {
 		session: DailyAttendanceSession,
 		entries: SessionAttendanceSave["entries"],
 	) => {
+		// Chặn re-entry (red-team FAIL-3): ref thay vì đọc state trong closure.
+		if (savingRef.current) return;
+		savingRef.current = true;
 		const key = sessionKey(session);
 		const wasRecorded = session.recorded;
+		const searchAtStart = { date: search.date, status: search.status };
 		setSavingKey(key);
 		setErrorByKey((prev) => ({ ...prev, [key]: null }));
+		setLiveMessage("");
 
 		try {
-			await saveSessionAttendance(session.classId, search.date, entries);
+			await saveSessionAttendance(session.classId, searchAtStart.date, entries);
 			toast.success(wasRecorded ? "Đã cập nhật điểm danh" : "Đã lưu điểm danh");
 			setExpandedKeys((prev) => {
 				const next = new Set(prev);
 				next.delete(key);
 				return next;
 			});
+			const savedAt = Date.now();
 			await queryClient.invalidateQueries({ queryKey: ["kernel"] });
+
+			// TOS-8 D3 (red-team Critical + kongming điều kiện 2): tính ca kế
+			// tiếp TỪ DỮ LIỆU SAU REFETCH — danh sách trước refetch vẫn giữ
+			// recorded=false cho ca vừa lưu. Bỏ auto-advance nếu người dùng đổi
+			// ngày/chip giữa lúc lưu, refetch lỗi, hoặc dữ liệu chưa kịp cập nhật.
+			const searchNow = latestSearchRef.current;
+			if (
+				searchNow.date !== searchAtStart.date ||
+				searchNow.status !== searchAtStart.status
+			) {
+				return;
+			}
+			const queryKey = dailyAttendanceQueryKey(searchAtStart.date);
+			const queryState = queryClient.getQueryState(queryKey);
+			const fresh = queryClient.getQueryData<DailyAttendanceResponse>(queryKey);
+			if (
+				!fresh ||
+				queryState?.status === "error" ||
+				(queryState?.dataUpdatedAt ?? 0) < savedAt
+			) {
+				return;
+			}
+
+			const sessions = fresh.sessions;
+			const savedIndex = sessions.findIndex((s) => sessionKey(s) === key);
+			// Quét từ ca sau ca vừa lưu tới hết rồi vòng lại từ đầu (trên danh
+			// sách ĐẦY ĐỦ — chip pending đã loại ca vừa lưu khỏi danh sách lọc).
+			const ordered =
+				savedIndex === -1
+					? sessions
+					: [...sessions.slice(savedIndex + 1), ...sessions];
+			const matchesChip = (s: DailyAttendanceSession) => {
+				if (searchAtStart.status === "pending") return !s.recorded;
+				if (searchAtStart.status === "completed") return s.recorded;
+				return true;
+			};
+			const next = ordered.find(
+				(s) =>
+					sessionKey(s) !== key &&
+					matchesChip(s) &&
+					!s.recorded &&
+					s.mode !== "legacy",
+			);
+			if (next) {
+				const nextKey = sessionKey(next);
+				setExpandedKeys((prev) => new Set(prev).add(nextKey));
+				setAutoFocusBulkKey(nextKey);
+				return;
+			}
+
+			// Hết ca trong phạm vi chip: thông báo theo số ca THẬT còn pending —
+			// `actionablePending` loại legacy vì màn này không điểm danh được
+			// legacy (kongming điều kiện 1), không dùng counts.pending.
+			const actionable = sessions.filter(
+				(s) => !s.recorded && s.mode !== "legacy",
+			).length;
+			const legacyPending = sessions.filter(
+				(s) => !s.recorded && s.mode === "legacy",
+			).length;
+			if (actionable === 0) {
+				setLiveMessage(
+					legacyPending > 0
+						? `Đã điểm danh xong mọi ca trong ngày. Còn ${legacyPending} ca lớp chưa gắn lịch ngày, mở trang lớp để điểm danh.`
+						: "Đã điểm danh xong mọi ca trong ngày",
+				);
+				dateInputRef.current?.focus();
+			} else {
+				setLiveMessage(`Còn ${actionable} ca chưa điểm danh trong ngày`);
+			}
 		} catch (err) {
 			if (err instanceof DailyAttendanceApiError) {
 				if (err.status === 400 && err.reason === "invalid-date") {
@@ -187,6 +281,7 @@ export function AttendanceRoute() {
 			}));
 		} finally {
 			setSavingKey(null);
+			savingRef.current = false;
 		}
 	};
 
@@ -207,12 +302,25 @@ export function AttendanceRoute() {
 
 	return (
 		<div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+			{/* Vùng thông báo aria-live persistent (TOS-8 D3): luôn mount, ẩn
+			thị giác; e2e chọn qua role="status" + testid để không trùng text
+			với empty-state. */}
+			<div
+				role="status"
+				aria-live="polite"
+				data-testid="attendance-live-status"
+				className="sr-only"
+			>
+				{liveMessage}
+			</div>
+
 			<PageHead
 				kicker={`${formatVNDate(search.date)} · ${STATUS_LABEL[search.status]}`}
 				title="Điểm danh tổng theo ngày"
 				action={
 					<div className="flex flex-wrap items-center gap-2">
 						<Input
+							ref={dateInputRef}
 							type="date"
 							aria-label="Chọn ngày điểm danh"
 							value={search.date}
@@ -273,7 +381,15 @@ export function AttendanceRoute() {
 			) : filteredSessions.length === 0 ? (
 				<section className="rounded-lg border border-border border-dashed p-10 text-center">
 					<p className="text-muted-foreground text-sm">
-						Không có ca học nào trong ngày này.
+						{/* TOS-8 D3 + kongming điều kiện 1: chip pending hết ca nhưng
+						ngày có dữ liệu (đã điểm danh hết các ca điểm danh được) →
+						thông báo hoàn tất thay vì "không có ca". */}
+						{search.status === "pending" &&
+						data &&
+						data.counts.all > 0 &&
+						data.sessions.every((s) => s.recorded || s.mode === "legacy")
+							? "Đã điểm danh xong mọi ca trong ngày"
+							: "Không có ca học nào trong ngày này."}
 					</p>
 				</section>
 			) : (
@@ -290,6 +406,10 @@ export function AttendanceRoute() {
 								saving={savingKey === key}
 								serverError={errorByKey[key] ?? null}
 								onSave={(entries) => handleSaveSession(session, entries)}
+								autoFocusBulk={autoFocusBulkKey === key}
+								onBulkFocusSettled={() =>
+									setAutoFocusBulkKey((k) => (k === key ? null : k))
+								}
 							/>
 						);
 					})}
