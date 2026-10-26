@@ -34,6 +34,11 @@ import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import { gradeReturnedEvent } from "../lib/notifications/templates";
+import {
 	loadEssayAnnotations,
 	toEssayAnnotation,
 	toEssayView,
@@ -288,6 +293,11 @@ type GradableAttemptRow = {
 export function gradingRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
+	/** #454 phase 3: phát grade_returned sau khi chấm thành công. */
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
+	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 }) {
 	const routes = new Hono<Env>();
 
@@ -644,6 +654,22 @@ export function gradingRoutes(deps: {
 		if (!grade) {
 			return c.json({ error: "grade persistence failed" }, 500);
 		}
+		// #454 phase 3: phát grade_returned theo attempt sau khi chấm thành
+		// công (fail-open — lỗi thông báo không đổi response chấm bài).
+		await emitNotifications(notificationDepsFrom(deps), ctx.orgId, [
+			gradeReturnedEvent({
+				attemptId: loaded.row.id,
+				studentId: loaded.row.studentId,
+				title: loaded.row.title,
+				// Attempt gắn lượt giao → xem bài đã chấm tại
+				// /learn/quizzes/attempt/$attemptId (CR I1 — portal không có
+				// /assignments/$id); attempt tự luyện (phase 10) → /practice.
+				linkPath:
+					loaded.row.caId !== null
+						? `/learn/quizzes/attempt/${loaded.row.id}`
+						: "/practice",
+			}),
+		]);
 		return c.json(grade);
 	});
 

@@ -15,6 +15,7 @@ import {
 	practiceCatalogResponseSchema,
 	type StartPracticeResponse,
 	type StudentClassDetail,
+	type StudentInboxResponse,
 	type StudentInvitationItem,
 	type StudentInvoiceItem,
 	type StudentMe,
@@ -23,6 +24,7 @@ import {
 	type StudentOverview,
 	startPracticeResponseSchema,
 	studentClassDetailSchema,
+	studentInboxResponseSchema,
 	studentMeSchema,
 	studentOverviewSchema,
 } from "@teacher-os/api/contracts";
@@ -596,6 +598,48 @@ export function useStudentNotifications() {
 		queryFn: fetchStudentNotifications,
 		staleTime: 10_000,
 		refetchInterval: 15_000,
+	});
+}
+
+// --- Inbox in-app (TOS-21 D7) ----------------------------------------------
+
+export async function fetchStudentInbox(): Promise<StudentInboxResponse> {
+	return historyGet("/api/student/inbox", (raw) =>
+		studentInboxResponseSchema.parse(raw),
+	);
+}
+
+export async function markInboxRead(id: string): Promise<{ ok: boolean }> {
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/inbox/${encodeURIComponent(id)}/read`,
+		{
+			method: "POST",
+			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			credentials: "include",
+		},
+	);
+	if (!res.ok) {
+		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+	}
+	return { ok: true };
+}
+
+export function useStudentInbox() {
+	return useQuery({
+		queryKey: ["student", "inbox"],
+		queryFn: fetchStudentInbox,
+		staleTime: 10_000,
+		refetchInterval: 15_000,
+	});
+}
+
+export function useMarkInboxRead() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: markInboxRead,
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
+		},
 	});
 }
 

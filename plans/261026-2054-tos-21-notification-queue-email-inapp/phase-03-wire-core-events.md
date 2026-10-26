@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Nối 4 sự kiện chính vào hàng đợi thông báo"
-status: pending
+status: completed
 priority: P0
 effort: "5h"
 dependencies: ["phase-02"]
@@ -15,7 +15,7 @@ Mỗi điểm gọi `emitNotifications(deps, ctx.orgId, events)` **sau** khi ghi
 |---|---|---|---|
 | Mời vào lớp (`class_invite`) | `POST /api/classes/:id/enroll` (`apps/server/src/routes/kernel.ts`) | `class_enrolled:<enrollmentId>` | học viên được ghi danh |
 | Giao bài (`assignment`) | `POST /api/classes/:id/assignments` (`kernel.ts`) | `assignment_published:<classAssignmentId>:<studentId>` | học viên đích (theo `classAssignmentTarget`, hoặc cả lớp đang `active`) |
-| Trả điểm (`assignment`) | `POST /api/grading/:attemptId/grade` (`routes/grading.ts`), `POST /api/assignments/:id/grade` (`routes/assignments/index.ts`) | `grade_returned:<attemptId>` / `grade_returned:assignment:<assignmentId>` | học viên của bài |
+| Trả điểm (`assignment`) | `POST /api/grading/:attemptId/grade` (`routes/grading.ts`), `POST /api/assignments/:id/grade` (`routes/assignments/index.ts`) | `grade_returned:<attemptId>` (khóa canonical duy nhất — cả 2 route đều phát theo attempt; route chấm cả assignment fan-out từng attempt/thành viên 1 bản ghi) | học viên của bài |
 | Hóa đơn (`tuition`) | `POST /api/invoices` (`kernel.ts`) | `invoice_issued:<invoiceId>` | học viên của enrollment |
 | Đổi lịch (`schedule`) | `POST /api/lessons/:id/edit`, `POST /api/classes/:id/sessions/:date/edit`, `POST /api/classes/:id/sessions/:date/cancel`, `POST /api/lessons/:id/cancel` | `schedule_changed:<classId>:<date>:<editedAtMs>:<studentId>` | học viên có dòng lesson bị đổi; chỉ phát khi `date`/`time` đổi hoặc hủy |
 | Lịch nghỉ (`schedule`) | `POST /api/holidays` (TOS-11 #445) khi `notify = true` | `holiday_created:<holidayId>:<studentId>` | học viên các lớp bị ảnh hưởng |

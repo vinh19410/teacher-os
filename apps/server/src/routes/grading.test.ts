@@ -1603,3 +1603,141 @@ describe("GET /api/grading (queue #383)", () => {
 		);
 	});
 });
+
+// #454 phase 3 — chấm bài phát grade_returned theo attempt, khóa canonical
+// chống nhân đôi khi chấm lại; fail-open khi hàng đợi ghi lỗi.
+describe("grade_returned notification (/api/grading/:attemptId/grade #454)", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+	let client: ReturnType<typeof createClient>;
+
+	beforeAll(async () => {
+		client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values({
+			id: "org-1",
+			name: "Academy 1",
+		});
+		await libsql.insert(schema.user).values({
+			id: "t-1",
+			name: "Cô Lan",
+			email: "lan@test.local",
+			role: "teacher",
+		});
+		await libsql.insert(schema.membership).values({
+			id: "mem-1",
+			orgId: "org-1",
+			userId: "t-1",
+			role: "teacher",
+		});
+		await libsql.insert(schema.student).values({
+			id: "student-1",
+			orgId: "org-1",
+			name: "Minh Tran",
+			email: "minh@gmail.com",
+			phone: "0901234567",
+		});
+		await libsql.insert(schema.classTable).values({
+			id: "class-1",
+			orgId: "org-1",
+			name: "IELTS Foundation",
+			level: "IELTS 5.0–6.0",
+			mode: "Online",
+			schedule: "T2 & T5 18:30–20:00",
+			sessionsDone: 0,
+			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-g",
+			orgId: "org-1",
+			task: "task1",
+			genre: "",
+			skill: "speaking",
+			part: "part2",
+			type: "place",
+			title: "Speaking Part 2",
+			prompt: "Describe a place.",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-g",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-g",
+			title: "Speaking Part 2",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-g",
+			orgId: "org-1",
+			assignmentId: "ca-g",
+			studentId: "student-1",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			submittedAt: new Date("2026-10-05T01:00:00Z"),
+		});
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: TEACHER_ORIGIN,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	async function postGrade(attemptId: string) {
+		return app.request(`/api/grading/${attemptId}/grade`, {
+			method: "POST",
+			headers: {
+				...TEACHER,
+				origin: TEACHER_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				scores: { fluency: 6, lexical: 6.5, grammar: 6, pronunciation: 6 },
+				feedback: "Tốt.",
+			}),
+		});
+	}
+
+	test("chấm thành công phát đúng 1 grade_returned theo attempt", async () => {
+		const res = await postGrade("att-g");
+		expect(res.status).toBe(200);
+		const rows = await libsql.select().from(schema.notificationRecord);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({
+			orgId: "org-1",
+			studentId: "student-1",
+			eventType: "grade_returned",
+			idempotencyKey: "grade_returned:att-g",
+		});
+	});
+
+	test("chấm lại (ghi đè) không nhân đôi thông báo", async () => {
+		const res = await postGrade("att-g");
+		expect(res.status).toBe(200);
+		const rows = await libsql.select().from(schema.notificationRecord);
+		expect(rows).toHaveLength(1);
+	});
+
+	test("404 attempt lạ → 0 dòng mới", async () => {
+		const res = await postGrade("att-khong-ton-tai");
+		expect(res.status).toBe(404);
+		expect(await libsql.select().from(schema.notificationRecord)).toHaveLength(
+			1,
+		);
+	});
+
+	test("hàng đợi ghi lỗi (mất bảng ghi) → request vẫn 2xx", async () => {
+		await client.execute("DROP TABLE notification_record");
+		const res = await postGrade("att-g");
+		expect(res.status).toBe(200);
+	});
+});

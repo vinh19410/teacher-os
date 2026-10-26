@@ -1,4 +1,5 @@
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
 import { asc, eq } from "drizzle-orm";
@@ -97,6 +98,18 @@ export interface AppDeps {
 	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
 	 */
 	runInBackground?(promise: Promise<unknown>): void;
+	/**
+	 * Mailer dùng chung cho hàng đợi thông báo (#454, plan TOS-21 D6) —
+	 * production truyền Resend/log qua index.ts, e2e truyền recordingMailer.
+	 * Vắng mặt → bản ghi vẫn tạo, email giữ `queued` + log cảnh báo.
+	 */
+	mailer?: Mailer;
+	/**
+	 * Origin cổng học viên đầu tiên cho link tuyệt đối trong email thông báo
+	 * (#454). `env.STUDENT_ORIGINS` là chuỗi thô nên caller parse
+	 * (`parseCORSOrigins(...)[0]`); vắng mặt → link tương đối (test node).
+	 */
+	studentOrigin?: string;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */

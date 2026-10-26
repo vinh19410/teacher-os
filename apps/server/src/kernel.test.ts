@@ -10,7 +10,9 @@
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { assignment } from "@teacher-os/db/schema/assignment";
+import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
 	session as authSession,
 	user as authUser,
@@ -22,6 +24,7 @@ import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { membership } from "@teacher-os/db/schema/membership";
 import { notif } from "@teacher-os/db/schema/notif";
+import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import { organization } from "@teacher-os/db/schema/organization";
 import { report } from "@teacher-os/db/schema/report";
 import { student } from "@teacher-os/db/schema/student";
@@ -30,7 +33,7 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
@@ -60,7 +63,10 @@ function findEnrollment(
 	);
 }
 
-async function createTestApp() {
+async function createTestApp(overrides?: {
+	mailer?: Mailer;
+	studentOrigin?: string;
+}) {
 	const client = createClient({ url: "file::memory:" });
 	const libsql = drizzle(client, { schema });
 	await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
@@ -92,6 +98,8 @@ async function createTestApp() {
 		corsOrigin: CORS_ORIGIN,
 		getSessionUser,
 		authHandler: () => new Response("auth stub", { status: 404 }),
+		// #454: test đường ống thông báo inject mailer + studentOrigin.
+		...overrides,
 	});
 
 	// Test-only helper inserts (never exported to prod code paths).
@@ -7225,5 +7233,405 @@ describe("enrollment invite -> accept lifecycle (issue #253)", () => {
 		const snapAfter = await t.kernel(session);
 		const pkg = snapAfter.packages.find((p) => p.enrollmentId === enId);
 		expect(pkg?.price).toBe(750000);
+	});
+});
+
+// #454 phase 3 — mọi sự kiện chính phát notification_record SAU khi ghi
+// nghiệp vụ thành công, không đổi response; khóa chống trùng theo D3.
+describe("notification events on core writes (#454 phase 3)", () => {
+	let t: TestApp;
+	let session: TestSession;
+	let orgId: string;
+
+	async function notifRows() {
+		return t.db.select().from(notificationRecord);
+	}
+
+	async function insertReadyPrompt(): Promise<string> {
+		const id = crypto.randomUUID();
+		await t.db.insert(assignmentPrompt).values({
+			id,
+			orgId,
+			task: "task2",
+			genre: "essay",
+			skill: "writing",
+			part: "task2",
+			type: "essay",
+			title: "Writing Task 2 — Technology",
+			prompt: "<p>Some people think robots will take over.</p>",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		return id;
+	}
+
+	beforeAll(async () => {
+		t = await createTestApp();
+		session = await t.insertUser("Cô Thông Báo");
+		await t.kernel(session);
+		const memberships = await t.membershipsOf(session.userId);
+		orgId = memberships[0]?.orgId ?? "";
+	});
+
+	test("enroll thành công phát 1 class_enrolled; replay 409 không thêm dòng", async () => {
+		const classId = await t.createClass(session, "Lớp thông báo");
+		const studentId = await t.addStudent(session, "Học viên mời");
+
+		const first = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(first.status).toBe(201);
+		const { id: enrollmentId } = (await first.json()) as { id: string };
+
+		const rows = await notifRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({
+			orgId,
+			studentId,
+			eventType: "class_enrolled",
+			idempotencyKey: `class_enrolled:${enrollmentId}`,
+		});
+
+		// Route idempotent-chống trùng: 409 → 0 dòng mới.
+		const replay = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(replay.status).toBe(409);
+		expect(await notifRows()).toHaveLength(1);
+
+		// 404 học viên lạ → 0 dòng mới.
+		const missing = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId: "student-khong-ton-tai" },
+		});
+		expect(missing.status).toBe(404);
+		expect(await notifRows()).toHaveLength(1);
+	});
+
+	test("giao bài phát 1 assignment_published mỗi học viên đích", async () => {
+		const classId = await t.createClass(session, "Lớp giao bài");
+		const s1 = await t.addActiveStudent(session, "Học viên A", { classId });
+		const s2 = await t.addActiveStudent(session, "Học viên B", { classId });
+		const promptId = await insertReadyPrompt();
+
+		const res = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2099-01-10",
+				studentIds: [s1, s2],
+				note: "",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id: caId } = (await res.json()) as { id: string };
+
+		const rows = (await notifRows()).filter(
+			(r) => r.eventType === "assignment_published",
+		);
+		expect(rows).toHaveLength(2);
+		expect(new Set(rows.map((r) => r.studentId))).toEqual(new Set([s1, s2]));
+		for (const row of rows) {
+			expect(row.idempotencyKey).toBe(
+				`assignment_published:${caId}:${row.studentId}`,
+			);
+		}
+
+		// Request thất bại (học viên không trong lớp) → 0 dòng mới.
+		const bad = await t.call(`/api/classes/${classId}/assignments`, {
+			session,
+			method: "POST",
+			body: {
+				promptId,
+				due: "2099-01-10",
+				studentIds: ["student-ngoai-lop"],
+				note: "",
+			},
+		});
+		expect(bad.status).toBe(400);
+		expect(
+			(await notifRows()).filter((r) => r.eventType === "assignment_published"),
+		).toHaveLength(2);
+	});
+
+	test("tạo hóa đơn phát 1 invoice_issued; 404 không phát", async () => {
+		const classId = await t.createClass(session, "Lớp hóa đơn");
+		const studentId = await t.addActiveStudent(session, "Học viên phí", {
+			classId,
+		});
+		const snapshot = await t.kernel(session);
+		const enId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+
+		const res = await t.call("/api/invoices", {
+			session,
+			method: "POST",
+			body: { enrollmentId: enId, amount: 2_500_000, due: "2099-02-01" },
+		});
+		expect(res.status).toBe(201);
+		const { id: invoiceId } = (await res.json()) as { id: string };
+
+		const rows = (await notifRows()).filter(
+			(r) => r.eventType === "invoice_issued",
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({
+			studentId,
+			idempotencyKey: `invoice_issued:${invoiceId}`,
+		});
+
+		const missing = await t.call("/api/invoices", {
+			session,
+			method: "POST",
+			body: {
+				enrollmentId: "enrollment-khong-ton-tai",
+				amount: 1,
+				due: "2099-02-01",
+			},
+		});
+		expect(missing.status).toBe(404);
+		expect(
+			(await notifRows()).filter((r) => r.eventType === "invoice_issued"),
+		).toHaveLength(1);
+	});
+
+	test("hủy lesson phát 1 schedule_changed; replay 409 không thêm", async () => {
+		const classId = await t.createClass(session, "Lớp hủy buổi");
+		const studentId = await t.addActiveStudent(session, "Học viên hủy", {
+			classId,
+		});
+		const snapshot = await t.kernel(session);
+		const enId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+		const lessonId = await t.insertLesson(session, {
+			classId,
+			enrollmentId: enId,
+		});
+
+		const res = await t.call(`/api/lessons/${lessonId}/cancel`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(res.status).toBe(200);
+		const rows = (await notifRows()).filter(
+			(r) => r.eventType === "schedule_changed",
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({ studentId });
+
+		// Lesson đã hủy → 409, không phát lại.
+		const replay = await t.call(`/api/lessons/${lessonId}/cancel`, {
+			session,
+			method: "POST",
+			body: {},
+		});
+		expect(replay.status).toBe(409);
+		expect(
+			(await notifRows()).filter((r) => r.eventType === "schedule_changed"),
+		).toHaveLength(1);
+	});
+
+	test("hủy occurrence phát theo số học viên trong bucket; bucket lạ 404 → 0 dòng", async () => {
+		const classId = await t.createClass(session, "Lớp occurrence");
+		const s1 = await t.addActiveStudent(session, "HV occ 1", { classId });
+		const s2 = await t.addActiveStudent(session, "HV occ 2", { classId });
+		const snapshot = await t.kernel(session);
+		const enIds = snapshot.enrollments
+			.filter((e) => e.classId === classId)
+			.map((e) => e.id);
+		for (const enrollmentId of enIds) {
+			await t.insertLesson(session, {
+				classId,
+				enrollmentId,
+				date: "2099-03-05",
+			});
+		}
+
+		const res = await t.call(
+			`/api/classes/${classId}/sessions/2099-03-05/cancel`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(res.status).toBe(200);
+		const cancelRows = (await notifRows()).filter(
+			(r) =>
+				r.eventType === "schedule_changed" &&
+				r.idempotencyKey.includes("2099-03-05"),
+		);
+		expect(cancelRows).toHaveLength(2);
+		expect(new Set(cancelRows.map((r) => r.studentId))).toEqual(
+			new Set([s1, s2]),
+		);
+
+		const missing = await t.call(
+			`/api/classes/${classId}/sessions/2099-04-01/cancel`,
+			{ session, method: "POST", body: {} },
+		);
+		expect(missing.status).toBe(404);
+		expect(
+			(await notifRows()).filter((r) =>
+				r.idempotencyKey.includes("2099-04-01"),
+			),
+		).toHaveLength(0);
+	});
+
+	test("đổi giờ occurrence phát khi giờ THỰC SỰ đổi; giữ nguyên giờ không phát", async () => {
+		const classId = await t.createClass(session, "Lớp đổi giờ");
+		const studentId = await t.addActiveStudent(session, "HV đổi giờ", {
+			classId,
+		});
+		const snapshot = await t.kernel(session);
+		const enId =
+			snapshot.enrollments.find(
+				(e) => e.classId === classId && e.studentId === studentId,
+			)?.id ?? "";
+		await t.insertLesson(session, {
+			classId,
+			enrollmentId: enId,
+			date: "2099-05-10",
+			time: "19:00",
+		});
+
+		// Sửa không đổi giờ (đổi topic) → 0 dòng.
+		const same = await t.call(
+			`/api/classes/${classId}/sessions/2099-05-10/edit`,
+			{
+				session,
+				method: "POST",
+				body: { time: "19:00", dur: 60, topic: "Vẫn buổi đó" },
+			},
+		);
+		expect(same.status).toBe(200);
+		expect(
+			(await notifRows()).filter((r) =>
+				r.idempotencyKey.includes("2099-05-10"),
+			),
+		).toHaveLength(0);
+
+		// Đổi giờ thật sự → 1 dòng cho học viên trong bucket.
+		const changed = await t.call(
+			`/api/classes/${classId}/sessions/2099-05-10/edit`,
+			{
+				session,
+				method: "POST",
+				body: { time: "20:00", dur: 60, topic: "Dời giờ" },
+			},
+		);
+		expect(changed.status).toBe(200);
+		const rows = (await notifRows()).filter((r) =>
+			r.idempotencyKey.includes("2099-05-10"),
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({ studentId });
+		expect(rows[0]?.idempotencyKey).toContain(
+			`schedule_changed:${classId}:2099-05-10:`,
+		);
+	});
+
+	test("chấm legacy assignment phát 1 grade_returned; chấm lại không nhân đôi", async () => {
+		const studentId = await t.addStudent(session, "HV điểm legacy");
+		const id = crypto.randomUUID();
+		await t.db.insert(assignment).values({
+			id,
+			orgId,
+			studentId,
+			title: "Essay 1 — Education",
+			type: "Writing Task 2",
+			due: "20/08",
+			status: "late",
+		});
+
+		const first = await t.call(`/api/assignments/${id}/grade`, {
+			session,
+			method: "POST",
+			body: { scores: { task: 6.5, coherence: 7, lexical: 6.5, grammar: 6 } },
+		});
+		expect(first.status).toBe(200);
+		let rows = (await notifRows()).filter(
+			(r) => r.eventType === "grade_returned",
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({
+			studentId,
+			idempotencyKey: `grade_returned:${id}`,
+		});
+
+		const replay = await t.call(`/api/assignments/${id}/grade`, {
+			session,
+			method: "POST",
+			body: { scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 } },
+		});
+		expect(replay.status).toBe(200);
+		rows = (await notifRows()).filter((r) => r.eventType === "grade_returned");
+		expect(rows).toHaveLength(1);
+
+		const missing = await t.call("/api/assignments/grade-khong-ton-tai/grade", {
+			session,
+			method: "POST",
+			body: { scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 } },
+		});
+		expect(missing.status).toBe(404);
+		expect(
+			(await notifRows()).filter((r) => r.eventType === "grade_returned"),
+		).toHaveLength(1);
+	});
+
+	test("enqueue ném lỗi (mất bảng ghi) → request vẫn 2xx", async () => {
+		const classId = await t.createClass(session, "Lớp fail-open");
+		const studentId = await t.addStudent(session, "HV fail-open");
+
+		await t.db.run(sql`DROP TABLE notification_record`);
+		const res = await t.call(`/api/classes/${classId}/enroll`, {
+			session,
+			method: "POST",
+			body: { studentId },
+		});
+		expect(res.status).toBe(201);
+	});
+
+	// Regression: AppDeps.studentOrigin phải tới được deliver qua
+	// notificationDepsFrom — nếu route tự dựng deps thiếu field này, email
+	// production chỉ còn link tương đối.
+	test("studentOrigin từ AppDeps → email mang link tuyệt đối", async () => {
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		const t2 = await createTestApp({
+			mailer: {
+				send: async (input) => {
+					sentInputs.push(input);
+				},
+			},
+			studentOrigin: "https://portal.test",
+		});
+		const session2 = await t2.insertUser("Cô Link Tuyệt Đối");
+		await t2.kernel(session2);
+		const classId2 = await t2.createClass(session2, "Lớp link tuyệt đối");
+		const studentId2 = await t2.addStudent(session2, "HV link tuyệt đối");
+
+		const res2 = await t2.call(`/api/classes/${classId2}/enroll`, {
+			session: session2,
+			method: "POST",
+			body: { studentId: studentId2 },
+		});
+		expect(res2.status).toBe(201);
+
+		const rows2 = await t2.db.select().from(notificationRecord);
+		expect(rows2).toHaveLength(1);
+		const linkPath = rows2[0]?.linkPath ?? "";
+		const input = sentInputs.at(0);
+		if (!input) throw new Error("mailer was not called");
+		expect(input.text).toContain(`https://portal.test${linkPath}`);
+		expect(input.html).toContain(`https://portal.test${linkPath}`);
 	});
 });
