@@ -287,4 +287,43 @@ describe("student inbox (/api/student/inbox)", () => {
 		const body = (await res.json()) as { unread: number };
 		expect(body.unread).toBe(1);
 	});
+
+	test("bản ghi failed vẫn hiển thị trong inbox học viên; POST read đặt read_at nhưng giữ nguyên status = failed (TOS-22 D5)", async () => {
+		await libsql.insert(schema.notificationRecord).values({
+			id: "n-quan-failed",
+			orgId: "org-1",
+			studentId: "student-quan",
+			eventType: "tuition_reminder",
+			eventGroup: "tuition",
+			idempotencyKey: "k-quan-failed",
+			title: "Nhắc học phí",
+			body: "Hóa đơn đến hạn thanh toán.",
+			linkPath: "/tuition",
+			channels: "email,in_app",
+			recipientEmail: "quan@bounce.test",
+			status: "failed",
+			retryCount: 3,
+			lastError: "E-selfomy-alignment-010: mailbox unavailable",
+			createdAt: new Date(),
+		});
+
+		const listRes = await get("/api/student/inbox", "quan");
+		expect(listRes.status).toBe(200);
+		const listBody = (await listRes.json()) as {
+			items: Array<{ id: string; status: string; readAt: string | null }>;
+		};
+		const failedItem = listBody.items.find((i) => i.id === "n-quan-failed");
+		expect(failedItem).toBeDefined();
+		expect(failedItem?.status).toBe("failed");
+
+		const readRes = await postRead("n-quan-failed", "quan");
+		expect(readRes.status).toBe(200);
+
+		const [row] = await libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "n-quan-failed"));
+		expect(row?.readAt).not.toBeNull();
+		expect(row?.status).toBe("failed");
+	});
 });

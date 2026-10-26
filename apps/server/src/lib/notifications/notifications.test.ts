@@ -1,4 +1,5 @@
 import { createClient } from "@libsql/client";
+import { NOTIFICATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { user as authUser } from "@teacher-os/db/schema/auth";
 import * as schema from "@teacher-os/db/schema/index";
@@ -247,7 +248,7 @@ describe("notifications service (#454 phase 2)", () => {
 		);
 	});
 
-	test("mailer ném lỗi → giữ queued, retry_count = 1, last_error không chứa API key", async () => {
+	test("mailer luôn ném lỗi → thử đủ 3 lượt rồi chuyển failed kèm E-selfomy-alignment-010, redact secret và cắt ≤ 500 ký tự", async () => {
 		await seedOrg("org-6", "Academy Six");
 		await seedStudent("org-6", "stu-6", "stu6@example.com");
 		const { createdIds } = await enqueueNotifications(db, "org-6", [
@@ -263,19 +264,153 @@ describe("notifications service (#454 phase 2)", () => {
 			},
 		]);
 
+		let attempts = 0;
+		const longTail = "x".repeat(600);
 		await deliverNotifications(
 			db,
 			fakeMailer(async () => {
-				throw new Error("resend send failed: 500 boom");
+				attempts += 1;
+				throw new Error(
+					`resend send failed: 500 boom Authorization: Bearer re_live_secret12345 ${longTail}`,
+				);
 			}),
 			createdIds,
+			"",
+			{ retryDelaysMs: [0, 0] },
 		);
 
+		expect(attempts).toBe(3);
 		const row = await rowOf("stu-6");
-		expect(row.status).toBe("queued");
-		expect(row.retryCount).toBe(1);
+		expect(row.status).toBe("failed");
+		expect(row.retryCount).toBe(3);
+		expect(
+			row.lastError?.startsWith(
+				`${NOTIFICATION_ERROR_CODES.DELIVERY_FAILED}: `,
+			),
+		).toBe(true);
 		expect(row.lastError).toContain("resend send failed: 500 boom");
-		expect(row.lastError ?? "").not.toContain("api-key-secret");
+		expect(row.lastError ?? "").not.toContain("re_live_secret12345");
+		expect((row.lastError ?? "").length).toBeLessThanOrEqual(500);
+	});
+
+	test("mailer lỗi 2 lần đầu rồi lần 3 thành công → sent, retry_count = 2, xóa last_error = null", async () => {
+		await seedOrg("org-6b", "Academy Six B");
+		await seedStudent("org-6b", "stu-6b", "stu6b@example.com");
+		const { createdIds } = await enqueueNotifications(db, "org-6b", [
+			{
+				studentId: "stu-6b",
+				eventType: "tuition_reminder",
+				idempotencyKey: "tuition_reminder:inv-6b:2026-10-26",
+				title: "Nhắc học phí",
+				body: "Hóa đơn đến hạn.",
+				linkPath: "/tuition",
+				refType: "invoice",
+				refId: "inv-6b",
+			},
+		]);
+
+		let attempts = 0;
+		await deliverNotifications(
+			db,
+			fakeMailer(async () => {
+				attempts += 1;
+				if (attempts <= 2) {
+					throw new Error(`temporary smtp error #${attempts}`);
+				}
+			}),
+			createdIds,
+			"",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		expect(attempts).toBe(3);
+		const row = await rowOf("stu-6b");
+		expect(row.status).toBe("sent");
+		expect(row.retryCount).toBe(2);
+		expect(row.lastError).toBeNull();
+		expect(row.sentAt).not.toBeNull();
+	});
+
+	test("batch 2 bản ghi, chỉ 1 lỗi → bản ghi OK chỉ gửi 1 lần ở lượt 1, không gửi lại ở lượt 2/3", async () => {
+		await seedOrg("org-6c", "Academy Six C");
+		await seedStudent("org-6c", "stu-6c-ok", "ok@example.com");
+		await seedStudent("org-6c", "stu-6c-fail", "fail@example.com");
+		const { createdIds } = await enqueueNotifications(db, "org-6c", [
+			{
+				studentId: "stu-6c-ok",
+				eventType: "class_enrolled",
+				idempotencyKey: "class_enrolled:enr-6c-ok",
+				title: "Mời lớp",
+				body: "Chào bạn",
+				linkPath: "/classes/c1",
+				refType: "enrollment",
+				refId: "enr-6c-ok",
+			},
+			{
+				studentId: "stu-6c-fail",
+				eventType: "class_enrolled",
+				idempotencyKey: "class_enrolled:enr-6c-fail",
+				title: "Mời lớp",
+				body: "Chào bạn",
+				linkPath: "/classes/c1",
+				refType: "enrollment",
+				refId: "enr-6c-fail",
+			},
+		]);
+
+		const callsByTo: Record<string, number> = {};
+		await deliverNotifications(
+			db,
+			fakeMailer(async (input) => {
+				callsByTo[input.to] = (callsByTo[input.to] ?? 0) + 1;
+				if (input.to === "fail@example.com") {
+					throw new Error("mailbox unavailable");
+				}
+			}),
+			createdIds,
+			"",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		expect(callsByTo["ok@example.com"]).toBe(1);
+		expect(callsByTo["fail@example.com"]).toBe(3);
+		expect((await rowOf("stu-6c-ok")).status).toBe("sent");
+		expect((await rowOf("stu-6c-fail")).status).toBe("failed");
+	});
+
+	test("bản ghi đã failed hoặc retry_count >= 3 → deliverNotifications không gọi mailer thêm", async () => {
+		await seedOrg("org-6d", "Academy Six D");
+		await seedStudent("org-6d", "stu-6d", "stu6d@example.com");
+		const { createdIds } = await enqueueNotifications(db, "org-6d", [
+			{
+				studentId: "stu-6d",
+				eventType: "class_enrolled",
+				idempotencyKey: "class_enrolled:enr-6d",
+				title: "Mời lớp",
+				body: "Chào bạn",
+				linkPath: "/classes/c1",
+				refType: "enrollment",
+				refId: "enr-6d",
+			},
+		]);
+		const id = createdIds[0];
+		if (!id) throw new Error("missing id");
+		await libsql
+			.update(notificationRecord)
+			.set({ retryCount: 3, status: "queued" })
+			.where(eq(notificationRecord.id, id));
+
+		let calls = 0;
+		await deliverNotifications(
+			db,
+			fakeMailer(async () => {
+				calls += 1;
+			}),
+			createdIds,
+			"",
+			{ retryDelaysMs: [0, 0] },
+		);
+		expect(calls).toBe(0);
 	});
 
 	test("read_at có sẵn → deliver chuyển thẳng read", async () => {

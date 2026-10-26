@@ -3417,6 +3417,12 @@ export const NOTIFICATION_STATUSES = [
 ] as const;
 export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
 
+/** TOS-22 (#463): tối đa 3 lần thử gửi Email tự động; hết lượt chuyển failed kèm E-selfomy-alignment-010. */
+export const MAX_EMAIL_ATTEMPTS = 3;
+export const NOTIFICATION_ERROR_CODES = {
+	DELIVERY_FAILED: "E-selfomy-alignment-010",
+} as const;
+
 /** GET /api/notification-logs?q=&event=&status=&page= — 20 dòng/trang. */
 export const notificationLogQuerySchema = z.object({
 	q: z.string().optional(),

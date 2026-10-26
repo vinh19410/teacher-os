@@ -40,6 +40,8 @@ export function assignmentRoutes(deps: {
 	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
 	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
+	notificationRetryDelaysMs?: number[];
 }) {
 	const routes = new Hono<Env>();
 
