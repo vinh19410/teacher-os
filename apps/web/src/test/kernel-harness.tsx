@@ -27,6 +27,7 @@ export function snapshotFixture(
 		enrollments: [],
 		packages: [],
 		lessons: [],
+		events: [],
 		assignments: [],
 		assignmentPrompts: [],
 		classAssignments: [],

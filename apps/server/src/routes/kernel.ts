@@ -72,6 +72,7 @@ import {
 	resolveReminderScope,
 } from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
+import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { paymentTransactionRoutes } from "./payment-transactions";
@@ -1470,6 +1471,8 @@ export function kernelRoutes(deps: {
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.
 	kernel.route("/attendance", dailyAttendanceRoutes(deps));
 	kernel.route("/holidays", holidayRoutes(deps));
+	// TOS-14 (#447): sự kiện vận hành ngoài lịch lớp — POST/DELETE /api/events.
+	kernel.route("/events", eventRoutes(deps));
 	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
 	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
 	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));

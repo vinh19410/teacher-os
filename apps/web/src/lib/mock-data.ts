@@ -5,6 +5,7 @@ import type {
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
+	KernelEventRow,
 	KernelHolidayShiftRow,
 	KernelHolidaySummary,
 	KernelVocabDeckRow,
@@ -278,6 +279,8 @@ export type KernelHydratedData = Pick<
 	/** TOS-11: nhãn kỳ nghỉ + "Đã dời sang dd/MM" trên lịch tuần. */
 	holidays: KernelHolidaySummary[];
 	holidayShifts: KernelHolidayShiftRow[];
+	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
+	events: KernelEventRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

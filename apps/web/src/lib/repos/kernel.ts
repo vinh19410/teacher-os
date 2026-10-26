@@ -349,6 +349,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		vocabSuggestions: snapshot.vocabSuggestions ?? [],
 		holidays: snapshot.holidays ?? [],
 		holidayShifts: snapshot.holidayShifts ?? [],
+		events: snapshot.events ?? [],
 	};
 }
 
@@ -524,6 +525,9 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	"vocabSuggestions",
 	"holidays",
 	"holidayShifts",
+	// TOS-14 (#447): events — optional để deploy skew (web mới + server cũ)
+	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
+	"events",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in

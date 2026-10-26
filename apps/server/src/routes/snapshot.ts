@@ -23,6 +23,7 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { orgEvent } from "@teacher-os/db/schema/org-event";
 import {
 	holidaySessionShift,
 	organizationHoliday,
@@ -76,6 +77,28 @@ export async function loadInvoices(
 	// explicit ISO string (same as the other createdAt projections below).
 	return rows.map((row) => ({
 		...row,
+		createdAt: row.createdAt.toISOString(),
+	}));
+}
+
+/** Sự kiện vận hành của org (TOS-14 / #447) — tách riêng khỏi lesson. */
+export async function loadEvents(
+	db: Db,
+	orgId: string,
+): Promise<KernelSnapshot["events"]> {
+	const rows = await db
+		.select()
+		.from(orgEvent)
+		.where(eq(orgEvent.orgId, orgId))
+		.orderBy(asc(orgEvent.date), asc(orgEvent.startTime), asc(orgEvent.id));
+	return rows.map((row) => ({
+		id: row.id,
+		title: row.title,
+		date: row.date,
+		startTime: row.startTime,
+		endTime: row.endTime,
+		note: row.note,
+		createdByUserId: row.createdByUserId,
 		createdAt: row.createdAt.toISOString(),
 	}));
 }
@@ -217,6 +240,7 @@ export async function loadSnapshot(
 		vocabSuggestionRows,
 		holidayRows,
 		holidayShiftRows,
+		eventRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -364,6 +388,7 @@ export async function loadSnapshot(
 			})
 			.from(holidaySessionShift)
 			.where(eq(holidaySessionShift.orgId, orgId)),
+		loadEvents(db, orgId),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -555,6 +580,7 @@ export async function loadSnapshot(
 			topic: row.topic,
 			zoom: row.zoom,
 		})),
+		events: eventRows,
 		assignments: assignmentRows.map((row) => ({
 			id: row.id,
 			studentId: row.studentId,

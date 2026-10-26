@@ -9,6 +9,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { todayISOVietnam } from "@/lib/week-grid";
 import {
 	classRow,
 	enrollmentRow,
@@ -120,32 +121,46 @@ describe("schedule week grid", () => {
 		expect(
 			(document.querySelectorAll(".day-col")[1] as HTMLElement).className,
 		).not.toContain("ring-ring/20");
+		// TOS-14: nav là button (URL ?view=&date=), "Hôm nay" disabled khi đang
+		// xem tuần hiện tại.
 		expect(
-			screen
-				.getByRole("link", { name: "Tuần này" })
-				.getAttribute("aria-disabled"),
-		).toBe("true");
+			(screen.getByRole("button", { name: "Hôm nay" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
 		// No fake calendar-sync chrome (Google Calendar is a non-goal).
 		expect(document.body.textContent).not.toMatch(/GCal|Google Calendar/);
 	});
 
-	it("follows the ?week= param and links to the neighbouring weeks", async () => {
+	it("follows the ?week= param, rewrites canonical URL, and navigates by button", async () => {
 		start();
 		routerState.search = { week: "2026-10-21" };
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByText(/^Tuần 19–25\/10/)).toBeTruthy();
 		expect(dayColumnLabels()[0]).toBe("T2 19/10");
+		// Link ?week= cũ vẫn chạy (D1): scrub về ?view=week&date= tương đương.
+		await waitFor(() =>
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/schedule",
+				search: { view: "week", date: "2026-10-21" },
+				replace: true,
+			}),
+		);
+		// Nav theo button (TOS-14): prev sang tuần trước cùng view.
+		fireEvent.click(screen.getByRole("button", { name: "← Tuần trước" }));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/schedule",
+			search: { view: "week", date: "2026-10-12" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Tuần sau →" }));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/schedule",
+			search: { view: "week", date: "2026-10-26" },
+		});
+		// Ngoài tuần hiện tại → "Hôm nay" khả dụng.
 		expect(
-			screen.getByRole("link", { name: "← Tuần trước" }).getAttribute("href"),
-		).toBe("/schedule?week=2026-10-12");
-		expect(
-			screen.getByRole("link", { name: "Tuần sau →" }).getAttribute("href"),
-		).toBe("/schedule?week=2026-10-26");
-		expect(
-			screen
-				.getByRole("link", { name: "Tuần này" })
-				.getAttribute("aria-disabled"),
-		).toBe("false");
+			(screen.getByRole("button", { name: "Hôm nay" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(false);
 		// No highlighted "today" outside the current week.
 		expect(document.querySelectorAll(".day-col.ring-2")).toHaveLength(0);
 	});
@@ -157,7 +172,7 @@ describe("schedule week grid", () => {
 		await waitFor(() =>
 			expect(routerState.navigate).toHaveBeenCalledWith({
 				to: "/schedule",
-				search: {},
+				search: { view: "week", date: todayISOVietnam() },
 				replace: true,
 			}),
 		);
@@ -462,5 +477,144 @@ describe("schedule holiday labels (TOS-11)", () => {
 		start();
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByTestId("holiday-open")).toBeTruthy();
+	});
+});
+
+describe("schedule views and org events (TOS-14)", () => {
+	function eventsSnapshot() {
+		return snapshotFixture({
+			classes: [
+				classRow({ id: "cl-1", name: "IELTS Writing" }),
+				classRow({
+					id: "cl-2",
+					name: "Speaking cơ bản",
+					schedule: '{"days":[2],"start":"08:00","end":"09:30"}',
+				}),
+			],
+			students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+			enrollments: [enrollmentRow({ id: "en-1", studentId: "st-1" })],
+			lessons: [
+				lessonRow({
+					id: "les-1",
+					enrollmentId: "en-1",
+					day: 1,
+					date: "2026-10-12",
+					type: "1:2",
+					topic: "Line chart",
+				}),
+			],
+			events: [
+				{
+					id: "ev-1",
+					title: "Họp chuyên môn giáo viên",
+					date: "2026-10-12",
+					startTime: "15:00",
+					endTime: "16:30",
+					note: "",
+				},
+			],
+		});
+	}
+
+	it("switches to month view and rewrites the URL", async () => {
+		start();
+		renderWithKernel(<ScheduleRoute />);
+		await screen.findByText(/^Tuần 12–18\/10/);
+		fireEvent.click(screen.getByRole("tab", { name: "Tháng" }));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/schedule",
+			search: { view: "month", date: todayISOVietnam() },
+		});
+	});
+
+	it("renders the month grid with per-class colors and day navigation", async () => {
+		start();
+		routerState.search = { view: "month", date: "2026-10-12" };
+		renderWithKernel(<ScheduleRoute />);
+		const grid = await screen.findByTestId("schedule-month-grid");
+		// Bấm ngày mở view Ngày.
+		fireEvent.click(within(grid).getByLabelText("Xem lịch ngày 12/10"));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/schedule",
+			search: { view: "day", date: "2026-10-12" },
+		});
+	});
+
+	it("creates an org event and shows it without a snapshot reload", async () => {
+		start((req, s) => {
+			if (req.method === "POST" && req.path === "/api/events") {
+				const body = req.body as { title: string; date: string };
+				const row = {
+					id: "ev-new",
+					title: body.title,
+					date: body.date,
+					startTime: (req.body as { startTime: string }).startTime,
+					endTime: (req.body as { endTime: string }).endTime,
+					note: "",
+				};
+				s.snapshot = {
+					...s.snapshot,
+					events: [...(s.snapshot.events ?? []), row],
+				};
+				return { status: 201, body: row };
+			}
+			return undefined;
+		});
+		renderWithKernel(<ScheduleRoute />);
+		await screen.findByText(/^Tuần 12–18\/10/);
+		const loadsBefore = server.snapshotLoads;
+		fireEvent.click(screen.getByTestId("schedule-add-event"));
+		fireEvent.change(screen.getByLabelText("Tên sự kiện *"), {
+			target: { value: "Họp chuyên môn giáo viên" },
+		});
+		fireEvent.change(screen.getByLabelText("Từ giờ *"), {
+			target: { value: "15:00" },
+		});
+		fireEvent.change(screen.getByLabelText("Đến giờ *"), {
+			target: { value: "16:30" },
+		});
+		fireEvent.click(screen.getByTestId("org-event-submit"));
+		// D6: chip hiện ngay từ response POST, KHÔNG refetch snapshot.
+		expect(await screen.findByText("Họp chuyên môn giáo viên")).toBeTruthy();
+		expect(server.writes.map((w) => `${w.method} ${w.path}`)).toContain(
+			"POST /api/events",
+		);
+		expect(server.snapshotLoads).toBe(loadsBefore);
+	});
+
+	it("deletes an org event and removes the chip immediately", async () => {
+		server = startKernelServer(eventsSnapshot(), (req, s) => {
+			if (req.method === "DELETE" && req.path === "/api/events/ev-1") {
+				s.snapshot = {
+					...s.snapshot,
+					events: (s.snapshot.events ?? []).filter((e) => e.id !== "ev-1"),
+				};
+				return { status: 200, body: { ok: true } };
+			}
+			return undefined;
+		});
+		renderWithKernel(<ScheduleRoute />);
+		const chip = await screen.findByTestId("org-event-chip");
+		fireEvent.click(chip);
+		fireEvent.click(screen.getByTestId("org-event-delete"));
+		fireEvent.click(screen.getByTestId("org-event-delete-confirm"));
+		await waitFor(() => {
+			expect(screen.queryByTestId("org-event-chip")).toBeNull();
+		});
+		expect(server.writes.map((w) => `${w.method} ${w.path}`)).toContain(
+			"DELETE /api/events/ev-1",
+		);
+	});
+
+	it("renders the day agenda with sessions and events", async () => {
+		server = startKernelServer(eventsSnapshot());
+		routerState.search = { view: "day", date: "2026-10-12" };
+		renderWithKernel(<ScheduleRoute />);
+		const agenda = await screen.findByTestId("schedule-day-agenda");
+		expect(within(agenda).getByText("IELTS Writing")).toBeTruthy();
+		expect(within(agenda).getByText("Họp chuyên môn giáo viên")).toBeTruthy();
+		// Bấm ca học mở ClassSessionModal như view Tuần.
+		fireEvent.click(within(agenda).getByText("IELTS Writing"));
+		expect(await screen.findByRole("dialog")).toBeTruthy();
 	});
 });
