@@ -250,6 +250,15 @@ const FINANCE_ENDPOINTS: ReadonlyArray<{
 		path: () => "/api/bank-link/sync",
 		body: () => ({}),
 	},
+	{
+		method: "GET",
+		path: () => "/api/students/stu-1/billing-timeline",
+	},
+	{
+		method: "POST",
+		path: () => "/api/debt-reminders",
+		body: () => ({ studentIds: ["stu-1"] }),
+	},
 ];
 
 describe("requireFinanceRole & snapshot viewer (TOS-17 #451)", () => {

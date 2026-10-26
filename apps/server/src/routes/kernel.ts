@@ -1,5 +1,8 @@
 import type {
+	BillingTimelineEvent,
+	BillingTimelineResponse,
 	CreatedResponse,
+	DebtReminderResponse,
 	InvoicePaymentMethod,
 	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
@@ -9,6 +12,7 @@ import {
 	classCreateSchema,
 	classNotesSchema,
 	classTuitionFeeUpdateSchema,
+	debtReminderCreateSchema,
 	enrollStudentSchema,
 	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
@@ -57,15 +61,18 @@ import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { MediaStore } from "../lib/media-store";
+import { deliverNotifications } from "../lib/notifications/deliver";
 import {
 	emitNotifications,
 	notificationDepsFrom,
 } from "../lib/notifications/emit";
+import { enqueueNotifications } from "../lib/notifications/enqueue";
 import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
 	invoiceIssuedEvent,
 	scheduleChangedEvents,
+	tuitionReminderEvent,
 } from "../lib/notifications/templates";
 import {
 	ensurePaymentRefs,
@@ -1703,6 +1710,227 @@ export function kernelRoutes(deps: {
 						: "",
 			})) satisfies InvoiceTransactionItem[],
 		);
+	});
+
+	// TOS-18 (#452): dòng thời gian hóa đơn & giao dịch theo học viên trên Sổ
+	// công nợ (/debts). Gắn requireFinanceRole tường minh (route dưới /students/*
+	// không thuộc prefix /invoices*); không trả raw/provider/content gốc của
+	// bank-hub để giữ PII retention (#320).
+	kernel.get(
+		"/students/:id/billing-timeline",
+		requireFinanceRole,
+		async (c) => {
+			const ctx = c.get("kernelCtx");
+			if (!ctx) return unauthorized(c);
+			const db = deps.getDb();
+			const studentId = c.req.param("id") ?? "";
+			const [stu] = await db
+				.select({ id: student.id })
+				.from(student)
+				.where(and(eq(student.id, studentId), eq(student.orgId, ctx.orgId)));
+			if (!stu) return c.json({ error: "student not found" }, 404);
+
+			const [invoiceRows, txRows] = await Promise.all([
+				db
+					.select({
+						id: invoice.id,
+						type: invoice.type,
+						amount: invoice.amount,
+						due: invoice.due,
+						status: invoice.status,
+						createdAt: invoice.createdAt,
+					})
+					.from(invoice)
+					.where(
+						and(eq(invoice.orgId, ctx.orgId), eq(invoice.studentId, studentId)),
+					)
+					.orderBy(desc(invoice.createdAt), desc(invoice.id))
+					.limit(200),
+				db
+					.select({
+						id: paymentTransaction.id,
+						invoiceId: paymentTransaction.invoiceId,
+						amount: paymentTransaction.amount,
+						provider: paymentTransaction.provider,
+						method: paymentTransaction.method,
+						content: paymentTransaction.content,
+						createdAt: paymentTransaction.createdAt,
+					})
+					.from(paymentTransaction)
+					.innerJoin(invoice, eq(paymentTransaction.invoiceId, invoice.id))
+					.where(
+						and(
+							eq(paymentTransaction.orgId, ctx.orgId),
+							eq(paymentTransaction.matchStatus, "matched"),
+							eq(invoice.orgId, ctx.orgId),
+							eq(invoice.studentId, studentId),
+						),
+					)
+					.orderBy(
+						desc(paymentTransaction.createdAt),
+						desc(paymentTransaction.id),
+					)
+					.limit(200),
+			]);
+
+			const fmtCode = (id: string) => `INV-${id.slice(-8).toUpperCase()}`;
+			const entries: Array<{
+				event: BillingTimelineEvent;
+				ts: number;
+				tieKey: string;
+			}> = [];
+
+			for (const inv of invoiceRows) {
+				entries.push({
+					ts: inv.createdAt.getTime(),
+					tieKey: inv.id,
+					event: {
+						kind: "invoice_issued",
+						at: inv.createdAt.toISOString(),
+						invoiceId: inv.id,
+						code: fmtCode(inv.id),
+						type: inv.type.trim() || "Khác",
+						amount: inv.amount,
+						due: inv.due,
+						status: inv.status === "paid" ? "paid" : "unpaid",
+					},
+				});
+			}
+
+			for (const tx of txRows) {
+				const invId = tx.invoiceId ?? "";
+				const isManual = tx.provider === "manual";
+				entries.push({
+					ts: tx.createdAt.getTime(),
+					tieKey: tx.id,
+					event: {
+						kind: "payment",
+						id: tx.id,
+						at: tx.createdAt.toISOString(),
+						invoiceId: invId,
+						code: fmtCode(invId),
+						amount: tx.amount,
+						source: isManual ? "manual" : "bank_hub",
+						method: isManual
+							? (INVOICE_PAYMENT_METHOD_LABEL[
+									tx.method as InvoicePaymentMethod
+								] ?? "Khác")
+							: "",
+						note: isManual ? tx.content : "",
+					},
+				});
+			}
+
+			entries.sort((a, b) => {
+				if (b.ts !== a.ts) return b.ts - a.ts;
+				if (a.event.kind !== b.event.kind) {
+					return a.event.kind === "payment" ? -1 : 1;
+				}
+				return b.tieKey.localeCompare(a.tieKey);
+			});
+
+			return c.json({
+				events: entries.map((e) => e.event),
+			} satisfies BillingTimelineResponse);
+		},
+	);
+
+	// TOS-18 (#452): gửi nhắc học phí hàng loạt cho học viên đang nợ qua hàng
+	// đợi thông báo Email + In-app của TOS-21 (#454). Gọi trực tiếp
+	// enqueueNotifications + deliverNotifications để trả đúng { queued, skipped }
+	// theo đơn vị hóa đơn còn nợ và không nuốt lỗi DB.
+	kernel.post("/debt-reminders", requireFinanceRole, async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, debtReminderCreateSchema);
+		if (!body.ok) return body.response;
+
+		const db = deps.getDb();
+		const { studentIds, classId } = body.data;
+		const D1_CHUNK = 50;
+		const openInvoices: Array<{
+			id: string;
+			studentId: string;
+			amount: number;
+			paidAmount: number;
+			due: string;
+		}> = [];
+
+		for (let i = 0; i < studentIds.length; i += D1_CHUNK) {
+			const chunk = studentIds.slice(i, i + D1_CHUNK);
+			const baseWhere = and(
+				eq(invoice.orgId, ctx.orgId),
+				inArray(invoice.studentId, chunk),
+				ne(invoice.status, "paid"),
+				sql`${invoice.paidAmount} < ${invoice.amount}`,
+			);
+			const rows = classId
+				? await db
+						.select({
+							id: invoice.id,
+							studentId: invoice.studentId,
+							amount: invoice.amount,
+							paidAmount: invoice.paidAmount,
+							due: invoice.due,
+						})
+						.from(invoice)
+						.innerJoin(
+							enrollment,
+							and(
+								eq(enrollment.id, invoice.enrollmentId),
+								eq(enrollment.orgId, ctx.orgId),
+								eq(enrollment.classId, classId),
+							),
+						)
+						.where(baseWhere)
+				: await db
+						.select({
+							id: invoice.id,
+							studentId: invoice.studentId,
+							amount: invoice.amount,
+							paidAmount: invoice.paidAmount,
+							due: invoice.due,
+						})
+						.from(invoice)
+						.where(baseWhere);
+			openInvoices.push(...rows);
+		}
+
+		const vnToday = vietnamTodayISO();
+		const events = openInvoices.map((inv) =>
+			tuitionReminderEvent(
+				{
+					id: inv.id,
+					studentId: inv.studentId,
+					amount: inv.amount - Math.min(inv.paidAmount, inv.amount),
+					due: inv.due,
+				},
+				vnToday,
+			),
+		);
+
+		const notifDeps = notificationDepsFrom(deps);
+		const { createdIds } = await enqueueNotifications(
+			notifDeps.db,
+			ctx.orgId,
+			events,
+		);
+		const delivery = deliverNotifications(
+			notifDeps.db,
+			notifDeps.mailer,
+			createdIds,
+			notifDeps.studentOrigin,
+		);
+		if (notifDeps.runInBackground) {
+			notifDeps.runInBackground(delivery);
+		} else {
+			await delivery;
+		}
+
+		return c.json({
+			queued: createdIds.length,
+			skipped: events.length - createdIds.length,
+		} satisfies DebtReminderResponse);
 	});
 
 	// Mounted after the Origin/content-type middleware above, so the
