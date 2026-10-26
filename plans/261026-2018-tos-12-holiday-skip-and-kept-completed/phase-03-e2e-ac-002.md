@@ -1,13 +1,21 @@
 ---
 phase: 3
 title: "E2E AC-002"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: ["phase-02"]
 ---
 
 # Phase 3: E2E AC-002
+
+> **Red-team adjustments (kongming, 2026-10-26):** bỏ ngày cố định
+> 26/12/2026 và 20/11/2026 — server chặn điểm danh buổi tương lai (C1) và
+> UI khóa xác nhận khi shifts rỗng nên kỳ nghỉ không trúng buổi không tạo
+> được qua UI (C2). Scenario 1 dùng ngày động: kỳ nghỉ #1 trúng buổi thật
+> của một lớp phụ và phủ đúng ngày bù tự nhiên M của lớp chính; scenario 2
+> điểm danh buổi HÔM NAY. Offset buổi lớp T3&T7 từ s0: s0, s0+4, s0+7,
+> s0+11; ngày bù sau khi nhảy qua M là T7 = s0+18.
 
 ## Files
 

@@ -3191,6 +3191,15 @@ export const holidayApplySchema = holidayDraftSchema.and(
 );
 export type HolidayApplyInput = z.infer<typeof holidayApplySchema>;
 
+/** Một ngày bù bị nhảy qua vì trùng kỳ nghỉ. `holidayName` null = ngày thuộc
+ * chính kỳ nghỉ đang tạo — client tự điền tên từ form (previewKey cố ý bỏ
+ * `name` nên server không trả tên draft, quyết định review TOS-11). */
+export interface HolidaySkippedDay {
+	/** yyyy-mm-dd ngày bị nhảy qua. */
+	date: string;
+	holidayName: string | null;
+}
+
 /** Một dòng bảng xem trước: buổi gốc bị dời + buổi bù cuối khóa. */
 export interface HolidayPlannedShift {
 	classId: string;
@@ -3207,8 +3216,8 @@ export interface HolidayPlannedShift {
 	dur: number;
 	/** 1 = Thứ 2 … 7 = Chủ nhật (lesson weekday). */
 	weekday: number;
-	/** Ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 dùng hiển thị "(*)". */
-	skippedHolidayDates: string[];
+	/** Các ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 hiển thị "(*)" và ghi chú tên. */
+	skippedHolidays: HolidaySkippedDay[];
 }
 
 /** Buổi có dòng đã điểm danh — giữ nguyên (D1), nhãn chi tiết ở TOS-12. */
@@ -3254,7 +3263,12 @@ export const holidayPreviewResponseSchema = z.object({
 			time: z.string(),
 			dur: z.number().int(),
 			weekday: z.number().int().min(1).max(7),
-			skippedHolidayDates: z.array(z.string()),
+			skippedHolidays: z.array(
+				z.object({
+					date: z.string(),
+					holidayName: z.string().nullable(),
+				}),
+			),
 		}),
 	),
 	keptCompleted: z.array(

@@ -1,13 +1,24 @@
 ---
 phase: 1
 title: "Preview trả tên kỳ nghỉ bị nhảy qua + test route AC-002"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: ["#445"]
 ---
 
 # Phase 1: Contract preview và test route
+
+> **Red-team adjustments (kongming, 2026-10-26):** bổ sung file
+> `apps/server/src/routes/enrollment-activation.ts` (C2b — nơi gọi planner thứ
+> hai, `loadClassHolidays` phải lấy thêm cột `name`); shape chốt
+> `skippedHolidays: {date, holidayName: string | null}[]` — null = ngày thuộc
+> kỳ nghỉ đang tạo, client điền tên từ form (giữ quyết định previewKey bỏ
+> `name`); loader sắp `createdAt ASC, id`, kỳ khai báo trước thắng khi chồng
+> ngày (I2); test case (c) làm theo I4: buổi trộn completed+upcoming của
+> `enr-a1` tại F3 + lớp B vẫn dời, apply assert status giữ nguyên và không có
+> shift cho lớp A. Không đưa `skippedHolidays` vào `planHashOf` (tên không đổi
+> dữ liệu ghi DB; đưa tên draft vào hash sẽ gây 409 khi sửa tên).
 
 ## Goal
 

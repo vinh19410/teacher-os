@@ -14,7 +14,8 @@
  * - "Đã có buổi" = ngày đó có BẤT KỲ dòng lesson nào (`enrollmentId` bất
  *   kỳ, mọi trạng thái) — không trộn buổi bù chung ngày với dòng cũ.
  * - Ngày đúng thứ (`schedule.days`) nhưng thuộc kỳ nghỉ (đã có hoặc kỳ đang
- *   tạo) bị nhảy qua và ghi vào `skippedHolidayDates` (TOS-12 hiển thị "(*)").
+ *   tạo) bị nhảy qua và ghi vào `skippedHolidays` kèm tên kỳ nghỉ — `null`
+ *   nghĩa là kỳ nghỉ đang tạo, client điền tên (TOS-12 hiển thị "(*)").
  */
 
 import type {
@@ -46,8 +47,10 @@ export interface PlanClassInput {
 export interface PlanInput {
 	range: { fromDate: string; toDate: string };
 	classes: PlanClassInput[];
-	/** Kỳ nghỉ đã có hiệu lực với từng lớp (đã lọc theo scope ở server). */
-	existingHolidayDates: Map<string, Set<string>>;
+	/** Kỳ nghỉ đã có hiệu lực với từng lớp: classId → (date → tên kỳ nghỉ),
+	 * đã lọc theo scope ở server; loader phải sắp theo createdAt ASC rồi mới
+	 * dựng map — kỳ khai báo trước thắng khi chồng ngày. */
+	existingHolidayDates: Map<string, Map<string, string>>;
 	/** Hôm nay theo giờ VN (yyyy-mm-dd) — truyền từ caller để hàm thuần deterministic. */
 	todayISO: string;
 }
@@ -141,10 +144,15 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 			}
 		}
 
-		// Kỳ nghỉ đang tạo + các kỳ đã có hiệu lực với lớp này.
-		const holidayDates = new Set(input.existingHolidayDates.get(cls.id) ?? []);
+		// Kỳ nghỉ đang tạo + các kỳ đã có hiệu lực với lớp này. Ngày chồng lấp
+		// giữa kỳ đã lưu và kỳ đang tạo giữ tên kỳ ĐÃ LƯU (khai báo trước ưu
+		// tiên — red-team I2); ngày chỉ thuộc kỳ đang tạo → null (client điền
+		// tên draft từ form, previewKey cố ý bỏ `name`).
+		const holidayDates = new Map<string, string | null>(
+			input.existingHolidayDates.get(cls.id) ?? [],
+		);
 		for (let d = fromDate; d <= toDate; d = addDaysISO(d, 1)) {
-			holidayDates.add(d);
+			if (!holidayDates.has(d)) holidayDates.set(d, null);
 		}
 
 		const dur = scheduleDurationMinutes(parsed);
@@ -174,7 +182,7 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 				originalDate: date,
 				sessionOrdinal: ordinal,
 				enrollmentIds: upcoming.map((row) => row.enrollmentId),
-				skippedHolidayDates: [],
+				skippedHolidays: [],
 			});
 		}
 
@@ -203,7 +211,10 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 					continue;
 				}
 				if (holidayDates.has(cursor)) {
-					shift.skippedHolidayDates.push(cursor);
+					shift.skippedHolidays.push({
+						date: cursor,
+						holidayName: holidayDates.get(cursor) ?? null,
+					});
 					cursor = addDaysISO(cursor, 1);
 					continue;
 				}

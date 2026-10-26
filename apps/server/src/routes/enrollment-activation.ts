@@ -67,15 +67,19 @@ function applyShiftsToRows(
 }
 
 /** Kỳ nghỉ có hiệu lực với một lớp: scope org của tổ chức + scope classes
- * có dòng organization_holiday_class trỏ tới lớp. */
+ * có dòng organization_holiday_class trỏ tới lớp. Sắp createdAt ASC, id —
+ * kỳ khai báo trước thắng khi chồng ngày (đồng bộ loader route, red-team I2). */
 async function loadClassHolidays(
 	db: Db,
 	orgId: string,
 	classId: string,
-): Promise<Array<{ id: string; fromDate: string; toDate: string }>> {
+): Promise<
+	Array<{ id: string; name: string; fromDate: string; toDate: string }>
+> {
 	const orgHolidays = await db
 		.select({
 			id: organizationHoliday.id,
+			name: organizationHoliday.name,
 			fromDate: organizationHoliday.fromDate,
 			toDate: organizationHoliday.toDate,
 			createdAt: organizationHoliday.createdAt,
@@ -90,6 +94,7 @@ async function loadClassHolidays(
 	const classScoped = await db
 		.select({
 			id: organizationHoliday.id,
+			name: organizationHoliday.name,
 			fromDate: organizationHoliday.fromDate,
 			toDate: organizationHoliday.toDate,
 			createdAt: organizationHoliday.createdAt,
@@ -111,7 +116,7 @@ async function loadClassHolidays(
 				a.createdAt.getTime() - b.createdAt.getTime() ||
 				a.id.localeCompare(b.id),
 		)
-		.map(({ id, fromDate, toDate }) => ({ id, fromDate, toDate }));
+		.map(({ id, name, fromDate, toDate }) => ({ id, name, fromDate, toDate }));
 }
 
 async function loadClassShifts(
@@ -349,14 +354,16 @@ export async function activateEnrollment(
 			if (shifts.length === 0) {
 				const holidays = await loadClassHolidays(db, orgId, cls.id);
 				if (holidays.length > 0) {
-					const holidayDates = new Set<string>();
+					// date → tên kỳ nghỉ; `holidays` đã sắp createdAt ASC nên kỳ
+					// khai báo trước thắng khi chồng ngày (đồng bộ loader route).
+					const datesByName = new Map<string, string>();
 					for (const holiday of holidays) {
 						for (
 							let d = holiday.fromDate;
 							d <= holiday.toDate;
 							d = addDaysISO(d, 1)
 						) {
-							holidayDates.add(d);
+							if (!datesByName.has(d)) datesByName.set(d, holiday.name);
 						}
 					}
 					for (const holiday of holidays) {
@@ -377,7 +384,7 @@ export async function activateEnrollment(
 									})),
 								},
 							],
-							existingHolidayDates: new Map([[cls.id, holidayDates]]),
+							existingHolidayDates: new Map([[cls.id, datesByName]]),
 							todayISO: vietnamTodayISO(),
 						});
 						for (const shift of planned.shifts) {

@@ -14,13 +14,17 @@ function lessons(
 	count: number,
 	enrollmentId = `enr-${classId}`,
 	utcDay = 5, // Friday
+	utcDay2?: number, // ngày thứ hai trong tuần (ví dụ T3&T7)
 ): Array<{ date: string; status: string; enrollmentId: string }> {
 	const rows: Array<{ date: string; status: string; enrollmentId: string }> =
 		[];
 	const cursor = new Date(`${startISO}T00:00:00Z`);
 	let made = 0;
 	while (made < count) {
-		if (cursor.getUTCDay() === utcDay) {
+		if (
+			cursor.getUTCDay() === utcDay ||
+			(utcDay2 !== undefined && cursor.getUTCDay() === utcDay2)
+		) {
 			rows.push({
 				date: cursor.toISOString().slice(0, 10),
 				status: "upcoming",
@@ -66,7 +70,7 @@ describe("planHolidayShift (TOS-11 phase 2)", () => {
 		expect(shift.time).toBe("19:00");
 		expect(shift.dur).toBe(90);
 		expect(shift.enrollmentIds).toEqual(["enr-cls-t6"]);
-		expect(shift.skippedHolidayDates).toEqual([]);
+		expect(shift.skippedHolidays).toEqual([]);
 	});
 
 	it("lớp T3 & T7, nghỉ 2 ngày trúng mỗi lớp 1 buổi → 2 shift nối tiếp đúng thứ (className asc)", () => {
@@ -105,22 +109,45 @@ describe("planHolidayShift (TOS-11 phase 2)", () => {
 		expect(result.shifts[1]?.weekday).toBe(6);
 	});
 
-	it("ngày bù dự kiến thuộc kỳ nghỉ khác → nhảy qua và ghi skippedHolidayDates", () => {
-		// Ngày bù tự nhiên 22/01/2027 thuộc kỳ nghỉ Tết đã khai báo với lớp.
+	it("ngày bù dự kiến thuộc kỳ nghỉ đã khai báo → nhảy qua và ghi skippedHolidays kèm tên (AC-002: 26/12 → 29/12)", () => {
+		// Lớp T3 & T7: buổi T3 15/12 bị dời; buổi dạy cuối 22/12 (T3) nên con
+		// trỏ chọn T7 26/12/2026 — thuộc kỳ nghỉ «Nghỉ Tết Dương lịch» đã lưu
+		// trong DB → nhảy sang T3 29/12/2026. Đúng ví dụ AC-002.
 		const result = planHolidayShift(
 			input({
-				existingHolidayDates: new Map([["cls-t6", new Set(["2027-01-22"])]]),
+				range: { fromDate: "2026-12-15", toDate: "2026-12-15" },
+				todayISO: "2026-12-01",
+				classes: [
+					{
+						id: "cls-t3t7",
+						name: "IELTS 5.0B",
+						schedule: JSON.stringify({
+							days: [1, 5],
+							start: "18:00",
+							end: "19:30",
+						}),
+						lessons: lessons("cls-t3t7", "2026-11-03", 15, "enr-t3t7", 2, 6),
+					},
+				],
+				existingHolidayDates: new Map([
+					["cls-t3t7", new Map([["2026-12-26", "Nghỉ Tết Dương lịch"]])],
+				]),
 			}),
 		);
 
 		const shift = result.shifts[0];
 		if (!shift) throw new Error("missing shift");
-		expect(shift.makeupDate).toBe("2027-01-29");
-		expect(shift.skippedHolidayDates).toEqual(["2027-01-22"]);
+		expect(shift.originalDate).toBe("2026-12-15");
+		expect(shift.makeupDate).toBe("2026-12-29");
+		expect(shift.weekday).toBe(2); // Thứ 3
+		expect(shift.skippedHolidays).toEqual([
+			{ date: "2026-12-26", holidayName: "Nghỉ Tết Dương lịch" },
+		]);
 	});
 
-	it("ngày bù cũng không rơi vào khoảng kỳ nghỉ đang tạo", () => {
-		// Range kéo dài trúng ngày bù tự nhiên 22/01/2027.
+	it("ngày bù rơi vào khoảng kỳ nghỉ đang tạo → skippedHolidays với holidayName null (client điền tên draft)", () => {
+		// Range kéo dài trúng ngày bù tự nhiên 22/01/2027 — thuộc kỳ nghỉ ĐANG
+		// tạo, planner không biết tên → null.
 		const result = planHolidayShift(
 			input({ range: { fromDate: "2026-11-20", toDate: "2027-01-22" } }),
 		);
@@ -128,6 +155,27 @@ describe("planHolidayShift (TOS-11 phase 2)", () => {
 		const shift = result.shifts[0];
 		if (!shift) throw new Error("missing shift");
 		expect(shift.makeupDate).toBe("2027-01-29");
+		expect(shift.skippedHolidays).toEqual([
+			{ date: "2027-01-22", holidayName: null },
+		]);
+	});
+
+	it("kỳ nghỉ đang tạo chồng ngày kỳ nghỉ đã lưu → tên kỳ đã lưu thắng (khai báo trước ưu tiên)", () => {
+		const result = planHolidayShift(
+			input({
+				range: { fromDate: "2026-11-20", toDate: "2027-01-22" },
+				existingHolidayDates: new Map([
+					["cls-t6", new Map([["2027-01-22", "Nghỉ Tết Dương lịch"]])],
+				]),
+			}),
+		);
+
+		const shift = result.shifts[0];
+		if (!shift) throw new Error("missing shift");
+		expect(shift.makeupDate).toBe("2027-01-29");
+		expect(shift.skippedHolidays).toEqual([
+			{ date: "2027-01-22", holidayName: "Nghỉ Tết Dương lịch" },
+		]);
 	});
 
 	it("buổi có 1 dòng completed → keptCompleted, không shift", () => {
