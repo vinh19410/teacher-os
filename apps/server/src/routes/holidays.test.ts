@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import { isoToLessonWeekday } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -148,12 +149,20 @@ async function seedClasses() {
 	}
 }
 
-function createApp(customDb: Db = db) {
+function createApp(
+	customDb: Db = db,
+	opts?: {
+		mailer?: Mailer;
+		studentOrigin?: string;
+	},
+) {
 	return buildApp({
 		getDb: () => customDb,
 		corsOrigin: CORS_ORIGIN,
 		getSessionUser: sessionFor,
 		authHandler: async () => new Response(null, { status: 404 }),
+		// #454 D9: đường ống thông báo holiday_created cần mailer + origin.
+		...opts,
 	});
 }
 
@@ -745,3 +754,83 @@ describe("C2: edit/move khóa nhóm holiday, move makeup kéo shift theo", () =>
 		expect(f10.length).toBeGreaterThan(0);
 	});
 });
+
+// #454 D9: apply notify=true phát holiday_created vào hàng đợi thông báo
+// (Email + In-app) cho học viên các lớp bị ảnh hưởng; notify=false thì không.
+describe("holiday_created qua hàng đợi thông báo (#454 D9)", () => {
+	test("apply notify=true → mỗi học viên active của lớp bị ảnh hưởng 1 bản ghi, khóa theo holidayId", async () => {
+		const app = createApp();
+		const planHash = await previewHash(app, draft());
+		const res = await apply(app, { ...draft(), planHash });
+		expect(res.status).toBe(200);
+		const { holidayId } = (await res.json()) as { holidayId: string };
+
+		const rows = await db.select().from(schema.notificationRecord);
+		// Lớp bị ảnh hưởng: cls-a (s-1, s-2) + cls-b (s-1) — unique theo học viên.
+		expect(rows).toHaveLength(2);
+		expect([...rows].map((r) => r.studentId).sort()).toEqual(["s-1", "s-2"]);
+		for (const row of rows) {
+			expect(row.eventType).toBe("holiday_created");
+			expect(row.eventGroup).toBe("schedule");
+			expect(row.idempotencyKey).toBe(
+				`holiday_created:${holidayId}:${row.studentId}`,
+			);
+			// Học viên seed không có email → chỉ in_app → sent ngay.
+			expect(row.status).toBe("sent");
+			expect(row.linkPath).toBe("/classes");
+		}
+	});
+
+	test("apply notify=false → không tạo notification_record", async () => {
+		const app = createApp();
+		const body = { ...draft(), notify: false };
+		const planHash = await previewHash(app, body);
+		const res = await apply(app, { ...body, planHash });
+		expect(res.status).toBe(200);
+		const rows = await db.select().from(schema.notificationRecord);
+		expect(rows).toHaveLength(0);
+	});
+
+	test("học viên có email → thư qua mailer với link tuyệt đối (studentOrigin)", async () => {
+		await db
+			.update(schema.student)
+			.set({ email: "s1@parent.local" })
+			.where(eq(schema.student.id, "s-1"));
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		const app = createApp(db, {
+			mailer: {
+				send: async (input) => {
+					sentInputs.push(input);
+				},
+			},
+			studentOrigin: "https://portal.test",
+		});
+		const planHash = await previewHash(app, draft());
+		const res = await apply(app, { ...draft(), planHash });
+		expect(res.status).toBe(200);
+
+		// s-1 có email → 1 thư; s-2 không email → chỉ in-app.
+		expect(sentInputs).toHaveLength(1);
+		const input = sentInputs[0];
+		if (!input) throw new Error("mailer was not called");
+		expect(input.to).toBe("s1@parent.local");
+		expect(input.subject).toBe("Thông báo lịch nghỉ");
+		expect(input.text).toContain("Nghỉ lễ giữa khóa");
+		expect(input.text).toContain("https://portal.test/classes");
+
+		const rows = await db.select().from(schema.notificationRecord);
+		expect(rows).toHaveLength(2);
+		const emailed = rows.find((r) => r.studentId === "s-1");
+		// Không có runInBackground trong test app → deliver chạy đồng bộ,
+		// mailer OK → sent ngay (đúng máy trạng thái D4).
+		expect(emailed?.status).toBe("sent");
+	});
+});
+
+/** Preview rồi trả planHash — helper cho các test apply của #454. */
+async function previewHash(app: ServerApp, body: Record<string, unknown>) {
+	const res = await preview(app, body);
+	expect(res.status).toBe(200);
+	const { planHash } = (await res.json()) as { planHash: string };
+	return planHash;
+}

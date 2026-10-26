@@ -207,12 +207,91 @@ describe("createLogMailer", () => {
 
 		expect(infoSpy).toHaveBeenCalledTimes(1);
 		expect(infoSpy).toHaveBeenCalledWith(
-			"[mail:log] to=%s subject=%s\n%s",
+			"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
 			"student@example.com",
 			"Verify Email",
+			"",
+			"",
 			"https://example.com/verify-email?token=123",
 		);
 
+		infoSpy.mockRestore();
+	});
+});
+
+describe("replyTo + fromName (plan TOS-21 D5)", () => {
+	test("Resend body có reply_to và from có tên", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: async () => JSON.stringify({ id: "email-789" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const mailer = createResendMailer({
+			apiKey: "test-api-key",
+			from: "noreply@teacheros.vn",
+		});
+		await mailer.send({
+			to: "student@example.com",
+			subject: "Bài tập mới",
+			html: "<p>Bài tập mới</p>",
+			text: "Bài tập mới",
+			replyTo: "teacher@example.com",
+			fromName: 'Trung tâm "ABC" qua Teacher OS',
+		});
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
+		expect(body.from).toBe(
+			'"Trung tâm \\"ABC\\" qua Teacher OS" <noreply@teacheros.vn>',
+		);
+		expect(body.reply_to).toBe("teacher@example.com");
+	});
+
+	test("không có replyTo/fromName → không thêm reply_to, from là địa chỉ trần", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: async () => JSON.stringify({ id: "email-1" }),
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const mailer = createResendMailer({
+			apiKey: "test-api-key",
+			from: "noreply@teacheros.vn",
+		});
+		await mailer.send({
+			to: "student@example.com",
+			subject: "Hello",
+			html: "<p>Hello</p>",
+			text: "Hello",
+		});
+
+		const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
+		expect(body.from).toBe("noreply@teacheros.vn");
+		expect(body.reply_to).toBeUndefined();
+	});
+
+	test("log mailer in thêm replyTo/fromName", async () => {
+		const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+		const mailer = createLogMailer();
+		await mailer.send({
+			to: "student@example.com",
+			subject: "Hello",
+			html: "<p>Hello</p>",
+			text: "Hello",
+			replyTo: "teacher@example.com",
+			fromName: "Academy qua Teacher OS",
+		});
+		expect(infoSpy).toHaveBeenCalledWith(
+			"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
+			"student@example.com",
+			"Hello",
+			"teacher@example.com",
+			"Academy qua Teacher OS",
+			"Hello",
+		);
 		infoSpy.mockRestore();
 	});
 });

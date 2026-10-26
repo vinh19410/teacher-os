@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Service enqueue/deliver, Reply-To + tên người gửi, AppDeps.mailer"
-status: pending
+status: completed
 priority: P0
 effort: "5h"
 dependencies: ["phase-01"]
@@ -14,7 +14,7 @@ dependencies: ["phase-01"]
 - Modify: `packages/auth/src/mail/mailer.ts` — `MailInput` thêm `replyTo?: string`, `fromName?: string`; Resend: `from = fromName ? \`"${fromName}" <${address(from)}>\` : from`, `reply_to` khi có. Log mailer in thêm 2 trường. Test hiện có của mailer phải còn xanh.
 - Modify: `apps/server/src/app.ts` — `AppDeps.mailer?: Mailer` (JSDoc theo giọng các dep khác).
 - Modify: `apps/server/src/index.ts` — tách `getMailer()` lười (giữ nguyên check `RESEND_API_KEY` + cảnh báo log-only), dùng chung cho `createAuth` và `buildApp`.
-- Modify: `apps/e2e/src/boot.ts` — truyền `recordingMailer` vào app; recording lưu thêm `replyTo`, `fromName`, `subject` để E2E đọc.
+- Modify: `apps/e2e/src/boot.ts` — truyền `recordingMailer` vào app; recording lưu TOÀN BỘ thư (không chỉ regex verify/reset): `to`, `subject`, `replyTo`, `fromName` để E2E đọc được header mới.
 - Create: `apps/server/src/lib/notifications/enqueue.ts`
   - `type NotificationEvent = { type; studentId; idempotencyKey; title; body; linkPath; refType; refId }`.
   - `enqueueNotifications(db, orgId, events)`: lọc `studentId` thuộc org; đọc `organization.name` + email chủ org (membership `teacher`/`owner` sớm nhất → `user.email`); `channels = email hợp lệ ? "email,in_app" : "in_app"`; bản ghi chỉ `in_app` → `status = "sent"`, `sent_at = now`; insert theo lô `onConflictDoNothing` trên `(org_id, idempotency_key)`; trả id các dòng mới (`returning`).

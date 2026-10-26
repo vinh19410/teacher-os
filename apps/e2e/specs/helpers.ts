@@ -52,6 +52,9 @@ export interface VerificationEmailEntry {
 	kind?: string;
 	error?: string;
 	at?: string;
+	// Plan TOS-21 (#454): recordingMailer lưu thêm header mới của thư thông báo.
+	replyTo?: string | null;
+	fromName?: string | null;
 }
 
 export async function readVerificationEmails(): Promise<
@@ -77,7 +80,8 @@ export async function verifyStudentEmailFromMailLog(
 	for (let i = 0; i < 20; i++) {
 		const emails = await readVerificationEmails();
 		const entry = emails.find(
-			(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
+			(e) =>
+				e.to.trim().toLowerCase() === email.trim().toLowerCase() && !!e.url,
 		);
 		if (entry?.url) {
 			verifyUrl = entry.url;
@@ -146,6 +150,8 @@ export async function seedStudent(opts: {
 	name: string;
 	email?: string;
 	phone?: string;
+	/** Đặt onboarding_completed_at để portal bỏ wizard onboarding (TOS-21). */
+	onboarded?: boolean;
 }): Promise<{ id: string; name: string; email: string }> {
 	const client = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
@@ -171,8 +177,8 @@ export async function seedStudent(opts: {
 
 		await withBusyRetry(() =>
 			client.execute({
-				sql: `INSERT INTO student (id, org_id, name, phone, email, zalo, parent_name, parent_phone, created_at)
-					VALUES (?,?,?,?,?,?,?,?,?)`,
+				sql: `INSERT INTO student (id, org_id, name, phone, email, zalo, parent_name, parent_phone, onboarding_completed_at, created_at)
+					VALUES (?,?,?,?,?,?,?,?,?,?)`,
 				args: [
 					id,
 					orgId,
@@ -182,6 +188,7 @@ export async function seedStudent(opts: {
 					opts.phone ?? "0901234567",
 					"",
 					"",
+					...(opts.onboarded ? [now] : [null]),
 					now,
 				],
 			}),
