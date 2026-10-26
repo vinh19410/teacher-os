@@ -12,6 +12,8 @@ dependencies: [1]
 > **Cập nhật 2026-10-26 (red-team #2–#9, #11, #12):** neo tích hợp dùng đúng code thật của TOS-7 — lưu qua hàm async `handleSaveSession` (không có useMutation), mở ca qua `expandedKeys: Set<string>` + `sessionKey()` = `${mode}:${classId}:${time}` (không chứa ngày), giữ multi-open. Không tạo state song song `openClassKey`.
 >
 > **Cập nhật 2026-10-26 (kongming GO, 4 điều kiện):** (1) thông báo/empty-state dùng `actionablePending` (loại legacy), không dùng `counts.pending`; (2) route giữ `latestSearchRef` — date/status đổi giữa lúc lưu thì bỏ auto-advance; tìm ca kế tiếp bằng index ca vừa lưu trong `fresh.sessions` đầy đủ rồi quét tới + vòng lại; kiểm `getQueryState(...).status !== "error"` và `dataUpdatedAt > thời điểm lưu`; cờ "đang lưu" bằng `useRef`; **không đụng `autoExpandedForKey`**; (3) "Quay lại chỉnh"/Esc focus dòng thiếu đầu tiên **sau khi modal đóng** (cờ `focusFirstMissingAfterClose` + effect, vì cleanup của `Modal` trả focus về nút lưu) — test assert `toHaveFocus()`; (4) vùng aria-live đặt `role="status"` + `data-testid="attendance-live-status"` để e2e chọn đúng 1 phần tử.
+>
+> **Cập nhật 2026-10-26 (code-review CR-Bugs F1–F3):** F1 route truyền `busy` khoá ghi mọi ca khi một ca đang lưu; F2 catch-path cũng guard đổi ngày/chip giữa lúc lưu (không toast/banner/refetch trên ngữ cảnh cũ); F3 sửa ca đã `recorded` (wasRecorded) không chạy auto-advance/completion — giữ hành vi TOS-7.
 
 ## Goal
 
@@ -29,7 +31,7 @@ dependencies: [1]
   - Mô tả "Gán Có mặt cho N học viên này rồi lưu điểm danh ca học?"
   - Nút "Gán Có mặt và lưu" (primary) và "Quay lại chỉnh". Esc / đóng modal = "Quay lại chỉnh".
   - **Cấm dispatch-then-read** (red-team #2): "Gán Có mặt và lưu" tính `next = markAllPresentState(draft)` (pure helper Phase 1), gọi `onSave(toSaveEntries(next))`, rồi mới `dispatch({ type: "markAllPresent" })` để sync UI.
-  - **Guard double-submit** (red-team #6): nhận prop `saving`, cả 2 nút `disabled={saving}`; modal đóng ngay khi bấm xác nhận, route chịu trách nhiệm idempotent theo key.
+  - **Guard double-submit** (red-team #6): nhận prop `saving`, cả 2 nút `disabled={saving}`; modal đóng ngay khi bấm xác nhận, route chịu trách nhiệm idempotent theo key. **CR-Bugs F1 (2026-10-26):** route truyền thêm `busy` (có MỘT ca bất kỳ đang lưu) — Lưu/điền nhanh/modal của TẤT CẢ ca bị khoá, không còn đường nuốt save im lặng cross-row.
   - "Quay lại chỉnh": hành vi TOS-7 (viền `warning` + focus dòng thiếu đầu tiên + thông báo).
 - Modify: `apps/web/src/routes/_auth/attendance.tsx` (TOS-7 tạo).
   - Tái dụng `sessionKey()` + `expandedKeys`: thêm state `autoFocusBulkKey: string | null` (tự mở = thêm key vào `expandedKeys` **và** đặt `autoFocusBulkKey`); `toggleSession` thủ công xoá `autoFocusBulkKey`.

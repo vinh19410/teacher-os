@@ -180,6 +180,13 @@ export function AttendanceRoute() {
 			const savedAt = Date.now();
 			await queryClient.invalidateQueries({ queryKey: ["kernel"] });
 
+			// CR-Bugs F3: D3 chỉ áp dụng luồng điểm danh lần đầu. Sửa một ca đã
+			// recorded (chip completed/all) không auto-advance, không thông báo
+			// hoàn tất, không giật focus khỏi nút Lưu — giữ hành vi TOS-7.
+			if (wasRecorded) {
+				return;
+			}
+
 			// TOS-8 D3 (red-team Critical + kongming điều kiện 2): tính ca kế
 			// tiếp TỪ DỮ LIỆU SAU REFETCH — danh sách trước refetch vẫn giữ
 			// recorded=false cho ca vừa lưu. Bỏ auto-advance nếu người dùng đổi
@@ -249,6 +256,15 @@ export function AttendanceRoute() {
 				setLiveMessage(`Còn ${actionable} ca chưa điểm danh trong ngày`);
 			}
 		} catch (err) {
+			// CR-Bugs F2: đối xứng với success path — đổi ngày/chip giữa lúc lưu
+			// thì bỏ mọi side-effect lỗi trên ngữ cảnh cũ (toast, banner, refetch
+			// query ngày cũ), chỉ nhường finally reset savingRef.
+			if (
+				latestSearchRef.current.date !== searchAtStart.date ||
+				latestSearchRef.current.status !== searchAtStart.status
+			) {
+				return;
+			}
 			if (err instanceof DailyAttendanceApiError) {
 				if (err.status === 400 && err.reason === "invalid-date") {
 					setErrorByKey((prev) => ({
@@ -410,6 +426,7 @@ export function AttendanceRoute() {
 								onBulkFocusSettled={() =>
 									setAutoFocusBulkKey((k) => (k === key ? null : k))
 								}
+								busy={savingKey !== null}
 							/>
 						);
 					})}

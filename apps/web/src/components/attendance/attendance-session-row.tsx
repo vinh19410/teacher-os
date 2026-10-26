@@ -30,6 +30,9 @@ export interface AttendanceSessionRowProps {
 	autoFocusBulk?: boolean;
 	/** Báo route xoá cờ auto-focus để re-render sau không giành lại focus. */
 	onBulkFocusSettled?: () => void;
+	/** Có MỘT ca bất kỳ đang lưu (red-team CR-Bugs F1): disable Lưu/điền
+	 * nhanh/modal của TẤT CẢ các ca để không nuốt save im lặng cross-row. */
+	busy?: boolean;
 }
 
 function formatTimeWindow(time: string, dur: number): string {
@@ -53,7 +56,11 @@ export function AttendanceSessionRow({
 	onSave,
 	autoFocusBulk = false,
 	onBulkFocusSettled,
+	busy = false,
 }: AttendanceSessionRowProps) {
+	// Saving của chính ca này hoặc một ca khác đang bay — mọi nút ghi đều khoá
+	// để tránh double-PUT và dead-click nuốt save im lặng (CR-Bugs F1/FAIL-3).
+	const lockSaving = saving || busy;
 	const [draft, dispatch] = useReducer(
 		attendanceDraftReducer,
 		session.students,
@@ -127,7 +134,7 @@ export function AttendanceSessionRow({
 	};
 
 	const handleSubmit = () => {
-		if (isFutureDate || saving || session.mode === "legacy") return;
+		if (isFutureDate || lockSaving || session.mode === "legacy") return;
 		const currentMissing = missingAttendanceLessonIds(draft);
 		if (currentMissing.length > 0) {
 			// TOS-8 D2: ca chưa recorded → hỏi xác nhận "Gán Có mặt và lưu".
@@ -292,7 +299,7 @@ export function AttendanceSessionRow({
 										type="button"
 										variant="outline"
 										size="sm"
-										disabled={saving || isFutureDate}
+										disabled={lockSaving || isFutureDate}
 										onClick={handleSubmit}
 									>
 										Thử lại
@@ -308,7 +315,7 @@ export function AttendanceSessionRow({
 								type="button"
 								variant="secondary"
 								disabled={
-									saving ||
+									lockSaving ||
 									isFutureDate ||
 									session.recorded ||
 									missingIds.length === 0
@@ -377,7 +384,7 @@ export function AttendanceSessionRow({
 													})
 												}
 												ariaLabel={`Trạng thái điểm danh của ${student.studentName}`}
-												disabled={saving || isFutureDate}
+												disabled={lockSaving || isFutureDate}
 												firstRadioRef={(el) => {
 													firstRadioByLessonRef.current[lessonId] = el;
 												}}
@@ -387,7 +394,7 @@ export function AttendanceSessionRow({
 												type="text"
 												maxLength={255}
 												value={draftEntry.note}
-												disabled={saving || isFutureDate}
+												disabled={lockSaving || isFutureDate}
 												aria-label={`Ghi chú học vụ của ${student.studentName}`}
 												placeholder="Ghi chú học vụ (≤ 255 ký tự)…"
 												onChange={(e) =>
@@ -407,7 +414,7 @@ export function AttendanceSessionRow({
 							<div className="flex flex-col gap-2 border-border border-t pt-3 lg:flex-row lg:items-center lg:justify-end">
 								<Button
 									type="button"
-									disabled={saving || isFutureDate}
+									disabled={lockSaving || isFutureDate}
 									onClick={handleSubmit}
 									className="min-h-11 w-full lg:min-h-9 lg:w-auto"
 								>
@@ -418,7 +425,7 @@ export function AttendanceSessionRow({
 							<FillMissingConfirm
 								open={confirmOpen}
 								count={missingIds.length}
-								saving={saving}
+								saving={lockSaving}
 								onConfirm={handleConfirmFillAndSave}
 								onCancel={handleCancelConfirm}
 							/>

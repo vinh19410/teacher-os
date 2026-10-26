@@ -734,4 +734,117 @@ describe("/attendance TOS-8 auto-advance", () => {
 		// Hết pending: danh sách chip pending unmount toàn bộ row, không tái mở gì.
 		expect(screen.queryByRole("radiogroup")).toBeNull();
 	});
+
+	it("lưu ca A đang bay: mọi ca khác khoá ghi, bấm Lưu ca B không phát PUT thêm (CR-Bugs F1)", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		const { promise: putPromise } = Promise.withResolvers<Response>();
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") return putPromise;
+				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		renderAttendance();
+		await screen.findByText("IELTS 6.5A");
+		// Mở cùng lúc 2 ca (multi-open của TOS-7).
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 6.5A/ }));
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 5.0B/ }));
+		for (const group of screen.getAllByRole("radiogroup")) {
+			fireEvent.click(within(group).getByRole("radio", { name: "Có mặt" }));
+		}
+
+		// Lưu ca A (18:00, đứng trước trong DOM) — PUT treo.
+		fireEvent.click(
+			screen.getAllByRole("button", { name: "Lưu điểm danh ca học" })[0]!,
+		);
+
+		// Ca B: vẫn nhãn Lưu (không phải ca đang lưu) nhưng disabled vì busy.
+		const remaining = screen.getAllByRole("button", {
+			name: "Lưu điểm danh ca học",
+		});
+		expect(remaining.length).toBe(1);
+		expect(remaining[0]?.hasAttribute("disabled")).toBe(true);
+		for (const bulk of screen.getAllByRole("button", {
+			name: "Đánh dấu tất cả Có mặt",
+		})) {
+			expect(bulk.hasAttribute("disabled")).toBe(true);
+		}
+		fireEvent.click(remaining[0]!);
+
+		const puts = fetchMock.mock.calls.filter(
+			(call) => call[1]?.method === "PUT",
+		);
+		expect(puts.length).toBe(1);
+	});
+
+	it("đổi ngày giữa lúc lưu rồi PUT trả 409 → không toast/banner trên ngữ cảnh mới (CR-Bugs F2)", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		const { promise: putPromise, resolve: resolvePut } =
+			Promise.withResolvers<Response>();
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") {
+					return putPromise;
+				}
+				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		renderAttendance();
+		await screen.findByText("IELTS 6.5A");
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 6.5A/ }));
+		const group = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		});
+		fireEvent.click(within(group).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+
+		// Đổi ngày trong khi PUT bay, rồi PUT trả 409 roster-changed.
+		routerState.search = { date: "2026-10-08", status: "all" };
+		fireEvent.change(screen.getByLabelText("Chọn ngày điểm danh"), {
+			target: { value: "2026-10-08" },
+		});
+		resolvePut(
+			new Response(
+				JSON.stringify({ error: "roster changed", reason: "roster-changed" }),
+				{ status: 409 },
+			),
+		);
+
+		// GET(07) + GET(08 sau đổi ngày) + PUT — KHÔNG refetch ngày cũ.
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+		expect(toast.error).not.toHaveBeenCalled();
+	});
+
+	it("sửa ca đã recorded ở chip completed: không auto-advance, không thông báo hoàn tất (CR-Bugs F3)", async () => {
+		routerState.search = { date: "2026-10-07", status: "completed" };
+		const { mock } = statefulFetch([SAMPLE_DAILY, SAMPLE_DAILY]);
+		vi.stubGlobal("fetch", mock);
+
+		renderAttendance();
+		await screen.findByText("IELTS 5.0B");
+		// Chip completed không tự mở ca nào — mở tay.
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 5.0B/ }));
+		const group = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Trần Hoàng Nam/,
+		});
+		fireEvent.click(within(group).getByRole("radio", { name: "Đi muộn" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith("Đã cập nhật điểm danh"),
+		);
+		// Không thông báo hoàn tất và không tự mở ca pending khác (cls-1).
+		expect(screen.getByTestId("attendance-live-status").textContent).toBe("");
+		expect(
+			screen.queryByRole("radiogroup", { name: /Nguyễn Minh Anh/ }),
+		).toBeNull();
+	});
 });
