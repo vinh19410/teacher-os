@@ -27,12 +27,17 @@ export async function enqueueNotifications(
 	if (events.length === 0) return { createdIds: [] };
 
 	const studentIds = [...new Set(events.map((e) => e.studentId))];
-	const students = await db
-		.select({ id: student.id, email: student.email })
-		.from(student)
-		.where(and(eq(student.orgId, orgId), inArray(student.id, studentIds)));
-	const emailByStudent = new Map(students.map((s) => [s.id, s.email] as const));
-
+	const emailByStudent = new Map<string, string>();
+	for (let i = 0; i < studentIds.length; i += INSERT_CHUNK) {
+		const chunk = studentIds.slice(i, i + INSERT_CHUNK);
+		const students = await db
+			.select({ id: student.id, email: student.email })
+			.from(student)
+			.where(and(eq(student.orgId, orgId), inArray(student.id, chunk)));
+		for (const s of students) {
+			emailByStudent.set(s.id, s.email);
+		}
+	}
 	const [org] = await db
 		.select({ name: organization.name })
 		.from(organization)

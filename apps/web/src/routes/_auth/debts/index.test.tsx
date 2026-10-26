@@ -24,8 +24,21 @@ vi.mock("@tanstack/react-router", async () => {
 	const mod = await import("@/test/router-mock");
 	return mod.routerMock();
 });
-const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+const toast = vi.hoisted(() => ({
+	success: vi.fn(),
+	info: vi.fn(),
+	error: vi.fn(),
+}));
 vi.mock("sonner", () => ({ toast }));
+
+const sendDebtRemindersMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/repos/payments", async () => {
+	const mod = await import("@/lib/repos/payments");
+	return {
+		...mod,
+		sendDebtReminders: sendDebtRemindersMock,
+	};
+});
 
 import { DebtsRoute } from "./index";
 
@@ -355,5 +368,134 @@ describe("DebtsRoute (/debts — TOS-15 #449)", () => {
 		);
 		expect(screen.queryByTestId("debt-ledger-table")).toBeNull();
 		expect(screen.queryByTestId("debts-empty")).toBeNull();
+	});
+
+	it("bấm nút (eye) mở ngăn dòng thời gian mà không kích hoạt điều hướng dòng sang /students/$studentId (TOS-18 #452)", async () => {
+		startDebtsServer();
+		renderWithKernel(<Debts />);
+		await screen.findByText("Tổng phải thu kỳ này");
+
+		const eyeBtn = screen.getByRole("button", {
+			name: "Xem dòng thời gian lịch sử hóa đơn & giao dịch của Nguyễn Minh Anh",
+		});
+		eyeBtn.focus();
+		fireEvent.click(eyeBtn);
+
+		expect(routerState.navigate).not.toHaveBeenCalled();
+		expect(
+			await screen.findByRole("heading", {
+				name: /Lịch sử hóa đơn & giao dịch — Nguyễn Minh Anh/,
+			}),
+		).toBeTruthy();
+
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(
+			screen.queryByRole("heading", {
+				name: /Lịch sử hóa đơn & giao dịch — Nguyễn Minh Anh/,
+			}),
+		).toBeNull();
+		expect(document.activeElement).toBe(eyeBtn);
+	});
+
+	it("dòng đã thu đủ có checkbox disabled; tích chọn 2 học viên đang nợ bật nút 'Gửi nhắc học phí (2)' và xác nhận gửi nhắc phí kèm link sang /notifications (TOS-18 #452)", async () => {
+		sendDebtRemindersMock.mockResolvedValueOnce({ queued: 2, skipped: 0 });
+		startDebtsServer();
+		renderWithKernel(<Debts />);
+		await screen.findByText("Tổng phải thu kỳ này");
+
+		const remindBtn = screen.getByTestId(
+			"send-debt-reminders",
+		) as HTMLButtonElement;
+		expect(remindBtn.disabled).toBe(true);
+		expect(remindBtn.textContent).toContain("Gửi nhắc học phí (0)");
+
+		const clearCheckbox = screen.getByRole("checkbox", {
+			name: "Chọn học viên Lê Thu Hà",
+		}) as HTMLInputElement;
+		expect(clearCheckbox.disabled).toBe(true);
+
+		const cb1 = screen.getByRole("checkbox", {
+			name: "Chọn học viên Nguyễn Minh Anh",
+		}) as HTMLInputElement;
+		const cb2 = screen.getByRole("checkbox", {
+			name: "Chọn học viên Trần Hoàng Nam",
+		}) as HTMLInputElement;
+		expect(cb1.disabled).toBe(false);
+		expect(cb2.disabled).toBe(false);
+
+		fireEvent.click(cb1);
+		fireEvent.click(cb2);
+		expect(routerState.navigate).not.toHaveBeenCalled();
+
+		expect(remindBtn.disabled).toBe(false);
+		expect(remindBtn.textContent).toContain("Gửi nhắc học phí (2)");
+
+		fireEvent.click(remindBtn);
+		const dialog = await screen.findByRole("dialog");
+		expect(dialog.textContent).toContain(
+			"Gửi nhắc học phí cho 2 học viên (2 hóa đơn còn nợ)?",
+		);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Xác nhận gửi" }),
+		);
+
+		await vi.waitFor(() => {
+			expect(sendDebtRemindersMock).toHaveBeenCalledWith({
+				studentIds: ["st-1", "st-2"],
+				classId: undefined,
+			});
+			expect(toast.success).toHaveBeenCalledWith(
+				expect.stringContaining("Đã gửi nhắc học phí cho 2 hóa đơn"),
+				expect.objectContaining({
+					action: expect.objectContaining({
+						label: "Xem nhật ký thông báo",
+					}),
+				}),
+			);
+		});
+
+		// Bấm nút action trong toast sẽ điều hướng sang /notifications
+		const toastOpts = toast.success.mock.calls[0]?.[1] as {
+			action?: { onClick?: () => void };
+		};
+		toastOpts?.action?.onClick?.();
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/notifications",
+		});
+	});
+
+	it("khi gọi lại trong cùng ngày (queued=0, skipped>0) hiển thị thông báo đã nhắc hôm nay", async () => {
+		sendDebtRemindersMock.mockResolvedValueOnce({ queued: 0, skipped: 2 });
+		startDebtsServer();
+		renderWithKernel(<Debts />);
+		await screen.findByText("Tổng phải thu kỳ này");
+
+		fireEvent.click(
+			screen.getByRole("checkbox", {
+				name: "Chọn tất cả học viên đang nợ hiển thị",
+			}),
+		);
+
+		const remindBtn = screen.getByTestId("send-debt-reminders");
+		// Có 3 học viên đang nợ trong 4 dòng (st-1, st-2, st-4; st-3 đã thu đủ)
+		expect(remindBtn.textContent).toContain("Gửi nhắc học phí (3)");
+
+		fireEvent.click(remindBtn);
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Xác nhận gửi" }),
+		);
+
+		await vi.waitFor(() => {
+			expect(toast.info).toHaveBeenCalledWith(
+				expect.stringContaining("đã được gửi nhắc học phí trong hôm nay"),
+				expect.objectContaining({
+					action: expect.objectContaining({
+						label: "Xem nhật ký thông báo",
+					}),
+				}),
+			);
+		});
 	});
 });
