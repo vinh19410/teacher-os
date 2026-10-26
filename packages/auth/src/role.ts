@@ -59,3 +59,29 @@ export function resolveRequestApp(input: {
 	}
 	return "student";
 }
+
+/**
+ * TOS-17 (#451) / FR-selfomy-alignment-029: vocabulary vai trò thành viên tổ
+ * chức (`membership.role`).
+ * - `"teacher"`: giáo viên độc lập hiện có (chủ org khi tự đăng ký) — giữ quyền
+ *   tài chính.
+ * - `"owner"`, `"admin"`: chủ trung tâm / quản trị viên — có quyền tài chính.
+ * - `"class_teacher"`: Giáo viên đứng lớp (TOS-48) — KHÔNG có quyền tài chính.
+ * - `"ta"`: Trợ giảng (TOS-48) — KHÔNG có quyền tài chính.
+ *
+ * Allowlist nghiêm ngặt (least privilege): mọi giá trị khác (rỗng, null, lạ)
+ * đều bị chặn truy cập Sổ công nợ / Doanh thu / API tài chính.
+ */
+export const FINANCE_ROLES = ["teacher", "owner", "admin"] as const;
+export type FinanceRole = (typeof FINANCE_ROLES)[number];
+export type OrgMemberRole = FinanceRole | "class_teacher" | "ta";
+
+const FINANCE_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+	admin: true,
+};
+
+export function canAccessFinance(role: string | null | undefined): boolean {
+	return typeof role === "string" && FINANCE_ROLE_MAP[role] === true;
+}

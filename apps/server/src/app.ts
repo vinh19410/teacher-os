@@ -46,6 +46,9 @@ export {
 export interface KernelCtx {
 	orgId: string;
 	userId: string;
+	/** TOS-17 (#451): `membership.role` của thành viên trong org. Optional cho
+	 * các test harness cục bộ tự set kernelCtx không qua bootstrapMiddleware. */
+	role?: string;
 }
 
 export type ServerApp = Hono<{ Variables: { kernelCtx: KernelCtx } }>;
@@ -190,7 +193,11 @@ function bootstrapMiddleware(deps: AppDeps) {
 		if (!first) {
 			return c.json({ error: "no membership after bootstrap" }, 403);
 		}
-		c.set("kernelCtx", { orgId: first.orgId, userId: session.userId });
+		c.set("kernelCtx", {
+			orgId: first.orgId,
+			userId: session.userId,
+			role: first.role,
+		});
 		return next();
 	};
 }

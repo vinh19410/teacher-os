@@ -1,5 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { resolveRequestApp, resolveUserRole } from "./role";
+import {
+	canAccessFinance,
+	FINANCE_ROLES,
+	resolveRequestApp,
+	resolveUserRole,
+} from "./role";
 
 const STUDENT = ["http://localhost:8003", "https://portal.example.com"];
 const TEACHER = ["http://localhost:8001", "https://app.example.com"];
@@ -193,5 +198,24 @@ describe("resolveRequestApp — admin origin (plan #413 phase 1)", () => {
 				teacherOrigins: TEACHER,
 			}),
 		).toBe("student");
+	});
+});
+
+describe("canAccessFinance (TOS-17 #451)", () => {
+	test("allows teacher (legacy org owner), owner, and admin", () => {
+		expect(FINANCE_ROLES).toEqual(["teacher", "owner", "admin"]);
+		expect(canAccessFinance("teacher")).toBe(true);
+		expect(canAccessFinance("owner")).toBe(true);
+		expect(canAccessFinance("admin")).toBe(true);
+	});
+
+	test("denies ta, class_teacher, empty, null/undefined, and unknown roles", () => {
+		expect(canAccessFinance("ta")).toBe(false);
+		expect(canAccessFinance("class_teacher")).toBe(false);
+		expect(canAccessFinance("")).toBe(false);
+		expect(canAccessFinance("student")).toBe(false);
+		expect(canAccessFinance("xyz")).toBe(false);
+		expect(canAccessFinance(null)).toBe(false);
+		expect(canAccessFinance(undefined)).toBe(false);
 	});
 });

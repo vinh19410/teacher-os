@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { TEACHER_NAV } from "@/components/layout/sidebar";
+import { teacherNavForViewer } from "@/components/layout/sidebar";
 import {
 	INVOICE_STATUS_LABEL,
 	invoiceCode,
@@ -176,8 +176,8 @@ function invoiceItems(data: MockData): SearchItem[] {
 	});
 }
 
-function navItems(): SearchItem[] {
-	return TEACHER_NAV.flatMap((group) =>
+function navItems(canAccessFinance: boolean): SearchItem[] {
+	return teacherNavForViewer(canAccessFinance).flatMap((group) =>
 		group.items
 			.filter((item) => item.enabled !== false)
 			.map((item) => ({
@@ -206,7 +206,7 @@ export function buildSearchIndex(data: MockData | null): SearchIndex {
 		...studentItems(data),
 		...assignmentItems(data),
 		...invoiceItems(data),
-		...navItems(),
+		...navItems(data.viewer?.canAccessFinance ?? true),
 	];
 	const groups = (Object.keys(KIND_ORDER) as SearchResultKind[])
 		.sort((a, b) => KIND_ORDER[a] - KIND_ORDER[b])

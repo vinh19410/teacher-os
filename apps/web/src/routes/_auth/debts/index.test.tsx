@@ -24,6 +24,8 @@ vi.mock("@tanstack/react-router", async () => {
 	const mod = await import("@/test/router-mock");
 	return mod.routerMock();
 });
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 
 import { DebtsRoute } from "./index";
 
@@ -331,5 +333,27 @@ describe("DebtsRoute (/debts — TOS-15 #449)", () => {
 		renderWithKernel(<Debts />);
 		expect(await screen.findByTestId("debts-filtered-empty")).toBeTruthy();
 		expect(screen.getByText("Không có học viên khớp bộ lọc")).toBeTruthy();
+	});
+
+	it("chặn thành viên có viewer.canAccessFinance = false: điều hướng về /dashboard kèm toast và không render bảng công nợ (TOS-17 #451)", async () => {
+		toast.error.mockClear();
+		startKernelServer(
+			snapshotFixture({
+				viewer: { role: "ta", canAccessFinance: false },
+			}),
+		);
+		renderWithKernel(<Debts />);
+		await vi.waitFor(() => {
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/dashboard",
+				replace: true,
+			});
+		});
+		expect(toast.error).toHaveBeenCalledWith(
+			"Bạn không có quyền xem Sổ công nợ",
+			expect.objectContaining({ id: "finance-forbidden" }),
+		);
+		expect(screen.queryByTestId("debt-ledger-table")).toBeNull();
+		expect(screen.queryByTestId("debts-empty")).toBeNull();
 	});
 });

@@ -27,6 +27,7 @@ import {
 	type RevenuePeriod,
 } from "@/lib/tuition-from-kernel";
 import { useDirectKernelAction } from "@/lib/use-direct-kernel-action";
+import { useFinanceRouteGuard } from "@/lib/use-finance-route-guard";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 // #345 — kỳ doanh thu được giữ qua URL kể cả trên trang chi tiết để nút
@@ -90,6 +91,12 @@ function MetaRow({
 }
 
 export function InvoiceDetailRoute() {
+	const canAccessFinance = useFinanceRouteGuard();
+	if (!canAccessFinance) return null;
+	return <InvoiceDetailContent />;
+}
+
+function InvoiceDetailContent() {
 	const { invoiceId } = Route.useParams();
 	const { ky } = Route.useSearch();
 	const { data } = useData();

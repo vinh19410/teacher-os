@@ -107,6 +107,23 @@ export const TEACHER_NAV: NavGroup[] = [
 	},
 ];
 
+const FINANCE_NAV_KEY_MAP: Record<string, true> = {
+	tuition: true,
+	debts: true,
+};
+
+/**
+ * TOS-17 (#451): ẩn mục "Doanh thu" và "Công nợ" trên Sidebar và ⌘K khi thành
+ * viên hiện tại không có quyền tài chính (`ta`, `class_teacher`).
+ */
+export function teacherNavForViewer(canAccessFinance: boolean): NavGroup[] {
+	if (canAccessFinance) return TEACHER_NAV;
+	return TEACHER_NAV.map((group) => ({
+		...group,
+		items: group.items.filter((item) => !FINANCE_NAV_KEY_MAP[item.key]),
+	}));
+}
+
 /**
  * Adapter TanStack `<Link>` cho shell — nav vẫn điều hướng bằng router thật
  * (không window.location) và TanStack tự đặt `aria-current="page"`; `/` cần

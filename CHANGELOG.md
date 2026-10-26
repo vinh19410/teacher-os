@@ -14,6 +14,7 @@ Quy ước khi cập nhật:
 ## 2026-10-27
 
 ### Added
+- Sổ công nợ (`/debts`) & phân quyền tài chính (TOS-17): hộp thoại **Ghi nhận thu tiền học phí** kiểm tra inline số tiền thu (`> 0` và `<= remaining`), hiện lỗi `"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ"` (`aria-invalid` + `aria-describedby`) và khóa nút `"Lưu phiếu thu học phí"` khi không hợp lệ; allowlist vai trò tài chính `FINANCE_ROLES = ["teacher", "owner", "admin"]` (`canAccessFinance`) cùng middleware `requireFinanceRole` trả `403 finance-forbidden` trên toàn bộ `/api/invoices*`, `/api/payment-transactions*`, `/api/bank-link*` cho vai trò `ta` / `class_teacher`, ẩn `invoices` trong snapshot `/api/kernel` kèm `viewer: { role, canAccessFinance }` và ẩn `tuition` trong `/api/dashboard/reminders`; web ẩn mục "Doanh thu" / "Công nợ" trên Sidebar và ⌘K, tự điều hướng `/debts` và `/tuition*` về `/dashboard` kèm thông báo (#451)
 - Sổ công nợ (`/debts`): nút `Thu` mở hộp thoại **Ghi nhận thu tiền học phí** — thu một phần/toàn bộ với phương thức (Chuyển khoản/Tiền mặt/Khác) + ghi chú; phiếu thu lưu 1 dòng ledger `payment_transaction` (`provider = "manual"`, migration `0049` thêm `method`/`recorded_by`) rồi `recomputeInvoiceStatement` tính lại Đã đóng/Còn nợ và 3 thẻ KPI ngay; server chặn vượt nợ (422 `amount-exceeds-debt`), chốt hóa đơn đã `paid` (422 `invoice-settled`) và idempotent theo `clientRequestId` (retry không ghi đôi); học viên nhiều khoản còn nợ chọn khoản thu (mặc định hạn sớm nhất); trang chi tiết hóa đơn hiển thị cột Phương thức (#450)
 
 ## 2026-10-23

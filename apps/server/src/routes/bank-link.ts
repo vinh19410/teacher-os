@@ -25,6 +25,7 @@ import {
 	clientTransactionToIngest,
 	ingestTransaction,
 } from "../lib/payments/ingest-transaction";
+import { requireFinanceRole } from "../lib/require-finance-role";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type BankLinkContext = Context<Env>;
@@ -62,6 +63,7 @@ export function bankLinkRoutes(deps: {
 	getBankHub?(): BankHubContext | undefined;
 }) {
 	const router = new Hono<Env>();
+	router.use("*", requireFinanceRole);
 
 	function unauthorized(c: BankLinkContext) {
 		return c.json({ error: "unauthorized" }, 401);
