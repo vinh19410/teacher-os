@@ -21,5 +21,6 @@ export const RICH_TEXT_CONTENT_CLASSES = [
 	"[&_pre]:rounded-[var(--radius)] [&_pre]:bg-muted [&_pre]:break-words [&_pre]:p-3 [&_pre]:text-sm [&_pre]:whitespace-pre-wrap [&_pre]:font-mono",
 	"[&_h2]:text-[1.25em] [&_h2]:font-semibold",
 	"[&_h3]:text-[1.1em] [&_h3]:font-semibold",
+	"[&_h4]:font-semibold",
 	"[&_hr]:my-2 [&_hr]:border-border",
 ].join(" ");

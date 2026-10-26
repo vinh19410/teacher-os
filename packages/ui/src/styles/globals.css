@@ -275,18 +275,23 @@
 }
 
 /* RichTextEditor (Tiptap): editable area + placeholder on first paragraph.
-   Shared by every app rendering the editor (web, admin) — keep one copy. */
-.ProseMirror {
-	min-height: 5rem;
-	outline: none;
-	padding: 10px 12px;
-	font-size: 0.875rem;
-	line-height: 1.5;
-}
-.ProseMirror p.is-editor-empty:first-child::before {
-	color: var(--muted-foreground);
-	content: attr(data-placeholder);
-	float: left;
-	height: 0;
-	pointer-events: none;
+   Shared by every app rendering the editor (web, admin) — keep one copy.
+   Layered under `components` so per-callsite utilities passed through the
+   editor's `contentClassName` (e.g. `[&_.ProseMirror]:min-h-22`) win the
+   cascade — unlayered, this block beat every utility (#438). */
+@layer components {
+	.ProseMirror {
+		min-height: 5rem;
+		outline: none;
+		padding: 10px 12px;
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+	.ProseMirror p.is-editor-empty:first-child::before {
+		color: var(--muted-foreground);
+		content: attr(data-placeholder);
+		float: left;
+		height: 0;
+		pointer-events: none;
+	}
 }
