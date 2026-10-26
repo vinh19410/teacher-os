@@ -38,7 +38,14 @@ import { useEffect, useId, useRef, useState } from "react";
  * `javascript:` never enter the document from the editor in the first place.
  */
 function isAllowedHref(href: string): boolean {
-	if (href.startsWith("#") || href.startsWith("/")) return true;
+	if (href.startsWith("#")) return true;
+	if (
+		href.startsWith("/") &&
+		!href.startsWith("//") &&
+		!href.startsWith("/\\")
+	) {
+		return true;
+	}
 	try {
 		const protocol = new URL(href).protocol;
 		return (
@@ -369,7 +376,7 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 													}}
 													aria-invalid={linkError ? true : undefined}
 													aria-describedby={linkError ? linkErrorId : undefined}
-													className="h-8 w-full rounded-sm border border-border border-solid bg-background px-2 text-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+													className="h-8 w-full rounded-sm border border-input border-solid bg-background px-2 text-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 												/>
 												{linkError && (
 													<p
@@ -410,6 +417,12 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 							title={label}
 							disabled={disabled}
 							focusableWhenDisabled={false}
+							// Keep the editor focused across mouse clicks: TipTap's
+							// focus command defers view.focus() to a rAF, so keys
+							// typed right after a click would land on the toolbar
+							// (Space/Enter would even re-trigger the button). Same
+							// pattern as library/tests/$testId.tsx.
+							onMouseDown={(event) => event.preventDefault()}
 							onClick={() => run(editor)}
 							className={toolbarButtonClass(pressed)}
 						>

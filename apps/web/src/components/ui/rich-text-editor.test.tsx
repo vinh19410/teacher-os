@@ -248,7 +248,7 @@ const TOOLBAR_LABELS = [
 
 describe("toolbar a11y (issue #438)", () => {
 	it("renders 16 buttons with a single roving tab stop and explicit focus ring", async () => {
-		const { container, getByRole, getAllByRole } = render(
+		const { container, getByRole } = render(
 			<RichTextEditor
 				value="<p>x</p>"
 				onChange={() => {}}
@@ -310,36 +310,38 @@ describe("toolbar a11y (issue #438)", () => {
 				placeholder="test"
 			/>,
 		);
-		const toolbar = await getByRole("toolbar", { name: "Định dạng văn bản" });
-		const byLabel = (name: string) =>
-			getAllByRole("button").find((b) => b.getAttribute("aria-label") === name);
-		if (!byLabel) throw new Error("toolbar buttons missing");
+		await getByRole("toolbar", { name: "Định dạng văn bản" });
+		const byLabel = (name: string): HTMLElement => {
+			const btn = getAllByRole("button").find(
+				(b) => b.getAttribute("aria-label") === name,
+			);
+			if (!btn) throw new Error(`missing toolbar button: ${name}`);
+			return btn;
+		};
 
-		const first = byLabel("In đậm")!;
+		const first = byLabel("In đậm");
 		first.focus();
 		expect(document.activeElement).toBe(first);
 
 		fireEvent.keyDown(first, { key: "ArrowRight" });
-		await waitFor(() =>
-			expect(document.activeElement).toBe(byLabel("In nghiêng")),
-		);
-		fireEvent.keyDown(document.activeElement!, { key: "ArrowLeft" });
+		const second = byLabel("In nghiêng");
+		await waitFor(() => expect(document.activeElement).toBe(second));
+		fireEvent.keyDown(second, { key: "ArrowLeft" });
 		await waitFor(() => expect(document.activeElement).toBe(first));
 		fireEvent.keyDown(first, { key: "End" });
-		await waitFor(() =>
-			expect(document.activeElement).toBe(byLabel("Đường kẻ ngang")),
-		);
+		const lastEnabled = byLabel("Đường kẻ ngang");
+		await waitFor(() => expect(document.activeElement).toBe(lastEnabled));
 
 		// From the last enabled button, ArrowRight skips the disabled Undo +
 		// Redo and wraps to the first button.
-		fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
+		fireEvent.keyDown(lastEnabled, { key: "ArrowRight" });
 		await waitFor(() => expect(document.activeElement).toBe(first));
 
 		// After a real document change Undo/Redo enable — the toolbar must
 		// still expose exactly one tab stop (roving index follows state).
-		fireEvent.click(byLabel("Đường kẻ ngang")!);
+		fireEvent.click(lastEnabled);
 		await waitFor(() =>
-			expect(byLabel("Hoàn tác")!.getAttribute("disabled")).toBeNull(),
+			expect(byLabel("Hoàn tác").getAttribute("disabled")).toBeNull(),
 		);
 		const tabbable = getAllByRole("button").filter((b) => b.tabIndex >= 0);
 		expect(tabbable).toHaveLength(1);
@@ -497,6 +499,8 @@ describe("link popover (issue #438)", () => {
 		expect(onChange).not.toHaveBeenCalled();
 
 		applyHref(input, "data:text/html,<b>x</b>");
+		await waitFor(() => expect(onChange).not.toHaveBeenCalled());
+		applyHref(input, "//evil.com/path");
 		await waitFor(() => expect(onChange).not.toHaveBeenCalled());
 	});
 
