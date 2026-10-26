@@ -13,7 +13,7 @@ import { vi } from "vitest";
 import { DataProvider } from "@/lib/data-provider";
 import { createKernelQueryClient } from "@/lib/query-client";
 
-type Row<K extends keyof KernelSnapshot> = NonNullable<
+type Row<K extends Exclude<keyof KernelSnapshot, "viewer">> = NonNullable<
 	KernelSnapshot[K]
 >[number];
 

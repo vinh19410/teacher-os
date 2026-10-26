@@ -1614,6 +1614,16 @@ export interface KernelCommentBankRow {
 	text: string;
 }
 
+/**
+ * TOS-17 (#451): ngữ cảnh phân quyền tài chính của thành viên hiện tại trong
+ * tổ chức (`membership.role`). Gửi kèm snapshot để web ẩn mục điều hướng
+ * Doanh thu / Công nợ và điều hướng về `/dashboard` khi truy cập trực tiếp.
+ */
+export interface KernelViewer {
+	role: string;
+	canAccessFinance: boolean;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
@@ -1639,6 +1649,9 @@ export interface KernelSnapshot {
 	holidayShifts?: KernelHolidayShiftRow[];
 	/** TOS-13: các buổi bị kỳ nghỉ mode "cancel" hủy (nhãn "Đã hủy — «kỳ nghỉ»"). */
 	holidayCancels?: KernelHolidayCancelRow[];
+	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
+	 * tương thích ngược với snapshot fixture cũ trong test. */
+	viewer?: KernelViewer;
 }
 
 export interface CreatedResponse {

@@ -75,6 +75,7 @@ import {
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
 import { recordManualPayment } from "../lib/payments/record-manual-payment";
+import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
 	findSyllabus,
@@ -151,6 +152,10 @@ export function kernelRoutes(deps: {
 		}
 		return next();
 	});
+
+	// TOS-17 (#451): mọi route /api/invoices và /api/invoices/* đòi quyền tài chính.
+	kernel.use("/invoices", requireFinanceRole);
+	kernel.use("/invoices/*", requireFinanceRole);
 
 	function unauthorized(c: KernelContext) {
 		return c.json({ error: "unauthorized" }, 401);
@@ -280,7 +285,9 @@ export function kernelRoutes(deps: {
 	kernel.get("/kernel", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		return c.json(await loadSnapshot(deps.getDb(), ctx.orgId));
+		return c.json(
+			await loadSnapshot(deps.getDb(), ctx.orgId, { role: ctx.role }),
+		);
 	});
 
 	kernel.get("/students", async (c) => {

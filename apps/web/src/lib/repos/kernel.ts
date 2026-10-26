@@ -358,6 +358,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		holidayShifts: snapshot.holidayShifts ?? [],
 		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
+		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
 
@@ -546,6 +547,7 @@ type MissingSnapshotKey = Exclude<
 	keyof KernelSnapshot,
 	| (typeof SNAPSHOT_COLLECTION_KEYS)[number]
 	| (typeof OPTIONAL_SNAPSHOT_COLLECTION_KEYS)[number]
+	| "viewer"
 >;
 const allSnapshotKeysPresent: MissingSnapshotKey extends never ? true : never =
 	true;
@@ -565,7 +567,14 @@ function isSnapshotShape(value: unknown): value is KernelSnapshot {
 		SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key])) &&
 		OPTIONAL_SNAPSHOT_COLLECTION_KEYS.every(
 			(key) => record[key] === undefined || Array.isArray(record[key]),
-		)
+		) &&
+		(record.viewer === undefined ||
+			(typeof record.viewer === "object" &&
+				record.viewer !== null &&
+				!Array.isArray(record.viewer) &&
+				typeof (record.viewer as Record<string, unknown>).role === "string" &&
+				typeof (record.viewer as Record<string, unknown>).canAccessFinance ===
+					"boolean"))
 	);
 }
 

@@ -11,14 +11,14 @@ import { GraduationCap, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
-import { DataProvider } from "@/lib/data-store";
+import { DataProvider, useData } from "@/lib/data-store";
 import { initialsFromName } from "@/lib/initials";
 import { readCollapsedPref, writeCollapsedPref } from "@/lib/sidebar-prefs";
 import {
 	extractUserPlan,
-	TEACHER_NAV,
 	TeacherShellLink,
 	teacherActiveKey,
+	teacherNavForViewer,
 } from "./sidebar";
 import { TopbarActions } from "./topbar";
 import { VersionBadge } from "./version-badge";
@@ -127,34 +127,63 @@ export function AppShell() {
 
 	return (
 		<DataProvider>
-			<Shell
-				nav={TEACHER_NAV}
+			<AppShellFrame
 				activeKey={teacherActiveKey(pathname)}
 				crumbs={[ORG_NAME, ...(ROUTE_CRUMBS[lastRouteId ?? ""] ?? [])]}
-				team={{ name: ORG_NAME, sub: "Bảng điều khiển giáo viên" }}
 				user={shellUser}
-				actions={<TopbarActions />}
-				linkComponent={TeacherShellLink}
-				navLabel="Điều hướng chính"
-				logo={
-					<span
-						aria-hidden="true"
-						className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-					>
-						<GraduationCap className="size-4" />
-					</span>
-				}
-				footerSlot={
-					<div className="px-2 pt-1">
-						<VersionBadge />
-					</div>
-				}
 				collapsed={collapsed}
 				onToggleCollapse={() => setCollapsed((v) => !v)}
-				dismissOnKeyChange={pathname}
-			>
-				<Outlet />
-			</Shell>
+				pathname={pathname}
+			/>
 		</DataProvider>
+	);
+}
+
+function AppShellFrame({
+	activeKey,
+	crumbs,
+	user,
+	collapsed,
+	onToggleCollapse,
+	pathname,
+}: {
+	activeKey: string;
+	crumbs: string[];
+	user: ShellUser;
+	collapsed: boolean;
+	onToggleCollapse: () => void;
+	pathname: string;
+}) {
+	const { data } = useData();
+	const canAccessFinance = data.viewer?.canAccessFinance ?? true;
+	return (
+		<Shell
+			nav={teacherNavForViewer(canAccessFinance)}
+			activeKey={activeKey}
+			crumbs={crumbs}
+			team={{ name: ORG_NAME, sub: "Bảng điều khiển giáo viên" }}
+			user={user}
+			actions={<TopbarActions />}
+			linkComponent={TeacherShellLink}
+			navLabel="Điều hướng chính"
+			logo={
+				<span
+					aria-hidden="true"
+					className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+				>
+					<GraduationCap className="size-4" />
+				</span>
+			}
+			footerSlot={
+				<div className="px-2 pt-1">
+					<VersionBadge />
+				</div>
+			}
+			collapsed={collapsed}
+			onToggleCollapse={onToggleCollapse}
+			dismissOnKeyChange={pathname}
+		>
+			<Outlet />
+		</Shell>
 	);
 }

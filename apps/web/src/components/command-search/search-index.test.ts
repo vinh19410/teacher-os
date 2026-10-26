@@ -95,7 +95,10 @@ function invoiceFixture(id: string, sid: string): Invoice {
 
 function dataFixture(
 	overrides: Partial<
-		Pick<MockData, "students" | "classes" | "assignments" | "invoices">
+		Pick<
+			MockData,
+			"students" | "classes" | "assignments" | "invoices" | "viewer"
+		>
 	> = {},
 ): MockData {
 	return {
@@ -179,6 +182,20 @@ describe("buildSearchIndex", () => {
 			"invoice",
 			"nav",
 		]);
+	});
+
+	it("ẩn mục điều hướng Doanh thu và Công nợ trong ⌘K khi viewer.canAccessFinance = false (TOS-17 #451)", () => {
+		const index = buildSearchIndex(
+			dataFixture({
+				viewer: { role: "ta", canAccessFinance: false },
+			}),
+		);
+		const nav = index.groups.find((group) => group.kind === "nav");
+		const labels = nav?.items.map((item) => item.label) ?? [];
+		expect(labels).not.toContain("Doanh thu");
+		expect(labels).not.toContain("Công nợ");
+		expect(labels).toContain("Tổng quan");
+		expect(labels).toContain("Hồ sơ");
 	});
 });
 
