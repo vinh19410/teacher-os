@@ -14,6 +14,8 @@ describe("emptyKernelData", () => {
 			"commentBank",
 			"enrollments",
 			"events",
+			"holidayShifts",
+			"holidays",
 			"invoices",
 			"lessons",
 			"notifs",

@@ -185,21 +185,29 @@ export function HolidayModal({
 			if (code === "stale-preview") {
 				toast.error("Lịch vừa thay đổi, kiểm tra lại bảng xem trước.");
 				if (draft) {
+					const seq = previewSeq.current + 1;
+					previewSeq.current = seq;
 					setPreviewLoading(true);
 					previewHoliday(draft)
 						.then((result) => {
-							setPreview(result);
-							setPreviewError(null);
+							if (previewSeq.current === seq) {
+								setPreview(result);
+								setPreviewError(null);
+							}
 						})
 						.catch((reloadCause: unknown) => {
-							setPreview(null);
-							setPreviewError(
-								reloadCause instanceof Error
-									? reloadCause.message
-									: "Không tải được bảng xem trước",
-							);
+							if (previewSeq.current === seq) {
+								setPreview(null);
+								setPreviewError(
+									reloadCause instanceof Error
+										? reloadCause.message
+										: "Không tải được bảng xem trước",
+								);
+							}
 						})
-						.finally(() => setPreviewLoading(false));
+						.finally(() => {
+							if (previewSeq.current === seq) setPreviewLoading(false);
+						});
 				}
 			} else if (code === "past-range") {
 				toast.error("Khoảng ngày đã qua — chỉ dời buổi chưa diễn ra.");
