@@ -113,11 +113,11 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 
 	await page.getByRole("button", { name: "Lưu điểm danh ca học" }).click();
 	// TOS-8 D2: lưu khi thiếu (ca chưa recorded) → modal xác nhận thay vì chặn im lặng.
+	// Modal visible chính là bằng chứng đồng bộ handleSubmit return sớm — không PUT.
 	const confirmDialog = page.getByRole("dialog", {
 		name: "Còn 1 học viên chưa chọn trạng thái",
 	});
 	await expect(confirmDialog).toBeVisible();
-	await page.waitForTimeout(400);
 	expect(putFired).toBe(false);
 
 	// "Quay lại chỉnh" → về hành vi TOS-7: thông báo thiếu + không PUT.
@@ -127,7 +127,6 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 			hasText: "Còn 1 học viên chưa chọn trạng thái",
 		}),
 	).toBeVisible();
-	await page.waitForTimeout(400);
 	expect(putFired).toBe(false);
 	page.off("request", onRequest);
 
@@ -414,15 +413,15 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 		});
 		await expect(confirmDialog).toBeVisible();
 
-		// "Quay lại chỉnh": không PUT, dòng thiếu có viền cảnh báo.
+		// "Quay lại chỉnh": không PUT (dialog visible = handleSubmit return
+		// sớm đồng bộ), dòng thiếu có viền cảnh báo.
 		await confirmDialog.getByRole("button", { name: "Quay lại chỉnh" }).click();
-		await page.waitForTimeout(500);
-		expect(putCount).toBe(0);
 		await expect(
 			page
 				.getByRole("alert")
 				.filter({ hasText: "Còn 2 học viên chưa chọn trạng thái" }),
 		).toBeVisible();
+		expect(putCount).toBe(0);
 
 		// Bấm lưu lần nữa → "Gán Có mặt và lưu": PUT đủ sĩ số, 2 người còn lại present.
 		await page.getByRole("button", { name: "Lưu điểm danh ca học" }).click();
@@ -519,7 +518,10 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 		);
 		const t1 = Date.now();
 		// Proxy NFR-008 (assert tổng 1 lần; không assert wall-clock từng bước).
-		expect(t1 - t0).toBeLessThanOrEqual(120_000);
+		// Ngưỡng cấu hình được qua env cho runner CI chậm (CR-Bugs M-3); mặc
+		// định vẫn 120s đúng AC.
+		const nfrBudgetMs = Number(process.env.NFR008_TOTAL_MS ?? "") || 120_000;
+		expect(t1 - t0).toBeLessThanOrEqual(nfrBudgetMs);
 
 		const afterRes = await page.request.get(
 			`${API_ORIGIN}/api/dashboard/reminders`,

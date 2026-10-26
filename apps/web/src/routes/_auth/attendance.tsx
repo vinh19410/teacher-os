@@ -4,7 +4,7 @@ import type {
 	DailyAttendanceResponse,
 	SessionAttendanceSave,
 } from "@teacher-os/api/contracts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AttendanceSessionRow } from "@/components/attendance/attendance-session-row";
 import { Button } from "@/components/ui/button";
@@ -105,7 +105,11 @@ export function AttendanceRoute() {
 	const savingRef = useRef(false);
 	const dateInputRef = useRef<HTMLInputElement>(null);
 
-	useEffect(() => {
+	// useLayoutEffect (không phải useEffect): sync ref trước cả passive effects
+	// — nếu PUT resolve trong microtask trùng lúc điều hướng, guard
+	// latestSearchRef trong handleSaveSession phải đọc được search mới ngay
+	// (CR-Bugs M-2).
+	useLayoutEffect(() => {
 		latestSearchRef.current = search;
 	}, [search]);
 
