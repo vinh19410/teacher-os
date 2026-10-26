@@ -29,6 +29,7 @@
 
 - Mỗi khi tạo GitHub issue mới trong repo này (ví dụ `gh issue create`), **luôn thêm label `ai-handle`** theo mặc định (`--label ai-handle`).
 - Chỉ bỏ label này khi người dùng yêu cầu rõ ràng cho issue đó.
+- Khi issue có phụ thuộc được đề cập (trong yêu cầu của người dùng, plan, hoặc nội dung issue — ví dụ "cần #X xong trước", "chặn #Y"), **luôn gắn quan hệ phụ thuộc tương ứng**: `--blocked-by <số|URL>` cho issue phải xong trước, `--blocking <số|URL>` cho issue đang chờ issue này (nhiều số phân cách bằng dấu phẩy, ví dụ `--blocked-by 200,201`). Issue đã tồn tại thì dùng `gh issue edit <N> --add-blocked-by …` / `--add-blocking …`. Không tự suy đoán phụ thuộc khi không được đề cập.
 - Lưu ý: label `ai-handle` chỉ là điều kiện để agent nhận việc; người duyệt vẫn phải kéo card sang **Ready** trên board "Teacher OS" thì agent mới bắt đầu làm.
 - Pipeline chạy từ repo chung `vinh19410/ai-handle@38656c3` (installed tại `~/.local/lib/teacher-os-ai-handle/`); upgrade = `bash install.sh --project teacher-os`.
 
