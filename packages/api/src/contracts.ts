@@ -3580,3 +3580,78 @@ export const studentInboxResponseSchema = z.object({
 	unread: z.number().int(),
 });
 export type StudentInboxResponse = z.infer<typeof studentInboxResponseSchema>;
+
+/**
+ * TOS-18 (#452) — Dòng thời gian hóa đơn & giao dịch thanh toán theo học viên
+ * (`GET /api/students/:id/billing-timeline`).
+ * - `at` là ISO 8601 (`createdAt.toISOString()`), sắp xếp giảm dần theo `createdAt`.
+ * - Giao dịch `bank_hub` luôn có `note: ""` và `method: ""` để không lộ nội
+ *   dung chuyển khoản gốc (`content`) hay `raw` payload (#320 PII retention).
+ */
+export const billingTimelineInvoiceIssuedEventSchema = z
+	.object({
+		kind: z.literal("invoice_issued"),
+		at: z.string(),
+		invoiceId: z.string().min(1),
+		code: z.string().min(1),
+		type: z.string().min(1),
+		amount: z.number().int(),
+		due: z.string(),
+		status: z.enum(["unpaid", "paid"]),
+	})
+	.strict();
+
+export const billingTimelinePaymentEventSchema = z
+	.object({
+		kind: z.literal("payment"),
+		id: z.string().min(1),
+		at: z.string(),
+		invoiceId: z.string().min(1),
+		code: z.string().min(1),
+		amount: z.number().int(),
+		source: z.enum(["bank_hub", "manual"]),
+		method: z.string(),
+		note: z.string(),
+	})
+	.strict();
+
+export const billingTimelineEventSchema = z.discriminatedUnion("kind", [
+	billingTimelineInvoiceIssuedEventSchema,
+	billingTimelinePaymentEventSchema,
+]);
+export type BillingTimelineEvent = z.infer<typeof billingTimelineEventSchema>;
+
+export const billingTimelineResponseSchema = z
+	.object({
+		events: z.array(billingTimelineEventSchema),
+	})
+	.strict();
+export type BillingTimelineResponse = z.infer<
+	typeof billingTimelineResponseSchema
+>;
+
+/**
+ * TOS-18 (#452) — Gửi nhắc học phí hàng loạt (`POST /api/debt-reminders`).
+ * `queued` và `skipped` đều tính theo đơn vị hóa đơn còn nợ.
+ */
+export const debtReminderCreateSchema = z
+	.object({
+		studentIds: z
+			.array(z.string().trim().min(1).max(64))
+			.min(1)
+			.max(100)
+			.refine((ids) => new Set(ids).size === ids.length, {
+				message: "Duplicate studentIds are not allowed",
+			}),
+		classId: z.string().trim().min(1).max(64).optional(),
+	})
+	.strict();
+export type DebtReminderCreate = z.infer<typeof debtReminderCreateSchema>;
+
+export const debtReminderResponseSchema = z
+	.object({
+		queued: z.number().int().min(0),
+		skipped: z.number().int().min(0),
+	})
+	.strict();
+export type DebtReminderResponse = z.infer<typeof debtReminderResponseSchema>;

@@ -1,5 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Eye } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { BillingTimelineDrawer } from "@/components/debts/billing-timeline-drawer";
 import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
 import { RecordPaymentModal } from "@/components/modals/record-payment-modal";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,11 +13,13 @@ import { Card, StatCard } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { Input, Select } from "@/components/ui/field";
+import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { initialsFromName } from "@/lib/initials";
 import { fmtVND } from "@/lib/mock-data";
+import { sendDebtReminders } from "@/lib/repos/payments";
 import {
 	type DebtFilterStatus,
 	type DebtLedgerRow,
@@ -84,6 +90,7 @@ function DebtStatusBadge({ status }: { status: DebtStatus }) {
 
 export function DebtsRoute() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const { data } = useData();
 	const canAccessFinance = useFinanceRouteGuard();
 	const rawSearch = Route.useSearch();
@@ -94,6 +101,12 @@ export function DebtsRoute() {
 
 	const [modalOpen, setModalOpen] = useState(false);
 	const [payRow, setPayRow] = useState<DebtLedgerRow | null>(null);
+	const [timelineStudentId, setTimelineStudentId] = useState<string | null>(
+		null,
+	);
+	const [selectedIds, setSelectedIds] = useState<string[]>([]);
+	const [confirmRemindOpen, setConfirmRemindOpen] = useState(false);
+	const [sendingReminders, setSendingReminders] = useState(false);
 	const [query, setQuery] = useState(() => search.q ?? "");
 	const lastEmittedQuery = useRef(query);
 	const latestSearchRef = useRef(search);
@@ -201,6 +214,87 @@ export function DebtsRoute() {
 	}
 
 	const { kpis, rows } = ledger;
+	const timelineRow = useMemo(
+		() =>
+			timelineStudentId
+				? (rows.find((r) => r.studentId === timelineStudentId) ?? null)
+				: null,
+		[rows, timelineStudentId],
+	);
+	const debtorRows = useMemo(() => rows.filter((r) => r.remaining > 0), [rows]);
+	const effectiveSelectedRows = useMemo(
+		() => debtorRows.filter((r) => selectedIds.includes(r.studentId)),
+		[debtorRows, selectedIds],
+	);
+	const effectiveSelectedIds = useMemo(
+		() => effectiveSelectedRows.map((r) => r.studentId),
+		[effectiveSelectedRows],
+	);
+	const selectedOpenInvoiceCount = useMemo(
+		() =>
+			effectiveSelectedRows.reduce(
+				(acc, r) => acc + r.openInvoiceIds.length,
+				0,
+			),
+		[effectiveSelectedRows],
+	);
+
+	function toggleSelectRow(studentId: string) {
+		setSelectedIds((prev) =>
+			prev.includes(studentId)
+				? prev.filter((id) => id !== studentId)
+				: [...prev, studentId],
+		);
+	}
+
+	function toggleSelectAll() {
+		if (
+			debtorRows.length > 0 &&
+			effectiveSelectedIds.length === debtorRows.length
+		) {
+			setSelectedIds([]);
+		} else {
+			setSelectedIds(debtorRows.map((r) => r.studentId));
+		}
+	}
+
+	async function handleConfirmRemind() {
+		if (effectiveSelectedIds.length === 0 || sendingReminders) return;
+		setSendingReminders(true);
+		try {
+			const result = await sendDebtReminders({
+				studentIds: effectiveSelectedIds,
+				classId: search.lop,
+			});
+			await queryClient.invalidateQueries({
+				queryKey: ["kernel", "notification-logs"],
+			});
+			setSelectedIds([]);
+			setConfirmRemindOpen(false);
+			const viewAction = {
+				label: "Xem nhật ký thông báo",
+				onClick: () => {
+					void navigate({ to: "/notifications" });
+				},
+			};
+			if (result.queued > 0) {
+				const skippedNote =
+					result.skipped > 0 ? ` (${result.skipped} đã nhắc hôm nay)` : "";
+				toast.success(
+					`Đã gửi nhắc học phí cho ${result.queued} hóa đơn${skippedNote}.`,
+					{ action: viewAction },
+				);
+			} else {
+				toast.info("Các hóa đơn này đã được gửi nhắc học phí trong hôm nay.", {
+					action: viewAction,
+				});
+			}
+		} catch {
+			toast.error("Không gửi được nhắc học phí. Vui lòng thử lại.");
+		} finally {
+			setSendingReminders(false);
+		}
+	}
 
 	if (!canAccessFinance) return null;
 
@@ -215,7 +309,15 @@ export function DebtsRoute() {
 				title="Sổ công nợ học viên"
 				action={
 					<div className="flex flex-wrap items-center gap-2">
-						{/* Chỗ cho nút "Gửi nhắc học phí (N)" của TOS-18 */}
+						<Button
+							type="button"
+							variant="default"
+							data-testid="send-debt-reminders"
+							disabled={effectiveSelectedIds.length === 0 || sendingReminders}
+							onClick={() => setConfirmRemindOpen(true)}
+						>
+							{`Gửi nhắc học phí (${effectiveSelectedIds.length})`}
+						</Button>
 						<Button
 							variant="outline"
 							data-testid="create-invoice"
@@ -341,6 +443,18 @@ export function DebtsRoute() {
 				) : (
 					<DataTable
 						headers={[
+							<input
+								key="select-all"
+								type="checkbox"
+								aria-label="Chọn tất cả học viên đang nợ hiển thị"
+								disabled={debtorRows.length === 0}
+								checked={
+									debtorRows.length > 0 &&
+									effectiveSelectedIds.length === debtorRows.length
+								}
+								onChange={toggleSelectAll}
+								className="size-4 cursor-pointer rounded border-input accent-primary disabled:cursor-not-allowed disabled:opacity-40"
+							/>,
 							"Học viên",
 							"Lớp",
 							"Phải đóng",
@@ -357,6 +471,30 @@ export function DebtsRoute() {
 									params: { studentId: row.studentId },
 								}),
 							cells: [
+								// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chặn click + Enter/Space từ ô checkbox nổi bọt lên <tr>
+								<div
+									key="sel"
+									className="flex items-center"
+									onClick={(e) => e.stopPropagation()}
+									onKeyDown={(e) => {
+										if (e.key === " " || e.key === "Enter") {
+											e.stopPropagation();
+										}
+									}}
+								>
+									<input
+										type="checkbox"
+										aria-label={`Chọn học viên ${row.name}`}
+										data-testid={`select-debtor-${row.studentId}`}
+										disabled={row.remaining <= 0}
+										checked={
+											row.remaining > 0 &&
+											effectiveSelectedIds.includes(row.studentId)
+										}
+										onChange={() => toggleSelectRow(row.studentId)}
+										className="size-4 cursor-pointer rounded border-input accent-primary disabled:cursor-not-allowed disabled:opacity-40"
+									/>
+								</div>,
 								<div key="stu" className="flex items-center gap-2 font-medium">
 									<Avatar text={initialsFromName(row.name)} size="sm" />
 									<span>{row.name}</span>
@@ -410,6 +548,16 @@ export function DebtsRoute() {
 											Thu
 										</Button>
 									)}
+									<Button
+										type="button"
+										size="icon-sm"
+										variant="ghost"
+										data-testid={`billing-timeline-${row.studentId}`}
+										aria-label={`Xem dòng thời gian lịch sử hóa đơn & giao dịch của ${row.name}`}
+										onClick={() => setTimelineStudentId(row.studentId)}
+									>
+										<Eye className="size-4" />
+									</Button>
 								</div>,
 							],
 						}))}
@@ -423,6 +571,42 @@ export function DebtsRoute() {
 				row={payRow}
 				onClose={() => setPayRow(null)}
 			/>
+			<BillingTimelineDrawer
+				open={timelineRow !== null}
+				row={timelineRow}
+				onClose={() => setTimelineStudentId(null)}
+			/>
+			<Modal
+				open={confirmRemindOpen}
+				onClose={() => {
+					if (!sendingReminders) setConfirmRemindOpen(false);
+				}}
+				title="Xác nhận gửi nhắc học phí"
+				footer={
+					<>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={sendingReminders}
+							onClick={() => setConfirmRemindOpen(false)}
+						>
+							Hủy
+						</Button>
+						<Button
+							type="button"
+							data-testid="confirm-send-debt-reminders"
+							disabled={sendingReminders || effectiveSelectedIds.length === 0}
+							onClick={() => void handleConfirmRemind()}
+						>
+							{sendingReminders ? "Đang gửi…" : "Xác nhận gửi"}
+						</Button>
+					</>
+				}
+			>
+				<p className="text-muted-foreground text-sm">
+					{`Gửi nhắc học phí cho ${effectiveSelectedIds.length} học viên (${selectedOpenInvoiceCount} hóa đơn còn nợ)? Hệ thống sẽ phát thông báo qua Email & In-app và ghi vào Nhật ký thông báo.`}
+				</p>
+			</Modal>
 		</div>
 	);
 }
