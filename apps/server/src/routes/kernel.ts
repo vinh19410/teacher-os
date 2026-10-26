@@ -110,7 +110,7 @@ export function kernelRoutes(deps: {
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
 			}
-			if (["POST", "PUT", "PATCH"].includes(c.req.method)) {
+			if (c.req.method === "POST") {
 				const contentType = c.req.header("Content-Type") ?? "";
 				if (!contentType.toLowerCase().startsWith("application/json")) {
 					return c.json(
@@ -142,6 +142,16 @@ export function kernelRoutes(deps: {
 	): Promise<
 		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
 	> {
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "content-type must be application/json" },
+					415,
+				),
+			};
+		}
 		let raw: unknown;
 		try {
 			raw = await c.req.json();

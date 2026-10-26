@@ -902,8 +902,23 @@ describe("PUT /api/classes/:id/sessions/:date/attendance", () => {
 			},
 		);
 		expect(studentRes.status).toBe(403);
-	});
 
+		const nonJsonPut = await app.request(
+			`/api/classes/cls-put/sessions/${MONDAY_ISO}/attendance`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher-1",
+					origin: CORS_ORIGIN,
+					"content-type": "text/plain",
+				},
+				body: JSON.stringify({
+					entries: [{ lessonId: "l-1", attendance: "present", note: "" }],
+				}),
+			},
+		);
+		expect(nonJsonPut.status).toBe(415);
+	});
 	test("ca 30 học viên lưu trong < 300ms ở server", async () => {
 		const today = vietnamTodayISO();
 		const lessonIds = await seedClassSession(today, 30);

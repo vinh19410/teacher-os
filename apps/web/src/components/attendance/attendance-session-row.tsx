@@ -1,5 +1,5 @@
-import type { SessionAttendanceSave } from "@teacher-os/api/contracts";
 import { Link } from "@tanstack/react-router";
+import type { SessionAttendanceSave } from "@teacher-os/api/contracts";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -52,9 +52,9 @@ export function AttendanceSessionRow({
 		createAttendanceDraft,
 	);
 	const [validationClicked, setValidationClicked] = useState(false);
-	const firstRadioByLessonRef = useRef<Record<string, HTMLButtonElement | null>>(
-		{},
-	);
+	const firstRadioByLessonRef = useRef<
+		Record<string, HTMLButtonElement | null>
+	>({});
 
 	// Khi dữ liệu server của ca thay đổi (vd sau refetch 409 hoặc đổi ngày), đồng bộ lại nháp.
 	useEffect(() => {
@@ -158,8 +158,8 @@ export function AttendanceSessionRow({
 									</p>
 								</div>
 								<Link
-									to="/classes/$id"
-									params={{ id: session.classId }}
+									to="/classes/$classId"
+									params={{ classId: session.classId }}
 									className={cn(
 										"inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 font-medium text-foreground text-xs transition-colors hover:bg-accent",
 										"focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
