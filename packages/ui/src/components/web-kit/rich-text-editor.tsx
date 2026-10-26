@@ -1,3 +1,5 @@
+import { Popover } from "@base-ui/react/popover";
+import { Toolbar } from "@base-ui/react/toolbar";
 import { RICH_TEXT_CONTENT_CLASSES } from "@teacher-os/ui/lib/rich-text-content-classes";
 import { cn } from "@teacher-os/ui/lib/utils";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -13,6 +15,7 @@ import {
 	Code,
 	Heading2,
 	Heading3,
+	Heading4,
 	Italic,
 	Link,
 	List,
@@ -26,12 +29,28 @@ import {
 	Underline,
 	Undo2,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
-function promptLinkHref(): string | null {
-	const url = window.prompt("Địa chỉ liên kết (https://…)");
-	return url?.trim() || null;
+/**
+ * Authoring-side scheme allowlist for the link popover. The render sink
+ * (`RichTextBody` → `sanitizeRichText`) strips dangerous URIs when students
+ * read content, but stored HTML can reach other consumers — so payloads like
+ * `javascript:` never enter the document from the editor in the first place.
+ */
+function isAllowedHref(href: string): boolean {
+	if (href.startsWith("#") || href.startsWith("/")) return true;
+	try {
+		const protocol = new URL(href).protocol;
+		return (
+			protocol === "http:" || protocol === "https:" || protocol === "mailto:"
+		);
+	} catch {
+		return false;
+	}
 }
+
+const LINK_HREF_ERROR =
+	"Chỉ hỗ trợ liên kết http(s):, mailto:, neo #… hoặc đường dẫn /…";
 
 /**
  * Toolbar state the live subscription exposes. Every key is derived from the
@@ -45,6 +64,7 @@ type ToolbarState = {
 	isStrike: boolean;
 	isH2: boolean;
 	isH3: boolean;
+	isH4: boolean;
 	isBulletList: boolean;
 	isOrderedList: boolean;
 	isBlockquote: boolean;
@@ -63,6 +83,8 @@ type ToolbarButton = {
 	toggleKey?: keyof ToolbarState;
 	/** Button is disabled while this state key is false. */
 	enabledKey?: "canUndo" | "canRedo";
+	/** The link button is a disclosure trigger (popover), not a plain toggle. */
+	kind?: "link";
 };
 
 const TOOLBAR_BUTTONS: ToolbarButton[] = [
@@ -103,6 +125,12 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
 		run: (e) => e.chain().focus().toggleHeading({ level: 3 }).run(),
 	},
 	{
+		label: "Đề mục cấp 4",
+		icon: Heading4,
+		toggleKey: "isH4",
+		run: (e) => e.chain().focus().toggleHeading({ level: 4 }).run(),
+	},
+	{
 		label: "Danh sách gạch đầu dòng",
 		icon: List,
 		toggleKey: "isBulletList",
@@ -135,15 +163,8 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
 	{
 		label: "Chèn liên kết",
 		icon: Link,
-		toggleKey: "isLink",
-		run: (e) => {
-			if (e.isActive("link")) {
-				e.chain().focus().unsetLink().run();
-				return;
-			}
-			const href = promptLinkHref();
-			if (href) e.chain().focus().setLink({ href }).run();
-		},
+		kind: "link",
+		run: () => {}, // handled by the link popover (RichTextToolbar)
 	},
 	{
 		label: "Đường kẻ ngang",
@@ -181,6 +202,7 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 			isStrike: e.isActive("strike"),
 			isH2: e.isActive("heading", { level: 2 }),
 			isH3: e.isActive("heading", { level: 3 }),
+			isH4: e.isActive("heading", { level: 4 }),
 			isBulletList: e.isActive("bulletList"),
 			isOrderedList: e.isActive("orderedList"),
 			isBlockquote: e.isActive("blockquote"),
@@ -192,36 +214,211 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 		}),
 	});
 
+	const [linkOpen, setLinkOpen] = useState(false);
+	const [linkHref, setLinkHref] = useState("");
+	const [linkError, setLinkError] = useState<string | null>(null);
+	const linkInputRef = useRef<HTMLInputElement>(null);
+	const closingViaApplyRef = useRef(false);
+	const linkInputId = useId();
+	const linkErrorId = `${linkInputId}-error`;
+
+	// Pressing the trigger while the caret sits inside a link removes the link
+	// and must NOT open the popover (parity with the pre-popover behavior).
+	// The decision lives solely in onOpenChange: the trigger's own click order
+	// relative to ours is not guaranteed, and an uncontrolled trigger would
+	// still toggle open.
+	const handleLinkOpenChange = (
+		next: boolean,
+		details: {
+			reason?: unknown;
+		},
+	) => {
+		if (next && details.reason === "trigger-press" && editor.isActive("link")) {
+			editor.chain().focus().extendMarkRange("link").unsetLink().run();
+			return;
+		}
+		if (next) {
+			setLinkError(null);
+			closingViaApplyRef.current = false;
+		}
+		setLinkOpen(next);
+	};
+
+	const applyLink = () => {
+		const href = linkHref.trim();
+		if (!href) return;
+		if (!isAllowedHref(href)) {
+			setLinkError(LINK_HREF_ERROR);
+			return;
+		}
+		editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+		// Return focus to the editor when the close is ours — Base UI would
+		// otherwise restore it to the trigger and kill the stored mark / leave
+		// the caret outside the text the teacher was editing.
+		closingViaApplyRef.current = true;
+		setLinkOpen(false);
+	};
+
+	// The popover input must not live in a <form>: the popup renders through a
+	// portal, so a submit would bubble to the page's own form (assignment
+	// builder) and save the document. Enter is handled on the input itself.
+	const linkPanelKeyDown = (event: React.KeyboardEvent) => {
+		if (
+			[
+				"ArrowLeft",
+				"ArrowRight",
+				"ArrowUp",
+				"ArrowDown",
+				"Home",
+				"End",
+			].includes(event.key)
+		) {
+			// Keep caret keys inside the input — the toolbar's composite
+			// keyboard handling must not steal them when the caret is at an
+			// edge of the field.
+			event.stopPropagation();
+		}
+	};
+
+	const toolbarButtonClass = (pressed?: boolean) =>
+		cn(
+			"flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40",
+			pressed && "bg-muted text-foreground",
+		);
+
+	// Base UI's composite handles arrows but not Home/End — move focus to the
+	// first/last enabled button ourselves (WAI-ARIA toolbar pattern).
+	const toolbarKeyDown = (event: React.KeyboardEvent) => {
+		if (event.key !== "Home" && event.key !== "End") return;
+		const enabled = Array.from(
+			event.currentTarget.querySelectorAll<HTMLButtonElement>("button"),
+		).filter((button) => !button.disabled);
+		if (enabled.length === 0) return;
+		event.preventDefault();
+		const target =
+			event.key === "Home" ? enabled[0] : enabled[enabled.length - 1];
+		target.focus();
+	};
+
 	return (
-		<div
-			role="toolbar"
+		<Toolbar.Root
 			aria-label="Định dạng văn bản"
-			className="flex flex-wrap items-center gap-0.5 border-border border-b border-solid px-1 py-1"
+			className="flex flex-wrap items-center gap-1 border-border border-b border-solid px-1 py-1"
+			onKeyDown={toolbarKeyDown}
 		>
 			{TOOLBAR_BUTTONS.map(
-				({ label, icon: Icon, run, toggleKey, enabledKey }) => {
+				({ label, icon: Icon, run, toggleKey, enabledKey, kind }) => {
 					const pressed = toggleKey ? state[toggleKey] : undefined;
 					const disabled = enabledKey ? !state[enabledKey] : false;
+
+					if (kind === "link") {
+						return (
+							<Popover.Root
+								key={label}
+								open={linkOpen}
+								onOpenChange={handleLinkOpenChange}
+								modal={true}
+							>
+								<Popover.Trigger
+									render={
+										<Toolbar.Button
+											aria-label={label}
+											aria-haspopup="dialog"
+											title={label}
+											className={toolbarButtonClass(state.isLink)}
+										>
+											<Icon size={14} aria-hidden="true" />
+										</Toolbar.Button>
+									}
+								/>
+								<Popover.Portal>
+									<Popover.Positioner align="start" sideOffset={6}>
+										<Popover.Popup
+											className="rounded-md border border-border border-solid bg-background text-foreground shadow-md"
+											initialFocus={linkInputRef}
+											finalFocus={() =>
+												closingViaApplyRef.current
+													? (editor.view.dom as HTMLElement)
+													: null
+											}
+											onKeyDown={linkPanelKeyDown}
+										>
+											<div className="flex w-72 flex-col gap-2 p-3">
+												<label
+													htmlFor={linkInputId}
+													className="text-muted-foreground text-xs"
+												>
+													Địa chỉ liên kết
+												</label>
+												<input
+													ref={linkInputRef}
+													id={linkInputId}
+													type="text"
+													inputMode="url"
+													placeholder="https://…"
+													value={linkHref}
+													onChange={(e) => {
+														setLinkHref(e.target.value);
+														setLinkError(null);
+													}}
+													onKeyDown={(e) => {
+														if (e.key === "Enter") {
+															e.preventDefault();
+															applyLink();
+														}
+													}}
+													aria-invalid={linkError ? true : undefined}
+													aria-describedby={linkError ? linkErrorId : undefined}
+													className="h-8 w-full rounded-sm border border-border border-solid bg-background px-2 text-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+												/>
+												{linkError && (
+													<p
+														id={linkErrorId}
+														className="text-destructive text-xs"
+													>
+														{linkError}
+													</p>
+												)}
+												<div className="flex items-center justify-end gap-1">
+													<Popover.Close
+														aria-label="Hủy"
+														className="rounded-sm px-2 py-1 text-sm hover:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+													>
+														Hủy
+													</Popover.Close>
+													<button
+														type="button"
+														onClick={applyLink}
+														className="rounded-sm bg-primary px-2 py-1 text-primary-foreground text-sm hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+													>
+														Áp dụng
+													</button>
+												</div>
+											</div>
+										</Popover.Popup>
+									</Popover.Positioner>
+								</Popover.Portal>
+							</Popover.Root>
+						);
+					}
+
 					return (
-						<button
+						<Toolbar.Button
 							key={label}
-							type="button"
 							aria-label={label}
 							{...(pressed === undefined ? {} : { "aria-pressed": pressed })}
 							title={label}
 							disabled={disabled}
+							focusableWhenDisabled={false}
 							onClick={() => run(editor)}
-							className={cn(
-								"flex h-7 w-7 items-center justify-center rounded-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40",
-								pressed && "bg-muted text-foreground",
-							)}
+							className={toolbarButtonClass(pressed)}
 						>
 							<Icon size={14} aria-hidden="true" />
-						</button>
+						</Toolbar.Button>
 					);
 				},
 			)}
-		</div>
+		</Toolbar.Root>
 	);
 }
 
@@ -285,7 +482,7 @@ export function RichTextEditor({
 		{
 			immediatelyRender: false,
 			extensions: [
-				StarterKit.configure({ heading: { levels: [2, 3] } }),
+				StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
 				Placeholder.configure({ placeholder: placeholder ?? "" }),
 			],
 			content: value,
@@ -350,7 +547,7 @@ export function RichTextEditor({
 	return (
 		<div
 			className={cn(
-				"w-full rounded-sm border border-border border-solid transition-[border-color,box-shadow] duration-[150ms] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+				"w-full rounded-sm border border-border border-solid transition-[border-color,box-shadow] duration-[150ms] has-[.ProseMirror:focus]:border-ring has-[.ProseMirror:focus]:ring-[3px] has-[.ProseMirror:focus]:ring-ring/50",
 				className,
 			)}
 		>
