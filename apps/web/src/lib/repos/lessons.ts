@@ -24,6 +24,7 @@ const LESSON_STATUSES: readonly LessonStatus[] = [
 	"upcoming",
 	"cancelled",
 	"absent",
+	"holiday",
 ];
 
 function coerceType(value: string): LessonType {

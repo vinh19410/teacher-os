@@ -77,7 +77,7 @@ export interface ClassSession {
 	mode?: "v2";
 }
 
-export type SessionStatus = "completed" | "cancelled" | "upcoming";
+export type SessionStatus = "completed" | "cancelled" | "holiday" | "upcoming";
 
 /**
  * Accepts only strict ISO `yyyy-mm-dd` — the sole format the create-class
@@ -297,7 +297,16 @@ function lessonWeekdayFromISO(dateISO: string): number {
  * physical session. Chronology is the plain sort of distinct dates; the
  * bucket supplies its own time/dur (generator + bucket-LWW writes keep them
  * uniform, and a divergent bucket can never reach here — it carries NULLs).
+ *
+ * TOS-11 (I4): nhóm `holiday` ("Nghỉ lễ — Đã dời lịch") KHÔNG tiêu thụ số
+ * buổi — `index` của nó là 0 và các nhóm sau vẫn đánh số liên tục, nên giáo
+ * trình không bị trượt và buổi bù nhận bài kế tiếp. `sessionOrdinal` của
+ * holiday preview dùng đúng định nghĩa này.
  */
+function isHolidayBucket(rows: ClassSessionLesson[]): boolean {
+	return rows.length > 0 && rows.every((row) => row.status === "holiday");
+}
+
 function buildClassSessionsV2(lessons: ClassSessionLesson[]): ClassSession[] {
 	const byDate = new Map<string, ClassSessionLesson[]>();
 	for (const row of lessons) {
@@ -308,7 +317,8 @@ function buildClassSessionsV2(lessons: ClassSessionLesson[]): ClassSession[] {
 	}
 	const dates = [...byDate.keys()].sort();
 	const weekdayOrdinal = new Map<number, number>();
-	return dates.map((dateISO, i) => {
+	let teachingIndex = 0;
+	return dates.map((dateISO) => {
 		const bucket = [...(byDate.get(dateISO) ?? [])].sort((a, b) =>
 			a.id.localeCompare(b.id),
 		);
@@ -316,8 +326,10 @@ function buildClassSessionsV2(lessons: ClassSessionLesson[]): ClassSession[] {
 		const slotIndex = (weekdayOrdinal.get(day) ?? 0) + 1;
 		weekdayOrdinal.set(day, slotIndex);
 		const head = bucket[0];
+		const holiday = isHolidayBucket(bucket);
+		if (!holiday) teachingIndex += 1;
 		return {
-			index: i + 1,
+			index: holiday ? 0 : teachingIndex,
 			slotIndex,
 			dateISO,
 			day,
@@ -382,12 +394,15 @@ export function sessionStatus(session: ClassSession): SessionStatus {
 		// Bucket-read semantics (#98): no prefix math — the rows ARE the truth.
 		let allCompleted = true;
 		let allCancelled = true;
+		let allHoliday = true;
 		for (const row of session.rows) {
 			if (row.status !== "completed") allCompleted = false;
 			if (row.status !== "cancelled") allCancelled = false;
+			if (row.status !== "holiday") allHoliday = false;
 		}
 		if (session.rows.length > 0 && allCompleted) return "completed";
 		if (session.rows.length > 0 && allCancelled) return "cancelled";
+		if (session.rows.length > 0 && allHoliday) return "holiday";
 		return "upcoming";
 	}
 	const stats = slotStatsBySid(session.rows);
@@ -577,6 +592,7 @@ export interface SessionAttendanceSid {
 export type SessionAttendanceKind =
 	| "completed"
 	| "cancelled"
+	| "holiday"
 	| "future"
 	| "upcoming"
 	| "actionable";
@@ -598,6 +614,7 @@ export function sessionAttendanceState(
 	const aggregate = sessionStatus(session);
 	if (aggregate === "cancelled") return { kind: "cancelled", sids: [] };
 	if (aggregate === "completed") return { kind: "completed", sids: [] };
+	if (aggregate === "holiday") return { kind: "holiday", sids: [] };
 	if (!sessionIsEligibleDate(session, todayISO)) {
 		return { kind: "future", sids: [] };
 	}
@@ -697,7 +714,8 @@ export function occurrenceSidStates(
 			if (
 				row?.status === "completed" ||
 				row?.status === "cancelled" ||
-				row?.status === "absent"
+				row?.status === "absent" ||
+				row?.status === "holiday"
 			) {
 				status = row.status;
 			} else if (row) {
@@ -763,13 +781,15 @@ export function findClassOccurrence(
 /** Tally điểm danh của một buổi cho card buổi học (#391): đếm qua
  * `occurrenceSidStates` — `completed` = có mặt, `absent` = vắng (dữ liệu
  * thật của row dated v2, đếm là ĐÃ điểm danh), `cancelled` = sid bị huỷ
- * (loại khỏi mẫu của card, không tính "chưa điểm danh"), còn lại = chưa
- * điểm danh. marked + absent + unmarked + cancelled = số học viên dự kiến. */
+ * (loại khỏi mẫu của card, không tính "chưa điểm danh"), `holiday` = buổi
+ * nghỉ lễ đã dời (TOS-11 — không diễn ra, loại khỏi mẫu), còn lại = chưa
+ * điểm danh. marked + absent + unmarked + cancelled + holiday = số học viên dự kiến. */
 export interface SessionAttendanceTally {
 	marked: number;
 	absent: number;
 	unmarked: number;
 	cancelled: number;
+	holiday: number;
 }
 
 export function sessionAttendanceTally(
@@ -780,10 +800,12 @@ export function sessionAttendanceTally(
 	const marked = states.filter((s) => s.status === "completed").length;
 	const absent = states.filter((s) => s.status === "absent").length;
 	const cancelled = states.filter((s) => s.status === "cancelled").length;
+	const holiday = states.filter((s) => s.status === "holiday").length;
 	return {
 		marked,
 		absent,
 		cancelled,
-		unmarked: states.length - marked - absent - cancelled,
+		holiday,
+		unmarked: states.length - marked - absent - cancelled - holiday,
 	};
 }

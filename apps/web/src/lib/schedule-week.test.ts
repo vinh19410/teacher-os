@@ -234,6 +234,24 @@ describe("rollupSessionStatus (homogenous vs mixed)", () => {
 	test("empty rows -> upcoming", () => {
 		expect(rollupSessionStatus([])).toBe("upcoming");
 	});
+
+	test("TOS-11: all holiday -> holiday", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "holiday" }),
+				lesson({ status: "holiday" }),
+			]),
+		).toBe("holiday");
+	});
+
+	test("TOS-11: mixed holiday and upcoming -> upcoming", () => {
+		expect(
+			rollupSessionStatus([
+				lesson({ status: "holiday" }),
+				lesson({ status: "upcoming" }),
+			]),
+		).toBe("upcoming");
+	});
 });
 
 describe("findSessionRows (live lookup by ref)", () => {
@@ -400,6 +418,20 @@ describe("weekSlotCount (AC8 — rendered-week distinct slots)", () => {
 		};
 		const columns = [[cancelledEntry, multiEnrollmentActiveEntry]];
 		expect(weekSlotCount(columns, [])).toBe(1);
+	});
+	test("TOS-11: holiday session entry không chiếm slot", () => {
+		const holidayEntry = {
+			key: "d:cls-1:2026-09-07",
+			classId: "cls-1",
+			dateISO: "2026-09-07",
+			day: 1,
+			time: "19:00",
+			rows: [lesson({ id: "r1", status: "holiday" })],
+			status: "holiday" as const,
+			type: "1:1" as const,
+			topic: "",
+		};
+		expect(weekSlotCount([[holidayEntry]], [])).toBe(0);
 	});
 });
 

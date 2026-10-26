@@ -4,12 +4,14 @@ import {
 	ClassSessionModal,
 	type ClassSessionModalRef,
 } from "@/components/schedule/class-session-modal";
+import { HolidayModal } from "@/components/schedule/holiday-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHead } from "@/components/ui/page-head";
 import { useData } from "@/lib/data-store";
 import type { LessonType } from "@/lib/mock-data";
 import { dayNames } from "@/lib/mock-data";
+import { holidayNameForDate, makeupDateForShift } from "@/lib/repos/holidays";
 import {
 	distinctStudentsBySid,
 	resolveWeekColumnEntries,
@@ -45,7 +47,7 @@ const typeBlockClass: Record<LessonType, string> = {
 };
 
 export function ScheduleRoute() {
-	const { data, classById } = useData();
+	const { data, classById, refresh } = useData();
 	const { week: weekParam } = Route.useSearch();
 	const navigate = useNavigate();
 	const { weekStart, dates, isCurrentWeek } = resolveWeek(weekParam);
@@ -53,6 +55,7 @@ export function ScheduleRoute() {
 	const [openSession, setOpenSession] = useState<ClassSessionModalRef | null>(
 		null,
 	);
+	const [holidayModalOpen, setHolidayModalOpen] = useState(false);
 
 	// A garbage ?week renders the current week already (resolveWeek falls
 	// back); this scrub replaces the bad param so the URL matches the view
@@ -88,6 +91,14 @@ export function ScheduleRoute() {
 			<PageHead
 				kicker={`Tuần ${formatWeekRange(weekStart)} · ${slotCount} buổi`}
 				title="Lịch dạy"
+				action={
+					<Button
+						data-testid="holiday-open"
+						onClick={() => setHolidayModalOpen(true)}
+					>
+						+ Tạo lịch nghỉ
+					</Button>
+				}
 			/>
 			<div className="mb-4 flex items-center justify-between gap-2">
 				<Link
@@ -223,6 +234,13 @@ export function ScheduleRoute() {
 													if (!s) return null;
 													const cls = classById(s.classId);
 													const className = cls?.name ?? "Lớp học";
+													const isHoliday = s.status === "holiday";
+													const makeupDate = isHoliday
+														? makeupDateForShift(data, s.classId, s.dateISO)
+														: null;
+													const holidayName = isHoliday
+														? holidayNameForDate(data, s.classId, s.dateISO)
+														: null;
 													return (
 														<button
 															type="button"
@@ -241,7 +259,9 @@ export function ScheduleRoute() {
 																	? "opacity-60"
 																	: s.status === "cancelled"
 																		? "opacity-35"
-																		: ""
+																		: isHoliday
+																			? "border-warn/60 opacity-75"
+																			: ""
 															}`}
 														>
 															<div className="text-[11px] text-muted-foreground tabular-nums">
@@ -270,7 +290,19 @@ export function ScheduleRoute() {
 																})()}
 															</div>
 															<div className="mt-px text-[11px] text-muted-foreground">
-																{s.type} · {s.topic.substring(0, 30)}
+																{isHoliday ? (
+																	<span className="font-medium text-warn">
+																		Nghỉ lễ — Đã dời lịch
+																		{holidayName ? ` · ${holidayName}` : ""}
+																		{makeupDate
+																			? ` · Đã dời sang ${formatDayMonth(makeupDate)}`
+																			: ""}
+																	</span>
+																) : (
+																	<>
+																		{s.type} · {s.topic.substring(0, 30)}
+																	</>
+																)}
 															</div>
 														</button>
 													);
@@ -309,6 +341,16 @@ export function ScheduleRoute() {
 			<ClassSessionModal
 				sessionRef={openSession}
 				onClose={() => setOpenSession(null)}
+			/>
+			<HolidayModal
+				open={holidayModalOpen}
+				classes={data.classes
+					.filter((cls) => cls.status === "active")
+					.map((cls) => ({ id: cls.id, name: cls.name }))}
+				onClose={() => setHolidayModalOpen(false)}
+				onApplied={() => {
+					void refresh();
+				}}
 			/>
 		</div>
 	);

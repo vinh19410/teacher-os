@@ -135,6 +135,8 @@ export function LessonModal({
 							</Badge>
 						) : lesson.status === "cancelled" ? (
 							<Badge variant="danger">Đã hủy</Badge>
+						) : lesson.status === "holiday" ? (
+							<Badge variant="warn">Nghỉ lễ — Đã dời lịch</Badge>
 						) : (
 							<Badge variant="accent">Sắp tới</Badge>
 						)}

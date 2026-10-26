@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Schema Lịch nghỉ chung + zod contract"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []
@@ -16,9 +16,9 @@ Có chỗ lưu kỳ nghỉ, lớp áp dụng và từng cặp buổi gốc → b
 ## Files to Create / Modify
 
 - Create: `packages/db/src/schema/organization-holiday.ts`
-  - `organization_holiday`: `id`, `orgId` (FK cascade), `name`, `fromDate`, `toDate` (yyyy-mm-dd), `scope` (`"org" | "classes"`), `mode` (`"shift" | "cancel"`, TOS-11 chỉ ghi `shift`), `notify` (integer boolean), `createdByUserId`, `createdAt`. Index `(orgId, fromDate)`.
+  - `organization_holiday`: `id`, `orgId` (FK cascade), `name`, `fromDate`, `toDate` (yyyy-mm-dd), `scope` (`"org" | "classes"`), `mode` (`"shift" | "cancel"`, TOS-11 chỉ ghi `shift`), `notify` (integer boolean), `notifiedAt` (integer timestamp, nullable — TOS-19 đọc để biết kỳ nghỉ nào chưa gửi thông báo, tránh migrate lại), `createdByUserId`, `createdAt`. Index `(orgId, fromDate)`.
   - `organization_holiday_class`: `holidayId` (FK cascade), `classId` (FK cascade), PK ghép. Chỉ có dòng khi `scope = "classes"`.
-  - `holiday_session_shift`: `id`, `orgId`, `holidayId` (FK cascade), `classId` (FK cascade), `originalDate`, `makeupDate`, `createdAt`. Unique `(classId, originalDate)` — một buổi gốc chỉ bị dời một lần. Index `(classId, makeupDate)`.
+  - `holiday_session_shift`: `id`, `orgId`, `holidayId` (FK cascade), `classId` (FK cascade), `originalDate`, `makeupDate`, `createdAt`. **Unique `(classId, originalDate)`** — một buổi gốc chỉ bị dời một lần — và **`uniqueIndex (classId, makeupDate)`** — chặn hai buổi bù rơi vào cùng một ngày (red-team C3; hai apply đồng thời không được sinh 2 dòng cùng `(classId, makeupDate)`).
   - Docstring nói rõ: buổi gốc có `lesson.status = "holiday"`, buổi bù là `lesson` `upcoming` thường; bảng shift là nguồn duy nhất cho nhãn "Đã dời sang" và hoàn tác (TOS-13).
 - Modify: `packages/db/src/schema/index.ts` — export file mới.
 - Create: migration qua `pnpm --filter @teacher-os/db db:generate` (tên do drizzle-kit sinh, kiểm tra SQL trước khi commit).

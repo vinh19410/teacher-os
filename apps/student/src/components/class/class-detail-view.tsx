@@ -80,6 +80,9 @@ function computeRingStats(detail: StudentClassDetail): ClassRingStats {
 		(l) => l.status === "completed" || l.status === "absent",
 	);
 	const attended = heldLessons.filter((l) => l.status === "completed").length;
+	// TOS-11 (I4): buổi `holiday` ("Nghỉ lễ — Đã dời lịch") không diễn ra,
+	// không trừ buổi — loại khỏi tổng để không hiện 24/25.
+	const teachingSessions = detail.lessons.filter((l) => l.status !== "holiday");
 	const submitted = detail.assignments.filter(
 		(a) => a.submittedAt != null || a.scores != null,
 	);
@@ -92,7 +95,7 @@ function computeRingStats(detail: StudentClassDetail): ClassRingStats {
 			: null;
 	return {
 		held: heldLessons.length,
-		totalSessions: detail.lessons.length,
+		totalSessions: teachingSessions.length,
 		attended,
 		assignmentsDone: submitted.length,
 		assignmentsTotal: detail.assignments.length,
@@ -157,10 +160,12 @@ function TodoBanner({
 }
 
 /** Tab "Giáo trình": các chủ đề của lớp theo thứ tự buổi học, tick chủ đề đã
- * hoàn thành (mọi buổi của chủ đề đều `completed`). */
+ * hoàn thành (mọi buổi của chủ đề đều `completed`). Buổi `holiday` (TOS-11)
+ * không diễn ra — loại khỏi progress để chủ đề không bị khoá "chưa xong". */
 function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
 	const topics = new Map<string, { total: number; completed: number }>();
 	for (const lesson of detail.lessons) {
+		if (lesson.status === "holiday") continue;
 		const topic = lesson.topic || "Chưa có chủ đề";
 		const entry = topics.get(topic) ?? { total: 0, completed: 0 };
 		entry.total += 1;

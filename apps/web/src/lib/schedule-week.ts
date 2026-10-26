@@ -82,12 +82,14 @@ export function sessionKeyOfRef(ref: SessionRef): string {
  * Status rollup:
  * - All cancelled -> "cancelled"
  * - All completed -> "completed"
+ * - All holiday (TOS-11: "Nghỉ lễ — Đã dời lịch") -> "holiday"
  * - Remaining (mixed, all upcoming, absent) -> "upcoming"
  */
 export function rollupSessionStatus(rows: readonly Lesson[]): LessonStatus {
 	if (rows.length === 0) return "upcoming";
 	if (rows.every((r) => r.status === "cancelled")) return "cancelled";
 	if (rows.every((r) => r.status === "completed")) return "completed";
+	if (rows.every((r) => r.status === "holiday")) return "holiday";
 	return "upcoming";
 }
 
@@ -225,7 +227,10 @@ export function weekSlotCount(
 	const slots = new Set<string>();
 	for (const column of columns) {
 		for (const item of column) {
-			if (item.status !== "cancelled") slots.add(`${item.day}|${item.time}`);
+			// Buổi đã hủy và buổi nghỉ lễ đã dời (TOS-11) không chiếm slot.
+			if (item.status !== "cancelled" && item.status !== "holiday") {
+				slots.add(`${item.day}|${item.time}`);
+			}
 		}
 	}
 	for (const block of projectedBlocks) {

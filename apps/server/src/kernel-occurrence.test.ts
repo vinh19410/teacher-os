@@ -540,4 +540,46 @@ describe("occurrence mutations (#98 phase 2)", () => {
 			attendanceNote: "Đến muộn 10 phút",
 		});
 	});
+
+	test("TOS-11: snapshot includes holidays and holidayShifts of the organization", async () => {
+		const [cls] = await t.libsql
+			.select({ orgId: schema.classTable.orgId })
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		if (!cls) throw new Error("expected class row");
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: "hol-snap-1",
+			orgId: cls.orgId,
+			name: "Nghỉ lễ 20/11",
+			fromDate: "2026-11-20",
+			toDate: "2026-11-20",
+			scope: "org",
+			mode: "shift",
+			notify: true,
+			createdByUserId: t.teacherA.id,
+		});
+		await t.libsql.insert(schema.holidaySessionShift).values({
+			id: "shift-snap-1",
+			orgId: cls.orgId,
+			holidayId: "hol-snap-1",
+			classId,
+			originalDate: "2026-11-20",
+			makeupDate: "2026-12-25",
+		});
+
+		const snap = await snapshot();
+		expect(snap.holidays).toContainEqual({
+			id: "hol-snap-1",
+			name: "Nghỉ lễ 20/11",
+			fromDate: "2026-11-20",
+			toDate: "2026-11-20",
+			scope: "org",
+		});
+		expect(snap.holidayShifts).toContainEqual({
+			holidayId: "hol-snap-1",
+			classId,
+			originalDate: "2026-11-20",
+			makeupDate: "2026-12-25",
+		});
+	});
 });

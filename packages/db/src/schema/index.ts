@@ -13,6 +13,7 @@ export * from "./membership";
 export * from "./notif";
 export * from "./org-bank-link";
 export * from "./organization";
+export * from "./organization-holiday";
 export * from "./payment-transaction";
 export * from "./quiz-attempt";
 export * from "./quiz-attempt-annotation";

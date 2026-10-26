@@ -45,6 +45,15 @@ export const lesson = sqliteTable(
 		/** Occurrence identity yyyy-mm-dd (UTC-anchored); NULL = legacy class. */
 		date: text("date"),
 		type: text("type").notNull().default("1:1"),
+		/**
+		 * `upcoming | completed | absent | cancelled | holiday` (TOS-11).
+		 * `holiday` = buổi gốc bị Lịch nghỉ chung dời ("Nghỉ lễ — Đã dời
+		 * lịch"): không trừ buổi (BR-003), không điểm danh, không sửa/hủy —
+		 * cặp gốc→bù sống ở `holiday_session_shift`. Buổi bù là dòng
+		 * `upcoming` thường; contract "class fields immutable" không đổi
+		 * (không đụng sessionsTotal/startDate/schedule, số buổi không phải
+		 * `holiday` vẫn bằng `sessionsTotal`).
+		 */
 		status: text("status").notNull().default("upcoming"),
 		/**
 		 * TOS-7 (#440): trạng thái điểm danh chi tiết — `present | late |

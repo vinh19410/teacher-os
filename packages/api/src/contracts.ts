@@ -1395,7 +1395,18 @@ export interface KernelLessonRow {
 	dur: number;
 	date: string | null;
 	type: string;
-	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
+	/**
+	 * `holiday` (TOS-11) = buổi gốc bị Lịch nghỉ chung dời — "không diễn
+	 * ra": không trừ buổi (BR-003), không điểm danh, cặp gốc→bù ở
+	 * `holiday_session_shift`.
+	 */
+	status:
+		| "completed"
+		| "upcoming"
+		| "cancelled"
+		| "absent"
+		| "holiday"
+		| string;
 	/**
 	 * TOS-7 — trạng thái điểm danh chi tiết (`present | late | excused |
 	 * unexcused`); null = chưa ghi chi tiết (dòng cũ / 1-click). Required
@@ -1570,6 +1581,9 @@ export interface KernelSnapshot {
 	assignmentTests: KernelAssignmentTestRow[];
 	vocabDecks: KernelVocabDeckRow[];
 	vocabSuggestions?: KernelVocabSuggestionRow[];
+	/** TOS-11: lịch tuần vẽ nhãn kỳ nghỉ + "Đã dời sang dd/MM" không cần gọi thêm endpoint. Optional — fixtures cũ không gửi. */
+	holidays?: KernelHolidaySummary[];
+	holidayShifts?: KernelHolidayShiftRow[];
 }
 
 export interface CreatedResponse {
@@ -3076,3 +3090,213 @@ export const vocabCardMutationResponseSchema = z
 export type VocabCardMutationResponse = z.infer<
 	typeof vocabCardMutationResponseSchema
 >;
+
+// --- Lịch nghỉ chung (TOS-11, issue #445) ---
+
+export const HOLIDAY_NAME_MIN = 2;
+export const HOLIDAY_NAME_MAX = 100;
+/** Số ngày tối đa tính CẢ HAI ĐẦU khoảng nghỉ. */
+export const HOLIDAY_MAX_DAYS = 30;
+
+export const HOLIDAY_SCOPES = ["org", "classes"] as const;
+export type HolidayScope = (typeof HOLIDAY_SCOPES)[number];
+export const HOLIDAY_MODES = ["shift", "cancel"] as const;
+export type HolidayMode = (typeof HOLIDAY_MODES)[number];
+
+/** Mã lỗi riêng của pipeline lịch nghỉ — route trả kèm HTTP 409/422. */
+export const HOLIDAY_ERROR_CODES = {
+	/** Khoảng ngày không trúng buổi nào (422). */
+	NO_SESSIONS: "no-sessions",
+	/** fromDate đã qua (422) — chỉ dời buổi chưa diễn ra. */
+	PAST_RANGE: "past-range",
+	/** Số buổi × lớp vượt ngưỡng batch D1 (422). */
+	TOO_LARGE: "too-large",
+	/** DB đổi giữa preview và apply — client phải xem lại bảng (409). */
+	STALE_PREVIEW: "stale-preview",
+	/** Nhóm buổi có dòng `holiday` — bị khóa sửa/dời (409). */
+	HOLIDAY_LOCKED: "holiday-locked",
+} as const;
+export type HolidayErrorCode =
+	(typeof HOLIDAY_ERROR_CODES)[keyof typeof HOLIDAY_ERROR_CODES];
+
+/** Strict yyyy-mm-dd: pattern VÀ roundtrip UTC (2026-02-30 lặng lẽ thành
+ * tháng 3 nếu chỉ regex — mirror `parseStartDateStrict` skeleton). Refine
+ * tự guard format: zod vẫn chạy check sau khi regex fail (chuỗi rỗng). */
+const holidayISODate = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/)
+	.refine((value) => {
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+		const date = new Date(`${value}T00:00:00Z`);
+		if (Number.isNaN(date.getTime())) return false;
+		return date.toISOString().slice(0, 10) === value;
+	});
+
+export const holidayDraftSchema = z
+	.object({
+		name: z.string().trim().min(HOLIDAY_NAME_MIN).max(HOLIDAY_NAME_MAX),
+		fromDate: holidayISODate,
+		toDate: holidayISODate,
+		scope: z.enum(HOLIDAY_SCOPES),
+		/** Bắt buộc ≥ 1 khi scope = "classes"; bỏ qua khi scope = "org". */
+		classIds: z
+			.array(z.string().min(1))
+			.max(200)
+			.default([])
+			.transform((ids) => [...new Set(ids)]),
+		/** TOS-11 chỉ mở "shift"; "cancel" là TOS-13. */
+		mode: z.literal("shift"),
+		notify: z.boolean().default(true),
+	})
+	.superRefine((input, ctx) => {
+		if (input.toDate < input.fromDate) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["toDate"],
+				message: "Ngày kết thúc phải từ ngày bắt đầu trở đi",
+			});
+			return;
+		}
+		const days =
+			(Date.parse(`${input.toDate}T00:00:00Z`) -
+				Date.parse(`${input.fromDate}T00:00:00Z`)) /
+				86_400_000 +
+			1;
+		if (days > HOLIDAY_MAX_DAYS) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["toDate"],
+				message: `Khoảng nghỉ tối đa ${HOLIDAY_MAX_DAYS} ngày`,
+			});
+		}
+		if (input.scope === "classes" && input.classIds.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["classIds"],
+				message: "Chọn ít nhất một lớp",
+			});
+		}
+	});
+export type HolidayDraft = z.infer<typeof holidayDraftSchema>;
+
+/** Apply = draft + planHash của lần preview GV đã xác nhận (I7). */
+export const holidayApplySchema = holidayDraftSchema.and(
+	z.object({ planHash: z.string().min(1) }),
+);
+export type HolidayApplyInput = z.infer<typeof holidayApplySchema>;
+
+/** Một dòng bảng xem trước: buổi gốc bị dời + buổi bù cuối khóa. */
+export interface HolidayPlannedShift {
+	classId: string;
+	className: string;
+	/** yyyy-mm-dd buổi gốc. */
+	originalDate: string;
+	/** Buổi thứ mấy theo đúng định nghĩa index tab Lịch học (I4 — không đếm nhóm `holiday`). */
+	sessionOrdinal: number;
+	/** yyyy-mm-dd buổi bù (thứ ∈ schedule.days, sau buổi cuối, không trùng kỳ nghỉ). */
+	makeupDate: string;
+	/** HH:MM khung giờ chuẩn của lớp. */
+	time: string;
+	/** Phút, cùng công thức `generateScheduleLessons`. */
+	dur: number;
+	/** 1 = Thứ 2 … 7 = Chủ nhật (lesson weekday). */
+	weekday: number;
+	/** Ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 dùng hiển thị "(*)". */
+	skippedHolidayDates: string[];
+}
+
+/** Buổi có dòng đã điểm danh — giữ nguyên (D1), nhãn chi tiết ở TOS-12. */
+export interface HolidayKeptCompleted {
+	classId: string;
+	className: string;
+	date: string;
+	sessionOrdinal: number;
+}
+
+/** Lớp không dời được: lịch legacy hoặc còn dòng không có `date`. */
+export interface HolidayUnsupported {
+	classId: string;
+	className: string;
+	reason: "legacy-schedule" | "undated";
+}
+
+export interface HolidayPreview {
+	shifts: HolidayPlannedShift[];
+	keptCompleted: HolidayKeptCompleted[];
+	unsupported: HolidayUnsupported[];
+	affectedClassCount: number;
+	/** SHA-256 ổn định của danh sách shift — apply phải gửi lại (I7). */
+	planHash: string;
+}
+
+/** Kết quả apply — `holidayId` để hoàn tác/đối chiếu (TOS-13). */
+export interface HolidayApplyResult {
+	holidayId: string;
+	shiftedCount: number;
+	classCount: number;
+}
+
+/** Wire schema bảng xem trước — web repos parse trước khi render (I7 kèm planHash). */
+export const holidayPreviewResponseSchema = z.object({
+	shifts: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			originalDate: z.string(),
+			sessionOrdinal: z.number().int(),
+			makeupDate: z.string(),
+			time: z.string(),
+			dur: z.number().int(),
+			weekday: z.number().int().min(1).max(7),
+			skippedHolidayDates: z.array(z.string()),
+		}),
+	),
+	keptCompleted: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			date: z.string(),
+			sessionOrdinal: z.number().int(),
+		}),
+	),
+	unsupported: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			reason: z.enum(["legacy-schedule", "undated"]),
+		}),
+	),
+	affectedClassCount: z.number().int(),
+	planHash: z.string().min(1),
+});
+
+export const holidayApplyResultSchema = z.object({
+	holidayId: z.string().min(1),
+	shiftedCount: z.number().int(),
+	classCount: z.number().int(),
+});
+
+/** Snapshot kernel thêm phần lịch nghỉ để lịch tuần vẽ nhãn không cần gọi thêm endpoint (phase 5). */
+export interface KernelHolidaySummary {
+	id: string;
+	name: string;
+	fromDate: string;
+	toDate: string;
+	scope: HolidayScope;
+}
+
+export interface KernelHolidayShiftRow {
+	holidayId?: string;
+	classId: string;
+	originalDate: string;
+	makeupDate: string;
+}
+
+/** Nhãn dùng chung web + student (phase 4) — một nguồn duy nhất. */
+export const LESSON_STATUS_LABEL: Record<string, string> = {
+	upcoming: "Chưa diễn ra",
+	completed: "Đã hoàn thành",
+	absent: "Nghỉ không phép",
+	cancelled: "Đã hủy",
+	holiday: "Nghỉ lễ — Đã dời lịch",
+};

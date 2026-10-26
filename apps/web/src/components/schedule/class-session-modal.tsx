@@ -262,6 +262,8 @@ export function ClassSessionModal({
 												<Badge variant="danger">Đã hủy</Badge>
 											) : state.status === "absent" ? (
 												<Badge variant="danger">Vắng mặt</Badge>
+											) : state.status === "holiday" ? (
+												<Badge variant="warn">Nghỉ lễ — Đã dời lịch</Badge>
 											) : (
 												<Badge variant="accent">Sắp tới</Badge>
 											)}

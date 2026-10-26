@@ -273,6 +273,26 @@ describe("computeReminders — attendance", () => {
 			result.attendance.items.some((item) => item.classId === "class-org2"),
 		).toBe(false);
 	});
+
+	test("(TOS-11) lesson holiday hôm nay không thành nhắc việc", async () => {
+		const today = vietnamTodayISO(NOW);
+		const weekday = new Date(`${today}T00:00:00Z`).getUTCDay();
+		await db.insert(schema.lesson).values({
+			id: "les-a-holiday",
+			orgId: "org-1",
+			classId: "class-dated",
+			enrollmentId: "enr-1",
+			day: weekday === 0 ? 7 : weekday,
+			time: "18:00",
+			dur: 90,
+			date: today,
+			status: "holiday",
+		});
+
+		const result = await computeReminders(db, "org-1", { kind: "org" }, NOW);
+		// Giữ nguyên 3 ca như (a) — holiday không phải ca cần điểm danh.
+		expect(result.attendance.pending).toBe(3);
+	});
 });
 
 describe("computeReminders — overdue grading", () => {

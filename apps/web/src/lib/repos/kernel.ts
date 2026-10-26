@@ -347,6 +347,8 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		assignmentTests: mapAssignmentTests(snapshot),
 		vocabDecks: snapshot.vocabDecks ?? [],
 		vocabSuggestions: snapshot.vocabSuggestions ?? [],
+		holidays: snapshot.holidays ?? [],
+		holidayShifts: snapshot.holidayShifts ?? [],
 	};
 }
 
@@ -520,6 +522,8 @@ const SNAPSHOT_COLLECTION_KEYS = [
  */
 const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	"vocabSuggestions",
+	"holidays",
+	"holidayShifts",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in
