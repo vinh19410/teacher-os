@@ -15,7 +15,7 @@ import type {
 	LessonStatus,
 	LessonType,
 } from "@/lib/mock-data";
-import type { ScheduleEventLike } from "@/lib/schedule-month";
+import type { HolidaySpanLike, ScheduleEventLike } from "@/lib/schedule-month";
 import {
 	distinctStudentsBySid,
 	resolveWeekColumnEntries,
@@ -29,6 +29,9 @@ export interface DaySourceData {
 	lessons: Lesson[];
 	/** Org events (TOS-14). Optional — snapshots without events still build. */
 	events?: readonly ScheduleEventLike[];
+	/** Org holidays (TOS-14b/#453). Optional — snapshots without holidays
+	 * still build. */
+	holidays?: readonly HolidaySpanLike[];
 }
 
 export interface DayLessonItem {
@@ -57,11 +60,24 @@ export interface DayEventItem {
 	endTime: string;
 }
 
-export type DayAgendaItem = DayLessonItem | DayEventItem;
+export interface DayHolidayItem {
+	kind: "holiday";
+	id: string;
+	name: string;
+	fromDate: string;
+	toDate: string;
+}
 
-/** Time ascending, id as the deterministic tie-breaker. */
+export type DayAgendaItem = DayLessonItem | DayEventItem | DayHolidayItem;
+
+/** Holidays are all-day spans → first; then time ascending; id tie-break. */
 function compareItems(a: DayAgendaItem, b: DayAgendaItem): number {
-	if (a.time !== b.time) return a.time < b.time ? -1 : 1;
+	const aDay = a.kind === "holiday" ? 0 : 1;
+	const bDay = b.kind === "holiday" ? 0 : 1;
+	if (aDay !== bDay) return aDay - bDay;
+	if (a.kind !== "holiday" && b.kind !== "holiday" && a.time !== b.time) {
+		return a.time < b.time ? -1 : 1;
+	}
 	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
@@ -124,6 +140,19 @@ export function buildDayAgenda(
 			time: event.startTime,
 			endTime: event.endTime,
 		});
+	}
+
+	// TOS-14b: holidays covering this date surface as all-day agenda items.
+	for (const holiday of data.holidays ?? []) {
+		if (holiday.fromDate <= dateISO && dateISO <= holiday.toDate) {
+			items.push({
+				kind: "holiday",
+				id: holiday.id,
+				name: holiday.name,
+				fromDate: holiday.fromDate,
+				toDate: holiday.toDate,
+			});
+		}
 	}
 
 	items.sort(compareItems);

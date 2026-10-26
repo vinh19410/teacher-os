@@ -155,6 +155,50 @@ describe("HolidayModal (TOS-11 phase 5)", () => {
 		);
 	});
 
+	it("khoảng 35 ngày → nút xác nhận khóa, không gọi preview; sửa về 30 ngày → mở khóa (AC-004 mục 2, #453)", async () => {
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+			/>,
+		);
+		fireEvent.change(screen.getByTestId("holiday-name"), {
+			target: { value: "Nghỉ đông" },
+		});
+		// 2026-11-01..2026-12-05 tính cả hai đầu = 35 ngày.
+		fireEvent.change(screen.getByTestId("holiday-from"), {
+			target: { value: "2026-11-01" },
+		});
+		fireEvent.change(screen.getByTestId("holiday-to"), {
+			target: { value: "2026-12-05" },
+		});
+		await settle();
+		expect(screen.getAllByText(/tối đa 30 ngày/).length).toBeGreaterThanOrEqual(
+			1,
+		);
+		expect(
+			(screen.getByText("Xác nhận áp dụng & Dời buổi") as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		expect(repos.previewHoliday).not.toHaveBeenCalled();
+
+		// Sửa về đúng 30 ngày (2026-11-01..2026-11-30) → mở khóa + preview chạy.
+		fireEvent.change(screen.getByTestId("holiday-to"), {
+			target: { value: "2026-11-30" },
+		});
+		const confirmBtn = screen.getByText(
+			"Xác nhận áp dụng & Dời buổi",
+		) as HTMLButtonElement;
+		await waitFor(() => expect(confirmBtn.disabled).toBe(false), {
+			timeout: 2000,
+		});
+		await waitFor(() => expect(repos.previewHoliday).toHaveBeenCalled(), {
+			timeout: 2000,
+		});
+	});
+
 	it("scope = classes mà chưa chọn lớp → lỗi và không preview", async () => {
 		render(
 			<HolidayModal

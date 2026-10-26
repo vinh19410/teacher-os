@@ -230,3 +230,72 @@ describe("buildDayAgenda — ordering and mixed sources", () => {
 		expect(items[0]).toMatchObject({ kind: "lesson", endTime: "00:30" });
 	});
 });
+
+describe("buildDayAgenda — holiday items (TOS-14b, #453)", () => {
+	const holiday = {
+		id: "hol-1",
+		name: "Nghỉ lễ 30/4",
+		fromDate: "2026-11-04",
+		toDate: "2026-11-06",
+	};
+
+	it("includes the holiday item with its span on a covered day", () => {
+		const items = buildDayAgenda(
+			{ classes: [], lessons: [], holidays: [holiday] },
+			DAY,
+		);
+		expect(items).toEqual([
+			{
+				kind: "holiday",
+				id: "hol-1",
+				name: "Nghỉ lễ 30/4",
+				fromDate: "2026-11-04",
+				toDate: "2026-11-06",
+			},
+		]);
+	});
+
+	it("sorts the holiday before earlier-time lessons and events", () => {
+		const items = buildDayAgenda(
+			{
+				classes: [cls("cls-1")],
+				lessons: [
+					lesson({ id: "d1", date: DAY, day: 4, time: "07:00", dur: 60 }),
+				],
+				events: [
+					{
+						id: "ev-early",
+						title: "Chợ sáng",
+						date: DAY,
+						startTime: "06:00",
+						endTime: "07:00",
+					},
+				],
+				holidays: [holiday],
+			},
+			DAY,
+		);
+		expect(items[0]).toMatchObject({ kind: "holiday", id: "hol-1" });
+		// Sau holiday, các item thường quay lại sort theo giờ: event 06:00 < lesson 07:00.
+		expect(items.map((i) => i.kind)).toEqual(["holiday", "event", "lesson"]);
+	});
+
+	it("has no holiday item outside the span or when holidays are absent", () => {
+		const withSpan = buildDayAgenda(
+			{ classes: [], lessons: [], holidays: [holiday] },
+			"2026-11-07",
+		);
+		expect(withSpan).toEqual([]);
+
+		const without = buildDayAgenda(
+			{
+				classes: [cls("cls-1")],
+				lessons: [
+					lesson({ id: "d1", date: DAY, day: 4, time: "19:00", dur: 90 }),
+				],
+			},
+			DAY,
+		);
+		expect(without.map((i) => i.kind)).toEqual(["lesson"]);
+	});
+});

@@ -13,6 +13,7 @@ import {
 	makeupDateForShift,
 } from "@/lib/repos/holidays";
 import type { KernelSlice } from "@/lib/repos/kernel";
+import { holidaysByDateIndex } from "@/lib/schedule-month";
 import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
 import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
 
@@ -47,6 +48,9 @@ export function ScheduleWeekView({
 		if (bucket) bucket.push(event);
 		else eventsByDate.set(event.date, [event]);
 	}
+	// TOS-14b: thẻ kỳ nghỉ trong cột ngày — expand span một lần từ snapshot.
+	const holidaysOnDate = holidaysByDateIndex(data.holidays ?? []);
+	const holidayById = new Map((data.holidays ?? []).map((h) => [h.id, h]));
 
 	return (
 		<>
@@ -89,16 +93,14 @@ export function ScheduleWeekView({
 							a.startTime.localeCompare(b.startTime) ||
 							a.id.localeCompare(b.id),
 					);
-					const dayHolidays = (data.holidays ?? []).filter(
-						(h) => h.fromDate <= dateISO && dateISO <= h.toDate,
-					);
+					const dayHolidays = holidaysOnDate.get(dateISO) ?? [];
 					return (
 						<div
 							key={dn}
 							className={`day-col flex min-h-[220px] flex-col rounded-xl border bg-card p-3 shadow-sm ${
 								isToday ? "border-ring ring-[3px] ring-ring/20" : ""
 							}`}
-							data-date={dates[i]}
+							data-date={dateISO}
 						>
 							<div className="flex items-center justify-between pb-3">
 								<div
@@ -106,7 +108,7 @@ export function ScheduleWeekView({
 										isToday ? "" : "text-muted-foreground"
 									}`}
 								>
-									{dn} {formatDayMonth(dates[i])}
+									{dn} {formatDayMonth(dateISO)}
 								</div>
 								{isToday && (
 									<span className="rounded-md bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
@@ -120,20 +122,6 @@ export function ScheduleWeekView({
 									dayHolidays.length === 0 && (
 										<div className="text-muted-foreground text-xs">—</div>
 									)}
-								{dayHolidays.map((holiday) => {
-									const isFirstVisibleDay =
-										dateISO === holiday.fromDate ||
-										(i === 0 && holiday.fromDate < dateISO);
-									return (
-										<HolidayCalendarCard
-											key={holiday.id}
-											holiday={holiday}
-											showUndoAction={isFirstVisibleDay}
-											todayISO={todayIso}
-											onRequestUndo={setUndoHoliday}
-										/>
-									);
-								})}
 								{entries.map((entry) =>
 									entry.block ? (
 										<div
@@ -179,7 +167,7 @@ export function ScheduleWeekView({
 															dateISO: s.dateISO,
 															day: s.day,
 															time: s.time,
-															columnDateISO: dates[i],
+															columnDateISO: dateISO,
 														})
 													}
 													className={`lesson-block mt-2 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(s.classId)} ${
@@ -245,6 +233,24 @@ export function ScheduleWeekView({
 										})()
 									),
 								)}
+								{dayHolidays.map((holiday) => {
+									const fullHoliday = holidayById.get(holiday.id);
+									const isFirstVisibleDay =
+										dateISO === holiday.fromDate ||
+										(i === 0 && holiday.fromDate < dateISO);
+									return (
+										// TOS-14b + TOS-13: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
+										<div key={holiday.id} className="mt-2">
+											<HolidayCalendarCard
+												name={holiday.name}
+												holiday={fullHoliday}
+												showUndoAction={isFirstVisibleDay}
+												todayISO={todayIso}
+												onRequestUndo={setUndoHoliday}
+											/>
+										</div>
+									);
+								})}
 								{dayEvents.map((event) => (
 									<OrgEventChip key={event.id} event={event} />
 								))}

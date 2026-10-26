@@ -1,14 +1,14 @@
 import { mkdirSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi, vietnamTodayISO } from "./helpers";
+import { addDaysISO, signUpViaUi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 /**
  * TOS-14 / issue #447 — Lịch dạy Tháng / Tuần / Ngày, màu ca học theo lớp,
  * sự kiện vận hành ngoài lịch lớp (≤ 2 giây).
  *
- * Kịch bản validation hộp thoại Lịch nghỉ chung (AC-004 mục 2) đã chuyển sang
- * follow-up #453 (blocked by #445) theo Scope split trong plan.
+ * Follow-up #453 (TOS-14b): kịch bản 3 — validation hộp thoại Lịch nghỉ chung
+ * (AC-004 mục 2) và thẻ kỳ nghỉ trong cả 3 view — cùng nằm trong file này.
  */
 
 const TODAY = vietnamTodayISO();
@@ -65,6 +65,13 @@ test("AC-004: đổi view Tháng/Tuần/Ngày ≤ 2s, màu theo lớp, tạo s�
 	await expect(page.getByTestId("schedule-day-agenda")).toBeVisible();
 	expect(Date.now() - switchToDayStart).toBeLessThan(2000);
 	await expect(page).toHaveURL(/view=day/);
+	// Khi chuyển qua tab Tuần, URL neo về Thứ Hai đầu tuần; nếu TODAY không phải
+	// Thứ Hai thì bấm "Hôm nay" để xem đúng ngày TODAY đã seed buổi học.
+	const todayBtn = page.getByRole("button", { name: "Hôm nay" });
+	if (await todayBtn.isEnabled()) {
+		await todayBtn.click();
+		await expect(page).toHaveURL(new RegExp(`date=${TODAY}`));
+	}
 	// Mỗi block ca học mang `data-class-color` ổn định (1..8); hai lớp khác màu.
 	let colorsInDay = await page
 		.locator("[data-class-color]")
@@ -142,4 +149,121 @@ test("AC-004: đổi view Tháng/Tuần/Ngày ≤ 2s, màu theo lớp, tạo s�
 		path: `${screenshotsDir}tos14-day-375.png`,
 		fullPage: true,
 	});
+});
+
+// #453 (TOS-14b) — AC-004 mục 2: hộp thoại Lịch nghỉ chung khóa validation.
+test("AC-004 mục 2: hộp thoại Lịch nghỉ chung — tên 1 ký tự hoặc 35 ngày khóa nút xác nhận, hợp lệ thì mở khóa", async ({
+	page,
+}) => {
+	const teacherEmail = await signUpViaUi(page);
+	// Cần ít nhất 1 buổi trong khoảng nghỉ để preview.shifts.length > 0 khi hợp lệ.
+	await seedDatedClass(page, {
+		name: "IELTS Kiểm tra Nghỉ",
+		startDate: TODAY,
+		schedule: { start: "09:00", end: "10:30" },
+		sessionsTotal: 2,
+		students: { teacherEmail, names: ["An Nguyễn"] },
+	});
+	await page.goto("/schedule");
+	await expect(page.getByText("IELTS Kiểm tra Nghỉ")).toBeVisible();
+	await page.getByTestId("holiday-open").click();
+
+	const dialog = page.getByRole("dialog", { name: "Tạo lịch nghỉ" });
+	await expect(dialog).toBeVisible();
+	const confirmBtn = dialog.getByRole("button", {
+		name: "Xác nhận áp dụng & Dời buổi",
+	});
+
+	// Tên 1 ký tự → cảnh báo inline + nút xác nhận khóa.
+	await dialog.getByTestId("holiday-name").fill("N");
+	await expect(dialog.getByText(/Tên từ 2–100 ký tự/)).toBeVisible();
+	await expect(confirmBtn).toBeDisabled();
+
+	// Khoảng 35 ngày (tính cả hai đầu) → cảnh báo "tối đa 30 ngày" + vẫn khóa.
+	await dialog.getByTestId("holiday-name").fill("Nghỉ đông E2E");
+	await dialog.getByTestId("holiday-from").fill(TODAY);
+	await dialog.getByTestId("holiday-to").fill(addDaysISO(TODAY, 34));
+	await expect(dialog.getByText(/tối đa 30 ngày/).first()).toBeVisible();
+	await expect(confirmBtn).toBeDisabled();
+
+	// Sửa về đúng 30 ngày → nút mở khóa + bảng xem trước chạy (debounce 300ms).
+	await dialog.getByTestId("holiday-to").fill(addDaysISO(TODAY, 29));
+	await expect(confirmBtn).toBeEnabled({ timeout: 5000 });
+	await expect(dialog.getByTestId("holiday-preview")).toBeVisible({
+		timeout: 5000,
+	});
+});
+
+// #453 (TOS-14b) — AC-004 mục 1: thẻ kỳ nghỉ hiển thị cả 3 view, ổn định
+// giữa các lần tải (dữ liệu thật qua snapshot kernel sau khi apply).
+test("AC-004: thẻ kỳ nghỉ hiển thị trong cả 3 view Tháng/Tuần/Ngày và ổn định giữa các lần tải", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	const teacherEmail = await signUpViaUi(page);
+	// Lớp có buổi đúng hôm nay → holiday 1 ngày TODAY trúng buổi, apply thành công.
+	await seedDatedClass(page, {
+		name: "IELTS Kỳ nghỉ",
+		startDate: TODAY,
+		schedule: { start: "09:00", end: "10:30" },
+		sessionsTotal: 2,
+		students: { teacherEmail, names: ["An Nguyễn"] },
+	});
+	await page.goto("/schedule");
+	await expect(page.getByText("IELTS Kỳ nghỉ")).toBeVisible();
+
+	// Tạo holiday 1 ngày hôm nay qua hộp thoại (preview → apply thật).
+	await page.getByTestId("holiday-open").click();
+	const dialog = page.getByRole("dialog", { name: "Tạo lịch nghỉ" });
+	await expect(dialog).toBeVisible();
+	await dialog.getByTestId("holiday-name").fill("Nghỉ lễ E2E");
+	await dialog.getByTestId("holiday-from").fill(TODAY);
+	await dialog.getByTestId("holiday-to").fill(TODAY);
+	await expect(dialog.getByTestId("holiday-preview")).toBeVisible({
+		timeout: 10_000,
+	});
+	await dialog
+		.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" })
+		.click();
+	await expect(page.getByText(/Đã dời 1 buổi của 1 lớp/)).toBeVisible();
+	await expect(dialog).toBeHidden();
+
+	const card = page
+		.getByTestId("holiday-calendar-card")
+		.filter({ hasText: "Nghỉ lễ E2E" });
+
+	// View Ngày TODAY (anchor mặc định sau khi mở /schedule là hôm nay).
+	await page.getByRole("tab", { name: "Ngày" }).click();
+	await expect(page.getByTestId("schedule-day-agenda")).toBeVisible();
+	await expect(card).toBeVisible();
+
+	// View Tuần: thẻ nằm trong cột ngày TODAY.
+	await page.getByRole("tab", { name: "Tuần" }).click();
+	await expect(page.locator(".week-cal")).toBeVisible();
+	await expect(
+		page
+			.locator(`.day-col[data-date="${TODAY}"]`)
+			.getByTestId("holiday-calendar-card")
+			.filter({ hasText: "Nghỉ lễ E2E" }),
+	).toBeVisible();
+
+	// View Tháng: thẻ nằm trong ô ngày TODAY.
+	await page.getByRole("tab", { name: "Tháng" }).click();
+	await expect(page.getByTestId("schedule-month-grid")).toBeVisible();
+	await expect(
+		page
+			.locator(`.month-cell[data-date="${TODAY}"]`)
+			.getByTestId("holiday-calendar-card")
+			.filter({ hasText: "Nghỉ lễ E2E" }),
+	).toBeVisible();
+
+	// Ổn định giữa các lần tải: reload → vẫn thấy thẻ ở ô TODAY.
+	await page.reload();
+	await expect(page.getByTestId("schedule-month-grid")).toBeVisible();
+	await expect(
+		page
+			.locator(`.month-cell[data-date="${TODAY}"]`)
+			.getByTestId("holiday-calendar-card")
+			.filter({ hasText: "Nghỉ lễ E2E" }),
+	).toBeVisible();
 });
