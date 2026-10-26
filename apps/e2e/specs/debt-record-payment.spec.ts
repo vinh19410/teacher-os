@@ -63,7 +63,9 @@ async function createInvoiceViaModal(
 
 async function openRecordPayment(page: Page, studentName: string) {
 	const row = debtRows(page).filter({ hasText: studentName });
-	await row.getByRole("button", { name: `Thu tiền cho ${studentName}` }).click();
+	await row
+		.getByRole("button", { name: `Thu tiền cho ${studentName}` })
+		.click();
 	const dialog = page.getByRole("dialog");
 	await expect(
 		dialog.getByRole("heading", {
@@ -143,15 +145,12 @@ test("AC-002: thu một phần 2.000.000 rồi thu đủ 2.500.000 — trạng t
 
 	// Lần 1: thu 2.000.000 Tiền mặt, ghi chú "Đợt 1".
 	const dialog1 = await openRecordPayment(page, STUDENT_A);
-	await expect(
-		dialog1.getByTestId("payment-summary"),
-	).toContainText("Phải đóng 4.500.000đ");
+	await expect(dialog1.getByTestId("payment-summary")).toContainText(
+		"Phải đóng 4.500.000đ",
+	);
 	await dialog1.getByLabel("Số tiền thực thu lần này (VND) *").fill("2000000");
 	await dialog1.getByRole("radio", { name: "Tiền mặt" }).check();
-	await dialog1
-		.getByLabel("Ghi chú", { exact: false })
-		.first()
-		.fill("Đợt 1");
+	await dialog1.getByLabel("Ghi chú", { exact: false }).first().fill("Đợt 1");
 	await expect(
 		dialog1.getByText(/Số dư còn nợ sau giao dịch này/),
 	).toContainText("2.500.000đ");
@@ -214,7 +213,10 @@ test("AC-002: thu một phần 2.000.000 rồi thu đủ 2.500.000 — trạng t
 	] as const) {
 		await page.setViewportSize({ width: w, height: h });
 		await page.waitForTimeout(300);
-		await page.screenshot({ path: `${screenshotsDir}${name}.png`, fullPage: true });
+		await page.screenshot({
+			path: `${screenshotsDir}${name}.png`,
+			fullPage: true,
+		});
 	}
 	const hasHorizontalOverflow = await page.evaluate(
 		() =>
