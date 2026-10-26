@@ -40,6 +40,22 @@ describe("TEACHER_NAV — Điểm danh ngày (TOS-6 #439)", () => {
 	});
 });
 
+describe("TEACHER_NAV — Công nợ (TOS-15 #449)", () => {
+	it("có mục debts (Công nợ) ngay dưới Doanh thu trong nhóm Kinh doanh", () => {
+		const business = TEACHER_NAV.find((group) => group.group === "Kinh doanh");
+		expect(business).toBeTruthy();
+		const items = business?.items ?? [];
+		const tuitionIndex = items.findIndex((item) => item.key === "tuition");
+		const debtsIndex = items.findIndex((item) => item.key === "debts");
+		expect(debtsIndex).toBeGreaterThan(-1);
+		expect(debtsIndex).toBe(tuitionIndex + 1);
+		expect(items[debtsIndex]).toMatchObject({
+			label: "Công nợ",
+			href: "/debts",
+		});
+	});
+});
+
 describe("extractUserPlan", () => {
 	it("returns null for non-object, null, or undefined user", () => {
 		expect(extractUserPlan(null)).toBeNull();
@@ -100,6 +116,7 @@ describe("TEACHER_NAV v2", () => {
 		// Accessible name e2e: /syllabus và /tuition giữ nhãn app đang có.
 		expect(ITEM_BY_HREF["/syllabus"]?.label).toBe("Syllabus");
 		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Doanh thu");
+		expect(ITEM_BY_HREF["/debts"]?.label).toBe("Công nợ");
 		expect(ITEM_BY_HREF["/dashboard"]?.label).toBe("Tổng quan");
 		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
 		expect(ITEM_BY_HREF["/students"]?.label).toBe("Học viên");
@@ -147,6 +164,7 @@ describe("teacherActiveKey", () => {
 	it("maps /grading and /grading/$attemptId to grading and returns empty for unauthenticated routes", () => {
 		expect(teacherActiveKey("/grading")).toBe("grading");
 		expect(teacherActiveKey("/grading/a-1")).toBe("grading");
+		expect(teacherActiveKey("/debts")).toBe("debts");
 		expect(teacherActiveKey("/login")).toBe("");
 	});
 });

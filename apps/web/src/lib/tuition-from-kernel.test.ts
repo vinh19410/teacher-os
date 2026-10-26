@@ -1,9 +1,13 @@
 import { describe, expect, it, test } from "vitest";
 import type { Invoice, Student } from "./mock-data";
 import {
+	addDaysISO,
+	debtLedger,
+	debtStatusOf,
 	effectiveInvoiceStatus,
 	formatDue,
 	invoiceReceived,
+	invoiceRemaining,
 	packagesEndingSoon,
 	revenueByPeriod,
 	rosterDebtByStudent,
@@ -1005,5 +1009,462 @@ describe("studentTuitionSummary (#347)", () => {
 		expect(summary.totalRemaining).toBe(0);
 		expect(summary.countedClasses).toBe(0);
 		expect(summary.unlinkedPaid).toBe(0);
+	});
+});
+
+describe("debtLedger & debtStatusOf (TOS-15 #449)", () => {
+	const TODAY = "2026-10-26";
+
+	const CLASSES = [
+		{ id: "C1", name: "IELTS 6.5A" },
+		{ id: "C2", name: "IELTS 5.0B" },
+	];
+
+	const STUDENTS: Student[] = [
+		{
+			...student("s1", 5),
+			name: "Nguyễn Minh Anh",
+			phone: "0901112222",
+			email: "minhanh@example.com",
+		},
+		{
+			...student("s2", 5),
+			name: "Trần Hoàng Nam",
+			phone: "0903334444",
+			email: "hoangnam@example.com",
+		},
+		{
+			...student("s3", 5),
+			name: "Lê Thu Hà",
+			phone: "0905556666",
+			email: "thuha@example.com",
+		},
+		{
+			...student("s4", 5),
+			name: "Đặng Quốc Bảo",
+			phone: "0907778888",
+			email: "quocbao@example.com",
+		},
+	];
+
+	const ENROLLMENTS = [
+		{ id: "E1", classId: "C1", studentId: "s1", status: "active" },
+		{ id: "E2", classId: "C2", studentId: "s2", status: "active" },
+		{ id: "E3", classId: "C1", studentId: "s3", status: "active" },
+		{ id: "E4", classId: "C2", studentId: "s4", status: "active" },
+	];
+
+	test("addDaysISO cộng/trừ ngày theo UTC anchor, giữ nguyên chuỗi nếu không phải ISO hợp lệ", () => {
+		expect(addDaysISO("2026-10-26", 7)).toBe("2026-11-02");
+		expect(addDaysISO("2026-10-26", -1)).toBe("2026-10-25");
+		expect(addDaysISO("2026-02-30", 7)).toBe("2026-02-30");
+		expect(addDaysISO("", 7)).toBe("");
+	});
+
+	test("học viên có 2 hóa đơn (1 thu một phần qua ledger, 1 mark-paid thủ công paidAmount=0) → tính đúng D3", () => {
+		const res = debtLedger({
+			todayISO: TODAY,
+			students: [STUDENTS[0]],
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices: [
+				invoice({
+					id: "inv-partial",
+					sid: "s1",
+					eid: "E1",
+					amount: 4_500_000,
+					paidAmount: 2_000_000,
+					status: "unpaid",
+					due: "2026-10-20",
+				}),
+				invoice({
+					id: "inv-manual-paid",
+					sid: "s1",
+					eid: "E1",
+					amount: 1_500_000,
+					paidAmount: 0,
+					status: "paid",
+					due: "2026-10-10",
+				}),
+			],
+		});
+
+		expect(res.rows).toHaveLength(1);
+		expect(res.rows[0]).toEqual({
+			studentId: "s1",
+			name: "Nguyễn Minh Anh",
+			classNames: ["IELTS 6.5A"],
+			totalDue: 6_000_000,
+			totalPaid: 3_500_000,
+			remaining: 2_500_000,
+			nextDue: "2026-10-20",
+			status: "overdue",
+			openInvoiceIds: ["inv-partial"],
+		});
+	});
+
+	test("hóa đơn unpaid có paidAmount >= amount (overpay clamp #340) → invoiceRemaining = 0, trạng thái clear, không vào openInvoiceIds", () => {
+		const overpaid = invoice({
+			id: "inv-clamp",
+			sid: "s1",
+			eid: "E1",
+			amount: 2_000_000,
+			paidAmount: 2_500_000,
+			status: "unpaid",
+			due: "2026-10-01",
+		});
+		expect(invoiceRemaining(overpaid)).toBe(0);
+
+		const res = debtLedger({
+			todayISO: TODAY,
+			students: [STUDENTS[0]],
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices: [overpaid],
+		});
+		expect(res.rows[0]?.remaining).toBe(0);
+		expect(res.rows[0]?.status).toBe("clear");
+		expect(res.rows[0]?.openInvoiceIds).toEqual([]);
+		expect(res.rows[0]?.nextDue).toBeNull();
+		expect(res.kpis.overdue).toEqual({ amount: 0, students: 0 });
+		expect(res.kpis.collected).toEqual({ amount: 2_000_000, students: 1 });
+	});
+
+	test("trạng thái nợ D4: hôm qua → overdue; hôm nay / +7 → due_soon; +8 → due; due rỗng/sai nhưng còn nợ → due; còn nợ 0 → clear", () => {
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: "2026-10-25",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("overdue");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: TODAY,
+					}),
+				],
+				TODAY,
+			),
+		).toBe("due_soon");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: "2026-11-02",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("due_soon");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: "2026-11-03",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("due");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: "",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("due");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "unpaid",
+						amount: 1_000_000,
+						paidAmount: 0,
+						due: "2026-02-30",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("due");
+		expect(
+			debtStatusOf(
+				[
+					invoice({
+						status: "paid",
+						amount: 1_000_000,
+						paidAmount: 1_000_000,
+						due: "2026-10-01",
+					}),
+				],
+				TODAY,
+			),
+		).toBe("clear");
+	});
+
+	test("nextDue và openInvoiceIds bỏ qua due rỗng khi chọn hạn sớm nhất (hóa đơn không hạn xếp sau)", () => {
+		const res = debtLedger({
+			todayISO: TODAY,
+			students: [STUDENTS[0]],
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices: [
+				invoice({
+					id: "inv-no-due",
+					sid: "s1",
+					eid: "E1",
+					amount: 500_000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "",
+					createdAt: 100,
+				}),
+				invoice({
+					id: "inv-later",
+					sid: "s1",
+					eid: "E1",
+					amount: 1_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-11-10",
+					createdAt: 200,
+				}),
+				invoice({
+					id: "inv-sooner",
+					sid: "s1",
+					eid: "E1",
+					amount: 1_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-11-01",
+					createdAt: 300,
+				}),
+			],
+		});
+		expect(res.rows[0]?.nextDue).toBe("2026-11-01");
+		expect(res.rows[0]?.openInvoiceIds).toEqual([
+			"inv-sooner",
+			"inv-later",
+			"inv-no-due",
+		]);
+	});
+
+	test("chip due trả cả due_soon + due; KPI và counts giữ nguyên khi đổi status nhưng đổi khi lọc classId hoặc q (D5)", () => {
+		const invoices = [
+			invoice({
+				id: "inv-1",
+				sid: "s1",
+				eid: "E1",
+				amount: 4_500_000,
+				paidAmount: 2_000_000,
+				status: "unpaid",
+				due: "2026-10-20", // overdue, remaining 2.5M
+			}),
+			invoice({
+				id: "inv-2",
+				sid: "s2",
+				eid: "E2",
+				amount: 3_800_000,
+				paidAmount: 0,
+				status: "unpaid",
+				due: "2026-10-29", // due_soon (+3d), remaining 3.8M
+			}),
+			invoice({
+				id: "inv-3",
+				sid: "s3",
+				eid: "E3",
+				amount: 4_500_000,
+				paidAmount: 4_500_000,
+				status: "paid",
+				due: "2026-10-15", // clear
+			}),
+			invoice({
+				id: "inv-4",
+				sid: "s4",
+				eid: "E4",
+				amount: 2_200_000,
+				paidAmount: 0,
+				status: "unpaid",
+				due: "2026-11-15", // due (> +7d), remaining 2.2M
+			}),
+		];
+
+		const allRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+		});
+		expect(allRes.rows.map((r) => r.studentId)).toEqual([
+			"s1",
+			"s2",
+			"s3",
+			"s4",
+		]);
+		expect(allRes.counts).toEqual({
+			all: 4,
+			overdue: 1,
+			due: 2,
+			clear: 1,
+		});
+		expect(allRes.kpis).toEqual({
+			receivable: { amount: 15_000_000, students: 4 },
+			collected: { amount: 6_500_000, students: 1 },
+			overdue: { amount: 2_500_000, students: 1 },
+		});
+
+		// Lọc status="due" trả cả s2 (due_soon) và s4 (due), nhưng KPI và counts không đổi!
+		const dueRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			status: "due",
+		});
+		expect(dueRes.rows.map((r) => r.studentId)).toEqual(["s2", "s4"]);
+		expect(dueRes.kpis).toEqual(allRes.kpis);
+		expect(dueRes.counts).toEqual(allRes.counts);
+
+		// Lọc status="clear" chỉ còn s3, nhưng KPI quá hạn vẫn giữ 2.500.000đ (D5).
+		const clearRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			status: "clear",
+		});
+		expect(clearRes.rows.map((r) => r.studentId)).toEqual(["s3"]);
+		expect(clearRes.kpis).toEqual(allRes.kpis);
+
+		// Lọc theo q ("nguyen minh" không dấu, hoặc email/SĐT) → KPI cập nhật theo tập tìm kiếm.
+		const qRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			q: "nguyen minh",
+		});
+		expect(qRes.rows.map((r) => r.studentId)).toEqual(["s1"]);
+		expect(qRes.kpis).toEqual({
+			receivable: { amount: 4_500_000, students: 1 },
+			collected: { amount: 2_000_000, students: 0 },
+			overdue: { amount: 2_500_000, students: 1 },
+		});
+
+		const phoneRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			q: "090333",
+		});
+		expect(phoneRes.rows.map((r) => r.studentId)).toEqual(["s2"]);
+
+		const emailRes = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			q: "THUHA@EXAMPLE",
+		});
+		expect(emailRes.rows.map((r) => r.studentId)).toEqual(["s3"]);
+	});
+
+	test("lọc classId loại hóa đơn eid='' và dangling eid; tổng không lọc khớp tuitionTotals", () => {
+		const invoices = [
+			invoice({
+				id: "inv-c1",
+				sid: "s1",
+				eid: "E1",
+				amount: 4_500_000,
+				paidAmount: 2_000_000,
+				status: "unpaid",
+				due: "2026-10-20",
+			}),
+			invoice({
+				id: "inv-legacy",
+				sid: "s1",
+				eid: "",
+				amount: 1_000_000,
+				paidAmount: 0,
+				status: "unpaid",
+				due: "2026-10-28",
+			}),
+			invoice({
+				id: "inv-dangling",
+				sid: "s2",
+				eid: "E-MISSING",
+				amount: 2_000_000,
+				paidAmount: 500_000,
+				status: "unpaid",
+				due: "2026-10-29",
+			}),
+			invoice({
+				id: "inv-c2",
+				sid: "s3",
+				eid: "E3",
+				amount: 3_000_000,
+				paidAmount: 0,
+				status: "paid",
+				due: "2026-10-10",
+			}),
+		];
+
+		const unFiltered = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+		});
+		const totals = tuitionTotals(invoices);
+		const sumPaid = unFiltered.rows.reduce((s, r) => s + r.totalPaid, 0);
+		const sumRem = unFiltered.rows.reduce((s, r) => s + r.remaining, 0);
+		expect(sumPaid).toBe(totals.collected);
+		expect(sumRem).toBe(totals.outstanding);
+
+		const classFiltered = debtLedger({
+			todayISO: TODAY,
+			students: STUDENTS,
+			classes: CLASSES,
+			enrollments: ENROLLMENTS,
+			invoices,
+			classId: "C1",
+		});
+		// Chỉ còn hóa đơn gắn E1 (s1) và E3 (s3); inv-legacy của s1 và inv-dangling của s2 bị loại.
+		expect(classFiltered.rows.map((r) => r.studentId)).toEqual(["s1", "s3"]);
+		expect(classFiltered.rows[0]?.totalDue).toBe(4_500_000);
+		expect(classFiltered.kpis.receivable).toEqual({
+			amount: 7_500_000,
+			students: 2,
+		});
 	});
 });

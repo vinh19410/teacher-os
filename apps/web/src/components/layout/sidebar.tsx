@@ -12,6 +12,7 @@ import {
 	ClipboardList,
 	LayoutDashboard,
 	PenLine,
+	ReceiptText,
 	School,
 	UserRound,
 	Users,
@@ -81,6 +82,12 @@ export const TEACHER_NAV: NavGroup[] = [
 		items: [
 			{ key: "tuition", label: "Doanh thu", icon: Wallet, href: "/tuition" },
 			{
+				key: "debts",
+				label: "Công nợ",
+				icon: ReceiptText,
+				href: "/debts",
+			},
+			{
 				key: "reports",
 				label: "Báo cáo",
 				icon: BarChart3,
@@ -143,6 +150,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/grading": "grading",
 	"/vocab": "vocab",
 	"/tuition": "tuition",
+	"/debts": "debts",
 	"/reports": "reports",
 	"/profile": "profile",
 };
