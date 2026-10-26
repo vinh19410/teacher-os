@@ -110,7 +110,9 @@ describe("buildMonthCells — lesson/event items and the 3-item cap", () => {
 		const cell = cellOf(cells, "2026-11-05");
 		expect(cell.items).toHaveLength(3);
 		expect(cell.overflow).toBe(2);
-		expect(cell.items.map((i) => i.time)).toEqual(["17:00", "18:00", "19:00"]);
+		expect(cell.items.map((i) => (i.kind === "holiday" ? "" : i.time))).toEqual(
+			["17:00", "18:00", "19:00"],
+		);
 	});
 
 	it("keeps 3 items + 0 overflow at the exact cap", () => {
@@ -149,7 +151,9 @@ describe("buildMonthCells — lesson/event items and the 3-item cap", () => {
 		);
 		const cell = cellOf(cells, "2026-11-05");
 		expect(cell.overflow).toBe(1);
-		expect(cell.items.map((i) => i.time)).toEqual(["18:00", "19:00", "20:00"]);
+		expect(cell.items.map((i) => (i.kind === "holiday" ? "" : i.time))).toEqual(
+			["18:00", "19:00", "20:00"],
+		);
 	});
 
 	it("maps events to structural items sorted among lessons by time", () => {
@@ -271,6 +275,87 @@ describe("buildMonthCells — legacy undated lessons follow the weekday", () => 
 			"2026-11-15",
 		);
 		expect(cellOf(cells, "2026-11-03").items).toEqual([]);
+	});
+});
+
+describe("buildMonthCells — holiday items (TOS-14b, #453)", () => {
+	const holiday = {
+		id: "hol-1",
+		name: "Nghỉ lễ 30/4",
+		fromDate: "2026-04-28",
+		toDate: "2026-04-30",
+	};
+
+	it("shows one holiday item per day inside the span, none outside", () => {
+		const cells = buildMonthCells(
+			{ classes: [], lessons: [], holidays: [holiday] },
+			"2026-04-15",
+			"2026-04-20",
+		);
+		for (const date of ["2026-04-28", "2026-04-29", "2026-04-30"]) {
+			expect(cellOf(cells, date).items).toEqual([
+				{ kind: "holiday", id: "hol-1", name: "Nghỉ lễ 30/4" },
+			]);
+		}
+		for (const date of ["2026-04-27", "2026-05-01"]) {
+			expect(cellOf(cells, date).items).toEqual([]);
+		}
+	});
+
+	it("sorts the holiday first and it counts toward the 3-item cap", () => {
+		const classes = [1, 2, 3, 4].map((i) => cls(`cls-${i}`));
+		const lessons = classes.map((c, i) =>
+			lesson({
+				id: `l-${i}`,
+				classId: c.id,
+				date: "2026-11-05",
+				day: 4, // Thursday
+				time: `${17 + i}:00`,
+			}),
+		);
+		const cells = buildMonthCells(
+			{
+				classes,
+				lessons,
+				events: [event({ startTime: "21:00", endTime: "22:00" })],
+				holidays: [
+					{
+						id: "hol-nov",
+						name: "Nghỉ lễ",
+						fromDate: "2026-11-05",
+						toDate: "2026-11-05",
+					},
+				],
+			},
+			"2026-11-15",
+			"2026-11-20",
+		);
+		const cell = cellOf(cells, "2026-11-05");
+		// 1 holiday + 4 lessons + 1 event = 6 items → cap 3, overflow 3.
+		expect(cell.overflow).toBe(3);
+		expect(cell.items[0]).toEqual({
+			kind: "holiday",
+			id: "hol-nov",
+			name: "Nghỉ lễ",
+		});
+		expect(
+			cell.items.slice(1).map((i) => (i.kind === "holiday" ? "" : i.time)),
+		).toEqual(["17:00", "18:00"]);
+	});
+
+	it("keeps old behavior when no holidays are passed", () => {
+		const cells = buildMonthCells(
+			{
+				classes: [cls("cls-1")],
+				lessons: [
+					lesson({ id: "l-1", date: "2026-11-05", day: 4, time: "19:00" }),
+				],
+			},
+			"2026-11-15",
+		);
+		const items = cellOf(cells, "2026-11-05").items;
+		expect(items).toHaveLength(1);
+		expect(items[0].kind).toBe("lesson");
 	});
 });
 

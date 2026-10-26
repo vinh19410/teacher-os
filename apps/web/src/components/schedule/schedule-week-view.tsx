@@ -1,10 +1,12 @@
 import { classBlockClass } from "@/components/schedule/class-block";
 import type { ClassSessionModalRef } from "@/components/schedule/class-session-modal";
+import { HolidayCalendarCard } from "@/components/schedule/holiday-calendar-card";
 import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { classColorIndex } from "@/lib/class-color";
 import { dayNames } from "@/lib/mock-data";
 import { holidayNameForDate, makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelSlice } from "@/lib/repos/kernel";
+import { holidaysByDateIndex } from "@/lib/schedule-month";
 import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
 import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
 
@@ -34,6 +36,8 @@ export function ScheduleWeekView({
 		if (bucket) bucket.push(event);
 		else eventsByDate.set(event.date, [event]);
 	}
+	// TOS-14b: thẻ kỳ nghỉ trong cột ngày — expand span một lần từ snapshot.
+	const holidaysOnDate = holidaysByDateIndex(data.holidays ?? []);
 
 	return (
 		<>
@@ -75,6 +79,7 @@ export function ScheduleWeekView({
 							a.startTime.localeCompare(b.startTime) ||
 							a.id.localeCompare(b.id),
 					);
+					const dayHolidays = holidaysOnDate.get(dates[i]) ?? [];
 					return (
 						<div
 							key={dn}
@@ -98,9 +103,11 @@ export function ScheduleWeekView({
 								)}
 							</div>
 							<div className="min-w-0 flex-1">
-								{entries.length === 0 && dayEvents.length === 0 && (
-									<div className="text-muted-foreground text-xs">—</div>
-								)}
+								{entries.length === 0 &&
+									dayEvents.length === 0 &&
+									dayHolidays.length === 0 && (
+										<div className="text-muted-foreground text-xs">—</div>
+									)}
 								{entries.map((entry) =>
 									entry.block ? (
 										<div
@@ -204,6 +211,12 @@ export function ScheduleWeekView({
 										})()
 									),
 								)}
+								{dayHolidays.map((holiday) => (
+									// TOS-14b: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
+									<div key={holiday.id} className="mt-2">
+										<HolidayCalendarCard name={holiday.name} />
+									</div>
+								))}
 								{dayEvents.map((event) => (
 									<OrgEventChip key={event.id} event={event} />
 								))}

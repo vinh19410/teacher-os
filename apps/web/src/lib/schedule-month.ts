@@ -41,6 +41,19 @@ export interface MonthSourceData {
 	lessons: Lesson[];
 	/** Org events (TOS-14). Optional — snapshots without events still build. */
 	events?: readonly ScheduleEventLike[];
+	/** Org holidays (TOS-14b/#453). Optional — snapshots without holidays
+	 * still build. Structural mirror of KernelHolidaySummary — deliberately
+	 * NOT imported from `@teacher-os/api` (same pattern as ScheduleEventLike). */
+	holidays?: readonly HolidaySpanLike[];
+}
+
+/** Structural mirror of KernelHolidaySummary's span fields. */
+export interface HolidaySpanLike {
+	id: string;
+	name: string;
+	/** `yyyy-mm-dd`, both ends inclusive. */
+	fromDate: string;
+	toDate: string;
 }
 
 export interface MonthLessonItem {
@@ -63,7 +76,13 @@ export interface MonthEventItem {
 	endTime: string;
 }
 
-export type MonthItem = MonthLessonItem | MonthEventItem;
+export interface MonthHolidayItem {
+	kind: "holiday";
+	id: string;
+	name: string;
+}
+
+export type MonthItem = MonthLessonItem | MonthEventItem | MonthHolidayItem;
 
 export interface MonthCell {
 	date: string;
@@ -105,9 +124,37 @@ function eventItemOf(event: ScheduleEventLike): MonthEventItem {
 	};
 }
 
-/** Time ascending, id as the deterministic tie-breaker. */
+/**
+ * Expand inclusive `[fromDate..toDate]` holiday spans into a per-date index —
+ * shared by the month view-model and the week view (one pass, UTC-safe +1 day
+ * on `yyyy-mm-dd` strings per the week-grid convention).
+ */
+export function holidaysByDateIndex<T extends HolidaySpanLike>(
+	holidays: readonly T[],
+): Map<string, T[]> {
+	const byDate = new Map<string, T[]>();
+	for (const holiday of holidays) {
+		let cursor = holiday.fromDate;
+		while (cursor <= holiday.toDate) {
+			const bucket = byDate.get(cursor);
+			if (bucket) bucket.push(holiday);
+			else byDate.set(cursor, [holiday]);
+			const next = new Date(`${cursor}T00:00:00Z`);
+			next.setUTCDate(next.getUTCDate() + 1);
+			cursor = next.toISOString().slice(0, 10);
+		}
+	}
+	return byDate;
+}
+
+/** Holidays are all-day spans → first; then time ascending; id tie-break. */
 function compareItems(a: MonthItem, b: MonthItem): number {
-	if (a.time !== b.time) return a.time < b.time ? -1 : 1;
+	const aDay = a.kind === "holiday" ? 0 : 1;
+	const bDay = b.kind === "holiday" ? 0 : 1;
+	if (aDay !== bDay) return aDay - bDay;
+	if (a.kind !== "holiday" && b.kind !== "holiday" && a.time !== b.time) {
+		return a.time < b.time ? -1 : 1;
+	}
 	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
@@ -146,6 +193,10 @@ export function buildMonthCells(
 		if (bucket) bucket.push(event);
 		else eventsByDate.set(event.date, [event]);
 	}
+
+	// Holidays expand their inclusive [fromDate..toDate] span into per-date
+	// items once — the cell loop only reads the small per-date buckets.
+	const holidaysByDate = holidaysByDateIndex(data.holidays ?? []);
 
 	// Projection only ever applies to classes with zero lesson rows —
 	// pre-filter once so the per-cell projection scan stays cheap.
@@ -193,6 +244,13 @@ export function buildMonthCells(
 		}
 		for (const event of eventsByDate.get(date) ?? []) {
 			items.push(eventItemOf(event));
+		}
+		for (const holiday of holidaysByDate.get(date) ?? []) {
+			items.push({
+				kind: "holiday",
+				id: holiday.id,
+				name: holiday.name,
+			});
 		}
 		items.sort(compareItems);
 
