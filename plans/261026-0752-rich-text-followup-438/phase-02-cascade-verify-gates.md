@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Cascade layer, verify hình ảnh, e2e, docs, gates"
-status: pending
+status: completed
 priority: P2
 effort: 0.5d
 dependencies: [1]

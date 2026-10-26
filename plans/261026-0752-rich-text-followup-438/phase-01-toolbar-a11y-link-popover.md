@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Toolbar a11y + H4 + popover link"
-status: pending
+status: completed
 priority: P2
 effort: 0.5d
 dependencies: []
@@ -100,6 +100,7 @@ failure evidence to the user. Never continue by self-reasoning.
 ## Risk Assessment
 
 - Base UI Toolbar trong jsdom: assert roving qua `focus()` + `document.activeElement` (chính sách chính, Task 1.1); nếu `fireEvent.keyDown` không kích hoạt được composite handler thì vẫn giữ assertion tab-stop/state, bổ sung test keyboard ở tầng e2e/Playwright — không hạ assertion về "không test".
+- **[Phase-1 Verification Finding, adjudicated kongming `KongmingToolbarRegr`] Hồi quy e2e spec cũ `full-option toolbar structures persist`:** TipTap defer `view.focus()` qua rAF khi editor chưa có focus → click nút toolbar giữ focus ở nút → phím gõ sau click rơi vào toolbar; handler Home/End tự viết biến race thành phá dữ liệu (End nhảy focus, Enter kích hoạt Undo). **Fix:** `onMouseDown={(e) => e.preventDefault()}` trên `Toolbar.Button` lệnh (pattern nhà `library/tests/$testId.tsx:628`) — editor không mất focus khi click, `chain().focus()` đi nhánh hasFocus ngay. Bàn phím a11y không đổi (chặn mousedown thôi). Link trigger giữ nguyên (popover tự quản focus). e2e spec cũ là regression test cho fix này.
 - Composition `Popover.Trigger render={Toolbar.Button}`: đã thiết kế controlled-open qua `onOpenChange` (Task 1.4 step 3). Nếu ca (b)/(f)/(g) vẫn đỏ sau 2 vòng red→green: chuyển hẳn sang fallback anchor — bỏ `Popover.Trigger`, `Toolbar.Button` thường + `Popover` anchor theo ref, `Popover.Root` đặt ngoài `Toolbar.Root`, tự quản `aria-expanded`/`aria-haspopup` — không cố vá quanh trigger quá 2 vòng.
 - Wrap 2 hàng 375px với 16 nút + gap-1: chấp nhận (F6 #437), chụp evidence phase 2.
 

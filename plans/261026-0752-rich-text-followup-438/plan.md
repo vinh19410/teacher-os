@@ -1,7 +1,7 @@
 ---
 title: "Rich text follow-up #438: a11y toolbar, popover link, cascade layer"
 description: "Follow-up #437: focus ring toolbar, roving tabindex (Base UI Toolbar), popover chọn link thay window.prompt, chốt H4, bọc .ProseMirror vào @layer components, verify mặt học viên + 2 test-header-form bằng hình ảnh."
-status: in-progress
+status: completed
 priority: P2
 effort: 1d
 issue: 438
@@ -36,8 +36,8 @@ Hiện trạng đã investigate (evidence `file:line`):
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Toolbar a11y + H4 + popover link (TDD)](./phase-01-toolbar-a11y-link-popover.md) | Pending |
-| 2 | [Cascade layer, verify hình ảnh, e2e, docs, gates](./phase-02-cascade-verify-gates.md) | Pending |
+| 1 | [Toolbar a11y + H4 + popover link (TDD)](./phase-01-toolbar-a11y-link-popover.md) | Completed |
+| 2 | [Cascade layer, verify hình ảnh, e2e, docs, gates](./phase-02-cascade-verify-gates.md) | Completed |
 
 ## Quyết định đã chốt
 
@@ -54,15 +54,15 @@ Không thêm dependency mới (`@base-ui/react` toolbar + popover đã trong nod
 
 ## Success Criteria
 
-- [ ] Nút toolbar có `focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none`; focus ở toolbar KHÔNG sáng ring wrapper; evidence chụp focus light+dark.
-- [ ] Toolbar 1 Tab stop duy nhất; ←/→/Home/End di chuyển; Undo/Redo disabled bị bỏ qua khi điều hướng; unit test keyboard khóa hành vi.
-- [ ] Popover link thay `window.prompt`: apply (allowlist scheme)/lỗi inline/Esc/click-outside/active→unset (onOpenChange reason)/selection rỗng (stored mark)/Enter-không-submit-form-trang/focus containment + phím mũi tên trong input — 8 ca unit test; không còn `window.prompt` trong codebase rich text.
-- [ ] H4 soạn được từ toolbar, markup `<h4>` qua `sanitizeRichText` nguyên vẹn, style editor ≡ render (`[&_h4]` trong `RICH_TEXT_CONTENT_CLASSES`).
-- [ ] `.ProseMirror` trong `@layer components`; computed `min-height` của surface "Mô tả" (web test-header-form, min-h-22) = **77px** (5.5rem × 14px root — `globals.css:220` đặt `html{font-size:14px}`, baseline TRƯỚC fix = 70px) và surface min-h-16 = **56px** (baseline 70px).
-- [ ] Screenshot: quiz-paper + quiz-reading-layout @375+1440 × light+dark với passage h2/blockquote/pre; 2 test-header-form; prompt-composer; answer-key-grid; part-content-fields; focus state. Script capture throwaway của plan exit 0; `pnpm design:compare` chạy như canary hồi quy #378 (screens.json hardcode — không cover surface #438).
-- [ ] E2E `rich-text-content.spec.ts` 4 spec cũ xanh KHÔNG sửa assertion; +1 spec popover link render `<a>` phía học viên (href qua allowlist). `pnpm check`, `check-types`, test (web+admin), full e2e xanh.
-- [ ] Docs grep `tiptap|ProseMirror|rich text` cập nhật (16 nút, popover link).
-- [ ] Mục 8 #438 out-of-scope ghi rõ trong PR (`Relates to #438`).
+- [x] Nút toolbar có `focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none`; focus ở toolbar KHÔNG sáng ring wrapper; evidence chụp focus light+dark.
+- [x] Toolbar 1 Tab stop duy nhất; ←/→/Home/End di chuyển; Undo/Redo disabled bị bỏ qua khi điều hướng; unit test keyboard khóa hành vi.
+- [x] Popover link thay `window.prompt`: apply (allowlist scheme)/lỗi inline/Esc/click-outside/active→unset (onOpenChange reason)/selection rỗng (stored mark)/Enter-không-submit-form-trang/focus containment + phím mũi tên trong input — 8 ca unit test; không còn `window.prompt` trong codebase rich text.
+- [x] H4 soạn được từ toolbar, markup `<h4>` qua `sanitizeRichText` nguyên vẹn, style editor ≡ render (`[&_h4]` trong `RICH_TEXT_CONTENT_CLASSES`).
+- [x] `.ProseMirror` trong `@layer components`; computed `min-height` của surface "Mô tả" (web test-header-form, min-h-22) = **77px** (5.5rem × 14px root — `globals.css:220` đặt `html{font-size:14px}`, baseline TRƯỚC fix = 70px) và surface min-h-16 = **56px** (baseline 70px).
+- [x] Screenshot: quiz-paper + quiz-reading-layout @375+1440 × light+dark với passage h2/blockquote/pre; 2 test-header-form; prompt-composer; answer-key-grid; part-content-fields; focus state. Script capture throwaway của plan exit 0; `pnpm design:compare` chạy như canary hồi quy #378 (screens.json hardcode — không cover surface #438).
+- [x] E2E `rich-text-content.spec.ts` 4 spec cũ xanh KHÔNG sửa assertion; +1 spec popover link render `<a>` phía học viên (href qua allowlist). `pnpm check`, `check-types`, test (web+admin), full e2e xanh.
+- [x] Docs grep `tiptap|ProseMirror|rich text` cập nhật (16 nút, popover link).
+- [x] Mục 8 #438 out-of-scope ghi rõ trong PR (`Relates to #438`).
 
 ## Câu hỏi mở
 
