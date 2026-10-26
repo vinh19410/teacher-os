@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "In-app học viên: API inbox, chuông thông báo, đánh dấu đã xem"
-status: pending
+status: completed
 priority: P0
 effort: "4h"
 dependencies: ["phase-02"]
@@ -20,7 +20,7 @@ dependencies: ["phase-02"]
 
 ## Steps
 
-1. Test đỏ: học viên A không thấy bản ghi của B / org khác; mark read của người khác → 404; mark read bản ghi `queued` → `read_at` có, `status` vẫn `queued`; bản ghi `sent` → `read`; chuông hiển thị badge đúng, bấm item gọi mutation và điều hướng.
+1. Test đỏ: học viên A không thấy bản ghi của B / org khác; mark read của người khác → 404; mark read bản ghi `queued` → `read_at` có, `status` vẫn `queued` (nguồn chân lý là `read_at`, `status` chỉ là projection — deliver sau đó chuyển thẳng `read` khi thấy `read_at`); bản ghi `sent` → `read`; chuông hiển thị badge đúng, bấm item gọi mutation và điều hướng; giữ nguyên hành vi accept/reject lời mời hiện có (`notification-bell.test.tsx` không regress).
 2. Viết code; theo token `DESIGN.md`, verify 1440 / 768 / 375 + focus bàn phím (Esc đóng panel đã có).
 
 ## Verification

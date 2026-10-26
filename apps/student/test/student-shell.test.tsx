@@ -17,6 +17,8 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 	useRouterState: ({ select }: { select: (state: unknown) => unknown }) =>
 		select({ location: { pathname: "/classes" } }),
+	// TOS-21 (#454): shell render chuông thông báo → bell dùng useNavigate.
+	useNavigate: () => vi.fn(),
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -30,6 +32,12 @@ vi.mock("@/lib/repos/student", () => ({
 	useStudentNotifications: () => ({ data: [], isLoading: false }),
 	useAcceptInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 	useRejectInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+	// TOS-21 (#454): shell render chuông → cần mock inbox in-app.
+	useStudentInbox: () => ({
+		data: { items: [], unread: 0 },
+		isLoading: false,
+	}),
+	useMarkInboxRead: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 import { StudentShell } from "@/components/layout/student-shell";

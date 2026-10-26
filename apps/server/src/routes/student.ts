@@ -45,6 +45,7 @@ import {
 	enrollment,
 	invoice,
 	lesson,
+	notificationRecord,
 	organization,
 	quizAttempt,
 	student,
@@ -432,6 +433,21 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		return next();
 	});
 
+	// CSRF defense cho POST inbox mark-read — cùng contract với /invitations/*.
+	router.use("/inbox/*", async (c, next) => {
+		if (c.req.method === "POST") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+		}
+		return next();
+	});
+
 	router.use("*", async (c, next) => {
 		const session = await deps.getSessionUser(c.req.raw.headers);
 		if (!session) {
@@ -666,6 +682,86 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
 	router.use("/invoices", requireStudent);
 	router.use("/invoices/*", requireStudent);
+	// TOS-21 D7: inbox học viên cần studentCtx (org + student id).
+	router.use("/inbox", requireStudent);
+	router.use("/inbox/*", requireStudent);
+
+	// In-app inbox học viên (plan TOS-21 D7): 50 dòng mới nhất của chính học
+	// viên trong org đang chọn; không trả recipient_email/reply_to_email/last_error.
+	router.get("/inbox", async (c) => {
+		const ctx = c.get("studentCtx");
+		const db = deps.getDb();
+
+		const rows = await db
+			.select({
+				id: notificationRecord.id,
+				eventType: notificationRecord.eventType,
+				title: notificationRecord.title,
+				body: notificationRecord.body,
+				linkPath: notificationRecord.linkPath,
+				status: notificationRecord.status,
+				readAt: notificationRecord.readAt,
+				createdAt: notificationRecord.createdAt,
+			})
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.orgId, ctx.orgId),
+					eq(notificationRecord.studentId, ctx.student.id),
+				),
+			)
+			.orderBy(desc(notificationRecord.createdAt), desc(notificationRecord.id))
+			.limit(50);
+
+		return c.json({
+			items: rows.map((row) => ({
+				id: row.id,
+				eventType: row.eventType,
+				title: row.title,
+				body: row.body,
+				linkPath: row.linkPath,
+				status: row.status,
+				readAt: row.readAt ? row.readAt.toISOString() : null,
+				createdAt: row.createdAt.toISOString(),
+			})),
+			unread: rows.filter((row) => row.readAt === null).length,
+		});
+	});
+
+	// Đánh dấu đã đọc: read_at là nguồn chân lý, status chỉ là projection
+	// (queued giữ nguyên — deliver sau sẽ chuyển thẳng read khi thấy read_at).
+	router.post("/inbox/:id/read", async (c) => {
+		const ctx = c.get("studentCtx");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+
+		const [record] = await db
+			.select()
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.id, id),
+					eq(notificationRecord.orgId, ctx.orgId),
+					eq(notificationRecord.studentId, ctx.student.id),
+				),
+			);
+
+		if (!record) {
+			return c.json({ error: "Không tìm thấy thông báo" }, 404);
+		}
+
+		if (record.readAt === null) {
+			await db
+				.update(notificationRecord)
+				.set({
+					readAt: new Date(),
+					...(record.status === "sent" ? { status: "read" as const } : {}),
+				})
+				.where(eq(notificationRecord.id, id));
+		}
+
+		return c.json({ ok: true });
+	});
 
 	const quizWriteGuard = createQuizWriteGuard(allowedOrigins);
 	router.use("/assignments/:assignmentId/quiz/*", quizWriteGuard);

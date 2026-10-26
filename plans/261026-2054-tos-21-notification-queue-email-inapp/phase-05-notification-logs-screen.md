@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Màn [5] Nhật ký gửi thông báo (apps/web)"
-status: pending
+status: completed
 priority: P0
 effort: "5h"
 dependencies: ["phase-02"]

@@ -58,8 +58,11 @@ const recordingMailer: Mailer = {
 			/https?:\/\/[^\s]*\/api\/auth\/reset-password\/[^\s?]+\?[^\s]+/,
 		);
 		const base = {
+			// Plan TOS-21 (#454): lưu TOÀN BỘ thư để E2E kiểm header mới.
 			to: input.to,
 			subject: input.subject,
+			replyTo: input.replyTo ?? null,
+			fromName: input.fromName ?? null,
 		};
 		const at = new Date().toISOString();
 		const line = verifyMatch
@@ -148,6 +151,10 @@ const app = buildApp({
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
 	],
 	getBankHub: () => fakeBankHub.hub,
+	// Plan TOS-21 (#454): hàng đợi thông báo dùng recordingMailer để E2E đọc được thư đã gửi.
+	mailer: recordingMailer,
+	// Link tuyệt đối trong email thông báo trỏ cổng học viên e2e.
+	studentOrigin: STUDENT_ORIGIN,
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

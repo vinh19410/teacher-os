@@ -5,6 +5,7 @@ import type {
 } from "@teacher-os/ui/components/app-shell/nav-group";
 import {
 	BarChart3,
+	Bell,
 	BookA,
 	BookMarked,
 	CalendarCheck,
@@ -56,6 +57,13 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Syllabus",
 				icon: BookMarked,
 				href: "/syllabus",
+			},
+			// TOS-21 (#454): nhật ký gửi thông báo Email & In-app — màn [5].
+			{
+				key: "notifications",
+				label: "Nhật ký thông báo",
+				icon: Bell,
+				href: "/notifications",
 			},
 		],
 	},
@@ -146,6 +154,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/students": "students",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
+	"/notifications": "notifications",
 	"/assignments": "assignments",
 	"/grading": "grading",
 	"/vocab": "vocab",

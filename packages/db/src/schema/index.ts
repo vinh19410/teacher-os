@@ -11,6 +11,7 @@ export * from "./lesson";
 export * from "./library-test";
 export * from "./membership";
 export * from "./notif";
+export * from "./notification-record";
 export * from "./org-bank-link";
 export * from "./org-event";
 export * from "./organization";

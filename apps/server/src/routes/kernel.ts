@@ -55,6 +55,16 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { MediaStore } from "../lib/media-store";
 import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import {
+	assignmentPublishedEvents,
+	classEnrolledEvent,
+	invoiceIssuedEvent,
+	scheduleChangedEvents,
+} from "../lib/notifications/templates";
+import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
@@ -75,6 +85,7 @@ import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
+import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
@@ -94,6 +105,11 @@ export function kernelRoutes(deps: {
 	getMediaStore?(): MediaStore | undefined;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
+	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
+	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 }) {
 	const kernel = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
@@ -142,6 +158,39 @@ export function kernelRoutes(deps: {
 		return c.json({ error: "future-session", reason: "future-session" }, 422);
 	}
 
+	/**
+	 * #454 phase 3: phát thông báo SAU khi ghi nghiệp vụ thành công, TRƯỚC
+	 * return c.json. emitNotifications tự nuốt lỗi (fail-open) nên thao tác
+	 * gốc không bao giờ vỡ vì lỗi thông báo.
+	 */
+	function notify(
+		orgId: string,
+		events: Parameters<typeof emitNotifications>[2],
+	) {
+		return emitNotifications(notificationDepsFrom(deps), orgId, events);
+	}
+
+	/** #454: studentIds có dòng lesson trong bucket (classId, date) — người nhận schedule_changed. */
+	async function bucketStudentIds(
+		db: Db,
+		classId: string,
+		dateISO: string,
+		orgId: string,
+	): Promise<string[]> {
+		const rows = await db
+			.select({ studentId: enrollment.studentId })
+			.from(lesson)
+			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
+			);
+		return [...new Set(rows.map((r) => r.studentId))];
+	}
+
 	async function readBody<S extends z.ZodType>(
 		c: KernelContext,
 		schema: S,
@@ -180,6 +229,7 @@ export function kernelRoutes(deps: {
 		const [row] = await db
 			.select({
 				id: classTable.id,
+				name: classTable.name,
 				schedule: classTable.schedule,
 				sessionsTotal: classTable.sessionsTotal,
 				startDate: classTable.startDate,
@@ -205,6 +255,7 @@ export function kernelRoutes(deps: {
 				id: lesson.id,
 				status: lesson.status,
 				classId: lesson.classId,
+				studentId: enrollment.studentId,
 				enrollmentClassId: enrollment.classId,
 				day: lesson.day,
 				time: lesson.time,
@@ -399,6 +450,13 @@ export function kernelRoutes(deps: {
 			studentId: input.studentId,
 			status: "invited",
 		});
+		await notify(ctx.orgId, [
+			classEnrolledEvent({
+				enrollmentId,
+				studentId: input.studentId,
+				className: cls.name,
+			}),
+		]);
 		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
 	});
 
@@ -555,6 +613,15 @@ export function kernelRoutes(deps: {
 			),
 		];
 		await db.batch(statements);
+		await notify(
+			ctx.orgId,
+			assignmentPublishedEvents({
+				classAssignmentId: assignmentId,
+				title: prompt.title,
+				due: input.due,
+				studentIds: input.studentIds,
+			}),
+		);
 		return c.json({ id: assignmentId } satisfies CreatedResponse, 201);
 	});
 
@@ -836,6 +903,18 @@ export function kernelRoutes(deps: {
 		if (updated.length === 0) {
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
+		// #454 phase 3: hủy buổi học là thay đổi lịch thật sự — phát cho học
+		// viên của dòng lesson. Check-in (completed) không phát.
+		if (nextStatus === "cancelled") {
+			await notify(ctx.orgId, [
+				...scheduleChangedEvents({
+					classId: row.classId,
+					date: row.date ?? "",
+					editedAtMs: Date.now(),
+					studentIds: [row.studentId],
+				}),
+			]);
+		}
 		return c.json({ ok: true });
 	}
 
@@ -909,6 +988,25 @@ export function kernelRoutes(deps: {
 				},
 				false,
 			);
+			// #454: phát khi giờ học THỰC SỰ đổi — người nhận là mọi học viên
+			// có dòng lesson trong bucket (occurrence edit áp cả bucket).
+			if (body.data.time !== pre.time) {
+				const studentIds = await bucketStudentIds(
+					db,
+					pre.classId,
+					pre.date,
+					ctx.orgId,
+				);
+				await notify(
+					ctx.orgId,
+					scheduleChangedEvents({
+						classId: pre.classId,
+						date: pre.date,
+						editedAtMs: Date.now(),
+						studentIds,
+					}),
+				);
+			}
 			return c.json({ ok: true });
 		}
 
@@ -940,6 +1038,18 @@ export function kernelRoutes(deps: {
 			.returning({ id: lesson.id });
 		if (updated.length === 0) {
 			return c.json({ error: "lesson changed or is not upcoming" }, 409);
+		}
+		// #454: lesson không ngày — phát cho đúng học viên của dòng khi giờ đổi.
+		if (body.data.time !== pre.time) {
+			await notify(
+				ctx.orgId,
+				scheduleChangedEvents({
+					classId: pre.classId,
+					date: "",
+					editedAtMs: Date.now(),
+					studentIds: [pre.studentId],
+				}),
+			);
 		}
 		return c.json({ ok: true });
 	});
@@ -1020,8 +1130,31 @@ export function kernelRoutes(deps: {
 				404,
 			);
 		}
+		// #454: chụp người nhận + miền so sánh TRƯỚC khi ghi để chỉ phát
+		// schedule_changed khi lịch THỰC SỰ đổi (dời ngày hoặc đổi giờ).
+		const notifyStudentIds = await bucketStudentIds(
+			db,
+			classId,
+			dateISO,
+			ctx.orgId,
+		);
+		const beforeTimes = await db
+			.select({ time: lesson.time })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
+			);
+		const moved = moveDateISO !== null && moveDateISO !== dateISO;
+		const timeChanged =
+			body.data.time !== undefined &&
+			beforeTimes.some((r) => r.time !== body.data.time);
 		// C2 (TOS-11): bucket có dòng `holiday` bị khóa sửa/dời — nhãn "Đã dời
 		// sang" và D6 đọc `holiday_session_shift` theo ngày gốc/ngày bù.
+		// Đặt sau phần chụp (chỉ đọc) — khóa thì 409, không phát thông báo.
 		if (await holidayBucketLocked(db, ctx.orgId, classId, dateISO)) {
 			return c.json(
 				{ error: "holiday occurrence is locked", reason: "holiday-locked" },
@@ -1082,6 +1215,17 @@ export function kernelRoutes(deps: {
 					);
 				}
 			}
+			if (moved || timeChanged) {
+				await notify(
+					ctx.orgId,
+					scheduleChangedEvents({
+						classId,
+						date: dateISO,
+						editedAtMs: Date.now(),
+						studentIds: notifyStudentIds,
+					}),
+				);
+			}
 			return c.json({
 				updated: rows.length,
 				skipped: Math.max(0, before.total - rows.length),
@@ -1119,6 +1263,11 @@ export function kernelRoutes(deps: {
 		if (nextStatus === "completed" && dateISO > vietnamTodayISO()) {
 			return futureSession(c);
 		}
+		// #454: chụp người nhận trước khi hủy ghi đè trạng thái bucket.
+		const notifyStudentIds =
+			nextStatus === "cancelled"
+				? await bucketStudentIds(db, classId, dateISO, orgId)
+				: [];
 		const rows = await occurrenceUpdate(
 			db,
 			classId,
@@ -1127,6 +1276,19 @@ export function kernelRoutes(deps: {
 			{ status: nextStatus },
 			true,
 		);
+		// #454: hủy buổi học là thay đổi lịch thật sự — chỉ phát khi có dòng
+		// bị hủy (replay trên bucket đã hủy không phát lại).
+		if (nextStatus === "cancelled" && rows.length > 0) {
+			await notify(
+				orgId,
+				scheduleChangedEvents({
+					classId,
+					date: dateISO,
+					editedAtMs: Date.now(),
+					studentIds: notifyStudentIds,
+				}),
+			);
+		}
 		// Skipped = bucket rows this action did NOT touch — i.e. the ones
 		// already settled. Advisory number, not transactional truth (RT5).
 		return c.json({
@@ -1368,6 +1530,14 @@ export function kernelRoutes(deps: {
 			paymentCode: generatePaymentCode(),
 			payToken: generatePayToken(),
 		});
+		await notify(ctx.orgId, [
+			invoiceIssuedEvent({
+				id: invoiceId,
+				studentId: enrollmentRow.studentId,
+				amount: input.amount,
+				due,
+			}),
+		]);
 		return c.json({ id: invoiceId } satisfies CreatedResponse, 201);
 	});
 
@@ -1466,6 +1636,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/bank-link", bankLinkRoutes(deps));
 	kernel.route("/payment-transactions", paymentTransactionRoutes(deps));
 	kernel.route("/grading", gradingRoutes(deps));
+	// #454 phase 5: log thông báo cho teacher — GET /api/notification-logs.
+	kernel.route("/notification-logs", notificationLogRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.
