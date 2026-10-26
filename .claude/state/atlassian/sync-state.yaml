@@ -1,0 +1,373 @@
+# --- Config dùng chung (không lặp ở 2 nơi) ---
+context:
+  jira:
+    project_key: TOS
+    base_url: https://teacher-os.atlassian.net
+    ac_mapping: subtasks
+    epic_mode: create
+  updated: 2026-10-26
+
+# --- Mapping + sync-state: 1 entry / artifact vault ---
+# Ghi bởi /jira selfomy-alignment --push (2026-10-26): 1 Epic + 11 Story + 37 AC Subtask = 49 issue.
+artifacts:
+  - vault_path: docs/selfomy-alignment/srs/selfomy-alignment-spec.md
+    feature: selfomy-alignment
+    mappings:
+      jira:
+        remote_id: TOS-4
+        remote_url: https://teacher-os.atlassian.net/browse/TOS-4
+        mapping_type: epic
+        base_snapshot: base/jira-TOS-4.json
+        base_local_hash: "sha256:d3da37bfac153833642b28d566e9a9ac1784235bf386027f781f6e8b9b4a416d"
+        base_remote_hash: "sha256:d3da37bfac153833642b28d566e9a9ac1784235bf386027f781f6e8b9b4a416d"
+        base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+        ac_mapping: subtasks
+        delivery_metadata: { status: "To Do" }
+        state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-001.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-5
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-5
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-5.json
+          base_local_hash: "sha256:5a6bc71ef0ab8c112cfecab01bd26b512ffd75126fb4ccb2da74dc0c28fc9cfe"
+          base_remote_hash: "sha256:5a6bc71ef0ab8c112cfecab01bd26b512ffd75126fb4ccb2da74dc0c28fc9cfe"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-6
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-7
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-8
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-002.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-9
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-9
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-9.json
+          base_local_hash: "sha256:177be7488972bfdcf90738199df86a9f747f792dd62bc2c2bf7441cd6aeb27fa"
+          base_remote_hash: "sha256:177be7488972bfdcf90738199df86a9f747f792dd62bc2c2bf7441cd6aeb27fa"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-11
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-12
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-13
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-004"
+          remote_id: TOS-14
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-003.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-10
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-10
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-10.json
+          base_local_hash: "sha256:99b346b508cd40b1e4c6a134e3c4761027034471f0790976527ff64c5571db17"
+          base_remote_hash: "sha256:99b346b508cd40b1e4c6a134e3c4761027034471f0790976527ff64c5571db17"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-15
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-16
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-17
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-004"
+          remote_id: TOS-18
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-004.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-19
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-19
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-19.json
+          base_local_hash: "sha256:ea8d5a0dea483c3057fc4cf9501d70678fc8724b3d3041989aa1917c92009721"
+          base_remote_hash: "sha256:ea8d5a0dea483c3057fc4cf9501d70678fc8724b3d3041989aa1917c92009721"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-21
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-22
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-23
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-005.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-20
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-20
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-20.json
+          base_local_hash: "sha256:1edd62e2fffe2a5ba403140817f3675b583b52a5518c762930b69f82cca8ad6f"
+          base_remote_hash: "sha256:1edd62e2fffe2a5ba403140817f3675b583b52a5518c762930b69f82cca8ad6f"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-24
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-25
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-26
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-004"
+          remote_id: TOS-27
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-006.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-28
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-28
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-28.json
+          base_local_hash: "sha256:a08ce22f5af71bd9efeadb39fbcd1e13a5a8579206627e6e8ac164c65f7949be"
+          base_remote_hash: "sha256:a08ce22f5af71bd9efeadb39fbcd1e13a5a8579206627e6e8ac164c65f7949be"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-30
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-31
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-32
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-004"
+          remote_id: TOS-33
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-007.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-29
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-29
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-29.json
+          base_local_hash: "sha256:9d9578bb1d4bfd58350515b325eee6840f15c1388222c592e54d349e73c73183"
+          base_remote_hash: "sha256:9d9578bb1d4bfd58350515b325eee6840f15c1388222c592e54d349e73c73183"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-34
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-35
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-36
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-008.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-37
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-37
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-37.json
+          base_local_hash: "sha256:b3a876d8182b4abad8abe6979f5256b3ad83861814fd164121f50f0c29e1773a"
+          base_remote_hash: "sha256:b3a876d8182b4abad8abe6979f5256b3ad83861814fd164121f50f0c29e1773a"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-39
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-40
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-41
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-009.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-38
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-38
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-38.json
+          base_local_hash: "sha256:79c0f69df29e2474989bab04634198395ba3b9d0cf61aed64bf606526481f2d8"
+          base_remote_hash: "sha256:79c0f69df29e2474989bab04634198395ba3b9d0cf61aed64bf606526481f2d8"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-42
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-43
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-44
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-004"
+          remote_id: TOS-45
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-010.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-46
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-46
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-46.json
+          base_local_hash: "sha256:58216e75e29f2e6a6a21e01480f725330af828d4425b13f88a517ac06f8f5fc3"
+          base_remote_hash: "sha256:58216e75e29f2e6a6a21e01480f725330af828d4425b13f88a517ac06f8f5fc3"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-48
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-49
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-003"
+          remote_id: TOS-50
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"
+  - vault_path: docs/selfomy-alignment/userstories/us-011.md
+    feature: selfomy-alignment
+    mappings:
+      # list: phần tử #story là bản chính (hash/state), các #AC-xxx là subtask con
+      jira:
+        - sub_ref: "#story"
+          remote_id: TOS-47
+          remote_url: https://teacher-os.atlassian.net/browse/TOS-47
+          mapping_type: story
+          parent: TOS-4
+          base_snapshot: base/jira-TOS-47.json
+          base_local_hash: "sha256:18d67c6b2b46c1defb6186ee6377584ede315d20ba30458ccacea151f39ca0e6"
+          base_remote_hash: "sha256:18d67c6b2b46c1defb6186ee6377584ede315d20ba30458ccacea151f39ca0e6"
+          base_meta_hash: "sha256:05e160401ab7caf2f90f5b0f8a391922868a65fa1ff35d497e2d04e78afe5c64"
+          ac_mapping: subtasks
+          delivery_metadata: { status: "To Do" }
+          state: synced
+        - sub_ref: "#AC-001"
+          remote_id: TOS-51
+          mapping_type: subtask
+          state: synced
+        - sub_ref: "#AC-002"
+          remote_id: TOS-52
+          mapping_type: subtask
+          state: synced
+    last_synced_at: "2026-10-26T14:55:41+0700"

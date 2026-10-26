@@ -69,7 +69,10 @@ __pycache__/
 
 # Agent tooling
 .zcode/
-.claude/
+.claude/*
+!.claude/state/
+.claude/state/*
+!.claude/state/atlassian/
 .video_agent/
 node_modules/
 .e2e/artifacts/

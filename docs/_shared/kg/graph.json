@@ -7,8 +7,8 @@
 		"node_count": 262,
 		"edge_count": 1518,
 		"coverage": {
-			"docs_total": 41,
-			"docs_parsed": 33,
+			"docs_total": 42,
+			"docs_parsed": 34,
 			"unparsed_docs": [
 				{
 					"path": "docs/code-standards.md",
@@ -319,10 +319,7 @@
 				}
 			],
 			"uncataloged_content": [],
-			"partial_parse_docs": [],
-			"notes": [
-				".claude/state/atlassian/sync-state.yaml vắng — bỏ qua nguồn Jira/Confluence canonical"
-			]
+			"partial_parse_docs": []
 		}
 	},
 	"nodes": [
