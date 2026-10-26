@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AddInvoiceModal } from "@/components/modals/add-invoice-modal";
+import { RecordPaymentModal } from "@/components/modals/record-payment-modal";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { initialsFromName } from "@/lib/initials";
 import { fmtVND } from "@/lib/mock-data";
 import {
 	type DebtFilterStatus,
+	type DebtLedgerRow,
 	type DebtStatus,
 	type DebtsSearch,
 	debtLedger,
@@ -89,6 +91,7 @@ export function DebtsRoute() {
 	);
 
 	const [modalOpen, setModalOpen] = useState(false);
+	const [payRow, setPayRow] = useState<DebtLedgerRow | null>(null);
 	const [query, setQuery] = useState(() => search.q ?? "");
 	const lastEmittedQuery = useRef(query);
 	const latestSearchRef = useRef(search);
@@ -391,7 +394,19 @@ export function DebtsRoute() {
 											e.stopPropagation();
 										}
 									}}
-								/>,
+								>
+									{row.remaining > 0 && (
+										<Button
+											size="sm"
+											variant="outline"
+											data-testid={`record-payment-${row.studentId}`}
+											aria-label={`Thu tiền cho ${row.name}`}
+											onClick={() => setPayRow(row)}
+										>
+											Thu
+										</Button>
+									)}
+								</div>,
 							],
 						}))}
 					/>
@@ -399,6 +414,11 @@ export function DebtsRoute() {
 			</div>
 
 			<AddInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
+			<RecordPaymentModal
+				open={payRow !== null}
+				row={payRow}
+				onClose={() => setPayRow(null)}
+			/>
 		</div>
 	);
 }

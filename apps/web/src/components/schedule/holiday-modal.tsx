@@ -317,6 +317,7 @@ export function HolidayModal({
 					preview={preview}
 					loading={previewLoading}
 					error={previewError}
+					draftName={name.trim()}
 				/>
 
 				<label className="flex items-center gap-2 text-sm">

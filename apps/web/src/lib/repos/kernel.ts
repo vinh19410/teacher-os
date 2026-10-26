@@ -139,6 +139,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,
 				body: { method: action.method },
 			};
+		case "record-invoice-payment":
+			// #450: invoicePaymentCreateSchema is .strict() — the payload is the
+			// entire body (clientRequestId, amount, method, note).
+			return {
+				path: `/api/invoices/${action.invoiceId}/payments`,
+				body: { ...action.payload },
+			};
 		case "grade-assignment":
 			return {
 				path: `/api/assignments/${action.assignmentId}/grade`,

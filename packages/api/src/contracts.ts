@@ -1248,6 +1248,53 @@ export const invoiceMarkPaidSchema = z
 export type InvoiceMarkPaid = z.infer<typeof invoiceMarkPaidSchema>;
 
 /**
+ * Issue #450 — record a manual tuition receipt (partial or full) on the
+ * debts ledger. `clientRequestId` is the idempotency key: the dialog
+ * generates it once per opening and the server stores it as
+ * `provider_txn_id` (provider "manual"), so a network retry replays to the
+ * same ledger row instead of recording the money twice. `amount` is integer
+ * VND and must be positive. `note` is stored as the ledger `content`.
+ */
+export const invoicePaymentMethodSchema = z.enum(["transfer", "cash", "other"]);
+export type InvoicePaymentMethod = z.infer<typeof invoicePaymentMethodSchema>;
+
+/** Display labels for manual receipt methods (matches `invoice.method`). */
+export const INVOICE_PAYMENT_METHOD_LABEL: Record<
+	InvoicePaymentMethod,
+	string
+> = {
+	transfer: "Chuyển khoản",
+	cash: "Tiền mặt",
+	other: "Khác",
+};
+
+export const invoicePaymentCreateSchema = z
+	.object({
+		clientRequestId: z.string().uuid(),
+		amount: z.number().int().min(1),
+		method: invoicePaymentMethodSchema,
+		note: z.string().trim().max(255).default(""),
+	})
+	.strict();
+export type InvoicePaymentCreate = z.infer<typeof invoicePaymentCreateSchema>;
+
+/** 201 (new receipt) and 200 (idempotent replay) response shape. */
+export interface InvoicePaymentResult {
+	id: string;
+	paidAmount: number;
+	remaining: number;
+	status: string;
+}
+
+/** 422/409 guard payload: the receipt was rejected, nothing was written.
+ * `error` carries the machine code (`invoice-settled` / `amount-exceeds-debt`
+ * / `client-request-id-conflict`) — the web reads it back as `reason`. */
+export interface InvoicePaymentRejected {
+	error: string;
+	remaining?: number;
+}
+
+/**
  * Issue #60 — create a tuition invoice for an enrollment. `due` is ISO
  * yyyy-mm-dd and is roundtrip-guarded server-side (`parseStartDateStrict`,
  * same precedent as `moveDate`) because the regex alone accepts 2026-02-30.
@@ -2553,13 +2600,19 @@ export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
 export interface InvoiceTransactionItem {
 	id: string;
 	amount: number;
-	/** Transfer memo as typed by the payer. */
+	/** Transfer memo as typed by the payer, or the teacher's note on manual receipts (#450). */
 	content: string;
 	referenceCode: string;
 	/** Provider timestamp string, as stored (e.g. "2026-10-05 10:00:00"). */
 	transactionDate: string;
 	/** ISO 8601 — server ingest time (Drizzle timestamp_ms → Date → toISOString()). */
 	createdAt: string;
+	/**
+	 * #450 — display label of a manual receipt ("Tiền mặt"/"Chuyển khoản"/
+	 * "Khác"); bank-hub rows stay "" (their channel is the transfer itself).
+	 * The ledger `provider` enum stays server-side (display-fields-only DTO).
+	 */
+	method: string;
 }
 
 export interface ReconcileResult {
@@ -3191,6 +3244,15 @@ export const holidayApplySchema = holidayDraftSchema.and(
 );
 export type HolidayApplyInput = z.infer<typeof holidayApplySchema>;
 
+/** Một ngày bù bị nhảy qua vì trùng kỳ nghỉ. `holidayName` null = ngày thuộc
+ * chính kỳ nghỉ đang tạo — client tự điền tên từ form (previewKey cố ý bỏ
+ * `name` nên server không trả tên draft, quyết định review TOS-11). */
+export interface HolidaySkippedDay {
+	/** yyyy-mm-dd ngày bị nhảy qua. */
+	date: string;
+	holidayName: string | null;
+}
+
 /** Một dòng bảng xem trước: buổi gốc bị dời + buổi bù cuối khóa. */
 export interface HolidayPlannedShift {
 	classId: string;
@@ -3207,8 +3269,8 @@ export interface HolidayPlannedShift {
 	dur: number;
 	/** 1 = Thứ 2 … 7 = Chủ nhật (lesson weekday). */
 	weekday: number;
-	/** Ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 dùng hiển thị "(*)". */
-	skippedHolidayDates: string[];
+	/** Các ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 hiển thị "(*)" và ghi chú tên. */
+	skippedHolidays: HolidaySkippedDay[];
 }
 
 /** Buổi có dòng đã điểm danh — giữ nguyên (D1), nhãn chi tiết ở TOS-12. */
@@ -3254,7 +3316,12 @@ export const holidayPreviewResponseSchema = z.object({
 			time: z.string(),
 			dur: z.number().int(),
 			weekday: z.number().int().min(1).max(7),
-			skippedHolidayDates: z.array(z.string()),
+			skippedHolidays: z.array(
+				z.object({
+					date: z.string(),
+					holidayName: z.string().nullable(),
+				}),
+			),
 		}),
 	),
 	keptCompleted: z.array(

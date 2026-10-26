@@ -771,6 +771,162 @@ describe("C2: edit/move khóa nhóm holiday, move makeup kéo shift theo", () =>
 	});
 });
 
+describe("TOS-12: skippedHolidays kèm tên và bảo vệ buổi đã điểm danh", () => {
+	test("kỳ nghỉ ĐÃ LƯU trong DB phủ ngày bù tự nhiên → preview và apply đều nhảy sang Friday kế tiếp, skippedHolidays có tên (AC-002)", async () => {
+		const app = createApp();
+		await db.insert(schema.organizationHoliday).values({
+			id: "hol-tet",
+			orgId: "org-1",
+			name: "Nghỉ Tết Dương lịch",
+			fromDate: F9,
+			toDate: F9,
+			scope: "org",
+			mode: "shift",
+			notify: false,
+			createdByUserId: "t-1",
+		});
+
+		const previewRes = await preview(app, draft());
+		expect(previewRes.status).toBe(200);
+		const body = (await previewRes.json()) as {
+			shifts: Array<{
+				classId: string;
+				makeupDate: string;
+				skippedHolidays: Array<{
+					date: string;
+					holidayName: string | null;
+				}>;
+			}>;
+			planHash: string;
+		};
+		const nextFriday = addDaysISO(F9, 7);
+		for (const classId of ["cls-a", "cls-b"]) {
+			const shift = body.shifts.find((row) => row.classId === classId);
+			expect(shift?.makeupDate).toBe(nextFriday);
+			expect(shift?.skippedHolidays).toEqual([
+				{ date: F9, holidayName: "Nghỉ Tết Dương lịch" },
+			]);
+		}
+
+		const applyRes = await apply(app, { ...draft(), planHash: body.planHash });
+		expect(applyRes.status).toBe(200);
+		const makeup = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, nextFriday));
+		expect(makeup).toHaveLength(3);
+		expect(makeup.every((row) => row.status === "upcoming")).toBe(true);
+		// Ngày bù cũ F9 không bị tạo lesson — chỉ là ngày bị nhảy qua.
+		const f9 = await db
+			.select({ id: schema.lesson.id })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, F9));
+		expect(f9).toHaveLength(0);
+	});
+
+	test("kỳ nghỉ scope classes chỉ lớp A → ngày bù lớp A nhảy, lớp B giữ ngày bù tự nhiên", async () => {
+		const app = createApp();
+		await db.insert(schema.organizationHoliday).values({
+			id: "hol-scoped",
+			orgId: "org-1",
+			name: "Nghỉ riêng lớp A",
+			fromDate: F9,
+			toDate: F9,
+			scope: "classes",
+			mode: "shift",
+			notify: false,
+			createdByUserId: "t-1",
+		});
+		await db.insert(schema.organizationHolidayClass).values({
+			id: "holc-scoped",
+			holidayId: "hol-scoped",
+			classId: "cls-a",
+		});
+
+		const res = await preview(app, draft());
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			shifts: Array<{
+				classId: string;
+				makeupDate: string;
+				skippedHolidays: Array<{
+					date: string;
+					holidayName: string | null;
+				}>;
+			}>;
+		};
+		const shiftA = body.shifts.find((row) => row.classId === "cls-a");
+		expect(shiftA?.makeupDate).toBe(addDaysISO(F9, 7));
+		expect(shiftA?.skippedHolidays).toEqual([
+			{ date: F9, holidayName: "Nghỉ riêng lớp A" },
+		]);
+		// Lớp B không thuộc kỳ nghỉ scope classes → không nhảy.
+		const shiftB = body.shifts.find((row) => row.classId === "cls-b");
+		expect(shiftB?.makeupDate).toBe(F9);
+		expect(shiftB?.skippedHolidays).toEqual([]);
+	});
+
+	test("buổi trộn completed + upcoming → keptCompleted; apply giữ nguyên cả 2 dòng, không sinh shift cho buổi đó", async () => {
+		const app = createApp();
+		// enr-a1 tại F3 đã điểm danh → buổi F3 lớp A thành buổi trộn (D2).
+		await db
+			.update(schema.lesson)
+			.set({ status: "completed" })
+			.where(
+				and(
+					eq(schema.lesson.date, F3),
+					eq(schema.lesson.enrollmentId, "enr-a1"),
+				),
+			);
+
+		const previewRes = await preview(app, draft());
+		const body = (await previewRes.json()) as {
+			shifts: Array<{ classId: string }>;
+			keptCompleted: Array<{
+				classId: string;
+				className: string;
+				date: string;
+				sessionOrdinal: number;
+			}>;
+			planHash: string;
+		};
+		expect(body.shifts.map((shift) => shift.classId)).toEqual(["cls-b"]);
+		expect(body.keptCompleted).toEqual([
+			{ classId: "cls-a", className: "Lớp A", date: F3, sessionOrdinal: 3 },
+		]);
+
+		const applyRes = await apply(app, { ...draft(), planHash: body.planHash });
+		expect(applyRes.status).toBe(200);
+		const applyBody = (await applyRes.json()) as { shiftedCount: number };
+		expect(applyBody.shiftedCount).toBe(1);
+
+		// Cả 2 dòng của lớp A tại F3 giữ nguyên status — không bị đánh holiday.
+		const classARows = await db
+			.select({
+				enrollmentId: schema.lesson.enrollmentId,
+				status: schema.lesson.status,
+			})
+			.from(schema.lesson)
+			.where(
+				and(eq(schema.lesson.date, F3), eq(schema.lesson.classId, "cls-a")),
+			);
+		expect(classARows).toHaveLength(2);
+		expect(classARows).toContainEqual({
+			enrollmentId: "enr-a1",
+			status: "completed",
+		});
+		expect(classARows).toContainEqual({
+			enrollmentId: "enr-a2",
+			status: "upcoming",
+		});
+		// Không có holiday_session_shift nào cho buổi trộn của lớp A.
+		const shiftsA = await db
+			.select({ id: schema.holidaySessionShift.id })
+			.from(schema.holidaySessionShift)
+			.where(eq(schema.holidaySessionShift.classId, "cls-a"));
+		expect(shiftsA).toHaveLength(0);
+	});
+});
 // #454 D9: apply notify=true phát holiday_created vào hàng đợi thông báo
 // (Email + In-app) cho học viên các lớp bị ảnh hưởng; notify=false thì không.
 describe("holiday_created qua hàng đợi thông báo (#454 D9)", () => {

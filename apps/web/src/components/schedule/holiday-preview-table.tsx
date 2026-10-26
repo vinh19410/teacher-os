@@ -1,10 +1,17 @@
 /**
- * Bảng xem trước dời buổi (TOS-11): mỗi dòng = một buổi gốc bị trùng + ngày
- * bù cuối khóa (đúng thứ + khung giờ chuẩn của lớp). `keptCompleted` và
- * `unsupported` hiển thị dòng xám không thao tác (nhãn chi tiết ở TOS-12).
- * Responsive: ≥768px bảng; <768px danh sách thẻ dọc.
+ * Bảng xem trước dời buổi (TOS-11 + TOS-12): mỗi dòng = một buổi gốc bị trùng
+ * + ngày bù cuối khóa (đúng thứ + khung giờ chuẩn của lớp). TOS-12: ngày bù
+ * nhảy qua kỳ nghỉ khác mang `*` ngay sau ngày bù và khối ghi chú dưới bảng
+ * nêu tên kỳ nghỉ bị nhảy qua + tên lớp (D3); buổi có dòng đã điểm danh hiện
+ * "Đã điểm danh" + Badge "Giữ nguyên — Đã diễn ra" (D4) và không được đếm
+ * vào tiêu đề. Responsive: ≥768px bảng; <768px danh sách thẻ dọc.
  */
-import type { HolidayPreview } from "@teacher-os/api/contracts";
+import type {
+	HolidayPlannedShift,
+	HolidayPreview,
+} from "@teacher-os/api/contracts";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { formatDayMonth } from "@/lib/week-grid";
 
 const VI_WEEKDAYS: Record<number, string> = {
@@ -27,14 +34,45 @@ function weekdayOfISO(iso: string): number {
 	return weekday === 0 ? 7 : weekday;
 }
 
+/** Gom các ngày bị nhảy qua của một shift thành nhóm liền kề theo kỳ nghỉ
+ * (cùng `holidayName`, kể cả null) — mỗi nhóm một câu ghi chú (red-team I3). */
+function skipGroups(
+	shift: HolidayPlannedShift,
+): Array<{ holidayName: string | null; dates: string[] }> {
+	const groups: Array<{ holidayName: string | null; dates: string[] }> = [];
+	for (const skip of shift.skippedHolidays) {
+		const last = groups[groups.length - 1];
+		if (last && last.holidayName === skip.holidayName) {
+			last.dates.push(skip.date);
+		} else {
+			groups.push({ holidayName: skip.holidayName, dates: [skip.date] });
+		}
+	}
+	return groups;
+}
+
+/** Nhãn `*` sau ngày bù — trang trí, giải thích nằm ở khối ghi chú dưới bảng. */
+function SkipMark() {
+	return (
+		<span className="text-muted-foreground" aria-hidden="true">
+			*
+		</span>
+	);
+}
+
 export function HolidayPreviewTable({
 	preview,
 	loading,
 	error,
+	draftName = "",
 }: {
 	preview: HolidayPreview | null;
 	loading: boolean;
 	error: string | null;
+	/** Tên kỳ nghỉ đang gõ trong form — điền cho `skippedHolidays` có
+	 * `holidayName` null (kỳ đang tạo; previewKey cố ý bỏ `name` nên server
+	 * không trả tên draft). */
+	draftName?: string;
 }) {
 	if (loading) {
 		return (
@@ -75,14 +113,31 @@ export function HolidayPreviewTable({
 		);
 	}
 
+	const shiftCount = preview.shifts.length;
+	const skipNotes = preview.shifts.flatMap((shift) =>
+		skipGroups(shift).map((group) => ({
+			key: `${shift.classId}:${shift.originalDate}:${group.dates[0]}`,
+			className: shift.className,
+			name:
+				group.holidayName ??
+				(draftName.trim().length > 0 ? draftName.trim() : "kỳ nghỉ đang tạo"),
+			datesLabel: group.dates.map((d) => formatDayMonth(d)).join(", "),
+			targetLabel: `${weekdayLabel(shift.weekday)}, ${formatDayMonth(shift.makeupDate)}/${shift.makeupDate.slice(0, 4)}`,
+		})),
+	);
+
 	return (
 		<div data-testid="holiday-preview" className="flex flex-col gap-2">
-			{preview.shifts.length === 0 && (
+			{/* D4: tiêu đề chỉ đếm shift — kept/unsupported không tính "xử lý". */}
+			<div data-testid="holiday-preview-title" className="font-medium text-sm">
+				{shiftCount} buổi sẽ được xử lý
+			</div>
+			{shiftCount === 0 && (
 				<div
-					data-testid="holiday-preview-empty"
+					data-testid="holiday-preview-none"
 					className="rounded-md border border-warn/50 bg-warn-soft px-3 py-3 text-sm text-warn"
 				>
-					Không có buổi học nào trong khoảng ngày đã chọn.
+					Không có buổi nào cần dời trong khoảng ngày đã chọn.
 				</div>
 			)}
 			{/* Bảng cho ≥768px; danh sách thẻ cho nhỏ hơn — cùng dữ liệu. */}
@@ -121,18 +176,12 @@ export function HolidayPreviewTable({
 									<span className="inline-flex items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 text-warn text-xs">
 										Nghỉ lễ — Đã dời lịch
 									</span>
-									{shift.skippedHolidayDates.length > 0 && (
-										<span
-											className="ml-1 text-[10px] text-muted-foreground"
-											title={shift.skippedHolidayDates.join(", ")}
-										>
-											(*)
-										</span>
-									)}
 								</td>
 								<td className="py-2 tabular-nums">
 									→ Dời sang {weekdayLabel(shift.weekday)},{" "}
-									{formatDayMonth(shift.makeupDate)} · {shift.time}
+									{formatDayMonth(shift.makeupDate)}
+									{shift.skippedHolidays.length > 0 && <SkipMark />} ·{" "}
+									{shift.time}
 								</td>
 							</tr>
 						))}
@@ -145,8 +194,9 @@ export function HolidayPreviewTable({
 								<td className="py-2 pr-3 tabular-nums">
 									{formatDayMonth(kept.date)} · Buổi {kept.sessionOrdinal}
 								</td>
-								<td className="py-2 pr-3" colSpan={2}>
-									Giữ nguyên — Đã diễn ra
+								<td className="py-2 pr-3">Đã điểm danh</td>
+								<td className="py-2">
+									<Badge variant="muted">(!) Giữ nguyên — Đã diễn ra</Badge>
 								</td>
 							</tr>
 						))}
@@ -172,18 +222,8 @@ export function HolidayPreviewTable({
 					>
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<span className="font-medium">{shift.className}</span>
-							<span>
-								<span className="inline-flex items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 text-warn text-xs">
-									Nghỉ lễ — Đã dời lịch
-								</span>
-								{shift.skippedHolidayDates.length > 0 && (
-									<span
-										className="ml-1 text-[10px] text-muted-foreground"
-										title={shift.skippedHolidayDates.join(", ")}
-									>
-										(*)
-									</span>
-								)}
+							<span className="inline-flex items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 text-warn text-xs">
+								Nghỉ lễ — Đã dời lịch
 							</span>
 						</div>
 						<div className="text-muted-foreground text-xs tabular-nums">
@@ -192,7 +232,8 @@ export function HolidayPreviewTable({
 						</div>
 						<div className="mt-1 tabular-nums">
 							→ Dời sang {weekdayLabel(shift.weekday)},{" "}
-							{formatDayMonth(shift.makeupDate)} · {shift.time}
+							{formatDayMonth(shift.makeupDate)}
+							{shift.skippedHolidays.length > 0 && <SkipMark />} · {shift.time}
 						</div>
 					</li>
 				))}
@@ -201,8 +242,16 @@ export function HolidayPreviewTable({
 						key={`card-kept:${kept.classId}:${kept.date}`}
 						className="rounded-lg border bg-muted px-3 py-2 text-muted-foreground text-sm"
 					>
-						{kept.className} · {formatDayMonth(kept.date)} — Giữ nguyên — Đã
-						diễn ra
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span>
+								{kept.className} · {formatDayMonth(kept.date)} · Buổi{" "}
+								{kept.sessionOrdinal}
+							</span>
+							<span className="text-xs">Đã điểm danh</span>
+						</div>
+						<div className="mt-1">
+							<Badge variant="muted">(!) Giữ nguyên — Đã diễn ra</Badge>
+						</div>
 					</li>
 				))}
 				{preview.unsupported.map((item) => (
@@ -214,6 +263,20 @@ export function HolidayPreviewTable({
 					</li>
 				))}
 			</ul>
+			{skipNotes.length > 0 && (
+				<div data-testid="holiday-preview-notes">
+					<Alert className="text-muted-foreground text-xs">
+						<ul className="space-y-1">
+							{skipNotes.map((note) => (
+								<li key={note.key}>
+									*Lớp {note.className}: ngày dự kiến {note.datesLabel} trùng «
+									{note.name}» nên tự nhảy sang {note.targetLabel}
+								</li>
+							))}
+						</ul>
+					</Alert>
+				</div>
+			)}
 		</div>
 	);
 }

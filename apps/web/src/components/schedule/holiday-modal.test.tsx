@@ -31,7 +31,7 @@ const PREVIEW: HolidayPreview = {
 			time: "19:00",
 			dur: 90,
 			weekday: 5,
-			skippedHolidayDates: [],
+			skippedHolidays: [],
 		},
 	],
 	keptCompleted: [],
@@ -259,5 +259,95 @@ describe("HolidayModal (TOS-11 phase 5)", () => {
 		fireEvent.click(screen.getByText("Xác nhận áp dụng & Dời buổi"));
 		await waitFor(() => expect(toast.error).toHaveBeenCalled());
 		await waitFor(() => expect(repos.previewHoliday).toHaveBeenCalledTimes(2));
+	});
+});
+
+describe("HolidayModal TOS-12: nhảy kỳ nghỉ và giữ nguyên buổi đã điểm danh", () => {
+	it("shift nhảy kỳ nghỉ + keptCompleted → *, ghi chú tên kỳ nghỉ, nhãn Giữ nguyên, tiêu đề đếm 1 buổi", async () => {
+		repos.previewHoliday.mockResolvedValue({
+			...PREVIEW,
+			shifts: [
+				{
+					...PREVIEW.shifts[0],
+					skippedHolidays: [
+						{ date: "2027-01-22", holidayName: "Nghỉ Tết Dương lịch" },
+					],
+				},
+			],
+			keptCompleted: [
+				{
+					classId: "cl-1",
+					className: "IELTS Writing",
+					date: "2026-11-20",
+					sessionOrdinal: 3,
+				},
+			],
+		});
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+			/>,
+		);
+		fillValidForm();
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+
+		// `*` gắn ngay sau ngày bù ở cột Kết quả (bảng desktop + thẻ mobile).
+		expect(
+			screen.getAllByText(/Dời sang Thứ 6, 22\/01 · 19:00/).length,
+		).toBeGreaterThanOrEqual(1);
+		expect(screen.getByTestId("holiday-preview").textContent).toContain(
+			"22/01* · 19:00",
+		);
+		// Ghi chú dưới bảng nêu đúng tên kỳ nghỉ và tên lớp (D3 + red-team I3).
+		expect(
+			screen.getByText(
+				/\*Lớp IELTS Writing: ngày dự kiến 22\/01 trùng «Nghỉ Tết Dương lịch» nên tự nhảy sang Thứ 6, 22\/01\/2027/,
+			),
+		).toBeTruthy();
+		// Nhãn D4: trạng thái "Đã điểm danh" + Badge "Giữ nguyên — Đã diễn ra"
+		// ở cả 2 layout; dòng không được đếm vào tiêu đề.
+		expect(screen.getAllByText("Đã điểm danh").length).toBeGreaterThanOrEqual(
+			2,
+		);
+		expect(
+			screen.getAllByText(/Giữ nguyên — Đã diễn ra/).length,
+		).toBeGreaterThanOrEqual(2);
+		expect(screen.getByTestId("holiday-preview-title").textContent).toBe(
+			"1 buổi sẽ được xử lý",
+		);
+	});
+
+	it("skippedHolidays holidayName null → ghi chú điền tên kỳ nghỉ đang gõ trong form", async () => {
+		repos.previewHoliday.mockResolvedValue({
+			...PREVIEW,
+			shifts: [
+				{
+					...PREVIEW.shifts[0],
+					skippedHolidays: [{ date: "2027-01-22", holidayName: null }],
+				},
+			],
+		});
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+			/>,
+		);
+		fillValidForm(); // tên "Nghỉ lễ 20/11"
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+		expect(
+			screen.getByText(
+				/\*Lớp IELTS Writing: ngày dự kiến 22\/01 trùng «Nghỉ lễ 20\/11» nên tự nhảy sang Thứ 6, 22\/01\/2027/,
+			),
+		).toBeTruthy();
 	});
 });
