@@ -18,7 +18,7 @@ import {
 	organizationHoliday,
 	organizationHolidayClass,
 } from "@teacher-os/db/schema/organization-holiday";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -141,23 +141,27 @@ async function loadClassLessons(
 }
 
 /** Kỳ nghỉ hiện có giao với từng lớp (loader bước 3): scope org hiệu lực
- * với mọi lớp; scope classes chỉ với các lớp trong organization_holiday_class. */
+ * với mọi lớp; scope classes chỉ với các lớp trong organization_holiday_class.
+ * Trả classId → (date → tên kỳ nghỉ); duyệt theo createdAt ASC, id — kỳ
+ * khai báo trước thắng khi hai kỳ chồng ngày (red-team I2). */
 async function loadExistingHolidayDates(
 	db: Db,
 	orgId: string,
 	classIds: string[],
-): Promise<Map<string, Set<string>>> {
-	const datesByClass = new Map<string, Set<string>>();
+): Promise<Map<string, Map<string, string>>> {
+	const datesByClass = new Map<string, Map<string, string>>();
 	if (classIds.length === 0) return datesByClass;
 	const orgHolidays = await db
 		.select({
 			id: organizationHoliday.id,
+			name: organizationHoliday.name,
 			fromDate: organizationHoliday.fromDate,
 			toDate: organizationHoliday.toDate,
 			scope: organizationHoliday.scope,
 		})
 		.from(organizationHoliday)
-		.where(eq(organizationHoliday.orgId, orgId));
+		.where(eq(organizationHoliday.orgId, orgId))
+		.orderBy(asc(organizationHoliday.createdAt), asc(organizationHoliday.id));
 	if (orgHolidays.length === 0) return datesByClass;
 	const scopedRows = await db
 		.select({
@@ -177,10 +181,13 @@ async function loadExistingHolidayDates(
 		if (list) list.push(row.classId);
 		else scopedByHoliday.set(row.holidayId, [row.classId]);
 	}
-	const addDate = (classId: string, date: string) => {
-		const set = datesByClass.get(classId);
-		if (set) set.add(date);
-		else datesByClass.set(classId, new Set([date]));
+	const addDate = (classId: string, date: string, name: string) => {
+		let byDate = datesByClass.get(classId);
+		if (!byDate) {
+			byDate = new Map<string, string>();
+			datesByClass.set(classId, byDate);
+		}
+		if (!byDate.has(date)) byDate.set(date, name);
 	};
 	const classIdSet = new Set(classIds);
 	for (const holiday of orgHolidays) {
@@ -191,7 +198,7 @@ async function loadExistingHolidayDates(
 						classIdSet.has(classId),
 					);
 		for (let d = holiday.fromDate; d <= holiday.toDate; d = addDaysISO(d, 1)) {
-			for (const classId of targets) addDate(classId, d);
+			for (const classId of targets) addDate(classId, d, holiday.name);
 		}
 	}
 	return datesByClass;

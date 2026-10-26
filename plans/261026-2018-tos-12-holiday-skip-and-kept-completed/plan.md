@@ -1,7 +1,7 @@
 ---
 title: "TOS-12: Buổi bù nhảy qua kỳ nghỉ khác và bảo vệ ca đã điểm danh"
 description: "Hiển thị chú thích (*) khi ngày bù nhảy qua kỳ nghỉ khác và nhãn 'Giữ nguyên — Đã diễn ra' cho buổi đã điểm danh trên Bảng xem trước Lịch nghỉ chung; khóa hành vi bằng test server + E2E 2 scenario AC-002."
-status: pending
+status: completed
 priority: P1
 effort: 1d
 issue: 446
@@ -49,9 +49,9 @@ Nguồn: Jira [TOS-12](https://teacher-os.atlassian.net/browse/TOS-12) (subtask 
 
 | # | Phase | Ước lượng | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [phase-01-preview-contract-and-route-tests.md](phase-01-preview-contract-and-route-tests.md): `skippedHolidays` có tên, test route với kỳ nghỉ đã lưu + buổi đã điểm danh | 3h | pending | #445 merged |
-| 2 | [phase-02-preview-table-labels.md](phase-02-preview-table-labels.md): chú thích `(*)`, ghi chú, nhãn "Giữ nguyên — Đã diễn ra", 3 viewport | 2h | pending | 1 |
-| 3 | [phase-03-e2e-ac-002.md](phase-03-e2e-ac-002.md): E2E 2 scenario AC-002 | 2h | pending | 2 |
+| 1 | [phase-01-preview-contract-and-route-tests.md](phase-01-preview-contract-and-route-tests.md): `skippedHolidays` có tên, test route với kỳ nghỉ đã lưu + buổi đã điểm danh | 3h | completed | #445 merged |
+| 2 | [phase-02-preview-table-labels.md](phase-02-preview-table-labels.md): chú thích `(*)`, ghi chú, nhãn "Giữ nguyên — Đã diễn ra", 3 viewport | 2h | completed | 1 |
+| 3 | [phase-03-e2e-ac-002.md](phase-03-e2e-ac-002.md): E2E 2 scenario AC-002 | 2h | completed | 2 |
 
 ## Acceptance criteria (từ AC-002)
 
