@@ -7,7 +7,7 @@ effort: 2d
 issue: 452
 branch: feat/tos-18-billing-timeline-reminders
 tags: [feature, backend, frontend, api, e2e]
-blockedBy: [449, 450]
+blockedBy: [449, 450, 454]
 blocks: []
 created: 2026-10-26
 ---
@@ -82,4 +82,4 @@ flowchart LR
 
 ## Cần người duyệt xác nhận
 
-- D5: nhắc phí chờ hạ tầng thông báo TOS-19/21 (hiện chưa có GitHub issue) thay vì dựng tạm. Khi TOS-21 có issue, chạy `gh issue edit 452 --add-blocked-by <TOS-21>`.
+- D5: nhắc phí chờ hạ tầng thông báo TOS-21 (#454, plan `plans/261026-2054-tos-21-notification-queue-email-inapp/`) thay vì dựng tạm. #452 đã gắn blocked by #454; phase 3 gọi `emitNotifications` với builder `tuitionReminderEvent` của #454.

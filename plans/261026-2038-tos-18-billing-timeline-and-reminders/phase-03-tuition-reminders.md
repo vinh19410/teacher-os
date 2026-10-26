@@ -4,7 +4,7 @@ title: "Chọn học viên đang nợ và Gửi nhắc học phí qua hàng đ�
 status: pending
 priority: P1
 effort: "4h"
-dependencies: ["phase-02", "TOS-21"]
+dependencies: ["phase-02", "TOS-21 #454"]
 ---
 
 # Phase 3: Nhắc học phí
