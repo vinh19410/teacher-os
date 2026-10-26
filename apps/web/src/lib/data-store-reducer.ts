@@ -98,6 +98,9 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "create-report":
 		case "create-assignment-prompt":
 		case "assign-class-prompt":
+		case "record-invoice-payment":
+			// #450: figures come from the post-write snapshot refresh — the
+			// ledger row and invoice totals are server-owned.
 			return state;
 		case "enroll-student": {
 			// Issue #122 / #251 / #253: attach an EXISTING student to class as invited.

@@ -247,9 +247,13 @@ describe("invoice transaction history (#345)", () => {
 				"content",
 				"createdAt",
 				"id",
+				"method",
 				"referenceCode",
 				"transactionDate",
 			]);
+			// #450: bank-hub rows carry no method label (the transfer itself is
+			// the channel); the provider enum stays server-side.
+			expect(row.method).toBe("");
 		}
 	});
 

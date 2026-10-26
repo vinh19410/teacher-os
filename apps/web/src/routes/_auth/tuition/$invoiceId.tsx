@@ -304,6 +304,7 @@ export function InvoiceDetailRoute() {
 							"Ngày giao dịch",
 							"Số tiền",
 							"Nội dung chuyển khoản",
+							"Phương thức",
 							"Mã tham chiếu",
 							"Ghi nhận lúc",
 						]}
@@ -324,6 +325,11 @@ export function InvoiceDetailRoute() {
 								</span>,
 								<span key="c" className="font-mono text-xs">
 									{tx.content || "—"}
+								</span>,
+								// #450: manual receipts carry a display label; bank rows
+								// are QR transfers by definition.
+								<span key="m" className="text-xs">
+									{tx.method || "Chuyển khoản"}
 								</span>,
 								<span key="r" className="text-muted-foreground text-xs">
 									{tx.referenceCode || "—"}

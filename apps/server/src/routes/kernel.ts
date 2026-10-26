@@ -1,5 +1,6 @@
 import type {
 	CreatedResponse,
+	InvoicePaymentMethod,
 	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
 } from "@teacher-os/api/contracts";
@@ -9,8 +10,10 @@ import {
 	classNotesSchema,
 	classTuitionFeeUpdateSchema,
 	enrollStudentSchema,
+	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
+	invoicePaymentCreateSchema,
 	lessonActionSchema,
 	lessonEditSchema,
 	lessonStatusForAttendance,
@@ -68,6 +71,7 @@ import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { recordManualPayment } from "../lib/payments/record-manual-payment";
 import {
 	buildImportBatch,
 	findSyllabus,
@@ -1563,6 +1567,66 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
+	// #450: manual tuition receipt (partial or full) recorded from the debts
+	// screen. One matched `payment_transaction` row (provider "manual") plus
+	// recompute in a single atomic batch — same ledger source of truth as the
+	// QR flow. Idempotent on the dialog's clientRequestId; the overpay /
+	// already-paid guards live inside the INSERT…SELECT.
+	kernel.post("/invoices/:id/payments", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, invoicePaymentCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const invoiceId = c.req.param("id");
+		const [inv] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.orgId, ctx.orgId)));
+		// Tenant predicate makes unknown and foreign ids indistinguishable.
+		if (!inv) return c.json({ error: "invoice not found" }, 404);
+		const outcome = await recordManualPayment(db, {
+			orgId: ctx.orgId,
+			invoiceId,
+			userId: ctx.userId,
+			clientRequestId: body.data.clientRequestId,
+			amount: body.data.amount,
+			method: body.data.method,
+			note: body.data.note,
+		});
+		switch (outcome.kind) {
+			case "created":
+				return c.json(
+					{
+						id: outcome.id,
+						paidAmount: outcome.paidAmount,
+						remaining: outcome.remaining,
+						status: outcome.status,
+					},
+					201,
+				);
+			case "replayed":
+				return c.json({
+					id: outcome.id,
+					paidAmount: outcome.paidAmount,
+					remaining: outcome.remaining,
+					status: outcome.status,
+				});
+			case "key-conflict":
+				return c.json({ error: "client-request-id-conflict" }, 409);
+			case "settled":
+				return c.json({ error: "invoice-settled" }, 422);
+			case "exceeds":
+				return c.json(
+					{
+						error: "amount-exceeds-debt",
+						remaining: outcome.remaining,
+					},
+					422,
+				);
+		}
+	});
+
 	// #320: rotate the public pay token (old links die — the modal confirms).
 	kernel.post("/invoices/:id/rotate-pay-token", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -1622,6 +1686,14 @@ export function kernelRoutes(deps: {
 				referenceCode: tx.referenceCode,
 				transactionDate: tx.transactionDate,
 				createdAt: tx.createdAt.toISOString(),
+				// Display label only — the provider enum stays server-side
+				// (display-fields-only DTO, #345 invariant).
+				method:
+					tx.provider === "manual"
+						? (INVOICE_PAYMENT_METHOD_LABEL[
+								tx.method as InvoicePaymentMethod
+							] ?? "")
+						: "",
 			})) satisfies InvoiceTransactionItem[],
 		);
 	});

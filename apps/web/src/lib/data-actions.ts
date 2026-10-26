@@ -5,6 +5,7 @@ import type {
 	AssignmentTestPartsSet,
 	AssignmentTestUpdate,
 	ClassType,
+	InvoicePaymentCreate,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
@@ -99,6 +100,14 @@ export type KernelAction =
 				due: string;
 				note?: string;
 			};
+	  }
+	| {
+			/** #450 — manual tuition receipt on the debts ledger. The payload is
+			 * the strict `InvoicePaymentCreate` contract posted verbatim; the
+			 * server is idempotent on `payload.clientRequestId`. */
+			type: "record-invoice-payment";
+			invoiceId: string;
+			payload: InvoicePaymentCreate;
 	  }
 	| {
 			type: "add-class";
