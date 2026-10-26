@@ -517,4 +517,27 @@ describe("occurrence mutations (#98 phase 2)", () => {
 			expect(match.index).toBeGreaterThan(useIdx);
 		}
 	});
+
+	test("TOS-7: snapshot includes attendance and attendanceNote on lesson rows", async () => {
+		const rows = await lessonRows();
+		const target = rows[0];
+		if (!target) throw new Error("expected at least one lesson row");
+		await t.libsql
+			.update(lesson)
+			.set({
+				status: "completed",
+				attendance: "late",
+				attendanceNote: "Đến muộn 10 phút",
+			})
+			.where(eq(lesson.id, target.id));
+
+		const snap = await snapshot();
+		const found = snap.lessons.find((l) => l.id === target.id);
+		expect(found).toMatchObject({
+			id: target.id,
+			status: "completed",
+			attendance: "late",
+			attendanceNote: "Đến muộn 10 phút",
+		});
+	});
 });

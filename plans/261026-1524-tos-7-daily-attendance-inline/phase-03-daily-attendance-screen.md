@@ -35,8 +35,8 @@ Thay empty state của route khung `/attendance` (TOS-6) bằng danh sách ca th
 | Hàng ca (mở) | Bảng học viên: STT, tên, `AttendanceStatusPicker`, ô "Ghi chú học vụ" (`maxLength=255`). Nút primary "Lưu điểm danh ca học". |
 | Lớp legacy | Nhãn "Lớp chưa gắn lịch ngày", danh sách học viên chỉ đọc, nút "Mở lớp để điểm danh →" tới `/classes/$classId`. |
 | Lưu | Nút disabled + "Đang lưu…" khi pending. Thành công: toast "Đã lưu điểm danh" (hoặc "Đã cập nhật điểm danh" khi ca đã `recorded`), thu gọn hàng, `invalidateQueries({ queryKey: ["kernel"] })` để bộ đếm dashboard và snapshot cùng làm mới. URL không đổi. |
-| Thiếu trạng thái | Chặn ở client: viền `warning` cho dòng thiếu, focus dòng thiếu đầu tiên, thông báo "Còn N học viên chưa chọn trạng thái". Không gọi API. |
-| Lỗi server | 422 `future-session`: "Chưa đến ngày học, chưa thể điểm danh." 409 `roster-changed`: "Danh sách lớp vừa thay đổi, đã tải lại." rồi refetch. Lỗi khác: thông báo kèm nút "Thử lại", giữ nguyên nháp. |
+| Thiếu trạng thái | Chặn ở client: viền `warning` cho dòng thiếu, focus dòng thiếu đầu tiên, thông báo "Còn N học viên chưa chọn trạng thái". Dòng `attendance: null` từ server (điểm danh cũ) cũng là "thiếu" cho đến khi giáo viên chọn. Không gọi API. |
+| Lỗi server | 400 `invalid-date`: "Ngày không đúng định dạng." 422 `future-session`: "Chưa đến ngày học, chưa thể điểm danh." 422 `incomplete-roster` / 422 `unknown-lesson` / 409 `roster-changed`: "Danh sách lớp vừa thay đổi, đã tải lại." rồi refetch (kích hoạt enrollment muộn thêm dòng vào bucket là case thật). Lỗi khác: thông báo kèm nút "Thử lại", giữ nguyên nháp. |
 | Ngày tương lai | Picker và nút lưu disabled, ghi chú "Chưa đến ngày học". |
 | Loading / rỗng | Skeleton 3 hàng. Rỗng: "Không có ca học nào trong ngày này." |
 | Mở sẵn | Khi `status=pending`, ca chưa điểm danh đầu tiên mở sẵn. |
@@ -45,9 +45,10 @@ Responsive theo wireframe: ở `768px` và `375px`, bảng học viên chuyển 
 
 ## Tasks & Steps
 
-1. Test đỏ cho `attendance-draft`: chọn trạng thái, sửa note, `missing()` trả đúng `lessonId`, `reset` lấy lại giá trị server.
+1. Test đỏ cho `attendance-draft`: chọn trạng thái, sửa note, `missing()` trả đúng `lessonId`, `reset` lấy lại giá trị server; **dòng `attendance: null` từ server nằm trong `missing()` cho đến khi được chọn**.
 2. Test đỏ cho `AttendanceSessionRow`:
    - Mở hàng thì thấy đủ học viên và 4 lựa chọn với nhãn tiếng Việt chuẩn.
+   - **Dòng `attendance: null` hiển thị "Chưa rõ (điểm danh cũ)" trên picker; bấm lưu khi còn dòng đó → không gọi `onSave`, hiện thông báo thiếu.**
    - Bấm lưu khi thiếu → không gọi `onSave`, hiện thông báo thiếu.
    - Chọn đủ rồi lưu → `onSave` nhận đúng `entries` (kể cả note đã trim).
    - Ca legacy không render radio, có link sang trang lớp.

@@ -117,6 +117,8 @@ export function SessionAttendanceModal({
 							</Badge>
 						) : display === "cancelled" ? (
 							<Badge variant="danger">Đã hủy</Badge>
+						) : display === "absent" ? (
+							<Badge variant="secondary">Vắng</Badge>
 						) : (
 							<Badge variant="accent">Sắp tới</Badge>
 						)}

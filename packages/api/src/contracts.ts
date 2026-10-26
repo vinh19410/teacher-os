@@ -1061,6 +1061,110 @@ export const lessonActionSchema = z.object({}).strict();
 export type LessonAction = z.infer<typeof lessonActionSchema>;
 
 /**
+ * TOS-7 (issue #440) — trạng thái điểm danh chi tiết trên dòng `lesson`.
+ * Đây là CHÍNH SÁCH MỚI do user chốt (Validation Session 1, 2026-10-26):
+ * vắng không phép trừ 1 buổi, vắng có phép không trừ. Setting cũ
+ * `unexcused_deduct` trong `workspace_settings` là tombstone (#321) và
+ * chưa từng được enforce (chỉ echo ở form Cài đặt, commit `603e05b3`) —
+ * không đọc lại; cấu hình theo tổ chức cần một bảng preference mới.
+ */
+export const UNEXCUSED_CONSUMES_SESSION = true;
+
+export const ATTENDANCE_STATUSES = [
+	"present",
+	"late",
+	"excused",
+	"unexcused",
+] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+export const attendanceStatusSchema = z.enum(ATTENDANCE_STATUSES);
+
+/**
+ * Ánh xạ D2 — trạng thái điểm danh quyết `lesson.status`, tức quyết số
+ * buổi đã học của gói (invariant 6): present/late trừ buổi, excused không
+ * trừ, unexcused trừ khi `UNEXCUSED_CONSUMES_SESSION`. Hàm thuần duy nhất
+ * để server và test dùng chung, không viết chuỗi rời.
+ */
+export function lessonStatusForAttendance(
+	attendance: AttendanceStatus,
+): "completed" | "absent" {
+	if (attendance === "excused") return "absent";
+	if (attendance === "unexcused" && !UNEXCUSED_CONSUMES_SESSION) {
+		return "absent";
+	}
+	return "completed";
+}
+
+/**
+ * Body của PUT /api/classes/:id/sessions/:date/attendance — lưu điểm danh
+ * cả ca trong một request. Đủ sĩ số do server kiểm (đối chiếu roster của
+ * bucket, thiếu → 422 incomplete-roster, thừa → 422 unknown-lesson).
+ */
+export const sessionAttendanceSaveSchema = z
+	.object({
+		entries: z
+			.array(
+				z.object({
+					lessonId: z.string().min(1),
+					attendance: attendanceStatusSchema,
+					note: z.string().trim().max(255).default(""),
+				}),
+			)
+			.min(1),
+	})
+	.strict()
+	.refine(
+		(v) => new Set(v.entries.map((e) => e.lessonId)).size === v.entries.length,
+		{ message: "lessonId trùng" },
+	);
+export type SessionAttendanceSave = z.infer<typeof sessionAttendanceSaveSchema>;
+
+/**
+ * Response của GET /api/attendance/daily?date= — danh sách ca học trong
+ * ngày. Bucket định danh theo `(classId, date)` (invariant "one physical
+ * session"); `time`/`dur` là field hiển thị lấy từ các dòng trong bucket.
+ * `students[].lessonId` null với lớp legacy (date IS NULL — chỉ xem, D4);
+ * `attendance` null với dòng cũ (`completed+NULL` hiển thị default
+ * "present", `absent+NULL` hiển thị "Chưa rõ" — không coerce dữ liệu).
+ */
+export const dailyAttendanceResponseSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		sessions: z.array(
+			z
+				.object({
+					classId: z.string().min(1),
+					className: z.string(),
+					time: z.string(),
+					dur: z.number().int().min(1),
+					mode: z.enum(["dated", "legacy"]),
+					recorded: z.boolean(),
+					students: z.array(
+						z.object({
+							lessonId: z.string().min(1).nullable(),
+							studentId: z.string().min(1),
+							studentName: z.string(),
+							attendance: attendanceStatusSchema.nullable(),
+							note: z.string(),
+						}),
+					),
+				})
+				.strict(),
+		),
+		counts: z
+			.object({
+				all: z.number().int().min(0),
+				pending: z.number().int().min(0),
+				completed: z.number().int().min(0),
+			})
+			.strict(),
+	})
+	.strict();
+export type DailyAttendanceResponse = z.infer<
+	typeof dailyAttendanceResponseSchema
+>;
+
+/**
  * Lesson edit (issue #55) — full-replace, upcoming-only. day: 1 = Monday …
  * 7 = Sunday (lesson-day convention; the class schedule JSON is 0-based —
  * the off-by-one is pinned here). WARNING for consumers (#56): omitted
@@ -1292,6 +1396,14 @@ export interface KernelLessonRow {
 	date: string | null;
 	type: string;
 	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
+	/**
+	 * TOS-7 — trạng thái điểm danh chi tiết (`present | late | excused |
+	 * unexcused`); null = chưa ghi chi tiết (dòng cũ / 1-click). Required
+	 * trong type: mọi fixture snapshot phải gửi tường minh hai field này.
+	 */
+	attendance: AttendanceStatus | null;
+	/** Teacher-only ghi chú học vụ (≤255); không chiếu vào /api/student. */
+	attendanceNote: string | null;
 	topic: string;
 	zoom: string;
 }

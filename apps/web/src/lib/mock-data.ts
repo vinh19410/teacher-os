@@ -1,6 +1,7 @@
 import type {
 	AssignmentQuestion,
 	AssignmentSkill,
+	AttendanceStatus,
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
@@ -54,6 +55,11 @@ export interface Lesson {
 	date: string | null;
 	type: LessonType;
 	status: LessonStatus;
+	/** TOS-7: trạng thái điểm danh chi tiết; null = chưa ghi (dòng cũ /
+	 * 1-click). Giá trị lạ coerce về null ở mapLessons. */
+	attendance: AttendanceStatus | null;
+	/** Teacher-only ghi chú học vụ; không hiển thị ngoài màn giáo viên. */
+	attendanceNote: string | null;
 	topic: string;
 	zoom: string;
 }

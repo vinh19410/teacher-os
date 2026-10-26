@@ -259,6 +259,41 @@ describe("mapStudents pkg derive (Wave 4)", () => {
 			remaining: 8,
 		});
 	});
+
+	test("TOS-7 D2: excused (absent) does not increase pkg.done; unexcused (completed) increases pkg.done by 1", () => {
+		const withExcused = mapStudents({
+			...snapshot,
+			lessons: [
+				{
+					...lessonRow("ls-excused", "en-new", "absent"),
+					attendance: "excused",
+					attendanceNote: "Xin nghỉ",
+				},
+			],
+		});
+		expect(withExcused.find((s) => s.id === "st-1")?.pkg).toMatchObject({
+			done: 0,
+			remaining: 10,
+		});
+
+		const withUnexcused = mapStudents({
+			...snapshot,
+			lessons: [
+				{
+					...lessonRow("ls-excused", "en-new", "absent"),
+					attendance: "excused",
+				},
+				{
+					...lessonRow("ls-unexcused", "en-new", "completed"),
+					attendance: "unexcused",
+				},
+			],
+		});
+		expect(withUnexcused.find((s) => s.id === "st-1")?.pkg).toMatchObject({
+			done: 1,
+			remaining: 9,
+		});
+	});
 });
 
 function lessonRow(
@@ -276,6 +311,8 @@ function lessonRow(
 		date: null,
 		type: "1:1",
 		status,
+		attendance: null,
+		attendanceNote: null,
 		topic: "",
 		zoom: "",
 	};

@@ -130,6 +130,8 @@ export function lessonRow(overrides: Partial<Row<"lessons">> = {}) {
 		date: null,
 		type: "1:1",
 		status: "upcoming",
+		attendance: null,
+		attendanceNote: null,
 		topic: "Task 2",
 		zoom: "",
 		...overrides,

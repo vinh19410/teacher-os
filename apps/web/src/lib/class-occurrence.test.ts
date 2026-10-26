@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	findClassOccurrence,
 	occurrenceSidStates,
+	sessionAttendanceState,
 	sessionAttendanceTally,
 	sessionStatus,
 } from "./class-sessions";
@@ -30,6 +31,8 @@ function lesson(over: Partial<Lesson> & Pick<Lesson, "id" | "sid">): Lesson {
 		date: null,
 		type: "1:2",
 		status: "upcoming",
+		attendance: null,
+		attendanceNote: null,
 		topic: "",
 		zoom: "",
 		...over,
@@ -205,6 +208,26 @@ describe("findClassOccurrence — dated (v2) rows", () => {
 			["sC", "absent", null],
 		]);
 		expect(states.every((s) => !s.canCancelEdit && !s.canCheckIn)).toBe(true);
+	});
+
+	test("TOS-7: sessionAttendanceState treats dated absent as settled (no check-in CTA)", () => {
+		const rows = [
+			dated(today, "completed", "r1", "sA"),
+			dated(today, "absent", "r2", "sB"),
+		];
+		const session = found(
+			findClassOccurrence(CLS, rows, { dateISO: today, time: "19:00" }),
+		);
+		const state = sessionAttendanceState(session, today);
+		// Rollup stays upcoming because absent ≠ completed, but NO sid gets
+		// display: "check-in" (clicking would 409 on non-upcoming row).
+		expect(state.kind).toBe("upcoming");
+		expect(
+			state.sids.map((s) => [s.sid, s.display, s.enrollmentLessonId]),
+		).toEqual([
+			["sA", "completed", null],
+			["sB", "absent", null],
+		]);
 	});
 
 	test("mixed class: a dated bucket is read as-is, undated rows are read on their own", () => {
