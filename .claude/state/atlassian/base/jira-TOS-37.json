@@ -1,1 +1,15 @@
-{"ac_mapping": "subtasks", "ac_subtasks": [{"remote_id": "TOS-39", "sub_ref": "#AC-001"}, {"remote_id": "TOS-40", "sub_ref": "#AC-002"}, {"remote_id": "TOS-41", "sub_ref": "#AC-003"}], "converter_version": "ba-jira-v1", "mapping_type": "story", "parent": "TOS-4", "priority": "Medium", "remote_id": "TOS-37", "summary": "US-008: Vận hành Phòng thi ảo công khai thu thập Lead khách vãng lai với trần bảo vệ kép Credit AI", "vault_path": "docs/selfomy-alignment/userstories/us-008.md"}
+{
+	"ac_mapping": "subtasks",
+	"ac_subtasks": [
+		{ "remote_id": "TOS-39", "sub_ref": "#AC-001" },
+		{ "remote_id": "TOS-40", "sub_ref": "#AC-002" },
+		{ "remote_id": "TOS-41", "sub_ref": "#AC-003" }
+	],
+	"converter_version": "ba-jira-v1",
+	"mapping_type": "story",
+	"parent": "TOS-4",
+	"priority": "Medium",
+	"remote_id": "TOS-37",
+	"summary": "US-008: Vận hành Phòng thi ảo công khai thu thập Lead khách vãng lai với trần bảo vệ kép Credit AI",
+	"vault_path": "docs/selfomy-alignment/userstories/us-008.md"
+}
