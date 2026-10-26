@@ -32,8 +32,8 @@ Scope: mở đủ toolbar theo **đúng render contract hiện có**, sửa bug 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Toolbar full-option + style render](./phase-01-toolbar-render.md) | Pending |
-| 2 | [E2E, docs và gates](./phase-02-e2e-docs-gates.md) | Pending |
+| 1 | [Toolbar full-option + style render](./phase-01-toolbar-render.md) | Completed |
+| 2 | [E2E, docs và gates](./phase-02-e2e-docs-gates.md) | Completed |
 
 ## Quyết định đã chốt
 
