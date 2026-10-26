@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
 	addDaysISO,
 	gotoWeek,
@@ -110,9 +110,9 @@ test("AC-002 (1440×900): ngày bù nhảy qua kỳ nghỉ đã khai báo → (*
 	await fillHoliday(dialog1, "Nghỉ Tết Dương lịch", M, M);
 	const preview1 = dialog1.getByTestId("holiday-preview");
 	await expect(preview1).toBeVisible({ timeout: 10_000 });
-	await expect(
-		dialog1.getByTestId("holiday-preview-title"),
-	).toHaveText("1 buổi sẽ được xử lý");
+	await expect(dialog1.getByTestId("holiday-preview-title")).toHaveText(
+		"1 buổi sẽ được xử lý",
+	);
 	await dialog1
 		.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" })
 		.click();
@@ -123,20 +123,23 @@ test("AC-002 (1440×900): ngày bù nhảy qua kỳ nghỉ đã khai báo → (*
 	// nghỉ #1 đã lưu → nhảy sang makeupNew với (*) và ghi chú tên kỳ nghỉ.
 	await gotoWeek(page, mondayWeekStartISO(addDaysISO(s0, 7)));
 	const dialog2 = await openHolidayDialog(page);
-	await fillHoliday(dialog2, "Nghỉ lễ giữa khóa", addDaysISO(s0, 7), addDaysISO(s0, 7));
+	await fillHoliday(
+		dialog2,
+		"Nghỉ lễ giữa khóa",
+		addDaysISO(s0, 7),
+		addDaysISO(s0, 7),
+	);
 	const preview2 = dialog2.getByTestId("holiday-preview");
 	await expect(preview2).toBeVisible({ timeout: 10_000 });
-	await expect(
-		dialog2.getByTestId("holiday-preview-title"),
-	).toHaveText("1 buổi sẽ được xử lý");
+	await expect(dialog2.getByTestId("holiday-preview-title")).toHaveText(
+		"1 buổi sẽ được xử lý",
+	);
 	const table2 = preview2.locator("table");
 	await expect(table2).toBeVisible();
 	await expect(table2).toContainText(
 		`Dời sang ${weekdayLabel(makeupNew)}, ${formatDayMonth(makeupNew)}*`,
 	);
-	await expect(
-		dialog2.getByTestId("holiday-preview-notes"),
-	).toContainText(
+	await expect(dialog2.getByTestId("holiday-preview-notes")).toContainText(
 		`*Lớp IELTS T3-T7 18h: ngày dự kiến ${formatDayMonth(M)} trùng «Nghỉ Tết Dương lịch» nên tự nhảy sang ${weekdayLabel(makeupNew)}, ${formatDayMonth(makeupNew)}/${makeupNew.slice(0, 4)}`,
 	);
 	await dialog2
@@ -204,9 +207,9 @@ test("AC-002 (1440×900): buổi đã điểm danh trong khoảng nghỉ → Gi�
 	await expect(preview).toBeVisible({ timeout: 10_000 });
 
 	// Chỉ buổi tuần sau được dời; buổi đã điểm danh KHÔNG đếm vào tiêu đề.
-	await expect(
-		dialog.getByTestId("holiday-preview-title"),
-	).toHaveText("1 buổi sẽ được xử lý");
+	await expect(dialog.getByTestId("holiday-preview-title")).toHaveText(
+		"1 buổi sẽ được xử lý",
+	);
 	const table = preview.locator("table");
 	await expect(table).toBeVisible();
 	const makeup = addDaysISO(TODAY, 28);
