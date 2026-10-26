@@ -1,3 +1,4 @@
+import type { HolidayMode } from "@teacher-os/api/contracts";
 import { planHolidayShift } from "@teacher-os/api/holiday-plan";
 import {
 	isoToLessonWeekday,
@@ -11,6 +12,7 @@ import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import {
+	holidaySessionCancel,
 	holidaySessionShift,
 	organizationHoliday,
 	organizationHolidayClass,
@@ -74,7 +76,13 @@ async function loadClassHolidays(
 	orgId: string,
 	classId: string,
 ): Promise<
-	Array<{ id: string; name: string; fromDate: string; toDate: string }>
+	Array<{
+		id: string;
+		name: string;
+		fromDate: string;
+		toDate: string;
+		mode: HolidayMode;
+	}>
 > {
 	const orgHolidays = await db
 		.select({
@@ -82,6 +90,7 @@ async function loadClassHolidays(
 			name: organizationHoliday.name,
 			fromDate: organizationHoliday.fromDate,
 			toDate: organizationHoliday.toDate,
+			mode: organizationHoliday.mode,
 			createdAt: organizationHoliday.createdAt,
 		})
 		.from(organizationHoliday)
@@ -97,6 +106,7 @@ async function loadClassHolidays(
 			name: organizationHoliday.name,
 			fromDate: organizationHoliday.fromDate,
 			toDate: organizationHoliday.toDate,
+			mode: organizationHoliday.mode,
 			createdAt: organizationHoliday.createdAt,
 		})
 		.from(organizationHoliday)
@@ -116,7 +126,13 @@ async function loadClassHolidays(
 				a.createdAt.getTime() - b.createdAt.getTime() ||
 				a.id.localeCompare(b.id),
 		)
-		.map(({ id, name, fromDate, toDate }) => ({ id, name, fromDate, toDate }));
+		.map(({ id, name, fromDate, toDate, mode }) => ({
+			id,
+			name,
+			fromDate,
+			toDate,
+			mode: mode === "cancel" ? "cancel" : "shift",
+		}));
 }
 
 async function loadClassShifts(
@@ -144,6 +160,31 @@ async function loadClassShifts(
 			),
 		)
 		.orderBy(holidaySessionShift.createdAt, holidaySessionShift.id);
+}
+
+async function loadClassCancels(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<
+	Array<{
+		id: string;
+		date: string;
+	}>
+> {
+	return db
+		.select({
+			id: holidaySessionCancel.id,
+			date: holidaySessionCancel.date,
+		})
+		.from(holidaySessionCancel)
+		.where(
+			and(
+				eq(holidaySessionCancel.orgId, orgId),
+				eq(holidaySessionCancel.classId, classId),
+			),
+		)
+		.orderBy(holidaySessionCancel.createdAt, holidaySessionCancel.id);
 }
 
 /**
@@ -331,12 +372,24 @@ export async function activateEnrollment(
 	// — một apply commit giữa lúc đọc và ghi làm guard lệch → batch fail
 	// (NOT NULL) → đọc lại và dựng lại, tối đa 3 lần.
 	for (let attempt = 1; attempt <= 3; attempt += 1) {
-		const shifts = await loadClassShifts(db, orgId, cls.id);
+		const [shifts, cancels, existingClassLessons] = await Promise.all([
+			loadClassShifts(db, orgId, cls.id),
+			loadClassCancels(db, orgId, cls.id),
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, cls.id)))
+				.limit(1),
+		]);
 		let rows: GeneratorRow[] = generated.map((row) => ({ ...row }));
 		const newShifts: Array<{
 			holidayId: string;
 			originalDate: string;
 			makeupDate: string;
+		}> = [];
+		const newCancels: Array<{
+			holidayId: string;
+			date: string;
 		}> = [];
 
 		if (parsedSchedule && rows.length > 0) {
@@ -348,10 +401,28 @@ export async function activateEnrollment(
 			}));
 			rows = applyShiftsToRows(rows, effective);
 
-			// I6: lớp chưa có dòng shift nào nhưng có kỳ nghỉ hiệu lực
-			// (chưa từng có học viên lúc apply, hoặc lớp tạo sau) — chạy
-			// planner trên tập dòng vừa sinh và tự sinh shift trong batch.
-			if (shifts.length === 0) {
+			// TOS-13 D7: dòng sinh ra rơi vào ngày trong `holiday_session_cancel`
+			// của lớp → `cancelled` (không sinh buổi bù).
+			const cancelDates = new Set(cancels.map((c) => c.date));
+			for (const row of rows) {
+				if (
+					row.date !== null &&
+					row.date !== undefined &&
+					cancelDates.has(row.date) &&
+					row.status === "upcoming"
+				) {
+					row.status = "cancelled";
+				}
+			}
+
+			// I6 (+ TOS-13): lớp chưa có dòng shift/cancel nào nhưng có kỳ nghỉ
+			// hiệu lực (chưa từng có học viên lúc apply, hoặc lớp tạo sau) — chạy
+			// planner trên tập dòng vừa sinh và tự sinh shift/cancel trong batch.
+			if (
+				shifts.length === 0 &&
+				cancels.length === 0 &&
+				existingClassLessons.length === 0
+			) {
 				const holidays = await loadClassHolidays(db, orgId, cls.id);
 				if (holidays.length > 0) {
 					// date → tên kỳ nghỉ; `holidays` đã sắp createdAt ASC nên kỳ
@@ -386,6 +457,7 @@ export async function activateEnrollment(
 							],
 							existingHolidayDates: new Map([[cls.id, datesByName]]),
 							todayISO: vietnamTodayISO(),
+							mode: holiday.mode,
 						});
 						for (const shift of planned.shifts) {
 							newShifts.push({
@@ -401,6 +473,17 @@ export async function activateEnrollment(
 									dur: scheduleDurationMinutes(parsedSchedule),
 								},
 							]);
+						}
+						for (const cancel of planned.cancellations) {
+							newCancels.push({
+								holidayId: holiday.id,
+								date: cancel.date,
+							});
+							for (const row of rows) {
+								if (row.date === cancel.date && row.status === "upcoming") {
+									row.status = "cancelled";
+								}
+							}
 						}
 					}
 				}
@@ -423,24 +506,43 @@ export async function activateEnrollment(
 				}),
 			);
 		}
+		for (const cancel of newCancels) {
+			statements.push(
+				db.insert(holidaySessionCancel).values({
+					id: crypto.randomUUID(),
+					orgId,
+					classId: cls.id,
+					...cancel,
+				}),
+			);
+		}
+		const referencedHolidayIds = [
+			...new Set([
+				...newShifts.map((s) => s.holidayId),
+				...newCancels.map((c) => c.holidayId),
+			]),
+		];
+		const holidayExistsGuard =
+			referencedHolidayIds.length > 0
+				? sql` AND (SELECT count(*) FROM ${organizationHoliday} WHERE ${organizationHoliday.orgId} = ${orgId} AND ${organizationHoliday.id} IN (${sql.join(
+						referencedHolidayIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})) = ${referencedHolidayIds.length}`
+				: sql``;
 		for (const row of rows) {
 			statements.push(
 				db.insert(lesson).values({
 					id: crypto.randomUUID(),
 					...row,
 					/**
-					 * Guard chống lệch đọc (I2b): count shift trong DB phải vẫn bằng
-					 * số đã đọc CỘNG với số shift batch này tự sinh (I6 — insert
-					 * shift chạy trước lesson trong cùng batch). Lệch nghĩa là có
-					 * apply vừa commit ngoài batch → rollback, vòng sau dựng lại.
-					 * Giữ NGUYÊN `row.status`: dòng đã đánh dấu `holiday` phải ghi
-					 * đúng `holiday`, không phải `upcoming`.
+					 * Guard chống lệch đọc (I2b + TOS-13): count shift và cancel
+					 * trong DB phải vẫn bằng số đã đọc CỘNG với số batch này tự sinh,
+					 * và các kỳ nghỉ vừa tham chiếu vẫn còn tồn tại.
 					 */
-					status: sql`CASE WHEN (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${cls.id}) = ${shifts.length + newShifts.length} THEN ${row.status} ELSE NULL END`,
+					status: sql`CASE WHEN (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${cls.id}) = ${shifts.length + newShifts.length} AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cls.id}) = ${cancels.length + newCancels.length}${holidayExistsGuard} THEN ${row.status} ELSE NULL END`,
 				}),
 			);
 		}
-
 		try {
 			await db.batch(statements);
 			return { ok: true };

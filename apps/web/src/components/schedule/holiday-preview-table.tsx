@@ -99,9 +99,9 @@ export function HolidayPreviewTable({
 
 	const hasAnyRow =
 		preview.shifts.length > 0 ||
+		preview.cancellations.length > 0 ||
 		preview.keptCompleted.length > 0 ||
 		preview.unsupported.length > 0;
-
 	if (!hasAnyRow) {
 		return (
 			<div
@@ -113,7 +113,7 @@ export function HolidayPreviewTable({
 		);
 	}
 
-	const shiftCount = preview.shifts.length;
+	const actionCount = preview.shifts.length + preview.cancellations.length;
 	const skipNotes = preview.shifts.flatMap((shift) =>
 		skipGroups(shift).map((group) => ({
 			key: `${shift.classId}:${shift.originalDate}:${group.dates[0]}`,
@@ -130,9 +130,9 @@ export function HolidayPreviewTable({
 		<div data-testid="holiday-preview" className="flex flex-col gap-2">
 			{/* D4: tiêu đề chỉ đếm shift — kept/unsupported không tính "xử lý". */}
 			<div data-testid="holiday-preview-title" className="font-medium text-sm">
-				{shiftCount} buổi sẽ được xử lý
+				{actionCount} buổi sẽ được xử lý
 			</div>
-			{shiftCount === 0 && (
+			{actionCount === 0 && (
 				<div
 					data-testid="holiday-preview-none"
 					className="rounded-md border border-warn/50 bg-warn-soft px-3 py-3 text-sm text-warn"
@@ -185,6 +185,25 @@ export function HolidayPreviewTable({
 								</td>
 							</tr>
 						))}
+						{preview.cancellations.map((cancel) => (
+							<tr
+								key={`cancel:${cancel.classId}:${cancel.date}`}
+								className="border-b last:border-0"
+							>
+								<td className="py-2 pr-3 font-medium">{cancel.className}</td>
+								<td className="py-2 pr-3 tabular-nums">
+									{weekdayLabel(weekdayOfISO(cancel.date))}
+									{", "}
+									{formatDayMonth(cancel.date)} · Buổi {cancel.sessionOrdinal}
+								</td>
+								<td className="py-2 pr-3">
+									<span className="inline-flex items-center rounded-md border border-destructive/40 bg-destructive-soft px-1.5 py-0.5 text-destructive text-xs">
+										Đã hủy
+									</span>
+								</td>
+								<td className="py-2 tabular-nums">→ Hủy buổi (không bù)</td>
+							</tr>
+						))}
 						{preview.keptCompleted.map((kept) => (
 							<tr
 								key={`kept:${kept.classId}:${kept.date}`}
@@ -235,6 +254,24 @@ export function HolidayPreviewTable({
 							{formatDayMonth(shift.makeupDate)}
 							{shift.skippedHolidays.length > 0 && <SkipMark />} · {shift.time}
 						</div>
+					</li>
+				))}
+				{preview.cancellations.map((cancel) => (
+					<li
+						key={`card-cancel:${cancel.classId}:${cancel.date}`}
+						className="rounded-lg border border-destructive/40 bg-destructive-soft px-3 py-2 text-sm"
+					>
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span className="font-medium">{cancel.className}</span>
+							<span className="inline-flex items-center rounded-md border border-destructive/40 bg-destructive-soft px-1.5 py-0.5 text-destructive text-xs">
+								Đã hủy
+							</span>
+						</div>
+						<div className="text-muted-foreground text-xs tabular-nums">
+							Buổi gốc: {formatDayMonth(cancel.date)} · Buổi{" "}
+							{cancel.sessionOrdinal}
+						</div>
+						<div className="mt-1 tabular-nums">→ Hủy buổi (không bù)</div>
 					</li>
 				))}
 				{preview.keptCompleted.map((kept) => (

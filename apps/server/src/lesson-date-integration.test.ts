@@ -140,7 +140,9 @@ describe("lesson.date generator + snapshot projection", () => {
 	async function enroll(classId: string, name: string): Promise<void> {
 		await t.addStudent(name, { classId });
 		const snap = await kernel();
-		const en = snap.enrollments.find((e) => e.classId === classId);
+		const en = snap.enrollments.find(
+			(e) => e.classId === classId && e.status === "invited",
+		);
 		if (en) {
 			const acceptRes = await t.call(`/api/enrollments/${en.id}/accept`, {
 				method: "POST",
@@ -207,5 +209,62 @@ describe("lesson.date generator + snapshot projection", () => {
 	test("snapshot lessons always carry the date field (null included)", async () => {
 		const snap = await kernel();
 		for (const row of snap.lessons) expect("date" in row).toBe(true);
+	});
+
+	test("TOS-13 D7: enrollment activated after a cancel-mode holiday marks the holiday date as cancelled without adding makeup sessions", async () => {
+		const classId = await createClassWith({
+			name: "Lớp Cancel D7",
+			type: "ielts",
+			level: "",
+			skills: ["Writing"],
+			mode: "Online",
+			templateId: "",
+			schedule: { days: [1, 4], start: "19:00", end: "20:30" },
+			sessionsTotal: 4,
+			startDate: "2027-08-24",
+		});
+		await enroll(classId, "HV Trước");
+
+		const prevRes = await t.call("/api/holidays/preview", {
+			method: "POST",
+			body: {
+				name: "Nghỉ 27/08",
+				fromDate: "2027-08-27",
+				toDate: "2027-08-27",
+				scope: "classes",
+				classIds: [classId],
+				mode: "cancel",
+				notify: false,
+			},
+		});
+		expect(prevRes.status).toBe(200);
+		const prevBody = (await prevRes.json()) as { planHash: string };
+
+		const applyRes = await t.call("/api/holidays", {
+			method: "POST",
+			body: {
+				name: "Nghỉ 27/08",
+				fromDate: "2027-08-27",
+				toDate: "2027-08-27",
+				scope: "classes",
+				classIds: [classId],
+				mode: "cancel",
+				notify: false,
+				planHash: prevBody.planHash,
+			},
+		});
+		expect(applyRes.status).toBe(200);
+
+		await enroll(classId, "HV Sau");
+		const snap = await kernel();
+		const enrollments = snap.enrollments.filter((e) => e.classId === classId);
+		expect(enrollments).toHaveLength(2);
+		for (const en of enrollments) {
+			const lessons = snap.lessons.filter((l) => l.enrollmentId === en.id);
+			expect(lessons).toHaveLength(4);
+			expect(lessons.find((l) => l.date === "2027-08-27")?.status).toBe(
+				"cancelled",
+			);
+		}
 	});
 });

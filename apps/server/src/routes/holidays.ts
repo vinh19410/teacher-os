@@ -1,11 +1,13 @@
 import {
 	HOLIDAY_ERROR_CODES,
 	type HolidayDraft,
+	type HolidayMode,
 	type HolidayPreview,
 	holidayApplySchema,
 	holidayDraftSchema,
 } from "@teacher-os/api/contracts";
 import {
+	type PlannedCancellation,
 	type PlannedShift,
 	planHolidayShift,
 } from "@teacher-os/api/holiday-plan";
@@ -15,6 +17,7 @@ import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { notif } from "@teacher-os/db/schema/notif";
 import {
+	holidaySessionCancel,
 	holidaySessionShift,
 	organizationHoliday,
 	organizationHolidayClass,
@@ -65,14 +68,23 @@ function formatNotifTime(date: Date): string {
 	}).format(date);
 }
 
-/** Hash ổn định của danh sách shift (I7) — preview trả, apply gửi lại. */
-async function planHashOf(shifts: PlannedShift[]): Promise<string> {
-	const payload = shifts
-		.map(
-			(shift) =>
-				`${shift.classId}|${shift.originalDate}|${shift.makeupDate}|${shift.enrollmentIds.length}`,
-		)
-		.join("\n");
+/** Hash ổn định của danh sách shift/cancellation (I7 + TOS-13) — preview trả, apply gửi lại. */
+async function planHashOf(
+	mode: HolidayMode,
+	shifts: PlannedShift[],
+	cancellations: PlannedCancellation[],
+): Promise<string> {
+	const payload =
+		mode === "cancel"
+			? `cancel\n${cancellations
+					.map((c) => `${c.classId}|${c.date}|${c.enrollmentIds.length}`)
+					.join("\n")}`
+			: shifts
+					.map(
+						(shift) =>
+							`${shift.classId}|${shift.originalDate}|${shift.makeupDate}|${shift.enrollmentIds.length}`,
+					)
+					.join("\n");
 	const digest = await crypto.subtle.digest(
 		"SHA-256",
 		new TextEncoder().encode(payload),
@@ -222,6 +234,7 @@ async function buildPlan(
 	| {
 			ok: true;
 			shifts: PlannedShift[];
+			cancellations: PlannedCancellation[];
 			preview: HolidayPreview;
 	  }
 > {
@@ -256,19 +269,35 @@ async function buildPlan(
 		})),
 		existingHolidayDates,
 		todayISO: vietnamTodayISO(),
+		mode: draft.mode,
 	});
+	const affectedClassIds = new Set([
+		...planned.shifts.map((s) => s.classId),
+		...planned.cancellations.map((c) => c.classId),
+	]);
 	return {
 		ok: true,
 		shifts: planned.shifts,
+		cancellations: planned.cancellations,
 		preview: {
 			shifts: planned.shifts.map(({ enrollmentIds, ...shift }) => {
 				void enrollmentIds;
 				return shift;
 			}),
+			cancellations: planned.cancellations.map(
+				({ enrollmentIds, ...cancel }) => {
+					void enrollmentIds;
+					return cancel;
+				},
+			),
 			keptCompleted: planned.keptCompleted,
 			unsupported: planned.unsupported,
-			affectedClassCount: new Set(planned.shifts.map((s) => s.classId)).size,
-			planHash: await planHashOf(planned.shifts),
+			affectedClassCount: affectedClassIds.size,
+			planHash: await planHashOf(
+				draft.mode,
+				planned.shifts,
+				planned.cancellations,
+			),
 		},
 	};
 }
@@ -339,11 +368,44 @@ function shiftStatements(
 	];
 }
 
+/** Áp dụng một cancellation trong batch (TOS-13 D1): guard INSERT-CASE biến
+ * `date` thành NULL khi trạng thái lệch (buổi vừa bị điểm danh hoặc ngày đó
+ * đã có dòng trong `holiday_session_cancel`) — cột NOT NULL làm toàn batch
+ * rollback. Sau đó UPDATE các dòng `upcoming` cùng ngày sang `cancelled`. */
+function cancelStatements(
+	db: Db,
+	orgId: string,
+	holidayId: string,
+	cancellation: PlannedCancellation,
+) {
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} = 'upcoming') = ${cancellation.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cancellation.classId} AND ${holidaySessionCancel.date} = ${cancellation.date}) = 0 THEN ${cancellation.date} ELSE NULL END`;
+	return [
+		db.insert(holidaySessionCancel).values({
+			id: crypto.randomUUID(),
+			orgId,
+			holidayId,
+			classId: cancellation.classId,
+			date: guard,
+		}),
+		db
+			.update(lesson)
+			.set({ status: "cancelled" })
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, cancellation.classId),
+					eq(lesson.date, cancellation.date),
+					eq(lesson.status, "upcoming"),
+				),
+			),
+	];
+}
+
 /** Lỗi constraint (UNIQUE/NOT NULL) từ guard CASE — batch đã rollback sạch,
  * caller xử lý 409 hoặc retry đọc lại. Lỗi khác là sự cố thật, phải ném. */
 export function isRollbackableConstraintError(err: unknown): boolean {
 	const message = err instanceof Error ? err.message : String(err);
-	return /UNIQUE|NOT NULL/i.test(message);
+	return /UNIQUE|NOT NULL|FOREIGN KEY/i.test(message);
 }
 
 export function holidayRoutes(deps: {
@@ -423,7 +485,9 @@ export function holidayRoutes(deps: {
 		if (!plan.ok) {
 			return c.json({ error: "class not found", reason: "class" }, 404);
 		}
-		if (plan.shifts.length === 0) {
+		const activeCount =
+			input.mode === "cancel" ? plan.cancellations.length : plan.shifts.length;
+		if (activeCount === 0) {
 			return c.json(
 				{
 					error: HOLIDAY_ERROR_CODES.NO_SESSIONS,
@@ -432,7 +496,10 @@ export function holidayRoutes(deps: {
 				422,
 			);
 		}
-		if ((await planHashOf(plan.shifts)) !== input.planHash) {
+		if (
+			(await planHashOf(input.mode, plan.shifts, plan.cancellations)) !==
+			input.planHash
+		) {
 			return c.json(
 				{
 					error: HOLIDAY_ERROR_CODES.STALE_PREVIEW,
@@ -466,15 +533,27 @@ export function holidayRoutes(deps: {
 				);
 			}
 		}
-		for (const shift of plan.shifts) {
-			statements.push(...shiftStatements(db, ctx.orgId, holidayId, shift));
+		if (input.mode === "cancel") {
+			for (const cancellation of plan.cancellations) {
+				statements.push(
+					...cancelStatements(db, ctx.orgId, holidayId, cancellation),
+				);
+			}
+		} else {
+			for (const shift of plan.shifts) {
+				statements.push(...shiftStatements(db, ctx.orgId, holidayId, shift));
+			}
 		}
 		if (input.notify) {
+			const notifText =
+				input.mode === "cancel"
+					? `Lịch nghỉ «${input.name}»: hủy ${plan.cancellations.length} buổi của ${plan.preview.affectedClassCount} lớp`
+					: `Lịch nghỉ «${input.name}»: dời ${plan.shifts.length} buổi của ${plan.preview.affectedClassCount} lớp`;
 			statements.push(
 				db.insert(notif).values({
 					id: crypto.randomUUID(),
 					orgId: ctx.orgId,
-					text: `Lịch nghỉ «${input.name}»: dời ${plan.shifts.length} buổi của ${plan.preview.affectedClassCount} lớp`,
+					text: notifText,
 					time: formatNotifTime(new Date()),
 					channel: "schedule",
 					dot: "warn",
@@ -509,13 +588,17 @@ export function holidayRoutes(deps: {
 		const result = {
 			holidayId,
 			shiftedCount: plan.shifts.length,
+			cancelledCount: plan.cancellations.length,
 			classCount: plan.preview.affectedClassCount,
 		};
 		// #454 D9: notify=true → holiday_created cho học viên ACTIVE của các
 		// lớp bị ảnh hưởng; emit tự fail-open nên không đổi response 200.
 		if (input.notify) {
 			const affectedClassIds = [
-				...new Set(plan.shifts.map((shift) => shift.classId)),
+				...new Set([
+					...plan.shifts.map((shift) => shift.classId),
+					...plan.cancellations.map((cancel) => cancel.classId),
+				]),
 			];
 			const studentIds = new Set<string>();
 			for (let i = 0; i < affectedClassIds.length; i += D1_IN_ARRAY_CHUNK) {
@@ -544,6 +627,309 @@ export function holidayRoutes(deps: {
 			);
 		}
 		return c.json(result);
+	});
+
+	holiday.delete("/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const holidayId = c.req.param("id");
+		const db = deps.getDb();
+
+		const [existing] = await db
+			.select({
+				id: organizationHoliday.id,
+				name: organizationHoliday.name,
+				fromDate: organizationHoliday.fromDate,
+			})
+			.from(organizationHoliday)
+			.where(
+				and(
+					eq(organizationHoliday.id, holidayId),
+					eq(organizationHoliday.orgId, ctx.orgId),
+				),
+			);
+		if (!existing) {
+			return c.json({ error: "holiday not found", reason: "holiday" }, 404);
+		}
+		// D3: chỉ hoàn tác kỳ nghỉ tương lai (fromDate > hôm nay theo giờ VN).
+		if (existing.fromDate <= vietnamTodayISO()) {
+			return c.json(
+				{
+					error: HOLIDAY_ERROR_CODES.HOLIDAY_STARTED,
+					reason: HOLIDAY_ERROR_CODES.HOLIDAY_STARTED,
+				},
+				422,
+			);
+		}
+
+		const shifts = await db
+			.select({
+				id: holidaySessionShift.id,
+				classId: holidaySessionShift.classId,
+				originalDate: holidaySessionShift.originalDate,
+				makeupDate: holidaySessionShift.makeupDate,
+			})
+			.from(holidaySessionShift)
+			.where(
+				and(
+					eq(holidaySessionShift.orgId, ctx.orgId),
+					eq(holidaySessionShift.holidayId, holidayId),
+				),
+			)
+			.orderBy(
+				asc(holidaySessionShift.classId),
+				asc(holidaySessionShift.originalDate),
+			);
+		const cancels = await db
+			.select({
+				id: holidaySessionCancel.id,
+				classId: holidaySessionCancel.classId,
+				date: holidaySessionCancel.date,
+			})
+			.from(holidaySessionCancel)
+			.where(
+				and(
+					eq(holidaySessionCancel.orgId, ctx.orgId),
+					eq(holidaySessionCancel.holidayId, holidayId),
+				),
+			)
+			.orderBy(
+				asc(holidaySessionCancel.classId),
+				asc(holidaySessionCancel.date),
+			);
+
+		// D4: tải lesson của các lớp liên quan theo chunk 50 (không N+1), kiểm tra
+		// mọi buổi bù còn nguyên `upcoming` và mọi buổi cancel còn nguyên `cancelled`.
+		const affectedClassIds = [
+			...new Set([
+				...shifts.map((s) => s.classId),
+				...cancels.map((cancel) => cancel.classId),
+			]),
+		];
+		const allLessons =
+			affectedClassIds.length > 0
+				? await loadClassLessons(db, ctx.orgId, affectedClassIds)
+				: [];
+		const lessonsByClassDate = new Map<string, PlanClassLessonRow[]>();
+		for (const row of allLessons) {
+			if (!row.date) continue;
+			const key = `${row.classId}|${row.date}`;
+			const list = lessonsByClassDate.get(key);
+			if (list) list.push(row);
+			else lessonsByClassDate.set(key, [row]);
+		}
+
+		const touched: Array<{ classId: string; makeupDate: string }> = [];
+		const shiftCounts: Array<{
+			shift: (typeof shifts)[number];
+			origCount: number;
+			makeupCount: number;
+		}> = [];
+		for (const shift of shifts) {
+			const makeupRows =
+				lessonsByClassDate.get(`${shift.classId}|${shift.makeupDate}`) ?? [];
+			const origRows =
+				lessonsByClassDate.get(`${shift.classId}|${shift.originalDate}`) ?? [];
+			const origHolidayRows = origRows.filter(
+				(row) => row.status === "holiday",
+			);
+			if (
+				origHolidayRows.length === 0 ||
+				makeupRows.some((row) => row.status !== "upcoming") ||
+				makeupRows.length !== origHolidayRows.length
+			) {
+				touched.push({
+					classId: shift.classId,
+					makeupDate: shift.makeupDate,
+				});
+				continue;
+			}
+			shiftCounts.push({
+				shift,
+				origCount: origHolidayRows.length,
+				makeupCount: makeupRows.length,
+			});
+		}
+
+		const cancelCounts: Array<{
+			cancel: (typeof cancels)[number];
+			cancelledCount: number;
+		}> = [];
+		for (const cancel of cancels) {
+			const bucketRows =
+				lessonsByClassDate.get(`${cancel.classId}|${cancel.date}`) ?? [];
+			const cancelledRows = bucketRows.filter(
+				(row) => row.status === "cancelled",
+			);
+			if (
+				cancelledRows.length === 0 ||
+				cancelledRows.length !== bucketRows.length
+			) {
+				touched.push({
+					classId: cancel.classId,
+					makeupDate: cancel.date,
+				});
+				continue;
+			}
+			cancelCounts.push({
+				cancel,
+				cancelledCount: cancelledRows.length,
+			});
+		}
+
+		if (touched.length > 0) {
+			return c.json(
+				{
+					error: HOLIDAY_ERROR_CODES.MAKEUP_TOUCHED,
+					reason: HOLIDAY_ERROR_CODES.MAKEUP_TOUCHED,
+					touched,
+				},
+				409,
+			);
+		}
+
+		// D5: 1 batch nguyên tử — gộp toàn bộ điều kiện guard vào 1 câu UPDATE
+		// trên `organization_holiday` ở đầu batch (nếu lệch biến `name` NOT NULL
+		// thành NULL → rollback toàn batch).
+		const guardParts = [
+			sql`(SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.holidayId} = ${holidayId}) = ${shifts.length}`,
+			sql`(SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.holidayId} = ${holidayId}) = ${cancels.length}`,
+			...shiftCounts.map(
+				({ shift, origCount, makeupCount }) =>
+					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} = 'upcoming') = ${makeupCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'holiday') = ${origCount}`,
+			),
+			...cancelCounts.map(
+				({ cancel, cancelledCount }) =>
+					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} = 'cancelled') = ${cancelledCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} != 'cancelled') = 0`,
+			),
+		];
+		const combinedGuard = sql.join(guardParts, sql` AND `);
+
+		const undoStatements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db
+				.update(organizationHoliday)
+				.set({
+					name: sql`CASE WHEN ${combinedGuard} THEN ${organizationHoliday.name} ELSE NULL END`,
+				})
+				.where(
+					and(
+						eq(organizationHoliday.id, holidayId),
+						eq(organizationHoliday.orgId, ctx.orgId),
+					),
+				),
+		];
+		for (const { shift } of shiftCounts) {
+			undoStatements.push(
+				db
+					.delete(lesson)
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.classId, shift.classId),
+							eq(lesson.date, shift.makeupDate),
+							eq(lesson.status, "upcoming"),
+						),
+					),
+				db
+					.update(lesson)
+					.set({ status: "upcoming" })
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.classId, shift.classId),
+							eq(lesson.date, shift.originalDate),
+							eq(lesson.status, "holiday"),
+						),
+					),
+			);
+		}
+		for (const { cancel } of cancelCounts) {
+			undoStatements.push(
+				db
+					.update(lesson)
+					.set({ status: "upcoming" })
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.classId, cancel.classId),
+							eq(lesson.date, cancel.date),
+							eq(lesson.status, "cancelled"),
+						),
+					),
+			);
+		}
+		// Xóa tường minh các bảng con + bảng chính (không phụ thuộc PRAGMA foreign_keys).
+		undoStatements.push(
+			db
+				.delete(holidaySessionShift)
+				.where(
+					and(
+						eq(holidaySessionShift.orgId, ctx.orgId),
+						eq(holidaySessionShift.holidayId, holidayId),
+					),
+				),
+			db
+				.delete(holidaySessionCancel)
+				.where(
+					and(
+						eq(holidaySessionCancel.orgId, ctx.orgId),
+						eq(holidaySessionCancel.holidayId, holidayId),
+					),
+				),
+			db
+				.delete(organizationHolidayClass)
+				.where(eq(organizationHolidayClass.holidayId, holidayId)),
+			db
+				.delete(organizationHoliday)
+				.where(
+					and(
+						eq(organizationHoliday.id, holidayId),
+						eq(organizationHoliday.orgId, ctx.orgId),
+					),
+				),
+		);
+		const restoredCount = shifts.length + cancels.length;
+		const removedMakeupCount = shifts.length;
+		undoStatements.push(
+			db.insert(notif).values({
+				id: crypto.randomUUID(),
+				orgId: ctx.orgId,
+				text: `Đã xóa kỳ nghỉ «${existing.name}»: khôi phục ${restoredCount} buổi`,
+				time: formatNotifTime(new Date()),
+				channel: "schedule",
+				dot: "warn",
+			}),
+		);
+
+		if (undoStatements.length > MAX_APPLY_STATEMENTS) {
+			return c.json(
+				{
+					error: HOLIDAY_ERROR_CODES.TOO_LARGE,
+					reason: HOLIDAY_ERROR_CODES.TOO_LARGE,
+				},
+				422,
+			);
+		}
+		try {
+			await db.batch(undoStatements);
+		} catch (err: unknown) {
+			if (isRollbackableConstraintError(err)) {
+				return c.json(
+					{
+						error: HOLIDAY_ERROR_CODES.MAKEUP_TOUCHED,
+						reason: HOLIDAY_ERROR_CODES.MAKEUP_TOUCHED,
+						touched: [],
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		return c.json({
+			restoredCount,
+			removedMakeupCount,
+		});
 	});
 
 	return holiday;

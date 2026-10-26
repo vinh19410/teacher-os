@@ -356,6 +356,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		vocabSuggestions: snapshot.vocabSuggestions ?? [],
 		holidays: snapshot.holidays ?? [],
 		holidayShifts: snapshot.holidayShifts ?? [],
+		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
 	};
 }
@@ -532,6 +533,7 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	"vocabSuggestions",
 	"holidays",
 	"holidayShifts",
+	"holidayCancels",
 	// TOS-14 (#447): events — optional để deploy skew (web mới + server cũ)
 	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
 	"events",

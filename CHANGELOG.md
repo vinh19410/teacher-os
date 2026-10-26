@@ -15,6 +15,7 @@ Quy ước khi cập nhật:
 
 ### Added
 - Sổ công nợ (`/debts`): nút `Thu` mở hộp thoại **Ghi nhận thu tiền học phí** — thu một phần/toàn bộ với phương thức (Chuyển khoản/Tiền mặt/Khác) + ghi chú; phiếu thu lưu 1 dòng ledger `payment_transaction` (`provider = "manual"`, migration `0049` thêm `method`/`recorded_by`) rồi `recomputeInvoiceStatement` tính lại Đã đóng/Còn nợ và 3 thẻ KPI ngay; server chặn vượt nợ (422 `amount-exceeds-debt`), chốt hóa đơn đã `paid` (422 `invoice-settled`) và idempotent theo `clientRequestId` (retry không ghi đôi); học viên nhiều khoản còn nợ chọn khoản thu (mặc định hạn sớm nhất); trang chi tiết hóa đơn hiển thị cột Phương thức (#450)
+- Lịch nghỉ chung (`/schedule`): mở phương thức **Hủy buổi (không bù)** (`mode = "cancel"`) chuyển các buổi `upcoming` trong khoảng nghỉ sang `cancelled` mà không sinh buổi bù cuối khóa (bảng mới `holiday_session_cancel`, migration `0050`, phân biệt với buổi giáo viên hủy tay) và thao tác **Xóa kỳ nghỉ (Hoàn tác)** (`DELETE /api/holidays/:id`) cho kỳ nghỉ tương lai (`fromDate > hôm nay` giờ VN) thu hồi buổi bù chưa diễn ra + khôi phục buổi gốc/buổi hủy về `upcoming` trong 1 batch nguyên tử (422 `holiday-started` nếu đã bắt đầu, 409 `makeup-touched` kèm danh sách nếu buổi bù đã điểm danh hoặc thay đổi); kích hoạt học viên sau kỳ nghỉ cancel tự động đánh dấu `cancelled` ở ngày nghỉ (D7); lịch tuần hiển thị thẻ kỳ nghỉ kèm nút hoàn tác và nhãn `"Đã hủy — «tên kỳ nghỉ»"` (#448)
 
 ## 2026-10-23
 

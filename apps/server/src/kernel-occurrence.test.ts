@@ -574,6 +574,7 @@ describe("occurrence mutations (#98 phase 2)", () => {
 			fromDate: "2026-11-20",
 			toDate: "2026-11-20",
 			scope: "org",
+			mode: "shift",
 		});
 		expect(snap.holidayShifts).toContainEqual({
 			holidayId: "hol-snap-1",

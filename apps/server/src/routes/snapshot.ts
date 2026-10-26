@@ -25,6 +25,7 @@ import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { orgEvent } from "@teacher-os/db/schema/org-event";
 import {
+	holidaySessionCancel,
 	holidaySessionShift,
 	organizationHoliday,
 } from "@teacher-os/db/schema/organization-holiday";
@@ -240,6 +241,7 @@ export async function loadSnapshot(
 		vocabSuggestionRows,
 		holidayRows,
 		holidayShiftRows,
+		holidayCancelRows,
 		eventRows,
 	] = await Promise.all([
 		db
@@ -375,6 +377,7 @@ export async function loadSnapshot(
 				fromDate: organizationHoliday.fromDate,
 				toDate: organizationHoliday.toDate,
 				scope: organizationHoliday.scope,
+				mode: organizationHoliday.mode,
 			})
 			.from(organizationHoliday)
 			.where(eq(organizationHoliday.orgId, orgId))
@@ -388,6 +391,14 @@ export async function loadSnapshot(
 			})
 			.from(holidaySessionShift)
 			.where(eq(holidaySessionShift.orgId, orgId)),
+		db
+			.select({
+				holidayId: holidaySessionCancel.holidayId,
+				classId: holidaySessionCancel.classId,
+				date: holidaySessionCancel.date,
+			})
+			.from(holidaySessionCancel)
+			.where(eq(holidaySessionCancel.orgId, orgId)),
 		loadEvents(db, orgId),
 	]);
 
@@ -691,13 +702,19 @@ export async function loadSnapshot(
 			name: row.name,
 			fromDate: row.fromDate,
 			toDate: row.toDate,
-			scope: row.scope as "org" | "classes",
+			scope: row.scope === "classes" ? "classes" : "org",
+			mode: row.mode === "cancel" ? "cancel" : "shift",
 		})),
 		holidayShifts: holidayShiftRows.map((row) => ({
 			holidayId: row.holidayId,
 			classId: row.classId,
 			originalDate: row.originalDate,
 			makeupDate: row.makeupDate,
+		})),
+		holidayCancels: holidayCancelRows.map((row) => ({
+			holidayId: row.holidayId,
+			classId: row.classId,
+			date: row.date,
 		})),
 	};
 }

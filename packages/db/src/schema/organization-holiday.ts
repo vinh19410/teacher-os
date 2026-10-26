@@ -110,3 +110,40 @@ export const holidaySessionShift = sqliteTable(
 		index("holiday_session_shift_holiday_idx").on(table.holidayId),
 	],
 );
+
+/**
+ * Buổi bị hủy bởi kỳ nghỉ `mode = "cancel"` (TOS-13 D1, issue #448): nguồn
+ * DUY NHẤT để hoàn tác khôi phục đúng buổi do kỳ nghỉ hủy — không khôi phục
+ * nhầm buổi giáo viên đã hủy tay cùng ngày. Mỗi dòng tương ứng các dòng
+ * `lesson` `(classId, date)` vừa chuyển `upcoming → cancelled` lúc apply;
+ * unique `(classId, date)` — một ngày của một lớp chỉ bị hủy bởi tối đa một
+ * kỳ nghỉ thành công (apply đè lên ngày đã hủy bị guard chặn với 409).
+ */
+export const holidaySessionCancel = sqliteTable(
+	"holiday_session_cancel",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		holidayId: text("holiday_id")
+			.notNull()
+			.references(() => organizationHoliday.id, { onDelete: "cascade" }),
+		classId: text("class_id")
+			.notNull()
+			.references(() => classTable.id, { onDelete: "cascade" }),
+		/** yyyy-mm-dd của buổi bị hủy (các dòng lesson cùng ngày thành `cancelled`). */
+		date: text("date").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("holiday_session_cancel_class_date_uq").on(
+			table.classId,
+			table.date,
+		),
+		index("holiday_session_cancel_org_idx").on(table.orgId),
+		index("holiday_session_cancel_holiday_idx").on(table.holidayId),
+	],
+);
