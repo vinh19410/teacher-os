@@ -26,6 +26,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { inputCls } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { isHttpError } from "@/lib/kernel-load-state";
+import { formatDeliveryError } from "@/lib/notification-error";
 import { reauth } from "@/lib/reauth";
 import {
 	NOTIFICATION_LOGS_PAGE_SIZE,
@@ -360,54 +361,71 @@ function NotificationsRoute() {
 										"",
 									]}
 									emptyMessage="Chưa có thông báo."
-									rows={rows.map((row) => ({
-										cells: [
-											<span
-												key="time"
-												className="whitespace-nowrap text-muted-foreground text-xs tabular-nums"
-											>
-												{fmtWhen(row.createdAt)}
-											</span>,
-											<div key="recipient" className="min-w-[140px]">
-												<div className="font-medium text-sm">
-													{row.recipientName}
-												</div>
-												{row.recipientEmail && (
-													<div className="text-muted-foreground text-xs">
-														{row.recipientEmail}
-													</div>
-												)}
-											</div>,
-											<span key="event" className="whitespace-nowrap text-sm">
-												{EVENT_TYPE_LABELS[row.eventType] ?? row.eventType}
-											</span>,
-											<span key="channel" className="whitespace-nowrap text-sm">
-												{CHANNEL_LABELS[row.channels] ?? row.channels}
-											</span>,
-											<div key="status" className="whitespace-nowrap">
-												<StatusTag
-													tone={
-														row.status === "failed"
-															? "danger"
-															: row.status === "queued"
-																? "warn"
-																: "ok"
-													}
+									rows={rows.map((row) => {
+										const deliveryError =
+											row.status === "failed"
+												? formatDeliveryError(row.lastError, row.retryCount)
+												: null;
+										return {
+											cells: [
+												<span
+													key="time"
+													className="whitespace-nowrap text-muted-foreground text-xs tabular-nums"
 												>
-													{NOTIFICATION_STATUS_LABELS[row.status]}
-												</StatusTag>
-											</div>,
-											<Button
-												key="action"
-												variant="secondary"
-												size="sm"
-												aria-label={`Xem chi tiết thông báo cho ${row.recipientName}`}
-												onClick={() => setDetailRow(row)}
-											>
-												<Eye aria-hidden="true" className="size-4" />
-											</Button>,
-										],
-									}))}
+													{fmtWhen(row.createdAt)}
+												</span>,
+												<div key="recipient" className="min-w-[140px]">
+													<div className="font-medium text-sm">
+														{row.recipientName}
+													</div>
+													{row.recipientEmail && (
+														<div className="text-muted-foreground text-xs">
+															{row.recipientEmail}
+														</div>
+													)}
+													{deliveryError && (
+														<p
+															className="mt-0.5 max-w-[260px] break-words text-destructive text-xs"
+															title={deliveryError.fullText}
+														>
+															{deliveryError.shortText}
+														</p>
+													)}
+												</div>,
+												<span key="event" className="whitespace-nowrap text-sm">
+													{EVENT_TYPE_LABELS[row.eventType] ?? row.eventType}
+												</span>,
+												<span
+													key="channel"
+													className="whitespace-nowrap text-sm"
+												>
+													{CHANNEL_LABELS[row.channels] ?? row.channels}
+												</span>,
+												<div key="status" className="whitespace-nowrap">
+													<StatusTag
+														tone={
+															row.status === "failed"
+																? "danger"
+																: row.status === "queued"
+																	? "warn"
+																	: "ok"
+														}
+													>
+														{NOTIFICATION_STATUS_LABELS[row.status]}
+													</StatusTag>
+												</div>,
+												<Button
+													key="action"
+													variant="secondary"
+													size="sm"
+													aria-label={`Xem chi tiết thông báo cho ${row.recipientName}`}
+													onClick={() => setDetailRow(row)}
+												>
+													<Eye aria-hidden="true" className="size-4" />
+												</Button>,
+											],
+										};
+									})}
 								/>
 							</div>
 

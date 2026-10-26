@@ -8,6 +8,7 @@
 import {
 	HOLIDAY_MAX_DAYS,
 	type HolidayDraft,
+	type HolidayMode,
 	type HolidayPreview,
 	holidayDraftSchema,
 } from "@teacher-os/api/contracts";
@@ -44,6 +45,7 @@ export function HolidayModal({
 	const [toDate, setToDate] = useState("");
 	const [scope, setScope] = useState<"org" | "classes">("org");
 	const [classIds, setClassIds] = useState<string[]>([]);
+	const [mode, setMode] = useState<HolidayMode>("shift");
 	const [notify, setNotify] = useState(true);
 	const [preview, setPreview] = useState<HolidayPreview | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
@@ -60,18 +62,17 @@ export function HolidayModal({
 				toDate,
 				scope,
 				classIds,
-				mode: "shift",
+				mode,
 				notify,
 			}),
-		[name, fromDate, toDate, scope, classIds, notify],
+		[name, fromDate, toDate, scope, classIds, mode, notify],
 	);
 	const draft: HolidayDraft | null = parsed.success ? parsed.data : null;
 	const draftRef = useRef<HolidayDraft | null>(null);
 	draftRef.current = draft;
 	const previewKey = draft
-		? `${draft.fromDate}|${draft.toDate}|${draft.scope}|${draft.classIds.join(",")}`
+		? `${draft.fromDate}|${draft.toDate}|${draft.scope}|${draft.classIds.join(",")}|${draft.mode}`
 		: null;
-
 	useEffect(() => {
 		if (!open) {
 			previewSeq.current += 1;
@@ -80,8 +81,8 @@ export function HolidayModal({
 			setToDate("");
 			setScope("org");
 			setClassIds([]);
+			setMode("shift");
 			setNotify(true);
-			setPreview(null);
 			setPreviewError(null);
 			setApplying(false);
 			return;
@@ -163,11 +164,16 @@ export function HolidayModal({
 			: undefined;
 	const formValid = parsed.success;
 
+	const actionCount = preview
+		? mode === "cancel"
+			? preview.cancellations.length
+			: preview.shifts.length
+		: 0;
 	const canConfirm =
 		formValid &&
 		!previewLoading &&
 		preview !== null &&
-		preview.shifts.length > 0 &&
+		actionCount > 0 &&
 		!applying;
 
 	async function confirm() {
@@ -175,10 +181,15 @@ export function HolidayModal({
 		setApplying(true);
 		try {
 			const result = await applyHoliday(draft, preview.planHash);
-			toast.success(
-				`Đã dời ${result.shiftedCount} buổi của ${result.classCount} lớp.`,
-			);
-			onApplied(result.shiftedCount);
+			if (draft.mode === "cancel") {
+				toast.success(`Đã hủy ${result.cancelledCount} buổi.`);
+				onApplied(result.cancelledCount);
+			} else {
+				toast.success(
+					`Đã dời ${result.shiftedCount} buổi của ${result.classCount} lớp.`,
+				);
+				onApplied(result.shiftedCount);
+			}
 			onClose();
 		} catch (cause: unknown) {
 			const code = cause instanceof Error ? cause.message : "request-failed";
@@ -308,8 +319,24 @@ export function HolidayModal({
 				<fieldset className="flex flex-col gap-1">
 					<legend className="font-medium text-sm">Phương thức</legend>
 					<label className="flex items-center gap-2 text-sm">
-						<input type="radio" name="holiday-mode" checked readOnly />
+						<input
+							type="radio"
+							name="holiday-mode"
+							data-testid="holiday-mode-shift"
+							checked={mode === "shift"}
+							onChange={() => setMode("shift")}
+						/>
 						Dời lịch (+1 buổi vào cuối khóa)
+					</label>
+					<label className="flex items-center gap-2 text-sm">
+						<input
+							type="radio"
+							name="holiday-mode"
+							data-testid="holiday-mode-cancel"
+							checked={mode === "cancel"}
+							onChange={() => setMode("cancel")}
+						/>
+						Hủy buổi (không bù)
 					</label>
 				</fieldset>
 
@@ -334,7 +361,11 @@ export function HolidayModal({
 						Hủy bỏ
 					</Button>
 					<Button type="submit" disabled={!canConfirm}>
-						{applying ? "Đang áp dụng…" : "Xác nhận áp dụng & Dời buổi"}
+						{applying
+							? "Đang áp dụng…"
+							: mode === "cancel"
+								? "Xác nhận áp dụng & Hủy buổi"
+								: "Xác nhận áp dụng & Dời buổi"}
 					</Button>
 				</div>
 			</form>

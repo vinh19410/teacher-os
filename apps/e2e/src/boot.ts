@@ -65,6 +65,15 @@ const recordingMailer: Mailer = {
 			fromName: input.fromName ?? null,
 		};
 		const at = new Date().toISOString();
+		if (
+			!verifyMatch &&
+			!resetMatch &&
+			input.to.trim().toLowerCase().endsWith("@bounce.test")
+		) {
+			const failedLine = JSON.stringify({ ...base, failed: true, at });
+			appendFileSync(MAIL_LOG_PATH, `${failedLine}\n`, "utf8");
+			throw new Error("mailbox unavailable");
+		}
 		const line = verifyMatch
 			? JSON.stringify({ ...base, url: verifyMatch[0], at })
 			: resetMatch
@@ -155,6 +164,8 @@ const app = buildApp({
 	mailer: recordingMailer,
 	// Link tuyệt đối trong email thông báo trỏ cổng học viên e2e.
 	studentOrigin: STUDENT_ORIGIN,
+	// Plan TOS-22 (#463): không chờ 2s/5s giữa các lượt retry trong E2E.
+	notificationRetryDelaysMs: [0, 0],
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

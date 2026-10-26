@@ -228,32 +228,40 @@ describe("NotificationsRoute (#454 phase 5)", () => {
 		expect(dialog.textContent).toContain("lan@school.vn");
 		expect(dialog.textContent).toContain("Cô Lan");
 		expect(dialog.textContent).toContain("Số lần thử lại");
+		expect(dialog.textContent).toContain("0/3 lần thử");
 		// last_error null → không hiển thị mục Lỗi gửi.
 		expect(dialog.textContent).not.toContain("Lỗi gửi");
 		fireEvent.click(screen.getByRole("button", { name: /đóng|close/i }));
 	});
 
-	it("hiển thị last_error và read_at khi có", async () => {
+	it("dòng failed hiển thị nhãn Lỗi gửi + thông điệp E-010 dưới người nhận, dialog hiện 3/3 lần thử và last_error đầy đủ", async () => {
 		renderRoute(
 			seedResponse({
 				rows: [
 					row({
 						status: "failed",
 						readAt: "2026-10-22T02:00:00.000Z",
-						retryCount: 2,
-						lastError: "SMTP timeout",
+						retryCount: 3,
+						lastError: "E-selfomy-alignment-010: mailbox unavailable",
 					}),
 				],
 			}),
 		);
-		await screen.findByText("Minh Tran");
+		const table = await screen.findByTestId("notifications-table");
+		expect(table.textContent).toContain("Lỗi gửi");
+		expect(table.textContent).toContain(
+			"E-010: mailbox unavailable sau 3 lần thử",
+		);
 		fireEvent.click(
 			screen.getByRole("button", {
 				name: "Xem chi tiết thông báo cho Minh Tran",
 			}),
 		);
 		const dialog = await screen.findByRole("dialog");
-		expect(dialog.textContent).toContain("SMTP timeout");
+		expect(dialog.textContent).toContain("3/3 lần thử");
+		expect(dialog.textContent).toContain(
+			"E-selfomy-alignment-010: mailbox unavailable",
+		);
 	});
 
 	it("phân trang: nút Trang sau đẩy ?page, Trang trước disabled ở trang 1", async () => {

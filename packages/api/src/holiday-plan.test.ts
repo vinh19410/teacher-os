@@ -15,9 +15,12 @@ function lessons(
 	enrollmentId = `enr-${classId}`,
 	utcDay = 5, // Friday
 	utcDay2?: number, // ngày thứ hai trong tuần (ví dụ T3&T7)
-): Array<{ date: string; status: string; enrollmentId: string }> {
-	const rows: Array<{ date: string; status: string; enrollmentId: string }> =
-		[];
+): Array<{ date: string | null; status: string; enrollmentId: string }> {
+	const rows: Array<{
+		date: string | null;
+		status: string;
+		enrollmentId: string;
+	}> = [];
 	const cursor = new Date(`${startISO}T00:00:00Z`);
 	let made = 0;
 	while (made < count) {
@@ -50,6 +53,7 @@ function input(overrides: Partial<PlanInput>): PlanInput {
 		],
 		existingHolidayDates: new Map(),
 		todayISO: "2026-10-26",
+		mode: "shift",
 		...overrides,
 	};
 }
@@ -384,6 +388,253 @@ describe("planHolidayShift (TOS-11 phase 2)", () => {
 	it("gọi 2 lần cùng input → output giống hệt (deterministic)", () => {
 		const a = planHolidayShift(input({}));
 		const b = planHolidayShift(input({}));
+		expect(a).toEqual(b);
+	});
+});
+
+describe("planHolidayShift mode cancel (TOS-13, issue #448)", () => {
+	it("nghỉ trúng 1 buổi upcoming → cancellations đủ buổi, shifts rỗng, không quét ngày bù", () => {
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+			}),
+		);
+
+		expect(result.unsupported).toEqual([]);
+		expect(result.keptCompleted).toEqual([]);
+		expect(result.shifts).toEqual([]);
+		expect(result.cancellations).toHaveLength(1);
+		const cancel = result.cancellations[0];
+		expect(cancel).toMatchObject({
+			classId: "cls-t6",
+			className: "Lớp T6",
+			date: "2026-11-20",
+			sessionOrdinal: 16,
+		});
+		expect(cancel?.enrollmentIds).toEqual(["enr-cls-t6"]);
+	});
+
+	it("buổi có dòng completed trong khoảng → keptCompleted, không cancellation (D1)", () => {
+		const rows = lessons("cls-t6", "2026-08-07", 24);
+		for (const row of rows) {
+			if (row.date === "2026-11-20") row.status = "completed";
+		}
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-t6",
+						name: "Lớp T6",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations).toEqual([]);
+		expect(result.keptCompleted).toEqual([
+			{
+				classId: "cls-t6",
+				className: "Lớp T6",
+				date: "2026-11-20",
+				sessionOrdinal: 16,
+			},
+		]);
+	});
+
+	it("buổi toàn cancelled hoặc toàn holiday trong khoảng → bỏ qua, không cancellation", () => {
+		const rows = lessons("cls-t6", "2026-08-07", 24);
+		for (const row of rows) {
+			if (row.date === "2026-11-20") row.status = "cancelled";
+		}
+		// Lớp thứ hai: buổi trùng đã bị kỳ nghỉ khác chuyển `holiday`.
+		const rowsHoliday = lessons("cls-t3", "2026-08-07", 24, "enr-cls-t3", 2);
+		for (const row of rowsHoliday) {
+			if (row.date === "2026-11-20" || row.date === "2026-11-24") {
+				row.status = "holiday";
+			}
+		}
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-t6",
+						name: "Lớp T6",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+					{
+						id: "cls-t3",
+						name: "Lớp T3",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rowsHoliday,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations).toEqual([]);
+		expect(result.shifts).toEqual([]);
+		expect(result.keptCompleted).toEqual([]);
+	});
+
+	it("buổi trộn completed + upcoming → keptCompleted thắng (không cancel một phần)", () => {
+		const rows = lessons("cls-t6", "2026-08-07", 24);
+		const first = true;
+		for (const row of rows) {
+			if (row.date === "2026-11-20" && first) {
+				row.status = "completed";
+			}
+		}
+		rows.push({
+			date: "2026-11-20",
+			status: "upcoming",
+			enrollmentId: "enr-cls-t6-b",
+		});
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-t6",
+						name: "Lớp T6",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations).toEqual([]);
+		expect(result.keptCompleted).toHaveLength(1);
+	});
+
+	it("D2: lớp schedule legacy nhưng dòng có date vẫn hủy được ở mode cancel; lớp có dòng date null → unsupported undated", () => {
+		const rows = lessons("cls-undated", "2026-08-07", 24);
+		for (const row of rows) {
+			if (row.date === "2026-11-20") row.date = null;
+		}
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-legacy",
+						name: "Lớp Legacy Có Date",
+						schedule: "khong-phai-json",
+						lessons: lessons("cls-legacy", "2026-08-07", 24),
+					},
+					{
+						id: "cls-undated",
+						name: "Lớp Undated",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations).toHaveLength(1);
+		expect(result.cancellations[0]?.classId).toBe("cls-legacy");
+		expect(result.unsupported.map((u) => u.reason)).toEqual(["undated"]);
+	});
+
+	it("buổi trộn cancelled (hủy tay lẻ) + upcoming → bỏ qua, không gộp vào cancellations", () => {
+		const rows = lessons("cls-t6", "2026-08-07", 24);
+		for (const row of rows) {
+			if (row.date === "2026-11-20") row.status = "cancelled";
+		}
+		rows.push({
+			date: "2026-11-20",
+			status: "upcoming",
+			enrollmentId: "enr-cls-t6-b",
+		});
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-t6",
+						name: "Lớp T6",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations).toEqual([]);
+		expect(result.keptCompleted).toEqual([]);
+	});
+
+	it("khoảng không trúng buổi nào → cancellations rỗng, shifts rỗng", () => {
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				range: { fromDate: "2030-01-01", toDate: "2030-01-07" },
+			}),
+		);
+
+		expect(result.cancellations).toEqual([]);
+		expect(result.shifts).toEqual([]);
+		expect(result.unsupported).toEqual([]);
+	});
+
+	it("2 lớp trúng buổi → cancellations sắp theo className asc (vi locale)", () => {
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-a",
+						name: "Lớp B",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: lessons("cls-a", "2026-08-07", 24),
+					},
+					{
+						id: "cls-b",
+						name: "Lớp A",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: lessons("cls-b", "2026-08-07", 24, "enr-cls-b"),
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations.map((c) => c.className)).toEqual([
+			"Lớp A",
+			"Lớp B",
+		]);
+	});
+
+	it("sessionOrdinal không đếm nhóm holiday (I4 parity cho cancel)", () => {
+		const rows = lessons("cls-t6", "2026-08-07", 24);
+		for (const row of rows) {
+			if (row.date === "2026-11-06") row.status = "holiday";
+		}
+		const result = planHolidayShift(
+			input({
+				mode: "cancel",
+				classes: [
+					{
+						id: "cls-t6",
+						name: "Lớp T6",
+						schedule: SCHEDULE_FRIDAY,
+						lessons: rows,
+					},
+				],
+			}),
+		);
+
+		expect(result.cancellations[0]?.sessionOrdinal).toBe(15);
+	});
+
+	it("gọi 2 lần cùng input cancel → output giống hệt (deterministic)", () => {
+		const a = planHolidayShift(input({ mode: "cancel" }));
+		const b = planHolidayShift(input({ mode: "cancel" }));
 		expect(a).toEqual(b);
 	});
 });

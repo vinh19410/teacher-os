@@ -1647,6 +1647,8 @@ export interface KernelSnapshot {
 	/** TOS-11: lịch tuần vẽ nhãn kỳ nghỉ + "Đã dời sang dd/MM" không cần gọi thêm endpoint. Optional — fixtures cũ không gửi. */
 	holidays?: KernelHolidaySummary[];
 	holidayShifts?: KernelHolidayShiftRow[];
+	/** TOS-13: các buổi bị kỳ nghỉ mode "cancel" hủy (nhãn "Đã hủy — «kỳ nghỉ»"). */
+	holidayCancels?: KernelHolidayCancelRow[];
 	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	viewer?: KernelViewer;
@@ -3187,6 +3189,10 @@ export const HOLIDAY_ERROR_CODES = {
 	STALE_PREVIEW: "stale-preview",
 	/** Nhóm buổi có dòng `holiday` — bị khóa sửa/dời (409). */
 	HOLIDAY_LOCKED: "holiday-locked",
+	/** Kỳ nghỉ đã bắt đầu (fromDate <= hôm nay giờ VN) — không hoàn tác (422, TOS-13 D3). */
+	HOLIDAY_STARTED: "holiday-started",
+	/** Buổi bù của kỳ nghỉ đã bị đụng (điểm danh / kỳ khác dời-hủy) — hoàn tác bị chặn (409, TOS-13 D4). */
+	MAKEUP_TOUCHED: "makeup-touched",
 } as const;
 export type HolidayErrorCode =
 	(typeof HOLIDAY_ERROR_CODES)[keyof typeof HOLIDAY_ERROR_CODES];
@@ -3216,8 +3222,8 @@ export const holidayDraftSchema = z
 			.max(200)
 			.default([])
 			.transform((ids) => [...new Set(ids)]),
-		/** TOS-11 chỉ mở "shift"; "cancel" là TOS-13. */
-		mode: z.literal("shift"),
+		/** TOS-13 (#448): "shift" dời buổi; "cancel" hủy buổi không bù. */
+		mode: z.enum(HOLIDAY_MODES),
 		notify: z.boolean().default(true),
 	})
 	.superRefine((input, ctx) => {
@@ -3301,8 +3307,21 @@ export interface HolidayUnsupported {
 	reason: "legacy-schedule" | "undated";
 }
 
+/** Một buổi (nhóm occurrence cùng ngày) bị hủy bởi kỳ nghỉ mode "cancel"
+ * (TOS-13 D2) — không sinh buổi bù, không đổi ngày kết thúc khóa. */
+export interface HolidayPlannedCancellation {
+	classId: string;
+	className: string;
+	/** yyyy-mm-dd buổi bị hủy. */
+	date: string;
+	/** Buổi thứ mấy theo đúng định nghĩa index tab Lịch học (I4 — không đếm nhóm `holiday`/`cancelled`). */
+	sessionOrdinal: number;
+}
+
 export interface HolidayPreview {
 	shifts: HolidayPlannedShift[];
+	/** TOS-13 mode "cancel": các buổi sẽ chuyển `cancelled`; `shifts` rỗng. */
+	cancellations: HolidayPlannedCancellation[];
 	keptCompleted: HolidayKeptCompleted[];
 	unsupported: HolidayUnsupported[];
 	affectedClassCount: number;
@@ -3314,7 +3333,17 @@ export interface HolidayPreview {
 export interface HolidayApplyResult {
 	holidayId: string;
 	shiftedCount: number;
+	/** TOS-13 mode "cancel": số buổi đã hủy; mode "shift" = 0. */
+	cancelledCount: number;
 	classCount: number;
+}
+
+/** Kết quả hoàn tác `DELETE /api/holidays/:id` (TOS-13 D5). */
+export interface HolidayDeleteResult {
+	/** Số buổi gốc + buổi hủy được khôi phục về `upcoming`. */
+	restoredCount: number;
+	/** Số buổi bù chưa diễn ra bị thu hồi (mode "shift"); mode "cancel" = 0. */
+	removedMakeupCount: number;
 }
 
 /** Wire schema bảng xem trước — web repos parse trước khi render (I7 kèm planHash). */
@@ -3335,6 +3364,14 @@ export const holidayPreviewResponseSchema = z.object({
 					holidayName: z.string().nullable(),
 				}),
 			),
+		}),
+	),
+	cancellations: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			date: z.string(),
+			sessionOrdinal: z.number().int(),
 		}),
 	),
 	keptCompleted: z.array(
@@ -3359,7 +3396,14 @@ export const holidayPreviewResponseSchema = z.object({
 export const holidayApplyResultSchema = z.object({
 	holidayId: z.string().min(1),
 	shiftedCount: z.number().int(),
+	cancelledCount: z.number().int(),
 	classCount: z.number().int(),
+});
+
+/** Wire schema kết quả hoàn tác (TOS-13). */
+export const holidayDeleteResultSchema = z.object({
+	restoredCount: z.number().int(),
+	removedMakeupCount: z.number().int(),
 });
 
 /** Snapshot kernel thêm phần lịch nghỉ để lịch tuần vẽ nhãn không cần gọi thêm endpoint (phase 5). */
@@ -3369,6 +3413,8 @@ export interface KernelHolidaySummary {
 	fromDate: string;
 	toDate: string;
 	scope: HolidayScope;
+	/** TOS-13: "shift" | "cancel" — nút hoàn tác + nhãn hủy đọc từ đây. */
+	mode: HolidayMode;
 }
 
 export interface KernelHolidayShiftRow {
@@ -3376,6 +3422,14 @@ export interface KernelHolidayShiftRow {
 	classId: string;
 	originalDate: string;
 	makeupDate: string;
+}
+
+/** TOS-13: buổi bị kỳ nghỉ mode "cancel" hủy — nguồn khôi phục khi hoàn tác
+ * (không khôi phục nhầm buổi giáo viên hủy tay). */
+export interface KernelHolidayCancelRow {
+	holidayId?: string;
+	classId: string;
+	date: string;
 }
 
 /** Nhãn dùng chung web + student (phase 4) — một nguồn duy nhất. */
@@ -3429,6 +3483,12 @@ export const NOTIFICATION_STATUSES = [
 	"failed",
 ] as const;
 export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
+
+/** TOS-22 (#463): tối đa 3 lần thử gửi Email tự động; hết lượt chuyển failed kèm E-selfomy-alignment-010. */
+export const MAX_EMAIL_ATTEMPTS = 3;
+export const NOTIFICATION_ERROR_CODES = {
+	DELIVERY_FAILED: "E-selfomy-alignment-010",
+} as const;
 
 /** GET /api/notification-logs?q=&event=&status=&page= — 20 dòng/trang. */
 export const notificationLogQuerySchema = z.object({

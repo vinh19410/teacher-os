@@ -16,24 +16,28 @@ export interface NotificationDeps {
 	 * caller parse (`parseCORSOrigins(...)[0]`), deliver không tự đọc env.
 	 */
 	studentOrigin?: string;
+	/** TOS-22 (#463) D6: khoảng chờ giữa các lượt thử gửi lại (chỉ test/E2E truyền [0, 0]). */
+	retryDelaysMs?: number[];
 }
 
 /**
- * Chọn đúng các dep thông báo từ AppDeps/route-deps (#454): dùng ở mọi
- * callsite `emitNotifications` để `studentOrigin` không bị bỏ sót khi route
- * tự dựng object deps (bug đã gặp: thiếu studentOrigin → link email tương đối).
+ * Chọn đúng các dep thông báo từ AppDeps/route-deps (#454, #463): dùng ở mọi
+ * callsite `emitNotifications` để `studentOrigin` và `retryDelaysMs` không bị
+ * bỏ sót khi route tự dựng object deps.
  */
 export function notificationDepsFrom(deps: {
 	getDb(): Db;
 	mailer?: Mailer;
 	runInBackground?(promise: Promise<unknown>): void;
 	studentOrigin?: string;
+	notificationRetryDelaysMs?: number[];
 }): NotificationDeps {
 	return {
 		db: deps.getDb(),
 		mailer: deps.mailer,
 		runInBackground: deps.runInBackground,
 		studentOrigin: deps.studentOrigin,
+		retryDelaysMs: deps.notificationRetryDelaysMs,
 	};
 }
 
@@ -54,6 +58,7 @@ export async function emitNotifications(
 			deps.mailer,
 			createdIds,
 			deps.studentOrigin,
+			deps.retryDelaysMs ? { retryDelaysMs: deps.retryDelaysMs } : undefined,
 		);
 		if (deps.runInBackground) {
 			deps.runInBackground(delivery);

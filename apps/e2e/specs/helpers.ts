@@ -55,6 +55,8 @@ export interface VerificationEmailEntry {
 	// Plan TOS-21 (#454): recordingMailer lưu thêm header mới của thư thông báo.
 	replyTo?: string | null;
 	fromName?: string | null;
+	// Plan TOS-22 (#463): recordingMailer đánh dấu failed: true cho thư thông báo tới @bounce.test.
+	failed?: boolean;
 }
 
 export async function readVerificationEmails(): Promise<

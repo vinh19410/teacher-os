@@ -46,7 +46,10 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
-import { holidaySessionShift } from "@teacher-os/db/schema/organization-holiday";
+import {
+	holidaySessionCancel,
+	holidaySessionShift,
+} from "@teacher-os/db/schema/organization-holiday";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
@@ -122,6 +125,8 @@ export function kernelRoutes(deps: {
 	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
 	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
+	notificationRetryDelaysMs?: number[];
 }) {
 	const kernel = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
@@ -775,19 +780,32 @@ export function kernelRoutes(deps: {
 		classId: string,
 		dateISO: string,
 	): Promise<boolean> {
-		const rows = await db
-			.select({ id: lesson.id })
-			.from(lesson)
-			.where(
-				and(
-					eq(lesson.orgId, orgId),
-					eq(lesson.classId, classId),
-					eq(lesson.date, dateISO),
-					eq(lesson.status, "holiday"),
-				),
-			)
-			.limit(1);
-		return rows.length > 0;
+		const [holidayRows, cancelRows] = await Promise.all([
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, dateISO),
+						eq(lesson.status, "holiday"),
+					),
+				)
+				.limit(1),
+			db
+				.select({ id: holidaySessionCancel.id })
+				.from(holidaySessionCancel)
+				.where(
+					and(
+						eq(holidaySessionCancel.orgId, orgId),
+						eq(holidaySessionCancel.classId, classId),
+						eq(holidaySessionCancel.date, dateISO),
+					),
+				)
+				.limit(1),
+		]);
+		return holidayRows.length > 0 || cancelRows.length > 0;
 	}
 
 	function invalidDateResponse(c: KernelContext) {
@@ -1920,6 +1938,9 @@ export function kernelRoutes(deps: {
 			notifDeps.mailer,
 			createdIds,
 			notifDeps.studentOrigin,
+			notifDeps.retryDelaysMs
+				? { retryDelaysMs: notifDeps.retryDelaysMs }
+				: undefined,
 		);
 		if (notifDeps.runInBackground) {
 			notifDeps.runInBackground(delivery);

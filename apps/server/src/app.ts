@@ -113,6 +113,11 @@ export interface AppDeps {
 	 * (`parseCORSOrigins(...)[0]`); vắng mặt → link tương đối (test node).
 	 */
 	studentOrigin?: string;
+	/**
+	 * TOS-22 (#463) D6: khoảng chờ (ms) giữa các lượt thử lại email thông báo.
+	 * Production bỏ trống (dùng mặc định [2000, 5000]); chỉ test/E2E truyền [0, 0].
+	 */
+	notificationRetryDelaysMs?: number[];
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
