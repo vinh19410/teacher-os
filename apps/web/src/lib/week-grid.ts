@@ -133,3 +133,78 @@ export function resolveWeek(
 		isCurrentWeek: weekStart === startOfWeekMonday(today),
 	};
 }
+
+/** Full Vietnamese weekday names Monday-first — the `formatDayLabel` table.
+ * Fixed strings instead of Intl so the label is deterministic everywhere. */
+const weekdayLongNames = [
+	"Thứ Hai",
+	"Thứ Ba",
+	"Thứ Tư",
+	"Thứ Năm",
+	"Thứ Sáu",
+	"Thứ Bảy",
+	"Chủ Nhật",
+] as const;
+
+/** 1-based Monday-first day number (1=Mon … 7=Sun) — the `lesson.day`
+ * convention, derived from the calendar date instead of a stored field. */
+export function isoDayNumber(iso: string): number {
+	return ((toUtcDate(iso).getUTCDay() + 6) % 7) + 1;
+}
+
+/** First day of the month containing `iso` (inputs assumed parse-valid). */
+export function startOfMonth(iso: string): string {
+	return `${iso.slice(0, 4)}-${iso.slice(5, 7)}-01`;
+}
+
+function dayOfMonthClamped(year: number, month1: number, day: number): string {
+	// Date.UTC(y, m, 0) is the last day of month `m` (1-based).
+	const lastDay = new Date(Date.UTC(year, month1, 0)).getUTCDate();
+	return fromUtcDate(
+		new Date(Date.UTC(year, month1 - 1, Math.min(day, lastDay))),
+	);
+}
+
+/** `iso` shifted by `n` calendar months, the day clamped to the target
+ * month's length (2026-01-31 + 1 → 2026-02-28; leap days included). Returns
+ * `iso` when the result would leave the supported year range — month nav
+ * stands still at the edges, mirroring `addWeeks`. */
+export function addMonths(iso: string, n: number): string {
+	const year = Number(iso.slice(0, 4));
+	const month = Number(iso.slice(5, 7));
+	const total = year * 12 + (month - 1) + n;
+	const newYear = Math.floor(total / 12);
+	const newMonth = (total % 12) + 1;
+	if (newYear < MIN_YEAR || newYear > MAX_YEAR) return iso;
+	return dayOfMonthClamped(newYear, newMonth, Number(iso.slice(8, 10)));
+}
+
+/** `iso + n days` on the UTC anchor; stands still at the 1970–2099 bounds
+ * (same guard as `addWeeks`). */
+export function addDays(iso: string, n: number): string {
+	const shifted = fromUtcDate(new Date(toUtcDate(iso).getTime() + n * DAY_MS));
+	const year = Number(shifted.slice(0, 4));
+	return ISO_DATE_PATTERN.test(shifted) && year >= MIN_YEAR && year <= MAX_YEAR
+		? shifted
+		: iso;
+}
+
+/** The 42 ISO dates (6×7, Monday-first) of the month grid containing `iso`:
+ * the Monday on/before the 1st, then 41 more days, so short months still
+ * fill all 6 rows with leading/trailing neighbor-month days. */
+export function monthGridDates(iso: string): string[] {
+	const start = toUtcDate(startOfWeekMonday(startOfMonth(iso)));
+	return Array.from({ length: 42 }, (_, i) =>
+		fromUtcDate(new Date(start.getTime() + i * DAY_MS)),
+	);
+}
+
+/** `Tháng 11 · 2026` straight from the ISO string — unpadded month. */
+export function formatMonthLabel(iso: string): string {
+	return `Tháng ${Number(iso.slice(5, 7))} · ${iso.slice(0, 4)}`;
+}
+
+/** `Thứ Hai 26/10` — full weekday name + `dd/MM` (see `formatDayMonth`). */
+export function formatDayLabel(iso: string): string {
+	return `${weekdayLongNames[isoDayNumber(iso) - 1]} ${formatDayMonth(iso)}`;
+}

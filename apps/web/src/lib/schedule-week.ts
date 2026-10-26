@@ -234,6 +234,40 @@ export function weekSlotCount(
 	return slots.size;
 }
 
+/** View-model của lưới tuần (TOS-14 tách route): cột theo ngày + projected. */
+export interface WeekModel {
+	columns: WeekSessionEntry[][];
+	projected: ProjectedWeekBlock[];
+	slotCount: number;
+}
+
+/**
+ * Composition point dùng chung bởi route /schedule: chọn buổi theo ngày cho
+ * 7 cột, block dự chiếu cho lớp chưa có dòng, và số buổi hiển thị.
+ */
+export function buildWeekModel(
+	data: {
+		classes: ClassGroup[];
+		lessons: Lesson[];
+	},
+	dates: readonly string[],
+): WeekModel {
+	const columns = [1, 2, 3, 4, 5, 6, 7].map((day, i) =>
+		resolveWeekColumnEntries(
+			selectWeekColumnSessions(data.lessons, day, dates),
+			data.classes,
+			data.lessons,
+			dates[i],
+		),
+	);
+	const projected = selectProjectedWeekBlocks(
+		data.classes,
+		data.lessons,
+		dates,
+	);
+	return { columns, projected, slotCount: weekSlotCount(columns, projected) };
+}
+
 /**
  * Per-student state when the occurrence cannot be resolved (divergent rows,
  * free-text schedule): keep the row-based actions the popup always had — they

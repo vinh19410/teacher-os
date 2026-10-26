@@ -69,6 +69,18 @@
 	--verdict-wrong: #b91c1c;
 	--verdict-on: #ffffff;
 
+	/* Màu lớp (TOS-14, D2): 8 hue phân tách, hash class.id → --class-1..8.
+	   Dùng làm border-left/chấm (non-text ≥3:1 trên background); chữ trong
+	   block vẫn --foreground, nền là biến thể soft ~88% trong suốt. */
+	--class-1: oklch(0.53 0.16 255);
+	--class-2: oklch(0.52 0.12 185);
+	--class-3: oklch(0.55 0.14 65);
+	--class-4: oklch(0.52 0.17 295);
+	--class-5: oklch(0.55 0.19 5);
+	--class-6: oklch(0.55 0.09 215);
+	--class-7: oklch(0.55 0.13 130);
+	--class-8: oklch(0.5 0.09 75);
+
 	/* Motion tokens (còn dùng). */
 	--leading-body: 1.47;
 	--motion-fast: 150ms;
@@ -84,6 +96,14 @@
 	--warn-soft: color-mix(in oklab, var(--warn), transparent 86%);
 	--danger-soft: color-mix(in oklab, var(--danger), transparent 88%);
 	--destructive-soft: color-mix(in oklab, var(--destructive), transparent 88%);
+	--class-1-soft: color-mix(in oklab, var(--class-1), transparent 88%);
+	--class-2-soft: color-mix(in oklab, var(--class-2), transparent 88%);
+	--class-3-soft: color-mix(in oklab, var(--class-3), transparent 88%);
+	--class-4-soft: color-mix(in oklab, var(--class-4), transparent 88%);
+	--class-5-soft: color-mix(in oklab, var(--class-5), transparent 88%);
+	--class-6-soft: color-mix(in oklab, var(--class-6), transparent 88%);
+	--class-7-soft: color-mix(in oklab, var(--class-7), transparent 88%);
+	--class-8-soft: color-mix(in oklab, var(--class-8), transparent 88%);
 	--verdict-correct-soft: color-mix(
 		in oklab,
 		var(--verdict-correct),
@@ -135,6 +155,16 @@
 	--verdict-correct: #4ade80;
 	--verdict-wrong: #f87171;
 	--verdict-on: oklch(0.145 0 0);
+
+	/* Màu lớp dark: cùng hue, sáng hơn để giữ ≥3:1 trên nền dark. */
+	--class-1: oklch(0.72 0.14 255);
+	--class-2: oklch(0.76 0.12 185);
+	--class-3: oklch(0.8 0.14 70);
+	--class-4: oklch(0.72 0.15 298);
+	--class-5: oklch(0.72 0.16 10);
+	--class-6: oklch(0.78 0.09 215);
+	--class-7: oklch(0.8 0.15 130);
+	--class-8: oklch(0.72 0.1 75);
 
 	--focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 	--elev-raised: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
@@ -190,6 +220,22 @@
 	--color-warn-soft: var(--warn-soft);
 	--color-danger-soft: var(--danger-soft);
 	--color-destructive-soft: var(--destructive-soft);
+	--color-class-1: var(--class-1);
+	--color-class-2: var(--class-2);
+	--color-class-3: var(--class-3);
+	--color-class-4: var(--class-4);
+	--color-class-5: var(--class-5);
+	--color-class-6: var(--class-6);
+	--color-class-7: var(--class-7);
+	--color-class-8: var(--class-8);
+	--color-class-1-soft: var(--class-1-soft);
+	--color-class-2-soft: var(--class-2-soft);
+	--color-class-3-soft: var(--class-3-soft);
+	--color-class-4-soft: var(--class-4-soft);
+	--color-class-5-soft: var(--class-5-soft);
+	--color-class-6-soft: var(--class-6-soft);
+	--color-class-7-soft: var(--class-7-soft);
+	--color-class-8-soft: var(--class-8-soft);
 	--color-verdict-correct: var(--verdict-correct);
 	--color-verdict-wrong: var(--verdict-wrong);
 	--color-verdict-on: var(--verdict-on);
