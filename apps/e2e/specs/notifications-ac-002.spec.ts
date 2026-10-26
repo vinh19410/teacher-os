@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import {
 	readVerificationEmails,
@@ -20,6 +21,10 @@ import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
 const PASSWORD = "password-8chars";
 const CLASS_NAME = "E2E TOS-22 Lớp thông báo lỗi";
 const STUDENT_BOUNCE = "TOS-22 Học viên Lỗi Email";
+const screenshotsDir = new URL(
+	"../../../plans/261027-0127-tos-22-notification-auto-retry-failed/screenshots/",
+	import.meta.url,
+).pathname;
 
 async function pollMail(
 	predicate: (entries: VerificationEmailEntry[]) => boolean,
@@ -150,6 +155,7 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 		failedRow.getByText("E-010: mailbox unavailable sau 3 lần thử"),
 	).toBeVisible();
 
+	mkdirSync(screenshotsDir, { recursive: true });
 	for (const vp of [
 		{ width: 1440, height: 900 },
 		{ width: 768, height: 1024 },
@@ -165,6 +171,10 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 				document.documentElement.clientWidth,
 		);
 		expect(docOverflow, `không tràn ngang trang ở ${vp.width}px`).toBe(false);
+		await teacher.screenshot({
+			path: `${screenshotsDir}tos22-failed-row-${vp.width}.png`,
+			fullPage: true,
+		});
 	}
 	await teacher.setViewportSize({ width: 1440, height: 900 });
 
