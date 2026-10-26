@@ -56,6 +56,7 @@ async function fetchKernelSnapshot(page: Page): Promise<SnapshotShape> {
 }
 
 function countsByEnrollment(snapshot: SnapshotShape) {
+	const map = new Map<string, { completed: number; nonHoliday: number }>();
 	for (const row of snapshot.lessons) {
 		const cur = map.get(row.enrollmentId) ?? { completed: 0, nonHoliday: 0 };
 		if (row.status === "completed") cur.completed += 1;
