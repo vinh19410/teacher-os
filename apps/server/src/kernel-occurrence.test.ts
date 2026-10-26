@@ -511,9 +511,9 @@ describe("occurrence mutations (#98 phase 2)", () => {
 		);
 		const useIdx = source.indexOf('kernel.use("*"');
 		expect(useIdx).toBeGreaterThan(-1);
-		const postMatches = [...source.matchAll(/kernel\.post\(/g)];
-		expect(postMatches.length).toBeGreaterThan(5);
-		for (const match of postMatches) {
+		const writeMatches = [...source.matchAll(/kernel\.(post|put)\(/g)];
+		expect(writeMatches.length).toBeGreaterThan(5);
+		for (const match of writeMatches) {
 			expect(match.index).toBeGreaterThan(useIdx);
 		}
 	});

@@ -8,6 +8,7 @@ import {
 	assignmentTest,
 	classAssignment,
 	classTable,
+	enrollment,
 	invoice,
 	lesson,
 	quizAttempt,
@@ -99,11 +100,21 @@ export async function computeReminders(
 			className: classTable.name,
 			time: lesson.time,
 			dur: lesson.dur,
+			date: lesson.date,
 		})
 		.from(lesson)
 		.innerJoin(
 			classTable,
 			and(eq(classTable.id, lesson.classId), eq(classTable.orgId, orgId)),
+		)
+		.innerJoin(
+			enrollment,
+			and(
+				eq(enrollment.id, lesson.enrollmentId),
+				eq(enrollment.classId, lesson.classId),
+				eq(enrollment.orgId, orgId),
+				eq(enrollment.status, "active"),
+			),
 		)
 		.where(
 			and(
@@ -116,13 +127,19 @@ export async function computeReminders(
 			),
 		);
 
-	// Gom ca-lớp theo (classId, time); dur lấy từ dòng đầu của nhóm.
+	// Gom ca-lớp: lớp dated gom theo (classId, date) khớp bucket vật lý của
+	// GET/PUT /attendance; lớp legacy gom theo (classId, time).
 	const groups = new Map<
 		string,
 		{ classId: string; className: string; time: string; dur: number }
 	>();
-	for (const row of attendanceRows) {
-		const key = `${row.classId}\u0000${row.time}`;
+	for (const row of [...attendanceRows].sort((a, b) =>
+		a.time.localeCompare(b.time),
+	)) {
+		const key =
+			row.date !== null
+				? `dated:${row.classId}\u0000${row.date}`
+				: `legacy:${row.classId}\u0000${row.time}`;
 		if (!groups.has(key)) {
 			groups.set(key, {
 				classId: row.classId,

@@ -221,17 +221,9 @@ export async function computeDailyAttendance(
 		const first = sortedByTime[0];
 		if (!first) continue;
 
-		// Mỗi học viên giữ dòng đầu theo lessonId nếu hiếm gặp >1 dòng trong cùng (classId, date).
-		const byStudent = new Map<string, RawDailyAttendanceRow>();
-		for (const row of [...rows].sort((a, b) =>
-			a.lessonId.localeCompare(b.lessonId),
-		)) {
-			if (!byStudent.has(row.studentId)) {
-				byStudent.set(row.studentId, row);
-			}
-		}
-
-		const students = [...byStudent.values()]
+		// Giữ toàn bộ dòng trong bucket (classId, date) để tập lessonId khớp 1-1
+		// với rosterRows của PUT /api/classes/:id/sessions/:date/attendance.
+		const students = [...rows]
 			.map((row) => ({
 				lessonId: row.lessonId,
 				studentId: row.studentId,
@@ -239,7 +231,11 @@ export async function computeDailyAttendance(
 				attendance: coerceDisplayAttendance(row.status, row.attendance),
 				note: row.attendanceNote ?? "",
 			}))
-			.sort((a, b) => a.studentName.localeCompare(b.studentName, "vi"));
+			.sort(
+				(a, b) =>
+					a.studentName.localeCompare(b.studentName, "vi") ||
+					a.lessonId.localeCompare(b.lessonId),
+			);
 
 		sessions.push({
 			classId,

@@ -63,7 +63,10 @@ import {
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
 import { dailyAttendanceRoutes } from "./daily-attendance";
-import { dashboardReminderRoutes } from "./dashboard-reminders";
+import {
+	dashboardReminderRoutes,
+	resolveReminderScope,
+} from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
 import { gradingRoutes } from "./grading";
 import { paymentTransactionRoutes } from "./payment-transactions";
@@ -107,7 +110,7 @@ export function kernelRoutes(deps: {
 			if (!allowedOrigins.includes(origin)) {
 				return c.json({ error: "origin not allowed" }, 403);
 			}
-			if (c.req.method === "POST") {
+			if (["POST", "PUT", "PATCH"].includes(c.req.method)) {
 				const contentType = c.req.header("Content-Type") ?? "";
 				if (!contentType.toLowerCase().startsWith("application/json")) {
 					return c.json(
@@ -1090,6 +1093,10 @@ export function kernelRoutes(deps: {
 		const body = await readBody(c, sessionAttendanceSaveSchema);
 		if (!body.ok) return body.response;
 
+		const scope = resolveReminderScope();
+		if (scope.kind === "assigned" && !scope.classIds.includes(classId)) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
 		const cls = await findClass(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);

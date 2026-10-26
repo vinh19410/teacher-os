@@ -263,7 +263,10 @@ export function ClassSessionsSection({
 												onClick={() => setModalIndex(s.index)}
 												className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
 											>
-												{status === "completed" ? "Sửa điểm danh" : "Điểm danh"}{" "}
+												{status === "completed" ||
+												(tally.unmarked === 0 && markedCount + absentCount > 0)
+													? "Sửa điểm danh"
+													: "Điểm danh"}{" "}
 												→
 											</button>
 										)}
@@ -276,7 +279,9 @@ export function ClassSessionsSection({
 									<span className="shrink-0 font-medium text-muted-foreground text-xs">
 										Đã hủy
 									</span>
-								) : status === "completed" || isPast ? (
+								) : status === "completed" ||
+									isPast ||
+									(tally.unmarked === 0 && markedCount + absentCount > 0) ? (
 									<AttendanceSummary
 										tally={tally}
 										total={attendees.length - tally.cancelled}

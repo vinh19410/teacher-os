@@ -120,7 +120,8 @@ function isRecentAbsence(lesson: Lesson, now: Date): boolean {
 	if (!isUnexcused && !(isLegacyAbsentRow && lesson.status === "absent")) {
 		return false;
 	}
-	const cutoff = new Date(now);
+	const todayIso = todayISOVietnam(now);
+	const cutoff = new Date(`${todayIso}T00:00:00Z`);
 	cutoff.setUTCDate(cutoff.getUTCDate() - ABSENT_WINDOW_DAYS);
 	return lesson.date >= cutoff.toISOString().slice(0, 10);
 }

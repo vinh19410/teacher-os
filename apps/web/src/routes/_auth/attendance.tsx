@@ -65,7 +65,9 @@ export const Route = createFileRoute("/_auth/attendance")({
 });
 
 function sessionKey(session: DailyAttendanceSession): string {
-	return `${session.mode}:${session.classId}:${session.time}`;
+	return session.mode === "dated"
+		? `dated:${session.classId}`
+		: `legacy:${session.classId}:${session.time}`;
 }
 
 export function AttendanceRoute() {
