@@ -86,6 +86,7 @@ export function AttendanceStatusPicker({
 				const selected = value === opt.value;
 				const isTabStop = selected || (value === null && index === 0);
 				return (
+					// biome-ignore lint/a11y/useSemanticElements: custom pill radio button follows WAI-ARIA radio + roving tabindex pattern
 					<button
 						key={opt.value}
 						ref={(el) => {

@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { DailyAttendanceSession } from "@/lib/attendance-draft";
 import { AttendanceSessionRow } from "./attendance-session-row";
@@ -217,9 +223,9 @@ describe("AttendanceSessionRow", () => {
 		);
 
 		expect(screen.queryByRole("radiogroup")).toBeNull();
-		expect(screen.getAllByText(/Lớp chưa gắn lịch ngày/).length).toBeGreaterThan(
-			0,
-		);
+		expect(
+			screen.getAllByText(/Lớp chưa gắn lịch ngày/).length,
+		).toBeGreaterThan(0);
 		const link = screen.getByRole("link", {
 			name: /Mở lớp để điểm danh/,
 		});
