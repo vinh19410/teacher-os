@@ -124,3 +124,54 @@ test("multi-line prompt keeps its line breaks through the editor round trip", as
 	expect(lines).toContain("Dòng thứ nhất");
 	expect(lines).toContain("Dòng thứ hai");
 });
+
+test("full-option toolbar structures persist and render for students", async ({
+	page,
+}) => {
+	const TITLE = "QC-436 Rich Full Option";
+
+	await signUpViaUi(page);
+	await page.goto("/assignments/new");
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await fillRichEditor(page, "Nội dung đề", "Phần giảng dạy chính");
+
+	const promptEditor = page.getByLabel("Nội dung đề");
+	const promptToolbar = promptEditor.locator(
+		"xpath=../preceding-sibling::div[@role='toolbar']",
+	);
+	await promptEditor.click();
+	await page.keyboard.press("ControlOrMeta+a");
+
+	// Heading 2 on the whole line, then type a blockquote paragraph below.
+	await promptToolbar.getByRole("button", { name: "Đề mục cấp 2" }).click();
+	await expect(promptEditor.locator("h2")).toContainText(
+		"Phần giảng dạy chính",
+	);
+	await page.keyboard.press("End");
+	await page.keyboard.press("Enter");
+	await promptToolbar.getByRole("button", { name: "Trích dẫn" }).click();
+	await page.keyboard.type("Trích dẫn từ tài liệu");
+	await expect(promptEditor.locator("blockquote")).toContainText(
+		"Trích dẫn từ tài liệu",
+	);
+
+	// Horizontal rule after the quote — momentary button, no aria-pressed.
+	await promptToolbar.getByRole("button", { name: "Đường kẻ ngang" }).click();
+	await expect(promptEditor.locator("hr")).toHaveCount(1);
+
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+
+	// Student-facing preview keeps the structure (h2 + blockquote + hr).
+	await page.goto("/assignments");
+	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
+	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
+	const paper = page.getByText("Xem trước phía học viên").locator("..");
+	await expect(paper.locator("h2")).toContainText("Phần giảng dạy chính");
+	await expect(paper.locator("blockquote")).toContainText(
+		"Trích dẫn từ tài liệu",
+	);
+	await expect(paper.locator("hr")).toHaveCount(1);
+});
