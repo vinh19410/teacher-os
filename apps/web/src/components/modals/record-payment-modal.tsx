@@ -18,6 +18,8 @@ import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 const NOTE_MAX = 255;
+const INVALID_AMOUNT_MESSAGE =
+	"Số tiền thu phải lớn hơn 0 và không vượt quá số tiền còn nợ";
 const METHOD_OPTIONS: ReadonlyArray<{
 	value: InvoicePaymentMethod;
 	label: string;
@@ -50,6 +52,7 @@ export function RecordPaymentModal({
 	const [method, setMethod] = useState<InvoicePaymentMethod>("transfer");
 	const [note, setNote] = useState("");
 	const [amountError, setAmountError] = useState<string | undefined>();
+	const [amountTouched, setAmountTouched] = useState(false);
 	const [noteError, setNoteError] = useState<string | undefined>();
 	const [clientRequestId, setClientRequestId] = useState(() =>
 		crypto.randomUUID(),
@@ -74,6 +77,7 @@ export function RecordPaymentModal({
 			setMethod("transfer");
 			setNote("");
 			setAmountError(undefined);
+			setAmountTouched(false);
 			setNoteError(undefined);
 			setClientRequestId(crypto.randomUUID());
 			reset();
@@ -91,6 +95,11 @@ export function RecordPaymentModal({
 	const selected = openInvoices.find((inv) => inv.id === invoiceId);
 	const remaining = selected ? invoiceRemaining(selected) : 0;
 	const parsedAmount = parseVndAmount(amount);
+	const isAmountValid =
+		parsedAmount !== null && parsedAmount > 0 && parsedAmount <= remaining;
+	const inlineAmountError =
+		amountError ??
+		(amountTouched && !isAmountValid ? INVALID_AMOUNT_MESSAGE : undefined);
 	const afterAmount =
 		parsedAmount !== null ? Math.max(0, remaining - parsedAmount) : remaining;
 	const afterLabel =
@@ -101,6 +110,7 @@ export function RecordPaymentModal({
 		setMethod("transfer");
 		setNote("");
 		setAmountError(undefined);
+		setAmountTouched(false);
 		setNoteError(undefined);
 	}
 
@@ -115,12 +125,8 @@ export function RecordPaymentModal({
 		e.preventDefault();
 		if (saving || submitBlocked || !selected) return;
 		const parsed = parseVndAmount(amount);
-		const amountMessage =
-			amount.trim() === ""
-				? "Vui lòng nhập số tiền thực thu."
-				: parsed === null || parsed <= 0
-					? "Số tiền phải là số nguyên dương, tối đa 12 chữ số."
-					: undefined;
+		setAmountTouched(true);
+		const amountMessage = !isAmountValid ? INVALID_AMOUNT_MESSAGE : undefined;
 		const noteMessage =
 			note.trim().length > NOTE_MAX
 				? `Ghi chú tối đa ${NOTE_MAX} ký tự.`
@@ -150,6 +156,7 @@ export function RecordPaymentModal({
 				// Nothing was written; sync the store so the dialog shows the
 				// settled figures, then explain. Stays open — the error must be
 				// readable (reconcile clears `error`, so set it after).
+				setAmountTouched(false);
 				await reconcile();
 				setError(
 					"Hóa đơn đã được ghi nhận đủ trước đó — không lưu thêm phiếu thu.",
@@ -159,6 +166,7 @@ export function RecordPaymentModal({
 			if (result.status === 422) {
 				// amount-exceeds-debt: nothing written; refresh the store so the
 				// dialog's remaining figure matches the server, keep editing.
+				setAmountTouched(false);
 				await reconcile();
 				setError(
 					"Số tiền vượt số dư còn nợ của khoản đang chọn — đã cập nhật số nợ mới.",
@@ -215,14 +223,19 @@ export function RecordPaymentModal({
 						? `Phải đóng ${fmtVND(selected.amount)} · Đã thu ${fmtVND(selected.paidAmount)} · Còn nợ ${fmtVND(remaining)}`
 						: "Không có khoản còn nợ nào."}
 				</p>
-				<Field label="Số tiền thực thu lần này (VND) *" error={amountError}>
+				<Field
+					label="Số tiền thực thu lần này (VND) *"
+					error={inlineAmountError}
+				>
 					<CurrencyInput
 						placeholder="2,000,000"
 						value={amount}
 						onChange={(next) => {
 							setAmount(next);
+							setAmountTouched(true);
 							if (amountError) setAmountError(undefined);
 						}}
+						onBlur={() => setAmountTouched(true)}
 					/>
 				</Field>
 				<div className="flex justify-end">
@@ -232,6 +245,7 @@ export function RecordPaymentModal({
 						size="sm"
 						onClick={() => {
 							setAmount(remaining > 0 ? String(remaining) : "");
+							setAmountTouched(true);
 							setAmountError(undefined);
 						}}
 						disabled={remaining <= 0 || saving}
@@ -298,7 +312,7 @@ export function RecordPaymentModal({
 					<Button
 						type="submit"
 						size="sm"
-						disabled={saving || submitBlocked || !selected}
+						disabled={saving || submitBlocked || !selected || !isAmountValid}
 					>
 						Lưu phiếu thu học phí
 					</Button>

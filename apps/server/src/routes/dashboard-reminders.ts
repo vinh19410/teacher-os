@@ -3,6 +3,7 @@ import {
 	dashboardRemindersResponseSchema,
 } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { canAccessFinance } from "@teacher-os/auth/role";
 import {
 	assignmentPrompt,
 	assignmentTest,
@@ -46,7 +47,7 @@ const ATTENDANCE_PREVIEW_LIMIT = 3;
  *   Phase 5 (FR-029, vai trò Trợ giảng) mới sinh ra scope này từ session.
  */
 export type ReminderScope =
-	| { kind: "org" }
+	| { kind: "org"; finance?: boolean }
 	| { kind: "assigned"; classIds: string[]; finance: false };
 
 /** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1 — cùng mẫu
@@ -209,7 +210,7 @@ export async function computeReminders(
 	const gradingSkills = [...assignmentRows, ...practiceRows];
 
 	let tuition: DashboardReminders["tuition"];
-	if (scope.kind === "org") {
+	if (scope.kind === "org" && scope.finance !== false) {
 		const invoiceRows = await db
 			.select({
 				studentId: invoice.studentId,
@@ -252,8 +253,11 @@ export async function computeReminders(
 
 /** Điểm cắm Phase 5 (FR-029): thay hàm này để suy scope từ session/membership
  * khi vai trò Trợ giảng tồn tại. Hiện tại mọi teacher là toàn org. */
-export function resolveReminderScope(): ReminderScope {
-	return { kind: "org" };
+export function resolveReminderScope(role?: string): ReminderScope {
+	return {
+		kind: "org",
+		finance: role === undefined ? true : canAccessFinance(role),
+	};
 }
 
 export function dashboardReminderRoutes(deps: { getDb(): Db }) {
@@ -265,7 +269,7 @@ export function dashboardReminderRoutes(deps: { getDb(): Db }) {
 		const data = await computeReminders(
 			deps.getDb(),
 			ctx.orgId,
-			resolveReminderScope(),
+			resolveReminderScope(ctx.role),
 			new Date(),
 		);
 		// Parse lại qua contract trước khi trả — chuẩn của các route kernel.

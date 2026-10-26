@@ -9,6 +9,7 @@ import {
 	type KernelLessonRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import { canAccessFinance } from "@teacher-os/auth/role";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
@@ -217,7 +218,10 @@ const knownClassTypes = new Set<string>(CLASS_TYPES);
 export async function loadSnapshot(
 	db: Db,
 	orgId: string,
+	opts?: { role?: string },
 ): Promise<KernelSnapshot> {
+	const viewerRole = opts?.role ?? "teacher";
+	const financeAllowed = canAccessFinance(viewerRole);
 	const [
 		studentRows,
 		classRows,
@@ -315,7 +319,7 @@ export async function loadSnapshot(
 			.from(assignmentPrompt)
 			.where(eq(assignmentPrompt.orgId, orgId))
 			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
-		loadInvoices(db, orgId),
+		financeAllowed ? loadInvoices(db, orgId) : Promise.resolve([]),
 		loadReports(db, orgId),
 		loadNotifs(db, orgId),
 		loadCommentBank(db, orgId),
@@ -699,5 +703,9 @@ export async function loadSnapshot(
 			originalDate: row.originalDate,
 			makeupDate: row.makeupDate,
 		})),
+		viewer: {
+			role: viewerRole,
+			canAccessFinance: financeAllowed,
+		},
 	};
 }

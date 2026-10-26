@@ -23,6 +23,7 @@ import {
 	formatDue,
 	validateDebtsSearch,
 } from "@/lib/tuition-from-kernel";
+import { useFinanceRouteGuard } from "@/lib/use-finance-route-guard";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 export const Route = createFileRoute("/_auth/debts/")({
@@ -84,6 +85,7 @@ function DebtStatusBadge({ status }: { status: DebtStatus }) {
 export function DebtsRoute() {
 	const navigate = useNavigate();
 	const { data } = useData();
+	const canAccessFinance = useFinanceRouteGuard();
 	const rawSearch = Route.useSearch();
 	const search = useMemo(
 		() => validateDebtsSearch(rawSearch as Record<string, unknown>),
@@ -199,6 +201,8 @@ export function DebtsRoute() {
 	}
 
 	const { kpis, rows } = ledger;
+
+	if (!canAccessFinance) return null;
 
 	return (
 		<div>

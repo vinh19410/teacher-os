@@ -14,6 +14,9 @@ import type { ClassGroup, Invoice, Student } from "@/lib/mock-data";
 
 // Route hiện tại để useParams mock trả đúng param mỗi case.
 let currentInvoiceId = "inv-abcdef12";
+const navigateSpy = vi.hoisted(() => vi.fn());
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => {
@@ -30,7 +33,7 @@ vi.mock("@tanstack/react-router", () => ({
 	notFound: () => {
 		throw new Error("not-found");
 	},
-	useNavigate: () => vi.fn(),
+	useNavigate: () => navigateSpy,
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
 	),
@@ -80,6 +83,7 @@ function invoiceFixture(overrides?: Partial<Invoice>): Invoice {
 }
 
 let storeInvoices: Invoice[] = [invoiceFixture()];
+let storeViewer = { role: "teacher", canAccessFinance: true };
 
 vi.mock("@/lib/data-store", () => ({
 	useData: () => ({
@@ -98,6 +102,7 @@ vi.mock("@/lib/data-store", () => ({
 			invoices: storeInvoices,
 			lessons: [],
 			syllabi: [],
+			viewer: storeViewer,
 		},
 	}),
 }));
@@ -357,5 +362,34 @@ describe("usePaidAmountWatch (#345)", () => {
 		rerender({ id: "inv-b", paid: 300000 });
 		await new Promise((r) => setTimeout(r, 20));
 		expect(invalidate).not.toHaveBeenCalled();
+	});
+});
+
+describe("InvoiceDetailRoute finance guard (TOS-17 #451)", () => {
+	it("redirects to /dashboard with toast instead of throwing notFound when viewer.canAccessFinance is false", async () => {
+		storeInvoices = [];
+		storeViewer = { role: "ta", canAccessFinance: false };
+		navigateSpy.mockClear();
+		toast.error.mockClear();
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={client}>
+				<InvoiceDetailRoute />
+			</QueryClientProvider>,
+		);
+		await waitFor(() => {
+			expect(navigateSpy).toHaveBeenCalledWith({
+				to: "/dashboard",
+				replace: true,
+			});
+		});
+		expect(toast.error).toHaveBeenCalledWith(
+			"Bạn không có quyền xem Sổ công nợ",
+			expect.objectContaining({ id: "finance-forbidden" }),
+		);
+		expect(container.innerHTML).toBe("");
+		storeViewer = { role: "teacher", canAccessFinance: true };
 	});
 });
