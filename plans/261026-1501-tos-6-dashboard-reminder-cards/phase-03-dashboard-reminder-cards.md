@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Khu vực Việc cần làm hôm nay trên dashboard"
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 dependencies: [1, 2]
@@ -15,7 +15,7 @@ Dashboard hiển thị khu vực "Việc cần làm hôm nay" ngay dưới `Page
 
 ## Files to Create / Modify
 
-- Create: `apps/web/src/lib/repos/dashboard-reminders.ts`. `queryOptions` với key `["kernel", "dashboard", "reminders"]`. Key nằm dưới prefix `kernel` nên các chỗ đang `invalidateQueries({ queryKey: ["kernel"] })` sẽ tự làm mới bộ đếm. Fetch theo mẫu `repos/grading.ts` (`credentials: "include"`, `HttpError`), parse bằng `dashboardRemindersResponseSchema`.
+- Create: `apps/web/src/lib/repos/dashboard-reminders.ts`. `queryOptions` với key `["kernel", "dashboard", "reminders"]`. **Chú ý:** refresh sau action kernel không tự phủ key này — mọi refresh chạy `exact: true` trên `kernelQueryKey = ["kernel"]` (data-provider.tsx:107, grading/$attemptId.tsx:79-84). Dashboard phải nối reminders vào vòng đời kernel snapshot: đọc `dataUpdatedAt` của kernel query (observer thêm trên cùng cache entry, `kernelQueryOptions` — shared entry theo kernel.ts:595-601) và đưa vào query key của reminders (`[...remindersKey, kernelDataUpdatedAt]`) hoặc invalidate tường minh khi `dataUpdatedAt` đổi. Fetch theo mẫu `repos/grading.ts` (`credentials: "include"`, `HttpError`), parse bằng `dashboardRemindersResponseSchema`.
 - Create: `apps/web/src/components/dashboard/reminder-cards.tsx`. Component chỉ nhận data, không tự fetch, để test dễ.
 - Create: `apps/web/src/components/dashboard/reminder-cards.test.tsx`.
 - Modify: `apps/web/src/routes/_auth/dashboard.tsx`. Gắn `useQuery` và render section. Cập nhật `dashboard.test.tsx`.
@@ -43,7 +43,7 @@ Dashboard hiển thị khu vực "Việc cần làm hôm nay" ngay dưới `Page
    - Thiếu `tuition` thì không render thẻ học phí và không có chữ "Học phí" trong DOM.
    - Đếm bằng 0 thì hiện nhãn zero inbox.
 2. Viết repo + component, gắn vào dashboard.
-3. Cập nhật `dashboard.test.tsx` để mock fetch reminders, giữ các assert hiện có.
+3. Cập nhật `dashboard.test.tsx` để mock fetch reminders, giữ các assert hiện có. Thêm 1 test chứng minh bộ đếm làm mới sau 1 kernel action: thay đổi `dataUpdatedAt` của entry `["kernel"]` trong cache → reminders query refetch (assert fetch được gọi lần 2).
 4. Tự kiểm bàn phím: Tab đi qua 3 thẻ theo đúng thứ tự, focus ring hiển thị.
 
 ## Verification

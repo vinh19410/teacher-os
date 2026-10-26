@@ -2057,6 +2057,50 @@ export const gradingQueueResponseSchema = z
 	.strict();
 export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
 
+/** Một ca học chưa điểm danh — nhóm (classId, time) của lesson hôm nay. */
+export const dashboardReminderItemSchema = z
+	.object({
+		classId: z.string(),
+		className: z.string(),
+		time: z.string(),
+		dur: z.number(),
+	})
+	.strict();
+export type DashboardReminderItem = z.infer<typeof dashboardReminderItemSchema>;
+
+/** GET /api/dashboard/reminders — bộ đếm 3 thẻ "Việc cần làm hôm nay" (TOS-6,
+ * issue #439). `tuition` vắng mặt khi scope không có quyền tài chính (TA),
+ * không trả `null` hay số 0. `date` là yyyy-mm-dd giờ Việt Nam dùng cho link
+ * `/attendance?date=`. */
+export const dashboardRemindersResponseSchema = z
+	.object({
+		date: z.string(),
+		attendance: z
+			.object({
+				pending: z.number(),
+				items: z.array(dashboardReminderItemSchema),
+			})
+			.strict(),
+		overdueGrading: z
+			.object({
+				count: z.number(),
+				writing: z.number(),
+				speaking: z.number(),
+			})
+			.strict(),
+		tuition: z
+			.object({
+				students: z.number(),
+				outstanding: z.number(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();
+export type DashboardReminders = z.infer<
+	typeof dashboardRemindersResponseSchema
+>;
+
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
 export const WRITING_MIN_WORDS: Readonly<Record<string, number>> = {

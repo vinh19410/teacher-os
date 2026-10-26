@@ -60,6 +60,7 @@ import {
 } from "../lib/syllabus-curriculum";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
+import { dashboardReminderRoutes } from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
 import { gradingRoutes } from "./grading";
 import { paymentTransactionRoutes } from "./payment-transactions";
@@ -1237,6 +1238,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/bank-link", bankLinkRoutes(deps));
 	kernel.route("/payment-transactions", paymentTransactionRoutes(deps));
 	kernel.route("/grading", gradingRoutes(deps));
+	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
+	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
 	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
 	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));

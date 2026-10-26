@@ -1,7 +1,7 @@
 ---
 title: "TOS-6: Thẻ Việc cần làm hôm nay trên Bảng điều khiển + điều hướng 1 chạm"
 description: "Thêm khu vực Việc cần làm hôm nay gồm 3 thẻ đếm từ server (ca chưa điểm danh, bài chờ chấm quá 24h, học phí đến hạn/quá hạn), điều hướng 1 chạm sang màn xử lý đã lọc sẵn, và chuẩn bị điểm cắm phạm vi cho Trợ giảng."
-status: pending
+status: completed
 priority: P1
 effort: 2d
 issue: 439
@@ -62,25 +62,58 @@ Nguồn: Jira [TOS-6](https://teacher-os.atlassian.net/browse/TOS-6) (subtask c�
 
 | # | Phase | Trạng thái | Phụ thuộc |
 |---|---|---|---|
-| 1 | [phase-01-server-reminders-api.md](phase-01-server-reminders-api.md): API đếm 3 thẻ + contract + `ReminderScope` | pending | — |
-| 2 | [phase-02-attendance-route-shell.md](phase-02-attendance-route-shell.md): route khung `/attendance` + mục sidebar | pending | — |
-| 3 | [phase-03-dashboard-reminder-cards.md](phase-03-dashboard-reminder-cards.md): khu vực "Việc cần làm hôm nay" trên dashboard | pending | 1, 2 |
-| 4 | [phase-04-e2e-and-perf.md](phase-04-e2e-and-perf.md): E2E, 3 viewport, design compare, đo 2 giây | pending | 3 |
+| 1 | [phase-01-server-reminders-api.md](phase-01-server-reminders-api.md): API đếm 3 thẻ + contract + `ReminderScope` | completed | — |
+| 2 | [phase-02-attendance-route-shell.md](phase-02-attendance-route-shell.md): route khung `/attendance` + mục sidebar | completed | — |
+| 3 | [phase-03-dashboard-reminder-cards.md](phase-03-dashboard-reminder-cards.md): khu vực "Việc cần làm hôm nay" trên dashboard | completed | 1, 2 |
+| 4 | [phase-04-e2e-and-perf.md](phase-04-e2e-and-perf.md): E2E, 3 viewport, design compare, đo 2 giây | completed | 3 |
 | 5 | [phase-05-ta-scope-blocked.md](phase-05-ta-scope-blocked.md): Scenario 2 — TA chỉ thấy lớp phân công, ẩn thẻ học phí | blocked | 1, plan FR-029 |
 
 ## Acceptance Criteria (map AC-001)
 
-- [ ] **Scenario 1:**
+- [x] **Scenario 1:**
   - Người dùng teacher (đại diện cho Giáo viên độc lập / Chủ trung tâm trong mô hình hiện tại) mở `/dashboard` và thấy đủ 3 thẻ có bộ đếm đúng dữ liệu.
   - API trả kết quả trong 2 giây hoặc ít hơn với seed e2e.
-- [ ] **Scenario 1:** bấm thẻ/nút "Ca học hôm nay chưa điểm danh" thì URL thành `/attendance?date={vietnamTodayISO}&status=pending`.
-- [ ] **Scenario 2:** đếm theo lớp phân công và không trả block `tuition` khi scope là TA. Phase 1 kiểm phần này bằng unit test trên `ReminderScope`. Hành vi end-to-end với vai trò TA thật được kiểm ở Phase 5 sau khi FR-029 xong.
-- [ ] `pnpm check`, `pnpm check-types`, test web/server và e2e liên quan đều xanh.
+- [x] **Scenario 1:** bấm thẻ/nút "Ca học hôm nay chưa điểm danh" thì URL thành `/attendance?date={vietnamTodayISO}&status=pending`.
+- [x] **Scenario 2:** đếm theo lớp phân công và không trả block `tuition` khi scope là TA. Phase 1 kiểm phần này bằng unit test trên `ReminderScope`. Hành vi end-to-end với vai trò TA thật được kiểm ở Phase 5 sau khi FR-029 xong.
+- [x] `pnpm check`, `pnpm check-types`, test web/server và e2e liên quan đều xanh.
 
 ## Rủi ro
 
 - **Lớp legacy có `lesson.date = NULL`:** phải đếm theo `day` (thứ trong tuần) giống `lessonsToday`. Nếu bỏ nhánh này, bộ đếm sẽ lệch với "Lịch hôm nay". Phase 1 có test cho cả 2 nhánh.
-- **Hai nguồn số liệu song song:** hàng KPI tính ở client, thẻ nhắc việc đếm ở server. Hai nguồn có thể lệch sau khi user thao tác. Phase 3 invalidate query reminders sau các action kernel liên quan (check-in, chấm bài, ghi nhận thanh toán).
+- **Hai nguồn số liệu song song:** hàng KPI tính ở client, thẻ nhắc việc đếm ở server. Bộ đếm KHÔNG tự làm mới theo prefix `["kernel"]`: mọi refresh sau action kernel chạy `exact: true` trên `kernelQueryKey` (data-provider.tsx:107, grading/$attemptId.tsx:79-84), chỉ chạm đúng key `["kernel"]`. Phase 3 phải tự nối reminders vào vòng đời kernel snapshot (key theo `dataUpdatedAt` của kernel query hoặc invalidate tường minh) kèm test chứng minh bộ đếm làm mới sau 1 kernel action.
+- **Lớp dated dời sang thứ khác:** thẻ điểm danh so lớp dated theo `date = today` còn KPI "Lịch hôm nay" lọc `day` thuần (dashboard-from-kernel.ts:13). Lớp có `date = hôm nay` nhưng `day ≠ thứ hôm nay` sẽ được đếm ở thẻ nhưng không hiện ở KPI (và ngược lại). Chấp nhận lệch có chủ đích này: thẻ nhắc việc theo occurrence thật (`date`), KPI theo khung giờ tuần; đánh số lại nếu user report.
+- **"Chưa thu đủ" theo trang đích, không theo KPI:** thẻ học phí lọc `status !== "paid" || paidAmount < amount` (khớp tuition/index.tsx:71) và `outstanding = Σ(amount − min(paidAmount, amount))` (clamp như tuition-from-kernel.ts:259 — hoá đơn trả thừa không kéo tổng âm). KPI "Còn phải thu" lọc `status !== "paid"` thuần nên hoá đơn `paid` mà thiếu tiền sẽ tính ở thẻ nhưng không tính ở KPI — chấp nhận có chủ đích: thẻ khớp trang `/tuition` mà nó dẫn tới.
+- **Thứ trong tuần ở server phải suy từ ISO:** server chạy UTC; từ 0h–7h giờ VN, `new Date().getDay()` lệch 1 ngày. Nhánh lớp legacy suy weekday từ `vietnamTodayISO(now)` theo mẫu `isoToLessonWeekday` (kernel.ts:656-660): `new Date(`${iso}T00:00:00Z`).getUTCDay()`. Không dùng `lessonDayFromDate` (local time) ở server.
+
+## Red Team Review
+
+### Session 2 — 2026-10-26 (vibe --advice, controller-run)
+
+Findings: 6 (2 accepted, 4 rejected) — 0 Critical, 1 High, 2 Medium, 3 Minor. Finding 2 nâng cấp thành High sau advisory blocker: refresh action kernel chạy `exact: true`, bộ đếm phải tự nối vòng đời kernel snapshot (đã sửa phase-03 + Rủi ro).
+Bối cảnh: reviewer subagent không khả dụng trên host (không có model); red-team chạy inline bởi vibe controller theo 3 lens (Security Adversary + Fact Checker, Failure Mode Analyst + Flow Tracer, Assumption Destroyer + Scope Auditor), Full tier.
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | KPI "Lịch hôm nay" là day-only (`lessonsToday` lọc `day === todayDow`, dashboard-from-kernel.ts:13-16); thẻ điểm danh date-aware (lớp dated so `date = today`, legacy so `day`). Lớp dated bị dời sang thứ khác (date = hôm nay, day ≠ hôm nay) khiến 2 nguồn lệch. | Medium | Accept (document) | plan.md Rủi ro |
+| 2 | Phase 3 viết "các chỗ đang `invalidateQueries({ queryKey: ["kernel"] })` sẽ tự làm mới" — SAI. Mọi refresh sau action kernel chạy `exact: true` trên `kernelQueryKey = ["kernel"]` (data-provider.tsx:107 — `refetchQueries({ queryKey: kernelQueryKey, exact: true, type: "all" })`; grading/$attemptId.tsx:79-84 — `invalidateQueries({ …, exact: true })`), chỉ chạm đúng key `["kernel"]`, không refetch children như `["kernel", "dashboard", "reminders"]`. Nếu không nối tường minh, bộ đếm stale sau check-in và sau chấm bài. | High | Accept (mở rộng sau advisory blocker) | phase-03 |
+| 3 | Nhãn zero-inbox "Đã hoàn tất hôm nay" trên thẻ học phí dễ đọc nhầm "đã thu đủ xong"; copy có thể tinh chỉnh ở review PR. | Minor | Reject (cosmetic) | — |
+| 4 | Perf <200ms: 3-4 query đơn giản có index `lesson_org_idx` / `invoice_org_idx`; gate đo đã có ở Phase 4. | Minor | Reject | — |
+| 5 | Scope Auditor: `computeReminders(db, orgId, scope, now)` thuần request-scoped qua `kernelCtx` (app.ts:45-50,180); `ReminderScope` không trùng state hiện có, không leak. | Minor | Reject | — |
+| 6 | `items` preview trả className/time — không tăng exposure so với kernel snapshot hiện gửi toàn bộ hoá đơn về client; TA scope chặn `finance` ở Phase 5. | Minor | Reject | — |
+
+**Fact Check Summary (claims verify được):** `lessonsToday`/`lessonDayFromDate` (dashboard-from-kernel.ts:8,13), mount `/grading` (kernel.ts:1239), hàng chờ submitted+writing/speaking+2 modes (grading.ts:117-166), gate student 403 (app.ts:134, role-gates.test.ts), `GradingSearch.status "awaiting"|"graded"` (grading/index.tsx:38), `effectiveInvoiceStatus` (tuition-from-kernel.ts:194), `submittedAt timestamp_ms` (schema/quiz-attempt.ts:83), `vietnamTodayISO` (vietnam-date.ts), sidebar dashboard item (sidebar.tsx:31), `design:compare` (package.json), invoice `due` default "" + `paidAmount` (schema/invoice.ts) — 16/16 VERIFIED, 0 FAILED.
+
+### Whole-Plan Consistency Sweep
+
+- Files reread: plan.md, phase-01…phase-04 (phase-05 blocked, không rà).
+- Decision deltas checked: 2 (finding 1 → thêm rủi ro; finding 2 → sửa cơ chế refresh ở phase 3).
+- Reconciled stale references: 2.
+- Unresolved contradictions: 0.
+
+### Verification Results
+
+- Claims checked: 16
+- Verified: 16 | Failed: 0 | Unverified: 0
 
 ## Validation Log
 

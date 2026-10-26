@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E, 3 viewport, design compare, đo 2 giây"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [3]

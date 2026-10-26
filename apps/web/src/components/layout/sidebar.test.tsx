@@ -22,6 +22,24 @@ import {
 	teacherActiveKey,
 } from "./sidebar";
 
+describe("TEACHER_NAV — Điểm danh ngày (TOS-6 #439)", () => {
+	it("có mục attendance ngay dưới Tổng quan trong nhóm Giảng dạy", () => {
+		const teaching = TEACHER_NAV.find((group) => group.group === "Giảng dạy");
+		expect(teaching).toBeTruthy();
+		const items = teaching?.items ?? [];
+		const dashboardIndex = items.findIndex((item) => item.key === "dashboard");
+		const attendanceIndex = items.findIndex(
+			(item) => item.key === "attendance",
+		);
+		expect(attendanceIndex).toBeGreaterThan(-1);
+		expect(attendanceIndex).toBe(dashboardIndex + 1);
+		expect(items[attendanceIndex]).toMatchObject({
+			label: "Điểm danh ngày",
+			href: "/attendance",
+		});
+	});
+});
+
 describe("extractUserPlan", () => {
 	it("returns null for non-object, null, or undefined user", () => {
 		expect(extractUserPlan(null)).toBeNull();
@@ -117,6 +135,7 @@ describe("teacherActiveKey", () => {
 	it("maps / and /dashboard to the overview item", () => {
 		expect(teacherActiveKey("/")).toBe("dashboard");
 		expect(teacherActiveKey("/dashboard")).toBe("dashboard");
+		expect(teacherActiveKey("/attendance")).toBe("attendance");
 	});
 
 	it("matches child routes by prefix", () => {
