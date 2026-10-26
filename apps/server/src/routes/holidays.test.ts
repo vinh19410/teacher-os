@@ -294,6 +294,22 @@ describe("POST /api/holidays/preview", () => {
 		});
 		expect(unauth.status).toBe(401);
 	});
+
+	// #453 AC-004 mục 2 — server không tin client: 35 ngày (> 30) bị chặn ở
+	// cả preview lẫn apply, kể cả khi client tự gắn planHash.
+	test("khoảng 35 ngày → 400 ở cả preview và apply (TOS-14b)", async () => {
+		const app = createApp();
+		const long35 = {
+			...draft(),
+			fromDate: F1,
+			toDate: addDaysISO(F1, 34), // tính cả hai đầu = 35 ngày
+		};
+		const previewRes = await preview(app, long35);
+		expect(previewRes.status).toBe(400);
+
+		const applyRes = await apply(app, { ...long35, planHash: "x" });
+		expect(applyRes.status).toBe(400);
+	});
 });
 
 describe("POST /api/holidays (apply)", () => {

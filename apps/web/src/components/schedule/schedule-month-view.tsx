@@ -3,6 +3,7 @@ import {
 	classBlockClass,
 	classDotClass,
 } from "@/components/schedule/class-block";
+import { HolidayCalendarCard } from "@/components/schedule/holiday-calendar-card";
 import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { Button } from "@/components/ui/button";
 import { classColorIndex } from "@/lib/class-color";
@@ -29,7 +30,12 @@ export function ScheduleMonthView({
 	const cells = useMemo(
 		() =>
 			buildMonthCells(
-				{ classes: data.classes, lessons: data.lessons, events: data.events },
+				{
+					classes: data.classes,
+					lessons: data.lessons,
+					events: data.events,
+					holidays: data.holidays,
+				},
 				anchor,
 			),
 		[data, anchor],
@@ -90,7 +96,9 @@ export function ScheduleMonthView({
 										className={`size-1.5 rounded-full ${
 											item.kind === "lesson"
 												? classDotClass(item.classId)
-												: "bg-muted-foreground"
+												: item.kind === "holiday"
+													? "bg-warn"
+													: "bg-muted-foreground"
 										}`}
 									/>
 								))}
@@ -118,6 +126,11 @@ export function ScheduleMonthView({
 											{item.time}
 										</span>{" "}
 										{classById.get(item.classId)?.name ?? "Lớp học"}
+									</div>
+								) : item.kind === "holiday" ? (
+									// TOS-14b: thẻ kỳ nghỉ chiếm 1 slot trong cap 3 của ô.
+									<div key={item.id} className="month-item min-w-0">
+										<HolidayCalendarCard name={item.name} />
 									</div>
 								) : (
 									<OrgEventChip

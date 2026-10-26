@@ -1,7 +1,7 @@
 ---
 title: "TOS-14b: thẻ kỳ nghỉ trong 3 view lịch dạy + khóa kịch bản validation hộp thoại Lịch nghỉ chung"
 description: "Thêm kind holiday vào view-model Tháng/Ngày, thẻ kỳ nghỉ trên cả 3 view từ snapshot thật, và khóa test/E2E validation 2–100 ký tự + ≤ 30 ngày của hộp thoại Lịch nghỉ chung."
-status: pending
+status: completed
 priority: P1
 effort: 5h
 issue: 453
@@ -74,10 +74,10 @@ flowchart LR
 
 ## Acceptance criteria (từ issue #453)
 
-- [ ] Kỳ nghỉ hiển thị trong cả 3 view (Tháng/Tuần/Ngày), ổn định giữa các lần tải.
-- [ ] Hộp thoại Tạo lịch nghỉ chung: tên 1 ký tự hoặc khoảng 35 ngày → cảnh báo inline, nút xác nhận khóa; sửa về hợp lệ thì mở khóa.
-- [ ] E2E AC-004 kịch bản validation xanh (chạy cùng bộ spec #447).
-- [ ] `pnpm check`, `pnpm check-types`, test `web`/`server` bị đụng, E2E bộ `schedule-views-and-events` xanh.
+- [x] Kỳ nghỉ hiển thị trong cả 3 view (Tháng/Tuần/Ngày), ổn định giữa các lần tải.
+- [x] Hộp thoại Tạo lịch nghỉ chung: tên 1 ký tự hoặc khoảng 35 ngày → cảnh báo inline, nút xác nhận khóa; sửa về hợp lệ thì mở khóa.
+- [x] E2E AC-004 kịch bản validation xanh (chạy cùng bộ spec #447).
+- [x] `pnpm check`, `pnpm check-types`, test `web`/`server` bị đụng, E2E bộ `schedule-views-and-events` xanh.
 
 ## Rủi ro
 

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { classBlockClass } from "@/components/schedule/class-block";
 import type { ClassSessionModalRef } from "@/components/schedule/class-session-modal";
+import { HolidayCalendarCard } from "@/components/schedule/holiday-calendar-card";
 import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { Card } from "@/components/ui/card";
 import { classColorIndex } from "@/lib/class-color";
@@ -47,6 +48,18 @@ export function ScheduleDayView({
 				</Card>
 			)}
 			{items.map((item) => {
+				if (item.kind === "holiday") {
+					// TOS-14b: kỳ nghỉ là mục cả ngày — thẻ full đầu agenda.
+					return (
+						<HolidayCalendarCard
+							key={item.id}
+							full
+							name={item.name}
+							fromDate={item.fromDate}
+							toDate={item.toDate}
+						/>
+					);
+				}
 				if (item.kind === "event") {
 					return <OrgEventChip key={item.id} event={eventOf(data, item.id)} />;
 				}
