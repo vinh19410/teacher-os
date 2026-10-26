@@ -20,7 +20,8 @@ dependencies: ["phase-01", "phase-02"]
 - Create: `apps/web/src/components/schedule/org-event-modal.tsx` — Tên, Ngày, Từ giờ / Đến giờ, Ghi chú; lỗi inline theo `orgEventDraftSchema`; tạo xong cập nhật snapshot tại chỗ (D6) và Toast.
 - Create: `apps/web/src/components/schedule/org-event-chip.tsx` — hiển thị sự kiện (muted + icon), bấm mở popover chi tiết có nút Xóa (xác nhận).
 - Create: `apps/web/src/lib/repos/events.ts` — `createEvent`, `deleteEvent`.
-- Tái dùng `holiday-calendar-card.tsx` (TOS-11/TOS-13) trong cả 3 view.
+- Item view-model dùng union mở rộng `kind: "lesson" | "event"` (không định nghĩa type holiday — follow-up ghép `"holiday"` khi #445 merge).
+- ~~Tái dùng `holiday-calendar-card.tsx`~~ → thuộc phạm vi #445/follow-up; không tạo file này.
 - Tests: `schedule.test.tsx` (cập nhật), `schedule-month-view.test.tsx`, `schedule-day-view.test.tsx`, `org-event-modal.test.tsx`.
 
 ## Tasks & Steps
