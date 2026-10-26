@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 
-import { cleanup, screen, within } from "@testing-library/react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
 	enrollmentRow,
+	type KernelServer,
 	lessonRow,
 	renderWithKernel,
 	snapshotFixture,
@@ -24,6 +27,65 @@ const Dashboard = (Route as unknown as { component: () => React.ReactNode })
 
 // Wednesday (lesson day 3) mid-morning, local time.
 const WEDNESDAY = new Date(2026, 9, 7, 10, 0);
+
+/** Body reminders mặc định khớp ngày Wednesday (07/10/2026) của fake timer. */
+const REMINDERS_BODY = {
+	date: "2026-10-07",
+	attendance: {
+		pending: 1,
+		items: [
+			{
+				classId: "cl-1",
+				className: "IELTS Writing tối",
+				time: "19:00",
+				dur: 90,
+			},
+		],
+	},
+	overdueGrading: { count: 2, writing: 1, speaking: 1 },
+	tuition: { students: 3, outstanding: 1_500_000 },
+};
+
+let remindersLoads = 0;
+
+/** startKernelServer + trả reply reminders cho /api/dashboard/reminders
+ * (mọi GET không phải snapshot rơi vào onWrite). */
+function startRemindersServer(
+	snapshot: KernelSnapshot,
+	remindersBody: unknown = REMINDERS_BODY,
+): KernelServer {
+	remindersLoads = 0;
+	return startKernelServer(snapshot, (req) => {
+		if (
+			req.method === "GET" &&
+			req.path.startsWith("/api/dashboard/reminders")
+		) {
+			remindersLoads += 1;
+			return { status: 200, body: remindersBody };
+		}
+		return undefined;
+	});
+}
+
+/** Nút probe mô phỏng đúng cơ chế refresh sau action kernel:
+ * refetchQueries exact:true trên ["kernel"] (data-provider.tsx). */
+function KernelRefreshProbe() {
+	const client = useQueryClient();
+	return (
+		<button
+			type="button"
+			onClick={() =>
+				void client.refetchQueries({
+					queryKey: ["kernel"],
+					exact: true,
+					type: "all",
+				})
+			}
+		>
+			probe-refresh-kernel
+		</button>
+	);
+}
 
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ["Date"] });
@@ -48,7 +110,7 @@ function section(heading: string): HTMLElement {
 
 describe("dashboard", () => {
 	it("lists today's class sessions from the kernel, skipping cancelled ones", async () => {
-		startKernelServer(
+		startRemindersServer(
 			snapshotFixture({
 				classes: [
 					classRow({ id: "cl-1", name: "IELTS Writing tối" }),
@@ -92,7 +154,7 @@ describe("dashboard", () => {
 	});
 
 	it("flags students with an absence or a missed check-in, and nobody else", async () => {
-		startKernelServer(
+		startRemindersServer(
 			snapshotFixture({
 				classes: [classRow({ id: "cl-1" })],
 				students: [
@@ -140,7 +202,7 @@ describe("dashboard", () => {
 	});
 
 	it("shows an empty org honestly — no demo names, dates or money", async () => {
-		startKernelServer(snapshotFixture());
+		startRemindersServer(snapshotFixture());
 		const view = renderWithKernel(<Dashboard />);
 		await screen.findByText("Không có buổi học nào hôm nay.");
 		expect(screen.getByText("Không có học viên rủi ro.")).toBeTruthy();
@@ -159,5 +221,61 @@ describe("dashboard", () => {
 			expect(text).not.toContain(demo);
 		}
 		expect(text).toContain("Cô Hạnh");
+	});
+
+	it("hiển thị khu vực Việc cần làm hôm nay với số đếm từ reminders API", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS Writing tối" })],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		expect(
+			await screen.findByText("Việc cần làm hôm nay (Thứ Tư, 07/10/2026)"),
+		).toBeTruthy();
+		expect(screen.getByText("1 ca")).toBeTruthy();
+		expect(screen.getByText("2 bài")).toBeTruthy();
+		expect(screen.getByText("3 học viên")).toBeTruthy();
+		// CTA thẻ điểm danh dẫn đúng hợp đồng URL của AC-001.
+		const link = screen
+			.getByRole("link", { name: /Ca học hôm nay chưa điểm danh/ })
+			.getAttribute("href");
+		expect(link).toContain("date=2026-10-07");
+		expect(link).toContain("status=pending");
+	});
+
+	it("refetch reminders khi kernel snapshot refresh — exact prefix không tự phủ", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS Writing tối" })],
+			}),
+		);
+		renderWithKernel(
+			<>
+				<Dashboard />
+				<KernelRefreshProbe />
+			</>,
+		);
+		await screen.findByText("Việc cần làm hôm nay (Thứ Tư, 07/10/2026)");
+		// Chờ counter ổn định (fetch mount theo key dataUpdatedAt đã lắng).
+		await vi.waitFor(() => {
+			expect(remindersLoads).toBeGreaterThanOrEqual(1);
+		});
+		const stableLoads = remindersLoads;
+		await vi.waitFor(
+			() => {
+				expect(remindersLoads).toBe(stableLoads);
+			},
+			{ interval: 50 },
+		);
+		const loadsBefore = remindersLoads;
+		// Date bị fake — đẩy đồng hồ để dataUpdatedAt của snapshot refetch
+		// thật sự đổi giá trị, key reminders mới khác key cũ.
+		vi.setSystemTime(new Date(WEDNESDAY.getTime() + 1000));
+		// Cùng cơ chế với refresh sau action kernel: exact:true trên ["kernel"].
+		fireEvent.click(screen.getByText("probe-refresh-kernel"));
+		await vi.waitFor(() => {
+			expect(remindersLoads).toBeGreaterThan(loadsBefore);
+		});
 	});
 });

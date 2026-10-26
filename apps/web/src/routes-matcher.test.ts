@@ -19,6 +19,7 @@ describe("routes-matcher", () => {
 			"/forgot-password",
 			"/reset-password",
 			"/dashboard",
+			"/attendance",
 			"/profile",
 			"/reports",
 			"/schedule",
