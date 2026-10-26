@@ -40,7 +40,13 @@ function mutateCachedEvents(
 			const events = Array.isArray(snapshot.events)
 				? (snapshot.events as KernelEventRow[])
 				: [];
-			return { ...snapshot, events: mutate(events) };
+			const next = [...mutate(events)].sort(
+				(a, b) =>
+					a.date.localeCompare(b.date) ||
+					a.startTime.localeCompare(b.startTime) ||
+					a.id.localeCompare(b.id),
+			);
+			return { ...snapshot, events: next };
 		},
 	);
 }

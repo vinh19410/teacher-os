@@ -4,7 +4,7 @@ import {
 	orgEventDraftSchema,
 } from "@teacher-os/api/contracts";
 import { CalendarPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, inputCls } from "@/components/ui/field";
@@ -64,12 +64,13 @@ export function OrgEventModal({
 	const draft: OrgEventDraft = { title, date, startTime, endTime, note };
 	const errors = draftErrors(draft);
 	const invalid = Object.keys(errors).length > 0;
-	// Lỗi inline chỉ hiện sau lần submit đầu (hoặc khi đã gõ xong một trường
-	// có nội dung) — không xát lỗi vào người dùng đang nhập.
+	// Lỗi inline chỉ hiện sau lần submit đầu hoặc trên chính trường đã nhập
+	// nội dung — không xát lỗi vào các trường chưa chạm tới.
 	const showError = (field: keyof OrgEventDraft): string | undefined =>
-		submitted || title.length > 0 ? errors[field] : undefined;
+		submitted || draft[field].length > 0 ? errors[field] : undefined;
 
-	const reset = () => {
+	useEffect(() => {
+		if (!open) return;
 		setTitle("");
 		setDate(defaultDate);
 		setStartTime("");
@@ -78,11 +79,11 @@ export function OrgEventModal({
 		setSubmitted(false);
 		setServerError(null);
 		setSaving(false);
-	};
+	}, [open, defaultDate]);
 
 	const close = () => {
+		if (saving) return;
 		onClose();
-		reset();
 	};
 
 	const submit = async () => {
@@ -97,7 +98,8 @@ export function OrgEventModal({
 				note: draft.note,
 			});
 			toast.success("Đã tạo sự kiện vận hành.");
-			close();
+			setSaving(false);
+			onClose();
 		} catch (error) {
 			setSaving(false);
 			if (error instanceof HttpError) {

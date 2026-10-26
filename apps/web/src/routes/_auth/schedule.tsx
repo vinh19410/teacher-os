@@ -86,14 +86,23 @@ export function ScheduleRoute() {
 	const go = (nextView: ScheduleView, nextDate: string) => {
 		navigate({ to: "/schedule", search: { view: nextView, date: nextDate } });
 	};
+	const normalizeWeekMonday = (iso: string) => {
+		const mon = startOfWeekMonday(iso);
+		return mon < "1970-01-01" ? "1970-01-01" : mon;
+	};
 	const step = (delta: number) => {
 		const next = shiftAnchor(view, date, delta);
 		// Week anchor luôn chuẩn về thứ Hai trong URL (như link ?week= cũ).
-		go(view, view === "week" ? startOfWeekMonday(next) : next);
+		go(view, view === "week" ? normalizeWeekMonday(next) : next);
 	};
 	const atEarliest = shiftAnchor(view, date, -1) === date;
-	const isCurrent = date === todayIso;
-
+	const atLatest = shiftAnchor(view, date, 1) === date;
+	const isCurrent =
+		view === "week"
+			? week.isCurrentWeek
+			: view === "month"
+				? date.slice(0, 7) === todayIso.slice(0, 7)
+				: date === todayIso;
 	const kicker =
 		view === "month"
 			? formatMonthLabel(date)
@@ -105,7 +114,7 @@ export function ScheduleRoute() {
 		if (next === view) return;
 		if (next === "week") {
 			// Nhảy tuần chứa ngày đang xem, giữ ngữ cảnh thời gian.
-			go("week", startOfWeekMonday(date));
+			go("week", normalizeWeekMonday(date));
 			return;
 		}
 		go(next, date);
@@ -160,7 +169,7 @@ export function ScheduleRoute() {
 				>
 					Hôm nay
 				</Button>
-				<Button variant="outline" onClick={() => step(1)}>
+				<Button variant="outline" onClick={() => step(1)} disabled={atLatest}>
 					{view === "month"
 						? "Tháng sau"
 						: view === "day"
@@ -169,7 +178,7 @@ export function ScheduleRoute() {
 					→
 				</Button>
 			</div>
-			{data.classes.length === 0 ? (
+			{data.classes.length === 0 && data.events.length === 0 ? (
 				<Card
 					variant="white"
 					className="p-8 text-center"

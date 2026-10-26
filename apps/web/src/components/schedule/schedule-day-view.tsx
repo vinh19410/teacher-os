@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { classColorIndex } from "@/lib/class-color";
 import type { KernelSlice } from "@/lib/repos/kernel";
 import { buildDayAgenda } from "@/lib/schedule-day";
-import { formatDayLabel, formatDayMonth, isoDayNumber } from "@/lib/week-grid";
+import { formatDayLabel, isoDayNumber } from "@/lib/week-grid";
 
 /**
  * View Ngày (TOS-14, D5): agenda theo giờ tăng dần — ca học (dated + legacy
@@ -37,7 +37,7 @@ export function ScheduleDayView({
 			data-date={dateISO}
 		>
 			<h2 className="font-medium text-muted-foreground text-sm">
-				{formatDayLabel(dateISO)} · {formatDayMonth(dateISO)}
+				{formatDayLabel(dateISO)}
 			</h2>
 			{items.length === 0 && (
 				<Card variant="white" className="p-8 text-center">

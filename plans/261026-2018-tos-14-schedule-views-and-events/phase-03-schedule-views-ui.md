@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Bộ chuyển view, view Tháng/Ngày, màu lớp, hộp thoại sự kiện"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: ["phase-01", "phase-02"]

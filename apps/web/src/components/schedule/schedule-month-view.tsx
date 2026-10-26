@@ -60,7 +60,7 @@ export function ScheduleMonthView({
 					<div
 						key={cell.date}
 						data-date={cell.date}
-						className={`month-cell flex min-h-20 flex-col rounded-lg border p-1.5 text-left max-app:min-h-0 max-app:items-center max-app:justify-center max-app:p-1 ${
+						className={`month-cell flex min-h-20 flex-col rounded-lg border p-1.5 text-left max-sm:min-h-0 max-sm:items-center max-sm:justify-center max-sm:p-1 ${
 							cell.inMonth
 								? "border-border bg-card"
 								: "border-border/50 bg-muted/40 text-muted-foreground"
@@ -69,7 +69,7 @@ export function ScheduleMonthView({
 						<button
 							type="button"
 							onClick={() => onOpenDay(cell.date)}
-							className="flex w-full items-center justify-center rounded text-xs hover:text-foreground"
+							className="flex w-full flex-col items-center justify-center gap-0.5 rounded text-xs hover:text-foreground"
 							aria-label={`Xem lịch ngày ${formatDayMonth(cell.date)}`}
 						>
 							<span
@@ -81,9 +81,28 @@ export function ScheduleMonthView({
 							>
 								{Number.parseInt(cell.date.slice(8), 10)}
 							</span>
+							{/* 375px: chấm màu theo lớp + chấm xám sự kiện nằm trong button để bấm mở view Ngày. */}
+							<span className="hidden flex-wrap items-center justify-center gap-0.5 max-sm:flex">
+								{cell.items.map((item) => (
+									<span
+										key={item.id}
+										aria-hidden
+										className={`size-1.5 rounded-full ${
+											item.kind === "lesson"
+												? classDotClass(item.classId)
+												: "bg-muted-foreground"
+										}`}
+									/>
+								))}
+								{cell.overflow > 0 && (
+									<span className="text-[10px] text-muted-foreground tabular-nums leading-none">
+										+{cell.overflow}
+									</span>
+								)}
+							</span>
 						</button>
-						{/* Desktop: khối chi tiết. Mobile: chấm màu (D5, 375px). */}
-						<div className="mt-1 min-w-0 flex-1 max-app:hidden">
+						{/* Desktop/Tablet (>=640px): khối chi tiết. Mobile (<640px): chấm màu ở trên (D5, 375px). */}
+						<div className="mt-1 min-w-0 flex-1 max-sm:hidden">
 							{cell.items.map((item) =>
 								item.kind === "lesson" ? (
 									<div
@@ -101,7 +120,11 @@ export function ScheduleMonthView({
 										{classById.get(item.classId)?.name ?? "Lớp học"}
 									</div>
 								) : (
-									<OrgEventChip key={item.id} event={eventOf(data, item.id)} />
+									<OrgEventChip
+										key={item.id}
+										event={eventOf(data, item.id)}
+										compact
+									/>
 								),
 							)}
 							{cell.overflow > 0 && (
@@ -114,25 +137,6 @@ export function ScheduleMonthView({
 								>
 									+{cell.overflow} xem ngày
 								</Button>
-							)}
-						</div>
-						{/* 375px: chấm màu theo lớp + chấm xám sự kiện. */}
-						<div className="hidden flex-wrap items-center justify-center gap-0.5 max-app:flex">
-							{cell.items.map((item) => (
-								<span
-									key={item.id}
-									aria-hidden
-									className={`size-1.5 rounded-full ${
-										item.kind === "lesson"
-											? classDotClass(item.classId)
-											: "bg-muted-foreground"
-									}`}
-								/>
-							))}
-							{cell.overflow > 0 && (
-								<span className="text-[10px] text-muted-foreground tabular-nums leading-none">
-									+{cell.overflow}
-								</span>
 							)}
 						</div>
 					</div>

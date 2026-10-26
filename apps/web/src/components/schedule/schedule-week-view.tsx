@@ -69,7 +69,11 @@ export function ScheduleWeekView({
 						})),
 					].sort((a, b) => a.time.localeCompare(b.time));
 					const isToday = dates[i] === todayIso;
-					const dayEvents = eventsByDate.get(dates[i]) ?? [];
+					const dayEvents = [...(eventsByDate.get(dates[i]) ?? [])].sort(
+						(a, b) =>
+							a.startTime.localeCompare(b.startTime) ||
+							a.id.localeCompare(b.id),
+					);
 					return (
 						<div
 							key={dn}

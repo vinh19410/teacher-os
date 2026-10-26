@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E AC-004: đổi view và đo ≤2 giây tạo sự kiện (validation kỳ nghỉ → follow-up)"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: ["phase-03"]

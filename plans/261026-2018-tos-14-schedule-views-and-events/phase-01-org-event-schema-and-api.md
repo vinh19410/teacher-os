@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Bảng org_event, contract và API sự kiện vận hành"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: []

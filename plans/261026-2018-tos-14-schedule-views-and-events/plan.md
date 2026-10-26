@@ -1,7 +1,7 @@
 ---
 title: "TOS-14: Lịch dạy Tháng/Tuần/Ngày, sự kiện vận hành và kiểm tra giới hạn kỳ nghỉ"
 description: "Thêm chế độ xem Tháng và Ngày cạnh Tuần trên /schedule (URL ?view=&date=), mã màu theo lớp, sự kiện vận hành ngoài lịch lớp (bảng org_event), và khóa kịch bản kiểm tra hợp lệ tên 2–100 ký tự / khoảng nghỉ ≤ 30 ngày của hộp thoại Lịch nghỉ chung."
-status: pending
+status: completed
 priority: P1
 effort: 2.5d
 issue: 447
@@ -66,10 +66,10 @@ Nguồn: Jira [TOS-14](https://teacher-os.atlassian.net/browse/TOS-14) (subtask 
 
 | # | Phase | Ước lượng | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [phase-01-org-event-schema-and-api.md](phase-01-org-event-schema-and-api.md): bảng `org_event`, contract, `POST/DELETE /api/events`, snapshot `events` | 4h | pending | — |
-| 2 | [phase-02-calendar-view-models.md](phase-02-calendar-view-models.md): hàm thuần view Tháng/Ngày, màu theo lớp, parse URL | 4h | pending | — |
-| 3 | [phase-03-schedule-views-ui.md](phase-03-schedule-views-ui.md): bộ chuyển view, view Tháng/Ngày, màu lớp ở view Tuần, hộp thoại sự kiện | 6h | pending | 1, 2 |
-| 4 | [phase-04-holiday-validation-and-e2e.md](phase-04-holiday-validation-and-e2e.md): E2E AC-004 đổi view + đo ≤2 giây tạo sự kiện (validation kỳ nghỉ đã chuyển sang follow-up) | 2h | pending | 3 |
+| 1 | [phase-01-org-event-schema-and-api.md](phase-01-org-event-schema-and-api.md): bảng `org_event`, contract, `POST/DELETE /api/events`, snapshot `events` | 4h | completed | — |
+| 2 | [phase-02-calendar-view-models.md](phase-02-calendar-view-models.md): hàm thuần view Tháng/Ngày, màu theo lớp, parse URL | 4h | completed | — |
+| 3 | [phase-03-schedule-views-ui.md](phase-03-schedule-views-ui.md): bộ chuyển view, view Tháng/Ngày, màu lớp ở view Tuần, hộp thoại sự kiện | 6h | completed | 1, 2 |
+| 4 | [phase-04-holiday-validation-and-e2e.md](phase-04-holiday-validation-and-e2e.md): E2E AC-004 đổi view + đo ≤2 giây tạo sự kiện (validation kỳ nghỉ đã chuyển sang follow-up) | 2h | completed | 3 |
 
 ```mermaid
 flowchart LR
@@ -82,12 +82,12 @@ Phase 1 và 2 chạy song song được (file tách rời).
 
 ## Acceptance criteria (từ AC-004)
 
-- [ ] `/schedule` có bộ chuyển Tháng / Tuần / Ngày; trạng thái nằm trong URL; điều hướng trước/sau/hôm nay theo đơn vị của view.
-- [ ] Ca học mỗi lớp có màu riêng ổn định giữa các view và các lần tải; sự kiện hiển thị trong cả 3 view. *(kỳ nghỉ hiển thị trong 3 view → follow-up, chờ #445)*
-- [ ] Tạo sự kiện "Họp chuyên môn giáo viên" → xuất hiện trong view đang mở trong ≤ 2 giây; không ảnh hưởng ca học, điểm danh, nhắc việc.
-- [ ] *(→ follow-up, chờ #445)* Hộp thoại Tạo lịch nghỉ chung: tên 1 ký tự hoặc khoảng 35 ngày → cảnh báo inline, nút xác nhận khóa; sửa về hợp lệ thì mở khóa.
-- [ ] 3 viewport + bàn phím đạt theo `REVIEW.md`; `pnpm design:compare` không lệch ngoài ý muốn.
-- [ ] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-004 xanh.
+- [x] `/schedule` có bộ chuyển Tháng / Tuần / Ngày; trạng thái nằm trong URL; điều hướng trước/sau/hôm nay theo đơn vị của view.
+- [x] Ca học mỗi lớp có màu riêng ổn định giữa các view và các lần tải; sự kiện hiển thị trong cả 3 view. *(kỳ nghỉ hiển thị trong 3 view → follow-up #453, chờ #445)*
+- [x] Tạo sự kiện "Họp chuyên môn giáo viên" → xuất hiện trong view đang mở trong ≤ 2 giây; không ảnh hưởng ca học, điểm danh, nhắc việc.
+- [ ] *(→ follow-up #453, chờ #445)* Hộp thoại Tạo lịch nghỉ chung: tên 1 ký tự hoặc khoảng 35 ngày → cảnh báo inline, nút xác nhận khóa; sửa về hợp lệ thì mở khóa.
+- [x] 3 viewport + bàn phím đạt theo `REVIEW.md`; `pnpm design:compare` không lệch ngoài ý muốn.
+- [x] `pnpm check`, `pnpm check-types`, test package bị đụng, E2E AC-004 xanh.
 
 ## Rủi ro
 

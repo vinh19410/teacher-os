@@ -16,11 +16,14 @@ import { formatDayMonth } from "@/lib/week-grid";
  */
 export function OrgEventChip({
 	event,
+	compact = false,
 }: {
 	event: Pick<
 		KernelEventRow,
 		"id" | "title" | "date" | "startTime" | "endTime" | "note"
 	>;
+	/** Biến thể thu gọn cho ô lưới Tháng (cùng cỡ với month-item). */
+	compact?: boolean;
 }) {
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
@@ -28,6 +31,7 @@ export function OrgEventChip({
 	const [deleting, setDeleting] = useState(false);
 
 	const close = () => {
+		if (deleting) return;
 		setOpen(false);
 		setConfirming(false);
 		setDeleting(false);
@@ -38,14 +42,15 @@ export function OrgEventChip({
 		try {
 			await deleteEvent(queryClient, event.id);
 			toast.success("Đã xóa sự kiện.");
-			close();
+			setOpen(false);
+			setConfirming(false);
+			setDeleting(false);
 		} catch (error) {
 			setDeleting(false);
 			setConfirming(false);
 			if (error instanceof HttpError && error.status === 404) {
-				// Đã bị xóa ở nơi khác — cache sẽ tự khớp ở lần refresh sau.
 				toast.info("Sự kiện đã không còn tồn tại.");
-				close();
+				setOpen(false);
 				return;
 			}
 			toast.error("Không xóa được sự kiện — thử lại.");
@@ -60,16 +65,38 @@ export function OrgEventChip({
 				data-event-id={event.id}
 				onClick={() => setOpen(true)}
 				title="Sự kiện vận hành — bấm để xem chi tiết"
-				className="org-event-chip mt-2 flex w-full cursor-pointer items-center gap-1.5 rounded-lg border border-border border-l-3 border-l-muted-foreground/40 bg-muted px-2.5 py-2 text-left transition-colors hover:bg-muted/70"
+				className={
+					compact
+						? "org-event-chip mt-0.5 flex w-full cursor-pointer items-center gap-1 truncate rounded border border-border border-l-3 border-l-muted-foreground/40 bg-muted px-1 py-0.5 text-left text-[11px] transition-colors hover:bg-muted/70"
+						: "org-event-chip mt-2 flex w-full cursor-pointer items-center gap-1.5 rounded-lg border border-border border-l-3 border-l-muted-foreground/40 bg-muted px-2.5 py-2 text-left transition-colors hover:bg-muted/70"
+				}
 			>
 				<CalendarClock
 					aria-hidden
-					className="size-3.5 shrink-0 text-muted-foreground"
+					className={
+						compact
+							? "size-3 shrink-0 text-muted-foreground"
+							: "size-3.5 shrink-0 text-muted-foreground"
+					}
 				/>
-				<span className="text-[11px] text-muted-foreground tabular-nums">
+				<span
+					className={
+						compact
+							? "text-[10px] text-muted-foreground tabular-nums"
+							: "text-[11px] text-muted-foreground tabular-nums"
+					}
+				>
 					{event.startTime}
 				</span>
-				<span className="truncate font-medium text-[13px]">{event.title}</span>
+				<span
+					className={
+						compact
+							? "truncate font-medium"
+							: "truncate font-medium text-[13px]"
+					}
+				>
+					{event.title}
+				</span>
 			</button>
 			<Modal
 				open={open}

@@ -12,6 +12,7 @@
 
 import type { ClassGroup, Lesson, LessonStatus } from "@/lib/mock-data";
 import {
+	distinctStudentsBySid,
 	resolveWeekColumnEntries,
 	selectProjectedWeekBlocks,
 	selectWeekColumnSessions,
@@ -90,7 +91,7 @@ function lessonItemOf(entry: {
 		classId: entry.classId,
 		time: entry.time,
 		status: entry.status,
-		students: entry.rows.length,
+		students: distinctStudentsBySid(entry.rows).length,
 	};
 }
 

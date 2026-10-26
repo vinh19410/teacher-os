@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "View-model thuần cho view Tháng/Ngày, màu lớp, URL"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: []

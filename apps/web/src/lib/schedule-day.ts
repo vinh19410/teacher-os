@@ -17,6 +17,7 @@ import type {
 } from "@/lib/mock-data";
 import type { ScheduleEventLike } from "@/lib/schedule-month";
 import {
+	distinctStudentsBySid,
 	resolveWeekColumnEntries,
 	selectProjectedWeekBlocks,
 	selectWeekColumnSessions,
@@ -92,7 +93,7 @@ export function buildDayAgenda(
 		topic: entry.topic,
 		type: entry.type,
 		dateISO: entry.dateISO,
-		students: entry.rows.length,
+		students: distinctStudentsBySid(entry.rows).length,
 		rows: entry.rows,
 	}));
 
