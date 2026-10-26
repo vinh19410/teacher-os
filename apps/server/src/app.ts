@@ -9,12 +9,15 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
+import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
 import { createAdminMeRoutes } from "./lib/require-admin";
 import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
+import { creditRoutes } from "./routes/credits";
+import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicPayRoutes } from "./routes/public-pay";
@@ -118,6 +121,18 @@ export interface AppDeps {
 	 * Production bỏ trống (dùng mặc định [2000, 5000]); chỉ test/E2E truyền [0, 0].
 	 */
 	notificationRetryDelaysMs?: number[];
+	/**
+	 * TOS-24 (#470): extractor bóc tách đề — Workers AI ở production (từ
+	 * binding `AI`), fake ở e2e/test. Vắng mặt → route /api/exam-imports
+	 * trả 503 EXAM_IMPORT_DISABLED, cùng hợp đồng fail-closed với
+	 * `getMediaStore`.
+	 */
+	getExamExtractor?(): ExamExtractor | undefined;
+	/**
+	 * TOS-24 (#470): kho file đề gốc nhập AI — dùng chung bucket MEDIA với
+	 * prefix `exam-imports/<orgId>/`. Vắng mặt → 503 EXAM_IMPORT_DISABLED.
+	 */
+	getExamImportStore?(): MediaStore | undefined;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -334,6 +349,10 @@ export function buildApp(deps: AppDeps) {
 			adminEmails: deps.adminEmails ?? [],
 		}),
 	);
+	// TOS-24 (#470): nhập đề bằng AI + ví Credit — mount TRƯỚC kernelRoutes
+	// để path riêng không bị kernel nuốt; guard 401/403 tự gắn trong router.
+	app.route("/api", examImportRoutes(deps));
+	app.route("/api", creditRoutes(deps));
 	app.route("/api", kernelRoutes(deps));
 
 	return app;

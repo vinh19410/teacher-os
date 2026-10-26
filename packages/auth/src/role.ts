@@ -85,3 +85,19 @@ const FINANCE_ROLE_MAP: Record<string, true> = {
 export function canAccessFinance(role: string | null | undefined): boolean {
 	return typeof role === "string" && FINANCE_ROLE_MAP[role] === true;
 }
+
+/**
+ * TOS-24 (#470): vai trò được nhập đề bằng AI (plan D8) — chỉ `teacher` +
+ * `owner`; `ta` chỉ xem, `class_teacher`/giá trị lạ bị chặn. Allowlist
+ * nghiêm ngặt least-privilege như `canAccessFinance`.
+ */
+export const EXAM_IMPORT_ROLES = ["teacher", "owner"] as const;
+
+const EXAM_IMPORT_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+};
+
+export function canImportExam(role: string | null | undefined): boolean {
+	return typeof role === "string" && EXAM_IMPORT_ROLE_MAP[role] === true;
+}

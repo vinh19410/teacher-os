@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Màn [6] Nhập đề AI: dropzone + đối chiếu 2 cột"
-status: pending
+status: done
 effort: 8h
 ---
 

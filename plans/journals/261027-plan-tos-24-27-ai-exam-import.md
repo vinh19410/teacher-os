@@ -28,3 +28,29 @@ hay binding AI nào trong `apps/server`. Ngân hàng đề của tổ chức là
 - Review #470 trước, chạy `/ak:cook plans/261027-0434-tos-24-ai-exam-import-reserve-extract/plan.md`;
   sau đó TOS-25 → TOS-26 → TOS-27 tuần tự (cùng sửa `exam-imports.ts` và màn `[6]`).
 - Người duyệt cần chốt: 30 Credit khởi tạo, model Workers AI mặc định, Listening chưa có audio khi xuất bản.
+
+## Ship TOS-24 (#470) — 2026-10-27 (session ai-handle-issue-470)
+
+### What shipped
+- Phase 1+2+3+4 đầy đủ: migration `0051` (3 bảng), ví Credit nguyên tử
+  (`wallet.ts`: 1 `db.batch` gồm UPDATE có điều kiện + INSERT log
+  `WHERE (SELECT changes() = 1)`; idempotency key trùng → trả kết quả cũ),
+  extractor Workers AI + fake, routes exam-imports/credits, màn `[6]`
+  (dropzone + đối chiếu 2 cột pdfjs + nhãn vàng), E2E `ai-exam-import-ac-001`.
+- Leverage kongming 3 lượt: red-team plan (GO + 3 điều kiện — tất cả đã thỏa:
+  test race reserve trên sqlite thật, lazy-create `ON CONFLICT DO NOTHING`,
+  reserve fail xoá job+file), code review (0 Critical / 2 Important — sửa:
+  `store.put` đưa vào catch-all, settle trước mark completed), e2e fail
+  (CTA là Link không phải button → đổi selector spec).
+
+### Evidence
+- server 1017 test, web 1672, db 6, api 315, auth 86 — xanh; `pnpm check`
+  + `check-types` repo-wide xanh; E2E AC-001 pass (cả suite: 228 pass + spec).
+
+### Deviations
+- Upload raw body + `X-File-Name` (precedent #305) thay vì multipart trong plan.
+- Chấp nhận rủi ro beta: crash đúng sau settle trước UPDATE job → job kẹt
+  `processing` đã settle (TOS-27 dọn); R2 put hỏng đã được catch-all bảo vệ.
+
+### Next steps
+- TOS-25 (chống trùng) — `content_fingerprint` + index đã dựng sẵn.

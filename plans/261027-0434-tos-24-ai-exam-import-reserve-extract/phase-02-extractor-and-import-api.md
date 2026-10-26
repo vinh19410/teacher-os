@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Extractor Workers AI + API nhập đề"
-status: pending
+status: done
 effort: 8h
 ---
 

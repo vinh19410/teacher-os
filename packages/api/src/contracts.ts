@@ -3655,3 +3655,142 @@ export const debtReminderResponseSchema = z
 	})
 	.strict();
 export type DebtReminderResponse = z.infer<typeof debtReminderResponseSchema>;
+
+// ============================================================================
+// TOS-24 (#470) — Nhập đề thi bằng AI: Ví Credit + exam import
+// ============================================================================
+
+/** Giá một dịch vụ tiêu Credit (mở rộng bởi TOS-42+). */
+export const CREDIT_COSTS = { examImport: 5 } as const;
+
+/** Ví tạo lười với 30 Credit Dùng thử cho tổ chức chưa có gói (E-001). */
+export const TRIAL_CREDITS = 30;
+
+/** Trần Credit cá nhân (US-010 / TOS-49) — hook no-op ở plan này. */
+export const EXAM_IMPORT_LIMITS = {
+	maxBytes: 15 * 1024 * 1024,
+	maxPages: 20,
+	timeoutMs: 120_000,
+	reviewConfidence: 0.8,
+} as const;
+
+/** MIME nhận của dropzone + route (phase-02). */
+export const EXAM_IMPORT_MIME = [
+	"application/pdf",
+	"image/png",
+	"image/jpeg",
+] as const;
+
+/** Mã lỗi của luồng exam import + ví (plan phase-02, plan TOS-27 mở rộng). */
+export const EXAM_IMPORT_ERROR_CODES = {
+	/** Ví không đủ Credit (HTTP 402). */
+	INSUFFICIENT_CREDITS: "E-selfomy-alignment-001",
+	/** File sai MIME / quá 15 MB (HTTP 400). */
+	INVALID_FILE: "E-selfomy-alignment-003",
+	/** Binding AI hoặc kho file chưa cấu hình (HTTP 503). */
+	DISABLED: "EXAM_IMPORT_DISABLED",
+	/** Extractor lỗi/timeout — credit đã hoàn (HTTP 502). */
+	FAILED: "EXAM_IMPORT_FAILED",
+	/** Job/file không thuộc org hiện tại hoặc không tồn tại (HTTP 404). */
+	NOT_FOUND: "exam_import_not_found",
+} as const;
+export type ExamImportErrorCode =
+	(typeof EXAM_IMPORT_ERROR_CODES)[keyof typeof EXAM_IMPORT_ERROR_CODES];
+
+export const EXAM_IMPORT_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+	"mixed",
+] as const;
+export type ExamImportSkill = (typeof EXAM_IMPORT_SKILLS)[number];
+
+/**
+ * Một câu hỏi bóc tách thô từ LLM (json_schema). `confidence` 0–1 do model
+ * tự chấm; hậu xử lý gán `needsReview` (xem `reviewedQuestionSchema`) —
+ * schema này KHÔNG có `needsReview` để tái sử dụng làm json_schema của
+ * `AI.run` nguyên văn.
+ */
+export const extractedQuestionSchema = z
+	.object({
+		stem: z.string().trim().min(1).max(500),
+		opts: z.array(z.string().trim().min(1).max(500)).max(6).nullish(),
+		answer: z.string().trim().max(200).nullish(),
+		type: z.string().trim().min(1).max(20).nullish(),
+		explanation: z.string().trim().max(2000).nullish(),
+		confidence: z.number().min(0).max(1),
+	})
+	.strict();
+export type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
+
+/** Câu hỏi đã hậu xử lý — `needsReview` do server tính, UI chỉ đọc. */
+export const reviewedQuestionSchema = extractedQuestionSchema.extend({
+	needsReview: z.boolean(),
+});
+export type ReviewedQuestion = z.infer<typeof reviewedQuestionSchema>;
+
+/** Một part của đề bóc tách thô (đầu ra LLM). */
+export const extractedPartSchema = z
+	.object({
+		passage: z.string().max(20_000).nullish(),
+		questions: z.array(extractedQuestionSchema).max(40),
+	})
+	.strict();
+export type ExtractedPart = z.infer<typeof extractedPartSchema>;
+
+/** Cấu trúc đề nháp đầu ra extractor (giới hạn kỳ vọng của prompt). */
+export const extractedExamSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		skill: z.enum(EXAM_IMPORT_SKILLS),
+		timeLimitMinutes: z.number().int().min(1).max(300).nullish(),
+		parts: z.array(extractedPartSchema).min(1).max(10),
+	})
+	.strict();
+export type ExtractedExam = z.infer<typeof extractedExamSchema>;
+
+/** Bản nháp lưu `draft_json` + trả wire: câu đã gắn `needsReview`. */
+export const extractedExamDraftSchema = extractedExamSchema
+	.extend({
+		parts: z
+			.array(
+				extractedPartSchema.extend({
+					questions: z.array(reviewedQuestionSchema).max(40),
+				}),
+			)
+			.min(1)
+			.max(10),
+	})
+	.strict();
+export type ExtractedExamDraft = z.infer<typeof extractedExamDraftSchema>;
+
+/** Wire DTO của một job nhập đề (không lộ R2 key). */
+export const examImportJobSchema = z
+	.object({
+		id: z.string().min(1),
+		fileName: z.string().min(1).max(500),
+		mimeType: z.string().min(1).max(100),
+		sizeBytes: z.number().int().min(0),
+		pageCount: z.number().int().min(0).nullish(),
+		contentFingerprint: z.string().min(64).max(64),
+		heldCredits: z.number().int().min(0),
+		importStatus: z.enum(["processing", "completed", "failed_refunded"]),
+		draft: extractedExamDraftSchema.nullish(),
+		errorCode: z.string().nullish(),
+		createdAt: z.string().min(1),
+		startedAt: z.string().min(1),
+		completedAt: z.string().nullish(),
+	})
+	.strict();
+export type ExamImportJob = z.infer<typeof examImportJobSchema>;
+
+/** `GET /api/credits/wallet` — khả dụng = balance − held. */
+export const creditWalletSchema = z
+	.object({
+		balance: z.number().int().min(0),
+		held: z.number().int().min(0),
+		available: z.number().int().min(0),
+	})
+	.strict();
+export type CreditWallet = z.infer<typeof creditWalletSchema>;

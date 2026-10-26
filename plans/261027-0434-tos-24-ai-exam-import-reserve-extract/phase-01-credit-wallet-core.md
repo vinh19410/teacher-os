@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Lõi Ví Credit + bảng exam_import_job"
-status: pending
+status: done
 effort: 5h
 ---
 

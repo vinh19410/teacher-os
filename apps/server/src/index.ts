@@ -12,6 +12,7 @@ import {
 	type BankHubContext,
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
+import { createWorkersAiExtractor } from "./lib/exam-import/extractor";
 import { createR2MediaStore } from "./lib/r2-media-store";
 import { getSessionUser } from "./session";
 
@@ -29,6 +30,9 @@ let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
 let libraryAudioStore: MediaStore | undefined;
 let bankHub: BankHubContext | undefined;
+// TOS-24 (#470): kho file đề nhập AI dùng chung bucket MEDIA — memoized
+// riêng để không tạo adapter mới mỗi request (same pattern mediaStore).
+let examImportStore: MediaStore | undefined;
 
 // Plan TOS-21 (#454): mailer memoized riêng, dùng chung cho createAuth lẫn
 // buildApp (AppDeps.mailer). Giữ nguyên check MAILER_IMPL + cảnh báo log-only.
@@ -110,6 +114,19 @@ export default buildApp({
 		libraryAudioStore ??= createR2MediaStore(env.LIBRARY_AUDIO);
 		return libraryAudioStore;
 	},
+	// TOS-24 (#470): file đề gốc nhập AI dùng chung bucket MEDIA (prefix
+	// `exam-imports/<orgId>/` do route tự ghép). Binding MEDIA thiếu →
+	// undefined → route /api/exam-imports trả 503 EXAM_IMPORT_DISABLED.
+	getExamImportStore: () => {
+		if (!env.MEDIA) return undefined;
+		examImportStore ??= createR2MediaStore(env.MEDIA);
+		return examImportStore;
+	},
+	// TOS-24 (#470): extractor Workers AI từ binding `AI` (alchemy biến
+	// `Cloudflare.Workers.AI()` thành handle `Ai`). Binding thiếu → undefined
+	// → route trả 503 EXAM_IMPORT_DISABLED (fail-closed như getMediaStore).
+	getExamExtractor: () =>
+		env.AI ? createWorkersAiExtractor(env.AI) : undefined,
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),

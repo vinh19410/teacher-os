@@ -153,6 +153,10 @@ export const server = Cloudflare.Worker("server", {
 		DB: db,
 		MEDIA: media,
 		LIBRARY_AUDIO: libraryAudio,
+		// TOS-24 (#470): Workers AI cho bóc tách đề — binding `ai` không cần
+		// cấu hình thêm; dev local đi qua proxy Cloudflare của alchemy, e2e
+		// không dùng workerd nên inject fake extractor qua boot.ts.
+		AI: Cloudflare.Workers.AI(),
 		CORS_ORIGIN: corsOriginConfig,
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,
