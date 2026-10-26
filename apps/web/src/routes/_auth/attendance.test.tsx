@@ -641,4 +641,97 @@ describe("/attendance TOS-8 auto-advance", () => {
 		).toBeNull();
 		expect(screen.getByTestId("attendance-live-status").textContent).toBe("");
 	});
+
+	it("double-submit khi PUT chưa xong: guard savingRef chặn re-entry, chỉ 1 PUT", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		const { promise: putPromise } = Promise.withResolvers<Response>();
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") return putPromise;
+				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		renderAttendance();
+		await screen.findByText("IELTS 6.5A");
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 6.5A/ }));
+		// Điền đủ học viên của ca đang mở (cls-2 collapse nên không có picker)
+		// để bấm lưu đi thẳng đường PUT (không mở modal).
+		const group1 = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		});
+		fireEvent.click(within(group1).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+		// Bấm lần 2 ngay khi PUT còn treo (red-team FAIL-3): nút đang "Đang lưu…"
+		// và savingRef chặn re-entry trong handleSaveSession.
+		const saveButton = screen.getByRole("button", { name: "Đang lưu…" });
+		expect(saveButton.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(saveButton);
+
+		const puts = fetchMock.mock.calls.filter(
+			(call) => call[1]?.method === "PUT",
+		);
+		expect(puts.length).toBe(1);
+	});
+
+	it("ngày còn đúng 1 ca pending: lưu xong không tái mở chính nó, thông báo hoàn tất", async () => {
+		routerState.search = { date: "2026-10-07", status: "pending" };
+		const SINGLE_PENDING: DailyAttendanceResponse = {
+			date: "2026-10-07",
+			sessions: [
+				pendingSession(
+					"cls-1",
+					"IELTS 6.5A",
+					"18:00",
+					"l-1",
+					"Nguyễn Minh Anh",
+				),
+			],
+			counts: { all: 1, pending: 1, completed: 0 },
+		};
+		const SINGLE_DONE: DailyAttendanceResponse = {
+			...SINGLE_PENDING,
+			sessions: [
+				{
+					...SINGLE_PENDING.sessions[0],
+					recorded: true,
+					students: [
+						{
+							lessonId: "l-1",
+							studentId: "st-l-1",
+							studentName: "Nguyễn Minh Anh",
+							attendance: "present" as const,
+							note: "",
+						},
+					],
+				},
+			],
+			counts: { all: 1, pending: 0, completed: 1 },
+		};
+		const { mock } = statefulFetch([SINGLE_PENDING, SINGLE_DONE]);
+		vi.stubGlobal("fetch", mock);
+
+		renderAttendance();
+		await screen.findByText("IELTS 6.5A");
+		// pending → ca đầu tự mở sẵn.
+		const group = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		});
+		fireEvent.click(within(group).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+
+		// Red-team FAIL-1: wrap-around phải loại key ca vừa lưu.
+		await waitFor(() =>
+			expect(
+				screen.getByTestId("attendance-live-status").textContent,
+			).toContain("Đã điểm danh xong mọi ca trong ngày"),
+		);
+		// Hết pending: danh sách chip pending unmount toàn bộ row, không tái mở gì.
+		expect(screen.queryByRole("radiogroup")).toBeNull();
+	});
 });

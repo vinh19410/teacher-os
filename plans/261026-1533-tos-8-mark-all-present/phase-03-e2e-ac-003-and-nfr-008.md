@@ -31,7 +31,7 @@ Chứng minh AC-003 chạy thật trên trình duyệt và luồng thao tác nha
 3. **Hộp xác nhận khi lưu thiếu:** để trống 2 người, bấm lưu → modal "Còn 2 học viên".
    - "Quay lại chỉnh": không có request PUT trong 1 giây, dòng thiếu có viền cảnh báo.
    - Bấm lưu lần nữa → "Gán Có mặt và lưu": PUT gửi đủ sĩ số, 2 người đó là "Có mặt".
-4. **Ca đã recorded còn dòng "Chưa rõ":** nút điền nhanh disabled, bấm lưu đi đường TOS-7 (không modal bulk).
+4. **Ca đã recorded còn dòng "Chưa rõ":** nút điền nhanh disabled, bấm lưu đi đường TOS-7 (không modal bulk). **Deviation (2026-10-26):** không dựng được state này qua public API (server PUT chặn incomplete-roster; "Chưa rõ" chỉ đến từ data legacy import) — hành vi đã cover bằng unit test row component ("ca recorded … chặn lưu") và test disabled recorded.
 5. **NFR-008 — 5 lớp ≤ 2 phút:**
    - Tạo 5 lớp có ca hôm nay, mỗi lớp 3–5 học viên. Mở `/attendance?date={hôm nay}&status=pending`.
    - Mốc `t0` khi trang tải xong. Lặp 5 lần: lần đầu click nút điền nhanh; các lần sau ca kế tiếp tự mở với focus ở **picker đầu tiên** — chờ `expect(picker).toBeFocused()`, rồi Shift+Tab tới nút điền nhanh + Enter (hoặc click nút nếu focus lệch); chỉnh 1 học viên sang "Vắng không phép"; lưu; chờ toast và ca kế tiếp tự mở (assert chức năng, không assert thời gian từng bước).

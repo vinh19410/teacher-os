@@ -288,6 +288,10 @@ describe("AttendanceSessionRow", () => {
 		expect(
 			screen.getAllByText(/Lớp chưa gắn lịch ngày/).length,
 		).toBeGreaterThan(0);
+		// TOS-8 D1: lớp legacy không render nút điền nhanh.
+		expect(
+			screen.queryByRole("button", { name: "Đánh dấu tất cả Có mặt" }),
+		).toBeNull();
 		const link = screen.getByRole("link", {
 			name: /Mở lớp để điểm danh/,
 		});
@@ -392,9 +396,7 @@ describe("AttendanceSessionRow", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
 		);
-		fireEvent.click(
-			screen.getByRole("button", { name: "Gán Có mặt và lưu" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Gán Có mặt và lưu" }));
 
 		expect(onSave).toHaveBeenCalledTimes(1);
 		expect(onSave).toHaveBeenCalledWith([

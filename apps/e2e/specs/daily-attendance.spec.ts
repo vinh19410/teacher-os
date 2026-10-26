@@ -243,7 +243,11 @@ test("3 viewport (1440×900, 768×1024, 375×812): chụp screenshot ca đang m�
 });
 
 test.describe("AC-003 mark all present (TOS-8)", () => {
-	/** Đọc kernel snapshot và trả lesson row của 1 học viên trong 1 lớp hôm nay. */
+	/** Đọc kernel snapshot và trả lesson row của 1 học viên trong 1 lớp hôm
+	 * nay. DB không reset giữa các test trong file (workers: 1) — tên học
+	 * viên có thể trùng giữa các lớp (AC-002 cũng seed "An Nguyễn"), nên phải
+	 * join student → enrollment (lọc theo classId) → lesson, không find theo
+	 * tên trên snapshot toàn cục. */
 	async function lessonOfStudent(
 		page: Page,
 		classId: string,
@@ -264,14 +268,17 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 				attendance?: string | null;
 			}>;
 		};
-		const student = snap.students?.find((s) => s.name === studentName);
-		expect(student, `student ${studentName} phải tồn tại`).toBeTruthy();
-		const enrollment = snap.enrollments?.find(
-			(e) => e.classId === classId && e.studentId === student?.id,
+		const candidateStudentIds = new Set(
+			(snap.students ?? [])
+				.filter((s) => s.name === studentName)
+				.map((s) => s.id),
+		);
+		const enrollment = (snap.enrollments ?? []).find(
+			(e) => e.classId === classId && candidateStudentIds.has(e.studentId),
 		);
 		expect(
 			enrollment,
-			`enrollment của ${studentName} phải tồn tại`,
+			`enrollment của ${studentName} trong ${classId} phải tồn tại`,
 		).toBeTruthy();
 		const lessonRow = snap.lessons?.find(
 			(l) =>
