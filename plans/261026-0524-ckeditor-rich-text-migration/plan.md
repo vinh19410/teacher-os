@@ -1,7 +1,7 @@
 ---
 title: "Chuyển rich text sang CKEditor 5"
 description: "Thay Tiptap bằng CKEditor 5 trong RichTextEditor dùng chung để nhập và hiển thị nội dung HTML ở các trường rich text."
-status: pending
+status: cancelled
 priority: P2
 effort: 2d
 issue: 436
@@ -9,10 +9,13 @@ branch: vinh19410/feat/ckeditor-rich-text
 tags: [frontend, rich-text, ui, dependencies]
 blockedBy: []
 blocks: []
+supersededBy: "plans/261026-1243-tiptap-full-editor/plan.md"
 created: 2026-10-26
 ---
 
 # Chuyển rich text sang CKEditor 5
+
+> **CANCELLED 2026-10-26:** License gate (Phase 1) chốt không vượt qua được — repo private, không LICENSE; key `GPL` kích hoạt nghĩa vụ GPL-2+ cho bundle frontend phân phối tới người dùng, free plan CDN không đủ production. Người dùng chốt: giữ Tiptap, nâng lên full-option editor. Tiếp tục tại `plans/261026-1243-tiptap-full-editor/plan.md`.
 
 ## Overview
 

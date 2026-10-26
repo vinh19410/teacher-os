@@ -36,6 +36,18 @@ describe("sanitizeRichText", () => {
 		expect(out).not.toContain("nofollow");
 	});
 
+	// Guard lock (issue #436): the editor refuses javascript: URIs at authoring
+	// time; this pins the render-side backstop so a DOMPurify/tiptap upgrade
+	// cannot silently let script URLs through to students.
+	it("strips javascript: link hrefs entirely", () => {
+		const out = sanitizeRichText(
+			'<p><a href="javascript:alert(1)">x</a><a href="data:text/html,boom">y</a></p>',
+		);
+		expect(out).not.toContain("javascript:");
+		expect(out).not.toContain("data:text/html");
+		expect(out).toContain("x");
+	});
+
 	it("does not double-encode entities", () => {
 		expect(sanitizeRichText("<p>a &amp; b</p>")).toContain("a &amp; b");
 	});
