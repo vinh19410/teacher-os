@@ -1,5 +1,4 @@
 import { expect, type Page, test } from "@playwright/test";
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import {
 	addDaysISO,
 	gotoWeek,
@@ -43,16 +42,20 @@ function formatDayMonth(iso: string): string {
 	return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 }
 
-async function fetchKernelSnapshot(page: Page): Promise<KernelSnapshot> {
+interface SnapshotShape {
+	lessons: Array<{ enrollmentId: string; status: string }>;
+	notifs: Array<{ text: string }>;
+}
+
+async function fetchKernelSnapshot(page: Page): Promise<SnapshotShape> {
 	const res = await page.request.get(`${API_ORIGIN}/api/kernel`, {
 		headers: { Origin: WEB_ORIGIN },
 	});
 	expect(res.status()).toBe(200);
-	return (await res.json()) as KernelSnapshot;
+	return (await res.json()) as SnapshotShape;
 }
 
-function countsByEnrollment(snapshot: KernelSnapshot) {
-	const map = new Map<string, { completed: number; nonHoliday: number }>();
+function countsByEnrollment(snapshot: SnapshotShape) {
 	for (const row of snapshot.lessons) {
 		const cur = map.get(row.enrollmentId) ?? { completed: 0, nonHoliday: 0 };
 		if (row.status === "completed") cur.completed += 1;
