@@ -20,6 +20,8 @@
 
 import type {
 	HolidayKeptCompleted,
+	HolidayMode,
+	HolidayPlannedCancellation,
 	HolidayPlannedShift,
 	HolidayUnsupported,
 } from "./contracts";
@@ -53,12 +55,22 @@ export interface PlanInput {
 	existingHolidayDates: Map<string, Map<string, string>>;
 	/** Hôm nay theo giờ VN (yyyy-mm-dd) — truyền từ caller để hàm thuần deterministic. */
 	todayISO: string;
+	/** TOS-13 (#448): "shift" dời buổi; "cancel" hủy buổi không bù (D2). */
+	mode: HolidayMode;
 }
 
 export interface PlanResult {
 	shifts: PlannedShift[];
+	/** TOS-13 mode "cancel": các buổi sẽ chuyển `cancelled`; `shifts` rỗng. */
+	cancellations: PlannedCancellation[];
 	keptCompleted: HolidayKeptCompleted[];
 	unsupported: HolidayUnsupported[];
+}
+
+/** Wire cancellation + roster thật tại buổi gốc: server dùng cho guard batch
+ * và INSERT holiday_session_cancel; không bao giờ rời server. */
+export interface PlannedCancellation extends HolidayPlannedCancellation {
+	enrollmentIds: string[];
 }
 
 /** Wire shift + roster thật tại buổi gốc: server dùng cho guard batch và
@@ -81,6 +93,7 @@ type ShiftSeed = Omit<PlannedShift, "makeupDate" | "weekday" | "time" | "dur">;
 
 export function planHolidayShift(input: PlanInput): PlanResult {
 	const shifts: PlannedShift[] = [];
+	const cancellations: PlannedCancellation[] = [];
 	const keptCompleted: HolidayKeptCompleted[] = [];
 	const unsupported: HolidayUnsupported[] = [];
 	const { fromDate, toDate } = input.range;
@@ -90,15 +103,6 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 	);
 
 	for (const cls of classInputs) {
-		const parsed = parseStoredSchedule(cls.schedule);
-		if (!parsed) {
-			unsupported.push({
-				classId: cls.id,
-				className: cls.name,
-				reason: "legacy-schedule",
-			});
-			continue;
-		}
 		if (cls.lessons.some((row) => row.date === null)) {
 			unsupported.push({
 				classId: cls.id,
@@ -107,7 +111,15 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 			});
 			continue;
 		}
-
+		const parsed = parseStoredSchedule(cls.schedule);
+		if (input.mode === "shift" && !parsed) {
+			unsupported.push({
+				classId: cls.id,
+				className: cls.name,
+				reason: "legacy-schedule",
+			});
+			continue;
+		}
 		// Gom theo date — occurrence identity: mọi dòng cùng (classId, date)
 		// là một buổi vật lý.
 		const byDate = new Map<string, PlanLessonRow[]>();
@@ -155,7 +167,6 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 			if (!holidayDates.has(d)) holidayDates.set(d, null);
 		}
 
-		const dur = scheduleDurationMinutes(parsed);
 		const classShifts: ShiftSeed[] = [];
 		for (const date of dates) {
 			if (date < fromDate || date > toDate) continue;
@@ -174,19 +185,35 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 				});
 				continue;
 			}
-			const upcoming = rows.filter((row) => row.status === "upcoming");
-			if (upcoming.length === 0) continue;
+			if (!rows.every((row) => row.status === "upcoming")) continue;
 			classShifts.push({
 				classId: cls.id,
 				className: cls.name,
 				originalDate: date,
 				sessionOrdinal: ordinal,
-				enrollmentIds: upcoming.map((row) => row.enrollmentId),
+				enrollmentIds: rows.map((row) => row.enrollmentId),
 				skippedHolidays: [],
 			});
 		}
 
 		if (classShifts.length === 0) continue;
+
+		// TOS-13 mode "cancel" (D2): mỗi buổi trùng chuyển `cancelled` — không
+		// sinh buổi bù, không kéo dài ngày kết thúc khóa, không quét cursor.
+		if (input.mode === "cancel") {
+			for (const seed of classShifts) {
+				cancellations.push({
+					classId: seed.classId,
+					className: seed.className,
+					date: seed.originalDate,
+					sessionOrdinal: seed.sessionOrdinal,
+					enrollmentIds: seed.enrollmentIds,
+				});
+			}
+			continue;
+		}
+		if (!parsed) continue;
+		const dur = scheduleDurationMinutes(parsed);
 
 		// Con trỏ bắt đầu (D4 + I1): sau buổi dạy MUỘN NHẤT (kể cả buổi sắp
 		// bị dời) và sau hôm nay.
@@ -240,6 +267,11 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 			a.className.localeCompare(b.className, "vi") ||
 			compareISO(a.originalDate, b.originalDate),
 	);
+	cancellations.sort(
+		(a, b) =>
+			a.className.localeCompare(b.className, "vi") ||
+			compareISO(a.date, b.date),
+	);
 	keptCompleted.sort(
 		(a, b) =>
 			a.className.localeCompare(b.className, "vi") ||
@@ -247,5 +279,5 @@ export function planHolidayShift(input: PlanInput): PlanResult {
 	);
 	unsupported.sort((a, b) => a.className.localeCompare(b.className, "vi"));
 
-	return { shifts, keptCompleted, unsupported };
+	return { shifts, cancellations, keptCompleted, unsupported };
 }

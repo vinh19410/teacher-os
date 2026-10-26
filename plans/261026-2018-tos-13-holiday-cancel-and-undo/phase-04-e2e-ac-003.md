@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E AC-003"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: ["phase-03"]

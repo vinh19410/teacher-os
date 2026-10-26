@@ -6,6 +6,7 @@ import type {
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
 	KernelEventRow,
+	KernelHolidayCancelRow,
 	KernelHolidayShiftRow,
 	KernelHolidaySummary,
 	KernelViewer,
@@ -283,6 +284,7 @@ export type KernelHydratedData = Pick<
 	/** TOS-11: nhãn kỳ nghỉ + "Đã dời sang dd/MM" trên lịch tuần. */
 	holidays: KernelHolidaySummary[];
 	holidayShifts: KernelHolidayShiftRow[];
+	holidayCancels: KernelHolidayCancelRow[];
 	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
 	events: KernelEventRow[];
 	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */

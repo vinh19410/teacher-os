@@ -1,10 +1,17 @@
+import type { KernelHolidaySummary } from "@teacher-os/api/contracts";
+import { useState } from "react";
 import { classBlockClass } from "@/components/schedule/class-block";
 import type { ClassSessionModalRef } from "@/components/schedule/class-session-modal";
 import { HolidayCalendarCard } from "@/components/schedule/holiday-calendar-card";
+import { HolidayUndoDialog } from "@/components/schedule/holiday-undo-dialog";
 import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { classColorIndex } from "@/lib/class-color";
 import { dayNames } from "@/lib/mock-data";
-import { holidayNameForDate, makeupDateForShift } from "@/lib/repos/holidays";
+import {
+	cancelledByHolidayName,
+	holidayNameForDate,
+	makeupDateForShift,
+} from "@/lib/repos/holidays";
 import type { KernelSlice } from "@/lib/repos/kernel";
 import { holidaysByDateIndex } from "@/lib/schedule-month";
 import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
@@ -22,13 +29,18 @@ export function ScheduleWeekView({
 	dates,
 	model,
 	onOpenSession,
+	onRefresh,
 }: {
 	data: KernelSlice;
 	dates: string[];
 	model: WeekModel;
 	onOpenSession: (session: ClassSessionModalRef) => void;
+	onRefresh?: () => void;
 }) {
 	const todayIso = todayISOVietnam();
+	const [undoHoliday, setUndoHoliday] = useState<KernelHolidaySummary | null>(
+		null,
+	);
 	const { columns, projected, slotCount } = model;
 	const eventsByDate = new Map<string, KernelSlice["events"]>();
 	for (const event of data.events) {
@@ -38,6 +50,7 @@ export function ScheduleWeekView({
 	}
 	// TOS-14b: thẻ kỳ nghỉ trong cột ngày — expand span một lần từ snapshot.
 	const holidaysOnDate = holidaysByDateIndex(data.holidays ?? []);
+	const holidayById = new Map((data.holidays ?? []).map((h) => [h.id, h]));
 
 	return (
 		<>
@@ -73,20 +86,21 @@ export function ScheduleWeekView({
 							block: b.block,
 						})),
 					].sort((a, b) => a.time.localeCompare(b.time));
-					const isToday = dates[i] === todayIso;
-					const dayEvents = [...(eventsByDate.get(dates[i]) ?? [])].sort(
+					const dateISO = dates[i];
+					const isToday = dateISO === todayIso;
+					const dayEvents = [...(eventsByDate.get(dateISO) ?? [])].sort(
 						(a, b) =>
 							a.startTime.localeCompare(b.startTime) ||
 							a.id.localeCompare(b.id),
 					);
-					const dayHolidays = holidaysOnDate.get(dates[i]) ?? [];
+					const dayHolidays = holidaysOnDate.get(dateISO) ?? [];
 					return (
 						<div
 							key={dn}
 							className={`day-col flex min-h-[220px] flex-col rounded-xl border bg-card p-3 shadow-sm ${
 								isToday ? "border-ring ring-[3px] ring-ring/20" : ""
 							}`}
-							data-date={dates[i]}
+							data-date={dateISO}
 						>
 							<div className="flex items-center justify-between pb-3">
 								<div
@@ -94,7 +108,7 @@ export function ScheduleWeekView({
 										isToday ? "" : "text-muted-foreground"
 									}`}
 								>
-									{dn} {formatDayMonth(dates[i])}
+									{dn} {formatDayMonth(dateISO)}
 								</div>
 								{isToday && (
 									<span className="rounded-md bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
@@ -133,11 +147,15 @@ export function ScheduleWeekView({
 											const cls = data.classes.find((c) => c.id === s.classId);
 											const className = cls?.name ?? "Lớp học";
 											const isHoliday = s.status === "holiday";
+											const isCancelled = s.status === "cancelled";
 											const makeupDate = isHoliday
 												? makeupDateForShift(data, s.classId, s.dateISO)
 												: null;
 											const holidayName = isHoliday
 												? holidayNameForDate(data, s.classId, s.dateISO)
+												: null;
+											const cancelledHolidayName = isCancelled
+												? cancelledByHolidayName(data, s.classId, s.dateISO)
 												: null;
 											return (
 												<button
@@ -149,7 +167,7 @@ export function ScheduleWeekView({
 															dateISO: s.dateISO,
 															day: s.day,
 															time: s.time,
-															columnDateISO: dates[i],
+															columnDateISO: dateISO,
 														})
 													}
 													className={`lesson-block mt-2 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(s.classId)} ${
@@ -197,6 +215,10 @@ export function ScheduleWeekView({
 																	? ` · Đã dời sang ${formatDayMonth(makeupDate)}`
 																	: ""}
 															</span>
+														) : cancelledHolidayName ? (
+															<span className="font-medium text-destructive">
+																Đã hủy — {cancelledHolidayName}
+															</span>
 														) : (
 															s.topic.substring(0, 30)
 														)}
@@ -211,12 +233,24 @@ export function ScheduleWeekView({
 										})()
 									),
 								)}
-								{dayHolidays.map((holiday) => (
-									// TOS-14b: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
-									<div key={holiday.id} className="mt-2">
-										<HolidayCalendarCard name={holiday.name} />
-									</div>
-								))}
+								{dayHolidays.map((holiday) => {
+									const fullHoliday = holidayById.get(holiday.id);
+									const isFirstVisibleDay =
+										dateISO === holiday.fromDate ||
+										(i === 0 && holiday.fromDate < dateISO);
+									return (
+										// TOS-14b + TOS-13: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
+										<div key={holiday.id} className="mt-2">
+											<HolidayCalendarCard
+												name={holiday.name}
+												holiday={fullHoliday}
+												showUndoAction={isFirstVisibleDay}
+												todayISO={todayIso}
+												onRequestUndo={setUndoHoliday}
+											/>
+										</div>
+									);
+								})}
 								{dayEvents.map((event) => (
 									<OrgEventChip key={event.id} event={event} />
 								))}
@@ -225,6 +259,16 @@ export function ScheduleWeekView({
 					);
 				})}
 			</div>
+			<HolidayUndoDialog
+				holiday={undoHoliday}
+				shifts={data.holidayShifts ?? []}
+				cancels={data.holidayCancels ?? []}
+				classes={data.classes.map((cls) => ({ id: cls.id, name: cls.name }))}
+				onClose={() => setUndoHoliday(null)}
+				onUndone={() => {
+					onRefresh?.();
+				}}
+			/>
 		</>
 	);
 }

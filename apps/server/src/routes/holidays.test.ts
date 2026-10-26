@@ -1006,3 +1006,369 @@ async function previewHash(app: ServerApp, body: Record<string, unknown>) {
 	const { planHash } = (await res.json()) as { planHash: string };
 	return planHash;
 }
+
+async function deleteHolidayReq(
+	app: ServerApp,
+	holidayId: string,
+	headers: Record<string, string> = TEACHER,
+) {
+	return app.request(`/api/holidays/${holidayId}`, {
+		method: "DELETE",
+		headers,
+	});
+}
+
+describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 + snapshot", () => {
+	test("apply mode cancel: buổi trùng thành cancelled, không sinh lesson mới, max(date) không đổi, có holiday_session_cancel và notif", async () => {
+		const app = createApp();
+		const maxBefore = await db
+			.select({ classId: schema.lesson.classId, date: schema.lesson.date })
+			.from(schema.lesson);
+		const maxByClassBefore = new Map<string, string>();
+		for (const r of maxBefore) {
+			if (!r.date) continue;
+			const cur = maxByClassBefore.get(r.classId);
+			if (!cur || r.date > cur) maxByClassBefore.set(r.classId, r.date);
+		}
+
+		const cancelDraft = { ...draft(), mode: "cancel" as const };
+		const prevRes = await preview(app, cancelDraft);
+		expect(prevRes.status).toBe(200);
+		const prevBody = (await prevRes.json()) as {
+			shifts: unknown[];
+			cancellations: Array<{
+				classId: string;
+				className: string;
+				date: string;
+				sessionOrdinal: number;
+			}>;
+			affectedClassCount: number;
+			planHash: string;
+		};
+		expect(prevBody.shifts).toEqual([]);
+		expect(prevBody.cancellations).toHaveLength(2);
+		expect(prevBody.affectedClassCount).toBe(2);
+
+		const applyRes = await apply(app, {
+			...cancelDraft,
+			planHash: prevBody.planHash,
+		});
+		expect(applyRes.status).toBe(200);
+		const applyBody = (await applyRes.json()) as {
+			holidayId: string;
+			shiftedCount: number;
+			cancelledCount: number;
+			classCount: number;
+		};
+		expect(applyBody.shiftedCount).toBe(0);
+		expect(applyBody.cancelledCount).toBe(2);
+		expect(applyBody.classCount).toBe(2);
+
+		const afterRows = await db
+			.select({
+				classId: schema.lesson.classId,
+				date: schema.lesson.date,
+				status: schema.lesson.status,
+			})
+			.from(schema.lesson);
+		expect(afterRows).toHaveLength(maxBefore.length);
+		for (const r of afterRows.filter((row) => row.date === F3)) {
+			expect(r.status).toBe("cancelled");
+		}
+		const maxByClassAfter = new Map<string, string>();
+		for (const r of afterRows) {
+			if (!r.date) continue;
+			const cur = maxByClassAfter.get(r.classId);
+			if (!cur || r.date > cur) maxByClassAfter.set(r.classId, r.date);
+		}
+		expect(maxByClassAfter).toEqual(maxByClassBefore);
+
+		const cancels = await db.select().from(schema.holidaySessionCancel);
+		expect(cancels).toHaveLength(2);
+		expect(cancels.map((c) => c.classId).sort()).toEqual(["cls-a", "cls-b"]);
+		for (const c of cancels) {
+			expect(c.date).toBe(F3);
+			expect(c.holidayId).toBe(applyBody.holidayId);
+		}
+		const shifts = await db.select().from(schema.holidaySessionShift);
+		expect(shifts).toHaveLength(0);
+
+		const notifs = await db.select().from(schema.notif);
+		expect(
+			notifs.some((n) =>
+				n.text.includes("Lịch nghỉ «Nghỉ lễ giữa khóa»: hủy 2 buổi của 2 lớp"),
+			),
+		).toBe(true);
+	});
+
+	test("apply mode cancel: buổi đã điểm danh ở lớp A giữ nguyên, chỉ hủy lớp B", async () => {
+		await db
+			.update(schema.lesson)
+			.set({ status: "completed" })
+			.where(
+				and(
+					eq(schema.lesson.classId, "cls-a"),
+					eq(schema.lesson.date, F3),
+					eq(schema.lesson.enrollmentId, "enr-a1"),
+				),
+			);
+		const app = createApp();
+		const cancelDraft = { ...draft(), mode: "cancel" as const };
+		const planHash = await previewHash(app, cancelDraft);
+		const res = await apply(app, { ...cancelDraft, planHash });
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			cancelledCount: number;
+			classCount: number;
+		};
+		expect(body.cancelledCount).toBe(1);
+		expect(body.classCount).toBe(1);
+
+		const f3A = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(
+				and(eq(schema.lesson.classId, "cls-a"), eq(schema.lesson.date, F3)),
+			);
+		expect(f3A.map((r) => r.status).sort()).toEqual(["completed", "upcoming"]);
+	});
+
+	test("apply mode cancel không trúng buổi nào → 422 no-sessions", async () => {
+		const app = createApp();
+		const res = await apply(app, {
+			...draft(),
+			mode: "cancel",
+			fromDate: addDaysISO(F1, 1),
+			toDate: addDaysISO(F1, 2),
+			planHash: "any",
+		});
+		expect(res.status).toBe(422);
+		const errBody = (await res.json()) as { reason: string };
+		expect(errBody.reason).toBe("no-sessions");
+	});
+
+	test("DELETE kỳ nghỉ shift tương lai: buổi gốc về upcoming, buổi bù bị xóa, bảng con trống, đếm buổi không-holiday giữ nguyên", async () => {
+		const app = createApp();
+		const beforeCounts = await perEnrollmentCounts();
+		const planHash = await previewHash(app, draft());
+		const applyRes = await apply(app, { ...draft(), planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const delRes = await deleteHolidayReq(app, holidayId);
+		expect(delRes.status).toBe(200);
+		const delBody = (await delRes.json()) as {
+			restoredCount: number;
+			removedMakeupCount: number;
+		};
+		expect(delBody).toEqual({ restoredCount: 2, removedMakeupCount: 2 });
+
+		const f3Rows = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, F3));
+		expect(f3Rows).toHaveLength(3);
+		expect(f3Rows.every((r) => r.status === "upcoming")).toBe(true);
+
+		const f9Rows = await db
+			.select({ id: schema.lesson.id })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, F9));
+		expect(f9Rows).toHaveLength(0);
+
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(0);
+		expect(await db.select().from(schema.holidaySessionShift)).toHaveLength(0);
+		expect(await perEnrollmentCounts()).toEqual(beforeCounts);
+
+		const notifs = await db.select().from(schema.notif);
+		expect(
+			notifs.some((n) =>
+				n.text.includes("Đã xóa kỳ nghỉ «Nghỉ lễ giữa khóa»: khôi phục 2 buổi"),
+			),
+		).toBe(true);
+	});
+
+	test("DELETE kỳ nghỉ cancel tương lai: chỉ khôi phục buổi trong holiday_session_cancel, buổi GV hủy tay cùng ngày ở lớp khác giữ cancelled", async () => {
+		const app = createApp();
+		// GV hủy tay lớp B tại F3 trước khi tạo kỳ nghỉ cancel cho riêng lớp A.
+		await db
+			.update(schema.lesson)
+			.set({ status: "cancelled" })
+			.where(
+				and(eq(schema.lesson.classId, "cls-b"), eq(schema.lesson.date, F3)),
+			);
+
+		const cancelDraft = {
+			...draft(),
+			mode: "cancel" as const,
+			scope: "classes" as const,
+			classIds: ["cls-a"],
+		};
+		const planHash = await previewHash(app, cancelDraft);
+		const applyRes = await apply(app, { ...cancelDraft, planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const delRes = await deleteHolidayReq(app, holidayId);
+		expect(delRes.status).toBe(200);
+		expect(await delRes.json()).toEqual({
+			restoredCount: 1,
+			removedMakeupCount: 0,
+		});
+
+		const f3A = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(
+				and(eq(schema.lesson.classId, "cls-a"), eq(schema.lesson.date, F3)),
+			);
+		expect(f3A.every((r) => r.status === "upcoming")).toBe(true);
+
+		const f3B = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(
+				and(eq(schema.lesson.classId, "cls-b"), eq(schema.lesson.date, F3)),
+			);
+		expect(f3B.every((r) => r.status === "cancelled")).toBe(true);
+		expect(await db.select().from(schema.holidaySessionCancel)).toHaveLength(0);
+	});
+
+	test("DELETE kỳ nghỉ có fromDate <= hôm nay → 422 holiday-started, DB không đổi", async () => {
+		const app = createApp();
+		await db.insert(schema.organizationHoliday).values({
+			id: "hol-today",
+			orgId: "org-1",
+			name: "Nghỉ bắt đầu hôm nay",
+			fromDate: TODAY,
+			toDate: F3,
+			scope: "org",
+			mode: "shift",
+			notify: false,
+			createdByUserId: "t-1",
+		});
+		const res = await deleteHolidayReq(app, "hol-today");
+		expect(res.status).toBe(422);
+		const errBody = (await res.json()) as { reason: string };
+		expect(errBody.reason).toBe("holiday-started");
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(1);
+	});
+
+	test("DELETE kỳ nghỉ shift khi buổi bù có dòng completed → 409 makeup-touched kèm danh sách, DB không đổi", async () => {
+		const app = createApp();
+		const planHash = await previewHash(app, draft());
+		const applyRes = await apply(app, { ...draft(), planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		// Điểm danh 1 dòng buổi bù của lớp A tại F9.
+		await db
+			.update(schema.lesson)
+			.set({ status: "completed" })
+			.where(
+				and(
+					eq(schema.lesson.classId, "cls-a"),
+					eq(schema.lesson.date, F9),
+					eq(schema.lesson.enrollmentId, "enr-a1"),
+				),
+			);
+
+		const res = await deleteHolidayReq(app, holidayId);
+		expect(res.status).toBe(409);
+		const body = (await res.json()) as {
+			reason: string;
+			touched: Array<{ classId: string; makeupDate: string }>;
+		};
+		expect(body.reason).toBe("makeup-touched");
+		expect(body.touched).toEqual([{ classId: "cls-a", makeupDate: F9 }]);
+
+		// DB không đổi: kỳ nghỉ và shift vẫn còn, buổi gốc vẫn holiday.
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(1);
+		expect(await db.select().from(schema.holidaySessionShift)).toHaveLength(2);
+		const f3B = await db
+			.select({ status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(
+				and(eq(schema.lesson.classId, "cls-b"), eq(schema.lesson.date, F3)),
+			);
+		expect(f3B.every((r) => r.status === "holiday")).toBe(true);
+	});
+
+	test("DELETE kỳ nghỉ thuộc org khác hoặc không tồn tại → 404", async () => {
+		const app = createApp();
+		const planHash = await previewHash(app, draft());
+		const applyRes = await apply(app, { ...draft(), planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const crossOrg = await deleteHolidayReq(app, holidayId, TEACHER_ORG2);
+		expect(crossOrg.status).toBe(404);
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(1);
+
+		const missing = await deleteHolidayReq(app, "hol-missing");
+		expect(missing.status).toBe(404);
+	});
+
+	test("D7: kích hoạt học viên sau kỳ nghỉ cancel → dòng ở ngày hủy là cancelled, không sinh buổi bù", async () => {
+		const app = createApp();
+		await db.insert(schema.student).values({
+			id: "s-3",
+			orgId: "org-1",
+			name: "Phúc",
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-a3",
+			orgId: "org-1",
+			classId: "cls-a",
+			studentId: "s-3",
+			status: "invited",
+		});
+
+		const cancelDraft = {
+			...draft(),
+			mode: "cancel" as const,
+			scope: "classes" as const,
+			classIds: ["cls-a"],
+		};
+		const planHash = await previewHash(app, cancelDraft);
+		const applyRes = await apply(app, { ...cancelDraft, planHash });
+		expect(applyRes.status).toBe(200);
+
+		const activation = await activateEnrollment(db, "org-1", "enr-a3");
+		expect(activation).toEqual({ ok: true });
+
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-a3"));
+		expect(rows).toHaveLength(8);
+		expect(rows.find((r) => r.date === F3)?.status).toBe("cancelled");
+		expect(rows.filter((r) => r.status === "upcoming")).toHaveLength(7);
+	});
+
+	test("snapshot trả holidays[].mode và holidayCancels", async () => {
+		const app = createApp();
+		const cancelDraft = {
+			...draft(),
+			mode: "cancel" as const,
+			scope: "classes" as const,
+			classIds: ["cls-a"],
+		};
+		const planHash = await previewHash(app, cancelDraft);
+		const applyRes = await apply(app, { ...cancelDraft, planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const snapRes = await app.request("/api/kernel", { headers: TEACHER });
+		expect(snapRes.status).toBe(200);
+		const snap = (await snapRes.json()) as {
+			holidays: Array<{ id: string; mode: string }>;
+			holidayCancels: Array<{
+				holidayId: string;
+				classId: string;
+				date: string;
+			}>;
+		};
+		expect(snap.holidays).toEqual([
+			expect.objectContaining({ id: holidayId, mode: "cancel" }),
+		]);
+		expect(snap.holidayCancels).toEqual([
+			{ holidayId, classId: "cls-a", date: F3 },
+		]);
+	});
+});

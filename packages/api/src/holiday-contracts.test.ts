@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	HOLIDAY_MAX_DAYS,
+	HOLIDAY_MODES,
 	HOLIDAY_NAME_MAX,
 	HOLIDAY_NAME_MIN,
 	holidayApplySchema,
@@ -117,12 +118,21 @@ describe("holiday contracts (TOS-11, issue #445)", () => {
 		}
 	});
 
-	it("rejects non-shift mode (cancel is TOS-13)", () => {
+	it(`rejects unknown mode (HOLIDAY_MODES = ${HOLIDAY_MODES.join(" | ")})`, () => {
+		const bogus = holidayDraftSchema.safeParse({
+			...VALID_DRAFT,
+			mode: "delete",
+		});
+		expect(bogus.success).toBe(false);
+	});
+
+	it('accepts mode "cancel" (TOS-13, issue #448)', () => {
 		const cancel = holidayDraftSchema.safeParse({
 			...VALID_DRAFT,
 			mode: "cancel",
 		});
-		expect(cancel.success).toBe(false);
+		expect(cancel.success).toBe(true);
+		if (cancel.success) expect(cancel.data.mode).toBe("cancel");
 	});
 
 	it("apply schema requires a non-empty planHash", () => {

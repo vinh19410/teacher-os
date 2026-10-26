@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Bảng holiday_session_cancel, contract mode, planner chế độ cancel"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: ["#445", "#446"]
