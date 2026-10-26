@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-10-26
+
+### Added
+- Sổ công nợ (`/debts`): nút `Thu` mở hộp thoại **Ghi nhận thu tiền học phí** — thu một phần/toàn bộ với phương thức (Chuyển khoản/Tiền mặt/Khác) + ghi chú; phiếu thu lưu 1 dòng ledger `payment_transaction` (`provider = "manual"`, migration `0048` thêm `method`/`recorded_by`) rồi `recomputeInvoiceStatement` tính lại Đã đóng/Còn nợ và 3 thẻ KPI ngay; server chặn vượt nợ (422 `amount-exceeds-debt`), chốt hóa đơn đã `paid` (422 `invoice-settled`) và idempotent theo `clientRequestId` (retry không ghi đôi); học viên nhiều khoản còn nợ chọn khoản thu (mặc định hạn sớm nhất); trang chi tiết hóa đơn hiển thị cột Phương thức (#450)
+
 ## 2026-10-23
 
 ### Added

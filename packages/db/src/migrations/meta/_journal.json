@@ -337,6 +337,20 @@
       "when": 1793028746226,
       "tag": "0047_slim_nightmare",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1793033695034,
+      "tag": "0048_small_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1793035803431,
+      "tag": "0049_shocking_kabuki",
+      "breakpoints": true
     }
   ]
 }
