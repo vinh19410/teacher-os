@@ -330,6 +330,13 @@
       "when": 1793022927477,
       "tag": "0046_faithful_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1793028746226,
+      "tag": "0047_slim_nightmare",
+      "breakpoints": true
     }
   ]
 }

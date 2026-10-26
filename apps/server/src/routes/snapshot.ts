@@ -24,6 +24,10 @@ import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { orgEvent } from "@teacher-os/db/schema/org-event";
+import {
+	holidaySessionShift,
+	organizationHoliday,
+} from "@teacher-os/db/schema/organization-holiday";
 import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
@@ -234,6 +238,8 @@ export async function loadSnapshot(
 		vocabDeckRows,
 		vocabWordDeckIds,
 		vocabSuggestionRows,
+		holidayRows,
+		holidayShiftRows,
 		eventRows,
 	] = await Promise.all([
 		db
@@ -362,6 +368,26 @@ export async function loadSnapshot(
 				),
 			)
 			.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id)),
+		db
+			.select({
+				id: organizationHoliday.id,
+				name: organizationHoliday.name,
+				fromDate: organizationHoliday.fromDate,
+				toDate: organizationHoliday.toDate,
+				scope: organizationHoliday.scope,
+			})
+			.from(organizationHoliday)
+			.where(eq(organizationHoliday.orgId, orgId))
+			.orderBy(asc(organizationHoliday.fromDate)),
+		db
+			.select({
+				holidayId: holidaySessionShift.holidayId,
+				classId: holidaySessionShift.classId,
+				originalDate: holidaySessionShift.originalDate,
+				makeupDate: holidaySessionShift.makeupDate,
+			})
+			.from(holidaySessionShift)
+			.where(eq(holidaySessionShift.orgId, orgId)),
 		loadEvents(db, orgId),
 	]);
 
@@ -659,6 +685,19 @@ export async function loadSnapshot(
 			studentId: row.studentId,
 			note: row.note ?? null,
 			createdAt: row.createdAt.toISOString(),
+		})),
+		holidays: holidayRows.map((row) => ({
+			id: row.id,
+			name: row.name,
+			fromDate: row.fromDate,
+			toDate: row.toDate,
+			scope: row.scope as "org" | "classes",
+		})),
+		holidayShifts: holidayShiftRows.map((row) => ({
+			holidayId: row.holidayId,
+			classId: row.classId,
+			originalDate: row.originalDate,
+			makeupDate: row.makeupDate,
 		})),
 	};
 }

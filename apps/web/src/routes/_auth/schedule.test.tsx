@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -33,7 +34,7 @@ import { ScheduleRoute } from "./schedule";
 // Monday 12/10/2026, 10:00 Vietnam time.
 const MONDAY = new Date("2026-10-12T03:00:00Z");
 
-function weekSnapshot() {
+function weekSnapshot(overrides: Partial<KernelSnapshot> = {}) {
 	return snapshotFixture({
 		classes: [
 			classRow({
@@ -72,6 +73,7 @@ function weekSnapshot() {
 				zoom: "https://meet.example/abc",
 			}),
 		],
+		...overrides,
 	});
 }
 
@@ -419,6 +421,62 @@ describe("class session dialog from the week grid", () => {
 				within(dialog).getByRole("group", { name: "HV Cũ 1-click" }),
 			).getByText("Hoàn thành"),
 		).toBeTruthy();
+	});
+});
+
+describe("schedule holiday labels (TOS-11)", () => {
+	it("block tuần holiday hiển thị 'Nghỉ lễ — Đã dời sang dd/MM' từ snapshot shift", async () => {
+		server = startKernelServer(
+			weekSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-10-12",
+						type: "1:2",
+						status: "holiday",
+					}),
+					lessonRow({
+						id: "les-2",
+						enrollmentId: "en-2",
+						day: 1,
+						date: "2026-10-12",
+						type: "1:2",
+						status: "holiday",
+					}),
+				],
+				holidays: [
+					{
+						id: "hol-1",
+						name: "Nghỉ lễ 20/11",
+						fromDate: "2026-10-12",
+						toDate: "2026-10-12",
+						scope: "org",
+					},
+				],
+				holidayShifts: [
+					{
+						classId: "cl-1",
+						originalDate: "2026-10-12",
+						makeupDate: "2026-12-21",
+					},
+				],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		const block = await screen.findByText("IELTS Writing");
+		expect(block).toBeTruthy();
+		const blockEl = block.closest("button");
+		expect(blockEl?.textContent).toContain("Nghỉ lễ — Đã dời lịch");
+		expect(blockEl?.textContent).toContain("Nghỉ lễ 20/11");
+		expect(blockEl?.textContent).toContain("Đã dời sang 21/12");
+	});
+
+	it("hiển thị nút + Tạo lịch nghỉ", async () => {
+		start();
+		renderWithKernel(<ScheduleRoute />);
+		expect(await screen.findByTestId("holiday-open")).toBeTruthy();
 	});
 });
 

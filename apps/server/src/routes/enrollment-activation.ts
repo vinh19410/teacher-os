@@ -1,20 +1,144 @@
+import { planHolidayShift } from "@teacher-os/api/holiday-plan";
 import {
+	isoToLessonWeekday,
 	parseStartDateStrict,
 	parseStoredSchedule,
+	scheduleDurationMinutes,
 	skeletonOf,
 } from "@teacher-os/api/skeleton";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import {
+	holidaySessionShift,
+	organizationHoliday,
+	organizationHolidayClass,
+} from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
+import { isRollbackableConstraintError } from "./holidays";
 
-function toMinutes(hhmm: string): number {
-	// TIME_REGEX guarantees exactly two numeric parts.
-	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
-	return hours * 60 + minutes;
+type GeneratorRow = Omit<typeof lesson.$inferInsert, "id" | "createdAt">;
+
+/** Một cặp buổi gốc → buổi bù đã chuẩn hóa khung giờ của lớp. */
+interface EffectiveShift {
+	originalDate: string;
+	makeupDate: string;
+	time: string;
+	dur: number;
+}
+
+/**
+ * Áp các shift theo thứ tự `createdAt ASC` lên tập dòng CỘNG DỒN (I3):
+ * buổi bù của kỳ trước có thể là buổi gốc của kỳ sau — mỗi shift biến dòng
+ * rơi vào `originalDate` thành `holiday` và thêm dòng `upcoming` tại
+ * `makeupDate` cho cùng enrollment.
+ */
+function applyShiftsToRows(
+	rows: GeneratorRow[],
+	shifts: EffectiveShift[],
+): GeneratorRow[] {
+	const acc = rows.map((row) => ({ ...row }));
+	for (const shift of shifts) {
+		const makeups: GeneratorRow[] = [];
+		for (const row of acc) {
+			if (row.date !== shift.originalDate) continue;
+			row.status = "holiday";
+			makeups.push({
+				orgId: row.orgId,
+				classId: row.classId,
+				enrollmentId: row.enrollmentId,
+				day: isoToLessonWeekday(shift.makeupDate),
+				time: shift.time,
+				dur: shift.dur,
+				date: shift.makeupDate,
+				type: row.type,
+				status: "upcoming",
+				topic: "",
+				zoom: "",
+			});
+		}
+		acc.push(...makeups);
+	}
+	return acc;
+}
+
+/** Kỳ nghỉ có hiệu lực với một lớp: scope org của tổ chức + scope classes
+ * có dòng organization_holiday_class trỏ tới lớp. */
+async function loadClassHolidays(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<Array<{ id: string; fromDate: string; toDate: string }>> {
+	const orgHolidays = await db
+		.select({
+			id: organizationHoliday.id,
+			fromDate: organizationHoliday.fromDate,
+			toDate: organizationHoliday.toDate,
+			createdAt: organizationHoliday.createdAt,
+		})
+		.from(organizationHoliday)
+		.where(
+			and(
+				eq(organizationHoliday.orgId, orgId),
+				eq(organizationHoliday.scope, "org"),
+			),
+		);
+	const classScoped = await db
+		.select({
+			id: organizationHoliday.id,
+			fromDate: organizationHoliday.fromDate,
+			toDate: organizationHoliday.toDate,
+			createdAt: organizationHoliday.createdAt,
+		})
+		.from(organizationHoliday)
+		.innerJoin(
+			organizationHolidayClass,
+			eq(organizationHolidayClass.holidayId, organizationHoliday.id),
+		)
+		.where(
+			and(
+				eq(organizationHoliday.orgId, orgId),
+				eq(organizationHolidayClass.classId, classId),
+			),
+		);
+	return [...orgHolidays, ...classScoped]
+		.sort(
+			(a, b) =>
+				a.createdAt.getTime() - b.createdAt.getTime() ||
+				a.id.localeCompare(b.id),
+		)
+		.map(({ id, fromDate, toDate }) => ({ id, fromDate, toDate }));
+}
+
+async function loadClassShifts(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<
+	Array<{
+		id: string;
+		originalDate: string;
+		makeupDate: string;
+	}>
+> {
+	return db
+		.select({
+			id: holidaySessionShift.id,
+			originalDate: holidaySessionShift.originalDate,
+			makeupDate: holidaySessionShift.makeupDate,
+		})
+		.from(holidaySessionShift)
+		.where(
+			and(
+				eq(holidaySessionShift.orgId, orgId),
+				eq(holidaySessionShift.classId, classId),
+			),
+		)
+		.orderBy(holidaySessionShift.createdAt, holidaySessionShift.id);
 }
 
 /**
@@ -45,7 +169,7 @@ export function generateScheduleLessons(input: {
 	const skeleton = startISO
 		? skeletonOf(parsed, startISO, input.sessionsTotal)
 		: null;
-	const dur = (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
+	const dur = scheduleDurationMinutes(parsed);
 	const ordinalByDay = new Map<number, number>();
 	return Array.from({ length: input.sessionsTotal }, (_, i) => {
 		const day = (parsed.days[i % parsed.days.length] ?? 0) + 1;
@@ -133,6 +257,7 @@ export async function activateEnrollment(
 	const [cls] = await db
 		.select({
 			id: classTable.id,
+			name: classTable.name,
 			schedule: classTable.schedule,
 			sessionsTotal: classTable.sessionsTotal,
 			startDate: classTable.startDate,
@@ -150,40 +275,130 @@ export async function activateEnrollment(
 		return { ok: false, error: "class" };
 	}
 
-	try {
-		// CAS update: chỉ flip nếu status vẫn là 'invited'
-		const updated = await db
-			.update(enrollment)
-			.set({ status: "active" })
-			.where(
-				and(
-					eq(enrollment.id, enrollmentId),
-					eq(enrollment.orgId, orgId),
-					eq(enrollment.status, "invited"),
-				),
-			)
-			.returning({ id: enrollment.id });
+	// CAS update: chỉ flip nếu status vẫn là 'invited'. Không bọc try-catch
+	// nuốt lỗi: sau khi CAS commit, mọi lỗi batch là lỗi thật phải ném ra —
+	// `isAlreadyActive()` sẽ luôn true ở điểm này và không được dùng để trả
+	// `{ ok: true }` ảo khi package/lesson chưa được ghi.
+	const updated = await db
+		.update(enrollment)
+		.set({ status: "active" })
+		.where(
+			and(
+				eq(enrollment.id, enrollmentId),
+				eq(enrollment.orgId, orgId),
+				eq(enrollment.status, "invited"),
+			),
+		)
+		.returning({ id: enrollment.id });
 
-		if (updated.length === 0) {
-			// Đã bị kích hoạt bởi request đồng thời khác
-			if (await isAlreadyActive()) {
-				return { ok: true };
-			}
-			return { ok: false, error: "enrollment" };
+	if (updated.length === 0) {
+		// Đã bị kích hoạt bởi request đồng thời khác
+		if (await isAlreadyActive()) {
+			return { ok: true };
 		}
+		return { ok: false, error: "enrollment" };
+	}
 
-		// Won CAS: sinh session package + chuỗi buổi học trong 1 batch
-		const packageValues = {
-			orgId,
-			studentId: existingEnrollment.studentId,
-			total: cls.sessionsTotal,
-			price: cls.tuitionFee ?? 0,
-			mode: cls.mode,
-			start: formatDayMonth(new Date()),
-			expiry: "",
-			status: "active",
-			enrollmentId,
-		};
+	const packageValues = {
+		orgId,
+		studentId: existingEnrollment.studentId,
+		total: cls.sessionsTotal,
+		price: cls.tuitionFee ?? 0,
+		mode: cls.mode,
+		start: formatDayMonth(new Date()),
+		expiry: "",
+		status: "active",
+		enrollmentId,
+	};
+
+	const generated = generateScheduleLessons({
+		schedule: cls.schedule,
+		startDate: cls.startDate,
+		sessionsTotal: cls.sessionsTotal,
+		orgId,
+		classId: cls.id,
+		enrollmentId,
+	});
+	const parsedSchedule = parseStoredSchedule(cls.schedule);
+
+	// D6 (I2b/I3/I6): dựng batch từ state đã đọc (shifts + rows đã áp
+	// shift); mọi insert lesson mang guard CASE đếm `holiday_session_shift`
+	// — một apply commit giữa lúc đọc và ghi làm guard lệch → batch fail
+	// (NOT NULL) → đọc lại và dựng lại, tối đa 3 lần.
+	for (let attempt = 1; attempt <= 3; attempt += 1) {
+		const shifts = await loadClassShifts(db, orgId, cls.id);
+		let rows: GeneratorRow[] = generated.map((row) => ({ ...row }));
+		const newShifts: Array<{
+			holidayId: string;
+			originalDate: string;
+			makeupDate: string;
+		}> = [];
+
+		if (parsedSchedule && rows.length > 0) {
+			const effective: EffectiveShift[] = shifts.map((shift) => ({
+				originalDate: shift.originalDate,
+				makeupDate: shift.makeupDate,
+				time: parsedSchedule.start,
+				dur: scheduleDurationMinutes(parsedSchedule),
+			}));
+			rows = applyShiftsToRows(rows, effective);
+
+			// I6: lớp chưa có dòng shift nào nhưng có kỳ nghỉ hiệu lực
+			// (chưa từng có học viên lúc apply, hoặc lớp tạo sau) — chạy
+			// planner trên tập dòng vừa sinh và tự sinh shift trong batch.
+			if (shifts.length === 0) {
+				const holidays = await loadClassHolidays(db, orgId, cls.id);
+				if (holidays.length > 0) {
+					const holidayDates = new Set<string>();
+					for (const holiday of holidays) {
+						for (
+							let d = holiday.fromDate;
+							d <= holiday.toDate;
+							d = addDaysISO(d, 1)
+						) {
+							holidayDates.add(d);
+						}
+					}
+					for (const holiday of holidays) {
+						const planned = planHolidayShift({
+							range: {
+								fromDate: holiday.fromDate,
+								toDate: holiday.toDate,
+							},
+							classes: [
+								{
+									id: cls.id,
+									name: cls.name ?? cls.id,
+									schedule: cls.schedule,
+									lessons: rows.map((row) => ({
+										date: row.date ?? null,
+										status: row.status ?? "upcoming",
+										enrollmentId: row.enrollmentId,
+									})),
+								},
+							],
+							existingHolidayDates: new Map([[cls.id, holidayDates]]),
+							todayISO: vietnamTodayISO(),
+						});
+						for (const shift of planned.shifts) {
+							newShifts.push({
+								holidayId: holiday.id,
+								originalDate: shift.originalDate,
+								makeupDate: shift.makeupDate,
+							});
+							rows = applyShiftsToRows(rows, [
+								{
+									originalDate: shift.originalDate,
+									makeupDate: shift.makeupDate,
+									time: parsedSchedule.start,
+									dur: scheduleDurationMinutes(parsedSchedule),
+								},
+							]);
+						}
+					}
+				}
+			}
+		}
 
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(sessionPackage).values({
@@ -191,25 +406,43 @@ export async function activateEnrollment(
 				...packageValues,
 			}),
 		];
-		for (const row of generateScheduleLessons({
-			schedule: cls.schedule,
-			startDate: cls.startDate,
-			sessionsTotal: cls.sessionsTotal,
-			orgId,
-			classId: cls.id,
-			enrollmentId,
-		})) {
+		for (const shift of newShifts) {
 			statements.push(
-				db.insert(lesson).values({ id: crypto.randomUUID(), ...row }),
+				db.insert(holidaySessionShift).values({
+					id: crypto.randomUUID(),
+					orgId,
+					classId: cls.id,
+					...shift,
+				}),
 			);
 		}
-		await db.batch(statements);
-		return { ok: true };
-	} catch (err: unknown) {
-		// Phòng vệ unique constraint nếu có race còn sót
-		if (await isAlreadyActive()) {
-			return { ok: true };
+		for (const row of rows) {
+			statements.push(
+				db.insert(lesson).values({
+					id: crypto.randomUUID(),
+					...row,
+					/**
+					 * Guard chống lệch đọc (I2b): count shift trong DB phải vẫn bằng
+					 * số đã đọc CỘNG với số shift batch này tự sinh (I6 — insert
+					 * shift chạy trước lesson trong cùng batch). Lệch nghĩa là có
+					 * apply vừa commit ngoài batch → rollback, vòng sau dựng lại.
+					 * Giữ NGUYÊN `row.status`: dòng đã đánh dấu `holiday` phải ghi
+					 * đúng `holiday`, không phải `upcoming`.
+					 */
+					status: sql`CASE WHEN (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${cls.id}) = ${shifts.length + newShifts.length} THEN ${row.status} ELSE NULL END`,
+				}),
+			);
 		}
-		throw err;
+
+		try {
+			await db.batch(statements);
+			return { ok: true };
+		} catch (err: unknown) {
+			if (attempt >= 3 || !isRollbackableConstraintError(err)) {
+				throw err;
+			}
+			// Vòng sau đọc lại shifts/rows và dựng batch mới.
+		}
 	}
+	throw new Error("activateEnrollment: shift guard retry exhausted");
 }

@@ -186,17 +186,19 @@ export function ClassSessionsSection({
 						const isPastUnmarked = isPast && markedCount + absentCount === 0;
 						// Link attendance cho buổi ĐÃ TỚI NGÀY (kể cả hôm nay — gate
 						// action trong modal vẫn chặn check-in sớm qua
-						// sessionIsEligibleDate) hoặc đã học.
+						// sessionIsEligibleDate) hoặc đã học. Buổi `holiday` (TOS-11)
+						// không diễn ra — không có CTA điểm danh.
 						const dateArrived =
 							!isProjected &&
 							status !== "cancelled" &&
+							status !== "holiday" &&
 							s.dateISO <= todayISO &&
 							attendees.length > 0;
 						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
 
 						return (
 							<li
-								key={`session-${s.index}`}
+								key={`session-${s.dateISO}-${s.index}`}
 								data-testid="session-row"
 								className={cn(
 									"flex flex-wrap items-center gap-3 rounded-lg border p-3",
@@ -211,7 +213,8 @@ export function ClassSessionsSection({
 											: "bg-muted text-muted-foreground",
 									)}
 								>
-									{s.index}
+									{/* Buổi `holiday` không tiêu thụ số buổi (TOS-11 I4) — index 0. */}
+									{s.index > 0 ? s.index : "—"}
 								</span>
 								<div className="min-w-0 flex-1">
 									<div className="flex flex-wrap items-center gap-1.5">
@@ -278,6 +281,10 @@ export function ClassSessionsSection({
 								) : status === "cancelled" ? (
 									<span className="shrink-0 font-medium text-muted-foreground text-xs">
 										Đã hủy
+									</span>
+								) : status === "holiday" ? (
+									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
+										Nghỉ lễ — Đã dời lịch
 									</span>
 								) : status === "completed" ||
 									isPast ||

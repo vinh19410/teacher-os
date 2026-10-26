@@ -4,7 +4,10 @@ import {
 	type DailyAttendanceResponse,
 	dailyAttendanceResponseSchema,
 } from "@teacher-os/api/contracts";
-import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import {
+	isoToLessonWeekday,
+	parseStartDateStrict,
+} from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	classTable,
@@ -26,12 +29,6 @@ type AttendanceContext = Context<Env>;
 /** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của Cloudflare D1 (#366 RT-F2). */
 const D1_IN_ARRAY_CHUNK = 50;
 
-/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1 — cùng quy ước `computeReminders`. */
-function lessonWeekdayOf(iso: string): number {
-	const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
-	return weekday === 0 ? 7 : weekday;
-}
-
 export interface RawDailyAttendanceRow {
 	lessonId: string;
 	classId: string;
@@ -48,14 +45,17 @@ export interface RawDailyAttendanceRow {
 
 /**
  * Điểm cắm Lịch nghỉ chung (FR-007, D3): loại bỏ các dòng không diễn ra buổi
- * dạy. Hiện tại chỉ bỏ `status === "cancelled"`; khi story Lịch nghỉ chung
- * có bảng dữ liệu, chỉ cần mở rộng hàm này mà không đổi `computeDailyAttendance`.
+ * dạy — `cancelled` và `holiday` (buổi gốc đã dời, TOS-11). Khi story mới
+ * thêm trạng thái không diễn ra, chỉ cần mở rộng hàm này mà không đổi
+ * `computeDailyAttendance`.
  */
 export function excludeNonTeachingSessions(
 	rows: readonly RawDailyAttendanceRow[],
 	_ctx: { orgId: string; dateISO: string },
 ): RawDailyAttendanceRow[] {
-	return rows.filter((row) => row.status !== "cancelled");
+	return rows.filter(
+		(row) => row.status !== "cancelled" && row.status !== "holiday",
+	);
 }
 
 function coerceDisplayAttendance(
@@ -83,7 +83,7 @@ async function queryDailyRows(
 	dateISO: string,
 	classIdsFilter?: readonly string[],
 ): Promise<RawDailyAttendanceRow[]> {
-	const weekday = lessonWeekdayOf(dateISO);
+	const weekday = isoToLessonWeekday(dateISO);
 	const datedMatch = and(isNotNull(lesson.date), eq(lesson.date, dateISO));
 	const legacyMatch = and(isNull(lesson.date), eq(lesson.day, weekday));
 

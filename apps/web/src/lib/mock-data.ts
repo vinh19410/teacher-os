@@ -6,6 +6,8 @@ import type {
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
 	KernelEventRow,
+	KernelHolidayShiftRow,
+	KernelHolidaySummary,
 	KernelVocabDeckRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
@@ -39,7 +41,12 @@ export interface Student {
 }
 
 export type LessonType = "1:1" | "1:2" | "trial" | "mock" | "review";
-export type LessonStatus = "completed" | "upcoming" | "cancelled" | "absent";
+export type LessonStatus =
+	| "completed"
+	| "upcoming"
+	| "cancelled"
+	| "absent"
+	| "holiday";
 
 export interface Lesson {
 	id: string;
@@ -269,6 +276,9 @@ export type KernelHydratedData = Pick<
 	vocabDecks: KernelVocabDeckRow[];
 	/** Pending vocab suggestions (#363): danh sách gợi ý đang chờ học viên phản hồi. */
 	vocabSuggestions: KernelVocabSuggestionRow[];
+	/** TOS-11: nhãn kỳ nghỉ + "Đã dời sang dd/MM" trên lịch tuần. */
+	holidays: KernelHolidaySummary[];
+	holidayShifts: KernelHolidayShiftRow[];
 	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
 	events: KernelEventRow[];
 };

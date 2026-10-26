@@ -3,6 +3,7 @@ import type { ClassSessionModalRef } from "@/components/schedule/class-session-m
 import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { classColorIndex } from "@/lib/class-color";
 import { dayNames } from "@/lib/mock-data";
+import { holidayNameForDate, makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelSlice } from "@/lib/repos/kernel";
 import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
 import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
@@ -124,6 +125,13 @@ export function ScheduleWeekView({
 											if (!s) return null;
 											const cls = data.classes.find((c) => c.id === s.classId);
 											const className = cls?.name ?? "Lớp học";
+											const isHoliday = s.status === "holiday";
+											const makeupDate = isHoliday
+												? makeupDateForShift(data, s.classId, s.dateISO)
+												: null;
+											const holidayName = isHoliday
+												? holidayNameForDate(data, s.classId, s.dateISO)
+												: null;
 											return (
 												<button
 													type="button"
@@ -142,7 +150,9 @@ export function ScheduleWeekView({
 															? "opacity-60"
 															: s.status === "cancelled"
 																? "opacity-35"
-																: ""
+																: isHoliday
+																	? "border-warn/60 opacity-75"
+																	: ""
 													}`}
 													data-class-color={classColorIndex(s.classId)}
 												>
@@ -172,7 +182,17 @@ export function ScheduleWeekView({
 														})()}
 													</div>
 													<div className="mt-px text-[11px] text-muted-foreground">
-														{s.topic.substring(0, 30)}
+														{isHoliday ? (
+															<span className="font-medium text-warn">
+																Nghỉ lễ — Đã dời lịch
+																{holidayName ? ` · ${holidayName}` : ""}
+																{makeupDate
+																	? ` · Đã dời sang ${formatDayMonth(makeupDate)}`
+																	: ""}
+															</span>
+														) : (
+															s.topic.substring(0, 30)
+														)}
 													</div>
 													<div className="mt-1">
 														<span className="rounded border border-border bg-background px-1 py-px text-[10px] text-muted-foreground">

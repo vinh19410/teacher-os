@@ -20,6 +20,29 @@ export interface ParsedSchedule {
 	end: string;
 }
 
+function toMinutes(hhmm: string): number {
+	// TIME_REGEX guarantees exactly two numeric parts.
+	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
+	return hours * 60 + minutes;
+}
+
+/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1 — never JS
+ * getDay() (0 = Sunday). Single source: kernel route, daily attendance và
+ * holiday pipeline (TOS-11) cùng dùng. */
+export function isoToLessonWeekday(iso: string): number {
+	const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+	return weekday === 0 ? 7 : weekday;
+}
+
+/**
+ * Thời lượng phút của một buổi theo lịch chuẩn của lớp — cùng công thức
+ * `generateScheduleLessons` (wraps midnight: 23:00→00:30 = 90). Tách ra để
+ * holiday makeup (TOS-11) và generator dùng chung một nguồn (DRY).
+ */
+export function scheduleDurationMinutes(parsed: ParsedSchedule): number {
+	return (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
+}
+
 /**
  * Parse the stored class schedule JSON; null for legacy free-text/invalid.
  * Mirrors apps/server kernel.ts byte-for-byte (dedup + sort before cycling).

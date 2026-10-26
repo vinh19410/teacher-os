@@ -33,6 +33,12 @@ const LESSON_STATUS: Record<
 		variant: "outline",
 		badgeClass: "text-muted-foreground line-through",
 	},
+	// TOS-11: buổi gốc bị Lịch nghỉ chung dời — "Nghỉ lễ — Đã dời lịch".
+	holiday: {
+		label: "Nghỉ lễ — Đã dời lịch",
+		variant: "outline",
+		badgeClass: "text-amber-600 dark:text-amber-400",
+	},
 	// Buổi `upcoming` đã qua giờ kết thúc (chưa ai check-in) — suy ra ở render.
 	ended: {
 		label: "Đã kết thúc",

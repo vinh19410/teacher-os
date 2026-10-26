@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "E2E AC-001: tạo lịch nghỉ chung, xem trước và dời buổi"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: ["phase-05"]
@@ -19,6 +19,8 @@ Chứng minh end-to-end kịch bản Gherkin của AC-001 trên app thật, ở 
 - Modify (nếu cần seed): helper seed trong `apps/e2e/src/` — 1 lớp T6 có 2 học viên active, 1 lớp T3 & T7, ngày bắt đầu cố định để ngày bù xác định được.
 
 ## Kịch bản
+
+> Lưu ý M1 (red-team): AC-001 vế "phát thông báo đổi lịch" chỉ đạt một phần ở ticket này — chỉ có dòng `notif` tổ chức, Email/In-app học viên là TOS-19. Test/E2E không tuyên bố trọn vẹn vế này; ghi rõ trong PR.
 
 1. Đăng nhập GV, mở `/schedule`, bấm **+ Tạo lịch nghỉ**.
 2. Nhập tên 1 ký tự → thấy lỗi, nút xác nhận khóa. Sửa thành "Nghỉ lễ 20/11".

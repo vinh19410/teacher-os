@@ -5,6 +5,7 @@ import {
 	ClassSessionModal,
 	type ClassSessionModalRef,
 } from "@/components/schedule/class-session-modal";
+import { HolidayModal } from "@/components/schedule/holiday-modal";
 import { OrgEventModal } from "@/components/schedule/org-event-modal";
 import { ScheduleDayView } from "@/components/schedule/schedule-day-view";
 import { ScheduleMonthView } from "@/components/schedule/schedule-month-view";
@@ -14,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { PageHead } from "@/components/ui/page-head";
 import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
+
 import {
 	parseScheduleSearch,
 	type ScheduleView,
@@ -52,7 +54,7 @@ const VIEW_LABELS: Record<ScheduleView, string> = {
 const VIEW_ORDER: ScheduleView[] = ["month", "week", "day"];
 
 export function ScheduleRoute() {
-	const { data } = useData();
+	const { data, refresh } = useData();
 	const search = Route.useSearch();
 	const navigate = useNavigate();
 	const { view, date, scrub } = parseScheduleSearch(search);
@@ -60,6 +62,7 @@ export function ScheduleRoute() {
 	const [openSession, setOpenSession] = useState<ClassSessionModalRef | null>(
 		null,
 	);
+	const [holidayModalOpen, setHolidayModalOpen] = useState(false);
 	const [eventModalOpen, setEventModalOpen] = useState(false);
 
 	// A garbage ?view/?date (or a legacy ?week link) scrubs the URL to the
@@ -126,7 +129,7 @@ export function ScheduleRoute() {
 				kicker={kicker}
 				title="Lịch dạy"
 				action={
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 sm:max-w-none">
 						<div data-testid="schedule-view-switch">
 							{/* Segmented control dùng chung (design `Tabs`) — pattern
 						    tablist/tab của repo, thay cho radiogroup tự chế. */}
@@ -144,6 +147,12 @@ export function ScheduleRoute() {
 						>
 							<CalendarPlus aria-hidden className="size-4" />
 							Sự kiện
+						</Button>
+						<Button
+							data-testid="holiday-open"
+							onClick={() => setHolidayModalOpen(true)}
+						>
+							+ Tạo lịch nghỉ
 						</Button>
 					</div>
 				}
@@ -220,6 +229,16 @@ export function ScheduleRoute() {
 			<ClassSessionModal
 				sessionRef={openSession}
 				onClose={() => setOpenSession(null)}
+			/>
+			<HolidayModal
+				open={holidayModalOpen}
+				classes={data.classes
+					.filter((cls) => cls.status === "active")
+					.map((cls) => ({ id: cls.id, name: cls.name }))}
+				onClose={() => setHolidayModalOpen(false)}
+				onApplied={() => {
+					void refresh();
+				}}
 			/>
 			<OrgEventModal
 				open={eventModalOpen}

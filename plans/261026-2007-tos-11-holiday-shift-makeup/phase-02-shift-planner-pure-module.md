@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "planHolidayShift — module thuần tính buổi trùng và ngày bù"
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 dependencies: ["phase-01"]
@@ -54,7 +54,7 @@ Quy tắc:
    - Mọi dòng còn lại đều `upcoming` → đưa vào `shifts`.
    - Có dòng `completed`/`absent` (đã điểm danh) → `keptCompleted`, không đụng (D1).
 3. Lớp có `parseStoredSchedule` null → `unsupported: legacy-schedule`; lớp có bất kỳ `date = null` → `unsupported: undated`.
-4. Ngày bù (D4): con trỏ bắt đầu từ ngày sau `max(date)` của các buổi còn dạy (sau khi đã loại các buổi sắp bị dời). Duyệt từng ngày; nhận ngày nếu thứ ∈ `schedule.days`, không thuộc `existingHolidayDates` của lớp hoặc `range` đang tạo, chưa có buổi. Ngày bị loại vì kỳ nghỉ → ghi vào `skippedHolidayDates`. Giới hạn vòng lặp `shifts * 7 * 52` ngày, vượt thì ném lỗi (không bịa ngày).
+4. Ngày bù (D4, thống nhất với plan.md sau red-team I1): con trỏ bắt đầu từ `max(max(date)` của **mọi nhóm buổi không `cancelled`/`holiday`, kể cả các buổi sắp bị dời**, `vietnamToday`) `+ 1`. Định nghĩa "đã có buổi": ngày đó có **bất kỳ dòng lesson nào** (`enrollmentId` bất kỳ, mọi trạng thái — cùng quan sát `bucketCounts` `kernel.ts:689`); ngày có dòng `cancelled`/`holiday` vẫn tính là đã có buổi, không trộn chung ngày. Ngày bị loại vì kỳ nghỉ → ghi vào `skippedHolidayDates`. Giới hạn vòng lặp `shifts * 7 * 52` ngày, vượt thì ném lỗi (không bịa ngày).
 5. `time = schedule.start`, `dur` cùng công thức `generateScheduleLessons` — tách helper `scheduleDurationMinutes` vào `skeleton.ts` và cho `enrollment-activation.ts` dùng lại (DRY).
 6. Thứ tự output ổn định: theo `className`, rồi `originalDate`.
 
@@ -66,6 +66,8 @@ Quy tắc:
    - Ngày bù dự kiến 26/12 thuộc kỳ nghỉ khác → nhảy sang 29/12, `skippedHolidayDates = ["2026-12-26"]` (đúng ví dụ AC-002).
    - Buổi có 1 dòng `completed` → vào `keptCompleted`, không có shift.
    - Buổi toàn `cancelled` trong khoảng → bỏ qua.
+   - Con trỏ bắt đầu: buổi bị dời là buổi cuối + một ngày đúng-thứ trống phía trước (do `moveDate` cũ) → ngày bù vẫn **sau** buổi cuối, không rơi vào ngày trống đó (I1).
+   - `max(date)` nhỏ hơn hôm nay → con trỏ bắt đầu từ `vietnamToday + 1`, không sinh ngày bù trong quá khứ (I1/I2).
    - Lớp schedule legacy → `unsupported`.
    - Khoảng không trúng buổi nào → `shifts` rỗng.
    - Gọi 2 lần cùng input → output giống hệt (deterministic).

@@ -23,7 +23,10 @@ import {
 	generatePaymentCode,
 	generatePayToken,
 } from "@teacher-os/api/lib/payment-code";
-import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import {
+	isoToLessonWeekday,
+	parseStartDateStrict,
+} from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -36,6 +39,7 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { holidaySessionShift } from "@teacher-os/db/schema/organization-holiday";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
@@ -70,6 +74,7 @@ import {
 import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
+import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
@@ -671,10 +676,33 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
-	/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1. */
-	function isoToLessonWeekday(iso: string): number {
-		const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
-		return weekday === 0 ? 7 : weekday;
+	// isoToLessonWeekday sống ở @teacher-os/api/skeleton (TOS-11 M5) — route
+	// holidays và activation cùng dùng một nguồn, không giữ bản mirror.
+
+	/**
+	 * C2 (TOS-11): nhóm buổi có dòng `holiday` bị khóa sửa/dời — bảng
+	 * `holiday_session_shift` là nguồn sự thật cho cặp gốc→bù; moveDate nhóm
+	 * này làm `originalDate`/`makeupDate` lệch, vỡ nhãn "Đã dời sang" và D6.
+	 */
+	async function holidayBucketLocked(
+		db: Db,
+		orgId: string,
+		classId: string,
+		dateISO: string,
+	): Promise<boolean> {
+		const rows = await db
+			.select({ id: lesson.id })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+					eq(lesson.status, "holiday"),
+				),
+			)
+			.limit(1);
+		return rows.length > 0;
 	}
 
 	function invalidDateResponse(c: KernelContext) {
@@ -744,6 +772,8 @@ export function kernelRoutes(deps: {
 							.from(enrollment)
 							.where(eq(enrollment.classId, classId)),
 					),
+					// C2 (TOS-11): dòng `holiday` không bao giờ bị ghi đè qua occurrenceUpdate.
+					ne(lesson.status, "holiday"),
 					...(statusFilter ? [eq(lesson.status, "upcoming" as const)] : []),
 				),
 			)
@@ -855,6 +885,13 @@ export function kernelRoutes(deps: {
 						error: "day change requires the occurrence endpoint",
 						reason: "use-occurrence-endpoint",
 					},
+					409,
+				);
+			}
+			// C2 (TOS-11): bucket có dòng `holiday` bị khóa sửa.
+			if (await holidayBucketLocked(db, ctx.orgId, pre.classId, pre.date)) {
+				return c.json(
+					{ error: "holiday occurrence is locked", reason: "holiday-locked" },
 					409,
 				);
 			}
@@ -983,15 +1020,56 @@ export function kernelRoutes(deps: {
 				404,
 			);
 		}
-		try {
-			const rows = await occurrenceUpdate(
-				db,
-				classId,
-				dateISO,
-				ctx.orgId,
-				set,
-				false,
+		// C2 (TOS-11): bucket có dòng `holiday` bị khóa sửa/dời — nhãn "Đã dời
+		// sang" và D6 đọc `holiday_session_shift` theo ngày gốc/ngày bù.
+		if (await holidayBucketLocked(db, ctx.orgId, classId, dateISO)) {
+			return c.json(
+				{ error: "holiday occurrence is locked", reason: "holiday-locked" },
+				409,
 			);
+		}
+		try {
+			let rows: Array<{ id: string }>;
+			if (moveDateISO && moveDateISO !== dateISO) {
+				// C2: dời lesson và kéo `holiday_session_shift.makeupDate` trong
+				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
+				try {
+					const [updatedRows] = await db.batch([
+						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
+						db
+							.update(holidaySessionShift)
+							.set({ makeupDate: moveDateISO })
+							.where(
+								and(
+									eq(holidaySessionShift.orgId, ctx.orgId),
+									eq(holidaySessionShift.classId, classId),
+									eq(holidaySessionShift.makeupDate, dateISO),
+								),
+							),
+					]);
+					rows = updatedRows;
+				} catch (shiftCause) {
+					if (isRollbackableConstraintError(shiftCause)) {
+						return c.json(
+							{
+								error: "destination date occupied",
+								reason: "date-occupied",
+							},
+							409,
+						);
+					}
+					throw shiftCause;
+				}
+			} else {
+				rows = await occurrenceUpdate(
+					db,
+					classId,
+					dateISO,
+					ctx.orgId,
+					set,
+					false,
+				);
+			}
 			// Unique-index race backstop (never parse SQLite error strings —
 			// re-check state instead): if the destination shows occupancy now,
 			// a concurrent move won and this write lost cleanly.
@@ -1135,7 +1213,10 @@ export function kernelRoutes(deps: {
 					eq(lesson.orgId, ctx.orgId),
 					eq(lesson.classId, classId),
 					eq(lesson.date, dateISO),
+					// TOS-11: buổi `holiday` (Nghỉ lễ — Đã dời lịch) không diễn ra,
+					// không nằm trong roster điểm danh.
 					ne(lesson.status, "cancelled"),
+					ne(lesson.status, "holiday"),
 				),
 			);
 		if (rosterRows.length === 0) {
@@ -1176,7 +1257,7 @@ export function kernelRoutes(deps: {
 		// kèm roster-snapshot guard trong WHERE. Nếu roster đổi giữa lúc đọc và
 		// ghi (ví dụ kích hoạt enrollment muộn thêm dòng upcoming), guard count
 		// lệch cho mọi câu lệnh -> toàn batch cập nhật 0 dòng -> trả 409.
-		const rosterCountGuard = sql`(SELECT count(*) FROM ${lesson} INNER JOIN ${enrollment} ON ${lesson.enrollmentId} = ${enrollment.id} AND ${enrollment.classId} = ${lesson.classId} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${dateISO} AND ${lesson.status} != 'cancelled' AND ${enrollment.status} = 'active') = ${entries.length}`;
+		const rosterCountGuard = sql`(SELECT count(*) FROM ${lesson} INNER JOIN ${enrollment} ON ${lesson.enrollmentId} = ${enrollment.id} AND ${enrollment.classId} = ${lesson.classId} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${dateISO} AND ${lesson.status} != 'cancelled' AND ${lesson.status} != 'holiday' AND ${enrollment.status} = 'active') = ${entries.length}`;
 
 		const statements = entries.map((entry) =>
 			db
@@ -1193,6 +1274,8 @@ export function kernelRoutes(deps: {
 						eq(lesson.classId, classId),
 						eq(lesson.date, dateISO),
 						ne(lesson.status, "cancelled"),
+						// TOS-11: dòng `holiday` không bao giờ nhận điểm danh.
+						ne(lesson.status, "holiday"),
 						lte(lesson.date, today),
 						inArray(
 							lesson.enrollmentId,
@@ -1387,6 +1470,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.
 	kernel.route("/attendance", dailyAttendanceRoutes(deps));
+	kernel.route("/holidays", holidayRoutes(deps));
 	// TOS-14 (#447): sự kiện vận hành ngoài lịch lớp — POST/DELETE /api/events.
 	kernel.route("/events", eventRoutes(deps));
 	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;

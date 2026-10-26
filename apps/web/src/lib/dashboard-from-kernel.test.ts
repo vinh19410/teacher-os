@@ -94,6 +94,13 @@ describe("lessonsToday", () => {
 			status: "cancelled",
 		}),
 		lesson({
+			id: "holiday",
+			sid: "s2",
+			day: 3,
+			time: "12:00",
+			status: "holiday",
+		}),
+		lesson({
 			id: "absent",
 			sid: "s2",
 			day: 3,
@@ -103,7 +110,7 @@ describe("lessonsToday", () => {
 		lesson({ id: "tue", sid: "s1", day: 2, time: "09:00", status: "upcoming" }),
 	];
 
-	test("keeps same weekday except cancelled, sorted by time", () => {
+	test("keeps same weekday except cancelled/holiday, sorted by time", () => {
 		expect(lessonsToday(rows, wednesday).map((l) => l.id)).toEqual([
 			"early",
 			"absent",
@@ -550,6 +557,22 @@ describe("upcomingLessonsThisWeek (issue #212)", () => {
 				time: "08:00",
 				date: null,
 				status: "cancelled",
+			}),
+			lesson({ id: "fri", sid: "s1", day: 5, time: "08:00", date: null }),
+		];
+		const result = upcomingLessonsThisWeek(lessons, wednesday);
+		expect(result.map((l) => l.id)).toEqual(["fri"]);
+	});
+
+	test("TOS-11: drops holiday lessons như cancelled", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "thu-holiday",
+				sid: "s1",
+				day: 4,
+				time: "08:00",
+				date: null,
+				status: "holiday",
 			}),
 			lesson({ id: "fri", sid: "s1", day: 5, time: "08:00", date: null }),
 		];

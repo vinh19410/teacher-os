@@ -13,7 +13,13 @@ export function lessonDayFromDate(now = new Date()): number {
 export function lessonsToday(lessons: Lesson[], now = new Date()): Lesson[] {
 	const day = lessonDayFromDate(now);
 	return lessons
-		.filter((lesson) => lesson.day === day && lesson.status !== "cancelled")
+		.filter(
+			(lesson) =>
+				lesson.day === day &&
+				// Buổi đã hủy và buổi nghỉ lễ đã dời (TOS-11) không phải ca dạy.
+				lesson.status !== "cancelled" &&
+				lesson.status !== "holiday",
+		)
 		.slice()
 		.sort((a, b) => a.time.localeCompare(b.time));
 }
@@ -90,7 +96,10 @@ export function upcomingLessonsThisWeek(
 	);
 	return lessons
 		.filter((lesson) => {
-			if (lesson.status === "cancelled") return false;
+			// TOS-11: `holiday` xử lý như `cancelled` — không phải buổi sắp dạy.
+			if (lesson.status === "cancelled" || lesson.status === "holiday") {
+				return false;
+			}
 			if (lesson.date == null) return lesson.day > todayDay;
 			return remaining.has(lesson.date);
 		})
