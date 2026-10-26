@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "API danh sách ca theo ngày + lưu điểm danh cả ca"
-status: pending
+status: completed
 priority: P1
 effort: "6h"
 dependencies: [1, "TOS-6 phase 1"]

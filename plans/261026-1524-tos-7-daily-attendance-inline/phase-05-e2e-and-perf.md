@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "E2E AC-002, 3 viewport, design compare, đo 2 giây"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [3, 4]

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Nội dung màn /attendance: chip lọc, accordion, 4 trạng thái, ghi chú, lưu"
-status: pending
+status: completed
 priority: P1
 effort: "7h"
 dependencies: [2, "TOS-6 phase 2"]

@@ -1,7 +1,7 @@
 ---
 title: "TOS-7: Điểm danh tổng theo ngày — lọc ca theo URL và điểm danh inline 4 trạng thái"
 description: "Dựng nội dung màn /attendance: liệt kê ca học trong ngày chọn trên URL (loại buổi đã huỷ, chừa điểm cắm nghỉ lễ), mở rộng inline, chọn 1 trong 4 trạng thái chuẩn kèm ghi chú học vụ và lưu cả ca trong 2 giây, bộ đếm dashboard giảm 1."
-status: pending
+status: completed
 priority: P1
 effort: 2.5d
 issue: 440
@@ -67,20 +67,20 @@ Nguồn: Jira [TOS-7](https://teacher-os.atlassian.net/browse/TOS-7) (subtask c�
 | # | Phase | Trạng thái | Phụ thuộc |
 |---|---|---|---|
 | 1 | [phase-01-attendance-schema-and-contracts.md](phase-01-attendance-schema-and-contracts.md): migration 2 cột + contract zod + ánh xạ trạng thái | completed | — |
-| 2 | [phase-02-daily-attendance-api.md](phase-02-daily-attendance-api.md): `GET /api/attendance/daily` + `PUT …/sessions/:date/attendance` | pending | 1, TOS-6 Phase 1 |
-| 3 | [phase-03-daily-attendance-screen.md](phase-03-daily-attendance-screen.md): nội dung màn `/attendance` (chip lọc, accordion, radio 4 trạng thái, ghi chú, lưu) | pending | 2, TOS-6 Phase 2 |
+| 2 | [phase-02-daily-attendance-api.md](phase-02-daily-attendance-api.md): `GET /api/attendance/daily` + `PUT …/sessions/:date/attendance` | completed | 1, TOS-6 Phase 1 |
+| 3 | [phase-03-daily-attendance-screen.md](phase-03-daily-attendance-screen.md): nội dung màn `/attendance` (chip lọc, accordion, radio 4 trạng thái, ghi chú, lưu) | completed | 2, TOS-6 Phase 2 |
 | 4 | [phase-04-kernel-consumers-sync.md](phase-04-kernel-consumers-sync.md): mang `attendance` vào kernel snapshot, cập nhật cảnh báo rủi ro + popup lịch | completed | 1 |
-| 5 | [phase-05-e2e-and-perf.md](phase-05-e2e-and-perf.md): E2E AC-002, 3 viewport, design compare, đo 2 giây | pending | 3, 4 |
+| 5 | [phase-05-e2e-and-perf.md](phase-05-e2e-and-perf.md): E2E AC-002, 3 viewport, design compare, đo 2 giây | completed | 3, 4 |
 
 ## Acceptance Criteria (map AC-002)
 
-- [ ] Mở `/attendance?date=2026-10-26` thì thấy mọi ca có buổi học ngày đó (lớp có ngày và lớp legacy theo thứ), buổi `cancelled` không xuất hiện. Danh sách tải trong ≤ 2 giây với seed e2e.
-- [ ] Mở rộng 1 ca ngay tại chỗ, chọn trạng thái cho từng học viên, nhập ghi chú, bấm "Lưu điểm danh ca học": request trả về trong ≤ 2 giây, URL không đổi, toast thành công.
-- [ ] Sau khi lưu, ca hiện nhãn "Đã điểm danh"; bộ đếm `attendance.pending` của `GET /api/dashboard/reminders` giảm đúng 1 (kiểm ở API test và E2E).
-- [ ] Dữ liệu ghi xuống đúng D2: `present`/`late`/`unexcused` → `status = completed`, `excused` → `status = absent`; ghi chú được lưu và hiển thị lại khi tải lại trang.
-- [ ] Lưu khi còn học viên chưa chọn trạng thái thì bị chặn ở client (viền vàng dòng thiếu + thông báo) và server trả 422.
-- [ ] Ngày tương lai không lưu được (422 `future-session`, giống guard check-in hiện có).
-- [ ] `pnpm check`, `pnpm check-types`, test web/server/db và e2e liên quan đều xanh.
+- [x] Mở `/attendance?date=2026-10-26` thì thấy mọi ca có buổi học ngày đó (lớp có ngày và lớp legacy theo thứ), buổi `cancelled` không xuất hiện. Danh sách tải trong ≤ 2 giây với seed e2e.
+- [x] Mở rộng 1 ca ngay tại chỗ, chọn trạng thái cho từng học viên, nhập ghi chú, bấm "Lưu điểm danh ca học": request trả về trong ≤ 2 giây, URL không đổi, toast thành công.
+- [x] Sau khi lưu, ca hiện nhãn "Đã điểm danh"; bộ đếm `attendance.pending` của `GET /api/dashboard/reminders` giảm đúng 1 (kiểm ở API test và E2E).
+- [x] Dữ liệu ghi xuống đúng D2: `present`/`late`/`unexcused` → `status = completed`, `excused` → `status = absent`; ghi chú được lưu và hiển thị lại khi tải lại trang.
+- [x] Lưu khi còn học viên chưa chọn trạng thái thì bị chặn ở client (viền vàng dòng thiếu + thông báo) và server trả 422.
+- [x] Ngày tương lai không lưu được (422 `future-session`, giống guard check-in hiện có).
+- [x] `pnpm check`, `pnpm check-types`, test web/server/db và e2e liên quan đều xanh.
 
 ## Rủi ro
 
