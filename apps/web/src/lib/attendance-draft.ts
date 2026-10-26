@@ -108,6 +108,28 @@ export function toSaveEntries(
 	return out;
 }
 
+/** Điền `present` cho mọi dòng chưa chọn (`attendance === null`), giữ nguyên
+ * lựa chọn có sẵn và ghi chú. Trả về đúng tham chiếu `state` khi không có dòng
+ * nào đổi để component không re-render vô ích. Helper thuần để hộp xác nhận
+ * "Gán Có mặt và lưu" tính entries trực tiếp, không phụ thuộc vòng render
+ * (cấm pattern dispatch-then-read: `toSaveEntries` sẽ throw trên state stale). */
+export function markAllPresentState(
+	state: AttendanceDraftState,
+): AttendanceDraftState {
+	let changed = false;
+	const nextEntries: Record<string, AttendanceDraftEntry> = {
+		...state.entries,
+	};
+	for (const lessonId of state.order) {
+		const current = nextEntries[lessonId];
+		if (current && current.attendance === null) {
+			nextEntries[lessonId] = { ...current, attendance: "present" };
+			changed = true;
+		}
+	}
+	return changed ? { ...state, entries: nextEntries } : state;
+}
+
 export function attendanceDraftReducer(
 	state: AttendanceDraftState,
 	action: AttendanceDraftAction,
@@ -119,17 +141,7 @@ export function attendanceDraftReducer(
 			return setDraftNote(state, action.lessonId, action.note);
 		case "reset":
 			return createAttendanceDraft(action.students);
-		case "markAllPresent": {
-			const nextEntries: Record<string, AttendanceDraftEntry> = {
-				...state.entries,
-			};
-			for (const lessonId of state.order) {
-				const current = nextEntries[lessonId];
-				if (current && current.attendance === null) {
-					nextEntries[lessonId] = { ...current, attendance: "present" };
-				}
-			}
-			return { ...state, entries: nextEntries };
-		}
+		case "markAllPresent":
+			return markAllPresentState(state);
 	}
 }

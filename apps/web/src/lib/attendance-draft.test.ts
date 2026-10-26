@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	attendanceDraftReducer,
 	createAttendanceDraft,
+	markAllPresentState,
 	missingAttendanceLessonIds,
 	setDraftAttendance,
 	setDraftNote,
@@ -100,5 +101,90 @@ describe("attendance-draft", () => {
 		]);
 		expect(draft.order).toEqual([]);
 		expect(missingAttendanceLessonIds(draft)).toEqual([]);
+	});
+});
+
+describe("markAllPresent (TOS-8 phase 1)", () => {
+	const MIXED_STUDENTS = [
+		{
+			lessonId: "l-1",
+			studentId: "s-1",
+			studentName: "An Nguyễn",
+			attendance: "excused" as const,
+			note: "Xin phép trước",
+		},
+		{
+			lessonId: "l-2",
+			studentId: "s-2",
+			studentName: "Bình Trần",
+			attendance: null,
+			note: "",
+		},
+		{
+			lessonId: "l-3",
+			studentId: "s-3",
+			studentName: "Cường Lê",
+			attendance: null,
+			note: "Ghi chú cũ",
+		},
+		{
+			lessonId: "l-4",
+			studentId: "s-4",
+			studentName: "Dũng Phạm",
+			attendance: "late" as const,
+			note: "",
+		},
+	];
+
+	test("điền present cho mọi ô trống, giữ lựa chọn có sẵn và ghi chú", () => {
+		const draft = createAttendanceDraft(MIXED_STUDENTS);
+		const next = attendanceDraftReducer(draft, { type: "markAllPresent" });
+
+		expect(next.entries["l-1"]).toEqual({
+			attendance: "excused",
+			note: "Xin phép trước",
+		});
+		expect(next.entries["l-2"]).toEqual({ attendance: "present", note: "" });
+		expect(next.entries["l-3"]).toEqual({
+			attendance: "present",
+			note: "Ghi chú cũ",
+		});
+		expect(next.entries["l-4"]).toEqual({ attendance: "late", note: "" });
+		expect(missingAttendanceLessonIds(next)).toEqual([]);
+	});
+
+	test("trả về đúng tham chiếu state khi không còn ô trống", () => {
+		const draft = createAttendanceDraft(MIXED_STUDENTS);
+		const filled = attendanceDraftReducer(draft, { type: "markAllPresent" });
+
+		expect(attendanceDraftReducer(filled, { type: "markAllPresent" })).toBe(
+			filled,
+		);
+		expect(markAllPresentState(filled)).toBe(filled);
+	});
+
+	test("trả về đúng tham chiếu state trên nháp rỗng (không học viên có lessonId)", () => {
+		const draft = createAttendanceDraft([
+			{
+				lessonId: null,
+				studentId: "s-leg",
+				studentName: "HV Legacy",
+				attendance: null,
+				note: "",
+			},
+		]);
+
+		expect(attendanceDraftReducer(draft, { type: "markAllPresent" })).toBe(
+			draft,
+		);
+	});
+
+	test("helper markAllPresentState khớp kết quả reducer (đường modal dùng helper)", () => {
+		const draft = createAttendanceDraft(MIXED_STUDENTS);
+
+		expect(markAllPresentState(draft)).toEqual(
+			attendanceDraftReducer(draft, { type: "markAllPresent" }),
+		);
+		expect(missingAttendanceLessonIds(markAllPresentState(draft))).toEqual([]);
 	});
 });

@@ -1,1 +1,15 @@
-{"ac_mapping": "subtasks", "ac_subtasks": [{"remote_id": "TOS-34", "sub_ref": "#AC-001"}, {"remote_id": "TOS-35", "sub_ref": "#AC-002"}, {"remote_id": "TOS-36", "sub_ref": "#AC-003"}], "converter_version": "ba-jira-v1", "mapping_type": "story", "parent": "TOS-4", "priority": "Medium", "remote_id": "TOS-29", "summary": "US-007: Tạo bài tập nhanh, giải thích đáp án lưu đệm và sử dụng Trợ giảng Chat AI trong hạn mức 100 lượt/ngày", "vault_path": "docs/selfomy-alignment/userstories/us-007.md"}
+{
+	"ac_mapping": "subtasks",
+	"ac_subtasks": [
+		{ "remote_id": "TOS-34", "sub_ref": "#AC-001" },
+		{ "remote_id": "TOS-35", "sub_ref": "#AC-002" },
+		{ "remote_id": "TOS-36", "sub_ref": "#AC-003" }
+	],
+	"converter_version": "ba-jira-v1",
+	"mapping_type": "story",
+	"parent": "TOS-4",
+	"priority": "Medium",
+	"remote_id": "TOS-29",
+	"summary": "US-007: Tạo bài tập nhanh, giải thích đáp án lưu đệm và sử dụng Trợ giảng Chat AI trong hạn mức 100 lượt/ngày",
+	"vault_path": "docs/selfomy-alignment/userstories/us-007.md"
+}
