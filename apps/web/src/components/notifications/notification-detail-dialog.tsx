@@ -1,4 +1,7 @@
-import type { NotificationLogRow } from "@teacher-os/api/contracts";
+import {
+	MAX_EMAIL_ATTEMPTS,
+	type NotificationLogRow,
+} from "@teacher-os/api/contracts";
 import { Modal } from "@/components/ui/modal";
 
 /** Nhãn tiếng Việt của trạng thái — dùng chung với bảng (export cho test). */
@@ -76,7 +79,9 @@ export function NotificationDetailDialog({
 					<Field label="Gửi lúc">{fmt(row.sentAt)}</Field>
 					<Field label="Đọc lúc">{fmt(row.readAt)}</Field>
 				</div>
-				<Field label="Số lần thử lại">{String(row.retryCount)}</Field>
+				<Field label="Số lần thử lại">
+					{`${row.retryCount}/${MAX_EMAIL_ATTEMPTS} lần thử`}
+				</Field>
 				{row.lastError && <Field label="Lỗi gửi">{row.lastError}</Field>}
 			</div>
 		</Modal>
