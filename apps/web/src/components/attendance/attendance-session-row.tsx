@@ -321,7 +321,7 @@ export function AttendanceSessionRow({
 									missingIds.length === 0
 								}
 								onClick={() => dispatch({ type: "markAllPresent" })}
-								className="min-h-11 w-full lg:min-h-9 lg:w-auto"
+								className="min-h-[44px] w-full lg:min-h-9 lg:w-auto"
 							>
 								Đánh dấu tất cả Có mặt
 							</Button>
@@ -416,7 +416,7 @@ export function AttendanceSessionRow({
 									type="button"
 									disabled={lockSaving || isFutureDate}
 									onClick={handleSubmit}
-									className="min-h-11 w-full lg:min-h-9 lg:w-auto"
+									className="min-h-[44px] w-full lg:min-h-9 lg:w-auto"
 								>
 									{saving ? "Đang lưu…" : "Lưu điểm danh ca học"}
 								</Button>

@@ -357,11 +357,15 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 				.getByRole("radio", { name: "Vắng có phép" }),
 		).toHaveAttribute("aria-checked", "true");
 
-		// API: Nam = excused/absent; 3 người còn lại present/completed.
+		// API: Nam = excused/absent; An giữ Đi muộn (late/completed); 2 người
+		// còn lại present/completed.
 		const nam = await lessonOfStudent(page, classId, "Trần Hoàng Nam");
 		expect(nam.attendance).toBe("excused");
 		expect(nam.status).toBe("absent");
-		for (const name of ["An Nguyễn", "Cường Lê", "Dũng Phạm"]) {
+		const an = await lessonOfStudent(page, classId, "An Nguyễn");
+		expect(an.attendance).toBe("late");
+		expect(an.status).toBe("completed");
+		for (const name of ["Cường Lê", "Dũng Phạm"]) {
 			const row = await lessonOfStudent(page, classId, name);
 			expect(row.attendance).toBe("present");
 			expect(row.status).toBe("completed");

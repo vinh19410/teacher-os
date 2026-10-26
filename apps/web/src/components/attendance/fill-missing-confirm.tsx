@@ -35,7 +35,7 @@ export function FillMissingConfirm({
 						variant="outline"
 						disabled={saving}
 						onClick={onCancel}
-						className="min-h-11 w-full lg:min-h-9 lg:w-auto"
+						className="min-h-[44px] w-full lg:min-h-9 lg:w-auto"
 					>
 						Quay lại chỉnh
 					</Button>
@@ -43,7 +43,7 @@ export function FillMissingConfirm({
 						type="button"
 						disabled={saving}
 						onClick={onConfirm}
-						className="min-h-11 w-full lg:min-h-9 lg:w-auto"
+						className="min-h-[44px] w-full lg:min-h-9 lg:w-auto"
 					>
 						{saving ? "Đang lưu…" : "Gán Có mặt và lưu"}
 					</Button>
