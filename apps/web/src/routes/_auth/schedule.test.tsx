@@ -8,6 +8,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { todayISOVietnam } from "@/lib/week-grid";
 import {
 	classRow,
 	enrollmentRow,
@@ -20,7 +21,6 @@ import {
 	type WriteHandler,
 } from "@/test/kernel-harness";
 import { resetRouterState, routerState } from "@/test/router-mock";
-import { todayISOVietnam } from "@/lib/week-grid";
 
 vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
@@ -494,7 +494,10 @@ describe("schedule views and org events (TOS-14)", () => {
 					endTime: (req.body as { endTime: string }).endTime,
 					note: "",
 				};
-				s.snapshot = { ...s.snapshot, events: [...s.snapshot.events ?? [], row] };
+				s.snapshot = {
+					...s.snapshot,
+					events: [...(s.snapshot.events ?? []), row],
+				};
 				return { status: 201, body: row };
 			}
 			return undefined;
@@ -514,9 +517,7 @@ describe("schedule views and org events (TOS-14)", () => {
 		});
 		fireEvent.click(screen.getByTestId("org-event-submit"));
 		// D6: chip hiện ngay từ response POST, KHÔNG refetch snapshot.
-		expect(
-			await screen.findByText("Họp chuyên môn giáo viên"),
-		).toBeTruthy();
+		expect(await screen.findByText("Họp chuyên môn giáo viên")).toBeTruthy();
 		expect(server.writes.map((w) => `${w.method} ${w.path}`)).toContain(
 			"POST /api/events",
 		);

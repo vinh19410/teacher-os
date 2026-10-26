@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	cleanup,
 	fireEvent,
@@ -8,8 +9,11 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type KernelServer, startKernelServer, snapshotFixture } from "@/test/kernel-harness";
+import {
+	type KernelServer,
+	snapshotFixture,
+	startKernelServer,
+} from "@/test/kernel-harness";
 import { OrgEventModal } from "./org-event-modal";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));

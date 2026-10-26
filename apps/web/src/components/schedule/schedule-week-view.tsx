@@ -4,10 +4,7 @@ import { OrgEventChip } from "@/components/schedule/org-event-chip";
 import { classColorIndex } from "@/lib/class-color";
 import { dayNames } from "@/lib/mock-data";
 import type { KernelSlice } from "@/lib/repos/kernel";
-import {
-	distinctStudentsBySid,
-	type WeekModel,
-} from "@/lib/schedule-week";
+import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
 import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
 
 /**
