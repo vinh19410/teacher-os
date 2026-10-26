@@ -12,6 +12,7 @@ export * from "./library-test";
 export * from "./membership";
 export * from "./notif";
 export * from "./org-bank-link";
+export * from "./org-event";
 export * from "./organization";
 export * from "./payment-transaction";
 export * from "./quiz-attempt";

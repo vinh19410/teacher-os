@@ -347,6 +347,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		assignmentTests: mapAssignmentTests(snapshot),
 		vocabDecks: snapshot.vocabDecks ?? [],
 		vocabSuggestions: snapshot.vocabSuggestions ?? [],
+		events: snapshot.events ?? [],
 	};
 }
 
@@ -520,6 +521,9 @@ const SNAPSHOT_COLLECTION_KEYS = [
  */
 const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	"vocabSuggestions",
+	// TOS-14 (#447): events — optional để deploy skew (web mới + server cũ)
+	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
+	"events",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in

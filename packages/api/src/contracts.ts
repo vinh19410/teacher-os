@@ -1,6 +1,9 @@
 import { z } from "zod";
+import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { isEmptyRichText, richTextField } from "./rich-text";
+
+export * from "./event-contracts";
 
 /**
  * Kernel API contracts — Wave 0.
@@ -1560,6 +1563,9 @@ export interface KernelSnapshot {
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
+	/** TOS-14 (#447): optional như vocabSuggestions — server cũ trong lúc deploy
+	 * skew không gửi events, web dùng `?? []` vẫn chạy. */
+	events?: KernelEventRow[];
 	assignments: KernelAssignmentRow[];
 	invoices: KernelInvoiceRow[];
 	reports: KernelReportRow[];

@@ -5,6 +5,7 @@ import type {
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
+	KernelEventRow,
 	KernelVocabDeckRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
@@ -268,6 +269,8 @@ export type KernelHydratedData = Pick<
 	vocabDecks: KernelVocabDeckRow[];
 	/** Pending vocab suggestions (#363): danh sách gợi ý đang chờ học viên phản hồi. */
 	vocabSuggestions: KernelVocabSuggestionRow[];
+	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
+	events: KernelEventRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

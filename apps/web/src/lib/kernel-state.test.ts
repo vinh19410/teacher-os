@@ -13,6 +13,7 @@ describe("emptyKernelData", () => {
 			"classes",
 			"commentBank",
 			"enrollments",
+			"events",
 			"invoices",
 			"lessons",
 			"notifs",
