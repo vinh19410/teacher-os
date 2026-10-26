@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	useNavigate,
@@ -9,10 +9,12 @@ import type {
 	NotificationEventType,
 	NotificationLogQuery,
 	NotificationLogRow,
+	NotificationResendResponse,
 	NotificationStatus,
 } from "@teacher-os/api/contracts";
-import { Eye } from "lucide-react";
+import { Eye, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { fmtWhen } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import {
@@ -24,15 +26,18 @@ import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { inputCls } from "@/components/ui/field";
+import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { formatDeliveryError } from "@/lib/notification-error";
 import { reauth } from "@/lib/reauth";
 import {
 	NOTIFICATION_LOGS_PAGE_SIZE,
+	notificationLogsAllQueryKey,
 	notificationLogsQueryOptions,
+	resendFailedNotifications,
+	resendNotification,
 } from "@/lib/repos/notifications";
-
 /**
  * Màn [5] Nhật ký gửi thông báo (#454, plan TOS-21 phase 5). Bộ lọc sống
  * URL (?q=&event=&status=&page=) để reload/back/share giữ nguyên trạng thái;
@@ -139,8 +144,32 @@ function filtersToSearch(
 	};
 }
 
+export function formatResendToast(res: NotificationResendResponse): {
+	kind: "success" | "error";
+	message: string;
+} {
+	if (res.requeued === 0 && res.skipped.length > 0) {
+		return {
+			kind: "error",
+			message: `Bỏ qua ${res.skipped.length} thông báo do học viên chưa có email.`,
+		};
+	}
+	const parts = [`Đã đưa ${res.requeued} thông báo về hàng đợi để gửi lại.`];
+	if (res.skipped.length > 0) {
+		parts.push(`Bỏ qua ${res.skipped.length} mục thiếu email.`);
+	}
+	if (res.remaining > 0) {
+		parts.push(`Còn ${res.remaining} mục lỗi, bấm lại để gửi tiếp.`);
+	}
+	return {
+		kind: "success",
+		message: parts.join(" "),
+	};
+}
+
 function NotificationsRoute() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const searchParams = useSearch({ from: "/_auth/notifications/" });
 
 	const eventFilter: "all" | NotificationEventGroup =
@@ -157,7 +186,7 @@ function NotificationsRoute() {
 	const [query, setQuery] = useState(() => searchParams.q ?? "");
 	const lastEmittedQuery = useRef(query);
 	const [detailRow, setDetailRow] = useState<NotificationLogRow | null>(null);
-
+	const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
 	const queryParams: NotificationLogQuery = {
 		...(searchParams.q ? { q: searchParams.q } : {}),
 		...(eventFilter !== "all" ? { event: eventFilter } : {}),
@@ -173,6 +202,56 @@ function NotificationsRoute() {
 			reauth();
 		}
 	}, [error]);
+
+	const singleResendMutation = useMutation({
+		mutationFn: (id: string) => resendNotification(id),
+		onSuccess: async (res) => {
+			const info = formatResendToast(res);
+			if (info.kind === "error") {
+				toast.error(info.message);
+			} else {
+				toast.success(info.message);
+			}
+			await queryClient.invalidateQueries({
+				queryKey: notificationLogsAllQueryKey,
+			});
+		},
+		onError: async (err) => {
+			if (isHttpError(err) && err.status === 409) {
+				toast.error(
+					"Thông báo này đã được đưa vào hàng đợi hoặc không còn ở trạng thái lỗi.",
+				);
+				await queryClient.invalidateQueries({
+					queryKey: notificationLogsAllQueryKey,
+				});
+				return;
+			}
+			toast.error("Không thể gửi lại thông báo. Vui lòng thử lại.");
+		},
+	});
+
+	const bulkResendMutation = useMutation({
+		mutationFn: () =>
+			resendFailedNotifications({
+				...(searchParams.q ? { q: searchParams.q } : {}),
+				...(eventFilter !== "all" ? { event: eventFilter } : {}),
+			}),
+		onSuccess: async (res) => {
+			setConfirmBulkOpen(false);
+			const info = formatResendToast(res);
+			if (info.kind === "error") {
+				toast.error(info.message);
+			} else {
+				toast.success(info.message);
+			}
+			await queryClient.invalidateQueries({
+				queryKey: notificationLogsAllQueryKey,
+			});
+		},
+		onError: () => {
+			toast.error("Không thể gửi lại các thông báo lỗi. Vui lòng thử lại.");
+		},
+	});
 
 	function applyFilters(next: {
 		q: string;
@@ -255,15 +334,38 @@ function NotificationsRoute() {
 		);
 	}
 
+	const failedCount = data?.counts.failed ?? 0;
+	const isResending =
+		singleResendMutation.isPending || bulkResendMutation.isPending;
+	const hasActiveFilter =
+		Boolean(searchParams.q?.trim()) ||
+		eventFilter !== "all" ||
+		statusFilter !== "all";
+	const showGlobalEmptyState =
+		(data?.counts.all ?? 0) === 0 && !hasActiveFilter;
+
 	return (
 		<div className="min-w-0">
 			<PageHead
 				kicker={`${total} thông báo`}
 				title="Nhật ký gửi thông báo (Email & In-app)"
 				lead="Lịch sử gửi thông báo cho học viên qua email và trong ứng dụng: trạng thái gửi, thời gian gửi và lỗi nếu có."
+				action={
+					failedCount > 0 ? (
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={isResending}
+							onClick={() => setConfirmBulkOpen(true)}
+						>
+							<RotateCcw aria-hidden="true" className="size-4" />
+							<span>{`Gửi lại tất cả mục lỗi (${failedCount})`}</span>
+						</Button>
+					) : undefined
+				}
 			/>
 
-			{total === 0 ? (
+			{showGlobalEmptyState ? (
 				<Card
 					variant="white"
 					className="p-8 text-center"
@@ -414,15 +516,36 @@ function NotificationsRoute() {
 														{NOTIFICATION_STATUS_LABELS[row.status]}
 													</StatusTag>
 												</div>,
-												<Button
+												<div
 													key="action"
-													variant="secondary"
-													size="sm"
-													aria-label={`Xem chi tiết thông báo cho ${row.recipientName}`}
-													onClick={() => setDetailRow(row)}
+													className="flex items-center justify-end gap-1.5 whitespace-nowrap"
 												>
-													<Eye aria-hidden="true" className="size-4" />
-												</Button>,
+													{row.status === "failed" && (
+														<Button
+															variant="outline"
+															size="sm"
+															disabled={isResending}
+															aria-label={`Gửi lại thông báo cho ${row.recipientName}`}
+															onClick={() =>
+																singleResendMutation.mutate(row.id)
+															}
+														>
+															<RotateCcw
+																aria-hidden="true"
+																className="size-3.5"
+															/>
+															<span>Gửi lại</span>
+														</Button>
+													)}
+													<Button
+														variant="secondary"
+														size="sm"
+														aria-label={`Xem chi tiết thông báo cho ${row.recipientName}`}
+														onClick={() => setDetailRow(row)}
+													>
+														<Eye aria-hidden="true" className="size-4" />
+													</Button>
+												</div>,
 											],
 										};
 									})}
@@ -485,6 +608,40 @@ function NotificationsRoute() {
 					onClose={() => setDetailRow(null)}
 				/>
 			)}
+
+			<Modal
+				open={confirmBulkOpen}
+				onClose={
+					bulkResendMutation.isPending
+						? () => undefined
+						: () => setConfirmBulkOpen(false)
+				}
+				title="Gửi lại tất cả thông báo lỗi?"
+				footer={
+					<>
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={bulkResendMutation.isPending}
+							onClick={() => setConfirmBulkOpen(false)}
+						>
+							Hủy
+						</Button>
+						<Button
+							variant="primary"
+							size="sm"
+							disabled={bulkResendMutation.isPending}
+							onClick={() => bulkResendMutation.mutate()}
+						>
+							Xác nhận gửi lại
+						</Button>
+					</>
+				}
+			>
+				<p className="text-muted-foreground text-sm">
+					{`Đưa ${failedCount} thông báo lỗi trong bộ lọc hiện tại về hàng đợi để gửi lại Email. Thông báo In-app trên cổng học viên không bị gửi trùng.`}
+				</p>
+			</Modal>
 		</div>
 	);
 }

@@ -21,6 +21,10 @@ type MockSearch = {
 	page?: number;
 };
 const mockSearch = vi.hoisted(() => ({ current: {} as MockSearch }));
+const toastMock = vi.hoisted(() => ({
+	success: vi.fn(),
+	error: vi.fn(),
+}));
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: Record<string, unknown>) => ({
 		...options,
@@ -30,6 +34,7 @@ vi.mock("@tanstack/react-router", () => ({
 	useNavigate: () => mockNavigate,
 	useSearch: () => mockSearch.current,
 }));
+vi.mock("sonner", () => ({ toast: toastMock }));
 
 import { Route, validateNotificationsSearch } from "./index";
 
@@ -111,8 +116,9 @@ function lastNavigateSearch(): Record<string, unknown> {
 beforeEach(() => {
 	mockNavigate.mockReset();
 	mockSearch.current = {};
+	toastMock.success.mockReset();
+	toastMock.error.mockReset();
 });
-
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
@@ -308,5 +314,173 @@ describe("NotificationsRoute (#454 phase 5)", () => {
 			}),
 		);
 		await screen.findByTestId("notifications-empty-state");
+	});
+
+	it("chỉ hiển thị nút Gửi lại trên dòng failed; bấm Gửi lại gọi POST /:id/resend, hiện toast và làm mới danh sách", async () => {
+		let resendCalled = false;
+		fetchMock = vi.fn((input: string | URL) => {
+			const url = String(input);
+			if (url.endsWith("/api/notification-logs/nt-failed/resend")) {
+				resendCalled = true;
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({ requeued: 1, skipped: [], remaining: 0 }),
+						{
+							status: 200,
+							headers: { "content-type": "application/json" },
+						},
+					),
+				);
+			}
+			return Promise.resolve(
+				new Response(
+					JSON.stringify(
+						seedResponse({
+							rows: [
+								row({
+									id: "nt-failed",
+									recipientName: "Hoa Loi",
+									status: "failed",
+									retryCount: 3,
+									lastError: "E-selfomy-alignment-010: mailbox unavailable",
+								}),
+								row({
+									id: "nt-sent",
+									recipientName: "Minh Ok",
+									status: "sent",
+								}),
+							],
+							total: 2,
+							counts: { queued: 0, sent: 1, read: 0, failed: 1, all: 2 },
+						}),
+					),
+					{
+						status: 200,
+						headers: { "content-type": "application/json" },
+					},
+				),
+			);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<Notifications />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByText("Hoa Loi");
+		const resendBtn = screen.getByRole("button", {
+			name: "Gửi lại thông báo cho Hoa Loi",
+		});
+		expect(resendBtn).toBeTruthy();
+		expect(
+			screen.queryByRole("button", {
+				name: "Gửi lại thông báo cho Minh Ok",
+			}),
+		).toBeNull();
+
+		fireEvent.click(resendBtn);
+		await waitFor(() => expect(resendCalled).toBe(true));
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã đưa 1 thông báo về hàng đợi để gửi lại.",
+			),
+		);
+	});
+
+	it("nút Gửi lại tất cả mục lỗi (N) hiện khi counts.failed > 0, mở Modal xác nhận, gọi POST /resend-failed với filter hiện tại và ẩn khi counts.failed = 0", async () => {
+		mockSearch.current = { q: "hoa", event: "tuition", status: "failed" };
+		let bulkBody: string | undefined;
+		let phase: "before" | "after" = "before";
+		fetchMock = vi.fn((input: string | URL, init?: RequestInit) => {
+			const url = String(input);
+			if (url.endsWith("/api/notification-logs/resend-failed")) {
+				bulkBody = String(init?.body ?? "");
+				phase = "after";
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({
+							requeued: 3,
+							skipped: [{ id: "nt-no-email", reason: "no_email" }],
+							remaining: 2,
+						}),
+						{
+							status: 200,
+							headers: { "content-type": "application/json" },
+						},
+					),
+				);
+			}
+			const body =
+				phase === "before"
+					? seedResponse({
+							rows: [
+								row({
+									id: "nt-failed",
+									recipientName: "Hoa Loi",
+									status: "failed",
+									retryCount: 3,
+									lastError: "E-selfomy-alignment-010: timeout",
+								}),
+							],
+							total: 1,
+							counts: { queued: 0, sent: 1, read: 0, failed: 4, all: 5 },
+						})
+					: seedResponse({
+							rows: [],
+							total: 0,
+							counts: { queued: 3, sent: 2, read: 0, failed: 0, all: 5 },
+						});
+			return Promise.resolve(
+				new Response(JSON.stringify(body), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+			);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<Notifications />
+			</QueryClientProvider>,
+		);
+
+		const bulkBtn = await screen.findByRole("button", {
+			name: "Gửi lại tất cả mục lỗi (4)",
+		});
+		fireEvent.click(bulkBtn);
+
+		const dialog = await screen.findByRole("dialog");
+		expect(dialog.textContent).toContain(
+			"Đưa 4 thông báo lỗi trong bộ lọc hiện tại về hàng đợi để gửi lại Email.",
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Xác nhận gửi lại" }));
+		await waitFor(() =>
+			expect(bulkBody).toBe(JSON.stringify({ q: "hoa", event: "tuition" })),
+		);
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã đưa 3 thông báo về hàng đợi để gửi lại. Bỏ qua 1 mục thiếu email. Còn 2 mục lỗi, bấm lại để gửi tiếp.",
+			),
+		);
+
+		// Sau khi refetch với counts.failed = 0 và total = 0 trên ?status=failed:
+		// nút header tự ẩn, nhưng thanh ChipFilter vẫn còn hiển thị cùng thông báo lọc trống.
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("button", { name: /Gửi lại tất cả mục lỗi/ }),
+			).toBeNull(),
+		);
+		expect(screen.getByRole("group", { name: "Trạng thái" })).toBeTruthy();
+		expect(
+			screen.getByText("Không có thông báo nào phù hợp với bộ lọc."),
+		).toBeTruthy();
 	});
 });

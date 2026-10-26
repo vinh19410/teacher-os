@@ -3533,6 +3533,35 @@ export type NotificationLogResponse = z.infer<
 	typeof notificationLogResponseSchema
 >;
 
+/** TOS-23 (#464): giới hạn số bản ghi failed được đặt lại mỗi lần "Gửi lại tất cả". */
+export const RESEND_BATCH_LIMIT = 50;
+
+/** POST /api/notification-logs/resend-failed — áp bộ lọc q + event hiện tại (không nhận status). */
+export const resendFailedBodySchema = z
+	.object({
+		q: z.string().optional(),
+		event: z.enum(NOTIFICATION_EVENT_GROUPS).optional(),
+	})
+	.strict();
+export type ResendFailedBody = z.infer<typeof resendFailedBodySchema>;
+
+export const notificationResendSkippedItemSchema = z.object({
+	id: z.string(),
+	reason: z.literal("no_email"),
+});
+export type NotificationResendSkippedItem = z.infer<
+	typeof notificationResendSkippedItemSchema
+>;
+
+export const notificationResendResponseSchema = z.object({
+	requeued: z.number().int().min(0),
+	skipped: z.array(notificationResendSkippedItemSchema),
+	remaining: z.number().int().min(0),
+});
+export type NotificationResendResponse = z.infer<
+	typeof notificationResendResponseSchema
+>;
+
 /** Mục inbox in-app của học viên (GET /api/student/inbox). */
 export const studentInboxItemSchema = z.object({
 	id: z.string(),

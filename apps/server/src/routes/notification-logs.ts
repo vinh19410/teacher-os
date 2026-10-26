@@ -4,11 +4,20 @@ import {
 	type NotificationLogRow,
 	type NotificationStatus,
 	notificationLogQuerySchema,
+	resendFailedBodySchema,
 } from "@teacher-os/api/contracts";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { notificationRecord, student } from "@teacher-os/db/schema/index";
-import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
+import { deliverNotifications } from "../lib/notifications/deliver";
+import { notificationDepsFrom } from "../lib/notifications/emit";
+import {
+	buildNotificationLogFilter,
+	requeueFailedNotifications,
+	requeueSingleFailedNotification,
+} from "../lib/notifications/requeue";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type NotificationLogContext = Context<Env>;
@@ -27,8 +36,37 @@ const PAGE_SIZE = 20;
  * - `counts` (cho chip trạng thái) tính trên bộ lọc q + event — KHÔNG áp
  *   status — bằng 1 query GROUP BY status (tránh N+1) kèm tổng "all".
  */
-export function notificationLogRoutes(deps: { getDb(): Db }) {
+export interface NotificationLogRouteDeps {
+	getDb(): Db;
+	mailer?: Mailer;
+	runInBackground?(promise: Promise<unknown>): void;
+	studentOrigin?: string;
+	notificationRetryDelaysMs?: number[];
+}
+
+export function notificationLogRoutes(deps: NotificationLogRouteDeps) {
 	const routes = new Hono<Env>();
+
+	async function triggerResendDelivery(requeuedIds: string[]): Promise<void> {
+		if (requeuedIds.length === 0) return;
+		const notifDeps = notificationDepsFrom(deps);
+		const delivery = deliverNotifications(
+			notifDeps.db,
+			notifDeps.mailer,
+			requeuedIds,
+			notifDeps.studentOrigin,
+			notifDeps.retryDelaysMs
+				? { retryDelaysMs: notifDeps.retryDelaysMs }
+				: undefined,
+		).catch((error) => {
+			console.error("[notifications] resend deliver failed", error);
+		});
+		if (notifDeps.runInBackground) {
+			notifDeps.runInBackground(delivery);
+		} else {
+			await delivery;
+		}
+	}
 
 	routes.get("/", async (c: NotificationLogContext) => {
 		const ctx = c.get("kernelCtx");
@@ -48,25 +86,8 @@ export function notificationLogRoutes(deps: { getDb(): Db }) {
 
 		const db = deps.getDb();
 
-		// Bộ lọc q dùng chung cho rows/total/counts. Escape % _ \ để giáo
-		// viên gõ "%" tìm nghĩa đen, không thành wildcard.
-		let qFilter: SQL | undefined;
-		const trimmedQ = q?.trim() ?? "";
-		if (trimmedQ) {
-			const pattern = `%${trimmedQ.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
-			qFilter = sql`(
-				lower(${student.name}) LIKE ${pattern} ESCAPE '\\'
-				OR lower(coalesce(${notificationRecord.recipientEmail}, '')) LIKE ${pattern} ESCAPE '\\'
-				OR lower(${notificationRecord.title}) LIKE ${pattern} ESCAPE '\\'
-			)`;
-		}
-
 		// counts (chip trạng thái): q + event, KHÔNG status.
-		const countWhere = and(
-			eq(notificationRecord.orgId, ctx.orgId),
-			qFilter,
-			event ? eq(notificationRecord.eventGroup, event) : undefined,
-		);
+		const countWhere = buildNotificationLogFilter(ctx.orgId, { q, event });
 		// rows + total: đầy đủ q + event + status.
 		const rowWhere = and(
 			countWhere,
@@ -165,6 +186,56 @@ export function notificationLogRoutes(deps: { getDb(): Db }) {
 			pageSize: PAGE_SIZE,
 		};
 		return c.json(response);
+	});
+
+	routes.post("/resend-failed", async (c: NotificationLogContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		let rawBody: unknown = {};
+		const text = await c.req.text();
+		if (text.trim().length > 0) {
+			try {
+				rawBody = JSON.parse(text);
+			} catch {
+				return c.json({ error: "invalid json" }, 400);
+			}
+		}
+		const parsed = resendFailedBodySchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const { response, requeuedIds } = await requeueFailedNotifications(
+			deps.getDb(),
+			ctx.orgId,
+			{
+				q: parsed.data.q,
+				event: parsed.data.event,
+			},
+		);
+		await triggerResendDelivery(requeuedIds);
+		return c.json(response);
+	});
+
+	routes.post("/:id/resend", async (c: NotificationLogContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const id = c.req.param("id") ?? "";
+		const result = await requeueSingleFailedNotification(
+			deps.getDb(),
+			ctx.orgId,
+			id,
+		);
+		if (result.kind === "not_found") {
+			return c.json({ error: "not_found" }, 404);
+		}
+		if (result.kind === "not_failed") {
+			return c.json({ error: "not_failed" }, 409);
+		}
+
+		await triggerResendDelivery(result.requeuedIds);
+		return c.json(result.response);
 	});
 
 	return routes;
