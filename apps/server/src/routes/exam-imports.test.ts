@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import {
 	CREDIT_COSTS,
@@ -5,6 +6,7 @@ import {
 	EXAM_IMPORT_ERROR_CODES,
 	type ExamImportJob,
 	examImportCreateResponseSchema,
+	examImportErrorSchema,
 	examImportJobSchema,
 	examImportLookupResponseSchema,
 	examImportPublishResponseSchema,
@@ -34,11 +36,19 @@ import {
 	type ServerApp,
 } from "../app";
 import {
+	ensureWallet,
+	reserveCredits,
+	settleCredits,
+} from "../lib/credits/wallet";
+import {
 	type ExamExtractor,
 	ExtractionFailedError,
 } from "../lib/exam-import/extractor";
 import { createFakeExamExtractor } from "../lib/exam-import/fake-extractor";
 import { sha256Hex } from "../lib/exam-import/fingerprint";
+// PDF tối thiểu HỢP LỆ (TOS-27): server inspect bằng unpdf nên bytes giả
+// "%%%%" không còn qua nổi kiểm trang — fixture phải là PDF thật.
+import { buildExamPdf } from "../lib/exam-import/make-pdf";
 import type { SessionUser } from "../session";
 
 const MIGRATIONS_DIR = new URL(
@@ -46,7 +56,8 @@ const MIGRATIONS_DIR = new URL(
 	import.meta.url,
 ).pathname;
 
-const PDF_BYTES = new Uint8Array(2048).fill(0x25); // "%PDF"-ish bytes giả
+// 1 trang — nội dung không ảnh hưởng extractor giả, chỉ cần parse được.
+const PDF_BYTES = new Uint8Array(buildExamPdf(1));
 
 const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 	// `role` ở đây là ACCOUNT role (SessionUser); role org ("ta") đọc từ
@@ -121,6 +132,7 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 	let appDisabled: ServerApp;
 	let appBrokenExtractor: ServerApp;
 	let appBrokenStore: ServerApp;
+	let appEmptyExtractor: ServerApp;
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
@@ -189,6 +201,25 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 				delete: () => Promise.resolve(),
 			}),
 			getExamExtractor: () => createFakeExamExtractor(),
+		});
+		// Extractor "thành công" nhưng 0 nhóm câu hỏi hợp lệ (TOS-27: E-004
+		// reason empty_result — AI không đọc được cấu trúc nào).
+		const emptyExtractor: ExamExtractor = {
+			extract: () =>
+				Promise.resolve({
+					exam: {
+						title: "Trống",
+						skill: "reading",
+						timeLimitMinutes: null,
+						parts: [{ passage: "", questions: [] }],
+					},
+					pageCount: 1,
+				}),
+		};
+		appEmptyExtractor = buildApp({
+			...baseDeps,
+			getExamImportStore: () => memory.store,
+			getExamExtractor: () => emptyExtractor,
 		});
 	});
 
@@ -265,8 +296,11 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		expect(
 			memory.objects.get(`exam-imports/org-1/${job.id}`)?.contentType,
 		).toBe("application/pdf");
+		expect(
+			memory.objects.get(`exam-imports/org-1/${job.id}`)?.bytes.byteLength,
+		).toBe(PDF_BYTES.byteLength);
 
-		// GET job + file đọc lại được.
+		// GET job + file đọc lại được nguyên vẹn byte.
 		const getRes = await app.request(`/api/exam-imports/${job.id}`, {
 			headers: { "x-test-user": "teacher" },
 		});
@@ -277,6 +311,7 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		});
 		expect(fileRes.status).toBe(200);
 		expect(fileRes.headers.get("Content-Type")).toBe("application/pdf");
+		expect((await fileRes.arrayBuffer()).byteLength).toBe(PDF_BYTES.byteLength);
 	});
 
 	test("thiếu Credit: 402 kèm balance, xoá sạch job + file + không log", async () => {
@@ -300,17 +335,21 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		expect(await walletLogs()).toHaveLength(0);
 	});
 
-	test("extractor ném lỗi: job failed_refunded, log released, ví nguyên 30", async () => {
+	test("extractor ném lỗi: job failed_refunded E-004, log released, ví nguyên 30", async () => {
 		const res = await upload(appBrokenExtractor);
 		expect(res.status).toBe(502);
-		const body = (await res.json()) as { code: string; jobId: string };
-		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.FAILED);
+		const body = examImportErrorSchema.parse(await res.json());
+		// TOS-27: lỗi sau reserve dùng mã E-004 + reason phân loại.
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.EXAM_FAILED);
+		expect(body.reason).toBe("ai_error");
+		if (!body.jobId) throw new Error("expected jobId");
 		const [job] = await db
 			.select()
 			.from(examImportJob)
 			.where(eq(examImportJob.id, body.jobId));
 		expect(job?.importStatus).toBe("failed_refunded");
-		expect(job?.errorCode).toBe("EXTRACTION_FAILED");
+		expect(job?.errorCode).toBe(EXAM_IMPORT_ERROR_CODES.EXAM_FAILED);
+		expect(job?.errorReason).toBe("ai_error");
 		const wallet = await db
 			.select()
 			.from(creditWallet)
@@ -331,11 +370,13 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		expect(dto.draft).toBeNull();
 	});
 
-	test("store.put hỏng sau reserve: job failed_refunded, log released, ví nguyên 30 (Important #1)", async () => {
+	test("store.put hỏng sau reserve: job failed_refunded E-004, log released, ví nguyên 30 (Important #1)", async () => {
 		const res = await upload(appBrokenStore);
 		expect(res.status).toBe(502);
-		const body = (await res.json()) as { code: string; jobId: string };
-		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.FAILED);
+		const body = examImportErrorSchema.parse(await res.json());
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.EXAM_FAILED);
+		expect(body.reason).toBe("ai_error");
+		if (!body.jobId) throw new Error("expected jobId");
 		const [job] = await db
 			.select()
 			.from(examImportJob)
@@ -371,14 +412,16 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		);
 	});
 
-	test("MIME không thuộc danh sách → 400 E-selfomy-alignment-003", async () => {
+	test("MIME không thuộc danh sách → 400 E-selfomy-alignment-003 reason type", async () => {
 		const res = await upload(app, "teacher", {
 			"Content-Type": "text/plain",
 		});
 		expect(res.status).toBe(400);
-		expect(((await res.json()) as { code: string }).code).toBe(
-			EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
-		);
+		expect(examImportErrorSchema.parse(await res.json())).toEqual({
+			error: "unsupported file type",
+			code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+			reason: "type",
+		});
 	});
 
 	test("binding AI/kho vắng mặt → 503 EXAM_IMPORT_DISABLED", async () => {
@@ -409,6 +452,291 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 			held: 0,
 			available: TRIAL_CREDITS,
 		});
+	});
+
+	// ==== TOS-27 (#473): chặn tệp trước khi giữ Credit + hoàn trả khi AI lỗi ====
+
+	test("PDF 25 trang → 400 E-003 reason pages, không job/log/file", async () => {
+		const bytes = new Uint8Array(buildExamPdf(25));
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "application/pdf",
+				"Content-Length": String(bytes.byteLength),
+				"X-File-Name": encodeURIComponent("de-25-trang.pdf"),
+			},
+			body: bytes,
+		});
+		expect(res.status).toBe(400);
+		const body = examImportErrorSchema.parse(await res.json());
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.INVALID_FILE);
+		expect(body.reason).toBe("pages");
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+		expect(await walletLogs()).toHaveLength(0);
+		expect(memory.objects.size).toBe(0);
+	});
+
+	test("PDF có mật khẩu → 400 E-003 reason password, không job/log", async () => {
+		// Fixture mã hoá thật (pypdf RC4) — pdf.js bỏ qua /Encrypt giả nên
+		// phải dùng file encrypt chuẩn để unpdf ném PasswordException.
+		const bytes = new Uint8Array(
+			readFileSync(
+				new URL(
+					"../../../e2e/fixtures/exam-import/protected.pdf",
+					import.meta.url,
+				).pathname,
+			),
+		);
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "application/pdf",
+				"Content-Length": String(bytes.byteLength),
+				"X-File-Name": encodeURIComponent("bi-mat.pdf"),
+			},
+			body: bytes,
+		});
+		expect(res.status).toBe(400);
+		const body = examImportErrorSchema.parse(await res.json());
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.INVALID_FILE);
+		expect(body.reason).toBe("password");
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+		expect(await walletLogs()).toHaveLength(0);
+	});
+
+	test("file khai báo 18 MB → 400 E-003 reason size, không job/log", async () => {
+		const res = await upload(app, "teacher", {
+			"Content-Length": String(18 * 1024 * 1024),
+		});
+		expect(res.status).toBe(400);
+		const body = examImportErrorSchema.parse(await res.json());
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.INVALID_FILE);
+		expect(body.reason).toBe("size");
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+		expect(await walletLogs()).toHaveLength(0);
+	});
+
+	test("extractor trả 0 câu hợp lệ → 502 E-004 reason empty_result, released", async () => {
+		const res = await upload(appEmptyExtractor);
+		expect(res.status).toBe(502);
+		const body = examImportErrorSchema.parse(await res.json());
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.EXAM_FAILED);
+		expect(body.reason).toBe("empty_result");
+		if (!body.jobId) throw new Error("expected jobId");
+		const [job] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, body.jobId));
+		expect(job?.importStatus).toBe("failed_refunded");
+		expect(job?.errorReason).toBe("empty_result");
+		const wallet = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(wallet[0]?.balance).toBe(TRIAL_CREDITS);
+		expect(wallet[0]?.held).toBe(0);
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+	});
+
+	test("retry: tạo job mới dùng lại file R2, settle bình thường", async () => {
+		const failedRes = await upload(appBrokenExtractor);
+		const failedBody = (await failedRes.json()) as { jobId: string };
+		const res = await app.request(
+			`/api/exam-imports/${failedBody.jobId}/retry`,
+			{ method: "POST", headers: { "x-test-user": "teacher" } },
+		);
+		expect(res.status).toBe(200);
+		const job = examImportJobSchema.parse(await res.json());
+		expect(job.importStatus).toBe("completed");
+		const jobs = await db.select().from(examImportJob);
+		expect(jobs).toHaveLength(2);
+		const oldJob = jobs.find((row) => row.id === failedBody.jobId);
+		const newJobRow = jobs.find((row) => row.id === job.id);
+		expect(oldJob?.importStatus).toBe("failed_refunded");
+		// Job mới DÙNG LẠI key R2 của job cũ (D4 — không upload lại).
+		expect(oldJob?.fileKey).toBe(`exam-imports/org-1/${failedBody.jobId}`);
+		expect(newJobRow?.fileKey).toBe(oldJob?.fileKey);
+		// File KHÔNG put lại — memory vẫn chỉ 1 object (key của job cũ).
+		expect(memory.objects.size).toBe(1);
+		// Sổ cái: reserve + released (lần fail) + reserved + settled (retry).
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"released",
+			"reserved",
+			"settled",
+		]);
+	});
+
+	test("retry job không ở failed_refunded → 409", async () => {
+		const okRes = await upload(app);
+		const okJob = examImportJobSchema.parse(await okRes.json());
+		const res = await app.request(`/api/exam-imports/${okJob.id}/retry`, {
+			method: "POST",
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(res.status).toBe(409);
+		expect(examImportErrorSchema.parse(await res.json()).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.NOT_RETRYABLE,
+		);
+	});
+
+	test("retry job không tồn tại → 404", async () => {
+		const res = await app.request("/api/exam-imports/khong-co/retry", {
+			method: "POST",
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(res.status).toBe(404);
+	});
+
+	test("retry khi file đã mất trên R2 → 410, không tạo job mới", async () => {
+		const failedRes = await upload(appBrokenExtractor);
+		const failedBody = (await failedRes.json()) as { jobId: string };
+		memory.objects.clear();
+		const res = await app.request(
+			`/api/exam-imports/${failedBody.jobId}/retry`,
+			{ method: "POST", headers: { "x-test-user": "teacher" } },
+		);
+		expect(res.status).toBe(410);
+		expect(examImportErrorSchema.parse(await res.json()).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.FILE_MISSING,
+		);
+		expect(await db.select().from(examImportJob)).toHaveLength(1);
+	});
+
+	test("retry thiếu Credit → xoá job mới, GIỮ file cũ, không log mới", async () => {
+		const failedRes = await upload(appBrokenExtractor);
+		const failedBody = (await failedRes.json()) as { jobId: string };
+		// Xả ví xuống dưới 5 Cr khả dụng.
+		const walletRow = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		await db
+			.update(creditWallet)
+			.set({ balance: 3 })
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(walletRow[0]).toBeDefined();
+		const res = await app.request(
+			`/api/exam-imports/${failedBody.jobId}/retry`,
+			{ method: "POST", headers: { "x-test-user": "teacher" } },
+		);
+		expect(res.status).toBe(402);
+		// Chỉ job cũ còn; file giữ nguyên cho job cũ xem lại.
+		expect(await db.select().from(examImportJob)).toHaveLength(1);
+		expect(memory.objects.size).toBe(1);
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+	});
+
+	test("job processing treo 151s → wallet GET tự hoàn đúng 1 lần (lazy sweep)", async () => {
+		await ensureWallet(db, "org-1");
+		const jobId = "job-stale-1";
+		await db.insert(examImportJob).values({
+			id: jobId,
+			orgId: "org-1",
+			createdBy: "u-teacher",
+			fileKey: `exam-imports/org-1/${jobId}`,
+			fileName: "treo.pdf",
+			mimeType: "application/pdf",
+			sizeBytes: 10,
+			contentFingerprint: "a".repeat(64),
+			heldCredits: CREDIT_COSTS.examImport,
+			importStatus: "processing",
+			startedAt: new Date(Date.now() - 151_000),
+		});
+		await reserveCredits(db, {
+			orgId: "org-1",
+			actorUserId: "u-teacher",
+			amount: CREDIT_COSTS.examImport,
+			refId: jobId,
+		});
+
+		const walletRes = await app.request("/api/credits/wallet", {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(creditWalletSchema.parse(await walletRes.json())).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+			available: TRIAL_CREDITS,
+		});
+		const [job] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, jobId));
+		expect(job?.importStatus).toBe("failed_refunded");
+		expect(job?.errorCode).toBe(EXAM_IMPORT_ERROR_CODES.EXAM_FAILED);
+		expect(job?.errorReason).toBe("timeout");
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+
+		// Gọi sweep lần 2 — idempotency key chặn hoàn lần thứ hai.
+		await app.request("/api/credits/wallet", {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+	});
+
+	test("job treo đã settle trước khi treo (crash-sau-settle) → sweep mark completed, KHÔNG hoàn", async () => {
+		await ensureWallet(db, "org-1");
+		const jobId = "job-stale-settled";
+		await db.insert(examImportJob).values({
+			id: jobId,
+			orgId: "org-1",
+			createdBy: "u-teacher",
+			fileKey: `exam-imports/org-1/${jobId}`,
+			fileName: "crash.pdf",
+			mimeType: "application/pdf",
+			sizeBytes: 10,
+			contentFingerprint: "b".repeat(64),
+			heldCredits: CREDIT_COSTS.examImport,
+			importStatus: "processing",
+			startedAt: new Date(Date.now() - 151_000),
+		});
+		await reserveCredits(db, {
+			orgId: "org-1",
+			actorUserId: "u-teacher",
+			amount: CREDIT_COSTS.examImport,
+			refId: jobId,
+		});
+		await settleCredits(db, {
+			orgId: "org-1",
+			actorUserId: "u-teacher",
+			amount: CREDIT_COSTS.examImport,
+			refId: jobId,
+		});
+
+		await app.request("/api/credits/wallet", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const [job] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, jobId));
+		// Credit đã trừ là sự thật sổ cái — job phải completed, không released.
+		expect(job?.importStatus).toBe("completed");
+		expect(job?.errorCode).toBeNull();
+		const wallet = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(wallet[0]?.balance).toBe(TRIAL_CREDITS - CREDIT_COSTS.examImport);
+		expect(wallet[0]?.held).toBe(0);
+		expect((await walletLogs()).map((row) => row.txStatus)).toEqual([
+			"reserved",
+			"settled",
+		]);
 	});
 
 	test("TOS-26 PATCH /:id/draft: cập nhật draft 0 Credit (không ghi thêm log ví), giữ nguyên needsReview=true", async () => {

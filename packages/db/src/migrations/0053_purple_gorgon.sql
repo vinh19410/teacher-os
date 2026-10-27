@@ -1,0 +1,1 @@
+ALTER TABLE `exam_import_job` ADD `error_reason` text;

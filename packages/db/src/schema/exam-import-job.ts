@@ -33,6 +33,9 @@ export const examImportJob = sqliteTable(
 		// JSON string khớp contract `extractedExamDraftSchema`.
 		draftJson: text("draft_json"),
 		errorCode: text("error_code"),
+		// Lý do thất bại khi `error_code` = E-selfomy-alignment-004 (TOS-27):
+		// "timeout" | "ai_error" | "empty_result".
+		errorReason: text("error_reason"),
 		// ID bộ đề assignment_test đã xuất bản từ job này (TOS-26 #472, idempotent).
 		publishedTestId: text("published_test_id"),
 		startedAt: integer("started_at", { mode: "timestamp_ms" })

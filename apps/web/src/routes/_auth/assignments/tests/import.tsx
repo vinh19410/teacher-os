@@ -1,16 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import type {
-	CreditWallet,
-	ExamImportDuplicate,
-	ExamImportJob,
-	ExtractedExamDraft,
+import {
+	type CreditWallet,
+	EXAM_IMPORT_ERROR_CODES,
+	EXAM_IMPORT_ERROR_MESSAGES,
+	type ExamImportDuplicate,
+	type ExamImportFailReason,
+	type ExamImportJob,
+	type ExtractedExamDraft,
 } from "@teacher-os/api/contracts";
-import { CREDIT_COSTS } from "@teacher-os/api/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CreditCostBadge } from "@/components/exam-import/credit-cost-badge";
 import { DuplicateExamBanner } from "@/components/exam-import/duplicate-exam-banner";
 import { ExamFileDropzone } from "@/components/exam-import/exam-file-dropzone";
 import { ExtractedExamPanel } from "@/components/exam-import/extracted-exam-panel";
+import { ImportFailedPanel } from "@/components/exam-import/import-failed-panel";
+import { InsufficientCreditsDialog } from "@/components/exam-import/insufficient-credits-dialog";
 import { SourceDocumentViewer } from "@/components/exam-import/source-document-viewer";
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +29,7 @@ import {
 	fetchExamImportJob,
 	lookupExamImportByFingerprint,
 	publishExamImport,
+	retryExamImport,
 	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
 export const Route = createFileRoute("/_auth/assignments/tests/import")({
@@ -94,6 +99,7 @@ export function ExamImportScreen({
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [publishError, setPublishError] = useState<string | null>(null);
 	const isWide = useIsWide();
+	const [retrying, setRetrying] = useState(false);
 	const refreshWallet = useCallback(() => {
 		fetchCreditWallet()
 			.then(setWallet)
@@ -179,6 +185,33 @@ export function ExamImportScreen({
 		},
 		[navigate, refreshWallet],
 	);
+	const handleRetry = useCallback(
+		async (targetJobId: string) => {
+			setRetrying(true);
+			try {
+				const created = await retryExamImport(targetJobId);
+				setState({ phase: "done", job: created });
+				refreshWallet();
+				void navigate({
+					to: "/assignments/tests/import",
+					search: { job: created.id },
+					replace: true,
+				});
+			} catch (err) {
+				setState({
+					phase: "error",
+					error:
+						typeof err === "object" && err !== null && "kind" in err
+							? (err as ExamImportCreateError)
+							: { kind: "unexpected", status: 0 },
+				});
+				refreshWallet();
+			} finally {
+				setRetrying(false);
+			}
+		},
+		[navigate, refreshWallet],
+	);
 
 	// TOS-25 (plan D1): dedupe client là best-effort **fail-open** — hash lỗi
 	// (crypto.subtle vắng ở non-secure context) hay lookup lỗi (mạng, server
@@ -225,6 +258,23 @@ export function ExamImportScreen({
 	);
 
 	const job = state.phase === "done" ? state.job : null;
+	const failedView: {
+		jobId: string | null;
+		reason: ExamImportFailReason | null;
+	} | null =
+		state.phase === "error" && state.error.kind === "failed"
+			? { jobId: state.error.jobId, reason: state.error.reason }
+			: job?.importStatus === "failed_refunded"
+				? {
+						jobId: job.id,
+						reason:
+							job.errorReason === "timeout" ||
+							job.errorReason === "ai_error" ||
+							job.errorReason === "empty_result"
+								? job.errorReason
+								: null,
+					}
+				: null;
 
 	const handleSaveDraft = useCallback(
 		async (draft: ExtractedExamDraft) => {
@@ -315,7 +365,22 @@ export function ExamImportScreen({
 				</div>
 			)}
 
-			{state.phase === "error" && <ErrorNotice error={state.error} />}
+			<InsufficientCreditsDialog
+				open={
+					state.phase === "error" && state.error.kind === "insufficient_credits"
+				}
+				onClose={() => setState({ phase: "idle" })}
+			/>
+
+			{failedView && (
+				<ImportFailedPanel
+					reason={failedView.reason}
+					retrying={retrying}
+					onRetry={() => {
+						if (failedView.jobId) void handleRetry(failedView.jobId);
+					}}
+				/>
+			)}
 
 			{duplicate && (
 				<DuplicateExamBanner
@@ -349,17 +414,21 @@ export function ExamImportScreen({
 				/>
 			)}
 
+			{state.phase === "error" &&
+				state.error.kind !== "insufficient_credits" &&
+				state.error.kind !== "failed" && <ErrorNotice error={state.error} />}
+
 			{/* Dropzone: màn trống HOẶC job `?job=` có draft không đọc được
 				(row hỏng/failed_refunded) — không dead-end màn trắng, notice ở
 				trên + vẫn nhập đề mới được (red-team #9). */}
 			{(!job || job.draft === null) && !uploading && (
 				<ExamFileDropzone
-					disabled={uploading || checking}
+					disabled={uploading || checking || retrying}
 					onFile={handleFile}
 				/>
 			)}
 
-			{job && !job.draft && (
+			{job && !job.draft && job.importStatus !== "failed_refunded" && (
 				<div
 					role="alert"
 					data-testid="exam-import-broken-draft"
@@ -433,17 +502,19 @@ function SourceColumn({ job }: { job: ExamImportJob }) {
 function ErrorNotice({ error }: { error: ExamImportCreateError }) {
 	let message: string;
 	switch (error.kind) {
-		case "insufficient_credits":
-			message = `Không đủ Credit — ví khả dụng ${error.available} Cr, cần ${CREDIT_COSTS.examImport} Cr.`;
-			break;
 		case "job_not_found":
 			message = "Bản nháp không tồn tại hoặc đã bị xoá — hãy nhập đề mới.";
 			break;
-		case "failed":
-			message = "Bóc tách thất bại — Credit đã hoàn về ví.";
+		case "file_missing":
+			message =
+				"Tệp đề gốc không còn trên kho lưu trữ — vui lòng tải lên lại tệp.";
+			break;
+		case "not_retryable":
+			message = "Lượt nhập đề này đã hoàn tất, không thể thử lại.";
 			break;
 		case "invalid_file":
-			message = "Tệp không hợp lệ — chỉ nhận PDF, PNG, JPG, JPEG tối đa 15 MB.";
+			message =
+				EXAM_IMPORT_ERROR_MESSAGES[EXAM_IMPORT_ERROR_CODES.INVALID_FILE];
 			break;
 		case "disabled":
 			message = "Tính năng chưa cấu hình — liên hệ quản trị để bật Nhập đề AI.";

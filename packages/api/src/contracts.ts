@@ -3685,14 +3685,20 @@ export const EXAM_IMPORT_MIME = [
 export const EXAM_IMPORT_ERROR_CODES = {
 	/** Ví không đủ Credit (HTTP 402). */
 	INSUFFICIENT_CREDITS: "E-selfomy-alignment-001",
-	/** File sai MIME / quá 15 MB (HTTP 400). */
+	/** File sai MIME / quá 15 MB / quá 20 trang / có mật khẩu (HTTP 400). */
 	INVALID_FILE: "E-selfomy-alignment-003",
 	/** Binding AI hoặc kho file chưa cấu hình (HTTP 503). */
 	DISABLED: "EXAM_IMPORT_DISABLED",
+	/** AI lỗi / timeout / 0 nhóm câu hỏi hợp lệ — credit đã hoàn (HTTP 502). */
+	EXAM_FAILED: "E-selfomy-alignment-004",
 	/** Extractor lỗi/timeout — credit đã hoàn (HTTP 502). */
 	FAILED: "EXAM_IMPORT_FAILED",
 	/** Job/file không thuộc org hiện tại hoặc không tồn tại (HTTP 404). */
 	NOT_FOUND: "exam_import_not_found",
+	/** Retry chỉ nhận job `failed_refunded` (HTTP 409). */
+	NOT_RETRYABLE: "exam_import_not_retryable",
+	/** File gốc trên R2 đã mất khi retry (HTTP 410). */
+	FILE_MISSING: "exam_import_file_missing",
 	/** Đề còn câu gắn nhãn Cần rà soát lại nhưng chưa tích xác nhận (HTTP 422). */
 	REVIEW_CONFIRMATION_REQUIRED: "REVIEW_CONFIRMATION_REQUIRED",
 	/** Số part vượt quá số slot tối đa của kỹ năng trong ASSIGNMENT_TEST_PRESETS (HTTP 422). */
@@ -3706,6 +3712,56 @@ export const EXAM_IMPORT_ERROR_CODES = {
 } as const;
 export type ExamImportErrorCode =
 	(typeof EXAM_IMPORT_ERROR_CODES)[keyof typeof EXAM_IMPORT_ERROR_CODES];
+
+/** Lý do chặn tệp E-003 — trước khi giữ Credit (plan TOS-27 D1). */
+export const EXAM_IMPORT_FILE_ERROR_REASONS = [
+	"type",
+	"size",
+	"pages",
+	"password",
+] as const;
+export type ExamImportFileErrorReason =
+	(typeof EXAM_IMPORT_FILE_ERROR_REASONS)[number];
+
+/** Lý do thất bại E-004 — sau khi giữ Credit, đã hoàn đủ (plan TOS-27 D2). */
+export const EXAM_IMPORT_FAIL_REASONS = [
+	"timeout",
+	"ai_error",
+	"empty_result",
+] as const;
+export type ExamImportFailReason = (typeof EXAM_IMPORT_FAIL_REASONS)[number];
+
+/**
+ * Thông điệp lỗi nguyên văn cột "Thông điệp" của spec
+ * (`docs/selfomy-alignment/srs/selfomy-alignment-spec.md` Error Matrix
+ * E-001/003/004) — một nguồn chữ cho web + test (plan TOS-27 D6).
+ * `EXAM_IMPORT_FAILED` (nhánh hiếm: settled rồi mới lỗi ghi job — credit ĐÃ
+ * trừ, KHÔNG hoàn) cố ý KHÔNG có thông điệp E-004 vì sẽ nói sai sự thật.
+ */
+export const EXAM_IMPORT_ERROR_MESSAGES: Record<
+	| typeof EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS
+	| typeof EXAM_IMPORT_ERROR_CODES.INVALID_FILE
+	| typeof EXAM_IMPORT_ERROR_CODES.EXAM_FAILED,
+	string
+> = {
+	[EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS]:
+		"Tổ chức của bạn đã dùng hết Credit AI trong kỳ. Vui lòng mua thêm gói 100 Credit (149.000đ) hoặc nâng cấp gói tháng để tiếp tục sử dụng tính năng này.",
+	[EXAM_IMPORT_ERROR_CODES.INVALID_FILE]:
+		"Tệp tải lên vượt quá giới hạn cho phép (tối đa 20 trang, 15 MB, định dạng PDF/PNG/JPG không khóa mật khẩu). Vui lòng tách nhỏ hoặc đổi tệp khác.",
+	[EXAM_IMPORT_ERROR_CODES.EXAM_FAILED]:
+		"Hệ thống AI đang phản hồi chậm hoặc không đọc được cấu trúc tệp này. Số Credit tạm giữ đã được hoàn lại đầy đủ vào ví của bạn. Vui lòng thử lại sau.",
+};
+
+/** Body lỗi có cấu trúc của exam import (400/402/502). */
+export const examImportErrorSchema = z.object({
+	error: z.string(),
+	code: z.string(),
+	reason: z.string().nullish(),
+	jobId: z.string().nullish(),
+	balance: z.number().int().nullish(),
+	available: z.number().int().nullish(),
+});
+export type ExamImportError = z.infer<typeof examImportErrorSchema>;
 
 export const EXAM_IMPORT_SKILLS = [
 	"reading",
@@ -3818,6 +3874,8 @@ export const examImportJobSchema = z
 		importStatus: z.enum(["processing", "completed", "failed_refunded"]),
 		draft: extractedExamDraftSchema.nullish(),
 		errorCode: z.string().nullish(),
+		// Lý do thất bại khi `errorCode` = E-004: timeout | ai_error | empty_result.
+		errorReason: z.string().nullish(),
 		publishedTestId: z.string().min(1).nullish(),
 		createdAt: z.string().min(1),
 		startedAt: z.string().min(1),

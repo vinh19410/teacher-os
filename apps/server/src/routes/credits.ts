@@ -2,6 +2,7 @@ import { creditWalletSchema } from "@teacher-os/api/contracts";
 import { Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { ensureWallet, readWallet } from "../lib/credits/wallet";
+import { releaseStaleImports } from "../lib/exam-import/release-stale";
 
 export interface CreditRouteDeps {
 	getDb(): Db;
@@ -22,6 +23,9 @@ export function creditRoutes(deps: CreditRouteDeps) {
 		const kernelCtx = c.get("kernelCtx");
 		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
 		const db = deps.getDb();
+		// Dọn lười job `processing` treo (plan TOS-27 D3) — xem ví là cơ hội
+		// giải tỏa Credit bị giữ bởi job đã chết.
+		await releaseStaleImports(db, kernelCtx.orgId);
 		await ensureWallet(db, kernelCtx.orgId);
 		const wallet = (await readWallet(db, kernelCtx.orgId)) ?? {
 			balance: 0,

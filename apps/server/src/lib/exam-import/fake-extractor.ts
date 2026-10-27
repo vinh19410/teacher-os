@@ -1,5 +1,5 @@
 import type { ExtractedExam } from "@teacher-os/api/contracts";
-import type { ExamExtractor } from "./extractor";
+import { type ExamExtractor, ExtractionFailedError } from "./extractor";
 
 /** Đề cố định của extractor giả (test unit + e2e): 3 câu, 1 câu 0.6 để
  * route hậu xử lý gắn `needsReview`. */
@@ -42,10 +42,17 @@ export const FAKE_EXTRACTED_EXAM: ExtractedExam = {
 	],
 };
 
-/** Extractor giả — không gọi AI, trả đề cố định với pageCount 2 trang. */
+/**
+ * Extractor giả — không gọi AI, trả đề cố định với pageCount 2 trang.
+ * Tên tệp chứa `ai-fail` → ném `ExtractionFailedError` để E2E AC-004 (TOS-27)
+ * kiểm tra luồng hoàn trả 5 Credit + hiện E-004 trên stack thật.
+ */
 export function createFakeExamExtractor(): ExamExtractor {
 	return {
-		async extract() {
+		async extract(input) {
+			if (input.fileName.toLowerCase().includes("ai-fail")) {
+				throw new ExtractionFailedError("simulated AI extraction failure");
+			}
 			return { exam: FAKE_EXTRACTED_EXAM, pageCount: 2 };
 		},
 	};

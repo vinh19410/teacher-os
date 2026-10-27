@@ -3,8 +3,8 @@ import {
 	EXAM_IMPORT_ERROR_CODES,
 	EXAM_IMPORT_LIMITS,
 	EXAM_IMPORT_MIME,
+	type ExamImportError,
 	type ExamImportJob,
-	type ExtractedExam,
 	examImportDraftUpdateSchema,
 	examImportJobSchema,
 	examImportPublishSchema,
@@ -18,27 +18,28 @@ import {
 import { canImportExam } from "@teacher-os/auth/role";
 import { examImportJob } from "@teacher-os/db/schema/exam-import-job";
 import { and, eq } from "drizzle-orm";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
 import {
 	assertStaffCap,
 	ensureWallet,
 	InsufficientCreditsError,
 	readWallet,
-	releaseCredits,
 	reserveCredits,
-	settleCredits,
 } from "../lib/credits/wallet";
 import { findCompletedImportByFingerprint } from "../lib/exam-import/dedupe";
 import type { ExamExtractor } from "../lib/exam-import/extractor";
-import { countPdfPages, sha256Hex } from "../lib/exam-import/fingerprint";
+import { sha256Hex } from "../lib/exam-import/fingerprint";
 import {
 	mergeReviewedDraft,
 	parseStoredDraft,
 	publishExamImportToBank,
 } from "../lib/exam-import/publish-to-bank";
+import { releaseStaleImports } from "../lib/exam-import/release-stale";
+import { type RunImportResult, runImport } from "../lib/exam-import/run-import";
+import { inspectExamFile } from "../lib/exam-import/validate-file";
 import { mediaObjectResponse } from "../lib/media-response";
-import { enforceDeclaredSize, type MediaStore } from "../lib/media-store";
+import type { MediaStore } from "../lib/media-store";
 
 export interface ExamImportRouteDeps {
 	getDb(): Db;
@@ -50,37 +51,6 @@ export interface ExamImportRouteDeps {
 }
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
-
-/** Mã error_code khi extract lỗi: timeout riêng để UI nhắc thử lại. */
-const ERROR_CODE_EXTRACTION_TIMEOUT = "EXTRACTION_TIMEOUT";
-const ERROR_CODE_EXTRACTION_FAILED = "EXTRACTION_FAILED";
-
-/**
- * Hậu xử lý gán `needsReview` (server tính, UI chỉ đọc): tin cậy thấp,
- * thiếu đáp án, opts dưới 2 lựa chọn, hoặc đáp án không nằm trong opts.
- */
-function toReviewedDraft(exam: ExtractedExam) {
-	return {
-		...exam,
-		parts: exam.parts.map((part) => ({
-			...part,
-			questions: part.questions.map((question) => {
-				const opts = question.opts ?? undefined;
-				const answer = question.answer ?? undefined;
-				return {
-					...question,
-					needsReview:
-						question.confidence < EXAM_IMPORT_LIMITS.reviewConfidence ||
-						answer === undefined ||
-						(opts !== undefined && opts.length < 2) ||
-						(opts !== undefined &&
-							answer !== undefined &&
-							!opts.includes(answer)),
-				};
-			}),
-		})),
-	};
-}
 
 /** Row `exam_import_job` → wire DTO (không lộ fileKey/orgId; draft parse
  * từ draft_json — JSON hỏng hoặc lệch schema thì draft null thay vì 500;
@@ -109,11 +79,42 @@ function toJobDto(row: typeof examImportJob.$inferSelect): ExamImportJob {
 		importStatus: row.importStatus,
 		draft,
 		errorCode: row.errorCode,
+		errorReason: row.errorReason,
 		publishedTestId: row.publishedTestId ?? null,
 		createdAt: row.createdAt.toISOString(),
 		startedAt: row.startedAt.toISOString(),
 		completedAt: row.completedAt?.toISOString() ?? null,
 	});
+}
+
+/** Map kết quả `runImport` → response 200/502 — dùng chung POST và retry. */
+function importFailureOrJob(
+	c: Context<Env>,
+	result: RunImportResult,
+	jobId: string,
+): Response {
+	if (result.ok) return c.json(toJobDto(result.row), 200);
+	if (result.kind === "hard") {
+		// Settled rồi mới hỏng ghi job — credit ĐÃ trừ, KHÔNG hoàn: KHÔNG dùng
+		// E-004 vì message E-004 nói "credit đã hoàn" sẽ sai sự thật.
+		return c.json(
+			{
+				error: "exam import failed",
+				code: EXAM_IMPORT_ERROR_CODES.FAILED,
+				jobId,
+			} satisfies ExamImportError,
+			502,
+		);
+	}
+	return c.json(
+		{
+			error: "exam import failed",
+			code: EXAM_IMPORT_ERROR_CODES.EXAM_FAILED,
+			reason: result.reason,
+			jobId,
+		} satisfies ExamImportError,
+		502,
+	);
 }
 
 /**
@@ -181,7 +182,8 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				{
 					error: "unsupported file type",
 					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
-				},
+					reason: "type",
+				} satisfies ExamImportError,
 				400,
 			);
 		}
@@ -199,7 +201,8 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				{
 					error: "invalid file size",
 					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
-				},
+					reason: "size",
+				} satisfies ExamImportError,
 				400,
 			);
 		}
@@ -216,7 +219,8 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				{
 					error: "invalid file name",
 					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
-				},
+					reason: "type",
+				} satisfies ExamImportError,
 				400,
 			);
 		}
@@ -231,12 +235,31 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				{
 					error: "invalid file size",
 					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
-				},
+					reason: "size",
+				} satisfies ExamImportError,
 				400,
 			);
 		}
 
 		const fingerprint = await sha256Hex(data);
+
+		// Kiểm sâu tệp (plan TOS-27 D1) TRƯỚC khi lưu R2 / tạo job / giữ
+		// Credit: sai số trang / PDF có mật khẩu / hỏng → 400 E-003, ví
+		// không bị đụng tới.
+		const inspection = await inspectExamFile(data, mimeType);
+		if (!inspection.ok) {
+			return c.json(
+				{
+					error: "invalid file",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+					reason: inspection.reason,
+				} satisfies ExamImportError,
+				400,
+			);
+		}
+
+		// Dọn lười job `processing` treo (plan TOS-27 D3) trước khi tạo job.
+		await releaseStaleImports(db, orgId);
 
 		// TOS-25 (#471): trùng mã băm trong cùng org (job `completed` có draft
 		// đọc được) → không gọi AI, không tạo job, không lưu R2, không giữ/trừ
@@ -250,7 +273,6 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 		if (duplicate) {
 			return c.json({ duplicateOf: duplicate }, 200);
 		}
-
 		// Vĩ tạo lười (30 Credit Dùng thử) + hook trần cá nhân (TOS-49).
 		await ensureWallet(db, orgId);
 		assertStaffCap(kernelCtx, CREDIT_COSTS.examImport);
@@ -302,112 +324,20 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 			throw error;
 		}
 
-		const signal = AbortSignal.timeout(EXAM_IMPORT_LIMITS.timeoutMs);
-		// `settled` phân nhánh catch-all: settle là 1 batch nguyên tử nên khi
-		// nó đã chạy thì held đã nhả + balance đã trừ — catch-all KHÔNG được
-		// release nữa (kongming review #470: tránh hoàn nhầm tiền đã trừ).
-		let settled = false;
-		try {
-			// Ghi file R2 TRONG try catch-all — put hỏng (503/quota) vẫn phải
-			// release + `failed_refunded`, không để job `processing` giữ credit
-			// (kongming review #470, Important #1).
-			const body = new Response(data).body;
-			if (body === null) {
-				throw new Error("re-streaming uploaded body failed");
-			}
-			const counted = enforceDeclaredSize(body, data.byteLength);
-			await store.put(fileKey, counted.stream, {
-				contentType: mimeType,
-				size: data.byteLength,
-			});
-			const { exam, pageCount: extractorPageCount } = await extractor.extract(
-				{ data, mimeType, fileName },
-				signal,
-			);
-			const draft = extractedExamDraftSchema.parse(toReviewedDraft(exam));
-			const pageCount =
-				extractorPageCount !== null ? extractorPageCount : countPdfPages(data);
-			const completedAt = new Date();
-			// Settle TRƯỚC khi mark `completed`: nếu settle hỏng thì job chưa
-			// thành công, catch-all hoàn credit sạch sẽ; chiều ngược lại sẽ kẹt
-			// "job completed nhưng credit vẫn held" (kongming review #470,
-			// Important #2). Cửa sổ hẹp còn lại — crash đúng sau settle trước
-			// UPDATE — là rủi ro beta đã ghi nhận trong plan (TOS-27 dọn sau).
-			await settleCredits(db, {
-				orgId,
-				actorUserId: userId,
-				amount: CREDIT_COSTS.examImport,
-				refId: jobId,
-			});
-			settled = true;
-			await db
-				.update(examImportJob)
-				.set({
-					draftJson: JSON.stringify(draft),
-					importStatus: "completed",
-					completedAt,
-					pageCount,
-				})
-				.where(eq(examImportJob.id, jobId));
-			const [row] = await db
-				.select()
-				.from(examImportJob)
-				.where(eq(examImportJob.id, jobId))
-				.limit(1);
-			if (!row) {
-				throw new Error("exam import job disappeared after settle");
-			}
-			return c.json(toJobDto(row), 200);
-		} catch {
-			if (settled) {
-				// Settle đã chốt mà UPDATE job hỏng (2 lỗi DB liên tiếp): credit
-				// đã trừ đúng sổ cái — KHÔNG release. Thử mark lại 1 lần, vẫn
-				// lỗi thì 500 thật (job `processing` có credit đã trừ — cùng
-				// lớp rủi ro crash-sau-settle đã chấp nhận ở beta).
-				try {
-					await db
-						.update(examImportJob)
-						.set({ importStatus: "completed", completedAt: new Date() })
-						.where(eq(examImportJob.id, jobId));
-				} catch (error) {
-					console.error("[exam-imports] mark completed sau settle lỗi", error);
-				}
-				return c.json(
-					{
-						error: "exam import failed",
-						code: EXAM_IMPORT_ERROR_CODES.FAILED,
-						jobId,
-					},
-					502,
-				);
-			}
-			// Catch-all sau reserve: hoàn Credit + đánh dấu job để ví không kẹt.
-			const errorCode = signal.aborted
-				? ERROR_CODE_EXTRACTION_TIMEOUT
-				: ERROR_CODE_EXTRACTION_FAILED;
-			await releaseCredits(db, {
-				orgId,
-				actorUserId: userId,
-				amount: CREDIT_COSTS.examImport,
-				refId: jobId,
-			});
-			await db
-				.update(examImportJob)
-				.set({
-					importStatus: "failed_refunded",
-					errorCode,
-					completedAt: new Date(),
-				})
-				.where(eq(examImportJob.id, jobId));
-			return c.json(
-				{
-					error: "exam import failed",
-					code: EXAM_IMPORT_ERROR_CODES.FAILED,
-					jobId,
-				},
-				502,
-			);
-		}
+		const result = await runImport({
+			db,
+			extractor,
+			store,
+			orgId,
+			userId,
+			jobId,
+			fileKey,
+			data,
+			mimeType,
+			fileName,
+			putFile: true,
+		});
+		return importFailureOrJob(c, result, jobId);
 	});
 
 	/** TOS-25: kiểm tra trùng sớm theo fingerprint — client gọi trước upload
@@ -447,6 +377,8 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 	router.get("/exam-imports/:id", async (c) => {
 		const kernelCtx = c.get("kernelCtx");
 		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
+		// Dọn lười job treo (plan TOS-27 D3) — xem kết quả cũng là cơ hội dọn.
+		await releaseStaleImports(deps.getDb(), kernelCtx.orgId);
 		const [row] = await deps
 			.getDb()
 			.select()
@@ -518,6 +450,136 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 			mediaType: row.mimeType,
 			mediaName: row.fileName,
 		});
+	});
+
+	/** Thử bóc tách lại AI (plan TOS-27 D4): job `failed_refunded` cùng org +
+	 * file còn trên R2 → tạo JOB MỚI dùng lại `file_key` +
+	 * `content_fingerprint` (không upload lại), chạy lại toàn bộ reserve →
+	 * extract → settle/release. Gate `canImportExam` như POST. */
+	router.post("/exam-imports/:id/retry", async (c) => {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
+		if (!canImportExam(kernelCtx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const extractor = deps.getExamExtractor?.();
+		const store = deps.getExamImportStore?.();
+		if (!extractor || !store) {
+			return c.json(
+				{
+					error: "exam import disabled",
+					code: EXAM_IMPORT_ERROR_CODES.DISABLED,
+				} satisfies ExamImportError,
+				503,
+			);
+		}
+
+		const db = deps.getDb();
+		const { orgId, userId } = kernelCtx;
+		await releaseStaleImports(db, orgId);
+
+		const [old] = await db
+			.select()
+			.from(examImportJob)
+			.where(
+				and(
+					eq(examImportJob.id, c.req.param("id")),
+					eq(examImportJob.orgId, orgId),
+				),
+			)
+			.limit(1);
+		if (!old) {
+			return c.json(
+				{
+					error: "exam import not found",
+					code: EXAM_IMPORT_ERROR_CODES.NOT_FOUND,
+				} satisfies ExamImportError,
+				404,
+			);
+		}
+		if (old.importStatus !== "failed_refunded") {
+			return c.json(
+				{
+					error: "exam import job is not retryable",
+					code: EXAM_IMPORT_ERROR_CODES.NOT_RETRYABLE,
+				} satisfies ExamImportError,
+				409,
+			);
+		}
+		// File gốc phải còn trên R2 — mất (đã dọn) → 410, không tạo job ảo.
+		const object = await store.get(old.fileKey);
+		if (!object) {
+			return c.json(
+				{
+					error: "exam import file missing",
+					code: EXAM_IMPORT_ERROR_CODES.FILE_MISSING,
+				} satisfies ExamImportError,
+				410,
+			);
+		}
+		const data = await new Response(object.body).arrayBuffer();
+
+		// Vĩ + trần cá nhân như POST (credit giữ lại từ đầu).
+		await ensureWallet(db, orgId);
+		assertStaffCap(kernelCtx, CREDIT_COSTS.examImport);
+
+		const jobId = crypto.randomUUID();
+		await db.insert(examImportJob).values({
+			id: jobId,
+			orgId,
+			createdBy: userId,
+			// Dùng lại key R2 của job cũ (D4): không upload lại, job cũ còn
+			// làm lịch sử — 2 row cùng fileKey là chủ ý.
+			fileKey: old.fileKey,
+			fileName: old.fileName,
+			mimeType: old.mimeType,
+			sizeBytes: old.sizeBytes,
+			contentFingerprint: old.contentFingerprint,
+			heldCredits: CREDIT_COSTS.examImport,
+			importStatus: "processing",
+			startedAt: new Date(),
+		});
+
+		// Reserve TRƯỚC khi extract; thua → chỉ xoá job row mới (KHÔNG xoá
+		// file — file thuộc job cũ, vẫn giữ làm lịch sử/xem lại).
+		try {
+			await reserveCredits(db, {
+				orgId,
+				actorUserId: userId,
+				amount: CREDIT_COSTS.examImport,
+				refId: jobId,
+			});
+		} catch (error) {
+			if (error instanceof InsufficientCreditsError) {
+				await db.delete(examImportJob).where(eq(examImportJob.id, jobId));
+				const wallet = await readWallet(db, orgId);
+				return c.json(
+					{
+						error: "insufficient credits",
+						code: EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS,
+						balance: wallet?.balance ?? 0,
+						available: wallet ? Math.max(0, wallet.balance - wallet.held) : 0,
+					} satisfies ExamImportError,
+					402,
+				);
+			}
+			throw error;
+		}
+
+		const result = await runImport({
+			db,
+			extractor,
+			store,
+			orgId,
+			userId,
+			jobId,
+			fileKey: old.fileKey,
+			data,
+			mimeType: old.mimeType,
+			fileName: old.fileName,
+			putFile: false,
+		});
+		return importFailureOrJob(c, result, jobId);
 	});
 
 	/**

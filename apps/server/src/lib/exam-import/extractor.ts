@@ -11,6 +11,12 @@ export interface ExamExtractInput {
 	fileName: string;
 }
 
+/** Kết quả một lượt bóc tách: đề thô + số trang (null với ảnh). */
+export interface ExamExtraction {
+	exam: ExtractedExam;
+	pageCount: number | null;
+}
+
 /**
  * Extractor bóc tách đề (TOS-24 #470). Interface THUẦN — KHÔNG tham chiếu
  * type Cloudflare: e2e (tsconfig `types: ["node"]`) type-check `server/app`
@@ -21,7 +27,7 @@ export interface ExamExtractor {
 	extract(
 		input: ExamExtractInput,
 		signal?: AbortSignal,
-	): Promise<{ exam: ExtractedExam; pageCount: number | null }>;
+	): Promise<ExamExtraction>;
 }
 
 /**
