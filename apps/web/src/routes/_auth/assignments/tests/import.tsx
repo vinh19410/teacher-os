@@ -3,6 +3,7 @@ import type {
 	CreditWallet,
 	ExamImportDuplicate,
 	ExamImportJob,
+	ExtractedExamDraft,
 } from "@teacher-os/api/contracts";
 import { CREDIT_COSTS } from "@teacher-os/api/contracts";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,15 +15,18 @@ import { SourceDocumentViewer } from "@/components/exam-import/source-document-v
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
+import { useData } from "@/lib/data-store";
 import { sha256Hex } from "@/lib/file-fingerprint";
 import {
 	createExamImport,
 	type ExamImportCreateError,
+	type ExamImportPublishError,
 	fetchCreditWallet,
 	fetchExamImportJob,
 	lookupExamImportByFingerprint,
+	publishExamImport,
+	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
-
 export const Route = createFileRoute("/_auth/assignments/tests/import")({
 	validateSearch: (search: Record<string, unknown>): { job?: string } => {
 		const job = search.job;
@@ -33,7 +37,8 @@ export const Route = createFileRoute("/_auth/assignments/tests/import")({
 
 function ImportExamRoute() {
 	const { job } = Route.useSearch();
-	return <ExamImportScreen jobId={job} />;
+	const { refresh } = useData();
+	return <ExamImportScreen jobId={job} onRefreshKernel={refresh} />;
 }
 
 /**
@@ -67,7 +72,13 @@ function useIsWide(): boolean {
 	return isWide;
 }
 
-export function ExamImportScreen({ jobId }: { jobId?: string }) {
+export function ExamImportScreen({
+	jobId,
+	onRefreshKernel,
+}: {
+	jobId?: string;
+	onRefreshKernel?: () => Promise<boolean>;
+}) {
 	const navigate = useNavigate();
 	const [state, setState] = useState<ScreenState>({ phase: "idle" });
 	const [wallet, setWallet] = useState<CreditWallet | null>(null);
@@ -78,6 +89,10 @@ export function ExamImportScreen({ jobId }: { jobId?: string }) {
 	const [checking, setChecking] = useState(false);
 	const abortRef = useRef<AbortController | null>(null);
 	const [activeTab, setActiveTab] = useState("document");
+	const [savingDraft, setSavingDraft] = useState(false);
+	const [publishing, setPublishing] = useState(false);
+	const [statusMessage, setStatusMessage] = useState<string | null>(null);
+	const [publishError, setPublishError] = useState<string | null>(null);
 	const isWide = useIsWide();
 	const refreshWallet = useCallback(() => {
 		fetchCreditWallet()
@@ -203,6 +218,61 @@ export function ExamImportScreen({ jobId }: { jobId?: string }) {
 
 	const job = state.phase === "done" ? state.job : null;
 
+	const handleSaveDraft = useCallback(
+		async (draft: ExtractedExamDraft) => {
+			if (!job) return;
+			setSavingDraft(true);
+			setStatusMessage(null);
+			setPublishError(null);
+			try {
+				const updated = await saveExamImportDraft({ jobId: job.id, draft });
+				setState({ phase: "done", job: updated });
+				setStatusMessage("Đã lưu bản nháp (0 Credit).");
+			} catch {
+				setPublishError("Không thể lưu bản nháp. Vui lòng thử lại.");
+			} finally {
+				setSavingDraft(false);
+			}
+		},
+		[job],
+	);
+
+	const handlePublish = useCallback(
+		async (draft: ExtractedExamDraft, reviewConfirmed: boolean) => {
+			if (!job) return;
+			setPublishing(true);
+			setStatusMessage(null);
+			setPublishError(null);
+			try {
+				const result = await publishExamImport({
+					jobId: job.id,
+					draft,
+					reviewConfirmed,
+				});
+				// Đồng bộ lại snapshot ['kernel'] để /assignments/tests/$id có sẵn đề mới.
+				await onRefreshKernel?.();
+				setStatusMessage(
+					result.status === "draft"
+						? "Đã lưu bộ đề nháp — cần bổ sung file nghe trước khi giao bài."
+						: "Đã xuất bản vào Ngân hàng đề.",
+				);
+				void navigate({
+					to: "/assignments/tests/$id",
+					params: { id: result.testId },
+				});
+			} catch (err) {
+				const kind =
+					typeof err === "object" && err !== null && "kind" in err
+						? (err as ExamImportPublishError).kind
+						: "unexpected";
+				setPublishError(formatPublishError(kind));
+			} finally {
+				setPublishing(false);
+			}
+		},
+		[job, navigate, onRefreshKernel],
+	);
+
 	return (
 		<div>
 			<nav
@@ -293,7 +363,15 @@ export function ExamImportScreen({ jobId }: { jobId?: string }) {
 						// ≥ lg: đối chiếu 2 cột — tài liệu gốc bên trái, câu hỏi bên phải.
 						<div className="grid grid-cols-2 items-start gap-6">
 							<SourceColumn job={job} />
-							<ExtractedExamPanel draft={job.draft} />
+							<ExtractedExamPanel
+								draft={job.draft}
+								savingDraft={savingDraft}
+								publishing={publishing}
+								statusMessage={statusMessage}
+								errorMessage={publishError}
+								onSaveDraft={handleSaveDraft}
+								onPublish={handlePublish}
+							/>
 						</div>
 					) : (
 						// < lg: Tabs + tab list sticky đáy màn để đổi bảng dễ.
@@ -301,7 +379,15 @@ export function ExamImportScreen({ jobId }: { jobId?: string }) {
 							{activeTab === "document" ? (
 								<SourceColumn job={job} />
 							) : (
-								<ExtractedExamPanel draft={job.draft} />
+								<ExtractedExamPanel
+									draft={job.draft}
+									savingDraft={savingDraft}
+									publishing={publishing}
+									statusMessage={statusMessage}
+									errorMessage={publishError}
+									onSaveDraft={handleSaveDraft}
+									onPublish={handlePublish}
+								/>
 							)}
 							<div className="sticky bottom-0 -mx-4 border-border border-t bg-background px-4 pt-2 pb-3">
 								<Tabs
@@ -361,4 +447,19 @@ function ErrorNotice({ error }: { error: ExamImportCreateError }) {
 			{message}
 		</div>
 	);
+}
+
+function formatPublishError(kind: ExamImportPublishError["kind"]): string {
+	switch (kind) {
+		case "review_confirmation_required":
+			return "Vui lòng tích xác nhận các câu gắn nhãn Cần rà soát lại trước khi lưu vào Ngân hàng đề.";
+		case "too_many_parts":
+			return "Số lượng part vượt quá giới hạn của kỹ năng đã chọn. Vui lòng gộp hoặc bớt part.";
+		case "skill_mixed_not_allowed":
+			return "Vui lòng chọn kỹ năng cụ thể (Reading, Listening, Writing hoặc Speaking) trước khi lưu vào Ngân hàng đề.";
+		case "invalid_draft":
+			return "Một số câu hỏi chưa có nội dung hoặc đáp án hợp lệ. Vui lòng kiểm tra lại.";
+		default:
+			return "Không thể lưu vào Ngân hàng đề. Vui lòng thử lại.";
+	}
 }

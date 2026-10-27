@@ -7,8 +7,14 @@ import {
 	examImportCreateResponseSchema,
 	examImportJobSchema,
 	examImportLookupResponseSchema,
+	examImportPublishResponseSchema,
 	TRIAL_CREDITS,
 } from "@teacher-os/api/contracts";
+import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
+import {
+	assignmentTest,
+	assignmentTestPart,
+} from "@teacher-os/db/schema/assignment-test";
 import {
 	creditUsageLog,
 	creditWallet,
@@ -187,6 +193,9 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 	});
 
 	beforeEach(async () => {
+		await db.delete(assignmentTestPart);
+		await db.delete(assignmentTest);
+		await db.delete(assignmentPrompt);
 		await db.delete(creditUsageLog);
 		await db.delete(creditWallet);
 		await db.delete(examImportJob);
@@ -400,6 +409,245 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 			held: 0,
 			available: TRIAL_CREDITS,
 		});
+	});
+
+	test("TOS-26 PATCH /:id/draft: cập nhật draft 0 Credit (không ghi thêm log ví), giữ nguyên needsReview=true", async () => {
+		const uploadRes = await upload();
+		const created = examImportJobSchema.parse(await uploadRes.json());
+		const logsBefore = await walletLogs();
+		expect(logsBefore).toHaveLength(2);
+
+		const initialDraft = created.draft;
+		if (!initialDraft) throw new Error("expected created.draft");
+		const editedDraft = {
+			...initialDraft,
+			title: "Cambridge IELTS 18 — Đã sửa tay",
+			parts: initialDraft.parts.map((part) => ({
+				questions: part.questions.map((q, idx) =>
+					idx === 2
+						? {
+								...q,
+								answer: "infrastructure",
+								explanation: "Đoạn 2 nêu rõ hạ tầng quyết định.",
+								// Thử gửi needsReview=false từ client — server phải giữ nguyên true.
+								needsReview: false,
+							}
+						: q,
+				),
+			})),
+		};
+
+		const patchRes = await app.request(
+			`/api/exam-imports/${created.id}/draft`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ draft: editedDraft }),
+			},
+		);
+		expect(patchRes.status).toBe(200);
+		const updated = examImportJobSchema.parse(await patchRes.json());
+		expect(updated.draft?.title).toBe("Cambridge IELTS 18 — Đã sửa tay");
+		expect(updated.draft?.parts[0]?.questions[2]?.answer).toBe(
+			"infrastructure",
+		);
+		expect(updated.draft?.parts[0]?.questions[2]?.needsReview).toBe(true);
+
+		// Ví và log ví hoàn toàn không đổi (0 Credit).
+		const logsAfter = await walletLogs();
+		expect(logsAfter).toHaveLength(2);
+		const [wallet] = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(wallet?.balance).toBe(TRIAL_CREDITS - CREDIT_COSTS.examImport);
+	});
+
+	test("TOS-26 POST /:id/publish: cổng xác nhận 422 khi reviewConfirmed=false, 200 ready khi reviewConfirmed=true, idempotent lần 2", async () => {
+		const uploadRes = await upload();
+		const created = examImportJobSchema.parse(await uploadRes.json());
+		const initialDraft = created.draft;
+		if (!initialDraft) throw new Error("expected created.draft");
+		const editedDraft = {
+			...initialDraft,
+			parts: initialDraft.parts.map((part) => ({
+				questions: part.questions.map((q, idx) =>
+					idx === 2 ? { ...q, answer: "infrastructure" } : q,
+				),
+			})),
+		};
+
+		// 1. Chưa tích xác nhận → 422 REVIEW_CONFIRMATION_REQUIRED
+		const unconfirmedRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: editedDraft,
+					reviewConfirmed: false,
+				}),
+			},
+		);
+		expect(unconfirmedRes.status).toBe(422);
+		const unconfirmedBody: unknown = await unconfirmedRes.json();
+		expect(
+			unconfirmedBody &&
+				typeof unconfirmedBody === "object" &&
+				"code" in unconfirmedBody
+				? unconfirmedBody.code
+				: undefined,
+		).toBe(EXAM_IMPORT_ERROR_CODES.REVIEW_CONFIRMATION_REQUIRED);
+
+		// 2. Đã tích xác nhận → 200 { testId, status: "ready" }
+		const publishRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: editedDraft,
+					reviewConfirmed: true,
+				}),
+			},
+		);
+		expect(publishRes.status).toBe(200);
+		const published = examImportPublishResponseSchema.parse(
+			await publishRes.json(),
+		);
+		expect(published.status).toBe("ready");
+		expect(published.testId).toBe(`test-import-${created.id}`);
+
+		// 3. Gọi publish lần 2 → trả cùng testId, không nhân bản bộ đề
+		const publishAgainRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: editedDraft,
+					reviewConfirmed: true,
+				}),
+			},
+		);
+		expect(publishAgainRes.status).toBe(200);
+		expect(await publishAgainRes.json()).toEqual(published);
+
+		const testsInDb = await db
+			.select()
+			.from(assignmentTest)
+			.where(eq(assignmentTest.orgId, "org-1"));
+		expect(testsInDb).toHaveLength(1);
+	});
+
+	test("TOS-26 guard: vượt số slot preset → 422 TOO_MANY_PARTS; org khác → 404; role ta → 403; Origin lạ → 403; non-JSON → 415", async () => {
+		const uploadRes = await upload();
+		const created = examImportJobSchema.parse(await uploadRes.json());
+		const initialDraft = created.draft;
+		const part0 = initialDraft?.parts[0];
+		if (!initialDraft || !part0) throw new Error("expected created.draft");
+		const tooManyPartsDraft = {
+			...initialDraft,
+			parts: [part0, part0, part0, part0],
+		};
+
+		const tooManyRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: tooManyPartsDraft,
+					reviewConfirmed: true,
+				}),
+			},
+		);
+		expect(tooManyRes.status).toBe(422);
+		const tooManyBody: unknown = await tooManyRes.json();
+		expect(
+			tooManyBody && typeof tooManyBody === "object" && "code" in tooManyBody
+				? tooManyBody.code
+				: undefined,
+		).toBe(EXAM_IMPORT_ERROR_CODES.TOO_MANY_PARTS);
+
+		const otherOrgRes = await app.request(
+			`/api/exam-imports/${created.id}/draft`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "other-org",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ draft: created.draft }),
+			},
+		);
+		expect(otherOrgRes.status).toBe(404);
+
+		const taRes = await app.request(`/api/exam-imports/${created.id}/publish`, {
+			method: "POST",
+			headers: {
+				"x-test-user": "ta",
+				Origin: "http://localhost:8001",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				draft: created.draft,
+				reviewConfirmed: true,
+			}),
+		});
+		expect(taRes.status).toBe(403);
+
+		const badOriginRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "https://evil.example",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: created.draft,
+					reviewConfirmed: true,
+				}),
+			},
+		);
+		expect(badOriginRes.status).toBe(403);
+
+		const nonJsonRes = await app.request(
+			`/api/exam-imports/${created.id}/publish`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "text/plain",
+				},
+				body: "{}",
+			},
+		);
+		expect(nonJsonRes.status).toBe(415);
 	});
 });
 

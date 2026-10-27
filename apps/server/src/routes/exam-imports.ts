@@ -5,7 +5,9 @@ import {
 	EXAM_IMPORT_MIME,
 	type ExamImportJob,
 	type ExtractedExam,
+	examImportDraftUpdateSchema,
 	examImportJobSchema,
+	examImportPublishSchema,
 	extractedExamDraftSchema,
 	fingerprintSchema,
 } from "@teacher-os/api/contracts";
@@ -30,6 +32,11 @@ import {
 import { findCompletedImportByFingerprint } from "../lib/exam-import/dedupe";
 import type { ExamExtractor } from "../lib/exam-import/extractor";
 import { countPdfPages, sha256Hex } from "../lib/exam-import/fingerprint";
+import {
+	mergeReviewedDraft,
+	parseStoredDraft,
+	publishExamImportToBank,
+} from "../lib/exam-import/publish-to-bank";
 import { mediaObjectResponse } from "../lib/media-response";
 import { enforceDeclaredSize, type MediaStore } from "../lib/media-store";
 
@@ -38,6 +45,8 @@ export interface ExamImportRouteDeps {
 	/** Vắng mặt (binding AI/kho chưa cấu hình) → POST trả 503 DISABLED. */
 	getExamExtractor?(): ExamExtractor | undefined;
 	getExamImportStore?(): MediaStore | undefined;
+	corsOrigin?: string | string[];
+	corsOrigins?: string | string[];
 }
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -100,6 +109,7 @@ function toJobDto(row: typeof examImportJob.$inferSelect): ExamImportJob {
 		importStatus: row.importStatus,
 		draft,
 		errorCode: row.errorCode,
+		publishedTestId: row.publishedTestId ?? null,
 		createdAt: row.createdAt.toISOString(),
 		startedAt: row.startedAt.toISOString(),
 		completedAt: row.completedAt?.toISOString() ?? null,
@@ -117,6 +127,30 @@ function toJobDto(row: typeof examImportJob.$inferSelect): ExamImportJob {
  */
 export function examImportRoutes(deps: ExamImportRouteDeps) {
 	const router = new Hono<Env>();
+	const allowedOrigins = Array.isArray(deps.corsOrigins)
+		? deps.corsOrigins
+		: typeof deps.corsOrigins === "string"
+			? [deps.corsOrigins]
+			: Array.isArray(deps.corsOrigin)
+				? deps.corsOrigin
+				: typeof deps.corsOrigin === "string"
+					? [deps.corsOrigin]
+					: [];
+
+	function checkJsonWriteCsrf(c: {
+		req: { header(name: string): string | undefined };
+		json(data: unknown, status: 403 | 415): Response;
+	}): Response | null {
+		const origin = c.req.header("Origin") ?? "";
+		if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
+			return c.json({ error: "origin not allowed" }, 403);
+		}
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return c.json({ error: "content-type must be application/json" }, 415);
+		}
+		return null;
+	}
 
 	router.post("/exam-imports", async (c) => {
 		const kernelCtx = c.get("kernelCtx");
@@ -486,5 +520,197 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 		});
 	});
 
+	/**
+	 * PATCH /exam-imports/:id/draft — lưu bản nháp chỉnh sửa tay với chi phí
+	 * 0 Credit (TOS-26 #472). Bảo toàn `needsReview` và `confidence` gốc từ DB
+	 * để sửa câu không tự xoá nhãn cảnh báo.
+	 */
+	router.patch("/exam-imports/:id/draft", async (c) => {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
+		if (!canImportExam(kernelCtx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const csrfError = checkJsonWriteCsrf(c);
+		if (csrfError) return csrfError;
+
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(examImportJob)
+			.where(
+				and(
+					eq(examImportJob.id, c.req.param("id")),
+					eq(examImportJob.orgId, kernelCtx.orgId),
+				),
+			)
+			.limit(1);
+		if (!row) {
+			return c.json(
+				{
+					error: "exam import not found",
+					code: EXAM_IMPORT_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+		if (row.importStatus !== "completed") {
+			return c.json(
+				{
+					error: "exam import is not completed",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_STATE,
+				},
+				409,
+			);
+		}
+
+		let rawBody: unknown;
+		try {
+			rawBody = await c.req.json();
+		} catch {
+			return c.json(
+				{
+					error: "invalid json",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_DRAFT,
+				},
+				400,
+			);
+		}
+		const wrapped = examImportDraftUpdateSchema.safeParse(rawBody);
+		const direct = wrapped.success
+			? null
+			: extractedExamDraftSchema.safeParse(rawBody);
+		const incomingDraft = wrapped.success
+			? wrapped.data.draft
+			: direct?.success
+				? direct.data
+				: null;
+		if (!incomingDraft) {
+			return c.json(
+				{
+					error: "invalid draft payload",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_DRAFT,
+				},
+				422,
+			);
+		}
+
+		const existingDraft = parseStoredDraft(row.draftJson);
+		const mergedDraft = mergeReviewedDraft(existingDraft, incomingDraft);
+		const [updated] = await db
+			.update(examImportJob)
+			.set({
+				draftJson: JSON.stringify(mergedDraft),
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(examImportJob.id, row.id),
+					eq(examImportJob.orgId, kernelCtx.orgId),
+				),
+			)
+			.returning();
+		return c.json(
+			toJobDto(updated ?? { ...row, draftJson: JSON.stringify(mergedDraft) }),
+		);
+	});
+
+	/**
+	 * POST /exam-imports/:id/publish — xuất bản đề vào Ngân hàng đề của tổ chức
+	 * (`assignment_prompt` + `assignment_test` + `assignment_test_part`) sau khi
+	 * kiểm tra cổng xác nhận câu gắn nhãn `(!) Cần rà soát lại` (TOS-26 #472).
+	 */
+	router.post("/exam-imports/:id/publish", async (c) => {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
+		if (!canImportExam(kernelCtx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const csrfError = checkJsonWriteCsrf(c);
+		if (csrfError) return csrfError;
+
+		const db = deps.getDb();
+		const [row] = await db
+			.select()
+			.from(examImportJob)
+			.where(
+				and(
+					eq(examImportJob.id, c.req.param("id")),
+					eq(examImportJob.orgId, kernelCtx.orgId),
+				),
+			)
+			.limit(1);
+		if (!row) {
+			return c.json(
+				{
+					error: "exam import not found",
+					code: EXAM_IMPORT_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+		if (row.importStatus !== "completed") {
+			return c.json(
+				{
+					error: "exam import is not completed",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_STATE,
+				},
+				409,
+			);
+		}
+
+		let rawBody: unknown;
+		try {
+			rawBody = await c.req.json();
+		} catch {
+			return c.json(
+				{
+					error: "invalid json",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_DRAFT,
+				},
+				400,
+			);
+		}
+		const parsed = examImportPublishSchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return c.json(
+				{
+					error: "invalid publish payload",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_DRAFT,
+				},
+				422,
+			);
+		}
+
+		const result = await publishExamImportToBank(db, {
+			job: row,
+			orgId: kernelCtx.orgId,
+			draft: parsed.data.draft,
+			reviewConfirmed: parsed.data.reviewConfirmed,
+		});
+		if (!result.ok) {
+			return c.json(
+				{
+					error: result.error,
+					code: result.code,
+					...(result.partIndex !== undefined
+						? { partIndex: result.partIndex }
+						: {}),
+					...(result.questionIndex !== undefined
+						? { questionIndex: result.questionIndex }
+						: {}),
+					...(result.maxParts !== undefined
+						? { maxParts: result.maxParts }
+						: {}),
+				},
+				422,
+			);
+		}
+
+		return c.json({
+			testId: result.testId,
+			status: result.status,
+		});
+	});
 	return router;
 }

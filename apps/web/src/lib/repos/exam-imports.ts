@@ -4,10 +4,13 @@ import {
 	EXAM_IMPORT_ERROR_CODES,
 	type ExamImportDuplicate,
 	type ExamImportJob,
+	type ExamImportPublishResponse,
 	type ExamImportSkill,
+	type ExtractedExamDraft,
 	examImportCreateResponseSchema,
 	examImportJobSchema,
 	examImportLookupResponseSchema,
+	examImportPublishResponseSchema,
 } from "@teacher-os/api/contracts";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
@@ -177,3 +180,109 @@ export const EXAM_IMPORT_SKILL_LABELS: Record<ExamImportSkill, string> = {
 	speaking: "speaking",
 	mixed: "mixed",
 };
+
+/** Kết quả lỗi nghiệp vụ của `POST /api/exam-imports/:id/publish` (TOS-26 #472). */
+export type ExamImportPublishError =
+	| { kind: "review_confirmation_required" }
+	| { kind: "too_many_parts"; maxParts?: number }
+	| { kind: "skill_mixed_not_allowed" }
+	| {
+			kind: "invalid_draft";
+			partIndex?: number;
+			questionIndex?: number;
+	  }
+	| { kind: "job_not_found" }
+	| { kind: "unexpected"; status: number };
+
+/**
+ * PATCH /api/exam-imports/:id/draft — lưu bản nháp chỉnh sửa tay với chi phí
+ * 0 Credit (TOS-26 #472).
+ */
+export async function saveExamImportDraft(input: {
+	jobId: string;
+	draft: ExtractedExamDraft;
+	baseUrl?: string;
+	signal?: AbortSignal;
+}): Promise<ExamImportJob> {
+	const baseUrl = input.baseUrl ?? getApiBaseUrl();
+	const res = await fetch(`${baseUrl}/api/exam-imports/${input.jobId}/draft`, {
+		method: "PATCH",
+		credentials: "include",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ draft: input.draft }),
+		signal: input.signal,
+	});
+	if (res.ok) return examImportJobSchema.parse(await res.json());
+	throw new Error(`Failed to save exam import draft: ${res.status}`);
+}
+
+/**
+ * POST /api/exam-imports/:id/publish — xuất bản đề vào Ngân hàng đề của tổ chức
+ * sau khi kiểm tra cổng xác nhận câu gắn nhãn Cần rà soát lại (TOS-26 #472).
+ */
+export async function publishExamImport(input: {
+	jobId: string;
+	draft: ExtractedExamDraft;
+	reviewConfirmed: boolean;
+	baseUrl?: string;
+	signal?: AbortSignal;
+}): Promise<ExamImportPublishResponse> {
+	const baseUrl = input.baseUrl ?? getApiBaseUrl();
+	const res = await fetch(
+		`${baseUrl}/api/exam-imports/${input.jobId}/publish`,
+		{
+			method: "POST",
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				draft: input.draft,
+				reviewConfirmed: input.reviewConfirmed,
+			}),
+			signal: input.signal,
+		},
+	);
+	if (res.ok) return examImportPublishResponseSchema.parse(await res.json());
+	throw await toPublishError(res);
+}
+
+async function toPublishError(res: Response): Promise<ExamImportPublishError> {
+	let body: unknown = null;
+	try {
+		body = await res.json();
+	} catch {
+		// bỏ qua
+	}
+	const record =
+		body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+	const code = typeof record.code === "string" ? record.code : "";
+	if (res.status === 404) return { kind: "job_not_found" };
+	if (res.status === 422) {
+		if (code === EXAM_IMPORT_ERROR_CODES.REVIEW_CONFIRMATION_REQUIRED) {
+			return { kind: "review_confirmation_required" };
+		}
+		if (code === EXAM_IMPORT_ERROR_CODES.TOO_MANY_PARTS) {
+			return {
+				kind: "too_many_parts",
+				maxParts:
+					typeof record.maxParts === "number" ? record.maxParts : undefined,
+			};
+		}
+		if (code === EXAM_IMPORT_ERROR_CODES.SKILL_MIXED_NOT_ALLOWED) {
+			return { kind: "skill_mixed_not_allowed" };
+		}
+		return {
+			kind: "invalid_draft",
+			partIndex:
+				typeof record.partIndex === "number" ? record.partIndex : undefined,
+			questionIndex:
+				typeof record.questionIndex === "number"
+					? record.questionIndex
+					: undefined,
+		};
+	}
+	return { kind: "unexpected", status: res.status };
+}

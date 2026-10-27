@@ -3693,6 +3693,16 @@ export const EXAM_IMPORT_ERROR_CODES = {
 	FAILED: "EXAM_IMPORT_FAILED",
 	/** Job/file không thuộc org hiện tại hoặc không tồn tại (HTTP 404). */
 	NOT_FOUND: "exam_import_not_found",
+	/** Đề còn câu gắn nhãn Cần rà soát lại nhưng chưa tích xác nhận (HTTP 422). */
+	REVIEW_CONFIRMATION_REQUIRED: "REVIEW_CONFIRMATION_REQUIRED",
+	/** Số part vượt quá số slot tối đa của kỹ năng trong ASSIGNMENT_TEST_PRESETS (HTTP 422). */
+	TOO_MANY_PARTS: "TOO_MANY_PARTS",
+	/** Kỹ năng đang là mixed — cần chọn kỹ năng cụ thể trước khi xuất bản (HTTP 422). */
+	SKILL_MIXED_NOT_ALLOWED: "SKILL_MIXED_NOT_ALLOWED",
+	/** Câu hỏi thiếu nội dung/đáp án hoặc không khớp giới hạn ngân hàng đề (HTTP 422). */
+	INVALID_DRAFT: "INVALID_DRAFT",
+	/** Job chưa hoàn tất bóc tách (HTTP 409). */
+	INVALID_STATE: "EXAM_IMPORT_INVALID_STATE",
 } as const;
 export type ExamImportErrorCode =
 	(typeof EXAM_IMPORT_ERROR_CODES)[keyof typeof EXAM_IMPORT_ERROR_CODES];
@@ -3726,6 +3736,7 @@ export type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
 
 /** Câu hỏi đã hậu xử lý — `needsReview` do server tính, UI chỉ đọc. */
 export const reviewedQuestionSchema = extractedQuestionSchema.extend({
+	explanation: richTextField(2000).nullish(),
 	needsReview: z.boolean(),
 });
 export type ReviewedQuestion = z.infer<typeof reviewedQuestionSchema>;
@@ -3756,6 +3767,7 @@ export const extractedExamDraftSchema = extractedExamSchema
 		parts: z
 			.array(
 				extractedPartSchema.extend({
+					passage: richTextField(20000).nullish(),
 					questions: z.array(reviewedQuestionSchema).max(40),
 				}),
 			)
@@ -3764,6 +3776,34 @@ export const extractedExamDraftSchema = extractedExamSchema
 	})
 	.strict();
 export type ExtractedExamDraft = z.infer<typeof extractedExamDraftSchema>;
+
+/** Body của `PATCH /api/exam-imports/:id/draft` (0 Credit, TOS-26 #472). */
+export const examImportDraftUpdateSchema = z
+	.object({
+		draft: extractedExamDraftSchema,
+	})
+	.strict();
+export type ExamImportDraftUpdate = z.infer<typeof examImportDraftUpdateSchema>;
+
+/** Body của `POST /api/exam-imports/:id/publish` (TOS-26 #472). */
+export const examImportPublishSchema = z
+	.object({
+		draft: extractedExamDraftSchema,
+		reviewConfirmed: z.boolean(),
+	})
+	.strict();
+export type ExamImportPublish = z.infer<typeof examImportPublishSchema>;
+
+/** Response 200 của `POST /api/exam-imports/:id/publish`. */
+export const examImportPublishResponseSchema = z
+	.object({
+		testId: z.string().min(1),
+		status: z.enum(["ready", "draft"]),
+	})
+	.strict();
+export type ExamImportPublishResponse = z.infer<
+	typeof examImportPublishResponseSchema
+>;
 
 /** Wire DTO của một job nhập đề (không lộ R2 key). */
 export const examImportJobSchema = z
@@ -3778,6 +3818,7 @@ export const examImportJobSchema = z
 		importStatus: z.enum(["processing", "completed", "failed_refunded"]),
 		draft: extractedExamDraftSchema.nullish(),
 		errorCode: z.string().nullish(),
+		publishedTestId: z.string().min(1).nullish(),
 		createdAt: z.string().min(1),
 		startedAt: z.string().min(1),
 		completedAt: z.string().nullish(),
