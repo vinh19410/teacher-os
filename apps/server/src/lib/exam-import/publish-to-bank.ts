@@ -211,9 +211,14 @@ export async function publishExamImportToBank(
 	}
 
 	// 3. Idempotency check (D6): nếu job đã có `publishedTestId` và bộ đề đó còn
-	// tồn tại trong org → trả lại chính `testId` đó, không nhân bản.
+	// tồn tại trong org:
+	// - Nếu bản nháp gửi lên không đổi so với DB (retry thuần) → trả ngay `testId` cũ.
+	// - Nếu người dùng mở lại bản nháp cũ (TOS-25) và sửa nội dung → tiếp tục
+	//   validate ở Bước 4 rồi cập nhật `draft_json` + đồng bộ lại `assignment_test`
+	//   & `assignment_prompt[]` của chính `existingTest.id` (không nhân bản bộ đề).
+	let existingTest: { id: string; status: string } | null = null;
 	if (job.publishedTestId) {
-		const [existingTest] = await db
+		const [foundTest] = await db
 			.select({
 				id: assignmentTest.id,
 				status: assignmentTest.status,
@@ -226,12 +231,18 @@ export async function publishExamImportToBank(
 				),
 			)
 			.limit(1);
-		if (existingTest) {
-			return {
-				ok: true,
-				testId: existingTest.id,
-				status: existingTest.status === "draft" ? "draft" : "ready",
-			};
+		if (foundTest) {
+			if (
+				existingDraft &&
+				JSON.stringify(mergedDraft) === JSON.stringify(existingDraft)
+			) {
+				return {
+					ok: true,
+					testId: foundTest.id,
+					status: foundTest.status === "draft" ? "draft" : "ready",
+				};
+			}
+			existingTest = foundTest;
 		}
 	}
 
@@ -357,11 +368,14 @@ export async function publishExamImportToBank(
 		});
 	}
 
-	// 5. Thực thi batch INSERT prompts + test + test_parts + UPDATE job.
-	// Dùng ID tất định theo `job.id` ở lần xuất bản đầu tiên để chống TOCTOU khi
-	// 2 request publish chạy song song trên D1/libsql.
+	// 5. Thực thi batch INSERT/UPSERT prompts + test + test_parts + UPDATE job.
+	// Dùng ID tất định theo `job.id` ở lần xuất bản đầu tiên (hoặc cập nhật tại chỗ
+	// `existingTest.id` khi người dùng mở lại bản nháp cũ qua TOS-25) để chống
+	// TOCTOU và không bao giờ nhân bản bộ đề.
 	const isFirstPublish = !job.publishedTestId;
-	const testId = isFirstPublish ? `test-import-${job.id}` : crypto.randomUUID();
+	const testId =
+		existingTest?.id ??
+		(isFirstPublish ? `test-import-${job.id}` : crypto.randomUUID());
 	const targetStatus: "ready" | "draft" =
 		skill === "listening" ? "draft" : "ready";
 	const sourceLabel = `AI import: ${job.fileName}`.slice(0, 200);
@@ -373,10 +387,19 @@ export async function publishExamImportToBank(
 	const statements: BatchItem<"sqlite">[] = [];
 	const promptIds: string[] = [];
 
+	if (existingTest) {
+		statements.push(
+			db
+				.delete(assignmentTestPart)
+				.where(eq(assignmentTestPart.testId, testId)),
+		);
+	}
+
 	for (const mappedPart of mappedParts) {
-		const promptId = isFirstPublish
-			? `prompt-import-${job.id}-${mappedPart.slotPart}`
-			: crypto.randomUUID();
+		const promptId =
+			existingTest || isFirstPublish
+				? `prompt-import-${job.id}-${mappedPart.slotPart}`
+				: crypto.randomUUID();
 		promptIds.push(promptId);
 
 		const partTitle =
@@ -384,58 +407,94 @@ export async function publishExamImportToBank(
 				? mergedDraft.title
 				: `${mergedDraft.title} — ${mappedPart.slotLabel}`.slice(0, 200);
 		const isWritingOrSpeaking = skill === "writing" || skill === "speaking";
+		const promptValues = {
+			id: promptId,
+			orgId,
+			task: skill === "writing" ? mappedPart.slotPart : "task2",
+			genre: skill === "writing" ? mappedPart.promptType : "",
+			skill,
+			part: mappedPart.slotPart,
+			type: mappedPart.promptType,
+			title: partTitle,
+			band: "7.0",
+			source: sourceLabel,
+			prompt: isWritingOrSpeaking ? mappedPart.passage : "",
+			intro: "",
+			passage: isWritingOrSpeaking ? "" : mappedPart.passage,
+			transcript: "",
+			cueTopic:
+				skill === "speaking" && mappedPart.slotPart === "part2"
+					? mergedDraft.title
+					: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			questions: JSON.stringify(
+				isWritingOrSpeaking ? [] : mappedPart.questions,
+			),
+			optionBank: "[]",
+			note: "",
+			status: targetStatus,
+		};
 
 		statements.push(
-			db.insert(assignmentPrompt).values({
-				id: promptId,
-				orgId,
-				task: skill === "writing" ? mappedPart.slotPart : "task2",
-				genre: skill === "writing" ? mappedPart.promptType : "",
-				skill,
-				part: mappedPart.slotPart,
-				type: mappedPart.promptType,
-				title: partTitle,
-				band: "7.0",
-				source: sourceLabel,
-				prompt: isWritingOrSpeaking ? mappedPart.passage : "",
-				intro: "",
-				passage: isWritingOrSpeaking ? "" : mappedPart.passage,
-				transcript: "",
-				cueTopic:
-					skill === "speaking" && mappedPart.slotPart === "part2"
-						? mergedDraft.title
-						: "",
-				cuePoints: "",
-				audioName: "",
-				imageUrl: "",
-				questions: JSON.stringify(
-					isWritingOrSpeaking ? [] : mappedPart.questions,
-				),
-				optionBank: "[]",
-				note: "",
-				status: targetStatus,
-			}),
+			existingTest
+				? db
+						.insert(assignmentPrompt)
+						.values(promptValues)
+						.onConflictDoUpdate({
+							target: assignmentPrompt.id,
+							set: {
+								task: promptValues.task,
+								genre: promptValues.genre,
+								skill: promptValues.skill,
+								part: promptValues.part,
+								type: promptValues.type,
+								title: promptValues.title,
+								source: promptValues.source,
+								prompt: promptValues.prompt,
+								passage: promptValues.passage,
+								cueTopic: promptValues.cueTopic,
+								questions: promptValues.questions,
+								status: promptValues.status,
+							},
+						})
+				: db.insert(assignmentPrompt).values(promptValues),
 		);
 	}
 
 	statements.push(
-		db.insert(assignmentTest).values({
-			id: testId,
-			orgId,
-			title: mergedDraft.title,
-			description: null,
-			skill,
-			timeLimitSeconds,
-			collection: null,
-			testGroup: null,
-			status: targetStatus,
-		}),
+		existingTest
+			? db
+					.update(assignmentTest)
+					.set({
+						title: mergedDraft.title,
+						skill,
+						timeLimitSeconds,
+						status: targetStatus,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(eq(assignmentTest.id, testId), eq(assignmentTest.orgId, orgId)),
+					)
+			: db.insert(assignmentTest).values({
+					id: testId,
+					orgId,
+					title: mergedDraft.title,
+					description: null,
+					skill,
+					timeLimitSeconds,
+					collection: null,
+					testGroup: null,
+					status: targetStatus,
+				}),
 	);
 
 	for (const [idx, mappedPart] of mappedParts.entries()) {
-		const partId = isFirstPublish
-			? `test-part-import-${job.id}-${mappedPart.slotPart}`
-			: crypto.randomUUID();
+		const partId =
+			existingTest || isFirstPublish
+				? `test-part-import-${job.id}-${mappedPart.slotPart}`
+				: crypto.randomUUID();
 		statements.push(
 			db.insert(assignmentTestPart).values({
 				id: partId,

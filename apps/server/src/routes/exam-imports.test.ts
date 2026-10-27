@@ -773,16 +773,50 @@ describe("exam imports dedupe (TOS-25 #471)", () => {
 		expect(unauthorized.status).toBe(401);
 	});
 
-	test("lookup: trùng → duplicate đủ jobId/title/completedAt từ draft", async () => {
-		await upload();
+	test("lookup & POST dedupe: trùng → duplicate đủ jobId/title/completedAt từ draft (kể cả sau khi PATCH /:id/draft đổi title)", async () => {
+		const first = await upload();
+		const firstJob = examImportJobSchema.parse(await first.json());
+		const fp = await sha256Hex(PDF_BYTES.buffer);
 		// Hash thật của byte upload — không dùng hex giả làm fixture.
-		const res = await lookup("teacher", await sha256Hex(PDF_BYTES.buffer));
+		const res = await lookup("teacher", fp);
 		expect(res.status).toBe(200);
 		const body = examImportLookupResponseSchema.parse(await res.json());
-		expect(body.duplicate?.jobId).toEqual(expect.any(String));
+		expect(body.duplicate?.jobId).toBe(firstJob.id);
 		// Title parse từ draft_json của fake extractor, không phải fileName.
 		expect(body.duplicate?.title).toBe("Cambridge IELTS Sample");
 		expect(body.duplicate?.completedAt).toEqual(expect.any(String));
+
+		// Giáo viên sửa tên đề qua PATCH /:id/draft (TOS-26) → lookup & POST
+		// dedupe đều trả về title mới nhất.
+		const patchRes = await app.request(
+			`/api/exam-imports/${firstJob.id}/draft`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: "http://localhost:8001",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					draft: { ...firstJob.draft, title: "Cambridge IELTS — Đã đổi tên" },
+				}),
+			},
+		);
+		expect(patchRes.status).toBe(200);
+
+		const lookupAfterPatch = examImportLookupResponseSchema.parse(
+			await (await lookup("teacher", fp)).json(),
+		);
+		expect(lookupAfterPatch.duplicate?.title).toBe(
+			"Cambridge IELTS — Đã đổi tên",
+		);
+
+		const postAfterPatch = examImportCreateResponseSchema.parse(
+			await (await upload()).json(),
+		);
+		expect(
+			"duplicateOf" in postAfterPatch && postAfterPatch.duplicateOf.title,
+		).toBe("Cambridge IELTS — Đã đổi tên");
 	});
 
 	test("upload lại cùng tệp: 200 {duplicateOf}, AI 0 lần, ví/log/R2 không đổi", async () => {

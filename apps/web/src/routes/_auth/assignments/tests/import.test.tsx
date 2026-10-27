@@ -347,11 +347,11 @@ describe("ExamImportScreen — chống trùng mã băm (TOS-25)", () => {
 		// Lần nạp đầu lỗi mạng → rơi về idle nhưng jobId prop vẫn là "job-old".
 		vi.mocked(fetchExamImportJob)
 			.mockRejectedValueOnce(new Error("transient network error"))
-			.mockResolvedValueOnce(jobFixture({ id: "job-old" }));
+			.mockResolvedValue(jobFixture({ id: "job-old" }));
 		vi.mocked(lookupExamImportByFingerprint).mockResolvedValue(
 			duplicateFixture,
 		);
-		render(<ExamImportScreen jobId="job-old" />);
+		const { rerender } = render(<ExamImportScreen jobId="job-old" />);
 		await waitFor(() =>
 			expect(vi.mocked(fetchExamImportJob)).toHaveBeenCalledTimes(1),
 		);
@@ -361,6 +361,20 @@ describe("ExamImportScreen — chống trùng mã băm (TOS-25)", () => {
 		fireEvent.click(screen.getByTestId("duplicate-reopen-button"));
 		await screen.findByTestId("extracted-exam-panel");
 		expect(vi.mocked(fetchExamImportJob)).toHaveBeenCalledTimes(2);
+		// Lưu bản nháp để sinh statusMessage, rồi quay lại màn trống chọn lại
+		// tệp trùng → mở lại phải xóa sạch thông báo cũ.
+		vi.mocked(saveExamImportDraft).mockResolvedValue(
+			jobFixture({ id: "job-old" }),
+		);
+		fireEvent.click(screen.getByTestId("save-draft-button"));
+		await screen.findByTestId("exam-import-status-notice");
+		rerender(<ExamImportScreen />);
+		selectFile();
+		await screen.findByTestId("duplicate-exam-banner");
+		fireEvent.click(screen.getByTestId("duplicate-reopen-button"));
+		rerender(<ExamImportScreen jobId="job-old" />);
+		await screen.findByTestId("extracted-exam-panel");
+		expect(screen.queryByTestId("exam-import-status-notice")).toBeNull();
 	});
 });
 

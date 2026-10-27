@@ -115,6 +115,10 @@ export function ExamImportScreen({
 		abortRef.current = null;
 		setChecking(false);
 		setDuplicate(null);
+		setStatusMessage(null);
+		setPublishError(null);
+		setSavingDraft(false);
+		setPublishing(false);
 		if (!jobId) {
 			setState({ phase: "idle" });
 			return;
@@ -187,6 +191,10 @@ export function ExamImportScreen({
 			abortRef.current = controller;
 			const { signal } = controller;
 			setDuplicate(null);
+			setStatusMessage(null);
+			setPublishError(null);
+			setSavingDraft(false);
+			setPublishing(false);
 			setState({ phase: "idle" });
 			setChecking(true);
 			try {
@@ -317,6 +325,10 @@ export function ExamImportScreen({
 						// draft hiện tại; banner biến mất (không clone job).
 						const targetJobId = duplicate.jobId;
 						setDuplicate(null);
+						setStatusMessage(null);
+						setPublishError(null);
+						setSavingDraft(false);
+						setPublishing(false);
 						void navigate({
 							to: "/assignments/tests/import",
 							search: { job: targetJobId },
