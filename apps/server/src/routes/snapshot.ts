@@ -173,6 +173,11 @@ function parseQuestions(
 					// the first reload (the write path persists them inside this
 					// same JSON; this destructure is the only read path).
 					pin: parsePin(record.pin),
+					// TOS-26 (#472): forward explanation khi có để giải thích đáp án
+					// không bị rơi lúc load snapshot ngân hàng đề.
+					...(typeof record.explanation === "string"
+						? { explanation: record.explanation }
+						: {}),
 				},
 			];
 		});
