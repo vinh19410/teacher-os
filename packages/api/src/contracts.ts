@@ -3785,6 +3785,35 @@ export const examImportJobSchema = z
 	.strict();
 export type ExamImportJob = z.infer<typeof examImportJobSchema>;
 
+// --- TOS-25 (#471): chống trùng mã băm, mở lại bản nháp cũ 0 Credit ---
+
+/** Vân tay SHA-256 hex (64 ký tự) — query param của `GET /exam-imports/lookup`. */
+export const fingerprintSchema = z.string().regex(/^[a-f0-9]{64}$/);
+
+/** Bản ghi trùng: dùng chung cho lookup lẫn nhánh POST. `title` lấy từ
+ * `draft_json` (fallback `fileName`), `completedAt` ISO — server luôn điền
+ * đủ, nhưng wire để nullish để client cũ/row lạ không nổ parse. */
+export const examImportDuplicateSchema = z
+	.object({
+		jobId: z.string().min(1),
+		title: z.string().min(1).max(500).nullish(),
+		completedAt: z.string().min(1).nullish(),
+	})
+	.strict();
+export type ExamImportDuplicate = z.infer<typeof examImportDuplicateSchema>;
+
+/** `GET /api/exam-imports/lookup` — `{ duplicate } | { duplicate: null }`. */
+export const examImportLookupResponseSchema = z
+	.object({ duplicate: examImportDuplicateSchema.nullable() })
+	.strict();
+
+/** Response 200 của `POST /api/exam-imports` (TOS-25): job mới tạo **hoặc**
+ * trùng mã băm — client phân biệt bằng presence của key `duplicateOf`. */
+export const examImportCreateResponseSchema = z.union([
+	examImportJobSchema,
+	z.object({ duplicateOf: examImportDuplicateSchema }).strict(),
+]);
+
 /** `GET /api/credits/wallet` — khả dụng = balance − held. */
 export const creditWalletSchema = z
 	.object({

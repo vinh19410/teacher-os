@@ -4,7 +4,9 @@ import {
 	creditWalletSchema,
 	EXAM_IMPORT_ERROR_CODES,
 	type ExamImportJob,
+	examImportCreateResponseSchema,
 	examImportJobSchema,
+	examImportLookupResponseSchema,
 	TRIAL_CREDITS,
 } from "@teacher-os/api/contracts";
 import {
@@ -30,6 +32,7 @@ import {
 	ExtractionFailedError,
 } from "../lib/exam-import/extractor";
 import { createFakeExamExtractor } from "../lib/exam-import/fake-extractor";
+import { sha256Hex } from "../lib/exam-import/fingerprint";
 import type { SessionUser } from "../session";
 
 const MIGRATIONS_DIR = new URL(
@@ -397,5 +400,227 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 			held: 0,
 			available: TRIAL_CREDITS,
 		});
+	});
+});
+
+describe("exam imports dedupe (TOS-25 #471)", () => {
+	let db: Db;
+	let memory: MemoryMediaStore;
+	let app: ServerApp;
+	let appBrokenExtractor: ServerApp;
+	// Đếm số lần AI chạy — assert "trùng → extractor 0 lần".
+	let extractCalls = 0;
+
+	/** POST raw-body giống harness describe trên (test seam — nhiều call site). */
+	function upload(target: ServerApp = app, user = "teacher") {
+		return target.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": user,
+				"Content-Type": "application/pdf",
+				"Content-Length": String(PDF_BYTES.byteLength),
+				"X-File-Name": encodeURIComponent("cambridge-sample.pdf"),
+			},
+			body: PDF_BYTES,
+		});
+	}
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		await db.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await db.insert(schema.user).values([
+			{
+				id: "u-teacher",
+				name: "Cô Lan",
+				email: "lan@test.local",
+				role: "teacher",
+			},
+			{
+				id: "u-ta",
+				name: "Trợ giảng",
+				email: "ta@test.local",
+				role: "teacher",
+			},
+			{
+				id: "u-teacher2",
+				name: "Thầy Hùng",
+				email: "hung@test.local",
+				role: "teacher",
+			},
+		]);
+		await db.insert(schema.membership).values([
+			{ id: "m-1", orgId: "org-1", userId: "u-teacher", role: "teacher" },
+			{ id: "m-2", orgId: "org-1", userId: "u-ta", role: "ta" },
+			{ id: "m-3", orgId: "org-2", userId: "u-teacher2", role: "teacher" },
+		]);
+
+		memory = createMemoryMediaStore();
+		const baseDeps: AppDeps = {
+			getDb: () => db,
+			corsOrigin: ["http://localhost:8001"],
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		};
+		const countingExtractor: ExamExtractor = {
+			extract: (input, signal) => {
+				extractCalls++;
+				return createFakeExamExtractor().extract(input, signal);
+			},
+		};
+		app = buildApp({
+			...baseDeps,
+			getExamImportStore: () => memory.store,
+			getExamExtractor: () => countingExtractor,
+		});
+		const failingExtractor: ExamExtractor = {
+			extract: () => Promise.reject(new ExtractionFailedError("boom")),
+		};
+		appBrokenExtractor = buildApp({
+			...baseDeps,
+			getExamImportStore: () => memory.store,
+			getExamExtractor: () => failingExtractor,
+		});
+	});
+
+	beforeEach(async () => {
+		await db.delete(creditUsageLog);
+		await db.delete(creditWallet);
+		await db.delete(examImportJob);
+		memory.objects.clear();
+		extractCalls = 0;
+	});
+
+	const lookup = (user: string, fingerprint: string, target: ServerApp = app) =>
+		target.request(
+			`/api/exam-imports/lookup?fingerprint=${encodeURIComponent(fingerprint)}`,
+			{ headers: { "x-test-user": user } },
+		);
+
+	test("route-order: GET /lookup khớp đúng handler, không bị /:id nuốt", async () => {
+		// Fingerprint hợp lệ, chưa có job nào → 200 {duplicate: null}. Nếu route
+		// /lookup bị đăng ký sau /:id, Hono sẽ khớp id="lookup" → 404 NOT_FOUND.
+		const res = await lookup("teacher", "a".repeat(64));
+		expect(res.status).toBe(200);
+		expect(examImportLookupResponseSchema.parse(await res.json())).toEqual({
+			duplicate: null,
+		});
+	});
+
+	test("lookup: fingerprint sai format → 400; ta → 403; chưa đăng nhập → 401", async () => {
+		const bad = await lookup("teacher", "không-phải-hex");
+		expect(bad.status).toBe(400);
+		expect(((await bad.json()) as { code: string }).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+		);
+		const forbidden = await lookup("ta", "a".repeat(64));
+		expect(forbidden.status).toBe(403);
+		const unauthorized = await lookup("nobody", "a".repeat(64));
+		expect(unauthorized.status).toBe(401);
+	});
+
+	test("lookup: trùng → duplicate đủ jobId/title/completedAt từ draft", async () => {
+		await upload();
+		// Hash thật của byte upload — không dùng hex giả làm fixture.
+		const res = await lookup("teacher", await sha256Hex(PDF_BYTES.buffer));
+		expect(res.status).toBe(200);
+		const body = examImportLookupResponseSchema.parse(await res.json());
+		expect(body.duplicate?.jobId).toEqual(expect.any(String));
+		// Title parse từ draft_json của fake extractor, không phải fileName.
+		expect(body.duplicate?.title).toBe("Cambridge IELTS Sample");
+		expect(body.duplicate?.completedAt).toEqual(expect.any(String));
+	});
+
+	test("upload lại cùng tệp: 200 {duplicateOf}, AI 0 lần, ví/log/R2 không đổi", async () => {
+		const first = await upload();
+		expect(first.status).toBe(200);
+		const firstJob = examImportJobSchema.parse(await first.json());
+		expect(extractCalls).toBe(1);
+
+		const second = await upload();
+		expect(second.status).toBe(200);
+		// Body là {duplicateOf}, KHÔNG phải job DTO — parse union phân biệt.
+		const body = examImportCreateResponseSchema.parse(await second.json());
+		expect("duplicateOf" in body).toBe(true);
+		if (!("duplicateOf" in body)) throw new Error("unreachable");
+		expect(body.duplicateOf.jobId).toBe(firstJob.id);
+		expect(body.duplicateOf.title).toBe("Cambridge IELTS Sample");
+
+		// AI chạy đúng 1 lần (lần đầu) — lần 2 không gọi extractor.
+		expect(extractCalls).toBe(1);
+		// Ví chỉ trừ đúng 1 lần: 30 → 25, held nhả hết.
+		const wallet = creditWalletSchema.parse(
+			await (
+				await app.request("/api/credits/wallet", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json(),
+		);
+		expect(wallet).toEqual({
+			balance: TRIAL_CREDITS - CREDIT_COSTS.examImport,
+			held: 0,
+			available: TRIAL_CREDITS - CREDIT_COSTS.examImport,
+		});
+		// Log chỉ [reserved, settled] của lần đầu — không thêm dòng nào.
+		const logs = await db
+			.select()
+			.from(creditUsageLog)
+			.where(eq(creditUsageLog.orgId, "org-1"));
+		expect(logs.map((row) => row.txStatus)).toEqual(["reserved", "settled"]);
+		// R2 không lưu thêm file, DB không tạo thêm job.
+		expect(memory.objects.size).toBe(1);
+		expect(
+			(await db.select().from(examImportJob)).map((row) => row.id),
+		).toEqual([firstJob.id]);
+	});
+
+	test("cùng byte ở org khác → bóc tách bình thường (org-scoped)", async () => {
+		await upload(app, "teacher");
+		const other = await upload(app, "other-org");
+		expect(other.status).toBe(200);
+		const job = examImportJobSchema.parse(await other.json());
+		expect(job.importStatus).toBe("completed");
+		expect(extractCalls).toBe(2);
+	});
+
+	test("job `failed_refunded` không chặn re-import", async () => {
+		const failed = await upload(appBrokenExtractor);
+		expect(failed.status).toBe(502);
+		const retried = await upload(app);
+		expect(retried.status).toBe(200);
+		const job = examImportJobSchema.parse(await retried.json());
+		expect(job.importStatus).toBe("completed");
+		expect(extractCalls).toBe(1);
+	});
+
+	test("job `completed` thiếu draft_json không chặn re-import (không khoá vĩnh viễn)", async () => {
+		// Mô phỏng row sinh bởi nhánh settled-retry sau crash: completed nhưng
+		// draftJson NULL (exam-imports.ts nhánh `if (settled)`).
+		const fingerprint = await sha256Hex(PDF_BYTES.buffer);
+		await db.insert(examImportJob).values({
+			id: "j-crash-no-draft",
+			orgId: "org-1",
+			createdBy: "u-teacher",
+			fileKey: "exam-imports/org-1/j-crash-no-draft",
+			fileName: "cambridge-sample.pdf",
+			mimeType: "application/pdf",
+			sizeBytes: PDF_BYTES.byteLength,
+			contentFingerprint: fingerprint,
+			importStatus: "completed",
+			draftJson: null,
+			completedAt: new Date(),
+		});
+		const res = await upload(app);
+		expect(res.status).toBe(200);
+		const job = examImportJobSchema.parse(await res.json());
+		expect(job.importStatus).toBe("completed");
+		expect(job.id).not.toBe("j-crash-no-draft");
+		expect(extractCalls).toBe(1);
 	});
 });

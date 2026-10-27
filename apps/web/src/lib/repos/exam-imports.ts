@@ -2,9 +2,12 @@ import {
 	type CreditWallet,
 	creditWalletSchema,
 	EXAM_IMPORT_ERROR_CODES,
+	type ExamImportDuplicate,
 	type ExamImportJob,
 	type ExamImportSkill,
+	examImportCreateResponseSchema,
 	examImportJobSchema,
+	examImportLookupResponseSchema,
 } from "@teacher-os/api/contracts";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
@@ -12,7 +15,16 @@ import { getApiBaseUrl } from "@/lib/repos/api-base-url";
  * Repos của luồng Nhập đề bằng AI (TOS-24, phase-03): POST raw-body file,
  * GET job, GET file gốc (stream) và GET ví Credit. Precedent upload #305 —
  * KHÔNG multipart: byte thô + header Content-Type/X-File-Name.
+ * TOS-25 (#471): thêm `lookupExamImportByFingerprint` (kiểm tra trùng trước
+ * upload) và `createExamImport` trả union — response 200 của POST giờ là
+ * job mới **hoặc** `{ duplicateOf }` (narrow tại đây để route không bao giờ
+ * đặt job rỗng vào state `done`).
  */
+
+/** Kết quả POST /api/exam-imports sau khi narrow union của TOS-25. */
+export type ExamImportCreateResult =
+	| { kind: "created"; job: ExamImportJob }
+	| { kind: "duplicate"; duplicate: ExamImportDuplicate };
 
 /** Kết quả lỗi có cấu trúc của POST /api/exam-imports (contract đã đóng băng). */
 export type ExamImportCreateError =
@@ -34,7 +46,7 @@ export async function createExamImport(input: {
 	file: File;
 	baseUrl?: string;
 	signal?: AbortSignal;
-}): Promise<ExamImportJob> {
+}): Promise<ExamImportCreateResult> {
 	const baseUrl = input.baseUrl ?? getApiBaseUrl();
 	const res = await fetch(`${baseUrl}/api/exam-imports`, {
 		method: "POST",
@@ -46,7 +58,15 @@ export async function createExamImport(input: {
 		body: input.file,
 		signal: input.signal,
 	});
-	if (res.ok) return examImportJobSchema.parse(await res.json());
+	if (res.ok) {
+		// TOS-25: union job | {duplicateOf} — job DTO là .strict() nên phân
+		// biệt bằng presence của key `duplicateOf`.
+		const body = examImportCreateResponseSchema.parse(await res.json());
+		if ("duplicateOf" in body) {
+			return { kind: "duplicate", duplicate: body.duplicateOf };
+		}
+		return { kind: "created", job: body };
+	}
 	throw await toCreateError(res);
 }
 
@@ -81,6 +101,22 @@ async function toCreateError(res: Response): Promise<ExamImportCreateError> {
 		return { kind: "failed", jobId: payload.jobId ?? null };
 	}
 	return { kind: "unexpected", status: res.status };
+}
+
+/** TOS-25: `GET /api/exam-imports/lookup?fingerprint=` — `duplicate | null`.
+ * Throw khi mạng/server lỗi: caller (màn import) bắt và **fail-open** —
+ * upload thẳng như TOS-24, không bao giờ chặn luồng (plan D1). */
+export async function lookupExamImportByFingerprint(
+	fingerprint: string,
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<ExamImportDuplicate | null> {
+	const res = await fetch(
+		`${baseUrl}/api/exam-imports/lookup?fingerprint=${encodeURIComponent(fingerprint)}`,
+		{ credentials: "include", signal },
+	);
+	if (!res.ok) throw new Error(`Failed to lookup exam import: ${res.status}`);
+	return examImportLookupResponseSchema.parse(await res.json()).duplicate;
 }
 
 /** GET /api/exam-imports/:id — job DTO (draft có needsReview do server tính). */
