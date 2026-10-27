@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TestBuilderShell } from "@/components/assignment-tests/test-builder-shell";
+import { ImportWithAiButton } from "@/components/exam-import/import-with-ai-button";
 import { PageHead } from "@/components/ui/page-head";
 
 export const Route = createFileRoute("/_auth/assignments/tests/new")({
@@ -25,6 +26,7 @@ function NewAssignmentTestRoute() {
 			<PageHead
 				title="Soạn bộ đề full test"
 				lead="Ghép các part IELTS thành một bộ đề trọn vẹn — chọn part từ ngân hàng hoặc soạn mới ngay trong slot. Số câu chạy liên tục theo số câu thật của từng part."
+				action={<ImportWithAiButton />}
 			/>
 			<TestBuilderShell mode="create" />
 		</div>

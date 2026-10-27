@@ -18,6 +18,7 @@ import { seedVocabLibrary } from "@teacher-os/db/seed/vocab-library";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
+import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -143,6 +144,14 @@ const LIBRARY_AUDIO_DIR = mkdtempSync(
 );
 const libraryAudioStore = createFsMediaStore(LIBRARY_AUDIO_DIR);
 
+// File đề gốc nhập AI (TOS-24 #470) — thư mục tạm RIÊNG, cùng bucket-logic
+// MEDIA của production; extractor là fake (đề cố định, pageCount 2) nên
+// E2E không đụng Workers AI.
+const EXAM_IMPORT_DIR = mkdtempSync(
+	join(tmpdir(), "teacher-os-e2e-exam-import-"),
+);
+const examImportStore = createFsMediaStore(EXAM_IMPORT_DIR);
+
 // Fake Bank Hub (#320): hosted-link pages + client stub cho E2E.
 const fakeBankHub = createFakeBankHub({
 	origin: `http://localhost:${PORT}`,
@@ -155,6 +164,9 @@ const app = buildApp({
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
 	getLibraryAudioStore: () => libraryAudioStore,
+	// TOS-24 (#470): file đề nhập AI (FS thay R2) + extractor fake.
+	getExamImportStore: () => examImportStore,
+	getExamExtractor: () => createFakeExamExtractor(),
 	adminEmails: ADMIN_EMAILS,
 	adminOrigins: [
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
@@ -187,6 +199,7 @@ const shutdown = () =>
 	server.close(() => {
 		rmSync(MEDIA_DIR, { recursive: true, force: true });
 		rmSync(LIBRARY_AUDIO_DIR, { recursive: true, force: true });
+		rmSync(EXAM_IMPORT_DIR, { recursive: true, force: true });
 		process.exit(0);
 	});
 process.on("SIGTERM", shutdown);

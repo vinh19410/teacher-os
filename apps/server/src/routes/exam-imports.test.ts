@@ -1,0 +1,401 @@
+import { createClient } from "@libsql/client";
+import {
+	CREDIT_COSTS,
+	creditWalletSchema,
+	EXAM_IMPORT_ERROR_CODES,
+	type ExamImportJob,
+	examImportJobSchema,
+	TRIAL_CREDITS,
+} from "@teacher-os/api/contracts";
+import {
+	creditUsageLog,
+	creditWallet,
+} from "@teacher-os/db/schema/credit-wallet";
+import { examImportJob } from "@teacher-os/db/schema/exam-import-job";
+import * as schema from "@teacher-os/db/schema/index";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+	type AppDeps,
+	buildApp,
+	type Db,
+	enforceDeclaredSize,
+	type MediaStore,
+	type ServerApp,
+} from "../app";
+import {
+	type ExamExtractor,
+	ExtractionFailedError,
+} from "../lib/exam-import/extractor";
+import { createFakeExamExtractor } from "../lib/exam-import/fake-extractor";
+import type { SessionUser } from "../session";
+
+const MIGRATIONS_DIR = new URL(
+	"../../../../packages/db/src/migrations",
+	import.meta.url,
+).pathname;
+
+const PDF_BYTES = new Uint8Array(2048).fill(0x25); // "%PDF"-ish bytes giả
+
+const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
+	// `role` ở đây là ACCOUNT role (SessionUser); role org ("ta") đọc từ
+	// bảng membership bởi bootstrapMiddleware.
+	const userKey = headers.get("x-test-user");
+	if (userKey === "teacher") {
+		return {
+			userId: "u-teacher",
+			userName: "Cô Lan",
+			email: "lan@test.local",
+			emailVerified: true,
+			role: "teacher" as const,
+		};
+	}
+	if (userKey === "ta") {
+		return {
+			userId: "u-ta",
+			userName: "Trợ giảng",
+			email: "ta@test.local",
+			emailVerified: true,
+			role: "teacher" as const,
+		};
+	}
+	if (userKey === "other-org") {
+		return {
+			userId: "u-teacher2",
+			userName: "Thầy Hùng",
+			email: "hung@test.local",
+			emailVerified: true,
+			role: "teacher" as const,
+		};
+	}
+	return null;
+};
+
+/** Store Map trong bộ nhớ — kiểm file R2 thật sự bị xoá khi reserve thua. */
+interface MemoryMediaStore {
+	store: MediaStore;
+	objects: Map<string, { bytes: Uint8Array; contentType: string }>;
+}
+
+function createMemoryMediaStore(): MemoryMediaStore {
+	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();
+	const store: MediaStore = {
+		async put(key, body, { contentType, size }) {
+			const counted = enforceDeclaredSize(body, size);
+			const bytes = new Uint8Array(
+				await new Response(counted.stream).arrayBuffer(),
+			);
+			objects.set(key, { bytes, contentType });
+		},
+		async get(key) {
+			const object = objects.get(key);
+			if (!object) return null;
+			return {
+				body: new Response(object.bytes).body as ReadableStream<Uint8Array>,
+				contentType: object.contentType,
+				size: object.bytes.byteLength,
+			};
+		},
+		async delete(key) {
+			objects.delete(key);
+		},
+	};
+	return { store, objects };
+}
+
+describe("exam imports + ví Credit (TOS-24 #470)", () => {
+	let db: Db;
+	let memory: MemoryMediaStore;
+	let app: ServerApp;
+	let appDisabled: ServerApp;
+	let appBrokenExtractor: ServerApp;
+	let appBrokenStore: ServerApp;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		await db.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await db.insert(schema.user).values([
+			{
+				id: "u-teacher",
+				name: "Cô Lan",
+				email: "lan@test.local",
+				role: "teacher",
+			},
+			{
+				id: "u-ta",
+				name: "Trợ giảng",
+				email: "ta@test.local",
+				role: "teacher",
+			},
+			{
+				id: "u-teacher2",
+				name: "Thầy Hùng",
+				email: "hung@test.local",
+				role: "teacher",
+			},
+		]);
+		await db.insert(schema.membership).values([
+			{ id: "m-1", orgId: "org-1", userId: "u-teacher", role: "teacher" },
+			{ id: "m-2", orgId: "org-1", userId: "u-ta", role: "ta" },
+			{ id: "m-3", orgId: "org-2", userId: "u-teacher2", role: "teacher" },
+		]);
+
+		memory = createMemoryMediaStore();
+		const baseDeps: AppDeps = {
+			getDb: () => db,
+			corsOrigin: ["http://localhost:8001"],
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		};
+		const failingExtractor: ExamExtractor = {
+			extract: () => Promise.reject(new ExtractionFailedError("boom")),
+		};
+		app = buildApp({
+			...baseDeps,
+			getExamImportStore: () => memory.store,
+			getExamExtractor: () => createFakeExamExtractor(),
+		});
+		appDisabled = buildApp(baseDeps);
+		appBrokenExtractor = buildApp({
+			...baseDeps,
+			getExamImportStore: () => memory.store,
+			getExamExtractor: () => failingExtractor,
+		});
+		// store.put luôn hỏng — mô phỏng R2 503/quota (kongming review #470
+		// Important #1: put hỏng sau reserve vẫn phải release + failed_refunded).
+		appBrokenStore = buildApp({
+			...baseDeps,
+			getExamImportStore: () => ({
+				put: () => Promise.reject(new Error("r2 unavailable")),
+				get: () => Promise.resolve(null),
+				delete: () => Promise.resolve(),
+			}),
+			getExamExtractor: () => createFakeExamExtractor(),
+		});
+	});
+
+	beforeEach(async () => {
+		await db.delete(creditUsageLog);
+		await db.delete(creditWallet);
+		await db.delete(examImportJob);
+		memory.objects.clear();
+	});
+
+	function upload(
+		target: ServerApp = app,
+		user = "teacher",
+		overrides: Record<string, string> = {},
+	) {
+		return target.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": user,
+				"Content-Type": "application/pdf",
+				"Content-Length": String(PDF_BYTES.byteLength),
+				"X-File-Name": encodeURIComponent("cambridge-sample.pdf"),
+				...overrides,
+			},
+			body: PDF_BYTES,
+		});
+	}
+
+	async function walletLogs(orgId = "org-1") {
+		return (
+			db
+				.select()
+				.from(creditUsageLog)
+				.where(eq(creditUsageLog.orgId, orgId))
+				// rowid = thứ tự chèn (createdAt có thể cùng ms).
+				.orderBy(creditUsageLog.createdAt, sql`rowid`)
+		);
+	}
+
+	test("happy path: reserve + settle đúng 1 log, ví 30→25, needsReview đúng 1 câu", async () => {
+		const res = await upload();
+		expect(res.status).toBe(200);
+		const job = examImportJobSchema.parse(await res.json());
+		expect(job.importStatus).toBe("completed");
+		expect(job.pageCount).toBe(2);
+		expect(job.heldCredits).toBe(CREDIT_COSTS.examImport);
+		expect(job.draft?.title).toBe("Cambridge IELTS Sample");
+		const questions = job.draft?.parts[0]?.questions ?? [];
+		expect(questions).toHaveLength(3);
+		expect(questions.filter((q) => q.needsReview)).toHaveLength(1);
+		expect(questions.filter((q) => !q.needsReview)).toHaveLength(2);
+
+		// Ví: 30 → 25, held nhả hết; đúng 1 reserved + 1 settled.
+		const wallet = creditWalletSchema.parse(
+			await (
+				await app.request("/api/credits/wallet", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json(),
+		);
+		expect(wallet).toEqual({
+			balance: TRIAL_CREDITS - CREDIT_COSTS.examImport,
+			held: 0,
+			available: TRIAL_CREDITS - CREDIT_COSTS.examImport,
+		});
+		const logs = await walletLogs();
+		expect(logs.map((row) => row.txStatus)).toEqual(["reserved", "settled"]);
+
+		// File nằm đúng key R2 org-scoped.
+		expect(memory.objects.has(`exam-imports/org-1/${job.id}`)).toBe(true);
+		expect(
+			memory.objects.get(`exam-imports/org-1/${job.id}`)?.contentType,
+		).toBe("application/pdf");
+
+		// GET job + file đọc lại được.
+		const getRes = await app.request(`/api/exam-imports/${job.id}`, {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(getRes.status).toBe(200);
+		expect(examImportJobSchema.parse(await getRes.json())).toEqual(job);
+		const fileRes = await app.request(`/api/exam-imports/${job.id}/file`, {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(fileRes.status).toBe(200);
+		expect(fileRes.headers.get("Content-Type")).toBe("application/pdf");
+	});
+
+	test("thiếu Credit: 402 kèm balance, xoá sạch job + file + không log", async () => {
+		await db
+			.insert(creditWallet)
+			.values({ orgId: "org-1", balance: CREDIT_COSTS.examImport - 1 });
+		const res = await upload();
+		expect(res.status).toBe(402);
+		const body = (await res.json()) as {
+			code: string;
+			balance: number;
+			available: number;
+		};
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS);
+		expect(body.balance).toBe(CREDIT_COSTS.examImport - 1);
+		// Không có reserve đang giữ → available = balance (held = 0).
+		expect(body.available).toBe(CREDIT_COSTS.examImport - 1);
+		const jobs = await db.select().from(examImportJob);
+		expect(jobs).toHaveLength(0);
+		expect(memory.objects.size).toBe(0);
+		expect(await walletLogs()).toHaveLength(0);
+	});
+
+	test("extractor ném lỗi: job failed_refunded, log released, ví nguyên 30", async () => {
+		const res = await upload(appBrokenExtractor);
+		expect(res.status).toBe(502);
+		const body = (await res.json()) as { code: string; jobId: string };
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.FAILED);
+		const [job] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, body.jobId));
+		expect(job?.importStatus).toBe("failed_refunded");
+		expect(job?.errorCode).toBe("EXTRACTION_FAILED");
+		const wallet = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(wallet[0]?.balance).toBe(TRIAL_CREDITS);
+		expect(wallet[0]?.held).toBe(0);
+		const logs = await walletLogs();
+		expect(logs.map((row) => row.txStatus)).toEqual(["reserved", "released"]);
+		// Job vẫn đọc được (failed_refunded) nhưng không lộ draft.
+		const dto = examImportJobSchema.parse(
+			await (
+				await app.request(`/api/exam-imports/${body.jobId}`, {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json(),
+		);
+		expect(dto.importStatus).toBe("failed_refunded");
+		expect(dto.draft).toBeNull();
+	});
+
+	test("store.put hỏng sau reserve: job failed_refunded, log released, ví nguyên 30 (Important #1)", async () => {
+		const res = await upload(appBrokenStore);
+		expect(res.status).toBe(502);
+		const body = (await res.json()) as { code: string; jobId: string };
+		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.FAILED);
+		const [job] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, body.jobId));
+		// Không job zombie `processing` — credit không kẹt held.
+		expect(job?.importStatus).toBe("failed_refunded");
+		const wallet = await db
+			.select()
+			.from(creditWallet)
+			.where(eq(creditWallet.orgId, "org-1"));
+		expect(wallet[0]?.balance).toBe(TRIAL_CREDITS);
+		expect(wallet[0]?.held).toBe(0);
+		const logs = await walletLogs();
+		expect(logs.map((row) => row.txStatus)).toEqual(["reserved", "released"]);
+	});
+
+	test("org khác không đọc được job/file của org-1 (404 cùng mã)", async () => {
+		const res = await upload();
+		const job = (await res.json()) as ExamImportJob;
+		const getRes = await app.request(`/api/exam-imports/${job.id}`, {
+			headers: { "x-test-user": "other-org" },
+		});
+		expect(getRes.status).toBe(404);
+		expect(((await getRes.json()) as { code: string }).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.NOT_FOUND,
+		);
+		const fileRes = await app.request(`/api/exam-imports/${job.id}/file`, {
+			headers: { "x-test-user": "other-org" },
+		});
+		expect(fileRes.status).toBe(404);
+		expect(((await fileRes.json()) as { code: string }).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.NOT_FOUND,
+		);
+	});
+
+	test("MIME không thuộc danh sách → 400 E-selfomy-alignment-003", async () => {
+		const res = await upload(app, "teacher", {
+			"Content-Type": "text/plain",
+		});
+		expect(res.status).toBe(400);
+		expect(((await res.json()) as { code: string }).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+		);
+	});
+
+	test("binding AI/kho vắng mặt → 503 EXAM_IMPORT_DISABLED", async () => {
+		const res = await upload(appDisabled);
+		expect(res.status).toBe(503);
+		expect(((await res.json()) as { code: string }).code).toBe(
+			EXAM_IMPORT_ERROR_CODES.DISABLED,
+		);
+	});
+
+	test("role ta POST → 403 (chỉ teacher/owner được nhập đề)", async () => {
+		const res = await upload(app, "ta");
+		expect(res.status).toBe(403);
+	});
+
+	test("chưa đăng nhập → 401", async () => {
+		const res = await upload(app, "nobody");
+		expect(res.status).toBe(401);
+	});
+
+	test("GET /credits/wallet tạo lười ví 30 Credit cho org mới", async () => {
+		const res = await app.request("/api/credits/wallet", {
+			headers: { "x-test-user": "other-org" },
+		});
+		expect(res.status).toBe(200);
+		expect(creditWalletSchema.parse(await res.json())).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+			available: TRIAL_CREDITS,
+		});
+	});
+});

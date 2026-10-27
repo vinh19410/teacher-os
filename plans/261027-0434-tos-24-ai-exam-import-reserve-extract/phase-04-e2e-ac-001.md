@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E AC-001"
-status: pending
+status: done
 effort: 3h
 ---
 

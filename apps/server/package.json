@@ -5,7 +5,8 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./app": "./src/app.ts",
-		"./session": "./src/session.ts"
+		"./session": "./src/session.ts",
+		"./lib/exam-import/fake-extractor": "./src/lib/exam-import/fake-extractor.ts"
 	},
 	"scripts": {
 		"build": "tsdown",

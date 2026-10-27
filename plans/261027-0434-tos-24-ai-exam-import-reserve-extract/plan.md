@@ -1,11 +1,11 @@
 ---
 title: "TOS-24: Tạm giữ 5 Credit, bóc tách đề thi bằng AI trong 120 giây và mở đối chiếu 2 cột"
 description: "Dựng lõi Ví Credit tối thiểu (reserve/settle/release, sổ cái append-only), bảng exam_import_job, extractor Cloudflare Workers AI và màn Nhập đề AI [6] với đối chiếu 2 cột + nhãn vàng Cần rà soát lại."
-status: pending
+status: completed
 priority: P0
 effort: 3d
 issue: 470
-branch: null
+branch: ai-handle-issue-470
 tags: [feature, backend, frontend, db, ai, e2e]
 blockedBy: []
 blocks: [471, 472, 473]
@@ -55,10 +55,10 @@ Nguồn: Jira [TOS-24](https://teacher-os.atlassian.net/browse/TOS-24) (subtask 
 
 | # | Phase | Ước lượng | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [phase-01-credit-wallet-core.md](phase-01-credit-wallet-core.md): schema + migration ví/sổ cái/job, service reserve/settle/release | 5h | pending | — |
-| 2 | [phase-02-extractor-and-import-api.md](phase-02-extractor-and-import-api.md): binding AI, extractor Workers AI, `POST /api/exam-imports`, `GET /:id`, `GET /:id/file`, `GET /api/credits/wallet` | 8h | pending | 1 |
-| 3 | [phase-03-import-workspace-ui.md](phase-03-import-workspace-ui.md): màn `[6]` dropzone + đối chiếu 2 cột + nhãn vàng | 8h | pending | 2 |
-| 4 | [phase-04-e2e-ac-001.md](phase-04-e2e-ac-001.md): E2E AC-001 với extractor giả lập | 3h | pending | 3 |
+| 1 | [phase-01-credit-wallet-core.md](phase-01-credit-wallet-core.md): schema + migration ví/sổ cái/job, service reserve/settle/release | 5h | done | — |
+| 2 | [phase-02-extractor-and-import-api.md](phase-02-extractor-and-import-api.md): binding AI, extractor Workers AI, `POST /api/exam-imports`, `GET /:id`, `GET /:id/file`, `GET /api/credits/wallet` | 8h | done | 1 |
+| 3 | [phase-03-import-workspace-ui.md](phase-03-import-workspace-ui.md): màn `[6]` dropzone + đối chiếu 2 cột + nhãn vàng | 8h | done | 2 |
+| 4 | [phase-04-e2e-ac-001.md](phase-04-e2e-ac-001.md): E2E AC-001 với extractor giả lập | 3h | done | 3 |
 
 ```mermaid
 sequenceDiagram
@@ -81,11 +81,11 @@ sequenceDiagram
 
 ## Acceptance criteria (từ AC-001)
 
-- [ ] Ví có ≥ 5 Credit + tệp hợp lệ → `credit_usage_log` có đúng 1 dòng `reserved` (−5) rồi 1 dòng `settled` cho cùng job; `balance` giảm 5, `held` về 0.
-- [ ] Job `completed` lưu `draft_json`, `content_fingerprint`, `page_count`; thời gian extractor bị chặn bởi timeout 120s.
-- [ ] Màn `[6]` hiển thị 2 cột (trái lật trang/zoom, phải đoạn văn + câu hỏi + đáp án); câu `confidence < 0.80` có nhãn vàng "(!) Cần rà soát lại"; < 1024px chuyển 2 tab.
-- [ ] Extractor ném lỗi → Credit được hoàn (`released`), ví không đổi (catch-all; UX lỗi ở TOS-27).
-- [ ] Hai request song song khi ví chỉ còn 5 Credit → chỉ 1 request reserve thành công.
+- [x] Ví có ≥ 5 Credit + tệp hợp lệ → `credit_usage_log` có đúng 1 dòng `reserved` (−5) rồi 1 dòng `settled` cho cùng job; `balance` giảm 5, `held` về 0.
+- [x] Job `completed` lưu `draft_json`, `content_fingerprint`, `page_count`; thời gian extractor bị chặn bởi timeout 120s.
+- [x] Màn `[6]` hiển thị 2 cột (trái lật trang/zoom, phải đoạn văn + câu hỏi + đáp án); câu `confidence < 0.80` có nhãn vàng "(!) Cần rà soát lại"; < 1024px chuyển 2 tab.
+- [x] Extractor ném lỗi → Credit được hoàn (`released`), ví không đổi (catch-all; UX lỗi ở TOS-27).
+- [x] Hai request song song khi ví chỉ còn 5 Credit → chỉ 1 request reserve thành công.
 
 ## Validation
 
