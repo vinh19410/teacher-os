@@ -23,6 +23,7 @@
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
 		"hono": "^4.12.32",
+		"unpdf": "^1.9.1",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

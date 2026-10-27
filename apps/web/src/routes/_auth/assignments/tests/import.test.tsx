@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
-import type { ExamImportJob } from "@teacher-os/api/contracts";
+import {
+	EXAM_IMPORT_ERROR_CODES,
+	EXAM_IMPORT_ERROR_MESSAGES,
+	type ExamImportJob,
+} from "@teacher-os/api/contracts";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,6 +13,12 @@ import { ExamImportScreen } from "./import";
 
 // Repos giả: kiểm soát wallet/job/file mà không chạm mạng thật. Nhãn skill
 // giữ nguyên giá trị thật (bản map ổn định, mock tay để không importOriginal).
+// checkExamFile của dropzone gọi pdfjs-dist (worker không chạy trong jsdom);
+// unit test riêng ở exam-file-check.test.ts + exam-file-dropzone.test.tsx.
+vi.mock("@/lib/exam-file-check", () => ({
+	checkExamFile: vi.fn(async () => null),
+}));
+
 vi.mock("@/lib/repos/exam-imports", () => ({
 	EXAM_IMPORT_SKILL_LABELS: {
 		reading: "reading",
@@ -25,6 +35,7 @@ vi.mock("@/lib/repos/exam-imports", () => ({
 	fetchExamImportFileUrl: vi.fn(async () => "blob:mock-file"),
 	fetchExamImportJob: vi.fn(),
 	createExamImport: vi.fn(),
+	retryExamImport: vi.fn(),
 	// TOS-25: mặc định không trùng — các test banner tự override.
 	lookupExamImportByFingerprint: vi.fn(async () => null),
 	saveExamImportDraft: vi.fn(),
@@ -57,6 +68,7 @@ import {
 	fetchExamImportJob,
 	lookupExamImportByFingerprint,
 	publishExamImport,
+	retryExamImport,
 	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
 
@@ -118,6 +130,7 @@ const jobFixture = (overrides: Partial<ExamImportJob> = {}): ExamImportJob => ({
 		],
 	},
 	errorCode: null,
+	errorReason: null,
 	createdAt: "2026-10-27T00:00:00Z",
 	startedAt: "2026-10-27T00:00:00Z",
 	completedAt: null,
@@ -225,6 +238,93 @@ describe("ExamImportScreen — luồng upload", () => {
 				vi.mocked(fetchCreditWallet).mock.calls.length,
 			).toBeGreaterThanOrEqual(2),
 		);
+	});
+
+	it("POST trả 502 E-004 → hiện ImportFailedPanel + bấm Thử bóc tách lại AI gọi retryExamImport", async () => {
+		mockMatchMedia(true);
+		vi.mocked(createExamImport).mockRejectedValue({
+			kind: "failed",
+			reason: "empty_result",
+			jobId: "job-fail-1",
+		});
+		vi.mocked(retryExamImport).mockResolvedValue(
+			jobFixture({ id: "job-retry-2" }),
+		);
+		render(<ExamImportScreen />);
+		const input = screen.getByTestId("exam-import-file-input");
+		fireEvent.change(input, {
+			target: {
+				files: [new File(["x"], "fail.pdf", { type: "application/pdf" })],
+			},
+		});
+		const panel = await screen.findByTestId("exam-import-failed-panel");
+		expect(panel.textContent).toContain(
+			EXAM_IMPORT_ERROR_MESSAGES[EXAM_IMPORT_ERROR_CODES.EXAM_FAILED],
+		);
+		fireEvent.click(screen.getByTestId("exam-import-retry"));
+		await waitFor(() =>
+			expect(vi.mocked(retryExamImport)).toHaveBeenCalledWith("job-fail-1"),
+		);
+		await screen.findByTestId("extracted-exam-panel");
+		expect(navigateMock).toHaveBeenCalledWith(
+			expect.objectContaining({ search: { job: "job-retry-2" } }),
+		);
+	});
+
+	it("mở ?job=failed_refunded từ URL hiện ImportFailedPanel kèm nút thử lại", async () => {
+		mockMatchMedia(true);
+		vi.mocked(fetchExamImportJob).mockResolvedValue(
+			jobFixture({
+				id: "job-failed-url",
+				importStatus: "failed_refunded",
+				draft: null,
+				errorCode: EXAM_IMPORT_ERROR_CODES.EXAM_FAILED,
+				errorReason: "timeout",
+			}),
+		);
+		render(<ExamImportScreen jobId="job-failed-url" />);
+		const panel = await screen.findByTestId("exam-import-failed-panel");
+		expect(panel.textContent).toContain("Quá thời gian chờ 120 giây.");
+	});
+
+	it("POST trả 402 E-001 → mở hộp thoại InsufficientCreditsDialog", async () => {
+		mockMatchMedia(true);
+		vi.mocked(createExamImport).mockRejectedValue({
+			kind: "insufficient_credits",
+			balance: 2,
+			available: 2,
+		});
+		render(<ExamImportScreen />);
+		const input = screen.getByTestId("exam-import-file-input");
+		fireEvent.change(input, {
+			target: {
+				files: [new File(["x"], "ok.pdf", { type: "application/pdf" })],
+			},
+		});
+		const dialogMsg = await screen.findByTestId(
+			"exam-import-insufficient-credits",
+		);
+		expect(dialogMsg.textContent).toBe(
+			EXAM_IMPORT_ERROR_MESSAGES[EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS],
+		);
+	});
+
+	it("nhánh hiếm hard_failed (EXAM_IMPORT_FAILED) hiện ErrorNotice fallback, KHÔNG hiện E-004", async () => {
+		mockMatchMedia(true);
+		vi.mocked(createExamImport).mockRejectedValue({
+			kind: "hard_failed",
+			jobId: "job-hard",
+		});
+		render(<ExamImportScreen />);
+		const input = screen.getByTestId("exam-import-file-input");
+		fireEvent.change(input, {
+			target: {
+				files: [new File(["x"], "ok.pdf", { type: "application/pdf" })],
+			},
+		});
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("Có lỗi xảy ra khi nhập đề");
+		expect(screen.queryByTestId("exam-import-failed-panel")).toBeNull();
 	});
 });
 

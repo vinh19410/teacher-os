@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Client: chặn tệp E-003, panel lỗi E-004, hộp thoại E-001"
-status: pending
+status: completed
 effort: 4h
 ---
 

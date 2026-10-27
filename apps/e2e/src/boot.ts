@@ -164,7 +164,8 @@ const app = buildApp({
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
 	getLibraryAudioStore: () => libraryAudioStore,
-	// TOS-24 (#470): file đề nhập AI (FS thay R2) + extractor fake.
+	// TOS-24 (#470) + TOS-27 (#473): file đề nhập AI (FS thay R2) + extractor
+	// fake (tên tệp chứa `ai-fail` ném lỗi để E2E AC-004 kiểm hoàn trả Credit).
 	getExamImportStore: () => examImportStore,
 	getExamExtractor: () => createFakeExamExtractor(),
 	adminEmails: ADMIN_EMAILS,

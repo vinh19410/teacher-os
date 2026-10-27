@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Server: kiểm tệp, phân loại lỗi + hoàn Credit, dọn job treo, thử lại"
-status: pending
+status: completed
 effort: 6h
 ---
 

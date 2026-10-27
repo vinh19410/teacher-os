@@ -3,11 +3,14 @@ import {
 	creditWalletSchema,
 	EXAM_IMPORT_ERROR_CODES,
 	type ExamImportDuplicate,
+	type ExamImportFailReason,
+	type ExamImportFileErrorReason,
 	type ExamImportJob,
 	type ExamImportPublishResponse,
 	type ExamImportSkill,
 	type ExtractedExamDraft,
 	examImportCreateResponseSchema,
+	examImportErrorSchema,
 	examImportJobSchema,
 	examImportLookupResponseSchema,
 	examImportPublishResponseSchema,
@@ -32,12 +35,23 @@ export type ExamImportCreateResult =
 /** Kết quả lỗi có cấu trúc của POST /api/exam-imports (contract đã đóng băng). */
 export type ExamImportCreateError =
 	| { kind: "insufficient_credits"; balance: number; available: number }
-	| { kind: "invalid_file" }
+	| { kind: "invalid_file"; reason: ExamImportFileErrorReason | null }
 	| { kind: "disabled" }
-	| { kind: "failed"; jobId: string | null }
+	/** AI lỗi/timeout/0 câu hợp lệ (E-004) — credit đã hoàn về ví. */
+	| {
+			kind: "failed";
+			reason: ExamImportFailReason | null;
+			jobId: string | null;
+	  }
+	/** Settled rồi mới hỏng ghi job (`EXAM_IMPORT_FAILED`) — credit ĐÃ trừ, KHÔNG hoàn. */
+	| { kind: "hard_failed"; jobId: string | null }
 	// GET /:id trả 404 (job của org khác / đã xoá) — dùng chung ErrorNotice
 	// của màn import (kongming PR-review #474 Minor #4).
 	| { kind: "job_not_found" }
+	/** Retry job không ở `failed_refunded` (409). */
+	| { kind: "not_retryable" }
+	/** File gốc trên R2 đã mất khi retry (410). */
+	| { kind: "file_missing" }
 	| { kind: "unexpected"; status: number };
 
 /**
@@ -82,26 +96,51 @@ async function toCreateError(res: Response): Promise<ExamImportCreateError> {
 	} catch {
 		// bỏ qua — status là nguồn chân lý chính.
 	}
-	const payload = (body ?? {}) as {
-		code?: string;
-		balance?: number;
-		available?: number;
-		jobId?: string;
-	};
+	const payload = examImportErrorSchema.safeParse(body);
+	const data = payload.success ? payload.data : null;
 	if (res.status === 402) {
-		const balance = typeof payload.balance === "number" ? payload.balance : 0;
+		const balance = data?.balance ?? 0;
 		return {
 			kind: "insufficient_credits",
 			balance,
 			// Server lỗi thời (chưa có available) → fallback bằng balance.
-			available:
-				typeof payload.available === "number" ? payload.available : balance,
+			available: data?.available ?? balance,
 		};
 	}
-	if (res.status === 400) return { kind: "invalid_file" };
+	if (res.status === 400) {
+		const reason = data?.reason;
+		return {
+			kind: "invalid_file",
+			reason:
+				reason === "type" ||
+				reason === "size" ||
+				reason === "pages" ||
+				reason === "password"
+					? reason
+					: null,
+		};
+	}
 	if (res.status === 503) return { kind: "disabled" };
-	if (res.status === 502 && payload.code === EXAM_IMPORT_ERROR_CODES.FAILED) {
-		return { kind: "failed", jobId: payload.jobId ?? null };
+	if (res.status === 410) return { kind: "file_missing" };
+	if (res.status === 409) return { kind: "not_retryable" };
+	if (res.status === 502) {
+		if (data?.code === EXAM_IMPORT_ERROR_CODES.EXAM_FAILED) {
+			const reason = data.reason;
+			return {
+				kind: "failed",
+				reason:
+					reason === "timeout" ||
+					reason === "ai_error" ||
+					reason === "empty_result"
+						? reason
+						: null,
+				jobId: data.jobId ?? null,
+			};
+		}
+		// `EXAM_IMPORT_FAILED` (nhánh hiếm: settled rồi hỏng ghi job — credit
+		// ĐÃ trừ, KHÔNG hoàn): không dùng message E-004, để UI hiện fallback
+		// trung thực (kongming plan-gate #473).
+		return { kind: "hard_failed", jobId: data?.jobId ?? null };
 	}
 	return { kind: "unexpected", status: res.status };
 }
@@ -157,6 +196,26 @@ export async function fetchExamImportFileUrl(
 		throw new Error(`Failed to fetch exam import file: ${res.status}`);
 	const blob = await res.blob();
 	return URL.createObjectURL(blob);
+}
+
+/**
+ * POST /api/exam-imports/:id/retry (TOS-27 D4) — "Thử bóc tách lại AI":
+ * server tạo JOB MỚI dùng lại file R2 (không upload lại) rồi chạy lại
+ * reserve → extract → settle/release. Trả job mới; lỗi map như createExamImport
+ * (thêm 409 not_retryable / 410 file_missing).
+ */
+export async function retryExamImport(
+	jobId: string,
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<ExamImportJob> {
+	const res = await fetch(`${baseUrl}/api/exam-imports/${jobId}/retry`, {
+		method: "POST",
+		credentials: "include",
+		signal,
+	});
+	if (res.ok) return examImportJobSchema.parse(await res.json());
+	throw await toCreateError(res);
 }
 
 /** GET /api/credits/wallet — { balance, held, available }. */

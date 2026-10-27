@@ -1,11 +1,11 @@
 ---
 title: "TOS-27: Chặn tệp không hợp lệ và tự động hoàn trả 5 Credit khi dịch vụ AI lỗi hoặc quá hạn 120 giây"
 description: "Chặn tệp > 15 MB, > 20 trang, sai định dạng hoặc có mật khẩu (E-003) cả client lẫn server trước khi giữ Credit; phân loại lỗi AI / 0 nhóm câu hỏi / quá 120 giây → release 5 Credit, ghi sổ cái, hiện E-004 + nút Thử bóc tách lại AI; hộp thoại thiếu Credit E-001; dọn job treo processing."
-status: pending
+status: completed
 priority: P0
 effort: 1.5d
 issue: 473
-branch: null
+branch: ai-handle-issue-473
 tags: [feature, backend, frontend, e2e]
 blockedBy: [470]
 blocks: []
@@ -30,6 +30,13 @@ Nguồn: Jira [TOS-27](https://teacher-os.atlassian.net/browse/TOS-27) (subtask 
 - **Việc còn lại:** kiểm trang/mật khẩu (client + server), phân loại lỗi + mã E-004, dọn job treo, nút thử lại, hộp thoại E-001, thông điệp lỗi chuẩn spec.
 - **Mode:** fast + scout, HOLD SCOPE.
 
+### Ghi nhận đối chiếu sau merge #474 (TOS-24)
+
+- `AbortSignal.timeout(120_000)` đã có sẵn ở `POST /api/exam-imports`; mở rộng thêm `Promise.race` dự phòng + phân loại `timeout` / `ai_error` / `empty_result` với `error_code = E-selfomy-alignment-004` và cột `error_reason` (migration `0052`).
+- Nhánh hiếm "settled thành công nhưng UPDATE job hỏng" giữ nguyên mã wire `EXAM_IMPORT_FAILED` (không dùng E-004 để không hiển thị thông điệp "Credit đã hoàn" sai sự thật).
+- Client dùng component `Modal` của repo cho hộp thoại `InsufficientCreditsDialog` (E-001); dropzone kiểm tra bằng `pdfjs-dist` sẵn có ở `apps/web` và gọi `task.destroy()` sau mỗi lần đếm trang.
+
+
 ## Quyết định
 
 | # | Quyết định | Lý do |
@@ -51,9 +58,9 @@ Nguồn: Jira [TOS-27](https://teacher-os.atlassian.net/browse/TOS-27) (subtask 
 
 | # | Phase | Ước lượng | Trạng thái | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [phase-01-server-validation-and-refund.md](phase-01-server-validation-and-refund.md): kiểm trang/mật khẩu server, phân loại lỗi + release, dọn job treo, `POST /:id/retry` | 6h | pending | TOS-24 |
-| 2 | [phase-02-client-validation-and-error-ui.md](phase-02-client-validation-and-error-ui.md): chặn tệp ở dropzone (E-003), panel lỗi E-004 + nút thử lại, hộp thoại E-001 | 4h | pending | 1 |
-| 3 | [phase-03-e2e-ac-004.md](phase-03-e2e-ac-004.md): E2E 2 scenario | 3h | pending | 2 |
+| 1 | [phase-01-server-validation-and-refund.md](phase-01-server-validation-and-refund.md): kiểm trang/mật khẩu server, phân loại lỗi + release, dọn job treo, `POST /:id/retry` | 6h | completed | TOS-24 |
+| 2 | [phase-02-client-validation-and-error-ui.md](phase-02-client-validation-and-error-ui.md): chặn tệp ở dropzone (E-003), panel lỗi E-004 + nút thử lại, hộp thoại E-001 | 4h | completed | 1 |
+| 3 | [phase-03-e2e-ac-004.md](phase-03-e2e-ac-004.md): E2E 2 scenario | 3h | completed | 2 |
 
 ```mermaid
 stateDiagram-v2
@@ -67,11 +74,11 @@ stateDiagram-v2
 
 ## Acceptance criteria (từ AC-004)
 
-- [ ] PDF 18 MB, PDF 25 trang, PDF có mật khẩu → bị chặn ngay ở dropzone với thông điệp E-003; gọi thẳng API cũng trả 400 E-003; `credit_usage_log` không có dòng mới, không có job.
-- [ ] Extractor lỗi / trả 0 nhóm câu hợp lệ / quá 120s → log có cặp `reserved −5` + `released +5`, ví về đúng số dư trước, job `failed_refunded` + `E-selfomy-alignment-004`; UI hiện thông điệp E-004 + nút "Thử bóc tách lại AI".
-- [ ] Bấm thử lại → job mới chạy lại không cần upload; thành công thì settled bình thường.
-- [ ] Job `processing` quá 150s → lần gọi tiếp theo tự hoàn Credit đúng 1 lần.
-- [ ] Ví < 5 Credit → hộp thoại E-001, không có job/log.
+- [x] PDF 18 MB, PDF 25 trang, PDF có mật khẩu → bị chặn ngay ở dropzone với thông điệp E-003; gọi thẳng API cũng trả 400 E-003; `credit_usage_log` không có dòng mới, không có job.
+- [x] Extractor lỗi / trả 0 nhóm câu hợp lệ / quá 120s → log có cặp `reserved −5` + `released +5`, ví về đúng số dư trước, job `failed_refunded` + `E-selfomy-alignment-004`; UI hiện thông điệp E-004 + nút "Thử bóc tách lại AI".
+- [x] Bấm thử lại → job mới chạy lại không cần upload; thành công thì settled bình thường.
+- [x] Job `processing` quá 150s → lần gọi tiếp theo tự hoàn Credit đúng 1 lần.
+- [x] Ví < 5 Credit → hộp thoại E-001, không có job/log.
 
 ## Validation
 

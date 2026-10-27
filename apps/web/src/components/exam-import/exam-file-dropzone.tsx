@@ -1,12 +1,19 @@
-import { EXAM_IMPORT_MIME } from "@teacher-os/api/contracts";
+import {
+	EXAM_IMPORT_ERROR_CODES,
+	EXAM_IMPORT_ERROR_MESSAGES,
+	EXAM_IMPORT_MIME,
+} from "@teacher-os/api/contracts";
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { checkExamFile, type ExamFileCheckError } from "@/lib/exam-file-check";
 
 /**
  * Dropzone chọn file đề (phase-03): PDF/PNG/JPEG, bấm chọn hoặc kéo-thả.
- * Chọn file xong gọi onFile ngay để route POST lên server; đang upload
- * (disabled) thì chặn cả click lẫn drop. Extend từ EXAM_IMPORT_MIME để
- * accept luôn khớp contract (đóng băng ở packages/api).
+ * Chọn file xong kiểm tra NGAY Ở client (TOS-27 phase-02): sai kiểu / quá
+ * 15 MB / quá 20 trang / PDF có mật khẩu → alert E-003 kèm lý do cụ thể,
+ * KHÔNG gọi API (server vẫn kiểm lại — guard này chỉ fail-fast). Đang
+ * upload (disabled) thì chặn cả click lẫn drop. Extend từ EXAM_IMPORT_MIME
+ * để accept luôn khớp contract (đóng băng ở packages/api).
  */
 const ACCEPT = EXAM_IMPORT_MIME.map((mime) => {
 	switch (mime) {
@@ -30,13 +37,27 @@ export function ExamFileDropzone({
 }) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [dragOver, setDragOver] = useState(false);
+	const [fileError, setFileError] = useState<ExamFileCheckError | null>(null);
+	const [checking, setChecking] = useState(false);
 
 	const emitFirstFile = useCallback(
-		(files: FileList | null) => {
+		async (files: FileList | null) => {
 			const file = files?.[0];
-			if (file && !disabled) onFile(file);
+			if (!file || disabled || checking) return;
+			setChecking(true);
+			setFileError(null);
+			try {
+				const error = await checkExamFile(file);
+				if (error) {
+					setFileError(error);
+					return;
+				}
+				onFile(file);
+			} finally {
+				setChecking(false);
+			}
 		},
-		[disabled, onFile],
+		[disabled, checking, onFile],
 	);
 
 	return (
@@ -51,7 +72,7 @@ export function ExamFileDropzone({
 				className="sr-only"
 				disabled={disabled}
 				onChange={(e) => {
-					emitFirstFile(e.target.files);
+					void emitFirstFile(e.target.files);
 					// Cho phép chọn lại cùng một file sau lỗi mà không cần đổi tên.
 					e.target.value = "";
 				}}
@@ -70,7 +91,7 @@ export function ExamFileDropzone({
 				onDrop={(e) => {
 					e.preventDefault();
 					setDragOver(false);
-					emitFirstFile(e.dataTransfer.files);
+					void emitFirstFile(e.dataTransfer.files);
 				}}
 				className={cn(
 					"flex min-h-32 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
@@ -84,9 +105,21 @@ export function ExamFileDropzone({
 					Kéo tệp đề vào đây, hoặc bấm để chọn
 				</p>
 				<p className="text-muted-foreground text-xs">
-					PDF, PNG, JPG hoặc JPEG — tối đa 15 MB
+					PDF, PNG, JPG hoặc JPEG — tối đa 20 trang, 15 MB, không khóa mật khẩu
 				</p>
 			</button>
+			{fileError && (
+				<div
+					role="alert"
+					data-testid="exam-import-file-error"
+					className="mt-3 rounded-lg border border-warn bg-warn/10 p-4 text-sm"
+				>
+					<p>
+						{EXAM_IMPORT_ERROR_MESSAGES[EXAM_IMPORT_ERROR_CODES.INVALID_FILE]}
+					</p>
+					<p className="mt-1 font-medium">{fileError.detail}</p>
+				</div>
+			)}
 		</>
 	);
 }
