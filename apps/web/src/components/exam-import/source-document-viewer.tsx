@@ -169,8 +169,6 @@ function PdfCanvas({ blobUrl }: { blobUrl: string }) {
 	// pdfjs doc object sống trong state bình thường — chỉ cần trigger
 	// re-render khi doc sẵn sàng/đổi trang/zoom; canvas render là effect.
 	const [doc, setDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-	const taskRef = useRef<pdfjsLib.PDFDocumentLoadingTask | null>(null);
-
 	useEffect(() => {
 		let cancelled = false;
 		const task = pdfjsLib.getDocument({
@@ -180,7 +178,6 @@ function PdfCanvas({ blobUrl }: { blobUrl: string }) {
 			// tài nguyên (blob local nên đọc vẫn full-in-memory).
 			disableAutoFetch: true,
 		});
-		taskRef.current = task;
 		task.promise
 			.then((loaded) => {
 				if (cancelled) return;
@@ -194,7 +191,6 @@ function PdfCanvas({ blobUrl }: { blobUrl: string }) {
 			cancelled = true;
 			void task.destroy();
 			setDoc(null);
-			taskRef.current = null;
 		};
 	}, [blobUrl]);
 

@@ -217,7 +217,10 @@ function ErrorNotice({ error }: { error: ExamImportCreateError }) {
 	let message: string;
 	switch (error.kind) {
 		case "insufficient_credits":
-			message = `Không đủ Credit — số dư ví còn ${error.balance} Cr, cần ${CREDIT_COSTS.examImport} Cr.`;
+			message = `Không đủ Credit — ví khả dụng ${error.available} Cr, cần ${CREDIT_COSTS.examImport} Cr.`;
+			break;
+		case "job_not_found":
+			message = "Bản nháp không tồn tại hoặc đã bị xoá — hãy nhập đề mới.";
 			break;
 		case "failed":
 			message = "Bóc tách thất bại — Credit đã hoàn về ví.";

@@ -276,9 +276,12 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		const body = (await res.json()) as {
 			code: string;
 			balance: number;
+			available: number;
 		};
 		expect(body.code).toBe(EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS);
 		expect(body.balance).toBe(CREDIT_COSTS.examImport - 1);
+		// Không có reserve đang giữ → available = balance (held = 0).
+		expect(body.available).toBe(CREDIT_COSTS.examImport - 1);
 		const jobs = await db.select().from(examImportJob);
 		expect(jobs).toHaveLength(0);
 		expect(memory.objects.size).toBe(0);

@@ -16,10 +16,13 @@ import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
 /** Kết quả lỗi có cấu trúc của POST /api/exam-imports (contract đã đóng băng). */
 export type ExamImportCreateError =
-	| { kind: "insufficient_credits"; balance: number }
+	| { kind: "insufficient_credits"; balance: number; available: number }
 	| { kind: "invalid_file" }
 	| { kind: "disabled" }
 	| { kind: "failed"; jobId: string | null }
+	// GET /:id trả 404 (job của org khác / đã xoá) — dùng chung ErrorNotice
+	// của màn import (kongming PR-review #474 Minor #4).
+	| { kind: "job_not_found" }
 	| { kind: "unexpected"; status: number };
 
 /**
@@ -59,12 +62,17 @@ async function toCreateError(res: Response): Promise<ExamImportCreateError> {
 	const payload = (body ?? {}) as {
 		code?: string;
 		balance?: number;
+		available?: number;
 		jobId?: string;
 	};
 	if (res.status === 402) {
+		const balance = typeof payload.balance === "number" ? payload.balance : 0;
 		return {
 			kind: "insufficient_credits",
-			balance: typeof payload.balance === "number" ? payload.balance : 0,
+			balance,
+			// Server lỗi thời (chưa có available) → fallback bằng balance.
+			available:
+				typeof payload.available === "number" ? payload.available : balance,
 		};
 	}
 	if (res.status === 400) return { kind: "invalid_file" };
@@ -85,6 +93,9 @@ export async function fetchExamImportJob(
 		credentials: "include",
 		signal,
 	});
+	if (res.status === 404) {
+		throw { kind: "job_not_found" } satisfies ExamImportCreateError;
+	}
 	if (!res.ok)
 		throw new Error(`Failed to fetch exam import job: ${res.status}`);
 	return examImportJobSchema.parse(await res.json());

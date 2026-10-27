@@ -72,12 +72,17 @@ function toReviewedDraft(exam: ExtractedExam) {
 }
 
 /** Row `exam_import_job` → wire DTO (không lộ fileKey/orgId; draft parse
- * từ draft_json — JSON hỏng thì draft null thay vì 500). */
+ * từ draft_json — JSON hỏng hoặc lệch schema thì draft null thay vì 500;
+ * row luôn ghi qua `extractedExamDraftSchema.parse` lúc write nên lệch
+ * schema chỉ xảy ra với row hỏng ngoài luồng thường). */
 function toJobDto(row: typeof examImportJob.$inferSelect): ExamImportJob {
 	let draft: unknown = null;
 	if (row.draftJson) {
 		try {
-			draft = JSON.parse(row.draftJson);
+			const parsed = extractedExamDraftSchema.safeParse(
+				JSON.parse(row.draftJson),
+			);
+			draft = parsed.success ? parsed.data : null;
 		} catch {
 			draft = null;
 		}
@@ -237,6 +242,10 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 						error: "insufficient credits",
 						code: EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS,
 						balance: wallet?.balance ?? 0,
+						// Khả dụng mới là số quyết định khi có reserve đang giữ
+						// (kongming PR-review #474 Minor #3 — balance có thể lớn
+						// hơn nhưng held chặn).
+						available: wallet ? Math.max(0, wallet.balance - wallet.held) : 0,
 					},
 					402,
 				);
@@ -353,8 +362,10 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 	});
 
 	/** GET job — org-scoped; org khác/không tồn tại đều 404 cùng mã. GET KHÔNG
-	 * gate `canImportExam`: `ta` được xem kết quả theo plan D8 ("TA chỉ xem")
-	 * — chỉ POST mới cần teacher/owner. */
+	 * gate `canImportExam`: role `student` không bao giờ chạm tới đây —
+	 * bootstrapMiddleware trả 403 STUDENT_ON_TEACHER_APP cho toàn bộ /api/*
+	 * trước khi set kernelCtx; member trong org (`ta`, `class_teacher`) được
+	 * xem kết quả theo plan D8 ("TA chỉ xem") — chỉ POST cần teacher/owner. */
 	router.get("/exam-imports/:id", async (c) => {
 		const kernelCtx = c.get("kernelCtx");
 		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
