@@ -54,3 +54,15 @@ hay binding AI nào trong `apps/server`. Ngân hàng đề của tổ chức là
 
 ### Next steps
 - TOS-25 (chống trùng) — `content_fingerprint` + index đã dựng sẵn.
+
+## Ship TOS-25 (#471) — 2026-10-27 (session ai-handle-issue-471)
+
+### What shipped
+- Phase 1+2+3 đầy đủ:
+  - `findCompletedImportByFingerprint` (`apps/server/src/lib/exam-import/dedupe.ts` + 10 unit tests): lọc theo `(org_id, content_fingerprint)` với `import_status = 'completed'` và `draft_json IS NOT NULL` (tránh khoá vĩnh viễn tệp nếu job cũ rơi vào cửa sổ crash-sau-settle thiếu draft), tiebreaker deterministic `completed_at DESC, started_at DESC, id ASC`, `title` lấy từ `draft_json` fallback `fileName`.
+  - `GET /api/exam-imports/lookup?fingerprint=<hex64>` (gate `canImportExam` + `fingerprintSchema`, đăng ký trước `/:id`) và nhánh chống trùng trong `POST /api/exam-imports` chạy ngay sau `sha256Hex(data)` trước `ensureWallet`/`insert`/`reserveCredits`/R2 → trả `200 { duplicateOf }` với chi phí **0 Credit** tuyệt đối.
+  - Client `sha256Hex(file)` (`apps/web/src/lib/file-fingerprint.ts` + 3 unit tests, fail-open khi thiếu `crypto.subtle` hoặc lỗi mạng), `DuplicateExamBanner` (`role="status"` + 4 unit tests), union `ExamImportCreateResult` trong `repos/exam-imports.ts` (+ 5 unit tests), cập nhật `import.tsx` (`checking` + `AbortController` chống double-submit/race, guard broken-draft + 6 unit tests mới), và E2E `ai-exam-import-ac-002.spec.ts` (lookup + bypass lookup qua `POST { duplicateOf }` + 3 viewport + điều hướng bàn phím Tab → Enter).
+
+### Evidence
+- Red-team plan 3 reviewers (12 findings sau dedupe: 8 accept, 1 partial, 1 reject) + Kongming plan-gates GO + Phase-1 GO; local code review (`PendingCodeReview`) 4/4 findings resolved → Verdict `APPROVE` (`0 Critical / 0 Important / 0 Minor`).
+- `pnpm check`, `pnpm check-types` (8/8), server tests, web tests, và E2E `ai-exam-import-ac-001` + `ai-exam-import-ac-002` + `ac-003` đều PASS.

@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type {
 	CreditWallet,
+	ExamImportDuplicate,
 	ExamImportJob,
 	ExtractedExamDraft,
 } from "@teacher-os/api/contracts";
 import { CREDIT_COSTS } from "@teacher-os/api/contracts";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CreditCostBadge } from "@/components/exam-import/credit-cost-badge";
+import { DuplicateExamBanner } from "@/components/exam-import/duplicate-exam-banner";
 import { ExamFileDropzone } from "@/components/exam-import/exam-file-dropzone";
 import { ExtractedExamPanel } from "@/components/exam-import/extracted-exam-panel";
 import { SourceDocumentViewer } from "@/components/exam-import/source-document-viewer";
@@ -14,12 +16,14 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
+import { sha256Hex } from "@/lib/file-fingerprint";
 import {
 	createExamImport,
 	type ExamImportCreateError,
 	type ExamImportPublishError,
 	fetchCreditWallet,
 	fetchExamImportJob,
+	lookupExamImportByFingerprint,
 	publishExamImport,
 	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
@@ -78,6 +82,12 @@ export function ExamImportScreen({
 	const navigate = useNavigate();
 	const [state, setState] = useState<ScreenState>({ phase: "idle" });
 	const [wallet, setWallet] = useState<CreditWallet | null>(null);
+	// TOS-25: bản ghi trùng đang hiển thị banner (từ lookup hoặc nhánh POST).
+	const [duplicate, setDuplicate] = useState<ExamImportDuplicate | null>(null);
+	// Cờ đang băm + lookup: khoá dropzone chống double-submit mà không bật
+	// banner "Đang bóc tách" trước khi biết tệp có trùng hay không.
+	const [checking, setChecking] = useState(false);
+	const abortRef = useRef<AbortController | null>(null);
 	const [activeTab, setActiveTab] = useState("document");
 	const [savingDraft, setSavingDraft] = useState(false);
 	const [publishing, setPublishing] = useState(false);
@@ -96,9 +106,23 @@ export function ExamImportScreen({
 		refreshWallet();
 	}, [refreshWallet]);
 
-	// Mở lại job từ URL: load job + đẩy máy trạng thái sang done.
+	// Mở lại job từ URL: load job + đẩy máy trạng thái sang done; quay về
+	// URL không có `?job=` (Back/SPA nav) thì reset về idle để hiện dropzone.
 	useEffect(() => {
-		if (!jobId) return;
+		// Đổi ?job= hoặc unmount → huỷ luồng hash/lookup/upload đang bay để
+		// không ghi đè state sau khi điều hướng.
+		abortRef.current?.abort();
+		abortRef.current = null;
+		setChecking(false);
+		setDuplicate(null);
+		setStatusMessage(null);
+		setPublishError(null);
+		setSavingDraft(false);
+		setPublishing(false);
+		if (!jobId) {
+			setState({ phase: "idle" });
+			return;
+		}
 		let cancelled = false;
 		fetchExamImportJob(jobId)
 			.then((jobDto) => {
@@ -109,26 +133,39 @@ export function ExamImportScreen({
 			});
 		return () => {
 			cancelled = true;
+			abortRef.current?.abort();
 		};
 	}, [jobId]);
 
 	const uploading = state.phase === "uploading";
 
-	const handleFile = useCallback(
-		async (file: File) => {
+	// Luồng upload TOS-24 giữ nguyên — TOS-25 chỉ thêm nhánh duplicate của
+	// POST (client bỏ qua lookup: tab cũ, race, lỗi mạng tạm thời). Response
+	// 200 `{ duplicateOf }` → banner trùng, KHÔNG vào state `done` với job
+	// rỗng (0 Credit — server chặn trước reserve).
+	const submitUpload = useCallback(
+		async (file: File, signal: AbortSignal) => {
+			if (signal.aborted) return;
 			setState({ phase: "uploading" });
 			try {
-				const created = await createExamImport({ file });
-				setState({ phase: "done", job: created });
+				const result = await createExamImport({ file, signal });
+				if (signal.aborted) return;
+				if (result.kind === "duplicate") {
+					setState({ phase: "idle" });
+					setDuplicate(result.duplicate);
+					return;
+				}
+				setState({ phase: "done", job: result.job });
 				// Job xong → server đã hoàn/giữ credit; refresh badge số dư.
 				refreshWallet();
 				// Kết quả sống trong URL — reload/back/share giữ nguyên.
 				void navigate({
 					to: "/assignments/tests/import",
-					search: { job: created.id },
+					search: { job: result.job.id },
 					replace: true,
 				});
 			} catch (err) {
+				if (signal.aborted) return;
 				setState({
 					phase: "error",
 					error:
@@ -141,6 +178,50 @@ export function ExamImportScreen({
 			}
 		},
 		[navigate, refreshWallet],
+	);
+
+	// TOS-25 (plan D1): dedupe client là best-effort **fail-open** — hash lỗi
+	// (crypto.subtle vắng ở non-secure context) hay lookup lỗi (mạng, server
+	// restart) → upload thẳng như TOS-24, KHÔNG bao giờ chặn luồng. Lớp bảo
+	// đảm 0 Credit nằm ở nhánh POST phía server.
+	const handleFile = useCallback(
+		async (file: File) => {
+			abortRef.current?.abort();
+			const controller = new AbortController();
+			abortRef.current = controller;
+			const { signal } = controller;
+			setDuplicate(null);
+			setStatusMessage(null);
+			setPublishError(null);
+			setSavingDraft(false);
+			setPublishing(false);
+			setState({ phase: "idle" });
+			setChecking(true);
+			try {
+				const fingerprint = await sha256Hex(file);
+				if (signal.aborted) return;
+				const hit = await lookupExamImportByFingerprint(
+					fingerprint,
+					undefined,
+					signal,
+				);
+				if (signal.aborted) return;
+				if (hit) {
+					// Trùng mã băm trong cùng org → không upload, không mất Credit.
+					setChecking(false);
+					setState({ phase: "idle" });
+					setDuplicate(hit);
+					return;
+				}
+			} catch {
+				if (signal.aborted) return;
+				// Lookup là tối ưu UX — lỗi bỏ qua, vẫn upload bình thường.
+			} finally {
+				if (!signal.aborted) setChecking(false);
+			}
+			await submitUpload(file, signal);
+		},
+		[submitUpload],
 	);
 
 	const job = state.phase === "done" ? state.job : null;
@@ -236,8 +317,56 @@ export function ExamImportScreen({
 
 			{state.phase === "error" && <ErrorNotice error={state.error} />}
 
-			{!job && !uploading && (
-				<ExamFileDropzone disabled={uploading} onFile={handleFile} />
+			{duplicate && (
+				<DuplicateExamBanner
+					duplicate={duplicate}
+					onReopen={() => {
+						// Mở đúng job cũ theo URL — luồng hiển thị TOS-24 đọc
+						// draft hiện tại; banner biến mất (không clone job).
+						const targetJobId = duplicate.jobId;
+						setDuplicate(null);
+						setStatusMessage(null);
+						setPublishError(null);
+						setSavingDraft(false);
+						setPublishing(false);
+						void navigate({
+							to: "/assignments/tests/import",
+							search: { job: targetJobId },
+						});
+						// Nếu URL đã mang sẵn ?job=<targetJobId> (ví dụ lần fetch
+						// trước lỗi mạng tạm thời rồi người dùng thả lại đúng tệp
+						// đó), useEffect([jobId]) không chạy lại — chủ động nạp lại.
+						if (jobId === targetJobId) {
+							fetchExamImportJob(targetJobId)
+								.then((jobDto) => {
+									setState({ phase: "done", job: jobDto });
+								})
+								.catch(() => {
+									setState({ phase: "idle" });
+								});
+						}
+					}}
+				/>
+			)}
+
+			{/* Dropzone: màn trống HOẶC job `?job=` có draft không đọc được
+				(row hỏng/failed_refunded) — không dead-end màn trắng, notice ở
+				trên + vẫn nhập đề mới được (red-team #9). */}
+			{(!job || job.draft === null) && !uploading && (
+				<ExamFileDropzone
+					disabled={uploading || checking}
+					onFile={handleFile}
+				/>
+			)}
+
+			{job && !job.draft && (
+				<div
+					role="alert"
+					data-testid="exam-import-broken-draft"
+					className="mb-4 rounded-lg border border-warn bg-warn/10 p-4 text-sm"
+				>
+					Bản nháp hỏng hoặc không đọc được — hãy nhập đề mới.
+				</div>
 			)}
 
 			{job?.draft && (

@@ -9,6 +9,7 @@ import {
 	examImportJobSchema,
 	examImportPublishSchema,
 	extractedExamDraftSchema,
+	fingerprintSchema,
 } from "@teacher-os/api/contracts";
 import {
 	normalizeMediaType,
@@ -28,6 +29,7 @@ import {
 	reserveCredits,
 	settleCredits,
 } from "../lib/credits/wallet";
+import { findCompletedImportByFingerprint } from "../lib/exam-import/dedupe";
 import type { ExamExtractor } from "../lib/exam-import/extractor";
 import { countPdfPages, sha256Hex } from "../lib/exam-import/fingerprint";
 import {
@@ -236,6 +238,19 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 
 		const fingerprint = await sha256Hex(data);
 
+		// TOS-25 (#471): trùng mã băm trong cùng org (job `completed` có draft
+		// đọc được) → không gọi AI, không tạo job, không lưu R2, không giữ/trừ
+		// Credit. Chạy TRƯỚC ensureWallet/INSERT/reserve — 0 Credit tuyệt đối
+		// kể cả khi client đã bỏ qua bước lookup (plan D3 lớp 2).
+		const duplicate = await findCompletedImportByFingerprint(
+			db,
+			orgId,
+			fingerprint,
+		);
+		if (duplicate) {
+			return c.json({ duplicateOf: duplicate }, 200);
+		}
+
 		// Vĩ tạo lười (30 Credit Dùng thử) + hook trần cá nhân (TOS-49).
 		await ensureWallet(db, orgId);
 		assertStaffCap(kernelCtx, CREDIT_COSTS.examImport);
@@ -393,6 +408,35 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				502,
 			);
 		}
+	});
+
+	/** TOS-25: kiểm tra trùng sớm theo fingerprint — client gọi trước upload
+	 * để không phải gửi lại tệp 15 MB. Đăng ký TRƯỚC `/:id` để Hono không
+	 * khớp "lookup" vào param id (khoá bằng test route-order). Gate
+	 * `canImportExam` như POST: đây là tính năng nhập đề, không cho role
+	 * chỉ-xem dùng làm oracle dò fingerprint của org. */
+	router.get("/exam-imports/lookup", async (c) => {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
+		if (!canImportExam(kernelCtx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const fingerprint = c.req.query("fingerprint") ?? "";
+		if (!fingerprintSchema.safeParse(fingerprint).success) {
+			return c.json(
+				{
+					error: "invalid fingerprint",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+				},
+				400,
+			);
+		}
+		const duplicate = await findCompletedImportByFingerprint(
+			deps.getDb(),
+			kernelCtx.orgId,
+			fingerprint,
+		);
+		return c.json({ duplicate });
 	});
 
 	/** GET job — org-scoped; org khác/không tồn tại đều 404 cùng mã. GET KHÔNG

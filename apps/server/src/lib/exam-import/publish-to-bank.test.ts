@@ -259,6 +259,31 @@ describe("publishExamImportToBank & mergeReviewedDraft (TOS-26 #472)", () => {
 		const prompts = await db.select().from(assignmentPrompt);
 		expect(tests).toHaveLength(1);
 		expect(prompts).toHaveLength(2);
+
+		// Mở lại bản nháp cũ (TOS-25) rồi sửa tiêu đề + xuất bản lại → cập nhật
+		// chính bộ đề đó và lưu draft_json mới mà không tạo bộ đề thứ 2.
+		const editedDraft = sampleDraft({ title: "Cambridge IELTS 18 — Bản sửa" });
+		const res4 = await publishExamImportToBank(db, {
+			job: updatedJob,
+			orgId: "org-1",
+			draft: editedDraft,
+			reviewConfirmed: true,
+		});
+		expect(res4).toEqual({
+			ok: true,
+			testId: "test-import-job-1",
+			status: "ready",
+		});
+		const testsAfterEdit = await db.select().from(assignmentTest);
+		expect(testsAfterEdit).toHaveLength(1);
+		expect(testsAfterEdit[0]?.title).toBe("Cambridge IELTS 18 — Bản sửa");
+		const [reloadedJob] = await db
+			.select()
+			.from(examImportJob)
+			.where(eq(examImportJob.id, job.id));
+		expect(JSON.parse(reloadedJob?.draftJson ?? "{}").title).toBe(
+			"Cambridge IELTS 18 — Bản sửa",
+		);
 	});
 
 	test("số part vượt quá slot của preset (reading > 3 parts) → 422 TOO_MANY_PARTS", async () => {

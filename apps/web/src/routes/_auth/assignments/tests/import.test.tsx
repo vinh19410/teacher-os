@@ -25,8 +25,15 @@ vi.mock("@/lib/repos/exam-imports", () => ({
 	fetchExamImportFileUrl: vi.fn(async () => "blob:mock-file"),
 	fetchExamImportJob: vi.fn(),
 	createExamImport: vi.fn(),
+	// TOS-25: mặc định không trùng — các test banner tự override.
+	lookupExamImportByFingerprint: vi.fn(async () => null),
 	saveExamImportDraft: vi.fn(),
 	publishExamImport: vi.fn(),
+}));
+
+// TOS-25: hash client mock deterministic (jsdom có thể thiếu crypto.subtle).
+vi.mock("@/lib/file-fingerprint", () => ({
+	sha256Hex: vi.fn(async () => "a".repeat(64)),
 }));
 
 // ExamImportScreen dùng useNavigate — ngoài router thật thì stub để render được;
@@ -43,16 +50,20 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
 	),
 }));
 
+import { sha256Hex } from "@/lib/file-fingerprint";
 import {
 	createExamImport,
 	fetchCreditWallet,
 	fetchExamImportJob,
+	lookupExamImportByFingerprint,
 	publishExamImport,
 	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	vi.mocked(sha256Hex).mockResolvedValue("a".repeat(64));
+	vi.mocked(lookupExamImportByFingerprint).mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -180,7 +191,11 @@ describe("ExamImportScreen — nhãn rà soát", () => {
 describe("ExamImportScreen — luồng upload", () => {
 	it("chọn file → text uploading → done hiện panel + đẩy ?job lên URL", async () => {
 		mockMatchMedia(true);
-		vi.mocked(createExamImport).mockResolvedValue(jobFixture());
+		const { promise, resolve: resolveUpload } = Promise.withResolvers<{
+			kind: "created";
+			job: ExamImportJob;
+		}>();
+		vi.mocked(createExamImport).mockReturnValue(promise);
 		render(<ExamImportScreen />);
 		const input = screen.getByTestId("exam-import-file-input");
 		expect(input.tagName).toBe("INPUT");
@@ -188,16 +203,16 @@ describe("ExamImportScreen — luồng upload", () => {
 			type: "application/pdf",
 		});
 		fireEvent.change(input, { target: { files: [file] } });
-		// Trạng thái uploading với text contract e2e.
-		expect(screen.getByTestId("exam-import-uploading").textContent).toContain(
+		// Trạng thái uploading với text contract e2e (sau hash+lookup TOS-25).
+		const uploadingBanner = await screen.findByTestId("exam-import-uploading");
+		expect(uploadingBanner.textContent).toContain(
 			"Đang bóc tách (tối đa 120 giây)",
 		);
 		// createExamImport nhận đúng file, credentials do repos lo.
-		await waitFor(() =>
-			expect(vi.mocked(createExamImport)).toHaveBeenCalledWith(
-				expect.objectContaining({ file }),
-			),
+		expect(vi.mocked(createExamImport)).toHaveBeenCalledWith(
+			expect.objectContaining({ file }),
 		);
+		resolveUpload({ kind: "created", job: jobFixture() });
 		// Done: panel bóc tách hiện, dropzone ẩn, navigate đẩy ?job.
 		await screen.findByTestId("extracted-exam-panel");
 		expect(screen.getByText("IELTS Reading Mock 01")).toBeTruthy();
@@ -210,6 +225,174 @@ describe("ExamImportScreen — luồng upload", () => {
 				vi.mocked(fetchCreditWallet).mock.calls.length,
 			).toBeGreaterThanOrEqual(2),
 		);
+	});
+});
+
+describe("ExamImportScreen — chống trùng mã băm (TOS-25)", () => {
+	const duplicateFixture = {
+		jobId: "job-old",
+		title: "Cambridge IELTS Sample",
+		completedAt: "2026-10-20T00:00:00Z",
+	};
+
+	function selectFile(): void {
+		const input = screen.getByTestId("exam-import-file-input");
+		fireEvent.change(input, {
+			target: {
+				files: [
+					new File(["pdf-bytes"], "mock.pdf", { type: "application/pdf" }),
+				],
+			},
+		});
+	}
+
+	it("lookup trùng → banner + KHÔNG upload; bấm nút → navigate ?job + banner biến mất", async () => {
+		mockMatchMedia(true);
+		vi.mocked(lookupExamImportByFingerprint).mockResolvedValue(
+			duplicateFixture,
+		);
+		vi.mocked(fetchExamImportJob).mockResolvedValue(
+			jobFixture({ id: "job-old" }),
+		);
+		const { rerender } = render(<ExamImportScreen />);
+		selectFile();
+
+		const banner = await screen.findByTestId("duplicate-exam-banner");
+		expect(banner.textContent).toContain("Phát hiện tệp trùng");
+		expect(banner.textContent).toContain("Mở lại bản nháp cũ (0 Cr)");
+		// role="status" từ Alert (contract e2e).
+		expect(screen.getByRole("status")).toBeTruthy();
+		// KHÔNG upload, KHÔNG giữ trạng thái uploading.
+		expect(vi.mocked(createExamImport)).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("exam-import-uploading")).toBeNull();
+		// Hash đã tính và lookup đã gọi với fingerprint mock.
+		await waitFor(() =>
+			expect(vi.mocked(lookupExamImportByFingerprint)).toHaveBeenCalledWith(
+				"a".repeat(64),
+				undefined,
+				expect.any(AbortSignal),
+			),
+		);
+
+		fireEvent.click(screen.getByTestId("duplicate-reopen-button"));
+		expect(navigateMock).toHaveBeenCalledWith(
+			expect.objectContaining({ search: { job: "job-old" } }),
+		);
+		expect(screen.queryByTestId("duplicate-exam-banner")).toBeNull();
+		// SPA cập nhật ?job=job-old → load đúng bản nháp cũ; quay về màn trống
+		// (jobId undefined) → reset về dropzone.
+		rerender(<ExamImportScreen jobId="job-old" />);
+		await screen.findByTestId("extracted-exam-panel");
+		rerender(<ExamImportScreen />);
+		expect(screen.getByTestId("exam-import-file-input")).toBeTruthy();
+	});
+
+	it("POST trả duplicate (client bỏ qua lookup) → cùng banner, không vào done", async () => {
+		mockMatchMedia(true);
+		// Lookup không trùng — banner phải đến từ nhánh POST, không phải lookup.
+		vi.mocked(lookupExamImportByFingerprint).mockResolvedValue(null);
+		vi.mocked(createExamImport).mockResolvedValue({
+			kind: "duplicate",
+			duplicate: duplicateFixture,
+		});
+		render(<ExamImportScreen />);
+		selectFile();
+
+		const banner = await screen.findByTestId("duplicate-exam-banner");
+		expect(banner.textContent).toContain("Phát hiện tệp trùng");
+		// Không panel kết quả, không lỗi generic — đúng nhánh D3 lớp 2.
+		expect(screen.queryByTestId("extracted-exam-panel")).toBeNull();
+		expect(screen.queryByTestId("exam-import-uploading")).toBeNull();
+		// Dropzone vẫn hiện (idle) để người dùng chủ động chọn nhánh.
+		expect(screen.getByTestId("exam-import-file-input")).toBeTruthy();
+	});
+
+	it("lookup lỗi (mạng/non-secure) → fail-open: vẫn upload như TOS-24", async () => {
+		mockMatchMedia(true);
+		vi.mocked(lookupExamImportByFingerprint).mockRejectedValue(
+			new Error("network down"),
+		);
+		vi.mocked(createExamImport).mockResolvedValue({
+			kind: "created",
+			job: jobFixture(),
+		});
+		render(<ExamImportScreen />);
+		selectFile();
+
+		await screen.findByTestId("extracted-exam-panel");
+		expect(screen.queryByTestId("duplicate-exam-banner")).toBeNull();
+		expect(vi.mocked(createExamImport)).toHaveBeenCalledWith(
+			expect.objectContaining({ file: expect.any(File) }),
+		);
+	});
+
+	it("hash lỗi trước lookup → fail-open vẫn upload (không treo màn)", async () => {
+		mockMatchMedia(true);
+		vi.mocked(sha256Hex).mockRejectedValue(new Error("WebCrypto unavailable"));
+		vi.mocked(createExamImport).mockResolvedValue({
+			kind: "created",
+			job: jobFixture(),
+		});
+		render(<ExamImportScreen />);
+		selectFile();
+
+		await screen.findByTestId("extracted-exam-panel");
+		// Hash nổ → không gọi lookup, đi thẳng upload.
+		expect(vi.mocked(lookupExamImportByFingerprint)).not.toHaveBeenCalled();
+		expect(screen.queryByTestId("duplicate-exam-banner")).toBeNull();
+	});
+
+	it("URL đang có sẵn ?job=<duplicate.jobId> (sau lỗi mạng tạm) → bấm mở lại vẫn nạp lại bản nháp", async () => {
+		mockMatchMedia(true);
+		// Lần nạp đầu lỗi mạng → rơi về idle nhưng jobId prop vẫn là "job-old".
+		vi.mocked(fetchExamImportJob)
+			.mockRejectedValueOnce(new Error("transient network error"))
+			.mockResolvedValue(jobFixture({ id: "job-old" }));
+		vi.mocked(lookupExamImportByFingerprint).mockResolvedValue(
+			duplicateFixture,
+		);
+		const { rerender } = render(<ExamImportScreen jobId="job-old" />);
+		await waitFor(() =>
+			expect(vi.mocked(fetchExamImportJob)).toHaveBeenCalledTimes(1),
+		);
+		selectFile();
+		await screen.findByTestId("duplicate-exam-banner");
+
+		fireEvent.click(screen.getByTestId("duplicate-reopen-button"));
+		await screen.findByTestId("extracted-exam-panel");
+		expect(vi.mocked(fetchExamImportJob)).toHaveBeenCalledTimes(2);
+		// Lưu bản nháp để sinh statusMessage, rồi quay lại màn trống chọn lại
+		// tệp trùng → mở lại phải xóa sạch thông báo cũ.
+		vi.mocked(saveExamImportDraft).mockResolvedValue(
+			jobFixture({ id: "job-old" }),
+		);
+		fireEvent.click(screen.getByTestId("save-draft-button"));
+		await screen.findByTestId("exam-import-status-notice");
+		rerender(<ExamImportScreen />);
+		selectFile();
+		await screen.findByTestId("duplicate-exam-banner");
+		fireEvent.click(screen.getByTestId("duplicate-reopen-button"));
+		rerender(<ExamImportScreen jobId="job-old" />);
+		await screen.findByTestId("extracted-exam-panel");
+		expect(screen.queryByTestId("exam-import-status-notice")).toBeNull();
+	});
+});
+
+describe("ExamImportScreen — job draft hỏng (TOS-25 guard)", () => {
+	it("?job= job completed thiếu draft → notice + dropzone quay lại, không màn trắng", async () => {
+		mockMatchMedia(true);
+		vi.mocked(fetchExamImportJob).mockResolvedValue(
+			jobFixture({ draft: null }),
+		);
+		render(<ExamImportScreen jobId="job-broken" />);
+		await screen.findByTestId("exam-import-broken-draft");
+		expect(
+			screen.getByTestId("exam-import-broken-draft").textContent,
+		).toContain("Bản nháp hỏng hoặc không đọc được");
+		// Dropzone trả lại để nhập đề mới — không dead-end.
+		expect(screen.getByTestId("exam-import-file-input")).toBeTruthy();
+		// Không workspace rỗng.
+		expect(screen.queryByTestId("exam-import-workspace")).toBeNull();
 	});
 });
 
