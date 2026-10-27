@@ -25,6 +25,8 @@ vi.mock("@/lib/repos/exam-imports", () => ({
 	fetchExamImportFileUrl: vi.fn(async () => "blob:mock-file"),
 	fetchExamImportJob: vi.fn(),
 	createExamImport: vi.fn(),
+	saveExamImportDraft: vi.fn(),
+	publishExamImport: vi.fn(),
 }));
 
 // ExamImportScreen dùng useNavigate — ngoài router thật thì stub để render được;
@@ -45,6 +47,8 @@ import {
 	createExamImport,
 	fetchCreditWallet,
 	fetchExamImportJob,
+	publishExamImport,
+	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
 
 beforeEach(() => {
@@ -206,5 +210,71 @@ describe("ExamImportScreen — luồng upload", () => {
 				vi.mocked(fetchCreditWallet).mock.calls.length,
 			).toBeGreaterThanOrEqual(2),
 		);
+	});
+});
+
+describe("ExamImportScreen — lưu nháp 0 Credit & xuất bản (TOS-26 #472)", () => {
+	it("sửa câu → Lưu bản nháp cập nhật job; tích xác nhận → Lưu vào Ngân hàng đề gọi refresh store trước khi điều hướng", async () => {
+		mockMatchMedia(true);
+		const initialJob = jobFixture();
+		vi.mocked(fetchExamImportJob).mockResolvedValue(initialJob);
+		vi.mocked(saveExamImportDraft).mockImplementation(async ({ draft }) => ({
+			...initialJob,
+			draft,
+		}));
+		vi.mocked(publishExamImport).mockResolvedValue({
+			testId: "test-import-job-1",
+			status: "ready",
+		});
+
+		const callOrder: string[] = [];
+		const refreshMock = vi.fn(async () => {
+			callOrder.push("refresh");
+			return true;
+		});
+		navigateMock.mockImplementation(() => {
+			callOrder.push("navigate");
+		});
+
+		render(<ExamImportScreen jobId="job-1" onRefreshKernel={refreshMock} />);
+		await screen.findByTestId("extracted-exam-panel");
+
+		const publishBtn = screen.getByTestId(
+			"publish-exam-button",
+		) as HTMLButtonElement;
+		expect(publishBtn.disabled).toBe(true);
+
+		// Sửa đáp án câu 2 (needsReview=true) rồi bấm Lưu bản nháp
+		fireEvent.change(screen.getByTestId("question-answer-1"), {
+			target: { value: "Đáp án mới" },
+		});
+		fireEvent.click(screen.getByTestId("save-draft-button"));
+
+		await waitFor(() =>
+			expect(vi.mocked(saveExamImportDraft)).toHaveBeenCalledTimes(1),
+		);
+		expect(
+			(await screen.findByTestId("exam-import-status-notice")).textContent,
+		).toContain("Đã lưu bản nháp (0 Credit).");
+
+		// Tích xác nhận câu Cần rà soát lại → nút xuất bản mở khóa
+		fireEvent.click(screen.getByTestId("review-confirmation-checkbox"));
+		expect(publishBtn.disabled).toBe(false);
+
+		fireEvent.click(publishBtn);
+		await waitFor(() =>
+			expect(vi.mocked(publishExamImport)).toHaveBeenCalledWith(
+				expect.objectContaining({
+					jobId: "job-1",
+					reviewConfirmed: true,
+				}),
+			),
+		);
+		expect(refreshMock).toHaveBeenCalledTimes(1);
+		expect(navigateMock).toHaveBeenCalledWith({
+			to: "/assignments/tests/$id",
+			params: { id: "test-import-job-1" },
+		});
+		expect(callOrder).toEqual(["refresh", "navigate"]);
 	});
 });
