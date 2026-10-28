@@ -8,7 +8,8 @@ import { releaseCredits } from "../credits/wallet";
 /**
  * Ngưỡng draft coi như treo: timeout AI 20s + biên DB/sweep (kongming
  * red-team #478 điều kiện 1 — PHẢI lớn hơn toàn bộ ngân sách nền của
- * pipeline để không đuổi kịp runner còn sống).
+ * pipeline để không đuổi kịp runner còn sống; TOS-33 budget vòng retry
+ * 30s vẫn nhỏ hơn ngưỡng này, test assert bất biến).
  */
 export const STALE_GRADING_AFTER_MS = 60_000;
 
@@ -16,21 +17,23 @@ export const STALE_GRADING_AFTER_MS = 60_000;
 const STALE_SWEEP_BATCH = 20;
 
 /**
- * Dọn lười held Credit treo do isolate chết giữa `waitUntil` (TOS-30).
- * Hai cửa sổ crash:
+ * Dọn lười held Credit treo do isolate chết giữa `waitUntil` (TOS-30;
+ * TOS-33 mở rộng đối chiếu THEO TỪNG LƯỢT chấm). Hai cửa sổ crash:
  * 1. Draft kẹt `ai_processing` (chết giữa pipeline) — CAS `manual_pending`
  *    TRƯỚC rồi release (kongming điều kiện 2: draft trước, ví sau; thua CAS
  *    nghĩa là runner sống đã chuyển `ai_drafted` và sẽ tự settle — sweep
  *    tuyệt đối không release, nếu không `held` bị trừ 2 lần).
  * 2. Draft đã rời `ai_processing` (`ai_drafted`/`manual_pending`) nhưng
  *    runner chết giữa CAS thắng và `settle`/`release` — held kẹt vĩnh viễn
- *    vì publish/PATCH không đụng ví (code review #478 Minor). Chỉ hoàn khi
- *    sổ cái CÓ reserve mà CHƯA có settle/release.
- * Cả hai đường chỉ hoàn qua helper `releaseIfReserved`: draft chưa kịp
- * reserve không có gì để hoàn — release mù sẽ ăn nhầm `held` của job khác
- * (guard `held >= amount` tính trên toàn org) hoặc ném
- * `InsufficientCreditsError` làm 500 route GET. Key
- * `ai_grading:<attemptId>:release` (UNIQUE) bảo đảm hoàn đúng 1 lần.
+ *    vì publish/PATCH không đụng ví (code review #478 Minor).
+ *
+ * TOS-33 D3: một attempt có thể có NHIỀU lượt reserve (lượt gốc + các lượt
+ * "Thử chấm lại AI", khóa `r<n>`), mỗi lượt một bộ reserve/settle/release.
+ * Đối chiếu per-occasion (`releaseUnsettledOccasions`): lượt nào có
+ * `reserved` mà chưa có `settled`/`released` thì release đúng key lượt đó
+ * (key dựng từ `retry_count` của draft — lượt 0 giữ key cũ TOS-30; KHÔNG
+ * parse/LIKE chuỗi). Đối chiếu gộp toàn bộ `ref_id` như bản cũ sẽ bỏ sót
+ * lượt r1 treo khi r0 đã released (kongming advisory #481 mục 2.5).
  *
  * Gọi ở đầu `GET /api/grading`, `GET /api/grading/:attemptId` và
  * `GET /api/credits/wallet` — mọi lần chạm ví/hàng chờ đều có cơ hội dọn rác.
@@ -46,6 +49,7 @@ export async function releaseStaleGradings(
 		.select({
 			attemptId: aiGradingDraft.attemptId,
 			creditCost: aiGradingDraft.creditCost,
+			retryCount: aiGradingDraft.retryCount,
 		})
 		.from(aiGradingDraft)
 		.where(
@@ -71,18 +75,30 @@ export async function releaseStaleGradings(
 			)
 			.returning({ attemptId: aiGradingDraft.attemptId });
 		if (won.length === 0) continue;
-		await releaseIfReserved(db, orgId, draft.attemptId, draft.creditCost);
+		// Sweep thắng CAS → runner lượt này đã chết → release đúng lượt
+		// hiện tại (key theo `retry_count`). Vẫn qua per-occasion check:
+		// draft không reserve (test seed, NO_TRANSCRIPT) không có held —
+		// release mù sẽ ăn nhầm held của job khác / ném thiếu Credit.
+		await releaseUnsettledOccasions(
+			db,
+			orgId,
+			draft.attemptId,
+			draft.retryCount,
+			draft.creditCost,
+		);
 	}
 
-	// Nhóm 2 — đã rời `ai_processing` nhưng held chưa được giải tỏa: draft
-	// `ai_drafted`/`manual_pending` quá hạn (crash sau CAS, trước ví). Giữ
-	// nguyên trạng thái draft — điểm AI vẫn dùng được, chỉ trả held. Lọc
-	// EXISTS/NOT EXISTS ngay trong SQL để không quét lại mãi cùng các draft
-	// đã xử lý (code review #478).
+	// Nhóm 2 — đã rời `ai_processing` nhưng còn lượt chưa giải tỏa: crash
+	// sau CAS, trước ví. Giữ nguyên trạng thái draft — điểm AI vẫn dùng
+	// được, chỉ trả held. Điều kiện SQL chỉ lọc thô (đủ mục đích, batch nhỏ):
+	// có BẤT KỲ dòng `reserved` nào của attempt — quyết định chính xác
+	// per-occasion thuộc `releaseUnsettledOccasions` (idempotent, gọi thừa
+	// vô hại; draft đã giải tỏa hết chỉ tốn 1 query log rồi thoát).
 	const terminalStale = await db
 		.select({
 			attemptId: aiGradingDraft.attemptId,
 			creditCost: aiGradingDraft.creditCost,
+			retryCount: aiGradingDraft.retryCount,
 		})
 		.from(aiGradingDraft)
 		.where(
@@ -94,31 +110,37 @@ export async function releaseStaleGradings(
 					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
 						AND cul.action_type = 'ai_grading'
 						AND cul.tx_status = 'reserved')`,
-				sql`NOT EXISTS (SELECT 1 FROM credit_usage_log cul
-					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
-						AND cul.action_type = 'ai_grading'
-						AND cul.tx_status IN ('settled', 'released'))`,
 			),
 		)
 		.limit(STALE_SWEEP_BATCH);
 	for (const draft of terminalStale) {
-		await releaseIfReserved(db, orgId, draft.attemptId, draft.creditCost);
+		await releaseUnsettledOccasions(
+			db,
+			orgId,
+			draft.attemptId,
+			draft.retryCount,
+			draft.creditCost,
+		);
 	}
 }
 
 /**
- * Hoàn held treo của một attempt: CHỈ khi sổ cái có dòng `reserved` mà
- * CHƯA có `settled`/`released` (mọi log cùng `refId` + `ai_grading`).
- * `releaseCredits` idempotent theo key — lần gọi lặp là no-op an toàn.
+ * Release MỌI lượt (0..retryCount) còn `reserved` chưa được giải tỏa: mỗi
+ * lượt một bộ key (`lượt 0` = key cũ TOS-30, `r<n>` = TOS-33); lượt đã
+ * `settled`/`released` bỏ qua — lặp lại là no-op an toàn theo key idempotent.
  */
-async function releaseIfReserved(
+async function releaseUnsettledOccasions(
 	db: Db,
 	orgId: string,
 	attemptId: string,
+	retryCount: number,
 	creditCost: number,
 ): Promise<void> {
 	const logs = await db
-		.select({ txStatus: creditUsageLog.txStatus })
+		.select({
+			idempotencyKey: creditUsageLog.idempotencyKey,
+			txStatus: creditUsageLog.txStatus,
+		})
 		.from(creditUsageLog)
 		.where(
 			and(
@@ -126,15 +148,35 @@ async function releaseIfReserved(
 				eq(creditUsageLog.actionType, "ai_grading"),
 			),
 		);
-	const statuses = new Set(logs.map((log) => log.txStatus));
-	if (!statuses.has("reserved") || statuses.has("settled")) return;
-	// Có `released` → đã hoàn rồi; không có gì để làm.
-	if (statuses.has("released")) return;
-	await releaseCredits(db, {
-		orgId,
-		actorUserId: "system",
-		amount: creditCost,
-		refId: attemptId,
-		actionType: "ai_grading",
-	});
+	const reserveKeys = new Set(
+		logs
+			.filter((log) => log.txStatus === "reserved")
+			.map((log) => log.idempotencyKey),
+	);
+	const resolvedKeys = new Set(
+		logs
+			.filter(
+				(log) => log.txStatus === "settled" || log.txStatus === "released",
+			)
+			.map((log) => log.idempotencyKey),
+	);
+	for (let occasion = 0; occasion <= retryCount; occasion++) {
+		const opPrefix =
+			occasion < 1
+				? `ai_grading:${attemptId}`
+				: `ai_grading:${attemptId}:r${occasion}`;
+		// Lượt không có reserve → không held nào để trả; đã settled/released
+		// → biến đổi hoàn tất, không đụng.
+		if (!reserveKeys.has(`${opPrefix}:reserve`)) continue;
+		if (resolvedKeys.has(`${opPrefix}:settle`)) continue;
+		if (resolvedKeys.has(`${opPrefix}:release`)) continue;
+		await releaseCredits(db, {
+			orgId,
+			actorUserId: "system",
+			amount: creditCost,
+			refId: attemptId,
+			actionType: "ai_grading",
+			...(occasion >= 1 ? { retryCount: occasion } : {}),
+		});
+	}
 }

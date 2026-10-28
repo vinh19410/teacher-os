@@ -1,4 +1,5 @@
 import {
+	AI_GRADING_CONFLICT_CODE,
 	type AiGradingDraftView,
 	type AiGradingStatus,
 	aiDraftPatchSchema,
@@ -8,6 +9,7 @@ import {
 	essayAnnotationPatchSchema,
 	type GradingQueueItem,
 	type GradingQueueResponse,
+	isAiGradingRetryableError,
 	isAiGradingStatus,
 	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
@@ -22,6 +24,7 @@ import {
 	type GradableSkill,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
+import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
 import {
 	aiGradingDraft,
 	assignmentPrompt,
@@ -37,7 +40,10 @@ import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
+import type { AiGrader } from "../lib/ai-grading/grader";
 import { releaseStaleGradings } from "../lib/ai-grading/release-stale";
+import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
+import { releaseCredits } from "../lib/credits/wallet";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import {
@@ -306,7 +312,9 @@ type GradableAttemptRow = {
 /**
  * Router chấm bài Writing/Speaking (#319). Mount TRONG kernelRoutes
  * (`kernel.route("/grading", …)`) để thừa hưởng Origin guard + guard JSON
- * POST + role gate teacher — không mount standalone.
+ * POST — không mount standalone. TOS-33 (#481): gate vai tự gắn trong các
+ * route GHI (`canReviewGrade` PATCH draft, `canPublishGrade` publish +
+ * ai-retry); GET mở cho mọi staff (TA đọc bài để rà).
  */
 export function gradingRoutes(deps: {
 	getDb(): Db;
@@ -318,6 +326,15 @@ export function gradingRoutes(deps: {
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
+	/** TOS-33 D3: grader + tham số pipeline cho "Thử chấm lại AI" —
+	 * cùng nguồn DI với submit route (buildApp); `runInBackground` dùng
+	 * chung field #454 ở trên. */
+	getAiGrader?(): AiGrader | undefined;
+	/** Khoảng chờ giữa các lượt retry trong vòng grader (mặc định [1s, 2s];
+	 * test/E2E truyền [0, 0]). */
+	aiRetryDelaysMs?: number[];
+	/** Test đụng: hạ timeout AI cho nhanh. */
+	aiGradingTimeoutMs?: number;
 }) {
 	const routes = new Hono<Env>();
 
@@ -694,6 +711,14 @@ export function gradingRoutes(deps: {
 	routes.post("/:attemptId/grade", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		// TOS-33 D1: chỉ vai chốt được publish — `ta` 403 (UI disable + API
+		// không tin client).
+		if (!canPublishGrade(ctx.role)) {
+			return c.json(
+				{ error: "grade publish forbidden", code: "GRADE_PUBLISH_FORBIDDEN" },
+				403,
+			);
+		}
 		const body = await parseJsonBody(c, quizGradeInputSchema);
 		if (!body.ok) return body.response;
 		const loaded = await loadGradableAttempt(
@@ -707,41 +732,82 @@ export function gradingRoutes(deps: {
 			return c.json({ error: "invalid scores" }, 400);
 		}
 		const now = new Date();
-		// TOS-30: "Chốt trả bài" = ĐÚNG MỘT đường công bố — điểm cuối lên
-		// `quiz_attempt` + draft sang `published` trong CÙNG batch (kongming
-		// điều kiện 2: publish draft từ BẤT KỲ trạng thái nào, kể cả
-		// `ai_processing` khi giáo viên không chờ AI). Bài không draft (chấm
-		// tay cũ) update 0 dòng — giữ nguyên luồng cũ. Draft update có điều
-		// kiện `(SELECT changes() = 1)`: statement trước khớp 0 dòng (route
-		// sắp trả 409) thì draft KHÔNG được publish oan (precedent wallet.ts).
-		const [updated] = await deps.getDb().batch([
-			deps
-				.getDb()
-				.update(quizAttempt)
-				.set({
-					gradeScores: scores,
-					gradeFeedback: body.data.feedback,
-					gradedAt: now,
-				})
-				.where(
-					and(
-						eq(quizAttempt.id, loaded.row.id),
-						eq(quizAttempt.orgId, ctx.orgId),
-						eq(quizAttempt.status, "submitted"),
-					),
-				)
-				.returning({ id: quizAttempt.id }),
-			deps
-				.getDb()
-				.update(aiGradingDraft)
-				.set({ status: "published", publishedAt: now })
-				.where(
-					and(
-						eq(aiGradingDraft.attemptId, loaded.row.id),
-						sql`(SELECT changes() = 1)`,
-					),
+		const db = deps.getDb();
+		// TOS-33 D4 (kongming advisory 2.2/2.3): CÓ draft → CAS draft TRƯỚC
+		// (`version = ? AND status != 'published'`), rồi `quiz_attempt` với
+		// `(SELECT changes() = 1)` — lệch version thì điểm KHÔNG đụng
+		// `quiz_attempt` (không "409 nhưng vẫn ghi đè"). KHÔNG draft (chấm
+		// tay cũ) → luồng TOS-30 nguyên: quiz_attempt trước, draft đuổi theo.
+		const [draft] = await db
+			.select({ version: aiGradingDraft.version })
+			.from(aiGradingDraft)
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, loaded.row.id),
+					eq(aiGradingDraft.orgId, ctx.orgId),
 				),
-		]);
+			)
+			.limit(1);
+		const publishInput = {
+			gradeScores: scores,
+			gradeFeedback: body.data.feedback,
+			gradedAt: now,
+		};
+		const attemptWhere = and(
+			eq(quizAttempt.id, loaded.row.id),
+			eq(quizAttempt.orgId, ctx.orgId),
+			eq(quizAttempt.status, "submitted"),
+		);
+		const attemptUpdate = db
+			.update(quizAttempt)
+			.set(publishInput)
+			.where(attemptWhere)
+			.returning({ id: quizAttempt.id });
+		const [updated] = draft
+			? await db.batch([
+					db
+						.update(aiGradingDraft)
+						.set({ status: "published", publishedAt: now })
+						.where(
+							and(
+								eq(aiGradingDraft.attemptId, loaded.row.id),
+								eq(aiGradingDraft.version, body.data.version ?? -1),
+								ne(aiGradingDraft.status, "published"),
+							),
+						)
+						.returning({ attemptId: aiGradingDraft.attemptId }),
+					// `changes()` đọc kết quả statement TRƯỚC trong cùng batch —
+					// draft CAS trượt (0 dòng) thì quiz_attempt KHÔNG ghi điểm
+					// (kongming advisory 2.2 + R2; precedent wallet.ts).
+					db
+						.update(quizAttempt)
+						.set(publishInput)
+						.where(and(attemptWhere, sql`(SELECT changes() = 1)`))
+						.returning({ id: quizAttempt.id }),
+				])
+			: await db.batch([
+					attemptUpdate,
+					db
+						.update(aiGradingDraft)
+						.set({ status: "published", publishedAt: now })
+						.where(
+							and(
+								eq(aiGradingDraft.attemptId, loaded.row.id),
+								sql`(SELECT changes() = 1)`,
+							),
+						),
+				]);
+		if (draft && updated.length === 0) {
+			// Draft CAS trượt (lệch version / đã published) → 409 E-011,
+			// quiz_attempt KHÔNG đổi (kongming test R2).
+			return c.json(
+				{
+					error: "draft version conflict",
+					code: AI_GRADING_CONFLICT_CODE,
+				},
+				409,
+			);
+		}
 		if (updated.length === 0) {
 			return errorResponse(c, 409);
 		}
@@ -776,13 +842,21 @@ export function gradingRoutes(deps: {
 	 * PATCH /api/grading/:attemptId/draft — "Lưu bản nháp" (TOS-30 D5):
 	 * điểm + nhận xét giáo viên đang rà, draft sang `teacher_reviewing`,
 	 * `version + 1`. Optimistic concurrency theo `version` client gửi —
-	 * lệch → 409 DRAFT_VERSION_CONFLICT (nền chống lưu đè E-011 TOS-33).
+	 * lệch → 409 E-selfomy-alignment-011 (TOS-33 D4).
 	 * Chỉ đụng draft đang EDITABLE (không `ai_processing`, không `published`);
 	 * bài không draft → 404 DRAFT_NOT_FOUND.
 	 */
 	routes.patch("/:attemptId/draft", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		// TOS-33 D1: `ta` ĐƯỢC lưu bản nháp (canReviewGrade) — gate này chặn
+		// vai lạ/student sót.
+		if (!canReviewGrade(ctx.role)) {
+			return c.json(
+				{ error: "grade review forbidden", code: "GRADE_REVIEW_FORBIDDEN" },
+				403,
+			);
+		}
 		const body = await parseJsonBody(c, aiDraftPatchSchema);
 		if (!body.ok) return body.response;
 		const loaded = await loadGradableAttempt(
@@ -816,7 +890,7 @@ export function gradingRoutes(deps: {
 			return c.json(
 				{
 					error: editable ? "draft version conflict" : "draft not editable",
-					code: editable ? "DRAFT_VERSION_CONFLICT" : "DRAFT_NOT_EDITABLE",
+					code: editable ? AI_GRADING_CONFLICT_CODE : "DRAFT_NOT_EDITABLE",
 				},
 				409,
 			);
@@ -846,10 +920,122 @@ export function gradingRoutes(deps: {
 		const view = updatedRow ? toDraftView(updatedRow) : null;
 		if (!view) {
 			return c.json(
-				{ error: "draft version conflict", code: "DRAFT_VERSION_CONFLICT" },
+				{ error: "draft version conflict", code: AI_GRADING_CONFLICT_CODE },
 				409,
 			);
 		}
+		return c.json(view);
+	});
+
+	/**
+	 * POST /api/grading/:attemptId/ai-retry — "Thử chấm lại AI" (TOS-33
+	 * D3/D5): draft phải `manual_pending` với `error_code` retryable
+	 * (TIMEOUT/FAILED — hai mã sinh SAU khi đã reserve, Credit đã hoàn
+	 * 100%). Chỉ `canPublishGrade` (retry tiêu Credit org — TA 403).
+	 *
+	 * Trình tự nguyên tử an toàn ví (kongming R1): release idempotent lượt
+	 * n−1 TRƯỚC → CAS `manual_pending → ai_processing` (+ reset
+	 * `started_at`, `retry_count + 1`, xoá `error_code`) → pipeline entry
+	 * retry chạy nền với bộ key `r<n>` riêng. Bấm trùng / đang xử lý →
+	 * 409 E-011; CAS trượt → 409 (chỉ 1 request reserve được).
+	 */
+	routes.post("/:attemptId/ai-retry", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canPublishGrade(ctx.role)) {
+			return c.json(
+				{ error: "ai retry forbidden", code: "AI_RETRY_FORBIDDEN" },
+				403,
+			);
+		}
+		const loaded = await loadGradableAttempt(
+			deps.getDb(),
+			c.req.param("attemptId"),
+			ctx.orgId,
+		);
+		if ("error" in loaded) return errorResponse(c, loaded.error);
+		const db = deps.getDb();
+		const [draft] = await db
+			.select()
+			.from(aiGradingDraft)
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, loaded.row.id),
+					eq(aiGradingDraft.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+		if (!draft) {
+			return c.json({ error: "draft not found", code: "DRAFT_NOT_FOUND" }, 404);
+		}
+		if (draft.status !== "manual_pending") {
+			return c.json(
+				{
+					error: "draft is being processed",
+					code: AI_GRADING_CONFLICT_CODE,
+				},
+				409,
+			);
+		}
+		if (!isAiGradingRetryableError(draft.errorCode)) {
+			return c.json(
+				{ error: "draft not retryable", code: "DRAFT_NOT_RETRYABLE" },
+				409,
+			);
+		}
+		const nextRetryCount = draft.retryCount + 1;
+		// Release idempotent lượt n−1 (nếu crash trước đó đã để held treo) —
+		// lượt n−1 hết lượt retry thì nhất thiết đã release; gọi lại là
+		// no-op theo key. Guard held không đụng vì no-op.
+		await releaseCredits(db, {
+			orgId: ctx.orgId,
+			actorUserId: "system",
+			amount: draft.creditCost,
+			refId: loaded.row.id,
+			actionType: "ai_grading",
+			...(draft.retryCount >= 1 ? { retryCount: draft.retryCount } : {}),
+		});
+		const updated = await db
+			.update(aiGradingDraft)
+			.set({
+				status: "ai_processing",
+				errorCode: null,
+				retryCount: nextRetryCount,
+				startedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, loaded.row.id),
+					eq(aiGradingDraft.status, "manual_pending"),
+				),
+			)
+			.returning();
+		const retryRow = updated[0];
+		if (!retryRow) {
+			// Thua CAS (request song song / sweep đã chạm) → không reserve.
+			return c.json(
+				{
+					error: "draft is being processed",
+					code: AI_GRADING_CONFLICT_CODE,
+				},
+				409,
+			);
+		}
+		const view = toDraftView(retryRow);
+		if (!view) {
+			return c.json({ error: "draft state invalid" }, 500);
+		}
+		scheduleAiGrading(
+			{
+				getDb: deps.getDb,
+				getAiGrader: deps.getAiGrader,
+				runInBackground: deps.runInBackground,
+				retryDelaysMs: deps.aiRetryDelaysMs,
+				aiGradingTimeoutMs: deps.aiGradingTimeoutMs,
+			},
+			loaded.row.id,
+			{ retryCount: nextRetryCount },
+		);
 		return c.json(view);
 	});
 

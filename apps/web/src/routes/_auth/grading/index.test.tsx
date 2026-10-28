@@ -6,8 +6,10 @@ import type {
 } from "@teacher-os/api/contracts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpError } from "@/lib/kernel-load-state";
 import * as gradingRepo from "@/lib/repos/grading";
 import { gradingQueryKey, gradingQueueQueryKey } from "@/lib/repos/grading";
+import { kernelQueryKey } from "@/lib/repos/kernel";
 
 const mockNavigate = vi.fn();
 const mockSearch = vi.hoisted(() => ({
@@ -319,5 +321,135 @@ describe("GradingRoute (/grading/$attemptId) — practice submission support (#3
 				queryKey: gradingQueueQueryKey,
 			});
 		});
+	});
+
+	it("TOS-33: TA thấy nút Chốt trả bài bị khóa nhưng bấm được Lưu bản nháp", async () => {
+		mockParams.attemptId = "att-prac-1";
+		const saveDraftSpy = vi.spyOn(gradingRepo, "saveDraft").mockResolvedValue({
+			status: "teacher_reviewing",
+			aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+			aiFeedback: "AI feedback",
+			reviewedScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+			reviewedFeedback: "TA nhận xét",
+			gradingMode: "standard",
+			version: 2,
+			errorCode: null,
+			publishedAt: null,
+		});
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		client.setQueryData(kernelQueryKey, { viewer: { role: "ta" } });
+		client.setQueryData(gradingQueryKey("att-prac-1"), {
+			...PRACTICE_SUBMISSION,
+			aiDraft: {
+				status: "ai_drafted",
+				aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+				aiFeedback: "AI feedback",
+				reviewedScores: null,
+				reviewedFeedback: "",
+				gradingMode: "standard",
+				version: 1,
+				errorCode: null,
+				publishedAt: null,
+			},
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+
+		const publishBtn = screen.getByTestId("publish-grade") as HTMLButtonElement;
+		const draftBtn = screen.getByTestId("save-draft") as HTMLButtonElement;
+		expect(publishBtn.disabled).toBe(true);
+		expect(draftBtn.disabled).toBe(false);
+
+		fireEvent.change(document.getElementById("grade-feedback")!, {
+			target: { value: "TA nhận xét" },
+		});
+		fireEvent.click(draftBtn);
+		await vi.waitFor(() => {
+			expect(saveDraftSpy).toHaveBeenCalledWith("att-prac-1", {
+				scores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+				feedback: "TA nhận xét",
+				version: 1,
+			});
+		});
+	});
+
+	it("TOS-33: lỗi 409 E-011 mở hộp thoại, bấm Tải lại bản mới nhất giữ nội dung ở vùng Bản bạn đang sửa", async () => {
+		mockParams.attemptId = "att-prac-1";
+		vi.spyOn(gradingRepo, "saveDraft").mockRejectedValue(
+			new HttpError(409, "conflict", { reason: "E-selfomy-alignment-011" }),
+		);
+		const latestSubmission: TeacherSubmission = {
+			...PRACTICE_SUBMISSION,
+			aiDraft: {
+				status: "teacher_reviewing",
+				aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+				aiFeedback: "AI feedback",
+				reviewedScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				reviewedFeedback: "Bản mới nhất từ nhân sự khác",
+				gradingMode: "standard",
+				version: 2,
+				errorCode: null,
+				publishedAt: null,
+			},
+		};
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(JSON.stringify(latestSubmission), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+		const client = new QueryClient({
+			defaultOptions: {
+				queries: { retry: false, staleTime: Number.POSITIVE_INFINITY },
+			},
+		});
+		client.setQueryData(gradingQueryKey("att-prac-1"), {
+			...PRACTICE_SUBMISSION,
+			aiDraft: {
+				status: "ai_drafted",
+				aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+				aiFeedback: "AI feedback",
+				reviewedScores: null,
+				reviewedFeedback: "",
+				gradingMode: "standard",
+				version: 1,
+				errorCode: null,
+				publishedAt: null,
+			},
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+
+		fireEvent.change(document.getElementById("grade-feedback")!, {
+			target: { value: "Nhận xét đang gõ dở" },
+		});
+		fireEvent.click(screen.getByTestId("save-draft"));
+
+		await vi.waitFor(() => {
+			expect(
+				screen.getByTestId("conflict-dialog-message").textContent,
+			).toContain("E-selfomy-alignment-011");
+		});
+
+		fireEvent.click(screen.getByTestId("reload-latest-draft"));
+
+		await vi.waitFor(() => {
+			expect(
+				(document.getElementById("grade-feedback") as HTMLTextAreaElement)
+					.value,
+			).toBe("Bản mới nhất từ nhân sự khác");
+		});
+		// Nội dung đang gõ vẫn được giữ lại ở vùng "Bản bạn đang sửa".
+		expect(
+			screen.getByTestId("conflict-preserved-draft").textContent,
+		).toContain("Nhận xét đang gõ dở");
 	});
 });

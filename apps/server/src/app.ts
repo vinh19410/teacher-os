@@ -123,6 +123,12 @@ export interface AppDeps {
 	 */
 	notificationRetryDelaysMs?: number[];
 	/**
+	 * TOS-33 (#481) D3: khoảng chờ (ms) giữa các lượt gọi grader trong vòng
+	 * "Thử chấm lại AI" / reserve đầu. Production bỏ trống ([1s, 2s]);
+	 * test/E2E truyền [0, 0].
+	 */
+	aiRetryDelaysMs?: number[];
+	/**
 	 * TOS-24 (#470): extractor bóc tách đề — Workers AI ở production (từ
 	 * binding `AI`), fake ở e2e/test. Vắng mặt → route /api/exam-imports
 	 * trả 503 EXAM_IMPORT_DISABLED, cùng hợp đồng fail-closed với
@@ -360,7 +366,14 @@ export function buildApp(deps: AppDeps) {
 	// để path riêng không bị kernel nuốt; guard 401/403 tự gắn trong router.
 	app.route("/api", examImportRoutes(deps));
 	app.route("/api", creditRoutes(deps));
-	app.route("/api", kernelRoutes(deps));
+	// TOS-33 (#481): grader + retry delays xuống routes chấm (ai-retry).
+	app.route(
+		"/api",
+		kernelRoutes({
+			...deps,
+			aiRetryDelaysMs: deps.aiRetryDelaysMs,
+		}),
+	);
 
 	return app;
 }

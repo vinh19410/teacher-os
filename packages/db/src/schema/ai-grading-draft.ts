@@ -60,6 +60,11 @@ export const aiGradingDraft = sqliteTable(
 		errorCode: text("error_code"),
 		/** Tăng mỗi lần "Lưu bản nháp" — nền cho chống lưu đè E-011 (TOS-33). */
 		version: integer("version").notNull().default(1),
+		/** TOS-33 D3: số lượt "Thử chấm lại AI" đã chạy thêm sau lượt đầu
+		 * (0 = lượt reserve gốc). Quyết khóa idempotency sổ cái
+		 * `ai_grading:<attemptId>:r<n>:<op>` khi n ≥ 1 — mỗi lượt một bộ
+		 * reserve/settle/release riêng trong sổ cái. */
+		retryCount: integer("retry_count").notNull().default(0),
 		startedAt: integer("started_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

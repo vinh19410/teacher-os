@@ -1,6 +1,8 @@
 import {
+	AI_GRADING_E004_MESSAGE,
 	AI_GRADING_ERROR_CODES,
 	type AiGradingDraftView,
+	isAiGradingRetryableError,
 } from "@teacher-os/api/contracts";
 import {
 	criteriaForSkill,
@@ -9,6 +11,7 @@ import {
 } from "@teacher-os/api/lib/ielts-band";
 import { fmtWhen } from "@/components/assignments/assignment-status";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
 import { cn } from "@/lib/cn";
@@ -69,14 +72,25 @@ export function aiDraftErrorLabel(errorCode: string | null): string | null {
  * theo tiêu chí + nhận xét AI. Giáo viên chỉnh ở GradeForm (điền sẵn từ
  * nháp rà → điểm AI); nút hành động nằm ở form, không ở panel này.
  */
+export const AI_RETRY_FORBIDDEN_TOOLTIP =
+	"Chỉ Giáo viên đứng lớp được chấm lại AI";
+
 export function AiDraftPanel({
 	draft,
 	skill,
 	part,
+	canRetry = true,
+	retrying = false,
+	onRetry,
 }: {
 	draft: AiGradingDraftView;
 	skill: GradableSkill;
 	part: string;
+	/** TOS-33 D3: chỉ vai `canPublishGrade` được bấm retry (tiêu Credit);
+	 * TA vẫn thấy panel E-004 nhưng nút disabled kèm tooltip. */
+	canRetry?: boolean;
+	retrying?: boolean;
+	onRetry?(): void;
 }) {
 	const keys = criteriaForSkill(skill);
 	const scores = draft.reviewedScores ?? draft.aiScores;
@@ -85,7 +99,15 @@ export function AiDraftPanel({
 		draft.status === "manual_pending"
 			? aiDraftErrorLabel(draft.errorCode)
 			: null;
-	// Nháp rà của giáo viên ưu tiên; chưa có thì hiển thị nhận xét AI (italic).
+	// TOS-33 D2/D3: `manual_pending` với TIMEOUT/FAILED (đã hoàn 100% Credit
+	// sau 2 lần tự thử lại) → thông điệp E-004 + nút "Thử chấm lại AI".
+	// Giữ nút ở trạng thái disabled khi đang `ai_processing` sau khi bấm.
+	const showE004Retry =
+		(draft.status === "manual_pending" &&
+			isAiGradingRetryableError(draft.errorCode)) ||
+		(draft.status === "ai_processing" && retrying);
+	const retryDisabled =
+		!canRetry || retrying || draft.status === "ai_processing";
 	const reviewed = draft.reviewedFeedback.length > 0;
 	const shownFeedback = reviewed ? draft.reviewedFeedback : draft.aiFeedback;
 
@@ -135,6 +157,43 @@ export function AiDraftPanel({
 				<p className="text-sm text-warn" role="status">
 					{errorLabel}
 				</p>
+			)}
+			{showE004Retry && (
+				<div
+					data-testid="ai-draft-e004"
+					role="alert"
+					className="flex flex-col gap-3 rounded-md border border-warn/40 bg-warn/5 p-3 text-sm"
+				>
+					<p className="text-foreground">
+						<span className="font-mono font-semibold text-warn text-xs">
+							E-selfomy-alignment-004
+						</span>{" "}
+						· {AI_GRADING_E004_MESSAGE}
+					</p>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							data-testid="ai-retry-button"
+							disabled={retryDisabled}
+							title={!canRetry ? AI_RETRY_FORBIDDEN_TOOLTIP : undefined}
+							onClick={() => {
+								if (retryDisabled) return;
+								onRetry?.();
+							}}
+						>
+							{retrying || draft.status === "ai_processing"
+								? "Đang chấm lại AI…"
+								: "Thử chấm lại AI"}
+						</Button>
+						{!canRetry && (
+							<span className="text-muted-foreground text-xs">
+								{AI_RETRY_FORBIDDEN_TOOLTIP}
+							</span>
+						)}
+					</div>
+				</div>
 			)}
 			{draft.publishedAt !== null && (
 				<p className="text-muted-foreground text-xs">

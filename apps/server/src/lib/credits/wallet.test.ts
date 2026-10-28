@@ -289,3 +289,67 @@ describe("credit wallet actionType (TOS-30 #478)", () => {
 		]);
 	});
 });
+
+describe("credit wallet retryCount (TOS-33 #481)", () => {
+	const AI_BASE = {
+		orgId: ORG,
+		actorUserId: "system",
+		amount: 1,
+		refId: "attempt-r",
+		actionType: "ai_grading" as const,
+	};
+
+	test("lượt 0 giữ key cũ; retryCount ≥ 1 sinh bộ key r<n> riêng", async () => {
+		await ensureWallet(db, ORG);
+		await reserveCredits(db, AI_BASE);
+		await releaseCredits(db, AI_BASE);
+		// Lượt retry 1: bộ key r1 — reserve lại thành công (key cũ không chặn).
+		await reserveCredits(db, { ...AI_BASE, retryCount: 1 });
+		await settleCredits(db, { ...AI_BASE, retryCount: 1 });
+
+		const rows = await logs();
+		expect(rows.map((r) => r.idempotencyKey)).toEqual([
+			"ai_grading:attempt-r:reserve",
+			"ai_grading:attempt-r:release",
+			"ai_grading:attempt-r:r1:reserve",
+			"ai_grading:attempt-r:r1:settle",
+		]);
+		expect(rows.map((r) => r.txStatus)).toEqual([
+			"reserved",
+			"released",
+			"reserved",
+			"settled",
+		]);
+	});
+
+	test("gọi lại cùng n → idempotent trả log cũ; n khác nhau không đè nhau", async () => {
+		await ensureWallet(db, ORG);
+		const first = await reserveCredits(db, { ...AI_BASE, retryCount: 2 });
+		const replay = await reserveCredits(db, { ...AI_BASE, retryCount: 2 });
+		expect(replay.id).toBe(first.id);
+
+		await releaseCredits(db, { ...AI_BASE, retryCount: 2 });
+		await reserveCredits(db, { ...AI_BASE, retryCount: 3 });
+
+		const rows = await logs();
+		expect(rows.map((r) => r.idempotencyKey)).toEqual([
+			"ai_grading:attempt-r:r2:reserve",
+			"ai_grading:attempt-r:r2:release",
+			"ai_grading:attempt-r:r3:reserve",
+		]);
+		// held: r2 đã release (−1), r3 reserve (+1) → đúng 1 Credit đang giữ.
+		const wallet = await readWallet(db, ORG);
+		expect(wallet?.held).toBe(1);
+	});
+
+	test("retryCount với exam_import bị bỏ qua — key cũ nguyên vẹn", async () => {
+		await ensureWallet(db, ORG);
+		await reserveCredits(db, {
+			...AI_BASE,
+			actionType: undefined,
+			retryCount: 1,
+		});
+		const rows = await logs();
+		expect(rows[0]?.idempotencyKey).toBe("exam_import:attempt-r:reserve");
+	});
+});

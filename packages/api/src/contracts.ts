@@ -2205,6 +2205,10 @@ export const quizGradeInputSchema = z
 	.object({
 		scores: z.record(z.string(), z.number()),
 		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+		/** TOS-33 D4: `version` draft client đang thấy — BẮT BUỘC khi attempt
+		 * có draft AI (thiếu → 409 E-011); bài chấm tay cũ không draft thì bỏ
+		 * qua. Đặt ở đây thay vì schema riêng để giữ shape POST /grade. */
+		version: z.number().int().min(1).optional(),
 	})
 	.strict();
 export type QuizGradeInput = z.infer<typeof quizGradeInputSchema>;
@@ -3823,6 +3827,39 @@ export const AI_GRADING_ERROR_CODES = {
 } as const;
 export type AiGradingErrorCode =
 	(typeof AI_GRADING_ERROR_CODES)[keyof typeof AI_GRADING_ERROR_CODES];
+
+/**
+ * TOS-33 (#481, D2): 2 mã kỹ thuật được sinh SAU khi đã reserve (đủ vòng
+ * retry) ánh xạ sang lỗi người dùng E-selfomy-alignment-004 — "Thử chấm
+ * lại AI" hợp lệ cho đúng các mã này. `DISABLED`/`NO_TRANSCRIPT` không
+ * reserve (hoặc vô ích khi retry) → KHÔNG hiện nút retry.
+ */
+const AI_GRADING_E004_CODE_SET: ReadonlySet<string> = new Set([
+	AI_GRADING_ERROR_CODES.TIMEOUT,
+	AI_GRADING_ERROR_CODES.FAILED,
+]);
+
+export function isAiGradingRetryableError(
+	errorCode: string | null | undefined,
+): boolean {
+	return (
+		typeof errorCode === "string" && AI_GRADING_E004_CODE_SET.has(errorCode)
+	);
+}
+
+/** Mã xung đột 409 trên wire (TOS-33 D4) — thay `DRAFT_VERSION_CONFLICT`
+ * của TOS-30 cho PATCH /draft + POST /grade + ai-retry đang xử lý. */
+export const AI_GRADING_CONFLICT_CODE = "E-selfomy-alignment-011";
+
+/** Thông điệp nguyên văn E-selfomy-alignment-004 (spec Error Matrix) —
+ * hiển thị khi grader lỗi đủ 2 lần tự thử lại (Credit đã hoàn 100%). */
+export const AI_GRADING_E004_MESSAGE =
+	"Hệ thống AI đang phản hồi chậm hoặc không đọc được cấu trúc tệp này. Số Credit tạm giữ đã được hoàn lại đầy đủ vào ví của bạn. Vui lòng thử lại sau.";
+
+/** Thông điệp nguyên văn E-selfomy-alignment-011 (spec Error Matrix) —
+ * xung đột lưu đè / gọi trùng; UI kèm nút "Tải lại bản mới nhất". */
+export const AI_GRADING_E011_MESSAGE =
+	"Bài làm này vừa được cập nhật bởi một nhân sự khác hoặc đang trong tiến trình chấm AI. Vui lòng tải lại dữ liệu mới nhất trước khi lưu.";
 
 /**
  * Thông điệp lỗi nguyên văn cột "Thông điệp" của spec

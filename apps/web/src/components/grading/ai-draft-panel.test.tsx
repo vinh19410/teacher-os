@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
-import type { AiGradingDraftView } from "@teacher-os/api/contracts";
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import {
+	AI_GRADING_E004_MESSAGE,
+	type AiGradingDraftView,
+} from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	AiDraftPanel,
 	AiDraftStatusBadge,
@@ -131,5 +134,80 @@ describe("aiDraftErrorLabel", () => {
 		expect(aiDraftErrorLabel("AI_GRADING_FAILED")).toContain("lỗi");
 		expect(aiDraftErrorLabel("MA_CODE_LA")).toBe("AI chấm lỗi.");
 		expect(aiDraftErrorLabel(null)).toBeNull();
+	});
+});
+
+describe("AiDraftPanel — E-004 và Thử chấm lại AI (TOS-33 #481)", () => {
+	test("TIMEOUT/FAILED hiện E-004 + nút Thử chấm lại AI; GV bấm gọi onRetry", () => {
+		const onRetry = vi.fn();
+		render(
+			<AiDraftPanel
+				draft={{
+					...DRAFTED,
+					status: "manual_pending",
+					aiScores: null,
+					aiFeedback: "",
+					errorCode: "AI_GRADING_FAILED",
+				}}
+				skill="writing"
+				part="task2"
+				canRetry={true}
+				onRetry={onRetry}
+			/>,
+		);
+		expect(screen.getByTestId("ai-draft-e004").textContent).toContain(
+			"E-selfomy-alignment-004",
+		);
+		expect(screen.getByTestId("ai-draft-e004").textContent).toContain(
+			AI_GRADING_E004_MESSAGE,
+		);
+		const btn = screen.getByTestId("ai-retry-button") as HTMLButtonElement;
+		expect(btn.disabled).toBe(false);
+		fireEvent.click(btn);
+		expect(onRetry).toHaveBeenCalledTimes(1);
+	});
+
+	test("TA (canRetry=false) vẫn thấy panel E-004 nhưng nút retry disabled kèm tooltip", () => {
+		const onRetry = vi.fn();
+		render(
+			<AiDraftPanel
+				draft={{
+					...DRAFTED,
+					status: "manual_pending",
+					aiScores: null,
+					aiFeedback: "",
+					errorCode: "AI_GRADING_TIMEOUT",
+				}}
+				skill="writing"
+				part="task2"
+				canRetry={false}
+				onRetry={onRetry}
+			/>,
+		);
+		const btn = screen.getByTestId("ai-retry-button") as HTMLButtonElement;
+		expect(btn.disabled).toBe(true);
+		expect(btn.getAttribute("title")).toBe(
+			"Chỉ Giáo viên đứng lớp được chấm lại AI",
+		);
+		fireEvent.click(btn);
+		expect(onRetry).not.toHaveBeenCalled();
+	});
+
+	test("DISABLED/NO_TRANSCRIPT không hiện E-004 hay nút retry", () => {
+		render(
+			<AiDraftPanel
+				draft={{
+					...DRAFTED,
+					status: "manual_pending",
+					aiScores: null,
+					aiFeedback: "",
+					errorCode: "AI_GRADING_NO_TRANSCRIPT",
+				}}
+				skill="speaking"
+				part="part2"
+			/>,
+		);
+		expect(screen.queryByTestId("ai-draft-e004")).toBeNull();
+		expect(screen.queryByTestId("ai-retry-button")).toBeNull();
 	});
 });

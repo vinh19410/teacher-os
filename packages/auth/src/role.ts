@@ -101,3 +101,42 @@ const EXAM_IMPORT_ROLE_MAP: Record<string, true> = {
 export function canImportExam(role: string | null | undefined): boolean {
 	return typeof role === "string" && EXAM_IMPORT_ROLE_MAP[role] === true;
 }
+
+/**
+ * TOS-33 (#481, AC-004): vai trò chấm/rà trên màn "Rà soát chấm bài AI" [7].
+ * Hai allowlist RIÊNG (không copy `canImportExam` — nó chặn
+ * `class_teacher`):
+ * - `canPublishGrade` ("Chốt trả bài" + "Thử chấm lại AI" — hành vi tiêu
+ *   Credit của tổ chức): `teacher`, `owner`, `admin`, `class_teacher`.
+ *   `ta` chỉ lưu bản nháp, bị chặn publish/retry (403).
+ * - `canReviewGrade` ("Lưu bản nháp" `teacher_reviewing`): các vai trên
+ *   + `ta`.
+ * Allowlist nghiêm ngặt least-privilege như `canAccessFinance`.
+ */
+export const GRADING_PUBLISH_ROLES = [
+	"teacher",
+	"owner",
+	"admin",
+	"class_teacher",
+] as const;
+export const GRADING_REVIEW_ROLES = [...GRADING_PUBLISH_ROLES, "ta"] as const;
+
+const GRADING_PUBLISH_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+	admin: true,
+	class_teacher: true,
+};
+
+const GRADING_REVIEW_ROLE_MAP: Record<string, true> = {
+	...GRADING_PUBLISH_ROLE_MAP,
+	ta: true,
+};
+
+export function canPublishGrade(role: string | null | undefined): boolean {
+	return typeof role === "string" && GRADING_PUBLISH_ROLE_MAP[role] === true;
+}
+
+export function canReviewGrade(role: string | null | undefined): boolean {
+	return typeof role === "string" && GRADING_REVIEW_ROLE_MAP[role] === true;
+}

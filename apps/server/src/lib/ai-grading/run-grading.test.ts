@@ -16,12 +16,18 @@ import type { Db } from "../../app";
 import {
 	ensureWallet,
 	readWallet,
+	releaseCredits,
 	reserveCredits,
 	settleCredits,
 } from "../credits/wallet";
-import { createFakeAiGrader } from "./fake-grader";
-import { releaseStaleGradings } from "./release-stale";
-import { AI_GRADING_TIMEOUT_MS, runAiGrading } from "./run-grading";
+import { createFakeAiGrader, FAKE_AI_FEEDBACK } from "./fake-grader";
+import type { AiGradingResult } from "./grader";
+import { releaseStaleGradings, STALE_GRADING_AFTER_MS } from "./release-stale";
+import {
+	AI_GRADING_BUDGET_MS,
+	AI_GRADING_TIMEOUT_MS,
+	runAiGrading,
+} from "./run-grading";
 
 // SQLite THẬT in-memory + migration thật (0054 ai_grading_draft) — chứng
 // minh CAS UPDATE + ON CONFLICT DO NOTHING nguyên tử trên SQL thật
@@ -189,6 +195,7 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 			{
 				getDb: () => db,
 				aiGradingTimeoutMs: 20,
+				retryDelaysMs: [0, 0],
 				getAiGrader: () => createFakeAiGrader({ delayMs: 200 }),
 			},
 			"a-timeout",
@@ -588,6 +595,301 @@ describe("releaseStaleGradings (TOS-30 dọn lười draft kẹt ai_processing)"
 		await releaseStaleGradings(db, ORG);
 
 		expect((await logs("a-settled-ok")).map((l) => l.txStatus)).toEqual([
+			"reserved",
+			"settled",
+		]);
+	});
+});
+
+/** Grader theo kịch bản từng lượt — bước "hang" trả promise không bao giờ
+ * resolve để pipeline tự cắt qua `AbortSignal.timeout` (không dùng timer
+ * trong test). */
+function scriptedGrader(steps: Array<"ok" | "fail" | "hang">) {
+	let call = 0;
+	return {
+		get calls() {
+			return call;
+		},
+		grader: {
+			async grade(): Promise<AiGradingResult> {
+				const step = steps[Math.min(call, steps.length - 1)];
+				call++;
+				if (step === "hang") {
+					return Promise.withResolvers<AiGradingResult>().promise;
+				}
+				if (step === "fail") {
+					throw new Error("grader boom");
+				}
+				return {
+					scores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+					feedback: FAKE_AI_FEEDBACK,
+				};
+			},
+		},
+	};
+}
+
+describe("runAiGrading vòng retry + entry retry (TOS-33 D2/D3 #481)", () => {
+	test("bất biến (kongming R3): sweep 60s > ngân sách pipeline 30s + biên", () => {
+		expect(STALE_GRADING_AFTER_MS).toBeGreaterThan(
+			AI_GRADING_BUDGET_MS + 5_000,
+		);
+	});
+
+	test("lỗi 3 lượt liên tiếp → 1 reserve + 1 release đủ số, manual_pending FAILED", async () => {
+		await seedSubmittedWritingAttempt("a-fail-3");
+		const s = scriptedGrader(["fail"]);
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => s.grader,
+				retryDelaysMs: [0, 0],
+			},
+			"a-fail-3",
+		);
+		expect(s.calls).toBe(3);
+		const row = await draft("a-fail-3");
+		expect(row?.status).toBe("manual_pending");
+		expect(row?.errorCode).toBe("AI_GRADING_FAILED");
+		const ledger = await logs("a-fail-3");
+		expect(ledger.map((l) => l.txStatus)).toEqual(["reserved", "released"]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+		});
+	});
+
+	test("lỗi lượt 1, thành công lượt 2 → chỉ reserved + settled, không release", async () => {
+		await seedSubmittedWritingAttempt("a-ok-2");
+		const s = scriptedGrader(["fail", "ok"]);
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => s.grader,
+				retryDelaysMs: [0, 0],
+			},
+			"a-ok-2",
+		);
+		expect(s.calls).toBe(2);
+		expect((await draft("a-ok-2"))?.status).toBe("ai_drafted");
+		expect((await logs("a-ok-2")).map((l) => l.txStatus)).toEqual([
+			"reserved",
+			"settled",
+		]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS - 1,
+			held: 0,
+		});
+	});
+
+	test("hết ngân sách chung → dừng không gọi thêm lượt, TIMEOUT + released", async () => {
+		await seedSubmittedWritingAttempt("a-budget");
+		const s = scriptedGrader(["hang", "ok"]);
+		// Ngân sách 40ms: lượt 1 treo hết 40ms → còn lại < 1s → dừng, không
+		// sang lượt 2.
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => s.grader,
+				aiGradingBudgetMs: 40,
+				retryDelaysMs: [0, 0],
+			},
+			"a-budget",
+		);
+		expect(s.calls).toBe(1);
+		const row = await draft("a-budget");
+		expect(row?.status).toBe("manual_pending");
+		expect(row?.errorCode).toBe("AI_GRADING_TIMEOUT");
+		expect((await logs("a-budget")).map((l) => l.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+	});
+
+	test("entry retry (retryCount=1): bỏ bước insert, settle bằng bộ key r1", async () => {
+		await seedSubmittedWritingAttempt("a-retry-ok");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-retry-ok",
+			orgId: ORG,
+			skill: "writing",
+			status: "ai_processing",
+			creditCost: 1,
+			retryCount: 1,
+		});
+		// Lượt 0 đã reserve + release trước đó.
+		const r0 = {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: "a-retry-ok",
+			actionType: "ai_grading" as const,
+		};
+		await reserveCredits(db, r0);
+		await releaseCredits(db, r0);
+
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => createFakeAiGrader(),
+				retryDelaysMs: [0, 0],
+			},
+			"a-retry-ok",
+			{ retryCount: 1 },
+		);
+		expect((await draft("a-retry-ok"))?.status).toBe("ai_drafted");
+		expect((await logs("a-retry-ok")).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:a-retry-ok:reserve",
+			"ai_grading:a-retry-ok:release",
+			"ai_grading:a-retry-ok:r1:reserve",
+			"ai_grading:a-retry-ok:r1:settle",
+		]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS - 1,
+			held: 0,
+		});
+	});
+
+	test("entry retry lỗi hết lượt → release bằng key r1", async () => {
+		await seedSubmittedWritingAttempt("a-retry-fail");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-retry-fail",
+			orgId: ORG,
+			skill: "writing",
+			status: "ai_processing",
+			creditCost: 1,
+			retryCount: 1,
+		});
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => scriptedGrader(["fail"]).grader,
+				retryDelaysMs: [0, 0],
+			},
+			"a-retry-fail",
+			{ retryCount: 1 },
+		);
+		const row = await draft("a-retry-fail");
+		expect(row?.status).toBe("manual_pending");
+		expect((await logs("a-retry-fail")).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:a-retry-fail:r1:reserve",
+			"ai_grading:a-retry-fail:r1:release",
+		]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+		});
+	});
+
+	test("kongming R2: GV publish giữa lúc r1 đang chạy → runner thua CAS, release đúng key r1", async () => {
+		await seedSubmittedWritingAttempt("a-retry-race");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-retry-race",
+			orgId: ORG,
+			skill: "writing",
+			status: "ai_processing",
+			creditCost: 1,
+			retryCount: 1,
+		});
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => ({
+					async grade(): Promise<AiGradingResult> {
+						// Giữa lúc grader đang chạy, GV đã publish draft trước.
+						await db
+							.update(aiGradingDraft)
+							.set({ status: "published", publishedAt: new Date() })
+							.where(eq(aiGradingDraft.attemptId, "a-retry-race"));
+						return {
+							scores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+							feedback: FAKE_AI_FEEDBACK,
+						};
+					},
+				}),
+				retryDelaysMs: [0, 0],
+			},
+			"a-retry-race",
+			{ retryCount: 1 },
+		);
+		expect((await draft("a-retry-race"))?.status).toBe("published");
+		expect((await logs("a-retry-race")).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:a-retry-race:r1:reserve",
+			"ai_grading:a-retry-race:r1:release",
+		]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+		});
+	});
+});
+
+describe("releaseStaleGradings per-occasion (TOS-33 #481 kongming 2.5)", () => {
+	test("crash sau reserve r1 khi r0 đã released → sweep vẫn release đúng r1", async () => {
+		await seedSubmittedWritingAttempt("a-stale-r1");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-stale-r1",
+			orgId: ORG,
+			skill: "writing",
+			status: "manual_pending",
+			creditCost: 1,
+			retryCount: 1,
+			startedAt: new Date(Date.now() - 61_000),
+		});
+		const base = {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: "a-stale-r1",
+			actionType: "ai_grading" as const,
+		};
+		// r0 đã hoàn tất; r1 chỉ mới reserve rồi crash (held = 1).
+		await reserveCredits(db, base);
+		await releaseCredits(db, base);
+		await reserveCredits(db, { ...base, retryCount: 1 });
+		expect((await readWallet(db, ORG))?.held).toBe(1);
+
+		await releaseStaleGradings(db, ORG);
+
+		expect((await logs("a-stale-r1")).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:a-stale-r1:reserve",
+			"ai_grading:a-stale-r1:release",
+			"ai_grading:a-stale-r1:r1:reserve",
+			"ai_grading:a-stale-r1:r1:release",
+		]);
+		expect(await readWallet(db, ORG)).toEqual({
+			balance: TRIAL_CREDITS,
+			held: 0,
+		});
+	});
+
+	test("lượt r1 đã settled → sweep không release thêm", async () => {
+		await seedSubmittedWritingAttempt("a-stale-r1-ok");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-stale-r1-ok",
+			orgId: ORG,
+			skill: "writing",
+			status: "ai_drafted",
+			creditCost: 1,
+			retryCount: 1,
+			startedAt: new Date(Date.now() - 61_000),
+		});
+		const base = {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: "a-stale-r1-ok",
+			actionType: "ai_grading" as const,
+		};
+		await reserveCredits(db, base);
+		await releaseCredits(db, base);
+		await reserveCredits(db, { ...base, retryCount: 1 });
+		await settleCredits(db, { ...base, retryCount: 1 });
+
+		await releaseStaleGradings(db, ORG);
+
+		expect((await logs("a-stale-r1-ok")).map((l) => l.txStatus)).toEqual([
+			"reserved",
+			"released",
 			"reserved",
 			"settled",
 		]);

@@ -23,6 +23,9 @@ import { Field, Textarea } from "@/components/ui/field";
  * đủ. `key` theo `gradedAt` ở caller để sau khi lưu form remount với giá
  * trị server mới.
  */
+export const PUBLISH_GRADE_FORBIDDEN_TOOLTIP =
+	"Chỉ Giáo viên đứng lớp được chốt trả bài";
+
 export function GradeForm({
 	skill,
 	part,
@@ -36,6 +39,7 @@ export function GradeForm({
 	savingDraft,
 	draftError,
 	onSaveDraft,
+	canPublish = true,
 }: {
 	skill: GradableSkill;
 	part: string;
@@ -53,6 +57,9 @@ export function GradeForm({
 	savingDraft?: boolean;
 	draftError?: string | null;
 	onSaveDraft?(input: QuizGradeInput): void;
+	/** TOS-33 D1: `canPublishGrade(role)` — `ta` chỉ được Lưu bản nháp,
+	 * nút Chốt trả bài bị khóa kèm tooltip. */
+	canPublish?: boolean;
 }) {
 	const keys = criteriaForSkill(skill);
 	const [scores, setScores] = useState<Record<string, number | null>>(() =>
@@ -74,7 +81,7 @@ export function GradeForm({
 			className="flex flex-col gap-4"
 			onSubmit={(event) => {
 				event.preventDefault();
-				if (!complete || saving) return;
+				if (!complete || saving || !canPublish) return;
 				onSave({
 					scores: Object.fromEntries(
 						keys.map((key) => [key, scores[key] as number]),
@@ -143,9 +150,23 @@ export function GradeForm({
 						{savingDraft ? "Đang lưu bản nháp…" : "Lưu bản nháp"}
 					</Button>
 				)}
-				<Button type="submit" className="w-full" disabled={!complete || saving}>
+				<Button
+					type="submit"
+					className="w-full"
+					data-testid="publish-grade"
+					disabled={!complete || saving || !canPublish}
+					title={!canPublish ? PUBLISH_GRADE_FORBIDDEN_TOOLTIP : undefined}
+				>
 					{saving ? "Đang lưu…" : draftMode ? "Chốt trả bài" : "Lưu điểm"}
 				</Button>
+				{!canPublish && (
+					<p
+						data-testid="publish-forbidden-hint"
+						className="text-center text-muted-foreground text-xs"
+					>
+						{PUBLISH_GRADE_FORBIDDEN_TOOLTIP}
+					</p>
+				)}
 			</div>
 		</form>
 	);

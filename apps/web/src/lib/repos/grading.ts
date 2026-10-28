@@ -38,7 +38,20 @@ async function gradingFetch(
 		...init,
 	});
 	if (!res.ok) {
-		throw new HttpError(res.status, `Failed to ${action}: ${res.status}`);
+		let reason: string | undefined;
+		try {
+			const payload = (await res.clone().json()) as { code?: unknown };
+			if (typeof payload?.code === "string") {
+				reason = payload.code;
+			}
+		} catch {
+			// Body không phải JSON (proxy/HTML) — giữ reason undefined.
+		}
+		throw new HttpError(
+			res.status,
+			`Failed to ${action}: ${res.status}`,
+			reason ? { reason } : undefined,
+		);
 	}
 	return res;
 }
@@ -104,6 +117,20 @@ export async function saveDraft(
 			body: JSON.stringify(input),
 		},
 		"save draft",
+		baseUrl,
+	);
+	return aiGradingDraftViewSchema.parse(await res.json());
+}
+
+/** POST /api/grading/:attemptId/ai-retry — "Thử chấm lại AI" (TOS-33 D3). */
+export async function retryAiGrading(
+	attemptId: string,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<AiGradingDraftView> {
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/ai-retry`,
+		{ method: "POST" },
+		"retry ai grading",
 		baseUrl,
 	);
 	return aiGradingDraftViewSchema.parse(await res.json());

@@ -1,0 +1,1 @@
+ALTER TABLE `ai_grading_draft` ADD `retry_count` integer DEFAULT 0 NOT NULL;

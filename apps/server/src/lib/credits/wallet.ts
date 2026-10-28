@@ -30,6 +30,11 @@ export interface CreditMutationInput {
 	/** Mặc định `exam_import` (callers cũ); chấm nháp AI truyền
 	 * `ai_grading` để sổ cái phân biệt dịch vụ (TOS-42 báo cáo theo loại). */
 	actionType?: CreditActionType;
+	/** TOS-33 D3: lượt chấm lại AI (0/bỏ trống = lượt gốc). `ai_grading` với
+	 * `retryCount ≥ 1` dùng bộ key riêng `…:r<n>:<op>` — mỗi lượt một bộ
+	 * reserve/settle/release; `refId` giữ `attemptId` để sweep/sổ cái nhóm
+	 * đúng theo bài. */
+	retryCount?: number;
 }
 
 /** Kết quả mutation — dòng log mới (hoặc log cũ khi gọi lại cùng key). */
@@ -49,9 +54,16 @@ type WalletOp = "reserve" | "settle" | "release";
 
 /** Key chống chạy đúp — UNIQUE index `credit_usage_log_idempotency_key_idx`.
  * Prefix theo `actionType`: `exam_import:<refId>:<op>` (cũ) /
- * `ai_grading:<attemptId>:<op>` (TOS-30). */
+ * `ai_grading:<attemptId>:<op>` (TOS-30 lượt gốc) /
+ * `ai_grading:<attemptId>:r<n>:<op>` (TOS-33 lượt chấm lại n ≥ 1). */
 function idempotencyKey(input: CreditMutationInput, op: WalletOp): string {
-	return `${input.actionType ?? "exam_import"}:${input.refId}:${op}`;
+	const retrySuffix =
+		input.actionType === "ai_grading" &&
+		typeof input.retryCount === "number" &&
+		input.retryCount >= 1
+			? `:r${input.retryCount}`
+			: "";
+	return `${input.actionType ?? "exam_import"}:${input.refId}${retrySuffix}:${op}`;
 }
 
 /**
