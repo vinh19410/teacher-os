@@ -8,6 +8,7 @@ import {
 	essayAnnotationPatchSchema,
 	type GradingQueueItem,
 	type GradingQueueResponse,
+	isAiGradingMode,
 	isAiGradingStatus,
 	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
@@ -99,6 +100,7 @@ export async function loadGradingQueue(
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
 				aiStatus: aiGradingDraft.status,
+				aiGradingMode: aiGradingDraft.gradingMode,
 				classId: classAssignment.classId,
 				className: classTable.name,
 				title: classAssignment.title,
@@ -158,6 +160,7 @@ export async function loadGradingQueue(
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
 				aiStatus: aiGradingDraft.status,
+				aiGradingMode: aiGradingDraft.gradingMode,
 				title: assignmentTest.title,
 				skill: assignmentTest.skill,
 				studentId: student.id,
@@ -240,6 +243,10 @@ export async function loadGradingQueue(
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
 			grade: toQuizAttemptGrade(row),
 			aiStatus: toAiStatus(row.aiStatus),
+			aiGradingMode:
+				row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
+					? row.aiGradingMode
+					: null,
 		});
 	}
 	for (const row of practiceRows) {
@@ -257,6 +264,10 @@ export async function loadGradingQueue(
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
 			grade: toQuizAttemptGrade(row),
 			aiStatus: toAiStatus(row.aiStatus),
+			aiGradingMode:
+				row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
+					? row.aiGradingMode
+					: null,
 		});
 	}
 

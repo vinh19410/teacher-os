@@ -52,7 +52,9 @@ function gradingPrompt(input: AiGradingInput): string {
 		"Tiêu chí cần chấm (dùng ĐÚNG key, đủ 4 key, mỗi key một số thang 0–9 bội của 0.5):",
 		criteria,
 		"",
-		"Nhận xét (tiếng Việt, 2–4 câu): nêu 1 điểm mạnh, 1 điểm cần cải thiện và 1 gợi ý luyện tập cụ thể.",
+		input.mode === "quick"
+			? "Chế độ chấm nhanh: Nhận xét (tiếng Việt, 1–2 câu ngắn gọn) chỉ nêu đánh giá tổng quan, KHÔNG gợi ý sửa câu chi tiết."
+			: "Nhận xét (tiếng Việt, 2–4 câu): nêu 1 điểm mạnh, 1 điểm cần cải thiện và 1 gợi ý luyện tập cụ thể.",
 		"",
 		'Trả về CHỈ MỘT JSON object, không markdown, không chữ nào khác: {"scores": {<4 key trên>: <số>}, "feedback": "<chuỗi>"}',
 	]

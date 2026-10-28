@@ -21,6 +21,10 @@ export const creditWallet = sqliteTable("credit_wallet", {
 	balance: integer("balance").notNull().default(0),
 	/** Số Credit đang tạm giữ (reserved, chưa settled). */
 	held: integer("held").notNull().default(0),
+	/** Loại gói hiện tại (TOS-32 D1, TOS-42 tiếp quản): "none" | "trial" | "monthly". */
+	planKind: text("plan_kind").notNull().default("none"),
+	/** Trạng thái gói (TOS-32 D1): "active" | "grace_period" | "expired" (nullable). */
+	planStatus: text("plan_status"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),
