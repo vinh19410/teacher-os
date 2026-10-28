@@ -1,5 +1,9 @@
 import { createClient } from "@libsql/client";
-import { TRIAL_CREDITS } from "@teacher-os/api/contracts";
+import {
+	AI_GRADING_ERROR_CODES,
+	QUICK_GRADE_MONTHLY_LIMIT,
+	TRIAL_CREDITS,
+} from "@teacher-os/api/contracts";
 import { aiGradingDraft } from "@teacher-os/db/schema/ai-grading-draft";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { classTable } from "@teacher-os/db/schema/class";
@@ -14,6 +18,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Db } from "../../app";
 import {
+	claimQuickGradeSlot,
 	ensureWallet,
 	readWallet,
 	releaseCredits,
@@ -210,7 +215,7 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 		]);
 	});
 
-	test("thiếu Credit → manual_pending không gọi AI, không dòng log", async () => {
+	test("thiếu Credit (ngoài gói tháng) → manual_pending + E-selfomy-alignment-001, không gọi AI, không dòng log", async () => {
 		await seedSubmittedWritingAttempt("a-broke");
 		await db
 			.update(schema.creditWallet)
@@ -228,7 +233,7 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 
 		const row = await draft("a-broke");
 		expect(row?.status).toBe("manual_pending");
-		expect(row?.errorCode).toBeNull();
+		expect(row?.errorCode).toBe(AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS);
 		expect(grader).not.toHaveBeenCalled();
 		expect(await logs("a-broke")).toEqual([]);
 	});
@@ -462,6 +467,260 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 			"settled",
 		]);
 	});
+
+	test("TOS-32: gói tháng active/grace_period, ví 0, đã dùng 29 lượt → bài Writing thứ 30 chấm nhanh (quick, 0 Credit, ví vẫn 0)", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 0, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT - 1; i++) {
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `pre-q-${i}`,
+			});
+		}
+
+		await seedSubmittedWritingAttempt("a-quick-30");
+		let observedMode: string | undefined;
+		const baseGrader = createFakeAiGrader({ scores: { task: 6.5 } });
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => ({
+					grade(input, signal) {
+						observedMode = input.mode;
+						return baseGrader.grade(input, signal);
+					},
+				}),
+			},
+			"a-quick-30",
+		);
+
+		expect(observedMode).toBe("quick");
+		const row = await draft("a-quick-30");
+		expect(row?.status).toBe("ai_drafted");
+		expect(row?.gradingMode).toBe("quick");
+		expect(row?.creditCost).toBe(0);
+		expect(row?.errorCode).toBeNull();
+		expect(await readWallet(db, ORG)).toEqual({ balance: 0, held: 0 });
+
+		const ledger = await logs("a-quick-30");
+		expect(ledger).toHaveLength(1);
+		expect(ledger[0]).toMatchObject({
+			actionType: "quick_grade_writing",
+			creditDelta: 0,
+			txStatus: "settled",
+			idempotencyKey: "quick_grade_writing:a-quick-30:claim",
+		});
+	});
+
+	test("TOS-32: gói tháng grace_period, ví 0 → vẫn được Chấm nhanh Writing", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 0, planKind: "monthly", planStatus: "grace_period" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+
+		await seedSubmittedWritingAttempt("a-quick-grace");
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => createFakeAiGrader(),
+			},
+			"a-quick-grace",
+		);
+
+		const row = await draft("a-quick-grace");
+		expect(row?.status).toBe("ai_drafted");
+		expect(row?.gradingMode).toBe("quick");
+		expect(row?.creditCost).toBe(0);
+	});
+
+	test("TOS-32: gói tháng active, ví 0, đã dùng đủ 30/30 lượt → manual_pending + E-selfomy-alignment-002, grader không được gọi", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 0, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT; i++) {
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `full-q-${i}`,
+			});
+		}
+
+		await seedSubmittedWritingAttempt("a-quick-31");
+		const grader = vi.fn();
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => ({ grade: grader as never }),
+			},
+			"a-quick-31",
+		);
+
+		const row = await draft("a-quick-31");
+		expect(row?.status).toBe("manual_pending");
+		expect(row?.errorCode).toBe(AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED);
+		expect(grader).not.toHaveBeenCalled();
+		expect(await logs("a-quick-31")).toEqual([]);
+	});
+
+	test("TOS-32: gói tháng expired hoặc Speaking thiếu Credit → manual_pending + E-selfomy-alignment-001", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 0, planKind: "monthly", planStatus: "expired" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		await seedSubmittedWritingAttempt("a-expired-plan");
+		await runAiGrading(
+			{ getDb: () => db, getAiGrader: () => createFakeAiGrader() },
+			"a-expired-plan",
+		);
+		expect((await draft("a-expired-plan"))?.errorCode).toBe(
+			AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS,
+		);
+
+		// Speaking (có transcript) trên gói tháng active nhưng ví chỉ còn 1 Credit (< 2) → E-001
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 1, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		await db.insert(classAssignment).values({
+			id: "ca-spk-broke",
+			orgId: ORG,
+			classId: "class-ag",
+			promptId: "prompt-ag-spk",
+			title: "Speaking Broke",
+			due: "2026-11-05",
+		});
+		await db.insert(quizAttempt).values({
+			id: "a-spk-broke",
+			orgId: ORG,
+			assignmentId: "ca-spk-broke",
+			studentId: "s-ag",
+			mode: "assignment",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			answers: "{}",
+			mediaKey: "speaking/a-spk-broke.webm",
+			submittedAt: new Date(),
+		});
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => createFakeAiGrader(),
+				getTranscriber: () => ({
+					async transcribe() {
+						return "This is a valid transcript with enough words for speaking.";
+					},
+				}),
+			},
+			"a-spk-broke",
+		);
+		const spkRow = await draft("a-spk-broke");
+		expect(spkRow?.status).toBe("manual_pending");
+		expect(spkRow?.errorCode).toBe(AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS);
+	});
+
+	test("TOS-32: quick mode nhưng AI lỗi khi org đang có held của job khác → hoàn lượt quick (reverted), KHÔNG đụng held của job khác", async () => {
+		// Ví có 5 Credit, đang bị job exam_import giữ hết 5 (available = 0, held = 5)
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 5, held: 0, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: "teacher-1",
+			amount: 5,
+			refId: "import-job-1",
+			actionType: "exam_import",
+		});
+
+		await seedSubmittedWritingAttempt("a-quick-fail");
+		await runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => createFakeAiGrader({ error: new Error("ai crash") }),
+			},
+			"a-quick-fail",
+		);
+
+		const row = await draft("a-quick-fail");
+		expect(row?.status).toBe("manual_pending");
+		expect(row?.gradingMode).toBe("quick");
+		expect(row?.errorCode).toBe(AI_GRADING_ERROR_CODES.FAILED);
+		// Held 5 của import-job-1 nguyên vẹn!
+		expect(await readWallet(db, ORG)).toEqual({ balance: 5, held: 5 });
+		// Sổ cái của a-quick-fail có đủ settled + reverted (triệt tiêu lượt)
+		const ledger = await logs("a-quick-fail");
+		expect(ledger.map((l) => l.txStatus)).toEqual(["settled", "reverted"]);
+	});
+
+	test("TOS-32: quick mode nhưng binding AI thiếu (getAiGrader undefined) → manual_pending DISABLED, hoàn lượt quick, KHÔNG đụng held của job khác", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 5, held: 0, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: "teacher-1",
+			amount: 5,
+			refId: "import-job-disabled",
+			actionType: "exam_import",
+		});
+
+		await seedSubmittedWritingAttempt("a-quick-disabled");
+		await runAiGrading({ getDb: () => db }, "a-quick-disabled");
+
+		const row = await draft("a-quick-disabled");
+		expect(row?.status).toBe("manual_pending");
+		expect(row?.gradingMode).toBe("quick");
+		expect(row?.errorCode).toBe(AI_GRADING_ERROR_CODES.DISABLED);
+		expect(await readWallet(db, ORG)).toEqual({ balance: 5, held: 5 });
+		expect((await logs("a-quick-disabled")).map((l) => l.txStatus)).toEqual([
+			"settled",
+			"reverted",
+		]);
+	});
+
+	test("TOS-32: quick mode thua CAS ai_drafted (teacher publish trước khi AI xong) → hoàn lượt quick, KHÔNG đụng held của job khác", async () => {
+		await db
+			.update(schema.creditWallet)
+			.set({ balance: 5, held: 0, planKind: "monthly", planStatus: "active" })
+			.where(eq(schema.creditWallet.orgId, ORG));
+		await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: "teacher-1",
+			amount: 5,
+			refId: "import-job-cas",
+			actionType: "exam_import",
+		});
+
+		await seedSubmittedWritingAttempt("a-quick-cas-race");
+		const gradingPromise = runAiGrading(
+			{
+				getDb: () => db,
+				getAiGrader: () => createFakeAiGrader({ delayMs: 80 }),
+			},
+			"a-quick-cas-race",
+		);
+		await vi.waitFor(async () => {
+			expect((await draft("a-quick-cas-race"))?.gradingMode).toBe("quick");
+			expect(await logs("a-quick-cas-race")).toHaveLength(1);
+		});
+		await db
+			.update(aiGradingDraft)
+			.set({ status: "published", publishedAt: new Date() })
+			.where(eq(aiGradingDraft.attemptId, "a-quick-cas-race"));
+
+		await gradingPromise;
+
+		const row = await draft("a-quick-cas-race");
+		expect(row?.status).toBe("published");
+		expect(await readWallet(db, ORG)).toEqual({ balance: 5, held: 5 });
+		expect((await logs("a-quick-cas-race")).map((l) => l.txStatus)).toEqual([
+			"settled",
+			"reverted",
+		]);
+	});
 });
 
 describe("releaseStaleGradings (TOS-30 dọn lười draft kẹt ai_processing)", () => {
@@ -597,6 +856,74 @@ describe("releaseStaleGradings (TOS-30 dọn lười draft kẹt ai_processing)"
 		expect((await logs("a-settled-ok")).map((l) => l.txStatus)).toEqual([
 			"reserved",
 			"settled",
+		]);
+	});
+
+	test("TOS-32: draft quick kẹt ai_processing > 60s → sweep chuyển manual_pending và revert lượt quick", async () => {
+		await seedSubmittedWritingAttempt("a-stale-quick");
+		await claimQuickGradeSlot(db, {
+			orgId: ORG,
+			attemptId: "a-stale-quick",
+		});
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-stale-quick",
+			orgId: ORG,
+			skill: "writing",
+			gradingMode: "quick",
+			creditCost: 0,
+			startedAt: new Date(Date.now() - 61_000),
+		});
+
+		await releaseStaleGradings(db, ORG);
+
+		const row = await draft("a-stale-quick");
+		expect(row?.status).toBe("manual_pending");
+		const ledger = await logs("a-stale-quick");
+		expect(ledger.map((l) => l.txStatus)).toEqual(["settled", "reverted"]);
+	});
+
+	test("TOS-32: crash giữa claimQuickGradeSlot và UPDATE grading_mode (draft vẫn standard + ai_processing > 60s) và Nhóm 3 (manual_pending quá hạn chưa revert) → sweep vẫn revert lượt quick", async () => {
+		// Case A: crash ngay sau claimQuickGradeSlot, trước khi UPDATE grading_mode='quick'
+		await seedSubmittedWritingAttempt("a-stale-pre-update");
+		await claimQuickGradeSlot(db, {
+			orgId: ORG,
+			attemptId: "a-stale-pre-update",
+		});
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-stale-pre-update",
+			orgId: ORG,
+			skill: "writing",
+			gradingMode: "standard",
+			creditCost: 1,
+			startedAt: new Date(Date.now() - 61_000),
+		});
+
+		// Case B (Nhóm 3): crash sau CAS manual_pending nhưng trước revertQuickGradeSlot
+		await seedSubmittedWritingAttempt("a-stale-group3");
+		await claimQuickGradeSlot(db, {
+			orgId: ORG,
+			attemptId: "a-stale-group3",
+		});
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-stale-group3",
+			orgId: ORG,
+			skill: "writing",
+			status: "manual_pending",
+			gradingMode: "quick",
+			creditCost: 0,
+			startedAt: new Date(Date.now() - 61_000),
+		});
+
+		await releaseStaleGradings(db, ORG);
+
+		expect((await draft("a-stale-pre-update"))?.status).toBe("manual_pending");
+		expect((await logs("a-stale-pre-update")).map((l) => l.txStatus)).toEqual([
+			"settled",
+			"reverted",
+		]);
+		expect((await logs("a-stale-group3")).map((l) => l.txStatus)).toEqual([
+			"settled",
+			"reverted",
 		]);
 	});
 });

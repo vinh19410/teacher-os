@@ -105,4 +105,33 @@ describe("createWorkersAiGrader (TOS-30)", () => {
 			}),
 		).rejects.toMatchObject({ code: "AI_GRADING_FAILED" });
 	});
+
+	test("TOS-32: mode 'quick' dùng prompt ngắn gọn (không gợi ý sửa câu chi tiết)", async () => {
+		const prompts: string[] = [];
+		const grader = createWorkersAiGrader({
+			async run(_model, input) {
+				const msgs = input.messages as Array<{ content: string }>;
+				prompts.push(msgs[0]?.content ?? "");
+				return {
+					response:
+						'{"scores": {"task": 6.5, "coherence": 7.0, "lexical": 6.0, "grammar": 6.5}, "feedback": "Nhận xét ngắn."}',
+				};
+			},
+		});
+		await grader.grade({
+			skill: "writing",
+			prompt: "Write an essay.",
+			essay: ESSAY,
+			mode: "standard",
+		});
+		await grader.grade({
+			skill: "writing",
+			prompt: "Write an essay.",
+			essay: ESSAY,
+			mode: "quick",
+		});
+		expect(prompts[0]).toContain("gợi ý luyện tập cụ thể");
+		expect(prompts[1]).toContain("Chế độ chấm nhanh");
+		expect(prompts[1]).not.toContain("gợi ý luyện tập cụ thể");
+	});
 });

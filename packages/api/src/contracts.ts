@@ -2150,6 +2150,13 @@ export function isAiGradingStatus(value: string): value is AiGradingStatus {
 	return (AI_GRADING_STATUSES as readonly string[]).includes(value);
 }
 
+/** Chế độ chấm nháp AI (TOS-30 standard, TOS-32 quick). */
+export const AI_GRADING_MODES = ["standard", "quick"] as const;
+export type AiGradingMode = (typeof AI_GRADING_MODES)[number];
+export function isAiGradingMode(value: string): value is AiGradingMode {
+	return (AI_GRADING_MODES as readonly string[]).includes(value);
+}
+
 /**
  * Bản nháp AI nhìn từ giáo viên (GET /api/grading/:attemptId trả
  * `aiDraft`) — shape này TUYỆT ĐỐI không xuất hiện ở API học viên (BR-001,
@@ -2314,6 +2321,8 @@ export const gradingQueueItemSchema = z
 		/** TOS-30: trạng thái draft AI của attempt; `null` khi bài không có
 		 * draft (chấm tay cũ). Optional để bundle cũ không throw. */
 		aiStatus: z.enum(AI_GRADING_STATUSES).nullable().optional(),
+		/** TOS-32: chế độ chấm nháp AI ("standard" | "quick"); `null` khi bài không có draft. */
+		aiGradingMode: z.enum(AI_GRADING_MODES).nullable().optional(),
 	})
 	.strict();
 export type GradingQueueItem = z.infer<typeof gradingQueueItemSchema>;
@@ -3813,6 +3822,9 @@ export const AI_GRADING_COST: Record<"writing" | "speaking", number> = {
 	speaking: 2,
 };
 
+/** Hạn mức lượt Chấm nhanh Writing hỗ trợ thêm mỗi tháng khi gói tháng hết Credit chính (TOS-32, BR-007). */
+export const QUICK_GRADE_MONTHLY_LIMIT = 30;
+
 /** Mã lỗi pipeline chấm nháp AI — cột `error_code` của draft (TOS-33 bổ
  * sung retry + E-004 riêng). Null = không lỗi. */
 export const AI_GRADING_ERROR_CODES = {
@@ -3824,6 +3836,10 @@ export const AI_GRADING_ERROR_CODES = {
 	DISABLED: "AI_GRADING_DISABLED",
 	/** Speaking chưa có transcript (TOS-30 stub; TOS-31 gắn STT). */
 	NO_TRANSCRIPT: "AI_GRADING_NO_TRANSCRIPT",
+	/** Hết sạch Credit AI cho tác vụ chi phí cao / ngoài gói tháng (E-001). */
+	INSUFFICIENT_CREDITS: "E-selfomy-alignment-001",
+	/** Hết cả Credit chính lẫn 30 lượt Chấm nhanh Writing trong tháng (E-002). */
+	QUOTA_EXHAUSTED: "E-selfomy-alignment-002",
 } as const;
 export type AiGradingErrorCode =
 	(typeof AI_GRADING_ERROR_CODES)[keyof typeof AI_GRADING_ERROR_CODES];
@@ -3860,6 +3876,22 @@ export const AI_GRADING_E004_MESSAGE =
  * xung đột lưu đè / gọi trùng; UI kèm nút "Tải lại bản mới nhất". */
 export const AI_GRADING_E011_MESSAGE =
 	"Bài làm này vừa được cập nhật bởi một nhân sự khác hoặc đang trong tiến trình chấm AI. Vui lòng tải lại dữ liệu mới nhất trước khi lưu.";
+
+/**
+ * Thông điệp cảnh báo nguyên văn cột "Screen state" của spec Error Matrix
+ * (`docs/selfomy-alignment/srs/selfomy-alignment-spec.md:111-112`, E-001 & E-002)
+ * hiển thị trên màn chấm bài [7] khi thiếu Credit / hết hạn mức Chấm nhanh (TOS-32 D5).
+ */
+export const AI_GRADING_ERROR_MESSAGES: Record<
+	| typeof AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS
+	| typeof AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED,
+	string
+> = {
+	[AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS]:
+		"Tổ chức của bạn đã dùng hết Credit AI trong kỳ. Vui lòng mua thêm gói 100 Credit (149.000đ) hoặc nâng cấp gói tháng để tiếp tục sử dụng tính năng này.",
+	[AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED]:
+		"Bạn đã sử dụng hết hạn mức Credit AI và 30 lượt chấm nhanh Writing hỗ trợ thêm trong tháng này. Vui lòng nạp thêm Credit để tiếp tục chấm tự động.",
+};
 
 /**
  * Thông điệp lỗi nguyên văn cột "Thông điệp" của spec

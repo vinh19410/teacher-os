@@ -16,6 +16,8 @@ export interface AiGradingInput {
 	essay?: string;
 	/** Lời nói Speaking đã chuyển văn bản (TOS-31 STT; TOS-30 luôn rỗng). */
 	transcript?: string;
+	/** Chế độ chấm (TOS-32 D4): "standard" (mặc định) | "quick" (0 Credit, nhận xét ngắn). */
+	mode?: "standard" | "quick";
 }
 
 /** Kết quả chấm nháp — `scores` theo key `criteriaForSkill(skill)`. */

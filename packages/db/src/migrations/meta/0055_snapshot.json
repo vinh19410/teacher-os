@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "5ddefcee-adc2-4220-826b-22495796299b",
+  "id": "762c2fa4-8d0f-485f-8304-bd18cf20560e",
   "prevId": "7d4b3ba2-934c-4380-93e6-8b116a52f03f",
   "tables": {
     "ai_grading_draft": {
@@ -104,14 +104,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": 1
-        },
-        "retry_count": {
-          "name": "retry_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
         },
         "started_at": {
           "name": "started_at",
@@ -1668,6 +1660,21 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "plan_kind": {
+          "name": "plan_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'none'"
+        },
+        "plan_status": {
+          "name": "plan_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",

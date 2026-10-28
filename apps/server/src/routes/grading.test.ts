@@ -1499,6 +1499,7 @@ describe("GET /api/grading (queue #383)", () => {
 			submittedAt: "2026-10-19T11:00:00.000Z",
 			grade: null,
 			aiStatus: null,
+			aiGradingMode: null,
 		});
 
 		// Đề writing 2 part -> chỉ 1 dòng, part lấy từ position nhỏ nhất (task1)
@@ -1515,6 +1516,7 @@ describe("GET /api/grading (queue #383)", () => {
 			submittedAt: "2026-10-19T09:00:00.000Z",
 			grade: null,
 			aiStatus: null,
+			aiGradingMode: null,
 		});
 
 		// Bài giao theo lớp đã chấm
@@ -1536,6 +1538,7 @@ describe("GET /api/grading (queue #383)", () => {
 				gradedAt: "2026-10-20T10:00:00.000Z",
 			},
 			aiStatus: null,
+			aiGradingMode: null,
 		});
 	});
 
@@ -2035,7 +2038,7 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		expect(await res.json()).toMatchObject({ code: "DRAFT_NOT_FOUND" });
 	});
 
-	test("hàng chờ trả aiStatus của attempt có draft", async () => {
+	test("hàng chờ trả aiStatus và aiGradingMode của attempt có draft", async () => {
 		const res = await app.request("/api/grading", {
 			headers: { ...TEACHER, origin: TEACHER_ORIGIN },
 		});
@@ -2043,8 +2046,10 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		const body = (await res.json()) as GradingQueueResponse;
 		const attD = body.items.find((item) => item.attemptId === "att-d");
 		expect(attD?.aiStatus).toBe("published");
+		expect(attD?.aiGradingMode).toBe("standard");
 		const attD2 = body.items.find((item) => item.attemptId === "att-d2");
 		expect(attD2?.aiStatus).toBeNull();
+		expect(attD2?.aiGradingMode).toBeNull();
 	});
 
 	test("overview học viên: Writing graded lộ scores IELTS, Speaking graded chỉ gradedAt (không vỡ zod)", async () => {

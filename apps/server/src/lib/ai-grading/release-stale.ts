@@ -1,9 +1,9 @@
 import { AI_GRADING_ERROR_CODES } from "@teacher-os/api/contracts";
 import { aiGradingDraft } from "@teacher-os/db/schema/ai-grading-draft";
 import { creditUsageLog } from "@teacher-os/db/schema/credit-wallet";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { Db } from "../../app";
-import { releaseCredits } from "../credits/wallet";
+import { releaseCredits, revertQuickGradeSlot } from "../credits/wallet";
 
 /**
  * Ngưỡng draft coi như treo: timeout AI 20s + biên DB/sweep (kongming
@@ -86,6 +86,13 @@ export async function releaseStaleGradings(
 			draft.retryCount,
 			draft.creditCost,
 		);
+		// Nếu draft đã kịp claim lượt Chấm nhanh (TOS-32) trước khi treo,
+		// hoàn lại lượt đó (idempotent; không phụ thuộc cột grading_mode vì
+		// crash có thể xảy ra trước UPDATE grading_mode).
+		await revertQuickGradeSlot(db, {
+			orgId,
+			attemptId: draft.attemptId,
+		});
 	}
 
 	// Nhóm 2 — đã rời `ai_processing` nhưng còn lượt chưa giải tỏa: crash
@@ -125,6 +132,43 @@ export async function releaseStaleGradings(
 			draft.retryCount,
 			draft.creditCost,
 		);
+	}
+
+	// Nhóm 3 — draft `manual_pending` quá hạn có dòng claim Chấm nhanh
+	// (`quick_grade_writing` `settled`) nhưng chưa có `reverted` (crash giữa
+	// CAS `manual_pending` và `revertQuickGradeSlot`).
+	const quickStale = await db
+		.select({
+			attemptId: aiGradingDraft.attemptId,
+		})
+		.from(aiGradingDraft)
+		.where(
+			and(
+				eq(aiGradingDraft.orgId, orgId),
+				or(
+					eq(aiGradingDraft.status, "manual_pending"),
+					and(
+						eq(aiGradingDraft.status, "published"),
+						isNull(aiGradingDraft.aiScores),
+					),
+				),
+				lt(aiGradingDraft.startedAt, cutoff),
+				sql`EXISTS (SELECT 1 FROM credit_usage_log cul
+					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
+						AND cul.action_type = 'quick_grade_writing'
+						AND cul.tx_status = 'settled')`,
+				sql`NOT EXISTS (SELECT 1 FROM credit_usage_log cul
+					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
+						AND cul.action_type = 'quick_grade_writing'
+						AND cul.tx_status = 'reverted')`,
+			),
+		)
+		.limit(STALE_SWEEP_BATCH);
+	for (const draft of quickStale) {
+		await revertQuickGradeSlot(db, {
+			orgId,
+			attemptId: draft.attemptId,
+		});
 	}
 }
 

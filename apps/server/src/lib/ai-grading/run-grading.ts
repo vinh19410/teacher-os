@@ -20,10 +20,13 @@ import {
 import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../../app";
 import {
+	claimQuickGradeSlot,
 	ensureWallet,
 	InsufficientCreditsError,
+	readOrgPlan,
 	releaseCredits,
 	reserveCredits,
+	revertQuickGradeSlot,
 	settleCredits,
 } from "../credits/wallet";
 import {
@@ -229,6 +232,27 @@ async function failDraft(
 	await releaseCredits(db, settle);
 }
 
+/** Nhánh thất bại cho chế độ Chấm nhanh (TOS-32 D3): TUYỆT ĐỐI không gọi
+ * `releaseCredits` (không có held nào của job này — gọi sẽ ăn nhầm held của
+ * job khác hoặc ném InsufficientCreditsError); hoàn lượt Chấm nhanh qua
+ * `revertQuickGradeSlot` idempotent. */
+async function failQuickDraft(
+	db: Db,
+	orgId: string,
+	attemptId: string,
+	errorCode: AiGradingErrorCode | null,
+): Promise<void> {
+	await casDraftFromProcessing(db, attemptId, {
+		status: "manual_pending",
+		errorCode,
+	});
+	await revertQuickGradeSlot(db, {
+		orgId,
+		attemptId,
+		actorUserId: AI_GRADING_ACTOR,
+	});
+}
+
 /** Gọi grader 1 lượt với timeout per-call — map DOMException TimeoutError /
  * AbortError cho catch bên ngoài phân loại. */
 async function gradeOnce(
@@ -324,6 +348,7 @@ export async function runAiGrading(
 		transcript = text;
 	}
 
+	let quickMode = false;
 	try {
 		// Org chưa từng tiêu Credit thì chưa có dòng `credit_wallet` —
 		// reserve UPDATE trượt 0 dòng thành `InsufficientCreditsError` cho
@@ -332,22 +357,59 @@ export async function runAiGrading(
 		await reserveCredits(db, settle);
 	} catch (error) {
 		if (error instanceof InsufficientCreditsError) {
-			// Thiếu Credit (E-001): `error_code` null — TOS-32 thay nhánh này
-			// (Chấm nhanh E-002) nên không đánh dấu là lỗi pipeline.
-			await casDraftFromProcessing(db, attemptId, {
-				status: "manual_pending",
-				errorCode: null,
-			});
-			return;
+			// TOS-32 (D3): Writing + gói tháng còn hiệu lực (active / grace_period)
+			// → hạ cấp mềm sang "Chấm nhanh" (0 Credit, tối đa 30 lượt/tháng).
+			if (attempt.skill === "writing") {
+				const plan = await readOrgPlan(db, attempt.orgId);
+				if (
+					plan.planKind === "monthly" &&
+					(plan.planStatus === "active" || plan.planStatus === "grace_period")
+				) {
+					const claimed = await claimQuickGradeSlot(db, {
+						orgId: attempt.orgId,
+						attemptId,
+						actorUserId: AI_GRADING_ACTOR,
+					});
+					if (!claimed) {
+						await casDraftFromProcessing(db, attemptId, {
+							status: "manual_pending",
+							errorCode: AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED,
+						});
+						return;
+					}
+					quickMode = true;
+					await db
+						.update(aiGradingDraft)
+						.set({ gradingMode: "quick", creditCost: 0 })
+						.where(eq(aiGradingDraft.attemptId, attemptId));
+				}
+			}
+			if (!quickMode) {
+				await casDraftFromProcessing(db, attemptId, {
+					status: "manual_pending",
+					errorCode: AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS,
+				});
+				return;
+			}
+		} else {
+			throw error;
 		}
-		throw error;
 	}
 
 	const grader = deps.getAiGrader?.();
 	if (!grader) {
-		// Fail-closed như extractor (binding AI thiếu) — Credit đã hoàn.
+		// Fail-closed như extractor (binding AI thiếu) — hoàn Credit hoặc lượt quick.
 		// KHÔNG retry: lỗi cấu hình, gọi lại vô ích.
-		await failDraft(db, settle, attemptId, AI_GRADING_ERROR_CODES.DISABLED);
+		if (quickMode) {
+			await failQuickDraft(
+				db,
+				attempt.orgId,
+				attemptId,
+				AI_GRADING_ERROR_CODES.DISABLED,
+			);
+		} else {
+			await failDraft(db, settle, attemptId, AI_GRADING_ERROR_CODES.DISABLED);
+		}
 		return;
 	}
 
@@ -367,6 +429,7 @@ export async function runAiGrading(
 				? essayToPlain(attempt.essay).text
 				: undefined,
 		transcript,
+		mode: (quickMode ? "quick" : "standard") as "quick" | "standard",
 	};
 
 	const MAX_GRADER_ATTEMPTS = 3;
@@ -423,21 +486,21 @@ export async function runAiGrading(
 	}
 
 	if (validScores === null) {
-		// Đã đủ lượt retry / hết ngân sách → hoàn TOÀN bộ số đã giữ.
-		await failDraft(
-			db,
-			settle,
-			attemptId,
-			failedByTimeout
-				? AI_GRADING_ERROR_CODES.TIMEOUT
-				: AI_GRADING_ERROR_CODES.FAILED,
-		);
+		// Đã đủ lượt retry / hết ngân sách → hoàn TOÀN bộ số đã giữ hoặc lượt quick.
+		const code = failedByTimeout
+			? AI_GRADING_ERROR_CODES.TIMEOUT
+			: AI_GRADING_ERROR_CODES.FAILED;
+		if (quickMode) {
+			await failQuickDraft(db, attempt.orgId, attemptId, code);
+		} else {
+			await failDraft(db, settle, attemptId, code);
+		}
 		return;
 	}
 
 	// CAS draft TRƯỚC, ví SAU (kongming red-team điều kiện 2): thua CAS
-	// (teacher đã publish / sweep đã manual_pending) → hoàn Credit, tuyệt
-	// đối không settle bằng `held` của job khác.
+	// (teacher đã publish / sweep đã manual_pending) → hoàn Credit / lượt
+	// Chấm nhanh, tuyệt đối không settle bằng `held` của job khác.
 	const won = await casDraftFromProcessing(db, attemptId, {
 		status: "ai_drafted",
 		aiScores: validScores,
@@ -445,7 +508,15 @@ export async function runAiGrading(
 		draftedAt: new Date(),
 	});
 	if (won) {
-		await settleCredits(db, settle);
+		if (!quickMode) {
+			await settleCredits(db, settle);
+		}
+	} else if (quickMode) {
+		await revertQuickGradeSlot(db, {
+			orgId: attempt.orgId,
+			attemptId,
+			actorUserId: AI_GRADING_ACTOR,
+		});
 	} else {
 		await releaseCredits(db, settle);
 	}
