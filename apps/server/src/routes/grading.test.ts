@@ -4,13 +4,22 @@ import type {
 	GradingQueueResponse,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
-import { studentOverviewSchema } from "@teacher-os/api/contracts";
+import {
+	studentOverviewSchema,
+	TRIAL_CREDITS,
+} from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { buildApp, type Db, type MediaStore } from "../app";
+import { createFakeAiGrader } from "../lib/ai-grading/fake-grader";
+import {
+	ensureWallet,
+	releaseCredits,
+	reserveCredits,
+} from "../lib/credits/wallet";
 import type { SessionUser } from "../session";
 import { loadGradingQueue } from "./grading";
 import { loadClassAssignmentItems } from "./student-class";
@@ -59,6 +68,15 @@ const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 		return {
 			userId: "t-2",
 			userName: "Thầy Nam",
+			role: "teacher",
+		};
+	}
+	// TOS-33 (#481): account-level vẫn teacher (không rơi gate student) —
+	// quyền chi tiết do membership.role quyết (kernelCtx.role = "ta").
+	if (userKey === "ta-1") {
+		return {
+			userId: "ta-u",
+			userName: "Anh Tuấn (TA)",
 			role: "teacher",
 		};
 	}
@@ -1923,14 +1941,16 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		});
 	});
 
-	test("PATCH version cũ → 409 DRAFT_VERSION_CONFLICT", async () => {
+	test("PATCH version cũ → 409 E-selfomy-alignment-011 (TOS-33 D4)", async () => {
 		const res = await patchDraft("att-d", {
 			scores: WRITING_SCORES,
 			feedback: "Trễ.",
 			version: 1,
 		});
 		expect(res.status).toBe(409);
-		expect(await res.json()).toMatchObject({ code: "DRAFT_VERSION_CONFLICT" });
+		expect(await res.json()).toMatchObject({
+			code: "E-selfomy-alignment-011",
+		});
 	});
 
 	test("PATCH sai key tiêu chí → 400 invalid scores", async () => {
@@ -1946,9 +1966,11 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		const res = await app.request("/api/grading/att-d/grade", {
 			method: "POST",
 			headers: teacherHeaders(),
+			// TOS-33 D4: có draft → `version` bắt buộc (client đang thấy 2).
 			body: JSON.stringify({
 				scores: WRITING_SCORES,
 				feedback: "Điểm cuối.",
+				version: 2,
 			}),
 		});
 		expect(res.status).toBe(200);
@@ -2133,5 +2155,433 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		]) {
 			expect(text).not.toContain(forbidden);
 		}
+	});
+});
+
+/**
+ * TOS-33 (#481, AC-004): phân quyền Trợ giảng (publish/retry 403, draft OK),
+ * chống lưu đè publish theo `version` (409 E-011, điểm KHÔNG ghi đè),
+ * "Thử chấm lại AI" (CAS manual_pending → ai_processing, sổ cái bộ key r<n>).
+ */
+describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+
+	const graderCalls = { count: 0 };
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values({
+			id: "org-1",
+			name: "Academy 1",
+		});
+		await libsql.insert(schema.user).values([
+			{ id: "t-1", name: "Cô Lan", email: "lan@test.local", role: "teacher" },
+			{
+				id: "ta-u",
+				name: "Anh Tuấn",
+				email: "tuan@test.local",
+				role: "teacher",
+			},
+		]);
+		await libsql.insert(schema.membership).values([
+			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
+			{ id: "mem-2", orgId: "org-1", userId: "ta-u", role: "ta" },
+		]);
+		await libsql.insert(schema.student).values({
+			id: "student-1",
+			orgId: "org-1",
+			name: "Minh Tran",
+			email: "minh@gmail.com",
+			phone: "0901234567",
+		});
+		await libsql.insert(schema.classTable).values({
+			id: "class-1",
+			orgId: "org-1",
+			name: "IELTS Foundation",
+			level: "IELTS 5.0–6.0",
+			mode: "Online",
+			schedule: "T2 & T5 18:30–20:00",
+			sessionsDone: 0,
+			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-t33",
+			orgId: "org-1",
+			task: "task2",
+			genre: "essay",
+			skill: "writing",
+			part: "task2",
+			type: "essay",
+			title: "Writing TOS-33",
+			prompt: "<p>Children should learn to code.</p>",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-t33",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-t33",
+			title: "Writing TOS-33",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-t33",
+			orgId: "org-1",
+			assignmentId: "ca-t33",
+			studentId: "student-1",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			essay: "My TOS-33 essay.",
+			submittedAt: new Date("2026-10-05T01:00:00Z"),
+		});
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+			// Pipeline "Thử chấm lại AI" chạy nền — grader luôn OK, không backoff.
+			getAiGrader: () => {
+				graderCalls.count++;
+				return createFakeAiGrader();
+			},
+			aiRetryDelaysMs: [0, 0],
+		});
+	});
+
+	const teacherHeaders = () => ({
+		...TEACHER,
+		origin: TEACHER_ORIGIN,
+		"content-type": "application/json",
+	});
+	const taHeaders = () => ({
+		"x-test-user": "ta-1",
+		origin: TEACHER_ORIGIN,
+		"content-type": "application/json",
+	});
+
+	/** Draft `manual_pending` + sổ cái lượt 0 đã release (mô phỏng sau lỗi
+	 * 3 lượt của pipeline) — nền cho các test ai-retry. */
+	async function seedRetryableDraft() {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "manual_pending",
+			creditCost: 1,
+			errorCode: "AI_GRADING_FAILED",
+		});
+		await ensureWallet(libsql, "org-1");
+		const input = {
+			orgId: "org-1",
+			actorUserId: "system",
+			amount: 1,
+			refId: "att-t33",
+			actionType: "ai_grading" as const,
+		};
+		await reserveCredits(libsql, input);
+		await releaseCredits(libsql, input);
+	}
+
+	async function draft() {
+		const [row] = await libsql
+			.select()
+			.from(schema.aiGradingDraft)
+			.where(eq(schema.aiGradingDraft.attemptId, "att-t33"));
+		return row ?? null;
+	}
+
+	async function attempt() {
+		const [row] = await libsql
+			.select()
+			.from(schema.quizAttempt)
+			.where(eq(schema.quizAttempt.id, "att-t33"));
+		return row;
+	}
+
+	async function ledger() {
+		return libsql
+			.select()
+			.from(schema.creditUsageLog)
+			.where(eq(schema.creditUsageLog.refId, "att-t33"));
+	}
+
+	/** Pipeline entry-retry chạy nền sau POST — poll tới khi rời ai_processing. */
+	async function waitPipelineDone(timeoutMs = 5_000): Promise<void> {
+		const deadline = Date.now() + timeoutMs;
+		for (;;) {
+			const row = await draft();
+			if (row && row.status !== "ai_processing") return;
+			if (Date.now() > deadline) throw new Error("pipeline không xong");
+			await new Promise((resolve) => setTimeout(resolve, 25));
+		}
+	}
+
+	beforeEach(async () => {
+		await libsql.delete(schema.aiGradingDraft);
+		await libsql.delete(schema.creditUsageLog);
+		await libsql.delete(schema.creditWallet);
+		await libsql.update(schema.quizAttempt).set({
+			gradeScores: null,
+			gradeFeedback: "",
+			gradedAt: null,
+		});
+		graderCalls.count = 0;
+	});
+
+	test("TA lưu bản nháp OK (canReviewGrade) nhưng GET/publish đúng vai", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "ai_drafted",
+			creditCost: 1,
+		});
+		// TA đọc bài (GET) — 200.
+		const read = await app.request("/api/grading/att-t33", {
+			headers: { "x-test-user": "ta-1", origin: TEACHER_ORIGIN },
+		});
+		expect(read.status).toBe(200);
+		// TA PATCH draft — 200 teacher_reviewing.
+		const patch = await app.request("/api/grading/att-t33/draft", {
+			method: "PATCH",
+			headers: taHeaders(),
+			body: JSON.stringify({
+				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				feedback: "TA rà.",
+				version: 1,
+			}),
+		});
+		expect(patch.status).toBe(200);
+		// TA publish — 403, điểm KHÔNG ghi.
+		const publish = await app.request("/api/grading/att-t33/grade", {
+			method: "POST",
+			headers: taHeaders(),
+			body: JSON.stringify({
+				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				feedback: "TA cố chốt.",
+				version: 2,
+			}),
+		});
+		expect(publish.status).toBe(403);
+		expect(await publish.json()).toMatchObject({
+			code: "GRADE_PUBLISH_FORBIDDEN",
+		});
+		expect((await attempt())?.gradeScores).toBeNull();
+	});
+
+	test("publish có draft thiếu version → 409 E-011, quiz_attempt không đổi", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "teacher_reviewing",
+			creditCost: 1,
+			version: 2,
+			reviewedScores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+		});
+		const res = await app.request("/api/grading/att-t33/grade", {
+			method: "POST",
+			headers: teacherHeaders(),
+			body: JSON.stringify({
+				scores: { task: 9, coherence: 9, lexical: 9, grammar: 9 },
+				feedback: "GV lưu từ màn cũ.",
+			}),
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toMatchObject({ code: "E-selfomy-alignment-011" });
+		// Kongming R2: assert CẢ quiz_attempt — không "409 nhưng vẫn ghi đè".
+		expect((await attempt())?.gradeScores).toBeNull();
+		expect((await attempt())?.gradedAt).toBeNull();
+	});
+
+	test("publish version cũ → 409 E-011, nháp TA không bị ghi đè", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "teacher_reviewing",
+			creditCost: 1,
+			version: 2,
+			reviewedScores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			reviewedFeedback: "Bản TA.",
+		});
+		const res = await app.request("/api/grading/att-t33/grade", {
+			method: "POST",
+			headers: teacherHeaders(),
+			body: JSON.stringify({
+				scores: { task: 9, coherence: 9, lexical: 9, grammar: 9 },
+				feedback: "GV lưu trễ.",
+				version: 1,
+			}),
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toMatchObject({ code: "E-selfomy-alignment-011" });
+		expect((await attempt())?.gradeScores).toBeNull();
+		const row = await draft();
+		expect(row?.status).toBe("teacher_reviewing");
+		expect(row?.reviewedFeedback).toBe("Bản TA.");
+	});
+
+	test("publish version đúng → published + điểm ghi (nhánh CAS draft trước)", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "teacher_reviewing",
+			creditCost: 1,
+			version: 2,
+		});
+		const res = await app.request("/api/grading/att-t33/grade", {
+			method: "POST",
+			headers: teacherHeaders(),
+			body: JSON.stringify({
+				scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				feedback: "Chốt.",
+				version: 2,
+			}),
+		});
+		expect(res.status).toBe(200);
+		expect((await attempt())?.gradeScores).toEqual({
+			task: 7,
+			coherence: 7,
+			lexical: 7,
+			grammar: 7,
+		});
+		expect((await draft())?.status).toBe("published");
+	});
+
+	test("ai-retry: TA 403 AI_RETRY_FORBIDDEN", async () => {
+		await seedRetryableDraft();
+		const res = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: taHeaders(),
+		});
+		expect(res.status).toBe(403);
+		expect(await res.json()).toMatchObject({ code: "AI_RETRY_FORBIDDEN" });
+		expect((await draft())?.status).toBe("manual_pending");
+	});
+
+	test("ai-retry khi đang ai_processing / errorCode không retryable → 409", async () => {
+		await libsql.insert(schema.aiGradingDraft).values([
+			{
+				attemptId: "att-t33",
+				orgId: "org-1",
+				skill: "writing",
+				status: "ai_processing",
+				creditCost: 1,
+			},
+		]);
+		const processing = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: teacherHeaders(),
+		});
+		expect(processing.status).toBe(409);
+		expect(await processing.json()).toMatchObject({
+			code: "E-selfomy-alignment-011",
+		});
+
+		await libsql
+			.update(schema.aiGradingDraft)
+			.set({ status: "manual_pending", errorCode: "AI_GRADING_NO_TRANSCRIPT" })
+			.where(eq(schema.aiGradingDraft.attemptId, "att-t33"));
+		const noTranscript = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: teacherHeaders(),
+		});
+		expect(noTranscript.status).toBe(409);
+		expect(await noTranscript.json()).toMatchObject({
+			code: "DRAFT_NOT_RETRYABLE",
+		});
+	});
+
+	test("ai-retry hợp lệ → CAS ai_processing + retry_count 1 + pipeline settle bộ r1", async () => {
+		await seedRetryableDraft();
+		const res = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: teacherHeaders(),
+		});
+		expect(res.status).toBe(200);
+		const view = (await res.json()) as AiGradingDraftView;
+		expect(view.status).toBe("ai_processing");
+		const row = await draft();
+		expect(row?.retryCount).toBe(1);
+		expect(row?.errorCode).toBeNull();
+		// Pipeline nền (grader luôn OK) settle bằng bộ key r1 riêng.
+		await waitPipelineDone();
+		const done = await draft();
+		expect(done?.status).toBe("ai_drafted");
+		expect(done?.retryCount).toBe(1);
+		const logs = await ledger();
+		expect(logs.map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:att-t33:reserve",
+			"ai_grading:att-t33:release",
+			"ai_grading:att-t33:r1:reserve",
+			"ai_grading:att-t33:r1:settle",
+		]);
+		// Bất biến sổ cái: held về 0, balance trừ đúng 1 Credit của lượt r1.
+		const [wallet] = await libsql
+			.select()
+			.from(schema.creditWallet)
+			.where(eq(schema.creditWallet.orgId, "org-1"));
+		expect(wallet?.held).toBe(0);
+		expect(wallet?.balance).toBe(TRIAL_CREDITS - 1);
+	});
+
+	test("ai-retry bấm trùng song song → chỉ 1 pipeline reserve", async () => {
+		await seedRetryableDraft();
+		const [a, b] = await Promise.all([
+			app.request("/api/grading/att-t33/ai-retry", {
+				method: "POST",
+				headers: teacherHeaders(),
+			}),
+			app.request("/api/grading/att-t33/ai-retry", {
+				method: "POST",
+				headers: teacherHeaders(),
+			}),
+		]);
+		const statuses = [a.status, b.status].sort();
+		expect(statuses).toEqual([200, 409]);
+		await waitPipelineDone();
+		// Đợi pipeline xong rồi mới đếm: reserve r1 đúng 1 lần.
+		const logs = await ledger();
+		const r1Reserves = logs.filter(
+			(l) => l.idempotencyKey === "ai_grading:att-t33:r1:reserve",
+		);
+		expect(r1Reserves).toHaveLength(1);
+		expect(graderCalls.count).toBe(1);
+	});
+
+	test("ai-retry khi draft bị sweep TIMEOUT trước khi kịp reserve (không có log reserve) → vẫn 200 và settle r1, không 500 InsufficientCreditsError", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "manual_pending",
+			creditCost: 1,
+			errorCode: "AI_GRADING_TIMEOUT",
+			retryCount: 0,
+		});
+		// KHÔNG có dòng reserve nào cho lượt 0 (crash trước reserve).
+		const res = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: teacherHeaders(),
+		});
+		expect(res.status).toBe(200);
+		await waitPipelineDone();
+		expect((await draft())?.status).toBe("ai_drafted");
+		expect((await ledger()).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:att-t33:r1:reserve",
+			"ai_grading:att-t33:r1:settle",
+		]);
 	});
 });

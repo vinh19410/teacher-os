@@ -1,6 +1,11 @@
+import { AI_GRADING_ERROR_CODES } from "@teacher-os/api/contracts";
 import { criteriaForSkill } from "@teacher-os/api/lib/ielts-band";
-import type { AiGrader, AiGradingInput, AiGradingResult } from "./grader";
-
+import {
+	type AiGrader,
+	AiGradingFailedError,
+	type AiGradingInput,
+	type AiGradingResult,
+} from "./grader";
 /** Nhận xét mặc định của fake grader — đủ dùng cho test + e2e AC-001. */
 export const FAKE_AI_FEEDBACK =
 	"Bài viết có ý tưởng rõ ràng, liên kết hợp lý. Cần phát triển thêm ví dụ ở đoạn 2 và đa dạng từ vựng học thuật.";
@@ -37,6 +42,14 @@ export function createFakeAiGrader(
 				await promise;
 			}
 			if (options.error) throw options.error;
+			const content =
+				`${input.essay ?? ""} ${input.transcript ?? ""}`.toLowerCase();
+			if (content.includes("ai-fail")) {
+				throw new AiGradingFailedError(
+					AI_GRADING_ERROR_CODES.FAILED,
+					"simulated AI grading failure",
+				);
+			}
 			const keys = criteriaForSkill(input.skill);
 			const scores = Object.fromEntries(
 				keys.map((key, index) => {

@@ -274,4 +274,39 @@ describe("GradeForm (#319)", () => {
 		);
 		expect(screen.getByRole("button", { name: "Đang lưu…" })).toBeTruthy();
 	});
+
+	test("TOS-33: TA (canPublish=false) khóa nút Chốt trả bài kèm tooltip nhưng vẫn Lưu bản nháp được", () => {
+		const onSave = vi.fn();
+		const onSaveDraft = vi.fn();
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={{
+					scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+					band: 6,
+					feedback: "Nháp",
+					gradedAt: "",
+				}}
+				saving={false}
+				error={null}
+				savedAt={null}
+				onSave={onSave}
+				draftMode={true}
+				canPublish={false}
+				onSaveDraft={onSaveDraft}
+			/>,
+		);
+		const publishBtn = screen.getByTestId("publish-grade") as HTMLButtonElement;
+		const draftBtn = screen.getByTestId("save-draft") as HTMLButtonElement;
+		expect(publishBtn.disabled).toBe(true);
+		expect(publishBtn.getAttribute("title")).toBe(
+			"Chỉ Giáo viên đứng lớp được chốt trả bài",
+		);
+		expect(draftBtn.disabled).toBe(false);
+		fireEvent.click(draftBtn);
+		expect(onSaveDraft).toHaveBeenCalledTimes(1);
+		fireEvent.click(publishBtn);
+		expect(onSave).not.toHaveBeenCalled();
+	});
 });

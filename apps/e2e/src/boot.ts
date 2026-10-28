@@ -184,6 +184,8 @@ const app = buildApp({
 	studentOrigin: STUDENT_ORIGIN,
 	// Plan TOS-22 (#463): không chờ 2s/5s giữa các lượt retry trong E2E.
 	notificationRetryDelaysMs: [0, 0],
+	// Plan TOS-33 (#481): không chờ 1s/2s giữa 3 lượt retry chấm bài trong E2E.
+	aiRetryDelaysMs: [0, 0],
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

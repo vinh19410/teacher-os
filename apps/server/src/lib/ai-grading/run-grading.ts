@@ -44,6 +44,23 @@ import {
  */
 export const AI_GRADING_TIMEOUT_MS = 20_000;
 
+/**
+ * TOS-33 D2: ngân sách TỔNG của toàn vòng chấm (tối đa 3 lượt gọi grader
+ * + backoff) — đo từ TRƯỚC reserve, nằm trong trần hậu-response ~30s của
+ * Workers. Bất biến test: `STALE_GRADING_AFTER_MS` (60s) > budget + biên —
+ * sweep không được đuổi kịp runner còn sống.
+ */
+export const AI_GRADING_BUDGET_MS = 30_000;
+
+/** Ngưỡng còn lại tối thiểu để mở thêm một lượt gọi grader. */
+const MIN_REMAINING_FOR_ATTEMPT_MS = 1_000;
+
+/** Tùy chọn lượt chấm lại (TOS-33 D3): route ai-retry CAS draft về
+ * `ai_processing` rồi gọi entry này — KHÔNG tạo draft mới. */
+export interface AiGradingOptions {
+	retryCount?: number;
+}
+
 /** Actor sổ cái cho pipeline hệ thống (không phải user nào cả). */
 const AI_GRADING_ACTOR = "system";
 
@@ -55,7 +72,12 @@ export interface AiGradingDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 	/** Chỉ test đụng: hạ timeout AI cho nhanh (mặc định 20s). */
 	aiGradingTimeoutMs?: number;
-	/** TOS-31 gắn STT thật; TOS-30 không wire → transcript rỗng. */
+	/** Chỉ test đụng: hạ ngân sách tổng vòng retry (mặc định 30s). */
+	aiGradingBudgetMs?: number;
+	/** TOS-33 D2: khoảng chờ giữa các lượt retry (mặc định [1s, 2s]);
+	 * test/E2E truyền [0, 0] để chạy nhanh (mẫu `notificationRetryDelaysMs`). */
+	retryDelaysMs?: number[];
+	aiRetryDelaysMs?: number[];
 	getTranscriber?():
 		| { transcribe(mediaKey: string): Promise<string> }
 		| undefined;
@@ -231,36 +253,73 @@ async function failQuickDraft(
 	});
 }
 
+/** Gọi grader 1 lượt với timeout per-call — map DOMException TimeoutError /
+ * AbortError cho catch bên ngoài phân loại. */
+async function gradeOnce(
+	grader: AiGrader,
+	input: Parameters<AiGrader["grade"]>[0],
+	timeoutMs: number,
+): Promise<AiGradingResult> {
+	const signal = AbortSignal.timeout(timeoutMs);
+	const { promise, resolve, reject } = Promise.withResolvers<AiGradingResult>();
+	const onAbort = () => reject(signal.reason);
+	signal.addEventListener("abort", onAbort, { once: true });
+	grader
+		.grade(input, signal)
+		.then(resolve, reject)
+		.finally(() => signal.removeEventListener("abort", onAbort));
+	return promise;
+}
+
+/** Đợi giữa 2 lượt — delay inject (test/E2E dùng [0, 0]). */
+function waitBackoff(ms: number): Promise<void> {
+	if (ms <= 0) return Promise.resolve();
+	const { promise, resolve } = Promise.withResolvers<void>();
+	setTimeout(resolve, ms);
+	return promise;
+}
+
 /**
- * Pipeline chấm nháp một attempt (TOS-30 D3): tạo draft `ai_processing`
- * (idempotent — đã có draft thì thoát) → Speaking thiếu transcript thoát
- * không tốn Credit (TOS-31 thay) → reserve → grade (≤ timeout) →
- * **CAS `ai_drafted` trước, settle sau**; thua CAS / lỗi AI → release.
+ * Pipeline chấm nháp một attempt (TOS-30 D3; vòng retry TOS-33 D2):
+ *
+ * - Luồng thường: tạo draft `ai_processing` (idempotent — đã có draft thì
+ *   thoát) → Speaking thiếu transcript thoát không tốn Credit (TOS-31 thay)
+ *   → reserve → gọi grader TỐI ĐA 3 LƯỢT (1 + 2 retry, backoff 1s/2s,
+ *   ngân sách tổng 30s — per-call = min(20s, còn lại), còn <1s dừng) →
+ *   **CAS `ai_drafted` trước, settle sau**; thua CAS / lỗi AI → release.
+ * - Entry retry (TOS-33 D3, `options.retryCount ≥ 1`): BỎ bước tạo draft —
+ *   route ai-retry đã CAS draft về `ai_processing`; reserve/settle/release
+ *   dùng bộ key riêng `ai_grading:<attemptId>:r<n>:<op>`.
+ *
  * Mọi lỗi ném về caller (schedule bọc log) — draft kẹt `ai_processing`
  * được `releaseStaleGradings` dọn.
  */
 export async function runAiGrading(
 	deps: AiGradingDeps,
 	attemptId: string,
+	options: AiGradingOptions = {},
 ): Promise<void> {
 	const db = deps.getDb();
+	const retryCount = options.retryCount ?? 0;
 	const attempt = await loadAttemptForGrading(db, attemptId);
 	if (!attempt) return;
 
 	const cost = AI_GRADING_COST[attempt.skill];
 
-	// Chống gọi trùng (nộp lại / request chạy lại): 1 dòng draft / attempt.
-	const inserted = await db
-		.insert(aiGradingDraft)
-		.values({
-			attemptId,
-			orgId: attempt.orgId,
-			skill: attempt.skill,
-			creditCost: cost,
-		})
-		.onConflictDoNothing()
-		.returning({ attemptId: aiGradingDraft.attemptId });
-	if (inserted.length === 0) return;
+	if (retryCount < 1) {
+		// Chống gọi trùng (nộp lại / request chạy lại): 1 dòng draft / attempt.
+		const inserted = await db
+			.insert(aiGradingDraft)
+			.values({
+				attemptId,
+				orgId: attempt.orgId,
+				skill: attempt.skill,
+				creditCost: cost,
+			})
+			.onConflictDoNothing()
+			.returning({ attemptId: aiGradingDraft.attemptId });
+		if (inserted.length === 0) return;
+	}
 
 	const settle = {
 		orgId: attempt.orgId,
@@ -268,6 +327,7 @@ export async function runAiGrading(
 		amount: cost,
 		refId: attemptId,
 		actionType: "ai_grading" as const,
+		...(retryCount >= 1 ? { retryCount } : {}),
 	};
 
 	// Speaking TOS-30 (D4): chưa có STT → manual_pending, không reserve.
@@ -339,6 +399,7 @@ export async function runAiGrading(
 	const grader = deps.getAiGrader?.();
 	if (!grader) {
 		// Fail-closed như extractor (binding AI thiếu) — hoàn Credit hoặc lượt quick.
+		// KHÔNG retry: lỗi cấu hình, gọi lại vô ích.
 		if (quickMode) {
 			await failQuickDraft(
 				db,
@@ -352,106 +413,131 @@ export async function runAiGrading(
 		return;
 	}
 
-	try {
-		// Pipeline TỰ áp hạn chót (kongming #478 follow-up): grader/AI treo
-		// cứng có thể bỏ qua `signal` — race ở đây cắt đúng deadline bất kể.
-		// Listener đăng ký TRƯỚC khi gọi grade; `signal.reason` là
-		// DOMException "TimeoutError" → catch map thành AI_GRADING_TIMEOUT.
-		const signal = AbortSignal.timeout(
-			deps.aiGradingTimeoutMs ?? AI_GRADING_TIMEOUT_MS,
-		);
-		const result = await new Promise<AiGradingResult>((resolve, reject) => {
-			const onAbort = () => reject(signal.reason);
-			signal.addEventListener("abort", onAbort, { once: true });
-			grader
-				.grade(
-					{
-						skill: attempt.skill,
-						prompt: attempt.prompt,
-						part: attempt.part,
-						essay:
-							attempt.skill === "writing"
-								? essayToPlain(attempt.essay).text
-								: undefined,
-						transcript,
-						mode: quickMode ? "quick" : "standard",
-					},
-					signal,
-				)
-				.then(resolve, reject)
-				.finally(() => signal.removeEventListener("abort", onAbort));
-		});
-		const scores = Object.fromEntries(
-			Object.entries(result.scores).map(([key, value]) => [
-				key,
-				roundBandStep(value),
-			]),
-		);
-		// Chuẩn hoá về ĐÚNG 4 key của skill — dư/thiếu key coi grader hỏng;
-		// shape chấm tay (`parseGradeScores` ở publish) là nguồn chuẩn.
-		const keys = criteriaForSkill(attempt.skill);
-		const validScores: Record<string, number> = {};
-		for (const key of keys) {
-			const value = scores[key];
-			if (value === undefined || !Number.isFinite(value)) {
-				throw new AiGradingFailedError(
-					AI_GRADING_ERROR_CODES.FAILED,
-					"grader returned incomplete scores",
-				);
-			}
-			validScores[key] = value;
-		}
+	// Ngân sách TỔNG đo từ TRƯỚC lượt gọi đầu (kongming advisory #481 R3):
+	// per-call = min(per-call cap, còn lại); còn < 1s thì dừng, không gọi
+	// thêm lượt. Hết ngân sách giữa chừng xếp `AI_GRADING_TIMEOUT`.
+	const budgetMs = deps.aiGradingBudgetMs ?? AI_GRADING_BUDGET_MS;
+	const perCallCapMs = deps.aiGradingTimeoutMs ?? AI_GRADING_TIMEOUT_MS;
+	const delays = deps.retryDelaysMs ?? deps.aiRetryDelaysMs ?? [1_000, 2_000];
+	const deadlineAt = Date.now() + budgetMs;
+	const graderInput = {
+		skill: attempt.skill,
+		prompt: attempt.prompt,
+		part: attempt.part,
+		essay:
+			attempt.skill === "writing"
+				? essayToPlain(attempt.essay).text
+				: undefined,
+		transcript,
+		mode: (quickMode ? "quick" : "standard") as "quick" | "standard",
+	};
 
-		// CAS draft TRƯỚC, ví SAU (kongming red-team điều kiện 2): thua CAS
-		// (teacher đã publish / sweep đã manual_pending) → hoàn Credit, tuyệt
-		// đối không settle bằng `held` của job khác.
-		const won = await casDraftFromProcessing(db, attemptId, {
-			status: "ai_drafted",
-			aiScores: validScores,
-			aiFeedback: result.feedback,
-			draftedAt: new Date(),
-		});
-		if (won) {
-			if (!quickMode) {
-				await settleCredits(db, settle);
-			}
-		} else if (quickMode) {
-			await revertQuickGradeSlot(db, {
-				orgId: attempt.orgId,
-				attemptId,
-				actorUserId: AI_GRADING_ACTOR,
-			});
-		} else {
-			await releaseCredits(db, settle);
+	const MAX_GRADER_ATTEMPTS = 3;
+	let validScores: Record<string, number> | null = null;
+	let feedback = "";
+	let failedByTimeout = false;
+	// Chuẩn hoá về ĐÚNG 4 key của skill nằm TRONG vòng retry — grader trả
+	// thiếu/dư key coi là 1 lượt hỏng (hành vi TOS-30: `failDraft` FAILED,
+	// không kẹt `ai_processing`); shape chấm tay (`parseGradeScores` ở
+	// publish) là nguồn chuẩn.
+	const keys = criteriaForSkill(attempt.skill);
+	for (let call = 1; call <= MAX_GRADER_ATTEMPTS; call++) {
+		const remaining = deadlineAt - Date.now();
+		if (call > 1 && remaining < MIN_REMAINING_FOR_ATTEMPT_MS) {
+			failedByTimeout = true;
+			break;
 		}
-	} catch (error) {
-		const code: AiGradingErrorCode =
-			error instanceof DOMException && error.name === "TimeoutError"
-				? AI_GRADING_ERROR_CODES.TIMEOUT
-				: error instanceof Error && error.name === "AbortError"
-					? AI_GRADING_ERROR_CODES.TIMEOUT
-					: AI_GRADING_ERROR_CODES.FAILED;
+		try {
+			const result = await gradeOnce(
+				grader,
+				graderInput,
+				Math.max(1, Math.min(perCallCapMs, remaining)),
+			);
+			const scores = Object.fromEntries(
+				Object.entries(result.scores).map(([key, value]) => [
+					key,
+					roundBandStep(value),
+				]),
+			);
+			const checked: Record<string, number> = {};
+			for (const key of keys) {
+				const value = scores[key];
+				if (value === undefined || !Number.isFinite(value)) {
+					throw new AiGradingFailedError(
+						AI_GRADING_ERROR_CODES.FAILED,
+						"grader returned incomplete scores",
+					);
+				}
+				checked[key] = value;
+			}
+			validScores = checked;
+			feedback = result.feedback;
+			break;
+		} catch (error) {
+			failedByTimeout =
+				// grader/AI treo cứng có thể bỏ qua `signal` — deadline ở trên
+				// cắt đúng hạn bất kể; map TimeoutError/AbortError.
+				(error instanceof DOMException && error.name === "TimeoutError") ||
+				(error instanceof Error && error.name === "AbortError");
+			if (call < MAX_GRADER_ATTEMPTS) {
+				await waitBackoff(delays[Math.min(call, delays.length) - 1] ?? 0);
+			}
+		}
+	}
+
+	if (validScores === null) {
+		// Đã đủ lượt retry / hết ngân sách → hoàn TOÀN bộ số đã giữ hoặc lượt quick.
+		const code = failedByTimeout
+			? AI_GRADING_ERROR_CODES.TIMEOUT
+			: AI_GRADING_ERROR_CODES.FAILED;
 		if (quickMode) {
 			await failQuickDraft(db, attempt.orgId, attemptId, code);
 		} else {
 			await failDraft(db, settle, attemptId, code);
 		}
+		return;
+	}
+
+	// CAS draft TRƯỚC, ví SAU (kongming red-team điều kiện 2): thua CAS
+	// (teacher đã publish / sweep đã manual_pending) → hoàn Credit / lượt
+	// Chấm nhanh, tuyệt đối không settle bằng `held` của job khác.
+	const won = await casDraftFromProcessing(db, attemptId, {
+		status: "ai_drafted",
+		aiScores: validScores,
+		aiFeedback: feedback,
+		draftedAt: new Date(),
+	});
+	if (won) {
+		if (!quickMode) {
+			await settleCredits(db, settle);
+		}
+	} else if (quickMode) {
+		await revertQuickGradeSlot(db, {
+			orgId: attempt.orgId,
+			attemptId,
+			actorUserId: AI_GRADING_ACTOR,
+		});
+	} else {
+		await releaseCredits(db, settle);
 	}
 }
 
 /**
- * Hẹn pipeline chạy nền sau khi response nộp bài đã trả (D3): có
- * `runInBackground` (waitUntil) → wrap; không có (test node) →
- * fire-and-forget với log lỗi — KHÔNG bỏ lặng lẽ (kongming điều kiện 4).
- * Trả promise để test await trực tiếp.
+ * Hẹn pipeline chạy nền sau khi response nộp bài đã trả (D3) hoặc sau khi
+ * route ai-retry CAS xong (TOS-33 D3): có `runInBackground` (waitUntil) →
+ * wrap; không có (test node) → fire-and-forget với log lỗi — KHÔNG bỏ
+ * lặng lẽ (kongming điều kiện 4). Trả promise để test await trực tiếp.
  */
 export function scheduleAiGrading(
 	deps: AiGradingDeps,
 	attemptId: string,
+	options: AiGradingOptions = {},
 ): Promise<void> {
-	const promise = runAiGrading(deps, attemptId).catch((error: unknown) => {
-		console.error(`[ai-grading] pipeline ${attemptId} thất bại:`, error);
-	});
+	const promise = runAiGrading(deps, attemptId, options).catch(
+		(error: unknown) => {
+			console.error(`[ai-grading] pipeline ${attemptId} thất bại:`, error);
+		},
+	);
 	if (deps.runInBackground) {
 		deps.runInBackground(promise);
 	}

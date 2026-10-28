@@ -1,17 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type {
-	AiGradingDraftView,
-	EssayAnnotation,
-	TeacherSubmission,
+import {
+	AI_GRADING_CONFLICT_CODE,
+	AI_GRADING_E011_MESSAGE,
+	type AiGradingDraftView,
+	type EssayAnnotation,
+	type QuizGradeInput,
+	type TeacherSubmission,
 } from "@teacher-os/api/contracts";
+import { criterionLabel } from "@teacher-os/api/lib/ielts-band";
+import { canPublishGrade } from "@teacher-os/auth/role";
 import { useState } from "react";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
 import { AiDraftPanel } from "@/components/grading/ai-draft-panel";
 import { GradeForm } from "@/components/grading/grade-form";
 import { SubmissionView } from "@/components/grading/submission-view";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
+import { SectionLabel } from "@/components/ui/section-label";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
@@ -19,6 +27,7 @@ import {
 	deleteAnnotation,
 	gradingQueryKey,
 	gradingQueueQueryKey,
+	retryAiGrading,
 	saveDraft,
 	saveGrade,
 	submissionQueryOptions,
@@ -48,17 +57,40 @@ function on401Reauth(loadError: Error | null): void {
 	}
 }
 
+function isVersionConflict(error: unknown): boolean {
+	return (
+		isHttpError(error) &&
+		error.status === 409 &&
+		error.reason === AI_GRADING_CONFLICT_CODE
+	);
+}
+
 export function GradingRoute() {
 	const { attemptId } = Route.useParams();
-	const { data, error, isPending } = useQuery(
-		submissionQueryOptions(attemptId),
-	);
+	const { data, error, isPending, refetch } = useQuery({
+		...submissionQueryOptions(attemptId),
+		// TOS-33 D3/D5: khi draft đang `ai_processing` (sau khi bấm "Thử chấm
+		// lại AI" hoặc vừa nộp), tự poll 1s/lần tới khi rời `ai_processing`.
+		refetchInterval: (query) =>
+			query.state.data?.aiDraft?.status === "ai_processing" ? 1_000 : false,
+	});
 	const queryClient = useQueryClient();
 	const [savedAt, setSavedAt] = useState<string | null>(null);
 	/** Band tổng sống — GradeForm tính từ 4 slider rồi đẩy lên để PageHead
 	 * render con số lớn (design `Grading`). */
 	const [overall, setOverall] = useState("—");
+	/** TOS-33 D4: hộp thoại E-011 + vùng giữ nội dung người dùng đang sửa
+	 * ("Bản bạn đang sửa") khi lưu bị chặn 409 do nhân sự khác đã cập nhật. */
+	const [conflictOpen, setConflictOpen] = useState(false);
+	const [preservedEdit, setPreservedEdit] = useState<QuizGradeInput | null>(
+		null,
+	);
 
+	const cachedKernel = queryClient.getQueryData<{
+		viewer?: { role?: string };
+	}>(kernelQueryKey);
+	const viewerRole = cachedKernel?.viewer?.role ?? "teacher";
+	const canPublish = canPublishGrade(viewerRole);
 	/** Cập nhật mảng annotations trong cache submission — dùng chung cho
 	 * create/update/delete, cache cũ (chưa có key) giữ nguyên. */
 	const setAnnotations = (
@@ -105,11 +137,20 @@ export function GradingRoute() {
 			});
 			setSavedAt(grade.gradedAt);
 		},
-		onError: on401Reauth,
+		onError(loadError, variables) {
+			on401Reauth(loadError);
+			if (isVersionConflict(loadError)) {
+				setPreservedEdit({
+					scores: variables.scores,
+					feedback: variables.feedback,
+				});
+				setConflictOpen(true);
+			}
+		},
 	});
 
 	/** "Lưu bản nháp" (TOS-30): PATCH draft với version đang thấy — server
-	 * lệch version → 409 (chống lưu đè). */
+	 * lệch version → 409 E-011 (chống lưu đè). */
 	const draftMutation = useMutation({
 		mutationFn: (input: {
 			patch: Parameters<typeof saveDraft>[1];
@@ -124,7 +165,36 @@ export function GradingRoute() {
 			});
 			setSavedAt(new Date().toISOString());
 		},
-		onError: on401Reauth,
+		onError(loadError, variables) {
+			on401Reauth(loadError);
+			if (isVersionConflict(loadError)) {
+				setPreservedEdit({
+					scores: variables.patch.scores,
+					feedback: variables.patch.feedback,
+				});
+				setConflictOpen(true);
+			}
+		},
+	});
+
+	/** "Thử chấm lại AI" (TOS-33 D3/D5): đặt lại draft `ai_processing` và
+	 * kích hoạt polling cho tới khi xong. */
+	const retryMutation = useMutation({
+		mutationFn: () => retryAiGrading(attemptId),
+		onSuccess(view: AiGradingDraftView) {
+			queryClient.setQueryData(gradingQueryKey(attemptId), (old) =>
+				old ? { ...old, aiDraft: view } : old,
+			);
+			void queryClient.invalidateQueries({
+				queryKey: gradingQueueQueryKey,
+			});
+		},
+		onError(loadError) {
+			on401Reauth(loadError);
+			if (isVersionConflict(loadError)) {
+				setConflictOpen(true);
+			}
+		},
 	});
 
 	const createMutation = useMutation({
@@ -164,7 +234,7 @@ export function GradingRoute() {
 		);
 	}
 
-	if (error || !data) {
+	if (!data) {
 		const status = isHttpError(error) ? error.status : 0;
 		const message =
 			status === 404
@@ -191,8 +261,12 @@ export function GradingRoute() {
 		mutation.error instanceof Error ? mutation.error.message : null;
 	const friendlySaveError =
 		isHttpError(mutation.error) && mutation.error.status === 409
-			? "Bài chưa ở trạng thái đã nộp — tải lại trang."
-			: saveError;
+			? isVersionConflict(mutation.error)
+				? `${AI_GRADING_CONFLICT_CODE} · ${AI_GRADING_E011_MESSAGE}`
+				: "Bài chưa ở trạng thái đã nộp — tải lại trang."
+			: isHttpError(mutation.error) && mutation.error.status === 403
+				? "Chỉ Giáo viên đứng lớp được chốt trả bài."
+				: saveError;
 	/** GradeForm điền điểm ĐÃ CÔNG BỐ khi có (`data.grade`) — chỉ bài chưa
 	 * chốt mới điền sẵn từ nháp rà → điểm gợi ý AI (code review #478: sau
 	 * publish, điền điểm AI sẽ mời giáo viên ghi đè điểm cuối). */
@@ -212,7 +286,7 @@ export function GradingRoute() {
 	const draftError = draftMutation.error
 		? isHttpError(draftMutation.error)
 			? draftMutation.error.status === 409
-				? "Bản nháp đã được lưu từ nơi khác — tải lại trang để thấy bản mới."
+				? `${AI_GRADING_CONFLICT_CODE} · ${AI_GRADING_E011_MESSAGE}`
 				: "Bài không có bản nháp AI để lưu."
 			: (draftMutation.error.message ?? null)
 		: null;
@@ -308,7 +382,53 @@ export function GradingRoute() {
 				</Card>
 				<div className="flex flex-col gap-6">
 					{draft !== null && (
-						<AiDraftPanel draft={draft} skill={data.skill} part={data.part} />
+						<AiDraftPanel
+							draft={draft}
+							skill={data.skill}
+							part={data.part}
+							canRetry={canPublish}
+							retrying={retryMutation.isPending}
+							onRetry={() => retryMutation.mutate()}
+						/>
+					)}
+					{preservedEdit !== null && (
+						<Card
+							data-testid="conflict-preserved-draft"
+							className="flex flex-col gap-3 border-warn/40 bg-warn/5 p-4 text-sm"
+						>
+							<div className="flex items-center justify-between gap-2">
+								<SectionLabel>Bản bạn đang sửa</SectionLabel>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => setPreservedEdit(null)}
+								>
+									Ẩn
+								</Button>
+							</div>
+							<p className="text-muted-foreground text-xs">
+								Nội dung bạn vừa chỉnh được giữ lại để đối chiếu hoặc chép sang
+								bản mới nhất:
+							</p>
+							<dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+								{Object.entries(preservedEdit.scores).map(([key, val]) => (
+									<div key={key} className="flex justify-between gap-2">
+										<dt className="text-muted-foreground">
+											{criterionLabel(data.skill, key as never, data.part)}
+										</dt>
+										<dd className="font-semibold tabular-nums">
+											{val.toFixed(1)}
+										</dd>
+									</div>
+								))}
+							</dl>
+							{preservedEdit.feedback.length > 0 && (
+								<blockquote className="border-warn/40 border-l-2 pl-3 text-foreground text-sm">
+									{preservedEdit.feedback}
+								</blockquote>
+							)}
+						</Card>
 					)}
 					<Card className="p-6">
 						<GradeForm
@@ -324,7 +444,12 @@ export function GradingRoute() {
 							error={mutation.error ? friendlySaveError : null}
 							savedAt={savedAt}
 							onOverallChange={setOverall}
-							onSave={(input) => mutation.mutate(input)}
+							canPublish={canPublish}
+							onSave={(input) =>
+								mutation.mutate(
+									draft !== null ? { ...input, version: draft.version } : input,
+								)
+							}
 							draftMode={draftActive}
 							savingDraft={draftMutation.isPending}
 							draftError={draftMutation.error ? draftError : null}
@@ -338,6 +463,43 @@ export function GradingRoute() {
 					</Card>
 				</div>
 			</div>
+			<Modal
+				open={conflictOpen}
+				onClose={() => setConflictOpen(false)}
+				title="Xung đột cập nhật điểm chấm (E-selfomy-alignment-011)"
+				footer={
+					<Button
+						type="button"
+						data-testid="reload-latest-draft"
+						onClick={() => {
+							mutation.reset();
+							draftMutation.reset();
+							retryMutation.reset();
+							setConflictOpen(false);
+							void refetch();
+						}}
+					>
+						Tải lại bản mới nhất
+					</Button>
+				}
+			>
+				<p data-testid="conflict-dialog-message" className="text-sm">
+					<span className="font-mono font-semibold text-warn text-xs">
+						{AI_GRADING_CONFLICT_CODE}
+					</span>{" "}
+					· {AI_GRADING_E011_MESSAGE}
+				</p>
+				{preservedEdit !== null && (
+					<div className="rounded-md border border-border bg-muted/40 p-3 text-xs">
+						<p className="mb-1 font-medium text-foreground">
+							Bản bạn đang sửa được giữ lại trên màn hình sau khi tải lại:
+						</p>
+						{preservedEdit.feedback.length > 0 && (
+							<p className="text-muted-foreground">{preservedEdit.feedback}</p>
+						)}
+					</div>
+				)}
+			</Modal>
 		</div>
 	);
 }

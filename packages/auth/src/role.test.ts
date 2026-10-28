@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
 	canAccessFinance,
+	canPublishGrade,
+	canReviewGrade,
 	FINANCE_ROLES,
+	GRADING_PUBLISH_ROLES,
+	GRADING_REVIEW_ROLES,
 	resolveRequestApp,
 	resolveUserRole,
 } from "./role";
@@ -217,5 +221,59 @@ describe("canAccessFinance (TOS-17 #451)", () => {
 		expect(canAccessFinance("xyz")).toBe(false);
 		expect(canAccessFinance(null)).toBe(false);
 		expect(canAccessFinance(undefined)).toBe(false);
+	});
+});
+
+describe("canPublishGrade / canReviewGrade (TOS-33 #481 AC-004)", () => {
+	const ROLES = [
+		"teacher",
+		"owner",
+		"admin",
+		"class_teacher",
+		"ta",
+		"student",
+		"xyz",
+		"",
+	] as const;
+
+	test("canPublishGrade allows teacher/owner/admin/class_teacher — NOT ta", () => {
+		expect(GRADING_PUBLISH_ROLES).toEqual([
+			"teacher",
+			"owner",
+			"admin",
+			"class_teacher",
+		]);
+		expect(canPublishGrade("teacher")).toBe(true);
+		expect(canPublishGrade("owner")).toBe(true);
+		expect(canPublishGrade("admin")).toBe(true);
+		expect(canPublishGrade("class_teacher")).toBe(true);
+		expect(canPublishGrade("ta")).toBe(false);
+	});
+
+	test("canReviewGrade allows publishing roles PLUS ta (lưu bản nháp)", () => {
+		expect(GRADING_REVIEW_ROLES).toEqual([
+			"teacher",
+			"owner",
+			"admin",
+			"class_teacher",
+			"ta",
+		]);
+		for (const role of GRADING_REVIEW_ROLES) {
+			expect(canReviewGrade(role)).toBe(true);
+		}
+	});
+
+	test("both deny student, unknown, empty, null/undefined", () => {
+		for (const fn of [canPublishGrade, canReviewGrade]) {
+			expect(fn("student")).toBe(false);
+			expect(fn("xyz")).toBe(false);
+			expect(fn("")).toBe(false);
+			expect(fn(null)).toBe(false);
+			expect(fn(undefined)).toBe(false);
+		}
+		// Đủ bảng: teacher+owner+admin+class_teacher publish; ta chỉ review.
+		expect(canPublishGrade("ta")).toBe(false);
+		expect(canReviewGrade("ta")).toBe(true);
+		void ROLES;
 	});
 });

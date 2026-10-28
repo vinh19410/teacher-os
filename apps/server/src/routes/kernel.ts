@@ -63,6 +63,7 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import type { AiGrader } from "../lib/ai-grading/grader";
 import type { MediaStore } from "../lib/media-store";
 import { deliverNotifications } from "../lib/notifications/deliver";
 import {
@@ -127,6 +128,11 @@ export function kernelRoutes(deps: {
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
+	/** TOS-33 (#481): grader + vòng retry cho "Thử chấm lại AI" — cùng DI
+	 * nguồn buildApp với submit route. */
+	getAiGrader?(): AiGrader | undefined;
+	aiRetryDelaysMs?: number[];
+	aiGradingTimeoutMs?: number;
 }) {
 	const kernel = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
