@@ -784,7 +784,11 @@ export function gradingRoutes(deps: {
 						.where(
 							and(
 								eq(aiGradingDraft.attemptId, loaded.row.id),
-								eq(aiGradingDraft.version, body.data.version ?? -1),
+								// Caller không gửi `version` (chấm bài vừa nộp ở version 1)
+								// mặc định so với version gốc 1 — ngay khi bất kỳ ai đã Lưu
+								// bản nháp (version ≥ 2), thiếu `version` hoặc gửi version 1
+								// đều trượt CAS → 409 E-011.
+								eq(aiGradingDraft.version, body.data.version ?? 1),
 								ne(aiGradingDraft.status, "published"),
 							),
 						)
