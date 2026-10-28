@@ -32,6 +32,10 @@ export function GradeForm({
 	savedAt,
 	onSave,
 	onOverallChange,
+	draftMode,
+	savingDraft,
+	draftError,
+	onSaveDraft,
 }: {
 	skill: GradableSkill;
 	part: string;
@@ -43,6 +47,12 @@ export function GradeForm({
 	/** Band tổng sống đẩy lên PageHead của route — form chỉ tính, không
 	 * tự render con số lớn (design `Grading`). */
 	onOverallChange?(band: string): void;
+	/** TOS-30: bài có draft AI → nút chính "Chốt trả bài", thêm nút phụ
+	 * "Lưu bản nháp" (cùng scores/feedback hiện tại). */
+	draftMode?: boolean;
+	savingDraft?: boolean;
+	draftError?: string | null;
+	onSaveDraft?(input: QuizGradeInput): void;
 }) {
 	const keys = criteriaForSkill(skill);
 	const [scores, setScores] = useState<Record<string, number | null>>(() =>
@@ -101,15 +111,42 @@ export function GradeForm({
 					{error}
 				</p>
 			)}
+			{draftError != null && (
+				<p role="alert" className="text-destructive text-sm">
+					{draftError}
+				</p>
+			)}
 			{savedAt !== null && (
 				<p className="text-sm text-success" data-testid="grade-saved">
 					Đã lưu · {fmtWhen(savedAt)}
 				</p>
 			)}
 
-			<Button type="submit" className="w-full" disabled={!complete || saving}>
-				{saving ? "Đang lưu…" : "Lưu điểm"}
-			</Button>
+			<div className="flex flex-col gap-2">
+				{draftMode && (
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full"
+						disabled={!complete || savingDraft || saving}
+						data-testid="save-draft"
+						onClick={() => {
+							if (!complete || savingDraft || saving) return;
+							onSaveDraft?.({
+								scores: Object.fromEntries(
+									keys.map((key) => [key, scores[key] as number]),
+								),
+								feedback,
+							});
+						}}
+					>
+						{savingDraft ? "Đang lưu bản nháp…" : "Lưu bản nháp"}
+					</Button>
+				)}
+				<Button type="submit" className="w-full" disabled={!complete || saving}>
+					{saving ? "Đang lưu…" : draftMode ? "Chốt trả bài" : "Lưu điểm"}
+				</Button>
+			</div>
 		</form>
 	);
 }

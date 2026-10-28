@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import type {
+	AiGradingDraftView,
 	GradingQueueResponse,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
@@ -1477,6 +1478,7 @@ describe("GET /api/grading (queue #383)", () => {
 			part: "",
 			submittedAt: "2026-10-19T11:00:00.000Z",
 			grade: null,
+			aiStatus: null,
 		});
 
 		// Đề writing 2 part -> chỉ 1 dòng, part lấy từ position nhỏ nhất (task1)
@@ -1492,6 +1494,7 @@ describe("GET /api/grading (queue #383)", () => {
 			part: "task1",
 			submittedAt: "2026-10-19T09:00:00.000Z",
 			grade: null,
+			aiStatus: null,
 		});
 
 		// Bài giao theo lớp đã chấm
@@ -1512,6 +1515,7 @@ describe("GET /api/grading (queue #383)", () => {
 				feedback: "Tốt",
 				gradedAt: "2026-10-20T10:00:00.000Z",
 			},
+			aiStatus: null,
 		});
 	});
 
@@ -1739,5 +1743,307 @@ describe("grade_returned notification (/api/grading/:attemptId/grade #454)", () 
 		await client.execute("DROP TABLE notification_record");
 		const res = await postGrade("att-g");
 		expect(res.status).toBe(200);
+	});
+});
+
+// TOS-30 (#478) — draft chấm AI: GET trả `aiDraft`, PATCH "Lưu bản nháp"
+// (teacher_reviewing + version), POST /grade publish draft trong cùng batch,
+// hàng chờ trả `aiStatus`; API học viên tuyệt đối không lộ shape draft.
+describe("AI grading draft (TOS-30 #478)", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values({
+			id: "org-1",
+			name: "Academy 1",
+		});
+		await libsql.insert(schema.user).values({
+			id: "t-1",
+			name: "Cô Lan",
+			email: "lan@test.local",
+			role: "teacher",
+		});
+		await libsql.insert(schema.membership).values({
+			id: "mem-1",
+			orgId: "org-1",
+			userId: "t-1",
+			role: "teacher",
+		});
+		await libsql.insert(schema.student).values({
+			id: "student-1",
+			orgId: "org-1",
+			name: "Minh Tran",
+			email: "minh@gmail.com",
+			phone: "0901234567",
+		});
+		await libsql.insert(schema.classTable).values({
+			id: "class-1",
+			orgId: "org-1",
+			name: "IELTS Foundation",
+			level: "IELTS 5.0–6.0",
+			mode: "Online",
+			schedule: "T2 & T5 18:30–20:00",
+			sessionsDone: 0,
+			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-d",
+			orgId: "org-1",
+			task: "task2",
+			genre: "essay",
+			skill: "writing",
+			part: "task2",
+			type: "essay",
+			title: "Writing Task 2 D",
+			prompt: "<p>Children should learn to code.</p>",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-d",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-d",
+			title: "Writing Task 2 D",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-d",
+			orgId: "org-1",
+			assignmentId: "ca-d",
+			studentId: "student-1",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			essay: "My draft essay.",
+			submittedAt: new Date("2026-10-05T01:00:00Z"),
+		});
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	const teacherHeaders = () => ({
+		...TEACHER,
+		origin: TEACHER_ORIGIN,
+		"content-type": "application/json",
+	});
+
+	async function getSubmission(attemptId: string) {
+		return app.request(`/api/grading/${attemptId}`, {
+			headers: { ...TEACHER, origin: TEACHER_ORIGIN },
+		});
+	}
+
+	async function patchDraft(
+		attemptId: string,
+		body: unknown,
+	): Promise<Response> {
+		return app.request(`/api/grading/${attemptId}/draft`, {
+			method: "PATCH",
+			headers: teacherHeaders(),
+			body: JSON.stringify(body),
+		});
+	}
+
+	const WRITING_SCORES = { task: 6.5, coherence: 7, lexical: 6, grammar: 6 };
+
+	test("GET trả aiDraft null khi bài chưa có draft", async () => {
+		const res = await getSubmission("att-d");
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as TeacherSubmission;
+		expect(body.aiDraft).toBeNull();
+	});
+
+	test("PATCH draft → teacher_reviewing + version 2, GET thấy reviewedScores", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-d",
+			orgId: "org-1",
+			skill: "writing",
+			status: "ai_drafted",
+			aiScores: { task: 6, coherence: 6.5, lexical: 5.5, grammar: 6 },
+			aiFeedback: "AI: cần phát triển ý.",
+			creditCost: 1,
+		});
+
+		const res = await getSubmission("att-d");
+		expect(res.status).toBe(200);
+		const before = (await res.json()) as TeacherSubmission;
+		expect(before.aiDraft).toMatchObject({
+			status: "ai_drafted",
+			version: 1,
+			errorCode: null,
+			publishedAt: null,
+		});
+		expect(before.aiDraft?.aiScores).toEqual({
+			task: 6,
+			coherence: 6.5,
+			lexical: 5.5,
+			grammar: 6,
+		});
+
+		const patch = await patchDraft("att-d", {
+			scores: WRITING_SCORES,
+			feedback: "Giáo viên: mở rộng ví dụ đoạn 2.",
+			version: 1,
+		});
+		expect(patch.status).toBe(200);
+		const after = (await patch.json()) as AiGradingDraftView;
+		expect(after).toMatchObject({
+			status: "teacher_reviewing",
+			reviewedScores: WRITING_SCORES,
+			reviewedFeedback: "Giáo viên: mở rộng ví dụ đoạn 2.",
+			version: 2,
+		});
+
+		// GET lần nữa thấy nháp rà + version mới.
+		const reread = await getSubmission("att-d");
+		const rereadBody = (await reread.json()) as TeacherSubmission;
+		expect(rereadBody.aiDraft).toMatchObject({
+			status: "teacher_reviewing",
+			version: 2,
+			aiFeedback: "AI: cần phát triển ý.",
+		});
+	});
+
+	test("PATCH version cũ → 409 DRAFT_VERSION_CONFLICT", async () => {
+		const res = await patchDraft("att-d", {
+			scores: WRITING_SCORES,
+			feedback: "Trễ.",
+			version: 1,
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toMatchObject({ code: "DRAFT_VERSION_CONFLICT" });
+	});
+
+	test("PATCH sai key tiêu chí → 400 invalid scores", async () => {
+		const res = await patchDraft("att-d", {
+			scores: { fluency: 6, lexical: 6, grammar: 6, pronunciation: 6 },
+			feedback: "Sai skill.",
+			version: 2,
+		});
+		expect(res.status).toBe(400);
+	});
+
+	test("POST /grade publish draft (teacher_reviewing → published) + grade_returned", async () => {
+		const res = await app.request("/api/grading/att-d/grade", {
+			method: "POST",
+			headers: teacherHeaders(),
+			body: JSON.stringify({
+				scores: WRITING_SCORES,
+				feedback: "Điểm cuối.",
+			}),
+		});
+		expect(res.status).toBe(200);
+		const grade = (await res.json()) as { band: number };
+		expect(grade.band).toBe(6.5);
+
+		const [draft] = await libsql
+			.select()
+			.from(schema.aiGradingDraft)
+			.where(eq(schema.aiGradingDraft.attemptId, "att-d"));
+		expect(draft?.status).toBe("published");
+		expect(draft?.publishedAt).not.toBeNull();
+
+		const [attempt] = await libsql
+			.select()
+			.from(schema.quizAttempt)
+			.where(eq(schema.quizAttempt.id, "att-d"));
+		expect(attempt?.gradeScores).toEqual(WRITING_SCORES);
+		expect(attempt?.gradedAt).not.toBeNull();
+
+		const notifications = await libsql.select().from(schema.notificationRecord);
+		expect(notifications).toHaveLength(1);
+		expect(notifications[0]).toMatchObject({
+			eventType: "grade_returned",
+			idempotencyKey: "grade_returned:att-d",
+		});
+	});
+
+	test("PATCH sau publish → 409 DRAFT_NOT_EDITABLE", async () => {
+		const res = await patchDraft("att-d", {
+			scores: WRITING_SCORES,
+			feedback: "Muốn sửa sau trả bài.",
+			version: 2,
+		});
+		expect(res.status).toBe(409);
+		expect(await res.json()).toMatchObject({ code: "DRAFT_NOT_EDITABLE" });
+	});
+
+	test("PATCH bài không draft → 404 DRAFT_NOT_FOUND", async () => {
+		// Lượt giao riêng (UNIQUE (assignment, student) với att-d).
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-d2",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-d",
+			title: "Writing Task 2 D2",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-d2",
+			orgId: "org-1",
+			assignmentId: "ca-d2",
+			studentId: "student-1",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			essay: "Another essay.",
+			submittedAt: new Date("2026-10-06T01:00:00Z"),
+		});
+		const res = await patchDraft("att-d2", {
+			scores: WRITING_SCORES,
+			feedback: "Không có draft.",
+			version: 1,
+		});
+		expect(res.status).toBe(404);
+		expect(await res.json()).toMatchObject({ code: "DRAFT_NOT_FOUND" });
+	});
+
+	test("hàng chờ trả aiStatus của attempt có draft", async () => {
+		const res = await app.request("/api/grading", {
+			headers: { ...TEACHER, origin: TEACHER_ORIGIN },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as GradingQueueResponse;
+		const attD = body.items.find((item) => item.attemptId === "att-d");
+		expect(attD?.aiStatus).toBe("published");
+		const attD2 = body.items.find((item) => item.attemptId === "att-d2");
+		expect(attD2?.aiStatus).toBeNull();
+	});
+
+	test("API học viên không chứa bất kỳ field draft nào (BR-001)", async () => {
+		const detail = await app.request("/api/student/attempts/att-d/detail", {
+			headers: {
+				"x-test-user": "student-u",
+				"x-student-org-id": "org-1",
+				Origin: "http://localhost:8003",
+			},
+		});
+		expect(detail.status).toBe(200);
+		const text = await detail.text();
+		for (const forbidden of [
+			"aiScores",
+			"aiFeedback",
+			"aiDraft",
+			"reviewedScores",
+			"ai_processing",
+			"ai_drafted",
+			"teacher_reviewing",
+			"manual_pending",
+		]) {
+			expect(text).not.toContain(forbidden);
+		}
 	});
 });

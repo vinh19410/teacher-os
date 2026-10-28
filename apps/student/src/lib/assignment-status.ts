@@ -2,6 +2,7 @@ import type {
 	StudentAssignment,
 	StudentAssignmentScores,
 } from "@teacher-os/api/contracts";
+import { isGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
 export type AssignmentDisplayStatus =
@@ -101,9 +102,14 @@ export function deriveAssignmentStatus(
 
 	// Submitted
 	if (assignment.submittedAt) {
+		// TOS-30 #478: chỉ Writing/Speaking chờ giáo viên chấm tay — bài tự
+		// chấm (Reading/Listening) đã có điểm ngay khi nộp, giữ "Đã nộp".
+		const needsTeacherGrading = isGradableSkill(assignment.skill ?? "");
 		return {
 			status: "submitted",
-			statusLabel: "Đã nộp",
+			statusLabel: needsTeacherGrading
+				? "Đã nộp — Đang chờ giáo viên chấm"
+				: "Đã nộp",
 			badgeClass: "bg-success-soft text-success",
 			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
 			bandScore: null,

@@ -1,6 +1,7 @@
 import { creditWalletSchema } from "@teacher-os/api/contracts";
 import { Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
+import { releaseStaleGradings } from "../lib/ai-grading/release-stale";
 import { ensureWallet, readWallet } from "../lib/credits/wallet";
 import { releaseStaleImports } from "../lib/exam-import/release-stale";
 
@@ -24,8 +25,11 @@ export function creditRoutes(deps: CreditRouteDeps) {
 		if (!kernelCtx) return c.json({ error: "unauthorized" }, 401);
 		const db = deps.getDb();
 		// Dọn lười job `processing` treo (plan TOS-27 D3) — xem ví là cơ hội
-		// giải tỏa Credit bị giữ bởi job đã chết.
+		// giải tỏa Credit bị giữ bởi job đã chết. TOS-30 thêm draft chấm AI
+		// kẹt `ai_processing` (kongming red-team #478: ví hiển thị đúng mà
+		// không cần ai mở trang chấm).
 		await releaseStaleImports(db, kernelCtx.orgId);
+		await releaseStaleGradings(db, kernelCtx.orgId);
 		await ensureWallet(db, kernelCtx.orgId);
 		const wallet = (await readWallet(db, kernelCtx.orgId)) ?? {
 			balance: 0,

@@ -13,6 +13,7 @@ import { partOf, skillOf } from "@/components/assignments/assignment-presets";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { normalizeVi } from "@/components/command-search/search-index";
+import { AiDraftStatusBadge } from "@/components/grading/ai-draft-panel";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -519,7 +520,10 @@ export function GradingQueueRoute() {
 											>
 												{fmtWhen(item.submittedAt)}
 											</span>,
-											<div key="status" className="whitespace-nowrap">
+											<div
+												key="status"
+												className="flex items-center gap-1.5 whitespace-nowrap"
+											>
 												{item.grade ? (
 													<StatusTag tone="ok">
 														{`Đã chấm · Band ${formatBand(item.grade.band)}`}
@@ -527,6 +531,10 @@ export function GradingQueueRoute() {
 												) : (
 													<StatusTag tone="warn">Chờ chấm</StatusTag>
 												)}
+												{item.aiStatus !== null &&
+													item.aiStatus !== undefined && (
+														<AiDraftStatusBadge status={item.aiStatus} />
+													)}
 											</div>,
 											<div
 												key="action"

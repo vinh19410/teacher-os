@@ -12,6 +12,7 @@ import {
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 import {
+	assignmentPrompt,
 	classAssignment,
 	classAssignmentTarget,
 	classTable,
@@ -152,11 +153,18 @@ export async function loadClassAssignmentItems(
 			className: classTable.name,
 			due: classAssignment.due,
 			submittedAt: classAssignmentTarget.submittedAt,
+			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
+			// chấm giáo viên (Writing/Speaking) với bài tự chấm.
+			skill: assignmentPrompt.skill,
 		})
 		.from(classAssignmentTarget)
 		.innerJoin(
 			classAssignment,
 			eq(classAssignmentTarget.assignmentId, classAssignment.id),
+		)
+		.innerJoin(
+			assignmentPrompt,
+			eq(assignmentPrompt.id, classAssignment.promptId),
 		)
 		.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
 		.where(
@@ -179,6 +187,7 @@ export async function loadClassAssignmentItems(
 		due: row.due,
 		submittedAt: row.submittedAt ?? null,
 		scores: null,
+		skill: row.skill,
 	}));
 }
 

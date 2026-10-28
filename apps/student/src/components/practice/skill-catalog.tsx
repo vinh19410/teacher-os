@@ -99,7 +99,9 @@ function TestCard({
 						/>
 					</div>
 					<span className="font-medium tabular-nums">
-						{isAwaitingGrade ? "Chờ chấm" : (score ?? "—")}
+						{isAwaitingGrade
+							? "Đã nộp — Đang chờ giáo viên chấm"
+							: (score ?? "—")}
 					</span>
 				</div>
 			</div>

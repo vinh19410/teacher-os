@@ -8,6 +8,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import type { AiGrader } from "./lib/ai-grading/grader";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
@@ -133,6 +134,12 @@ export interface AppDeps {
 	 * prefix `exam-imports/<orgId>/`. Vắng mặt → 503 EXAM_IMPORT_DISABLED.
 	 */
 	getExamImportStore?(): MediaStore | undefined;
+	/**
+	 * TOS-30 (#478): grader chấm nháp AI — Workers AI ở production (binding
+	 * `AI`), fake ở e2e/test. Vắng mặt → draft rơi `AI_GRADING_DISABLED`
+	 * (fail-closed, Credit hoàn đủ), cùng hợp đồng với `getExamExtractor`.
+	 */
+	getAiGrader?(): AiGrader | undefined;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */

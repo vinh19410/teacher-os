@@ -1,9 +1,14 @@
 import {
+	type AiGradingDraftView,
+	type AiGradingStatus,
+	aiDraftPatchSchema,
+	aiGradingDraftViewSchema,
 	type EssayAnnotation,
 	essayAnnotationCreateSchema,
 	essayAnnotationPatchSchema,
 	type GradingQueueItem,
 	type GradingQueueResponse,
+	isAiGradingStatus,
 	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
 	type TeacherSubmission,
@@ -18,6 +23,7 @@ import {
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
 import {
+	aiGradingDraft,
 	assignmentPrompt,
 	assignmentTest,
 	assignmentTestPart,
@@ -27,10 +33,11 @@ import {
 	quizAttemptAnnotation,
 	student,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
+import { releaseStaleGradings } from "../lib/ai-grading/release-stale";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import {
@@ -55,6 +62,11 @@ type GradingContext = Context<Env>;
 const GRADING_QUEUE_BRANCH_LIMIT = 500;
 /** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của Cloudflare D1 (#366 RT-F2). */
 const D1_IN_ARRAY_CHUNK = 50;
+
+/** `ai_grading_draft.status` (string|null) → union an toàn cho wire. */
+function toAiStatus(value: string | null): AiGradingStatus | null {
+	return value !== null && isAiGradingStatus(value) ? value : null;
+}
 
 /**
  * Tải hàng chờ chấm Writing/Speaking của tổ chức (#383) — hợp nhất cả bài
@@ -86,6 +98,7 @@ export async function loadGradingQueue(
 				gradeScores: quizAttempt.gradeScores,
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
+				aiStatus: aiGradingDraft.status,
 				classId: classAssignment.classId,
 				className: classTable.name,
 				title: classAssignment.title,
@@ -96,6 +109,7 @@ export async function loadGradingQueue(
 				part: assignmentPrompt.part,
 			})
 			.from(quizAttempt)
+			.leftJoin(aiGradingDraft, eq(aiGradingDraft.attemptId, quizAttempt.id))
 			.innerJoin(
 				classAssignment,
 				and(
@@ -143,12 +157,14 @@ export async function loadGradingQueue(
 				gradeScores: quizAttempt.gradeScores,
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
+				aiStatus: aiGradingDraft.status,
 				title: assignmentTest.title,
 				skill: assignmentTest.skill,
 				studentId: student.id,
 				studentName: student.name,
 			})
 			.from(quizAttempt)
+			.leftJoin(aiGradingDraft, eq(aiGradingDraft.attemptId, quizAttempt.id))
 			.innerJoin(
 				assignmentTest,
 				and(
@@ -223,6 +239,7 @@ export async function loadGradingQueue(
 			part: row.part ?? "",
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
 			grade: toQuizAttemptGrade(row),
+			aiStatus: toAiStatus(row.aiStatus),
 		});
 	}
 	for (const row of practiceRows) {
@@ -239,6 +256,7 @@ export async function loadGradingQueue(
 			part: (row.testId ? firstPartByTestId[row.testId] : undefined) ?? "",
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
 			grade: toQuizAttemptGrade(row),
+			aiStatus: toAiStatus(row.aiStatus),
 		});
 	}
 
@@ -325,6 +343,54 @@ export function gradingRoutes(deps: {
 			return { ok: false, response: c.json({ error: "invalid body" }, 400) };
 		}
 		return { ok: true, data: body.data };
+	}
+
+	/** Draft state cho phép "Lưu bản nháp": AI xong (hoặc hỏng) và chưa
+	 * trả bài. `ai_processing` chặn (AI chưa có kết quả), `published` chặn
+	 * (đã trả bài — sửa điểm dùng POST /grade). */
+	const EDITABLE_DRAFT_STATUSES: readonly AiGradingStatus[] = [
+		"ai_drafted",
+		"teacher_reviewing",
+		"manual_pending",
+	];
+
+	/** Row draft → view giáo viên; `null` khi status lạ (không bao giờ với
+	 * dữ liệu mình ghi). */
+	function toDraftView(
+		row: typeof aiGradingDraft.$inferSelect,
+	): AiGradingDraftView | null {
+		if (!isAiGradingStatus(row.status)) return null;
+		return aiGradingDraftViewSchema.parse({
+			status: row.status,
+			aiScores: row.aiScores ?? null,
+			aiFeedback: row.aiFeedback,
+			reviewedScores: row.reviewedScores ?? null,
+			reviewedFeedback: row.reviewedFeedback,
+			gradingMode: row.gradingMode,
+			version: row.version,
+			errorCode: row.errorCode,
+			publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+		});
+	}
+
+	/** Draft chấm AI của một attempt; `null` khi bài không có draft (chấm
+	 * tay cũ) — mọi query có predicate orgId (chuẩn IDOR). */
+	async function loadAiDraft(
+		db: Db,
+		attemptId: string,
+		orgId: string,
+	): Promise<AiGradingDraftView | null> {
+		const [row] = await db
+			.select()
+			.from(aiGradingDraft)
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, attemptId),
+					eq(aiGradingDraft.orgId, orgId),
+				),
+			)
+			.limit(1);
+		return row ? toDraftView(row) : null;
 	}
 
 	/** Attempt + đề + học viên theo org — mọi join có predicate orgId
@@ -564,7 +630,11 @@ export function gradingRoutes(deps: {
 	routes.get("/", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const items = await loadGradingQueue(deps.getDb(), ctx.orgId);
+		const db = deps.getDb();
+		// Dọn lười draft `ai_processing` treo (TOS-30) — mở hàng chờ là cơ
+		// hội giải tỏa Credit giữ bởi runner chết.
+		await releaseStaleGradings(db, ctx.orgId);
+		const items = await loadGradingQueue(db, ctx.orgId);
 		const response: GradingQueueResponse = { items };
 		return c.json(response);
 	});
@@ -572,17 +642,25 @@ export function gradingRoutes(deps: {
 	routes.get("/:attemptId", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		// Sweep trước khi trả — badge draft không hiện trạng `ai_processing` ma.
+		await releaseStaleGradings(db, ctx.orgId);
 		const loaded = await loadGradableAttempt(
-			deps.getDb(),
+			db,
 			c.req.param("attemptId"),
 			ctx.orgId,
 		);
 		if ("error" in loaded) return errorResponse(c, loaded.error);
 		const annotations =
 			loaded.skill === "writing"
-				? await loadEssayAnnotations(deps.getDb(), loaded.row.id, ctx.orgId)
+				? await loadEssayAnnotations(db, loaded.row.id, ctx.orgId)
 				: [];
-		return c.json(toSubmission(loaded.row, loaded.skill, annotations));
+		// TOS-30: draft chấm AI đính kèm submission — chỉ cổng giáo viên.
+		const aiDraft = await loadAiDraft(db, loaded.row.id, ctx.orgId);
+		return c.json({
+			...toSubmission(loaded.row, loaded.skill, annotations),
+			aiDraft,
+		});
 	});
 
 	/**
@@ -629,22 +707,41 @@ export function gradingRoutes(deps: {
 			return c.json({ error: "invalid scores" }, 400);
 		}
 		const now = new Date();
-		const updated = await deps
-			.getDb()
-			.update(quizAttempt)
-			.set({
-				gradeScores: scores,
-				gradeFeedback: body.data.feedback,
-				gradedAt: now,
-			})
-			.where(
-				and(
-					eq(quizAttempt.id, loaded.row.id),
-					eq(quizAttempt.orgId, ctx.orgId),
-					eq(quizAttempt.status, "submitted"),
+		// TOS-30: "Chốt trả bài" = ĐÚNG MỘT đường công bố — điểm cuối lên
+		// `quiz_attempt` + draft sang `published` trong CÙNG batch (kongming
+		// điều kiện 2: publish draft từ BẤT KỲ trạng thái nào, kể cả
+		// `ai_processing` khi giáo viên không chờ AI). Bài không draft (chấm
+		// tay cũ) update 0 dòng — giữ nguyên luồng cũ. Draft update có điều
+		// kiện `(SELECT changes() = 1)`: statement trước khớp 0 dòng (route
+		// sắp trả 409) thì draft KHÔNG được publish oan (precedent wallet.ts).
+		const [updated] = await deps.getDb().batch([
+			deps
+				.getDb()
+				.update(quizAttempt)
+				.set({
+					gradeScores: scores,
+					gradeFeedback: body.data.feedback,
+					gradedAt: now,
+				})
+				.where(
+					and(
+						eq(quizAttempt.id, loaded.row.id),
+						eq(quizAttempt.orgId, ctx.orgId),
+						eq(quizAttempt.status, "submitted"),
+					),
+				)
+				.returning({ id: quizAttempt.id }),
+			deps
+				.getDb()
+				.update(aiGradingDraft)
+				.set({ status: "published", publishedAt: now })
+				.where(
+					and(
+						eq(aiGradingDraft.attemptId, loaded.row.id),
+						sql`(SELECT changes() = 1)`,
+					),
 				),
-			)
-			.returning({ id: quizAttempt.id });
+		]);
 		if (updated.length === 0) {
 			return errorResponse(c, 409);
 		}
@@ -673,6 +770,87 @@ export function gradingRoutes(deps: {
 			}),
 		]);
 		return c.json(grade);
+	});
+
+	/**
+	 * PATCH /api/grading/:attemptId/draft — "Lưu bản nháp" (TOS-30 D5):
+	 * điểm + nhận xét giáo viên đang rà, draft sang `teacher_reviewing`,
+	 * `version + 1`. Optimistic concurrency theo `version` client gửi —
+	 * lệch → 409 DRAFT_VERSION_CONFLICT (nền chống lưu đè E-011 TOS-33).
+	 * Chỉ đụng draft đang EDITABLE (không `ai_processing`, không `published`);
+	 * bài không draft → 404 DRAFT_NOT_FOUND.
+	 */
+	routes.patch("/:attemptId/draft", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await parseJsonBody(c, aiDraftPatchSchema);
+		if (!body.ok) return body.response;
+		const loaded = await loadGradableAttempt(
+			deps.getDb(),
+			c.req.param("attemptId"),
+			ctx.orgId,
+		);
+		if ("error" in loaded) return errorResponse(c, loaded.error);
+		const scores = parseGradeScores(loaded.skill, body.data.scores);
+		if (!scores) {
+			return c.json({ error: "invalid scores" }, 400);
+		}
+		const db = deps.getDb();
+		const [draft] = await db
+			.select()
+			.from(aiGradingDraft)
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, loaded.row.id),
+					eq(aiGradingDraft.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+		if (!draft) {
+			return c.json({ error: "draft not found", code: "DRAFT_NOT_FOUND" }, 404);
+		}
+		const editable =
+			isAiGradingStatus(draft.status) &&
+			EDITABLE_DRAFT_STATUSES.includes(draft.status);
+		if (!editable || draft.version !== body.data.version) {
+			return c.json(
+				{
+					error: editable ? "draft version conflict" : "draft not editable",
+					code: editable ? "DRAFT_VERSION_CONFLICT" : "DRAFT_NOT_EDITABLE",
+				},
+				409,
+			);
+		}
+		const updated = await db
+			.update(aiGradingDraft)
+			.set({
+				status: "teacher_reviewing",
+				reviewedScores: scores,
+				reviewedFeedback: body.data.feedback,
+				version: draft.version + 1,
+			})
+			.where(
+				and(
+					eq(aiGradingDraft.attemptId, loaded.row.id),
+					eq(aiGradingDraft.version, draft.version),
+					// Guard trạng thái LẠI ở câu UPDATE: giữa lúc đọc và UPDATE,
+					// "Chốt trả bài" có thể đã set `published` (không đụng
+					// version) — không guard thì draft terminal quay về
+					// `teacher_reviewing` (code review #478). Trượt → 0 dòng →
+					// 409 DRAFT_VERSION_CONFLICT ở dưới.
+					ne(aiGradingDraft.status, "published"),
+				),
+			)
+			.returning();
+		const updatedRow = updated[0];
+		const view = updatedRow ? toDraftView(updatedRow) : null;
+		if (!view) {
+			return c.json(
+				{ error: "draft version conflict", code: "DRAFT_VERSION_CONFLICT" },
+				409,
+			);
+		}
+		return c.json(view);
 	});
 
 	/**

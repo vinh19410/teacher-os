@@ -1,7 +1,7 @@
 ---
 title: "TOS-30: Chấm nháp ngầm Writing/Speaking ẩn với học viên cho tới khi Giáo viên bấm \"Chốt trả bài\""
 description: "Nền tảng chấm nháp AI của US-006: bảng ai_grading_draft, grader interface + fake grader, tự kích hoạt khi học viên nộp bài Writing/Speaking (tạm giữ 1/2 Credit, ≤ 30 giây, settle/release), màn Rà soát [7] hiển thị điểm gợi ý 4 tiêu chí + nhận xét, lưu nháp và Chốt trả bài mới mở khóa kết quả cho học viên."
-status: pending
+status: completed
 priority: P0
 effort: 3d
 issue: 478

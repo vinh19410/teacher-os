@@ -1,5 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
+	type AiDraftPatch,
+	type AiGradingDraftView,
+	aiGradingDraftViewSchema,
 	type EssayAnnotation,
 	type EssayAnnotationCreate,
 	type EssayAnnotationPatch,
@@ -85,6 +88,25 @@ export async function saveGrade(
 		baseUrl,
 	);
 	return quizAttemptGradeSchema.parse(await res.json());
+}
+
+/** PATCH /api/grading/:attemptId/draft — "Lưu bản nháp" (TOS-30). */
+export async function saveDraft(
+	attemptId: string,
+	input: AiDraftPatch,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<AiGradingDraftView> {
+	const res = await gradingFetch(
+		`/${encodeURIComponent(attemptId)}/draft`,
+		{
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+		"save draft",
+		baseUrl,
+	);
+	return aiGradingDraftViewSchema.parse(await res.json());
 }
 
 /**

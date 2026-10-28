@@ -155,7 +155,7 @@ describe("SkillCatalog", () => {
 			/>,
 		);
 		expect(screen.getByText("Lần gần nhất")).toBeTruthy();
-		expect(screen.getByText("Chờ chấm")).toBeTruthy();
+		expect(screen.getByText("Đã nộp — Đang chờ giáo viên chấm")).toBeTruthy();
 	});
 });
 

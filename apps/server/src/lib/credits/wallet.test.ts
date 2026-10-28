@@ -242,3 +242,50 @@ describe("credit wallet (TOS-24 #470)", () => {
 		expect(assertStaffCap({ orgId: ORG, userId: USER }, 5)).toBeUndefined();
 	});
 });
+
+describe("credit wallet actionType (TOS-30 #478)", () => {
+	test("actionType ai_grading: key prefix ai_grading: + cột action_type đúng", async () => {
+		await ensureWallet(db, ORG);
+		const reserve = await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: "attempt-1",
+			actionType: "ai_grading",
+		});
+		expect(reserve).toMatchObject({ creditDelta: -1, txStatus: "reserved" });
+		await settleCredits(db, {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: "attempt-1",
+			actionType: "ai_grading",
+		});
+
+		const rows = await logs();
+		expect(rows.map((r) => r.idempotencyKey)).toEqual([
+			"ai_grading:attempt-1:reserve",
+			"ai_grading:attempt-1:settle",
+		]);
+		expect(rows.every((r) => r.actionType === "ai_grading")).toBe(true);
+		// exam_import và ai_grading cùng refId là 2 dịch vụ khác nhau —
+		// idempotency key KHÔNG chạm nhau (reserve exam_import vẫn thành công).
+		await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: USER,
+			amount: 1,
+			refId: "attempt-1",
+		});
+		const allLogs = await logs();
+		expect(allLogs.map((r) => r.idempotencyKey)).toEqual([
+			"ai_grading:attempt-1:reserve",
+			"ai_grading:attempt-1:settle",
+			"exam_import:attempt-1:reserve",
+		]);
+		expect(allLogs.map((r) => r.txStatus)).toEqual([
+			"reserved",
+			"settled",
+			"reserved",
+		]);
+	});
+});

@@ -324,7 +324,9 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await setBand(teacherPage, "Lexical Resource", "7");
 		await setBand(teacherPage, "Grammatical Range & Accuracy", "7");
 		await setBand(teacherPage, "Pronunciation", "7");
-		await teacherPage.getByRole("button", { name: "Lưu điểm" }).click();
+		// TOS-30: submit thật tạo draft `manual_pending` (chưa có STT) →
+		// GradeForm ở draft mode, nút chính là "Chốt trả bài".
+		await teacherPage.getByRole("button", { name: "Chốt trả bài" }).click();
 		await expect(teacherPage.getByTestId("grade-saved")).toBeVisible();
 		await expect(teacherPage.getByTestId("grade-overall-band")).toHaveText(
 			"7.0",
@@ -371,12 +373,13 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await sp.waitForURL(/\/learn\/quizzes\/attempt\//, { timeout: 30_000 });
 		const practiceAttemptId = new URL(sp.url()).pathname.split("/").pop() ?? "";
 
-		// 2) Học viên vào Lịch sử thấy trạng thái "Chờ chấm" (không còn "Đã nộp — tự luyện").
+		// 2) Học viên vào Lịch sử thấy trạng thái thống nhất "Đã nộp — Đang
+		// chờ giáo viên chấm" (TOS-30 #478; không còn "Đã nộp — tự luyện").
 		await sp.goto(`${STUDENT_ORIGIN}/history`);
 		const historyRow = sp
 			.getByTestId("history-entry-row")
 			.filter({ hasText: practiceWritingTitle });
-		await expect(historyRow).toContainText("Chờ chấm");
+		await expect(historyRow).toContainText("Đã nộp — Đang chờ giáo viên chấm");
 		await expect(historyRow).not.toContainText("Đã nộp — tự luyện");
 
 		// 3) Giáo viên bấm mục nav "Chấm bài" trong sidebar → lọc "Luyện tập" → bấm "Chấm bài".
@@ -420,7 +423,9 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await teacherPage
 			.locator("#grade-feedback")
 			.fill("Bố cục mạch lạc, từ vựng tự nhiên.");
-		await teacherPage.getByRole("button", { name: "Lưu điểm" }).click();
+		// TOS-30: practice submit thật tạo draft `ai_drafted` (fake grader
+		// boot.ts) → form điền sẵn điểm AI, nút chính là "Chốt trả bài".
+		await teacherPage.getByRole("button", { name: "Chốt trả bài" }).click();
 		await expect(teacherPage.getByTestId("grade-saved")).toBeVisible();
 
 		await teacherPage.getByRole("link", { name: "← Về hàng chờ chấm" }).click();

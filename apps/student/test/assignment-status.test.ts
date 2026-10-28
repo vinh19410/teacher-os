@@ -180,7 +180,26 @@ describe("deriveAssignmentStatus", () => {
 		};
 		const derived = deriveAssignmentStatus(asg, today);
 		expect(derived.status).toBe("submitted");
+		// TOS-30 #478: bài tự chấm (không skill) giữ nhãn ngắn.
 		expect(derived.statusLabel).toBe("Đã nộp");
+	});
+
+	it("handles submitted writing assignment with teacher-grading label", () => {
+		const asg = {
+			id: "a-writing",
+			title: "Writing Task 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "Class A",
+			due: "2026-09-20",
+			submittedAt: "2026-09-19T10:00",
+			scores: null,
+			// TOS-30 #478: Writing/Speaking chờ giáo viên chấm tay → nhãn dài.
+			skill: "writing",
+		} as const;
+		const derived = deriveAssignmentStatus(asg, today);
+		expect(derived.status).toBe("submitted");
+		expect(derived.statusLabel).toBe("Đã nộp — Đang chờ giáo viên chấm");
 	});
 
 	it("handles graded assignment with band score", () => {
