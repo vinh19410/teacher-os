@@ -92,7 +92,7 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	);
 });
 
-test("staging deploy workflow is manual-only (no develop push trigger)", () => {
+test("staging deploy workflow deploys only from the staging branch", () => {
 	const stagingPath = join(repoRoot, ".github/workflows/deploy-staging.yml");
 	assert.equal(
 		existsSync(stagingPath),
@@ -102,10 +102,15 @@ test("staging deploy workflow is manual-only (no develop push trigger)", () => {
 
 	const yaml = readFileSync(stagingPath, "utf8");
 
+	assert.match(
+		yaml,
+		/^\s*push:\s*\n\s*branches:\s*\[staging\]\s*$/m,
+		"push trigger must cover exactly the dedicated staging branch (QA environment)",
+	);
 	assert.doesNotMatch(
 		yaml,
-		/^\s*push:/m,
-		"must not trigger on push (staging auto-deploy disabled 2026-09-22)",
+		/branches:\s*\[[^\]]*\b(develop|main)\b/,
+		"must not deploy staging on develop/main pushes (develop auto-deploy disabled 2026-09-22)",
 	);
 	assert.match(
 		yaml,

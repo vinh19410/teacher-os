@@ -1,11 +1,14 @@
 # Staging deploy to Cloudflare stage "staging"
-# (app/api.staging.teacheros.io.vn) for QC and migration rehearsal.
+# (app/api.staging.teacheros.io.vn) — the QA environment.
 #
-# Auto-deploy disabled 2026-09-22: the push trigger on the integration
-# branch was removed, so merging code no longer ships staging automatically.
-# The workflow is manual-only (workflow_dispatch) — e.g. to rehearse a
-# pending migration on staging before promoting to prod
-# (docs/production-release-runbook.md, "Provision staging").
+# Trigger: every push to the dedicated `staging` branch deploys staging.
+# Promote a build for QA by fast-forwarding `staging` to the develop commit
+# under test (git push origin develop:staging, or merge a PR into staging).
+# Merging into `develop` alone still does NOT deploy (develop auto-deploy was
+# removed 2026-09-22). workflow_dispatch stays for manual migration rehearsal
+# (docs/production-release-runbook.md, "Provision staging"). The GitHub
+# environment "staging" must allow the `staging` branch (deployment branch
+# policy) or the deploy job is rejected.
 #
 # Sibling of deploy.yml (prod) with the same design constraints (see
 # docs/production-release-runbook.md, "Provision staging"):
@@ -27,6 +30,8 @@
 name: Deploy Staging
 
 on:
+  push:
+    branches: [staging]
   workflow_dispatch: {}
 
 concurrency:
