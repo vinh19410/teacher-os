@@ -13,7 +13,10 @@ import { partOf, skillOf } from "@/components/assignments/assignment-presets";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { normalizeVi } from "@/components/command-search/search-index";
-import { AiDraftStatusBadge } from "@/components/grading/ai-draft-panel";
+import {
+	AiDraftStatusBadge,
+	AiQuickGradeBadge,
+} from "@/components/grading/ai-draft-panel";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -535,6 +538,9 @@ export function GradingQueueRoute() {
 													item.aiStatus !== undefined && (
 														<AiDraftStatusBadge status={item.aiStatus} />
 													)}
+												{item.aiGradingMode === "quick" && (
+													<AiQuickGradeBadge />
+												)}
 											</div>,
 											<div
 												key="action"

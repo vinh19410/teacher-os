@@ -1,5 +1,9 @@
 import { createClient } from "@libsql/client";
-import { TRIAL_CREDITS } from "@teacher-os/api/contracts";
+import {
+	QUICK_GRADE_MONTHLY_LIMIT,
+	TRIAL_CREDITS,
+} from "@teacher-os/api/contracts";
+import { monthWindowVietnamMs } from "@teacher-os/api/vietnam-date";
 import {
 	creditUsageLog,
 	creditWallet,
@@ -12,11 +16,14 @@ import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import type { Db } from "../../app";
 import {
 	assertStaffCap,
+	claimQuickGradeSlot,
 	ensureWallet,
 	InsufficientCreditsError,
+	readOrgPlan,
 	readWallet,
 	releaseCredits,
 	reserveCredits,
+	revertQuickGradeSlot,
 	settleCredits,
 } from "./wallet";
 
@@ -287,5 +294,196 @@ describe("credit wallet actionType (TOS-30 #478)", () => {
 			"settled",
 			"reserved",
 		]);
+	});
+});
+
+describe("quick grade writing quota & org plan (TOS-32 #480)", () => {
+	test("monthWindowVietnamMs: biên tháng theo Asia/Ho_Chi_Minh (UTC+7)", () => {
+		// 2026-10-31T16:59:59.999Z = 2026-10-31 23:59:59.999+07:00 (tháng 10)
+		const octEnd = monthWindowVietnamMs(new Date("2026-10-31T16:59:59.999Z"));
+		expect(octEnd).toEqual({
+			startMs: Date.parse("2026-10-01T00:00:00+07:00"),
+			endMs: Date.parse("2026-11-01T00:00:00+07:00"),
+		});
+		// 2026-10-31T17:00:00.000Z = 2026-11-01 00:00:00.000+07:00 (sang tháng 11)
+		const novStart = monthWindowVietnamMs(new Date("2026-10-31T17:00:00.000Z"));
+		expect(novStart).toEqual({
+			startMs: Date.parse("2026-11-01T00:00:00+07:00"),
+			endMs: Date.parse("2026-12-01T00:00:00+07:00"),
+		});
+	});
+
+	test("readOrgPlan: chưa có ví → none/null; có ví monthly/active → trả đúng", async () => {
+		expect(await readOrgPlan(db, ORG)).toEqual({
+			planKind: "none",
+			planStatus: null,
+		});
+		await ensureWallet(db, ORG);
+		expect(await readOrgPlan(db, ORG)).toEqual({
+			planKind: "none",
+			planStatus: null,
+		});
+		await db
+			.update(creditWallet)
+			.set({ planKind: "monthly", planStatus: "active" })
+			.where(eq(creditWallet.orgId, ORG));
+		expect(await readOrgPlan(db, ORG)).toEqual({
+			planKind: "monthly",
+			planStatus: "active",
+		});
+	});
+
+	test("claimQuickGradeSlot: 29 lượt → lượt 30 true, lượt 31 false; gọi lặp cùng attemptId idempotent", async () => {
+		const now = new Date("2026-10-15T08:00:00+07:00");
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT - 1; i++) {
+			const ok = await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `att-${i}`,
+				now,
+			});
+			expect(ok).toBe(true);
+		}
+		// Lượt thứ 30 thành công
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "att-30",
+				now,
+			}),
+		).toBe(true);
+		// Gọi lặp cùng attemptId "att-30" → vẫn trả true (idempotent), không tạo dòng thứ 31
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "att-30",
+				now,
+			}),
+		).toBe(true);
+		// Lượt thứ 31 bị chặn
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "att-31",
+				now,
+			}),
+		).toBe(false);
+
+		const rows = await logs();
+		expect(rows).toHaveLength(QUICK_GRADE_MONTHLY_LIMIT);
+		expect(rows[29]).toMatchObject({
+			actionType: "quick_grade_writing",
+			creditDelta: 0,
+			txStatus: "settled",
+			refId: "att-30",
+			idempotencyKey: "quick_grade_writing:att-30:claim",
+		});
+	});
+
+	test("2 claim song song khi đã dùng 29/30: đúng 1 true, 1 false", async () => {
+		const now = new Date("2026-10-15T08:00:00+07:00");
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT - 1; i++) {
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `race-seed-${i}`,
+				now,
+			});
+		}
+		const [first, second] = await Promise.all([
+			claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "race-a",
+				now,
+			}),
+			claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "race-b",
+				now,
+			}),
+		]);
+		expect([first, second].sort()).toEqual([false, true]);
+		expect(await logs()).toHaveLength(QUICK_GRADE_MONTHLY_LIMIT);
+	});
+
+	test("sang tháng mới (Asia/Ho_Chi_Minh) hạn mức về lại 30", async () => {
+		const oct = new Date("2026-10-31T23:59:00+07:00");
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT; i++) {
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `oct-${i}`,
+				now: oct,
+			});
+		}
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "oct-31",
+				now: oct,
+			}),
+		).toBe(false);
+
+		// Đúng 00:00:00+07:00 ngày 01/11 → tháng mới, claim thành công
+		const nov = new Date("2026-11-01T00:00:00+07:00");
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "nov-1",
+				now: nov,
+			}),
+		).toBe(true);
+	});
+
+	test("revertQuickGradeSlot: hoàn lại 1 lượt (kể cả khi revert sang đầu tháng mới), gọi 2 lần idempotent", async () => {
+		const oct = new Date("2026-10-31T23:59:50+07:00");
+		for (let i = 1; i <= QUICK_GRADE_MONTHLY_LIMIT; i++) {
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: `rev-${i}`,
+				now: oct,
+			});
+		}
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "rev-extra",
+				now: oct,
+			}),
+		).toBe(false);
+
+		// Revert lượt 30 (gọi 2 lần vẫn chỉ hoàn đúng 1 lượt; giữ nguyên createdAt cùng tháng với claim)
+		expect(
+			await revertQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "rev-30",
+			}),
+		).toBe(true);
+		expect(
+			await revertQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "rev-30",
+			}),
+		).toBe(true);
+		// Revert một attempt chưa từng claim → false, không tặng thêm lượt
+		expect(
+			await revertQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "never-claimed",
+			}),
+		).toBe(false);
+
+		// Giờ còn 29/30 → claim thêm đúng 1 lượt được, lượt kế tiếp bị chặn
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "rev-30-replacement",
+				now: oct,
+			}),
+		).toBe(true);
+		expect(
+			await claimQuickGradeSlot(db, {
+				orgId: ORG,
+				attemptId: "rev-31-blocked",
+				now: oct,
+			}),
+		).toBe(false);
 	});
 });

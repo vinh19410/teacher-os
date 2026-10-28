@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
-import type { AiGradingDraftView } from "@teacher-os/api/contracts";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+	AI_GRADING_ERROR_CODES,
+	AI_GRADING_ERROR_MESSAGES,
+	type AiGradingDraftView,
+} from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import {
 	AiDraftPanel,
 	AiDraftStatusBadge,
+	AiQuickGradeBadge,
 	aiDraftErrorLabel,
 } from "./ai-draft-panel";
 
@@ -95,6 +100,69 @@ describe("AiDraftPanel (TOS-30 #478)", () => {
 		expect(screen.getByText("Đã trả kết quả")).toBeTruthy();
 		expect(screen.getByText(/Đã trả bài/)).toBeTruthy();
 	});
+
+	test("TOS-32: gradingMode 'quick' hiện nhãn 'Bản nháp chấm nhanh'; 'standard' không hiện", () => {
+		render(<AiDraftPanel draft={DRAFTED} skill="writing" part="task2" />);
+		expect(screen.queryByText("Bản nháp chấm nhanh")).toBeNull();
+		cleanup();
+
+		render(
+			<AiDraftPanel
+				draft={{ ...DRAFTED, gradingMode: "quick" }}
+				skill="writing"
+				part="task2"
+			/>,
+		);
+		expect(screen.getByText("Bản nháp chấm nhanh")).toBeTruthy();
+	});
+
+	test("TOS-32: E-selfomy-alignment-002 và E-selfomy-alignment-001 hiện thông điệp nguyên văn spec + nút 'Nạp thêm Credit' mở hộp thoại hướng dẫn", () => {
+		render(
+			<AiDraftPanel
+				draft={{
+					...DRAFTED,
+					status: "manual_pending",
+					aiScores: null,
+					aiFeedback: "",
+					errorCode: AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED,
+				}}
+				skill="writing"
+				part="task2"
+			/>,
+		);
+		expect(
+			screen.getByText(
+				AI_GRADING_ERROR_MESSAGES[AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED],
+			),
+		).toBeTruthy();
+		const topUpBtn = screen.getByRole("button", { name: "Nạp thêm Credit" });
+		expect(topUpBtn).toBeTruthy();
+		fireEvent.click(topUpBtn);
+		expect(screen.getByRole("dialog")).toBeTruthy();
+		cleanup();
+
+		render(
+			<AiDraftPanel
+				draft={{
+					...DRAFTED,
+					status: "manual_pending",
+					aiScores: null,
+					aiFeedback: "",
+					errorCode: AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS,
+				}}
+				skill="writing"
+				part="task2"
+				topUpHref="/settings/billing"
+			/>,
+		);
+		expect(
+			screen.getByText(
+				AI_GRADING_ERROR_MESSAGES[AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS],
+			),
+		).toBeTruthy();
+		const topUpLink = screen.getByRole("link", { name: "Nạp thêm Credit" });
+		expect(topUpLink.getAttribute("href")).toBe("/settings/billing");
+	});
 });
 
 describe("AiDraftStatusBadge", () => {
@@ -119,6 +187,11 @@ describe("AiDraftStatusBadge", () => {
 			cleanup();
 		}
 	});
+
+	test("AiQuickGradeBadge hiện nhãn 'Bản nháp chấm nhanh'", () => {
+		render(<AiQuickGradeBadge />);
+		expect(screen.getByText("Bản nháp chấm nhanh")).toBeTruthy();
+	});
 });
 
 describe("aiDraftErrorLabel", () => {
@@ -129,6 +202,12 @@ describe("aiDraftErrorLabel", () => {
 			"lời thoại",
 		);
 		expect(aiDraftErrorLabel("AI_GRADING_FAILED")).toContain("lỗi");
+		expect(aiDraftErrorLabel(AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS)).toBe(
+			AI_GRADING_ERROR_MESSAGES[AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS],
+		);
+		expect(aiDraftErrorLabel(AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED)).toBe(
+			AI_GRADING_ERROR_MESSAGES[AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED],
+		);
 		expect(aiDraftErrorLabel("MA_CODE_LA")).toBe("AI chấm lỗi.");
 		expect(aiDraftErrorLabel(null)).toBeNull();
 	});

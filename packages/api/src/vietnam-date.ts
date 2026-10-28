@@ -74,3 +74,20 @@ export function vietnamSessionEndMs(
 	const end = Date.parse(`${date}T${time}:00+07:00`);
 	return Number.isNaN(end) ? null : end + durationMinutes * 60_000;
 }
+
+/**
+ * Khoảng nửa mở `[startMs, endMs)` của tháng dương lịch chứa `now` theo múi
+ * giờ Việt Nam (`Asia/Ho_Chi_Minh`, UTC+7). Dùng cho hạn mức tháng (ví dụ 30
+ * lượt Chấm nhanh Writing của TOS-32 D2).
+ */
+export function monthWindowVietnamMs(now: Date = new Date()): {
+	startMs: number;
+	endMs: number;
+} {
+	const ym = vietnamDateKeyOf(now).slice(0, 7);
+	const nextYm = addMonthsISO(ym, 1);
+	return {
+		startMs: Date.parse(`${ym}-01T00:00:00+07:00`),
+		endMs: Date.parse(`${nextYm}-01T00:00:00+07:00`),
+	};
+}

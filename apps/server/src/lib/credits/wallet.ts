@@ -1,4 +1,8 @@
-import { TRIAL_CREDITS } from "@teacher-os/api/contracts";
+import {
+	QUICK_GRADE_MONTHLY_LIMIT,
+	TRIAL_CREDITS,
+} from "@teacher-os/api/contracts";
+import { monthWindowVietnamMs } from "@teacher-os/api/vietnam-date";
 import {
 	creditUsageLog,
 	creditWallet,
@@ -45,6 +49,16 @@ export interface WalletBalance {
 	held: number;
 }
 
+/** Loại gói của tổ chức (TOS-32 D1, TOS-42 tiếp quản). */
+export type OrgPlanKind = "none" | "trial" | "monthly";
+/** Trạng thái gói của tổ chức (TOS-32 D1). */
+export type OrgPlanStatus = "active" | "grace_period" | "expired";
+
+export interface OrgPlanState {
+	planKind: OrgPlanKind;
+	planStatus: OrgPlanStatus | null;
+}
+
 type WalletOp = "reserve" | "settle" | "release";
 
 /** Key chống chạy đúp — UNIQUE index `credit_usage_log_idempotency_key_idx`.
@@ -77,6 +91,133 @@ export async function readWallet(
 		.where(eq(creditWallet.orgId, orgId))
 		.limit(1);
 	return row ?? null;
+}
+
+const VALID_PLAN_KINDS: readonly OrgPlanKind[] = ["none", "trial", "monthly"];
+const VALID_PLAN_STATUSES: readonly OrgPlanStatus[] = [
+	"active",
+	"grace_period",
+	"expired",
+];
+
+function isOrgPlanKind(value: string): value is OrgPlanKind {
+	return (VALID_PLAN_KINDS as readonly string[]).includes(value);
+}
+
+function isOrgPlanStatus(value: string | null): value is OrgPlanStatus {
+	return (
+		value !== null && (VALID_PLAN_STATUSES as readonly string[]).includes(value)
+	);
+}
+
+/**
+ * Đọc trạng thái gói hiện tại của tổ chức từ `credit_wallet` (TOS-32 D1).
+ * Khi org chưa có dòng ví hoặc giá trị ngoài tập hợp lệ → `{ planKind: "none", planStatus: null }`.
+ */
+export async function readOrgPlan(
+	db: Db,
+	orgId: string,
+): Promise<OrgPlanState> {
+	const [row] = await db
+		.select({
+			planKind: creditWallet.planKind,
+			planStatus: creditWallet.planStatus,
+		})
+		.from(creditWallet)
+		.where(eq(creditWallet.orgId, orgId))
+		.limit(1);
+	if (!row) return { planKind: "none", planStatus: null };
+	return {
+		planKind: isOrgPlanKind(row.planKind) ? row.planKind : "none",
+		planStatus: isOrgPlanStatus(row.planStatus) ? row.planStatus : null,
+	};
+}
+
+function quickGradeClaimKey(attemptId: string): string {
+	return `quick_grade_writing:${attemptId}:claim`;
+}
+
+function quickGradeRevertKey(attemptId: string): string {
+	return `quick_grade_writing:${attemptId}:revert`;
+}
+
+/**
+ * Giành 1 lượt Chấm nhanh Writing (0 Credit) trong tháng dương lịch theo giờ
+ * Việt Nam (`Asia/Ho_Chi_Minh`) (TOS-32 D2, tối đa 30 lượt/tháng).
+ * Kiểm hạn mức và ghi sổ cái trong MỘT câu `INSERT ... SELECT ... WHERE count < 30`
+ * nguyên tử để 2 bài nộp đồng thời không bao giờ vượt 30.
+ * Idempotent theo `attemptId`: gọi lặp cùng `attemptId` đã claim trả `true` mà không đếm thêm.
+ */
+export async function claimQuickGradeSlot(
+	db: Db,
+	input: {
+		orgId: string;
+		attemptId: string;
+		actorUserId?: string;
+		now?: Date;
+	},
+): Promise<boolean> {
+	const key = quickGradeClaimKey(input.attemptId);
+	const existing = await findLogByKey(db, key);
+	if (existing) return true;
+
+	const now = input.now ?? new Date();
+	const { startMs, endMs } = monthWindowVietnamMs(now);
+	const actorUserId = input.actorUserId ?? "system";
+	const createdMs = now.getTime();
+
+	try {
+		await db
+			.insert(creditUsageLog)
+			.select(
+				sql`SELECT ${crypto.randomUUID()}, ${input.orgId}, ${actorUserId}, ${"quick_grade_writing"}, ${0}, ${"settled"}, ${input.attemptId}, ${key}, ${createdMs} WHERE MAX((SELECT COALESCE(SUM(CASE WHEN ${creditUsageLog.txStatus} = 'settled' THEN 1 WHEN ${creditUsageLog.txStatus} = 'reverted' THEN -1 ELSE 0 END), 0) FROM ${creditUsageLog} WHERE ${creditUsageLog.orgId} = ${input.orgId} AND ${creditUsageLog.actionType} = 'quick_grade_writing' AND ${creditUsageLog.createdAt} >= ${startMs} AND ${creditUsageLog.createdAt} < ${endMs}), 0) < ${QUICK_GRADE_MONTHLY_LIMIT}`,
+			);
+	} catch (error) {
+		const previous = await findLogByKey(db, key);
+		if (previous) return true;
+		throw error;
+	}
+
+	const inserted = await findLogByKey(db, key);
+	return inserted !== null;
+}
+
+/**
+ * Hoàn lại 1 lượt Chấm nhanh Writing khi AI lỗi/quá hạn hoặc isolate chết
+ * trước khi chấm xong (TOS-32 D3). Sổ cái append-only nên ghi 1 dòng bù
+ * `tx_status = "reverted"` (lấy `created_at` từ chính dòng `claim` gốc để cặp
+ * `settled`/`reverted` luôn triệt tiêu trong cùng tháng dương lịch kể cả khi
+ * revert diễn ra qua giao thừa đầu tháng). Idempotent theo `attemptId`.
+ */
+export async function revertQuickGradeSlot(
+	db: Db,
+	input: {
+		orgId: string;
+		attemptId: string;
+		actorUserId?: string;
+	},
+): Promise<boolean> {
+	const claimKey = quickGradeClaimKey(input.attemptId);
+	const revertKey = quickGradeRevertKey(input.attemptId);
+	const existingRevert = await findLogByKey(db, revertKey);
+	if (existingRevert) return true;
+
+	const actorUserId = input.actorUserId ?? "system";
+
+	try {
+		await db
+			.insert(creditUsageLog)
+			.select(
+				sql`SELECT ${crypto.randomUUID()}, ${input.orgId}, ${actorUserId}, ${"quick_grade_writing"}, ${0}, ${"reverted"}, ${input.attemptId}, ${revertKey}, ${creditUsageLog.createdAt} FROM ${creditUsageLog} WHERE ${creditUsageLog.idempotencyKey} = ${claimKey} AND ${creditUsageLog.orgId} = ${input.orgId} AND NOT EXISTS (SELECT 1 FROM ${creditUsageLog} rev WHERE rev.idempotency_key = ${revertKey})`,
+			);
+	} catch (error) {
+		const previous = await findLogByKey(db, revertKey);
+		if (previous) return true;
+		throw error;
+	}
+
+	const inserted = await findLogByKey(db, revertKey);
+	return inserted !== null;
 }
 
 async function findLogByKey(
