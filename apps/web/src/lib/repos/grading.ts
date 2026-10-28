@@ -129,7 +129,11 @@ export async function retryAiGrading(
 ): Promise<AiGradingDraftView> {
 	const res = await gradingFetch(
 		`/${encodeURIComponent(attemptId)}/ai-retry`,
-		{ method: "POST" },
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: "{}",
+		},
 		"retry ai grading",
 		baseUrl,
 	);

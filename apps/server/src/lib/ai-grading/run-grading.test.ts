@@ -894,4 +894,56 @@ describe("releaseStaleGradings per-occasion (TOS-33 #481 kongming 2.5)", () => {
 			"settled",
 		]);
 	});
+
+	test("org có > 20 draft đã settled cũ không làm nghẽn batch 20 — draft thứ 25 còn held treo vẫn được dọn ngay", async () => {
+		const staleDate = new Date(Date.now() - 61_000);
+		for (let i = 1; i <= 24; i++) {
+			const id = `a-settled-batch-${i}`;
+			await seedSubmittedWritingAttempt(id);
+			await db.insert(aiGradingDraft).values({
+				attemptId: id,
+				orgId: ORG,
+				skill: "writing",
+				status: "ai_drafted",
+				creditCost: 1,
+				startedAt: staleDate,
+			});
+			const input = {
+				orgId: ORG,
+				actorUserId: "system",
+				amount: 1,
+				refId: id,
+				actionType: "ai_grading" as const,
+			};
+			await reserveCredits(db, input);
+			await settleCredits(db, input);
+		}
+
+		const targetId = "a-stuck-after-24";
+		await seedSubmittedWritingAttempt(targetId);
+		await db.insert(aiGradingDraft).values({
+			attemptId: targetId,
+			orgId: ORG,
+			skill: "writing",
+			status: "manual_pending",
+			creditCost: 1,
+			startedAt: staleDate,
+		});
+		await reserveCredits(db, {
+			orgId: ORG,
+			actorUserId: "system",
+			amount: 1,
+			refId: targetId,
+			actionType: "ai_grading",
+		});
+		expect((await readWallet(db, ORG))?.held).toBe(1);
+
+		await releaseStaleGradings(db, ORG);
+
+		expect((await logs(targetId)).map((l) => l.txStatus)).toEqual([
+			"reserved",
+			"released",
+		]);
+		expect((await readWallet(db, ORG))?.held).toBe(0);
+	});
 });

@@ -41,9 +41,11 @@ import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
-import { releaseStaleGradings } from "../lib/ai-grading/release-stale";
+import {
+	releaseStaleGradings,
+	releaseUnsettledOccasions,
+} from "../lib/ai-grading/release-stale";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
-import { releaseCredits } from "../lib/credits/wallet";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import {
@@ -984,17 +986,18 @@ export function gradingRoutes(deps: {
 			);
 		}
 		const nextRetryCount = draft.retryCount + 1;
-		// Release idempotent lượt n−1 (nếu crash trước đó đã để held treo) —
-		// lượt n−1 hết lượt retry thì nhất thiết đã release; gọi lại là
-		// no-op theo key. Guard held không đụng vì no-op.
-		await releaseCredits(db, {
-			orgId: ctx.orgId,
-			actorUserId: "system",
-			amount: draft.creditCost,
-			refId: loaded.row.id,
-			actionType: "ai_grading",
-			...(draft.retryCount >= 1 ? { retryCount: draft.retryCount } : {}),
-		});
+		// Release idempotent mọi lượt 0..retryCount còn `reserved` chưa giải
+		// tỏa (nếu crash trước đó đã để held treo). Dùng `releaseUnsettledOccasions`
+		// thay vì `releaseCredits` thẳng: draft bị sweep gán TIMEOUT trước khi
+		// kịp reserve không có log `reserved` — gọi thẳng sẽ ném
+		// `InsufficientCreditsError` làm 500 route.
+		await releaseUnsettledOccasions(
+			db,
+			ctx.orgId,
+			loaded.row.id,
+			draft.retryCount,
+			draft.creditCost,
+		);
 		const updated = await db
 			.update(aiGradingDraft)
 			.set({

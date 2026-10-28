@@ -262,9 +262,24 @@ test("Scenario 2: Bài chứa ai-fail lỗi sau 2 lần tự thử lại → ho�
 	await expect(e004Box).toContainText(
 		"Số Credit tạm giữ đã được hoàn lại đầy đủ vào ví của bạn.",
 	);
-	await expect(teacherPage.getByTestId("ai-retry-button")).toBeEnabled();
+	const retryBtn = teacherPage.getByTestId("ai-retry-button");
+	await expect(retryBtn).toBeEnabled();
 
-	// Số dư ví giữ nguyên (1 Credit tạm giữ đã được hoàn trả 100%, held = 0).
+	// Bấm "Thử chấm lại AI" trên UI thật (đi qua guard Content-Type JSON của kernel) → 200.
+	const retryResponsePromise = teacherPage.waitForResponse(
+		(res) =>
+			res.url().endsWith(`/api/grading/${failAttemptId}/ai-retry`) &&
+			res.request().method() === "POST",
+	);
+	await retryBtn.click();
+	const retryRes = await retryResponsePromise;
+	expect(retryRes.status()).toBe(200);
+
+	// Chờ lượt retry chạy xong (bài vẫn chứa ai-fail nên hoàn lại 100% Credit và về lại Chờ chấm tay).
+	await expect(panel.getByText("Chờ chấm tay")).toBeVisible();
+	await expect(e004Box).toBeVisible();
+
+	// Số dư ví giữ nguyên (Credit tạm giữ của cả 2 lượt đều đã được hoàn trả 100%, held = 0).
 	const walletAfterRes = await teacherPage.request.get(
 		`${API_ORIGIN}/api/credits/wallet`,
 	);

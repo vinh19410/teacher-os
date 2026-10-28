@@ -2555,4 +2555,28 @@ describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
 		expect(r1Reserves).toHaveLength(1);
 		expect(graderCalls.count).toBe(1);
 	});
+
+	test("ai-retry khi draft bị sweep TIMEOUT trước khi kịp reserve (không có log reserve) → vẫn 200 và settle r1, không 500 InsufficientCreditsError", async () => {
+		await libsql.insert(schema.aiGradingDraft).values({
+			attemptId: "att-t33",
+			orgId: "org-1",
+			skill: "writing",
+			status: "manual_pending",
+			creditCost: 1,
+			errorCode: "AI_GRADING_TIMEOUT",
+			retryCount: 0,
+		});
+		// KHÔNG có dòng reserve nào cho lượt 0 (crash trước reserve).
+		const res = await app.request("/api/grading/att-t33/ai-retry", {
+			method: "POST",
+			headers: teacherHeaders(),
+		});
+		expect(res.status).toBe(200);
+		await waitPipelineDone();
+		expect((await draft())?.status).toBe("ai_drafted");
+		expect((await ledger()).map((l) => l.idempotencyKey)).toEqual([
+			"ai_grading:att-t33:r1:reserve",
+			"ai_grading:att-t33:r1:settle",
+		]);
+	});
 });

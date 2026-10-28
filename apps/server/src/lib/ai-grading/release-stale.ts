@@ -90,10 +90,9 @@ export async function releaseStaleGradings(
 
 	// Nhóm 2 — đã rời `ai_processing` nhưng còn lượt chưa giải tỏa: crash
 	// sau CAS, trước ví. Giữ nguyên trạng thái draft — điểm AI vẫn dùng
-	// được, chỉ trả held. Điều kiện SQL chỉ lọc thô (đủ mục đích, batch nhỏ):
-	// có BẤT KỲ dòng `reserved` nào của attempt — quyết định chính xác
-	// per-occasion thuộc `releaseUnsettledOccasions` (idempotent, gọi thừa
-	// vô hại; draft đã giải tỏa hết chỉ tốn 1 query log rồi thoát).
+	// được, chỉ trả held. Điều kiện SQL so sánh số dòng `reserved` > số dòng
+	// `settled`/`released` của attempt: draft đã giải tỏa hết mọi lượt bị
+	// loại ngay trong SQL để org có > 20 draft cũ không làm nghẽn batch 20.
 	const terminalStale = await db
 		.select({
 			attemptId: aiGradingDraft.attemptId,
@@ -106,10 +105,15 @@ export async function releaseStaleGradings(
 				eq(aiGradingDraft.orgId, orgId),
 				inArray(aiGradingDraft.status, ["ai_drafted", "manual_pending"]),
 				lt(aiGradingDraft.startedAt, cutoff),
-				sql`EXISTS (SELECT 1 FROM credit_usage_log cul
+				sql`(SELECT count(*) FROM credit_usage_log cul
 					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
 						AND cul.action_type = 'ai_grading'
-						AND cul.tx_status = 'reserved')`,
+						AND cul.tx_status = 'reserved')
+					>
+					(SELECT count(*) FROM credit_usage_log cul
+					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
+						AND cul.action_type = 'ai_grading'
+						AND cul.tx_status IN ('settled', 'released'))`,
 			),
 		)
 		.limit(STALE_SWEEP_BATCH);
@@ -129,7 +133,7 @@ export async function releaseStaleGradings(
  * lượt một bộ key (`lượt 0` = key cũ TOS-30, `r<n>` = TOS-33); lượt đã
  * `settled`/`released` bỏ qua — lặp lại là no-op an toàn theo key idempotent.
  */
-async function releaseUnsettledOccasions(
+export async function releaseUnsettledOccasions(
 	db: Db,
 	orgId: string,
 	attemptId: string,
