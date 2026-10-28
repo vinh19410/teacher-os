@@ -15,8 +15,10 @@ import { organization } from "@teacher-os/db/schema/organization";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { describe, expect, test } from "vitest";
 import { type AppDeps, buildApp, type Db } from "./app";
+import { PROBE_QUERY } from "./routes/readiness";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const MIGRATIONS_DIR = new URL(
@@ -71,6 +73,23 @@ describe("/readyz", () => {
 		expect(await t.db.select().from(membership)).toEqual([]);
 		// The probe never touches the session/better-auth seam.
 		expect(t.getSessionUserCalls()).toBe(0);
+	});
+
+	test("probe query stays within Cloudflare D1's 100 bound-parameter limit", () => {
+		// libsql in-memory has no such cap, so the healthy-DB test above passed
+		// while D1 rejected the ~132-parameter probe and staging /readyz
+		// answered 503. Guard the compiled statement directly.
+		// https://developers.cloudflare.com/d1/platform/limits/
+		const { sql: text, params } = new SQLiteSyncDialect().sqlToQuery(
+			PROBE_QUERY,
+		);
+		expect(params.length).toBeLessThanOrEqual(100);
+		// The whole name list rides in one JSON parameter, so the contract
+		// still covers every table and index (incl. 0006's unique index).
+		expect(text).toContain("json_each(?)");
+		const names = JSON.parse(String(params[0])) as string[];
+		expect(names).toContain("lesson");
+		expect(names).toContain("comment_bank_org_operation_uidx");
 	});
 
 	test("GET / stays a plain liveness probe", async () => {

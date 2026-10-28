@@ -66,11 +66,16 @@ if (REQUIRED_OBJECTS.length === 0 || REQUIRED_COLUMN_TOTAL === 0) {
  * and fails when any required table/index/column is absent — catching
  * half-applied migrations that a `SELECT 1` or single-table probe would
  * miss. Table/index names come from the schema, never user input.
+ *
+ * The name list travels as ONE bound parameter (a JSON array unpacked by
+ * `json_each`), never one parameter per name: Cloudflare D1 rejects any
+ * statement with more than 100 bound parameters, and the schema already
+ * declares ~132 tables + indexes — one-param-per-name made D1 refuse the
+ * probe and /readyz answered 503 on a fully migrated database.
  */
-const PROBE_QUERY = sql`SELECT (SELECT count(*) FROM sqlite_master WHERE type IN ('table', 'index') AND name IN (${sql.join(
-	REQUIRED_OBJECTS.map((name) => sql`${name}`),
-	sql`, `,
-)})) AS present, (${sql.join(
+export const PROBE_QUERY = sql`SELECT (SELECT count(*) FROM sqlite_master WHERE type IN ('table', 'index') AND name IN (SELECT value FROM json_each(${JSON.stringify(
+	REQUIRED_OBJECTS,
+)}))) AS present, (${sql.join(
 	TABLE_CONFIGS.map((table) =>
 		// Table names are schema-controlled identifiers — safe to inline.
 		sql.raw(`(SELECT count(*) FROM pragma_table_info('${table.name}'))`),
