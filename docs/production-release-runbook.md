@@ -123,7 +123,8 @@ migration/recovery rehearsal — and serves QC on its own subdomain:
 `https://app.staging.teacheros.io.vn` (web) +
 `https://api.staging.teacheros.io.vn` (API). After first provisioning (or
 destroy/recreate), the automated staging deploy (see "Automated staging
-deploy (CI/CD)" below) keeps the stage current on every push to `develop`;
+deploy (CI/CD)" below) keeps the stage current on every push to the
+`staging` branch;
 run this procedure manually only for first provisioning or
 destroy/recreate.
 
@@ -177,10 +178,14 @@ operator `.env` and the GitHub repo secret of the same name.
 ## Automated staging deploy (CI/CD)
 
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
-`staging`. Since 2026-09-22 staging auto-deploy is disabled: the `push`
-trigger on `develop` was removed, so merging code no longer deploys staging.
-The workflow runs only on manual `workflow_dispatch` (e.g. to rehearse a
-pending migration on staging before promotion) and runs the
+`staging`. Since 2026-09-22 merging into `develop` no longer deploys staging.
+Instead, staging deploys on every push to the dedicated `staging` branch —
+the QA environment. To hand a build to QA, fast-forward `staging` to the
+`develop` commit under test (`git push origin develop:staging`); QA then
+checks `https://app.staging.teacheros.io.vn`. The GitHub environment
+`staging` allows deployments from the `staging` branch (and `develop` for
+manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
+Either way the workflow runs the
 same quality gates as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
