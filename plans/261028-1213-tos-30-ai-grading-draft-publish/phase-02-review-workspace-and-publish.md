@@ -13,7 +13,14 @@ effort: 1.25d
 - Contract `packages/api/src/contracts.ts`: `AiGradingDraftView`, `aiDraftPatchSchema`, mở rộng `TeacherSubmission`, `GradingQueueItem`.
 - Sửa `apps/web/src/routes/_auth/grading/$attemptId.tsx`: bố cục 2 cột; panel "Gợi ý từ AI" (4 select bước 0.5 điền sẵn, textarea nhận xét, badge trạng thái); nút "Lưu bản nháp" + "Chốt trả bài". Tạo component `apps/web/src/components/grading/ai-draft-panel.tsx`.
 - Sửa `apps/web/src/routes/_auth/grading/index.tsx`: badge trạng thái (`AI đã chấm nháp`, `Đang rà soát`, `Chờ chấm tay`, `Đã trả kết quả`).
-- Cổng học viên (`apps/student`): attempt `submitted` chưa `graded_at` hiện "Đã nộp — Đang chờ giáo viên chấm".
+- Cổng học viên nhãn "Đã nộp — Đang chờ giáo viên chấm" — **skill-aware**: chỉ Writing/Speaking chưa `graded_at`; Reading/Listening tự chấm giữ "Đã nộp"; bài đã "Chốt trả bài" (`gradedAt`) → "Đã chấm"/"Điểm: X":
+  - `apps/student/src/components/history/history-list.tsx` — chip `awaiting` (chỉ tồn tại với Writing/Speaking) → "Đã nộp — Đang chờ giáo viên chấm".
+  - `apps/student/src/components/practice/skill-catalog.tsx` — `isAwaitingGrade` → cùng chuỗi.
+  - `apps/student/src/lib/assignment-status.ts` — `submitted` + `skill` gradable → cùng chuỗi; thêm nhánh `gradedAt` → "Đã chấm" (Speaking shape scores không khớp IELTS Writing).
+  - `apps/student/src/routes/_auth/learn/quizzes/attempt/$attemptId.tsx` — `data-testid="awaiting-grade"` chỉ khi skill gradable + grade null.
+  - `packages/api` `studentAssignmentSchema` thêm `skill`/`gradedAt` (optional); `loadClassAssignmentItems` join `assignment_prompt.skill` + `quiz_attempt.graded_at/grade_scores`.
+  - Sửa test: `history-list.test.tsx`, `practice-catalog.test.tsx`, `apps/student/test/assignment-status.test.ts`, `attempt-summary.test.tsx`.
+- API học viên không bao giờ join `ai_grading_draft`; test hợp đồng chặn rò rỉ ở `grading.test.ts` (BR-001) + e2e AC-001.
 
 ## Steps
 

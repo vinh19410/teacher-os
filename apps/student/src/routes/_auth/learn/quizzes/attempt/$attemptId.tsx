@@ -125,16 +125,18 @@ export function AttemptSummaryBody({
 				)}
 				.
 			</p>
-			{/* TOS-30 #478: chưa có điểm cuối → chỉ nhãn chờ chấm, KHÔNG lộ
-				trạng thái/diểm chấm nháp AI (BR-001). */}
-			{grade === null && (
-				<p
-					className="font-medium text-foreground text-sm"
-					data-testid="awaiting-grade"
-				>
-					Đã nộp — Đang chờ giáo viên chấm
-				</p>
-			)}
+			{/* TOS-30 #478: CHỈ Writing/Speaking chờ giáo viên chấm tay — quiz
+				Reading/Listening tự chấm không bao giờ có `grade` nhưng cũng
+				không bao giờ chờ ai, không được dính nhãn chờ. */}
+			{(summary.skill === "writing" || summary.skill === "speaking") &&
+				grade === null && (
+					<p
+						className="font-medium text-foreground text-sm"
+						data-testid="awaiting-grade"
+					>
+						Đã nộp — Đang chờ giáo viên chấm
+					</p>
+				)}
 		</div>
 	);
 

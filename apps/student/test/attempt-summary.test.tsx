@@ -254,6 +254,28 @@ describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
 			expect(html).not.toContain("Bài viết của bạn");
 		}
 	});
+
+	// TOS-30 #478: nhãn chờ chấm CHỈ dành cho Writing/Speaking (chấm tay);
+	// Reading tự chấm không bao giờ chờ ai.
+	it("Reading nộp xong không dính nhãn chờ giáo viên chấm", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{ ...summary, essay: null }}
+				attemptId={summary.id}
+			/>,
+		);
+		expect(html).not.toContain("Đã nộp — Đang chờ giáo viên chấm");
+	});
+
+	it("Writing nộp xong chưa chấm hiện nhãn chờ giáo viên chấm", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody
+				summary={{ ...writingSummary, skill: "writing" }}
+				attemptId={writingSummary.id}
+			/>,
+		);
+		expect(html).toContain("Đã nộp — Đang chờ giáo viên chấm");
+	});
 });
 
 describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305)", () => {
