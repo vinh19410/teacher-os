@@ -1843,6 +1843,10 @@ export const studentAssignmentSchema = z.object({
 	 * Speaking cần giáo viên chấm tay) với bài tự chấm (Reading/Listening).
 	 * Optional: server cũ không gửi. */
 	skill: z.string().nullable().optional(),
+	/** TOS-30 #478: ISO datetime giáo viên "Chốt trả bài" (quiz_attempt.
+	 * graded_at) — phân biệt đã chấm với đang chờ khi scores chưa đủ band.
+	 * Optional: server cũ không gửi. */
+	gradedAt: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 

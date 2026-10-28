@@ -1,7 +1,7 @@
 import { AI_GRADING_ERROR_CODES } from "@teacher-os/api/contracts";
 import { aiGradingDraft } from "@teacher-os/db/schema/ai-grading-draft";
 import { creditUsageLog } from "@teacher-os/db/schema/credit-wallet";
-import { and, eq, inArray, lt } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import type { Db } from "../../app";
 import { releaseCredits } from "../credits/wallet";
 
@@ -73,11 +73,12 @@ export async function releaseStaleGradings(
 		if (won.length === 0) continue;
 		await releaseIfReserved(db, orgId, draft.attemptId, draft.creditCost);
 	}
-	if (processing.length > 0) return;
 
 	// Nhóm 2 — đã rời `ai_processing` nhưng held chưa được giải tỏa: draft
 	// `ai_drafted`/`manual_pending` quá hạn (crash sau CAS, trước ví). Giữ
-	// nguyên trạng thái draft — điểm AI vẫn dùng được, chỉ trả held.
+	// nguyên trạng thái draft — điểm AI vẫn dùng được, chỉ trả held. Lọc
+	// EXISTS/NOT EXISTS ngay trong SQL để không quét lại mãi cùng các draft
+	// đã xử lý (code review #478).
 	const terminalStale = await db
 		.select({
 			attemptId: aiGradingDraft.attemptId,
@@ -89,6 +90,14 @@ export async function releaseStaleGradings(
 				eq(aiGradingDraft.orgId, orgId),
 				inArray(aiGradingDraft.status, ["ai_drafted", "manual_pending"]),
 				lt(aiGradingDraft.startedAt, cutoff),
+				sql`EXISTS (SELECT 1 FROM credit_usage_log cul
+					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
+						AND cul.action_type = 'ai_grading'
+						AND cul.tx_status = 'reserved')`,
+				sql`NOT EXISTS (SELECT 1 FROM credit_usage_log cul
+					WHERE cul.ref_id = ${aiGradingDraft.attemptId}
+						AND cul.action_type = 'ai_grading'
+						AND cul.tx_status IN ('settled', 'released'))`,
 			),
 		)
 		.limit(STALE_SWEEP_BATCH);

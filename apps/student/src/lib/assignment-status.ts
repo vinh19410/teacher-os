@@ -100,6 +100,19 @@ export function deriveAssignmentStatus(
 		};
 	}
 
+	// TOS-30 #478: giáo viên đã "Chốt trả bài" (graded_at có, scores chưa
+	// đủ band) — tuyệt đối KHÔNG rơi vào nhãn chờ chấm nữa.
+	if (assignment.gradedAt) {
+		return {
+			status: "graded",
+			statusLabel: "Đã chấm",
+			badgeClass: "bg-success-soft text-success",
+			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
+			bandScore: null,
+			sortOrder: 4,
+		};
+	}
+
 	// Submitted
 	if (assignment.submittedAt) {
 		// TOS-30 #478: chỉ Writing/Speaking chờ giáo viên chấm tay — bài tự

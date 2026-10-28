@@ -4,6 +4,7 @@ import type {
 	GradingQueueResponse,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
+import { studentOverviewSchema } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -12,6 +13,7 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type MediaStore } from "../app";
 import type { SessionUser } from "../session";
 import { loadGradingQueue } from "./grading";
+import { loadClassAssignmentItems } from "./student-class";
 
 const CORS_ORIGINS = ["http://localhost:8001", "http://localhost:8003"];
 const TEACHER_ORIGIN = "http://localhost:8001";
@@ -2021,6 +2023,87 @@ describe("AI grading draft (TOS-30 #478)", () => {
 		expect(attD?.aiStatus).toBe("published");
 		const attD2 = body.items.find((item) => item.attemptId === "att-d2");
 		expect(attD2?.aiStatus).toBeNull();
+	});
+
+	test("overview học viên: Writing graded lộ scores IELTS, Speaking graded chỉ gradedAt (không vỡ zod)", async () => {
+		// Speaking đã "Chốt trả bài" — grade_scores là bộ key Speaking,
+		// KHÔNG khớp studentAssignmentScoresSchema (Writing): nếu map mù thì
+		// studentOverviewSchema.parse vỡ, cả tab Bài tập của học viên chết.
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-d-spk",
+			orgId: "org-1",
+			task: "part2",
+			genre: "",
+			skill: "speaking",
+			part: "part2",
+			type: "place",
+			title: "Speaking D",
+			prompt: "Describe a place you like to visit.",
+			cueTopic: "a place",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-d-spk",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-d-spk",
+			title: "Speaking D",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.classAssignmentTarget).values([
+			{
+				id: "cat-ca-d",
+				orgId: "org-1",
+				assignmentId: "ca-d",
+				studentId: "student-1",
+				submittedAt: new Date().toISOString(),
+			},
+			{
+				id: "cat-ca-d-spk",
+				orgId: "org-1",
+				assignmentId: "ca-d-spk",
+				studentId: "student-1",
+				submittedAt: new Date().toISOString(),
+			},
+		]);
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-d-spk",
+			orgId: "org-1",
+			assignmentId: "ca-d-spk",
+			studentId: "student-1",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			mediaKey: "quiz-media/org-1/att-d-spk/k3",
+			gradeScores: { fluency: 6, lexical: 6.5, grammar: 6, pronunciation: 6 },
+			gradedAt: new Date("2026-10-28T04:00:00Z"),
+			submittedAt: new Date("2026-10-27T04:00:00Z"),
+		});
+
+		const items = await loadClassAssignmentItems(libsql, "org-1", "student-1");
+		const writing = items.find((item) => item.id === "ca-d");
+		const speaking = items.find((item) => item.id === "ca-d-spk");
+		// Writing: đủ 4 key IELTS → scores lộ (band hiển thị như cũ).
+		expect(writing?.scores).toEqual({
+			task: 6.5,
+			coherence: 7,
+			lexical: 6,
+			grammar: 6,
+		});
+		expect(writing?.gradedAt).toBeTruthy();
+		// Speaking: scores null (shape khác) nhưng gradedAt có → "Đã chấm".
+		expect(speaking?.scores).toBeNull();
+		expect(speaking?.gradedAt).toBeTruthy();
+
+		// Toàn bộ items parse được qua overview schema — không vỡ client.
+		const overview = studentOverviewSchema.parse({
+			student: { id: "student-1", name: "Minh Tran" },
+			classes: [],
+			assignments: items,
+		});
+		expect(overview.assignments.length).toBeGreaterThan(0);
 	});
 
 	test("API học viên không chứa bất kỳ field draft nào (BR-001)", async () => {
