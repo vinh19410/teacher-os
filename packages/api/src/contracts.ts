@@ -2550,6 +2550,12 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 					alts: z.string(),
 					verdict: z.enum(QUIZ_VERDICTS),
 					answer: z.string().nullable(),
+					/** Giải thích đáp án riêng của câu (rich text, #358) — soạn từ
+					 * #423, CHỈ xuống wire ở detail sau nộp (route 409 khi
+					 * in_progress); take payload `studentQuizQuestionSchema` không
+					 * bao giờ có field này. Server chỉ gửi key khi câu có giải
+					 * thích — optional để bundle cũ/payload cũ không vỡ. */
+					explanation: z.string().optional(),
 				})
 				.strict(),
 		),
