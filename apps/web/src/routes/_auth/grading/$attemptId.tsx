@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type {
+	AiGradingDraftView,
 	EssayAnnotation,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
+import { AiDraftPanel } from "@/components/grading/ai-draft-panel";
 import { GradeForm } from "@/components/grading/grade-form";
 import { SubmissionView } from "@/components/grading/submission-view";
 import { Card } from "@/components/ui/card";
@@ -17,6 +19,7 @@ import {
 	deleteAnnotation,
 	gradingQueryKey,
 	gradingQueueQueryKey,
+	saveDraft,
 	saveGrade,
 	submissionQueryOptions,
 	updateAnnotation,
@@ -72,8 +75,24 @@ export function GradingRoute() {
 		mutationFn: (input: Parameters<typeof saveGrade>[1]) =>
 			saveGrade(attemptId, input),
 		onSuccess(grade) {
-			queryClient.setQueryData(gradingQueryKey(attemptId), (old) =>
-				old ? { ...old, grade } : old,
+			queryClient.setQueryData(
+				gradingQueryKey(attemptId),
+				(old: TeacherSubmission | undefined) =>
+					old
+						? {
+								...old,
+								grade,
+								// Chốt trả bài → draft sang published ngay trong cache
+								// (server đã ghi cùng batch).
+								aiDraft: old.aiDraft
+									? {
+											...old.aiDraft,
+											status: "published" as const,
+											publishedAt: new Date().toISOString(),
+										}
+									: null,
+							}
+						: old,
 			);
 			// Tab Bài tập (kernel snapshot) phải thấy tag "Đã chấm · Band X" mới.
 			void queryClient.invalidateQueries({
@@ -85,6 +104,25 @@ export function GradingRoute() {
 				queryKey: gradingQueueQueryKey,
 			});
 			setSavedAt(grade.gradedAt);
+		},
+		onError: on401Reauth,
+	});
+
+	/** "Lưu bản nháp" (TOS-30): PATCH draft với version đang thấy — server
+	 * lệch version → 409 (chống lưu đè). */
+	const draftMutation = useMutation({
+		mutationFn: (input: {
+			patch: Parameters<typeof saveDraft>[1];
+			version: number;
+		}) => saveDraft(attemptId, { ...input.patch, version: input.version }),
+		onSuccess(view: AiGradingDraftView) {
+			queryClient.setQueryData(gradingQueryKey(attemptId), (old) =>
+				old ? { ...old, aiDraft: view } : old,
+			);
+			void queryClient.invalidateQueries({
+				queryKey: gradingQueueQueryKey,
+			});
+			setSavedAt(new Date().toISOString());
 		},
 		onError: on401Reauth,
 	});
@@ -155,6 +193,29 @@ export function GradingRoute() {
 		isHttpError(mutation.error) && mutation.error.status === 409
 			? "Bài chưa ở trạng thái đã nộp — tải lại trang."
 			: saveError;
+	/** GradeForm điền điểm ĐÃ CÔNG BỐ khi có (`data.grade`) — chỉ bài chưa
+	 * chốt mới điền sẵn từ nháp rà → điểm gợi ý AI (code review #478: sau
+	 * publish, điền điểm AI sẽ mời giáo viên ghi đè điểm cuối). */
+	const draft = data.aiDraft ?? null;
+	const draftInitialGrade =
+		data.grade ??
+		(draft
+			? {
+					scores: draft.reviewedScores ?? draft.aiScores ?? {},
+					feedback: draft.reviewedFeedback || draft.aiFeedback,
+					band: 0,
+					gradedAt: draft.publishedAt ?? "",
+				}
+			: null);
+	/** Draft `published` là terminal — form quay về luồng chấm tay thường. */
+	const draftActive = draft !== null && draft.status !== "published";
+	const draftError = draftMutation.error
+		? isHttpError(draftMutation.error)
+			? draftMutation.error.status === 409
+				? "Bản nháp đã được lưu từ nơi khác — tải lại trang để thấy bản mới."
+				: "Bài không có bản nháp AI để lưu."
+			: (draftMutation.error.message ?? null)
+		: null;
 
 	/** Map lỗi annotation thành message thân thiện rồi ném lại — component
 	 * highlight hiển thị ngay tại vị trí thao tác (popover/hàng sửa/xác nhận
@@ -245,19 +306,37 @@ export function GradingRoute() {
 						}
 					/>
 				</Card>
-				<Card className="self-start p-6">
-					<GradeForm
-						key={data.grade?.gradedAt ?? "new"}
-						skill={data.skill}
-						part={data.part}
-						initial={data.grade}
-						saving={mutation.isPending}
-						error={mutation.error ? friendlySaveError : null}
-						savedAt={savedAt}
-						onOverallChange={setOverall}
-						onSave={(input) => mutation.mutate(input)}
-					/>
-				</Card>
+				<div className="flex flex-col gap-6">
+					{draft !== null && (
+						<AiDraftPanel draft={draft} skill={data.skill} part={data.part} />
+					)}
+					<Card className="p-6">
+						<GradeForm
+							key={
+								draftActive
+									? `draft-${draft.version}`
+									: (data.grade?.gradedAt ?? "new")
+							}
+							skill={data.skill}
+							part={data.part}
+							initial={draftInitialGrade}
+							saving={mutation.isPending}
+							error={mutation.error ? friendlySaveError : null}
+							savedAt={savedAt}
+							onOverallChange={setOverall}
+							onSave={(input) => mutation.mutate(input)}
+							draftMode={draftActive}
+							savingDraft={draftMutation.isPending}
+							draftError={draftMutation.error ? draftError : null}
+							onSaveDraft={(input) =>
+								draftMutation.mutate({
+									patch: { ...input, version: draft?.version ?? 1 },
+									version: draft?.version ?? 1,
+								})
+							}
+						/>
+					</Card>
+				</div>
 			</div>
 		</div>
 	);

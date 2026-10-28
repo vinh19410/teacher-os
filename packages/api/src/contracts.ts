@@ -1839,6 +1839,14 @@ export const studentAssignmentSchema = z.object({
 	due: z.string(),
 	submittedAt: z.string().nullable(),
 	scores: studentAssignmentScoresSchema.nullable(),
+	/** TOS-30 #478: kỹ năng của đề — phân biệt nhãn chờ chấm (Writing/
+	 * Speaking cần giáo viên chấm tay) với bài tự chấm (Reading/Listening).
+	 * Optional: server cũ không gửi. */
+	skill: z.string().nullable().optional(),
+	/** TOS-30 #478: ISO datetime giáo viên "Chốt trả bài" (quiz_attempt.
+	 * graded_at) — phân biệt đã chấm với đang chờ khi scores chưa đủ band.
+	 * Optional: server cũ không gửi. */
+	gradedAt: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -2120,6 +2128,62 @@ export const QUIZ_FEEDBACK_MAX = 5000;
 export const bandScoreSchema = z
 	.number()
 	.refine(isBandStep, "band step 0.5 in 0..9");
+
+/**
+ * Chấm nháp AI Writing/Speaking (TOS-30 #478). Trạng thái của bảng
+ * `ai_grading_draft` (máy trạng thái `AiGradingDraft` trong SRS):
+ * `ai_processing → ai_drafted | manual_pending`; `ai_drafted →
+ * teacher_reviewing | published`; `teacher_reviewing → teacher_reviewing |
+ * published`; `manual_pending → published` (chấm tay).
+ */
+export const AI_GRADING_STATUSES = [
+	"ai_processing",
+	"ai_drafted",
+	"teacher_reviewing",
+	"manual_pending",
+	"published",
+] as const;
+export type AiGradingStatus = (typeof AI_GRADING_STATUSES)[number];
+
+/** Type guard trạng thái draft (đọc từ DB string → union an toàn). */
+export function isAiGradingStatus(value: string): value is AiGradingStatus {
+	return (AI_GRADING_STATUSES as readonly string[]).includes(value);
+}
+
+/**
+ * Bản nháp AI nhìn từ giáo viên (GET /api/grading/:attemptId trả
+ * `aiDraft`) — shape này TUYỆT ĐỐI không xuất hiện ở API học viên (BR-001,
+ * test hợp đồng chặn rò rỉ). Bài chấm tay cũ (không draft) → `null`.
+ */
+export const aiGradingDraftViewSchema = z
+	.object({
+		status: z.enum(AI_GRADING_STATUSES),
+		aiScores: z.record(z.string(), z.number()).nullable(),
+		aiFeedback: z.string(),
+		/** Điểm/nhận xét giáo viên đã "Lưu bản nháp" — null khi chưa lưu lần nào. */
+		reviewedScores: z.record(z.string(), z.number()).nullable(),
+		reviewedFeedback: z.string(),
+		gradingMode: z.string(),
+		version: z.number().int().min(1),
+		errorCode: z.string().nullable(),
+		/** ISO datetime "Chốt trả bài"; null khi chưa publish. */
+		publishedAt: z.string().nullable(),
+	})
+	.strict();
+export type AiGradingDraftView = z.infer<typeof aiGradingDraftViewSchema>;
+
+/** PATCH /api/grading/:attemptId/draft — "Lưu bản nháp" với optimistic
+ * concurrency: `version` client đang thấy; lệch → 409 (nền chống lưu đè
+ * E-011 của TOS-33). */
+export const aiDraftPatchSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+		version: z.number().int().min(1),
+	})
+	.strict();
+export type AiDraftPatch = z.infer<typeof aiDraftPatchSchema>;
+
 export const writingGradeScoresSchema = z
 	.object({
 		task: bandScoreSchema,
@@ -2219,6 +2283,10 @@ export const teacherSubmissionSchema = z
 		 * `classAssignmentId` là chuỗi rỗng, `className` là nhãn "Luyện tập",
 		 * `due` rỗng. Optional để bundle cũ + server mới không throw. */
 		practice: z.literal(true).optional(),
+		/** TOS-30: bản nháp AI + nháp rà của giáo viên. Optional cho bundle
+		 * cũ; `null` = bài chấm tay cũ không có draft. Học viên không bao giờ
+		 * nhận shape này (BR-001). */
+		aiDraft: aiGradingDraftViewSchema.nullable().optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
@@ -2239,6 +2307,9 @@ export const gradingQueueItemSchema = z
 		part: z.string(),
 		submittedAt: z.string(),
 		grade: quizAttemptGradeSchema.nullable(),
+		/** TOS-30: trạng thái draft AI của attempt; `null` khi bài không có
+		 * draft (chấm tay cũ). Optional để bundle cũ không throw. */
+		aiStatus: z.enum(AI_GRADING_STATUSES).nullable().optional(),
 	})
 	.strict();
 export type GradingQueueItem = z.infer<typeof gradingQueueItemSchema>;
@@ -3730,6 +3801,28 @@ export const EXAM_IMPORT_FAIL_REASONS = [
 	"empty_result",
 ] as const;
 export type ExamImportFailReason = (typeof EXAM_IMPORT_FAIL_REASONS)[number];
+
+/** Giá Credit mỗi lượt chấm nháp AI theo kỹ năng (BR-001: Writing 1,
+ * Speaking 2 — Speaking chấm phát âm nên giá cao hơn; TOS-42 mở gói tháng). */
+export const AI_GRADING_COST: Record<"writing" | "speaking", number> = {
+	writing: 1,
+	speaking: 2,
+};
+
+/** Mã lỗi pipeline chấm nháp AI — cột `error_code` của draft (TOS-33 bổ
+ * sung retry + E-004 riêng). Null = không lỗi. */
+export const AI_GRADING_ERROR_CODES = {
+	/** AI quá hạn (20s) hoặc bị hủy — Credit đã hoàn. */
+	TIMEOUT: "AI_GRADING_TIMEOUT",
+	/** AI trả kết quả không hợp lệ / lỗi khác — Credit đã hoàn. */
+	FAILED: "AI_GRADING_FAILED",
+	/** Binding AI chưa cấu hình — fail-closed, Credit đã hoàn. */
+	DISABLED: "AI_GRADING_DISABLED",
+	/** Speaking chưa có transcript (TOS-30 stub; TOS-31 gắn STT). */
+	NO_TRANSCRIPT: "AI_GRADING_NO_TRANSCRIPT",
+} as const;
+export type AiGradingErrorCode =
+	(typeof AI_GRADING_ERROR_CODES)[keyof typeof AI_GRADING_ERROR_CODES];
 
 /**
  * Thông điệp lỗi nguyên văn cột "Thông điệp" của spec

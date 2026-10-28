@@ -17,12 +17,19 @@ export class InsufficientCreditsError extends Error {
 	}
 }
 
+/** Loại dịch vụ tiêu Credit — quyết prefix idempotency key lẫn cột
+ * `action_type` của sổ cái (TOS-30 mở rộng từ `exam_import`). */
+export type CreditActionType = "exam_import" | "ai_grading";
+
 /** Đầu vào chung của reserve/settle/release — `refId` là job id gốc. */
 export interface CreditMutationInput {
 	orgId: string;
 	actorUserId: string;
 	amount: number;
 	refId: string;
+	/** Mặc định `exam_import` (callers cũ); chấm nháp AI truyền
+	 * `ai_grading` để sổ cái phân biệt dịch vụ (TOS-42 báo cáo theo loại). */
+	actionType?: CreditActionType;
 }
 
 /** Kết quả mutation — dòng log mới (hoặc log cũ khi gọi lại cùng key). */
@@ -40,9 +47,11 @@ export interface WalletBalance {
 
 type WalletOp = "reserve" | "settle" | "release";
 
-/** Key chống chạy đúp — UNIQUE index `credit_usage_log_idempotency_key_idx`. */
-function idempotencyKey(refId: string, op: WalletOp): string {
-	return `exam_import:${refId}:${op}`;
+/** Key chống chạy đúp — UNIQUE index `credit_usage_log_idempotency_key_idx`.
+ * Prefix theo `actionType`: `exam_import:<refId>:<op>` (cũ) /
+ * `ai_grading:<attemptId>:<op>` (TOS-30). */
+function idempotencyKey(input: CreditMutationInput, op: WalletOp): string {
+	return `${input.actionType ?? "exam_import"}:${input.refId}:${op}`;
 }
 
 /**
@@ -103,7 +112,7 @@ async function mutateWallet(
 	input: CreditMutationInput,
 	op: WalletOp,
 ): Promise<CreditMutationResult> {
-	const key = idempotencyKey(input.refId, op);
+	const key = idempotencyKey(input, op);
 	const txStatus = op === "release" ? "released" : `${op}d`;
 
 	const guardHeld =
@@ -123,10 +132,11 @@ async function mutateWallet(
 
 	// Cột SELECT phải đủ và đúng thứ tự toàn bộ cột bảng (INSERT ... SELECT
 	// của drizzle liệt kê mọi cột không-disable) — kể cả created_at.
+	// action_type theo dịch vụ (exam_import cũ / ai_grading TOS-30).
 	const logInsert = db
 		.insert(creditUsageLog)
 		.select(
-			sql`SELECT ${crypto.randomUUID()}, ${input.orgId}, ${input.actorUserId}, 'exam_import', ${creditDelta}, ${txStatus}, ${input.refId}, ${key}, ${Date.now()} WHERE (SELECT changes() = 1)`,
+			sql`SELECT ${crypto.randomUUID()}, ${input.orgId}, ${input.actorUserId}, ${input.actionType ?? "exam_import"}, ${creditDelta}, ${txStatus}, ${input.refId}, ${key}, ${Date.now()} WHERE (SELECT changes() = 1)`,
 		);
 
 	try {

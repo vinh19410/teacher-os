@@ -57,6 +57,8 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
+import type { AiGrader } from "../lib/ai-grading/grader";
+import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
@@ -90,6 +92,8 @@ export interface StudentRouteDeps {
 	getMediaStore?(): MediaStore | undefined;
 	/** Xem `AppDeps.runInBackground`. */
 	runInBackground?(promise: Promise<unknown>): void;
+	/** TOS-30: grader chấm nháp AI — vắng mặt → draft `AI_GRADING_DISABLED`. */
+	getAiGrader?(): AiGrader | undefined;
 }
 
 export interface StudentContext {
@@ -1731,6 +1735,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				),
 			)
 			.returning({ id: quizAttempt.id });
+
+		// TOS-30: nộp Writing/Speaking → chấm nháp AI chạy nền (waitUntil).
+		// CHỈ flip thắng mới kích hoạt — double-submit không dựng draft lần 2
+		// (pipeline còn tự chống bằng ON CONFLICT DO NOTHING). `header.skill`
+		// đã normalize (practice → skill của đề tự luyện).
+		if (
+			flipped.length > 0 &&
+			(header?.skill === "writing" || header?.skill === "speaking")
+		) {
+			void scheduleAiGrading(deps, attemptId);
+		}
 
 		const [attempt] = await db
 			.select({

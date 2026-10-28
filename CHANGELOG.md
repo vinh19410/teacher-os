@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-10-28
+
+### Added
+- Chấm nháp AI Writing/Speaking ẩn với học viên (TOS-30 #478, màn Rà soát chấm bài AI `[7]`): học viên nộp Writing (hoặc Speaking hợp lệ) → hệ thống tạm giữ 1/2 Credit, AI chấm nháp ≤ 30 giây (timeout 20s, pipeline nền `waitUntil`) → draft `ai_drafted` với điểm gợi ý 4 tiêu chí IELTS (bước 0.5) + nhận xét; bảng mới `ai_grading_draft` tách nháp khỏi `quiz_attempt.grade_scores` nên cổng học viên chỉ thấy "Đã nộp — Đang chờ giáo viên chấm", không lộ điểm AI; `releaseStaleGradings` dọn draft kẹt (60s) + trả held Credit ở `GET /grading*` và `/credits/wallet`; sổ cái ghi `action_type = ai_grading` với idempotency key riêng, AI lỗi/thiếu Credit → hoàn đủ Credit + `manual_pending`. Giáo viên thấy panel "Gợi ý từ AI" trên màn chấm 2 cột, "Lưu bản nháp" (PATCH draft, version chống lưu đè) và "Chốt trả bài" tái dùng `POST /grade` — publish draft + điểm cuối trong cùng batch, phát `grade_returned`; hàng chờ `/grading` thêm badge trạng thái draft; nhãn cổng học viên phân biệt theo kỹ năng (Writing/Speaking chờ chấm tay, Reading/Listening giữ "Đã nộp").
+
 ## 2026-10-27
 
 ### Added

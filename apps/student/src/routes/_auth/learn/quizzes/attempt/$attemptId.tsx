@@ -111,19 +111,33 @@ export function AttemptSummaryBody({
 	const grade = summary.grade ?? null;
 	const part = summary.part ?? "";
 	const submittedLine = (
-		<p className="text-muted-foreground text-sm">
-			Bạn đã nộp bài lúc{" "}
-			<span className="font-medium text-foreground">
-				{formatVietnamSubmittedAt(summary.submittedAt)}
-			</span>
-			{duration && (
-				<>
-					{" · hoàn thành trong "}
-					<span className="font-medium text-foreground">{duration}</span>
-				</>
-			)}
-			.
-		</p>
+		<div className="flex flex-col gap-1">
+			<p className="text-muted-foreground text-sm">
+				Bạn đã nộp bài lúc{" "}
+				<span className="font-medium text-foreground">
+					{formatVietnamSubmittedAt(summary.submittedAt)}
+				</span>
+				{duration && (
+					<>
+						{" · hoàn thành trong "}
+						<span className="font-medium text-foreground">{duration}</span>
+					</>
+				)}
+				.
+			</p>
+			{/* TOS-30 #478: CHỈ Writing/Speaking chờ giáo viên chấm tay — quiz
+				Reading/Listening tự chấm không bao giờ có `grade` nhưng cũng
+				không bao giờ chờ ai, không được dính nhãn chờ. */}
+			{(summary.skill === "writing" || summary.skill === "speaking") &&
+				grade === null && (
+					<p
+						className="font-medium text-foreground text-sm"
+						data-testid="awaiting-grade"
+					>
+						Đã nộp — Đang chờ giáo viên chấm
+					</p>
+				)}
+		</div>
 	);
 
 	// Field `skill` optional (server cũ vắng mặt) → rơi về nhánh khác.

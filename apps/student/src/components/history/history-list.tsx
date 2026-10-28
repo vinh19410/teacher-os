@@ -11,11 +11,13 @@ import { HISTORY_SKILL_LABELS } from "@/components/history/history-skill-labels"
 import { WritingReview } from "@/components/history/writing-review";
 import { cn } from "@/lib/cn";
 
-/** Nhãn chip trạng thái theo design-v2 `DetailHistory` (Tag hot = chờ chấm). */
+/** Nhãn chip trạng thái theo design-v2 `DetailHistory` (Tag hot = chờ chấm).
+ * TOS-30 #478: nhãn chờ chấm thống nhất "Đã nộp — Đang chờ giáo viên chấm"
+ * — cổng học viên KHÔNG lộ trạng thái/diểm chấm nháp AI. */
 const STATUS_LABELS: Record<HistoryEntry["status"], string> = {
 	auto: "Tự chấm",
 	graded: "Đã chấm",
-	awaiting: "Chờ chấm",
+	awaiting: "Đã nộp — Đang chờ giáo viên chấm",
 };
 
 function StatusTag({ entry }: { entry: HistoryEntry }) {

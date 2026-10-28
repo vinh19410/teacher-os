@@ -1,10 +1,11 @@
-import type {
-	EnrollmentStatus,
-	StudentAssignment,
-	StudentClass,
-	StudentClassLesson,
-	StudentNextSession,
-	StudentTeacher,
+import {
+	type EnrollmentStatus,
+	type StudentAssignment,
+	type StudentClass,
+	type StudentClassLesson,
+	type StudentNextSession,
+	type StudentTeacher,
+	studentAssignmentScoresSchema,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import {
@@ -12,12 +13,14 @@ import {
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 import {
+	assignmentPrompt,
 	classAssignment,
 	classAssignmentTarget,
 	classTable,
 	enrollment,
 	lesson,
 	membership,
+	quizAttempt,
 	user,
 } from "@teacher-os/db/schema/index";
 import { and, asc, desc, eq, gte, isNotNull } from "drizzle-orm";
@@ -152,13 +155,32 @@ export async function loadClassAssignmentItems(
 			className: classTable.name,
 			due: classAssignment.due,
 			submittedAt: classAssignmentTarget.submittedAt,
+			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
+			// chấm giáo viên (Writing/Speaking) với bài tự chấm.
+			skill: assignmentPrompt.skill,
+			// TOS-30 #478: điểm/bài đã "Chốt trả bài" — phân biệt đã chấm với
+			// đang chờ (scores luôn null trước PR #482 nên nhãn chờ chấm dính
+			// mãi cả sau publish).
+			gradeScores: quizAttempt.gradeScores,
+			gradedAt: quizAttempt.gradedAt,
 		})
 		.from(classAssignmentTarget)
 		.innerJoin(
 			classAssignment,
 			eq(classAssignmentTarget.assignmentId, classAssignment.id),
 		)
+		.innerJoin(
+			assignmentPrompt,
+			eq(assignmentPrompt.id, classAssignment.promptId),
+		)
 		.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
+		.leftJoin(
+			quizAttempt,
+			and(
+				eq(quizAttempt.assignmentId, classAssignment.id),
+				eq(quizAttempt.studentId, classAssignmentTarget.studentId),
+			),
+		)
 		.where(
 			and(
 				eq(classAssignmentTarget.orgId, orgId),
@@ -170,16 +192,26 @@ export async function loadClassAssignmentItems(
 		)
 		.orderBy(desc(classAssignment.createdAt));
 
-	return targetRows.map((row) => ({
-		id: row.id,
-		title: row.title,
-		source: "class_assignment" as const,
-		classId: row.classId,
-		className: row.className ?? null,
-		due: row.due,
-		submittedAt: row.submittedAt ?? null,
-		scores: null,
-	}));
+	return targetRows.map((row) => {
+		// Chỉ lộ `scores` khi ĐÚNG shape IELTS Writing (Speaking lưu key
+		// fluency/pronunciation — safeParse fail → null; trạng thái "đã chấm"
+		// của Speaking do `gradedAt` lo, tránh vỡ zod ở client).
+		const parsedScores = studentAssignmentScoresSchema.safeParse(
+			row.gradeScores,
+		);
+		return {
+			id: row.id,
+			title: row.title,
+			source: "class_assignment" as const,
+			classId: row.classId,
+			className: row.className ?? null,
+			due: row.due,
+			submittedAt: row.submittedAt ?? null,
+			scores: parsedScores.success ? parsedScores.data : null,
+			skill: row.skill,
+			gradedAt: row.gradedAt ? row.gradedAt.toISOString() : null,
+		};
+	});
 }
 
 /** Hạng trạng thái trong một slot legacy: buổi đã diễn ra trước, rồi buổi

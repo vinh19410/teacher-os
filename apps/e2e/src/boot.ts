@@ -18,6 +18,7 @@ import { seedVocabLibrary } from "@teacher-os/db/seed/vocab-library";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
+import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
@@ -168,6 +169,10 @@ const app = buildApp({
 	// fake (tên tệp chứa `ai-fail` ném lỗi để E2E AC-004 kiểm hoàn trả Credit).
 	getExamImportStore: () => examImportStore,
 	getExamExtractor: () => createFakeExamExtractor(),
+	// TOS-30 (#478): grader fake trả điểm cố định 6.5/7.0/6.0/6.5 — E2E
+	// AC-001 thấy draft `ai_drafted` mà không đụng Workers AI. Pipeline chạy
+	// fire-and-forget (không waitUntil trong Node) — test chờ qua UI.
+	getAiGrader: () => createFakeAiGrader(),
 	adminEmails: ADMIN_EMAILS,
 	adminOrigins: [
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,

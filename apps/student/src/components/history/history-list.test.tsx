@@ -88,8 +88,9 @@ describe("HistoryList (phase 11 #378)", () => {
 		expect(screen.getByText("Xem nhận xét")).toBeTruthy();
 		cleanup();
 
-		// Chờ chấm (#383): cả practice lẫn assignment chưa chấm đều hiện
-		// "Chờ chấm" (không còn "Đã nộp — tự luyện") và đều KHÔNG có nút xem lại.
+		// Chờ chấm (#383, TOS-30 #478): cả practice lẫn assignment chưa chấm
+		// đều hiện nhãn thống nhất "Đã nộp — Đang chờ giáo viên chấm" và đều
+		// KHÔNG có nút xem lại.
 		renderList({
 			entries: [
 				ENTRY_AWAITING,
@@ -99,7 +100,9 @@ describe("HistoryList (phase 11 #378)", () => {
 			pages: 1,
 			total: 2,
 		});
-		expect(screen.getAllByText("Chờ chấm")).toHaveLength(2);
+		expect(
+			screen.getAllByText("Đã nộp — Đang chờ giáo viên chấm"),
+		).toHaveLength(2);
 		expect(screen.queryByText("Đã nộp — tự luyện")).toBeNull();
 		expect(screen.queryByText("Xem nhận xét")).toBeNull();
 	});

@@ -14,7 +14,7 @@ effort: 0.75d
 
 ## Steps
 
-1. Học viên (cổng student) nộp bài Writing → mở danh sách bài: thấy "Đã nộp — Đang chờ giáo viên chấm", không có điểm.
+1. Học viên (cổng student) nộp bài Writing → chi tiết attempt `awaiting-grade` "Đã nộp — Đang chờ giáo viên chấm", không có điểm; API học viên không chứa field draft (BR-001).
 2. Giáo viên mở `/grading/:attemptId` → thấy panel "Gợi ý từ AI" với 4 điểm + nhận xét, badge "AI đã chấm nháp"; số dư ví giảm 1.
 3. Giáo viên sửa 1 tiêu chí, "Lưu bản nháp" → badge "Đang rà soát"; học viên vẫn không thấy điểm.
 4. "Chốt trả bài" → học viên reload thấy điểm cuối cùng.
