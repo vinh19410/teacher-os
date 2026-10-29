@@ -181,3 +181,40 @@ test("prod deploy is blocked unless quality and e2e both pass", () => {
 	assert.ok(deps.includes("quality"), "deploy must need quality");
 	assert.ok(deps.includes("e2e"), "deploy must need e2e");
 });
+
+// #329 H5: alchemy.run.ts falls back to blank secrets for any SEPAY_BANKHUB_*
+// key the deploy step does not pass, so a stage can never be switched on
+// from CI (and a dashboard value is overwritten on the next deploy).
+test("deploy workflows pass every SEPAY_BANKHUB_* key alchemy.run.ts reads", () => {
+	const infra = readFileSync(
+		join(repoRoot, "packages/infra/alchemy.run.ts"),
+		"utf8",
+	);
+	const keys = [
+		...new Set(
+			[...infra.matchAll(/Config\.string\(\s*"(SEPAY_BANKHUB_[A-Z_]+)"/g)].map(
+				(m) => m[1],
+			),
+		),
+	];
+	assert.ok(keys.length >= 5, `expected the Bank Hub config keys, got ${keys}`);
+
+	for (const workflow of ["deploy.yml", "deploy-staging.yml"]) {
+		const yaml = readFileSync(
+			join(repoRoot, ".github/workflows", workflow),
+			"utf8",
+		);
+		const step = yaml.match(
+			/- name: Deploy to Cloudflare[^\n]*\n([\s\S]*?)\n\s+run: pnpm alchemy deploy/,
+		);
+		assert.ok(step, `${workflow}: alchemy deploy step not found`);
+		for (const key of keys) {
+			const source = key === "SEPAY_BANKHUB_BASE_URL" ? "vars" : "secrets";
+			assert.match(
+				step[1],
+				new RegExp(`^\\s+${key}: \\$\\{\\{ ${source}\\.${key} \\}\\}$`, "m"),
+				`${workflow}: deploy step must pass ${key} from ${source}.${key}`,
+			);
+		}
+	}
+});

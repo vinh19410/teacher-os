@@ -59,8 +59,18 @@ export function bankHubWebhookRoutes(deps: {
 			if (!event.event.startsWith("BANK_ACCOUNT_")) {
 				return c.json({ success: true });
 			}
-			const result = await applyAccountEvent(deps.getDb(), hub, event);
-			return c.json({ success: true, applied: result === "applied" });
+			// Same always-ack rule as IPN: a Bank Hub lookup failure must not
+			// 500 (the event would be lost); the panel's ?refresh=1 / sync
+			// re-reads the account state from Bank Hub.
+			try {
+				const result = await applyAccountEvent(deps.getDb(), hub, event);
+				return c.json({ success: true, applied: result === "applied" });
+			} catch (err) {
+				console.error(
+					`[bankhub-event] ${event.event} not applied: ${err instanceof Error ? err.message : String(err)}`,
+				);
+				return c.json({ success: true, applied: false });
+			}
 		}
 		// Balance-change IPN (#320). SePay retries ONLY on network errors — a
 		// 4xx or 5xx here means the transaction is never delivered again, so

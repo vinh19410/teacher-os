@@ -41,6 +41,8 @@ describe("bank-link reconcile (#320)", () => {
 	const pagesByAccount = new Map<string, Page[]>();
 	const queriedAccounts: string[] = [];
 	let rateLimited = false;
+	let accountLookups = 0;
+	let accountLookupFails = false;
 
 	function credit(
 		id: string,
@@ -107,8 +109,10 @@ describe("bank-link reconcile (#320)", () => {
 				createLinkToken: async () => {
 					throw new Error("not used");
 				},
-				getBankAccount: async (xid) =>
-					({
+				getBankAccount: async (xid) => {
+					accountLookups += 1;
+					if (accountLookupFails) throw new BankHubError(502, "down");
+					return {
 						xid,
 						companyXid: "company-1",
 						brandName: "MBBank",
@@ -117,7 +121,8 @@ describe("bank-link reconcile (#320)", () => {
 						accountHolderName: "A",
 						accountNumber: "0123456789",
 						active: true,
-					}) satisfies BankHubAccount,
+					} satisfies BankHubAccount;
+				},
 				listBankAccounts: async () => [],
 				listTransactions: async (input) => {
 					if (rateLimited) {
@@ -218,6 +223,41 @@ describe("bank-link reconcile (#320)", () => {
 			.from(paymentTransaction)
 			.where(eq(paymentTransaction.providerTxnId, "r-1"));
 		expect(rows).toHaveLength(1);
+	});
+
+	test("past-account credits resolve to the caller's org without per-row Bank Hub lookups (#329 H4)", async () => {
+		await libsql
+			.update(orgBankLink)
+			.set({ lastReconciledAt: Math.floor(Date.now() / 1000) - 120 })
+			.where(eq(orgBankLink.orgId, orgId));
+		const old = (id: string) => ({
+			...credit(id, 100000, "ck khong ma"),
+			bankAccountXid: "ba-old",
+		});
+		pagesByAccount.set("ba-now", []);
+		pagesByAccount.set("ba-old", [
+			{
+				data: [old("h4-1"), old("h4-2"), old("h4-3")],
+				meta: { page: 1, perPage: 100, total: 3, totalPages: 1 },
+			},
+		]);
+		accountLookups = 0;
+		accountLookupFails = true; // even with the account API down
+		try {
+			const res = await api("/api/bank-link/reconcile", {});
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({ scanned: 3, unmatched: 3 });
+		} finally {
+			accountLookupFails = false;
+		}
+		expect(accountLookups).toBe(0);
+		const rows = await libsql
+			.select()
+			.from(paymentTransaction)
+			.where(eq(paymentTransaction.bankAccountXid, "ba-old"));
+		expect(
+			rows.filter((r) => r.providerTxnId.startsWith("h4-")).map((r) => r.orgId),
+		).toEqual([orgId, orgId, orgId]);
 	});
 
 	test("cooldown inside 60s answers 429", async () => {

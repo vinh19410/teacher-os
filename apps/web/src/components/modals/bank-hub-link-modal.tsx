@@ -1,5 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { BankLinkTokenResponse } from "@teacher-os/api/contracts";
+import type {
+	BankLinkStatus,
+	BankLinkTokenResponse,
+} from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
 import type { BankLinkPurpose } from "@/components/payments/bank-link-panel";
 import { Button } from "@/components/ui/button";
@@ -34,10 +37,24 @@ function errorMessage(err: unknown): string {
 }
 
 /**
+ * When the server state proves the hosted flow for `purpose` has finished.
+ * Unlink starts from "linked", so "linked" can never be its exit signal.
+ */
+const FLOW_FINISHED: Record<
+	BankLinkPurpose,
+	(status: BankLinkStatus["status"]) => boolean
+> = {
+	link: (status) => status === "linked",
+	reactivate: (status) => status === "linked",
+	unlink: (status) => status !== "linked",
+};
+
+/**
  * Iframe modal around the SePay Bank Hub hosted link (#320). postMessage is
  * only a UX shortcut — the sandbox may not emit FINISHED_* without a
  * completion_redirect_uri — so the modal also polls GET /api/bank-link every
- * 5 s while open and closes itself once the server reports "linked".
+ * 5 s while open and closes itself once the server reports the purpose's end
+ * state (see FLOW_FINISHED).
  */
 export function BankHubLinkModal({
 	open,
@@ -128,11 +145,14 @@ export function BankHubLinkModal({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, token]);
 
-	// Server-reported linked state closes the modal even without postMessage.
+	// Server-reported end state closes the modal even without postMessage.
+	const serverStatus = status?.status;
 	useEffect(() => {
-		if (open && status?.status === "linked") void finish();
+		if (open && serverStatus && FLOW_FINISHED[purpose](serverStatus)) {
+			void finish();
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open, status?.status]);
+	}, [open, purpose, serverStatus]);
 
 	return (
 		<Modal

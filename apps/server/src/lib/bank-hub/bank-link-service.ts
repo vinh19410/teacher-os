@@ -45,15 +45,30 @@ async function ensureUnlimitedTransactionAmount(
 }
 
 /**
+ * createCompany hit the duplicate full_name but org_bank_link holds no xid:
+ * either a racing tab has not written it yet (retry works) or the xid was
+ * lost (Bank Hub has no list/search-company API to recover it — ops must
+ * restore org_bank_link.company_xid by hand). The route answers 409
+ * COMPANY_SETTLING, never a generic upstream 502.
+ */
+export class BankHubCompanySettlingError extends Error {
+	constructor() {
+		super("Bank Hub company creation is still settling — retry");
+		this.name = "BankHubCompanySettlingError";
+	}
+}
+
+/**
  * Idempotently make sure the org has a Bank Hub company, recording its xid
  * in org_bank_link, and that its transaction_amount is "Unlimited" (the IPN
  * delivery gate — see ensureUnlimitedTransactionAmount). The row is inserted
  * (status "none") BEFORE createCompany so a racing tab or webhook observes
  * the in-flight state; after a duplicate full_name 400 the loser re-reads the
- * row the winner filled in. There is no list/search-company API in Bank Hub,
- * so a crash between createCompany and the row update leaves the org with a
- * one-click retry (new company create fails again → row still empty →
- * user-facing error), not silent corruption.
+ * row the winner filled in. The xid is written IMMEDIATELY after
+ * createCompany — nothing that can fail runs in between — because a second
+ * create always fails on the duplicate full_name, so an unrecorded xid locks
+ * the org out. The limit edit runs after the write; if it fails, the cached
+ * path above repairs it on the next attempt.
  */
 export async function ensureCompany(
 	db: Db,
@@ -80,31 +95,29 @@ export async function ensureCompany(
 		return afterInsert;
 	}
 
+	let company: BankHubCompany;
 	try {
-		const company = await hub.client.createCompany({
+		company = await hub.client.createCompany({
 			fullName: `teacheros-${orgId}`,
 			status: "Active",
 		});
-		await ensureUnlimitedTransactionAmount(hub, company);
-		const [updated] = await db
-			.update(orgBankLink)
-			.set({ companyXid: company.xid, updatedAt: new Date() })
-			.where(eq(orgBankLink.orgId, orgId))
-			.returning();
-		if (!updated) throw new Error("org_bank_link row disappeared");
-		return updated;
 	} catch (err) {
 		// Duplicate full_name ⇒ the concurrent tab won; re-read its xid.
 		if (err instanceof BankHubError && err.status === 400) {
 			const [row] = await read();
 			if (row?.companyXid) return row;
-			throw new BankHubError(
-				409,
-				"Bank Hub company creation is still settling — retry",
-			);
+			throw new BankHubCompanySettlingError();
 		}
 		throw err;
 	}
+	const [updated] = await db
+		.update(orgBankLink)
+		.set({ companyXid: company.xid, updatedAt: new Date() })
+		.where(eq(orgBankLink.orgId, orgId))
+		.returning();
+	if (!updated) throw new Error("org_bank_link row disappeared");
+	await ensureUnlimitedTransactionAmount(hub, company);
+	return updated;
 }
 
 /**

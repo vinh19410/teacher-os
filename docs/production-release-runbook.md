@@ -79,13 +79,13 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | --- | --- | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Deploy operator | operator env | n/a (identifier, not a credential) |
 | `CLOUDFLARE_API_TOKEN` | Deploy operator | operator env | Cloudflare dashboard → My Profile → API Tokens → roll, update `.env` |
-| `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
+| `BETTER_AUTH_SECRET` | Deploy operator | GitHub env variable → CI deploy → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
-| `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | operator env → Worker binding (#320) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
-| `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
-| `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
-| `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
+| `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | GitHub env secret → CI deploy → Worker binding (#320, #329) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
+| `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | GitHub env secret → CI deploy → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
+| `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | GitHub env secret → CI deploy → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
+| `SEPAY_BANKHUB_BASE_URL` | Deploy operator | GitHub env variable → CI deploy → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
 
 ## Deploy preflight (all releases)
@@ -770,16 +770,14 @@ a per-stage operation.
 2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
    KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
    (bắt buộc set tường minh ở production — default rơi về sandbox host).
-   Deploy qua CI hiện CHƯA truyền các biến này: bước `pnpm alchemy deploy`
-   trong `.github/workflows/deploy.yml` (prod) và `deploy-staging.yml`
-   (staging) không có `SEPAY_BANKHUB_*` trong khối `env:`, nên
-   `packages/infra/alchemy.run.ts` rơi về default (secret rỗng, base URL
-   sandbox) và Worker deploy từ CI luôn ở trạng thái tắt; đặt tay trên
-   Cloudflare dashboard cũng bị ghi đè ở lần deploy kế tiếp. Trước khi bật,
-   phải mở rộng khối `env:` của bước deploy ở cả hai workflow để đọc 4 secret
-   (`secrets.*`) và `SEPAY_BANKHUB_BASE_URL` (`vars.*`) từ GitHub environment
-   của stage — cùng pattern với `RESEND_API_KEY`/`MAILER_IMPL` — rồi đặt giá
-   trị bằng `gh secret set … --env <stage>` / `gh variable set … --env <stage>`.
+   Bước `pnpm alchemy deploy` trong `.github/workflows/deploy.yml` (prod,
+   environment `production`) và `deploy-staging.yml` (environment `staging`)
+   đọc 4 secret từ `secrets.*` và `SEPAY_BANKHUB_BASE_URL` từ `vars.*` của
+   GitHub environment (#329 H5; `scripts/ci-workflow.test.mjs` khóa việc này
+   cho mọi key `SEPAY_BANKHUB_*` trong `packages/infra/alchemy.run.ts`). Đặt
+   giá trị bằng `gh secret set SEPAY_BANKHUB_… --env <stage>` /
+   `gh variable set SEPAY_BANKHUB_BASE_URL --env <stage>` rồi chạy lại deploy.
+   Đừng đặt tay trên Cloudflare dashboard — lần deploy kế tiếp ghi đè.
 3. Chạy `apps/server/scripts/bankhub-setup.ts` (đọc env, không in secret):
    đăng ký webhook lifecycle
    `https://api.<domain>/webhooks/sepay/bankhub/events` (auth `SECRET_KEY`,

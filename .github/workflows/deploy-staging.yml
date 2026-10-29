@@ -105,6 +105,14 @@ jobs:
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
           MAILER_IMPL: ${{ vars.MAILER_IMPL }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
+          # SePay Bank Hub (#320/#329): secret trống ⇒ tính năng tắt (503
+          # BANKHUB_DISABLED). Bật stage bằng gh secret/variable set --env.
+          # BASE_URL trống ⇒ sandbox; production phải đặt bankhub-api.sepay.vn.
+          SEPAY_BANKHUB_CLIENT_ID: ${{ secrets.SEPAY_BANKHUB_CLIENT_ID }}
+          SEPAY_BANKHUB_CLIENT_SECRET: ${{ secrets.SEPAY_BANKHUB_CLIENT_SECRET }}
+          SEPAY_BANKHUB_IPN_API_KEY: ${{ secrets.SEPAY_BANKHUB_IPN_API_KEY }}
+          SEPAY_BANKHUB_WEBHOOK_SECRET: ${{ secrets.SEPAY_BANKHUB_WEBHOOK_SECRET }}
+          SEPAY_BANKHUB_BASE_URL: ${{ vars.SEPAY_BANKHUB_BASE_URL }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
         run: pnpm alchemy deploy --stage staging --yes

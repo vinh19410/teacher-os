@@ -16,6 +16,7 @@ import {
 	type BankHubLinkToken,
 } from "../lib/bank-hub/bank-hub-client";
 import {
+	BankHubCompanySettlingError,
 	ensureCompany,
 	maskAccount,
 	type OrgBankLinkRow,
@@ -197,15 +198,7 @@ export function bankLinkRoutes(deps: {
 		let token: BankHubLinkToken;
 		try {
 			const company = await ensureCompany(db, hub, ctx.orgId);
-			if (!company.companyXid) {
-				return c.json(
-					{
-						error: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-						code: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-					},
-					409,
-				);
-			}
+			if (!company.companyXid) throw new BankHubCompanySettlingError();
 			token = await hub.client.createLinkToken({
 				companyXid: company.companyXid,
 				purpose: PURPOSE_BY_REQUEST[body.data.purpose],
@@ -214,6 +207,15 @@ export function bankLinkRoutes(deps: {
 					: {}),
 			});
 		} catch (err) {
+			if (err instanceof BankHubCompanySettlingError) {
+				return c.json(
+					{
+						error: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
+						code: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
+					},
+					409,
+				);
+			}
 			if (err instanceof BankHubError) return bankHubFailure(c, err);
 			throw err;
 		}
@@ -322,7 +324,7 @@ export function bankLinkRoutes(deps: {
 							db,
 							hub,
 							clientTransactionToIngest(transaction),
-							{ saveNoCode: true },
+							{ saveNoCode: true, orgId: ctx.orgId },
 						);
 						if (outcome === "matched") matched += 1;
 						else if (outcome === "unmatched") unmatched += 1;

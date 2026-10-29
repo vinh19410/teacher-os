@@ -114,7 +114,10 @@ export function paymentTransactionRoutes(deps: { getDb(): Db }) {
 			);
 		}
 
-		await db.batch([
+		// The match_status guard makes the claim atomic: a concurrent assign
+		// that read the same unmatched row updates nothing, so the money lands
+		// on exactly one invoice. Its recompute is a no-op on a correct ledger.
+		const [claimed] = await db.batch([
 			db
 				.update(paymentTransaction)
 				.set({
@@ -123,9 +126,24 @@ export function paymentTransactionRoutes(deps: { getDb(): Db }) {
 					unmatchedReason: "",
 					raw: "",
 				})
-				.where(eq(paymentTransaction.id, tx.id)),
+				.where(
+					and(
+						eq(paymentTransaction.id, tx.id),
+						eq(paymentTransaction.matchStatus, "unmatched"),
+					),
+				)
+				.returning({ id: paymentTransaction.id }),
 			recomputeInvoiceStatement(db, ctx.orgId, target.id),
 		]);
+		if (claimed.length === 0) {
+			return c.json(
+				{
+					error: "transaction already assigned",
+					code: "TRANSACTION_ALREADY_ASSIGNED",
+				},
+				409,
+			);
+		}
 		return c.json({ ok: true });
 	});
 

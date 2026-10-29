@@ -391,6 +391,23 @@ describe("bank hub IPN ingest (#320)", () => {
 		expect(tx?.paymentCode?.toUpperCase()).toBe("TOS7K2M9QXA");
 	});
 
+	test("a prefixed payment_code still resolves to the invoice (#329 M4)", async () => {
+		const res = await ipn({
+			transactionId: "t-12",
+			amount: 10000,
+			content: "chuyen tien",
+			paymentCode: "SEVQR TOS7K2M9QXA",
+		});
+		expect(res.status).toBe(200);
+		const [tx] = await libsql
+			.select()
+			.from(paymentTransaction)
+			.where(eq(paymentTransaction.providerTxnId, "t-12"));
+		expect(tx?.paymentCode).toBe("TOS7K2M9QXA");
+		// inv-A1 is already paid by earlier tests — found, not unknown_code.
+		expect(tx?.unmatchedReason).toBe("invoice_paid");
+	});
+
 	test("wrong Apikey is a 401 without reading the body", async () => {
 		const res = await app.request(IPN_PATH, {
 			method: "POST",

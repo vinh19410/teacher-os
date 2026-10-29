@@ -6,10 +6,11 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
-import type {
-	BankHubAccount,
-	BankHubClient,
-	BankHubContext,
+import {
+	type BankHubAccount,
+	type BankHubClient,
+	type BankHubContext,
+	BankHubError,
 } from "./lib/bank-hub/bank-hub-client";
 
 const MIGRATIONS_DIR = new URL(
@@ -194,6 +195,40 @@ describe("bank hub webhook events", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { applied: boolean };
 		expect(body.applied).toBe(false);
+	});
+
+	test("a Bank Hub API failure is acked (SePay drops 5xx), row untouched", async () => {
+		const flaky = buildApp({
+			getDb: () => db,
+			corsOrigin: "http://localhost:8001",
+			getSessionUser: async () => null,
+			authHandler: () => new Response("auth stub", { status: 404 }),
+			getBankHub: () => {
+				const hub = fakeHub();
+				return {
+					...hub,
+					client: {
+						...hub.client,
+						getBankAccount: async () => {
+							throw new BankHubError(502, "upstream down");
+						},
+					},
+				};
+			},
+		});
+		const before = await readRow();
+		const res = await flaky.request(WEBHOOK_PATH, {
+			method: "POST",
+			headers: { "content-type": "application/json", "X-Secret-Key": "whsec" },
+			body: JSON.stringify({
+				timestamp: 450,
+				event: "BANK_ACCOUNT_UNLINKED",
+				metadata: { bank_account_xid: "ba-1" },
+			}),
+		});
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ success: true, applied: false });
+		expect(await readRow()).toEqual(before);
 	});
 
 	test("non-BANK_ACCOUNT events are acked without any write", async () => {

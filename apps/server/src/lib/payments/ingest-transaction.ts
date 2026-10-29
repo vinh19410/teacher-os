@@ -1,7 +1,4 @@
-import {
-	extractPaymentCode,
-	PAYMENT_CODE_RE,
-} from "@teacher-os/api/lib/payment-code";
+import { extractPaymentCode } from "@teacher-os/api/lib/payment-code";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { type SQL, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
@@ -36,6 +33,14 @@ export interface IngestOptions {
 	 * unmatched queue as `no_code` so the teacher can assign them.
 	 */
 	saveNoCode: boolean;
+	/**
+	 * Owning org when the caller already knows it. Reconciliation sweeps only
+	 * the org's own current + past account xids, so it passes ctx.orgId and
+	 * skips the per-transaction Bank Hub account lookup a past xid would
+	 * otherwise need (up to 500 API calls per account, all dropped as
+	 * "api-error" while that API is down). IPN leaves it unset.
+	 */
+	orgId?: string;
 }
 
 /**
@@ -58,19 +63,24 @@ export async function ingestTransaction(
 	if (input.transferType !== "credit") return "skipped";
 	if (!Number.isInteger(input.amount) || input.amount <= 0) return "skipped";
 
+	// Extract (not just test) the code from payment_code too: SePay may send
+	// it with a prefix ("SEVQR TOS…"), and the whole string never matches an
+	// invoice's payment_code.
 	const scannedCode =
-		(input.paymentCode && PAYMENT_CODE_RE.test(input.paymentCode)
-			? input.paymentCode.toUpperCase()
-			: null) ?? extractPaymentCode(input.content);
+		(input.paymentCode ? extractPaymentCode(input.paymentCode) : null) ??
+		extractPaymentCode(input.content);
 	if (!scannedCode && !opts.saveNoCode) return "skipped";
 
 	// Resolve the owning org by the receiving account; a relinked (old)
 	// account falls back through the Bank Hub API to the company → org row.
-	const linked = await runRows<{ org_id: string }>(
-		db,
-		sql`SELECT org_id FROM org_bank_link WHERE bank_account_xid = ${input.bankAccountXid} LIMIT 1`,
-	);
-	let orgId = linked[0]?.org_id;
+	let orgId = opts.orgId;
+	if (!orgId) {
+		const linked = await runRows<{ org_id: string }>(
+			db,
+			sql`SELECT org_id FROM org_bank_link WHERE bank_account_xid = ${input.bankAccountXid} LIMIT 1`,
+		);
+		orgId = linked[0]?.org_id;
+	}
 	if (!orgId) {
 		if (!hub) return "skipped";
 		try {

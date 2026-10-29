@@ -6,7 +6,7 @@ import {
 import * as schema from "@teacher-os/db/schema/index";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
@@ -198,6 +198,62 @@ describe("payment-transactions teacher routes (#320)", () => {
 			},
 		);
 		expect(res.status).toBe(404);
+	});
+
+	test("concurrent assigns of one transaction credit exactly one invoice", async () => {
+		await libsql.insert(invoice).values([
+			{
+				id: "inv-race-a",
+				orgId,
+				studentId: "stu-1",
+				amount: 900000,
+				status: "unpaid",
+				paymentCode: "TOSRACEA001",
+				payToken: "tok-race-a-abc123def456gh",
+			},
+			{
+				id: "inv-race-b",
+				orgId,
+				studentId: "stu-1",
+				amount: 900000,
+				status: "unpaid",
+				paymentCode: "TOSRACEB001",
+				payToken: "tok-race-b-abc123def456gh",
+			},
+		]);
+		await libsql.insert(paymentTransaction).values({
+			id: "tx-race",
+			orgId,
+			providerTxnId: "pt-race",
+			amount: 250000,
+			content: "hoc phi thang 10",
+			matchStatus: "unmatched",
+			unmatchedReason: "no_code",
+		});
+
+		const [first, second] = await Promise.all([
+			api("POST", "/api/payment-transactions/tx-race/assign", {
+				invoiceId: "inv-race-a",
+			}),
+			api("POST", "/api/payment-transactions/tx-race/assign", {
+				invoiceId: "inv-race-b",
+			}),
+		]);
+		expect([first.status, second.status].sort()).toEqual([200, 409]);
+
+		const invoices = await libsql
+			.select()
+			.from(invoice)
+			.where(inArray(invoice.id, ["inv-race-a", "inv-race-b"]));
+		const credited = invoices.reduce((sum, row) => sum + row.paidAmount, 0);
+		expect(credited).toBe(250000);
+		const [tx] = await libsql
+			.select()
+			.from(paymentTransaction)
+			.where(eq(paymentTransaction.id, "tx-race"));
+		const winner = first.status === 200 ? "inv-race-a" : "inv-race-b";
+		expect(tx?.invoiceId).toBe(winner);
+		expect(invoices.find((row) => row.id === winner)?.paidAmount).toBe(250000);
 	});
 
 	test("ignore flips only unmatched rows of this org", async () => {

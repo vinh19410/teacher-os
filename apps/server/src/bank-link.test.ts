@@ -48,6 +48,8 @@ interface FakeHub {
 	setLinkTokenError(err: unknown): void;
 	setListAccountsError(err: unknown): void;
 	setCompanyAmount(amount: number | "Unlimited"): void;
+	setCreateCompanyError(err: unknown): void;
+	setEditCompanyError(err: unknown): void;
 }
 
 function createFakeHub(): FakeHub {
@@ -59,8 +61,11 @@ function createFakeHub(): FakeHub {
 	const edits: { xid: string; transactionAmount: number | "Unlimited" }[] = [];
 	let linkTokenError: unknown;
 	let listAccountsError: unknown;
+	let createCompanyError: unknown;
+	let editCompanyError: unknown;
 	const client: BankHubClient = {
 		createCompany: async (input) => {
+			if (createCompanyError) throw createCompanyError;
 			creations += 1;
 			return {
 				xid: `company-${creations}`,
@@ -76,6 +81,7 @@ function createFakeHub(): FakeHub {
 			transactionAmount: companyAmount,
 		}),
 		editCompany: async (xid, patch) => {
+			if (editCompanyError) throw editCompanyError;
 			edits.push({
 				xid,
 				transactionAmount: patch.transactionAmount ?? "Unlimited",
@@ -131,6 +137,12 @@ function createFakeHub(): FakeHub {
 		},
 		setCompanyAmount: (amount) => {
 			companyAmount = amount;
+		},
+		setCreateCompanyError: (err) => {
+			createCompanyError = err;
+		},
+		setEditCompanyError: (err) => {
+			editCompanyError = err;
 		},
 	};
 }
@@ -269,6 +281,56 @@ describe("bank-link routes", () => {
 		const lastEdit = fake.companyEdits().at(-1);
 		expect(lastEdit).toMatchObject({ transactionAmount: "Unlimited" });
 		fake.setCompanyAmount("Unlimited");
+	});
+
+	test("a failed limit edit after company creation does not lock the org out (#329 H3)", async () => {
+		const userD = await insertUser("Teacher D");
+		const creationsBefore = fake.companyCreations();
+		fake.setCompanyAmount(0); // new companies default to 0 → edit is required
+		fake.setEditCompanyError(new BankHubError(502, "edit failed"));
+		const first = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userD.token,
+			body: { purpose: "link" },
+		});
+		expect(first.status).toBe(502);
+		expect(fake.companyCreations()).toBe(creationsBefore + 1);
+
+		// Bank Hub now holds a company named teacheros-<org>; a second create
+		// fails on the duplicate full_name, so the retry must reuse the xid.
+		fake.setEditCompanyError(undefined);
+		fake.setCreateCompanyError(new BankHubError(400, "duplicate full_name"));
+		try {
+			const retry = await api(app, "POST", "/api/bank-link/link-token", {
+				token: userD.token,
+				body: { purpose: "link" },
+			});
+			expect(retry.status).toBe(200);
+			expect(fake.companyCreations()).toBe(creationsBefore + 1);
+			expect(fake.companyEdits().at(-1)).toMatchObject({
+				xid: `company-${creationsBefore + 1}`,
+				transactionAmount: "Unlimited",
+			});
+		} finally {
+			fake.setCreateCompanyError(undefined);
+			fake.setCompanyAmount("Unlimited");
+		}
+	});
+
+	test("a duplicate company with no recorded xid is 409 COMPANY_SETTLING, not 502 (#329 H3)", async () => {
+		const userE = await insertUser("Teacher E");
+		fake.setCreateCompanyError(new BankHubError(400, "duplicate full_name"));
+		try {
+			const res = await api(app, "POST", "/api/bank-link/link-token", {
+				token: userE.token,
+				body: { purpose: "link" },
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: "BANK_LINK_COMPANY_SETTLING",
+			});
+		} finally {
+			fake.setCreateCompanyError(undefined);
+		}
 	});
 
 	test("rejects a hosted link outside the allowlist with 502", async () => {
