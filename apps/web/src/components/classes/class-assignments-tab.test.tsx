@@ -375,4 +375,29 @@ describe("ClassAssignmentsTab (#208)", () => {
 		// Đề Reading tự chấm → không có lối chấm tay.
 		expect(html).not.toContain("/grading/att-3");
 	});
+
+	// #319/#391: vào bằng ?tab=assignments (← Về lớp từ trang chấm) — mở toàn
+	// bộ item để link "Chấm bài" và tag "Đã chấm" luôn với tới mà không cần
+	// bấm gì thêm.
+	it("assignmentsFocus opens every accordion item", () => {
+		currentDataFixture = {
+			classAssignments: testAssignments,
+			assignmentPrompts: testPrompts,
+			students: testStudents,
+		};
+
+		const html = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="list"
+				onViewChange={vi.fn()}
+				assignmentsFocus
+			/>,
+		);
+
+		const items = html.match(/class="assign-item/g)?.length ?? 0;
+		const expanded = html.match(/aria-expanded="true"/g)?.length ?? 0;
+		expect(items).toBeGreaterThan(0);
+		expect(expanded).toBe(items);
+	});
 });

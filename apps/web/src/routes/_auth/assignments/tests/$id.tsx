@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_auth/assignments/tests/$id")({
 			<p className="mb-2 text-sm">Không tìm thấy bộ đề.</p>
 			<Link
 				to="/assignments"
-				className="text-accent-blue text-sm underline-offset-[3px] hover:underline"
+				className="text-muted-foreground text-xs transition-colors hover:text-primary"
 			>
 				Về trang Bài tập
 			</Link>
@@ -28,11 +28,11 @@ function EditAssignmentTestRoute() {
 		<div>
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 text-muted-foreground text-xs"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 				>
 					Bài tập
 				</Link>

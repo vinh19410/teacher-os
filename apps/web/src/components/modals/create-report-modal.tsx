@@ -118,11 +118,11 @@ export function CreateReportModal({
 					</Select>
 				</Field>
 				{error && (
-					<p className="mb-3 text-[13px] text-[color-mix(in_oklab,var(--danger),black_18%)]">
+					<p className="text-[13px] text-[color-mix(in_oklab,var(--danger),black_18%)]">
 						{error}
 					</p>
 				)}
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

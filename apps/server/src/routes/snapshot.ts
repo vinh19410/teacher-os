@@ -6,8 +6,10 @@
 import {
 	CLASS_TYPES,
 	type ClassType,
+	type KernelLessonRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import { canAccessFinance } from "@teacher-os/auth/role";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
@@ -22,6 +24,12 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { orgEvent } from "@teacher-os/db/schema/org-event";
+import {
+	holidaySessionCancel,
+	holidaySessionShift,
+	organizationHoliday,
+} from "@teacher-os/db/schema/organization-holiday";
 import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
@@ -30,6 +38,11 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
+import {
+	vocabDeck,
+	vocabSuggestion,
+	vocabWord,
+} from "@teacher-os/db/schema/vocab";
 import { and, asc, desc, eq } from "drizzle-orm";
 import type { Db } from "../app";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
@@ -40,7 +53,7 @@ export async function loadInvoices(
 	db: Db,
 	orgId: string,
 ): Promise<KernelSnapshot["invoices"]> {
-	return db
+	const rows = await db
 		.select({
 			id: invoice.id,
 			studentId: invoice.studentId,
@@ -53,6 +66,7 @@ export async function loadInvoices(
 			type: invoice.type,
 			method: invoice.method,
 			paidAmount: invoice.paidAmount,
+			createdAt: invoice.createdAt,
 		})
 		.from(invoice)
 		.innerJoin(
@@ -61,6 +75,34 @@ export async function loadInvoices(
 		)
 		.where(eq(invoice.orgId, orgId))
 		.orderBy(asc(invoice.createdAt), asc(invoice.id));
+	// #343 — `timestamp_ms` lands as a JS Date; the wire convention is an
+	// explicit ISO string (same as the other createdAt projections below).
+	return rows.map((row) => ({
+		...row,
+		createdAt: row.createdAt.toISOString(),
+	}));
+}
+
+/** Sự kiện vận hành của org (TOS-14 / #447) — tách riêng khỏi lesson. */
+export async function loadEvents(
+	db: Db,
+	orgId: string,
+): Promise<KernelSnapshot["events"]> {
+	const rows = await db
+		.select()
+		.from(orgEvent)
+		.where(eq(orgEvent.orgId, orgId))
+		.orderBy(asc(orgEvent.date), asc(orgEvent.startTime), asc(orgEvent.id));
+	return rows.map((row) => ({
+		id: row.id,
+		title: row.title,
+		date: row.date,
+		startTime: row.startTime,
+		endTime: row.endTime,
+		note: row.note,
+		createdByUserId: row.createdByUserId,
+		createdAt: row.createdAt.toISOString(),
+	}));
 }
 
 /**
@@ -131,6 +173,11 @@ function parseQuestions(
 					// the first reload (the write path persists them inside this
 					// same JSON; this destructure is the only read path).
 					pin: parsePin(record.pin),
+					// TOS-26 (#472): forward explanation khi có để giải thích đáp án
+					// không bị rơi lúc load snapshot ngân hàng đề.
+					...(typeof record.explanation === "string"
+						? { explanation: record.explanation }
+						: {}),
 				},
 			];
 		});
@@ -177,7 +224,10 @@ const knownClassTypes = new Set<string>(CLASS_TYPES);
 export async function loadSnapshot(
 	db: Db,
 	orgId: string,
+	opts?: { role?: string },
 ): Promise<KernelSnapshot> {
+	const viewerRole = opts?.role ?? "teacher";
+	const financeAllowed = canAccessFinance(viewerRole);
 	const [
 		studentRows,
 		classRows,
@@ -195,6 +245,13 @@ export async function loadSnapshot(
 		commentBankRows,
 		assignmentTestRows,
 		assignmentTestPartRows,
+		vocabDeckRows,
+		vocabWordDeckIds,
+		vocabSuggestionRows,
+		holidayRows,
+		holidayShiftRows,
+		holidayCancelRows,
+		eventRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -269,7 +326,7 @@ export async function loadSnapshot(
 			.from(assignmentPrompt)
 			.where(eq(assignmentPrompt.orgId, orgId))
 			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
-		loadInvoices(db, orgId),
+		financeAllowed ? loadInvoices(db, orgId) : Promise.resolve([]),
 		loadReports(db, orgId),
 		loadNotifs(db, orgId),
 		loadCommentBank(db, orgId),
@@ -296,6 +353,62 @@ export async function loadSnapshot(
 			)
 			.where(eq(assignmentTest.orgId, orgId))
 			.orderBy(asc(assignmentTestPart.position)),
+		db
+			.select()
+			.from(vocabDeck)
+			.where(eq(vocabDeck.orgId, orgId))
+			.orderBy(asc(vocabDeck.createdAt), asc(vocabDeck.id)),
+		db
+			.select({ deckId: vocabWord.deckId })
+			.from(vocabWord)
+			.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
+			.where(eq(vocabDeck.orgId, orgId)),
+		db
+			.select({
+				id: vocabSuggestion.id,
+				deckId: vocabSuggestion.deckId,
+				studentId: vocabSuggestion.studentId,
+				note: vocabSuggestion.note,
+				createdAt: vocabSuggestion.createdAt,
+			})
+			.from(vocabSuggestion)
+			.where(
+				and(
+					eq(vocabSuggestion.orgId, orgId),
+					eq(vocabSuggestion.status, "pending"),
+				),
+			)
+			.orderBy(asc(vocabSuggestion.createdAt), asc(vocabSuggestion.id)),
+		db
+			.select({
+				id: organizationHoliday.id,
+				name: organizationHoliday.name,
+				fromDate: organizationHoliday.fromDate,
+				toDate: organizationHoliday.toDate,
+				scope: organizationHoliday.scope,
+				mode: organizationHoliday.mode,
+			})
+			.from(organizationHoliday)
+			.where(eq(organizationHoliday.orgId, orgId))
+			.orderBy(asc(organizationHoliday.fromDate)),
+		db
+			.select({
+				holidayId: holidaySessionShift.holidayId,
+				classId: holidaySessionShift.classId,
+				originalDate: holidaySessionShift.originalDate,
+				makeupDate: holidaySessionShift.makeupDate,
+			})
+			.from(holidaySessionShift)
+			.where(eq(holidaySessionShift.orgId, orgId)),
+		db
+			.select({
+				holidayId: holidaySessionCancel.holidayId,
+				classId: holidaySessionCancel.classId,
+				date: holidaySessionCancel.date,
+			})
+			.from(holidaySessionCancel)
+			.where(eq(holidaySessionCancel.orgId, orgId)),
+		loadEvents(db, orgId),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -310,8 +423,10 @@ export async function loadSnapshot(
 		.select()
 		.from(classAssignmentTarget)
 		.where(eq(classAssignmentTarget.orgId, orgId));
-	// Trạng thái chấm theo target: chỉ attempt đã nộp, chỉ 5 cột nhẹ
-	// (không kéo essay/answers/snapshot đề).
+	// Trạng thái chấm theo target: chỉ attempt đã nộp của LUỢT GIAO, chỉ 5
+	// cột nhẹ (không kéo essay/answers/snapshot đề). Phase 10 (#378): attempt
+	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp —
+	// không lọc sẽ sinh key "null:<studentId>" rác trong attemptByTarget.
 	const submittedAttemptRows = await db
 		.select({
 			id: quizAttempt.id,
@@ -322,7 +437,11 @@ export async function loadSnapshot(
 		})
 		.from(quizAttempt)
 		.where(
-			and(eq(quizAttempt.orgId, orgId), eq(quizAttempt.status, "submitted")),
+			and(
+				eq(quizAttempt.orgId, orgId),
+				eq(quizAttempt.status, "submitted"),
+				eq(quizAttempt.mode, "assignment"),
+			),
 		);
 	const attemptByTarget = new Map(
 		submittedAttemptRows.map((row) => [
@@ -475,9 +594,13 @@ export async function loadSnapshot(
 			date: row.date ?? null,
 			type: row.type,
 			status: row.status,
+			attendance: (row.attendance ?? null) as KernelLessonRow["attendance"],
+			attendanceNote: (row.attendanceNote ??
+				null) as KernelLessonRow["attendanceNote"],
 			topic: row.topic,
 			zoom: row.zoom,
 		})),
+		events: eventRows,
 		assignments: assignmentRows.map((row) => ({
 			id: row.id,
 			studentId: row.studentId,
@@ -567,5 +690,44 @@ export async function loadSnapshot(
 			status: row.status,
 			parts: partsByTest.get(row.id) ?? [],
 		})),
+		vocabDecks: vocabDeckRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			title: row.title,
+			lang: row.lang,
+			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
+			createdAt: row.createdAt.toISOString(),
+			sourceLibraryDeckId: row.sourceLibraryDeckId ?? null,
+		})),
+		vocabSuggestions: vocabSuggestionRows.map((row) => ({
+			id: row.id,
+			deckId: row.deckId,
+			studentId: row.studentId,
+			note: row.note ?? null,
+			createdAt: row.createdAt.toISOString(),
+		})),
+		holidays: holidayRows.map((row) => ({
+			id: row.id,
+			name: row.name,
+			fromDate: row.fromDate,
+			toDate: row.toDate,
+			scope: row.scope === "classes" ? "classes" : "org",
+			mode: row.mode === "cancel" ? "cancel" : "shift",
+		})),
+		holidayShifts: holidayShiftRows.map((row) => ({
+			holidayId: row.holidayId,
+			classId: row.classId,
+			originalDate: row.originalDate,
+			makeupDate: row.makeupDate,
+		})),
+		holidayCancels: holidayCancelRows.map((row) => ({
+			holidayId: row.holidayId,
+			classId: row.classId,
+			date: row.date,
+		})),
+		viewer: {
+			role: viewerRole,
+			canAccessFinance: financeAllowed,
+		},
 	};
 }

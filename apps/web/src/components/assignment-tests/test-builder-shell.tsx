@@ -544,7 +544,7 @@ export function TestBuilderShell({
 	const pickerSlot = slots.find((slot) => slot.part === pickerPart);
 
 	return (
-		<div className="grid grid-cols-[280px_1fr] gap-6 max-app:grid-cols-1">
+		<div className="grid grid-cols-[1fr_1.3fr] gap-6 max-app:grid-cols-1">
 			{/* Cột trái — outline theo mẫu Selfomy ("3 groups, 13 questions"). */}
 			<Card
 				variant="white"
@@ -554,17 +554,19 @@ export function TestBuilderShell({
 				<strong className="text-sm">
 					{header.title.trim() || "Bộ đề chưa đặt tên"}
 				</strong>
-				<span className="font-mono text-meta text-xs">
+				<span className="text-muted-foreground text-xs">
 					{assignedCount}/{slots.length} parts · {totalQuestions} questions
 				</span>
-				<ol className="flex flex-col gap-2">
+				<ol className="flex flex-col">
 					{slotViews.map((slot) => (
 						<li
 							key={slot.part}
-							className="flex flex-col rounded-md border border-line px-3 py-2"
+							className="flex flex-col border-border border-t py-2 transition-colors duration-150 first:border-t-0 hover:text-primary"
 						>
-							<span className="font-medium text-xs">{slot.label}</span>
-							<span className="text-muted-fg text-xs">
+							<span className="text-muted-foreground text-xs">
+								{slot.label}
+							</span>
+							<span className="text-xs">
 								{slot.prompt ? (
 									<>
 										{slot.prompt.title}
@@ -593,7 +595,7 @@ export function TestBuilderShell({
 				{bannerOpen && (
 					<div
 						role="status"
-						className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+						className="flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md bg-muted px-3 py-2"
 					>
 						<span className="text-xs">
 							Đã phục hồi bản nháp bộ đề — kiểm tra rồi tiếp tục, hoặc Hủy để
@@ -671,9 +673,9 @@ export function TestBuilderShell({
 							lockPart
 							onFieldChange={handleComposerFieldChange}
 						/>
-						<div className="flex flex-wrap items-center justify-between gap-3 border-line border-t pt-3">
+						<div className="flex flex-wrap items-center justify-between gap-3 border-border border-t pt-3">
 							<div className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
+								<span className="text-muted-foreground text-xs">
 									Trạng thái
 								</span>
 								<ChipFilter
@@ -712,16 +714,17 @@ export function TestBuilderShell({
 						</div>
 					</Card>
 				)}
-				<div className="sticky bottom-0 border-line border-t bg-bg/90 py-3 backdrop-blur">
+				<div className="sticky bottom-0 border-border border-t bg-background/90 py-3 backdrop-blur">
 					{submit.notice && (
 						<KernelSubmitNotice
 							notice={submit.notice}
 							onReconcile={() => void handleReconcile()}
 							disabled={submit.saving}
+							className="mb-3"
 						/>
 					)}
 					{submit.error && (
-						<p role="alert" className="mb-2 text-danger text-xs">
+						<p role="alert" className="mb-2 text-destructive text-xs">
 							{submit.error}
 						</p>
 					)}
@@ -731,7 +734,7 @@ export function TestBuilderShell({
 						</p>
 					)}
 					<div className="flex flex-wrap items-center justify-between gap-3">
-						<span className="text-muted-fg text-xs">
+						<span className="text-muted-foreground text-xs">
 							{mode === "create"
 								? "Tạo bộ đề rồi gán part ở bước sau."
 								: "Thay đổi part lưu ngay vào bộ đề."}

@@ -45,7 +45,27 @@ export const lesson = sqliteTable(
 		/** Occurrence identity yyyy-mm-dd (UTC-anchored); NULL = legacy class. */
 		date: text("date"),
 		type: text("type").notNull().default("1:1"),
+		/**
+		 * `upcoming | completed | absent | cancelled | holiday` (TOS-11).
+		 * `holiday` = buổi gốc bị Lịch nghỉ chung dời ("Nghỉ lễ — Đã dời
+		 * lịch"): không trừ buổi (BR-003), không điểm danh, không sửa/hủy —
+		 * cặp gốc→bù sống ở `holiday_session_shift`. Buổi bù là dòng
+		 * `upcoming` thường; contract "class fields immutable" không đổi
+		 * (không đụng sessionsTotal/startDate/schedule, số buổi không phải
+		 * `holiday` vẫn bằng `sessionsTotal`).
+		 */
 		status: text("status").notNull().default("upcoming"),
+		/**
+		 * TOS-7 (#440): trạng thái điểm danh chi tiết — `present | late |
+		 * excused | unexcused`. NULL = chưa ghi chi tiết (dòng cũ hoặc điểm
+		 * danh 1-click; quy ước hiển thị `NULL + completed` là "Có mặt").
+		 * Ánh xạ sang `status` (D2): present/late/unexcused → completed
+		 * (trừ buổi), excused → absent (không trừ) — hàm duy nhất
+		 * `lessonStatusForAttendance` ở @teacher-os/api contracts.
+		 */
+		attendance: text("attendance"),
+		/** Ghi chú học vụ của giáo viên (≤255). Teacher-only — không bao giờ chiếu vào /api/student. */
+		attendanceNote: text("attendance_note"),
 		topic: text("topic").notNull().default(""),
 		zoom: text("zoom").notNull().default(""),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })

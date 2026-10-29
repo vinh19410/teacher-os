@@ -15,7 +15,11 @@ export const bankHubTokenResponseSchema = z.object({
 // the 201 body.
 export const bankHubTokenSchema = bankHubTokenResponseSchema;
 
-/** {code, data} envelope used by every API other than /v1/token. */
+/**
+ * {code, data} envelope — confirmed on the company endpoints. /v1/token and
+ * /v1/link-token/create return flat bodies instead; response shapes are not
+ * uniform across endpoints, so never assume one from another.
+ */
 export function bankHubEnvelope<T extends z.ZodTypeAny>(data: T) {
 	return z.object({
 		code: z.unknown().optional(),
@@ -47,7 +51,8 @@ export const bankHubAccountRawSchema = z.object({
 	bank_code: z.string().nullish(),
 	account_holder_name: z.string().nullish(),
 	account_number: z.string().nullish(),
-	active: z.union([z.boolean(), z.number()]).nullish(),
+	// SQLite-backed API: booleans serialize as "0"/"1" strings, not 0/1/bool.
+	active: z.union([z.boolean(), z.number(), z.string()]).nullish(),
 });
 
 export const bankHubTransactionRawSchema = z.object({
@@ -75,6 +80,21 @@ export const bankHubTransactionListSchema = z.object({
 		})
 		.partial()
 		.optional(),
+});
+
+/**
+ * Body of POST /v1/transaction/create (sandbox mock transaction). Docs show
+ * the {code, message, data} envelope with transaction_id in data — only
+ * transaction_id is load-bearing, the rest stay loose (shape rules are not
+ * uniform across endpoints).
+ */
+export const bankHubMockTransactionRawSchema = z.object({
+	transaction_id: z.string().min(1),
+	reference_number: z.string().nullish(),
+	transaction_date: z.string().nullish(),
+	amount: z.coerce.number().nullish(),
+	transfer_type: z.string().nullish(),
+	accumulated: z.coerce.number().nullish(),
 });
 
 /** Bank Hub lifecycle webhook envelope (X-Secret-Key auth, phase 2). */

@@ -180,7 +180,47 @@ describe("deriveAssignmentStatus", () => {
 		};
 		const derived = deriveAssignmentStatus(asg, today);
 		expect(derived.status).toBe("submitted");
+		// TOS-30 #478: bài tự chấm (không skill) giữ nhãn ngắn.
 		expect(derived.statusLabel).toBe("Đã nộp");
+	});
+
+	it("handles submitted writing assignment with teacher-grading label", () => {
+		const asg = {
+			id: "a-writing",
+			title: "Writing Task 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "Class A",
+			due: "2026-09-20",
+			submittedAt: "2026-09-19T10:00",
+			scores: null,
+			// TOS-30 #478: Writing/Speaking chờ giáo viên chấm tay → nhãn dài.
+			skill: "writing",
+		} as const;
+		const derived = deriveAssignmentStatus(asg, today);
+		expect(derived.status).toBe("submitted");
+		expect(derived.statusLabel).toBe("Đã nộp — Đang chờ giáo viên chấm");
+	});
+
+	it("handles published speaking assignment (gradedAt, speaking scores shape)", () => {
+		// TOS-30 #478: Speaking đã "Chốt trả bài" — grade_scores là bộ key
+		// Speaking (không khớp IELTS Writing scores) → phải về "Đã chấm",
+		// KHÔNG được dính nhãn chờ chấm.
+		const asg = {
+			id: "a-speaking",
+			title: "Speaking Part 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "Class A",
+			due: "2026-09-20",
+			submittedAt: "2026-09-19T10:00",
+			scores: null,
+			skill: "speaking",
+			gradedAt: "2026-09-20T08:00:00.000Z",
+		} as const;
+		const derived = deriveAssignmentStatus(asg, today);
+		expect(derived.status).toBe("graded");
+		expect(derived.statusLabel).toBe("Đã chấm");
 	});
 
 	it("handles graded assignment with band score", () => {

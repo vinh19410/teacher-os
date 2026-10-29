@@ -21,6 +21,7 @@ import {
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
+import { EssayWithHighlights } from "@teacher-os/ui/components/quiz/essay-with-highlights";
 import { MusicIcon, VideoIcon } from "lucide-react";
 import { useEffect } from "react";
 import Loader from "@/components/loader";
@@ -72,11 +73,28 @@ function AttemptRouteView() {
 }
 
 /**
+ * Writing đã chấm → chia 2 khung (bài viết | kết quả chấm) ở ≥ 921px (#336).
+ * Nguồn sự thật duy nhất cho quyết định chia khung — `AttemptSummaryBody` và
+ * `AttemptSummaryPage` đều gọi hàm này; thêm skill/nhánh mới thì cập nhật ở
+ * đây. Điều kiện khớp thứ tự nhánh render: Speaking rơi vào nhánh riêng,
+ * Writing cần `essay != null`, khung phải cần `grade != null`.
+ */
+export function isSplitWritingResult(summary: QuizAttemptSummary): boolean {
+	return (
+		summary.skill !== "speaking" &&
+		(summary.essay ?? null) !== null &&
+		(summary.grade ?? null) !== null
+	);
+}
+
+/**
  * Body màn kết quả — export để unit test các nhánh (#304, red-team I):
  * Speaking (`skill === "speaking"`, #305) hiện bài nói đã nộp + nghe lại;
  * Writing (`essay !== null`) hiện bài đã nộp thay score card 0/0; đề tự chấm
  * giữ nguyên score card + bảng đáp án. Writing/Speaking đã chấm
  * (`summary.grade`) hiện band + tiêu chí + nhận xét thay dòng chờ chấm.
+ * Writing đã chấm (#336) chia 2 khung ≥ 921px, ghi chú giáo viên hiện inline
+ * ngay sau highlight.
  */
 export function AttemptSummaryBody({
 	summary,
@@ -93,19 +111,33 @@ export function AttemptSummaryBody({
 	const grade = summary.grade ?? null;
 	const part = summary.part ?? "";
 	const submittedLine = (
-		<p className="text-muted-fg text-sm">
-			Bạn đã nộp bài lúc{" "}
-			<span className="font-medium text-fg">
-				{formatVietnamSubmittedAt(summary.submittedAt)}
-			</span>
-			{duration && (
-				<>
-					{" · hoàn thành trong "}
-					<span className="font-medium text-fg">{duration}</span>
-				</>
-			)}
-			.
-		</p>
+		<div className="flex flex-col gap-1">
+			<p className="text-muted-foreground text-sm">
+				Bạn đã nộp bài lúc{" "}
+				<span className="font-medium text-foreground">
+					{formatVietnamSubmittedAt(summary.submittedAt)}
+				</span>
+				{duration && (
+					<>
+						{" · hoàn thành trong "}
+						<span className="font-medium text-foreground">{duration}</span>
+					</>
+				)}
+				.
+			</p>
+			{/* TOS-30 #478: CHỈ Writing/Speaking chờ giáo viên chấm tay — quiz
+				Reading/Listening tự chấm không bao giờ có `grade` nhưng cũng
+				không bao giờ chờ ai, không được dính nhãn chờ. */}
+			{(summary.skill === "writing" || summary.skill === "speaking") &&
+				grade === null && (
+					<p
+						className="font-medium text-foreground text-sm"
+						data-testid="awaiting-grade"
+					>
+						Đã nộp — Đang chờ giáo viên chấm
+					</p>
+				)}
+		</div>
 	);
 
 	// Field `skill` optional (server cũ vắng mặt) → rơi về nhánh khác.
@@ -114,12 +146,15 @@ export function AttemptSummaryBody({
 		return (
 			<>
 				{submittedLine}
-				<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+				<h2 className="mt-6 mb-2 font-semibold text-foreground">
 					Bài nói của bạn
 				</h2>
 				{media ? (
 					<div className="flex flex-col gap-3">
-						<Attachment state="done" className="w-full rounded-md bg-bg">
+						<Attachment
+							state="done"
+							className="w-full rounded-md bg-background"
+						>
 							<AttachmentMedia>
 								{isVideoMediaType(media.type) ? (
 									<VideoIcon aria-hidden />
@@ -139,14 +174,14 @@ export function AttemptSummaryBody({
 						<QuizMediaPlayer media={media} attemptId={attemptId} />
 					</div>
 				) : (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Bài này được nộp khi chưa có file bài nói.
 					</p>
 				)}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="speaking" part={part} />
 				) : (
-					<p className="mt-3 text-muted-fg text-sm">
+					<p className="mt-3 text-muted-foreground text-sm">
 						Giáo viên sẽ chấm bài nói của bạn.
 					</p>
 				)}
@@ -156,26 +191,74 @@ export function AttemptSummaryBody({
 
 	if (essay !== null) {
 		const wordCount = countWords(essay);
+		// Ghi chú giáo viên hiện inline ngay sau highlight (#336): server CHỈ
+		// gửi `annotations` khi bài đã chấm — client chỉ đọc `?? []`.
+		const annotations = summary.annotations ?? [];
+		const emptyEssay = essay.trim() === "";
+		const split = isSplitWritingResult(summary);
+		const essayFrame = (
+			<section
+				aria-labelledby="essay-heading"
+				className="min-w-0"
+				data-testid="essay-frame"
+			>
+				<h2
+					className="mt-6 mb-1 font-extrabold text-foreground"
+					id="essay-heading"
+				>
+					Bài viết của bạn
+				</h2>
+				<p
+					className="font-mono text-muted-foreground text-sm"
+					data-testid="essay-summary-count"
+				>
+					{wordCount} từ
+				</p>
+				{/* Khối bài viết kiểu design `Results`: cột trái có border-l,
+				 * chữ lớn giãn dòng, không card. */}
+				<div className="mt-2 whitespace-pre-wrap border-border border-l-2 pl-5 text-lg leading-[1.9]">
+					{emptyEssay ? (
+						<span className="text-muted-foreground">Bạn đã nộp bài trống.</span>
+					) : (
+						<EssayWithHighlights
+							essay={essay}
+							annotations={annotations}
+							inlineNotes
+						/>
+					)}
+				</div>
+			</section>
+		);
+		// split ≡ grade != null trong nhánh này (Speaking đã early-return,
+		// essay != null) — guard `grade` để TS thu hẹp kiểu.
+		if (split && grade) {
+			return (
+				<>
+					{submittedLine}
+					<div
+						className="app:grid app:grid-cols-[1.3fr_1fr] app:items-start app:gap-8"
+						data-testid="writing-result-split"
+					>
+						{essayFrame}
+						<AttemptGradeCard
+							grade={grade}
+							part={part}
+							scrollable
+							skill="writing"
+							className="app:sticky app:top-20 min-w-0"
+						/>
+					</div>
+				</>
+			);
+		}
 		return (
 			<>
 				{submittedLine}
-				<h2 className="mt-6 mb-1 font-display font-semibold text-fg">
-					Bài viết của bạn
-				</h2>
-				<p className="text-muted-fg text-sm" data-testid="essay-summary-count">
-					{wordCount} từ
-				</p>
-				<div className="mt-2 whitespace-pre-wrap rounded-md border border-line bg-bg p-4 text-[15px] leading-[1.7]">
-					{essay.trim() === "" ? (
-						<span className="text-muted-fg">Bạn đã nộp bài trống.</span>
-					) : (
-						essay
-					)}
-				</div>
+				{essayFrame}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="writing" part={part} />
 				) : (
-					<p className="mt-3 text-muted-fg text-sm">
+					<p className="mt-3 text-muted-foreground text-sm">
 						Giáo viên sẽ chấm bài viết của bạn.
 					</p>
 				)}
@@ -203,7 +286,7 @@ export function AttemptSummaryBody({
 					}
 				/>
 			</div>
-			<h2 className="mt-6 mb-2 font-display font-semibold text-fg">
+			<h2 className="mt-6 mb-2 font-extrabold text-foreground tracking-[-0.02em]">
 				Bảng đáp án
 			</h2>
 			<AttemptCompactList items={summary.items} />
@@ -229,13 +312,18 @@ function AttemptSummaryPage() {
 	}
 
 	return (
-		<div className="flex min-h-svh flex-col bg-surface/30">
+		<div className="flex min-h-svh flex-col bg-muted/30">
 			<QuizRuntimeHeader
 				title={summary.title}
 				saveState={null}
 				onSubmitClick={null}
 			/>
-			<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">
+			<main
+				className={cn(
+					"mx-auto w-full flex-1 px-4 py-6",
+					isSplitWritingResult(summary) ? "max-w-[1120px]" : "max-w-[720px]",
+				)}
+			>
 				<AttemptSummaryBody summary={summary} attemptId={attemptId} />
 			</main>
 		</div>

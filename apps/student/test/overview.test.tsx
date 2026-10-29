@@ -12,6 +12,13 @@ vi.mock("@/lib/auth-client", () => ({
 	},
 }));
 
+// GreetingHeader đọc org hoạt động cho kicker PageHead — mock kho dữ liệu
+// để renderToStaticMarkup chạy không cần QueryClientProvider.
+vi.mock("@/lib/repos/student", () => ({
+	useStudentOrgs: () => ({ data: [] }),
+	getActiveStudentOrgId: () => null,
+}));
+
 // AssignmentRow giờ dùng TanStack Link (route take #283) — stub thành <a>
 // thuần để renderToStaticMarkup chạy không cần router context.
 vi.mock("@tanstack/react-router", () => ({

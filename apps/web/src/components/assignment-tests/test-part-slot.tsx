@@ -43,13 +43,21 @@ export function TestPartSlot({
 		return (
 			<Card
 				variant="white"
-				className="flex flex-wrap items-center justify-between gap-3 border-dashed py-4"
+				className="flex flex-row flex-wrap items-center justify-between gap-3 border-dashed py-4"
 			>
-				<div className="flex flex-col">
-					<strong className="text-sm">{label}</strong>
-					<span className="text-muted-fg text-xs">
-						Chưa gán part — chọn từ ngân hàng hoặc soạn mới.
+				<div className="flex items-start gap-3">
+					<span
+						aria-hidden="true"
+						className="font-semibold text-muted-foreground text-xl tabular-nums leading-[1.1]"
+					>
+						{qStart}
 					</span>
+					<div className="flex flex-col">
+						<span className="text-muted-foreground text-xs">{label}</span>
+						<span className="text-muted-foreground text-xs">
+							Chưa gán part — chọn từ ngân hàng hoặc soạn mới.
+						</span>
+					</div>
 				</div>
 				<div className="flex gap-2">
 					<Button
@@ -72,29 +80,41 @@ export function TestPartSlot({
 	return (
 		<Card variant="white" className="flex flex-col gap-2 py-4">
 			<div className="flex flex-wrap items-start justify-between gap-2">
-				<div className="flex flex-col">
-					<span className="font-mono text-meta text-xs">{label}</span>
-					<strong className="text-sm">{prompt.title}</strong>
-					<span className="text-muted-fg text-xs">
-						{typeLabel} · {count} câu
+				<div className="flex min-w-0 items-start gap-3">
+					{/* Số câu bắt đầu của slot — số thứ tự extrabold theo design */}
+					<span
+						aria-hidden="true"
+						className="font-semibold text-xl tabular-nums leading-[1.1]"
+					>
+						{qStart}
 					</span>
+					<div className="flex min-w-0 flex-col">
+						<span className="text-muted-foreground text-xs">{label}</span>
+						<strong className="text-sm">{prompt.title}</strong>
+						<span className="text-muted-foreground text-xs">
+							{typeLabel} · Câu {count > 0 ? `${qStart}–${last}` : qStart} ·{" "}
+							{count} câu
+						</span>
+					</div>
 				</div>
-				<div className="flex flex-col items-end gap-1.5">
-					<Badge variant="accent">
-						Câu {count > 0 ? `${qStart}–${last}` : qStart}
-					</Badge>
-					<Badge variant={prompt.status === "ready" ? "success" : "warn"}>
-						{prompt.status === "ready" ? "Sẵn sàng" : "Bản nháp"}
-					</Badge>
-				</div>
+				<Badge variant={prompt.status === "ready" ? "success" : "warn"}>
+					{prompt.status === "ready" ? "Sẵn sàng" : "Bản nháp"}
+				</Badge>
 			</div>
 			<div className="flex justify-end gap-2">
 				<Button variant="secondary" size="sm" disabled={busy} onClick={onEdit}>
 					Chỉnh sửa
 				</Button>
-				{/* Chỉ gỡ khỏi test — prompt vẫn nằm trong ngân hàng. */}
-				<Button variant="danger" size="sm" disabled={busy} onClick={onRemove}>
-					Gỡ khỏi test
+				{/* Chỉ gỡ khỏi test — prompt vẫn nằm trong ngân hàng (không phá
+				hủy dữ liệu → hover cam, không đỏ destructive). */}
+				<Button
+					variant="ghost"
+					size="sm"
+					aria-label="Gỡ khỏi test"
+					disabled={busy}
+					onClick={onRemove}
+				>
+					✕
 				</Button>
 			</div>
 		</Card>

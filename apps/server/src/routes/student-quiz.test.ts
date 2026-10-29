@@ -46,6 +46,7 @@ const writeHeaders = (origin: string = STUDENT_ORIGIN) => ({
 
 describe("student quiz take & review (/api/student/* quiz attempt domain)", () => {
 	let app: ServerApp;
+	const backgroundJobs: Promise<unknown>[] = [];
 	let libsql: Db;
 
 	beforeAll(async () => {
@@ -320,6 +321,9 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			"ca-q20",
 			"ca-q21",
 			"ca-q22",
+			"ca-q23",
+			"ca-q24",
+			"ca-q25",
 		]) {
 			await libsql.insert(schema.classAssignment).values({
 				id: assignmentId,
@@ -332,9 +336,15 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 							? "prompt-mixed"
 							: assignmentId === "ca-q12"
 								? "prompt-note-tfng"
-								: ["ca-q13", "ca-q14", "ca-q16", "ca-q18"].includes(
-											assignmentId,
-										)
+								: [
+											"ca-q13",
+											"ca-q14",
+											"ca-q16",
+											"ca-q18",
+											"ca-q23",
+											"ca-q24",
+											"ca-q25",
+										].includes(assignmentId)
 									? "prompt-writing"
 									: ["ca-q19", "ca-q20", "ca-q21", "ca-q22"].includes(
 												assignmentId,
@@ -356,6 +366,9 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		app = buildApp({
 			getDb: () => libsql as unknown as Db,
 			corsOrigin: CORS_ORIGINS,
+			runInBackground: (job) => {
+				backgroundJobs.push(job);
+			},
 			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
 				const userKey = headers.get("x-test-user");
 				if (!userKey || userKey === "none") return null;
@@ -1049,6 +1062,87 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(detailBody.essay).toBe(essay);
 	});
 
+	// (#332) Summary chỉ lộ highlight khi ĐÃ chấm + có ít nhất 1 highlight.
+	test("summary reveals teacher annotations only after grading", async () => {
+		const essay = "The graph shows a clear upward trend in marriages.";
+		const attemptId = await startAttempt("ca-q23");
+		expect((await patchEssay(attemptId, essay)).status).toBe(200);
+		expect((await submit(attemptId)).status).toBe(200);
+
+		// Giáo viên highlight trước, chấm sau: 2 annotation đã tồn tại trong DB.
+		await libsql.insert(schema.quizAttemptAnnotation).values([
+			{
+				id: "ann-late",
+				orgId: "org-1",
+				attemptId,
+				startOffset: 0,
+				endOffset: 3,
+				note: "Mở bài ổn.",
+			},
+			{
+				id: "ann-early",
+				orgId: "org-1",
+				attemptId,
+				startOffset: 4,
+				endOffset: 9,
+				note: "Graph: viết hoa giữa câu.",
+			},
+		]);
+
+		// Chưa chấm → KHÔNG có key `annotations` (học viên không thấy dở dang).
+		const beforeGrade = await app.request(
+			`/api/student/attempts/${attemptId}`,
+			{ headers: OWNER },
+		);
+		expect(beforeGrade.status).toBe(200);
+		const beforeBody = (await beforeGrade.json()) as Record<string, unknown>;
+		expect("annotations" in beforeBody).toBe(false);
+
+		// Chấm điểm (ghi thẳng DB như giáo viên lưu qua route grade).
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				gradeFeedback: "Khá.",
+				gradedAt: new Date("2026-10-06T05:00:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, attemptId));
+
+		const afterGrade = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: OWNER,
+		});
+		const afterBody = (await afterGrade.json()) as QuizAttemptSummary;
+		expect(afterBody.grade?.band).toBe(6);
+		// Sắp theo start dù seed ngược thứ tự id.
+		expect(afterBody.annotations?.map((a) => [a.start, a.end])).toEqual([
+			[0, 3],
+			[4, 9],
+		]);
+		expect(afterBody.annotations?.map((a) => a.note)).toEqual([
+			"Mở bài ổn.",
+			"Graph: viết hoa giữa câu.",
+		]);
+
+		// Đã chấm nhưng 0 highlight → không có key.
+		const noAnnAttempt = await startAttempt("ca-q24");
+		expect((await patchEssay(noAnnAttempt, "Another essay.")).status).toBe(200);
+		expect((await submit(noAnnAttempt)).status).toBe(200);
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				gradeFeedback: "",
+				gradedAt: new Date("2026-10-06T05:30:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, noAnnAttempt));
+		const noAnn = await app.request(`/api/student/attempts/${noAnnAttempt}`, {
+			headers: OWNER,
+		});
+		const noAnnBody = (await noAnn.json()) as Record<string, unknown>;
+		expect(noAnnBody.grade).toBeTruthy();
+		expect("annotations" in noAnnBody).toBe(false);
+	});
+
 	// (#304) Guards của PATCH essay: đề không phải Writing 400, vượt max 400,
 	// học viên khác 404, đã nộp 409.
 	test("essay patch guards: non-writing 400, over max 400, other student 404, after submit 409", async () => {
@@ -1285,5 +1379,131 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			},
 		);
 		expect(control.status).toBe(200);
+	});
+
+	test("HTML-wrapped writing essay (<p> tags) renders as plain text in take, summary, and detail with aligned annotation offsets (#382)", async () => {
+		const htmlEssay = "<p>Remote learning has widened the gap.</p>";
+		const attemptId = await startAttempt("ca-q25");
+		expect((await patchEssay(attemptId, htmlEssay)).status).toBe(200);
+
+		// Take payload khi resume trả plain text (không lộ thẻ <p>).
+		const take = await app.request("/api/student/assignments/ca-q25/quiz", {
+			headers: OWNER,
+		});
+		expect(take.status).toBe(200);
+		const takeBody = (await take.json()) as StudentQuizDetail;
+		expect(takeBody.attempt?.essay).toBe(
+			"Remote learning has widened the gap.",
+		);
+
+		expect((await submit(attemptId)).status).toBe(200);
+
+		// Giáo viên highlight "widened" (raw 23..30, plain 20..27) và chấm điểm.
+		await libsql.insert(schema.quizAttemptAnnotation).values({
+			id: "ann-html-student",
+			orgId: "org-1",
+			attemptId,
+			startOffset: 23,
+			endOffset: 30,
+			note: "Động từ chuẩn.",
+		});
+		await libsql
+			.update(schema.quizAttempt)
+			.set({
+				gradeScores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+				gradeFeedback: "Tốt.",
+				gradedAt: new Date("2026-10-21T05:00:00Z"),
+			})
+			.where(eq(schema.quizAttempt.id, attemptId));
+
+		const summary = await app.request(`/api/student/attempts/${attemptId}`, {
+			headers: OWNER,
+		});
+		expect(summary.status).toBe(200);
+		const summaryBody = (await summary.json()) as QuizAttemptSummary;
+		expect(summaryBody.essay).toBe("Remote learning has widened the gap.");
+		expect(summaryBody.annotations).toEqual([
+			{
+				id: "ann-html-student",
+				start: 20,
+				end: 27,
+				note: "Động từ chuẩn.",
+			},
+		]);
+
+		const detail = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(detail.status).toBe(200);
+		const detailBody = (await detail.json()) as QuizAttemptDetail;
+		expect(detailBody.essay).toBe("Remote learning has widened the gap.");
+	});
+
+	test("AI tắt: submit Writing/Reading không tạo draft hay dòng credit_usage_log", async () => {
+		// Lượt giao RIÊNG cho test này (UNIQUE (assignment, student) mỗi cặp).
+		await libsql.insert(schema.classAssignment).values([
+			{
+				id: "ca-ag-w",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-writing",
+				title: "Quiz ca-ag-w",
+				due: "2099-01-10",
+			},
+			{
+				id: "ca-ag-r",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-quiz-2",
+				title: "Quiz ca-ag-r",
+				due: "2099-01-10",
+			},
+		]);
+		await libsql.insert(schema.classAssignmentTarget).values([
+			{
+				id: "cat-ca-ag-w",
+				orgId: "org-1",
+				assignmentId: "ca-ag-w",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+			{
+				id: "cat-ca-ag-r",
+				orgId: "org-1",
+				assignmentId: "ca-ag-r",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+		]);
+
+		const writingAttempt = await startAttempt("ca-ag-w");
+		await patchEssay(
+			writingAttempt,
+			"The graph illustrates marriage rates in Australia between 1960 and 2000.",
+		);
+		const submitRes = await submit(writingAttempt);
+		expect(submitRes.status).toBe(200);
+
+		await Promise.all(backgroundJobs);
+		const [writingDraft] = await libsql
+			.select()
+			.from(schema.aiGradingDraft)
+			.where(eq(schema.aiGradingDraft.attemptId, writingAttempt));
+		expect(writingDraft ?? null).toBeNull();
+		const writingLogs = await libsql
+			.select()
+			.from(schema.creditUsageLog)
+			.where(eq(schema.creditUsageLog.refId, writingAttempt));
+		expect(writingLogs).toEqual([]);
+
+		const readingAttempt = await startAttempt("ca-ag-r");
+		const readingRes = await submit(readingAttempt);
+		expect(readingRes.status).toBe(200);
+		const [readingDraft] = await libsql
+			.select()
+			.from(schema.aiGradingDraft)
+			.where(eq(schema.aiGradingDraft.attemptId, readingAttempt));
+		expect(readingDraft ?? null).toBeNull();
 	});
 });

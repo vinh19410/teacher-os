@@ -8,19 +8,24 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/forgot-password": true,
 	"/reset-password": true,
 	"/dashboard": true,
+	"/attendance": true,
 	"/profile": true,
 	"/reports": true,
 	"/schedule": true,
 	"/tuition": true,
-	"/payments": true,
+	"/debts": true,
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
 	"/assignments/tests/new": true,
 	"/assignments/tests/preview": true,
+	"/grading": true,
 	"/classes": true,
 	"/students": true,
+	// Nhật ký gửi thông báo (#454, TOS-21) — màn [5].
+	"/notifications": true,
 	"/syllabus": true,
+	"/vocab": true,
 };
 
 /**
@@ -37,6 +42,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	"/grading/",
 	"/students/",
 	"/syllabus/",
+	// Chi tiết hóa đơn (#345) — /tuition/$invoiceId dưới layout auth.
+	"/tuition/",
 	// Public pay page (#320) — outside the auth layout by design.
 	"/pay/",
 ];

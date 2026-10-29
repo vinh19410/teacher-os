@@ -19,10 +19,16 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	assert.match(yaml, /pull_request:/, "must trigger on pull_request");
 	assert.match(yaml, /push:/, "must trigger on push");
 	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.doesNotMatch(
+	// Contract locks flow-style branches lists; switching ci.yml to YAML block style requires updating this test.
+	assert.match(
 		yaml,
-		/\bdevelop\b/,
-		"must not trigger on develop (runs on main only)",
+		/pull_request:\s*\n\s*branches:\s*\[main,\s*develop\]/,
+		"pull_request must target main and develop (pre-merge gate)",
+	);
+	assert.match(
+		yaml,
+		/push:\s*\n\s*branches:\s*\[main,\s*develop\]/,
+		"push must cover main and develop (post-merge convergence)",
 	);
 	assert.match(yaml, /pnpm exec biome check \./, "must run read-only biome");
 	assert.match(yaml, /pnpm check-types/, "must run check-types");
@@ -57,6 +63,17 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 		/test:ci-workflow/,
 		"root test must invoke the CI contract",
 	);
+	const checkScript = String(rootPkg.scripts?.check ?? "");
+	assert.doesNotMatch(
+		checkScript,
+		/--write/,
+		"root check must not mutate the tree",
+	);
+	assert.equal(
+		checkScript,
+		"biome check .",
+		"root check must be a read-only biome check",
+	);
 
 	const turbo = JSON.parse(readFileSync(join(repoRoot, "turbo.json"), "utf8"));
 	assert.equal(
@@ -75,7 +92,7 @@ test("ci workflow exists and matches the quality-gate contract", () => {
 	);
 });
 
-test("staging deploy workflow is manual-only (no develop push trigger)", () => {
+test("staging deploy workflow deploys only from the staging branch", () => {
 	const stagingPath = join(repoRoot, ".github/workflows/deploy-staging.yml");
 	assert.equal(
 		existsSync(stagingPath),
@@ -85,10 +102,15 @@ test("staging deploy workflow is manual-only (no develop push trigger)", () => {
 
 	const yaml = readFileSync(stagingPath, "utf8");
 
+	assert.match(
+		yaml,
+		/^\s*push:\s*\n\s*branches:\s*\[staging\]\s*$/m,
+		"push trigger must cover exactly the dedicated staging branch (QA environment)",
+	);
 	assert.doesNotMatch(
 		yaml,
-		/^\s*push:/m,
-		"must not trigger on push (staging auto-deploy disabled 2026-09-22)",
+		/branches:\s*\[[^\]]*\b(develop|main)\b/,
+		"must not deploy staging on develop/main pushes (develop auto-deploy disabled 2026-09-22)",
 	);
 	assert.match(
 		yaml,
@@ -109,7 +131,11 @@ test("e2e workflow exists and matches the e2e contract", () => {
 		/pull_request_target/,
 		"must never use pull_request_target (fork PR escalation)",
 	);
-	assert.match(yaml, /push:/, "must trigger on push");
+	assert.match(
+		yaml,
+		/^\s*workflow_call:/m,
+		"must be callable so deploy.yml can gate prod on it",
+	);
 	assert.match(yaml, /\bmain\b/, "must include main");
 	assert.doesNotMatch(
 		yaml,
@@ -130,4 +156,28 @@ test("e2e workflow exists and matches the e2e contract", () => {
 		/\bsecrets\s*[.[]/,
 		"must not require GitHub secrets",
 	);
+});
+
+test("prod deploy is blocked unless quality and e2e both pass", () => {
+	const deployPath = join(repoRoot, ".github/workflows/deploy.yml");
+	const yaml = readFileSync(deployPath, "utf8");
+
+	const e2eJob = yaml.match(/^ {2}e2e:\n((?: {4}.*\n|\s*\n)+)/m);
+	assert.ok(e2eJob, "deploy.yml must declare an e2e job");
+	assert.match(
+		e2eJob[1],
+		/^ {4}uses: \.\/\.github\/workflows\/e2e\.yml\s*$/m,
+		"e2e job must reuse e2e.yml (one definition of the suite)",
+	);
+	assert.doesNotMatch(
+		e2eJob[1],
+		/^ {4}secrets:/m,
+		"e2e job must not receive prod secrets",
+	);
+
+	const needs = yaml.match(/^ {2}deploy:\n {4}needs: \[([^\]]*)\]/m);
+	assert.ok(needs, "deploy job must declare needs");
+	const deps = needs[1].split(",").map((d) => d.trim());
+	assert.ok(deps.includes("quality"), "deploy must need quality");
+	assert.ok(deps.includes("e2e"), "deploy must need e2e");
 });

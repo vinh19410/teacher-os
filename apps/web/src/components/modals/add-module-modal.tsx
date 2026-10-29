@@ -2,25 +2,25 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useData } from "@/lib/data-store";
+import type { CurriculumTarget } from "@/lib/data-actions";
+import { useTargetSyllabus } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
 export function AddModuleModal({
 	open,
 	onClose,
-	syllabusId,
+	target,
 }: {
 	open: boolean;
 	onClose: () => void;
-	syllabusId: string;
+	target: CurriculumTarget;
 }) {
-	const { syllabusById } = useData();
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
-	const sy = syllabusById(syllabusId);
+	const sy = useTargetSyllabus(target);
 
 	async function submit(e: FormEvent) {
 		e.preventDefault();
@@ -31,7 +31,7 @@ export function AddModuleModal({
 		}
 		const result = await run({
 			type: "add-module",
-			syllabusId,
+			target,
 			payload: { title: title.trim(), description: description.trim() },
 		});
 		if (result?.kind === "refreshed") {
@@ -71,7 +71,7 @@ export function AddModuleModal({
 						rows={2}
 					/>
 				</Field>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
 							{error}
@@ -85,7 +85,7 @@ export function AddModuleModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

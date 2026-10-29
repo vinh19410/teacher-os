@@ -14,9 +14,12 @@ import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
+import { seedVocabLibrary } from "@teacher-os/db/seed/vocab-library";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
+import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
+import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -31,7 +34,16 @@ const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
 const CORS_ORIGINS = [
 	`http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`,
 	`http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`,
+	// Console admin (plan #413) — CORS cho fetch từ app admin lẫn CSRF
+	// Origin guard của /api/admin.
+	`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
 ];
+// Plan #413: allowlist email admin của e2e — phase 7 đăng ký account admin
+// qua /api/auth từ origin 8004 với email nằm trong danh sách này.
+const ADMIN_EMAILS = (process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local")
+	.split(",")
+	.map((s) => s.trim())
+	.filter((s) => s.length > 0);
 // Portal origin is the role-classification student origin (plan #260,
 // red-team #7): requests carrying it classify as student instead of
 // failing the better-auth origin check.
@@ -48,10 +60,22 @@ const recordingMailer: Mailer = {
 			/https?:\/\/[^\s]*\/api\/auth\/reset-password\/[^\s?]+\?[^\s]+/,
 		);
 		const base = {
+			// Plan TOS-21 (#454): lưu TOÀN BỘ thư để E2E kiểm header mới.
 			to: input.to,
 			subject: input.subject,
+			replyTo: input.replyTo ?? null,
+			fromName: input.fromName ?? null,
 		};
 		const at = new Date().toISOString();
+		if (
+			!verifyMatch &&
+			!resetMatch &&
+			input.to.trim().toLowerCase().endsWith("@bounce.test")
+		) {
+			const failedLine = JSON.stringify({ ...base, failed: true, at });
+			appendFileSync(MAIL_LOG_PATH, `${failedLine}\n`, "utf8");
+			throw new Error("mailbox unavailable");
+		}
 		const line = verifyMatch
 			? JSON.stringify({ ...base, url: verifyMatch[0], at })
 			: resetMatch
@@ -81,11 +105,27 @@ await client.execute("PRAGMA journal_mode = WAL;");
 await client.execute("PRAGMA busy_timeout = 5000;");
 const libsql = drizzle(client, { schema });
 await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+await client.execute("PRAGMA foreign_keys = ON;");
+try {
+	await seedVocabLibrary(client);
+} catch (err) {
+	console.error(
+		"[vocab-library-seed] failed — every spec will fail; check CSV/EXPECTED_COUNTS first",
+		err,
+	);
+	throw err;
+}
 
 const auth = createAuth({
 	db: libsql,
 	corsOrigin: CORS_ORIGINS,
 	studentOrigins: [STUDENT_ORIGIN],
+	// Plan #413: đăng ký account admin từ origin console với email trong
+	// allowlist (phase 7 dùng để sign-up admin thật).
+	adminOrigins: [
+		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
+	],
+	adminEmails: ADMIN_EMAILS,
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",
@@ -98,6 +138,21 @@ const auth = createAuth({
 const MEDIA_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-media-"));
 const mediaStore = createFsMediaStore(MEDIA_DIR);
 
+// Kho audio thư viện đề (#413 phase 3) — thư mục tạm RIÊNG để xoá sạch
+// không đụng media bài nói; cùng adapter FS.
+const LIBRARY_AUDIO_DIR = mkdtempSync(
+	join(tmpdir(), "teacher-os-e2e-library-audio-"),
+);
+const libraryAudioStore = createFsMediaStore(LIBRARY_AUDIO_DIR);
+
+// File đề gốc nhập AI (TOS-24 #470) — thư mục tạm RIÊNG, cùng bucket-logic
+// MEDIA của production; extractor là fake (đề cố định, pageCount 2) nên
+// E2E không đụng Workers AI.
+const EXAM_IMPORT_DIR = mkdtempSync(
+	join(tmpdir(), "teacher-os-e2e-exam-import-"),
+);
+const examImportStore = createFsMediaStore(EXAM_IMPORT_DIR);
+
 // Fake Bank Hub (#320): hosted-link pages + client stub cho E2E.
 const fakeBankHub = createFakeBankHub({
 	origin: `http://localhost:${PORT}`,
@@ -109,7 +164,28 @@ const app = buildApp({
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
+	getLibraryAudioStore: () => libraryAudioStore,
+	// TOS-24 (#470) + TOS-27 (#473): file đề nhập AI (FS thay R2) + extractor
+	// fake (tên tệp chứa `ai-fail` ném lỗi để E2E AC-004 kiểm hoàn trả Credit).
+	getExamImportStore: () => examImportStore,
+	getExamExtractor: () => createFakeExamExtractor(),
+	// TOS-30 (#478): grader fake trả điểm cố định 6.5/7.0/6.0/6.5 — E2E
+	// AC-001 thấy draft `ai_drafted` mà không đụng Workers AI. Pipeline chạy
+	// fire-and-forget (không waitUntil trong Node) — test chờ qua UI.
+	getAiGrader: () => createFakeAiGrader(),
+	adminEmails: ADMIN_EMAILS,
+	adminOrigins: [
+		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
+	],
 	getBankHub: () => fakeBankHub.hub,
+	// Plan TOS-21 (#454): hàng đợi thông báo dùng recordingMailer để E2E đọc được thư đã gửi.
+	mailer: recordingMailer,
+	// Link tuyệt đối trong email thông báo trỏ cổng học viên e2e.
+	studentOrigin: STUDENT_ORIGIN,
+	// Plan TOS-22 (#463): không chờ 2s/5s giữa các lượt retry trong E2E.
+	notificationRetryDelaysMs: [0, 0],
+	// Plan TOS-33 (#481): không chờ 1s/2s giữa 3 lượt retry chấm bài trong E2E.
+	aiRetryDelaysMs: [0, 0],
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe
@@ -130,6 +206,8 @@ const server = serve(
 const shutdown = () =>
 	server.close(() => {
 		rmSync(MEDIA_DIR, { recursive: true, force: true });
+		rmSync(LIBRARY_AUDIO_DIR, { recursive: true, force: true });
+		rmSync(EXAM_IMPORT_DIR, { recursive: true, force: true });
 		process.exit(0);
 	});
 process.on("SIGTERM", shutdown);

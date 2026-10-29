@@ -71,8 +71,8 @@ function PayTokenRoute() {
 
 	if (failed) {
 		return (
-			<main className="flex min-h-screen items-center justify-center p-6">
-				<p className="text-muted-fg text-sm">
+			<main className="grid min-h-screen place-items-center p-6">
+				<p className="text-muted-foreground text-sm">
 					Link thanh toán không tồn tại hoặc đã bị thu hồi.
 				</p>
 			</main>
@@ -80,8 +80,8 @@ function PayTokenRoute() {
 	}
 	if (!view) {
 		return (
-			<main className="flex min-h-screen items-center justify-center p-6">
-				<p className="text-muted-fg text-sm">Đang tải…</p>
+			<main className="grid min-h-screen place-items-center p-6">
+				<p className="text-muted-foreground text-sm">Đang tải…</p>
 			</main>
 		);
 	}
@@ -92,22 +92,25 @@ function PayTokenRoute() {
 		now: Date.now(),
 	});
 	return (
-		<main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
-			<header>
-				<p className="text-muted-fg text-xs">{view.orgName}</p>
-				<h1 className="font-semibold text-lg">{view.studentName}</h1>
-			</header>
-			<PaymentQrPanel data={view} />
-			{view.payable && pollExhausted && (
-				<Button
-					variant="secondary"
-					size="sm"
-					className="self-start"
-					onClick={() => setRefreshedAt(Date.now())}
-				>
-					Làm mới
-				</Button>
-			)}
+		// PayPage v2: một card duy nhất căn giữa khung màn hình.
+		<main className="grid min-h-screen place-items-center p-6">
+			<div className="w-full max-w-sm rounded-xl border bg-card p-8 text-center text-card-foreground shadow-sm">
+				<div className="text-muted-foreground text-sm">{view.orgName}</div>
+				<h1 className="mt-1 font-semibold text-2xl tracking-tight">
+					{view.studentName}
+				</h1>
+				<PaymentQrPanel data={view} className="mt-6 items-center" />
+				{view.payable && pollExhausted && (
+					<Button
+						variant="secondary"
+						size="sm"
+						className="mx-auto mt-4"
+						onClick={() => setRefreshedAt(Date.now())}
+					>
+						Làm mới
+					</Button>
+				)}
+			</div>
 		</main>
 	);
 }

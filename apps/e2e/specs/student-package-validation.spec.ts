@@ -34,6 +34,7 @@ test("class detail → enroll học viên có sẵn KHÔNG có input gói, chọ
 	await expect(classDialog).toBeHidden();
 
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
@@ -90,6 +91,7 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 
 	// Vào lớp -> "+ Thêm học viên vào lớp"
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	const option = dialog.getByRole("option", { name: STUDENT_NAME });
@@ -120,8 +122,9 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText(`Email: ${STUDENT_EMAIL}`)).toBeVisible();
 
-	// Trang Học phí: derive gói từ lớp (12 buổi, trạng thái Đang học)
-	await page.getByText("Học phí", { exact: true }).first().click();
+	// Trang Doanh thu (#343 — menu /tuition đổi tên): derive gói từ lớp
+	// (12 buổi, trạng thái Đang học)
+	await page.getByText("Doanh thu", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
 	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
 	await expect(tuitionRow).toBeVisible();

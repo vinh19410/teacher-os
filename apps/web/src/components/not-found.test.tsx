@@ -5,11 +5,11 @@ import { NotFoundPage } from "./not-found";
 describe("NotFoundPage component", () => {
 	it("renders the branded TeacherOS header with logo and home link", () => {
 		const html = renderToStaticMarkup(<NotFoundPage />);
-		expect(html).toContain("Teacher OS");
+		// Redesign #349: the boxed logo svg became the mono TEACHER/OS wordmark.
+		expect(html).toContain("Teacher");
+		expect(html).toContain("OS");
+		expect(html).not.toContain("<svg");
 		expect(html).toContain('href="/"');
-		// Brand logo svg
-		expect(html).toContain("<svg");
-		expect(html).toContain('fill="var(--accent)"');
 	});
 
 	it("renders the prominent 404 indicator and localized Vietnamese messaging", () => {

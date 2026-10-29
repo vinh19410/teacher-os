@@ -14,6 +14,11 @@ import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
+import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../../lib/notifications/emit";
+import { gradeReturnedEvent } from "../../lib/notifications/templates";
 import { loadSnapshot } from "../snapshot";
 import { testsRoutes } from "./tests";
 
@@ -28,7 +33,16 @@ type AssignmentContext = Context<Env>;
  * cho nút Apply phase-5) và full-test builder CRUD ở ./tests (route con
  * "/tests"). Bảng `assignment` remains grading-only, server-fed.
  */
-export function assignmentRoutes(deps: { getDb(): Db }) {
+export function assignmentRoutes(deps: {
+	getDb(): Db;
+	/** #454 phase 3: phát grade_returned sau khi chấm thành công. */
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
+	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
+	notificationRetryDelaysMs?: number[];
+}) {
 	const routes = new Hono<Env>();
 
 	function unauthorized(c: AssignmentContext) {
@@ -120,11 +134,26 @@ export function assignmentRoutes(deps: { getDb(): Db }) {
 			.where(
 				and(eq(assignment.id, assignmentId), eq(assignment.orgId, ctx.orgId)),
 			)
-			.returning({ id: assignment.id });
+			.returning({
+				id: assignment.id,
+				studentId: assignment.studentId,
+				title: assignment.title,
+			});
 
 		if (!updated[0]) {
 			return c.json({ error: "assignment not found" }, 404);
 		}
+		// #454 phase 3: row `assignment` là điểm per-học viên (không có
+		// attempt) — khóa canonical là chính row id, 1 thông báo mỗi lần chấm
+		// thành công, fail-open như các route khác.
+		await emitNotifications(notificationDepsFrom(deps), ctx.orgId, [
+			gradeReturnedEvent({
+				attemptId: updated[0].id,
+				studentId: updated[0].studentId,
+				title: updated[0].title,
+				linkPath: "/assignments",
+			}),
+		]);
 		return c.json({ id: assignmentId } satisfies CreatedResponse);
 	});
 

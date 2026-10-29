@@ -706,3 +706,37 @@ describe("emitBackfillSql", () => {
 		);
 	});
 });
+
+describe("buildBackfillPlan: legacy Monday-first rows on a Thursday start", () => {
+	test("stamps every legacy row (Mon×3 / Thu×2) with the k-th occurrence of its weekday", () => {
+		const days = [1, 4, 1, 4, 1];
+		const plan = buildBackfillPlan(
+			[
+				{
+					classId: "c1",
+					scheduleRaw: '{"days":[0,3],"start":"19:00","end":"20:30"}',
+					startDateRaw: "2026-11-05",
+					total: 5,
+				},
+			],
+			days.map((day, i) => ({
+				id: `r${i}`,
+				classId: "c1",
+				enrollmentId: "e1",
+				day,
+				time: "19:00",
+				createdAtMs: 1000 + i,
+				seq: i,
+				status: "upcoming",
+			})),
+		);
+		expect(plan.classes).toEqual([{ classId: "c1", conforms: true }]);
+		expect(plan.updates.map((u) => u.date).sort()).toEqual([
+			"2026-11-05",
+			"2026-11-09",
+			"2026-11-12",
+			"2026-11-16",
+			"2026-11-23",
+		]);
+	});
+});

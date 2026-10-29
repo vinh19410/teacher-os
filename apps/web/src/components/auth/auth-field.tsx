@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-
+import { inputCls } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 
 /** Maps TanStack Form field errors to a plain string[] (first message renders). */
@@ -25,6 +25,8 @@ interface AuthFieldProps {
 	required?: boolean;
 }
 
+/** Field auth v2: inputCls dùng chung (viền + ring 3px, `text-base
+ * md:text-sm`), id/aria giữ nguyên cho e2e (`#si-email-status`…). */
 export function AuthField({
 	label,
 	id,
@@ -45,12 +47,9 @@ export function AuthField({
 	const invalid = errors.length > 0;
 
 	return (
-		<div className="mb-[14px]">
-			<div className="mb-[7px] flex items-baseline justify-between gap-[10px]">
-				<label
-					htmlFor={id}
-					className="font-[510] text-[13px] text-fg-2 tracking-[0.01em]"
-				>
+		<div className="grid gap-2">
+			<div className="flex items-baseline justify-between gap-[10px]">
+				<label htmlFor={id} className="font-medium text-sm leading-none">
 					{label}
 				</label>
 				{labelRowExtra}
@@ -70,13 +69,9 @@ export function AuthField({
 					aria-invalid={invalid || undefined}
 					aria-describedby={invalid ? `${id}-status` : undefined}
 					className={cn(
-						"h-12 w-full rounded-[var(--radius-md)] border border-line bg-bg px-[15px] text-fg text-sm",
-						"transition-[border-color,box-shadow] duration-[150ms] motion-reduce:transition-none",
-						"hover:border-[color-mix(in_oklab,var(--fg),transparent_72%)]",
-						"focus:border-accent-blue focus:shadow-[var(--focus-ring)] focus:outline-none",
-						passwordToggle && "pr-[50px]",
-						invalid &&
-							"border-danger focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--danger),transparent_68%)]",
+						inputCls,
+						passwordToggle && "pr-9",
+						invalid && "border-destructive/60",
 					)}
 				/>
 				{passwordToggle && (
@@ -85,7 +80,7 @@ export function AuthField({
 						onClick={() => setPasswordShown((shown) => !shown)}
 						aria-pressed={passwordShown}
 						aria-label={passwordShown ? "Hide password" : "Show password"}
-						className="absolute top-1/2 right-[6px] grid h-[38px] w-[38px] -translate-y-1/2 place-items-center rounded-[var(--radius-sm)] text-muted-fg transition-[background,color] duration-[150ms] hover:bg-surface hover:text-fg-2 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 					>
 						<svg
 							viewBox="0 0 24 24"
@@ -95,7 +90,7 @@ export function AuthField({
 							strokeLinecap="round"
 							strokeLinejoin="round"
 							aria-hidden="true"
-							className="block h-[17px] w-[17px]"
+							className="block size-4"
 						>
 							<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
 							<circle cx="12" cy="12" r="3" />
@@ -103,16 +98,9 @@ export function AuthField({
 					</button>
 				)}
 			</div>
-			<div
-				id={`${id}-status`}
-				className="mt-[5px] min-h-[19px] text-[13px]"
-				aria-live="polite"
-			>
+			<div id={`${id}-status`} className="text-sm" aria-live="polite">
 				{invalid ? (
-					<p
-						role="alert"
-						className="text-[color-mix(in_oklab,var(--danger),black_18%)]"
-					>
+					<p role="alert" className="text-destructive">
 						{errors[0]}
 					</p>
 				) : (

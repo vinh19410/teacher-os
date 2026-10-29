@@ -1,4 +1,5 @@
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { membership } from "@teacher-os/db/schema/membership";
 import { organization } from "@teacher-os/db/schema/organization";
 import { asc, eq } from "drizzle-orm";
@@ -7,14 +8,25 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import type { AiGrader } from "./lib/ai-grading/grader";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
+import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
+import { createAdminMeRoutes } from "./lib/require-admin";
 import { redactResetToken } from "./log-redaction";
+import { adminLibraryRoutes } from "./routes/admin-library";
+import { bankHubMockRoutes } from "./routes/bank-hub-mock";
 import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
+import { creditRoutes } from "./routes/credits";
+import { examImportRoutes } from "./routes/exam-imports";
+import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
+import { studentClassmatesRoutes } from "./routes/student-classmates";
+import { studentHistoryRoutes } from "./routes/student-history";
+import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -38,6 +50,9 @@ export {
 export interface KernelCtx {
 	orgId: string;
 	userId: string;
+	/** TOS-17 (#451): `membership.role` của thành viên trong org. Optional cho
+	 * các test harness cục bộ tự set kernelCtx không qua bootstrapMiddleware. */
+	role?: string;
 }
 
 export type ServerApp = Hono<{ Variables: { kernelCtx: KernelCtx } }>;
@@ -58,15 +73,79 @@ export interface AppDeps {
 	 */
 	getMediaStore?(): MediaStore | undefined;
 	/**
+	 * Kho audio thư viện đề (#413 phase 3) — R2 ở production, đĩa ở e2e.
+	 * Vắng mặt → các route audio của /api/admin/library trả 503
+	 * LIBRARY_AUDIO_DISABLED, cùng hợp đồng với `getMediaStore`.
+	 */
+	getLibraryAudioStore?(): MediaStore | undefined;
+	/**
+	 * Plan #413: allowlist email admin (binding ADMIN_EMAILS đã parse; so
+	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
+	 */
+	adminEmails?: string[];
+	/**
+	 * Plan #413: origin của console admin dùng cho CSRF /api/admin — cố ý
+	 * tách khỏi `corsOrigin` (gồm cả origin teacher/student). Rỗng → mọi
+	 * write /api/admin bị 403 (fail-closed).
+	 */
+	adminOrigins?: string | string[];
+	/**
 	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
 	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
 	 */
 	getBankHub?(): BankHubContext | undefined;
 	/**
+	 * Webhook GitHub (#421) — secret HMAC dùng chung. Rỗng/vắng (chưa cấu
+	 * hình binding) thì `/webhooks/github` trả 503 GITHUB_WEBHOOK_DISABLED,
+	 * cùng hợp đồng fail-closed với `getBankHub`.
+	 */
+	githubWebhookSecret?: string;
+	/**
 	 * Chạy việc dọn dẹp sau response (xoá object R2 bù trừ) — production
 	 * truyền `waitUntil` để việc không bị huỷ khi client ngắt kết nối.
 	 */
 	runInBackground?(promise: Promise<unknown>): void;
+	/**
+	 * Mailer dùng chung cho hàng đợi thông báo (#454, plan TOS-21 D6) —
+	 * production truyền Resend/log qua index.ts, e2e truyền recordingMailer.
+	 * Vắng mặt → bản ghi vẫn tạo, email giữ `queued` + log cảnh báo.
+	 */
+	mailer?: Mailer;
+	/**
+	 * Origin cổng học viên đầu tiên cho link tuyệt đối trong email thông báo
+	 * (#454). `env.STUDENT_ORIGINS` là chuỗi thô nên caller parse
+	 * (`parseCORSOrigins(...)[0]`); vắng mặt → link tương đối (test node).
+	 */
+	studentOrigin?: string;
+	/**
+	 * TOS-22 (#463) D6: khoảng chờ (ms) giữa các lượt thử lại email thông báo.
+	 * Production bỏ trống (dùng mặc định [2000, 5000]); chỉ test/E2E truyền [0, 0].
+	 */
+	notificationRetryDelaysMs?: number[];
+	/**
+	 * TOS-33 (#481) D3: khoảng chờ (ms) giữa các lượt gọi grader trong vòng
+	 * "Thử chấm lại AI" / reserve đầu. Production bỏ trống ([1s, 2s]);
+	 * test/E2E truyền [0, 0].
+	 */
+	aiRetryDelaysMs?: number[];
+	/**
+	 * TOS-24 (#470): extractor bóc tách đề — Workers AI ở production (từ
+	 * binding `AI`), fake ở e2e/test. Vắng mặt → route /api/exam-imports
+	 * trả 503 EXAM_IMPORT_DISABLED, cùng hợp đồng fail-closed với
+	 * `getMediaStore`.
+	 */
+	getExamExtractor?(): ExamExtractor | undefined;
+	/**
+	 * TOS-24 (#470): kho file đề gốc nhập AI — dùng chung bucket MEDIA với
+	 * prefix `exam-imports/<orgId>/`. Vắng mặt → 503 EXAM_IMPORT_DISABLED.
+	 */
+	getExamImportStore?(): MediaStore | undefined;
+	/**
+	 * TOS-30 (#478): grader chấm nháp AI — Workers AI ở production (binding
+	 * `AI`), fake ở e2e/test. Vắng mặt → bỏ qua chấm nháp (không draft,
+	 * không đụng Credit), cùng hợp đồng fail-closed với `getExamExtractor`.
+	 */
+	getAiGrader?(): AiGrader | undefined;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -88,7 +167,9 @@ function bootstrapMiddleware(deps: AppDeps) {
 		if (
 			isAuthPath(pathname) ||
 			pathname === "/api/student" ||
-			pathname.startsWith("/api/student/")
+			pathname.startsWith("/api/student/") ||
+			pathname === "/api/admin" ||
+			pathname.startsWith("/api/admin/")
 		) {
 			return next();
 		}
@@ -104,6 +185,17 @@ function bootstrapMiddleware(deps: AppDeps) {
 				{
 					error: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
 					code: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+				},
+				403,
+			);
+		}
+		// Plan #413: role admin không bao giờ bootstrap org/membership trên
+		// kernel tree — admin chỉ làm việc trên /api/admin (bypass ở trên).
+		if (session.role === "admin") {
+			return c.json(
+				{
+					error: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
+					code: ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
 				},
 				403,
 			);
@@ -134,7 +226,11 @@ function bootstrapMiddleware(deps: AppDeps) {
 		if (!first) {
 			return c.json({ error: "no membership after bootstrap" }, 403);
 		}
-		c.set("kernelCtx", { orgId: first.orgId, userId: session.userId });
+		c.set("kernelCtx", {
+			orgId: first.orgId,
+			userId: session.userId,
+			role: first.role,
+		});
 		return next();
 	};
 }
@@ -214,6 +310,15 @@ export function buildApp(deps: AppDeps) {
 	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
 	// middleware and Better Auth never run — auth is the X-Secret-Key header.
 	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// GitHub webhooks (#421): cùng ngoài-/api treatment — auth là HMAC
+	// X-Hub-Signature-256 trên raw body, không session.
+	app.route(
+		"/webhooks/github",
+		githubWebhookRoutes({ secret: deps.githubWebhookSecret }),
+	);
+	// Postman-facing sandbox mock-transaction wrapper: same outside-/api
+	// treatment, auth is the IPN Apikey header (see routes/bank-hub-mock.ts).
+	app.route("/dev/bank-hub", bankHubMockRoutes(deps));
 	// Public pay page data (#320): outside /api/* (bootstrap 403s student
 	// roles there) and readable signed-out — the token is the capability.
 	app.route("/public/pay", publicPayRoutes(deps));
@@ -221,7 +326,54 @@ export function buildApp(deps: AppDeps) {
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
 	app.route("/api/student", studentRoutes(deps));
-	app.route("/api", kernelRoutes(deps));
+	// Bạn cùng lớp (#378): sub-app cùng mount point, route riêng
+	// /classes/:classId/classmates — guard tạo từ chung createStudentGuard.
+	app.route("/api/student", studentClassmatesRoutes(deps));
+	// Tự luyện (#378 phase 10): sub-app cùng mount point — catalog + take +
+	// start attempt practice; guard tự gắn trong router (bootstrapMiddleware
+	// bỏ qua /api/student).
+	app.route("/api/student", studentPracticeRoutes(deps));
+	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
+	// guard tự gắn trong router như practice.
+	app.route("/api/student", studentHistoryRoutes(deps));
+	// Plan #413 phase 3: router thật của thư viện đề — requireAdmin +
+	// CSRF Origin(adminOrigins) tự gắn trong router; bootstrapMiddleware vẫn
+	// bypass /api/admin nên không session teacher nào bootstrap org qua
+	// đường này. Mount tại /api/admin/library; các nhánh admin khác (phase
+	// sau) mount song song cùng guard.
+	app.route(
+		"/api/admin/library",
+		adminLibraryRoutes({
+			getDb: deps.getDb,
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
+			adminOrigins: deps.adminOrigins ?? [],
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			runInBackground: deps.runInBackground,
+		}),
+	);
+	// Plan #413: GET /api/admin/me — identity admin sau gate, guard _auth của
+	// console (apps/admin/src/routes/_auth/route.tsx) dùng để quyết shell hay
+	// redirect /login?error=<mã gate>.
+	app.route(
+		"/api/admin",
+		createAdminMeRoutes({
+			getSessionUser: deps.getSessionUser,
+			adminEmails: deps.adminEmails ?? [],
+		}),
+	);
+	// TOS-24 (#470): nhập đề bằng AI + ví Credit — mount TRƯỚC kernelRoutes
+	// để path riêng không bị kernel nuốt; guard 401/403 tự gắn trong router.
+	app.route("/api", examImportRoutes(deps));
+	app.route("/api", creditRoutes(deps));
+	// TOS-33 (#481): grader + retry delays xuống routes chấm (ai-retry).
+	app.route(
+		"/api",
+		kernelRoutes({
+			...deps,
+			aiRetryDelaysMs: deps.aiRetryDelaysMs,
+		}),
+	);
 
 	return app;
 }

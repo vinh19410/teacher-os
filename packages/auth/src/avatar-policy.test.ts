@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { createClient } from "@libsql/client";
+import * as schema from "@teacher-os/db/schema/index";
+import { drizzle } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
 	AVATAR_MAX_IMAGE_CHARS,
 	AVATAR_TARGET_PX,
@@ -9,6 +10,12 @@ import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
+import { createAuth } from "./index";
+
+const MIGRATIONS_DIR = new URL(
+	"../../../packages/db/src/migrations",
+	import.meta.url,
+).pathname;
 
 describe("avatar-policy constants", () => {
 	it("pins the 192px render target and the 65536-char encoded cap", () => {
@@ -114,25 +121,103 @@ describe("validateUpdateUserImage", () => {
 	});
 });
 
-describe("update-user hook delegates to the pure validators (source-parse)", () => {
-	// The hook itself is inline in createAuth's closure and untestable directly;
-	// this pins the delegate wiring so the policy module stays the only guard.
-	const here = dirname(fileURLToPath(import.meta.url));
-	const indexSrc = readFileSync(join(here, "index.ts"), "utf8");
+describe("/update-user rejects invalid profile payloads through better-auth", () => {
+	const ORIGIN = "http://localhost:3000";
+	let auth: Awaited<ReturnType<typeof setupAuth>>;
+	let cookie: string;
 
-	it("runs a hooks.before middleware for /update-user", () => {
-		expect(indexSrc).toMatch(/hooks:\s*\{/);
-		expect(indexSrc).toMatch(/createAuthMiddleware/);
-		expect(indexSrc).toMatch(/"\/update-user"/);
+	async function setupAuth() {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		return createAuth({
+			db,
+			corsOrigin: ORIGIN,
+			studentOrigins: [],
+			secret: "test-secret-0123456789abcdef0123456789abcdef",
+			baseURL: ORIGIN,
+			googleClientId: "test-dummy",
+			googleClientSecret: "test-dummy",
+			mailer: { send: async () => {} },
+		});
+	}
+
+	function post(path: string, body: unknown, withCookie = true) {
+		return auth.handler(
+			new Request(`${ORIGIN}/api/auth${path}`, {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: ORIGIN,
+					...(withCookie && { cookie }),
+				},
+				body: JSON.stringify(body),
+			}),
+		);
+	}
+
+	async function currentUser() {
+		const res = await auth.handler(
+			new Request(`${ORIGIN}/api/auth/get-session`, {
+				headers: { origin: ORIGIN, cookie },
+			}),
+		);
+		return ((await res.json()) as { user: { name: string; image?: string } })
+			.user;
+	}
+
+	beforeAll(async () => {
+		auth = await setupAuth();
+		const res = await post(
+			"/sign-up/email",
+			{
+				name: "Trần Mai Lan",
+				email: "lan@example.com",
+				password: "password123",
+			},
+			false,
+		);
+		expect(res.status).toBe(200);
+		const token = /better-auth\.session_token=([^;]+)/.exec(
+			res.headers.getSetCookie().join("\n"),
+		)?.[1];
+		if (!token) throw new Error("sign-up set no session cookie");
+		cookie = `better-auth.session_token=${token}`;
 	});
 
-	it("delegates validation to validateUpdateUserName / validateUpdateUserImage", () => {
-		expect(indexSrc).toMatch(/validateUpdateUserName\(/);
-		expect(indexSrc).toMatch(/validateUpdateUserImage\(/);
+	it("rejects a too-short name with 400 and the Vietnamese message", async () => {
+		const res = await post("/update-user", { name: "A" });
+		expect(res.status).toBe(400);
+		expect(((await res.json()) as { message: string }).message).toMatch(
+			/2 ký tự/,
+		);
+		expect((await currentUser()).name).toBe("Trần Mai Lan");
 	});
 
-	it("rejects with a 400 BAD_REQUEST carrying the Vietnamese message", () => {
-		expect(indexSrc).toMatch(/APIError/);
-		expect(indexSrc).toMatch(/BAD_REQUEST/);
+	it("rejects an unsafe image payload and keeps the stored image", async () => {
+		const res = await post("/update-user", {
+			image: "data:image/svg+xml;base64,PHN2Zz4=",
+		});
+		expect(res.status).toBe(400);
+		expect(((await res.json()) as { message: string }).message).toMatch(
+			/JPEG\/PNG|https/,
+		);
+		expect((await currentUser()).image ?? null).toBeNull();
+	});
+
+	it("rejects an image above the character budget", async () => {
+		const res = await post("/update-user", {
+			image: `data:image/png;base64,${"A".repeat(AVATAR_MAX_IMAGE_CHARS)}`,
+		});
+		expect(res.status).toBe(400);
+	});
+
+	it("accepts a valid name and image and persists them", async () => {
+		const image = "data:image/jpeg;base64,/9j/4AAQ";
+		const res = await post("/update-user", { name: "Cô Lan", image });
+		expect(res.status).toBe(200);
+		const user = await currentUser();
+		expect(user.name).toBe("Cô Lan");
+		expect(user.image).toBe(image);
 	});
 });

@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { Notif } from "@/lib/mock-data";
@@ -35,26 +34,16 @@ describe("NotifPanel component", () => {
 		expect(html).toContain("Buổi học IELTS Writing sắp diễn ra");
 		expect(html).toContain("10:30 · Học phí");
 		expect(html).toContain("18:00 · Lịch dạy");
+		// Read-only feed: no mark-read (or any other) write control.
+		expect(html).not.toContain("<button");
 	});
 
 	it("includes responsive fixed positioning classes for mobile bounds", () => {
 		const html = renderToStaticMarkup(<NotifPanel notifs={[]} />);
-		expect(html).toContain("max-app:fixed");
-		expect(html).toContain("max-app:top-14");
-		expect(html).toContain("max-app:right-4");
-		expect(html).toContain("max-app:left-4");
-		expect(html).toContain("max-app:w-auto");
-	});
-});
-
-describe("Topbar notification contract", () => {
-	it("conditions unread badge on data.notifs.length > 0", () => {
-		const src = readFileSync(new URL("./topbar.tsx", import.meta.url), "utf-8");
-		expect(src).toMatch(
-			/\{data\.notifs\.length > 0 && \(\s*<span[^>]*data-testid="notif-badge"/,
-		);
-		expect(src).toMatch(
-			/ref=\{bellWrapRef\}\s+className="[^"]*max-app:ml-auto[^"]*"/,
-		);
+		expect(html).toContain("max-md:fixed");
+		expect(html).toContain("max-md:top-14");
+		expect(html).toContain("max-md:right-4");
+		expect(html).toContain("max-md:left-4");
+		expect(html).toContain("max-md:w-auto");
 	});
 });

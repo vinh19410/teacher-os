@@ -246,6 +246,160 @@
       "when": 1791265828629,
       "tag": "0034_familiar_jamie_braddock",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1791338232502,
+      "tag": "0035_ambiguous_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1792269420184,
+      "tag": "0036_bored_infant_terrible",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1792283390520,
+      "tag": "0037_cheerful_gambit",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1792383369224,
+      "tag": "0038_wise_blizzard",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1792394810892,
+      "tag": "0039_ambiguous_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1792426045750,
+      "tag": "0040_deep_oracle",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1792549010002,
+      "tag": "0041_known_ink",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1792589043473,
+      "tag": "0042_syllabus_class_pointer_reconcile",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1792643499781,
+      "tag": "0043_rainy_edwin_jarvis",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1792744072934,
+      "tag": "0044_library_part_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1793006508264,
+      "tag": "0045_aspiring_thena",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1793022927477,
+      "tag": "0046_faithful_punisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1793028746226,
+      "tag": "0047_slim_nightmare",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1793033695034,
+      "tag": "0048_small_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1793035803431,
+      "tag": "0049_shocking_kabuki",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1793039606286,
+      "tag": "0050_bent_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1793053855787,
+      "tag": "0051_tan_slayback",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1793057455787,
+      "tag": "0052_exam_import_published_test",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1793072194989,
+      "tag": "0053_purple_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1793165829294,
+      "tag": "0054_productive_spencer_smythe",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1793177324182,
+      "tag": "0055_premium_blazing_skull",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1793180353912,
+      "tag": "0056_demonic_nuke",
+      "breakpoints": true
     }
   ]
 }

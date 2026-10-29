@@ -102,7 +102,10 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await classDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ value: templateId });
-	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	// TemplatePicker (issue #394): kỹ năng render Tag trong vùng aria-live.
+	await expect(
+		classDialog.locator('[aria-live="polite"]').getByText("Writing"),
+	).toBeVisible();
 	await expect(
 		classDialog.getByRole("button", { name: "Writing", exact: true }),
 	).toHaveAttribute("aria-pressed", "true");
@@ -136,10 +139,9 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 		);
 	}
 
-	// Bản copy: KHÔNG có nút import, header đánh dấu "Bản sao của một lớp".
+	// Issue #394: id bản copy KHÔNG còn mở trang /syllabus/<copy> — rơi vào
+	// trạng thái không tìm thấy của route. Nút import chỉ tồn tại ở template
+	// (đã assert ở đầu test); copy chỉ sửa được qua "Quản lý buổi" của lớp.
 	await page.goto(`/syllabus/${copy.id}`);
-	await expect(
-		page.getByRole("button", { name: "Nhập từ Excel/CSV" }),
-	).toBeHidden();
-	await expect(page.getByText("Bản sao của một lớp")).toBeVisible();
+	await expect(page.getByText("Không tìm thấy syllabus")).toBeVisible();
 });

@@ -10,7 +10,7 @@ import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
-import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { useTemplates } from "@/lib/repos/use-syllabus";
 
 export const Route = createFileRoute("/_auth/syllabus/")({
 	component: SyllabusRoute,
@@ -26,7 +26,7 @@ const SKILL_MAP: Record<string, string> = {
 
 export function SyllabusRoute() {
 	const navigate = useNavigate();
-	const { templates } = useSyllabus();
+	const templates = useTemplates();
 	const { classesForSyllabus } = useData();
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
@@ -42,12 +42,14 @@ export function SyllabusRoute() {
 	return (
 		<div>
 			<PageHead
+				kicker={`${templates.length} template · ${templates.reduce((sum, s) => sum + s.totalLessons, 0)} buổi tổng cộng`}
 				title="Giáo trình"
-				lead={`${templates.length} template · ${templates.reduce((sum, s) => sum + s.totalLessons, 0)} buổi tổng cộng`}
+				action={
+					<Button onClick={() => setModalOpen(true)}>+ Tạo syllabus</Button>
+				}
 			/>
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+			<div className="mb-4">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => setModalOpen(true)}>+ Tạo syllabus</Button>
 			</div>
 			{templates.length === 0 ? (
 				<Card
@@ -55,17 +57,15 @@ export function SyllabusRoute() {
 					className="p-8 text-center"
 					data-testid="syllabus-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
-						Chưa có syllabus nào
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<h2 className="font-semibold text-lg">Chưa có syllabus nào</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Bấm "+ Tạo syllabus" ở góc trên để tạo giáo trình mẫu hoặc nhập từ
 						file Excel/CSV.
 					</p>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="font-mono text-meta text-xs">
+					<p className="text-muted-foreground text-xs">
 						Không có giáo trình nào phù hợp với bộ lọc.
 					</p>
 				</Card>
@@ -105,20 +105,20 @@ export function SyllabusRoute() {
 										)}
 										<Tag>{sy.level}</Tag>
 									</div>
-									<span className="font-mono text-meta text-xs">
+									<span className="text-muted-foreground text-xs">
 										{sy.totalLessons} buổi
 									</span>
 								</div>
-								<h3 className="mt-3 font-display font-semibold text-lg">
-									{sy.name}
-								</h3>
-								<p className="mt-2 text-muted-fg text-sm leading-[1.45]">
+								<h3 className="mt-3 font-semibold text-lg">{sy.name}</h3>
+								<p className="mt-2 text-muted-foreground text-sm leading-[1.45]">
 									{sy.description}
 								</p>
 								<div className="mt-4">
 									<div className="mb-1 flex justify-between">
-										<span className="font-mono text-meta text-xs">Module</span>
-										<span className="font-mono text-meta text-xs">
+										<span className="text-muted-foreground text-xs">
+											Module
+										</span>
+										<span className="text-muted-foreground text-xs">
 											{sy.modules.length}
 										</span>
 									</div>

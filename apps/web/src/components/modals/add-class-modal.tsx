@@ -4,12 +4,12 @@ import {
 	IELTS_SKILLS,
 } from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { TemplatePicker } from "@/components/syllabus/template-picker";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { Tag } from "@/components/ui/tag";
 import {
 	getTomorrowDateInputValue,
 	isFutureDateInputValue,
@@ -18,7 +18,7 @@ import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, dayNames, type Syllabus } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
-import { useSyllabus } from "@/lib/repos/use-syllabus";
+import { useTemplates } from "@/lib/repos/use-syllabus";
 import { findScheduleConflicts } from "@/lib/schedule-conflicts";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -56,53 +56,6 @@ const SESSION_MINUTES = 90;
 const DEFAULT_START = "19:00";
 const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
 
-export function ClassTemplatePicker({
-	templates,
-	templateId,
-	onTemplateId,
-}: {
-	templates: ReadonlyArray<{
-		id: string;
-		name: string;
-		skills: readonly string[];
-	}>;
-	templateId: string;
-	onTemplateId: (value: string) => void;
-}) {
-	const selectedTemplate = templates.find((item) => item.id === templateId);
-	return (
-		<>
-			<Field label="Template giáo trình">
-				<Select
-					value={templateId}
-					onChange={(event) => onTemplateId(event.target.value)}
-				>
-					<option value="">— Lớp trống —</option>
-					{templates.map((item) => (
-						<option key={item.id} value={item.id}>
-							{item.name} · {item.skills.length} kỹ năng
-						</option>
-					))}
-				</Select>
-			</Field>
-			{selectedTemplate ? (
-				selectedTemplate.skills.length > 0 ? (
-					<div className="flex flex-wrap items-center gap-1">
-						<span className="text-muted-fg text-sm">Kỹ năng giáo trình</span>
-						{selectedTemplate.skills.map((skill) => (
-							<Tag key={skill}>{skill}</Tag>
-						))}
-					</div>
-				) : (
-					<p className="text-muted-fg text-sm">
-						Syllabus chưa khai báo kỹ năng
-					</p>
-				)
-			) : null}
-		</>
-	);
-}
-
 export function AddClassModal({
 	open,
 	onClose,
@@ -110,7 +63,7 @@ export function AddClassModal({
 	open: boolean;
 	onClose: () => void;
 }) {
-	const { templates } = useSyllabus();
+	const templates = useTemplates();
 	const [name, setName] = useState("");
 	const [level, setLevel] = useState("Band 7.0");
 	const [classType, setClassType] = useState<ClassType>("ielts");
@@ -335,10 +288,12 @@ export function AddClassModal({
 						/>
 					</Field>
 				)}
-				<ClassTemplatePicker
+				{/* TemplatePicker dùng chung (issue #394) — allowEmpty cho lớp trống. */}
+				<TemplatePicker
+					allowEmpty
 					templates={templates}
-					templateId={templateId}
-					onTemplateId={changeTemplateId}
+					value={templateId}
+					onChange={changeTemplateId}
 				/>
 				<Field label="Ngày học *">
 					<ChipMulti options={DAY_OPTIONS} value={days} onChange={setDays} />
@@ -366,9 +321,14 @@ export function AddClassModal({
 					<div
 						role="status"
 						data-testid="schedule-conflict-warning"
-						className="rounded-sm border border-warn border-solid bg-warn-soft p-3 text-warn text-xs"
+						className="rounded-md bg-warn-soft p-3 text-warn text-xs"
 					>
-						<p className="font-medium">Lịch bị trùng với lớp đang học</p>
+						<p className="font-medium">
+							<span className="mr-2 inline-flex rounded-md bg-destructive px-2 py-0.5 font-medium text-white text-xs">
+								Trùng lịch
+							</span>
+							Lịch bị trùng với lớp đang học
+						</p>
 						<ul className="mt-1 space-y-0.5">
 							{scheduleConflicts
 								.slice(0, 3)
@@ -414,7 +374,7 @@ export function AddClassModal({
 						onChange={(e) => setStartDate(e.target.value)}
 					/>
 				</Field>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
 							{error}
@@ -428,7 +388,7 @@ export function AddClassModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

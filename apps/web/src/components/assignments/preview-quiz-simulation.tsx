@@ -123,7 +123,7 @@ export function PreviewQuizSimulation({
 				currentQuestion={currentQuestion}
 			/>
 			<div className="flex items-center justify-between gap-3">
-				<span className="font-mono text-meta text-xs">
+				<span className="text-muted-foreground text-xs">
 					Bản mô phỏng — bài làm không được lưu.
 				</span>
 				<Button onClick={onSubmit}>

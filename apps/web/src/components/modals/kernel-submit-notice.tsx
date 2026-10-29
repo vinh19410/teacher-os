@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 import type { KernelFormNotice } from "@/lib/use-kernel-form-submit";
 
 /**
@@ -10,15 +11,17 @@ export function KernelSubmitNotice({
 	notice,
 	onReconcile,
 	disabled,
+	className,
 }: {
 	notice: KernelFormNotice;
 	onReconcile: () => void;
 	disabled: boolean;
+	className?: string;
 }) {
 	if (notice.kind === "committed") {
 		return (
-			<div role="status" className="mb-3 flex items-center gap-3">
-				<p className="flex-1 text-muted-fg text-xs">
+			<div role="status" className={cn("flex items-center gap-3", className)}>
+				<p className="flex-1 text-muted-foreground text-xs">
 					Đã lưu trên máy chủ nhưng chưa tải lại được dữ liệu.
 				</p>
 				<Button
@@ -34,7 +37,7 @@ export function KernelSubmitNotice({
 	}
 	if (notice.kind === "unknown") {
 		return (
-			<div role="alert" className="mb-3 flex items-center gap-3">
+			<div role="alert" className={cn("flex items-center gap-3", className)}>
 				<p className="flex-1 text-danger text-xs">
 					Không xác định được kết quả — dữ liệu có thể đã lưu. Tải lại để kiểm
 					tra trước khi thử lại, tránh tạo trùng.
@@ -51,7 +54,7 @@ export function KernelSubmitNotice({
 		);
 	}
 	return (
-		<div role="alert" className="mb-3 flex items-center gap-3">
+		<div role="alert" className={cn("flex items-center gap-3", className)}>
 			<p className="flex-1 text-danger text-xs">
 				Không tải lại được dữ liệu — kiểm tra kết nối rồi tải lại.
 			</p>

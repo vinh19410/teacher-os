@@ -20,6 +20,7 @@ import { StatusTag } from "@/components/assignments/status-tag";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
+import { inputCls } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
@@ -265,22 +266,23 @@ export function AssignmentsRoute() {
 
 	return (
 		<div>
-			<div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-				<PageHead
-					title="Bài tập"
-					lead="Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
-				/>
-				<Button onClick={() => navigate({ to: "/assignments/new" })}>
-					+ Tạo bài tập
-				</Button>
-			</div>
+			<PageHead
+				kicker="Ngân hàng đề"
+				title="Bài tập"
+				lead="Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
+				action={
+					<Button onClick={() => navigate({ to: "/assignments/new" })}>
+						+ Tạo bài tập
+					</Button>
+				}
+			/>
 
 			{totalPrompts === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<h2 className="font-display font-semibold text-fg text-lg">
+					<h2 className="font-semibold text-foreground text-lg">
 						Chưa có bài tập nào
 					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Tạo bài tập đầu tiên để lưu vào danh sách và giao cho các lớp học.
 					</p>
 					<div className="mt-6 flex justify-center">
@@ -294,31 +296,31 @@ export function AssignmentsRoute() {
 					{/* Left column: Filters + List */}
 					<div className="flex flex-col gap-4">
 						{/* Filter Card */}
-						<Card variant="white" className="flex flex-col gap-4 p-5">
+						<Card className="flex flex-col gap-4 p-5">
 							{/* Mobile: gập bộ lọc để danh sách đề lên trước (desktop ẩn) */}
-							<div className="flex items-center justify-between border-border-soft border-b pb-3 lg:hidden">
+							<div className="flex items-center justify-between border-border border-b pb-3 lg:hidden">
 								<button
 									type="button"
 									onClick={() => setFiltersOpen((v) => !v)}
 									aria-expanded={filtersOpen}
 									aria-controls="assignment-filters-body"
-									className="flex items-center gap-1.5 font-medium text-fg text-sm"
+									className="flex items-center gap-1.5 font-medium text-foreground text-sm"
 								>
 									Bộ lọc
 									{activeFilterCount > 0 && (
-										<span className="rounded-full bg-fg px-1.5 font-mono text-[10px] text-bg leading-4">
+										<span className="rounded-full bg-primary px-1.5 font-mono text-[10px] text-primary-foreground leading-4">
 											{activeFilterCount}
 										</span>
 									)}
 									<ChevronDown
 										aria-hidden="true"
 										className={cn(
-											"size-4 text-meta motion-safe:transition-transform motion-safe:duration-150",
+											"size-4 text-muted-foreground motion-safe:transition-transform motion-safe:duration-150",
 											filtersOpen && "rotate-180",
 										)}
 									/>
 								</button>
-								<p aria-hidden="true" className="font-mono text-meta text-xs">
+								<p aria-hidden="true" className="text-muted-foreground text-xs">
 									{filteredPrompts.length}/{totalPrompts} đề
 								</p>
 							</div>
@@ -329,7 +331,7 @@ export function AssignmentsRoute() {
 									!filtersOpen && "hidden lg:flex",
 								)}
 							>
-								{/* In-page search input */}
+								{/* In-page search input — sunk control như Field (phase 2) */}
 								<div>
 									<input
 										type="text"
@@ -337,13 +339,13 @@ export function AssignmentsRoute() {
 										onChange={(e) => handleQueryChange(e.target.value)}
 										placeholder="Tìm đề theo tiêu đề hoặc nguồn"
 										aria-label="Tìm đề theo tiêu đề hoặc nguồn"
-										className="w-full rounded-md border border-line bg-surface px-3 py-2 text-fg text-sm placeholder:text-muted-fg focus:border-fg focus:outline-none"
+										className={inputCls}
 									/>
 								</div>
 
 								{/* Skill Filter */}
 								<div className="flex flex-col gap-1.5">
-									<span className="font-medium text-muted-fg text-xs">
+									<span className="font-medium text-muted-foreground text-xs">
 										Kỹ năng
 									</span>
 									<ChipFilter
@@ -358,7 +360,7 @@ export function AssignmentsRoute() {
 								{/* Part Filter — khi xem "Tất cả", nhóm chip theo kỹ năng
 								    thay vì một bức tường 12 phần thi trộn 4 kỹ năng */}
 								<div id="part-block" className="flex flex-col gap-1.5">
-									<span className="font-medium text-muted-fg text-xs">
+									<span className="font-medium text-muted-foreground text-xs">
 										Phần thi
 									</span>
 									<ChipFilter
@@ -386,7 +388,7 @@ export function AssignmentsRoute() {
 													key={skill.id}
 													className="flex flex-wrap items-center gap-x-3 gap-y-2"
 												>
-													<span className="shrink-0 font-mono text-[10px] text-meta uppercase tracking-[0.08em]">
+													<span className="shrink-0 text-muted-foreground text-xs">
 														{skill.name}
 													</span>
 													<ChipFilter
@@ -402,14 +404,14 @@ export function AssignmentsRoute() {
 								</div>
 
 								{/* Card Footer: Count + Clear */}
-								<div className="flex items-center justify-between border-border-soft border-t pt-3">
+								<div className="flex items-center justify-between border-border border-t pt-3">
 									<p
 										id="result-count"
 										aria-live="polite"
-										className="font-mono text-meta text-xs"
+										className="text-muted-foreground text-xs"
 									>
 										Đang hiện{" "}
-										<strong className="font-semibold text-fg">
+										<strong className="font-semibold text-foreground">
 											{filteredPrompts.length}
 										</strong>{" "}
 										/ {totalPrompts} đề
@@ -418,7 +420,7 @@ export function AssignmentsRoute() {
 										<button
 											type="button"
 											onClick={clearFilters}
-											className="font-medium text-muted-fg text-xs hover:text-fg"
+											className="font-medium text-muted-foreground text-xs transition-colors hover:text-primary"
 										>
 											Xóa bộ lọc
 										</button>
@@ -430,10 +432,10 @@ export function AssignmentsRoute() {
 						{/* Prompt List or Filter-Empty Card */}
 						{filteredPrompts.length === 0 ? (
 							<Card variant="white" className="p-10 text-center">
-								<h2 className="font-display font-semibold text-[17px] text-fg">
+								<h2 className="font-semibold text-[17px] text-foreground">
 									Không có đề khớp bộ lọc
 								</h2>
-								<p className="mt-1 text-muted-fg text-sm">
+								<p className="mt-1 text-muted-foreground text-sm">
 									Thử kỹ năng hoặc phần thi khác, hoặc xóa bộ lọc để xem toàn bộ
 									danh sách.
 								</p>
@@ -444,7 +446,7 @@ export function AssignmentsRoute() {
 								aria-label="Đề trong danh sách"
 								className="flex flex-col gap-2"
 							>
-								{filteredPrompts.map((prompt) => {
+								{filteredPrompts.map((prompt, index) => {
 									const isSelected = activePrompt?.id === prompt.id;
 									const {
 										skill: pSkill,
@@ -463,25 +465,36 @@ export function AssignmentsRoute() {
 											aria-pressed={isSelected}
 											onClick={() => setSelectedId(prompt.id)}
 											className={cn(
-												"grid min-h-[72px] w-full grid-cols-[1fr_auto] items-center gap-4 rounded-xl border p-4 text-left transition-all duration-150",
-												isSelected
-													? "border-fg bg-surface shadow-xs ring-1 ring-fg"
-													: "border-line bg-bg hover:border-fg/60 hover:bg-surface/50",
+												"group grid w-full grid-cols-[auto_1fr_auto] items-center gap-4 border-border border-t py-4 text-left transition-colors duration-150 first:border-t-0",
+												isSelected && "bg-muted",
 											)}
 										>
+											{/* Số thứ tự mono theo design (cột "#") */}
+											<span
+												aria-hidden="true"
+												className="font-mono text-[11px] text-muted-foreground tabular-nums"
+											>
+												{String(index + 1).padStart(2, "0")}
+											</span>
+
 											{/* Left: Title + meta */}
-											<div className="flex flex-col gap-1.5 overflow-hidden">
-												<h3 className="truncate font-display font-semibold text-[15px] text-fg">
+											<div className="flex min-w-0 flex-col gap-1.5">
+												<h3
+													className={cn(
+														"truncate font-semibold text-[15px] text-foreground transition-colors duration-150 group-hover:text-primary",
+														isSelected && "text-primary",
+													)}
+												>
 													{prompt.title}
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs">
 													<Tag>{t.label}</Tag>
 													{prompt.source.trim() && (
-														<span className="truncate text-meta">
+														<span className="truncate text-muted-foreground">
 															{prompt.source.trim()}
 														</span>
 													)}
-													<span className="font-mono text-[11px] text-meta">
+													<span className="text-muted-foreground text-xs">
 														Thêm {fmtDate(prompt.createdAt)}
 													</span>
 												</div>
@@ -492,7 +505,7 @@ export function AssignmentsRoute() {
 												<StatusTag tone={statusInfo.tone}>
 													{statusInfo.label}
 												</StatusTag>
-												<span className="font-mono text-meta text-xs">
+												<span className="text-muted-foreground text-xs">
 													{part.label} · Band {prompt.band}
 												</span>
 											</div>

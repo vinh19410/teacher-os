@@ -8,15 +8,11 @@ import { DataTable } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/cn";
 import {
+	formatRemainingVND,
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 } from "@/lib/format-invoice";
-import {
-	type ClassGroup,
-	fmtVND,
-	type KernelHydratedData,
-	type Student,
-} from "@/lib/mock-data";
+import type { ClassGroup, KernelHydratedData, Student } from "@/lib/mock-data";
 import type { RosterDebt } from "@/lib/tuition-from-kernel";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -30,8 +26,12 @@ export interface ClassRosterTabProps {
 }
 
 /** Ô "Học phí" của tab Học viên (#322): badge trạng thái cùng nhãn/màu với
- * /tuition, kèm số tiền còn nợ. Không entry trong map = "Chưa lập phiếu";
- * học viên được mời giữ nguyên "—". */
+ * /tuition, kèm "còn X" — số tiền chưa thu của enrollment trong lớp, đã trừ
+ * ledger partial (#320/#340, qua `formatRemainingVND` copy đơn nguồn). Ô này
+ * không có cột Số tiền riêng nên nhãn hiện cho mọi hóa đơn chưa paid, kể cả
+ * chưa thu gì. Overpay clamp (outstanding ≤ 0) chỉ hiện badge — tránh "còn
+ * 0đ". Không entry trong map = "Chưa lập phiếu"; học viên được mời giữ
+ * nguyên "—". */
 export function RosterTuitionCell({
 	debt,
 	isInvited,
@@ -40,7 +40,7 @@ export function RosterTuitionCell({
 	isInvited: boolean;
 }) {
 	if (isInvited) {
-		return <span className="font-mono text-meta text-xs">—</span>;
+		return <span className="text-muted-foreground text-xs">—</span>;
 	}
 	if (!debt) {
 		return <Badge variant="muted">Chưa lập phiếu</Badge>;
@@ -50,7 +50,7 @@ export function RosterTuitionCell({
 			{INVOICE_STATUS_LABEL[debt.status]}
 		</Badge>
 	);
-	if (debt.status === "paid") {
+	if (debt.status === "paid" || debt.outstanding <= 0) {
 		return badge;
 	}
 	return (
@@ -58,11 +58,11 @@ export function RosterTuitionCell({
 			{badge}
 			<span
 				className={cn(
-					"font-mono",
+					"tabular-nums",
 					debt.status === "overdue" && "font-semibold text-danger",
 				)}
 			>
-				{fmtVND(debt.outstanding)}
+				{formatRemainingVND(debt.outstanding)}
 			</span>
 		</span>
 	);
@@ -100,10 +100,9 @@ export function ClassRosterTab({
 				<DataTable
 					headers={[
 						"Học viên",
-						"Mục tiêu",
-						"Còn lại",
+						"Đăng ký",
+						"Band mục tiêu",
 						"Học phí",
-						"Trạng thái",
 						"Thao tác",
 					]}
 					emptyMessage="Chưa có học viên nào trong lớp."
@@ -122,32 +121,31 @@ export function ClassRosterTab({
 									<Avatar text={s.avatar} size="sm" />
 									{s.name}
 								</div>,
-								<span key="t" className="font-mono text-meta text-xs">
-									Band {s.targetBand} · {s.skills.join(", ")}
+								// #391: cột "Đăng ký" gộp trạng thái + số buổi còn lại
+								// (design: Enrollment); band/skills xem ở hồ sơ học viên.
+								<div key="e" className="flex items-center gap-2">
+									{isInvited ? (
+										<Badge variant="warn">Đã mời</Badge>
+									) : (
+										<Badge variant="success" dot>
+											Đang học
+										</Badge>
+									)}
+									<span className="text-muted-foreground text-xs tabular-nums">
+										{isInvited ? "—" : `${s.pkg.remaining}/${s.pkg.total}`}
+									</span>
+								</div>,
+								// #391: "Current band" của design không có data (Student
+								// chỉ có targetBand) → hiện band mục tiêu, không bịa band
+								// hiện tại.
+								<span key="b" className="text-sm tabular-nums">
+									Band {s.targetBand}
 								</span>,
-								isInvited ? (
-									<span key="r" className="font-mono text-meta text-xs">
-										—
-									</span>
-								) : (
-									<span key="r" className="font-mono">
-										{s.pkg.remaining}/{s.pkg.total}
-									</span>
-								),
 								<RosterTuitionCell
 									key="fee"
 									debt={rosterDebt.get(s.id)}
 									isInvited={isInvited}
 								/>,
-								isInvited ? (
-									<Badge key="b" variant="warn">
-										Đã mời
-									</Badge>
-								) : (
-									<Badge key="b" variant="success" dot>
-										Đang học
-									</Badge>
-								),
 								isInvited && en ? (
 									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
 									<div
@@ -206,12 +204,12 @@ export function ClassRosterTab({
 						: "Hủy lời mời tham gia lớp?"
 				}
 			>
-				<p className="text-muted-fg text-sm">
+				<p className="text-muted-foreground text-sm">
 					{confirmAction?.type === "activate"
 						? `Học viên "${confirmAction.studentName}" sẽ chuyển sang trạng thái Đang học và được tạo gói học cùng lịch các buổi học trong lớp.`
 						: `Học viên "${confirmAction?.studentName}" sẽ bị xóa khỏi danh sách mời của lớp này. Bạn có thể mời lại sau.`}
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

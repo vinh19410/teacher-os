@@ -5,21 +5,32 @@ import { buttonVariants } from "@teacher-os/ui/components/button";
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
-import { useEffect, useMemo, useState } from "react";
-import Loader from "@/components/loader";
-import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import {
 	isReadingSplitPane,
 	QuizReadingSplitLayout,
-} from "@/components/quiz/quiz-reading-layout";
+} from "@teacher-os/ui/components/quiz/quiz-reading-layout";
+import { useEffect, useMemo, useState } from "react";
+import Loader from "@/components/loader";
+import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import {
 	attemptDetailQueryOptions,
+	type QuizTakeSource,
 	quizDetailQueryOptions,
 	useAttemptDetail,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
+
+/** Nguồn chrome paper cho review: cặp `practice`/`testId` khi là lượt tự
+ * luyện (#378), mặc định là lượt giao bài theo `assignmentId`. */
+function attemptTakeSource(
+	attempt: Pick<QuizAttemptDetail, "assignmentId" | "practice" | "testId">,
+): QuizTakeSource {
+	return attempt.practice === true && attempt.testId
+		? { kind: "practice", testId: attempt.testId }
+		: { kind: "assignment", id: attempt.assignmentId };
+}
 
 export const Route = createFileRoute(
 	"/_auth/learn/quizzes/attempt/$attemptId/detail",
@@ -41,8 +52,9 @@ export const Route = createFileRoute(
 		// Paper chrome (passage/prompt/optionBank/type) từ prompt hiện tại;
 		// questions vẫn lấy từ snapshot của attempt — server chấm theo
 		// snapshot (RT#3) và GET quiz đã trả questions snapshot khi có attempt.
+		// Lượt tự luyện (#378) lấy chrome từ route practice qua testId.
 		await studentQueryClient.ensureQueryData(
-			quizDetailQueryOptions(attemptDetail.assignmentId),
+			quizDetailQueryOptions(attemptTakeSource(attemptDetail)),
 		);
 	},
 	component: AttemptDetailPage,
@@ -68,7 +80,7 @@ function AttemptDetailPage() {
 }
 
 function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
-	const quizQuery = useStudentQuizDetail(attempt.assignmentId);
+	const quizQuery = useStudentQuizDetail(attemptTakeSource(attempt));
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 
 	// Attempt detail đã mang type từng câu (server resolve fallback
@@ -107,6 +119,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						alts: question.alts,
 						answer: question.answer,
 						note: attempt.note,
+						// #358: giải thích riêng của câu (chỉ có sau nộp) — review
+						// item ưu tiên field này, fallback note chung của đề.
+						...(question.explanation
+							? { explanation: question.explanation }
+							: {}),
 					},
 				]),
 			),
@@ -145,8 +162,8 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	);
 
 	return (
-		<div className="flex min-h-svh flex-col bg-surface/30">
-			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-line border-b bg-bg/95 px-4 backdrop-blur">
+		<div className="flex min-h-svh flex-col bg-muted/30">
+			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-border border-b bg-background/95 px-4 backdrop-blur">
 				<div className="flex min-w-0 items-center gap-2">
 					<Link to="/" className={cn(buttonVariants({ variant: "ghost" }))}>
 						Thoát
@@ -155,11 +172,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						to="/learn/quizzes/attempt/$attemptId"
 						params={{ attemptId: attempt.id }}
 						aria-label="Quay lại trang kết quả"
-						className="rounded-md px-2 py-1 text-accent-blue text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-accent-blue"
+						className="rounded-md px-2 py-1 text-primary text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-hot"
 					>
 						← Kết quả
 					</Link>
-					<h1 className="truncate font-display font-semibold text-[15px] tracking-tight">
+					<h1 className="truncate font-semibold text-[15px] tracking-tight">
 						{attempt.title}
 					</h1>
 				</div>

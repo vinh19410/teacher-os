@@ -1,27 +1,49 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
+import { Check, CircleDashed, Clock, X } from "lucide-react";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import {
 	formatVietnamDateFromISO,
 	VI_DAY_NAMES,
 } from "@/lib/vietnam-display-date";
 
-const LESSON_STATUS: Record<string, { label: string; badgeClass: string }> = {
+const LESSON_STATUS: Record<
+	string,
+	{ label: string; variant: BadgeVariant; badgeClass: string }
+> = {
 	completed: {
 		label: "Đã học",
-		badgeClass: "border-success/20 bg-success-soft text-success",
+		variant: "outline",
+		badgeClass: "text-foreground",
 	},
 	upcoming: {
 		label: "Sắp tới",
-		badgeClass: "border-accent-blue/20 bg-accent-soft text-accent-blue",
+		variant: "secondary",
+		badgeClass: "",
 	},
 	absent: {
 		label: "Vắng",
-		badgeClass: "border-warn/20 bg-warn-soft text-warn",
+		variant: "destructive",
+		badgeClass: "",
 	},
 	cancelled: {
 		label: "Đã huỷ",
-		badgeClass: "border-line bg-surface-warm text-muted-fg",
+		variant: "outline",
+		badgeClass: "text-muted-foreground line-through",
+	},
+	// TOS-11: buổi gốc bị Lịch nghỉ chung dời — "Nghỉ lễ — Đã dời lịch".
+	holiday: {
+		label: "Nghỉ lễ — Đã dời lịch",
+		variant: "outline",
+		badgeClass: "text-amber-600 dark:text-amber-400",
+	},
+	// Buổi `upcoming` đã qua giờ kết thúc (chưa ai check-in) — suy ra ở render.
+	ended: {
+		label: "Đã kết thúc",
+		variant: "outline",
+		badgeClass: "text-muted-foreground",
 	},
 };
 
@@ -31,14 +53,32 @@ export function lessonDayLabel(lesson: StudentClassLesson): string {
 	return VI_DAY_NAMES[lesson.day % 7] ?? "";
 }
 
-/** Buổi tới = buổi `upcoming` có ngày đầu tiên từ hôm nay trở đi. Lớp legacy
- * (`date` null) không có ngày cụ thể nên không highlight. */
+/** Buổi `upcoming` đã qua thời điểm kết thúc (ngày + giờ bắt đầu + thời lượng,
+ * giờ Việt Nam UTC+7) mặc dù chưa có ai check-in. Toán học end-time dùng chung
+ * `vietnamSessionEndMs` (server `loadNextSession` #395 cùng nguồn); policy
+ * hiển thị (chỉ áp cho `upcoming`, fallback không đoán) là của client. `now`
+ * được tiêm vào để test xác định, không đọc `Date` ngầm. */
+export function isLessonEnded(lesson: StudentClassLesson, now: Date): boolean {
+	if (lesson.status !== "upcoming" || lesson.date == null) return false;
+	const end = vietnamSessionEndMs(lesson.date, lesson.time, lesson.dur);
+	if (end == null) return false;
+	return end <= now.getTime();
+}
+
+/** Buổi tới = buổi `upcoming` chưa kết thúc, có ngày đầu tiên từ hôm nay trở
+ * đi. Lớp legacy (`date` null) không có ngày cụ thể nên không highlight;
+ * buổi hôm nay đã qua giờ kết thúc cũng bị bỏ qua (#393). */
 export function findNextLessonId(
 	lessons: StudentClassLesson[],
 	todayISO: string,
+	now: Date,
 ): string | null {
 	const next = lessons.find(
-		(l) => l.status === "upcoming" && l.date != null && l.date >= todayISO,
+		(l) =>
+			l.status === "upcoming" &&
+			l.date != null &&
+			l.date >= todayISO &&
+			!isLessonEnded(l, now),
 	);
 	return next?.id ?? null;
 }
@@ -46,9 +86,11 @@ export function findNextLessonId(
 export function ClassLessonList({
 	lessons,
 	todayISO,
+	now,
 }: {
 	lessons: StudentClassLesson[];
 	todayISO: string;
+	now: Date;
 }) {
 	if (lessons.length === 0) {
 		return (
@@ -60,55 +102,107 @@ export function ClassLessonList({
 		);
 	}
 
-	const nextId = findNextLessonId(lessons, todayISO);
+	const nextId = findNextLessonId(lessons, todayISO, now);
 
 	return (
-		<ol className="space-y-2.5">
-			{lessons.map((lesson, i) => {
-				const isNext = lesson.id === nextId;
-				const status = LESSON_STATUS[lesson.status] ?? {
-					label: lesson.status,
-					badgeClass: "border-line bg-surface-warm text-muted-fg",
-				};
-				return (
-					<li
-						key={lesson.id}
-						aria-current={isNext ? "true" : undefined}
-						className={cn(
-							"flex flex-col gap-2 rounded-[var(--radius-md)] border bg-surface/30 p-4 sm:flex-row sm:items-center sm:justify-between",
-							isNext ? "border-accent-blue bg-accent-soft/40" : "border-line",
-						)}
-					>
-						<div className="min-w-0 flex-1">
-							<div className="flex flex-wrap items-baseline gap-2">
-								<span className="font-[590] text-[15px] text-fg">
-									Buổi {i + 1}
-								</span>
-								<span className="text-[13px] text-fg-2">
-									{lessonDayLabel(lesson)} · {lesson.time} · {lesson.dur} phút
-								</span>
-							</div>
-							{lesson.topic && (
-								<p className="mt-1 truncate text-[13px] text-muted-fg">
-									{lesson.topic}
-								</p>
+		<div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+			<ol className="relative">
+				{lessons.map((lesson, i) => {
+					const isNext = lesson.id === nextId;
+					const displayStatus = isLessonEnded(lesson, now)
+						? "ended"
+						: lesson.status;
+					const future =
+						nextId !== null &&
+						displayStatus === "upcoming" &&
+						!isNext &&
+						lesson.date != null &&
+						lesson.date > todayISO;
+					const status = LESSON_STATUS[displayStatus] ?? {
+						label: displayStatus,
+						variant: "outline" as const,
+						badgeClass: "text-muted-foreground",
+					};
+					const Dot =
+						displayStatus === "completed"
+							? Check
+							: displayStatus === "absent" || displayStatus === "cancelled"
+								? X
+								: displayStatus === "ended"
+									? Clock
+									: CircleDashed;
+
+					return (
+						<li
+							key={lesson.id}
+							aria-current={isNext ? "true" : undefined}
+							className={cn(
+								"relative grid grid-cols-[2rem_1fr] gap-4 pb-5 last:pb-0",
+								future && "opacity-60",
 							)}
-						</div>
-						<div className="flex items-center gap-2">
-							{isNext && (
-								<span className="rounded-full bg-accent-blue px-2.5 py-0.5 font-[590] text-[12px] text-accent-on">
-									Buổi tới
-								</span>
+						>
+							{i < lessons.length - 1 && (
+								<span
+									aria-hidden="true"
+									className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
+								/>
 							)}
 							<span
-								className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-[590] text-[12px] tracking-tight ${status.badgeClass}`}
+								aria-hidden="true"
+								className={cn(
+									"relative z-10 grid size-8 place-items-center rounded-full border",
+									displayStatus === "completed" &&
+										"border-primary bg-primary text-primary-foreground",
+									displayStatus === "absent" &&
+										"border-destructive bg-destructive text-white",
+									(displayStatus === "cancelled" ||
+										displayStatus === "ended") &&
+										"bg-muted text-muted-foreground",
+									displayStatus !== "completed" &&
+										displayStatus !== "absent" &&
+										displayStatus !== "cancelled" &&
+										displayStatus !== "ended" &&
+										"bg-background text-muted-foreground",
+									isNext && "text-foreground ring-[3px] ring-ring/30",
+								)}
 							>
-								{status.label}
+								<Dot className="size-4" />
 							</span>
-						</div>
-					</li>
-				);
-			})}
-		</ol>
+							<div
+								className={cn(
+									"flex flex-wrap items-start justify-between gap-x-4 gap-y-1 pt-1",
+									isNext && "-mt-1 rounded-lg border bg-muted/40 p-3",
+								)}
+							>
+								<div className="min-w-0">
+									<div className="text-muted-foreground text-xs tabular-nums">
+										Buổi {i + 1} · {lessonDayLabel(lesson)} · {lesson.time} ·{" "}
+										{lesson.dur} phút
+									</div>
+									{lesson.topic && (
+										<div
+											className={cn(
+												"font-medium",
+												lesson.status === "cancelled" &&
+													"text-muted-foreground line-through",
+											)}
+										>
+											{lesson.topic}
+										</div>
+									)}
+								</div>
+								{isNext ? (
+									<Badge variant="default">Buổi tới</Badge>
+								) : (
+									<Badge variant={status.variant} className={status.badgeClass}>
+										{status.label}
+									</Badge>
+								)}
+							</div>
+						</li>
+					);
+				})}
+			</ol>
+		</div>
 	);
 }

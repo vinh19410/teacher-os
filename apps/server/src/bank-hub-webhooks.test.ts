@@ -48,6 +48,9 @@ function fakeHub(): BankHubContext {
 		getBankAccount: async (xid) => account(xid),
 		listBankAccounts: async () => [account("ba-1")],
 		listTransactions: async () => ({ data: [] }),
+		createMockTransaction: async () => {
+			throw new Error("not used");
+		},
 	};
 	return {
 		client,

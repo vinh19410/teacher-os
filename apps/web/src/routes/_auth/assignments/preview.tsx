@@ -85,10 +85,8 @@ export function PreviewAssignmentRoute() {
 					lead="Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
 				/>
 				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
-					<h2 className="font-display font-semibold text-lg">
-						Không tìm thấy đề này.
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<h2 className="font-semibold text-lg">Không tìm thấy đề này.</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Đề có thể đã bị xóa khỏi ngân hàng. Quay lại danh sách để chọn đề
 						khác.
 					</p>
@@ -113,10 +111,10 @@ export function PreviewAssignmentRoute() {
 					lead="Trang này mô phỏng đề bài đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
 				/>
 				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
-					<h2 className="font-display font-semibold text-lg">
+					<h2 className="font-semibold text-lg">
 						Chưa có bản nháp nào để xem trước.
 					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Soạn đề ở trang tạo bài tập rồi bấm Xem trước.
 					</p>
 					<div className="mt-6 flex justify-center">
@@ -136,11 +134,11 @@ export function PreviewAssignmentRoute() {
 		<div className="max-w-3xl">
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 text-muted-foreground text-xs"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 				>
 					Bài tập
 				</Link>
@@ -150,7 +148,7 @@ export function PreviewAssignmentRoute() {
 						<button
 							type="button"
 							onClick={() => navigate({ to: "/assignments/new" })}
-							className="underline-offset-[3px] hover:text-fg hover:underline"
+							className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 						>
 							Tạo mới
 						</button>
@@ -229,8 +227,8 @@ export function PreviewAssignmentRoute() {
 				)}
 
 				{!sim && (
-					<Card variant="white" className="flex flex-col gap-3">
-						<h2 className="font-display font-semibold text-[17px]">
+					<Card className="flex flex-col gap-3">
+						<h2 className="font-extrabold text-[17px] tracking-[-0.03em]">
 							Bài làm của học viên (mô phỏng)
 						</h2>
 						<Textarea
@@ -240,10 +238,10 @@ export function PreviewAssignmentRoute() {
 							placeholder="Học viên sẽ viết bài ở đây…"
 						/>
 						<div className="flex items-center justify-between">
-							<span className="font-mono text-meta text-xs">
+							<span className="text-muted-foreground text-xs">
 								Bản xem trước — bài làm không được lưu.
 							</span>
-							<span className="font-mono text-meta text-xs">
+							<span className="text-muted-foreground text-xs">
 								{wordCount(answer)} từ
 							</span>
 						</div>

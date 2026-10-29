@@ -10,20 +10,22 @@ import {
 	type GradableSkill,
 	ieltsOverallBand,
 } from "@teacher-os/api/lib/ielts-band";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fmtWhen } from "@/components/assignments/assignment-status";
+import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
-import { Field, Select, Textarea } from "@/components/ui/field";
-
-/** 19 mức điểm IELTS 0–9 bước 0.5, value là String(n), nhãn `formatBand`. */
-const BAND_OPTIONS = Array.from({ length: 19 }, (_, i) => i / 2);
+import { Field, Textarea } from "@/components/ui/field";
 
 /**
- * Form chấm 4 tiêu chí IELTS (#319). Band tổng tự tính từ scores đã chọn
- * (`ieltsOverallBand`) và chỉ hiện khi đủ 4 tiêu chí; nút Lưu disable tới
- * khi đủ. `key` theo `gradedAt` ở caller để sau khi lưu form remount với
- * giá trị server mới.
+ * Form chấm 4 tiêu chí IELTS (#319) bằng BandSlider (#331). Mỗi tiêu chí là
+ * `number | null` — `null` nghĩa là chưa chọn, nút Lưu chỉ mở khi đủ 4.
+ * Band tổng tự tính từ scores đã chọn (`ieltsOverallBand`) và chỉ hiện khi
+ * đủ. `key` theo `gradedAt` ở caller để sau khi lưu form remount với giá
+ * trị server mới.
  */
+export const PUBLISH_GRADE_FORBIDDEN_TOOLTIP =
+	"Chỉ Giáo viên đứng lớp được chốt trả bài";
+
 export function GradeForm({
 	skill,
 	part,
@@ -32,6 +34,12 @@ export function GradeForm({
 	error,
 	savedAt,
 	onSave,
+	onOverallChange,
+	draftMode,
+	savingDraft,
+	draftError,
+	onSaveDraft,
+	canPublish = true,
 }: {
 	skill: GradableSkill;
 	part: string;
@@ -40,27 +48,43 @@ export function GradeForm({
 	error: string | null;
 	savedAt: string | null;
 	onSave(input: QuizGradeInput): void;
+	/** Band tổng sống đẩy lên PageHead của route — form chỉ tính, không
+	 * tự render con số lớn (design `Grading`). */
+	onOverallChange?(band: string): void;
+	/** TOS-30: bài có draft AI → nút chính "Chốt trả bài", thêm nút phụ
+	 * "Lưu bản nháp" (cùng scores/feedback hiện tại). */
+	draftMode?: boolean;
+	savingDraft?: boolean;
+	draftError?: string | null;
+	onSaveDraft?(input: QuizGradeInput): void;
+	/** TOS-33 D1: `canPublishGrade(role)` — `ta` chỉ được Lưu bản nháp,
+	 * nút Chốt trả bài bị khóa kèm tooltip. */
+	canPublish?: boolean;
 }) {
 	const keys = criteriaForSkill(skill);
-	const [scores, setScores] = useState<Record<string, string>>(() =>
-		Object.fromEntries(
-			keys.map((key) => [key, String(initial?.scores[key] ?? "")]),
-		),
+	const [scores, setScores] = useState<Record<string, number | null>>(() =>
+		Object.fromEntries(keys.map((key) => [key, initial?.scores[key] ?? null])),
 	);
 	const [feedback, setFeedback] = useState(initial?.feedback ?? "");
 
-	const complete = keys.every((key) => scores[key] !== "");
-	const values = keys.map((key) => Number(scores[key]));
+	const complete = keys.every((key) => scores[key] !== null);
+	const values = complete ? keys.map((key) => scores[key] as number) : [];
+	const overallText = complete ? formatBand(ieltsOverallBand(values)) : "—";
+
+	// Band tổng sống lên PageHead qua callback — route là nơi render con số.
+	useEffect(() => {
+		onOverallChange?.(overallText);
+	}, [onOverallChange, overallText]);
 
 	return (
 		<form
 			className="flex flex-col gap-4"
 			onSubmit={(event) => {
 				event.preventDefault();
-				if (!complete || saving) return;
+				if (!complete || saving || !canPublish) return;
 				onSave({
 					scores: Object.fromEntries(
-						keys.map((key) => [key, Number(scores[key])]),
+						keys.map((key) => [key, scores[key] as number]),
 					),
 					feedback,
 				});
@@ -68,33 +92,13 @@ export function GradeForm({
 		>
 			{keys.map((key) => (
 				<Field key={key} label={criterionLabel(skill, key, part)}>
-					<Select
+					<BandSlider
 						id={`grade-${key}`}
 						value={scores[key]}
-						onChange={(event) =>
-							setScores((prev) => ({ ...prev, [key]: event.target.value }))
-						}
-					>
-						<option value="">—</option>
-						{BAND_OPTIONS.map((band) => (
-							<option key={band} value={String(band)}>
-								{formatBand(band)}
-							</option>
-						))}
-					</Select>
+						onChange={(band) => setScores((prev) => ({ ...prev, [key]: band }))}
+					/>
 				</Field>
 			))}
-
-			<p className="text-fg text-sm">
-				Band tổng{" "}
-				<span
-					data-testid="grade-overall-band"
-					aria-live="polite"
-					className="font-semibold"
-				>
-					{complete ? formatBand(ieltsOverallBand(values)) : "—"}
-				</span>
-			</p>
 
 			<Field label="Nhận xét cho học viên">
 				<Textarea
@@ -105,13 +109,18 @@ export function GradeForm({
 					onChange={(event) => setFeedback(event.target.value)}
 				/>
 			</Field>
-			<p className="text-meta text-xs">
+			<p className="text-muted-foreground text-xs">
 				{feedback.length}/{QUIZ_FEEDBACK_MAX}
 			</p>
 
 			{error !== null && (
-				<p role="alert" className="text-danger text-sm">
+				<p role="alert" className="text-destructive text-sm">
 					{error}
+				</p>
+			)}
+			{draftError != null && (
+				<p role="alert" className="text-destructive text-sm">
+					{draftError}
 				</p>
 			)}
 			{savedAt !== null && (
@@ -120,9 +129,45 @@ export function GradeForm({
 				</p>
 			)}
 
-			<Button type="submit" disabled={!complete || saving}>
-				{saving ? "Đang lưu…" : "Lưu điểm"}
-			</Button>
+			<div className="flex flex-col gap-2">
+				{draftMode && (
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full"
+						disabled={!complete || savingDraft || saving}
+						data-testid="save-draft"
+						onClick={() => {
+							if (!complete || savingDraft || saving) return;
+							onSaveDraft?.({
+								scores: Object.fromEntries(
+									keys.map((key) => [key, scores[key] as number]),
+								),
+								feedback,
+							});
+						}}
+					>
+						{savingDraft ? "Đang lưu bản nháp…" : "Lưu bản nháp"}
+					</Button>
+				)}
+				<Button
+					type="submit"
+					className="w-full"
+					data-testid="publish-grade"
+					disabled={!complete || saving || !canPublish}
+					title={!canPublish ? PUBLISH_GRADE_FORBIDDEN_TOOLTIP : undefined}
+				>
+					{saving ? "Đang lưu…" : draftMode ? "Chốt trả bài" : "Lưu điểm"}
+				</Button>
+				{!canPublish && (
+					<p
+						data-testid="publish-forbidden-hint"
+						className="text-center text-muted-foreground text-xs"
+					>
+						{PUBLISH_GRADE_FORBIDDEN_TOOLTIP}
+					</p>
+				)}
+			</div>
 		</form>
 	);
 }

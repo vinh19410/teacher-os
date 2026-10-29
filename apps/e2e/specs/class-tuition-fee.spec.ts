@@ -31,10 +31,14 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(addDialog).toBeHidden();
 
 		// Go into class detail
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
+
+		// #391: học phí + nút Sửa sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 
 		// Verify fee displayed
 		await expect(
@@ -91,10 +95,14 @@ test.describe("class tuition fee (issue #227)", () => {
 		await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
 		await expect(dialog).toBeHidden();
 
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
+
+		// #391: học phí sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 
 		await expect(page.getByText("Học phí: —")).toBeVisible();
 	});
@@ -150,12 +158,15 @@ test.describe("class tuition fee (issue #227)", () => {
 		await expect(addDialog).toBeHidden();
 
 		// Go into class detail
-		const classRow = page.locator("tbody").getByText(CLASS_NAME);
+		// Redesign #349: card grid class title.
+		const classRow = page.locator("h3", { hasText: CLASS_NAME });
 		await expect(classRow).toBeVisible();
 		await classRow.click();
 		await expect(page).toHaveURL(/\/classes\/.+/);
 
 		// Test in EditClassFeeModal
+		// #391: nút Sửa học phí sống ở tab "Học viên".
+		await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 		await page.getByRole("button", { name: "Sửa", exact: true }).click();
 		const editDialog = page.getByRole("dialog");
 		await expect(editDialog.getByText("Sửa học phí lớp")).toBeVisible();

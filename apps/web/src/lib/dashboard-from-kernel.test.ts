@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	atRiskRows,
+	formatClassSessionMeta,
 	formatDashboardGreeting,
 	formatDashboardLead,
 	groupLessonsByClassSession,
@@ -53,6 +54,8 @@ function lesson(
 		date: null,
 		type: "1:1",
 		status: "upcoming",
+		attendance: null,
+		attendanceNote: null,
 		topic: "T",
 		zoom: "",
 		...partial,
@@ -91,6 +94,13 @@ describe("lessonsToday", () => {
 			status: "cancelled",
 		}),
 		lesson({
+			id: "holiday",
+			sid: "s2",
+			day: 3,
+			time: "12:00",
+			status: "holiday",
+		}),
+		lesson({
 			id: "absent",
 			sid: "s2",
 			day: 3,
@@ -100,7 +110,7 @@ describe("lessonsToday", () => {
 		lesson({ id: "tue", sid: "s1", day: 2, time: "09:00", status: "upcoming" }),
 	];
 
-	test("keeps same weekday except cancelled, sorted by time", () => {
+	test("keeps same weekday except cancelled/holiday, sorted by time", () => {
 		expect(lessonsToday(rows, wednesday).map((l) => l.id)).toEqual([
 			"early",
 			"absent",
@@ -291,10 +301,18 @@ describe("atRiskRows", () => {
 		).toEqual([]);
 	});
 
-	test("absent is a risk reason", () => {
+	test("absent dated within 14 days is a risk reason", () => {
 		const rows = atRiskRows(
 			students,
-			[lesson({ id: "a", sid: "s2", day: 5, status: "absent" })],
+			[
+				lesson({
+					id: "a",
+					sid: "s2",
+					day: 5,
+					status: "absent",
+					date: "2026-08-18",
+				}),
+			],
 			wednesday,
 		);
 		expect(rows).toEqual([{ student: s2, reasons: ["absent"] }]);
@@ -321,12 +339,107 @@ describe("atRiskRows", () => {
 
 	test("Sunday treats Mon–Sat upcoming as missed; merges reasons without duplicate students", () => {
 		const lessons: Lesson[] = [
-			lesson({ id: "a", sid: "s2", day: 2, status: "absent" }),
+			lesson({
+				id: "a",
+				sid: "s2",
+				day: 2,
+				status: "absent",
+				date: "2026-08-18",
+			}),
 			lesson({ id: "m", sid: "s2", day: 4, status: "upcoming" }),
 		];
 		expect(atRiskRows(students, lessons, sunday)).toEqual([
 			{ student: s2, reasons: ["absent", "missed-check-in"] },
 		]);
+	});
+
+	test("TOS-7: completed + unexcused in window is absent risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "u",
+					sid: "s3",
+					day: 3,
+					status: "completed",
+					attendance: "unexcused",
+					date: "2026-08-19",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
+	});
+
+	test("TOS-7: excused is a legitimate absence, never a risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "e",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					attendance: "excused",
+					date: "2026-08-19",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
+	});
+
+	test("TOS-7: absent + attendance null in window (legacy 1-click rows) stays a risk", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "n",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					date: "2026-08-10",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
+	});
+
+	test("TOS-7: absences older than 14 days no longer alert", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({
+					id: "old",
+					sid: "s3",
+					day: 3,
+					status: "absent",
+					attendance: "unexcused",
+					date: "2026-07-01",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
+	});
+
+	test("TOS-7: legacy undated rows have no absent write path, no absent reason", () => {
+		const rows = atRiskRows(
+			students,
+			[
+				lesson({ id: "legacy", sid: "s3", day: 3, status: "absent" }),
+				lesson({
+					id: "legacy-unexcused",
+					sid: "s3",
+					day: 4,
+					status: "completed",
+					attendance: "unexcused",
+				}),
+			],
+			wednesday,
+		);
+		expect(rows).toEqual([]);
 	});
 });
 
@@ -451,6 +564,22 @@ describe("upcomingLessonsThisWeek (issue #212)", () => {
 		expect(result.map((l) => l.id)).toEqual(["fri"]);
 	});
 
+	test("TOS-11: drops holiday lessons như cancelled", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "thu-holiday",
+				sid: "s1",
+				day: 4,
+				time: "08:00",
+				date: null,
+				status: "holiday",
+			}),
+			lesson({ id: "fri", sid: "s1", day: 5, time: "08:00", date: null }),
+		];
+		const result = upcomingLessonsThisWeek(lessons, wednesday);
+		expect(result.map((l) => l.id)).toEqual(["fri"]);
+	});
+
 	test("dated rows: keeps only dates in the remaining part of this week", () => {
 		const lessons: Lesson[] = [
 			lesson({
@@ -551,5 +680,28 @@ describe("upcomingLessonsThisWeek (issue #212)", () => {
 		expect(
 			upcomingLessonsThisWeek(lessons, wednesday).map((l) => l.id),
 		).toEqual(["thu-legacy-0900", "thu-dated-1900", "fri-legacy-2000"]);
+	});
+});
+
+describe("formatClassSessionMeta (issue #373)", () => {
+	const session = {
+		classId: "cl-1",
+		time: "19:00",
+		dur: 90,
+		type: "1:1" as const,
+		lessons: [],
+	};
+
+	test("joins duration, type and topic when all present", () => {
+		expect(formatClassSessionMeta({ ...session, topic: "Line chart" })).toBe(
+			"90' · 1:1 · Line chart",
+		);
+	});
+
+	test("drops missing or whitespace-only topic — no trailing separator", () => {
+		expect(formatClassSessionMeta({ ...session, topic: "" })).toBe("90' · 1:1");
+		expect(formatClassSessionMeta({ ...session, topic: "   " })).toBe(
+			"90' · 1:1",
+		);
 	});
 });

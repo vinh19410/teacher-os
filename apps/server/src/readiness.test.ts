@@ -15,8 +15,10 @@ import { organization } from "@teacher-os/db/schema/organization";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
+import { SQLiteSyncDialect } from "drizzle-orm/sqlite-core";
 import { describe, expect, test } from "vitest";
 import { type AppDeps, buildApp, type Db } from "./app";
+import { PROBE_QUERY } from "./routes/readiness";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const MIGRATIONS_DIR = new URL(
@@ -73,6 +75,23 @@ describe("/readyz", () => {
 		expect(t.getSessionUserCalls()).toBe(0);
 	});
 
+	test("probe query stays within Cloudflare D1's 100 bound-parameter limit", () => {
+		// libsql in-memory has no such cap, so the healthy-DB test above passed
+		// while D1 rejected the ~132-parameter probe and staging /readyz
+		// answered 503. Guard the compiled statement directly.
+		// https://developers.cloudflare.com/d1/platform/limits/
+		const { sql: text, params } = new SQLiteSyncDialect().sqlToQuery(
+			PROBE_QUERY,
+		);
+		expect(params.length).toBeLessThanOrEqual(100);
+		// The whole name list rides in one JSON parameter, so the contract
+		// still covers every table and index (incl. 0006's unique index).
+		expect(text).toContain("json_each(?)");
+		const names = JSON.parse(String(params[0])) as string[];
+		expect(names).toContain("lesson");
+		expect(names).toContain("comment_bank_org_operation_uidx");
+	});
+
 	test("GET / stays a plain liveness probe", async () => {
 		const t = await createReadinessApp();
 		const res = await t.app.request("/", { headers: { origin: CORS_ORIGIN } });
@@ -93,6 +112,18 @@ describe("/readyz", () => {
 		// report 200 on a database stuck before it.
 		const t = await createReadinessApp();
 		await t.db.run(sql`DROP INDEX comment_bank_org_operation_uidx`);
+		const res = await callReadyz(t.app);
+		expect(res.status).toBe(503);
+		expect(await res.text()).toBe('{"ok":false}');
+	});
+
+	test("columns added by a later migration absent (DB stuck before 0045) is not ready", async () => {
+		// TOS-7 #440 — 0045 chỉ ADD COLUMN nên probe tables+indexes không
+		// thấy khác biệt: code mới + DB cũ phải 503 ở readyz thay vì 500
+		// "no such column" giữa giờ điểm danh.
+		const t = await createReadinessApp();
+		await t.db.run(sql`ALTER TABLE lesson DROP COLUMN attendance`);
+		await t.db.run(sql`ALTER TABLE lesson DROP COLUMN attendance_note`);
 		const res = await callReadyz(t.app);
 		expect(res.status).toBe(503);
 		expect(await res.text()).toBe('{"ok":false}');

@@ -7,7 +7,14 @@ import {
 	deriveAssignmentStatus,
 } from "@/lib/assignment-status";
 
-type FilterTab = "all" | "due-soon" | "overdue" | "submitted";
+export type FilterTab = "all" | "due-soon" | "overdue" | "submitted";
+
+export const ASSIGNMENT_FILTER_TABS: readonly FilterTab[] = [
+	"all",
+	"due-soon",
+	"overdue",
+	"submitted",
+];
 
 const TABS: Array<{ id: FilterTab; label: string }> = [
 	{ id: "all", label: "Tất cả" },
@@ -19,12 +26,20 @@ const TABS: Array<{ id: FilterTab; label: string }> = [
 export function AssignmentList({
 	assignments,
 	showClassName = true,
+	activeTab: controlledTab,
+	onTabChange,
+	hideHeading = false,
+	className = "mt-10",
 }: {
 	assignments: StudentAssignment[];
 	showClassName?: boolean;
+	activeTab?: FilterTab;
+	onTabChange?: (tab: FilterTab) => void;
+	hideHeading?: boolean;
+	className?: string;
 }) {
-	const [activeTab, setActiveTab] = useState<FilterTab>("all");
-
+	const [internalTab, setInternalTab] = useState<FilterTab>("all");
+	const activeTab = controlledTab ?? internalTab;
 	const categorized = useMemo(() => {
 		const listWithStatus = assignments.map((a) => ({
 			assignment: a,
@@ -69,17 +84,20 @@ export function AssignmentList({
 	}, [activeTab, categorized.list]);
 
 	return (
-		<section className="mt-10">
+		<section className={className}>
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h2 className="font-[620] font-display text-[20px] text-fg tracking-tight">
-					Bài tập
-				</h2>
+				{!hideHeading && (
+					<h2 className="font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
+						Bài tập
+					</h2>
+				)}
 
-				{/* Filter Tabs */}
+				{/* Filter Tabs — segmented theo design Tabs: nền sunk, tab chọn
+				 * = raise + chữ cam. */}
 				<div
 					role="tablist"
 					aria-label="Lọc bài tập theo trạng thái"
-					className="flex flex-wrap items-center gap-1 rounded-[var(--radius-pill)] bg-surface p-1 text-[13px]"
+					className="inline-flex flex-wrap items-center gap-1 rounded-lg rounded-md bg-muted p-1.5 text-[13px]"
 				>
 					{TABS.map((tab) => {
 						const isSelected = activeTab === tab.id;
@@ -91,19 +109,21 @@ export function AssignmentList({
 								type="button"
 								role="tab"
 								aria-selected={isSelected}
-								onClick={() => setActiveTab(tab.id)}
-								className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 font-[510] transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
+								onClick={() => {
+									setInternalTab(tab.id);
+									onTabChange?.(tab.id);
+								}}
+								className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
 									isSelected
-										? "bg-bg font-[590] text-fg shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-										: "text-muted-fg hover:text-fg"
+										? "rounded-md border border-input bg-transparent font-medium text-primary"
+										: "text-muted-foreground hover:text-foreground"
 								}`}
 							>
 								<span>{tab.label}</span>
 								<span
-									className={`rounded-full px-1.5 py-0.2 text-[11px] ${
-										isSelected
-											? "bg-surface text-fg"
-											: "bg-surface-warm text-muted-fg"
+									aria-hidden="true"
+									className={`rounded-full px-1.5 py-0.2 font-mono text-[11px] ${
+										isSelected ? "text-primary" : "text-muted-foreground"
 									}`}
 								>
 									{count}

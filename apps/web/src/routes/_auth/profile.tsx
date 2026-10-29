@@ -8,6 +8,7 @@ import {
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { BankLinkPanel } from "@/components/payments/bank-link-panel";
 import {
 	AvatarSection,
 	type ProfileUser,
@@ -64,12 +65,17 @@ function ProfileRoute() {
 		<div>
 			<PageHead
 				title="Hồ sơ"
-				lead="Tên hiển thị, ảnh đại diện và liên kết Google."
+				lead="Tên hiển thị, ảnh đại diện, liên kết Google và tài khoản ngân hàng nhận học phí qua mã QR tự đối soát."
 			/>
-			<div className="flex flex-col gap-5">
-				<ProfileForm user={user} />
-				<AvatarSection user={user} />
-				<GoogleLinkCard />
+			<div className="grid gap-5 max-lg:flex max-lg:flex-col lg:grid-cols-[1.4fr_1fr]">
+				<div className="flex flex-col gap-5">
+					<ProfileForm user={user} />
+					<AvatarSection user={user} />
+					<GoogleLinkCard />
+				</div>
+				<div className="self-start">
+					<BankLinkPanel />
+				</div>
 			</div>
 		</div>
 	);

@@ -1,138 +1,200 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CalendarPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ClassSessionModal,
 	type ClassSessionModalRef,
 } from "@/components/schedule/class-session-modal";
+import { HolidayModal } from "@/components/schedule/holiday-modal";
+import { OrgEventModal } from "@/components/schedule/org-event-modal";
+import { ScheduleDayView } from "@/components/schedule/schedule-day-view";
+import { ScheduleMonthView } from "@/components/schedule/schedule-month-view";
+import { ScheduleWeekView } from "@/components/schedule/schedule-week-view";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageHead } from "@/components/ui/page-head";
+import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
-import type { LessonType } from "@/lib/mock-data";
-import { dayNames } from "@/lib/mock-data";
+
 import {
-	distinctStudentsBySid,
-	resolveWeekColumnEntries,
-	selectProjectedWeekBlocks,
-	selectWeekColumnSessions,
-	weekSlotCount,
-} from "@/lib/schedule-week";
+	parseScheduleSearch,
+	type ScheduleView,
+	shiftAnchor,
+} from "@/lib/schedule-view";
+import { buildWeekModel } from "@/lib/schedule-week";
 import {
-	addWeeks,
-	formatDayMonth,
+	formatDayLabel,
+	formatMonthLabel,
 	formatWeekRange,
-	parseWeekParam,
 	resolveWeek,
+	startOfWeekMonday,
 	todayISOVietnam,
 } from "@/lib/week-grid";
 
 export const Route = createFileRoute("/_auth/schedule")({
-	// Raw passthrough like the login route: the component parses via
-	// parseWeekParam (null → current week) and cleans a garbage param off
-	// the URL, so validateSearch itself never throws or redirects.
-	validateSearch: (search: Record<string, unknown>): { week?: string } => ({
+	// Raw passthrough: the component parses via parseScheduleSearch (TOS-14
+	// D1 — ?view=&date=, legacy ?week= still readable) and cleans garbage
+	// params off the URL, so validateSearch itself never throws or redirects.
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { view?: string; date?: string; week?: string } => ({
+		view: typeof search.view === "string" ? search.view : undefined,
+		date: typeof search.date === "string" ? search.date : undefined,
 		week: typeof search.week === "string" ? search.week : undefined,
 	}),
 	component: ScheduleRoute,
 });
 
-const typeBlockClass: Record<LessonType, string> = {
-	"1:1": "border-l-accent-blue bg-accent-soft",
-	"1:2": "border-l-success bg-success-soft",
-	trial: "border-l-warn bg-warn-soft",
-	mock: "border-l-fg bg-fg-soft",
-	review: "border-l-meta bg-line-soft",
+const VIEW_LABELS: Record<ScheduleView, string> = {
+	month: "Tháng",
+	week: "Tuần",
+	day: "Ngày",
 };
 
+const VIEW_ORDER: ScheduleView[] = ["month", "week", "day"];
+
 export function ScheduleRoute() {
-	const { data, classById } = useData();
-	const { week: weekParam } = Route.useSearch();
+	const { data, refresh } = useData();
+	const search = Route.useSearch();
 	const navigate = useNavigate();
-	const { weekStart, dates, isCurrentWeek } = resolveWeek(weekParam);
+	const { view, date, scrub } = parseScheduleSearch(search);
 	const todayIso = todayISOVietnam();
 	const [openSession, setOpenSession] = useState<ClassSessionModalRef | null>(
 		null,
 	);
+	const [holidayModalOpen, setHolidayModalOpen] = useState(false);
+	const [eventModalOpen, setEventModalOpen] = useState(false);
 
-	// A garbage ?week renders the current week already (resolveWeek falls
-	// back); this scrub replaces the bad param so the URL matches the view
-	// and reloads stay deterministic. `replace` avoids a history entry.
+	// A garbage ?view/?date (or a legacy ?week link) scrubs the URL to the
+	// canonical ?view=&date= form so reloads stay deterministic. `replace`
+	// avoids a history entry; a clean default load rewrites nothing.
 	useEffect(() => {
-		if (weekParam !== undefined && parseWeekParam(weekParam) === null) {
-			void navigate({ to: "/schedule", search: {}, replace: true });
-		}
-	}, [weekParam, navigate]);
+		if (!scrub) return;
+		navigate({
+			to: "/schedule",
+			search: { view, date },
+			replace: true,
+		});
+	}, [scrub, view, date, navigate]);
 
-	// Date-accurate week selection (issue #121, #162): weekly sessions are
-	// grouped by class (a single block represents one physical session).
-	// Dated rows render only in the week containing their occurrence date;
-	// undated legacy rows keep the weekday-template behavior; classes with
-	// zero lesson rows contribute display-only projected blocks.
-	const columns = dayNames.map((_, i) =>
-		resolveWeekColumnEntries(
-			selectWeekColumnSessions(data.lessons, i + 1, dates),
-			data.classes,
-			data.lessons,
-			dates[i],
-		),
+	const week = useMemo(
+		() => resolveWeek(view === "week" ? date : undefined),
+		[view, date],
 	);
-	const projected = selectProjectedWeekBlocks(
-		data.classes,
-		data.lessons,
-		dates,
+	const weekModel = useMemo(
+		() => (view === "week" ? buildWeekModel(data, week.dates) : null),
+		[view, data, week.dates],
 	);
-	const slotCount = weekSlotCount(columns, projected);
+
+	const go = (nextView: ScheduleView, nextDate: string) => {
+		navigate({ to: "/schedule", search: { view: nextView, date: nextDate } });
+	};
+	const normalizeWeekMonday = (iso: string) => {
+		const mon = startOfWeekMonday(iso);
+		return mon < "1970-01-01" ? "1970-01-01" : mon;
+	};
+	const step = (delta: number) => {
+		const next = shiftAnchor(view, date, delta);
+		// Week anchor luôn chuẩn về thứ Hai trong URL (như link ?week= cũ).
+		go(view, view === "week" ? normalizeWeekMonday(next) : next);
+	};
+	const atEarliest = shiftAnchor(view, date, -1) === date;
+	const atLatest = shiftAnchor(view, date, 1) === date;
+	const isCurrent =
+		view === "week"
+			? week.isCurrentWeek
+			: view === "month"
+				? date.slice(0, 7) === todayIso.slice(0, 7)
+				: date === todayIso;
+	const kicker =
+		view === "month"
+			? formatMonthLabel(date)
+			: view === "day"
+				? formatDayLabel(date)
+				: `Tuần ${formatWeekRange(week.weekStart)} · ${weekModel?.slotCount ?? 0} buổi`;
+
+	const onSwitchView = (next: ScheduleView) => {
+		if (next === view) return;
+		if (next === "week") {
+			// Nhảy tuần chứa ngày đang xem, giữ ngữ cảnh thời gian.
+			go("week", normalizeWeekMonday(date));
+			return;
+		}
+		go(next, date);
+	};
 
 	return (
 		<div>
 			<PageHead
+				kicker={kicker}
 				title="Lịch dạy"
-				lead={`Tuần ${formatWeekRange(weekStart)} · ${slotCount} buổi`}
+				action={
+					<div className="flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 sm:max-w-none">
+						<div data-testid="schedule-view-switch">
+							{/* Segmented control dùng chung (design `Tabs`) — pattern
+						    tablist/tab của repo, thay cho radiogroup tự chế. */}
+							<Tabs
+								tabs={VIEW_ORDER.map((v) => ({ id: v, label: VIEW_LABELS[v] }))}
+								active={view}
+								onChange={(v) => onSwitchView(v as ScheduleView)}
+								className="mb-0"
+							/>
+						</div>
+						<Button
+							variant="outline"
+							onClick={() => setEventModalOpen(true)}
+							data-testid="schedule-add-event"
+						>
+							<CalendarPlus aria-hidden className="size-4" />
+							Sự kiện
+						</Button>
+						<Button
+							data-testid="holiday-open"
+							onClick={() => setHolidayModalOpen(true)}
+						>
+							+ Tạo lịch nghỉ
+						</Button>
+					</div>
+				}
 			/>
 			<div className="mb-4 flex items-center justify-between gap-2">
-				<Link
-					to="/schedule"
-					search={{ week: addWeeks(weekStart, -1) }}
-					className="font-mono text-meta text-muted-fg text-xs hover:text-fg"
+				<Button
+					variant="outline"
+					onClick={() => step(-1)}
+					disabled={atEarliest}
 				>
-					← Tuần trước
-				</Link>
-				<Link
-					to="/schedule"
-					// Function form guarantees the param is dropped, not merged.
-					search={() => ({})}
-					aria-disabled={isCurrentWeek}
-					tabIndex={isCurrentWeek ? -1 : 0}
-					onClick={(e) => {
-						// aria-disabled alone does not stop keyboard activation.
-						if (isCurrentWeek) e.preventDefault();
-					}}
-					className={`font-mono text-meta text-xs ${
-						isCurrentWeek
-							? "pointer-events-none text-fg-2"
-							: "text-muted-fg hover:text-fg"
-					}`}
+					←{" "}
+					{view === "month"
+						? "Tháng trước"
+						: view === "day"
+							? "Ngày trước"
+							: "Tuần trước"}
+				</Button>
+				<Button
+					variant="ghost"
+					onClick={() => go(view, todayIso)}
+					disabled={isCurrent}
+					className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
 				>
-					Tuần này
-				</Link>
-				<Link
-					to="/schedule"
-					search={{ week: addWeeks(weekStart, 1) }}
-					className="font-mono text-meta text-muted-fg text-xs hover:text-fg"
-				>
-					Tuần sau →
-				</Link>
+					Hôm nay
+				</Button>
+				<Button variant="outline" onClick={() => step(1)} disabled={atLatest}>
+					{view === "month"
+						? "Tháng sau"
+						: view === "day"
+							? "Ngày sau"
+							: "Tuần sau"}{" "}
+					→
+				</Button>
 			</div>
-			{data.classes.length === 0 ? (
+			{data.classes.length === 0 && data.events.length === 0 ? (
 				<Card
 					variant="white"
 					className="p-8 text-center"
 					data-testid="schedule-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
-						Chưa có lịch dạy nào
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<h2 className="font-semibold text-lg">Chưa có lịch dạy nào</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Lịch dạy được tự động sắp xếp dựa trên các lớp học đang hoạt động.
 						Hãy tạo lớp học để bắt đầu theo dõi lịch dạy.
 					</p>
@@ -142,174 +204,49 @@ export function ScheduleRoute() {
 						</Button>
 					</div>
 				</Card>
+			) : view === "month" ? (
+				<ScheduleMonthView
+					data={data}
+					anchor={date}
+					onOpenDay={(d) => go("day", d)}
+				/>
+			) : view === "day" ? (
+				<ScheduleDayView
+					data={data}
+					dateISO={date}
+					onOpenSession={setOpenSession}
+				/>
 			) : (
-				<>
-					{slotCount === 0 && (
-						<div className="mb-4 rounded-md border border-line-soft bg-surface px-4 py-3 text-center text-muted-fg text-sm">
-							Không có buổi học nào trong tuần này.
-						</div>
-					)}
-					<div className="week-cal grid grid-cols-7 gap-2 max-app:grid-cols-1 max-app:gap-3">
-						{dayNames.map((dn, i) => {
-							const sessions = columns[i];
-							// Real sessions and projected blocks interleave chronologically;
-							// projected entries render as non-interactive divs — never a
-							// button, never a ClassSessionModal write target (AC3).
-							const blocks = projected
-								.filter((b) => b.day === i + 1)
-								.map((b) => ({
-									key: `proj:${b.classId}:${b.dateISO}`,
-									time: b.time,
-									block: b,
-								}));
-							const entries = [
-								...sessions.map((s) => ({
-									key: s.key,
-									time: s.time,
-									session: s,
-									block: null,
-								})),
-								...blocks.map((b) => ({
-									key: b.key,
-									time: b.time,
-									session: null,
-									block: b.block,
-								})),
-							].sort((a, b) => a.time.localeCompare(b.time));
-							const isToday = dates[i] === todayIso;
-							return (
-								<div key={dn} className="day-col flex flex-col">
-									<div className="pb-3 text-center">
-										<div
-											className={`font-semibold text-[11px] uppercase tracking-[0.04em] ${
-												isToday ? "text-accent-blue" : "text-muted-fg"
-											}`}
-										>
-											{dn}
-										</div>
-										<div
-											className={`font-mono text-[11px] ${
-												isToday ? "text-accent-blue" : "text-line-meta"
-											}`}
-										>
-											{formatDayMonth(dates[i])}
-										</div>
-									</div>
-									<div className="min-w-0 flex-1">
-										{entries.length === 0 && (
-											<div className="font-mono text-meta text-xs">—</div>
-										)}
-										{entries.map((entry) =>
-											entry.block ? (
-												<div
-													key={entry.key}
-													className={`lesson-block mt-2 rounded-sm border-l-3 border-l-solid px-3 py-2 text-left opacity-75 ${typeBlockClass["1:1"]}`}
-													title="Buổi dự kiến từ lịch lớp — chưa có học viên"
-												>
-													<div className="font-mono text-[11px] text-fg-2">
-														{entry.block.time}
-													</div>
-													<div className="font-semibold text-sm">
-														{entry.block.className}
-													</div>
-													<div className="mt-px text-[11px] text-muted-fg">
-														Dự kiến · chưa có học viên
-													</div>
-												</div>
-											) : (
-												(() => {
-													const s = entry.session;
-													if (!s) return null;
-													const cls = classById(s.classId);
-													const className = cls?.name ?? "Lớp học";
-													return (
-														<button
-															type="button"
-															key={s.key}
-															onClick={() =>
-																setOpenSession({
-																	classId: s.classId,
-																	dateISO: s.dateISO,
-																	day: s.day,
-																	time: s.time,
-																	columnDateISO: dates[i],
-																})
-															}
-															className={`lesson-block mt-2 cursor-pointer rounded-sm border-l-3 border-l-solid px-3 py-2 text-left transition-[transform,box-shadow] duration-[150ms] hover:-translate-y-px hover:shadow-[var(--elev-raised)] ${
-																typeBlockClass[s.type]
-															} ${
-																s.status === "completed"
-																	? "opacity-60"
-																	: s.status === "cancelled"
-																		? "opacity-35"
-																		: ""
-															}`}
-														>
-															<div className="font-mono text-[11px] text-fg-2">
-																{s.time}
-															</div>
-															<div
-																className={
-																	s.status === "completed" ||
-																	s.status === "cancelled"
-																		? "font-semibold text-sm line-through decoration-meta"
-																		: "font-semibold text-sm"
-																}
-															>
-																{className}
-																{(() => {
-																	// #204: legacy undated entries bundle whole-course rows; the chip
-																	// must count students, not rows.
-																	const students = distinctStudentsBySid(
-																		s.rows,
-																	).length;
-																	return students > 1 ? (
-																		<span className="ml-1 font-normal text-[11px] text-muted-fg">
-																			({students} HV)
-																		</span>
-																	) : null;
-																})()}
-															</div>
-															<div className="mt-px text-[11px] text-muted-fg">
-																{s.type} · {s.topic.substring(0, 30)}
-															</div>
-														</button>
-													);
-												})()
-											),
-										)}
-									</div>
-								</div>
-							);
-						})}
-					</div>
-					<div className="mt-6 flex flex-wrap gap-4 font-mono text-[11px] text-meta">
-						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-accent-soft" />
-							1:1
-						</span>
-						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-success-soft" />
-							1:2
-						</span>
-						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-warn-soft" />
-							Học thử (Trial)
-						</span>
-						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-fg-soft" />
-							Thi thử (Mock)
-						</span>
-						<span>
-							<span className="mr-1 inline-block h-2 w-2 rounded-full bg-line-soft" />
-							Ôn tập (Review)
-						</span>
-					</div>
-				</>
+				weekModel && (
+					<ScheduleWeekView
+						data={data}
+						dates={week.dates}
+						model={weekModel}
+						onOpenSession={setOpenSession}
+						onRefresh={() => {
+							void refresh();
+						}}
+					/>
+				)
 			)}
 			<ClassSessionModal
 				sessionRef={openSession}
 				onClose={() => setOpenSession(null)}
+			/>
+			<HolidayModal
+				open={holidayModalOpen}
+				classes={data.classes
+					.filter((cls) => cls.status === "active")
+					.map((cls) => ({ id: cls.id, name: cls.name }))}
+				onClose={() => setHolidayModalOpen(false)}
+				onApplied={() => {
+					void refresh();
+				}}
+			/>
+			<OrgEventModal
+				open={eventModalOpen}
+				defaultDate={date}
+				onClose={() => setEventModalOpen(false)}
 			/>
 		</div>
 	);

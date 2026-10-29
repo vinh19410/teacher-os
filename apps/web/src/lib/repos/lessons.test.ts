@@ -11,6 +11,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [
 		{
 			id: "st-1",
@@ -61,6 +62,8 @@ const snapshot: KernelSnapshot = {
 			date: null,
 			type: "1:1",
 			status: "completed",
+			attendance: "late",
+			attendanceNote: "Đi muộn 5p",
 			topic: "Task 2",
 			zoom: "zoom.us/1",
 		},
@@ -74,6 +77,8 @@ const snapshot: KernelSnapshot = {
 			date: null,
 			type: "1:2",
 			status: "upcoming",
+			attendance: null,
+			attendanceNote: null,
 			topic: "Speaking",
 			zoom: "",
 		},
@@ -87,6 +92,8 @@ const snapshot: KernelSnapshot = {
 			date: null,
 			type: "trial",
 			status: "upcoming",
+			attendance: null,
+			attendanceNote: null,
 			topic: "orphan",
 			zoom: "",
 		},
@@ -100,6 +107,8 @@ const snapshot: KernelSnapshot = {
 			date: null,
 			type: "weird-type",
 			status: "weird-status",
+			attendance: "weird-attendance" as never,
+			attendanceNote: null,
 			topic: "",
 			zoom: "",
 		},
@@ -128,10 +137,16 @@ describe("mapLessons", () => {
 		expect(lessons.find((l) => l.id === "les-3")).toBeUndefined();
 	});
 
-	test("unknown type/status coerce to display-safe defaults", () => {
+	test("unknown type/status/attendance coerce to display-safe defaults, valid attendance and note preserved", () => {
 		const row = lessons.find((l) => l.id === "les-4");
 		expect(row?.type).toBe("1:1");
 		expect(row?.status).toBe("upcoming");
+		expect(row?.attendance).toBeNull();
+		expect(row?.attendanceNote).toBeNull();
+
+		const first = lessons.find((l) => l.id === "les-1");
+		expect(first?.attendance).toBe("late");
+		expect(first?.attendanceNote).toBe("Đi muộn 5p");
 	});
 
 	test("empty snapshot maps to an empty schedule", () => {
@@ -140,6 +155,7 @@ describe("mapLessons", () => {
 				assignmentPrompts: [],
 				classAssignments: [],
 				assignmentTests: [],
+				vocabDecks: [],
 				students: [],
 				classes: [],
 				syllabi: [],

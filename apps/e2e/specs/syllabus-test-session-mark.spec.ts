@@ -18,7 +18,7 @@ async function createSyllabusTemplate(page: Page, name: string) {
 	return templateId;
 }
 
-test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền amber, đổi loại cập nhật nhãn", async ({
+test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền tint xám, đổi loại cập nhật nhãn", async ({
 	page,
 }) => {
 	await signUpViaUi(page);
@@ -44,7 +44,7 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await expect(addDialog).toBeHidden();
 	await expect(page.getByText("Buổi thường", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(0);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(0);
 
 	// Sửa buổi thành "Thi giữa kỳ" → badge + tint hiện. Locator scope vào
 	// lesson row (grid 1fr_auto) để không trúng nút Sửa của module header.
@@ -59,11 +59,11 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(1);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(1);
 	// Chống false-positive: class attribute khớp substring chưa đủ — computed
 	// style phải là màu thật (biome từng gộp mất space giữa 2 class trong
 	// className template, token dính nhưng CSS không áp dụng).
-	const tinted = page.locator("[class*='bg-warn-soft/50']").first();
+	const tinted = page.locator('[data-testid="test-session-row"]').first();
 	const tintBg = await tinted.evaluate(
 		(el) => getComputedStyle(el).backgroundColor,
 	);
@@ -80,7 +80,7 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền a
 	await expect(editDialog2).toBeHidden();
 	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(1);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(1);
 });
 
 test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight hiện", async ({
@@ -114,7 +114,7 @@ test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight h
 	await expect(page.getByText("Module thủ công")).toBeHidden();
 	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
 	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(2);
 });
 
 test("màn hình lớp không có select Loại; sửa buổi thi từ lớp giữ nguyên kind (guard #154)", async ({
@@ -149,7 +149,11 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await classDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ value: templateId });
-	await expect(classDialog.getByText("Kỹ năng giáo trình")).toBeVisible();
+	// TemplatePicker (issue #394): kỹ năng render dạng Tag trong vùng preview
+	// aria-live (nhãn "Kỹ năng giáo trình" cũ đã bỏ).
+	await expect(
+		classDialog.locator('[aria-live="polite"]').getByText("Writing"),
+	).toBeVisible();
 	// Auto-fill số buổi (#235): template v4 có 5 buổi (2 buổi thi Buổi 3
 	// giữa kỳ + Buổi 5 cuối kỳ) → "Tổng số buổi" tự điền "5", tính cả buổi thi.
 	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("5");
@@ -173,11 +177,13 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	);
 	if (!copy) throw new Error("Kernel snapshot thiếu bản copy của template");
 
-	// Màn hình Chi tiết lớp: tab "Buổi học" chứa curriculum section. Mở Sửa
+	// Màn hình Chi tiết lớp (#391): "Sắp xếp buổi" ở header, mở modal sửa buổi.
 	// buổi thi (Buổi 3) → KHÔNG có select "Loại buổi học"; đổi title rồi lưu.
 	// Locator scope lesson row (grid 20px_1fr_auto) của curriculum section.
 	await page.goto(`/classes/${copy.classId}`);
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	// #221: the curriculum tree moved into the "Quản lý buổi" modal.
 	await page.getByRole("button", { name: "Sắp xếp buổi", exact: true }).click();
 	const examRow = page
@@ -192,11 +198,16 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await editDialog.getByRole("button", { name: "Lưu thay đổi" }).click();
 	await expect(editDialog).toBeHidden();
 
-	// Bản copy ở màn hình syllabus: badge vẫn còn — kind KHÔNG bị reset.
-	// (Không exact:true — title div chứa thêm text badge.) Copy v4 có 2 buổi
-	// thi (Buổi 3 giữa kỳ + Buổi 5 cuối kỳ) → 2 dòng tint.
+	// Issue #394: id bản copy không còn mở trang /syllabus/<copy> (chỉ
+	// template) — rơi vào 404 branded. Kind không bị reset đã được khoá ở
+	// các assert edit phía trên; title mới xem được trên lịch lớp.
 	await page.goto(`/syllabus/${copy.id}`);
+	await expect(
+		page.getByText("Không tìm thấy syllabus", { exact: true }),
+	).toBeVisible();
+	await page.goto(`/classes/${copy.classId}`);
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByText("Buổi 3 — giữa kỳ đã đổi")).toBeVisible();
-	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
 });

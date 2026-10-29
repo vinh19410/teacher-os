@@ -1,0 +1,62 @@
+[
+  {
+    "id": "click",
+    "prompt": "soft UI click tap, gentle modern app interface button press, light and friendly, close mic",
+    "duration": 0.5
+  },
+  {
+    "id": "toggle",
+    "prompt": "soft toggle switch flip, gentle plastic click clack, clean UI interaction, friendly",
+    "duration": 0.5
+  },
+  {
+    "id": "swish",
+    "prompt": "gentle airy whoosh swish, soft fabric-like transition passing by, light and positive",
+    "duration": 0.6
+  },
+  {
+    "id": "pop",
+    "prompt": "soft rounded bubble pop, gentle warm single pop, subtle and friendly, not loud",
+    "duration": 0.5
+  },
+  {
+    "id": "chime",
+    "prompt": "bright positive success chime, two soft marimba-like notes rising, clean and warm",
+    "duration": 0.9
+  },
+  {
+    "id": "typing",
+    "prompt": "soft quiet laptop keyboard typing burst, gentle muted keys, brief",
+    "duration": 1.0
+  },
+  {
+    "id": "riser",
+    "prompt": "gentle uplifting synth riser, airy build-up with soft noise sweep rising in pitch, positive tension, no drums",
+    "duration": 2.5
+  },
+  {
+    "id": "snap",
+    "prompt": "soft finger snap, warm wooden snap, light and satisfying, single",
+    "duration": 0.5
+  },
+  {
+    "id": "thud-soft",
+    "prompt": "soft low felt thud, gentle padded impact landing on a cushion, warm and quiet, no reverb tail",
+    "duration": 0.5
+  },
+  {
+    "id": "sweep",
+    "prompt": "light airy transition sweep, smooth filtered noise passing left to right, subtle corporate motion graphic sound",
+    "duration": 0.8
+  },
+  {
+    "id": "sparkle",
+    "prompt": "subtle positive sparkle shimmer, few soft high bell twinkles, delicate and brief",
+    "duration": 1.0
+  },
+  {
+    "id": "soft-bell",
+    "prompt": "soft warm bell tone with long gentle reverb tail, calm peaceful ending, felt piano like",
+    "duration": 4
+  }
+]

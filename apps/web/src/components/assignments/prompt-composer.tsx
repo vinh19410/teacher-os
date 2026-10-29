@@ -67,25 +67,23 @@ export function PromptComposer({
 		<Card variant="white" className="flex flex-col gap-4">
 			<div>
 				<SectionLabel>Đề bài</SectionLabel>
-				<h2 className="font-display font-semibold text-[22px]">
-					{skill.heading}
-				</h2>
+				<h2 className="font-semibold text-[22px]">{skill.heading}</h2>
 			</div>
 			{lockPart ? (
 				// Slot đã khóa skill/part — hiển thị chip tĩnh từ value, không
 				// ChipFilter (đổi skill/part giữa chừng làm lệch preset test).
 				<div className="flex flex-wrap gap-2">
-					<span className="rounded-full border border-fg bg-fg px-[14px] py-[6px] font-medium text-bg text-xs">
+					<span className="rounded-md rounded-md bg-muted px-[14px] py-[6px] font-medium text-primary text-xs">
 						{skill.name}
 					</span>
-					<span className="rounded-full border border-line px-[14px] py-[6px] font-medium text-xs">
+					<span className="rounded-md rounded-md border border-input bg-transparent px-[14px] py-[6px] font-medium text-xs">
 						{part.label}
 					</span>
 				</div>
 			) : (
 				<>
 					<div className="flex flex-col gap-1.5">
-						<span className="font-medium text-muted-fg text-xs">Kỹ năng</span>
+						<span className="text-muted-foreground text-xs">Kỹ năng</span>
 						<ChipFilter
 							options={SKILLS.map((entry) => entry.name)}
 							value={skill.name}
@@ -105,7 +103,7 @@ export function PromptComposer({
 						/>
 					</div>
 					<div className="flex flex-col gap-1.5">
-						<span className="font-medium text-muted-fg text-xs">
+						<span className="text-muted-foreground text-xs">
 							{skill.partLabel}
 						</span>
 						<ChipFilter
@@ -126,9 +124,7 @@ export function PromptComposer({
 				</>
 			)}
 			<div className="flex flex-col gap-1.5">
-				<span className="font-medium text-muted-fg text-xs">
-					{skill.typeLabel}
-				</span>
+				<span className="text-muted-foreground text-xs">{skill.typeLabel}</span>
 				<ChipFilter
 					options={part.types.map((entry) => entry.label)}
 					value={type.label}
@@ -149,9 +145,7 @@ export function PromptComposer({
 			</Field>
 			<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 				<div className="flex flex-col gap-1.5">
-					<span className="font-medium text-muted-fg text-xs">
-						Band mục tiêu
-					</span>
+					<span className="text-muted-foreground text-xs">Band mục tiêu</span>
 					<ChipFilter
 						options={["6.0", "6.5", "7.0", "7.5"]}
 						value={value.band}
@@ -194,15 +188,15 @@ export function PromptComposer({
 				</Field>
 			)}
 			{value.skill === "reading" && (
-				<span className="-mt-3 text-right font-mono text-meta text-xs">
+				<span className="-mt-3 text-right text-muted-foreground text-xs">
 					{wordCount(htmlToPlainText(value.passage))} từ
 				</span>
 			)}
 			{value.skill === "listening" && (
-				<div className="rounded-md border border-line bg-bg p-3">
-					<p className="font-medium text-muted-fg text-xs">File nghe</p>
+				<div className="rounded-md rounded-md bg-muted p-3">
+					<p className="font-medium text-muted-foreground text-xs">File nghe</p>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
-						<label className="inline-flex cursor-pointer rounded-full border border-line px-3 py-2 font-medium text-xs">
+						<label className="inline-flex cursor-pointer rounded-md rounded-md border border-input bg-transparent px-3 py-2 font-medium text-xs transition-colors hover:text-primary">
 							<input
 								type="file"
 								className="sr-only"
@@ -220,7 +214,7 @@ export function PromptComposer({
 								<span className="text-sm">{value.audioName}</span>
 								<button
 									type="button"
-									className="text-accent-blue text-xs"
+									className="text-primary text-xs"
 									onClick={() => onFieldChange({ audioName: "" })}
 								>
 									Gỡ file
@@ -228,13 +222,13 @@ export function PromptComposer({
 							</>
 						) : null}
 					</div>
-					<p className="mt-1 text-[11px] text-meta">
+					<p className="mt-1 text-[11px] text-muted-foreground">
 						{value.audioName
 							? "Sẽ phát cho học viên khi được giao"
 							: "Section này khoảng 8–10 phút"}
 					</p>
 					{showErrors && errors.audioName && (
-						<p role="alert" className="mt-1 text-danger text-xs">
+						<p role="alert" className="mt-1 text-destructive text-xs">
 							{errors.audioName}
 						</p>
 					)}
@@ -319,7 +313,7 @@ export function PromptComposer({
 				/>
 			</Field>
 			{isAuto && (
-				<span className="text-right font-mono text-meta text-xs">
+				<span className="text-right text-muted-foreground text-xs">
 					{value.items.length} câu ·{" "}
 					{value.items.filter((item) => item.answer.trim()).length}/
 					{value.items.length} đáp án đã khóa

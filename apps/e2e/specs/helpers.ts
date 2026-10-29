@@ -1,7 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
-import { expect, type Page } from "@playwright/test";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { type APIRequestContext, expect, type Page } from "@playwright/test";
+import {
+	ADMIN_ORIGIN,
+	API_ORIGIN,
+	STUDENT_ORIGIN,
+	WEB_ORIGIN,
+} from "./origins";
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -47,6 +52,11 @@ export interface VerificationEmailEntry {
 	kind?: string;
 	error?: string;
 	at?: string;
+	// Plan TOS-21 (#454): recordingMailer lưu thêm header mới của thư thông báo.
+	replyTo?: string | null;
+	fromName?: string | null;
+	// Plan TOS-22 (#463): recordingMailer đánh dấu failed: true cho thư thông báo tới @bounce.test.
+	failed?: boolean;
 }
 
 export async function readVerificationEmails(): Promise<
@@ -72,7 +82,8 @@ export async function verifyStudentEmailFromMailLog(
 	for (let i = 0; i < 20; i++) {
 		const emails = await readVerificationEmails();
 		const entry = emails.find(
-			(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
+			(e) =>
+				e.to.trim().toLowerCase() === email.trim().toLowerCase() && !!e.url,
 		);
 		if (entry?.url) {
 			verifyUrl = entry.url;
@@ -141,6 +152,8 @@ export async function seedStudent(opts: {
 	name: string;
 	email?: string;
 	phone?: string;
+	/** Đặt onboarding_completed_at để portal bỏ wizard onboarding (TOS-21). */
+	onboarded?: boolean;
 }): Promise<{ id: string; name: string; email: string }> {
 	const client = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
@@ -166,8 +179,8 @@ export async function seedStudent(opts: {
 
 		await withBusyRetry(() =>
 			client.execute({
-				sql: `INSERT INTO student (id, org_id, name, phone, email, zalo, parent_name, parent_phone, created_at)
-					VALUES (?,?,?,?,?,?,?,?,?)`,
+				sql: `INSERT INTO student (id, org_id, name, phone, email, zalo, parent_name, parent_phone, onboarding_completed_at, created_at)
+					VALUES (?,?,?,?,?,?,?,?,?,?)`,
 				args: [
 					id,
 					orgId,
@@ -177,6 +190,7 @@ export async function seedStudent(opts: {
 					opts.phone ?? "0901234567",
 					"",
 					"",
+					...(opts.onboarded ? [now] : [null]),
 					now,
 				],
 			}),
@@ -187,16 +201,31 @@ export async function seedStudent(opts: {
 		client.close();
 	}
 }
-/** Navigate to a class's "Buổi học" tab (Issue #89 merged tab) — it renders the
- * "Đã học"/"Sắp tới" badges on the timeline table. Text counts must scope to
- * "Buổi học" while on it. */
+/** Navigate to a class's merged "Sessions & practice" tab (#391) — it renders
+ * the session cards and the assigned-practice accordion. Text counts must
+ * scope to the tab while on it. */
 export async function openClassScheduleTab(page: Page, className: string) {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
-	const classRow = page.locator("tbody").getByText(className);
+	// Redesign #349: the classes list is a card grid — the class title is the
+	// only h3 on the page; clicking it bubbles to the card button.
+	const classRow = page.locator("h3", { hasText: className });
 	await expect(classRow).toBeVisible();
 	await classRow.click();
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
+}
+
+/** Navigate to a class's "Học viên" tab (#391) — "+ Thêm học viên vào lớp",
+ * "Sửa" học phí và chuỗi `Học phí: …` sống ở tab này. */
+export async function openClassRosterTab(page: Page, className: string) {
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await expect(page).toHaveURL(/\/classes$/);
+	const classRow = page.locator("h3", { hasText: className });
+	await expect(classRow).toBeVisible();
+	await classRow.click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 }
 
 /** Today as yyyy-mm-dd in Vietnam (UTC+7) via Intl parts — never a UTC slice
@@ -306,5 +335,165 @@ export async function acceptAllClassEnrollments(
 	);
 	for (const en of enrollments) {
 		await acceptEnrollment(page, en.id);
+	}
+}
+
+// --- Admin console (plan #413 phase 7) --------------------------------------
+
+function sleep(ms: number): Promise<void> {
+	const { promise, resolve } = Promise.withResolvers<void>();
+	setTimeout(resolve, ms);
+	return promise;
+}
+
+/** Email admin mặc định của e2e — khớp E2E_ADMIN_EMAILS trong boot.ts. */
+export const ADMIN_EMAIL =
+	(process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local").split(",")[0]?.trim() ??
+	"admin@e2e.local";
+export const ADMIN_PASSWORD = "password-8chars";
+
+/**
+ * Đảm bảo có đúng MỘT tài khoản admin hợp lệ cho cả run: đăng ký qua API
+ * thật với Origin admin (allowlist của boot chấp nhận ADMIN_EMAIL), sau đó
+ * khóa DB đảm bảo `role='admin'` + `email_verified=1` (requireAdmin đòi cả
+ * hai; đăng ký mới của better-auth để email chưa verify). Idempotent —
+ * chạy lại khi account đã tồn tại chỉ còn nhánh UPDATE.
+ */
+export async function ensureAdminAccount(
+	request: APIRequestContext,
+): Promise<void> {
+	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+		data: { name: "E2E Admin", email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+		headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
+	});
+	if (res.status() !== 200) {
+		// Đã tồn tại (422/400) là đường lặp lại hợp lệ; từ chối khác → fail loud.
+		const body = await res.text();
+		if (!/already|exists|tồn tại|registered/i.test(body)) {
+			throw new Error(`admin sign-up failed (${res.status()}): ${body}`);
+		}
+	}
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	try {
+		await client.execute("PRAGMA busy_timeout = 5000;");
+		for (let i = 0; ; i++) {
+			const rs = await client.execute({
+				sql: "UPDATE user SET role = 'admin', email_verified = 1 WHERE lower(email) = lower(?)",
+				args: [ADMIN_EMAIL],
+			});
+			if (Number(rs.rowsAffected) > 0) break;
+			if (i >= 30) throw new Error("admin user row chưa xuất hiện sau sign-up");
+			await sleep(100 * (i + 1));
+		}
+	} finally {
+		client.close();
+	}
+}
+
+/** Đăng nhập admin qua form thật của cổng 8004 → hạ cánh trang danh sách. */
+export async function adminSignInViaUi(page: Page): Promise<void> {
+	await page.goto(`${ADMIN_ORIGIN}/login`);
+	await page.locator("#signin-email").fill(ADMIN_EMAIL);
+	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
+	await page.locator("#panel-signin button[type='submit']").click();
+	// Cold vite dev của app admin có thể chậm; flow-critical → 30s.
+	await expect(page).toHaveURL(/\/library\/tests/, { timeout: 30_000 });
+	await expect(
+		page.getByRole("heading", { name: "Thư viện đề" }),
+	).toBeVisible();
+}
+
+/** Đăng nhập admin rồi mở trang tạo bộ đề mới (link "Tạo bộ đề" có 2 bản
+ * khi list rỗng — đi thẳng URL cho ổn định). */
+export async function adminOpenNewTestPage(page: Page): Promise<void> {
+	await adminSignInViaUi(page);
+	await page.goto(`${ADMIN_ORIGIN}/library/tests/new`);
+	await expect(
+		page.getByRole("heading", { name: "Tạo bộ đề mới" }),
+	).toBeVisible();
+}
+
+/** Sinh buffer MP3 hợp lệ tối thiểu (10 MPEG1 Layer3 frame) — không commit
+ * binary fixture; header frame thật để gần hành vi file thật. */
+export function mp3FixtureBytes(): Buffer {
+	const frame = Buffer.alloc(417, 0);
+	frame[0] = 0xff; // sync
+	frame[1] = 0xfb; // MPEG1 Layer3, no CRC
+	frame[2] = 0x90; // 128 kbps, 44.1 kHz
+	frame[3] = 0x64;
+	return Buffer.concat(Array.from({ length: 10 }, () => frame));
+}
+
+/**
+ * TOS-17 (#451 / D6): tạo thành viên tổ chức với `membership.role` chỉ định
+ * (`"ta"` | `"class_teacher"`) trong org của `teacherEmail` và đăng nhập sẵn
+ * trên `page` (qua cookie session của `/api/auth/sign-up/email`) trước khi
+ * trình duyệt gọi `/api/kernel` lần đầu.
+ */
+export async function seedOrgMember(
+	page: Page,
+	opts: {
+		teacherEmail: string;
+		role: "ta" | "class_teacher";
+		name?: string;
+		email?: string;
+		password?: string;
+	},
+): Promise<{ id: string; email: string; orgId: string; role: string }> {
+	const orgId = await orgIdForTeacherEmail(opts.teacherEmail);
+	const email =
+		opts.email ??
+		`e2e-${opts.role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+	const password = opts.password ?? "password-8chars";
+	const name =
+		opts.name ?? (opts.role === "ta" ? "Trợ giảng E2E" : "GV Đứng Lớp E2E");
+
+	await page.context().clearCookies();
+
+	const res = await page.request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+		data: { name, email, password },
+		headers: {
+			"Content-Type": "application/json",
+			Origin: WEB_ORIGIN,
+		},
+	});
+	if (res.status() !== 200) {
+		throw new Error(
+			`seedOrgMember sign-up failed (${res.status()}): ${await res.text()}`,
+		);
+	}
+
+	const client = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await client.execute("PRAGMA busy_timeout = 5000;");
+	try {
+		const userId = await withBusyRetry(async () => {
+			const rs = await client.execute({
+				sql: "SELECT id FROM user WHERE lower(email) = lower(?) LIMIT 1",
+				args: [email],
+			});
+			const id = rs.rows[0]?.id;
+			if (!id) throw new Error("seedOrgMember: user row not found yet");
+			return String(id);
+		}, 20);
+
+		const now = Date.now();
+		await withBusyRetry(async () => {
+			await client.execute({
+				sql: "DELETE FROM membership WHERE user_id = ?",
+				args: [userId],
+			});
+			await client.execute({
+				sql: "INSERT INTO membership (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
+				args: [crypto.randomUUID(), orgId, userId, opts.role, now],
+			});
+		}, 10);
+
+		return { id: userId, email, orgId, role: opts.role };
+	} finally {
+		client.close();
 	}
 }

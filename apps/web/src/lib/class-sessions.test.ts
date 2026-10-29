@@ -262,6 +262,8 @@ describe("buildClassSessions", () => {
 			date: null,
 			type: "1:1",
 			status: "upcoming",
+			attendance: null,
+			attendanceNote: null,
 			topic: "",
 			zoom: "",
 		};

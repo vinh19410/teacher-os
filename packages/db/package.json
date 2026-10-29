@@ -11,7 +11,8 @@
 	},
 	"scripts": {
 		"db:generate": "drizzle-kit generate",
-		"db:migrate:deploy": "drizzle-kit migrate"
+		"db:migrate:deploy": "drizzle-kit migrate",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@libsql/client": "catalog:",
@@ -23,7 +24,11 @@
 	},
 	"devDependencies": {
 		"@teacher-os/config": "workspace:*",
+		"@types/node": "catalog:",
+		"@types/papaparse": "^5.5.2",
 		"drizzle-kit": "^0.31.10",
-		"typescript": "catalog:"
+		"papaparse": "^5.7.0",
+		"typescript": "catalog:",
+		"vitest": "^4.1.10"
 	}
 }

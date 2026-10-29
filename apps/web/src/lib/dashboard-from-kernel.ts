@@ -13,7 +13,13 @@ export function lessonDayFromDate(now = new Date()): number {
 export function lessonsToday(lessons: Lesson[], now = new Date()): Lesson[] {
 	const day = lessonDayFromDate(now);
 	return lessons
-		.filter((lesson) => lesson.day === day && lesson.status !== "cancelled")
+		.filter(
+			(lesson) =>
+				lesson.day === day &&
+				// Buổi đã hủy và buổi nghỉ lễ đã dời (TOS-11) không phải ca dạy.
+				lesson.status !== "cancelled" &&
+				lesson.status !== "holiday",
+		)
 		.slice()
 		.sort((a, b) => a.time.localeCompare(b.time));
 }
@@ -62,6 +68,14 @@ export function groupLessonsByClassSession(
 	}
 	return Array.from(groups.values());
 }
+
+/**
+ * Dòng meta của một buổi-lớp trên dashboard: chỉ nối các phần có giá trị,
+ * nên lesson thiếu topic không còn dấu `·` treo cuối (issue #373).
+ */
+export function formatClassSessionMeta(g: DashboardClassSession): string {
+	return [`${g.dur}'`, g.type, g.topic.trim()].filter(Boolean).join(" · ");
+}
 /**
  * Phần còn lại của tuần hiện tại (mai → Chủ nhật), khác lessonsToday có
  * chủ ý:
@@ -82,7 +96,10 @@ export function upcomingLessonsThisWeek(
 	);
 	return lessons
 		.filter((lesson) => {
-			if (lesson.status === "cancelled") return false;
+			// TOS-11: `holiday` xử lý như `cancelled` — không phải buổi sắp dạy.
+			if (lesson.status === "cancelled" || lesson.status === "holiday") {
+				return false;
+			}
 			if (lesson.date == null) return lesson.day > todayDay;
 			return remaining.has(lesson.date);
 		})
@@ -98,10 +115,34 @@ export interface DashboardRiskRow {
 }
 
 /**
+ * TOS-7 — cửa sổ cảnh báo vắng: chỉ các buổi CÓ NGÀY trong 14 ngày gần
+ * nhất. lesson.date là chuỗi UTC-anchored yyyy-mm-dd nên so sánh chuỗi với
+ * cutoff ISO; legacy (date null) đóng băng, không có đường ghi absent.
+ */
+const ABSENT_WINDOW_DAYS = 14;
+
+function isRecentAbsence(lesson: Lesson, now: Date): boolean {
+	if (lesson.date == null) return false;
+	if (lesson.attendance === "excused") return false;
+	const isUnexcused = lesson.attendance === "unexcused";
+	const isLegacyAbsentRow = lesson.attendance == null;
+	if (!isUnexcused && !(isLegacyAbsentRow && lesson.status === "absent")) {
+		return false;
+	}
+	const todayIso = todayISOVietnam(now);
+	const cutoff = new Date(`${todayIso}T00:00:00Z`);
+	cutoff.setUTCDate(cutoff.getUTCDate() - ABSENT_WINDOW_DAYS);
+	return lesson.date >= cutoff.toISOString().slice(0, 10);
+}
+
+/**
  * At-risk from kernel lessons only — never `student.atRisk` or tuition tags.
- * `absent` has no kernel write path yet; missed-check-in is the live signal:
- * upcoming on a weekday strictly before today in the Mon=1 week model.
- * Monday therefore yields 0 missed (no wrap from Sunday).
+ * missed-check-in is the live signal: upcoming on a weekday strictly before
+ * today in the Mon=1 week model (Monday therefore yields 0 missed — no wrap
+ * from Sunday). `absent` kể từ TOS-7 có đường ghi: chỉ tính vắng trong cửa
+ * sổ 14 ngày và KHÔNG tính vắng có phép (`excused`) — vắng hợp lệ không
+ * phải cảnh báo; vắng không phép (`unexcused`) hoặc dòng absent cũ
+ * (`attendance = NULL` trong cửa sổ) mới là tín hiệu.
  */
 export function atRiskRows(
 	students: Student[],
@@ -113,7 +154,7 @@ export function atRiskRows(
 
 	for (const lesson of lessons) {
 		let reason: DashboardRiskReason | null = null;
-		if (lesson.status === "absent") {
+		if (isRecentAbsence(lesson, now)) {
 			reason = "absent";
 		} else if (lesson.status === "upcoming" && lesson.day < today) {
 			reason = "missed-check-in";

@@ -1,0 +1,112 @@
+{
+  "release": "teacher-os-intro",
+  "source": "apps/landing/public/index.html + docs/project-overview-pdr.md (see plans/reports/2026-10-14-teacher-os-intro-facts.md)",
+  "arc": "hook_payoff",
+  "hook": "pain_point",
+  "ending": "signature_outro",
+  "voice": {
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "Giọng nữ tiếng Việt ấm áp, tự tin và thân thiện, phát âm tiếng Việt rõ ràng từng âm tiết, tốc độ vừa phải như MC video giới thiệu sản phẩm công nghệ, nhấn nhẹ vào các con số và tên module."
+  },
+  "outroStyle": "Nhẹ nhàng, ấm áp, chậm rãi — lời khép lại điềm đạm và đầy hứa hẹn ở cuối video.",
+  "scenes": [
+    {
+      "id": "s01-hook",
+      "type": "hook",
+      "shot": { "size": "MEDIUM", "camera": "push_in", "cutIn": { "word": "khắp", "size": "CLOSE" } },
+      "lines": [
+        { "en": "Bạn dạy rất giỏi.", "vi": "Bạn dạy rất giỏi." },
+        { "en": "Nhưng bài vở, lịch học, học phí — nằm rải rác khắp nơi.", "vi": "Nhưng bài vở, lịch học, học phí — nằm rải rác khắp nơi." }
+      ]
+    },
+    {
+      "id": "s02-reveal",
+      "type": "cover",
+      "shot": { "size": "WIDE", "camera": "pull_out" },
+      "lines": [
+        { "en": "Teacher OS gom tất cả vào một workspace duy nhất.", "vi": "Teacher OS gom tất cả vào một workspace duy nhất." },
+        { "en": "Sáu module, một danh sách học viên.", "vi": "Sáu module, một danh sách học viên." }
+      ]
+    },
+    {
+      "id": "s03-classes",
+      "type": "feature",
+      "shot": { "size": "MEDIUM", "camera": "pan" },
+      "lines": [
+        { "en": "Nhân bản syllabus vào lớp, lịch học có ngay.", "vi": "Nhân bản syllabus vào lớp, lịch học có ngay." }
+      ]
+    },
+    {
+      "id": "s04-assignments",
+      "type": "ui-demo",
+      "shot": { "size": "MEDIUM", "camera": "parallax" },
+      "lines": [
+        { "en": "Ngân hàng đề IELTS bốn kỹ năng, sẵn đáp án chấm tự động.", "vi": "Ngân hàng đề IELTS bốn kỹ năng, sẵn đáp án chấm tự động." },
+        { "en": "Giao đề một nút, học viên làm online.", "vi": "Giao đề một nút, học viên làm online." }
+      ]
+    },
+    {
+      "id": "s05-grading",
+      "type": "ui-demo",
+      "shot": { "size": "CLOSE", "camera": "static" },
+      "lines": [
+        { "en": "Chấm Writing một lượt: bài luận, đáp án, band điểm chung màn hình.", "vi": "Chấm Writing một lượt: bài luận, đáp án, band điểm chung màn hình." },
+        { "en": "Trắc nghiệm máy chấm giúp.", "vi": "Trắc nghiệm máy chấm giúp." }
+      ]
+    },
+    {
+      "id": "s06-tuition",
+      "type": "feature",
+      "shot": { "size": "MEDIUM", "camera": "push_in" },
+      "lines": [
+        { "en": "Hết gói là có hoá đơn.", "vi": "Hết gói là có hoá đơn." },
+        { "en": "Đã thu, còn lại — rõ từng học viên, đối soát tự động.", "vi": "Đã thu, còn lại — rõ từng học viên, đối soát tự động." }
+      ]
+    },
+    {
+      "id": "s07-portal",
+      "type": "ui-demo",
+      "shot": { "size": "WIDE", "camera": "tilt" },
+      "lines": [
+        { "en": "Học viên nộp bài và xem điểm trên portal riêng.", "vi": "Học viên nộp bài và xem điểm trên portal riêng." },
+        { "en": "Báo cáo tới phụ huynh trước khi họ kịp hỏi.", "vi": "Báo cáo tới phụ huynh trước khi họ kịp hỏi." }
+      ]
+    },
+    {
+      "id": "s08-stats",
+      "type": "stats",
+      "shot": { "size": "CLOSE", "camera": "static" },
+      "lines": [
+        { "en": "Hơn một nghìn hai trăm lớp đã chạy qua.", "vi": "Hơn 1.200 lớp đã chạy qua." },
+        { "en": "Tám nghìn năm trăm bài đã chấm.", "vi": "8.500 bài đã chấm." }
+      ]
+    },
+    {
+      "id": "s09-how",
+      "type": "diagram",
+      "shot": { "size": "MEDIUM", "camera": "pan" },
+      "lines": [
+        { "en": "Ba bước: tạo workspace, nhân bản syllabus, bắt đầu dạy.", "vi": "Ba bước: tạo workspace, nhân bản syllabus, bắt đầu dạy." }
+      ]
+    },
+    {
+      "id": "s10-cta",
+      "type": "cta",
+      "shot": { "size": "CLOSE", "camera": "push_in" },
+      "lines": [
+        { "en": "Beta miễn phí đang mở.", "vi": "Beta miễn phí đang mở." },
+        { "en": "Giữ chỗ ngay hôm nay.", "vi": "Giữ chỗ ngay hôm nay." }
+      ]
+    },
+    {
+      "id": "s11-outro",
+      "type": "outro",
+      "outro": true,
+      "shot": { "size": "WIDE", "camera": "pull_out" },
+      "lines": [
+        { "en": "Teacher OS — nền vận hành cho giáo viên vẫn muốn được dạy.", "vi": "Teacher OS — nền vận hành cho giáo viên vẫn muốn được dạy." }
+      ]
+    }
+  ]
+}

@@ -82,12 +82,14 @@ export function sessionKeyOfRef(ref: SessionRef): string {
  * Status rollup:
  * - All cancelled -> "cancelled"
  * - All completed -> "completed"
+ * - All holiday (TOS-11: "Nghỉ lễ — Đã dời lịch") -> "holiday"
  * - Remaining (mixed, all upcoming, absent) -> "upcoming"
  */
 export function rollupSessionStatus(rows: readonly Lesson[]): LessonStatus {
 	if (rows.length === 0) return "upcoming";
 	if (rows.every((r) => r.status === "cancelled")) return "cancelled";
 	if (rows.every((r) => r.status === "completed")) return "completed";
+	if (rows.every((r) => r.status === "holiday")) return "holiday";
 	return "upcoming";
 }
 
@@ -225,13 +227,50 @@ export function weekSlotCount(
 	const slots = new Set<string>();
 	for (const column of columns) {
 		for (const item of column) {
-			if (item.status !== "cancelled") slots.add(`${item.day}|${item.time}`);
+			// Buổi đã hủy và buổi nghỉ lễ đã dời (TOS-11) không chiếm slot.
+			if (item.status !== "cancelled" && item.status !== "holiday") {
+				slots.add(`${item.day}|${item.time}`);
+			}
 		}
 	}
 	for (const block of projectedBlocks) {
 		slots.add(`${block.day}|${block.time}`);
 	}
 	return slots.size;
+}
+
+/** View-model của lưới tuần (TOS-14 tách route): cột theo ngày + projected. */
+export interface WeekModel {
+	columns: WeekSessionEntry[][];
+	projected: ProjectedWeekBlock[];
+	slotCount: number;
+}
+
+/**
+ * Composition point dùng chung bởi route /schedule: chọn buổi theo ngày cho
+ * 7 cột, block dự chiếu cho lớp chưa có dòng, và số buổi hiển thị.
+ */
+export function buildWeekModel(
+	data: {
+		classes: ClassGroup[];
+		lessons: Lesson[];
+	},
+	dates: readonly string[],
+): WeekModel {
+	const columns = [1, 2, 3, 4, 5, 6, 7].map((day, i) =>
+		resolveWeekColumnEntries(
+			selectWeekColumnSessions(data.lessons, day, dates),
+			data.classes,
+			data.lessons,
+			dates[i],
+		),
+	);
+	const projected = selectProjectedWeekBlocks(
+		data.classes,
+		data.lessons,
+		dates,
+	);
+	return { columns, projected, slotCount: weekSlotCount(columns, projected) };
 }
 
 /**

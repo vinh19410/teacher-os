@@ -219,16 +219,59 @@ export function buildClozeSegments(
 	});
 }
 
-/** Segments → existing wire shape (`opts: null` — text kinds have no options). */
+/** Segments → existing wire shape (`opts: null` — text kinds have no options).
+ * `existing` (#420 Task 4.1b): merge metadata (`explanation`/`answerSet`/`pin`/
+ * `type`) của item cũ vào segment theo KHOÁ NỘI DUNG `answer.trim()` (#425 —
+ * trước đây merge theo index nên xóa/chèn blank làm bám sai metadata; stem
+ * KHÔNG dùng làm khoá vì gap hấp thụ từ bị xóa khi xóa blank liền kề).
+ * Trùng answer: chọn base UNUSED có |baseIdx − segIdx| nhỏ nhất (tie → baseIdx
+ * nhỏ) — mơ hồ cố hữu trong run trùng answer, grading không đổi. Pass 2: khi
+ * `segments.length === existing.length`, segment chưa khớp kế thừa metadata
+ * `existing[i]` (nếu chưa dùng) — sửa answer/typo không mất explanation
+ * (kongming plan-gate). Giới hạn có chủ đích: xóa+chèn cùng lúc (độ dài giữ)
+ * có thể khiến blank MỚI hưởng metadata của blank vừa xóa khi base của nó đã
+ * bị segment khác dùng ở pass 1 — heuristic vị trí không phân biệt được
+ * trường hợp này (grading không đổi; xóa hẳn metadata thì mất explanation
+ * khi sửa typo). Blank mới (answer chưa có trong existing) luôn ra item sạch;
+ * blank bị xóa → metadata tự rơi. */
 export function segmentsToItems(
 	segments: ClozeSegment[],
+	existing?: readonly AssignmentQuestion[],
 ): AssignmentQuestion[] {
-	return segments.map((segment) => ({
+	const toApplied = (segment: ClozeSegment) => ({
 		stem: segment.stem,
 		opts: null,
 		answer: segment.answer.trim(),
 		alts: segment.alts,
-	}));
+	});
+	if (!existing || existing.length === 0) return segments.map(toApplied);
+	const used = existing.map(() => false);
+	const matched = segments.map((segment, segmentIndex) => {
+		const applied = toApplied(segment);
+		const answer = segment.answer.trim();
+		let bestIndex = -1;
+		let bestDistance = Number.POSITIVE_INFINITY;
+		for (const [index, base] of existing.entries()) {
+			if (used[index] || base.answer.trim() !== answer) continue;
+			const distance = Math.abs(index - segmentIndex);
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				bestIndex = index;
+			}
+		}
+		if (bestIndex >= 0) used[bestIndex] = true;
+		return { applied, baseIndex: bestIndex };
+	});
+	if (segments.length === existing.length) {
+		return matched.map(({ applied, baseIndex }, i) => {
+			const index = baseIndex >= 0 ? baseIndex : used[i] ? -1 : i;
+			if (index < 0) return applied;
+			return { ...existing[index], ...applied };
+		});
+	}
+	return matched.map(({ applied, baseIndex }) =>
+		baseIndex >= 0 ? { ...existing[baseIndex], ...applied } : applied,
+	);
 }
 
 /**

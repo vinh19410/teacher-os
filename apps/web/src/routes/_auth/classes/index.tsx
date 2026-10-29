@@ -5,13 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
-import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
-import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
+import { splitSyllabi } from "@/lib/repos/syllabus";
 import { useClasses } from "@/lib/repos/use-classes";
 
 export const Route = createFileRoute("/_auth/classes/")({
@@ -23,11 +22,14 @@ const MODE_MAP: Record<string, string> = {
 	"Trực tuyến": "Online",
 	"Trực tiếp": "Offline",
 };
+// Contract #170: list pages keep their localized Vietnamese labels.
+const SYLLABUS_LABEL = "Giáo trình";
 
 export function ClassesRoute() {
 	const navigate = useNavigate();
 	const { classes } = useClasses();
 	const { data } = useData();
+	const { curriculumByClassId } = splitSyllabi(data.syllabi);
 	const [filter, setFilter] = useState("Tất cả");
 	const [modalOpen, setModalOpen] = useState(false);
 
@@ -44,10 +46,13 @@ export function ClassesRoute() {
 
 	return (
 		<div>
-			<PageHead title="Lớp học" lead={`${activeCount} lớp đang hoạt động`} />
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+			<PageHead
+				kicker={`${activeCount} lớp đang hoạt động`}
+				title="Lớp học"
+				action={<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>}
+			/>
+			<div className="mb-6">
 				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>
 			</div>
 			{classes.length === 0 ? (
 				<Card
@@ -55,92 +60,78 @@ export function ClassesRoute() {
 					className="p-8 text-center"
 					data-testid="classes-empty-state"
 				>
-					<h2 className="font-display font-semibold text-lg">
+					<h2 className="font-semibold text-lg tracking-tight">
 						Chưa có lớp học nào
 					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Bấm "+ Tạo lớp" ở góc trên để xếp lịch, liên kết giáo trình và quản
 						lý danh sách học viên.
 					</p>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
-					<p className="font-mono text-meta text-xs">
+					<p className="text-muted-foreground text-sm">
 						Không có lớp học nào phù hợp với bộ lọc.
 					</p>
 				</Card>
 			) : (
-				<Card variant="white" className="p-0">
-					<DataTable
-						headers={[
-							"Lớp",
-							"Giáo trình",
-							"Sĩ số",
-							"Tiến độ",
-							"Lịch",
-							"Trạng thái",
-						]}
-						emptyMessage="Chưa có lớp học."
-						rows={list.map((c) => {
-							const sy = data.syllabi.find((s) => s.id === c.syllabusId);
-							const pct =
-								c.sessionsTotal > 0
-									? (c.sessionsDone / c.sessionsTotal) * 100
-									: 0;
-							return {
-								onClick: () =>
+				<div className="grid gap-6 md:grid-cols-2">
+					{list.map((c, i) => {
+						const sy = curriculumByClassId.get(c.id) ?? null;
+						const pct =
+							c.sessionsTotal > 0
+								? (c.sessionsDone / c.sessionsTotal) * 100
+								: 0;
+						return (
+							<button
+								key={c.id}
+								type="button"
+								onClick={() =>
 									navigate({
 										to: "/classes/$classId",
 										params: { classId: c.id },
-									}),
-								cells: [
-									<div key="n">
-										<div className="flex items-center gap-2">
-											<span className="font-semibold text-sm">{c.name}</span>
-											<Tag>{CLASS_TYPE_LABELS[c.type]}</Tag>
+									})
+								}
+								className="group rounded-xl border bg-card p-6 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+							>
+								<div className="flex items-baseline justify-between gap-3 text-muted-foreground text-xs">
+									<span>
+										{String(i + 1).padStart(2, "0")} ·{" "}
+										{CLASS_TYPE_LABELS[c.type]}
+									</span>
+									<span>{classMeta(c)}</span>
+								</div>
+								<h3 className="mt-3 font-semibold text-lg tracking-tight">
+									{c.name}
+								</h3>
+								<div className="mt-1 text-muted-foreground text-sm">
+									{formatSchedule(c.schedule)}
+								</div>
+								<div className="text-muted-foreground text-xs">
+									{c.studentIds.length} học viên · {SYLLABUS_LABEL}:{" "}
+									{sy ? sy.name : "chưa gán"}
+								</div>
+								{c.sessionsTotal > 0 && (
+									<div className="mt-5">
+										<Progress value={pct} />
+										<div className="mt-1.5 text-muted-foreground text-xs">
+											Tiến độ {c.sessionsDone}/{c.sessionsTotal} buổi
 										</div>
-										<div className="font-mono text-meta text-xs">
-											{classMeta(c)}
-										</div>
-									</div>,
-									sy ? (
-										<span key="sy">{sy.name}</span>
-									) : (
-										<span key="sy" className="font-mono text-meta text-xs">
-											Chưa gán
-										</span>
-									),
-									<span key="c" className="font-mono">
-										{c.studentIds.length}
-									</span>,
-									<div key="p" className="min-w-[100px]">
-										<Progress
-											value={pct}
-											variant={
-												pct >= 67 ? "default" : pct >= 34 ? "warn" : "low"
-											}
-										/>
-										<div className="mt-[3px] font-mono text-meta text-xs">
-											{c.sessionsDone}/{c.sessionsTotal} buổi
-										</div>
-									</div>,
-									<span key="s" className="font-mono text-meta text-xs">
-										{formatSchedule(c.schedule)}
-									</span>,
-									c.status === "active" ? (
-										<Badge key="b" variant="success" dot>
+									</div>
+								)}
+								<div className="mt-3">
+									{c.status === "active" ? (
+										<Badge variant="success" dot>
 											Đang học
 										</Badge>
 									) : (
-										<Badge key="b" variant="muted">
-											Tạm dừng
-										</Badge>
-									),
-								],
-							};
-						})}
-					/>
-				</Card>
+										<Badge variant="muted">Tạm dừng</Badge>
+									)}
+								</div>
+							</button>
+						);
+					})}
+				</div>
 			)}
 			<AddClassModal open={modalOpen} onClose={() => setModalOpen(false)} />
 		</div>

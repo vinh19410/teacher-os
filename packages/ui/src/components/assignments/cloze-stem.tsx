@@ -1,10 +1,14 @@
-import { QUIZ_ANSWER_VALUE_MAX } from "@teacher-os/api/contracts";
+import {
+	QUIZ_ANSWER_VALUE_MAX,
+	type QuizVerdict,
+} from "@teacher-os/api/contracts";
 import {
 	countBlanks,
 	parseTableStem,
 	splitStemByMarker,
 	TABLECOMP_TYPE,
 } from "@teacher-os/ui/lib/cloze";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 /**
  * Shared student-facing stem renderer (phase-03 FR5). One implementation for
@@ -34,21 +38,34 @@ import {
  * so an empty learner blank sizes like the shortest preview blank. */
 const MIN_BLANK_WIDTH_CH = 6;
 
+/** Ô điền tô theo verdict khi soi bài (undefined = take/preview, không đổi). */
+const VERDICT_INPUT_CLASSES: Record<QuizVerdict, string> = {
+	correct: "border-b-verdict-correct text-verdict-correct",
+	wrong: "border-b-verdict-wrong text-verdict-wrong line-through",
+	skipped: "border-b-meta border-dashed text-muted-foreground",
+};
+
 function blankInput({
 	widthCh,
 	number,
 	value,
 	onChange,
+	verdict,
 }: {
 	widthCh: number;
 	number?: number;
 	value?: string;
 	onChange?: (value: string) => void;
+	verdict?: QuizVerdict;
 }) {
 	const ariaLabel =
 		number === undefined ? "Chỗ điền đáp án" : `Điền đáp án câu ${number}`;
-	const className =
-		"mx-[2px] rounded-sm border-line border-b-2 bg-bg px-1 align-baseline font-mono text-sm";
+	const className = cn(
+		// disabled:opacity-100 — fieldset review disabled không được làm mờ
+		// màu verdict của ô điền (#351).
+		"mx-[2px] rounded-sm border-border border-b-2 bg-background px-1 align-baseline font-mono text-sm disabled:opacity-100",
+		verdict && VERDICT_INPUT_CLASSES[verdict],
+	);
 	const style = { width: `${widthCh}ch` };
 	if (onChange) {
 		return (
@@ -81,6 +98,7 @@ export function ClozeStemText({
 	onChange,
 	typeId,
 	number,
+	verdict,
 }: {
 	stem: string;
 	/** Auto-grading key — preview-mode input width only, never rendered. */
@@ -93,6 +111,8 @@ export function ClozeStemText({
 	/** Type id when known — tablecomp stems get the labeled-row layout. */
 	typeId?: string;
 	number?: number;
+	/** Verdict chấm của câu — chỉ review truyền; tô viền dưới + chữ ô điền. */
+	verdict?: QuizVerdict;
 }) {
 	const interactive = onChange !== undefined;
 	const widthCh = interactive
@@ -110,7 +130,7 @@ export function ClozeStemText({
 					<span>
 						Hàng {ref.row} — Cột {ref.col}:{titles}
 					</span>
-					{blankInput({ widthCh, number, value, onChange })}
+					{blankInput({ widthCh, number, value, onChange, verdict })}
 				</>
 			);
 		}
@@ -121,7 +141,7 @@ export function ClozeStemText({
 	return (
 		<>
 			{before}
-			{blankInput({ widthCh, number, value, onChange })}
+			{blankInput({ widthCh, number, value, onChange, verdict })}
 			{after}
 		</>
 	);

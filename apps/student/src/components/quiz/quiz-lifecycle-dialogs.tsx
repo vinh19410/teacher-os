@@ -60,7 +60,7 @@ export function QuizDialog({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-fg/40 p-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 p-4">
 			<div
 				ref={cardRef}
 				role="alertdialog"
@@ -69,14 +69,14 @@ export function QuizDialog({
 				aria-describedby={descriptionId}
 				tabIndex={-1}
 				onKeyDown={handleKeyDown}
-				className="w-full max-w-sm rounded-[var(--radius-lg)] border border-line bg-bg p-5 shadow-lg focus-visible:outline-2 focus-visible:outline-accent-blue"
+				className="w-full max-w-sm rounded-[var(--radius-lg)] border border-border bg-background p-5 shadow-lg focus-visible:outline-2 focus-visible:outline-hot"
 			>
-				<h2 id={titleId} className="font-display font-semibold text-fg">
+				<h2 id={titleId} className="font-semibold text-foreground">
 					{title}
 				</h2>
 				<p
 					id={descriptionId}
-					className="mt-2 text-muted-fg text-sm leading-relaxed"
+					className="mt-2 text-muted-foreground text-sm leading-relaxed"
 				>
 					{description}
 				</p>

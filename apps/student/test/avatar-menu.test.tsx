@@ -1,24 +1,31 @@
+// @vitest-environment jsdom
+
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { AvatarMenu } from "@/components/layout/avatar-menu";
+import { describe, expect, it, vi } from "vitest";
 
-describe("AvatarMenu", () => {
-	it("renders compact variant with initial and name", () => {
-		const html = renderToStaticMarkup(
-			<AvatarMenu name="Vinh Tran" email="vinh@test.local" variant="compact" />,
-		);
-		expect(html).toContain(">V</span>");
-		expect(html).toContain("Vinh Tran");
-		expect(html).toContain('aria-label="Tài khoản học viên"');
-	});
+vi.mock("@/lib/auth-client", () => ({
+	authClient: { signOut: vi.fn() },
+}));
 
-	it("renders sidebar variant with full user card including name and email", () => {
+import { AvatarMenuContent } from "@/components/layout/avatar-menu";
+
+// Shell v2: trigger avatar do UserFooter (packages/ui) quản — component này
+// chỉ là nội dung menu tài khoản mở từ footer (thông tin + Đăng xuất).
+describe("AvatarMenuContent", () => {
+	it("renders account info with role badge and sign-out item", () => {
 		const html = renderToStaticMarkup(
-			<AvatarMenu name="Vinh Tran" email="vinh@test.local" variant="sidebar" />,
+			<AvatarMenuContent name="Vinh Tran" email="vinh@test.local" />,
 		);
-		expect(html).toContain(">V</span>");
+		expect(html).toContain('role="menu"');
 		expect(html).toContain("Vinh Tran");
 		expect(html).toContain("vinh@test.local");
-		expect(html).toContain('aria-label="Tài khoản học viên"');
+		expect(html).toContain("Học viên");
+		expect(html).toContain("Đăng xuất");
+		expect(html).toContain('role="menuitem"');
+	});
+
+	it("falls back to a generic student name without one", () => {
+		const html = renderToStaticMarkup(<AvatarMenuContent />);
+		expect(html).toContain("Học viên");
 	});
 });

@@ -2,6 +2,7 @@ import type {
 	StudentAssignment,
 	StudentAssignmentScores,
 } from "@teacher-os/api/contracts";
+import { isGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
 export type AssignmentDisplayStatus =
@@ -92,19 +93,37 @@ export function deriveAssignmentStatus(
 		return {
 			status: "graded",
 			statusLabel: `Điểm: ${bandScore}`,
-			badgeClass: "bg-success-soft text-success border-success/20",
+			badgeClass: "bg-success-soft text-success",
 			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
 			bandScore,
 			sortOrder: 4,
 		};
 	}
 
+	// TOS-30 #478: giáo viên đã "Chốt trả bài" (graded_at có, scores chưa
+	// đủ band) — tuyệt đối KHÔNG rơi vào nhãn chờ chấm nữa.
+	if (assignment.gradedAt) {
+		return {
+			status: "graded",
+			statusLabel: "Đã chấm",
+			badgeClass: "bg-success-soft text-success",
+			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
+			bandScore: null,
+			sortOrder: 4,
+		};
+	}
+
 	// Submitted
 	if (assignment.submittedAt) {
+		// TOS-30 #478: chỉ Writing/Speaking chờ giáo viên chấm tay — bài tự
+		// chấm (Reading/Listening) đã có điểm ngay khi nộp, giữ "Đã nộp".
+		const needsTeacherGrading = isGradableSkill(assignment.skill ?? "");
 		return {
 			status: "submitted",
-			statusLabel: "Đã nộp",
-			badgeClass: "bg-success-soft text-success border-success/20",
+			statusLabel: needsTeacherGrading
+				? "Đã nộp — Đang chờ giáo viên chấm"
+				: "Đã nộp",
+			badgeClass: "bg-success-soft text-success",
 			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
 			bandScore: null,
 			sortOrder: 3,
@@ -116,7 +135,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg border-line",
+			badgeClass: "bg-muted text-muted-foreground",
 			dueText: "Không có hạn",
 			bandScore: null,
 			sortOrder: 2,
@@ -129,7 +148,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "not-submitted",
 			statusLabel: "Chưa nộp",
-			badgeClass: "bg-surface text-muted-fg border-line",
+			badgeClass: "bg-muted text-muted-foreground",
 			dueText: assignment.due,
 			bandScore: null,
 			sortOrder: 2,
@@ -143,7 +162,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "overdue",
 			statusLabel: "Quá hạn",
-			badgeClass: "bg-danger-soft text-danger border-danger/20",
+			badgeClass: "bg-primary font-medium text-primary-foreground",
 			dueText: `Hạn: ${dueFormatted} · quá ${overdueDays} ngày`,
 			bandScore: null,
 			sortOrder: 0, // Overdue first
@@ -155,7 +174,7 @@ export function deriveAssignmentStatus(
 		return {
 			status: "due-soon",
 			statusLabel: "Sắp đến hạn",
-			badgeClass: "bg-warning-soft text-[#a16207] border-warning/20",
+			badgeClass: "border border-dashed border-border text-muted-foreground",
 			dueText: `Hạn: ${dueFormatted} · ${relativeMsg}`,
 			bandScore: null,
 			sortOrder: 1,
@@ -165,7 +184,7 @@ export function deriveAssignmentStatus(
 	return {
 		status: "not-submitted",
 		statusLabel: "Chưa nộp",
-		badgeClass: "bg-surface text-muted-fg border-line",
+		badgeClass: "bg-muted text-muted-foreground",
 		dueText: `Hạn: ${dueFormatted} · còn ${diff} ngày`,
 		bandScore: null,
 		sortOrder: 2,

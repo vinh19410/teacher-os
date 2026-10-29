@@ -4,6 +4,7 @@ import {
 	bankHubCompanyRawSchema,
 	bankHubEnvelope,
 	bankHubLinkTokenRawSchema,
+	bankHubMockTransactionRawSchema,
 	bankHubTokenResponseSchema,
 	bankHubTransactionListSchema,
 } from "./bank-hub-types";
@@ -94,6 +95,15 @@ export interface BankHubTransactionPage {
 	};
 }
 
+export interface BankHubMockTransaction {
+	transactionId: string;
+	referenceNumber: string;
+	transactionDate: string;
+	amount: number | null;
+	transferType: string;
+	accumulated: number | null;
+}
+
 export type BankHubLinkPurpose =
 	| "LINK_BANK_ACCOUNT"
 	| "UNLINK_BANK_ACCOUNT"
@@ -127,6 +137,17 @@ export interface BankHubClient {
 		page?: number;
 		perPage?: number;
 	}): Promise<BankHubTransactionPage>;
+	/**
+	 * Sandbox-only mock transaction (docs: "Giả lập giao dịch"). SePay itself
+	 * answers 403 on the production host, so callers gate on BankHubContext
+	 * env before reaching this.
+	 */
+	createMockTransaction(input: {
+		bankAccountXid: string;
+		transferType: "credit" | "debit";
+		amount: number;
+		content: string;
+	}): Promise<BankHubMockTransaction>;
 }
 
 function toCompany(raw: {
@@ -151,7 +172,7 @@ function toAccount(raw: {
 	bank_code?: string | null;
 	account_holder_name?: string | null;
 	account_number?: string | null;
-	active?: boolean | number | null;
+	active?: boolean | number | string | null;
 }): BankHubAccount {
 	return {
 		xid: raw.xid,
@@ -161,7 +182,7 @@ function toAccount(raw: {
 		bankCode: raw.bank_code ?? "",
 		accountHolderName: raw.account_holder_name ?? "",
 		accountNumber: raw.account_number ?? "",
-		active: raw.active === true || raw.active === 1,
+		active: raw.active === true || raw.active === 1 || raw.active === "1",
 	};
 }
 
@@ -290,9 +311,17 @@ export function createBankHubClient(
 		const json: unknown = await res.json().catch(() => undefined);
 		const parsed = opts.schema.safeParse(json);
 		if (!parsed.success) {
+			// Paths and codes only — values may hold link_token or account data.
+			const issues = parsed.error.issues
+				.map((i) => `${i.path.join(".") || "(root)"}: ${i.code}`)
+				.join("; ");
+			const keys =
+				json && typeof json === "object" && !Array.isArray(json)
+					? Object.keys(json).join(",")
+					: typeof json;
 			throw new BankHubError(
 				res.status,
-				`Bank Hub response for ${opts.path} is malformed`,
+				`Bank Hub response for ${opts.path} is malformed (${issues}; keys=${keys})`,
 			);
 		}
 		return parsed.data;
@@ -300,7 +329,6 @@ export function createBankHubClient(
 
 	const companyEnvelope = bankHubEnvelope(bankHubCompanyRawSchema);
 	const accountEnvelope = bankHubEnvelope(bankHubAccountRawSchema);
-	const linkTokenEnvelope = bankHubEnvelope(bankHubLinkTokenRawSchema);
 	const accountListEnvelope = bankHubEnvelope(bankHubAccountRawSchema.array());
 
 	return {
@@ -349,12 +377,13 @@ export function createBankHubClient(
 						: {}),
 					...(input.language !== undefined ? { language: input.language } : {}),
 				},
-				schema: linkTokenEnvelope,
+				// 201 body is flat — no {code, data} envelope like company endpoints.
+				schema: bankHubLinkTokenRawSchema,
 			}).then((raw) => ({
-				xid: raw.data.xid,
-				hostedLinkUrl: raw.data.hosted_link_url,
-				linkToken: raw.data.link_token,
-				expiresAt: raw.data.expires_at,
+				xid: raw.xid,
+				hostedLinkUrl: raw.hosted_link_url,
+				linkToken: raw.link_token,
+				expiresAt: raw.expires_at,
 			})),
 		getBankAccount: (xid) =>
 			request({
@@ -392,6 +421,25 @@ export function createBankHubClient(
 							totalPages: page.meta.total_pages,
 						}
 					: undefined,
+			})),
+		createMockTransaction: (input) =>
+			request({
+				method: "POST",
+				path: "/v1/transaction/create",
+				body: {
+					bank_account_xid: input.bankAccountXid,
+					transfer_type: input.transferType,
+					amount: input.amount,
+					transaction_content: input.content,
+				},
+				schema: bankHubEnvelope(bankHubMockTransactionRawSchema),
+			}).then((raw) => ({
+				transactionId: raw.data.transaction_id,
+				referenceNumber: raw.data.reference_number ?? "",
+				transactionDate: raw.data.transaction_date ?? "",
+				amount: raw.data.amount ?? null,
+				transferType: raw.data.transfer_type ?? input.transferType,
+				accumulated: raw.data.accumulated ?? null,
 			})),
 	};
 }

@@ -20,6 +20,29 @@ export interface ParsedSchedule {
 	end: string;
 }
 
+function toMinutes(hhmm: string): number {
+	// TIME_REGEX guarantees exactly two numeric parts.
+	const [hours = 0, minutes = 0] = hhmm.split(":").map(Number);
+	return hours * 60 + minutes;
+}
+
+/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1 — never JS
+ * getDay() (0 = Sunday). Single source: kernel route, daily attendance và
+ * holiday pipeline (TOS-11) cùng dùng. */
+export function isoToLessonWeekday(iso: string): number {
+	const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+	return weekday === 0 ? 7 : weekday;
+}
+
+/**
+ * Thời lượng phút của một buổi theo lịch chuẩn của lớp — cùng công thức
+ * `generateScheduleLessons` (wraps midnight: 23:00→00:30 = 90). Tách ra để
+ * holiday makeup (TOS-11) và generator dùng chung một nguồn (DRY).
+ */
+export function scheduleDurationMinutes(parsed: ParsedSchedule): number {
+	return (toMinutes(parsed.end) - toMinutes(parsed.start) + 1440) % 1440;
+}
+
 /**
  * Parse the stored class schedule JSON; null for legacy free-text/invalid.
  * Mirrors apps/server kernel.ts byte-for-byte (dedup + sort before cycling).
@@ -73,7 +96,11 @@ function lessonWeekday(date: Date): number {
 	return day === 0 ? 7 : day;
 }
 
-/** Per-weekday occurrence count of the generator cycle over deduped+sorted days. */
+/**
+ * Per-weekday row count of the pre-#494 generator cycle (Monday-first, blind
+ * to startDate). Only legacy undated rows have this shape, so only the
+ * backfill conformance check may use it.
+ */
 export function occurrencesPerDay(
 	days: number[],
 	total: number,
@@ -88,14 +115,43 @@ export function occurrencesPerDay(
 	return counts;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
- * Chronological skeleton: weekday (lesson convention 1-7) → the ordered
- * yyyy-mm-dd list of its k-th occurrences starting at startISO. The walk
- * caps at total*7+14 days — it can only trip on a weekday-convention bug,
- * and then the whole derivation must bail rather than fabricate dates.
- * Null when schedule/startISO invalid or the cap trips.
+ * Chronological skeleton: the first `total` scheduled days on or after
+ * startISO, grouped as weekday (lesson convention 1-7) → ordered yyyy-mm-dd
+ * dates. The walk caps at total*7+14 days — it can only trip on a
+ * weekday-convention bug, and then the derivation must bail rather than
+ * fabricate dates. Null when total <= 0 or the cap trips.
  */
 export function skeletonOf(
+	schedule: ParsedSchedule,
+	startISO: string,
+	total: number,
+): Map<number, string[]> | null {
+	if (total <= 0) return null;
+	const scheduled = new Set(schedule.days.map((day0) => day0 + 1));
+	const skeleton = new Map<number, string[]>();
+	const startMs = new Date(`${startISO}T00:00:00Z`).getTime();
+	let placed = 0;
+	for (let offset = 0; offset < total * 7 + 14 && placed < total; offset++) {
+		const date = new Date(startMs + offset * DAY_MS);
+		const weekday = lessonWeekday(date);
+		if (!scheduled.has(weekday)) continue;
+		const list = skeleton.get(weekday) ?? [];
+		list.push(date.toISOString().slice(0, 10));
+		skeleton.set(weekday, list);
+		placed += 1;
+	}
+	return placed === total ? skeleton : null;
+}
+
+/**
+ * Skeleton for legacy undated rows: per weekday, as many k-th occurrences as
+ * the pre-#494 cycle generated (`occurrencesPerDay`). Backfill stamps those
+ * rows, so it must follow their shape, not the chronological skeleton.
+ */
+function legacySkeletonOf(
 	schedule: ParsedSchedule,
 	startISO: string,
 	total: number,
@@ -110,7 +166,6 @@ export function skeletonOf(
 	let placed = 0;
 	for (const day of needed.keys()) skeleton.set(day, []);
 	const startMs = new Date(`${startISO}T00:00:00Z`).getTime();
-	const DAY_MS = 24 * 60 * 60 * 1000;
 	for (
 		let offset = 0;
 		offset < total * 7 + 14 && placed < skeleton.size;
@@ -202,7 +257,7 @@ export function conforms(input: ConformsInput): ConformsResult {
 			}
 		}
 	}
-	if (!skeletonOf(parsed, startISO, input.total)) {
+	if (!legacySkeletonOf(parsed, startISO, input.total)) {
 		return { conform: false, reason: "skeleton-cap-tripped" };
 	}
 	return { conform: true };
@@ -302,7 +357,7 @@ export function buildBackfillPlan(
 		const startISO = parseStartDateStrict(cls.startDateRaw);
 		// conforms() guarantees both parses succeed; the guards keep TS honest.
 		const skeleton =
-			parsed && startISO ? skeletonOf(parsed, startISO, cls.total) : null;
+			parsed && startISO ? legacySkeletonOf(parsed, startISO, cls.total) : null;
 		if (!skeleton) {
 			summary.push({
 				classId: cls.classId,

@@ -74,18 +74,16 @@ export function StudentPreviewPaper(props: {
 		isValidPin(item.pin),
 	);
 	return (
-		<div className="rounded-lg border border-line bg-surface-warm p-5">
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
-				Xem trước phía học viên
-			</p>
-			<p className="mt-1 font-display font-semibold text-[17px]">
+		<div className="rounded-lg rounded-xl border bg-card p-5 shadow-sm">
+			<p className="text-muted-foreground text-xs">Xem trước phía học viên</p>
+			<p className="mt-1 font-semibold text-[17px]">
 				{props.title.trim() || "Chưa đặt tên đề"}
 			</p>
-			<p className="mt-1.5 font-mono text-meta text-xs">
+			<p className="mt-1.5 text-muted-foreground text-xs">
 				{part.spec} · Band {props.band}
 			</p>
 			{skillId === "listening" && (
-				<p className="mt-3 rounded-md border border-line bg-surface p-3 text-sm">
+				<p className="mt-3 rounded-md rounded-md bg-muted p-3 text-sm">
 					🔊 {props.audioName?.trim() || "Chưa đính file nghe"}
 				</p>
 			)}
@@ -109,7 +107,7 @@ export function StudentPreviewPaper(props: {
 					<img
 						src={diagramImageUrl}
 						alt="Ảnh biểu đồ đề Reading"
-						className="mt-3 max-h-72 rounded-md border border-line"
+						className="mt-3 max-h-72 rounded-md border border-border"
 						referrerPolicy="no-referrer"
 						loading="lazy"
 					/>
@@ -119,7 +117,7 @@ export function StudentPreviewPaper(props: {
 					{!isEmptyRichText(props.intro ?? "") && (
 						<RichTextBody
 							text={props.intro ?? ""}
-							className="text-muted-fg text-sm"
+							className="text-muted-foreground text-sm"
 						/>
 					)}
 					{bankable && <OptionBankList bank={bank} kind={bankKind} />}
@@ -139,7 +137,7 @@ export function StudentPreviewPaper(props: {
 								"Câu hỏi sẽ hiện ở đây."
 							)}
 							{item.opts?.map((option, optionIndex) => (
-								<div key={optionIndex} className="ml-5 text-muted-fg">
+								<div key={optionIndex} className="ml-5 text-muted-foreground">
 									{String.fromCharCode(65 + optionIndex)} {option}
 								</div>
 							))}
@@ -186,7 +184,7 @@ export function StudentPreviewPaper(props: {
 				<Tag>{props.status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}</Tag>
 			</div>
 			{!isEmptyRichText(props.prompt) && skillId === "writing" && (
-				<p className="mt-2 font-mono text-[11px] text-meta">
+				<p className="mt-2 text-muted-foreground text-xs">
 					{wordCount(htmlToPlainText(props.prompt))} từ
 				</p>
 			)}

@@ -1,3 +1,4 @@
+import { RICH_TEXT_CONTENT_CLASSES } from "@teacher-os/ui/lib/rich-text-content-classes";
 import { sanitizeRichText } from "@teacher-os/ui/lib/rich-text-sanitize";
 import { cn } from "@teacher-os/ui/lib/utils";
 import { useMemo } from "react";
@@ -43,11 +44,7 @@ export function RichTextBody({
 	if (isHtml && typeof document !== "undefined") {
 		return (
 			<div
-				className={cn(
-					// Tailwind preflight strips list styling — restore it for rendered markup
-					"[&_a]:underline [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5",
-					className,
-				)}
+				className={cn(RICH_TEXT_CONTENT_CLASSES, className)}
 				dangerouslySetInnerHTML={{ __html: sanitizeRichText(text) }}
 			/>
 		);

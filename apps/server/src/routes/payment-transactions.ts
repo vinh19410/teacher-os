@@ -6,6 +6,7 @@ import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { recomputeInvoiceStatement } from "../lib/payments/recompute-invoice";
+import { requireFinanceRole } from "../lib/require-finance-role";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type TxContext = Context<Env>;
@@ -18,6 +19,7 @@ type TxContext = Context<Env>;
  */
 export function paymentTransactionRoutes(deps: { getDb(): Db }) {
 	const router = new Hono<Env>();
+	router.use("*", requireFinanceRole);
 
 	function unauthorized(c: TxContext) {
 		return c.json({ error: "unauthorized" }, 401);

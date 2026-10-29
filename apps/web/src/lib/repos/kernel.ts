@@ -9,7 +9,7 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
-import type { KernelAction } from "@/lib/data-actions";
+import type { CurriculumTarget, KernelAction } from "@/lib/data-actions";
 import {
 	HttpError,
 	isHttpError,
@@ -71,7 +71,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "add-syllabus":
 			return {
-				path: "/api/syllabi",
+				path: "/api/syllabus-templates",
 				body: {
 					name: action.payload.name,
 					type: action.payload.type,
@@ -82,16 +82,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					modules: action.payload.modules,
 				},
 			};
-		case "import-syllabus":
+		case "import-curriculum":
 			return {
-				path: `/api/classes/${action.classId}/import-syllabus`,
+				path: `/api/classes/${action.classId}/curriculum/import`,
 				body: { templateId: action.templateId },
 			};
 		case "remove-curriculum":
 			// Body must stay exactly {} — same CSRF-safe convention as
 			// check-in/cancel.
 			return {
-				path: `/api/classes/${action.classId}/remove-curriculum`,
+				path: `/api/classes/${action.classId}/curriculum/remove`,
 				body: {},
 			};
 		case "update-class-notes":
@@ -139,6 +139,13 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,
 				body: { method: action.method },
 			};
+		case "record-invoice-payment":
+			// #450: invoicePaymentCreateSchema is .strict() — the payload is the
+			// entire body (clientRequestId, amount, method, note).
+			return {
+				path: `/api/invoices/${action.invoiceId}/payments`,
+				body: { ...action.payload },
+			};
 		case "grade-assignment":
 			return {
 				path: `/api/assignments/${action.assignmentId}/grade`,
@@ -176,56 +183,56 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "add-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules`,
+				path: `${curriculumBase(action.target)}/modules`,
 				body: { ...action.payload },
 			};
 		case "edit-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}`,
 				body: { ...action.payload },
 			};
 		case "add-lesson":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons`,
 				body: { ...action.payload },
 			};
 		case "edit-lesson":
 			// Spread để key `status` undefined tự rơi khỏi JSON — server sẽ
 			// preserve status cũ khi body không có key này.
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/${action.lessonId}`,
 				body: { ...action.payload },
 			};
 		case "replace-syllabus-content":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/replace-content`,
+				path: `/api/syllabus-templates/${action.syllabusId}/replace-content`,
 				body: { modules: action.modules },
 			};
 		case "delete-module":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/remove`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/remove`,
 				body: {},
 			};
 		case "delete-lesson":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/${action.lessonId}/remove`,
 				body: {},
 			};
 		case "delete-syllabus":
 			// Body phải stay exactly {} — same CSRF-safe convention as
 			// remove-curriculum (server schema là z.object({}).strict()).
 			return {
-				path: `/api/syllabi/${action.syllabusId}/remove`,
+				path: `/api/syllabus-templates/${action.syllabusId}/remove`,
 				body: {},
 			};
 		case "reorder-modules":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/reorder`,
+				path: `${curriculumBase(action.target)}/modules/reorder`,
 				body: { moduleIds: action.moduleIds },
 			};
 		case "reorder-lessons":
 			return {
-				path: `/api/syllabi/${action.syllabusId}/modules/${action.moduleId}/lessons/reorder`,
+				path: `${curriculumBase(action.target)}/modules/${action.moduleId}/lessons/reorder`,
 				body: { lessonIds: action.lessonIds },
 			};
 		case "activate-enrollment":
@@ -275,6 +282,48 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "PATCH",
 				body: { ...action.payload },
 			};
+		case "create-vocab-deck":
+			// #359: vocabDeckCreateSchema .strict() — id optional không gửi
+			// (server tự sinh), lang default "en" server-side.
+			return {
+				path: "/api/kernel/vocab/decks",
+				body: { ...action.payload },
+			};
+		case "rename-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/decks/rename",
+				body: { ...action.payload },
+			};
+		case "delete-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/decks/delete",
+				body: { deckId: action.deckId },
+			};
+		case "upsert-vocab-word":
+			return {
+				path: "/api/kernel/vocab/words/upsert",
+				body: { ...action.payload },
+			};
+		case "remove-vocab-word":
+			return {
+				path: "/api/kernel/vocab/words/remove",
+				body: { wordId: action.wordId },
+			};
+		case "clone-vocab-library-decks":
+			return {
+				path: "/api/kernel/vocab-library/clone",
+				body: { ...action.payload },
+			};
+		case "suggest-vocab-deck":
+			return {
+				path: "/api/kernel/vocab/suggestions",
+				body: { ...action.payload },
+			};
+		case "revoke-vocab-suggestion":
+			return {
+				path: "/api/kernel/vocab/suggestions/revoke",
+				body: { suggestionId: action.suggestionId },
+			};
 	}
 }
 
@@ -303,6 +352,13 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		enrollments: mapEnrollments(snapshot),
 		classAssignments: mapClassAssignments(snapshot),
 		assignmentTests: mapAssignmentTests(snapshot),
+		vocabDecks: snapshot.vocabDecks ?? [],
+		vocabSuggestions: snapshot.vocabSuggestions ?? [],
+		holidays: snapshot.holidays ?? [],
+		holidayShifts: snapshot.holidayShifts ?? [],
+		holidayCancels: snapshot.holidayCancels ?? [],
+		events: snapshot.events ?? [],
+		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
 
@@ -324,6 +380,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 export interface KernelCommandPayload {
 	updated?: number;
 	skipped?: number;
+	duplicates?: string[];
 }
 
 export type KernelCommandResult =
@@ -364,6 +421,7 @@ export interface KernelWriteEnvelope {
 	id?: string;
 	updated?: number;
 	skipped?: number;
+	duplicates?: string[];
 }
 
 function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
@@ -375,6 +433,12 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	if (typeof record.id === "string") envelope.id = record.id;
 	if (typeof record.updated === "number") envelope.updated = record.updated;
 	if (typeof record.skipped === "number") envelope.skipped = record.skipped;
+	if (
+		Array.isArray(record.duplicates) &&
+		record.duplicates.every((item): item is string => typeof item === "string")
+	) {
+		envelope.duplicates = record.duplicates;
+	}
 	return envelope;
 }
 
@@ -396,6 +460,16 @@ async function parseErrorReason(res: Response): Promise<string | undefined> {
 		// Body-rác/không-JSON: reason stays undefined; status still classifies.
 	}
 	return undefined;
+}
+
+/**
+ * Base path cho tám thao tác module/lesson theo phạm vi của `target`
+ * (design D7, issue #394): template scope hoặc giáo trình của lớp.
+ */
+function curriculumBase(target: CurriculumTarget): string {
+	return target.kind === "template"
+		? `/api/syllabus-templates/${target.syllabusId}`
+		: `/api/classes/${target.classId}/curriculum`;
 }
 
 /** Transport: POST a kernel write and resolve its parsed 2xx envelope. */
@@ -448,14 +522,32 @@ const SNAPSHOT_COLLECTION_KEYS = [
 	"reports",
 	"notifs",
 	"commentBank",
+	"vocabDecks",
+] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
+
+/**
+ * Optional snapshot collections (#363 RT-F8/F23): tolerated when absent on older
+ * server payloads so deploy skew never blanks the teacher workspace, while still
+ * verified as an array when present.
+ */
+const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
+	"vocabSuggestions",
+	"holidays",
+	"holidayShifts",
+	"holidayCancels",
+	// TOS-14 (#447): events — optional để deploy skew (web mới + server cũ)
+	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
+	"events",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in
-// SNAPSHOT_COLLECTION_KEYS, or a new contract field would silently skip the
-// shape guard below.
+// SNAPSHOT_COLLECTION_KEYS or OPTIONAL_SNAPSHOT_COLLECTION_KEYS, or a new
+// contract field would silently skip the shape guard below.
 type MissingSnapshotKey = Exclude<
 	keyof KernelSnapshot,
-	(typeof SNAPSHOT_COLLECTION_KEYS)[number]
+	| (typeof SNAPSHOT_COLLECTION_KEYS)[number]
+	| (typeof OPTIONAL_SNAPSHOT_COLLECTION_KEYS)[number]
+	| "viewer"
 >;
 const allSnapshotKeysPresent: MissingSnapshotKey extends never ? true : never =
 	true;
@@ -463,16 +555,27 @@ void allSnapshotKeysPresent;
 
 /**
  * Minimal shape guard: a `200` body only counts as a snapshot when every
- * contract collection is present and is an array. Without this, a proxy page
- * or foreign JSON envelope would map "successfully" into an empty-looking
- * workspace — exactly the failure mode this phase exists to prevent.
+ * required contract collection is present and is an array, and every optional
+ * collection is either absent or an array.
  */
 function isSnapshotShape(value: unknown): value is KernelSnapshot {
 	if (typeof value !== "object" || value === null || Array.isArray(value)) {
 		return false;
 	}
 	const record = value as Record<string, unknown>;
-	return SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key]));
+	return (
+		SNAPSHOT_COLLECTION_KEYS.every((key) => Array.isArray(record[key])) &&
+		OPTIONAL_SNAPSHOT_COLLECTION_KEYS.every(
+			(key) => record[key] === undefined || Array.isArray(record[key]),
+		) &&
+		(record.viewer === undefined ||
+			(typeof record.viewer === "object" &&
+				record.viewer !== null &&
+				!Array.isArray(record.viewer) &&
+				typeof (record.viewer as Record<string, unknown>).role === "string" &&
+				typeof (record.viewer as Record<string, unknown>).canAccessFinance ===
+					"boolean"))
+	);
 }
 
 /** Transport: fetch the org-scoped kernel snapshot. */
@@ -626,34 +729,23 @@ export function createKernelCommandBus(
 					}
 				: { kind: "outcome-unknown", error };
 		}
-		const { id, updated, skipped } = envelope;
+		const { id, updated, skipped, duplicates } = envelope;
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				await deps.refetch();
-				return { kind: "refreshed", id, updated, skipped };
+				return { kind: "refreshed", id, updated, skipped, duplicates };
 			} catch (error) {
-				// Session expired between the write and the refresh. The write
-				// itself committed, so report once and re-auth — a retry would
-				// hit the same dead session. Every action resolves `committed`
-				// with the acknowledged id (the comment-bank exception is
-				// absorbed: its ack IS the durable commit boundary).
 				if (isHttpError(error) && error.status === 401) {
 					deps.onAuthLost();
-					return { kind: "committed", id, updated, skipped };
+					return { kind: "committed", id, updated, skipped, duplicates };
 				}
-				// A student-role rejection on the post-write reload means the
-				// write landed but the session can no longer read — same exit.
 				if (isStudentRoleRejected(error)) {
 					deps.onRoleBlocked?.();
-					return { kind: "committed", id, updated, skipped };
+					return { kind: "committed", id, updated, skipped, duplicates };
 				}
-				// A flaky GET must not lose the acknowledged write's outcome.
 			}
 		}
-		// The 2xx acknowledgement is the durable commit boundary — the write
-		// IS saved even though the UI could not reload. Callers see
-		// `committed`, keep the input out of retry reach, and reconcile.
-		return { kind: "committed", id, updated, skipped };
+		return { kind: "committed", id, updated, skipped, duplicates };
 	}
 
 	return {

@@ -21,6 +21,33 @@ import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
 /** POST start trả về đúng `{ attemptId }` (201 mới / 200 resume). */
 const quizStartResultSchema = z.object({ attemptId: z.string().min(1) });
 
+/**
+ * Nguồn đề của take/review screen (phase 10 #378): luồng giao bài gắn
+ * `assignmentId`, lượt tự luyện gắn `testId` — quyết định endpoint quiz
+ * detail/start. Submit/autosave/essay/media vẫn dùng route attempt chung
+ * `/api/student/attempts/*` cho cả hai nguồn.
+ */
+export type QuizTakeSource =
+	| { kind: "assignment"; id: string }
+	| { kind: "practice"; testId: string };
+
+/** Id định danh nguồn trong query key — assignmentId hoặc testId. */
+export function quizTakeSourceId(source: QuizTakeSource): string {
+	return source.kind === "assignment" ? source.id : source.testId;
+}
+
+function quizDetailPath(source: QuizTakeSource): string {
+	return source.kind === "assignment"
+		? `/api/student/assignments/${encodeURIComponent(source.id)}/quiz`
+		: `/api/student/practice/${encodeURIComponent(source.testId)}/quiz`;
+}
+
+function quizStartPath(source: QuizTakeSource): string {
+	return source.kind === "assignment"
+		? `/api/student/assignments/${encodeURIComponent(source.id)}/quiz/start`
+		: `/api/student/practice/${encodeURIComponent(source.testId)}/attempts`;
+}
+
 async function parseErrorBody(res: Response): Promise<{ code?: string }> {
 	try {
 		const body = (await res.json()) as { code?: string; error?: string };
@@ -56,47 +83,49 @@ async function request<T>(
 	return parse(await res.json());
 }
 
-/** GET /api/student/assignments/:assignmentId/quiz — đề sạch + attempt state. */
+/** GET đề sạch + attempt state — luồng assignment hoặc practice (#378). */
 export async function fetchStudentQuizDetail(
-	assignmentId: string,
+	source: QuizTakeSource,
 ): Promise<StudentQuizDetail> {
-	return request(
-		`/api/student/assignments/${encodeURIComponent(assignmentId)}/quiz`,
-		{ method: "GET" },
-		(raw) => studentQuizDetailSchema.parse(raw),
+	return request(quizDetailPath(source), { method: "GET" }, (raw) =>
+		studentQuizDetailSchema.parse(raw),
 	);
 }
 
-export function quizDetailQueryOptions(assignmentId: string) {
+export function quizDetailQueryKey(source: QuizTakeSource) {
+	return ["student", "quiz", source.kind, quizTakeSourceId(source)] as const;
+}
+
+export function quizDetailQueryOptions(source: QuizTakeSource) {
 	return {
-		queryKey: ["student", "quiz", assignmentId] as const,
-		queryFn: () => fetchStudentQuizDetail(assignmentId),
+		queryKey: quizDetailQueryKey(source),
+		queryFn: () => fetchStudentQuizDetail(source),
 		staleTime: 60_000,
 	};
 }
 
-export function useStudentQuizDetail(assignmentId: string) {
-	return useQuery(quizDetailQueryOptions(assignmentId));
+export function useStudentQuizDetail(source: QuizTakeSource) {
+	return useQuery(quizDetailQueryOptions(source));
 }
 
 /** POST start — snapshot đề vào attempt; 201 mới / 200 resume cùng attemptId. */
 export async function startQuizAttempt(
-	assignmentId: string,
+	source: QuizTakeSource,
 ): Promise<{ attemptId: string }> {
 	return request(
-		`/api/student/assignments/${encodeURIComponent(assignmentId)}/quiz/start`,
+		quizStartPath(source),
 		{ method: "POST", body: JSON.stringify({}) },
 		(raw) => quizStartResultSchema.parse(raw),
 	);
 }
 
-export function useStartQuizAttempt(assignmentId: string) {
+export function useStartQuizAttempt(source: QuizTakeSource) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: () => startQuizAttempt(assignmentId),
+		mutationFn: () => startQuizAttempt(source),
 		onSuccess: () => {
 			void queryClient.invalidateQueries({
-				queryKey: ["student", "quiz", assignmentId],
+				queryKey: quizDetailQueryKey(source),
 			});
 		},
 	});
@@ -338,10 +367,10 @@ export async function fetchQuizMediaObjectUrl(
  */
 export async function setQuizDetailMedia(
 	queryClient: QueryClient,
-	assignmentId: string,
+	source: QuizTakeSource,
 	media: QuizAttemptMedia | null,
 ): Promise<void> {
-	const { queryKey } = quizDetailQueryOptions(assignmentId);
+	const { queryKey } = quizDetailQueryOptions(source);
 	// Refetch đang bay (sau hủy/conflict) có thể trả về sau và đè media mới
 	// bằng dữ liệu cũ — hủy nó trước khi ghi.
 	await queryClient.cancelQueries({ queryKey });

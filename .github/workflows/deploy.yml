@@ -1,8 +1,10 @@
 # Production deploy: merge develop -> main ships to Cloudflare stage "prod".
 #
 # Design constraints (see docs/production-release-runbook.md):
-# - Deploy job runs only after the same quality gates as CI pass on this ref,
-#   so a bypassed/failing CI can never ship.
+# - Deploy job runs only after the same quality gates as CI AND the E2E suite
+#   (reusable e2e.yml) pass on this ref, so a bypassed/failing CI or a red E2E
+#   can never ship. Private repo on the free plan has no required checks, so
+#   this `needs` is the only thing standing between a red E2E and prod.
 # - Concurrency serializes deploys without cancelling a run in progress:
 #   alchemy applies forward-only D1 migrations, and two overlapping deploys
 #   would race the migration ledger.
@@ -55,8 +57,12 @@ jobs:
       - run: pnpm check-types
       - run: pnpm build
 
+  e2e:
+    # Deliberately no secrets passed: the E2E suite runs credential-free.
+    uses: ./.github/workflows/e2e.yml
+
   deploy:
-    needs: [quality]
+    needs: [quality, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
@@ -79,6 +85,9 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Tên secret Actions là GH_WEBHOOK_SECRET (Actions cấm tiền tố
+          # GITHUB_); tên env/binding Worker vẫn là GITHUB_WEBHOOK_SECRET.
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
           MAILER_IMPL: ${{ vars.MAILER_IMPL }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
         run: pnpm alchemy deploy --stage prod --yes

@@ -4,14 +4,12 @@ import {
 	isAnsweredValue,
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
+import {
+	VERDICT_BADGE_CLASSES,
+	VERDICT_SOLID_CLASSES,
+	VerdictIcon,
+} from "@teacher-os/ui/components/quiz/quiz-verdict";
 import { cn } from "@teacher-os/ui/lib/utils";
-
-/** Nút số câu tô màu theo verdict (review mode) thay vì theo answered. */
-const VERDICT_BUTTON_CLASSES: Record<QuizVerdict, string> = {
-	correct: "border-success/40 bg-success-soft text-success",
-	wrong: "border-danger/40 bg-danger-soft text-danger",
-	skipped: "border-line bg-surface text-muted-fg",
-};
 
 const VERDICT_ARIA_LABELS: Record<QuizVerdict, string> = {
 	correct: "đúng",
@@ -52,17 +50,29 @@ export function QuizNavigator({
 			.length;
 
 	return (
-		<footer className="sticky bottom-0 z-20 max-h-[30svh] overflow-y-auto border-line border-t bg-bg/95 backdrop-blur lg:max-h-none lg:overflow-visible">
+		<footer className="sticky bottom-0 z-20 max-h-[30svh] overflow-y-auto border-border border-t bg-background/95 backdrop-blur lg:max-h-none lg:overflow-visible">
 			<div className="w-full px-4 py-3">
 				<p
 					role="status"
 					data-testid="navigator-progress"
 					aria-live="polite"
-					className="mb-2 text-[13px] text-muted-fg"
+					className="mb-2 font-mono text-muted-foreground text-xs"
 				>
-					{reviewMode
-						? `Đúng ${verdictCount("correct")} câu · Sai ${verdictCount("wrong")} · Bỏ qua ${verdictCount("skipped")}`
-						: `Đã trả lời ${answeredCount}/${allQuestions.length} câu`}
+					{reviewMode ? (
+						<>
+							Đúng{" "}
+							<span className="text-verdict-correct">
+								{verdictCount("correct")}
+							</span>{" "}
+							câu · Sai{" "}
+							<span className="text-verdict-wrong">
+								{verdictCount("wrong")}
+							</span>{" "}
+							· Bỏ qua {verdictCount("skipped")}
+						</>
+					) : (
+						`Đã trả lời ${answeredCount}/${allQuestions.length} câu`
+					)}
 				</p>
 				<div className="flex flex-wrap gap-1.5">
 					{allQuestions.map((question) => {
@@ -88,16 +98,27 @@ export function QuizNavigator({
 								aria-current={isCurrent ? "true" : undefined}
 								onClick={() => onSelect(question.q)}
 								className={cn(
-									"flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-accent-blue",
+									"relative flex size-9 items-center justify-center rounded-md border font-mono text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2",
 									verdict
-										? VERDICT_BUTTON_CLASSES[verdict]
+										? VERDICT_SOLID_CLASSES[verdict]
 										: answered
 											? "border-transparent bg-primary text-primary-foreground"
-											: "border-line bg-surface text-fg hover:border-fg-2",
-									isCurrent && "outline-2 outline-accent-blue outline-offset-1",
+											: "border-border bg-background text-foreground hover:bg-accent",
+									isCurrent && "ring-2 ring-primary ring-offset-1",
 								)}
 							>
 								{question.number}
+								{verdict && (
+									<VerdictIcon
+										verdict={verdict}
+										// stroke màu verdict trên chấm --bg: kế thừa
+										// currentColor (--verdict-on == --bg) sẽ vô hình.
+										className={cn(
+											"absolute -top-1 -right-1 size-2.5 rounded-full bg-background p-px",
+											VERDICT_BADGE_CLASSES[verdict],
+										)}
+									/>
+								)}
 							</button>
 						);
 					})}

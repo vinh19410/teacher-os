@@ -11,8 +11,8 @@ export const QUIZ_SAVE_STATE_LABELS: Record<QuizSaveState, string> = {
 };
 
 const SAVE_STATE_CLASSES: Record<QuizSaveState, string> = {
-	saving: "text-muted-fg",
-	saved: "text-success",
+	saving: "text-muted-foreground",
+	saved: "text-primary",
 	error: "text-danger",
 };
 
@@ -38,12 +38,12 @@ export function QuizRuntimeHeader({
 	children?: ReactNode;
 }) {
 	return (
-		<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-line border-b bg-bg/95 px-4 backdrop-blur">
+		<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-border border-b bg-background/95 px-4 backdrop-blur">
 			<div className="flex min-w-0 items-center gap-3">
 				<Link to="/" className={cn(buttonVariants({ variant: "ghost" }))}>
 					Thoát
 				</Link>
-				<h1 className="truncate font-display font-semibold text-[15px] tracking-tight">
+				<h1 className="truncate font-semibold text-[15px] tracking-tight">
 					{title}
 				</h1>
 			</div>
@@ -55,7 +55,7 @@ export function QuizRuntimeHeader({
 						data-state={saveState}
 						aria-live="polite"
 						className={cn(
-							"font-medium text-[13px]",
+							"font-mono text-xs uppercase tracking-[0.08em]",
 							SAVE_STATE_CLASSES[saveState],
 						)}
 					>
@@ -64,7 +64,11 @@ export function QuizRuntimeHeader({
 				)}
 				{children}
 				{onSubmitClick !== null && (
-					<Button onClick={onSubmitClick} disabled={submitDisabled}>
+					<Button
+						onClick={onSubmitClick}
+						disabled={submitDisabled}
+						className="rounded-lg bg-primary text-bg hover:bg-primary hover:text-primary-foreground"
+					>
 						Nộp bài
 					</Button>
 				)}

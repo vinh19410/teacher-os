@@ -59,11 +59,13 @@ for (const [format, fixture] of [
 		for (const n of ["1", "2", "3", "4", "5"]) {
 			await expect(page.getByText(`Buổi ${n}`)).toBeVisible();
 		}
-		// Highlight buổi thi: badge warn + nền dòng amber (bg-warn-soft/50) —
+		// Highlight buổi thi: badge + testid row marker (redesign #349) —
 		// đúng 2 dòng thi giữa kỳ/cuối kỳ.
 		await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
 		await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
-		await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(2);
+		await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(
+			2,
+		);
 	});
 }
 
@@ -90,7 +92,7 @@ test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regressio
 	}
 	// Không có buổi thi nào → không badge, không dòng tint.
 	await expect(page.getByText("Thi giữa kỳ")).toHaveCount(0);
-	await expect(page.locator("[class*='bg-warn-soft/50']")).toHaveCount(0);
+	await expect(page.locator('[data-testid="test-session-row"]')).toHaveCount(0);
 });
 
 test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đã nhập", async ({

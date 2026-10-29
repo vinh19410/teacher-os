@@ -22,37 +22,45 @@ export function AttemptScoreCard({
 	return (
 		<section
 			aria-label="Kết quả bài làm"
-			className="rounded-[var(--radius-lg)] border border-line bg-bg p-6"
+			className="rounded-lg rounded-xl border bg-card p-6 shadow-sm"
 		>
-			<p className="font-mono text-[11px] text-muted-fg uppercase tracking-[0.08em]">
+			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
 				Điểm
 			</p>
 			<p
 				data-testid="attempt-correct-count"
-				className="mt-1 font-display font-semibold text-5xl text-fg leading-none"
+				className="mt-2 font-extrabold text-6xl text-foreground leading-none tracking-[-0.03em]"
 			>
 				{correctCount}
 			</p>
-			<p className="mt-1.5 text-muted-fg text-sm">trên tổng {totalCount} câu</p>
+			<p className="mt-2 text-muted-foreground text-sm">
+				trên tổng {totalCount} câu
+			</p>
 
-			<dl className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+			<dl className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-fg">Câu đúng</dt>
-					<dd data-testid="attempt-correct" className="font-[590] text-success">
+					<dt className="text-muted-foreground">Câu đúng</dt>
+					<dd
+						data-testid="attempt-correct"
+						className="font-medium font-mono text-success"
+					>
 						{correctCount}
 					</dd>
 				</div>
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-fg">Câu sai</dt>
-					<dd data-testid="attempt-wrong" className="font-[590] text-danger">
+					<dt className="text-muted-foreground">Câu sai</dt>
+					<dd
+						data-testid="attempt-wrong"
+						className="font-medium font-mono text-destructive"
+					>
 						{wrongCount}
 					</dd>
 				</div>
 				<div className="flex items-baseline gap-1.5">
-					<dt className="text-muted-fg">Câu bỏ qua</dt>
+					<dt className="text-muted-foreground">Câu bỏ qua</dt>
 					<dd
 						data-testid="attempt-skipped"
-						className="font-[590] text-muted-fg"
+						className="font-medium font-mono text-muted-foreground"
 					>
 						{skippedCount}
 					</dd>

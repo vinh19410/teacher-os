@@ -93,7 +93,7 @@ export function LessonModal({
 						/>
 					)}
 					{error && (
-						<div role="alert" className="mb-3 text-danger text-xs">
+						<div role="alert" className="text-danger text-xs">
 							{error}
 						</div>
 					)}
@@ -109,8 +109,10 @@ export function LessonModal({
 			) : (
 				<>
 					<div className="flex flex-col gap-1">
-						<span className="font-medium text-muted-fg text-xs">Thời gian</span>
-						<div className="font-mono text-meta text-xs">
+						<span className="font-medium text-muted-foreground text-xs">
+							Thời gian
+						</span>
+						<div className="text-muted-foreground text-xs">
 							{dateIso
 								? `${lessonDayLabel(lesson.day)}, ${formatDayMonth(dateIso)}`
 								: lessonDayLabel(lesson.day)}{" "}
@@ -118,11 +120,13 @@ export function LessonModal({
 						</div>
 					</div>
 					<div className="flex flex-col gap-1">
-						<span className="font-medium text-muted-fg text-xs">Chủ đề</span>
+						<span className="font-medium text-muted-foreground text-xs">
+							Chủ đề
+						</span>
 						<div className="text-sm">{lesson.topic}</div>
 					</div>
 					<div className="flex flex-col gap-1">
-						<span className="font-medium text-muted-fg text-xs">
+						<span className="font-medium text-muted-foreground text-xs">
 							Trạng thái
 						</span>
 						{lesson.status === "completed" ? (
@@ -131,21 +135,23 @@ export function LessonModal({
 							</Badge>
 						) : lesson.status === "cancelled" ? (
 							<Badge variant="danger">Đã hủy</Badge>
+						) : lesson.status === "holiday" ? (
+							<Badge variant="warn">Nghỉ lễ — Đã dời lịch</Badge>
 						) : (
 							<Badge variant="accent">Sắp tới</Badge>
 						)}
 					</div>
 					{lesson.zoom && (
 						<div className="flex flex-col gap-1">
-							<span className="font-medium text-muted-fg text-xs">
+							<span className="font-medium text-muted-foreground text-xs">
 								Link Zoom/Meet
 							</span>
-							<div className="break-all font-mono text-meta text-xs">
+							<div className="break-all text-muted-foreground text-xs">
 								{lesson.zoom}
 							</div>
 						</div>
 					)}
-					<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+					<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 						{lesson.status === "upcoming" ? (
 							<>
 								<Button

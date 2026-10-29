@@ -6,6 +6,7 @@ const base: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [],
 	classes: [],
 	syllabi: [],
@@ -37,6 +38,7 @@ describe("mapInvoices", () => {
 						date: "19/08",
 						type: "Gói buổi",
 						method: "CK",
+						createdAt: "2026-08-01T02:00:00.000Z",
 					},
 				],
 			}),
@@ -53,6 +55,7 @@ describe("mapInvoices", () => {
 				method: "CK",
 				due: "2026-08-19",
 				note: "",
+				createdAt: Date.parse("2026-08-01T02:00:00.000Z"),
 			},
 		]);
 	});
@@ -76,6 +79,7 @@ describe("mapInvoices", () => {
 						date: "01/09",
 						type: "Theo tháng",
 						method: "—",
+						createdAt: "2026-09-01T00:00:00.000Z",
 					},
 				],
 			}),
@@ -92,6 +96,7 @@ describe("mapInvoices", () => {
 				method: "—",
 				due: "2026-09-15",
 				note: "Học phí tháng 9",
+				createdAt: Date.parse("2026-09-01T00:00:00.000Z"),
 			},
 		]);
 	});
@@ -112,6 +117,7 @@ describe("mapInvoices", () => {
 					date: "",
 					type: "",
 					method: "—",
+					createdAt: "2026-09-02T00:00:00.000Z",
 				},
 			],
 		});
@@ -135,10 +141,34 @@ describe("mapInvoices", () => {
 					date: "",
 					type: "",
 					method: "—",
+					createdAt: "2026-09-03T00:00:00.000Z",
 				},
 			],
 		});
 		expect(mapped?.status).toBe("unpaid");
+	});
+
+	test("maps a missing/unparseable wire createdAt to 0 (#343 deploy skew)", () => {
+		const [mapped] = mapInvoices({
+			...base,
+			// Deploy skew: old server without the createdAt field.
+			invoices: [
+				{
+					id: "INV-skew",
+					studentId: "student-1",
+					due: "",
+					note: "",
+					enrollmentId: "",
+					amount: 1,
+					paidAmount: 0,
+					status: "unpaid",
+					date: "",
+					type: "",
+					method: "—",
+				},
+			] as never,
+		});
+		expect(mapped?.createdAt).toBe(0);
 	});
 });
 

@@ -1,5 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import type {
+	BillingTimelineResponse,
+	DebtReminderCreate,
+	DebtReminderResponse,
+	InvoiceTransactionItem,
 	PaymentInstructions,
 	PaymentTransactionItem,
 	ReconcileResult,
@@ -49,6 +53,34 @@ export function invoicePaymentQueryOptions(
 	return queryOptions({
 		queryKey: invoicePaymentQueryKey(invoiceId),
 		queryFn: ({ signal }) => fetchInvoicePayment(invoiceId, baseUrl, signal),
+	});
+}
+
+/** #345 — matched bank transactions of one invoice (detail page table). */
+export const invoiceTransactionsQueryKey = (invoiceId: string) =>
+	["invoice-transactions", invoiceId] as const;
+
+export async function fetchInvoiceTransactions(
+	invoiceId: string,
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<InvoiceTransactionItem[]> {
+	const res = await fetch(`${baseUrl}/api/invoices/${invoiceId}/transactions`, {
+		credentials: "include",
+		signal,
+	});
+	if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.status}`);
+	return (await res.json()) as InvoiceTransactionItem[];
+}
+
+export function invoiceTransactionsQueryOptions(
+	invoiceId: string,
+	baseUrl: string = getApiBaseUrl(),
+) {
+	return queryOptions({
+		queryKey: invoiceTransactionsQueryKey(invoiceId),
+		queryFn: ({ signal }) =>
+			fetchInvoiceTransactions(invoiceId, baseUrl, signal),
 	});
 }
 
@@ -130,4 +162,45 @@ export function rotatePayToken(
 	baseUrl: string = getApiBaseUrl(),
 ): Promise<{ payToken: string }> {
 	return postJson(`${baseUrl}/api/invoices/${invoiceId}/rotate-pay-token`);
+}
+
+/** TOS-18 (#452) — dòng thời gian hóa đơn & giao dịch theo học viên trên /debts. */
+export const billingTimelineQueryKey = (studentId: string) =>
+	["billing-timeline", studentId] as const;
+
+export async function fetchBillingTimeline(
+	studentId: string,
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<BillingTimelineResponse> {
+	const res = await fetch(
+		`${baseUrl}/api/students/${encodeURIComponent(studentId)}/billing-timeline`,
+		{
+			credentials: "include",
+			signal,
+		},
+	);
+	if (!res.ok) {
+		throw new Error(`Failed to fetch billing timeline: ${res.status}`);
+	}
+	return (await res.json()) as BillingTimelineResponse;
+}
+
+export function billingTimelineQueryOptions(
+	studentId: string,
+	baseUrl: string = getApiBaseUrl(),
+) {
+	return queryOptions({
+		queryKey: billingTimelineQueryKey(studentId),
+		queryFn: ({ signal }) => fetchBillingTimeline(studentId, baseUrl, signal),
+		staleTime: 0,
+	});
+}
+
+/** TOS-18 (#452) — gửi nhắc học phí hàng loạt qua hàng đợi thông báo. */
+export function sendDebtReminders(
+	input: DebtReminderCreate,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<DebtReminderResponse> {
+	return postJson(`${baseUrl}/api/debt-reminders`, input);
 }

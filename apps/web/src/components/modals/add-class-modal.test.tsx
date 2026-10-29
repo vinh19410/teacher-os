@@ -6,15 +6,24 @@ const templates = [
 		id: "syl-skills",
 		name: "IELTS Foundation",
 		skills: ["Writing", "Speaking"],
+		classId: null,
+		sourceTemplateId: null,
+		totalLessons: 3,
+		modules: [],
 	},
 	{
 		id: "syl-empty",
 		name: "Giao tiếp A1",
 		skills: [],
+		classId: null,
+		sourceTemplateId: null,
+		totalLessons: 0,
+		modules: [],
 	},
 ];
 
 vi.mock("@/lib/repos/use-syllabus", () => ({
+	useTemplates: () => templates,
 	useSyllabus: () => ({
 		templates,
 		syllabi: templates,
@@ -50,7 +59,6 @@ import type {
 } from "@/lib/mock-data";
 import {
 	AddClassModal,
-	ClassTemplatePicker,
 	sessionsFromTemplate,
 	skillsFromTemplate,
 } from "./add-class-modal";
@@ -65,63 +73,14 @@ function linkedSelectId(html: string) {
 	return id;
 }
 
-describe("ClassTemplatePicker syllabus skills", () => {
-	it("shows a skill count on every option and no hint for an empty class", () => {
-		const html = renderToStaticMarkup(
-			<ClassTemplatePicker
-				templates={templates}
-				templateId=""
-				onTemplateId={() => undefined}
-			/>,
-		);
-
-		expect(html).toContain("IELTS Foundation · 2 kỹ năng");
-		expect(html).toContain("Giao tiếp A1 · 0 kỹ năng");
-		expect(html).toContain(">— Lớp trống —<");
-		expect(html).not.toContain("Kỹ năng giáo trình");
-		expect(html).not.toContain("Syllabus chưa khai báo kỹ năng");
-		linkedSelectId(html);
-	});
-
-	it("shows syllabus skill tags while the template select stays labelled", () => {
-		const html = renderToStaticMarkup(
-			<ClassTemplatePicker
-				templates={templates}
-				templateId="syl-skills"
-				onTemplateId={() => undefined}
-			/>,
-		);
-
-		expect(html).toContain("Kỹ năng giáo trình");
-		expect(html).toContain(">Writing<");
-		expect(html).toContain(">Speaking<");
-		expect(html).not.toContain("Syllabus chưa khai báo kỹ năng");
-		linkedSelectId(html);
-	});
-
-	it("shows the empty-skills notice and keeps the select labelled", () => {
-		const html = renderToStaticMarkup(
-			<ClassTemplatePicker
-				templates={templates}
-				templateId="syl-empty"
-				onTemplateId={() => undefined}
-			/>,
-		);
-
-		expect(html).toContain("Syllabus chưa khai báo kỹ năng");
-		expect(html).not.toContain("Kỹ năng giáo trình");
-		linkedSelectId(html);
-	});
-});
-
 describe("AddClassModal template options", () => {
 	it("renders skill counts and leaves class skill chips unselected", () => {
 		const html = renderToStaticMarkup(
 			<AddClassModal open onClose={() => undefined} />,
 		);
 
-		expect(html).toContain("IELTS Foundation · 2 kỹ năng");
-		expect(html).toContain("Giao tiếp A1 · 0 kỹ năng");
+		expect(html).toContain("IELTS Foundation · 3 buổi");
+		expect(html).toContain("Giao tiếp A1 · 0 buổi");
 		expect(html).not.toContain("Kỹ năng giáo trình");
 		expect(html).not.toContain("Syllabus chưa khai báo kỹ năng");
 		expect(html).toMatch(/aria-pressed="false"[^>]*>Writing</);

@@ -234,7 +234,7 @@ export function AddSyllabusModal({
 						onChange={(e) => setTotal(e.target.value)}
 					/>
 				</Field>
-				<div className="flex flex-col gap-2">
+				<div className="flex flex-col gap-2 empty:hidden">
 					{error && (
 						<p role="alert" className="text-danger text-xs">
 							{error}
@@ -248,7 +248,7 @@ export function AddSyllabusModal({
 						/>
 					)}
 				</div>
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

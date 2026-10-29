@@ -5,9 +5,19 @@ import type {
 	AssignmentTestPartsSet,
 	AssignmentTestUpdate,
 	ClassType,
+	InvoicePaymentCreate,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
+
+/**
+ * Phạm vi của một thao tác nội dung giáo trình (design D7, issue #394):
+ * template dùng chung hoặc giáo trình riêng của một lớp. `repos/kernel.ts`
+ * suy ra path từ target — caller không tự ghép path theo `classId`.
+ */
+export type CurriculumTarget =
+	| { kind: "template"; syllabusId: string }
+	| { kind: "class"; classId: string };
 
 export type KernelAction =
 	| { type: "check-in"; lessonId: string }
@@ -92,6 +102,14 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** #450 — manual tuition receipt on the debts ledger. The payload is
+			 * the strict `InvoicePaymentCreate` contract posted verbatim; the
+			 * server is idempotent on `payload.clientRequestId`. */
+			type: "record-invoice-payment";
+			invoiceId: string;
+			payload: InvoicePaymentCreate;
+	  }
+	| {
 			type: "add-class";
 			payload: {
 				name: string;
@@ -128,7 +146,7 @@ export type KernelAction =
 	  }
 	| {
 			/** Deep-copy a syllabus template into the class's own curriculum (issue #79). */
-			type: "import-syllabus";
+			type: "import-curriculum";
 			classId: string;
 			templateId: string;
 	  }
@@ -146,18 +164,18 @@ export type KernelAction =
 	  }
 	| {
 			type: "add-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			payload: { title: string; description: string };
 	  }
 	| {
 			type: "edit-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			payload: { title: string; description: string };
 	  }
 	| {
 			type: "add-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			payload: {
 				title: string;
@@ -171,7 +189,7 @@ export type KernelAction =
 	  }
 	| {
 			type: "edit-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonId: string;
 			payload: {
@@ -184,23 +202,23 @@ export type KernelAction =
 	  }
 	| {
 			type: "delete-module";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 	  }
 	| {
 			type: "delete-lesson";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonId: string;
 	  }
 	| {
 			type: "reorder-modules";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleIds: string[];
 	  }
 	| {
 			type: "reorder-lessons";
-			syllabusId: string;
+			target: CurriculumTarget;
 			moduleId: string;
 			lessonIds: string[];
 	  }
@@ -236,6 +254,57 @@ export type KernelAction =
 			type: "update-assignment-prompt";
 			promptId: string;
 			payload: AssignmentPromptUpdate;
+	  }
+	| {
+			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
+			type: "create-vocab-deck";
+			payload: { classId: string | null; title: string; lang?: string };
+	  }
+	| {
+			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
+			type: "rename-vocab-deck";
+			payload: { deckId: string; title: string; lang?: string };
+	  }
+	| {
+			/** Xoá bộ từ vựng (deck + words + cards trong 1 db.batch server-side). */
+			type: "delete-vocab-deck";
+			deckId: string;
+	  }
+	| {
+			/** Tạo mới hoặc cập nhật một từ vựng trong deck (id optional). */
+			type: "upsert-vocab-word";
+			payload: {
+				deckId: string;
+				id?: string;
+				word: string;
+				ipa?: string | null;
+				translation?: string;
+				sortOrder?: number;
+			};
+	  }
+	| {
+			/** Xoá một từ vựng (cards của từ cũng bị xoá server-side). */
+			type: "remove-vocab-word";
+			wordId: string;
+	  }
+	| {
+			/** Built-in Vocab Library (#361, #363): clone các bài từ thư viện về lớp hoặc hub (classId = null). */
+			type: "clone-vocab-library-decks";
+			payload: { classId: string | null; deckIds: string[] };
+	  }
+	| {
+			/** Gợi ý bộ từ vựng cho học viên (#363, idempotent). */
+			type: "suggest-vocab-deck";
+			payload: {
+				deckId: string;
+				studentId: string;
+				note?: string | null;
+			};
+	  }
+	| {
+			/** Thu hồi gợi ý bộ từ vựng (#363, soft flip dismissed). */
+			type: "revoke-vocab-suggestion";
+			suggestionId: string;
 	  };
 
 /** Backwards-compatible name for data-store consumers. */

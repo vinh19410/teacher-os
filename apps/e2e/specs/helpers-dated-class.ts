@@ -5,15 +5,17 @@
  * — the ['kernel'] cache is staleTime: Infinity. Returns nothing; callers
  * navigate themselves. */
 import type { Page } from "@playwright/test";
+import { seedStudent, vnWeekdayMon0 } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 export async function seedDatedClass(
 	page: Page,
 	opts: {
 		name: string;
-		schedule: { days: number[]; start?: string; end?: string };
+		schedule?: { days?: number[]; start?: string; end?: string };
 		startDate: string;
 		sessionsTotal?: number;
+		students?: { teacherEmail?: string; names: string[] };
 	},
 ): Promise<string> {
 	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {
@@ -25,9 +27,9 @@ export async function seedDatedClass(
 			mode: "Online",
 			templateId: "",
 			schedule: {
-				days: opts.schedule.days,
-				start: opts.schedule.start ?? "19:00",
-				end: opts.schedule.end ?? "20:30",
+				days: opts.schedule?.days ?? [vnWeekdayMon0(opts.startDate)],
+				start: opts.schedule?.start ?? "19:00",
+				end: opts.schedule?.end ?? "20:30",
 			},
 			sessionsTotal: opts.sessionsTotal ?? 4,
 			startDate: opts.startDate,
@@ -43,5 +45,47 @@ export async function seedDatedClass(
 		);
 	}
 	const body = (await response.json()) as { id: string };
-	return body.id;
+	const classId = body.id;
+
+	if (opts.students) {
+		for (const studentName of opts.students.names) {
+			const st = await seedStudent({
+				teacherEmail: opts.students.teacherEmail,
+				name: studentName,
+			});
+			const enrollRes = await page.request.post(
+				`${API_ORIGIN}/api/classes/${classId}/enroll`,
+				{
+					data: { studentId: st.id },
+					headers: {
+						Origin: WEB_ORIGIN,
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			if (enrollRes.status() !== 201) {
+				throw new Error(
+					`enroll failed (${enrollRes.status()}): ${await enrollRes.text()}`,
+				);
+			}
+			const { id: enrollmentId } = (await enrollRes.json()) as { id: string };
+			const acceptRes = await page.request.post(
+				`${API_ORIGIN}/api/enrollments/${enrollmentId}/accept`,
+				{
+					data: {},
+					headers: {
+						Origin: WEB_ORIGIN,
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			if (acceptRes.status() !== 200) {
+				throw new Error(
+					`accept failed (${acceptRes.status()}): ${await acceptRes.text()}`,
+				);
+			}
+		}
+	}
+
+	return classId;
 }

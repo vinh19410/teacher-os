@@ -1,9 +1,17 @@
 import type {
 	AssignmentQuestion,
 	AssignmentSkill,
+	AttendanceStatus,
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
+	KernelEventRow,
+	KernelHolidayCancelRow,
+	KernelHolidayShiftRow,
+	KernelHolidaySummary,
+	KernelViewer,
+	KernelVocabDeckRow,
+	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
 
 export interface Student {
@@ -35,7 +43,12 @@ export interface Student {
 }
 
 export type LessonType = "1:1" | "1:2" | "trial" | "mock" | "review";
-export type LessonStatus = "completed" | "upcoming" | "cancelled" | "absent";
+export type LessonStatus =
+	| "completed"
+	| "upcoming"
+	| "cancelled"
+	| "absent"
+	| "holiday";
 
 export interface Lesson {
 	id: string;
@@ -52,6 +65,11 @@ export interface Lesson {
 	date: string | null;
 	type: LessonType;
 	status: LessonStatus;
+	/** TOS-7: trạng thái điểm danh chi tiết; null = chưa ghi (dòng cũ /
+	 * 1-click). Giá trị lạ coerce về null ở mapLessons. */
+	attendance: AttendanceStatus | null;
+	/** Teacher-only ghi chú học vụ; không hiển thị ngoài màn giáo viên. */
+	attendanceNote: string | null;
 	topic: string;
 	zoom: string;
 }
@@ -121,6 +139,10 @@ export interface Invoice {
 	 * concern. Empty on legacy rows created before the create API. */
 	due: string;
 	note: string;
+	/** #343 — creation timestamp (ms) parsed from KernelInvoiceRow.createdAt
+	 * (ISO wire). 0 on unparseable/legacy-snapshot rows: the invoice is
+	 * excluded from revenue buckets and counted as dropped, never silent. */
+	createdAt: number;
 }
 export interface Scores {
 	task: number;
@@ -212,6 +234,12 @@ export interface Syllabus {
 	modules: SyllabusModule[];
 }
 
+/** Template giáo trình dùng chung — `classId` chắc chắn null (issue #394). */
+export type SyllabusTemplate = Syllabus & { classId: null };
+
+/** Giáo trình của một lớp — bản copy với `classId` trỏ đúng lớp đó (issue #394). */
+export type ClassCurriculum = Syllabus & { classId: string };
+
 export interface MockData {
 	students: Student[];
 	lessons: Lesson[];
@@ -223,6 +251,9 @@ export interface MockData {
 	commentBank: CommentBankItem[];
 	classes: ClassGroup[];
 	syllabi: Syllabus[];
+	/** TOS-17 (#451): quyền tài chính của thành viên hiện tại; mặc định cho phép
+	 * trong fixture cũ khi không truyền. */
+	viewer?: KernelViewer;
 }
 
 export type KernelHydratedData = Pick<
@@ -246,6 +277,18 @@ export type KernelHydratedData = Pick<
 	/** Full-test builder: full tests (parts đã group theo test);
 	 * MockData itself has no such collection. */
 	assignmentTests: KernelAssignmentTestRow[];
+	/** Student Vocab SRS (#359): deck list (aggregate wordCount) cho trang lớp. */
+	vocabDecks: KernelVocabDeckRow[];
+	/** Pending vocab suggestions (#363): danh sách gợi ý đang chờ học viên phản hồi. */
+	vocabSuggestions: KernelVocabSuggestionRow[];
+	/** TOS-11: nhãn kỳ nghỉ + "Đã dời sang dd/MM" trên lịch tuần. */
+	holidays: KernelHolidaySummary[];
+	holidayShifts: KernelHolidayShiftRow[];
+	holidayCancels: KernelHolidayCancelRow[];
+	/** TOS-14 (#447): sự kiện vận hành ngoài lịch lớp (org_event). */
+	events: KernelEventRow[];
+	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */
+	viewer?: KernelViewer;
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

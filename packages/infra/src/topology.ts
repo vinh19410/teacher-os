@@ -18,6 +18,10 @@ export interface DomainTopology {
 	studentHost: string;
 	/** Browser origin of the student portal. */
 	studentOrigin: string;
+	/** Admin console hostname: admin.<domain> (plan #413). */
+	adminHost: string;
+	/** Browser origin of the admin console (plan #413). */
+	adminOrigin: string;
 	/** Browser origin of the API (BETTER_AUTH_URL). */
 	apiOrigin: string;
 	/** better-auth base URL including the /api/auth mount path. */
@@ -90,6 +94,8 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		appOrigin: `https://app.${domain}`,
 		studentHost: `student.${domain}`,
 		studentOrigin: `https://student.${domain}`,
+		adminHost: `admin.${domain}`,
+		adminOrigin: `https://admin.${domain}`,
 		apiOrigin,
 		authBaseURL: `${apiOrigin}${AUTH_MOUNT_PATH}`,
 		googleRedirectURI: `${apiOrigin}${AUTH_MOUNT_PATH}/callback/google`,
@@ -102,4 +108,19 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		landingHost: domain,
 		landingAliases: [`www.${domain}`],
 	};
+}
+
+/** Staging QA flag AUTH_ASSUME_EMAIL_VERIFIED. Throws on the prod domain so
+ * the flag can never weaken email verification in production. */
+export function resolveAssumeEmailVerified(
+	flag: string | undefined,
+	appDomain: string | undefined,
+): boolean {
+	const enabled = flag === "true";
+	if (enabled && appDomain?.trim() === PROD_APP_DOMAIN) {
+		throw new Error(
+			"AUTH_ASSUME_EMAIL_VERIFIED must never be enabled on production",
+		);
+	}
+	return enabled;
 }

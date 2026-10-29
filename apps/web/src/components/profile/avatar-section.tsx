@@ -82,7 +82,7 @@ export function AvatarSection({ user }: { user: ProfileUser }) {
 						data-testid="avatar-input"
 						onChange={onFileChange}
 					/>
-					<p className="text-muted-fg text-xs">
+					<p className="text-muted-foreground text-xs">
 						JPEG/PNG/WebP tối đa 10MB — hệ thống nén về ≤64KB trước khi lưu.
 					</p>
 				</div>

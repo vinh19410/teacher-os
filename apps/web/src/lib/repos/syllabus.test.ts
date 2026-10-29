@@ -13,6 +13,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [],
 	classes: [],
 	syllabi: [
@@ -189,6 +190,7 @@ describe("mapSyllabi", () => {
 			assignmentPrompts: [],
 			classAssignments: [],
 			assignmentTests: [],
+			vocabDecks: [],
 			students: [],
 			classes: [],
 			syllabi: [],

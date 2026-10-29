@@ -96,10 +96,10 @@ export function PreviewAssignmentTestRoute() {
 					lead="Trang này mô phỏng bộ đề đúng như học viên sẽ đọc khi làm. Bài làm ở đây không được lưu."
 				/>
 				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
-					<h2 className="font-display font-semibold text-lg">
+					<h2 className="font-semibold text-lg">
 						Chưa có bộ đề nào để xem trước.
 					</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-fg text-sm">
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Soạn bộ đề ở trang soạn full test rồi bấm Xem trước. Trang này không
 						mở được trực tiếp bằng link.
 					</p>
@@ -119,11 +119,11 @@ export function PreviewAssignmentTestRoute() {
 		<div className="max-w-3xl">
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 text-muted-foreground text-xs"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 				>
 					Bài tập
 				</Link>

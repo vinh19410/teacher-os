@@ -18,9 +18,12 @@ environment — never editing this runbook.
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
 | Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
+| Admin console origin | `https://admin.<domain>` | Website.Vite (admin) `domain: adminHost` from `packages/infra/src/topology.ts` (plan #413) |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
 | `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
+| `ADMIN_ORIGINS` (server binding) | `https://admin.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing the admin origin fails the run (drives admin CSRF + sign-up classification, plan #413) |
+| `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set secret-like binding; matched lowercase by `requireAdmin` on every request and by the admin-origin sign-up hook (`ADMIN_SIGNUP_FORBIDDEN`) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -83,6 +86,7 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
 | `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
+| `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
 
 ## Deploy preflight (all releases)
 
@@ -119,7 +123,8 @@ migration/recovery rehearsal — and serves QC on its own subdomain:
 `https://app.staging.teacheros.io.vn` (web) +
 `https://api.staging.teacheros.io.vn` (API). After first provisioning (or
 destroy/recreate), the automated staging deploy (see "Automated staging
-deploy (CI/CD)" below) keeps the stage current on every push to `develop`;
+deploy (CI/CD)" below) keeps the stage current on every push to the
+`staging` branch;
 run this procedure manually only for first provisioning or
 destroy/recreate.
 
@@ -154,7 +159,8 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 `.github/workflows/deploy.yml` deploys stage `prod` automatically on every
 push to `main` (i.e. merging `develop` into `main` is the release trigger).
 The workflow reproduces this runbook's gates in order: the same quality steps
-as CI, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+as CI and the full Playwright E2E suite (the reusable `e2e.yml`, credential-free)
+must both pass — a red E2E blocks the release — then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. Deploys are serialized
@@ -172,10 +178,14 @@ operator `.env` and the GitHub repo secret of the same name.
 ## Automated staging deploy (CI/CD)
 
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
-`staging`. Since 2026-09-22 staging auto-deploy is disabled: the `push`
-trigger on `develop` was removed, so merging code no longer deploys staging.
-The workflow runs only on manual `workflow_dispatch` (e.g. to rehearse a
-pending migration on staging before promotion) and runs the
+`staging`. Since 2026-09-22 merging into `develop` no longer deploys staging.
+Instead, staging deploys on every push to the dedicated `staging` branch —
+the QA environment. To hand a build to QA, fast-forward `staging` to the
+`develop` commit under test (`git push origin develop:staging`); QA then
+checks `https://app.staging.teacheros.io.vn`. The GitHub environment
+`staging` allows deployments from the `staging` branch (and `develop` for
+manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
+Either way the workflow runs the
 same quality gates as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
@@ -616,6 +626,20 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
    - Kiểm tra xem server có đang chạy ở chế độ `LOG-ONLY` (quên cấu hình `MAILER_IMPL=resend` hoặc thiếu `RESEND_API_KEY`) hay không.
    - Kiểm tra log server xem có lỗi gửi mail từ Resend (quota, invalid recipient).
 
+
+## GitHub webhook endpoint — issue #421
+
+- **Payload URL:** `https://api.<domain>/webhooks/github` (prod) / `https://api.staging.<domain>/webhooks/github` (staging).
+- **Content type:** `application/json` **bắt buộc** — form-encoded bị 415 theo hợp đồng endpoint.
+- **Secret:** giá trị `GITHUB_WEBHOOK_SECRET` đã đặt ở GitHub environment; chọn event cần nhận trong trang cấu hình webhook.
+- **Kiểm tra:** sau khi thêm webhook, GitHub gửi delivery `ping` — kiểm tra trả 200 trong tab "Recent Deliveries". Secret chưa set ⇒ endpoint trả 503 `GITHUB_WEBHOOK_DISABLED` (tính năng tắt, không ảnh hưởng phần khác).
+- **Tên biến:** secret Actions/environment là `GH_WEBHOOK_SECRET` (GitHub Actions cấm tên secret bắt đầu `GITHUB_`); binding Worker là `GITHUB_WEBHOOK_SECRET`.
+- Đặt secret ở **cả hai** environment (production và staging):
+  ```bash
+  gh secret set GH_WEBHOOK_SECRET --env production
+  gh secret set GH_WEBHOOK_SECRET --env staging
+  ```
+
 ## Student Invitation & Multi-Org (Migration 0025) — issue #263
 
 - **Migration file:** `packages/db/src/migrations/0025_spotty_betty_ross.sql`
@@ -656,6 +680,12 @@ nullable/có DEFAULT hoặc tạo bảng mới, không sửa/xóa cột hay bả
   giáo viên) và ở select full `quiz_attempt` (màn làm bài/kết quả học viên)
   — thiếu cột thì các trang đó trả 500, trong khi `/readyz` vẫn xanh vì probe
   không kiểm cột.
+- **0035** (`0035_ambiguous_freak.sql`): tạo bảng `quiz_attempt_annotation`
+  (highlight + ghi chú giáo viên trên bài Writing, FK cascade theo
+  `quiz_attempt`, #332). **DEPLOY ORDER**: migration chạy TRƯỚC worker; worker
+  mới query bảng này ở GET `/api/grading/:attemptId` và summary học viên đã
+  chấm — thiếu bảng thì trả 500, `/readyz` không phát hiện. Rollback code:
+  bảng còn sót vô hại, không có bước hoàn tác dữ liệu.
 
 Hệ quả rollback (worker rollback = redeploy commit cũ theo procedure
 "Rollback code"):
@@ -763,8 +793,8 @@ a per-stage operation.
    `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
    keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
    không có `completion_redirect_uri`.
-5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang "Nhận học phí"
-   (`/payments`) → tạo
+5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang Hồ sơ
+   (`/profile`, card "Nhận học phí qua chuyển khoản" — #338) → tạo
    phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
    "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
 6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng
@@ -778,3 +808,82 @@ a per-stage operation.
   trong cửa sổ đó.
 - SePay không retry IPN khi nhận 4xx/5xx: parse-lỏng chặn schema-drift, nhưng
   lỗi DB thật vẫn làm mất delivery — nút "Đối soát" là đường bù.
+
+## Built-in vocabulary library (migration 0037) — issue #361
+
+- **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (migration `0037`) **TRƯỚC** khi deploy worker (`snapshot` giáo viên và các route `/api/kernel/vocab-library/*`, `/api/student/vocab/*` đọc các bảng `vocab_library_*` cùng 2 cột `vocab_deck.source_library_deck_id` và `vocab_word.audio_url`).
+- **Release train:** `vocabSessionCardSchema` thêm trường `hasAudio` với `.strict()` → `apps/server` và `apps/student` **BẮT BUỘC deploy cùng một bước** (`pnpm alchemy deploy`); không promote riêng lẻ từng gói.
+- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Chỉ chạy `--d1` trên PROD sau khi đã smoke `--d1 --verify` trên Staging và chủ sở hữu dự án đã xác nhận quyền sử dụng nội dung (Open Question 1).
+
+## Independent vocab hub & suggestions (migration 0038) — issue #363
+
+- **Recreate bảng `vocab_deck` (`0038_wise_blizzard.sql`):** SQLite không hỗ trợ `ALTER COLUMN ... DROP NOT NULL`, nên migration `0038` thực hiện chuỗi `PRAGMA foreign_keys=OFF → CREATE TABLE __new_vocab_deck → INSERT SELECT → DROP TABLE vocab_deck → ALTER TABLE RENAME → PRAGMA foreign_keys=ON → CREATE INDEX` (cùng tạo bảng mới `vocab_suggestion`).
+- **Diễn tập, Backup & Thời điểm chạy:** Bắt buộc diễn tập trên bản sao dữ liệu Staging trước khi lên Production; **backup/export D1 (hoặc ghi lại bookmark Time Travel)** trước khi apply `0038` trên PROD; chạy trong khung giờ thấp điểm (off-hours) vì cửa sổ ms-level giữa `DROP` và `RENAME` là forward-only, không rollback.
+- **Deploy order & Release train:**
+  1. Chạy `db:migrate:deploy` (`0038`) **TRƯỚC** khi deploy worker.
+  2. Deploy `apps/server` trả trường optional `vocabSuggestions` trong kernel snapshot **TRƯỚC** (hoặc đồng thời trong cùng lượt `pnpm alchemy deploy`) với `apps/web` và `apps/student`.
+  3. Mặc dù `vocabOverviewSchema` và `vocabOverviewDeckSchema` dùng `.catch()` fallback cho client mới đọc payload cũ, `apps/server`, `apps/web`, và `apps/student` vẫn phải đi cùng một release train để tránh bundle cũ `.strict()` từ chối trường `suggestions` mới.
+
+## Student full vocabulary courses (migration 0039) — issue #366
+
+- **Recreate bảng `vocab_card` (`0039_ambiguous_prowler.sql`):** Bỏ ràng buộc `FOREIGN KEY (word_id) REFERENCES vocab_word(id)` bằng chuỗi `PRAGMA foreign_keys=OFF → CREATE TABLE __new_vocab_card → INSERT SELECT → DROP TABLE vocab_card → ALTER TABLE RENAME → PRAGMA foreign_keys=ON → CREATE INDEX` (giữ nguyên `FOREIGN KEY (student_id) REFERENCES student(id) ON DELETE cascade` và 3 index) để `vocab_card.word_id` trỏ được tới cả `vocab_word.id` lẫn `vocab_library_word.id` (`libword-*`).
+- **Diễn tập, Backup & Thời điểm chạy:** Ghi lại bookmark D1 Time Travel / backup trước khi apply `0039` trên PROD; chạy trong khung giờ thấp điểm (off-hours).
+- **Deploy order & Release train:**
+  1. Chạy `db:migrate:deploy` (`0039`) **TRƯỚC** khi deploy worker để học viên học bài thư viện (`libdeck-*`) không gặp lỗi khóa ngoại `SQLITE_CONSTRAINT_FOREIGNKEY`.
+  2. Deploy đồng bộ `apps/server`, `apps/web`, và `apps/student` trong cùng một release train (vì `vocabStudentProgressDeckSchema` thêm trường `className` trên response `.strict()`).
+
+
+## Library part groups (migration 0044) — issue #420/#424
+
+- **Migration `0044_library_part_groups.sql` chỉ `ADD COLUMN`:** `ALTER TABLE library_test_part ADD groups text DEFAULT '[]' NOT NULL` — thuần thêm cột có default, không recreate bảng, không cần khung giờ thấp điểm.
+- **Backup:** Ghi lại bookmark D1 Time Travel (hoặc backup/export D1) trước khi apply `0044` trên PROD.
+- **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (`0044`) **TRƯỚC** khi deploy worker — route admin `PUT /api/admin/library/tests/:testId/parts/:part` ghi cột `groups` ngay khi bundle mới lên.
+- **Deploy skew — strict DTO (red-team A2/F3):** `libraryPartDtoSchema` và `libraryPartUpsertSchema` đều `.strict()` với key `groups` → worker server (`apps/server`) và bundle admin (`apps/admin`) **PHẢI cùng một release train** (precedent #304): alchemy deploy cả hai trong cùng một lần deploy; **reload tab admin sau deploy** (tab cũ strict-reject DTO mới → trang sửa đề báo lỗi; tab cũ bấm lưu trước khi reload sẽ bị 400/last-write-wins). Nếu rollback worker về pre-#420, phải rollback/hạ admin cùng lúc — admin mới gửi `groups` làm server cũ 400 mọi lần lưu part. Migration là `ADD COLUMN` nên rollback worker **không phá** dữ liệu `groups` đã ghi.
+- **Deploy skew — groups corrupt guard (#425):** 2 key strict mới — `groupsCorrupt` (DTO part) và `discardCorruptGroups` (upsert) — rơi cùng ràng buộc release train ở trên. **Server mới + tab admin cũ:** server emit thêm `groupsCorrupt` vào DTO part, tab admin cũ schema `.strict()` sẽ reject response → trang sửa đề lỗi — **reload tab admin sau deploy, giống dòng trên**. **Admin mới + server cũ:** DTO parse OK nhờ `groupsCorrupt` có `.default(false)`, nhưng bấm «Lưu đè nhóm hỏng» gửi `discardCorruptGroups` → server cũ 400 (strict-reject) — rollback worker về pre-#425 phải hạ admin đồng thời. Chỉ dùng nút «Lưu đè nhóm hỏng» sau khi cả worker lẫn admin cùng bản mới.
+- **Render contract (red-team S7):** `questions[].explanation` và `groups[].instruction` là rich text — mọi render site tương lai (PR3 web học viên) **PHẢI** dùng `RichTextBody` (DOMPurify, sink `dangerouslySetInnerHTML` duy nhất tại `packages/ui/src/lib/rich-text-sanitize.ts`); không dùng `dangerouslySetInnerHTML` trực tiếp.
+
+## Admin console go-live (plan #413)
+
+Cổng quản trị Teacher OS (`apps/admin`) chạy trên origin riêng
+`https://admin.<domain>` (staging: `admin.staging.teacheros.io.vn`; dev cục
+bộ: 8004, E2E: 8104) và API của nó nằm ở `/api/admin` trên Worker API,
+ngoài kernel tree.
+
+### Binding bắt buộc
+
+| Binding | Giá trị production | Ghi chú |
+| --- | --- | --- |
+| `ADMIN_ORIGINS` | `https://admin.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu origin admin fail loud khi deploy |
+| `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
+| `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
+
+### Quy trình cấp admin đầu tiên
+
+1. Đặt `ADMIN_EMAILS=<email-vận-hành>` trong môi trường deploy (binding,
+   không ghi vào file `.env` cho production) rồi deploy.
+2. Người vận hành mở `https://admin.<domain>/register` (route không được
+   link công khai) và đăng ký bằng đúng email trong danh sách; server từ
+   chối mọi email khác bằng 403 `ADMIN_SIGNUP_FORBIDDEN` (không tạo row
+   `user`).
+3. Verify email (mail verification của Better Auth) — `requireAdmin` đòi
+   `email_verified` bên cạnh `role='admin'` (role được stamp từ Origin
+   admin lúc sign-up).
+4. Smoke: đăng nhập tại `https://admin.<domain>/login` → shell hiện mục
+   "Thư viện đề" và `GET /api/admin/me` trả 200.
+
+### Bucket `library-audio` (kho audio đề Listening)
+
+- Bucket R2 riêng `library-audio` (tách khỏi `MEDIA` bài nói) — worker chỉ
+  đọc/ghi qua adapter inject tại `/api/admin/library/tests/:id/parts/:slot/
+  audio` (PUT upload / GET phát / DELETE dọn theo part, allowlist MIME
+  MP3/M4A/WAV/AAC/OGG/WEBM, trần 50 MB).
+- Xóa bộ đề/part phải dọn sạch object audio tương ứng; kiểm bằng cách GET
+  lại URL audio sau khi xóa — phải trả 404.
+
+### Kiểm domain custom
+
+Sau deploy, xác nhận `https://admin.<domain>` gắn đúng Worker admin,
+certificates issue thành công (giống `app.`/`student.`), và session cookie
+zone (`Domain=.<domain>`) hoạt động: đăng nhập admin rồi gọi
+`https://api.<domain>/api/admin/me` phải 200; một session teacher/student
+gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.

@@ -227,7 +227,7 @@ export function GradeModal({
 					/>
 				</Field>
 				{error && (
-					<p role="alert" className="mb-3 text-danger text-xs">
+					<p role="alert" className="text-danger text-xs">
 						{error}
 					</p>
 				)}
@@ -238,7 +238,7 @@ export function GradeModal({
 						disabled={saving}
 					/>
 				)}
-				<div className="flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="flex justify-end gap-2 border-border border-t pt-4">
 					<Button
 						type="button"
 						variant="secondary"

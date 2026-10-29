@@ -26,15 +26,26 @@ export interface QuizPart {
 	/** Instruction riêng của giáo viên cho cụm (tách từ intro). undefined =
 	 * cụm theo type → header dùng QUIZ_TYPE_DISPLAY. */
 	instructionHtml?: string;
+	/** Option bank riêng của part (nhóm thư viện #433). undefined = part dùng
+	 * bank cấp đề (`detail.optionBank`) như trước — caller cũ không đổi. */
+	optionBank?: string[];
+	/** Nguồn dựng part: `"intro"` = section tách từ marker intro (#301);
+	 * `"group"` = nhóm câu có cấu trúc (thư viện, #433); undefined = cụm theo
+	 * type. QuizPaper chỉ cắt intro thành preamble khi có part `"intro"` —
+	 * part `"group"` mang instructionHtml của nhóm nhưng KHÔNG được nuốt
+	 * preamble (red-team RT11). */
+	source?: "intro" | "group";
 }
 
 /** Chia questions trong nửa mở [fromQ, toQ) thành các cụm liên tiếp cùng
- * type hiệu dụng. `qStart`/`number` đánh theo q toàn cục (1-based). */
+ * type hiệu dụng. `qStart`/`number` đánh theo q toàn cục (1-based) với offset
+ * `qOffset` (0 cho take screen — hành vi cũ; >0 cho view multi-part #433). */
 function clusterByType(
 	questions: readonly StudentQuizQuestion[],
 	fromQ: number,
 	toQ: number,
 	promptType: string,
+	qOffset = 0,
 ): QuizPart[] {
 	const parts: QuizPart[] = [];
 	let current: QuizPart | null = null;
@@ -46,13 +57,17 @@ function clusterByType(
 			current = {
 				id: "",
 				label: "",
-				qStart: q + 1,
+				qStart: qOffset + q + 1,
 				typeId,
 				questions: [],
 			};
 			parts.push(current);
 		}
-		current.questions.push({ q, number: q + 1, ...question });
+		current.questions.push({
+			q: qOffset + q,
+			number: qOffset + q + 1,
+			...question,
+		});
 	}
 	return parts;
 }
@@ -73,17 +88,19 @@ function finalizeParts(parts: QuizPart[]): QuizPart[] {
  * khối "Questions X–Y" thì mỗi section thành 1 part mang instructionHtml
  * của giáo viên (offset numbering: "Questions 14–20" trên đề part 2 → câu
  * 1–7); khoảng không được intro phủ vẫn gom theo type. intro không tách được
- * → hành vi cũ nguyên vẹn. `q`/`number` không đổi vì đáp án và grading key
- * theo `q`. */
+ * → hành vi cũ nguyên vẹn. `qOffset` (#433, mặc định 0 — caller cũ không
+ * đổi) cộng vào `q`/`number`/`qStart` SAU khi split (split tự quy số về
+ * local — red-team R2). Section part mang `source: "intro"` (RT11). */
 export function buildQuizParts(
 	questions: readonly StudentQuizQuestion[],
 	promptType: string,
 	intro = "",
+	qOffset = 0,
 ): QuizPart[] {
 	const split = splitQuizIntro(intro, questions.length);
 	if (!split) {
 		return finalizeParts(
-			clusterByType(questions, 0, questions.length, promptType),
+			clusterByType(questions, 0, questions.length, promptType, qOffset),
 		);
 	}
 	const parts: QuizPart[] = [];
@@ -91,7 +108,13 @@ export function buildQuizParts(
 	for (const section of split.sections) {
 		if (cursor < section.start - 1) {
 			parts.push(
-				...clusterByType(questions, cursor, section.start - 1, promptType),
+				...clusterByType(
+					questions,
+					cursor,
+					section.start - 1,
+					promptType,
+					qOffset,
+				),
 			);
 		}
 		const from = section.start - 1;
@@ -99,13 +122,14 @@ export function buildQuizParts(
 		parts.push({
 			id: "",
 			label: "",
-			qStart: section.start,
+			qStart: qOffset + section.start,
 			// Fallback kép theo contract: type câu đầu của section.
 			typeId: questions[from]?.type ?? promptType,
 			instructionHtml: section.html,
+			source: "intro",
 			questions: questions.slice(from, to).map((question, offset) => ({
-				q: from + offset,
-				number: from + offset + 1,
+				q: qOffset + from + offset,
+				number: qOffset + from + offset + 1,
 				...question,
 			})),
 		});
@@ -113,7 +137,13 @@ export function buildQuizParts(
 	}
 	if (cursor < questions.length) {
 		parts.push(
-			...clusterByType(questions, cursor, questions.length, promptType),
+			...clusterByType(
+				questions,
+				cursor,
+				questions.length,
+				promptType,
+				qOffset,
+			),
 		);
 	}
 	return finalizeParts(parts);

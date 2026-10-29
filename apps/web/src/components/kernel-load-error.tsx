@@ -24,9 +24,15 @@ export default function KernelLoadError({
 			role="alert"
 			className="mx-auto flex h-full max-w-md flex-col items-center justify-center gap-4 p-8 text-center"
 		>
-			<AlertTriangle className="h-10 w-10 text-danger" aria-hidden="true" />
-			<h1 className="font-bold text-xl">Không tải được dữ liệu lớp/học viên</h1>
-			<p className="text-muted-foreground text-sm">{failure.message}</p>
+			<span className="flex size-12 items-center justify-center rounded-full bg-muted">
+				<AlertTriangle className="size-6 text-destructive" aria-hidden="true" />
+			</span>
+			<h1 className="font-semibold text-xl tracking-tight">
+				Không tải được dữ liệu lớp/học viên
+			</h1>
+			<p className="font-mono text-muted-foreground text-sm">
+				{failure.message}
+			</p>
 			{failure.kind === "retryable" ? (
 				<Button type="button" autoFocus onClick={onRetry}>
 					Thử lại

@@ -1,13 +1,41 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
-export function PageHead({ title, lead }: { title: string; lead?: ReactNode }) {
+export function PageHead({
+	kicker,
+	title,
+	lead,
+	action,
+	className,
+}: {
+	/** Mô tả muted bên dưới title (prop `kicker` cũ map vào đây; `lead` là
+	 * dòng phụ dài hơn — có thể cùng tồn tại). */
+	kicker?: ReactNode;
+	title: ReactNode;
+	lead?: ReactNode;
+	action?: ReactNode;
+	className?: string;
+}) {
 	return (
-		<div className="mb-6">
-			<h1 className="text-balance font-display font-semibold text-[clamp(28px,3.5vw,40px)] leading-[1.1] tracking-[-0.015em]">
-				{title}
-			</h1>
-			{lead && (
-				<p className="mt-2 max-w-[60ch] text-base text-muted-fg">{lead}</p>
+		<div
+			className={cn(
+				"mb-6 flex flex-wrap items-end justify-between gap-4",
+				className,
+			)}
+		>
+			<div className="min-w-0 space-y-1">
+				<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
+					{title}
+				</h1>
+				{kicker && <p className="text-muted-foreground">{kicker}</p>}
+				{lead && lead !== kicker && (
+					<p className="max-w-[60ch] text-muted-foreground text-sm">{lead}</p>
+				)}
+			</div>
+			{action && (
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
+					{action}
+				</div>
 			)}
 		</div>
 	);

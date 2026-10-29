@@ -7,12 +7,14 @@ export interface TabsProps {
 	className?: string;
 }
 
+/** Tabs segmented v2 (design `Tabs`): track bg-muted, item active nổi
+ * bg-background + shadow-sm. Giữ role tablist/tab + aria-selected. */
 export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 	return (
 		<div
 			role="tablist"
 			className={cn(
-				"mb-5 flex gap-1 overflow-x-auto border-line border-b",
+				"no-scrollbar mb-6 inline-flex h-9 max-w-full items-center overflow-x-auto rounded-lg bg-muted p-[3px] text-muted-foreground",
 				className,
 			)}
 		>
@@ -24,11 +26,10 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 					aria-selected={t.id === active}
 					onClick={() => onChange(t.id)}
 					className={cn(
-						"whitespace-nowrap border-b-2 border-b-transparent border-none bg-transparent px-4 py-3 font-medium text-sm transition-colors duration-[150ms]",
-						"focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+						"inline-flex h-full items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 font-medium text-sm outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50",
 						t.id === active
-							? "border-b-accent-blue text-accent-blue"
-							: "text-muted-fg hover:text-fg",
+							? "bg-background text-foreground shadow-sm dark:border-input dark:bg-input/30"
+							: "hover:text-foreground",
 					)}
 				>
 					{t.label}

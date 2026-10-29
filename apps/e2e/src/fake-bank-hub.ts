@@ -90,6 +90,17 @@ export function createFakeBankHub(options: { origin: string }): FakeBankHub {
 		listBankAccounts: async () =>
 			Array.from(accounts.values()).filter((a) => a.linked || a.active),
 		listTransactions: async () => ({ data: [] as BankHubTransaction[] }),
+		createMockTransaction: async (input) => {
+			accountSeq += 1;
+			return {
+				transactionId: `txn-e2e-${accountSeq}`,
+				referenceNumber: `FT-E2E-${accountSeq}`,
+				transactionDate: new Date().toISOString(),
+				amount: input.amount,
+				transferType: input.transferType,
+				accumulated: input.amount,
+			};
+		},
 	};
 
 	const page = (error?: string) => `<!doctype html>

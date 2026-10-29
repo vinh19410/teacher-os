@@ -6,7 +6,12 @@ import {
 import { formatMediaSize } from "@teacher-os/api/lib/quiz-media";
 import { countWords } from "@teacher-os/api/lib/word-count";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import { EssayWithHighlights } from "@teacher-os/ui/components/quiz/essay-with-highlights";
 import { SectionLabel } from "@/components/ui/section-label";
+import {
+	AnnotatableEssay,
+	type AnnotatableEssayProps,
+} from "./annotatable-essay";
 import { SubmissionMediaPlayer } from "./submission-media-player";
 
 /**
@@ -14,12 +19,15 @@ import { SubmissionMediaPlayer } from "./submission-media-player";
  * xét là plain text render qua JSX text node — không dùng
  * dangerouslySetInnerHTML, không có bề mặt XSS. Ảnh Task 1 chỉ render khi
  * URL qua pattern allowlist; `referrerPolicy` ngăn URL trang chấm lộ qua
- * Referer tới host ảnh.
+ * Referer tới host ảnh. `annotation` bật công cụ highlight cho bài Writing
+ * (#332) — vắng mặt thì essay chỉ hiển thị kèm highlight sẵn có.
  */
 export function SubmissionView({
 	submission: sub,
+	annotation,
 }: {
 	submission: TeacherSubmission;
+	annotation?: Omit<AnnotatableEssayProps, "essay" | "annotations">;
 }) {
 	const minWords = WRITING_MIN_WORDS[sub.part];
 	const imageUrl = sub.prompt.imageUrl.trim();
@@ -38,7 +46,7 @@ export function SubmissionView({
 										alt="Hình minh hoạ đề Task 1"
 										referrerPolicy="no-referrer"
 										loading="lazy"
-										className="max-h-96 rounded-md border border-line"
+										className="max-h-96 rounded-md border border-border"
 									/>
 								)}
 						</>
@@ -48,11 +56,11 @@ export function SubmissionView({
 								<RichTextBody text={sub.prompt.prompt} />
 							)}
 							{sub.prompt.cueTopic !== "" && (
-								<div className="rounded-md border border-line bg-card p-4">
-									<p className="font-medium text-fg text-sm">
+								<div className="rounded-lg border border-border bg-muted/50 p-4">
+									<p className="font-medium text-foreground text-sm">
 										Describe {sub.prompt.cueTopic}
 									</p>
-									<ul className="mt-2 list-disc pl-5 text-muted-fg text-sm">
+									<ul className="mt-2 list-disc pl-5 text-muted-foreground text-sm">
 										{sub.prompt.cuePoints
 											.split("\n")
 											.filter(Boolean)
@@ -73,25 +81,35 @@ export function SubmissionView({
 					sub.essay !== null && sub.essay.trim() !== "" ? (
 						<div className="flex flex-col gap-2">
 							<p
-								className="font-mono text-meta text-xs"
+								className="text-muted-foreground text-sm"
 								data-testid="essay-word-count"
 							>
-								{countWords(sub.essay)} từ
+								Chọn chữ để chú thích · {countWords(sub.essay)} từ
 								{minWords !== undefined ? ` · tối thiểu ${minWords}` : ""}
 							</p>
-							<div
-								data-testid="essay-text"
-								className="whitespace-pre-wrap rounded-md border border-line bg-card p-4 text-fg text-sm leading-relaxed"
-							>
-								{sub.essay}
-							</div>
+							{annotation ? (
+								<AnnotatableEssay
+									essay={sub.essay}
+									annotations={sub.annotations ?? []}
+									{...annotation}
+								/>
+							) : (
+								<EssayWithHighlights
+									essay={sub.essay}
+									annotations={sub.annotations ?? []}
+									data-testid="essay-text"
+									className="border-border border-l-2 pl-5 text-foreground text-lg leading-[1.9]"
+								/>
+							)}
 						</div>
 					) : (
-						<p className="text-muted-fg text-sm">Học viên đã nộp bài trống.</p>
+						<p className="text-muted-foreground text-sm">
+							Học viên đã nộp bài trống.
+						</p>
 					)
 				) : sub.media !== null ? (
 					<div className="flex flex-col gap-2">
-						<p className="font-mono text-meta text-xs">
+						<p className="text-muted-foreground text-xs">
 							{sub.media.name} · {formatMediaSize(sub.media.size)}
 						</p>
 						<SubmissionMediaPlayer
@@ -101,7 +119,7 @@ export function SubmissionView({
 						/>
 					</div>
 				) : (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Bài này được nộp khi chưa có file bài nói.
 					</p>
 				)}

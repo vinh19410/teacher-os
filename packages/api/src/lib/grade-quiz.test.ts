@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { AssignmentQuestion } from "../contracts";
-import { gradeQuiz } from "./grade-quiz";
+import { gradeQuiz, isAcceptedAnswer } from "./grade-quiz";
 
 const question = (
 	overrides: Partial<AssignmentQuestion> = {},
@@ -114,5 +114,33 @@ describe("gradeQuiz — đáp án chứa ký tự JSON đặc biệt (scenario I
 		expect(gradeQuiz([path], { "0": "c:\\users2" }).verdicts).toEqual([
 			"wrong",
 		]);
+	});
+});
+
+describe("isAcceptedAnswer — rule so khớp dùng chung grader/UI (#351)", () => {
+	test("khớp key sau normalize (hoa/thường + whitespace dư)", () => {
+		expect(isAcceptedAnswer("  PARIS  ", "Paris", "")).toBe(true);
+		expect(isAcceptedAnswer("hà   nội", "Hà Nội", "")).toBe(true);
+	});
+
+	test("khớp alt sau normalize — cùng rule grader", () => {
+		expect(isAcceptedAnswer("NORTH", "northern", "north / Northern")).toBe(
+			true,
+		);
+		expect(isAcceptedAnswer("northern", "northern", "north")).toBe(true);
+	});
+
+	test("không khớp khi lệch và khi value rỗng (blank không bao giờ đúng)", () => {
+		expect(isAcceptedAnswer("hanoi", "Hà Nội", "")).toBe(false);
+		expect(isAcceptedAnswer("", "Paris", "glue / paste")).toBe(false);
+		expect(isAcceptedAnswer("   ", "Paris", "")).toBe(false);
+	});
+
+	test("'a/b' không bị tách — separator phải đúng ' / '", () => {
+		// Slash không có space xung quanh là một phần của giá trị.
+		expect(isAcceptedAnswer("a/b", "a/b", "")).toBe(true);
+		expect(isAcceptedAnswer("a", "a/b", "")).toBe(false);
+		// Alt rỗng (separator thừa) bị drop — value rỗng không khớp được.
+		expect(isAcceptedAnswer("", "Paris", " / ")).toBe(false);
 	});
 });

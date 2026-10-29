@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	addDays,
+	addMonths,
 	addWeeks,
+	formatDayLabel,
 	formatDayMonth,
+	formatMonthLabel,
 	formatWeekRange,
+	isoDayNumber,
 	isSameISOWeek,
+	monthGridDates,
 	parseWeekParam,
 	resolveWeek,
+	startOfMonth,
 	startOfWeekMonday,
 	todayISOVietnam,
 	weekDates,
@@ -197,5 +204,117 @@ describe("resolveWeek", () => {
 		const resolved = resolveWeek(undefined, new Date("2026-08-23T18:30:00Z"));
 		expect(resolved.weekStart).toBe("2026-08-24");
 		expect(resolved.isCurrentWeek).toBe(true);
+	});
+});
+
+describe("startOfMonth", () => {
+	it("maps a mid-month date to the 1st", () => {
+		expect(startOfMonth("2026-11-15")).toBe("2026-11-01");
+	});
+
+	it("keeps the 1st as-is", () => {
+		expect(startOfMonth("2026-01-01")).toBe("2026-01-01");
+	});
+});
+
+describe("addMonths", () => {
+	it("shifts calendar months across year boundaries", () => {
+		expect(addMonths("2026-11-15", 1)).toBe("2026-12-15");
+		expect(addMonths("2026-12-15", 1)).toBe("2027-01-15");
+		expect(addMonths("2026-01-15", -1)).toBe("2025-12-15");
+		expect(addMonths("2026-11-15", 0)).toBe("2026-11-15");
+	});
+
+	it("clamps the day to the target month length", () => {
+		expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
+		expect(addMonths("2026-03-31", -1)).toBe("2026-02-28");
+	});
+
+	it("handles the leap day (2028-02-29)", () => {
+		expect(addMonths("2028-01-31", 1)).toBe("2028-02-29");
+		expect(addMonths("2028-02-29", 1)).toBe("2028-03-29");
+		expect(addMonths("2028-02-29", 12)).toBe("2029-02-28");
+	});
+
+	it("stands still at the supported year bounds (nav edge guard)", () => {
+		expect(addMonths("2099-12-05", 1)).toBe("2099-12-05");
+		expect(addMonths("1970-01-05", -1)).toBe("1970-01-05");
+	});
+});
+
+describe("addDays", () => {
+	it("crosses month and year boundaries", () => {
+		expect(addDays("2026-10-31", 1)).toBe("2026-11-01");
+		expect(addDays("2026-11-01", -1)).toBe("2026-10-31");
+		expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+	});
+
+	it("steps through the leap day", () => {
+		expect(addDays("2028-02-28", 1)).toBe("2028-02-29");
+		expect(addDays("2028-02-29", 1)).toBe("2028-03-01");
+	});
+
+	it("stands still at the supported year bounds (nav edge guard)", () => {
+		expect(addDays("2099-12-31", 1)).toBe("2099-12-31");
+		expect(addDays("1970-01-01", -1)).toBe("1970-01-01");
+	});
+});
+
+describe("isoDayNumber", () => {
+	it("returns the 1-7 Monday-first day number (lesson.day convention)", () => {
+		expect(isoDayNumber("2026-10-26")).toBe(1); // Monday
+		expect(isoDayNumber("2026-10-30")).toBe(5); // Friday
+		expect(isoDayNumber("2026-10-25")).toBe(7); // Sunday
+		expect(isoDayNumber("2026-11-01")).toBe(7); // Sunday
+	});
+});
+
+describe("monthGridDates", () => {
+	it("returns 42 Monday-first dates for the anchor's month", () => {
+		const grid = monthGridDates("2026-11-15");
+		expect(grid).toHaveLength(42);
+		expect(grid[0]).toBe("2026-10-26"); // Monday on/before Nov 1 (Sunday)
+		expect(grid[6]).toBe("2026-11-01");
+		expect(grid[41]).toBe("2026-12-06");
+	});
+
+	it("normalizes any day of the month to the same grid", () => {
+		expect(monthGridDates("2026-11-01")).toEqual(monthGridDates("2026-11-30"));
+	});
+
+	it("includes Feb 29 in a leap-year grid (starts Mon 2028-01-31)", () => {
+		const grid = monthGridDates("2028-02-10");
+		expect(grid[0]).toBe("2028-01-31");
+		expect(grid).toContain("2028-02-29");
+		expect(grid[41]).toBe("2028-03-12");
+	});
+
+	it("covers a 6-calendar-week span for a Sunday-starting 30-day month", () => {
+		// Nov 2026 starts Sunday → grid Oct 26 … Dec 6 spans 6 weeks.
+		const grid = monthGridDates("2026-11-15");
+		expect(grid[34]).toBe("2026-11-29"); // Sunday of week 5, not the end
+		expect(grid[41]).toBe("2026-12-06");
+	});
+
+	it("keeps the ISO-week-53 edge inside the grid (Dec 2026 → Jan 2027)", () => {
+		const grid = monthGridDates("2026-12-15");
+		expect(grid[0]).toBe("2026-11-30");
+		expect(grid[41]).toBe("2027-01-10");
+	});
+});
+
+describe("formatMonthLabel", () => {
+	it("formats `Tháng M · YYYY` with an unpadded month", () => {
+		expect(formatMonthLabel("2026-11-15")).toBe("Tháng 11 · 2026");
+		expect(formatMonthLabel("2026-03-02")).toBe("Tháng 3 · 2026");
+	});
+});
+
+describe("formatDayLabel", () => {
+	it("formats the full Vietnamese weekday + dd/MM", () => {
+		expect(formatDayLabel("2026-10-26")).toBe("Thứ Hai 26/10");
+		expect(formatDayLabel("2026-10-25")).toBe("Chủ Nhật 25/10");
+		expect(formatDayLabel("2026-11-01")).toBe("Chủ Nhật 01/11");
+		expect(formatDayLabel("2026-11-15")).toBe("Chủ Nhật 15/11");
 	});
 });

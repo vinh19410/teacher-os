@@ -16,13 +16,10 @@ export function Progress({
 			? "bg-danger"
 			: variant === "warn"
 				? "bg-warn"
-				: "bg-accent-blue";
+				: "bg-primary";
 	return (
 		<div
-			className={cn(
-				"h-1.5 overflow-hidden rounded-full bg-line-soft",
-				className,
-			)}
+			className={cn("h-1.5 overflow-hidden rounded-full bg-muted", className)}
 		>
 			<div
 				className={cn(

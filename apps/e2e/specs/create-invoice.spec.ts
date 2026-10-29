@@ -35,6 +35,7 @@ async function setupOrgWithEnrollment(page: Page): Promise<string> {
 
 	// Enroll the existing student via the class-detail picker (#122 flow).
 	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog = page.getByRole("dialog");
 	const option = enrollDialog.getByRole("option", { name: STUDENT_NAME });
@@ -57,32 +58,37 @@ async function setupOrgWithEnrollment(page: Page): Promise<string> {
 }
 
 /** The Card holding the "Hóa đơn" DataTable (scoped away from the package
- * cards above, which also render VND amounts). */
+ * cards above, which also render VND amounts). Redesign phase 5: selector
+ * đổi từ `div.mt-8` sang testid vì utility layout class không còn ổn định. */
 function invoiceRegion(page: Page) {
-	return page
-		.locator("div.mt-8")
-		.filter({ has: page.getByRole("heading", { name: "Hóa đơn" }) });
+	return page.getByTestId("tuition-invoices-section");
 }
 
 function invoiceTable(page: Page) {
 	return invoiceRegion(page).locator("tbody tr");
 }
 
-/** One KPI StatCard inside the 3-card grid, addressed by its label. */
+/** One KPI StatCard inside the KPI grid, addressed by its label. Selector
+ * đổi từ `.grid.grid-cols-3 > div` (bám utility Tailwind) sang testid của
+ * grid trong cùng commit đổi markup (plan redesign, bảng "E2E bám class"). */
 function kpiCard(page: Page, label: string) {
-	return page.locator(".grid.grid-cols-3 > div").filter({ hasText: label });
+	return page
+		.locator('[data-testid="tuition-kpis"] > div')
+		.filter({ hasText: label });
 }
 
 /** The big number div of a KPI card — exact-matched, because "0đ" is a
- * substring of every vi-VN amount ending in zero. */
+ * substring of every vi-VN amount ending in zero. `> div` giữ selector ở
+ * div số (con đầu của StatCard) sau khi StatCard bọc thêm Card ở phase 2. */
 function kpiNum(page: Page, label: string) {
-	return kpiCard(page, label).locator("div").first();
+	return kpiCard(page, label).locator("> div").first();
 }
 
 async function openCreateInvoiceModal(page: Page) {
-	await page.getByText("Học phí", { exact: true }).first().click();
+	// #343 — menu /tuition đổi tên "Doanh thu"; text này render bởi app web.
+	await page.getByText("Doanh thu", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/tuition$/);
-	await page.getByRole("button", { name: "+ Tạo hóa đơn" }).click();
+	await page.getByTestId("create-invoice").click();
 	const dialog = page.getByRole("dialog");
 	await expect(
 		dialog.getByRole("heading", { name: "Tạo hóa đơn" }),
@@ -147,7 +153,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	// Empty-org baseline first: collected starts at zero, outstanding rises
 	// by exactly the new invoice (issue #62).
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("0đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("400.000đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("400.000đ");
 
 	// The unpaid row shows the entered due as dd/mm (same date we filled)
 	// plus the note tooltip (issue #135).
@@ -159,7 +165,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	// Mark paid → the command bus refetches → KPIs flip in place (issue #62).
 	await row.getByRole("button", { name: "Đã nhận" }).click();
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("0đ");
 
 	// Everything survives a reload; the paid row's due cell becomes "—".
 	await page.reload();
@@ -168,7 +174,7 @@ test("tuition → tạo hóa đơn hợp lệ → due dd/mm + KPI khớp sau mar
 	await expect(paidRow.getByText("Đã thu")).toBeVisible();
 	await expect(paidRow.getByText("—")).toBeVisible();
 	await expect(kpiNum(page, "Đã thu (VND)")).toHaveText("400.000đ");
-	await expect(kpiNum(page, "Còn nợ (VND)")).toHaveText("0đ");
+	await expect(kpiNum(page, "Còn phải thu (VND)")).toHaveText("0đ");
 });
 
 test("tuition → tạo hóa đơn amount trống → field error, không POST, không row", async ({
@@ -217,6 +223,7 @@ test("tuition → picker hóa đơn loại trừ học viên chưa kích hoạt 
 	const INVITED_STUDENT = "HV-Chờ-Kích-Hoạt";
 	await seedStudent({ teacherEmail, name: INVITED_STUDENT });
 	await page.reload();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog2 = page.getByRole("dialog");
 	const option2 = enrollDialog2.getByRole("option", { name: INVITED_STUDENT });

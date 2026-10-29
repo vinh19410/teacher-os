@@ -162,7 +162,7 @@ export function SessionActionsModal({
 		>
 			<div className="space-y-5">
 				{notice && (
-					<p role="status" className="text-accent-blue text-sm">
+					<p role="status" className="text-primary text-sm">
 						{notice}
 					</p>
 				)}
@@ -170,13 +170,13 @@ export function SessionActionsModal({
 				<section className="space-y-2">
 					<h3 className="font-medium text-sm">Hành động cả lớp</h3>
 					{targetNames.length > 0 ? (
-						<ul className="list-disc space-y-0.5 pl-5 text-fg-2 text-xs">
+						<ul className="list-disc space-y-0.5 pl-5 text-muted-foreground text-xs">
 							{targetNames.map((name, i) => (
 								<li key={`${name}-${i}`}>{name}</li>
 							))}
 						</ul>
 					) : (
-						<p className="text-muted-fg text-xs">
+						<p className="text-muted-foreground text-xs">
 							Cả lớp đã chốt cho buổi này.
 						</p>
 					)}
@@ -202,14 +202,14 @@ export function SessionActionsModal({
 						</Button>
 					</div>
 					{!eligible && targets.length > 0 && (
-						<p className="text-muted-fg text-xs">
+						<p className="text-muted-foreground text-xs">
 							Buổi diễn ra sau hôm nay — Hoàn thành mở khi đến buổi.
 						</p>
 					)}
 					{confirming !== null && (
 						<div
 							role="alertdialog"
-							className="space-y-2 rounded border border-danger/40 bg-surface-warm/50 p-3"
+							className="space-y-2 rounded border border-danger/40 bg-muted/40/50 p-3"
 						>
 							<p className="font-medium text-sm">
 								{confirming === "complete"
@@ -259,7 +259,7 @@ export function SessionActionsModal({
 					)}
 				</section>
 
-				<section className="space-y-3 border-line-soft border-t pt-4">
+				<section className="space-y-3 border-border border-t pt-4">
 					<h3 className="font-medium text-sm">Chỉnh sửa buổi</h3>
 					<Field label="Chủ đề">
 						<Input

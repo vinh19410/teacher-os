@@ -11,10 +11,11 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
-import type {
-	BankHubAccount,
-	BankHubClient,
-	BankHubContext,
+import {
+	type BankHubAccount,
+	type BankHubClient,
+	type BankHubContext,
+	BankHubError,
 } from "./lib/bank-hub/bank-hub-client";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -41,15 +42,23 @@ interface FakeHub {
 	hub: BankHubContext;
 	linkCalls: string[];
 	companyCreations(): number;
+	companyEdits(): { xid: string; transactionAmount: number | "Unlimited" }[];
 	setAccounts(accounts: BankHubAccount[]): void;
 	setHostedUrl(url: string): void;
+	setLinkTokenError(err: unknown): void;
+	setListAccountsError(err: unknown): void;
+	setCompanyAmount(amount: number | "Unlimited"): void;
 }
 
 function createFakeHub(): FakeHub {
 	let accounts: BankHubAccount[] = [account()];
 	let hostedUrl = "https://bankhub.sepay.vn/link/abc";
 	let creations = 0;
+	let companyAmount: number | "Unlimited" = 0;
 	const linkCalls: string[] = [];
+	const edits: { xid: string; transactionAmount: number | "Unlimited" }[] = [];
+	let linkTokenError: unknown;
+	let listAccountsError: unknown;
 	const client: BankHubClient = {
 		createCompany: async (input) => {
 			creations += 1;
@@ -57,22 +66,29 @@ function createFakeHub(): FakeHub {
 				xid: `company-${creations}`,
 				fullName: input.fullName,
 				status: "Active",
-				transactionAmount: 0,
+				transactionAmount: companyAmount,
 			};
 		},
 		getCompany: async (xid) => ({
 			xid,
 			fullName: "",
 			status: "Active",
-			transactionAmount: "Unlimited",
+			transactionAmount: companyAmount,
 		}),
-		editCompany: async (xid) => ({
-			xid,
-			fullName: "",
-			status: "Active",
-			transactionAmount: "Unlimited",
-		}),
+		editCompany: async (xid, patch) => {
+			edits.push({
+				xid,
+				transactionAmount: patch.transactionAmount ?? "Unlimited",
+			});
+			return {
+				xid,
+				fullName: "",
+				status: "Active",
+				transactionAmount: "Unlimited",
+			};
+		},
 		createLinkToken: async (input) => {
+			if (linkTokenError) throw linkTokenError;
 			linkCalls.push(input.purpose);
 			return {
 				xid: "lt-1",
@@ -82,8 +98,14 @@ function createFakeHub(): FakeHub {
 			};
 		},
 		getBankAccount: async (xid) => account({ xid }),
-		listBankAccounts: async () => accounts,
+		listBankAccounts: async () => {
+			if (listAccountsError) throw listAccountsError;
+			return accounts;
+		},
 		listTransactions: async () => ({ data: [] }),
+		createMockTransaction: async () => {
+			throw new Error("not used");
+		},
 	};
 	return {
 		hub: {
@@ -94,11 +116,21 @@ function createFakeHub(): FakeHub {
 		},
 		linkCalls,
 		companyCreations: () => creations,
+		companyEdits: () => edits,
 		setAccounts: (next) => {
 			accounts = next;
 		},
 		setHostedUrl: (next) => {
 			hostedUrl = next;
+		},
+		setLinkTokenError: (err) => {
+			linkTokenError = err;
+		},
+		setListAccountsError: (err) => {
+			listAccountsError = err;
+		},
+		setCompanyAmount: (amount) => {
+			companyAmount = amount;
 		},
 	};
 }
@@ -209,6 +241,36 @@ describe("bank-link routes", () => {
 		expect(fake.companyCreations()).toBe(1);
 	});
 
+	test("forces transaction_amount Unlimited right after company creation", async () => {
+		// Bank Hub only delivers IPNs for companies with transaction_amount > 0
+		// or "Unlimited"; new companies default to 0, so the edit is mandatory.
+		const userC = await insertUser("Teacher C");
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userC.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		const lastEdit = fake.companyEdits().at(-1);
+		expect(lastEdit).toMatchObject({
+			xid: expect.stringMatching(/^company-\d+$/),
+			transactionAmount: "Unlimited",
+		});
+	});
+
+	test("repairs a cached company still on the zero limit", async () => {
+		// The fresh-create edit may have been lost (crash/network) — the cached
+		// company path must re-check and self-heal on the next link attempt.
+		fake.setCompanyAmount(0);
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userA.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		const lastEdit = fake.companyEdits().at(-1);
+		expect(lastEdit).toMatchObject({ transactionAmount: "Unlimited" });
+		fake.setCompanyAmount("Unlimited");
+	});
+
 	test("rejects a hosted link outside the allowlist with 502", async () => {
 		fake.setHostedUrl("https://evil.example/link/x");
 		const res = await api(app, "POST", "/api/bank-link/link-token", {
@@ -217,6 +279,55 @@ describe("bank-link routes", () => {
 		});
 		expect(res.status).toBe(502);
 		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
+	});
+
+	test("accepts the sandbox hosted-link origin", async () => {
+		fake.setHostedUrl("https://bankhub-sandbox.sepay.vn/link/x");
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userB.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(200);
+		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
+	});
+
+	test("maps a Bank Hub failure on link-token to 502 without leaking the message", async () => {
+		fake.setLinkTokenError(new BankHubError(500, "sandbox exploded"));
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userB.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(502);
+		const text = await res.text();
+		expect(text).toContain("BANKHUB_UPSTREAM");
+		expect(text).not.toContain("sandbox exploded");
+		fake.setLinkTokenError(undefined);
+	});
+
+	test("maps Bank Hub rate limiting on link-token to 429 with Retry-After", async () => {
+		fake.setLinkTokenError(
+			new BankHubError(429, "slow down", { retryAfter: 30 }),
+		);
+		const res = await api(app, "POST", "/api/bank-link/link-token", {
+			token: userB.token,
+			body: { purpose: "link" },
+		});
+		expect(res.status).toBe(429);
+		expect(res.headers.get("retry-after")).toBe("30");
+		const err = (await res.json()) as { code: string };
+		expect(err.code).toBe("BANKHUB_RATE_LIMITED");
+		fake.setLinkTokenError(undefined);
+	});
+
+	test("sync maps a Bank Hub failure to 502 instead of a bare 500", async () => {
+		fake.setListAccountsError(new BankHubError(500, "accounts unavailable"));
+		const res = await api(app, "POST", "/api/bank-link/sync", {
+			token: userA.token,
+		});
+		expect(res.status).toBe(502);
+		const err = (await res.json()) as { code: string };
+		expect(err.code).toBe("BANKHUB_UPSTREAM");
+		fake.setListAccountsError(undefined);
 	});
 
 	test("server blocks link when the org is already linked (409)", async () => {

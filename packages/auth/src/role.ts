@@ -1,4 +1,4 @@
-export type AppRole = "teacher" | "student";
+export type AppRole = "teacher" | "student" | "admin";
 
 /**
  * State key stamped server-side into the OAuth `additionalData` (verification
@@ -9,9 +9,12 @@ export type AppRole = "teacher" | "student";
 export const OAUTH_APP_STATE_KEY = "app";
 
 /** DB role column → AppRole. NULL/unknown falls back to teacher (defensive for
- * out-of-band rows; migration 0024 guarantees no NULL rows after backfill). */
+ * out-of-band rows; migration 0024 guarantees no NULL rows after backfill).
+ * `admin` là role thật trong DB (plan #413) — không rơi vào nhánh teacher. */
 export function resolveUserRole(role: string | null | undefined): AppRole {
-	return role === "student" ? "student" : "teacher";
+	if (role === "student") return "student";
+	if (role === "admin") return "admin";
+	return "teacher";
 }
 
 function matchOrigin(origin: string, known: string[]): boolean {
@@ -34,6 +37,7 @@ export function resolveRequestApp(input: {
 	oauthApp?: string | null;
 	studentOrigins: string[];
 	teacherOrigins: string[];
+	adminOrigins?: string[];
 }): AppRole {
 	// matchOrigin tự loại origin rỗng/"null", nên null|undefined chỉ cần về "".
 	const origin = input.origin ?? "";
@@ -43,8 +47,96 @@ export function resolveRequestApp(input: {
 	if (matchOrigin(origin, input.teacherOrigins)) {
 		return "teacher";
 	}
-	if (input.oauthApp === "teacher" || input.oauthApp === "student") {
+	if (matchOrigin(origin, input.adminOrigins ?? [])) {
+		return "admin";
+	}
+	if (
+		input.oauthApp === "teacher" ||
+		input.oauthApp === "student" ||
+		input.oauthApp === "admin"
+	) {
 		return input.oauthApp;
 	}
 	return "student";
+}
+
+/**
+ * TOS-17 (#451) / FR-selfomy-alignment-029: vocabulary vai trò thành viên tổ
+ * chức (`membership.role`).
+ * - `"teacher"`: giáo viên độc lập hiện có (chủ org khi tự đăng ký) — giữ quyền
+ *   tài chính.
+ * - `"owner"`, `"admin"`: chủ trung tâm / quản trị viên — có quyền tài chính.
+ * - `"class_teacher"`: Giáo viên đứng lớp (TOS-48) — KHÔNG có quyền tài chính.
+ * - `"ta"`: Trợ giảng (TOS-48) — KHÔNG có quyền tài chính.
+ *
+ * Allowlist nghiêm ngặt (least privilege): mọi giá trị khác (rỗng, null, lạ)
+ * đều bị chặn truy cập Sổ công nợ / Doanh thu / API tài chính.
+ */
+export const FINANCE_ROLES = ["teacher", "owner", "admin"] as const;
+export type FinanceRole = (typeof FINANCE_ROLES)[number];
+export type OrgMemberRole = FinanceRole | "class_teacher" | "ta";
+
+const FINANCE_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+	admin: true,
+};
+
+export function canAccessFinance(role: string | null | undefined): boolean {
+	return typeof role === "string" && FINANCE_ROLE_MAP[role] === true;
+}
+
+/**
+ * TOS-24 (#470): vai trò được nhập đề bằng AI (plan D8) — chỉ `teacher` +
+ * `owner`; `ta` chỉ xem, `class_teacher`/giá trị lạ bị chặn. Allowlist
+ * nghiêm ngặt least-privilege như `canAccessFinance`.
+ */
+export const EXAM_IMPORT_ROLES = ["teacher", "owner"] as const;
+
+const EXAM_IMPORT_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+};
+
+export function canImportExam(role: string | null | undefined): boolean {
+	return typeof role === "string" && EXAM_IMPORT_ROLE_MAP[role] === true;
+}
+
+/**
+ * TOS-33 (#481, AC-004): vai trò chấm/rà trên màn "Rà soát chấm bài AI" [7].
+ * Hai allowlist RIÊNG (không copy `canImportExam` — nó chặn
+ * `class_teacher`):
+ * - `canPublishGrade` ("Chốt trả bài" + "Thử chấm lại AI" — hành vi tiêu
+ *   Credit của tổ chức): `teacher`, `owner`, `admin`, `class_teacher`.
+ *   `ta` chỉ lưu bản nháp, bị chặn publish/retry (403).
+ * - `canReviewGrade` ("Lưu bản nháp" `teacher_reviewing`): các vai trên
+ *   + `ta`.
+ * Allowlist nghiêm ngặt least-privilege như `canAccessFinance`.
+ */
+export const GRADING_PUBLISH_ROLES = [
+	"teacher",
+	"owner",
+	"admin",
+	"class_teacher",
+] as const;
+export const GRADING_REVIEW_ROLES = [...GRADING_PUBLISH_ROLES, "ta"] as const;
+
+const GRADING_PUBLISH_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+	admin: true,
+	class_teacher: true,
+};
+
+const GRADING_REVIEW_ROLE_MAP: Record<string, true> = {
+	...GRADING_PUBLISH_ROLE_MAP,
+	ta: true,
+};
+
+export function canPublishGrade(role: string | null | undefined): boolean {
+	return typeof role === "string" && GRADING_PUBLISH_ROLE_MAP[role] === true;
+}
+
+export function canReviewGrade(role: string | null | undefined): boolean {
+	return typeof role === "string" && GRADING_REVIEW_ROLE_MAP[role] === true;
 }

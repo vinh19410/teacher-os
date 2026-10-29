@@ -1,0 +1,274 @@
+import type { KernelHolidaySummary } from "@teacher-os/api/contracts";
+import { useState } from "react";
+import { classBlockClass } from "@/components/schedule/class-block";
+import type { ClassSessionModalRef } from "@/components/schedule/class-session-modal";
+import { HolidayCalendarCard } from "@/components/schedule/holiday-calendar-card";
+import { HolidayUndoDialog } from "@/components/schedule/holiday-undo-dialog";
+import { OrgEventChip } from "@/components/schedule/org-event-chip";
+import { classColorIndex } from "@/lib/class-color";
+import { dayNames } from "@/lib/mock-data";
+import {
+	cancelledByHolidayName,
+	holidayNameForDate,
+	makeupDateForShift,
+} from "@/lib/repos/holidays";
+import type { KernelSlice } from "@/lib/repos/kernel";
+import { holidaysByDateIndex } from "@/lib/schedule-month";
+import { distinctStudentsBySid, type WeekModel } from "@/lib/schedule-week";
+import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
+
+/**
+ * Lưới tuần (tách từ route /schedule giữ nguyên hành vi, TOS-14): block ca học
+ * đổi sang màu THEO LỚP (`classBlockClass`, D2), loại buổi thành badge nhỏ.
+ * Buổi dự chiếu (lớp chưa có dòng) vẫn non-interactive. Sự kiện vận hành và
+ * (sau #445) thẻ kỳ nghỉ render trong cột ngày tương ứng. View-model tính sẵn
+ * từ `buildWeekModel` — view thuần render.
+ */
+export function ScheduleWeekView({
+	data,
+	dates,
+	model,
+	onOpenSession,
+	onRefresh,
+}: {
+	data: KernelSlice;
+	dates: string[];
+	model: WeekModel;
+	onOpenSession: (session: ClassSessionModalRef) => void;
+	onRefresh?: () => void;
+}) {
+	const todayIso = todayISOVietnam();
+	const [undoHoliday, setUndoHoliday] = useState<KernelHolidaySummary | null>(
+		null,
+	);
+	const { columns, projected, slotCount } = model;
+	const eventsByDate = new Map<string, KernelSlice["events"]>();
+	for (const event of data.events) {
+		const bucket = eventsByDate.get(event.date);
+		if (bucket) bucket.push(event);
+		else eventsByDate.set(event.date, [event]);
+	}
+	// TOS-14b: thẻ kỳ nghỉ trong cột ngày — expand span một lần từ snapshot.
+	const holidaysOnDate = holidaysByDateIndex(data.holidays ?? []);
+	const holidayById = new Map((data.holidays ?? []).map((h) => [h.id, h]));
+
+	return (
+		<>
+			{slotCount === 0 && (
+				<div className="mb-4 rounded-md border border-border bg-muted px-4 py-3 text-center text-muted-foreground text-sm">
+					Không có buổi học nào trong tuần này.
+				</div>
+			)}
+			<div className="week-cal grid grid-cols-7 gap-2 max-app:grid-cols-1 max-app:gap-3">
+				{dayNames.map((dn, i) => {
+					const sessions = columns[i];
+					// Real sessions and projected blocks interleave chronologically;
+					// projected entries render as non-interactive divs — never a
+					// button, never a ClassSessionModal write target (AC3).
+					const blocks = projected
+						.filter((b) => b.day === i + 1)
+						.map((b) => ({
+							key: `proj:${b.classId}:${b.dateISO}`,
+							time: b.time,
+							block: b,
+						}));
+					const entries = [
+						...sessions.map((s) => ({
+							key: s.key,
+							time: s.time,
+							session: s,
+							block: null,
+						})),
+						...blocks.map((b) => ({
+							key: b.key,
+							time: b.time,
+							session: null,
+							block: b.block,
+						})),
+					].sort((a, b) => a.time.localeCompare(b.time));
+					const dateISO = dates[i];
+					const isToday = dateISO === todayIso;
+					const dayEvents = [...(eventsByDate.get(dateISO) ?? [])].sort(
+						(a, b) =>
+							a.startTime.localeCompare(b.startTime) ||
+							a.id.localeCompare(b.id),
+					);
+					const dayHolidays = holidaysOnDate.get(dateISO) ?? [];
+					return (
+						<div
+							key={dn}
+							className={`day-col flex min-h-[220px] flex-col rounded-xl border bg-card p-3 shadow-sm ${
+								isToday ? "border-ring ring-[3px] ring-ring/20" : ""
+							}`}
+							data-date={dateISO}
+						>
+							<div className="flex items-center justify-between pb-3">
+								<div
+									className={`font-medium text-sm ${
+										isToday ? "" : "text-muted-foreground"
+									}`}
+								>
+									{dn} {formatDayMonth(dateISO)}
+								</div>
+								{isToday && (
+									<span className="rounded-md bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
+										Hôm nay
+									</span>
+								)}
+							</div>
+							<div className="min-w-0 flex-1">
+								{entries.length === 0 &&
+									dayEvents.length === 0 &&
+									dayHolidays.length === 0 && (
+										<div className="text-muted-foreground text-xs">—</div>
+									)}
+								{entries.map((entry) =>
+									entry.block ? (
+										<div
+											key={entry.key}
+											className={`lesson-block mt-2 rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left opacity-75 ${classBlockClass(entry.block.classId)}`}
+											title="Buổi dự kiến từ lịch lớp — chưa có học viên"
+											data-class-color={classColorIndex(entry.block.classId)}
+										>
+											<div className="text-[11px] text-muted-foreground tabular-nums">
+												{entry.block.time}
+											</div>
+											<div className="font-semibold text-sm">
+												{entry.block.className}
+											</div>
+											<div className="mt-px text-[11px] text-muted-foreground">
+												Dự kiến · chưa có học viên
+											</div>
+										</div>
+									) : (
+										(() => {
+											const s = entry.session;
+											if (!s) return null;
+											const cls = data.classes.find((c) => c.id === s.classId);
+											const className = cls?.name ?? "Lớp học";
+											const isHoliday = s.status === "holiday";
+											const isCancelled = s.status === "cancelled";
+											const makeupDate = isHoliday
+												? makeupDateForShift(data, s.classId, s.dateISO)
+												: null;
+											const holidayName = isHoliday
+												? holidayNameForDate(data, s.classId, s.dateISO)
+												: null;
+											const cancelledHolidayName = isCancelled
+												? cancelledByHolidayName(data, s.classId, s.dateISO)
+												: null;
+											return (
+												<button
+													type="button"
+													key={s.key}
+													onClick={() =>
+														onOpenSession({
+															classId: s.classId,
+															dateISO: s.dateISO,
+															day: s.day,
+															time: s.time,
+															columnDateISO: dateISO,
+														})
+													}
+													className={`lesson-block mt-2 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(s.classId)} ${
+														s.status === "completed"
+															? "opacity-60"
+															: s.status === "cancelled"
+																? "opacity-35"
+																: isHoliday
+																	? "border-warn/60 opacity-75"
+																	: ""
+													}`}
+													data-class-color={classColorIndex(s.classId)}
+												>
+													<div className="text-[11px] text-muted-foreground tabular-nums">
+														{s.time}
+													</div>
+													<div
+														className={
+															s.status === "completed" ||
+															s.status === "cancelled"
+																? "font-semibold text-sm line-through decoration-muted-foreground"
+																: "font-semibold text-sm"
+														}
+													>
+														{className}
+														{(() => {
+															// #204: legacy undated entries bundle whole-course rows; the chip
+															// must count students, not rows.
+															const students = distinctStudentsBySid(
+																s.rows,
+															).length;
+															return students > 1 ? (
+																<span className="ml-1 font-normal text-[11px] text-muted-foreground">
+																	({students} HV)
+																</span>
+															) : null;
+														})()}
+													</div>
+													<div className="mt-px text-[11px] text-muted-foreground">
+														{isHoliday ? (
+															<span className="font-medium text-warn">
+																Nghỉ lễ — Đã dời lịch
+																{holidayName ? ` · ${holidayName}` : ""}
+																{makeupDate
+																	? ` · Đã dời sang ${formatDayMonth(makeupDate)}`
+																	: ""}
+															</span>
+														) : cancelledHolidayName ? (
+															<span className="font-medium text-destructive">
+																Đã hủy — {cancelledHolidayName}
+															</span>
+														) : (
+															s.topic.substring(0, 30)
+														)}
+													</div>
+													<div className="mt-1">
+														<span className="rounded border border-border bg-background px-1 py-px text-[10px] text-muted-foreground">
+															{s.type}
+														</span>
+													</div>
+												</button>
+											);
+										})()
+									),
+								)}
+								{dayHolidays.map((holiday) => {
+									const fullHoliday = holidayById.get(holiday.id);
+									const isFirstVisibleDay =
+										dateISO === holiday.fromDate ||
+										(i === 0 && holiday.fromDate < dateISO);
+									return (
+										// TOS-14b + TOS-13: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
+										<div key={holiday.id} className="mt-2">
+											<HolidayCalendarCard
+												name={holiday.name}
+												holiday={fullHoliday}
+												showUndoAction={isFirstVisibleDay}
+												todayISO={todayIso}
+												onRequestUndo={setUndoHoliday}
+											/>
+										</div>
+									);
+								})}
+								{dayEvents.map((event) => (
+									<OrgEventChip key={event.id} event={event} />
+								))}
+							</div>
+						</div>
+					);
+				})}
+			</div>
+			<HolidayUndoDialog
+				holiday={undoHoliday}
+				shifts={data.holidayShifts ?? []}
+				cancels={data.holidayCancels ?? []}
+				classes={data.classes.map((cls) => ({ id: cls.id, name: cls.name }))}
+				onClose={() => setUndoHoliday(null)}
+				onUndone={() => {
+					onRefresh?.();
+				}}
+			/>
+		</>
+	);
+}

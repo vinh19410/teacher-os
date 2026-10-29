@@ -102,7 +102,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 	// Xem trước (#282) → trang riêng góc nhìn học viên (?id=).
 	await page.getByRole("button", { name: "Xem trước" }).click();
 	await expect(page).toHaveURL(/\/assignments\/preview\?id=/);
-	// Title trong StudentPreviewPaper là <p class="font-display">, không phải heading.
+	// Title trong StudentPreviewPaper là <p>, không phải heading.
 	await expect(page.getByText("QC-208 Bank Chart Draft").first()).toBeVisible();
 	await expect(page.getByText("Xem trước phía học viên").first()).toBeVisible();
 	await page.getByRole("button", { name: "Quay lại danh sách" }).click();

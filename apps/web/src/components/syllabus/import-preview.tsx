@@ -27,7 +27,7 @@ export function SyllabusImportPreview({
 			type="button"
 			variant="ghost"
 			size="sm"
-			className="px-1.5 text-muted-fg hover:text-danger"
+			className="px-1.5 text-muted-foreground hover:text-danger"
 			onClick={onRemove}
 			disabled={disabled}
 			aria-label="Gỡ file"
@@ -39,7 +39,7 @@ export function SyllabusImportPreview({
 
 	if (!result.ok) {
 		return (
-			<div className="rounded-md border border-line-soft border-solid bg-surface">
+			<div className="rounded-md border border-border border-solid bg-muted">
 				<div className="flex items-center justify-between gap-2 px-3 py-2">
 					<span className="text-danger text-xs">
 						File có {result.errors.length} lỗi
@@ -65,21 +65,21 @@ export function SyllabusImportPreview({
 	}
 
 	return (
-		<div className="rounded-md border border-line-soft border-solid bg-surface">
+		<div className="rounded-md border border-border border-solid bg-muted">
 			<div className="flex items-center justify-between gap-2 px-3 py-2">
 				<span className="text-xs">
 					{result.modules.length} module · {result.lessonCount} buổi học
 				</span>
 				{removeFileButton}
 			</div>
-			<div className="max-h-64 overflow-y-auto border-line-soft border-t">
+			<div className="max-h-64 overflow-y-auto border-border border-t">
 				<table className="w-full border-collapse text-xs">
 					<thead>
 						<tr>
 							{PREVIEW_HEADERS.map((h) => (
 								<th
 									key={h}
-									className="border-line border-b px-2 py-1.5 text-left font-mono text-[11px] text-muted-fg uppercase tracking-[0.04em]"
+									className="border-border border-b px-2 py-1.5 text-left text-[11px] text-muted-foreground uppercase tabular-nums tracking-[0.04em]"
 								>
 									{h}
 								</th>
@@ -91,9 +91,9 @@ export function SyllabusImportPreview({
 							m.lessons.map((l, li) => (
 								<tr
 									key={`${mi}-${li}-${l.title}`}
-									className="border-line-soft border-b"
+									className="border-border border-b"
 								>
-									<td className="px-2 py-1.5 font-mono text-muted-fg">
+									<td className="px-2 py-1.5 text-muted-foreground">
 										{lessonNumber(result.modules, mi, li)}
 									</td>
 									<td className="px-2 py-1.5">

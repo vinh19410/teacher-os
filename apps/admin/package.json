@@ -1,0 +1,43 @@
+{
+	"name": "admin",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "vite build",
+		"serve": "vite preview",
+		"start": "vite",
+		"check-types": "vite build && tsc --noEmit",
+		"dev:bare": "vite dev",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@tailwindcss/vite": "^4.3.3",
+		"@tanstack/react-form": "^1.33.2",
+		"@tanstack/react-query": "^5.101.4",
+		"@tanstack/react-router": "^1.170.18",
+		"@teacher-os/api": "workspace:*",
+		"@teacher-os/env": "workspace:*",
+		"@teacher-os/ui": "workspace:*",
+		"better-auth": "catalog:",
+		"lucide-react": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"sonner": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@tanstack/router-plugin": "^1.168.23",
+		"@teacher-os/config": "workspace:*",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react": "^6.0.4",
+		"jsdom": "catalog:",
+		"postcss": "^8.5.24",
+		"tailwindcss": "catalog:",
+		"typescript": "catalog:",
+		"vite": "^8.1.5",
+		"vitest": "^4.1.10"
+	}
+}

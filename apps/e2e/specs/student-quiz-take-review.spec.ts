@@ -316,7 +316,9 @@ test.beforeAll(async ({ browser }) => {
 					(_, i) =>
 						`Đoạn văn thứ ${i + 1} kể về lịch sử Hồ Gươm và những truyền thuyết xung quanh ngôi đền cổ bên kia hồ.`,
 				).join("</p><p>")}</p>`,
-				questions: Array.from({ length: 8 }, (_, i) => ({
+				// Root font 14px (design v2) thu nhỏ rem 12.5% → cần 14 câu để
+				// workPane thực sự tràn chiều cao 597px ở viewport 1280×720.
+				questions: Array.from({ length: 14 }, (_, i) => ({
 					stem: `Theo đoạn văn, hồ có tên gọi là thứ ____ ${i + 1}.`,
 					opts: null,
 					answer: `năm ${i + 1}`,
@@ -567,6 +569,12 @@ test.describe("Student quiz take & review", () => {
 			"data-verdict",
 			"correct",
 		);
+		// Verdict block highlight (#351): fieldset câu tô theo verdict (locator
+		// fieldset-scoped — data-question cũng nằm trên nút navigator).
+		await expect(page.locator('fieldset[data-question="0"]')).toHaveAttribute(
+			"data-verdict",
+			"correct",
+		);
 		await expect(q1.getByTestId("quiz-review-chip")).toHaveText("Đúng");
 		await expect(q1.getByText("Đáp án: B")).toBeVisible();
 		const q2 = page.locator('[data-question="1"]');
@@ -577,12 +585,16 @@ test.describe("Student quiz take & review", () => {
 		// Wrong chip shows the student's own answer so the mistake is visible.
 		await expect(q2.getByTestId("quiz-review-chip")).toHaveText("A");
 		await expect(q2.getByText("Đáp án: C")).toBeVisible();
+		// Câu sai: hàng đáp án đúng được đánh dấu (#351).
+		await expect(q2.getByText("Đáp án đúng")).toBeVisible();
 		const q3 = page.locator('[data-question="2"]');
 		await expect(q3.getByTestId("quiz-review-item")).toHaveAttribute(
 			"data-verdict",
 			"skipped",
 		);
 		await expect(q3.getByTestId("quiz-review-chip")).toHaveText("Chưa trả lời");
+		// Bỏ qua: key vẫn được đánh dấu (chỉ verdict=correct ẩn nhãn).
+		await expect(q3.getByText("Đáp án đúng")).toBeVisible();
 
 		await q1.getByText("Giải thích").click();
 		await expect(q1.getByText(NOTE_A)).toBeVisible();

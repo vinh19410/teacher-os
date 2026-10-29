@@ -30,7 +30,7 @@ export function PromptPickerDialog({
 		<Modal open={open} onClose={onClose} title={`Chọn part — ${slotLabel}`}>
 			<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
 				{prompts.length === 0 ? (
-					<p className="text-muted-fg text-sm">
+					<p className="text-muted-foreground text-sm">
 						Ngân hàng chưa có đề nào cho {slotLabel} — đóng và bấm "Soạn mới" để
 						thêm part đầu tiên.
 					</p>
@@ -45,12 +45,12 @@ export function PromptPickerDialog({
 							<button
 								key={prompt.id}
 								type="button"
-								className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-bg px-3 py-2 text-left transition-colors hover:border-fg"
+								className="flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md border border-input bg-transparent px-3 py-2 text-left transition-colors hover:text-primary"
 								onClick={() => onPick(prompt.id)}
 							>
 								<span className="flex flex-col">
 									<strong className="text-sm">{prompt.title}</strong>
-									<span className="text-muted-fg text-xs">
+									<span className="text-muted-foreground text-xs">
 										{typeLabel} · {(prompt.questions ?? []).length} câu
 										{prompt.source ? ` · ${prompt.source}` : ""}
 									</span>

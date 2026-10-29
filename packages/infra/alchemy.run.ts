@@ -3,7 +3,10 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import { config } from "dotenv";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import { resolveDomainTopology } from "./src/topology.ts";
+import {
+	resolveAssumeEmailVerified,
+	resolveDomainTopology,
+} from "./src/topology.ts";
 
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
@@ -43,21 +46,26 @@ if (topology && process.env.CORS_ORIGIN) {
 	const explicit = process.env.CORS_ORIGIN.split(",").map((s) => s.trim());
 	if (
 		!explicit.includes(topology.appOrigin) ||
-		!explicit.includes(topology.studentOrigin)
+		!explicit.includes(topology.studentOrigin) ||
+		!explicit.includes(topology.adminOrigin)
 	) {
 		throw new Error(
-			`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} missing required origins ${topology.appOrigin} or ${topology.studentOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origins.`,
+			`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} missing required origins ${topology.appOrigin}, ${topology.studentOrigin}, or ${topology.adminOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origins.`,
 		);
 	}
 }
 
 const corsOriginConfig = topology
 	? Config.string("CORS_ORIGIN").pipe(
-			Config.withDefault(`${topology.appOrigin},${topology.studentOrigin}`),
+			Config.withDefault(
+				`${topology.appOrigin},${topology.studentOrigin},${topology.adminOrigin}`,
+			),
 		)
 	: isDevCommand
 		? Config.string("CORS_ORIGIN").pipe(
-				Config.withDefault("http://localhost:8001,http://localhost:8003"),
+				Config.withDefault(
+					"http://localhost:8001,http://localhost:8003,http://localhost:8004",
+				),
 			)
 		: Config.string("CORS_ORIGIN");
 
@@ -91,6 +99,50 @@ const studentOriginsConfig = topology
 			)
 		: Config.string("STUDENT_ORIGINS");
 
+// Plan #413: ADMIN_ORIGINS mặc định theo topology (admin.<APP_DOMAIN>) —
+// explicit thiếu origin admin ở topology mode fail loud, cùng pattern
+// STUDENT_ORIGINS ở trên (presence, không phải truthiness, là gate).
+const adminOriginsEnv = process.env.ADMIN_ORIGINS;
+if (topology && adminOriginsEnv !== undefined) {
+	const explicitAdmins = adminOriginsEnv
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	if (!explicitAdmins.includes(topology.adminOrigin)) {
+		throw new Error(
+			`[topology] ADMIN_ORIGINS=${adminOriginsEnv || "(empty)"} missing required admin origin ${topology.adminOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear ADMIN_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
+		);
+	}
+}
+
+const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
+	Config.withDefault("false"),
+);
+
+const adminOriginsConfig = topology
+	? Config.string("ADMIN_ORIGINS").pipe(
+			Config.withDefault(topology.adminOrigin),
+		)
+	: isDevCommand
+		? Config.string("ADMIN_ORIGINS").pipe(
+				Config.withDefault("http://localhost:8004"),
+			)
+		: Config.string("ADMIN_ORIGINS");
+
+// Plan #413: ADMIN_EMAILS KHÔNG có default — rỗng (không set) = không ai là
+// admin, không ai đăng ký được account admin. Danh sách email phân tách dấu
+// phẩy; server so khớp lowercase mỗi request.
+const adminEmailsConfig = Config.string("ADMIN_EMAILS").pipe(
+	Config.withDefault(""),
+);
+
+// Staging QA: coi mọi tài khoản là đã xác minh email, vì staging không
+// gửi mail. Chặn cứng trên prod để cờ không thể lọt sang môi trường thật.
+const assumeEmailVerified = resolveAssumeEmailVerified(
+	process.env.AUTH_ASSUME_EMAIL_VERIFIED,
+	process.env.APP_DOMAIN,
+);
+
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
 });
@@ -99,6 +151,11 @@ export const db = Cloudflare.D1.Database("database", {
 // domain and no forceDestroy: objects are student data, read and written only
 // by the server Worker through /api/student/attempts/:id/media.
 export const media = Cloudflare.R2.Bucket("media", {});
+
+// Kho audio đề listening của thư viện (#413 phase 3) — private như bucket
+// media, KHÔNG forceDestroy: object audio là dữ liệu đề dùng chung, chỉ
+// server Worker đọc/ghi qua /api/admin/library/.../audio.
+export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
 
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
@@ -109,8 +166,16 @@ export const server = Cloudflare.Worker("server", {
 	env: {
 		DB: db,
 		MEDIA: media,
+		LIBRARY_AUDIO: libraryAudio,
+		// TOS-24 (#470): Workers AI cho bóc tách đề — binding `ai` không cần
+		// cấu hình thêm; dev local đi qua proxy Cloudflare của alchemy, e2e
+		// không dùng workerd nên inject fake extractor qua boot.ts.
+		AI: Cloudflare.Workers.AI(),
+		AI_ENABLED: aiEnabledConfig,
 		CORS_ORIGIN: corsOriginConfig,
 		STUDENT_ORIGINS: studentOriginsConfig,
+		ADMIN_ORIGINS: adminOriginsConfig,
+		ADMIN_EMAILS: adminEmailsConfig,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
@@ -121,6 +186,7 @@ export const server = Cloudflare.Worker("server", {
 			: "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
+		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
 		MAILER_IMPL: Config.string("MAILER_IMPL").pipe(Config.withDefault("log")),
 		MAIL_FROM: Config.string("MAIL_FROM").pipe(
 			Config.withDefault("TeacherOS <onboarding@resend.dev>"),
@@ -150,6 +216,12 @@ export const server = Cloudflare.Worker("server", {
 		SEPAY_BANKHUB_BASE_URL: Config.string("SEPAY_BANKHUB_BASE_URL").pipe(
 			Config.withDefault("https://bankhub-api-sandbox.sepay.vn"),
 		),
+		// Webhook GitHub (#421): blank secret ⇒ /webhooks/github trả 503
+		// GITHUB_WEBHOOK_DISABLED (dev không cần cấu hình). Same pattern as
+		// RESEND_API_KEY — redacted conflicts with withDefault.
+		GITHUB_WEBHOOK_SECRET: Config.string("GITHUB_WEBHOOK_SECRET").pipe(
+			Config.withDefault(""),
+		),
 	},
 	dev: {
 		port: 8000,
@@ -167,6 +239,7 @@ export default Alchemy.Stack(
 	},
 	Effect.gen(function* () {
 		const serverWorker = yield* server;
+		const aiEnabled = yield* aiEnabledConfig;
 		const webWorker = yield* Cloudflare.Website.Vite("web", {
 			rootDir: "../../apps/web",
 			main: "src/worker.ts",
@@ -185,6 +258,7 @@ export default Alchemy.Stack(
 				VITE_SERVER_URL: topology
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
+				VITE_AI_ENABLED: aiEnabled,
 			},
 			dev: {
 				port: 8001,
@@ -237,11 +311,37 @@ export default Alchemy.Stack(
 			},
 		});
 
+		// Plan #413 phase 5: cổng quản trị — dev 8004, domain topology.adminHost.
+		const adminWorker = yield* Cloudflare.Website.Vite("admin", {
+			rootDir: "../../apps/admin",
+			main: "src/worker.ts",
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.adminHost,
+				},
+				workersDev: false,
+			}),
+			env: {
+				VITE_SERVER_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
+			},
+			dev: {
+				port: 8004,
+				strictPort: true,
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
 			student: studentWorker.url,
+			admin: adminWorker.url,
 		};
 	}),
 );

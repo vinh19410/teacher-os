@@ -13,7 +13,7 @@ async function createTemplateWithModules(page: Page, name: string) {
 	// và có nút "+ Thêm buổi học" của riêng nó — phải scope theo module, nếu
 	// không từ module thứ hai trở đi locator sẽ strict-violate (2 matches).
 	const moduleSection = (title: string) =>
-		page.locator("div.overflow-hidden").filter({
+		page.getByTestId("module-card").filter({
 			has: page.getByRole("heading", { name: title, exact: true }),
 		});
 
@@ -86,8 +86,8 @@ async function createClassAndImportTemplate(page: Page, className: string) {
 	await page.getByText(className).click();
 	await expect(page).toHaveURL(/\/classes\/.+/);
 
-	// Curriculum import lives on the "Buổi học" tab (#221); roster is default.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	// Curriculum import lives on the "Giáo trình" tab (#391).
+	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 
 	// Import the template into the class (single "Nhập giáo trình" submit).
 	await page.getByRole("button", { name: "Nhập từ template" }).click();
@@ -107,13 +107,15 @@ test("manage modal reorders lessons and the schedule table follows (#221)", asyn
 	await createClassAndImportTemplate(page, "E2E 221 Lớp");
 
 	// Curriculum card is assignment-only: no progress, no expandable tree.
-	await page.getByRole("tab", { name: "Buổi học", exact: true }).click();
+	await page
+		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.click();
 	await expect(page.getByRole("button", { name: /^Mở rộng \(/ })).toHaveCount(
 		0,
 	);
 
-	// Schedule table starts A1 → A2 → B1.
-	const scheduleRows = page.locator("tbody tr");
+	// Session cards start A1 → A2 → B1 (#391 testid thay bảng).
+	const scheduleRows = page.locator("[data-testid='session-row']");
 	await expect(
 		scheduleRows.filter({ hasText: "Buổi A1" }).first(),
 	).toBeVisible();

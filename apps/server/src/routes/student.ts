@@ -2,6 +2,7 @@ import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
 	DAILY_STUDY_HOUR_OPTIONS,
+	type EssayAnnotation,
 	EXAM_INTERESTS,
 	IELTS_TARGET_BANDS,
 	LEARNING_GOAL_OPTIONS,
@@ -25,6 +26,7 @@ import {
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
+import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
@@ -32,16 +34,18 @@ import {
 	normalizeMediaType,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	assignment,
 	assignmentPrompt,
+	assignmentTest,
+	assignmentTestPart,
 	classAssignment,
 	classAssignmentTarget,
 	classTable,
 	enrollment,
 	invoice,
 	lesson,
+	notificationRecord,
 	organization,
 	quizAttempt,
 	student,
@@ -53,12 +57,18 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
+import type { AiGrader } from "../lib/ai-grading/grader";
+import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import {
+	loadEssayAnnotations,
+	toPlainAnnotation,
+} from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -72,6 +82,7 @@ import {
 	studentClassColumns,
 	toStudentClass,
 } from "./student-class";
+import { registerVocabRoutes } from "./vocab";
 
 export interface StudentRouteDeps {
 	getDb(): Db;
@@ -81,13 +92,109 @@ export interface StudentRouteDeps {
 	getMediaStore?(): MediaStore | undefined;
 	/** Xem `AppDeps.runInBackground`. */
 	runInBackground?(promise: Promise<unknown>): void;
+	/** TOS-30: grader chấm nháp AI — vắng mặt → bỏ qua chấm nháp. */
+	getAiGrader?(): AiGrader | undefined;
 }
 
-interface StudentContext {
+export interface StudentContext {
 	student: typeof student.$inferSelect;
 	orgId: string;
 	userId: string;
 	sessionUser: SessionUser & { email: string };
+}
+
+export type StudentEnv = {
+	Variables: {
+		sessionUser: SessionUser & { email: string };
+		studentCtx: StudentContext;
+	};
+};
+
+/**
+ * Guard học viên dùng chung cho mọi route /api/student: nạp dòng student theo
+ * email session (tự provision khi email đã verify), chọn org theo header
+ * `x-student-org-id` và đặt `studentCtx`. Không khớp → 403 NOT_LINKED /
+ * EMAIL_UNVERIFIED.
+ */
+export function createStudentGuard(deps: StudentRouteDeps) {
+	return async (c: Context<StudentEnv>, next: () => Promise<void>) => {
+		const sessionUser = c.get("sessionUser");
+		if (!sessionUser) {
+			return c.json({ error: "unauthorized", code: "UNAUTHORIZED" }, 401);
+		}
+		const db = deps.getDb();
+		const normalizedEmail = sessionUser.email.toLowerCase();
+
+		let rows = await db
+			.select()
+			.from(student)
+			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.orderBy(desc(student.createdAt), asc(student.id));
+
+		if (rows.length === 0) {
+			if (sessionUser.emailVerified === true) {
+				try {
+					await provisionStudentForUser(db, {
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					});
+					rows = await db
+						.select()
+						.from(student)
+						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+						.orderBy(desc(student.createdAt), asc(student.id));
+				} catch (err) {
+					console.error("Failed to provision student for user", {
+						userId: sessionUser.userId,
+						error: err,
+					});
+				}
+			}
+
+			if (rows.length === 0) {
+				const code =
+					sessionUser.emailVerified === true
+						? STUDENT_ERROR_CODES.NOT_LINKED
+						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
+				return c.json(
+					{
+						error: code,
+						code,
+					},
+					403,
+				);
+			}
+		}
+
+		const requestedOrgId = c.req.header("x-student-org-id");
+		let matchedStudent = rows[0];
+
+		if (requestedOrgId) {
+			const found = rows.find((r) => r.orgId === requestedOrgId);
+			if (found) {
+				matchedStudent = found;
+			}
+		}
+
+		if (!matchedStudent) {
+			return c.json(
+				{
+					error: STUDENT_ERROR_CODES.NOT_LINKED,
+					code: STUDENT_ERROR_CODES.NOT_LINKED,
+				},
+				403,
+			);
+		}
+
+		c.set("studentCtx", {
+			student: matchedStudent,
+			orgId: matchedStudent.orgId,
+			userId: sessionUser.userId,
+			sessionUser,
+		});
+
+		return next();
+	};
 }
 function parseLearningGoals(raw: string | null): LearningGoalOption[] | null {
 	if (!raw) return null;
@@ -124,8 +231,13 @@ function parseTargetScore(
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
- * fallback style as snapshot.ts parseQuestions: corrupt rows → []). */
-function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
+ * fallback style as snapshot.ts parseQuestions: corrupt rows → []). Export
+ * cho route tự luyện (#378) — snapshot đề practice dùng CÙNG một bộ làm
+ * sạch, không lập convention thứ hai. */
+export function parseQuizQuestions(
+	raw: string,
+	rowId: string,
+): AssignmentQuestion[] {
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		if (!Array.isArray(parsed)) {
@@ -147,6 +259,14 @@ function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
 					alts: typeof record.alts === "string" ? record.alts : "",
 					type: typeof record.type === "string" ? record.type : null,
 					pin: parsePin(record.pin),
+					// #358: forward giải thích (soạn từ #423) như `type`/`pin` —
+					// thiếu dòng này thì snapshot lúc start strip mất field và
+					// review không bao giờ thấy. Take payload whitelist
+					// stem/opts/type/pin nên explanation không lộ trước khi nộp.
+					...(typeof record.explanation === "string" &&
+					record.explanation.trim().length > 0
+						? { explanation: record.explanation }
+						: {}),
 				},
 			];
 		});
@@ -156,8 +276,32 @@ function parseQuizQuestions(raw: string, rowId: string): AssignmentQuestion[] {
 	}
 }
 
-/** answers JSON `{"<qIndex>":"<value>"}` → guarded record (corrupt → {}). */
-function parseQuizAnswers(raw: string): Record<string, string> {
+/** #358 — attempt start TRƯỚC khi parser forward `explanation` có snapshot
+ * không mang giải thích. Fallback đọc giải thích từ đề hiện hành, nhưng CHỈ
+ * khi đề chưa đổi so với snapshot: cùng số câu và từng câu trùng stem +
+ * answer — đề đã sửa (thêm/bớt/đổi câu) thì bỏ fallback, không gắn giải
+ * thích lệch câu. Câu snapshot đã có giải thích giữ nguyên. */
+export function fillExplanationsFromCurrent(
+	snapshot: AssignmentQuestion[],
+	current: AssignmentQuestion[],
+): AssignmentQuestion[] {
+	if (snapshot.length !== current.length) return snapshot;
+	const aligned = snapshot.every(
+		(question, index) =>
+			question.stem === current[index]?.stem &&
+			question.answer === current[index]?.answer,
+	);
+	if (!aligned) return snapshot;
+	return snapshot.map((question, index) => {
+		if (question.explanation) return question;
+		const explanation = current[index]?.explanation;
+		return explanation ? { ...question, explanation } : question;
+	});
+}
+
+/** answers JSON `{"<qIndex>":"<value>"}` → guarded record (corrupt → {}).
+ * Export cho route tự luyện (#378) — cùng một bộ làm sạch. */
+export function parseQuizAnswers(raw: string): Record<string, string> {
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -173,8 +317,9 @@ function parseQuizAnswers(raw: string): Record<string, string> {
 	}
 }
 
-/** optionBank JSON string[] → guarded (corrupt/legacy → []). */
-function parseQuizOptionBank(raw: string): string[] {
+/** optionBank JSON string[] → guarded (corrupt/legacy → []). Export cho
+ * route tự luyện (#378). */
+export function parseQuizOptionBank(raw: string): string[] {
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		return Array.isArray(parsed)
@@ -215,12 +360,53 @@ function buildStudentMe(
 	};
 }
 
-type StudentEnv = {
-	Variables: {
-		sessionUser: SessionUser & { email: string };
-		studentCtx: StudentContext;
+/**
+ * Guard CSRF + shape JSON dùng chung cho mọi route GHI của quiz domain học
+ * viên (RT#2): kiểm Origin trong allowlist, buộc Content-Type application/
+ * json, cap body 4096 byte (route /essay #304 cap riêng 48KB). Chỉ PUT/
+ * DELETE đúng route media bài nói (#305) được bỏ qua bước JSON + bodyLimit
+ * — body raw stream đi thẳng vào R2, handler tự kiểm header + byte thật.
+ * Factory dùng chung cho studentRoutes lẫn router tự luyện phase 10 (#378)
+ * — router mount ngoài studentRoutes không được thừa hưởng guard.
+ */
+export function createQuizWriteGuard(allowedOrigins: string[]) {
+	return async (
+		c: Context<StudentEnv>,
+		next: () => Promise<void>,
+	): Promise<Response | void> => {
+		const method = c.req.method;
+		if (
+			method === "POST" ||
+			method === "PATCH" ||
+			method === "PUT" ||
+			method === "DELETE"
+		) {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			if (
+				(method === "PUT" || method === "DELETE") &&
+				QUIZ_MEDIA_ROUTE_PATH.test(c.req.path)
+			) {
+				return next();
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
+			// Content-Length không lọt) — precedent POST /api/syllabus-templates (syllabus.ts).
+			return bodyLimit({
+				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
+				onError: (bc) => bc.json({ error: "payload too large" }, 413),
+			})(c, next);
+		}
+		return next();
 	};
-};
+}
+
+const QUIZ_MEDIA_ROUTE_PATH = /^\/api\/student\/attempts\/[^/]+\/media$/;
 
 export function studentRoutes(deps: StudentRouteDeps) {
 	const router = new Hono<StudentEnv>();
@@ -269,6 +455,21 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// /enrollments/*; các handler này không đọc body nên chặn simple-request
 	// cross-site (form/text/plain) bằng Origin + Content-Type check.
 	router.use("/invitations/*", async (c, next) => {
+		if (c.req.method === "POST") {
+			const origin = c.req.header("Origin") ?? "";
+			if (!allowedOrigins.includes(origin)) {
+				return c.json({ error: "origin not allowed" }, 403);
+			}
+			const contentType = c.req.header("Content-Type") ?? "";
+			if (!contentType.toLowerCase().startsWith("application/json")) {
+				return c.json({ error: "content-type must be application/json" }, 415);
+			}
+		}
+		return next();
+	});
+
+	// CSRF defense cho POST inbox mark-read — cùng contract với /invitations/*.
+	router.use("/inbox/*", async (c, next) => {
 		if (c.req.method === "POST") {
 			const origin = c.req.header("Origin") ?? "";
 			if (!allowedOrigins.includes(origin)) {
@@ -495,85 +696,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		return c.json(orgs);
 	});
 
-	// Org-Scoped Middleware for /me, /overview, etc.
-	const requireStudent = async (
-		c: Context<StudentEnv>,
-		next: () => Promise<void>,
-	) => {
-		const sessionUser = c.get("sessionUser");
-		const db = deps.getDb();
-		const normalizedEmail = sessionUser.email.toLowerCase();
-
-		let rows = await db
-			.select()
-			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), asc(student.id));
-
-		if (rows.length === 0) {
-			if (sessionUser.emailVerified === true) {
-				try {
-					await provisionStudentForUser(db, {
-						name: sessionUser.userName,
-						email: sessionUser.email,
-					});
-					rows = await db
-						.select()
-						.from(student)
-						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-						.orderBy(desc(student.createdAt), asc(student.id));
-				} catch (err) {
-					console.error("Failed to provision student for user", {
-						userId: sessionUser.userId,
-						error: err,
-					});
-				}
-			}
-
-			if (rows.length === 0) {
-				const code =
-					sessionUser.emailVerified === true
-						? STUDENT_ERROR_CODES.NOT_LINKED
-						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
-				return c.json(
-					{
-						error: code,
-						code,
-					},
-					403,
-				);
-			}
-		}
-
-		const requestedOrgId = c.req.header("x-student-org-id");
-		let matchedStudent = rows[0];
-
-		if (requestedOrgId) {
-			const found = rows.find((r) => r.orgId === requestedOrgId);
-			if (found) {
-				matchedStudent = found;
-			}
-		}
-
-		if (!matchedStudent) {
-			return c.json(
-				{
-					error: STUDENT_ERROR_CODES.NOT_LINKED,
-					code: STUDENT_ERROR_CODES.NOT_LINKED,
-				},
-				403,
-			);
-		}
-
-		c.set("studentCtx", {
-			student: matchedStudent,
-			orgId: matchedStudent.orgId,
-			userId: sessionUser.userId,
-			sessionUser,
-		});
-
-		return next();
-	};
+	// Org-Scoped Middleware for /me, /overview, etc. Factory để route cùng
+	// domain ở file khác (student-classmates.ts) tái dùng đúng một logic xác
+	// thực học viên + chọn org (x-student-org-id).
+	const requireStudent = createStudentGuard(deps);
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
@@ -591,54 +717,88 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
 	router.use("/invoices", requireStudent);
 	router.use("/invoices/*", requireStudent);
+	// TOS-21 D7: inbox học viên cần studentCtx (org + student id).
+	router.use("/inbox", requireStudent);
+	router.use("/inbox/*", requireStudent);
 
-	// CSRF cho POST/PATCH mới (RT#2, mirror guard /onboarding). Đăng ký SAU
-	// session gate `use("*")` nên request không có session vẫn 401 trước khi
-	// chạm CSRF; body cap 4096 bytes như onboarding (RT#16). Mọi method ghi
-	// (POST/PATCH/PUT/DELETE) đều kiểm Origin. Chỉ PUT/DELETE đúng route
-	// media bài nói (#305) bỏ qua bước JSON + bodyLimit — bodyLimit đọc/bọc
-	// stream mà handler cần chuyển nguyên vào R2; handler tự kiểm
-	// Content-Type/Content-Length và đếm byte thật. Audio/video Content-Type
-	// vẫn kích hoạt preflight nên không có lối form cross-site. Route ghi khác
-	// (kể cả PUT/DELETE thêm sau này) giữ guard JSON + bodyLimit.
-	const MEDIA_ROUTE_PATH = /^\/api\/student\/attempts\/[^/]+\/media$/;
-	const quizWriteGuard = async (
-		c: Context<StudentEnv>,
-		next: () => Promise<void>,
-	) => {
-		const method = c.req.method;
-		if (
-			method === "POST" ||
-			method === "PATCH" ||
-			method === "PUT" ||
-			method === "DELETE"
-		) {
-			const origin = c.req.header("Origin") ?? "";
-			if (!allowedOrigins.includes(origin)) {
-				return c.json({ error: "origin not allowed" }, 403);
-			}
-			if (
-				(method === "PUT" || method === "DELETE") &&
-				MEDIA_ROUTE_PATH.test(c.req.path)
-			) {
-				return next();
-			}
-			const contentType = c.req.header("Content-Type") ?? "";
-			if (!contentType.toLowerCase().startsWith("application/json")) {
-				return c.json({ error: "content-type must be application/json" }, 415);
-			}
-			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
-			// Content-Length không lọt) — precedent kernel.ts /syllabi.
-			// Route /essay (#304) cap riêng 48KB: bài Writing tới 10.000 ký tự
-			// UTF-8 (vẫn dưới giới hạn 64KB của fetch keepalive); các route
-			// quiz khác giữ 4096.
-			return bodyLimit({
-				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
-				onError: (bc) => bc.json({ error: "payload too large" }, 413),
-			})(c, next);
+	// In-app inbox học viên (plan TOS-21 D7): 50 dòng mới nhất của chính học
+	// viên trong org đang chọn; không trả recipient_email/reply_to_email/last_error.
+	router.get("/inbox", async (c) => {
+		const ctx = c.get("studentCtx");
+		const db = deps.getDb();
+
+		const rows = await db
+			.select({
+				id: notificationRecord.id,
+				eventType: notificationRecord.eventType,
+				title: notificationRecord.title,
+				body: notificationRecord.body,
+				linkPath: notificationRecord.linkPath,
+				status: notificationRecord.status,
+				readAt: notificationRecord.readAt,
+				createdAt: notificationRecord.createdAt,
+			})
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.orgId, ctx.orgId),
+					eq(notificationRecord.studentId, ctx.student.id),
+				),
+			)
+			.orderBy(desc(notificationRecord.createdAt), desc(notificationRecord.id))
+			.limit(50);
+
+		return c.json({
+			items: rows.map((row) => ({
+				id: row.id,
+				eventType: row.eventType,
+				title: row.title,
+				body: row.body,
+				linkPath: row.linkPath,
+				status: row.status,
+				readAt: row.readAt ? row.readAt.toISOString() : null,
+				createdAt: row.createdAt.toISOString(),
+			})),
+			unread: rows.filter((row) => row.readAt === null).length,
+		});
+	});
+
+	// Đánh dấu đã đọc: read_at là nguồn chân lý, status chỉ là projection
+	// (queued giữ nguyên — deliver sau sẽ chuyển thẳng read khi thấy read_at).
+	router.post("/inbox/:id/read", async (c) => {
+		const ctx = c.get("studentCtx");
+		const id = c.req.param("id");
+		const db = deps.getDb();
+
+		const [record] = await db
+			.select()
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.id, id),
+					eq(notificationRecord.orgId, ctx.orgId),
+					eq(notificationRecord.studentId, ctx.student.id),
+				),
+			);
+
+		if (!record) {
+			return c.json({ error: "Không tìm thấy thông báo" }, 404);
 		}
-		return next();
-	};
+
+		if (record.readAt === null) {
+			await db
+				.update(notificationRecord)
+				.set({
+					readAt: new Date(),
+					...(record.status === "sent" ? { status: "read" as const } : {}),
+				})
+				.where(eq(notificationRecord.id, id));
+		}
+
+		return c.json({ ok: true });
+	});
+
+	const quizWriteGuard = createQuizWriteGuard(allowedOrigins);
 	router.use("/assignments/:assignmentId/quiz/*", quizWriteGuard);
 	router.use("/attempts/*", quizWriteGuard);
 
@@ -654,6 +814,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	 * assignment_prompt, cả hai có predicate orgId — chuẩn IDOR của quiz
 	 * domain). Dùng chung cho essay (#304), media và submit (#305). Skill
 	 * immutable trên PATCH prompt nên đọc một lần là đủ cho CAS sau đó.
+	 * Attempt tự luyện (phase 10) KHÔNG có class_assignment — skill lấy từ
+	 * `assignment_test` qua `test_id` (đề xoá/set null → skill rỗng, route
+	 * gọi xử lý như attempt lạ).
 	 */
 	const loadOwnedAttemptWithSkill = async (
 		attemptId: string,
@@ -664,7 +827,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.getDb()
 			.select({
 				status: quizAttempt.status,
+				mode: quizAttempt.mode,
+				testId: quizAttempt.testId,
 				skill: assignmentPrompt.skill,
+				testSkill: assignmentTest.skill,
 				mediaKey: quizAttempt.mediaKey,
 				mediaName: quizAttempt.mediaName,
 				mediaType: quizAttempt.mediaType,
@@ -672,21 +838,34 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				mediaUploadedAt: quizAttempt.mediaUploadedAt,
 			})
 			.from(quizAttempt)
-			.innerJoin(
+			.leftJoin(
 				classAssignment,
 				and(
 					eq(classAssignment.id, quizAttempt.assignmentId),
 					eq(classAssignment.orgId, orgId),
 				),
 			)
-			.innerJoin(
+			.leftJoin(
 				assignmentPrompt,
 				and(
 					eq(assignmentPrompt.id, classAssignment.promptId),
 					eq(assignmentPrompt.orgId, orgId),
 				),
 			)
+			.leftJoin(
+				assignmentTest,
+				and(
+					eq(assignmentTest.id, quizAttempt.testId),
+					eq(assignmentTest.orgId, orgId),
+				),
+			)
 			.where(ownedAttempt(attemptId, studentId, orgId));
+		if (!row) return row;
+		if (row.mode === "practice") {
+			// Đề gốc bị xoá (test_id set null) → skill rỗng: caller gate speaking
+			// theo skill nên attempt rơi về luồng tự chấm an toàn.
+			return { ...row, skill: row.testSkill ?? "" };
+		}
 		return row;
 	};
 
@@ -767,7 +946,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const db = deps.getDb();
-		const todayISO = vietnamTodayISO();
+		const now = new Date();
 
 		const [enrollmentRows, teacher] = await Promise.all([
 			db
@@ -783,7 +962,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					await loadNextSession(db, orgId, cls.id, todayISO),
+					await loadNextSession(db, orgId, cls.id, now),
 					teacher,
 				),
 			),
@@ -851,9 +1030,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.limit(1);
 		if (!row) return c.json({ error: "class not found" }, 404);
 
+		const now = new Date();
 		const [teacher, nextSession, lessons, assignments] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			loadNextSession(db, orgId, row.id, vietnamTodayISO()),
+			loadNextSession(db, orgId, row.id, now),
 			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
 			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
 			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
@@ -1077,7 +1257,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						id: attempt.id,
 						status: attempt.status as QuizAttemptStatus,
 						answers: parseQuizAnswers(attempt.answers),
-						essay: attempt.essay,
+						essay:
+							prompt.skill === "writing"
+								? essayToPlain(attempt.essay).text
+								: attempt.essay,
 						media: toQuizAttemptMedia(attempt),
 					}
 				: null,
@@ -1584,10 +1767,22 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			)
 			.returning({ id: quizAttempt.id });
 
+		// TOS-30: nộp Writing/Speaking → chấm nháp AI chạy nền (waitUntil).
+		// CHỈ flip thắng mới kích hoạt — double-submit không dựng draft lần 2
+		// (pipeline còn tự chống bằng ON CONFLICT DO NOTHING). `header.skill`
+		// đã normalize (practice → skill của đề tự luyện).
+		if (
+			flipped.length > 0 &&
+			(header?.skill === "writing" || header?.skill === "speaking")
+		) {
+			void scheduleAiGrading(deps, attemptId);
+		}
+
 		const [attempt] = await db
 			.select({
 				status: quizAttempt.status,
 				mediaKey: quizAttempt.mediaKey,
+				mode: quizAttempt.mode,
 				assignmentId: quizAttempt.assignmentId,
 				questionsSnapshot: quizAttempt.questionsSnapshot,
 				answers: quizAttempt.answers,
@@ -1611,36 +1806,51 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const grade = gradeQuiz(questions, answers);
 
 		// Đóng non-goal #208: write-path đánh dấu đã nộp (ISO datetime).
+		// Attempt tự luyện (phase 10) KHÔNG có class_assignment_target — chỉ ghi
+		// correctCount, không đụng trạng thái nộp của lượt giao.
+		const isPractice = attempt.mode === "practice";
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db
 				.update(quizAttempt)
 				.set({ correctCount: grade.correctCount })
 				.where(owner),
-			db
-				.update(classAssignmentTarget)
-				.set({ submittedAt: new Date().toISOString() })
-				.where(
-					and(
-						eq(classAssignmentTarget.orgId, orgId),
-						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
-						eq(classAssignmentTarget.studentId, s.id),
-					),
-				),
 		];
+		if (!isPractice && attempt.assignmentId !== null) {
+			statements.push(
+				db
+					.update(classAssignmentTarget)
+					.set({ submittedAt: new Date().toISOString() })
+					.where(
+						and(
+							eq(classAssignmentTarget.orgId, orgId),
+							eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+							eq(classAssignmentTarget.studentId, s.id),
+						),
+					),
+			);
+		}
 
 		if (flipped.length > 0) {
+			await db.batch(statements);
+		} else if (isPractice) {
+			// Double-submit practice: grade thuần từ data đã freeze — ghi lặp vô
+			// hại, không có target stamp nào cần tự chữa.
 			await db.batch(statements);
 		} else {
 			// Request trước có thể đã thắng flip nhưng db.batch hỏng ngay sau
 			// đó (D1 transient) — stamp mất vĩnh viễn nếu không tự chữa. Grade
 			// thuần từ data đã freeze nên ghi lặp vô hại.
+			const assignmentId = attempt.assignmentId;
+			if (assignmentId === null) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
 			const [target] = await db
 				.select({ submittedAt: classAssignmentTarget.submittedAt })
 				.from(classAssignmentTarget)
 				.where(
 					and(
 						eq(classAssignmentTarget.orgId, orgId),
-						eq(classAssignmentTarget.assignmentId, attempt.assignmentId),
+						eq(classAssignmentTarget.assignmentId, assignmentId),
 						eq(classAssignmentTarget.studentId, s.id),
 					),
 				);
@@ -1680,16 +1890,122 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const questions = parseQuizQuestions(attempt.questionsSnapshot, attempt.id);
 		const answers = parseQuizAnswers(attempt.answers);
 		const grade = gradeQuiz(questions, answers);
-		const [header] = await db
+		// Header đề: luồng assignment join class_assignment → prompt như cũ;
+		// luồng tự luyện (phase 10) lấy title/skill từ assignment_test và
+		// note/type/part từ prompt của part ĐẦU (position thấp nhất) — phần
+		// chrome hiển thị của review. Đề đã xoá (test_id set null) → leftJoin
+		// trả 1 row null → title/skill rỗng, attempt vẫn review được.
+		const header = await (attempt.mode === "practice"
+			? deps
+					.getDb()
+					.select({
+						title: assignmentTest.title,
+						note: assignmentPrompt.note,
+						type: assignmentPrompt.type,
+						skill: assignmentTest.skill,
+						part: assignmentPrompt.part,
+					})
+					.from(assignmentTest)
+					.leftJoin(
+						assignmentTestPart,
+						eq(assignmentTestPart.testId, assignmentTest.id),
+					)
+					.leftJoin(
+						assignmentPrompt,
+						and(
+							eq(assignmentPrompt.id, assignmentTestPart.promptId),
+							eq(assignmentPrompt.orgId, orgId),
+						),
+					)
+					.where(
+						and(
+							// CHECK DB ép practice ⇒ test_id NOT NULL — `?? ""` chỉ
+							// để thu hẹp kiểu, id "" không khớp row nào.
+							eq(assignmentTest.id, attempt.testId ?? ""),
+							eq(assignmentTest.orgId, orgId),
+						),
+					)
+					.orderBy(asc(assignmentTestPart.position))
+					.limit(1)
+			: deps
+					.getDb()
+					.select({
+						title: classAssignment.title,
+						note: assignmentPrompt.note,
+						type: assignmentPrompt.type,
+						skill: assignmentPrompt.skill,
+						part: assignmentPrompt.part,
+					})
+					.from(classAssignment)
+					.innerJoin(
+						assignmentPrompt,
+						and(
+							eq(assignmentPrompt.id, classAssignment.promptId),
+							eq(assignmentPrompt.orgId, orgId),
+						),
+					)
+					.where(
+						and(
+							// Attempt assignment luôn có lượt giao (CHECK DB) —
+							// `?? ""` chỉ để thu hẹp kiểu.
+							eq(classAssignment.id, attempt.assignmentId ?? ""),
+							eq(classAssignment.orgId, orgId),
+						),
+					));
+		return {
+			attempt,
+			questions,
+			answers,
+			grade,
+			title: header[0]?.title ?? "",
+			note: header[0]?.note ?? "",
+			promptType: header[0]?.type ?? "",
+			skill: header[0]?.skill ?? "",
+			part: header[0]?.part ?? "",
+		};
+	};
+
+	/**
+	 * #358 — questions của đề HIỆN HÀNH cho fallback giải thích (attempt start
+	 * trước khi snapshot giữ explanation). Assignment: prompt của lượt giao;
+	 * tự luyện: gộp questions mọi part theo position, cùng thứ tự snapshot
+	 * (`buildMergedQuestions`). Org predicate trên mọi bảng. Đề đã xoá → [].
+	 */
+	const loadCurrentQuestionsForAttempt = async (
+		attempt: typeof quizAttempt.$inferSelect,
+		orgId: string,
+	): Promise<AssignmentQuestion[]> => {
+		const db = deps.getDb();
+		if (attempt.mode === "practice") {
+			if (!attempt.testId) return [];
+			const rows = await db
+				.select({
+					id: assignmentPrompt.id,
+					questions: assignmentPrompt.questions,
+				})
+				.from(assignmentTestPart)
+				.innerJoin(
+					assignmentTest,
+					and(
+						eq(assignmentTest.id, assignmentTestPart.testId),
+						eq(assignmentTest.orgId, orgId),
+					),
+				)
+				.innerJoin(
+					assignmentPrompt,
+					and(
+						eq(assignmentPrompt.id, assignmentTestPart.promptId),
+						eq(assignmentPrompt.orgId, orgId),
+					),
+				)
+				.where(eq(assignmentTestPart.testId, attempt.testId))
+				.orderBy(asc(assignmentTestPart.position));
+			return rows.flatMap((row) => parseQuizQuestions(row.questions, row.id));
+		}
+		const [row] = await db
 			.select({
-				title: classAssignment.title,
-				note: assignmentPrompt.note,
-				type: assignmentPrompt.type,
-				// Skill quyết định summary/detail có lộ essay (#304) — join có
-				// predicate orgId, nhất quán chuẩn IDOR với PATCH essay.
-				skill: assignmentPrompt.skill,
-				// Part để nhãn tiêu chí chấm Writing đúng TA/TR (#319).
-				part: assignmentPrompt.part,
+				id: assignmentPrompt.id,
+				questions: assignmentPrompt.questions,
 			})
 			.from(classAssignment)
 			.innerJoin(
@@ -1701,21 +2017,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			)
 			.where(
 				and(
-					eq(classAssignment.id, attempt.assignmentId),
+					eq(classAssignment.id, attempt.assignmentId ?? ""),
 					eq(classAssignment.orgId, orgId),
 				),
 			);
-		return {
-			attempt,
-			questions,
-			answers,
-			grade,
-			title: header?.title ?? "",
-			note: header?.note ?? "",
-			promptType: header?.type ?? "",
-			skill: header?.skill ?? "",
-			part: header?.part ?? "",
-		};
+		return row ? parseQuizQuestions(row.questions, row.id) : [];
 	};
 
 	/** GET /api/student/attempts/:attemptId — summary sau nộp (409 in_progress). */
@@ -1732,9 +2038,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
 		const { attempt, questions, answers, grade, title, skill, part } = loaded;
+		const essayView = skill === "writing" ? essayToPlain(attempt.essay) : null;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
-			assignmentId: attempt.assignmentId,
+			// Tự luyện không có lượt giao — chuỗi rỗng; client dùng cặp
+			// practice/testId bên dưới để dựng điều hướng.
+			assignmentId: attempt.assignmentId ?? "",
 			title,
 			status: "submitted",
 			correctCount: grade.correctCount,
@@ -1752,17 +2061,36 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				};
 			}),
 			// Bài Writing lộ kèm số từ ở summary (#304); đề khác luôn null.
-			essay: skill === "writing" ? attempt.essay : null,
+			essay: essayView ? essayView.text : null,
 			// Bài nói Speaking (#305) — summary rẽ nhánh theo skill.
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
 		};
+		// Tự luyện (phase 10): CHỈ thêm cặp key khi là attempt practice —
+		// bundle cũ (strict) không vỡ với attempt assignment.
+		if (attempt.mode === "practice") {
+			summary.practice = true;
+			if (attempt.testId) summary.testId = attempt.testId;
+		}
 		// Điểm giáo viên chấm: CHỈ thêm key khi đã chấm — bundle cũ (schema
 		// strict) không vỡ ở attempt chưa chấm.
 		const teacherGrade = toQuizAttemptGrade(attempt);
-		if (teacherGrade) {
-			summary.grade = teacherGrade;
-			summary.part = part;
+		if (!teacherGrade) return c.json(summary);
+		summary.grade = teacherGrade;
+		summary.part = part;
+		// Highlight + ghi chú (#332): CHỈ thêm khi đã chấm + Writing + có
+		// ít nhất 1 highlight — học viên không thấy highlight dở dang;
+		// bundle cũ (strict) chỉ lỗi parse ở đúng attempt này.
+		if (skill === "writing" && essayView) {
+			const rawAnnotations = await loadEssayAnnotations(
+				deps.getDb(),
+				attempt.id,
+				orgId,
+			);
+			const annotations = rawAnnotations
+				.map((a) => toPlainAnnotation(essayView, a))
+				.filter((a): a is EssayAnnotation => a !== null);
+			if (annotations.length > 0) summary.annotations = annotations;
 		}
 		return c.json(summary);
 	});
@@ -1795,9 +2123,21 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			skill,
 		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
+		// #358: snapshot cũ (start trước khi parser forward explanation) không
+		// có câu nào mang giải thích → thử fallback đề hiện hành (chỉ khi đề
+		// chưa đổi). Route này đã gate 409 in_progress ở loader nên giải thích
+		// — như key/alts — chỉ xuống wire sau nộp.
+		const reviewQuestions = questions.some((question) => question.explanation)
+			? questions
+			: fillExplanationsFromCurrent(
+					questions,
+					await loadCurrentQuestionsForAttempt(attempt, orgId),
+				);
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
-			assignmentId: attempt.assignmentId,
+			// Tự luyện không có lượt giao — chuỗi rỗng; cặp practice/testId bên
+			// dưới là nguồn điều hướng của client.
+			assignmentId: attempt.assignmentId ?? "",
 			title,
 			status: "submitted",
 			correctCount: grade.correctCount,
@@ -1808,10 +2148,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
 			note,
 			// Bài Writing lộ ở review-detail (#304); đề khác luôn null.
-			essay: skill === "writing" ? attempt.essay : null,
+			essay: skill === "writing" ? essayToPlain(attempt.essay).text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
-			questions: questions.map((question, index) => {
+			questions: reviewQuestions.map((question, index) => {
 				const given = answers[String(index)];
 				return {
 					stem: question.stem,
@@ -1824,11 +2164,21 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					alts: question.alts,
 					verdict: grade.verdicts[index] ?? "skipped",
 					answer: given !== undefined && given.trim().length > 0 ? given : null,
+					// CHỈ thêm key khi câu có giải thích — câu/đề cũ giữ shape.
+					...(question.explanation
+						? { explanation: question.explanation }
+						: {}),
 				};
 			}),
 		};
+		if (attempt.mode === "practice") {
+			detail.practice = true;
+			if (attempt.testId) detail.testId = attempt.testId;
+		}
 		return c.json(detail);
 	});
+
+	registerVocabRoutes(router, deps, requireStudent, allowedOrigins);
 
 	return router;
 }

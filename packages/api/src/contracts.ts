@@ -1,6 +1,9 @@
 import { z } from "zod";
+import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { isEmptyRichText, richTextField } from "./rich-text";
+
+export * from "./event-contracts";
 
 /**
  * Kernel API contracts — Wave 0.
@@ -592,6 +595,54 @@ export function isAssignmentImageUrl(value: string): boolean {
 }
 
 /**
+ * Một câu hỏi trong đề reading/listening — tách riêng để thư viện đề
+ * (library-contracts) tái dùng nguyên văn, không nhân bản (#413). Field
+ * giữ nguyên thứ tự và shape cũ; schema này là MỘT nguồn sự thật cho cả
+ * assignment_prompt lẫn library_test_part.
+ */
+export const assignmentQuestionSchema = z
+	.object({
+		stem: z.string().trim().max(500),
+		opts: z.array(z.string().max(500)).max(6).nullish(),
+		answer: z.string().trim().max(200),
+		alts: z.string().max(500).default(""),
+		/**
+		 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
+		 * prompt). Optional — câu không khai type nhận fallback
+		 * `prompt.type` khi server dựng payload student, đề cũ
+		 * không cần migration.
+		 */
+		type: z.string().trim().min(1).max(20).nullish(),
+		/**
+		 * Phase-04 FR1 — label pin on the prompt image, percents of
+		 * the image box (0–100, center of the pin). Nullish for
+		 * non-image types and legacy image rows. `.strict()` on the
+		 * inner object ON PURPOSE (red-team #2/#12): the old strip
+		 * mode silently dropped unknown fields — a typo'd field or
+		 * a drifted client now 400s instead of vanishing data.
+		 */
+		pin: z
+			.object({
+				x: z.number().min(0).max(100),
+				y: z.number().min(0).max(100),
+			})
+			.nullish(),
+		/**
+		 * Giải thích đáp án (rich text) hiển thị sau khi nộp — tương ứng
+		 * "Feedback" của từng đáp án bên Selfomy. Optional, KHÔNG default để
+		 * câu cũ giữ nguyên shape.
+		 */
+		explanation: richTextField(2000).optional(),
+		/**
+		 * Khóa tập đáp án không thứ tự (IELTS "Choose TWO"): các câu cùng
+		 * khóa trong một snapshot được chấm như một tập — đáp án đúng ở câu
+		 * này được chấp nhận ở câu kia. Null/absent = chấm theo vị trí.
+		 */
+		answerSet: z.string().trim().min(1).max(20).nullish(),
+	})
+	.strict();
+
+/**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
@@ -615,39 +666,7 @@ const assignmentPromptBaseSchema = z
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
 		imageUrl: z.string().trim().max(500).default(""),
-		questions: z
-			.array(
-				z
-					.object({
-						stem: z.string().trim().max(500),
-						opts: z.array(z.string().max(500)).max(6).nullish(),
-						answer: z.string().trim().max(200),
-						alts: z.string().max(500).default(""),
-						/**
-						 * Dạng bài riêng của câu này (đề trộn nhiều dạng trong 1
-						 * prompt). Optional — câu không khai type nhận fallback
-						 * `prompt.type` khi server dựng payload student, đề cũ
-						 * không cần migration.
-						 */
-						type: z.string().trim().min(1).max(20).nullish(),
-						/**
-						 * Phase-04 FR1 — label pin on the prompt image, percents of
-						 * the image box (0–100, center of the pin). Nullish for
-						 * non-image types and legacy image rows. `.strict()` on the
-						 * inner object ON PURPOSE (red-team #2/#12): the old strip
-						 * mode silently dropped unknown fields — a typo'd field or
-						 * a drifted client now 400s instead of vanishing data.
-						 */
-						pin: z
-							.object({
-								x: z.number().min(0).max(100),
-								y: z.number().min(0).max(100),
-							})
-							.nullish(),
-					})
-					.strict(),
-			)
-			.max(40),
+		questions: z.array(assignmentQuestionSchema).max(40),
 		/**
 		 * Phase-02 FR2 — structured option bank for the bankable matching
 		 * pairs (`ASSIGNMENT_OPTION_BANK_TYPES`). Every item must be 1–200
@@ -1045,6 +1064,110 @@ export const lessonActionSchema = z.object({}).strict();
 export type LessonAction = z.infer<typeof lessonActionSchema>;
 
 /**
+ * TOS-7 (issue #440) — trạng thái điểm danh chi tiết trên dòng `lesson`.
+ * Đây là CHÍNH SÁCH MỚI do user chốt (Validation Session 1, 2026-10-26):
+ * vắng không phép trừ 1 buổi, vắng có phép không trừ. Setting cũ
+ * `unexcused_deduct` trong `workspace_settings` là tombstone (#321) và
+ * chưa từng được enforce (chỉ echo ở form Cài đặt, commit `603e05b3`) —
+ * không đọc lại; cấu hình theo tổ chức cần một bảng preference mới.
+ */
+export const UNEXCUSED_CONSUMES_SESSION = true;
+
+export const ATTENDANCE_STATUSES = [
+	"present",
+	"late",
+	"excused",
+	"unexcused",
+] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+export const attendanceStatusSchema = z.enum(ATTENDANCE_STATUSES);
+
+/**
+ * Ánh xạ D2 — trạng thái điểm danh quyết `lesson.status`, tức quyết số
+ * buổi đã học của gói (invariant 6): present/late trừ buổi, excused không
+ * trừ, unexcused trừ khi `UNEXCUSED_CONSUMES_SESSION`. Hàm thuần duy nhất
+ * để server và test dùng chung, không viết chuỗi rời.
+ */
+export function lessonStatusForAttendance(
+	attendance: AttendanceStatus,
+): "completed" | "absent" {
+	if (attendance === "excused") return "absent";
+	if (attendance === "unexcused" && !UNEXCUSED_CONSUMES_SESSION) {
+		return "absent";
+	}
+	return "completed";
+}
+
+/**
+ * Body của PUT /api/classes/:id/sessions/:date/attendance — lưu điểm danh
+ * cả ca trong một request. Đủ sĩ số do server kiểm (đối chiếu roster của
+ * bucket, thiếu → 422 incomplete-roster, thừa → 422 unknown-lesson).
+ */
+export const sessionAttendanceSaveSchema = z
+	.object({
+		entries: z
+			.array(
+				z.object({
+					lessonId: z.string().min(1),
+					attendance: attendanceStatusSchema,
+					note: z.string().trim().max(255).default(""),
+				}),
+			)
+			.min(1),
+	})
+	.strict()
+	.refine(
+		(v) => new Set(v.entries.map((e) => e.lessonId)).size === v.entries.length,
+		{ message: "lessonId trùng" },
+	);
+export type SessionAttendanceSave = z.infer<typeof sessionAttendanceSaveSchema>;
+
+/**
+ * Response của GET /api/attendance/daily?date= — danh sách ca học trong
+ * ngày. Bucket định danh theo `(classId, date)` (invariant "one physical
+ * session"); `time`/`dur` là field hiển thị lấy từ các dòng trong bucket.
+ * `students[].lessonId` null với lớp legacy (date IS NULL — chỉ xem, D4);
+ * `attendance` null với dòng cũ (`completed+NULL` hiển thị default
+ * "present", `absent+NULL` hiển thị "Chưa rõ" — không coerce dữ liệu).
+ */
+export const dailyAttendanceResponseSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		sessions: z.array(
+			z
+				.object({
+					classId: z.string().min(1),
+					className: z.string(),
+					time: z.string(),
+					dur: z.number().int().min(1),
+					mode: z.enum(["dated", "legacy"]),
+					recorded: z.boolean(),
+					students: z.array(
+						z.object({
+							lessonId: z.string().min(1).nullable(),
+							studentId: z.string().min(1),
+							studentName: z.string(),
+							attendance: attendanceStatusSchema.nullable(),
+							note: z.string(),
+						}),
+					),
+				})
+				.strict(),
+		),
+		counts: z
+			.object({
+				all: z.number().int().min(0),
+				pending: z.number().int().min(0),
+				completed: z.number().int().min(0),
+			})
+			.strict(),
+	})
+	.strict();
+export type DailyAttendanceResponse = z.infer<
+	typeof dailyAttendanceResponseSchema
+>;
+
+/**
  * Lesson edit (issue #55) — full-replace, upcoming-only. day: 1 = Monday …
  * 7 = Sunday (lesson-day convention; the class schedule JSON is 0-based —
  * the off-by-one is pinned here). WARNING for consumers (#56): omitted
@@ -1125,12 +1248,59 @@ export const invoiceMarkPaidSchema = z
 export type InvoiceMarkPaid = z.infer<typeof invoiceMarkPaidSchema>;
 
 /**
+ * Issue #450 — record a manual tuition receipt (partial or full) on the
+ * debts ledger. `clientRequestId` is the idempotency key: the dialog
+ * generates it once per opening and the server stores it as
+ * `provider_txn_id` (provider "manual"), so a network retry replays to the
+ * same ledger row instead of recording the money twice. `amount` is integer
+ * VND and must be positive. `note` is stored as the ledger `content`.
+ */
+export const invoicePaymentMethodSchema = z.enum(["transfer", "cash", "other"]);
+export type InvoicePaymentMethod = z.infer<typeof invoicePaymentMethodSchema>;
+
+/** Display labels for manual receipt methods (matches `invoice.method`). */
+export const INVOICE_PAYMENT_METHOD_LABEL: Record<
+	InvoicePaymentMethod,
+	string
+> = {
+	transfer: "Chuyển khoản",
+	cash: "Tiền mặt",
+	other: "Khác",
+};
+
+export const invoicePaymentCreateSchema = z
+	.object({
+		clientRequestId: z.string().uuid(),
+		amount: z.number().int().min(1),
+		method: invoicePaymentMethodSchema,
+		note: z.string().trim().max(255).default(""),
+	})
+	.strict();
+export type InvoicePaymentCreate = z.infer<typeof invoicePaymentCreateSchema>;
+
+/** 201 (new receipt) and 200 (idempotent replay) response shape. */
+export interface InvoicePaymentResult {
+	id: string;
+	paidAmount: number;
+	remaining: number;
+	status: string;
+}
+
+/** 422/409 guard payload: the receipt was rejected, nothing was written.
+ * `error` carries the machine code (`invoice-settled` / `amount-exceeds-debt`
+ * / `client-request-id-conflict`) — the web reads it back as `reason`. */
+export interface InvoicePaymentRejected {
+	error: string;
+	remaining?: number;
+}
+
+/**
  * Issue #60 — create a tuition invoice for an enrollment. `due` is ISO
  * yyyy-mm-dd and is roundtrip-guarded server-side (`parseStartDateStrict`,
  * same precedent as `moveDate`) because the regex alone accepts 2026-02-30.
  * `amount` is integer VND and must be positive — unlike package `price`
  * (min 0), an invoice is a concrete amount due. Creation is non-idempotent,
- * consistent with POST /syllabi.
+ * consistent with POST /api/syllabus-templates.
  */
 export const invoiceCreateSchema = z
 	.object({
@@ -1275,7 +1445,26 @@ export interface KernelLessonRow {
 	dur: number;
 	date: string | null;
 	type: string;
-	status: "completed" | "upcoming" | "cancelled" | "absent" | string;
+	/**
+	 * `holiday` (TOS-11) = buổi gốc bị Lịch nghỉ chung dời — "không diễn
+	 * ra": không trừ buổi (BR-003), không điểm danh, cặp gốc→bù ở
+	 * `holiday_session_shift`.
+	 */
+	status:
+		| "completed"
+		| "upcoming"
+		| "cancelled"
+		| "absent"
+		| "holiday"
+		| string;
+	/**
+	 * TOS-7 — trạng thái điểm danh chi tiết (`present | late | excused |
+	 * unexcused`); null = chưa ghi chi tiết (dòng cũ / 1-click). Required
+	 * trong type: mọi fixture snapshot phải gửi tường minh hai field này.
+	 */
+	attendance: AttendanceStatus | null;
+	/** Teacher-only ghi chú học vụ (≤255); không chiếu vào /api/student. */
+	attendanceNote: string | null;
 	topic: string;
 	zoom: string;
 }
@@ -1302,6 +1491,13 @@ export interface KernelInvoiceRow {
 	 * payment_transaction amounts). Stays 0 for manually mark-paid invoices.
 	 */
 	paidAmount: number;
+	/**
+	 * #343 — ISO 8601 creation timestamp (server clock); the anchor for
+	 * revenue-by-period bucketing. Drizzle `timestamp_ms` maps to a JS
+	 * `Date`, so the snapshot loader serializes it explicitly with
+	 * `.toISOString()` — never `Number()` this on the wire.
+	 */
+	createdAt: string;
 }
 
 export interface AssignmentQuestion {
@@ -1314,6 +1510,11 @@ export interface AssignmentQuestion {
 	/** Phase-04 FR1 — image label pin (percents of the image box). Null for
 	 * non-image types and legacy image rows. */
 	pin?: { x: number; y: number } | null;
+	/** Giải thích đáp án (rich text) — mirror schema ở assignmentQuestionSchema,
+	 * optional không default để câu cũ giữ nguyên shape. */
+	explanation?: string;
+	/** Khóa tập đáp án không thứ tự (IELTS "Choose TWO") — mirror schema. */
+	answerSet?: string | null;
 }
 
 export interface KernelAssignmentPromptRow {
@@ -1413,6 +1614,16 @@ export interface KernelCommentBankRow {
 	text: string;
 }
 
+/**
+ * TOS-17 (#451): ngữ cảnh phân quyền tài chính của thành viên hiện tại trong
+ * tổ chức (`membership.role`). Gửi kèm snapshot để web ẩn mục điều hướng
+ * Doanh thu / Công nợ và điều hướng về `/dashboard` khi truy cập trực tiếp.
+ */
+export interface KernelViewer {
+	role: string;
+	canAccessFinance: boolean;
+}
+
 export interface KernelSnapshot {
 	students: KernelStudentRow[];
 	classes: KernelClassRow[];
@@ -1420,6 +1631,9 @@ export interface KernelSnapshot {
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
+	/** TOS-14 (#447): optional như vocabSuggestions — server cũ trong lúc deploy
+	 * skew không gửi events, web dùng `?? []` vẫn chạy. */
+	events?: KernelEventRow[];
 	assignments: KernelAssignmentRow[];
 	invoices: KernelInvoiceRow[];
 	reports: KernelReportRow[];
@@ -1428,6 +1642,16 @@ export interface KernelSnapshot {
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
 	assignmentTests: KernelAssignmentTestRow[];
+	vocabDecks: KernelVocabDeckRow[];
+	vocabSuggestions?: KernelVocabSuggestionRow[];
+	/** TOS-11: lịch tuần vẽ nhãn kỳ nghỉ + "Đã dời sang dd/MM" không cần gọi thêm endpoint. Optional — fixtures cũ không gửi. */
+	holidays?: KernelHolidaySummary[];
+	holidayShifts?: KernelHolidayShiftRow[];
+	/** TOS-13: các buổi bị kỳ nghỉ mode "cancel" hủy (nhãn "Đã hủy — «kỳ nghỉ»"). */
+	holidayCancels?: KernelHolidayCancelRow[];
+	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
+	 * tương thích ngược với snapshot fixture cũ trong test. */
+	viewer?: KernelViewer;
 }
 
 export interface CreatedResponse {
@@ -1456,6 +1680,12 @@ export type StudentErrorCode =
 export const ACCOUNT_ERROR_CODES = {
 	STUDENT_ON_TEACHER_APP: "ACCOUNT_STUDENT_ROLE",
 	TEACHER_ON_STUDENT_PORTAL: "ACCOUNT_TEACHER_ROLE",
+	/** Role admin chạm kernel tree của teacher app (plan #413). */
+	ADMIN_ON_TEACHER_APP: "ACCOUNT_ADMIN_ROLE",
+	/** Sign-up trên origin admin với email ngoài ADMIN_EMAILS (plan #413). */
+	ADMIN_SIGNUP_FORBIDDEN: "ACCOUNT_ADMIN_SIGNUP_FORBIDDEN",
+	/** requireAdmin: session không thỏa admin gate (plan #413). */
+	NOT_ADMIN: "ACCOUNT_NOT_ADMIN",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
@@ -1609,6 +1839,14 @@ export const studentAssignmentSchema = z.object({
 	due: z.string(),
 	submittedAt: z.string().nullable(),
 	scores: studentAssignmentScoresSchema.nullable(),
+	/** TOS-30 #478: kỹ năng của đề — phân biệt nhãn chờ chấm (Writing/
+	 * Speaking cần giáo viên chấm tay) với bài tự chấm (Reading/Listening).
+	 * Optional: server cũ không gửi. */
+	skill: z.string().nullable().optional(),
+	/** TOS-30 #478: ISO datetime giáo viên "Chốt trả bài" (quiz_attempt.
+	 * graded_at) — phân biệt đã chấm với đang chờ khi scores chưa đủ band.
+	 * Optional: server cũ không gửi. */
+	gradedAt: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -1642,6 +1880,182 @@ export const studentClassDetailSchema = z.object({
 	assignments: z.array(studentAssignmentSchema),
 });
 export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
+
+/** Roster "Bạn cùng lớp" — CHỈ tên + chữ tắt, không bao giờ trả
+ * email/band/học phí/điểm (quy ước quyền riêng lớp học #378). */
+export const classmatesResponseSchema = z.array(
+	z.object({
+		id: z.string(),
+		name: z.string(),
+		initials: z.string(),
+		isMe: z.boolean(),
+	}),
+);
+export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
+
+// --- Tự luyện (phase 10, #378) — /api/student/practice domain --------------
+// KHÔNG có "dictation": kỹ năng này chưa có đề trong thư viện.
+
+/** Kỹ năng có đề luyện tập trong thư viện `assignment_test`. */
+export const PRACTICE_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+] as const;
+export type PracticeSkill = (typeof PRACTICE_SKILLS)[number];
+
+/** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
+export const PRACTICE_CATALOG_PAGE_SIZE = 12;
+
+/** Kết quả gần nhất của CHÍNH học viên này với một đề luyện tập. `score`
+ * là chuỗi hiển thị sẵn ("8/13" tự chấm, "Band 6.5" đã chấm Writing/
+ * Speaking), null khi đề tự chấm mà server không derive được. */
+export const practiceAttemptSummarySchema = z
+	.object({
+		/** ISO datetime lần nộp gần nhất. */
+		submittedAt: z.string(),
+		/** "graded" = giáo viên đã chấm (gradeScores có mặt). */
+		status: z.enum(["submitted", "graded"]),
+		score: z.string().nullable(),
+	})
+	.strict();
+export type PracticeAttemptSummary = z.infer<
+	typeof practiceAttemptSummarySchema
+>;
+
+/** Một đề luyện tập trong catalog — MỘT row `assignment_test` status ready. */
+export const practiceCatalogItemSchema = z
+	.object({
+		testId: z.string(),
+		title: z.string(),
+		skill: z.enum(PRACTICE_SKILLS),
+		/** Số part đã ghép trong đề (số slot `assignment_test_part`). */
+		parts: z.number().int().min(1),
+		/** Bộ sưu tập nguồn — null khi giáo viên không đặt. */
+		collection: z.string().nullable(),
+		testGroup: z.string().nullable(),
+		/** Thời lượng theo phút (từ `timeLimitSeconds`) — null = không giới hạn. */
+		durationMin: z.number().int().nullable(),
+		/** Lượt tự luyện gần nhất của chính học viên — null = chưa làm. */
+		lastAttempt: practiceAttemptSummarySchema.nullable(),
+	})
+	.strict();
+export type PracticeCatalogItem = z.infer<typeof practiceCatalogItemSchema>;
+
+/** GET /api/student/practice?skill=&collection=&q=&page= — phân trang 12. */
+export const practiceCatalogResponseSchema = z
+	.object({
+		items: z.array(practiceCatalogItemSchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type PracticeCatalogResponse = z.infer<
+	typeof practiceCatalogResponseSchema
+>;
+
+/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume
+ * lượt đang làm (cùng shape với start attempt luồng assignment). */
+export const startPracticeResponseSchema = z
+	.object({ attemptId: z.string().min(1) })
+	.strict();
+export type StartPracticeResponse = z.infer<typeof startPracticeResponseSchema>;
+
+// --- Lịch sử học tập (phase 11, #378) — /api/student/history domain --------
+// Nguồn: quiz_attempt đã nộp (practice + assignment) và vocab_review_log
+// (sessionKind='review'), gom ngày theo giờ Việt Nam (vietnam-date.ts).
+// KHÔNG có Dictation/Mock test — hai loại này chưa có dữ liệu thật.
+
+/** Kỹ năng hiển thị trên trang Lịch sử: 4 skill có đề + Từ vựng (SRS). */
+export const HISTORY_SKILLS = [...PRACTICE_SKILLS, "vocabulary"] as const;
+export type HistorySkill = (typeof HISTORY_SKILLS)[number];
+
+/** Số dòng mỗi trang danh sách chi tiết. */
+export const HISTORY_PAGE_SIZE = 20;
+
+/** Một ngày có hoạt động. Chỉ ngày count > 0 mới xuất hiện trong mảng —
+ * client dựng lưới tháng và coi ngày vắng mặt là 0. */
+export const historyDaySchema = z
+	.object({
+		/** yyyy-mm-dd theo giờ Việt Nam. */
+		date: z.string(),
+		/** Số hoạt động: lượt nộp bài + thẻ từ vựng đã ôn. */
+		count: z.number().int().min(0),
+		/** Tổng phút học (làm bài + ôn từ) rơi vào ngày này. */
+		minutes: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryDay = z.infer<typeof historyDaySchema>;
+
+/** GET /api/student/history/month?ym=yyyy-mm (mặc định tháng hiện tại VN). */
+export const historyMonthResponseSchema = z
+	.object({
+		ym: z.string(),
+		days: z.array(historyDaySchema),
+	})
+	.strict();
+export type HistoryMonthResponse = z.infer<typeof historyMonthResponseSchema>;
+
+/** Một dòng bảng tuần: đếm hoạt động theo 7 ngày Thứ 2 → Chủ nhật. */
+export const historyWeekRowSchema = z
+	.object({
+		skill: z.enum(HISTORY_SKILLS),
+		days: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekRow = z.infer<typeof historyWeekRowSchema>;
+
+/** GET /api/student/history/week?monday=yyyy-mm-dd — ngày lẻ được chuẩn hóa
+ * về Thứ Hai của tuần chứa nó; `minutes` là tổng phút mỗi ngày cho cột
+ * "Thời gian" của WeekTable. */
+export const historyWeekResponseSchema = z
+	.object({
+		monday: z.string(),
+		rows: z.array(historyWeekRowSchema),
+		minutes: z.array(z.number().int().min(0)).length(7),
+	})
+	.strict();
+export type HistoryWeekResponse = z.infer<typeof historyWeekResponseSchema>;
+
+/** Nguồn một dòng lịch sử: luyện tập / bài tập lớp / ôn từ vựng. */
+export const HISTORY_ENTRY_KINDS = ["practice", "assignment", "vocab"] as const;
+export type HistoryEntryKind = (typeof HISTORY_ENTRY_KINDS)[number];
+
+/** Một dòng trong danh sách chi tiết. Vocab gộp theo ngày: 1 dòng
+ * "Từ vựng" = mọi thẻ đã ôn trong ngày đó (id `vocab-<date>`). */
+export const historyEntrySchema = z
+	.object({
+		id: z.string(),
+		kind: z.enum(HISTORY_ENTRY_KINDS),
+		skill: z.enum(HISTORY_SKILLS),
+		title: z.string(),
+		/** yyyy-mm-dd giờ Việt Nam của thời điểm nộp/ôn. */
+		date: z.string(),
+		/** ISO datetime — dùng sắp xếp mới nhất trước. */
+		submittedAt: z.string(),
+		minutes: z.number().int().min(0),
+		/** Chuỗi hiển thị sẵn ("Band 6.0", "8/13") — null = chưa có điểm. */
+		score: z.string().nullable(),
+		/** auto = tự chấm · graded = giáo viên đã chấm · awaiting = chờ chấm. */
+		status: z.enum(["auto", "graded", "awaiting"]),
+		/** Attempt nguồn để mở xem lại (Writing đã chấm) — vocab luôn null. */
+		attemptId: z.string().nullable(),
+	})
+	.strict();
+export type HistoryEntry = z.infer<typeof historyEntrySchema>;
+
+/** GET /api/student/history?skill=&page= — mới nhất trước, 20 dòng/trang. */
+export const historyListResponseSchema = z
+	.object({
+		entries: z.array(historyEntrySchema),
+		page: z.number().int().min(1),
+		pages: z.number().int().min(1),
+		total: z.number().int().min(0),
+	})
+	.strict();
+export type HistoryListResponse = z.infer<typeof historyListResponseSchema>;
 
 // --- Student quiz take & review (#283) — /api/student quiz attempt domain ---
 
@@ -1714,6 +2128,69 @@ export const QUIZ_FEEDBACK_MAX = 5000;
 export const bandScoreSchema = z
 	.number()
 	.refine(isBandStep, "band step 0.5 in 0..9");
+
+/**
+ * Chấm nháp AI Writing/Speaking (TOS-30 #478). Trạng thái của bảng
+ * `ai_grading_draft` (máy trạng thái `AiGradingDraft` trong SRS):
+ * `ai_processing → ai_drafted | manual_pending`; `ai_drafted →
+ * teacher_reviewing | published`; `teacher_reviewing → teacher_reviewing |
+ * published`; `manual_pending → published` (chấm tay).
+ */
+export const AI_GRADING_STATUSES = [
+	"ai_processing",
+	"ai_drafted",
+	"teacher_reviewing",
+	"manual_pending",
+	"published",
+] as const;
+export type AiGradingStatus = (typeof AI_GRADING_STATUSES)[number];
+
+/** Type guard trạng thái draft (đọc từ DB string → union an toàn). */
+export function isAiGradingStatus(value: string): value is AiGradingStatus {
+	return (AI_GRADING_STATUSES as readonly string[]).includes(value);
+}
+
+/** Chế độ chấm nháp AI (TOS-30 standard, TOS-32 quick). */
+export const AI_GRADING_MODES = ["standard", "quick"] as const;
+export type AiGradingMode = (typeof AI_GRADING_MODES)[number];
+export function isAiGradingMode(value: string): value is AiGradingMode {
+	return (AI_GRADING_MODES as readonly string[]).includes(value);
+}
+
+/**
+ * Bản nháp AI nhìn từ giáo viên (GET /api/grading/:attemptId trả
+ * `aiDraft`) — shape này TUYỆT ĐỐI không xuất hiện ở API học viên (BR-001,
+ * test hợp đồng chặn rò rỉ). Bài chấm tay cũ (không draft) → `null`.
+ */
+export const aiGradingDraftViewSchema = z
+	.object({
+		status: z.enum(AI_GRADING_STATUSES),
+		aiScores: z.record(z.string(), z.number()).nullable(),
+		aiFeedback: z.string(),
+		/** Điểm/nhận xét giáo viên đã "Lưu bản nháp" — null khi chưa lưu lần nào. */
+		reviewedScores: z.record(z.string(), z.number()).nullable(),
+		reviewedFeedback: z.string(),
+		gradingMode: z.string(),
+		version: z.number().int().min(1),
+		errorCode: z.string().nullable(),
+		/** ISO datetime "Chốt trả bài"; null khi chưa publish. */
+		publishedAt: z.string().nullable(),
+	})
+	.strict();
+export type AiGradingDraftView = z.infer<typeof aiGradingDraftViewSchema>;
+
+/** PATCH /api/grading/:attemptId/draft — "Lưu bản nháp" với optimistic
+ * concurrency: `version` client đang thấy; lệch → 409 (nền chống lưu đè
+ * E-011 của TOS-33). */
+export const aiDraftPatchSchema = z
+	.object({
+		scores: z.record(z.string(), z.number()),
+		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+		version: z.number().int().min(1),
+	})
+	.strict();
+export type AiDraftPatch = z.infer<typeof aiDraftPatchSchema>;
+
 export const writingGradeScoresSchema = z
 	.object({
 		task: bandScoreSchema,
@@ -1735,6 +2212,10 @@ export const quizGradeInputSchema = z
 	.object({
 		scores: z.record(z.string(), z.number()),
 		feedback: z.string().max(QUIZ_FEEDBACK_MAX),
+		/** TOS-33 D4: `version` draft client đang thấy — BẮT BUỘC khi attempt
+		 * có draft AI (thiếu → 409 E-011); bài chấm tay cũ không draft thì bỏ
+		 * qua. Đặt ở đây thay vì schema riêng để giữ shape POST /grade. */
+		version: z.number().int().min(1).optional(),
 	})
 	.strict();
 export type QuizGradeInput = z.infer<typeof quizGradeInputSchema>;
@@ -1749,6 +2230,36 @@ export const quizAttemptGradeSchema = z
 	})
 	.strict();
 export type QuizAttemptGrade = z.infer<typeof quizAttemptGradeSchema>;
+
+/** Highlight + ghi chú giáo viên trên essay Writing (#332). Offset là index
+ * UTF-16 (String.slice) trên essay đã nộp — essay đóng băng sau nộp. */
+export const QUIZ_ANNOTATION_NOTE_MAX = 1000;
+export const QUIZ_ANNOTATIONS_MAX = 200;
+export const QUIZ_ANNOTATION_SPAN_MAX = 1000;
+export const essayAnnotationSchema = z
+	.object({
+		id: z.string(),
+		start: z.number().int().min(0),
+		end: z.number().int().min(1),
+		note: z.string(),
+	})
+	.strict();
+export type EssayAnnotation = z.infer<typeof essayAnnotationSchema>;
+/** POST /api/grading/:attemptId/annotations — biên kiểm thêm theo essay ở server. */
+export const essayAnnotationCreateSchema = z
+	.object({
+		start: z.number().int().min(0),
+		end: z.number().int().min(1),
+		note: z.string().max(QUIZ_ANNOTATION_NOTE_MAX),
+	})
+	.strict()
+	.refine((v) => v.end > v.start, "end must be greater than start");
+export type EssayAnnotationCreate = z.infer<typeof essayAnnotationCreateSchema>;
+/** PATCH /api/grading/:attemptId/annotations/:annotationId. */
+export const essayAnnotationPatchSchema = z
+	.object({ note: z.string().max(QUIZ_ANNOTATION_NOTE_MAX) })
+	.strict();
+export type EssayAnnotationPatch = z.infer<typeof essayAnnotationPatchSchema>;
 
 /** GET /api/grading/:attemptId — bài nộp Writing/Speaking cho giáo viên chấm. */
 export const teacherSubmissionSchema = z
@@ -1776,9 +2287,97 @@ export const teacherSubmissionSchema = z
 		essay: z.string().nullable(),
 		media: quizAttemptMediaSchema.nullable(),
 		grade: quizAttemptGradeSchema.nullable(),
+		/** Highlight + ghi chú trên essay (#332) — server luôn gửi; optional
+		 * để bundle mới + server cũ không throw. Speaking luôn `[]`. */
+		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Bài tự luyện (phase 10, #378): KHÔNG gắn lớp — `classId`/
+		 * `classAssignmentId` là chuỗi rỗng, `className` là nhãn "Luyện tập",
+		 * `due` rỗng. Optional để bundle cũ + server mới không throw. */
+		practice: z.literal(true).optional(),
+		/** TOS-30: bản nháp AI + nháp rà của giáo viên. Optional cho bundle
+		 * cũ; `null` = bài chấm tay cũ không có draft. Học viên không bao giờ
+		 * nhận shape này (BR-001). */
+		aiDraft: aiGradingDraftViewSchema.nullable().optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
+
+/** Một dòng trong hàng chờ chấm Writing/Speaking (GET /api/grading, #383) —
+ * hợp nhất cả bài giao theo lớp (mode='assignment') và tự luyện
+ * (mode='practice', classId='', className='Luyện tập', due=''). */
+export const gradingQueueItemSchema = z
+	.object({
+		attemptId: z.string(),
+		mode: z.enum(["assignment", "practice"]),
+		classId: z.string(),
+		className: z.string(),
+		title: z.string(),
+		due: z.string(),
+		student: z.object({ id: z.string(), name: z.string() }).strict(),
+		skill: z.enum(["writing", "speaking"]),
+		part: z.string(),
+		submittedAt: z.string(),
+		grade: quizAttemptGradeSchema.nullable(),
+		/** TOS-30: trạng thái draft AI của attempt; `null` khi bài không có
+		 * draft (chấm tay cũ). Optional để bundle cũ không throw. */
+		aiStatus: z.enum(AI_GRADING_STATUSES).nullable().optional(),
+		/** TOS-32: chế độ chấm nháp AI ("standard" | "quick"); `null` khi bài không có draft. */
+		aiGradingMode: z.enum(AI_GRADING_MODES).nullable().optional(),
+	})
+	.strict();
+export type GradingQueueItem = z.infer<typeof gradingQueueItemSchema>;
+
+/** GET /api/grading — danh sách bài nộp Writing/Speaking cho giáo viên chấm. */
+export const gradingQueueResponseSchema = z
+	.object({
+		items: z.array(gradingQueueItemSchema),
+	})
+	.strict();
+export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
+
+/** Một ca học chưa điểm danh — nhóm (classId, time) của lesson hôm nay. */
+export const dashboardReminderItemSchema = z
+	.object({
+		classId: z.string(),
+		className: z.string(),
+		time: z.string(),
+		dur: z.number(),
+	})
+	.strict();
+export type DashboardReminderItem = z.infer<typeof dashboardReminderItemSchema>;
+
+/** GET /api/dashboard/reminders — bộ đếm 3 thẻ "Việc cần làm hôm nay" (TOS-6,
+ * issue #439). `tuition` vắng mặt khi scope không có quyền tài chính (TA),
+ * không trả `null` hay số 0. `date` là yyyy-mm-dd giờ Việt Nam dùng cho link
+ * `/attendance?date=`. */
+export const dashboardRemindersResponseSchema = z
+	.object({
+		date: z.string(),
+		attendance: z
+			.object({
+				pending: z.number(),
+				items: z.array(dashboardReminderItemSchema),
+			})
+			.strict(),
+		overdueGrading: z
+			.object({
+				count: z.number(),
+				writing: z.number(),
+				speaking: z.number(),
+			})
+			.strict(),
+		tuition: z
+			.object({
+				students: z.number(),
+				outstanding: z.number(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();
+export type DashboardReminders = z.infer<
+	typeof dashboardRemindersResponseSchema
+>;
 
 /** Mục tiêu số từ tối thiểu IELTS Writing theo part — chỉ cảnh báo ở client,
  * không chặn nộp (user chốt #304). Part lạ → không hiện mục tiêu. */
@@ -1923,6 +2522,13 @@ export const quizAttemptSummarySchema = z
 		/** Part của đề (task1/task2/part1…) — server CHỈ gửi kèm `grade`, để
 		 * nhãn tiêu chí Writing đúng TA/TR; cùng lý do strict ở trên. */
 		part: z.string().optional(),
+		/** Highlight + ghi chú giáo viên (#332) — server CHỈ gửi khi đã chấm +
+		 * Writing + có ít nhất 1 highlight, cùng lý do strict của `grade`. */
+		annotations: z.array(essayAnnotationSchema).optional(),
+		/** Lượt tự luyện (phase 10) — server CHỈ gửi khi attempt practice;
+		 * `testId` là đề thư viện nguồn để client dựng URL take/review. */
+		practice: z.literal(true).optional(),
+		testId: z.string().optional(),
 	})
 	.strict();
 export type QuizAttemptSummary = z.infer<typeof quizAttemptSummarySchema>;
@@ -1944,6 +2550,12 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 					alts: z.string(),
 					verdict: z.enum(QUIZ_VERDICTS),
 					answer: z.string().nullable(),
+					/** Giải thích đáp án riêng của câu (rich text, #358) — soạn từ
+					 * #423, CHỈ xuống wire ở detail sau nộp (route 409 khi
+					 * in_progress); take payload `studentQuizQuestionSchema` không
+					 * bao giờ có field này. Server chỉ gửi key khi câu có giải
+					 * thích — optional để bundle cũ/payload cũ không vỡ. */
+					explanation: z.string().optional(),
 				})
 				.strict(),
 		),
@@ -1993,6 +2605,8 @@ export const BANK_LINK_ERROR_CODES = {
 	NO_LINKED_ACCOUNT: "BANK_LINK_NO_LINKED_ACCOUNT",
 	BAD_HOSTED_LINK_ORIGIN: "BANK_LINK_BAD_HOSTED_LINK_ORIGIN",
 	COMPANY_SETTLING: "BANK_LINK_COMPANY_SETTLING",
+	BANKHUB_UPSTREAM: "BANKHUB_UPSTREAM",
+	BANKHUB_RATE_LIMITED: "BANKHUB_RATE_LIMITED",
 } as const;
 export type BankLinkErrorCode =
 	(typeof BANK_LINK_ERROR_CODES)[keyof typeof BANK_LINK_ERROR_CODES];
@@ -2087,8 +2701,1392 @@ export const paymentAssignSchema = z
 	.strict();
 export type PaymentAssignInput = z.infer<typeof paymentAssignSchema>;
 
+/** #345 — one matched bank transaction on the teacher's invoice detail page. */
+export interface InvoiceTransactionItem {
+	id: string;
+	amount: number;
+	/** Transfer memo as typed by the payer, or the teacher's note on manual receipts (#450). */
+	content: string;
+	referenceCode: string;
+	/** Provider timestamp string, as stored (e.g. "2026-10-05 10:00:00"). */
+	transactionDate: string;
+	/** ISO 8601 — server ingest time (Drizzle timestamp_ms → Date → toISOString()). */
+	createdAt: string;
+	/**
+	 * #450 — display label of a manual receipt ("Tiền mặt"/"Chuyển khoản"/
+	 * "Khác"); bank-hub rows stay "" (their channel is the transfer itself).
+	 * The ledger `provider` enum stays server-side (display-fields-only DTO).
+	 */
+	method: string;
+}
+
 export interface ReconcileResult {
 	scanned: number;
 	matched: number;
 	unmatched: number;
 }
+
+// --- Student Vocab SRS Game (#359) & Built-in Vocab Library (#361) ---
+// RELEASE TRAIN NOTE (#304, #361): All vocab response/request schemas use `.strict()`.
+// `apps/server` and `apps/student` MUST be deployed on the same release train.
+// Note on `hasAudio` (#361): `.default(false)` makes old payloads backward-compatible
+// with the new schema, but an older student bundle parsing `.strict()` at runtime will
+// reject the new `hasAudio` field from a newer server — always deploy worker + student together.
+
+/** Server-side upper bound for clamping `durationMs` (1 hour) — never rejects client input. */
+export const VOCAB_DURATION_MAX_MS = 3_600_000;
+
+/** Upper bound (5 MB) for proxying remote library audio files (#361). */
+export const LIBRARY_AUDIO_MAX_BYTES = 5 * 1024 * 1024;
+
+export const VOCAB_ERROR_CODES = {
+	DECK_NOT_FOUND: "VOCAB_DECK_NOT_FOUND",
+	WORD_NOT_FOUND: "VOCAB_WORD_NOT_FOUND",
+	CARD_NOT_FOUND: "VOCAB_CARD_NOT_FOUND",
+	/** Review first-result trên card chưa học (state='new') — phải qua Learn. */
+	CARD_NOT_DUE: "VOCAB_CARD_NOT_DUE",
+	AUDIO_NOT_FOUND: "VOCAB_AUDIO_NOT_FOUND",
+	INVALID_AUDIO: "VOCAB_INVALID_AUDIO",
+	LIBRARY_COURSE_NOT_FOUND: "LIBRARY_COURSE_NOT_FOUND",
+	LIBRARY_DECK_NOT_FOUND: "LIBRARY_DECK_NOT_FOUND",
+	LIBRARY_CLONE_TOO_LARGE: "LIBRARY_CLONE_TOO_LARGE",
+	LIBRARY_CLONE_DUPLICATE_DECK: "LIBRARY_CLONE_DUPLICATE_DECK",
+	SUGGESTION_NOT_FOUND: "VOCAB_SUGGESTION_NOT_FOUND",
+	SUGGESTION_ALREADY_ACCEPTED: "VOCAB_SUGGESTION_ALREADY_ACCEPTED",
+} as const;
+export type VocabErrorCode =
+	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
+
+export interface KernelVocabDeckRow {
+	id: string;
+	classId: string | null;
+	title: string;
+	lang: string;
+	wordCount: number;
+	createdAt: string;
+	sourceLibraryDeckId: string | null;
+}
+export interface KernelVocabSuggestionRow {
+	id: string;
+	deckId: string;
+	studentId: string;
+	note: string | null;
+	createdAt: string;
+}
+
+export const RESERVED_LIBRARY_ID_PREFIX_REGEX =
+	/^(libcourse|libdeck|libword)-/i;
+
+export const vocabDeckCreateSchema = z
+	.object({
+		id: z
+			.string()
+			.min(1)
+			.max(128)
+			.refine(
+				(id) => !RESERVED_LIBRARY_ID_PREFIX_REGEX.test(id),
+				"Reserved library ID prefix",
+			)
+			.optional(),
+		classId: z.string().min(1).nullable().optional().default(null),
+		title: z.string().trim().min(1).max(200),
+		lang: z.string().trim().min(1).max(16).default("en"),
+	})
+	.strict();
+export type VocabDeckCreateInput = z.infer<typeof vocabDeckCreateSchema>;
+
+export const vocabDeckRenameSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string().trim().min(1).max(200),
+		lang: z.string().trim().min(1).max(16).optional(),
+	})
+	.strict();
+export type VocabDeckRenameInput = z.infer<typeof vocabDeckRenameSchema>;
+
+export const vocabDeckDeleteSchema = z
+	.object({
+		deckId: z.string().min(1),
+	})
+	.strict();
+export type VocabDeckDeleteInput = z.infer<typeof vocabDeckDeleteSchema>;
+
+/**
+ * Teacher word upsert contract. Note: `audioKey` is intentionally omitted here
+ * (red-team F3) — audio keys are generated and set exclusively by the server
+ * after a verified upload to `PUT /api/kernel/vocab/words/:wordId/audio`.
+ */
+export const vocabWordUpsertSchema = z
+	.object({
+		id: z
+			.string()
+			.min(1)
+			.max(128)
+			.refine(
+				(id) => !RESERVED_LIBRARY_ID_PREFIX_REGEX.test(id),
+				"Reserved library ID prefix",
+			)
+			.optional(),
+		deckId: z.string().min(1),
+		word: z.string().trim().min(1).max(200),
+		ipa: z.string().trim().max(200).nullable().optional(),
+		translation: z.string().trim().max(500).default(""),
+		sortOrder: z.number().int().min(0).default(0),
+	})
+	.strict();
+export type VocabWordUpsertInput = z.infer<typeof vocabWordUpsertSchema>;
+
+export const vocabWordRemoveSchema = z
+	.object({
+		wordId: z.string().min(1),
+	})
+	.strict();
+export type VocabWordRemoveInput = z.infer<typeof vocabWordRemoveSchema>;
+
+export const vocabTeacherWordSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		word: z.string(),
+		ipa: z.string().nullable(),
+		translation: z.string(),
+		audioKey: z.string().nullable(),
+		audioUrl: z.string().nullable(),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabTeacherWord = z.infer<typeof vocabTeacherWordSchema>;
+
+export const vocabTeacherWordsResponseSchema = z
+	.object({
+		words: z.array(vocabTeacherWordSchema),
+	})
+	.strict();
+export type VocabTeacherWordsResponse = z.infer<
+	typeof vocabTeacherWordsResponseSchema
+>;
+
+export const vocabLibraryCourseSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+		deckCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryCourse = z.infer<typeof vocabLibraryCourseSchema>;
+
+export const vocabLibraryCoursesResponseSchema = z
+	.object({
+		courses: z.array(vocabLibraryCourseSchema),
+	})
+	.strict();
+export type VocabLibraryCoursesResponse = z.infer<
+	typeof vocabLibraryCoursesResponseSchema
+>;
+
+export const vocabLibraryDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		courseId: z.string().min(1),
+		title: z.string(),
+		description: z.string().nullable(),
+		imageUrl: z.string().nullable(),
+		wordCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryDeck = z.infer<typeof vocabLibraryDeckSchema>;
+
+export const vocabLibraryDecksResponseSchema = z
+	.object({
+		decks: z.array(vocabLibraryDeckSchema),
+	})
+	.strict();
+export type VocabLibraryDecksResponse = z.infer<
+	typeof vocabLibraryDecksResponseSchema
+>;
+
+export const vocabLibraryWordSchema = z
+	.object({
+		id: z.string().min(1),
+		word: z.string(),
+		ipa: z.string().nullable(),
+		pos: z.string().nullable(),
+		translation: z.string(),
+		sentenceVi: z.string().nullable(),
+		sentenceEn: z.string().nullable(),
+		pictureUrl: z.string().nullable(),
+		audioUrl: z.string().nullable(),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabLibraryWord = z.infer<typeof vocabLibraryWordSchema>;
+
+export const vocabLibraryWordsResponseSchema = z
+	.object({
+		deck: z
+			.object({
+				id: z.string().min(1),
+				title: z.string(),
+			})
+			.strict(),
+		words: z.array(vocabLibraryWordSchema),
+	})
+	.strict();
+export type VocabLibraryWordsResponse = z.infer<
+	typeof vocabLibraryWordsResponseSchema
+>;
+
+export const vocabLibraryCloneSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		deckIds: z.array(z.string().min(1)).min(1).max(50),
+	})
+	.strict();
+export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
+
+export const vocabStudentLibraryCourseSchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+		deckCount: z.number().int().min(0),
+		wordCount: z.number().int().min(0),
+		reviewWordCount: z.number().int().min(0),
+		learnedWordCount: z.number().int().min(0),
+		dueWordCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabStudentLibraryCourse = z.infer<
+	typeof vocabStudentLibraryCourseSchema
+>;
+
+export const vocabStudentLibraryCoursesResponseSchema = z
+	.object({
+		courses: z.array(vocabStudentLibraryCourseSchema),
+	})
+	.strict();
+export type VocabStudentLibraryCoursesResponse = z.infer<
+	typeof vocabStudentLibraryCoursesResponseSchema
+>;
+
+export const vocabStudentLibraryCourseSummarySchema = z
+	.object({
+		id: z.string().min(1),
+		name: z.string(),
+		description: z.string().nullable(),
+		target: z.string().nullable(),
+	})
+	.strict();
+export type VocabStudentLibraryCourseSummary = z.infer<
+	typeof vocabStudentLibraryCourseSummarySchema
+>;
+
+export const vocabStudentLibraryDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		courseId: z.string().min(1),
+		title: z.string(),
+		description: z.string().nullable(),
+		imageUrl: z.string().nullable(),
+		wordCount: z.number().int().min(0),
+		newCount: z.number().int().min(0),
+		reviewCount: z.number().int().min(0),
+		dueCount: z.number().int().min(0),
+		learnedCount: z.number().int().min(0),
+		sortOrder: z.number().int(),
+	})
+	.strict();
+export type VocabStudentLibraryDeck = z.infer<
+	typeof vocabStudentLibraryDeckSchema
+>;
+
+export const vocabStudentLibraryDecksResponseSchema = z
+	.object({
+		course: vocabStudentLibraryCourseSummarySchema.optional(),
+		decks: z.array(vocabStudentLibraryDeckSchema),
+	})
+	.strict();
+export type VocabStudentLibraryDecksResponse = z.infer<
+	typeof vocabStudentLibraryDecksResponseSchema
+>;
+
+export const vocabSuggestDeckSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		deckId: z.string().min(1),
+		studentId: z.string().min(1),
+		note: z.string().trim().max(500).nullable().optional(),
+	})
+	.strict();
+export type VocabSuggestDeckInput = z.infer<typeof vocabSuggestDeckSchema>;
+
+export const vocabRevokeSuggestionSchema = z
+	.object({
+		suggestionId: z.string().min(1),
+	})
+	.strict();
+export type VocabRevokeSuggestionInput = z.infer<
+	typeof vocabRevokeSuggestionSchema
+>;
+
+export const vocabTeacherSuggestionSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		studentId: z.string().min(1),
+		note: z.string().nullable(),
+		status: z.enum(["pending", "accepted", "dismissed"]),
+		createdAt: z.string(),
+		respondedAt: z.string().nullable(),
+	})
+	.strict();
+export type VocabTeacherSuggestion = z.infer<
+	typeof vocabTeacherSuggestionSchema
+>;
+
+export const vocabTeacherSuggestionsResponseSchema = z
+	.object({
+		suggestions: z.array(vocabTeacherSuggestionSchema),
+	})
+	.strict();
+export type VocabTeacherSuggestionsResponse = z.infer<
+	typeof vocabTeacherSuggestionsResponseSchema
+>;
+
+export const vocabStudentProgressDeckSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string(),
+		classId: z.string().nullable(),
+		className: z.string().catch(""),
+		source: z.enum(["class", "suggested", "library"]).catch("class"),
+		total: z.number().int().min(0),
+		byLevel: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		dueToday: z.number().int().min(0),
+		stateNew: z.number().int().min(0),
+		stateReview: z.number().int().min(0),
+		lastActivityAt: z.string().nullable(),
+	})
+	.strict();
+export type VocabStudentProgressDeck = z.infer<
+	typeof vocabStudentProgressDeckSchema
+>;
+
+export const vocabStudentProgressActivityDaySchema = z
+	.object({
+		dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		sessions: z.number().int().min(0),
+		correct: z.number().int().min(0),
+	})
+	.strict();
+export type VocabStudentProgressActivityDay = z.infer<
+	typeof vocabStudentProgressActivityDaySchema
+>;
+
+export const vocabStudentProgressResponseSchema = z
+	.object({
+		studentId: z.string().min(1),
+		decks: z.array(vocabStudentProgressDeckSchema),
+		activity7Days: z.array(vocabStudentProgressActivityDaySchema),
+	})
+	.strict();
+export type VocabStudentProgressResponse = z.infer<
+	typeof vocabStudentProgressResponseSchema
+>;
+
+export const vocabSuggestionItemSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		title: z.string(),
+		wordCount: z.number().int().min(0),
+		note: z.string().nullable().catch(null),
+		createdAt: z.string(),
+	})
+	.strict();
+export type VocabSuggestionItem = z.infer<typeof vocabSuggestionItemSchema>;
+
+export const vocabSuggestionMutationResponseSchema = z
+	.object({
+		id: z.string().min(1),
+		deckId: z.string().min(1),
+		status: z.enum(["accepted", "dismissed"]),
+		respondedAt: z.string(),
+	})
+	.strict();
+export type VocabSuggestionMutationResponse = z.infer<
+	typeof vocabSuggestionMutationResponseSchema
+>;
+
+export const vocabOverviewDeckSchema = z
+	.object({
+		deckId: z.string().min(1),
+		title: z.string(),
+		className: z.string().catch(""),
+		source: z.enum(["class", "suggested", "library"]).catch("class"),
+		total: z.number().int().min(0),
+		newCount: z.number().int().min(0),
+		dueCount: z.number().int().min(0),
+	})
+	.strict();
+export type VocabOverviewDeck = z.infer<typeof vocabOverviewDeckSchema>;
+
+export const vocabOverviewSchema = z
+	.object({
+		dueCount: z.number().int().min(0),
+		nextDueAt: z.number().int().nullable(),
+		upcomingCount: z.number().int().min(0).nullable(),
+		learnedCount: z.number().int().min(0),
+		matureCount: z.number().int().min(0),
+		levelDistribution: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		streak: z.number().int().min(0),
+		retention: z.number().int().min(0).max(100).nullable(),
+		forecast: z.tuple([
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+			z.number().int().min(0),
+		]),
+		decks: z.array(vocabOverviewDeckSchema),
+		suggestions: z.array(vocabSuggestionItemSchema).catch([]),
+	})
+	.strict();
+export type VocabOverview = z.infer<typeof vocabOverviewSchema>;
+
+export const vocabSessionDeckSchema = z
+	.object({
+		id: z.string().min(1),
+		title: z.string(),
+		lang: z.string(),
+	})
+	.strict();
+export type VocabSessionDeck = z.infer<typeof vocabSessionDeckSchema>;
+
+export const vocabSessionCardSchema = z
+	.object({
+		id: z.string().min(1),
+		wordId: z.string().min(1),
+		word: z.string(),
+		translation: z.string(),
+		ipa: z.string().nullable(),
+		audioKey: z.string().nullable(),
+		hasAudio: z.boolean().default(false),
+		level: z.number().int().min(1).max(5),
+		isWarning: z.boolean(),
+		state: z.enum(["new", "review"]),
+		intervalDays: z.number().int().min(0),
+		dueAt: z.number().int(),
+		lapses: z.number().int().min(0),
+	})
+	.strict();
+export type VocabSessionCard = z.infer<typeof vocabSessionCardSchema>;
+
+export const vocabPoolItemSchema = z
+	.object({
+		wordId: z.string().min(1),
+		word: z.string(),
+		translation: z.string(),
+		lang: z.string(),
+		deckId: z.string().min(1),
+	})
+	.strict();
+export type VocabPoolItem = z.infer<typeof vocabPoolItemSchema>;
+
+export const vocabSessionDataSchema = z
+	.object({
+		deck: vocabSessionDeckSchema,
+		cards: z.array(vocabSessionCardSchema),
+		pool: z.array(vocabPoolItemSchema),
+	})
+	.strict();
+export type VocabSessionData = z.infer<typeof vocabSessionDataSchema>;
+
+export const vocabAnswerSchema = z
+	.object({
+		clientLogId: z.string().uuid(),
+		cardId: z.string().min(1),
+		correct: z.boolean(),
+		durationMs: z.number().int().min(0),
+	})
+	.strict();
+export type VocabAnswerInput = z.infer<typeof vocabAnswerSchema>;
+
+export const vocabLearnCommitSchema = z
+	.object({
+		clientLogId: z.string().uuid(),
+		cardId: z.string().min(1),
+		/**
+		 * Equivalent to `firstTryCorrect` across all scored steps of the word
+		 * (`docs/srs-spec.md` §3b rule 7; a word with only "intro" is true).
+		 */
+		gradeGood: z.boolean(),
+		durationMs: z.number().int().min(0),
+	})
+	.strict();
+export type VocabLearnCommitInput = z.infer<typeof vocabLearnCommitSchema>;
+
+export const vocabCardMutationResponseSchema = z
+	.object({
+		card: vocabSessionCardSchema,
+	})
+	.strict();
+export type VocabCardMutationResponse = z.infer<
+	typeof vocabCardMutationResponseSchema
+>;
+
+// --- Lịch nghỉ chung (TOS-11, issue #445) ---
+
+export const HOLIDAY_NAME_MIN = 2;
+export const HOLIDAY_NAME_MAX = 100;
+/** Số ngày tối đa tính CẢ HAI ĐẦU khoảng nghỉ. */
+export const HOLIDAY_MAX_DAYS = 30;
+
+export const HOLIDAY_SCOPES = ["org", "classes"] as const;
+export type HolidayScope = (typeof HOLIDAY_SCOPES)[number];
+export const HOLIDAY_MODES = ["shift", "cancel"] as const;
+export type HolidayMode = (typeof HOLIDAY_MODES)[number];
+
+/** Mã lỗi riêng của pipeline lịch nghỉ — route trả kèm HTTP 409/422. */
+export const HOLIDAY_ERROR_CODES = {
+	/** Khoảng ngày không trúng buổi nào (422). */
+	NO_SESSIONS: "no-sessions",
+	/** fromDate đã qua (422) — chỉ dời buổi chưa diễn ra. */
+	PAST_RANGE: "past-range",
+	/** Số buổi × lớp vượt ngưỡng batch D1 (422). */
+	TOO_LARGE: "too-large",
+	/** DB đổi giữa preview và apply — client phải xem lại bảng (409). */
+	STALE_PREVIEW: "stale-preview",
+	/** Nhóm buổi có dòng `holiday` — bị khóa sửa/dời (409). */
+	HOLIDAY_LOCKED: "holiday-locked",
+	/** Kỳ nghỉ đã bắt đầu (fromDate <= hôm nay giờ VN) — không hoàn tác (422, TOS-13 D3). */
+	HOLIDAY_STARTED: "holiday-started",
+	/** Buổi bù của kỳ nghỉ đã bị đụng (điểm danh / kỳ khác dời-hủy) — hoàn tác bị chặn (409, TOS-13 D4). */
+	MAKEUP_TOUCHED: "makeup-touched",
+} as const;
+export type HolidayErrorCode =
+	(typeof HOLIDAY_ERROR_CODES)[keyof typeof HOLIDAY_ERROR_CODES];
+
+/** Strict yyyy-mm-dd: pattern VÀ roundtrip UTC (2026-02-30 lặng lẽ thành
+ * tháng 3 nếu chỉ regex — mirror `parseStartDateStrict` skeleton). Refine
+ * tự guard format: zod vẫn chạy check sau khi regex fail (chuỗi rỗng). */
+const holidayISODate = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/)
+	.refine((value) => {
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+		const date = new Date(`${value}T00:00:00Z`);
+		if (Number.isNaN(date.getTime())) return false;
+		return date.toISOString().slice(0, 10) === value;
+	});
+
+export const holidayDraftSchema = z
+	.object({
+		name: z.string().trim().min(HOLIDAY_NAME_MIN).max(HOLIDAY_NAME_MAX),
+		fromDate: holidayISODate,
+		toDate: holidayISODate,
+		scope: z.enum(HOLIDAY_SCOPES),
+		/** Bắt buộc ≥ 1 khi scope = "classes"; bỏ qua khi scope = "org". */
+		classIds: z
+			.array(z.string().min(1))
+			.max(200)
+			.default([])
+			.transform((ids) => [...new Set(ids)]),
+		/** TOS-13 (#448): "shift" dời buổi; "cancel" hủy buổi không bù. */
+		mode: z.enum(HOLIDAY_MODES),
+		notify: z.boolean().default(true),
+	})
+	.superRefine((input, ctx) => {
+		if (input.toDate < input.fromDate) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["toDate"],
+				message: "Ngày kết thúc phải từ ngày bắt đầu trở đi",
+			});
+			return;
+		}
+		const days =
+			(Date.parse(`${input.toDate}T00:00:00Z`) -
+				Date.parse(`${input.fromDate}T00:00:00Z`)) /
+				86_400_000 +
+			1;
+		if (days > HOLIDAY_MAX_DAYS) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["toDate"],
+				message: `Khoảng nghỉ tối đa ${HOLIDAY_MAX_DAYS} ngày`,
+			});
+		}
+		if (input.scope === "classes" && input.classIds.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["classIds"],
+				message: "Chọn ít nhất một lớp",
+			});
+		}
+	});
+export type HolidayDraft = z.infer<typeof holidayDraftSchema>;
+
+/** Apply = draft + planHash của lần preview GV đã xác nhận (I7). */
+export const holidayApplySchema = holidayDraftSchema.and(
+	z.object({ planHash: z.string().min(1) }),
+);
+export type HolidayApplyInput = z.infer<typeof holidayApplySchema>;
+
+/** Một ngày bù bị nhảy qua vì trùng kỳ nghỉ. `holidayName` null = ngày thuộc
+ * chính kỳ nghỉ đang tạo — client tự điền tên từ form (previewKey cố ý bỏ
+ * `name` nên server không trả tên draft, quyết định review TOS-11). */
+export interface HolidaySkippedDay {
+	/** yyyy-mm-dd ngày bị nhảy qua. */
+	date: string;
+	holidayName: string | null;
+}
+
+/** Một dòng bảng xem trước: buổi gốc bị dời + buổi bù cuối khóa. */
+export interface HolidayPlannedShift {
+	classId: string;
+	className: string;
+	/** yyyy-mm-dd buổi gốc. */
+	originalDate: string;
+	/** Buổi thứ mấy theo đúng định nghĩa index tab Lịch học (I4 — không đếm nhóm `holiday`). */
+	sessionOrdinal: number;
+	/** yyyy-mm-dd buổi bù (thứ ∈ schedule.days, sau buổi cuối, không trùng kỳ nghỉ). */
+	makeupDate: string;
+	/** HH:MM khung giờ chuẩn của lớp. */
+	time: string;
+	/** Phút, cùng công thức `generateScheduleLessons`. */
+	dur: number;
+	/** 1 = Thứ 2 … 7 = Chủ nhật (lesson weekday). */
+	weekday: number;
+	/** Các ngày bị nhảy qua vì trùng kỳ nghỉ — TOS-12 hiển thị "(*)" và ghi chú tên. */
+	skippedHolidays: HolidaySkippedDay[];
+}
+
+/** Buổi có dòng đã điểm danh — giữ nguyên (D1), nhãn chi tiết ở TOS-12. */
+export interface HolidayKeptCompleted {
+	classId: string;
+	className: string;
+	date: string;
+	sessionOrdinal: number;
+}
+
+/** Lớp không dời được: lịch legacy hoặc còn dòng không có `date`. */
+export interface HolidayUnsupported {
+	classId: string;
+	className: string;
+	reason: "legacy-schedule" | "undated";
+}
+
+/** Một buổi (nhóm occurrence cùng ngày) bị hủy bởi kỳ nghỉ mode "cancel"
+ * (TOS-13 D2) — không sinh buổi bù, không đổi ngày kết thúc khóa. */
+export interface HolidayPlannedCancellation {
+	classId: string;
+	className: string;
+	/** yyyy-mm-dd buổi bị hủy. */
+	date: string;
+	/** Buổi thứ mấy theo đúng định nghĩa index tab Lịch học (I4 — không đếm nhóm `holiday`/`cancelled`). */
+	sessionOrdinal: number;
+}
+
+export interface HolidayPreview {
+	shifts: HolidayPlannedShift[];
+	/** TOS-13 mode "cancel": các buổi sẽ chuyển `cancelled`; `shifts` rỗng. */
+	cancellations: HolidayPlannedCancellation[];
+	keptCompleted: HolidayKeptCompleted[];
+	unsupported: HolidayUnsupported[];
+	affectedClassCount: number;
+	/** SHA-256 ổn định của danh sách shift — apply phải gửi lại (I7). */
+	planHash: string;
+}
+
+/** Kết quả apply — `holidayId` để hoàn tác/đối chiếu (TOS-13). */
+export interface HolidayApplyResult {
+	holidayId: string;
+	shiftedCount: number;
+	/** TOS-13 mode "cancel": số buổi đã hủy; mode "shift" = 0. */
+	cancelledCount: number;
+	classCount: number;
+}
+
+/** Kết quả hoàn tác `DELETE /api/holidays/:id` (TOS-13 D5). */
+export interface HolidayDeleteResult {
+	/** Số buổi gốc + buổi hủy được khôi phục về `upcoming`. */
+	restoredCount: number;
+	/** Số buổi bù chưa diễn ra bị thu hồi (mode "shift"); mode "cancel" = 0. */
+	removedMakeupCount: number;
+}
+
+/** Wire schema bảng xem trước — web repos parse trước khi render (I7 kèm planHash). */
+export const holidayPreviewResponseSchema = z.object({
+	shifts: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			originalDate: z.string(),
+			sessionOrdinal: z.number().int(),
+			makeupDate: z.string(),
+			time: z.string(),
+			dur: z.number().int(),
+			weekday: z.number().int().min(1).max(7),
+			skippedHolidays: z.array(
+				z.object({
+					date: z.string(),
+					holidayName: z.string().nullable(),
+				}),
+			),
+		}),
+	),
+	cancellations: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			date: z.string(),
+			sessionOrdinal: z.number().int(),
+		}),
+	),
+	keptCompleted: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			date: z.string(),
+			sessionOrdinal: z.number().int(),
+		}),
+	),
+	unsupported: z.array(
+		z.object({
+			classId: z.string(),
+			className: z.string(),
+			reason: z.enum(["legacy-schedule", "undated"]),
+		}),
+	),
+	affectedClassCount: z.number().int(),
+	planHash: z.string().min(1),
+});
+
+export const holidayApplyResultSchema = z.object({
+	holidayId: z.string().min(1),
+	shiftedCount: z.number().int(),
+	cancelledCount: z.number().int(),
+	classCount: z.number().int(),
+});
+
+/** Wire schema kết quả hoàn tác (TOS-13). */
+export const holidayDeleteResultSchema = z.object({
+	restoredCount: z.number().int(),
+	removedMakeupCount: z.number().int(),
+});
+
+/** Snapshot kernel thêm phần lịch nghỉ để lịch tuần vẽ nhãn không cần gọi thêm endpoint (phase 5). */
+export interface KernelHolidaySummary {
+	id: string;
+	name: string;
+	fromDate: string;
+	toDate: string;
+	scope: HolidayScope;
+	/** TOS-13: "shift" | "cancel" — nút hoàn tác + nhãn hủy đọc từ đây. */
+	mode: HolidayMode;
+}
+
+export interface KernelHolidayShiftRow {
+	holidayId?: string;
+	classId: string;
+	originalDate: string;
+	makeupDate: string;
+}
+
+/** TOS-13: buổi bị kỳ nghỉ mode "cancel" hủy — nguồn khôi phục khi hoàn tác
+ * (không khôi phục nhầm buổi giáo viên hủy tay). */
+export interface KernelHolidayCancelRow {
+	holidayId?: string;
+	classId: string;
+	date: string;
+}
+
+/** Nhãn dùng chung web + student (phase 4) — một nguồn duy nhất. */
+export const LESSON_STATUS_LABEL: Record<string, string> = {
+	upcoming: "Chưa diễn ra",
+	completed: "Đã hoàn thành",
+	absent: "Nghỉ không phép",
+	cancelled: "Đã hủy",
+	holiday: "Nghỉ lễ — Đã dời lịch",
+};
+/** #454 — loại sự kiện chi tiết của 1 thông báo (nội dung thư cần biết sự kiện cụ thể). */
+export const NOTIFICATION_EVENT_TYPES = [
+	"class_enrolled",
+	"assignment_published",
+	"grade_returned",
+	"invoice_issued",
+	"tuition_reminder",
+	"schedule_changed",
+	"holiday_created",
+] as const;
+
+/** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
+export const NOTIFICATION_EVENT_GROUPS = [
+	"class_invite",
+	"assignment",
+	"tuition",
+	"schedule",
+] as const;
+
+export type NotificationEventType = (typeof NOTIFICATION_EVENT_TYPES)[number];
+export type NotificationEventGroup = (typeof NOTIFICATION_EVENT_GROUPS)[number];
+
+/** Ánh xạ event_type → event_group cho chip lọc (D2). */
+export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
+	NotificationEventType,
+	NotificationEventGroup
+> = {
+	class_enrolled: "class_invite",
+	assignment_published: "assignment",
+	grade_returned: "assignment",
+	invoice_issued: "tuition",
+	tuition_reminder: "tuition",
+	schedule_changed: "schedule",
+	holiday_created: "schedule",
+};
+
+export const NOTIFICATION_STATUSES = [
+	"queued",
+	"sent",
+	"read",
+	"failed",
+] as const;
+export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
+
+/** TOS-22 (#463): tối đa 3 lần thử gửi Email tự động; hết lượt chuyển failed kèm E-selfomy-alignment-010. */
+export const MAX_EMAIL_ATTEMPTS = 3;
+export const NOTIFICATION_ERROR_CODES = {
+	DELIVERY_FAILED: "E-selfomy-alignment-010",
+} as const;
+
+/** GET /api/notification-logs?q=&event=&status=&page= — 20 dòng/trang. */
+export const notificationLogQuerySchema = z.object({
+	q: z.string().optional(),
+	event: z.enum(NOTIFICATION_EVENT_GROUPS).optional(),
+	status: z.enum(NOTIFICATION_STATUSES).optional(),
+	page: z.number().int().min(1).optional(),
+});
+export type NotificationLogQuery = z.infer<typeof notificationLogQuerySchema>;
+
+export const notificationLogRowSchema = z.object({
+	id: z.string(),
+	createdAt: z.string(),
+	recipientName: z.string(),
+	recipientEmail: z.string().nullable(),
+	eventType: z.enum(NOTIFICATION_EVENT_TYPES),
+	eventGroup: z.enum(NOTIFICATION_EVENT_GROUPS),
+	channels: z.string(),
+	status: z.enum(NOTIFICATION_STATUSES),
+	title: z.string(),
+	body: z.string(),
+	linkPath: z.string(),
+	senderName: z.string(),
+	replyToEmail: z.string().nullable(),
+	sentAt: z.string().nullable(),
+	readAt: z.string().nullable(),
+	retryCount: z.number().int(),
+	lastError: z.string().nullable(),
+	refType: z.string(),
+	refId: z.string(),
+});
+export type NotificationLogRow = z.infer<typeof notificationLogRowSchema>;
+
+export const notificationLogResponseSchema = z.object({
+	rows: z.array(notificationLogRowSchema),
+	total: z.number().int(),
+	counts: z.record(z.enum([...NOTIFICATION_STATUSES, "all"]), z.number().int()),
+	page: z.number().int().min(1),
+	pageSize: z.literal(20),
+});
+export type NotificationLogResponse = z.infer<
+	typeof notificationLogResponseSchema
+>;
+
+/** TOS-23 (#464): giới hạn số bản ghi failed được đặt lại mỗi lần "Gửi lại tất cả". */
+export const RESEND_BATCH_LIMIT = 50;
+
+/** POST /api/notification-logs/resend-failed — áp bộ lọc q + event hiện tại (không nhận status). */
+export const resendFailedBodySchema = z
+	.object({
+		q: z.string().optional(),
+		event: z.enum(NOTIFICATION_EVENT_GROUPS).optional(),
+	})
+	.strict();
+export type ResendFailedBody = z.infer<typeof resendFailedBodySchema>;
+
+export const notificationResendSkippedItemSchema = z.object({
+	id: z.string(),
+	reason: z.literal("no_email"),
+});
+export type NotificationResendSkippedItem = z.infer<
+	typeof notificationResendSkippedItemSchema
+>;
+
+export const notificationResendResponseSchema = z.object({
+	requeued: z.number().int().min(0),
+	skipped: z.array(notificationResendSkippedItemSchema),
+	remaining: z.number().int().min(0),
+});
+export type NotificationResendResponse = z.infer<
+	typeof notificationResendResponseSchema
+>;
+
+/** Mục inbox in-app của học viên (GET /api/student/inbox). */
+export const studentInboxItemSchema = z.object({
+	id: z.string(),
+	eventType: z.enum(NOTIFICATION_EVENT_TYPES),
+	title: z.string(),
+	body: z.string(),
+	linkPath: z.string(),
+	status: z.enum(NOTIFICATION_STATUSES),
+	readAt: z.string().nullable(),
+	createdAt: z.string(),
+});
+export type StudentInboxItem = z.infer<typeof studentInboxItemSchema>;
+
+export const studentInboxResponseSchema = z.object({
+	items: z.array(studentInboxItemSchema),
+	unread: z.number().int(),
+});
+export type StudentInboxResponse = z.infer<typeof studentInboxResponseSchema>;
+
+/**
+ * TOS-18 (#452) — Dòng thời gian hóa đơn & giao dịch thanh toán theo học viên
+ * (`GET /api/students/:id/billing-timeline`).
+ * - `at` là ISO 8601 (`createdAt.toISOString()`), sắp xếp giảm dần theo `createdAt`.
+ * - Giao dịch `bank_hub` luôn có `note: ""` và `method: ""` để không lộ nội
+ *   dung chuyển khoản gốc (`content`) hay `raw` payload (#320 PII retention).
+ */
+export const billingTimelineInvoiceIssuedEventSchema = z
+	.object({
+		kind: z.literal("invoice_issued"),
+		at: z.string(),
+		invoiceId: z.string().min(1),
+		code: z.string().min(1),
+		type: z.string().min(1),
+		amount: z.number().int(),
+		due: z.string(),
+		status: z.enum(["unpaid", "paid"]),
+	})
+	.strict();
+
+export const billingTimelinePaymentEventSchema = z
+	.object({
+		kind: z.literal("payment"),
+		id: z.string().min(1),
+		at: z.string(),
+		invoiceId: z.string().min(1),
+		code: z.string().min(1),
+		amount: z.number().int(),
+		source: z.enum(["bank_hub", "manual"]),
+		method: z.string(),
+		note: z.string(),
+	})
+	.strict();
+
+export const billingTimelineEventSchema = z.discriminatedUnion("kind", [
+	billingTimelineInvoiceIssuedEventSchema,
+	billingTimelinePaymentEventSchema,
+]);
+export type BillingTimelineEvent = z.infer<typeof billingTimelineEventSchema>;
+
+export const billingTimelineResponseSchema = z
+	.object({
+		events: z.array(billingTimelineEventSchema),
+	})
+	.strict();
+export type BillingTimelineResponse = z.infer<
+	typeof billingTimelineResponseSchema
+>;
+
+/**
+ * TOS-18 (#452) — Gửi nhắc học phí hàng loạt (`POST /api/debt-reminders`).
+ * `queued` và `skipped` đều tính theo đơn vị hóa đơn còn nợ.
+ */
+export const debtReminderCreateSchema = z
+	.object({
+		studentIds: z
+			.array(z.string().trim().min(1).max(64))
+			.min(1)
+			.max(100)
+			.refine((ids) => new Set(ids).size === ids.length, {
+				message: "Duplicate studentIds are not allowed",
+			}),
+		classId: z.string().trim().min(1).max(64).optional(),
+	})
+	.strict();
+export type DebtReminderCreate = z.infer<typeof debtReminderCreateSchema>;
+
+export const debtReminderResponseSchema = z
+	.object({
+		queued: z.number().int().min(0),
+		skipped: z.number().int().min(0),
+	})
+	.strict();
+export type DebtReminderResponse = z.infer<typeof debtReminderResponseSchema>;
+
+// ============================================================================
+// TOS-24 (#470) — Nhập đề thi bằng AI: Ví Credit + exam import
+// ============================================================================
+
+/** Giá một dịch vụ tiêu Credit (mở rộng bởi TOS-42+). */
+export const CREDIT_COSTS = { examImport: 5 } as const;
+
+/** Ví tạo lười với 30 Credit Dùng thử cho tổ chức chưa có gói (E-001). */
+export const TRIAL_CREDITS = 30;
+
+/** Trần Credit cá nhân (US-010 / TOS-49) — hook no-op ở plan này. */
+export const EXAM_IMPORT_LIMITS = {
+	maxBytes: 15 * 1024 * 1024,
+	maxPages: 20,
+	timeoutMs: 120_000,
+	reviewConfidence: 0.8,
+} as const;
+
+/** MIME nhận của dropzone + route (phase-02). */
+export const EXAM_IMPORT_MIME = [
+	"application/pdf",
+	"image/png",
+	"image/jpeg",
+] as const;
+
+/** Mã lỗi của luồng exam import + ví (plan phase-02, plan TOS-27 mở rộng). */
+export const EXAM_IMPORT_ERROR_CODES = {
+	/** Ví không đủ Credit (HTTP 402). */
+	INSUFFICIENT_CREDITS: "E-selfomy-alignment-001",
+	/** File sai MIME / quá 15 MB / quá 20 trang / có mật khẩu (HTTP 400). */
+	INVALID_FILE: "E-selfomy-alignment-003",
+	/** Binding AI hoặc kho file chưa cấu hình (HTTP 503). */
+	DISABLED: "EXAM_IMPORT_DISABLED",
+	/** AI lỗi / timeout / 0 nhóm câu hỏi hợp lệ — credit đã hoàn (HTTP 502). */
+	EXAM_FAILED: "E-selfomy-alignment-004",
+	/** Extractor lỗi/timeout — credit đã hoàn (HTTP 502). */
+	FAILED: "EXAM_IMPORT_FAILED",
+	/** Job/file không thuộc org hiện tại hoặc không tồn tại (HTTP 404). */
+	NOT_FOUND: "exam_import_not_found",
+	/** Retry chỉ nhận job `failed_refunded` (HTTP 409). */
+	NOT_RETRYABLE: "exam_import_not_retryable",
+	/** File gốc trên R2 đã mất khi retry (HTTP 410). */
+	FILE_MISSING: "exam_import_file_missing",
+	/** Đề còn câu gắn nhãn Cần rà soát lại nhưng chưa tích xác nhận (HTTP 422). */
+	REVIEW_CONFIRMATION_REQUIRED: "REVIEW_CONFIRMATION_REQUIRED",
+	/** Số part vượt quá số slot tối đa của kỹ năng trong ASSIGNMENT_TEST_PRESETS (HTTP 422). */
+	TOO_MANY_PARTS: "TOO_MANY_PARTS",
+	/** Kỹ năng đang là mixed — cần chọn kỹ năng cụ thể trước khi xuất bản (HTTP 422). */
+	SKILL_MIXED_NOT_ALLOWED: "SKILL_MIXED_NOT_ALLOWED",
+	/** Câu hỏi thiếu nội dung/đáp án hoặc không khớp giới hạn ngân hàng đề (HTTP 422). */
+	INVALID_DRAFT: "INVALID_DRAFT",
+	/** Job chưa hoàn tất bóc tách (HTTP 409). */
+	INVALID_STATE: "EXAM_IMPORT_INVALID_STATE",
+} as const;
+export type ExamImportErrorCode =
+	(typeof EXAM_IMPORT_ERROR_CODES)[keyof typeof EXAM_IMPORT_ERROR_CODES];
+
+/** Lý do chặn tệp E-003 — trước khi giữ Credit (plan TOS-27 D1). */
+export const EXAM_IMPORT_FILE_ERROR_REASONS = [
+	"type",
+	"size",
+	"pages",
+	"password",
+] as const;
+export type ExamImportFileErrorReason =
+	(typeof EXAM_IMPORT_FILE_ERROR_REASONS)[number];
+
+/** Lý do thất bại E-004 — sau khi giữ Credit, đã hoàn đủ (plan TOS-27 D2). */
+export const EXAM_IMPORT_FAIL_REASONS = [
+	"timeout",
+	"ai_error",
+	"empty_result",
+] as const;
+export type ExamImportFailReason = (typeof EXAM_IMPORT_FAIL_REASONS)[number];
+
+/** Giá Credit mỗi lượt chấm nháp AI theo kỹ năng (BR-001: Writing 1,
+ * Speaking 2 — Speaking chấm phát âm nên giá cao hơn; TOS-42 mở gói tháng). */
+export const AI_GRADING_COST: Record<"writing" | "speaking", number> = {
+	writing: 1,
+	speaking: 2,
+};
+
+/** Hạn mức lượt Chấm nhanh Writing hỗ trợ thêm mỗi tháng khi gói tháng hết Credit chính (TOS-32, BR-007). */
+export const QUICK_GRADE_MONTHLY_LIMIT = 30;
+
+/** Mã lỗi pipeline chấm nháp AI — cột `error_code` của draft (TOS-33 bổ
+ * sung retry + E-004 riêng). Null = không lỗi. */
+export const AI_GRADING_ERROR_CODES = {
+	/** AI quá hạn (20s) hoặc bị hủy — Credit đã hoàn. */
+	TIMEOUT: "AI_GRADING_TIMEOUT",
+	/** AI trả kết quả không hợp lệ / lỗi khác — Credit đã hoàn. */
+	FAILED: "AI_GRADING_FAILED",
+	/** Binding AI chưa cấu hình — fail-closed, Credit đã hoàn. */
+	DISABLED: "AI_GRADING_DISABLED",
+	/** Speaking chưa có transcript (TOS-30 stub; TOS-31 gắn STT). */
+	NO_TRANSCRIPT: "AI_GRADING_NO_TRANSCRIPT",
+	/** Hết sạch Credit AI cho tác vụ chi phí cao / ngoài gói tháng (E-001). */
+	INSUFFICIENT_CREDITS: "E-selfomy-alignment-001",
+	/** Hết cả Credit chính lẫn 30 lượt Chấm nhanh Writing trong tháng (E-002). */
+	QUOTA_EXHAUSTED: "E-selfomy-alignment-002",
+} as const;
+export type AiGradingErrorCode =
+	(typeof AI_GRADING_ERROR_CODES)[keyof typeof AI_GRADING_ERROR_CODES];
+
+/**
+ * TOS-33 (#481, D2): 2 mã kỹ thuật được sinh SAU khi đã reserve (đủ vòng
+ * retry) ánh xạ sang lỗi người dùng E-selfomy-alignment-004 — "Thử chấm
+ * lại AI" hợp lệ cho đúng các mã này. `DISABLED`/`NO_TRANSCRIPT` không
+ * reserve (hoặc vô ích khi retry) → KHÔNG hiện nút retry.
+ */
+const AI_GRADING_E004_CODE_SET: ReadonlySet<string> = new Set([
+	AI_GRADING_ERROR_CODES.TIMEOUT,
+	AI_GRADING_ERROR_CODES.FAILED,
+]);
+
+export function isAiGradingRetryableError(
+	errorCode: string | null | undefined,
+): boolean {
+	return (
+		typeof errorCode === "string" && AI_GRADING_E004_CODE_SET.has(errorCode)
+	);
+}
+
+/** Mã xung đột 409 trên wire (TOS-33 D4) — thay `DRAFT_VERSION_CONFLICT`
+ * của TOS-30 cho PATCH /draft + POST /grade + ai-retry đang xử lý. */
+export const AI_GRADING_CONFLICT_CODE = "E-selfomy-alignment-011";
+
+/** Thông điệp nguyên văn E-selfomy-alignment-004 (spec Error Matrix) —
+ * hiển thị khi grader lỗi đủ 2 lần tự thử lại (Credit đã hoàn 100%). */
+export const AI_GRADING_E004_MESSAGE =
+	"Hệ thống AI đang phản hồi chậm hoặc không đọc được cấu trúc tệp này. Số Credit tạm giữ đã được hoàn lại đầy đủ vào ví của bạn. Vui lòng thử lại sau.";
+
+/** Thông điệp nguyên văn E-selfomy-alignment-011 (spec Error Matrix) —
+ * xung đột lưu đè / gọi trùng; UI kèm nút "Tải lại bản mới nhất". */
+export const AI_GRADING_E011_MESSAGE =
+	"Bài làm này vừa được cập nhật bởi một nhân sự khác hoặc đang trong tiến trình chấm AI. Vui lòng tải lại dữ liệu mới nhất trước khi lưu.";
+
+/**
+ * Thông điệp cảnh báo nguyên văn cột "Screen state" của spec Error Matrix
+ * (`docs/selfomy-alignment/srs/selfomy-alignment-spec.md:111-112`, E-001 & E-002)
+ * hiển thị trên màn chấm bài [7] khi thiếu Credit / hết hạn mức Chấm nhanh (TOS-32 D5).
+ */
+export const AI_GRADING_ERROR_MESSAGES: Record<
+	| typeof AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS
+	| typeof AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED,
+	string
+> = {
+	[AI_GRADING_ERROR_CODES.INSUFFICIENT_CREDITS]:
+		"Tổ chức của bạn đã dùng hết Credit AI trong kỳ. Vui lòng mua thêm gói 100 Credit (149.000đ) hoặc nâng cấp gói tháng để tiếp tục sử dụng tính năng này.",
+	[AI_GRADING_ERROR_CODES.QUOTA_EXHAUSTED]:
+		"Bạn đã sử dụng hết hạn mức Credit AI và 30 lượt chấm nhanh Writing hỗ trợ thêm trong tháng này. Vui lòng nạp thêm Credit để tiếp tục chấm tự động.",
+};
+
+/**
+ * Thông điệp lỗi nguyên văn cột "Thông điệp" của spec
+ * (`docs/selfomy-alignment/srs/selfomy-alignment-spec.md` Error Matrix
+ * E-001/003/004) — một nguồn chữ cho web + test (plan TOS-27 D6).
+ * `EXAM_IMPORT_FAILED` (nhánh hiếm: settled rồi mới lỗi ghi job — credit ĐÃ
+ * trừ, KHÔNG hoàn) cố ý KHÔNG có thông điệp E-004 vì sẽ nói sai sự thật.
+ */
+export const EXAM_IMPORT_ERROR_MESSAGES: Record<
+	| typeof EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS
+	| typeof EXAM_IMPORT_ERROR_CODES.INVALID_FILE
+	| typeof EXAM_IMPORT_ERROR_CODES.EXAM_FAILED,
+	string
+> = {
+	[EXAM_IMPORT_ERROR_CODES.INSUFFICIENT_CREDITS]:
+		"Tổ chức của bạn đã dùng hết Credit AI trong kỳ. Vui lòng mua thêm gói 100 Credit (149.000đ) hoặc nâng cấp gói tháng để tiếp tục sử dụng tính năng này.",
+	[EXAM_IMPORT_ERROR_CODES.INVALID_FILE]:
+		"Tệp tải lên vượt quá giới hạn cho phép (tối đa 20 trang, 15 MB, định dạng PDF/PNG/JPG không khóa mật khẩu). Vui lòng tách nhỏ hoặc đổi tệp khác.",
+	[EXAM_IMPORT_ERROR_CODES.EXAM_FAILED]:
+		"Hệ thống AI đang phản hồi chậm hoặc không đọc được cấu trúc tệp này. Số Credit tạm giữ đã được hoàn lại đầy đủ vào ví của bạn. Vui lòng thử lại sau.",
+};
+
+/** Body lỗi có cấu trúc của exam import (400/402/502). */
+export const examImportErrorSchema = z.object({
+	error: z.string(),
+	code: z.string(),
+	reason: z.string().nullish(),
+	jobId: z.string().nullish(),
+	balance: z.number().int().nullish(),
+	available: z.number().int().nullish(),
+});
+export type ExamImportError = z.infer<typeof examImportErrorSchema>;
+
+export const EXAM_IMPORT_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+	"mixed",
+] as const;
+export type ExamImportSkill = (typeof EXAM_IMPORT_SKILLS)[number];
+
+/**
+ * Một câu hỏi bóc tách thô từ LLM (json_schema). `confidence` 0–1 do model
+ * tự chấm; hậu xử lý gán `needsReview` (xem `reviewedQuestionSchema`) —
+ * schema này KHÔNG có `needsReview` để tái sử dụng làm json_schema của
+ * `AI.run` nguyên văn.
+ */
+export const extractedQuestionSchema = z
+	.object({
+		stem: z.string().trim().min(1).max(500),
+		opts: z.array(z.string().trim().min(1).max(500)).max(6).nullish(),
+		answer: z.string().trim().max(200).nullish(),
+		type: z.string().trim().min(1).max(20).nullish(),
+		explanation: z.string().trim().max(2000).nullish(),
+		confidence: z.number().min(0).max(1),
+	})
+	.strict();
+export type ExtractedQuestion = z.infer<typeof extractedQuestionSchema>;
+
+/** Câu hỏi đã hậu xử lý — `needsReview` do server tính, UI chỉ đọc. */
+export const reviewedQuestionSchema = extractedQuestionSchema.extend({
+	explanation: richTextField(2000).nullish(),
+	needsReview: z.boolean(),
+});
+export type ReviewedQuestion = z.infer<typeof reviewedQuestionSchema>;
+
+/** Một part của đề bóc tách thô (đầu ra LLM). */
+export const extractedPartSchema = z
+	.object({
+		passage: z.string().max(20_000).nullish(),
+		questions: z.array(extractedQuestionSchema).max(40),
+	})
+	.strict();
+export type ExtractedPart = z.infer<typeof extractedPartSchema>;
+
+/** Cấu trúc đề nháp đầu ra extractor (giới hạn kỳ vọng của prompt). */
+export const extractedExamSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		skill: z.enum(EXAM_IMPORT_SKILLS),
+		timeLimitMinutes: z.number().int().min(1).max(300).nullish(),
+		parts: z.array(extractedPartSchema).min(1).max(10),
+	})
+	.strict();
+export type ExtractedExam = z.infer<typeof extractedExamSchema>;
+
+/** Bản nháp lưu `draft_json` + trả wire: câu đã gắn `needsReview`. */
+export const extractedExamDraftSchema = extractedExamSchema
+	.extend({
+		parts: z
+			.array(
+				extractedPartSchema.extend({
+					passage: richTextField(20000).nullish(),
+					questions: z.array(reviewedQuestionSchema).max(40),
+				}),
+			)
+			.min(1)
+			.max(10),
+	})
+	.strict();
+export type ExtractedExamDraft = z.infer<typeof extractedExamDraftSchema>;
+
+/** Body của `PATCH /api/exam-imports/:id/draft` (0 Credit, TOS-26 #472). */
+export const examImportDraftUpdateSchema = z
+	.object({
+		draft: extractedExamDraftSchema,
+	})
+	.strict();
+export type ExamImportDraftUpdate = z.infer<typeof examImportDraftUpdateSchema>;
+
+/** Body của `POST /api/exam-imports/:id/publish` (TOS-26 #472). */
+export const examImportPublishSchema = z
+	.object({
+		draft: extractedExamDraftSchema,
+		reviewConfirmed: z.boolean(),
+	})
+	.strict();
+export type ExamImportPublish = z.infer<typeof examImportPublishSchema>;
+
+/** Response 200 của `POST /api/exam-imports/:id/publish`. */
+export const examImportPublishResponseSchema = z
+	.object({
+		testId: z.string().min(1),
+		status: z.enum(["ready", "draft"]),
+	})
+	.strict();
+export type ExamImportPublishResponse = z.infer<
+	typeof examImportPublishResponseSchema
+>;
+
+/** Wire DTO của một job nhập đề (không lộ R2 key). */
+export const examImportJobSchema = z
+	.object({
+		id: z.string().min(1),
+		fileName: z.string().min(1).max(500),
+		mimeType: z.string().min(1).max(100),
+		sizeBytes: z.number().int().min(0),
+		pageCount: z.number().int().min(0).nullish(),
+		contentFingerprint: z.string().min(64).max(64),
+		heldCredits: z.number().int().min(0),
+		importStatus: z.enum(["processing", "completed", "failed_refunded"]),
+		draft: extractedExamDraftSchema.nullish(),
+		errorCode: z.string().nullish(),
+		// Lý do thất bại khi `errorCode` = E-004: timeout | ai_error | empty_result.
+		errorReason: z.string().nullish(),
+		publishedTestId: z.string().min(1).nullish(),
+		createdAt: z.string().min(1),
+		startedAt: z.string().min(1),
+		completedAt: z.string().nullish(),
+	})
+	.strict();
+export type ExamImportJob = z.infer<typeof examImportJobSchema>;
+
+// --- TOS-25 (#471): chống trùng mã băm, mở lại bản nháp cũ 0 Credit ---
+
+/** Vân tay SHA-256 hex (64 ký tự) — query param của `GET /exam-imports/lookup`. */
+export const fingerprintSchema = z.string().regex(/^[a-f0-9]{64}$/);
+
+/** Bản ghi trùng: dùng chung cho lookup lẫn nhánh POST. `title` lấy từ
+ * `draft_json` (fallback `fileName`), `completedAt` ISO — server luôn điền
+ * đủ, nhưng wire để nullish để client cũ/row lạ không nổ parse. */
+export const examImportDuplicateSchema = z
+	.object({
+		jobId: z.string().min(1),
+		title: z.string().min(1).max(500).nullish(),
+		completedAt: z.string().min(1).nullish(),
+	})
+	.strict();
+export type ExamImportDuplicate = z.infer<typeof examImportDuplicateSchema>;
+
+/** `GET /api/exam-imports/lookup` — `{ duplicate } | { duplicate: null }`. */
+export const examImportLookupResponseSchema = z
+	.object({ duplicate: examImportDuplicateSchema.nullable() })
+	.strict();
+
+/** Response 200 của `POST /api/exam-imports` (TOS-25): job mới tạo **hoặc**
+ * trùng mã băm — client phân biệt bằng presence của key `duplicateOf`. */
+export const examImportCreateResponseSchema = z.union([
+	examImportJobSchema,
+	z.object({ duplicateOf: examImportDuplicateSchema }).strict(),
+]);
+
+/** `GET /api/credits/wallet` — khả dụng = balance − held. */
+export const creditWalletSchema = z
+	.object({
+		balance: z.number().int().min(0),
+		held: z.number().int().min(0),
+		available: z.number().int().min(0),
+	})
+	.strict();
+export type CreditWallet = z.infer<typeof creditWalletSchema>;

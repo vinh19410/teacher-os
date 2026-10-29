@@ -1,10 +1,11 @@
-import type { KernelAction } from "./data-actions";
+import type { CurriculumTarget, KernelAction } from "./data-actions";
 import type {
 	ClassGroup,
 	MockData,
 	Syllabus,
 	SyllabusModule,
 } from "./mock-data";
+import { splitSyllabi } from "./repos/syllabus";
 
 function uid(prefix: string): string {
 	return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -23,6 +24,22 @@ function mapSyllabus(
 	fn: (sy: Syllabus) => Syllabus,
 ): Syllabus {
 	return s.id === syllabusId ? fn(structuredClone(s)) : s;
+}
+
+/**
+ * Id dòng syllabus tương ứng với `target` (issue #394): template tra trực
+ * tiếp; class target tra qua `splitSyllabi` — nguồn sự thật là cột
+ * `syllabus.class_id` — thay vì so `classId` tại đây (D7: một nơi phân loại duy nhất).
+ */
+function targetSyllabusId(
+	state: { syllabi: Syllabus[] },
+	target: CurriculumTarget,
+): string {
+	if (target.kind === "template") return target.syllabusId;
+	return (
+		splitSyllabi(state.syllabi).curriculumByClassId.get(target.classId)?.id ??
+		""
+	);
 }
 
 function mapModule(
@@ -81,6 +98,9 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "create-report":
 		case "create-assignment-prompt":
 		case "assign-class-prompt":
+		case "record-invoice-payment":
+			// #450: figures come from the post-write snapshot refresh — the
+			// ledger row and invoice totals are server-owned.
 			return state;
 		case "enroll-student": {
 			// Issue #122 / #251 / #253: attach an EXISTING student to class as invited.
@@ -157,7 +177,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = [
 							...sy.modules,
 							{
@@ -177,7 +197,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.map((m) =>
 							m.id === action.moduleId
 								? {
@@ -196,7 +216,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.map((m) =>
 							mapModule(m, action.moduleId, (mod) => {
 								mod.lessons = [
@@ -225,7 +245,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.map((m) =>
 							mapModule(m, action.moduleId, (mod) => {
 								mod.lessons = mod.lessons.map((l) =>
@@ -256,7 +276,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.filter((m) => m.id !== action.moduleId);
 						recomputeTotalLessons(sy);
 						return sy;
@@ -268,7 +288,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.map((m) =>
 							mapModule(m, action.moduleId, (mod) => {
 								mod.lessons = mod.lessons.filter(
@@ -287,7 +307,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						const byId = new Map(sy.modules.map((m) => [m.id, m]));
 						sy.modules = action.moduleIds.flatMap((id) => {
 							const mod = byId.get(id);
@@ -302,7 +322,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			return {
 				...state,
 				syllabi: state.syllabi.map((s) =>
-					mapSyllabus(s, action.syllabusId, (sy) => {
+					mapSyllabus(s, targetSyllabusId(state, action.target), (sy) => {
 						sy.modules = sy.modules.map((m) =>
 							mapModule(m, action.moduleId, (mod) => {
 								const byId = new Map(mod.lessons.map((l) => [l.id, l]));

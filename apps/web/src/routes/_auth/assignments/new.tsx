@@ -443,11 +443,11 @@ export function NewAssignmentRoute() {
 		<div>
 			<nav
 				aria-label="Breadcrumb"
-				className="mb-3 flex items-center gap-2 font-mono text-meta text-xs"
+				className="mb-3 flex items-center gap-2 text-muted-foreground text-xs"
 			>
 				<Link
 					to="/assignments"
-					className="underline-offset-[3px] hover:text-fg hover:underline"
+					className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 				>
 					Bài tập
 				</Link>
@@ -461,7 +461,7 @@ export function NewAssignmentRoute() {
 			{bannerOpen && !saved && (
 				<div
 					role="status"
-					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 py-2"
+					className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md rounded-md bg-muted px-3 py-2"
 				>
 					<span className="text-xs">
 						Đã phục hồi bản nháp — kiểm tra rồi tiếp tục, hoặc Hủy để soạn mới.
@@ -492,26 +492,29 @@ export function NewAssignmentRoute() {
 						status={status}
 						onFieldChange={handleFieldChange}
 					/>
-					<div className="sticky bottom-0 mt-5 border-line border-t bg-bg/90 py-3 backdrop-blur">
+					<div className="sticky bottom-0 mt-5 border-border border-t bg-background/90 py-3 backdrop-blur">
 						{submit.notice && (
 							<KernelSubmitNotice
 								notice={submit.notice}
 								onReconcile={handleReconcile}
 								disabled={submit.saving}
+								className="mb-2"
 							/>
 						)}
 						{submit.error && (
-							<p role="alert" className="mb-2 text-danger text-xs">
+							<p role="alert" className="mb-2 text-destructive text-xs">
 								{submit.error}
 							</p>
 						)}
 						<div className="flex flex-wrap items-center justify-between gap-3">
 							<div className="flex flex-col">
 								<strong className="text-sm">{actionCopy.title}</strong>
-								<span className="text-muted-fg text-xs">{actionCopy.sub}</span>
+								<span className="text-muted-foreground text-xs">
+									{actionCopy.sub}
+								</span>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<span className="font-medium text-muted-fg text-xs">
+								<span className="text-muted-foreground text-xs">
 									Trạng thái
 								</span>
 								<ChipFilter

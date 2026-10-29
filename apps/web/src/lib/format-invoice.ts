@@ -1,4 +1,5 @@
-import type { InvoiceStatus } from "./mock-data";
+import type { Invoice } from "./mock-data";
+import { fmtVND, type InvoiceStatus } from "./mock-data";
 
 /** Short human-readable invoice code (#176): the table cells showed the raw
  * UUID, which was unreadable. INV + the last 8 id chars stays scannable while
@@ -27,3 +28,29 @@ export const INVOICE_STATUS_VARIANT: Record<
 	InvoiceStatus,
 	"success" | "warn" | "danger"
 > = { paid: "success", unpaid: "warn", overdue: "danger" };
+
+/** Copy đơn nguồn của nhãn "còn Xđ" (#340) — roster (aggregate per học viên)
+ * và `invoiceRemainingLabel` (per hóa đơn) cùng gọi để ba surface không lệch
+ * prefix hay format tiền. */
+export function formatRemainingVND(amount: number): string {
+	return `còn ${fmtVND(amount)}`;
+}
+
+/** Nhãn "còn Xđ" cho MỘT hóa đơn chưa đóng đủ (#340), null khi không có gì
+ * để nói thêm: đã paid; chưa thu gì (`paidAmount <= 0` — cell Số tiền đã
+ * hiện đủ amount, thêm nhãn là thừa); hoặc remaining ≤ 0 sau clamp (overpay,
+ * ledger chưa reconcile → tránh "còn 0đ"). Clamp ở đây là double-guard có
+ * chủ ý — cơ chế load-bearing nằm ở `rosterDebtByStudent` (unit test pin
+ * riêng); với ledger hiện tại bỏ `Math.min` không đổi output nhưng hai
+ * guards tồn tại để helper đứng vững độc lập (cùng convention
+ * `tuitionTotals`, #320). */
+export function invoiceRemainingLabel(
+	invoice: Pick<Invoice, "amount" | "paidAmount" | "status">,
+): string | null {
+	if (invoice.status === "paid") return null;
+	const remaining =
+		invoice.amount - Math.min(invoice.paidAmount, invoice.amount);
+	return invoice.paidAmount > 0 && remaining > 0
+		? formatRemainingVND(remaining)
+		: null;
+}

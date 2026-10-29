@@ -1,5 +1,10 @@
 import type {
+	BillingTimelineEvent,
+	BillingTimelineResponse,
 	CreatedResponse,
+	DebtReminderResponse,
+	InvoicePaymentMethod,
+	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
 } from "@teacher-os/api/contracts";
 import {
@@ -7,31 +12,28 @@ import {
 	classCreateSchema,
 	classNotesSchema,
 	classTuitionFeeUpdateSchema,
-	deleteSyllabusSchema,
+	debtReminderCreateSchema,
 	enrollStudentSchema,
-	importSyllabusSchema,
+	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
+	invoicePaymentCreateSchema,
 	lessonActionSchema,
 	lessonEditSchema,
-	lessonRemoveSchema,
-	lessonUpsertSchema,
-	moduleRemoveSchema,
-	moduleUpsertSchema,
+	lessonStatusForAttendance,
 	occurrenceEditSchema,
-	removeCurriculumSchema,
-	reorderLessonsSchema,
-	reorderModulesSchema,
 	STUDENT_INVITATION_ERROR_CODES,
+	sessionAttendanceSaveSchema,
 	studentInviteSchema,
-	syllabusCreateSchema,
-	syllabusReplaceContentSchema,
 } from "@teacher-os/api/contracts";
 import {
 	generatePaymentCode,
 	generatePayToken,
 } from "@teacher-os/api/lib/payment-code";
-import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import {
+	isoToLessonWeekday,
+	parseStartDateStrict,
+} from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -44,42 +46,68 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import {
+	holidaySessionCancel,
+	holidaySessionShift,
+} from "@teacher-os/db/schema/organization-holiday";
+import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
-import {
+import type {
 	syllabus,
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import {
-	and,
-	asc,
-	desc,
-	eq,
-	inArray,
-	isNull,
-	lte,
-	max,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
-import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import type { AiGrader } from "../lib/ai-grading/grader";
 import type { MediaStore } from "../lib/media-store";
+import { deliverNotifications } from "../lib/notifications/deliver";
+import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import { enqueueNotifications } from "../lib/notifications/enqueue";
+import {
+	assignmentPublishedEvents,
+	classEnrolledEvent,
+	invoiceIssuedEvent,
+	scheduleChangedEvents,
+	tuitionReminderEvent,
+} from "../lib/notifications/templates";
 import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { recordManualPayment } from "../lib/payments/record-manual-payment";
+import { requireFinanceRole } from "../lib/require-finance-role";
+import {
+	buildImportBatch,
+	findSyllabus,
+	MAX_IMPORT_NODES,
+	selectTemplateTree,
+} from "../lib/syllabus-curriculum";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
+import { dailyAttendanceRoutes } from "./daily-attendance";
+import {
+	dashboardReminderRoutes,
+	resolveReminderScope,
+} from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
+import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
+import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
+import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
+import { syllabusRoutes } from "./syllabus";
+import { vocabLibraryRoutes } from "./vocab-library";
+import { vocabTeacherRoutes } from "./vocab-teacher";
 
 // Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
 // chuyển sang enrollment-activation.ts.
@@ -93,6 +121,18 @@ export function kernelRoutes(deps: {
 	getMediaStore?(): MediaStore | undefined;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
+	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
+	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
+	notificationRetryDelaysMs?: number[];
+	/** TOS-33 (#481): grader + vòng retry cho "Thử chấm lại AI" — cùng DI
+	 * nguồn buildApp với submit route. */
+	getAiGrader?(): AiGrader | undefined;
+	aiRetryDelaysMs?: number[];
+	aiGradingTimeoutMs?: number;
 }) {
 	const kernel = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
@@ -128,6 +168,10 @@ export function kernelRoutes(deps: {
 		return next();
 	});
 
+	// TOS-17 (#451): mọi route /api/invoices và /api/invoices/* đòi quyền tài chính.
+	kernel.use("/invoices", requireFinanceRole);
+	kernel.use("/invoices/*", requireFinanceRole);
+
 	function unauthorized(c: KernelContext) {
 		return c.json({ error: "unauthorized" }, 401);
 	}
@@ -141,12 +185,55 @@ export function kernelRoutes(deps: {
 		return c.json({ error: "future-session", reason: "future-session" }, 422);
 	}
 
+	/**
+	 * #454 phase 3: phát thông báo SAU khi ghi nghiệp vụ thành công, TRƯỚC
+	 * return c.json. emitNotifications tự nuốt lỗi (fail-open) nên thao tác
+	 * gốc không bao giờ vỡ vì lỗi thông báo.
+	 */
+	function notify(
+		orgId: string,
+		events: Parameters<typeof emitNotifications>[2],
+	) {
+		return emitNotifications(notificationDepsFrom(deps), orgId, events);
+	}
+
+	/** #454: studentIds có dòng lesson trong bucket (classId, date) — người nhận schedule_changed. */
+	async function bucketStudentIds(
+		db: Db,
+		classId: string,
+		dateISO: string,
+		orgId: string,
+	): Promise<string[]> {
+		const rows = await db
+			.select({ studentId: enrollment.studentId })
+			.from(lesson)
+			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
+			);
+		return [...new Set(rows.map((r) => r.studentId))];
+	}
+
 	async function readBody<S extends z.ZodType>(
 		c: KernelContext,
 		schema: S,
 	): Promise<
 		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
 	> {
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "content-type must be application/json" },
+					415,
+				),
+			};
+		}
 		let raw: unknown;
 		try {
 			raw = await c.req.json();
@@ -169,6 +256,7 @@ export function kernelRoutes(deps: {
 		const [row] = await db
 			.select({
 				id: classTable.id,
+				name: classTable.name,
 				schedule: classTable.schedule,
 				sessionsTotal: classTable.sessionsTotal,
 				startDate: classTable.startDate,
@@ -179,151 +267,6 @@ export function kernelRoutes(deps: {
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		return row;
-	}
-
-	/** Full row — import needs classId (template check) + metadata to copy. */
-	async function findSyllabus(db: Db, syllabusId: string, orgId: string) {
-		const [row] = await db
-			.select()
-			.from(syllabus)
-			.where(and(eq(syllabus.id, syllabusId), eq(syllabus.orgId, orgId)));
-		return row;
-	}
-
-	/** Module must belong to the given syllabus AND the org — client ids are never trusted. */
-	async function findModule(
-		db: Db,
-		moduleId: string,
-		syllabusId: string,
-		orgId: string,
-	) {
-		const [row] = await db
-			.select({ id: syllabusModule.id })
-			.from(syllabusModule)
-			.where(
-				and(
-					eq(syllabusModule.id, moduleId),
-					eq(syllabusModule.syllabusId, syllabusId),
-					eq(syllabusModule.orgId, orgId),
-				),
-			);
-		return row;
-	}
-
-	function hasDuplicateIds(ids: string[]): boolean {
-		return new Set(ids).size !== ids.length;
-	}
-
-	function sameIdSet(payload: string[], dbIds: string[]): boolean {
-		if (payload.length !== dbIds.length) return false;
-		const dbSet = new Set(dbIds);
-		return payload.every((id) => dbSet.has(id));
-	}
-
-	/** Import size guard: modules + lessons above this would brick one D1 batch. */
-	const MAX_IMPORT_NODES = 500;
-
-	/**
-	 * Deep-copy batch of a template tree into a class copy (issue #79).
-	 * All ids are generated before the batch so the copy is wired with fresh
-	 * UUIDs; every lesson status resets to `upcoming` (status is per-class
-	 * progress, not template content); positions are preserved. Callers own
-	 * the org + template checks and the class pointer statement.
-	 */
-	function buildImportBatch(
-		db: Db,
-		input: {
-			template: typeof syllabus.$inferSelect;
-			modules: (typeof syllabusModule.$inferSelect)[];
-			lessons: (typeof syllabusLesson.$inferSelect)[];
-			classId: string;
-			orgId: string;
-		},
-	): {
-		copyId: string;
-		statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
-	} {
-		const { template, classId, orgId } = input;
-		const copyId = crypto.randomUUID();
-		const moduleIds = new Map(
-			input.modules.map((m) => [m.id, crypto.randomUUID()]),
-		);
-		const lessonIds = new Map(
-			input.lessons.map((l) => [l.id, crypto.randomUUID()]),
-		);
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.insert(syllabus).values({
-				id: copyId,
-				orgId,
-				name: template.name,
-				level: template.level,
-				type: template.type,
-				skills: template.skills,
-				description: template.description,
-				totalLessons: template.totalLessons,
-				createdAt: template.createdAt,
-				classId,
-				sourceTemplateId: template.id,
-			}),
-			...input.modules.map((m) =>
-				db.insert(syllabusModule).values({
-					id: moduleIds.get(m.id) as string,
-					orgId,
-					syllabusId: copyId,
-					title: m.title,
-					description: m.description,
-					position: m.position,
-					createdAt: m.createdAt,
-				}),
-			),
-			...input.lessons.map((l) =>
-				db.insert(syllabusLesson).values({
-					id: lessonIds.get(l.id) as string,
-					orgId,
-					moduleId: moduleIds.get(l.moduleId) as string,
-					title: l.title,
-					objectives: l.objectives,
-					materials: l.materials,
-					// kind là nội dung giáo trình — copy giữ nguyên (status
-					// là tiến độ per-lớp, reset upcoming ở dưới).
-					kind: l.kind,
-					status: "upcoming",
-					position: l.position,
-					createdAt: l.createdAt,
-				}),
-			),
-		];
-		return { copyId, statements };
-	}
-
-	/** Pre-read of a template's module/lesson tree, ordered by position. */
-	async function selectTemplateTree(db: Db, templateId: string, orgId: string) {
-		const modules = await db
-			.select()
-			.from(syllabusModule)
-			.where(
-				and(
-					eq(syllabusModule.syllabusId, templateId),
-					eq(syllabusModule.orgId, orgId),
-				),
-			)
-			.orderBy(asc(syllabusModule.position));
-		const lessons = modules.length
-			? await db
-					.select()
-					.from(syllabusLesson)
-					.where(
-						and(
-							eq(syllabusLesson.orgId, orgId),
-							inArray(
-								syllabusLesson.moduleId,
-								modules.map((m) => m.id),
-							),
-						),
-					)
-					.orderBy(asc(syllabusLesson.position))
-			: [];
-		return { modules, lessons };
 	}
 
 	/**
@@ -339,6 +282,7 @@ export function kernelRoutes(deps: {
 				id: lesson.id,
 				status: lesson.status,
 				classId: lesson.classId,
+				studentId: enrollment.studentId,
 				enrollmentClassId: enrollment.classId,
 				day: lesson.day,
 				time: lesson.time,
@@ -356,7 +300,9 @@ export function kernelRoutes(deps: {
 	kernel.get("/kernel", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		return c.json(await loadSnapshot(deps.getDb(), ctx.orgId));
+		return c.json(
+			await loadSnapshot(deps.getDb(), ctx.orgId, { role: ctx.role }),
+		);
 	});
 
 	kernel.get("/students", async (c) => {
@@ -533,6 +479,13 @@ export function kernelRoutes(deps: {
 			studentId: input.studentId,
 			status: "invited",
 		});
+		await notify(ctx.orgId, [
+			classEnrolledEvent({
+				enrollmentId,
+				studentId: input.studentId,
+				className: cls.name,
+			}),
+		]);
 		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
 	});
 
@@ -689,6 +642,15 @@ export function kernelRoutes(deps: {
 			),
 		];
 		await db.batch(statements);
+		await notify(
+			ctx.orgId,
+			assignmentPublishedEvents({
+				classAssignmentId: assignmentId,
+				title: prompt.title,
+				due: input.due,
+				studentIds: input.studentIds,
+			}),
+		);
 		return c.json({ id: assignmentId } satisfies CreatedResponse, 201);
 	});
 
@@ -768,144 +730,6 @@ export function kernelRoutes(deps: {
 		return c.json({ id: classId } satisfies CreatedResponse, 201);
 	});
 
-	kernel.post("/classes/:id/import-syllabus", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, importSyllabusSchema);
-		if (!body.ok) return body.response;
-		const db = deps.getDb();
-		const classId = c.req.param("id");
-
-		const cls = await findClass(db, classId, ctx.orgId);
-		if (!cls) {
-			return c.json({ error: "class not found" }, 404);
-		}
-		// Deterministic duplicate check — never parse SQLite error strings.
-		if (cls.syllabusId !== null) {
-			return c.json({ error: "Lớp đã có giáo trình" }, 409);
-		}
-
-		const tpl = await findSyllabus(db, body.data.templateId, ctx.orgId);
-		if (!tpl || tpl.classId !== null) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-		const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
-		if (tree.modules.length + tree.lessons.length > MAX_IMPORT_NODES) {
-			return c.json({ error: "Template quá lớn để import" }, 422);
-		}
-
-		const { copyId, statements } = buildImportBatch(db, {
-			template: tpl,
-			...tree,
-			classId,
-			orgId: ctx.orgId,
-		});
-		statements.push(
-			db
-				.update(classTable)
-				.set({ syllabusId: copyId })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				),
-		);
-		try {
-			await db.batch(statements);
-		} catch {
-			// Unique index race backstop: only a concurrent import surfaces
-			// here as a set pointer — re-check instead of swallowing real
-			// errors into a 409.
-			const after = await findClass(db, classId, ctx.orgId);
-			if (after?.syllabusId != null) {
-				return c.json({ error: "Lớp đã có giáo trình" }, 409);
-			}
-			throw new Error("import-syllabus batch failed");
-		}
-		return c.json({ id: copyId } satisfies CreatedResponse, 201);
-	});
-
-	kernel.post("/classes/:id/remove-curriculum", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, removeCurriculumSchema);
-		if (!body.ok) return body.response;
-		const db = deps.getDb();
-		const classId = c.req.param("id");
-
-		const cls = await findClass(db, classId, ctx.orgId);
-		if (!cls) {
-			return c.json({ error: "class not found" }, 404);
-		}
-		// Pointer empty → nothing to remove (idempotent no-op).
-		if (cls.syllabusId === null) {
-			return c.json({ ok: true });
-		}
-		// Org + ownership guard: the pointed row must be THIS class's copy.
-		// A template pointer (class_id NULL) or a foreign anomaly is refused —
-		// templates are never deleted through this endpoint.
-		const [copy] = await db
-			.select({ id: syllabus.id })
-			.from(syllabus)
-			.where(
-				and(
-					eq(syllabus.id, cls.syllabusId),
-					eq(syllabus.classId, classId),
-					eq(syllabus.orgId, ctx.orgId),
-				),
-			);
-		if (!copy) {
-			// Legacy anomaly: the pointer targets a template, a foreign-org
-			// row, or a deleted row. Cleanup = null this class's pointer only;
-			// the pointed row (templates included) is never deleted here.
-			await db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				);
-			return c.json({ ok: true });
-		}
-
-		// FK order (NO ACTION): null the pointer FIRST, then delete
-		// child-first (lessons → modules → syllabus), every DELETE org-scoped.
-		await db.batch([
-			db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
-				),
-			db.delete(syllabusLesson).where(
-				and(
-					eq(syllabusLesson.orgId, ctx.orgId),
-					inArray(
-						syllabusLesson.moduleId,
-						db
-							.select({ id: syllabusModule.id })
-							.from(syllabusModule)
-							.where(
-								and(
-									eq(syllabusModule.syllabusId, copy.id),
-									eq(syllabusModule.orgId, ctx.orgId),
-								),
-							),
-					),
-				),
-			),
-			db
-				.delete(syllabusModule)
-				.where(
-					and(
-						eq(syllabusModule.syllabusId, copy.id),
-						eq(syllabusModule.orgId, ctx.orgId),
-					),
-				),
-			db
-				.delete(syllabus)
-				.where(and(eq(syllabus.id, copy.id), eq(syllabus.orgId, ctx.orgId))),
-		]);
-		return c.json({ ok: true });
-	});
-
 	kernel.post("/classes/:id/notes", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -948,10 +772,46 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
-	/** yyyy-mm-dd (UTC-anchored) → lesson weekday 1-7, Monday = 1. */
-	function isoToLessonWeekday(iso: string): number {
-		const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
-		return weekday === 0 ? 7 : weekday;
+	// isoToLessonWeekday sống ở @teacher-os/api/skeleton (TOS-11 M5) — route
+	// holidays và activation cùng dùng một nguồn, không giữ bản mirror.
+
+	/**
+	 * C2 (TOS-11): nhóm buổi có dòng `holiday` bị khóa sửa/dời — bảng
+	 * `holiday_session_shift` là nguồn sự thật cho cặp gốc→bù; moveDate nhóm
+	 * này làm `originalDate`/`makeupDate` lệch, vỡ nhãn "Đã dời sang" và D6.
+	 */
+	async function holidayBucketLocked(
+		db: Db,
+		orgId: string,
+		classId: string,
+		dateISO: string,
+	): Promise<boolean> {
+		const [holidayRows, cancelRows] = await Promise.all([
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, dateISO),
+						eq(lesson.status, "holiday"),
+					),
+				)
+				.limit(1),
+			db
+				.select({ id: holidaySessionCancel.id })
+				.from(holidaySessionCancel)
+				.where(
+					and(
+						eq(holidaySessionCancel.orgId, orgId),
+						eq(holidaySessionCancel.classId, classId),
+						eq(holidaySessionCancel.date, dateISO),
+					),
+				)
+				.limit(1),
+		]);
+		return holidayRows.length > 0 || cancelRows.length > 0;
 	}
 
 	function invalidDateResponse(c: KernelContext) {
@@ -1021,6 +881,8 @@ export function kernelRoutes(deps: {
 							.from(enrollment)
 							.where(eq(enrollment.classId, classId)),
 					),
+					// C2 (TOS-11): dòng `holiday` không bao giờ bị ghi đè qua occurrenceUpdate.
+					ne(lesson.status, "holiday"),
 					...(statusFilter ? [eq(lesson.status, "upcoming" as const)] : []),
 				),
 			)
@@ -1083,6 +945,18 @@ export function kernelRoutes(deps: {
 		if (updated.length === 0) {
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
+		// #454 phase 3: hủy buổi học là thay đổi lịch thật sự — phát cho học
+		// viên của dòng lesson. Check-in (completed) không phát.
+		if (nextStatus === "cancelled") {
+			await notify(ctx.orgId, [
+				...scheduleChangedEvents({
+					classId: row.classId,
+					date: row.date ?? "",
+					editedAtMs: Date.now(),
+					studentIds: [row.studentId],
+				}),
+			]);
+		}
 		return c.json({ ok: true });
 	}
 
@@ -1135,6 +1009,13 @@ export function kernelRoutes(deps: {
 					409,
 				);
 			}
+			// C2 (TOS-11): bucket có dòng `holiday` bị khóa sửa.
+			if (await holidayBucketLocked(db, ctx.orgId, pre.classId, pre.date)) {
+				return c.json(
+					{ error: "holiday occurrence is locked", reason: "holiday-locked" },
+					409,
+				);
+			}
 			await occurrenceUpdate(
 				db,
 				pre.classId,
@@ -1149,6 +1030,25 @@ export function kernelRoutes(deps: {
 				},
 				false,
 			);
+			// #454: phát khi giờ học THỰC SỰ đổi — người nhận là mọi học viên
+			// có dòng lesson trong bucket (occurrence edit áp cả bucket).
+			if (body.data.time !== pre.time) {
+				const studentIds = await bucketStudentIds(
+					db,
+					pre.classId,
+					pre.date,
+					ctx.orgId,
+				);
+				await notify(
+					ctx.orgId,
+					scheduleChangedEvents({
+						classId: pre.classId,
+						date: pre.date,
+						editedAtMs: Date.now(),
+						studentIds,
+					}),
+				);
+			}
 			return c.json({ ok: true });
 		}
 
@@ -1180,6 +1080,18 @@ export function kernelRoutes(deps: {
 			.returning({ id: lesson.id });
 		if (updated.length === 0) {
 			return c.json({ error: "lesson changed or is not upcoming" }, 409);
+		}
+		// #454: lesson không ngày — phát cho đúng học viên của dòng khi giờ đổi.
+		if (body.data.time !== pre.time) {
+			await notify(
+				ctx.orgId,
+				scheduleChangedEvents({
+					classId: pre.classId,
+					date: "",
+					editedAtMs: Date.now(),
+					studentIds: [pre.studentId],
+				}),
+			);
 		}
 		return c.json({ ok: true });
 	});
@@ -1260,15 +1172,79 @@ export function kernelRoutes(deps: {
 				404,
 			);
 		}
-		try {
-			const rows = await occurrenceUpdate(
-				db,
-				classId,
-				dateISO,
-				ctx.orgId,
-				set,
-				false,
+		// #454: chụp người nhận + miền so sánh TRƯỚC khi ghi để chỉ phát
+		// schedule_changed khi lịch THỰC SỰ đổi (dời ngày hoặc đổi giờ).
+		const notifyStudentIds = await bucketStudentIds(
+			db,
+			classId,
+			dateISO,
+			ctx.orgId,
+		);
+		const beforeTimes = await db
+			.select({ time: lesson.time })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
 			);
+		const moved = moveDateISO !== null && moveDateISO !== dateISO;
+		const timeChanged =
+			body.data.time !== undefined &&
+			beforeTimes.some((r) => r.time !== body.data.time);
+		// C2 (TOS-11): bucket có dòng `holiday` bị khóa sửa/dời — nhãn "Đã dời
+		// sang" và D6 đọc `holiday_session_shift` theo ngày gốc/ngày bù.
+		// Đặt sau phần chụp (chỉ đọc) — khóa thì 409, không phát thông báo.
+		if (await holidayBucketLocked(db, ctx.orgId, classId, dateISO)) {
+			return c.json(
+				{ error: "holiday occurrence is locked", reason: "holiday-locked" },
+				409,
+			);
+		}
+		try {
+			let rows: Array<{ id: string }>;
+			if (moveDateISO && moveDateISO !== dateISO) {
+				// C2: dời lesson và kéo `holiday_session_shift.makeupDate` trong
+				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
+				try {
+					const [updatedRows] = await db.batch([
+						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
+						db
+							.update(holidaySessionShift)
+							.set({ makeupDate: moveDateISO })
+							.where(
+								and(
+									eq(holidaySessionShift.orgId, ctx.orgId),
+									eq(holidaySessionShift.classId, classId),
+									eq(holidaySessionShift.makeupDate, dateISO),
+								),
+							),
+					]);
+					rows = updatedRows;
+				} catch (shiftCause) {
+					if (isRollbackableConstraintError(shiftCause)) {
+						return c.json(
+							{
+								error: "destination date occupied",
+								reason: "date-occupied",
+							},
+							409,
+						);
+					}
+					throw shiftCause;
+				}
+			} else {
+				rows = await occurrenceUpdate(
+					db,
+					classId,
+					dateISO,
+					ctx.orgId,
+					set,
+					false,
+				);
+			}
 			// Unique-index race backstop (never parse SQLite error strings —
 			// re-check state instead): if the destination shows occupancy now,
 			// a concurrent move won and this write lost cleanly.
@@ -1280,6 +1256,17 @@ export function kernelRoutes(deps: {
 						409,
 					);
 				}
+			}
+			if (moved || timeChanged) {
+				await notify(
+					ctx.orgId,
+					scheduleChangedEvents({
+						classId,
+						date: dateISO,
+						editedAtMs: Date.now(),
+						studentIds: notifyStudentIds,
+					}),
+				);
 			}
 			return c.json({
 				updated: rows.length,
@@ -1318,6 +1305,11 @@ export function kernelRoutes(deps: {
 		if (nextStatus === "completed" && dateISO > vietnamTodayISO()) {
 			return futureSession(c);
 		}
+		// #454: chụp người nhận trước khi hủy ghi đè trạng thái bucket.
+		const notifyStudentIds =
+			nextStatus === "cancelled"
+				? await bucketStudentIds(db, classId, dateISO, orgId)
+				: [];
 		const rows = await occurrenceUpdate(
 			db,
 			classId,
@@ -1326,6 +1318,19 @@ export function kernelRoutes(deps: {
 			{ status: nextStatus },
 			true,
 		);
+		// #454: hủy buổi học là thay đổi lịch thật sự — chỉ phát khi có dòng
+		// bị hủy (replay trên bucket đã hủy không phát lại).
+		if (nextStatus === "cancelled" && rows.length > 0) {
+			await notify(
+				orgId,
+				scheduleChangedEvents({
+					classId,
+					date: dateISO,
+					editedAtMs: Date.now(),
+					studentIds: notifyStudentIds,
+				}),
+			);
+		}
 		// Skipped = bucket rows this action did NOT touch — i.e. the ones
 		// already settled. Advisory number, not transactional truth (RT5).
 		return c.json({
@@ -1374,7 +1379,140 @@ export function kernelRoutes(deps: {
 		);
 	});
 
-	// Issue #60 — creation is non-idempotent, consistent with POST /syllabi.
+	kernel.put("/classes/:id/sessions/:date/attendance", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+		const body = await readBody(c, sessionAttendanceSaveSchema);
+		if (!body.ok) return body.response;
+
+		const scope = resolveReminderScope();
+		if (scope.kind === "assigned" && !scope.classIds.includes(classId)) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+
+		const today = vietnamTodayISO();
+		if (dateISO > today) {
+			return futureSession(c);
+		}
+
+		const rosterRows = await db
+			.select({ id: lesson.id })
+			.from(lesson)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(lesson.enrollmentId, enrollment.id),
+					eq(enrollment.classId, lesson.classId),
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.where(
+				and(
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+					// TOS-11: buổi `holiday` (Nghỉ lễ — Đã dời lịch) không diễn ra,
+					// không nằm trong roster điểm danh.
+					ne(lesson.status, "cancelled"),
+					ne(lesson.status, "holiday"),
+				),
+			);
+		if (rosterRows.length === 0) {
+			return c.json(
+				{ error: "occurrence not found", reason: "not-found" },
+				404,
+			);
+		}
+
+		const { entries } = body.data;
+		const rosterIdSet = new Set(rosterRows.map((r) => r.id));
+		const sentIdSet = new Set(entries.map((e) => e.lessonId));
+
+		for (const sentId of sentIdSet) {
+			if (!rosterIdSet.has(sentId)) {
+				return c.json(
+					{ error: "unknown lesson", reason: "unknown-lesson" },
+					422,
+				);
+			}
+		}
+
+		const missing = rosterRows
+			.map((r) => r.id)
+			.filter((id) => !sentIdSet.has(id));
+		if (missing.length > 0) {
+			return c.json(
+				{
+					error: "incomplete roster",
+					reason: "incomplete-roster",
+					missing,
+				},
+				422,
+			);
+		}
+
+		// D1 không có .transaction() tương tác; ghi bằng một db.batch nguyên tử
+		// kèm roster-snapshot guard trong WHERE. Nếu roster đổi giữa lúc đọc và
+		// ghi (ví dụ kích hoạt enrollment muộn thêm dòng upcoming), guard count
+		// lệch cho mọi câu lệnh -> toàn batch cập nhật 0 dòng -> trả 409.
+		const rosterCountGuard = sql`(SELECT count(*) FROM ${lesson} INNER JOIN ${enrollment} ON ${lesson.enrollmentId} = ${enrollment.id} AND ${enrollment.classId} = ${lesson.classId} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${dateISO} AND ${lesson.status} != 'cancelled' AND ${lesson.status} != 'holiday' AND ${enrollment.status} = 'active') = ${entries.length}`;
+
+		const statements = entries.map((entry) =>
+			db
+				.update(lesson)
+				.set({
+					status: lessonStatusForAttendance(entry.attendance),
+					attendance: entry.attendance,
+					attendanceNote: entry.note,
+				})
+				.where(
+					and(
+						eq(lesson.id, entry.lessonId),
+						eq(lesson.orgId, ctx.orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, dateISO),
+						ne(lesson.status, "cancelled"),
+						// TOS-11: dòng `holiday` không bao giờ nhận điểm danh.
+						ne(lesson.status, "holiday"),
+						lte(lesson.date, today),
+						inArray(
+							lesson.enrollmentId,
+							db
+								.select({ id: enrollment.id })
+								.from(enrollment)
+								.where(
+									and(
+										eq(enrollment.classId, classId),
+										eq(enrollment.orgId, ctx.orgId),
+										eq(enrollment.status, "active"),
+									),
+								),
+						),
+						rosterCountGuard,
+					),
+				)
+				.returning({ id: lesson.id }),
+		);
+		const [first, ...rest] = statements;
+		if (!first) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const results = await db.batch([first, ...rest]);
+		const updated = results.reduce((acc, rows) => acc + rows.length, 0);
+		if (updated !== entries.length) {
+			return c.json({ error: "roster changed", reason: "roster-changed" }, 409);
+		}
+
+		return c.json({ updated, recorded: true });
+	});
+
+	// Issue #60 — creation is non-idempotent, consistent with POST /api/syllabus-templates.
 	kernel.post("/invoices", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -1434,6 +1572,14 @@ export function kernelRoutes(deps: {
 			paymentCode: generatePaymentCode(),
 			payToken: generatePayToken(),
 		});
+		await notify(ctx.orgId, [
+			invoiceIssuedEvent({
+				id: invoiceId,
+				studentId: enrollmentRow.studentId,
+				amount: input.amount,
+				due,
+			}),
+		]);
 		return c.json({ id: invoiceId } satisfies CreatedResponse, 201);
 	});
 
@@ -1457,6 +1603,66 @@ export function kernelRoutes(deps: {
 			return c.json({ error: "invoice not found" }, 404);
 		}
 		return c.json({ ok: true });
+	});
+
+	// #450: manual tuition receipt (partial or full) recorded from the debts
+	// screen. One matched `payment_transaction` row (provider "manual") plus
+	// recompute in a single atomic batch — same ledger source of truth as the
+	// QR flow. Idempotent on the dialog's clientRequestId; the overpay /
+	// already-paid guards live inside the INSERT…SELECT.
+	kernel.post("/invoices/:id/payments", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, invoicePaymentCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const invoiceId = c.req.param("id");
+		const [inv] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.orgId, ctx.orgId)));
+		// Tenant predicate makes unknown and foreign ids indistinguishable.
+		if (!inv) return c.json({ error: "invoice not found" }, 404);
+		const outcome = await recordManualPayment(db, {
+			orgId: ctx.orgId,
+			invoiceId,
+			userId: ctx.userId,
+			clientRequestId: body.data.clientRequestId,
+			amount: body.data.amount,
+			method: body.data.method,
+			note: body.data.note,
+		});
+		switch (outcome.kind) {
+			case "created":
+				return c.json(
+					{
+						id: outcome.id,
+						paidAmount: outcome.paidAmount,
+						remaining: outcome.remaining,
+						status: outcome.status,
+					},
+					201,
+				);
+			case "replayed":
+				return c.json({
+					id: outcome.id,
+					paidAmount: outcome.paidAmount,
+					remaining: outcome.remaining,
+					status: outcome.status,
+				});
+			case "key-conflict":
+				return c.json({ error: "client-request-id-conflict" }, 409);
+			case "settled":
+				return c.json({ error: "invoice-settled" }, 422);
+			case "exceeds":
+				return c.json(
+					{
+						error: "amount-exceeds-debt",
+						remaining: outcome.remaining,
+					},
+					422,
+				);
+		}
 	});
 
 	// #320: rotate the public pay token (old links die — the modal confirms).
@@ -1486,578 +1692,277 @@ export function kernelRoutes(deps: {
 		return c.json({ ...instructions, payToken: row.payToken });
 	});
 
-	kernel.get("/syllabi", async (c) => {
+	// #345: matched bank transactions for one invoice (teacher detail page,
+	// org-scoped; raw/provider payloads stay server-side per #320 retention).
+	kernel.get("/invoices/:id/transactions", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const snapshot = await loadSnapshot(deps.getDb(), ctx.orgId);
-		return c.json(snapshot.syllabi);
+		const db = deps.getDb();
+		const invoiceId = c.req.param("id");
+		const [inv] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.orgId, ctx.orgId)));
+		if (!inv) return c.json({ error: "invoice not found" }, 404);
+		const rows = await db
+			.select()
+			.from(paymentTransaction)
+			.where(
+				and(
+					eq(paymentTransaction.orgId, ctx.orgId),
+					eq(paymentTransaction.invoiceId, invoiceId),
+					eq(paymentTransaction.matchStatus, "matched"),
+				),
+			)
+			.orderBy(desc(paymentTransaction.createdAt), desc(paymentTransaction.id))
+			.limit(100);
+		return c.json(
+			rows.map((tx) => ({
+				id: tx.id,
+				amount: tx.amount,
+				content: tx.content,
+				referenceCode: tx.referenceCode,
+				transactionDate: tx.transactionDate,
+				createdAt: tx.createdAt.toISOString(),
+				// Display label only — the provider enum stays server-side
+				// (display-fields-only DTO, #345 invariant).
+				method:
+					tx.provider === "manual"
+						? (INVOICE_PAYMENT_METHOD_LABEL[
+								tx.method as InvoicePaymentMethod
+							] ?? "")
+						: "",
+			})) satisfies InvoiceTransactionItem[],
+		);
 	});
 
-	kernel.post(
-		"/syllabi",
-		async (c, next) => {
-			if (!c.get("kernelCtx")) return unauthorized(c);
-			return next();
+	// TOS-18 (#452): dòng thời gian hóa đơn & giao dịch theo học viên trên Sổ
+	// công nợ (/debts). Gắn requireFinanceRole tường minh (route dưới /students/*
+	// không thuộc prefix /invoices*); không trả raw/provider/content gốc của
+	// bank-hub để giữ PII retention (#320).
+	kernel.get(
+		"/students/:id/billing-timeline",
+		requireFinanceRole,
+		async (c) => {
+			const ctx = c.get("kernelCtx");
+			if (!ctx) return unauthorized(c);
+			const db = deps.getDb();
+			const studentId = c.req.param("id") ?? "";
+			const [stu] = await db
+				.select({ id: student.id })
+				.from(student)
+				.where(and(eq(student.id, studentId), eq(student.orgId, ctx.orgId)));
+			if (!stu) return c.json({ error: "student not found" }, 404);
+
+			const [invoiceRows, txRows] = await Promise.all([
+				db
+					.select({
+						id: invoice.id,
+						type: invoice.type,
+						amount: invoice.amount,
+						due: invoice.due,
+						status: invoice.status,
+						createdAt: invoice.createdAt,
+					})
+					.from(invoice)
+					.where(
+						and(eq(invoice.orgId, ctx.orgId), eq(invoice.studentId, studentId)),
+					)
+					.orderBy(desc(invoice.createdAt), desc(invoice.id))
+					.limit(200),
+				db
+					.select({
+						id: paymentTransaction.id,
+						invoiceId: paymentTransaction.invoiceId,
+						amount: paymentTransaction.amount,
+						provider: paymentTransaction.provider,
+						method: paymentTransaction.method,
+						content: paymentTransaction.content,
+						createdAt: paymentTransaction.createdAt,
+					})
+					.from(paymentTransaction)
+					.innerJoin(invoice, eq(paymentTransaction.invoiceId, invoice.id))
+					.where(
+						and(
+							eq(paymentTransaction.orgId, ctx.orgId),
+							eq(paymentTransaction.matchStatus, "matched"),
+							eq(invoice.orgId, ctx.orgId),
+							eq(invoice.studentId, studentId),
+						),
+					)
+					.orderBy(
+						desc(paymentTransaction.createdAt),
+						desc(paymentTransaction.id),
+					)
+					.limit(200),
+			]);
+
+			const fmtCode = (id: string) => `INV-${id.slice(-8).toUpperCase()}`;
+			const entries: Array<{
+				event: BillingTimelineEvent;
+				ts: number;
+				tieKey: string;
+			}> = [];
+
+			for (const inv of invoiceRows) {
+				entries.push({
+					ts: inv.createdAt.getTime(),
+					tieKey: inv.id,
+					event: {
+						kind: "invoice_issued",
+						at: inv.createdAt.toISOString(),
+						invoiceId: inv.id,
+						code: fmtCode(inv.id),
+						type: inv.type.trim() || "Khác",
+						amount: inv.amount,
+						due: inv.due,
+						status: inv.status === "paid" ? "paid" : "unpaid",
+					},
+				});
+			}
+
+			for (const tx of txRows) {
+				const invId = tx.invoiceId ?? "";
+				const isManual = tx.provider === "manual";
+				entries.push({
+					ts: tx.createdAt.getTime(),
+					tieKey: tx.id,
+					event: {
+						kind: "payment",
+						id: tx.id,
+						at: tx.createdAt.toISOString(),
+						invoiceId: invId,
+						code: fmtCode(invId),
+						amount: tx.amount,
+						source: isManual ? "manual" : "bank_hub",
+						method: isManual
+							? (INVOICE_PAYMENT_METHOD_LABEL[
+									tx.method as InvoicePaymentMethod
+								] ?? "Khác")
+							: "",
+						note: isManual ? tx.content : "",
+					},
+				});
+			}
+
+			entries.sort((a, b) => {
+				if (b.ts !== a.ts) return b.ts - a.ts;
+				if (a.event.kind !== b.event.kind) {
+					return a.event.kind === "payment" ? -1 : 1;
+				}
+				return b.tieKey.localeCompare(a.tieKey);
+			});
+
+			return c.json({
+				events: entries.map((e) => e.event),
+			} satisfies BillingTimelineResponse);
 		},
-		bodyLimit({
-			maxSize: 2 * 1024 * 1024,
-			onError: (c) =>
-				c.json({ error: "Dữ liệu syllabus vượt giới hạn 2 MiB." }, 413),
-		}),
 	);
 
-	kernel.post("/syllabi", async (c) => {
+	// TOS-18 (#452): gửi nhắc học phí hàng loạt cho học viên đang nợ qua hàng
+	// đợi thông báo Email + In-app của TOS-21 (#454). Gọi trực tiếp
+	// enqueueNotifications + deliverNotifications để trả đúng { queued, skipped }
+	// theo đơn vị hóa đơn còn nợ và không nuốt lỗi DB.
+	kernel.post("/debt-reminders", requireFinanceRole, async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, syllabusCreateSchema);
+		const body = await readBody(c, debtReminderCreateSchema);
 		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
 
-		const syllabusId = crypto.randomUUID();
-		// One atomic batch: syllabus + imported modules/lessons (issue #144).
-		// Tuple type is required by db.batch (drizzle); same shape as
-		// buildImportBatch (issue #79).
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.insert(syllabus).values({
-				id: syllabusId,
-				orgId: ctx.orgId,
-				name: input.name,
-				level: input.level,
-				type: input.type,
-				skills: JSON.stringify(input.skills),
-				description: input.description,
-				totalLessons: input.totalLessons,
-			}),
-		];
-		for (const [mi, m] of (input.modules ?? []).entries()) {
-			const moduleId = crypto.randomUUID();
-			statements.push(
-				db.insert(syllabusModule).values({
-					id: moduleId,
-					orgId: ctx.orgId,
-					syllabusId,
-					title: m.title,
-					description: m.description,
-					position: mi,
-				}),
+		const db = deps.getDb();
+		const { studentIds, classId } = body.data;
+		const D1_CHUNK = 50;
+		const openInvoices: Array<{
+			id: string;
+			studentId: string;
+			amount: number;
+			paidAmount: number;
+			due: string;
+		}> = [];
+
+		for (let i = 0; i < studentIds.length; i += D1_CHUNK) {
+			const chunk = studentIds.slice(i, i + D1_CHUNK);
+			const baseWhere = and(
+				eq(invoice.orgId, ctx.orgId),
+				inArray(invoice.studentId, chunk),
+				ne(invoice.status, "paid"),
+				sql`${invoice.paidAmount} < ${invoice.amount}`,
 			);
-			for (const [li, l] of m.lessons.entries()) {
-				statements.push(
-					db.insert(syllabusLesson).values({
-						id: crypto.randomUUID(),
-						orgId: ctx.orgId,
-						moduleId,
-						title: l.title,
-						objectives: l.objectives,
-						materials: l.materials,
-						kind: l.kind,
-						status: l.status,
-						position: li,
-					}),
-				);
-			}
-		}
-		await db.batch(statements);
-		return c.json({ id: syllabusId } satisfies CreatedResponse, 201);
-	});
-
-	// Replace toàn bộ cây module/lesson của một syllabus (import ghi đè ở màn
-	// hình detail, issue #152). Delete explicit qua subquery — không dựa FK
-	// cascade (same rule as module-remove). One atomic batch.
-	kernel.post("/syllabi/:id/replace-content", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, syllabusReplaceContentSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-		const id = c.req.param("id");
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) return c.json({ error: "syllabus not found" }, 404);
-		const lessonCount = input.modules.reduce(
-			(sum, m) => sum + m.lessons.length,
-			0,
-		);
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.delete(syllabusLesson).where(
-				and(
-					eq(syllabusLesson.orgId, ctx.orgId),
-					inArray(
-						syllabusLesson.moduleId,
-						db
-							.select({ id: syllabusModule.id })
-							.from(syllabusModule)
-							.where(
-								and(
-									eq(syllabusModule.syllabusId, id),
-									eq(syllabusModule.orgId, ctx.orgId),
-								),
+			const rows = classId
+				? await db
+						.select({
+							id: invoice.id,
+							studentId: invoice.studentId,
+							amount: invoice.amount,
+							paidAmount: invoice.paidAmount,
+							due: invoice.due,
+						})
+						.from(invoice)
+						.innerJoin(
+							enrollment,
+							and(
+								eq(enrollment.id, invoice.enrollmentId),
+								eq(enrollment.orgId, ctx.orgId),
+								eq(enrollment.classId, classId),
 							),
-					),
-				),
+						)
+						.where(baseWhere)
+				: await db
+						.select({
+							id: invoice.id,
+							studentId: invoice.studentId,
+							amount: invoice.amount,
+							paidAmount: invoice.paidAmount,
+							due: invoice.due,
+						})
+						.from(invoice)
+						.where(baseWhere);
+			openInvoices.push(...rows);
+		}
+
+		const vnToday = vietnamTodayISO();
+		const events = openInvoices.map((inv) =>
+			tuitionReminderEvent(
+				{
+					id: inv.id,
+					studentId: inv.studentId,
+					amount: inv.amount - Math.min(inv.paidAmount, inv.amount),
+					due: inv.due,
+				},
+				vnToday,
 			),
-			db
-				.delete(syllabusModule)
-				.where(
-					and(
-						eq(syllabusModule.syllabusId, id),
-						eq(syllabusModule.orgId, ctx.orgId),
-					),
-				),
-			db
-				.update(syllabus)
-				.set({ totalLessons: lessonCount })
-				.where(and(eq(syllabus.id, id), eq(syllabus.orgId, ctx.orgId))),
-		];
-		for (const [mi, m] of input.modules.entries()) {
-			const moduleId = crypto.randomUUID();
-			statements.push(
-				db.insert(syllabusModule).values({
-					id: moduleId,
-					orgId: ctx.orgId,
-					syllabusId: id,
-					title: m.title,
-					description: m.description,
-					position: mi,
-				}),
-			);
-			for (const [li, l] of m.lessons.entries()) {
-				statements.push(
-					db.insert(syllabusLesson).values({
-						id: crypto.randomUUID(),
-						orgId: ctx.orgId,
-						moduleId,
-						title: l.title,
-						objectives: l.objectives,
-						materials: l.materials,
-						kind: l.kind,
-						status: l.status,
-						position: li,
-					}),
-				);
-			}
-		}
-		await db.batch(statements);
-		return c.json({ ok: true });
-	});
-
-	kernel.post("/syllabi/:id/modules", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, moduleUpsertSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-		const syllabusId = c.req.param("id");
-
-		const sy = await findSyllabus(db, syllabusId, ctx.orgId);
-		if (!sy) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-
-		const [last] = await db
-			.select({ max: max(syllabusModule.position) })
-			.from(syllabusModule)
-			.where(
-				and(
-					eq(syllabusModule.syllabusId, syllabusId),
-					eq(syllabusModule.orgId, ctx.orgId),
-				),
-			);
-
-		const moduleId = crypto.randomUUID();
-		await db.insert(syllabusModule).values({
-			id: moduleId,
-			orgId: ctx.orgId,
-			syllabusId,
-			title: input.title,
-			description: input.description,
-			position: (last?.max ?? -1) + 1,
-		});
-		return c.json({ id: moduleId } satisfies CreatedResponse, 201);
-	});
-
-	kernel.post("/syllabi/:id/modules/reorder", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, reorderModulesSchema);
-		if (!body.ok) return body.response;
-		const { moduleIds } = body.data;
-		if (hasDuplicateIds(moduleIds)) {
-			return c.json({ error: "duplicate ids" }, 400);
-		}
-		const db = deps.getDb();
-		const id = c.req.param("id");
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-		const siblings = await db
-			.select({ id: syllabusModule.id })
-			.from(syllabusModule)
-			.where(
-				and(
-					eq(syllabusModule.syllabusId, id),
-					eq(syllabusModule.orgId, ctx.orgId),
-				),
-			);
-		if (siblings.length > MAX_IMPORT_NODES) {
-			return c.json({ error: "too many modules to reorder" }, 422);
-		}
-		if (
-			!sameIdSet(
-				moduleIds,
-				siblings.map((row) => row.id),
-			)
-		) {
-			return c.json({ error: "set-mismatch" }, 409);
-		}
-		const statements = moduleIds.map((moduleId, position) =>
-			db
-				.update(syllabusModule)
-				.set({ position })
-				.where(
-					and(
-						eq(syllabusModule.id, moduleId),
-						eq(syllabusModule.syllabusId, id),
-						eq(syllabusModule.orgId, ctx.orgId),
-					),
-				),
 		);
-		const [first, ...rest] = statements;
-		if (!first) {
-			return c.json({ error: "set-mismatch" }, 409);
-		}
-		await db.batch([first, ...rest]);
-		return c.json({ ok: true });
-	});
 
-	kernel.post("/syllabi/:id/modules/:mid", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, moduleUpsertSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-		const { id, mid } = c.req.param();
-
-		const mod = await findModule(db, mid, id, ctx.orgId);
-		if (!mod) {
-			return c.json({ error: "module not found" }, 404);
-		}
-
-		await db
-			.update(syllabusModule)
-			.set({ title: input.title, description: input.description })
-			.where(
-				and(eq(syllabusModule.id, mid), eq(syllabusModule.orgId, ctx.orgId)),
-			);
-		return c.json({ ok: true });
-	});
-
-	kernel.post("/syllabi/:id/modules/:mid/remove", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, moduleRemoveSchema);
-		if (!body.ok) return body.response;
-		const db = deps.getDb();
-		const { id, mid } = c.req.param();
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-		const mod = await findModule(db, mid, id, ctx.orgId);
-		if (!mod) {
-			return c.json({ error: "module not found" }, 404);
-		}
-		await db.batch([
-			db.delete(syllabusLesson).where(
-				and(
-					eq(syllabusLesson.orgId, ctx.orgId),
-					inArray(
-						syllabusLesson.moduleId,
-						db
-							.select({ id: syllabusModule.id })
-							.from(syllabusModule)
-							.where(
-								and(
-									eq(syllabusModule.id, mid),
-									eq(syllabusModule.syllabusId, id),
-									eq(syllabusModule.orgId, ctx.orgId),
-								),
-							),
-					),
-				),
-			),
-			db
-				.delete(syllabusModule)
-				.where(
-					and(
-						eq(syllabusModule.id, mid),
-						eq(syllabusModule.syllabusId, id),
-						eq(syllabusModule.orgId, ctx.orgId),
-					),
-				),
-		]);
-		return c.json({ ok: true });
-	});
-
-	kernel.post("/syllabi/:id/modules/:mid/lessons", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, lessonUpsertSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-		const { id, mid } = c.req.param();
-
-		const mod = await findModule(db, mid, id, ctx.orgId);
-		if (!mod) {
-			return c.json({ error: "module not found" }, 404);
-		}
-
-		const [last] = await db
-			.select({ max: max(syllabusLesson.position) })
-			.from(syllabusLesson)
-			.where(
-				and(
-					eq(syllabusLesson.moduleId, mid),
-					eq(syllabusLesson.orgId, ctx.orgId),
-				),
-			);
-
-		const lessonId = crypto.randomUUID();
-		await db.insert(syllabusLesson).values({
-			id: lessonId,
-			orgId: ctx.orgId,
-			moduleId: mid,
-			title: input.title,
-			objectives: input.objectives,
-			materials: input.materials,
-			kind: input.kind ?? "lesson",
-			status: input.status ?? "upcoming",
-			position: (last?.max ?? -1) + 1,
-		});
-		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
-	});
-
-	kernel.post("/syllabi/:id/modules/:mid/lessons/reorder", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, reorderLessonsSchema);
-		if (!body.ok) return body.response;
-		const { lessonIds } = body.data;
-		if (hasDuplicateIds(lessonIds)) {
-			return c.json({ error: "duplicate ids" }, 400);
-		}
-		const db = deps.getDb();
-		const { id, mid } = c.req.param();
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-		const mod = await findModule(db, mid, id, ctx.orgId);
-		if (!mod) {
-			return c.json({ error: "module not found" }, 404);
-		}
-		const siblings = await db
-			.select({ id: syllabusLesson.id })
-			.from(syllabusLesson)
-			.where(
-				and(
-					eq(syllabusLesson.moduleId, mid),
-					eq(syllabusLesson.orgId, ctx.orgId),
-				),
-			);
-		if (siblings.length > MAX_IMPORT_NODES) {
-			return c.json({ error: "too many lessons to reorder" }, 422);
-		}
-		if (
-			!sameIdSet(
-				lessonIds,
-				siblings.map((row) => row.id),
-			)
-		) {
-			return c.json({ error: "set-mismatch" }, 409);
-		}
-		const statements = lessonIds.map((lessonId, position) =>
-			db
-				.update(syllabusLesson)
-				.set({ position })
-				.where(
-					and(
-						eq(syllabusLesson.id, lessonId),
-						eq(syllabusLesson.moduleId, mid),
-						eq(syllabusLesson.orgId, ctx.orgId),
-					),
-				),
+		const notifDeps = notificationDepsFrom(deps);
+		const { createdIds } = await enqueueNotifications(
+			notifDeps.db,
+			ctx.orgId,
+			events,
 		);
-		const [first, ...rest] = statements;
-		if (!first) {
-			return c.json({ error: "set-mismatch" }, 409);
-		}
-		await db.batch([first, ...rest]);
-		return c.json({ ok: true });
-	});
-
-	kernel.post("/syllabi/:id/modules/:mid/lessons/:lid", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, lessonUpsertSchema);
-		if (!body.ok) return body.response;
-		const input = body.data;
-		const db = deps.getDb();
-		const { id, mid, lid } = c.req.param();
-
-		const [lesson] = await db
-			.select({
-				id: syllabusLesson.id,
-				kind: syllabusLesson.kind,
-				status: syllabusLesson.status,
-			})
-			.from(syllabusLesson)
-			.innerJoin(syllabusModule, eq(syllabusLesson.moduleId, syllabusModule.id))
-			.where(
-				and(
-					eq(syllabusLesson.id, lid),
-					eq(syllabusLesson.moduleId, mid),
-					eq(syllabusModule.syllabusId, id),
-					eq(syllabusLesson.orgId, ctx.orgId),
-				),
-			);
-		if (!lesson) {
-			return c.json({ error: "lesson not found" }, 404);
+		const delivery = deliverNotifications(
+			notifDeps.db,
+			notifDeps.mailer,
+			createdIds,
+			notifDeps.studentOrigin,
+			notifDeps.retryDelaysMs
+				? { retryDelaysMs: notifDeps.retryDelaysMs }
+				: undefined,
+		);
+		if (notifDeps.runInBackground) {
+			notifDeps.runInBackground(delivery);
+		} else {
+			await delivery;
 		}
 
-		await db
-			.update(syllabusLesson)
-			.set({
-				title: input.title,
-				objectives: input.objectives,
-				materials: input.materials,
-				// Body không có kind/status (form lớp) → giữ nguyên giá trị hiện tại.
-				kind: input.kind ?? lesson.kind,
-				status: input.status ?? lesson.status,
-			})
-			.where(
-				and(eq(syllabusLesson.id, lid), eq(syllabusLesson.orgId, ctx.orgId)),
-			);
-		return c.json({ ok: true });
-	});
-
-	kernel.post("/syllabi/:id/modules/:mid/lessons/:lid/remove", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, lessonRemoveSchema);
-		if (!body.ok) return body.response;
-		const db = deps.getDb();
-		const { id, mid, lid } = c.req.param();
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-		const mod = await findModule(db, mid, id, ctx.orgId);
-		if (!mod) {
-			return c.json({ error: "module not found" }, 404);
-		}
-		const [row] = await db
-			.select({ id: syllabusLesson.id })
-			.from(syllabusLesson)
-			.where(
-				and(
-					eq(syllabusLesson.id, lid),
-					eq(syllabusLesson.moduleId, mid),
-					eq(syllabusLesson.orgId, ctx.orgId),
-				),
-			);
-		if (!row) {
-			return c.json({ error: "lesson not found" }, 404);
-		}
-		await db
-			.delete(syllabusLesson)
-			.where(
-				and(
-					eq(syllabusLesson.id, lid),
-					eq(syllabusLesson.moduleId, mid),
-					eq(syllabusLesson.orgId, ctx.orgId),
-				),
-			);
-		return c.json({ ok: true });
-	});
-
-	// Xóa template giáo trình (hard delete cả cây module/lesson). Bản copy của
-	// các lớp đã import là deep-copy độc lập (buildImportBatch, issue #79) nên
-	// không bị ảnh hưởng; chỉ cần detach provenance vì source_template_id là
-	// logical FK only (SQLite không có FK thật để tự set null).
-	kernel.post("/syllabi/:id/remove", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const body = await readBody(c, deleteSyllabusSchema);
-		if (!body.ok) return body.response;
-		const db = deps.getDb();
-		const id = c.req.param("id");
-
-		const sy = await findSyllabus(db, id, ctx.orgId);
-		if (!sy) return c.json({ error: "syllabus not found" }, 404);
-		// Mirror guard import handler: bản copy của lớp chỉ được xóa qua
-		// remove-curriculum phía lớp; 404 che tồn tại (consistent với guard
-		// template của import handler phía trên).
-		if (sy.classId !== null) {
-			return c.json({ error: "syllabus not found" }, 404);
-		}
-
-		// FK order (NO ACTION trên class.syllabus_id): null pointer trước, rồi
-		// detach provenance, rồi delete explicit child-first qua subquery —
-		// không dựa FK cascade (same rule as remove-curriculum). Mọi statement
-		// org-scoped.
-		await db.batch([
-			db
-				.update(classTable)
-				.set({ syllabusId: null })
-				.where(
-					and(eq(classTable.syllabusId, id), eq(classTable.orgId, ctx.orgId)),
-				),
-			db
-				.update(syllabus)
-				.set({ sourceTemplateId: null })
-				.where(
-					and(eq(syllabus.sourceTemplateId, id), eq(syllabus.orgId, ctx.orgId)),
-				),
-			db.delete(syllabusLesson).where(
-				and(
-					eq(syllabusLesson.orgId, ctx.orgId),
-					inArray(
-						syllabusLesson.moduleId,
-						db
-							.select({ id: syllabusModule.id })
-							.from(syllabusModule)
-							.where(
-								and(
-									eq(syllabusModule.syllabusId, id),
-									eq(syllabusModule.orgId, ctx.orgId),
-								),
-							),
-					),
-				),
-			),
-			db
-				.delete(syllabusModule)
-				.where(
-					and(
-						eq(syllabusModule.syllabusId, id),
-						eq(syllabusModule.orgId, ctx.orgId),
-					),
-				),
-			db
-				.delete(syllabus)
-				.where(and(eq(syllabus.id, id), eq(syllabus.orgId, ctx.orgId))),
-		]);
-		return c.json({ ok: true });
+		return c.json({
+			queued: createdIds.length,
+			skipped: events.length - createdIds.length,
+		} satisfies DebtReminderResponse);
 	});
 
 	// Mounted after the Origin/content-type middleware above, so the
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
+	kernel.route("/", syllabusRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
@@ -2065,6 +1970,21 @@ export function kernelRoutes(deps: {
 	kernel.route("/bank-link", bankLinkRoutes(deps));
 	kernel.route("/payment-transactions", paymentTransactionRoutes(deps));
 	kernel.route("/grading", gradingRoutes(deps));
+	// #454 phase 5: log thông báo cho teacher — GET /api/notification-logs.
+	kernel.route("/notification-logs", notificationLogRoutes(deps));
+	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
+	kernel.route("/dashboard", dashboardReminderRoutes(deps));
+	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.
+	kernel.route("/attendance", dailyAttendanceRoutes(deps));
+	kernel.route("/holidays", holidayRoutes(deps));
+	// TOS-14 (#447): sự kiện vận hành ngoài lịch lớp — POST/DELETE /api/events.
+	kernel.route("/events", eventRoutes(deps));
+	// #359: duy nhất /api/kernel/vocab/* — web kernelCommand gọi đúng path này;
+	// mount /vocab trùng (/api/vocab/*) đã bỏ để không mở surface thừa.
+	kernel.route("/kernel/vocab", vocabTeacherRoutes(deps));
+	// #361: catalog thư viện từ vựng read-global cho mọi org đã đăng nhập (vẫn 401 khi chưa đăng nhập),
+	// POST /clone kiểm tra org-guard trên classId.
+	kernel.route("/kernel/vocab-library", vocabLibraryRoutes(deps));
 
 	return kernel;
 }

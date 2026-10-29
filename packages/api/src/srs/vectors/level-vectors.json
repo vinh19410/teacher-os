@@ -1,0 +1,1024 @@
+{
+  "spec": "docs/srs-spec.md v2",
+  "epochBase": 1700000000000,
+  "answers": [
+    {
+      "name": "level 1 + correct",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 2,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 3,
+        "dueAt": 1700259200000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 1 + wrong",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 2 + correct",
+      "input": {
+        "level": 2,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 3,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 7,
+        "dueAt": 1700604800000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 2 + wrong",
+      "input": {
+        "level": 2,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "level 3 + correct",
+      "input": {
+        "level": 3,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 4,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 14,
+        "dueAt": 1701209600000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 3 + wrong",
+      "input": {
+        "level": 3,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 2,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 3,
+        "dueAt": 1700259200000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "level 4 + correct",
+      "input": {
+        "level": 4,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 5,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 30,
+        "dueAt": 1702592000000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 4 + wrong",
+      "input": {
+        "level": 4,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 3,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 7,
+        "dueAt": 1700604800000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "level 5 + correct",
+      "input": {
+        "level": 5,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 5,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 30,
+        "dueAt": 1702592000000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 5 + wrong",
+      "input": {
+        "level": 5,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 5,
+        "isWarning": true,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "level 5 flagged + correct",
+      "input": {
+        "level": 5,
+        "isWarning": true,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 4,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 14,
+        "dueAt": 1701209600000,
+        "lapses": 2
+      }
+    },
+    {
+      "name": "level 5 flagged + wrong",
+      "input": {
+        "level": 5,
+        "isWarning": true,
+        "state": "review",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 2
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "new card level 1 + correct -> review",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "new",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 0
+      },
+      "correct": true,
+      "now": 1700000000000,
+      "expected": {
+        "level": 2,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 3,
+        "dueAt": 1700259200000,
+        "lapses": 0
+      }
+    },
+    {
+      "name": "new card level 1 + wrong -> review, lapses stay 0",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "new",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 0
+      },
+      "correct": false,
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 0
+      }
+    }
+  ],
+  "legacy": [
+    {
+      "state": "new",
+      "intervalDays": 0,
+      "expectedLevel": 1
+    },
+    {
+      "state": "learning",
+      "intervalDays": 0,
+      "expectedLevel": 1
+    },
+    {
+      "state": "learning",
+      "intervalDays": 5,
+      "expectedLevel": 1
+    },
+    {
+      "state": "review",
+      "intervalDays": 1,
+      "expectedLevel": 1
+    },
+    {
+      "state": "review",
+      "intervalDays": 2,
+      "expectedLevel": 1
+    },
+    {
+      "state": "review",
+      "intervalDays": 3,
+      "expectedLevel": 2
+    },
+    {
+      "state": "review",
+      "intervalDays": 6,
+      "expectedLevel": 2
+    },
+    {
+      "state": "review",
+      "intervalDays": 7,
+      "expectedLevel": 3
+    },
+    {
+      "state": "review",
+      "intervalDays": 13,
+      "expectedLevel": 3
+    },
+    {
+      "state": "review",
+      "intervalDays": 14,
+      "expectedLevel": 4
+    },
+    {
+      "state": "review",
+      "intervalDays": 29,
+      "expectedLevel": 4
+    },
+    {
+      "state": "review",
+      "intervalDays": 30,
+      "expectedLevel": 5
+    },
+    {
+      "state": "review",
+      "intervalDays": 210,
+      "expectedLevel": 5
+    }
+  ],
+  "typing": [
+    {
+      "word": "teacher",
+      "typed": "teacher",
+      "match": true
+    },
+    {
+      "word": "teacher",
+      "typed": "  teacher ",
+      "match": true
+    },
+    {
+      "word": "teacher",
+      "typed": "TEACHER",
+      "match": true
+    },
+    {
+      "word": "ice cream",
+      "typed": "ice  cream",
+      "match": true
+    },
+    {
+      "word": "o'clock",
+      "typed": "o’clock",
+      "match": true
+    },
+    {
+      "word": "well-known",
+      "typed": "well–known",
+      "match": true
+    },
+    {
+      "word": "teacher",
+      "typed": "teachar",
+      "match": false
+    },
+    {
+      "word": "teacher",
+      "typed": "teachr",
+      "match": false
+    },
+    {
+      "word": "café",
+      "typed": "café",
+      "match": true
+    },
+    {
+      "word": "café",
+      "typed": "cafe",
+      "match": false
+    },
+    {
+      "word": "teacher",
+      "typed": "",
+      "match": false
+    },
+    {
+      "word": "look after",
+      "typed": "Look After",
+      "match": true
+    },
+    {
+      "word": "café",
+      "typed": "café",
+      "match": true
+    },
+    {
+      "word": "phở",
+      "typed": "pho",
+      "match": false
+    }
+  ],
+  "eligibility": [
+    {
+      "word": "teacher",
+      "typingEligible": true
+    },
+    {
+      "word": "ice cream",
+      "typingEligible": true
+    },
+    {
+      "word": "o'clock",
+      "typingEligible": true
+    },
+    {
+      "word": "o’clock",
+      "typingEligible": true
+    },
+    {
+      "word": "well-known",
+      "typingEligible": true
+    },
+    {
+      "word": "café",
+      "typingEligible": true
+    },
+    {
+      "word": "phở",
+      "typingEligible": true
+    },
+    {
+      "word": "Mr.",
+      "typingEligible": false
+    },
+    {
+      "word": "5 o'clock",
+      "typingEligible": false
+    },
+    {
+      "word": "a/an",
+      "typingEligible": false
+    },
+    {
+      "word": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "typingEligible": false
+    }
+  ],
+  "hints": [
+    {
+      "word": "teacher",
+      "level": 1,
+      "hint": "t______"
+    },
+    {
+      "word": "teacher",
+      "level": 2,
+      "hint": "t______"
+    },
+    {
+      "word": "teacher",
+      "level": 3,
+      "hint": "_______"
+    },
+    {
+      "word": "teacher",
+      "level": 4,
+      "hint": "_______"
+    },
+    {
+      "word": "teacher",
+      "level": 5,
+      "hint": ""
+    },
+    {
+      "word": "ice cream",
+      "level": 1,
+      "hint": "i__ c____"
+    },
+    {
+      "word": "ice cream",
+      "level": 3,
+      "hint": "___ _____"
+    },
+    {
+      "word": "o'clock",
+      "level": 2,
+      "hint": "o'_____"
+    },
+    {
+      "word": "o'clock",
+      "level": 4,
+      "hint": "_'_____"
+    },
+    {
+      "word": "well-known",
+      "level": 1,
+      "hint": "w___-_____"
+    },
+    {
+      "word": "ice-cream",
+      "level": 1,
+      "hint": "i__-_____"
+    }
+  ],
+  "intervals": [
+    {
+      "minutes": 10,
+      "label": "10m"
+    },
+    {
+      "minutes": 1440,
+      "label": "1d"
+    },
+    {
+      "minutes": 10080,
+      "label": "1w"
+    },
+    {
+      "minutes": 21600,
+      "label": "2w"
+    },
+    {
+      "minutes": 43200,
+      "label": "1mo"
+    },
+    {
+      "minutes": 52560,
+      "label": "1mo"
+    },
+    {
+      "minutes": 525600,
+      "label": "1.0y"
+    },
+    {
+      "minutes": 4320,
+      "label": "3d"
+    }
+  ],
+  "learnSteps": [
+    {
+      "eligible": [
+        "meaningChoice",
+        "wordChoice",
+        "listeningChoice",
+        "typing"
+      ],
+      "steps": [
+        "intro",
+        "listeningChoice",
+        "typing"
+      ]
+    },
+    {
+      "eligible": [
+        "meaningChoice",
+        "wordChoice",
+        "typing"
+      ],
+      "steps": [
+        "intro",
+        "meaningChoice",
+        "typing"
+      ]
+    },
+    {
+      "eligible": [
+        "meaningChoice",
+        "wordChoice",
+        "listeningChoice"
+      ],
+      "steps": [
+        "intro",
+        "listeningChoice",
+        "wordChoice"
+      ]
+    },
+    {
+      "eligible": [
+        "meaningChoice"
+      ],
+      "steps": [
+        "intro",
+        "meaningChoice"
+      ]
+    },
+    {
+      "eligible": [
+        "wordChoice"
+      ],
+      "steps": [
+        "intro",
+        "wordChoice"
+      ]
+    },
+    {
+      "eligible": [
+        "listeningChoice"
+      ],
+      "steps": [
+        "intro",
+        "listeningChoice"
+      ]
+    },
+    {
+      "eligible": [
+        "typing"
+      ],
+      "steps": [
+        "intro",
+        "typing"
+      ]
+    },
+    {
+      "eligible": [],
+      "steps": [
+        "intro"
+      ]
+    },
+    {
+      "eligible": [
+        "listeningChoice",
+        "wordChoice"
+      ],
+      "steps": [
+        "intro",
+        "listeningChoice",
+        "wordChoice"
+      ]
+    }
+  ],
+  "learnQueue": [
+    {
+      "name": "all correct",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro",
+            "listeningChoice",
+            "typing"
+          ]
+        },
+        {
+          "word": "w2",
+          "steps": [
+            "intro",
+            "meaningChoice",
+            "wordChoice"
+          ]
+        }
+      ],
+      "actions": [
+        "continue",
+        "correct",
+        "correct",
+        "continue",
+        "correct",
+        "correct"
+      ],
+      "expected": {
+        "total": 6,
+        "shown": [
+          "w1:intro",
+          "w1:listeningChoice",
+          "w1:typing",
+          "w2:intro",
+          "w2:meaningChoice",
+          "w2:wordChoice"
+        ],
+        "done": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commits": [
+          {
+            "word": "w1",
+            "grade": "good"
+          },
+          {
+            "word": "w2",
+            "grade": "good"
+          }
+        ]
+      }
+    },
+    {
+      "name": "wrong middle step requeues to end and commits after other words with grade again",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro",
+            "listeningChoice",
+            "typing"
+          ]
+        },
+        {
+          "word": "w2",
+          "steps": [
+            "intro",
+            "meaningChoice",
+            "typing"
+          ]
+        }
+      ],
+      "actions": [
+        "continue",
+        "wrong",
+        "correct",
+        "continue",
+        "correct",
+        "correct",
+        "correct"
+      ],
+      "expected": {
+        "total": 6,
+        "shown": [
+          "w1:intro",
+          "w1:listeningChoice",
+          "w1:typing",
+          "w2:intro",
+          "w2:meaningChoice",
+          "w2:typing",
+          "w1:listeningChoice"
+        ],
+        "done": [
+          1,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commits": [
+          {
+            "word": "w2",
+            "grade": "good"
+          },
+          {
+            "word": "w1",
+            "grade": "again"
+          }
+        ]
+      }
+    },
+    {
+      "name": "forgot on typing step requeues and logs again",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro",
+            "listeningChoice",
+            "typing"
+          ]
+        }
+      ],
+      "actions": [
+        "continue",
+        "correct",
+        "forgot",
+        "correct"
+      ],
+      "expected": {
+        "total": 3,
+        "shown": [
+          "w1:intro",
+          "w1:listeningChoice",
+          "w1:typing",
+          "w1:typing"
+        ],
+        "done": [
+          1,
+          2,
+          2,
+          3
+        ],
+        "commits": [
+          {
+            "word": "w1",
+            "grade": "again"
+          }
+        ]
+      }
+    },
+    {
+      "name": "wrong twice on the same step",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro",
+            "meaningChoice",
+            "typing"
+          ]
+        }
+      ],
+      "actions": [
+        "continue",
+        "wrong",
+        "correct",
+        "wrong",
+        "correct"
+      ],
+      "expected": {
+        "total": 3,
+        "shown": [
+          "w1:intro",
+          "w1:meaningChoice",
+          "w1:typing",
+          "w1:meaningChoice",
+          "w1:meaningChoice"
+        ],
+        "done": [
+          1,
+          1,
+          2,
+          2,
+          3
+        ],
+        "commits": [
+          {
+            "word": "w1",
+            "grade": "again"
+          }
+        ]
+      }
+    },
+    {
+      "name": "word with only intro",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro"
+          ]
+        }
+      ],
+      "actions": [
+        "continue"
+      ],
+      "expected": {
+        "total": 1,
+        "shown": [
+          "w1:intro"
+        ],
+        "done": [
+          1
+        ],
+        "commits": [
+          {
+            "word": "w1",
+            "grade": "good"
+          }
+        ]
+      }
+    },
+    {
+      "name": "two words where first word misses last step and commits after second word",
+      "words": [
+        {
+          "word": "w1",
+          "steps": [
+            "intro",
+            "listeningChoice",
+            "typing"
+          ]
+        },
+        {
+          "word": "w2",
+          "steps": [
+            "intro",
+            "listeningChoice",
+            "typing"
+          ]
+        }
+      ],
+      "actions": [
+        "continue",
+        "correct",
+        "wrong",
+        "continue",
+        "correct",
+        "correct",
+        "correct"
+      ],
+      "expected": {
+        "total": 6,
+        "shown": [
+          "w1:intro",
+          "w1:listeningChoice",
+          "w1:typing",
+          "w2:intro",
+          "w2:listeningChoice",
+          "w2:typing",
+          "w1:typing"
+        ],
+        "done": [
+          1,
+          2,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commits": [
+          {
+            "word": "w2",
+            "grade": "good"
+          },
+          {
+            "word": "w1",
+            "grade": "again"
+          }
+        ]
+      }
+    }
+  ],
+  "learnCommit": [
+    {
+      "name": "new card default",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "new",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 0
+      },
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 0
+      }
+    },
+    {
+      "name": "new card with non-zero lapses preserved",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "new",
+        "intervalDays": 0,
+        "dueAt": 1700000000000,
+        "lapses": 3
+      },
+      "now": 1700000000000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086400000,
+        "lapses": 3
+      }
+    },
+    {
+      "name": "new card with offset dueAt",
+      "input": {
+        "level": 1,
+        "isWarning": false,
+        "state": "new",
+        "intervalDays": 0,
+        "dueAt": 1699999995000,
+        "lapses": 0
+      },
+      "now": 1700000010000,
+      "expected": {
+        "level": 1,
+        "isWarning": false,
+        "state": "review",
+        "intervalDays": 1,
+        "dueAt": 1700086410000,
+        "lapses": 0
+      }
+    }
+  ]
+}

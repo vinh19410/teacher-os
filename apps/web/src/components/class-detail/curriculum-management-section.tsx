@@ -2,18 +2,13 @@ import { useState } from "react";
 
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import {
-	CLASS_TYPE_LABELS,
-	type ClassGroup,
-	type Syllabus,
-} from "@/lib/mock-data";
+import { CLASS_TYPE_LABELS, type ClassGroup } from "@/lib/mock-data";
+import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface CurriculumManagementSectionProps {
 	cls: ClassGroup;
-	syllabus: Syllabus | null;
 	run: DirectKernelAction["run"];
 	isPending: DirectKernelAction["isPending"];
 	busy: boolean;
@@ -24,27 +19,29 @@ export interface CurriculumManagementSectionProps {
  * removes the class's template copy. Progress lives in the page header
  * StatCards and the schedule table; content editing moved to the
  * "Quản lý buổi" modal (phase 2).
+ *
+ * Issue #394: giáo trình đọc qua `useClassCurriculum` (nguồn sự thật
+ * `syllabus.class_id`). Chỉ còn hai trạng thái: có giáo trình / chưa có —
+ * nhánh "con trỏ lệch" đã xoá vì server không còn rẽ theo con trỏ.
+ * Markup theo design v2 (#391): thẻ trắng viền, empty state viền đứt.
  */
 export function CurriculumManagementSection({
 	cls,
-	syllabus: sy,
 	run,
 	isPending,
 	busy,
 }: CurriculumManagementSectionProps) {
+	const sy = useClassCurriculum(cls.id);
 	const [importOpen, setImportOpen] = useState(false);
 	const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
 	return (
 		<div>
-			{sy && sy.classId === cls.id ? (
-				<Card
-					variant="white"
-					className="mb-4 flex flex-wrap items-center gap-4"
-				>
+			{sy ? (
+				<div className="flex flex-wrap items-center gap-4">
 					<div className="flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
-						<div className="font-mono text-meta text-xs">
+						<div className="text-muted-foreground text-xs">
 							{sy.level} ·{" "}
 							{sy.skills.length > 0
 								? sy.skills.join(", ")
@@ -60,10 +57,10 @@ export function CurriculumManagementSection({
 					>
 						Gỡ giáo trình
 					</Button>
-				</Card>
-			) : cls.syllabusId === "" ? (
-				<Card variant="white" className="p-8 text-center">
-					<p className="text-muted-fg text-sm">
+				</div>
+			) : (
+				<div className="rounded-lg border border-dashed p-6 text-center">
+					<p className="text-muted-foreground text-sm">
 						Lớp chưa có giáo trình. Nhập một bản sao từ template — chỉnh sửa
 						trên lớp không ảnh hưởng template hay lớp khác.
 					</p>
@@ -74,24 +71,7 @@ export function CurriculumManagementSection({
 					>
 						Nhập từ template
 					</Button>
-				</Card>
-			) : (
-				// Legacy anomaly: pointer set but not this class's copy
-				// (pre-migration data). Removing nulls the pointer only.
-				<Card variant="white" className="p-8 text-center">
-					<p className="text-muted-fg text-sm">
-						Lớp có con trỏ giáo trình lệch (dữ liệu cũ) và không thể chỉnh sửa.
-						Gỡ con trỏ để bắt đầu lại với một template.
-					</p>
-					<Button
-						variant="secondary"
-						size="sm"
-						className="mt-4"
-						onClick={() => setConfirmRemoveOpen(true)}
-					>
-						Gỡ giáo trình
-					</Button>
-				</Card>
+				</div>
 			)}
 
 			<ImportSyllabusModal
@@ -105,13 +85,12 @@ export function CurriculumManagementSection({
 				onClose={busy ? () => undefined : () => setConfirmRemoveOpen(false)}
 				title="Gỡ giáo trình khỏi lớp?"
 			>
-				<p className="text-muted-fg text-sm">
-					Nếu lớp đang giữ một bản sao giáo trình, toàn bộ cây (kèm tiến độ buổi
-					học) sẽ bị xóa; nếu chỉ là con trỏ lệch (dữ liệu cũ), chỉ con trỏ được
-					dọn. Template gốc và các lớp khác không bao giờ bị ảnh hưởng. Hành
-					động này không thể hoàn tác.
+				<p className="text-muted-foreground text-sm">
+					Toàn bộ cây giáo trình của lớp (kèm tiến độ buổi học) sẽ bị xoá.
+					Template gốc và các lớp khác không bị ảnh hưởng. Hành động này không
+					thể hoàn tác.
 				</p>
-				<div className="mt-4 flex justify-end gap-2 border-line-soft border-t border-solid pt-4">
+				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
 						size="sm"

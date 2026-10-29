@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<!--
+  Teacher OS — intro (11 scenes, 68.8 s) — style: saas-bento (energy 3).
+  One persistent bento grid (4x3) reflows scene to scene; the indigo ring motif
+  is born as broken arcs on the s01 chaos tiles, closes on the Teacher OS 2x2 at
+  the s02 drop, then jumps tile-to-tile until it settles on the logo tile.
+  Camera locked-off; the only zooms are the FLIP tile-expands (s03/s05/s10).
+  No flash, no shake — juice is back.out(1.4) + soft slams on the 4 drops.
+-->
+<html lang="vi" data-resolution="landscape" data-ratio="16x9">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Teacher OS — nền vận hành cho giáo viên</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Local TTFs (OFL, google/fonts), all with the full vietnamese subset. */
+      @font-face { font-family: "Manrope"; src: url("assets/fonts/Manrope-VF.ttf") format("truetype"); font-weight: 200 800; font-display: block; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-VF.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+      @font-face { font-family: "Be Vietnam Pro"; src: url("assets/fonts/BeVietnamPro-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: block; }
+      :root {
+        --bg: #f5f6f8; --ink: #0f172a; --accent: #6366f1; --tile: #ffffff;
+        --mute: #64748b; --line: #e2e8f0; --mint: #10b981; --peach: #fb923c;
+        --cell: #edf1f6;
+        --accent-ink: #5b5ede; --mint-ink: #0b7d57; --peach-ink: #b25209; /* darkened text variants for 4.5:1; hues unchanged on shapes */
+        --W: 1920px; --H: 1080px;
+        --cap-w: 1660px; --cap-bottom: 44px; --cap-size: 40px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); }
+      #root { position: relative; width: var(--W); height: var(--H); overflow: hidden; background: var(--bg); color: var(--ink); font-family: "Manrope", sans-serif; }
+      .layer { position: absolute; left: 0; top: 0; width: var(--W); height: var(--H); }
+      .abs { position: absolute; }
+      .mono { font-family: "JetBrains Mono", monospace; font-weight: 500; }
+      .em { font-style: normal; color: var(--accent); }
+      .mint { color: var(--mint); }
+      .kwx { display: inline-block; }
+
+      /* bg: subtle gradient meshes, top-right + bottom-left (2 gradient elements total) */
+      .mesh-tr { right: -160px; top: -170px; width: 760px; height: 760px; background: radial-gradient(closest-side, rgba(99,102,241,0.10), rgba(99,102,241,0)); }
+      .mesh-bl { left: -200px; bottom: -230px; width: 820px; height: 820px; background: radial-gradient(closest-side, rgba(16,185,129,0.07), rgba(16,185,129,0)); }
+
+      /* empty grid slot outlines (s01 only) */
+      .slot { position: absolute; border: 1.5px dashed var(--line); border-radius: 28px; opacity: 0; visibility: hidden; }
+
+      /* bento tiles: placed with transform x/y (no layout tweens); width/height tween for the FLIP */
+      .tile { position: absolute; left: 0; top: 0; background: var(--tile); border: 1px solid var(--line); border-radius: 28px;
+              box-shadow: 0 12px 32px rgba(15,23,42,0.08); overflow: hidden; opacity: 0; visibility: hidden; }
+      .tile > * { position: absolute; }
+      .face, .rich, .full { position: absolute; inset: 0; border-radius: 28px; }
+      .rich, .full { opacity: 0; visibility: hidden; display: none; background: var(--tile); }
+      .ic { left: 26px; top: 24px; width: 52px; height: 52px; border-radius: 16px; background: rgba(99,102,241,0.10); color: var(--accent);
+            display: flex; align-items: center; justify-content: center; }
+      .ic svg { width: 28px; height: 28px; }
+      .t-title { left: 92px; top: 33px; font-size: 34px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+      .frag { right: 24px; top: 0; height: 100%; display: flex; align-items: center; gap: 12px; }
+
+      /* small UI atoms */
+      .bar { border-radius: 7px; background: var(--cell); }
+      .bar.hot { background: rgba(99,102,241,0.30); }
+      .dot { border-radius: 50%; background: var(--cell); }
+      .chip { display: flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--cell);
+              font-family: "JetBrains Mono", monospace; font-weight: 500; position: absolute; }
+      .avatar { border-radius: 50%; background: rgba(99,102,241,0.16); }
+      .ck { stroke-dasharray: 1; stroke-dashoffset: 1; }
+      .card { background: var(--tile); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 8px 22px rgba(15,23,42,0.06); }
+      .toast { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 16px; background: var(--tile);
+               border: 1px solid var(--line); box-shadow: 0 10px 26px rgba(15,23,42,0.10); font-size: 22px; font-weight: 700;
+               opacity: 0; visibility: hidden; }
+      .toast i { width: 12px; height: 12px; border-radius: 50%; background: var(--mint); }
+
+      /* Teacher OS anchor tile (2x2); .os-inner scales to 0.62 in banner mode */
+      .os-inner { position: absolute; inset: 0; }
+      .mark { left: 40px; top: 40px; width: 72px; height: 72px; border-radius: 20px; background: var(--accent);
+              display: grid; grid-template-columns: repeat(2, 12px); grid-template-rows: repeat(2, 12px); gap: 10px; place-content: center; }
+      .mark i { width: 12px; height: 12px; border-radius: 4px; background: #fff; }
+      .os-title { left: 40px; top: 148px; font-size: 72px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+      .os-sub { left: 40px; top: 296px; font-size: 26px; font-weight: 500; color: var(--mute); }
+      .mdots { left: 42px; top: 356px; display: flex; gap: 12px; }
+      .mdots i { width: 14px; height: 14px; border-radius: 50%; opacity: 0.25; }
+      .mdots i:nth-child(1) { background: var(--accent); }
+      .mdots i:nth-child(2) { background: var(--mint); }
+      .mdots i:nth-child(3) { background: var(--peach); }
+      .mdots i:nth-child(4) { background: var(--ink); }
+      .os-inner > * { position: absolute; }
+      .ver { right: 36px; top: 36px; font-size: 24px; color: var(--accent-ink); }
+
+      /* stats and step tiles */
+      .stat-num { left: 40px; top: 44px; font-size: 88px; letter-spacing: -0.02em; line-height: 1; }
+      .stat-label { left: 42px; top: 158px; font-size: 26px; font-weight: 500; color: var(--mute); }
+      .step-num { left: 28px; top: 26px; font-size: 26px; color: var(--accent-ink); }
+      .step-title { left: 28px; top: 66px; font-size: 33px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; width: 330px; }
+      .step-ic { right: 24px; top: 24px; width: 52px; height: 52px; border-radius: 16px; background: rgba(99,102,241,0.10); color: var(--accent);
+                 display: flex; align-items: center; justify-content: center; }
+      .step-ic svg { width: 28px; height: 28px; }
+
+      /* CTA button */
+      .btn { display: flex; align-items: center; justify-content: center; border-radius: 20px; background: var(--tile);
+             border: 2px solid var(--accent); color: var(--accent-ink); font-weight: 800; }
+
+      /* headline zone (top-left, above the grid) */
+      .hl { left: 96px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); opacity: 0; visibility: hidden; z-index: 3; }
+      .hl .w { display: inline-block; }
+      .msk { overflow: hidden; }
+      .msk > div, .msk > h1 { display: block; }
+
+      /* motif: the indigo ring, one svg over the grid (inside #stage so it scales with it) */
+      #motif { pointer-events: none; z-index: 60; }
+      #motifR { fill: none; stroke: var(--accent); stroke-width: 2; }
+      .fr { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; opacity: 0; }
+
+      /* fx: light sweep + cursor (ripples live inside their tiles) */
+      #sweepWrap { border-radius: 28px; overflow: hidden; pointer-events: none; z-index: 45; }
+      #sweepBar { position: absolute; top: -20%; height: 140%; width: 34%;
+                  background: linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,0.85), rgba(255,255,255,0)); opacity: 0; }
+      #cursor { z-index: 70; opacity: 0; visibility: hidden; }
+      .ripple { position: absolute; width: 60px; height: 60px; border: 3px solid var(--accent); border-radius: 50%;
+                opacity: 0; pointer-events: none; }
+
+      /* caption band: white pill, Be Vietnam Pro 600 40px, current word accent */
+      .cap { position: absolute; left: 0; width: var(--cap-w); bottom: var(--cap-bottom); display: flex; justify-content: center; z-index: 80; }
+      .cap-box { padding: 12px 30px; border-radius: 18px; background: #ffffff; white-space: nowrap;
+                 border: 1px solid var(--line); box-shadow: 0 10px 28px rgba(15,23,42,0.10);
+                 font: 600 var(--cap-size)/1.3 "Be Vietnam Pro"; text-align: center; color: var(--ink); }
+      .cw { color: #64748b; }
+
+      /* signature bottom-right from 1.0 s to the end (untouched per contract) */
+      #sig { right: 40px; bottom: 22px; width: 250px; height: 130px; z-index: 85; }
+      #sig-txt { position: absolute; right: 18px; bottom: 26px; font: 800 56px/1 "Manrope"; letter-spacing: -0.02em; color: var(--ink); }
+      #sig svg { position: absolute; left: 0; top: 0; }
+      #fade { background: var(--bg); opacity: 1; pointer-events: none; z-index: 84; }
+
+      .odo { display: inline-flex; font-variant-numeric: tabular-nums; }
+      .odo-d { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
+      .odo-s { display: block; }
+      .odo-s i { display: block; height: 1em; font-style: normal; }
+
+      /* Ratio editions (reframe.py). 9x16: 3x4 grid, safe band y 220-1500, right 140 covered. */
+      html[data-ratio="1x1"] { --cap-w: 1080px; --cap-bottom: 64px; --cap-size: 46px; }
+      html[data-ratio="9x16"] { --cap-w: 1080px; --cap-bottom: 440px; --cap-size: 48px; }
+      html[data-ratio="1x1"] #sig, html[data-ratio="9x16"] #sig { transform: scale(0.7); transform-origin: 100% 100%; }
+      html[data-ratio="9x16"] #sig { bottom: 300px; }
+      html[data-ratio="1x1"] .hl { left: 80px !important; right: 80px; font-size: 72px !important; }
+      html[data-ratio="9x16"] .hl { left: 60px !important; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="68.8" data-width="1920" data-height="1080">
+      <div id="bg" class="layer">
+        <div class="abs mesh-tr"></div>
+        <div class="abs mesh-bl"></div>
+      </div>
+
+      <div id="stage" class="layer">
+        <!-- empty slot outlines, s01 only (HEAD geometry rows 270/500/730) -->
+        <div id="slots">
+          <div class="slot" style="left:96px;   top:270px; width:854px; height:440px;"></div>
+          <div class="slot" style="left:970px;  top:270px; width:417px; height:210px;"></div>
+          <div class="slot" style="left:1407px; top:270px; width:417px; height:210px;"></div>
+          <div class="slot" style="left:970px;  top:500px; width:417px; height:210px;"></div>
+          <div class="slot" style="left:1407px; top:500px; width:417px; height:210px;"></div>
+          <div class="slot" style="left:96px;   top:730px; width:854px; height:210px;"></div>
+          <div class="slot" style="left:970px;  top:730px; width:854px; height:210px;"></div>
+        </div>
+
+        <!-- persistent bento grid -->
+        <div id="grid" class="layer">
+          <!-- Teacher OS anchor (also the s11 logo tile) -->
+          <div class="tile" id="tOS" style="width:854px; height:440px;">
+            <div class="face">
+              <div class="os-inner">
+                <div class="mark"><i></i><i></i><i></i><i></i></div>
+                <div class="os-title">Teacher <span class="em">OS</span></div>
+                <div class="os-sub os-big">Mọi thứ trong một chỗ.</div>
+                <div class="mdots os-big"><i></i><i></i><i></i><i></i></div>
+                <div class="mono ver os-big">beta</div>
+              </div>
+            </div>
+          </div>
+          <!-- Lớp học -->
+          <div class="tile" id="tLop" style="width:417px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></div>
+              <div class="t-title">Lớp học</div>
+              <div class="frag">
+                <div class="bar" style="width:74px; height:16px;"></div>
+                <div style="display:flex; gap:8px;"><i class="dot" style="width:14px;height:14px;"></i><i class="dot" style="width:14px;height:14px;background:rgba(99,102,241,0.35);"></i><i class="dot" style="width:14px;height:14px;"></i></div>
+              </div>
+            </div>
+            <!-- s03 full-frame demo: clone a syllabus into a new class -->
+            <div class="full">
+              <svg style="position:absolute; inset:0;" width="1920" height="1080" viewBox="0 0 1920 1080">
+                <g stroke="#e2e8f0" stroke-width="1.5">
+                  <path d="M360 200V920M700 200V920M1040 200V920M1380 200V920M1720 200V920"/>
+                  <path d="M300 320H1740M300 520H1740M300 720H1740"/>
+                </g>
+              </svg>
+              <div class="pan" style="position:absolute; inset:0;">
+                <div class="card s3in" style="position:absolute; left:430px; top:290px; width:440px; height:330px; padding:28px; opacity:0;">
+                  <div class="mono" style="font-size:20px; color:var(--accent-ink);">SYLLABUS</div>
+                  <div style="font-size:30px; font-weight:700; margin-top:10px;">IELTS Intensive</div>
+                  <div class="bar" style="width:340px; height:14px; margin-top:22px;"></div>
+                  <div class="bar" style="width:300px; height:14px; margin-top:14px;"></div>
+                  <div class="bar" style="width:330px; height:14px; margin-top:14px;"></div>
+                  <div class="bar hot" style="width:210px; height:14px; margin-top:14px;"></div>
+                  <div class="chip" style="right:24px; bottom:24px; width:120px; height:44px; font-size:20px;">12 tuần</div>
+                </div>
+                <div class="card s3in" style="position:absolute; left:1050px; top:290px; width:440px; height:220px; padding:26px; opacity:0;">
+                  <div style="display:flex; align-items:center; gap:14px;"><i class="avatar" style="width:44px; height:44px;"></i><div class="bar" style="width:180px; height:16px;"></div></div>
+                  <div style="display:flex; align-items:center; gap:14px; margin-top:20px;"><i class="avatar" style="width:44px; height:44px;"></i><div class="bar" style="width:220px; height:16px;"></div></div>
+                  <div style="display:flex; align-items:center; gap:14px; margin-top:20px;"><i class="avatar" style="width:44px; height:44px;"></i><div class="bar" style="width:150px; height:16px;"></div></div>
+                </div>
+                <div id="lop-slotB" class="card" style="position:absolute; left:1050px; top:560px; width:440px; height:220px; padding:26px; border-style:dashed; opacity:0;">
+                  <div style="display:flex; align-items:center; gap:14px;"><i class="avatar" style="width:44px; height:44px; background:rgba(16,185,129,0.18);"></i><div class="bar" style="width:200px; height:16px;"></div></div>
+                  <div style="display:flex; align-items:center; gap:14px; margin-top:20px;"><i class="chip" style="left:0; width:44px; height:44px; font-size:18px; color:var(--accent-ink); position:relative;">T5</i><div class="bar" style="width:160px; height:16px;"></div></div>
+                  <div style="display:flex; align-items:center; gap:14px; margin-top:20px;"><i class="dot" style="width:44px; height:44px;"></i><div class="bar" style="width:190px; height:16px;"></div></div>
+                </div>
+                <div id="lop-ghosts" style="position:absolute; left:650px; top:455px; width:0; height:0;">
+                  <div class="gcard card" style="position:absolute; left:-190px; top:-80px; width:380px; height:160px; padding:20px; opacity:0;">
+                    <div class="bar" style="width:200px; height:14px;"></div>
+                    <div class="bar" style="width:150px; height:14px; margin-top:12px;"></div>
+                  </div>
+                  <div class="gcard card" style="position:absolute; left:-190px; top:-80px; width:380px; height:160px; padding:20px; opacity:0;">
+                    <div class="bar" style="width:200px; height:14px;"></div>
+                    <div class="bar" style="width:150px; height:14px; margin-top:12px;"></div>
+                  </div>
+                  <div class="gcard card" style="position:absolute; left:-190px; top:-80px; width:380px; height:160px; padding:20px; opacity:0;">
+                    <div class="bar" style="width:200px; height:14px;"></div>
+                    <div class="bar" style="width:150px; height:14px; margin-top:12px;"></div>
+                  </div>
+                </div>
+                <div id="lop-cal" class="card" style="position:absolute; left:430px; top:660px; width:440px; height:220px; padding:26px; opacity:0;">
+                  <div style="display:grid; grid-template-columns:repeat(7, 44px); gap:12px;">
+                    <i class="dot" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot cal-c" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot cal-c" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i>
+                    <i class="dot" style="width:44px; height:44px;"></i><i class="dot cal-c" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot" style="width:44px; height:44px;"></i><i class="dot cal-c" style="width:44px; height:44px;"></i>
+                  </div>
+                </div>
+                <div class="ripple" style="left:620px; top:425px;"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Chấm bài -->
+          <div class="tile" id="tCham" style="width:417px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/></svg></div>
+              <div class="t-title">Chấm bài</div>
+              <div class="frag">
+                <svg width="40" height="40" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg width="40" height="40" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div class="bar" style="width:64px; height:16px;"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Ngân hàng đề -->
+          <div class="tile" id="tDe" style="width:417px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
+              <div class="t-title" data-layout-allow-overlap>Ngân hàng đề</div>
+              <div class="frag">
+                <div class="bar" style="width:70px; height:16px;"></div>
+                <div class="chip" style="position:relative; width:84px; height:40px; font-size:19px; color:var(--accent-ink);">IELTS</div>
+              </div>
+            </div>
+            <!-- s04 slot demo (2x2): skill chips, shelf, assign button, student rows -->
+            <div class="rich">
+              <div id="de-par1" style="position:absolute; left:32px; top:96px; width:428px; height:380px;">
+                <div style="display:flex; gap:14px;">
+                  <div class="chip de-skill" style="position:relative; width:74px; height:46px; font-size:21px; color:var(--mint-ink);">L</div>
+                  <div class="chip de-skill" style="position:relative; width:74px; height:46px; font-size:21px; color:var(--peach-ink);">R</div>
+                  <div class="chip de-skill" style="position:relative; width:74px; height:46px; font-size:21px; color:var(--accent-ink);">W</div>
+                  <div class="chip de-skill" style="position:relative; width:74px; height:46px; font-size:21px; color:var(--mint-ink);">S</div>
+                </div>
+                <div class="card de-shelf" style="position:absolute; left:0; top:72px; width:132px; height:160px; padding:16px;">
+                  <div class="bar" style="width:70px; height:12px;"></div><div class="bar" style="width:96px; height:12px; margin-top:10px;"></div><div class="bar" style="width:82px; height:12px; margin-top:10px;"></div>
+                  <div class="chip" style="left:16px; bottom:14px; width:56px; height:30px; font-size:15px; color:var(--accent-ink);">W2</div>
+                </div>
+                <div class="card de-shelf" style="position:absolute; left:148px; top:72px; width:132px; height:160px; padding:16px;">
+                  <div class="bar" style="width:70px; height:12px;"></div><div class="bar" style="width:96px; height:12px; margin-top:10px;"></div><div class="bar" style="width:82px; height:12px; margin-top:10px;"></div>
+                  <div class="chip" style="left:16px; bottom:14px; width:56px; height:30px; font-size:15px; color:var(--mint-ink);">L1</div>
+                </div>
+                <div class="card de-shelf" style="position:absolute; left:296px; top:72px; width:132px; height:160px; padding:16px;">
+                  <div class="bar" style="width:70px; height:12px;"></div><div class="bar" style="width:96px; height:12px; margin-top:10px;"></div><div class="bar" style="width:82px; height:12px; margin-top:10px;"></div>
+                  <div class="chip" style="left:16px; bottom:14px; width:56px; height:30px; font-size:15px; color:var(--peach-ink);">R4</div>
+                </div>
+                <div class="card" id="de-key" style="position:absolute; left:0; top:256px; width:428px; height:88px; padding:18px;">
+                  <div class="mono" style="font-size:17px; color:var(--mute);">ĐÁP ÁN</div>
+                  <div style="display:flex; gap:12px; margin-top:10px;">
+                    <div class="chip" style="position:relative; width:40px; height:36px; font-size:17px;">A</div><div class="chip" style="position:relative; width:40px; height:36px; font-size:17px;">C</div>
+                    <div class="chip" style="position:relative; width:40px; height:36px; font-size:17px;">B</div><div class="chip" style="position:relative; width:40px; height:36px; font-size:17px;">D</div>
+                    <div class="bar" style="width:110px; height:36px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div id="de-par2" style="position:absolute; left:500px; top:96px; width:356px; height:420px;">
+                <div class="btn" id="de-btn" style="position:absolute; left:0; top:0; width:190px; height:60px; font-size:26px;">Giao đề</div>
+                <div class="de-row" style="position:absolute; left:0; top:92px; width:356px; height:60px; display:flex; align-items:center; gap:14px;">
+                  <i class="avatar" style="width:40px; height:40px;"></i><div class="bar" style="width:150px; height:15px;"></div><i class="de-dot dot" style="width:16px; height:16px; margin-left:auto;"></i>
+                </div>
+                <div class="de-row" style="position:absolute; left:0; top:166px; width:356px; height:60px; display:flex; align-items:center; gap:14px;">
+                  <i class="avatar" style="width:40px; height:40px;"></i><div class="bar" style="width:190px; height:15px;"></div><i class="de-dot dot" style="width:16px; height:16px; margin-left:auto;"></i>
+                </div>
+                <div class="de-row" style="position:absolute; left:0; top:240px; width:356px; height:60px; display:flex; align-items:center; gap:14px;">
+                  <i class="avatar" style="width:40px; height:40px;"></i><div class="bar" style="width:130px; height:15px;"></div><i class="de-dot dot" style="width:16px; height:16px; margin-left:auto;"></i>
+                </div>
+                <div class="de-row" style="position:absolute; left:0; top:314px; width:356px; height:60px; display:flex; align-items:center; gap:14px;">
+                  <i class="avatar" style="width:40px; height:40px;"></i><div class="bar" style="width:170px; height:15px;"></div><i class="de-dot dot" style="width:16px; height:16px; margin-left:auto;"></i>
+                </div>
+              </div>
+              <div class="de-fly card" style="left:32px; top:168px; width:132px; height:48px; padding:12px; opacity:0;"><div class="bar" style="width:70px; height:12px;"></div></div>
+              <div class="de-fly card" style="left:180px; top:168px; width:132px; height:48px; padding:12px; opacity:0;"><div class="bar" style="width:70px; height:12px;"></div></div>
+              <div class="de-fly card" style="left:328px; top:168px; width:132px; height:48px; padding:12px; opacity:0;"><div class="bar" style="width:70px; height:12px;"></div></div>
+              <div class="de-fly card" style="left:32px; top:264px; width:132px; height:48px; padding:12px; opacity:0;"><div class="bar" style="width:70px; height:12px;"></div></div>
+              <div class="ripple" style="left:565px; top:96px;"></div>
+            </div>
+            <!-- s05 full-frame: tri-pane grading -->
+            <div class="full">
+              <div class="msk" data-layout-allow-overflow style="position:absolute; left:200px; top:240px; width:560px; height:740px;">
+                <div class="gd-pane card" style="width:560px; height:740px; padding:36px; opacity:0;">
+                  <div class="mono" style="font-size:22px; color:var(--accent);">BÀI LUẬN</div>
+                  <div class="bar" style="width:460px; height:18px; margin-top:34px;"></div>
+                  <div class="bar" style="width:480px; height:18px; margin-top:20px;"></div>
+                  <div class="bar" style="width:420px; height:18px; margin-top:20px;"></div>
+                  <div class="bar" style="width:470px; height:18px; margin-top:20px;"></div>
+                  <div class="bar" style="width:380px; height:18px; margin-top:20px;"></div>
+                  <div class="bar" style="width:455px; height:18px; margin-top:20px;"></div>
+                  <div class="bar" style="width:300px; height:18px; margin-top:20px;"></div>
+                </div>
+              </div>
+              <div class="msk" data-layout-allow-overflow style="position:absolute; left:800px; top:240px; width:560px; height:740px;">
+                <div class="gd-pane card" style="width:560px; height:740px; padding:36px; opacity:0;">
+                  <div class="mono" style="font-size:22px; color:var(--mute);">ĐÁP ÁN</div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:30px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">A</div><div class="bar" style="width:330px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:24px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">C</div><div class="bar" style="width:290px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:24px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">B</div><div class="bar" style="width:350px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:24px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">D</div><div class="bar" style="width:270px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:24px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">A</div><div class="bar" style="width:310px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div style="display:flex; align-items:center; gap:16px; margin-top:24px;"><div class="chip" style="position:relative; width:44px; height:40px; font-size:19px;">B</div><div class="bar" style="width:330px; height:15px;"></div><svg class="gd-tick" width="30" height="30" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                </div>
+              </div>
+              <div class="msk" data-layout-allow-overflow style="position:absolute; left:1400px; top:300px; width:400px; height:420px;">
+                <div class="gd-pane card" style="width:400px; height:420px; padding:34px; opacity:0;">
+                  <div class="mono" style="font-size:22px; color:var(--mute);">BAND</div>
+                  <div id="gd-band" class="chip" style="left:34px; top:78px; width:332px; height:110px; background:rgba(99,102,241,0.08); font-size:66px; color:var(--ink);">
+                    <span class="odo" data-value="7.5"></span>
+                  </div>
+                  <div class="bar" style="position:absolute; left:34px; top:230px; width:332px; height:14px;"></div>
+                  <div class="bar hot" style="position:absolute; left:34px; top:262px; width:268px; height:14px;"></div>
+                  <div class="bar" style="position:absolute; left:34px; top:294px; width:300px; height:14px;"></div>
+                  <div class="bar hot" style="position:absolute; left:34px; top:326px; width:220px; height:14px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Học phí -->
+          <div class="tile" id="tPhi" style="width:417px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 15h2"/></svg></div>
+              <div class="t-title">Học phí</div>
+              <div class="frag">
+                <div class="bar" style="width:80px; height:16px;"></div>
+                <i class="dot" style="width:16px; height:16px; background:rgba(16,185,129,0.5);"></i>
+              </div>
+            </div>
+            <!-- s01 CLOSE cut-in: the mess inside the tuition tile -->
+            <div class="full">
+              <div id="phi-scrap1" data-layout-allow-overlap class="card" style="position:absolute; left:220px; top:230px; width:980px; height:660px; padding:34px; transform:rotate(-2.5deg); opacity:0;">
+                <div class="mono" style="font-size:24px; color:var(--mute);">BẢNG TÍNH — HỌC PHÍ THÁNG 9</div>
+                <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:10px; margin-top:24px;">
+                  <i class="bar" style="height:56px;"></i><i class="bar hot" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(251,146,60,0.4);"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(16,185,129,0.35);"></i>
+                  <i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(251,146,60,0.4);"></i><i class="bar" style="height:56px;"></i><i class="bar hot" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i>
+                  <i class="bar hot" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(251,146,60,0.4);"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i>
+                  <i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(16,185,129,0.35);"></i><i class="bar" style="height:56px;"></i><i class="bar hot" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px;"></i><i class="bar" style="height:56px; background:rgba(251,146,60,0.4);"></i>
+                </div>
+                <div style="display:flex; gap:14px; margin-top:24px; align-items:center;">
+                  <div class="bar" style="width:180px; height:18px; background:rgba(251,146,60,0.45);"></div>
+                  <div class="bar" style="width:260px; height:18px;"></div>
+                  <div class="bar" style="width:140px; height:18px;"></div>
+                  <div class="mono" style="font-size:26px; color:var(--ink); margin-left:auto;">4.280.000</div>
+                </div>
+              </div>
+              <svg id="phi-scrap2" data-layout-allow-overlap style="position:absolute; left:1240px; top:240px; transform:rotate(4deg); opacity:0;" width="400" height="540" viewBox="0 0 400 540">
+                <path d="M26 40 L80 16 L146 38 L212 12 L286 34 L358 18 L374 80 L356 160 L378 252 L354 344 L374 438 L318 468 L238 450 L158 472 L78 452 L24 472 L38 386 L16 292 L40 200 L18 106 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
+                <path d="M80 106 L318 92 M66 212 L342 198 M74 318 L330 304" stroke="#edf1f6" stroke-width="4" fill="none"/>
+                <path d="M80 396 L326 386" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="10 8" fill="none"/>
+                <path d="M92 424 L266 416" stroke="#fb923c" stroke-width="4" opacity="0.6" fill="none"/>
+                <path d="M92 452 L210 446" stroke="#6366f1" stroke-width="4" opacity="0.5" fill="none"/>
+              </svg>
+              <div id="phi-scrap3" data-layout-allow-overlap class="card" style="position:absolute; left:540px; top:920px; width:700px; height:120px; padding:22px; display:flex; gap:18px; align-items:center; transform:rotate(-1.5deg); opacity:0;">
+                <div class="bar" style="width:200px; height:16px;"></div>
+                <div class="bar" style="width:150px; height:16px; background:rgba(251,146,60,0.4);"></div>
+                <div class="bar" style="width:110px; height:16px;"></div>
+                <div class="mono" style="font-size:20px; color:var(--mute); margin-left:auto;">chưa đối soát</div>
+              </div>
+            </div>
+            <!-- s06 slot demo (2x1): invoice, ledger, two counters -->
+            <div class="rich">
+              <div id="phi-invoice" class="card" style="position:absolute; left:24px; top:52px; width:212px; height:176px; padding:18px;">
+                <div class="mono" style="font-size:15px; color:var(--accent-ink);">HOÁ ĐƠN</div>
+                <div class="bar" style="width:120px; height:12px; margin-top:14px;"></div>
+                <div class="bar" style="width:150px; height:12px; margin-top:10px;"></div>
+                <div class="bar" style="width:100px; height:12px; margin-top:10px;"></div>
+                <div class="bar hot" style="width:130px; height:12px; margin-top:14px;"></div>
+              </div>
+              <svg style="position:absolute; left:236px; top:138px;" width="70" height="8" viewBox="0 0 70 8"><path id="phi-conn" class="ck" pathLength="1" d="M2 4H68" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round"/></svg>
+              <div id="phi-rows" style="position:absolute; left:316px; top:36px; width:330px;">
+                <div class="phi-row" style="display:flex; align-items:center; gap:12px; height:44px;">
+                  <i class="avatar" style="width:32px; height:32px;"></i><div class="bar" style="width:120px; height:13px;"></div><svg class="phi-ck" width="26" height="26" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="phi-row" style="display:flex; align-items:center; gap:12px; height:44px;">
+                  <i class="avatar" style="width:32px; height:32px;"></i><div class="bar" style="width:160px; height:13px;"></div><svg class="phi-ck" width="26" height="26" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="phi-row" style="display:flex; align-items:center; gap:12px; height:44px;">
+                  <i class="avatar" style="width:32px; height:32px;"></i><div class="bar" style="width:100px; height:13px;"></div><svg class="phi-ck" width="26" height="26" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+              </div>
+              <div id="phi-odos" style="position:absolute; left:664px; top:40px; width:170px;">
+                <div id="phi-odo1" style="opacity:0;">
+                  <div class="mono" style="font-size:42px; color:var(--mint-ink); line-height:1;"><span class="odo" data-value="84%"></span></div>
+                  <div style="font-size:19px; color:var(--mute); margin-top:8px;">đã thu</div>
+                </div>
+                <div id="phi-odo2" style="opacity:0; margin-top:22px;">
+                  <div class="mono" style="font-size:42px; color:var(--peach-ink); line-height:1;"><span class="odo" data-value="16%"></span></div>
+                  <div style="font-size:19px; color:var(--mute); margin-top:8px;">còn lại</div>
+                </div>
+              </div>
+              <div id="phi-hand" class="chip" style="left:480px; top:38px; width:52px; height:40px; background:rgba(16,185,129,0.14); opacity:0;">
+                <svg width="24" height="24" viewBox="0 0 44 44"><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div id="phi-toast" class="toast" style="left:430px; top:186px;"><i></i>Đã đối soát</div>
+            </div>
+          </div>
+          <!-- Portal -->
+          <div class="tile" id="tPortal" style="width:854px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/></svg></div>
+              <div class="t-title">Portal</div>
+              <div class="frag">
+                <i class="avatar" style="width:34px; height:34px;"></i>
+                <div class="bar" style="width:90px; height:15px;"></div>
+                <i class="dot" style="width:12px; height:12px; background:rgba(16,185,129,0.5);"></i>
+              </div>
+            </div>
+            <!-- s07 slot demo (1x2 tall): the portal column scrolls to the profile -->
+            <div class="rich">
+              <div class="msk" data-layout-allow-overflow style="position:absolute; left:0; top:0; width:417px; height:542px;">
+                <div id="po-scroll" style="position:absolute; left:24px; top:74px; width:368px; height:900px;">
+                  <div class="card" style="width:360px; height:128px; padding:20px;">
+                    <div style="display:flex; align-items:center; gap:12px;"><i class="avatar" style="width:36px; height:36px;"></i><div class="bar" style="width:150px; height:14px;"></div></div>
+                    <div class="bar" style="width:250px; height:13px; margin-top:16px;"></div>
+                    <div class="bar" style="width:200px; height:13px; margin-top:10px;"></div>
+                  </div>
+                  <div class="card" style="width:360px; height:158px; padding:20px; margin-top:18px;">
+                    <div style="display:flex; align-items:center; gap:12px;"><i class="avatar" style="width:36px; height:36px;"></i><div class="bar" style="width:170px; height:14px;"></div></div>
+                    <div class="bar" style="width:260px; height:13px; margin-top:16px;"></div>
+                    <div id="po-band" class="chip" style="position:relative; width:96px; height:42px; margin-top:14px; font-size:20px; color:var(--mint-ink); background:rgba(16,185,129,0.12); opacity:0;">7.0</div>
+                  </div>
+                  <div class="card" id="po-profile" style="position:relative; width:360px; height:118px; padding:20px; margin-top:18px; border-color:rgba(99,102,241,0.5);">
+                    <div style="display:flex; align-items:center; gap:12px;"><i class="avatar" style="width:44px; height:44px;"></i><div><div class="bar" style="width:140px; height:14px;"></div><div class="bar" style="width:90px; height:11px; margin-top:8px;"></div></div></div>
+                    <i class="dot po-mint" style="position:absolute; right:18px; top:22px; width:13px; height:13px; background:rgba(16,185,129,0.55);"></i>
+                  </div>
+                  <div class="card" id="po-report" style="width:360px; height:190px; padding:20px; margin-top:18px;">
+                    <div class="mono" style="font-size:16px; color:var(--accent-ink);">BÁO CÁO</div>
+                    <div class="po-rrow bar" style="width:250px; height:13px; margin-top:16px;"></div>
+                    <div class="po-rrow bar" style="width:290px; height:13px; margin-top:12px;"></div>
+                    <div class="po-rrow bar" style="width:220px; height:13px; margin-top:12px;"></div>
+                    <div class="po-rrow bar hot" style="width:180px; height:13px; margin-top:12px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div id="po-avas" style="position:absolute; right:6px; top:70px; width:0; height:0;">
+                <i class="avatar po-av" style="position:absolute; left:-8px; top:0; width:26px; height:26px;"></i>
+                <i class="avatar po-av" style="position:absolute; left:-4px; top:150px; width:26px; height:26px;"></i>
+                <i class="avatar po-av" style="position:absolute; left:-10px; top:300px; width:26px; height:26px;"></i>
+                <i class="avatar po-av" style="position:absolute; left:-5px; top:450px; width:26px; height:26px;"></i>
+              </div>
+              <div id="po-toast" class="toast" style="left:24px; top:12px;"><i></i>Đã gửi phụ huynh</div>
+            </div>
+          </div>
+          <!-- Danh sách học viên -->
+          <div class="tile" id="tList" style="width:854px; height:210px;">
+            <div class="face">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a4.5 4.5 0 0 1 5 4.5"/></svg></div>
+              <div class="t-title">Danh sách</div>
+              <div class="frag">
+                <i class="avatar" style="width:34px; height:34px;"></i><i class="avatar" style="width:34px; height:34px;"></i><i class="avatar" style="width:34px; height:34px;"></i>
+                <div class="bar" style="width:100px; height:15px;"></div>
+              </div>
+            </div>
+          </div>
+          <!-- s08 stat tiles -->
+          <div class="tile" id="tStat1" style="width:854px; height:261px;">
+            <div class="face">
+              <div class="mono stat-num"><span class="odo" data-value="1.200"></span></div>
+              <div class="stat-label">lớp đã chạy qua</div>
+            </div>
+          </div>
+          <div class="tile" id="tStat2" style="width:854px; height:261px;">
+            <div class="face">
+              <div class="mono stat-num" style="color:var(--mint-ink);"><span class="odo" data-value="8.500"></span></div>
+              <div class="stat-label">bài đã chấm</div>
+            </div>
+          </div>
+          <!-- s09 step tiles -->
+          <div class="tile" id="tS1" style="width:417px; height:261px;">
+            <div class="face">
+              <div class="mono step-num">01</div>
+              <div class="step-title">Tạo workspace</div>
+              <div class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+              <svg id="s1-ck" style="position:absolute; left:28px; top:170px; opacity:0;" width="34" height="34" viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="#10b981" stroke-width="3" opacity="0.3"/><path class="ck" pathLength="1" d="M14 22.5l5.5 5.5L30 17" fill="none" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="tile" id="tS2" style="width:417px; height:261px;">
+            <div class="face">
+              <div class="mono step-num">02</div>
+              <div class="step-title">Nhân bản syllabus</div>
+              <div class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></div>
+              <div id="s2-ghost" class="card" style="position:absolute; left:28px; top:160px; width:150px; height:64px; padding:12px; opacity:0;">
+                <div class="bar" style="width:80px; height:11px;"></div><div class="bar" style="width:60px; height:11px; margin-top:8px;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tile" id="tS3" style="width:417px; height:261px;">
+            <div class="face">
+              <div class="mono step-num">03</div>
+              <div class="step-title" style="color:var(--mint-ink);">Bắt đầu dạy</div>
+              <div class="step-ic" style="background:rgba(16,185,129,0.12); color:var(--mint);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/></svg></div>
+            </div>
+          </div>
+          <!-- s10 CTA tile -->
+          <div class="tile" id="tCTA" style="width:854px; height:542px;">
+            <div class="face">
+              <div class="mark" style="width:56px; height:56px; border-radius:16px;"><i style="width:10px;height:10px;"></i><i style="width:10px;height:10px;"></i><i style="width:10px;height:10px;"></i><i style="width:10px;height:10px;"></i></div>
+              <div class="t-title" style="left:28px; top:112px; width:400px; font-size:40px; line-height:1.15;">Beta đang mở</div>
+              <div class="btn" style="position:absolute; left:28px; top:210px; width:200px; height:64px; font-size:26px;">Giữ chỗ</div>
+            </div>
+            <div class="full">
+              <div style="position:absolute; left:150px; top:300px; width:1620px;">
+                <div class="hl" id="hl-cta" style="position:static; font-size:84px; opacity:1; visibility:visible;">
+                  <div class="msk" data-layout-allow-overflow><div class="ln">Beta <span class="kwx" id="cta-kw">miễn phí</span> đang mở.</div></div>
+                </div>
+              </div>
+              <div class="msk" data-layout-allow-overflow style="position:absolute; left:790px; top:540px; width:340px; height:110px;">
+                <div id="cta-btn" class="btn" style="position:static; width:340px; height:100px; font-size:34px;">Giữ chỗ</div>
+              </div>
+              <div id="cta-chip" class="toast" style="left:788px; top:700px;"><i></i>Chỗ của bạn đã giữ</div>
+              <div class="ripple" style="left:930px; top:560px;"></div>
+            </div>
+          </div>
+          <!-- s09 step connectors (drawn across the 20px gaps) -->
+          <svg id="conns" style="position:absolute; inset:0; pointer-events:none; opacity:0;" width="1920" height="1080" viewBox="0 0 1920 1080">
+            <path id="conn1" class="ck" pathLength="1" d="M509 531H541" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round"/>
+            <path id="conn2" class="ck" pathLength="1" d="M946 531H978" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round"/>
+            <circle id="connDot" r="5" fill="#6366f1" opacity="0"/>
+          </svg>
+        </div>
+
+        <!-- headlines (scene-scoped, live above the grid zone) -->
+        <div id="hl1a" class="hl abs" style="top:96px; font-size:72px;" data-layout-allow-overlap><div class="msk" data-layout-allow-overflow><div class="ln">Bạn dạy rất <span class="kwx">giỏi.</span></div></div></div>
+        <div id="hl1b" class="hl abs" style="top:88px; font-size:72px;" data-layout-allow-overlap>
+          <div class="msk" data-layout-allow-overflow><div class="ln">Nhưng bài vở, lịch học, học phí —</div></div>
+          <div class="msk" data-layout-allow-overflow><div class="ln">nằm rải rác khắp nơi.</div></div>
+        </div>
+        <div id="hl2" class="hl abs" style="top:96px; font-size:72px;">
+          <div class="msk" data-layout-allow-overflow><div class="ln">Teacher OS gom tất cả</div></div>
+          <div class="msk" data-layout-allow-overflow><div class="ln">vào một <span class="kwx">workspace</span> duy nhất.</div></div>
+        </div>
+        <div id="hl11" class="hl abs" style="top:84px; font-size:96px;">
+          <div class="msk" data-layout-allow-overflow><div class="ln">Teacher <span class="em">OS</span></div></div>
+        </div>
+
+        <!-- s08 foreground mint dots -->
+        <div id="statDots" class="layer" style="pointer-events:none;">
+          <i class="dot" style="position:absolute; left:1050px; top:200px; width:16px; height:16px; background:rgba(16,185,129,0.4);"></i>
+          <i class="dot" style="position:absolute; left:1600px; top:640px; width:12px; height:12px; background:rgba(16,185,129,0.32);"></i>
+          <i class="dot" style="position:absolute; left:1180px; top:840px; width:20px; height:20px; background:rgba(16,185,129,0.25);"></i>
+          <i class="dot" style="position:absolute; left:1760px; top:330px; width:10px; height:10px; background:rgba(16,185,129,0.45);"></i>
+        </div>
+
+        <!-- s01 loose paper bits (fg parallax), sucked back in at s02 "gom" -->
+        <div id="paper" class="layer" style="pointer-events:none;">
+          <div style="position:absolute; left:420px; top:340px; width:120px; height:78px; border-radius:10px; background:#fff; border:1.5px solid var(--line); transform:rotate(-10deg);"></div>
+          <div style="position:absolute; left:1240px; top:820px; width:100px; height:66px; border-radius:10px; background:#fff; border:1.5px solid var(--line); transform:rotate(8deg);"></div>
+          <div style="position:absolute; left:760px; top:180px; width:88px; height:60px; border-radius:10px; background:#fff; border:1.5px solid var(--line); transform:rotate(14deg);"></div>
+          <div style="position:absolute; left:1560px; top:240px; width:110px; height:72px; border-radius:10px; background:#fff; border:1.5px solid var(--line); transform:rotate(-7deg);"></div>
+        </div>
+
+        <!-- motif: the indigo ring + its s01 broken arcs (inside #stage so it tracks the grid) -->
+        <svg id="motif" class="layer" viewBox="0 0 1920 1080" width="1920" height="1080">
+          <rect id="motifR" pathLength="1" x="96" y="270" width="854" height="440" rx="28" vector-effect="non-scaling-stroke"
+                stroke-dasharray="1" stroke-dashoffset="1" opacity="0"/>
+          <path class="fr" id="fr1" pathLength="1" d="M0,-46 A46,46 0 0 1 46,0" stroke-dasharray="1" stroke-dashoffset="1"/>
+          <path class="fr" id="fr2" pathLength="1" d="M46,0 A46,46 0 0 1 0,46" stroke-dasharray="1" stroke-dashoffset="1"/>
+          <path class="fr" id="fr3" pathLength="1" d="M0,46 A46,46 0 0 1 -46,0" stroke-dasharray="1" stroke-dashoffset="1"/>
+          <path class="fr" id="fr4" pathLength="1" d="M-46,0 A46,46 0 0 1 0,-46" stroke-dasharray="1" stroke-dashoffset="1"/>
+        </svg>
+
+        <div id="s6ghost" class="layer" style="pointer-events:none;">
+        <div class="card g6" style="position:absolute; left:1290px; top:470px; width:220px; height:130px; padding:18px; opacity:0;">
+          <div class="mono" style="font-size:15px; color:var(--accent);">BÁO CÁO</div>
+          <div class="bar" style="width:130px; height:11px; margin-top:14px;"></div>
+          <div class="bar" style="width:100px; height:11px; margin-top:9px;"></div>
+          <div class="bar" style="width:60px; height:11px; margin-top:9px; background:rgba(16,185,129,0.4);"></div>
+        </div>
+        <div class="card g6" style="position:absolute; left:1290px; top:470px; width:220px; height:130px; padding:18px; opacity:0;">
+          <div class="bar" style="width:130px; height:11px;"></div>
+          <div class="bar" style="width:100px; height:11px; margin-top:9px;"></div>
+        </div>
+        <div class="card g6" style="position:absolute; left:1290px; top:470px; width:220px; height:130px; padding:18px; opacity:0;">
+          <div class="bar" style="width:130px; height:11px;"></div>
+          <div class="bar" style="width:100px; height:11px; margin-top:9px;"></div>
+        </div>
+      </div>
+      <div id="sweepWrap" class="abs" style="left:0; top:0; width:854px; height:440px;"><div id="sweepBar"></div></div>
+        <div id="cursor" class="abs">
+          <svg width="44" height="52" viewBox="0 0 44 52"><path d="M8 4l28 16-13 3-6 14z" fill="#ffffff" stroke="#0f172a" stroke-width="3" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+
+      <div id="captions" class="layer"></div>
+      <div id="sig" class="abs">
+        <svg viewBox="0 0 250 130" width="250" height="130"><path id="sig-line" class="ck" pathLength="1" d="M20,112 C80,100 150,118 236,96" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"/></svg>
+        <div id="sig-txt" data-layout-allow-overflow>Zuey</div>
+      </div>
+      <div id="fade" class="layer"></div>
+      <audio id="mix" src="assets/audio/mix.m4a" data-start="0" data-duration="68.8" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>/*TIMING:BEGIN*/window.TIMING={"duration":68.8,"fps":30,"beat0":0.004,"beatLen":0.535714,"kick":[[16,40],[48,72],[72,84],[84,92],[104,128]],"drops":[16,48,84,104],"outroBeat":122,"scenes":{"s01-hook":{"start":0,"end":8.575,"lines":[{"on":1.075,"off":2.038,"words":[["bạn",1.075,1.353],["dạy",1.409,1.538],["rất",1.594,1.705],["giỏi",1.761,2.038]]},{"on":2.594,"off":6.409,"words":[["nhưng",2.594,2.853],["bài",2.909,3.02],["vở",3.131,3.353],["lịch",3.668,3.798],["học",3.853,4.112],["học",4.335,4.463],["phí",4.538,4.798],["nằm",5.279,5.52],["rải",5.594,5.724],["rác",5.779,5.927],["khắp",5.964,6.15],["nơi",6.187,6.409]]}]},"s02-reveal":{"start":8.575,"end":15.004,"lines":[{"on":8.7,"off":12.144,"words":[["teacher",8.7,9.144],["os",9.274,9.718],["gom",9.922,10.125],["tất",10.218,10.348],["cả",10.422,10.644],["vào",10.755,10.885],["một",10.922,11.088],["workspace",11.107,11.57],["duy",11.681,11.792],["nhất",11.866,12.144]]},{"on":12.662,"off":14.774,"words":[["sáu",12.662,12.829],["module",12.94,13.292],["một",13.681,13.848],["danh",13.922,14.051],["sách",14.144,14.311],["học",14.348,14.496],["viên",14.57,14.774]]}]},"s03-classes":{"start":15.004,"end":18.218,"lines":[{"on":15.128,"off":17.85,"words":[["nhân",15.128,15.295],["bản",15.35,15.517],["syllabus",15.61,16.11],["vào",16.202,16.313],["lớp",16.387,16.573],["lịch",16.943,17.091],["học",17.128,17.406],["có",17.443,17.554],["ngay",17.628,17.85]]}]},"s04-assignments":{"start":18.218,"end":25.718,"lines":[{"on":18.342,"off":21.879,"words":[["ngân",18.342,18.491],["hàng",18.546,18.694],["đề",18.787,18.935],["ielts",19.12,19.528],["bốn",19.62,19.768],["kỹ",19.842,19.935],["năng",20.009,20.194],["sẵn",20.583,20.713],["đáp",20.768,20.916],["án",20.991,21.139],["chấm",21.231,21.398],["tự",21.491,21.583],["động",21.657,21.879]]},{"on":22.453,"off":24.657,"words":[["giao",22.453,22.602],["đề",22.676,22.787],["một",22.861,23.028],["nút",23.065,23.287],["học",23.509,23.676],["viên",23.731,23.898],["làm",23.991,24.157],["online",24.25,24.657]]}]},"s05-grading":{"start":25.718,"end":33.218,"lines":[{"on":25.842,"off":30.528,"words":[["chấm",25.842,26.028],["writing",26.194,26.62],["một",26.713,26.861],["lượt",26.916,27.102],["bài",27.62,27.731],["luận",27.824,27.991],["đáp",28.472,28.657],["án",28.75,28.916],["band",29.398,29.565],["điểm",29.62,29.75],["chung",29.861,30.102],["màn",30.157,30.287],["hình",30.342,30.528]]},{"on":31.139,"off":32.768,"words":[["trắc",31.139,31.287],["nghiệm",31.342,31.583],["máy",32.009,32.231],["chấm",32.287,32.435],["giúp",32.509,32.768]]}]},"s06-tuition":{"start":33.218,"end":39.111,"lines":[{"on":33.342,"off":34.75,"words":[["hết",33.342,33.491],["gói",33.565,33.824],["là",33.935,34.046],["có",34.12,34.268],["hoá",34.305,34.435],["đơn",34.528,34.75]]},{"on":35.157,"off":38.602,"words":[["đã",35.157,35.25],["thu",35.342,35.565],["còn",35.842,35.972],["lại",36.046,36.25],["rõ",36.602,36.768],["từng",36.879,37.009],["học",37.046,37.157],["viên",37.231,37.435],["đối",37.805,37.916],["soát",38.009,38.194],["tự",38.268,38.361],["động",38.435,38.602]]}]},"s07-portal":{"start":39.111,"end":45.004,"lines":[{"on":39.235,"off":42.05,"words":[["học",39.235,39.383],["viên",39.439,39.661],["nộp",39.717,39.92],["bài",39.957,40.217],["và",40.365,40.532],["xem",40.661,40.809],["điểm",40.865,41.069],["trên",41.161,41.365],["portal",41.457,41.735],["riêng",41.828,42.05]]},{"on":42.513,"off":44.772,"words":[["báo",42.513,42.606],["cáo",42.679,42.865],["tới",42.939,43.106],["phụ",43.124,43.217],["huynh",43.272,43.494],["trước",43.717,43.902],["khi",43.939,44.143],["họ",44.217,44.365],["kịp",44.383,44.532],["hỏi",44.569,44.772]]}]},"s08-stats":{"start":45.004,"end":50.361,"lines":[{"on":45.128,"off":47.48,"words":[["hơn",45.128,45.387],["một",45.517,45.647],["nghìn",45.702,45.906],["hai",45.998,46.11],["trăm",46.165,46.332],["lớp",46.406,46.684],["đã",46.795,46.924],["chạy",46.998,47.221],["qua",47.258,47.48]]},{"on":48.165,"off":50.091,"words":[["tám",48.165,48.332],["nghìn",48.387,48.664],["năm",48.739,48.887],["trăm",48.943,49.091],["bài",49.165,49.387],["đã",49.628,49.758],["chấm",49.832,50.091]]}]},"s09-how":{"start":50.361,"end":55.718,"lines":[{"on":50.485,"off":54.893,"words":[["ba",50.485,50.615],["bước",50.689,50.911],["tạo",51.282,51.541],["workspace",51.67,52.3],["nhân",52.819,52.967],["bản",53.041,53.226],["syllabus",53.337,53.8],["bắt",54.3,54.411],["đầu",54.485,54.578],["dạy",54.67,54.893]]}]},"s10-cta":{"start":55.718,"end":59.468,"lines":[{"on":55.842,"off":57.435,"words":[["beta",55.842,56.25],["miễn",56.342,56.509],["phí",56.602,56.879],["đang",56.972,57.12],["mở",57.213,57.435]]},{"on":57.861,"off":58.972,"words":[["giữ",57.861,58.009],["chỗ",58.083,58.231],["ngay",58.305,58.491],["hôm",58.583,58.713],["nay",58.768,58.972]]}]},"s11-outro":{"start":59.468,"end":68.8,"lines":[{"on":60.004,"off":65.044,"words":[["teacher",60.004,60.524],["os",60.764,61.244],["nền",61.984,62.224],["vận",62.284,62.444],["hành",62.504,62.704],["cho",62.804,62.904],["giáo",62.964,63.104],["viên",63.204,63.444],["vẫn",64.024,64.184],["muốn",64.284,64.464],["được",64.524,64.684],["dạy",64.804,65.044]]}]}},"captions":[{"start":0.955,"end":2.434,"words":[["Bạn",1.075],["dạy",1.409],["rất",1.594],["giỏi.",1.761]]},{"start":2.474,"end":5.119,"words":[["Nhưng",2.594],["bài",2.664],["vở,",2.909],["lịch",3.131],["học,",3.668],["học",3.853],["phí",4.335],["—",4.538]]},{"start":5.159,"end":6.909,"words":[["nằm",5.279],["rải",5.594],["rác",5.779],["khắp",5.964],["nơi.",6.187]]},{"start":8.58,"end":10.595,"words":[["Teacher",8.7],["OS",9.274],["gom",9.922],["tất",10.218],["cả",10.422]]},{"start":10.635,"end":12.502,"words":[["vào",10.755],["một",10.922],["workspace",11.107],["duy",11.681],["nhất.",11.866]]},{"start":12.542,"end":14.968,"words":[["Sáu",12.662],["module,",12.94],["một",13.681],["danh",13.922],["sách",14.144],["học",14.348],["viên.",14.57]]},{"start":15.008,"end":16.783,"words":[["Nhân",15.128],["bản",15.35],["syllabus",15.61],["vào",16.202],["lớp,",16.387]]},{"start":16.823,"end":18.182,"words":[["lịch",16.943],["học",17.128],["có",17.443],["ngay.",17.628]]},{"start":18.222,"end":20.423,"words":[["Ngân",18.342],["hàng",18.546],["đề",18.787],["IELTS",19.12],["bốn",19.62],["kỹ",19.842],["năng,",20.009]]},{"start":20.463,"end":22.293,"words":[["sẵn",20.583],["đáp",20.768],["án",20.991],["chấm",21.231],["tự",21.491],["động.",21.657]]},{"start":22.333,"end":23.349,"words":[["Giao",22.453],["đề",22.676],["một",22.861],["nút,",23.065]]},{"start":23.389,"end":25.157,"words":[["học",23.509],["viên",23.731],["làm",23.991],["online.",24.25]]},{"start":25.722,"end":28.312,"words":[["Chấm",25.842],["Writing",26.194],["một",26.713],["lượt:",26.916],["bài",27.62],["luận,",27.824]]},{"start":28.352,"end":30.979,"words":[["đáp",28.472],["án,",28.75],["band",29.398],["điểm",29.62],["chung",29.861],["màn",30.157],["hình.",30.342]]},{"start":31.019,"end":33.182,"words":[["Trắc",31.139],["nghiệm",31.342],["máy",32.009],["chấm",32.287],["giúp.",32.509]]},{"start":33.222,"end":34.997,"words":[["Hết",33.342],["gói",33.565],["là",33.935],["có",34.12],["hoá",34.305],["đơn.",34.528]]},{"start":35.037,"end":36.442,"words":[["Đã",35.157],["thu,",35.227],["còn",35.342],["lại",35.842],["—",36.046]]},{"start":36.482,"end":37.645,"words":[["rõ",36.602],["từng",36.879],["học",37.046],["viên,",37.231]]},{"start":37.685,"end":39.075,"words":[["đối",37.805],["soát",38.009],["tự",38.268],["động.",38.435]]},{"start":39.115,"end":40.501,"words":[["Học",39.235],["viên",39.439],["nộp",39.717],["bài",39.957],["và",40.365]]},{"start":40.541,"end":42.353,"words":[["xem",40.661],["điểm",40.865],["trên",41.161],["portal",41.457],["riêng.",41.828]]},{"start":42.393,"end":43.557,"words":[["Báo",42.513],["cáo",42.679],["tới",42.939],["phụ",43.124],["huynh",43.272]]},{"start":43.597,"end":44.968,"words":[["trước",43.717],["khi",43.939],["họ",44.217],["kịp",44.383],["hỏi.",44.569]]},{"start":45.008,"end":47.98,"words":[["Hơn",45.128],["1.200",45.517],["lớp",45.998],["đã",46.165],["chạy",46.795],["qua.",46.998]]},{"start":48.045,"end":50.325,"words":[["8.500",48.165],["bài",48.387],["đã",48.943],["chấm.",49.628]]},{"start":50.365,"end":54.14,"words":[["Ba",50.485],["bước:",50.689],["tạo",51.282],["workspace,",51.67],["nhân",52.819],["bản",53.041],["syllabus,",53.337]]},{"start":54.18,"end":55.393,"words":[["bắt",54.3],["đầu",54.485],["dạy.",54.67]]},{"start":55.722,"end":57.701,"words":[["Beta",55.842],["miễn",56.342],["phí",56.602],["đang",56.972],["mở.",57.213]]},{"start":57.741,"end":59.472,"words":[["Giữ",57.861],["chỗ",58.083],["ngay",58.305],["hôm",58.583],["nay.",58.768]]},{"start":59.884,"end":61.824,"words":[["Teacher",60.004],["OS",60.074],["—",60.764]]},{"start":61.864,"end":63.864,"words":[["nền",61.984],["vận",62.284],["hành",62.504],["cho",62.804],["giáo",62.964],["viên",63.204]]},{"start":63.904,"end":65.544,"words":[["vẫn",64.024],["muốn",64.284],["được",64.524],["dạy.",64.804]]}],"sfx":[{"sfx":"swish","vol":0.35,"t":0.1},{"sfx":"pop","vol":0.3,"t":5.594},{"sfx":"snap","vol":0.3,"t":4.538},{"sfx":"click","vol":0.3,"t":5.964},{"sfx":"swish","vol":0.3,"t":6.187},{"sfx":"sweep","vol":0.35,"t":8.575},{"sfx":"snap","vol":0.35,"t":9.922},{"sfx":"thud-soft","vol":0.5,"t":11.107},{"sfx":"sparkle","vol":0.3,"t":12.662},{"sfx":"chime","vol":0.35,"t":14.144},{"sfx":"sweep","vol":0.3,"t":15.004},{"sfx":"pop","vol":0.3,"t":15.128},{"sfx":"snap","vol":0.3,"t":16.387},{"sfx":"pop","vol":0.3,"t":17.628},{"sfx":"pop","vol":0.3,"t":19.62},{"sfx":"click","vol":0.3,"t":20.768},{"sfx":"click","vol":0.35,"t":22.453},{"sfx":"swish","vol":0.3,"t":23.065},{"sfx":"pop","vol":0.3,"t":24.25},{"sfx":"sweep","vol":0.3,"t":25.718},{"sfx":"thud-soft","vol":0.5,"t":29.62},{"sfx":"pop","vol":0.3,"t":32.287},{"sfx":"chime","vol":0.3,"t":32.509},{"sfx":"sweep","vol":0.3,"t":33.218},{"sfx":"pop","vol":0.3,"t":35.342},{"sfx":"pop","vol":0.3,"t":36.046},{"sfx":"chime","vol":0.3,"t":38.009},{"sfx":"sweep","vol":0.3,"t":39.111},{"sfx":"pop","vol":0.3,"t":39.717},{"sfx":"pop","vol":0.3,"t":40.865},{"sfx":"chime","vol":0.35,"t":44.569},{"sfx":"thud-soft","vol":0.45,"t":45.702},{"sfx":"thud-soft","vol":0.45,"t":48.387},{"sfx":"sweep","vol":0.3,"t":49.832},{"sfx":"pop","vol":0.3,"t":50.485},{"sfx":"snap","vol":0.3,"t":51.282},{"sfx":"pop","vol":0.3,"t":52.819},{"sfx":"chime","vol":0.35,"t":54.67},{"sfx":"sweep","vol":0.35,"t":55.718},{"sfx":"click","vol":0.35,"t":57.861},{"sfx":"thud-soft","vol":0.5,"t":58.083},{"sfx":"chime","vol":0.3,"t":58.305},{"sfx":"soft-bell","vol":0.4,"t":61.984},{"sfx":"sparkle","vol":0.3,"t":64.804}],"env":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.33,0.68,1,1,0.87,0.59,0.32,0.52,0.56,0.59,0.55,0.26,0.47,1,0.33,0.32,0.41,0.35,0.78,0.68,0.04,0.16,0.33,0.36,1,1,0.92,0.69,0.52,0.34,0.18,0.07,0.03,0.03,0.02,0,0,0,0,0,0,0,0,0,0,0.01,0.71,1,1,1,1,0.9,1,0.95,0.79,0.66,0.57,1,0.93,0.76,0.66,0.34,0.09,0.63,1,0.94,0.82,0.74,0.59,0.34,0.19,0.09,0.03,0.02,0.03,0.02,0.02,0.02,0.32,0.75,0.88,0.68,0.05,0.12,0.15,0.27,0.55,1,0.89,0.14,0.04,0.04,0.02,0.02,0.04,0.03,0.03,0.03,0.04,0.1,0.2,1,0.59,0.06,0.06,0.07,0.07,0.08,0.7,0.57,0.46,0.47,0.46,0.5,0.5,0.29,0.04,0.05,0.06,0.03,0.03,0.04,0.04,0.03,0.01,0.02,0.48,0.97,0.86,0.93,0.81,0.72,0.56,0.46,0.47,0.46,0.36,0.58,0.93,0.55,0.45,0.24,0.36,0.42,0.89,0.69,0.38,0.08,0.05,0.13,0.43,0.91,0.08,0.07,1,1,1,1,1,1,0.82,0.34,0.05,0.04,0.03,0.02,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.06,0.99,0.99,0.11,0.01,0.06,0.52,0.44,0.95,0.8,0.87,0.84,0.84,0.79,0.36,0.03,0.45,0.99,0.99,0.93,0.67,0.1,0.05,0.67,0.76,0.84,0.85,0.53,0.71,0.52,0.23,0.07,0,0,0,0,0.18,0.64,1,1,0.93,0.66,0.49,0.21,0.01,0.56,0.88,0.36,0,0,0.01,0.62,0.71,0.51,0.42,0.31,0.33,0.45,0.54,0.27,0.02,0.02,0.51,0.9,0.66,0.76,0.81,0.73,0.49,0.08,0,0,0.11,0.93,0.64,0.18,0.17,0.21,0.4,0.02,0.3,1,0.78,0.86,0.88,0.63,0.36,0.17,0.16,0.27,0.76,0.74,0.56,0.58,0.74,0.8,1,1,0.87,0.25,0.01,0,0,0.01,0,0.01,0,0,0,0,0,0,0,0,0,0,0.1,0.72,0.79,0.57,0.71,0.76,0.76,0.77,0.41,0.34,0.59,1,0.95,0.82,0.32,0.31,1,1,1,0.95,1,0.92,0.38,0.01,0.01,0.01,0,0,0,0,0,0.14,1,1,0.95,0.76,0.08,0.01,0.01,0.11,0.32,0.79,0.64,0.54,0.5,0.59,0.68,0.53,0.65,0.58,0.01,0.06,0.1,0.15,0.53,0.51,0.03,0.01,0.01,0.04,0.65,1,1,1,0.91,0.66,0.3,0.01,0.01,0,0,0,0,0,0,0.52,1,1,1,0.95,0.94,1,0.97,0.85,0.74,0.58,0.53,0.36,0.31,0.19,0.35,0.4,0.48,0.66,0.78,0.88,0.82,0.72,0.28,0.41,0.91,0.96,0.64,0.56,0.49,0.32,0.2,0.05,0.01,0.55,0.74,0.59,0.47,0.44,0.6,0.8,0.99,0.8,0.44,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.91,0.92,0.96,0.27,0.04,0.04,0.26,0.73,0.84,0.6,0.06,0.01,0.01,0.01,0.01,0.01,0.22,0.57,0.54,0.5,0.55,0.82,0.89,0.9,0.92,0.94,0.97,0.74,0.33,0.02,0.01,0,0,0,0,0,0,0,0,0,0,0.02,1,1,1,1,0.81,0.82,0.5,0.5,0.71,0.77,0.55,0.65,0.55,0.39,0.99,0.78,0.78,0.81,0.71,0.61,0.14,0.02,0.02,0.68,0.66,0.71,0.54,0.25,0.42,0.72,0.7,0.75,0.74,0.73,0.38,0.68,0.41,0.11,0.01,0.46,0.92,0.74,0.55,0.54,0.4,0.02,0.17,0.42,0.31,0.5,0.76,0.84,0.8,0.74,0.8,0.76,0.67,0.25,0.01,0.01,0.02,0.03,0.04,0.04,0.02,0.01,0.48,1,0.66,0.68,0.4,0.53,0.71,0.47,1,0.95,0.08,0.08,0.03,0.74,0.59,0.52,0.45,0.59,0.7,0.59,0.07,0.51,0.45,0.83,0.64,0.6,0.68,0.47,0.02,0.32,0.88,0.54,0.45,0.21,0.71,0.82,0.78,0.78,0.35,0.15,0.01,0.01,0.01,0.01,0.01,0,0,0,0,0,0,0,0,0,0,0,0.01,0.22,0.78,0.52,1,0.88,0.83,0.73,0.5,1,0.92,0.86,0.74,0.4,0.5,0.61,0.59,0.21,0.01,0.05,0.63,0.91,1,0.92,0.98,0.08,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.07,0.21,0.91,0.6,0.02,0.01,0.02,0.02,0.92,1,1,0.77,0.83,0.89,0.73,0.79,0.81,0.67,0.58,0.24,0.21,0.09,0.38,0.55,0.76,0.69,0.69,0.72,0.72,0.8,0.75,0.75,0.74,0.59,0.27,0.02,0.01,0.01,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2,0.45,0.73,0.82,0.67,0.88,0.78,0.71,0.66,0.4,0.3,0.33,0.62,1,1,0.87,0.5,0.01,0,0.88,1,0.91,0.81,0.86,0.72,0.7,0.8,0.8,0.65,0.16,0.01,0.13,0.32,0.61,0.79,0.71,0.57,0.17,0,0,0.01,0.01,0,0,0.01,0,0,0,0,0,0,0,0.02,0.21,0.69,1,1,0.78,0.67,0.54,0.8,1,1,0.65,0.23,0.09,0,0,0,0,0,0,0,0,0,0,0,0,0,0.21,0.88,1,0.5,0.01,0.08,0.03,0.83,0.96,0.71,0.66,0.52,0.65,0.67,0.33,0.03,0.01,0,0,0,0,0,0,0,0,0,0,0,0.35,1,1,0.94,1,1,0.43,0.61,1,0.8,0.32,0.28,0.1,0.02,0.37,0.43,0.67,1,0.72,0.72,0.58,0.47,0.53,0.58,0.71,0.5,0.35,0.21,0.17,0.39,0.77,0.61,0.49,0.38,0.2,0.02,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.31,0.55,1,0.36,0.01,0.76,1,1,1,1,0.81,0.28,0.05,0,0,0,0,0,0,0,0,0,0,0.09,0.56,0.69,0.92,0.78,0.52,0.55,0.58,0.37,0.03,0.14,0.47,0.27,0.69,0.44,0.51,0.56,0.37,0.38,0.72,0.96,0.96,0.91,0.17,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.11,0.38,0.86,1,0.39,0.02,0.01,0.04,0.61,1,1,0.97,0.73,0.53,0.5,0.58,0.43,0.59,0.7,0.61,0.84,0.75,0.39,0.01,0.01,0.35,0.73,0.68,0.4,0.21,0.2,0.33,0.55,0.63,0.54,0.35,0.66,0.94,0.78,0.75,0.79,0.63,0.64,0.29,0,0.01,0,0,0,0,0,0,0,0.03,0.31,0.81,1,0.44,0.57,0.27,0.01,0.19,0.28,0.95,0.93,0.83,0.89,0.78,0.35,0.02,0,0,0,0,0,0,0.4,1,0.74,0.47,0.37,0.38,0.46,0.55,0.54,0.51,0.33,0.08,0.01,0.01,0,0,0,0.01,0.01,0,0.05,0.36,0.42,0.96,1,0.59,0.64,0.56,0.65,0.04,0.01,0.48,0.83,0.49,0.43,0.13,0.28,0.39,0.26,0.02,0.04,0.04,0.61,0.81,1,0.98,0.66,0.79,0.43,0.02,0.01,0.01,0.01,0.01,0.01,0,0,0.04,0.4,0.98,0.73,0.7,0.64,0.44,0.45,0.47,0.37,0.62,0.52,0.18,0.01,0,0,0.52,0.47,0.39,0.12,0.52,0.91,0.85,0.71,0.19,0.07,0.03,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0.05,0.19,0.85,0.75,0.12,0.07,0.07,0.07,1,1,1,1,0.92,1,0.98,0.94,1,1,0.67,0.01,0,0.01,0.8,0.8,0.63,0.64,0.6,0.57,0.56,0.59,0.49,0.4,0.15,0.03,0.1,0.73,0.6,0.58,0.48,0.37,0.28,0.3,0.49,0.49,0.29,0.66,0.69,0.82,0.75,0.29,1,1,0.85,0.65,0.58,0.44,0.36,0.14,0.09,0.36,0.28,0.85,0.94,0.77,0.78,0.39,0.02,0.16,0.63,0.58,0.46,0.07,0.01,0.41,0.75,0.52,0.32,0.34,0.49,0.34,1,1,0.91,0.9,0.83,0.28,0.01,0.01,0.01,0,0,0,0,0,0,0,0,0.02,0.84,0.95,0.79,0.77,0.29,0.02,0.58,0.73,0.66,0.62,0.59,0.58,0.41,0.01,0.66,0.86,0.8,0.88,0.25,0.04,0.45,0.93,0.65,0.2,0.46,1,1,1,1,1,0.64,0.14,0.01,0.01,0.01,0.01,0.01,0.2,0.51,0.8,0.69,0.15,0.06,0.04,0.05,0.45,1,1,0.96,0.97,0.65,0.2,0.21,0.42,0.73,0.06,0.02,0.01,0.47,0.88,0.07,0.1,0.18,0.29,0.53,0.57,0.45,0.35,0.18,0.06,0.01,0.01,0.01,0,0,0,0,0,0.05,0.13,0.48,0.97,0.93,0.8,0.76,1,1,0.89,0.87,0.87,1,1,0.96,0.74,0.11,0.09,0.72,0.73,0.84,0.88,0.89,0.66,0.45,0.5,0.47,0.31,0.41,0.64,0.64,0.53,0.05,0.37,0.15,0.71,0.66,0.83,0.89,0.67,0.81,0.8,0.84,0.76,0.02,0,0.01,0,0,0.3,0.39,0.7,0.72,0.48,0.35,0.46,0.14,0.1,0.59,0.2,0.76,0.49,0.34,0.03,0,0.19,0.68,1,0.91,0.79,0.63,0.47,0.22,0.04,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.61,0.79,0.62,0.64,0.61,0.9,0.94,0.75,0.6,0.66,0.85,1,1,0.67,0.59,0.55,0.49,0.44,0.58,0.87,0.76,0.79,0.92,0.42,0.44,0.35,0.8,0.74,0.99,0.75,0.64,0.88,0.75,0.77,0.71,0.57,0.48,0.27,0.11,0.02,0,0,0.01,0.22,0.53,0.64,0.28,0.29,0.41,0.19,0.05,0.49,0.21,0.65,0.85,0.57,0.69,0.96,0.84,0.09,0,0,0,0,0,0,0,0,0.23,0.62,0.83,1,0.94,0.76,0.66,0.18,0.54,0.93,0.88,0.77,0.43,0.03,0,0.01,0,0.01,0,0,0,0.01,0,0.01,0,0,0.03,0.77,0.68,0.52,0.51,0.58,0.62,0.5,0.25,0.02,0,0,0.11,0.94,1,0.69,0.07,0.41,0.31,0.23,0.09,0.01,0.95,0.84,0.85,0.73,0.65,0.42,0.3,0.09,0.02,0.01,0.01,0,0,0.01,0,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0,1,1,1,1,0.67,0.6,0.71,0.91,1,0.7,0.53,0.38,0.35,0.62,0.82,0.28,0.33,0.14,0.19,1,0.94,0.81,0.9,0.76,0.41,0.57,1,0.93,0.63,0.37,0.41,0.06,0.01,0,0,0,0,0,0,0,0.01,0.01,0.01,0.01,0.04,0.56,1,0.81,0.05,0.01,0.32,1,0.99,1,0.89,0.38,0.11,1,0.97,0.74,0.67,0.56,0.48,0.29,0.05,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.38,0.64,1,0.9,0.74,0.49,0.01,0,0.7,0.86,0.84,0.78,0.76,0.65,0.63,0.91,0.78,0.78,0.8,0.63,0.27,0.63,0.38,0.05,0.04,0.06,0.64,0.72,0.54,0.51,0.52,0.6,0.76,0.73,0.18,0.11,0.53,0.94,0.58,0.52,0.76,0.78,1,0.92,0.76,0.66,0.67,0.63,0.43,0.27,0.08,0,0,0,0,0,0,0,0,0,0,0.26,0.55,0.56,0.74,0.89,0.76,0.63,0.01,0.46,0.41,0.61,0.38,0.41,0.42,0.53,0.62,0.73,0.74,0.71,0.77,0.69,0.32,0.06,0.07,0.18,1,0.58,0.9,0.98,0.91,0.92,0.92,0.86,0.75,0.7,0.38,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.53,0.9,0.74,0.09,0,0,0.05,0.29,0.42,0.33,0.75,0.65,0.44,0.41,0.4,0.24,0.09,0.03,0.01,0,0.05,0.64,0.71,0.68,0.69,0.66,0.23,0.01,0.02,0.44,0.48,0.5,0.47,0.23,0.17,0.24,0.19,0.06,0.02,0,0,0,0,0,0,0,0,0,0,0.01,0.01,0.01,0.01,0,0,0,0,0.01,0.62,1,1,1,0.93,0.78,0.75,0.86,0.53,0.21,0.48,1,0.3,0.1,0.18,0.25,0.2,0.46,0.64,0.47,0.53,0.58,0.47,0.37,0.1,0.09,0.36,0.51,0.6,0.39,0.18,0.33,0.72,0.57,0.62,0.53,0.3,0.1,1,1,0.91,1,0.79,1,1,0.39,0.02,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0.36,0.23,0.23,1,0.75,0.17,0.85,1,1,1,1,0.8,0.66,0.63,1,1,1,0.37,1,0.84,0.13,0.01,0.13,0.25,0.29,0.27,0.59,0.63,0.44,0.47,0.33,0.12,0.01,0.01,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]};/*TIMING:END*/</script>
+    <script>
+      (() => {
+        const T = window.TIMING;
+        const R9 = document.documentElement.dataset.ratio === "9x16"; // reframe.py edition
+        const tl = gsap.timeline({ paused: true });
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+
+        // ---------- lookups: every time comes from TIMING, never the wall clock ----------
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+        const SC = T.scenes;
+        const B = (n) => T.beat0 + T.beatLen * n;
+        const isKick = (n) => T.kick.some(([a, b]) => n >= a && n < b);
+        const hit = (sid, word, nth) => {
+          const h = SC[sid].lines.flatMap((l) => l.words).filter((w) => w[0] === word)[nth - 1];
+          if (!h) console.warn(`[timing] "${word}" #${nth} missing in ${sid}`);
+          return h;
+        };
+        const W = (sid, word, nth = 1) => (hit(sid, word, nth) || [0, SC[sid].start])[1];
+        const FR = 1 / 30;
+        // seeded PRNG: Math.random would make every render different
+        const rng = (seed) => () => {
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ (t >>> 7);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+
+        // ---------- synchronous DOM build (nothing is created during playback) ----------
+        const splitWords = (el) =>
+          Array.from(el.childNodes).forEach((n) => {
+            if (n.nodeType === 1) return n.namespaceURI === "http://www.w3.org/2000/svg" ? undefined : splitWords(n);
+            if (n.nodeType !== 3) return;
+            const frag = document.createDocumentFragment();
+            n.textContent.split(/([ \t\r\n]+)/).forEach((p) => {
+              if (!p) return;
+              if (/^[ \t\r\n]+$/.test(p)) return frag.append(" ");
+              const s = document.createElement("span");
+              s.className = "w";
+              s.textContent = p;
+              frag.append(s);
+            });
+            n.replaceWith(frag);
+          });
+        $$(".hl .ln").forEach(splitWords);
+        // odometers: reels built now, rolled by tweens later
+        $$(".odo").forEach((o) => {
+          o.setAttribute("data-layout-allow-overflow", ""); // reels clip on purpose
+          const reel = Array.from({ length: 20 }, (_, i) => `<i>${i % 10}</i>`).join("");
+          if (o.dataset.value == null) console.warn("[odo] missing data-value", o);
+          o.innerHTML = Array.from(o.dataset.value ?? "").map((ch) => (/\d/.test(ch) ? `<span class="odo-d"><span class="odo-s">${reel}</span></span>` : `<span>${ch}</span>`)).join("");
+        });
+        gsap.set($$(".de-dot"), { scale: 0 });
+        gsap.set($$(".de-fly"), { autoAlpha: 0 });
+        gsap.set("#cursor", { x: 0, y: 0 });
+
+        // ---------- shared vocabulary ----------
+        const pop = (e, t, o = {}) => tl.fromTo(e, { autoAlpha: 0, scale: o.from ?? 0.4 }, { autoAlpha: 1, scale: 1, duration: o.d ?? 0.45, ease: o.ease ?? "back.out(2.2)", stagger: o.stagger ?? 0, immediateRender: false }, t);
+        const rise = (e, t, o = {}) => tl.fromTo(e, { autoAlpha: 0, y: o.y ?? 40 }, { autoAlpha: 1, y: 0, duration: o.d ?? 0.5, ease: o.ease ?? "power3.out", stagger: o.stagger ?? 0, immediateRender: false }, t);
+        const draw = (e, t, d = 0.6, ease = "power2.inOut") => tl.fromTo(e, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: d, ease, immediateRender: false }, t);
+        const lineIn = (e, t, o = {}) => tl.fromTo(e, { yPercent: 110, rotate: o.rot ?? 3 }, { yPercent: 0, rotate: 0, duration: o.d ?? 0.6, ease: "expo.out", stagger: { each: o.each ?? 0.055, ease: "power1.in" }, immediateRender: false }, t);
+        const bump = (e, t, o = {}) => {
+          tl.to(e, { scale: o.s ?? 1.08, duration: 0.08, ease: "power2.out" }, t);
+          tl.to(e, { scale: 1, duration: 0.3, ease: "power2.out" }, t + 0.08);
+        };
+        // kinetic keyword: accent colour + a small scale beat
+        const kw = (sel, t) => {
+          tl.to(sel, { color: "#6366f1", scale: 1.12, transformOrigin: "0% 80%", duration: 0.18, ease: "power2.out" }, t);
+          tl.to(sel, { scale: 1, duration: 0.4, ease: "back.out(1.4)" }, t + 0.18);
+        };
+        // slam: the energy-3 soft version only (no elastic, small squash, no shake)
+        const slam = (e, t, o = {}) => {
+          const q = 0.5, t0 = Math.max(0, t - (o.d ?? 0.22));
+          tl.fromTo(e, { autoAlpha: o.keep ? 1 : 0, scale: o.from ?? 1.25, filter: `blur(${12 * q}px)` }, { autoAlpha: 1, scale: 1 - 0.06 * q, filter: "blur(0px)", duration: Math.max(FR, t - t0), ease: "expo.in", immediateRender: false }, t0);
+          tl.to(e, { scaleX: 1 + 0.06 * q, scaleY: 1 - 0.08 * q, duration: 3 * FR, ease: "power2.out" }, t);
+          tl.to(e, { scaleX: 1, scaleY: 1, duration: 0.5, ease: "back.out(1.4)" }, t + 3 * FR);
+          tl.set(e, { filter: "none" }, t + 4 * FR);
+        };
+        const settleCam = (e, t0, t1, amt = 0.035) => tl.fromTo(e, { scale: 1 }, { scale: 1 + amt, duration: Math.max(0.1, t1 - t0), ease: "none", immediateRender: false }, t0);
+        const camReset = (t, d = 0.45) => tl.to("#stage", { scale: 1, duration: d, ease: "power2.inOut" }, t);
+        const odo = (e, t, o = {}) => {
+          const el = typeof e === "string" ? $(e) : e;
+          const digits = Array.from(el.dataset.value ?? "").filter((c) => /\d/.test(c)).map(Number);
+          $$(".odo-s", el).forEach((s, i) => {
+            const idx = digits[i] + (i === digits.length - 1 ? 10 : 0);
+            tl.fromTo(s, { yPercent: 0 }, { yPercent: -idx * 5, duration: (o.d ?? 1.1) + i * 0.08, ease: o.ease ?? "power3.out", immediateRender: false }, t);
+          });
+        };
+        // sway: ±amp° seeded, finite repeats, phases offset
+        const sway = (els, t0, o = {}) => {
+          els.forEach((el, i) => {
+            const r = rng((o.seed ?? 11) + i * 17);
+            const amp = (o.amp ?? 1) * (r() > 0.5 ? 1 : -1);
+            tl.fromTo(el, { rotation: 0 }, { rotation: amp, duration: o.half ?? 1.1, ease: "sine.inOut", yoyo: true, repeat: o.repeat ?? 2, immediateRender: false }, t0 + i * (o.lag ?? 0.13));
+          });
+        };
+
+        // ---------- bento geometry ----------
+        // 16:9: 4x3 grid (cols 96/533/970/1407). 9x16: 3x4 grid inside the safe band
+        // (x 40-938, y 240-1380; apps cover top 220 / bottom 420 / right 140).
+        const CX = R9 ? [40, 346, 652] : [96, 533, 970, 1407];
+        const W1 = R9 ? 286 : 417;
+        const GAP = 20;
+        const MODES = R9
+          ? { HEAD: { ys: [440, 680, 920, 1160], h: 220 }, FULL: { ys: [240, 530, 820, 1110], h: 270 } }
+          : { HEAD: { ys: [270, 500, 730], h: 210 }, FULL: { ys: [120, 401, 682], h: 261 } };
+        const rectOf = (m, [c, r, cs, rs]) => ({ x: CX[c], y: MODES[m].ys[r], width: W1 * cs + GAP * (cs - 1), height: MODES[m].h * rs + GAP * (rs - 1) });
+        const LAY169 = {
+          s01: { m: "HEAD", t: { tLop: [2, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [3, 1, 1, 1] } },
+          s02: { m: "HEAD", t: { tOS: [0, 0, 2, 2], tLop: [2, 0, 1, 1], tCham: [3, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [3, 1, 1, 1], tList: [0, 2, 2, 1], tPortal: [2, 2, 2, 1] } },
+          s03: { m: "FULL", t: { tLop: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tDe: [3, 0, 1, 1], tPhi: [2, 1, 1, 1], tPortal: [3, 1, 1, 1], tOS: [0, 2, 2, 1], tList: [2, 2, 2, 1] } },
+          s04: { m: "FULL", t: { tDe: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tLop: [3, 0, 1, 1], tPhi: [2, 1, 1, 1], tPortal: [3, 1, 1, 1], tOS: [0, 2, 2, 1], tList: [2, 2, 2, 1] } },
+          s06: { m: "FULL", t: { tOS: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tLop: [3, 0, 1, 1], tPhi: [2, 1, 2, 1], tDe: [2, 2, 1, 1], tPortal: [3, 2, 1, 1], tList: [0, 2, 2, 1] } },
+          s07: { m: "FULL", t: { tOS: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tLop: [3, 0, 1, 1], tPhi: [2, 1, 1, 1], tPortal: [3, 1, 1, 2], tDe: [2, 2, 1, 1], tList: [0, 2, 2, 1] } },
+          s08: { m: "FULL", t: { tStat1: [0, 0, 2, 1], tStat2: [0, 1, 2, 1], tOS: [0, 2, 2, 1], tLop: [2, 0, 1, 1], tCham: [3, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [3, 1, 1, 1], tPortal: [2, 2, 1, 1], tList: [3, 2, 1, 1] } },
+          s09: { m: "FULL", t: { tOS: [0, 0, 2, 1], tDe: [2, 0, 1, 1], tCham: [3, 0, 1, 1], tS1: [0, 1, 1, 1], tS2: [1, 1, 1, 1], tS3: [2, 1, 1, 1], tLop: [3, 1, 1, 1], tList: [0, 2, 2, 1], tPhi: [2, 2, 1, 1], tPortal: [3, 2, 1, 1] } },
+          s10: { m: "FULL", t: { tCTA: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tDe: [3, 0, 1, 1], tPhi: [2, 1, 1, 1], tPortal: [3, 1, 1, 1], tOS: [0, 2, 2, 1], tList: [2, 2, 2, 1] } },
+          s11: { m: "HEAD", t: { tOS: [0, 0, 2, 2], tLop: [2, 0, 1, 1], tCham: [3, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [3, 1, 1, 1], tList: [0, 2, 2, 1], tPortal: [2, 2, 2, 1] } },
+        };
+        // 9x16 layouts: same 12 cells transposed to a 3x4 grid, re-authored so the
+        // wide tiles stay wide (list) and the tall tile stays tall (portal).
+        const LAY9 = {
+          s01: { m: "HEAD", t: { tLop: [0, 1, 1, 1], tDe: [1, 1, 1, 1], tPhi: [2, 1, 1, 1] } },
+          s02: { m: "HEAD", t: { tOS: [0, 0, 2, 2], tLop: [2, 0, 1, 1], tCham: [2, 1, 1, 1], tDe: [0, 2, 1, 1], tPhi: [1, 2, 1, 1], tList: [0, 3, 2, 1], tPortal: [2, 2, 1, 2] } },
+          s03: { m: "FULL", t: { tLop: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [2, 2, 1, 1], tPortal: [2, 3, 1, 1], tOS: [0, 3, 2, 1], tList: [0, 2, 2, 1] } },
+          s04: { m: "FULL", t: { tDe: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tLop: [2, 1, 1, 1], tPhi: [2, 2, 1, 1], tPortal: [2, 3, 1, 1], tOS: [0, 3, 2, 1], tList: [0, 2, 2, 1] } },
+          s06: { m: "FULL", t: { tPhi: [0, 0, 2, 1], tCham: [2, 0, 1, 1], tLop: [2, 1, 1, 1], tOS: [0, 1, 2, 2], tDe: [2, 2, 1, 1], tPortal: [2, 3, 1, 1], tList: [0, 3, 2, 1] } },
+          s07: { m: "FULL", t: { tOS: [0, 0, 2, 2], tPortal: [2, 0, 1, 2], tPhi: [0, 2, 1, 1], tCham: [1, 2, 1, 1], tDe: [2, 2, 1, 1], tList: [0, 3, 2, 1], tLop: [2, 3, 1, 1] } },
+          s08: { m: "FULL", t: { tStat1: [0, 0, 2, 1], tStat2: [0, 1, 2, 1], tOS: [0, 2, 2, 1], tLop: [2, 0, 1, 1], tCham: [2, 1, 1, 1], tDe: [2, 2, 1, 1], tList: [0, 3, 1, 1], tPhi: [1, 3, 1, 1], tPortal: [2, 3, 1, 1] } },
+          s09: { m: "FULL", t: { tOS: [0, 0, 2, 1], tS1: [0, 1, 1, 1], tS2: [1, 1, 1, 1], tS3: [2, 1, 1, 1], tDe: [0, 2, 1, 1], tCham: [1, 2, 1, 1], tLop: [2, 2, 1, 1], tList: [0, 3, 1, 1], tPhi: [1, 3, 1, 1], tPortal: [2, 3, 1, 1] } },
+          s10: { m: "FULL", t: { tCTA: [0, 0, 2, 2], tCham: [2, 0, 1, 1], tDe: [2, 1, 1, 1], tPhi: [2, 2, 1, 1], tPortal: [2, 3, 1, 1], tOS: [0, 2, 2, 1], tList: [0, 3, 2, 1] } },
+          s11: { m: "HEAD", t: { tOS: [0, 0, 2, 2], tLop: [2, 0, 1, 1], tCham: [2, 1, 1, 1], tDe: [0, 2, 1, 1], tPhi: [1, 2, 1, 1], tList: [0, 3, 2, 1], tPortal: [2, 2, 1, 2] } },
+        };
+        const LAY = R9 ? LAY9 : LAY169;
+        // which tile shows its rich (slot-demo) layer per scene; full views are handled by expand/collapse
+        const CONTENT = { s04: { tDe: "rich" }, s06: { tPhi: "rich" }, s07: { tPortal: "rich" } };
+        const DIM = { s04: { keep: ["tDe"] }, s06: { keep: ["tPhi"] }, s07: { keep: ["tPortal"] }, s08: { keep: ["tStat1", "tStat2"] }, s09: { keep: ["tS1", "tS2", "tS3", "tOS"] }, s10: { keep: ["tCTA"] } };
+        const RING_BASE = 0.6;
+        // tile placement is transform-only: park every tile at its first/canonical slot
+        for (const el of $$(".tile")) {
+          const id = el.id;
+          const head = LAY.s01.t[id] ?? LAY.s02.t[id];
+          const cell = head ?? LAY.s08.t[id] ?? LAY.s09.t[id] ?? LAY.s10.t[id];
+          const rc = rectOf(head ? "HEAD" : "FULL", cell);
+          gsap.set(el, { x: rc.x, y: rc.y });
+        }
+        if (R9) {
+          // tile content keeps its 16:9 design canvas, uniformly fitted to the narrower grid
+          const DW = { tOS: 854, tList: 854, tStat1: 854, tStat2: 854, tCTA: 854 };
+          const FH = { tOS: 440, tStat1: 261, tStat2: 261, tS1: 261, tS2: 261, tS3: 261, tCTA: 542, tList: 210 };
+          const RH = { tDe: 542, tPhi: 261, tPortal: 542 };
+          $$(".tile").forEach((el) => {
+            const dw = DW[el.id] ?? 417;
+            const k = dw === 854 ? 592 / 854 : 286 / 417;
+            [".face", ".rich", ".full"].forEach((sel) => {
+              const ly = $(sel, el);
+              if (!ly) return;
+              const dh = sel === ".face" ? (FH[el.id] ?? 210) : sel === ".rich" ? (RH[el.id] ?? 261) : 1920;
+              gsap.set(ly, { width: dw, height: dh, scale: sel === ".full" ? 1 : k, transformOrigin: "0% 0%" });
+            });
+          });
+          // full views re-layout vertically (1080x1920 design canvas)
+          const s3 = $$("#tLop .full .s3in");
+          gsap.set(s3[0], { left: 60, top: 320, width: 460, height: 320 });
+          gsap.set(s3[1], { left: 600, top: 320, width: 420, height: 240 });
+          gsap.set("#lop-slotB", { left: 600, top: 620, width: 420, height: 240 });
+          gsap.set("#lop-ghosts", { left: 290, top: 470 });
+          gsap.set("#lop-cal", { left: 60, top: 700, width: 460, height: 260 });
+          gsap.set("#tLop .ripple", { left: 260, top: 450 });
+          const msk = $$("#tDe .full .msk");
+          gsap.set(msk[0], { left: 60, top: 240, width: 960, height: 430 });
+          gsap.set(msk[1], { left: 60, top: 700, width: 960, height: 430 });
+          gsap.set(msk[2], { left: 60, top: 1160, width: 960, height: 430 });
+          gsap.set($$(".gd-pane"), { width: 960, height: 430 });
+          gsap.set("#gd-band", { left: 34, top: 64, width: 892, height: 130, fontSize: 96 });
+          const bandBars = $$("#tDe .full .msk:nth-of-type(3) .bar");
+          bandBars.forEach((b, i) => gsap.set(b, { left: 34, top: 214 + i * 32, width: [830, 680, 760, 560][i] ?? 560, height: 16 }));
+          const ctaDivs = $$("#tCTA .full > div");
+          gsap.set(ctaDivs[0], { left: 60, top: 560, width: 960 });
+          gsap.set("#hl-cta", { fontSize: 64 });
+          gsap.set(ctaDivs[1], { left: 370, top: 880, width: 340, height: 110 });
+          gsap.set("#cta-chip", { left: 370, top: 1040 });
+          gsap.set("#tCTA .ripple", { left: 510, top: 900 });
+          gsap.set("#phi-scrap1", { left: 30, top: 560, width: 1020, height: 720 });
+          gsap.set("#phi-scrap2", { left: 640, top: 140, width: 420, height: 560 });
+          gsap.set("#phi-scrap3", { left: 90, top: 1330, width: 900, height: 150 });
+          // headlines move above the grid into the safe band
+          gsap.set("#hl1a", { top: 250, fontSize: 60 });
+          gsap.set("#hl1b", { top: 245, fontSize: 60 });
+          gsap.set("#hl2", { top: 250, fontSize: 60 });
+          gsap.set("#hl11", { top: 240, fontSize: 76 });
+          // s01 slot outlines take the 9x16 canonical cells
+          const slotCells = [[0, 0, 2, 2], [2, 0, 1, 1], [2, 1, 1, 1], [0, 2, 1, 1], [1, 2, 1, 1], [0, 3, 2, 1], [2, 2, 1, 2]];
+          $$("#slots .slot").forEach((sl, i) => gsap.set(sl, rectOf("HEAD", slotCells[i])));
+          // s08 foreground dots and s01 paper bits move into the vertical frame
+          const dotPos = [[450, 700], [800, 1080], [560, 1420], [920, 860]];
+          $$("#statDots .dot").forEach((d, i) => gsap.set(d, { left: dotPos[i][0], top: dotPos[i][1] }));
+          const paperPos = [[180, 480], [640, 1280], [380, 280], [760, 640]];
+          $$("#paper > div").forEach((p2, i) => { p2.style.left = paperPos[i][0] + "px"; p2.style.top = paperPos[i][1] + "px"; });
+          // s09 step connectors move to the 3-column gaps
+          gsap.set("#conn1", { attr: { d: "M321 665H351" } });
+          gsap.set("#conn2", { attr: { d: "M627 665H657" } });
+        }
+
+        let curName = "s01";
+        let bannerScale = 1;
+        const expanded = { tLop: false, tDe: false, tPhi: false, tCTA: false };
+        const orderOf = (lay, id) => {
+          const [c, r, cs, rs] = lay.t[id];
+          return Math.abs(c + cs / 2 - 2) + Math.abs(r + rs / 2 - 1.5);
+        };
+        const showLayer = (sel, t) => {
+          if (!sel) return;
+          tl.set(sel, { display: "block" }, Math.max(0, t - 0.01));
+          tl.fromTo(sel, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: "power2.out", immediateRender: false }, t);
+        };
+        const hideLayer = (sel, t) => {
+          if (!sel) return;
+          tl.to(sel, { autoAlpha: 0, duration: 0.15, ease: "power2.in" }, t);
+          tl.set(sel, { display: "none" }, t + 0.16);
+        };
+        const swapTo = (id, mode, t) => {
+          const el = $(`#${id}`);
+          const face = $(".face", el), ri = $(".rich", el), fu = $(".full", el);
+          if (mode === "face") {
+            hideLayer(ri, t);
+            hideLayer(fu, t);
+            tl.set(face, { display: "block" }, Math.max(0, t - 0.01));
+            tl.fromTo(face, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: "power2.out", immediateRender: false }, t + 0.1);
+          } else {
+            tl.to(face, { autoAlpha: 0, duration: 0.18, ease: "power2.in" }, t);
+            tl.set(face, { display: "none" }, t + 0.19);
+            hideLayer(mode === "full" ? ri : fu, t);
+            showLayer(mode === "full" ? fu : ri, t + 0.05);
+          }
+        };
+        // grid-reflow: tiles swap slots (0.03s stagger, power2.inOut 0.5s); new tiles stagger-fill
+        const reflow = (name, t, o = {}) => {
+          const lay = LAY[name], prev = LAY[curName];
+          const dur = o.dur ?? 0.5;
+          const ids = Object.keys(lay.t);
+          const skip = o.skip ?? [], skipLeave = o.skipLeave ?? [];
+          const leaving = Object.keys(prev.t).filter((id) => !lay.t[id] && !skipLeave.includes(id) && !expanded[id]);
+          leaving.forEach((id, i) => {
+            tl.to(`#${id}`, { autoAlpha: 0, scale: 0.9, duration: 0.3, ease: "power2.in" }, t + i * 0.03);
+          });
+          const moving = ids.filter((id) => prev.t[id] && !skip.includes(id) && !expanded[id]);
+          const fresh = ids.filter((id) => !prev.t[id] && !skip.includes(id));
+          moving.sort((a, b) => orderOf(lay, a) - orderOf(lay, b));
+          moving.forEach((id, i) => {
+            tl.to(`#${id}`, { ...rectOf(lay.m, lay.t[id]), rotation: 0, duration: dur, ease: "power2.inOut" }, t + i * 0.03);
+          });
+          fresh.sort((a, b) => orderOf(lay, a) - orderOf(lay, b));
+          fresh.forEach((id, i) => {
+            tl.set(`#${id}`, { ...rectOf(lay.m, lay.t[id]), rotation: 0, scale: 1 }, Math.max(0, t - 0.01));
+            tl.fromTo(`#${id}`, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: o.fillDur ?? 0.5, ease: "power3.out", immediateRender: false },
+              t + (o.fill ?? 0) + i * (o.fillEach ?? 0.05));
+          });
+          ids.forEach((id) => {
+            if (skip.includes(id) || expanded[id]) return;
+            const want = CONTENT[name]?.[id] ?? "face";
+            const had = CONTENT[curName]?.[id] ?? "face";
+            if (want !== had) swapTo(id, want, t + dur * 0.5); // park demos that do not continue into this scene
+          });
+          // tOS banner mode (2x1) scales its content down
+          if (lay.t.tOS) {
+            const banner = lay.t.tOS[2] * lay.t.tOS[3] === 2;
+            const s = R9 ? 592 / 854 : (banner ? 0.62 : 1);
+            if (Math.abs(s - bannerScale) > 1e-6) {
+              tl.to("#tOS .os-inner", { scale: s, duration: dur, ease: "power2.inOut", transformOrigin: "0% 0%" }, t);
+              bannerScale = s;
+            }
+            tl.to($$(".os-big"), { autoAlpha: banner ? 0 : 1, duration: dur * 0.6 }, t);
+          }
+          // dim the bystanders (profile: one active tile, others dim to 60%)
+          const dim = DIM[name];
+          if (dim) {
+            ids.forEach((id) => {
+              if (skip.includes(id) || expanded[id] || dim.keep.includes(id) || CONTENT[name]?.[id]) return;
+              tl.to(`#${id}`, { opacity: 0.6, duration: 0.4 }, t + 0.2);
+            });
+          } else if (DIM[curName]) {
+            ids.forEach((id) => { if (!skip.includes(id)) tl.to(`#${id}`, { opacity: 1, duration: 0.4 }, t + 0.15); });
+          }
+          curName = name;
+        };
+        // FLIP tile-expand: the only zoom in the video (power3.inOut 0.6s)
+        const expand = (id, t, o = {}) => {
+          const dur = o.dur ?? 0.6, ease = o.ease ?? "power3.inOut";
+          const FW = R9 ? 1080 : 1920, FH = R9 ? 1920 : 1080;
+          expanded[id] = true;
+          tl.set(`#${id}`, { zIndex: 40 }, t);
+          tl.to(`#${id}`, { x: 0, y: 0, width: FW, height: FH, duration: dur, ease }, t);
+          // the expanded tile covers the whole grid: park the other faces beneath it
+          $$("#grid .tile").forEach((el) => {
+            if (el.id === id || expanded[el.id]) return;
+            const f = $(".face", el);
+            if (f) { tl.to(f, { autoAlpha: 0, duration: 0.15, ease: "power2.in" }, t); tl.set(f, { display: "none" }, t + 0.16); }
+          });
+          swapTo(id, "full", t); // the slot demo collapses while the FLIP is still small
+          const INS = R9 ? { x: 16, y: 16, width: 1048, height: 1888 } : { x: 24, y: 24, width: 1872, height: 1032 };
+          tl.to("#motifR", { attr: INS, duration: dur, ease: "power2.inOut" }, t);
+        };
+        const collapse = (id, rc, t) => {
+          const el = $(`#${id}`);
+          const ri = $(".rich", el);
+          tl.to($(".full", el), { autoAlpha: 0, duration: 0.18, ease: "power2.in" }, t);
+          tl.set($(".full", el), { display: "none" }, t + 0.19);
+          if (ri) { tl.to(ri, { autoAlpha: 0, duration: 0.15 }, t); tl.set(ri, { display: "none" }, t + 0.16); }
+          tl.to(el, { ...rc, rotation: 0, duration: 0.36, ease: "power3.in" }, t);
+          tl.set(el, { zIndex: 1 }, t + 0.37);
+          tl.set($(".face", el), { display: "block" }, t + 0.26);
+          tl.fromTo($(".face", el), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: "power2.out", immediateRender: false }, t + 0.27);
+          // bring the covered faces back (except a tile whose slot demo continues)
+          $$("#grid .tile").forEach((other) => {
+            if (other.id === id) return;
+            const of_ = $(".face", other);
+            if (of_ && (CONTENT[curName]?.[other.id] ?? "face") === "face") {
+              tl.set(of_, { display: "block" }, t + 0.2);
+              tl.fromTo(of_, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, ease: "power2.out", immediateRender: false }, t + 0.21);
+            }
+          });
+          tl.to("#motifR", { attr: { x: rc.x, y: rc.y, width: rc.width, height: rc.height }, duration: 0.4, ease: "power2.inOut" }, t + 0.05);
+          expanded[id] = false;
+        };
+
+        // ---------- motif (indigo ring) helpers ----------
+        const ringTo = (rc, t, o = {}) => {
+          tl.to("#motifR", { attr: { x: rc.x, y: rc.y, width: rc.width, height: rc.height, rx: 28 }, duration: o.dur ?? 0.5, ease: o.ease ?? "power2.inOut" }, t);
+          if (o.op != null) tl.to("#motifR", { opacity: o.op, duration: o.od ?? o.dur ?? 0.5 }, t);
+        };
+        const ringJump = (id, layName, t) => ringTo(rectOf(LAY[layName].m, LAY[layName].t[id]), t, { dur: 0.45 });
+        const ringBorn = (t) => {
+          // four broken arcs wake up on the chaos tiles ("mảnh vỡ rời rạc")
+          const spots = [
+            { x: 1360, y: 296, s: 0.85, rot: 35 },   // on tLop
+            { x: 996, y: 684, s: 0.75, rot: -28 },   // on tDe
+            { x: 1433, y: 526, s: 0.8, rot: 12 },    // on tPhi
+            { x: 1180, y: 430, s: 0.65, rot: 70 },   // loose
+          ];
+          ["#fr1", "#fr2", "#fr3", "#fr4"].forEach((id, i) => {
+            gsap.set(id, { x: spots[i].x, y: spots[i].y, scale: spots[i].s, rotation: spots[i].rot, transformOrigin: "50% 50%" });
+            tl.to(id, { opacity: 0.9, duration: 0.3 }, t + i * 0.08);
+            draw(id, t + 0.05 + i * 0.08, 0.45, "power2.out");
+            tl.set(id, { strokeDashoffset: 0.55 }, t + 0.55 + i * 0.08); // fragments stay half-drawn
+          });
+        };
+        // light sweep across a tile rect (opacity <= 0.35)
+        const sweep = (rc, t) => {
+          tl.set("#sweepWrap", { x: rc.x + 1, y: rc.y + 1, width: rc.width - 2, height: rc.height - 2 }, Math.max(0, t - 0.01));
+          tl.fromTo("#sweepBar", { xPercent: -180, opacity: 0.35 }, { xPercent: 330, opacity: 0, duration: 0.6, ease: "power2.inOut", immediateRender: false }, t);
+        };
+        // cursor: travels on an arc (x and y on different eases), presses on the beat
+        const cursorTo = (x, y, t, d = 0.5) => {
+          tl.fromTo("#cursor", { autoAlpha: 0, scale: 0.85 }, { autoAlpha: 1, scale: 1, duration: 0.2, immediateRender: false }, t - 0.05);
+          tl.to("#cursor", { x, duration: d, ease: "expo.out" }, t);
+          tl.to("#cursor", { y, duration: d, ease: "power2.inOut" }, t);
+        };
+        const press = (ripple, t) => {
+          tl.to("#cursor", { scale: 0.88, duration: 3 * FR, ease: "power2.out" }, t);
+          tl.to("#cursor", { scale: 1, duration: 0.2, ease: "power2.out" }, t + 3 * FR);
+          tl.fromTo(ripple, { scale: 0.2, opacity: 0.5 }, { scale: 2.4, opacity: 0, duration: 0.55, ease: "power2.out", immediateRender: false }, t);
+        };
+
+        // ---------- opening ----------
+        tl.fromTo("#fade", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power1.out" }, 0);
+        const paperBits = $$("#paper > div");
+        paperBits.forEach((p, i) => tl.set(p, { autoAlpha: 0 }, 0));
+
+        // ============ s01-hook (0 – 8.575) · build · chaos in the empty grid ============
+        {
+          const sid = "s01-hook";
+          $$("#slots .slot").forEach((s, i) => tl.fromTo(s, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, immediateRender: false }, 0.5 + i * 0.03));
+          settleCam("#stage", 0.3, 8.35, 0.03);
+          // headline A on the first spoken line, keyword beat on "giỏi"
+          tl.set("#hl1a", { autoAlpha: 1 }, 0.95);
+          lineIn("#hl1a .w", W(sid, "bạn") - 0.05, { each: 0.07 });
+          kw("#hl1a .kwx", W(sid, "giỏi"));
+          // headline B crossfades in as line 2 starts
+          tl.to("#hl1a", { autoAlpha: 0, y: -16, duration: 0.22, ease: "power2.in" }, W(sid, "nhưng") - 0.15);
+          tl.set("#hl1b", { autoAlpha: 1 }, W(sid, "nhưng") - 0.1);
+          lineIn($$("#hl1b .ln .w"), W(sid, "nhưng") - 0.05, { each: 0.03 });
+          // loose paper bits drift (foreground parallax)
+          paperBits.forEach((p, i) => {
+            tl.to(p, { autoAlpha: 0.85, duration: 0.4, immediateRender: false }, 2.7 + i * 0.12);
+            tl.to(p, { x: (i % 2 ? -1 : 1) * 26, y: (i < 2 ? 1 : -1) * 16, rotation: "+=3", duration: 1.6, ease: "sine.inOut" }, 2.9 + i * 0.1);
+          });
+          // three admin tiles slap into their slots on their spoken words, then self-pump
+          const chaos = [
+            { id: "#tDe", at: W(sid, "bài") },
+            { id: "#tLop", at: W(sid, "lịch") },
+            { id: "#tPhi", at: W(sid, "học", 2) },
+          ];
+          chaos.forEach((c) => {
+            tl.fromTo(c.id, { autoAlpha: 0, scale: 1.35 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: "expo.out", immediateRender: false }, c.at);
+            tl.fromTo(`${c.id} .face`, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, immediateRender: false }, c.at + 0.1);
+            tl.fromTo(c.id, { scale: 1 }, { scale: 1.045, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, c.at + 0.5);
+          });
+          // hero: on "rải rác" the tiles tumble and stick askew (back.out overshoot, designed chaos)
+          const TUMBLE = [{ id: "#tDe", rot: -4, dx: -8, dy: 5 }, { id: "#tLop", rot: 3.5, dx: 7, dy: -6 }, { id: "#tPhi", rot: -3, dx: -6, dy: 4 }];
+          TUMBLE.forEach((c, i) => {
+            const base = rectOf("HEAD", LAY.s01.t[c.id.slice(1)]);
+            tl.to(c.id, { rotation: c.rot, x: base.x + c.dx, y: base.y + c.dy, duration: 0.5, ease: "back.out(1.4)" }, W(sid, "rải") + i * 0.06);
+          });
+          ringBorn(W(sid, "rải"));
+          // cut-in: FLIP the tuition tile to CLOSE on "khắp" (0.45s expo.inOut per brief)
+          const khap = W(sid, "khắp");
+          tl.to("#hl1b", { autoAlpha: 0, duration: 0.2, ease: "power1.in" }, khap - 0.1);
+          $$("#slots .slot").forEach((s) => tl.to(s, { autoAlpha: 0, duration: 0.3 }, khap));
+          tl.to("#tPhi", { rotation: 0, x: 0, y: 0, duration: 0.2, ease: "power2.in" }, khap - 0.18);
+          expand("tPhi", khap, { dur: 0.45, ease: "expo.inOut" });
+          // inside the close-up: spreadsheet scrap + crumpled receipt fly in on arcs, spin resolves
+          tl.fromTo("#phi-scrap1", { autoAlpha: 0, x: -420, y: 300, rotation: -14 }, { autoAlpha: 1, x: 0, y: 0, rotation: -3, duration: 0.7, ease: "expo.out", immediateRender: false }, khap + 0.15);
+          tl.fromTo("#phi-scrap2", { autoAlpha: 0, x: 460, y: -260, rotation: 12 }, { autoAlpha: 1, x: 0, y: 0, rotation: 4, duration: 0.7, ease: "expo.out", immediateRender: false }, khap + 0.28);
+          // exit: collapse, one 2-frame brace of the whole grid, then the reflow opens s02
+          const endS1 = SC["s02-reveal"].start;
+          collapse("tPhi", rectOf(LAY.s01.m, LAY.s01.t.tPhi), endS1 - 0.62);
+          tl.to("#motifR", { opacity: 0, duration: 0.3 }, endS1 - 0.5); // the ring retires with the close-up
+          tl.to("#grid", { scale: 0.997, duration: 2 * FR, ease: "power2.in", transformOrigin: "50% 50%" }, endS1 - 0.14);
+          tl.to("#grid", { scale: 1, duration: 2 * FR, ease: "power2.out" }, endS1 - 0.14 + 2 * FR);
+          tl.to(paperBits, { autoAlpha: 0, duration: 0.25 }, endS1 - 0.2);
+        }
+
+        // ============ s02-reveal (8.575 – 15.004) · DROP · the grid assembles ============
+        {
+          const sid = "s02-reveal";
+          const drop = B(T.drops[0]); // 8.575
+          camReset(drop, 0.45);
+          reflow("s02", drop, { skip: ["tOS", "tPortal", "tList", "tCham", "tLop", "tDe", "tPhi"] });
+          // ring 1 on the drop: the anchor tile, then the two middle tiles (from center, 0.05 apart)
+          ["#tOS", "#tPortal", "#tList"].forEach((id, i) => {
+            tl.set(id, { ...rectOf("HEAD", LAY.s02.t[id.slice(1)]), rotation: 0, scale: 1 }, drop - 0.01);
+            tl.fromTo(id, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "power3.out", immediateRender: false }, drop + i * 0.05);
+          });
+          // ring 2 on beat 20: the four right-hand tiles snap upright into their corners
+          const b20 = B(20);
+          tl.set("#tCham", { ...rectOf("HEAD", LAY.s02.t.tCham), rotation: 0, scale: 1 }, drop - 0.01);
+          tl.fromTo("#tCham", { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "power3.out", immediateRender: false }, b20);
+          ["#tLop", "#tDe", "#tPhi"].forEach((id, i) => {
+            const base = rectOf("HEAD", LAY.s02.t[id.slice(1)]);
+            tl.to(id, { rotation: 0, x: base.x, y: base.y, duration: 0.4, ease: "power2.inOut" }, b20 + i * 0.03);
+          });
+          settleCam("#stage", drop + 0.5, 14.4, 0.03);
+          // headline
+          tl.set("#hl2", { autoAlpha: 1 }, 8.62);
+          lineIn($$("#hl2 .ln:first-child .w"), W(sid, "teacher") - 0.05, { each: 0.06 });
+          lineIn($$("#hl2 .ln:last-child .w"), W(sid, "vào") - 0.05, { each: 0.04 });
+          kw("#hl2 .kwx", W(sid, "workspace"));
+          // tOS content builds as the tile fills
+          tl.fromTo("#tOS .os-inner > *", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.07, immediateRender: false }, drop + 0.25);
+          // "gom": every loose thing snaps home — paper bits sucked into the grid
+          const gom = W(sid, "gom");
+          paperBits.forEach((p, i) => {
+            const ctr = R9 ? [540, 860] : [960, 560];
+            tl.to(p, { x: (ctr[0] - parseFloat(p.style.left)) * 0.6, y: (ctr[1] - parseFloat(p.style.top)) * 0.6, scale: 0.4, autoAlpha: 0, duration: 0.5, ease: "power3.in" }, gom + i * 0.04);
+          });
+          // ring fragments arc toward the 2x2 corners
+          ["#fr1", "#fr2", "#fr3", "#fr4"].forEach((id, i) => {
+            tl.to(id, { x: [950, 96, 96, 950][i], y: [296, 684, 296, 684][i], rotation: 0, scale: 0.62, duration: 0.55, ease: "power2.inOut" }, gom + 0.05);
+          });
+          ringTo(rectOf("HEAD", [0, 0, 2, 2]), gom + 0.05, { dur: 0.55 }); // the ring takes the anchor slot before it closes
+          // DROP: soft slam on the Teacher OS tile; the ring closes two frames late
+          const ws = W(sid, "workspace");
+          slam("#tOS", ws, { keep: true, from: 1.18 });
+          ["#fr1", "#fr2", "#fr3", "#fr4"].forEach((id, i) => tl.to(id, { opacity: 0, duration: 0.3 }, ws + 0.05 + i * 0.03));
+          tl.to("#motifR", { opacity: RING_BASE, duration: 0.25 }, ws + 0.03);
+          draw("#motifR", ws + 2 * FR, 0.55, "expo.out");
+          sweep(rectOf("HEAD", [0, 0, 2, 2]), ws + 0.55);
+          // "sáu": the six module icons pop in sequence
+          pop($$(".tile .ic"), W(sid, "sáu"), { from: 0.55, ease: "back.out(1.7)", stagger: 0.08, d: 0.4 });
+          // "danh sách": the roster tile lights mint for one beat
+          const ds = W(sid, "sách");
+          tl.to("#tList", { backgroundColor: "rgba(16,185,129,0.10)", borderColor: "rgba(16,185,129,0.55)", duration: 0.25, ease: "power2.out" }, ds);
+          tl.to("#tList", { backgroundColor: "#ffffff", borderColor: "#e2e8f0", duration: 0.4, ease: "power2.inOut" }, ds + 0.55);
+          // the settled grid sways, phases offset
+          sway($$("#grid .tile").filter((el) => el.id !== "tOS"), b20 + 0.55, { amp: 0.8, half: 0.8, repeat: 1, seed: 23 });
+          // exit: retire the headline, reflow hands the anchor slot to Lớp học
+          tl.to("#hl2", { autoAlpha: 0, y: -14, duration: 0.22, ease: "power2.in" }, 14.25);
+          reflow("s03", SC["s03-classes"].start - 0.5);
+          ringJump("tLop", "s03", SC["s03-classes"].start - 0.45);
+        }
+
+        // ============ s03-classes (15.004 – 18.218) · breathe · the one full-frame zoom ============
+        {
+          const sid = "s03-classes";
+          const t0 = SC[sid].start;
+          expand("tLop", t0 + 0.05); // FLIP 0.6s — the video's single zoom
+          // inner stage pans left→right inside the tile (the pan lives in the tile, not the camera)
+          tl.fromTo("#tLop .pan", { x: 40 }, { x: -60, duration: 2.9, ease: "power1.inOut", immediateRender: false }, t0 + 0.4);
+          // syllabus card and the first class rise; the cursor arcs in and clicks on "bản"
+          rise($$(".s3in"), t0 + 0.25, { y: 46, d: 0.5, stagger: 0.08 });
+          cursorTo(...(R9 ? [275, 465] : [620, 430]), t0 + 0.28, 0.42);
+          press("#tLop .ripple", W(sid, "bản") + 0.05);
+          // hero: the ghost copy arcs to the new class slot, two ghosts trailing one frame each
+          const gc = $$("#lop-ghosts .gcard");
+          gc.forEach((g, i) => tl.set(g, { autoAlpha: i === 2 ? 1 : [0.35, 0.2][i], x: 0, y: 0 }, t0 + 0.4));
+          const gh = W(sid, "bản") + 0.18;
+          const gx = R9 ? 520 : 630, gy = R9 ? 270 : 215;
+          gc.forEach((g, i) => {
+            tl.to(g, { x: gx, duration: 0.5, ease: "expo.out" }, gh + i * FR);
+            tl.to(g, { y: gy, duration: 0.5, ease: "power2.inOut" }, gh + i * FR);
+            if (i < 2) tl.to(g, { autoAlpha: 0, duration: 0.3 }, gh + 0.35 + i * FR);
+          });
+          // the new class card settles 30% after the ghost lands and self-fills
+          pop("#lop-slotB", gh + 0.42, { from: 0.7, ease: "back.out(1.4)", d: 0.45 });
+          tl.to(gc[2], { autoAlpha: 0, duration: 0.25 }, gh + 0.55);
+          tl.fromTo("#lop-slotB .bar", { scaleX: 0.2, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.4, ease: "power2.out", stagger: 0.08, immediateRender: false }, gh + 0.7);
+          // "có ngay": the mini-calendar pops with mint session cells
+          const ngay = W(sid, "ngay");
+          tl.fromTo("#lop-cal", { autoAlpha: 0, scale: 0.86 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(1.4)", immediateRender: false }, ngay - 0.05);
+          tl.to($$("#lop-cal .cal-c"), { backgroundColor: "#10b981", duration: 0.2, stagger: 0.06 }, ngay + 0.15);
+          // the hold breathes: session cells pulse mint on the downbeat, the cursor drifts
+          tl.to($$("#lop-cal .cal-c"), { opacity: 0.85, duration: 0.12, ease: "power1.out" }, 17.68);
+          tl.to($$("#lop-cal .cal-c"), { opacity: 1, duration: 0.32, ease: "power1.in" }, 17.8);
+          tl.to("#cursor", { x: "+=3", y: "+=2", duration: 0.6, ease: "sine.inOut", yoyo: true, repeat: 1 }, 17.15);
+          tl.to("#cursor", { autoAlpha: 0, duration: 0.25 }, 17.95);
+          // exit: tile-collapse back to its slot, then the reflow crowns Ngân hàng đề
+          const endS3 = SC["s04-assignments"].start;
+          collapse("tLop", rectOf(LAY.s03.m, LAY.s03.t.tLop), endS3 - 0.27);
+          reflow("s04", endS3 + 0.12, { dur: 0.45 });
+          ringJump("tDe", "s04", endS3 + 0.15);
+        }
+
+        // ============ s04-assignments (18.218 – 25.718) · build · assign with one button ============
+        {
+          const sid = "s04-assignments";
+          const t0 = SC[sid].start;
+          // in-tile parallax: the two columns drift at different rates during the hold
+          tl.fromTo("#de-par1", { x: 0 }, { x: -14, duration: 2.4, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, t0 + 1.2);
+          tl.fromTo("#de-par2", { x: 0 }, { x: -22, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, t0 + 1.2);
+          // "bốn": four skill chips pop from the center
+          pop($$(".de-skill"), W(sid, "bốn"), { from: 0.5, ease: "back.out(1.7)", stagger: { each: 0.05, from: "center" }, d: 0.4 });
+          // the shelf of đề cards rises under them
+          rise($$(".de-shelf"), W(sid, "ielts") + 0.1, { y: 34, d: 0.45, stagger: 0.06, ease: "power2.out" });
+          // "đáp án": the answer-key preview rises
+          tl.fromTo("#de-key", { autoAlpha: 0, y: 44 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out", immediateRender: false }, W(sid, "đáp"));
+          // "giao đề": the assign button rises; the cursor arcs toward it
+          tl.fromTo("#de-btn", { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power3.out", immediateRender: false }, W(sid, "giao"));
+          cursorTo(...(R9 ? [440, 318] : [660, 235]), W(sid, "một") - 0.4, 0.55);
+          // hero: press on "nút" — ripple, button squash, four đề cards smear to the four rows
+          const nut = W(sid, "nút");
+          press("#tDe .ripple", nut);
+          tl.to("#de-btn", { scaleX: 1.06, scaleY: 0.92, duration: 3 * FR, ease: "power2.out" }, nut);
+          tl.to("#de-btn", { scaleX: 1, scaleY: 1, duration: 0.4, ease: "back.out(1.4)" }, nut + 3 * FR);
+          const FLY = [[468, 20], [320, 94], [172, 168], [468, 146]];
+          $$(".de-fly").forEach((f, i) => {
+            const [fx, fy] = FLY[i], st = nut + 0.18 + i * 0.05;
+            tl.set(f, { autoAlpha: 1 }, st);
+            tl.fromTo(f, { x: 0, y: 0, skewX: 0 }, { x: fx, y: fy, skewX: -12, duration: 0.42, ease: "expo.out", immediateRender: false }, st);
+            tl.to(f, { skewX: 0, duration: 0.2, ease: "power2.out" }, st + 0.26);
+            tl.to(f, { autoAlpha: 0, duration: 0.18 }, st + 0.44);
+            tl.to($$(".de-dot")[i], { scale: 1, duration: 0.3, ease: "back.out(2)" }, st + 0.32);
+          });
+          // "online": the four status dots go mint
+          tl.to($$(".de-dot"), { backgroundColor: "#10b981", duration: 0.2, stagger: 0.03 }, W(sid, "online"));
+          tl.to("#cursor", { autoAlpha: 0, duration: 0.25 }, t0 + 6.3);
+          // exit: zoom-through by tile-expand — the Writing card becomes s05's full frame
+          expand("tDe", SC["s05-grading"].start - 0.17);
+        }
+
+        // ============ s05-grading (25.718 – 33.218) · DROP · static, the number speaks ============
+        {
+          const sid = "s05-grading";
+          const t0 = SC[sid].start;
+          settleCam("#stage", t0 + 0.5, 32.6, 0.02);
+          // "một lượt": tri-pane rises together, essay leads, the others trail 2–4 frames
+          const lut = W(sid, "lượt");
+          tl.fromTo($$(".gd-pane"), { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "expo.out", stagger: 0.09, immediateRender: false }, lut - 0.05);
+          // the essay lines read themselves in sequence
+          tl.fromTo($$("#tDe .full .msk:first-child .bar"), { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.35, ease: "power2.out", stagger: 0.12, immediateRender: false }, lut + 0.55);
+          // DROP on "band điểm": the chip slams soft, the odo decelerates into 7.5
+          const band = W(sid, "band");
+          slam("#gd-band", band + 0.1, { keep: true, from: 1.22 });
+          odo("#gd-band .odo", band + 0.12, { d: 1.05 });
+          const landed = band + 1.25;
+          tl.to("#gd-band .odo", { color: "#6366f1", duration: 0.2 }, landed); // the number keeps the accent
+          bump("#gd-band", landed, { s: 1.06 });
+          // "máy chấm": mint ticks cascade from the middle of the answer pane
+          pop($$(".gd-tick"), W(sid, "chấm", 2) - 0.05, { from: 0.5, ease: "back.out(1.7)", stagger: { each: 0.04, from: "center" }, d: 0.32 });
+          // exit: the band number shrinks toward the ledger (match-move keeps direction), reflow under cover
+          const endS5 = SC["s06-tuition"].start;
+          reflow("s06", endS5 - 0.55, { skip: ["tDe"] });
+          tl.to("#gd-band", { scale: 0.25, x: R9 ? -140 : -150, y: R9 ? -950 : 6, autoAlpha: 0, duration: 0.42, ease: "power2.in", transformOrigin: "50% 50%" }, endS5 - 0.35);
+          collapse("tDe", rectOf(LAY.s06.m, LAY.s06.t.tDe), endS5 - 0.17);
+          ringJump("tPhi", "s06", endS5 + 0.25);
+        }
+
+        // ============ s06-tuition (33.218 – 39.111) · breathe · invoice + two counters ============
+        {
+          const sid = "s06-tuition";
+          const t0 = SC[sid].start;
+          // the mint chip from s05 pops as the ledger's first status check (match-move landing)
+          tl.fromTo("#phi-hand", { autoAlpha: 0, scale: 0.4 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)", immediateRender: false }, t0 + 0.45);
+          draw("#phi-hand .ck", t0 + 0.55, 0.3, "power2.out");
+          // "hoá đơn": the invoice slides out of the finished session card on a light arc
+          const hd = W(sid, "hoá");
+          tl.fromTo("#phi-invoice", { autoAlpha: 0, x: -36, y: -64 }, { autoAlpha: 1, x: 0, y: 0, duration: 0.55, ease: "expo.out", immediateRender: false }, hd);
+          tl.to("#phi-invoice", { y: 0, duration: 0.55, ease: "power2.inOut" }, hd); // y on its own ease = the arc
+          // hold push-in: the invoice scales itself 1.00 → 1.08 (camera stays locked)
+          tl.fromTo("#phi-invoice", { scale: 1 }, { scale: 1.08, transformOrigin: "30% 40%", duration: 3.0, ease: "power2.inOut", immediateRender: false }, t0 + 1.9);
+          sweep(rectOf("FULL", [2, 1, 2, 1]), hd + 0.7);
+          // ledger rows in, swaying very softly
+          tl.fromTo($$(".phi-row"), { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: { each: 0.05, from: "center" }, immediateRender: false }, t0 + 1.85);
+          tl.fromTo("#phi-rows", { rotation: 0 }, { rotation: 0.5, duration: 1.0, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, t0 + 2.6);
+          // "đã thu" / "còn lại": the two odometers, word-keyed
+          tl.fromTo("#phi-odo1", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, immediateRender: false }, W(sid, "thu"));
+          odo("#phi-odo1 .odo", W(sid, "thu"), { d: 0.95 });
+          tl.fromTo("#phi-odo2", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, immediateRender: false }, W(sid, "lại"));
+          odo("#phi-odo2 .odo", W(sid, "lại"), { d: 0.95 });
+          // "đối soát": rows tick-khớp, the connector draws, the toast pops
+          const sot = W(sid, "soát");
+          $$(".phi-ck .ck").forEach((p, i) => draw(p, sot + i * 0.09, 0.3, "power2.out"));
+          draw("#phi-conn", sot - 0.15, 0.4, "power2.inOut");
+          pop("#phi-toast", sot + 0.35, { from: 0.7, ease: "back.out(1.4)", d: 0.4 });
+          // exit: the report ghost arcs to the portal tile (two trails, one frame apart)
+          const endS6 = SC["s07-portal"].start;
+          const g6 = $$("#s6ghost .g6");
+          const gdx = R9 ? 445 : 218, gdy = R9 ? 860 : 140;
+          g6.forEach((g, i) => tl.set(g, { autoAlpha: i === 0 ? 1 : [0.35, 0.2][i], x: 0, y: 0 }, endS6 - 0.5));
+          g6.forEach((g, i) => {
+            const st = endS6 - 0.48 + i * FR;
+            tl.to(g, { x: gdx, duration: 0.5, ease: "expo.out" }, st);
+            tl.to(g, { y: gdy, duration: 0.5, ease: "power2.inOut" }, st);
+          });
+          g6.forEach((g, i) => tl.to(g, { autoAlpha: 0, duration: 0.25 }, endS6 - 0.1 + i * FR));
+          reflow("s07", endS6 - 0.35);
+          ringJump("tPortal", "s07", endS6 - 0.05);
+          tl.to("#phi-toast", { autoAlpha: 0, y: -12, duration: 0.25 }, endS6 - 0.35);
+        }
+
+        // ============ s07-portal (39.111 – 45.004) · build · the column scrolls ============
+        {
+          const sid = "s07-portal";
+          const t0 = SC[sid].start;
+          // the column scrolls down inside the tall tile and stops at the profile
+          tl.fromTo("#po-scroll", { y: 0 }, { y: -150, duration: 1.7, ease: "power1.inOut", immediateRender: false }, t0 + 0.35);
+          tl.to("#po-scroll", { y: -238, duration: 0.7, ease: "power2.out" }, W(sid, "riêng") - 0.4);
+          // avatars at the tile edge travel faster (1.6x parallax)
+          tl.fromTo($$(".po-av"), { y: 0 }, { y: -210, duration: 1.7, ease: "power1.inOut", stagger: 0.04, immediateRender: false }, t0 + 0.35);
+          tl.to($$(".po-av"), { y: -330, duration: 0.7, ease: "power2.out", stagger: 0.03 }, W(sid, "riêng") - 0.4);
+          // "nộp bài": the submission cards rise into the list
+          tl.fromTo($$("#po-scroll .card"), { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.12, immediateRender: false }, W(sid, "nộp") - 0.05);
+          // "xem điểm": the band chip pops mint
+          tl.fromTo("#po-band", { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: "back.out(1.7)", immediateRender: false }, W(sid, "điểm"));
+          // "kịp hỏi": the report assembles its rows, a light sweep crosses, the toast pops
+          tl.fromTo($$(".po-rrow"), { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.35, ease: "power2.out", stagger: 0.05, immediateRender: false }, W(sid, "tới") + 0.2);
+          sweep(rectOf("FULL", [3, 1, 1, 2]), W(sid, "kịp") - 0.25);
+          pop("#po-toast", W(sid, "hỏi") - 0.1, { from: 0.7, ease: "back.out(1.4)", d: 0.4 });
+          // the tail holds: rows sway ±1° out of phase, the mint status dot drifts
+          sway($$("#po-scroll .card"), 42.9, { amp: 1, half: 0.5, repeat: 1, seed: 71, lag: 0.08 });
+          tl.fromTo(".po-mint", { x: 0 }, { x: 7, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, 42.9);
+          // exit: reflow into the stats layout
+          const endS7 = SC["s08-stats"].start;
+          reflow("s08", endS7 - 0.35, { fill: 0.45 });
+          ringJump("tStat1", "s08", endS7 + 0.1);
+        }
+
+        // ============ s08-stats (45.004 – 50.361) · DROP · static recap ============
+        {
+          const sid = "s08-stats";
+          const t0 = SC[sid].start;
+          // mint dots drift slowly in the foreground
+          tl.fromTo($$("#statDots .dot"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, stagger: 0.1, immediateRender: false }, t0 + 0.3);
+          $$("#statDots .dot").forEach((d, i) => {
+            tl.fromTo(d, { x: 0, y: 0 }, { x: (i % 2 ? -1 : 1) * 24, y: (i < 2 ? 1 : -1) * 14, duration: 2.2, ease: "sine.inOut", immediateRender: false }, t0 + 0.4 + i * 0.15);
+          });
+          // "nghìn": odo 0 → 1.200 decelerating, then the soft slam
+          odo("#tStat1 .odo", W(sid, "nghìn"), { d: 1.05 });
+          slam("#tStat1 .face", W(sid, "chạy") - 0.05, { keep: true, from: 1.15 });
+          kw("#tStat1 .odo", W(sid, "chạy") - 0.05);
+          // "tám nghìn": the ring passes to the second tile; odo 0 → 8.500 in mint
+          ringJump("tStat2", "s08", W(sid, "tám"));
+          odo("#tStat2 .odo", W(sid, "nghìn", 2), { d: 1.05 });
+          slam("#tStat2 .face", W(sid, "đã", 2) - 0.05, { keep: true, from: 1.15 });
+          // "đã chấm": recap — every module tile lights in sequence, mint, left to right
+          const recap = [$("#tLop"), $("#tCham"), $("#tDe"), $("#tPhi"), $("#tPortal"), $("#tList")];
+          recap.forEach((el, i) => {
+            tl.to(el, { backgroundColor: "rgba(16,185,129,0.12)", duration: 0.16, ease: "power1.out" }, W(sid, "chấm") + i * 0.04);
+            tl.to(el, { backgroundColor: "#ffffff", duration: 0.35, ease: "power1.in" }, W(sid, "chấm") + 0.16 + i * 0.04);
+          });
+          // exit: the recap grid clusters into the three step tiles
+          const endS8 = SC["s09-how"].start;
+          reflow("s09", endS8 - 0.3, { fill: 0.2 });
+          ringJump("tS1", "s09", endS8 + 0.2);
+          tl.to($$("#statDots .dot"), { autoAlpha: 0, duration: 0.3 }, endS8 - 0.3);
+        }
+
+        // ============ s09-how (50.361 – 55.718) · breathe · the ring walks the steps ============
+        {
+          const sid = "s09-how";
+          // connectors fade in with the step tiles, then draw keyword by keyword
+          tl.to("#conns", { opacity: 1, duration: 0.3 }, SC[sid].start + 0.25);
+          bump("#tS1", W(sid, "tạo"), { s: 1.04 });
+          tl.fromTo("#s1-ck", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, immediateRender: false }, W(sid, "tạo"));
+          draw("#s1-ck .ck", W(sid, "tạo") + 0.1, 0.3, "power2.out");
+          draw("#conn1", W(sid, "nhân") - 0.3, 0.3, "power2.inOut");
+          const cx0 = R9 ? 321 : 509, cx1 = R9 ? 351 : 541, cy0 = R9 ? 660 : 526;
+          tl.fromTo("#connDot", { opacity: 0, x: cx0, y: cy0, attr: { cx: 0, cy: 0 } }, { opacity: 1, x: cx1, duration: 0.3, ease: "power1.inOut", immediateRender: false }, W(sid, "nhân") - 0.3);
+          bump("#tS2", W(sid, "nhân"), { s: 1.04 });
+          // step 2 reuses the clone gesture from s03
+          tl.fromTo("#s2-ghost", { autoAlpha: 0, x: -18 }, { autoAlpha: 0.9, x: 0, duration: 0.35, ease: "expo.out", immediateRender: false }, W(sid, "nhân") + 0.05);
+          tl.to("#s2-ghost", { autoAlpha: 0.25, duration: 0.3 }, W(sid, "nhân") + 0.45);
+          draw("#conn2", W(sid, "bắt") - 0.35, 0.3, "power2.inOut");
+          // hero "bắt đầu dạy": step 3 lands mint, all three breathe together, phases offset
+          tl.fromTo("#tS3", { scale: 1 }, { scale: 1.05, duration: 0.16, ease: "power2.out", immediateRender: false }, W(sid, "bắt"));
+          tl.to("#tS3", { scale: 1, duration: 0.5, ease: "back.out(1.4)" }, W(sid, "bắt") + 0.16);
+          sway(["#tS1", "#tS2", "#tS3"], W(sid, "dạy") + 0.1, { amp: 1, half: 0.55, repeat: 1, seed: 41, lag: 0.1 });
+          // exit: the three steps fold into one big CTA tile (grid-reflow, no fade to empty)
+          const endS9 = SC["s10-cta"].start;
+          reflow("s10", endS9 - 0.42, { dur: 0.4, skipLeave: ["tS1", "tS2", "tS3"] });
+          const ctaHome = rectOf(LAY.s10.m, LAY.s10.t.tCTA);
+          ["#tS1", "#tS2", "#tS3"].forEach((s, i) => {
+            tl.to(s, { ...ctaHome, autoAlpha: 0, scale: 0.9, duration: 0.38, ease: "power2.inOut" }, endS9 - 0.4 + i * 0.04);
+          });
+          tl.to("#conns", { opacity: 0, duration: 0.25 }, endS9 - 0.45);
+          ringTo(rectOf("FULL", [0, 0, 2, 2]), endS9 - 0.15, { dur: 0.4 });
+          tl.to("#motifR", { scale: 1.05, transformOrigin: "50% 50%", duration: 0.25, ease: "power2.out", yoyo: true, repeat: 1 }, endS9 - 0.15);
+        }
+
+        // ============ s10-cta (55.718 – 59.468) · DROP · one tile, one button ============
+        {
+          const sid = "s10-cta";
+          const t0 = SC[sid].start;
+          expand("tCTA", t0); // FLIP 0.6s — the section's zoom
+          // the headline rises inside the tile as it lands; "miễn phí" takes the accent
+          lineIn($$("#hl-cta .ln .w"), t0 + 0.4, { each: 0.05 });
+          kw("#cta-kw", W(sid, "miễn"));
+          // the button rises 40% after the headline
+          tl.fromTo("#cta-btn", { autoAlpha: 0, y: 36 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "expo.out", immediateRender: false }, t0 + 0.62);
+          // hero: on "giữ chỗ" — press, squash, ripple, mint confirmation chip
+          cursorTo(...(R9 ? [525, 915] : [935, 575]), W(sid, "giữ") - 0.55, 0.5);
+          const gium = W(sid, "giữ");
+          press("#tCTA .ripple", gium);
+          tl.to("#cta-btn", { scaleX: 1.05, scaleY: 0.93, duration: 3 * FR, ease: "power2.out" }, gium);
+          tl.to("#cta-btn", { scaleX: 1, scaleY: 1, duration: 0.45, ease: "back.out(1.4)" }, gium + 3 * FR);
+          pop("#cta-chip", gium + 2 * FR + 0.12, { from: 0.65, ease: "back.out(1.4)", d: 0.4 });
+          // "ngay hôm nay": the button fills accent and re-lands with a soft slam
+          tl.to("#cta-btn", { backgroundColor: "#6366f1", color: "#ffffff", duration: 0.22, ease: "power2.out" }, W(sid, "ngay"));
+          slam("#cta-btn", W(sid, "ngay") + 0.25, { keep: true, from: 1.14 });
+          tl.to("#cursor", { autoAlpha: 0, duration: 0.25 }, W(sid, "ngay") + 0.3);
+          settleCam("#stage", t0 + 0.7, 59.1, 0.02);
+          // exit: tile-collapse, reflow back to the canonical bento
+          const endS10 = SC["s11-outro"].start;
+          collapse("tCTA", rectOf(LAY.s10.m, LAY.s10.t.tCTA), endS10 - 0.17);
+          reflow("s11", endS10 + 0.25, { dur: 0.5, fill: 0.1, fillEach: 0.06 });
+          camReset(endS10, 0.45);
+        }
+
+        // ============ s11-outro (59.468 – 68.8) · calm · the ring comes home ============
+        {
+          const sid = "s11-outro";
+          const t0 = SC[sid].start;
+          settleCam("#stage", t0 + 0.9, 65.4, 0.03);
+          tl.set("#hl11", { autoAlpha: 1 }, 59.9);
+          lineIn($$("#hl11 .ln .w"), W(sid, "teacher") - 0.05, { each: 0.09 });
+          // "vẫn muốn được dạy": the ring settles on the logo tile and breathes
+          const van = W(sid, "vẫn");
+          ringTo(rectOf("HEAD", [0, 0, 2, 2]), van - 0.4, { dur: 0.6 });
+          tl.fromTo("#motifR", { scale: 1 }, { scale: 1.015, transformOrigin: "50% 50%", duration: 0.62, ease: "sine.inOut", yoyo: true, repeat: 3, immediateRender: false }, van);
+          sway($$("#grid .tile").filter((el) => LAY.s11.t[el.id]), van + 0.2, { amp: 1, half: 1.05, repeat: 1, seed: 57, lag: 0.15 });
+          // everything eases toward stillness; the video ends on the outro bed and the signature
+          tl.to("#fade", { opacity: 1, duration: 1.1, ease: "power1.in" }, 67.5);
+        }
+
+        // ---------- beat reactions: icon nudge 4px on kicks, ring brightens on downbeats ----------
+        const nudges = $$("#tOS .mark, .tile .ic");
+        const covered = [[25.4, 33.5], [55.6, 59.55]]; // full-frame windows: the grid is not on screen
+        const isCovered = (t) => covered.some(([a, b]) => t >= a && t < b);
+        for (let n = 0; B(n) < T.duration && n < T.outroBeat; n++) {
+          if (!isKick(n)) continue;
+          const t = B(n);
+          if (isCovered(t) || t + 0.31 > T.duration) continue;
+          nudges.forEach((el, i) => {
+            tl.to(el, { y: -4, duration: 0.07, ease: "power1.out" }, t + i * 0.012);
+            tl.to(el, { y: 0, duration: 0.24, ease: "power2.out" }, t + 0.07 + i * 0.012);
+          });
+          if (n % 4 === 0) {
+            tl.to("#motifR", { opacity: 1, duration: 0.06, ease: "power1.out" }, t);
+            tl.to("#motifR", { opacity: RING_BASE, duration: 0.3, ease: "power1.in" }, t + 0.06);
+          }
+        }
+
+        // ---------- Vietnamese karaoke captions (white pill, current word accent) ----------
+        const capLayer = $("#captions");
+        T.captions.forEach((c) => {
+          const cap = document.createElement("div");
+          cap.className = "cap";
+          const box = document.createElement("div");
+          box.className = "cap-box";
+          const spans = c.words.map(([txt], j) => {
+            if (j) box.append(" ");
+            const s = document.createElement("span");
+            s.className = "cw";
+            s.textContent = txt;
+            box.append(s);
+            return s;
+          });
+          cap.append(box);
+          capLayer.append(cap);
+          tl.fromTo(cap, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.14, ease: "power2.out" }, c.start);
+          tl.to(cap, { autoAlpha: 0, duration: 0.2, ease: "power1.inOut" }, Math.max(c.start + 0.3, c.end - 0.2));
+          c.words.forEach(([, s], j) => {
+            tl.to(spans[j], { color: "#6366f1", duration: 0.05 }, s);
+            const next = j < c.words.length - 1 ? c.words[j + 1][1] : Math.max(s + 0.35, c.end - 0.4);
+            tl.to(spans[j], { color: "#0f172a", duration: 0.12 }, next);
+          });
+        });
+
+        // ---------- signature (untouched per contract) ----------
+        tl.fromTo("#sig-txt", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(-20% -20% -20% 0%)", duration: 0.6, ease: "steps(8)" }, 1.0);
+        draw("#sig-line", 1.45, 0.35, "power2.out");
+
+        tl.set({}, {}, T.duration); // pin the timeline length to the video duration
+      })();
+    </script>
+  </body>
+</html>

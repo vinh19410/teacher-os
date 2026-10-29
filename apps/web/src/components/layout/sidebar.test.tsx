@@ -1,13 +1,83 @@
-import { readFileSync } from "node:fs";
+// @vitest-environment jsdom
+
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
-		signOut: vi.fn(),
-	},
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({
+		to,
+		children,
+		...rest
+	}: { to: string; children?: React.ReactNode } & Record<string, unknown>) => (
+		<a href={to} {...rest}>
+			{children}
+		</a>
+	),
 }));
 
-import { extractUserPlan } from "./sidebar";
+import {
+	extractUserPlan,
+	TEACHER_NAV,
+	TeacherShellLink,
+	teacherActiveKey,
+	teacherNavForViewer,
+} from "./sidebar";
+
+describe("TEACHER_NAV — Điểm danh ngày (TOS-6 #439)", () => {
+	it("có mục attendance ngay dưới Tổng quan trong nhóm Giảng dạy", () => {
+		const teaching = TEACHER_NAV.find((group) => group.group === "Giảng dạy");
+		expect(teaching).toBeTruthy();
+		const items = teaching?.items ?? [];
+		const dashboardIndex = items.findIndex((item) => item.key === "dashboard");
+		const attendanceIndex = items.findIndex(
+			(item) => item.key === "attendance",
+		);
+		expect(attendanceIndex).toBeGreaterThan(-1);
+		expect(attendanceIndex).toBe(dashboardIndex + 1);
+		expect(items[attendanceIndex]).toMatchObject({
+			label: "Điểm danh ngày",
+			href: "/attendance",
+		});
+	});
+});
+
+describe("TEACHER_NAV — Công nợ (TOS-15 #449)", () => {
+	it("có mục debts (Công nợ) ngay dưới Doanh thu trong nhóm Kinh doanh", () => {
+		const business = TEACHER_NAV.find((group) => group.group === "Kinh doanh");
+		expect(business).toBeTruthy();
+		const items = business?.items ?? [];
+		const tuitionIndex = items.findIndex((item) => item.key === "tuition");
+		const debtsIndex = items.findIndex((item) => item.key === "debts");
+		expect(debtsIndex).toBeGreaterThan(-1);
+		expect(debtsIndex).toBe(tuitionIndex + 1);
+		expect(items[debtsIndex]).toMatchObject({
+			label: "Công nợ",
+			href: "/debts",
+		});
+	});
+});
+
+describe("teacherNavForViewer (TOS-17 #451)", () => {
+	it("giữ nguyên Doanh thu và Công nợ khi canAccessFinance = true", () => {
+		const business = teacherNavForViewer(true).find(
+			(group) => group.group === "Kinh doanh",
+		);
+		const keys = business?.items.map((item) => item.key) ?? [];
+		expect(keys).toContain("tuition");
+		expect(keys).toContain("debts");
+		expect(keys).toContain("profile");
+	});
+
+	it("ẩn Doanh thu và Công nợ khỏi nhóm Kinh doanh khi canAccessFinance = false", () => {
+		const business = teacherNavForViewer(false).find(
+			(group) => group.group === "Kinh doanh",
+		);
+		const keys = business?.items.map((item) => item.key) ?? [];
+		expect(keys).not.toContain("tuition");
+		expect(keys).not.toContain("debts");
+		expect(keys).toContain("profile");
+	});
+});
 
 describe("extractUserPlan", () => {
 	it("returns null for non-object, null, or undefined user", () => {
@@ -52,37 +122,91 @@ describe("extractUserPlan", () => {
 	});
 });
 
-describe("Sidebar component contract", () => {
-	const src = readFileSync(new URL("./sidebar.tsx", import.meta.url), "utf-8");
+describe("TEACHER_NAV v2", () => {
+	const ITEM_BY_HREF: Record<string, { label: string }> = Object.fromEntries(
+		TEACHER_NAV.flatMap((group) => group.items).map((item) => [
+			item.href,
+			{ label: item.label },
+		]),
+	);
 
-	it("does not hardcode the PRO badge", () => {
-		// Ensures no static PRO badge literal is rendered in sidebar
-		expect(src).not.toMatch(/>\s*PRO\s*<\/span>/);
+	it("groups teaching, IELTS and business items with app labels kept", () => {
+		expect(TEACHER_NAV.map((group) => group.group)).toEqual([
+			"Giảng dạy",
+			"IELTS",
+			"Kinh doanh",
+		]);
+		// Accessible name e2e: /syllabus và /tuition giữ nhãn app đang có.
+		expect(ITEM_BY_HREF["/syllabus"]?.label).toBe("Syllabus");
+		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Doanh thu");
+		expect(ITEM_BY_HREF["/debts"]?.label).toBe("Công nợ");
+		expect(ITEM_BY_HREF["/dashboard"]?.label).toBe("Tổng quan");
+		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
+		expect(ITEM_BY_HREF["/students"]?.label).toBe("Học viên");
+		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch dạy");
+		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
+		expect(ITEM_BY_HREF["/grading"]?.label).toBe("Chấm bài");
+		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
+		expect(ITEM_BY_HREF["/profile"]?.label).toBe("Hồ sơ");
 	});
 
-	it("renders plan badge conditionally with data-testid='sidebar-user-plan'", () => {
-		expect(src).toMatch(/\{plan && \(/);
-		expect(src).toMatch(/data-testid="sidebar-user-plan"/);
-		expect(src).toMatch(/\{plan\}/);
-	});
-
-	it("provides title hover attribute on user displayName", () => {
-		expect(src).toMatch(/<span[^>]*title=\{displayName\}/);
-	});
-
-	it("provides title hover attribute on user email", () => {
-		expect(src).toMatch(
-			/data-testid="sidebar-user-email"[^>]*title=\{user\.email\}/,
+	it("moves 'Từ vựng' into the IELTS group per design v2 (supersedes #363 DOM order)", () => {
+		const groupByKey: Record<string, string> = Object.fromEntries(
+			TEACHER_NAV.flatMap((group) =>
+				group.items.map((item) => [item.key, group.group]),
+			),
 		);
+		expect(groupByKey.vocab).toBe("IELTS");
+		expect(groupByKey.classes).toBe("Giảng dạy");
+		expect(groupByKey.assignments).toBe("IELTS");
+		expect(groupByKey.grading).toBe("IELTS");
 	});
 
-	it("provides accessible aria-label and title on profile Link", () => {
-		expect(src).toMatch(/to="\/profile"/);
-		expect(src).toMatch(/aria-label="Hồ sơ cá nhân"/);
-		expect(src).toMatch(/title=\{[\s\S]*Hồ sơ cá nhân/);
+	it("gates the reports item behind PARENT_REPORTS_ENABLED", () => {
+		const reports = TEACHER_NAV.flatMap((group) => group.items).find(
+			(item) => item.key === "reports",
+		);
+		expect(reports).toBeDefined();
+		expect(reports?.enabled).toBe(false);
+	});
+});
+
+describe("teacherActiveKey", () => {
+	it("maps / and /dashboard to the overview item", () => {
+		expect(teacherActiveKey("/")).toBe("dashboard");
+		expect(teacherActiveKey("/dashboard")).toBe("dashboard");
+		expect(teacherActiveKey("/attendance")).toBe("attendance");
 	});
 
-	it("uses flex-1 min-w-0 to maximize available horizontal space", () => {
-		expect(src).toMatch(/to="\/profile"[\s\S]*?flex-1/);
+	it("matches child routes by prefix", () => {
+		expect(teacherActiveKey("/classes/abc")).toBe("classes");
+		expect(teacherActiveKey("/students/u-1")).toBe("students");
+		expect(teacherActiveKey("/assignments/new")).toBe("assignments");
+	});
+
+	it("maps /grading and /grading/$attemptId to grading and returns empty for unauthenticated routes", () => {
+		expect(teacherActiveKey("/grading")).toBe("grading");
+		expect(teacherActiveKey("/grading/a-1")).toBe("grading");
+		expect(teacherActiveKey("/debts")).toBe("debts");
+		expect(teacherActiveKey("/login")).toBe("");
+	});
+});
+
+describe("TeacherShellLink", () => {
+	it("renders an anchor through the router with the shell classes", () => {
+		const html = renderToStaticMarkup(
+			<TeacherShellLink
+				href="/classes"
+				className="h-8 rounded-md"
+				aria-current="page"
+				onClick={() => {}}
+			>
+				Lớp học
+			</TeacherShellLink>,
+		);
+		expect(html).toContain('href="/classes"');
+		expect(html).toContain('aria-current="page"');
+		expect(html).toContain("h-8 rounded-md");
+		expect(html).toContain("Lớp học");
 	});
 });

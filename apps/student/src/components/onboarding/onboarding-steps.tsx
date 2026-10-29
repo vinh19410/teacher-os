@@ -55,25 +55,28 @@ export function OptionButton({
 			type="button"
 			onClick={onClick}
 			className={cn(
-				"flex w-full items-center justify-between rounded-[var(--radius-lg)] border p-4 text-left transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+				"flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+				// Selection = nền sunk + chữ cam (contrast AA ở cả 2 theme —
+				// accent cam trên surface đo 6.38 dark / 5.05 light); viền trong
+				// suốt để không đè border-state.
 				selected
-					? "border-accent-blue/40 bg-accent-soft font-medium text-fg"
-					: "border-line bg-bg text-fg hover:border-line-hover",
+					? "border-transparent bg-muted font-medium text-primary"
+					: "rounded-md border border-input bg-transparent text-foreground",
 				className,
 			)}
 		>
 			<div className="space-y-0.5">
 				<div className="font-medium text-sm">{label}</div>
 				{description ? (
-					<div className="text-muted-fg text-xs">{description}</div>
+					<div className="text-muted-foreground text-xs">{description}</div>
 				) : null}
 			</div>
 			<div
 				className={cn(
 					"ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
 					selected
-						? "border-accent-blue bg-accent-blue text-accent-on"
-						: "border-line bg-transparent",
+						? "border-primary bg-primary text-primary-foreground"
+						: "border-border bg-transparent",
 				)}
 			>
 				{selected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
@@ -92,10 +95,10 @@ export function ExamInterestStep({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h2 className="font-semibold text-fg text-lg">
+				<h2 className="font-semibold text-foreground text-lg">
 					Bạn đang quan tâm chứng chỉ nào?
 				</h2>
-				<p className="mt-1 text-muted-fg text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Chọn bài thi bạn muốn ôn luyện để xây dựng mục tiêu học tập rõ ràng.
 				</p>
 			</div>
@@ -133,10 +136,10 @@ export function TargetScoreStep({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h2 className="font-semibold text-fg text-lg">
+				<h2 className="font-semibold text-foreground text-lg">
 					Điểm mục tiêu của bạn?
 				</h2>
-				<p className="mt-1 text-muted-fg text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Mục tiêu điểm số bạn muốn đạt được trong kỳ thi{" "}
 					{EXAM_LABELS[examInterest]}.
 				</p>
@@ -151,13 +154,15 @@ export function TargetScoreStep({
 							type="button"
 							onClick={() => onSelect(opt)}
 							className={cn(
-								"rounded-[var(--radius-lg)] border p-3.5 text-center transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								"rounded-lg border p-3.5 text-center transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								selected
-									? "border-accent-blue/40 bg-accent-soft font-semibold text-fg shadow-sm"
-									: "border-line bg-bg text-fg hover:border-line-hover",
+									? "border-transparent bg-muted font-semibold text-primary"
+									: "rounded-md border border-input bg-transparent text-foreground",
 							)}
 						>
-							<div className="font-semibold text-base">{displayLabel}</div>
+							<div className="font-mono font-semibold text-base">
+								{displayLabel}
+							</div>
 						</button>
 					);
 				})}
@@ -180,10 +185,10 @@ export function LearningGoalsStep({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h2 className="font-semibold text-fg text-lg">
+				<h2 className="font-semibold text-foreground text-lg">
 					Mục tiêu học tiếng Anh của bạn là gì?
 				</h2>
-				<p className="mt-1 text-muted-fg text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Bạn có thể chọn nhiều mục tiêu phù hợp với định hướng của mình.
 				</p>
 			</div>
@@ -196,10 +201,10 @@ export function LearningGoalsStep({
 							type="button"
 							onClick={() => onToggle(goal)}
 							className={cn(
-								"flex items-center justify-between rounded-[var(--radius-lg)] border p-3 text-left transition-all focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								"flex items-center justify-between rounded-lg border p-3 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								selected
-									? "border-accent-blue/40 bg-accent-soft font-medium text-fg"
-									: "border-line bg-bg text-fg hover:border-line-hover",
+									? "border-transparent bg-muted font-medium text-primary"
+									: "rounded-md border border-input bg-transparent text-foreground",
 							)}
 						>
 							<span className="text-sm">{GOAL_LABELS[goal]}</span>
@@ -207,8 +212,8 @@ export function LearningGoalsStep({
 								className={cn(
 									"flex h-4 w-4 items-center justify-center rounded border transition-colors",
 									selected
-										? "border-accent-blue bg-accent-blue text-accent-on"
-										: "border-line bg-transparent",
+										? "border-primary bg-primary text-primary-foreground"
+										: "border-border bg-transparent",
 								)}
 							>
 								{selected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
@@ -220,7 +225,7 @@ export function LearningGoalsStep({
 			<div className="pt-2">
 				<label
 					htmlFor="learning-goals-note"
-					className="mb-1.5 block font-medium text-fg text-xs"
+					className="mb-1.5 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]"
 				>
 					Ghi chú thêm (tùy chọn)
 				</label>
@@ -232,9 +237,9 @@ export function LearningGoalsStep({
 					}
 					maxLength={200}
 					placeholder="Ví dụ: Cần chứng chỉ trước tháng 12 để làm hồ sơ tốt nghiệp..."
-					className="min-h-20 border-line bg-bg text-sm focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0"
+					className="min-h-20 rounded-md border border-input bg-muted text-sm focus-visible:ring-2 focus-visible:ring-primary/40"
 				/>
-				<div className="mt-1 text-right text-[11px] text-muted-fg">
+				<div className="mt-1 text-right font-mono text-[11px] text-muted-foreground">
 					{note.length}/200
 				</div>
 			</div>
@@ -252,10 +257,10 @@ export function StudyHoursStep({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h2 className="font-semibold text-fg text-lg">
+				<h2 className="font-semibold text-foreground text-lg">
 					Mỗi ngày bạn dành bao nhiêu thời gian cho tiếng Anh?
 				</h2>
-				<p className="mt-1 text-muted-fg text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Thời gian tự học và luyện tập trung bình mỗi ngày.
 				</p>
 			</div>
@@ -289,41 +294,41 @@ export function OnboardingSummary({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h2 className="font-semibold text-fg text-lg">
+				<h2 className="font-semibold text-foreground text-lg">
 					Xác nhận thông tin của bạn
 				</h2>
-				<p className="mt-1 text-muted-fg text-xs">
+				<p className="mt-1 text-muted-foreground text-xs">
 					Vui lòng kiểm tra lại các thông tin trước khi hoàn thành thiết lập mục
 					tiêu.
 				</p>
 			</div>
-			<div className="divide-y divide-line rounded-[var(--radius-lg)] border border-line bg-surface/50 text-sm">
+			<div className="divide-y divide-line rounded-lg rounded-xl border bg-card text-sm shadow-sm">
 				<div className="flex items-center justify-between p-3.5">
-					<span className="text-muted-fg">Chứng chỉ quan tâm</span>
-					<span className="font-medium text-fg">
+					<span className="text-muted-foreground">Chứng chỉ quan tâm</span>
+					<span className="font-medium text-foreground">
 						{EXAM_LABELS[answers.examInterest]}
 					</span>
 				</div>
 				<div className="flex items-center justify-between p-3.5">
-					<span className="text-muted-fg">Điểm mục tiêu</span>
-					<span className="font-medium text-fg">{targetDisplay}</span>
+					<span className="text-muted-foreground">Điểm mục tiêu</span>
+					<span className="font-medium text-foreground">{targetDisplay}</span>
 				</div>
 				<div className="flex flex-col gap-1 p-3.5">
 					<div className="flex items-start justify-between">
-						<span className="text-muted-fg">Mục tiêu học</span>
-						<span className="max-w-[60%] text-right font-medium text-fg">
+						<span className="text-muted-foreground">Mục tiêu học</span>
+						<span className="max-w-[60%] text-right font-medium text-foreground">
 							{goalsDisplay}
 						</span>
 					</div>
 					{answers.learningGoalsNote ? (
-						<div className="mt-1 rounded border border-line/60 bg-bg/60 p-2 text-muted-fg text-xs italic">
+						<div className="mt-1 rounded border border-border/60 bg-background/60 p-2 text-muted-foreground text-xs italic">
 							"{answers.learningGoalsNote}"
 						</div>
 					) : null}
 				</div>
 				<div className="flex items-center justify-between p-3.5">
-					<span className="text-muted-fg">Thời gian mỗi ngày</span>
-					<span className="font-medium text-fg">
+					<span className="text-muted-foreground">Thời gian mỗi ngày</span>
+					<span className="font-medium text-foreground">
 						{HOUR_LABELS[answers.dailyStudyHours]}
 					</span>
 				</div>

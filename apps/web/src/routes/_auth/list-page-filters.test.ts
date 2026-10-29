@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateDebtsSearch } from "@/lib/tuition-from-kernel";
 
 describe("issue #170 list page filters and KPI styling logic", () => {
 	it("debt KPI danger style only applies when outstanding > 0", () => {
@@ -100,5 +101,33 @@ describe("issue #170 list page filters and KPI styling logic", () => {
 		expect(filterBySkill("Nói")).toHaveLength(1);
 		expect(filterBySkill("Đọc")).toHaveLength(1);
 		expect(filterBySkill("Nghe")).toHaveLength(1);
+	});
+
+	it("validateDebtsSearch parses status, q, and lop safely (TOS-15 #449)", () => {
+		expect(validateDebtsSearch({})).toEqual({
+			status: undefined,
+			q: undefined,
+			lop: undefined,
+		});
+		expect(
+			validateDebtsSearch({
+				status: "overdue",
+				q: "nguyen minh",
+				lop: "cl-1",
+			}),
+		).toEqual({
+			status: "overdue",
+			q: "nguyen minh",
+			lop: "cl-1",
+		});
+		// Alias tương thích wireframe: due_soon -> due, paid -> clear
+		expect(validateDebtsSearch({ status: "due_soon" }).status).toBe("due");
+		expect(validateDebtsSearch({ status: "paid" }).status).toBe("clear");
+		// Giá trị lạ / rỗng rơi về undefined
+		expect(validateDebtsSearch({ status: "lol" }).status).toBeUndefined();
+		expect(validateDebtsSearch({ status: "all" }).status).toBeUndefined();
+		expect(validateDebtsSearch({ q: "   " }).q).toBeUndefined();
+		expect(validateDebtsSearch({ lop: "" }).lop).toBeUndefined();
+		expect(validateDebtsSearch({ lop: "  cl-2  " }).lop).toBe("cl-2");
 	});
 });

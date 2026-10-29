@@ -1,0 +1,969 @@
+id,lessonName,lessonDescription,image,order,courseId,createdAt,updatedAt
+334,Human Awareness,84.Nhận thức của con người,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_84.webp,84,6,2025-04-22 09:05:15.232000 +00:00,2025-04-22 09:06:47.483000 +00:00
+4,Talking About Time,20.Nói về thời gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_4.webp,20,1,2025-04-22 09:05:15.212000 +00:00,2025-04-22 09:06:47.373000 +00:00
+53,Recreation Places P1,34.Địa điểm giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_53.webp,34,1,2025-04-22 09:05:15.209000 +00:00,2025-04-22 09:06:47.405000 +00:00
+254,Growing up P1,4.Quá trình trưởng thành,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_4.webp,4,6,2025-04-22 09:05:15.234000 +00:00,2025-04-22 09:06:47.442000 +00:00
+52,Games & Sports,33.Trò chơi và các môn thể thao,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_52.webp,33,1,2025-04-22 09:05:15.206000 +00:00,2025-04-22 09:06:47.401000 +00:00
+313,Telecommunication,63.Viễn thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_63.webp,63,6,2025-04-22 09:05:15.229000 +00:00,2025-04-22 09:06:47.476000 +00:00
+49,Movies P2,40.Phim ảnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_49.webp,40,1,2025-04-22 09:05:15.203000 +00:00,2025-04-22 09:06:47.408000 +00:00
+3,Culture,71.Văn hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_3.webp,71,1,2025-04-22 09:05:15.230000 +00:00,2025-04-22 09:06:47.431000 +00:00
+9,Appearance,9.Ngoại hình,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_9.webp,9,1,2025-04-22 09:05:15.195000 +00:00,2025-04-22 09:06:47.338000 +00:00
+8,Body,8.Bộ phận cơ thể,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_8.webp,8,1,2025-04-22 09:05:15.193000 +00:00,2025-04-22 09:06:47.337000 +00:00
+307,Furniture,57.Nội thất,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_57.webp,57,6,2025-04-22 09:05:15.224000 +00:00,2025-04-22 09:06:47.472000 +00:00
+257,Physical Development P2,7.Phát triển thể chất,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_7.webp,7,6,2025-04-22 09:05:15.218000 +00:00,2025-04-22 09:06:47.443000 +00:00
+369,The Artists P1,119.Nghệ sĩ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_119.webp,119,6,2025-04-22 09:05:15.237000 +00:00,2025-04-22 09:06:47.505000 +00:00
+62,Kitchenware,27.Dụng cụ nấu ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_62.webp,27,1,2025-04-22 09:05:15.210000 +00:00,2025-04-22 09:06:47.388000 +00:00
+330,Human Impact P1,80.Tác động của con người,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_80.webp,80,6,2025-04-22 09:05:15.240000 +00:00,2025-04-22 09:06:47.483000 +00:00
+48,Movies P1,39.Phim ảnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_48.webp,39,1,2025-04-22 09:05:15.222000 +00:00,2025-04-22 09:06:47.403000 +00:00
+32,School Subjects,5.Các môn học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_32.webp,5,1,2025-04-22 09:05:15.191000 +00:00,2025-04-22 09:06:47.334000 +00:00
+33,Classroom,6.Lớp học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_33.webp,6,1,2025-04-22 09:05:15.198000 +00:00,2025-04-22 09:06:47.336000 +00:00
+5,Measurement,21.Đơn vị đo lường,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_5.webp,21,1,2025-04-22 09:05:15.204000 +00:00,2025-04-22 09:06:47.366000 +00:00
+360,The Public P1,110.Công chúng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_110.webp,110,6,2025-04-22 09:05:15.234000 +00:00,2025-04-22 09:06:47.502000 +00:00
+297,Natural Disasters,47.Thảm họa thiên nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_47.webp,47,6,2025-04-22 09:05:15.236000 +00:00,2025-04-22 09:06:47.466000 +00:00
+10,Characteristics,10.Tính cách,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_10.webp,10,1,2025-04-22 09:05:15.213000 +00:00,2025-04-22 09:06:47.339000 +00:00
+258,Mental Development P1,8.Phát triển trí tuệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_8.webp,8,6,2025-04-22 09:05:15.215000 +00:00,2025-04-22 09:06:47.444000 +00:00
+65,Clothes P2,46.Trang phục,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_65.webp,46,1,2025-04-22 09:05:15.201000 +00:00,2025-04-22 09:06:47.410000 +00:00
+92,Traveling P1,65.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_92.webp,65,1,2025-04-22 09:05:15.223000 +00:00,2025-04-22 09:06:47.428000 +00:00
+12,Feelings,12.Cảm xúc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_12.webp,12,1,2025-04-22 09:05:15.212000 +00:00,2025-04-22 09:06:47.340000 +00:00
+273,Fulfillment In Life P2,23.Cuộc sống trọn vẹn,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_23.webp,23,6,2025-04-22 09:05:15.219000 +00:00,2025-04-22 09:06:47.450000 +00:00
+283,Communication P2,33.Giao tiếp hiệu quả,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_33.webp,33,6,2025-04-22 09:05:15.232000 +00:00,2025-04-22 09:06:47.462000 +00:00
+301,The Universe P1,51.Vũ trụ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_51.webp,51,6,2025-04-22 09:05:15.214000 +00:00,2025-04-22 09:06:47.462000 +00:00
+322,Urbanisation P2,72.Đô thị hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_72.webp,72,6,2025-04-22 09:05:15.235000 +00:00,2025-04-22 09:06:47.479000 +00:00
+77,Flowers,53.Các loài hoa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_77.webp,53,1,2025-04-22 09:05:15.200000 +00:00,2025-04-22 09:06:47.415000 +00:00
+335,Air Pollution P1,85.Ô nhiễm không khí,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_85.webp,85,6,2025-04-22 09:05:15.231000 +00:00,2025-04-22 09:06:47.480000 +00:00
+64,Clothes P1,45.Trang phục,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_64.webp,45,1,2025-04-22 09:05:15.216000 +00:00,2025-04-22 09:06:47.408000 +00:00
+456,Correspondence & Documents,34.Thư tín & Văn bản,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_34.webp?_t=1585299896,34,10,2025-04-22 09:05:15.220000 +00:00,2025-04-22 09:06:47.880000 +00:00
+28,Bathroom,25.Phòng tắm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_28.webp,25,1,2025-04-22 09:05:15.211000 +00:00,2025-04-22 09:06:47.395000 +00:00
+47,Music Instruments,38.Nhạc cụ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_47.webp,38,1,2025-04-22 09:05:15.217000 +00:00,2025-04-22 09:06:47.402000 +00:00
+259,Mental Development P2,9.Phát triển trí tuệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_9.webp,9,6,2025-04-22 09:05:15.083000 +00:00,2025-04-22 09:06:47.445000 +00:00
+72,Traffic P2,79.Giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_72.webp,79,1,2025-04-22 09:05:15.205000 +00:00,2025-04-22 09:06:47.431000 +00:00
+314,Information Technology P1,64.Công nghệ thông tin,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_64.webp,64,6,2025-04-22 09:05:15.221000 +00:00,2025-04-22 09:06:47.476000 +00:00
+284,Expressions,34.Các cách diễn tả,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_34.webp,34,6,2025-04-22 09:05:15.231000 +00:00,2025-04-22 09:06:47.464000 +00:00
+299,The Planets P1,49.Các hành tinh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_49.webp,49,6,2025-04-22 09:05:15.238000 +00:00,2025-04-22 09:06:47.471000 +00:00
+68,Accessories P1,49.Phụ kiện thời trang,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_68.webp,49,1,2025-04-22 09:05:15.207000 +00:00,2025-04-22 09:06:47.409000 +00:00
+305,Design P2,55.Thiết kế,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_55.webp,55,6,2025-04-22 09:05:15.233000 +00:00,2025-04-22 09:06:47.471000 +00:00
+296,Wildlife,46.Đời sống hoang dã,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_46.webp,46,6,2025-04-22 09:05:15.350000 +00:00,2025-04-22 09:06:47.464000 +00:00
+97,Technology,96.Công nghệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_97.webp,96,1,2025-04-22 09:05:15.278000 +00:00,2025-04-22 09:06:47.438000 +00:00
+270,Lifestyles P1,20.Lối sống,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_20.webp,20,6,2025-04-22 09:05:15.269000 +00:00,2025-04-22 09:06:47.457000 +00:00
+549,Travel & Tourism P1,17. Du lịch lữ hành P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_17.webp,17,12,2025-04-22 09:05:15.342000 +00:00,2025-04-22 09:06:47.529000 +00:00
+63,Fashion,44.Thời trang,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_63.webp,44,1,2025-04-22 09:05:15.251000 +00:00,2025-04-22 09:06:47.409000 +00:00
+96,Sports,98.Các môn thể thao,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_96.webp,98,1,2025-04-22 09:05:15.246000 +00:00,2025-04-22 09:06:47.440000 +00:00
+82,Natural Disasters,76.Thảm họa thiên nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_82.webp,76,1,2025-04-22 09:05:15.267000 +00:00,2025-04-22 09:06:47.433000 +00:00
+341,Employment,91.Tuyển dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_91.webp,91,6,2025-04-22 09:05:15.275000 +00:00,2025-04-22 09:06:47.487000 +00:00
+286,Travel P1,36.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_36.webp,36,6,2025-04-22 09:05:15.370000 +00:00,2025-04-22 09:06:47.465000 +00:00
+348,Justice P2,98.Công lý,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_98.webp,98,6,2025-04-22 09:05:15.402000 +00:00,2025-04-22 09:06:47.493000 +00:00
+614,Time for a change P1,4. Đến lúc thay đổi 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_3.webp,4,13,2025-04-22 09:05:15.376000 +00:00,2025-04-22 09:06:47.575000 +00:00
+566,Task 1 writing P2,34. Kỹ năng viết task 1 P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_34.webp,34,12,2025-04-22 09:05:15.338000 +00:00,2025-04-22 09:06:47.533000 +00:00
+562,The media P2,30. Truyền thông P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_30.webp,30,12,2025-04-22 09:05:15.340000 +00:00,2025-04-22 09:06:47.537000 +00:00
+321,Urbanisation P1,71.Đô thị hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_71.webp,71,6,2025-04-22 09:05:15.345000 +00:00,2025-04-22 09:06:47.477000 +00:00
+462,Shopping,40.Mua sắm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_40.webp?_t=1585301176,40,10,2025-04-22 09:05:15.425000 +00:00,2025-04-22 09:06:47.750000 +00:00
+355,The Media P1,105.Phương tiện truyền thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_105.webp,105,6,2025-04-22 09:05:15.329000 +00:00,2025-04-22 09:06:47.501000 +00:00
+569,Task 2 writing P2,37. Kỹ năng viết task 2 P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_37.webp,37,12,2025-04-22 09:05:15.391000 +00:00,2025-04-22 09:06:47.549000 +00:00
+611,Human nature P1,1. Bản chất con người 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_1.webp,1,13,2025-04-22 09:05:15.356000 +00:00,2025-04-22 09:06:47.553000 +00:00
+637,Rocket science P3,27. Khoa học vũ trụ 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_27.webp,27,13,2025-04-22 09:05:15.472000 +00:00,2025-04-22 09:06:47.695000 +00:00
+621,Physical and mental health,11. Sức khỏe thể chất tinh thần,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_11.webp,11,13,2025-04-22 09:05:15.320000 +00:00,2025-04-22 09:06:47.603000 +00:00
+81,Zoo Animals,52.Động vật ở sở thú,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_81.webp,52,1,2025-04-22 09:05:15.272000 +00:00,2025-04-22 09:06:47.412000 +00:00
+539,Nature & Environment P1,7. Thiên nhiên & Môi trường P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_7.webp,7,12,2025-04-22 09:05:15.307000 +00:00,2025-04-22 09:06:47.523000 +00:00
+302,The Universe P2,52.Vũ trụ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_52.webp,52,6,2025-04-22 09:05:15.336000 +00:00,2025-04-22 09:06:47.471000 +00:00
+315,Information Technology P2,65.Công nghệ thông tin,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_65.webp,65,6,2025-04-22 09:05:15.310000 +00:00,2025-04-22 09:06:47.477000 +00:00
+80,Pets,51.Vật nuôi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_80.webp,51,1,2025-04-22 09:05:15.265000 +00:00,2025-04-22 09:06:47.411000 +00:00
+336,Air Pollution P2,86.Ô nhiễm không khí,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_86.webp,86,6,2025-04-22 09:05:15.261000 +00:00,2025-04-22 09:06:47.484000 +00:00
+16,Illness,84.Ốm đau,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_16.webp,84,1,2025-04-22 09:05:15.295000 +00:00,2025-04-22 09:06:47.434000 +00:00
+460,Multiple-meaning words P2,38.Từ nhiều nghĩa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_38.webp?_t=1585300999,38,10,2025-04-22 09:05:15.343000 +00:00,2025-04-22 09:06:47.788000 +00:00
+461,Ordering & Shipping,39.Đặt hàng & vận chuyển,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_39.webp?_t=1585300999,39,10,2025-04-22 09:05:15.367000 +00:00,2025-04-22 09:06:47.789000 +00:00
+502,Restaurants,80.Nhà hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_80.webp?_t=1585314373,80,10,2025-04-22 09:05:15.293000 +00:00,2025-04-22 09:06:48.145000 +00:00
+540,Nature & Environment P2,8. Thiên nhiên & Môi trường P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_8.webp,8,12,2025-04-22 09:05:15.291000 +00:00,2025-04-22 09:06:47.524000 +00:00
+266,Unhealthy Habits,16.Thói quen không lành mạnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_16.webp,16,6,2025-04-22 09:05:15.297000 +00:00,2025-04-22 09:06:47.450000 +00:00
+93,Traveling P2,66.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_93.webp,66,1,2025-04-22 09:05:15.241000 +00:00,2025-04-22 09:06:47.427000 +00:00
+340,Marketing,90.Truyền thông tiếp thị,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_90.webp,90,6,2025-04-22 09:05:15.346000 +00:00,2025-04-22 09:06:47.486000 +00:00
+1007,Changing roles in society 3,39. Thay đổi vai trò 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_39.webp,39,21,2025-04-22 09:05:16.645000 +00:00,2025-04-22 09:06:48.429000 +00:00
+342,Management,92.Quản trị công ty,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_92.webp,92,6,2025-04-22 09:05:15.281000 +00:00,2025-04-22 09:06:47.487000 +00:00
+232,Bài 29,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_29.webp,29,5,2025-04-22 09:06:43.668000 +00:00,2025-04-22 09:06:48.759000 +00:00
+316,Globalisation P1,66.Toàn cầu hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_66.webp,66,6,2025-04-22 09:05:15.332000 +00:00,2025-04-22 09:06:47.477000 +00:00
+285,On The Move,35.Trên đường di chuyển,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_35.webp,35,6,2025-04-22 09:05:15.277000 +00:00,2025-04-22 09:06:47.465000 +00:00
+308,Architecture P1,58.Kiến trúc,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_58.webp,58,6,2025-04-22 09:05:15.333000 +00:00,2025-04-22 09:06:47.473000 +00:00
+94,Direction,22.Phương hướng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_94.webp,22,1,2025-04-22 09:05:15.287000 +00:00,2025-04-22 09:06:47.367000 +00:00
+41,Company Positions,89.Chức vụ trong công ty,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_41.webp,89,1,2025-04-22 09:05:15.277000 +00:00,2025-04-22 09:06:47.436000 +00:00
+558,Buildings P2,26. Các tòa nhà P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_26.webp,26,12,2025-04-22 09:05:15.332000 +00:00,2025-04-22 09:06:47.535000 +00:00
+278,Education,28.Giáo dục,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_28.webp,28,6,2025-04-22 09:05:15.266000 +00:00,2025-04-22 09:06:47.458000 +00:00
+551,Gender roles P1,19. Vai trò giới tính P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_19.webp,19,12,2025-04-22 09:05:15.336000 +00:00,2025-04-22 09:06:47.526000 +00:00
+366,The Arts P2,116.Nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_116.webp,116,6,2025-04-22 09:05:15.368000 +00:00,2025-04-22 09:06:47.504000 +00:00
+260,Maturity,10.Sự trưởng thành,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_10.webp,10,6,2025-04-22 09:05:15.270000 +00:00,2025-04-22 09:06:47.446000 +00:00
+317,Globalisation P2,67.Toàn cầu hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_67.webp,67,6,2025-04-22 09:05:15.290000 +00:00,2025-04-22 09:06:47.478000 +00:00
+13,Family,13.Gia đình,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_13.webp,13,1,2025-04-22 09:05:15.315000 +00:00,2025-04-22 09:06:47.347000 +00:00
+43,Office P1,91.Văn phòng làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_43.webp,91,1,2025-04-22 09:05:15.275000 +00:00,2025-04-22 09:06:47.436000 +00:00
+54,Recreation Places P2,35.Địa điểm giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_54.webp,35,1,2025-04-22 09:05:15.252000 +00:00,2025-04-22 09:06:47.404000 +00:00
+536,Health & Fitness P2,4. Sức khỏe & Thể chất P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_4.webp,4,12,2025-04-22 09:05:15.345000 +00:00,2025-04-22 09:06:47.507000 +00:00
+635,Rocket science P1,25. Khoa học vũ trụ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_25.webp,25,13,2025-04-22 09:05:15.465000 +00:00,2025-04-22 09:06:47.687000 +00:00
+292,Time Periods,42.Các giai đoạn lịch sử,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_42.webp,42,6,2025-04-22 09:05:15.353000 +00:00,2025-04-22 09:06:47.464000 +00:00
+352,The Courts P2,102.Tòa án,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_102.webp,102,6,2025-04-22 09:05:15.343000 +00:00,2025-04-22 09:06:47.500000 +00:00
+615,Time for a change P2,5. Đến lúc thay đổi 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_15.webp,5,13,2025-04-22 09:05:15.407000 +00:00,2025-04-22 09:06:47.570000 +00:00
+455,Communication,33.Giao tiếp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_33.webp?_t=1585299896,33,10,2025-04-22 09:05:15.279000 +00:00,2025-04-22 09:06:47.860000 +00:00
+350,Criminals P2,100.Tội phạm,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_100.webp,100,6,2025-04-22 09:05:15.353000 +00:00,2025-04-22 09:06:47.492000 +00:00
+535,Health & Fitness P1,3. Sức khỏe & Thể chất P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_3.webp,3,12,2025-04-22 09:05:15.292000 +00:00,2025-04-22 09:06:47.507000 +00:00
+39,Career P1,87.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_39.webp,87,1,2025-04-22 09:05:15.286000 +00:00,2025-04-22 09:06:47.436000 +00:00
+547,Culture & Modern Society P1,15. Văn hóa & Xã hội hiện đại P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_15.webp,15,12,2025-04-22 09:05:15.411000 +00:00,2025-04-22 09:06:47.530000 +00:00
+568,Task 2 writing P1,36. Kỹ năng viết task 2 P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_36.webp,36,12,2025-04-22 09:05:15.339000 +00:00,2025-04-22 09:06:47.536000 +00:00
+613,Human nature P3,3. Bản chất con người 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_03.webp,3,13,2025-04-22 09:05:15.357000 +00:00,2025-04-22 09:06:47.573000 +00:00
+546,Hobbies P2,14. Sở thích P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_14.webp,14,12,2025-04-22 09:05:15.346000 +00:00,2025-04-22 09:06:47.531000 +00:00
+294,Natural World P1,44.Thế giới tự nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_44.webp,44,6,2025-04-22 09:05:15.268000 +00:00,2025-04-22 09:06:47.466000 +00:00
+304,Design P1,54.Thiết kế,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_54.webp,54,6,2025-04-22 09:05:15.294000 +00:00,2025-04-22 09:06:47.474000 +00:00
+59,Spices,61.Gia vị,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_59.webp,61,1,2025-04-22 09:05:15.370000 +00:00,2025-04-22 09:06:47.417000 +00:00
+88,Finance,95.Tài chính,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_88.webp,95,1,2025-04-22 09:05:15.242000 +00:00,2025-04-22 09:06:47.437000 +00:00
+83,Weather,73.Thời tiết,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_83.webp,73,1,2025-04-22 09:05:15.283000 +00:00,2025-04-22 09:06:47.430000 +00:00
+69,Accessories P2,50.Phụ kiện thời trang,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_69.webp,50,1,2025-04-22 09:05:15.272000 +00:00,2025-04-22 09:06:47.411000 +00:00
+326,Industrialisation P2,76.Công nghiệp hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_76.webp,76,6,2025-04-22 09:05:15.349000 +00:00,2025-04-22 09:06:47.479000 +00:00
+57,Fruits,59.Hoa quả,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_57.webp,59,1,2025-04-22 09:05:15.288000 +00:00,2025-04-22 09:06:47.419000 +00:00
+11,Age,11.Tuổi tác,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_11.webp,11,1,2025-04-22 09:05:15.308000 +00:00,2025-04-22 09:06:47.339000 +00:00
+303,Outer Space,53.Ngoài không gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_53.webp,53,6,2025-04-22 09:05:15.262000 +00:00,2025-04-22 09:06:47.475000 +00:00
+332,The Green Revolution P1,82.Cuộc cách mạng xanh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_82.webp,82,6,2025-04-22 09:05:15.319000 +00:00,2025-04-22 09:06:47.484000 +00:00
+70,Vehicles,77.Phương tiện giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_70.webp,77,1,2025-04-22 09:05:15.330000 +00:00,2025-04-22 09:06:47.432000 +00:00
+15,Daily Activities,30.Hoạt động thường ngày,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_15.webp,30,1,2025-04-22 09:05:15.328000 +00:00,2025-04-22 09:06:47.401000 +00:00
+503,Healthcare P1,81.Chăm sóc y tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_81.webp?_t=1585314475,81,10,2025-04-22 09:05:15.380000 +00:00,2025-04-22 09:06:48.148000 +00:00
+354,Law System P2,104.Hệ thống luật pháp,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_104.webp,104,6,2025-04-22 09:05:15.341000 +00:00,2025-04-22 09:06:47.501000 +00:00
+445,Products P2,23.Sản phẩm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_23.webp?_t=1585296927,23,10,2025-04-22 09:05:15.394000 +00:00,2025-04-22 09:06:47.797000 +00:00
+1022,Lesson 11,11. Bài học 11,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_11.webp,11,22,2025-04-22 09:05:16.108000 +00:00,2025-04-22 09:06:48.269000 +00:00
+1005,Changing roles in society 1,37. Thay đổi vai trò 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_37.webp,37,21,2025-04-22 09:05:19.967000 +00:00,2025-04-22 09:06:48.422000 +00:00
+18,Hospitals,85.Bệnh viện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_18.webp,85,1,2025-04-22 09:05:15.335000 +00:00,2025-04-22 09:06:47.434000 +00:00
+42,Working Skills,90.Kĩ năng làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_42.webp,90,1,2025-04-22 09:05:15.371000 +00:00,2025-04-22 09:06:47.437000 +00:00
+275,Student Life P2,25.Đời sống sinh viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_25.webp,25,6,2025-04-22 09:05:15.243000 +00:00,2025-04-22 09:06:47.459000 +00:00
+253,Family,3.Gia đình,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_3.webp,3,6,2025-04-22 09:05:15.266000 +00:00,2025-04-22 09:06:47.441000 +00:00
+338,The Energy Crisis P1,88.Khủng hoảng năng lượng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_88.webp,88,6,2025-04-22 09:05:15.294000 +00:00,2025-04-22 09:06:47.487000 +00:00
+327,The Developing World,77.Xã hội phát triển,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_77.webp,77,6,2025-04-22 09:05:15.309000 +00:00,2025-04-22 09:06:47.480000 +00:00
+636,Rocket science P2,26. Khoa học vũ trụ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_26.webp,26,13,2025-04-22 09:05:15.431000 +00:00,2025-04-22 09:06:47.687000 +00:00
+552,Gender roles P2,20. Vai trò giới tính P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_20.webp,20,12,2025-04-22 09:05:15.340000 +00:00,2025-04-22 09:06:47.526000 +00:00
+626,Powers of persuasion P2,16. Sức mạnh của thuyết phục 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_16.webp,16,13,2025-04-22 09:05:15.541000 +00:00,2025-04-22 09:06:47.669000 +00:00
+78,Plants,54.Thực vật,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_78.webp,54,1,2025-04-22 09:05:15.280000 +00:00,2025-04-22 09:06:47.420000 +00:00
+483,Transportation,61.Giao thông vận tải,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_61.webp?_t=1585307814,61,10,2025-04-22 09:05:15.517000 +00:00,2025-04-22 09:06:47.822000 +00:00
+44,Office P2,92.Văn phòng làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_44.webp,92,1,2025-04-22 09:05:15.268000 +00:00,2025-04-22 09:06:47.438000 +00:00
+291,Ancient Times P2,41.Thời cổ đại,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_41.webp,41,6,2025-04-22 09:05:15.288000 +00:00,2025-04-22 09:06:47.463000 +00:00
+556,Places P2,24. Địa điểm P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_24.webp,24,12,2025-04-22 09:05:15.383000 +00:00,2025-04-22 09:06:47.532000 +00:00
+346,Workplace P2,96.Nơi làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_96.webp,96,6,2025-04-22 09:05:15.319000 +00:00,2025-04-22 09:06:47.488000 +00:00
+55,Food,56.Đồ ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_55.webp,56,1,2025-04-22 09:05:15.271000 +00:00,2025-04-22 09:06:47.425000 +00:00
+279,Examination,29.Kì thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_29.webp,29,6,2025-04-22 09:05:15.290000 +00:00,2025-04-22 09:06:47.460000 +00:00
+264,Staying Healthy P1,14.Giữ sức khỏe,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_14.webp,14,6,2025-04-22 09:05:15.278000 +00:00,2025-04-22 09:06:47.449000 +00:00
+29,Garden,28.Vườn tược,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_29.webp,28,1,2025-04-22 09:05:15.292000 +00:00,2025-04-22 09:06:47.399000 +00:00
+91,Accommodation,67.Nơi ở,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_91.webp,67,1,2025-04-22 09:05:15.248000 +00:00,2025-04-22 09:06:47.429000 +00:00
+38,Industries,86.Các ngành nghề,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_38.webp,86,1,2025-04-22 09:05:15.314000 +00:00,2025-04-22 09:06:47.435000 +00:00
+560,Arts P2,28. Nghệ thuật P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_28.webp,28,12,2025-04-22 09:05:15.336000 +00:00,2025-04-22 09:06:47.535000 +00:00
+298,Climates,48.Khí hậu,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_48.webp,48,6,2025-04-22 09:05:15.286000 +00:00,2025-04-22 09:06:47.468000 +00:00
+557,Buildings P1,25. Các tòa nhà P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_25.webp,25,12,2025-04-22 09:05:15.351000 +00:00,2025-04-22 09:06:47.537000 +00:00
+506,Hospitals P2,84.Bệnh viện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_84.webp?_t=1585314707,84,10,2025-04-22 09:05:15.337000 +00:00,2025-04-22 09:06:48.164000 +00:00
+353,Law System P1,103.Hệ thống luật pháp,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_103.webp,103,6,2025-04-22 09:05:15.354000 +00:00,2025-04-22 09:06:47.500000 +00:00
+1006,Changing roles in society 2,38. Thay đổi vai trò 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_38.webp,38,21,2025-04-22 09:05:20.224000 +00:00,2025-04-22 09:06:48.425000 +00:00
+76,Transportation,83.Vận tải nói chung,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_76.webp,83,1,2025-04-22 09:05:15.259000 +00:00,2025-04-22 09:06:47.435000 +00:00
+365,The Arts P1,115.Nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_115.webp,115,6,2025-04-22 09:05:15.345000 +00:00,2025-04-22 09:06:47.504000 +00:00
+100,Social Issues,100.Vấn nạn xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_100.webp,100,1,2025-04-22 09:05:15.273000 +00:00,2025-04-22 09:06:47.440000 +00:00
+454,Office Technology P2,32.Công nghệ văn phòng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_32.webp?_t=1585299433,32,10,2025-04-22 09:05:15.347000 +00:00,2025-04-22 09:06:47.871000 +00:00
+300,The Planets P2,50.Các hành tinh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_50.webp,50,6,2025-04-22 09:05:15.365000 +00:00,2025-04-22 09:06:47.470000 +00:00
+344,Career P2,94.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_94.webp,94,6,2025-04-22 09:05:15.344000 +00:00,2025-04-22 09:06:47.491000 +00:00
+364,Art Inspiration,114.Cảm hứng nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_114.webp,114,6,2025-04-22 09:05:15.324000 +00:00,2025-04-22 09:06:47.505000 +00:00
+622,Striving to achieve P1,12. Nỗ lực để có thành quả 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_12.webp,12,13,2025-04-22 09:05:15.395000 +00:00,2025-04-22 09:06:47.613000 +00:00
+444,Products P1,22.Sản phẩm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_22.webp?_t=1585296852,22,10,2025-04-22 09:05:15.488000 +00:00,2025-04-22 09:06:47.862000 +00:00
+357,The Press P1,107.Báo chí,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_107.webp,107,6,2025-04-22 09:05:15.284000 +00:00,2025-04-22 09:06:47.501000 +00:00
+24,Hotels,63.Khách sạn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_24.webp,63,1,2025-04-22 09:05:15.264000 +00:00,2025-04-22 09:06:47.425000 +00:00
+358,The Press P2,108.Báo chí,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_108.webp,108,6,2025-04-22 09:05:15.342000 +00:00,2025-04-22 09:06:47.502000 +00:00
+643,Urban jungle P2,33. Thành thị đông đúc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_8.webp,33,13,2025-04-22 09:05:15.445000 +00:00,2025-04-22 09:06:47.717000 +00:00
+628,Ways and means,18. Phương thức và cách thức,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_18.webp,18,13,2025-04-22 09:05:15.831000 +00:00,2025-04-22 09:06:47.675000 +00:00
+225,Bài 22,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_22.webp,22,5,2025-04-22 09:05:16.550000 +00:00,2025-04-22 09:06:48.925000 +00:00
+26,Living room,23.Phòng khách,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_26.webp,23,1,2025-04-22 09:05:15.253000 +00:00,2025-04-22 09:06:47.349000 +00:00
+20,Stores,32.Cửa hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_20.webp,32,1,2025-04-22 09:05:15.331000 +00:00,2025-04-22 09:06:47.402000 +00:00
+263,Keeping Fit P2,13.Giữ vóc dáng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_12.webp,13,6,2025-04-22 09:05:15.271000 +00:00,2025-04-22 09:06:47.448000 +00:00
+265,Staying Healthy P2,15.Giữ sức khỏe,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_15.webp,15,6,2025-04-22 09:05:15.279000 +00:00,2025-04-22 09:06:47.449000 +00:00
+67,Make-up P2,48.Trang điểm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_67.webp,48,1,2025-04-22 09:05:15.249000 +00:00,2025-04-22 09:06:47.410000 +00:00
+25,Kitchen,26.Phòng bếp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_25.webp,26,1,2025-04-22 09:05:15.298000 +00:00,2025-04-22 09:06:47.396000 +00:00
+328,Environmental Problems P1,78.Vấn đề môi trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_78.webp,78,6,2025-04-22 09:05:15.289000 +00:00,2025-04-22 09:06:47.481000 +00:00
+45,Salaries,93.Lương bổng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_45.webp,93,1,2025-04-22 09:05:15.280000 +00:00,2025-04-22 09:06:47.438000 +00:00
+269,Personal Life P2,19.Đời sống cá nhân,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_19.webp,19,6,2025-04-22 09:05:15.244000 +00:00,2025-04-22 09:06:47.452000 +00:00
+21,Restaurants,36.Nhà hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_21.webp,36,1,2025-04-22 09:05:15.284000 +00:00,2025-04-22 09:06:47.404000 +00:00
+99,Media,99.Truyền thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_99.webp,99,1,2025-04-22 09:05:15.311000 +00:00,2025-04-22 09:06:47.439000 +00:00
+90,Outdoor Activities,68.Hoạt động ngoài trời,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_90.webp,68,1,2025-04-22 09:05:15.295000 +00:00,2025-04-22 09:06:47.428000 +00:00
+19,Amusement Parks,43.Công viên giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_19.webp,43,1,2025-04-22 09:05:15.292000 +00:00,2025-04-22 09:06:47.412000 +00:00
+89,Famous Landmarks,64.Địa danh nổi tiếng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_89.webp,64,1,2025-04-22 09:05:15.314000 +00:00,2025-04-22 09:06:47.427000 +00:00
+267,Diseases,17.Đau bệnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_17.webp,17,6,2025-04-22 09:05:15.265000 +00:00,2025-04-22 09:06:47.451000 +00:00
+23,Beverages,57.Đồ uống,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_23.webp,57,1,2025-04-22 09:05:15.287000 +00:00,2025-04-22 09:06:47.417000 +00:00
+323,Overpopulation,73.Đông dân cư,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_73.webp,73,6,2025-04-22 09:05:15.317000 +00:00,2025-04-22 09:06:47.479000 +00:00
+370,The Artists P2,120.Nghệ sĩ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_120.webp,120,6,2025-04-22 09:05:15.323000 +00:00,2025-04-22 09:06:47.505000 +00:00
+894,Community service 2,8. Dịch vụ cộng đồng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_08.webp,8,19,2025-04-22 09:05:20.338000 +00:00,2025-04-22 09:06:48.585000 +00:00
+22,Banks,94.Ngân hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_22.webp,94,1,2025-04-22 09:05:15.274000 +00:00,2025-04-22 09:06:47.437000 +00:00
+261,Minds & Thoughts,11.Tâm lý & Suy nghĩ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_11.webp,11,6,2025-04-22 09:05:15.260000 +00:00,2025-04-22 09:06:47.447000 +00:00
+282,Communication P1,32.Giao tiếp hiệu quả,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_32.webp,32,6,2025-04-22 09:05:15.276000 +00:00,2025-04-22 09:06:47.461000 +00:00
+50,Entertainment,41.Giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_50.webp,41,1,2025-04-22 09:05:15.294000 +00:00,2025-04-22 09:06:47.406000 +00:00
+71,Traffic P1,78.Giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_71.webp,78,1,2025-04-22 09:05:15.267000 +00:00,2025-04-22 09:06:47.432000 +00:00
+538,Studies & Work P2,6. Học tập & Làm việc P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_6.webp,6,12,2025-04-22 09:05:15.308000 +00:00,2025-04-22 09:06:47.508000 +00:00
+268,Personal Life P1,18.Đời sống cá nhân,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_18.webp,18,6,2025-04-22 09:05:15.269000 +00:00,2025-04-22 09:06:47.452000 +00:00
+58,Drinks,60.Thức uống,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_58.webp,60,1,2025-04-22 09:05:15.296000 +00:00,2025-04-22 09:06:47.421000 +00:00
+74,Buses,81.Xe buýt,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_74.webp,81,1,2025-04-22 09:05:15.260000 +00:00,2025-04-22 09:06:47.433000 +00:00
+6,Colours,15.Màu sắc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_6.webp,15,1,2025-04-22 09:05:15.254000 +00:00,2025-04-22 09:06:47.347000 +00:00
+252,Relationships,2.Các mối quan hệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_2.webp,2,6,2025-04-22 09:05:15.245000 +00:00,2025-04-22 09:06:47.441000 +00:00
+545,Hobbies P1,13. Sở thích P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_13.webp,13,12,2025-04-22 09:05:15.291000 +00:00,2025-04-22 09:06:47.533000 +00:00
+277,University P2,27.Đại học,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_27.webp,27,6,2025-04-22 09:05:15.250000 +00:00,2025-04-22 09:06:47.460000 +00:00
+256,Physical Development P1,6.Phát triển thể chất,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_6.webp,6,6,2025-04-22 09:05:15.283000 +00:00,2025-04-22 09:06:47.443000 +00:00
+61,Cooking,31.Nấu ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_61.webp,31,1,2025-04-22 09:05:15.297000 +00:00,2025-04-22 09:06:47.407000 +00:00
+60,Tastes,62.Hương vị,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_60.webp,62,1,2025-04-22 09:05:15.318000 +00:00,2025-04-22 09:06:47.426000 +00:00
+75,Bicycles,82.Xe đạp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_75.webp,82,1,2025-04-22 09:05:15.265000 +00:00,2025-04-22 09:06:47.434000 +00:00
+1,Museums,72.Bảo tàng nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_1.webp,72,1,2025-04-22 09:05:15.313000 +00:00,2025-04-22 09:06:47.430000 +00:00
+86,Countries,69.Các quốc gia,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_86.webp,69,1,2025-04-22 09:05:15.312000 +00:00,2025-04-22 09:06:47.429000 +00:00
+287,Travel P2,37.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_37.webp,37,6,2025-04-22 09:05:15.267000 +00:00,2025-04-22 09:06:47.470000 +00:00
+30,Garage,29.Nhà để xe,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_30.webp,29,1,2025-04-22 09:05:15.285000 +00:00,2025-04-22 09:06:47.397000 +00:00
+550,Travel & Tourism P2,18. Du lịch lữ hành P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_18.webp,18,12,2025-04-22 09:05:15.269000 +00:00,2025-04-22 09:06:47.527000 +00:00
+84,Universe,74.Vũ trụ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_84.webp,74,1,2025-04-22 09:05:15.276000 +00:00,2025-04-22 09:06:47.429000 +00:00
+331,Human Impact P2,81.Tác động của con người,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_81.webp,81,6,2025-04-22 09:05:15.322000 +00:00,2025-04-22 09:06:47.482000 +00:00
+457,Common Words P1,35.Từ thông dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_35.webp?_t=1585300483,35,10,2025-04-22 09:05:15.290000 +00:00,2025-04-22 09:06:47.775000 +00:00
+14,Relationships,14.Các mối quan hệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_14.webp,14,1,2025-04-22 09:05:15.256000 +00:00,2025-04-22 09:06:47.348000 +00:00
+529,Choosing A Career P2,24. Lựa chọn nghề nghiệp 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_13.webp,24,11,2025-04-22 09:05:16.103000 +00:00,2025-04-22 09:06:48.559000 +00:00
+649,Energy efficient,39. Sử dụng năng lượng hiệu quả,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_53.webp,39,13,2025-04-22 09:05:15.511000 +00:00,2025-04-22 09:06:47.773000 +00:00
+309,Architecture P2,59.Kiến trúc,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_59.webp,59,6,2025-04-22 09:05:15.344000 +00:00,2025-04-22 09:06:47.475000 +00:00
+524,Artificial Intelligence P1,18. Trí tuệ nhân tạo 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_17.webp,18,11,2025-04-22 09:05:16.100000 +00:00,2025-04-22 09:06:48.212000 +00:00
+616,No man is an island P1,6. Con người không cô độc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_06.webp,6,13,2025-04-22 09:05:15.397000 +00:00,2025-04-22 09:06:47.578000 +00:00
+478,Society P2,56.Xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_56.webp?_t=1585307015,56,10,2025-04-22 09:05:15.995000 +00:00,2025-04-22 09:06:47.810000 +00:00
+644,Tackling issues P1,34. Giải quyết vấn đề 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_10.webp,34,13,2025-04-22 09:05:15.479000 +00:00,2025-04-22 09:06:47.724000 +00:00
+647,This Earth P2,37. Trái Đất 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_44.webp,37,13,2025-04-22 09:05:15.593000 +00:00,2025-04-22 09:06:47.761000 +00:00
+459,Multiple-meaning words P1,37.Từ nhiều nghĩa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_37.webp?_t=1585300999,37,10,2025-04-22 09:05:15.586000 +00:00,2025-04-22 09:06:47.779000 +00:00
+251,Childhood,1.Thời thơ ấu,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_1.webp,1,6,2025-04-22 09:05:15.355000 +00:00,2025-04-22 09:06:47.440000 +00:00
+561,The media P1,29. Truyền thông P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_29.webp,29,12,2025-04-22 09:05:15.333000 +00:00,2025-04-22 09:06:47.536000 +00:00
+255,Growing up P2,5.Quá trình trưởng thành,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_5.webp,5,6,2025-04-22 09:05:15.371000 +00:00,2025-04-22 09:06:47.442000 +00:00
+701,Phone questionnaire,42. Phỏng vấn qua điện thoại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_042.webp,42,15,2025-04-22 09:05:15.762000 +00:00,2025-04-22 09:06:48.207000 +00:00
+759,Making arrangements,100. Sắp xếp,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_100.webp,100,15,2025-04-22 09:05:16.012000 +00:00,2025-04-22 09:06:47.916000 +00:00
+570,Task 2 writing P3,38. Kỹ năng viết task 2 P3,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_38.webp,38,12,2025-04-22 09:05:15.715000 +00:00,2025-04-22 09:06:47.552000 +00:00
+1017,Lesson 6,6. Bài học 6,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_06.webp,6,22,2025-04-22 09:05:16.091000 +00:00,2025-04-22 09:06:48.294000 +00:00
+883,Our Green World 1,25. Thế giới xanh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_25.webp,25,18,2025-04-22 09:06:43.924000 +00:00,2025-04-22 09:06:48.879000 +00:00
+1012,Lesson 1,1. Bài học 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_01.webp,1,22,2025-04-22 09:05:16.085000 +00:00,2025-04-22 09:06:48.143000 +00:00
+85,Nature,75.Thiên nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_85.webp,75,1,2025-04-22 09:05:15.386000 +00:00,2025-04-22 09:06:47.432000 +00:00
+280,Language P1,30.Ngôn ngữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_30.webp,30,6,2025-04-22 09:05:15.369000 +00:00,2025-04-22 09:06:47.461000 +00:00
+617,No man is an island P2,7. Con người không cô độc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_7.webp,7,13,2025-04-22 09:05:15.658000 +00:00,2025-04-22 09:06:47.581000 +00:00
+564,The law & Crime & Punishment P2,32. Luật & Tội ác & Trừng phạt P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_32.webp,32,12,2025-04-22 09:05:15.420000 +00:00,2025-04-22 09:06:47.535000 +00:00
+512,Transition Words,90.Từ nối trong câu,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_20.webp?_t=1571450195,90,10,2025-04-22 09:05:15.562000 +00:00,2025-04-22 09:06:48.175000 +00:00
+630,State control P2,20. Kiểm soát của chính quyền 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_60.webp,20,13,2025-04-22 09:05:15.643000 +00:00,2025-04-22 09:06:47.680000 +00:00
+624,Make a reputation,14. Tạo danh tiếng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_11.webp,14,13,2025-04-22 09:05:15.534000 +00:00,2025-04-22 09:06:47.650000 +00:00
+618,As an individual P1,8. Như một cá nhân 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_08.webp,8,13,2025-04-22 09:05:15.441000 +00:00,2025-04-22 09:06:47.587000 +00:00
+700,Using phones and mobiles,41. Điện thoại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_041.webp,41,15,2025-04-22 09:05:16.055000 +00:00,2025-04-22 09:06:48.205000 +00:00
+1028,Lesson 17,17. Bài học 17,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_17.webp,17,22,2025-04-22 09:05:16.106000 +00:00,2025-04-22 09:06:48.284000 +00:00
+640,The latest thing P1,30. Cập nhật mới nhất 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_30.webp,30,13,2025-04-22 09:05:15.606000 +00:00,2025-04-22 09:06:47.708000 +00:00
+507,Clinics,85.Phòng khám,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_85.webp?_t=1585314973,85,10,2025-04-22 09:05:15.342000 +00:00,2025-04-22 09:06:48.165000 +00:00
+281,Language P2,31.Ngôn ngữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_31.webp,31,6,2025-04-22 09:05:15.338000 +00:00,2025-04-22 09:06:47.463000 +00:00
+319,World Population P2,69.Dân số thế giới,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_69.webp,69,6,2025-04-22 09:05:15.331000 +00:00,2025-04-22 09:06:47.478000 +00:00
+504,Healthcare P2,82.Chăm sóc y tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_82.webp?_t=1585314602,82,10,2025-04-22 09:05:15.351000 +00:00,2025-04-22 09:06:48.154000 +00:00
+468,Recruiting & Applying P2,46.Tuyển dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_46.webp?_t=1585305300,46,10,2025-04-22 09:05:15.991000 +00:00,2025-04-22 09:06:47.813000 +00:00
+654,The media P1,44. Truyền thông 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_44.webp,44,13,2025-04-22 09:05:15.675000 +00:00,2025-04-22 09:06:47.673000 +00:00
+641,The latest thing P2,31. Cập nhật mới nhất 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_31.webp,31,13,2025-04-22 09:05:15.619000 +00:00,2025-04-22 09:06:47.710000 +00:00
+508,Pharmacies,86.Hiệu thuốc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_86.webp?_t=1585315353,86,10,2025-04-22 09:05:15.348000 +00:00,2025-04-22 09:06:48.166000 +00:00
+423,Economics,1.Kinh tế học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_1.webp?_t=1585295566,1,10,2025-04-22 09:05:15.688000 +00:00,2025-04-22 09:06:47.793000 +00:00
+480,Environment & Nature P1,58.Thiên nhiên môi trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_58.webp?_t=1585307379,58,10,2025-04-22 09:05:15.998000 +00:00,2025-04-22 09:06:47.812000 +00:00
+781,"Phrases with ""up""","122. Cụm với ""up""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_122.webp,122,15,2025-04-22 09:05:16.096000 +00:00,2025-04-22 09:06:48.150000 +00:00
+702,Downside of texting,43. Tin nhắn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_043.webp,43,15,2025-04-22 09:05:15.797000 +00:00,2025-04-22 09:06:48.208000 +00:00
+794,Your body and you 2,5. Cơ thể bạn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_05.webp,5,16,2025-04-22 09:05:16.161000 +00:00,2025-04-22 09:06:48.693000 +00:00
+289,Nature P2,39.Thiên nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_39.webp,39,6,2025-04-22 09:05:15.344000 +00:00,2025-04-22 09:06:47.462000 +00:00
+262,Keeping Fit P1,12.Giữ vóc dáng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_13.webp,12,6,2025-04-22 09:05:15.631000 +00:00,2025-04-22 09:06:47.446000 +00:00
+553,People P1,21. Con người P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_21.webp,21,12,2025-04-22 09:05:15.615000 +00:00,2025-04-22 09:06:47.532000 +00:00
+488,Security,66.An ninh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_66.webp?_t=1585308403,66,10,2025-04-22 09:05:16.380000 +00:00,2025-04-22 09:06:47.851000 +00:00
+652,Law enforcement P1,42. Thi hành luật 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_42.webp,42,13,2025-04-22 09:05:15.651000 +00:00,2025-04-22 09:06:47.679000 +00:00
+473,Workplace P1,51.Nơi làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_51.webp?_t=1585306405,51,10,2025-04-22 09:05:16.377000 +00:00,2025-04-22 09:06:47.841000 +00:00
+658,In times of difficulties,48. Khi gặp khó khăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_48.webp,48,13,2025-04-22 09:05:15.389000 +00:00,2025-04-22 09:06:47.784000 +00:00
+489,Arts,67.Nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_67.webp?_t=1585308641,67,10,2025-04-22 09:05:16.370000 +00:00,2025-04-22 09:06:47.850000 +00:00
+426,Business Planning P1,4.Kế hoạch kinh doanh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_4.webp?_t=1585295760,4,10,2025-04-22 09:05:15.546000 +00:00,2025-04-22 09:06:47.777000 +00:00
+431,Contracts P1,"9.Hợp đồng, thỏa thuận",https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_9.webp?_t=1585285409,9,10,2025-04-22 09:05:15.783000 +00:00,2025-04-22 09:06:48.046000 +00:00
+359,Celebrities,109.Thế giới người nổi tiếng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_109.webp,109,6,2025-04-22 09:05:15.415000 +00:00,2025-04-22 09:06:47.503000 +00:00
+588,Caring for those in need P1,10. Chăm sóc người khác 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_10.webp,10,14,2025-04-22 09:05:16.365000 +00:00,2025-04-22 09:06:48.430000 +00:00
+645,Tackling issues P2,35. Giải quyết vấn đề 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_35.webp,35,13,2025-04-22 09:05:15.495000 +00:00,2025-04-22 09:06:47.733000 +00:00
+351,The Courts P1,101.Tòa án,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_101.webp,101,6,2025-04-22 09:05:15.341000 +00:00,2025-04-22 09:06:47.499000 +00:00
+235,Bài 32,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_32.webp,32,5,2025-04-22 09:05:20.528000 +00:00,2025-04-22 09:06:48.750000 +00:00
+427,Business Planning P2,5.Kế hoạch kinh doanh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_5.webp?_t=1585295885,5,10,2025-04-22 09:05:15.571000 +00:00,2025-04-22 09:06:47.754000 +00:00
+612,Human nature P2,2. Bản chất con người 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_4.webp,2,13,2025-04-22 09:05:15.355000 +00:00,2025-04-22 09:06:47.584000 +00:00
+638,Construction P1,28. Xây dựng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_28.webp,28,13,2025-04-22 09:05:15.601000 +00:00,2025-04-22 09:06:47.705000 +00:00
+530,Common Phrases,26. Cụm từ thường gặp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_1.webp,26,11,2025-04-22 09:05:16.372000 +00:00,2025-04-22 09:06:48.335000 +00:00
+659,This is not the end,49. Không phải kết thúc,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_49.webp,49,13,2025-04-22 09:05:15.453000 +00:00,2025-04-22 09:06:47.790000 +00:00
+428,Marketing,"6.Truyền thông, tiếp thị",https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_6.webp?_t=1585275750,6,10,2025-04-22 09:05:15.704000 +00:00,2025-04-22 09:06:47.782000 +00:00
+482,Airlines,60.Hàng không,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_60.webp?_t=1585307679,60,10,2025-04-22 09:05:15.738000 +00:00,2025-04-22 09:06:47.826000 +00:00
+793,Your body and you 1,4. Cơ thể bạn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_04.webp,4,16,2025-04-22 09:05:16.156000 +00:00,2025-04-22 09:06:48.669000 +00:00
+475,Career P1,53.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_53.webp?_t=1585306648,53,10,2025-04-22 09:05:16.176000 +00:00,2025-04-22 09:06:47.844000 +00:00
+312,Computer P2,62.Máy tính,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_62.webp,62,6,2025-04-22 09:05:15.332000 +00:00,2025-04-22 09:06:47.475000 +00:00
+337,Alternative Energy,87.Năng lượng thay thế,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_87.webp,87,6,2025-04-22 09:05:15.337000 +00:00,2025-04-22 09:06:47.485000 +00:00
+567,Task 1 writing P3,35. Kỹ năng viết task 1 P3,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_35.webp,35,12,2025-04-22 09:05:15.340000 +00:00,2025-04-22 09:06:47.534000 +00:00
+639,Construction P2,29. Xây dựng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_29.webp,29,13,2025-04-22 09:05:15.520000 +00:00,2025-04-22 09:06:47.707000 +00:00
+510,Common Phrases P1,88.Cụm từ thông dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_56.webp?_t=1579173887,88,10,2025-04-22 09:05:15.369000 +00:00,2025-04-22 09:06:48.169000 +00:00
+98,Arts,97.Nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_98.webp,97,1,2025-04-22 09:05:15.334000 +00:00,2025-04-22 09:06:47.438000 +00:00
+608,Cities of the future P2,30. Thành phố tương lai 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_30.webp,30,14,2025-04-22 09:05:16.356000 +00:00,2025-04-22 09:06:48.069000 +00:00
+543,Science & Technology P1,11. Khoa học & Công nghệ P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_11.webp,11,12,2025-04-22 09:05:15.367000 +00:00,2025-04-22 09:06:47.525000 +00:00
+537,Studies & Work P1,5. Học tập & Làm việc P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_5.webp,5,12,2025-04-22 09:05:15.343000 +00:00,2025-04-22 09:06:47.508000 +00:00
+505,Hospitals P1,83.Bệnh viện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_83.webp?_t=1585314707,83,10,2025-04-22 09:05:15.372000 +00:00,2025-04-22 09:06:48.163000 +00:00
+362,The Theatres,112.Nhà hát,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_112.webp,112,6,2025-04-22 09:05:15.346000 +00:00,2025-04-22 09:06:47.504000 +00:00
+509,Insurance,87.Bảo hiểm,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_43.webp?_t=1578387331,87,10,2025-04-22 09:05:15.352000 +00:00,2025-04-22 09:06:48.167000 +00:00
+580,The generation gap P2,2. Khoảng cách thế hệ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_02.webp,2,14,2025-04-22 09:05:16.359000 +00:00,2025-04-22 09:06:48.405000 +00:00
+799,For a better community 2,10. Vì một cộng đồng tốt đẹp hơn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_10.webp,10,16,2025-04-22 09:05:16.191000 +00:00,2025-04-22 09:06:48.962000 +00:00
+806,Cultural diversity 1,17. Đa dạng văn hóa 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_17.webp,17,16,2025-04-22 09:05:16.308000 +00:00,2025-04-22 09:06:48.966000 +00:00
+565,Task 1 writing P1,33. Kỹ năng viết task 1 P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_33.webp,33,12,2025-04-22 09:05:15.677000 +00:00,2025-04-22 09:06:47.535000 +00:00
+664,Going to hospital,5. Bệnh viện,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_005.webp,5,15,2025-04-22 09:05:15.923000 +00:00,2025-04-22 09:06:48.234000 +00:00
+725,Rock concerts,66. Đêm diễn rock,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_066.webp,66,15,2025-04-22 09:05:15.920000 +00:00,2025-04-22 09:06:48.566000 +00:00
+443,Organizations P2,21.Các tổ chức,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_21.webp?_t=1585296758,21,10,2025-04-22 09:05:15.675000 +00:00,2025-04-22 09:06:47.872000 +00:00
+708,Film reviews,49. Phim ảnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_049.webp,49,15,2025-04-22 09:05:15.822000 +00:00,2025-04-22 09:06:47.910000 +00:00
+491,Movies,69.Phim ảnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_69.webp?_t=1585309176,69,10,2025-04-22 09:05:15.983000 +00:00,2025-04-22 09:06:47.816000 +00:00
+627,Powers of persuasion P3,17. Sức mạnh của thuyết phục 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_17.webp,17,13,2025-04-22 09:05:15.550000 +00:00,2025-04-22 09:06:47.670000 +00:00
+429,Advertisement,"7.Quảng cáo, quảng bá",https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_7.webp?_t=1585275881,7,10,2025-04-22 09:05:15.969000 +00:00,2025-04-22 09:06:47.768000 +00:00
+745,A struggling business,86. Làm ăn thất bát,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_086.webp,86,15,2025-04-22 09:05:15.948000 +00:00,2025-04-22 09:06:47.892000 +00:00
+661,Healthy eating plan,2. Ăn uống lành mạnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_002.webp,2,15,2025-04-22 09:05:15.978000 +00:00,2025-04-22 09:06:48.181000 +00:00
+634,Natural history P3,24. Lịch sử tự nhiên 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_24.webp,24,13,2025-04-22 09:05:15.525000 +00:00,2025-04-22 09:06:47.685000 +00:00
+470,Salaries & Benefits P1,48.Lương thưởng phúc lợi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_48.webp?_t=1585305963,48,10,2025-04-22 09:05:15.989000 +00:00,2025-04-22 09:06:47.798000 +00:00
+656,A matter of taste P1,46. Thị hiếu 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_56.webp,46,13,2025-04-22 09:05:15.654000 +00:00,2025-04-22 09:06:47.780000 +00:00
+448,Construction,26.Ngành xây dựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_26.webp?_t=1585297417,26,10,2025-04-22 09:05:15.939000 +00:00,2025-04-22 09:06:47.849000 +00:00
+465,Warranties,43.Bảo hành,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_43.webp?_t=1585301578,43,10,2025-04-22 09:05:15.986000 +00:00,2025-04-22 09:06:47.803000 +00:00
+728,Storms and flooding,69. Bão lũ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_069.webp,69,15,2025-04-22 09:05:15.951000 +00:00,2025-04-22 09:06:48.343000 +00:00
+629,State control P1,19. Kiểm soát của chính quyền 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_19.webp,19,13,2025-04-22 09:05:15.603000 +00:00,2025-04-22 09:06:47.677000 +00:00
+425,Commerce P2,3.Thương mại,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_3.webp?_t=1585274292,3,10,2025-04-22 09:05:15.824000 +00:00,2025-04-22 09:06:47.742000 +00:00
+650,Getting down to business P1,40. Bắt đầu kinh doanh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_40.webp,40,13,2025-04-22 09:05:15.712000 +00:00,2025-04-22 09:06:47.776000 +00:00
+750,Political sound bites,91. Tóm tắt diễn văn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_091.webp,91,15,2025-04-22 09:05:15.976000 +00:00,2025-04-22 09:06:48.869000 +00:00
+684,Sleep,25. Giấc ngủ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_025.webp,25,15,2025-04-22 09:05:16.016000 +00:00,2025-04-22 09:06:47.959000 +00:00
+667,Feelings 2,8. Cảm xúc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_008.webp,8,15,2025-04-22 09:05:15.934000 +00:00,2025-04-22 09:06:48.243000 +00:00
+665,Health headlines,6. Sức khỏe,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_006.webp,6,15,2025-04-22 09:05:15.926000 +00:00,2025-04-22 09:06:48.235000 +00:00
+555,Places P1,23. Địa điểm P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_23.webp,23,12,2025-04-22 09:05:15.639000 +00:00,2025-04-22 09:06:47.534000 +00:00
+740,Better job performance,81. Cải thiện hiệu suất,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_081.webp,81,15,2025-04-22 09:05:15.930000 +00:00,2025-04-22 09:06:48.035000 +00:00
+744,A growing business,85. Làm ăn phát đạt,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_085.webp,85,15,2025-04-22 09:05:15.945000 +00:00,2025-04-22 09:06:48.428000 +00:00
+433,Sales & Production,11.Bán hàng & Sản xuất,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_11.webp?_t=1585291969,11,10,2025-04-22 09:05:15.814000 +00:00,2025-04-22 09:06:48.052000 +00:00
+733,Classroom actions,74. Trong lớp học,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_074.webp,74,15,2025-04-22 09:05:15.828000 +00:00,2025-04-22 09:06:48.526000 +00:00
+653,Law enforcement P2,43. Thi hành luật 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_43.webp,43,13,2025-04-22 09:05:15.683000 +00:00,2025-04-22 09:06:47.682000 +00:00
+731,Mountain rescue,72. Cứu hộ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_072.webp,72,15,2025-04-22 09:05:15.792000 +00:00,2025-04-22 09:06:48.366000 +00:00
+356,The Media P2,106.Phương tiện truyền thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_106.webp,106,6,2025-04-22 09:05:15.942000 +00:00,2025-04-22 09:06:47.500000 +00:00
+686,Money 2,27. Tiền bạc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_027.webp,27,15,2025-04-22 09:05:16.019000 +00:00,2025-04-22 09:06:48.226000 +00:00
+746,Going bankrupt,87. Phá sản,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_087.webp,87,15,2025-04-22 09:05:15.966000 +00:00,2025-04-22 09:06:48.075000 +00:00
+721,A picnic,62. Dã ngoại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_062.webp,62,15,2025-04-22 09:05:15.912000 +00:00,2025-04-22 09:06:48.222000 +00:00
+476,Career P2,54.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_54.webp?_t=1585306648,54,10,2025-04-22 09:05:15.981000 +00:00,2025-04-22 09:06:47.883000 +00:00
+642,Urban jungle P1,32. Thành thị đông đúc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_32.webp,32,13,2025-04-22 09:05:15.956000 +00:00,2025-04-22 09:06:47.711000 +00:00
+706,Newspaper headlines,47. Tít báo,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_047.webp,47,15,2025-04-22 09:05:15.818000 +00:00,2025-04-22 09:06:47.978000 +00:00
+705,Talking about news,46. Tin tức,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_046.webp,46,15,2025-04-22 09:05:15.810000 +00:00,2025-04-22 09:06:47.992000 +00:00
+620,Scientific discovery,10. Khám phá khoa học,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_10.webp,10,13,2025-04-22 09:05:15.500000 +00:00,2025-04-22 09:06:47.594000 +00:00
+748,Company rescue,89. Cứu vãn công ty,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_089.webp,89,15,2025-04-22 09:05:15.972000 +00:00,2025-04-22 09:06:48.079000 +00:00
+723,A family meal,64. Bữa ăn gia đình,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_064.webp,64,15,2025-04-22 09:05:15.917000 +00:00,2025-04-22 09:06:48.561000 +00:00
+51,Events,42.Các sự kiện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_51.webp,42,1,2025-04-22 09:05:15.271000 +00:00,2025-04-22 09:06:47.408000 +00:00
+646,This Earth P1,36. Trái Đất 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_36.webp,36,13,2025-04-22 09:05:15.505000 +00:00,2025-04-22 09:06:47.737000 +00:00
+734,What teacher says,75. Lời thầy cô,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_075.webp,75,15,2025-04-22 09:05:15.829000 +00:00,2025-04-22 09:06:48.377000 +00:00
+715,Board games,56. Trò chơi,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_056.webp,56,15,2025-04-22 09:05:15.892000 +00:00,2025-04-22 09:06:48.211000 +00:00
+651,Getting down to business P2,41. Bắt đầu kinh doanh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_41.webp,41,13,2025-04-22 09:05:15.597000 +00:00,2025-04-22 09:06:47.657000 +00:00
+709,The pros and cons of TV,50. Truyền hình,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_050.webp,50,15,2025-04-22 09:05:15.823000 +00:00,2025-04-22 09:06:48.321000 +00:00
+752,Opinions about politicians,93. Quan điểm về chính trị gia,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_093.webp,93,15,2025-04-22 09:05:16.000000 +00:00,2025-04-22 09:06:48.558000 +00:00
+632,Natural history P1,22. Lịch sử tự nhiên 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_32.webp,22,13,2025-04-22 09:05:15.612000 +00:00,2025-04-22 09:06:47.684000 +00:00
+471,Salaries & Benefits P2,49.Lương thưởng phúc lợi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_49.webp?_t=1585305963,49,10,2025-04-22 09:05:15.990000 +00:00,2025-04-22 09:06:47.836000 +00:00
+755,Dishonesty,96. Không trung thực,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_096.webp,96,15,2025-04-22 09:05:16.007000 +00:00,2025-04-22 09:06:47.905000 +00:00
+724,A wedding,65. Đám cưới,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_065.webp,65,15,2025-04-22 09:05:15.919000 +00:00,2025-04-22 09:06:48.557000 +00:00
+534,Relationship P2,2. Các mối quan hệ P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_2.webp,2,12,2025-04-22 09:05:15.669000 +00:00,2025-04-22 09:06:47.507000 +00:00
+619,As an individual P2,9. Như một cá nhân 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_14.webp,9,13,2025-04-22 09:05:15.555000 +00:00,2025-04-22 09:06:47.588000 +00:00
+741,Colleagues,82. Đồng nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_082.webp,82,15,2025-04-22 09:05:15.932000 +00:00,2025-04-22 09:06:48.025000 +00:00
+719,Sports injuries,60. Chấn thương,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_060.webp,60,15,2025-04-22 09:05:15.903000 +00:00,2025-04-22 09:06:48.246000 +00:00
+439,Accounting,17.Kế toán kiểm toán,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_17.webp?_t=1585293679,17,10,2025-04-22 09:05:15.971000 +00:00,2025-04-22 09:06:48.110000 +00:00
+511,Common Phrases P2,89.Cụm từ thông dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_29.webp?_t=1571450388,89,10,2025-04-22 09:05:15.677000 +00:00,2025-04-22 09:06:48.171000 +00:00
+704,Computers,45. Máy tính,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_045.webp,45,15,2025-04-22 09:05:15.806000 +00:00,2025-04-22 09:06:47.887000 +00:00
+655,The media P2,45. Truyền thông 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_20.webp,45,13,2025-04-22 09:05:15.647000 +00:00,2025-04-22 09:06:47.779000 +00:00
+678,Weather,19. Thời tiết,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_019.webp,19,15,2025-04-22 09:05:16.014000 +00:00,2025-04-22 09:06:48.195000 +00:00
+720,The mind of a champion,61. Nhà vô địch,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_061.webp,61,15,2025-04-22 09:05:15.908000 +00:00,2025-04-22 09:06:48.216000 +00:00
+554,People P2,22. Con người P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_22.webp,22,12,2025-04-22 09:05:15.627000 +00:00,2025-04-22 09:06:47.533000 +00:00
+737,Learn a language,78. Học ngoại ngữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_078.webp,78,15,2025-04-22 09:05:15.846000 +00:00,2025-04-22 09:06:48.459000 +00:00
+758,Success,99. Thành công,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_099.webp,99,15,2025-04-22 09:05:16.004000 +00:00,2025-04-22 09:06:47.912000 +00:00
+73,Cars,80.Xe hơi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_73.webp,80,1,2025-04-22 09:05:15.312000 +00:00,2025-04-22 09:06:47.433000 +00:00
+707,Press behaviour,48. Giới báo chí,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_048.webp,48,15,2025-04-22 09:05:15.820000 +00:00,2025-04-22 09:06:48.009000 +00:00
+711,Hobbies,52. Sở thích,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_052.webp,52,15,2025-04-22 09:05:15.880000 +00:00,2025-04-22 09:06:48.017000 +00:00
+449,Office Procedures,27.Thủ tục tại văn phòng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_27.webp?_t=1585298397,27,10,2025-04-22 09:05:15.817000 +00:00,2025-04-22 09:06:47.868000 +00:00
+447,Industry,25.Công nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_25.webp?_t=1585297328,25,10,2025-04-22 09:05:15.731000 +00:00,2025-04-22 09:06:47.853000 +00:00
+710,TV crimes series,51. Phim về tội phạm,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_051.webp,51,15,2025-04-22 09:05:15.876000 +00:00,2025-04-22 09:06:47.914000 +00:00
+663,Common ailments 2,4. Bệnh tật 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_004.webp,4,15,2025-04-22 09:05:15.925000 +00:00,2025-04-22 09:06:48.185000 +00:00
+666,Feelings 1,7. Cảm xúc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_007.webp,7,15,2025-04-22 09:05:15.928000 +00:00,2025-04-22 09:06:48.241000 +00:00
+713,Reading,54. Đọc sách,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_054.webp,54,15,2025-04-22 09:05:15.885000 +00:00,2025-04-22 09:06:48.323000 +00:00
+722,A surprise party,63. Bữa tiệc bất ngờ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_063.webp,63,15,2025-04-22 09:05:15.915000 +00:00,2025-04-22 09:06:48.250000 +00:00
+732,Memories of schools,73. Kí ức mái trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_073.webp,73,15,2025-04-22 09:05:15.827000 +00:00,2025-04-22 09:06:48.376000 +00:00
+440,Taxes & Policies,18.Thuế & Chính sách,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_18.webp?_t=1585296403,18,10,2025-04-22 09:05:15.872000 +00:00,2025-04-22 09:06:47.846000 +00:00
+717,Winter sports,58. Thể thao mùa đông,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_058.webp,58,15,2025-04-22 09:05:15.898000 +00:00,2025-04-22 09:06:48.020000 +00:00
+572,Life Stories P3,3. Tiểu sử 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_22.webp,3,11,2025-04-22 09:05:16.126000 +00:00,2025-04-22 09:06:48.303000 +00:00
+276,University P1,26.Đại học,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_26.webp,26,6,2025-04-22 09:05:15.530000 +00:00,2025-04-22 09:06:47.459000 +00:00
+726,Dramatic events,67. Sự kiện thị phi,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_067.webp,67,15,2025-04-22 09:05:15.922000 +00:00,2025-04-22 09:06:48.333000 +00:00
+349,Criminals P1,99.Tội phạm,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_99.webp,99,6,2025-04-22 09:05:15.339000 +00:00,2025-04-22 09:06:47.497000 +00:00
+559,Arts P1,27. Nghệ thuật P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_27.webp,27,12,2025-04-22 09:05:15.335000 +00:00,2025-04-22 09:06:47.536000 +00:00
+756,Time,97. Thời gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_097.webp,97,15,2025-04-22 09:05:16.011000 +00:00,2025-04-22 09:06:47.908000 +00:00
+437,Investments P1,15.Khoản đầu tư,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_15.webp?_t=1585293217,15,10,2025-04-22 09:05:15.770000 +00:00,2025-04-22 09:06:48.095000 +00:00
+662,Common ailments 1,3. Bệnh tật 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_003.webp,3,15,2025-04-22 09:05:15.878000 +00:00,2025-04-22 09:06:48.182000 +00:00
+464,Customer Services P2,42.Dịch vụ chăm sóc khách hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_42.webp?_t=1585301332,42,10,2025-04-22 09:05:15.982000 +00:00,2025-04-22 09:06:47.802000 +00:00
+714,Art galleries,55. Triển lãm nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_055.webp,55,15,2025-04-22 09:05:15.889000 +00:00,2025-04-22 09:06:48.327000 +00:00
+749,A future prime minister,90. Thủ tướng tương lai,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_090.webp,90,15,2025-04-22 09:05:15.974000 +00:00,2025-04-22 09:06:48.077000 +00:00
+739,Job likes and dislikes,80. Công việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_080.jpeg,80,15,2025-04-22 09:05:15.905000 +00:00,2025-04-22 09:06:48.227000 +00:00
+463,Customer Services P1,41.Dịch vụ chăm sóc khách hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_41.webp?_t=1585301332,41,10,2025-04-22 09:05:15.870000 +00:00,2025-04-22 09:06:47.801000 +00:00
+669,A good parent,10. Người phụ huynh tốt,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_010.webp,10,15,2025-04-22 09:05:15.970000 +00:00,2025-04-22 09:06:48.606000 +00:00
+311,Computer P1,61.Máy tính,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_61.webp,61,6,2025-04-22 09:05:15.663000 +00:00,2025-04-22 09:06:47.476000 +00:00
+660,Physical actions,1. Hành động cơ thể,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_001.webp,1,15,2025-04-22 09:05:15.607000 +00:00,2025-04-22 09:06:48.179000 +00:00
+430,Negotiations,8.Đàm phán kinh doanh,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_8.webp?_t=1585295450,8,10,2025-04-22 09:05:15.977000 +00:00,2025-04-22 09:06:48.043000 +00:00
+751,Election night,92. Đêm bầu cử,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_092.webp,92,15,2025-04-22 09:05:15.980000 +00:00,2025-04-22 09:06:48.554000 +00:00
+673,A new relationship,14. Mối quan hệ mới,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_014.webp,14,15,2025-04-22 09:05:15.999000 +00:00,2025-04-22 09:06:48.186000 +00:00
+633,Natural history P2,23. Lịch sử tự nhiên 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_23.webp,23,13,2025-04-22 09:05:15.645000 +00:00,2025-04-22 09:06:47.685000 +00:00
+703,Domestic robots,44. Robot nội địa,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_044.webp,44,15,2025-04-22 09:05:15.802000 +00:00,2025-04-22 09:06:47.891000 +00:00
+753,Passing laws,94. Thông qua bộ luật,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_094.webp,94,15,2025-04-22 09:05:16.002000 +00:00,2025-04-22 09:06:48.604000 +00:00
+479,Social Issues,57.Các vấn đề xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_57.webp?_t=1585307242,57,10,2025-04-22 09:05:15.997000 +00:00,2025-04-22 09:06:47.818000 +00:00
+716,Team sports,57. Thể thao đồng đội,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_057.webp,57,15,2025-04-22 09:05:15.895000 +00:00,2025-04-22 09:06:48.055000 +00:00
+424,Commerce P1,2.Thương mại,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_2.webp?_t=1585295731,2,10,2025-04-22 09:05:15.946000 +00:00,2025-04-22 09:06:47.753000 +00:00
+434,Finance P1,12.Tài chính tiền tệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_12.webp?_t=1585292164,12,10,2025-04-22 09:05:15.689000 +00:00,2025-04-22 09:06:48.082000 +00:00
+432,Contracts P2,"10.Hợp đồng, thỏa thuận",https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_10.webp?_t=1585295993,10,10,2025-04-22 09:05:15.854000 +00:00,2025-04-22 09:06:48.048000 +00:00
+631,State control P3,21. Kiểm soát của chính quyền 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_21.webp,21,13,2025-04-22 09:05:15.567000 +00:00,2025-04-22 09:06:47.684000 +00:00
+729,Fight in a fish shop 1,70. Cuộc cãi vã 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_070.webp,70,15,2025-04-22 09:05:15.953000 +00:00,2025-04-22 09:06:48.344000 +00:00
+712,My free time,53. Thời gian rảnh,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_053.webp,53,15,2025-04-22 09:05:15.882000 +00:00,2025-04-22 09:06:47.918000 +00:00
+657,A matter of taste P2,47. Thị hiếu 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_47.webp,47,13,2025-04-22 09:05:15.676000 +00:00,2025-04-22 09:06:47.787000 +00:00
+742,Losing your job,83. Mất việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_083.webp,83,15,2025-04-22 09:05:15.940000 +00:00,2025-04-22 09:06:48.215000 +00:00
+674,Ending a relationship,15. Kết thúc mối quan hệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_015.webp,15,15,2025-04-22 09:05:16.006000 +00:00,2025-04-22 09:06:48.158000 +00:00
+295,Natural World P2,45.Thế giới tự nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_45.webp,45,6,2025-04-22 09:05:15.591000 +00:00,2025-04-22 09:06:47.467000 +00:00
+736,Exam results,77. Kết quả thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_077.webp,77,15,2025-04-22 09:05:15.841000 +00:00,2025-04-22 09:06:48.562000 +00:00
+768,Discussion groups,109. Thảo luận nhóm,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_109.webp,109,15,2025-04-22 09:05:16.009000 +00:00,2025-04-22 09:06:48.129000 +00:00
+492,Music,70.Âm nhạc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_70.webp?_t=1585309262,70,10,2025-04-22 09:05:15.985000 +00:00,2025-04-22 09:06:48.032000 +00:00
+40,Career P2,88.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_40.webp,88,1,2025-04-22 09:05:15.247000 +00:00,2025-04-22 09:06:47.436000 +00:00
+747,Management buyout,88. Hội đồng quản trị mua lại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_088.webp,88,15,2025-04-22 09:05:15.968000 +00:00,2025-04-22 09:06:48.475000 +00:00
+648,This Earth P3,38. Trái Đất 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_51.webp,38,13,2025-04-22 09:05:15.594000 +00:00,2025-04-22 09:06:47.766000 +00:00
+743,Buying an existing business,84. Mua lại công ty,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_084.webp,84,15,2025-04-22 09:05:15.943000 +00:00,2025-04-22 09:06:48.225000 +00:00
+469,Employee Training,47.Đào tạo nhân sự,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_47.webp?_t=1585305544,47,10,2025-04-22 09:05:15.987000 +00:00,2025-04-22 09:06:47.804000 +00:00
+442,Organizations P1,20.Các tổ chức,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_20.webp?_t=1585296667,20,10,2025-04-22 09:05:15.873000 +00:00,2025-04-22 09:06:47.856000 +00:00
+668,Growing up,9. Trưởng thành,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_009.webp,9,15,2025-04-22 09:05:15.936000 +00:00,2025-04-22 09:06:48.311000 +00:00
+727,Riots,68. Cơn bạo loạn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_068.webp,68,15,2025-04-22 09:05:15.950000 +00:00,2025-04-22 09:06:48.337000 +00:00
+290,Ancient Times P1,40.Thời cổ đại,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_40.webp,40,6,2025-04-22 09:05:15.623000 +00:00,2025-04-22 09:06:47.463000 +00:00
+610,Healthy lifestyles and longevity P2,32. Lối sống lành mạnh và trường thọ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_32.webp,32,14,2025-04-22 09:05:16.153000 +00:00,2025-04-22 09:06:48.011000 +00:00
+805,Gender equality 3,16. Bình đẳng giới 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_16.webp,16,16,2025-04-22 09:05:16.252000 +00:00,2025-04-22 09:06:48.969000 +00:00
+477,Society P1,55.Xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_55.webp?_t=1585306906,55,10,2025-04-22 09:05:16.302000 +00:00,2025-04-22 09:06:47.796000 +00:00
+691,Road rage,32. Phẫn nộ vì giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_032.webp,32,15,2025-04-22 09:05:16.025000 +00:00,2025-04-22 09:06:48.094000 +00:00
+687,A waste of money,28. Lãng phí tiền của,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_028.webp,28,15,2025-04-22 09:05:16.020000 +00:00,2025-04-22 09:06:48.147000 +00:00
+774,Metaphors 1,115. Nghĩa bóng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_115.webp,115,15,2025-04-22 09:05:16.285000 +00:00,2025-04-22 09:06:48.249000 +00:00
+497,Traveling P2,75.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_75.webp?_t=1585309960,75,10,2025-04-22 09:05:16.279000 +00:00,2025-04-22 09:06:48.135000 +00:00
+685,Money 1,26. Tiền bạc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_026.webp,26,15,2025-04-22 09:05:16.017000 +00:00,2025-04-22 09:06:48.308000 +00:00
+785,"Phrases with ""take""","126. Cụm với ""take""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_126.webp,126,15,2025-04-22 09:05:16.231000 +00:00,2025-04-22 09:06:48.260000 +00:00
+693,Airports,34. Sân bay,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_034.webp,34,15,2025-04-22 09:05:16.028000 +00:00,2025-04-22 09:06:48.054000 +00:00
+803,Gender equality 1,14. Bình đẳng giới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_14.webp,14,16,2025-04-22 09:05:16.235000 +00:00,2025-04-22 09:06:48.662000 +00:00
+773,Multiple meanings,114. Cụm nhiều nghĩa,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_114.webp,114,15,2025-04-22 09:05:16.272000 +00:00,2025-04-22 09:06:48.224000 +00:00
+603,Our world heritage sites P2,25. Những di sản thế giới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_25.webp,25,14,2025-04-22 09:05:16.151000 +00:00,2025-04-22 09:06:48.229000 +00:00
+804,Gender equality 2,15. Bình đẳng giới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_15.webp,15,16,2025-04-22 09:05:16.238000 +00:00,2025-04-22 09:06:48.664000 +00:00
+602,Our world heritage sites P1,24. Những di sản thế giới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_24.webp,24,14,2025-04-22 09:05:16.147000 +00:00,2025-04-22 09:06:48.005000 +00:00
+683,Clothes shopping,24. Mua sắm quần áo,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_024.webp,24,15,2025-04-22 09:05:16.015000 +00:00,2025-04-22 09:06:48.228000 +00:00
+484,Science,62.Khoa học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_62.webp?_t=1585307963,62,10,2025-04-22 09:05:16.299000 +00:00,2025-04-22 09:06:47.824000 +00:00
+778,"Phrases with ""back""","119. Cụm với ""back""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_119.webp,119,15,2025-04-22 09:05:16.248000 +00:00,2025-04-22 09:06:48.328000 +00:00
+801,Inventions 1,12. Các phát minh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_12.webp,12,16,2025-04-22 09:05:16.255000 +00:00,2025-04-22 09:06:48.852000 +00:00
+1026,Lesson 15,15. Bài học 15,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_15.webp,15,22,2025-04-22 09:05:16.206000 +00:00,2025-04-22 09:06:48.277000 +00:00
+670,Mother and daughter,11. Mẹ và con gái,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_011.webp,11,15,2025-04-22 09:05:16.168000 +00:00,2025-04-22 09:06:48.312000 +00:00
+495,Media,73.Phương tiện truyền thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_73.webp?_t=1585309778,73,10,2025-04-22 09:05:16.296000 +00:00,2025-04-22 09:06:48.123000 +00:00
+764,Asking for information,105. Hỏi han thông tin,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_105.webp,105,15,2025-04-22 09:05:16.080000 +00:00,2025-04-22 09:06:47.970000 +00:00
+808,Cultural diversity 3,19. Đa dạng văn hóa 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_19.webp,19,16,2025-04-22 09:05:16.266000 +00:00,2025-04-22 09:06:48.855000 +00:00
+574,Urbanisation P2,6. Đô thị hóa 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_24.webp,6,11,2025-04-22 09:05:16.143000 +00:00,2025-04-22 09:06:48.256000 +00:00
+796,Music 1,7. Âm nhạc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_07.webp,7,16,2025-04-22 09:05:16.181000 +00:00,2025-04-22 09:06:48.968000 +00:00
+757,Making decisions,98. Ra quyết định,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_098.webp,98,15,2025-04-22 09:05:16.063000 +00:00,2025-04-22 09:06:48.227000 +00:00
+486,Education & Schooling P2,64.Giáo dục & Trường học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_64.webp?_t=1585308139,64,10,2025-04-22 09:05:16.269000 +00:00,2025-04-22 09:06:47.833000 +00:00
+325,Industrialisation P1,75.Công nghiệp hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_75.webp,75,6,2025-04-22 09:05:16.263000 +00:00,2025-04-22 09:06:47.481000 +00:00
+361,The Public P2,111.Công chúng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_111.webp,111,6,2025-04-22 09:05:15.275000 +00:00,2025-04-22 09:06:47.503000 +00:00
+810,Culture 2,21. Văn hóa 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_21.webp,21,16,2025-04-22 09:05:16.306000 +00:00,2025-04-22 09:06:48.851000 +00:00
+689,My best ever buy,30. Món hời,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_030.webp,30,15,2025-04-22 09:05:16.023000 +00:00,2025-04-22 09:06:48.039000 +00:00
+695,A police investigation,36. Cuộc điều tra,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_036.webp,36,15,2025-04-22 09:05:16.032000 +00:00,2025-04-22 09:06:48.062000 +00:00
+467,Recruiting & Applying P1,45.Tuyển dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_45.webp?_t=1585305300,45,10,2025-04-22 09:05:16.282000 +00:00,2025-04-22 09:06:47.809000 +00:00
+522,Cultural Identity P2,15. Bản sắc văn hóa 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_2.webp,15,11,2025-04-22 09:05:16.242000 +00:00,2025-04-22 09:06:48.209000 +00:00
+754,Criticism,95. Phê phán,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_095.webp,95,15,2025-04-22 09:05:16.071000 +00:00,2025-04-22 09:06:48.232000 +00:00
+699,Gang culture,40. Băng nhóm phạm tội,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_040.webp,40,15,2025-04-22 09:05:16.054000 +00:00,2025-04-22 09:06:48.203000 +00:00
+807,Cultural diversity 2,18. Đa dạng văn hóa 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_18.webp,18,16,2025-04-22 09:05:16.260000 +00:00,2025-04-22 09:06:48.964000 +00:00
+813,Preserving the environment 1,24. Bảo vệ môi trường 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_24.webp,24,16,2025-04-22 09:05:16.313000 +00:00,2025-04-22 09:06:48.781000 +00:00
+795,Your body and you 3,6. Cơ thể bạn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_06.webp,6,16,2025-04-22 09:05:16.173000 +00:00,2025-04-22 09:06:48.972000 +00:00
+487,Agriculture,65.Nông nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_65.webp?_t=1585308296,65,10,2025-04-22 09:05:16.257000 +00:00,2025-04-22 09:06:47.834000 +00:00
+310,Innovation,60.Cách tân,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_60.webp,60,6,2025-04-22 09:05:16.274000 +00:00,2025-04-22 09:06:47.473000 +00:00
+802,Inventions 2,13. Các phát minh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_13.webp,13,16,2025-04-22 09:05:16.226000 +00:00,2025-04-22 09:06:48.653000 +00:00
+696,Crime headlines,37. Tội phạm,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_037.webp,37,15,2025-04-22 09:05:16.037000 +00:00,2025-04-22 09:06:48.193000 +00:00
+499,Household,77.Hộ gia đình,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_77.webp?_t=1585310534,77,10,2025-04-22 09:05:16.261000 +00:00,2025-04-22 09:06:48.139000 +00:00
+541,Language & Communication P1,9. Ngôn ngữ & Giao tiếp P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_9.webp,9,12,2025-04-22 09:05:16.048000 +00:00,2025-04-22 09:06:47.524000 +00:00
+368,The Artistic World P2,118.Thế giới nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_118.webp,118,6,2025-04-22 09:05:16.268000 +00:00,2025-04-22 09:06:47.506000 +00:00
+498,Hotels,76.Khách sạn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_76.webp?_t=1585310182,76,10,2025-04-22 09:05:16.284000 +00:00,2025-04-22 09:06:48.136000 +00:00
+578,Choosing A Career P3,25. Lựa chọn nghề nghiệp 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_28.webp,25,11,2025-04-22 09:05:16.355000 +00:00,2025-04-22 09:06:48.331000 +00:00
+1016,Lesson 5,5. Bài học 5,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_05.webp,5,22,2025-04-22 09:05:16.117000 +00:00,2025-04-22 09:06:48.292000 +00:00
+451,Meetings & Conferences P1,29.Hội thảo & cuộc họp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_29.webp?_t=1585299153,29,10,2025-04-22 09:05:16.301000 +00:00,2025-04-22 09:06:47.862000 +00:00
+500,Cooking P1,78.Nấu ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_78.webp?_t=1585310537,78,10,2025-04-22 09:05:16.249000 +00:00,2025-04-22 09:06:48.142000 +00:00
+520,The Mass Media P2,12. Truyền thông đại chúng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_40.webp,12,11,2025-04-22 09:05:16.287000 +00:00,2025-04-22 09:06:48.015000 +00:00
+772,Synonymous phrasal verbs,113. Cụm động từ đồng nghĩa,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_113.webp,113,15,2025-04-22 09:05:16.245000 +00:00,2025-04-22 09:06:48.221000 +00:00
+698,Incompetent criminals,39. Kẻ thủ ác,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_039.webp,39,15,2025-04-22 09:05:16.053000 +00:00,2025-04-22 09:06:48.202000 +00:00
+494,Events,72.Sự kiện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_72.webp?_t=1585309695,72,10,2025-04-22 09:05:16.179000 +00:00,2025-04-22 09:06:48.116000 +00:00
+761,Wants and needs,102. Nhu cầu và mong muốn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_102.webp,102,15,2025-04-22 09:05:16.086000 +00:00,2025-04-22 09:06:47.924000 +00:00
+1027,Lesson 16,16. Bài học 16,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_16.webp,16,22,2025-04-22 09:05:16.120000 +00:00,2025-04-22 09:06:48.283000 +00:00
+771,Common phrases 2,112. Cụm thông dụng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_112.webp,112,15,2025-04-22 09:05:16.265000 +00:00,2025-04-22 09:06:48.218000 +00:00
+688,Living in poverty,29. Nghèo khó,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_029.webp,29,15,2025-04-22 09:05:16.021000 +00:00,2025-04-22 09:06:48.009000 +00:00
+792,Family life 3,3. Cuộc sống gia đình 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_03.webp,3,16,2025-04-22 09:05:16.155000 +00:00,2025-04-22 09:06:48.024000 +00:00
+1029,Lesson 18,18. Bài học 18,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_18.webp,18,22,2025-04-22 09:05:16.194000 +00:00,2025-04-22 09:06:48.263000 +00:00
+767,Exclamations,108. Cảm thán,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_108.webp,108,15,2025-04-22 09:05:16.233000 +00:00,2025-04-22 09:06:48.245000 +00:00
+458,Common Words P2,36.Từ thông dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_36.webp?_t=1585300801,36,10,2025-04-22 09:05:16.044000 +00:00,2025-04-22 09:06:47.777000 +00:00
+1013,Lesson 2,2. Bài học 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_02.webp,2,22,2025-04-22 09:05:16.123000 +00:00,2025-04-22 09:06:48.278000 +00:00
+690,Transport,31. Giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_031.webp,31,15,2025-04-22 09:05:16.024000 +00:00,2025-04-22 09:06:48.085000 +00:00
+782,"Phrases with ""off""","123. Cụm với ""off""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_123.webp,123,15,2025-04-22 09:05:16.239000 +00:00,2025-04-22 09:06:48.310000 +00:00
+589,Caring for those in need P2,11. Chăm sóc người khác 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_11.webp,11,14,2025-04-22 09:05:16.375000 +00:00,2025-04-22 09:06:48.458000 +00:00
+692,A long car journey,33. Chuyến đi dài,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_033.webp,33,15,2025-04-22 09:05:16.026000 +00:00,2025-04-22 09:06:48.096000 +00:00
+784,"Phrases with ""go""","125. Cụm với ""go""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_125.webp,125,15,2025-04-22 09:05:16.256000 +00:00,2025-04-22 09:06:48.258000 +00:00
+513,Life Stories P1,1. Tiểu sử 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_22.webp,1,11,2025-04-22 09:05:16.114000 +00:00,2025-04-22 09:06:48.301000 +00:00
+493,Entertainment,71.Hoạt động giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_71.webp?_t=1585309615,71,10,2025-04-22 09:05:16.271000 +00:00,2025-04-22 09:06:47.803000 +00:00
+452,Meetings & Conferences P2,30.Hội thảo & cuộc họp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_30.webp?_t=1585299266,30,10,2025-04-22 09:05:16.295000 +00:00,2025-04-22 09:06:47.874000 +00:00
+474,Workplace P2,52.Nơi làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_52.webp?_t=1585306405,52,10,2025-04-22 09:05:16.290000 +00:00,2025-04-22 09:06:47.842000 +00:00
+548,Culture & Modern Society P2,16. Văn hóa & Xã hội hiện đại P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_16.webp,16,12,2025-04-22 09:05:15.316000 +00:00,2025-04-22 09:06:47.525000 +00:00
+528,Choosing A Career P1,23. Lựa chọn nghề nghiệp 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_9.webp,23,11,2025-04-22 09:05:16.110000 +00:00,2025-04-22 09:06:48.426000 +00:00
+594,Being a part of ASEAN P3,16. Là một thành viên của ASEAN 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_16.webp,16,14,2025-04-22 09:05:16.394000 +00:00,2025-04-22 09:06:48.468000 +00:00
+809,Culture 1,20. Văn hóa 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_20.webp,20,16,2025-04-22 09:05:16.259000 +00:00,2025-04-22 09:06:48.853000 +00:00
+1020,Lesson 9,9. Bài học 9,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_09.webp,9,22,2025-04-22 09:05:16.137000 +00:00,2025-04-22 09:06:48.298000 +00:00
+453,Office Technology P1,31.Công nghệ văn phòng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_31.webp?_t=1585299433,31,10,2025-04-22 09:05:16.281000 +00:00,2025-04-22 09:06:47.876000 +00:00
+694,A holiday break,35. Kỳ nghỉ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_035.webp,35,15,2025-04-22 09:05:16.030000 +00:00,2025-04-22 09:06:48.057000 +00:00
+800,For a better community 3,11. Vì một cộng đồng tốt đẹp hơn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_11.webp,11,16,2025-04-22 09:05:16.309000 +00:00,2025-04-22 09:06:48.854000 +00:00
+501,Cooking P2,79.Nấu ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_79.webp?_t=1585310625,79,10,2025-04-22 09:05:16.254000 +00:00,2025-04-22 09:06:48.144000 +00:00
+519,The Mass Media P1,11. Truyền thông đại chúng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_58.webp,11,11,2025-04-22 09:05:16.115000 +00:00,2025-04-22 09:06:47.900000 +00:00
+811,New ways to learn 1,22. Cách học mới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_22.webp,22,16,2025-04-22 09:05:16.312000 +00:00,2025-04-22 09:06:48.582000 +00:00
+542,Language & Communication P2,10. Ngôn ngữ & Giao tiếp P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_10.webp,10,12,2025-04-22 09:05:16.046000 +00:00,2025-04-22 09:06:47.525000 +00:00
+466,Inventory,44.Lưu kho,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_44.webp?_t=1585301578,44,10,2025-04-22 09:05:16.345000 +00:00,2025-04-22 09:06:47.806000 +00:00
+601,Further education P4,23. Bậc học cao hơn 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_23.webp,23,14,2025-04-22 09:05:16.146000 +00:00,2025-04-22 09:06:48.003000 +00:00
+797,Music 2,8. Âm nhạc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_08.webp,8,16,2025-04-22 09:05:16.183000 +00:00,2025-04-22 09:06:48.967000 +00:00
+577,Artificial Intelligence P2,19. Trí tuệ nhân tạo 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_27.webp,19,11,2025-04-22 09:05:16.162000 +00:00,2025-04-22 09:06:48.060000 +00:00
+518,The Green Movement P2,10. Phong trào Xanh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_18.webp,10,11,2025-04-22 09:05:16.196000 +00:00,2025-04-22 09:06:48.007000 +00:00
+607,Cities of the future P1,29. Thành phố tương lai 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_29.webp,29,14,2025-04-22 09:05:16.352000 +00:00,2025-04-22 09:06:48.022000 +00:00
+760,Likes and dislikes,101. Sở thích sở ghét,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_101.webp,101,15,2025-04-22 09:05:16.067000 +00:00,2025-04-22 09:06:47.921000 +00:00
+1015,Lesson 4,4. Bài học 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_04.webp,4,22,2025-04-22 09:05:16.124000 +00:00,2025-04-22 09:06:48.286000 +00:00
+579,The generation gap P1,1. Khoảng cách thế hệ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_01.webp,1,14,2025-04-22 09:05:16.335000 +00:00,2025-04-22 09:06:48.353000 +00:00
+775,Metaphors 2,116. Nghĩa bóng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_116.webp,116,15,2025-04-22 09:05:16.082000 +00:00,2025-04-22 09:06:48.252000 +00:00
+1031,Lesson 20,20. Bài học 20,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_20.webp,20,22,2025-04-22 09:05:16.112000 +00:00,2025-04-22 09:06:48.304000 +00:00
+604,Our world heritage sites P3,26. Những di sản thế giới 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_26.webp,26,14,2025-04-22 09:05:16.152000 +00:00,2025-04-22 09:06:48.611000 +00:00
+697,A robbery,38. Vụ cướp,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_038.webp,38,15,2025-04-22 09:05:16.051000 +00:00,2025-04-22 09:06:48.197000 +00:00
+515,Modern Society,7. Xã hội hiện đại,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_23.webp,7,11,2025-04-22 09:05:16.331000 +00:00,2025-04-22 09:06:48.257000 +00:00
+575,The Mass Media P3,13. Truyền thông đại chúng 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_25.webp,13,11,2025-04-22 09:05:16.341000 +00:00,2025-04-22 09:06:47.933000 +00:00
+762,Excuses,103. Cái cớ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_103.webp,103,15,2025-04-22 09:05:16.057000 +00:00,2025-04-22 09:06:47.942000 +00:00
+817,Ecotourism 2,28. Du lịch sinh thái 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_28.webp,28,16,2025-04-22 09:05:16.325000 +00:00,2025-04-22 09:06:48.318000 +00:00
+1024,Lesson 13,13. Bài học 13,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_13.webp,13,22,2025-04-22 09:05:16.171000 +00:00,2025-04-22 09:06:48.275000 +00:00
+527,The World Of Work P2,22. Thế giới công việc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_12.webp,22,11,2025-04-22 09:05:16.101000 +00:00,2025-04-22 09:06:48.253000 +00:00
+1030,Lesson 19,19. Bài học 19,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_19.webp,19,22,2025-04-22 09:05:16.107000 +00:00,2025-04-22 09:06:48.282000 +00:00
+718,A great tennis player,59. Tuyển thủ quần vợt,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_059.webp,59,15,2025-04-22 09:05:15.901000 +00:00,2025-04-22 09:06:48.037000 +00:00
+1025,Lesson 14,14. Bài học 14,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_14.webp,14,22,2025-04-22 09:05:16.104000 +00:00,2025-04-22 09:06:48.276000 +00:00
+586,Becoming independent P1,8. Trở nên độc lập 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_08.webp,8,14,2025-04-22 09:05:16.349000 +00:00,2025-04-22 09:06:48.565000 +00:00
+769,Speeches,110. Diễn văn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_110.webp,110,15,2025-04-22 09:05:16.079000 +00:00,2025-04-22 09:06:48.191000 +00:00
+1023,Lesson 12,12. Bài học 12,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_12.webp,12,22,2025-04-22 09:05:16.158000 +00:00,2025-04-22 09:06:48.273000 +00:00
+514,Urbanisation P1,5. Đô thị hóa 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_30.webp,5,11,2025-04-22 09:05:16.140000 +00:00,2025-04-22 09:06:48.329000 +00:00
+815,Preserving the environment 3,26. Bảo vệ môi trường 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_26.webp,26,16,2025-04-22 09:05:16.319000 +00:00,2025-04-22 09:06:48.836000 +00:00
+532,Lifelong Learning P2,28. Học tập suốt đời 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_51.webp,28,11,2025-04-22 09:05:16.328000 +00:00,2025-04-22 09:06:48.347000 +00:00
+816,Ecotourism 1,27. Du lịch sinh thái 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_27.webp,27,16,2025-04-22 09:05:16.322000 +00:00,2025-04-22 09:06:48.625000 +00:00
+1018,Lesson 7,7. Bài học 7,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_07.webp,7,22,2025-04-22 09:05:16.121000 +00:00,2025-04-22 09:06:48.295000 +00:00
+780,"Phrases with ""around/about""","121. Cụm với ""around/about""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_121.webp,121,15,2025-04-22 09:05:16.089000 +00:00,2025-04-22 09:06:48.470000 +00:00
+1021,Lesson 10,10. Bài học 10,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_10.webp,10,22,2025-04-22 09:05:16.186000 +00:00,2025-04-22 09:06:48.268000 +00:00
+521,Cultural Identity P1,14. Bản sắc văn hóa 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_16.webp,14,11,2025-04-22 09:05:16.149000 +00:00,2025-04-22 09:06:48.604000 +00:00
+763,Invitations and offers,104. Lời mời,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_104.webp,104,15,2025-04-22 09:05:16.073000 +00:00,2025-04-22 09:06:47.949000 +00:00
+682,Our home 2,23. Nhà thân thương 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_023.webp,23,15,2025-04-22 09:05:16.338000 +00:00,2025-04-22 09:06:48.610000 +00:00
+576,Cultural Identity P3,16. Bản sắc văn hóa 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_26.webp,16,11,2025-04-22 09:05:16.174000 +00:00,2025-04-22 09:06:48.089000 +00:00
+776,Informal phrasal verbs,117. Cụm nghĩa thông thường,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_117.webp,117,15,2025-04-22 09:05:16.094000 +00:00,2025-04-22 09:06:48.254000 +00:00
+1019,Lesson 8,8. Bài học 8,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_08.webp,8,22,2025-04-22 09:05:16.119000 +00:00,2025-04-22 09:06:48.297000 +00:00
+834,The mass media 2,17. Truyền thông đại chúng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_17.webp,17,17,2025-04-22 09:05:20.006000 +00:00,2025-04-22 09:06:48.818000 +00:00
+2,Extracurricular Activities,3.Hoạt động ngoại khóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_2.webp,3,1,2025-04-22 09:05:15.189000 +00:00,2025-04-22 09:06:47.333000 +00:00
+943,Folk tales 3,21. Truyện dân gian 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_21.webp,21,20,2025-04-22 09:05:16.649000 +00:00,2025-04-22 09:06:48.450000 +00:00
+787,"Phrases with ""put""","128. Cụm với ""put""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_128.webp,128,15,2025-04-22 09:05:16.396000 +00:00,2025-04-22 09:06:48.609000 +00:00
+7,Shapes,16.Hình dạng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_7.webp,16,1,2025-04-22 09:05:15.306000 +00:00,2025-04-22 09:06:47.349000 +00:00
+46,Music,37.Âm nhạc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_46.webp,37,1,2025-04-22 09:05:15.348000 +00:00,2025-04-22 09:06:47.406000 +00:00
+677,Ex-girlfriends,18. Bạn gái cũ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_018.webp,18,15,2025-04-22 09:05:16.371000 +00:00,2025-04-22 09:06:48.190000 +00:00
+197,At The Airport,25.Sân bay,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_25.webp,25,4,2025-04-22 09:05:16.640000 +00:00,2025-04-22 09:06:48.821000 +00:00
+790,Family life 1,1. Cuộc sống gia đình 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_01.webp,1,16,2025-04-22 09:05:16.368000 +00:00,2025-04-22 09:06:48.215000 +00:00
+208,Bài 5,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_5.webp,5,5,2025-04-22 09:05:16.547000 +00:00,2025-04-22 09:06:48.689000 +00:00
+190,Economy P1,18.Nền kinh tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_18.webp,18,4,2025-04-22 09:05:16.647000 +00:00,2025-04-22 09:06:48.840000 +00:00
+812,New ways to learn 2,23. Cách học mới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_23.webp,23,16,2025-04-22 09:05:16.311000 +00:00,2025-04-22 09:06:48.850000 +00:00
+738,Getting a job,79. Tìm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_079.webp,79,15,2025-04-22 09:05:15.865000 +00:00,2025-04-22 09:06:48.465000 +00:00
+525,Recruitment,20. Tuyển dụng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_lesson_5.webp,20,11,2025-04-22 09:05:16.354000 +00:00,2025-04-22 09:06:48.220000 +00:00
+339,The Energy Crisis P2,89.Khủng hoảng năng lượng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_89.webp,89,6,2025-04-22 09:05:18.908000 +00:00,2025-04-22 09:06:47.486000 +00:00
+973,City Life 1,5. Cuộc sống đô thị 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_05.webp,5,21,2025-04-22 09:05:20.020000 +00:00,2025-04-22 09:06:48.716000 +00:00
+192,Recognition P1,20.Ghi nhận nhân viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_20.webp,20,4,2025-04-22 09:05:16.632000 +00:00,2025-04-22 09:06:48.771000 +00:00
+770,Common phrases 1,111. Cụm thông dụng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_111.webp,111,15,2025-04-22 09:05:16.188000 +00:00,2025-04-22 09:06:48.013000 +00:00
+250,Bài 47,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_47.webp,47,5,2025-04-22 09:05:16.540000 +00:00,2025-04-22 09:06:48.797000 +00:00
+189,Tourist Attractions,17.Địa điểm du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_17.webp,17,4,2025-04-22 09:05:16.655000 +00:00,2025-04-22 09:06:48.856000 +00:00
+791,Family life 2,2. Cuộc sống gia đình 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_02.webp,2,16,2025-04-22 09:05:16.363000 +00:00,2025-04-22 09:06:48.244000 +00:00
+836,The mass media 4,19. Truyền thông đại chúng 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_19.webp,19,17,2025-04-22 09:05:20.009000 +00:00,2025-04-22 09:06:48.478000 +00:00
+798,For a better community 1,9. Vì một cộng đồng tốt đẹp hơn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_09.webp,9,16,2025-04-22 09:05:16.185000 +00:00,2025-04-22 09:06:48.928000 +00:00
+968,Life on other planets 4,46. Sự sống ở hành tinh khác 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_46.webp,46,20,2025-04-22 09:05:16.552000 +00:00,2025-04-22 09:06:48.520000 +00:00
+928,Life in the countryside 2,6. Cuộc sống nông thôn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_18.webp,6,20,2025-04-22 09:05:19.922000 +00:00,2025-04-22 09:06:48.568000 +00:00
+516,Industrialisation,8. Công nghiệp hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_27.webp,8,11,2025-04-22 09:05:16.141000 +00:00,2025-04-22 09:06:48.019000 +00:00
+573,A man's life,4. Cuộc đời một con người,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_23.webp,4,11,2025-04-22 09:05:16.139000 +00:00,2025-04-22 09:06:48.072000 +00:00
+239,Bài 36,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_36.webp,36,5,2025-04-22 09:05:16.636000 +00:00,2025-04-22 09:06:48.804000 +00:00
+526,The World Of Work P1,21. Thế giới công việc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_33.webp,21,11,2025-04-22 09:05:16.178000 +00:00,2025-04-22 09:06:48.247000 +00:00
+926,Leisure activities 4,4. Hoạt động giải trí 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_87.webp,4,20,2025-04-22 09:05:16.562000 +00:00,2025-04-22 09:06:48.580000 +00:00
+605,Our world heritage sites P4,27. Những di sản thế giới 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_27.webp,27,14,2025-04-22 09:05:16.154000 +00:00,2025-04-22 09:06:48.315000 +00:00
+730,Fight in a fish shop 2,71. Cuộc cãi vã 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_071.webp,71,15,2025-04-22 09:05:15.965000 +00:00,2025-04-22 09:06:48.363000 +00:00
+895,Community service 3,9. Dịch vụ cộng đồng 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_09.webp,9,19,2025-04-22 09:05:16.644000 +00:00,2025-04-22 09:06:48.589000 +00:00
+238,Bài 35,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_35.webp,35,5,2025-04-22 09:05:16.652000 +00:00,2025-04-22 09:06:48.807000 +00:00
+371,Home Life,1.Cuộc sống gia đình,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_1.webp,1,7,2025-04-22 09:05:16.330000 +00:00,2025-04-22 09:06:48.379000 +00:00
+850,Music 3,33. Âm nhạc 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_33.webp,33,17,2025-04-22 09:05:20.014000 +00:00,2025-04-22 09:06:48.708000 +00:00
+672,Friendship at work,13. Chốn công sở,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_013.webp,13,15,2025-04-22 09:05:19.687000 +00:00,2025-04-22 09:06:48.184000 +00:00
+978,Teen Stress And Pressure 2,10. Áp lực tuổi teen 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_10.webp,10,21,2025-04-22 09:05:20.056000 +00:00,2025-04-22 09:06:48.359000 +00:00
+583,The generation gap P5,5. Khoảng cách thế hệ 5,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_05.webp,5,14,2025-04-22 09:05:16.316000 +00:00,2025-04-22 09:06:48.469000 +00:00
+606,Our world heritage sites P5,28. Những di sản thế giới 5,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_28.webp,28,14,2025-04-22 09:05:16.344000 +00:00,2025-04-22 09:06:48.608000 +00:00
+842,Conservation 1,25. Sự bảo tồn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_25.webp,25,17,2025-04-22 09:05:20.037000 +00:00,2025-04-22 09:06:48.518000 +00:00
+838,The story of my village 2,21. Chuyện làng tôi 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_21.webp,21,17,2025-04-22 09:05:20.007000 +00:00,2025-04-22 09:06:48.495000 +00:00
+584,Relationships P1,6. Các mối quan hệ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_06.webp,6,14,2025-04-22 09:05:16.350000 +00:00,2025-04-22 09:06:48.562000 +00:00
+924,Leisure activities 2,2. Hoạt động giải trí 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_32.webp,2,20,2025-04-22 09:05:16.557000 +00:00,2025-04-22 09:06:48.548000 +00:00
+34,Universities,7.Trường đại học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_34.webp,7,1,2025-04-22 09:05:15.257000 +00:00,2025-04-22 09:06:47.337000 +00:00
+862,My Home 2,4. Nhà của tôi 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_82.webp,4,18,2025-04-22 09:05:20.071000 +00:00,2025-04-22 09:06:48.849000 +00:00
+825,Special education 2,8. Giáo dục đặc biệt 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_08.webp,8,17,2025-04-22 09:05:20.130000 +00:00,2025-04-22 09:06:48.919000 +00:00
+840,Undersea world 2,23. Thế giới đại dương 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_23.webp,23,17,2025-04-22 09:05:20.024000 +00:00,2025-04-22 09:06:48.500000 +00:00
+271,Lifestyles P2,21.Lối sống,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_21.webp,21,6,2025-04-22 09:05:15.722000 +00:00,2025-04-22 09:06:47.458000 +00:00
+533,Relationship P1,1. Các mối quan hệ P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_1.webp,1,12,2025-04-22 09:05:18.911000 +00:00,2025-04-22 09:06:47.506000 +00:00
+27,Bedroom,24.Phòng ngủ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_27.webp,24,1,2025-04-22 09:05:15.293000 +00:00,2025-04-22 09:06:47.378000 +00:00
+841,Undersea world 3,24. Thế giới đại dương 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_24.webp,24,17,2025-04-22 09:05:20.028000 +00:00,2025-04-22 09:06:48.501000 +00:00
+625,Powers of persuasion P1,15. Sức mạnh của thuyết phục 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_15.webp,15,13,2025-04-22 09:05:15.436000 +00:00,2025-04-22 09:06:47.664000 +00:00
+582,The generation gap P4,4. Khoảng cách thế hệ 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_04.webp,4,14,2025-04-22 09:05:16.385000 +00:00,2025-04-22 09:06:48.300000 +00:00
+490,Museums,68.Bảo tàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_68.webp?_t=1585309085,68,10,2025-04-22 09:05:16.327000 +00:00,2025-04-22 09:06:47.832000 +00:00
+472,Promotions & Recognition,50.Thăng tiến & ghi nhận,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_50.webp?_t=1585306097,50,10,2025-04-22 09:05:16.395000 +00:00,2025-04-22 09:06:47.840000 +00:00
+343,Career P1,93.Sự nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_93.webp,93,6,2025-04-22 09:05:19.163000 +00:00,2025-04-22 09:06:47.488000 +00:00
+496,Traveling P1,74.Du lịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_74.webp?_t=1585309801,74,10,2025-04-22 09:05:16.304000 +00:00,2025-04-22 09:06:48.133000 +00:00
+531,Lifelong Learning P1,27. Học tập suốt đời 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_21.webp,27,11,2025-04-22 09:05:16.324000 +00:00,2025-04-22 09:06:48.360000 +00:00
+788,"Phrases with ""keep""","129. Cụm với ""keep""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_129.webp,129,15,2025-04-22 09:05:16.339000 +00:00,2025-04-22 09:06:48.118000 +00:00
+571,Life Stories P2,2. Tiểu sử 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TAN_lesson_21.webp,2,11,2025-04-22 09:05:16.307000 +00:00,2025-04-22 09:06:48.301000 +00:00
+585,Relationships P2,7. Các mối quan hệ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_07.webp,7,14,2025-04-22 09:05:16.347000 +00:00,2025-04-22 09:06:48.564000 +00:00
+922,An overcrowded world 3,36. Một thế giới quá đông đúc 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_36.webp,36,19,2025-04-22 09:05:20.078000 +00:00,2025-04-22 09:06:48.671000 +00:00
+988,Vietnam:Then and Now 1,20. Xưa và Nay 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_20.webp,20,21,2025-04-22 09:05:20.145000 +00:00,2025-04-22 09:06:48.785000 +00:00
+965,Life on other planets 1,43. Sự sống ở hành tinh khác 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_43.webp,43,20,2025-04-22 09:05:20.083000 +00:00,2025-04-22 09:06:48.511000 +00:00
+372,Cultural Diversity,2.Đa dạng văn hóa,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_2.webp,2,7,2025-04-22 09:05:16.333000 +00:00,2025-04-22 09:06:48.633000 +00:00
+167,Destinations P2,7.Điểm đến,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_7.webp,7,3,2025-04-22 09:05:16.560000 +00:00,2025-04-22 09:06:48.905000 +00:00
+17,Numbers,17.Số đếm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_17.webp,17,1,2025-04-22 09:05:15.274000 +00:00,2025-04-22 09:06:47.348000 +00:00
+971,Local Environment 3,3. Môi trường địa phương 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_03.webp,3,21,2025-04-22 09:05:20.151000 +00:00,2025-04-22 09:06:48.700000 +00:00
+997,Tourism 3,29. Du lịch 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_29.webp,29,21,2025-04-22 09:05:20.138000 +00:00,2025-04-22 09:06:48.373000 +00:00
+847,National parks 2,30. Công viên quốc gia 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_30.webp,30,17,2025-04-22 09:05:20.064000 +00:00,2025-04-22 09:06:48.720000 +00:00
+345,Workplace P1,95.Nơi làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_95.webp,95,6,2025-04-22 09:05:19.119000 +00:00,2025-04-22 09:06:47.489000 +00:00
+839,Undersea world 1,22. Thế giới đại dương 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_22.webp,22,17,2025-04-22 09:05:20.011000 +00:00,2025-04-22 09:06:48.497000 +00:00
+814,Preserving the environment 2,25. Bảo vệ môi trường 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10_25.webp,25,16,2025-04-22 09:05:16.320000 +00:00,2025-04-22 09:06:48.842000 +00:00
+347,Justice P1,97.Công lý,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_97.webp,97,6,2025-04-22 09:05:18.994000 +00:00,2025-04-22 09:06:47.490000 +00:00
+600,Further education P3,22. Bậc học cao hơn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_22.webp,22,14,2025-04-22 09:05:16.404000 +00:00,2025-04-22 09:06:48.140000 +00:00
+599,Further education P2,21. Bậc học cao hơn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_21.webp,21,14,2025-04-22 09:05:16.407000 +00:00,2025-04-22 09:06:48.074000 +00:00
+587,Becoming independent P2,9. Trở nên độc lập 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_09.webp,9,14,2025-04-22 09:05:16.358000 +00:00,2025-04-22 09:06:48.381000 +00:00
+418,Wonders Of The World P1,25.Kì quan thế giới,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_25.webp,25,8,2025-04-22 09:05:16.493000 +00:00,2025-04-22 09:06:48.782000 +00:00
+409,Sources Of Energy,16.Nguồn năng lượng,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_16.webp,16,8,2025-04-22 09:05:16.457000 +00:00,2025-04-22 09:06:48.900000 +00:00
+412,Hobbies,19.Sở thích,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_19.webp,19,8,2025-04-22 09:05:16.490000 +00:00,2025-04-22 09:06:48.895000 +00:00
+215,Bài 12,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_12.webp,12,5,2025-04-22 09:05:16.505000 +00:00,2025-04-22 09:06:48.952000 +00:00
+184,Colleagues P1,12.Đồng nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_12.webp,12,4,2025-04-22 09:05:16.595000 +00:00,2025-04-22 09:06:48.683000 +00:00
+390,Women In Society P1,20.Phụ nữ trong xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_20.webp,20,7,2025-04-22 09:05:16.426000 +00:00,2025-04-22 09:06:48.388000 +00:00
+581,The generation gap P3,3. Khoảng cách thế hệ 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_03.webp,3,14,2025-04-22 09:05:16.374000 +00:00,2025-04-22 09:06:48.544000 +00:00
+1004,Space travel 3,36. Du hành vũ trụ 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_25.webp,36,21,2025-04-22 09:05:16.554000 +00:00,2025-04-22 09:06:48.421000 +00:00
+218,Bài 15,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_15.webp,15,5,2025-04-22 09:05:16.497000 +00:00,2025-04-22 09:06:48.949000 +00:00
+163,Pack Your Bag,3.Xếp hành lý,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_3.webp,3,3,2025-04-22 09:05:16.539000 +00:00,2025-04-22 09:06:48.936000 +00:00
+828,Technology and you 3,11. Công nghệ 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_11.webp,11,17,2025-04-22 09:05:16.461000 +00:00,2025-04-22 09:06:48.778000 +00:00
+187,Social Relationships P2,15.Quan hệ xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_15.webp,15,4,2025-04-22 09:05:16.576000 +00:00,2025-04-22 09:06:48.857000 +00:00
+942,Folk tales 2,20. Truyện dân gian 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_20.webp,20,20,2025-04-22 09:05:16.583000 +00:00,2025-04-22 09:06:48.448000 +00:00
+414,Recreation P2,21.Giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_21.webp,21,8,2025-04-22 09:05:16.485000 +00:00,2025-04-22 09:06:48.939000 +00:00
+932,Peoples of Viet Nam 2,10. Người Việt Nam 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_10.webp,10,20,2025-04-22 09:05:16.580000 +00:00,2025-04-22 09:06:48.576000 +00:00
+989,Vietnam:Then and Now 2,21. Xưa và Nay 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_21.webp,21,21,2025-04-22 09:05:16.598000 +00:00,2025-04-22 09:06:48.736000 +00:00
+915,Sources of energy 2,29. Nguồn năng lượng 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_29.webp,29,19,2025-04-22 09:05:16.507000 +00:00,2025-04-22 09:06:48.622000 +00:00
+386,Water Sports,16.Thể thao dưới nước,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_16.webp,16,7,2025-04-22 09:05:16.419000 +00:00,2025-04-22 09:06:48.382000 +00:00
+970,Local Environment 2,2. Môi trường địa phương 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_02.webp,2,21,2025-04-22 09:05:16.503000 +00:00,2025-04-22 09:06:48.696000 +00:00
+819,A day in the life 2,2. Một ngày trong cuộc sống 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_02.webp,2,17,2025-04-22 09:05:16.471000 +00:00,2025-04-22 09:06:48.924000 +00:00
+378,Economic Reforms P1,8.Cải cách kinh tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_8.webp,8,7,2025-04-22 09:05:16.413000 +00:00,2025-04-22 09:06:48.631000 +00:00
+382,Deserts P2,12.Sa mạc,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_12.webp,12,7,2025-04-22 09:05:16.410000 +00:00,2025-04-22 09:06:48.668000 +00:00
+413,Recreation P1,20.Giải trí,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_20.webp,20,8,2025-04-22 09:05:16.464000 +00:00,2025-04-22 09:06:48.826000 +00:00
+592,Being a part of ASEAN P1,14. Là một thành viên của ASEAN 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_14.webp,14,14,2025-04-22 09:05:16.390000 +00:00,2025-04-22 09:06:48.462000 +00:00
+207,Bài 4,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_3.webp,4,5,2025-04-22 09:05:16.499000 +00:00,2025-04-22 09:06:48.687000 +00:00
+384,Endangered Species P2,14.Các loài đang lâm nguy,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_14.webp,14,7,2025-04-22 09:05:16.416000 +00:00,2025-04-22 09:06:48.712000 +00:00
+204,Bài 1,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_1.webp,1,5,2025-04-22 09:05:16.568000 +00:00,2025-04-22 09:06:48.899000 +00:00
+609,Healthy lifestyles and longevity P1,31. Lối sống lành mạnh và trường thọ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_31.webp,31,14,2025-04-22 09:05:16.362000 +00:00,2025-04-22 09:06:48.028000 +00:00
+415,Space Conquest P1,22.Chinh phục không gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_22.webp,22,8,2025-04-22 09:05:16.488000 +00:00,2025-04-22 09:06:48.822000 +00:00
+681,Our home 1,22. Nhà thân thương 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_022.webp,22,15,2025-04-22 09:05:16.366000 +00:00,2025-04-22 09:06:48.161000 +00:00
+392,The ASEAN P1,22.Hiệp hội các quốc gia ĐNA,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_22.webp,22,7,2025-04-22 09:05:16.429000 +00:00,2025-04-22 09:06:48.383000 +00:00
+394,Friendship,1.Tình bạn,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_1.webp,1,8,2025-04-22 09:05:16.432000 +00:00,2025-04-22 09:06:48.397000 +00:00
+823,People's background 3,6. Lý lịch 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_06.webp,6,17,2025-04-22 09:05:16.481000 +00:00,2025-04-22 09:06:48.890000 +00:00
+985,Wonders of Vietnam 1,17. Kỳ quan Việt Nam 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_17.webp,17,21,2025-04-22 09:05:16.588000 +00:00,2025-04-22 09:06:48.867000 +00:00
+597,Global warming P2,19. Sự nóng lên toàn cầu 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_19.webp,19,14,2025-04-22 09:05:16.402000 +00:00,2025-04-22 09:06:47.896000 +00:00
+598,Further education P1,20. Bậc học cao hơn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_20.webp,20,14,2025-04-22 09:05:16.399000 +00:00,2025-04-22 09:06:47.903000 +00:00
+590,Caring for those in need P3,12. Chăm sóc người khác 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_12.webp,12,14,2025-04-22 09:05:16.388000 +00:00,2025-04-22 09:06:48.460000 +00:00
+591,Caring for those in need P4,13. Chăm sóc người khác 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_13.webp,13,14,2025-04-22 09:05:16.389000 +00:00,2025-04-22 09:06:48.461000 +00:00
+851,Films and cinema 1,34. Phim ảnh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_34.webp,34,17,2025-04-22 09:05:16.501000 +00:00,2025-04-22 09:06:48.707000 +00:00
+901,Viet Nam food and drink 3,15. Ẩm thực Việt Nam 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_15.webp,15,19,2025-04-22 09:05:16.538000 +00:00,2025-04-22 09:06:48.613000 +00:00
+789,"Phrases with ""come""","130. Cụm với ""come""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_130.webp,130,15,2025-04-22 09:05:16.398000 +00:00,2025-04-22 09:06:48.138000 +00:00
+168,On The Menu,8.Thực đơn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_8.webp,8,3,2025-04-22 09:05:16.511000 +00:00,2025-04-22 09:06:48.888000 +00:00
+224,Bài 21,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_21.webp,21,5,2025-04-22 09:05:16.529000 +00:00,2025-04-22 09:06:48.941000 +00:00
+387,The 22nd SEA Games P1,17.Đại hội thể thao Đông Nam Á,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_17.webp,17,7,2025-04-22 09:05:16.421000 +00:00,2025-04-22 09:06:48.385000 +00:00
+786,"Phrases with ""turn""","127. Cụm với ""turn""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_127.webp,127,15,2025-04-22 09:05:16.387000 +00:00,2025-04-22 09:06:48.306000 +00:00
+676,Starting again,17. Bắt đầu lại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_017.webp,17,15,2025-04-22 09:05:16.379000 +00:00,2025-04-22 09:06:48.000000 +00:00
+400,Competitions P2,7.Các cuộc thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_7.webp,7,8,2025-04-22 09:05:16.459000 +00:00,2025-04-22 09:06:48.403000 +00:00
+900,Viet Nam food and drink 2,14. Ẩm thực Việt Nam 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_14.webp,14,19,2025-04-22 09:05:16.536000 +00:00,2025-04-22 09:06:48.602000 +00:00
+376,Future Jobs,6.Nghề nghiệp tương lai,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_6.webp,6,7,2025-04-22 09:05:16.408000 +00:00,2025-04-22 09:06:48.665000 +00:00
+596,Global warming P1,18. Sự nóng lên toàn cầu 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_18.webp,18,14,2025-04-22 09:05:16.400000 +00:00,2025-04-22 09:06:47.885000 +00:00
+234,Bài 31,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_31.webp,31,5,2025-04-22 09:05:16.480000 +00:00,2025-04-22 09:06:48.753000 +00:00
+783,"Phrases with ""get""","124. Cụm với ""get""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_124.webp,124,15,2025-04-22 09:05:16.406000 +00:00,2025-04-22 09:06:48.258000 +00:00
+174,Correspondence,2.Thư tín,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_2.webp,2,4,2025-04-22 09:05:16.527000 +00:00,2025-04-22 09:06:48.874000 +00:00
+401,World Population,8.Dân số thế giới,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_8.webp,8,8,2025-04-22 09:05:16.447000 +00:00,2025-04-22 09:06:48.480000 +00:00
+831,An excursion 2,14. Chuyến du ngoạn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_14.webp,14,17,2025-04-22 09:05:16.477000 +00:00,2025-04-22 09:06:48.915000 +00:00
+381,Deserts P1,11.Sa mạc,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_11.webp,11,7,2025-04-22 09:05:16.453000 +00:00,2025-04-22 09:06:48.713000 +00:00
+398,Illiteracy,5.Nạn mù chữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_5.webp,5,8,2025-04-22 09:05:16.445000 +00:00,2025-04-22 09:06:48.402000 +00:00
+161,Choose A Trip,1.Lựa chọn chuyến đi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_1.webp,1,3,2025-04-22 09:05:16.543000 +00:00,2025-04-22 09:06:48.938000 +00:00
+593,Being a part of ASEAN P2,15. Là một thành viên của ASEAN 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_15.webp,15,14,2025-04-22 09:05:16.392000 +00:00,2025-04-22 09:06:48.213000 +00:00
+857,Historical places 1,40. Địa danh lịch sử 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_40.webp,40,17,2025-04-22 09:05:16.513000 +00:00,2025-04-22 09:06:48.710000 +00:00
+779,"Phrases with ""through""","120. Cụm với ""through""",https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_120.webp,120,15,2025-04-22 09:05:16.384000 +00:00,2025-04-22 09:06:48.378000 +00:00
+396,A Party,3.Một bữa tiệc,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_3.webp,3,8,2025-04-22 09:05:16.436000 +00:00,2025-04-22 09:06:48.400000 +00:00
+411,The Asian Games P2,18.Đại hội thể thao châu Á,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_18.webp,18,8,2025-04-22 09:05:16.469000 +00:00,2025-04-22 09:06:48.902000 +00:00
+886,Robots 2,28. Người máy 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_28.webp,28,18,2025-04-22 09:05:16.524000 +00:00,2025-04-22 09:06:48.877000 +00:00
+219,Bài 16,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_16.webp,16,5,2025-04-22 09:05:16.533000 +00:00,2025-04-22 09:06:48.946000 +00:00
+882,Houses in Future 2,24. Nhà ở trong tương lai 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_24.webp,24,18,2025-04-22 09:05:16.521000 +00:00,2025-04-22 09:06:48.835000 +00:00
+377,Economic Policy,7.Chính sách kinh tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_7.webp,7,7,2025-04-22 09:05:16.412000 +00:00,2025-04-22 09:06:48.667000 +00:00
+403,Celebrations P2,10.Lễ kỉ niệm,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_10.webp,10,8,2025-04-22 09:05:16.455000 +00:00,2025-04-22 09:06:48.492000 +00:00
+855,The World cup 3,38. Cúp thế giới 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_38.webp,38,17,2025-04-22 09:05:16.506000 +00:00,2025-04-22 09:06:48.702000 +00:00
+407,Nature In Danger P1,14.Thiên nhiên lâm nguy,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_14.webp,14,8,2025-04-22 09:05:16.462000 +00:00,2025-04-22 09:06:48.907000 +00:00
+385,Book,15.Sách truyện,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_15.webp,15,7,2025-04-22 09:05:16.418000 +00:00,2025-04-22 09:06:48.724000 +00:00
+858,Historical places 2,41. Địa danh lịch sử 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_41.webp,41,17,2025-04-22 09:05:16.517000 +00:00,2025-04-22 09:06:48.698000 +00:00
+216,Bài 13,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_13.webp,13,5,2025-04-22 09:05:16.508000 +00:00,2025-04-22 09:06:48.951000 +00:00
+818,A day in the life 1,1. Một ngày trong cuộc sống 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_01.webp,1,17,2025-04-22 09:05:16.440000 +00:00,2025-04-22 09:06:48.784000 +00:00
+383,Endangered Species P1,13.Các loài đang lâm nguy,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_13.webp,13,7,2025-04-22 09:05:16.414000 +00:00,2025-04-22 09:06:48.726000 +00:00
+595,Being a part of ASEAN P4,17. Là một thành viên của ASEAN 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_17.webp,17,14,2025-04-22 09:05:16.403000 +00:00,2025-04-22 09:06:47.886000 +00:00
+389,International Organizations,19.Tổ chức quốc tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_19.webp,19,7,2025-04-22 09:05:16.424000 +00:00,2025-04-22 09:06:48.391000 +00:00
+824,Special education 1,7. Giáo dục đặc biệt 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_07.webp,7,17,2025-04-22 09:05:16.474000 +00:00,2025-04-22 09:06:48.892000 +00:00
+395,Personal Experiences,2.Trải nghiệm cá nhân,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_2.webp,2,8,2025-04-22 09:05:16.435000 +00:00,2025-04-22 09:06:48.399000 +00:00
+237,Bài 34,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_34.webp,34,5,2025-04-22 09:05:16.495000 +00:00,2025-04-22 09:06:48.809000 +00:00
+899,Viet Nam food and drink 1,13. Ẩm thực Việt Nam 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_13.webp,13,19,2025-04-22 09:05:16.531000 +00:00,2025-04-22 09:06:48.600000 +00:00
+830,An excursion 1,13. Chuyến du ngoạn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_13.webp,13,17,2025-04-22 09:05:16.472000 +00:00,2025-04-22 09:06:48.916000 +00:00
+391,Women In Society P2,21.Phụ nữ trong xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_21.webp,21,7,2025-04-22 09:05:16.427000 +00:00,2025-04-22 09:06:48.394000 +00:00
+87,Languages,70.Ngôn ngữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_87.webp,70,1,2025-04-22 09:05:15.296000 +00:00,2025-04-22 09:06:47.430000 +00:00
+405,Post Office P2,12.Bưu điện,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_12.webp,12,8,2025-04-22 09:05:16.454000 +00:00,2025-04-22 09:06:48.866000 +00:00
+416,Space Conquest P2,23.Chinh phục không gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_23.webp,23,8,2025-04-22 09:05:16.489000 +00:00,2025-04-22 09:06:48.825000 +00:00
+393,The ASEAN P2,23.Hiệp hội các quốc gia ĐNA,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_23.webp,23,7,2025-04-22 09:05:16.430000 +00:00,2025-04-22 09:06:48.396000 +00:00
+274,Student Life P1,24.Đời sống sinh viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_24.webp,24,6,2025-04-22 09:05:16.289000 +00:00,2025-04-22 09:06:47.459000 +00:00
+408,Nature In Danger P2,15.Thiên nhiên lâm nguy,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_15.webp,15,8,2025-04-22 09:05:16.466000 +00:00,2025-04-22 09:06:48.786000 +00:00
+923,Leisure activities 1,1. Hoạt động giải trí 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_31.webp,1,20,2025-04-22 09:05:16.555000 +00:00,2025-04-22 09:06:48.547000 +00:00
+374,School Education System,4.Hệ thống giáo dục trường học,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_4.webp,4,7,2025-04-22 09:05:16.383000 +00:00,2025-04-22 09:06:48.637000 +00:00
+402,Celebrations P1,9.Lễ kỉ niệm,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_9.webp,9,8,2025-04-22 09:05:16.451000 +00:00,2025-04-22 09:06:48.484000 +00:00
+675,How we met,16. Gặp gỡ,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_016.webp,16,15,2025-04-22 09:05:16.382000 +00:00,2025-04-22 09:06:48.188000 +00:00
+397,Volunteer Work,4.Công việc tình nguyện,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_4.webp,4,8,2025-04-22 09:05:16.438000 +00:00,2025-04-22 09:06:48.401000 +00:00
+162,Budget Your Trip,2.Ngân sách chuyến đi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_2.webp,2,3,2025-04-22 09:05:16.534000 +00:00,2025-04-22 09:06:48.937000 +00:00
+854,The World cup 2,37. Cúp thế giới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_37.webp,37,17,2025-04-22 09:05:16.509000 +00:00,2025-04-22 09:06:48.703000 +00:00
+820,School talks,3. Trò chuyện ở trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_03.webp,3,17,2025-04-22 09:05:16.476000 +00:00,2025-04-22 09:06:48.922000 +00:00
+881,Houses in Future 1,23. Nhà ở trong tương lai 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_23.webp,23,18,2025-04-22 09:05:16.515000 +00:00,2025-04-22 09:06:48.908000 +00:00
+735,Exam revision,76. Ôn luyện cho kì thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_076.webp,76,15,2025-04-22 09:05:15.833000 +00:00,2025-04-22 09:06:48.304000 +00:00
+879,Cities 1,21. Các thành phố 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_29.webp,21,18,2025-04-22 09:05:16.528000 +00:00,2025-04-22 09:06:48.729000 +00:00
+835,The mass media 3,18. Truyền thông đại chúng 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_18.webp,18,17,2025-04-22 09:05:16.479000 +00:00,2025-04-22 09:06:48.819000 +00:00
+875,Television 2,17. Chương trình truyền hình 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_17.webp,17,18,2025-04-22 09:05:16.526000 +00:00,2025-04-22 09:06:48.790000 +00:00
+202,Occupation,30.Nghề nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_30.webp,30,4,2025-04-22 09:05:16.498000 +00:00,2025-04-22 09:06:48.911000 +00:00
+56,Vegetables,58.Rau củ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_56.webp,58,1,2025-04-22 09:05:15.285000 +00:00,2025-04-22 09:06:47.419000 +00:00
+984,Life in The Past 4,16. Quá khứ 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_16.webp,16,21,2025-04-22 09:05:20.418000 +00:00,2025-04-22 09:06:48.652000 +00:00
+169,Natural World,9.Thế giới tự nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_9.webp,9,3,2025-04-22 09:05:16.537000 +00:00,2025-04-22 09:06:48.779000 +00:00
+972,Local Environment 4,4. Môi trường địa phương 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_04.webp,4,21,2025-04-22 09:05:16.523000 +00:00,2025-04-22 09:06:48.717000 +00:00
+318,World Population P1,68.Dân số thế giới,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_68.webp,68,6,2025-04-22 09:05:15.366000 +00:00,2025-04-22 09:06:47.478000 +00:00
+333,The Green Revolution P2,83.Cuộc cách mạng xanh,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_83.webp,83,6,2025-04-22 09:05:15.399000 +00:00,2025-04-22 09:06:47.482000 +00:00
+980,Teen Stress And Pressure 4,12. Áp lực tuổi teen 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_12.webp,12,21,2025-04-22 09:05:20.432000 +00:00,2025-04-22 09:06:48.367000 +00:00
+249,Bài 46,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_46.webp,46,5,2025-04-22 09:05:16.512000 +00:00,2025-04-22 09:06:48.742000 +00:00
+380,Life In The Future,10.Cuộc sống tương lai,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_10.webp,10,7,2025-04-22 09:05:16.448000 +00:00,2025-04-22 09:06:48.714000 +00:00
+913,Festivals around the world 3,27. Các lễ hội trên thế giới 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_27.webp,27,19,2025-04-22 09:05:16.518000 +00:00,2025-04-22 09:06:48.690000 +00:00
+404,Post Office P1,11.Bưu điện,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_11.webp,11,8,2025-04-22 09:05:16.486000 +00:00,2025-04-22 09:06:48.530000 +00:00
+917,Travelling in the future 1,31. Di chuyển trong tương lai 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_31.webp,31,19,2025-04-22 09:05:20.244000 +00:00,2025-04-22 09:06:48.644000 +00:00
+419,Wonders Of The World P2,26.Kì quan thế giới,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_26.webp,26,8,2025-04-22 09:05:16.483000 +00:00,2025-04-22 09:06:48.731000 +00:00
+1000,Learning English 2,32. Học tiếng Anh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_32.webp,32,21,2025-04-22 09:05:19.941000 +00:00,2025-04-22 09:06:48.406000 +00:00
+981,Life in The Past 1,13. Quá khứ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_13.webp,13,21,2025-04-22 09:05:20.431000 +00:00,2025-04-22 09:06:48.368000 +00:00
+417,Spaceship,24.Tàu phi hành,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_24.webp,24,8,2025-04-22 09:05:16.492000 +00:00,2025-04-22 09:06:48.783000 +00:00
+951,English speaking countries 3,29. Quốc gia nói tiếng Anh 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_29.webp,29,20,2025-04-22 09:05:16.601000 +00:00,2025-04-22 09:06:48.482000 +00:00
+999,Learning English 1,31. Học tiếng Anh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_31.webp,31,21,2025-04-22 09:05:19.940000 +00:00,2025-04-22 09:06:48.372000 +00:00
+966,Life on other planets 2,44. Sự sống ở hành tinh khác 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_44.webp,44,20,2025-04-22 09:05:20.081000 +00:00,2025-04-22 09:06:48.512000 +00:00
+990,Vietnam:Then and Now 3,22. Xưa và Nay 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_22.webp,22,21,2025-04-22 09:05:16.605000 +00:00,2025-04-22 09:06:48.830000 +00:00
+1011,My future career 4,43. Sự nghiệp tương lai 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_43.webp,43,21,2025-04-22 09:05:20.032000 +00:00,2025-04-22 09:06:48.531000 +00:00
+957,Communication 1,35. Giao tiếp 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_89.webp,35,20,2025-04-22 09:05:20.299000 +00:00,2025-04-22 09:06:48.494000 +00:00
+193,Recognition P2,21.Ghi nhận nhân viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_21.webp,21,4,2025-04-22 09:05:16.631000 +00:00,2025-04-22 09:06:48.755000 +00:00
+188,Job Application,16.Ứng tuyển,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_16.webp,16,4,2025-04-22 09:05:16.608000 +00:00,2025-04-22 09:06:48.858000 +00:00
+848,Music 1,31. Âm nhạc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_31.webp,31,17,2025-04-22 09:05:20.233000 +00:00,2025-04-22 09:06:48.718000 +00:00
+935,Our customs and traditions 1,13. Phong tục tập quán nước ta 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_13.webp,13,20,2025-04-22 09:05:20.125000 +00:00,2025-04-22 09:06:48.578000 +00:00
+446,Operation,24.Vận hành sản xuất,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_24.webp?_t=1585297191,24,10,2025-04-22 09:05:15.744000 +00:00,2025-04-22 09:06:48.034000 +00:00
+228,Bài 25,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_25.webp,25,5,2025-04-22 09:05:16.612000 +00:00,2025-04-22 09:06:48.727000 +00:00
+826,Technology and you 1,9. Công nghệ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_09.webp,9,17,2025-04-22 09:05:20.129000 +00:00,2025-04-22 09:06:48.906000 +00:00
+931,Peoples of Viet Nam 1,9. Người Việt Nam 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_94.webp,9,20,2025-04-22 09:05:20.120000 +00:00,2025-04-22 09:06:48.574000 +00:00
+544,Science & Technology P2,12. Khoa học & Công nghệ P2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_12.webp,12,12,2025-04-22 09:05:16.041000 +00:00,2025-04-22 09:06:47.529000 +00:00
+517,The Green Movement P1,9. Phong trào Xanh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_59.webp,9,11,2025-04-22 09:05:16.099000 +00:00,2025-04-22 09:06:48.004000 +00:00
+623,Striving to achieve P2,13. Nỗ lực để có thành quả 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_13.webp,13,13,2025-04-22 09:05:15.575000 +00:00,2025-04-22 09:06:47.642000 +00:00
+272,Fulfillment In Life P1,22.Cuộc sống trọn vẹn,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_22.webp,22,6,2025-04-22 09:05:15.581000 +00:00,2025-04-22 09:06:47.458000 +00:00
+191,Economy P2,19.Nền kinh tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_19.webp,19,4,2025-04-22 09:05:16.597000 +00:00,2025-04-22 09:06:48.773000 +00:00
+982,Life in The Past 2,14. Quá khứ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_14.webp,14,21,2025-04-22 09:05:20.154000 +00:00,2025-04-22 09:06:48.370000 +00:00
+66,Make-up P1,47.Trang điểm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_66.webp,47,1,2025-04-22 09:05:15.339000 +00:00,2025-04-22 09:06:47.413000 +00:00
+1009,My future career 2,41. Sự nghiệp tương lai 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_41.webp,41,21,2025-04-22 09:05:16.624000 +00:00,2025-04-22 09:06:48.437000 +00:00
+178,Communication,6.Giao tiếp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_6.webp,6,4,2025-04-22 09:05:16.582000 +00:00,2025-04-22 09:06:48.794000 +00:00
+967,Life on other planets 3,45. Sự sống ở hành tinh khác 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_45.webp,45,20,2025-04-22 09:05:20.088000 +00:00,2025-04-22 09:06:48.514000 +00:00
+888,My hobbies 2,2. Sở thích 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_21.webp,2,19,2025-04-22 09:05:16.573000 +00:00,2025-04-22 09:06:48.527000 +00:00
+183,Reservation,11.Đặt chỗ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_11.webp,11,4,2025-04-22 09:05:16.593000 +00:00,2025-04-22 09:06:48.682000 +00:00
+964,Science and technology 4,42. Khoa học và tự nhiên 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_42.webp,42,20,2025-04-22 09:05:20.085000 +00:00,2025-04-22 09:06:48.509000 +00:00
+180,Office P2,8.Văn phòng làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_8.webp,8,4,2025-04-22 09:05:16.585000 +00:00,2025-04-22 09:06:48.875000 +00:00
+959,Communication 3,37. Giao tiếp 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_37.webp,37,20,2025-04-22 09:05:20.103000 +00:00,2025-04-22 09:06:48.499000 +00:00
+1003,Space travel 2,35. Du hành vũ trụ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_35.webp,35,21,2025-04-22 09:05:16.616000 +00:00,2025-04-22 09:06:48.417000 +00:00
+893,Community service 1,7. Dịch vụ cộng đồng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_07.webp,7,19,2025-04-22 09:05:20.136000 +00:00,2025-04-22 09:06:48.583000 +00:00
+934,Peoples of Viet Nam 4,12. Người Việt Nam 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_23.webp,12,20,2025-04-22 09:05:20.108000 +00:00,2025-04-22 09:06:48.375000 +00:00
+95,Days In A Week,19.Ngày trong tuần,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_95.webp,19,1,2025-04-22 09:05:15.298000 +00:00,2025-04-22 09:06:47.377000 +00:00
+200,Shopping,28.Mua sắm,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_28.webp,28,4,2025-04-22 09:05:16.578000 +00:00,2025-04-22 09:06:48.839000 +00:00
+911,Festivals around the world 1,25. Các lễ hội trên thế giới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_25.webp,25,19,2025-04-22 09:05:20.252000 +00:00,2025-04-22 09:06:48.619000 +00:00
+196,At The Hospital,24.Bệnh viện,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_24.webp,24,4,2025-04-22 09:05:16.629000 +00:00,2025-04-22 09:06:48.749000 +00:00
+36,Examination,2.Kì thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_36.webp,2,1,2025-04-22 09:05:15.205000 +00:00,2025-04-22 09:06:47.089000 +00:00
+927,Life in the countryside 1,5. Cuộc sống nông thôn 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_10.webp,5,20,2025-04-22 09:05:19.975000 +00:00,2025-04-22 09:06:48.553000 +00:00
+930,Life in the countryside 4,8. Cuộc sống nông thôn 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_28.webp,8,20,2025-04-22 09:05:20.149000 +00:00,2025-04-22 09:06:48.573000 +00:00
+229,Bài 26,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_26.webp,26,5,2025-04-22 09:05:16.620000 +00:00,2025-04-22 09:06:48.774000 +00:00
+166,Destinations P1,6.Điểm đến,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_6.webp,6,3,2025-04-22 09:05:16.558000 +00:00,2025-04-22 09:06:48.931000 +00:00
+31,School Stationery,4.Dụng cụ học tập,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_31.webp,4,1,2025-04-22 09:05:15.258000 +00:00,2025-04-22 09:06:47.330000 +00:00
+944,Folk tales 4,22. Truyện dân gian 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_22.webp,22,20,2025-04-22 09:05:16.651000 +00:00,2025-04-22 09:06:48.451000 +00:00
+248,Bài 45,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_45.webp,45,5,2025-04-22 09:05:16.614000 +00:00,2025-04-22 09:06:48.798000 +00:00
+227,Bài 24,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_24.webp,24,5,2025-04-22 09:05:16.654000 +00:00,2025-04-22 09:06:48.728000 +00:00
+849,Music 2,32. Âm nhạc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_32.webp,32,17,2025-04-22 09:05:16.627000 +00:00,2025-04-22 09:06:48.709000 +00:00
+821,People's background 1,4. Lý lịch 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_04.webp,4,17,2025-04-22 09:05:16.622000 +00:00,2025-04-22 09:06:48.922000 +00:00
+946,Pollution 2,24. Ô nhiễm 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_53.webp,24,20,2025-04-22 09:05:20.194000 +00:00,2025-04-22 09:06:48.452000 +00:00
+925,Leisure activities 3,3. Hoạt động giải trí 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_34.webp,3,20,2025-04-22 09:05:19.960000 +00:00,2025-04-22 09:06:48.550000 +00:00
+320,The Modern World,70.Xã hội hiện đại,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_70.webp,70,6,2025-04-22 09:05:16.298000 +00:00,2025-04-22 09:06:47.479000 +00:00
+212,Bài 9,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_9.webp,9,5,2025-04-22 09:05:16.606000 +00:00,2025-04-22 09:06:48.955000 +00:00
+171,Languages,11.Ngôn ngữ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_11.webp,11,3,2025-04-22 09:05:16.638000 +00:00,2025-04-22 09:06:48.894000 +00:00
+243,Bài 40,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_40.webp,40,5,2025-04-22 09:05:16.602000 +00:00,2025-04-22 09:06:48.800000 +00:00
+948,Pollution 4,26. Ô nhiễm 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_8.webp,26,20,2025-04-22 09:05:20.186000 +00:00,2025-04-22 09:06:48.472000 +00:00
+165,Indoor Games,5.Trò chơi trong nhà,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_5.webp,5,3,2025-04-22 09:05:20.171000 +00:00,2025-04-22 09:06:48.933000 +00:00
+975,City Life 3,7. Cuộc sống đô thị 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_07.webp,7,21,2025-04-22 09:05:20.175000 +00:00,2025-04-22 09:06:48.341000 +00:00
+293,Time Expressions,43.Cách nói về thời gian,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_43.webp,43,6,2025-04-22 09:05:18.771000 +00:00,2025-04-22 09:06:47.468000 +00:00
+329,Environmental Problems P2,79.Vấn đề môi trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_79.webp,79,6,2025-04-22 09:05:19.168000 +00:00,2025-04-22 09:06:47.480000 +00:00
+79,Insects,55.Côn trùng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_79.webp,55,1,2025-04-22 09:05:15.296000 +00:00,2025-04-22 09:06:47.416000 +00:00
+441,Billing & Expenses,19.Hóa đơn & Chi phí,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_19.webp?_t=1585296496,19,10,2025-04-22 09:05:19.362000 +00:00,2025-04-22 09:06:47.838000 +00:00
+485,Education & Schooling P1,63.Giáo dục & Trường học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_63.webp?_t=1585308059,63,10,2025-04-22 09:05:16.293000 +00:00,2025-04-22 09:06:47.829000 +00:00
+367,The Artistic World P1,117.Thế giới nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_117.webp,117,6,2025-04-22 09:05:15.368000 +00:00,2025-04-22 09:06:47.506000 +00:00
+288,Nature P1,38.Thiên nhiên,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_38.webp,38,6,2025-04-22 09:05:15.618000 +00:00,2025-04-22 09:06:47.470000 +00:00
+1014,Lesson 3,3. Bài học 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/PTCOL_lesson_03.webp,3,22,2025-04-22 09:05:16.098000 +00:00,2025-04-22 09:06:48.279000 +00:00
+679,Food,20. Đồ ăn,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_020.webp,20,15,2025-04-22 09:05:19.648000 +00:00,2025-04-22 09:06:48.134000 +00:00
+199,On The Road,27.Giao thông,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_27.webp,27,4,2025-04-22 09:05:16.657000 +00:00,2025-04-22 09:06:48.775000 +00:00
+222,Bài 19,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_19.webp,19,5,2025-04-22 09:05:16.610000 +00:00,2025-04-22 09:06:48.945000 +00:00
+213,Bài 10,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_10.webp,10,5,2025-04-22 09:05:16.642000 +00:00,2025-04-22 09:06:48.837000 +00:00
+1002,Space travel 1,34. Du hành vũ trụ 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_34.webp,34,21,2025-04-22 09:05:19.946000 +00:00,2025-04-22 09:06:48.418000 +00:00
+961,Science and technology 1,39. Khoa học và tự nhiên 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_39.webp,39,20,2025-04-22 09:05:20.190000 +00:00,2025-04-22 09:06:48.502000 +00:00
+195,Employee Encouragement P2,23.Khích lệ nhân viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_23.webp,23,4,2025-04-22 09:05:16.630000 +00:00,2025-04-22 09:06:48.865000 +00:00
+35,Schools,1.Trường học,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_35.webp,1,1,2025-04-22 09:05:14.878000 +00:00,2025-04-22 09:06:47.107000 +00:00
+203,A Marketing Plan,31.Kế hoạch tiếp thị,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_31.webp,31,4,2025-04-22 09:05:20.167000 +00:00,2025-04-22 09:06:48.929000 +00:00
+164,Outdoor Activities,4.Hoạt động ngoài trời,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_4.webp,4,3,2025-04-22 09:05:20.158000 +00:00,2025-04-22 09:06:48.935000 +00:00
+936,Our customs and traditions 2,14. Phong tục tập quán nước ta 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_14.webp,14,20,2025-04-22 09:05:20.214000 +00:00,2025-04-22 09:06:48.551000 +00:00
+1010,My future career 3,42. Sự nghiệp tương lai 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_42.webp,42,21,2025-04-22 09:05:19.949000 +00:00,2025-04-22 09:06:48.442000 +00:00
+406,Communication,13.Giao tiếp,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_13.webp,13,8,2025-04-22 09:05:16.618000 +00:00,2025-04-22 09:06:48.751000 +00:00
+241,Bài 38,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_38.webp,38,5,2025-04-22 09:05:16.634000 +00:00,2025-04-22 09:06:48.777000 +00:00
+1001,Learning English 3,33. Học tiếng Anh 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_33.webp,33,21,2025-04-22 09:05:19.943000 +00:00,2025-04-22 09:06:48.413000 +00:00
+940,Festivals in Viet Nam 3,18. Lễ hội ở Việt Nam 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_37.webp,18,20,2025-04-22 09:05:20.206000 +00:00,2025-04-22 09:06:48.443000 +00:00
+939,Festivals in Viet Nam 2,17. Lễ hội ở Việt Nam 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_17.webp,17,20,2025-04-22 09:05:20.211000 +00:00,2025-04-22 09:06:48.442000 +00:00
+845,Conservation 4,28. Sự bảo tồn 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_28.webp,28,17,2025-04-22 09:05:20.057000 +00:00,2025-04-22 09:06:48.528000 +00:00
+987,Wonders of Vietnam 3,19. Kỳ quan Việt Nam 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_19.webp,19,21,2025-04-22 09:05:20.389000 +00:00,2025-04-22 09:06:48.817000 +00:00
+874,Television 1,16. Chương trình truyền hình 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_16.webp,16,18,2025-04-22 09:05:20.569000 +00:00,2025-04-22 09:06:48.824000 +00:00
+991,Eating habits 1,23. Thói quen ăn uống 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_16.webp,23,21,2025-04-22 09:05:20.139000 +00:00,2025-04-22 09:06:48.828000 +00:00
+863,My Home 3,5. Nhà của tôi 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_84.webp,5,18,2025-04-22 09:05:20.076000 +00:00,2025-04-22 09:06:48.847000 +00:00
+843,Conservation 2,26. Sự bảo tồn 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_26.webp,26,17,2025-04-22 09:05:20.133000 +00:00,2025-04-22 09:06:48.549000 +00:00
+933,Peoples of Viet Nam 3,11. Người Việt Nam 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_41.webp,11,20,2025-04-22 09:05:20.111000 +00:00,2025-04-22 09:06:48.577000 +00:00
+912,Festivals around the world 2,26. Các lễ hội trên thế giới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_26.webp,26,19,2025-04-22 09:05:20.250000 +00:00,2025-04-22 09:06:48.621000 +00:00
+892,Health 3,6. Sức khỏe 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_06.webp,6,19,2025-04-22 09:05:20.319000 +00:00,2025-04-22 09:06:48.629000 +00:00
+918,Travelling in the future 2,32. Di chuyển trong tương lai 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_32.webp,32,19,2025-04-22 09:05:20.295000 +00:00,2025-04-22 09:06:48.648000 +00:00
+410,The Asian Games P1,17.Đại hội thể thao châu Á,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_17.webp,17,8,2025-04-22 09:05:20.374000 +00:00,2025-04-22 09:06:48.901000 +00:00
+969,Local Environment 1,1. Môi trường địa phương 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_01.webp,1,21,2025-04-22 09:05:20.468000 +00:00,2025-04-22 09:06:48.697000 +00:00
+856,Cities,39. Các thành phố,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_39.webp,39,17,2025-04-22 09:05:16.504000 +00:00,2025-04-22 09:06:48.701000 +00:00
+974,City Life 2,6. Cuộc sống đô thị 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_06.webp,6,21,2025-04-22 09:05:20.023000 +00:00,2025-04-22 09:06:48.715000 +00:00
+205,Bài 2,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_2.webp,2,5,2025-04-22 09:05:20.352000 +00:00,2025-04-22 09:06:48.902000 +00:00
+920,An overcrowded world 1,34. Một thế giới quá đông đúc 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_34.webp,34,19,2025-04-22 09:05:20.079000 +00:00,2025-04-22 09:06:48.971000 +00:00
+833,The mass media 1,16. Truyền thông đại chúng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_16.webp,16,17,2025-04-22 09:05:20.412000 +00:00,2025-04-22 09:06:48.735000 +00:00
+231,Bài 28,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_28.webp,28,5,2025-04-22 09:05:20.073000 +00:00,2025-04-22 09:06:48.769000 +00:00
+363,The Museums,113.Bảo tàng nghệ thuật,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_113.webp,113,6,2025-04-22 09:05:15.278000 +00:00,2025-04-22 09:06:47.504000 +00:00
+436,Banking,14.Ngân hàng & giao dịch,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_14.webp?_t=1585292604,14,10,2025-04-22 09:05:15.812000 +00:00,2025-04-22 09:06:48.092000 +00:00
+977,Teen Stress And Pressure 1,9. Áp lực tuổi teen 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_09.webp,9,21,2025-04-22 09:05:20.054000 +00:00,2025-04-22 09:06:48.349000 +00:00
+919,Travelling in the future 3,33. Di chuyển trong tương lai 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_33.webp,33,19,2025-04-22 09:05:20.606000 +00:00,2025-04-22 09:06:48.441000 +00:00
+837,The story of my village 1,20. Chuyện làng tôi 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_20.webp,20,17,2025-04-22 09:05:20.060000 +00:00,2025-04-22 09:06:48.493000 +00:00
+962,Science and technology 2,40. Khoa học và tự nhiên 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_10.webp,40,20,2025-04-22 09:05:20.096000 +00:00,2025-04-22 09:06:48.504000 +00:00
+963,Science and technology 3,41. Khoa học và tự nhiên 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_41.webp,41,20,2025-04-22 09:05:20.087000 +00:00,2025-04-22 09:06:48.506000 +00:00
+992,Eating habits 2,24. Thói quen ăn uống 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_24.webp,24,21,2025-04-22 09:05:20.148000 +00:00,2025-04-22 09:06:48.777000 +00:00
+179,Office P1,7.Văn phòng làm việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_7.webp,7,4,2025-04-22 09:05:20.547000 +00:00,2025-04-22 09:06:48.792000 +00:00
+230,Bài 27,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_27.webp,27,5,2025-04-22 09:05:20.525000 +00:00,2025-04-22 09:06:48.772000 +00:00
+223,Bài 20,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_20.webp,20,5,2025-04-22 09:05:20.302000 +00:00,2025-04-22 09:06:48.943000 +00:00
+186,Social Relationships P1,14.Quan hệ xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_14.webp,14,4,2025-04-22 09:05:20.507000 +00:00,2025-04-22 09:06:48.684000 +00:00
+217,Bài 14,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_14.webp,14,5,2025-04-22 09:05:20.215000 +00:00,2025-04-22 09:06:48.950000 +00:00
+210,Bài 7,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_7.webp,7,5,2025-04-22 09:05:20.279000 +00:00,2025-04-22 09:06:48.963000 +00:00
+941,Folk tales 1,19. Truyện dân gian 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_19.webp,19,20,2025-04-22 09:05:20.204000 +00:00,2025-04-22 09:06:48.444000 +00:00
+945,Pollution 1,23. Ô nhiễm 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_23.webp,23,20,2025-04-22 09:05:20.327000 +00:00,2025-04-22 09:06:48.451000 +00:00
+906,Traffic 2,20. Giao thông 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_20.webp,20,19,2025-04-22 09:05:20.262000 +00:00,2025-04-22 09:06:48.638000 +00:00
+929,Life in the countryside 3,7. Cuộc sống nông thôn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TAN_lesson_26.webp,7,20,2025-04-22 09:05:20.155000 +00:00,2025-04-22 09:06:48.571000 +00:00
+246,Bài 43,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_43.webp,43,5,2025-04-22 09:05:20.483000 +00:00,2025-04-22 09:06:48.796000 +00:00
+829,Technology and you 4,12. Công nghệ 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_12.webp,12,17,2025-04-22 09:05:20.335000 +00:00,2025-04-22 09:06:48.918000 +00:00
+221,Bài 18,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_18.webp,18,5,2025-04-22 09:05:20.512000 +00:00,2025-04-22 09:06:48.948000 +00:00
+993,Eating habits 3,25. Thói quen ăn uống 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_25.webp,25,21,2025-04-22 09:05:20.348000 +00:00,2025-04-22 09:06:48.832000 +00:00
+194,Employee Encouragement P1,22.Khích lệ nhân viên,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_22.webp,22,4,2025-04-22 09:05:20.504000 +00:00,2025-04-22 09:06:48.762000 +00:00
+953,Natural disasters 1,31. Thảm họa thiên nhiên 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_82.webp,31,20,2025-04-22 09:05:20.324000 +00:00,2025-04-22 09:06:48.489000 +00:00
+904,The first university in Viet Nam 3,18. Trường đại học đầu tiên của Việt Nam 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_18.webp,18,19,2025-04-22 09:05:20.266000 +00:00,2025-04-22 09:06:48.623000 +00:00
+214,Bài 11,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_11.webp,11,5,2025-04-22 09:05:20.274000 +00:00,2025-04-22 09:06:48.954000 +00:00
+890,Health 1,4. Sức khỏe 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_04.webp,4,19,2025-04-22 09:05:20.316000 +00:00,2025-04-22 09:06:48.546000 +00:00
+170,Countries,10.Quốc gia,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_10.webp,10,3,2025-04-22 09:05:20.357000 +00:00,2025-04-22 09:06:48.889000 +00:00
+902,The first university in Viet Nam 1,16. Trường đại học đầu tiên của Việt Nam 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_16.webp,16,19,2025-04-22 09:05:20.269000 +00:00,2025-04-22 09:06:48.615000 +00:00
+908,Films 1,22. Phim 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_22.webp,22,19,2025-04-22 09:05:20.256000 +00:00,2025-04-22 09:06:48.616000 +00:00
+937,Our customs and traditions 3,15. Phong tục tập quán nước ta 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_15.webp,15,20,2025-04-22 09:05:20.212000 +00:00,2025-04-22 09:06:48.628000 +00:00
+986,Wonders of Vietnam 2,18. Kỳ quan Việt Nam 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_18.webp,18,21,2025-04-22 09:05:20.415000 +00:00,2025-04-22 09:06:48.371000 +00:00
+914,Sources of energy 1,28. Nguồn năng lượng 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_28.webp,28,19,2025-04-22 09:05:20.246000 +00:00,2025-04-22 09:06:48.647000 +00:00
+960,Communication 4,38. Giao tiếp 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_38.webp,38,20,2025-04-22 09:05:20.329000 +00:00,2025-04-22 09:06:48.500000 +00:00
+903,The first university in Viet Nam 2,17. Trường đại học đầu tiên của Việt Nam 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_17.webp,17,19,2025-04-22 09:05:20.169000 +00:00,2025-04-22 09:06:48.886000 +00:00
+955,Natural disasters 3,33. Thảm họa thiên nhiên 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_33.webp,33,20,2025-04-22 09:05:20.321000 +00:00,2025-04-22 09:06:48.789000 +00:00
+889,My hobbies 3,3. Sở thích 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_5.webp,3,19,2025-04-22 09:05:20.332000 +00:00,2025-04-22 09:06:48.529000 +00:00
+897,Music and arts 2,11. Âm nhạc và nghệ thuật 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_27.webp,11,19,2025-04-22 09:05:20.272000 +00:00,2025-04-22 09:06:48.597000 +00:00
+950,English speaking countries 2,28. Quốc gia nói tiếng Anh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_28.webp,28,20,2025-04-22 09:05:20.192000 +00:00,2025-04-22 09:06:48.479000 +00:00
+846,National parks 1,29. Công viên quốc gia 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_29.webp,29,17,2025-04-22 09:05:20.222000 +00:00,2025-04-22 09:06:48.722000 +00:00
+852,Films and cinema 2,35. Phim ảnh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_35.webp,35,17,2025-04-22 09:05:20.404000 +00:00,2025-04-22 09:06:48.705000 +00:00
+952,English speaking countries 4,30. Quốc gia nói tiếng Anh 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_45.webp,30,20,2025-04-22 09:05:20.196000 +00:00,2025-04-22 09:06:48.486000 +00:00
+233,Bài 30,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_30.webp,30,5,2025-04-22 09:05:20.533000 +00:00,2025-04-22 09:06:48.756000 +00:00
+938,Festivals in Viet Nam 1,16. Lễ hội ở Việt Nam 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_16.webp,16,20,2025-04-22 09:05:20.208000 +00:00,2025-04-22 09:06:48.733000 +00:00
+1008,My future career 1,40. Sự nghiệp tương lai 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_40.webp,40,21,2025-04-22 09:05:20.232000 +00:00,2025-04-22 09:06:48.435000 +00:00
+996,Tourism 2,28. Du lịch 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_28.webp,28,21,2025-04-22 09:05:20.341000 +00:00,2025-04-22 09:06:48.904000 +00:00
+947,Pollution 3,25. Ô nhiễm 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_77.webp,25,20,2025-04-22 09:05:20.188000 +00:00,2025-04-22 09:06:48.456000 +00:00
+891,Health 2,5. Sức khỏe 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_05.webp,5,19,2025-04-22 09:05:20.313000 +00:00,2025-04-22 09:06:48.620000 +00:00
+245,Bài 42,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_42.webp,42,5,2025-04-22 09:05:20.480000 +00:00,2025-04-22 09:06:48.802000 +00:00
+206,Bài 3,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_3.webp,3,5,2025-04-22 09:05:20.488000 +00:00,2025-04-22 09:06:48.864000 +00:00
+435,Finance P2,13.Tài chính tiền tệ,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_13.webp?_t=1585292604,13,10,2025-04-22 09:05:15.693000 +00:00,2025-04-22 09:06:48.087000 +00:00
+671,A good friend,12. Người bạn tốt,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_012.webp,12,15,2025-04-22 09:05:23.686000 +00:00,2025-04-22 09:06:48.183000 +00:00
+766,Conversation rules,107. Nguyên tắc hội thoại,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_107.webp,107,15,2025-04-22 09:05:16.075000 +00:00,2025-04-22 09:06:48.238000 +00:00
+909,Films 2,23. Phim 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_23.webp,23,19,2025-04-22 09:05:20.254000 +00:00,2025-04-22 09:06:48.617000 +00:00
+916,Sources of energy 3,30. Nguồn năng lượng 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_30.webp,30,19,2025-04-22 09:05:20.241000 +00:00,2025-04-22 09:06:48.640000 +00:00
+905,Traffic 1,19. Giao thông 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_19.webp,19,19,2025-04-22 09:05:20.264000 +00:00,2025-04-22 09:06:48.642000 +00:00
+907,Traffic 3,21. Giao thông 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_21.webp,21,19,2025-04-22 09:05:20.259000 +00:00,2025-04-22 09:06:48.645000 +00:00
+777,Formal phrasal verbs,118. Cụm nghĩa trang trọng,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_118.webp,118,15,2025-04-22 09:05:16.097000 +00:00,2025-04-22 09:06:48.312000 +00:00
+910,Films 3,24. Phim 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_24.webp,24,19,2025-04-22 09:05:20.267000 +00:00,2025-04-22 09:06:48.651000 +00:00
+859,New School 1,1. Ngôi trường mới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_1.webp,1,18,2025-04-22 09:05:20.583000 +00:00,2025-04-22 09:06:48.672000 +00:00
+181,With Customers P1,9.Làm việc với khách hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_9.webp,9,4,2025-04-22 09:05:20.563000 +00:00,2025-04-22 09:06:48.678000 +00:00
+177,Office Positions,5.Chức vụ trong văn phòng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_5.webp,5,4,2025-04-22 09:05:20.623000 +00:00,2025-04-22 09:06:48.737000 +00:00
+880,Cities 2,22. Các thành phố 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/INTERIE_lesson_32.webp,22,18,2025-04-22 09:05:20.616000 +00:00,2025-04-22 09:06:48.746000 +00:00
+240,Bài 37,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_37.webp,37,5,2025-04-22 09:05:20.543000 +00:00,2025-04-22 09:06:48.747000 +00:00
+236,Bài 33,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_33.webp,33,5,2025-04-22 09:05:20.637000 +00:00,2025-04-22 09:06:48.810000 +00:00
+201,Working Skills,29.Kĩ năng công việc,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_29.webp,29,4,2025-04-22 09:05:20.590000 +00:00,2025-04-22 09:06:48.837000 +00:00
+172,Accommodation,12.Nơi ở,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_12.webp,12,3,2025-04-22 09:05:20.598000 +00:00,2025-04-22 09:06:48.897000 +00:00
+976,City Life 4,8. Cuộc sống đô thị 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_08.webp,8,21,2025-04-22 09:05:20.229000 +00:00,2025-04-22 09:06:48.345000 +00:00
+979,Teen Stress And Pressure 3,11. Áp lực tuổi teen 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_11.webp,11,21,2025-04-22 09:05:20.429000 +00:00,2025-04-22 09:06:48.364000 +00:00
+388,The 22nd SEA Games P2,18.Đại hội thể thao Đông Nam Á,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_18.webp,18,7,2025-04-22 09:05:16.423000 +00:00,2025-04-22 09:06:48.386000 +00:00
+949,English speaking countries 1,27. Quốc gia nói tiếng Anh 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_27.webp,27,20,2025-04-22 09:05:20.530000 +00:00,2025-04-22 09:06:48.477000 +00:00
+898,Music and arts 3,12. Âm nhạc và nghệ thuật 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_53.webp,12,19,2025-04-22 09:05:20.605000 +00:00,2025-04-22 09:06:48.592000 +00:00
+680,Cooking,21. Nấu nướng,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_021.webp,21,15,2025-04-22 09:05:23.670000 +00:00,2025-04-22 09:06:48.605000 +00:00
+209,Bài 6,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_6.webp,6,5,2025-04-22 09:05:20.280000 +00:00,2025-04-22 09:06:48.956000 +00:00
+211,Bài 8,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_8.webp,8,5,2025-04-22 09:05:20.277000 +00:00,2025-04-22 09:06:48.960000 +00:00
+873,Tet Holiday 2,15. Ngày Tết 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_15.webp,15,18,2025-04-22 09:05:20.631000 +00:00,2025-04-22 09:06:48.961000 +00:00
+885,Robots 1 ,27. Người máy 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_27.webp,27,18,2025-04-22 09:05:20.571000 +00:00,2025-04-22 09:06:48.835000 +00:00
+865,Friends 2,7. Bạn bè 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_35.webp,7,18,2025-04-22 09:05:20.529000 +00:00,2025-04-22 09:06:48.841000 +00:00
+860,New School 2,2. Ngôi trường mới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_35.webp,2,18,2025-04-22 09:05:20.531000 +00:00,2025-04-22 09:06:48.926000 +00:00
+864,Friends 1,6. Bạn bè 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_58.webp,6,18,2025-04-22 09:05:20.534000 +00:00,2025-04-22 09:06:48.845000 +00:00
+853,The World cup 1,36. Cúp thế giới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_36.webp,36,17,2025-04-22 09:05:20.402000 +00:00,2025-04-22 09:06:48.704000 +00:00
+868,Neighborhood 3,10. Vùng lân cận 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_3.webp,10,18,2025-04-22 09:05:20.526000 +00:00,2025-04-22 09:06:48.740000 +00:00
+399,Competitions P1,6.Các cuộc thi,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_6.webp,6,8,2025-04-22 09:05:16.450000 +00:00,2025-04-22 09:06:48.744000 +00:00
+247,Bài 44,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_44.webp,44,5,2025-04-22 09:05:20.540000 +00:00,2025-04-22 09:06:48.745000 +00:00
+998,Tourism 4,30. Du lịch 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_30.webp,30,21,2025-04-22 09:05:20.339000 +00:00,2025-04-22 09:06:48.374000 +00:00
+244,Bài 41,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_41.webp,41,5,2025-04-22 09:05:20.485000 +00:00,2025-04-22 09:06:48.798000 +00:00
+861,My Home 1,3. Nhà của tôi 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_79.webp,3,18,2025-04-22 09:05:20.523000 +00:00,2025-04-22 09:06:48.871000 +00:00
+983,Life in The Past 3,15. Quá khứ 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_15.webp,15,21,2025-04-22 09:05:20.425000 +00:00,2025-04-22 09:06:48.393000 +00:00
+956,Natural disasters 4,34. Thảm họa thiên nhiên 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_34.webp,34,20,2025-04-22 09:05:20.323000 +00:00,2025-04-22 09:06:48.493000 +00:00
+958,Communication 2,36. Giao tiếp 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_21.webp,36,20,2025-04-22 09:05:20.320000 +00:00,2025-04-22 09:06:48.497000 +00:00
+884,Our Green World 2,26. Thế giới xanh 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_26.webp,26,18,2025-04-22 09:05:20.564000 +00:00,2025-04-22 09:06:48.878000 +00:00
+226,Bài 23,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_23.webp,23,5,2025-04-22 09:05:20.575000 +00:00,2025-04-22 09:06:48.882000 +00:00
+844,Conservation 3,27. Sự bảo tồn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_27.webp,27,17,2025-04-22 09:05:20.414000 +00:00,2025-04-22 09:06:48.524000 +00:00
+887,My hobbies 1,1. Sở thích 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/11TA_Lesson_3.webp,1,19,2025-04-22 09:05:20.397000 +00:00,2025-04-22 09:06:48.525000 +00:00
+450,Management,28.Quản trị công ty,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_28.webp?_t=1585298594,28,10,2025-04-22 09:05:15.674000 +00:00,2025-04-22 09:06:47.770000 +00:00
+242,Bài 39,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_39.webp,39,5,2025-04-22 09:05:20.554000 +00:00,2025-04-22 09:06:48.812000 +00:00
+896,Music and arts 1,10. Âm nhạc và nghệ thuật 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_61.webp,10,19,2025-04-22 09:05:20.358000 +00:00,2025-04-22 09:06:48.587000 +00:00
+921,An overcrowded world 2,35. Một thế giới quá đông đúc 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN7_lesson_35.webp,35,19,2025-04-22 09:05:20.548000 +00:00,2025-04-22 09:06:48.670000 +00:00
+182,With Customers P2,10.Làm việc với khách hàng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_10.webp,10,4,2025-04-22 09:05:20.567000 +00:00,2025-04-22 09:06:48.679000 +00:00
+954,Natural disasters 2,32. Thảm họa thiên nhiên 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN8_lesson_32.webp,32,20,2025-04-22 09:05:20.325000 +00:00,2025-04-22 09:06:48.814000 +00:00
+220,Bài 17,10 từ vựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/CNTT_Lesson_17.webp,17,5,2025-04-22 09:05:20.509000 +00:00,2025-04-22 09:06:48.896000 +00:00
+994,Eating habits 4,26. Thói quen ăn uống 4,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_9.webp,26,21,2025-04-22 09:05:20.349000 +00:00,2025-04-22 09:06:48.816000 +00:00
+995,Tourism 1,27. Du lịch 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN9_lesson_27.webp,27,21,2025-04-22 09:05:20.345000 +00:00,2025-04-22 09:06:48.823000 +00:00
+827,Technology and you 2,10. Công nghệ 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_10.webp,10,17,2025-04-22 09:05:20.333000 +00:00,2025-04-22 09:06:48.909000 +00:00
+832,An excursion 3,15. Chuyến du ngoạn 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_15.webp,15,17,2025-04-22 09:05:20.454000 +00:00,2025-04-22 09:06:48.913000 +00:00
+481,Environment & Nature P2,59.Thiên nhiên môi trường,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_59.webp?_t=1585307461,59,10,2025-04-22 09:05:15.992000 +00:00,2025-04-22 09:06:47.820000 +00:00
+438,Investments P2,16.Khoản đầu tư,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC1000_lesson_16.webp?_t=1585293217,16,10,2025-04-22 09:05:15.779000 +00:00,2025-04-22 09:06:48.102000 +00:00
+822,People's background 2,5. Lý lịch 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/Tieng_Anh_10N_05.webp,5,17,2025-04-22 09:05:20.315000 +00:00,2025-04-22 09:06:48.921000 +00:00
+37,Ordinal Numbers,18.Số thứ tự,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_37.webp,18,1,2025-04-22 09:05:15.299000 +00:00,2025-04-22 09:06:47.350000 +00:00
+306,Construction,56.Xây dựng,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_57.webp,56,6,2025-04-22 09:05:15.289000 +00:00,2025-04-22 09:06:47.472000 +00:00
+563,The law & Crime & Punishment P1,31. Luật & Tội ác & Trừng phạt P1,https://mochien3.1-api.mochidemy.com/public/images/lesson/IECOL_lesson_31.webp,31,12,2025-04-22 09:05:15.333000 +00:00,2025-04-22 09:06:47.534000 +00:00
+375,Higher Education,5.Giáo dục đại học,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_5.webp,5,7,2025-04-22 09:05:16.441000 +00:00,2025-04-22 09:06:48.656000 +00:00
+379,Economic Reforms P2,9.Cải cách kinh tế,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_9.webp,9,7,2025-04-22 09:05:16.446000 +00:00,2025-04-22 09:06:48.694000 +00:00
+869,World Wonders 1,11. Cảnh quan thế giới 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_11.webp,11,18,2025-04-22 09:05:24.502000 +00:00,2025-04-22 09:06:48.739000 +00:00
+867,Neighborhood 2,9. Vùng lân cận 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TADL_lesson_4.webp,9,18,2025-04-22 09:05:20.522000 +00:00,2025-04-22 09:06:48.741000 +00:00
+866,Neighborhood 1,8. Vùng lân cận 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACB_lesson_17.webp,8,18,2025-04-22 09:05:20.514000 +00:00,2025-04-22 09:06:48.743000 +00:00
+185,Colleagues P2,13.Đồng nghiệp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_13.webp,13,4,2025-04-22 09:05:24.210000 +00:00,2025-04-22 09:06:48.859000 +00:00
+324,Rural Areas,74.Khu vực nông thôn,https://mochien3.1-api.mochidemy.com/public/images/lesson/BASICIE_Lesson_74.webp,74,6,2025-04-22 09:05:15.288000 +00:00,2025-04-22 09:06:47.484000 +00:00
+765,Ways of talking,106. Cách nói chuyện,https://mochien3.1-api.mochidemy.com/public/images/lesson/Phrasal_lesson_106.webp,106,15,2025-04-22 09:05:16.083000 +00:00,2025-04-22 09:06:48.066000 +00:00
+523,Endangered Species,17. Động vật có nguy cơ tuyệt chủng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TOEIC_Lesson_37.webp,17,11,2025-04-22 09:05:16.237000 +00:00,2025-04-22 09:06:48.242000 +00:00
+373,Ways Of Socialising,3.Cách thức giao tiếp xã hội,https://mochien3.1-api.mochidemy.com/public/images/lesson/12TA_Lesson_3.webp,3,7,2025-04-22 09:05:16.336000 +00:00,2025-04-22 09:06:48.636000 +00:00
+878,Sports and Games 3,20. Các môn thể thao 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_20.webp,20,18,2025-04-22 09:05:24.219000 +00:00,2025-04-22 09:06:48.674000 +00:00
+871,World Wonders 3,13. Cảnh quan thế giới 3,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_13.webp,13,18,2025-04-22 09:05:20.611000 +00:00,2025-04-22 09:06:48.676000 +00:00
+175,Meetings,3.Các cuộc họp,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_3.webp,3,4,2025-04-22 09:05:20.625000 +00:00,2025-04-22 09:06:48.791000 +00:00
+198,In A Hotel,26.Khách sạn,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_26.webp,26,4,2025-04-22 09:05:16.648000 +00:00,2025-04-22 09:06:48.820000 +00:00
+176,New Recruits,4.Nhân viên mới,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_4.webp,4,4,2025-04-22 09:05:24.299000 +00:00,2025-04-22 09:06:48.833000 +00:00
+173,Contracts,1.Hợp đồng,https://mochien3.1-api.mochidemy.com/public/images/lesson/TACS_Lesson_1.webp,1,4,2025-04-22 09:05:20.629000 +00:00,2025-04-22 09:06:48.870000 +00:00
+870,World Wonders 2,12. Cảnh quan thế giới 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_12.webp,12,18,2025-04-22 09:05:20.536000 +00:00,2025-04-22 09:06:48.872000 +00:00
+877,Sports and Games 2,19. Các môn thể thao 2,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_19.webp,19,18,2025-04-22 09:05:20.614000 +00:00,2025-04-22 09:06:48.942000 +00:00
+876,Sports and Games 1,18. Các môn thể thao 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_18.webp,18,18,2025-04-22 09:05:24.231000 +00:00,2025-04-22 09:06:48.944000 +00:00
+872,Tet Holiday 1,14. Ngày Tết 1,https://mochien3.1-api.mochidemy.com/public/images/lesson/TAN6_lesson_14.webp,14,18,2025-04-22 09:05:20.633000 +00:00,2025-04-22 09:06:48.965000 +00:00

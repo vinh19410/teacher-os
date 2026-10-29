@@ -7,12 +7,14 @@ import {
 	type StudentMe,
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import * as schema from "@teacher-os/db/schema/index";
 import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
+import { loadNextSession } from "./routes/student-class";
 import type { SessionUser } from "./session";
 import * as studentProvisioning from "./student-provisioning";
 
@@ -1314,6 +1316,253 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				},
 			);
 			expect(res.status).toBe(403);
+		});
+	});
+
+	describe("nextSession skips ended today sessions (#395)", () => {
+		// Snapshot MỘT lần: seed và assertion cùng nhìn một mốc, dù suite chạy
+		// băng qua nửa đêm VN thì seed/assertion vẫn tự nhất quán với nhau.
+		const TODAY = vietnamTodayISO();
+		const YESTERDAY = addDaysISO(TODAY, -1);
+		const dowOf = (iso: string) =>
+			((new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7) + 1;
+
+		beforeAll(async () => {
+			await libsql.insert(schema.classTable).values([
+				{
+					id: "class-395a",
+					orgId: "org-1",
+					name: "IELTS 395 A",
+					level: "IELTS 5.0–6.0",
+					mode: "Online",
+					schedule: "T2 00:00–00:30",
+					sessionsDone: 0,
+					sessionsTotal: 20,
+					status: "active",
+				},
+				{
+					id: "class-395b",
+					orgId: "org-1",
+					name: "IELTS 395 B",
+					level: "IELTS 5.0–6.0",
+					mode: "Online",
+					schedule: "T2 00:00–00:30",
+					sessionsDone: 0,
+					sessionsTotal: 20,
+					status: "active",
+				},
+				{
+					id: "class-395c",
+					orgId: "org-1",
+					name: "IELTS 395 C legacy",
+					level: "IELTS 5.0–6.0",
+					mode: "Online",
+					schedule: "T2 08:00–09:00",
+					sessionsDone: 0,
+					sessionsTotal: 20,
+					status: "active",
+				},
+				{
+					id: "class-395d",
+					orgId: "org-1",
+					name: "IELTS 395 D boundary",
+					level: "IELTS 5.0–6.0",
+					mode: "Online",
+					schedule: "T2 10:30–12:00",
+					sessionsDone: 0,
+					sessionsTotal: 20,
+					status: "active",
+				},
+			]);
+			await libsql.insert(schema.enrollment).values([
+				{
+					id: "enr-395a",
+					orgId: "org-1",
+					classId: "class-395a",
+					studentId: "student-1",
+					status: "active",
+				},
+				{
+					id: "enr-395b",
+					orgId: "org-1",
+					classId: "class-395b",
+					studentId: "student-1",
+					status: "active",
+				},
+				{
+					id: "enr-395c",
+					orgId: "org-1",
+					classId: "class-395c",
+					studentId: "student-1",
+					status: "active",
+				},
+				{
+					id: "enr-395d",
+					orgId: "org-1",
+					classId: "class-395d",
+					studentId: "student-1",
+					status: "active",
+				},
+			]);
+			await libsql.insert(schema.lesson).values([
+				{
+					// dur 0 ⇒ end = 00:00 hôm nay (giờ VN) ⇒ đã kết thúc ở MỌI thời
+					// điểm chạy test (ranh giới <=) — seed độc lập đồng hồ.
+					id: "ls-395a-ended",
+					orgId: "org-1",
+					classId: "class-395a",
+					enrollmentId: "enr-395a",
+					day: dowOf(TODAY),
+					time: "00:00",
+					dur: 0,
+					date: TODAY,
+					status: "upcoming",
+					topic: "Sáng đã kết thúc",
+				},
+				{
+					// end = mai 00:30 giờ VN ⇒ chưa kết thúc ở mọi thời điểm chạy test
+					// thông thường (trừ cửa sổ băng qua đúng nửa đêm VN — xem mục Rủi ro
+					// trong plan).
+					id: "ls-395a-evening",
+					orgId: "org-1",
+					classId: "class-395a",
+					enrollmentId: "enr-395a",
+					day: dowOf(TODAY),
+					time: "23:00",
+					dur: 90,
+					date: TODAY,
+					status: "upcoming",
+					topic: "Buổi tối",
+				},
+				{
+					// Hôm qua: bị gte(date, today) loại khỏi ứng viên, không cạnh tranh.
+					id: "ls-395b-past",
+					orgId: "org-1",
+					classId: "class-395b",
+					enrollmentId: "enr-395b",
+					day: dowOf(YESTERDAY),
+					time: "23:00",
+					dur: 59,
+					date: YESTERDAY,
+					status: "upcoming",
+					topic: "Hôm qua",
+				},
+				{
+					// Phòng thủ invariant vỡ: time lệch format không thể sinh qua write
+					// path (TIME_REGEX); end == null ⇒ không coi là đã kết thúc.
+					id: "ls-395b-legacy",
+					orgId: "org-1",
+					classId: "class-395b",
+					enrollmentId: "enr-395b",
+					day: dowOf(TODAY),
+					time: "7pm",
+					dur: 60,
+					date: TODAY,
+					status: "upcoming",
+					topic: "Legacy lệch format",
+				},
+				{
+					id: "ls-395c-nodate",
+					orgId: "org-1",
+					classId: "class-395c",
+					enrollmentId: "enr-395c",
+					day: 1,
+					time: "08:00",
+					dur: 60,
+					date: null,
+					status: "upcoming",
+					topic: "Lớp legacy",
+				},
+				{
+					// 2099-03-10 = thứ Ba ⇒ day 2; end = 12:00 giờ VN — dùng với `now`
+					// inject tường minh ở test ranh giới.
+					id: "ls-395d-boundary",
+					orgId: "org-1",
+					classId: "class-395d",
+					enrollmentId: "enr-395d",
+					day: 2,
+					time: "10:30",
+					dur: 90,
+					date: "2099-03-10",
+					status: "upcoming",
+					topic: "Ranh giới",
+				},
+			]);
+		});
+
+		test("overview skips today's already-ended session when picking Buổi tới", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			const a = overview.classes.find((c) => c.id === "class-395a");
+			expect(a?.nextSession).toEqual({
+				date: TODAY,
+				time: "23:00",
+				topic: "Buổi tối",
+			});
+		});
+
+		test("class detail skips today's already-ended session too", async () => {
+			const res = await app.request("/api/student/classes/class-395a", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const detail = (await res.json()) as StudentClassDetail;
+			expect(detail.class.nextSession).toEqual({
+				date: TODAY,
+				time: "23:00",
+				topic: "Buổi tối",
+			});
+		});
+
+		test("legacy malformed time is never treated as ended (defensive fallback)", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			const b = overview.classes.find((c) => c.id === "class-395b");
+			expect(b?.nextSession).toEqual({
+				date: TODAY,
+				time: "7pm",
+				topic: "Legacy lệch format",
+			});
+		});
+
+		test("legacy class without dates has no next session", async () => {
+			const res = await app.request("/api/student/overview", {
+				headers: { "x-test-user": "google-verified" },
+			});
+			expect(res.status).toBe(200);
+			const overview = (await res.json()) as StudentOverview;
+			const c = overview.classes.find((cls) => cls.id === "class-395c");
+			expect(c?.nextSession).toBeNull();
+		});
+
+		test("boundary: end == now counts as ended (loader, injected now)", async () => {
+			const next = await loadNextSession(
+				libsql,
+				"org-1",
+				"class-395d",
+				new Date("2099-03-10T12:00:00+07:00"),
+			);
+			expect(next).toBeNull();
+		});
+
+		test("boundary: end > now still counts as Buổi tới (loader, injected now)", async () => {
+			const next = await loadNextSession(
+				libsql,
+				"org-1",
+				"class-395d",
+				new Date("2099-03-10T11:59:59+07:00"),
+			);
+			expect(next).toEqual({
+				date: "2099-03-10",
+				time: "10:30",
+				topic: "Ranh giới",
+			});
 		});
 	});
 });

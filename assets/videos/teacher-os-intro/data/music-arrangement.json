@@ -1,0 +1,19 @@
+{
+  "source": "assets/audio/music/bgm-raw.mp3",
+  "output": "assets/audio/music/bgm.flac",
+  "bpm": 112,
+  "beat0": 0.004,
+  "crossfade": 0.025,
+  "fadeOut": { "beat": 122, "seconds": 3.4 },
+  "segments": [
+    { "to": [0, 16], "from": 0, "role": "s01 hook chaos (intro groove, muted kick)" },
+    { "to": [16, 40], "from": 28, "role": "DROP A at s02 reveal ( Teacher OS slam), runs under s03" },
+    { "to": [40, 48], "from": 76, "role": "s04 build (snare roll + riser), one silent beat at target 47" },
+    { "to": [48, 72], "from": 84, "role": "DROP at s05 grading, runs under s06" },
+    { "to": [72, 84], "from": 60, "role": "s07 portal groove" },
+    { "to": [84, 92], "from": 116, "role": "DROP at s08 stats (biggest)" },
+    { "to": [92, 100], "from": 108, "role": "s09 breathe (breakdown, pads + plucks)" },
+    { "to": [100, 104], "from": 76, "role": "short build into the CTA drop" },
+    { "to": [104, 128], "from": 140, "role": "DROP at s10 CTA, tail under s11" }
+  ]
+}

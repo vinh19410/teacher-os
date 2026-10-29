@@ -1,5 +1,6 @@
 import { waitUntil } from "cloudflare:workers";
 import { type Auth, type CreateAuthInput, createAuth } from "@teacher-os/auth";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import {
 	createLogMailer,
 	createResendMailer,
@@ -7,6 +8,7 @@ import {
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db, type MediaStore } from "./app";
+import { createAiProviders } from "./lib/ai-gate";
 import {
 	type BankHubContext,
 	createBankHubContext,
@@ -26,7 +28,34 @@ export function parseCORSOrigins(raw: string): string[] {
 let db: Db | undefined;
 let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
+let libraryAudioStore: MediaStore | undefined;
 let bankHub: BankHubContext | undefined;
+// TOS-24 (#470): kho file đề nhập AI dùng chung bucket MEDIA — memoized
+// riêng để không tạo adapter mới mỗi request (same pattern mediaStore).
+let examImportStore: MediaStore | undefined;
+
+// Plan TOS-21 (#454): mailer memoized riêng, dùng chung cho createAuth lẫn
+// buildApp (AppDeps.mailer). Giữ nguyên check MAILER_IMPL + cảnh báo log-only.
+let mailer: Mailer | undefined;
+const getMailer = (): Mailer => {
+	if (mailer) return mailer;
+	if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
+		throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
+	}
+	if (env.MAILER_IMPL !== "resend") {
+		console.error(
+			"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
+		);
+	}
+	mailer =
+		env.MAILER_IMPL === "resend"
+			? createResendMailer({
+					apiKey: env.RESEND_API_KEY,
+					from: env.MAIL_FROM,
+				})
+			: createLogMailer();
+	return mailer;
+};
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
@@ -38,25 +67,15 @@ const getAuth = (): Auth => {
 		db = createDb() as unknown as Db;
 	}
 	if (!auth) {
-		if (env.MAILER_IMPL === "resend" && !env.RESEND_API_KEY) {
-			throw new Error("RESEND_API_KEY is required when MAILER_IMPL=resend");
-		}
-		if (env.MAILER_IMPL !== "resend") {
-			console.error(
-				"[mail] MAILER is in LOG-ONLY mode — verification emails are NOT being sent. Set MAILER_IMPL=resend + RESEND_API_KEY to enable.",
-			);
-		}
-		const mailer =
-			env.MAILER_IMPL === "resend"
-				? createResendMailer({
-						apiKey: env.RESEND_API_KEY,
-						from: env.MAIL_FROM,
-					})
-				: createLogMailer();
+		const mailer = getMailer();
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
 			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
+			// Plan #413: cổng admin + allowlist email admin (rỗng = không ai là
+			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
+			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
+			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -78,7 +97,12 @@ const getAuth = (): Auth => {
 export default buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
-	getSessionUser: (headers) => getSessionUser(getAuth(), headers),
+	getSessionUser: (headers) =>
+		getSessionUser(
+			getAuth(),
+			headers,
+			env.AUTH_ASSUME_EMAIL_VERIFIED === "true",
+		),
 	authHandler: (req) => getAuth().handler(req),
 	// Binding MEDIA thiếu (deploy chưa tạo bucket) → undefined → route 503,
 	// không phải TypeError 500.
@@ -87,6 +111,26 @@ export default buildApp({
 		mediaStore ??= createR2MediaStore(env.MEDIA);
 		return mediaStore;
 	},
+	// Kho audio thư viện đề (#413 phase 3) — cùng hợp đồng: binding
+	// LIBRARY_AUDIO thiếu → undefined → route audio trả 503
+	// LIBRARY_AUDIO_DISABLED.
+	getLibraryAudioStore: () => {
+		if (!env.LIBRARY_AUDIO) return undefined;
+		libraryAudioStore ??= createR2MediaStore(env.LIBRARY_AUDIO);
+		return libraryAudioStore;
+	},
+	// TOS-24 (#470): file đề gốc nhập AI dùng chung bucket MEDIA (prefix
+	// `exam-imports/<orgId>/` do route tự ghép). Binding MEDIA thiếu →
+	// undefined → route /api/exam-imports trả 503 EXAM_IMPORT_DISABLED.
+	getExamImportStore: () => {
+		if (!env.MEDIA) return undefined;
+		examImportStore ??= createR2MediaStore(env.MEDIA);
+		return examImportStore;
+	},
+	...createAiProviders(env),
+	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
+	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
 	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
 	getBankHub: () => {
@@ -99,5 +143,16 @@ export default buildApp({
 		});
 		return bankHub;
 	},
+	// Webhook GitHub (#421): secret rỗng (chưa cấu hình binding) →
+	// /webhooks/github trả 503 GITHUB_WEBHOOK_DISABLED.
+	githubWebhookSecret: env.GITHUB_WEBHOOK_SECRET,
+	// Plan TOS-21 (#454): cùng mailer memoized với auth (D6) — getter để
+	// check MAILER_IMPL vẫn chạy lười như cũ, không ở lúc import module.
+	get mailer() {
+		return getMailer();
+	},
+	// Plan TOS-21 (#454): origin cổng học viên đầu tiên cho link tuyệt đối
+	// trong email — env STUDENT_ORIGINS là chuỗi thô nên parse ở đây.
+	studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });

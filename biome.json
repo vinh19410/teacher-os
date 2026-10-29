@@ -31,10 +31,12 @@
 			"!**/packages/db/src/migrations/meta",
 			"!**/playwright-report",
 			"!**/test-results",
-			"!docs/diagrams",
 			"!**/.mail-preview",
+			"!**/.cache/design-v2",
 			"!**/apps/landing/public",
-			"!**/apps/landing/public"
+			"!**/packages/api/src/srs/vectors",
+			"!assets/videos",
+			"!plans/reports/**/*.html"
 		]
 	},
 	"formatter": {
@@ -45,7 +47,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"correctness": {
 				"useExhaustiveDependencies": "info"
 			},
@@ -79,6 +81,28 @@
 	},
 	"overrides": [
 		{
+			"includes": [
+				"apps/web/src/lib/repos/**/*.ts",
+				"!apps/web/src/lib/repos/use-*.ts",
+				"!apps/web/src/lib/repos/**/*.test.ts"
+			],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@/lib/data-store": "Repo mapping modules stay pure (unit-testable without the provider) — read the store through a use-*.ts hook instead.",
+									"@/lib/data-provider": "Repo mapping modules stay pure (unit-testable without the provider) — read the store through a use-*.ts hook instead."
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		{
 			"includes": ["packages/env/src/web.ts"],
 			"linter": {
 				"rules": {
@@ -91,7 +115,9 @@
 		{
 			"includes": [
 				"packages/ui/src/components/input-group.tsx",
-				"packages/ui/src/components/label.tsx"
+				"packages/ui/src/components/label.tsx",
+				"apps/student/src/components/vocab/prompt-*.tsx",
+				"apps/student/src/components/vocab/vocab-pronunciation-buttons.tsx"
 			],
 			"linter": {
 				"rules": {

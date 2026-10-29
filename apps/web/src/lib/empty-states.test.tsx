@@ -40,6 +40,7 @@ const mockStoreData: {
 	syllabi: Syllabus[];
 	lessons: unknown[];
 	enrollments: unknown[];
+	events: unknown[];
 } = {
 	students: [],
 	classes: [],
@@ -47,6 +48,7 @@ const mockStoreData: {
 	syllabi: [],
 	lessons: [],
 	enrollments: [],
+	events: [],
 };
 
 vi.mock("@/lib/data-store", () => ({
@@ -89,6 +91,7 @@ vi.mock("@/lib/repos/use-syllabus", () => ({
 	useSyllabus: () => ({
 		templates: mockStoreData.syllabi,
 	}),
+	useTemplates: () => mockStoreData.syllabi,
 }));
 
 vi.mock("@/lib/use-direct-kernel-action", () => ({
@@ -103,7 +106,7 @@ import { ClassesRoute } from "@/routes/_auth/classes/index";
 import { ScheduleRoute } from "@/routes/_auth/schedule";
 import { StudentsRoute } from "@/routes/_auth/students/index";
 import { SyllabusRoute } from "@/routes/_auth/syllabus/index";
-import { TuitionRoute } from "@/routes/_auth/tuition";
+import { TuitionRoute } from "@/routes/_auth/tuition/index";
 
 describe("List empty states (Issue #118)", () => {
 	it("renders empty state card on /students when 0 students exist", () => {
@@ -146,7 +149,7 @@ describe("List empty states (Issue #118)", () => {
 		expect(html).toContain("+ Tạo syllabus");
 	});
 
-	it("renders empty state card on /schedule when 0 classes exist and shows bilingual legend", () => {
+	it("renders empty state card on /schedule when 0 classes exist", () => {
 		mockStoreData.classes = [];
 		mockStoreData.lessons = [];
 
@@ -156,7 +159,7 @@ describe("List empty states (Issue #118)", () => {
 		expect(html).toContain("Quản lý lớp học");
 	});
 
-	it("renders Vietnamese legend on /schedule when classes exist", () => {
+	it("renders class-colored week grid on /schedule when classes exist", () => {
 		mockStoreData.classes = [
 			{
 				id: "c1",
@@ -181,9 +184,11 @@ describe("List empty states (Issue #118)", () => {
 
 		const html = renderWithClient(<ScheduleRoute />);
 		expect(html).not.toContain('data-testid="schedule-empty-state"');
-		expect(html).toContain("Học thử (Trial)");
-		expect(html).toContain("Thi thử (Mock)");
-		expect(html).toContain("Ôn tập (Review)");
+		// TOS-14 D2: màu block theo lớp (hash class.id), không còn legend màu
+		// theo loại buổi — loại buổi là badge trong block.
+		expect(html).not.toContain("Học thử (Trial)");
+		// Bộ chuyển view mới luôn hiện khi có lớp.
+		expect(html).toContain('data-testid="schedule-view-switch"');
 		expect(html).toContain("Không có buổi học nào trong tuần này.");
 	});
 });

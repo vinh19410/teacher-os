@@ -28,11 +28,12 @@
 		"dompurify": "catalog:",
 		"dotenv": "catalog:",
 		"lucide-react": "catalog:",
-		"next-themes": "catalog:",
 		"papaparse": "^5.7.0",
+		"pdfjs-dist": "^6.4.299",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"read-excel-file": "^9.3.10",
+		"recharts": "^3.10.1",
 		"sonner": "catalog:",
 		"zod": "catalog:"
 	},

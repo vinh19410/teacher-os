@@ -1,0 +1,56 @@
+[
+  { "sfx": "swish", "scene": "s01-hook", "at": 0.1, "vol": 0.35 },
+  { "sfx": "pop", "scene": "s01-hook", "word": "rải", "vol": 0.3 },
+  { "sfx": "snap", "scene": "s01-hook", "word": "phí", "vol": 0.3 },
+  { "sfx": "click", "scene": "s01-hook", "word": "khắp", "vol": 0.3 },
+  { "sfx": "swish", "scene": "s01-hook", "word": "nơi", "vol": 0.3 },
+
+  { "sfx": "sweep", "scene": "s02-reveal", "at": 0, "vol": 0.35 },
+  { "sfx": "snap", "scene": "s02-reveal", "word": "gom", "vol": 0.35 },
+  { "sfx": "thud-soft", "scene": "s02-reveal", "word": "workspace", "vol": 0.5 },
+  { "sfx": "sparkle", "scene": "s02-reveal", "word": "sáu", "vol": 0.3 },
+  { "sfx": "chime", "scene": "s02-reveal", "word": "sách", "vol": 0.35 },
+
+  { "sfx": "sweep", "scene": "s03-classes", "at": 0, "vol": 0.3 },
+  { "sfx": "pop", "scene": "s03-classes", "word": "nhân", "vol": 0.3 },
+  { "sfx": "snap", "scene": "s03-classes", "word": "lớp", "vol": 0.3 },
+  { "sfx": "pop", "scene": "s03-classes", "word": "ngay", "vol": 0.3 },
+
+  { "sfx": "pop", "scene": "s04-assignments", "word": "bốn", "vol": 0.3 },
+  { "sfx": "click", "scene": "s04-assignments", "word": "đáp", "vol": 0.3 },
+  { "sfx": "click", "scene": "s04-assignments", "word": "giao", "vol": 0.35 },
+  { "sfx": "swish", "scene": "s04-assignments", "word": "nút", "vol": 0.3 },
+  { "sfx": "pop", "scene": "s04-assignments", "word": "online", "vol": 0.3 },
+
+  { "sfx": "sweep", "scene": "s05-grading", "at": 0, "vol": 0.3 },
+  { "sfx": "thud-soft", "scene": "s05-grading", "word": "điểm", "vol": 0.5 },
+  { "sfx": "pop", "scene": "s05-grading", "word": "chấm", "nth": 2, "vol": 0.3 },
+  { "sfx": "chime", "scene": "s05-grading", "word": "giúp", "vol": 0.3 },
+
+  { "sfx": "sweep", "scene": "s06-tuition", "at": 0, "vol": 0.3 },
+  { "sfx": "pop", "scene": "s06-tuition", "word": "thu", "vol": 0.3 },
+  { "sfx": "pop", "scene": "s06-tuition", "word": "lại", "vol": 0.3 },
+  { "sfx": "chime", "scene": "s06-tuition", "word": "soát", "vol": 0.3 },
+
+  { "sfx": "sweep", "scene": "s07-portal", "at": 0, "vol": 0.3 },
+  { "sfx": "pop", "scene": "s07-portal", "word": "nộp", "vol": 0.3 },
+  { "sfx": "pop", "scene": "s07-portal", "word": "điểm", "vol": 0.3 },
+  { "sfx": "chime", "scene": "s07-portal", "word": "hỏi", "vol": 0.35 },
+
+  { "sfx": "thud-soft", "scene": "s08-stats", "word": "nghìn", "vol": 0.45 },
+  { "sfx": "thud-soft", "scene": "s08-stats", "word": "nghìn", "nth": 2, "vol": 0.45 },
+  { "sfx": "sweep", "scene": "s08-stats", "word": "chấm", "vol": 0.3 },
+
+  { "sfx": "pop", "scene": "s09-how", "word": "ba", "vol": 0.3 },
+  { "sfx": "snap", "scene": "s09-how", "word": "tạo", "vol": 0.3 },
+  { "sfx": "pop", "scene": "s09-how", "word": "nhân", "vol": 0.3 },
+  { "sfx": "chime", "scene": "s09-how", "word": "dạy", "vol": 0.35 },
+
+  { "sfx": "sweep", "scene": "s10-cta", "at": 0, "vol": 0.35 },
+  { "sfx": "click", "scene": "s10-cta", "word": "giữ", "vol": 0.35 },
+  { "sfx": "thud-soft", "scene": "s10-cta", "word": "chỗ", "vol": 0.5 },
+  { "sfx": "chime", "scene": "s10-cta", "word": "ngay", "vol": 0.3 },
+
+  { "sfx": "soft-bell", "scene": "s11-outro", "word": "nền", "vol": 0.4 },
+  { "sfx": "sparkle", "scene": "s11-outro", "word": "dạy", "vol": 0.3 }
+]

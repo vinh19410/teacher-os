@@ -79,6 +79,50 @@ describe("SubmissionView (#319)", () => {
 		expect(markup).toContain("Học viên đã nộp bài trống.");
 	});
 
+	test("Writing có annotations: essay render qua mark đánh số", () => {
+		const essay = "Living in a city has many benefits.";
+		const start = essay.indexOf("benefits");
+		const markup = renderToStaticMarkup(
+			<SubmissionView
+				submission={buildSubmission({
+					skill: "writing",
+					part: "task2",
+					essay,
+					annotations: [
+						{ id: "a-1", start, end: start + "benefits".length, note: "hay" },
+					],
+				})}
+			/>,
+		);
+		expect(markup).toContain("<mark");
+		expect(markup).toContain('data-n="1"');
+		expect(markup).toContain("benefits");
+	});
+
+	test("Writing với annotation props: bật công cụ highlight + danh sách ghi chú", () => {
+		const essay = "Living in a city has many benefits.";
+		const markup = renderToStaticMarkup(
+			<SubmissionView
+				submission={buildSubmission({
+					skill: "writing",
+					part: "task2",
+					essay,
+					annotations: [],
+				})}
+				annotation={{
+					pending: false,
+					onCreate: () => Promise.resolve(),
+					onUpdate: () => Promise.resolve(),
+					onDelete: () => Promise.resolve(),
+				}}
+			/>,
+		);
+		expect(markup).toContain("Ghi chú trên bài viết (0)");
+		expect(markup).toContain(
+			"Bôi đen từ hoặc cụm từ trong bài để highlight và ghi chú.",
+		);
+	});
+
 	test("Speaking: cue card + media player được mount", () => {
 		const markup = renderToStaticMarkup(
 			<SubmissionView

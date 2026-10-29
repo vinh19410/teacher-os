@@ -10,6 +10,7 @@ import {
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
 import { createKernelQueryClient } from "@/lib/query-client";
+import { mapClasses } from "./classes";
 import {
 	classifyWriteFailure,
 	createKernelCommandBus,
@@ -21,6 +22,8 @@ import {
 	mapKernelSnapshot,
 	postKernelCommand,
 } from "./kernel";
+import { mapStudents } from "./students";
+import { mapSyllabi } from "./syllabus";
 
 // The real QueryClient brings the real reauth path with it; only the
 // auth-client transport (and its env dependency) is mocked away.
@@ -32,6 +35,7 @@ const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabDecks: [],
 	students: [
 		{
 			id: "st-1",
@@ -179,6 +183,7 @@ const snapshot: KernelSnapshot = {
 			date: "19/08",
 			type: "Gói buổi",
 			method: "—",
+			createdAt: "2026-08-01T00:00:00.000Z",
 		},
 	],
 	reports: [
@@ -208,6 +213,14 @@ const snapshot: KernelSnapshot = {
 
 describe("mapKernelSnapshot", () => {
 	const slice = mapKernelSnapshot(snapshot);
+
+	test("projects students, classes and syllabi exactly like their repos", () => {
+		// One projection per collection: the store and the repo hooks can never
+		// disagree about a student's package or a class roster.
+		expect(slice.students).toEqual(mapStudents(snapshot));
+		expect(slice.classes).toEqual(mapClasses(snapshot));
+		expect(slice.syllabi).toEqual(mapSyllabi(snapshot));
+	});
 
 	test("student pkg comes from the newest ACTIVE package only", () => {
 		const s1 = slice.students.find((s) => s.id === "st-1");
@@ -280,6 +293,7 @@ describe("mapKernelSnapshot", () => {
 				method: "—",
 				due: "2026-08-19",
 				note: "",
+				createdAt: Date.parse("2026-08-01T00:00:00.000Z"),
 			},
 		]);
 	});
@@ -447,7 +461,7 @@ describe("kernelCommand", () => {
 				totalLessons: 10,
 			},
 		});
-		expect(req.path).toBe("/api/syllabi");
+		expect(req.path).toBe("/api/syllabus-templates");
 		expect(req.body).not.toHaveProperty("id");
 	});
 
@@ -489,15 +503,15 @@ describe("kernelCommand", () => {
 		expect(
 			kernelCommand({
 				type: "edit-module",
-				syllabusId: "sy",
+				target: { kind: "template", syllabusId: "sy" },
 				moduleId: "m",
 				payload: { title: "T", description: "" },
 			}).path,
-		).toBe("/api/syllabi/sy/modules/m");
+		).toBe("/api/syllabus-templates/sy/modules/m");
 		expect(
 			kernelCommand({
 				type: "add-lesson",
-				syllabusId: "sy",
+				target: { kind: "template", syllabusId: "sy" },
 				moduleId: "m",
 				payload: {
 					title: "T",
@@ -506,52 +520,56 @@ describe("kernelCommand", () => {
 					status: "upcoming",
 				},
 			}).path,
-		).toBe("/api/syllabi/sy/modules/m/lessons");
+		).toBe("/api/syllabus-templates/sy/modules/m/lessons");
 		expect(
 			kernelCommand({
 				type: "edit-lesson",
-				syllabusId: "sy",
+				target: { kind: "template", syllabusId: "sy" },
 				moduleId: "m",
 				lessonId: "l",
 				payload: { title: "T", objectives: "", materials: "", status: "done" },
 			}).path,
-		).toBe("/api/syllabi/sy/modules/m/lessons/l");
+		).toBe("/api/syllabus-templates/sy/modules/m/lessons/l");
 	});
 
 	test("delete and reorder map to verb-sub-path POSTs with canonical bodies", () => {
 		const deletedModule = kernelCommand({
 			type: "delete-module",
-			syllabusId: "sy",
+			target: { kind: "template", syllabusId: "sy" },
 			moduleId: "m",
 		});
-		expect(deletedModule.path).toBe("/api/syllabi/sy/modules/m/remove");
+		expect(deletedModule.path).toBe(
+			"/api/syllabus-templates/sy/modules/m/remove",
+		);
 		expect(deletedModule.body).toEqual({});
 		const deletedLesson = kernelCommand({
 			type: "delete-lesson",
-			syllabusId: "sy",
+			target: { kind: "template", syllabusId: "sy" },
 			moduleId: "m",
 			lessonId: "l",
 		});
 		expect(deletedLesson.path).toBe(
-			"/api/syllabi/sy/modules/m/lessons/l/remove",
+			"/api/syllabus-templates/sy/modules/m/lessons/l/remove",
 		);
 		const reorderedModules = kernelCommand({
 			type: "reorder-modules",
-			syllabusId: "sy",
+			target: { kind: "template", syllabusId: "sy" },
 			moduleIds: ["m2", "m1"],
 		});
-		expect(reorderedModules.path).toBe("/api/syllabi/sy/modules/reorder");
+		expect(reorderedModules.path).toBe(
+			"/api/syllabus-templates/sy/modules/reorder",
+		);
 		expect(reorderModulesSchema.safeParse(reorderedModules.body).success).toBe(
 			true,
 		);
 		const reorderedLessons = kernelCommand({
 			type: "reorder-lessons",
-			syllabusId: "sy",
+			target: { kind: "template", syllabusId: "sy" },
 			moduleId: "m",
 			lessonIds: ["l2", "l1"],
 		});
 		expect(reorderedLessons.path).toBe(
-			"/api/syllabi/sy/modules/m/lessons/reorder",
+			"/api/syllabus-templates/sy/modules/m/lessons/reorder",
 		);
 		expect(reorderLessonsSchema.safeParse(reorderedLessons.body).success).toBe(
 			true,
@@ -560,14 +578,14 @@ describe("kernelCommand", () => {
 
 	test("import-syllabus, remove-curriculum and update-class-notes target the class subpath", () => {
 		const imported = kernelCommand({
-			type: "import-syllabus",
+			type: "import-curriculum",
 			classId: "c1",
 			templateId: "tpl1",
 		});
-		expect(imported.path).toBe("/api/classes/c1/import-syllabus");
+		expect(imported.path).toBe("/api/classes/c1/curriculum/import");
 		expect(imported.body).toEqual({ templateId: "tpl1" });
 		const removed = kernelCommand({ type: "remove-curriculum", classId: "c1" });
-		expect(removed.path).toBe("/api/classes/c1/remove-curriculum");
+		expect(removed.path).toBe("/api/classes/c1/curriculum/remove");
 		expect(removed.body).toEqual({});
 		expect(
 			kernelCommand({ type: "update-class-notes", classId: "c1", notes: "n" })
