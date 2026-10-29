@@ -216,20 +216,20 @@ export function generateScheduleLessons(input: {
 		? skeletonOf(parsed, startISO, input.sessionsTotal)
 		: null;
 	const dur = scheduleDurationMinutes(parsed);
-	const ordinalByDay = new Map<number, number>();
-	return Array.from({ length: input.sessionsTotal }, (_, i) => {
-		const day = (parsed.days[i % parsed.days.length] ?? 0) + 1;
-		let date: string | null = null;
-		if (skeleton) {
-			const ordinal = ordinalByDay.get(day) ?? 0;
-			date = skeleton.get(day)?.[ordinal] ?? null;
-			ordinalByDay.set(day, ordinal + 1);
-		}
+	const slots: Array<{ day: number; date: string | null }> = skeleton
+		? [...skeleton]
+				.flatMap(([day, dates]) => dates.map((date) => ({ day, date })))
+				.sort((a, b) => a.date.localeCompare(b.date))
+		: Array.from({ length: input.sessionsTotal }, (_, i) => ({
+				// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
+				day: (parsed.days[i % parsed.days.length] ?? 0) + 1,
+				date: null,
+			}));
+	return slots.map(({ day, date }) => {
 		return {
 			orgId: input.orgId,
 			classId: input.classId,
 			enrollmentId: input.enrollmentId,
-			// days is non-empty; ?? only satisfies noUncheckedIndexedAccess.
 			day,
 			time: parsed.start,
 			dur,
