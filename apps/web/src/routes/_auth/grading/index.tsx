@@ -26,6 +26,7 @@ import { inputCls } from "@/components/ui/field";
 import { PageHead } from "@/components/ui/page-head";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
+import { AI_ENABLED } from "@/lib/features";
 import { initialsFromName } from "@/lib/initials";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
@@ -534,11 +535,12 @@ export function GradingQueueRoute() {
 												) : (
 													<StatusTag tone="warn">Chờ chấm</StatusTag>
 												)}
-												{item.aiStatus !== null &&
+												{AI_ENABLED &&
+													item.aiStatus !== null &&
 													item.aiStatus !== undefined && (
 														<AiDraftStatusBadge status={item.aiStatus} />
 													)}
-												{item.aiGradingMode === "quick" && (
+												{AI_ENABLED && item.aiGradingMode === "quick" && (
 													<AiQuickGradeBadge />
 												)}
 											</div>,

@@ -70,6 +70,7 @@ export default defineConfig({
 			url: webSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
+				VITE_AI_ENABLED: "true",
 				E2E_API_PORT: String(apiPort),
 				E2E_WEB_PORT: String(webPort),
 			},

@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { SectionLabel } from "@/components/ui/section-label";
+import { AI_ENABLED } from "@/lib/features";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
@@ -381,7 +382,7 @@ export function GradingRoute() {
 					/>
 				</Card>
 				<div className="flex flex-col gap-6">
-					{draft !== null && (
+					{AI_ENABLED && draft !== null && (
 						<AiDraftPanel
 							draft={draft}
 							skill={data.skill}

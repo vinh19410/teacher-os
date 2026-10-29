@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import {
 	type CreditWallet,
 	EXAM_IMPORT_ERROR_CODES,
@@ -20,6 +25,7 @@ import { PageHead } from "@/components/ui/page-head";
 import { Progress } from "@/components/ui/progress";
 import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
+import { AI_ENABLED } from "@/lib/features";
 import { sha256Hex } from "@/lib/file-fingerprint";
 import {
 	createExamImport,
@@ -33,6 +39,11 @@ import {
 	saveExamImportDraft,
 } from "@/lib/repos/exam-imports";
 export const Route = createFileRoute("/_auth/assignments/tests/import")({
+	beforeLoad: () => {
+		if (!AI_ENABLED) {
+			throw redirect({ to: "/assignments/tests/new" });
+		}
+	},
 	validateSearch: (search: Record<string, unknown>): { job?: string } => {
 		const job = search.job;
 		return typeof job === "string" && job.length > 0 ? { job } : {};

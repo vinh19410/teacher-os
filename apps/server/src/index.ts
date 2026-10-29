@@ -8,12 +8,11 @@ import {
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db, type MediaStore } from "./app";
-import { createWorkersAiGrader } from "./lib/ai-grading/workers-ai-grader";
+import { createAiProviders } from "./lib/ai-gate";
 import {
 	type BankHubContext,
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
-import { createWorkersAiExtractor } from "./lib/exam-import/extractor";
 import { createR2MediaStore } from "./lib/r2-media-store";
 import { getSessionUser } from "./session";
 
@@ -128,14 +127,7 @@ export default buildApp({
 		examImportStore ??= createR2MediaStore(env.MEDIA);
 		return examImportStore;
 	},
-	// TOS-24 (#470): extractor Workers AI từ binding `AI` (alchemy biến
-	// `Cloudflare.Workers.AI()` thành handle `Ai`). Binding thiếu → undefined
-	// → route trả 503 EXAM_IMPORT_DISABLED (fail-closed như getMediaStore).
-	getExamExtractor: () =>
-		env.AI ? createWorkersAiExtractor(env.AI) : undefined,
-	// TOS-30 (#478): grader chấm nháp AI từ cùng binding `AI`. Thiếu →
-	// draft rơi `AI_GRADING_DISABLED` + hoàn Credit (fail-closed).
-	getAiGrader: () => (env.AI ? createWorkersAiGrader(env.AI) : undefined),
+	...createAiProviders(env),
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
