@@ -40,31 +40,31 @@ describe("projectClassSessions (issue #121)", () => {
 		});
 	});
 
-	test("two-day schedule, odd total: extra occurrence on the array's first day", () => {
+	test("two-day schedule, odd total: the extra occurrence follows the calendar from startDate", () => {
 		const sessions = projectClassSessions({
 			schedule: '{"days":[2,4],"start":"19:00","end":"20:30"}',
 			startDate: QC_START,
 			sessionsTotal: 5,
 		});
-		// days 0-6 Mon-first: [2,4] = Wed & Fri. Wed×3 / Fri×2 — Wed is first
-		// in the deduped+sorted array, and the first Fri is the startDate.
+		// days 0-6 Mon-first: [2,4] = Wed & Fri. startDate is a Friday, so the
+		// first 5 scheduled days are Fri×3 / Wed×2.
 		expect(datesOf(sessions as ClassSession[])).toEqual([
 			"2026-08-28",
 			"2026-09-02",
 			"2026-09-04",
 			"2026-09-09",
-			"2026-09-16",
+			"2026-09-11",
 		]);
 		expect(
-			(sessions as ClassSession[]).filter((s) => s.day === 3),
+			(sessions as ClassSession[]).filter((s) => s.day === 5),
 		).toHaveLength(3);
 		expect(
-			(sessions as ClassSession[]).filter((s) => s.day === 5),
+			(sessions as ClassSession[]).filter((s) => s.day === 3),
 		).toHaveLength(2);
 		// Per-weekday slot ordinals restart at 1.
 		expect(
 			(sessions as ClassSession[])
-				.filter((s) => s.day === 3)
+				.filter((s) => s.day === 5)
 				.map((s) => s.slotIndex),
 		).toEqual([1, 2, 3]);
 	});
@@ -75,9 +75,8 @@ describe("projectClassSessions (issue #121)", () => {
 			startDate: QC_START,
 			sessionsTotal: 7,
 		});
-		// Wed×4 / Fri×3 — literal dates pinned against the server generator.
-		// The extra occurrence goes to Wed (first day), so the course tail is
-		// the 4th Wednesday (23/09), not the 4th Friday.
+		// Fri×4 / Wed×3 — the first 7 scheduled days from the Friday start, so
+		// the course tail is the 4th Friday (18/09).
 		expect(datesOf(sessions as ClassSession[])).toEqual([
 			"2026-08-28",
 			"2026-09-02",
@@ -85,7 +84,7 @@ describe("projectClassSessions (issue #121)", () => {
 			"2026-09-09",
 			"2026-09-11",
 			"2026-09-16",
-			"2026-09-23",
+			"2026-09-18",
 		]);
 	});
 
