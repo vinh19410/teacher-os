@@ -127,9 +127,6 @@ export default buildApp({
 		examImportStore ??= createR2MediaStore(env.MEDIA);
 		return examImportStore;
 	},
-	// Extractor và grader Workers AI chỉ có khi AI_ENABLED === "true" (prod mặc
-	// định tắt) và binding AI tồn tại. Ngược lại route trả 503
-	// EXAM_IMPORT_DISABLED, draft rơi AI_GRADING_DISABLED + hoàn Credit.
 	...createAiProviders(env),
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),

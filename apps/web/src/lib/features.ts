@@ -6,5 +6,4 @@ import { env } from "@teacher-os/env/web";
  */
 export const PARENT_REPORTS_ENABLED = false;
 
-/** Cùng cờ với `AI_ENABLED` phía server; tắt thì ẩn mọi điểm vào AI. */
 export const AI_ENABLED = env.VITE_AI_ENABLED === "true";

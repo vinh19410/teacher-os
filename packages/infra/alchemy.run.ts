@@ -115,9 +115,6 @@ if (topology && adminOriginsEnv !== undefined) {
 	}
 }
 
-// Cờ duy nhất cho tính năng AI (nhập đề, chấm nháp): mặc định tắt, chỉ chuỗi
-// "true" mới bật. Cùng một giá trị đi vào server (AI_ENABLED) và build web
-// (VITE_AI_ENABLED) để hai phía không lệch nhau.
 const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
 	Config.withDefault("false"),
 );
