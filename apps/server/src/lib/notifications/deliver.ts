@@ -161,9 +161,10 @@ export async function deliverNotifications(
 			if (!row.channels.includes("email")) continue;
 			if (!row.recipientEmail) continue;
 
-			const linkUrl = row.linkPath
-				? `${studentOrigin}${row.linkPath}`
-				: studentOrigin;
+			const linkUrl =
+				studentOrigin && row.linkPath
+					? `${studentOrigin}${row.linkPath}`
+					: studentOrigin;
 			try {
 				await mailer.send({
 					to: row.recipientEmail,

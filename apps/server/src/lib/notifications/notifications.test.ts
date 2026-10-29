@@ -248,6 +248,38 @@ describe("notifications service (#454 phase 2)", () => {
 		);
 	});
 
+	test("không có studentOrigin (cổng học viên tắt) → thư gửi đi không kèm link", async () => {
+		await seedOrg("org-5c", "Academy Five C");
+		await seedStudent("org-5c", "stu-5c", "stu5c@example.com");
+		const { createdIds } = await enqueueNotifications(db, "org-5c", [
+			{
+				studentId: "stu-5c",
+				eventType: "invoice_issued",
+				idempotencyKey: "invoice_issued:inv-5c",
+				title: "Hóa đơn học phí",
+				body: "Hóa đơn đã phát hành.",
+				linkPath: "/tuition",
+				refType: "invoice",
+				refId: "inv-5c",
+			},
+		]);
+
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		await deliverNotifications(
+			db,
+			fakeMailer(async (input) => {
+				sentInputs.push(input);
+			}),
+			createdIds,
+		);
+
+		const sentInput = sentInputs.at(0);
+		if (!sentInput) throw new Error("mailer was not called");
+		expect(sentInput.text).toBe("Hóa đơn đã phát hành.");
+		expect(sentInput.html).not.toContain("<a ");
+		expect(sentInput.html).not.toContain("/tuition");
+	});
+
 	test("mailer luôn ném lỗi → thử đủ 3 lượt rồi chuyển failed kèm E-selfomy-alignment-010, redact secret và cắt ≤ 500 ký tự", async () => {
 		await seedOrg("org-6", "Academy Six");
 		await seedStudent("org-6", "stu-6", "stu6@example.com");

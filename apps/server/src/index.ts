@@ -161,6 +161,9 @@ export default buildApp({
 	},
 	// Plan TOS-21 (#454): origin cổng học viên đầu tiên cho link tuyệt đối
 	// trong email — env STUDENT_ORIGINS là chuỗi thô nên parse ở đây.
-	studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0],
+	studentOrigin:
+		env.STUDENT_PORTAL_ENABLED === "true"
+			? parseCORSOrigins(env.STUDENT_ORIGINS)[0]
+			: undefined,
 	runInBackground: (promise) => waitUntil(promise),
 });

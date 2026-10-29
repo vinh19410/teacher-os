@@ -124,3 +124,26 @@ export function resolveAssumeEmailVerified(
 	}
 	return enabled;
 }
+
+/** STUDENT_PORTAL_ENABLED: on a domain topology the portal ships only when the
+ * operator opts in (staging does, prod does not). Without APP_DOMAIN (local
+ * dev, e2e) the portal always runs. */
+export function resolveStudentPortalEnabled(
+	flag: string | undefined,
+	appDomain: string | undefined,
+): boolean {
+	if (!appDomain?.trim()) return true;
+	return flag === "true";
+}
+
+/** Exposure props for the student Worker. Portal off keeps the Worker but
+ * gives it no domain and no workers.dev URL, so nothing public serves it. */
+export function studentWorkerExposure(
+	topology: DomainTopology | undefined,
+	portalEnabled: boolean,
+) {
+	if (!topology) return {};
+	return portalEnabled
+		? { domain: { name: topology.studentHost }, workersDev: false }
+		: { workersDev: false };
+}

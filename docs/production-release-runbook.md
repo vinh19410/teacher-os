@@ -17,7 +17,7 @@ environment — never editing this runbook.
 | --- | --- | --- |
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
-| Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
+| Student portal origin | `https://student.<domain>` **only when `STUDENT_PORTAL_ENABLED=true`** (default off with `APP_DOMAIN` set; staging sets it in `deploy-staging.yml`) | Website.Vite (student) `domain: studentHost` via `studentWorkerExposure` in `packages/infra/src/topology.ts`. Off = the Worker still deploys but has no domain and no workers.dev URL, and student emails carry no portal link |
 | Admin console origin | `https://admin.<domain>` | Website.Vite (admin) `domain: adminHost` from `packages/infra/src/topology.ts` (plan #413) |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
 | `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |

@@ -6,6 +6,8 @@ import * as Effect from "effect/Effect";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveStudentPortalEnabled,
+	studentWorkerExposure,
 } from "./src/topology.ts";
 
 config({ path: "./.env" });
@@ -139,6 +141,13 @@ const assumeEmailVerified = resolveAssumeEmailVerified(
 	process.env.APP_DOMAIN,
 );
 
+// Cổng học viên tạm ẩn trên prod: bật bằng STUDENT_PORTAL_ENABLED=true khi
+// có APP_DOMAIN (staging bật); dev không APP_DOMAIN luôn chạy cổng.
+const studentPortalEnabled = resolveStudentPortalEnabled(
+	process.env.STUDENT_PORTAL_ENABLED,
+	process.env.APP_DOMAIN,
+);
+
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
 });
@@ -171,6 +180,7 @@ export const server = Cloudflare.Worker("server", {
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,
 		ADMIN_EMAILS: adminEmailsConfig,
+		STUDENT_PORTAL_ENABLED: studentPortalEnabled ? "true" : "",
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
@@ -287,12 +297,7 @@ export default Alchemy.Stack(
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "none",
 			},
-			...(topology && {
-				domain: {
-					name: topology.studentHost,
-				},
-				workersDev: false,
-			}),
+			...studentWorkerExposure(topology, studentPortalEnabled),
 			env: {
 				VITE_SERVER_URL: topology
 					? topology.apiOrigin

@@ -3,6 +3,8 @@ import {
 	PROD_APP_DOMAIN,
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveStudentPortalEnabled,
+	studentWorkerExposure,
 } from "./topology";
 
 describe("resolveDomainTopology", () => {
@@ -127,6 +129,42 @@ describe("admin host (plan #413 phase 1)", () => {
 		const t = resolveDomainTopology("teacher-os.edu.vn");
 		expect(t.adminHost).toBe("admin.teacher-os.edu.vn");
 		expect(t.adminOrigin).toBe("https://admin.teacher-os.edu.vn");
+	});
+});
+
+describe("student portal exposure", () => {
+	const prod = resolveDomainTopology(PROD_APP_DOMAIN);
+
+	test("prod defaults to portal off, so the student Worker gets no domain and no workers.dev URL", () => {
+		const enabled = resolveStudentPortalEnabled(undefined, PROD_APP_DOMAIN);
+		expect(enabled).toBe(false);
+		expect(studentWorkerExposure(prod, enabled)).toEqual({
+			workersDev: false,
+		});
+	});
+
+	test("anything but the literal true keeps the portal off on a domain topology", () => {
+		for (const flag of ["", "false", "TRUE", "1", " true"]) {
+			expect(resolveStudentPortalEnabled(flag, PROD_APP_DOMAIN)).toBe(false);
+		}
+	});
+
+	test("staging opt-in attaches student.<domain> as before", () => {
+		const staging = resolveDomainTopology("staging.teacheros.io.vn");
+		const enabled = resolveStudentPortalEnabled(
+			"true",
+			"staging.teacheros.io.vn",
+		);
+		expect(studentWorkerExposure(staging, enabled)).toEqual({
+			domain: { name: "student.staging.teacheros.io.vn" },
+			workersDev: false,
+		});
+	});
+
+	test("local dev without APP_DOMAIN always runs the portal and sets no exposure props", () => {
+		expect(resolveStudentPortalEnabled(undefined, undefined)).toBe(true);
+		expect(resolveStudentPortalEnabled("false", "")).toBe(true);
+		expect(studentWorkerExposure(undefined, true)).toEqual({});
 	});
 });
 

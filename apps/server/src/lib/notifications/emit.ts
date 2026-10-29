@@ -12,7 +12,7 @@ export interface NotificationDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 	/**
 	 * Origin cổng học viên cho link tuyệt đối trong thư (#454). Vắng mặt →
-	 * link tương đối (test node). `env.STUDENT_ORIGINS` là chuỗi thô nên do
+	 * thư không kèm link (cổng học viên tắt, test node). `env.STUDENT_ORIGINS` là chuỗi thô nên do
 	 * caller parse (`parseCORSOrigins(...)[0]`), deliver không tự đọc env.
 	 */
 	studentOrigin?: string;
