@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-10-29
+
+### Fixed
+- `/readyz` trả 503 `{"ok":false}` trên D1 dù database đã migrate đủ: probe trong `apps/server/src/routes/readiness.ts` truyền mỗi bảng/index một tham số (~132 tham số), vượt giới hạn 100 tham số mỗi câu lệnh của Cloudflare D1 nên D1 từ chối query. Danh sách tên giờ đi trong **một** tham số JSON (`name IN (SELECT value FROM json_each(?))`), hành vi kiểm tra giữ nguyên; thêm test chặn probe vượt 100 tham số (libsql in-memory dùng trong test không có giới hạn này).
+
 ## 2026-10-28
 
 ### CI/Infra
