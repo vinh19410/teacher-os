@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { resolveDomainTopology } from "./topology";
+import { describe, expect, it, test } from "vitest";
+import {
+	PROD_APP_DOMAIN,
+	resolveAssumeEmailVerified,
+	resolveDomainTopology,
+} from "./topology";
 
 describe("resolveDomainTopology", () => {
 	it("derives the exact app/api origins for a bare domain", () => {
@@ -123,5 +127,20 @@ describe("admin host (plan #413 phase 1)", () => {
 		const t = resolveDomainTopology("teacher-os.edu.vn");
 		expect(t.adminHost).toBe("admin.teacher-os.edu.vn");
 		expect(t.adminOrigin).toBe("https://admin.teacher-os.edu.vn");
+	});
+});
+
+describe("resolveAssumeEmailVerified", () => {
+	test("throws when enabled on the prod domain", () => {
+		expect(() => resolveAssumeEmailVerified("true", PROD_APP_DOMAIN)).toThrow(
+			/never be enabled on production/,
+		);
+	});
+
+	test("enabled on staging, off by default", () => {
+		expect(resolveAssumeEmailVerified("true", "staging.teacheros.io.vn")).toBe(
+			true,
+		);
+		expect(resolveAssumeEmailVerified(undefined, PROD_APP_DOMAIN)).toBe(false);
 	});
 });

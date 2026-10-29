@@ -17,10 +17,13 @@ export type { Auth };
  * Returns null when there is no valid session; callers decide 401 vs skip.
  * The caller owns the auth instance so tests and the E2E boot shim can share
  * one instance instead of the old construct-per-request behavior.
+ * `assumeEmailVerified` (staging QA only, infra blocks it on prod) reports
+ * every user as verified, including accounts created before the flag.
  */
 export async function getSessionUser(
 	auth: Auth,
 	headers: Headers,
+	assumeEmailVerified = false,
 ): Promise<SessionUser | null> {
 	const session = await auth.api.getSession({ headers });
 	if (!session?.user) {
@@ -30,7 +33,7 @@ export async function getSessionUser(
 		userId: session.user.id,
 		userName: session.user.name,
 		email: session.user.email,
-		emailVerified: Boolean(session.user.emailVerified),
+		emailVerified: assumeEmailVerified || Boolean(session.user.emailVerified),
 		role: resolveUserRole((session.user as { role?: string | null }).role),
 	};
 }

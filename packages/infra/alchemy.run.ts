@@ -3,7 +3,10 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import { config } from "dotenv";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import { resolveDomainTopology } from "./src/topology.ts";
+import {
+	resolveAssumeEmailVerified,
+	resolveDomainTopology,
+} from "./src/topology.ts";
 
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
@@ -129,6 +132,13 @@ const adminEmailsConfig = Config.string("ADMIN_EMAILS").pipe(
 	Config.withDefault(""),
 );
 
+// Staging QA: coi mọi tài khoản là đã xác minh email, vì staging không
+// gửi mail. Chặn cứng trên prod để cờ không thể lọt sang môi trường thật.
+const assumeEmailVerified = resolveAssumeEmailVerified(
+	process.env.AUTH_ASSUME_EMAIL_VERIFIED,
+	process.env.APP_DOMAIN,
+);
+
 export const db = Cloudflare.D1.Database("database", {
 	migrationsDir: "../../packages/db/src/migrations",
 });
@@ -171,6 +181,7 @@ export const server = Cloudflare.Worker("server", {
 			: "",
 		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
+		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
 		MAILER_IMPL: Config.string("MAILER_IMPL").pipe(Config.withDefault("log")),
 		MAIL_FROM: Config.string("MAIL_FROM").pipe(
 			Config.withDefault("TeacherOS <onboarding@resend.dev>"),
