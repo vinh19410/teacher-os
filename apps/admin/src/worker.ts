@@ -106,9 +106,12 @@ export default {
 		const isGetOrHead = request.method === "GET" || request.method === "HEAD";
 		const accept = request.headers.get("accept") ?? "";
 		if (isGetOrHead && accept.includes("text/html") && env.ASSETS) {
-			const indexUrl = new URL("/index.html", request.url);
+			// Fetch `/`, not `/index.html`: with htmlHandling "auto-trailing-slash"
+			// the asset layer answers `/index.html` with a 307 to `/`, which bounced
+			// every deep link to the home page (#489). Conditional headers are
+			// dropped so the shell can never come back as an empty 304.
 			const indexRes = await env.ASSETS.fetch(
-				new Request(indexUrl.toString(), request),
+				new Request(new URL("/", request.url), { method: request.method }),
 			);
 			const response = new Response(indexRes.body, indexRes);
 			applySecurityHeaders(response.headers);
