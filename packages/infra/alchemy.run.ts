@@ -262,6 +262,7 @@ export default Alchemy.Stack(
 				VITE_SERVER_URL: topology
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
+				VITE_STUDENT_PORTAL_ENABLED: String(studentPortalEnabled),
 			},
 			dev: {
 				port: 8001,

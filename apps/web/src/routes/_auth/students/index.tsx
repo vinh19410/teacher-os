@@ -18,6 +18,7 @@ import { classMeta } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import { usePendingInvitations } from "@/lib/repos/invitations";
 import { useStudents } from "@/lib/repos/use-students";
+import { STUDENT_PORTAL_ENABLED } from "@/lib/student-portal";
 
 export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
@@ -42,9 +43,9 @@ export function StudentsRoute() {
 	);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
-	const pendingInvites = (invitations ?? []).filter(
-		(inv) => inv.status === "pending",
-	);
+	const pendingInvites = STUDENT_PORTAL_ENABLED
+		? (invitations ?? []).filter((inv) => inv.status === "pending")
+		: [];
 	const unpaidStudentIds = new Set(
 		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
 	);
@@ -67,44 +68,52 @@ export function StudentsRoute() {
 	return (
 		<div>
 			<PageHead
-				kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
+				kicker={
+					STUDENT_PORTAL_ENABLED
+						? `${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`
+						: `${students.length} học viên đang học`
+				}
 				title="Học viên"
 				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				action={
-					<Button
-						onClick={() => setInviteModalOpen(true)}
-						className="self-start sm:self-center"
-					>
-						<UserPlus className="h-4 w-4" />
-						Mời học viên
-					</Button>
+					STUDENT_PORTAL_ENABLED && (
+						<Button
+							onClick={() => setInviteModalOpen(true)}
+							className="self-start sm:self-center"
+						>
+							<UserPlus className="h-4 w-4" />
+							Mời học viên
+						</Button>
+					)
 				}
 			/>
 
 			<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-				<Tabs
-					tabs={[
-						{
-							id: "students",
-							label: `Học viên (${students.length})`,
-						},
-						{
-							id: "invitations",
-							label:
-								pendingInvites.length > 0
-									? `Lời mời đang chờ (${pendingInvites.length})`
-									: "Lời mời đang chờ",
-						},
-					]}
-					active={activeTab}
-					onChange={(id) => setActiveTab(id as "students" | "invitations")}
-				/>
+				{STUDENT_PORTAL_ENABLED && (
+					<Tabs
+						tabs={[
+							{
+								id: "students",
+								label: `Học viên (${students.length})`,
+							},
+							{
+								id: "invitations",
+								label:
+									pendingInvites.length > 0
+										? `Lời mời đang chờ (${pendingInvites.length})`
+										: "Lời mời đang chờ",
+							},
+						]}
+						active={activeTab}
+						onChange={(id) => setActiveTab(id as "students" | "invitations")}
+					/>
+				)}
 				{activeTab === "students" && (
 					<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 				)}
 			</div>
 
-			{activeTab === "invitations" ? (
+			{STUDENT_PORTAL_ENABLED && activeTab === "invitations" ? (
 				<PendingInvitationsList
 					onInviteClick={() => setInviteModalOpen(true)}
 				/>
@@ -116,9 +125,9 @@ export function StudentsRoute() {
 				>
 					<h2 className="font-semibold text-lg">Chưa có học viên nào</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						Học viên sẽ tự xuất hiện tại đây khi đăng ký và đăng nhập student
-						portal lần đầu. Giáo viên có thể thêm học viên vào lớp từ trang chi
-						tiết lớp học.
+						{STUDENT_PORTAL_ENABLED
+							? "Học viên sẽ tự xuất hiện tại đây khi đăng ký và đăng nhập student portal lần đầu. Giáo viên có thể thêm học viên vào lớp từ trang chi tiết lớp học."
+							: "Chưa có học viên nào trong tổ chức."}
 					</p>
 				</Card>
 			) : list.length === 0 ? (
@@ -188,10 +197,12 @@ export function StudentsRoute() {
 				</Card>
 			)}
 
-			<InviteStudentModal
-				open={inviteModalOpen}
-				onClose={() => setInviteModalOpen(false)}
-			/>
+			{STUDENT_PORTAL_ENABLED && (
+				<InviteStudentModal
+					open={inviteModalOpen}
+					onClose={() => setInviteModalOpen(false)}
+				/>
+			)}
 		</div>
 	);
 }

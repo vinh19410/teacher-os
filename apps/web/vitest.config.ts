@@ -8,6 +8,7 @@ import { defineConfig } from "vitest/config";
 // into import.meta.env before any test module is imported. Suites that care
 // pass an explicit baseUrl and never read the value.
 process.env.VITE_SERVER_URL ??= "http://localhost:8000";
+process.env.VITE_STUDENT_PORTAL_ENABLED ??= "true";
 
 const rootPkg = JSON.parse(
 	await fs.readFile(

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
+import { STUDENT_PORTAL_ENABLED } from "@/lib/student-portal";
 import { VocabDeckEditorDialog } from "./vocab-deck-editor";
 import { VocabLibraryDialog } from "./vocab-library-dialog";
 import { VocabSuggestDialog } from "./vocab-suggest-dialog";
@@ -246,7 +247,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				<p className="text-muted-foreground text-sm">
 					{isHubMode
 						? "Bộ từ vựng độc lập thuộc trung tâm — bạn có thể gợi ý cho từng học viên bất kỳ lúc nào."
-						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
+						: STUDENT_PORTAL_ENABLED
+							? "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."
+							: "Bộ từ vựng này thuộc về lớp."}
 				</p>
 				<Input
 					value={newTitle}

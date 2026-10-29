@@ -316,3 +316,36 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 		).toContain("4");
 	});
 });
+
+describe("VocabDeckList create-deck copy by student portal flag", () => {
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	});
+
+	async function openClassCreateDialog(portal: "true" | "false") {
+		vi.stubEnv("VITE_STUDENT_PORTAL_ENABLED", portal);
+		vi.resetModules();
+		const { VocabDeckList: List } = await import("./vocab-deck-list");
+		const harness = await import("@/test/kernel-harness");
+		harness.startKernelServer(
+			harness.snapshotFixture({
+				classes: [harness.classRow({ id: "cl-1", name: "IELTS 6.5" })],
+			}),
+		);
+		harness.renderWithKernel(<List classId="cl-1" />);
+		fireEvent.click(await screen.findByRole("button", { name: "Tạo bộ từ" }));
+	}
+
+	it("mentions the student portal while it is on", async () => {
+		await openClassCreateDialog("true");
+		expect(screen.getByText(/trên cổng học viên/)).toBeDefined();
+	});
+
+	it("drops the student portal mention while it is hidden", async () => {
+		await openClassCreateDialog("false");
+		expect(screen.queryByText(/cổng học viên/)).toBeNull();
+		expect(screen.getByText("Bộ từ vựng này thuộc về lớp.")).toBeDefined();
+	});
+});
