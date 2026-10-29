@@ -109,3 +109,18 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		landingAliases: [`www.${domain}`],
 	};
 }
+
+/** Staging QA flag AUTH_ASSUME_EMAIL_VERIFIED. Throws on the prod domain so
+ * the flag can never weaken email verification in production. */
+export function resolveAssumeEmailVerified(
+	flag: string | undefined,
+	appDomain: string | undefined,
+): boolean {
+	const enabled = flag === "true";
+	if (enabled && appDomain?.trim() === PROD_APP_DOMAIN) {
+		throw new Error(
+			"AUTH_ASSUME_EMAIL_VERIFIED must never be enabled on production",
+		);
+	}
+	return enabled;
+}

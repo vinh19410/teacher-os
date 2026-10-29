@@ -90,7 +90,6 @@ const getAuth = (): Auth => {
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 			mailer,
 			runInBackground: (promise) => waitUntil(promise),
-			autoVerifyEmail: env.AUTO_VERIFY_EMAIL === "true",
 		});
 	}
 	return auth;
@@ -99,7 +98,12 @@ const getAuth = (): Auth => {
 export default buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
-	getSessionUser: (headers) => getSessionUser(getAuth(), headers),
+	getSessionUser: (headers) =>
+		getSessionUser(
+			getAuth(),
+			headers,
+			env.AUTH_ASSUME_EMAIL_VERIFIED === "true",
+		),
 	authHandler: (req) => getAuth().handler(req),
 	// Binding MEDIA thiếu (deploy chưa tạo bucket) → undefined → route 503,
 	// không phải TypeError 500.
