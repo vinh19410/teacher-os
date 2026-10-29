@@ -31,18 +31,12 @@
 			"!**/packages/db/src/migrations/meta",
 			"!**/playwright-report",
 			"!**/test-results",
-			"!docs/diagrams",
 			"!**/.mail-preview",
 			"!**/.cache/design-v2",
 			"!**/apps/landing/public",
 			"!**/packages/api/src/srs/vectors",
 			"!assets/videos",
-			"!plans/reports/**/*.html",
-			"!docs/*/test/e2e",
-			"!docs/*/test/testcases/preview.html",
-			"!docs/*/test/testcases/data.js",
-			"!docs/*/test/checklist/preview.html",
-			"!docs/*/test/checklist/data.js"
+			"!plans/reports/**/*.html"
 		]
 	},
 	"formatter": {

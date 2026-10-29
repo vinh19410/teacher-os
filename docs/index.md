@@ -10,4 +10,3 @@ Start here if you need the current project contract or the owning code paths.
 - [System Architecture](./system-architecture.md) - current runtime shape and request flow
 - [Codebase Summary](./codebase-summary.md) - navigation map to the main source owners
 - [Production Release Runbook](./production-release-runbook.md) - operator procedure for production deploys, verification, rollback, and support
-- [SRS Spec](./srs-spec.md) - vocabulary spaced-repetition contract (5 memory levels, minigames, Learn/Review) — engine conformance vectors at `packages/api/src/srs/vectors/` (#359)
