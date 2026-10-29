@@ -259,6 +259,14 @@ export function parseQuizQuestions(
 					alts: typeof record.alts === "string" ? record.alts : "",
 					type: typeof record.type === "string" ? record.type : null,
 					pin: parsePin(record.pin),
+					// #358: forward giải thích (soạn từ #423) như `type`/`pin` —
+					// thiếu dòng này thì snapshot lúc start strip mất field và
+					// review không bao giờ thấy. Take payload whitelist
+					// stem/opts/type/pin nên explanation không lộ trước khi nộp.
+					...(typeof record.explanation === "string" &&
+					record.explanation.trim().length > 0
+						? { explanation: record.explanation }
+						: {}),
 				},
 			];
 		});
@@ -266,6 +274,29 @@ export function parseQuizQuestions(
 		console.warn(`[student] invalid quiz questions JSON for ${rowId}`);
 		return [];
 	}
+}
+
+/** #358 — attempt start TRƯỚC khi parser forward `explanation` có snapshot
+ * không mang giải thích. Fallback đọc giải thích từ đề hiện hành, nhưng CHỈ
+ * khi đề chưa đổi so với snapshot: cùng số câu và từng câu trùng stem +
+ * answer — đề đã sửa (thêm/bớt/đổi câu) thì bỏ fallback, không gắn giải
+ * thích lệch câu. Câu snapshot đã có giải thích giữ nguyên. */
+export function fillExplanationsFromCurrent(
+	snapshot: AssignmentQuestion[],
+	current: AssignmentQuestion[],
+): AssignmentQuestion[] {
+	if (snapshot.length !== current.length) return snapshot;
+	const aligned = snapshot.every(
+		(question, index) =>
+			question.stem === current[index]?.stem &&
+			question.answer === current[index]?.answer,
+	);
+	if (!aligned) return snapshot;
+	return snapshot.map((question, index) => {
+		if (question.explanation) return question;
+		const explanation = current[index]?.explanation;
+		return explanation ? { ...question, explanation } : question;
+	});
 }
 
 /** answers JSON `{"<qIndex>":"<value>"}` → guarded record (corrupt → {}).
@@ -1934,6 +1965,65 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		};
 	};
 
+	/**
+	 * #358 — questions của đề HIỆN HÀNH cho fallback giải thích (attempt start
+	 * trước khi snapshot giữ explanation). Assignment: prompt của lượt giao;
+	 * tự luyện: gộp questions mọi part theo position, cùng thứ tự snapshot
+	 * (`buildMergedQuestions`). Org predicate trên mọi bảng. Đề đã xoá → [].
+	 */
+	const loadCurrentQuestionsForAttempt = async (
+		attempt: typeof quizAttempt.$inferSelect,
+		orgId: string,
+	): Promise<AssignmentQuestion[]> => {
+		const db = deps.getDb();
+		if (attempt.mode === "practice") {
+			if (!attempt.testId) return [];
+			const rows = await db
+				.select({
+					id: assignmentPrompt.id,
+					questions: assignmentPrompt.questions,
+				})
+				.from(assignmentTestPart)
+				.innerJoin(
+					assignmentTest,
+					and(
+						eq(assignmentTest.id, assignmentTestPart.testId),
+						eq(assignmentTest.orgId, orgId),
+					),
+				)
+				.innerJoin(
+					assignmentPrompt,
+					and(
+						eq(assignmentPrompt.id, assignmentTestPart.promptId),
+						eq(assignmentPrompt.orgId, orgId),
+					),
+				)
+				.where(eq(assignmentTestPart.testId, attempt.testId))
+				.orderBy(asc(assignmentTestPart.position));
+			return rows.flatMap((row) => parseQuizQuestions(row.questions, row.id));
+		}
+		const [row] = await db
+			.select({
+				id: assignmentPrompt.id,
+				questions: assignmentPrompt.questions,
+			})
+			.from(classAssignment)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, attempt.assignmentId ?? ""),
+					eq(classAssignment.orgId, orgId),
+				),
+			);
+		return row ? parseQuizQuestions(row.questions, row.id) : [];
+	};
+
 	/** GET /api/student/attempts/:attemptId — summary sau nộp (409 in_progress). */
 	router.get("/attempts/:attemptId", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
@@ -2033,6 +2123,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			skill,
 		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
+		// #358: snapshot cũ (start trước khi parser forward explanation) không
+		// có câu nào mang giải thích → thử fallback đề hiện hành (chỉ khi đề
+		// chưa đổi). Route này đã gate 409 in_progress ở loader nên giải thích
+		// — như key/alts — chỉ xuống wire sau nộp.
+		const reviewQuestions = questions.some((question) => question.explanation)
+			? questions
+			: fillExplanationsFromCurrent(
+					questions,
+					await loadCurrentQuestionsForAttempt(attempt, orgId),
+				);
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			// Tự luyện không có lượt giao — chuỗi rỗng; cặp practice/testId bên
@@ -2051,7 +2151,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			essay: skill === "writing" ? essayToPlain(attempt.essay).text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
-			questions: questions.map((question, index) => {
+			questions: reviewQuestions.map((question, index) => {
 				const given = answers[String(index)];
 				return {
 					stem: question.stem,
@@ -2064,6 +2164,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					alts: question.alts,
 					verdict: grade.verdicts[index] ?? "skipped",
 					answer: given !== undefined && given.trim().length > 0 ? given : null,
+					// CHỈ thêm key khi câu có giải thích — câu/đề cũ giữ shape.
+					...(question.explanation
+						? { explanation: question.explanation }
+						: {}),
 				};
 			}),
 		};

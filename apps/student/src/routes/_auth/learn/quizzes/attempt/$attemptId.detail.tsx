@@ -119,6 +119,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 						alts: question.alts,
 						answer: question.answer,
 						note: attempt.note,
+						// #358: giải thích riêng của câu (chỉ có sau nộp) — review
+						// item ưu tiên field này, fallback note chung của đề.
+						...(question.explanation
+							? { explanation: question.explanation }
+							: {}),
 					},
 				]),
 			),

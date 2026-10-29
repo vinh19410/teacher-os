@@ -7,6 +7,7 @@ import {
 	type QuizReviewInfo,
 	QuizReviewItem,
 	quizReviewChipText,
+	quizReviewExplanation,
 } from "@teacher-os/ui/components/quiz/quiz-review-item";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -160,6 +161,52 @@ describe("QuizReviewItem — disclosure Giải thích (note snapshot)", () => {
 			<QuizReviewItem info={reviewInfo({ note: "  " })} />,
 		);
 		expect(html).not.toContain("Giải thích");
+	});
+});
+
+describe("QuizReviewItem — giải thích riêng từng câu (#358)", () => {
+	it("explanation câu được ưu tiên hơn note chung của đề", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({
+					explanation: "<p>Đoạn 2 nêu rõ <strong>Paris</strong>.</p>",
+					note: "Ghi chú chung của đề",
+				})}
+			/>,
+		);
+		expect(html).toContain('data-testid="quiz-review-explanation"');
+		expect(html).toContain('data-source="question"');
+		expect(html).toContain("Giải thích");
+		expect(html).toContain("Đoạn 2 nêu rõ");
+		expect(html).not.toContain("Ghi chú chung của đề");
+		// Disclosure native <details>/<summary> — bàn phím + screen reader sẵn.
+		expect(html).toMatch(/<details[^>]*>\s*<summary/);
+	});
+
+	it("explanation chỉ khoảng trắng → fallback note", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ explanation: "   ", note: "Ghi chú chung" })}
+			/>,
+		);
+		expect(html).toContain('data-source="note"');
+		expect(html).toContain("Ghi chú chung");
+	});
+
+	it("cả explanation lẫn note rỗng → không render disclosure", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem info={reviewInfo({ explanation: " ", note: "" })} />,
+		);
+		expect(html).not.toContain("quiz-review-explanation");
+		expect(html).not.toContain("Giải thích");
+	});
+
+	it("quizReviewExplanation — explanation → note → null", () => {
+		expect(
+			quizReviewExplanation(reviewInfo({ explanation: " e ", note: "n" })),
+		).toBe("e");
+		expect(quizReviewExplanation(reviewInfo({ note: " n " }))).toBe("n");
+		expect(quizReviewExplanation(reviewInfo({ note: " " }))).toBeNull();
 	});
 });
 

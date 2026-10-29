@@ -1,4 +1,5 @@
 import type { QuizVerdict } from "@teacher-os/api/contracts";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import {
 	VERDICT_CHIP_CLASSES,
 	VerdictIcon,
@@ -14,8 +15,23 @@ export interface QuizReviewInfo {
 	alts: string;
 	/** Đáp án học viên — null = bỏ qua. */
 	answer: string | null;
-	/** Giải thích của đề — withhold ở take, chỉ reveal ở detail. */
+	/** Ghi chú chung của đề — withhold ở take, chỉ reveal ở detail. Là
+	 * fallback "Giải thích" khi câu không có `explanation` riêng. */
 	note: string;
+	/** Giải thích đáp án riêng của câu (rich text, #358) — chỉ có ở detail
+	 * sau nộp. Ưu tiên hơn `note`. */
+	explanation?: string;
+}
+
+/** Nội dung disclosure "Giải thích": giải thích riêng của câu (#358) nếu có,
+ * không thì note chung của đề (hành vi cũ); rỗng → null (ẩn disclosure). */
+export function quizReviewExplanation(
+	info: Pick<QuizReviewInfo, "note" | "explanation">,
+): string | null {
+	const explanation = info.explanation?.trim() ?? "";
+	if (explanation.length > 0) return explanation;
+	const note = info.note.trim();
+	return note.length > 0 ? note : null;
 }
 
 /**
@@ -55,7 +71,7 @@ export function QuizReviewChip({ info }: { info: QuizReviewInfo }) {
 /**
  * Khối review chèn dưới mỗi câu ở detail screen: dòng "Đáp án: X — thay thế:
  * a / b" (+ "Bạn trả lời" khi sai) + disclosure "Giải thích" (native
- * <details>, không cần JS). Chip verdict render ở dòng số câu — khối này chỉ
+ * <details>, không cần JS — giải thích riêng của câu, fallback note đề). Chip verdict render ở dòng số câu — khối này chỉ
  * giữ metadata. Render trong fieldset disabled của câu nên không cần tự khóa
  * input.
  */
@@ -64,6 +80,7 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 		.split(" / ")
 		.map((alt) => alt.trim())
 		.filter(Boolean);
+	const explanation = quizReviewExplanation(info);
 	return (
 		<div
 			data-testid="quiz-review-item"
@@ -92,14 +109,22 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 					</span>
 				</p>
 			)}
-			{info.note.trim().length > 0 && (
-				<details className="mt-1.5">
-					<summary className="cursor-pointer select-none font-medium text-primary">
+			{explanation !== null && (
+				<details
+					className="mt-1.5"
+					data-testid="quiz-review-explanation"
+					data-source={info.explanation?.trim() ? "question" : "note"}
+				>
+					<summary className="cursor-pointer select-none rounded-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-hot">
 						Giải thích
 					</summary>
-					<p className="mt-1 whitespace-pre-wrap text-muted-foreground leading-[1.55]">
-						{info.note}
-					</p>
+					{/* Rich text (#423 soạn bằng editor) — RichTextBody sanitize
+						HTML, dữ liệu plain cũ giữ pre-wrap như trước. */}
+					<RichTextBody
+						text={explanation}
+						legacyWhitespace="pre-wrap"
+						className="mt-1 text-muted-foreground leading-[1.55]"
+					/>
 				</details>
 			)}
 		</div>
