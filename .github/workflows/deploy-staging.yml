@@ -113,6 +113,8 @@ jobs:
           SEPAY_BANKHUB_IPN_API_KEY: ${{ secrets.SEPAY_BANKHUB_IPN_API_KEY }}
           SEPAY_BANKHUB_WEBHOOK_SECRET: ${{ secrets.SEPAY_BANKHUB_WEBHOOK_SECRET }}
           SEPAY_BANKHUB_BASE_URL: ${{ vars.SEPAY_BANKHUB_BASE_URL }}
+          # QA cần tài khoản admin test trên staging (#489); rỗng = không ai là admin.
+          ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
         run: pnpm alchemy deploy --stage staging --yes
