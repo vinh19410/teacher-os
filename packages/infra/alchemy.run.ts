@@ -115,6 +115,13 @@ if (topology && adminOriginsEnv !== undefined) {
 	}
 }
 
+// Cờ duy nhất cho tính năng AI (nhập đề, chấm nháp): mặc định tắt, chỉ chuỗi
+// "true" mới bật. Cùng một giá trị đi vào server (AI_ENABLED) và build web
+// (VITE_AI_ENABLED) để hai phía không lệch nhau.
+const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
+	Config.withDefault("false"),
+);
+
 const adminOriginsConfig = topology
 	? Config.string("ADMIN_ORIGINS").pipe(
 			Config.withDefault(topology.adminOrigin),
@@ -167,6 +174,7 @@ export const server = Cloudflare.Worker("server", {
 		// cấu hình thêm; dev local đi qua proxy Cloudflare của alchemy, e2e
 		// không dùng workerd nên inject fake extractor qua boot.ts.
 		AI: Cloudflare.Workers.AI(),
+		AI_ENABLED: aiEnabledConfig,
 		CORS_ORIGIN: corsOriginConfig,
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,
@@ -234,6 +242,7 @@ export default Alchemy.Stack(
 	},
 	Effect.gen(function* () {
 		const serverWorker = yield* server;
+		const aiEnabled = yield* aiEnabledConfig;
 		const webWorker = yield* Cloudflare.Website.Vite("web", {
 			rootDir: "../../apps/web",
 			main: "src/worker.ts",
@@ -252,6 +261,7 @@ export default Alchemy.Stack(
 				VITE_SERVER_URL: topology
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
+				VITE_AI_ENABLED: aiEnabled,
 			},
 			dev: {
 				port: 8001,

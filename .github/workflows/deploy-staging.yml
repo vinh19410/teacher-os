@@ -107,6 +107,8 @@ jobs:
           MAIL_FROM: ${{ vars.MAIL_FROM }}
           # QA cần tài khoản admin test trên staging (#489); rỗng = không ai là admin.
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
+          # Bật AI (nhập đề, chấm nháp) trên staging khi QA cần; trống = tắt.
+          AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
         run: pnpm alchemy deploy --stage staging --yes
