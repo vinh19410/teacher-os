@@ -79,6 +79,11 @@ export interface CreateAuthInput {
 	 * email có tài khoản hay không. Không có thì better-auth tự `await`.
 	 */
 	runInBackground?: (promise: Promise<unknown>) => void;
+	/**
+	 * Staging QA: user mới tạo được đánh dấu đã xác minh email ngay, không gửi
+	 * mail xác minh (staging không có mailer thật). Infra cấm bật trên prod.
+	 */
+	autoVerifyEmail?: boolean;
 }
 
 /** Tài khoản học viên không thể đăng nhập vào trang giáo viên (plan #260 D4). */
@@ -239,7 +244,7 @@ export function createAuth(input: CreateAuthInput) {
 					});
 				}
 			},
-			sendOnSignUp: true,
+			sendOnSignUp: !input.autoVerifyEmail,
 			autoSignInAfterVerification: true,
 			expiresIn: 60 * 60,
 		},
@@ -312,7 +317,13 @@ export function createAuth(input: CreateAuthInput) {
 								});
 							}
 						}
-						return { data: { ...user, role: appRole } };
+						return {
+							data: {
+								...user,
+								role: appRole,
+								...(input.autoVerifyEmail ? { emailVerified: true } : {}),
+							},
+						};
 					},
 				},
 			},

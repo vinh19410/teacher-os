@@ -90,6 +90,7 @@ const getAuth = (): Auth => {
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 			mailer,
 			runInBackground: (promise) => waitUntil(promise),
+			autoVerifyEmail: env.AUTO_VERIFY_EMAIL === "true",
 		});
 	}
 	return auth;

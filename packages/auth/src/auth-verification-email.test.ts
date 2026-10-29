@@ -13,7 +13,7 @@ const MIGRATIONS_DIR = new URL(
 
 const TEST_ORIGIN = "http://localhost:3000";
 
-async function setupTestAuth(mailer: Mailer) {
+async function setupTestAuth(mailer: Mailer, autoVerifyEmail = false) {
 	const client = createClient({ url: "file::memory:" });
 	const libsql = drizzle(client, { schema });
 	await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
@@ -27,6 +27,7 @@ async function setupTestAuth(mailer: Mailer) {
 		googleClientId: "test-dummy",
 		googleClientSecret: "test-dummy",
 		mailer,
+		autoVerifyEmail,
 	});
 }
 
@@ -139,5 +140,30 @@ describe("auth email verification wiring", () => {
 		// Must propagate error — not swallow (so client UI can display error)
 		expect(res.status).not.toBe(200);
 		expect(sendSpy).toHaveBeenCalledTimes(2);
+	});
+
+	test("autoVerifyEmail marks new users verified and sends no verification mail", async () => {
+		const sendSpy = vi.fn().mockResolvedValue(undefined);
+		const auth = await setupTestAuth({ send: sendSpy }, true);
+
+		const res = await auth.handler(
+			new Request(`${TEST_ORIGIN}/api/auth/sign-up/email`, {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: TEST_ORIGIN,
+				},
+				body: JSON.stringify({
+					name: "Student Staging",
+					email: "student-staging@example.com",
+					password: "password123",
+				}),
+			}),
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { user: { emailVerified: boolean } };
+		expect(body.user.emailVerified).toBe(true);
+		expect(sendSpy).not.toHaveBeenCalled();
 	});
 });
