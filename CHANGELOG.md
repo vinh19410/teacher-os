@@ -13,6 +13,16 @@ Quy ước khi cập nhật:
 
 ## 2026-10-29
 
+### Added
+- Release lõi vận hành lớp + học phí lên production (`develop` → `main`, #501, issue #494): lịch tháng/tuần/ngày + kỳ nghỉ, điểm danh theo buổi và theo ngày, hóa đơn/thu tiền/sổ công nợ, nhắc học phí, nhật ký thông báo; 22 migration (0035–0056) áp lên D1 prod (ledger 35 → 57), dữ liệu prod giữ nguyên.
+- Cờ `AI_ENABLED` (mặc định tắt, #496): nhập đề AI và chấm nháp AI tắt hẳn trên prod, UI ẩn mọi điểm vào AI; khi tắt, `runAiGrading` thoát sớm không tạo draft hay reserve Credit (#497).
+
+### Fixed
+- Lịch nhiều thứ trong tuần (ví dụ T2+T5) sinh sai buổi cuối khi ngày bắt đầu không phải thứ đầu tiên trong lịch: `skeletonOf` giờ đi theo lịch từ `startDate` thay vì dồn buổi dư vào thứ đầu mảng (#498). Backfill #98 giữ công thức cũ qua `legacySkeletonOf`.
+
+### CI/Infra
+- Job e2e nâng `timeout-minutes` 20 → 40: suite 243 test (1 worker) cần ~23 phút trên runner chậm, làm `Deploy Production` bị hủy hai lần trước khi deploy (#502).
+
 ### Fixed
 - `/readyz` trả 503 `{"ok":false}` trên D1 dù database đã migrate đủ: probe trong `apps/server/src/routes/readiness.ts` truyền mỗi bảng/index một tham số (~132 tham số), vượt giới hạn 100 tham số mỗi câu lệnh của Cloudflare D1 nên D1 từ chối query. Danh sách tên giờ đi trong **một** tham số JSON (`name IN (SELECT value FROM json_each(?))`), hành vi kiểm tra giữ nguyên; thêm test chặn probe vượt 100 tham số (libsql in-memory dùng trong test không có giới hạn này).
 
