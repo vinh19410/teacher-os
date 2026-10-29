@@ -9,7 +9,7 @@ import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test, vi } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 import type { SessionUser } from "../session";
 
@@ -46,6 +46,7 @@ const writeHeaders = (origin: string = STUDENT_ORIGIN) => ({
 
 describe("student quiz take & review (/api/student/* quiz attempt domain)", () => {
 	let app: ServerApp;
+	const backgroundJobs: Promise<unknown>[] = [];
 	let libsql: Db;
 
 	beforeAll(async () => {
@@ -365,6 +366,9 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		app = buildApp({
 			getDb: () => libsql as unknown as Db,
 			corsOrigin: CORS_ORIGINS,
+			runInBackground: (job) => {
+				backgroundJobs.push(job);
+			},
 			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
 				const userKey = headers.get("x-test-user");
 				if (!userKey || userKey === "none") return null;
@@ -1436,10 +1440,7 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(detailBody.essay).toBe("Remote learning has widened the gap.");
 	});
 
-	// TOS-30 (#478): nộp Writing/Speaking kích hoạt pipeline chấm nháp AI;
-	// test không wire getAiGrader → draft rơi `AI_GRADING_DISABLED` (đủ để
-	// chứng minh schedule ĐƯỢC gọi). Reading/trắc nghiệm không tạo draft.
-	test("TOS-30: submit Writing tạo draft AI, Reading không tạo", async () => {
+	test("AI tắt: submit Writing/Reading không tạo draft hay dòng credit_usage_log", async () => {
 		// Lượt giao RIÊNG cho test này (UNIQUE (assignment, student) mỗi cặp).
 		await libsql.insert(schema.classAssignment).values([
 			{
@@ -1484,19 +1485,21 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const submitRes = await submit(writingAttempt);
 		expect(submitRes.status).toBe(200);
 
-		await vi.waitFor(async () => {
-			const [draft] = await libsql
-				.select()
-				.from(schema.aiGradingDraft)
-				.where(eq(schema.aiGradingDraft.attemptId, writingAttempt));
-			expect(draft?.status).toBe("manual_pending");
-			expect(draft?.errorCode).toBe("AI_GRADING_DISABLED");
-		});
+		await Promise.all(backgroundJobs);
+		const [writingDraft] = await libsql
+			.select()
+			.from(schema.aiGradingDraft)
+			.where(eq(schema.aiGradingDraft.attemptId, writingAttempt));
+		expect(writingDraft ?? null).toBeNull();
+		const writingLogs = await libsql
+			.select()
+			.from(schema.creditUsageLog)
+			.where(eq(schema.creditUsageLog.refId, writingAttempt));
+		expect(writingLogs).toEqual([]);
 
 		const readingAttempt = await startAttempt("ca-ag-r");
 		const readingRes = await submit(readingAttempt);
 		expect(readingRes.status).toBe(200);
-		// Reading không hề được schedule → không có draft, không cần chờ.
 		const [readingDraft] = await libsql
 			.select()
 			.from(schema.aiGradingDraft)

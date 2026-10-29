@@ -142,8 +142,8 @@ export interface AppDeps {
 	getExamImportStore?(): MediaStore | undefined;
 	/**
 	 * TOS-30 (#478): grader chấm nháp AI — Workers AI ở production (binding
-	 * `AI`), fake ở e2e/test. Vắng mặt → draft rơi `AI_GRADING_DISABLED`
-	 * (fail-closed, Credit hoàn đủ), cùng hợp đồng với `getExamExtractor`.
+	 * `AI`), fake ở e2e/test. Vắng mặt → bỏ qua chấm nháp (không draft,
+	 * không đụng Credit), cùng hợp đồng fail-closed với `getExamExtractor`.
 	 */
 	getAiGrader?(): AiGrader | undefined;
 }
